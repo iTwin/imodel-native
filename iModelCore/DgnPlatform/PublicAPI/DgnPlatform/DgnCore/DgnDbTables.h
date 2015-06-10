@@ -44,12 +44,10 @@
 //-----------------------------------------------------------------------------------------
 // DgnDb table names
 //-----------------------------------------------------------------------------------------
-#define DGN_TABLE_Domain            DGN_TABLE("Domain")
-#define DGN_TABLE_Font              DGN_TABLE("Font")
-#define DGN_TABLE_Handler           DGN_TABLE("Handler")
-#define DGN_TABLE_Session           DGN_TABLE("Session")
-
-#define DGN_VTABLE_RTree3d         DGN_TABLE("RTree3d")
+#define DGN_TABLE_Domain        DGN_TABLE("Domain")
+#define DGN_TABLE_Font          DGN_TABLE("Font")
+#define DGN_TABLE_Handler       DGN_TABLE("Handler")
+#define DGN_VTABLE_RTree3d      DGN_TABLE("RTree3d")
 
 //-----------------------------------------------------------------------------------------
 // ECRelationshipClass names (combine with DGN_SCHEMA macro for use in ECSql)
@@ -179,7 +177,7 @@ struct DgnCategories : DgnDbTable
             int32_t GetDisplayPriority() const {return m_displayPriority;}
             DgnMaterialId GetMaterial() const {return m_material;}
             double GetTransparency() const {return m_transparency;}
-            DGNPLATFORM_EXPORT bool operator==(Appearance const& other) const;
+            DGNPLATFORM_EXPORT bool operator== (Appearance const& other) const;
             bool IsEqual(Appearance const& other) const {return *this==other;}
             void FromJson(Utf8StringCR); //!< initialize this appearance from a previously saved json string
             DGNPLATFORM_EXPORT Utf8String ToJson() const;   //!< convert this appearance to a json string
@@ -583,7 +581,7 @@ public:
             DGNPLATFORM_EXPORT Utf8CP GetName() const;
             DGNPLATFORM_EXPORT Utf8CP GetDescription() const;
             DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
-            Entry const& operator* () const {return *this;}
+            Entry const& operator*() const {return *this;}
         }; // Entry
 
     typedef Entry const_iterator;
@@ -635,7 +633,7 @@ public:
     BeSQLite::DbResult DeleteProperty(DgnViewId viewId, DgnViewPropertySpecCR spec, uint64_t id=0);
 
     //! Get an iterator over the Views in this DgnDb.
-    Iterator MakeIterator(int viewTypeMask=(int)DgnViewType::All) const {return Iterator(m_dgndb, viewTypeMask);}
+    Iterator MakeIterator(int viewTypeMask= (int)DgnViewType::All) const {return Iterator(m_dgndb, viewTypeMask);}
 };
 
 enum class ModelIterate
@@ -749,7 +747,7 @@ public:
 
             bool Is3d() const {return GetModelType()==DgnModelType::Physical;}
             bool InModelGui() const {return 0 != ((int)ModelIterate::Gui & GetVisibility());}
-            Entry const& operator* () const {return *this;}
+            Entry const& operator*() const {return *this;}
         };
 
         typedef Entry const_iterator;
@@ -859,7 +857,7 @@ struct DgnElements : DgnDbTable
     friend struct DgnModel;
     friend struct DgnModels;
     friend struct ElementHandler;
-    friend struct ITxnManager;
+    friend struct Txns;
     friend struct ProgressiveViewFilter;
 
     //! The totals for loaded DgnElements in this DgnDb. These values reflect the current state of the loaded elements.
@@ -930,7 +928,12 @@ public:
     DGNPLATFORM_EXPORT DgnElementCP FindElement(DgnElementId id) const;
 
     //! Query the DgnModelId of the specified DgnElementId.
-    DGNPLATFORM_EXPORT DgnModelId QueryModelId(DgnElementId elementId);
+    //! @private
+    DGNPLATFORM_EXPORT DgnModelId QueryModelId(DgnElementId elementId) const;
+
+    //! Query for the DgnElementId of the element that has the specified code
+    //! @note Element codes are usually, but not necessarily, unique. If not unique, this method returns the first one found.
+    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(Utf8CP code) const;
 
     //! Free unreferenced elements in the pool until the total amount of memory used by the pool is no more than a target number of bytes.
     //! @param[in] memTarget The target number of bytes used by elements in the pool. If the pool is currently using more than this target,
@@ -963,7 +966,7 @@ public:
 
     //! Get an editable copy of an element by DgnElementId.
     //! @return Invalid if the element does not exist, or if it cannot be edited.
-    template<class T> RefCountedPtr<T> GetForEdit(DgnElementId id) const {RefCountedCPtr<T> orig=Get<T>(id); return orig.IsValid() ? (T*)orig->CopyForEdit().get() : nullptr;}
+    template<class T> RefCountedPtr<T> GetForEdit(DgnElementId id) const {RefCountedCPtr<T> orig=Get<T>(id); return orig.IsValid() ?(T*)orig->CopyForEdit().get() : nullptr;}
 
     //! Insert a copy of the supplied DgnElement into this DgnDb.
     //! @param[in] element The DgnElement to insert.
@@ -1131,7 +1134,7 @@ public:
             DGNPLATFORM_EXPORT ColorDef GetColorValue() const;
             DGNPLATFORM_EXPORT Utf8CP GetName() const;
             DGNPLATFORM_EXPORT Utf8CP GetBookName() const;
-            Entry const& operator* () const {return *this;}
+            Entry const& operator*() const {return *this;}
         };
 
     typedef Entry const_iterator;
@@ -1340,7 +1343,7 @@ public:
             DGNPLATFORM_EXPORT DgnMaterialId GetId() const;
             DGNPLATFORM_EXPORT Utf8CP GetName() const;
             DGNPLATFORM_EXPORT Utf8CP GetPalette() const;
-            Entry const& operator* () const {return *this;}
+            Entry const& operator*() const {return *this;}
         };
 
     typedef Entry const_iterator;
@@ -1490,7 +1493,7 @@ public:
             DGNPLATFORM_EXPORT DgnLinkId GetId() const;
             DGNPLATFORM_EXPORT DgnLinkType GetType() const;
             DGNPLATFORM_EXPORT Utf8CP GetDisplayLabel() const;
-            Entry const& operator* () const { return *this; }
+            Entry const& operator*() const { return *this; }
         }; // Entry
 
         typedef Entry const_iterator;
@@ -1528,7 +1531,7 @@ public:
             DGNPLATFORM_EXPORT DgnLinkId GetId() const;
             DGNPLATFORM_EXPORT DgnLinkType GetType() const;
             DGNPLATFORM_EXPORT Utf8CP GetDisplayLabel() const;
-            Entry const& operator* () const { return *this; }
+            Entry const& operator*() const { return *this; }
 
         }; // Entry
 
@@ -1565,7 +1568,7 @@ public:
 
         public:
             DGNPLATFORM_EXPORT DgnElementKey GetKey() const;
-            Entry const& operator* () const { return *this; }
+            Entry const& operator*() const { return *this; }
 
         }; // Entry
 

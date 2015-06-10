@@ -41,7 +41,6 @@ DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_col
                  m_geomParts(*this), m_units(*this), m_models(*this), m_elements(*this), 
                  m_materials(*this), m_links(*this), m_ecsqlCache(50, "DgnDb")
     {
-    m_txnManager = NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -52,7 +51,7 @@ void DgnDb::Destroy()
     // delete dgnfile, causes all models, etc. to be freed.
     m_models.Empty();
 
-    DELETE_AND_CLEAR(m_txnManager);
+    m_txns = nullptr; // ref counted
 
     m_ecsqlCache.Empty();
     }
@@ -84,20 +83,21 @@ DbResult DgnDb::_OnDbOpened()
     if (BE_SQLITE_OK != rc)
         return rc;
 
-    m_units.Load();
+    Txns(); // make sure txnmanager is allocated
 
+    m_units.Load();
     return Domains().OnDbOpened();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ITxnManagerR DgnDb::GetTxnManager()
+TxnManagerR DgnDb::Txns()
     {
-    if (NULL == m_txnManager)
-        m_txnManager = new ITxnManager(*this);
+    if (!m_txns.IsValid())
+        m_txns = new TxnManager(*this);
 
-    return *m_txnManager;
+    return *m_txns;
     }
 
 //--------------------------------------------------------------------------------------
@@ -226,7 +226,7 @@ DgnFileStatus DgnDb::CompactFile()
 
     Savepoint* savepoint = GetSavepoint(0);
     if (savepoint)
-        savepoint->Commit();
+        savepoint->Commit(nullptr);
 
     if (BE_SQLITE_OK != TryExecuteSql("VACUUM"))
         return  DGNFILE_ERROR_SQLiteError;

@@ -58,7 +58,7 @@ virtual bool _DoUpdateSelectedControls (FenceParamsR fp, SelectionMode mode) = 0
 //! The manipulator might not ever be asked to draw it's controls.
 //! @note A manipulator should always try to select at least one control.
 //! @return true if any control is selected.
-virtual bool _DoUpdateSelectedControls (HitPathCR path) = 0;
+virtual bool _DoUpdateSelectedControls (HitDetailCR path) = 0;
 
 //! Check whether manipulator currently has any controls selected.
 //! @return true if manipulator has controls selected or flashed.
@@ -106,7 +106,7 @@ virtual StatusInt _DoModify (DgnButtonEventCR ev, bool isDynamics) = 0;
 
 //! Called when manipulator is displaying controls and user clicks on the element again,
 //! but not on a control. Manipulator may choose to present the user with a different set of controls.
-virtual void _OnNewHit (HitPathCR path) {}
+virtual void _OnNewHit (HitDetailCR path) {}
 
 //! Called on a data button event to allow controls to act on a single click.
 //! @note This method can be used to launch editors as it is called before _OnPreModify.
@@ -120,7 +120,7 @@ virtual bool _OnRightClick (DgnButtonEventCR ev) {return false;}
 
 //! Called when user double clicks on the manipulator's element. (ex. edit text)
 //! @return true if manipulator handled double-click event.
-virtual bool _OnDoubleClick (HitPathCR path) {return false;}
+virtual bool _OnDoubleClick (HitDetailCR path) {return false;}
 
 //! Called when a drag operation starts. This method is only useful for manipulators that 
 //! wish to distinguish click-move-click from down-drag-release.
@@ -167,7 +167,7 @@ struct IEditManipulatorExtension : DgnDomain::Handler::Extension
 {
 public:
 
-virtual IEditManipulatorPtr _GetIEditManipulator (HitPathCR hit) = 0;
+virtual IEditManipulatorPtr _GetIEditManipulator (HitDetailCR hit) = 0;
 HANDLER_EXTENSION_DECLARE_MEMBERS(IEditManipulatorExtension, DGNPLATFORM_EXPORT)
 
 }; // IEditManipulatorExtension

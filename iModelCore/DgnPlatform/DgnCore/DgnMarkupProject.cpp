@@ -69,17 +69,48 @@ BentleyStatus DgnMarkupProject::QueryPropertyAsJson (JsonValueR json, DgnMarkupP
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnViewId DgnMarkupProject::GetFirstViewOf(DgnModelId mid)
+    {
+    for (auto const& view : Views().MakeIterator())
+        {
+        if (view.GetBaseModelId() == mid)
+            return view.GetDgnViewId();
+        }
+    return DgnViewId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnViewId RedlineModel::GetFirstView()
+    {
+    auto db = GetDgnMarkupProject();
+    return db? db->GetFirstViewOf(GetModelId()): DgnViewId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnViewId PhysicalRedlineModel::GetFirstView()
+    {
+    auto db = GetDgnMarkupProject();
+    return db? db->GetFirstViewOf(GetModelId()): DgnViewId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 PhysicalRedlineViewController::PhysicalRedlineViewController (PhysicalRedlineModel& rdlModel, PhysicalViewController& subjectView, DgnViewId physicalRedlineViewId) 
     : 
-    PhysicalViewController (*rdlModel.GetDgnMarkupProject(), physicalRedlineViewId.IsValid()? physicalRedlineViewId: rdlModel.GetViewId()),
+    PhysicalViewController (*rdlModel.GetDgnMarkupProject(), physicalRedlineViewId.IsValid()? physicalRedlineViewId: rdlModel.GetFirstView()),
     m_subjectView (subjectView)
     {
 #ifndef NDEBUG
     if (physicalRedlineViewId.IsValid())
         {
-        DgnViewId assocViewId = rdlModel.GetViewId();
+        DgnViewId assocViewId = rdlModel.GetFirstView();
         BeAssert (!assocViewId.IsValid() || assocViewId == physicalRedlineViewId);
         }
 #endif
@@ -295,16 +326,6 @@ DgnDbR PhysicalRedlineViewController::_GetDgnDb() const
     return m_targetModelIsInSubjectView? m_subjectView.GetDgnDb(): T_Super::_GetDgnDb();
     }
 
-#if defined (NEEDS_WORK_DGNITEM)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-BitMaskCR  PhysicalRedlineViewController::_GetCategoryDisplayMask () const
-    {
-    return m_targetModelIsInSubjectView ? m_subjectView.GetCategoryDisplayMask(): T_Super::_GetCategoryDisplayMask();
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -409,7 +430,7 @@ void DgnMarkupProject::SavePropertyFromJson (DgnMarkupProjectProperty::ProjectPr
 +---------------+---------------+---------------+---------------+---------------+------*/
 RedlineViewController::RedlineViewController (RedlineModel& rdlModel, DgnViewId viewId) 
     : 
-    SheetViewController (*rdlModel.GetDgnMarkupProject(), viewId),
+    SheetViewController (*rdlModel.GetDgnMarkupProject(), viewId.IsValid()? viewId: rdlModel.GetFirstView()),
     m_enableViewManipulation(false),
     m_drawBorder(true)
     {;}
@@ -471,9 +492,6 @@ DgnMarkupProjectPtr DgnMarkupProject::OpenDgnDb(DbResult* outResult, BeFileNameC
         status = BE_SQLITE_ERROR_BadDbSchema;
         return nullptr;
         }
-
-    if (openParams.m_startDefaultTxn)
-        markupProject->GetTxnManager().Activate();
 
     return markupProject;
     }
@@ -579,27 +597,34 @@ DbResult DgnMarkupProject::ConvertToMarkupProject (BeFileNameCR fileName, Create
 
     return BE_SQLITE_OK;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void RedlineModel::_ToPropertiesJson(Json::Value& val) const 
+    {
+    T_Super::_ToPropertiesJson(val);
+
+    Json::Value json (Json::objectValue);
+    m_assoc.ToPropertiesJson (json);
+    val["RedlineModel_Assoc"] = json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void RedlineModel::_FromPropertiesJson(Json::Value const& val) 
+    {
+    T_Super::_FromPropertiesJson(val);
+    m_assoc.FromPropertiesJson (val["RedlineModel_Assoc"]);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RedlineModel::SetAssociation (DgnDbR dgnProject, ViewControllerCR projectView)
     {
-    //  Serialize the association data
-    DgnViewAssociationData assocData;
-    assocData.FromDgnProject (dgnProject, projectView, *GetDgnMarkupProject());
-    Json::Value json (Json::objectValue);
-    assocData.ToPropertiesJson (json);
-
-    //  Store the serialized association data as a property of the "Redline" ECInstance that is associated with this redlinemodel.
-    ECN::ECClassCP rdlClass = GetECClass();
-    ECSqlUpdateBuilder updateSql;
-    updateSql.Update(*rdlClass, false).Where("ECInstanceId=?");
-    updateSql.AddSet("DgnProjectViewId", Utf8PrintfString("%lld",projectView.GetViewId().GetValue()).c_str());  // we stored the project view id redundantly to make it easier for clients to get it from the ecinstance.
-    updateSql.AddSet("DgnProjectViewSettings", Utf8PrintfString("'%hs'", Json::FastWriter::ToString(json).c_str()).c_str()); // we must enclose the serialized Json value in single quotes to tell SQLite to ignore the characters like { and . that are inside.
-    ECSqlStatement updateStmt;
-    updateStmt.Prepare (*GetDgnMarkupProject(), updateSql.ToString ().c_str ());
-    updateStmt.BindId (1, GetECInstanceId());
-    updateStmt.Step();
+    m_assoc.FromDgnProject (dgnProject, projectView, *GetDgnMarkupProject());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -607,21 +632,7 @@ void RedlineModel::SetAssociation (DgnDbR dgnProject, ViewControllerCR projectVi
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RedlineModel::GetAssociation (DgnViewAssociationData& assocData) const
     {
-    //  Query the serialized association data stored as a property on the "Redline" ECInstance associated with this redlinemodel.
-    ECN::ECClassCP rdlClass = GetECClass();
-    ECSqlSelectBuilder selectSql;
-    selectSql.Select("DgnProjectViewSettings").From(*rdlClass, false).Where ("ECInstanceId=?");
-    ECSqlStatement selectStmt;
-    selectStmt.Prepare (*GetDgnMarkupProject(), selectSql.ToString ().c_str ());
-    selectStmt.BindId (1, GetECInstanceId());
-    selectStmt.Step();
-
-    //  Re-create the DgnViewAssociationData from the serlialized data 
-    Json::Value json (Json::objectValue);
-    Json::Reader::Parse (selectStmt.GetValueText(0), json);
-
-    GetDgnMarkupProject()->QueryPropertyAsJson (json, *this, RedlineModelProperty::DgnProjectAssociationData());
-    assocData.FromPropertiesJson (json);
+    assocData = m_assoc;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -726,9 +737,6 @@ DgnMarkupProjectPtr DgnMarkupProject::CreateDgnDb(DbResult* result, BeFileNameCR
     if (BE_SQLITE_OK != stat)
         return nullptr;
 
-    if (params.m_startDefaultTxn)
-        markupProject->GetTxnManager().Activate();
-
     return  markupProject;
     }
 
@@ -812,7 +820,6 @@ BentleyStatus DgnMarkupProject::ImportMarkupEcschema ()
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/13
-+---------------+---------------+---------------+---------------+---------------+------*/
 ECN::ECClassCP DgnMarkupProject::GetRedlineECClass()
     {
     ECN::ECClassCP redlineClass = Schemas ().GetECClass ("DgnMarkupSchema", "Redline");
@@ -823,27 +830,23 @@ ECN::ECClassCP DgnMarkupProject::GetRedlineECClass()
         }
     return redlineClass;
     }
++---------------+---------------+---------------+---------------+---------------+------*/
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/13
+* @bsimethod                                    Sam.Wilson                      07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceId DgnMarkupProject::GetECInstanceId (DgnModelCR model) const
+DgnMarkupProject* RedlineModel::GetDgnMarkupProject() const
     {
-    int64_t ecInstanceIdValue;
-    if (QueryProperty (&ecInstanceIdValue, sizeof(ecInstanceIdValue), RedlineModelProperty::RedlineECInstanceId(), model.GetModelId().GetValue()) != BE_SQLITE_ROW)
-        return ECInstanceId();
-    return ECInstanceId (ecInstanceIdValue);
+    return dynamic_cast<DgnMarkupProject*>(&GetDgnDb());
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/13
+* @bsimethod                                    Sam.Wilson                      07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceId RedlineModel::GetECInstanceId () const {return GetDgnMarkupProject()->GetECInstanceId (*this);}
-ECN::ECClassCP RedlineModel::GetECClass () const {return GetDgnMarkupProject()->GetRedlineECClass();}
-ECInstanceId PhysicalRedlineModel::GetECInstanceId () const {return GetDgnMarkupProject()->GetECInstanceId (*this);}
-ECN::ECClassCP PhysicalRedlineModel::GetECClass () const {return GetDgnMarkupProject()->GetRedlineECClass();}
-DgnMarkupProject* RedlineModel::GetDgnMarkupProject() const {return m_dgndb;}
-DgnMarkupProject* PhysicalRedlineModel::GetDgnMarkupProject() const {return m_dgndb;}
+DgnMarkupProject* PhysicalRedlineModel::GetDgnMarkupProject() const
+    {
+    return dynamic_cast<DgnMarkupProject*>(&GetDgnDb());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/13
@@ -1050,259 +1053,82 @@ bpair<DgnPlatform::DgnModelId,double> DgnMarkupProject::FindClosestRedlineModel 
     {
     DPoint3d viewOriginToMatch = viewController.GetOrigin();
 
-    ECSqlSelectBuilder selectSql;
-    selectSql.Select("RedlineModelId,DgnProjectViewSettings").From(*GetRedlineECClass(), false);
-    ECSqlStatement selectStmt;
-    selectStmt.Prepare (*this, selectSql.ToString ().c_str ());
     DgnModelId closestRedlineModelId;
     DPoint3d closestOrigin;
     double closestDistance = DBL_MAX;
-    while (ECSqlStepStatus::HasRow == selectStmt.Step())
+    for (auto const& view : Views().MakeIterator())
         {
-        if (selectStmt.IsValueNull(0))
+        RedlineModelP rdlModel = Models().Get<RedlineModel>(view.GetBaseModelId());
+        if (nullptr != rdlModel)
             {
-            BeDataAssert(false && "damaged table has no RedlineModelId value!");
-            continue;
-            }
-        DgnModelId redlineModelId (selectStmt.GetValueInt64(0));
-        Utf8CP serializedViewAssociation = selectStmt.GetValueText(1);
-        if (serializedViewAssociation == nullptr)
-            continue; // this is not a redline model that is associated with any particular view, so we have no way of comparing it with the project view.
-        DgnViewAssociationData assoc;
-        assoc.FromSerializedJson (serializedViewAssociation);
-        if (assoc.GetViewId() == viewController.GetViewId())
-            {
-            DPoint3d viewOrigin;
-            assoc.GetViewOrigin (viewOrigin, *this);
-            double d = viewOrigin.Distance (viewOriginToMatch);
-            if (d < closestDistance)
+            DgnViewAssociationData assoc;
+            rdlModel->GetAssociation(assoc);
+            if (assoc.GetViewId() == viewController.GetViewId())
                 {
-                closestRedlineModelId = redlineModelId;
-                closestDistance = d;
-                closestOrigin = viewOrigin;
-                if (BeNumerical::Compare (d, 0.0) == 0)
-                    break;
+                DPoint3d viewOrigin;
+                assoc.GetViewOrigin (viewOrigin, *this);
+                double d = viewOrigin.Distance (viewOriginToMatch);
+                if (d < closestDistance)
+                    {
+                    closestRedlineModelId = rdlModel->GetModelId();
+                    closestDistance = d;
+                    closestOrigin = viewOrigin;
+                    if (BeNumerical::Compare (d, 0.0) == 0)
+                        break;
+                    }
                 }
             }
         }
     return make_bpair (closestRedlineModelId, closestDistance);
     }
 
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-RedlineModel::RDLSheetDef::RDLSheetDef()
-    {
-    // *** WIP_SHEETMODEL - reinstate SheetDef?? Copy more fields from SheetDef??
-    m_size.Init (0, 0);
-    m_origin.Init (0, 0);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RedlineModel::RDLSheetDef::ToPropertiesJson(Json::Value& val) const
-    {
-    // *** WIP_SHEETMODEL - reinstate SheetDef?? Copy more fields from SheetDef??
-    JsonUtils::DPoint2dToJson (val["Origin"], m_origin);
-    JsonUtils::DVec2dToJson   (val["Size"], m_size);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RedlineModel::RDLSheetDef::FromPropertiesJson(Json::Value const& val)
-    {
-    // *** WIP_SHEETMODEL - reinstate SheetDef?? Copy more fields from SheetDef??
-    JsonUtils::DPoint2dFromJson (m_origin, val["Origin"]);
-    JsonUtils::DVec2dFromJson   (m_size, val["Size"]);
-    return BSISUCCESS;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RedlineModel::StoreSheetDef () const
+RedlineModelPtr RedlineModel::Create (DgnMarkupProjectR markupProject, Utf8CP name, DgnModelId templateModelId)
     {
-    Json::Value json (Json::objectValue);
-    m_sheetDef.ToPropertiesJson (json);
-
-    GetDgnMarkupProject()->SavePropertyFromJson (*this, RedlineModelProperty::RDLSheetDef(), json);
-
-    return BSISUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RedlineModel::LoadSheetDef ()
-    {
-    Json::Value json (Json::objectValue);
-    if (GetDgnMarkupProject()->QueryPropertyAsJson (json, *this, RedlineModelProperty::RDLSheetDef()) != BSISUCCESS)
-        return BSIERROR;
-
-    return m_sheetDef.FromPropertiesJson (json);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-RedlineModelP RedlineModel::Open (DgnMarkupProjectR markupProject, DgnModelId mid)
-    {
-    DgnModelP model = markupProject.Models().GetModel (mid);
-    if (NULL == model)
-        return NULL;
-    if (model->GetModelType() != DgnModelType::Sheet)
-        {
-        BeAssert (false && "Not a redline model!?");
-        return NULL;
-        }
-    RedlineModel* rdl = (RedlineModel*) model;
-    rdl->LoadSheetDef();
-
-    BeAssert (rdl->m_dgndb == &markupProject);
-    return rdl;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalRedlineModelP PhysicalRedlineModel::Open (DgnMarkupProjectR markupProject, DgnModelId mid)
-    {
-    DgnModelP model = markupProject.Models().GetModel (mid);
-    if (NULL == model)
-        return NULL;
-    if (model->GetModelType() != DgnModelType::Physical)
-        {
-        BeAssert (false && "Not a physical redline model!?");
-        return NULL;
-        }
-    PhysicalRedlineModel* rdl = (PhysicalRedlineModel*) model;
-    rdl->m_dgndb = &markupProject;
-
-    return rdl;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RedlineModel::SetSheetDef (RDLSheetDef const& sheetDef)
-    {
-    m_sheetDef = sheetDef;
-    StoreSheetDef ();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-RedlineModelP RedlineModel::CreateModel (DgnMarkupProjectR markupProject, Utf8CP name, DgnModelId templateModelId)
-    {
-    markupProject.GetTxnManager().Deactivate();
-
-    DgnModelId modelId = markupProject.CreateModelPhaseI (name, DgnModelType::Sheet);
-
-    RedlineModelP rdlModel = Open (markupProject, modelId);
-    if (rdlModel == nullptr)
+    DgnClassId rmodelClassId = DgnClassId(markupProject.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "RedlineModel"));
+    RedlineModelPtr rdlModel = new RedlineModel(RedlineModel::CreateParams(markupProject, rmodelClassId, name, DPoint2d::FromZero()));
+    if (!rdlModel.IsValid())
         return nullptr;
 
     //  Copy model properties and contents from template
-    DgnModels::Model templateModel;
-    if (markupProject.Models().QueryModelById (&templateModel, templateModelId) == BSISUCCESS && templateModel.GetModelType() == DgnModelType::Sheet)
+    SheetModelP templateModel = markupProject.Models().Get<SheetModel>(templateModelId);
+    if (nullptr != templateModel)
         {
-        DgnModelP templateModel = markupProject.Models().GetModel (templateModelId);
-
         //  Copy model properties and settings
         rdlModel->GetPropertiesR() = templateModel->GetProperties();
-        rdlModel->SaveProperties();
-        rdlModel->FillModel();
+        rdlModel->m_size = templateModel->GetSize();
 
-#if defined (NEEDS_WORK_DGNITEM)
-        // *** WIP_REDLINE_SHEETDEF - copy sheet def from template model??
-        UnitDefinition const& units = rdlModel->GetDgnDb().Units().GetStorageUnits();
-        UnitDefinitionCR masterUnits = rdlModel->GetModelInfo().GetMasterUnit();
-        double uorPerMaster = units.ConvertDistanceFrom(1.0, masterUnits);
-        RDLSheetDef sheetDef;
-        sheetDef.m_origin.Init (0,0);
-        sheetDef.m_size.Init (uorPerMaster*5, uorPerMaster*5);
-        //  *** WIP_REDLINE_SHEETDEF
-        rdlModel->SetSheetDef (sheetDef);
-
-        //  Copy elements
-        templateModel->FillModel();
-        for (PersistentDgnElementP ref : templateModel->GetElementsCollection())
-            {
-            //  Note: We don't need CopyContext or any style ID remapping, since we created the DgnMarkupProject as a copy of the template model's project, and we created this redline model as a copy (same dimensionality, etc.) as the template model.
-            EditElementHandle eeh (ref);
-            eeh.GetWriteableElement();
-            eeh.SetDgnModel (*rdlModel);
-            eeh.GetWriteableElement()->ClearElementIds();
-            eeh.AddToModel ();
-            }
-#endif
+        //  Copy elements -- *** TBD ***
         }
-  
-    markupProject.SaveChanges();
-    markupProject.GetTxnManager().Activate();
-
     return rdlModel;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelId DgnMarkupProject::CreateModelPhaseI (Utf8CP name, DgnModelType modelType)
+PhysicalRedlineModelPtr PhysicalRedlineModel::Create (DgnMarkupProjectR markupProject, Utf8CP name, PhysicalModelCR subjectViewTargetModel)
     {
-#if defined (NEEDS_WORK_ELEMENT_REFACTOR)
-    //  1. Create a row in the model table and default settings and properties
-    DgnModels::Model modelRow;
-    //                     Sam, i need help, this is wrong --v
-    modelRow.SetModelType (Schemas().GetECClassId("dgn","MarkupModel"), modelType);
-    modelRow.SetName (name);
-    if (Models().CreateNewModel (modelRow) != DGNMODEL_STATUS_Success)
-        return DgnModelId();
+    DgnClassId rmodelClassId = DgnClassId(markupProject.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "PhysicalRedlineModel"));
 
-    DgnModelId modelId = modelRow.GetId();
-
-    //  2. Save proper model properties and properties
-    RedlineModel rdlModelTemp (*this, modelId, name);
-    rdlModelTemp.SaveProperties();
-
-    //  3. Add Redline ECProperties to the model
-    CreateModelECProperties (modelId, name);
-
-    return modelId;
-#endif
-    return DgnModelId();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalRedlineModelP PhysicalRedlineModel::CreateModel (DgnMarkupProjectR markupProject, Utf8CP name, PhysicalModelCR subjectViewTargetModel)
-    {
-    DgnModelId modelId = markupProject.CreateModelPhaseI (name, DgnModelType::Physical);
-
-    PhysicalRedlineModelP rdlModel = Open (markupProject, modelId);
-    if (NULL == rdlModel)
+    PhysicalRedlineModelPtr rdlModel = new PhysicalRedlineModel(PhysicalRedlineModel::CreateParams(markupProject, rmodelClassId, name));
+    if (!rdlModel.IsValid())
         {
         DGNCORELOG->error("PhysicalRedlineModel::CreateModel failed");
         BeAssert(false && "PhysicalRedlineModel::CreateModel failed");
-        return NULL;
+        return nullptr;
         }
 
     UnitDefinition mu = subjectViewTargetModel.GetProperties().GetMasterUnit();
     UnitDefinition su = subjectViewTargetModel.GetProperties().GetSubUnit();
     rdlModel->GetPropertiesR().SetWorkingUnits (mu, su);
 
-    rdlModel->SaveProperties();
-
     return rdlModel;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/13
-+---------------+---------------+---------------+---------------+---------------+------*/
 void DgnMarkupProject::CreateModelECProperties (DgnModelId modelId, Utf8CP modelName)
     {
     // --------------------------------------------------------------
@@ -1356,31 +1182,7 @@ void DgnMarkupProject::CreateModelECProperties (DgnModelId modelId, Utf8CP model
     ECInstanceId const& newECInstanceId = newECInstanceKey.GetECInstanceId ();
     SaveProperty (RedlineModelProperty::RedlineECInstanceId(), &newECInstanceId, sizeof(ECInstanceId), modelId.GetValue());
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void computeModelRange (DRange3dR range, RedlineModelR model)
-    {
-#if defined (NEEDS_WORK_DGNITEM)
-    DPoint3d const ooo = {0,0,0};
-    range.Init();
-
-    model.FillModel();
-    for (PersistentDgnElementP ref : model.GetElementsCollection())
-        {
-        EditElementHandle eeh (ref);
-        DisplayHandler* dh = eeh.GetDisplayHandler();
-        if (dh)
-            {
-            DRange3d erange;
-            dh->CalcElementRange (eeh, erange, NULL);
-            if (!erange.low.AlmostEqual(ooo) || !erange.high.AlmostEqual(ooo))  // ignore type 106s that report a range of 000-000
-                range.UnionOf (range, erange);
-            }
-        }
-#endif
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
@@ -1402,16 +1204,16 @@ void RedlineModel::StoreImageData (bvector<uint8_t> const& imageData, IViewOutpu
     //  but, be sure to maintain the aspect ratio of the original image.
     if (fitToX)
         {
-        m_imageDef.m_size.x = m_sheetDef.m_size.x;
-        m_imageDef.m_size.y = m_sheetDef.m_size.x * (m_imageDef.m_sizeInPixels.y / (double)m_imageDef.m_sizeInPixels.x);
+        m_imageDef.m_size.x = m_size.x;
+        m_imageDef.m_size.y = m_size.x * (m_imageDef.m_sizeInPixels.y / (double)m_imageDef.m_sizeInPixels.x);
         }
     else
         {
-        m_imageDef.m_size.y = m_sheetDef.m_size.y;
-        m_imageDef.m_size.x = m_sheetDef.m_size.y * (m_imageDef.m_sizeInPixels.x / (double)m_imageDef.m_sizeInPixels.y);
+        m_imageDef.m_size.y = m_size.y;
+        m_imageDef.m_size.x = m_size.y * (m_imageDef.m_sizeInPixels.x / (double)m_imageDef.m_sizeInPixels.y);
         }
 
-    m_imageDef.m_origin = m_sheetDef.m_origin;
+    m_imageDef.m_origin.FromZero();
     
     //  Store the image def
     Json::Value json (Json::objectValue);
@@ -1424,13 +1226,14 @@ void RedlineModel::StoreImageData (bvector<uint8_t> const& imageData, IViewOutpu
     GetDgnMarkupProject()->SaveProperty (propSpec, &imageData[0], (uint32_t)imageData.size(), GetModelId().GetValue());
 
     // Update the sheetdef to make sure it encloses the image.
-    if (!m_imageDef.m_size.AlmostEqual (m_sheetDef.m_size))
+    if (!m_imageDef.m_size.AlmostEqual (DVec2d::From(m_size)))
         {
-        m_sheetDef.m_size.x = std::max (m_imageDef.m_size.x, m_sheetDef.m_size.x);
-        m_sheetDef.m_size.y = std::max (m_imageDef.m_size.y, m_sheetDef.m_size.y);
-        StoreSheetDef();
+        m_size.x = std::max (m_imageDef.m_size.x, m_size.x);
+        m_size.y = std::max (m_imageDef.m_size.y, m_size.y);
         }
     
+    SaveProperties();
+
     //  Define the image texture
     DefineImageTextures (m_imageDef, imageData);
 
@@ -1468,7 +1271,7 @@ void RedlineModel::StoreImageDataFromJPEG (uint8_t const* jpegData, size_t jpegD
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RedlineModel::LoadImageData (ImageDef& imageDef, bvector<uint8_t>& imageData)
     {
-    return LoadImageData (imageDef, imageData, *m_dgndb, GetModelId());
+    return LoadImageData (imageDef, imageData, GetDgnDb(), GetModelId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1707,16 +1510,6 @@ BentleyStatus RedlineModel::DrawImage (ViewContextR context, DPoint3dCR viewOrg,
 
     context.GetIViewDraw().DrawMosaic ((int)m_tilesX, tilesY, &x, &m_tileOrigins[0]);
 
-#if defined (NEEDS_WORK_DGNITEM)
-    if (drawBorder)
-        {
-        SheetDef sheetDef;
-        sheetDef.SetOrigin (m_sheetDef.m_origin);
-        sheetDef.SetSize (m_sheetDef.m_size.x, m_sheetDef.m_size.y);
-        sheetDef.Draw (&context);
-        }
-#endif
-
     return BSISUCCESS;
     }
 
@@ -1738,7 +1531,7 @@ void RedlineViewController::_DrawView (ViewContextR context)
 
     targetModel->DrawImage (context, GetOrigin(), GetDelta(), m_drawBorder);
 
-    T_Super::_DrawView (context);
+    T_Super::_DrawView (context);   // draws sheet border and redline graphics
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1787,9 +1580,7 @@ RedlineViewControllerPtr RedlineViewController::InsertView (RedlineModelR rdlMod
             controller->SetBackgroundColor (templateSheet->GetBackgroundColor());
         controller->SetDelta (templateSheet->GetDelta());
         controller->SetOrigin (templateSheet->GetOrigin());
-#if defined (NEEDS_WORK_DGNITEM)
-        controller->SetCategoryDisplayMask (templateSheet->GetCategoryDisplayMask());
-#endif
+        controller->GetViewedCategoriesR() = templateSheet->GetViewedCategories();
         controller->SetRotation (templateSheet->GetRotation());
         controller->GetViewFlagsR() = templateSheet->GetViewFlags();
         }
@@ -1797,8 +1588,7 @@ RedlineViewControllerPtr RedlineViewController::InsertView (RedlineModelR rdlMod
         {
         DPoint3d org;
         DVec3d delta;
-        DRange3d range;
-        computeModelRange (range, rdlModel);
+        AxisAlignedBox3d range = rdlModel.QueryModelRange();
         if (!range.IsEmpty())
             {
             range.Extend (range.XLength() * 0.1);   // add in a margin of 10%
@@ -1822,11 +1612,8 @@ RedlineViewControllerPtr RedlineViewController::InsertView (RedlineModelR rdlMod
         memset (&flags, 0, sizeof(flags));
         controller->GetViewFlagsR() = flags;
 
-#if defined (NEEDS_WORK_DGNITEM)
-        BitMaskHolder allCategoriesOn (true);
-        allCategoriesOn->SetFromString ("0-63", 0, 64);
-        controller->SetCategoryDisplayMask (*allCategoriesOn);
-#endif
+        for (auto const& cat : rdlModel.GetDgnDb().Categories().MakeIterator())
+            controller->ChangeCategoryDisplay(cat.GetCategoryId(), true);
         }
         
     controller->m_enableViewManipulation = false;
@@ -1868,9 +1655,8 @@ DgnViewId DgnMarkupProject::CreateRedlineModelView (RedlineModelR model, DgnView
     SaveProperty (RedlineModelProperty::ViewId(), &v, sizeof(v), model.GetModelId().GetValue());
 
     //  Adjust the model's sheet settings to fit in the view
-    RedlineModel::RDLSheetDef sheetDef;
-    sheetDef.m_origin.Init (controller->GetOrigin().x, controller->GetOrigin().y);
-    sheetDef.m_size.Init (controller->GetDelta().x, controller->GetDelta().y);
+    //model.m_origin.Init (controller->GetOrigin().x, controller->GetOrigin().y);
+    model.m_size.Init (controller->GetDelta().x, controller->GetDelta().y);
 
     //  Apply user-specified insets. 
     //  imageViewRect is the desired location and size of the image in pixels
@@ -1883,8 +1669,8 @@ DgnViewId DgnMarkupProject::CreateRedlineModelView (RedlineModelR model, DgnView
     //  insetdistance.x                   = (insetpixels.x / widthpixels.x) * widthdistance.x 
     //                                    =  insetpixels.x * (widthdistance.x/widthpixels.x)
     //                                      
-    double toDistanceX = sheetDef.m_size.x / projectViewRect.Width();
-    double toDistanceY = sheetDef.m_size.y / projectViewRect.Height();
+    double toDistanceX = model.m_size.x / projectViewRect.Width();
+    double toDistanceY = model.m_size.y / projectViewRect.Height();
 
     DPoint2d deltaUL;    // vector from project view origin to desired origin (upper left)
     deltaUL.x = ( imageViewRect.Left() - projectViewRect.Left()     ) * toDistanceX;
@@ -1901,8 +1687,8 @@ DgnViewId DgnMarkupProject::CreateRedlineModelView (RedlineModelR model, DgnView
     DVec2d deltaSize; 
     deltaSize.Init (-deltaUL.x + deltaBR.x,  deltaUL.y + (-deltaBR.y));
 
-    sheetDef.m_origin.Add (deltaBL);
-    sheetDef.m_size.Add (deltaSize);
+    //model.m_origin.Add (deltaBL);
+    model.m_size.Add (deltaSize);
 
     /*
     double inset = 0.1 * uorPerMaster;
@@ -1912,21 +1698,21 @@ DgnViewId DgnMarkupProject::CreateRedlineModelView (RedlineModelR model, DgnView
     sheetDef.m_origin.y += inset;
     */
 
-    model.SetSheetDef (sheetDef);
+    model.SaveProperties();
 
     return controller->GetViewId();    
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnViewId RedlineModel::GetViewId () const
     {
     int64_t v;
-    if (m_dgndb->QueryProperty (&v, sizeof(v), RedlineModelProperty::ViewId(), GetModelId().GetValue()) != BE_SQLITE_ROW)
+    if (GetDgnDb().QueryProperty (&v, sizeof(v), RedlineModelProperty::ViewId(), GetModelId().GetValue()) != BE_SQLITE_ROW)
         return DgnViewId();
     return DgnViewId(v);
     }
++---------------+---------------+---------------+---------------+---------------+------*/
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
@@ -1995,7 +1781,6 @@ DgnViewId DgnMarkupProject::CreatePhysicalRedlineModelView (PhysicalRedlineModel
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/13
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnViewId PhysicalRedlineModel::GetViewId () const
     {
     int64_t v;
@@ -2003,6 +1788,7 @@ DgnViewId PhysicalRedlineModel::GetViewId () const
         return DgnViewId();
     return DgnViewId(v);
     }
++---------------+---------------+---------------+---------------+---------------+------*/
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/13
@@ -2010,9 +1796,17 @@ DgnViewId PhysicalRedlineModel::GetViewId () const
 RedlineModelP DgnMarkupProject::CreateRedlineModel (Utf8CP name, DgnModelId templateModel)
     {
     if (CheckIsOpen() != BSISUCCESS)
-        return NULL;
+        return nullptr;
 
-    return RedlineModel::CreateModel (*this, name, templateModel);
+    RedlineModelPtr rdlModel = RedlineModel::Create (*this, name, templateModel);
+    if (!rdlModel.IsValid())
+        return nullptr;
+
+    Models().Insert(*rdlModel); // Takes ownership of the rdlModel, adding a reference to it.
+
+    SaveChanges();
+
+    return rdlModel.get();      // ... that's why I can return a naked pointer to the model
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2021,9 +1815,18 @@ RedlineModelP DgnMarkupProject::CreateRedlineModel (Utf8CP name, DgnModelId temp
 PhysicalRedlineModelP DgnMarkupProject::CreatePhysicalRedlineModel (Utf8CP name, PhysicalModelCR subjectViewTargetModel)
     {
     if (CheckIsOpen() != BSISUCCESS)
-        return NULL;
+        return nullptr;
 
-    return PhysicalRedlineModel::CreateModel (*this, name, subjectViewTargetModel);
+    PhysicalRedlineModelPtr rdlModel = PhysicalRedlineModel::Create (*this, name, subjectViewTargetModel);
+
+    if (!rdlModel.IsValid())
+        return nullptr;
+
+    Models().Insert(*rdlModel); // Takes ownership of the rdlModel, adding a reference to it.
+
+    SaveChanges();
+
+    return rdlModel.get();      // ... that's why I can return a naked pointer to the model
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2034,15 +1837,10 @@ RedlineModelP DgnMarkupProject::OpenRedlineModel (DgnModelId mid)
     if (CheckIsOpen() != BSISUCCESS)
         return NULL;
 
-    RedlineModelP redlineModel;
+    ;
 
-    DgnModelP dgnModel = Models().FindModel (mid);
-    if (dgnModel)
-        redlineModel = dynamic_cast<RedlineModelP>(dgnModel);
-    else
-        redlineModel = RedlineModel::Open (*this, mid);
-   
-   if (redlineModel == nullptr)
+    RedlineModelP redlineModel = Models().Get<RedlineModel>(mid);
+    if (nullptr == redlineModel)
         return nullptr;
 
     //! Always fill a redline model. We never work with a subset of redline graphics.
@@ -2060,14 +1858,7 @@ PhysicalRedlineModelP DgnMarkupProject::OpenPhysicalRedlineModel (DgnModelId mid
     if (CheckIsOpen() != BSISUCCESS)
         return NULL;
 
-    PhysicalRedlineModelP redlineModel;
-
-    DgnModelP dgnModel = Models().FindModel (mid);
-    if (dgnModel)
-        redlineModel = dynamic_cast<PhysicalRedlineModelP>(dgnModel);
-    else
-        redlineModel = PhysicalRedlineModel::Open (*this, mid);
-   
+    PhysicalRedlineModelP redlineModel = Models().Get<PhysicalRedlineModel>(mid);
    if (redlineModel == nullptr)
         return nullptr;
 

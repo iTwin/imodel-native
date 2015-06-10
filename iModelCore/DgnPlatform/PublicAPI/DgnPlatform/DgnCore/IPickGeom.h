@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/IPickGeom.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,26 +12,23 @@
 #include <DgnPlatform/DgnPlatform.h>
 #include "HitPath.h"
 
-
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //=======================================================================================
-//! Interface to supply topology information for an element being located. A copy of this object is stored on the HitPaths so that it
-//! can be used to interpet the hit information later if and when the user accepts a hit.
+//! Interface for supplying additional topology information for an element being located.
+//! Can be stored with the hit detail and later used to interpet the hit information.
 // @bsiclass 
 //=======================================================================================
-struct IElemTopology
+struct IElemTopology : Bentley::IRefCounted
 {
-//! During the locating process, many copies of this object are needed. This method must make an equivalent copy of the object that can be
-//! independently deleted.
-virtual IElemTopology* _Clone () const = 0;
+//! Create a deep copy of this object.
+virtual IElemTopologyP _Clone() const = 0;
 
-//! All implementers of this interface must have a virtual destructor.
-virtual ~IElemTopology () {}
-
-//! Compare this object to another object implementing IElemTopology and return 0 the two should be considered "the same" and 1 otherwise.
-virtual int _Compare (IElemTopologyCR otherTopo) const {return 0;}
+//! Compare objects and return true if they should be considered the same.
+virtual bool _IsEqual (IElemTopologyCR) const = 0;
 };
+
+typedef RefCountedPtr<IElemTopology> IElemTopologyPtr; //!< Reference counted type to manage the life-cycle of the IElemTopology.
 
 //=======================================================================================
 //! Geometry data associated with a pick.

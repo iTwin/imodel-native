@@ -1637,7 +1637,6 @@ void ViewContext::_DrawAreaPattern (ClipStencil& boundary)
     if (nullptr == params)
         return;
 
-    int         patternIndex = 0; // NEEDSWORK: No more mlines...
     DPoint3d    origin = params->origin;
 
     // Can greatly speed up fit calculation by just drawing boundary...
@@ -1651,7 +1650,6 @@ void ViewContext::_DrawAreaPattern (ClipStencil& boundary)
     if (NULL != detail)
         {
         wasSnappable = detail->IsSnappable ();
-        detail->SetPatternIndex (patternIndex);
         detail->SetNonSnappable (PatternParamsModifierFlags::None == (params->modifiers & PatternParamsModifierFlags::Snap));
         }
 
@@ -1676,10 +1674,7 @@ void ViewContext::_DrawAreaPattern (ClipStencil& boundary)
         PatternHelper::ProcessHatchPattern (*this, boundary, cookedParams.get(), origin);
 
     if (NULL != detail)
-        {
-        detail->SetPatternIndex (0);
         detail->SetNonSnappable (!wasSnappable);
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**

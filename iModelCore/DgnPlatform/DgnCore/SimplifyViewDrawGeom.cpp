@@ -267,21 +267,23 @@ BentleyStatus SimplifyViewDrawGeom::CurveVectorOutputProcessor (CurveVectorCR cu
     return SUCCESS;
     }
 
+BEGIN_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct IntersectDetail
+struct IntersectLocationDetail
     {
     size_t      m_index;
     double      m_fraction;
 
-    IntersectDetail (size_t index, double fraction) {m_index = index; m_fraction = fraction;}
+    IntersectLocationDetail (size_t index, double fraction) {m_index = index; m_fraction = fraction;}
     };
+END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int compareCurveIntersections (IntersectDetail const* detail0, IntersectDetail const* detail1)
+static int compareCurveIntersections (IntersectLocationDetail const* detail0, IntersectLocationDetail const* detail1)
     {
     if (detail0->m_index < detail1->m_index)
         {
@@ -305,7 +307,7 @@ static int compareCurveIntersections (IntersectDetail const* detail0, IntersectD
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool computeInteriorPoint (DPoint3dR midPoint, CurveVectorCR curves, IntersectDetail& startDetail, IntersectDetail& endDetail)
+static bool computeInteriorPoint (DPoint3dR midPoint, CurveVectorCR curves, IntersectLocationDetail& startDetail, IntersectLocationDetail& endDetail)
     {
     size_t      midIndex;
     double      midFraction;
@@ -357,7 +359,7 @@ static bool clipAsOpenCurveVector (CurveVectorCR curves, ClipVectorCR clip, Simp
 
     curveRange.Extend (1.0); // UORs.   
 
-    bvector<IntersectDetail> intersectDetails;
+    bvector<IntersectLocationDetail> intersectDetails;
 
     for (ClipPrimitivePtr const& thisClip: clip)
         {
@@ -385,7 +387,7 @@ static bool clipAsOpenCurveVector (CurveVectorCR curves, ClipVectorCR clip, Simp
 
                     // Get curve index for sorting, can disregard 2nd detail in pair as both should be identical...
                     for (CurveLocationDetailPair pair: intersections)
-                        intersectDetails.push_back (IntersectDetail (curves.CurveLocationDetailIndex (pair.detailA), pair.detailA.fraction));
+                        intersectDetails.push_back (IntersectLocationDetail (curves.CurveLocationDetailIndex (pair.detailA), pair.detailA.fraction));
                     }
                 }
             }
@@ -401,16 +403,16 @@ static bool clipAsOpenCurveVector (CurveVectorCR curves, ClipVectorCR clip, Simp
         return !clip.PointInside (testPoint, 1.0e-5);
         }
 
-    qsort (&intersectDetails.front (), intersectDetails.size (), sizeof (IntersectDetail), (int (*) (void const*, void const*)) compareCurveIntersections);
+    qsort (&intersectDetails.front (), intersectDetails.size (), sizeof (IntersectLocationDetail), (int (*) (void const*, void const*)) compareCurveIntersections);
 
     // Add final point for last curve...
-    intersectDetails.push_back (IntersectDetail (curves.size ()-1, 1.0));
+    intersectDetails.push_back (IntersectLocationDetail (curves.size ()-1, 1.0));
 
-    bool            lastInside = false;
-    IntersectDetail insideStartDetail (0, 0.0);
-    IntersectDetail lastDetail (0, 0.0);
+    bool lastInside = false;
+    IntersectLocationDetail insideStartDetail (0, 0.0);
+    IntersectLocationDetail lastDetail (0, 0.0);
 
-    for (IntersectDetail thisDetail: intersectDetails)
+    for (IntersectLocationDetail thisDetail: intersectDetails)
         {
         if (thisDetail.m_index == lastDetail.m_index && (thisDetail.m_fraction - lastDetail.m_fraction) < 1.0e-4)
             continue;

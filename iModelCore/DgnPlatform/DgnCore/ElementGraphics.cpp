@@ -124,12 +124,14 @@ virtual StatusInt _ProcessBody (ISolidKernelEntityCR entity) override
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual void _DrawTextString (TextStringCR text, double* zDepth) override
     {
-    AnnounceCurrentState();
+    AnnounceCurrentState ();
 
     if (SUCCESS == m_dropObj->_ProcessTextString (text))
         return;
 
+    // NOTE: Now that we know we are dropping the text, we also want the adornments...
     T_Super::_DrawTextString (text, zDepth);
+    text.DrawTextAdornments (*m_context);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -203,6 +205,19 @@ ElementGraphicsContext (IElementGraphicsProcessor* dropObj, ElementGraphicsDrawG
     _SetupOutputs();
 
     dropObj->_AnnounceContext (*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual void _DrawTextString (TextStringCR text) override
+    {
+    // NOTE: When IElementGraphicsProcessor handles TextString we don't want to spew adornment geometry!
+    text.GetGlyphSymbology(*GetCurrentDisplayParams());
+    CookDisplayParams();
+
+    double zDepth = GetCurrentDisplayParams()->GetNetDisplayPriority();
+    GetIDrawGeom().DrawTextString(text, Is3dView() ? nullptr : &zDepth);                
     }
 
 /*---------------------------------------------------------------------------------**//**

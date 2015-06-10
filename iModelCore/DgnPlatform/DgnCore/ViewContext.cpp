@@ -1392,7 +1392,7 @@ bool ViewContext::_VisitAllModelElements (bool includeTransients)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    05/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ViewContext::VisitHit (HitPathCR hit)
+StatusInt ViewContext::VisitHit (HitDetailCR hit)
     {
     ClearAborted();
     _InitScanRangeAndPolyhedron();
@@ -2675,8 +2675,8 @@ void ViewContext::_DrawTextString (TextStringCR text)
     text.GetGlyphSymbology (*GetCurrentDisplayParams());
     CookDisplayParams();
 
-    GetIDrawGeom().DrawTextString (text, NULL);
-
+    double zDepth = GetCurrentDisplayParams()->GetNetDisplayPriority();
+    GetIDrawGeom().DrawTextString(text, Is3dView() ? nullptr : &zDepth);                
     text.DrawTextAdornments (*this);
     }
 

@@ -28,7 +28,7 @@ DbResult DgnModels::InsertModel(Model& row)
 
     status = stmt.Step();
     BeAssert(BE_SQLITE_DONE==status);
-    return(BE_SQLITE_DONE==status) ? BE_SQLITE_OK : status;
+    return (BE_SQLITE_DONE==status) ? BE_SQLITE_OK : status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -70,9 +70,9 @@ BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
         out->m_id = id;
         out->m_name.AssignOrClear(stmt.GetValueText(0));
         out->m_description.AssignOrClear(stmt.GetValueText(1));
-        out->m_modelType = (DgnModelType) stmt.GetValueInt(2);
+        out->m_modelType =(DgnModelType) stmt.GetValueInt(2);
         out->m_classId = DgnClassId(stmt.GetValueInt64(3));
-        out->m_space = (Model::CoordinateSpace) stmt.GetValueInt(4);
+        out->m_space =(Model::CoordinateSpace) stmt.GetValueInt(4);
         out->m_inGuiList = TO_BOOL(stmt.GetValueInt(5));
         }
 
@@ -127,7 +127,7 @@ BentleyStatus DgnModels::QueryModelDependencyIndexAndType(uint64_t& didx, DgnMod
         return BSIERROR;
 
     didx = selectDependencyIndex->GetValueInt64(0);
-    mtype = (DgnModelType)selectDependencyIndex->GetValueInt(1);
+    mtype =(DgnModelType)selectDependencyIndex->GetValueInt(1);
     m_modelDependencyIndexAndType[mid] = make_bpair(didx, mtype);
     return BSISUCCESS;
     }
@@ -141,7 +141,7 @@ size_t DgnModels::Iterator::QueryCount() const
 
     Statement sql;
     sql.Prepare(*m_db, sqlString.c_str());
-    sql.BindInt(1, (int) m_itType);
+    sql.BindInt(1,(int) m_itType);
 
     return (BE_SQLITE_ROW != sql.Step()) ? 0 : sql.GetValueInt(0);
     }
@@ -157,7 +157,7 @@ DgnModels::Iterator::const_iterator DgnModels::Iterator::begin() const
 
         m_db->GetCachedStatement(m_stmt, sqlString.c_str());
         m_params.Bind(*m_stmt);
-        m_stmt->BindInt(1, (int) m_itType);
+        m_stmt->BindInt(1,(int) m_itType);
         }
     else
         {
@@ -168,12 +168,12 @@ DgnModels::Iterator::const_iterator DgnModels::Iterator::begin() const
     }
 
 DgnModelId   DgnModels::Iterator::Entry::GetModelId() const {Verify(); return m_sql->GetValueId<DgnModelId>(0);}
-Utf8CP       DgnModels::Iterator::Entry::GetName() const {Verify();return m_sql->GetValueText(1);}
-Utf8CP       DgnModels::Iterator::Entry::GetDescription() const {Verify();return m_sql->GetValueText(2);}
-DgnModelType DgnModels::Iterator::Entry::GetModelType() const {Verify();return (DgnModelType) m_sql->GetValueInt(3);}
-DgnModels::Model::CoordinateSpace DgnModels::Iterator::Entry::GetCoordinateSpace() const {Verify();return (Model::CoordinateSpace) m_sql->GetValueInt(4);}
-uint32_t     DgnModels::Iterator::Entry::GetVisibility() const {Verify();return m_sql->GetValueInt(5);}
-DgnClassId   DgnModels::Iterator::Entry::GetClassId() const {Verify();return DgnClassId(m_sql->GetValueInt64(6));}
+Utf8CP       DgnModels::Iterator::Entry::GetName() const {Verify(); return m_sql->GetValueText(1);}
+Utf8CP       DgnModels::Iterator::Entry::GetDescription() const {Verify(); return m_sql->GetValueText(2);}
+DgnModelType DgnModels::Iterator::Entry::GetModelType() const {Verify(); return (DgnModelType) m_sql->GetValueInt(3);}
+DgnModels::Model::CoordinateSpace DgnModels::Iterator::Entry::GetCoordinateSpace() const {Verify(); return (Model::CoordinateSpace) m_sql->GetValueInt(4);}
+uint32_t     DgnModels::Iterator::Entry::GetVisibility() const {Verify(); return m_sql->GetValueInt(5);}
+DgnClassId   DgnModels::Iterator::Entry::GetClassId() const {Verify(); return DgnClassId(m_sql->GetValueInt64(6));}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    11/00
@@ -314,7 +314,7 @@ DgnModelStatus DgnModel2d::_OnInsertElement(DgnElementR element)
     return DGNMODEL_STATUS_Success;
     }
 
-#if defined (NEEDS_WORK_ELEMENTS_API)
+#if defined(NEEDS_WORK_ELEMENTS_API)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -332,7 +332,7 @@ void SectionDrawingModel::_FromPropertiesJson(Json::Value const& val)
     {
     T_Super::_FromPropertiesJson(val);
 
-    if (val.isMember ("annotation_scale"))
+    if (val.isMember("annotation_scale"))
         m_annotationScale = val["annotation_scale"].asDouble();
     else
         m_annotationScale = 1.0;
@@ -540,7 +540,7 @@ void DgnModel::_OnDeletedElement(DgnElementCR element)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelStatus DgnModel::_OnUpdateElement(DgnElementCR element, DgnElementR replacement)
     {
-    if (this != (&replacement.GetDgnModel()) || (this != &element.GetDgnModel()))
+    if (this !=(&replacement.GetDgnModel()) ||(this != &element.GetDgnModel()))
         {
         BeAssert(false);
         return DGNMODEL_STATUS_WrongModel;
@@ -583,25 +583,6 @@ DgnRangeTreeP DgnModel::GetRangeIndexP(bool create) const
     return m_rangeIndex;
     }
 
-#if defined (NEEDS_WORK_ELEMDSCR_REWORK)
-/*---------------------------------------------------------------------------------**//**
-* Called whenever the geom for an element (could possibly have) changed.
-* If a cached presentation of the geom is stored on the DgnElementP, delete it. Also
-* remove its range from the range tree
-* @bsimethod                                                    KeithBentley    10/00
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::ElementChanged(DgnElement& elRef, DgnElementChangeReason reason)
-    {
-    // if there are qvElems on this DgnElementP, delete them
-    elRef.ForceElemChanged(false, reason);
-
-    if (ELEMREF_CHANGE_REASON_Modify != reason)
-        return;
-
-    OnElementModify((DgnElementR) elRef);
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/11
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -616,7 +597,7 @@ DgnElementCP DgnModel::FindElementById(DgnElementId id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::ClearAllQvElems()
     {
-#if defined (NEEDS_WORK_DGNITEM)
+#if defined(NEEDS_WORK_DGNITEM)
     DgnModel::DgnElementIterator iter(this);
     for (ElementRefP elRef = iter.GetFirstElementRef(); NULL != elRef && !iter.HitEOF(); elRef = iter.GetNextElementRef(true))
         elRef->ForceElemChanged(true, ELEMREF_CHANGE_REASON_ClearQVData);
@@ -831,7 +812,7 @@ DPoint3d DgnModel::_GetGlobalOrigin() const
     return GetDgnDb().Units().GetGlobalOrigin();
     }
 
-#if defined (NEEDS_WORK_ELEMENTS_API)
+#if defined(NEEDS_WORK_ELEMENTS_API)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/11
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -975,4 +956,3 @@ void SheetModel::_FromPropertiesJson(Json::Value const& val)
     T_Super::_FromPropertiesJson(val);
     JsonUtils::DPoint2dFromJson(m_size, val["sheet_size"]);
     }
-

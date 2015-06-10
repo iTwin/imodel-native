@@ -5,9 +5,9 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+//__PUBLISH_SECTION_START__
 #pragma once
 
-//__PUBLISH_SECTION_START__
 #if !defined (DOCUMENTATION_GENERATOR)
 
 #include <DgnPlatform/DgnPlatform.h>
@@ -26,7 +26,7 @@
 #include "HitPath.h"
 #include "IAuxCoordSys.h"
 #include "IPickGeom.h"
-#include "ITxnManager.h"
+#include "TxnManager.h"
 #include "IViewDraw.h"
 #include "IViewOutput.h"
 #include "IViewTransients.h"

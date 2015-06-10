@@ -50,7 +50,7 @@
         <Bindings>
             <Libs>Delivery/$(libprefix)DgnPlatform$(libext)</Libs>
             <Assemblies ProductDirectoryName="DgnPlatformNativeAssemblies">Delivery/$(shlibprefix)DgnPlatform$(ApiNumber)$(shlibext)</Assemblies>
-            <Files ProductDirectoryName="DgnPlatformXliffs" Required="false" SubPartDirectory="xliffs">Delivery/xliffs/DgnCoreMessages_en.xliff,Delivery/xliffs/DgnHandlersMessages_en.xliff</Files>
+            <Files ProductDirectoryName="DgnPlatformXliffs" Required="false" SubPartDirectory="xliffs">Delivery/xliffs/DgnCoreMessages_en.xliff</Files>
             <Files Required="false" ProductDirectoryName="DgnPlatformLastResortFonts" SubPartDirectory="DgnPlatformLastResortFonts">Delivery/lastresortfonts</Files>
             <Directory SourceName="Delivery/icons" ProductDirectoryName="DgnCoreDecorators" SubPartDirectory="DgnPlatformIcons" Required="false" />
         </Bindings>

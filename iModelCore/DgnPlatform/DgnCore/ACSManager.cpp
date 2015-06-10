@@ -293,7 +293,18 @@ virtual bool    /*AuxCoordSys::*/_Equals (IAuxCoordSysCP other) const override
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual WString /*AuxCoordSys::*/_GetTypeName () const override
     {
-    return DgnCoreL10N::GetStringW((DgnCoreL10N::Number)(DgnCoreL10N::Number::ACS_TYPE_BASE_ + static_cast<int>(m_acsData.m_type)));
+    L10N::StringId id;
+
+    switch (m_acsData.m_type)
+        {
+        case ACSType::None:        id = DgnCoreL10N::ACS_TYPE_NONE(); break;
+        case ACSType::Rectangular: id = DgnCoreL10N::ACS_TYPE_RECT();  break;
+        case ACSType::Cylindrical: id = DgnCoreL10N::ACS_TYPE_CYL();   break;
+        case ACSType::Spherical:   id = DgnCoreL10N::ACS_TYPE_SPHERE();  break;
+        case ACSType::Extended:    id = DgnCoreL10N::ACS_TYPE_EXTEND(); break;
+        };
+
+    return DgnCoreL10N::GetStringW(id);
     }
 
 /*---------------------------------------------------------------------------------**//**
