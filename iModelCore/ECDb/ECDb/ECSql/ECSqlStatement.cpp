@@ -49,7 +49,7 @@ ECSqlStatement& ECSqlStatement::operator= (ECSqlStatement&& rhs)
     {
     if (this != &rhs)
         {
-        rhs.m_pimpl = std::move (rhs.m_pimpl);
+        m_pimpl = std::move (rhs.m_pimpl);
 
         //nulling out the pimpl on the RHS to avoid that rhs' destructor tries to delete it
         rhs.m_pimpl = nullptr;
