@@ -95,6 +95,12 @@ CCompFpOpts=precise
     %if $(GreaterThan6_1) == "YES"
         LLVMCommonCompOpts + -Wno-error=tautological-pointer-compare
     %endif
+
+    # We need to ignore these warnings for Apple LLVM 7.0, but they don't even exist prior, so guard.
+    GreaterThan7_0 = $[@readstdout "python $(SrcRoot)bsicommon/build/DetectClangVersion.py 700.0.53"]
+    %if $(GreaterThan7_0) == "YES"
+        LLVMCommonCompOpts + -Wno-error=pointer-bool-conversion
+    %endif    
 %endif
 
 $(o)SQLite$(oext): $(SQLiteDir)sqlite3-all.c $(SQLiteDir)sqlite3-1.c $(SQLiteDir)sqlite3-2.c $(SQLiteDir)sqlite3-3.c $(SQLiteDir)sqlite3-4.c \
