@@ -17,7 +17,34 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 #define SecureStoreKey_Username         "Username"
 #define SecureStoreKey_Password         "Password"
 
-bvector<std::function<void ()>> ConnectAuthenticationPersistence::s_onUserChangedCallbacks;
+ConnectAuthenticationPersistencePtr ConnectAuthenticationPersistence::s_shared;
+std::once_flag ConnectAuthenticationPersistence::s_shared_once;
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectAuthenticationPersistence::CustomInitialize
+(
+ILocalState* customLocalState,
+std::shared_ptr<ISecureStore> customSecureStore
+)
+    {
+    std::call_once (s_shared_once, [] {});
+    s_shared.reset (new ConnectAuthenticationPersistence (customLocalState, customSecureStore));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ConnectAuthenticationPersistencePtr ConnectAuthenticationPersistence::GetShared ()
+    {
+    std::call_once (s_shared_once, []
+        {
+        s_shared.reset (new ConnectAuthenticationPersistence ());
+        });
+
+    return s_shared;
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
@@ -37,15 +64,17 @@ m_secureStore (customSecureStore ? customSecureStore : std::make_shared<SecureSt
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectAuthenticationPersistence::SetCredentials (CredentialsCR credentials)
     {
+    BeCriticalSectionHolder lock (m_cs);
+
     UpgradeIfNeeded ();
 
-    if (!s_onUserChangedCallbacks.empty ())
+    if (!m_onUserChangedCallbacks.empty ())
         {
         auto oldCreds = GetCredentials ();
         if (!oldCreds.GetUsername ().empty () &&
             oldCreds.GetUsername () != credentials.GetUsername ())
             {
-            for (auto& listener : s_onUserChangedCallbacks)
+            for (auto& listener : m_onUserChangedCallbacks)
                 {
                 listener ();
                 }
@@ -61,6 +90,8 @@ void ConnectAuthenticationPersistence::SetCredentials (CredentialsCR credentials
 +---------------+---------------+---------------+---------------+---------------+------*/
 Credentials ConnectAuthenticationPersistence::GetCredentials () const
     {
+    BeCriticalSectionHolder lock (m_cs);
+
     UpgradeIfNeeded ();
 
     Utf8String username = m_secureStore->LoadValue (SecureStoreNameSpace_Connect, SecureStoreKey_Username);
@@ -74,6 +105,7 @@ Credentials ConnectAuthenticationPersistence::GetCredentials () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectAuthenticationPersistence::SetToken (SamlTokenPtr token)
     {
+    BeCriticalSectionHolder lock (m_cs);
     m_secureStore->SaveValue (SecureStoreNameSpace_Connect, SecureStoreKey_Token, token ? token->AsString ().c_str () : "");
     m_token.reset ();
     }
@@ -83,6 +115,8 @@ void ConnectAuthenticationPersistence::SetToken (SamlTokenPtr token)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SamlTokenPtr ConnectAuthenticationPersistence::GetToken () const
     {
+    BeCriticalSectionHolder lock (m_cs);
+
     if (nullptr == m_token)
         {
         Utf8String tokenStr = m_secureStore->LoadValue (SecureStoreNameSpace_Connect, SecureStoreKey_Token);
@@ -101,7 +135,8 @@ SamlTokenPtr ConnectAuthenticationPersistence::GetToken () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectAuthenticationPersistence::RegisterUserChangedListener (std::function<void ()> onUserChangedCallback)
     {
-    s_onUserChangedCallbacks.push_back (onUserChangedCallback);
+    BeCriticalSectionHolder lock (m_cs);
+    m_onUserChangedCallbacks.push_back (onUserChangedCallback);
     }
 
 /*--------------------------------------------------------------------------------------+
