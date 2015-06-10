@@ -49,7 +49,7 @@ protected:
     typedef bset<RasterTilePtr, SortByResolution> SortedTiles;
 
     RasterProgressiveDisplay (RasterQuadTreeR raster, ViewContextR context);
-    virtual ~RasterProgressiveDisplay(){};
+    virtual ~RasterProgressiveDisplay();
 
     //! Displays tiled rasters and schedules downloads. 
     virtual Completion _Process(ViewContextR) override;
@@ -455,6 +455,13 @@ RasterProgressiveDisplay::RasterProgressiveDisplay(RasterQuadTreeR raster, ViewC
     }
 
 //----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  6/2015
+//----------------------------------------------------------------------------------------
+RasterProgressiveDisplay::~RasterProgressiveDisplay()
+    {
+    }
+
+//----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
 RefCountedPtr<RasterProgressiveDisplay> RasterProgressiveDisplay::Create(RasterQuadTreeR rasterTree, ViewContextR context)
@@ -549,7 +556,10 @@ void RasterProgressiveDisplay::Draw (ViewContextR context)
     // Defer time-consuming tasks to progressive display
     //&&MM review how we draw. Right now, we only draw here when we have the qv tile.
     //     everything else including download, read from cache, qv tile creation is done in the _Process callback.
-    // - Can we cancel what we scheduled from the previous draw?
+    // - Can we cancel what we scheduled from the previous draw? 
+    //      **** We really need that functionality because when zooming in/out we will request all intermediate levels and that can 
+    //           take some time and bandwidth before we finally receive what we need.
+    //  
     // - Can we request missing tiles here so it starts background work right away?
     // - Need a timer in _process to give time to tile to arrive but I would prefer to have an async call from the DataCache when data as arrived. 
     //   Instead of querying every missing tiles again and again in hopes that they are now available.
@@ -613,7 +623,7 @@ IProgressiveDisplay::Completion RasterProgressiveDisplay::_Process(ViewContextR 
             break;
             }
 
-        (*pTile)->GetDisplayTileP(true);  // Read from cache or request it. Won't be request twice by the reality data cache.
+        (*pTile)->GetDisplayTileP(true);  // Read from cache or request it. Won't be requested twice by the reality data cache.
         if((*pTile)->Draw(context))
             {
             pTile = m_pMissingTiles.erase(pTile);
@@ -632,7 +642,7 @@ IProgressiveDisplay::Completion RasterProgressiveDisplay::_Process(ViewContextR 
 //-------------------------------  TEMP TEMP TEMP ----------------------------------------
 //----------------------------------------------------------------------------------------
 
-#if 0
+#if 0 //&&MM WMS Example
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
@@ -654,7 +664,6 @@ void WebMercatorModel::_AddGraphicsToScene (ViewContextR context)
 
                 // how to get a in latlong BBOX: http://boundingbox.klokantech.com/
             #if 0
-                //&&MM everything is hardcoded for now.
                 m_serverUrl = "http://giswebservices.massgis.state.ma.us/geoserver/wms";
                 m_version = "1.1.1";
                 m_layers = "massgis:GISDATA.TOWNS_POLYM,massgis:GISDATA.NAVTEQRDS_ARC,massgis:GISDATA.NAVTEQRDS_ARC_INT";
@@ -673,8 +682,7 @@ void WebMercatorModel::_AddGraphicsToScene (ViewContextR context)
                 m_corners[0].z = m_corners[1].z = m_corners[2].z = m_corners[3].z = 0;
 
                 m_vendorSpecific = "SERVICE=WMS";
-            #elif 0
-                //&&MM everything is hardcoded for now.
+            #elif 0.
             //http://giswebservices.massgis.state.ma.us/geoserver/wms?request=GetCapabilities&service=WMS
                 m_serverUrl = "http://giswebservices.massgis.state.ma.us/geoserver/wms";
                 m_version = "1.1.1";
@@ -697,7 +705,6 @@ void WebMercatorModel::_AddGraphicsToScene (ViewContextR context)
             #elif 1
                 //http://basemap.nationalmap.gov/arcgis/services/USGSImageryTopo/MapServer/WMSServer?request=GetCapabilities&service=WMS
 
-                //&&MM everything is hardcoded for now.
                 Utf8String serverUrl = "http://basemap.nationalmap.gov/arcgis/services/USGSImageryTopo/MapServer/WmsServer";
                 Utf8String version = "1.1.1";
                 Utf8String layers = "0";
@@ -713,7 +720,6 @@ void WebMercatorModel::_AddGraphicsToScene (ViewContextR context)
                 bbox.high.x = -58.1;
                 bbox.high.y = 49.8;   
             #elif 1
-                //&&MM everything is hardcoded for now.
                 //http://ows.geobase.ca/wms/geobase_en?service=wms&request=getCapabilities
                 m_serverUrl = "http://ows.geobase.ca/wms/geobase_en";
                 m_version = "1.1.1";
@@ -756,7 +762,6 @@ void WebMercatorModel::_AddGraphicsToScene (ViewContextR context)
             //     m_corners[0].z = m_corners[1].z = m_corners[2].z = m_corners[3].z = 0;
 
             #else
-                //&&MM everything is hardcoded for now.
                 //http://www2.demis.nl/wms/wms.asp?wms=WorldMap&request=GetCapabilities&version=1.1.1
                 m_serverUrl = "http://www3.demis.nl/wms/wms.asp";
                 m_version = "1.1.1";
@@ -783,7 +788,7 @@ void WebMercatorModel::_AddGraphicsToScene (ViewContextR context)
             double xLength = bbox.high.x - bbox.low.x;
             double yLength = bbox.high.y - bbox.low.y;
                         
-            uint32_t metaWidth = 2048*256;  // arbitrary size. &&MM let the user decide? compute something automatically using bbox? server res? or a default?
+            uint32_t metaWidth = 2048*256;  // arbitrary size. 
             uint32_t metaHeight = (uint32_t)((yLength/xLength) * metaWidth);
                         
             s_rasterLOD = RasterLOD::Create(*WmsSource::Create(serverUrl.c_str(), version.c_str(), layers.c_str(), styles.c_str(), csType.c_str(), csLabel.c_str(), format.c_str(), bbox, metaWidth, metaHeight), context.GetDgnDb());

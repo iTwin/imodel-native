@@ -26,14 +26,15 @@ $(OutBuildContexts)RealityModFramework/PublicAPI/RasterSchema : $(repositoryRoot
 #--------------------------------------------------------------------------------------
 #   BENTLEY_LIBRARIES
 #--------------------------------------------------------------------------------------
-ContextLibPrefix = $(BuildContext)SubParts/Libs/$(libprefix)
+ContextSubpartsLibs = $(BuildContext)SubParts/Libs/
 
-BENTLEY_LIBRARIES = $(ContextLibPrefix)DgnPlatform$(stlibext)
-BENTLEY_LIBRARIES + $(ContextLibPrefix)BentleyGeom$(stlibext)
-BENTLEY_LIBRARIES + $(ContextLibPrefix)ECObjects$(stlibext)
-BENTLEY_LIBRARIES + $(ContextLibPrefix)BeSQLiteEC$(stlibext)
-BENTLEY_LIBRARIES + $(ContextLibPrefix)BeJsonCpp$(stlibext)
-BENTLEY_LIBRARIES + $(ContextLibPrefix)BaseGeoCoord$(stlibext)
+BENTLEY_LIBRARIES = $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+BENTLEY_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
+BENTLEY_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
+BENTLEY_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
+BENTLEY_LIBRARIES + $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext)
+BENTLEY_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext)
+BENTLEY_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
 
 #--------------------------------------------------------------------------------------
 #   Set up build dependencies
