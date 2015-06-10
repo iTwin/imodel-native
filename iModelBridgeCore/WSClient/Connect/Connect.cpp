@@ -16,15 +16,13 @@
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
+static ClientInfoPtr s_clientInfo;
 static IHttpHandlerPtr s_customHttpHandler;
 static bool s_connectInitialized = false;
 
 static Utf8String s_wsgUrl;
 static Utf8String s_eulaUrl;
 static Utf8String s_stsUrl;
-static Utf8String s_userAgent;
-static Utf8String s_appId;
-static Utf8String s_deviceId;
 
 /////////////////////////////////////////////////////////////
 // Authentication related stuff
@@ -52,10 +50,13 @@ static Utf8String s_deviceId;
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Travis.Cobbs    04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Connect::Initialize (IHttpHandlerPtr customHttpHandler)
+void Connect::Initialize (ClientInfoPtr clientInfo, IHttpHandlerPtr customHttpHandler)
     {
+    BeAssert (nullptr != clientInfo);
+
     if (!s_connectInitialized)
         {
+        s_clientInfo = clientInfo;
         s_customHttpHandler = customHttpHandler;
         s_connectInitialized = true;
         }
@@ -66,6 +67,7 @@ void Connect::Initialize (IHttpHandlerPtr customHttpHandler)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Connect::Uninintialize ()
     {
+    s_clientInfo = nullptr;
     s_customHttpHandler = nullptr;
     s_connectInitialized = false;
     }
@@ -137,54 +139,6 @@ void Connect::SetEulaUrl (Utf8StringCR url)
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Travis.Cobbs    07/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR Connect::GetUserAgent ()
-    {
-    return s_userAgent;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Travis.Cobbs    07/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Connect::SetUserAgent (Utf8StringCR url)
-    {
-    s_userAgent = url;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Travis.Cobbs    07/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR Connect::GetAppId ()
-    {
-    return s_appId;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Travis.Cobbs    07/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Connect::SetAppId (Utf8StringCR url)
-    {
-    s_appId = url;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Travis.Cobbs    07/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR Connect::GetDeviceId ()
-    {
-    return s_deviceId;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Travis.Cobbs    07/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Connect::SetDeviceId (Utf8StringCR url)
-    {
-    s_deviceId = url;
-    }
-
-/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt Connect::GetStsToken (CredentialsCR creds, SamlTokenR tokenOut, Utf8CP appliesToUrlString, Utf8CP stsUrl)
@@ -225,7 +179,7 @@ StatusInt Connect::GetStsToken (SamlTokenCR parentToken, SamlTokenR tokenOut, Ut
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt Connect::GetStsToken (Utf8StringCR authorization, JsonValueCR issueExParams, SamlTokenR tokenOut, Utf8CP appliesToUrlString, Utf8CP stsUrl)
     {
-    Initialize ();
+    BeAssert (s_connectInitialized);
 
     Json::Value issueExParamsValue = issueExParams;
 
@@ -237,24 +191,13 @@ StatusInt Connect::GetStsToken (Utf8StringCR authorization, JsonValueCR issueExP
     issueExParamsValue["Lifetime"] = Utf8PrintfString ("%d", CONNECT_TOKEN_LIFETIME);
     issueExParamsValue["OnBehalfOf"] = "";
     issueExParamsValue["Properties"] = "";
-    if (!s_appId.empty ())
-        {
-        issueExParamsValue["AppId"] = s_appId;
-        }
-    if (!s_deviceId.empty ())
-        {
-        issueExParamsValue["DeviceId"] = s_deviceId;
-        }
+    issueExParamsValue["DeviceId"] = s_clientInfo->GetDeviceId ();
+    issueExParamsValue["AppId"] = s_clientInfo->GetProductToken ();
 
-    //    MOBILEDGN_LOGE("Bentley::MobileUtils::Connect::GetStsToken(): About to create HttpClient.");
-    HttpClient client (nullptr, s_customHttpHandler);
+    HttpClient client (s_clientInfo, s_customHttpHandler);
     HttpRequest request = client.CreatePostRequest (stsUrl);
     request.GetHeaders ().SetContentType ("application/json");
     request.GetHeaders ().SetAuthorization (authorization);
-    if (!s_userAgent.empty ())
-        {
-        request.GetHeaders ().SetUserAgent (s_userAgent);
-        }
 
     HttpStringBodyPtr requestBody = HttpStringBody::Create (Json::FastWriter ().write (issueExParamsValue));
     request.SetRequestBody (requestBody);

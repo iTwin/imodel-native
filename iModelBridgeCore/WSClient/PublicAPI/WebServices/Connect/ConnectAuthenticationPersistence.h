@@ -10,9 +10,11 @@
 
 #include <WebServices/Connect/IConnectAuthenticationPersistence.h>
 #include <MobileDgn/MobileDgnApplication.h>
+#include <MobileDgn/Utils/SecureStore.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
+USING_NAMESPACE_BENTLEY_MOBILEDGN
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
 /*--------------------------------------------------------------------------------------+
@@ -22,14 +24,25 @@ struct EXPORT_VTABLE_ATTRIBUTE ConnectAuthenticationPersistence : public IConnec
     {
     private:
         static bvector<std::function<void ()>> s_onUserChangedCallbacks;
-        MobileDgn::ILocalState& m_localState;
+
+        ILocalState& m_localState;
+        std::shared_ptr<ISecureStore> m_secureStore;
         mutable SamlTokenPtr m_token;
 
+    private:
+        void UpgradeIfNeeded () const;
+
     public:
-        WSCLIENT_EXPORT ConnectAuthenticationPersistence (MobileDgn::ILocalState* customLocalState = nullptr);
+        WSCLIENT_EXPORT ConnectAuthenticationPersistence 
+            (
+            ILocalState* customLocalState = nullptr,
+            std::shared_ptr<ISecureStore> customSecureStore = nullptr
+            );
         virtual ~ConnectAuthenticationPersistence () {}
 
+        //! Connect credentials are shared between apps if SecureStore implementation allows it
         WSCLIENT_EXPORT void SetCredentials (CredentialsCR credentials) override;
+        //! Connect credentials are shared between apps if SecureStore implementation allows it
         WSCLIENT_EXPORT Credentials GetCredentials () const override;
 
         WSCLIENT_EXPORT void SetToken (SamlTokenPtr token) override;

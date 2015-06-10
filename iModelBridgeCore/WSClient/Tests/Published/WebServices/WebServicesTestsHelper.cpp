@@ -127,8 +127,8 @@ HttpResponse StubWSInfoHttpResponseWebApi (BeVersion webApiVersion)
         (
         "Bentley-WSG/%s, Bentley-WebAPI/%d.%d",
         info.GetVersion ().ToString ().c_str (),
-        info.GetWebApiVersion ().GetMajor(),
-        info.GetWebApiVersion ().GetMinor()
+        info.GetWebApiVersion ().GetMajor (),
+        info.GetWebApiVersion ().GetMinor ()
         );
     return StubHttpResponse (HttpStatus::OK, "", {{"Server", serverHeader}});
     }
@@ -190,5 +190,5 @@ WSError StubWSConflictError ()
 
 ClientInfoPtr StubClientInfo ()
     {
-    return ClientInfo::Create ("Bentley-Test", BeVersion (1, 0), "Test");
+    return std::shared_ptr<ClientInfo> (new ClientInfo ("Bentley-Test", BeVersion (1, 0), "TestAppGUID", "TestDeviceId", "TestSystem"));
     }

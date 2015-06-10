@@ -10,6 +10,7 @@
 
 #include <MobileDgn/MobileDgnApplication.h>
 #include <WebServices/Connect/SamlToken.h>
+#include <WebServices/Client/ClientInfo.h>
 #include <MobileDgn/Utils/Http/Credentials.h>
 #include <MobileDgn/Utils/Http/HttpClient.h>
 
@@ -34,6 +35,10 @@ struct Connect
         static StatusInt GetStsToken (Utf8StringCR authorization, JsonValueCR issueExParams, SamlTokenR tokenOut, Utf8CP appliesToUrl, Utf8CP stsUrl);
 
     public:
+        //! Initialize once in app lifetime
+        WSCLIENT_EXPORT static void Initialize (ClientInfoPtr clientInfo, IHttpHandlerPtr customHttpHandler = nullptr);
+        WSCLIENT_EXPORT static void Uninintialize ();
+
         WSCLIENT_EXPORT static StatusInt Login (CredentialsCR creds, SamlTokenR tokenOut, Utf8CP appliesToUrl = nullptr, Utf8CP stsUrl = nullptr);
         WSCLIENT_EXPORT static StatusInt GetStsToken (CredentialsCR creds, SamlTokenR tokenOut, Utf8CP appliesToUrl, Utf8CP stsUrl);
         WSCLIENT_EXPORT static StatusInt GetStsToken (SamlTokenCR parentToken, SamlTokenR tokenOut, Utf8CP appliesToUrl, Utf8CP stsUrl);
@@ -47,14 +52,6 @@ struct Connect
         WSCLIENT_EXPORT static Utf8StringCR GetEulaUrl ();
         WSCLIENT_EXPORT static Utf8StringCR GetStsUrl ();
         WSCLIENT_EXPORT static void SetEulaUrl (Utf8StringCR url);
-        WSCLIENT_EXPORT static Utf8StringCR GetUserAgent ();
-        WSCLIENT_EXPORT static void SetUserAgent (Utf8StringCR url);
-        WSCLIENT_EXPORT static Utf8StringCR GetAppId ();
-        WSCLIENT_EXPORT static void SetAppId (Utf8StringCR url);
-        WSCLIENT_EXPORT static Utf8StringCR GetDeviceId ();
-        WSCLIENT_EXPORT static void SetDeviceId (Utf8StringCR url);
-        WSCLIENT_EXPORT static void Initialize (std::shared_ptr<IHttpHandler> customHttpHandler = nullptr);
-        WSCLIENT_EXPORT static void Uninintialize ();
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
