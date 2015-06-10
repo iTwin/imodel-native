@@ -88,7 +88,7 @@ struct RTree3dBoundsTest : RTreeAcceptFunction::Tester
 {
     RTree3dVal  m_bounds;
 
-    RTree3dBoundsTest (BeSQLiteDbR db) : Tester(db) {}
+    RTree3dBoundsTest (DbR db) : Tester(db) {}
     void _StepRange(DbFunction::Context&, int nArgs, DbValue* args) override {}
     int _TestRange(QueryInfo const& info) override
         {

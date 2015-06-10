@@ -227,7 +227,7 @@ double      Statement::GetValueDouble(int col)  {return sqlite3_column_double(m_
 BeGuid      Statement::GetValueGuid(int col)    {BeGuid guid; memcpy(&guid, GetValueBlob(col), sizeof(guid)); return guid;}
 int         Statement::GetParameterIndex(Utf8CP name) { return sqlite3_bind_parameter_index(m_stmt, name);}
 Utf8CP      Statement::GetSql() const           {return sqlite3_sql(m_stmt); }
-DbResult    Statement::Prepare(BeSQLiteDbCR db, Utf8CP sql) {return Prepare(*db.m_dbFile, sql);}
+DbResult    Statement::Prepare(DbCR db, Utf8CP sql) {return Prepare(*db.m_dbFile, sql);}
 
 DbValueType DbValue::GetValueType() const             {return (DbValueType) sqlite3_value_type(m_val);}
 int         DbValue::GetValueBytes() const            {return sqlite3_value_bytes(m_val);}
@@ -266,7 +266,7 @@ void SchemaVersion::FromJson(Utf8CP val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Casey.Mullen      04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Statement::TryPrepare(BeSQLiteDbCR db, Utf8CP sql)
+DbResult Statement::TryPrepare(DbCR db, Utf8CP sql)
     {
     return DoPrepare(db.GetSqlDb(), sql);
     }
@@ -547,7 +547,7 @@ Db::~Db() {DoCloseDb();}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-Savepoint::Savepoint(BeSQLiteDbR db, Utf8CP name, bool beginTxn, BeSQLiteTxnMode txnMode) : m_dbFile(db.m_dbFile), m_name(name), m_txnMode(txnMode)
+Savepoint::Savepoint(DbR db, Utf8CP name, bool beginTxn, BeSQLiteTxnMode txnMode) : m_dbFile(db.m_dbFile), m_name(name), m_txnMode(txnMode)
     {
     m_db = &db;
     m_depth = -1;
@@ -1745,8 +1745,8 @@ bool Db::IsDbOpen() const
 
 struct CleanupCaller
     {
-    BeSQLiteDbR m_db;
-    CleanupCaller(BeSQLiteDbR db) : m_db(db) {}
+    DbR m_db;
+    CleanupCaller(DbR db) : m_db(db) {}
     void CallHandler(DbAppData& handler) const {handler._OnCleanup(m_db);}
     };
 
@@ -2414,7 +2414,7 @@ static int filterTableCallback(void *pCtx, Utf8CP tableName) {return (int) ((Cha
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ChangeSet::ApplyChanges(BeSQLiteDbR db)
+DbResult ChangeSet::ApplyChanges(DbR db)
     {
     return (DbResult) sqlite3changeset_apply(db.GetSqlDb(), m_size, m_changeset, filterTableCallback, conflictCallback, this);
     }
@@ -3014,7 +3014,7 @@ HighPriorityRequired::~HighPriorityRequired() { HighPriorityOperationSequencer::
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult BlobIO::Open(BeSQLiteDbR db, Utf8CP tableName, Utf8CP columnName, uint64_t row, bool writable, Utf8CP dbName)
+DbResult BlobIO::Open(DbR db, Utf8CP tableName, Utf8CP columnName, uint64_t row, bool writable, Utf8CP dbName)
     {
     return (DbResult) sqlite3_blob_open(db.GetSqlDb(), dbName ? dbName : "main", tableName, columnName, row, writable, &m_blob);
     }
@@ -3109,7 +3109,7 @@ ZipErrors SnappyFromBlob::ReadNextChunk()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ZipErrors SnappyFromBlob::Init(BeSQLiteDbCR db, Utf8CP tableName, Utf8CP column, int64_t rowId)
+ZipErrors SnappyFromBlob::Init(DbCR db, Utf8CP tableName, Utf8CP column, int64_t rowId)
     {
     m_blobOffset = 0;
     m_uncompressAvail = 0;
@@ -3122,7 +3122,7 @@ ZipErrors SnappyFromBlob::Init(BeSQLiteDbCR db, Utf8CP tableName, Utf8CP column,
             return  ZIP_ERROR_BLOB_READ_ERROR;
             }
         }
-    else if (BE_SQLITE_OK != m_blobIO.Open((BeSQLiteDbR) db, tableName, column, rowId, 0))
+    else if (BE_SQLITE_OK != m_blobIO.Open((DbR) db, tableName, column, rowId, 0))
         {
         m_blobBytesLeft = 0;
         return  ZIP_ERROR_BLOB_READ_ERROR;
@@ -3378,7 +3378,7 @@ void SnappyToBlob::Finish()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SnappyToBlob::SaveToRow(BeSQLiteDbR db, Utf8CP tableName, Utf8CP column, int64_t rowId)
+BentleyStatus SnappyToBlob::SaveToRow(DbR db, Utf8CP tableName, Utf8CP column, int64_t rowId)
     {
     Finish();
 
@@ -4533,7 +4533,7 @@ DbResult DbEmbeddedFileTable::CreateTable() const
 // @bsimethod                                    Krischan.Eberle                  11/14
 //+---------------+---------------+---------------+---------------+---------------+----
 //static
-bool DbEmbeddedFileTable::HasLastModifiedColumn(BeSQLiteDbR db)
+bool DbEmbeddedFileTable::HasLastModifiedColumn(DbR db)
     {
     const SchemaVersion firstVersionWithLastModifiedColumn(3, 1, 0, 1);
 
@@ -4648,7 +4648,7 @@ void DbFile::SetRTreeMatch(RTreeAcceptFunction::Tester* tester) const
     m_rtreeMatch.SetTester(tester);
     }
 
-RTreeAcceptFunction::Tester::Tester(BeSQLiteDbR db) : m_db(db), RTreeMatchFunction("rTreeMatch", 1) {db.GetDbFile()->InitRTreeMatch();}
+RTreeAcceptFunction::Tester::Tester(DbR db) : m_db(db), RTreeMatchFunction("rTreeMatch", 1) {db.GetDbFile()->InitRTreeMatch();}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/

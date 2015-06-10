@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/PerformanceSqlStatement_Tests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)
@@ -160,7 +160,7 @@ bool createAdditionalIndices
 //+---------------+---------------+---------------+---------------+---------------+------
 void TimePrepareStatement
 (
-BeSQLiteDbR db,
+DbR db,
 Utf8CP sqlTemplate,
 bvector<Utf8String>& testTableNames,
 int repetitionsPerTable,

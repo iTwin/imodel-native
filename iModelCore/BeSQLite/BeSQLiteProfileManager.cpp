@@ -2,7 +2,7 @@
 |
 |     $Source: BeSQLiteProfileManager.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BeSQLiteProfileManager.h"
@@ -30,7 +30,7 @@ std::vector<std::unique_ptr<BeSQLiteProfileUpgrader>> BeSQLiteProfileManager::s_
 // @bsimethod                                Krischan.Eberle                10/2014
 //---------------+---------------+---------------+---------------+---------------+------
 //static
-DbResult BeSQLiteProfileManager::UpgradeProfile (BeSQLiteDbR db)
+DbResult BeSQLiteProfileManager::UpgradeProfile (DbR db)
     {
     if (db.IsReadonly ())
         {
@@ -90,7 +90,7 @@ DbResult BeSQLiteProfileManager::UpgradeProfile (BeSQLiteDbR db)
 // @bsimethod                                Krischan.Eberle                10/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-DbResult BeSQLiteProfileManager::AssignProfileVersion (BeSQLiteDbR db)
+DbResult BeSQLiteProfileManager::AssignProfileVersion (DbR db)
     {
     //Save the profile version as string (JSON format)
     const auto profileVersionStr = s_expectedProfileVersion.ToJson ();
@@ -106,7 +106,7 @@ DbResult BeSQLiteProfileManager::AssignProfileVersion (BeSQLiteDbR db)
 // @bsimethod                                Krischan.Eberle                10/2014
 //---------------+---------------+---------------+---------------+---------------+------
 //static
-DbResult BeSQLiteProfileManager::ReadProfileVersion (SchemaVersion& profileVersion, BeSQLiteDbR db)
+DbResult BeSQLiteProfileManager::ReadProfileVersion (SchemaVersion& profileVersion, DbR db)
     {
     Utf8String currentVersionString;
     auto stat = db.QueryProperty (currentVersionString, Properties::SchemaVersion ());
@@ -168,7 +168,7 @@ SchemaVersion BeSQLiteProfileUpgrader::GetTargetVersion () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                10/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-DbResult BeSQLiteProfileUpgrader::Upgrade (BeSQLiteDbR db) const
+DbResult BeSQLiteProfileUpgrader::Upgrade (DbR db) const
     {
     return _Upgrade (db);
     }
@@ -179,7 +179,7 @@ DbResult BeSQLiteProfileUpgrader::Upgrade (BeSQLiteDbR db) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                10/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-DbResult BeSQLiteProfileUpgrader_3101::_Upgrade (BeSQLiteDbR db) const
+DbResult BeSQLiteProfileUpgrader_3101::_Upgrade (DbR db) const
     {
     if (db.TableExists (BEDB_TABLE_EmbeddedFile))
         {
