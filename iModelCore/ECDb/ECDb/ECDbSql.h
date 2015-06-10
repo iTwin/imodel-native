@@ -388,10 +388,10 @@ struct ECDbSqlColumn : NonCopyableClass
     struct Constraint : NonCopyableClass
         {
 
-        enum class Collate
+        enum class Collation
             {
-            Default, // Default is really Binary in sqlite. But we will not provide collate for property to sqlite in this case and assume sqlite default.
-            Binary, // Compares string data using memcmp(), regardless of text encoding
+            Default, // Default is really Binary in sqlite. But we will not provide collation for property to sqlite in this case and assume sqlite default.
+            Binary, // Compares string data using memcmp, regardless of text encoding
             NoCase, // The same as binary, except the 26 upper case characters of ASCII are folded to their lower case equivalents before the comparison is performed. Note that only ASCII characters are case folded. SQLite does not attempt to do full UTF case folding due to the size of the tables required.
             RTrim,  // The same as binary, except that trailing space characters are ignored.
             };
@@ -451,11 +451,10 @@ struct ECDbSqlColumn : NonCopyableClass
             bool m_constraintIsUnique : 2;
             Utf8String m_constraintCheck;
             Utf8String m_constraintDefaultValue;
-            Collate m_collate;
+            Collation m_collation;
         public:
-            Constraint () :m_constraintNotNull (false), m_constraintIsUnique (false), m_collate (Collate::Default)
-                {
-                }
+            Constraint () :m_constraintNotNull (false), m_constraintIsUnique (false), m_collation (Collation::Default)
+                {}
             bool IsNotNull () const { return m_constraintNotNull; }
             bool IsUnique () const { return m_constraintIsUnique; }
             Utf8StringCR GetCheckExpression () const { return m_constraintCheck; }
@@ -464,10 +463,10 @@ struct ECDbSqlColumn : NonCopyableClass
             void SetIsUnique (bool isUnique) { m_constraintIsUnique = isUnique; }
             void SetCheckExpression (Utf8CP expression) { m_constraintCheck = expression; }
             void SetDefaultExpression (Utf8CP expression) { m_constraintDefaultValue = expression; }
-            Collate GetCollate ()  const { return m_collate; }
-            void SetCollate (Collate collate)  { m_collate = collate; }
-            static Collate StringToCollate (Utf8CP typeName);
-            static Utf8CP CollateToString (Collate type);
+            Collation GetCollation ()  const { return m_collation; }
+            void SetCollation(Collation collation) { m_collation = collation; }
+            static Utf8CP CollationToString (Collation);
+            static bool TryParseCollationString(Collation&, Utf8CP);
         };
 
     private:
@@ -1029,13 +1028,13 @@ struct ECDbSqlPersistence : NonCopyableClass
     {
     private:
         const Utf8CP Sql_InsertTable = "INSERT OR REPLACE INTO ec_Table (Id, Name, IsOwnedByECDb, IsVirtual) VALUES (?, ?, ?, ?)";
-        const Utf8CP Sql_InsertColumn = "INSERT OR REPLACE INTO ec_Column (Id, TableId, Name, Type, IsVirtual, Ordinal, Constraint_NotNull, Constraint_Unique, Constraint_Check, Constraint_Default, Constraint_Collate, PrimaryKey_Ordinal, UserData) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        const Utf8CP Sql_InsertColumn = "INSERT OR REPLACE INTO ec_Column (Id, TableId, Name, Type, IsVirtual, Ordinal, Constraint_NotNull, Constraint_Unique, Constraint_Check, Constraint_Default, Constraint_Collation, PrimaryKey_Ordinal, UserData) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         const Utf8CP Sql_InsertIndex = "INSERT OR REPLACE INTO ec_Index (Id, TableId, Name, IsUnique, WhereClause) VALUES (?, ?, ?, ?, ?)";
         const Utf8CP Sql_InsertIndexColumn = "INSERT OR REPLACE INTO ec_IndexColumn (IndexId, ColumnId, Ordinal) VALUES (?, ?, ?)";
         const Utf8CP Sql_InsertForeignKey = "INSERT OR REPLACE INTO ec_ForeignKey (Id, TableId, ReferenceTableId, Name, OnDelete, OnUpdate, MatchType) VALUES (?, ?, ?, ?, ?, ?, ?)";
         const Utf8CP Sql_InsertForeignKeyColumn = "INSERT OR REPLACE INTO ec_ForeignKeyColumn (ForeignKeyId, ColumnId, ReferenceColumnId, Ordinal) VALUES (?, ?, ?, ?)";
         const Utf8CP Sql_SelectTable = "SELECT Id, Name, IsOwnedByECDb, IsVirtual FROM ec_Table";
-        const Utf8CP Sql_SelectColumn = "SELECT Id, Name, Type, IsVirtual, Constraint_NotNull, Constraint_Unique, Constraint_Check, Constraint_Default, Constraint_Collate, PrimaryKey_Ordinal, UserData FROM ec_Column WHERE TableId = ? ORDER BY Ordinal";
+        const Utf8CP Sql_SelectColumn = "SELECT Id, Name, Type, IsVirtual, Constraint_NotNull, Constraint_Unique, Constraint_Check, Constraint_Default, Constraint_Collation, PrimaryKey_Ordinal, UserData FROM ec_Column WHERE TableId = ? ORDER BY Ordinal";
         const Utf8CP Sql_SelectIndex = "SELECT I.Id, T.Name, I.Name, I.IsUnique, I.WhereClause FROM ec_Index I INNER JOIN ec_Table T ON T.Id = I.TableId";
         const Utf8CP Sql_SelectIndexColumn = "SELECT C.Name FROM ec_IndexColumn I INNER JOIN ec_Column C ON C.Id = I.ColumnId WHERE I.IndexId = ? ORDER BY I.Ordinal";
         const Utf8CP Sql_SelectForeignKey = "SELECT F.Id, R.Name, F.Name, F.OnDelete, F.OnUpdate, F.MatchType FROM ec_ForeignKey F INNER JOIN ec_Table R ON R.Id = F.ReferenceTableId WHERE F.TableId = ?";

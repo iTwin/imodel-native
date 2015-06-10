@@ -249,7 +249,7 @@ MapStatus ClassMapInfo::EvaluateInheritedMapStrategy ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ClassMapInfo::_InitializeFromSchema ()
     {
-    InitializeFromClassHint ();
+    InitializeFromClassMapCA ();
     InitializeFromClassHasCurrentTimeStampProperty();
     // Add indices for important identifiers
     ProcessStandardKeys (m_ecClass, L"BusinessKeySpecification");
@@ -264,7 +264,8 @@ void ClassMapInfo::_InitializeFromSchema ()
 //+---------------+---------------+---------------+---------------+---------------+------
 void ClassMapInfo::InitializeFromClassHasCurrentTimeStampProperty()
     {
-    auto classHint = ClassHintReader::ReadClassHasCurrentTimeStampProperty(m_ecClass);
+    auto classHint = CustomAttributeReader::Read(m_ecClass, L"ClassHasCurrentTimeStampProperty");
+
     if (classHint == nullptr)
         return;
    
@@ -292,21 +293,15 @@ void ClassMapInfo::InitializeFromClassHasCurrentTimeStampProperty()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-void ClassMapInfo::InitializeFromClassHint ()
+void ClassMapInfo::InitializeFromClassMapCA ()
     {
     ECDbMapStrategy mapStrategy(Strategy::DoNotMap);
-    auto schemaHint = SchemaHintReader::ReadHint (m_ecClass.GetSchema ());
-    if (schemaHint != nullptr)
+    ECDbClassMap customClassMap;
+    if (ECDbMapCustomAttributeHelper::TryGetClassMap(customClassMap, m_ecClass))
         {
-        if (SchemaHintReader::TryReadDefaultClassMapStrategy (mapStrategy, *schemaHint))
-            GetMapStrategyR() = mapStrategy;
-
-        }
-
-    auto classHint = ClassHintReader::ReadHint (m_ecClass);
-    if (classHint != nullptr)
-        {
-        if (ClassHintReader::TryReadMapStrategy (mapStrategy, *classHint))
+        Utf8String mapStrategyStr, mapStrategyOptionsStr;
+        if (customClassMap.TryGetMapStrategy(mapStrategyStr, mapStrategyOptionsStr) &&
+            mapStrategy.Parse(mapStrategy, mapStrategyStr.c_str(), mapStrategyOptionsStr.c_str()) == SUCCESS)
             {
             GetMapStrategyR() = mapStrategy;
             if (GetMapStrategyR().IsTablePerHierarchy() || GetMapStrategyR().IsSharedTableForThisClass())
@@ -317,16 +312,26 @@ void ClassMapInfo::InitializeFromClassHint ()
             }
 
         Utf8String tableName;
-        if (ClassHintReader::TryReadTableName (tableName, *classHint))
+        if (customClassMap.TryGetTableName(tableName))
             m_tableName = tableName;
 
         Utf8String ecInstanceIdColumnName;
-        if (ClassHintReader::TryReadECInstanceIdColumnName (ecInstanceIdColumnName, *classHint))
+        if (customClassMap.TryGetECInstanceIdColumn(ecInstanceIdColumnName))
             m_ecInstanceIdColumnName = ecInstanceIdColumnName;
 
-        ClassHintReader::TryReadIndices (m_hintIndexes, *classHint, m_ecClass);
+        bvector<ECDbClassMap::DbIndex> indices;
+        if (customClassMap.TryGetIndexes(indices))
+            {
+            for (ECDbClassMap::DbIndex const& index : indices)
+                {
+                ClassIndexInfoPtr indexInfo = ClassIndexInfo::Create(index);
+                if (indexInfo != nullptr)
+                    m_dbIndexes.push_back(indexInfo);
+                }
+            }
         }
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Affan.Khan                07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -475,11 +480,11 @@ ECClassCR          ecClass
 Utf8String ClassMapInfo::ResolveTablePrefix (ECClassCR ecClass)
     {
     ECSchemaCR schema = ecClass.GetSchema ();
-    auto hint = SchemaHintReader::ReadHint (schema);
-    if (hint != nullptr)
+    ECDbSchemaMap customSchemaMap;
+    if (ECDbMapCustomAttributeHelper::TryGetSchemaMap (customSchemaMap, schema))
         {
         Utf8String tablePrefix;
-        if (SchemaHintReader::TryReadTablePrefix (tablePrefix, *hint))
+        if (customSchemaMap.TryGetTablePrefix(tablePrefix))
             return tablePrefix;
         }
 

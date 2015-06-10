@@ -18,7 +18,8 @@ bool ECSchemaValidator::ValidateSchema (ECSchemaValidationResult& result, ECN::E
     {
     std::vector<std::unique_ptr<ECSchemaValidationRule>> validationTasks;
     validationTasks.push_back (std::move (std::unique_ptr<ECSchemaValidationRule> (new CaseInsensitiveClassNamesRule (supportLegacySchemas))));
-   // validationTasks.push_back (std::move (std::unique_ptr<ECSchemaValidationRule> (new StructWithRegularBaseClassRule (supportLegacySchemas))));
+    validationTasks.push_back(std::move(std::unique_ptr<ECSchemaValidationRule>(new MapStrategyRule())));
+    // validationTasks.push_back (std::move (std::unique_ptr<ECSchemaValidationRule> (new StructWithRegularBaseClassRule (supportLegacySchemas))));
     bool valid = true;
     for (ECClassCP ecClass : schema.GetClasses ())
         {
@@ -51,7 +52,6 @@ bool ECSchemaValidator::ValidateClass (ECSchemaValidationResult& result, ECN::EC
     std::vector<std::unique_ptr<ECSchemaValidationRule>> validationTasks;
     validationTasks.push_back (std::move (std::unique_ptr<ECSchemaValidationRule> (new CaseInsensitivePropertyNamesRule (ecClass, supportLegacySchemas))));
     validationTasks.push_back (std::move (std::unique_ptr<ECSchemaValidationRule> (new NoPropertiesOfSameTypeAsClassRule (ecClass))));
-    validationTasks.push_back(std::move(std::unique_ptr<ECSchemaValidationRule>(new MapStrategyRule(ecClass))));
 
     bool valid = true;
     for (ECPropertyCP prop : ecClass.GetProperties (true))
@@ -138,93 +138,83 @@ Utf8String ECSchemaValidationRule::Error::ToString() const
     {
     return _ToString();
     }
+
+
+//**********************************************************************
+// MapStrategyRule
+//**********************************************************************
 //---------------------------------------------------------------------------------------
-// @bsimethod                                Muhammada.zaighum                    04/2015
+// @bsimethod                                Muhammad.zaighum                    04/2015
 //---------------------------------------------------------------------------------------
-MapStrategyRule::MapStrategyRule(ECClassCR ecClass)
-: ECSchemaValidationRule(Type::IncorrectMapStrategyClass), m_error(nullptr)
+MapStrategyRule::MapStrategyRule()
+    : ECSchemaValidationRule(Type::InvalidMapStrategy), m_error(nullptr) 
     {
-    m_error = std::unique_ptr<Error>(new Error(GetType(), ecClass));
+    m_error = std::unique_ptr<Error>(new Error(GetType()));
     }
+
 //---------------------------------------------------------------------------------------
-// @bsimethod                                Muhammada.zaighum                    04/2015
+// @bsimethod                                Muhammad.zaighum                    04/2015
 //---------------------------------------------------------------------------------------
 std::unique_ptr<ECSchemaValidationRule::Error> MapStrategyRule::_GetError() const
     {
-    if (m_error->GetInvalidStrategies().empty())
+    if (!m_error->IsError ())
         return nullptr;
 
     return std::move(m_error);
     }
+
 //---------------------------------------------------------------------------------------
-// @bsimethod                                Muhammada.zaighum                    04/2015
+// @bsimethod                                Muhammad.zaighum                    04/2015
 //---------------------------------------------------------------------------------------
 Utf8String MapStrategyRule::Error::_ToString() const
     {
-    if (GetInvalidStrategies().empty())
+    if (!IsError())
         return "";
 
-    Utf8String violatingStrategiesStr;
-    bool isFirstSet = true;
-    for (auto const& strategy : GetInvalidStrategies())
+    Utf8CP errorMsgTemplate = "ECSchema '%s' contains ECClasses that have a 'ClassMap' custom attribute with invalid values for the properties MapStrategy or MapStrategyOptions: %s.";
+    Utf8String classList;
+    ECClassCP firstClass = nullptr;
+    for (ECClassCP ecClass : m_classesWithInvalidMapStrategy)
         {
-        if (!isFirstSet)
-            {
-            violatingStrategiesStr.append(" - ");
-            isFirstSet = false;
-            }
-        violatingStrategiesStr.append(strategy);
-        }        
+        if (firstClass != nullptr)
+            classList.append(", ");
 
-    Utf8CP strTemplate = nullptr;
-    strTemplate = "ECSchema '%s' contains Invalid MapStrategies. Conflicting Strategies: %s.";
-    Utf8String str;
-    str.Sprintf(strTemplate, Utf8String(m_ecClass.GetSchema().GetName()).c_str(), Utf8String(violatingStrategiesStr).c_str());
-    return std::move(str);
+        classList.append(Utf8String(ecClass->GetName()));
+        firstClass = ecClass;
+        }
+
+    Utf8String error;
+    error.Sprintf(errorMsgTemplate, Utf8String(firstClass->GetSchema().GetName()).c_str(), classList.c_str());
+    return std::move(error);
     }
+
 //---------------------------------------------------------------------------------------
-// @bsimethod                                Muhammada.zaighum                    04/2015
+// @bsimethod                                Muhammad.zaighum                    04/2015
 //---------------------------------------------------------------------------------------
-bool MapStrategyRule::_ValidateClass(ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty)
+bool MapStrategyRule::_ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass)
     {
     ECDbMapStrategy mapStrategy(Strategy::DoNotMap);
-    mapStrategy.Reset();
-    ECValue mapStrategyValue;
-    ECValue mapStrategyOptionValue;
-    auto classHint = ClassHintReader::ReadHint(ecClass);
-    if (classHint != nullptr)
+    ECDbClassMap customClassMap;
+    if (ECDbMapCustomAttributeHelper::TryGetClassMap(customClassMap, ecClass))
         {
-        auto strategyStatus = classHint->GetValue(mapStrategyValue, BSCAP_MapStrategy);
-        auto strategyOptionStatus = classHint->GetValue(mapStrategyOptionValue, BSCAP_MapStrategyOption);
-        if (mapStrategyValue.IsNull() && mapStrategyOptionValue.IsNull())
+        Utf8String mapStrategyStr, mapStrategyOptionStr;
+        if (customClassMap.TryGetMapStrategy(mapStrategyStr, mapStrategyOptionStr))
             {
-            return true;
-            }
-        if ((strategyStatus == ECOBJECTS_STATUS_Success || strategyOptionStatus == ECOBJECTS_STATUS_Success))
-            {
-            if (mapStrategy.Parse(mapStrategy, mapStrategyValue.GetUtf8CP(), mapStrategyOptionValue.GetUtf8CP()) == BentleyStatus::SUCCESS)
+            if (SUCCESS != mapStrategy.Parse(mapStrategy, mapStrategyStr.c_str(), mapStrategyOptionStr.c_str()))
                 {
-                return true;
+                m_error->AddClassWithInvalidMapStrategy(ecClass);
+                return false;
                 }
             }
-        auto& invalidStrategies= m_error->GetInvalidStrategiesR();
-        if (!mapStrategyValue.IsNull())
-            {
-            invalidStrategies.push_back(mapStrategyValue.GetUtf8CP());
-            }
-        if (!mapStrategyOptionValue.IsNull())
-            {
-            invalidStrategies.push_back(mapStrategyOptionValue.GetUtf8CP());
-            }
-        return false;
-
         }
+
     return true;
     }
+
+
 //**********************************************************************
 // CaseInsensitiveClassNamesRule
 //**********************************************************************
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    06/2014
 //---------------------------------------------------------------------------------------

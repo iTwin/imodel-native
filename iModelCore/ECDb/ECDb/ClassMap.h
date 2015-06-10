@@ -234,7 +234,7 @@ struct ColumnFactory : NonCopyableClass
         private:
             PropertyMapR m_propertyMap;
             ECDbSqlColumn::Type m_columnType;
-            ECDbSqlColumn::Constraint::Collate m_collate;
+            ECDbSqlColumn::Constraint::Collation m_collation;
             GenerateColumnNameOptions m_generateColumnNameOptions;
             PersistenceType m_persistenceType;
             Utf8String m_accessString;
@@ -256,7 +256,7 @@ struct ColumnFactory : NonCopyableClass
                 Utf8CP accessStringPrefix = nullptr,
                 bool isNotNull = false,
                 bool isUnique = false,
-                ECDbSqlColumn::Constraint::Collate collate = ECDbSqlColumn::Constraint::Collate::Default);
+                ECDbSqlColumn::Constraint::Collation collation = ECDbSqlColumn::Constraint::Collation::Default);
 
             PropertyMapCR GetPropertyMap () const { return m_propertyMap; }
             Utf8StringCR GetColumnName () const { return m_requestedColumnName; }
@@ -268,7 +268,7 @@ struct ColumnFactory : NonCopyableClass
             Strategy GetStrategy () const { return m_strategy; }
             uint32_t GetColumnUserDate () const { return m_columnUserData; }
             PersistenceType GetColumnPersistenceType () const { return m_persistenceType; }
-            ECDbSqlColumn::Constraint::Collate GetCollate () const { return m_collate; }
+            ECDbSqlColumn::Constraint::Collation GetCollation () const { return m_collation; }
         };
 
     private:
@@ -284,7 +284,7 @@ struct ColumnFactory : NonCopyableClass
         ECDbSqlColumn* ApplyCreateOrReuseStrategy (Specification const& specifications, ECDbSqlTable& targetTable, ECN::ECClassId propertyLocalToClassId);
         ECDbSqlColumn* ApplyCreateOrReuseSharedColumnStrategy (Specification const& specifications, ECDbSqlTable& targetTable, ECN::ECClassId propertyLocalToClassId);
         ECN::ECClassId GetPersistenceClassId (Specification const& specifications) const;
-        bool FindReusableSharedDataColumns (std::vector<ECDbSqlColumn const*>& columns, ECDbSqlTable const& table, ECDbSqlColumn::Constraint::Collate collate = ECDbSqlColumn::Constraint::Collate::Default, SortBy sortby = SortBy::None) const;
+        bool FindReusableSharedDataColumns (std::vector<ECDbSqlColumn const*>& columns, ECDbSqlTable const& table, ECDbSqlColumn::Constraint::Collation collation = ECDbSqlColumn::Constraint::Collation::Default, SortBy sortby = SortBy::None) const;
         bool IsColumnInUse (Utf8CP columnFullName) const;
         bool IsColumnInUse (Utf8CP tableName, Utf8CP columnName) const;
         bool IsColumnInUse (ECDbSqlColumn const& column) const;
@@ -357,7 +357,7 @@ struct ClassMap : public IClassMap, RefCountedBase
     public:
         static ClassMapPtr Create (ECN::ECClassCR ecClass, ECDbMapCR ecdbMap, ECDbMapStrategy mapStrategy, bool setIsDirty) { return new ClassMap (ecClass, ecdbMap, mapStrategy, setIsDirty); }
         //! Builds the list of PropertyMaps for this ClassMap
-        //! @param  classMapInfo This will contain information cleaned from ECDbClassHint
+        //! @param  classMapInfo This will contain information cleaned from ClassMap custom attribute
         MapStatus Initialize (ClassMapInfoCR classMapInfo);
  
     
@@ -372,7 +372,7 @@ struct ClassMap : public IClassMap, RefCountedBase
         ECN::PrimitiveType primitiveType, 
         bool nullable, 
         bool unique, 
-        ECDbSqlColumn::Constraint::Collate collate, 
+        ECDbSqlColumn::Constraint::Collation, 
         Utf8CP accessStringPrefix);
 
 

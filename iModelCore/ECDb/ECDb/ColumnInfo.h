@@ -24,13 +24,13 @@ private:
     ECN::PrimitiveType m_columnType;
     bool              m_nullable;
     bool              m_unique;
-    ECDbSqlColumn::Constraint::Collate           m_collate;
+    ECDbSqlColumn::Constraint::Collation m_collation;
     bool              m_virtual;
     int               m_priority;
-    void InitializeFromHint(ECN::IECInstanceCP ecdbPropertyHint, ECN::ECPropertyCR ecProperty);
+    void InitializeFromMapCustomAttribute(ECN::ECPropertyCR ecProperty);
 
 public:
-    ColumnInfo (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, ECN::IECInstanceCP ecdbPropertyHint);
+    ColumnInfo (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString);
     virtual ~ColumnInfo() {}
     int               GetPriority () const  { return m_priority; }
     void              SetPriority (int priority) { m_priority = priority; }
@@ -44,7 +44,7 @@ public:
     void              SetUnique(bool unique){m_unique = unique;}
     void              SetColumnType (ECN::PrimitiveType columnType) { m_columnType = columnType; }
     bool              GetUnique() const;
-    ECDbSqlColumn::Constraint::Collate           GetCollate ()const { return m_collate; }
+    ECDbSqlColumn::Constraint::Collation GetCollation ()const { return m_collation; }
     void SetColumnName (Utf8CP columnName);
     };
 

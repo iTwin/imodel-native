@@ -94,7 +94,6 @@ public:
 
     //! @copydoc ECDbMap::GetClassMap
     ClassMapCP                  GetClassMapCP (ECN::ECClassCR ecClass, bool loadIfNotFound = true) const;
-    bool                        IsMappedToExistingTable (ECDbSqlTable& table) const;
 
     ECDbSqlTable*                  FindOrCreateTable (Utf8CP tableName, bool isVirtual, Utf8CP primaryKeyColumnName, bool mapToSecondaryTable, bool mapToExisitingTable) ;
     MappedTableP                GetMappedTable (ClassMapCR classMap, bool createMappedTableEntryIfNotFound = true);

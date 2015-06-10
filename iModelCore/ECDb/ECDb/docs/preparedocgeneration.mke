@@ -63,7 +63,7 @@ linkdocstobuildcontext:
     @CreateSymLinks.py -d"$(bcDocsDir)Source/ECDb=${preprocessedSourceDir}"
     @CreateSymLinks.py -d"$(bcDocsDir)Images/ECDb=$(baseDir)images"
     @CreateSymLinks.py -m"$(bcDocsDir)Files/ECDb=$(baseDir)files"
-    @CreateSymLinks.py "$(bcDocsDir)Files/ECDb/Bentley_Standard_CustomAttributes.ecschema.xml=$(OutBuildContexts)ECStandards/ECSchemas/Standard/$(StandardCustomAttributesSchemaName)"
+    @CreateSymLinks.py "$(bcDocsDir)Files/ECDb/ECDbMap.ecschema.xml=$(OutBuildContexts)ECStandards/ECSchemas/Standard/$(ECDbMapSchemaName)"
     
 
 

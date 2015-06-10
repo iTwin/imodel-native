@@ -6,16 +6,10 @@
     xsi:schemaLocation="ecschema ECSchema.xsd" >
 
   <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.07" prefix="bsca" />
-
-    <ECCustomAttributes>
-        <ECDbSchemaHint xmlns="Bentley_Standard_CustomAttributes.01.07">
-            <TablePrefix>stco</TablePrefix>
-        </ECDbSchemaHint>
-    </ECCustomAttributes>
-
+  
 <ECClass typeName="Company" isDomainClass="True">
     <ECProperty propertyName="Name" typeName="string" />
-  </ECClass>
+</ECClass>
      
 <ECClass typeName="Employee" isDomainClass="True">
     <ECProperty propertyName="EmployeeID" typeName="int" displayLabel="Employee ID" />

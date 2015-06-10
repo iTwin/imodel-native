@@ -13,7 +13,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 enum class Strategy : uint32_t //0xffffffff 
     {
-    //Public Strategies that user can specify in ECDbClassHint::MapStrategy
+    //Public Strategies that user can specify in custom attribute ClassMap::MapStrategy
     //===========================================================================================
     DoNotMap = 0x1,
     DoNotMapHierarchy = 0x2,

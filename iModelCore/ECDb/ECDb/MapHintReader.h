@@ -14,44 +14,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //======================================================================================
 // @bsiclass                                                 Krischan.Eberle  02/2014
 //+===============+===============+===============+===============+===============+======
-struct SchemaHintReader
-    {
-private:
-    SchemaHintReader ();
-    ~SchemaHintReader ();
-
-public:
-    static ECN::IECInstancePtr ReadHint (ECN::ECSchemaCR ecschema);
-    static bool TryReadTablePrefix (Utf8String& tablePrefix, ECN::IECInstanceCR hint);
-    static bool TryReadDefaultClassMapStrategy (ECDbMapStrategy& mapStrategy, ECN::IECInstanceCR hint);  
-    };
-
-
-//======================================================================================
-// @bsiclass                                                 Krischan.Eberle  02/2014
-//+===============+===============+===============+===============+===============+======
-struct ClassHintReader
-    {
-private:
-    ClassHintReader ();
-    ~ClassHintReader ();
-
-public:
-    static bool TryConvertToMapStrategy (ECDbMapStrategy& mapStrategy, WCharCP mapStrategyName);
-    static ECN::IECInstancePtr ReadHint (ECN::ECClassCR ecClass);
-    static ECN::IECInstancePtr ReadHintOption(ECN::ECClassCR ecClass);
-    static bool TryReadMapStrategy (ECDbMapStrategy& mapStrategy, ECN::IECInstanceCR classHint);
-    static bool TryReadTableName (Utf8String& tableName, ECN::IECInstanceCR classHint);
-    static bool TryReadECInstanceIdColumnName (Utf8String& ecInstanceIdColumnName, ECN::IECInstanceCR classHint);
-    static bool TryReadMapToExistingTable (bool& mapToExistingTable, ECN::IECInstanceCR classHint);
-    static bool TryReadReplaceEmptyTableWithEmptyView (bool& replaceEmptyTableWithEmptyView, ECN::IECInstanceCR classHint);
-    static ECN::IECInstancePtr ReadClassHasCurrentTimeStampProperty(ECN::ECClassCR ecClass);
-    static bool TryReadIndices (bvector<ClassIndexInfoPtr>& indices, ECN::IECInstanceCR classHint, ECN::ECClassCR ecClass);
-    };
-
-//======================================================================================
-// @bsiclass                                                 Krischan.Eberle  02/2014
-//+===============+===============+===============+===============+===============+======
 struct RelationshipClassHintReader
     {
 private:
@@ -68,34 +30,18 @@ public:
     static bool TryReadTargetECClassIdColumnName (Utf8String& targetECClassIdColumnName, ECN::IECInstanceCR relClassHint);
     };
 
-//======================================================================================
-// @bsiclass                                                 Krischan.Eberle  02/2014
-//+===============+===============+===============+===============+===============+======
-struct PropertyHintReader
-    {
-private:
-    PropertyHintReader ();
-    ~PropertyHintReader ();
-
-public:
-    static ECN::IECInstancePtr ReadHint (ECN::ECPropertyCR ecProperty);
-    static bool TryReadColumnName (Utf8String& columnName, ECN::IECInstanceCR hint);
-    static bool TryReadIsNullable (bool& isNullable, ECN::IECInstanceCR hint);
-    static bool TryReadIsUnique (bool& isUnique, ECN::IECInstanceCR hint);
-    static bool TryReadCollate (ECDbSqlColumn::Constraint::Collate& collate, ECN::IECInstanceCR hint);
-    };
 
 //======================================================================================
 // @bsiclass                                                 Krischan.Eberle  02/2014
 //+===============+===============+===============+===============+===============+======
-struct HintReaderHelper
+struct CustomAttributeReader
     {
 private:
-    HintReaderHelper ();
-    ~HintReaderHelper ();
+    CustomAttributeReader ();
+    ~CustomAttributeReader ();
         
 public:
-    static ECN::IECInstancePtr ReadHint (ECN::IECCustomAttributeContainer const& caContainer, WCharCP hintCustomAttributeName);
+    static ECN::IECInstancePtr Read (ECN::IECCustomAttributeContainer const&, WCharCP customAttributeName);
     static bool TryGetTrimmedValue (Utf8StringR val, ECN::IECInstanceCR ca, WCharCP ecPropertyName);
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE

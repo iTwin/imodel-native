@@ -374,12 +374,12 @@ TEST_F (ECDbHintTests, AbstractClassWithTablePerHierarchyAndSharedTableForThisCl
         L"<?xml version='1.0' encoding='utf-8'?>"
         L"<ECSchema schemaName='TestAbstractClasses' nameSpacePrefix='tac' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         L"    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
+        L"    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
         L"    <ECClass typeName='AbstractBaseClass' isDomainClass='False'>"
         L"        <ECCustomAttributes>"
-        L"            <ECDbClassHint xmlns='Bentley_Standard_CustomAttributes.01.00'>"
-        L"                <Indexes />"
+        L"            <ClassMap xmlns='ECDbMap.01.00'>"
         L"                <MapStrategy>TablePerHierarchy</MapStrategy>"
-        L"            </ECDbClassHint>"
+        L"            </ClassMap>"
         L"        </ECCustomAttributes>"
         L"        <ECProperty propertyName='P1' typeName='string' />"
         L"    </ECClass>"
@@ -393,20 +393,19 @@ TEST_F (ECDbHintTests, AbstractClassWithTablePerHierarchyAndSharedTableForThisCl
         L"    </ECClass>"
         L"    <ECClass typeName='SharedTable' isDomainClass='False'>"
         L"        <ECCustomAttributes>"
-        L"            <ECDbClassHint xmlns='Bentley_Standard_CustomAttributes.01.00'>"
-        L"                <Indexes />"
+        L"            <ClassMap xmlns='ECDbMap.01.00'>"
         L"                <MapStrategy>SharedTableForThisClass</MapStrategy>"
         L"                <TableName>SharedTable</TableName>"
-        L"            </ECDbClassHint>"
+        L"            </ClassMap>"
         L"        </ECCustomAttributes>"
         L"        <ECProperty propertyName='P1' typeName='string' />"
         L"    </ECClass>"
         L"    <ECClass typeName='SharedTable1' isDomainClass='True'>"
         L"        <ECCustomAttributes>"
-        L"            <ECDbClassHint xmlns='Bentley_Standard_CustomAttributes.01.00'>"
+        L"            <ClassMap xmlns='ECDbMap.01.00'>"
         L"                <MapStrategy>SharedTableForThisClass</MapStrategy>"
         L"                <TableName>SharedTable</TableName>"
-        L"            </ECDbClassHint>"
+        L"            </ClassMap>"
         L"        </ECCustomAttributes>"
         L"        <ECProperty propertyName='P2' typeName='string' />"
         L"    </ECClass>"
@@ -451,22 +450,23 @@ TEST_F (ECDbHintTests, TablePerHierarchy_WithReuseColumns)
         L"<?xml version='1.0' encoding='utf-8'?>"
         L"<ECSchema schemaName='SchemaWithReuseColumn' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         L"    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
+        L"    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
         L"    <ECClass typeName='BaseClass' isDomainClass='True'>"
         L"        <ECCustomAttributes>"
-        L"            <ECDbClassHint xmlns='Bentley_Standard_CustomAttributes.01.00'>"
-        L"                <Indexes />"
-        L"                <MapStrategy>TablePerHierarchy | ReuseColumns</MapStrategy>"
-        L"            </ECDbClassHint>"
+        L"            <ClassMap xmlns='ECDbMap.01.00'>"
+        L"                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        L"                <MapStrategyOptions>ReuseColumns</MapStrategyOptions>"
+        L"            </ClassMap>"
         L"        </ECCustomAttributes>"
         L"        <ECProperty propertyName='P1' typeName='string' />"
         L"    </ECClass>"
         L"    <ECClass typeName='ChildDomainClassA' isDomainClass='True'>"
         L"        <BaseClass>BaseClass</BaseClass>"
         L"        <ECCustomAttributes>"
-        L"            <ECDbClassHint xmlns='Bentley_Standard_CustomAttributes.01.00'>"
-        L"                <Indexes />"
-        L"                <MapStrategy>TablePerHierarchy | ReuseColumns</MapStrategy>"
-        L"            </ECDbClassHint>"
+        L"            <ClassMap xmlns='ECDbMap.01.00'>"
+        L"                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        L"                <MapStrategyOptions>ReuseColumns</MapStrategyOptions>"
+        L"            </ClassMap>"
         L"        </ECCustomAttributes>"
         L"        <ECProperty propertyName='P2' typeName='double' />"
         L"    </ECClass>"
@@ -535,54 +535,53 @@ TEST_F (ECDbHintTests, TablePerHierarchy_WithReuseColumns)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECDbHintTests, TablePerHierarchy_ReuseColumns_DisableReuseColumnsForThisClass)
     {
-    auto const schema =
-        L"<?xml version='1.0' encoding='utf-8'?>"
-        L"<ECSchema schemaName='SchemaWithReuseColumn' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-        L"    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
-        L"    <ECClass typeName='BaseClass' isDomainClass='True'>"
-        L"        <ECCustomAttributes>"
-        L"            <ECDbClassHint xmlns='Bentley_Standard_CustomAttributes.01.00'>"
-        L"                <Indexes />"
-        L"                <MapStrategy>TablePerHierarchy | ReuseColumns</MapStrategy>"
-        L"            </ECDbClassHint>"
-        L"        </ECCustomAttributes>"
-        L"        <ECProperty propertyName='P1' typeName='string' />"
-        L"    </ECClass>"
-        L"    <ECClass typeName='ChildDomainClassA' isDomainClass='True'>"
-        L"        <BaseClass>BaseClass</BaseClass>"
-        L"        <ECCustomAttributes>"
-        L"            <ECDbClassHint xmlns='Bentley_Standard_CustomAttributes.01.00'>"
-        L"                <Indexes />"
-        L"                <MapStrategy>DisableReuseColumnsForThisClass</MapStrategy>"
-        L"            </ECDbClassHint>"
-        L"        </ECCustomAttributes>"
-        L"        <ECProperty propertyName='P2' typeName='double' />"
-        L"    </ECClass>"
-        L"    <ECClass typeName='ChildDomainClassB' isDomainClass='True'>"
-        L"        <BaseClass>BaseClass</BaseClass>"
-        L"        <ECCustomAttributes>"
-        L"            <ECDbClassHint xmlns='Bentley_Standard_CustomAttributes.01.00'>"
-        L"                <Indexes />"
-        L"                <MapStrategy>DisableReuseColumnsForThisClass</MapStrategy>"
-        L"            </ECDbClassHint>"
-        L"        </ECCustomAttributes>"
-        L"        <ECProperty propertyName='P3' typeName='int' />"
-        L"    </ECClass>"
-        L"    <ECClass typeName='DerivedA' isDomainClass='True'>"
-        L"        <BaseClass>ChildDomainClassA</BaseClass>"
-        L"        <ECProperty propertyName='P4' typeName='double' />"
-        L"    </ECClass>"
-        L"    <ECClass typeName='DerivedB' isDomainClass='True'>"
-        L"        <BaseClass>ChildDomainClassA</BaseClass>"
-        L"        <ECProperty propertyName='P5' typeName='string' />"
-        L"    </ECClass>"
-        L"</ECSchema>";
+    Utf8CP schemaXml =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='SchemaWithReuseColumn' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
+        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "    <ECClass typeName='BaseClass' isDomainClass='True'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "                <MapStrategyOptions>ReuseColumns</MapStrategyOptions>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='P1' typeName='string' />"
+        "    </ECClass>"
+        "    <ECClass typeName='ChildDomainClassA' isDomainClass='True'>"
+        "        <BaseClass>BaseClass</BaseClass>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>DisableReuseColumnsForThisClass</MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='P2' typeName='double' />"
+        "    </ECClass>"
+        "    <ECClass typeName='ChildDomainClassB' isDomainClass='True'>"
+        "        <BaseClass>BaseClass</BaseClass>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>DisableReuseColumnsForThisClass</MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='P3' typeName='int' />"
+        "    </ECClass>"
+        "    <ECClass typeName='DerivedA' isDomainClass='True'>"
+        "        <BaseClass>ChildDomainClassA</BaseClass>"
+        "        <ECProperty propertyName='P4' typeName='double' />"
+        "    </ECClass>"
+        "    <ECClass typeName='DerivedB' isDomainClass='True'>"
+        "        <BaseClass>ChildDomainClassA</BaseClass>"
+        "        <ECProperty propertyName='P5' typeName='string' />"
+        "    </ECClass>"
+        "</ECSchema>";
 
     ECDbTestProject saveTestProject;
     ECDbR db = saveTestProject.Create ("columnReuseTest.ecdb");
-    ECSchemaPtr testSchema;
     auto readContext = ECSchemaReadContext::CreateContext ();
-    ECSchema::ReadFromXmlString (testSchema, schema, *readContext);
+    ECSchemaPtr testSchema = nullptr;
+    ASSERT_EQ (ECObjectsStatus::ECOBJECTS_STATUS_Success, ECSchema::ReadFromXmlString(testSchema, schemaXml, *readContext));
     ASSERT_TRUE (testSchema != nullptr);
     auto importStatus = db.Schemas ().ImportECSchemas (readContext->GetCache ());
     ASSERT_TRUE (importStatus == BentleyStatus::SUCCESS);
@@ -627,35 +626,35 @@ TEST_F (ECDbHintTests, TablePerHierarchy_ReuseColumns_DisableReuseColumnsForThis
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECDbHintTests, TestInValidMapStrategyValue)
+TEST_F (ECDbHintTests, TestInvalidMapStrategyValue)
     {
-    auto const schema =
-        L"<?xml version='1.0' encoding='utf-8'?>"
-        L"<ECSchema schemaName='SchemaWithReuseColumn' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-        L"    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
-        L"    <ECClass typeName='ClassA' isDomainClass='True'>"
-        L"        <ECCustomAttributes>"
-        L"            <ECDbClassHint xmlns='Bentley_Standard_CustomAttributes.01.00'>"
-        L"                <Indexes />"
-        L"                <MapStrategy>TablePerHierarchy | ReuseColumn</MapStrategy>"
-        L"            </ECDbClassHint>"
-        L"        </ECCustomAttributes>"
-        L"        <ECProperty propertyName='Price' typeName='double' />"
-        L"    </ECClass>"
-        L"    <ECClass typeName='ClassAB' isDomainClass='True'>"
-        L"        <BaseClass>ClassA</BaseClass>"
-        L"    </ECClass>"
-        L"</ECSchema>";
+    Utf8CP schemaXml =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='SchemaWithReuseColumn' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
+        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "    <ECClass typeName='ClassA' isDomainClass='True'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>bla</MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECClass>"
+        "    <ECClass typeName='ClassAB' isDomainClass='True'>"
+        "        <BaseClass>ClassA</BaseClass>"
+        "    </ECClass>"
+        "</ECSchema>";
 
     ECDbTestProject::Initialize ();
     ECDb ecdb;
     ASSERT_EQ (BE_SQLITE_OK, ECDbTestUtility::CreateECDb (ecdb, nullptr, L"SchemaHintDb.ecdb")) << "ECDb couldn't be created";
 
-    ECSchemaPtr testSchema;
     auto readContext = ECSchemaReadContext::CreateContext ();
-    ECSchema::ReadFromXmlString (testSchema, schema, *readContext);
-    ASSERT_TRUE (testSchema != nullptr);
-    auto importStatus = ecdb.Schemas ().ImportECSchemas (readContext->GetCache ());
+    ECSchemaPtr testSchema = nullptr;
+    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, ECSchema::ReadFromXmlString(testSchema, schemaXml, *readContext));
+    ASSERT_TRUE(testSchema != nullptr);
+    auto importStatus = ecdb.Schemas().ImportECSchemas(readContext->GetCache());
     ASSERT_TRUE (importStatus == BentleyStatus::ERROR) << "Schema import successful instead of returning error";
     }
 
@@ -957,40 +956,40 @@ TEST_F (ECDbHintTests, TablePerHierarchy_TablePerClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (ECDbTests, TestStructClassInTablePerHierarchy)
     {
-    auto const schema =
-        L"<?xml version='1.0' encoding='utf-8'?>"
-        L"<ECSchema schemaName='TeststructClassInTablePerHierarchy' nameSpacePrefix='tph' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-        L"    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
-        L"    <ECClass typeName='BaseClass' isDomainClass='True'>"
-        L"        <ECCustomAttributes>"
-        L"            <ECDbClassHint xmlns='Bentley_Standard_CustomAttributes.01.00'>"
-        L"                <Indexes />"
-        L"                <MapStrategy>TablePerHierarchy</MapStrategy>"
-        L"            </ECDbClassHint>"
-        L"        </ECCustomAttributes>"
-        L"        <ECProperty propertyName='PerpertyTPH' typeName='string' />"
-        L"    </ECClass>"
-        L"    <ECClass typeName='CustomAttributeClass' isDomainClass='False' isCustomAttributeClass='True'>"
-        L"        <BaseClass>BaseClass</BaseClass>"
-        L"        <ECProperty propertyName='PropertyCustomAttributeClass' typeName='string' />"
-        L"    </ECClass>"
-        L"    <ECClass typeName='isStructClass' isStruct='True' isDomainClass='True'>"
-        L"        <BaseClass>BaseClass</BaseClass>"
-        L"        <ECProperty propertyName='PropertyIsStructClass' typeName='string' />"
-        L"    </ECClass>"
-        L"    <ECClass typeName='NonDomainClass' isDomainClass='False'>"
-        L"        <BaseClass>BaseClass</BaseClass>"
-        L"        <ECProperty propertyName='PropertyNonDomainClass' typeName='string' />"
-        L"    </ECClass>"
-        L"</ECSchema>";
+    Utf8CP schemaXml =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TeststructClassInTablePerHierarchy' nameSpacePrefix='tph' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
+        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "    <ECClass typeName='BaseClass' isDomainClass='True'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='PerpertyTPH' typeName='string' />"
+        "    </ECClass>"
+        "    <ECClass typeName='CustomAttributeClass' isDomainClass='False' isCustomAttributeClass='True'>"
+        "        <BaseClass>BaseClass</BaseClass>"
+        "        <ECProperty propertyName='PropertyCustomAttributeClass' typeName='string' />"
+        "    </ECClass>"
+        "    <ECClass typeName='isStructClass' isStruct='True' isDomainClass='True'>"
+        "        <BaseClass>BaseClass</BaseClass>"
+        "        <ECProperty propertyName='PropertyIsStructClass' typeName='string' />"
+        "    </ECClass>"
+        "    <ECClass typeName='NonDomainClass' isDomainClass='False'>"
+        "        <BaseClass>BaseClass</BaseClass>"
+        "        <ECProperty propertyName='PropertyNonDomainClass' typeName='string' />"
+        "    </ECClass>"
+        "</ECSchema>";
 
     ECDbTestProject saveTestProject;
     ECDbR db = saveTestProject.Create ("StructClassInTablePerHierarchyDb.ecdb");
-    ECSchemaPtr testSchema;
     auto readContext = ECSchemaReadContext::CreateContext ();
-    ECSchema::ReadFromXmlString (testSchema, schema, *readContext);
-    ASSERT_TRUE (testSchema != nullptr);
-    auto importStatus = db.Schemas ().ImportECSchemas (readContext->GetCache ());
+    ECSchemaPtr testSchema = nullptr;
+    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, ECSchema::ReadFromXmlString(testSchema, schemaXml, *readContext));
+    ASSERT_TRUE(testSchema != nullptr);
+    auto importStatus = db.Schemas().ImportECSchemas(readContext->GetCache());
     ASSERT_TRUE (importStatus == BentleyStatus::SUCCESS);
 
     ASSERT_TRUE (db.TableExists ("tph_BaseClass"));
