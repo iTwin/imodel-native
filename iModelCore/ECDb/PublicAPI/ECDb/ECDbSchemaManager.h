@@ -240,7 +240,6 @@ private:
     static void ReportUpdateError (SchemaImportContext const& context, ECN::ECSchemaCR newSchema, ECN::ECSchemaCR existingSchema, Utf8CP reason);
     static bool AssertOnDuplicateCopyOfSchema(const bvector<ECN::ECSchemaP>& schema);
     
-    bool ContainsECSchema (Utf8CP schemaName) const;
     ECN::ECSchemaCP GetECSchema (ECN::ECSchemaId schemaId, bool ensureAllClassesLoaded) const;
     //! Ensure that all direct subclasses of @p ecClass are loaded. Subclasses of its subclasses are not loaded
     //! @param[in] ecClass ECClass whose direct subclasses should be loaded
@@ -274,6 +273,10 @@ public:
     //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR (error details are being logged)
     ECDB_EXPORT BentleyStatus ImportECSchemas (ECN::ECSchemaCacheR schemaCache, ImportOptions const& options = ImportOptions (), IImportIssueListener const* issueListener = nullptr) const;
     
+    //! Checks whether the ECDb file contains the ECSchema with the specified name or not.
+    //! @param[in] schemaName Name of the ECSchema to check for
+    //! @return true if the ECDb file contains the ECSchema. false otherwise.
+    ECDB_EXPORT bool ContainsECSchema(Utf8CP schemaName) const;
 
     //! Get an ECSchema by name
     //! @param[in] schemaName Name (not full name) of the ECSchema to retrieve
@@ -296,8 +299,6 @@ public:
     ECDB_EXPORT BentleyStatus GetECSchemaKeys (ECSchemaKeys& keys) const;
     ECDB_EXPORT BentleyStatus GetECClassKeys (ECClassKeys& keys, Utf8CP schemaName) const;
 
-
-    //! The function accepts normal or full schema name. But it only considers ECSchema name without version.
 
 //__PUBLISH_SECTION_START__
     //! Gets the ECClass for the specified name.
