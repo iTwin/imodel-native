@@ -52,8 +52,7 @@ void WebServices::ConnectSetup (JsonValueCR messageDataObj, bool requireToken)
     else
         {
         MobileDgnApplication::AbstractUiState ().SetValue (CONNECT_SIGNED_IN, false);
-        ConnectAuthenticationPersistence caPersistence;
-        caPersistence.SetToken (nullptr);
+        ConnectAuthenticationPersistence::GetShared ()->SetToken (nullptr);
         }
 
     if (!cred.GetUsername ().empty ())
@@ -69,7 +68,7 @@ void WebServices::ConnectSetup (JsonValueCR messageDataObj, bool requireToken)
 
         Utf8String displayUserName = "";
         bmap<Utf8String, Utf8String> attributes;
-        BentleyStatus attributeStatus = sToken.GetAttributes(attributes);
+        BentleyStatus attributeStatus = sToken.GetAttributes (attributes);
         if (SUCCESS == attributeStatus)
             {
             Utf8String givenName = attributes["givenname"];
@@ -85,23 +84,21 @@ void WebServices::ConnectSetup (JsonValueCR messageDataObj, bool requireToken)
     csSetup[CS_MESSAGE_FIELD_password] = cred.GetPassword ();
     csSetup[CS_MESSAGE_FIELD_token] = token;
 
-    MobileDgnUi::SendMessageToWorkThread (CS_MESSAGE_SetCredentials, std::move(csSetup));
+    MobileDgnUi::SendMessageToWorkThread (CS_MESSAGE_SetCredentials, std::move (csSetup));
     }
 
 bool GetCredentials (JsonValueCR messageDataObj, CredentialsR cred)
     {
-    ConnectAuthenticationPersistence caPersistence;
-
     if (messageDataObj.isMember (AuthenticationData::USERNAME))
         {
         Utf8String username = messageDataObj[AuthenticationData::USERNAME].asString ();
         Utf8String password = messageDataObj[AuthenticationData::PASSWORD].asString ();
         cred = Credentials (username, password);
-        caPersistence.SetCredentials (cred);
+        ConnectAuthenticationPersistence::GetShared ()->SetCredentials (cred);
         }
     else
         {
-        cred = caPersistence.GetCredentials ();
+        cred = ConnectAuthenticationPersistence::GetShared ()->GetCredentials ();
         }
 
     return cred.IsValid ();
@@ -109,16 +106,14 @@ bool GetCredentials (JsonValueCR messageDataObj, CredentialsR cred)
 
 bool GetToken (JsonValueCR messageDataObj, Utf8StringR token)
     {
-    ConnectAuthenticationPersistence caPersistence;
-
     if (messageDataObj.isMember (AuthenticationData::TOKEN))
         {
         token = messageDataObj[AuthenticationData::TOKEN].asString ();
-        caPersistence.SetToken (std::make_shared<SamlToken> (token));
+        ConnectAuthenticationPersistence::GetShared ()->SetToken (std::make_shared<SamlToken> (token));
         }
     else
         {
-        SamlTokenPtr cachedToken = caPersistence.GetToken ();
+        SamlTokenPtr cachedToken = ConnectAuthenticationPersistence::GetShared ()->GetToken ();
         if (cachedToken == nullptr || cachedToken->IsEmpty ())
             {
             return false;
