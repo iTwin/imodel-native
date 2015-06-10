@@ -2443,17 +2443,7 @@ bool GeometricElement::_DrawHit (HitDetailCR hit, ViewContextR context) const
 
     context.SetCurrentElement(element.get());
 
-    bool        pushedtrans = false;
-    Transform   hitLocalToContextLocal;
-
-    // NOTE: GeomDetail::LocalToWorld includes pushed transforms...
-    if (SUCCESS == hit.GetHitLocalToContextLocal(hitLocalToContextLocal, context) && !hitLocalToContextLocal.IsIdentity())
-        {
-        context.PushTransform(hitLocalToContextLocal);
-        pushedtrans = true;
-        }
-
-    // NEEDSWORK: Store curve symbology in hit detail when cleaning up DisplayPath/HitDetail...
+    // NEEDSWORK: Get curve symbology from GeomDetail m_geomId...
     ElemDisplayParamsR  dispParams = *context.GetCurrentDisplayParams();
 
     dispParams.Init();
@@ -2491,9 +2481,6 @@ bool GeometricElement::_DrawHit (HitDetailCR hit, ViewContextR context) const
         context.GetIDrawGeom().DrawCurveVector(*curve, false);
     else
         context.GetIDrawGeom().DrawCurveVector2d(*curve, false, context.GetCurrentDisplayParams()->GetNetDisplayPriority());
-
-    if (pushedtrans)
-        context.PopTransformClip();
 
     context.SetCurrentElement(nullptr);
 

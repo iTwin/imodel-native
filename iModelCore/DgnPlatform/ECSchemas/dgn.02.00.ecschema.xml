@@ -369,6 +369,17 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+                <!-- WIP: Why does this add "WHERE ECClassId = xxx"?
+                <Indexes>
+                    <DbIndex>
+                        <Name>idx_dgn_Element_Code</Name>
+                        <IsUnique>False</IsUnique>
+                        <Properties>
+                            <string>Code</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
+                -->
             </ClassMap>
             <ClassHasCurrentTimeStampProperty xmlns="Bentley_Standard_CustomAttributes.01.12">
                 <PropertyName>LastMod</PropertyName>
@@ -404,6 +415,8 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>False</IsNullable>
+                    <!-- Code is usually, but not necessarily, unique -->
+                    <IsUnique>False</IsUnique>
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>

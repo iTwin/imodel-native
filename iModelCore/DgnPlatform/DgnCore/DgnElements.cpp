@@ -1487,13 +1487,24 @@ DateTime DgnElements::QueryLastModifiedTime(DgnElementId elementId) const
     return (ECSqlStepStatus::HasRow != stmt->Step()) ? DateTime() : stmt->GetValueDateTime(0);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    02/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelId DgnElements::QueryModelId(DgnElementId elementId)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    02/2015
+//---------------------------------------------------------------------------------------
+DgnModelId DgnElements::QueryModelId(DgnElementId elementId) const
     {
     CachedStatementPtr stmt;
     GetStatement(stmt, "SELECT ModelId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
     stmt->BindId(1, elementId);
     return (BE_SQLITE_ROW != stmt->Step()) ? DgnModelId() : stmt->GetValueId<DgnModelId>(0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    06/2015
+//---------------------------------------------------------------------------------------
+DgnElementId DgnElements::QueryElementIdByCode(Utf8CP code) const
+    {
+    CachedStatementPtr statement;
+    GetStatement(statement, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Code=? LIMIT 1"); // find first if code not unique
+    statement->BindText(1, code, Statement::MakeCopy::No);
+    return (BE_SQLITE_ROW != statement->Step()) ? DgnElementId() : statement->GetValueId<DgnElementId>(0);
     }

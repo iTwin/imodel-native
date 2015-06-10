@@ -12,16 +12,17 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeomDetail::Init ()
     {
-    m_primitive     = NULL;
-    m_localToWorld.InitIdentity ();
-    m_localPoint.Zero ();
+    m_primitive     = nullptr;
     m_geomType      = HitGeomType::None;
     m_detailSource  = HitDetailSource::None;
     m_hitPriority   = HitPriority::Highest;
     m_nonSnappable  = false;
     m_viewDist      = 0.0;
     m_viewZ         = 0.0;
-    m_localNormal.Zero ();
+    m_geomId        = 0;
+
+    m_closePoint.Zero ();
+    m_normal.Zero ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -71,9 +72,9 @@ HitGeomType GeomDetail::GetEffectiveHitGeomType() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeomDetail::SetCurvePrimitive (ICurvePrimitiveCP curve, HitGeomType geomType)
+void GeomDetail::SetCurvePrimitive (ICurvePrimitiveCP curve, TransformCP localToWorld, HitGeomType geomType)
     {
-    m_primitive = NULL; 
+    m_primitive = nullptr; 
     m_geomType  = HitGeomType::None;
 
     if (!curve)
@@ -129,30 +130,14 @@ void GeomDetail::SetCurvePrimitive (ICurvePrimitiveCP curve, HitGeomType geomTyp
             }
         }
 
+    if (nullptr != localToWorld && m_primitive.IsValid())
+        m_primitive->TransformInPlace(*localToWorld);
+
     // Set geometry type override...
     //  - HitGeomType::Point with CURVE_PRIMITIVE_TYPE_Arc denotes arc center...
     //  - HitGeomType::Surface with any curve primitive denotes an interior hit...
     if (HitGeomType::None != geomType)
         m_geomType = geomType;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  05/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeomDetail::GetClosestPoint (DPoint3dR pt) const
-    {
-    m_localToWorld.MultiplyAndRenormalize (&pt, &m_localPoint, 1);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  05/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeomDetail::SetClosestPoint (DPoint3dCR pt)
-    {
-    DMatrix4d   worldToLocal;
-    
-    worldToLocal.TransposeOf (m_localToWorld);
-    worldToLocal.MultiplyAndRenormalize (&m_localPoint, &pt, 1);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -196,7 +181,7 @@ bool GeomDetail::GetArc (DEllipse3dR ellipse) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeomDetail::FillGPA (GPArrayR gpa, bool worldCoords, bool singleSegment) const
+bool GeomDetail::FillGPA (GPArrayR gpa, bool singleSegment) const
     {
     if (!m_primitive.IsValid ())
         return false;
@@ -234,9 +219,6 @@ bool GeomDetail::FillGPA (GPArrayR gpa, bool worldCoords, bool singleSegment) co
                 return false;
             }
         }
-
-    if (worldCoords)
-        gpa.Transform (&m_localToWorld);
 
     return true;
     }
@@ -300,7 +282,7 @@ double GeomDetail::GetCloseParam () const
     double      fraction;
     DPoint3d    curvePoint;
 
-    if (!m_primitive->ClosestPointBounded (m_localPoint, fraction, curvePoint))
+    if (!m_primitive->ClosestPointBounded (m_closePoint, fraction, curvePoint))
         return 0.0;
 
     return fraction;
@@ -391,40 +373,6 @@ CurvePrimitiveIdCP GeomDetail::GetCurvePrimitiveId() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   11/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt HitDetail::GetHitLocalToContextLocal (TransformR hitLocalToContextLocalTrans, ViewContextR context) const
-    {
-    DMatrix4d   contextLocalToWorld;
-
-    hitLocalToContextLocalTrans.InitIdentity ();
-
-    // NOTE: GeomDetail::LocalToWorld may include transforms pushed by _Draw method...
-    if (SUCCESS != context.GetCurrLocalToWorldTrans (contextLocalToWorld))
-        return ERROR;
-
-    DMatrix4d   worldToContextLocal, hitLocalToContextLocal;
-
-    worldToContextLocal.QrInverseOf (contextLocalToWorld);
-    hitLocalToContextLocal.InitProduct (worldToContextLocal, m_geomDetail.GetLocalToWorld ());
-
-    return (hitLocalToContextLocalTrans.InitFrom (hitLocalToContextLocal) ? SUCCESS : ERROR); // hitLocalToContextLocal should never have perspective...
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   11/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt HitDetail::GetContextLocalToHitLocal (TransformR contextLocalToHitLocalTrans, ViewContextR context) const
-    {
-    Transform   hitLocalToContextLocalTrans;
-    StatusInt   status = GetHitLocalToContextLocal (hitLocalToContextLocalTrans, context);
-
-    contextLocalToHitLocalTrans.InverseOf (hitLocalToContextLocalTrans);
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/015
 +---------------+---------------+---------------+---------------+---------------+------*/
 HitDetail::HitDetail
@@ -470,7 +418,7 @@ HitDetail::~HitDetail () {}
 void HitDetail::_DrawInVp (DgnViewportP vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const
     {
     if (vp->IsActive())
-        T_HOST.GetGraphicsAdmin()._DrawPathInVp (this, vp, drawMode, drawPurpose, stopFlag);
+        T_HOST.GetGraphicsAdmin()._DrawInVp (this, vp, drawMode, drawPurpose, stopFlag);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -581,7 +529,7 @@ SnapDetail::SnapDetail (HitDetail const* from) : HitDetail (*from)
     m_allowAssociations  = true;
 
     m_screenPt.x = m_screenPt.y = 0;
-    m_geomDetail.GetClosestPoint (m_snapPoint);
+    m_snapPoint = m_geomDetail.GetClosestPoint();
     m_adjustedPt = m_snapPoint;
     m_snapMode = m_originalSnapMode = SnapMode::First;
 
@@ -656,12 +604,9 @@ SnapDetail* SnapDetail::_Clone () const
 * the snapped point, otherwise it returns the closest point on the element.
 * @bsimethod    HitDetail                                         KeithBentley    12/97
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SnapDetail::_GetHitPoint (DPoint3dR pt) const
+DPoint3dCR SnapDetail::_GetHitPoint () const
     {
-    if (IsHot ())
-        pt = m_snapPoint;
-    else
-        m_geomDetail.GetClosestPoint (pt);
+    return (IsHot() ? m_snapPoint : m_geomDetail.GetClosestPoint());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -939,33 +884,22 @@ static bool is2dHitCompare (HitDetailCR oHit1, HitDetailCR oHit2)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static int doZCompareOfSurfaceAndEdge (HitDetailCR oHitSurf, HitDetailCR oHitEdge)
     {
-    DgnViewportR vp = oHitSurf.GetViewport ();
+    DgnViewportR vp = oHitSurf.GetViewport();
     DPoint4d     homogeneousPlane;
     
-    if (!homogeneousPlane.PlaneFromOriginAndNormal (oHitSurf.GetGeomDetail ().GetClosestPointLocal (), oHitSurf.GetGeomDetail ().GetSurfaceNormal ()))
+    if (!homogeneousPlane.PlaneFromOriginAndNormal(oHitSurf.GetGeomDetail().GetClosestPoint(), oHitSurf.GetGeomDetail().GetSurfaceNormal()))
         return 0;
 
-    DMap4dCP    worldToViewMap = vp.GetWorldToViewMap ();
-    DMatrix4d   worldToLocal;
-    DMap4d      localToWorldMap, localToViewMap;
+    DMap4d      worldToViewMap = *vp.GetWorldToViewMap();
+    DPoint4d    eyePointWorld;
 
-    worldToLocal.QrInverseOf (oHitSurf.GetGeomDetail ().GetLocalToWorld ());
-    localToWorldMap.InitFrom (oHitSurf.GetGeomDetail ().GetLocalToWorld (), worldToLocal);
-    localToViewMap.InitProduct (*worldToViewMap, localToWorldMap);
+    worldToViewMap.M1.GetColumn(eyePointWorld, 2);
 
-    DPoint4d    eyePointLocal;
+    DPoint3d    testPointWorld = oHitEdge.GetGeomDetail().GetClosestPoint();
 
-    localToViewMap.M1.GetColumn (eyePointLocal, 2);
-
-    DPoint3d    testPointLocal = oHitEdge.GetGeomDetail ().GetClosestPointLocal ();
-    DMatrix4d   localEdgeToLocalSurf;
-
-    localEdgeToLocalSurf.InitProduct (worldToLocal, oHitEdge.GetGeomDetail ().GetLocalToWorld ());
-    localEdgeToLocalSurf.MultiplyAndRenormalize (&testPointLocal, &testPointLocal, 1);
-
-    double  a0 = homogeneousPlane.DotProduct (eyePointLocal);
-    double  a1 = homogeneousPlane.DotProduct (testPointLocal, 1.0);
-    double  tol = s_tooCloseTolerance * (1.0 + fabs (a0) + fabs (a1) + fabs (homogeneousPlane.w));
+    double  a0 = homogeneousPlane.DotProduct(eyePointWorld);
+    double  a1 = homogeneousPlane.DotProduct(testPointWorld, 1.0);
+    double  tol = s_tooCloseTolerance * (1.0 + fabs(a0) + fabs(a1) + fabs(homogeneousPlane.w));
 
 #if defined (NOT_NOT_DUMP)
     if (fabs (a1) < tol)
@@ -987,8 +921,8 @@ static int doZCompareOfSurfaceAndEdge (HitDetailCR oHitSurf, HitDetailCR oHitEdg
 +---------------+---------------+---------------+---------------+---------------+------*/
 static int doZCompare (HitDetailCR oHit1, HitDetailCR oHit2)
     {
-    double  z1 = oHit1.GetGeomDetail ().GetZValue ();
-    double  z2 = oHit2.GetGeomDetail ().GetZValue ();
+    double  z1 = oHit1.GetGeomDetail().GetZValue();
+    double  z2 = oHit2.GetGeomDetail().GetZValue();
 
     // For 2d hits z reflects display priority which should be checked before locate priority, etc. when a fill/surface hit is involved...
     if (is2dHitCompare (oHit1, oHit2))
@@ -1000,30 +934,30 @@ static int doZCompare (HitDetailCR oHit1, HitDetailCR oHit2)
         }
 
     // Point clouds already output only a single best z for a screen location...only compare using screen distance, not z...
-    if (HitDetailSource::PointCloud == oHit1.GetGeomDetail ().GetDetailSource () && HitDetailSource::PointCloud == oHit2.GetGeomDetail ().GetDetailSource ())
+    if (HitDetailSource::PointCloud == oHit1.GetGeomDetail().GetDetailSource() && HitDetailSource::PointCloud == oHit2.GetGeomDetail().GetDetailSource())
         return 0;
 
     // Always prioritize sprites (ex. HUD markers) over surface hits...
     if (HitDetailSource::Sprite == oHit1.GetGeomDetail ().GetDetailSource () || HitDetailSource::Sprite == oHit2.GetGeomDetail ().GetDetailSource ())
         return 0;
 
-    DVec3d  normal1 = oHit1.GetGeomDetail ().GetSurfaceNormal ();
-    DVec3d  normal2 = oHit2.GetGeomDetail ().GetSurfaceNormal ();
+    DVec3d  normal1 = oHit1.GetGeomDetail().GetSurfaceNormal();
+    DVec3d  normal2 = oHit2.GetGeomDetail().GetSurfaceNormal();
 
-    if (0.0 != normal1.Magnitude () && 0.0 != normal2.Magnitude ())
+    if (0.0 != normal1.Magnitude() && 0.0 != normal2.Magnitude())
         {
         // Both surface hits...if close let other criteria determine order...
         if (DoubleOps::WithinTolerance (z1, z2, s_tooCloseTolerance))
             return 0;
         }
-    else if (0.0 != normal1.Magnitude ())
+    else if (0.0 != normal1.Magnitude())
         {
         // 1st is surface hit...project 2nd hit into plane defined by surface normal...
         int compareResult = doZCompareOfSurfaceAndEdge (oHit1, oHit2);
 
         return (0 == compareResult ? 0 : compareResult);
         }
-    else if (0.0 != normal2.Magnitude ())
+    else if (0.0 != normal2.Magnitude())
         {
         // 2nd is surface hit...project 1st hit into plane defined by surface normal...
         int compareResult = doZCompareOfSurfaceAndEdge (oHit2, oHit1);
@@ -1032,8 +966,8 @@ static int doZCompare (HitDetailCR oHit1, HitDetailCR oHit2)
         }
     else
         {
-        bool isQvWireHit1 = (HitGeomType::Surface == oHit1.GetGeomDetail ().GetGeomType () && NULL == oHit1.GetGeomDetail ().GetCurvePrimitive ());
-        bool isQvWireHit2 = (HitGeomType::Surface == oHit2.GetGeomDetail ().GetGeomType () && NULL == oHit2.GetGeomDetail ().GetCurvePrimitive ());
+        bool isQvWireHit1 = (HitGeomType::Surface == oHit1.GetGeomDetail().GetGeomType() && NULL == oHit1.GetGeomDetail().GetCurvePrimitive());
+        bool isQvWireHit2 = (HitGeomType::Surface == oHit2.GetGeomDetail().GetGeomType() && NULL == oHit2.GetGeomDetail().GetCurvePrimitive());
 
         // NOTE: QV wireframe hits are only needed to locate silhouettes, make sure they always lose to a real edge hit since a robust z compare isn't possible...
         if (isQvWireHit1 && !isQvWireHit2)
@@ -1070,23 +1004,19 @@ int HitList::Compare (HitDetailCP oHit1, HitDetailCP oHit2, bool comparePriority
 
     if (comparePriority)
         {
-        int p1 = static_cast<int>(oHit1->GetGeomDetail ().GetLocatePriority ());
-        int p2 = static_cast<int>(oHit2->GetGeomDetail ().GetLocatePriority ());
+        int p1 = static_cast<int>(oHit1->GetGeomDetail().GetLocatePriority());
+        int p2 = static_cast<int>(oHit2->GetGeomDetail().GetLocatePriority());
 
         COMPARE_RELATIVE (p1, p2);
         }
 
-    double dist1 = tenthOfPixel (oHit1->GetGeomDetail ().GetScreenDist ());
-    double dist2 = tenthOfPixel (oHit2->GetGeomDetail ().GetScreenDist ());
+    double dist1 = tenthOfPixel (oHit1->GetGeomDetail().GetScreenDist());
+    double dist2 = tenthOfPixel (oHit2->GetGeomDetail().GetScreenDist());
 
     COMPARE_RELATIVE (dist1, dist2);
 
     // Linestyle/pattern/thickness hits have lower priority...
-    COMPARE_RELATIVE (oHit1->GetGeomDetail ().GetDetailSource (), oHit2->GetGeomDetail ().GetDetailSource ());
-
-    //// everything else is the same, higher filepos wins because w/file order display (2d) it's the one on top always.        removed in graphite
-    //if (oHit1->GetRoot () == oHit2->GetRoot ())                                                                              removed in graphite
-    //    COMPARE_RELATIVE (oHit2->GetHeadElem ()->GetFilePos (), oHit1->GetHeadElem ()->GetFilePos ());                       removed in graphite
+    COMPARE_RELATIVE (oHit1->GetGeomDetail().GetDetailSource(), oHit2->GetGeomDetail().GetDetailSource());
 
     return 0;
     }
@@ -1104,7 +1034,7 @@ bool            comparePriority
     {
     HitList::iterator currHit = begin ();
 
-    HitDetail*    oldHit;
+    HitDetail*  oldHit;
     int         count = GetCount();
     int         index = 0;
     int         comparison;
@@ -1178,7 +1108,7 @@ HitDetailP HitList::GetNextHit ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool HitList::RemoveHitsFrom (HitDetailCR hit)
     {
-    HitDetailP    thisHit;
+    HitDetailP  thisHit;
     bool        removedOne = false;
 
     // walk backwards through list so we don't have to worry about what happens on remove
@@ -1200,7 +1130,7 @@ bool HitList::RemoveHitsFrom (HitDetailCR hit)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool HitList::RemoveHitsFrom (DgnElementCR element)
     {
-    HitDetailP    thisHit;
+    HitDetailP  thisHit;
     bool        removedOne = false;
 
     // walk backwards through list so we don't have to worry about what happens on remove
@@ -1222,7 +1152,7 @@ bool HitList::RemoveHitsFrom (DgnElementCR element)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool     HitList::RemoveHitsFrom (DgnModelR model)
     {
-    HitDetailP    thisHit;
+    HitDetailP  thisHit;
     bool        removedOne = false;
 
     // walk backwards through list so we don't have to worry about what happens on remove
@@ -1252,250 +1182,3 @@ void HitList::Dump (WCharCP label) const
 
     printf ("\n");
     }
-
-#if defined (NOT_NOW)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      09/2008
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       HitDetail::GetLinearParameters (DSegment3dP hitSeg, int* vertex, int* segmentNumber) const
-    {
-    GeomDetail const&  detail = GetGeomDetail ();
-
-    if (hitSeg)
-        {
-        if (!detail.GetSegment (*hitSeg))
-            return ERROR;
-
-        // Return segment in world coords...
-        detail.GetLocalToWorld ().MultiplyAndRenormalize (hitSeg->point, hitSeg->point, 2);
-        }
-
-    if (vertex)
-        *vertex = (int) detail.GetCloseVertex ();
-
-    if (segmentNumber)
-        *segmentNumber = (int) detail.GetSegmentNumber ();
-
-    return SUCCESS;
-    }
-#endif
-
-#ifdef WIP_VANCOUVER_MERGE // DgnActionItem
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  08/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnActionItemContext::DgnActionItemContext (HitDetailCP hitPath, DPoint3dCP point, DgnViewportP view)
-    :m_hitPathPtr(NULL), m_pointPtr (NULL), m_view (view)
-    {
-    if (NULL != point)
-        m_pointPtr = std::shared_ptr<DPoint3d>(new DPoint3d(*point));
-
-    if (NULL != hitPath)
-        m_hitPathPtr = new HitDetail(*hitPath);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  12/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct NullDgnActionItemContext: public DgnActionItemContext
-    {
-    private:
-    ECN::IAUIDataContextCP m_context;
-    
-    virtual ContextType _GetContextType() const override {return m_context->GetContextType();}
-    virtual ECN::IECInstanceP       GetInstance () const override {return m_context->GetInstance();}
-    virtual void*                   GetCustomData() const override {return m_context->GetCustomData();}
-    virtual ECN::ECInstanceIterableCP    GetInstanceIterable () const override {return m_context->GetInstanceIterable();}
-    virtual WString                 GetMoniker () const override {return m_context->GetMoniker();}
-    
-
-    public:
-        NullDgnActionItemContext (ECN::IAUIDataContextCR context)
-            :m_context(&context), DgnActionItemContext(NULL, NULL, NULL)
-            {}
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  08/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void    IEditActionSource::_GetCommand (bvector<ECN::IUICommandPtr>& cmds, ECN::IAUIDataContextCR instance, int purpose)
-    {
-    bvector<DgnPlatform::IEditActionPtr> dgnPlatformCmds;
-    DgnActionItemContext const* info = dynamic_cast<DgnActionItemContext const*> (&instance);
-    if (NULL != info)
-        _GetCommand(dgnPlatformCmds, *info, purpose);
-    else
-        {
-        NullDgnActionItemContext context(instance);
-        _GetCommand(dgnPlatformCmds, context, purpose);
-        }
-
-    std::copy(dgnPlatformCmds.begin(), dgnPlatformCmds.end(), std::back_inserter(cmds));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  09/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-HitDetailCP       DgnActionItemContext::GetHitDetail() const {return  m_hitPathPtr.get();}
-DgnViewportP       DgnActionItemContext::GetView() const 
-    {
-    return (NULL == m_hitPathPtr.get()) ? m_view : m_hitPathPtr->GetViewport();
-    }
-
-DPoint3dCP      DgnActionItemContext::GetPoint() const {return  m_pointPtr.get();}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  09/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ElementHandle   DgnActionItemContext::GetRootElement() const 
-    {
-    if (m_hitPathPtr.IsNull())
-        return ElementHandle();
-
-    DgnElementP     element = m_hitPathPtr->GetPathElem(0);
-    DgnModelP    modelRef = m_hitPathPtr->GetRoot ();
-
-    return ElementHandle(element, modelRef);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  11/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct DgnUISeperator : public IEditAction
-    {
-    WString m_id;
-    DgnUISeperator (WCharCP id)
-        :m_id(id)
-        {}
-
-    virtual WCharCP             _GetCommandId () const override { return m_id.c_str(); }
-    virtual WString             _GetLabel ()  const override { return L""; }
-    virtual WString             _GetDescription ()  const override { return L""; }
-    virtual ECN::ECImageKeyCP   _GetImageId ()  const override { return NULL; }
-    virtual bool                _IsSeparator ()  const override { return true; }
-    
-    virtual EditActionMenuMark  _GetMenuMark() const override {return MENUMARK_None;}
-    virtual bool                _GetIsEnabled () const override {return true;}
-    virtual EditActionPriority  _GetPriority () const override {return EDITACTION_PRIORITY_UserCommon;}
-    virtual BentleyStatus   _ExecuteCmd (ECN::IAUIDataContextCP instance) override
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-    public:
-    static IEditAction* CreateSeparator(WCharCP id) {return new DgnUISeperator(id);}
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  12/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-IEditActionPtr  DgnEditAction::CreateSeparator (WCharCP id)
-    {
-    return DgnUISeperator::CreateSeparator(id);
-    }
-
-struct ECInstanceToDgnECInstanceCollectionAdapter;
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  11/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct ECInstanceToDgnECInstanceCollectionAdapterIter : public IDgnECInstanceCollectionIteratorAdapter
-    {
-    private:
-        ECN::ECInstanceIterable::const_iterator                  m_iter;
-        DgnECInstancePtr                                    m_val;
-        bool                                                m_valFetched;
-        ECInstanceToDgnECInstanceCollectionAdapter const&   m_parent;
-
-        
-    public:
-    ECInstanceToDgnECInstanceCollectionAdapterIter (ECInstanceToDgnECInstanceCollectionAdapter const& parent, bool begin);
-
-    virtual void                MoveToNext  () override
-        {
-        ++m_iter;
-        m_val = NULL;
-        m_valFetched = false;
-        }
-
-    virtual bool                IsDifferent (ECN::IInstanceCollectionIteratorAdapter<DgnECInstanceP const> const & rhs) const override
-        {
-        ECInstanceToDgnECInstanceCollectionAdapterIter const* rhsIter = static_cast<ECInstanceToDgnECInstanceCollectionAdapterIter const*>(&rhs);
-        return m_iter != rhsIter->m_iter;
-        }
-    
-    virtual reference           GetCurrent () override;
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  11/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct ECInstanceToDgnECInstanceCollectionAdapter : public IDgnECInstanceCollectionAdapter
-    {
-    friend ECInstanceToDgnECInstanceCollectionAdapterIter;
-    
-    private:
-        ECN::ECInstanceIterableCP       m_iterable;
-    public:
-        ECInstanceToDgnECInstanceCollectionAdapter (ECN::ECInstanceIterableCP const& iterable)
-            :m_iterable(iterable)
-            {}
-
-    virtual const_iterator begin() const override
-        {
-        return new ECInstanceToDgnECInstanceCollectionAdapterIter(*this, true);
-        }
-    virtual const_iterator end() const override
-        {
-        return new ECInstanceToDgnECInstanceCollectionAdapterIter(*this, false);
-        }
-
-    static ECInstanceToDgnECInstanceCollectionAdapter* Create(ECN::ECInstanceIterableCP const& iterable) {return new ECInstanceToDgnECInstanceCollectionAdapter(iterable);}
-    };
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  11/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceToDgnECInstanceCollectionAdapterIter::ECInstanceToDgnECInstanceCollectionAdapterIter (ECInstanceToDgnECInstanceCollectionAdapter const& parent, bool begin)
-:m_iter(begin ? parent.m_iterable->begin() : parent.m_iterable->end()), m_valFetched(false), m_parent(parent)
-    {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  12/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECInstanceToDgnECInstanceCollectionAdapterIter::reference ECInstanceToDgnECInstanceCollectionAdapterIter::GetCurrent ()
-    {
-    if (m_valFetched)
-        return m_val.GetCR();
-
-    m_valFetched = true;
-    DgnECInstanceP instance = dynamic_cast<DgnECInstanceP> (*m_iter);
-    if (NULL == instance)
-        return m_val.GetCR();
-    
-    m_val = instance;
-    return m_val.GetCR();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  12/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnECInstanceIterable   DgnActionItemContext::_GetDgnInstanceIterable() const
-    {
-    ECN::ECInstanceIterableCP ecIterable = GetInstanceIterable();
-    if (NULL != ecIterable)
-        return DgnECInstanceIterable(ECInstanceToDgnECInstanceCollectionAdapter::Create(ecIterable));
-
-    ElementHandle element = GetRootElement();
-    if (element.IsValid())
-        {
-        FindInstancesScopePtr scope = FindInstancesScope::CreateScope(element, false);
-        ECQueryPtr query = ECQuery::CreateQuery(ECQUERY_PROCESS_SearchAllClasses);
-        return Bentley::DgnPlatform::DgnECManager::GetManager().FindInstances(*scope, *query);
-        }
-
-
-    return DgnECInstanceIterable::CreateEmpty();
-    }
-#endif

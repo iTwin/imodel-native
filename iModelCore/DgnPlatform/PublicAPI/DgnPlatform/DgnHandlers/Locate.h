@@ -201,7 +201,7 @@ protected:
     virtual bool _IsSnappableModel(DgnModelP modelRef) {return true;}
     virtual SnapStatus _PerformConstraintSnap(SnapDetailP, double hotDistance, HitSource snapSource) {return SnapStatus::Success;}
     DGNVIEW_EXPORT virtual void _GetPreferredPointSnapModes (bvector<SnapMode>& snaps, HitSource source);
-    virtual uint32_t _GetKeypointDivisor() {return 1;}
+    virtual uint32_t _GetKeypointDivisor() {return 2;}
     virtual bool _IsConstraintSnapActive () {return false;}
     virtual void _SetChosenSnapMode (SnapType snapType, SnapMode snapMode) {}
     virtual void _SynchSnapMode() {}

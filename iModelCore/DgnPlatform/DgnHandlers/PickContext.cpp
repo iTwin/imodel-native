@@ -210,20 +210,18 @@ void PickOutput::_AddHit (DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPrio
             }
         }
 
-    DPoint3d    pickPtWorld;
+    DPoint3d    hitPtWorld;
     DMatrix4d   localToWorld;
 
     m_context->GetCurrLocalToWorldTrans (localToWorld);
-    m_context->FrustumToLocal (&pickPtWorld, &m_pickPointWorld, 1);
-    localToWorld.MultiplyAndRenormalize (&pickPtWorld, &pickPtWorld, 1);
+    localToWorld.MultiplyAndRenormalize (&hitPtWorld, &localPt, 1);
 
-    m_currGeomDetail.SetLocalToWorld (localToWorld);
-    m_currGeomDetail.SetClosestPointLocal (localPt);
+    m_currGeomDetail.SetClosestPoint (hitPtWorld);
     m_currGeomDetail.SetLocatePriority (priority);
     m_currGeomDetail.SetScreenDist (sqrt (distSquaredXY (hitPtScreen, m_pickPointView)));
     m_currGeomDetail.SetZValue (getAdjustedViewZ (*m_context, hitPtScreen) + m_context->GetCurrentDisplayParams()->GetNetDisplayPriority());
 
-    RefCountedPtr<HitDetail> thisHit = new HitDetail (*m_context->GetViewport(), *element, pickPtWorld, m_options.GetHitSource (), *m_context->GetViewFlags(), m_currGeomDetail);
+    RefCountedPtr<HitDetail> thisHit = new HitDetail (*m_context->GetViewport(), *element, m_pickPointWorld, m_options.GetHitSource (), *m_context->GetViewFlags(), m_currGeomDetail);
 
     if (nullptr != m_context->GetElemTopology())
         thisHit->SetElemTopology(m_context->GetElemTopology()->_Clone());
@@ -498,12 +496,11 @@ bool PickOutput::TestIndexedPolyEdge (DPoint3dCP vertsP, DPoint4dCP hVertsP, int
 
     if (proximity.closeDistanceSquared < m_pickApertureSquared)
         {
-        ICurvePrimitivePtr  curve = ICurvePrimitive::CreateLine (DSegment3d::From (edge[0], edge[1]));
-
+        ICurvePrimitivePtr  tmpCurve = ICurvePrimitive::CreateLine (DSegment3d::From (edge[0], edge[1]));
         CurvePrimitiveIdPtr newId = CurvePrimitiveId::Create (CurvePrimitiveId::Type_PolyfaceEdge, CurveTopologyId (CurveTopologyId::Type_PolyfaceEdge, closeVertexId, segmentVertexId), nullptr);
-        curve->SetId (newId.get());
-        m_currGeomDetail.SetCurvePrimitive (curve.get ());
 
+        tmpCurve->SetId (newId.get());
+        m_currGeomDetail.SetCurvePrimitive (tmpCurve.get(), m_context->GetCurrLocalToFrustumTransformCP());
         _AddHit (proximity.closePoint, NULL, priority);
 
         return true;
@@ -583,8 +580,7 @@ bool PickOutput::TestCurveVector (CurveVectorCR curves, HitPriority priority)
     if (!((m_pickApertureSquared > pickDistSquared) || (TEST_LSTYLE_BaseGeom == m_testingLStyle && m_unusableLStyleHit)))
         return false;
 
-    m_currGeomDetail.SetCurvePrimitive (location.curve);
-
+    m_currGeomDetail.SetCurvePrimitive (location.curve, m_context->GetCurrLocalToFrustumTransformCP());
     _AddHit (hitPtView, &location.point, priority);
 
     return true;
@@ -607,7 +603,8 @@ StatusInt PickOutput::_ProcessCurvePrimitive (ICurvePrimitiveCR primitive, bool 
             if (!PointWithinTolerance (viewPt))
                 break;
 
-            m_currGeomDetail.SetCurvePrimitive (&primitive, HitGeomType::Point); // NOTE: Need to set curve to create curve topo associations to arc centers!
+            // NOTE: Need to set curve to create curve topo associations to arc centers!
+            m_currGeomDetail.SetCurvePrimitive (&primitive, m_context->GetCurrLocalToFrustumTransformCP(), HitGeomType::Point);
             _AddHit (viewPt, &ellipse->center, ellipse->IsFullEllipse () ? HitPriority::Origin : HitPriority::Interior);
             break;
             }
@@ -923,18 +920,18 @@ void PickOutput::_DrawTextString (TextStringCR text, double* zDepth)
     text.ComputeBoundingShape(points);
     text.ComputeTransform().Multiply(points, _countof(points));
 
-    CurveVectorPtr  curves = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
+    CurveVectorPtr  tmpCurve = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Outer);
 
-    curves->push_back (ICurvePrimitive::CreateLineString (points, 5));
+    tmpCurve->push_back (ICurvePrimitive::CreateLineString (points, 5));
 
-    if (TestCurveVector (*curves, HitPriority::Edge))
+    if (TestCurveVector (*tmpCurve, HitPriority::Edge))
         return;
 
     DPoint3d    intersectPt;
     DVec3d      normal;
 
     // Always test for interior hit if we didn't hit origin/edge...
-    if (!boresiteToCurveVector (*curves, GetBoresite (), intersectPt, normal))
+    if (!boresiteToCurveVector (*tmpCurve, GetBoresite (), intersectPt, normal))
         return;
 
     DPoint4d    hitPtView;
@@ -942,9 +939,8 @@ void PickOutput::_DrawTextString (TextStringCR text, double* zDepth)
     m_context->LocalToView (&hitPtView, &intersectPt, 1);
 
     // Treat this as a curve hit, need bounding shape for correct snappping behavior (center/bisector/midpoint)...
-    m_currGeomDetail.SetCurvePrimitive (&(*curves->front ()));
-
-    _AddHit (hitPtView, &intersectPt, HitPriority::TestBox);
+    m_currGeomDetail.SetCurvePrimitive (&(*tmpCurve->front()), m_context->GetCurrLocalToFrustumTransformCP());
+    _AddHit (hitPtView, &intersectPt, HitPriority::TextBox);
     }
 
 /*---------------------------------------------------------------------------------**//**
