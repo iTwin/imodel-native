@@ -641,7 +641,7 @@ TEST_F (ECInstanceInserterTests, InsertInstanceWithOutProvidingSourceTargetClass
     ASSERT_EQ (stmt.Step (), ECSqlStepStatus::Done);
     stmt.Finalize ();
     //Instance insertion query without specifing Souce/TargetClassId's shouldn't work for a link table relationship if constraint isn't a single table or isn't polymorphic Constraint
-    ASSERT_EQ (stmt.Prepare (db, "INSERT INTO rc.RelationshipClassC (SourceECInstanceId, TargetECInstanceId) VALUES (?, ?)"), ECSqlStatus::InvalidECSql);
+    ASSERT_EQ (stmt.Prepare (db, "INSERT INTO rc.RelationshipClassC (SourceECInstanceId, TargetECInstanceId) VALUES (?, ?)"), ECSqlStatus::Success);
     stmt.Finalize ();
 
     //Instance insertion query without specifing Souce/TargetClassId's should work for a link table relationship if each constraint is a single table

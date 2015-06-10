@@ -314,8 +314,9 @@ BentleyStatus ViewGenerator::GetViewQueryForChild (NativeSqlBuilder& viewSql, EC
 
     //Generate Select statement
     viewSql.Append ("SELECT ");
-    
-    if (auto classIdColumn = table.FindColumnCP(ECDB_COL_ECClassId))
+
+    auto classIdColumn = table.FindColumnCP (ECDB_COL_ECClassId);
+    if (classIdColumn != nullptr)
         viewSql.Append (classIdColumn->GetName ().c_str());
     else
         viewSql.Append (firstChildClassMap->GetClass ().GetId ()).AppendSpace ().Append (ECCLASSID_COLUMNNAME);
@@ -334,63 +335,65 @@ BentleyStatus ViewGenerator::GetViewQueryForChild (NativeSqlBuilder& viewSql, EC
     viewSql.Append (" FROM ").AppendEscaped (table.GetName().c_str());
 
     NativeSqlBuilder where;
-    if (oneToManyMapping)
+    if (classIdColumn != nullptr)
         {
-        if (isPolymorphic)
+        if (oneToManyMapping)
             {
-            std::set<ECClassId> inConstraintCIDs;
-            for(auto classMap  : childClassMap)
-                inConstraintCIDs.insert (classMap->GetClass ().GetId ());
-
-            std::vector<ECClassId> notInConstraintCIDs;
-            for(auto classId  : classesMappedToTable)
+            if (isPolymorphic)
                 {
-                if (inConstraintCIDs.find(classId) == inConstraintCIDs.end())
-                    notInConstraintCIDs.push_back(classId);
-                }
+                std::set<ECClassId> inConstraintCIDs;
+                for (auto classMap : childClassMap)
+                    inConstraintCIDs.insert (classMap->GetClass ().GetId ());
 
-            //Here we want to create minimum size IN() query. So we will either exclude or include base on which one is minimum
-            if (notInConstraintCIDs.size() > inConstraintCIDs.size()) // include class ids of class we do want.
-                {
-                if (!inConstraintCIDs.empty())
+                std::vector<ECClassId> notInConstraintCIDs;
+                for (auto classId : classesMappedToTable)
                     {
-                    where.AppendParenLeft().Append (ECCLASSID_COLUMNNAME).Append (" IN (");
-                    bool isFirstItem = true;
-                    for(auto& classMap  : childClassMap)
+                    if (inConstraintCIDs.find (classId) == inConstraintCIDs.end ())
+                        notInConstraintCIDs.push_back (classId);
+                    }
+
+                //Here we want to create minimum size IN() query. So we will either exclude or include base on which one is minimum
+                if (notInConstraintCIDs.size () > inConstraintCIDs.size ()) // include class ids of class we do want.
+                    {
+                    if (!inConstraintCIDs.empty ())
                         {
-                        if (!isFirstItem)
+                        where.AppendParenLeft ().AppendQuoted(table.GetName().c_str()).AppendDot().AppendQuoted(classIdColumn->GetName().c_str()).Append (" IN (");
+                        bool isFirstItem = true;
+                        for (auto& classMap : childClassMap)
+                            {
+                            if (!isFirstItem)
                             where.AppendComma (true);
 
-                        where.Append(classMap->GetClass ().GetId());       
+                            where.Append (classMap->GetClass ().GetId ());
 
-                        isFirstItem = false;
+                            isFirstItem = false;
+                            }
+                        where.AppendParenRight ().AppendParenRight ();
                         }
-                    where.AppendParenRight ().AppendParenRight ();
                     }
-                }
-            else //exclude class ids of class we don't want. 
-                {
-                if (!notInConstraintCIDs.empty())
+                else //exclude class ids of class we don't want. 
                     {
-                    where.AppendParenLeft ().Append (ECCLASSID_COLUMNNAME).Append (" NOT IN (");
-                    bool isFirstItem = true;
-                    for (auto classId : notInConstraintCIDs)
+                    if (!notInConstraintCIDs.empty ())
                         {
-                        if (!isFirstItem)
+                        where.AppendParenLeft ().AppendQuoted (table.GetName ().c_str ()).AppendDot ().AppendQuoted (classIdColumn->GetName ().c_str ()).Append (" NOT IN (");
+                        bool isFirstItem = true;
+                        for (auto classId : notInConstraintCIDs)
+                            {
+                            if (!isFirstItem)
                             where.AppendComma (true);
 
-                        where.Append (classId);
+                            where.Append (classId);
 
-                        isFirstItem = false;
+                            isFirstItem = false;
+                            }
+                        where.AppendParenRight ().AppendParenRight ();
                         }
-                    where.AppendParenRight ().AppendParenRight ();
                     }
                 }
+            else
+               where.AppendParenLeft ().AppendQuoted (table.GetName ().c_str ()).AppendDot ().AppendQuoted (classIdColumn->GetName ().c_str ()).Append (" = ").Append (firstChildClassMap->GetClass ().GetId ()).AppendParenRight ();
             }
-        else
-            where.AppendParenLeft ().Append (ECCLASSID_COLUMNNAME).Append (" = ").Append (firstChildClassMap->GetClass ().GetId()).AppendParenRight ();
-        } 
-   
+        }
     //We allow query of struct classes.
     if (firstChildClassMap->IsMappedToSecondaryTable ())
         {
@@ -488,6 +491,33 @@ BentleyStatus ViewGenerator::CreateViewForRelationshipClassLinkTableMap (NativeS
 
     viewSql.Append (" FROM ").AppendEscaped (relationMap.GetTable ().GetName ().c_str ());
    
+    //Append secondary table JOIN
+    auto const secondaryTables = relationMap.GetSecondaryTables ();
+    auto primaryTable = &relationMap.GetTable ();
+    auto primaryECInstanceIdColumn = primaryTable->GetFilteredColumnFirst (ECDbSystemColumnECInstanceId);
+    BeAssert (primaryECInstanceIdColumn != nullptr);
+    if (!secondaryTables.empty ())
+        {
+        for (auto secondaryTable : secondaryTables)
+            {
+            auto secondaryECInstanceIdColumn = secondaryTable->GetFilteredColumnFirst (ECDbSystemColumnECInstanceId);
+            BeAssert (secondaryECInstanceIdColumn != nullptr);
+            viewSql.Append (" INNER JOIN ").AppendEscaped (secondaryTable->GetName ().c_str ()).Append (" ON ").AppendParenLeft ();
+            viewSql.AppendEscaped (secondaryTable->GetName ().c_str ()).AppendDot ().AppendEscaped (secondaryECInstanceIdColumn->GetName ().c_str ());
+            viewSql.Append (" = ");
+            if (!relationMap.GetSourceECClassIdPropMap ()->IsMappedToPrimaryTable ())
+                viewSql.AppendEscaped (primaryTable->GetName ().c_str ()).AppendDot ().AppendEscaped (relationMap.GetSourceECInstanceIdPropMap ()->GetFirstColumn ()->GetName ().c_str ());
+            else if (!relationMap.GetTargetECClassIdPropMap ()->IsMappedToPrimaryTable ())
+                viewSql.AppendEscaped (primaryTable->GetName ().c_str ()).AppendDot ().AppendEscaped (relationMap.GetTargetECInstanceIdPropMap ()->GetFirstColumn ()->GetName ().c_str ());
+            else
+                {
+                BeAssert (false && "Incorrect case");
+                return ERROR;
+                }
+
+            viewSql.AppendParenRight ();
+            }
+        }
     return BentleyStatus::SUCCESS;
     }
 
@@ -625,7 +655,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationship (NativeSqlBuilder& viewSq
                      if (classesMappedToTable.size() != 1)
                          {
                          unionQuery.Append(" WHERE ");
-                         unionQuery.AppendEscaped(column->GetName().c_str()).Append(" IN ");
+                         unionQuery.AppendEscaped (relationMap.GetTable ().GetName ().c_str ()).AppendDot ().AppendEscaped (column->GetName ().c_str ()).Append (" IN ");
                          unionQuery.AppendParenLeft();
                          
                              unionQuery.Append(cm->GetClass().GetId());
@@ -678,7 +708,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationship (NativeSqlBuilder& viewSq
                 if (classesMappedToTable.size () != ltm.size ())
                     {
                     unionQuery.Append (" WHERE ");
-                    unionQuery.AppendEscaped (column->GetName ().c_str ()).Append (" IN ");
+                    unionQuery.AppendEscaped(table->GetName().c_str()).AppendDot().AppendEscaped (column->GetName ().c_str ()).Append (" IN ");
                     unionQuery.AppendParenLeft ();
                     for (auto lt : ltm)
                         {

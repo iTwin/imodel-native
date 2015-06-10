@@ -617,6 +617,11 @@ ECSqlStatus ECSqlInsertPreparer::PrepareConstraintClassId (NativeSqlSnippets& in
     if (constraintClassIdPropMap.IsVirtual ())
         return ECSqlStatus::Success;
 
+    if (!constraintClassIdPropMap.IsMappedToPrimaryTable () || constraintClassIdPropMap.GetFirstColumn ()->GetUserFlags () == ECDbSystemColumnECClassId)
+        {
+        return ECSqlStatus::Success;
+        }
+
     auto classIdColSqlSnippet = constraintClassIdPropMap.ToNativeSql (nullptr, ECSqlType::Insert, false);
     if (!classIdColSqlSnippet.empty ())
         {
