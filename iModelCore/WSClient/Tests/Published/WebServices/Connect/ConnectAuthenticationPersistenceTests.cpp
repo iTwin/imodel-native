@@ -17,44 +17,43 @@
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 using namespace ::testing;
 
-TEST_F (ConnectAuthenticationPersistenceTests, GetCredentials_SetCredentialsCalledOnOtherPersistenceWithSameLocalState_ReturnsSameCredentials)
+TEST_F (ConnectAuthenticationPersistenceTests, GetShared_CalledTwice_ReturnsSameCredentials)
     {
     StubLocalState localState;
     auto secureStore = std::make_shared<StubSecureStore> ();
-    ConnectAuthenticationPersistence p1 (&localState, secureStore);
-    ConnectAuthenticationPersistence p2 (&localState, secureStore);
+    ConnectAuthenticationPersistence::CustomInitialize (&localState, secureStore);
 
-    p1.SetCredentials ({"A", "B"});
-    EXPECT_EQ (Credentials ("A", "B"), p2.GetCredentials ());
+    auto p1 = ConnectAuthenticationPersistence::GetShared ();
+    auto p2 = ConnectAuthenticationPersistence::GetShared ();
+
+    EXPECT_EQ (p1, p2);
     }
 
-TEST_F (ConnectAuthenticationPersistenceTests, GetToken_SetTokenCalledOnOtherPersistenceOnOtherPersistenceWithSameLocalState_ReturnsSameToken)
+TEST_F (ConnectAuthenticationPersistenceTests, GetToken_SetTokenCalled_ReturnsSameToken)
     {
     StubLocalState localState;
     auto secureStore = std::make_shared<StubSecureStore> ();
-    ConnectAuthenticationPersistence p1 (&localState, secureStore);
-    ConnectAuthenticationPersistence p2 (&localState, secureStore);
+    ConnectAuthenticationPersistence::CustomInitialize (&localState, secureStore);
+    auto persistence = ConnectAuthenticationPersistence::GetShared ();
 
     auto token = StubSamlToken ();
-    EXPECT_FALSE (token->AsString ().empty ());
-
-    p1.SetToken (token);
-    ASSERT_NE (nullptr, p2.GetToken ());
-    EXPECT_EQ (token->AsString (), p2.GetToken ()->AsString ());
+    persistence->SetToken (token);
+    ASSERT_NE (nullptr, persistence->GetToken ());
+    EXPECT_EQ (token->AsString (), persistence->GetToken ()->AsString ());
     }
 
 TEST_F (ConnectAuthenticationPersistenceTests, GetCredentials_CredentialsStoredInOldLocation_SavesToSecureStoreAndDeletesThemFromOldLocation)
     {
     StubLocalState localState;
     auto secureStore = std::make_shared<StubSecureStore> ();
-    ConnectAuthenticationPersistence p1 (&localState, secureStore);
-    ConnectAuthenticationPersistence p2 (&localState, secureStore);
+    ConnectAuthenticationPersistence::CustomInitialize (&localState, secureStore);
+    auto persistence = ConnectAuthenticationPersistence::GetShared ();
 
     localState.SaveValue ("Connect", "Username", "TestUsername");
     secureStore->legacyValues["ConnectLogin"]["TestUsername"] = "TestPassword";
     secureStore->legacyValues["ConnectToken"]["Token"] = "TestToken";
 
-    auto credentials = p1.GetCredentials ();
+    auto credentials = persistence->GetCredentials ();
     EXPECT_STREQ ("TestUsername", credentials.GetUsername ().c_str ());
     EXPECT_STREQ ("TestPassword", credentials.GetPassword ().c_str ());
 
@@ -65,9 +64,4 @@ TEST_F (ConnectAuthenticationPersistenceTests, GetCredentials_CredentialsStoredI
     EXPECT_STREQ ("TestUsername", secureStore->values["Connect"]["Username"].asString ().c_str ());
     EXPECT_STREQ ("TestPassword", secureStore->values["Connect"]["Password"].asString ().c_str ());
     EXPECT_STREQ ("TestToken", secureStore->values["Connect"]["Token"].asString ().c_str ());
-
-    // Load from new storage
-    credentials = p2.GetCredentials ();
-    EXPECT_STREQ ("TestUsername", credentials.GetUsername ().c_str ());
-    EXPECT_STREQ ("TestPassword", credentials.GetPassword ().c_str ());
     }

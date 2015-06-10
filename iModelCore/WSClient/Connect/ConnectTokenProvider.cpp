@@ -18,7 +18,7 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 * @bsimethod                                                    Vincas.Razma    12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConnectTokenProvider::ConnectTokenProvider (std::shared_ptr<IConnectAuthenticationPersistence> customPersistence) :
-m_persistence (customPersistence ? customPersistence : std::make_shared<ConnectAuthenticationPersistence> ())
+m_persistence (customPersistence ? customPersistence : ConnectAuthenticationPersistence::GetShared ())
     {
     }
 

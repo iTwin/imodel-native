@@ -931,6 +931,21 @@ TEST_F (WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV1_SendsPostReque
     client->SendUpdateObjectRequest ({"TestSchema.TestClass", "TestId"}, propertiesJson)->Wait ();
     }
 
+TEST_F (WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV1AndETagPassed_SendsRequestWithIfMatch)
+    {
+    auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", StubClientInfo (), nullptr, GetHandlerPtr ());
+
+    GetHandler ().ExpectRequests (2);
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi13 ());
+    GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
+        {
+        EXPECT_STREQ ("TestETag", request.GetHeaders ().GetIfMatch ());
+        return StubHttpResponse ();
+        });
+
+    client->SendUpdateObjectRequest ({"A.B", "C"}, Json::objectValue, "TestETag")->Wait ();
+    }
+
 TEST_F (WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV1ResponseIsOK_Success)
     {
     auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", StubClientInfo (), nullptr, GetHandlerPtr ());
@@ -971,6 +986,21 @@ TEST_F (WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV2_SendsPostReque
         });
 
     client->SendUpdateObjectRequest ({"TestSchema.TestClass", "TestId"}, ToJson (R"({"TestProperty" : "TestValue" })"))->Wait ();
+    }
+
+TEST_F (WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV2AndETagPassed_SendsRequestWithoutIfMatch)
+    {
+    auto client = WSRepositoryClient::Create ("https://srv.com/ws", "foo", StubClientInfo (), nullptr, GetHandlerPtr ());
+
+    GetHandler ().ExpectRequests (2);
+    GetHandler ().ForRequest (1, StubWSInfoHttpResponseWebApi20 ());
+    GetHandler ().ForRequest (2, [=] (HttpRequestCR request)
+        {
+        EXPECT_EQ (nullptr, request.GetHeaders ().GetIfMatch ());
+        return StubHttpResponse ();
+        });
+
+    client->SendUpdateObjectRequest ({"A.B", "C"}, Json::objectValue, "TestETag")->Wait ();
     }
 
 TEST_F (WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV2ResponseIsOK_Success)
