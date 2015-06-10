@@ -28,7 +28,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ConnectAuthenticationPersistence : public IConnec
         static ConnectAuthenticationPersistencePtr s_shared;
         static std::once_flag s_shared_once;
 
-        mutable BeCriticalSection m_cs;
+        mutable BeMutex m_cs;
         ILocalState& m_localState;
         std::shared_ptr<ISecureStore> m_secureStore;
 
