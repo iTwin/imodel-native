@@ -2681,28 +2681,6 @@ void ViewContext::_DrawTextString (TextStringCR text)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      09/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_SetLocatePriority (int priority)
-    {
-    IPickGeomP      pickGeom;
-
-    if (NULL != (pickGeom = GetIPickGeom()))
-        pickGeom->GetGeomDetail().SetLocatePriority (static_cast<HitPriority> (priority));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      09/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_SetNonSnappable (bool unsnappable)
-    {
-    IPickGeomP      pickGeom;
-
-    if (NULL != (pickGeom = GetIPickGeom()))
-        pickGeom->GetGeomDetail().SetNonSnappable (unsnappable);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::SetLinestyleTangents (DPoint3dCP start, DPoint3dCP end)

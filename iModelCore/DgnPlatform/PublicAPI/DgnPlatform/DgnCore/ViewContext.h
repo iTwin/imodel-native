@@ -449,8 +449,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _ClearZ ();
     DGNPLATFORM_EXPORT virtual ScanCriteria::Result _CheckNodeRange(ScanCriteriaCR, DRange3dCR, bool is3d);
     DGNPLATFORM_EXPORT virtual void _DrawAligned (DVec3dCR axis, DPoint3dCR origin, AlignmentMode type, IStrokeAligned& stroker);
-    DGNPLATFORM_EXPORT virtual void _SetLocatePriority (int priority);
-    DGNPLATFORM_EXPORT virtual void _SetNonSnappable (bool unsnappable);
 
     DGNPLATFORM_EXPORT ViewContext ();
     DGNPLATFORM_EXPORT virtual ~ViewContext ();

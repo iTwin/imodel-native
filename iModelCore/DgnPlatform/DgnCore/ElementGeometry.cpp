@@ -2648,7 +2648,7 @@ void ElementGeometryCollection::Iterator::ToNext()
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  04/2015
 +===============+===============+===============+===============+===============+======*/
-struct ElementGeometryCollectionContext : public NullContext
+struct ElementGeometryCollectionContext : NullContext
 {
     DEFINE_T_SUPER(NullContext)
 protected:
