@@ -1673,7 +1673,7 @@ TEST_F(ElementDependencyGraph, ModelDependenciesInvalidDirectionTest)
     auto m2id = m2->GetModelId();
 
     // Make m2 depend on m1
-    auto modelClassId = m_db->Schemas().GetECClass("dgn", "Model")->GetId();
+    auto modelClassId = m_db->Schemas().GetECClass("dgn", "PhysicalModel")->GetId();
     auto m1key = EC::ECInstanceKey(modelClassId, EC::ECInstanceId(m1id.GetValue()));
     auto m2key = EC::ECInstanceKey(modelClassId, EC::ECInstanceId(m2id.GetValue()));
 
