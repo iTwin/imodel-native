@@ -320,8 +320,8 @@ BentleyStatus ClassMapInfo::InitializeFromClassMapCA()
         return SUCCESS;
 
     Utf8String mapStrategyStr, mapStrategyOptionsStr;
-    bool ecstat = customClassMap.TryGetMapStrategy(mapStrategyStr, mapStrategyOptionsStr);
-    if (!ecstat)
+    ECObjectsStatus ecstat = customClassMap.TryGetMapStrategy(mapStrategyStr, mapStrategyOptionsStr);
+    if (ECOBJECTS_STATUS_Success != ecstat)
         return ERROR;
 
     if (!mapStrategyStr.empty() || !mapStrategyOptionsStr.empty())
@@ -339,16 +339,16 @@ BentleyStatus ClassMapInfo::InitializeFromClassMapCA()
         }
 
     ecstat = customClassMap.TryGetTableName(m_tableName);
-    if (!ecstat)
+    if (ECOBJECTS_STATUS_Success != ecstat)
         return ERROR;
 
     ecstat = customClassMap.TryGetECInstanceIdColumn(m_ecInstanceIdColumnName);
-    if (!ecstat)
+    if (ECOBJECTS_STATUS_Success != ecstat)
         return ERROR;
 
     bvector<ECDbClassMap::DbIndex> indices;
     ecstat = customClassMap.TryGetIndexes(indices);
-    if (!ecstat)
+    if (ECOBJECTS_STATUS_Success != ecstat)
         return ERROR;
 
     for (ECDbClassMap::DbIndex const& index : indices)
