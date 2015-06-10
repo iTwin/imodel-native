@@ -450,15 +450,14 @@ MapStatus ClassMap::AddPropertyMaps (IClassMap const* parentClassMap, ECDbClassM
         {
         WCharCP propertyAccessString = property->GetName ().c_str ();
         propMap = PropertyMap::CreateAndEvaluateMapping (*property, m_ecDbMap, m_ecClass, propertyAccessString, &GetTable(), nullptr);
-        BeAssert (propMap != nullptr);
         if (propMap == nullptr)
-            continue;
+            return MapStatus::Error;
+
         if (GetPropertyMap (propertyAccessString) != nullptr)
             {
             BeAssert (GetPropertyMap (propertyAccessString) == nullptr && " it should not be there");
             return MapStatus::Error;
             }
-
 
         if (loadInfo == nullptr)
             {

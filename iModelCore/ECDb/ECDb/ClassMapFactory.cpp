@@ -99,11 +99,14 @@ ClassMapPtr ClassMapFactory::Load (MapStatus& mapStatus, ECClassCR ecClass, ECDb
 ClassMapPtr ClassMapFactory::Create (MapStatus& mapStatus, SchemaImportContext const& schemaImportContext, ECN::ECClassCR ecClass, ECDbMapCR ecdbMap)
     {
     if (ecdbMap.AssertIfNotMapping())
+        {
+        mapStatus = MapStatus::Error;
         return nullptr;
+        }
 
     BeAssert (ecdbMap.GetClassMap (ecClass, false) == nullptr);
 
-    auto classMapInfo = ClassMapInfoFactory::CreateFromHint (mapStatus, schemaImportContext, ecClass, ecdbMap);
+    auto classMapInfo = ClassMapInfoFactory::CreateFromECDbMapCustomAttributes (mapStatus, schemaImportContext, ecClass, ecdbMap);
     if (classMapInfo == nullptr)
         return nullptr;
 

@@ -19,11 +19,10 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ClassMapInfoPtr ClassMapInfoFactory::CreateFromHint (MapStatus& mapStatus, SchemaImportContext const& schemaImportContext, ECN::ECClassCR ecClass, ECDbMapCR ecDbMap)
+ClassMapInfoPtr ClassMapInfoFactory::CreateFromECDbMapCustomAttributes(MapStatus& mapStatus, SchemaImportContext const& schemaImportContext, ECN::ECClassCR ecClass, ECDbMapCR ecDbMap)
     {
     mapStatus = MapStatus::Error;
     auto info = CreateInstance (ecClass, ecDbMap, nullptr, nullptr, ECDbMapStrategy::GetDefaultMapStrategy());
-    BeAssert (info != nullptr);
     if (info == nullptr)
         return nullptr;
 
@@ -80,11 +79,17 @@ ClassMapInfoPtr ClassMapInfoFactory::CreateFromHint (MapStatus& mapStatus, Schem
 //static
 ClassMapInfoPtr ClassMapInfoFactory::CreateInstance (ECClassCR ecClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, ECDbMapStrategy mapStrategy)
     {
+    ClassMapInfoPtr info = nullptr;
     ECRelationshipClassCP ecRelationshipClass = ecClass.GetRelationshipClassCP ();
     if (ecRelationshipClass != nullptr)
-        return RelationshipClassMapInfo::Create (*ecRelationshipClass, ecDbMap, tableName, primaryKeyColumnName, mapStrategy);
+        info = RelationshipClassMapInfo::Create(*ecRelationshipClass, ecDbMap, tableName, primaryKeyColumnName, mapStrategy);
     else
-        return ClassMapInfo::Create (ecClass, ecDbMap, tableName, primaryKeyColumnName, mapStrategy);
+        info = ClassMapInfo::Create (ecClass, ecDbMap, tableName, primaryKeyColumnName, mapStrategy);
+
+    if (info == nullptr || info->_Initialize() != SUCCESS)
+        return nullptr;
+
+    return info;
     }
 
 
@@ -96,6 +101,7 @@ ClassMapInfoPtr ClassMapInfoFactory::CreateInstance (ECClassCR ecClass, ECDbMapC
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+------
+//static
 ClassMapInfoPtr ClassMapInfo::Create (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, ECDbMapStrategy mapStrategy)
     {
     return new ClassMapInfo (ecClass, ecDbMap, tableName, primaryKeyColumnName, mapStrategy);
@@ -106,29 +112,37 @@ ClassMapInfoPtr ClassMapInfo::Create (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap,
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassMapInfo::ClassMapInfo (ECClassCR ecClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, ECDbMapStrategy mapStrategy)
 : m_ecDbMap (ecDbMap), m_ecClass (ecClass), m_ecInstanceIdColumnName (primaryKeyColumnName), m_tableName (tableName), m_isMapToVirtualTable (IClassMap::IsAbstractECClass (ecClass)), m_ClassHasCurrentTimeStampProperty (NULL), m_parentClassMap (nullptr), m_strategy (mapStrategy)
+    {}
+
+//---------------------------------------------------------------------------------
+//@bsimethod                                 Affan.Khan                            07/2012
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ClassMapInfo::_Initialize()
     {
-  //  if (Utf8String::IsNullOrEmpty (tableName))
-        _InitializeFromSchema ();
+    //  if (Utf8String::IsNullOrEmpty (tableName))
+    if (SUCCESS != _InitializeFromSchema())
+        return ERROR;
 
     //Default values for table name and primary key column name
-    if (m_tableName.empty ())
+    if (m_tableName.empty())
         {
         // ClassMappingRule: if hint does not supply a table name, use {ECSchema prefix}_{ECClass name}
-        m_tableName = ResolveTablePrefix (ecClass);
-        if (!IClassMap::IsMapToSecondaryTableStrategy (ecClass))  // ClassMappingRule: assumes that structs are always used in arrays
-            m_tableName.append ("_");
+        m_tableName = ResolveTablePrefix(m_ecClass);
+        if (!IClassMap::IsMapToSecondaryTableStrategy(m_ecClass))  // ClassMappingRule: assumes that structs are always used in arrays
+            m_tableName.append("_");
         else
-            m_tableName.append ("_ArrayOf");
+            m_tableName.append("_ArrayOf");
 
-        m_tableName.append (Utf8String (ecClass.GetName ()));
+        m_tableName.append(Utf8String(m_ecClass.GetName()));
         }
 
-    if (m_ecInstanceIdColumnName.empty ())
+    if (m_ecInstanceIdColumnName.empty())
         {
         // ClassMappingRule: if hint does not supply an ECInstanceId (primary key) column name, use ECDB_COL_ECInstanceId
-        m_ecInstanceIdColumnName =  ECDB_COL_ECInstanceId;
+        m_ecInstanceIdColumnName = ECDB_COL_ECInstanceId;
         }
 
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -247,27 +261,30 @@ MapStatus ClassMapInfo::EvaluateInheritedMapStrategy ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Affan.Khan                07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClassMapInfo::_InitializeFromSchema ()
+BentleyStatus ClassMapInfo::_InitializeFromSchema ()
     {
-    InitializeFromClassMapCA ();
-    InitializeFromClassHasCurrentTimeStampProperty();
+    if (SUCCESS != InitializeFromClassMapCA() || SUCCESS != InitializeFromClassHasCurrentTimeStampProperty())
+        return ERROR;
+
     // Add indices for important identifiers
-    ProcessStandardKeys (m_ecClass, L"BusinessKeySpecification");
-    ProcessStandardKeys (m_ecClass, L"GlobalIdSpecification");
-    ProcessStandardKeys (m_ecClass, L"SyncIDSpecification");
+    if (SUCCESS != ProcessStandardKeys(m_ecClass, L"BusinessKeySpecification") ||
+        SUCCESS != ProcessStandardKeys(m_ecClass, L"GlobalIdSpecification") ||
+        SUCCESS != ProcessStandardKeys(m_ecClass, L"SyncIDSpecification"))
+        return ERROR;
     
     //TODO: VerifyThatTableNameIsNotReservedName, e.g. dgn element table, etc.
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 muhammad.zaighum                01/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-void ClassMapInfo::InitializeFromClassHasCurrentTimeStampProperty()
+BentleyStatus ClassMapInfo::InitializeFromClassHasCurrentTimeStampProperty()
     {
     auto classHint = CustomAttributeReader::Read(m_ecClass, L"ClassHasCurrentTimeStampProperty");
 
     if (classHint == nullptr)
-        return;
+        return SUCCESS;
    
     WString propertyName;
     ECValue v;
@@ -275,10 +292,10 @@ void ClassMapInfo::InitializeFromClassHasCurrentTimeStampProperty()
         {
         propertyName = v.GetString();
         ECPropertyP dateTimeProperty = m_ecClass.GetPropertyP(propertyName);
-        if (NULL == dateTimeProperty)
+        if (nullptr == dateTimeProperty)
             {
             BeAssert(false && "ClassHasCurrentTimeStamp Property Not Found in ECClass");
-            return;
+            return ERROR;
             }
         if (dateTimeProperty->GetTypeName().Equals(L"dateTime"))
             {
@@ -287,59 +304,73 @@ void ClassMapInfo::InitializeFromClassHasCurrentTimeStampProperty()
         else
             {
             BeAssert(false && "Property is not of type dateTime");
+            return ERROR;
             }
         }
+
+    return SUCCESS;
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-void ClassMapInfo::InitializeFromClassMapCA ()
+BentleyStatus ClassMapInfo::InitializeFromClassMapCA()
     {
-    ECDbMapStrategy mapStrategy(Strategy::DoNotMap);
     ECDbClassMap customClassMap;
-    if (ECDbMapCustomAttributeHelper::TryGetClassMap(customClassMap, m_ecClass))
+    if (!ECDbMapCustomAttributeHelper::TryGetClassMap(customClassMap, m_ecClass))
+        return SUCCESS;
+
+    Utf8String mapStrategyStr, mapStrategyOptionsStr;
+    bool ecstat = customClassMap.TryGetMapStrategy(mapStrategyStr, mapStrategyOptionsStr);
+    if (!ecstat)
+        return ERROR;
+
+    if (!mapStrategyStr.empty() || !mapStrategyOptionsStr.empty())
         {
-        Utf8String mapStrategyStr, mapStrategyOptionsStr;
-        if (customClassMap.TryGetMapStrategy(mapStrategyStr, mapStrategyOptionsStr) &&
-            mapStrategy.Parse(mapStrategy, mapStrategyStr.c_str(), mapStrategyOptionsStr.c_str()) == SUCCESS)
+        ECDbMapStrategy mapStrategy(Strategy::DoNotMap);
+        if (mapStrategy.Parse(mapStrategy, mapStrategyStr.c_str(), mapStrategyOptionsStr.c_str()) != SUCCESS)
+            return ERROR;
+
+        GetMapStrategyR() = mapStrategy;
+        if (GetMapStrategyR().IsTablePerHierarchy() || GetMapStrategyR().IsSharedTableForThisClass())
             {
-            GetMapStrategyR() = mapStrategy;
-            if (GetMapStrategyR().IsTablePerHierarchy() || GetMapStrategyR().IsSharedTableForThisClass())
-                {
-                if (m_isMapToVirtualTable)
-                    m_isMapToVirtualTable = false;
-                }
-            }
-
-        Utf8String tableName;
-        if (customClassMap.TryGetTableName(tableName))
-            m_tableName = tableName;
-
-        Utf8String ecInstanceIdColumnName;
-        if (customClassMap.TryGetECInstanceIdColumn(ecInstanceIdColumnName))
-            m_ecInstanceIdColumnName = ecInstanceIdColumnName;
-
-        bvector<ECDbClassMap::DbIndex> indices;
-        if (customClassMap.TryGetIndexes(indices))
-            {
-            for (ECDbClassMap::DbIndex const& index : indices)
-                {
-                ClassIndexInfoPtr indexInfo = ClassIndexInfo::Create(index);
-                if (indexInfo != nullptr)
-                    m_dbIndexes.push_back(indexInfo);
-                }
+            if (m_isMapToVirtualTable)
+                m_isMapToVirtualTable = false;
             }
         }
+
+    ecstat = customClassMap.TryGetTableName(m_tableName);
+    if (!ecstat)
+        return ERROR;
+
+    ecstat = customClassMap.TryGetECInstanceIdColumn(m_ecInstanceIdColumnName);
+    if (!ecstat)
+        return ERROR;
+
+    bvector<ECDbClassMap::DbIndex> indices;
+    ecstat = customClassMap.TryGetIndexes(indices);
+    if (!ecstat)
+        return ERROR;
+
+    for (ECDbClassMap::DbIndex const& index : indices)
+        {
+        ClassIndexInfoPtr indexInfo = ClassIndexInfo::Create(index);
+        if (indexInfo == nullptr)
+            return ERROR;
+
+        m_dbIndexes.push_back(indexInfo);
+        }
+
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Affan.Khan                07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClassMapInfo::ProcessStandardKeys (ECClassCR ecClass, WCharCP customAttributeName)
+BentleyStatus ClassMapInfo::ProcessStandardKeys (ECClassCR ecClass, WCharCP customAttributeName)
     {
     StandardKeySpecification::Type keyType = StandardKeySpecification::GetTypeFromString(customAttributeName);
     if (keyType == StandardKeySpecification::Type::None)
-        return;
+        return SUCCESS;
 
     IECInstancePtr ca = ecClass.GetCustomAttribute (customAttributeName);
     if (ca.IsValid())
@@ -358,12 +389,18 @@ void ClassMapInfo::ProcessStandardKeys (ECClassCR ecClass, WCharCP customAttribu
             {
             //Create unique not null index on provided property
             ECPropertyP key;
-            if ( nullptr == (key = ecClass.GetPropertyP(v.GetString())))
+            if (nullptr == (key = ecClass.GetPropertyP(v.GetString())))
+                {
                 LOG.errorv(L"Rejecting user specified %ls on class %ls because property specified in it '%ls' doesn't exist in class", customAttributeName, ecClass.GetFullName(), v.GetString());
+                return ERROR;
+                }
             else
                 {
                 if (key->GetAsPrimitiveProperty() == nullptr)
+                    {
                     LOG.errorv(L"Rejecting user specified %ls on class %ls because specified property is not primitive.", customAttributeName, ecClass.GetFullName());
+                    return ERROR;
+                    }
                 else
                     {
                     PrimitiveType ectype = key->GetAsPrimitiveProperty()->GetType();
@@ -382,11 +419,16 @@ void ClassMapInfo::ProcessStandardKeys (ECClassCR ecClass, WCharCP customAttribu
                         m_standardKeys.push_back(spec);
                         }
                     else
+                        {
                         LOG.errorv(L"Rejecting user specified %ls on class %ls because specified property type not supported. Supported types are Binary, Boolean, DateTime, Double, Integer, Long and String.", customAttributeName, ecClass.GetFullName());
+                        return ERROR;
+                        }
                     }
                 }
             } 
         }
+
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -484,7 +526,7 @@ Utf8String ClassMapInfo::ResolveTablePrefix (ECClassCR ecClass)
     if (ECDbMapCustomAttributeHelper::TryGetSchemaMap (customSchemaMap, schema))
         {
         Utf8String tablePrefix;
-        if (customSchemaMap.TryGetTablePrefix(tablePrefix))
+        if (customSchemaMap.TryGetTablePrefix(tablePrefix) == ECOBJECTS_STATUS_Success && !tablePrefix.empty ())
             return tablePrefix;
         }
 
@@ -541,18 +583,28 @@ RelationshipClassMapInfo::RelationshipClassMapInfo (ECRelationshipClassCR relati
      : ClassMapInfo (relationshipClass, ecDbMap, tableName, primaryKeyColumnName, mapStrategy),
         m_userPreferredDirection (PreferredDirection::Unspecified), 
         m_allowDuplicateRelationships(TriState::Default)
-    {
+    {}
 
-    _InitializeFromSchema (); //Necessary even when loading from db as part of the info is held in the hint CA stored in the db
-    DetermineCardinality ();
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Ramanujam.Raman                07/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus RelationshipClassMapInfo::_Initialize()
+    {
+    if (SUCCESS != ClassMapInfo::_Initialize())
+        return ERROR;
+
+    DetermineCardinality();
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Ramanujam.Raman                07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelationshipClassMapInfo::_InitializeFromSchema ()
+BentleyStatus RelationshipClassMapInfo::_InitializeFromSchema ()
     {  
-    ClassMapInfo::_InitializeFromSchema();
+    if (SUCCESS != ClassMapInfo::_InitializeFromSchema())
+        return ERROR;
+
     auto relClass = GetECClass ().GetRelationshipClassCP ();
     BeAssert (relClass != nullptr);
     auto relClassHint = RelationshipClassHintReader::ReadHint (*relClass);
@@ -591,6 +643,8 @@ void RelationshipClassMapInfo::_InitializeFromSchema ()
 
     if (!m_targetInfo.GetECInstanceIdColumn ().empty ())
         m_targetECInstanceIdColumn = m_targetInfo.GetECInstanceIdColumn ();
+
+    return SUCCESS;
     }
     
 //---------------------------------------------------------------------------------
