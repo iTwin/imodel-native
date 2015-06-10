@@ -1290,24 +1290,26 @@ ECSqlTestDataset ECSqlInsertTestDataset::RelationshipEndTableMappingTests (ECDbT
     ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasTHBase_NN (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (1005, 234, %lld);",
                     thBaseClassId);
     ECSqlStatementCrudTestDatasetHelper::AddNonSelect (dataset, ecsqlStr.c_str (), 1);
-    }
+        }
 
     {
     Utf8String ecsqlStr;
     ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasTHBase_NN (SourceECInstanceId, SourceECClassId, TargetECInstanceId) VALUES (1006, %lld, 234);",
-                    psaClassId);
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsqlStr.c_str (), IECSqlExpectedResult::Category::Invalid);
+            psaClassId);
+    ECSqlStatementCrudTestDatasetHelper::AddNonSelect (dataset, ecsqlStr.c_str (), 1);
     }
 
-    ecsql = "INSERT INTO ecsql.PSAHasTHBase_NN (SourceECInstanceId, TargetECInstanceId) VALUES (1007, 234);";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
-
+    {
+    Utf8String ecsqlStr;
+    ecsqlStr = "INSERT INTO ecsql.PSAHasTHBase_NN (SourceECInstanceId, TargetECInstanceId) VALUES (1007, 234);";
+    ECSqlStatementCrudTestDatasetHelper::AddNonSelect (dataset, ecsqlStr.c_str (), 1);
+    }
     //mismatching class ids
     {
     Utf8String ecsqlStr;
     ecsqlStr.Sprintf ("INSERT INTO ecsql.PSAHasTHBase_NN (SourceECInstanceId, TargetECInstanceId, TargetECClassId) VALUES (1008, 234, %lld);",
                 psaClassId);
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsqlStr.c_str (), IECSqlExpectedResult::Category::Invalid);
+    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsqlStr.c_str (), IECSqlExpectedResult::Category::Invalid);;
     }
 
     {
