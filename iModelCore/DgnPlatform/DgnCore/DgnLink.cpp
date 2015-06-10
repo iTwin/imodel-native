@@ -240,7 +240,7 @@ DgnLinks::OnElementIterator::const_iterator DgnLinks::OnElementIterator::begin()
     {
     if (!m_stmt.IsValid())
         {
-        Utf8String sql = MakeSqlString("SELECT Link.Id,Link.Type,Link.DisplayLabel FROM " DGN_TABLE(DGN_CLASSNAME_Link) " Link INNER JOIN " DGN_TABLE(DGN_RELNAME_ElementHasLinks) " Rel ON Link.Id=Rel.LinkId WHERE Rel.ElementClassId=? AND Rel.ElementId=?", true);
+        Utf8String sql = MakeSqlString ("SELECT Link.Id,Link.Type,Link.DisplayLabel FROM " DGN_TABLE (DGN_CLASSNAME_Link) " Link INNER JOIN " DGN_TABLE (DGN_RELNAME_ElementHasLinks) " Rel ON Link.Id=Rel.LinkId INNER JOIN " DGN_TABLE (DGN_CLASSNAME_Element) " Elm ON Elm.Id=Rel.ElementId WHERE Elm.ECClassId=? AND Elm.Id=?", true);
         m_db->GetCachedStatement(m_stmt, sql.c_str());
         m_stmt->BindInt64(1, m_elementKey.GetECClassId());
         m_stmt->BindId(2, m_elementKey.GetECInstanceId());
@@ -259,7 +259,7 @@ DgnLinks::OnElementIterator::const_iterator DgnLinks::OnElementIterator::begin()
 //---------------------------------------------------------------------------------------
 size_t DgnLinks::OnElementIterator::QueryCount() const
     {
-    Utf8String sql = MakeSqlString("SELECT COUNT(*) FROM " DGN_TABLE(DGN_RELNAME_ElementHasLinks) " WHERE ElementClassId=? AND ElementId=?", true);
+    Utf8String sql = MakeSqlString ("SELECT COUNT(*) FROM " DGN_TABLE (DGN_RELNAME_ElementHasLinks) " Rel INNER JOIN " DGN_TABLE (DGN_CLASSNAME_Element) " Elm ON Elm.Id = Rel.ElementId WHERE Elm.ECClassId = ? AND Elm.Id = ? ", true);
 
     Statement query;
     query.Prepare(*m_db, sql.c_str());
@@ -287,7 +287,7 @@ DgnLinks::ReferencesLinkIterator::const_iterator DgnLinks::ReferencesLinkIterato
     {
     if (!m_stmt.IsValid())
         {
-        Utf8String sql = MakeSqlString("SELECT ElementClassId,ElementId FROM " DGN_TABLE(DGN_RELNAME_ElementHasLinks) " WHERE LinkId=?", true);
+        Utf8String sql = MakeSqlString ("SELECT Elm.ECClassId,Elm.Id FROM " DGN_TABLE (DGN_RELNAME_ElementHasLinks) " Rel INNER JOIN " DGN_TABLE (DGN_CLASSNAME_Element) " Elm ON Elm.Id = Rel.ElementId WHERE Rel.LinkId=?", true);
         m_db->GetCachedStatement(m_stmt, sql.c_str());
         m_stmt->BindId(1, m_linkId);
         m_params.Bind(*m_stmt);
@@ -408,11 +408,10 @@ BentleyStatus DgnLinks::InsertOnElement(DgnElementKey elementKey, DgnLinkId link
     PRECONDITION(BE_SQLITE_OK == m_dgndb.GetNextRepositoryBasedId(nextId, DGN_TABLE(DGN_RELNAME_ElementHasLinks), "Id"), ERROR);
 
     Statement insert;
-    insert.Prepare(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_RELNAME_ElementHasLinks) " (Id,ElementId,ElementClassId,LinkId) VALUES (?,?,?,?)");
+    insert.Prepare(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_RELNAME_ElementHasLinks) " (Id,ElementId,LinkId) VALUES (?,?,?)");
     insert.BindId(1, nextId);
     insert.BindId(2, elementKey.GetECInstanceId());
-    insert.BindInt64(3, elementKey.GetECClassId());
-    insert.BindId(4, linkId);
+    insert.BindId(3, linkId);
 
     POSTCONDITION(BE_SQLITE_DONE == insert.Step(), ERROR);
 

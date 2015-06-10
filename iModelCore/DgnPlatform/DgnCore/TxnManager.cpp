@@ -413,8 +413,6 @@ void TxnSummary::AddAffectedDependency(BeSQLite::EC::ECInstanceId const& relid, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 TxnSummary::TxnSummary(DgnDbR db) : m_dgndb(db), m_modelDepsChanged(false), m_elementDepsChanged(false) 
     {
-    static bool s_aSummaryExists=false;
-
     BeAssert(!db.IsReadonly());
     }
 

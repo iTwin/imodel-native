@@ -170,7 +170,7 @@ public:
 /*=================================================================================**//**
 * @bsiclass                                                     KeithBentley    03/01
 +===============+===============+===============+===============+===============+======*/
-struct  ElementLocateManager
+struct EXPORT_VTABLE_ATTRIBUTE ElementLocateManager
 {
 //__PUBLISH_SECTION_END__
     friend struct ElementPicker;
