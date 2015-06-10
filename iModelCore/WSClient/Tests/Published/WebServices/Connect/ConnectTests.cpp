@@ -14,7 +14,7 @@ using namespace ::testing;
 
 void ConnectTests::SetUp ()
     {
-    Connect::Initialize (GetHandlerPtr ());
+    Connect::Initialize (StubClientInfo (), GetHandlerPtr ());
     }
 
 void ConnectTests::TearDown ()

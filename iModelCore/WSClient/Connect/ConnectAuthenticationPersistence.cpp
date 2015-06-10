@@ -8,30 +8,27 @@
 #include "ClientInternal.h"
 #include <WebServices/Connect/ConnectAuthenticationPersistence.h>
 
-#include <MobileDgn/Utils/SecureStore.h>
-
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_MOBILEDGN
-
-#define SecureStoreNameSpace_ConnectLogin       "ConnectLogin"
-#define SecureStoreNameSpace_ConnectToken       "ConnectToken"
-#define SecureStoreKey_Token                    "Token"
-
-#define LocalStateNameSpace_Connect             "Connect"
-#define LocalStateKey_Username                  "Username"
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
-#define LOCALSTATE_Namespace_BentleyConnect "BentleyCONNECT"
-#define LOCALSTATE_Key_Username             "Username"
-#define LOCALSTATE_Key_Token                "Token"
+#define SecureStoreNameSpace_Connect    "Connect"
+#define SecureStoreKey_Token            "Token"
+#define SecureStoreKey_Username         "Username"
+#define SecureStoreKey_Password         "Password"
 
 bvector<std::function<void ()>> ConnectAuthenticationPersistence::s_onUserChangedCallbacks;
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-ConnectAuthenticationPersistence::ConnectAuthenticationPersistence (MobileDgn::ILocalState* customLocalState) :
-m_localState (customLocalState ? *customLocalState : MobileDgnApplication::App ().LocalState ())
+ConnectAuthenticationPersistence::ConnectAuthenticationPersistence
+(
+ILocalState* customLocalState,
+std::shared_ptr<ISecureStore> customSecureStore
+) :
+m_localState (customLocalState ? *customLocalState : MobileDgnApplication::App ().LocalState ()),
+m_secureStore (customSecureStore ? customSecureStore : std::make_shared<SecureStore> (&m_localState))
     {
     }
 
@@ -40,6 +37,8 @@ m_localState (customLocalState ? *customLocalState : MobileDgnApplication::App (
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectAuthenticationPersistence::SetCredentials (CredentialsCR credentials)
     {
+    UpgradeIfNeeded ();
+
     if (!s_onUserChangedCallbacks.empty ())
         {
         auto oldCreds = GetCredentials ();
@@ -53,8 +52,8 @@ void ConnectAuthenticationPersistence::SetCredentials (CredentialsCR credentials
             }
         }
 
-    m_localState.SaveValue (LocalStateNameSpace_Connect, LocalStateKey_Username, credentials.GetUsername ());
-    SecureStore (&m_localState).SaveValue (SecureStoreNameSpace_ConnectLogin, credentials.GetUsername ().c_str (), credentials.GetPassword ().c_str ());
+    m_secureStore->SaveValue (SecureStoreNameSpace_Connect, SecureStoreKey_Username, credentials.GetUsername ().c_str ());
+    m_secureStore->SaveValue (SecureStoreNameSpace_Connect, SecureStoreKey_Password, credentials.GetPassword ().c_str ());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -62,8 +61,11 @@ void ConnectAuthenticationPersistence::SetCredentials (CredentialsCR credentials
 +---------------+---------------+---------------+---------------+---------------+------*/
 Credentials ConnectAuthenticationPersistence::GetCredentials () const
     {
-    Utf8String username = m_localState.GetValue (LocalStateNameSpace_Connect, LocalStateKey_Username).asString ();
-    Utf8String password = SecureStore (&m_localState).LoadValue (SecureStoreNameSpace_ConnectLogin, username.c_str ());
+    UpgradeIfNeeded ();
+
+    Utf8String username = m_secureStore->LoadValue (SecureStoreNameSpace_Connect, SecureStoreKey_Username);
+    Utf8String password = m_secureStore->LoadValue (SecureStoreNameSpace_Connect, SecureStoreKey_Password);
+
     return Credentials (std::move (username), std::move (password));
     }
 
@@ -72,7 +74,7 @@ Credentials ConnectAuthenticationPersistence::GetCredentials () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectAuthenticationPersistence::SetToken (SamlTokenPtr token)
     {
-    SecureStore (&m_localState).SaveValue (SecureStoreNameSpace_ConnectToken, SecureStoreKey_Token, token ? token->AsString ().c_str () : "");
+    m_secureStore->SaveValue (SecureStoreNameSpace_Connect, SecureStoreKey_Token, token ? token->AsString ().c_str () : "");
     m_token.reset ();
     }
 
@@ -83,7 +85,7 @@ SamlTokenPtr ConnectAuthenticationPersistence::GetToken () const
     {
     if (nullptr == m_token)
         {
-        Utf8String tokenStr = SecureStore (&m_localState).LoadValue (SecureStoreNameSpace_ConnectToken, SecureStoreKey_Token);
+        Utf8String tokenStr = m_secureStore->LoadValue (SecureStoreNameSpace_Connect, SecureStoreKey_Token);
         if (tokenStr.empty ())
             {
             return nullptr;
@@ -100,4 +102,42 @@ SamlTokenPtr ConnectAuthenticationPersistence::GetToken () const
 void ConnectAuthenticationPersistence::RegisterUserChangedListener (std::function<void ()> onUserChangedCallback)
     {
     s_onUserChangedCallbacks.push_back (onUserChangedCallback);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectAuthenticationPersistence::UpgradeIfNeeded () const
+    {
+    // Upgrade from old data that was initialized with Graphite0503 code
+    // TODO: remove when Graphite0503 apps are no longer running
+
+    // Old username storage
+    Json::Value username = m_localState.GetValue ("Connect", "Username");
+    if (username.isNull ())
+        {
+        return;
+        }
+
+    Utf8String password = m_secureStore->LegacyLoadValue ("ConnectLogin", username.asCString ());
+    Utf8String token = m_secureStore->LegacyLoadValue ("ConnectToken", "Token");
+
+    // Save to new storage, skip empty values to not reset existing values if any
+    if (!username.empty ())
+        {
+        m_secureStore->SaveValue (SecureStoreNameSpace_Connect, SecureStoreKey_Username, username.asCString ());
+        }
+    if (!password.empty ())
+        {
+        m_secureStore->SaveValue (SecureStoreNameSpace_Connect, SecureStoreKey_Password, password.c_str ());
+        }
+    if (!token.empty ())
+        {
+        m_secureStore->SaveValue (SecureStoreNameSpace_Connect, SecureStoreKey_Token, token.c_str ());
+        }
+
+    // Remove old data
+    m_secureStore->LegacyClearValue ("ConnectLogin", username.asCString ());
+    m_secureStore->LegacyClearValue ("ConnectToken", "Token");
+    m_localState.SaveValue ("Connect", "Username", Json::nullValue);
     }

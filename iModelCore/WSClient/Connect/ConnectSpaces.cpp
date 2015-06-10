@@ -39,7 +39,7 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 #define HTTP_FILE_DOWNLOAD_TIMEOUT 6
 #define HTTP_DEFAULT_TIMEOUT 10
 
-Utf8String s_userAgent;
+ClientInfoPtr s_clientInfo;
 
 static std::shared_ptr<WorkerThreadPool> s_threadPool;
 static std::shared_ptr<WorkerThreadPool> s_dlThreadPool;
@@ -50,18 +50,13 @@ std::set<std::string> ConnectSpaces::sm_dayNames;
 Utf8String ConnectSpaces::sm_eulaUrlBase;
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    07/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectSpaces::SetUserAgent (Utf8StringCR userAgent)
-    {
-    s_userAgent = userAgent;
-    }
-
-/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Travis.Cobbs    05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConnectSpaces::Initialize ()
+void ConnectSpaces::Initialize (ClientInfoPtr clientInfo)
     {
+    BeAssert (nullptr != clientInfo);
+
+    s_clientInfo = clientInfo;
     s_threadPool   = std::make_shared<WorkerThreadPool> (1, "ConnectSpaces::web");
     s_dlThreadPool = std::make_shared<WorkerThreadPool> (2, "ConnectSpaces::downloads");
 
@@ -143,6 +138,7 @@ void ConnectSpaces::Uninitialize()
 * @bsimethod                                                    Travis.Cobbs    05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConnectSpaces::ConnectSpaces() : 
+m_client (s_clientInfo),
 m_cancelToken (SimpleCancellationToken::Create())
     {
     }
@@ -210,13 +206,10 @@ HttpRequest ConnectSpaces::CreateGetRequest (Utf8StringCR url, bool acceptJson /
         {
         request.GetHeaders ().SetAuthorization (m_token.ToAuthorizationString ());
         }
-    request.GetHeaders().SetUserAgent (s_userAgent);    
+
     request.SetTimeoutSeconds (HTTP_DEFAULT_TIMEOUT);
     request.SetCancellationToken(m_cancelToken);
-    if (!s_userAgent.empty())
-        {
-        request.GetHeaders().SetUserAgent (s_userAgent);
-        }
+
     if (acceptJson)
         {
         request.GetHeaders().SetValue("Accept", "application/json");

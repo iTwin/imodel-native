@@ -13,10 +13,10 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
 TEST_F (ClientInfoTests, Create_PassedMandatoryValues_SetsValues)
     {
-    auto info = ClientInfo::Create ("Test-AppName", BeVersion (4, 2, 6, 9), "TestAppId");
+    auto info = ClientInfo::Create ("Test-AppName", BeVersion (4, 2, 6, 9), "TestAppGUID");
 
     EXPECT_STREQ ("Test-AppName", info->GetApplicationName ().c_str ());
-    EXPECT_STREQ ("TestAppId", info->GetApplicationId ().c_str ());
+    EXPECT_STREQ ("TestAppGUID", info->GetApplicationGUID ().c_str ());
 
     EXPECT_EQ (BeVersion (4, 2, 6, 9), info->GetApplicationVersion ());
 
@@ -27,20 +27,26 @@ TEST_F (ClientInfoTests, Create_PassedMandatoryValues_SetsValues)
 
 TEST_F (ClientInfoTests, FillHttpRequestHeaders_ValuesPassedToCreate_SetsCorrespondingHeaders)
     {
-    ClientInfo info ("Test-AppName", BeVersion (4, 2, 6, 9), "TestAppId", "TestDeviceId", "TestSystem");
+    ClientInfo info ("Test-AppName", BeVersion (4, 2, 6, 9), "TestAppGUID", "TestDeviceId", "TestSystem");
 
     HttpRequestHeaders headers;
     info.FillHttpRequestHeaders (headers);
 
     EXPECT_STREQ ("Test-AppName/4.2 (TestSystem)", headers.GetUserAgent ());
-    EXPECT_STREQ ("TestAppId", headers.GetValue ("Mas-App-Guid"));
+    EXPECT_STREQ ("TestAppGUID", headers.GetValue ("Mas-App-Guid"));
     EXPECT_STREQ ("TestDeviceId", headers.GetValue ("Mas-Uuid"));
     EXPECT_STREQ ("en", headers.GetAcceptLanguage ());
     }
 
+TEST_F (ClientInfoTests, GetProductToken_PassedMandatoryValues_SetsValues)
+    {
+    ClientInfo info ("TestAppName", BeVersion (4, 2, 6, 9), "TestAppGUID", "TestDeviceId", "TestSystem");
+    EXPECT_STREQ ("TestAppName/4.2", info.GetProductToken ().c_str ());
+    }
+
 TEST_F (ClientInfoTests, FillHttpRequestHeaders_SameHeadersWithValues_OverridesExistingValues)
     {
-    ClientInfo info ("Test-AppName", BeVersion (4, 2, 6, 9), "TestAppId", "TestDeviceId", "TestSystem");
+    ClientInfo info ("Test-AppName", BeVersion (4, 2, 6, 9), "TestAppGUID", "TestDeviceId", "TestSystem");
 
     HttpRequestHeaders headers;
     headers.SetUserAgent ("OtherAgent");
@@ -49,7 +55,7 @@ TEST_F (ClientInfoTests, FillHttpRequestHeaders_SameHeadersWithValues_OverridesE
     info.FillHttpRequestHeaders (headers);
 
     EXPECT_STREQ ("Test-AppName/4.2 (TestSystem)", headers.GetUserAgent ());
-    EXPECT_STREQ ("TestAppId", headers.GetValue ("Mas-App-Guid"));
+    EXPECT_STREQ ("TestAppGUID", headers.GetValue ("Mas-App-Guid"));
     EXPECT_STREQ ("TestDeviceId", headers.GetValue ("Mas-Uuid"));
     }
 

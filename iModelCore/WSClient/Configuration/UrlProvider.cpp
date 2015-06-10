@@ -14,9 +14,9 @@ static UrlProvider::Environment s_env;
 bool UrlProvider::s_isInitialized = false;
 
 const Utf8String UrlProvider::s_punchListWsgUrl[3] = {
-    "https://qa-punchlist-eus.cloudapp.net",
-    "https://qa-punchlist-eus.cloudapp.net",
-    "https://connect-punchlist.bentley.com"
+    "https://qa-wsg20-eus.cloudapp.net",
+    "https://qa-wsg20-eus.cloudapp.net",
+    "https://connect-wsg20.bentley.com"
     };
 
 // CONNECT 1.1
@@ -28,8 +28,7 @@ const Utf8String UrlProvider::s_punchListWsgUrl[3] = {
 
 const Utf8String UrlProvider::s_connectWsgUrl[3] = {
     "https://dev-wsg20-eus.cloudapp.net",
-    "https://dev-wsg20-eus.cloudapp.net",
-    //"https://qa-wsg20-eus.cloudapp.net",
+    "https://qa-wsg20-eus.cloudapp.net",
     "https://connect-wsg20.bentley.com"
     };
 

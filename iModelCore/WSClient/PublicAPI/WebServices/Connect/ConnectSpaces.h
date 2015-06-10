@@ -71,11 +71,11 @@ namespace Bentley
 struct ConnectSpaces
     {
 public:
-    WSCLIENT_EXPORT static void SetUserAgent(Utf8StringCR userAgent); // TODO WIP TEMPORARY SOLUTION
-
-    WSCLIENT_EXPORT static void Initialize();
+    //! Initialize once in app lifetime
+    WSCLIENT_EXPORT static void Initialize(ClientInfoPtr clientInfo);
     WSCLIENT_EXPORT static bool IsInitialized();
     WSCLIENT_EXPORT static void Uninitialize();
+
     WSCLIENT_EXPORT static bool ParseLastModified(const std::string &lastModified, Bentley::DateTime &dateTime);
 
     WSCLIENT_EXPORT bool OnMessageReceived(Utf8CP messageType, JsonValueCR messageObj);

@@ -28,7 +28,7 @@ struct ClientInfo : public IHttpHeaderProvider
 
         Utf8String m_applicationName;
         BeVersion m_applicationVersion;
-        Utf8String m_applicationId;
+        Utf8String m_applicationGUID;
         Utf8String m_deviceId;
         Utf8String m_systemDescription;
 
@@ -40,21 +40,21 @@ struct ClientInfo : public IHttpHeaderProvider
         //! Create client info with mandatory fields and initialize other required fields automatically. 
         //! There should be one ClientInfo created per application and shared to code that connects to web services.
         //! @param[in] applicationName - human readable string with company and application name. Format: "Bentley-TestApplication"
-        //! @param[in] applicationVersion - major and minor numbers will be used to identify application in server side
-        //! @param[in] applicationId - unique application GUID used for licensing. Should not change through application releases
+        //! @param[in] applicationVersion - major and minor numbers could be used to identify application in server side
+        //! @param[in] applicationGUID - unique application GUID used for registering WSG usage
         //! @param[in] primaryHeaderProvider - [optional] provide additional headers
         WSCLIENT_EXPORT static ClientInfoPtr Create
             (
             Utf8String applicationName,
             BeVersion applicationVersion,
-            Utf8String applicationId,
+            Utf8String applicationGUID,
             IHttpHeaderProviderPtr primaryHeaderProvider = nullptr
             );
 
         //! Consider using ClientInfo::Create() instead. Create client info with custom values, only useful for testing.
         //! @param[in] applicationName - human readable string with company and application name. Format: "Bentley-TestApplication"
-        //! @param[in] applicationVersion - major and minor numbers will be used to identify application in server side
-        //! @param[in] applicationId - unique application GUID used for licensing. Should not change through application releases
+        //! @param[in] applicationVersion - major and minor numbers could be used to identify application in server side
+        //! @param[in] applicationGUID - unique application GUID used for registering WSG usage
         //! @param[in] deviceId - unique device ID used for licensing. Should be different for different devices
         //! @param[in] systemDescription - system desription for User-Agent header
         //! @param[in] primaryHeaderProvider - [optional] provide additional headers
@@ -62,7 +62,7 @@ struct ClientInfo : public IHttpHeaderProvider
             (
             Utf8String applicationName,
             BeVersion applicationVersion,
-            Utf8String applicationId,
+            Utf8String applicationGUID,
             Utf8String deviceId,
             Utf8String systemDescription,
             IHttpHeaderProviderPtr primaryHeaderProvider = nullptr
@@ -84,9 +84,12 @@ struct ClientInfo : public IHttpHeaderProvider
 
         WSCLIENT_EXPORT Utf8String GetApplicationName () const;
         WSCLIENT_EXPORT BeVersion GetApplicationVersion () const;
-        WSCLIENT_EXPORT Utf8String GetApplicationId () const;
+        WSCLIENT_EXPORT Utf8String GetApplicationGUID () const;
         WSCLIENT_EXPORT Utf8String GetDeviceId () const;
         WSCLIENT_EXPORT Utf8String GetSystemDescription () const;
+
+        //! Create product token used in User-Agent header. Example: "TestApplicationName/4.2"
+        WSCLIENT_EXPORT Utf8String GetProductToken () const;
 
         //! Fill required headers using ClientInfo values
         WSCLIENT_EXPORT virtual void FillHttpRequestHeaders (HttpRequestHeaders& headersOut) const override;
