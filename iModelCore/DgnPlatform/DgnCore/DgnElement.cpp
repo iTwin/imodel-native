@@ -898,7 +898,7 @@ DgnElementId ElementGroup::QueryFromMember(DgnDbR db, DgnClassId groupClassId, D
         return DgnElementId();
 
     CachedStatementPtr statement;
-    db.Elements().GetStatement(statement, "SELECT GroupId FROM " DGN_TABLE(DGN_RELNAME_ElementGroupHasMembers) " WHERE GroupClassId=? AND MemberId=?");
+    db.Elements ().GetStatement (statement, "SELECT Rel.GroupId FROM " DGN_TABLE (DGN_RELNAME_ElementGroupHasMembers) " Rel INNER JOIN " DGN_TABLE (DGN_CLASSNAME_Element) " Elm ON Elm.Id = Rel.GroupId  WHERE Elm.ECClassId=? AND Rel.MemberId=?");
     statement->BindId(1, groupClassId);
     statement->BindId(2, memberId);
 

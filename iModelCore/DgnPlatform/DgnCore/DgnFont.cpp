@@ -782,7 +782,7 @@ DgnFontId DgnFonts::AcquireId(DgnFontCR font)
 
     m_fontMap[newId] = DbFontMap().QueryById(newId);
 
-    FONT_LOG.infov("Created font map entry %i -> type/name %i/'%s'.", (int)newId.GetValue(), font.GetName().c_str());
+    FONT_LOG.infov ("Created font map entry %i -> type/name %i/'%s'.", (int)newId.GetValue (), font.GetType(), font.GetName ().c_str ());
 
     return newId;
     }
