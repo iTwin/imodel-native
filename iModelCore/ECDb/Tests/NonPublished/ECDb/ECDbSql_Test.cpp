@@ -259,31 +259,6 @@ TEST(ECDbSql, IndexErrors)
         "   <ECProperty propertyName ='PropertyDouble' typeName = 'double' />"
         "</ECClass>"
         "</ECSchema>",
-        ERROR));
-
-    testSchemaXmls.push_back(bpair<Utf8String, BentleyStatus>(
-        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-        "   <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.12' prefix ='bsca' />"
-        "   <ECSchemaReference name='ECDbMap' version='01.00' prefix ='ecdbmap' />"
-        "<ECClass typeName = 'IndexClass3' isDomainClass = 'True'>"
-        "   <ECCustomAttributes>"
-        "       <ClassMap xmlns = 'ECDbMap.01.00'>"
-        "           <Indexes>"
-        "               <DbIndex>"
-        "                   <Name>SELECT</Name>"
-        "                   <IsUnique>False</IsUnique>"
-        "                   <Properties>"
-        "                       <string>PropertyInt</string>"
-        "                   </Properties>"
-        "               </DbIndex>"
-        "           </Indexes>"
-        "       </ClassMap>"
-        "   </ECCustomAttributes>"
-        "   <ECProperty propertyName ='PropertyString' typeName = 'string' />"
-        "   <ECProperty propertyName ='PropertyInt' typeName = 'int' />"
-        "   <ECProperty propertyName ='PropertyDouble' typeName = 'double' />"
-        "</ECClass>"
-        "</ECSchema>",
         SUCCESS));
 
     int i = 0;
