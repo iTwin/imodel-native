@@ -118,7 +118,7 @@ void PersistRelationship (IECRelationshipInstanceR relInstance, ECDbR ecdb)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ValidatePersistingRelationship
 (
-BeSQLiteDbR db, 
+DbR db, 
 Utf8CP tableName, 
 ECInstanceId whereECInstanceId, 
 Utf8CP expectedIdColumnName, 

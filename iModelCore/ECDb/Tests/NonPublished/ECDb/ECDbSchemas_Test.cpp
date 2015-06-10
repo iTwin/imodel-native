@@ -15,7 +15,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                        03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool TableExist(BeSQLiteDbR db, WCharCP table)
+static bool TableExist(DbR db, WCharCP table)
     {
     Utf8String tableName(table);
     return db.TableExists(tableName.c_str());
@@ -24,7 +24,7 @@ static bool TableExist(BeSQLiteDbR db, WCharCP table)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                        03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int GetColumnCount(BeSQLiteDbR db, WCharCP table)
+static int GetColumnCount(DbR db, WCharCP table)
     {
     Utf8String tableName(table);
     Statement stmt;
@@ -35,7 +35,7 @@ static int GetColumnCount(BeSQLiteDbR db, WCharCP table)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                        03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool ColumnExist(BeSQLiteDbR db, WCharCP table, WCharCP column)
+static bool ColumnExist(DbR db, WCharCP table, WCharCP column)
     {
     Utf8String tableName(table);
     Utf8String columnName(column);
@@ -1308,7 +1308,7 @@ ECSchemaCachePtr CreateImportSchemaAgainstExistingTablesTestSchema ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   04/13
 //+---------------+---------------+---------------+---------------+---------------+------
-void AssertImportedSchema (BeSQLiteDbR ecdb, Utf8CP expectedSchemaName, Utf8CP expectedClassName, Utf8CP expectedPropertyName)
+void AssertImportedSchema (DbR ecdb, Utf8CP expectedSchemaName, Utf8CP expectedClassName, Utf8CP expectedPropertyName)
     {
     CachedStatementPtr findClassStmt = nullptr;
     ecdb.GetCachedStatement (findClassStmt, "SELECT NULL FROM ec_Class c, ec_Schema s WHERE c.ECSchemaId = s.Id AND s.Name = ? AND c.Name = ? LIMIT 1");

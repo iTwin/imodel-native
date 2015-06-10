@@ -1451,7 +1451,7 @@ Utf8String DDLGenerator::GetCreateIndexDDL(ECDbSqlIndex const& o, DDLGenerator::
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus DDLGenerator::CopyRows (BeSQLiteDbR db, Utf8CP sourceTable, bvector<Utf8String>& sourceColumns, Utf8CP targetTable, bvector<Utf8String>& targetColumns)
+BentleyStatus DDLGenerator::CopyRows (DbR db, Utf8CP sourceTable, bvector<Utf8String>& sourceColumns, Utf8CP targetTable, bvector<Utf8String>& targetColumns)
     {
     Utf8String sourceColumnList;
     for (auto& column : sourceColumns)
@@ -1482,7 +1482,7 @@ BentleyStatus DDLGenerator::CopyRows (BeSQLiteDbR db, Utf8CP sourceTable, bvecto
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus DDLGenerator::AddColumns (ECDbSqlTable const& table, std::vector<Utf8CP> const& newColumns, BeSQLiteDbR &db)
+BentleyStatus DDLGenerator::AddColumns (ECDbSqlTable const& table, std::vector<Utf8CP> const& newColumns, DbR &db)
     {
     if (newColumns.empty ())
         return BentleyStatus::SUCCESS;

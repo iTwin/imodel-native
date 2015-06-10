@@ -284,7 +284,7 @@ private:
 
     ECRelatedItemsDisplaySpecificationsCache (ECDbCR ecDb) : m_ecDb (ecDb) {}
 
-    virtual void _OnCleanup (BeSQLiteDbR host) override {delete this;}
+    virtual void _OnCleanup (BeSQLite::DbR host) override {delete this;}
 
     static BeSQLite::DbAppData::Key const& GetKey() {static BeSQLite::DbAppData::Key s_key; return s_key;}
 

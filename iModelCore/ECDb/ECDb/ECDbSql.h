@@ -792,8 +792,8 @@ struct DDLGenerator
             return "DROP INDEX [" + index.GetName () + "]";
             }
 
-        static BentleyStatus AddColumns (ECDbSqlTable const& table, std::vector<Utf8CP> const& newColumns, BeSQLiteDbR &db);
-        static BentleyStatus CopyRows (BeSQLiteDbR db, Utf8CP sourceTable, bvector<Utf8String>& sourceColumns, Utf8CP targetTable, bvector<Utf8String>& targetColumns);
+        static BentleyStatus AddColumns (ECDbSqlTable const& table, std::vector<Utf8CP> const& newColumns, DbR &db);
+        static BentleyStatus CopyRows (DbR db, Utf8CP sourceTable, bvector<Utf8String>& sourceColumns, Utf8CP targetTable, bvector<Utf8String>& targetColumns);
 
     };
 
