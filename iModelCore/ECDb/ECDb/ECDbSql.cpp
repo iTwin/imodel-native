@@ -1861,6 +1861,12 @@ Utf8CP ECDbSqlColumn::Constraint::CollationToString (ECDbSqlColumn::Constraint::
 //static 
 bool ECDbSqlColumn::Constraint::TryParseCollationString(Collation& collation, Utf8CP str)
     {
+    if (Utf8String::IsNullOrEmpty(str))
+        {
+        collation = Collation::Default;
+        return true;
+        }
+
     if (BeStringUtilities::Stricmp(str, "Binary") == 0)
         collation = Collation::Binary;
     else if (BeStringUtilities::Stricmp(str, "NoCase") == 0)

@@ -20,9 +20,10 @@ private:
     ClassMapInfoFactory ();
     ~ClassMapInfoFactory ();
 
+    static ClassMapInfoPtr CreateInstance(ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, ECDbMapStrategy mapStrategy);
+
 public:
-    static ClassMapInfoPtr CreateInstance (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, ECDbMapStrategy mapStrategy);
-    static ClassMapInfoPtr CreateFromHint (MapStatus& mapStatus, SchemaImportContext const& schemaImportContext, ECN::ECClassCR ecClass, ECDbMapCR ecDbMap);
+    static ClassMapInfoPtr CreateFromECDbMapCustomAttributes (MapStatus& mapStatus, SchemaImportContext const& schemaImportContext, ECN::ECClassCR ecClass, ECDbMapCR ecDbMap);
     };
 
 //======================================================================================
@@ -33,9 +34,6 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct ClassMapInfo : public RefCountedBase, NonCopyableClass
 {
-//TODO: Remove friend, once setting m_mapStrategy after evaluation is no longer necessary
-friend ClassMapInfoPtr ClassMapInfoFactory::CreateFromHint (MapStatus& mapStatus, SchemaImportContext const& schemaImportContext, ECN::ECClassCR ecClass, ECDbMapCR ecDbMap);
-
 private:
     Utf8String m_tableName;
     Utf8String m_ecInstanceIdColumnName;
@@ -51,16 +49,15 @@ protected:
     ECN::ECClassCR m_ecClass;
 
 private:
-
-    void InitializeFromClassMapCA ();
-    void InitializeFromClassHasCurrentTimeStampProperty();
+    BentleyStatus InitializeFromClassMapCA ();
+    BentleyStatus InitializeFromClassHasCurrentTimeStampProperty();
 
     bool ValidateBaseClasses () const;
     MapStatus EvaluateInheritedMapStrategy ();
 
     bool GatherBaseClassMaps (bvector<IClassMap const*>& baseClassMaps, bvector<IClassMap const*>& tphMaps, bvector<IClassMap const*>& tpcMaps, bvector<IClassMap const*>& nmhMaps, ECN::ECClassCR ecClass) const;
 
-    void ProcessStandardKeys(ECN::ECClassCR ecClass, WCharCP customAttributeName);
+    BentleyStatus ProcessStandardKeys(ECN::ECClassCR ecClass, WCharCP customAttributeName);
     static Utf8String ResolveTablePrefix (ECN::ECClassCR ecClass);
 
     MapStatus ReportError_OneClassMappedByTableInHierarchyFromTwoDifferentAncestors (ECN::ECClassCR ecClass, bvector<IClassMap const*> tphMaps) const;
@@ -68,7 +65,7 @@ private:
 protected:
     ClassMapInfo (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, ECDbMapStrategy mapStrategy);
     virtual ~ClassMapInfo() {}
-    virtual void _InitializeFromSchema();
+    virtual BentleyStatus _InitializeFromSchema();
     virtual MapStatus _EvaluateMapStrategy ();
 
     static void LogClassNotMapped (NativeLogging::SEVERITY severity, ECN::ECClassCR ecClass, Utf8CP explanation);
@@ -76,6 +73,8 @@ protected:
 public:
     ECN::ECPropertyP GetClassHasCurrentTimeStampProperty() const { return m_ClassHasCurrentTimeStampProperty; }
     static ClassMapInfoPtr Create (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, ECDbMapStrategy mapStrategy);
+    virtual BentleyStatus _Initialize();
+
     ECDbMapStrategy const& GetMapStrategy () const{ return m_strategy; }
     ECDbMapStrategy& GetMapStrategyR (){ return m_strategy; }
     //! Evaluates the MapStrategy for the ECClass represented by this ClassMapInfo based on ClassMap ECCustomAttribute and
@@ -172,7 +171,7 @@ private:
     Utf8String m_targetECClassIdColumn;
     RelationshipConstraintInfo m_sourceInfo, m_targetInfo;
 
-    virtual void _InitializeFromSchema () override;
+    virtual BentleyStatus _InitializeFromSchema () override;
     virtual MapStatus _EvaluateMapStrategy ();
 
     MapStatus DetermineRelationshipMapStrategy ();
@@ -191,6 +190,8 @@ protected:
 
 public:
     static ClassMapInfoPtr Create (ECN::ECRelationshipClassCR relationshipClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, ECDbMapStrategy mapStrategy);
+    virtual BentleyStatus _Initialize() override;
+
     PreferredDirection GetUserPreferredDirection () const {return m_userPreferredDirection;}
     TriState GetAllowDuplicateRelationships() const {return m_allowDuplicateRelationships;}
     Utf8StringCR GetSourceECInstanceIdColumn() const {return m_sourceECInstanceIdColumn;}
@@ -202,7 +203,6 @@ public:
 
     RelationshipConstraintInfo const& GetSourceInfo () const { return m_sourceInfo; }
     RelationshipConstraintInfo const& GetTargetInfo () const { return m_targetInfo; }
-
 };
 
 //======================================================================================

@@ -65,7 +65,10 @@ PropertyMapPtr PropertyMap::CreateAndEvaluateMapping (ECPropertyCR ecProperty, E
         }
 
     // WIP_ECDB: honor the hint for non-default mappings
-    ColumnInfo columnInfo (ecProperty, propertyAccessString);
+    ColumnInfo columnInfo = ColumnInfo::Create (ecProperty, propertyAccessString);
+    if (!columnInfo.IsValid())
+        return nullptr;
+
     auto policy = ECDbPolicyManager::GetPropertyPolicy (ecProperty, IsValidInECSqlPolicyAssertion::Get ());
     if (!policy.IsSupported ())
         {
@@ -825,8 +828,8 @@ MapStatus PropertyMapToColumn::_FindOrCreateColumnsInTable (ClassMap& classMap ,
     {
     Utf8CP        columnName = m_columnInfo.GetName ();
     PrimitiveType primitiveType = m_columnInfo.GetColumnType ();
-    bool          nullable = m_columnInfo.GetNullable ();
-    bool          unique = m_columnInfo.GetUnique ();
+    bool          nullable = m_columnInfo.IsNullable ();
+    bool          unique = m_columnInfo.IsUnique ();
     ECDbSqlColumn::Constraint::Collation collation = m_columnInfo.GetCollation ();
     m_column = classMap.FindOrCreateColumnForProperty(classMap, classMapInfor, *this, columnName, primitiveType, nullable, unique, collation, nullptr);
     BeAssert (m_column != nullptr && "This actually indicates a mapping error. The method PropertyMapToColumn::_FindOrCreateColumnsInTable should therefore be changed to return an error.");
@@ -984,8 +987,8 @@ MapStatus PropertyMapPoint::_FindOrCreateColumnsInTable(ClassMap& classMap,  Cla
     PrimitiveType primitiveType = PRIMITIVETYPE_Double;
 
     Utf8CP        columnName    = m_columnInfo.GetName();
-    bool          nullable      = m_columnInfo.GetNullable();
-    bool          unique        = m_columnInfo.GetUnique();
+    bool          nullable      = m_columnInfo.IsNullable();
+    bool          unique        = m_columnInfo.IsUnique();
     ECDbSqlColumn::Constraint::Collation collation = m_columnInfo.GetCollation();
 
     Utf8String xColumnName(columnName);
