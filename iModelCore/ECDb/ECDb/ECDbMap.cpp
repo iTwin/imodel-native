@@ -312,13 +312,18 @@ MapStatus ECDbMap::MapClass (SchemaImportContext const& schemaImportContext, ECC
     MapStatus status = classMap == nullptr ? MapStatus::Success : MapStatus::AlreadyMapped;
     if (status != MapStatus::AlreadyMapped)
         {
-        auto newClassMap = ClassMapFactory::Create (status, schemaImportContext, ecClass, *this);
+        ClassMapPtr newClassMap = ClassMapFactory::Create (status, schemaImportContext, ecClass, *this);
 
         //error (and no reevaluation)
         if ((status == MapStatus::BaseClassesNotMapped || status == MapStatus::Error) && !revaluateMapStrategy)
             return status;
 
-        BeAssert (newClassMap.IsValid () && "ClassMap just cannot be invalid at this point. Some logical flaw has crept in.");
+        if (newClassMap == nullptr)
+            {
+            BeAssert(false && "ClassMapPtr is not expected to be nullptr at this point.");
+            return MapStatus::Error; // this can happen if the ECDbMap custom attributes had invalid values
+            }
+
         status = AddClassMap (newClassMap);
         if (status == MapStatus::Error)
             return status;
