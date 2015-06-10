@@ -19,15 +19,15 @@ BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
 struct WmsSource : public RasterSource
 {
 public:
-    static WmsSourcePtr Create(WmsMap const& properties);
+    static WmsSourcePtr Create(WmsMap const& mapInfo);
 
-    WmsMap const& GetProperties() {return m_properties;}
+    WmsMap const& GetProperties() {return m_mapInfo;}
 
 protected:
     virtual DisplayTilePtr _QueryTile(TileId const& id, bool request) override;
 
 private:
-    WmsSource(WmsMap const& prop);
+    WmsSource(WmsMap const& mapInfo);
 
     virtual ~WmsSource(){};
 
@@ -35,7 +35,7 @@ private:
 
     GeoCoordinates::BaseGCSPtr CreateBaseGcsFromWmsGcs(Utf8StringCR gcsStr);
 
-    WmsMap m_properties;
+    WmsMap m_mapInfo;
 
     bvector<Byte> m_decompressBuffer;
 

@@ -19,10 +19,17 @@ struct WmsModelHandler;
 //----------------------------------------------------------------------------------------
 struct WmsMap
     {
-    RASTERSCHEMA_EXPORT WmsMap();
+    WmsMap();
+    RASTERSCHEMA_EXPORT WmsMap(Utf8CP url, DRange2dCR bbox, Utf8CP version, Utf8CP layers, Utf8CP csType, Utf8CP csLabel);
 
     //! Return true if mandatory parameters are set. Does not validate with server.
-    bool HasValidParameters() const {return true;} //&&MM todo
+    bool HasValidParameters() const;
+
+    //! Compute and set metaWidth and metaHeight using the number of requested resolution. bbox aspect ration is preserved.
+    RASTERSCHEMA_EXPORT void SetMetaSizeByResolutionCount(uint32_t count);
+
+    //! Set metaWidth or metaHeight using the largest side of the bounding box to pixelCount and compute the other meta size that preserves bbox aspect ratio.
+    RASTERSCHEMA_EXPORT void SetMetaSizeByLargestBoundingBoxSide(uint32_t pixelCount);
 
     Utf8String m_url;               //! Get map url. Up to but excluding the query char '?'
 

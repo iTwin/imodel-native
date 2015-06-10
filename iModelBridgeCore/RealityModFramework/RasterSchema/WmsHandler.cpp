@@ -56,34 +56,77 @@ static void DRange2dToJson (JsonValueR outValue, DRange2dCR range)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
- WmsMap::WmsMap()
+WmsMap::WmsMap()
     {
-    //m_styles = "";      // default style
-    m_format = "image/png";
-
-    //m_vendorSpecific = "";
-    m_transparent = false;
+    m_boundingBox.init(); // null range
+    m_metaWidth = 0;
+    m_metaHeight = 0;
     }
 
-//     Utf8String m_url;               //! Get map url. Up to but excluding the query char '?'
-// 
-//     // Raster window
-//     DRange2d m_boundingBox;         //! Bounding box corners (minx,miny,maxx,maxy) in 'CoordinateSystem' unit.
-//     uint32_t m_metaWidth;           //! Width of the window in pixels. The pixel ratio should be equal to the 'BoundingBox' ratio to avoid any distortion. Sub-Resolutions will be generated from this width.
-//     uint32_t m_metaHeight;          //! Height of the window in pixels. The pixel ratio should be equal to the 'BoundingBox' ratio to avoid any distortion. Sub-Resolutions will be generated from this Height.
-// 
-// 
-//     // Mandatory GetMap parameters
-//     Utf8String m_version;           //! Wms server version
-//     Utf8String m_layers;            //! Comma-separated list of one or more map layers.
-//     Utf8String m_styles;            //! Comma-separated list of one rendering style per requested layer.
-//     Utf8String m_csType;            //! Usually, 'SRS' for 1.1.1 and below. 'CRS' for 1.3 and above.
-//     Utf8String m_csLabel;           //! Coordinate system label. ex: "EPSG:4326"
-//     Utf8String m_format;            //! Output format of map default is 'image/png'
-// 
-//     // Optional parameters
-//     Utf8String m_vendorSpecific;    //! [optional] Unparsed, vendor specific parameters that will be appended to the request. 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  6/2015
+//----------------------------------------------------------------------------------------
+ WmsMap::WmsMap(Utf8CP url, DRange2dCR bbox, Utf8CP version, Utf8CP layers, Utf8CP csType, Utf8CP csLabel)
+ :m_url(url),
+  m_boundingBox(bbox),
+  //m_metaWidth(),
+  //m_metaHeight(),
+  m_version(version),
+  m_layers(layers),
+  m_styles(""),         // Default style.
+  m_csType(csType),
+  m_csLabel(csLabel),
+  m_format("image/png"),    // The standards says that all servers should support png.
+  m_vendorSpecific(""),
+  m_transparent(true)
+    {
+    SetMetaSizeByResolutionCount(10);
+    }
     
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  6/2015
+//----------------------------------------------------------------------------------------
+void WmsMap::SetMetaSizeByResolutionCount(uint32_t count)
+    {
+    // Limit to what a signed int can hold.
+    SetMetaSizeByLargestBoundingBoxSide((uint32_t)MIN((256 << (uint64_t)count), INT32_MAX));
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  6/2015
+//----------------------------------------------------------------------------------------
+void WmsMap::SetMetaSizeByLargestBoundingBoxSide(uint32_t pixelCount)
+    {
+    // Limit to what a signed int can hold.
+    pixelCount = MIN(pixelCount, INT32_MAX);
+
+    double xLength = m_boundingBox.high.x - m_boundingBox.low.x;
+    double yLength = m_boundingBox.high.y - m_boundingBox.low.y;
+
+    // Keep the same cartesian to pixel ratio
+    if(xLength > yLength)
+        {
+        m_metaWidth = pixelCount;
+        m_metaHeight = (uint32_t)((yLength/xLength) * pixelCount);
+        }
+    else
+        {
+        m_metaHeight = pixelCount;
+        m_metaWidth = (uint32_t)((xLength/yLength) * pixelCount);
+        }
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  6/2015
+//----------------------------------------------------------------------------------------
+bool WmsMap::HasValidParameters() const 
+    {
+    if(m_url.empty() || m_boundingBox.isNull() || 0 == m_metaWidth || 0 == m_metaHeight ||
+        m_version.empty() || m_layers.empty() || m_csType.empty() || m_csLabel.empty() || m_format.empty())
+        return false;
+    
+    return true;
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
@@ -137,15 +180,15 @@ void WmsMap::FromJson(Json::Value const& v)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
-DgnPlatform::DgnModelId WmsModelHandler::CreateWmsModel(DgnDbR db, Utf8CP modelName, WmsMap const& prop)
+DgnPlatform::DgnModelId WmsModelHandler::CreateWmsModel(DgnDbR db, Utf8CP modelName, WmsMap const& mapInfo)
     {
     DgnClassId classId(db.Schemas().GetECClassId(BENTLEY_RASTER_SCHEMA_NAME, RASTER_CLASSNAME_WmsModel));
     BeAssert(classId.IsValid());
 
-    if(!prop.HasValidParameters())
+    if(!mapInfo.HasValidParameters())
         return DgnModelId();  // Can't create model, Return an invalid model id.
 
-    WmsModelPtr modelP = new WmsModel(DgnModel::CreateParams(db, classId, modelName), prop);
+    WmsModelPtr modelP = new WmsModel(DgnModel::CreateParams(db, classId, modelName), mapInfo);
 
     db.Models().Insert(*modelP);
     return modelP->GetModelId();
