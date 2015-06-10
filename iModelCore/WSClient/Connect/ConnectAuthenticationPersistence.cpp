@@ -64,7 +64,7 @@ m_secureStore (customSecureStore ? customSecureStore : std::make_shared<SecureSt
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectAuthenticationPersistence::SetCredentials (CredentialsCR credentials)
     {
-    BeCriticalSectionHolder lock (m_cs);
+    BeMutexHolder lock (m_cs);
 
     UpgradeIfNeeded ();
 
@@ -90,7 +90,7 @@ void ConnectAuthenticationPersistence::SetCredentials (CredentialsCR credentials
 +---------------+---------------+---------------+---------------+---------------+------*/
 Credentials ConnectAuthenticationPersistence::GetCredentials () const
     {
-    BeCriticalSectionHolder lock (m_cs);
+    BeMutexHolder lock (m_cs);
 
     UpgradeIfNeeded ();
 
@@ -105,7 +105,7 @@ Credentials ConnectAuthenticationPersistence::GetCredentials () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectAuthenticationPersistence::SetToken (SamlTokenPtr token)
     {
-    BeCriticalSectionHolder lock (m_cs);
+    BeMutexHolder lock (m_cs);
     m_secureStore->SaveValue (SecureStoreNameSpace_Connect, SecureStoreKey_Token, token ? token->AsString ().c_str () : "");
     m_token.reset ();
     }
@@ -115,7 +115,7 @@ void ConnectAuthenticationPersistence::SetToken (SamlTokenPtr token)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SamlTokenPtr ConnectAuthenticationPersistence::GetToken () const
     {
-    BeCriticalSectionHolder lock (m_cs);
+    BeMutexHolder lock (m_cs);
 
     if (nullptr == m_token)
         {
@@ -135,7 +135,7 @@ SamlTokenPtr ConnectAuthenticationPersistence::GetToken () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectAuthenticationPersistence::RegisterUserChangedListener (std::function<void ()> onUserChangedCallback)
     {
-    BeCriticalSectionHolder lock (m_cs);
+    BeMutexHolder lock (m_cs);
     m_onUserChangedCallbacks.push_back (onUserChangedCallback);
     }
 
