@@ -957,9 +957,11 @@ DgnElementCP DgnElements::FindElement(DgnElementId id) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnElements::GetStatement(CachedStatementPtr& stmt, Utf8CP sql) const
+CachedStatementPtr DgnElements::GetStatement(Utf8CP sql) const
     {
-    return m_stmts.GetPreparedStatement(stmt, *m_dgndb.GetDbFile(), sql);
+    CachedStatementPtr stmt;
+    m_stmts.GetPreparedStatement(stmt, *m_dgndb.GetDbFile(), sql);
+    return stmt;
     }
     
 DgnElements::Totals DgnElements::GetTotals() const {return m_tree->m_totals;}
@@ -1090,9 +1092,8 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersistent) const
     {
-    CachedStatementPtr stmt;
     enum Column : int       {ClassId=0,ModelId=1,CategoryId=2,Label=3,Code=4,ParentId=5,LastMod=6,};
-    GetStatement(stmt, "SELECT ECClassId,ModelId,CategoryId,Label,Code,ParentId,LastMod FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    CachedStatementPtr stmt = GetStatement("SELECT ECClassId,ModelId,CategoryId,Label,Code,ParentId,LastMod FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
     stmt->BindId(1, elementId);
 
     DbResult result = stmt->Step();
@@ -1136,8 +1137,7 @@ DgnElementCPtr DgnElements::GetElement(DgnElementId elementId) const
 //+---------------+---------------+---------------+---------------+---------------+------
 DgnElementKey DgnElements::QueryElementKey(DgnElementId elementId) const
     {
-    CachedStatementPtr stmt;
-    GetStatement(stmt, "SELECT ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    CachedStatementPtr stmt =GetStatement("SELECT ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
     stmt->BindInt64(1, elementId.GetValueUnchecked());
     return BE_SQLITE_ROW == stmt->Step() ? DgnElementKey(stmt->GetValueId<DgnClassId>(0), elementId) : DgnElementKey();
     }
@@ -1147,8 +1147,7 @@ DgnElementKey DgnElements::QueryElementKey(DgnElementId elementId) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DgnElements::IsElementIdUsed(DgnElementId id) const
     {
-    CachedStatementPtr stmt;
-    m_dgndb.GetCachedStatement(stmt, "SELECT 1 FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    CachedStatementPtr stmt = GetStatement("SELECT 1 FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
     stmt->BindInt64(1, id.GetValueUnchecked());
     return BE_SQLITE_ROW == stmt->Step();
     }
@@ -1161,9 +1160,7 @@ DgnElementId DgnElements::GetHighestElementId()
     if (!m_highestElementId.IsValid())
         {
         BeLuid nextRepo(m_dgndb.GetRepositoryId().GetNextRepositoryId().GetValue(),0);
-        Statement stmt;
-        
-        stmt.Prepare(m_dgndb, "SELECT max(Id) FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id<?");
+        Statement stmt(m_dgndb, "SELECT max(Id) FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id<?");
         stmt.BindInt64(1,nextRepo.GetValue());
 
         DbResult result = stmt.Step();
@@ -1492,8 +1489,7 @@ DateTime DgnElements::QueryLastModifiedTime(DgnElementId elementId) const
 //---------------------------------------------------------------------------------------
 DgnModelId DgnElements::QueryModelId(DgnElementId elementId) const
     {
-    CachedStatementPtr stmt;
-    GetStatement(stmt, "SELECT ModelId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    CachedStatementPtr stmt=GetStatement("SELECT ModelId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
     stmt->BindId(1, elementId);
     return (BE_SQLITE_ROW != stmt->Step()) ? DgnModelId() : stmt->GetValueId<DgnModelId>(0);
     }

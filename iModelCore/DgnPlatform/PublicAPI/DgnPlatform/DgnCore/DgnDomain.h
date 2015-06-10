@@ -46,8 +46,8 @@
 #define HANDLER_EXTENSION_DECLARE_MEMBERS(__classname__,__exporter__) \
     private: __exporter__ static Token& z_Get##__classname__##Token();\
     public: static BentleyStatus RegisterExtension(DgnDomain::Handler& handler, __classname__& obj) {return obj.RegisterExt(handler,z_Get##__classname__##Token());}\
-            static BentleyStatus DropExtension    (DgnDomain::Handler& handler) {return DropExt(handler,z_Get##__classname__##Token());}\
-            static __classname__* Cast            (DgnDomain::Handler& handler) {return (__classname__*) CastExt(handler,z_Get##__classname__##Token());}
+            static BentleyStatus DropExtension(DgnDomain::Handler& handler) {return DropExt(handler,z_Get##__classname__##Token());}\
+            static __classname__* Cast(DgnDomain::Handler& handler) {return (__classname__*) CastExt(handler,z_Get##__classname__##Token());}
 
 // This macro must be included somewhere within a source file that implements a DgnDomain::Handler::Extension
 #define HANDLER_EXTENSION_DEFINE_MEMBERS(__classname__) \
@@ -193,7 +193,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
 
         struct ExtensionEntry
         {
-            ExtensionEntry (Extension::Token& token, Extension& extension, ExtensionEntry* next) : m_token(token), m_extension(extension), m_next(next){}
+            ExtensionEntry(Extension::Token& token, Extension& extension, ExtensionEntry* next) : m_token(token), m_extension(extension), m_next(next){}
             static ExtensionEntry* Find(ExtensionEntry*, Extension::Token const&);
 
             Extension::Token&   m_token;

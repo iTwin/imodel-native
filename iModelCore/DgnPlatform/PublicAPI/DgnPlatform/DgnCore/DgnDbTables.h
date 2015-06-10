@@ -919,7 +919,7 @@ private:
 public:
     BeSQLite::SnappyFromBlob& GetSnappyFrom() {return m_snappyFrom;}
     BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;}
-    DGNPLATFORM_EXPORT BeSQLite::DbResult GetStatement(BeSQLite::CachedStatementPtr& stmt, Utf8CP sql) const;
+    DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const;
     DGNPLATFORM_EXPORT void ChangeMemoryUsed(int32_t delta) const;
 
     //! Look up an element in the pool of loaded elements for this DgnDb.

@@ -150,8 +150,7 @@ void DgnSchemaTableHandler::Element::_OnUpdate(TxnSummary& summary, Changes::Cha
 //---------------------------------------------------------------------------------------
 void DgnSchemaTableHandler::ModelDrivesModel::CheckDirection(TxnSummary& summary, EC::ECInstanceId relid) const
     {
-    Statement stmt;
-    stmt.Prepare(summary.GetDgnDb(), "SELECT RootModelId,DependentModelId FROM " DGN_TABLE(DGN_RELNAME_ModelDrivesModel) " WHERE(ECInstanceId=?)");
+    Statement stmt(summary.GetDgnDb(), "SELECT RootModelId,DependentModelId FROM " DGN_TABLE(DGN_RELNAME_ModelDrivesModel) " WHERE(ECInstanceId=?)");
     stmt.BindId(1, relid);
     if (stmt.Step() != BE_SQLITE_ROW)
         {

@@ -191,13 +191,6 @@ public:
     //! to it is released. There is no way to hold a pointer to a "closed project".
     DGNPLATFORM_EXPORT static DgnDbPtr CreateDgnDb(BeSQLite::DbResult* status, BeFileNameCR filename, CreateDgnDbParams const& params);
 
-    //! Get the next available (unused) value for a BeServerIssuedId for the supplied Table/Column.
-    //! @param [in,out] value
-    //! @param [in] tableName
-    //! @param [in] columnName
-    //! @param [in] minimumId
-    DGNPLATFORM_EXPORT BeSQLite::DbResult GetNextServerIssuedId(BeServerIssuedId& value, Utf8CP tableName, Utf8CP columnName, uint32_t minimumId=1);
-
     DGNPLATFORM_EXPORT DgnModels& Models() const;                   //!< Information about models for this DgnDb
     DGNPLATFORM_EXPORT DgnElements& Elements() const;               //!< Information about graphic elements for this DgnDb
     DGNPLATFORM_EXPORT DgnViews& Views() const;                     //!< Information about views for this DgnDb
@@ -222,15 +215,6 @@ public:
     //! @remarks This is only to be used by DgnPlatform internally to avoid misuse and unexpected caching behavior.
     //! Therefore it is not inlined.
     DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetPreparedECSqlStatement(Utf8CP ecsql) const;
-
-    //! Create a "PatchSet" by comparing db with a different version if itself. 
-    //! @note This function will return an error if the two files have different DbGuids. 'baseFile' must identify a version of Db.
-    //! @param[out] cset The generated ChangeSet
-    //! @param[out] errMsg  If not null, an explanatory error message is returned in case of failure
-    //! @param[in] baseFile A different version of the same db
-    //! @return BE_SQLITE_OK if patchset was created; else a non-zero error status if the diff failed. Returns BE_SQLITE_MISMATCH if the two Dbs have different GUIDs.
-    DGNPLATFORM_EXPORT BeSQLite::DbResult CreatePatchSetFromDiff(BeSQLite::ChangeSet& cset, Utf8StringP errMsg, BeFileNameCR baseFile);
-
 };
 
 #if !defined(DOCUMENTATION_GENERATOR)

@@ -242,16 +242,15 @@ void TxnMonitorVerifier::Clear()
 void TxnMonitorVerifier::_OnTxnCommit(TxnSummaryCR summary)
     {
     m_OnTxnClosedCalled = true;
-    Statement stmt;
-    stmt.Prepare(summary.GetDgnDb(), "SELECT ElementId,ChangeType FROM " TEMP_TABLE(TXN_TABLE_Elements));
+    Statement stmt(summary.GetDgnDb(), "SELECT ElementId,ChangeType FROM " TEMP_TABLE(TXN_TABLE_Elements));
     while (stmt.Step() == BE_SQLITE_ROW)
         {
         auto eid = stmt.GetValueId<DgnElementId>(0);
-        switch ((TxnSummary::ChangeType) stmt.GetValueInt(1))
+        switch (stmt.GetValueInt(1))
             {
-            case TxnSummary::ChangeType::Add:    m_adds.insert(eid); break;
-            case TxnSummary::ChangeType::Delete: m_deletes.insert(eid); break;
-            case TxnSummary::ChangeType::Update: m_mods.insert(eid); break;
+            case (int)TxnSummary::ChangeType::Add:    m_adds.insert(eid); break;
+            case (int)TxnSummary::ChangeType::Delete: m_deletes.insert(eid); break;
+            case (int)TxnSummary::ChangeType::Update: m_mods.insert(eid); break;
             default:
                 FAIL();
             }
@@ -1990,3 +1989,26 @@ TEST_F(TransactionManagerTests, ElementAssembly)
     ASSERT_TRUE(!el1->IsPersistent());  // neither should now be persistent
     ASSERT_TRUE(!el2->IsPersistent());
 }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(TransactionManagerTests, UndoRedo)
+{
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+    m_db->Txns().EnableTracking(true);
+
+    DgnClassId testClass(TestElement::GetTestElementECClass(*m_db)->GetId());
+    DgnModelP model = m_db->Models().GetModel(m_defaultModelId);
+
+    TestElement::CreateParams params(*model, testClass, m_defaultCategoryId);
+    TestElementPtr e1 = new TestElement(params);
+
+    DgnElementCPtr el1 = e1->Insert();
+    m_db->SaveChanges("change 1");
+
+    ASSERT_TRUE(el1->IsPersistent());
+    m_db->Txns().ReverseSingleTxn();
+    ASSERT_TRUE(!el1->IsPersistent());
+    }

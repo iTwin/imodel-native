@@ -50,9 +50,7 @@ void DgnDb::Destroy()
     {
     // delete dgnfile, causes all models, etc. to be freed.
     m_models.Empty();
-
-    m_txns = nullptr; // ref counted
-
+    m_txns = nullptr; // clear ref counted ptr
     m_ecsqlCache.Empty();
     }
 
@@ -172,7 +170,7 @@ DbResult DgnDb::CreateNewDgnDb(BeFileNameCR inFileName, CreateDgnDbParams const&
             {
             if (BeFileNameStatus::Success != BeFileName::BeDeleteFile(projectFile))
                 {
-                LOG.errorv(L"Unable to create DgnDb because '%ls' cannot be deleted.", projectFile.GetName());
+                LOG.errorv("Unable to create DgnDb because '%s' cannot be deleted.", projectFile.GetNameUtf8().c_str());
                 return BE_SQLITE_ERROR_FileExists;
                 }
             }
@@ -238,31 +236,6 @@ DgnFileStatus DgnDb::CompactFile()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::GetNextServerIssuedId(BeServerIssuedId& value, Utf8CP tableName, Utf8CP colName, uint32_t minimumId)
-    {
-    // WIP - In the future, this should coordinate with a central authority to compute an ID.
-    Statement stmt;
-    stmt.Prepare(*this, SqlPrintfString("SELECT max(%s) FROM %s", colName, tableName));
-
-    DbResult result = stmt.Step();
-    if (BE_SQLITE_ROW != result)
-        {
-        value.Invalidate();
-        BeAssert(false);
-        return result;
-        }
-
-    uint32_t newId = stmt.GetValueInt(0) + 1;
-    if (newId < minimumId)
-        newId = minimumId;
-
-    value = BeServerIssuedId(newId);
-    return BE_SQLITE_OK;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnStyles::DgnStyles(DgnDbR project) : DgnDbTable(project), m_lineStyles(nullptr), m_annotationTextStyles(nullptr), m_annotationFrameStyles(nullptr),
@@ -288,20 +261,3 @@ DgnAnnotationFrameStyles& DgnStyles::AnnotationFrameStyles() {if (NULL == m_anno
 DgnAnnotationLeaderStyles& DgnStyles::AnnotationLeaderStyles() {if (NULL == m_annotationLeaderStyles) m_annotationLeaderStyles = new DgnAnnotationLeaderStyles(m_dgndb); return *m_annotationLeaderStyles;}
 DgnTextAnnotationSeeds& DgnStyles::TextAnnotationSeeds() {if (NULL == m_textAnnotationSeeds) m_textAnnotationSeeds = new DgnTextAnnotationSeeds(m_dgndb); return *m_textAnnotationSeeds;}
 
-//=======================================================================================
-// @bsiclass                                    Sam.Wilson                      04/15
-//=======================================================================================
-BEGIN_UNNAMED_NAMESPACE
-struct IgnoreTablesForDiff : ChangeSet::IgnoreTablesForDiff
-{
-    bool _ShouldIgnoreTable(Utf8CP tableName) override {return 0 == strncmp(tableName, "dgn_RTree3d", 12);}
-};
-END_UNNAMED_NAMESPACE
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult DgnDb::CreatePatchSetFromDiff(BeSQLite::ChangeSet& cset, Utf8StringP errMsg, BeFileNameCR baseFile)
-    {
-    return cset.PatchSetFromDiff(errMsg, *this, baseFile, IgnoreTablesForDiff());
-    }

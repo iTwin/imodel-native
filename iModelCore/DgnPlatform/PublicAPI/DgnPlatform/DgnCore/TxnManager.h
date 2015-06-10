@@ -230,7 +230,6 @@ protected:
     ChangeEntry     m_curr;
     bvector<TxnId>  m_multiTxnOp;
     bvector<RevTxn> m_reversedTxn;
-    bool            m_isActive;
     bool            m_undoInProgress;
     bool            m_inDynamics;
     bool            m_propagateChanges;
@@ -251,7 +250,6 @@ protected:
     TxnRowId LastRow(TxnId id);
 
     void TruncateChanges(TxnId id);
-    void SetActive(bool newValue) {m_isActive = newValue;}
     void SetUndoInProgress(bool);
     void ReverseTxnRange(TxnRange& txnRange, Utf8StringP, bool);
     void ReinstateTxn(TxnRange&, Utf8StringP redoStr);
@@ -279,16 +277,8 @@ public:
     //! @return the result of calling changeset.ApplyChanges
     DGNPLATFORM_EXPORT BeSQLite::DbResult ApplyChangeSet(BeSQLite::ChangeSet& changeset, TxnDirection isUndo);
 
-    //! @name Start and Stop Journaling Changes for Undo
-    //@{
-    //! Query if the Transaction Manager is currently active
-    //! @return True if the Transaction Manager is currently active.
-    //! @see Activate
-    bool IsActive() {return m_isActive;}
-
     //! @name Multi-transaction Operations
     //@{
-
     //! Begin a new multi-transaction operation. This can be used to cause a series of transactions, that would normally
     //! be considered separate actions for undo, to be "grouped" into a single undoable operation. This means that when the user issues the "undo"
     //! command, the entire group of changes is undone as a single action. Multi Txn operations can be nested, and until the outermost operation is closed,

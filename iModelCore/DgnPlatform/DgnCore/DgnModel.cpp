@@ -15,9 +15,7 @@ DbResult DgnModels::InsertModel(Model& row)
     DbResult status = m_dgndb.GetNextRepositoryBasedId(row.m_id, DGN_TABLE(DGN_CLASSNAME_Model), "Id");
     BeAssert(status == BE_SQLITE_OK);
 
-    Statement stmt;
-    stmt.Prepare(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) " (Id,Name,Descr,Type,ECClassId,Space,Visibility) VALUES(?,?,?,?,?,?,?)");
-
+    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) " (Id,Name,Descr,Type,ECClassId,Space,Visibility) VALUES(?,?,?,?,?,?,?)");
     stmt.BindId(1, row.GetId());
     stmt.BindText(2, row.GetNameCP(), Statement::MakeCopy::No);
     stmt.BindText(3, row.GetDescription(), Statement::MakeCopy::No);
@@ -36,8 +34,7 @@ DbResult DgnModels::InsertModel(Model& row)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelStatus DgnModels::DeleteModel(DgnModelId modelId)
     {
-    Statement stmt;
-    stmt.Prepare(m_dgndb, "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
+    Statement stmt(m_dgndb, "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
     stmt.BindId(1, modelId);
     return BE_SQLITE_DONE == stmt.Step() ? DGNMODEL_STATUS_Success : DGNMODEL_STATUS_InvalidModel;
     }
@@ -58,8 +55,7 @@ DgnModelId DgnModels::QueryModelId(Utf8CP name) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
     {
-    Statement stmt;
-    stmt.Prepare(m_dgndb, "SELECT Name,Descr,Type,ECClassId,Space,Visibility FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
+    Statement stmt(m_dgndb, "SELECT Name,Descr,Type,ECClassId,Space,Visibility FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
     stmt.BindId(1, id);
 
     if (BE_SQLITE_ROW != stmt.Step())
@@ -84,8 +80,7 @@ BentleyStatus DgnModels::QueryModelById(Model* out, DgnModelId id) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnModels::GetModelName(Utf8StringR name, DgnModelId id) const
     {
-    Statement stmt;
-    stmt.Prepare(m_dgndb, "SELECT Name FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
+    Statement stmt(m_dgndb, "SELECT Name FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
     stmt.BindId(1, id);
 
     if (BE_SQLITE_ROW != stmt.Step())
@@ -139,8 +134,7 @@ size_t DgnModels::Iterator::QueryCount() const
     {
     Utf8String sqlString = MakeSqlString("SELECT count(*) FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE (?1 = (Visibility & ?1))", true);
 
-    Statement sql;
-    sql.Prepare(*m_db, sqlString.c_str());
+    Statement sql(*m_db, sqlString.c_str());
     sql.BindInt(1,(int) m_itType);
 
     return (BE_SQLITE_ROW != sql.Step()) ? 0 : sql.GetValueInt(0);
@@ -377,8 +371,7 @@ Transform SectionDrawingModel::GetFlatteningMatrix(double zdelta) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::ReadProperties()
     {
-    Statement stmt;
-    stmt.Prepare(m_dgndb, "SELECT Props FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
+    Statement stmt(m_dgndb, "SELECT Props FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
     stmt.BindId(1, m_modelId);
 
     DbResult  result = stmt.Step();
@@ -407,8 +400,7 @@ BeSQLite::DbResult DgnModel::SaveProperties()
     _ToPropertiesJson(propJson);
     Utf8String val = Json::FastWriter::ToString(propJson);
 
-    Statement stmt;
-    stmt.Prepare(m_dgndb, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Model) " SET Props=? WHERE Id=?");
+    Statement stmt(m_dgndb, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Model) " SET Props=? WHERE Id=?");
     stmt.BindText(1, val, Statement::MakeCopy::No);
     stmt.BindId(2, m_modelId);
 
@@ -847,9 +839,8 @@ DgnFileStatus DgnModel::_FillModel()
     if (IsFilled())
         return  DGNFILE_STATUS_Success;
 
-    Statement stmt;
     enum Column : int {Id=0,ClassId=1,CategoryId=2,Label=3,Code=4,ParentId=5};
-    stmt.Prepare(m_dgndb, "SELECT Id,ECClassId,CategoryId,Label,Code,ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
+    Statement stmt(m_dgndb, "SELECT Id,ECClassId,CategoryId,Label,Code,ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
     stmt.BindId(1, m_modelId);
 
     SetFilled();
@@ -916,8 +907,7 @@ ModelHandlerP ModelHandler::FindHandler(DgnDb const& db, DgnClassId handlerId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d DgnModel::_QueryModelRange() const
     {
-    Statement stmt;
-    stmt.Prepare(m_dgndb, "SELECT DGN_bbox_union(DGN_placement_aabb(g.Placement)) FROM " 
+    Statement stmt(m_dgndb, "SELECT DGN_bbox_union(DGN_placement_aabb(g.Placement)) FROM " 
                            DGN_TABLE(DGN_CLASSNAME_Element)     " AS e," 
                            DGN_TABLE(DGN_CLASSNAME_ElementGeom) " AS g"
                           " WHERE e.ModelId=? AND e.Id=g.ElementId");
