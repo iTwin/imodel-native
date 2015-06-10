@@ -381,13 +381,13 @@ static const PropertySpec EMBEDDED_FACE_DATA_PROPERTY_SPEC(EMBEDDED_FACE_DATA_PR
 //=======================================================================================
 struct EmbeddedFaceDataIterator : public BeSQLite::DbTableIterator
 {
-    EmbeddedFaceDataIterator(BeSQLiteDbR db) : BeSQLite::DbTableIterator(db) {}
+    EmbeddedFaceDataIterator(DbR db) : BeSQLite::DbTableIterator(db) {}
 
     struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
     {
     private:
         friend struct EmbeddedFaceDataIterator;
-        Entry(BeSQLiteStatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) {}
+        Entry(StatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) {}
 
     public:
         DgnFonts::DbFaceDataDirect::DataId GetId() const { Verify(); return m_sql->GetValueInt64(0); }
