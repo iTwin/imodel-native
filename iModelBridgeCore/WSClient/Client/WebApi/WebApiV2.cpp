@@ -467,10 +467,13 @@ ICancellationTokenPtr cancellationToken
     HttpRequest request = m_configuration->GetHttpClient ().CreatePostRequest (url);
 
     request.GetHeaders ().SetContentType ("application/json");
-    if (!eTag.empty ())
-        {
-        request.GetHeaders ().SetIfMatch (eTag);
-        }
+
+    // WSG 2.x does not support instance validation in update request
+    // TODO: implement WSG side or Client side validation
+    //if (!eTag.empty ())
+    //    {
+    //    request.GetHeaders ().SetIfMatch (eTag);
+    //    }
 
     Json::Value updateJson;
     JsonValueR instanceJson = updateJson["instance"];

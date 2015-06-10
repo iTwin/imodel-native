@@ -45,7 +45,9 @@ Utf8String StubSamlTokenXML (uint32_t validMinutes, Utf8StringCR stubCertificate
 
 SamlTokenPtr StubSamlToken (uint32_t validMinutes)
     {
-    return std::make_shared<SamlToken> (StubSamlTokenXML (validMinutes));
+    auto token = std::make_shared<SamlToken> (StubSamlTokenXML (validMinutes));
+    EXPECT_FALSE (token->AsString ().empty ());
+    return token;
     }
 
 HttpResponse StubImsTokenHttpResponse (uint32_t validMinutes)
