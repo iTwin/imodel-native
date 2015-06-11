@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: PublicAPI/DgnPlatform/DgnCore/Annotations/AnnotationTextBlockLayout.h $
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 #pragma once
 
@@ -42,10 +42,8 @@ struct AnnotationLayoutRun : public RefCountedBase
         FractionDenominator,
         FractionNumerator,
         JustificationRange
+    };
 
-    }; // SubRange
-
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(RefCountedBase)
     
@@ -58,35 +56,30 @@ private:
     bmap<SubRange,DRange2d> m_subRanges;
     DVec2d m_offsetFromLine;
 
-    void CopyFrom(AnnotationLayoutRunCR);
-    void Invalidate();
-    void Update();
+    DGNPLATFORM_EXPORT void CopyFrom(AnnotationLayoutRunCR);
+    void Invalidate() { m_isValid = false; }
+    DGNPLATFORM_EXPORT void Update();
 
 public:
     DGNPLATFORM_EXPORT explicit AnnotationLayoutRun(AnnotationRunBaseCR);
-    DGNPLATFORM_EXPORT AnnotationLayoutRun(AnnotationLayoutRunCR);
-    DGNPLATFORM_EXPORT AnnotationLayoutRunR operator=(AnnotationLayoutRunCR);
-    
-    bool CanWrap() const;
-    bool Wrap(AnnotationLayoutRunPtr& leftOver, double width, bool shouldForceLeadingUnit);
-    bool AffectsJustification() const;
+    AnnotationLayoutRun(AnnotationLayoutRunCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
+    AnnotationLayoutRunR operator=(AnnotationLayoutRunCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
+    static AnnotationLayoutRunPtr Create(AnnotationRunBaseCR seedRun) { return new AnnotationLayoutRun(seedRun); }
+    AnnotationLayoutRunPtr Clone() const { return new AnnotationLayoutRun(*this); }
 
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
-    DGNPLATFORM_EXPORT static AnnotationLayoutRunPtr Create(AnnotationRunBaseCR);
-    DGNPLATFORM_EXPORT AnnotationLayoutRunPtr Clone() const;
-
-    DGNPLATFORM_EXPORT AnnotationRunBaseCR GetSeedRun() const;
-    DGNPLATFORM_EXPORT size_t GetCharOffset() const;
-    DGNPLATFORM_EXPORT void SetCharOffset(size_t);
-    DGNPLATFORM_EXPORT size_t GetNumChars() const;
-    DGNPLATFORM_EXPORT void SetNumChars(size_t);
-    DGNPLATFORM_EXPORT DRange2dCR GetLayoutRange() const;
+    AnnotationRunBaseCR GetSeedRun() const { return *m_seedRun; }
+    size_t GetCharOffset() const { return m_charOffset; }
+    void SetCharOffset(size_t value) { m_charOffset = value; Invalidate(); }
+    size_t GetNumChars() const { return m_numChars; }
+    void SetNumChars(size_t value) { m_numChars = value; Invalidate(); }
+    DRange2dCR GetLayoutRange() const { const_cast<AnnotationLayoutRunP>(this)->Update(); return m_layoutRange; }
     DGNPLATFORM_EXPORT BentleyStatus GetSubRange(DRange2dR, SubRange) const;
-    DGNPLATFORM_EXPORT DVec2dCR GetOffsetFromLine() const;
-    DGNPLATFORM_EXPORT void SetOffsetFromLine(DVec2dCR);
-
-}; // AnnotationLayoutRun
+    DVec2dCR GetOffsetFromLine() const { return m_offsetFromLine; }
+    void SetOffsetFromLine(DVec2dCR value) { m_offsetFromLine = value; }
+    bool CanWrap() const; //!< @private
+    bool Wrap(AnnotationLayoutRunPtr& leftOver, double width, bool shouldForceLeadingUnit); //!< @private
+    bool AffectsJustification() const; //!< @private
+};
 
 //=======================================================================================
 //! Represents a sequence or sub-sequence of runs that visually comprise a line of text on screen. When a single run is spliced between multiple lines, unique AnnotationLayoutRun objects will exist in both lines with appropriate offset and size values. There is no concept of a layout "paragraph"; when computing layout information, only lines matter, not paragraphs.
@@ -94,7 +87,6 @@ public:
 //=======================================================================================
 struct AnnotationLayoutLine : public RefCountedBase
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(RefCountedBase)
     
@@ -105,29 +97,24 @@ private:
     DRange2d m_justificationRange;
     DVec2d m_offsetFromDocument;
 
-    void CopyFrom(AnnotationLayoutLineCR);
-    void Invalidate();
-    void Update();
+    DGNPLATFORM_EXPORT void CopyFrom(AnnotationLayoutLineCR);
+    void Invalidate() { m_isValid = false; }
+    DGNPLATFORM_EXPORT void Update();
 
 public:
     DGNPLATFORM_EXPORT AnnotationLayoutLine();
-    DGNPLATFORM_EXPORT AnnotationLayoutLine(AnnotationLayoutLineCR);
-    DGNPLATFORM_EXPORT AnnotationLayoutLineR operator=(AnnotationLayoutLineCR);
+    AnnotationLayoutLine(AnnotationLayoutLineCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
+    AnnotationLayoutLineR operator=(AnnotationLayoutLineCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
+    static AnnotationLayoutLinePtr Create() { return new AnnotationLayoutLine(); }
+    AnnotationLayoutLinePtr Clone() const { return new AnnotationLayoutLine(*this); }
 
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
-    DGNPLATFORM_EXPORT static AnnotationLayoutLinePtr Create();
-    DGNPLATFORM_EXPORT AnnotationLayoutLinePtr Clone() const;
-
-    DGNPLATFORM_EXPORT DRange2dCR GetLayoutRange() const;
-    DGNPLATFORM_EXPORT DRange2dCR GetJustificationRange() const;
-    DGNPLATFORM_EXPORT DVec2dCR GetOffsetFromDocument() const;
-    DGNPLATFORM_EXPORT void SetOffsetFromDocument(DVec2dCR);
-    DGNPLATFORM_EXPORT AnnotationLayoutRunCollectionCR GetRuns() const;
-
-    DGNPLATFORM_EXPORT void AppendRun(AnnotationLayoutRunR);
-
-}; // AnnotationLayoutLine
+    DRange2dCR GetLayoutRange() const { const_cast<AnnotationLayoutLineP>(this)->Update(); return m_layoutRange; }
+    DRange2dCR GetJustificationRange() const { const_cast<AnnotationLayoutLineP>(this)->Update(); return m_justificationRange; }
+    DVec2dCR GetOffsetFromDocument() const { return m_offsetFromDocument; }
+    void SetOffsetFromDocument(DVec2dCR value) { m_offsetFromDocument = value; }
+    AnnotationLayoutRunCollectionCR GetRuns() const { return m_runs; }
+    void AppendRun(AnnotationLayoutRunR value) { Invalidate(); m_runs.push_back(&value); }
+};
 
 //=======================================================================================
 //! Computes size, lines, and layout information for an AnnotationTextBlock. Layout information is computed on-demand and cached, so it is (a) cheap to create instances of this object up-front, and (b) cheap to re-query this object between calls to Invalidate.
@@ -136,7 +123,6 @@ public:
 //=======================================================================================
 struct AnnotationTextBlockLayout : public RefCountedBase
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(RefCountedBase)
 
@@ -145,29 +131,24 @@ private:
     AnnotationLayoutLineCollection m_lines;
     DRange2d m_layoutRange;
 
-    void CopyFrom(AnnotationTextBlockLayoutCR);
+    DGNPLATFORM_EXPORT void CopyFrom(AnnotationTextBlockLayoutCR);
     AnnotationLayoutLinePtr FlushLine(AnnotationLayoutLineR);
     void PopulateLines();
     void JustifyLines();
-    void Update();
+    void Invalidate() { m_isValid = false; }
+    DGNPLATFORM_EXPORT void Update();
 
 public:
     DGNPLATFORM_EXPORT explicit AnnotationTextBlockLayout(AnnotationTextBlockCR);
-    DGNPLATFORM_EXPORT AnnotationTextBlockLayout(AnnotationTextBlockLayoutCR);
-    DGNPLATFORM_EXPORT AnnotationTextBlockLayoutR operator=(AnnotationTextBlockLayoutCR);
+    AnnotationTextBlockLayout(AnnotationTextBlockLayoutCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
+    AnnotationTextBlockLayoutR operator=(AnnotationTextBlockLayoutCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
+    static AnnotationTextBlockLayoutPtr Create(AnnotationTextBlockCR doc) { return new AnnotationTextBlockLayout(doc); }
+    AnnotationTextBlockLayoutPtr Clone() const { return new AnnotationTextBlockLayout(*this); }
 
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
-    DGNPLATFORM_EXPORT static AnnotationTextBlockLayoutPtr Create(AnnotationTextBlockCR);
-    DGNPLATFORM_EXPORT AnnotationTextBlockLayoutPtr Clone() const;
-
-    DGNPLATFORM_EXPORT AnnotationTextBlockCR GetDocument() const;
-    DGNPLATFORM_EXPORT AnnotationLayoutLineCollectionCR GetLines() const;
-    DGNPLATFORM_EXPORT DRange2dCR GetLayoutRange() const;
-
-    DGNPLATFORM_EXPORT void Invalidate();
-
-}; // AnnotationTextBlockLayout
+    AnnotationTextBlockCR GetDocument() const { return *m_doc; }
+    AnnotationLayoutLineCollectionCR GetLines() const { const_cast<AnnotationTextBlockLayoutP>(this)->Update(); return m_lines; }
+    DRange2dCR GetLayoutRange() const { const_cast<AnnotationTextBlockLayoutP>(this)->Update(); return m_layoutRange; }
+};
 
 //! @endGroup
 
