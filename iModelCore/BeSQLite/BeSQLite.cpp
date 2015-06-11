@@ -1086,7 +1086,7 @@ DbResult DbFile::DeleteProperties(PropertySpecCR spec, uint64_t* id)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DbFile::SaveSettings()
+void DbFile::SaveSettings(Utf8CP changesetName)
     {
     if (!m_settingsDirty)
         return;
@@ -1109,7 +1109,7 @@ void DbFile::SaveSettings()
     rc = (DbResult) sqlite3_exec(m_sqlDb,"DELETE FROM " TEMP_TABLE_Prefix BEDB_TABLE_Property, nullptr, nullptr, nullptr);
     BeAssert(BE_SQLITE_OK == rc);
 
-    txn->Save("Settings"); // save the settings changes.
+    txn->Save(changesetName); // save the settings changes.
 
     for (auto tracker : m_trackers)
         tracker.second->_OnSettingsSaved();
@@ -1118,10 +1118,10 @@ void DbFile::SaveSettings()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Db::SaveSettings()
+void Db::SaveSettings(Utf8CP name)
     {
     _OnSaveSettings();
-    m_dbFile->SaveSettings();
+    m_dbFile->SaveSettings(name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1666,9 +1666,7 @@ bool Db::GetColumns(bvector<Utf8String>& columns, Utf8CP tableName) const
 
     columns.clear();
     for (int nColumn = 0; nColumn < statement.GetColumnCount(); nColumn++)
-        {
         columns.push_back(statement.GetColumnName(nColumn));
-        }
 
     return true;
     }
@@ -2224,13 +2222,13 @@ DbResult ChangeTracker::CreateSession()
     if (m_session)
         return  BE_SQLITE_OK;
 
-    if (nullptr == m_dbFile)
+    if (nullptr == m_db)
         {
         BeAssert(false);
         return  BE_SQLITE_ERROR;
         }
 
-    DbResult result = (DbResult) sqlite3session_create(m_dbFile->GetSqlDb(), "main", &m_session);
+    DbResult result = (DbResult) sqlite3session_create(m_db->GetSqlDb(), "main", &m_session);
     BeAssert(BE_SQLITE_OK == result);
 
     if (BE_SQLITE_OK == result)
@@ -2248,7 +2246,7 @@ void ChangeTracker::EndTracking()
     if (m_session)
         {
         sqlite3session_delete(m_session);
-        m_session = 0;
+        m_session = nullptr;
         }
     m_isTracking = false;
     }
@@ -2273,33 +2271,17 @@ bool ChangeTracker::HasChanges() {return m_session && 0 == sqlite3session_isempt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ChangeSet::FromChangeTrack(ChangeTracker& session)
+DbResult ChangeSet::FromChangeTrack(ChangeTracker& session, SetType setType)
     {
     BeAssert(!IsValid());
-    return (DbResult) sqlite3session_changeset(session.GetSqlSession(), &m_size, &m_changeset);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ChangeSet::PatchSetFromChangeTrack(ChangeTracker& session)
-    {
-    BeAssert(!IsValid());
-    return (DbResult) sqlite3session_patchset(session.GetSqlSession(), &m_size, &m_changeset);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-static int diffFilter(void* filterPtr, Utf8CP tableName) 
-    {
-    return !((ChangeSet::IgnoreTablesForDiff*)filterPtr)->_ShouldIgnoreTable(tableName);
+    return (setType == SetType::Full) ? (DbResult) sqlite3session_changeset(session.GetSqlSession(), &m_size, &m_changeset) :
+                                        (DbResult) sqlite3session_patchset(session.GetSqlSession(), &m_size, &m_changeset);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ChangeSet::PatchSetFromDiff(Utf8StringP errMsgOut, Db& db, BeFileNameCR baseFile, IgnoreTablesForDiff const& filter)
+DbResult ChangeTracker::DifferenceToDb(Utf8StringP errMsgOut, BeFileNameCR baseFile)
     {
     // Check if Db GUIDs match
     if (true)
@@ -2309,10 +2291,10 @@ DbResult ChangeSet::PatchSetFromDiff(Utf8StringP errMsgOut, Db& db, BeFileNameCR
         if (BE_SQLITE_OK != result)
             {
             if (errMsgOut != nullptr)
-                *errMsgOut = db.GetLastError();
+                *errMsgOut = m_db->GetLastError();
             return result;
             }
-        if (db.GetDbGuid() != baseDb.GetDbGuid())
+        if (m_db->GetDbGuid() != baseDb.GetDbGuid())
             {
             if (errMsgOut != nullptr)
                 *errMsgOut = "DbGuids differ";
@@ -2320,32 +2302,22 @@ DbResult ChangeSet::PatchSetFromDiff(Utf8StringP errMsgOut, Db& db, BeFileNameCR
             }
         }
 
-    DbResult result =  db.AttachDb(Utf8String(baseFile).c_str(), "base");
+    DbResult result =  m_db->AttachDb(baseFile.GetNameUtf8().c_str(), "base");
     if (BE_SQLITE_OK != result)
         {
         if (errMsgOut != nullptr)
-            *errMsgOut = db.GetLastError();
+            *errMsgOut = m_db->GetLastError();
         return result;
         }
 
-    sqlite3_session* session;
-    result = (DbResult) sqlite3session_create(db.GetSqlDb(), "main", &session);
-    if (BE_SQLITE_OK != result)
-        {
-        if (errMsgOut != nullptr)
-            *errMsgOut = db.GetLastError();
-        return result;
-        }
+    Restart(); // make sure we don't currently have any changes
 
-    sqlite3session_table_filter(session, diffFilter, (void*)&filter); // set up auto-attach for most tables
-
-    BeSQLite::Statement tables;
-    tables.Prepare(db, "SELECT name FROM main.sqlite_master WHERE type='table'");
-    while (tables.Step() == BE_SQLITE_ROW)
+    Statement tablesStmt(*m_db, "SELECT name FROM main.sqlite_master WHERE type='table'");
+    while (tablesStmt.Step() == BE_SQLITE_ROW)
         {
-        Utf8CP tableName = tables.GetValueText(0);
+        Utf8CP tableName = tablesStmt.GetValueText(0);
         char* errMsg = nullptr;
-        result = (DbResult)sqlite3session_diff(session, "base", tableName, &errMsg);
+        result = (DbResult) sqlite3session_diff(GetSqlSession(), "base", tableName, &errMsg);
         if (BE_SQLITE_OK != result)
             {
             if (errMsgOut != nullptr)
@@ -2359,17 +2331,8 @@ DbResult ChangeSet::PatchSetFromDiff(Utf8StringP errMsgOut, Db& db, BeFileNameCR
             }
         }
 
-    if (BE_SQLITE_OK == result)
-        {
-        result = (DbResult) sqlite3session_patchset(session, &m_size, &m_changeset);
-        if (errMsgOut != nullptr)
-            *errMsgOut = db.GetLastError();
-        }
-
-    sqlite3session_delete(session);
-    db.DetachDb("base");
-
-    return result;
+    m_db->DetachDb("base");
+    return BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2511,16 +2474,16 @@ Changes::Change& Changes::Change::operator++()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::AddChangeTracker(ChangeTracker& tracker)
     {
-    if (tracker.GetDbFile() != nullptr)
+    if (tracker.GetDb() != nullptr)
         {
-        BeAssert(false);
+        BeAssert(false);      // already attached???
         return BE_SQLITE_ERROR;
         }
 
     if (!m_dbFile->m_trackers.Insert(tracker.GetName(), &tracker).second)
         return BE_SQLITE_ERROR;
 
-    tracker.SetDbFile(m_dbFile);
+    tracker.SetDb(this);
     return BE_SQLITE_OK;
     }
 
@@ -2669,7 +2632,7 @@ Utf8String DbValue::Format(int detailLevel) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Changes::Change::DumpColumns(int startCol, int endCol, Changes::Change::Stage stage, bvector<Utf8String> const& columns, int detailLevel) const
+void Changes::Change::DumpColumns(int startCol, int endCol, Stage stage, bvector<Utf8String> const& columns, int detailLevel) const
     {
     Byte* pcols;
     int npcols;
@@ -2688,7 +2651,7 @@ void Changes::Change::DumpColumns(int startCol, int endCol, Changes::Change::Sta
         if (nprinted != 0)
             printf(" ");
 
-        printf("[%s]", columns[i].c_str());
+        printf("%s=", columns[i].c_str());
 
         if (v.IsValid())
             printf("%s", v.Format(detailLevel).c_str());
@@ -2712,7 +2675,7 @@ Utf8String Changes::Change::FormatPrimarykeyColumns(bool isInsert, int detailLev
         if (pcols[i] == 0)
             continue;
 
-        auto pkv = GetValue(i, isInsert? Changes::Change::Stage::New: Changes::Change::Stage::Old);
+        auto pkv = GetValue(i, isInsert ? Stage::New : Stage::Old);
         BeAssert(pkv.IsValid());
         
         if (pkv.IsNull())   // WIP_CHANGES -- why do we get this??
@@ -2735,8 +2698,8 @@ void Changes::Change::Dump(Db const& db, bool isPatchSet, bset<Utf8String>& tabl
     int nCols,indirect;
     DbOpcode opcode;
     DbResult rc = GetOperation(&tableName, &nCols, &opcode, &indirect);
-    if (rc!=BE_SQLITE_OK)
-        { BeAssert(false); }
+    BeAssert (rc==BE_SQLITE_OK);
+    UNUSED_VARIABLE(rc);
 
     if (tablesSeen.find(tableName) == tablesSeen.end())
         {
@@ -2746,7 +2709,7 @@ void Changes::Change::Dump(Db const& db, bool isPatchSet, bset<Utf8String>& tabl
         tablesSeen.insert(tableName);
         }
 
-    printf("\n[%s] ", FormatPrimarykeyColumns((DbOpcode::Insert==opcode), detailLevel).c_str());
+    printf("\nkey=%s ", FormatPrimarykeyColumns((DbOpcode::Insert==opcode), detailLevel).c_str());
 
     bvector<Utf8String> columnNames;
     db.GetColumns(columnNames, tableName);
@@ -2757,13 +2720,13 @@ void Changes::Change::Dump(Db const& db, bool isPatchSet, bset<Utf8String>& tabl
             printf("DELETE ");
             if (detailLevel > 0)
                 printf("\n");
-            DumpColumns(0, nCols-1, Changes::Change::Stage::Old, columnNames, detailLevel);
+            DumpColumns(0, nCols-1, Stage::Old, columnNames, detailLevel);
             break;
         case DbOpcode::Insert:
             printf("INSERT ");
             if (detailLevel > 0)
                 printf("\n");
-            DumpColumns(0, nCols-1, Changes::Change::Stage::New, columnNames, detailLevel);
+            DumpColumns(0, nCols-1, Stage::New, columnNames, detailLevel);
             break;
         case DbOpcode::Update:
             printf("UPDATE ");
@@ -2772,10 +2735,10 @@ void Changes::Change::Dump(Db const& db, bool isPatchSet, bset<Utf8String>& tabl
             if (!isPatchSet)
                 {
                 printf("old: ");
-                DumpColumns(0, nCols-1, Changes::Change::Stage::Old, columnNames, detailLevel);
+                DumpColumns(0, nCols-1, Stage::Old, columnNames, detailLevel);
                 printf("\nnew: ");
                 }
-            DumpColumns(0, nCols-1, Changes::Change::Stage::New, columnNames, detailLevel);
+            DumpColumns(0, nCols-1, Stage::New, columnNames, detailLevel);
             break;
 
         default:

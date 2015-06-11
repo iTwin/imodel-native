@@ -744,14 +744,15 @@ public:
     explicit Statement(SqlStatementP stmt) {m_stmt=stmt;}
 
     //! construct a new blank Statement.
-    Statement() {m_stmt=0; }
+    Statement() {m_stmt=nullptr; }
+    Statement(BeSQLiteDbCR db, Utf8CP sql) {m_stmt=nullptr; Prepare(db, sql);}
     ~Statement() {Finalize();}
 
-    SqlStatementP& GetStmtR() {return m_stmt;} // internal use only
-    DbResult Prepare(BeSQLiteDbFileCR, Utf8CP sql); // internal use only
+    SqlStatementP& GetStmtR() {return m_stmt;} //! @private internal use only
+    DbResult Prepare(BeSQLiteDbFileCR, Utf8CP sql); //! @private  internal use only
 
     //! Determine whether this Statement has already been prepared.
-    bool IsPrepared() const {return NULL != m_stmt;}
+    bool IsPrepared() const {return nullptr != m_stmt;}
 
     //! Destroy this Statement. If the Statement was Prepared, releases all memory associated it.
     BE_SQLITE_EXPORT void Finalize();
@@ -1024,7 +1025,7 @@ struct ChangeTracker : RefCountedBase
 {
 protected:
     bool            m_isTracking;
-    BeSQLiteDbFileP m_dbFile;
+    Db*             m_db;
     SqlSessionP     m_session;
     Utf8String      m_name;
 
@@ -1037,15 +1038,22 @@ protected:
     virtual OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) = 0;
     virtual void _OnSettingsSave() {}
     virtual void _OnSettingsSaved() {}
-    void SetDbFile(BeSQLiteDbFileP dbFile) {m_dbFile = dbFile;}
-    BeSQLiteDbFileP GetDbFile() {return m_dbFile;}
+    void SetDb(Db* db) {m_db = db;}
+    Db* GetDb() {return m_db;}
     Utf8CP GetName() const {return m_name.c_str();}
 
 public:
-    ChangeTracker(Utf8CP name=NULL) : m_name(name) {m_session=0; m_dbFile=0; m_isTracking=false;}
+    ChangeTracker(Utf8CP name=NULL) : m_name(name) {m_session=0; m_db=0; m_isTracking=false;}
     virtual ~ChangeTracker() {EndTracking();}
     virtual TrackChangesForTable _FilterTable(Utf8CP tableName) {return TrackChangesForTable::Yes;}
     SqlSessionP GetSqlSession() {return m_session;}
+
+    //! Track all of the differences between the Db of this ChangeTracker and a changed copy of that database.
+    //! @param[out] errMsg  If not null, an explanatory error message is returned in case of failure
+    //! @param[in] baseFile A different version of the same db
+    //! @return BE_SQLITE_OK if hangeset was created; else a non-zero error status if the diff failed. Returns BE_SQLITE_MISMATCH if the two Dbs have different GUIDs.
+    //! @note This function will return an error if the two files have different DbGuids. 'baseFile' must identify a version of Db.
+    BE_SQLITE_EXPORT DbResult DifferenceToDb(Utf8StringP errMsg, BeFileNameCR baseFile);
 
     //! Turn off change tracking for a database.
     BE_SQLITE_EXPORT void EndTracking();
@@ -1374,14 +1382,10 @@ public:
 //=======================================================================================
 struct ChangeSet : NonCopyableClass
 {
+    enum class SetType : bool {Full=0, Patch=1};
     enum class ApplyChangesForTable : bool {No=0, Yes=1};
     enum class ConflictCause : int {Data=1, NotFound=2, Conflict=3, Constraint=4, ForeignKey=5};
     enum class ConflictResolution : int {Skip=0, Replace=1, Abort=2};
-
-    struct IgnoreTablesForDiff
-        {
-        virtual bool _ShouldIgnoreTable(Utf8CP) = 0;
-        };
 
 private:
     int    m_size;
@@ -1396,26 +1400,17 @@ public:
     ChangeSet() {m_size=0; m_changeset=nullptr;}
     ~ChangeSet() {Free();}
 
-    //! Free the data held by this ChangeSet. @note Normally, the destructor will call Free. Do not try to use this ChangeSet after calling Free.
+    //! Free the data held by this ChangeSet.
+    //! @note Normally the destructor will call Free. After this call the ChangeSet is invalid.
     BE_SQLITE_EXPORT void Free();
 
-    //! Re-create this ChangeSet from data from a previously saved incarnation of a ChangeSet.
+    //! Re-create this ChangeSet from data from a previously saved ChangeSet.
     BE_SQLITE_EXPORT DbResult FromData(int size, void const* data, bool invert);
 
-    //! Create a ChangeSet from a ChangeTracker. The ChangeSet can then be saved persistently.
-    BE_SQLITE_EXPORT DbResult FromChangeTrack(ChangeTracker&);
-
-    //! Create a "PatchSet" from a ChangeTracker. The PatchSet can then be saved persistently.
-    BE_SQLITE_EXPORT DbResult PatchSetFromChangeTrack(ChangeTracker&);
-
-    //! Create a "PatchSet" by comparing db with a different version if itself.
-    //! @note This function will return an error if the two files have different DbGuids. 'baseFile' must identify a version of Db.
-    //! @param[out] errMsg  If not null, an explanatory error message is returned in case of failure
-    //! @param[in] db       The db
-    //! @param[in] baseFile A different version of the same db
-    //! @param[in] filter   Caller's filter to ignore tables for purposes of the diff
-    //! @return BE_SQLITE_OK if patchset was created; else a non-zero error status if the diff failed. Returns BE_SQLITE_MISMATCH if the two Dbs have different GUIDs.
-    BE_SQLITE_EXPORT DbResult PatchSetFromDiff(Utf8StringP errMsg, Db& db, BeFileNameCR baseFile, IgnoreTablesForDiff const& filter);
+    //! Create a ChangeSet or PatchSet from a ChangeTracker. The ChangeSet can then be saved persistently.
+    //! @param[in] tracker  ChangeTracker from which to create ChangeSet or PatchSet
+    //! @param[in] setType  whether to create a full ChangeSet or just a PatchSet
+    BE_SQLITE_EXPORT DbResult FromChangeTrack(ChangeTracker& tracker, SetType setType=SetType::Full);
 
     //! Apply all of the changes in a ChangeSet to the supplied database.
     //! @param[in] db the database to which the changes are applied.
@@ -1433,7 +1428,7 @@ public:
     bool IsValid() {return 0 != m_changeset;}
 
     //! Dump to stdout for debugging purposes.
-    BE_SQLITE_EXPORT void Dump(Db const&, bool isPatchSet = true, int detailLevel = 0) const;
+    BE_SQLITE_EXPORT void Dump(Db const&, bool isPatchSet=false, int detailLevel=0) const;
 
     //! Get a description of a conflict cause for debugging purposes.
     BE_SQLITE_EXPORT static Utf8String InterpretConflictCause(ChangeSet::ConflictCause);
@@ -2261,7 +2256,7 @@ protected:
     BE_SQLITE_EXPORT DbResult QueryPropertySize(uint32_t& propsize, PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const;
     BE_SQLITE_EXPORT DbResult QueryProperty(void* value, uint32_t propsize, PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const;
     BE_SQLITE_EXPORT DbResult QueryProperty(Utf8StringR value, PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const;
-    BE_SQLITE_EXPORT void SaveSettings();
+    BE_SQLITE_EXPORT void SaveSettings(Utf8CP changesetName);
     BE_SQLITE_EXPORT DbResult DeleteProperty(PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0);
     BE_SQLITE_EXPORT DbResult DeleteProperties(PropertySpecCR spec, uint64_t* majorId);
     BE_SQLITE_EXPORT int AddFunction(DbFunction& function) const;
@@ -2778,7 +2773,7 @@ public:
 
     //! Make any previous changes to settings properties part of the current transaction. They will be written to disk if/when the transaction is committed.
     //! Unless this method is called after changes are made to setting properties, the changes are held in memory only and not saved to disk.
-    BE_SQLITE_EXPORT void SaveSettings();
+    BE_SQLITE_EXPORT void SaveSettings(Utf8CP changesetName=nullptr);
     //! @}
 
     //! @name RepositoryLocalValue
@@ -2814,11 +2809,6 @@ public:
     //! @param[out] lastResult The last error code for this Db.
     //! @see sqlite3_errmsg, sqlite3_errcode
     BE_SQLITE_EXPORT Utf8CP GetLastError(DbResult* lastResult = NULL) const;
-
-    //! Save all modified settings entries in the properties table. Unless this is called, changes to Settings properties
-    //! are not saved when the database is closed.
-    //! @note See discussion of Settings properties in PropertySpec.
-    BE_SQLITE_EXPORT DbResult SaveSettings() const;
 
     //! Commit the outermost transaction, writing changes to the file. Then, restart the transaction.
     //! @param[in] changesetName The name of the operation that generated these changes. If transaction tracking is enabled, 
