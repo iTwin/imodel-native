@@ -298,11 +298,10 @@ DgnGeomPartPtr DgnGeomParts::LoadGeomPart(DgnGeomPartId geomPartId)
    
     auto& elements = m_dgndb.Elements();
 
-    BeSQLite::CachedStatementPtr selectStmt;
-    elements.GetStatement(selectStmt, "SELECT Code FROM " DGN_TABLE(DGN_CLASSNAME_GeomPart) " WHERE Id=?");
-    selectStmt->BindId(1, geomPartId);
+    CachedStatementPtr stmt=elements.GetStatement("SELECT Code FROM " DGN_TABLE(DGN_CLASSNAME_GeomPart) " WHERE Id=?");
+    stmt->BindId(1, geomPartId);
 
-    DbResult result = selectStmt->Step();
+    DbResult result = stmt->Step();
     if (BE_SQLITE_ROW != result)
         return nullptr;
 
@@ -325,7 +324,7 @@ DgnGeomPartPtr DgnGeomParts::LoadGeomPart(DgnGeomPartId geomPartId)
     if (actuallyRead != header.m_size)
         return nullptr;
 
-    DgnGeomPartPtr geomPartPtr = new DgnGeomPart(selectStmt->GetValueText(0));
+    DgnGeomPartPtr geomPartPtr = new DgnGeomPart(stmt->GetValueText(0));
 
     ElementGeometryCollection collection(m_dgndb, geometryBlob.GetDataCP(), header.m_size);
 
@@ -344,17 +343,9 @@ DgnGeomPartId DgnGeomParts::QueryGeomPartId(Utf8CP code)
     if (!code || !*code)
         return DgnGeomPartId();
 
-    CachedStatementPtr statement;
-    GetDgnDb().Elements().GetStatement(statement, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_GeomPart) " WHERE Code=?");
-
-    if (!statement.IsValid())
-        return DgnGeomPartId();
-
-    statement->BindText(1, code, Statement::MakeCopy::No);
-    if (BE_SQLITE_ROW != statement->Step())
-        return DgnGeomPartId();
-
-    return statement->GetValueId<DgnGeomPartId>(0);
+    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_GeomPart) " WHERE Code=?");
+    stmt->BindText(1, code, Statement::MakeCopy::No);
+    return (BE_SQLITE_ROW != stmt->Step()) ? DgnGeomPartId() : stmt->GetValueId<DgnGeomPartId>(0);
     }
 
 //---------------------------------------------------------------------------------------
@@ -372,11 +363,10 @@ BentleyStatus DgnGeomParts::Draw(DgnGeomPartId geomPartId, ViewContextR context,
    
     auto& elements = context.GetDgnDb().Elements();
 
-    BeSQLite::CachedStatementPtr selectStmt;
-    elements.GetStatement(selectStmt, "SELECT Code FROM " DGN_TABLE(DGN_CLASSNAME_GeomPart) " WHERE Id=?");
-    selectStmt->BindId(1, geomPartId);
+    CachedStatementPtr stmt=elements.GetStatement("SELECT Code FROM " DGN_TABLE(DGN_CLASSNAME_GeomPart) " WHERE Id=?");
+    stmt->BindId(1, geomPartId);
 
-    DbResult result = selectStmt->Step();
+    DbResult result = stmt->Step();
     if (BE_SQLITE_ROW != result)
         return ERROR;
 

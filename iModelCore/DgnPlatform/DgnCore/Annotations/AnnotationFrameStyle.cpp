@@ -56,39 +56,12 @@ bool AnnotationFrameStylePropertyBag::_IsRealProperty(T_Key key) const
         }
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     06/2014
-//---------------------------------------------------------------------------------------
-AnnotationFrameStylePropertyBagPtr AnnotationFrameStylePropertyBag::Create() { return new AnnotationFrameStylePropertyBag(); }
-AnnotationFrameStylePropertyBag::AnnotationFrameStylePropertyBag() :
-    T_Super()
-    {
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     06/2014
-//---------------------------------------------------------------------------------------
-AnnotationFrameStylePropertyBagPtr AnnotationFrameStylePropertyBag::Clone() const { return new AnnotationFrameStylePropertyBag(*this); }
-AnnotationFrameStylePropertyBag::AnnotationFrameStylePropertyBag(AnnotationFrameStylePropertyBagCR rhs) : T_Super(rhs) { }
-AnnotationFrameStylePropertyBagR AnnotationFrameStylePropertyBag::operator=(AnnotationFrameStylePropertyBagCR rhs) { T_Super::operator=(rhs); return *this;}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     06/2014
-//---------------------------------------------------------------------------------------
-bool AnnotationFrameStylePropertyBag::HasProperty(AnnotationFrameStyleProperty key) const { return T_Super::HasProperty((T_Key)key); }
-void AnnotationFrameStylePropertyBag::ClearProperty(AnnotationFrameStyleProperty key) { T_Super::ClearProperty((T_Key)key); }
-AnnotationFrameStylePropertyBag::T_Integer AnnotationFrameStylePropertyBag::GetIntegerProperty(AnnotationFrameStyleProperty key) const { return T_Super::GetIntegerProperty((T_Key)key); }
-void AnnotationFrameStylePropertyBag::SetIntegerProperty(AnnotationFrameStyleProperty key, T_Integer value) { T_Super::SetIntegerProperty((T_Key)key, value); }
-AnnotationFrameStylePropertyBag::T_Real AnnotationFrameStylePropertyBag::GetRealProperty(AnnotationFrameStyleProperty key) const { return T_Super::GetRealProperty((T_Key)key); }
-void AnnotationFrameStylePropertyBag::SetRealProperty(AnnotationFrameStyleProperty key, T_Real value) { T_Super::SetRealProperty((T_Key)key, value); }
-
 //*****************************************************************************************************************************************************************************************************
 //*****************************************************************************************************************************************************************************************************
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-AnnotationFrameStylePtr AnnotationFrameStyle::Create(DgnDbR project) { return new AnnotationFrameStyle(project); }
 AnnotationFrameStyle::AnnotationFrameStyle(DgnDbR project) :
     T_Super()
     {
@@ -98,9 +71,6 @@ AnnotationFrameStyle::AnnotationFrameStyle(DgnDbR project) :
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-AnnotationFrameStylePtr AnnotationFrameStyle::Clone() const { return new AnnotationFrameStyle(*this); }
-AnnotationFrameStyle::AnnotationFrameStyle(AnnotationFrameStyleCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
-AnnotationFrameStyleR AnnotationFrameStyle::operator=(AnnotationFrameStyleCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
 void AnnotationFrameStyle::CopyFrom(AnnotationFrameStyleCR rhs)
     {
     m_dgndb = rhs.m_dgndb;
@@ -120,17 +90,6 @@ void AnnotationFrameStyle::Reset()
     m_description.clear();
     m_data.ClearAllProperties();
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     06/2014
-//---------------------------------------------------------------------------------------
-DgnDbR AnnotationFrameStyle::GetDgnProjectR() const { return *m_dgndb; }
-DgnStyleId AnnotationFrameStyle::GetId() const { return m_id; }
-void AnnotationFrameStyle::SetId(DgnStyleId value) { m_id = value; }
-Utf8StringCR AnnotationFrameStyle::GetName() const { return m_name; }
-void AnnotationFrameStyle::SetName(Utf8CP value) { m_name = value; }
-Utf8StringCR AnnotationFrameStyle::GetDescription() const { return m_description; }
-void AnnotationFrameStyle::SetDescription(Utf8CP value) { m_description = value; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
@@ -222,15 +181,6 @@ void AnnotationFrameStyle::SetType(AnnotationFrameType value) { setIntegerValue(
 static const AnnotationFrameStylePropertyBag::T_Real DEFAULT_VERTICALPADDING_VALUE = 0.0;
 double AnnotationFrameStyle::GetVerticalPadding() const { return getRealValue(m_data, AnnotationFrameStyleProperty::VerticalPadding, DEFAULT_VERTICALPADDING_VALUE); }
 void AnnotationFrameStyle::SetVerticalPadding(double value) { setRealValue(m_data, AnnotationFrameStyleProperty::VerticalPadding, DEFAULT_VERTICALPADDING_VALUE, value); }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     06/2014
-//---------------------------------------------------------------------------------------
-void AnnotationFrameStyle::SetPadding(double value)
-    {
-    SetHorizontalPadding(value);
-    SetVerticalPadding(value);
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
@@ -487,13 +437,6 @@ AnnotationFrameStylePtr DgnAnnotationFrameStyles::QueryByName(Utf8CP name) const
     return style;
     }
     
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     04/2014
-//---------------------------------------------------------------------------------------
-DgnStyleId DgnAnnotationFrameStyles::Iterator::Entry::GetId() const { Verify(); return m_sql->GetValueId<DgnStyleId>(0); }
-Utf8CP DgnAnnotationFrameStyles::Iterator::Entry::GetName() const { Verify(); return m_sql->GetValueText(1); }
-Utf8CP DgnAnnotationFrameStyles::Iterator::Entry::GetDescription() const { Verify(); return m_sql->GetValueText(2); }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     04/2014
 //---------------------------------------------------------------------------------------

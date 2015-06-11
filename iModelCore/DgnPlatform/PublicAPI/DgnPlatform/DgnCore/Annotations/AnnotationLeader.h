@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: PublicAPI/DgnPlatform/DgnCore/Annotations/AnnotationLeader.h $
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 #pragma once
 
@@ -27,8 +27,7 @@ enum struct SetAnnotationLeaderStyleOptions
     
     Default = 0,
     Direct = PreserveOverrides
-
-}; // SetAnnotationLeaderStyleOptions
+};
 
 //=======================================================================================
 //! This enumerates all possible annotation leader source attachment types (e.g. how a leader connects to the frame).
@@ -39,8 +38,7 @@ enum struct AnnotationLeaderSourceAttachmentType
 {
     Invalid = 0,
     Id = 1 //<! Uses the ID of an attachment point defined by the frame. To get attachment point IDs, see AnnotationFrameLayout.
-
-}; // AnnotationLeaderSourceAttachmentType
+};
 
 //=======================================================================================
 //! This enumerates all possible annotation leader target attachment types (e.g. how a leader connects to its target).
@@ -51,8 +49,7 @@ enum struct AnnotationLeaderTargetAttachmentType
 {
     Invalid = 0,
     PhysicalPoint = 1 //!< Uses a physical 3D point to connect to; no association is kept to what it is pointing at.
-
-}; // AnnotationLeaderTargetAttachmentType
+};
 
 //=======================================================================================
 //! An AnnotationLeader is a line and optional terminator from an AnnotationFrame to another object in the project for a TextAnnotation. AnnotationLeader is merely a data object; see AnnotationLeaderLayout for size and geometry, and AnnotationLeaderDraw for drawing.
@@ -63,7 +60,6 @@ enum struct AnnotationLeaderTargetAttachmentType
 //=======================================================================================
 struct AnnotationLeader : public RefCountedBase
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(RefCountedBase)
     friend struct AnnotationLeaderPersistence;
@@ -79,41 +75,33 @@ private:
     AnnotationLeaderTargetAttachmentType m_targetAttachmentType;
     std::unique_ptr<DPoint3d> m_targetAttachmentDataForPhysicalPoint;
 
-    void CopyFrom(AnnotationLeaderCR);
+    DGNPLATFORM_EXPORT void CopyFrom(AnnotationLeaderCR);
     void Reset();
 
 public:
     DGNPLATFORM_EXPORT explicit AnnotationLeader(DgnDbR);
-    DGNPLATFORM_EXPORT AnnotationLeader(AnnotationLeaderCR);
-    DGNPLATFORM_EXPORT AnnotationLeaderR operator=(AnnotationLeaderCR);
-
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
-    DGNPLATFORM_EXPORT static AnnotationLeaderPtr Create(DgnDbR);
+    AnnotationLeader(AnnotationLeaderCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
+    AnnotationLeaderR operator=(AnnotationLeaderCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
+    static AnnotationLeaderPtr Create(DgnDbR project) { return new AnnotationLeader(project); }
     DGNPLATFORM_EXPORT static AnnotationLeaderPtr Create(DgnDbR, DgnStyleId);
-    DGNPLATFORM_EXPORT AnnotationLeaderPtr Clone() const;
+    AnnotationLeaderPtr Clone() const { return new AnnotationLeader(*this); }
 
-    DGNPLATFORM_EXPORT DgnDbR GetDgnProjectR() const;
-    DGNPLATFORM_EXPORT DgnStyleId GetStyleId() const;
+    DgnDbR GetDbR() const { return *m_dgndb; }
+    DgnStyleId GetStyleId() const { return m_styleID; }
     DGNPLATFORM_EXPORT void SetStyleId(DgnStyleId, SetAnnotationLeaderStyleOptions);
-    DGNPLATFORM_EXPORT AnnotationLeaderStylePtr CreateEffectiveStyle() const;
-    DGNPLATFORM_EXPORT AnnotationLeaderStylePropertyBagCR GetStyleOverrides() const;
-    DGNPLATFORM_EXPORT AnnotationLeaderStylePropertyBagR GetStyleOverridesR();
-
-    DGNPLATFORM_EXPORT AnnotationLeaderSourceAttachmentType GetSourceAttachmentType() const;
-    DGNPLATFORM_EXPORT void SetSourceAttachmentType(AnnotationLeaderSourceAttachmentType);
-    DGNPLATFORM_EXPORT uint32_t const* GetSourceAttachmentDataForId() const;
-    DGNPLATFORM_EXPORT void SetSourceAttachmentDataForId(uint32_t const*);
-    
-    DGNPLATFORM_EXPORT AnnotationLeaderTargetAttachmentType GetTargetAttachmentType() const;
-    DGNPLATFORM_EXPORT void SetTargetAttachmentType(AnnotationLeaderTargetAttachmentType);
-    DGNPLATFORM_EXPORT DPoint3dCP GetTargetAttachmentDataForPhysicalPoint() const;
-    DGNPLATFORM_EXPORT void SetTargetAttachmentDataForPhysicalPoint(DPoint3dCP);
-
-}; // AnnotationLeader
+    AnnotationLeaderStylePtr CreateEffectiveStyle() const { return m_dgndb->Styles().AnnotationLeaderStyles().QueryById(m_styleID)->CreateEffectiveStyle(m_styleOverrides); }
+    AnnotationLeaderStylePropertyBagCR GetStyleOverrides() const { return m_styleOverrides; }
+    AnnotationLeaderStylePropertyBagR GetStyleOverridesR() { return m_styleOverrides; }
+    AnnotationLeaderSourceAttachmentType GetSourceAttachmentType() const { return m_sourceAttachmentType; }
+    void SetSourceAttachmentType(AnnotationLeaderSourceAttachmentType value) { m_sourceAttachmentType = value; }
+    uint32_t const* GetSourceAttachmentDataForId() const { return m_sourceAttachmentDataForId.get(); }
+    void SetSourceAttachmentDataForId(uint32_t const* value) { m_sourceAttachmentDataForId.reset(value ? new uint32_t(*value) : NULL); }
+    AnnotationLeaderTargetAttachmentType GetTargetAttachmentType() const { return m_targetAttachmentType; }
+    void SetTargetAttachmentType(AnnotationLeaderTargetAttachmentType value) { m_targetAttachmentType = value; }
+    DPoint3dCP GetTargetAttachmentDataForPhysicalPoint() const { return m_targetAttachmentDataForPhysicalPoint.get(); }
+    void SetTargetAttachmentDataForPhysicalPoint(DPoint3dCP value) { m_targetAttachmentDataForPhysicalPoint.reset(value ? new DPoint3d(*value) : NULL); }
+};
 
 //! @endGroup
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
-
-//__PUBLISH_SECTION_END__

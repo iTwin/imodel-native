@@ -247,7 +247,9 @@ DgnElementKey InsertElement(Utf8CP elementCode, DgnModelId mid = DgnModelId(), D
 void TwiddleTime(DgnElementKeyCR ekey)
 {
     BeThreadUtilities::BeSleep(1); // make sure the new timestamp is after the one that's on the Element now
+#if defined (NEEDS_WORK_TXN_MANAGER)
     m_db->Elements().UpdateLastModifiedTime(ekey.GetElementId());
+#endif
 }
 
 /*---------------------------------------------------------------------------------**//**

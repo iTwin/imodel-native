@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: DgnCore/Annotations/TextAnnotationDraw.cpp $
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
 #include <DgnPlatformInternal.h> 
@@ -11,7 +11,6 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-TextAnnotationDrawPtr TextAnnotationDraw::Create(TextAnnotationCR annotation) { return new TextAnnotationDraw(annotation); }
 TextAnnotationDraw::TextAnnotationDraw(TextAnnotationCR annotation) :
     T_Super()
     {
@@ -22,21 +21,11 @@ TextAnnotationDraw::TextAnnotationDraw(TextAnnotationCR annotation) :
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-TextAnnotationDrawPtr TextAnnotationDraw::Clone() const { return new TextAnnotationDraw(*this); }
-TextAnnotationDraw::TextAnnotationDraw(TextAnnotationDrawCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
-TextAnnotationDrawR TextAnnotationDraw::operator=(TextAnnotationDrawCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
 void TextAnnotationDraw::CopyFrom(TextAnnotationDrawCR rhs)
     {
     m_annotation = rhs.m_annotation;
     m_documentTransform = rhs.m_documentTransform;
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     05/2014
-//---------------------------------------------------------------------------------------
-TextAnnotationCR TextAnnotationDraw::GetAnnotation() const { return *m_annotation; }
-TransformCR TextAnnotationDraw::GetDocumentTransform() const { return m_documentTransform; }
-void TextAnnotationDraw::SetDocumentTransform(TransformCR value) { m_documentTransform = value; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014

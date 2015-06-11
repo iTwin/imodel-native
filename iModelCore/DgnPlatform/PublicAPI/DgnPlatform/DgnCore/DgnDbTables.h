@@ -47,6 +47,7 @@
 #define DGN_TABLE_Domain        DGN_TABLE("Domain")
 #define DGN_TABLE_Font          DGN_TABLE("Font")
 #define DGN_TABLE_Handler       DGN_TABLE("Handler")
+#define DGN_TABLE_Txns          DGN_TABLE("Txns")
 #define DGN_VTABLE_RTree3d      DGN_TABLE("RTree3d")
 
 //-----------------------------------------------------------------------------------------
@@ -70,8 +71,6 @@
 #include <Bentley/HeapZone.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
-
-struct TxnElementSummary;
 
 //! Map of ID to DgnFont object. See method FontNumberMap.
 typedef bmap<uint32_t, DgnFontCP> T_FontNumberMap;
@@ -857,7 +856,7 @@ struct DgnElements : DgnDbTable
     friend struct DgnModel;
     friend struct DgnModels;
     friend struct ElementHandler;
-    friend struct Txns;
+    friend struct TxnManager;
     friend struct ProgressiveViewFilter;
 
     //! The totals for loaded DgnElements in this DgnDb. These values reflect the current state of the loaded elements.
@@ -902,8 +901,8 @@ private:
     void AddToPool(DgnElementR) const;
     void DropFromPool(DgnElementCR) const;
     void SendOnLoadedEvent(DgnElementR elRef) const;
+    void OnChangesetApply(TxnSummary const&);
     void OnChangesetApplied(TxnSummary const&);
-    void OnChangesetCanceled(TxnSummary const&);
     DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, bool makePersistent) const;
     DgnElementCPtr LoadElement(DgnElementId elementId, bool makePersistent) const;
     bool IsElementIdUsed(DgnElementId id) const;
@@ -919,7 +918,7 @@ private:
 public:
     BeSQLite::SnappyFromBlob& GetSnappyFrom() {return m_snappyFrom;}
     BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;}
-    DGNPLATFORM_EXPORT BeSQLite::DbResult GetStatement(BeSQLite::CachedStatementPtr& stmt, Utf8CP sql) const;
+    DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const;
     DGNPLATFORM_EXPORT void ChangeMemoryUsed(int32_t delta) const;
 
     //! Look up an element in the pool of loaded elements for this DgnDb.
@@ -992,15 +991,6 @@ public:
 
     //! Get the Heapzone for this DgnDb.
     HeapZone& GetHeapZone() {return m_heapZone;}
-
-    //! Update the last modified timestamp of the specified element
-    //! @note Updates to the element class automatically cause the last modified time to be updated (via a database trigger).
-    //! This method should only be used to indicate that aspect of the element has changed and that change should be
-    //! considered to be a change to the element itself for change propagation purposes.
-    DGNPLATFORM_EXPORT BentleyStatus UpdateLastModifiedTime(DgnElementId elementId);
-
-    //! Query the last modified time from the specified element
-    DGNPLATFORM_EXPORT DateTime QueryLastModifiedTime(DgnElementId elementId) const;
 
     //! Query the DgnElementKey for a DgnElement from this DgnDb by its DgnElementId.
     //! @return Invalid key if the element does not exist.

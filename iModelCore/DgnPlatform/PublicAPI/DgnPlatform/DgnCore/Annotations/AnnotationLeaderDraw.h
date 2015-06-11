@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: PublicAPI/DgnPlatform/DgnCore/Annotations/AnnotationLeaderDraw.h $
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 #pragma once
 
@@ -22,29 +22,24 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 struct AnnotationLeaderDraw : public RefCountedBase
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(RefCountedBase)
 
     AnnotationLeaderLayoutCP m_leaderLayout;
 
-    void CopyFrom(AnnotationLeaderDrawCR);
+    DGNPLATFORM_EXPORT void CopyFrom(AnnotationLeaderDrawCR);
 
 public:
     DGNPLATFORM_EXPORT explicit AnnotationLeaderDraw(AnnotationLeaderLayoutCR);
-    DGNPLATFORM_EXPORT AnnotationLeaderDraw(AnnotationLeaderDrawCR);
-    DGNPLATFORM_EXPORT AnnotationLeaderDrawR operator=(AnnotationLeaderDrawCR);
+    AnnotationLeaderDraw(AnnotationLeaderDrawCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
+    AnnotationLeaderDrawR operator=(AnnotationLeaderDrawCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
+    static AnnotationLeaderDrawPtr Create(AnnotationLeaderLayoutCR leaderLayout) { return new AnnotationLeaderDraw(leaderLayout); }
+    AnnotationLeaderDrawPtr Clone() const { return new AnnotationLeaderDraw(*this); }
 
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
-    DGNPLATFORM_EXPORT static AnnotationLeaderDrawPtr Create(AnnotationLeaderLayoutCR);
-    DGNPLATFORM_EXPORT AnnotationLeaderDrawPtr Clone() const;
-
-    DGNPLATFORM_EXPORT AnnotationLeaderLayoutCR GetLeaderLayout() const;
+    AnnotationLeaderLayoutCR GetLeaderLayout() const { return *m_leaderLayout; }
 
     DGNPLATFORM_EXPORT BentleyStatus Draw(ViewContextR) const;
-
-}; // AnnotationLeaderDraw
+};
 
 //! @endGroup
 

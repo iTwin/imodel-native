@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: DgnCore/Annotations/AnnotationLeader.cpp $
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
  
 #include <DgnPlatformInternal.h> 
@@ -16,7 +16,6 @@ template<typename T> static bool isEnumFlagSet(T testBit, T options) { return 0 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-AnnotationLeaderPtr AnnotationLeader::Create(DgnDbR project) { return new AnnotationLeader(project); }
 AnnotationLeader::AnnotationLeader(DgnDbR project) :
     T_Super()
     {
@@ -40,9 +39,6 @@ AnnotationLeaderPtr AnnotationLeader::Create(DgnDbR project, DgnStyleId styleID)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-AnnotationLeaderPtr AnnotationLeader::Clone() const { return new AnnotationLeader(*this); }
-AnnotationLeader::AnnotationLeader(AnnotationLeaderCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
-AnnotationLeaderR AnnotationLeader::operator=(AnnotationLeaderCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
 void AnnotationLeader::CopyFrom(AnnotationLeaderCR rhs)
     {
     // Making additions or changes? Please check constructor and Reset.
@@ -68,23 +64,6 @@ void AnnotationLeader::Reset()
     m_targetAttachmentType = AnnotationLeaderTargetAttachmentType::Invalid;
     m_targetAttachmentDataForPhysicalPoint.reset(NULL);
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     06/2014
-//---------------------------------------------------------------------------------------
-DgnDbR AnnotationLeader::GetDgnProjectR() const { return *m_dgndb; }
-DgnStyleId AnnotationLeader::GetStyleId() const { return m_styleID; }
-AnnotationLeaderStylePtr AnnotationLeader::CreateEffectiveStyle() const { return m_dgndb->Styles().AnnotationLeaderStyles().QueryById(m_styleID)->CreateEffectiveStyle(m_styleOverrides); }
-AnnotationLeaderStylePropertyBagCR AnnotationLeader::GetStyleOverrides() const { return m_styleOverrides; }
-AnnotationLeaderStylePropertyBagR AnnotationLeader::GetStyleOverridesR() { return m_styleOverrides; }
-AnnotationLeaderSourceAttachmentType AnnotationLeader::GetSourceAttachmentType() const { return m_sourceAttachmentType; }
-void AnnotationLeader::SetSourceAttachmentType(AnnotationLeaderSourceAttachmentType value) { m_sourceAttachmentType = value; }
-uint32_t const* AnnotationLeader::GetSourceAttachmentDataForId() const { return m_sourceAttachmentDataForId.get(); }
-void AnnotationLeader::SetSourceAttachmentDataForId(uint32_t const* value) { m_sourceAttachmentDataForId.reset(value ? new uint32_t(*value) : NULL); }
-AnnotationLeaderTargetAttachmentType AnnotationLeader::GetTargetAttachmentType() const { return m_targetAttachmentType; }
-void AnnotationLeader::SetTargetAttachmentType(AnnotationLeaderTargetAttachmentType value) { m_targetAttachmentType = value; }
-DPoint3dCP AnnotationLeader::GetTargetAttachmentDataForPhysicalPoint() const { return m_targetAttachmentDataForPhysicalPoint.get(); }
-void AnnotationLeader::SetTargetAttachmentDataForPhysicalPoint(DPoint3dCP value) { m_targetAttachmentDataForPhysicalPoint.reset(value ? new DPoint3d(*value) : NULL); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014

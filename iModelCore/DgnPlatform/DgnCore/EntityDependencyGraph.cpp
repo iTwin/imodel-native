@@ -1046,15 +1046,14 @@ void DgnElementDependencyGraph::InvokeAffectedDependencyHandlers(TxnSummaryCR su
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnElementDependencyGraph::WhatIfChanged(IEdgeProcessor& proc, bvector<DgnElementId> const& directlyChangedEntities, bvector<EC::ECInstanceId> const& directlyChangedDepRels)
     {
-    TxnSummary fakeSummary(m_db);
     for (DgnElementId const& element : directlyChangedEntities)
-        fakeSummary.AddAffectedElement(element, DgnModelId(), 0.0, TxnSummary::ChangeType::Update);
+        m_summary.AddAffectedElement(element, DgnModelId(), 0.0, TxnSummary::ChangeType::Update);
 
     for (EC::ECInstanceId const& deprel : directlyChangedDepRels)
-        fakeSummary.AddAffectedDependency(deprel, TxnSummary::ChangeType::Update);
+        m_summary.AddAffectedDependency(deprel, TxnSummary::ChangeType::Update);
 
     m_processor = &proc;
-    InvokeAffectedDependencyHandlers(fakeSummary);
+    InvokeAffectedDependencyHandlers(m_summary);
     m_processor = nullptr;
 
     return BSISUCCESS;

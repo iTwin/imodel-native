@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: DgnCore/Annotations/AnnotationParagraph.cpp $
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
 #include <DgnPlatformInternal.h> 
@@ -13,7 +13,6 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationParagraphPtr AnnotationParagraph::Create(DgnDbR project) { return new AnnotationParagraph(project); }
 AnnotationParagraph::AnnotationParagraph(DgnDbR project) :
     T_Super()
     {
@@ -45,9 +44,6 @@ AnnotationParagraphPtr AnnotationParagraph::Create(DgnDbR project, DgnStyleId st
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationParagraphPtr AnnotationParagraph::Clone() const { return new AnnotationParagraph(*this); }
-AnnotationParagraph::AnnotationParagraph(AnnotationParagraphCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
-AnnotationParagraphR AnnotationParagraph::operator=(AnnotationParagraphCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
 void AnnotationParagraph::CopyFrom(AnnotationParagraphCR rhs)
     {
     m_dgndb = rhs.m_dgndb;
@@ -59,17 +55,6 @@ void AnnotationParagraph::CopyFrom(AnnotationParagraphCR rhs)
     for (auto const& rhsRun : rhs.m_runs)
         m_runs.push_back(rhsRun->Clone());
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     05/2014
-//---------------------------------------------------------------------------------------
-DgnDbR AnnotationParagraph::GetDgnProjectR() const { return *m_dgndb; }
-DgnStyleId AnnotationParagraph::GetStyleId() const { return m_styleID; }
-AnnotationTextStylePtr AnnotationParagraph::CreateEffectiveStyle() const { return m_dgndb->Styles().AnnotationTextStyles().QueryById(m_styleID)->CreateEffectiveStyle(m_styleOverrides); }
-AnnotationTextStylePropertyBagCR AnnotationParagraph::GetStyleOverrides() const { return m_styleOverrides; }
-AnnotationTextStylePropertyBagR AnnotationParagraph::GetStyleOverridesR() { return m_styleOverrides; }
-AnnotationRunCollectionCR AnnotationParagraph::GetRuns() const { return m_runs; }
-AnnotationRunCollectionR AnnotationParagraph::GetRunsR() { return m_runs; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014

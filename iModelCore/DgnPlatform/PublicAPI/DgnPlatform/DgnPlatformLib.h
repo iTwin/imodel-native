@@ -119,9 +119,9 @@ public:
             virtual uint32_t _QueryUser(bool attemptRecovery, Utf8CP productName) {return 0;}
             virtual uint32_t _EnterCoreCriticalSection(CharCP) {return 0;} // WIP_CHAR_OK - Just for diagnostic purposes
             virtual uint32_t _ReleaseCoreCriticalSection(CharCP) {return 0;} // WIP_CHAR_OK - Just for diagnostic purposes
-            virtual void   _RestoreCoreCriticalSection(CharCP, int) {} // WIP_CHAR_OK - Just for diagnostic purposes
-            virtual void    _OnHostTermination(bool isProcessShutdown) {delete this;}
-            virtual bool    _ConIOEnabled() {return false;}
+            virtual void _RestoreCoreCriticalSection(CharCP, int) {} // WIP_CHAR_OK - Just for diagnostic purposes
+            virtual void _OnHostTermination(bool isProcessShutdown) {delete this;}
+            virtual bool _ConIOEnabled() {return false;}
             virtual WString _ConIOGetLine(wchar_t const* prompt) {return L"";}
             };
 
@@ -173,9 +173,10 @@ public:
             virtual void _OnNothingToUndo() {}
             virtual void _OnPrepareForUndoRedo(){}
             virtual void _OnNothingToRedo(){}
+
             DGNPLATFORM_EXPORT virtual void _OnTxnCommit(TxnSummaryCR);
-            DGNPLATFORM_EXPORT virtual void _OnTxnReverse(TxnSummaryCR, TxnDirection);
-            DGNPLATFORM_EXPORT virtual void _OnTxnReversed(TxnSummaryCR, TxnDirection);
+            DGNPLATFORM_EXPORT virtual void _OnTxnReverse(TxnSummaryCR);
+            DGNPLATFORM_EXPORT virtual void _OnTxnReversed(TxnSummaryCR);
             DGNPLATFORM_EXPORT virtual void _OnUndoRedoFinished(DgnDbR, TxnDirection);
 
             //! @name Transaction Monitors
@@ -1008,7 +1009,6 @@ public:
             m_lineStyleManager = 0;
             m_formatterAdmin = 0;
             m_realityDataAdmin = 0;
-
             };
 
         virtual ~Host() {}
