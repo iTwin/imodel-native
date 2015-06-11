@@ -119,9 +119,9 @@ public:
             virtual uint32_t _QueryUser(bool attemptRecovery, Utf8CP productName) {return 0;}
             virtual uint32_t _EnterCoreCriticalSection(CharCP) {return 0;} // WIP_CHAR_OK - Just for diagnostic purposes
             virtual uint32_t _ReleaseCoreCriticalSection(CharCP) {return 0;} // WIP_CHAR_OK - Just for diagnostic purposes
-            virtual void   _RestoreCoreCriticalSection(CharCP, int) {} // WIP_CHAR_OK - Just for diagnostic purposes
-            virtual void    _OnHostTermination(bool isProcessShutdown) {delete this;}
-            virtual bool    _ConIOEnabled() {return false;}
+            virtual void _RestoreCoreCriticalSection(CharCP, int) {} // WIP_CHAR_OK - Just for diagnostic purposes
+            virtual void _OnHostTermination(bool isProcessShutdown) {delete this;}
+            virtual bool _ConIOEnabled() {return false;}
             virtual WString _ConIOGetLine(wchar_t const* prompt) {return L"";}
             };
 
@@ -1009,7 +1009,6 @@ public:
             m_lineStyleManager = 0;
             m_formatterAdmin = 0;
             m_realityDataAdmin = 0;
-
             };
 
         virtual ~Host() {}

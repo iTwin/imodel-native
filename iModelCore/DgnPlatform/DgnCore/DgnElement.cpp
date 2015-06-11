@@ -205,11 +205,6 @@ void DgnElement::UpdateLastModTime()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelStatus DgnElement::_InsertInDb()
     {
-    if (m_code.empty())
-        m_code = _GenerateDefaultCode();
-
-    UpdateLastModTime();
-
     enum Column : int       {ElementId=1,ECClassId=2,ModelId=3,CategoryId=4,Label=5,Code=6,ParentId=7,LastMod=8};
     CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Element) " (Id,ECClassId,ModelId,CategoryId,Label,Code,ParentId,LastMod) VALUES(?,?,?,?,?,?,?,?)");
 
@@ -232,8 +227,6 @@ DgnModelStatus DgnElement::_UpdateInDb()
     {
     enum Column : int       {CategoryId=1,Label=2,Code=3,ParentId=4,LastMod=5,ElementId=6};
     CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("UPDATE " DGN_TABLE(DGN_CLASSNAME_Element) " SET CategoryId=?,Label=?,Code=?,ParentId=?,LastMod=? WHERE Id=?");
-
-    UpdateLastModTime();
 
     // note: ECClassId and ModelId cannot be modified.
     stmt->BindId(Column::CategoryId, m_categoryId);

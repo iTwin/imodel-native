@@ -1969,7 +1969,8 @@ TEST_F(TransactionManagerTests, ElementAssembly)
     ASSERT_TRUE(el2.IsValid());
     ASSERT_EQ(el2->GetParentId(), el1->GetElementId());
 
-    DgnElementCPtr el3 = e2->Insert(); // insert a second copy of the same element (that should not be a problem).
+    e2 = new TestElement(params);
+    DgnElementCPtr el3 = e2->Insert(); // insert another element
     ASSERT_TRUE(el3.IsValid());
 
     int count =(int) el1->QueryChildren().size(); // now make sure there are two children of el1
@@ -2035,7 +2036,7 @@ TEST_F(TransactionManagerTests, UndoRedo)
     stat = txns.ReverseSingleTxn();
     ASSERT_EQ(stat, SUCCESS);
 
+    templateEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "");
     DgnElementCPtr el2 = templateEl->Insert();
     m_db->SaveChanges("change 2");
-
     }

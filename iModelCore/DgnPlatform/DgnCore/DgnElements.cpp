@@ -764,7 +764,7 @@ void ElemIdTree::RemoveElement(DgnElementCR element, bool killingWholeTree)
         }
 
     m_dgndb.Elements().ChangeMemoryUsed(0 -(int32_t) element._GetMemSize());
-    element.SetInPool(false);
+    element.SetPersistent(false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -913,7 +913,7 @@ void DgnElements::AddToPool(DgnElementR element) const
     {
     BeDbMutexHolder _v_v(m_mutex);
     BeAssert(!element.IsPersistent());
-    element.SetInPool(true);
+    element.SetPersistent(true);
 
     ChangeMemoryUsed(element._GetMemSize());
 
@@ -1226,15 +1226,12 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnModelStatus* o
     {
     DgnModelStatus ALLOW_NULL_OUTPUT(stat,outStat);
 
-    // We can't change the Id of the input element if it is a persistent element, so don't allow it. 
-    // But, we don't care what the current id is otherwise - we're going to overwrite it.
-    if (element.IsPersistent()) 
+    // don't allow elements that already have an id.
+    if (element.m_elementId.IsValid()) 
         {
         stat = DGNMODEL_STATUS_WrongElement;
         return nullptr;
         }
-
-    element.m_elementId = DgnElementId(); // in case the insert fails.
 
     DgnModelR model = element.GetDgnModel();
     if (&model.GetDgnDb() != &m_dgndb)
@@ -1257,19 +1254,25 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnModelStatus* o
 
     CallAppData(OnInsertCaller(), element);
 
+    element.m_elementId = MakeNewElementId(); 
+    element.UpdateLastModTime();
+    if (element.m_code.empty())
+        element.m_code = element._GenerateDefaultCode();
+
     DgnElementPtr newElement = element.CopyForEdit();
     if (!newElement.IsValid())
         {
+        element.m_elementId = DgnElementId();
         stat = DGNMODEL_STATUS_BadElement;
         return nullptr;
         }
 
-    newElement->m_elementId = MakeNewElementId(); 
     stat = newElement->_InsertInDb();
     if (DGNMODEL_STATUS_Success != stat)
+        {
+        element.m_elementId = DgnElementId();
         return nullptr;
-
-    element.m_elementId = newElement->m_elementId; // set this on input element so caller can see it
+        }
 
     AddToPool(*newElement);
 
@@ -1333,8 +1336,11 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
     CallAppData(OnUpdateCaller(element, replacement), element);
     CallAppData(OnUpdateCaller(element, replacement), replacement);
 
+    replacement.UpdateLastModTime(); 
+
     uint32_t oldSize = element._GetMemSize(); // save current size
     stat = element._CopyFrom(replacement);    // copy new data into original element
+
     if (DGNMODEL_STATUS_Success == stat)
         stat = element._UpdateInDb();
 

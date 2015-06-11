@@ -137,9 +137,9 @@ protected:
 
     struct Flags
         {
-        uint32_t m_lockHeld:1;
+        uint32_t m_persistent:1;
         uint32_t m_editable:1;
-        uint32_t m_inPool:1;
+        uint32_t m_lockHeld:1;
         uint32_t m_inSelectionSet:1;
         uint32_t m_hilited:3;
         uint32_t m_undisplayed:1;
@@ -160,7 +160,7 @@ protected:
     mutable Flags   m_flags;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
-    void SetInPool(bool val) const {m_flags.m_inPool = val;} //!< @private
+    void SetPersistent(bool val) const {m_flags.m_persistent = val;} //!< @private
 
     DGNPLATFORM_EXPORT virtual ~DgnElement();
 
@@ -318,7 +318,7 @@ public:
 
     //! Determine whether this is a copy of the "persistent state" (i.e. an exact copy of what is saved in the DgnDb) of a DgnElement.
     //! @note If this flag is true, this element must be readonly. To modify an element, call CopyForEdit.
-    bool IsPersistent() const {return m_flags.m_inPool;}
+    bool IsPersistent() const {return m_flags.m_persistent;}
 
     //! Test if the element is currently in the selection set.
     bool IsInSelectionSet() const {return m_flags.m_inSelectionSet;}
