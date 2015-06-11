@@ -60,7 +60,7 @@ enum struct AnnotationFrameStyleProperty
 //! @note Unless dealing with style overrides, you will not typically use this enumeration directly. While AnnotationFrameStyle provides high-level accessors to its properties, overrides are expressed directly via AnnotationFrameStylePropertyBag and AnnotationFrameStyleProperty.
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
-struct AnnotationFrameStylePropertyBag : public AnnotationPropertyBag
+struct EXPORT_VTABLE_ATTRIBUTE AnnotationFrameStylePropertyBag : AnnotationPropertyBag
 {
 private:
     DEFINE_T_SUPER(AnnotationPropertyBag)

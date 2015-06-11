@@ -20,7 +20,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //! @note While you can technically map a key to both value types, this should not be done in practice.
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
-struct AnnotationPropertyBag : public RefCountedBase
+struct EXPORT_VTABLE_ATTRIBUTE AnnotationPropertyBag : RefCountedBase
 {
     typedef int32_t T_Key;
     typedef int64_t T_Integer;
