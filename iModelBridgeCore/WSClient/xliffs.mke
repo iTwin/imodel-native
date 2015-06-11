@@ -17,3 +17,7 @@ SQLANG_Xliff    = $(OutputRootDir)build/WSClient/xliffs/WSError_en.xliff
 SQLANG_CHeader  = $(_MakeFilePath)Connect/Connect.xliff.h
 SQLANG_Xliff    = $(OutputRootDir)build/WSClient/xliffs/Connect_en.xliff
 %include $(SrcRoot)bsicommon/sharedmki/CHeaderToXliff.mki
+
+SQLANG_CHeader  = $(_MakeFilePath)Configuration/BuddiError.xliff.h
+SQLANG_Xliff    = $(OutputRootDir)build/WSClient/xliffs/BuddiError_en.xliff
+%include $(SrcRoot)bsicommon/sharedmki/CHeaderToXliff.mki
