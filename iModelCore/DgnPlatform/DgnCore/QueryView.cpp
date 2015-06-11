@@ -466,7 +466,7 @@ void QueryViewController::_OnAttachedToViewport(DgnViewportR)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QueryViewController::BindModelAndCategory (BeSQLiteStatementR stmt) const
+void QueryViewController::BindModelAndCategory (StatementR stmt) const
     {
     int vSetIdx = stmt.GetParameterIndex("@vSet");
     if (0 == vSetIdx)

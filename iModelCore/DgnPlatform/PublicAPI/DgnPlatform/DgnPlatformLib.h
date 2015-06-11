@@ -196,7 +196,7 @@ public:
         {
         protected:
             bool m_isInitialized;
-            BeSQLiteDbP m_lastResortFontDb;
+            BeSQLite::DbP m_lastResortFontDb;
             DgnFonts* m_dbFonts;
             DgnFontPtr m_lastResortTTFont;
             DgnFontPtr m_lastResortRscFont;

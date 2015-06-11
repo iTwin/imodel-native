@@ -2020,7 +2020,7 @@ void DgnDbRTree3dViewFilter::InitializeSecondaryTest(DRange3dCR volume, uint32_t
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-RtreeViewFilter::RtreeViewFilter(DgnViewportCR viewport, BeSQLiteDbR db, double minimumSizePixels, DgnElementIdSet const* exclude)
+RtreeViewFilter::RtreeViewFilter(DgnViewportCR viewport, DbR db, double minimumSizePixels, DgnElementIdSet const* exclude)
         : Tester(db), m_minimumSizePixels(minimumSizePixels), m_exclude(exclude), m_clips(nullptr)
     {
     m_nCalls = m_nScores = m_nSkipped = 0;
@@ -2047,7 +2047,7 @@ RtreeViewFilter::RtreeViewFilter(DgnViewportCR viewport, BeSQLiteDbR db, double 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbRTree3dViewFilter::DgnDbRTree3dViewFilter(DgnViewportCR viewport, ICheckStopP checkStop, BeSQLiteDbR db, uint32_t hitLimit, double minimumSizePixels,
+DgnDbRTree3dViewFilter::DgnDbRTree3dViewFilter(DgnViewportCR viewport, ICheckStopP checkStop, DbR db, uint32_t hitLimit, double minimumSizePixels,
                             DgnElementIdSet const* alwaysDraw, DgnElementIdSet const* exclude)
     : RtreeViewFilter(viewport, db, minimumSizePixels, exclude), m_checkStop(checkStop), m_useSecondary(false), m_alwaysDraw(nullptr)
     {

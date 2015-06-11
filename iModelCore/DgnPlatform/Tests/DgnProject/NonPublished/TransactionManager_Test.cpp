@@ -1625,11 +1625,11 @@ TEST_F(ElementDependencyGraph, ModelDependenciesWithCycleTest)
     //       ---> m3
     //
 
-    auto modelClassId = m_db->Schemas().GetECClass("dgn", "Model")->GetId();
-    auto m1key = EC::ECInstanceKey(modelClassId, EC::ECInstanceId(m1id.GetValue()));
-    auto m2key = EC::ECInstanceKey(modelClassId, EC::ECInstanceId(m2id.GetValue()));
-    auto m3key = EC::ECInstanceKey(modelClassId, EC::ECInstanceId(m3id.GetValue()));
-    auto m4key = EC::ECInstanceKey(modelClassId, EC::ECInstanceId(m4id.GetValue()));
+    auto modelClassId = m_db->Schemas().GetECClass ("dgn", "PhysicalModel")->GetId();
+    auto m1key = EC::ECInstanceKey (modelClassId, EC::ECInstanceId(m1id.GetValue()));
+    auto m2key = EC::ECInstanceKey (modelClassId, EC::ECInstanceId(m2id.GetValue()));
+    auto m3key = EC::ECInstanceKey (modelClassId, EC::ECInstanceId(m3id.GetValue()));
+    auto m4key = EC::ECInstanceKey (modelClassId, EC::ECInstanceId(m4id.GetValue()));
 
     EC::ECSqlStatement mrelstmt;
     EC::ECInstanceKey rkey;
@@ -1670,7 +1670,7 @@ TEST_F(ElementDependencyGraph, ModelDependenciesInvalidDirectionTest)
     auto m2id = m2->GetModelId();
 
     // Make m2 depend on m1
-    auto modelClassId = m_db->Schemas().GetECClass("dgn", "Model")->GetId();
+    auto modelClassId = m_db->Schemas().GetECClass("dgn", "PhysicalModel")->GetId();
     auto m1key = EC::ECInstanceKey(modelClassId, EC::ECInstanceId(m1id.GetValue()));
     auto m2key = EC::ECInstanceKey(modelClassId, EC::ECInstanceId(m2id.GetValue()));
 

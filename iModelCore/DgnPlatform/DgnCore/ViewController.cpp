@@ -1575,6 +1575,11 @@ void CameraViewController::_RestoreFromSettings(JsonValueCR jsonObj)
         m_clipVector = NULL;
         }
 #endif
+
+    //  Anything is better than garbage
+    if (m_delta.x <= DBL_EPSILON) m_delta.x = (m_delta.y + m_delta.z)/2;
+    if (m_delta.y <= DBL_EPSILON) m_delta.y = (m_delta.x + m_delta.z)/2;
+    if (m_delta.z <= DBL_EPSILON) m_delta.z = (m_delta.x + m_delta.y)/2;
     }
 
 //---------------------------------------------------------------------------------------

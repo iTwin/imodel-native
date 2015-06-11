@@ -815,7 +815,7 @@ double          scale
     if (DrawPurpose::Plot == context.GetDrawPurpose())      // Opt for slower, higher quality when plotting.
         return false;
 
-#if !defined(BENTLEYCONFIG_GRAPHICS_OPENGLES)  //  We always want to use geometry map with OpenGL ES because the our OpenGL implementation of PushClipStencil does not work
+#if 1 || !defined(BENTLEYCONFIG_GRAPHICS_OPENGLES)  //  We always want to use geometry map with OpenGL ES because the our OpenGL implementation of PushClipStencil does not work
     double          pixelSize = context.GetPixelSizeAtPoint (NULL);
     double          tilePixels = MAX (spacing.x, spacing.y) / pixelSize;
     static double   s_maxGeometryMapTile = 32.0;
@@ -1317,6 +1317,7 @@ DPoint3dR       origin
 #else
     bool            useStencil = false;
 #endif
+    useStencil = false;
     GPArraySmartP   boundGpa (PatternHelper::GetBoundaryGPA (boundary, params->rMatrix, origin, useStencil));
 
     if (NULL == boundGpa || 0 == boundGpa->GetCount ())

@@ -655,7 +655,15 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <Class class="Model" />
         </Source>
         <Target cardinality="(0,N)" roleLabel="has N elements" polymorphic="True">
-            <Class class="Element" >
+          <ECCustomAttributes>
+            <ECDbRelationshipConstraintHint xmlns="Bentley_Standard_CustomAttributes.01.12">
+<!--              <ForeignKeyConstraint>
+                <EnforceReferentialIntegrityCheck>True</EnforceReferentialIntegrityCheck>
+                <OnDeleteAction>NoAction</OnDeleteAction>
+              </ForeignKeyConstraint> -->
+            </ECDbRelationshipConstraintHint>
+          </ECCustomAttributes>
+          <Class class="Element" >
                 <Key>
                     <Property name="ModelId" />
                 </Key>

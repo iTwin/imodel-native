@@ -443,7 +443,7 @@ DgnModelStatus GeometricElement::WriteGeomStream(Statement& stmt, DgnDbR dgnDb)
         return DGNMODEL_STATUS_Success;
 
     StatusInt status = snappy.SaveToRow(dgnDb, DGN_TABLE(DGN_CLASSNAME_ElementGeom), GEOM_Column, m_elementId.GetValue());
-    return(SUCCESS != status) ? DGNMODEL_STATUS_ElementWriteError : DGNMODEL_STATUS_Success;
+    return (SUCCESS != status) ? DGNMODEL_STATUS_ElementWriteError : DGNMODEL_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -900,7 +900,7 @@ DgnElementId ElementGroup::QueryFromMember(DgnDbR db, DgnClassId groupClassId, D
     if (!groupClassId.IsValid() || !memberId.IsValid())
         return DgnElementId();
 
-    CachedStatementPtr statement=db.Elements().GetStatement("SELECT GroupId FROM " DGN_TABLE(DGN_RELNAME_ElementGroupHasMembers) " WHERE GroupClassId=? AND MemberId=?");
+    CachedStatementPtr statement=db.Elements().GetStatement("SELECT Rel.GroupId FROM " DGN_TABLE(DGN_RELNAME_ElementGroupHasMembers) " Rel INNER JOIN " DGN_TABLE(DGN_CLASSNAME_Element) " Elm ON Elm.Id=Rel.GroupId WHERE Elm.ECClassId=? AND Rel.MemberId=?");
     statement->BindId(1, groupClassId);
     statement->BindId(2, memberId);
 
