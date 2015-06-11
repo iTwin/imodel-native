@@ -570,7 +570,7 @@ TEST(ECDbMap, RelationshipConstraintHintOnSubclasses)
 
     bvector<Utf8String> columns;
     ASSERT_TRUE (ecdb.GetColumns(columns, "dgn_element"));
-    ASSERT_EQ(10, columns.size()) << "dgn_element table should not contain an extra foreign key columns as the relationship constraint hint specifies to use the ParentId column";
+    ASSERT_EQ(11, columns.size()) << "dgn_element table should not contain an extra foreign key columns as the relationship constraint hint specifies to use the ParentId column";
     
     auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
     auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
