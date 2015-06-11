@@ -306,6 +306,9 @@
                   <Member>
                     <KeyName>EPSG:22092</KeyName>
                   </Member>
+                  <Member>
+                    <KeyName>WGS84.TM-12SE</KeyName>
+                  </Member>
                 </Members>
               </Group>
               <Group>
@@ -330,6 +333,14 @@
                     <KeyName>EPSG:22832</KeyName>
                   </Member>
                 </Members>
+              </Group>
+              <Group>
+                  <Name>Congo</Name>
+                  <Members>
+                      <Member>
+                          <KeyName>RGRDC2005.CongoTMZn30</KeyName>
+                      </Member>
+                  </Members>
               </Group>
               <Group>
                 <Name>Cote d'Ivoire</Name>
@@ -464,6 +475,9 @@
                   </Member>
                   <Member>
                     <KeyName>EPSG:26692</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>WGS84.GabonTM</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -790,6 +804,9 @@
                   </Member>
                   <Member>
                     <KeyName>EPSG:32766</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>Moznet-MOD.UTM-38S</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -1701,6 +1718,15 @@
               <Member>
                 <KeyName>EPSG:3852</KeyName>
               </Member>
+              <Member>
+                <KeyName>RSRGD2000.MSLC2000</KeyName>
+              </Member>
+              <Member>
+                <KeyName>RSRGD2000.BCLC2000</KeyName>
+              </Member>
+              <Member>
+                <KeyName>RSRGD2000.PCLC2000</KeyName>
+              </Member>
             </Members>
           </Group>
           <Group>
@@ -1739,70 +1765,67 @@
                 <Name>Bhutan</Name>
                 <Members>
                    <Member>
-                     <KeyName>EPSG:5266</KeyName>
+                       <KeyName>BhutanNtl.BhutanNtlGrid</KeyName>
                    </Member>
                    <Member>
-                     <KeyName>EPSG:5292</KeyName>
+                       <KeyName>BhutanNtl.BumthangTM</KeyName>
                    </Member>
                    <Member>
-                     <KeyName>EPSG:5292</KeyName>
+                       <KeyName>BhutanNtl.ChhukhaTM</KeyName>
                    </Member>
                    <Member>
-                     <KeyName>EPSG:5293</KeyName>
+                       <KeyName>BhutanNtl.DaganaTM</KeyName>
                    </Member>
                    <Member>
-                     <KeyName>EPSG:5294</KeyName>
+                       <KeyName>BhutanNtl.GasaTM</KeyName>
                    </Member>
                    <Member>
-                     <KeyName>EPSG:5295</KeyName>
+                       <KeyName>BhutanNtl.HaTM</KeyName>
                    </Member>
                    <Member>
-                     <KeyName>EPSG:5296</KeyName>
+                       <KeyName>BhutanNtl.LhuentseTM</KeyName>
                    </Member>
                    <Member>
-                     <KeyName>EPSG:5297</KeyName>
+                       <KeyName>BhutanNtl.MongarTM</KeyName>
                    </Member>
                    <Member>
-                     <KeyName>EPSG:5298</KeyName>
+                       <KeyName>BhutanNtl.ParoTM</KeyName>
                    </Member>
                    <Member>
-                     <KeyName>EPSG:5299</KeyName>
+                       <KeyName>BhutanNtl.PemagatshelTM</KeyName>
                    </Member>
                    <Member>
-                     <KeyName>EPSG:5300</KeyName>
+                       <KeyName>BhutanNtl.PunakhaTM</KeyName>
                    </Member>
                    <Member>
-                     <KeyName>EPSG:5301</KeyName>
+                       <KeyName>BhutanNtl.SamdrupTM</KeyName>
                    </Member>
                    <Member>
-                     <KeyName>EPSG:5302</KeyName>
+                       <KeyName>BhutanNtl.SamtseTM</KeyName>
                    </Member>
                    <Member>
-                     <KeyName>EPSG:5303</KeyName>
+                       <KeyName>BhutanNtl.SarpangTM</KeyName>
                    </Member>
                    <Member>
-                     <KeyName>EPSG:5304</KeyName>
+                       <KeyName>BhutanNtl.ThimphuTM</KeyName>
                    </Member>
                    <Member>
-                     <KeyName>EPSG:5305</KeyName>
+                       <KeyName>BhutanNtl.TrashigangTM</KeyName>
                    </Member>
                    <Member>
-                     <KeyName>EPSG:5306</KeyName>
+                       <KeyName>BhutanNtl.TrongsaTM</KeyName>
                    </Member>
                    <Member>
-                     <KeyName>EPSG:5307</KeyName>
+                       <KeyName>BhutanNtl.TsirangTM</KeyName>
                    </Member>
                    <Member>
-                     <KeyName>EPSG:5308</KeyName>
+                       <KeyName>BhutanNtl.WangdueTM</KeyName>
                    </Member>
                    <Member>
-                     <KeyName>EPSG:5309</KeyName>
+                       <KeyName>BhutanNtl.YangtseTM</KeyName>
                    </Member>
                    <Member>
-                     <KeyName>EPSG:5310</KeyName>
-                   </Member>
-                   <Member>
-                     <KeyName>EPSG:5311</KeyName>
+                       <KeyName>BhutanNtl.ZhemgangTM</KeyName>
                    </Member>
                 </Members>    
               </Group>
@@ -5778,6 +5801,12 @@
                   <Member>
                     <KeyName>EPSG:3357</KeyName>
                   </Member>
+                  <Member>
+                    <KeyName>GrandCayman59.GCNG59</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>LittleCayman61.SING61</KeyName>
+                  </Member>
                 </Members>
               </Group>
               <Group>
@@ -6080,6 +6109,27 @@
                <Member>
                  <KeyName>EPSG:21782</KeyName>
                </Member>
+               <Member>
+                 <KeyName>EUROP50.TM-6NE</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>EUROP50.SPBA</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>ETRF89.UTM-31N/zE-N</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>ETRF89.UTM-33N/zE-N</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>ETRF89.UTM-31N/N-zE</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>ETRF89.UTM-32N/N-zE</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>ETRF89.UTM-33N/N-zE</KeyName>
+               </Member>
             </Members>
             <Groups>
               <Group>
@@ -6229,6 +6279,15 @@
                   <Member>
                     <KeyName>EPSG:102067</KeyName>
                   </Member>
+                  <Member>
+                    <KeyName>Pulkovo42/83b.GK3d-3/EN</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>Pulkovo42/83b.GK3d-4/EN</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>Pulkovo42/83b.GK3d-5/EN</KeyName>
+                  </Member>
                 </Members>
               </Group>
               <Group>
@@ -6247,10 +6306,10 @@
                     <KeyName>EPSG:4096</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5316</KeyName>
+                    <KeyName>FCS_DEN/FMP</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>FCS_DEN/FMP</KeyName>
+                    <KeyName>ETRF89.FaroeTM</KeyName>
                   </Member>
                 </Members>
                 <Groups>
@@ -7010,6 +7069,36 @@
                   <Member>
                     <KeyName>FCS_GER/FMP</KeyName>
                   </Member>
+                  <Member>
+                    <KeyName>PD83.GK3d-3</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>PD83.GK3d-4</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>RD83.GK3d-4</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>RD83.GK3d-5</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>DHDN/3.GK3d-2/EN</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>DHDN/3.GK3d-3/EN</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>DHDN/3.GK3d-4/EN</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>DHDN/3.GK3d-5/EN</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>DHDN/3.GK3d-1/EN</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>DHDN/3.GK3d-1</KeyName>
+                  </Member>
                 </Members>
               </Group>
               <Group>
@@ -7163,6 +7252,9 @@
                   </Member>
                   <Member>
                     <KeyName>EPSG:3065</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ROME1940.EmiliaRomTM</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -7679,6 +7771,21 @@
                       <Member>
                         <KeyName>Pulkovo/58.Poland-V</KeyName>
                       </Member>
+                      <Member>
+                        <KeyName>Pulkovo42/58b.GK6d-2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Pulkovo42/58b.GK6d-3</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Pulkovo42/58b.GK3d-3</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Pulkovo42/58b.GK3d-4</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Pulkovo42/58b.GK3d-5</KeyName>
+                      </Member>
                     </Members>
                   </Group>
 
@@ -7717,7 +7824,18 @@
                       </Member>
                     </Members>
                   </Group>
-
+                  
+                  <Group>
+                    <Name>Pulkovo 1942-1983</Name>
+                    <Members>
+                      <Member>
+                        <KeyName>Pulkovo42/83b.GK6d-2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>Pulkovo42/83b.GK6d-3</KeyName>
+                      </Member>
+                    </Members>
+                  </Group>
 
                 </Groups>
               </Group>
@@ -7793,6 +7911,12 @@
                   </Member>
                   <Member>
                     <KeyName>EPSG:5016</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>PTRA08.EuropeLCC</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>PTRA08.EuropeEA2001</KeyName>
                   </Member>
                 </Members>
                 <Groups>
@@ -8177,6 +8301,12 @@
                   </Member>
                   <Member>
                     <KeyName>EPSG:4083</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>REGCAN95.EuropeLCC</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>REGCAN95.EuropeEA2001</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -8619,46 +8749,52 @@
                     <KeyName>EPSG:5259-1</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5269</KeyName>
+                    <KeyName>TUREF.GK3d-9/N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5270</KeyName>
+                    <KeyName>TUREF.GK3d-9/I</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5271</KeyName>
+                    <KeyName>TUREF.GK3d-10/N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5272</KeyName>
+                    <KeyName>TUREF.GK3d-10/I</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5273</KeyName>
+                    <KeyName>TUREF.GK3d-11/N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5274</KeyName>
+                    <KeyName>TUREF.GK3d-11/I</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5275</KeyName>
+                    <KeyName>TUREF.GK3d-12/I</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5269-1</KeyName>
+                    <KeyName>TUREF.GK3d-12/N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5270-1</KeyName>
+                    <KeyName>TUREF.GK3d-13/N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5271-1</KeyName>
+                    <KeyName>TUREF.GK3d-13/I</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5272-1</KeyName>
+                    <KeyName>TUREF.GK3d-14/N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5273-1</KeyName>
+                    <KeyName>TUREF.GK3d-14/I</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5274-1</KeyName>
+                    <KeyName>TUREF.GK3d-15/N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:5275-1</KeyName>
+                    <KeyName>TUREF.GK3d-15/I</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>TUREF.EuropeEA2001</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>TUREF.EuropeLCC</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -9616,6 +9752,9 @@
                   <Member>
                     <KeyName>EPSG:3727</KeyName>
                   </Member>
+                  <Member>
+                    <KeyName>Reunion1992.UTM-39S</KeyName>
+                  </Member>
                 </Members>
               </Group>
               <Group>
@@ -9623,6 +9762,9 @@
                 <Members>
                   <Member>
                     <KeyName>EPSG:4471</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>Cadastre1997.UTM-38S</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -9968,6 +10110,12 @@
                   <Member>
                     <KeyName>SouthYemen.GK-9</KeyName>
                   </Member>
+                  <Member>
+                    <KeyName>YemenNtl1996.UTM-37N</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>YemenNtl1996.UTM-40N</KeyName>
+                  </Member>
                 </Members>
               </Group>
               <Group>
@@ -10270,6 +10418,9 @@
                       <Member>
                         <KeyName>EPSG:2953</KeyName>
                       </Member>
+                      <Member>
+                        <KeyName>NAD27.NBStereographic</KeyName>
+                      </Member>
                     </Members>
                   </Group>
                   <Group>
@@ -10387,12 +10538,6 @@
                       </Member>
                       <Member>
                         <KeyName>EPSG:26897</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EPSG:5320</KeyName>
-                      </Member>
-                      <Member>
-                        <KeyName>EPSG:5321</KeyName>
                       </Member>
                       <Member>
                         <KeyName>MTM27-8IF</KeyName>
@@ -10513,6 +10658,12 @@
                       </Member>
                       <Member>
                         <KeyName>MTM83-17</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>NAD83.TeranetOntLmbrt</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>CSRS.TeranetOntLmbrt</KeyName>
                       </Member>
                     </Members>
                   </Group>
@@ -13985,6 +14136,15 @@
                               <Member>
                                 <KeyName>EPSG:26813</KeyName>
                               </Member>
+                              <Member>
+                                <KeyName>NAD27.MichiganEast</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NAD27.MichiganCentral</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NAD27.MichiganWest</KeyName>
+                              </Member>
                             </Members>
                           </Group>
                           <Group>
@@ -17220,6 +17380,12 @@
                               </Member>
                               <Member>
                                 <KeyName>EPSG:32145</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>NAD83.SPCS83Vermont</KeyName>
+                              </Member>
+                              <Member>
+                                <KeyName>HPGN.SPCS83Vermont</KeyName>
                               </Member>
                             </Members>
                           </Group>
@@ -20843,6 +21009,12 @@
                   <Member>
                     <KeyName>WGS84.Mercator41</KeyName>
                   </Member>
+                  <Member>
+                    <KeyName>CHATHAM.ChathamIss</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>Chatam1979a.ChathamIss</KeyName>
+                  </Member>
                 </Members>
                 <Groups>
                   <Group>
@@ -21265,6 +21437,9 @@
                           </Member>
                           <Member>
                             <KeyName>NZGD2K.UTM-60S</KeyName>
+                          </Member>
+                          <Member>
+                            <KeyName>NZGD2K.UTM-1S</KeyName>
                           </Member>
                         </Members>
                       </Group>
@@ -21997,6 +22172,9 @@
                   <Member>
                     <KeyName>ARATU_TUCANO.UTM-25S</KeyName>
                   </Member>
+                  <Member>
+                    <KeyName>Aratu_1.UTM-25S</KeyName>
+                  </Member>
                 </Members>
               </Group>
               <Group>
@@ -22664,6 +22842,18 @@
                       <Member>
                         <KeyName>EPSG:31985</KeyName>
                       </Member>
+                      <Member>
+                        <KeyName>SIRGAS2000.UTM-26S</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>SIRGAS2000.BzMercator</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>SIRGAS2000.BzPolyconic</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>SIRGAS2000.UTM-23N</KeyName>
+                      </Member>
                     </Members>
                   </Group>
                 </Groups>
@@ -22687,6 +22877,12 @@
                   </Member>
                   <Member>
                     <KeyName>EPSG:29221</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>SAD1969.UTM-17N</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>SAD1969.UTM-22S</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -25812,6 +26008,267 @@
                <Member>
                  <KeyName>EPSG:3770</KeyName>
                </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZnA1</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZnA2</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZnA3</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZnA4</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZnA5</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZnB1</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZnB2</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZnB3</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZnB4</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZnB5</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZnC1</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZnC2</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZnC3</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZnC4</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZnC5</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZn1-27</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZn1-29</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZn1-31</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZn1-21</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZn2-10</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZn2-12</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZn2-24</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZn2-26</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZn2-28</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZn3-13</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZn3-15</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZn3-17</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZn3-19</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZn3-21</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZn3-23</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZn4-12</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZn4-30</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZn4-32</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZn4-34</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZn4-36</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZn4-38</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZn4-40</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZn5-15</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZn5-17</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZn5-19</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZn5-21</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZn5-23</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZn5-25</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>WGS84.ArticZn5-27</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>GR96.ArticZn1-25</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>GR96.ArticZn2-18</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>GR96.ArticZn2-20</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>GR96.ArticZn3-29</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>GR96.ArticZn3-31</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>GR96.ArticZn3-33</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>GR96.ArticZn4-20</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>GR96.ArticZn4-22</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>GR96.ArticZn4-24</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>GR96.ArticZn5-41</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>GR96.ArticZn5-43</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>GR96.ArticZn5-45</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>GR96.ArticZn6-26</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>GR96.ArticZn6-28</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>GR96.ArticZn6-30</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>GR96.ArticZn7-11</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>GR96.ArticZn7-13</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>GR96.ArticZn8-20</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>GR96.ArticZn8-22</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>ETRF89.ArticZn2-22</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>ETRF89.ArticZn3-11</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>ETRF89.ArticZn4-26</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>ETRF89.ArticZn4-28</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>ETRF89.ArticZn5-11</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>ETRF89.ArticZn5-13</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>ETRF89.ArticZn5-47</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>CSRS.ArticZn1-23</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>CSRS.ArticZn2-14</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>CSRS.ArticZn2-16</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>CSRS.ArticZn3-25</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>CSRS.ArticZn3-27</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>CSRS.ArticZn3-29</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>CSRS.ArticZn4-14</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>CSRS.ArticZn4-16</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>CSRS.ArticZn4-18</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>CSRS.ArticZn5-33</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>CSRS.ArticZn5-35</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>CSRS.ArticZn5-37</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>CSRS.ArticZn5-39</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>CSRS.ArticZn6-18</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>CSRS.ArticZn6-20</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>CSRS.ArticZn6-22</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>CSRS.ArticZn6-24</KeyName>
+               </Member>
             </Members>
           </Group>
           <Group>
@@ -26300,6 +26757,74 @@
                 </Members>
               </Group>
               <Group>
+                <Name>Bhutan</Name>
+                <Members>
+                   <Member>
+                     <KeyName>EPSG:5266</KeyName>
+                   </Member>
+                   <Member>
+                     <KeyName>EPSG:5292</KeyName>
+                   </Member>
+                   <Member>
+                     <KeyName>EPSG:5293</KeyName>
+                   </Member>
+                   <Member>
+                     <KeyName>EPSG:5294</KeyName>
+                   </Member>
+                   <Member>
+                     <KeyName>EPSG:5295</KeyName>
+                   </Member>
+                   <Member>
+                     <KeyName>EPSG:5296</KeyName>
+                   </Member>
+                   <Member>
+                     <KeyName>EPSG:5297</KeyName>
+                   </Member>
+                   <Member>
+                     <KeyName>EPSG:5298</KeyName>
+                   </Member>
+                   <Member>
+                     <KeyName>EPSG:5299</KeyName>
+                   </Member>
+                   <Member>
+                     <KeyName>EPSG:5300</KeyName>
+                   </Member>
+                   <Member>
+                     <KeyName>EPSG:5301</KeyName>
+                   </Member>
+                   <Member>
+                     <KeyName>EPSG:5302</KeyName>
+                   </Member>
+                   <Member>
+                     <KeyName>EPSG:5303</KeyName>
+                   </Member>
+                   <Member>
+                     <KeyName>EPSG:5304</KeyName>
+                   </Member>
+                   <Member>
+                     <KeyName>EPSG:5305</KeyName>
+                   </Member>
+                   <Member>
+                     <KeyName>EPSG:5306</KeyName>
+                   </Member>
+                   <Member>
+                     <KeyName>EPSG:5307</KeyName>
+                   </Member>
+                   <Member>
+                     <KeyName>EPSG:5308</KeyName>
+                   </Member>
+                   <Member>
+                     <KeyName>EPSG:5309</KeyName>
+                   </Member>
+                   <Member>
+                     <KeyName>EPSG:5310</KeyName>
+                   </Member>
+                   <Member>
+                     <KeyName>EPSG:5311</KeyName>
+                   </Member>
+                </Members>
+              </Group>
+              <Group>
                   <Name>Canada</Name>
                   <Groups>
                     <Group>
@@ -26359,6 +26884,12 @@
                           <Member>
                             <KeyName>NAD83/98.MTM-10</KeyName>
                           </Member>
+                          <Member>
+                            <KeyName>EPSG:5320</KeyName>
+                          </Member>
+                          <Member>
+                            <KeyName>EPSG:5321</KeyName>
+                          </Member>
                         </Members>
                       </Group>
                   </Groups>
@@ -26371,6 +26902,14 @@
                   </Member>
                   <Member>
                     <KeyName>Krovak S-JTSK/95</KeyName>
+                  </Member>
+                </Members>
+              </Group>
+              <Group>
+                <Name>Denmark</Name>
+                <Members>
+                  <Member>
+                    <KeyName>EPSG:5316</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -26785,6 +27324,48 @@
                   </Member>
                   <Member>
                     <KeyName>ED50.TM45</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5269</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5270</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5271</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5272</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5273</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5274</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5275</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5269-1</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5270-1</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5271-1</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5272-1</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5273-1</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5274-1</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:5275-1</KeyName>
                   </Member>
                 </Members>
               </Group>
