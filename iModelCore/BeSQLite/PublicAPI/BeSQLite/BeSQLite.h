@@ -744,7 +744,7 @@ public:
 
     //! construct a new blank Statement.
     Statement() {m_stmt=nullptr; }
-    Statement(BeSQLiteDbCR db, Utf8CP sql) {m_stmt=nullptr; Prepare(db, sql);}
+    Statement(DbCR db, Utf8CP sql) {m_stmt=nullptr; Prepare(db, sql);}
     ~Statement() {Finalize();}
 
     SqlStatementP& GetStmtR() {return m_stmt;} //! @private internal use only
