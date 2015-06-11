@@ -2,7 +2,7 @@
 |
 |   $Source: BaseGeoCoord/GCSLibrary.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 
@@ -1635,10 +1635,10 @@ virtual CSEllipsoidDef* GetEllipsoid (WCharCP ellipsoidName) override
     stream = NULL;
 
     /* Check the ellipsoid definition for valitity. */
-    double cs_ERadMax = 7.0E+06;
-    double cs_PRadMax = 7.0E+06;
-    double cs_ERadMin = 6.0E+06;
-    double cs_PRadMin = 6.0E+06;
+    double cs_ERadMax = 7.0E+08; // Modified from original value of 7.0E+06 to support solar system objects other than Earth.
+    double cs_PRadMax = 7.0E+08; // Modified from original value of 7.0E+06 to support solar system objects other than Earth.
+    double cs_ERadMin = 1.0E+02; // Modified from original value of 6.0E+06 to support solar system objects other than Earth.
+    double cs_PRadMin = 1.0E+02; // Modified from original value of 6.0E+06 to support solar system objects other than Earth.
     if (elptr->e_rad < cs_ERadMin || elptr->e_rad > cs_ERadMax ||
         elptr->p_rad < cs_PRadMin || elptr->p_rad > cs_PRadMax)
         {
