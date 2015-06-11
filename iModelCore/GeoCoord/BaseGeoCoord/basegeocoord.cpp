@@ -2,7 +2,7 @@
 |
 |   $Source: BaseGeoCoord/basegeocoord.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #pragma  warning(disable:4242) // toupper returns an int which is stuffed into this char string.  
@@ -214,6 +214,18 @@ class SRSWKTParser
 {
 public:
 
+    enum class AxisDirection
+        {
+        NORTH,
+        SOUTH,
+        EAST,
+        WEST,
+        UP,
+        DOWN,
+        OTHER,
+        UNDEFINED
+        };
+
 /*---------------------------------------------------------------------------------**//**
 *   @bsimethod                                                  Alain Robert 2004/03
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -388,8 +400,29 @@ StatusInt GetProjected (BaseGCSPtr baseGCS, WStringR wkt) const
         // Optional
         if ((wkt.length() >= 4) && (wkt.substr (0, 4) == (L"AXIS")))
             {
-            // We cannot at this time process the AXIS clause ... the parser fails
-            return ERROR;
+            // For a projcs clause two axises must be specified one after the other
+            // We cannot at this time process all the configuration of the AXIS clause ... the parser fails
+            // unless the order is exactly EAST then NORTH whatever the label used.
+            if (GetAxis(wkt) != AxisDirection::EAST)
+                return ERROR;
+
+            // Trim of whites
+            wkt.Trim();
+
+            // Trim commas
+            if ((wkt.length() >= 1) && (wkt.substr(0, 1) ==(L",")))
+                {
+                wkt = wkt.substr(1);
+                }
+            // Trim of whites
+            wkt.Trim();
+
+            // The second AXIS Clause is required accordinag to specs.
+            if ((wkt.length() < 4) || (wkt.substr (0, 4) != (L"AXIS")))
+                return ERROR;
+
+            if (GetAxis(wkt) != AxisDirection::NORTH)
+                return ERROR;
             }
 
         if ((wkt.length() >= 1) && (wkt.substr (0, 1) == (L"]")))
@@ -1157,6 +1190,18 @@ StatusInt GetProjectionToCoordSys (WStringR wkt,double conversionToDegree, BaseG
             sectionCompleted = true;
             }
 
+        // Even though the specs call for the linear units following immediately the PARAMETERS
+        // sometimes it is not the case and we learn to live with the fact within limits.
+        if ((wkt.length() >= 9) && (wkt.substr (0, 9) == (L"AUTHORITY")))
+            {
+            sectionCompleted = true;
+            }
+
+        if ((wkt.length() >= 4) && (wkt.substr (0, 4) == (L"AXIS")))
+            {
+            sectionCompleted = true;
+            }
+
         if (wkt.length() == previousLength)
             {
             return ERROR;
@@ -1579,6 +1624,72 @@ WString GetAuthority (WStringR wkt) const
         authorityID = authorityCode;
 
     return authorityID;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+*   @description PRIVATE This private method extracts from the provided stream the axis definition
+*   The complete WKT authority section must be provided including the AXIS[ ] keyword.
+*   The wkt text stream may contain additional text that is returned with the AXIS section
+*   removed.
+*
+*   @param wkt IN/OUT The WKT portion that contains the axis to extract.
+*
+*   @return The axis identifier
+*
+*   @bsimethod                                                  Alain Robert 2004/09
++---------------+---------------+---------------+---------------+---------------+------*/
+AxisDirection GetAxis (WStringR wkt) const
+    {
+    WString     authorityID;
+    wkt.Trim();
+
+    // Validate that this is the proper section (must start with ")
+    if ((wkt.length() < 4) || (!(wkt.substr (0, 4) == L"AXIS")))
+        return AxisDirection::UNDEFINED;
+
+    // Remove keyword
+    wkt = wkt.substr (4);
+
+    // Trim again
+    wkt.Trim();
+
+    // Make sure that remainder starts with [
+    if ((wkt.length() < 1) || (!(wkt.substr (0, 1) == L"[")))
+        {
+        return AxisDirection::UNDEFINED;
+        }
+    wkt = wkt.substr (1);
+
+    WString     name = GetName (wkt);
+    wkt.Trim();
+    if ((wkt.length() >= 1) && (wkt.substr(0, 1) ==(L",")))
+        wkt = wkt.substr(1);
+
+    WString     keyword = GetKeyword (wkt);
+    wkt.Trim();
+
+    // Check end of section
+    if ((wkt.length() < 1) || (!(wkt.substr(0, 1) == L"]")))
+        return AxisDirection::UNDEFINED;
+
+    wkt = wkt.substr(1);
+
+    if (keyword == L"NORTH")
+        return AxisDirection::NORTH;
+    if (keyword == L"SOUTH")
+        return AxisDirection::SOUTH;
+    if (keyword == L"EAST")
+        return AxisDirection::EAST;
+    if (keyword == L"WEST")
+        return AxisDirection::WEST;
+    if (keyword == L"UP")
+        return AxisDirection::UP;
+    if (keyword == L"DOWN")
+        return AxisDirection::DOWN;
+    if (keyword == L"OTHER")
+        return AxisDirection::OTHER;
+    
+    return AxisDirection::UNDEFINED;
     }
 
 
