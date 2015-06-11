@@ -18,19 +18,12 @@
     #define ECDB_EXPORT IMPORT_ATTRIBUTE
 #endif
 
-
 #define BEGIN_BENTLEY_SQLITE_EC_NAMESPACE   BEGIN_BENTLEY_SQLITE_NAMESPACE namespace EC {
 #define END_BENTLEY_SQLITE_EC_NAMESPACE     } END_BENTLEY_SQLITE_NAMESPACE
 #define USING_NAMESPACE_BENTLEY_SQLITE_EC   using namespace BentleyApi::BeSQLite::EC;
 
 #define ECDB_TYPEDEFS(_name_) \
-    BEGIN_BENTLEY_SQLITE_EC_NAMESPACE \
-        struct _name_; \
-        typedef _name_*          _name_##P;  \
-        typedef _name_&          _name_##R;  \
-        typedef _name_ const*    _name_##CP; \
-        typedef _name_ const&    _name_##CR; \
-    END_BENTLEY_SQLITE_EC_NAMESPACE
+    BEGIN_BENTLEY_SQLITE_EC_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_SQLITE_EC_NAMESPACE
 
 #if !defined (DOCUMENTATION_GENERATOR)
 #define ECDB_TYPEDEFS_PTR(_name_)   \
