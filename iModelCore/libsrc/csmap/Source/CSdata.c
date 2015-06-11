@@ -381,11 +381,21 @@ Const double cs_Zero1  = 0.0;
 	   the following numbers are pretty liberal.  You may want
 	   to be more conservative. */
 
+#ifdef GEOCOORD_ENHANCEMENT
+/* We modified the default values to enable ellipsoids to represent planets for demo purposes.
+  The specific planet we wanted to upport is Mars yet I made changes liberal enough to
+  include planets of the solar system and beyond */
+double cs_ERadMax = 7.0E+08;
+double cs_PRadMax = 7.0E+08;
+double cs_ERadMin = 1.0E+02;
+double cs_PRadMin = 1.0E+02;
+#else
+
 double cs_ERadMax = 7.0E+06;
 double cs_PRadMax = 7.0E+06;
 double cs_ERadMin = 6.0E+06;
 double cs_PRadMin = 6.0E+06;
-
+#endif
 double cs_EccentMax = 0.2;
 
 double cs_DelMax = 50000.0;
