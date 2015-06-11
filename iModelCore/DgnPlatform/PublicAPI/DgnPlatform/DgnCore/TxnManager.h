@@ -20,7 +20,6 @@ DGNPLATFORM_TYPEDEFS(TxnMonitor)
 #define TEMP_TABLE(name)    "temp." name
 #define TXN_TABLE(name)      TXN_TABLE_PREFIX name
 
-#define TXN_TABLE_Change     TXN_TABLE("Change")
 #define TXN_TABLE_Elements   TXN_TABLE("Elements")
 #define TXN_TABLE_Depend     TXN_TABLE("Depend")
 
@@ -35,7 +34,7 @@ struct DgnElementDependencyGraph;
 
  @bsiclass
 +===============+===============+===============+===============+===============+======*/
-enum class TxnDirection {Undo=0, Redo=1};
+enum class TxnDirection {Backwards=0, Forward=1};
 
 //=======================================================================================
 //! A 32 bit value to identify the group of entries that form a single transaction.
@@ -100,6 +99,7 @@ private:
     DgnDbR m_dgndb;
     BeSQLite::CachedStatementPtr m_elementStmt;
     BeSQLite::CachedStatementPtr m_dependencyStmt;
+    TxnDirection m_direction;
     bool m_modelDepsChanged;
     bool m_elementDepsChanged;
     bvector<ValidationError> m_validationErrors; //!< Validation errors detected on the last boundary check
@@ -109,7 +109,7 @@ public:
     bset<DgnElementId> m_failedDependencyTargets;
 
     enum class ChangeType : int {Add, Update, Delete};
-    DGNPLATFORM_EXPORT explicit TxnSummary(DgnDbR db);
+    DGNPLATFORM_EXPORT explicit TxnSummary(DgnDbR db, TxnDirection);
     DGNPLATFORM_EXPORT ~TxnSummary();
     void AddChangeSet(BeSQLite::ChangeSet&);
 
@@ -152,8 +152,8 @@ public:
 struct TxnMonitor
 {
     virtual void _OnTxnCommit(TxnSummaryCR) = 0;
-    virtual void _OnTxnReverse(TxnSummaryCR, TxnDirection isUndo) = 0;
-    virtual void _OnTxnReversed(TxnSummaryCR, TxnDirection isUndo) = 0;
+    virtual void _OnTxnReverse(TxnSummaryCR) = 0;
+    virtual void _OnTxnReversed(TxnSummaryCR) = 0;
     virtual void _OnUndoRedoFinished(DgnDbR, TxnDirection isUndo) {}
 };
 
@@ -202,7 +202,10 @@ struct RevTxn
 };
 
 //=======================================================================================
-//! This class provides a transaction mechanism for handling changes to Elements in DgnDbs.
+//! This class implements the DgnDb::Txns()
+//!    - Reversing (undo) and Reinstating (redo) Txns
+//!    - change propagation.
+//!    - combining multi-step Txns into a single reversible "operation"
 // @bsiclass
 //=======================================================================================
 struct TxnManager : BeSQLite::ChangeTracker
@@ -298,7 +301,6 @@ public:
 
     //! @name Reversing and Reinstating Transactions
     //@{
-
     //! Query if there are currently any reversible (undoable) changes in the Transaction Manager
     //! @return true if there are currently any reversible (undoable) changes in the Transaction Manager.
     bool IsUndoPossible() {return 0 < GetCurrTxnId();}
@@ -313,10 +315,10 @@ public:
     //! @remarks  Reversed Transactions can be reinstated by calling ReinstateTxn. To completely remove all vestiges of (including the memory
     //!           used by) a transaction, call ClearReversedTxns.
     //! @see ReinstateTxn ClearReversedTxns
-    DGNPLATFORM_EXPORT void ReverseTxns(int numActions);
+    DGNPLATFORM_EXPORT StatusInt ReverseTxns(int numActions);
 
     //! Reverse (undo) the most recent transaction.
-    void ReverseSingleTxn() {ReverseTxns(1);}
+    StatusInt ReverseSingleTxn() {return ReverseTxns(1);}
 
     //! Reverse all element changes back to the most recent Mark. Marks are created by calling SaveUndoMark.
     //! @param[out] name of mark undone.
@@ -343,21 +345,17 @@ public:
     //! @return SUCCESS if the transactions were reversed and cleared, ERROR if TxnPos is invalid.
     DGNPLATFORM_EXPORT StatusInt CancelToPos(TxnId pos);
 
-
-    //! Reinstate the most recent previously applied and then reversed transaction. Since at any time multiple transactions can be reversed, it
+    //! Reinstate the most recently reversed transaction. Since at any time multiple transactions can be reversed, it
     //! may take multiple calls to this method to reinstate all reversed operations.
-    //! @return SUCCESS if a reversed transaction was reinstated, ERROR if no transactions were reversed.
+    //! @return SUCCESS if a reversed transaction was reinstated, ERROR if no Txns were reversed.
     DGNPLATFORM_EXPORT StatusInt ReinstateTxn();
 
     //! Query if undo/redo is in progress
     bool IsUndoInProgress() {return m_undoInProgress;}
-
-    //! Set description of current txn. Used to show what will be undone/redone.
-    void SetTxnDescription(Utf8CP descr) {m_curr.m_description.assign(descr);}
+    //@}
 
     //! Get the DgnDb of this Txns
     DgnDbR GetDgnDb() {return m_dgndb;}
-    //@}
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

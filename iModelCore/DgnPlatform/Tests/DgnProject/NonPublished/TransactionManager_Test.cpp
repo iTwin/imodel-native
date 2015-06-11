@@ -133,9 +133,9 @@ struct TxnMonitorVerifier : TxnMonitor
     TxnMonitorVerifier();
     ~TxnMonitorVerifier();
     void Clear();
-    virtual void _OnTxnCommit(TxnSummaryCR summary) override;
-    virtual void _OnTxnReverse(TxnSummaryCR, TxnDirection isUndo) override {m_OnTxnReverseCalled = true;}
-    virtual void _OnTxnReversed(TxnSummaryCR, TxnDirection isUndo) override {m_OnTxnReversedCalled = true;}
+    void _OnTxnCommit(TxnSummaryCR summary) override;
+    void _OnTxnReverse(TxnSummaryCR) override {m_OnTxnReverseCalled = true;}
+    void _OnTxnReversed(TxnSummaryCR) override {m_OnTxnReversedCalled = true;}
     };
 
 /*=================================================================================**//**
@@ -154,8 +154,8 @@ public:
     void CloseDb() {m_db->CloseDb();}
     DgnModelR GetDefaultModel() {return *m_db->Models().GetModel(m_defaultModelId);}
     void SetupProject(WCharCP projFile, WCharCP testFile, BeSQLite::Db::OpenMode mode);
-    DgnElementKey InsertElement(Utf8CP elementCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId());
-    void TwiddleTime(DgnElementKeyCR ekey);
+    DgnElementCPtr InsertElement(Utf8CP elementCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId());
+    void TwiddleTime(DgnElementCPtr);
 };
 
 /*=================================================================================**//**
@@ -167,7 +167,7 @@ struct ElementDependencyGraph : TransactionManagerTests
 
     struct ElementsAndRelationships
         {
-        DgnElementKey e99, e3, e31, e2, e1;
+        DgnElementCPtr e99, e3, e31, e2, e1;
         EC::ECInstanceKey r99_3, r99_31, r3_2, r31_2, r2_1;
         };
 
@@ -176,10 +176,10 @@ struct ElementDependencyGraph : TransactionManagerTests
 
     EC::CachedECSqlStatementPtr GetSelectElementDrivesElementById();
     void SetUpForRelationshipTests(WCharCP testname);
-    EC::ECInstanceKey InsertElementDrivesElementRelationship(DgnElementKeyCR root, DgnElementKeyCR dependent);
+    EC::ECInstanceKey InsertElementDrivesElementRelationship(DgnElementCPtr root, DgnElementCPtr dependent);
 
-    void TestTPS(DgnElementKeyCR e1, DgnElementKeyCR e2, size_t ntimes);
-    void TestOverlappingOrder(DgnElementKeyCR r1, EC::ECInstanceKeyCR r1_d3, EC::ECInstanceKeyCR r2_d3, bool r1First);
+    void TestTPS(DgnElementCPtr e1, DgnElementCPtr e2, size_t ntimes);
+    void TestOverlappingOrder(DgnElementCPtr r1, EC::ECInstanceKeyCR r1_d3, EC::ECInstanceKeyCR r2_d3, bool r1First);
     void TestRelationships(DgnDb& db, ElementsAndRelationships const&);
 };
 
@@ -327,7 +327,7 @@ void TransactionManagerTests::SetupProject(WCharCP projFile, WCharCP testFile, B
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementKey TransactionManagerTests::InsertElement(Utf8CP elementCode, DgnModelId mid, DgnCategoryId categoryId )
+DgnElementCPtr TransactionManagerTests::InsertElement(Utf8CP elementCode, DgnModelId mid, DgnCategoryId categoryId )
     {
     if (!mid.IsValid())
         mid = m_defaultModelId;
@@ -336,16 +336,17 @@ DgnElementKey TransactionManagerTests::InsertElement(Utf8CP elementCode, DgnMode
         categoryId = m_defaultCategoryId;
 
     TestElementPtr el = TestElement::Create(*m_db, mid, categoryId, elementCode);
-    return m_db->Elements().Insert(*el)->GetElementKey();
+    return m_db->Elements().Insert(*el);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TransactionManagerTests::TwiddleTime(DgnElementKeyCR ekey)
+void TransactionManagerTests::TwiddleTime(DgnElementCPtr el)
     {
     BeThreadUtilities::BeSleep(1); // make sure the new timestamp is after the one that's on the Element now
-    m_db->Elements().UpdateLastModifiedTime(ekey.GetElementId());
+    DgnElementPtr mod = el->CopyForEdit();
+    mod->Update();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -399,7 +400,7 @@ void ElementDependencyGraph::SetUpForRelationshipTests(WCharCP testname)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-EC::ECInstanceKey ElementDependencyGraph::InsertElementDrivesElementRelationship(DgnElementKeyCR root, DgnElementKeyCR dependent)
+EC::ECInstanceKey ElementDependencyGraph::InsertElementDrivesElementRelationship(DgnElementCPtr root, DgnElementCPtr dependent)
     {
     EC::ECSqlInsertBuilder b;
     b.InsertInto(GetElementDrivesElementClass());
@@ -410,10 +411,10 @@ EC::ECInstanceKey ElementDependencyGraph::InsertElementDrivesElementRelationship
 
     EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement(b.ToString().c_str());
 
-    stmt->BindInt64(1, root.GetECClassId());
-    stmt->BindId(2, root.GetECInstanceId());
-    stmt->BindInt64(3, dependent.GetECClassId());
-    stmt->BindId(4, dependent.GetECInstanceId());
+    stmt->BindId(1, root->GetElementClassId());
+    stmt->BindId(2, root->GetElementId());
+    stmt->BindId(3, dependent->GetElementClassId());
+    stmt->BindId(4, dependent->GetElementId());
 
     EC::ECInstanceKey rkey;
     if (EC::ECSqlStepStatus::Done != stmt->Step(rkey))
@@ -614,10 +615,10 @@ TEST_F(TransactionManagerTests, CRUD)
     //  Test adds
     //  -------------------------------------------------------------
     auto key1 = InsertElement("E1");
-    ASSERT_TRUE( key1.GetElementId().IsValid() );
+    ASSERT_TRUE( key1->GetElementId().IsValid() );
 
     auto key2 = InsertElement("E2");
-    ASSERT_TRUE( key2.GetElementId().IsValid() );
+    ASSERT_TRUE( key2->GetElementId().IsValid() );
 
     m_db->SaveChanges();
 
@@ -625,29 +626,29 @@ TEST_F(TransactionManagerTests, CRUD)
     ASSERT_EQ(monitor.m_adds.size()     , 2);
     ASSERT_EQ(monitor.m_deletes.size()  , 0);
     ASSERT_EQ(monitor.m_mods.size()     , 0);
-    ASSERT_TRUE(isElementIdInKeySet(monitor.m_adds, key1.GetElementId()) );
-    ASSERT_TRUE(isElementIdInKeySet(monitor.m_adds, key2.GetElementId()) );
+    ASSERT_TRUE(isElementIdInKeySet(monitor.m_adds, key1->GetElementId()) );
+    ASSERT_TRUE(isElementIdInKeySet(monitor.m_adds, key2->GetElementId()) );
 
     monitor.Clear();
 
     //  -------------------------------------------------------------
     //  Test mods
     //  -------------------------------------------------------------
-    TwiddleTime(key1);
+    TwiddleTime(key1.get());
     m_db->SaveChanges();
 
     EXPECT_TRUE(monitor.m_OnTxnClosedCalled);
     ASSERT_EQ(monitor.m_adds.size()     , 0);
     ASSERT_EQ(monitor.m_deletes.size()  , 0);
     ASSERT_EQ(monitor.m_mods.size()     , 1);
-    ASSERT_TRUE(isElementIdInKeySet(monitor.m_mods, key1.GetElementId()) );
+    ASSERT_TRUE(isElementIdInKeySet(monitor.m_mods, key1->GetElementId()) );
 
     monitor.Clear();
 
     //  -------------------------------------------------------------
     //  Test deletes
     //  -------------------------------------------------------------
-    auto delStatus = m_db->Elements().Delete(key2.GetElementId());
+    auto delStatus = key2->Delete();
     ASSERT_TRUE( BSISUCCESS == delStatus );
 
     m_db->SaveChanges();
@@ -656,7 +657,7 @@ TEST_F(TransactionManagerTests, CRUD)
     ASSERT_EQ(monitor.m_adds.size()     , 0);
     ASSERT_EQ(monitor.m_deletes.size()  , 1);
     ASSERT_EQ(monitor.m_mods.size()     , 0);
-    ASSERT_TRUE(isElementIdInKeySet(monitor.m_deletes, key2.GetElementId()) );
+    ASSERT_TRUE(isElementIdInKeySet(monitor.m_deletes, key2->GetElementId()) );
 
     monitor.Clear();
     }
@@ -670,12 +671,9 @@ TEST_F(TransactionManagerTests, ElementInstance)
     SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OPEN_ReadWrite);
 
     auto key1 = InsertElement("E1");
-    ASSERT_TRUE( key1.GetElementId().IsValid() );
+    ASSERT_TRUE( key1->GetElementId().IsValid() );
 
-    DgnElementCPtr el = m_db->Elements().GetElement(key1.GetElementId());
-    ASSERT_TRUE( el.IsValid() );
-
-    ASSERT_EQ( &el->GetElementHandler(), &TestElementHandler::GetHandler() );
+    ASSERT_EQ( &key1->GetElementHandler(), &TestElementHandler::GetHandler() );
 
 #ifdef WIP_NEED_SOME_OTHER_WAY_TO_ACCESS_SUB_CLASS_PROPERTIES
     ECN::IECInstanceCR e1props = el->GetSubclassProperties();
@@ -713,10 +711,10 @@ TEST_F(TransactionManagerTests, ElementItem)
     ECN::ECClassCP testItemClass = m_db->Schemas().GetECClass(TMTEST_SCHEMA_NAME, TMTEST_TEST_ITEM_CLASS_NAME);
     ASSERT_NE( nullptr , testItemClass );
 
-    DgnElementId elementId = InsertElement("E1").GetElementId();
-    ASSERT_TRUE( elementId.IsValid() );
+    auto e1 = InsertElement("E1");
+    ASSERT_TRUE( e1.IsValid() );
 
-    TestElementCPtr el = m_db->Elements().Get<TestElement>(elementId);
+    TestElementCPtr el = m_db->Elements().Get<TestElement>(e1->GetElementId());
     ASSERT_TRUE( el != nullptr );
 
     ASSERT_EQ( &el->GetElementHandler(), &TestElementHandler::GetHandler() );
@@ -972,7 +970,7 @@ TEST_F(Performance_ElementDependencyGraph, PerformanceDeep1)
 
     //  Create 10000 Elements, and make each depend on the previous one.
     EC::ECInstanceKey firstRel,previousRel,thisRel,lastRel;
-    DgnElementKey firstElement, previousElement, thisElement, lastElement;
+    DgnElementCPtr firstElement, previousElement, thisElement, lastElement;
 
     if (true)
         {
@@ -1058,11 +1056,11 @@ void Performance_ElementDependencyGraph::DoPerformanceShallow(size_t depCount)
     SetUpForRelationshipTests(L"PerformanceShallow");
 
     //  Create the "root" Element. All other Elements will depend on this.
-    DgnElementKey rootElement = InsertElement("Root");
+    DgnElementCPtr rootElement = InsertElement("Root");
 
     //  Create a bunch of Elements, and make each depend on the single rootElement
     EC::ECInstanceKey firstRel, lastRel;
-    DgnElementKey firstDependentElement, lastDependentElement;
+    DgnElementCPtr firstDependentElement, lastDependentElement;
     if (true)
         {
         StopWatch timer("Inserts", true);
@@ -1211,7 +1209,7 @@ TEST_F(ElementDependencyGraph, NonDependencyOrderTest)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementDependencyGraph::TestOverlappingOrder(DgnElementKeyCR r1, EC::ECInstanceKeyCR r1_d3, EC::ECInstanceKeyCR r2_d3, bool r1First)
+void ElementDependencyGraph::TestOverlappingOrder(DgnElementCPtr r1, EC::ECInstanceKeyCR r1_d3, EC::ECInstanceKeyCR r2_d3, bool r1First)
     {
     m_db->SaveChanges();
 
@@ -1271,8 +1269,8 @@ TEST_F(ElementDependencyGraph, FailureTest1)
     {
     SetUpForRelationshipTests(L"FailureTest1");
 
-    DgnElementKey e1 = InsertElement("E1");
-    DgnElementKey e2 = InsertElement("E2");
+    DgnElementCPtr e1 = InsertElement("E1");
+    DgnElementCPtr e2 = InsertElement("E2");
     EC::ECInstanceKey e1_e2 = InsertElementDrivesElementRelationship(e1, e2);
 
     EC::CachedECSqlStatementPtr selectDepRel = GetSelectElementDrivesElementById();
@@ -1344,10 +1342,10 @@ TEST_F(ElementDependencyGraph, CycleTest2)
     SetUpForRelationshipTests(L"CycleTest1");
 
     //  Two Elements
-    DgnElementKey e1 = InsertElement("E1");
-    DgnElementKey e2 = InsertElement("E2");
-    DgnElementKey e3 = InsertElement("E3");
-    DgnElementKey e4 = InsertElement("E4");
+    DgnElementCPtr e1 = InsertElement("E1");
+    DgnElementCPtr e2 = InsertElement("E2");
+    DgnElementCPtr e3 = InsertElement("E3");
+    DgnElementCPtr e4 = InsertElement("E4");
 
     //  Forward dependency relationship
     InsertElementDrivesElementRelationship(e1, e2);
@@ -1377,7 +1375,7 @@ TEST_F(ElementDependencyGraph, CycleTest2)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementDependencyGraph::TestTPS(DgnElementKeyCR e1, DgnElementKeyCR e2, size_t ntimes)
+void ElementDependencyGraph::TestTPS(DgnElementCPtr e1, DgnElementCPtr e2, size_t ntimes)
     {
     m_db->SaveChanges();
 
@@ -1731,11 +1729,13 @@ TEST_F(ElementDependencyGraph, PersistentHandlerTest)
     {
     SetUpForRelationshipTests(L"PersistentHandlerTest");
     
+    {
     auto e1 = InsertElement("E1");
     auto e2 = InsertElement("E2");
 
     auto rel = InsertElementDrivesElementRelationship(e1, e2);
     m_db->SaveChanges();
+    }
 
     BeFileName theFile = m_db->GetFileName();
 
@@ -1844,13 +1844,16 @@ TEST_F(ElementDependencyGraph, WhatIfTest1)
     // Prepare the list of elements for what-if
     bvector<DgnElementId> changedEntities;
     bvector<BeSQLite::EC::ECInstanceId> changedDepRels;
-    changedEntities.push_back(e1.GetElementId());
+    changedEntities.push_back(e1->GetElementId());
+
+    e1=nullptr; // can't keep these after we close the file.
+    e2=nullptr;
 
     // Check that WhatIfChanged finds this edge and invokes processor on it
     ABCHandler::GetHandler().Clear();
         {
         TestEdgeProcessor proc;
-        TxnSummary summary(*m_db);
+        TxnSummary summary(*m_db, TxnDirection::Forward);
         DgnElementDependencyGraph graph(*m_db, summary);
         ASSERT_EQ( BSISUCCESS , graph.WhatIfChanged(proc, changedEntities, changedDepRels) );
 
@@ -1858,7 +1861,6 @@ TEST_F(ElementDependencyGraph, WhatIfTest1)
         ASSERT_EQ( proc.m_relIds.size() , 1 );
         ASSERT_EQ( ABCHandler::GetHandler().m_relIds.size(), 0 ) << L"Real dependency handler should not have been called";
         }
-
     // Repeat the test, but show that we can do WhatIfChanged without writing to anything.
     BeFileName theFile = m_db->GetFileName();
     CloseDb();
@@ -1870,7 +1872,7 @@ TEST_F(ElementDependencyGraph, WhatIfTest1)
     ABCHandler::GetHandler().Clear();
         {
         TestEdgeProcessor proc;
-        TxnSummary summary(*m_db);
+        TxnSummary summary(*m_db, TxnDirection::Forward);
         DgnElementDependencyGraph graph(*m_db, summary);
         ASSERT_EQ( BSISUCCESS , graph.WhatIfChanged(proc, changedEntities, changedDepRels) );
 
@@ -1898,13 +1900,13 @@ TEST_F(ElementDependencyGraph, TestPriority)
     // Prepare the list of elements for what-if
     bvector<DgnElementId> changedEntities;
     bvector<BeSQLite::EC::ECInstanceId> changedDepRels;
-    changedEntities.push_back(e2.GetElementId());
+    changedEntities.push_back(e2->GetElementId());
 
     // Check that we get e11_e2, then e12_e2
     ABCHandler::GetHandler().Clear();
         {
         TestEdgeProcessor proc;
-        TxnSummary summary(*m_db);
+        TxnSummary summary(*m_db, TxnDirection::Forward);
         DgnElementDependencyGraph graph(*m_db, summary);
         ASSERT_EQ( BSISUCCESS , graph.WhatIfChanged(proc, changedEntities, changedDepRels) );
 
@@ -1919,7 +1921,7 @@ TEST_F(ElementDependencyGraph, TestPriority)
 
     // Change the priority of e12_e2 to be greater. Now, it should be called first.
         {
-        TxnSummary summary(*m_db);
+        TxnSummary summary(*m_db, TxnDirection::Forward);
         DgnElementDependencyGraph graph(*m_db, summary);
         DgnElementDependencyGraph::Edge edge_e12_e2 = graph.QueryEdgeByRelationshipId(e12_e2.GetECInstanceId());
         ASSERT_TRUE( edge_e12_e2.GetECRelationshipId().IsValid() );
@@ -1931,7 +1933,7 @@ TEST_F(ElementDependencyGraph, TestPriority)
     ABCHandler::GetHandler().Clear();
         {
         TestEdgeProcessor proc;
-        TxnSummary summary(*m_db);
+        TxnSummary summary(*m_db, TxnDirection::Forward);
         DgnElementDependencyGraph graph(*m_db, summary);
         ASSERT_EQ( BSISUCCESS , graph.WhatIfChanged(proc, changedEntities, changedDepRels) );
 
@@ -1990,25 +1992,50 @@ TEST_F(TransactionManagerTests, ElementAssembly)
     ASSERT_TRUE(!el2->IsPersistent());
 }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, UndoRedo)
 {
     SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OPEN_ReadWrite);
-    m_db->Txns().EnableTracking(true);
+    auto& txns = m_db->Txns(); 
+    txns.EnableTracking(true);
 
-    DgnClassId testClass(TestElement::GetTestElementECClass(*m_db)->GetId());
-    DgnModelP model = m_db->Models().GetModel(m_defaultModelId);
+    TestElementPtr templateEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "");
 
-    TestElement::CreateParams params(*model, testClass, m_defaultCategoryId);
-    TestElementPtr e1 = new TestElement(params);
+    ASSERT_TRUE(!txns.IsUndoPossible()); // with no changes, you can't undo or redo
+    ASSERT_TRUE(!txns.IsRedoPossible());
 
-    DgnElementCPtr el1 = e1->Insert();
+    DgnElementCPtr el1 = templateEl->Insert();
     m_db->SaveChanges("change 1");
 
+    ASSERT_TRUE(txns.IsUndoPossible());  // we have an undoable Txn, but nothing undone.
+    ASSERT_TRUE(!txns.IsRedoPossible());
+
     ASSERT_TRUE(el1->IsPersistent());
-    m_db->Txns().ReverseSingleTxn();
+    StatusInt stat = txns.ReverseSingleTxn();
+    ASSERT_EQ(stat, SUCCESS);
+    ASSERT_TRUE(!txns.IsUndoPossible());     // we can now redo but not undo
+    ASSERT_TRUE(txns.IsRedoPossible());
+
+    DgnElementCPtr afterUndo= m_db->Elements().GetElement(el1->GetElementId());
+    ASSERT_TRUE(!afterUndo.IsValid()); // it should not be in database.
     ASSERT_TRUE(!el1->IsPersistent());
+    stat = txns.ReinstateTxn();  // redo the add, put the added element back
+    ASSERT_EQ(stat, SUCCESS);
+
+    ASSERT_TRUE(txns.IsUndoPossible());
+    ASSERT_TRUE(!txns.IsRedoPossible());
+
+    DgnElementCPtr afterRedo = m_db->Elements().GetElement(el1->GetElementId());
+    ASSERT_TRUE(afterRedo.IsValid());
+    ASSERT_TRUE(!el1->IsPersistent());
+    ASSERT_TRUE(el1.get() != afterRedo.get());
+
+    stat = txns.ReverseSingleTxn();
+    ASSERT_EQ(stat, SUCCESS);
+
+    DgnElementCPtr el2 = templateEl->Insert();
+    m_db->SaveChanges("change 2");
+
     }

@@ -240,8 +240,9 @@ protected:
 
     //! Virtual assignment method. If your subclass has member variables, it @b must override this method and copy those values from @a source.
     //! @param[in] source The element from which to copy
-    //! @note If you override this method, you @b must call T_Super::_CopyFrom, forwarding its status.
-    //! @note Implementers should be aware that this element starts in a valid state. Be careful to free existing state before overwriting it. Also note that
+    //! @note If you override this method, you @b must call T_Super::_CopyFrom, forwarding its status (that is, only return DGNMODEL_STATUS_Success if both your
+    //! implementation and your superclass succeed.)
+    //! @note Implementers should be aware that your element starts in a valid state. Be careful to free existing state before overwriting it. Also note that
     //! @a source is not necessarily the same type as this DgnElement. See notes at CopyFrom.
     DGNPLATFORM_EXPORT virtual DgnModelStatus _CopyFrom(DgnElementCR source);
 
@@ -446,6 +447,13 @@ public:
 
     //! Set the label (user-friendly name) of this DgnElement.
     void SetLabel(Utf8CP label) {m_label.AssignOrClear(label);}
+
+    //! Get the time this element was last modified.
+    //! @note the time is in UTC Julian days.
+    double GetLastModifiedTime() const {return m_lastModTime;}
+
+    //! Get the last modified time as a DateTime timestamp
+    DateTime GetTimeStamp() const {DateTime timestamp; DateTime::FromJulianDay(timestamp, m_lastModTime, DateTime::Info(DateTime::Kind::Utc)); return timestamp;}
 
     //! Get the display label (for use in the GUI) of this DgnElement.
     //! @note The default implementation returns the label if it is set or the code if the label is not set.

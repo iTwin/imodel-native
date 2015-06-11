@@ -617,6 +617,7 @@ DgnModelStatus DgnElement::_CopyFrom(DgnElementCR other)
     m_code       = other.m_code;
     m_label      = other.m_label;
     m_parentId   = other.m_parentId;
+    m_lastModTime = other.m_lastModTime;
 
     return DGNMODEL_STATUS_Success;
     }

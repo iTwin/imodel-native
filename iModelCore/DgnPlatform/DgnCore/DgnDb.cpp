@@ -48,9 +48,8 @@ DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_col
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDb::Destroy()
     {
-    // delete dgnfile, causes all models, etc. to be freed.
     m_models.Empty();
-    m_txns = nullptr; // clear ref counted ptr
+    m_txnManager = nullptr; // RefCountedPtr, deletes TxnManager
     m_ecsqlCache.Empty();
     }
 
@@ -92,10 +91,10 @@ DbResult DgnDb::_OnDbOpened()
 +---------------+---------------+---------------+---------------+---------------+------*/
 TxnManagerR DgnDb::Txns()
     {
-    if (!m_txns.IsValid())
-        m_txns = new TxnManager(*this);
+    if (!m_txnManager.IsValid())
+        m_txnManager = new TxnManager(*this);
 
-    return *m_txns;
+    return *m_txnManager;
     }
 
 //--------------------------------------------------------------------------------------
@@ -111,13 +110,14 @@ CachedECSqlStatementPtr DgnDb::GetPreparedECSqlStatement(Utf8CP ecsql) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::DoOpenDgnDb(BeFileNameCR projectNameIn, OpenParams const& params)
     {
-    m_fileName.SetName(projectNameIn);
-    m_fileName.SupplyDefaultNameParts(s_dgndbExt);
+    BeFileName fileName(projectNameIn);
+    fileName.SupplyDefaultNameParts(s_dgndbExt);
+    m_fileName = fileName.GetNameUtf8();
 
-    DbResult stat = OpenBeSQLiteDb(m_fileName, params);
+    DbResult stat = OpenBeSQLiteDb(fileName, params);
     if (BE_SQLITE_OK != stat)
         {
-        LOG.errorv("Error %s opening [%s]", Db::InterpretDbResult(stat), m_fileName.GetNameUtf8().c_str());
+        LOG.errorv("Error %s opening [%s]", Db::InterpretDbResult(stat), m_fileName.c_str());
         }
 
     return stat;
@@ -189,7 +189,7 @@ DbResult DgnDb::CreateNewDgnDb(BeFileNameCR inFileName, CreateDgnDbParams const&
     if (BE_SQLITE_OK != rc)
         return rc;
 
-    m_fileName.SetName(projectFile);
+    m_fileName = projectFile.GetNameUtf8();
 
     rc = CreateProjectTables();
     if (BE_SQLITE_OK != rc)

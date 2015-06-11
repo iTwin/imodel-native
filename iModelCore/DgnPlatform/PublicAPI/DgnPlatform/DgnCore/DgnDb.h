@@ -119,7 +119,6 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
         DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _DoUpgrade(DgnDbR, DgnVersion& from) const;
     };
 
-
 private:
     void Destroy();
 
@@ -127,21 +126,21 @@ protected:
     friend struct Txns;
     friend struct DgnElement;
 
+    Utf8String      m_fileName;
+    DgnElements     m_elements;
+    DgnModels       m_models;
     DgnVersion      m_schemaVersion;
     DgnDomains      m_domains;
     DgnFonts        m_fonts;
     DgnColors       m_colors;
     DgnCategories   m_categories;
     DgnStyles       m_styles;
-    DgnModels       m_models;
-    DgnElements     m_elements;
     DgnUnits        m_units;
     DgnViews        m_views;
     DgnGeomParts    m_geomParts;
     DgnMaterials    m_materials;
     DgnLinks        m_links;
-    BeFileName      m_fileName;
-    TxnManagerPtr   m_txns;
+    TxnManagerPtr   m_txnManager;
 
     BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
 
@@ -161,11 +160,9 @@ public:
 
     BeSQLite::DbResult SaveDgnDbSchemaVersion(DgnVersion version=DgnVersion(DGNDB_CURRENT_VERSION_Major,DGNDB_CURRENT_VERSION_Minor,DGNDB_CURRENT_VERSION_Sub1,DGNDB_CURRENT_VERSION_Sub2));
 
-public:
-
-    //! Get the file name for this DgnDb.
+    //! Get ae BeFileName for this DgnDb.
     //! @note The superclass method BeSQLite::Db::GetDbFileName may also be used to get the same value, as a Utf8CP.
-    DGNPLATFORM_EXPORT BeFileNameCR GetFileName() const;
+    BeFileName GetFileName() const {return BeFileName(m_fileName);}
 
     //! Get the schema version of an opened DgnDb.
     DGNPLATFORM_EXPORT DgnVersion GetSchemaVersion();
@@ -217,7 +214,7 @@ public:
     DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetPreparedECSqlStatement(Utf8CP ecsql) const;
 };
 
-#if !defined(DOCUMENTATION_GENERATOR)
+#if !defined (DOCUMENTATION_GENERATOR)
 inline BeSQLite::DbResult DgnViews::QueryProperty(void* value, uint32_t size, DgnViewId viewId, DgnViewPropertySpecCR spec, uint64_t id)const {return m_dgndb.QueryProperty(value, size, spec, viewId.GetValue(), id);}
 inline BeSQLite::DbResult DgnViews::QueryProperty(Utf8StringR value, DgnViewId viewId, DgnViewPropertySpecCR spec, uint64_t id) const{return m_dgndb.QueryProperty(value, spec, viewId.GetValue(), id);}
 inline BeSQLite::DbResult DgnViews::QueryPropertySize(uint32_t& size, DgnViewId viewId, DgnViewPropertySpecCR spec, uint64_t id) const{return m_dgndb.QueryPropertySize(size, spec, viewId.GetValue(), id);}
