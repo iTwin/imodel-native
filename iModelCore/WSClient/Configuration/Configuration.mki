@@ -12,9 +12,15 @@ ConfigurationMkiSourceDir = $(ClientSourceDirectory)Configuration/
 #--------------------------------------------------------------------------------------
 #   Set up build dependencies
 #--------------------------------------------------------------------------------------
-ConfigurationMkiHeaders = $(ConfigurationMkiPublicApiDir)UrlProvider.h                      
+ConfigurationMkiHeaders = $(ConfigurationMkiPublicApiDir)BuddiClient.h    \
+                          $(ConfigurationMkiPublicApiDir)BuddiError.h     \
+                          $(ConfigurationMkiPublicApiDir)UrlProvider.h
 
 #--------------------------------------------------------------------------------------
 #   Compile
 #--------------------------------------------------------------------------------------
-$(o)UrlProvider$(oext) : $(ConfigurationMkiSourceDir)UrlProvider.cpp $(ConfigurationMkiHeaders) ${MultiCompileDepends}
+$(o)BuddiClient$(oext)  : $(ConfigurationMkiSourceDir)BuddiClient.cpp $(ConfigurationMkiHeaders) ${MultiCompileDepends}
+
+$(o)BuddiError$(oext)   : $(ConfigurationMkiSourceDir)BuddiError.cpp $(ConfigurationMkiHeaders) ${MultiCompileDepends}
+
+$(o)UrlProvider$(oext)  : $(ConfigurationMkiSourceDir)UrlProvider.cpp $(ConfigurationMkiHeaders) ${MultiCompileDepends}
