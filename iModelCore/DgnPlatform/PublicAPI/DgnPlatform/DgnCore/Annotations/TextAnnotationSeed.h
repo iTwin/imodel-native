@@ -44,8 +44,8 @@ private:
     DEFINE_T_SUPER(AnnotationPropertyBag)
     
 protected:
-    virtual bool _IsIntegerProperty(T_Key) const override;
-    virtual bool _IsRealProperty(T_Key) const override;
+    DGNPLATFORM_EXPORT virtual bool _IsIntegerProperty(T_Key) const override;
+    DGNPLATFORM_EXPORT virtual bool _IsRealProperty(T_Key) const override;
 
 public:
     TextAnnotationSeedPropertyBag() : T_Super() {}

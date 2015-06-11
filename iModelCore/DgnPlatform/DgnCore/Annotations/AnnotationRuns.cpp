@@ -51,7 +51,7 @@ void AnnotationRunBase::SetStyleId(DgnStyleId value, SetAnnotationTextStyleOptio
 //---------------------------------------------------------------------------------------
 AnnotationTextRun::AnnotationTextRun(DgnDbR project) :
     T_Super(project),
-    m_subsuperscript(AnnotationTextRunSubSuperScript::SubScript)
+    m_subsuperscript(AnnotationTextRunSubSuperScript::Neither)
     {
     }
 

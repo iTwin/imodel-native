@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
+#include <DgnPlatform/DgnCore/Annotations/TextAnnotationElement.h>
 
 struct DgnSchemaTableHandler
 {
@@ -708,6 +709,7 @@ DgnSchemaDomain::DgnSchemaDomain() : DgnDomain (DGN_ECSCHEMA_NAME, "Base DgnDb D
     RegisterHandler(ElementGroupHandler::GetHandler());
     RegisterHandler(PointCloudBaseModelHandler::GetHandler());
     RegisterHandler(RasterBaseModelHandler::GetHandler());
+    RegisterHandler(PhysicalTextAnnotationElementHandler::GetHandler());
 
     RegisterDefaultDependencyHandlers();
 

@@ -89,7 +89,7 @@ TEST_F(AnnotationTextStyleTest, DefaultsAndAccessors)
     ASSERT_TRUE(style.IsValid());
 
     // Basics
-    EXPECT_TRUE(&project == &style->GetDgnProjectR());
+    EXPECT_TRUE(&project == &style->GetDbR());
     EXPECT_TRUE(!style->GetId().IsValid()); // Cannot call SetId directly from published API.
 
     // Defaults
@@ -132,7 +132,7 @@ TEST_F(AnnotationTextStyleTest, DeepCopy)
     ASSERT_TRUE(clonedStyle.IsValid());
     ASSERT_TRUE(style.get() != clonedStyle.get());
     
-    EXPECT_TRUE(&project == &clonedStyle->GetDgnProjectR());
+    EXPECT_TRUE(&project == &clonedStyle->GetDbR());
     EXPECT_TRUE(style->GetId() == clonedStyle->GetId());
     VERIFY_DATA_1(clonedStyle);
     }
@@ -169,14 +169,14 @@ TEST_F(AnnotationTextStyleTest, TableReadWrite)
     AnnotationTextStylePtr fileStyle = project.Styles().AnnotationTextStyles().QueryById(testStyle->GetId());
     ASSERT_TRUE(fileStyle.IsValid());
     
-    EXPECT_TRUE(&project == &fileStyle->GetDgnProjectR());
+    EXPECT_TRUE(&project == &fileStyle->GetDbR());
     EXPECT_TRUE(testStyle->GetId() == fileStyle->GetId());
     VERIFY_DATA_1(fileStyle);
 
     fileStyle = project.Styles().AnnotationTextStyles().QueryByName(name.c_str());
     EXPECT_TRUE(fileStyle.IsValid());
     
-    EXPECT_TRUE(&project == &fileStyle->GetDgnProjectR());
+    EXPECT_TRUE(&project == &fileStyle->GetDbR());
     EXPECT_TRUE(testStyle->GetId() == fileStyle->GetId());
     VERIFY_DATA_1(fileStyle);
     
@@ -197,7 +197,7 @@ TEST_F(AnnotationTextStyleTest, TableReadWrite)
     fileStyle = project.Styles().AnnotationTextStyles().QueryByName(name.c_str());
     EXPECT_TRUE(fileStyle.IsValid());
     
-    EXPECT_TRUE(&project == &fileStyle->GetDgnProjectR());
+    EXPECT_TRUE(&project == &fileStyle->GetDbR());
     EXPECT_TRUE(mutatedStyle->GetId() == fileStyle->GetId());
     VERIFY_DATA_1(fileStyle);
     

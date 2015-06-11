@@ -124,7 +124,7 @@ private:
     Utf8String m_content;
     AnnotationTextRunSubSuperScript m_subsuperscript;
 
-    void CopyFrom(AnnotationTextRunCR);
+    DGNPLATFORM_EXPORT void CopyFrom(AnnotationTextRunCR);
 
 protected:
     virtual AnnotationRunBasePtr _Clone() const override { return CloneAsTextRun(); }
@@ -161,7 +161,7 @@ private:
     Utf8String m_denominatorContent;
     Utf8String m_numeratorContent;
 
-    void CopyFrom(AnnotationFractionRunCR);
+    DGNPLATFORM_EXPORT void CopyFrom(AnnotationFractionRunCR);
 
 protected:
     virtual AnnotationRunBasePtr _Clone() const override { return CloneAsFractionRun(); }
