@@ -173,6 +173,8 @@ public:
 struct ECDbSchemaMap;
 struct ECDbClassMap;
 struct ECDbPropertyMap;
+struct ECDbLinkTableRelationshipMap;
+struct ECDbForeignKeyRelationshipMap;
 
 //=======================================================================================    
 //! ECDbMapCustomAttributeHelper is a convenience API for the custom attributes defined
@@ -204,6 +206,19 @@ public:
     //! @param[in] ecProperty ECProperty to retrieve the custom attribute from.
     //! @return true if @p ecProperty has the custom attribute. false, if @p ecProperty doesn't have the custom attribute
     ECOBJECTS_EXPORT static bool TryGetPropertyMap(ECDbPropertyMap& propertyMap, ECPropertyCR ecProperty);
+
+    //! Tries to retrieve the LinkTableRelationshipMap custom attribute from the specified ECRelationshipClass.
+    //! @param[out] linkTableRelationshipMap Retrieved link table relationship map
+    //! @param[in] ecRelationship ECRelationshipClass to retrieve the custom attribute from.
+    //! @return true if @p ecRelationship has the custom attribute. false, if @p ecRelationship doesn't have the custom attribute
+    ECOBJECTS_EXPORT static bool TryGetLinkTableRelationshipMap(ECDbLinkTableRelationshipMap& linkTableRelationshipMap, ECRelationshipClassCR ecRelationship);
+
+    //! Tries to retrieve the ForeignKeyRelationshipMap custom attribute from the specified ECRelationshipClass.
+    //! @param[out] foreignKeyTableRelationshipMap Retrieved foreign key relationship map
+    //! @param[in] ecRelationship ECRelationshipClass to retrieve the custom attribute from.
+    //! @return true if @p ecRelationship has the custom attribute. false, if @p ecRelationship doesn't have the custom attribute
+    ECOBJECTS_EXPORT static bool TryGetForeignKeyRelationshipMap(ECDbForeignKeyRelationshipMap& foreignKeyTableRelationshipMap, ECRelationshipClassCR ecRelationship);
+
     };
 
 //=======================================================================================    
@@ -339,6 +354,124 @@ public:
     //! @param[out] collation Collation. It remains unchanged, if the Collation property wasn't set in the PropertyMap.
     //! @return ECOBJECTSTATUS_Success if Collation was set or unset in the PropertyMap, Error codes otherwise
     ECOBJECTS_EXPORT ECObjectsStatus TryGetCollation(Utf8StringR collation) const;
+    };
+
+
+//=======================================================================================    
+//! ECDbPropertyMap is a convenience wrapper around the PropertyMap custom attribute that simplifies
+//! reading the values of that custom attribute
+//! @ingroup ECObjectsGroup
+//! @bsiclass
+//=======================================================================================    
+struct ECDbRelationshipConstraintMap
+    {
+friend struct ECDbRelationshipConstraintMapHelper;
+
+private:
+    Utf8String m_ecInstanceIdColumn;
+    Utf8String m_ecClassIdColumn;
+    bool m_createDefaultIndex;
+    bool m_enforceReferentialIntegrity;
+    Utf8String m_onDeleteAction;
+    Utf8String m_onUpdateAction;
+
+    ECDbRelationshipConstraintMap(Utf8CP ecInstanceIdColumn, Utf8CP ecClassIdColumn, bool createDefaultIndex, bool enforceReferentialIntegrity, Utf8CP onDeleteAction, Utf8CP onUpdateAction)
+        : m_ecInstanceIdColumn(ecInstanceIdColumn), m_ecClassIdColumn(ecClassIdColumn), m_createDefaultIndex(createDefaultIndex), m_enforceReferentialIntegrity(enforceReferentialIntegrity), m_onDeleteAction(onDeleteAction), m_onUpdateAction(onUpdateAction)
+        {}
+
+public:
+    ECDbRelationshipConstraintMap() : m_createDefaultIndex(true), m_enforceReferentialIntegrity(false) {}
+
+    //! Gets the name of the constraint's ECInstanceId column.
+    //! @return Constraint's ECInstanceId column or nullptr if not specified in the custom attribute
+    Utf8CP GetECInstanceIdColumn() const { return m_ecInstanceIdColumn.c_str(); }
+    //! Gets the name of the constraint's ECClassId column.
+    //! @return Constraint's ECClassId column or nullptr if not specified in the custom attribute
+    Utf8CP GetECClassIdColumn() const { return m_ecClassIdColumn.c_str(); }
+    //! Gets a value indicating whether a default index on the constraint's instance id and class id columns
+    //! should be created or not
+    //! @return true, if the default index should be created. false otherwise
+    bool CreateDefaultIndex() const { return m_createDefaultIndex; }
+    //! Gets a value indicating whether referential integrity should be enforced or not.
+    //! @return true, if referential integrity should be enforced. false otherwise
+    bool EnforceReferentialIntegrity() const { return m_enforceReferentialIntegrity; }
+    //! Gets the OnDelete action if ECDbRelationshipConstraintMap::EnforceReferentialIntegrity is true.
+    //! @return OnDelete action or nullptr if not specified in the custom attribute
+    Utf8CP GetOnDeleteAction() const { return m_onDeleteAction.c_str(); }
+    //! Gets the OnUpdate action if ECDbRelationshipConstraintMap::EnforceReferentialIntegrity is true.
+    //! @return OnUpdate action or nullptr if not specified in the custom attribute
+    Utf8CP GetOnUpdateAction() const { return m_onUpdateAction.c_str(); }
+    };
+
+//=======================================================================================    
+//! ECDbLinkTableRelationshipMap is a convenience wrapper around the LinkTableRelationshipMap 
+//! custom attribute that simplifies reading the values of that custom attribute
+//! @ingroup ECObjectsGroup
+//! @bsiclass
+//=======================================================================================    
+struct ECDbLinkTableRelationshipMap
+    {
+    friend struct ECDbMapCustomAttributeHelper;
+
+private:
+    ECRelationshipClassCP m_relClass;
+    IECInstanceCP m_ca;
+
+    ECDbLinkTableRelationshipMap(ECRelationshipClassCR, IECInstanceCP ca);
+
+public:
+    ECDbLinkTableRelationshipMap() : m_relClass(nullptr), m_ca(nullptr) {}
+
+    //! Tries to get the value of the Source property from the LinkTableRelationshipMap.
+    //! @param[out] sourceConstraint Mapping information for the source constraint of the relationship. 
+    //! It is set to default values, if the Source property wasn't set in the LinkTableRelationshipMap.
+    //! @return ECOBJECTSTATUS_Success if Source was set or unset in the LinkTableRelationshipMap, error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetSource(ECDbRelationshipConstraintMap& sourceConstraint) const;
+    //! Tries to get the value of the Target property from the LinkTableRelationshipMap.
+    //! @param[out] targetConstraint Mapping information for the target constraint of the relationship. 
+    //! It is set to default values, if the Target property wasn't set in the LinkTableRelationshipMap.
+    //! @return ECOBJECTSTATUS_Success if Target was set or unset in the LinkTableRelationshipMap, error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetTarget(ECDbRelationshipConstraintMap& targetConstraint) const;
+    //! Tries to get the value of the AllowDuplicateRelationships property from the LinkTableRelationshipMap.
+    //! @param[out] allowDuplicateRelationships AllowDuplicateRelationships flag. It remains unchanged, if the AllowDuplicateRelationships property wasn't set in the LinkTableRelationshipMap.
+    //! @return ECOBJECTSTATUS_Success if AllowDuplicateRelationships was set or unset in the LinkTableRelationshipMap, Error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetAllowDuplicateRelationships(bool& allowDuplicateRelationships) const;
+    };
+
+//=======================================================================================    
+//! ECDbForeignKeyRelationshipMap is a convenience wrapper around the ForeignKeyRelationshipMap 
+//! custom attribute that simplifies reading the values of that custom attribute
+//! @ingroup ECObjectsGroup
+//! @bsiclass
+//=======================================================================================    
+struct ECDbForeignKeyRelationshipMap
+    {
+    friend struct ECDbMapCustomAttributeHelper;
+
+private:
+    ECRelationshipClassCP m_relClass;
+    IECInstanceCP m_ca;
+
+    ECDbForeignKeyRelationshipMap(ECRelationshipClassCR, IECInstanceCP ca);
+
+public:
+    ECDbForeignKeyRelationshipMap() : m_relClass(nullptr), m_ca(nullptr) {}
+
+    //! Tries to get the value of the ForeignKeyOnTarget property from the ForeignKeyRelationshipMap.
+    //! @param[out] foreignKeyOnTargetFlag ForeignKeyOnTarget flag. If true, the foreign key is on the target end of the ECRelationshipClass.
+    //! If false, the foreign key is on the source end of the ECRelationshipClass. @p foreignKeyOnTargetFlag remains unchanged, 
+    //! if the ForeignKeyOnTarget property wasn't set in the ForeignKeyRelationshipMap.
+    //! @return ECOBJECTSTATUS_Success if ForeignKeyOnTarget was set or unset in the ForeignKeyRelationshipMap, Error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetForeignKeyOnTarget(bool& foreignKeyOnTargetFlag) const;
+    //! Tries to get the value of the ForeignKey property from the ForeignKeyRelationshipMap.
+    //! @param[out] foreignKeyConstraint Mapping information for the foreign key constraint of the relationship. 
+    //! It remains unchanged, if the ForeignKey property wasn't set in the ForeignKeyRelationshipMap.
+    //! @return ECOBJECTSTATUS_Success if ForeignKey was set or unset in the ForeignKeyRelationshipMap, error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetForeignKey(ECDbRelationshipConstraintMap& foreignKeyConstraint) const;
+    //! Tries to get the value of the AllowDuplicateRelationships property from the ForeignKeyRelationshipMap.
+    //! @param[out] allowDuplicateRelationships AllowDuplicateRelationships flag. It remains unchanged, if the AllowDuplicateRelationships property wasn't set in the ForeignKeyRelationshipMap.
+    //! @return ECOBJECTSTATUS_Success if AllowDuplicateRelationships was set or unset in the ForeignKeyRelationshipMap, Error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetAllowDuplicateRelationships(bool& allowDuplicateRelationships) const;
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
