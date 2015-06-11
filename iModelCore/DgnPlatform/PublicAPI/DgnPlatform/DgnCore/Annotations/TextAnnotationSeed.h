@@ -38,7 +38,7 @@ enum struct TextAnnotationSeedProperty
 //! @note Unless dealing with style overrides, you will not typically use this enumeration directly. While TextAnnotationSeed provides high-level accessors to its properties, overrides are expressed directly via TextAnnotationSeedPropertyBag and TextAnnotationSeedProperty.
 // @bsiclass                                                    Jeff.Marker     07/2014
 //=======================================================================================
-struct TextAnnotationSeedPropertyBag : public AnnotationPropertyBag
+struct EXPORT_VTABLE_ATTRIBUTE TextAnnotationSeedPropertyBag : AnnotationPropertyBag
 {
 private:
     DEFINE_T_SUPER(AnnotationPropertyBag)

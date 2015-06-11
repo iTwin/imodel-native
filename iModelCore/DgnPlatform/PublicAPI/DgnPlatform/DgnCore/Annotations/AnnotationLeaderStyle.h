@@ -66,7 +66,7 @@ enum struct AnnotationLeaderStyleProperty
 //! @note Unless dealing with style overrides, you will not typically use this enumeration directly. While AnnotationLeaderStyle provides high-level accessors to its properties, overrides are expressed directly via AnnotationLeaderStylePropertyBag and AnnotationLeaderStyleProperty.
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
-struct AnnotationLeaderStylePropertyBag : public AnnotationPropertyBag
+struct EXPORT_VTABLE_ATTRIBUTE AnnotationLeaderStylePropertyBag : AnnotationPropertyBag
 {
 private:
     DEFINE_T_SUPER(AnnotationPropertyBag)

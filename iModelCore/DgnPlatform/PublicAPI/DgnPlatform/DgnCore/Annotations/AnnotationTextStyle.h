@@ -67,7 +67,7 @@ enum struct AnnotationTextStyleProperty
 //! @note Unless dealing with style overrides, you will not typically use this enumeration directly. While AnnotationTextStyle provides high-level accessors to its properties, overrides are expressed directly via AnnotationTextStylePropertyBag and AnnotationTextStyleProperty.
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
-struct AnnotationTextStylePropertyBag : public AnnotationPropertyBag
+struct EXPORT_VTABLE_ATTRIBUTE AnnotationTextStylePropertyBag : AnnotationPropertyBag
 {
 private:
     DEFINE_T_SUPER(AnnotationPropertyBag)
