@@ -164,8 +164,7 @@ character set. However, applications can extend BeSQLite by implementing the #Be
 #define UNUSED_VARIABLE(x) (void)(x)
 
 #define BESQLITE_TYPEDEFS(_name_) \
-    BEGIN_BENTLEY_SQLITE_NAMESPACE struct _name_; END_BENTLEY_SQLITE_NAMESPACE \
-    ADD_BENTLEY_API_TYPEDEFS1(BeSQLite,_name_,BeSQLite##_name_,struct)
+    BEGIN_BENTLEY_SQLITE_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_SQLITE_NAMESPACE
 
 BENTLEY_API_TYPEDEFS (BeGuid);
 BESQLITE_TYPEDEFS (Db);
@@ -749,7 +748,7 @@ public:
     ~Statement() {Finalize();}
 
     SqlStatementP& GetStmtR() {return m_stmt;} //! @private internal use only
-    DbResult Prepare(BeSQLiteDbFileCR, Utf8CP sql); //! @private  internal use only
+    DbResult Prepare(DbFileCR, Utf8CP sql); //! @private internal use only
 
     //! Determine whether this Statement has already been prepared.
     bool IsPrepared() const {return nullptr != m_stmt;}
@@ -761,13 +760,13 @@ public:
     //! @param[in] db The database to use
     //! @param[in] sql The SQL string to prepare.
     //! @see sqlite3_prepare
-    BE_SQLITE_EXPORT DbResult Prepare(BeSQLiteDbCR db, Utf8CP sql);
+    BE_SQLITE_EXPORT DbResult Prepare(DbCR db, Utf8CP sql);
 
     //! Prepare this Statement. Identical to Prepare, except that it does not automatically log errors
     //! @param[in] db The database to use
     //! @param[in] sql The SQL string to prepare.
     //! @see sqlite3_prepare
-    BE_SQLITE_EXPORT DbResult TryPrepare(BeSQLiteDbCR db, Utf8CP sql);
+    BE_SQLITE_EXPORT DbResult TryPrepare(DbCR db, Utf8CP sql);
 
     //! Perform a single step on this (previously prepared) Statement
     //! @see sqlite3_step
@@ -971,7 +970,7 @@ public:
     //! @param[in] dbName The name of the database attachment to open. If NULL, use "main".
     //! @return BE_SQLITE_OK on success, error status otherwise.
     //! @see sqlite3_blob_open
-    BE_SQLITE_EXPORT DbResult Open(BeSQLiteDbR db, Utf8CP tableName, Utf8CP columnName, uint64_t row, bool writable, Utf8CP dbName=0);
+    BE_SQLITE_EXPORT DbResult Open(DbR db, Utf8CP tableName, Utf8CP columnName, uint64_t row, bool writable, Utf8CP dbName=0);
 
     //! Move and existing opened BlobIO to a new row in the same table.
     //! @param[in] row The new rowId
@@ -1242,9 +1241,9 @@ struct RTreeAcceptFunction : AggregateFunction
     //! It's constructor registers itself as the callback object and it's destructor unregisters itself.
     struct Tester : RTreeMatchFunction
     {
-    BeSQLiteDbR m_db;
+    DbR m_db;
 
-    BE_SQLITE_EXPORT Tester(BeSQLiteDbR db);
+    BE_SQLITE_EXPORT Tester(DbR db);
     virtual void _StepRange(DbFunction::Context&, int nArgs, DbValue* args) = 0;
 
     //! Perform the RTree search by calling "Step" on the supplied statement. This object becomes the callback function for the "rTreeMatch(1)" sql function
@@ -1414,7 +1413,7 @@ public:
 
     //! Apply all of the changes in a ChangeSet to the supplied database.
     //! @param[in] db the database to which the changes are applied.
-    BE_SQLITE_EXPORT DbResult ApplyChanges(BeSQLiteDbR db);
+    BE_SQLITE_EXPORT DbResult ApplyChanges(DbR db);
 
     BE_SQLITE_EXPORT DbResult ConcatenateWith(ChangeSet const& second);
 
@@ -1630,11 +1629,11 @@ private:
     DbTableIterator& operator=(DbTableIterator const& rhs);
 
 protected:
-    mutable BeSQLiteDbP    m_db;
+    mutable DbP    m_db;
     mutable CachedStatementPtr m_stmt;
     NamedParams m_params;
 
-    explicit DbTableIterator(BeSQLiteDbCR db) : m_db((BeSQLiteDbP)&db) {}
+    explicit DbTableIterator(DbCR db) : m_db((DbP)&db) {}
     BE_SQLITE_EXPORT Utf8String MakeSqlString(Utf8CP sql, bool hasWhere=false) const;
 
 public:
@@ -1642,8 +1641,8 @@ public:
     {
     protected:
         bool  m_isValid;
-        BeSQLiteStatementP m_sql;
-        Entry(BeSQLiteStatementP sql, bool isValid) {m_sql=sql; m_isValid=isValid;}
+        StatementP m_sql;
+        Entry(StatementP sql, bool isValid) {m_sql=sql; m_isValid=isValid;}
 //__PUBLISH_SECTION_END__
         void Verify() const {BeAssert(NULL != m_sql->GetSqlStatementP());}
 //__PUBLISH_SECTION_START__
@@ -1681,8 +1680,8 @@ struct DbEmbeddedFileTable
 {
 private:
     friend struct Db;
-    BeSQLiteDbR m_db;
-    DbEmbeddedFileTable(BeSQLiteDbR db) : m_db(db) {}
+    DbR m_db;
+    DbEmbeddedFileTable(DbR db) : m_db(db) {}
 
     //__PUBLISH_SECTION_END__
     BeRepositoryBasedId GetNextEmbedFileId() const;
@@ -1696,13 +1695,13 @@ public:
     struct Iterator : DbTableIterator
     {
     public:
-        explicit Iterator(BeSQLiteDbCR db) : DbTableIterator(db) {}
+        explicit Iterator(DbCR db) : DbTableIterator(db) {}
 
         struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
         {
         private:
             friend struct Iterator;
-            Entry(BeSQLiteStatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
+            Entry(StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
         public:
             BE_SQLITE_EXPORT Utf8CP GetNameUtf8() const;          //!< the name of this embedded file.
             BE_SQLITE_EXPORT Utf8CP GetDescriptionUtf8() const;   //!< the description of this embedded file.
@@ -1873,7 +1872,7 @@ public:
     //__PUBLISH_SECTION_END__
     //! Create the Embedded file table if it doesn't exist
     DbResult CreateTable() const;
-    static bool HasLastModifiedColumn(BeSQLiteDbR db);
+    static bool HasLastModifiedColumn(DbR db);
     //__PUBLISH_SECTION_START__
 };
 
@@ -2278,7 +2277,7 @@ struct DbAppData
     //! This method is called whenever this object is removed from its host BeSQLite::Db. This can happen either by an explicit call to
     //! Db::DropAppData, or because the Db itself is being deleted (in which case all of its DbAppData is notified \b before the Db is deleted).
     //! @param[in] host The host Db on which this DbAppData resided.
-    virtual void _OnCleanup(BeSQLiteDbR host) = 0;
+    virtual void _OnCleanup(DbR host) = 0;
 };
 
 //=======================================================================================
@@ -2398,8 +2397,8 @@ public:
     {
     private:
         friend struct Db;
-        typedef AppDataList<DbAppData, DbAppData::Key, BeSQLiteDbR> T_AppDataList;
-        BeSQLiteDbR    m_db;
+        typedef AppDataList<DbAppData, DbAppData::Key, DbR> T_AppDataList;
+        DbR            m_db;
         T_AppDataList  m_entries;
         DbAppDataList(Db&);
 
@@ -3067,7 +3066,7 @@ public:
     //! @note The cell in the db at tableName[column,rowId] must be an existing blob of #GetCompressedSize bytes. This method cannot be used to
     //! change the size of a blob.
     //! @see sqlite3_blob_open, sqlite3_blob_write, sqlite3_blob_close
-    BE_SQLITE_EXPORT BentleyStatus SaveToRow(BeSQLiteDbR db, Utf8CP tableName, Utf8CP column, int64_t rowId);
+    BE_SQLITE_EXPORT BentleyStatus SaveToRow(DbR db, Utf8CP tableName, Utf8CP column, int64_t rowId);
 };
 
 //=======================================================================================
@@ -3124,7 +3123,7 @@ private:
 
 public:
     BE_SQLITE_EXPORT SnappyFromBlob();
-    BE_SQLITE_EXPORT ZipErrors Init(BeSQLiteDbCR db, Utf8CP tableName, Utf8CP column, int64_t rowId);
+    BE_SQLITE_EXPORT ZipErrors Init(DbCR db, Utf8CP tableName, Utf8CP column, int64_t rowId);
     BE_SQLITE_EXPORT ~SnappyFromBlob();
     BE_SQLITE_EXPORT virtual ZipErrors _Read(Byte* data, uint32_t size, uint32_t& actuallyRead) override;
     BE_SQLITE_EXPORT void Finish() ;

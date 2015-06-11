@@ -2,7 +2,7 @@
 |
 |     $Source: BeSQLiteProfileManager.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -41,17 +41,17 @@ public:
     //! is not up-to-date).
     //! @param[in] db BeSQLite file handle to upgrade
     //! @return BE_SQLITE_OK if successful. Error code otherwise.
-    static DbResult UpgradeProfile (BeSQLiteDbR db);
+    static DbResult UpgradeProfile (DbR db);
 
     //! Reads the version of the BeSQLite profile of the given BeSQLite file
     //! @return BE_SQLITE_OK in case of success or error code if the SQLite database is no
     //! BeSQLite file, i.e. does not have the BeSQLite profile
-    static DbResult ReadProfileVersion (SchemaVersion& profileVersion, BeSQLiteDbR db);
+    static DbResult ReadProfileVersion (SchemaVersion& profileVersion, DbR db);
 
     //! Saves the software's expected profile version in the specified BeSQLite file.
     //! @param[in] db BeSQLite file handle to save profile version to
     //! @return BE_SQLITE_OK if successful. Error code otherwise.
-    static DbResult AssignProfileVersion (BeSQLiteDbR db);
+    static DbResult AssignProfileVersion (DbR db);
     };
 
 //=======================================================================================
@@ -61,14 +61,14 @@ struct BeSQLiteProfileUpgrader
     {
 private:
     virtual SchemaVersion _GetTargetVersion () const = 0;
-    virtual DbResult _Upgrade (BeSQLiteDbR db) const = 0;
+    virtual DbResult _Upgrade (DbR db) const = 0;
 
 public:
     virtual ~BeSQLiteProfileUpgrader ()
         {}
 
     SchemaVersion GetTargetVersion () const;
-    DbResult Upgrade (BeSQLiteDbR db) const;
+    DbResult Upgrade (DbR db) const;
     };
 
 //=======================================================================================
@@ -82,7 +82,7 @@ private:
         {
         return SchemaVersion (3, 1, 0, 1);
         }
-    virtual DbResult _Upgrade (BeSQLiteDbR db) const override;
+    virtual DbResult _Upgrade (DbR db) const override;
     };
 
 END_BENTLEY_SQLITE_NAMESPACE
