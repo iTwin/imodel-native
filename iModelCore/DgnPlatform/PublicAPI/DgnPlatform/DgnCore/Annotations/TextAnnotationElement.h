@@ -23,7 +23,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     06/2015
 //=======================================================================================
-struct PhysicalTextAnnotationElement : PhysicalElement
+struct EXPORT_VTABLE_ATTRIBUTE PhysicalTextAnnotationElement : PhysicalElement
 {
 private:
     DEFINE_T_SUPER(PhysicalElement);
