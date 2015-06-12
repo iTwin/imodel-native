@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
+
+    <Part Name="PublicAPI" BentleyBuildMakeFile="RealityModFramework.prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="RealityPlatform" />
+            <PublicAPI Domain="RealityPackage" />
+        </Bindings>
+    </Part>
+    
+    <Part Name="RealityPlatform" BentleyBuildMakeFile="RealityPlatform\RealityPlatform.mke">
+      <SubPart PartName="PublicAPI" />
+      <SubPart PartName="ImagePPDLL"                 PartFile="ImagePP"                   Repository="ImagePP" />
+      <SubPart PartName="PointoolsVortexAPI_VS2012"  PartFile="PointoolsVortexAPI_VS2012" Repository="PointoolsVortexAPI" />
+      <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
+      <Bindings>
+          <Libs>Delivery/$(stlibprefix)RealityPlatform$(stlibext)</Libs>
+          <Files ProductDirectoryName="RealityAssemblies">delivery/$(shlibprefix)RealityPlatform$(shlibext)</Files>
+      </Bindings>
+    </Part>
+
+    <Part Name="RealityDataHandlerTester" BentleyBuildMakeFile="RealityPlatform\Tests\RealityDataHandlerTester\RealityDataHandlerTester.mke" OnlyPlatforms="x86,x64">
+        <SubPart PartName="RealityPlatform"/>
+        <Bindings>
+            <Files ProductDirectoryName="RealityAssemblies">Delivery/RealityDataHandlerTester.exe</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="RealityPackage" BentleyBuildMakeFile="RealityPackage\RealityPackage.mke">
+        <SubPart PartName="PublicAPI" />
+        <SubPart PartName="BentleyApi"  PartFile="BentleyApi"   Repository="BentleyApi" />
+        <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="BeXmlDll"    PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
+        <SubPart PartName="GeomDlls"    PartFile="geomlibs"     Repository="GeomLibs" />        
+        <Bindings>
+            <Libs>Delivery/$(stlibprefix)RealityPackage$(stlibext)</Libs>
+            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/$(shlibprefix)RealityPackage$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="RealityPackageUnitTests" BentleyBuildMakeFile="${SrcBsiCommon}/sharedmki/BuildUnitTests.mke" 
+          BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)RealityModFramework/Tests/RealityPackage/ -dBEGTEST_NAME=RealityPackage -dBEGTEST_DEPENDENCIES=$(SrcRoot)RealityModFramework/Tests/dependencies.mki">
+        <SubPart PartName="google_gtest_lib"    PartFile="gtest"        Repository="util-gtest" />
+        <SubPart PartName="RealityPackage"/>
+    </Part>
+
+    <Part Name="RealityPlatformUnitTests" BentleyBuildMakeFile="${SrcBsiCommon}/sharedmki/BuildUnitTests.mke"
+          BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)RealityModFramework/Tests/RealityPlatform/ -dBEGTEST_NAME=RealityPlatform -dBEGTEST_DEPENDENCIES=$(SrcRoot)RealityModFramework/Tests/dependencies.mki">
+        <SubPart PartName="google_gtest_lib"    PartFile="gtest"        Repository="util-gtest" />
+        <SubPart PartName="RealityPlatform"/>
+    </Part>
+
+    <Part Name="RealityPackage-Tested">
+        <SubPart PartName="RealityPackageUnitTests"/>
+        <SubPart PartName="BeGTestCommon"       PartFile="BeGTest"      Repository="BeGTest" />
+    </Part>
+
+    <Part Name="RealityPlatform-Tested">
+        <SubPart PartName="RealityPlatformUnitTests"/>
+        <SubPart PartName="BeGTestCommon"       PartFile="BeGTest"      Repository="BeGTest" />
+    </Part>
+
+    <Part Name="RealityFramework-Tested">
+        <SubPart PartName="RealityPlatformUnitTests"/>
+        <SubPart PartName="RealityPackageUnitTests"/>
+        <SubPart PartName="BeGTestCommon"       PartFile="BeGTest"      Repository="BeGTest" />
+    </Part>
+
+  <Part Name="ScalableMeshHandler" BMakeFile="ScalableMeshHandler/handler.mke">
+    <SubPart PartName="ScalableMesh" PartFile="ScalableMesh" Repository="ScalableMesh" />
+    <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform" />
+        <Bindings>
+            <Libs>delivery/$(shlibprefix)ScalableMeshHandler$(libext)</Libs>    
+            <Assemblies ProductDirectoryName="RealityAssemblies">delivery/$(shlibprefix)ScalableMeshHandler$(shlibext)</Assemblies> 
+            <PublicAPI Domain="ScalableMeshHandler" />
+        </Bindings>
+	</Part>
+
+
+    <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+    <!-- ////////////////////////////   PointCloudSchema   /////////////////////////////////// -->
+    <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+
+    <Part Name="PointCloudSchema" OnlyPlatforms="x86,x64" BentleyBuildMakeFile="PointCloudSchema/PointCloudSchema.mke" >
+        <SubPart PartName="PointCloudSchemaPublicAPI"/>
+        <SubPart PartName="PointCloudSchemaSubParts"/>
+        <SubPart PartName="BePointCloud" PartFile="BePointCloud" Repository="BePointCloud" />
+        <Bindings>
+            <Assemblies ProductDirectoryName="PointCloudAssemblies">Delivery/PointCloudSchema.dll</Assemblies>
+            <Libs>Delivery/PointCloudSchema.lib</Libs>
+        </Bindings>
+    </Part>
+
+    <Part Name="PointCloudSchemaSubParts">
+        <SubPart PartName="BentleyDll"      PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
+        <SubPart PartName="GeomDlls"        PartFile="geomlibs"     Repository="GeomLibs" />
+        <!-- Need full data to decode EPSG code -->
+        <SubPart PartName="GeoCoordData"    PartFile="csmap"        Repository="libsrc-csmap"/>
+    </Part>
+
+    <Part Name="PointCloudSchemaPublicAPI" BentleyBuildMakeFile="PointCloudSchema/PointCloudSchema.prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="PointCloudSchema"/>
+            <Files ProductDirectoryName="ECSchemas" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/BentleyPointCloud*.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+
+    <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+    <!-- ////////////////////////////     RasterSchema     /////////////////////////////////// -->
+    <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+
+    <Part Name="RasterSchema" OnlyPlatforms="x86,x64" BentleyBuildMakeFile="RasterSchema/RasterSchema.mke" >
+        <SubPart PartName="RasterSchemaPublicAPI"/>
+
+<!-- &&ep1 -->
+        <SubPart PartName="ImagePPDLL"                 PartFile="ImagePP"                   Repository="ImagePP" />
+
+        <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
+        <!-- Need full data to decode EPSG code -->
+        <SubPart PartName="GeoCoordData"    PartFile="csmap"        Repository="libsrc-csmap"/>
+        <Bindings>
+            <Assemblies ProductDirectoryName="RasterAssemblies">Delivery/$(shlibprefix)RasterSchema$(shlibext)</Assemblies>
+            <Libs>Delivery/$(libprefix)RasterSchema$(libext)</Libs>
+        </Bindings>
+    </Part>
+
+    <Part Name="RasterSchemaPublicAPI" BentleyBuildMakeFile="RasterSchema/RasterSchema.prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="RasterSchema"/>
+            <Files ProductDirectoryName="ECSchemas" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/BentleyRaster*.xml
+            </Files>
+        </Bindings>
+    </Part>
+
+
+    <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+    <!-- ////////////////////////////////// Products ///////////////////////////////////////// -->
+    <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+    
+    <ProductDirectoryList ListName="RealityModFrameworkDirList" >
+        <ProductDirectory Name="PublicAPI"                  Deliver="false" />
+        <ProductDirectory Name="VendorAPI"                  Deliver="false" />
+        <ProductDirectory Name="Libs"                       Deliver="false" />
+        <ProductDirectory Name="OracleNativeAssemblies"     Deliver="false"/>
+        <ProductDirectory Name="GdalData"                   Deliver="false"/>
+        <ProductDirectory Name="csmapmergemodules"          Deliver="false" />
+        <ProductDirectory Name="LoggingManagedAssemblies"   Deliver="false"/>
+
+         <!--notices/ review if notices need to be delivered--> 
+        <ProductDirectory Name="VendorNotices"   Deliver="false"    LibType="dynamic"   Path="notices"/>
+        <ProductDirectory Name="VendorNotices"   Deliver="false"    LibType="static"    Path="notices"/>
+
+        <ProductDirectory   Name="PublicAPI"                    LibType="Static"    Deliver="false"/>
+        <ProductDirectory   Name="VendorAPI"                    LibType="Static"    Deliver="false" />
+        <ProductDirectory   Name="libs"                         LibType="Static"    Deliver="false"/>
+        <ProductDirectory   Name="BentleyNativeAssemblies"      LibType="Static"    Deliver="false"/>
+        <ProductDirectory   Name="GeomNativeAssemblies"         LibType="Static"    Deliver="false"/>
+        <ProductDirectory   Name="RmgrToolsNativeAssemblies"    LibType="Static"    Deliver="false"/>
+
+        <ProductDirectory Name="RealityAssemblies"      Path=""/>
+        <ProductDirectory Name="BentleyNativeAssemblies"    Path=""/>
+        <ProductDirectory Name="ImagePPAssemblies"          Path=""/>
+        <ProductDirectory Name="RmgrToolsNativeAssemblies"  Path=""/>
+        <ProductDirectory Name="AdobeAssemblies"            Path="" Deliver="false"/>
+        <ProductDirectory Name="AdobeResource"              Path="System/Data/PDFL" RelativeTo="AdobeAssemblies"  Deliver="false"/>
+        <ProductDirectory Name="PPNativeAssemblies"         Path="" />
+        <ProductDirectory Name="PdfLibInitNativeAssemblies" Path="" />
+        <ProductDirectory Name="GeomNativeAssemblies"       Path="" />
+        <ProductDirectory Name="GeoCoordData"               Path="GeoCoordinateData" />
+        <ProductDirectory Name="GeoCoordNativeAssemblies"   Path="" />
+        <ProductDirectory Name="MrSidAssemblies"            Path="" />
+        <ProductDirectory Name="ErdasEcwJpeg2000Assemblies" Path="" />
+        <ProductDirectory Name="ECObjectsNativeAssemblies"  Path="" />
+        <ProductDirectory Name="ECSchemas" Path="ECSchemas" />       
+
+        <ProductDirectory Name="GeomNativeAssemblies" Path=""/>
+        <ProductDirectory Name="PointoolsAssemblies" Path=""/>
+        <ProductDirectory Name="PointoolsAssemblies32Ext" Path="Pointools32Ext" RelativeTo="PointoolsAssemblies"/>
+
+        <ProductDirectory Name="LoggingNativeAssemblies" Path=""/>
+    </ProductDirectoryList>
+
+	
+    <Product Name="RealityModFramework">
+        <!--SubPart PartName="RasterSchema"/-->
+        <SubPart PartName="RealityFramework-Tested"/>
+        <SubPart PartName="RealityDataHandlerTester"/>
+        <Directories DirectoryListName="RealityModFrameworkDirList" />
+    </Product>
+
+</BuildContext>
