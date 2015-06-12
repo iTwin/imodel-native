@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: DgnCore/Annotations/AnnotationLeaderDraw.cpp $
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
 #include <DgnPlatformInternal.h> 
@@ -11,7 +11,6 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-AnnotationLeaderDrawPtr AnnotationLeaderDraw::Create(AnnotationLeaderLayoutCR leaderLayout) { return new AnnotationLeaderDraw(leaderLayout); }
 AnnotationLeaderDraw::AnnotationLeaderDraw(AnnotationLeaderLayoutCR leaderLayout) :
     T_Super()
     {
@@ -21,18 +20,10 @@ AnnotationLeaderDraw::AnnotationLeaderDraw(AnnotationLeaderLayoutCR leaderLayout
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-AnnotationLeaderDrawPtr AnnotationLeaderDraw::Clone() const { return new AnnotationLeaderDraw(*this); }
-AnnotationLeaderDraw::AnnotationLeaderDraw(AnnotationLeaderDrawCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
-AnnotationLeaderDrawR AnnotationLeaderDraw::operator=(AnnotationLeaderDrawCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
 void AnnotationLeaderDraw::CopyFrom(AnnotationLeaderDrawCR rhs)
     {
     m_leaderLayout = rhs.m_leaderLayout;
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     06/2014
-//---------------------------------------------------------------------------------------
-AnnotationLeaderLayoutCR AnnotationLeaderDraw::GetLeaderLayout() const { return *m_leaderLayout; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014

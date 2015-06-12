@@ -1223,7 +1223,7 @@ bool OcclusionScorer::ComputeEyeSpanningRangeOcclusionScore(double* score, DPoin
     double  s_eyeSpanningCameraLimit = 1.0E-3;
 
     DRange3d npcRange;
-    npcRange.init();
+    npcRange.Init ();
     for (int i=0; i<8; i++)
         {
         DPoint3d  npc;
@@ -1634,7 +1634,7 @@ void InitForDgnModel()
         DPoint4d viewDirection = {0.0, 0.0, -1.0, 0.0};
 
         DMatrix4d  viewToLocal = m_viewContext.GetViewToLocal();
-        viewToLocal.multiply(&viewDirection, &viewDirection, 1);
+        viewToLocal.Multiply (&viewDirection, &viewDirection, 1);
         m_orthogonalProjectionIndex = ((viewDirection.x < 0.0) ? 1  : 0) +
                                       ((viewDirection.x > 0.0) ? 2  : 0) +
                                       ((viewDirection.y < 0.0) ? 4  : 0) +
@@ -2031,7 +2031,7 @@ RtreeViewFilter::RtreeViewFilter(DgnViewportCR viewport, DbR db, double minimumS
     m_boundingRange.FromRange(range);
 
     // get bounding range of front plane of polyhedron
-    range.initFrom(m_frustum.GetPts(), 4);
+    range.InitFrom(m_frustum.GetPts(), 4);
     m_frontFaceRange.FromRange(range);
 
     // get unit bvector from front plane to back plane

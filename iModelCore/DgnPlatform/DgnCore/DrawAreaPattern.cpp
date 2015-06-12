@@ -1645,7 +1645,7 @@ void ViewContext::_DrawAreaPattern (ClipStencil& boundary)
         return boundary.GetStroker ()._StrokeForCache (*this);
 
     IPickGeom*  pickGeom = GetIPickGeom();
-    GeomDetailP detail = pickGeom ? &pickGeom->GetGeomDetail () : NULL;
+    GeomDetailP detail = pickGeom ? &pickGeom->_GetGeomDetail () : NULL;
     bool        wasSnappable = true;
 
     if (NULL != detail)

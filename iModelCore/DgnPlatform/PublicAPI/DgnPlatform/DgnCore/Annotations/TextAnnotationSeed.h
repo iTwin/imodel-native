@@ -29,8 +29,7 @@ enum struct TextAnnotationSeedProperty
     FrameStyleId = 1, //<! (integer) @note ID of an AnnotationFrameStyle in the project
     LeaderStyleId = 2, //<! (integer) @note ID of an AnnotationLeaderStyle in the project
     TextStyleId = 3 //<! (integer) @note ID of an AnnotationTextStyle in the project
-
-}; // TextAnnotationSeedProperty
+};
 
 //=======================================================================================
 //! This specialized collection provides direct access to TextAnnotationSeed property keys and values.
@@ -39,34 +38,29 @@ enum struct TextAnnotationSeedProperty
 //! @note Unless dealing with style overrides, you will not typically use this enumeration directly. While TextAnnotationSeed provides high-level accessors to its properties, overrides are expressed directly via TextAnnotationSeedPropertyBag and TextAnnotationSeedProperty.
 // @bsiclass                                                    Jeff.Marker     07/2014
 //=======================================================================================
-struct TextAnnotationSeedPropertyBag : public AnnotationPropertyBag
+struct EXPORT_VTABLE_ATTRIBUTE TextAnnotationSeedPropertyBag : AnnotationPropertyBag
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(AnnotationPropertyBag)
     
 protected:
-    virtual bool _IsIntegerProperty(T_Key) const override;
-    virtual bool _IsRealProperty(T_Key) const override;
+    DGNPLATFORM_EXPORT virtual bool _IsIntegerProperty(T_Key) const override;
+    DGNPLATFORM_EXPORT virtual bool _IsRealProperty(T_Key) const override;
 
 public:
-    DGNPLATFORM_EXPORT TextAnnotationSeedPropertyBag();
-    DGNPLATFORM_EXPORT TextAnnotationSeedPropertyBag(TextAnnotationSeedPropertyBagCR);
-    DGNPLATFORM_EXPORT TextAnnotationSeedPropertyBagR operator=(TextAnnotationSeedPropertyBagCR);
-
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
-    DGNPLATFORM_EXPORT static TextAnnotationSeedPropertyBagPtr Create();
-    DGNPLATFORM_EXPORT TextAnnotationSeedPropertyBagPtr Clone() const;
+    TextAnnotationSeedPropertyBag() : T_Super() {}
+    TextAnnotationSeedPropertyBag(TextAnnotationSeedPropertyBagCR rhs) : T_Super(rhs) {}
+    TextAnnotationSeedPropertyBagR operator=(TextAnnotationSeedPropertyBagCR rhs) { T_Super::operator=(rhs); return *this;}
+    static TextAnnotationSeedPropertyBagPtr Create() { return new TextAnnotationSeedPropertyBag(); }
+    TextAnnotationSeedPropertyBagPtr Clone() const { return new TextAnnotationSeedPropertyBag(*this); }
     
-    DGNPLATFORM_EXPORT bool HasProperty(TextAnnotationSeedProperty) const;
-    DGNPLATFORM_EXPORT void ClearProperty(TextAnnotationSeedProperty);
-    DGNPLATFORM_EXPORT T_Integer GetIntegerProperty(TextAnnotationSeedProperty) const;
-    DGNPLATFORM_EXPORT void SetIntegerProperty(TextAnnotationSeedProperty, T_Integer);
-    DGNPLATFORM_EXPORT T_Real GetRealProperty(TextAnnotationSeedProperty) const;
-    DGNPLATFORM_EXPORT void SetRealProperty(TextAnnotationSeedProperty, T_Real);
-
-}; // TextAnnotationSeedPropertyBag
+    bool HasProperty(TextAnnotationSeedProperty key) const { return T_Super::HasProperty((T_Key)key); }
+    void ClearProperty(TextAnnotationSeedProperty key) { T_Super::ClearProperty((T_Key)key); }
+    T_Integer GetIntegerProperty(TextAnnotationSeedProperty key) const { return T_Super::GetIntegerProperty((T_Key)key); }
+    void SetIntegerProperty(TextAnnotationSeedProperty key, T_Integer value) { T_Super::SetIntegerProperty((T_Key)key, value); }
+    T_Real GetRealProperty(TextAnnotationSeedProperty key) const { return T_Super::GetRealProperty((T_Key)key); }
+    void SetRealProperty(TextAnnotationSeedProperty key, T_Real value) { T_Super::SetRealProperty((T_Key)key, value); }
+};
 
 //=======================================================================================
 //! This is used to provide seed properties when creating a TextAnnotation. Unlike a classic "style", a "seed" is only used when creating the element. Once created, elements will not react to changes in the seed.
@@ -77,7 +71,6 @@ public:
 //=======================================================================================
 struct TextAnnotationSeed : public RefCountedBase
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(RefCountedBase)
     friend struct TextAnnotationSeedPersistence;
@@ -88,28 +81,24 @@ private:
     Utf8String m_description;
     TextAnnotationSeedPropertyBag m_data;
 
-    void CopyFrom(TextAnnotationSeedCR);
+    DGNPLATFORM_EXPORT void CopyFrom(TextAnnotationSeedCR);
     void Reset();
 
 public:
     DGNPLATFORM_EXPORT explicit TextAnnotationSeed(DgnDbR);
-    DGNPLATFORM_EXPORT TextAnnotationSeed(TextAnnotationSeedCR);
-    DGNPLATFORM_EXPORT TextAnnotationSeedR operator=(TextAnnotationSeedCR);
-    
-    void SetId(DgnStyleId);
-
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
-    DGNPLATFORM_EXPORT static TextAnnotationSeedPtr Create(DgnDbR);
-    DGNPLATFORM_EXPORT TextAnnotationSeedPtr Clone() const;
+    TextAnnotationSeed(TextAnnotationSeedCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
+    TextAnnotationSeedR operator=(TextAnnotationSeedCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
+    static TextAnnotationSeedPtr Create(DgnDbR project) { return new TextAnnotationSeed(project); }
+    TextAnnotationSeedPtr Clone() const { return new TextAnnotationSeed(*this); }
     DGNPLATFORM_EXPORT TextAnnotationSeedPtr CreateEffectiveStyle(TextAnnotationSeedPropertyBagCR overrides) const;
 
-    DGNPLATFORM_EXPORT DgnDbR GetDgnProjectR() const;
-    DGNPLATFORM_EXPORT DgnStyleId GetId() const;
-    DGNPLATFORM_EXPORT Utf8StringCR GetName() const;
-    DGNPLATFORM_EXPORT void SetName(Utf8CP);
-    DGNPLATFORM_EXPORT Utf8StringCR GetDescription() const;
-    DGNPLATFORM_EXPORT void SetDescription(Utf8CP);
+    DgnDbR GetDbR() const { return *m_dgndb; }
+    DgnStyleId GetId() const { return m_id; }
+    void SetId(DgnStyleId value) { m_id = value; } //!< @private
+    Utf8StringCR GetName() const { return m_name; }
+    void SetName(Utf8CP value) { m_name = value; }
+    Utf8StringCR GetDescription() const { return m_description; }
+    void SetDescription(Utf8CP value) { m_description = value; }
 
     DGNPLATFORM_EXPORT DgnStyleId GetFrameStyleId() const;
     DGNPLATFORM_EXPORT void SetFrameStyleId(DgnStyleId);
@@ -117,15 +106,13 @@ public:
     DGNPLATFORM_EXPORT void SetLeaderStyleId(DgnStyleId);
     DGNPLATFORM_EXPORT DgnStyleId GetTextStyleId() const;
     DGNPLATFORM_EXPORT void SetTextStyleId(DgnStyleId);
-
-}; // TextAnnotationSeed
+};
 
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
 struct DgnTextAnnotationSeeds : public DgnDbTable
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(DgnDbTable);
     friend struct DgnDb;
@@ -133,7 +120,6 @@ private:
     DgnTextAnnotationSeeds(DgnDbR db) : T_Super(db) {}
 
 public:
-//__PUBLISH_SECTION_START__
     //=======================================================================================
     // @bsiclass
     //=======================================================================================
@@ -157,20 +143,18 @@ public:
             Entry(BeSQLite::StatementP sql, bool isValid) : T_Super(sql, isValid) {}
 
         public:
-            DGNPLATFORM_EXPORT DgnStyleId GetId() const;
-            DGNPLATFORM_EXPORT Utf8CP GetName() const;
-            DGNPLATFORM_EXPORT Utf8CP GetDescription() const;
+            DgnStyleId GetId() const { Verify(); return m_sql->GetValueId<DgnStyleId>(0); }
+            Utf8CP GetName() const { Verify(); return m_sql->GetValueText(1); }
+            Utf8CP GetDescription() const { Verify(); return m_sql->GetValueText(2); }
             Entry const& operator* () const { return *this; }
-
-        }; // Entry
+        };
 
         typedef Entry const_iterator;
         typedef Entry iterator;
         DGNPLATFORM_EXPORT const_iterator begin() const;
         const_iterator end() const { return Entry(NULL, false); }
         DGNPLATFORM_EXPORT size_t QueryCount() const;
-
-    }; // Iterator
+    };
     
     //! Queries the project for an annotation seed by-ID, and returns a deserialized instance.
     DGNPLATFORM_EXPORT TextAnnotationSeedPtr QueryById(DgnStyleId) const;
@@ -198,11 +182,8 @@ public:
     //! Deletes an annotation seed from the project. If a style does not exist by-ID, no action is performed.
     //! @note When a style is removed, no attempts are currently made to normalize existing elements. Thus, elements may still attempt to reference a missing style, and must be written to assume such a style doesn't exist.
     DGNPLATFORM_EXPORT BentleyStatus Delete(DgnStyleId);
-
-}; // DgnTextAnnotationSeeds
+};
 
 //! @endGroup
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
-
-//__PUBLISH_SECTION_END__

@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: PublicAPI/DgnPlatform/DgnCore/Annotations/AnnotationFrameLayout.h $
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 #pragma once
 
@@ -23,7 +23,6 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 struct AnnotationFrameLayout : public RefCountedBase
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(RefCountedBase)
 
@@ -34,31 +33,27 @@ private:
     DRange2d m_contentRange;
     CurveVectorPtr m_frameGeometry;
 
-    void CopyFrom(AnnotationFrameLayoutCR);
-    void Invalidate();
-    void Update();
+    DGNPLATFORM_EXPORT void CopyFrom(AnnotationFrameLayoutCR);
+    void Invalidate() { m_isValid = false; }
+    DGNPLATFORM_EXPORT void Update();
 
 public:
     DGNPLATFORM_EXPORT AnnotationFrameLayout(AnnotationFrameCR, AnnotationTextBlockLayoutCR);
-    DGNPLATFORM_EXPORT AnnotationFrameLayout(AnnotationFrameLayoutCR);
-    DGNPLATFORM_EXPORT AnnotationFrameLayoutR operator=(AnnotationFrameLayoutCR);
+    AnnotationFrameLayout(AnnotationFrameLayoutCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
+    AnnotationFrameLayoutR operator=(AnnotationFrameLayoutCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
+    static AnnotationFrameLayoutPtr Create(AnnotationFrameCR frame, AnnotationTextBlockLayoutCR docLayout) { return new AnnotationFrameLayout(frame, docLayout); }
+    AnnotationFrameLayoutPtr Clone() const { return new AnnotationFrameLayout(*this); }
 
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
-    DGNPLATFORM_EXPORT static AnnotationFrameLayoutPtr Create(AnnotationFrameCR, AnnotationTextBlockLayoutCR);
-    DGNPLATFORM_EXPORT AnnotationFrameLayoutPtr Clone() const;
-
-    DGNPLATFORM_EXPORT AnnotationFrameCR GetFrame() const;
-    DGNPLATFORM_EXPORT AnnotationTextBlockLayoutCR GetDocumentLayout() const;
-    DGNPLATFORM_EXPORT double GetEffectiveFontHeight() const;
-    DGNPLATFORM_EXPORT DRange2d GetContentRange() const;
-    DGNPLATFORM_EXPORT CurveVectorCR GetFrameGeometry() const;
+    AnnotationFrameCR GetFrame() const { return *m_frame; }
+    AnnotationTextBlockLayoutCR GetDocumentLayout() const { return *m_docLayout; }
+    double GetEffectiveFontHeight() const { const_cast<AnnotationFrameLayoutP>(this)->Update(); return m_effectiveFontHeight; }
+    DRange2d GetContentRange() const { const_cast<AnnotationFrameLayoutP>(this)->Update(); return m_contentRange; }
+    CurveVectorCR GetFrameGeometry() const { const_cast<AnnotationFrameLayoutP>(this)->Update(); return *m_frameGeometry; }
 
     DGNPLATFORM_EXPORT size_t GetAttachmentIdCount() const;
     DGNPLATFORM_EXPORT uint32_t GetAttachmentId(size_t) const;
     DGNPLATFORM_EXPORT void ComputePhysicalPointForAttachmentId(DPoint3dR, DVec3dR, uint32_t) const;
-
-}; // AnnotationFrameLayout
+};
 
 //! @endGroup
 

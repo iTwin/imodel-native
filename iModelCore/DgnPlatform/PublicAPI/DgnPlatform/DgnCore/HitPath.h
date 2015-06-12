@@ -99,11 +99,11 @@ private:
     bool                    m_nonSnappable;             // non-snappable detail, ex. pattern or line style.
     double                  m_viewDist;                 // xy distance to hit (view coordinates).
     double                  m_viewZ;                    // z distance to hit (view coordinates).
-    uint32_t                m_geomId;                   // geometric primitive id for this hit.
+    T_GeomPrimitiveId       m_geomId;                   // id of geometric primitive that genereated this hit.
 
 public:
 
-    DGNPLATFORM_EXPORT void Init ();
+    DGNPLATFORM_EXPORT void Init();
 
     DPoint3dCR              GetClosestPoint() const     {return m_closePoint;}
     DVec3dCR                GetSurfaceNormal() const    {return m_normal;}
@@ -122,6 +122,11 @@ public:
     void                    SetNonSnappable (bool yesNo)            {m_nonSnappable = yesNo;}
     void                    SetScreenDist (double value)            {m_viewDist = value;}
     void                    SetZValue (double value)                {m_viewZ = value;}
+
+    //! @private
+    T_GeomPrimitiveId GetGeomPrimitiveId() const {return m_geomId;}
+    //! @private
+    void SetGeomPrimitiveId(T_GeomPrimitiveId geomId) {m_geomId = geomId;}
 
     DGNPLATFORM_EXPORT bool     FillGPA (GPArrayR, bool singleSegment = true) const;
     DGNPLATFORM_EXPORT bool     GetArc (DEllipse3dR) const;

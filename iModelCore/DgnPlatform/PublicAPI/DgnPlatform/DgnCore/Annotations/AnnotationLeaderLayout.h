@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: PublicAPI/DgnPlatform/DgnCore/Annotations/AnnotationLeaderLayout.h $
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 #pragma once
 
@@ -23,7 +23,6 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 struct AnnotationLeaderLayout : public RefCountedBase
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(RefCountedBase)
 
@@ -38,32 +37,28 @@ private:
     CurveVectorPtr m_terminatorGeometry;
     Transform m_terminatorTransform;
 
-    void CopyFrom(AnnotationLeaderLayoutCR);
-    void Invalidate();
-    void Update();
+    DGNPLATFORM_EXPORT void CopyFrom(AnnotationLeaderLayoutCR);
+    void Invalidate() { m_isValid = false; }
+    DGNPLATFORM_EXPORT void Update();
 
 public:
     DGNPLATFORM_EXPORT AnnotationLeaderLayout(AnnotationLeaderCR, AnnotationFrameLayoutCR);
-    DGNPLATFORM_EXPORT AnnotationLeaderLayout(AnnotationLeaderLayoutCR);
-    DGNPLATFORM_EXPORT AnnotationLeaderLayoutR operator=(AnnotationLeaderLayoutCR);
+    AnnotationLeaderLayout(AnnotationLeaderLayoutCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
+    AnnotationLeaderLayoutR operator=(AnnotationLeaderLayoutCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
+    static AnnotationLeaderLayoutPtr Create(AnnotationLeaderCR leader, AnnotationFrameLayoutCR frameLayout) { return new AnnotationLeaderLayout(leader, frameLayout); }
+    AnnotationLeaderLayoutPtr Clone() const { return new AnnotationLeaderLayout(*this); }
 
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
-    DGNPLATFORM_EXPORT static AnnotationLeaderLayoutPtr Create(AnnotationLeaderCR, AnnotationFrameLayoutCR);
-    DGNPLATFORM_EXPORT AnnotationLeaderLayoutPtr Clone() const;
-
-    DGNPLATFORM_EXPORT AnnotationLeaderCR GetLeader() const;
-    DGNPLATFORM_EXPORT AnnotationFrameLayoutCR GetFrameLayout() const;
-    DGNPLATFORM_EXPORT TransformCR GetFrameTransform() const;
-    DGNPLATFORM_EXPORT void SetFrameTransform(TransformCR);
-    DGNPLATFORM_EXPORT DPoint3dCR GetSourcePhysicalPoint() const;
-    DGNPLATFORM_EXPORT DVec3dCR GetSourceTangent() const;
-    DGNPLATFORM_EXPORT DPoint3dCR GetTargetPhysicalPoint() const;
-    DGNPLATFORM_EXPORT CurveVectorCR GetLineGeometry() const;
-    DGNPLATFORM_EXPORT CurveVectorCR GetTerminatorGeometry() const;
-    DGNPLATFORM_EXPORT TransformCR GetTerminatorTransform() const;
-
-}; // AnnotationLeaderLayout
+    AnnotationLeaderCR GetLeader() const { return *m_leader; }
+    AnnotationFrameLayoutCR GetFrameLayout() const { return *m_frameLayout; }
+    TransformCR GetFrameTransform() const { return m_frameTransform; }
+    void SetFrameTransform(TransformCR value) { m_frameTransform = value; }
+    DPoint3dCR GetSourcePhysicalPoint() const { const_cast<AnnotationLeaderLayoutP>(this)->Update(); return m_sourcePhysicalPoint; }
+    DVec3dCR GetSourceTangent() const { const_cast<AnnotationLeaderLayoutP>(this)->Update(); return m_sourceTangent; }
+    DPoint3dCR GetTargetPhysicalPoint() const { const_cast<AnnotationLeaderLayoutP>(this)->Update(); return m_targetPhysicalPoint; }
+    CurveVectorCR GetLineGeometry() const { const_cast<AnnotationLeaderLayoutP>(this)->Update(); return *m_lineGeometry; }
+    TransformCR GetTerminatorTransform() const { const_cast<AnnotationLeaderLayoutP>(this)->Update(); return m_terminatorTransform; }
+    CurveVectorCR GetTerminatorGeometry() const { const_cast<AnnotationLeaderLayoutP>(this)->Update(); return *m_terminatorGeometry; }
+};
 
 //! @endGroup
 

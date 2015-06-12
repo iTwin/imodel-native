@@ -455,4 +455,3 @@ DgnProgressMeter::Abort DgnProgressMeter::ShowProgress() {return _ShowProgress()
 void DgnProgressMeter::Hide() {_Hide();}
 
 DEFINE_KEY_METHOD(DgnMarkupProject)
-DEFINE_KEY_METHOD(IPickGeom)

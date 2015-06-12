@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnCore/DgnMarkupProject.h>
+#include <DgnPlatform/DgnCore/Annotations/TextAnnotationElement.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 struct RedlineModelHandler         : SheetModelHandler    {MODELHANDLER_DECLARE_MEMBERS("RedlineModel",                 RedlineModel,         RedlineModelHandler, SheetModelHandler, )};
@@ -695,6 +696,7 @@ DgnSchemaDomain::DgnSchemaDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Do
     RegisterHandler(ElementGroupHandler::GetHandler());
     RegisterHandler(PointCloudBaseModelHandler::GetHandler());
     RegisterHandler(RasterBaseModelHandler::GetHandler());
+    RegisterHandler(PhysicalTextAnnotationElementHandler::GetHandler());
 
     RegisterDefaultDependencyHandlers();
 

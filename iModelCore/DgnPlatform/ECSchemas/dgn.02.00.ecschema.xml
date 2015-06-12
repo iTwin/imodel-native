@@ -793,4 +793,9 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         </Target>
     </ECRelationshipClass>
 
+    <ECClass typeName="PhysicalTextAnnotationElement" isDomainClass="True">
+        <BaseClass>PhysicalElement</BaseClass>
+        <ECProperty propertyName="TextAnnotationBlob" typeName="binary"/>
+    </ECClass>
+
 </ECSchema>

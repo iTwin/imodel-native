@@ -310,7 +310,7 @@ StatusInt ProcessDEllipse3d (DEllipse3dCP ellipseP, bool closed, bool filled)
 
     DEllipse3d  tmpEllipse = *ellipseP;
 
-    tmpEllipse.productOf (&transform, ellipseP);
+    transform.Multiply (tmpEllipse, *ellipseP);
 
     if (m_fp->AcceptByCurve ())
         {
@@ -636,7 +636,7 @@ virtual void    _DrawQvElem (QvElem* qvElem, int subElemIndex) override
         DPoint4d    pickPtView;
 
         m_context->FrustumToView (&pickPtView, &fencePt, 1);
-        pickPtView.getProjectedXYZ (&pickPt);
+        pickPtView.GetProjectedXYZ (pickPt);
 
         bool        gotHit = false;
         DPoint3d    hitPt;
@@ -757,7 +757,7 @@ virtual void    _DrawSymbol (IDisplaySymbol* symbolDefP, TransformCP transP, Cli
         // Compute new range from corners to make sure low < high or intesectsWith will return false...
         range.InitFrom (boxPts, 8);
 
-        if (!range.intersectsWith (&m_npcSubRange))
+        if (!range.IntersectsWith (m_npcSubRange))
             return;
         }
 
@@ -1199,7 +1199,7 @@ int             nPoints
         RotMatrix   rMatrix;
 
         rMatrix.initIdentity ();
-        ellipse.initFromScaledRotMatrix (&center, &rMatrix, radius, radius, 0.0, msGeomConst_2pi);
+        ellipse.InitFromScaledRotMatrix (center, rMatrix, radius, radius, 0.0, msGeomConst_2pi);
 
         gpa->Add (ellipse);
 
@@ -1265,7 +1265,7 @@ static void     setFenceRangeFromInsideClip (DRange3dR fenceRange, ClipVectorCR 
     Frustum     viewFrustum = vp->GetFrustum (DgnCoordSystem::World, true);
 
     memcpy (viewBox, viewFrustum.GetPts (), sizeof (viewBox));
-    viewRange.initFrom (viewBox, 8);
+    viewRange.InitFrom (viewBox, 8);
 
     double      minDepth, maxDepth;
 
@@ -1282,11 +1282,11 @@ static void     setFenceRangeFromInsideClip (DRange3dR fenceRange, ClipVectorCR 
 
     DPoint3d    corners[8];
 
-    range.get8Corners (corners);
+    range.Get8Corners  (corners);
     if (NULL != clipPrimitive->GetTransformFromClip())
         clipPrimitive->GetTransformFromClip()->multiply (corners, 8);
 
-    range.initFrom (corners, 8);
+    range.InitFrom (corners, 8);
     range.IntersectionOf (range, viewRange);
 
     if (!range.IsNull ())
@@ -1510,7 +1510,7 @@ DPoint3d        *norm           /* => norm (peterson) bvector to plane */
 
     major = xVec.normalize ((DVec3d *) &ellipse.vector0);
     minor = yVec.normalize ((DVec3d *) &ellipse.vector90);
-    rotMatrix.initFrom2Vectors (&xVec, &yVec);
+    rotMatrix.InitFrom2Vectors (xVec, yVec);
 
     double      a, b, c, discrim, xtmp, ytmp;
     double      slope, intercept;
@@ -1550,7 +1550,7 @@ DPoint3d        *norm           /* => norm (peterson) bvector to plane */
             *isAngle = Angle::Atan2 (ytmp, xtmp);
             rotMatrix.Multiply(*isPnt);
 
-            if (ellipse.isAngleInSweep (*isAngle))
+            if (ellipse.IsAngleInSweep (*isAngle))
                 {
                 (*n)++;
                 isPnt++;
@@ -1567,7 +1567,7 @@ DPoint3d        *norm           /* => norm (peterson) bvector to plane */
                 *isAngle = Angle::Atan2 (ytmp, xtmp);
                 rotMatrix.Multiply(*isPnt);
 
-                if (ellipse.isAngleInSweep (*isAngle))
+                if (ellipse.IsAngleInSweep (*isAngle))
                     {
                     (*n)++;
                     isPnt++;
@@ -1598,7 +1598,7 @@ DPoint3d        *norm           /* => norm (peterson) bvector to plane */
             *isAngle = Angle::Atan2 (ytmp, xtmp);
             rotMatrix.Multiply(*isPnt);
 
-            if (ellipse.isAngleInSweep (*isAngle))
+            if (ellipse.IsAngleInSweep (*isAngle))
                 {
                 (*n)++;
                 isPnt++;
@@ -1615,7 +1615,7 @@ DPoint3d        *norm           /* => norm (peterson) bvector to plane */
                 *isAngle = Angle::Atan2 (ytmp, xtmp);
                 rotMatrix.Multiply(*isPnt);
 
-                if (ellipse.isAngleInSweep (*isAngle))
+                if (ellipse.IsAngleInSweep (*isAngle))
                     {
                     (*n)++;
                     isPnt++;
@@ -1650,7 +1650,7 @@ bool            FenceParams::ClipPlaneArcIntersect (ClipPrimitiveCR primitive, d
         primitive.TransformFromClip (isPnt[i]);
 
         if (primitive.PointInside (isPnt[i], m_onTolerance))
-            intersectFound |= StoreIntersectionIfInsideClip (ellipse.angleToFraction (isAngle[i]), &isPnt[i], &primitive);
+            intersectFound |= StoreIntersectionIfInsideClip (ellipse.AngleToFraction (isAngle[i]), &isPnt[i], &primitive);
         }
 
     return intersectFound;
@@ -1725,7 +1725,7 @@ bool            FenceParams::ArcIntersect (DPoint2dCP lineSegP, DEllipse3dCR ell
         {
         if (pointIsInBlock (range, primitive.ClipZLow(), primitive.ClipZHigh(), m_onTolerance, isPnt[i]))
             {
-            double  fraction = ellipse.angleToFraction (isAngle[i]);
+            double  fraction = ellipse.AngleToFraction (isAngle[i]);
 
             if (fraction > 1.0)
                 fraction = 1.0;          // TR# 291396. The ellipse.IsAngleInSweep() function will return true for angles slightly outside of span so apply limits here.
@@ -1754,7 +1754,7 @@ bool            FenceParams::ArcFenceIntersect (ClipPrimitiveCR clipPrimitive, D
     DEllipse3d  rotatedEllipse;
 
     if (NULL != clipPrimitive.GetTransformToClip())
-        rotatedEllipse.productOf (clipPrimitive.GetTransformToClip(), &ellipse);
+        clipPrimitive.GetTransformToClip()->Multiply (rotatedEllipse, ellipse);
     else
         rotatedEllipse = ellipse;
 
@@ -1793,8 +1793,8 @@ double          onTolerance
     DPoint3d    deltaB;
     DRange3d    aRange, bRange;
 
-    aRange.initFrom (clipPoints, 2, 0.0);
-    bRange.initFrom (linePoints, 2);
+    aRange.InitFrom (clipPoints, 2, 0.0);
+    bRange.InitFrom (linePoints, 2);
 
     // Allow intersections "on the fence". TR# 175566
     aRange.low.x  -= onTolerance;
@@ -1973,8 +1973,8 @@ bool            FenceParams::AcceptDEllipse3d (DEllipse3dCR ellipse)
     DPoint3d    testPoint;
     DEllipse3d  localEllipse;
 
-    localEllipse.productOf (&m_transform, &ellipse);
-    localEllipse.fractionParameterToPoint (&testPoint, 0.5);
+    m_transform.Multiply (localEllipse, ellipse);
+    localEllipse.FractionParameterToPoint (testPoint, 0.5);
 
     bool        pointIn, insideMode = !m_overlapMode && !static_cast<int>(m_clipMode);
 

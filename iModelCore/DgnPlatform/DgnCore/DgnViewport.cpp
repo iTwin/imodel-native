@@ -162,7 +162,7 @@ void DgnViewport::ViewToNpc(DPoint3dP npcVec, DPoint3dCP screenVec, int nPts) co
 
     Transform    scrToNpcTran;
     bsiTransform_initFromRange(NULL, &scrToNpcTran, &llb, &urf);
-    scrToNpcTran.multiply(npcVec, screenVec, nPts);
+    scrToNpcTran.Multiply (npcVec, screenVec, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -175,7 +175,7 @@ void DgnViewport::NpcToView(DPoint3dP screenVec, DPoint3dCP npcVec, int nPts) co
 
     Transform    npcToScrTran;
     bsiTransform_initFromRange(&npcToScrTran, NULL, &llb, &urf);
-    npcToScrTran.multiply(screenVec, npcVec, nPts);
+    npcToScrTran.Multiply (screenVec, npcVec, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -183,7 +183,7 @@ void DgnViewport::NpcToView(DPoint3dP screenVec, DPoint3dCP npcVec, int nPts) co
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::NpcToWorld(DPoint3dP rootPts, DPoint3dCP npcPts, int nPts) const
     {
-    m_rootToNpc.M1.multiplyAndRenormalize(rootPts, npcPts, nPts);
+    m_rootToNpc.M1.MultiplyAndRenormalize(rootPts, npcPts, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -191,7 +191,7 @@ void DgnViewport::NpcToWorld(DPoint3dP rootPts, DPoint3dCP npcPts, int nPts) con
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::WorldToNpc(DPoint3dP npcPts, DPoint3dCP rootPts, int nPts) const
     {
-    m_rootToNpc.M0.multiplyAndRenormalize(npcPts, rootPts, nPts);
+    m_rootToNpc.M0.MultiplyAndRenormalize(npcPts, rootPts, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -433,7 +433,7 @@ void DgnViewport::CalcNpcToView(DMap4dR npcToView)
     {
     DPoint3d    viewLow, viewHigh;
     _GetViewCorners(viewLow, viewHigh);
-    npcToView.initFromRanges(&s_NpcCorners[NPC_000], &s_NpcCorners[NPC_111], &viewLow, &viewHigh);
+    npcToView.InitFromRanges (s_NpcCorners[NPC_000], s_NpcCorners[NPC_111], viewLow, viewHigh);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -769,7 +769,7 @@ Frustum DgnViewport::GetFrustum(DgnCoordSystem sys, bool expandedBox) const
 
         // get the root corners of the unexpanded box
         DPoint3d  ueRootBox[NPC_CORNER_COUNT];
-        ueRootToNpc.M1.multiplyAndRenormalize(ueRootBox, s_NpcCorners, NPC_CORNER_COUNT);
+        ueRootToNpc.M1.MultiplyAndRenormalize(ueRootBox, s_NpcCorners, NPC_CORNER_COUNT);
 
         // and convert them to npc coordinates of the expanded view
         WorldToNpc(box.GetPtsP(), ueRootBox, NPC_CORNER_COUNT);
@@ -845,7 +845,7 @@ ViewportStatus DgnViewport::Scroll(Point2dCP screenDist) // => distance to scrol
         }
 
     DPoint3d pts[2];
-    pts[0].zero();
+    pts[0].Zero ();
     pts[1] = offset;
 
     ViewToWorld(pts, pts, 2);
@@ -921,7 +921,7 @@ ViewportStatus DgnViewport::Zoom(DPoint3dCP newCenterRoot, double factor)
         product.InitProduct(offsetTransform, scaleTransform);
 
         Frustum frust = GetFrustum(DgnCoordSystem::Npc, false);
-        product.multiply(frust.GetPtsP(), NPC_CORNER_COUNT);
+        product.Multiply((frust.GetPtsP()), NPC_CORNER_COUNT);
 
         NpcToWorld(frust.GetPtsP(), frust.GetPtsP(), NPC_CORNER_COUNT);
 
@@ -1461,8 +1461,8 @@ void DgnViewport::GridFix(DPoint3dR pointRoot, RotMatrixCR rMatrixRoot, DPoint3d
 
     // get origin and point in view coordinate system
     DPoint3d    pointRootView, originRootView;
-    rMatrixRoot.multiply(&pointRootView, &pointRoot);
-    rMatrixRoot.multiply(&originRootView, &originRoot);
+    rMatrixRoot.Multiply(pointRootView, pointRoot);
+    rMatrixRoot.Multiply(originRootView, originRoot);
 
     // see whether we need to adjust the origin for iso-grid
     if (isoGrid)
