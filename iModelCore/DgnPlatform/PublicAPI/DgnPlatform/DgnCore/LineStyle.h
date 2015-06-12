@@ -1160,37 +1160,6 @@ typedef LeafNode <NameNode, MSCharIKey>       T_LsNameTreeNode;
 typedef T_LsIdTree::Iterator                  T_LsIdIterator;
 typedef T_LsIdTree::Iterator                  T_LsIdIterator;
 
-#if defined(NOTNOW)
-/*=================================================================================**//**
-    Class that performs the upgrade logic required for the line style names table element
-    and the line style component definitions table element.
-    @bsiclass                                                   John.Gooding    10/2012
-+===============+===============+===============+===============+===============+======*/
-struct LineStyleUpgradeProcessor : RefCountedBase
-{
-private:
-    bmap <uint64_t, uint32_t> m_idMap;
-    DgnElementCP   m_v8Components;
-    DgnDbR         m_dgnDb;
-
-    LineStyleStatus UpgradeLsComponent (uint32_t& v10Id, uint64_t v8Id, LsComponentType type);
-    DgnDbR GetDgnDb () { return m_dgnDb; }
-
-    DgnElementCP FindComponent (uint64_t v8Id);
-    static uint64_t const* GetDependents (struct LStyleDefEntryElm const& lStyleDef);
-    static void SetDescription (V10ComponentBase*v10, struct LStyleDefEntryElm const& lStyleDef);
-    LineStyleStatus UpgradeCompoundType (uint32_t&v10Id, struct LStyleDefEntryElm const& lStyleDef);
-    LineStyleStatus UpgradeLineCode (uint32_t& v10Id, struct LStyleDefEntryElm const& lStyleDef);
-    LineStyleStatus UpgradeLinePoint (uint32_t& v10Id, struct LStyleDefEntryElm const& lStyleDef);
-    LineStyleStatus UpgradePointSymbol (uint32_t& v10Id, struct LStyleDefEntryElm const& lStyleDef);
-    LineStyleUpgradeProcessor (DgnDbR project, DgnElementCP components);
-
-public:
-    DGNPLATFORM_EXPORT static RefCountedPtr<LineStyleUpgradeProcessor> Create (DgnDbR project, DgnElementCP components);
-    DGNPLATFORM_EXPORT LineStyleStatus UpgradeLineStyleV8toV10 (struct LStyleNameEntryElm const& lStyle, Utf8CP alternateName);
-};
-#endif
-
 //__PUBLISH_SECTION_START__
 //!  Defines possible values for LsDefinition::GetUnitsType() and LsDefinition::SetUnitsType().
 //!  @ingroup LineStyleManagerModule
@@ -1365,24 +1334,6 @@ public:
     static int64_t GetMaxKey () {return INT32_MAX;}
     };
 
-//=======================================================================================
-// @bsiclass
-//=======================================================================================
-struct NameNode
-{
-    LsDefinitionP       m_entry;
-
-public:
-    NameNode (LsDefinition* entry) {m_entry = entry;}
-
-    LsDefinitionP      GetValue     () const {return m_entry;}
-    MSCharIKey        GetKey        () const   {return m_entry->_GetName();}
-
-    static MSCharIKey GetMinKey    () {return MINCKEY;}
-    static MSCharIKey GetMaxKey    () {return MAXCKEY;}
-};
-
-
 //__PUBLISH_SECTION_START__
 //=======================================================================================
 //! An entry in a LsCache; it contains a pointer to an LsDefinition
@@ -1453,7 +1404,6 @@ struct LsCache : public RefCountedBase
 //__PUBLISH_SECTION_END__
 private:
     T_LsIdTree          m_idTree;
-    T_LsNameTree        m_nameTree;
     DgnDbR              m_dgnDb;
     bmap<LsLocation, LsComponentPtr> m_loadedComponents;
     bool                m_isLoaded;
@@ -1462,7 +1412,6 @@ private:
     ~LsCache();
 
     void                                    EmptyIdMap      ();   // EmptyIdMap and EmptyNameMap should probably always be called together.
-    void                                    EmptyNameMap    ();   // EmptyIdMap and EmptyNameMap should probably always be called together.
 
     //  virtual LineStyleComponentP     _FindComponent (ComponentID& componentID, bool searchSystemMaps) const;
 
@@ -1476,15 +1425,10 @@ public:
     T_LsIdIterator                              FirstId                  () {return m_idTree.FirstEntry();}
     void                                        AddIdEntry               (DgnStyleId id, LsDefinitionP nameRec, bool resolves);
     DGNPLATFORM_EXPORT BentleyStatus            RemoveIdEntry            (DgnStyleId id);
-    DGNPLATFORM_EXPORT BentleyStatus            RemoveNameEntry          (Utf8CP);
-    DGNPLATFORM_EXPORT LsDefinitionP            AddNameEntry             (Utf8CP, DgnStyleId styleId, DgnDbR, Json::Value& lsDefinition);
-    DGNPLATFORM_EXPORT void                     AddNameEntry             (LsDefinition*);
-    DGNPLATFORM_EXPORT void                     ProcessNameMap           (PFNameMapProcessFunc processFunc, void* arg);
     T_LsIdTree*                                 GetIdMap                 () {return &m_idTree;}
     DGNPLATFORM_EXPORT LsIdNodeP                SearchIdsForName         (Utf8CP name) const;
     bool                                        IsLoaded                 () const {return m_isLoaded;}
     void                                        TreeLoaded               () { m_isLoaded=true; }
-    void                                        DropComponentRefs        ();
 
     DGNPLATFORM_EXPORT static LsDefinitionP     FindInMap                (DgnDbR dgndb, DgnStyleId styleId);
     BentleyStatus                               Load                     ();
@@ -1501,19 +1445,6 @@ public:
     DGNPLATFORM_EXPORT static LsCacheP  GetDgnDbCache             (DgnDbR, bool loadIfNotLoaded = true);
 
     DGNPLATFORM_EXPORT Utf8String                  GetFileName             () const;    //!< Name of file used to load the map.
-
-    //! Searches the set of names associated with the LsCache.
-    //! @param[in] lsName The name of the line style.
-    //! @return The associated LsDefinition object if found. Otherwise, it returns NULL;
-    //! @note If the line style map is a LsDgnFileMap then the LsDefinitionP that is
-    //! returned may point to a line style defined in a DGN file or a line style defined
-    //! in a resource file.
-    DGNPLATFORM_EXPORT LsDefinitionP            GetLineStyleP   (Utf8CP lsName) const;
-    //! Searches the set of names associated with the LsCache.
-    //! @param[in] lsName The name of the line style.
-    //! @return The associated LsDefinition object if found. Otherwise, it returns NULL;
-    //! @see LsCache::GetLineStyleP
-    DGNPLATFORM_EXPORT LsDefinitionCP           GetLineStyleCP  (Utf8CP lsName) const;
 
     //! Searches the set of ID's associated with the LsCache.
     //! @param[in] styleId The ID that is used to associate an element with a line style.

@@ -150,24 +150,6 @@ void            LsCache::AddIdEntry(DgnStyleId id, LsDefinitionP nameRec, bool r
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            LsCache::AddNameEntry (LsDefinition* nameRec)
-    {
-    m_nameTree.Add ((NameNode*) &nameRec);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   01/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-LsDefinitionP   LsCache::AddNameEntry(Utf8CP name, DgnStyleId styleId, DgnDbR project, Json::Value& lsDefinition)
-    {
-    LsDefinition* nameRec = new LsDefinition (name, project, lsDefinition, styleId);
-    AddNameEntry (nameRec);
-    return  nameRec;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   01/03
-+---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus       LsCache::RemoveIdEntry (DgnStyleId id)
     {
     LsIdNode    node (0,0,0, true);
@@ -179,47 +161,12 @@ BentleyStatus       LsCache::RemoveIdEntry (DgnStyleId id)
     return  SUCCESS;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   01/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus       LsCache::RemoveNameEntry (Utf8CP name)
-    {
-    LsDefinition* node;
-
-    if (SUCCESS != m_nameTree.Remove (name, (NameNode*) &node))
-        return  ERROR;
-
-    delete node;
-    return  SUCCESS;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    11/2013
 //---------------------------------------------------------------------------------------
 LsCacheP  LsCache::GetDgnDbCache (DgnDbR project, bool loadIfNotLoaded)
     {
     return  project.Styles().LineStyles().GetLsCacheP (loadIfNotLoaded);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JimBartlett     08/92
-+---------------+---------------+---------------+---------------+---------------+------*/
-static StatusInt   clearComponentRef
-(
-NameNode const*     nameNode,
-void*                 arg
-)
-    {
-    (const_cast <LsDefinition*> (nameNode->GetValue()))->SetComponent (NULL);
-    return  SUCCESS;
-    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    Keith.Bentley   01/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            LsCache::DropComponentRefs ()
-    {
-    ProcessNameMap (clearComponentRef, NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -263,16 +210,6 @@ void            LsIdNode::Clear ()
     m_nameRec = NULL;
     }
 
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   01/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-static StatusInt   freeNameRec (NameNodeP node, void* arg)
-    {
-    delete node->GetValue();
-    return  SUCCESS;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -295,19 +232,8 @@ void            LsCache::EmptyIdMap ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            LsCache::EmptyNameMap ()
-    {
-    // iterate tree, delete all entries
-    m_nameTree.Process (freeNameRec, NULL);
-    m_nameTree.Empty();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   01/03
-+---------------+---------------+---------------+---------------+---------------+------*/
 void            LsCache::EmptyMaps()
     {
-    EmptyNameMap ();
     EmptyIdMap ();
     m_isLoaded = false;
     }
@@ -471,16 +397,6 @@ LsDefinitionP     LsCache::FindInMap (DgnDbR dgndb, DgnStyleId styleId)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* look up a linestyle in a LsCache by name. Return name record.
-* @bsimethod                                                    Keith.Bentley   01/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-LsDefinitionP   LsCache::GetLineStyleP (Utf8CP name) const
-    {
-    NameNode*   nameNode = m_nameTree.Get (name);
-    return  (NULL != nameNode) ? nameNode->GetValue() : NULL;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * look up a linestyle in a LsCache by id. Return LsIdNodeP
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -513,16 +429,7 @@ Utf8String         LsCache::GetFileName () const
     return Utf8String(fileName);
     }
 
-LsDefinitionCP  LsCache::GetLineStyleCP (Utf8CP name) const { return GetLineStyleP (name); }
 LsDefinitionCP  LsCache::GetLineStyleCP (DgnStyleId styleId)  const { return GetLineStyleP (styleId); }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Chuck.Kirschman 03/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            LsCache::ProcessNameMap (PFNameMapProcessFunc processFunc, void* arg)
-    {
-    m_nameTree.Process (processFunc, arg);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
@@ -543,42 +450,3 @@ Utf8CP  name
     return  NULL;
     }
 
-#if defined(NOTNOW)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   01/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            LsCache::RenameStyle
-(
-Utf8CP       oldName,
-Utf8CP       newName,
-LsLocationType    type        // LsLocationType::Unknown for any
-)
-    {
-    for (T_LsIdIterator curr = FirstId(); curr.Entry(); curr = curr.Next())
-        {
-        LsLocationType    currType = curr.Entry()->GetValue()->GetLocation()->GetSourceType();
-
-        if (type != LsLocationType::Unknown && type != currType)
-            continue;
-
-        Utf8CP currName =curr.Entry()->GetName();
-
-        if (currName && !BeStringUtilities::Stricmp (currName, oldName))
-            {
-            (const_cast <LsIdNode*>(curr.Entry()))->SetName (newName);
-            return;
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   01/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-void LineStyleCacheManager::FreeDgnFileMaps ()
-    {
-    // Better also clear the cache at this time in case there are any stale pointers.
-    // The case we ran into (TR #175621) was a Ref Reload was freeing the maps, but
-    //   when the maps were repopulated, the styles were already in the cache.
-    LineStyleCacheManager::CacheFree ();
-    }
-#endif
