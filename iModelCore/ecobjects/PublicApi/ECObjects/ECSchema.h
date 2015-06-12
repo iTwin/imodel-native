@@ -1522,7 +1522,7 @@ struct SchemaKey
     //! @li SCHEMAMATCHTYPE_Latest - Returns whether the current schema's name is equal to the target's.
     ECOBJECTS_EXPORT bool Matches (SchemaKeyCR rhs, SchemaMatchType matchType) const;
 
-    //! Compares two schema names and returns whether the target schema matches this m_schemaName. Comparison is case insensitive
+    //! Compares two schema names and returns whether the target schema matches this m_schemaName. Comparison is case-sensitive
     //! @param[in]  schemaName  The schema name to compare to
     ECOBJECTS_EXPORT int  CompareByName (WString schemaName) const;
 
