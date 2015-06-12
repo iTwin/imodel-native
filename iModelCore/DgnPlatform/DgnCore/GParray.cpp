@@ -560,8 +560,8 @@ double &dMax
     dMax = 0.0;
     ptrdiff_t lastInteriorKnotIndex = (ptrdiff_t)knots.size () - order;
     DRange3d range;
-    range.init ();
-    range.extend (bezierPoles, order);
+    range.Init ();
+    range.Extend (bezierPoles, order);
     double tolerance = m_abstol
             + m_reltol * (range.low.maxAbs () + range.high.maxAbs ()) * order * order;
 
@@ -701,8 +701,8 @@ int &nextReadIndex
     if (jmdlGraphicsPointArray_getBezier (&source, &myReadIndex, newPoles, &newOrder, MAX_BEZIER_CURVE_ORDER))
         {
         DRange3d bezierRange;
-        bezierRange.init ();
-        bezierRange.extend (newPoles, newOrder);
+        bezierRange.Init ();
+        bezierRange.Extend (newPoles, newOrder);
         GraphicsPoint gp;
         double knot0, knot1;
         jmdlGraphicsPointArray_getGraphicsPoint (&source, &gp, readIndex0);

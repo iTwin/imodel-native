@@ -1587,7 +1587,7 @@ bool SimplifyViewDrawGeom::IsRangeTotallyInsideClip (DRange3dCR range)
     { 
     DPoint3d    corners[8];
     
-    range.get8Corners (corners);
+    range.Get8Corners  (corners);
 
     return ArePointsTotallyInsideClip (corners, 8);
     }
@@ -2025,7 +2025,7 @@ StatusInt SimplifyViewDrawGeom::ProcessFacetTextureOutlines (IPolyfaceConstructi
         SUCCESS != calculateParamToWorld (paramToWorld, params, points, nPoints))
         return ERROR;
 
-    tileRange.initFrom (floor (paramRange.low.x), floor (paramRange.low.y), ceil (paramRange.high.x), ceil (paramRange.high.y));
+    tileRange.InitFrom (floor (paramRange.low.x), floor (paramRange.low.y), ceil (paramRange.high.x), ceil (paramRange.high.y));
 
     ConvexClipPlaneSet  convexPlanes;
     bool                clockwise = params[1].crossProductToPoints (&params[0], &params[2]) > 0.0;

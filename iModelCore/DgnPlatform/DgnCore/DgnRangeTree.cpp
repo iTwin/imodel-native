@@ -1227,7 +1227,7 @@ bool OcclusionScorer::ComputeEyeSpanningRangeOcclusionScore(double* score, DPoin
     double  s_eyeSpanningCameraLimit = 1.0E-3;
 
     DRange3d npcRange;
-    npcRange.init();
+    npcRange.Init ();
     for (int i=0; i<8; i++)
         {
         DPoint3d  npc;
@@ -2035,7 +2035,7 @@ RtreeViewFilter::RtreeViewFilter(DgnViewportCR viewport, BeSQLiteDbR db, double 
     m_boundingRange.FromRange(range);
 
     // get bounding range of front plane of polyhedron
-    range.initFrom(m_frustum.GetPts(), 4);
+    range.InitFrom(m_frustum.GetPts(), 4);
     m_frontFaceRange.FromRange(range);
 
     // get unit bvector from front plane to back plane

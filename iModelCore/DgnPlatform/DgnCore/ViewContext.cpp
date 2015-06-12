@@ -200,7 +200,7 @@ Frustum ViewContext::GetFrustum()
     else
         {
         if (NULL == m_viewport)
-            s_fullNpcRange.get8Corners(frustPts);
+            s_fullNpcRange.Get8Corners(frustPts);
         else
             frustum = m_viewport->GetFrustum(DgnCoordSystem::Npc, true);
         }
@@ -573,7 +573,7 @@ void ViewContext::GetViewIndTransform (TransformP trans, DPoint3dCP originLocal)
         v.normalizedDifference (localPt+1, originLocal);
 
         // convert to rmatrix
-        rMatrix.initFrom2Vectors (&u, &v);
+        rMatrix.InitFrom2Vectors (u, v);
         }
     else
         {
@@ -885,7 +885,7 @@ bool ViewContext::_ScanRangeFromPolyhedron()
                 DRange3d skewRange;
 
                 // get bounding range of front plane of polyhedron
-                skewRange.initFrom (polyhedron.GetPts(), 4);
+                skewRange.InitFrom (polyhedron.GetPts(), 4);
 
                 // get unit bvector from front plane to back plane
                 DPoint3d    skewVec;
@@ -1324,7 +1324,7 @@ void ViewContext::SetSubRectFromViewRect(BSIRectCP viewRect)
 
     // this is due to fact that y's can be reversed from view to npc
     DRange3d npcSubRect;
-    npcSubRect.initFrom (&viewRange.low, 2);
+    npcSubRect.InitFrom (&viewRange.low, 2);
     SetSubRectNpc(npcSubRect);
     }
 

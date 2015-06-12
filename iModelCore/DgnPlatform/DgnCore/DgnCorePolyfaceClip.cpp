@@ -221,7 +221,7 @@ static bool intersectPlaneEdgesWithPlanes (DRange3dR intersectRange, T_ClipPlane
 
                     points[0].sumOf (&intersectionOrigin, &intersectionNormal, tNear);
                     points[1].sumOf (&intersectionOrigin, &intersectionNormal, tFar);
-                    intersectRange.extend (points, 2);
+                    intersectRange.Extend (points, 2);
                     }
                 }
             }
@@ -241,7 +241,7 @@ static bool intersectPlaneEdgesWithPlanes (DRange3dR intersectRange, T_ClipPlane
         return true;
         }
 
-    return !intersectRange.isNull();
+    return !intersectRange.IsNull();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -255,7 +255,7 @@ bool ClipUtil::IntersectClipPlaneSets (DRange3dP intersectRange, ClipPlaneCP pla
     if (NULL == intersectRange)
         intersectRange = &tmpRange;
 
-    intersectRange->init ();
+    intersectRange->Init ();
 
     for (size_t i=0; i<nPlanes1; i++)
         combinedPlanes.push_back (planeSet1 + i);
