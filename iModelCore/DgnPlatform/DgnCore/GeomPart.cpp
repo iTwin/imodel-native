@@ -270,7 +270,7 @@ DgnGeomPartPtr DgnGeomParts::LoadGeomPart(DgnGeomPartId geomPartId)
         return nullptr;
         }
 
-    DgnGeomPartPtr geomPartPtr = new DgnGeomPart(selectStmt->GetValueText(0));
+    DgnGeomPartPtr geomPartPtr = new DgnGeomPart(stmt->GetValueText(0));
     GeomStreamR    geom = geomPartPtr->GetGeomStreamR();
 
     geom.ReserveMemory(header.m_size);
