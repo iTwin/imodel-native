@@ -268,7 +268,7 @@ bool PickOutput::PointWithinTolerance (DPoint4dCR testPt)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DPoint3d* PickOutput::GetProjectedPickPointView (DPoint3dR point)
     {
-    GetPickPointView().GetProjectedXYZ (point);
+    _GetPickPointView().GetProjectedXYZ (point);
     return &point;
     }
 
