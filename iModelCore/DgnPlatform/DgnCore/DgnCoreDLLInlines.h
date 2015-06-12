@@ -53,7 +53,6 @@ DG_INLINE size_t IViewClipObject::GetPrimaryCutPlaneCount() const {return _GetPr
 DG_INLINE StatusInt IViewClipObject::ApplyTransform(TransformCR t) {return _ApplyTransform(t);}
 DG_INLINE void IViewClipObject::Draw(ViewContextR c) {return _Draw(c);}
 
-DG_INLINE BeFileNameCR DgnDb::GetFileName() const {return m_fileName;}
 DG_INLINE DgnViews& DgnDb::Views() const {return const_cast<DgnViews&>(m_views);}
 DG_INLINE DgnMaterials& DgnDb::Materials() const {return const_cast<DgnMaterials&>(m_materials);}
 DG_INLINE DgnModels& DgnDb::Models() const {return const_cast<DgnModels&>(m_models);}

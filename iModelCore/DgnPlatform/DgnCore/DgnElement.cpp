@@ -92,8 +92,7 @@ void GeometricElement::SaveGeomStream(GeomStreamCP stream)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelStatus DgnElement::_DeleteInDb() const
     {
-    CachedStatementPtr stmt;
-    GetDgnDb().Elements().GetStatement(stmt, "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("DELETE FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
     stmt->BindId(1, m_elementId);
 
     switch (stmt->Step())
@@ -206,14 +205,8 @@ void DgnElement::UpdateLastModTime()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelStatus DgnElement::_InsertInDb()
     {
-    if (m_code.empty())
-        m_code = _GenerateDefaultCode();
-
-    UpdateLastModTime();
-
-    CachedStatementPtr stmt;
     enum Column : int       {ElementId=1,ECClassId=2,ModelId=3,CategoryId=4,Label=5,Code=6,ParentId=7,LastMod=8};
-    GetDgnDb().Elements().GetStatement(stmt, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Element) " (Id,ECClassId,ModelId,CategoryId,Label,Code,ParentId,LastMod) VALUES(?,?,?,?,?,?,?,?)");
+    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Element) " (Id,ECClassId,ModelId,CategoryId,Label,Code,ParentId,LastMod) VALUES(?,?,?,?,?,?,?,?)");
 
     stmt->BindId(Column::ElementId, m_elementId);
     stmt->BindId(Column::ECClassId, m_classId);
@@ -232,15 +225,12 @@ DgnModelStatus DgnElement::_InsertInDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelStatus DgnElement::_UpdateInDb()
     {
-    CachedStatementPtr stmt;
     enum Column : int       {CategoryId=1,Label=2,Code=3,ParentId=4,LastMod=5,ElementId=6};
-    GetDgnDb().Elements().GetStatement(stmt, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Element) " SET CategoryId=?,Label=?,Code=?,ParentId=?,LastMod=? WHERE Id=?");
-
-    UpdateLastModTime();
+    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("UPDATE " DGN_TABLE(DGN_CLASSNAME_Element) " SET CategoryId=?,Label=?,Code=?,ParentId=?,LastMod=? WHERE Id=?");
 
     // note: ECClassId and ModelId cannot be modified.
     stmt->BindId(Column::CategoryId, m_categoryId);
-    stmt->BindText(Column::Label, GetLabel(), Statement::MakeCopy::No);
+    stmt->BindText(Column::Label, GetLabel(),       Statement::MakeCopy::No);
     stmt->BindText(Column::Code, GetCode(), Statement::MakeCopy::No);
     stmt->BindId(Column::ParentId, m_parentId);
     stmt->BindDouble(Column::LastMod, m_lastModTime);
@@ -254,8 +244,7 @@ DgnModelStatus DgnElement::_UpdateInDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementIdSet DgnElement::QueryChildren() const
     {
-    CachedStatementPtr stmt;
-    GetDgnDb().Elements().GetStatement(stmt, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ParentId=?");
+    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ParentId=?");
     stmt->BindId(1, GetElementId());
 
     DgnElementIdSet elementIdSet;
@@ -325,8 +314,7 @@ DgnModelStatus GeometricElement::_InsertInDb()
         return stat;
 
     DgnDbR dgnDb = GetDgnDb();
-    CachedStatementPtr stmt;
-    dgnDb.Elements().GetStatement(stmt, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_ElementGeom) "(Geom,Placement,ElementId) VALUES(?,?,?)");
+    CachedStatementPtr stmt=dgnDb.Elements().GetStatement("INSERT INTO " DGN_TABLE(DGN_CLASSNAME_ElementGeom) "(Geom,Placement,ElementId) VALUES(?,?,?)");
     stmt->BindId(3, m_elementId);
 
     stat = _BindPlacement(*stmt);
@@ -362,8 +350,7 @@ DgnModelStatus GeometricElement::_UpdateInDb()
         return stat;
 
     DgnDbR dgnDb = GetDgnDb();
-    CachedStatementPtr stmt;
-    dgnDb.Elements().GetStatement(stmt, "UPDATE " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " SET Geom=?,Placement=? WHERE ElementId=?");
+    CachedStatementPtr stmt=dgnDb.Elements().GetStatement("UPDATE " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " SET Geom=?,Placement=? WHERE ElementId=?");
     stmt->BindId(3, m_elementId);
 
     stat = _BindPlacement(*stmt);
@@ -377,7 +364,7 @@ DgnModelStatus GeometricElement::_UpdateInDb()
         return stat;
 
     // Update element uses geom part relationships for geom parts referenced in geom stream...
-    dgnDb.Elements().GetStatement(stmt, "SELECT GeomPartId FROM " DGN_TABLE(DGN_RELNAME_ElementGeomUsesParts) " WHERE ElementId=?");
+    stmt = dgnDb.Elements().GetStatement("SELECT GeomPartId FROM " DGN_TABLE(DGN_RELNAME_ElementGeomUsesParts) " WHERE ElementId=?");
     stmt->BindId(1, m_elementId);
 
     IdSet<DgnGeomPartId> partsOld;
@@ -395,7 +382,7 @@ DgnModelStatus GeometricElement::_UpdateInDb()
 
     if (!partsToRemove.empty())
         {
-        dgnDb.Elements().GetStatement(stmt, "DELETE FROM " DGN_TABLE(DGN_RELNAME_ElementGeomUsesParts) " WHERE ElementId=? AND GeomPartId=?");
+        stmt = dgnDb.Elements().GetStatement("DELETE FROM " DGN_TABLE(DGN_RELNAME_ElementGeomUsesParts) " WHERE ElementId=? AND GeomPartId=?");
         stmt->BindId(1, m_elementId);
 
         for (DgnGeomPartId partId : partsToRemove)
@@ -449,7 +436,7 @@ DgnModelStatus GeometricElement::WriteGeomStream(Statement& stmt, DgnDbR dgnDb)
         return DGNMODEL_STATUS_Success;
 
     StatusInt status = snappy.SaveToRow(dgnDb, DGN_TABLE(DGN_CLASSNAME_ElementGeom), GEOM_Column, m_elementId.GetValue());
-    return(SUCCESS != status) ? DGNMODEL_STATUS_ElementWriteError : DGNMODEL_STATUS_Success;
+    return (SUCCESS != status) ? DGNMODEL_STATUS_ElementWriteError : DGNMODEL_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -473,8 +460,7 @@ DgnModelStatus DgnElement3d::_LoadFromDb()
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
 
-    CachedStatementPtr stmt;
-    GetDgnDb().Elements().GetStatement(stmt, "SELECT Placement FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " Where ElementId=?");
+    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("SELECT Placement FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " Where ElementId=?");
     stmt->BindId(1, m_elementId);
 
     if (BE_SQLITE_ROW != stmt->Step())
@@ -524,9 +510,7 @@ DgnModelStatus PhysicalElement::_InsertInDb()
     if (!m_placement.IsValid()) // this is an invisible element
         return DGNMODEL_STATUS_Success;
 
-    CachedStatementPtr stmt;
-    GetDgnDb().Elements().GetStatement(stmt, "INSERT INTO " DGN_VTABLE_RTree3d " (ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ) VALUES (?,?,?,?,?,?,?)");
-
+    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("INSERT INTO " DGN_VTABLE_RTree3d " (ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ) VALUES (?,?,?,?,?,?,?)");
     stmt->BindId(1, m_elementId);
     AxisAlignedBox3dCR range = m_placement.CalculateRange();
     stmt->BindDouble(2, range.low.x);
@@ -551,8 +535,7 @@ DgnModelStatus PhysicalElement::_UpdateInDb()
     if (!m_placement.IsValid()) // this is an invisible element
         return DGNMODEL_STATUS_Success;
 
-    CachedStatementPtr stmt;
-    GetDgnDb().Elements().GetStatement(stmt, "UPDATE " DGN_VTABLE_RTree3d " SET MinX=?,MaxX=?,MinY=?,MaxY=?,MinZ=?,MaxZ=? WHERE ElementId=?");
+    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("UPDATE " DGN_VTABLE_RTree3d " SET MinX=?,MaxX=?,MinY=?,MaxY=?,MinZ=?,MaxZ=? WHERE ElementId=?");
 
     AxisAlignedBox3dCR range = m_placement.CalculateRange();
     stmt->BindDouble(1, range.low.x);
@@ -587,8 +570,7 @@ DgnModelStatus DgnElement2d::_LoadFromDb()
     if (DGNMODEL_STATUS_Success != stat)
         return stat;
 
-    CachedStatementPtr stmt;
-    GetDgnDb().Elements().GetStatement(stmt, "SELECT Placement FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " Where ElementId=?");
+    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("SELECT Placement FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " Where ElementId=?");
     stmt->BindId(1, m_elementId);
 
     if (BE_SQLITE_ROW != stmt->Step())
@@ -628,6 +610,7 @@ DgnModelStatus DgnElement::_CopyFrom(DgnElementCR other)
     m_code       = other.m_code;
     m_label      = other.m_label;
     m_parentId   = other.m_parentId;
+    m_lastModTime = other.m_lastModTime;
 
     return DGNMODEL_STATUS_Success;
     }
@@ -850,7 +833,7 @@ DgnModelStatus ElementGroup::InsertMember(DgnElementCR member) const
 
     CachedECSqlStatementPtr statement = GetDgnDb().GetPreparedECSqlStatement
         ("INSERT INTO " DGN_SCHEMA(DGN_RELNAME_ElementGroupHasMembers)
-        " (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES (?,?,?,?)");
+         " (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES (?,?,?,?)");
 
     statement->BindId(1, GetElementClassId());
     statement->BindId(2, GetElementId());
@@ -876,8 +859,7 @@ DgnModelStatus ElementGroup::DeleteMember(DgnElementCR member) const
     if (DGNMODEL_STATUS_Success != status)
         return status;
 
-    CachedStatementPtr statement;
-    GetDgnDb().Elements().GetStatement(statement, "DELETE FROM " DGN_TABLE(DGN_RELNAME_ElementGroupHasMembers) " WHERE GroupId=? AND MemberId=?");
+    CachedStatementPtr statement=GetDgnDb().Elements().GetStatement("DELETE FROM " DGN_TABLE(DGN_RELNAME_ElementGroupHasMembers) " WHERE GroupId=? AND MemberId=?");
     statement->BindId(1, GetElementId());
     statement->BindId(2, member.GetElementId());
 
@@ -893,8 +875,7 @@ DgnModelStatus ElementGroup::DeleteMember(DgnElementCR member) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementIdSet ElementGroup::_QueryMembers() const
     {
-    CachedStatementPtr statement;
-    GetDgnDb().Elements().GetStatement(statement, "SELECT MemberId FROM " DGN_TABLE(DGN_RELNAME_ElementGroupHasMembers) " WHERE GroupId=?");
+    CachedStatementPtr statement=GetDgnDb().Elements().GetStatement("SELECT MemberId FROM " DGN_TABLE(DGN_RELNAME_ElementGroupHasMembers) " WHERE GroupId=?");
     statement->BindId(1, GetElementId());
 
     DgnElementIdSet elementIdSet;
@@ -912,13 +893,9 @@ DgnElementId ElementGroup::QueryFromMember(DgnDbR db, DgnClassId groupClassId, D
     if (!groupClassId.IsValid() || !memberId.IsValid())
         return DgnElementId();
 
-    CachedStatementPtr statement;
-    db.Elements ().GetStatement (statement, "SELECT Rel.GroupId FROM " DGN_TABLE (DGN_RELNAME_ElementGroupHasMembers) " Rel INNER JOIN " DGN_TABLE (DGN_CLASSNAME_Element) " Elm ON Elm.Id = Rel.GroupId  WHERE Elm.ECClassId=? AND Rel.MemberId=?");
+    CachedStatementPtr statement=db.Elements().GetStatement("SELECT Rel.GroupId FROM " DGN_TABLE(DGN_RELNAME_ElementGroupHasMembers) " Rel INNER JOIN " DGN_TABLE(DGN_CLASSNAME_Element) " Elm ON Elm.Id=Rel.GroupId WHERE Elm.ECClassId=? AND Rel.MemberId=?");
     statement->BindId(1, groupClassId);
     statement->BindId(2, memberId);
 
-    if (BE_SQLITE_ROW != statement->Step())
-        return DgnElementId();
-
-    return statement->GetValueId<DgnElementId>(0);
+    return (BE_SQLITE_ROW != statement->Step()) ? DgnElementId() : statement->GetValueId<DgnElementId>(0);
     }

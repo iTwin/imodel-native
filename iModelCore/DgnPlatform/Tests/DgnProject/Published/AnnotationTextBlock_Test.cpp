@@ -87,7 +87,7 @@ TEST_F(AnnotationTextBlockTest, DefaultsAndAccessors)
     ASSERT_TRUE(doc.IsValid());
 
     // Basics
-    EXPECT_TRUE(&project == &doc->GetDgnProjectR());
+    EXPECT_TRUE(&project == &doc->GetDbR());
     EXPECT_TRUE(0 == doc->GetParagraphs().size());
     
     // Defaults
@@ -105,7 +105,7 @@ TEST_F(AnnotationTextBlockTest, DefaultsAndAccessors)
     ASSERT_TRUE(par.IsValid());
 
     // Basics
-    EXPECT_TRUE(&project == &par->GetDgnProjectR());
+    EXPECT_TRUE(&project == &par->GetDbR());
     EXPECT_TRUE(0 == par->GetRuns().size());
 
     // Defaults
@@ -119,7 +119,7 @@ TEST_F(AnnotationTextBlockTest, DefaultsAndAccessors)
     ASSERT_TRUE(textRun.IsValid());
 
     // Basics
-    EXPECT_TRUE(&project == &textRun->GetDgnProjectR());
+    EXPECT_TRUE(&project == &textRun->GetDbR());
 
     // Defaults
     EXPECT_TRUE(!textRun->GetStyleId().IsValid());
@@ -135,7 +135,7 @@ TEST_F(AnnotationTextBlockTest, DefaultsAndAccessors)
     ASSERT_TRUE(fracRun.IsValid());
 
     // Basics
-    EXPECT_TRUE(&project == &fracRun->GetDgnProjectR());
+    EXPECT_TRUE(&project == &fracRun->GetDbR());
 
     // Defaults
     EXPECT_TRUE(!fracRun->GetStyleId().IsValid());
@@ -152,7 +152,7 @@ TEST_F(AnnotationTextBlockTest, DefaultsAndAccessors)
     ASSERT_TRUE(brkRun.IsValid());
 
     // Basics
-    EXPECT_TRUE(&project == &brkRun->GetDgnProjectR());
+    EXPECT_TRUE(&project == &brkRun->GetDbR());
 
     // Defaults
     EXPECT_TRUE(!brkRun->GetStyleId().IsValid());

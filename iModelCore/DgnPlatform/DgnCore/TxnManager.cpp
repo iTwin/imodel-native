@@ -7,8 +7,10 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
-
 DPILOG_DEFINE(Txns)
+
+BEGIN_UNNAMED_NAMESPACE
+static bool s_aSummaryExists=false;
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   06/15
@@ -20,11 +22,13 @@ struct ChangeBlobHeader
     uint32_t m_size;
 
     ChangeBlobHeader(uint32_t size) {m_signature = DB_Signature06; m_size=size;}
-    ChangeBlobHeader(BeSQLite::SnappyReader& in) {uint32_t actuallyRead; in._Read((Byte*) this, sizeof(*this), actuallyRead);}
+    ChangeBlobHeader(SnappyReader& in) {uint32_t actuallyRead; in._Read((Byte*) this, sizeof(*this), actuallyRead);}
 };
 
+END_UNNAMED_NAMESPACE
+
 /*---------------------------------------------------------------------------------**//**
-* we keep a statement cache just for Txns statements
+* we keep a statement cache just for TxnManager statements
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachedStatementPtr TxnManager::GetTxnStatement(Utf8CP sql) const
@@ -41,7 +45,7 @@ CachedStatementPtr TxnManager::GetTxnStatement(Utf8CP sql) const
 DbResult TxnManager::SaveCurrentChange(ChangeSet& changeset, Utf8CP operation)
     {
     enum Column : int   {SessionId=1,TxnId=2,Deleted=3,Operation=4,Settings=5,Mark=6,Change=7};
-    CachedStatementPtr stmt = GetTxnStatement("INSERT INTO " TXN_TABLE_Change " (SessionId,TxnId,Deleted,Operation,Settings,Mark,Change) VALUES(?,?,?,?,?,?,?)");
+    CachedStatementPtr stmt = GetTxnStatement("INSERT INTO " DGN_TABLE_Txns "(SessionId,TxnId,Deleted,Operation,Settings,Mark,Change) VALUES(?,?,?,?,?,?,?)");
 
     stmt->BindGuid(Column::SessionId, m_curr.m_sessionId);
     stmt->BindInt(Column::TxnId,  m_curr.m_txnId);
@@ -76,7 +80,7 @@ DbResult TxnManager::SaveCurrentChange(ChangeSet& changeset, Utf8CP operation)
     if (1 == m_snappyTo.GetCurrChunk())
         return BE_SQLITE_DONE;
 
-    StatusInt status = m_snappyTo.SaveToRow(m_dgndb, TXN_TABLE_Change, "Change", m_dgndb.GetLastInsertRowId());
+    StatusInt status = m_snappyTo.SaveToRow(m_dgndb, DGN_TABLE_Txns, "Change", m_dgndb.GetLastInsertRowId());
     return (SUCCESS != status) ? BE_SQLITE_ERROR : BE_SQLITE_DONE;
     }
 
@@ -86,7 +90,7 @@ DbResult TxnManager::SaveCurrentChange(ChangeSet& changeset, Utf8CP operation)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::TruncateChanges(TxnId id)
     {
-    CachedStatementPtr stmt = GetTxnStatement("DELETE FROM " TXN_TABLE_Change " WHERE SessionId=? AND TxnId>=?");
+    CachedStatementPtr stmt = GetTxnStatement("DELETE FROM " DGN_TABLE_Txns " WHERE SessionId=? AND TxnId>=?");
     stmt->BindGuid(1, m_curr.m_sessionId);
     stmt->BindInt(2, id.GetValue());
     stmt->Step();
@@ -98,7 +102,7 @@ void TxnManager::TruncateChanges(TxnId id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult TxnManager::ReadEntry(TxnRowId rowid, ChangeEntry& entry)
     {
-    CachedStatementPtr stmt = GetTxnStatement("SELECT SessionId,TxnId,Operation,Settings,Mark FROM " TXN_TABLE_Change " WHERE rowid=?");
+    CachedStatementPtr stmt = GetTxnStatement("SELECT SessionId,TxnId,Operation,Settings,Mark FROM " DGN_TABLE_Txns " WHERE rowid=?");
     stmt->BindInt64(1, rowid);
     auto rc = stmt->Step();
     if (rc != BE_SQLITE_ROW)
@@ -106,8 +110,8 @@ DbResult TxnManager::ReadEntry(TxnRowId rowid, ChangeEntry& entry)
 
     entry.m_sessionId = stmt->GetValueGuid(0);
     entry.m_txnId = TxnId(stmt->GetValueInt(1));
-    entry.m_settingsChange = stmt->GetValueInt(2) == 1;
-    entry.m_description = stmt->GetValueText(3);
+    entry.m_description = stmt->GetValueText(2);
+    entry.m_settingsChange = stmt->GetValueInt(3) == 1;
     entry.m_mark = stmt->GetValueText(4);
     return BE_SQLITE_ROW;
     }
@@ -117,7 +121,6 @@ DbResult TxnManager::ReadEntry(TxnRowId rowid, ChangeEntry& entry)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TxnManager::TxnManager(DgnDbR project) : m_dgndb(project), m_stmts(20)
     {
-    m_isActive          = false;
     m_undoInProgress    = false;
     m_inDynamics        = false;
     m_propagateChanges  = true;
@@ -141,8 +144,9 @@ TxnManager::TxnManager(DgnDbR project) : m_dgndb(project), m_stmts(20)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TxnRowId TxnManager::FirstRow(TxnId id)
     {
-    CachedStatementPtr stmt = GetTxnStatement("SELECT ROWID FROM " TXN_TABLE_Change " WHERE SessionId=? AND TxnId=? ORDER BY TxnId");
-    stmt->BindInt(1, id.GetValue());
+    CachedStatementPtr stmt = GetTxnStatement("SELECT ROWID FROM " DGN_TABLE_Txns " WHERE SessionId=? AND TxnId=? ORDER BY TxnId LIMIT 1");
+    stmt->BindGuid(1, m_curr.m_sessionId);
+    stmt->BindInt(2, id.GetValue());
 
     auto rc = stmt->Step();
     UNUSED_VARIABLE(rc);
@@ -156,8 +160,9 @@ TxnRowId TxnManager::FirstRow(TxnId id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TxnRowId TxnManager::LastRow(TxnId id)
     {
-    CachedStatementPtr stmt = GetTxnStatement("SELECT ROWID FROM " TXN_TABLE_Change " WHERE SessionId=? AND TxnId=? ORDER BY TxnId DESC");
-    stmt->BindInt(1, id.GetValue());
+    CachedStatementPtr stmt = GetTxnStatement("SELECT ROWID FROM " DGN_TABLE_Txns " WHERE SessionId=? AND TxnId=? ORDER BY TxnId DESC LIMIT 1");
+    stmt->BindGuid(1, m_curr.m_sessionId);
+    stmt->BindInt(2, id.GetValue());
 
     auto rc = stmt->Step();
     UNUSED_VARIABLE(rc);
@@ -198,12 +203,12 @@ TxnId TxnManager::GetMultiTxnOperationStart()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::CancelChanges(BeSQLite::ChangeSet& direct)
+void TxnManager::CancelChanges(ChangeSet& direct)
     {
     UndoChangeSet inverted;     // invert it so we can reverse these changes
     inverted.FromData(direct.GetSize(), direct.GetData(), true);
 
-    ApplyChangeSet(inverted, TxnDirection::Undo);
+    ApplyChangeSet(inverted, TxnDirection::Backwards);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -212,7 +217,6 @@ void TxnManager::CancelChanges(BeSQLite::ChangeSet& direct)
 void TxnManager::SetUndoInProgress(bool yesNo)
     {
     BeAssert(m_undoInProgress != yesNo);
-    BeAssert(IsActive());
 
     // we're about to reverse or reinstate a committed transaction. Before that can happen, we need to cancel
     // any pending uncommitted changes.
@@ -278,10 +282,7 @@ TxnManager::TrackChangesForTable TxnManager::_FilterTable(Utf8CP tableName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operation) 
     {
-    if (!isCommit) // this is a cancel.
-        return OnCommitStatus::Continue;
-
-    if (!HasChanges())
+    if (!isCommit || !HasChanges())
         return OnCommitStatus::Continue;
 
     DeleteReversedTxns(); // these Txns are no longer reachable.
@@ -302,19 +303,27 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
 
     Restart(); // clear current tracker before propagating changes.
 
-    TxnSummary summary(m_dgndb);
-    summary.AddChangeSet(changeset);
-
-    BentleyStatus status = PropagateChanges(summary);   // Propagate indirect changes
-
-    if (HasChanges())
+    BentleyStatus status;
+    if (true) // to make sure TxnSummary is destroyed before we call CancelChanges below
         {
-        UndoChangeSet indirectChanges; 
-        indirectChanges.FromChangeTrack(*this);
-        Restart();
+        TxnSummary summary(m_dgndb, TxnDirection::Forward);
+        summary.AddChangeSet(changeset);
 
-        summary.AddChangeSet(indirectChanges); // so admins will see entire changeset
-        changeset.ConcatenateWith(indirectChanges);
+        status = PropagateChanges(summary);   // Propagate indirect changes
+
+        // At this point, all of the changes to all tables have been applied.
+        if (SUCCESS == status)
+            T_HOST.GetTxnAdmin()._OnTxnCommit(summary);
+
+        if (HasChanges())
+            {
+            UndoChangeSet indirectChanges;
+            indirectChanges.FromChangeTrack(*this);
+            Restart();
+
+            summary.AddChangeSet(indirectChanges); // so admins will see entire changeset
+            changeset.ConcatenateWith(indirectChanges);
+            }
         }
 
     if (BSISUCCESS != status)
@@ -326,12 +335,32 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
         {
         SaveCurrentChange(changeset, operation);
         if (m_multiTxnOp.empty())
-            m_curr.m_txnId.Next();
+            m_curr.m_txnId.Next(); // only increment the TxnId if we're not doing a multi-step operation
         }
 
-    // At this point, all of the changes to all tables have been applied.
-    T_HOST.GetTxnAdmin()._OnTxnCommit(summary);
     return OnCommitStatus::Continue;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TxnSummary::TxnSummary(DgnDbR db, TxnDirection direction) : m_dgndb(db), m_modelDepsChanged(false), m_elementDepsChanged(false), m_direction(direction)
+    {
+    BeAssert(!db.IsReadonly());
+    BeAssert(!s_aSummaryExists); // only one summary at a time may exist because they use temporary tables
+    s_aSummaryExists=true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TxnSummary::~TxnSummary()
+    {
+    BeAssert(s_aSummaryExists);
+    s_aSummaryExists=false;
+
+    m_dgndb.ExecuteSql("DELETE FROM " TEMP_TABLE(TXN_TABLE_Elements));
+    m_dgndb.ExecuteSql("DELETE FROM " TEMP_TABLE(TXN_TABLE_Depend));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -385,7 +414,7 @@ void TxnSummary::AddAffectedElement(DgnElementId const& eid, DgnModelId mid, dou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnSummary::AddAffectedDependency(BeSQLite::EC::ECInstanceId const& relid, ChangeType changeType)
+void TxnSummary::AddAffectedDependency(EC::ECInstanceId const& relid, ChangeType changeType)
     {
     CachedECSqlStatementPtr stmt  = GetDgnDb().GetPreparedECSqlStatement(
         "SELECT element.ModelId FROM " DGN_SCHEMA(DGN_CLASSNAME_Element) " AS element, " DGN_SCHEMA(DGN_RELNAME_ElementDrivesElement) " AS DEP"
@@ -406,14 +435,6 @@ void TxnSummary::AddAffectedDependency(BeSQLite::EC::ECInstanceId const& relid, 
     m_dependencyStmt->Step();
 
     m_modelsInTxn.insert(mid);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TxnSummary::TxnSummary(DgnDbR db) : m_dgndb(db), m_modelDepsChanged(false), m_elementDepsChanged(false) 
-    {
-    BeAssert(!db.IsReadonly());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -464,24 +485,19 @@ void TxnSummary::AddChangeSet(ChangeSet& changeset)
     m_dependencyStmt = nullptr;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TxnSummary::~TxnSummary()
-    {
-    m_dgndb.ExecuteSql("DELETE FROM " TEMP_TABLE(TXN_TABLE_Elements));
-    m_dgndb.ExecuteSql("DELETE FROM " TEMP_TABLE(TXN_TABLE_Depend));
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult TxnManager::ApplyChangeSet(BeSQLite::ChangeSet& changeset, TxnDirection isUndo)
+DbResult TxnManager::ApplyChangeSet(ChangeSet& changeset, TxnDirection isUndo)
     {
-    TxnSummary summary(m_dgndb);
+    TxnSummary summary(m_dgndb, isUndo);
     summary.AddChangeSet(changeset);
+
+    m_dgndb.Elements().OnChangesetApply(summary);
+
     // notify monitors that changeset is about to be applied
-    T_HOST.GetTxnAdmin()._OnTxnReverse(summary, isUndo);
+    T_HOST.GetTxnAdmin()._OnTxnReverse(summary);
 
     bool wasTracking = EnableTracking(false);
     DbResult rc = changeset.ApplyChanges(m_dgndb);
@@ -489,28 +505,14 @@ BeSQLite::DbResult TxnManager::ApplyChangeSet(BeSQLite::ChangeSet& changeset, Tx
 
     if (rc != BE_SQLITE_OK)
         {
-        LOG.errorv("ApplyChangeSet failed with %x", rc);
         BeAssert(false);
         return rc;
         }
 
-    if (true)
-        {
-#if defined (NEEDS_WORK_TXN_MANAGER)
-        if (cleanup == HowToCleanUpElements::CallApplied)
-            m_dgndb.Elements().OnChangesetApplied(summary);
-#endif
-
-        // At this point, all of the changes to all tables have been applied.
-        T_HOST.GetTxnAdmin()._OnTxnReversed(summary, isUndo);
-        }
-
-#if defined (NEEDS_WORK_TXN_MANAGER)
-    if (cleanup == HowToCleanUpElements::CallCancelled)
-        m_dgndb.Elements().OnChangesetCanceled(summary);
-#endif
-
-    return rc;
+    // At this point, all of the changes to all tables have been applied.
+    m_dgndb.Elements().OnChangesetApplied(summary);
+    T_HOST.GetTxnAdmin()._OnTxnReversed(summary);
+    return BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -518,7 +520,7 @@ BeSQLite::DbResult TxnManager::ApplyChangeSet(BeSQLite::ChangeSet& changeset, Tx
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::ReadChangeSet(UndoChangeSet& changeset, TxnRowId rowId, TxnDirection direction)
     {
-    if (ZIP_SUCCESS != m_snappyFrom.Init(m_dgndb, TXN_TABLE_Change, "Changes", rowId))
+    if (ZIP_SUCCESS != m_snappyFrom.Init(m_dgndb, DGN_TABLE_Txns, "Change", rowId))
         {
         BeAssert(false);
         return;
@@ -541,7 +543,7 @@ void TxnManager::ReadChangeSet(UndoChangeSet& changeset, TxnRowId rowId, TxnDire
         return;
         }
 
-    changeset.FromData(header.m_size, changesBlob.GetData(), direction==TxnDirection::Undo);
+    changeset.FromData(header.m_size, changesBlob.GetData(), direction==TxnDirection::Backwards);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -551,13 +553,14 @@ void TxnManager::ApplyChanges(TxnRowId rowId, TxnDirection direction)
     {
     UndoChangeSet changeset;
     ReadChangeSet(changeset, rowId, direction);
+
     auto rc = ApplyChangeSet(changeset, direction);
     if (BE_SQLITE_OK != rc)
         return;
 
     // Mark this row as deleted/undeleted depending on the way we just applied the changes.
-    CachedStatementPtr stmt = GetTxnStatement("UPDATE " TXN_TABLE_Change " SET Deleted=? WHERE rowid=?");
-    stmt->BindInt(1, direction==TxnDirection::Undo);
+    CachedStatementPtr stmt = GetTxnStatement("UPDATE " DGN_TABLE_Txns " SET Deleted=? WHERE rowid=?");
+    stmt->BindInt(1, direction==TxnDirection::Backwards);
     stmt->BindInt64(2, rowId);
     rc = stmt->Step();
     BeAssert(rc==BE_SQLITE_DONE);
@@ -577,7 +580,7 @@ void TxnManager::CancelChanges(TxnRowId txnId)
     for (auto entry : files)
         {
         UndoChangeSet changeset;
-        entry.GetChangeSet(changeset, TxnDirection::Undo);
+        entry.GetChangeSet(changeset, TxnDirection::Backwards);
 
         TxnSummary summary(m_dgndb, txnId, txnDescr, txnSource, changeset);
         m_dgndb.Elements().OnChangesetCanceled(summary);
@@ -592,11 +595,13 @@ void TxnManager::ReverseTxnRange(TxnRange& txnRange, Utf8StringP undoStr, bool m
     {
     SetUndoInProgress(true);
     
-    TxnRowId last = LastRow(TxnId(txnRange.GetLast()-1));
+    TxnRowId last  = LastRow(TxnId(txnRange.GetLast()-1));
     TxnRowId first = FirstRow(txnRange.GetFirst());
 
     for (TxnRowId curr=last; curr.IsValid() && curr >= first; curr.Prev())
-        ApplyChanges(curr, TxnDirection::Undo);
+        ApplyChanges(curr, TxnDirection::Backwards);
+
+    m_dgndb.SaveChanges(); // make sure we save the updated Txn data to disk.
 
     SetUndoInProgress(false);
 
@@ -608,7 +613,7 @@ void TxnManager::ReverseTxnRange(TxnRange& txnRange, Utf8StringP undoStr, bool m
         undoStr->assign(entry.m_description + fmtString);
         }
 
-    m_curr.m_txnId = txnRange.GetFirst();
+    m_curr.m_txnId = txnRange.GetFirst(); // we reuse txnids
 
     // save in undone txn log
     RevTxn revTxn(txnRange, multiStep);
@@ -657,7 +662,7 @@ StatusInt TxnManager::ReverseActions(TxnRange& txnRange, bool multiStep, bool sh
     while (GetCurrTxnId() < GetMultiTxnOperationStart())
         EndMultiTxnOperation();
 
-    T_HOST.GetTxnAdmin()._OnUndoRedoFinished(m_dgndb, TxnDirection::Undo);
+    T_HOST.GetTxnAdmin()._OnUndoRedoFinished(m_dgndb, TxnDirection::Backwards);
 
     if (showMsg)
         NotificationManager::OutputMessage(NotifyMessageDetails(OutputMessagePriority::Info, undoStr.c_str()));
@@ -670,7 +675,7 @@ StatusInt TxnManager::ReverseActions(TxnRange& txnRange, bool multiStep, bool sh
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TxnManager::PrepareForUndo()
     {
-    if (IsActive() && IsUndoPossible())
+    if (IsUndoPossible())
         {
         T_HOST.GetTxnAdmin()._OnPrepareForUndoRedo();
         return  true;
@@ -683,16 +688,16 @@ bool TxnManager::PrepareForUndo()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   02/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::ReverseTxns(int numActions)
+StatusInt TxnManager::ReverseTxns(int numActions)
     {
     if (!PrepareForUndo())
-        return;
+        return ERROR;
 
     TxnId last = GetCurrTxnId();
     TxnId first(last - numActions);
 
     TxnRange range(first, last);
-    ReverseActions(range, numActions>1, true);
+    return ReverseActions(range, numActions>1, true);
     }
 
 #if defined (NEEDS_WORK_TXN_MANAGER)
@@ -740,13 +745,15 @@ void TxnManager::ReinstateTxn(TxnRange& revTxn, Utf8StringP redoStr)
 
     SetUndoInProgress(true);
 
-    TxnRowId last  = LastRow(revTxn.GetLast());
+    TxnRowId last  = LastRow(TxnId(revTxn.GetLast()-1));
     TxnRowId first = FirstRow(revTxn.GetFirst());
 
-    for (TxnRowId curr=first; curr.IsValid() && curr < last; curr.Next())
-        ApplyChanges(curr, TxnDirection::Redo);
+    for (TxnRowId curr=first; curr.IsValid() && curr <= last; curr.Next())
+        ApplyChanges(curr, TxnDirection::Forward);
 
     SetUndoInProgress(false);
+
+    m_dgndb.SaveChanges(); // make sure we save the updated Txn data to disk.
 
     if (redoStr)
         {
@@ -768,7 +775,7 @@ StatusInt TxnManager::ReinstateActions(RevTxn& revTxn)
     Utf8String redoStr;
     ReinstateTxn(revTxn.m_range, &redoStr);     // do the actual redo now.
 
-    T_HOST.GetTxnAdmin()._OnUndoRedoFinished(m_dgndb, TxnDirection::Redo);
+    T_HOST.GetTxnAdmin()._OnUndoRedoFinished(m_dgndb, TxnDirection::Forward);
 
     NotificationManager::OutputMessage(NotifyMessageDetails(OutputMessagePriority::Info, redoStr.c_str()));
     return SUCCESS;
@@ -779,14 +786,13 @@ StatusInt TxnManager::ReinstateActions(RevTxn& revTxn)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt TxnManager::ReinstateTxn()
     {
-    if (!IsActive() || !IsRedoPossible())
+    if (!IsRedoPossible())
         {
         T_HOST.GetTxnAdmin()._OnNothingToRedo();
         return ERROR;
         }
 
     T_HOST.GetTxnAdmin()._OnPrepareForUndoRedo();
-
     RevTxn*  revTxn = &m_reversedTxn.back();
     return  ReinstateActions(*revTxn);
     }
@@ -832,7 +838,7 @@ void TxnManager::DeleteReversedTxns()
 
     // these transactions are no longer reinstateable. Throw them away.
     m_reversedTxn.clear();
-    CachedStatementPtr stmt = GetTxnStatement("DELETE FROM " TXN_TABLE_Change " WHERE Deleted=1");
+    CachedStatementPtr stmt = GetTxnStatement("DELETE FROM " DGN_TABLE_Txns " WHERE Deleted=1");
     stmt->Step();
     }
 
@@ -843,9 +849,6 @@ void TxnManager::DeleteReversedTxns()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TxnManager::SaveUndoMark(Utf8CP name)
     {
-    if (!IsActive())
-        return ERROR;
-
     ClearReversedTxns();
 
     m_db.SaveMark(TxnId(m_currentTxnID-1), name);
@@ -894,9 +897,8 @@ template <typename CALLER> void DgnPlatformLib::Host::TxnAdmin::CallMonitors(CAL
 struct TxnReverseCaller
 {
     TxnSummaryCR m_summary;
-    TxnDirection m_isUndo;
-    TxnReverseCaller(TxnSummaryCR summary, TxnDirection isUndo) : m_summary(summary), m_isUndo(isUndo) {}
-    void operator()(TxnMonitorR monitor) const {monitor._OnTxnReverse(m_summary, m_isUndo);}
+    TxnReverseCaller(TxnSummaryCR summary) : m_summary(summary) {}
+    void operator()(TxnMonitorR monitor) const {monitor._OnTxnReverse(m_summary);}
 };
 
 //=======================================================================================
@@ -905,18 +907,17 @@ struct TxnReverseCaller
 struct TxnReversedCaller
 {
     TxnSummaryCR m_summary;
-    TxnDirection m_isUndo;
-    TxnReversedCaller(TxnSummaryCR summary, TxnDirection isUndo) : m_summary(summary), m_isUndo(isUndo) {}
-    void operator()(TxnMonitorR monitor) const {monitor._OnTxnReversed(m_summary, m_isUndo);}
+    TxnReversedCaller(TxnSummaryCR summary) : m_summary(summary) {}
+    void operator()(TxnMonitorR monitor) const {monitor._OnTxnReversed(m_summary);}
 };
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   07/13
 //=======================================================================================
-struct TxnCommityCaller
+struct TxnCommitCaller
 {
     TxnSummaryCR m_summary;
-    TxnCommityCaller(TxnSummaryCR summary) : m_summary(summary) {}
+    TxnCommitCaller(TxnSummaryCR summary) : m_summary(summary) {}
     void operator()(TxnMonitorR monitor) const {monitor._OnTxnCommit(m_summary);}
 };
 
@@ -936,23 +937,23 @@ struct UndoRedoFinishedCaller
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnPlatformLib::Host::TxnAdmin::_OnTxnCommit(TxnSummaryCR summary)
     {
-    CallMonitors(TxnCommityCaller(summary));
+    CallMonitors(TxnCommitCaller(summary));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnPlatformLib::Host::TxnAdmin::_OnTxnReverse(TxnSummaryCR summary, TxnDirection isUndo)
+void DgnPlatformLib::Host::TxnAdmin::_OnTxnReverse(TxnSummaryCR summary)
     {
-    CallMonitors(TxnReverseCaller(summary, isUndo));
+    CallMonitors(TxnReverseCaller(summary));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnPlatformLib::Host::TxnAdmin::_OnTxnReversed(TxnSummaryCR summary, TxnDirection isUndo)
+void DgnPlatformLib::Host::TxnAdmin::_OnTxnReversed(TxnSummaryCR summary)
     {
-    CallMonitors(TxnReversedCaller(summary, isUndo));
+    CallMonitors(TxnReversedCaller(summary));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -962,4 +963,3 @@ void DgnPlatformLib::Host::TxnAdmin::_OnUndoRedoFinished(DgnDbR project, TxnDire
     {
     CallMonitors(UndoRedoFinishedCaller(project, isUndo));
     }
-

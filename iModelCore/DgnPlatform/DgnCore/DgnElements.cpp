@@ -764,7 +764,7 @@ void ElemIdTree::RemoveElement(DgnElementCR element, bool killingWholeTree)
         }
 
     m_dgndb.Elements().ChangeMemoryUsed(0 -(int32_t) element._GetMemSize());
-    element.SetInPool(false);
+    element.SetPersistent(false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -913,7 +913,7 @@ void DgnElements::AddToPool(DgnElementR element) const
     {
     BeDbMutexHolder _v_v(m_mutex);
     BeAssert(!element.IsPersistent());
-    element.SetInPool(true);
+    element.SetPersistent(true);
 
     ChangeMemoryUsed(element._GetMemSize());
 
@@ -957,9 +957,11 @@ DgnElementCP DgnElements::FindElement(DgnElementId id) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnElements::GetStatement(CachedStatementPtr& stmt, Utf8CP sql) const
+CachedStatementPtr DgnElements::GetStatement(Utf8CP sql) const
     {
-    return m_stmts.GetPreparedStatement(stmt, *m_dgndb.GetDbFile(), sql);
+    CachedStatementPtr stmt;
+    m_stmts.GetPreparedStatement(stmt, *m_dgndb.GetDbFile(), sql);
+    return stmt;
     }
     
 DgnElements::Totals DgnElements::GetTotals() const {return m_tree->m_totals;}
@@ -976,6 +978,14 @@ DgnElements::DgnElements(DgnDbR dgndb) : DgnDbTable(dgndb), m_heapZone(0, false)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* A changeset is about to be applied to the database. The database is currently entirely in its pre-changed state.
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElements::OnChangesetApply(TxnSummary const& summary)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * A changeset was just applied to the database. That means that the element data in memory potentially does not match
 * what is now in the database. We need to find any elements in memory that were affected by the changeset and fix them.
 * Note that it is entirely possible that some elements in the changeset are not currently in memory. That's fine, we
@@ -984,74 +994,38 @@ DgnElements::DgnElements(DgnDbR dgndb) : DgnDbTable(dgndb), m_heapZone(0, false)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElements::OnChangesetApplied(TxnSummary const& summary)
     {
-#if defined (NEEDS_WORK_ELEMENTS_API)
-    // ADDS: elements that were added by the changeset are generally not of interest. However, when we
-    // delete elements in a session we don't remove them from the pool or from loaded models.
-    // Rather, they are marked as deleted. That is for two reasons: 1) otherwise we wouldn't know what model to
-    // put it in when it is undeleted in the case where we have loaded models, and 2) because we can't force their
-    // reference count to 0 and someone may be holding a reference to it. So, we need to check all of the adds in the
-    // changeset and see whether they are in fact "undeletes" from undo/redo.
-    for (auto& el : summary.m_addedElements)
-        {
-        DgnElementP elRef = const_cast<DgnElementP>(FindElement(el));
-        if (nullptr != elRef) // if it is not found, there's nothing to do
-            elRef->UnDeleteElement();
-        }
+    enum Column : int {ElementId=0,ModelId=1,ChangeType=2,LastMod=3};
+    CachedStatementPtr stmt = GetStatement("SELECT ElementId,ModelId,ChangeType,LastMod FROM " TEMP_TABLE(TXN_TABLE_Elements)); 
 
-    // DELETES: elements that were deleted by the changeset must be marked as deleted in the pool (see discussion above).
-    for (auto& el : summary.m_deletedElements)
+    while (BE_SQLITE_ROW == stmt->Step())
         {
-        DgnElementP elRef = const_cast<DgnElementP>(FindElement(el));
-        if (nullptr != elRef) // if not found, nothing to do
+        switch ((TxnSummary::ChangeType) stmt->GetValueInt(Column::ChangeType))            
             {
-            DgnModelR model = elRef->GetDgnModel();
-            elRef->MarkAsDeleted();
-            model._OnDeletedElement(*elRef, false);
+            case TxnSummary::ChangeType::Add:
+                break;
+
+            case TxnSummary::ChangeType::Delete:
+                {
+                DgnElementCP el = FindElement(stmt->GetValueId<DgnElementId>(Column::ElementId));
+                if (el)
+                    DropFromPool(*el);
+                }
+                break;
+
+            case TxnSummary::ChangeType::Update:
+                {
+                DgnElementP el = const_cast<DgnElementP>(FindElement(stmt->GetValueId<DgnElementId>(Column::ElementId)));
+                if (nullptr==el)
+                    continue;
+
+                DgnElementCPtr unmodified = LoadElement(el->GetElementId(), false);
+                el->_CopyFrom(*unmodified);
+
+                // fix size, call some method on element?
+                }
+                break;
             }
         }
-
-    // MODIFIED: elements that are modified must be reloaded from the database
-    for (auto& el: summary.m_updatedElements)
-        {
-        DgnModelStatus stat = el->ReloadFromDb();
-        BeAssert(DGNMODEL_STATUS_Success == stat);
-        UNUSED_VARIABLE(stat);
-        }
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* A previously undone changeset was canceled (meaning we made a different change while the changeset was reversed).
-* Or, we had uncommitted changes when we issued the undo command, that were reversed.
-* At this point all of the elements that were deleted by reversing the changeset (i.e. elements that were created by the original change)
-* are no longer useful. Tell their DgnModel to drop its reference (if it has one) to them so they become garbage and can be purged.
-* @bsimethod                                    Keith.Bentley                   07/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::OnChangesetCanceled(TxnSummary const& summary)
-    {
-#if defined (NEEDS_WORK_ELEMENTS_API)
-    // This is only necessary because we keep deleted elements in memory. For XAttributes, we free the memory when
-    // we delete them so there is no corresponding work here for them.
-    for (auto& el : summary.m_deletedElements)
-        {
-        DgnElementP elRef = const_cast<DgnElementP>(FindElement(el));
-        if (nullptr == elRef)
-            continue;
-
-        // Note: we can't actually free the memory here. We must wait for the next purge. They are garbage and no one
-        // should ever find them again. The element must have been deleted when the add was changeset was undone, but
-        // we need to tell the model to drop its reference.
-        DgnModelR model = elRef->GetDgnModel();
-
-        // If the element was undone, then it is already deleted. However, if the transaction was never committed, and we're
-        // undoing, then we need to delete the element to free its XAttributes, QV graphics, etc.
-        if (!elRef->IsDeleted())
-            elRef->MarkAsDeleted();
-
-        model._OnDeletedElement(*elRef, true); // this causes the model to remove this element from its "owned" list.
-        BeAssert(elRef->GetRefCount() == 0);
-        }
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1090,9 +1064,8 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersistent) const
     {
-    CachedStatementPtr stmt;
     enum Column : int       {ClassId=0,ModelId=1,CategoryId=2,Label=3,Code=4,ParentId=5,LastMod=6,};
-    GetStatement(stmt, "SELECT ECClassId,ModelId,CategoryId,Label,Code,ParentId,LastMod FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    CachedStatementPtr stmt = GetStatement("SELECT ECClassId,ModelId,CategoryId,Label,Code,ParentId,LastMod FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
     stmt->BindId(1, elementId);
 
     DbResult result = stmt->Step();
@@ -1136,8 +1109,7 @@ DgnElementCPtr DgnElements::GetElement(DgnElementId elementId) const
 //+---------------+---------------+---------------+---------------+---------------+------
 DgnElementKey DgnElements::QueryElementKey(DgnElementId elementId) const
     {
-    CachedStatementPtr stmt;
-    GetStatement(stmt, "SELECT ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    CachedStatementPtr stmt =GetStatement("SELECT ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
     stmt->BindInt64(1, elementId.GetValueUnchecked());
     return BE_SQLITE_ROW == stmt->Step() ? DgnElementKey(stmt->GetValueId<DgnClassId>(0), elementId) : DgnElementKey();
     }
@@ -1147,8 +1119,7 @@ DgnElementKey DgnElements::QueryElementKey(DgnElementId elementId) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DgnElements::IsElementIdUsed(DgnElementId id) const
     {
-    CachedStatementPtr stmt;
-    m_dgndb.GetCachedStatement(stmt, "SELECT 1 FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    CachedStatementPtr stmt = GetStatement("SELECT 1 FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
     stmt->BindInt64(1, id.GetValueUnchecked());
     return BE_SQLITE_ROW == stmt->Step();
     }
@@ -1161,9 +1132,7 @@ DgnElementId DgnElements::GetHighestElementId()
     if (!m_highestElementId.IsValid())
         {
         BeLuid nextRepo(m_dgndb.GetRepositoryId().GetNextRepositoryId().GetValue(),0);
-        Statement stmt;
-        
-        stmt.Prepare(m_dgndb, "SELECT max(Id) FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id<?");
+        Statement stmt(m_dgndb, "SELECT max(Id) FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id<?");
         stmt.BindInt64(1,nextRepo.GetValue());
 
         DbResult result = stmt.Step();
@@ -1257,15 +1226,12 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnModelStatus* o
     {
     DgnModelStatus ALLOW_NULL_OUTPUT(stat,outStat);
 
-    // We can't change the Id of the input element if it is a persistent element, so don't allow it. 
-    // But, we don't care what the current id is otherwise - we're going to overwrite it.
-    if (element.IsPersistent()) 
+    // don't allow elements that already have an id.
+    if (element.m_elementId.IsValid()) 
         {
         stat = DGNMODEL_STATUS_WrongElement;
         return nullptr;
         }
-
-    element.m_elementId = DgnElementId(); // in case the insert fails.
 
     DgnModelR model = element.GetDgnModel();
     if (&model.GetDgnDb() != &m_dgndb)
@@ -1288,19 +1254,25 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnModelStatus* o
 
     CallAppData(OnInsertCaller(), element);
 
+    element.m_elementId = MakeNewElementId(); 
+    element.UpdateLastModTime();
+    if (element.m_code.empty())
+        element.m_code = element._GenerateDefaultCode();
+
     DgnElementPtr newElement = element.CopyForEdit();
     if (!newElement.IsValid())
         {
+        element.m_elementId = DgnElementId();
         stat = DGNMODEL_STATUS_BadElement;
         return nullptr;
         }
 
-    newElement->m_elementId = MakeNewElementId(); 
     stat = newElement->_InsertInDb();
     if (DGNMODEL_STATUS_Success != stat)
+        {
+        element.m_elementId = DgnElementId();
         return nullptr;
-
-    element.m_elementId = newElement->m_elementId; // set this on input element so caller can see it
+        }
 
     AddToPool(*newElement);
 
@@ -1364,8 +1336,11 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
     CallAppData(OnUpdateCaller(element, replacement), element);
     CallAppData(OnUpdateCaller(element, replacement), replacement);
 
+    replacement.UpdateLastModTime(); 
+
     uint32_t oldSize = element._GetMemSize(); // save current size
     stat = element._CopyFrom(replacement);    // copy new data into original element
+
     if (DGNMODEL_STATUS_Success == stat)
         stat = element._UpdateInDb();
 
@@ -1456,44 +1431,11 @@ DgnModelStatus DgnElements::Delete(DgnElementCR element)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    01/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus DgnElements::UpdateLastModifiedTime(DgnElementId elementId)
-    {
-    if (!elementId.IsValid())
-        return BentleyStatus::ERROR;
-
-    CachedStatementPtr stmt;
-    m_dgndb.GetCachedStatement(stmt, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Element) " SET Id=Id WHERE Id=?"); // Minimal SQL to cause trigger to run
-
-    stmt->BindId(1, elementId);
-    return (BE_SQLITE_DONE == stmt->Step()) ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    01/2015
-//---------------------------------------------------------------------------------------
-DateTime DgnElements::QueryLastModifiedTime(DgnElementId elementId) const
-    {
-    if (!elementId.IsValid())
-        return DateTime();
-
-    CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT LastMod FROM " DGN_SCHEMA(DGN_CLASSNAME_Element) " WHERE ECInstanceId=?");
-    if (!stmt.IsValid())
-        return DateTime();
-
-    stmt->BindId(1, elementId);
-
-    return (ECSqlStepStatus::HasRow != stmt->Step()) ? DateTime() : stmt->GetValueDateTime(0);
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2015
 //---------------------------------------------------------------------------------------
 DgnModelId DgnElements::QueryModelId(DgnElementId elementId) const
     {
-    CachedStatementPtr stmt;
-    GetStatement(stmt, "SELECT ModelId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
+    CachedStatementPtr stmt=GetStatement("SELECT ModelId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
     stmt->BindId(1, elementId);
     return (BE_SQLITE_ROW != stmt->Step()) ? DgnModelId() : stmt->GetValueId<DgnModelId>(0);
     }
@@ -1503,8 +1445,7 @@ DgnModelId DgnElements::QueryModelId(DgnElementId elementId) const
 //---------------------------------------------------------------------------------------
 DgnElementId DgnElements::QueryElementIdByCode(Utf8CP code) const
     {
-    CachedStatementPtr statement;
-    GetStatement(statement, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Code=? LIMIT 1"); // find first if code not unique
+    CachedStatementPtr statement=GetStatement("SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Code=? LIMIT 1"); // find first if code not unique
     statement->BindText(1, code, Statement::MakeCopy::No);
     return (BE_SQLITE_ROW != statement->Step()) ? DgnElementId() : statement->GetValueId<DgnElementId>(0);
     }

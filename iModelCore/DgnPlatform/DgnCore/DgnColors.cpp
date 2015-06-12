@@ -15,7 +15,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BSI             07/91
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ColorUtil::ConvertRgbToHsv (HsvColorDef* hsv, ColorDef const* rgb)
+void ColorUtil::ConvertRgbToHsv(HsvColorDef* hsv, ColorDef const* rgb)
     {
     double      min, max, r = rgb->GetRed(), g = rgb->GetGreen(), b = rgb->GetBlue();
     double      delta_rgb, inthue;
@@ -74,7 +74,7 @@ void ColorUtil::ConvertRgbToHsv (HsvColorDef* hsv, ColorDef const* rgb)
     Extract bytes from int color, return as (doubles) RgbFactor.
 * @bsimethod                                                    BSI             07/91
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ColorUtil::ConvertIntToRGBFactor (RgbFactor& rgbFactor, ColorDef intColor)
+void ColorUtil::ConvertIntToRGBFactor(RgbFactor& rgbFactor, ColorDef intColor)
     {
     double              scale = 1.0 / (double) UCHAR_MAX;
     const unsigned char *pByte = (const unsigned char *) (&intColor);
@@ -88,7 +88,7 @@ void ColorUtil::ConvertIntToRGBFactor (RgbFactor& rgbFactor, ColorDef intColor)
     Scale 0..1 doubles to 0..255, pack as bytes.
 * @bsimethod                                                    BSI             07/91
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ColorUtil::ConvertRGBFactorToInt (ColorDef& intColor, RgbFactor &rgbFactor)
+void ColorUtil::ConvertRGBFactorToInt(ColorDef& intColor, RgbFactor &rgbFactor)
     {
     double          scale = (double) UCHAR_MAX;
     unsigned char *pByte = (unsigned char *) (&intColor);
@@ -102,7 +102,7 @@ void ColorUtil::ConvertRGBFactorToInt (ColorDef& intColor, RgbFactor &rgbFactor)
  Extract bytes from int color, return as (float) FloatRgb.
 * @bsimethod                                                    BSI             07/91
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ColorUtil::ConvertIntToFloatRgb (FPoint3dR rgb, ColorDef intColor)
+void ColorUtil::ConvertIntToFloatRgb(FPoint3dR rgb, ColorDef intColor)
     {
     double              scale = 1.0 / (double) UCHAR_MAX;
     const unsigned char *pByte = (const unsigned char *) (&intColor);
@@ -129,7 +129,7 @@ void ColorUtil::ConvertFloatRgbToInt(ColorDef &intColor, FPoint3dR rgb)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BSI             07/91
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ColorUtil::ConvertRgbFactorToColorDef (ColorDef &colorDef, RgbFactor const& rgbFactor)
+void ColorUtil::ConvertRgbFactorToColorDef(ColorDef &colorDef, RgbFactor const& rgbFactor)
     {
     static double  s_scale  = (double) UCHAR_MAX;
 
@@ -141,7 +141,7 @@ void ColorUtil::ConvertRgbFactorToColorDef (ColorDef &colorDef, RgbFactor const&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BSI             07/91
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ColorUtil::ConvertColorDefToRgbFactor (RgbFactorR rgbFactor, ColorDef colorDef)
+void ColorUtil::ConvertColorDefToRgbFactor(RgbFactorR rgbFactor, ColorDef colorDef)
     {
     static double  s_scale  = 1.0 / (double) UCHAR_MAX;
 
@@ -153,7 +153,7 @@ void ColorUtil::ConvertColorDefToRgbFactor (RgbFactorR rgbFactor, ColorDef color
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BSI             07/91
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ColorUtil::ConvertHsvToRgb (ColorDef* rgb, HsvColorDef const* hsv)
+void ColorUtil::ConvertHsvToRgb(ColorDef* rgb, HsvColorDef const* hsv)
     {
     double      dhue, dsaturation, dvalue = hsv->value;
     double      hue_fractpart;
@@ -190,44 +190,44 @@ void ColorUtil::ConvertHsvToRgb (ColorDef* rgb, HsvColorDef const* hsv)
         {
         case 0:     /* reddish */
             {
-            rgb->SetRed   (v & 0xff);
-            rgb->SetGreen (t & 0xff);
-            rgb->SetBlue  (p & 0xff);
+            rgb->SetRed(v & 0xff);
+            rgb->SetGreen(t & 0xff);
+            rgb->SetBlue(p & 0xff);
             break;
             }
         case 1:     /* yellowish */
             {
-            rgb->SetRed   (q & 0xff);
-            rgb->SetGreen (v & 0xff);
-            rgb->SetBlue  (p & 0xff);
+            rgb->SetRed(q & 0xff);
+            rgb->SetGreen(v & 0xff);
+            rgb->SetBlue(p & 0xff);
             break;
             }
         case 2:     /* greenish */
             {
-            rgb->SetRed   (p & 0xff);
-            rgb->SetGreen (v & 0xff);
-            rgb->SetBlue  (t & 0xff);
+            rgb->SetRed(p & 0xff);
+            rgb->SetGreen(v & 0xff);
+            rgb->SetBlue(t & 0xff);
             break;
             }
         case 3:     /* cyanish */
             {
-            rgb->SetRed   (p & 0xff);
-            rgb->SetGreen (q & 0xff);
-            rgb->SetBlue  (v & 0xff);
+            rgb->SetRed(p & 0xff);
+            rgb->SetGreen(q & 0xff);
+            rgb->SetBlue(v & 0xff);
             break;
             }
         case 4:     /* bluish */
             {
-            rgb->SetRed   (t & 0xff);
-            rgb->SetGreen (p & 0xff);
-            rgb->SetBlue  (v & 0xff);
+            rgb->SetRed(t & 0xff);
+            rgb->SetGreen(p & 0xff);
+            rgb->SetBlue(v & 0xff);
             break;
             }
         case 5:     /* magenta-ish */
             {
-            rgb->SetRed   (v & 0xff);
-            rgb->SetGreen (p & 0xff);
-            rgb->SetBlue  (q & 0xff);
+            rgb->SetRed(v & 0xff);
+            rgb->SetGreen(p & 0xff);
+            rgb->SetBlue(q & 0xff);
             break;
             }
         }
@@ -236,7 +236,7 @@ void ColorUtil::ConvertHsvToRgb (ColorDef* rgb, HsvColorDef const* hsv)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ColorUtil::AdjustValueAndSaturation (ColorDef* colorArray, uint32_t numColors, double valueAdjustment, double saturationAdjustment, bool valueAndSaturationFixed, double hueValue, bool hueFixed)
+void ColorUtil::AdjustValueAndSaturation(ColorDef* colorArray, uint32_t numColors, double valueAdjustment, double saturationAdjustment, bool valueAndSaturationFixed, double hueValue, bool hueFixed)
     {
     if (hueFixed && valueAndSaturationFixed)
         {
@@ -247,7 +247,7 @@ void ColorUtil::AdjustValueAndSaturation (ColorDef* colorArray, uint32_t numColo
         hsv.value       = (int)(valueAdjustment * 100.0 + 0.5);
         hsv.saturation  = (int)(saturationAdjustment * 100.0 + 0.5);
 
-        ColorUtil::ConvertHsvToRgb (&oneColor, &hsv);
+        ColorUtil::ConvertHsvToRgb(&oneColor, &hsv);
 
         for (uint32_t iColor=0; iColor < numColors; iColor++)
             colorArray[iColor] = oneColor;
@@ -261,7 +261,7 @@ void ColorUtil::AdjustValueAndSaturation (ColorDef* colorArray, uint32_t numColo
         double      newValue;
         double      newSaturation;
 
-        ColorUtil::ConvertRgbToHsv (&hsv, &colorArray[iColor]);
+        ColorUtil::ConvertRgbToHsv(&hsv, &colorArray[iColor]);
 
         if (valueAndSaturationFixed)
             {
@@ -299,7 +299,7 @@ void ColorUtil::AdjustValueAndSaturation (ColorDef* colorArray, uint32_t numColo
         hsv.value       = (int)(newValue + 0.5);
         hsv.saturation  = (int)(newSaturation + 0.5);
 
-        ColorUtil::ConvertHsvToRgb (&colorArray[iColor], &hsv);
+        ColorUtil::ConvertHsvToRgb(&colorArray[iColor], &hsv);
         }
     }
 
@@ -316,8 +316,8 @@ void ColorUtil::InterpolateColorsRGB (ColorDefP interpolatedColors, size_t nInte
                                                                                                                
     RgbFactor       startFactor, endFactor, interpolatedFactor;
 
-    ConvertColorDefToRgbFactor (startFactor, startColor);
-    ConvertColorDefToRgbFactor (endFactor, endColor);
+    ConvertColorDefToRgbFactor(startFactor, startColor);
+    ConvertColorDefToRgbFactor(endFactor, endColor);
 
     double      step = 1.0 / (double) (nInterpolatedColors - 1.0), endRatio = step, startRatio;
     for (size_t i=1; i<nInterpolatedColors-1; i++, endRatio += step)
@@ -328,7 +328,7 @@ void ColorUtil::InterpolateColorsRGB (ColorDefP interpolatedColors, size_t nInte
         interpolatedFactor.green = startRatio * startFactor.green + endRatio * endFactor.green;
         interpolatedFactor.blue  = startRatio * startFactor.blue  + endRatio * endFactor.blue;
 
-        ConvertRgbFactorToColorDef (interpolatedColors[i], interpolatedFactor);
+        ConvertRgbFactorToColorDef(interpolatedColors[i], interpolatedFactor);
         }
     }
 
@@ -337,9 +337,8 @@ void ColorUtil::InterpolateColorsRGB (ColorDefP interpolatedColors, size_t nInte
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnTrueColorId DgnColors::FindMatchingColor(ColorDef color) const
     {
-    Statement stmt;
-    stmt.Prepare (m_dgndb, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Color) " WHERE Value=?");
-    stmt.BindInt (1, color.GetValue());
+    Statement stmt(m_dgndb, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Color) " WHERE Value=?");
+    stmt.BindInt(1, color.GetValue());
 
     return  (BE_SQLITE_ROW == stmt.Step()) ? stmt.GetValueId<DgnTrueColorId>(0) : DgnTrueColorId();
     }
@@ -349,9 +348,8 @@ DgnTrueColorId DgnColors::FindMatchingColor(ColorDef color) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnColors::QueryColor(ColorDef& color, Utf8StringP name, Utf8StringP book, DgnTrueColorId id) const
     {
-    Statement stmt;
-    stmt.Prepare (m_dgndb, "SELECT Value,Name,Book FROM " DGN_TABLE(DGN_CLASSNAME_Color) " WHERE Id=?");
-    stmt.BindId (1, id);
+    Statement stmt(m_dgndb, "SELECT Value,Name,Book FROM " DGN_TABLE(DGN_CLASSNAME_Color) " WHERE Id=?");
+    stmt.BindId(1, id);
     if (BE_SQLITE_ROW != stmt.Step())
         return  ERROR;
 
@@ -371,10 +369,9 @@ BentleyStatus DgnColors::QueryColor(ColorDef& color, Utf8StringP name, Utf8Strin
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnColors::QueryColorByName(ColorDef& color, Utf8StringCR name, Utf8StringCR book) const
     {
-    Statement stmt;
-    stmt.Prepare (m_dgndb, "SELECT Value FROM " DGN_TABLE(DGN_CLASSNAME_Color) " WHERE Name=? AND Book=?");
-    stmt.BindText (1, name, Statement::MakeCopy::No);
-    stmt.BindText (1, name, Statement::MakeCopy::No);
+    Statement stmt(m_dgndb, "SELECT Value FROM " DGN_TABLE(DGN_CLASSNAME_Color) " WHERE Name=? AND Book=?");
+    stmt.BindText(1, name, Statement::MakeCopy::No);
+    stmt.BindText(1, name, Statement::MakeCopy::No);
     if (BE_SQLITE_ROW != stmt.Step())
         return  ERROR;
 
@@ -389,14 +386,13 @@ DgnTrueColorId DgnColors::Insert(ColorDef color, Utf8CP name, Utf8CP book)
     {
     DgnTrueColorId newId;
 
-    auto status = m_dgndb.GetNextRepositoryBasedId (newId, DGN_TABLE(DGN_CLASSNAME_Color), "Id");
-    BeAssert (status == BE_SQLITE_OK);
+    auto status = m_dgndb.GetNextRepositoryBasedId(newId, DGN_TABLE(DGN_CLASSNAME_Color), "Id");
+    BeAssert(status == BE_SQLITE_OK);
 
-    Statement stmt;
-    stmt.Prepare (m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Color) " (Id,Value,Name,Book) VALUES(?,?,?,?)");
+    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Color) " (Id,Value,Name,Book) VALUES(?,?,?,?)");
 
-    stmt.BindId (1, newId);
-    stmt.BindInt (2, color.GetValue());
+    stmt.BindId(1, newId);
+    stmt.BindInt(2, color.GetValue());
     if (name && *name)
         stmt.BindText(3, name, Statement::MakeCopy::No);
 
@@ -404,7 +400,7 @@ DgnTrueColorId DgnColors::Insert(ColorDef color, Utf8CP name, Utf8CP book)
         stmt.BindText(4, book, Statement::MakeCopy::No);
 
     status = stmt.Step();
-    BeAssert (BE_SQLITE_DONE==status);
+    BeAssert(BE_SQLITE_DONE==status);
     return (BE_SQLITE_DONE==status) ? newId : DgnTrueColorId();
     }
 
@@ -415,8 +411,7 @@ size_t DgnColors::Iterator::QueryCount() const
     {
     Utf8String sqlString = MakeSqlString("SELECT count(*) FROM " DGN_TABLE(DGN_CLASSNAME_Color));
 
-    Statement sql;
-    sql.Prepare (*m_db, sqlString.c_str());
+    Statement sql(*m_db, sqlString.c_str());
 
     return (BE_SQLITE_ROW != sql.Step()) ? 0 : sql.GetValueInt(0);
     }
@@ -430,7 +425,7 @@ DgnColors::Iterator::const_iterator DgnColors::Iterator::begin() const
         {
         Utf8String sqlString = MakeSqlString("SELECT Id,Value,Name,Book FROM " DGN_TABLE(DGN_CLASSNAME_Color));
 
-        m_db->GetCachedStatement (m_stmt, sqlString.c_str());
+        m_db->GetCachedStatement(m_stmt, sqlString.c_str());
         m_params.Bind(*m_stmt);
         }
     else
@@ -438,10 +433,10 @@ DgnColors::Iterator::const_iterator DgnColors::Iterator::begin() const
         m_stmt->Reset();
         }
 
-    return Entry (m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
+    return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
     }
 
 DgnTrueColorId DgnColors::Iterator::Entry::GetId() const {Verify(); return m_sql->GetValueId<DgnTrueColorId>(0);}
-ColorDef DgnColors::Iterator::Entry::GetColorValue () const {Verify(); return ColorDef(m_sql->GetValueInt(1));}
+ColorDef DgnColors::Iterator::Entry::GetColorValue() const {Verify(); return ColorDef(m_sql->GetValueInt(1));}
 Utf8CP DgnColors::Iterator::Entry::GetName() const {Verify(); return m_sql->GetValueText(2);}
 Utf8CP DgnColors::Iterator::Entry::GetBookName() const {Verify(); return m_sql->GetValueText(3);}

@@ -1217,7 +1217,7 @@ void PickContext::_DrawSymbol (IDisplaySymbol* symbol, TransformCP trans, ClipPl
     // Get corner points and transform into npc space...
     DPoint3d    boxPts[8];
 
-    range.get8Corners (boxPts);
+    range.Get8Corners  (boxPts);
 
     if (trans)
         trans->multiply (boxPts, boxPts, 8);

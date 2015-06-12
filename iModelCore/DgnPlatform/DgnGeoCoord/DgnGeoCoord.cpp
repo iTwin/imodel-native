@@ -4999,7 +4999,7 @@ static BeSQLite::DbAppData::Key const& GetKey()
     return s_key;
     }
 
-    virtual void        _OnCleanup (BeSQLiteDbR) override {delete this;}
+    virtual void _OnCleanup(DbR) override {delete this;}
 };
 
 /*=================================================================================**//**
@@ -5015,7 +5015,7 @@ static BeSQLite::DbAppData::Key const& GetKey()
     return s_key;
     }
 
-    virtual void        _OnCleanup (BeSQLiteDbR) override {delete this;}
+    virtual void _OnCleanup(DbR) override {delete this;}
 
     DgnGCSAppData (DgnGCS& gcs) : m_gcs(&gcs) {;}
 };

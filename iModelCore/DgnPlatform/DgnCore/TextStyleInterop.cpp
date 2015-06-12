@@ -10,7 +10,6 @@
 //---------------------------------------------------------------------------------------
 BentleyStatus TextStyleInterop::AnnotationToTextString(TextStringStyleR tss, AnnotationTextStyleCR ats)
     {
-    tss.m_color = ats.GetColor();
     tss.m_font = &ats.ResolveFont();
     tss.m_isBold = ats.IsBold();
     tss.m_isItalic = ats.IsItalic();
@@ -28,7 +27,6 @@ BentleyStatus TextStyleInterop::TextStringToAnnotation(DgnDbR db, AnnotationText
     {
     DgnFontId fontID = db.Fonts().AcquireId(*tss.m_font);
     
-    ats.m_data.SetIntegerProperty(AnnotationTextStyleProperty::ColorId, tss.m_color.GetValue());
     ats.m_data.SetIntegerProperty(AnnotationTextStyleProperty::FontId, fontID.GetValue());
     ats.m_data.SetIntegerProperty(AnnotationTextStyleProperty::IsBold, tss.m_isBold ? 1 : 0);
     ats.m_data.SetIntegerProperty(AnnotationTextStyleProperty::IsItalic, tss.m_isItalic? 1 : 0);

@@ -47,6 +47,7 @@
 #define DGN_TABLE_Domain        DGN_TABLE("Domain")
 #define DGN_TABLE_Font          DGN_TABLE("Font")
 #define DGN_TABLE_Handler       DGN_TABLE("Handler")
+#define DGN_TABLE_Txns          DGN_TABLE("Txns")
 #define DGN_VTABLE_RTree3d      DGN_TABLE("RTree3d")
 
 //-----------------------------------------------------------------------------------------
@@ -70,8 +71,6 @@
 #include <Bentley/HeapZone.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
-
-struct TxnElementSummary;
 
 //! Map of ID to DgnFont object. See method FontNumberMap.
 typedef bmap<uint32_t, DgnFontCP> T_FontNumberMap;
@@ -298,14 +297,14 @@ struct DgnCategories : DgnDbTable
     struct Iterator : BeSQLite::DbTableIterator
     {
     public:
-        explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLiteDbCR) db) {}
+        explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR) db) {}
 
         //! An entry in the table.
         struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
         {
         private:
             friend struct Iterator;
-            Entry(BeSQLiteStatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
+            Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
         public:
             DGNPLATFORM_EXPORT DgnCategoryId GetCategoryId() const; //!< The category id. Unique. This is an internal identifier and is not displayed in the GUI.
             DGNPLATFORM_EXPORT Rank GetRank() const; //!< The category's rank
@@ -335,14 +334,14 @@ struct DgnCategories : DgnDbTable
         //! construct a SubCategoryIterator
         //! @param[in] db The database for the SubCategory table
         //! @param[in] category Limit the iterator to SubCategories of this category. If invalid, iterate all SubCategories of all categories.
-        SubCategoryIterator(DgnDbCR db, DgnCategoryId category) : DbTableIterator((BeSQLiteDbCR)db), m_categoryId(category) {}
+        SubCategoryIterator(DgnDbCR db, DgnCategoryId category) : DbTableIterator((BeSQLite::DbCR)db), m_categoryId(category) {}
 
         //! An entry in the table.
         struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
         {
         private:
             friend struct SubCategoryIterator;
-            Entry(BeSQLiteStatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
+            Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
         public:
             DGNPLATFORM_EXPORT DgnCategoryId GetCategoryId() const; //! The Category id.
             DGNPLATFORM_EXPORT DgnSubCategoryId GetSubCategoryId() const; //!< The SubCategory id.
@@ -565,14 +564,14 @@ public:
         int  m_typeMask;
 
     public:
-        Iterator(DgnDbCR db, int viewTypeMask) : DbTableIterator((BeSQLiteDbCR)db) {m_typeMask = viewTypeMask;}
+        Iterator(DgnDbCR db, int viewTypeMask) : DbTableIterator((BeSQLite::DbCR)db) {m_typeMask = viewTypeMask;}
 
         //! An entry in the table
         struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
         {
         private:
             friend struct Iterator;
-            Entry(BeSQLiteStatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
+            Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
         public:
             DGNPLATFORM_EXPORT DgnViewId GetDgnViewId() const;
             DGNPLATFORM_EXPORT DgnModelId GetBaseModelId() const;
@@ -729,12 +728,12 @@ public:
         ModelIterate   m_itType;
 
     public:
-        Iterator(DgnDbCR db, ModelIterate itType) : DbTableIterator((BeSQLiteDbCR)db) {m_itType = itType;}
+        Iterator(DgnDbCR db, ModelIterate itType) : DbTableIterator((BeSQLite::DbCR)db) {m_itType = itType;}
         struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
         {
         private:
             friend struct Iterator;
-            Entry(BeSQLiteStatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
+            Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
 
         public:
             DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
@@ -857,7 +856,7 @@ struct DgnElements : DgnDbTable
     friend struct DgnModel;
     friend struct DgnModels;
     friend struct ElementHandler;
-    friend struct Txns;
+    friend struct TxnManager;
     friend struct ProgressiveViewFilter;
 
     //! The totals for loaded DgnElements in this DgnDb. These values reflect the current state of the loaded elements.
@@ -902,8 +901,8 @@ private:
     void AddToPool(DgnElementR) const;
     void DropFromPool(DgnElementCR) const;
     void SendOnLoadedEvent(DgnElementR elRef) const;
+    void OnChangesetApply(TxnSummary const&);
     void OnChangesetApplied(TxnSummary const&);
-    void OnChangesetCanceled(TxnSummary const&);
     DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, bool makePersistent) const;
     DgnElementCPtr LoadElement(DgnElementId elementId, bool makePersistent) const;
     bool IsElementIdUsed(DgnElementId id) const;
@@ -919,7 +918,7 @@ private:
 public:
     BeSQLite::SnappyFromBlob& GetSnappyFrom() {return m_snappyFrom;}
     BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;}
-    DGNPLATFORM_EXPORT BeSQLite::DbResult GetStatement(BeSQLite::CachedStatementPtr& stmt, Utf8CP sql) const;
+    DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const;
     DGNPLATFORM_EXPORT void ChangeMemoryUsed(int32_t delta) const;
 
     //! Look up an element in the pool of loaded elements for this DgnDb.
@@ -992,15 +991,6 @@ public:
 
     //! Get the Heapzone for this DgnDb.
     HeapZone& GetHeapZone() {return m_heapZone;}
-
-    //! Update the last modified timestamp of the specified element
-    //! @note Updates to the element class automatically cause the last modified time to be updated (via a database trigger).
-    //! This method should only be used to indicate that aspect of the element has changed and that change should be
-    //! considered to be a change to the element itself for change propagation purposes.
-    DGNPLATFORM_EXPORT BentleyStatus UpdateLastModifiedTime(DgnElementId elementId);
-
-    //! Query the last modified time from the specified element
-    DGNPLATFORM_EXPORT DateTime QueryLastModifiedTime(DgnElementId elementId) const;
 
     //! Query the DgnElementKey for a DgnElement from this DgnDb by its DgnElementId.
     //! @return Invalid key if the element does not exist.
@@ -1104,13 +1094,13 @@ public:
     struct Iterator : BeSQLite::DbTableIterator
     {
     public:
-        explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLiteDbCR)db) {}
+        explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR)db) {}
 
         struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
         {
         private:
             friend struct Iterator;
-            Entry(BeSQLiteStatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
+            Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
         public:
             DGNPLATFORM_EXPORT DgnTrueColorId GetId() const;
             DGNPLATFORM_EXPORT ColorDef GetColorValue() const;
@@ -1161,7 +1151,7 @@ struct DgnFonts : NonCopyableClass
             {
             private:
                 friend struct Iterator;
-                Entry(BeSQLiteStatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) {}
+                Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) {}
 
             public:
                 DGNPLATFORM_EXPORT DgnFontId GetId() const;
@@ -1228,7 +1218,7 @@ struct DgnFonts : NonCopyableClass
             {
             private:
                 friend struct Iterator;
-                Entry(BeSQLiteStatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) {}
+                Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) {}
 
             public:
                 DGNPLATFORM_EXPORT uint64_t GetId() const;
@@ -1260,7 +1250,7 @@ struct DgnFonts : NonCopyableClass
 private:
     DbFontMapDirect m_dbFontMap;
     DbFaceDataDirect m_dbFaceData;
-    BeSQLiteDbR m_db;
+    BeSQLite::DbR m_db;
     Utf8String m_tableName;
     bool m_isFontMapLoaded;
     T_FontMap m_fontMap;
@@ -1268,7 +1258,7 @@ private:
     void Update();
 
 public:
-    DgnFonts(BeSQLiteDbR db, Utf8CP tableName) : m_dbFontMap(*this), m_dbFaceData(*this), m_db(db), m_tableName(tableName), m_isFontMapLoaded(false) {}
+    DgnFonts(BeSQLite::DbR db, Utf8CP tableName) : m_dbFontMap(*this), m_dbFaceData(*this), m_db(db), m_tableName(tableName), m_isFontMapLoaded(false) {}
 
     DbFontMapDirect& DbFontMap() { return m_dbFontMap; }
     DbFaceDataDirect& DbFaceData() { return m_dbFaceData; }
@@ -1314,13 +1304,13 @@ public:
     struct Iterator : BeSQLite::DbTableIterator
     {
     public:
-        explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLiteDbCR)db) { }
+        explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR)db) { }
 
         struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
         {
         private:
             friend struct Iterator;
-            Entry(BeSQLiteStatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
+            Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
         public:
             DGNPLATFORM_EXPORT DgnMaterialId GetId() const;
             DGNPLATFORM_EXPORT Utf8CP GetName() const;
@@ -1458,7 +1448,7 @@ public:
         DEFINE_T_SUPER(BeSQLite::DbTableIterator);
 
     public:
-        Iterator(DgnDbCR db) : T_Super((BeSQLiteDbCR)db) {}
+        Iterator(DgnDbCR db) : T_Super((BeSQLite::DbCR)db) {}
 
         //=======================================================================================
         // @bsiclass
@@ -1469,7 +1459,7 @@ public:
             DEFINE_T_SUPER(DbTableIterator::Entry);
             friend struct Iterator;
 
-            Entry(BeSQLiteStatementP sql, bool isValid) : T_Super(sql, isValid) {}
+            Entry(BeSQLite::StatementP sql, bool isValid) : T_Super(sql, isValid) {}
 
         public:
             DGNPLATFORM_EXPORT DgnLinkId GetId() const;
@@ -1496,7 +1486,7 @@ public:
         DgnElementKey m_elementKey;
 
     public:
-        OnElementIterator(DgnDbCR db, DgnElementKey elementKey) : T_Super((BeSQLiteDbCR)db), m_elementKey(elementKey) {}
+        OnElementIterator(DgnDbCR db, DgnElementKey elementKey) : T_Super((BeSQLite::DbCR)db), m_elementKey(elementKey) {}
 
         //=======================================================================================
         // @bsiclass
@@ -1507,7 +1497,7 @@ public:
             DEFINE_T_SUPER(DbTableIterator::Entry);
             friend struct OnElementIterator;
 
-            Entry(BeSQLiteStatementP sql, bool isValid) : T_Super(sql, isValid) {}
+            Entry(BeSQLite::StatementP sql, bool isValid) : T_Super(sql, isValid) {}
 
         public:
             DGNPLATFORM_EXPORT DgnLinkId GetId() const;
@@ -1535,7 +1525,7 @@ public:
         DgnLinkId m_linkId;
 
     public:
-        ReferencesLinkIterator(DgnDbCR db, DgnLinkId linkId) : T_Super((BeSQLiteDbCR)db), m_linkId(linkId) {}
+        ReferencesLinkIterator(DgnDbCR db, DgnLinkId linkId) : T_Super((BeSQLite::DbCR)db), m_linkId(linkId) {}
 
         //=======================================================================================
         // @bsiclass
@@ -1546,7 +1536,7 @@ public:
             DEFINE_T_SUPER(DbTableIterator::Entry);
             friend struct OnElementIterator;
 
-            Entry(BeSQLiteStatementP sql, bool isValid) : T_Super(sql, isValid) {}
+            Entry(BeSQLite::StatementP sql, bool isValid) : T_Super(sql, isValid) {}
 
         public:
             DGNPLATFORM_EXPORT DgnElementKey GetKey() const;

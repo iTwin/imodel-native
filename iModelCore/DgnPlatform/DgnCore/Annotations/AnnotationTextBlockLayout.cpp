@@ -58,7 +58,6 @@ static void moveRange(DRange2dR range, DVec2dCR offset)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationLayoutRunPtr AnnotationLayoutRun::Create(AnnotationRunBaseCR seedRun) { return new AnnotationLayoutRun(seedRun); }
 AnnotationLayoutRun::AnnotationLayoutRun(AnnotationRunBaseCR seedRun) :
     T_Super()
     {
@@ -84,9 +83,6 @@ AnnotationLayoutRun::AnnotationLayoutRun(AnnotationRunBaseCR seedRun) :
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationLayoutRunPtr AnnotationLayoutRun::Clone() const { return new AnnotationLayoutRun(*this); }
-AnnotationLayoutRun::AnnotationLayoutRun(AnnotationLayoutRunCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
-AnnotationLayoutRunR AnnotationLayoutRun::operator=(AnnotationLayoutRunCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
 void AnnotationLayoutRun::CopyFrom(AnnotationLayoutRunCR rhs)
     {
     m_seedRun = rhs.m_seedRun;
@@ -97,19 +93,6 @@ void AnnotationLayoutRun::CopyFrom(AnnotationLayoutRunCR rhs)
     m_subRanges = rhs.m_subRanges;
     m_offsetFromLine = rhs.m_offsetFromLine;
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     05/2014
-//---------------------------------------------------------------------------------------
-AnnotationRunBaseCR AnnotationLayoutRun::GetSeedRun() const { return *m_seedRun; }
-size_t AnnotationLayoutRun::GetCharOffset() const { return m_charOffset; }
-void AnnotationLayoutRun::SetCharOffset(size_t value) { m_charOffset = value; Invalidate(); }
-size_t AnnotationLayoutRun::GetNumChars() const { return m_numChars; }
-void AnnotationLayoutRun::SetNumChars(size_t value) { m_numChars = value; Invalidate(); }
-DRange2dCR AnnotationLayoutRun::GetLayoutRange() const { const_cast<AnnotationLayoutRunP>(this)->Update(); return m_layoutRange; }
-DVec2dCR AnnotationLayoutRun::GetOffsetFromLine() const { return m_offsetFromLine; }
-void AnnotationLayoutRun::SetOffsetFromLine(DVec2dCR value) { m_offsetFromLine = value; }
-void AnnotationLayoutRun::Invalidate() { m_isValid = false; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
@@ -385,7 +368,6 @@ bool AnnotationLayoutRun::AffectsJustification() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationLayoutLinePtr AnnotationLayoutLine::Create() { return new AnnotationLayoutLine(); }
 AnnotationLayoutLine::AnnotationLayoutLine() :
     T_Super()
     {
@@ -397,9 +379,6 @@ AnnotationLayoutLine::AnnotationLayoutLine() :
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationLayoutLinePtr AnnotationLayoutLine::Clone() const { return new AnnotationLayoutLine(*this); }
-AnnotationLayoutLine::AnnotationLayoutLine(AnnotationLayoutLineCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
-AnnotationLayoutLineR AnnotationLayoutLine::operator=(AnnotationLayoutLineCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
 void AnnotationLayoutLine::CopyFrom(AnnotationLayoutLineCR rhs)
     {
     m_isValid = rhs.m_isValid;
@@ -410,25 +389,6 @@ void AnnotationLayoutLine::CopyFrom(AnnotationLayoutLineCR rhs)
     m_runs.reserve(rhs.m_runs.size());
     for (auto const& rhsRun : rhs.m_runs)
         m_runs.push_back(rhsRun->Clone());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     05/2014
-//---------------------------------------------------------------------------------------
-DRange2dCR AnnotationLayoutLine::GetLayoutRange() const { const_cast<AnnotationLayoutLineP>(this)->Update(); return m_layoutRange; }
-DRange2dCR AnnotationLayoutLine::GetJustificationRange() const { const_cast<AnnotationLayoutLineP>(this)->Update(); return m_justificationRange; }
-DVec2dCR AnnotationLayoutLine::GetOffsetFromDocument() const { return m_offsetFromDocument; }
-void AnnotationLayoutLine::SetOffsetFromDocument(DVec2dCR value) { m_offsetFromDocument = value; }
-AnnotationLayoutRunCollectionCR AnnotationLayoutLine::GetRuns() const { return m_runs; }
-void AnnotationLayoutLine::Invalidate() { m_isValid = false; }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     05/2014
-//---------------------------------------------------------------------------------------
-void AnnotationLayoutLine::AppendRun(AnnotationLayoutRunR value)
-    {
-    Invalidate();
-    m_runs.push_back(&value);
     }
 
 //---------------------------------------------------------------------------------------
@@ -474,7 +434,6 @@ void AnnotationLayoutLine::Update()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationTextBlockLayoutPtr AnnotationTextBlockLayout::Create(AnnotationTextBlockCR doc) { return new AnnotationTextBlockLayout(doc); }
 AnnotationTextBlockLayout::AnnotationTextBlockLayout(AnnotationTextBlockCR doc) :
     T_Super()
     {
@@ -486,9 +445,6 @@ AnnotationTextBlockLayout::AnnotationTextBlockLayout(AnnotationTextBlockCR doc) 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationTextBlockLayoutPtr AnnotationTextBlockLayout::Clone() const { return new AnnotationTextBlockLayout(*this); }
-AnnotationTextBlockLayout::AnnotationTextBlockLayout(AnnotationTextBlockLayoutCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
-AnnotationTextBlockLayoutR AnnotationTextBlockLayout::operator=(AnnotationTextBlockLayoutCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
 void AnnotationTextBlockLayout::CopyFrom(AnnotationTextBlockLayoutCR rhs)
     {
     m_doc = rhs.m_doc;
@@ -500,14 +456,6 @@ void AnnotationTextBlockLayout::CopyFrom(AnnotationTextBlockLayoutCR rhs)
     for (auto const& rhsLine : rhs.m_lines)
         m_lines.push_back(rhsLine->Clone());
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     05/2014
-//---------------------------------------------------------------------------------------
-AnnotationTextBlockCR AnnotationTextBlockLayout::GetDocument() const { return *m_doc; }
-AnnotationLayoutLineCollectionCR AnnotationTextBlockLayout::GetLines() const { const_cast<AnnotationTextBlockLayoutP>(this)->Update(); return m_lines; }
-DRange2dCR AnnotationTextBlockLayout::GetLayoutRange() const { const_cast<AnnotationTextBlockLayoutP>(this)->Update(); return m_layoutRange; }
-void AnnotationTextBlockLayout::Invalidate() { m_isValid = false; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014

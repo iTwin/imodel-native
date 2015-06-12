@@ -144,7 +144,7 @@ static int countSheets(DgnDbR db)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
-void DgnModelTests::InsertElement(DgnDbR db, DgnModelId mid, bool is3d, bool expectSuccess)
+void DgnModelTests::InsertElement(DgnDbR db,   DgnModelId mid, bool is3d, bool expectSuccess)
     {
     DgnModelP model = db.Models().GetModel(mid);
 
