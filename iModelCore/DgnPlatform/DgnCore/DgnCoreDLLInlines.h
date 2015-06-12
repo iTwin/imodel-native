@@ -266,8 +266,6 @@ DG_INLINE bool ViewContext::_WantSaveQvElem(DrawExpense expense) {return T_HOST.
 DG_INLINE BentleyStatus ViewContext::GetCurrLocalToFrustumTrans(TransformR trans) const { return m_transformClipStack.GetTransform(trans); }
 DG_INLINE BentleyStatus ViewContext::GetCurrFrustumToLocalTrans(TransformR trans) const { return m_transformClipStack.GetInverseTransform(trans); }
 DG_INLINE TransformCP ViewContext::GetCurrLocalToFrustumTransformCP() const { return m_transformClipStack.GetTransformCP(); }
-DG_INLINE void ViewContext::SetLocatePriority(int priority) { _SetLocatePriority(priority); }
-DG_INLINE void ViewContext::SetNonSnappable(bool unsnappable) { _SetNonSnappable(unsnappable); }
 DG_INLINE void ViewContext::DrawTextString(TextStringCR textString) {_DrawTextString(textString);}
 DG_INLINE BentleyStatus ViewContext::GetLocalToFrustumTrans(TransformR trans, size_t index) const { return m_transformClipStack.GetTransformFromIndex(trans, index); }
 DG_INLINE bool ViewContext::IsViewIndependent() { return m_transformClipStack.IsViewIndependent(); }
@@ -277,10 +275,10 @@ DG_INLINE double ViewContext::GetCurrentLevelOfDetail() const { return m_levelOf
 DG_INLINE void ViewContext::SetCurrentLevelOfDetail(double levelOfDetail) { m_levelOfDetail = levelOfDetail; }
 DG_INLINE ViewContext::ContextMark::~ContextMark() {Pop();}
 
-DG_INLINE IElemTopologyCP ViewContext::GetElemTopology() const {return(m_currElemTopo.IsValid() ? m_currElemTopo.get() : nullptr);}
-DG_INLINE void           ViewContext::SetElemTopology(IElemTopologyP topo) {m_currElemTopo = topo;} // graphite moved these out of line
-DG_INLINE DgnGeomPartId  ViewContext::GetDgnGeomPartId()  {return m_currGeomPart;}
-DG_INLINE void           ViewContext::SetDgnGeomPartId(DgnGeomPartId partId) {m_currGeomPart = partId;}
+DG_INLINE IElemTopologyCP   ViewContext::GetElemTopology() const {return(m_currElemTopo.IsValid() ? m_currElemTopo.get() : nullptr);}
+DG_INLINE void              ViewContext::SetElemTopology(IElemTopologyP topo) {m_currElemTopo = topo;}
+DG_INLINE T_GeomPrimitiveId ViewContext::GetGeomPrimitiveId() const {return m_currGeomPrimitiveId;}
+DG_INLINE void              ViewContext::SetGeomPrimitiveId(T_GeomPrimitiveId geomId) {m_currGeomPrimitiveId = geomId;}
 
 DG_INLINE IDrawGeom::IDrawGeom() { }
 
@@ -505,15 +503,6 @@ DG_INLINE double PlotInfo::GetLineWeightMM() const {return m_widthMM;}
 DG_INLINE void PlotInfo::SetLineWeightMM(double mm, bool set) {if (set) m_widthMM = mm; m_hasLineWeightMM = set;};
 
 DG_INLINE void LineStyleParams::SetScale(double inScale) { modifiers |= STYLEMOD_SCALE; scale = inScale; }
-
-DG_INLINE DPoint4dCR IPickGeom::GetPickPointView() const {return _GetPickPointView();}
-DG_INLINE DPoint3dCR IPickGeom::GetPickPointWorld() const {return _GetPickPointWorld();}
-DG_INLINE GeomDetail& IPickGeom::GetGeomDetail() {return _GetGeomDetail();}
-DG_INLINE bool IPickGeom::IsPointVisible(DPoint3dCP screenPt) {return _IsPointVisible(screenPt);}
-DG_INLINE void IPickGeom::SetHitPriorityOverride(HitPriority priority) {_SetHitPriorityOverride(priority);}
-DG_INLINE void IPickGeom::AddHit(DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPriority priority) {_AddHit(hitPtScreen, hitPtLocal, priority);}
-DG_INLINE bool IPickGeom::IsSnap() const {return _IsSnap();}
-DG_INLINE DRay3d IPickGeom::GetBoresite() const { return _GetBoresite();}
 
 DG_INLINE StatusInt     ViewController::VisitHit(HitDetailCR hit, ViewContextR context) const{return _VisitHit(hit, context);}
 DG_INLINE void ViewController::DrawView(ViewContextR context) {return _DrawView(context);}

@@ -19,11 +19,11 @@
 //__PUBLISH_SECTION_END__
 DGNPLATFORM_TYPEDEFS (QvBaseMatSym)
 DGNPLATFORM_TYPEDEFS (Material)
-DGNPLATFORM_TYPEDEFS (DgnGraphics)
-DGNPLATFORM_TYPEDEFS (DgnGraphicsProcessor)
 //__PUBLISH_SECTION_START__
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+
+typedef bpair<int32_t, int32_t> T_GeomPrimitiveId;
 
 //=======================================================================================
 //! Line style parameters

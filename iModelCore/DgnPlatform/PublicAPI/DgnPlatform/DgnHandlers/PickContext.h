@@ -34,7 +34,6 @@ private:
     bool                        m_doLocateSilhouettes;
     bool                        m_doLocateInteriors;
     TestLStylePhase             m_testingLStyle;
-    // clang says not used - int m_maxHits;
 
     IViewOutputP                m_viewOutput;
     DgnPlatform::GeomDetail     m_currGeomDetail;
@@ -79,16 +78,6 @@ protected:
     virtual void        _DrawPointCloud (IPointCloudDrawParams* drawParams) override;
     virtual void        _DrawQvElem (QvElem* qvElem, int subElemIndex) override;
 
-    virtual GeomDetailR _GetGeomDetail () override {return m_currGeomDetail;}
-    virtual DPoint4dCR  _GetPickPointView () const override {return m_pickPointView;}
-    virtual DPoint3dCR  _GetPickPointWorld () const override {return m_pickPointWorld;}
-
-    virtual bool        _IsPointVisible (DPoint3dCP screenPt) override;
-    virtual void        _AddHit (DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPriority) override;
-    virtual void        _SetHitPriorityOverride (HitPriority priority) override {m_hitPriorityOverride = priority;}
-    virtual bool        _IsSnap () const;
-    virtual DRay3d      _GetBoresite () const;
-
 public:
     PickOutput ();
     DGNPLATFORM_EXPORT ~PickOutput ();
@@ -104,6 +93,16 @@ public:
     void                InitStrokeForCache () {m_doLocateSilhouettes = false;}
     bool                GetLocateSilhouettes () {return m_doLocateSilhouettes;}
     bool*               GetLocateInteriors () {return &m_doLocateInteriors;}
+
+    // IPickGeom
+    virtual DPoint4dCR  _GetPickPointView() const override {return m_pickPointView;}
+    virtual DPoint3dCR  _GetPickPointWorld() const override {return m_pickPointWorld;}
+    virtual GeomDetailR _GetGeomDetail() override {return m_currGeomDetail;}
+    virtual bool        _IsPointVisible(DPoint3dCP screenPt) override;
+    virtual void        _SetHitPriorityOverride(HitPriority priority) override {m_hitPriorityOverride = priority;}
+    virtual void        _AddHit(DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPriority) override;
+    virtual bool        _IsSnap() const;
+    virtual DRay3d      _GetBoresite() const;
 
 }; // PickOutput
 

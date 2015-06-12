@@ -66,7 +66,7 @@ ViewContext::ViewContext()
     m_isCameraOn                = false;
     m_frustumTransClipDepth     = 0;
     m_edgeMaskState             = EdgeMaskState_None;
-    m_currElemTopo              = NULL;
+    m_currGeomPrimitiveId       = make_bpair(-1, -1);
 
     m_rasterDisplayParams.SetFlags(0);
 
@@ -2693,28 +2693,6 @@ void ViewContext::_DrawTextString (TextStringCR text)
     double zDepth = GetCurrentDisplayParams()->GetNetDisplayPriority();
     GetIDrawGeom().DrawTextString(text, Is3dView() ? nullptr : &zDepth);                
     text.DrawTextAdornments (*this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      09/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_SetLocatePriority (int priority)
-    {
-    IPickGeomP      pickGeom;
-
-    if (NULL != (pickGeom = GetIPickGeom()))
-        pickGeom->GetGeomDetail().SetLocatePriority (static_cast<HitPriority> (priority));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      09/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::_SetNonSnappable (bool unsnappable)
-    {
-    IPickGeomP      pickGeom;
-
-    if (NULL != (pickGeom = GetIPickGeom()))
-        pickGeom->GetGeomDetail().SetNonSnappable (unsnappable);
     }
 
 /*---------------------------------------------------------------------------------**//**
