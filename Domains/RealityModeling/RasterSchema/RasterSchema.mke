@@ -34,6 +34,8 @@ BENTLEY_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
 BENTLEY_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
 BENTLEY_LIBRARIES + $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext)
 BENTLEY_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext)
+BENTLEY_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)IppGraLibs$(libprefix)
+BENTLEY_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)IppUtlLibs$(libprefix)
 BENTLEY_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
 
 #--------------------------------------------------------------------------------------
@@ -45,12 +47,18 @@ rasterSchemaDepends             = $(rasterSchemaPublicApiSrc)RasterDomain.h     
                                   $(rasterSchemaPublicApiSrc)RasterSchemaTypes.h            \
                                   $(rasterSchemaPublicApiSrc)RasterHandler.h                \
                                   $(rasterSchemaPublicApiSrc)RasterDomain.h                 \
+                                  $(rasterSchemaPublicApiSrc)RasterFileHandler.h            \
                                   $(rasterSchemaPublicApiSrc)WmsHandler.h
 
 rasterDisplayDepends =  $(rasterSchemaSrc)RasterSource.h \
                         $(rasterSchemaSrc)RasterQuadTree.h \
                         $(rasterSchemaSrc)WmsSource.h
                         
+rasterFileDepends    =  $(rasterSchemaSrc)RasterFile.h \
+                        $(rasterSchemaSrc)RasterFileProgressiveDisplay.h \
+                        $(rasterSchemaSrc)RasterFileSource.h \
+                        $(rasterSchemaSrc)ImagePPAdmin.h
+
 %include MultiCppCompileRule.mki
 
 #----------------------------------------------------------------------
@@ -77,7 +85,9 @@ MultiCompileDepends=$(_MakeFileSpec)
 #--------------------------------------------------------------------------------------
 $(o)RasterHandler$(oext)    : $(rasterSchemaSrc)RasterHandler.cpp   $(rasterSchemaDepends) ${MultiCompileDepends}
 
-$(o)RasterDomain$(oext)     : $(rasterSchemaSrc)RasterDomain.cpp    $(rasterSchemaDepends) ${MultiCompileDepends}
+$(o)RasterFileHandler$(oext)            : $(rasterSchemaSrc)RasterFileHandler.cpp                   $(rasterSchemaDepends) ${MultiCompileDepends}
+
+$(o)RasterDomain$(oext)                 : $(rasterSchemaSrc)RasterDomain.cpp                        $(rasterSchemaDepends) ${MultiCompileDepends}
 
 $(o)RasterQuadTree$(oext)   : $(rasterSchemaSrc)RasterQuadTree.cpp  $(rasterSchemaDepends) $(rasterDisplayDepends) ${MultiCompileDepends}
 
@@ -86,6 +96,14 @@ $(o)RasterSource$(oext)     : $(rasterSchemaSrc)RasterSource.cpp    $(rasterSche
 $(o)WmsHandler$(oext)       : $(rasterSchemaSrc)WmsHandler.cpp      $(rasterSchemaDepends) $(rasterDisplayDepends) ${MultiCompileDepends}
 
 $(o)WmsSource$(oext)        : $(rasterSchemaSrc)WmsSource.cpp       $(rasterSchemaDepends) $(rasterDisplayDepends) ${MultiCompileDepends}
+
+$(o)RasterFile$(oext)                   : $(rasterSchemaSrc)RasterFile.cpp                          $(rasterSchemaDepends) $(rasterFileDepends) ${MultiCompileDepends}
+
+$(o)ImagePPAdmin$(oext)                 : $(rasterSchemaSrc)ImagePPAdmin.cpp                        $(rasterSchemaDepends) $(rasterFileDepends) ${MultiCompileDepends}
+
+$(o)RasterFileProgressiveDisplay$(oext) : $(rasterSchemaSrc)RasterFileProgressiveDisplay.cpp        $(rasterSchemaDepends) $(rasterFileDepends) ${MultiCompileDepends}
+
+$(o)RasterFileSource$(oext)             : $(rasterSchemaSrc)RasterFileSource.cpp                    $(rasterSchemaDepends) $(rasterFileDepends) ${MultiCompileDepends}
 
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.

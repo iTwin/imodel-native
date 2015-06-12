@@ -19,6 +19,16 @@ RasterDomain::RasterDomain() : DgnDomain(BENTLEY_RASTER_SCHEMA_NAME, "Bentley Ra
     {
     RegisterHandler(RasterModelHandler::GetHandler()); //&&MM do we need to register this abstract handler? baseModelHandler would be enough?
     RegisterHandler(WmsModelHandler::GetHandler());
+    RegisterHandler(RasterFileModelHandler::GetHandler());
+//&&ep1
+    //Initialize ImagePP host
+    ImagePP::ImageppLib::Initialize(*new MyImageppLibHost());
+/* &&ep1 - need this ?
+    if (!SessionManager::InitBaseGCS())
+        return false;
+
+    return true;
+*/
     }
  
 //-----------------------------------------------------------------------------------------

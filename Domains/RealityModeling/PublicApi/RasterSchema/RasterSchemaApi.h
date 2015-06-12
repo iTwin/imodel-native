@@ -22,6 +22,15 @@
 #define RASTER_SCHEMA(className)                            BENTLEY_RASTER_SCHEMA_NAME "." className
 
 //-----------------------------------------------------------------------------------------
+// Define standard typedefs (P, CP, R, CR) and RefCountedPtr
+//-----------------------------------------------------------------------------------------
+RASTERSCHEMA_TYPEDEFS(RasterQuadTree)
+RASTERSCHEMA_REF_COUNTED_PTR(RasterQuadTree)
+
+RASTERSCHEMA_TYPEDEFS(RasterFile)
+RASTERSCHEMA_REF_COUNTED_PTR(RasterFile)
+
+//-----------------------------------------------------------------------------------------
 // Include from PublicApi
 //-----------------------------------------------------------------------------------------
 #include "RasterSchemaCommon.h"

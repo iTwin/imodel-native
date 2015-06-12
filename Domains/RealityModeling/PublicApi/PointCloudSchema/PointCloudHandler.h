@@ -27,10 +27,9 @@ struct EXPORT_VTABLE_ATTRIBUTE PointCloudModel : BentleyApi::DgnPlatform::PointC
     DEFINE_T_SUPER(PointCloudBaseModel)
 
 private:
-    BePointCloud::PointCloudScenePtr  m_pointCloudScenePtr;
+    BePointCloud::PointCloudScenePtr    m_pointCloudScenePtr;
 
-    static  void        InitializeApi();
-            DRange3d    GetSceneRange();
+    DRange3d                            GetSceneRange();
 
 public:
     // POINTCLOUD_WIP_GR06_Json - To remove this, we could move JsonUtils.h to PublicApi and then delete this struct and associated methods.
