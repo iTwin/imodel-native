@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="BentleyRaster" nameSpacePrefix="raster" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.10" prefix="bsca" />
+    <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
+    <ECSchemaReference name="dgn" version="02.00" prefix="dgn" />
+
+    <ECClass typeName="RasterModel" isDomainClass="True" >
+      <BaseClass>dgn:RasterBaseModel</BaseClass>
+    </ECClass>
+
+    <ECClass typeName="WmsModel" isDomainClass="True" >
+        <BaseClass>RasterModel</BaseClass>
+    </ECClass>
+
+    <ECClass typeName="RasterFileModel" isDomainClass="True" >
+      <BaseClass>RasterModel</BaseClass>
+    </ECClass>
+
+</ECSchema>

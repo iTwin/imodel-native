@@ -1,0 +1,15 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: RasterSchema/RasterSchema.prewire.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+PolicyFile=$(SrcBsiCommon)sharedmki/AssertCommonCompileLinkPolicy.mki
+%include mdl.mki
+
+$(BuildContext)PublicAPI/RasterSchema : $(_MakeFilePath)../PublicAPI/RasterSchema
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)ECSchemas/Domain/BentleyRaster.01.00.ecschema.xml : $(_MakeFilePath)BentleyRaster.01.00.ecschema.xml
+    $(LinkFirstDepToFirstTarget)
