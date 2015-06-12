@@ -285,8 +285,8 @@ struct Iterator : std::iterator<std::forward_iterator_tag, uint8_t const*>
 
     DGNPLATFORM_EXPORT void ToNext ();
 
-    Iterator (uint8_t const* data, size_t totalDataSize, ViewContextP context) : m_data(data), m_totalDataSize(totalDataSize), m_dataOffset(0), m_context(context), m_useBRep(true) {ToNext();}
-    Iterator () : m_data(nullptr), m_totalDataSize(0), m_dataOffset(0), m_context(nullptr), m_useBRep(true) {}
+    Iterator (uint8_t const* data, size_t totalDataSize, ViewContextP context, bool useBRep) : m_data(data), m_totalDataSize(totalDataSize), m_dataOffset(0), m_context(context), m_useBRep(useBRep) {ToNext();}
+    Iterator () : m_data(nullptr), m_totalDataSize(0), m_dataOffset(0), m_context(nullptr), m_useBRep(false) {}
 
     friend struct ElementGeometryCollection;
 
@@ -307,22 +307,26 @@ ViewContextP        m_context;
 Transform           m_elemToWorld;
 Transform           m_geomToElem;
 Transform           m_geomToWorld;
+bool                m_useBRep;
 
 public:
 
 typedef Iterator const_iterator;
 typedef const_iterator iterator; //!< only const iteration is possible
     
-const_iterator begin () const {return const_iterator (m_data, m_dataSize, m_context);}
+const_iterator begin () const {return const_iterator (m_data, m_dataSize, m_context, m_useBRep);}
 const_iterator end   () const {return const_iterator ();}
 
+void SetIgnoreBreps() {m_useBRep = false;} //!< Iterator will use simplified BRep representation when solids kernel is available (performance optimization when exact geometry isn't required).
+
 DGNPLATFORM_EXPORT ElemDisplayParamsCR GetElemDisplayParams();
-DGNPLATFORM_EXPORT DgnGeomPartId GetDgnGeomPartId(); //!< Returns invalid id if current geometry is from a part
+DGNPLATFORM_EXPORT DgnGeomPartId GetDgnGeomPartId(); //!< Returns invalid id if current geometry is not from a part
+DGNPLATFORM_EXPORT T_GeomPrimitiveId GetGeomPrimitiveId(); //!< Returns primitive id for current geometry
 DGNPLATFORM_EXPORT TransformCR GetElementToWorld();
 DGNPLATFORM_EXPORT TransformCR GetGeometryToWorld();
 DGNPLATFORM_EXPORT TransformCR GetGeometryToElement();
 
-DGNPLATFORM_EXPORT ElementGeometryCollection (DgnDbR dgnDb, uint8_t const* data, size_t dataSize);
+DGNPLATFORM_EXPORT ElementGeometryCollection (DgnDbR dgnDb, GeomStreamCR geom);
 DGNPLATFORM_EXPORT ElementGeometryCollection (GeometricElementCR element);
 DGNPLATFORM_EXPORT ~ElementGeometryCollection ();
 
@@ -359,25 +363,28 @@ private:
 bool                    m_appearanceChanged;
 bool                    m_haveLocalGeom;
 bool                    m_havePlacement;
+bool                    m_isPartCreate;
+bool                    m_is3d;
 Placement3d             m_placement3d;
 Placement2d             m_placement2d;
-DgnModelR               m_model;
+DgnDbR                  m_dgnDb;
 DgnSubCategoryId        m_prevSubCategory;
 Transform               m_prevGeomToWorld;
 ElemDisplayParams       m_elParams;
 ElementGeomIO::Writer   m_writer;
 
-ElementGeometryBuilder (DgnModelR model, DgnCategoryId categoryId, Placement3dCR placement);
-ElementGeometryBuilder (DgnModelR model, DgnCategoryId categoryId, Placement2dCR placement);
-ElementGeometryBuilder (DgnModelR model, DgnCategoryId categoryId);
+ElementGeometryBuilder (DgnDbR dgnDb, DgnCategoryId categoryId, Placement3dCR placement);
+ElementGeometryBuilder (DgnDbR dgnDb, DgnCategoryId categoryId, Placement2dCR placement);
+ElementGeometryBuilder (DgnDbR dgnDb, DgnCategoryId categoryId, bool is3d);
 
 bool ConvertToLocal (ElementGeometryR);
 bool AppendWorld (ElementGeometryR);
-bool AppendLocal (ElementGeometryCR, TransformCP geomToElement);
+bool AppendLocal (ElementGeometryCR);
 void OnNewGeom (DRange3dCR localRange, TransformCP geomToElement);
 
 public:
 
+DGNPLATFORM_EXPORT BentleyStatus SetGeomStream (DgnGeomPartR);
 DGNPLATFORM_EXPORT BentleyStatus SetGeomStreamAndPlacement (GeometricElementR);
 
 DGNPLATFORM_EXPORT bool Append (DgnSubCategoryId);
@@ -391,6 +398,8 @@ DGNPLATFORM_EXPORT bool Append (MSBsplineSurfaceCR); //! 3d only
 DGNPLATFORM_EXPORT bool Append (PolyfaceQueryCR); //! 3d only
 DGNPLATFORM_EXPORT bool Append (ISolidKernelEntityCR); //! 3d only
 DGNPLATFORM_EXPORT bool Append (TextStringCR);
+
+DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr CreateGeomPart (DgnDbR db, bool is3d);
 
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint3dCR origin, YawPitchRollAngles const& angles = YawPitchRollAngles());
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnModelR model, DgnCategoryId categoryId, DPoint2dCR origin, AngleInDegrees const& angle = AngleInDegrees());

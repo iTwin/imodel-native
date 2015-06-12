@@ -1029,7 +1029,6 @@ private:
 public:
     DgnGeomPartId GetHighestGeomPartId();
     DgnGeomPartId MakeNewGeomPartId();
-    static BentleyStatus Draw(DgnGeomPartId, ViewContextR, DgnCategoryId, ViewFlagsCR);
 
 public:
     //! Load a geometry part by ID.
@@ -1045,27 +1044,10 @@ public:
     //! @note This method will update the DgnGeomPartId in geomPart.
     DGNPLATFORM_EXPORT BentleyStatus InsertGeomPart(DgnGeomPartR geomPart);
 
-    //! Insert a geometry part into the DgnDb.
-    //! @param[in] geometryBlob binary geometry data
-    //! @param[in] geometryBlobSize size of geometryBlob in bytes
-    //! @param[in] code the optional code for the specified geometry part
-    //! @note This method is intended for importers.  Most applications with insert a DgnGeomPart.
-    //! @private
-    DGNPLATFORM_EXPORT DgnGeomPartId InsertGeomPart(const void* geometryBlob, int geometryBlobSize, Utf8CP code=nullptr);
-
     //! Update an existing geometry part in the DgnDb.
     //! @param[in] geomPart geometry part. Its ID identifies the existing geom part. Its geometry is written to the DgnDb.
     //! @return non-zero error status if the geom part does not exist or if its ID is invalid
     DGNPLATFORM_EXPORT BentleyStatus UpdateGeomPart(DgnGeomPartR geomPart);
-
-    //! Update an existing geometry part in the DgnDb.
-    //! @param[in] geomPartId ID of the part to update
-    //! @param[in] geometryBlob binary geometry data
-    //! @param[in] geometryBlobSize size of geometryBlob in bytes
-    //! @param[in] code the optional code for the specified geometry part
-    //! @return non-zero error status if the geom part does not exist or if its ID is invalid
-    //! @private
-    DGNPLATFORM_EXPORT BentleyStatus UpdateGeomPart(DgnGeomPartId geomPartId, const void* geometryBlob, int geometryBlobSize, Utf8CP code=nullptr);
 
     //! Insert the ElementGeomUsesParts relationship between an element and the geom parts it uses.
     //! @note Most apps will not need to call this directly.

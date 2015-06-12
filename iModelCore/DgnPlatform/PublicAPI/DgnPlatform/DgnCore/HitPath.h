@@ -83,8 +83,6 @@ enum class HitDetailSource
 
 ENUM_IS_FLAGS(HitDetailSource)
 
-typedef bpair<int32_t, int32_t> T_GeomPrimitiveId;
-
 //=======================================================================================
 // @bsiclass                                                      Keith.Bentley   10/04
 //=======================================================================================
@@ -126,9 +124,9 @@ public:
     void                    SetZValue (double value)                {m_viewZ = value;}
 
     //! @private
-    T_GeomPrimitiveId const& GetGeometryPrimitiveId() {return m_geomId;}
+    T_GeomPrimitiveId GetGeomPrimitiveId() const {return m_geomId;}
     //! @private
-    void SetGeometryPrimitiveId(T_GeomPrimitiveId& geomId) {m_geomId = geomId;}
+    void SetGeomPrimitiveId(T_GeomPrimitiveId geomId) {m_geomId = geomId;}
 
     DGNPLATFORM_EXPORT bool     FillGPA (GPArrayR, bool singleSegment = true) const;
     DGNPLATFORM_EXPORT bool     GetArc (DEllipse3dR) const;

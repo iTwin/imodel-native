@@ -66,7 +66,7 @@ ViewContext::ViewContext()
     m_isCameraOn                = false;
     m_frustumTransClipDepth     = 0;
     m_edgeMaskState             = EdgeMaskState_None;
-    m_currElemTopo              = NULL;
+    m_currGeomPrimitiveId       = make_bpair(-1, -1);
 
     m_rasterDisplayParams.SetFlags(0);
 
