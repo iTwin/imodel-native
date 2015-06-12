@@ -137,9 +137,9 @@ protected:
 
     struct Flags
         {
-        uint32_t m_lockHeld:1;
+        uint32_t m_persistent:1;
         uint32_t m_editable:1;
-        uint32_t m_inPool:1;
+        uint32_t m_lockHeld:1;
         uint32_t m_inSelectionSet:1;
         uint32_t m_hilited:3;
         uint32_t m_undisplayed:1;
@@ -160,7 +160,7 @@ protected:
     mutable Flags   m_flags;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
-    void SetInPool(bool val) const {m_flags.m_inPool = val;} //!< @private
+    void SetPersistent(bool val) const {m_flags.m_persistent = val;} //!< @private
 
     DGNPLATFORM_EXPORT virtual ~DgnElement();
 
@@ -240,8 +240,9 @@ protected:
 
     //! Virtual assignment method. If your subclass has member variables, it @b must override this method and copy those values from @a source.
     //! @param[in] source The element from which to copy
-    //! @note If you override this method, you @b must call T_Super::_CopyFrom, forwarding its status.
-    //! @note Implementers should be aware that this element starts in a valid state. Be careful to free existing state before overwriting it. Also note that
+    //! @note If you override this method, you @b must call T_Super::_CopyFrom, forwarding its status (that is, only return DGNMODEL_STATUS_Success if both your
+    //! implementation and your superclass succeed.)
+    //! @note Implementers should be aware that your element starts in a valid state. Be careful to free existing state before overwriting it. Also note that
     //! @a source is not necessarily the same type as this DgnElement. See notes at CopyFrom.
     DGNPLATFORM_EXPORT virtual DgnModelStatus _CopyFrom(DgnElementCR source);
 
@@ -317,7 +318,7 @@ public:
 
     //! Determine whether this is a copy of the "persistent state" (i.e. an exact copy of what is saved in the DgnDb) of a DgnElement.
     //! @note If this flag is true, this element must be readonly. To modify an element, call CopyForEdit.
-    bool IsPersistent() const {return m_flags.m_inPool;}
+    bool IsPersistent() const {return m_flags.m_persistent;}
 
     //! Test if the element is currently in the selection set.
     bool IsInSelectionSet() const {return m_flags.m_inSelectionSet;}
@@ -446,6 +447,13 @@ public:
 
     //! Set the label (user-friendly name) of this DgnElement.
     void SetLabel(Utf8CP label) {m_label.AssignOrClear(label);}
+
+    //! Get the time this element was last modified.
+    //! @note the time is in UTC Julian days.
+    double GetLastModifiedTime() const {return m_lastModTime;}
+
+    //! Get the last modified time as a DateTime timestamp
+    DateTime GetTimeStamp() const {DateTime timestamp; DateTime::FromJulianDay(timestamp, m_lastModTime, DateTime::Info(DateTime::Kind::Utc)); return timestamp;}
 
     //! Get the display label (for use in the GUI) of this DgnElement.
     //! @note The default implementation returns the label if it is set or the code if the label is not set.

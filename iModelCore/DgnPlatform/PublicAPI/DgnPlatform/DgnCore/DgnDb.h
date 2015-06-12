@@ -119,7 +119,6 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
         DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _DoUpgrade(DgnDbR, DgnVersion& from) const;
     };
 
-
 private:
     void Destroy();
 
@@ -127,21 +126,21 @@ protected:
     friend struct Txns;
     friend struct DgnElement;
 
+    Utf8String      m_fileName;
+    DgnElements     m_elements;
+    DgnModels       m_models;
     DgnVersion      m_schemaVersion;
     DgnDomains      m_domains;
     DgnFonts        m_fonts;
     DgnColors       m_colors;
     DgnCategories   m_categories;
     DgnStyles       m_styles;
-    DgnModels       m_models;
-    DgnElements     m_elements;
     DgnUnits        m_units;
     DgnViews        m_views;
     DgnGeomParts    m_geomParts;
     DgnMaterials    m_materials;
     DgnLinks        m_links;
-    BeFileName      m_fileName;
-    TxnManagerPtr   m_txns;
+    TxnManagerPtr   m_txnManager;
 
     BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
 
@@ -161,11 +160,9 @@ public:
 
     BeSQLite::DbResult SaveDgnDbSchemaVersion(DgnVersion version=DgnVersion(DGNDB_CURRENT_VERSION_Major,DGNDB_CURRENT_VERSION_Minor,DGNDB_CURRENT_VERSION_Sub1,DGNDB_CURRENT_VERSION_Sub2));
 
-public:
-
-    //! Get the file name for this DgnDb.
+    //! Get ae BeFileName for this DgnDb.
     //! @note The superclass method BeSQLite::Db::GetDbFileName may also be used to get the same value, as a Utf8CP.
-    DGNPLATFORM_EXPORT BeFileNameCR GetFileName() const;
+    BeFileName GetFileName() const {return BeFileName(m_fileName);}
 
     //! Get the schema version of an opened DgnDb.
     DGNPLATFORM_EXPORT DgnVersion GetSchemaVersion();
@@ -191,13 +188,6 @@ public:
     //! to it is released. There is no way to hold a pointer to a "closed project".
     DGNPLATFORM_EXPORT static DgnDbPtr CreateDgnDb(BeSQLite::DbResult* status, BeFileNameCR filename, CreateDgnDbParams const& params);
 
-    //! Get the next available (unused) value for a BeServerIssuedId for the supplied Table/Column.
-    //! @param [in,out] value
-    //! @param [in] tableName
-    //! @param [in] columnName
-    //! @param [in] minimumId
-    DGNPLATFORM_EXPORT BeSQLite::DbResult GetNextServerIssuedId(BeServerIssuedId& value, Utf8CP tableName, Utf8CP columnName, uint32_t minimumId=1);
-
     DGNPLATFORM_EXPORT DgnModels& Models() const;                   //!< Information about models for this DgnDb
     DGNPLATFORM_EXPORT DgnElements& Elements() const;               //!< Information about graphic elements for this DgnDb
     DGNPLATFORM_EXPORT DgnViews& Views() const;                     //!< Information about views for this DgnDb
@@ -222,18 +212,9 @@ public:
     //! @remarks This is only to be used by DgnPlatform internally to avoid misuse and unexpected caching behavior.
     //! Therefore it is not inlined.
     DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetPreparedECSqlStatement(Utf8CP ecsql) const;
-
-    //! Create a "PatchSet" by comparing db with a different version if itself. 
-    //! @note This function will return an error if the two files have different DbGuids. 'baseFile' must identify a version of Db.
-    //! @param[out] cset The generated ChangeSet
-    //! @param[out] errMsg  If not null, an explanatory error message is returned in case of failure
-    //! @param[in] baseFile A different version of the same db
-    //! @return BE_SQLITE_OK if patchset was created; else a non-zero error status if the diff failed. Returns BE_SQLITE_MISMATCH if the two Dbs have different GUIDs.
-    DGNPLATFORM_EXPORT BeSQLite::DbResult CreatePatchSetFromDiff(BeSQLite::ChangeSet& cset, Utf8StringP errMsg, BeFileNameCR baseFile);
-
 };
 
-#if !defined(DOCUMENTATION_GENERATOR)
+#if !defined (DOCUMENTATION_GENERATOR)
 inline BeSQLite::DbResult DgnViews::QueryProperty(void* value, uint32_t size, DgnViewId viewId, DgnViewPropertySpecCR spec, uint64_t id)const {return m_dgndb.QueryProperty(value, size, spec, viewId.GetValue(), id);}
 inline BeSQLite::DbResult DgnViews::QueryProperty(Utf8StringR value, DgnViewId viewId, DgnViewPropertySpecCR spec, uint64_t id) const{return m_dgndb.QueryProperty(value, spec, viewId.GetValue(), id);}
 inline BeSQLite::DbResult DgnViews::QueryPropertySize(uint32_t& size, DgnViewId viewId, DgnViewPropertySpecCR spec, uint64_t id) const{return m_dgndb.QueryPropertySize(size, spec, viewId.GetValue(), id);}

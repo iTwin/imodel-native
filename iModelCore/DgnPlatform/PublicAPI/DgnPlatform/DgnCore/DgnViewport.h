@@ -167,7 +167,7 @@ struct RtreeViewFilter : BeSQLite::RTreeAcceptFunction::Tester
     bool AllPointsClippedByOnePlane(ConvexClipPlaneSetCR cps, size_t nPoints, DPoint3dCP points) const;
     void SetClipVector(ClipVectorR clip) {m_clips = &clip;}
     bool SkewTest(BeSQLite::RTree3dValCP);
-    DGNPLATFORM_EXPORT RtreeViewFilter(DgnViewportCR, BeSQLiteDbR db, double minimumSizeScreenPixels, DgnElementIdSet const* exclude);
+    DGNPLATFORM_EXPORT RtreeViewFilter(DgnViewportCR, BeSQLite::DbR db, double minimumSizeScreenPixels, DgnElementIdSet const* exclude);
     };
 
 //=======================================================================================
@@ -241,7 +241,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDbRTree3dViewFilter : RtreeViewFilter
     double MaxOcclusionScore();
 
 public:
-    DGNPLATFORM_EXPORT DgnDbRTree3dViewFilter(DgnViewportCR, ICheckStopP, BeSQLiteDbR db, uint32_t hitLimit, double minimumSizeScreenPixels, DgnElementIdSet const* alwaysDraw, DgnElementIdSet const* neverDraw);
+    DGNPLATFORM_EXPORT DgnDbRTree3dViewFilter(DgnViewportCR, ICheckStopP, BeSQLite::DbR db, uint32_t hitLimit, double minimumSizeScreenPixels, DgnElementIdSet const* alwaysDraw, DgnElementIdSet const* neverDraw);
     void SetChceckStop(ICheckStopP checkStop) {m_checkStop = checkStop;}
     void InitializeSecondaryTest(DRange3dCR volume, uint32_t hitLimit);
     void GetStats(uint32_t& nAcceptCalls, uint32_t&nScores) { nAcceptCalls = m_nCalls; nScores = m_nScores; }
@@ -259,7 +259,7 @@ struct DgnDbRTreeFitFilter : BeSQLite::RTreeAcceptFunction::Tester
     virtual void _StepRange(BeSQLite::DbFunction::Context&, int nArgs, BeSQLite::DbValue* args) override {m_fitRange.Extend(m_lastRange);}
 
 public:
-    DgnDbRTreeFitFilter(BeSQLiteDbR db) : Tester(db) {m_fitRange = DRange3d::NullRange();}
+    DgnDbRTreeFitFilter(BeSQLite::DbR db) : Tester(db) {m_fitRange = DRange3d::NullRange();}
     DRange3dCR GetRange() const {return m_fitRange;}
     };
 

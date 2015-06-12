@@ -148,6 +148,9 @@
     <ClCompile Include="NonPublished\ECExpressionTests.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
+    <ClCompile Include="NonPublished\ElementProperties.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\DgnHandlersTests.h">

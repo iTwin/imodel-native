@@ -906,7 +906,7 @@ bool DgnRangeTree::LeafNode::DropElementFromLeaf(Entry const& entry, DgnRangeTre
             continue;
 
         if (curr+1 < m_endChild)
-            memmove(curr, curr+1, (m_endChild - curr) * sizeof(GeometricElementCP));
+            memmove(curr, curr+1, (m_endChild - curr) * sizeof(Entry));
 
         --m_endChild;
 
@@ -1066,10 +1066,6 @@ void DgnRangeTree::AddElement(Entry const& entry)
     if (nullptr == m_root)
         m_root = AllocateLeafNode();
     
-#ifdef WIP_ELEMENT_UPDATE
-    BeAssert(!((DRTInternalNodeP)m_root)->DropElement(entry, *this));
-#endif
-
     DRTLeafNodeP leaf = m_root->ToLeaf();
     if (leaf)
         leaf->AddElementToLeaf(entry, *this);
@@ -2024,7 +2020,7 @@ void DgnDbRTree3dViewFilter::InitializeSecondaryTest(DRange3dCR volume, uint32_t
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-RtreeViewFilter::RtreeViewFilter(DgnViewportCR viewport, BeSQLiteDbR db, double minimumSizePixels, DgnElementIdSet const* exclude)
+RtreeViewFilter::RtreeViewFilter(DgnViewportCR viewport, DbR db, double minimumSizePixels, DgnElementIdSet const* exclude)
         : Tester(db), m_minimumSizePixels(minimumSizePixels), m_exclude(exclude), m_clips(nullptr)
     {
     m_nCalls = m_nScores = m_nSkipped = 0;
@@ -2051,7 +2047,7 @@ RtreeViewFilter::RtreeViewFilter(DgnViewportCR viewport, BeSQLiteDbR db, double 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbRTree3dViewFilter::DgnDbRTree3dViewFilter(DgnViewportCR viewport, ICheckStopP checkStop, BeSQLiteDbR db, uint32_t hitLimit, double minimumSizePixels,
+DgnDbRTree3dViewFilter::DgnDbRTree3dViewFilter(DgnViewportCR viewport, ICheckStopP checkStop, DbR db, uint32_t hitLimit, double minimumSizePixels,
                             DgnElementIdSet const* alwaysDraw, DgnElementIdSet const* exclude)
     : RtreeViewFilter(viewport, db, minimumSizePixels, exclude), m_checkStop(checkStop), m_useSecondary(false), m_alwaysDraw(nullptr)
     {

@@ -19,7 +19,6 @@ template<typename T> static bool isEnumFlagSet(T testBit, T options) { return 0 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationTextBlockPtr AnnotationTextBlock::Create(DgnDbR project) { return new AnnotationTextBlock(project); }
 AnnotationTextBlock::AnnotationTextBlock(DgnDbR project) :
     T_Super()
     {
@@ -66,9 +65,6 @@ AnnotationTextBlockPtr AnnotationTextBlock::Create(DgnDbR project, DgnStyleId st
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationTextBlockPtr AnnotationTextBlock::Clone() const { return new AnnotationTextBlock(*this); }
-AnnotationTextBlock::AnnotationTextBlock(AnnotationTextBlockCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
-AnnotationTextBlockR AnnotationTextBlock::operator=(AnnotationTextBlockCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
 void AnnotationTextBlock::CopyFrom(AnnotationTextBlockCR rhs)
     {
     m_dgndb = rhs.m_dgndb;
@@ -95,29 +91,6 @@ void AnnotationTextBlock::Reset()
     m_styleOverrides.ClearAllProperties();
     m_paragraphs.clear();
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     05/2014
-//---------------------------------------------------------------------------------------
-DgnDbR AnnotationTextBlock::GetDgnProjectR() const { return *m_dgndb; }
-DgnStyleId AnnotationTextBlock::GetStyleId() const { return m_styleID; }
-AnnotationTextStylePtr AnnotationTextBlock::CreateEffectiveStyle() const { return m_dgndb->Styles().AnnotationTextStyles().QueryById(m_styleID)->CreateEffectiveStyle(m_styleOverrides); }
-AnnotationTextStylePropertyBagCR AnnotationTextBlock::GetStyleOverrides() const { return m_styleOverrides; }
-AnnotationTextStylePropertyBagR AnnotationTextBlock::GetStyleOverridesR() { return m_styleOverrides; }
-AnnotationParagraphCollectionCR AnnotationTextBlock::GetParagraphs() const { return m_paragraphs; }
-AnnotationParagraphCollectionR AnnotationTextBlock::GetParagraphsR() { return m_paragraphs; }
-void AnnotationTextBlock::AppendParagraph(AnnotationParagraphR par) { m_paragraphs.push_back(&par); }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     05/2014
-//---------------------------------------------------------------------------------------
-static const double DEFAULT_DOCUMENTWIDTH_VALUE = 0.0;
-double AnnotationTextBlock::GetDocumentWidth() const { return m_documentWidth; }
-void AnnotationTextBlock::SetDocumentWidth(double value) { m_documentWidth = value; }
-
-static const int64_t DEFAULT_JUSTIFICATION_VALUE = (int64_t)AnnotationTextBlock::HorizontalJustification::Left;
-AnnotationTextBlock::HorizontalJustification AnnotationTextBlock::GetJustification() const { return m_justification; }
-void AnnotationTextBlock::SetJustification(HorizontalJustification value) { m_justification = value; }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
@@ -176,19 +149,13 @@ void AnnotationTextBlock::AppendRun(AnnotationRunBaseR run)
     m_paragraphs.back()->GetRunsR().push_back(&run);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     07/2014
-//---------------------------------------------------------------------------------------
-bool AnnotationTextBlock::IsEmpty() const
-    {
-    return ((0 == m_paragraphs.size()) || (0 == m_paragraphs[0]->GetRuns().size()));
-    }
-
 //*****************************************************************************************************************************************************************************************************
 //*****************************************************************************************************************************************************************************************************
 
 static const uint8_t CURRENT_MAJOR_VERSION = 1;
 static const uint8_t CURRENT_MINOR_VERSION = 0;
+static const double DEFAULT_DOCUMENTWIDTH_VALUE = 0.0;
+static const int64_t DEFAULT_JUSTIFICATION_VALUE = (int64_t)AnnotationTextBlock::HorizontalJustification::Left;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
@@ -475,7 +442,7 @@ BentleyStatus AnnotationTextBlockPersistence::DecodeFromFlatBuf(AnnotationTextBl
         {
         for (auto const& fbParagraph : *fbDocument.paragraphs())
             {
-            AnnotationParagraphPtr paragraph = AnnotationParagraph::Create(document.GetDgnProjectR());
+            AnnotationParagraphPtr paragraph = AnnotationParagraph::Create(document.GetDbR());
             PRECONDITION(fbParagraph.has_styleId(), ERROR);
             paragraph->SetStyleId(DgnStyleId(fbParagraph.styleId()), SetAnnotationTextStyleOptions::Direct);
 
@@ -489,7 +456,7 @@ BentleyStatus AnnotationTextBlockPersistence::DecodeFromFlatBuf(AnnotationTextBl
                         {
                         case FB::AnnotationTextBlockRunType_Text:
                             {
-                            AnnotationTextRunPtr textRun = AnnotationTextRun::Create(document.GetDgnProjectR());
+                            AnnotationTextRunPtr textRun = AnnotationTextRun::Create(document.GetDbR());
                             run = textRun;
                             
                             PRECONDITION(fbRun.has_text_content(), ERROR);
@@ -510,7 +477,7 @@ BentleyStatus AnnotationTextBlockPersistence::DecodeFromFlatBuf(AnnotationTextBl
 
                         case FB::AnnotationTextBlockRunType_Fraction:
                             {
-                            AnnotationFractionRunPtr fractionRun = AnnotationFractionRun::Create(document.GetDgnProjectR());
+                            AnnotationFractionRunPtr fractionRun = AnnotationFractionRun::Create(document.GetDbR());
                             run = fractionRun;
                             
                             PRECONDITION(fbRun.has_fraction_denominatorContent(), ERROR);
@@ -524,7 +491,7 @@ BentleyStatus AnnotationTextBlockPersistence::DecodeFromFlatBuf(AnnotationTextBl
 
                         case FB::AnnotationTextBlockRunType_LineBreak:
                             {
-                            AnnotationLineBreakRunPtr lineBreakRun = AnnotationLineBreakRun::Create(document.GetDgnProjectR());
+                            AnnotationLineBreakRunPtr lineBreakRun = AnnotationLineBreakRun::Create(document.GetDbR());
                             run = lineBreakRun;
 
                             break;

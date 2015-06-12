@@ -32,7 +32,7 @@ DgnDomain::TableHandler* DgnDomains::FindTableHandler(Utf8CP tableName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDomainCP DgnDomains::FindDomain (Utf8CP name) const
+DgnDomainCP DgnDomains::FindDomain(Utf8CP name) const
     {
     for (DgnDomainCP domain : m_domains)
         {
@@ -69,8 +69,7 @@ DbResult DgnDomain::LoadHandlers(DgnDbR dgndb) const
     for (Handler* iter : m_handlers)
         myHandlers.Insert(iter->GetClassName(), iter);
 
-    Statement stmt;
-    stmt.Prepare(dgndb, "SELECT Name,ClassId FROM " DGN_TABLE_Handler " WHERE Domain=?");
+    Statement stmt(dgndb, "SELECT Name,ClassId FROM " DGN_TABLE_Handler " WHERE Domain=?");
     stmt.BindText(1, GetDomainName(), Statement::MakeCopy::No);
 
     // make sure we have all of the handlers for this domain registered.
@@ -119,8 +118,7 @@ DbResult DgnDomains::SyncWithSchemas()
     for (DgnDomain* iter : hostDomains)
         registeredDomains.Insert(iter->GetDomainName(), iter);
 
-    Statement stmt;
-    stmt.Prepare (m_dgndb, "SELECT Name,Version FROM " DGN_TABLE_Domain);
+    Statement stmt(m_dgndb, "SELECT Name,Version FROM " DGN_TABLE_Domain);
     while (BE_SQLITE_ROW == stmt.Step())
         {
         Utf8String domainName(stmt.GetValueText(0));
@@ -275,8 +273,7 @@ BentleyStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDomains::InsertDomain(DgnDomainCR domain)
     {
-    Statement stmt;
-    stmt.Prepare(m_dgndb, SqlPrintfString ("INSERT INTO " DGN_TABLE_Domain " (Name,Descr,Version) VALUES(?,?,?)"));
+    Statement stmt(m_dgndb, SqlPrintfString("INSERT INTO " DGN_TABLE_Domain " (Name,Descr,Version) VALUES(?,?,?)"));
     stmt.BindText(1, domain.GetDomainName(), Statement::MakeCopy::No);
     stmt.BindText(2, domain.GetDomainDescription(), Statement::MakeCopy::No);
     stmt.BindInt(3, domain.GetVersion());
@@ -370,8 +367,7 @@ DbResult DgnDomains::InsertHandler(DgnDomain::Handler& handler)
         return BE_SQLITE_ERROR;
         }
 
-    Statement stmt;
-    stmt.Prepare(m_dgndb, "INSERT INTO " DGN_TABLE_Handler " (Domain,Name,ClassId) VALUES(?,?,?)");
+    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE_Handler " (Domain,Name,ClassId) VALUES(?,?,?)");
     stmt.BindText(1, handler.GetDomain().GetDomainName(), Statement::MakeCopy::No);
     stmt.BindText(2, handler.GetClassName(), Statement::MakeCopy::No);
     stmt.BindId(3, id);
@@ -397,9 +393,9 @@ DgnDomain::Handler::ExtensionEntry* DgnDomain::Handler::ExtensionEntry::Find(Ext
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnDomain::Handler::AddExtension (ElementHandler::Extension::Token& id, ElementHandler::Extension& extension)
+BentleyStatus DgnDomain::Handler::AddExtension(ElementHandler::Extension::Token& id, ElementHandler::Extension& extension)
     {
-    ExtensionEntry* prev = ExtensionEntry::Find (m_extensions, id);
+    ExtensionEntry* prev = ExtensionEntry::Find(m_extensions, id);
     if (NULL != prev)
         return  ERROR;
 
@@ -410,7 +406,7 @@ BentleyStatus DgnDomain::Handler::AddExtension (ElementHandler::Extension::Token
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnDomain::Handler::DropExtension (ElementHandler::Extension::Token& id)
+BentleyStatus DgnDomain::Handler::DropExtension(ElementHandler::Extension::Token& id)
     {
     for (ExtensionEntry* prev=0, *entry=m_extensions; NULL != entry; prev=entry, entry=entry->m_next)
         {
@@ -432,9 +428,9 @@ BentleyStatus DgnDomain::Handler::DropExtension (ElementHandler::Extension::Toke
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementHandler::Extension* DgnDomain::Handler::FindExtension (Extension::Token& id)
+ElementHandler::Extension* DgnDomain::Handler::FindExtension(Extension::Token& id)
     {
-    ExtensionEntry* found = ExtensionEntry::Find (m_extensions, id);
+    ExtensionEntry* found = ExtensionEntry::Find(m_extensions, id);
     if (NULL != found)
         return  &found->m_extension;
 
@@ -447,7 +443,7 @@ ElementHandler::Extension* DgnDomain::Handler::FindExtension (Extension::Token& 
 DgnDomain::Handler* DgnDomain::Handler::z_CreateInstance()
     {
     DgnDomain::Handler* instance= new DgnDomain::Handler();
-    instance->SetSuperClass ((DgnDomain::Handler*) nullptr);
+    instance->SetSuperClass((DgnDomain::Handler*) nullptr);
     return instance;
     }
 
