@@ -140,7 +140,7 @@ bool    GPArray::GetClosestPoint (DPoint3dP closePoint, GPArrayParamP closeParam
         return false;
 
     if (NULL != closePoint)
-        proximityData.closePoint.getXYZ (closePoint);
+        proximityData.closePoint.GetXYZ (*closePoint);
 
     if (NULL != closeParam)
         {
@@ -360,9 +360,9 @@ BentleyStatus   GPArray::GetConicOrEllipse (int* index, DConic4dP conic, DEllips
 
     if (bsiDConic4d_getCommonAxes (conic, &axes, &basis, &curveType) && curveType == 1)
         {
-        axes.center.getXYZ (&ellipse->center);
-        axes.vector0.getXYZ (&ellipse->vector0);
-        axes.vector90.getXYZ (&ellipse->vector90);
+        axes.center.GetXYZ (ellipse->center);
+        axes.vector0.GetXYZ (ellipse->vector0);
+        axes.vector90.GetXYZ (ellipse->vector90);
         ellipse->start = axes.start;
         ellipse->sweep = axes.sweep;
         isEllipse = true;
@@ -400,9 +400,9 @@ BentleyStatus   GPArray::GetEllipse (int* index, DEllipse3dP ellipse, bool flatt
 
     if (bsiDConic4d_getCommonAxes (&conic, &axes, &basis, &curveType) && curveType == 1)
         {
-        axes.center.getXYZ (&ellipse->center);
-        axes.vector0.getXYZ (&ellipse->vector0);
-        axes.vector90.getXYZ (&ellipse->vector90);
+        axes.center.GetXYZ (ellipse->center);
+        axes.vector0.GetXYZ (ellipse->vector0);
+        axes.vector90.GetXYZ (ellipse->vector90);
         ellipse->start = axes.start;
         ellipse->sweep = axes.sweep;
 
@@ -568,9 +568,9 @@ double &dMax
     double lastKnot = knots[lastInteriorKnotIndex + 1];
     size_t lastPoleIndex = poles.size() - 1;
     DPoint3d localOrigin;
-    poles[0].getProjectedXYZ (&localOrigin);
+    poles[0].GetProjectedXYZ (localOrigin);
     if (s_zeroOrigin)
-        localOrigin.zero ();
+        localOrigin.Zero ();
     for (int i = 0; i < order; i++)
         {
         double interiorKnot = knots[lastInteriorKnotIndex - i];

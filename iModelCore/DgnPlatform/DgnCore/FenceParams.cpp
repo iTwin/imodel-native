@@ -636,7 +636,7 @@ virtual void    _DrawQvElem (QvElem* qvElem, int subElemIndex) override
         DPoint4d    pickPtView;
 
         m_context->FrustumToView (&pickPtView, &fencePt, 1);
-        pickPtView.getProjectedXYZ (&pickPt);
+        pickPtView.GetProjectedXYZ (pickPt);
 
         bool        gotHit = false;
         DPoint3d    hitPt;

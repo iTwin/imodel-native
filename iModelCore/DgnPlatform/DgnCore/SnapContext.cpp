@@ -322,8 +322,8 @@ static double   distSquaredXY (DPoint4dCR pVec1, DPoint4dCR pVec2)
     {
     DPoint3d    v1, v2;
 
-    pVec1.getProjectedXYZ (&v1);
-    pVec2.getProjectedXYZ (&v2);
+    pVec1.GetProjectedXYZ (v1);
+    pVec2.GetProjectedXYZ (v2);
 
     double dx = v1.x - v2.x;
     double dy = v1.y - v2.y;
@@ -343,7 +343,7 @@ static double   getDistanceFromSnap (SnapDetailCR hit, ViewContextP context)
     pts[1] = hit.GetSnapPoint();
 
     // NOTE: Use viewport to get active-to-view...
-    context->GetViewport()->GetWorldToViewMap()->M0.multiply (scrPts, pts, NULL, 2);
+    context->GetViewport()->GetWorldToViewMap()->M0.Multiply (scrPts, pts, NULL, 2);
 
     return sqrt (distSquaredXY (scrPts[0], scrPts[1]));
     }
@@ -356,9 +356,9 @@ void            SnapContext::SetSnapPoint (DPoint3dCR snapPt, bool forceHot)
     {
     DPoint4d    viewPt;
 
-    m_viewport->GetWorldToViewMap()->M0.multiply (&viewPt, &snapPt, NULL, 1);
+    m_viewport->GetWorldToViewMap()->M0.Multiply (&viewPt, &snapPt, NULL, 1);
 
-    viewPt.normalizeWeightInPlace();
+    viewPt.NormalizeWeightInPlace ();
 
     Point2d     screenPt;
     screenPt.x = (long) viewPt.x;
