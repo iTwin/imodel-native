@@ -1634,7 +1634,7 @@ void InitForDgnModel()
         DPoint4d viewDirection = {0.0, 0.0, -1.0, 0.0};
 
         DMatrix4d  viewToLocal = m_viewContext.GetViewToLocal();
-        viewToLocal.multiply(&viewDirection, &viewDirection, 1);
+        viewToLocal.Multiply (&viewDirection, &viewDirection, 1);
         m_orthogonalProjectionIndex = ((viewDirection.x < 0.0) ? 1  : 0) +
                                       ((viewDirection.x > 0.0) ? 2  : 0) +
                                       ((viewDirection.y < 0.0) ? 4  : 0) +

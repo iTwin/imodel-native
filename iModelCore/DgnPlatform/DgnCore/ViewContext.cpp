@@ -125,7 +125,7 @@ BentleyStatus ViewContext::GetCurrLocalToWorldTrans(DMatrix4dR localToWorld) con
 void ViewContext::ViewToNpc(DPoint3dP npcVec, DPoint3dCP screenVec, int nPts) const
     {
     ViewToFrustum(npcVec, screenVec, nPts);
-    m_frustumToNpc.M0.multiplyAndRenormalize(npcVec, npcVec, nPts);
+    m_frustumToNpc.M0.MultiplyAndRenormalize(npcVec, npcVec, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -142,7 +142,7 @@ void ViewContext::NpcToView(DPoint3dP viewVec, DPoint3dCP npcVec, int nPts) cons
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::NpcToFrustum(DPoint3dP frustumPts, DPoint3dCP npcPts, int nPts) const
     {
-    m_frustumToNpc.M1.multiplyAndRenormalize(frustumPts, npcPts, nPts);
+    m_frustumToNpc.M1.MultiplyAndRenormalize(frustumPts, npcPts, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -205,7 +205,7 @@ Frustum ViewContext::GetFrustum()
             frustum = m_viewport->GetFrustum(DgnCoordSystem::Npc, true);
         }
 
-    m_frustumToNpc.M1.multiplyAndRenormalize(frustPts, frustPts, NPC_CORNER_COUNT);
+    m_frustumToNpc.M1.MultiplyAndRenormalize(frustPts, frustPts, NPC_CORNER_COUNT);
     DgnViewport::FixFrustumOrder(frustum);
     return frustum;
     }
@@ -430,7 +430,7 @@ void ViewContext::_Detach()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::LocalToView(DPoint4dP viewPts, DPoint3dCP localPts, int nPts) const
     {
-    GetLocalToView().multiply (viewPts, localPts, NULL, nPts);
+    GetLocalToView().Multiply (viewPts, localPts, NULL, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -441,9 +441,9 @@ void ViewContext::LocalToView (DPoint3dP viewPts, DPoint3dCP localPts, int nPts)
     DMatrix4dCR  localToView = GetLocalToView();
 
     if (m_isCameraOn)
-        localToView.multiplyAndRenormalize (viewPts, localPts, nPts);
+        localToView.MultiplyAndRenormalize(viewPts, localPts, nPts);
     else
-        localToView.multiplyAffine (viewPts, localPts, nPts);
+        localToView.MultiplyAffine (viewPts, localPts, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -459,7 +459,7 @@ void ViewContext::ViewToLocal (DPoint3dP localPts, DPoint4dCP viewPts, int nPts)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::ViewToLocal (DPoint3dP localPts, DPoint3dCP viewPts, int nPts) const
     {
-    GetViewToLocal().multiplyAndRenormalize (localPts, viewPts, nPts);
+    GetViewToLocal().MultiplyAndRenormalize(localPts, viewPts, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -467,7 +467,7 @@ void ViewContext::ViewToLocal (DPoint3dP localPts, DPoint3dCP viewPts, int nPts)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::FrustumToView (DPoint4dP viewPts, DPoint3dCP frustumPts, int nPts) const
     {
-    m_frustumToView.M0.multiply (viewPts, frustumPts, NULL, nPts);
+    m_frustumToView.M0.Multiply (viewPts, frustumPts, NULL, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -475,7 +475,7 @@ void ViewContext::FrustumToView (DPoint4dP viewPts, DPoint3dCP frustumPts, int n
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::FrustumToView (DPoint3dP viewPts, DPoint3dCP frustumPts, int nPts) const
     {
-    m_frustumToView.M0.multiplyAndRenormalize (viewPts, frustumPts, nPts);
+    m_frustumToView.M0.MultiplyAndRenormalize(viewPts, frustumPts, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -510,7 +510,7 @@ void ViewContext::ViewToFrustum (DPoint3dP frustumPts, DPoint4dCP viewPts, int n
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::ViewToFrustum (DPoint3dP frustumPts, DPoint3dCP viewPts, int nPts) const
     {
-    m_frustumToView.M1.multiplyAndRenormalize (frustumPts, viewPts, nPts);
+    m_frustumToView.M1.MultiplyAndRenormalize(frustumPts, viewPts, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -703,7 +703,7 @@ uint32_t        ViewContext::GetLocalTransformKey() const
     static      DPoint3d  s_ramdomLocalToFrustTransformRefPoint = { 1234567.0, 7654321.0, 233425.0};
     DPoint3d    transformedPoint;
 
-    localToFrustum.multiply (&transformedPoint, &s_ramdomLocalToFrustTransformRefPoint, 1);
+    localToFrustum.Multiply (&transformedPoint, &s_ramdomLocalToFrustTransformRefPoint, 1);
 
     return (uint32_t) transformedPoint.x + (uint32_t) transformedPoint.y + (uint32_t) transformedPoint.z;
     }
@@ -1248,7 +1248,7 @@ bool ViewContext::IsLocalPointVisible (DPoint3dCR localPoint, bool boresite)
         DPoint3d        zPoints[2];
         Transform       frustumToLocal;
 
-        zPoints[0].zero();
+        zPoints[0].Zero ();
         zPoints[1].init (0.0, 0.0, 1.0);
 
         NpcToFrustum (zPoints, zPoints, 2);
@@ -1770,7 +1770,7 @@ DMatrix4d ViewContext::GetViewToLocal() const
     if (SUCCESS == GetCurrFrustumToLocalTrans(frustumToLocalTransform) && !frustumToLocalTransform.IsIdentity())
         {
         DMatrix4d frustumToLocal = DMatrix4d::From(frustumToLocalTransform);
-        viewToLocal.productOf(&frustumToLocal, &viewToLocal);
+        viewToLocal.InitProduct (frustumToLocal, viewToLocal);
         }
 
     return viewToLocal;
@@ -1787,7 +1787,7 @@ DMatrix4d ViewContext::GetLocalToView() const
     if (SUCCESS == GetCurrLocalToFrustumTrans(localToFrustumTransform) && !localToFrustumTransform.IsIdentity())
         {
         DMatrix4d   localToFrustum = DMatrix4d::From(localToFrustumTransform);
-        localToView.productOf(&localToView, &localToFrustum);
+        localToView.InitProduct (localToView, localToFrustum);
         }
 
     return localToView;
@@ -2617,7 +2617,7 @@ void ViewContext::_DrawAligned (DVec3dCR axis, DPoint3dCR origin, AlignmentMode 
         {
         DMatrix4d       localToFrustum = DMatrix4d::From (localToFrustumTransform);
 
-        toNpc.productOf (&toNpc, &localToFrustum);
+        toNpc.InitProduct (toNpc, localToFrustum);
         }
 
     DVec3d      axisLocal;

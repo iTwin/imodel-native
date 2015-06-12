@@ -21,8 +21,8 @@ static double  distSquaredXY (DPoint4dCR pVec1, DPoint4dCR pVec2)
     {
     DPoint3d    v1, v2;
 
-    pVec1.getProjectedXYZ (&v1);
-    pVec2.getProjectedXYZ (&v2);
+    pVec1.GetProjectedXYZ (v1);
+    pVec2.GetProjectedXYZ (v2);
 
     double dx = v1.x - v2.x;
     double dy = v1.y - v2.y;
@@ -266,10 +266,10 @@ bool PickOutput::PointWithinTolerance (DPoint4dCR testPt)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d* PickOutput::GetProjectedPickPointView (DPoint3dR pPoint)
+DPoint3d* PickOutput::GetProjectedPickPointView (DPoint3dR point)
     {
-    _GetPickPointView().getProjectedXYZ (&pPoint);
-    return &pPoint;
+    GetPickPointView().GetProjectedXYZ (point);
+    return &point;
     }
 
 /*---------------------------------------------------------------------------------**//**
