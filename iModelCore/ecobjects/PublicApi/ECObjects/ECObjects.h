@@ -22,13 +22,7 @@
 #define USING_NAMESPACE_EC                  using namespace BentleyApi::ECN;
 
 #define EC_TYPEDEFS(_name_)  \
-        BEGIN_BENTLEY_ECOBJECT_NAMESPACE      \
-            struct _name_;      \
-            typedef _name_ *         _name_##P;  \
-            typedef _name_ &         _name_##R;  \
-            typedef _name_ const*    _name_##CP; \
-            typedef _name_ const&    _name_##CR; \
-        END_BENTLEY_ECOBJECT_NAMESPACE
+    BEGIN_BENTLEY_ECOBJECT_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_ECOBJECT_NAMESPACE
 
 EC_TYPEDEFS(ECValue);
 EC_TYPEDEFS(ECValueAccessor);
