@@ -13,4 +13,8 @@
         <BaseClass>RasterModel</BaseClass>
     </ECClass>
 
+    <ECClass typeName="RasterFileModel" isDomainClass="True" >
+      <BaseClass>RasterModel</BaseClass>
+    </ECClass>
+
 </ECSchema>

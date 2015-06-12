@@ -17,6 +17,9 @@ DOMAIN_DEFINE_MEMBERS(PointCloudDomain)
 PointCloudDomain::PointCloudDomain() : DgnDomain(BENTLEY_POINTCLOUD_SCHEMA_NAME, "Bentley Point Cloud Domain", 1) 
     {
     RegisterHandler(PointCloudModelHandler::GetHandler());
+
+    // Initialize Pointools API, among others.
+    InitializeApi();
     }
  
 //-----------------------------------------------------------------------------------------
@@ -26,3 +29,17 @@ void PointCloudDomain::_OnSchemaImported(DgnDbR db) const
     {
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                   Eric.Paquet         05/2015
+//-----------------------------------------------------------------------------------------
+void PointCloudDomain::InitializeApi()
+    {
+    static bool s_initialized = false;
+    if(!s_initialized)
+        {
+        BePointCloud::BePointCloudApi::Initialize();
+        PointCloudSchema::ModelViewportManager::Get().Register();
+
+        s_initialized = true;
+        }
+    }
