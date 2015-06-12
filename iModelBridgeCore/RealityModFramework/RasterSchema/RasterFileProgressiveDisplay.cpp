@@ -1,26 +1,32 @@
 /*-------------------------------------------------------------------------------------+
 |
-|     $Source: PointCloudSchema/PointCloudProgressiveDisplay.cpp $
+|     $Source: RasterSchema/RasterFileProgressiveDisplay.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <PointCloudSchemaInternal.h>
+#include <RasterSchemaInternal.h>
 
 #include <Logging/bentleylogging.h>
-#define LOG (*NativeLogging::LoggingManager::GetLogger (L"PointCloud"))
+#define LOG (*NativeLogging::LoggingManager::GetLogger (L"RasterFile"))
+
+//&&ep needed here ?
+#define QV_RGBA_FORMAT   0
+#define QV_BGRA_FORMAT   1
+#define QV_RGB_FORMAT    2
+#define QV_BGR_FORMAT    3
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
-USING_NAMESPACE_BENTLEY_POINTCLOUDSCHEMA
-USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
+USING_NAMESPACE_BENTLEY_RASTERSCHEMA
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     5/2015
 //----------------------------------------------------------------------------------------
-//&&ep - eliminate vp from parameters
-PointCloudProgressiveDisplay::PointCloudProgressiveDisplay (PointCloudModel& model, DgnViewportR vp) 
+RasterFileProgressiveDisplay::RasterFileProgressiveDisplay (RasterFileModel& model) 
     :
     m_model(model),
+
+//&&ep need this ?
     m_waitTime(0),
     m_nextRetryTime(0)
     {
@@ -31,15 +37,69 @@ PointCloudProgressiveDisplay::PointCloudProgressiveDisplay (PointCloudModel& mod
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     5/2015
 //----------------------------------------------------------------------------------------
-PointCloudProgressiveDisplay::~PointCloudProgressiveDisplay() 
+RasterFileProgressiveDisplay::~RasterFileProgressiveDisplay() 
     {
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     5/2015
 //----------------------------------------------------------------------------------------
-void PointCloudProgressiveDisplay::DrawView (ViewContextR context)
+void RasterFileProgressiveDisplay::DrawView (ViewContextR context)
     {
+    // **********************************
+    // *** NB: This method must be fast. 
+    // **********************************
+    // Do not try to read from SQLite or allocate huge amounts of memory in here. 
+    // Defer time-consuming tasks to progressive display
+
+    //
+    //  First, determine if we can draw map tiles at all.
+    //
+    if (!ShouldDrawInContext (context) || NULL == context.GetViewport())
+        return;
+
+
+//&&ep test
+{
+    uint32_t wid = m_model.GetRasterFilePtr()->GetWidth();
+    if (wid == 7) return;
+
+    Byte   *bitMap;
+    Point2d imageSize;
+    BentleyStatus status = m_model.GetRasterFilePtr()->ReadFileToBitmap(&bitMap, &imageSize);
+    if (status == ERROR)
+        return;
+
+    DPoint3d    rasterPoints[4];
+    bool        enableAlpha = true;
+    rasterPoints[0].x = 0; rasterPoints[0].y = 0; rasterPoints[0].z = 0; 
+    rasterPoints[1].x = 0; rasterPoints[1].y = 10; rasterPoints[1].z = 0; 
+    rasterPoints[2].x = 10; rasterPoints[2].y = 0; rasterPoints[2].z = 0; 
+    rasterPoints[3].x = 10; rasterPoints[3].y = 15; rasterPoints[3].z = 0; 
+
+    #define WIDTH 100
+    #define HEIGHT 100
+    int     width = WIDTH;
+    int     height = HEIGHT;
+    Byte pixels[WIDTH * HEIGHT * 4];
+
+    int pitch = 0;
+    for (int i = 0; i < WIDTH * HEIGHT; i++)
+        {
+        pixels[pitch] = 255;
+        pixels[pitch + 1] = 0;
+        pixels[pitch + 2] = 0;
+        pixels[pitch + 3] = 255;
+        pitch += 4;
+        }
+
+    context.GetIViewDraw().DrawRaster (rasterPoints, width*4, width, height, enableAlpha, QV_BGRA_FORMAT, pixels, NULL);
+
+}
+
+
+/* &&ep d
+
     // **********************************
     // *** NB: This method must be fast. 
     // **********************************
@@ -60,14 +120,16 @@ void PointCloudProgressiveDisplay::DrawView (ViewContextR context)
         m_waitTime = 100;
         m_nextRetryTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis() + m_waitTime;
         }
+*/
     }
 
 //----------------------------------------------------------------------------------------
 // This callback is invoked on a timer during progressive display.
 // @bsimethod                                                       Eric.Paquet     5/2015
 //----------------------------------------------------------------------------------------
-IProgressiveDisplay::Completion PointCloudProgressiveDisplay::_Process (ViewContextR context)
+IProgressiveDisplay::Completion RasterFileProgressiveDisplay::_Process (ViewContextR context)
     {
+/* &&ep d
     if (BeTimeUtilities::GetCurrentTimeAsUnixMillis() < m_nextRetryTime)
         {
         LOG.tracev("Wait %lld until next retry", m_nextRetryTime - BeTimeUtilities::GetCurrentTimeAsUnixMillis());
@@ -82,14 +144,16 @@ IProgressiveDisplay::Completion PointCloudProgressiveDisplay::_Process (ViewCont
         m_waitTime = (uint64_t)(m_waitTime * 1.33);
         m_nextRetryTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis() + m_waitTime;  
         }
+*/
 
+IProgressiveDisplay::Completion drawStatus = IProgressiveDisplay::Completion::Finished;
     return drawStatus;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PointCloudProgressiveDisplay::ShouldDrawInContext (ViewContextR context) const
+bool RasterFileProgressiveDisplay::ShouldDrawInContext (ViewContextR context) const
     {
     switch (context.GetDrawPurpose())
         {

@@ -47,8 +47,6 @@ DgnModelId PointCloudModelHandler::CreatePointCloudModel(DgnDbR db, BeFileName f
 //----------------------------------------------------------------------------------------
 PointCloudModel::PointCloudModel(CreateParams const& params) : T_Super (params)
     {
-    // Initialize Pointools API, among others.
-    PointCloudModel::InitializeApi();
     m_pointCloudScenePtr = nullptr;
     }
 
@@ -57,20 +55,6 @@ PointCloudModel::PointCloudModel(CreateParams const& params) : T_Super (params)
 //----------------------------------------------------------------------------------------
 PointCloudModel::~PointCloudModel()
     {
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     5/2015
-//----------------------------------------------------------------------------------------
-void PointCloudModel::InitializeApi()
-    {
-    static bool s_initialized = false;
-    if(!s_initialized)
-        {
-        BePointCloud::BePointCloudApi::Initialize();
-        PointCloudSchema::ModelViewportManager::Get().Register();
-        s_initialized = true;
-        }
     }
 
 //----------------------------------------------------------------------------------------

@@ -18,6 +18,8 @@ struct PointCloudDomain : DgnPlatform::DgnDomain
 {
     DOMAIN_DECLARE_MEMBERS(PointCloudDomain, POINTCLOUDSCHEMA_EXPORT)
 
+    static  void        InitializeApi();
+
 protected:
     virtual void _OnSchemaImported(DgnDbR) const override;
 

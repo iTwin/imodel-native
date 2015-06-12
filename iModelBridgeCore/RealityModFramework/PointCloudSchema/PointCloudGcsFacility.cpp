@@ -33,6 +33,7 @@ DgnGCSPtr PointCloudGcsFacility::CreateGcsFromWkt(WStringCR spatialReferenceWkt,
             pSrcBaseGcs->InitFromWellKnownText(&warning, &warningErrorMsg, wktFlavor, wktWithoutFlavor.GetWCharCP());
             if(pSrcBaseGcs->IsValid())
                 // POINTCLOUD_WIP_GR06_GCS - Dont create DgnGCS; keep the base, because PC exposes a baseGCS, not a DgnGCS
+                //                           Also, bug with InitFromWellKnownText (does not accept ...PROJECTION["Lambert Conformal Conic, Two Standard Parallels"]... and others; returned GCS always seems invalid) AR looks at that
                 sceneGcs = DgnGCS::CreateGCS(pSrcBaseGcs.get(), dgnDb);
             }
         }
