@@ -418,6 +418,7 @@ DGNPLATFORM_EXPORT ElemDisplayParams ();
 DGNPLATFORM_EXPORT explicit ElemDisplayParams (ElemDisplayParamsCR rhs);
 
 DGNPLATFORM_EXPORT void     Init ();
+DGNPLATFORM_EXPORT void     ResetAppearance(); //!< Like Init, but saves and restores category and sub-category around the call to Init. This is particularly useful when a single element draws objects of different symbology, but its draw code does not have easy access to reset the category.
 DGNPLATFORM_EXPORT void     Resolve (ViewContextR); // Resolve effective values
 DGNPLATFORM_EXPORT void     SetCategoryId (DgnCategoryId); // Setting the Category Id also sets the SubCategory to the default.
 DGNPLATFORM_EXPORT void     SetSubCategoryId (DgnSubCategoryId);

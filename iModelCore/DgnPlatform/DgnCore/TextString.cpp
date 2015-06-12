@@ -328,6 +328,27 @@ void TextString::TransformOrientationAndExtractScale(DPoint2dR scaleFactor, RotM
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     06/2015
+//---------------------------------------------------------------------------------------
+void TextString::ApplyTransform(TransformCR transform)
+    {
+    DPoint3d newOrigin = GetOrigin();
+    transform.Multiply(newOrigin);
+
+    RotMatrix newOrientation = GetOrientation();
+    DPoint2d scaleFactor;
+    TextString::TransformOrientationAndExtractScale(scaleFactor, newOrientation, transform);
+
+    DPoint2d newSize = GetStyleR().GetSize();
+    newSize.x *= scaleFactor.x;
+    newSize.y *= scaleFactor.y;
+
+    SetOrigin(newOrigin);
+    SetOrientation(newOrientation);
+    GetStyleR().SetSize(newSize);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     01/2015
 //---------------------------------------------------------------------------------------
 void TextString::GetGlyphSymbology(ElemDisplayParamsR params) const
