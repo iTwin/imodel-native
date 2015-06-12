@@ -983,6 +983,22 @@ DgnElements::DgnElements(DgnDbR dgndb) : DgnDbTable(dgndb), m_heapZone(0, false)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElements::OnChangesetApply(TxnSummary const& summary)
     {
+    for (auto const& iter : summary.MakeElementIterator())
+        {
+        switch (iter.GetChangeType())
+            {
+            // For update and delete, we need the pre-changed version of the element in memory before we can apply the changeset
+            // For Inserts, there is no pre-changed state, of course.
+            case TxnSummary::ChangeType::Update:
+            case TxnSummary::ChangeType::Delete:
+                {
+                auto el = GetElement(iter.GetElementId()); 
+                BeAssert(el.IsValid());
+                UNUSED_VARIABLE(el);
+                }
+                break;
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -994,34 +1010,27 @@ void DgnElements::OnChangesetApply(TxnSummary const& summary)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElements::OnChangesetApplied(TxnSummary const& summary)
     {
-    enum Column : int {ElementId=0,ModelId=1,ChangeType=2,LastMod=3};
-    CachedStatementPtr stmt = GetStatement("SELECT ElementId,ModelId,ChangeType,LastMod FROM " TEMP_TABLE(TXN_TABLE_Elements)); 
-
-    while (BE_SQLITE_ROW == stmt->Step())
+    for (auto const& iter : summary.MakeElementIterator())
         {
-        switch ((TxnSummary::ChangeType) stmt->GetValueInt(Column::ChangeType))            
+        auto el = GetElement(iter.GetElementId()); // get pre-changed state
+        BeAssert(el.IsValid());
+
+        switch (iter.GetChangeType())
             {
-            case TxnSummary::ChangeType::Add:
+            case TxnSummary::ChangeType::Insert: // for inserts, "el" is the post-changed version of the element (since it was not in memory, we must have loaded it above)
+                el->_OnInserted(nullptr);
                 break;
 
             case TxnSummary::ChangeType::Delete:
-                {
-                DgnElementCP el = FindElement(stmt->GetValueId<DgnElementId>(Column::ElementId));
-                if (el)
-                    DropFromPool(*el);
-                }
+                el->_OnDeleted();
                 break;
 
             case TxnSummary::ChangeType::Update:
                 {
-                DgnElementP el = const_cast<DgnElementP>(FindElement(stmt->GetValueId<DgnElementId>(Column::ElementId)));
-                if (nullptr==el)
-                    continue;
+                DgnElementCPtr postModified = LoadElement(el->GetElementId(), false);
 
-                DgnElementCPtr unmodified = LoadElement(el->GetElementId(), false);
-                el->_CopyFrom(*unmodified);
-
-                // fix size, call some method on element?
+                BeAssert(postModified.IsValid());
+                FinishUpdate(*postModified.get(), *el.get());
                 }
                 break;
             }
@@ -1047,7 +1056,7 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, 
         return nullptr;
         }
 
-    if (DGNMODEL_STATUS_Success != el->_LoadFromDb())
+    if (DgnDbStatus::Success != el->_LoadFromDb())
         return nullptr;
 
     if (makePersistent)
@@ -1183,118 +1192,92 @@ DgnElementId DgnElements::MakeNewElementId()
     }
 
 
-struct OnDeleteCaller   {bool operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnDelete(el);}   };
-struct OnDeletedCaller  {bool operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnDeleted(el);}  };
-struct OnInsertCaller   {bool operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnInsert(el);}   };
-struct OnInsertedCaller
-    {
-    DgnElementCR m_newEl;
-    OnInsertedCaller(DgnElementCR newEl) : m_newEl(newEl){}
-    bool operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnInserted(m_newEl);}   
-    };
-struct OnUpdateCaller
-    {
-    DgnElementCR m_orig, m_updated;
-    OnUpdateCaller(DgnElementCR orig, DgnElementCR updated) : m_orig(orig), m_updated(updated){}
-    bool operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnUpdate(m_orig, m_updated);}   
-    };
-struct OnUpdatedCaller
-    {
-    DgnElementCR m_updated;
-    OnUpdatedCaller(DgnElementCR updated) : m_updated(updated){}
-    bool operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnUpdated(m_updated);}   
-    };
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/15
+* @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<class T> void DgnElements::CallAppData(T const& caller, DgnElementCR el)
+DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat)
     {
-    for (auto entry=el.m_appData.begin(); entry!=el.m_appData.end(); )
+    element.m_elementId = MakeNewElementId(); 
+
+    if (DgnDbStatus::Success != (stat = element._OnInsert()))
+        return nullptr;
+
+    // ask parent whether its ok to add this child.
+    DgnElementCPtr parent = GetElement(element.m_parentId);
+    if (parent.IsValid() && DgnDbStatus::Success != (stat=parent->_OnChildInsert(element)))
+        return nullptr;
+
+
+    DgnElementPtr newElement = element.CopyForEdit();
+    if (!newElement.IsValid())
         {
-        if (caller(*entry->second, el))
-            entry = el.m_appData.erase(entry);
-        else
-            ++entry;
+        stat = DgnDbStatus::BadElement;
+        return nullptr;
         }
-    }    
+
+    if (DgnDbStatus::Success != (stat=newElement->_InsertInDb()))
+        return nullptr;
+
+    AddToPool(*newElement);
+
+    newElement->_OnInserted(&element);
+
+    if (parent.IsValid())
+        parent->_OnChildInserted(*newElement);
+
+    return newElement;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnModelStatus* outStat)
+DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnDbStatus* outStat)
     {
-    DgnModelStatus ALLOW_NULL_OUTPUT(stat,outStat);
+    DgnDbStatus ALLOW_NULL_OUTPUT(stat,outStat);
 
     // don't allow elements that already have an id.
     if (element.m_elementId.IsValid()) 
         {
-        stat = DGNMODEL_STATUS_WrongElement;
+        stat = DgnDbStatus::WrongElement;
         return nullptr;
         }
 
     DgnModelR model = element.GetDgnModel();
     if (&model.GetDgnDb() != &m_dgndb)
         {
-        stat = DGNMODEL_STATUS_WrongDgnDb;
+        stat = DgnDbStatus::WrongDgnDb;
         return nullptr;
         }
 
-    stat = model._OnInsertElement(element);
-    if (DGNMODEL_STATUS_Success != stat)
-        return nullptr;
+    DgnElementCPtr newEl = PerformInsert(element, stat);
+    if (!newEl.IsValid())
+        element.m_elementId = DgnElementId(); // make sure they know the insert failed
 
-    // ask parent whether its ok to add this child.
-    auto parent = GetElement(element.m_parentId);
-    if (parent.IsValid() && DgnElement::PreChange::Ok != parent->_OnChildInsert(element))
-        {
-        stat = DGNMODEL_STATUS_ParentBlockedChange;
-        return nullptr;
-        }
+    return newEl;
+    }
 
-    CallAppData(OnInsertCaller(), element);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElements::FinishUpdate(DgnElementCR replacement, DgnElementCR original)
+    {
+    replacement._OnUpdated(original);
 
-    element.m_elementId = MakeNewElementId(); 
-    element.UpdateLastModTime();
-    if (element.m_code.empty())
-        element.m_code = element._GenerateDefaultCode();
-
-    DgnElementPtr newElement = element.CopyForEdit();
-    if (!newElement.IsValid())
-        {
-        element.m_elementId = DgnElementId();
-        stat = DGNMODEL_STATUS_BadElement;
-        return nullptr;
-        }
-
-    stat = newElement->_InsertInDb();
-    if (DGNMODEL_STATUS_Success != stat)
-        {
-        element.m_elementId = DgnElementId();
-        return nullptr;
-        }
-
-    AddToPool(*newElement);
-
-    model._OnInsertedElement(*newElement);
-    if (parent.IsValid())
-        parent->_OnChildInserted(*newElement);
-
-    CallAppData(OnInsertedCaller(*newElement), element);
-
-    return newElement;
+    uint32_t oldSize = original._GetMemSize(); // save current size
+    (*const_cast<DgnElementP>(&original))._CopyFrom(replacement);    // copy new data into original element
+    ChangeMemoryUsed(original._GetMemSize() - oldSize); // report size change
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatus* outStat)
+DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnDbStatus* outStat)
     {
-    DgnModelStatus ALLOW_NULL_OUTPUT(stat,outStat);
+    DgnDbStatus ALLOW_NULL_OUTPUT(stat,outStat);
 
     if (replacement.IsPersistent())
         {
-        stat =  DGNMODEL_STATUS_WrongElement;
+        stat =  DgnDbStatus::WrongElement;
         return nullptr;
         }
 
@@ -1302,76 +1285,44 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnModelStatu
     DgnElementCPtr orig = GetElement(replacement.GetElementId());
     if (!orig.IsValid())
         {
-        stat = DGNMODEL_STATUS_InvalidId;
+        stat = DgnDbStatus::InvalidId;
         return nullptr;
         }
 
     DgnElementR element = const_cast<DgnElementR>(*orig.get());
     DgnModelR model = element.GetDgnModel();
-    if ((&model.GetDgnDb() != &m_dgndb) ||(&model != &replacement.GetDgnModel()))
+    if (&model != &replacement.GetDgnModel())
         {
-        stat = DGNMODEL_STATUS_WrongModel;
+        stat = DgnDbStatus::WrongDgnDb;
         return nullptr;
         }
 
-    stat = model._OnUpdateElement(element, replacement); // let model know about the update BEFORE we overwrite original element
-    if (DGNMODEL_STATUS_Success != stat)
-        return nullptr; // model rejected proposed change
-
-    if (DgnElement::PreChange::Ok != element._OnUpdate(replacement))
-        {
-        stat = DGNMODEL_STATUS_ElementBlockedChange;
-        return nullptr;
-        }
+    if (DgnDbStatus::Success != (stat=replacement._OnUpdate(element)))
+        return nullptr; // something rejected proposed change
 
     // ask parent whether its ok to update his child.
     auto parent = GetElement(element.m_parentId);
-    if (parent.IsValid() && DgnElement::PreChange::Ok != parent->_OnChildUpdate(element, replacement))
-        {
-        stat = DGNMODEL_STATUS_ParentBlockedChange;
+    if (parent.IsValid() && DgnDbStatus::Success != (stat = parent->_OnChildUpdate(element, replacement)))
         return nullptr;
-        }
 
-    // we need to call the pre/post update events on BOTH sets of appdata
-    CallAppData(OnUpdateCaller(element, replacement), element);
-    CallAppData(OnUpdateCaller(element, replacement), replacement);
-
-    replacement.UpdateLastModTime(); 
-
-    uint32_t oldSize = element._GetMemSize(); // save current size
-    stat = element._CopyFrom(replacement);    // copy new data into original element
-
-    if (DGNMODEL_STATUS_Success == stat)
-        stat = element._UpdateInDb();
-
-    if (DGNMODEL_STATUS_Success != stat)
-        {
-        // The update didn't work. We need to reload the original element and copy its state back. Then, tell the model about the failure
-        // so it can reverse any damage done in the "OnUpdate" call above.
-        DgnElementCPtr unmodified = LoadElement(element.GetElementId(), false);
-        element._CopyFrom(*unmodified);
-        model._OnUpdateElementFailed(element); // notify model the update failed
+    stat = replacement._UpdateInDb();   // perform the actual update in the database
+    if (DgnDbStatus::Success != stat)
         return nullptr;
-        }
 
-    parent = GetElement(element.m_parentId); // look it up again, may have changed
+    if (element.m_parentId != replacement.m_parentId) // did parent change?
+        parent = GetElement(replacement.m_parentId);
+
     if (parent.IsValid())
-        parent->_OnChildUpdated(element);
+        parent->_OnChildUpdated(replacement);
 
-    // we need to call the pre/post update events on BOTH sets of appdata
-    CallAppData(OnUpdatedCaller(element), element);
-    CallAppData(OnUpdatedCaller(element), replacement);
-
-    ChangeMemoryUsed(element._GetMemSize() - oldSize); // report size change
-
-    model._OnUpdatedElement(element); // notify model that update finished successfully
+    FinishUpdate(replacement, element);
     return &element;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElements::PerformDelete(DgnElementCR element)
+DgnDbStatus DgnElements::PerformDelete(DgnElementCR element)
     {
     // delete children, if any.
     DgnElementIdSet children = element.QueryChildren();
@@ -1382,52 +1333,44 @@ DgnModelStatus DgnElements::PerformDelete(DgnElementCR element)
             continue;
 
         auto stat = PerformDelete(*child);
-        if (DGNMODEL_STATUS_Success != stat)
+        if (DgnDbStatus::Success != stat)
             return stat;
         }
 
-    CallAppData(OnDeleteCaller(), element);
-
     auto stat = element._DeleteInDb();
-    if (DGNMODEL_STATUS_Success != stat)
+    if (DgnDbStatus::Success != stat)
         return stat;
 
-    CallAppData(OnDeletedCaller(), element);
-
-    DropFromPool(element);
-    element.GetDgnModel()._OnDeletedElement(element);
-    return DGNMODEL_STATUS_Success;
+    element._OnDeleted();
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElements::Delete(DgnElementCR element)
+DgnDbStatus DgnElements::Delete(DgnElementCR element)
     {
     DgnModelR model = element.GetDgnModel();
-    if (&model.GetDgnDb() != &m_dgndb || !element.IsPersistent() || !element.GetElementId().IsValid())
-        return DGNMODEL_STATUS_WrongElement;
+    if (&model.GetDgnDb() != &m_dgndb || !element.IsPersistent())
+        return DgnDbStatus::WrongElement;
 
-    DgnModelStatus stat = model._OnDeleteElement(element);
-    if (DGNMODEL_STATUS_Success != stat)
+    DgnDbStatus stat = element._OnDelete();
+    if (DgnDbStatus::Success != stat)
         return stat;
-
-    if (DgnElement::PreChange::Ok != element._OnDelete())
-        return DGNMODEL_STATUS_ElementBlockedChange;
 
     // ask parent whether its ok to delete his child.
     auto parent = GetElement(element.m_parentId);
-    if (parent.IsValid() && DgnElement::PreChange::Ok != parent->_OnChildDelete(element))
-        return DGNMODEL_STATUS_ParentBlockedChange;
+    if (parent.IsValid() && DgnDbStatus::Success != (stat=parent->_OnChildDelete(element)))
+        return stat;
 
     stat = PerformDelete(element);
-    if (DGNMODEL_STATUS_Success != stat)
+    if (DgnDbStatus::Success != stat)
         return stat;
 
     if (parent.IsValid())
         parent->_OnChildDeleted(element);
 
-    return DGNMODEL_STATUS_Success;
+    return DgnDbStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------

@@ -379,7 +379,11 @@ TEST_F (ElementDisplayProperties, SetDisplayParams)
         EXPECT_EQ (21, params.GetWeight ());
         bool weight = params.IsWeightFromSubCategoryAppearance ();
         EXPECT_FALSE (weight);
+
+#if defined (NEEDS_WORK_MATERIAL)
         EXPECT_EQ (NULL, params.GetMaterial ());
+#endif
+
         EXPECT_EQ (2, params.GetDisplayPriority ());
         }
     }

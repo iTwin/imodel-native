@@ -9,6 +9,14 @@
 #include <DgnPlatform/DgnCore/QvElemSet.h>
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), m_dgnModel(params.m_model), m_classId(params.m_classId),
+             m_categoryId(params.m_categoryId), m_label(params.m_label), m_code(params.m_code), m_parentId(params.m_parentId), m_lastModTime(params.m_lastModTime) 
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::AddRef() const
@@ -84,13 +92,13 @@ QvCache*  GeometricElement::GetMyQvCache() const {return GetDgnDb().Models().Get
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement::SaveGeomStream(GeomStreamCP stream)
     {
-    m_geom = *stream;     // assign the new element (overwrites or reallocates)
+    m_geom = *stream;    // assign the new steam (overwrites or reallocates)
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement::_DeleteInDb() const
+DgnDbStatus DgnElement::_DeleteInDb() const
     {
     CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("DELETE FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE Id=?");
     stmt->BindId(1, m_elementId);
@@ -98,13 +106,13 @@ DgnModelStatus DgnElement::_DeleteInDb() const
     switch (stmt->Step())
         {
         case BE_SQLITE_CONSTRAINT_FOREIGNKEY:
-            return  DGNMODEL_STATUS_ForeignKeyConstraint;
+            return  DgnDbStatus::ForeignKeyConstraint;
 
         case BE_SQLITE_DONE:
-            return DGNMODEL_STATUS_Success;
+            return DgnDbStatus::Success;
         }
 
-    return DGNMODEL_STATUS_ElementWriteError;
+    return DgnDbStatus::ElementWriteError;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -201,12 +209,106 @@ void DgnElement::UpdateLastModTime()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+template<class T> void DgnElement::CallAppData(T const& caller) const
+    {
+    for (auto entry=m_appData.begin(); entry!=m_appData.end(); )
+        {
+        if (caller(*entry->second, *this))
+            entry = m_appData.erase(entry);
+        else
+            ++entry;
+        }
+    }    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::_OnInsert()
+    {
+    UpdateLastModTime();
+    if (m_code.empty())
+        m_code = _GenerateDefaultCode();
+
+    return m_dgnModel._OnInsertElement(*this);
+    }
+
+struct OnInsertedCaller
+    {
+    DgnElementCR m_newEl;
+    OnInsertedCaller(DgnElementCR newEl) : m_newEl(newEl){}
+    bool operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnInserted(m_newEl);}   
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::_OnInserted(DgnElementP copiedFrom) const
+    {
+    if (copiedFrom)
+        copiedFrom->CallAppData(OnInsertedCaller(*this));
+
+    m_dgnModel._OnInsertedElement(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
+    {
+    if (m_classId != original.m_classId)
+        return DgnDbStatus::WrongClass;
+
+    UpdateLastModTime();
+    return m_dgnModel._OnUpdateElement(*this, original);
+    }
+
+struct OnUpdatedCaller
+    {
+    DgnElementCR m_updated, m_original;
+    OnUpdatedCaller(DgnElementCR updated, DgnElementCR original) : m_updated(updated), m_original(original){}
+    bool operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnUpdated(m_updated, m_original);}   
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::_OnUpdated(DgnElementCR original) const
+    {
+    // we need to call the events on BOTH sets of appdata
+    original.CallAppData(OnUpdatedCaller(*this, original));
+    CallAppData(OnUpdatedCaller(*this, original));
+
+    m_dgnModel._OnUpdatedElement(*this, original);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::_OnDelete() const
+    {
+    return m_dgnModel._OnDeleteElement(*this);
+    }
+
+struct OnDeletedCaller  {bool operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnDeleted(el);}};
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::_OnDeleted() const
+    {
+    CallAppData(OnDeletedCaller());
+    GetDgnDb().Elements().DropFromPool(*this);
+    m_dgnModel._OnDeletedElement(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement::_InsertInDb()
+DgnDbStatus DgnElement::_InsertInDb()
     {
     enum Column : int       {ElementId=1,ECClassId=2,ModelId=3,CategoryId=4,Label=5,Code=6,ParentId=7,LastMod=8};
-    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Element) " (Id,ECClassId,ModelId,CategoryId,Label,Code,ParentId,LastMod) VALUES(?,?,?,?,?,?,?,?)");
+    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Element) "(Id,ECClassId,ModelId,CategoryId,Label,Code,ParentId,LastMod) VALUES(?,?,?,?,?,?,?,?)");
 
     stmt->BindId(Column::ElementId, m_elementId);
     stmt->BindId(Column::ECClassId, m_classId);
@@ -217,13 +319,13 @@ DgnModelStatus DgnElement::_InsertInDb()
     stmt->BindId(Column::ParentId, m_parentId);
     stmt->BindDouble(Column::LastMod, m_lastModTime);
 
-    return stmt->Step() != BE_SQLITE_DONE ? DGNMODEL_STATUS_ElementWriteError : DGNMODEL_STATUS_Success;
+    return stmt->Step() != BE_SQLITE_DONE ? DgnDbStatus::ElementWriteError : DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement::_UpdateInDb()
+DgnDbStatus DgnElement::_UpdateInDb()
     {
     enum Column : int       {CategoryId=1,Label=2,Code=3,ParentId=4,LastMod=5,ElementId=6};
     CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("UPDATE " DGN_TABLE(DGN_CLASSNAME_Element) " SET CategoryId=?,Label=?,Code=?,ParentId=?,LastMod=? WHERE Id=?");
@@ -236,7 +338,7 @@ DgnModelStatus DgnElement::_UpdateInDb()
     stmt->BindDouble(Column::LastMod, m_lastModTime);
     stmt->BindId(Column::ElementId, m_elementId);
 
-    return (stmt->Step() != BE_SQLITE_DONE) ? DGNMODEL_STATUS_ElementWriteError : DGNMODEL_STATUS_Success;
+    return stmt->Step() != BE_SQLITE_DONE ? DgnDbStatus::ElementWriteError : DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -253,6 +355,7 @@ DgnElementIdSet DgnElement::QueryChildren() const
 
     return elementIdSet;
     }
+
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   11/10
@@ -271,23 +374,23 @@ static Utf8CP GEOM_Column = "Geom";
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus GeometricElement::_LoadFromDb()
+DgnDbStatus GeometricElement::_LoadFromDb()
     {
-    DgnModelStatus stat = T_Super::_LoadFromDb();
-    if (DGNMODEL_STATUS_Success != stat)
+    DgnDbStatus stat = T_Super::_LoadFromDb();
+    if (DgnDbStatus::Success != stat)
         return stat;
 
     auto& pool = GetDgnDb().Elements();
     SnappyFromBlob& snappy = pool.GetSnappyFrom();
 
     if (ZIP_SUCCESS != snappy.Init(pool.GetDgnDb(), DGN_TABLE(DGN_CLASSNAME_ElementGeom), GEOM_Column, m_elementId.GetValue()))
-        return DGNMODEL_STATUS_Success; // this element has no geometry
+        return DgnDbStatus::Success; // this element has no geometry
 
     GeomBlobHeader header(snappy);
     if ((GeomBlobHeader::Signature != header.m_signature) || 0 == header.m_size)
         {
         BeAssert(false);
-        return DGNMODEL_STATUS_ElementReadError;
+        return DgnDbStatus::ElementReadError;
         }
 
     m_geom.ReserveMemory(header.m_size);
@@ -298,19 +401,19 @@ DgnModelStatus GeometricElement::_LoadFromDb()
     if (actuallyRead != m_geom.GetSize())
         {
         BeAssert(false);
-        return DGNMODEL_STATUS_ElementReadError;
+        return DgnDbStatus::ElementReadError;
         }
 
-    return DGNMODEL_STATUS_Success;
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus GeometricElement::_InsertInDb()
+DgnDbStatus GeometricElement::_InsertInDb()
     {
-    DgnModelStatus stat = T_Super::_InsertInDb();
-    if (DGNMODEL_STATUS_Success != stat)
+    DgnDbStatus stat = T_Super::_InsertInDb();
+    if (DgnDbStatus::Success != stat)
         return stat;
 
     DgnDbR dgnDb = GetDgnDb();
@@ -318,13 +421,13 @@ DgnModelStatus GeometricElement::_InsertInDb()
     stmt->BindId(3, m_elementId);
 
     stat = _BindPlacement(*stmt);
-    if (DGNMODEL_STATUS_NoGeometry == stat)
-        return DGNMODEL_STATUS_Success;
+    if (DgnDbStatus::NoGeometry == stat)
+        return DgnDbStatus::Success;
 
-    if (DGNMODEL_STATUS_Success == stat)
+    if (DgnDbStatus::Success == stat)
         stat = WriteGeomStream(*stmt, dgnDb);
 
-    if (DGNMODEL_STATUS_Success != stat)
+    if (DgnDbStatus::Success != stat)
         return stat;
 
     // Insert element uses geom part relationships for geom parts referenced in geom stream...
@@ -334,7 +437,7 @@ DgnModelStatus GeometricElement::_InsertInDb()
     for (DgnGeomPartId partId : parts)
         {
         if (BentleyStatus::SUCCESS != dgnDb.GeomParts().InsertElementGeomUsesParts(m_elementId, partId))
-            stat = DGNMODEL_STATUS_ElementWriteError;
+            stat = DgnDbStatus::ElementWriteError;
         }
 
     return stat;
@@ -343,10 +446,10 @@ DgnModelStatus GeometricElement::_InsertInDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus GeometricElement::_UpdateInDb()
+DgnDbStatus GeometricElement::_UpdateInDb()
     {
-    DgnModelStatus stat = T_Super::_UpdateInDb();
-    if (DGNMODEL_STATUS_Success != stat)
+    DgnDbStatus stat = T_Super::_UpdateInDb();
+    if (DgnDbStatus::Success != stat)
         return stat;
 
     DgnDbR dgnDb = GetDgnDb();
@@ -354,13 +457,13 @@ DgnModelStatus GeometricElement::_UpdateInDb()
     stmt->BindId(3, m_elementId);
 
     stat = _BindPlacement(*stmt);
-    if (DGNMODEL_STATUS_NoGeometry == stat)
-        return DGNMODEL_STATUS_Success;
+    if (DgnDbStatus::NoGeometry == stat)
+        return DgnDbStatus::Success;
 
-    if (DGNMODEL_STATUS_Success == stat)
+    if (DgnDbStatus::Success == stat)
         stat = WriteGeomStream(*stmt, dgnDb);
 
-    if (DGNMODEL_STATUS_Success != stat)
+    if (DgnDbStatus::Success != stat)
         return stat;
 
     // Update element uses geom part relationships for geom parts referenced in geom stream...
@@ -389,7 +492,7 @@ DgnModelStatus GeometricElement::_UpdateInDb()
             {
             stmt->BindId(2, partId);
             if (BE_SQLITE_DONE != stmt->Step())
-                stat = DGNMODEL_STATUS_BadRequest;
+                stat = DgnDbStatus::BadRequest;
             }
         }
 
@@ -399,7 +502,7 @@ DgnModelStatus GeometricElement::_UpdateInDb()
     for (DgnGeomPartId partId : partsToAdd)
         {
         if (BentleyStatus::SUCCESS != dgnDb.GeomParts().InsertElementGeomUsesParts(m_elementId, partId))
-            stat = DGNMODEL_STATUS_ElementWriteError;
+            stat = DgnDbStatus::ElementWriteError;
         }
 
     return stat;
@@ -408,7 +511,7 @@ DgnModelStatus GeometricElement::_UpdateInDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus GeometricElement::WriteGeomStream(Statement& stmt, DgnDbR dgnDb)
+DgnDbStatus GeometricElement::WriteGeomStream(Statement& stmt, DgnDbR dgnDb)
     {
     SnappyToBlob& snappy = dgnDb.Elements().GetSnappyTo();
 
@@ -430,50 +533,50 @@ DgnModelStatus GeometricElement::WriteGeomStream(Statement& stmt, DgnDbR dgnDb)
         }
 
     if (BE_SQLITE_DONE != stmt.Step())
-        return DGNMODEL_STATUS_ElementWriteError;
+        return DgnDbStatus::ElementWriteError;
 
     if (1 == snappy.GetCurrChunk())
-        return DGNMODEL_STATUS_Success;
+        return DgnDbStatus::Success;
 
     StatusInt status = snappy.SaveToRow(dgnDb, DGN_TABLE(DGN_CLASSNAME_ElementGeom), GEOM_Column, m_elementId.GetValue());
-    return (SUCCESS != status) ? DGNMODEL_STATUS_ElementWriteError : DGNMODEL_STATUS_Success;
+    return SUCCESS != status ? DgnDbStatus::ElementWriteError : DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement3d::_BindPlacement(Statement& stmt)
+DgnDbStatus DgnElement3d::_BindPlacement(Statement& stmt)
     {
     if (!m_placement.IsValid())
-        return DGNMODEL_STATUS_NoGeometry;
+        return DgnDbStatus::NoGeometry;
 
     stmt.BindBlob(2, &m_placement, sizeof(m_placement), Statement::MakeCopy::No);
-    return DGNMODEL_STATUS_Success;
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement3d::_LoadFromDb()
+DgnDbStatus DgnElement3d::_LoadFromDb()
     {
-    DgnModelStatus stat = T_Super::_LoadFromDb();
-    if (DGNMODEL_STATUS_Success != stat)
+    DgnDbStatus stat = T_Super::_LoadFromDb();
+    if (DgnDbStatus::Success != stat)
         return stat;
 
     CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("SELECT Placement FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " Where ElementId=?");
     stmt->BindId(1, m_elementId);
 
     if (BE_SQLITE_ROW != stmt->Step())
-        return DGNMODEL_STATUS_Success; // it is legal to have an element with no geometry.
+        return DgnDbStatus::Success; // it is legal to have an element with no geometry.
 
     if (stmt->GetColumnBytes(0) != sizeof(m_placement))
         {
         BeAssert(false);
-        return DGNMODEL_STATUS_ElementReadError;
+        return DgnDbStatus::ElementReadError;
         }
 
     memcpy(&m_placement, stmt->GetValueBlob(0), sizeof(m_placement));
-    return DGNMODEL_STATUS_Success;
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -499,16 +602,15 @@ DgnClassId PhysicalElement::QueryClassId(DgnDbR db)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* A physical element was just successfully added to the database. We need to add the corresponding entry into the persistent range tree.
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus PhysicalElement::_InsertInDb()
+void PhysicalElement::_OnInserted(DgnElementP from) const
     {
-    DgnModelStatus stat = T_Super::_InsertInDb();
-    if (DGNMODEL_STATUS_Success != stat)
-        return stat;
+    T_Super::_OnInserted(from);
 
     if (!m_placement.IsValid()) // this is an invisible element
-        return DGNMODEL_STATUS_Success;
+        return;
 
     CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("INSERT INTO " DGN_VTABLE_RTree3d " (ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ) VALUES (?,?,?,?,?,?,?)");
     stmt->BindId(1, m_elementId);
@@ -519,24 +621,21 @@ DgnModelStatus PhysicalElement::_InsertInDb()
     stmt->BindDouble(5, range.high.y);
     stmt->BindDouble(6, range.low.z);
     stmt->BindDouble(7, range.high.z);
-
-    return stmt->Step() == BE_SQLITE_DONE ? DGNMODEL_STATUS_Success : DGNMODEL_STATUS_ElementWriteError;
+    stmt->Step();
     }
 
 /*---------------------------------------------------------------------------------**//**
+* A physical element was just successfully updated in the database. We need to update the corresponding entry in the persistent range tree.
 * @bsimethod                                    Sam.Wilson                      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus PhysicalElement::_UpdateInDb()
+void PhysicalElement::_OnUpdated(DgnElementCR from) const
     {
-    DgnModelStatus stat = T_Super::_UpdateInDb();
-    if (DGNMODEL_STATUS_Success != stat)
-        return stat;
+    T_Super::_OnUpdated(from);
 
     if (!m_placement.IsValid()) // this is an invisible element
-        return DGNMODEL_STATUS_Success;
+        return;
 
     CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("UPDATE " DGN_VTABLE_RTree3d " SET MinX=?,MaxX=?,MinY=?,MaxY=?,MinZ=?,MaxZ=? WHERE ElementId=?");
-
     AxisAlignedBox3dCR range = m_placement.CalculateRange();
     stmt->BindDouble(1, range.low.x);
     stmt->BindDouble(2, range.high.x);
@@ -545,45 +644,44 @@ DgnModelStatus PhysicalElement::_UpdateInDb()
     stmt->BindDouble(5, range.low.z);
     stmt->BindDouble(6, range.high.z);
     stmt->BindId(7, m_elementId);
-
-    return stmt->Step() == BE_SQLITE_DONE ? DGNMODEL_STATUS_Success : DGNMODEL_STATUS_ElementWriteError;
+    stmt->Step();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement2d::_BindPlacement(Statement& stmt)
+DgnDbStatus DgnElement2d::_BindPlacement(Statement& stmt)
     {
     if (!m_placement.IsValid())
-        return DGNMODEL_STATUS_NoGeometry;
+        return DgnDbStatus::NoGeometry;
 
     stmt.BindBlob(2, &m_placement, sizeof(m_placement), Statement::MakeCopy::No);
-    return DGNMODEL_STATUS_Success;
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement2d::_LoadFromDb()
+DgnDbStatus DgnElement2d::_LoadFromDb()
     {
-    DgnModelStatus stat = T_Super::_LoadFromDb();
-    if (DGNMODEL_STATUS_Success != stat)
+    DgnDbStatus stat = T_Super::_LoadFromDb();
+    if (DgnDbStatus::Success != stat)
         return stat;
 
     CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("SELECT Placement FROM " DGN_TABLE(DGN_CLASSNAME_ElementGeom) " Where ElementId=?");
     stmt->BindId(1, m_elementId);
 
     if (BE_SQLITE_ROW != stmt->Step())
-        return DGNMODEL_STATUS_Success; // it is legal to have an element with no geometry.
+        return DgnDbStatus::Success; // it is legal to have an element with no geometry.
 
     if (stmt->GetColumnBytes(0) != sizeof(m_placement))
         {
         BeAssert(false);
-        return DGNMODEL_STATUS_ElementReadError;
+        return DgnDbStatus::ElementReadError;
         }
 
     memcpy(&m_placement, stmt->GetValueBlob(0), sizeof(m_placement));
-    return DGNMODEL_STATUS_Success;
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -598,67 +696,58 @@ QvElem* GeometricElement::GetQvElem(uint32_t id) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement::_CopyFrom(DgnElementCR other)
+void DgnElement::_CopyFrom(DgnElementCR other)
     {
     if (&other == this)
-        return DGNMODEL_STATUS_Success;
+        return;
 
     if (&m_dgnModel != &other.m_dgnModel)
-        return DGNMODEL_STATUS_BadElement;
+        {
+        BeAssert(false);
+        return;
+        }
 
     m_categoryId = other.m_categoryId;
     m_code       = other.m_code;
     m_label      = other.m_label;
     m_parentId   = other.m_parentId;
     m_lastModTime = other.m_lastModTime;
-
-    return DGNMODEL_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus GeometricElement::_CopyFrom(DgnElementCR other)
+void GeometricElement::_CopyFrom(DgnElementCR other)
     {
-    auto stat = T_Super::_CopyFrom(other);
-    if (DGNMODEL_STATUS_Success != stat)
-        return stat;
+    T_Super::_CopyFrom(other);
 
     GeometricElementCP otherGeom = other.ToGeometricElement();
     if (otherGeom)
         SaveGeomStream(&otherGeom->m_geom);
-    return DGNMODEL_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement3d::_CopyFrom(DgnElementCR other)
+void DgnElement3d::_CopyFrom(DgnElementCR other)
     {
-    auto stat = T_Super::_CopyFrom(other);
-    if (DGNMODEL_STATUS_Success != stat)
-        return stat;
+    T_Super::_CopyFrom(other);
 
     DgnElement3dCP el3d = other.ToElement3d();
     if (el3d)
         m_placement = el3d->m_placement;
-
-    return DGNMODEL_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnElement2d::_CopyFrom(DgnElementCR other)
+void DgnElement2d::_CopyFrom(DgnElementCR other)
     {
-    auto stat = T_Super::_CopyFrom(other);
-    if (DGNMODEL_STATUS_Success != stat)
-        return stat;
+    T_Super::_CopyFrom(other);
 
     DgnElement2dCP el2d = other.ToElement2d();
     if (el2d)
         m_placement = el2d->m_placement;
-    return DGNMODEL_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -815,25 +904,23 @@ AxisAlignedBox3d Placement2d::CalculateRange() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementCPtr DgnElement::Update(DgnModelStatus* stat) {return GetDgnDb().Elements().Update(*this, stat);}
-DgnElementCPtr DgnElement::Insert(DgnModelStatus* stat) {return GetDgnDb().Elements().Insert(*this, stat);}
-DgnModelStatus DgnElement::Delete() const {return GetDgnDb().Elements().Delete(*this);}
+DgnElementCPtr DgnElement::Update(DgnDbStatus* stat) {return GetDgnDb().Elements().Update(*this, stat);}
+DgnElementCPtr DgnElement::Insert(DgnDbStatus* stat) {return GetDgnDb().Elements().Insert(*this, stat);}
+DgnDbStatus DgnElement::Delete() const {return GetDgnDb().Elements().Delete(*this);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus ElementGroup::InsertMember(DgnElementCR member) const
+DgnDbStatus ElementGroup::InsertMember(DgnElementCR member) const
     {
     if (!GetElementId().IsValid() || !member.GetElementId().IsValid())
-        return DGNMODEL_STATUS_InvalidId;
+        return DgnDbStatus::InvalidId;
 
-    DgnModelStatus status = _OnMemberInsert(member); // give subclass a chance to reject member insert
-    if (DGNMODEL_STATUS_Success != status)
+    DgnDbStatus status = _OnMemberInsert(member); // give subclass a chance to reject member insert
+    if (DgnDbStatus::Success != status)
         return status;
 
-    CachedECSqlStatementPtr statement = GetDgnDb().GetPreparedECSqlStatement
-        ("INSERT INTO " DGN_SCHEMA(DGN_RELNAME_ElementGroupHasMembers)
-         " (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES (?,?,?,?)");
+    CachedECSqlStatementPtr statement = GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " DGN_SCHEMA(DGN_RELNAME_ElementGroupHasMembers) "(SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
 
     statement->BindId(1, GetElementClassId());
     statement->BindId(2, GetElementId());
@@ -841,22 +928,22 @@ DgnModelStatus ElementGroup::InsertMember(DgnElementCR member) const
     statement->BindId(4, member.GetElementId());
 
     if (ECSqlStepStatus::Done != statement->Step())
-        return DGNMODEL_STATUS_BadRequest;
+        return DgnDbStatus::BadRequest;
 
     _OnMemberInserted(member); // notify subclass that member was inserted
-    return DGNMODEL_STATUS_Success;
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus ElementGroup::DeleteMember(DgnElementCR member) const
+DgnDbStatus ElementGroup::DeleteMember(DgnElementCR member) const
     {
     if (!GetElementId().IsValid() || !member.GetElementId().IsValid())
-        return DGNMODEL_STATUS_InvalidId;
+        return DgnDbStatus::InvalidId;
 
-    DgnModelStatus status = _OnMemberDelete(member); // give subclass a chance to reject member delete
-    if (DGNMODEL_STATUS_Success != status)
+    DgnDbStatus status = _OnMemberDelete(member); // give subclass a chance to reject member delete
+    if (DgnDbStatus::Success != status)
         return status;
 
     CachedStatementPtr statement=GetDgnDb().Elements().GetStatement("DELETE FROM " DGN_TABLE(DGN_RELNAME_ElementGroupHasMembers) " WHERE GroupId=? AND MemberId=?");
@@ -864,10 +951,10 @@ DgnModelStatus ElementGroup::DeleteMember(DgnElementCR member) const
     statement->BindId(2, member.GetElementId());
 
     if (BE_SQLITE_DONE != statement->Step())
-        return DGNMODEL_STATUS_BadRequest;
+        return DgnDbStatus::BadRequest;
 
     _OnMemberDeleted(member); // notify subclass that member was deleted
-    return DGNMODEL_STATUS_Success;
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

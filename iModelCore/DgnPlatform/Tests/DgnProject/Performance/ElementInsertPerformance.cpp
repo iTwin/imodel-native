@@ -129,7 +129,7 @@ struct PTestElementHandler : DgnPlatform::ElementHandler
         return db.Elements().Insert(*testElement)->GetElementKey();
     }
 
-    DgnModelStatus DeleteElement(DgnDbR db, DgnElementId eid)
+    DgnDbStatus DeleteElement(DgnDbR db, DgnElementId eid)
     {
         return db.Elements().Delete(eid);
     }

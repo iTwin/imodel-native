@@ -994,7 +994,7 @@ StatusInt DgnViewport::ComputeViewRange (DRange3dR range, FitViewParams& params)
     FitContext  context (params);
     context.AllocateScanCriteria ();
 
-    if (SUCCESS != SetupFromViewController()) // can't proceed if viewport isn't valid (e.g. not active)
+    if (ViewportStatus::Success != SetupFromViewController()) // can't proceed if viewport isn't valid (e.g. not active)
         return ERROR;
 
     context.SetViewport(this); // Don't want to attach...but transients have view display mask!
@@ -1147,7 +1147,7 @@ StatusInt       IViewTransients::ComputeRange (DRange3dR range, DgnViewportP vp)
     // NEEDSWORK_WIP_RANGE - Do we need to keep this method if fit starts using project extents???
     //                       Can maybe just have a virtual _GetRange method on IViewTransient and
     //                       require implemention to keep "geometry" range if needed...
-    if (SUCCESS != vp->SetupFromViewController()) // can't proceed if viewport isn't valid (e.g. not active)
+    if (ViewportStatus::Success != vp->SetupFromViewController()) // can't proceed if viewport isn't valid (e.g. not active)
         return  ERROR;
 
     FitViewParams params;

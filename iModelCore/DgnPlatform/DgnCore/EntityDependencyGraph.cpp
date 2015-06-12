@@ -555,7 +555,7 @@ DbResult DgnElementDependencyGraph::UpdateEdgeStatusInDb(Edge const& edge, EdgeS
 DbResult DgnElementDependencyGraph::SetFailedEdgeStatusInDb(Edge const& edge, bool failed) 
     {
     if (failed)
-        m_summary.AddFailedDependencyTarget(edge.m_eout);
+        m_summary.AddFailedTarget(edge.m_eout);
 
     EdgeStatusAccessor saccs(edge.m_status);
     saccs.m_failed = failed;        // set or clear the failed bit
@@ -1017,16 +1017,8 @@ void DgnElementDependencyGraph::InvokeAffectedDependencyHandlers(TxnSummaryCR su
         WriteDot(BeFileName(L"D:\\tmp\\ChangePropagationRelationships.dot"), bvector<bvector<uint64_t>>());
 
     // Step through the affected models in dependency order
-    CachedStatementPtr modelsInOrder;
-    auto sqlitestat = m_db.GetCachedStatement(modelsInOrder, "SELECT Id From " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE InVirtualSet(?,Id) ORDER BY Type,DependencyIndex");
-    if (sqlitestat != BE_SQLITE_OK)
-        {
-        EDGLOG(LOG_ERROR, "error creating model select on %x", sqlitestat);
-        BeAssert(false);
-        return;
-        }
-
-    modelsInOrder->BindVirtualSet(1, summary.m_modelsInTxn);
+    CachedStatementPtr modelsInOrder=m_db.GetCachedStatement("SELECT Id From " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE InVirtualSet(?,Id) ORDER BY Type,DependencyIndex");
+    modelsInOrder->BindVirtualSet(1, summary.GetModelSet());
 
     while (modelsInOrder->Step() == BE_SQLITE_ROW)
         {

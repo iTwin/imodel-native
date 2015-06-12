@@ -509,11 +509,11 @@ static void validateCamera(CameraViewControllerR controller)
 * set up this viewport from the given viewController
 * @bsimethod                                                    KeithBentley    04/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnViewport::_SetupFromViewController()
+ViewportStatus DgnViewport::_SetupFromViewController()
     {
     ViewControllerP   viewController = m_viewController.get();
     if (NULL == viewController)
-        return ERROR;
+        return ViewportStatus::InvalidViewport;
 
     _AdjustAspectRatio(*viewController, false);
 
@@ -609,13 +609,13 @@ StatusInt DgnViewport::_SetupFromViewController()
     m_viewOrg   = origin;
 
     if (SUCCESS != _ConnectToOutput())
-        return ERROR;
+        return ViewportStatus::InvalidViewport;
 
     BeAssert(NULL == m_output || !m_output->IsDrawActive());
 
     double compressionFraction;
     if (SUCCESS != RootToNpcFromViewDef(m_rootToNpc, &compressionFraction, IsCameraOn() ? &m_camera : NULL, origin, delta, m_rotMatrix, viewController->GetTargetModel()))
-        return  ERROR;
+        return  ViewportStatus::InvalidViewport;
 
     DPoint3d  rootBox[NPC_CORNER_COUNT];
     NpcToWorld(rootBox, s_NpcCorners, NPC_CORNER_COUNT);
@@ -628,7 +628,7 @@ StatusInt DgnViewport::_SetupFromViewController()
 
     m_frustumValid = true;
 
-    return SUCCESS;
+    return ViewportStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -660,31 +660,31 @@ void DgnViewport::FixFrustumOrder(Frustum& frustum)
 * Set up the ViewController structure associated with this view with the supplied Frustum.
 * @bsimethod                                                    KeithBentley    11/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnViewport::SetupFromFrustum(Frustum const& inFrustum)
+ViewportStatus DgnViewport::SetupFromFrustum(Frustum const& inFrustum)
     {
     ViewControllerP   viewController = m_viewController.get();
     if (NULL == viewController || !m_frustumValid)
-        return VIEWFRUST_STATUS_InvalidWindow;
+        return ViewportStatus::InvalidWindow;
 
-    ViewFrustumStatus validSize = viewController->SetupFromFrustum(inFrustum);
+    ViewportStatus validSize = viewController->SetupFromFrustum(inFrustum);
 
-    StatusInt status = _SetupFromViewController();
-    if (SUCCESS != status)
+    ViewportStatus status = _SetupFromViewController();
+    if (ViewportStatus::Success != status)
         return  status;
 
     // may have been corrected by SetupFromViewController for sheet/2d views
     viewController->SetRotation(m_rotMatrix);
-    return  validSize;
+    return validSize;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/90
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnViewport::ChangeArea(DPoint3dCP pts)
+ViewportStatus DgnViewport::ChangeArea(DPoint3dCP pts)
     {
     ViewControllerP viewController = m_viewController.get();
     if (NULL == viewController)
-        return  ERROR;
+        return  ViewportStatus::InvalidViewport;
 
     if (!m_qvDCAssigned)
         _SetupFromViewController();
@@ -721,8 +721,8 @@ StatusInt DgnViewport::ChangeArea(DPoint3dCP pts)
         DPoint3d newEye = DPoint3d::FromSumOf(newTarget, cameraView->GetZVector(), focusDist);
 
         auto stat = cameraView->LookAtUsingLensAngle(newEye, newTarget, cameraView->GetYVector(), lensAngle);
-        if (VIEWFRUST_STATUS_SUCCESS != stat)
-            return (StatusInt)stat;
+        if (ViewportStatus::Success != stat)
+            return stat;
         }
     else
         {
@@ -730,9 +730,9 @@ StatusInt DgnViewport::ChangeArea(DPoint3dCP pts)
         delta.z = viewController->GetDelta().z;
 
         /* make sure its not too big or too small */
-        StatusInt returnCode = (StatusInt)ValidateWindowSize(delta, true);
-        if (returnCode != SUCCESS)
-            return returnCode;
+        auto stat = ValidateWindowSize(delta, true);
+        if (stat != ViewportStatus::Success)
+            return stat;
 
         viewController->SetDelta(delta);
 
@@ -743,7 +743,7 @@ StatusInt DgnViewport::ChangeArea(DPoint3dCP pts)
         }
 
     _SynchWithViewController(true);
-    return SUCCESS;
+    return ViewportStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -821,11 +821,11 @@ DPoint3d DgnViewport::DetermineDefaultRotatePoint()
 * Camera position is unchanged.
 * @bsimethod                                                    KeithBentley    12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnViewport::Scroll(Point2dCP screenDist) // => distance to scroll in pixels
+ViewportStatus DgnViewport::Scroll(Point2dCP screenDist) // => distance to scroll in pixels
     {
     ViewControllerP   viewController = m_viewController.get();
     if (NULL == viewController)
-        return ERROR;
+        return ViewportStatus::InvalidViewport;
 
     DVec3d offset;
     offset.Init(screenDist->x, screenDist->y, 0.0);
@@ -891,11 +891,11 @@ double DgnViewport::GetFocusPlaneNpc()
 * Updates ViewController and re-synchs viewport.
 * @bsimethod                                                    KeithBentley    12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnViewport::Zoom(DPoint3dCP newCenterRoot, double factor)
+ViewportStatus DgnViewport::Zoom(DPoint3dCP newCenterRoot, double factor)
     {
     ViewControllerP   viewController = m_viewController.get();
     if (NULL == viewController)
-        return ERROR;
+        return ViewportStatus::InvalidViewport;
 
     CameraViewControllerP cameraView = GetCameraViewControllerP();
     if (cameraView && cameraView->IsCameraOn())
@@ -937,8 +937,8 @@ StatusInt DgnViewport::Zoom(DPoint3dCP newCenterRoot, double factor)
     delta.y *= factor;
 
     // first check to see whether the zoom operation results in an invalid view. If so, make sure we don't change anything
-    StatusInt validSize = ValidateWindowSize(delta, false);
-    if (SUCCESS != validSize)
+    ViewportStatus validSize = ValidateWindowSize(delta, false);
+    if (ViewportStatus::Success != validSize)
         return  validSize;
 
     DPoint3d center = (NULL != newCenterRoot) ? *newCenterRoot : viewController->GetCenter();
@@ -1252,7 +1252,7 @@ double DgnViewport::GetPixelSizeAtPoint(DPoint3dCP rootPtP, DgnCoordSystem coord
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/90
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void limitWindowSize(ViewFrustumStatus& error, double& value, ViewFrustumStatus lowErr, ViewFrustumStatus highErr)
+static void limitWindowSize(ViewportStatus& error, double& value, ViewportStatus lowErr, ViewportStatus highErr)
     {
     if (value < MIN_VIEWDELTA)
         {
@@ -1269,19 +1269,29 @@ static void limitWindowSize(ViewFrustumStatus& error, double& value, ViewFrustum
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::OutputFrustumErrorMessage(StatusInt errorStatus)
+void DgnViewport::OutputFrustumErrorMessage(ViewportStatus errorStatus)
     {
-    if (SUCCESS == errorStatus || ERROR == errorStatus)
-        return;
+    DgnCoreL10N::StringId id;
+    switch (errorStatus)
+        {
+        case ViewportStatus::InvalidWindow:
+            id = DgnCoreL10N::VIEWFRUST_Message_InvalidWindow();
+            break;
+        case ViewportStatus::MaxWindow:
+            id = DgnCoreL10N::VIEWFRUST_Message_MaxWindow();
+            break;
+        case ViewportStatus::MinWindow:
+            id = DgnCoreL10N::VIEWFRUST_Message_MinWindow();
+            break;
+        case ViewportStatus::MaxZoom:
+            id = DgnCoreL10N::VIEWFRUST_Message_MaxZoom();
+            break;
 
-    L10N::StringId ids[] = {
-        DgnCoreL10N::VIEWFRUST_Message_InvalidWindow(),
-        DgnCoreL10N::VIEWFRUST_Message_MinWindow(),
-        DgnCoreL10N::VIEWFRUST_Message_MaxWindow(),
-        DgnCoreL10N::VIEWFRUST_Message_MaxZoom(),
-        };
+        default:
+            return;
+        }
 
-    Utf8String msg = DgnCoreL10N::GetString(*(ids+errorStatus-VIEWFRUSTUM_ERROR_BASE));
+    Utf8String msg = DgnCoreL10N::GetString(id);
     if (msg.size() > 0)
         NotificationManager::OutputMessage(NotifyMessageDetails(OutputMessagePriority::Error, msg.c_str()));
     }
@@ -1289,13 +1299,13 @@ void DgnViewport::OutputFrustumErrorMessage(StatusInt errorStatus)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/86
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewFrustumStatus DgnViewport::ValidateWindowSize(DPoint3dR delta, bool messageNeeded)
+ViewportStatus DgnViewport::ValidateWindowSize(DPoint3dR delta, bool messageNeeded)
     {
-    ViewFrustumStatus  error=VIEWFRUST_STATUS_SUCCESS, ignore;
+    ViewportStatus  error=ViewportStatus::Success, ignore;
 
-    limitWindowSize(error,  delta.x, VIEWFRUST_STATUS_MinWindow, VIEWFRUST_STATUS_MaxWindow);
-    limitWindowSize(error,  delta.y, VIEWFRUST_STATUS_MinWindow, VIEWFRUST_STATUS_MaxWindow);
-    limitWindowSize(ignore, delta.z, VIEWFRUST_STATUS_MinWindow, VIEWFRUST_STATUS_MaxWindow);    // always check z depth
+    limitWindowSize(error,  delta.x, ViewportStatus::MinWindow, ViewportStatus::MaxWindow);
+    limitWindowSize(error,  delta.y, ViewportStatus::MinWindow, ViewportStatus::MaxWindow);
+    limitWindowSize(ignore, delta.z, ViewportStatus::MinWindow, ViewportStatus::MaxWindow);    // always check z depth
 
     if (messageNeeded)
         OutputFrustumErrorMessage(error);
