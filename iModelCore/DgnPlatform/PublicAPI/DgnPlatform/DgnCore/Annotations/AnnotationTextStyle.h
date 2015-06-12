@@ -36,22 +36,21 @@ enum struct AnnotationStackedFractionType
 //=======================================================================================
 enum struct AnnotationTextStyleProperty
 {
-    ColorId = 1, //!< (integer, per-run) @note Must be a valid color ID in the project
+    Color = 1, //!< (integer, per-run) @note Equivalent to ColorDef as an integer
     FontId = 2, //!< (integer, per-run) @note Must be a valid font ID in the project
     Height = 3, //!< (real, per-document) @note In project UORs
     LineSpacingFactor = 4, //!< (real, per-document) @note Factor of height
     IsBold = 5, //!< (integer, per-run) @note 0 or 1 boolean
-    IsItalic = 6, //!< (integer, per-run) @note 0 or 1 boolean
-    // IsSubScript = 7 -- deprecated in 06 in favor of a run property
-    // IsSuperScript = 8 -- deprecated in 06 in favor of a run property
-    IsUnderlined = 9, //!< (integer, per-run) @note 0 or 1 boolean
-    StackedFractionScale = 10, //!< (real, per-run) @note Factor of height
-    StackedFractionType = 11, //!< (integer, per-run) @note Must exist in the AnnotationStackedFractionType enumeration
-    SubScriptOffsetFactor = 12, //!< (real, per-run) @note Factor of height
-    SubScriptScale = 13, //!< (real, per-run) @note Factor of height
-    SuperScriptOffsetFactor = 14, //!< (real, per-run) @note Factor of height
-    SuperScriptScale = 15, //!< (real, per-run) @note Factor of height
-    WidthFactor = 16 //!< (real, per-document) @note Factor of height
+    IsColorByCategory = 6, //!< (integer, per-run) @note 0 or 1 boolean
+    IsItalic = 7, //!< (integer, per-run) @note 0 or 1 boolean
+    IsUnderlined = 8, //!< (integer, per-run) @note 0 or 1 boolean
+    StackedFractionScale = 9, //!< (real, per-run) @note Factor of height
+    StackedFractionType = 10, //!< (integer, per-run) @note Must exist in the AnnotationStackedFractionType enumeration
+    SubScriptOffsetFactor = 11, //!< (real, per-run) @note Factor of height
+    SubScriptScale = 12, //!< (real, per-run) @note Factor of height
+    SuperScriptOffsetFactor = 13, //!< (real, per-run) @note Factor of height
+    SuperScriptScale = 14, //!< (real, per-run) @note Factor of height
+    WidthFactor = 15 //!< (real, per-document) @note Factor of height
 
 //__PUBLISH_SECTION_END__
     // *********************************************************************************************
@@ -140,6 +139,8 @@ public:
     DGNPLATFORM_EXPORT void SetLineSpacingFactor(double);
     DGNPLATFORM_EXPORT bool IsBold() const;
     DGNPLATFORM_EXPORT void SetIsBold(bool);
+    DGNPLATFORM_EXPORT bool IsColorByCategory() const;
+    DGNPLATFORM_EXPORT void SetIsColorByCategory(bool);
     DGNPLATFORM_EXPORT bool IsItalic() const;
     DGNPLATFORM_EXPORT void SetIsItalic(bool);
     DGNPLATFORM_EXPORT bool IsUnderlined() const;

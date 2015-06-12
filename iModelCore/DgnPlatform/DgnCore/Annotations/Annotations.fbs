@@ -15,22 +15,21 @@ namespace BentleyG06.DgnPlatform.FB;
 enum AnnotationTextStyleProperty : int {
                                     //  TYPE    TARGET      NOTES
                                     //  ----    ------      -----
-    ColorId = 1,                    //  integer run         Must be a valid color ID in the project
+    Color = 1,                      //  integer run         Equivalent to ColorDef as an integer
     FontId = 2,                     //  integer run         Must be a valid font ID in the project
     Height = 3,                     //  real    document    In project UORs
     LineSpacingFactor = 4,          //  real    document    Factor of height
     IsBold = 5,                     //  integer run         0 or 1 boolean
-    IsItalic = 6,                   //  integer run         0 or 1 boolean
-    // IsSubScript = 7 -- deprecated in 06 in favor of a run property
-    // IsSuperScript = 8 -- deprecated in 06 in favor of a run property
-    IsUnderlined = 9,               //  integer run         0 or 1 boolean
-    StackedFractionScale = 10,      //  real    run         Factor of height
-    StackedFractionType = 11,       //  integer run         Must exist in the AnnotationStackedFractionType enumeration
-    SubScriptOffsetFactor = 12,     //  real    run         Factor of height
-    SubScriptScale = 13,            //  real    run         Factor of height
-    SuperScriptOffsetFactor = 14,   //  real    run         Factor of height
-    SuperScriptScale = 15,          //  real    run         Factor of height
-    WidthFactor = 16                //  real    document    Factor of height
+    IsColorByCategory = 6,          //  integer run         0 or 1 boolean
+    IsItalic = 7,                   //  integer run         0 or 1 boolean
+    IsUnderlined = 8,               //  integer run         0 or 1 boolean
+    StackedFractionScale = 9,       //  real    run         Factor of height
+    StackedFractionType = 10,       //  integer run         Must exist in the AnnotationStackedFractionType enumeration
+    SubScriptOffsetFactor = 11,     //  real    run         Factor of height
+    SubScriptScale = 12,            //  real    run         Factor of height
+    SuperScriptOffsetFactor = 13,   //  real    run         Factor of height
+    SuperScriptScale = 14,          //  real    run         Factor of height
+    WidthFactor = 15                //  real    document    Factor of height
 
 } // AnnotationTextStyleProperty
 
@@ -86,6 +85,7 @@ struct AnnotationTextBlockSetter (emitVectorTypedefs) {
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
 enum AnnotationTextBlockRunType : int {
+    Invalid = 0,
     Text = 1,
     Fraction = 2,
     LineBreak = 3
@@ -155,21 +155,22 @@ table AnnotationTextBlock {
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
 enum AnnotationFrameStyleProperty : int {
-                                //  TYPE    NOTES
-                                //  ----    -----
-    CloudBulgeFactor = 1,       //  real    Factor of effective diameter
-    CloudDiameterFactor = 2,    //  real    Factor of text height
-    FillColorId = 3,            //  integer Must be a valid color ID in the project
-    FillTransparency = 4,       //  real    [0.0..1.0]
-    HorizontalPadding = 5,      //  real    Factor of the first character's text height
-    IsFillEnabled = 6,          //  integer 0 or 1 boolean
-    IsStrokeCloud = 7,          //  integer 0 or 1 boolean
-    IsStrokeEnabled = 8,        //  integer 0 or 1 boolean
-    StrokeColorId = 9,          //  integer Must be a valid color ID in the project
-    StrokeStyle = 10,           //  integer Must be a standard line code
-    StrokeWeight = 11,          //  integer Must be a standard line weight
-    Type = 12,                  //  integer Must exist in the AnnotationFrameType enumeration
-    VerticalPadding = 13        //  real    Factor of the first character's text height
+                                    //  TYPE    NOTES
+                                    //  ----    -----
+    CloudBulgeFactor = 1,           //  real    Factor of effective diameter
+    CloudDiameterFactor = 2,        //  real    Factor of text height
+    FillColor = 3,                  //  integer Equivalent to ColorDef as an integer
+    FillTransparency = 4,           //  real    [0.0..1.0]
+    HorizontalPadding = 5,          //  real    Factor of the first character's text height
+    IsFillColorByCategory = 6,      //  integer 0 or 1 boolean
+    IsFillEnabled = 7,              //  integer 0 or 1 boolean
+    IsStrokeCloud = 8,              //  integer 0 or 1 boolean
+    IsStrokeColorByCategory = 9,    //  integer 0 or 1 boolean
+    IsStrokeEnabled = 10,           //  integer 0 or 1 boolean
+    StrokeColor = 11,               //  integer Equivalent to ColorDef as an integer
+    StrokeWeight = 12,              //  integer Must be a standard line weight
+    Type = 13,                      //  integer Must exist in the AnnotationFrameType enumeration
+    VerticalPadding = 14            //  real    Factor of the first character's text height
 
 } // AnnotationFrameStyleProperty
 
@@ -219,17 +220,17 @@ table AnnotationFrame {
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
 enum AnnotationLeaderStyleProperty : int {
-                                //  TYPE    NOTES
-                                //  ----    -----
-    LineColorId = 1,            //  integer Must be a valid color ID in the project
-    LineStyle = 2,              //  integer Must be a standard line code
-    LineType = 3,               //  integer Must exist in the AnnotationLeaderLineType enumeration
-    LineWeight = 4,             //  integer Must be a standard line weight
-    TerminatorColorId = 5,      //  integer Must be a valid color ID in the project
-    TerminatorScaleFactor = 6,  //  real    Generally describes the length of the side of the box encompassing the terminator, as a factor of the first character's text height
-    TerminatorStyle = 7,        //  integer Must be a standard line code
-    TerminatorType = 8,         //  integer Must exist in the AnnotationLeaderTerminatorType enumeration
-    TerminatorWeight = 9        //  integer Must be a standard line weight
+                                        //  TYPE    NOTES
+                                        //  ----    -----
+    IsLineColorByCategory = 1,          //  integer 0 or 1 boolean
+    IsTerminatorColorByCategory = 2,    //  integer 0 or 1 boolean
+    LineColor = 3,                      //  integer Equivalent to ColorDef as an integer
+    LineType = 4,                       //  integer Must exist in the AnnotationLeaderLineType enumeration
+    LineWeight = 5,                     //  integer Must be a standard line weight
+    TerminatorColor = 6,                //  integer Equivalent to ColorDef as an integer
+    TerminatorScaleFactor = 7,          //  real    Generally describes the length of the side of the box encompassing the terminator, as a factor of the first character's text height
+    TerminatorType = 8,                 //  integer Must exist in the AnnotationLeaderTerminatorType enumeration
+    TerminatorWeight = 9                //  integer Must be a standard line weight
 
 } // AnnotationLeaderStyleProperty
 
@@ -264,6 +265,7 @@ table AnnotationLeaderStyle {
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
 enum AnnotationLeaderSourceAttachmentType : int {
+    Invalid = 0,
     ById = 1
 
 } // AnnotationLeaderSourceAttachmentType
@@ -272,6 +274,7 @@ enum AnnotationLeaderSourceAttachmentType : int {
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
 enum AnnotationLeaderTargetAttachmentType : int {
+    Invalid = 0,
     ByPhysicalPoint = 1
 
 } // AnnotationLeaderTargetAttachmentType

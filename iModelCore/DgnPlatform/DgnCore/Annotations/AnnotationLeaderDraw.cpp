@@ -28,53 +28,39 @@ void AnnotationLeaderDraw::CopyFrom(AnnotationLeaderDrawCR rhs)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-#ifdef MERGE_0501_06_JEFF
-static void recookDisplayParams(ViewContextR context, ElemDisplayParamsR displayParams)
+static void setStrokeSymbology(ViewContextR context, bool isColorByCategory, ColorDef color, uint32_t weight)
     {
-    DgnModelP model = context.GetCurrentModel();
-    PRECONDITION(NULL != model, );
-
-    displayParams.SetElementColorFlags(model);
-    displayParams.SetFillColorFlags(model);
-
-    context.ResolveEffectiveDisplayParams(displayParams, NULL);
-    context.CookDisplayParams(0);
-    }
-#endif
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     06/2014
-//---------------------------------------------------------------------------------------
-static void setStrokeSymbology(ViewContextR context, ColorDef color, int32_t style, uint32_t weight)
-    {
-#ifdef MERGE_0501_06_JEFF
     ElemDisplayParamsP displayParams = context.GetCurrentDisplayParams();
     PRECONDITION(NULL != displayParams, );
 
-    displayParams->m_symbology.color = color;
-    displayParams->m_symbology.style = style;
-    displayParams->m_symbology.weight = weight;
-    displayParams->m_fillDisplay = FillDisplay::Never;
+    displayParams->ResetAppearance();
+    
+    displayParams->SetWeight(weight);
+    displayParams->SetFillDisplay(FillDisplay::Never);
 
-    recookDisplayParams(context, *displayParams);
-#endif
+    if (!isColorByCategory)
+        displayParams->SetLineColor(color);
+
+    context.CookDisplayParams();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-static void setFillSymbology(ViewContextR context, ColorDef color, double transparency)
+static void setFillSymbology(ViewContextR context, bool isColorByCategory, ColorDef color, double transparency)
     {
-#ifdef MERGE_0501_06_JEFF
     ElemDisplayParamsP displayParams = context.GetCurrentDisplayParams();
     PRECONDITION(NULL != displayParams, );
 
-    displayParams->m_fillColor = color;
-    displayParams->m_transparency = transparency;
-    displayParams->m_fillDisplay = FillDisplay::Always;
+    displayParams->ResetAppearance();
 
-    recookDisplayParams(context, *displayParams);
-#endif
+    displayParams->SetTransparency(transparency);
+    displayParams->SetFillDisplay(FillDisplay::Always);
+
+    if (!isColorByCategory)
+        displayParams->SetFillColor(color);
+
+    context.CookDisplayParams();
     }
 
 //---------------------------------------------------------------------------------------
@@ -220,7 +206,7 @@ BentleyStatus AnnotationLeaderDraw::Draw(ViewContextR context) const
         CurveVectorPtr effectiveLineGeometry = createEffectiveLineGeometry(m_leaderLayout->GetLineGeometry(), transformedTerminatorGeometry.get());
         if (effectiveLineGeometry.IsValid())
             {
-            setStrokeSymbology(context, leaderStyle->GetLineColor(), leaderStyle->GetLineStyle(), leaderStyle->GetLineWeight());
+            setStrokeSymbology(context, leaderStyle->IsLineColorByCategory(), leaderStyle->GetLineColor(), leaderStyle->GetLineWeight());
             output.DrawCurveVector(*effectiveLineGeometry, false);
             }
         }
@@ -233,12 +219,12 @@ BentleyStatus AnnotationLeaderDraw::Draw(ViewContextR context) const
 
         if (CurveVector::BOUNDARY_TYPE_Open == terminatorGeometry.GetBoundaryType())
             {
-            setStrokeSymbology(context, leaderStyle->GetTerminatorColor(), leaderStyle->GetTerminatorStyle(), leaderStyle->GetTerminatorWeight());
+            setStrokeSymbology(context, leaderStyle->IsTerminatorColorByCategory(), leaderStyle->GetTerminatorColor(), leaderStyle->GetTerminatorWeight());
             output.DrawCurveVector(terminatorGeometry, false);
             }
         else
             {
-            setFillSymbology(context, leaderStyle->GetTerminatorColor(), 0.0);
+            setFillSymbology(context, leaderStyle->IsTerminatorColorByCategory(), leaderStyle->GetTerminatorColor(), 0.0);
             output.DrawCurveVector(terminatorGeometry, true);
             }
         

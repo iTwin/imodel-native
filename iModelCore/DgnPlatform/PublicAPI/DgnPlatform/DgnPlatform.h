@@ -655,12 +655,12 @@ enum DgnPlatformInvalidSymbology
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     03/2015
 //=======================================================================================
-enum struct DgnFontType { TrueType = 1, Rsc = 2, Shx = 3 };
+enum struct DgnFontType { TrueType = 1, Rsc = 2, Shx = 3, };
 
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     03/2015
 //=======================================================================================
-enum struct DgnFontStyle { Regular, Bold, Italic, BoldItalic };
+enum struct DgnFontStyle { Regular, Bold, Italic, BoldItalic, };
 
 /** @endcond */
 

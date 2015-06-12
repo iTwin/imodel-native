@@ -40,17 +40,18 @@ enum struct AnnotationFrameStyleProperty
 {
     CloudBulgeFactor = 1, //!< (real) @note Factor of effective diameter
     CloudDiameterFactor = 2, //!< (real) @note Factor of text height
-    FillColorId = 3, //!< (integer) @note Must be a valid color ID in the project
+    FillColor = 3, //!< (integer) @note Equivalent to ColorDef as an integer
     FillTransparency = 4, //!< (real) @note [0.0..1.0]
     HorizontalPadding = 5, //!< (real) @note Factor of the first character's text height
-    IsFillEnabled = 6, //!< (integer) @note 0 or 1 boolean
-    IsStrokeCloud = 7, //!< (integer) @note 0 or 1 boolean
-    IsStrokeEnabled = 8, //!< (integer) @note 0 or 1 boolean
-    StrokeColorId = 9, //!< (integer) @note Must be a valid color ID in the project
-    StrokeStyle = 10, //!< (integer) @note Must be a standard line code
-    StrokeWeight = 11, //!< (integer) @note Must be a standard line weight
-    Type = 12, //!< (integer) @note Must exist in the AnnotationFrameType enumeration
-    VerticalPadding = 13 //!< (real) @note Factor of the first character's text height
+    IsFillColorByCategory = 6, //!< (integer) @note 0 or 1 boolean
+    IsFillEnabled = 7, //!< (integer) @note 0 or 1 boolean
+    IsStrokeCloud = 8, //!< (integer) @note 0 or 1 boolean
+    IsStrokeColorByCategory = 9, //!< (integer) @note 0 or 1 boolean
+    IsStrokeEnabled = 10, //!< (integer) @note 0 or 1 boolean
+    StrokeColor = 11, //!< (integer) @note Equivalent to ColorDef as an integer
+    StrokeWeight = 12, //!< (integer) @note Must be a standard line weight
+    Type = 13, //!< (integer) @note Must exist in the AnnotationFrameType enumeration
+    VerticalPadding = 14 //!< (real) @note Factor of the first character's text height
 };
 
 //=======================================================================================
@@ -131,16 +132,18 @@ public:
     DGNPLATFORM_EXPORT void SetFillTransparency(double);
     DGNPLATFORM_EXPORT double GetHorizontalPadding() const;
     DGNPLATFORM_EXPORT void SetHorizontalPadding(double);
+    DGNPLATFORM_EXPORT bool IsFillColorByCategory() const;
+    DGNPLATFORM_EXPORT void SetIsFillColorByCategory(bool);
     DGNPLATFORM_EXPORT bool IsFillEnabled() const;
     DGNPLATFORM_EXPORT void SetIsFillEnabled(bool);
     DGNPLATFORM_EXPORT bool IsStrokeCloud() const;
     DGNPLATFORM_EXPORT void SetIsStrokeCloud(bool);
+    DGNPLATFORM_EXPORT bool IsStrokeColorByCategory() const;
+    DGNPLATFORM_EXPORT void SetIsStrokeColorByCategory(bool);
     DGNPLATFORM_EXPORT bool IsStrokeEnabled() const;
     DGNPLATFORM_EXPORT void SetIsStrokeEnabled(bool);
     DGNPLATFORM_EXPORT ColorDef GetStrokeColor() const;
     DGNPLATFORM_EXPORT void SetStrokeColor(ColorDef);
-    DGNPLATFORM_EXPORT int32_t GetStrokeStyle() const;
-    DGNPLATFORM_EXPORT void SetStrokeStyle(int32_t);
     DGNPLATFORM_EXPORT uint32_t GetStrokeWeight() const;
     DGNPLATFORM_EXPORT void SetStrokeWeight(uint32_t);
     DGNPLATFORM_EXPORT AnnotationFrameType GetType() const;

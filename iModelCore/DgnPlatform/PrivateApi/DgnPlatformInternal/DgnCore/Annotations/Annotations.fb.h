@@ -33,31 +33,32 @@ struct TextAnnotation;
 struct TextAnnotationElementTransform;
 struct TextAnnotationElement;
 
-enum {
-  AnnotationTextStyleProperty_ColorId = 1,
+enum AnnotationTextStyleProperty {
+  AnnotationTextStyleProperty_Color = 1,
   AnnotationTextStyleProperty_FontId = 2,
   AnnotationTextStyleProperty_Height = 3,
   AnnotationTextStyleProperty_LineSpacingFactor = 4,
   AnnotationTextStyleProperty_IsBold = 5,
-  AnnotationTextStyleProperty_IsItalic = 6,
-  AnnotationTextStyleProperty_IsUnderlined = 9,
-  AnnotationTextStyleProperty_StackedFractionScale = 10,
-  AnnotationTextStyleProperty_StackedFractionType = 11,
-  AnnotationTextStyleProperty_SubScriptOffsetFactor = 12,
-  AnnotationTextStyleProperty_SubScriptScale = 13,
-  AnnotationTextStyleProperty_SuperScriptOffsetFactor = 14,
-  AnnotationTextStyleProperty_SuperScriptScale = 15,
-  AnnotationTextStyleProperty_WidthFactor = 16
+  AnnotationTextStyleProperty_IsColorByCategory = 6,
+  AnnotationTextStyleProperty_IsItalic = 7,
+  AnnotationTextStyleProperty_IsUnderlined = 8,
+  AnnotationTextStyleProperty_StackedFractionScale = 9,
+  AnnotationTextStyleProperty_StackedFractionType = 10,
+  AnnotationTextStyleProperty_SubScriptOffsetFactor = 11,
+  AnnotationTextStyleProperty_SubScriptScale = 12,
+  AnnotationTextStyleProperty_SuperScriptOffsetFactor = 13,
+  AnnotationTextStyleProperty_SuperScriptScale = 14,
+  AnnotationTextStyleProperty_WidthFactor = 15
 };
 
 inline const char **EnumNamesAnnotationTextStyleProperty() {
-  static const char *names[] = { "ColorId", "FontId", "Height", "LineSpacingFactor", "IsBold", "IsItalic", "", "", "IsUnderlined", "StackedFractionScale", "StackedFractionType", "SubScriptOffsetFactor", "SubScriptScale", "SuperScriptOffsetFactor", "SuperScriptScale", "WidthFactor", nullptr };
+  static const char *names[] = { "Color", "FontId", "Height", "LineSpacingFactor", "IsBold", "IsColorByCategory", "IsItalic", "IsUnderlined", "StackedFractionScale", "StackedFractionType", "SubScriptOffsetFactor", "SubScriptScale", "SuperScriptOffsetFactor", "SuperScriptScale", "WidthFactor", nullptr };
   return names;
 }
 
-inline const char *EnumNameAnnotationTextStyleProperty(int e) { return EnumNamesAnnotationTextStyleProperty()[e - AnnotationTextStyleProperty_ColorId]; }
+inline const char *EnumNameAnnotationTextStyleProperty(AnnotationTextStyleProperty e) { return EnumNamesAnnotationTextStyleProperty()[e - AnnotationTextStyleProperty_Color]; }
 
-enum {
+enum AnnotationTextBlockProperty {
   AnnotationTextBlockProperty_DocumentWidth = 1,
   AnnotationTextBlockProperty_Justification = 2
 };
@@ -67,22 +68,23 @@ inline const char **EnumNamesAnnotationTextBlockProperty() {
   return names;
 }
 
-inline const char *EnumNameAnnotationTextBlockProperty(int e) { return EnumNamesAnnotationTextBlockProperty()[e - AnnotationTextBlockProperty_DocumentWidth]; }
+inline const char *EnumNameAnnotationTextBlockProperty(AnnotationTextBlockProperty e) { return EnumNamesAnnotationTextBlockProperty()[e - AnnotationTextBlockProperty_DocumentWidth]; }
 
-enum {
+enum AnnotationTextBlockRunType {
+  AnnotationTextBlockRunType_Invalid = 0,
   AnnotationTextBlockRunType_Text = 1,
   AnnotationTextBlockRunType_Fraction = 2,
   AnnotationTextBlockRunType_LineBreak = 3
 };
 
 inline const char **EnumNamesAnnotationTextBlockRunType() {
-  static const char *names[] = { "Text", "Fraction", "LineBreak", nullptr };
+  static const char *names[] = { "Invalid", "Text", "Fraction", "LineBreak", nullptr };
   return names;
 }
 
-inline const char *EnumNameAnnotationTextBlockRunType(int e) { return EnumNamesAnnotationTextBlockRunType()[e - AnnotationTextBlockRunType_Text]; }
+inline const char *EnumNameAnnotationTextBlockRunType(AnnotationTextBlockRunType e) { return EnumNamesAnnotationTextBlockRunType()[e]; }
 
-enum {
+enum AnnotationTextRunSubSuperScript {
   AnnotationTextRunSubSuperScript_Neither = 0,
   AnnotationTextRunSubSuperScript_SubScript = 1,
   AnnotationTextRunSubSuperScript_SuperScript = 2
@@ -93,73 +95,76 @@ inline const char **EnumNamesAnnotationTextRunSubSuperScript() {
   return names;
 }
 
-inline const char *EnumNameAnnotationTextRunSubSuperScript(int e) { return EnumNamesAnnotationTextRunSubSuperScript()[e]; }
+inline const char *EnumNameAnnotationTextRunSubSuperScript(AnnotationTextRunSubSuperScript e) { return EnumNamesAnnotationTextRunSubSuperScript()[e]; }
 
-enum {
+enum AnnotationFrameStyleProperty {
   AnnotationFrameStyleProperty_CloudBulgeFactor = 1,
   AnnotationFrameStyleProperty_CloudDiameterFactor = 2,
-  AnnotationFrameStyleProperty_FillColorId = 3,
+  AnnotationFrameStyleProperty_FillColor = 3,
   AnnotationFrameStyleProperty_FillTransparency = 4,
   AnnotationFrameStyleProperty_HorizontalPadding = 5,
-  AnnotationFrameStyleProperty_IsFillEnabled = 6,
-  AnnotationFrameStyleProperty_IsStrokeCloud = 7,
-  AnnotationFrameStyleProperty_IsStrokeEnabled = 8,
-  AnnotationFrameStyleProperty_StrokeColorId = 9,
-  AnnotationFrameStyleProperty_StrokeStyle = 10,
-  AnnotationFrameStyleProperty_StrokeWeight = 11,
-  AnnotationFrameStyleProperty_Type = 12,
-  AnnotationFrameStyleProperty_VerticalPadding = 13
+  AnnotationFrameStyleProperty_IsFillColorByCategory = 6,
+  AnnotationFrameStyleProperty_IsFillEnabled = 7,
+  AnnotationFrameStyleProperty_IsStrokeCloud = 8,
+  AnnotationFrameStyleProperty_IsStrokeColorByCategory = 9,
+  AnnotationFrameStyleProperty_IsStrokeEnabled = 10,
+  AnnotationFrameStyleProperty_StrokeColor = 11,
+  AnnotationFrameStyleProperty_StrokeWeight = 12,
+  AnnotationFrameStyleProperty_Type = 13,
+  AnnotationFrameStyleProperty_VerticalPadding = 14
 };
 
 inline const char **EnumNamesAnnotationFrameStyleProperty() {
-  static const char *names[] = { "CloudBulgeFactor", "CloudDiameterFactor", "FillColorId", "FillTransparency", "HorizontalPadding", "IsFillEnabled", "IsStrokeCloud", "IsStrokeEnabled", "StrokeColorId", "StrokeStyle", "StrokeWeight", "Type", "VerticalPadding", nullptr };
+  static const char *names[] = { "CloudBulgeFactor", "CloudDiameterFactor", "FillColor", "FillTransparency", "HorizontalPadding", "IsFillColorByCategory", "IsFillEnabled", "IsStrokeCloud", "IsStrokeColorByCategory", "IsStrokeEnabled", "StrokeColor", "StrokeWeight", "Type", "VerticalPadding", nullptr };
   return names;
 }
 
-inline const char *EnumNameAnnotationFrameStyleProperty(int e) { return EnumNamesAnnotationFrameStyleProperty()[e - AnnotationFrameStyleProperty_CloudBulgeFactor]; }
+inline const char *EnumNameAnnotationFrameStyleProperty(AnnotationFrameStyleProperty e) { return EnumNamesAnnotationFrameStyleProperty()[e - AnnotationFrameStyleProperty_CloudBulgeFactor]; }
 
-enum {
-  AnnotationLeaderStyleProperty_LineColorId = 1,
-  AnnotationLeaderStyleProperty_LineStyle = 2,
-  AnnotationLeaderStyleProperty_LineType = 3,
-  AnnotationLeaderStyleProperty_LineWeight = 4,
-  AnnotationLeaderStyleProperty_TerminatorColorId = 5,
-  AnnotationLeaderStyleProperty_TerminatorScaleFactor = 6,
-  AnnotationLeaderStyleProperty_TerminatorStyle = 7,
+enum AnnotationLeaderStyleProperty {
+  AnnotationLeaderStyleProperty_IsLineColorByCategory = 1,
+  AnnotationLeaderStyleProperty_IsTerminatorColorByCategory = 2,
+  AnnotationLeaderStyleProperty_LineColor = 3,
+  AnnotationLeaderStyleProperty_LineType = 4,
+  AnnotationLeaderStyleProperty_LineWeight = 5,
+  AnnotationLeaderStyleProperty_TerminatorColor = 6,
+  AnnotationLeaderStyleProperty_TerminatorScaleFactor = 7,
   AnnotationLeaderStyleProperty_TerminatorType = 8,
   AnnotationLeaderStyleProperty_TerminatorWeight = 9
 };
 
 inline const char **EnumNamesAnnotationLeaderStyleProperty() {
-  static const char *names[] = { "LineColorId", "LineStyle", "LineType", "LineWeight", "TerminatorColorId", "TerminatorScaleFactor", "TerminatorStyle", "TerminatorType", "TerminatorWeight", nullptr };
+  static const char *names[] = { "IsLineColorByCategory", "IsTerminatorColorByCategory", "LineColor", "LineType", "LineWeight", "TerminatorColor", "TerminatorScaleFactor", "TerminatorType", "TerminatorWeight", nullptr };
   return names;
 }
 
-inline const char *EnumNameAnnotationLeaderStyleProperty(int e) { return EnumNamesAnnotationLeaderStyleProperty()[e - AnnotationLeaderStyleProperty_LineColorId]; }
+inline const char *EnumNameAnnotationLeaderStyleProperty(AnnotationLeaderStyleProperty e) { return EnumNamesAnnotationLeaderStyleProperty()[e - AnnotationLeaderStyleProperty_IsLineColorByCategory]; }
 
-enum {
+enum AnnotationLeaderSourceAttachmentType {
+  AnnotationLeaderSourceAttachmentType_Invalid = 0,
   AnnotationLeaderSourceAttachmentType_ById = 1
 };
 
 inline const char **EnumNamesAnnotationLeaderSourceAttachmentType() {
-  static const char *names[] = { "ById", nullptr };
+  static const char *names[] = { "Invalid", "ById", nullptr };
   return names;
 }
 
-inline const char *EnumNameAnnotationLeaderSourceAttachmentType(int e) { return EnumNamesAnnotationLeaderSourceAttachmentType()[e - AnnotationLeaderSourceAttachmentType_ById]; }
+inline const char *EnumNameAnnotationLeaderSourceAttachmentType(AnnotationLeaderSourceAttachmentType e) { return EnumNamesAnnotationLeaderSourceAttachmentType()[e]; }
 
-enum {
+enum AnnotationLeaderTargetAttachmentType {
+  AnnotationLeaderTargetAttachmentType_Invalid = 0,
   AnnotationLeaderTargetAttachmentType_ByPhysicalPoint = 1
 };
 
 inline const char **EnumNamesAnnotationLeaderTargetAttachmentType() {
-  static const char *names[] = { "ByPhysicalPoint", nullptr };
+  static const char *names[] = { "Invalid", "ByPhysicalPoint", nullptr };
   return names;
 }
 
-inline const char *EnumNameAnnotationLeaderTargetAttachmentType(int e) { return EnumNamesAnnotationLeaderTargetAttachmentType()[e - AnnotationLeaderTargetAttachmentType_ByPhysicalPoint]; }
+inline const char *EnumNameAnnotationLeaderTargetAttachmentType(AnnotationLeaderTargetAttachmentType e) { return EnumNamesAnnotationLeaderTargetAttachmentType()[e]; }
 
-enum {
+enum TextAnnotationSeedProperty {
   TextAnnotationSeedProperty_FrameStyleId = 1,
   TextAnnotationSeedProperty_LeaderStyleId = 2,
   TextAnnotationSeedProperty_TextStyleId = 3
@@ -170,7 +175,7 @@ inline const char **EnumNamesTextAnnotationSeedProperty() {
   return names;
 }
 
-inline const char *EnumNameTextAnnotationSeedProperty(int e) { return EnumNamesTextAnnotationSeedProperty()[e - TextAnnotationSeedProperty_FrameStyleId]; }
+inline const char *EnumNameTextAnnotationSeedProperty(TextAnnotationSeedProperty e) { return EnumNamesTextAnnotationSeedProperty()[e - TextAnnotationSeedProperty_FrameStyleId]; }
 
 MANUALLY_ALIGNED_STRUCT(8) AnnotationTextStyleSetter {
  private:
@@ -187,10 +192,10 @@ MANUALLY_ALIGNED_STRUCT(8) AnnotationTextStyleSetter {
   double realValue_;
 
  public:
-  AnnotationTextStyleSetter(int32_t key, int64_t integerValue, double realValue)
-    : key_(flatbuffers::EndianScalar(key)), __padding0(0), integerValue_(flatbuffers::EndianScalar(integerValue)), realValue_(flatbuffers::EndianScalar(realValue)) { (void)__padding0; }
+  AnnotationTextStyleSetter(AnnotationTextStyleProperty key, int64_t integerValue, double realValue)
+    : key_(flatbuffers::EndianScalar(static_cast<int32_t>(key))), __padding0(0), integerValue_(flatbuffers::EndianScalar(integerValue)), realValue_(flatbuffers::EndianScalar(realValue)) { (void)__padding0; }
 
-  int32_t key() const { return flatbuffers::EndianScalar(key_); }
+  AnnotationTextStyleProperty key() const { return static_cast<AnnotationTextStyleProperty>(flatbuffers::EndianScalar(key_)); }
   int64_t integerValue() const { return flatbuffers::EndianScalar(integerValue_); }
   double realValue() const { return flatbuffers::EndianScalar(realValue_); }
 };
@@ -215,10 +220,10 @@ MANUALLY_ALIGNED_STRUCT(8) AnnotationTextBlockSetter {
   double realValue_;
 
  public:
-  AnnotationTextBlockSetter(int32_t key, int64_t integerValue, double realValue)
-    : key_(flatbuffers::EndianScalar(key)), __padding0(0), integerValue_(flatbuffers::EndianScalar(integerValue)), realValue_(flatbuffers::EndianScalar(realValue)) { (void)__padding0; }
+  AnnotationTextBlockSetter(AnnotationTextBlockProperty key, int64_t integerValue, double realValue)
+    : key_(flatbuffers::EndianScalar(static_cast<int32_t>(key))), __padding0(0), integerValue_(flatbuffers::EndianScalar(integerValue)), realValue_(flatbuffers::EndianScalar(realValue)) { (void)__padding0; }
 
-  int32_t key() const { return flatbuffers::EndianScalar(key_); }
+  AnnotationTextBlockProperty key() const { return static_cast<AnnotationTextBlockProperty>(flatbuffers::EndianScalar(key_)); }
   int64_t integerValue() const { return flatbuffers::EndianScalar(integerValue_); }
   double realValue() const { return flatbuffers::EndianScalar(realValue_); }
 };
@@ -243,10 +248,10 @@ MANUALLY_ALIGNED_STRUCT(8) AnnotationFrameStyleSetter {
   double realValue_;
 
  public:
-  AnnotationFrameStyleSetter(int32_t key, int64_t integerValue, double realValue)
-    : key_(flatbuffers::EndianScalar(key)), __padding0(0), integerValue_(flatbuffers::EndianScalar(integerValue)), realValue_(flatbuffers::EndianScalar(realValue)) { (void)__padding0; }
+  AnnotationFrameStyleSetter(AnnotationFrameStyleProperty key, int64_t integerValue, double realValue)
+    : key_(flatbuffers::EndianScalar(static_cast<int32_t>(key))), __padding0(0), integerValue_(flatbuffers::EndianScalar(integerValue)), realValue_(flatbuffers::EndianScalar(realValue)) { (void)__padding0; }
 
-  int32_t key() const { return flatbuffers::EndianScalar(key_); }
+  AnnotationFrameStyleProperty key() const { return static_cast<AnnotationFrameStyleProperty>(flatbuffers::EndianScalar(key_)); }
   int64_t integerValue() const { return flatbuffers::EndianScalar(integerValue_); }
   double realValue() const { return flatbuffers::EndianScalar(realValue_); }
 };
@@ -271,10 +276,10 @@ MANUALLY_ALIGNED_STRUCT(8) AnnotationLeaderStyleSetter {
   double realValue_;
 
  public:
-  AnnotationLeaderStyleSetter(int32_t key, int64_t integerValue, double realValue)
-    : key_(flatbuffers::EndianScalar(key)), __padding0(0), integerValue_(flatbuffers::EndianScalar(integerValue)), realValue_(flatbuffers::EndianScalar(realValue)) { (void)__padding0; }
+  AnnotationLeaderStyleSetter(AnnotationLeaderStyleProperty key, int64_t integerValue, double realValue)
+    : key_(flatbuffers::EndianScalar(static_cast<int32_t>(key))), __padding0(0), integerValue_(flatbuffers::EndianScalar(integerValue)), realValue_(flatbuffers::EndianScalar(realValue)) { (void)__padding0; }
 
-  int32_t key() const { return flatbuffers::EndianScalar(key_); }
+  AnnotationLeaderStyleProperty key() const { return static_cast<AnnotationLeaderStyleProperty>(flatbuffers::EndianScalar(key_)); }
   int64_t integerValue() const { return flatbuffers::EndianScalar(integerValue_); }
   double realValue() const { return flatbuffers::EndianScalar(realValue_); }
 };
@@ -315,10 +320,10 @@ MANUALLY_ALIGNED_STRUCT(8) TextAnnotationSeedSetter {
   double realValue_;
 
  public:
-  TextAnnotationSeedSetter(int32_t key, int64_t integerValue, double realValue)
-    : key_(flatbuffers::EndianScalar(key)), __padding0(0), integerValue_(flatbuffers::EndianScalar(integerValue)), realValue_(flatbuffers::EndianScalar(realValue)) { (void)__padding0; }
+  TextAnnotationSeedSetter(TextAnnotationSeedProperty key, int64_t integerValue, double realValue)
+    : key_(flatbuffers::EndianScalar(static_cast<int32_t>(key))), __padding0(0), integerValue_(flatbuffers::EndianScalar(integerValue)), realValue_(flatbuffers::EndianScalar(realValue)) { (void)__padding0; }
 
-  int32_t key() const { return flatbuffers::EndianScalar(key_); }
+  TextAnnotationSeedProperty key() const { return static_cast<TextAnnotationSeedProperty>(flatbuffers::EndianScalar(key_)); }
   int64_t integerValue() const { return flatbuffers::EndianScalar(integerValue_); }
   double realValue() const { return flatbuffers::EndianScalar(realValue_); }
 };
@@ -401,7 +406,10 @@ struct AnnotationTextStyleBuilder {
   void add_setters(flatbuffers::Offset<flatbuffers::Vector<const AnnotationTextStyleSetter *>> setters) { fbb_.AddOffset(14, setters); }
   AnnotationTextStyleBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   AnnotationTextStyleBuilder &operator=(const AnnotationTextStyleBuilder &);
-  flatbuffers::Offset<AnnotationTextStyle> Finish() { return flatbuffers::Offset<AnnotationTextStyle>(fbb_.EndTable(start_, 6)); }
+  flatbuffers::Offset<AnnotationTextStyle> Finish() {
+    auto o = flatbuffers::Offset<AnnotationTextStyle>(fbb_.EndTable(start_, 6));
+    return o;
+  }
 };
 
 inline flatbuffers::Offset<AnnotationTextStyle> CreateAnnotationTextStyle(flatbuffers::FlatBufferBuilder &_fbb,
@@ -422,14 +430,14 @@ inline flatbuffers::Offset<AnnotationTextStyle> CreateAnnotationTextStyle(flatbu
 }
 
 struct AnnotationTextBlockRun : private flatbuffers::Table {
-  int32_t type() const { return GetField<int32_t>(4, 0); }
+  AnnotationTextBlockRunType type() const { return static_cast<AnnotationTextBlockRunType>(GetField<int32_t>(4, 0)); }
   const flatbuffers::Vector<const AnnotationTextBlockSetter *> *properties() const { return GetPointer<const flatbuffers::Vector<const AnnotationTextBlockSetter *> *>(6); }
   int64_t styleId() const { return GetField<int64_t>(8, 0); }
   const flatbuffers::Vector<const AnnotationTextStyleSetter *> *styleOverrides() const { return GetPointer<const flatbuffers::Vector<const AnnotationTextStyleSetter *> *>(10); }
   const flatbuffers::String *text_content() const { return GetPointer<const flatbuffers::String *>(12); }
   const flatbuffers::String *fraction_numeratorContent() const { return GetPointer<const flatbuffers::String *>(14); }
   const flatbuffers::String *fraction_denominatorContent() const { return GetPointer<const flatbuffers::String *>(16); }
-  int32_t text_subsuperscript() const { return GetField<int32_t>(18, 0); }
+  AnnotationTextRunSubSuperScript text_subsuperscript() const { return static_cast<AnnotationTextRunSubSuperScript>(GetField<int32_t>(18, 0)); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<int32_t>(verifier, 4 /* type */) &&
@@ -466,28 +474,31 @@ typedef flatbuffers::Offset<AnnotationTextBlockRunOffsetVector> AnnotationTextBl
 struct AnnotationTextBlockRunBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_type(int32_t type) { fbb_.AddElement<int32_t>(4, type, 0); }
+  void add_type(AnnotationTextBlockRunType type) { fbb_.AddElement<int32_t>(4, static_cast<int32_t>(type), 0); }
   void add_properties(flatbuffers::Offset<flatbuffers::Vector<const AnnotationTextBlockSetter *>> properties) { fbb_.AddOffset(6, properties); }
   void add_styleId(int64_t styleId) { fbb_.AddElement<int64_t>(8, styleId, 0); }
   void add_styleOverrides(flatbuffers::Offset<flatbuffers::Vector<const AnnotationTextStyleSetter *>> styleOverrides) { fbb_.AddOffset(10, styleOverrides); }
   void add_text_content(flatbuffers::Offset<flatbuffers::String> text_content) { fbb_.AddOffset(12, text_content); }
   void add_fraction_numeratorContent(flatbuffers::Offset<flatbuffers::String> fraction_numeratorContent) { fbb_.AddOffset(14, fraction_numeratorContent); }
   void add_fraction_denominatorContent(flatbuffers::Offset<flatbuffers::String> fraction_denominatorContent) { fbb_.AddOffset(16, fraction_denominatorContent); }
-  void add_text_subsuperscript(int32_t text_subsuperscript) { fbb_.AddElement<int32_t>(18, text_subsuperscript, 0); }
+  void add_text_subsuperscript(AnnotationTextRunSubSuperScript text_subsuperscript) { fbb_.AddElement<int32_t>(18, static_cast<int32_t>(text_subsuperscript), 0); }
   AnnotationTextBlockRunBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   AnnotationTextBlockRunBuilder &operator=(const AnnotationTextBlockRunBuilder &);
-  flatbuffers::Offset<AnnotationTextBlockRun> Finish() { return flatbuffers::Offset<AnnotationTextBlockRun>(fbb_.EndTable(start_, 8)); }
+  flatbuffers::Offset<AnnotationTextBlockRun> Finish() {
+    auto o = flatbuffers::Offset<AnnotationTextBlockRun>(fbb_.EndTable(start_, 8));
+    return o;
+  }
 };
 
 inline flatbuffers::Offset<AnnotationTextBlockRun> CreateAnnotationTextBlockRun(flatbuffers::FlatBufferBuilder &_fbb,
-   int32_t type = 0,
+   AnnotationTextBlockRunType type = AnnotationTextBlockRunType_Invalid,
    flatbuffers::Offset<flatbuffers::Vector<const AnnotationTextBlockSetter *>> properties = 0,
    int64_t styleId = 0,
    flatbuffers::Offset<flatbuffers::Vector<const AnnotationTextStyleSetter *>> styleOverrides = 0,
    flatbuffers::Offset<flatbuffers::String> text_content = 0,
    flatbuffers::Offset<flatbuffers::String> fraction_numeratorContent = 0,
    flatbuffers::Offset<flatbuffers::String> fraction_denominatorContent = 0,
-   int32_t text_subsuperscript = 0) {
+   AnnotationTextRunSubSuperScript text_subsuperscript = AnnotationTextRunSubSuperScript_Neither) {
   AnnotationTextBlockRunBuilder builder_(_fbb);
   builder_.add_styleId(styleId);
   builder_.add_text_subsuperscript(text_subsuperscript);
@@ -538,7 +549,10 @@ struct AnnotationTextBlockParagraphBuilder {
   void add_runs(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<AnnotationTextBlockRun>>> runs) { fbb_.AddOffset(10, runs); }
   AnnotationTextBlockParagraphBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   AnnotationTextBlockParagraphBuilder &operator=(const AnnotationTextBlockParagraphBuilder &);
-  flatbuffers::Offset<AnnotationTextBlockParagraph> Finish() { return flatbuffers::Offset<AnnotationTextBlockParagraph>(fbb_.EndTable(start_, 4)); }
+  flatbuffers::Offset<AnnotationTextBlockParagraph> Finish() {
+    auto o = flatbuffers::Offset<AnnotationTextBlockParagraph>(fbb_.EndTable(start_, 4));
+    return o;
+  }
 };
 
 inline flatbuffers::Offset<AnnotationTextBlockParagraph> CreateAnnotationTextBlockParagraph(flatbuffers::FlatBufferBuilder &_fbb,
@@ -594,7 +608,10 @@ struct AnnotationTextBlockBuilder {
   void add_paragraphs(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<AnnotationTextBlockParagraph>>> paragraphs) { fbb_.AddOffset(14, paragraphs); }
   AnnotationTextBlockBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   AnnotationTextBlockBuilder &operator=(const AnnotationTextBlockBuilder &);
-  flatbuffers::Offset<AnnotationTextBlock> Finish() { return flatbuffers::Offset<AnnotationTextBlock>(fbb_.EndTable(start_, 6)); }
+  flatbuffers::Offset<AnnotationTextBlock> Finish() {
+    auto o = flatbuffers::Offset<AnnotationTextBlock>(fbb_.EndTable(start_, 6));
+    return o;
+  }
 };
 
 inline flatbuffers::Offset<AnnotationTextBlock> CreateAnnotationTextBlock(flatbuffers::FlatBufferBuilder &_fbb,
@@ -653,7 +670,10 @@ struct AnnotationFrameStyleBuilder {
   void add_setters(flatbuffers::Offset<flatbuffers::Vector<const AnnotationFrameStyleSetter *>> setters) { fbb_.AddOffset(14, setters); }
   AnnotationFrameStyleBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   AnnotationFrameStyleBuilder &operator=(const AnnotationFrameStyleBuilder &);
-  flatbuffers::Offset<AnnotationFrameStyle> Finish() { return flatbuffers::Offset<AnnotationFrameStyle>(fbb_.EndTable(start_, 6)); }
+  flatbuffers::Offset<AnnotationFrameStyle> Finish() {
+    auto o = flatbuffers::Offset<AnnotationFrameStyle>(fbb_.EndTable(start_, 6));
+    return o;
+  }
 };
 
 inline flatbuffers::Offset<AnnotationFrameStyle> CreateAnnotationFrameStyle(flatbuffers::FlatBufferBuilder &_fbb,
@@ -702,7 +722,10 @@ struct AnnotationFrameBuilder {
   void add_styleOverrides(flatbuffers::Offset<flatbuffers::Vector<const AnnotationFrameStyleSetter *>> styleOverrides) { fbb_.AddOffset(10, styleOverrides); }
   AnnotationFrameBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   AnnotationFrameBuilder &operator=(const AnnotationFrameBuilder &);
-  flatbuffers::Offset<AnnotationFrame> Finish() { return flatbuffers::Offset<AnnotationFrame>(fbb_.EndTable(start_, 4)); }
+  flatbuffers::Offset<AnnotationFrame> Finish() {
+    auto o = flatbuffers::Offset<AnnotationFrame>(fbb_.EndTable(start_, 4));
+    return o;
+  }
 };
 
 inline flatbuffers::Offset<AnnotationFrame> CreateAnnotationFrame(flatbuffers::FlatBufferBuilder &_fbb,
@@ -757,7 +780,10 @@ struct AnnotationLeaderStyleBuilder {
   void add_setters(flatbuffers::Offset<flatbuffers::Vector<const AnnotationLeaderStyleSetter *>> setters) { fbb_.AddOffset(14, setters); }
   AnnotationLeaderStyleBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   AnnotationLeaderStyleBuilder &operator=(const AnnotationLeaderStyleBuilder &);
-  flatbuffers::Offset<AnnotationLeaderStyle> Finish() { return flatbuffers::Offset<AnnotationLeaderStyle>(fbb_.EndTable(start_, 6)); }
+  flatbuffers::Offset<AnnotationLeaderStyle> Finish() {
+    auto o = flatbuffers::Offset<AnnotationLeaderStyle>(fbb_.EndTable(start_, 6));
+    return o;
+  }
 };
 
 inline flatbuffers::Offset<AnnotationLeaderStyle> CreateAnnotationLeaderStyle(flatbuffers::FlatBufferBuilder &_fbb,
@@ -782,9 +808,9 @@ struct AnnotationLeader : private flatbuffers::Table {
   uint8_t minorVersion() const { return GetField<uint8_t>(6, 0); }
   int64_t styleId() const { return GetField<int64_t>(8, 0); }
   const flatbuffers::Vector<const AnnotationLeaderStyleSetter *> *styleOverrides() const { return GetPointer<const flatbuffers::Vector<const AnnotationLeaderStyleSetter *> *>(10); }
-  int32_t sourceAttachmentType() const { return GetField<int32_t>(12, 0); }
+  AnnotationLeaderSourceAttachmentType sourceAttachmentType() const { return static_cast<AnnotationLeaderSourceAttachmentType>(GetField<int32_t>(12, 0)); }
   uint32_t sourceAttachmentId() const { return GetField<uint32_t>(14, 0); }
-  int32_t targetAttachmentType() const { return GetField<int32_t>(16, 0); }
+  AnnotationLeaderTargetAttachmentType targetAttachmentType() const { return static_cast<AnnotationLeaderTargetAttachmentType>(GetField<int32_t>(16, 0)); }
   const AnnotationLeaderDPoint3d *targetAttachmentPt() const { return GetStruct<const AnnotationLeaderDPoint3d *>(18); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
@@ -822,13 +848,16 @@ struct AnnotationLeaderBuilder {
   void add_minorVersion(uint8_t minorVersion) { fbb_.AddElement<uint8_t>(6, minorVersion, 0); }
   void add_styleId(int64_t styleId) { fbb_.AddElement<int64_t>(8, styleId, 0); }
   void add_styleOverrides(flatbuffers::Offset<flatbuffers::Vector<const AnnotationLeaderStyleSetter *>> styleOverrides) { fbb_.AddOffset(10, styleOverrides); }
-  void add_sourceAttachmentType(int32_t sourceAttachmentType) { fbb_.AddElement<int32_t>(12, sourceAttachmentType, 0); }
+  void add_sourceAttachmentType(AnnotationLeaderSourceAttachmentType sourceAttachmentType) { fbb_.AddElement<int32_t>(12, static_cast<int32_t>(sourceAttachmentType), 0); }
   void add_sourceAttachmentId(uint32_t sourceAttachmentId) { fbb_.AddElement<uint32_t>(14, sourceAttachmentId, 0); }
-  void add_targetAttachmentType(int32_t targetAttachmentType) { fbb_.AddElement<int32_t>(16, targetAttachmentType, 0); }
+  void add_targetAttachmentType(AnnotationLeaderTargetAttachmentType targetAttachmentType) { fbb_.AddElement<int32_t>(16, static_cast<int32_t>(targetAttachmentType), 0); }
   void add_targetAttachmentPt(const AnnotationLeaderDPoint3d *targetAttachmentPt) { fbb_.AddStruct(18, targetAttachmentPt); }
   AnnotationLeaderBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   AnnotationLeaderBuilder &operator=(const AnnotationLeaderBuilder &);
-  flatbuffers::Offset<AnnotationLeader> Finish() { return flatbuffers::Offset<AnnotationLeader>(fbb_.EndTable(start_, 8)); }
+  flatbuffers::Offset<AnnotationLeader> Finish() {
+    auto o = flatbuffers::Offset<AnnotationLeader>(fbb_.EndTable(start_, 8));
+    return o;
+  }
 };
 
 inline flatbuffers::Offset<AnnotationLeader> CreateAnnotationLeader(flatbuffers::FlatBufferBuilder &_fbb,
@@ -836,9 +865,9 @@ inline flatbuffers::Offset<AnnotationLeader> CreateAnnotationLeader(flatbuffers:
    uint8_t minorVersion = 0,
    int64_t styleId = 0,
    flatbuffers::Offset<flatbuffers::Vector<const AnnotationLeaderStyleSetter *>> styleOverrides = 0,
-   int32_t sourceAttachmentType = 0,
+   AnnotationLeaderSourceAttachmentType sourceAttachmentType = AnnotationLeaderSourceAttachmentType_Invalid,
    uint32_t sourceAttachmentId = 0,
-   int32_t targetAttachmentType = 0,
+   AnnotationLeaderTargetAttachmentType targetAttachmentType = AnnotationLeaderTargetAttachmentType_Invalid,
    const AnnotationLeaderDPoint3d *targetAttachmentPt = 0) {
   AnnotationLeaderBuilder builder_(_fbb);
   builder_.add_styleId(styleId);
@@ -891,7 +920,10 @@ struct TextAnnotationSeedBuilder {
   void add_setters(flatbuffers::Offset<flatbuffers::Vector<const TextAnnotationSeedSetter *>> setters) { fbb_.AddOffset(14, setters); }
   TextAnnotationSeedBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   TextAnnotationSeedBuilder &operator=(const TextAnnotationSeedBuilder &);
-  flatbuffers::Offset<TextAnnotationSeed> Finish() { return flatbuffers::Offset<TextAnnotationSeed>(fbb_.EndTable(start_, 6)); }
+  flatbuffers::Offset<TextAnnotationSeed> Finish() {
+    auto o = flatbuffers::Offset<TextAnnotationSeed>(fbb_.EndTable(start_, 6));
+    return o;
+  }
 };
 
 inline flatbuffers::Offset<TextAnnotationSeed> CreateTextAnnotationSeed(flatbuffers::FlatBufferBuilder &_fbb,
@@ -947,7 +979,10 @@ struct TextAnnotationBuilder {
   void add_leaders(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<AnnotationLeader>>> leaders) { fbb_.AddOffset(12, leaders); }
   TextAnnotationBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   TextAnnotationBuilder &operator=(const TextAnnotationBuilder &);
-  flatbuffers::Offset<TextAnnotation> Finish() { return flatbuffers::Offset<TextAnnotation>(fbb_.EndTable(start_, 5)); }
+  flatbuffers::Offset<TextAnnotation> Finish() {
+    auto o = flatbuffers::Offset<TextAnnotation>(fbb_.EndTable(start_, 5));
+    return o;
+  }
 };
 
 inline flatbuffers::Offset<TextAnnotation> CreateTextAnnotation(flatbuffers::FlatBufferBuilder &_fbb,
@@ -993,7 +1028,10 @@ struct TextAnnotationElementBuilder {
   void add_transform(const TextAnnotationElementTransform *transform) { fbb_.AddStruct(10, transform); }
   TextAnnotationElementBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   TextAnnotationElementBuilder &operator=(const TextAnnotationElementBuilder &);
-  flatbuffers::Offset<TextAnnotationElement> Finish() { return flatbuffers::Offset<TextAnnotationElement>(fbb_.EndTable(start_, 4)); }
+  flatbuffers::Offset<TextAnnotationElement> Finish() {
+    auto o = flatbuffers::Offset<TextAnnotationElement>(fbb_.EndTable(start_, 4));
+    return o;
+  }
 };
 
 inline flatbuffers::Offset<TextAnnotationElement> CreateTextAnnotationElement(flatbuffers::FlatBufferBuilder &_fbb,

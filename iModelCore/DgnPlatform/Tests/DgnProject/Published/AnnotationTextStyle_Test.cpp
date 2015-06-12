@@ -37,7 +37,7 @@ TEST(BasicAnnotationTextStyleTest, PropertyBagTypes)
     {
     AnnotationTextStylePropertyBagPtr data = AnnotationTextStylePropertyBag::Create();
 
-    data->SetIntegerProperty(AnnotationTextStyleProperty::ColorId, 2);
+    data->SetIntegerProperty(AnnotationTextStyleProperty::Color, 2);
     data->SetIntegerProperty(AnnotationTextStyleProperty::FontId, 2);
     data->SetRealProperty(AnnotationTextStyleProperty::Height, 2.0);
     data->SetIntegerProperty(AnnotationTextStyleProperty::IsBold, 1);

@@ -22,12 +22,13 @@ bool AnnotationFrameStylePropertyBag::_IsIntegerProperty(T_Key key) const
     {
     switch ((AnnotationFrameStyleProperty)key)
         {
-        case AnnotationFrameStyleProperty::FillColorId:
+        case AnnotationFrameStyleProperty::FillColor:
+        case AnnotationFrameStyleProperty::IsFillColorByCategory:
         case AnnotationFrameStyleProperty::IsFillEnabled:
         case AnnotationFrameStyleProperty::IsStrokeCloud:
+        case AnnotationFrameStyleProperty::IsStrokeColorByCategory:
         case AnnotationFrameStyleProperty::IsStrokeEnabled:
-        case AnnotationFrameStyleProperty::StrokeColorId:
-        case AnnotationFrameStyleProperty::StrokeStyle:
+        case AnnotationFrameStyleProperty::StrokeColor:
         case AnnotationFrameStyleProperty::StrokeWeight:
         case AnnotationFrameStyleProperty::Type:
             return true;
@@ -138,9 +139,9 @@ static const AnnotationFrameStylePropertyBag::T_Real DEFAULT_CLOUDDIAMETERFACTOR
 double AnnotationFrameStyle::GetCloudDiameterFactor() const { return getRealValue(m_data, AnnotationFrameStyleProperty::CloudDiameterFactor, DEFAULT_CLOUDDIAMETERFACTOR_VALUE); }
 void AnnotationFrameStyle::SetCloudDiameterFactor(double value) { setRealValue(m_data, AnnotationFrameStyleProperty::CloudDiameterFactor, DEFAULT_CLOUDDIAMETERFACTOR_VALUE, value); }
 
-static const AnnotationFrameStylePropertyBag::T_Integer DEFAULT_FILLCOLORID_VALUE = 0;
-ColorDef AnnotationFrameStyle::GetFillColor() const { return ColorDef((uint32_t) getIntegerValue(m_data, AnnotationFrameStyleProperty::FillColorId, DEFAULT_FILLCOLORID_VALUE)); }
-void AnnotationFrameStyle::SetFillColor(ColorDef value) { setIntegerValue(m_data, AnnotationFrameStyleProperty::FillColorId, DEFAULT_FILLCOLORID_VALUE, value.GetValue()); }
+static const AnnotationFrameStylePropertyBag::T_Integer DEFAULT_FILLCOLOR_VALUE = 0;
+ColorDef AnnotationFrameStyle::GetFillColor() const { return ColorDef((uint32_t)getIntegerValue(m_data, AnnotationFrameStyleProperty::FillColor, DEFAULT_FILLCOLOR_VALUE)); }
+void AnnotationFrameStyle::SetFillColor(ColorDef value) { SetIsFillColorByCategory(false); setIntegerValue(m_data, AnnotationFrameStyleProperty::FillColor, DEFAULT_FILLCOLOR_VALUE, value.GetValue()); }
 
 static const AnnotationFrameStylePropertyBag::T_Real DEFAULT_FILLTRANSPARENCY_VALUE = 0.0;
 double AnnotationFrameStyle::GetFillTransparency() const { return getRealValue(m_data, AnnotationFrameStyleProperty::FillTransparency, DEFAULT_FILLTRANSPARENCY_VALUE); }
@@ -150,6 +151,10 @@ static const AnnotationFrameStylePropertyBag::T_Real DEFAULT_HORIZONTALPADDING_V
 double AnnotationFrameStyle::GetHorizontalPadding() const { return getRealValue(m_data, AnnotationFrameStyleProperty::HorizontalPadding, DEFAULT_HORIZONTALPADDING_VALUE); }
 void AnnotationFrameStyle::SetHorizontalPadding(double value) { setRealValue(m_data, AnnotationFrameStyleProperty::HorizontalPadding, DEFAULT_HORIZONTALPADDING_VALUE, value); }
 
+static const AnnotationFrameStylePropertyBag::T_Integer DEFAULT_ISFILLCOLORBYCATEGORY_VALUE = 1;
+bool AnnotationFrameStyle::IsFillColorByCategory() const { return (0 != getIntegerValue(m_data, AnnotationFrameStyleProperty::IsFillColorByCategory, DEFAULT_ISFILLCOLORBYCATEGORY_VALUE)); }
+void AnnotationFrameStyle::SetIsFillColorByCategory(bool value) { if (value) SetFillColor(ColorDef()); setIntegerValue(m_data, AnnotationFrameStyleProperty::IsFillColorByCategory, DEFAULT_ISFILLCOLORBYCATEGORY_VALUE, (value ? 1 : 0)); }
+
 static const AnnotationFrameStylePropertyBag::T_Integer DEFAULT_ISFILLENABLED_VALUE = 0;
 bool AnnotationFrameStyle::IsFillEnabled() const { return (0 != getIntegerValue(m_data, AnnotationFrameStyleProperty::IsFillEnabled, DEFAULT_ISFILLENABLED_VALUE)); }
 void AnnotationFrameStyle::SetIsFillEnabled(bool value) { setIntegerValue(m_data, AnnotationFrameStyleProperty::IsFillEnabled, DEFAULT_ISFILLENABLED_VALUE, (value ? 1 : 0)); }
@@ -158,17 +163,17 @@ static const AnnotationFrameStylePropertyBag::T_Integer DEFAULT_ISSTROKECLOUD_VA
 bool AnnotationFrameStyle::IsStrokeCloud() const { return (0 != getIntegerValue(m_data, AnnotationFrameStyleProperty::IsStrokeCloud, DEFAULT_ISSTROKECLOUD_VALUE)); }
 void AnnotationFrameStyle::SetIsStrokeCloud(bool value) { setIntegerValue(m_data, AnnotationFrameStyleProperty::IsStrokeCloud, DEFAULT_ISSTROKECLOUD_VALUE, (value ? 1 : 0)); }
 
+static const AnnotationFrameStylePropertyBag::T_Integer DEFAULT_ISSTROKECOLORBYCATEGORY_VALUE = 1;
+bool AnnotationFrameStyle::IsStrokeColorByCategory() const { return (0 != getIntegerValue(m_data, AnnotationFrameStyleProperty::IsStrokeColorByCategory, DEFAULT_ISSTROKECOLORBYCATEGORY_VALUE)); }
+void AnnotationFrameStyle::SetIsStrokeColorByCategory(bool value) { if (value) SetStrokeColor(ColorDef()); setIntegerValue(m_data, AnnotationFrameStyleProperty::IsStrokeColorByCategory, DEFAULT_ISSTROKECOLORBYCATEGORY_VALUE, (value ? 1 : 0)); }
+
 static const AnnotationFrameStylePropertyBag::T_Integer DEFAULT_ISSTROKEENABLED_VALUE = 0;
 bool AnnotationFrameStyle::IsStrokeEnabled() const { return (0 != getIntegerValue(m_data, AnnotationFrameStyleProperty::IsStrokeEnabled, DEFAULT_ISSTROKEENABLED_VALUE)); }
 void AnnotationFrameStyle::SetIsStrokeEnabled(bool value) { setIntegerValue(m_data, AnnotationFrameStyleProperty::IsStrokeEnabled, DEFAULT_ISSTROKEENABLED_VALUE, (value ? 1 : 0)); }
 
-static const AnnotationFrameStylePropertyBag::T_Integer DEFAULT_STROKECOLORID_VALUE = 0;
-ColorDef AnnotationFrameStyle::GetStrokeColor() const { return ColorDef((uint32_t)getIntegerValue(m_data, AnnotationFrameStyleProperty::StrokeColorId, DEFAULT_STROKECOLORID_VALUE)); }
-void AnnotationFrameStyle::SetStrokeColor(ColorDef value) { setIntegerValue(m_data, AnnotationFrameStyleProperty::StrokeColorId, DEFAULT_STROKECOLORID_VALUE, value.GetValue()); }
-
-static const AnnotationFrameStylePropertyBag::T_Integer DEFAULT_STROKESTYLE_VALUE = 0;
-int32_t AnnotationFrameStyle::GetStrokeStyle() const { return (int32_t)getIntegerValue(m_data, AnnotationFrameStyleProperty::StrokeStyle, DEFAULT_STROKESTYLE_VALUE); }
-void AnnotationFrameStyle::SetStrokeStyle(int32_t value) { setIntegerValue(m_data, AnnotationFrameStyleProperty::StrokeStyle, DEFAULT_STROKESTYLE_VALUE, (uint32_t)value); }
+static const AnnotationFrameStylePropertyBag::T_Integer DEFAULT_STROKECOLOR_VALUE = 0;
+ColorDef AnnotationFrameStyle::GetStrokeColor() const { return ColorDef((uint32_t)getIntegerValue(m_data, AnnotationFrameStyleProperty::StrokeColor, DEFAULT_STROKECOLOR_VALUE)); }
+void AnnotationFrameStyle::SetStrokeColor(ColorDef value) { SetIsStrokeColorByCategory(false); setIntegerValue(m_data, AnnotationFrameStyleProperty::StrokeColor, DEFAULT_STROKECOLOR_VALUE, value.GetValue()); }
 
 static const AnnotationFrameStylePropertyBag::T_Integer DEFAULT_STROKEWEIGHT_VALUE = 0;
 uint32_t AnnotationFrameStyle::GetStrokeWeight() const { return (uint32_t)getIntegerValue(m_data, AnnotationFrameStyleProperty::StrokeWeight, DEFAULT_STROKEWEIGHT_VALUE); }
@@ -254,14 +259,15 @@ BentleyStatus AnnotationFrameStylePersistence::EncodeAsFlatBuf(FB::AnnotationFra
     {
     appendRealSetter(setters, data, AnnotationFrameStyleProperty::CloudBulgeFactor, FB::AnnotationFrameStyleProperty_CloudBulgeFactor, DEFAULT_CLOUDBULGEFACTOR_VALUE);
     appendRealSetter(setters, data, AnnotationFrameStyleProperty::CloudDiameterFactor, FB::AnnotationFrameStyleProperty_CloudDiameterFactor, DEFAULT_CLOUDDIAMETERFACTOR_VALUE);
-    appendIntegerSetter(setters, data, AnnotationFrameStyleProperty::FillColorId, FB::AnnotationFrameStyleProperty_FillColorId, DEFAULT_FILLCOLORID_VALUE);
+    appendIntegerSetter(setters, data, AnnotationFrameStyleProperty::FillColor, FB::AnnotationFrameStyleProperty_FillColor, DEFAULT_FILLCOLOR_VALUE);
     appendRealSetter(setters, data, AnnotationFrameStyleProperty::FillTransparency, FB::AnnotationFrameStyleProperty_FillTransparency, DEFAULT_FILLTRANSPARENCY_VALUE);
     appendRealSetter(setters, data, AnnotationFrameStyleProperty::HorizontalPadding, FB::AnnotationFrameStyleProperty_HorizontalPadding, DEFAULT_HORIZONTALPADDING_VALUE);
+    appendIntegerSetter(setters, data, AnnotationFrameStyleProperty::IsFillColorByCategory, FB::AnnotationFrameStyleProperty_IsFillColorByCategory, DEFAULT_ISFILLCOLORBYCATEGORY_VALUE);
     appendIntegerSetter(setters, data, AnnotationFrameStyleProperty::IsFillEnabled, FB::AnnotationFrameStyleProperty_IsFillEnabled, DEFAULT_ISFILLENABLED_VALUE);
     appendIntegerSetter(setters, data, AnnotationFrameStyleProperty::IsStrokeCloud, FB::AnnotationFrameStyleProperty_IsStrokeCloud, DEFAULT_ISSTROKECLOUD_VALUE);
+    appendIntegerSetter(setters, data, AnnotationFrameStyleProperty::IsStrokeColorByCategory, FB::AnnotationFrameStyleProperty_IsStrokeColorByCategory, DEFAULT_ISSTROKECOLORBYCATEGORY_VALUE);
     appendIntegerSetter(setters, data, AnnotationFrameStyleProperty::IsStrokeEnabled, FB::AnnotationFrameStyleProperty_IsStrokeEnabled, DEFAULT_ISSTROKEENABLED_VALUE);
-    appendIntegerSetter(setters, data, AnnotationFrameStyleProperty::StrokeColorId, FB::AnnotationFrameStyleProperty_StrokeColorId, DEFAULT_STROKECOLORID_VALUE);
-    appendIntegerSetter(setters, data, AnnotationFrameStyleProperty::StrokeStyle, FB::AnnotationFrameStyleProperty_StrokeStyle, DEFAULT_STROKESTYLE_VALUE);
+    appendIntegerSetter(setters, data, AnnotationFrameStyleProperty::StrokeColor, FB::AnnotationFrameStyleProperty_StrokeColor, DEFAULT_STROKECOLOR_VALUE);
     appendIntegerSetter(setters, data, AnnotationFrameStyleProperty::StrokeWeight, FB::AnnotationFrameStyleProperty_StrokeWeight, DEFAULT_STROKEWEIGHT_VALUE);
     appendIntegerSetter(setters, data, AnnotationFrameStyleProperty::Type, FB::AnnotationFrameStyleProperty_Type, DEFAULT_TYPE_VALUE);
     appendRealSetter(setters, data, AnnotationFrameStyleProperty::VerticalPadding, FB::AnnotationFrameStyleProperty_VerticalPadding, DEFAULT_VERTICALPADDING_VALUE);
@@ -336,14 +342,15 @@ BentleyStatus AnnotationFrameStylePersistence::DecodeFromFlatBuf(AnnotationFrame
             {
             case FB::AnnotationFrameStyleProperty_CloudBulgeFactor: data.SetRealProperty(AnnotationFrameStyleProperty::CloudBulgeFactor, setter.realValue()); break;
             case FB::AnnotationFrameStyleProperty_CloudDiameterFactor: data.SetRealProperty(AnnotationFrameStyleProperty::CloudDiameterFactor, setter.realValue()); break;
-            case FB::AnnotationFrameStyleProperty_FillColorId: data.SetIntegerProperty(AnnotationFrameStyleProperty::FillColorId, setter.integerValue()); break;
+            case FB::AnnotationFrameStyleProperty_FillColor: data.SetIntegerProperty(AnnotationFrameStyleProperty::FillColor, setter.integerValue()); break;
             case FB::AnnotationFrameStyleProperty_FillTransparency: data.SetRealProperty(AnnotationFrameStyleProperty::FillTransparency, setter.realValue()); break;
             case FB::AnnotationFrameStyleProperty_HorizontalPadding: data.SetRealProperty(AnnotationFrameStyleProperty::HorizontalPadding, setter.realValue()); break;
+            case FB::AnnotationFrameStyleProperty_IsFillColorByCategory: data.SetIntegerProperty(AnnotationFrameStyleProperty::IsFillColorByCategory, setter.integerValue()); break;
             case FB::AnnotationFrameStyleProperty_IsFillEnabled: data.SetIntegerProperty(AnnotationFrameStyleProperty::IsFillEnabled, setter.integerValue()); break;
             case FB::AnnotationFrameStyleProperty_IsStrokeCloud: data.SetIntegerProperty(AnnotationFrameStyleProperty::IsStrokeCloud, setter.integerValue()); break;
+            case FB::AnnotationFrameStyleProperty_IsStrokeColorByCategory: data.SetIntegerProperty(AnnotationFrameStyleProperty::IsStrokeColorByCategory, setter.integerValue()); break;
             case FB::AnnotationFrameStyleProperty_IsStrokeEnabled: data.SetIntegerProperty(AnnotationFrameStyleProperty::IsStrokeEnabled, setter.integerValue()); break;
-            case FB::AnnotationFrameStyleProperty_StrokeColorId: data.SetIntegerProperty(AnnotationFrameStyleProperty::StrokeColorId, setter.integerValue()); break;
-            case FB::AnnotationFrameStyleProperty_StrokeStyle: data.SetIntegerProperty(AnnotationFrameStyleProperty::StrokeStyle, setter.integerValue()); break;
+            case FB::AnnotationFrameStyleProperty_StrokeColor: data.SetIntegerProperty(AnnotationFrameStyleProperty::StrokeColor, setter.integerValue()); break;
             case FB::AnnotationFrameStyleProperty_StrokeWeight: data.SetIntegerProperty(AnnotationFrameStyleProperty::StrokeWeight, setter.integerValue()); break;
             case FB::AnnotationFrameStyleProperty_Type: data.SetIntegerProperty(AnnotationFrameStyleProperty::Type, setter.integerValue()); break;
             case FB::AnnotationFrameStyleProperty_VerticalPadding: data.SetRealProperty(AnnotationFrameStyleProperty::VerticalPadding, setter.realValue()); break;
