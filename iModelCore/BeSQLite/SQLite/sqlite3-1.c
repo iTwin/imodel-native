@@ -296,7 +296,7 @@ extern "C" {
 */
 #define SQLITE_VERSION        "3.8.11"
 #define SQLITE_VERSION_NUMBER 3008011
-#define SQLITE_SOURCE_ID      "2015-06-02 09:20:46 fb3914070791c84b5f323b7359ac845246d8a844"
+#define SQLITE_SOURCE_ID      "2015-06-11 18:01:29 c39cb0e2571f58c87053de009e2c135d71b2c3af"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
@@ -1139,7 +1139,7 @@ struct sqlite3_io_methods {
 ** pointed to by the pArg argument.  This capability is used during testing
 ** and only needs to be supported when SQLITE_TEST is defined.
 **
-* <li>[[SQLITE_FCNTL_WAL_BLOCK]]
+** <li>[[SQLITE_FCNTL_WAL_BLOCK]]
 ** The [SQLITE_FCNTL_WAL_BLOCK] is a signal to the VFS layer that it might
 ** be advantageous to block on the next WAL lock if the lock is not immediately
 ** available.  The WAL subsystem issues this signal during rare
@@ -8818,70 +8818,22 @@ int sqlite3changeset_invert(
 ** single changeset. The result is a changeset equivalent to applying
 ** changeset A followed by changeset B. 
 **
-** Rows are identified by the values in their PRIMARY KEY columns. A change
-** in changeset A is considered to apply to the same row as a change in
-** changeset B if the two rows have the same primary key.
+** This function combines the two input changesets using an 
+** sqlite3_changegroup object. Calling it produces similar results as the
+** following code fragment:
 **
-** Changes to rows that appear only in changeset A or B are copied into the
-** output changeset. Or, if both changeset A and B contain a change that
-** applies to a single row, the output depends on the type of each change,
-** as follows:
+**   sqlite3_changegroup *pGrp;
+**   rc = sqlite3_changegroup_new(&pGrp);
+**   if( rc==SQLITE_OK ) rc = sqlite3changegroup_add(pGrp, nA, pA);
+**   if( rc==SQLITE_OK ) rc = sqlite3changegroup_add(pGrp, nB, pB);
+**   if( rc==SQLITE_OK ){
+**     rc = sqlite3changegroup_output(pGrp, pnOut, ppOut);
+**   }else{
+**     *ppOut = 0;
+**     *pnOut = 0;
+**   }
 **
-** <table border=1 style="margin-left:8ex;margin-right:8ex">
-**   <tr><th style="white-space:pre">Change A      </th>
-**       <th style="white-space:pre">Change B      </th>
-**       <th>Output Change
-**   <tr><td>INSERT <td>INSERT <td>
-**       Change A is copied into the output changeset. Change B is discarded.
-**       This case does not occur if changeset B is recorded immediately after
-**       changeset A. 
-**   <tr><td>INSERT <td>UPDATE <td>
-**       An INSERT change is copied into the output changeset. The values in
-**       the INSERT change are as if the row was inserted by change A and then
-**       updated according to change B.
-**   <tr><td>INSERT <td>DELETE <td>
-**       No change at all is copied into the output changeset.
-**   <tr><td>UPDATE <td>INSERT <td>
-**       Change A is copied into the output changeset. Change B is discarded.
-**       This case does not occur if changeset B is recorded immediately after
-**       changeset A. 
-**   <tr><td>UPDATE <td>UPDATE <td>
-**       A single UPDATE is copied into the output changeset. The accompanying
-**       values are as if the row was updated once by change A and then again
-**       by change B.
-**   <tr><td>UPDATE <td>DELETE <td>
-**       A single DELETE is copied into the output changeset.
-**   <tr><td>DELETE <td>INSERT <td>
-**       If one or more of the column values in the row inserted by change 
-**       B differ from those in the row deleted by change A, an UPDATE
-**       change is added to the output changeset. Otherwise, if the inserted
-**       row is exactly the same as the deleted row, no change is added to
-**       the output changeset.
-**   <tr><td>DELETE <td>UPDATE <td>
-**       Change A is copied into the output changeset. Change B is discarded.
-**       This case does not occur if changeset B is recorded immediately after
-**       changeset A. 
-**   <tr><td>DELETE <td>DELETE <td>
-**       Change A is copied into the output changeset. Change B is discarded.
-**       This case does not occur if changeset B is recorded immediately after
-**       changeset A. 
-** </table>
-**
-** If the two changesets contain changes to the same table, then the number
-** of columns and the position of the primary key columns for the table must
-** be the same in each changeset. If this is not the case, attempting to
-** concatenate the two changesets together fails and this function returns
-** SQLITE_SCHEMA. If either of the two input changesets appear to be corrupt,
-** and the corruption is detected, SQLITE_CORRUPT is returned. Or, if an
-** out-of-memory condition occurs during processing, this function returns
-** SQLITE_NOMEM.
-**
-** If none of the above errors occur, SQLITE_OK is returned and *ppOut set
-** to point to a buffer containing the output changeset. It is the 
-** responsibility of the caller to eventually call sqlite3_free() on *ppOut 
-** to release memory allocated for the buffer. *pnOut is set to the number 
-** of bytes in the output changeset. If an error does occur, both *ppOut and 
-** *pnOut are set to zero before returning.
+** Refer to the sqlite3_changegroup documentation below for details.
 */
 int sqlite3changeset_concat(
   int nA,                         /* Number of bytes in buffer pA */
@@ -8891,6 +8843,148 @@ int sqlite3changeset_concat(
   int *pnOut,                     /* OUT: Number of bytes in output changeset */
   void **ppOut                    /* OUT: Buffer containing output changeset */
 );
+
+
+/*
+** Changegroup handle.
+*/
+typedef struct sqlite3_changegroup sqlite3_changegroup;
+
+/*
+** CAPI3REF: Combine two or more changesets into a single changeset.
+**
+** An sqlite3_changegroup object is used to combine two or more changesets
+** (or patchsets) into a single changeset (or patchset). A single changegroup
+** object may combine changesets or patchsets, but not both. The output is
+** always in the same format as the input.
+**
+** If successful, this function returns SQLITE_OK and populates (*pp) with
+** a pointer to a new sqlite3_changegroup object before returning. The caller
+** should eventually free the returned object using a call to 
+** sqlite3changegroup_delete(). If an error occurs, an SQLite error code
+** (i.e. SQLITE_NOMEM) is returned and *pp is set to NULL.
+**
+** The usual usage pattern for an sqlite3_changegroup object is as follows:
+**
+** <ul>
+**   <li> It is created using a call to sqlite3changegroup_new().
+**
+**   <li> Zero or more changesets (or patchsets) are added to the object
+**        by calling sqlite3changegroup_add().
+**
+**   <li> The result of combining all input changesets together is obtained 
+**        by the application via a call to sqlite3changegroup_output().
+**
+**   <li> The object is deleted using a call to sqlite3changegroup_delete().
+** </ul>
+**
+** Any number of calls to add() and output() may be made between the calls to
+** new() and delete(), and in any order.
+**
+** As well as the regular sqlite3changegroup_add() and 
+** sqlite3changegroup_output() functions, also available are the streaming
+** versions sqlite3changegroup_add_strm() and sqlite3changegroup_output_strm().
+*/
+int sqlite3changegroup_new(sqlite3_changegroup **pp);
+
+/*
+** Add all changes within the changeset (or patchset) in buffer pData (size
+** nData bytes) to the changegroup. 
+**
+** If the buffer contains a patchset, then all prior calls to this function
+** on the same changegroup object must also have specified patchsets. Or, if
+** the buffer contains a changeset, so must have the earlier calls to this
+** function. Otherwise, SQLITE_ERROR is returned and no changes are added
+** to the changegroup.
+**
+** Rows within the changeset and changegroup are identified by the values in
+** their PRIMARY KEY columns. A change in the changeset is considered to
+** apply to the same row as a change already present in the changegroup if
+** the two rows have the same primary key.
+**
+** Changes to rows that that do not already appear in the changegroup are
+** simply copied into it. Or, if both the new changeset and the changegroup
+** contain changes that apply to a single row, the final contents of the
+** changegroup depends on the type of each change, as follows:
+**
+** <table border=1 style="margin-left:8ex;margin-right:8ex">
+**   <tr><th style="white-space:pre">Existing Change  </th>
+**       <th style="white-space:pre">New Change       </th>
+**       <th>Output Change
+**   <tr><td>INSERT <td>INSERT <td>
+**       The new change is ignored. This case does not occur if the new
+**       changeset was recorded immediately after the changesets already
+**       added to the changegroup.
+**   <tr><td>INSERT <td>UPDATE <td>
+**       The INSERT change remains in the changegroup. The values in the 
+**       INSERT change are modified as if the row was inserted by the
+**       existing change and then updated according to the new change.
+**   <tr><td>INSERT <td>DELETE <td>
+**       The existing INSERT is removed from the changegroup. The DELETE is
+**       not added.
+**   <tr><td>UPDATE <td>INSERT <td>
+**       The new change is ignored. This case does not occur if the new
+**       changeset was recorded immediately after the changesets already
+**       added to the changegroup.
+**   <tr><td>UPDATE <td>UPDATE <td>
+**       The existing UPDATE remains within the changegroup. It is amended 
+**       so that the accompanying values are as if the row was updated once 
+**       by the existing change and then again by the new change.
+**   <tr><td>UPDATE <td>DELETE <td>
+**       The existing UPDATE is replaced by the new DELETE within the
+**       changegroup.
+**   <tr><td>DELETE <td>INSERT <td>
+**       If one or more of the column values in the row inserted by the
+**       new change differ from those in the row deleted by the existing 
+**       change, the existing DELETE is replaced by an UPDATE within the
+**       changegroup. Otherwise, if the inserted row is exactly the same 
+**       as the deleted row, the existing DELETE is simply discarded.
+**   <tr><td>DELETE <td>UPDATE <td>
+**       The new change is ignored. This case does not occur if the new
+**       changeset was recorded immediately after the changesets already
+**       added to the changegroup.
+**   <tr><td>DELETE <td>DELETE <td>
+**       The new change is ignored. This case does not occur if the new
+**       changeset was recorded immediately after the changesets already
+**       added to the changegroup.
+** </table>
+**
+** If the new changeset contains changes to a table that is already present
+** in the changegroup, then the number of columns and the position of the
+** primary key columns for the table must be consistent. If this is not the
+** case, this function fails with SQLITE_SCHEMA. If the input changeset
+** appears to be corrupt and the corruption is detected, SQLITE_CORRUPT is
+** returned. Or, if an out-of-memory condition occurs during processing, this
+** function returns SQLITE_NOMEM. In all cases, if an error occurs the
+** final contents of the changegroup is undefined.
+**
+** If no error occurs, SQLITE_OK is returned.
+*/
+int sqlite3changegroup_add(sqlite3_changegroup*, int nData, void *pData);
+
+/*
+** Obtain a buffer containing a changeset (or patchset) representing the
+** current contents of the changegroup. If the inputs to the changegroup
+** were themselves changesets, the output is a changeset. Or, if the
+** inputs were patchsets, the output is also a patchset.
+**
+** If an error occurs, an SQLite error code is returned and the output
+** variables (*pnData) and (*ppData) are set to 0. Otherwise, SQLITE_OK
+** is returned and the output variables are set to the size of and a 
+** pointer to the output buffer, respectively. In this case it is the
+** responsibility of the caller to eventually free the buffer using a
+** call to sqlite3_free().
+*/
+int sqlite3changegroup_output(
+  sqlite3_changegroup*,
+  int *pnData,                    /* OUT: Size of output buffer in bytes */
+  void **ppData                   /* OUT: Pointer to output buffer */
+);
+
+/*
+** Delete a changegroup object.
+*/
+void sqlite3changegroup_delete(sqlite3_changegroup*);
 
 /*
 ** CAPI3REF: Apply A Changeset To A Database
@@ -9272,6 +9366,14 @@ int sqlite3session_patchset_strm(
   sqlite3_session *pSession,
   int (*xOutput)(void *pOut, const void *pData, int nData),
   void *pOut
+);
+int sqlite3changegroup_add_strm(sqlite3_changegroup*, 
+    int (*xInput)(void *pIn, void *pData, int *pnData),
+    void *pIn
+);
+int sqlite3changegroup_output_strm(sqlite3_changegroup*,
+    int (*xOutput)(void *pOut, const void *pData, int nData), 
+    void *pOut
 );
 
 
@@ -12676,9 +12778,9 @@ struct CollSeq {
 ** used as the P4 operand, they will be more readable.
 **
 ** Note also that the numeric types are grouped together so that testing
-** for a numeric type is a single comparison.  And the NONE type is first.
+** for a numeric type is a single comparison.  And the BLOB type is first.
 */
-#define SQLITE_AFF_NONE     'A'
+#define SQLITE_AFF_BLOB     'A'
 #define SQLITE_AFF_TEXT     'B'
 #define SQLITE_AFF_NUMERIC  'C'
 #define SQLITE_AFF_INTEGER  'D'
@@ -13435,7 +13537,7 @@ struct SrcList {
     Expr *pOn;        /* The ON clause of a join */
     IdList *pUsing;   /* The USING clause of a join */
     Bitmask colUsed;  /* Bit N (1<<N) set if column N of pTab is used */
-    char *zIndex;     /* Identifier from "INDEXED BY <zIndex>" clause */
+    char *zIndexedBy; /* Identifier from "INDEXED BY <zIndex>" clause */
     Index *pIndex;    /* Index structure corresponding to zIndex, if any */
   } a[1];             /* One entry for each identifier on the list */
 };
@@ -14349,10 +14451,6 @@ SQLITE_PRIVATE   void *sqlite3TestTextToPtr(const char*);
 #endif
 
 #if defined(SQLITE_DEBUG)
-SQLITE_PRIVATE   TreeView *sqlite3TreeViewPush(TreeView*,u8);
-SQLITE_PRIVATE   void sqlite3TreeViewPop(TreeView*);
-SQLITE_PRIVATE   void sqlite3TreeViewLine(TreeView*, const char*, ...);
-SQLITE_PRIVATE   void sqlite3TreeViewItem(TreeView*, const char*, u8);
 SQLITE_PRIVATE   void sqlite3TreeViewExpr(TreeView*, const Expr*, u8);
 SQLITE_PRIVATE   void sqlite3TreeViewExprList(TreeView*, const ExprList*, u8, const char*);
 SQLITE_PRIVATE   void sqlite3TreeViewSelect(TreeView*, const Select*, u8);
@@ -14509,6 +14607,7 @@ SQLITE_PRIVATE int sqlite3ExprCodeExprList(Parse*, ExprList*, int, u8);
 #define SQLITE_ECEL_FACTOR   0x02  /* Factor out constant terms */
 SQLITE_PRIVATE void sqlite3ExprIfTrue(Parse*, Expr*, int, int);
 SQLITE_PRIVATE void sqlite3ExprIfFalse(Parse*, Expr*, int, int);
+SQLITE_PRIVATE void sqlite3ExprIfFalseDup(Parse*, Expr*, int, int);
 SQLITE_PRIVATE Table *sqlite3FindTable(sqlite3*,const char*, const char*);
 SQLITE_PRIVATE Table *sqlite3LocateTable(Parse*,int isView,const char*, const char*);
 SQLITE_PRIVATE Table *sqlite3LocateTableItem(Parse*,int isView,struct SrcList_item *);
@@ -22636,17 +22735,14 @@ SQLITE_PRIVATE int sqlite3ApiExit(sqlite3* db, int rc){
 /************** Begin file printf.c ******************************************/
 /*
 ** The "printf" code that follows dates from the 1980's.  It is in
-** the public domain.  The original comments are included here for
-** completeness.  They are very out-of-date but might be useful as
-** an historical reference.  Most of the "enhancements" have been backed
-** out so that the functionality is now the same as standard printf().
+** the public domain. 
 **
 **************************************************************************
 **
 ** This file contains code for a set of "printf"-like routines.  These
 ** routines format strings much like the printf() from the standard C
 ** library, though the implementation here has enhancements to support
-** SQLlite.
+** SQLite.
 */
 
 /*
@@ -23693,22 +23789,45 @@ SQLITE_PRIVATE void sqlite3DebugPrintf(const char *zFormat, ...){
 }
 #endif
 
-#ifdef SQLITE_DEBUG
-/*************************************************************************
-** Routines for implementing the "TreeView" display of hierarchical
-** data structures for debugging.
-**
-** The main entry points (coded elsewhere) are:
-**     sqlite3TreeViewExpr(0, pExpr, 0);
-**     sqlite3TreeViewExprList(0, pList, 0, 0);
-**     sqlite3TreeViewSelect(0, pSelect, 0);
-** Insert calls to those routines while debugging in order to display
-** a diagram of Expr, ExprList, and Select objects.
-**
+
+/*
+** variable-argument wrapper around sqlite3VXPrintf().
 */
-/* Add a new subitem to the tree.  The moreToFollow flag indicates that this
-** is not the last item in the tree. */
-SQLITE_PRIVATE TreeView *sqlite3TreeViewPush(TreeView *p, u8 moreToFollow){
+SQLITE_PRIVATE void sqlite3XPrintf(StrAccum *p, u32 bFlags, const char *zFormat, ...){
+  va_list ap;
+  va_start(ap,zFormat);
+  sqlite3VXPrintf(p, bFlags, zFormat, ap);
+  va_end(ap);
+}
+
+/************** End of printf.c **********************************************/
+/************** Begin file treeview.c ****************************************/
+/*
+** 2015-06-08
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+*************************************************************************
+**
+** This file contains C code to implement the TreeView debugging routines.
+** These routines print a parse tree to standard output for debugging and
+** analysis. 
+**
+** The interfaces in this file is only available when compiling
+** with SQLITE_DEBUG.
+*/
+#ifdef SQLITE_DEBUG
+
+/*
+** Add a new subitem to the tree.  The moreToFollow flag indicates that this
+** is not the last item in the tree.
+*/
+static TreeView *sqlite3TreeViewPush(TreeView *p, u8 moreToFollow){
   if( p==0 ){
     p = sqlite3_malloc64( sizeof(*p) );
     if( p==0 ) return 0;
@@ -23720,15 +23839,21 @@ SQLITE_PRIVATE TreeView *sqlite3TreeViewPush(TreeView *p, u8 moreToFollow){
   if( p->iLevel<sizeof(p->bLine) ) p->bLine[p->iLevel] = moreToFollow;
   return p;
 }
-/* Finished with one layer of the tree */
-SQLITE_PRIVATE void sqlite3TreeViewPop(TreeView *p){
+
+/*
+** Finished with one layer of the tree
+*/
+static void sqlite3TreeViewPop(TreeView *p){
   if( p==0 ) return;
   p->iLevel--;
   if( p->iLevel<0 ) sqlite3_free(p);
 }
-/* Generate a single line of output for the tree, with a prefix that contains
-** all the appropriate tree lines */
-SQLITE_PRIVATE void sqlite3TreeViewLine(TreeView *p, const char *zFormat, ...){
+
+/*
+** Generate a single line of output for the tree, with a prefix that contains
+** all the appropriate tree lines
+*/
+static void sqlite3TreeViewLine(TreeView *p, const char *zFormat, ...){
   va_list ap;
   int i;
   StrAccum acc;
@@ -23748,24 +23873,361 @@ SQLITE_PRIVATE void sqlite3TreeViewLine(TreeView *p, const char *zFormat, ...){
   fprintf(stdout,"%s", zBuf);
   fflush(stdout);
 }
-/* Shorthand for starting a new tree item that consists of a single label */
-SQLITE_PRIVATE void sqlite3TreeViewItem(TreeView *p, const char *zLabel, u8 moreToFollow){
-  p = sqlite3TreeViewPush(p, moreToFollow);
-  sqlite3TreeViewLine(p, "%s", zLabel);
-}
-#endif /* SQLITE_DEBUG */
 
 /*
-** variable-argument wrapper around sqlite3VXPrintf().
+** Shorthand for starting a new tree item that consists of a single label
 */
-SQLITE_PRIVATE void sqlite3XPrintf(StrAccum *p, u32 bFlags, const char *zFormat, ...){
-  va_list ap;
-  va_start(ap,zFormat);
-  sqlite3VXPrintf(p, bFlags, zFormat, ap);
-  va_end(ap);
+static void sqlite3TreeViewItem(TreeView *p, const char *zLabel,u8 moreFollows){
+  p = sqlite3TreeViewPush(p, moreFollows);
+  sqlite3TreeViewLine(p, "%s", zLabel);
 }
 
-/************** End of printf.c **********************************************/
+
+/*
+** Generate a human-readable description of a the Select object.
+*/
+SQLITE_PRIVATE void sqlite3TreeViewSelect(TreeView *pView, const Select *p, u8 moreToFollow){
+  int n = 0;
+  pView = sqlite3TreeViewPush(pView, moreToFollow);
+  sqlite3TreeViewLine(pView, "SELECT%s%s (0x%p) selFlags=0x%x",
+    ((p->selFlags & SF_Distinct) ? " DISTINCT" : ""),
+    ((p->selFlags & SF_Aggregate) ? " agg_flag" : ""), p, p->selFlags
+  );
+  if( p->pSrc && p->pSrc->nSrc ) n++;
+  if( p->pWhere ) n++;
+  if( p->pGroupBy ) n++;
+  if( p->pHaving ) n++;
+  if( p->pOrderBy ) n++;
+  if( p->pLimit ) n++;
+  if( p->pOffset ) n++;
+  if( p->pPrior ) n++;
+  sqlite3TreeViewExprList(pView, p->pEList, (n--)>0, "result-set");
+  if( p->pSrc && p->pSrc->nSrc ){
+    int i;
+    pView = sqlite3TreeViewPush(pView, (n--)>0);
+    sqlite3TreeViewLine(pView, "FROM");
+    for(i=0; i<p->pSrc->nSrc; i++){
+      struct SrcList_item *pItem = &p->pSrc->a[i];
+      StrAccum x;
+      char zLine[100];
+      sqlite3StrAccumInit(&x, 0, zLine, sizeof(zLine), 0);
+      sqlite3XPrintf(&x, 0, "{%d,*}", pItem->iCursor);
+      if( pItem->zDatabase ){
+        sqlite3XPrintf(&x, 0, " %s.%s", pItem->zDatabase, pItem->zName);
+      }else if( pItem->zName ){
+        sqlite3XPrintf(&x, 0, " %s", pItem->zName);
+      }
+      if( pItem->pTab ){
+        sqlite3XPrintf(&x, 0, " tabname=%Q", pItem->pTab->zName);
+      }
+      if( pItem->zAlias ){
+        sqlite3XPrintf(&x, 0, " (AS %s)", pItem->zAlias);
+      }
+      if( pItem->jointype & JT_LEFT ){
+        sqlite3XPrintf(&x, 0, " LEFT-JOIN");
+      }
+      sqlite3StrAccumFinish(&x);
+      sqlite3TreeViewItem(pView, zLine, i<p->pSrc->nSrc-1); 
+      if( pItem->pSelect ){
+        sqlite3TreeViewSelect(pView, pItem->pSelect, 0);
+      }
+      sqlite3TreeViewPop(pView);
+    }
+    sqlite3TreeViewPop(pView);
+  }
+  if( p->pWhere ){
+    sqlite3TreeViewItem(pView, "WHERE", (n--)>0);
+    sqlite3TreeViewExpr(pView, p->pWhere, 0);
+    sqlite3TreeViewPop(pView);
+  }
+  if( p->pGroupBy ){
+    sqlite3TreeViewExprList(pView, p->pGroupBy, (n--)>0, "GROUPBY");
+  }
+  if( p->pHaving ){
+    sqlite3TreeViewItem(pView, "HAVING", (n--)>0);
+    sqlite3TreeViewExpr(pView, p->pHaving, 0);
+    sqlite3TreeViewPop(pView);
+  }
+  if( p->pOrderBy ){
+    sqlite3TreeViewExprList(pView, p->pOrderBy, (n--)>0, "ORDERBY");
+  }
+  if( p->pLimit ){
+    sqlite3TreeViewItem(pView, "LIMIT", (n--)>0);
+    sqlite3TreeViewExpr(pView, p->pLimit, 0);
+    sqlite3TreeViewPop(pView);
+  }
+  if( p->pOffset ){
+    sqlite3TreeViewItem(pView, "OFFSET", (n--)>0);
+    sqlite3TreeViewExpr(pView, p->pOffset, 0);
+    sqlite3TreeViewPop(pView);
+  }
+  if( p->pPrior ){
+    const char *zOp = "UNION";
+    switch( p->op ){
+      case TK_ALL:         zOp = "UNION ALL";  break;
+      case TK_INTERSECT:   zOp = "INTERSECT";  break;
+      case TK_EXCEPT:      zOp = "EXCEPT";     break;
+    }
+    sqlite3TreeViewItem(pView, zOp, (n--)>0);
+    sqlite3TreeViewSelect(pView, p->pPrior, 0);
+    sqlite3TreeViewPop(pView);
+  }
+  sqlite3TreeViewPop(pView);
+}
+
+/*
+** Generate a human-readable explanation of an expression tree.
+*/
+SQLITE_PRIVATE void sqlite3TreeViewExpr(TreeView *pView, const Expr *pExpr, u8 moreToFollow){
+  const char *zBinOp = 0;   /* Binary operator */
+  const char *zUniOp = 0;   /* Unary operator */
+  pView = sqlite3TreeViewPush(pView, moreToFollow);
+  if( pExpr==0 ){
+    sqlite3TreeViewLine(pView, "nil");
+    sqlite3TreeViewPop(pView);
+    return;
+  }
+  switch( pExpr->op ){
+    case TK_AGG_COLUMN: {
+      sqlite3TreeViewLine(pView, "AGG{%d:%d}",
+            pExpr->iTable, pExpr->iColumn);
+      break;
+    }
+    case TK_COLUMN: {
+      if( pExpr->iTable<0 ){
+        /* This only happens when coding check constraints */
+        sqlite3TreeViewLine(pView, "COLUMN(%d)", pExpr->iColumn);
+      }else{
+        sqlite3TreeViewLine(pView, "{%d:%d}",
+                             pExpr->iTable, pExpr->iColumn);
+      }
+      break;
+    }
+    case TK_INTEGER: {
+      if( pExpr->flags & EP_IntValue ){
+        sqlite3TreeViewLine(pView, "%d", pExpr->u.iValue);
+      }else{
+        sqlite3TreeViewLine(pView, "%s", pExpr->u.zToken);
+      }
+      break;
+    }
+#ifndef SQLITE_OMIT_FLOATING_POINT
+    case TK_FLOAT: {
+      sqlite3TreeViewLine(pView,"%s", pExpr->u.zToken);
+      break;
+    }
+#endif
+    case TK_STRING: {
+      sqlite3TreeViewLine(pView,"%Q", pExpr->u.zToken);
+      break;
+    }
+    case TK_NULL: {
+      sqlite3TreeViewLine(pView,"NULL");
+      break;
+    }
+#ifndef SQLITE_OMIT_BLOB_LITERAL
+    case TK_BLOB: {
+      sqlite3TreeViewLine(pView,"%s", pExpr->u.zToken);
+      break;
+    }
+#endif
+    case TK_VARIABLE: {
+      sqlite3TreeViewLine(pView,"VARIABLE(%s,%d)",
+                          pExpr->u.zToken, pExpr->iColumn);
+      break;
+    }
+    case TK_REGISTER: {
+      sqlite3TreeViewLine(pView,"REGISTER(%d)", pExpr->iTable);
+      break;
+    }
+    case TK_AS: {
+      sqlite3TreeViewLine(pView,"AS %Q", pExpr->u.zToken);
+      sqlite3TreeViewExpr(pView, pExpr->pLeft, 0);
+      break;
+    }
+    case TK_ID: {
+      sqlite3TreeViewLine(pView,"ID \"%w\"", pExpr->u.zToken);
+      break;
+    }
+#ifndef SQLITE_OMIT_CAST
+    case TK_CAST: {
+      /* Expressions of the form:   CAST(pLeft AS token) */
+      sqlite3TreeViewLine(pView,"CAST %Q", pExpr->u.zToken);
+      sqlite3TreeViewExpr(pView, pExpr->pLeft, 0);
+      break;
+    }
+#endif /* SQLITE_OMIT_CAST */
+    case TK_LT:      zBinOp = "LT";     break;
+    case TK_LE:      zBinOp = "LE";     break;
+    case TK_GT:      zBinOp = "GT";     break;
+    case TK_GE:      zBinOp = "GE";     break;
+    case TK_NE:      zBinOp = "NE";     break;
+    case TK_EQ:      zBinOp = "EQ";     break;
+    case TK_IS:      zBinOp = "IS";     break;
+    case TK_ISNOT:   zBinOp = "ISNOT";  break;
+    case TK_AND:     zBinOp = "AND";    break;
+    case TK_OR:      zBinOp = "OR";     break;
+    case TK_PLUS:    zBinOp = "ADD";    break;
+    case TK_STAR:    zBinOp = "MUL";    break;
+    case TK_MINUS:   zBinOp = "SUB";    break;
+    case TK_REM:     zBinOp = "REM";    break;
+    case TK_BITAND:  zBinOp = "BITAND"; break;
+    case TK_BITOR:   zBinOp = "BITOR";  break;
+    case TK_SLASH:   zBinOp = "DIV";    break;
+    case TK_LSHIFT:  zBinOp = "LSHIFT"; break;
+    case TK_RSHIFT:  zBinOp = "RSHIFT"; break;
+    case TK_CONCAT:  zBinOp = "CONCAT"; break;
+    case TK_DOT:     zBinOp = "DOT";    break;
+
+    case TK_UMINUS:  zUniOp = "UMINUS"; break;
+    case TK_UPLUS:   zUniOp = "UPLUS";  break;
+    case TK_BITNOT:  zUniOp = "BITNOT"; break;
+    case TK_NOT:     zUniOp = "NOT";    break;
+    case TK_ISNULL:  zUniOp = "ISNULL"; break;
+    case TK_NOTNULL: zUniOp = "NOTNULL"; break;
+
+    case TK_COLLATE: {
+      sqlite3TreeViewLine(pView, "COLLATE %Q", pExpr->u.zToken);
+      sqlite3TreeViewExpr(pView, pExpr->pLeft, 0);
+      break;
+    }
+
+    case TK_AGG_FUNCTION:
+    case TK_FUNCTION: {
+      ExprList *pFarg;       /* List of function arguments */
+      if( ExprHasProperty(pExpr, EP_TokenOnly) ){
+        pFarg = 0;
+      }else{
+        pFarg = pExpr->x.pList;
+      }
+      if( pExpr->op==TK_AGG_FUNCTION ){
+        sqlite3TreeViewLine(pView, "AGG_FUNCTION%d %Q",
+                             pExpr->op2, pExpr->u.zToken);
+      }else{
+        sqlite3TreeViewLine(pView, "FUNCTION %Q", pExpr->u.zToken);
+      }
+      if( pFarg ){
+        sqlite3TreeViewExprList(pView, pFarg, 0, 0);
+      }
+      break;
+    }
+#ifndef SQLITE_OMIT_SUBQUERY
+    case TK_EXISTS: {
+      sqlite3TreeViewLine(pView, "EXISTS-expr");
+      sqlite3TreeViewSelect(pView, pExpr->x.pSelect, 0);
+      break;
+    }
+    case TK_SELECT: {
+      sqlite3TreeViewLine(pView, "SELECT-expr");
+      sqlite3TreeViewSelect(pView, pExpr->x.pSelect, 0);
+      break;
+    }
+    case TK_IN: {
+      sqlite3TreeViewLine(pView, "IN");
+      sqlite3TreeViewExpr(pView, pExpr->pLeft, 1);
+      if( ExprHasProperty(pExpr, EP_xIsSelect) ){
+        sqlite3TreeViewSelect(pView, pExpr->x.pSelect, 0);
+      }else{
+        sqlite3TreeViewExprList(pView, pExpr->x.pList, 0, 0);
+      }
+      break;
+    }
+#endif /* SQLITE_OMIT_SUBQUERY */
+
+    /*
+    **    x BETWEEN y AND z
+    **
+    ** This is equivalent to
+    **
+    **    x>=y AND x<=z
+    **
+    ** X is stored in pExpr->pLeft.
+    ** Y is stored in pExpr->pList->a[0].pExpr.
+    ** Z is stored in pExpr->pList->a[1].pExpr.
+    */
+    case TK_BETWEEN: {
+      Expr *pX = pExpr->pLeft;
+      Expr *pY = pExpr->x.pList->a[0].pExpr;
+      Expr *pZ = pExpr->x.pList->a[1].pExpr;
+      sqlite3TreeViewLine(pView, "BETWEEN");
+      sqlite3TreeViewExpr(pView, pX, 1);
+      sqlite3TreeViewExpr(pView, pY, 1);
+      sqlite3TreeViewExpr(pView, pZ, 0);
+      break;
+    }
+    case TK_TRIGGER: {
+      /* If the opcode is TK_TRIGGER, then the expression is a reference
+      ** to a column in the new.* or old.* pseudo-tables available to
+      ** trigger programs. In this case Expr.iTable is set to 1 for the
+      ** new.* pseudo-table, or 0 for the old.* pseudo-table. Expr.iColumn
+      ** is set to the column of the pseudo-table to read, or to -1 to
+      ** read the rowid field.
+      */
+      sqlite3TreeViewLine(pView, "%s(%d)", 
+          pExpr->iTable ? "NEW" : "OLD", pExpr->iColumn);
+      break;
+    }
+    case TK_CASE: {
+      sqlite3TreeViewLine(pView, "CASE");
+      sqlite3TreeViewExpr(pView, pExpr->pLeft, 1);
+      sqlite3TreeViewExprList(pView, pExpr->x.pList, 0, 0);
+      break;
+    }
+#ifndef SQLITE_OMIT_TRIGGER
+    case TK_RAISE: {
+      const char *zType = "unk";
+      switch( pExpr->affinity ){
+        case OE_Rollback:   zType = "rollback";  break;
+        case OE_Abort:      zType = "abort";     break;
+        case OE_Fail:       zType = "fail";      break;
+        case OE_Ignore:     zType = "ignore";    break;
+      }
+      sqlite3TreeViewLine(pView, "RAISE %s(%Q)", zType, pExpr->u.zToken);
+      break;
+    }
+#endif
+    default: {
+      sqlite3TreeViewLine(pView, "op=%d", pExpr->op);
+      break;
+    }
+  }
+  if( zBinOp ){
+    sqlite3TreeViewLine(pView, "%s", zBinOp);
+    sqlite3TreeViewExpr(pView, pExpr->pLeft, 1);
+    sqlite3TreeViewExpr(pView, pExpr->pRight, 0);
+  }else if( zUniOp ){
+    sqlite3TreeViewLine(pView, "%s", zUniOp);
+    sqlite3TreeViewExpr(pView, pExpr->pLeft, 0);
+  }
+  sqlite3TreeViewPop(pView);
+}
+
+/*
+** Generate a human-readable explanation of an expression list.
+*/
+SQLITE_PRIVATE void sqlite3TreeViewExprList(
+  TreeView *pView,
+  const ExprList *pList,
+  u8 moreToFollow,
+  const char *zLabel
+){
+  int i;
+  pView = sqlite3TreeViewPush(pView, moreToFollow);
+  if( zLabel==0 || zLabel[0]==0 ) zLabel = "LIST";
+  if( pList==0 ){
+    sqlite3TreeViewLine(pView, "%s (empty)", zLabel);
+  }else{
+    sqlite3TreeViewLine(pView, "%s", zLabel);
+    for(i=0; i<pList->nExpr; i++){
+      sqlite3TreeViewExpr(pView, pList->a[i].pExpr, i<pList->nExpr-1);
+    }
+  }
+  sqlite3TreeViewPop(pView);
+}
+
+#endif /* SQLITE_DEBUG */
+
+/************** End of treeview.c ********************************************/
 /************** Begin file random.c ******************************************/
 /*
 ** 2001 September 15

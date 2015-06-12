@@ -1634,7 +1634,7 @@ protected:
     NamedParams m_params;
 
     explicit DbTableIterator(DbCR db) : m_db((DbP)&db) {}
-    BE_SQLITE_EXPORT Utf8String MakeSqlString(Utf8CP sql, bool hasWhere=false) const;
+                BE_SQLITE_EXPORT Utf8String MakeSqlString(Utf8CP sql, bool hasWhere=false) const;
 
 public:
     struct Entry
