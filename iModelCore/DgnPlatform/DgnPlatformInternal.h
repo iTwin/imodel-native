@@ -36,7 +36,7 @@
 #include <DgnPlatform/DgnCore/rtypes.r.h>
 #include <DgnPlatform/DgnCore/QvElemSet.h>
 #include <DgnPlatformInternal/DgnCore/MaterialTokens.h>
-#include <DgnPlatform/DgnCore/LsLocal.h>
+#include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatformInternal/DgnCore/DgnCoreL10N.h>
 #include <DgnPlatform/DgnCore/NullContext.h>
 #include <DgnPlatform/DgnCore/SimplifyViewDrawGeom.h>
@@ -45,8 +45,6 @@
 #include <DgnPlatform/DgnCore/SectionClip.h>
 #include <DgnPlatform/DgnCore/DgnCoreEvent.h>
 #include <DgnPlatform/DgnCore/GPArray.h>
-#include <DgnPlatform/DgnCore/LineStyleApi.h>
-#include <DgnPlatform/DgnCore/LineStyleApi.h>
 #include <DgnPlatform/DgnCore/DgnRangeTree.h>
 #include <DgnPlatform/DgnCore/ITiledRaster.h>
 #include <DgnPlatform/DgnCore/MeasureGeom.h>

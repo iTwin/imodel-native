@@ -156,7 +156,6 @@ void DgnPlatformLib::Initialize ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnPlatformLib::Host::LoadResources()
     {
-    GetLineStyleManager().Initialize();
     }
 
 DgnPlatformLib::Host::RasterAttachmentAdmin& DgnPlatformLib::Host::_SupplyRasterAttachmentAdmin() {return *new RasterAttachmentAdmin();}

@@ -940,7 +940,7 @@ public:
         SessionAdmin*           m_sessionAdmin;
         TxnAdmin*               m_txnAdmin;
         IACSManagerP            m_acsManager;
-        LineStyleManagerP       m_lineStyleManager;
+        //  LineStyleManagerP       m_lineStyleManager;
         FormatterAdmin*         m_formatterAdmin;
         RealityDataAdmin*       m_realityDataAdmin;
         Utf8String              m_productName;
@@ -1018,7 +1018,7 @@ public:
             m_sessionAdmin = 0;
             m_txnAdmin = 0;
             m_acsManager = 0;
-            m_lineStyleManager = 0;
+            //  m_lineStyleManager = 0;
             m_formatterAdmin = 0;
             m_realityDataAdmin = 0;
 
@@ -1042,7 +1042,7 @@ public:
         SessionAdmin&           GetSessionAdmin()          {return *m_sessionAdmin;}
         TxnAdmin&               GetTxnAdmin()              {return *m_txnAdmin;}
         IACSManagerR            GetAcsManager()            {return *m_acsManager;}
-        LineStyleManagerR       GetLineStyleManager()      {return *m_lineStyleManager;}
+        //  LineStyleManagerR       GetLineStyleManager()      {return *m_lineStyleManager;}
         FormatterAdmin&         GetFormatterAdmin()        {return *m_formatterAdmin;}
         RealityDataAdmin&       GetRealityDataAdmin()      {return *m_realityDataAdmin;}
         Utf8CP                  GetProductName()           {return m_productName.c_str();}

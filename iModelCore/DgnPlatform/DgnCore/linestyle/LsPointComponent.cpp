@@ -2,10 +2,11 @@
 |
 |     $Source: DgnCore/linestyle/LsPointComponent.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
+
 #include    <DgnPlatform/DgnCore/LsLocal.h>
 
 #define LCPOINT_ANYVERTEX   (LCPOINT_LINEORG | LCPOINT_LINEEND | LCPOINT_LINEVERT)
@@ -439,15 +440,15 @@ void            LsPointComponent::SaveToResource (LinePointRsc& resource)
     memset (&resource, 0, GetResourceSize ());
     CopyDescription (resource.descr);
     
-    //  Seems odd, but lcType = LsElementType::LineCode has always been used when there is no linecode.
+    //  Seems odd, but lcType = LsComponentType::LineCode has always been used when there is no linecode.
     //  Leaving lcType causes _loadComponent to call LoadInternalComponent and it 
-    resource.lcType = (uint32_t)LsElementType::LineCode;
+    resource.lcType = (uint32_t)LsComponentType::LineCode;
     LsComponentP    comp = m_strokeComponent.get ();
     if (NULL != comp)
         {
         LsLocationCP    loc = comp->GetLocation ();
-        resource.lcType = (uint32_t)loc->GetRscType ();
-        resource.lcID   = loc->GetRscID ();
+        resource.lcType = (uint32_t)loc->GetComponentType ();
+        resource.lcID   = loc->GetComponentId ().GetValue();
         }
 
     for (T_SymbolsCollectionConstIter curr = m_symbols.begin (); curr != m_symbols.end (); ++curr)
@@ -457,8 +458,8 @@ void            LsPointComponent::SaveToResource (LinePointRsc& resource)
 
         PointSymInfo*   pointSymInfo = resource.symbol + resource.nSym++;
         LsLocationCP    loc = curr->m_symbol->GetLocation ();
-        pointSymInfo->symType = (uint32_t)loc->GetRscType ();
-        pointSymInfo->symID   = loc->GetRscID ();
+        pointSymInfo->symType = (uint32_t)loc->GetComponentType ();
+        pointSymInfo->symID   = loc->GetComponentId ().GetValue();
 
         pointSymInfo->strokeNo  = (uint16_t)curr->m_strokeNo;
         pointSymInfo->mod1      = (uint16_t)curr->m_mod1;
@@ -546,7 +547,7 @@ int             strokeNo
 +---------------+---------------+---------------+---------------+---------------+------*/
 LsPointComponent* LsPointComponent::LoadLinePoint
 (
-LsRscReader*    reader
+LsComponentReader*    reader
 )
     {
     LinePointRsc*   lpRsc = (LinePointRsc*) reader->GetRsc();
@@ -555,15 +556,16 @@ LsRscReader*    reader
         return  NULL;
 
     LsPointComponent* pointComp = new LsPointComponent (reader->GetSource());
-    pointComp->SetDescription (WString(lpRsc->descr, false).c_str());
+    pointComp->SetDescription (Utf8String(lpRsc->descr, false).c_str());
 
+#if defined(NOTNOW)
+    //  Maybe this is necessary to avoid recursing
     LineStyleCacheManager::CacheAdd (pointComp);
-
-    DgnDbR     project = reader->GetDgnDb();
+#endif
     LsLocation      tmpLocation;
     tmpLocation.GetLineCodeLocation (reader);
 
-    LsComponent*       subComp = LineStyleCacheManager::GetSubComponent (&tmpLocation, project);
+    LsComponent*       subComp = LsCache::GetLsComponent (tmpLocation);
     if (NULL != subComp)
         {
         pointComp->m_strokeComponent = dynamic_cast <LsStrokePatternComponentP> (subComp);
@@ -580,7 +582,7 @@ LsRscReader*    reader
         while (pRscInfo < pRscEnd)
             {
             tmpLocation.GetPointSymbolLocation (reader, symNum++);
-            LsSymbolComponentP  symbol = (LsSymbolComponentP) LineStyleCacheManager::GetSubComponent (&tmpLocation, project);
+            LsSymbolComponentP  symbol = (LsSymbolComponentP)LsCache::GetLsComponent (tmpLocation);
 
             // Apparently we have symbols that don't participate in the line style.  See TR #308324.
             // These should be removed when there is an opportunity like a file format change.

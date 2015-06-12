@@ -8,120 +8,30 @@
 #include    <DgnPlatformInternal.h>
 #include    <DgnPlatform/DgnCore/LsLocal.h>
 
-static LsComponent*  _loadComponent (LsRscReader* reader);
-static  bool    s_loadingComponents = false;
+static LsComponent*  loadComponent (LsComponentReader* reader);
 
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
-/*=================================================================================**//**
-* @bsiclass                                                     Keith.Bentley   01/03
-+===============+===============+===============+===============+===============+======*/
-struct LsComponentKey
-{
-private:
-    LsComponentPtr m_entry;
-
-public:
-    LsComponent* GetValue() const {return m_entry.get();}
-
-    LsComponentKey (LsComponent const* entry) {m_entry = const_cast<LsComponent*>(entry);}
-    LsComponentKey () {}
-
-    inline int Compare (LsComponentKey* other) const
-        {
-        const LsComponent*  otherEntry = other->GetValue ();
-
-        if (otherEntry == GetValue())
-            return _EQ_;
-        if (!m_entry.IsValid())
-            return _LT_;
-        if (NULL == otherEntry)
-            return _GT_;
-
-        LsLocation const* thisComp  = GetValue()->GetLocation();
-        LsLocation const* otherComp = otherEntry->GetLocation();
-
-        if (thisComp->GetFileKey() != otherComp->GetFileKey())
-            return  thisComp->GetFileKey() > otherComp->GetFileKey() ? _GT_ : _LT_;
-
-        if (thisComp->GetRscType() != otherComp->GetRscType())
-            return  thisComp->GetRscType() > otherComp->GetRscType() ? _GT_ : _LT_;
-
-        if (thisComp->GetIdentKey() != otherComp->GetIdentKey())
-            return  thisComp->GetIdentKey() > otherComp->GetIdentKey() ? _GT_ : _LT_;
-
-        return  _EQ_;
-        }
-
-    bool operator< (LsComponentKey other) const {return Compare (&other) <  _EQ_;}
-};
-
-/*=================================================================================**//**
-* @bsiclass                                                     Keith.Bentley   03/03
-+===============+===============+===============+===============+===============+======*/
-struct LsComponentTree : bset<LsComponentKey>
-{
-public:
-    void AddToCompCache (LsComponent* comp) {insert (comp);}
-    void DeleteMatchingComponent (LsComponent* compareComponent) {erase (compareComponent); }
-    void GetComponentList (T_LsComponents& components, intptr_t fileKey, uint32_t componentType);
-    void Empty ();
-};
-
-static LsComponentTree    s_lsCompCache;
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    John.Gooding                    10/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-void LsComponentTree::GetComponentList (T_LsComponents& components, intptr_t fileKey, uint32_t componentType)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    06/2015
+//---------------------------------------------------------------------------------------
+bool const LsLocation::operator < (LsLocation const &r ) const
     {
-    for (auto it=begin(), done=end(); it!=done; ++it)
-        {
-        LsComponentP     comp = it->GetValue();
-    
-        if (comp->GetLocation ()->GetFileKey () != fileKey)
-            continue;
-        
-        if (0 != componentType && (uint32_t)comp->GetLocation ()->GetRscType () != componentType)
-            continue;
-        
-        components.push_back (comp);
-        }
-    }
+    if (GetComponentType() != r.GetComponentType())
+        return  GetComponentType() < r.GetComponentType() ? true : false;
 
-/*---------------------------------------------------------------------------------**//**
-* Empty the (one and only) tree of Linestyle Components. To do this, we need to first 
-* drop all references to them in the LineStyles in all of the NameTrees for all open 
-* DgnFiles.
-* @bsimethod                                                    Keith.Bentley   03/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-void LsComponentTree::Empty ()
-    {
-    // if there's no entries, we're done.
-    if (empty())
-        return;
+    if (GetComponentId().GetValue() != r.GetComponentId().GetValue())
+        return  GetComponentId().GetValue() < r.GetComponentId().GetValue() ? true : false;
 
-    // run through all of the LineStyle entries in all LsMap's dropping any references to LsComponents (we're about to delete them all).
-    LsMap::DropAllComponentRefs();
-
-    clear();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   01/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-static LsComponent* lookupComponent (LsComponent* in)
-    {
-    BeAssert (0 < in->GetRefCount());
-    auto node = s_lsCompCache.find(in);
-    return  node!=s_lsCompCache.end() ? node->GetValue() : NULL;
+    BeAssert (GetFileKey() == r.GetFileKey());
+    return  false;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-LsDgnDbReader::~LsDgnDbReader ()
+LsComponentReader::~LsComponentReader ()
     {
     FREE_AND_CLEAR (m_rsc);
     }
@@ -129,29 +39,22 @@ LsDgnDbReader::~LsDgnDbReader ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-LsRscReader*   LsRscReader::GetRscReader (const LsLocation* source, DgnDbR project)
+LsComponentReader*   LsComponentReader::GetRscReader (const LsLocation* source, DgnDbR project)
     {
-
-    switch (source->GetSourceType())
-        {
-        case LsLocationType::DgnDb:
-            return  new LsDgnDbReader (source, project);
-        }
-
-    return  NULL;
+    return  new LsComponentReader (source, project);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JimBartlett     08/92
 +---------------+---------------+---------------+---------------+---------------+------*/
-static LsComponent* cacheLoadComponent(LsLocation*location)
+static LsComponent* cacheLoadComponent(LsLocationCR location)
     {
-    LsRscReader* reader = LsRscReader::GetRscReader (location, *location->GetDgnDb());
+    LsComponentReader* reader = LsComponentReader::GetRscReader (&location, *location.GetDgnDb());
 
     if (NULL == reader)
         return  NULL;
 
-    LsComponent* component = _loadComponent (reader);
+    LsComponent* component = loadComponent (reader);
     delete  reader;
 
     return component;
@@ -160,7 +63,7 @@ static LsComponent* cacheLoadComponent(LsLocation*location)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-void LsComponent::GetNextComponentId (uint32_t& id, DgnDbR project, PropertySpec spec)
+void LsComponent::GetNextComponentId (LsComponentId& id, DgnDbR project, BeSQLite::PropertySpec spec)
     {
     SqlPrintfString sql("SELECT  max(Id) from " BEDB_TABLE_Property " where Namespace='%s' and Name='%s'", spec.GetNamespace(), spec.GetName());
     Statement stmt;
@@ -168,39 +71,30 @@ void LsComponent::GetNextComponentId (uint32_t& id, DgnDbR project, PropertySpec
     DbResult result = stmt.Step();
     if (BE_SQLITE_DONE != result && BE_SQLITE_ROW != result)
         {
-        id = 1;
+        id = LsComponentId(1);
         return;
         }
 
-    id = (uint32_t)stmt.GetValueInt(0) + 1;
+    id = LsComponentId(stmt.GetValueInt(0) + 1);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    11/2012
 //---------------------------------------------------------------------------------------
-LineStyleStatus LsComponent::AddComponentAsProperty (uint32_t& componentId, DgnDbR project, PropertySpec spec, void const*data, uint32_t dataSize)
+LineStyleStatus LsComponent::AddComponentAsProperty (LsComponentId& componentId, DgnDbR project, PropertySpec spec, void const*data, uint32_t dataSize)
     {
     GetNextComponentId (componentId, project, spec);
 
-    if (project.SaveProperty (spec, data, dataSize, componentId, 0) != BE_SQLITE_OK)
+    if (project.SaveProperty (spec, data, dataSize, componentId.GetValue(), 0) != BE_SQLITE_OK)
         return LINESTYLE_STATUS_SQLITE_Error;
 
-    return LINESTYLE_STATUS_Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    John.Gooding                    10/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-LineStyleStatus LsComponent::GetComponentList(T_LsComponents& components, intptr_t fileKey, uint32_t componentType)
-    {
-    s_lsCompCache.GetComponentList (components, fileKey, componentType);
     return LINESTYLE_STATUS_Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-LsComponent::LsComponent (DgnDbR project, uint32_t componentType, uint32_t componentId) : m_isDirty (false)
+LsComponent::LsComponent (DgnDbR project, LsComponentType componentType, LsComponentId componentId) : m_isDirty (false)
     {
     m_location.SetLocation (project, componentType, componentId);
     }
@@ -216,9 +110,9 @@ LsComponent::LsComponent (LsLocation const* location) : m_isDirty (false)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    John.Gooding      09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            LsComponent::CopyDescription (CharP buffer) const
+void            LsComponent::CopyDescription (Utf8CP buffer)
     {
-    m_descr.ConvertToLocaleChars (buffer, LS_MAX_DESCR);
+    m_descr.AssignOrClear(buffer);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -360,7 +254,7 @@ LineCodeRsc const* lcRsc
 )
     {
     if (NULL != lcRsc)
-        SetDescription (WString(lcRsc->descr, false).c_str());
+        SetDescription (Utf8String(lcRsc->descr));
 
     CreateFromRsrc (lcRsc);
     }
@@ -370,18 +264,16 @@ LineCodeRsc const* lcRsc
 +---------------+---------------+---------------+---------------+---------------+------*/
 LsStrokePatternComponentP LsStrokePatternComponent::LoadStrokePatternComponent
 (
-LsRscReader*    reader
+LsComponentReader*    reader
 )
     {
     LineCodeRsc*        lcRsc = (LineCodeRsc*) reader->GetRsc();
     const LsLocation*   source = reader->GetSource();
 
-    //  This used to handle LsInternalComponent of line code 0 setting resource type to LsElementType::LineCode.
+    //  This used to handle LsInternalComponent of line code 0 setting resource type to LsComponentType::LineCode.
     
     LsStrokePatternComponent* strokeComp = new LsStrokePatternComponent (source);
     strokeComp->Init (lcRsc);
-
-    s_lsCompCache.AddToCompCache (strokeComp);
 
     return  strokeComp;
     }
@@ -424,8 +316,8 @@ void            LsCompoundComponent::InitLineStyleResource (LineStyleRsc& lsRsc)
         {
         LsLocationCP        loc = curr->m_subComponent->GetLocation ();
 
-        componentInfo->type = (uint32_t)loc->GetRscType ();
-        componentInfo->id = loc->GetRscID ();
+        componentInfo->type = (uint32_t)loc->GetComponentType ();
+        componentInfo->id = loc->GetComponentId ().GetValue();
         componentInfo->offset = curr->m_offset;
         }
     }
@@ -566,7 +458,7 @@ double          offset
 +---------------+---------------+---------------+---------------+---------------+------*/
 LsCompoundComponentP  LsCompoundComponent::LoadCompoundComponent
 (
-LsRscReader*    reader
+LsComponentReader*    reader
 )
     {
     LineStyleRsc*   lsRsc = reader->GetRsc();
@@ -574,9 +466,7 @@ LsRscReader*    reader
         return  NULL;
 
     LsCompoundComponent*  compound = new LsCompoundComponent (reader->GetSource());
-    compound->SetDescription (WString(lsRsc->descr, false).c_str());
-
-    s_lsCompCache.AddToCompCache (compound);
+    compound->SetDescription (Utf8String(lsRsc->descr, false).c_str());
 
     LsLocation  tmpLocation;
 
@@ -584,7 +474,7 @@ LsRscReader*    reader
         {
         tmpLocation.GetCompoundComponentLocation (reader, i);
         
-        LsOffsetComponent offsetComp (lsRsc->component[i].offset, LineStyleCacheManager::GetSubComponent (&tmpLocation, reader->GetDgnDb()));
+        LsOffsetComponent offsetComp (lsRsc->component[i].offset, LsCache::GetLsComponent (&tmpLocation));
         
         if (offsetComp.m_subComponent.get () == compound)
             {
@@ -608,7 +498,7 @@ LsRscReader*    reader
 LsInternalComponent::LsInternalComponent (LsLocation const *pLocation) :
             LsStrokePatternComponent (pLocation)
     {
-    uint32_t id = (uint32_t) pLocation->GetIdentKey();
+    uint32_t id = pLocation->GetComponentId().GetValue();
 
     m_hardwareLineCode = 0;
     // Linecode only if hardware bit is set and masked value is within range.
@@ -676,7 +566,7 @@ LsLocation&     location
 )
     {
     LsLocation  tmpLocation;
-    tmpLocation.SetFrom (&location, (uint32_t)LsResourceType::Internal);
+    tmpLocation.SetFrom (&location, LsComponentType::Internal);
 
     LsInternalComponent*  comp = new LsInternalComponent (&location);
     comp->m_isDirty = true;
@@ -691,32 +581,10 @@ LsLocation&     location
 StatusInt LsDefinition::UpdateStyleTable () const
     {
     DgnDbP project = GetLocation()->GetDgnDb();
-    project->Styles ().LineStyles().Update (DgnStyleId(m_styleNumber), _GetName(), GetLocation()->GetRscID(),
-                                        static_cast <uint16_t> (GetLocation()->GetRscType()), GetAttributes(), m_unitDef);
+    project->Styles ().LineStyles().Update (DgnStyleId(m_styleNumber), _GetName(), GetLocation()->GetComponentId(),
+                                            GetLocation()->GetComponentType(), GetAttributes(), m_unitDef);
 
     return BSISUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// This does not transfer the component or update the component ID. That has to be
-// done separately.
-//
-// @bsimethod                                                   John.Gooding    11/2012
-//--------------+------------------------------------------------------------------------
-StatusInt LsDefinition::TransferStyleTableEntry(DgnStyleId& newId, DgnDbR targetProject) const
-    {
-    targetProject.Styles ().LineStyles().Insert (newId, _GetName(), GetLocation()->GetRscID(),
-                                             static_cast <uint16_t> (GetLocation()->GetRscType()), GetAttributes(), m_unitDef);
-
-    return BSISUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    10/2012
-//--------------+------------------------------------------------------------------------
-void LsDefinition::RemapComponentId (uint32_t newId)
-    {
-    m_location.UpdateRscID(newId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -724,22 +592,17 @@ void LsDefinition::RemapComponentId (uint32_t newId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 LsStrokePatternComponentP  LsInternalComponent::LoadInternalComponent
 (
-LsRscReader*    reader
+LsComponentReader*    reader
 )
     {
     const LsLocation* location = reader->GetSource();
 
     LsLocation  tmpLocation;
-    tmpLocation.SetFrom (location, (uint32_t)LsResourceType::Internal);
+    tmpLocation.SetFrom (location, LsComponentType::Internal);
     LsInternalComponent*  comp = new LsInternalComponent (location);
     
     comp->Init (NULL);
 
-    //  The original code set its type back to match the original type so it would 
-    //  be found in the search but I don't understand when they differ.
-    //  BeAssert (reader->GetRscType() == LsResourceType::Internal);
-
-    s_lsCompCache.AddToCompCache (comp);
     return  comp;
     }
 
@@ -937,22 +800,11 @@ LsComponentP    LsDefinition::GetComponentP(DgnModelP modelRef) const
         }
 
     nonConstThis->m_componentLoadPostProcessed = false;
-    LsComponent searchComp (&m_location);
-    searchComp.AddRef(); // we never want this to be deleted!
-
-    LsComponentP    component = lookupComponent (&searchComp);
-
-    if (NULL == component)
+    LsComponentP    component = LsCache::GetLsComponent (nonConstThis->m_location);
+    if (nullptr == component)
         {
-        s_loadingComponents = true;  // Prevent cache unloading due to Level Libraries.
-        component = cacheLoadComponent (&nonConstThis->m_location);
-        s_loadingComponents = false;
-
-        if (NULL == component)
-            {
-            nonConstThis->m_componentLookupFailed = true;
-            return NULL;
-            }
+        nonConstThis->m_componentLookupFailed = true;
+        return NULL;
         }
 
     nonConstThis->SetComponent (component);
@@ -981,34 +833,34 @@ bool LsCompoundComponent::_ContainsComponent (LsComponentP other) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-BentleyStatus       LsDgnDbReader::_LoadDefinition ()
+BentleyStatus       LsComponentReader::_LoadDefinition ()
     {
     if (NULL != m_rsc)
         return SUCCESS;
 
     HighPriorityOperationBlock highPriority; // see comments in BeSQLite.h
-    m_rscType = (uint32_t)m_source->GetRscType();
+    m_componentType = m_source->GetComponentType();
 
-    switch ((LsElementType)m_rscType)
+    switch ((LsComponentType)m_componentType)
         {
-        case LsElementType::LineCode:
-            LsStrokePatternComponent::CreateRscFromDgnDb ((LineCodeRsc**)&m_rsc, m_dgndb, m_source->GetRscID(), false);
+        case LsComponentType::LineCode:
+            LsStrokePatternComponent::CreateRscFromDgnDb ((LineCodeRsc**)&m_rsc, m_dgndb, m_source->GetComponentId(), false);
             break;
 
-        case LsElementType::Compound:
-            LsCompoundComponent::CreateRscFromDgnDb ((LineStyleRsc**)&m_rsc, m_dgndb, m_source->GetRscID(), false);
+        case LsComponentType::Compound:
+            LsCompoundComponent::CreateRscFromDgnDb ((LineStyleRsc**)&m_rsc, m_dgndb, m_source->GetComponentId(), false);
             break;
 
-        case LsElementType::LinePoint:
-            LsPointComponent::CreateRscFromDgnDb ((LinePointRsc**)&m_rsc, m_dgndb, m_source->GetRscID(), false);
+        case LsComponentType::LinePoint:
+            LsPointComponent::CreateRscFromDgnDb ((LinePointRsc**)&m_rsc, m_dgndb, m_source->GetComponentId(), false);
             break;
 
-        case LsElementType::PointSymbol:
+        case LsComponentType::PointSymbol:
         //  case LS_ELEMENT_POINTSYMBOLV7:
-            LsSymbolComponent::CreateRscFromDgnDb ((PointSymRsc**)&m_rsc, m_dgndb, m_source->GetRscID(), false);
+            LsSymbolComponent::CreateRscFromDgnDb ((PointSymRsc**)&m_rsc, m_dgndb, m_source->GetComponentId(), false);
             break;
 
-        case LsElementType::Internal:
+        case LsComponentType::Internal:
             break;
         }
 
@@ -1019,29 +871,29 @@ BentleyStatus       LsDgnDbReader::_LoadDefinition ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-static LsComponent*  _loadComponent (LsRscReader* reader)
+static LsComponent*  loadComponent (LsComponentReader* reader)
     {
     if (SUCCESS != reader->_LoadDefinition())
         {
-        if (LsElementType::Internal == (LsElementType)reader->GetRscType())
+        if (LsComponentType::Internal == (LsComponentType)reader->GetComponentType())
             return LsInternalComponent::LoadInternalComponent (reader);
 
         return NULL;
         }
 
-    switch ((LsElementType)reader->GetRscType())
+    switch ((LsComponentType)reader->GetComponentType())
         {
-        case LsElementType::Compound:
+        case LsComponentType::Compound:
             return LsCompoundComponent::LoadCompoundComponent (reader);
 
-        case LsElementType::LineCode:
+        case LsComponentType::LineCode:
             return LsStrokePatternComponent::LoadStrokePatternComponent (reader);
             break;
 
-        case LsElementType::LinePoint:
+        case LsComponentType::LinePoint:
             return LsPointComponent::LoadLinePoint (reader);
 
-        case LsElementType::PointSymbol:
+        case LsComponentType::PointSymbol:
             return LsSymbolComponent::LoadPointSym (reader);
             break;
         }
@@ -1049,217 +901,35 @@ static LsComponent*  _loadComponent (LsRscReader* reader)
     return  NULL;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* Get a pointer to a component in the component cache. If the component is not in the cache it will be loaded.
-* @bsimethod                                                    JimBartlett     01/92
-+---------------+---------------+---------------+---------------+---------------+------*/
-LsComponentP LineStyleCacheManager::GetSubComponent(LsLocationCP location, DgnDbR project)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    06/2015
+//---------------------------------------------------------------------------------------
+LsCacheP LsLocation::GetCacheP () const
     {
-    // A resource file handle of zero is illegal when loading sub-components
-    if (!location->IsValid())
-        return  NULL;
+    if (GetDgnDb() == nullptr)
+        return nullptr;
 
-    LsComponent searchComp (location);
-    searchComp.AddRef(); // we never want this to be deleted!
-
-    LsComponent* found = lookupComponent (&searchComp);
-    if (NULL != found)
-        return  found;
-
-    return  cacheLoadComponent (const_cast <LsLocationP> (location));
+    return LsCache::GetDgnDbCache(*GetDgnDb(), true);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    ChuckKirschman  02/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            LineStyleCacheManager::CacheFree
-(
-)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    06/2015
+//---------------------------------------------------------------------------------------
+LsComponent* LsCache::GetLsComponent(LsLocationCR location)
     {
-    // since there's only one component cache, the only way to delete the entries for a modelref is to delete ALL entries.
-    // That's suboptimal.  This function is called from the LS Editor and when a file is closed.  It's the latter case that
-    // caught me.  It turns out that if there are level libraries specified in a DGNLIB that contains line styles, and there
-    // is a style where the level is missing (from older code that didn't check line style levels) then when the level library
-    // is closed all the caches are cleared, which is disastrous during a load.
-    if (!s_loadingComponents)
-        s_lsCompCache.Empty ();
+    LsCacheP lsCache = location.GetCacheP();
+    BeAssert(nullptr != lsCache);
+    if (nullptr == lsCache)
+        return nullptr;
+
+    auto iter = lsCache->m_loadedComponents.find(location);
+    if (iter != lsCache->m_loadedComponents.end())
+        return iter->second.get();
+
+    LsComponentPtr comp = cacheLoadComponent (location);
+    if (comp.IsNull())
+        return nullptr;
+
+    lsCache->m_loadedComponents[location] = comp;
+    return comp.get();
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    ChuckKirschman  02/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            LineStyleCacheManager::CacheDelete
-(
-LsLocation const*   searchLocation,
-int                 option      /* Currently unused */
-)
-    {
-    // since there's only one component cache, the only way to delete the entries for a modelref is to delete ALL entries.
-    // That's OK, this is only used for the linestyle editor and the cache will just get repopulated the next time the components are referenced.
-    s_lsCompCache.Empty ();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    ChuckKirschman  09/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            LineStyleCacheManager::CacheDeleteComponent
-(
-LsComponent&    compareComponent,
-int             option      /* Currently unused */
-)
-    {
-    s_lsCompCache.DeleteMatchingComponent (&compareComponent);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    ChuckKirschman  02/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            LineStyleCacheManager::CacheDelete
-(
-uint32_t        rscFile,
-uint32_t        rscType,
-uint32_t        rscID,
-int             option      /* Currently unsed */
-)
-    {
-#ifdef DGNV10FORMAT_CHANGES_WIP_LINESTYLES
-    LsComponent compareComponent (rscFile, rscType, rscID);
-    CacheDeleteComponent (compareComponent, option);
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    ChuckKirschman  02/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            LineStyleCacheManager::CacheDelete
-(
-DgnDbP          dgnFile,
-long            lsType, 
-DgnElementId    elementID,
-int             option      /* Currently unsed */
-)
-    {
-#ifdef DGNV10FORMAT_CHANGES_WIP_LINESTYLES
-    LsComponent compareComponent (dgnFile, lsType, elementID);
-    return CacheDeleteComponent (compareComponent, option);
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* This function is used by the editors to load a temporary line style into the cache
-* so it can be displayed in the preview window.
-* @bsimethod                                                    JimBartlett     08/92
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus LineStyleCacheManager::CacheInsert (DgnDbP dgnFile, long compType, DgnElementId compID, void* pRsc, long option)
-    {
-#ifdef DGNPROJECT_MODELS_CHANGES_WIP
-    DgnModelP modelRef = dgnFile->GetFirstDgnModel();
-
-    CacheDelete (dgnFile, compType, compID, option);
-
-    LsLocation      tmpLocation;
-    tmpLocation.SetLocation (dgnFile, compType, compID);
-
-    LsRscReader* reader = LsRscReader::GetRscReader (&tmpLocation, modelRef);
-
-    if (NULL == reader)
-        return  ERROR;
-
-    reader->SetRsc ((LineStyleRsc*)pRsc);
-    LsComponent* component = _loadComponent (reader);
-    reader->SetRsc (NULL);
-    delete  reader;
-
-    return  NULL != component ? SUCCESS : ERROR;
-#endif
-    return  ERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* This function is used by the editors to load a temporary line style into the cache
-* so it can be displayed in the preview window.
-* @bsimethod                                                    JimBartlett     08/92
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus LineStyleCacheManager::CacheInsert (RscFileHandle rscFile, long rscType, uint32_t rscId, DgnDbP dgnFile, void* pRsc, long option)
-    {
-#ifdef DGNPROJECT_MODELS_CHANGES_WIP
-    DgnModelP modelRef = dgnFile->GetFirstDgnModel();
-
-    CacheDelete (rscFile, rscType, rscId, option);
-
-    LsLocation      tmpLocation;
-    tmpLocation.SetLocation (rscFile, rscType, rscId);
-
-    LsRscReader* reader = LsRscReader::GetRscReader (&tmpLocation, modelRef);
-
-    if (NULL == reader)
-        return  ERROR;
-
-    reader->SetRsc ((LineStyleRsc*)pRsc);
-    LsComponent* component = _loadComponent (reader);
-    reader->SetRsc (NULL);
-    delete  reader;
-
-    return  NULL != component ? SUCCESS : ERROR;
-#endif
-    return  ERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    John.Gooding                    09/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            LineStyleCacheManager::CacheAdd (LsComponent* comp)
-    {
-    s_lsCompCache.AddToCompCache (comp);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    ChuckKirschman  01/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-LsElementType BentleyApi::remapRscTypeToElmType  /* <= Elm type */
-(
-uint32_t    rscType     /* => Resource type */
-)
-    {
-    LsElementType elmType = (LsElementType)rscType;
-
-    switch  ((LsResourceType)rscType)
-        {
-        case LsResourceType::Compound:
-            elmType = LsElementType::Compound;
-            break;
-
-        case LsResourceType::LineCode:
-            elmType = LsElementType::LineCode;
-            break;
-
-        case LsResourceType::LinePoint:
-            elmType = LsElementType::LinePoint;
-            break;
-
-        case LsResourceType::PointSymbol:
-        case LsResourceType::PointSymbolV7:
-            elmType = LsElementType::PointSymbol;
-            break;
-
-        case LsResourceType::Internal:
-            elmType = LsElementType::Internal;
-            break;
-        }
-
-    return elmType;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    ChuckKirschman  01/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t BentleyApi::remapElmTypeToRscType  /* <= Rsc type */
-(
-LsElementType    elmType     /* => Elm type */
-)
-    {
-    //  This function is a vestige of the support for line styles from resource files
-    //  and from dgn files. In V10 they only come from projects.
-    return (uint32_t)elmType;
-    }
-

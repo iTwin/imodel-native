@@ -14,6 +14,8 @@
 #include    <Bentley/bvector.h>
 #include    "LineStyle.h"
 
+#error none of this should apply.
+
 typedef struct dwgLineStyleInfo* DwgLineStyleInfoP;     // this is outside the linestyle namespace.
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -97,7 +99,7 @@ public:
         DgnElementId        GetId                           () const {return m_subComponent ? m_subComponent->GetId() : m_id;}
         double              GetOffset                       () const {return m_offset;}
         void                SetOffset                       (double offset) {m_offset = offset;}
-        LsElmComponentP     GetSubComponent                 () const {return m_subComponent;}
+        LsElmComponentP     GetLsComponent                 () const {return m_subComponent;}
         BentleyStatus       LoadSubComponentFromResource    (RscFileHandle rfHandle, bool createSubComponents);
         BentleyStatus       LoadSubComponentFromElement     (DgnModelP modelRef, bool createSubComponents);
      };
@@ -132,7 +134,7 @@ public:
     LsElmCompoundComponent ();
     ~LsElmCompoundComponent ();
     uint32_t GetNumComponents () const {return static_cast<uint32_t>(m_components.size());}
-    LsElmComponentP GetComponent (uint32_t iComp) const {return m_components[iComp].GetSubComponent();}
+    LsElmComponentP GetComponent (uint32_t iComp) const {return m_components[iComp].GetLsComponent();}
     LsComponentInfo const & GetComponentInfo (uint32_t iComp) const {return m_components[iComp];}
     uint32_t GetComponentType (uint32_t iComp) const {return m_components[iComp].GetType();}
     DgnElementId GetComponentId (uint32_t iComp) const {return m_components[iComp].GetId();}

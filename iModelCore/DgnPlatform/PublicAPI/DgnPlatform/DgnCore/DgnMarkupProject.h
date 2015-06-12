@@ -447,7 +447,7 @@ public:
 struct CreateDgnMarkupProjectParams : CreateDgnDbParams
 {
 private:
-    DgnDbR     m_dgnProject;
+    DgnDbR     m_dgnDb;
     bool            m_overwriteExisting;
     bool            m_physicalRedlining;
 
@@ -456,10 +456,10 @@ public:
     //! @param[in] dgnProject   The DgnDb which is the target of this markup.
     //! @param[in] guid         The BeProjectGuid to store in the newly created DgnDb. If invalid (the default), a new BeProjectGuid is created.
     //! The new BeProjectGuid can be obtained via GetGuid.
-    CreateDgnMarkupProjectParams (DgnDbR dgnProject, BeDbGuid guid=BeDbGuid()) : CreateDgnDbParams(guid), m_dgnProject(dgnProject), m_overwriteExisting(false) {;}
+    CreateDgnMarkupProjectParams (DgnDbR dgnProject, BeDbGuid guid=BeDbGuid()) : CreateDgnDbParams(guid), m_dgnDb(dgnProject), m_overwriteExisting(false) {;}
 
     //! Get the subject DgnDb
-    DgnDbR GetSubjectDgnProject() const {return m_dgnProject;}
+    DgnDbR GetSubjectDgnProject() const {return m_dgnDb;}
 
     //! Specify whether to overwrite an existing file or not. The default is to fail if a file by the supplied name already exists.
     void SetOverwriteExisting (bool val) {m_overwriteExisting = val;}

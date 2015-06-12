@@ -347,8 +347,6 @@ void DgnPlatformLib::Host::InitializeDgnCore ()
 
     BeAssert (NULL == m_txnAdmin); m_txnAdmin = &_SupplyTxnAdmin();
 
-    m_lineStyleManager = new LineStyleManager ();
-
     // ECSchemaReadContext::GetStandardPaths will append ECSchemas/ for us.
     ECN::ECSchemaReadContext::Initialize (T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
     }
@@ -368,7 +366,6 @@ void DgnPlatformLib::Host::TerminateDgnCore(bool onProgramExit)
     TERMINATE_HOST_OBJECT(m_acsManager, onProgramExit);
     TERMINATE_HOST_OBJECT(m_sessionAdmin, onProgramExit);
     TERMINATE_HOST_OBJECT(m_realityDataAdmin, onProgramExit);
-    TERMINATE_HOST_OBJECT(m_lineStyleManager, onProgramExit);
 
     for (ObjEntry& obj : m_hostObj)
         TERMINATE_HOST_OBJECT(obj.m_val, onProgramExit);
@@ -394,7 +391,6 @@ void DgnPlatformLib::Host::TerminateDgnCore(bool onProgramExit)
     BeAssert (NULL == m_sessionAdmin);
     BeAssert (NULL == m_txnAdmin);
     BeAssert (NULL == m_acsManager);
-    BeAssert (NULL == m_lineStyleManager);
     BeAssert (NULL == m_formatterAdmin);
     BeAssert (NULL == m_realityDataAdmin);
     BeAssert (NULL == m_exceptionHandler);

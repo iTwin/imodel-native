@@ -31,7 +31,6 @@
 #include "IViewOutput.h"
 #include "IViewTransients.h"
 #include "LineStyle.h"
-#include "LineStyleManager.h"
 #include "DgnEntity.h"
 #include "DgnDb.h"
 #include "NotificationManager.h"

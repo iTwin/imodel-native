@@ -1,6 +1,6 @@
 /*----------------------------------------------------------------------+
 |
-|     $Source: DgnCore/linestyle/LineStyleManager.cpp $
+|     $Source: DgnCore/linestyle/DgnLineStyles.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
