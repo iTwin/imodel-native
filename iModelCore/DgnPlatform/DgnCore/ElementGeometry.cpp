@@ -393,21 +393,7 @@ bool ElementGeometry::TransformInPlace (TransformCR transform)
         case GeometryType::TextString:
             {
             TextStringR text = *GetAsTextString();
-            
-            DPoint3d newOrigin = text.GetOrigin();
-            transform.Multiply(newOrigin);
-
-            RotMatrix newOrientation = text.GetOrientation();
-            DPoint2d scaleFactor;
-            TextString::TransformOrientationAndExtractScale(scaleFactor, newOrientation, transform);
-
-            DPoint2d newSize = text.GetStyle().GetSize();
-            newSize.x *= scaleFactor.x;
-            newSize.y *= scaleFactor.y;
-
-            text.SetOrigin(newOrigin);
-            text.SetOrientation(newOrientation);
-            text.GetStyleR().SetSize(newSize);
+            text.ApplyTransform(transform);
 
             return true;
             }
