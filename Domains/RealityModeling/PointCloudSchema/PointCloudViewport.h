@@ -52,11 +52,11 @@ struct PTViewportID
     public:
         PTViewportID () : m_dgnModelP(0), m_sceneP(0), m_msView(0) 
             {
-            m_rangeUOR.init ();
+            m_rangeUOR.Init ();
             }
         PTViewportID (DgnModelP modelRefP, BePointCloud::PointCloudScene* sceneP, int view) : m_dgnModelP(modelRefP), m_sceneP(sceneP), m_msView(view)
             {
-            m_rangeUOR.init ();
+            m_rangeUOR.Init ();
             }
         PTViewportID (DgnModelP modelRefP, BePointCloud::PointCloudScene* sceneP, int view, DRange3dR rangeUOR) : m_dgnModelP(modelRefP), m_sceneP(sceneP), m_msView(view), m_rangeUOR (rangeUOR) 
             {}

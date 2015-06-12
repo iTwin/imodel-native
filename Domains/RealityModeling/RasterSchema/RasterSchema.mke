@@ -34,8 +34,8 @@ BENTLEY_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
 BENTLEY_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
 BENTLEY_LIBRARIES + $(ContextSubpartsLibs)$(stlibprefix)BeJsonCpp$(stlibext)
 BENTLEY_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext)
-BENTLEY_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)IppGraLibs$(libprefix)
-BENTLEY_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)IppUtlLibs$(libprefix)
+BENTLEY_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)IppGraLibs$(libext)
+BENTLEY_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)IppUtlLibs$(libext)
 BENTLEY_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
 
 #--------------------------------------------------------------------------------------

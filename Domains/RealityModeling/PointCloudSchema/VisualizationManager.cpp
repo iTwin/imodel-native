@@ -161,9 +161,9 @@ void VisualizationManager::SetViewportInfo (ViewContextR context, Transform cons
     RotMatrix rotEnd; rotEnd.initFromScale (1+0.0001);
     rotEnd.multiply (&scaledRange.end, &vector.end, 1);
 #else
-    Transform transOrg; transOrg.initFrom (-1,-1,-1);
+    Transform transOrg; transOrg.InitFrom (-1,-1,-1);
     transOrg.multiply (&scaledRange.low, &range.low, 1);
-    Transform transEnd; transEnd.initFrom (1,1,1);
+    Transform transEnd; transEnd.InitFrom (1,1,1);
     transEnd.multiply (&scaledRange.high, &range.high, 1);
 #endif
 
@@ -194,19 +194,19 @@ void VisualizationManager::SetViewportProjectionFromSceneRange(ViewContextR cont
     DRange3d viewRange_npc; GetNpcViewRange(viewRange_npc, context);
     
     // Compute the point cloud Npc corners
-    DRange3d pointCloudRange_local; pointCloudRange_local.initFrom(&range.low, &range.high);
+    DRange3d pointCloudRange_local; pointCloudRange_local.InitFrom(range.low, range.high);
     DRange3d pointCloudRange_npc; 
     LocalRangeToNpcRange(pointCloudRange_npc, pointCloudRange_local, context);
 
     // intersect the point cloud with the view (Npc)
-    DRange3d subViewRange_npc; subViewRange_npc.intersectionOf(&pointCloudRange_npc, &viewRange_npc);
+    DRange3d subViewRange_npc; subViewRange_npc.IntersectionOf(pointCloudRange_npc, viewRange_npc);
     DPoint3d subViewBox_npc[NPC_CORNER_COUNT];
-    subViewRange_npc.get8Corners(subViewBox_npc);
+    subViewRange_npc.Get8Corners(subViewBox_npc);
 
     // Convert the intersected box into view coordinates.
     DPoint3d subViewBox_view[NPC_CORNER_COUNT];
     context.NpcToView(&subViewBox_view[0], &subViewBox_npc[0], 8);
-    DRange3d subViewRange_view; subViewRange_view.initFrom(subViewBox_view, NPC_CORNER_COUNT);
+    DRange3d subViewRange_view; subViewRange_view.InitFrom(subViewBox_view, NPC_CORNER_COUNT);
 
     int horizontalPixels = (int)(subViewRange_view.high.x - subViewRange_view.low.x + 0.5);  //  + 1?
     int verticalPixels  =  (int)(subViewRange_view.high.y - subViewRange_view.low.y + 0.5);  //  + 1?
@@ -233,24 +233,24 @@ void VisualizationManager::SetViewportOrtho(ViewContextR context, Transform cons
     // Get the 8 Npc corners of the view
     DPoint3d viewBox_npc[NPC_CORNER_COUNT];
     GetNpcViewBox(viewBox_npc, context);
-    DRange3d viewRange_npc; viewRange_npc.initFrom(viewBox_npc, NPC_CORNER_COUNT);
+    DRange3d viewRange_npc; viewRange_npc.InitFrom(viewBox_npc, NPC_CORNER_COUNT);
 
     // Compute the point cloud Npc corners
-    DRange3d pointCloudRange_local; pointCloudRange_local.initFrom(&vector.low, &vector.high);
+    DRange3d pointCloudRange_local; pointCloudRange_local.InitFrom(vector.low, vector.high);
     DPoint3d pointCloudBox[NPC_CORNER_COUNT];
-    pointCloudRange_local.get8Corners(pointCloudBox);
+    pointCloudRange_local.Get8Corners(pointCloudBox);
     context.LocalToView(&pointCloudBox[0], &pointCloudBox[0], NPC_CORNER_COUNT);
     context.ViewToNpc(&pointCloudBox[0], &pointCloudBox[0], NPC_CORNER_COUNT);
 
     // intersect the point cloud with the view
-    DRange3d pointCloudRange_npc; pointCloudRange_npc.initFrom(pointCloudBox, NPC_CORNER_COUNT);
-    viewRange_npc.intersectionOf(&pointCloudRange_npc, &viewRange_npc);
-    viewRange_npc.get8Corners(viewBox_npc);
+    DRange3d pointCloudRange_npc; pointCloudRange_npc.InitFrom(pointCloudBox, NPC_CORNER_COUNT);
+    viewRange_npc.IntersectionOf(pointCloudRange_npc, viewRange_npc);
+    viewRange_npc.Get8Corners(viewBox_npc);
 
     // Convert the intersected box into view coordinates.
     DPoint3d viewBox_view[NPC_CORNER_COUNT];
     context.NpcToView(&viewBox_view[0], &viewBox_npc[0], NPC_CORNER_COUNT);
-    DRange3d viewRange_view; viewRange_view.initFrom(viewBox_view, NPC_CORNER_COUNT);
+    DRange3d viewRange_view; viewRange_view.InitFrom(viewBox_view, NPC_CORNER_COUNT);
 
     int horizontalPixels = (int)(viewRange_view.high.x - viewRange_view.low.x + 0.5);  //  + 1?
     int verticalPixels  =  (int)(viewRange_view.high.y - viewRange_view.low.y + 0.5);  //  + 1?
@@ -291,12 +291,12 @@ void VisualizationManager::SetViewportOrtho(ViewContextR context, Transform cons
 void VisualizationManager::LocalRangeToNpcRange(DRange3d& npcRange, DRange3d const& localRange, ViewContextR context)
     {
     DPoint3d box[8];
-    localRange.get8Corners(box);
+    localRange.Get8Corners(box);
 
     if (SUCCESS == LocalToViewAccountingForPointBehindCamera(box, box, 8, context))
         {
         context.ViewToNpc(box, box, 8);
-        npcRange.initFrom(box, 8);
+        npcRange.InitFrom(box, 8);
         }
     else
         {
@@ -594,7 +594,7 @@ void VisualizationManager::GetNpcViewRange (DRange3d& npcRange, ViewContextR con
 //     if (modelRefMark.m_useNpcSubRange)
 //         npcRange        = modelRefMark.m_npcSubRange;
 //     else
-        npcRange.initFrom (0.0, 0.0, 0.0, 1.0, 1.0, 1.0);
+        npcRange.InitFrom (0.0, 0.0, 0.0, 1.0, 1.0, 1.0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -606,7 +606,7 @@ void VisualizationManager::GetNpcViewBox (DPoint3d npcPoints[8], ViewContextR co
     DRange3d                        npcRange;
     GetNpcViewRange(npcRange, context);
 
-    npcRange.get8Corners (npcPoints);
+    npcRange.Get8Corners (npcPoints);
     }
 
 /*---------------------------------------------------------------------------------**//**

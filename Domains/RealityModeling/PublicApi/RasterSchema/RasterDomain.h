@@ -8,6 +8,9 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
+#include <DgnPlatform/DgnCore/DgnDomain.h>
+#include <RasterSchema/RasterSchemaCommon.h>
+
 BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
 
 //=======================================================================================

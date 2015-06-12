@@ -58,7 +58,7 @@ static void DRange2dToJson (JsonValueR outValue, DRange2dCR range)
 //----------------------------------------------------------------------------------------
 WmsMap::WmsMap()
     {
-    m_boundingBox.init(); // null range
+    m_boundingBox.Init(); // null range
     m_metaWidth = 0;
     m_metaHeight = 0;
     }
@@ -121,7 +121,7 @@ void WmsMap::SetMetaSizeByLargestBoundingBoxSide(uint32_t pixelCount)
 //----------------------------------------------------------------------------------------
 bool WmsMap::HasValidParameters() const 
     {
-    if(m_url.empty() || m_boundingBox.isNull() || 0 == m_metaWidth || 0 == m_metaHeight ||
+    if(m_url.empty() || m_boundingBox.IsNull() || 0 == m_metaWidth || 0 == m_metaHeight ||
         m_version.empty() || m_layers.empty() || m_csType.empty() || m_csLabel.empty() || m_format.empty())
         return false;
     

@@ -10,6 +10,8 @@
 
 #include <DgnPlatform/DgnCore/RasterBaseModel.h>
 #include <RasterSchema/RasterHandler.h>
+#include <RasterSchema/RasterSchemaTypes.h>
+
 
 /*&&ep d
 class HRFRasterFile;

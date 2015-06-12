@@ -10,15 +10,21 @@
 
 #include <RasterSchema/RasterSchemaApi.h>
 
+
 #include <Bentley/Bentley.h>
 #include <DgnPlatform/DgnCore/DgnDomain.h>
 #include <DgnPlatform/DgnCore/RasterBaseModel.h>
 #include <DgnPlatform/DgnCore/ImageUtilities.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/DgnHandlers/image.h>
+
 //&&ep1
 #include <windows.h>
 #include <Imagepp/h/ImageppAPI.h>
+
+#ifdef GetCurrentTime
+#undef GetCurrentTime
+#endif
 
 #include <Imagepp/all/h/HRFRasterFile.h>
 #include <Imagepp/all/h/HFCURLFile.h>

@@ -12,6 +12,15 @@
 #include <RasterSchema/RasterSchemaCommon.h>
 #include <RasterSchema/ExportMacros.h>
 
+//-----------------------------------------------------------------------------------------
+// Define standard typedefs (P, CP, R, CR) and RefCountedPtr
+//-----------------------------------------------------------------------------------------
+RASTERSCHEMA_TYPEDEFS(RasterQuadTree)
+RASTERSCHEMA_REF_COUNTED_PTR(RasterQuadTree)
+
+RASTERSCHEMA_TYPEDEFS(RasterFile)
+RASTERSCHEMA_REF_COUNTED_PTR(RasterFile)
+
 RASTERSCHEMA_REF_COUNTED_PTR(RasterModel)
 
 RASTERSCHEMA_REF_COUNTED_PTR(WmsModel)
