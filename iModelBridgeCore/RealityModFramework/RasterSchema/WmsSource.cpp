@@ -65,7 +65,12 @@ public:
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
-bool WmsTileData::_IsExpired() const {return DateTime::CompareResult::EarlierThan == DateTime::Compare(GetExpirationDate(), DateTime::GetCurrentTime());}
+bool WmsTileData::_IsExpired() const 
+    {
+    //&&MM maybe we could the expiration date to handle errors. e.g. set a short expiration date for errors, timeout.
+    //     that way the caller would receive the WmsTileData and we would retry at a later time.
+    return DateTime::CompareResult::EarlierThan == DateTime::Compare(GetExpirationDate(), DateTime::GetCurrentTime());
+    }
 
 //=======================================================================================
 // @bsimethod                                                   Mathieu.Marchand  6/2015
@@ -305,7 +310,7 @@ WmsSource::WmsSource(WmsMap const& mapInfo)
 
     // for WMS we define a 256x256 multi-resolution image.
     bvector<Resolution> resolution;
-    RasterSource::GenerateResolution(resolution, m_mapInfo.m_metaWidth, m_mapInfo.m_metaHeight, 512, 512);
+    RasterSource::GenerateResolution(resolution, m_mapInfo.m_metaWidth, m_mapInfo.m_metaHeight, 256, 256);
 
     GeoCoordinates::BaseGCSPtr pGcs = CreateBaseGcsFromWmsGcs(m_mapInfo.m_csLabel);
     BeAssert(pGcs.IsValid()); //Is it an error if we do not have a GCS? We will assume coincident.
@@ -321,15 +326,6 @@ DisplayTilePtr WmsSource::_QueryTile(TileId const& id, bool request)
     //&&MM source should return raster data so caller can do what they want with it.
     Utf8String tileUrl = BuildTileUrl(id);
 
-    //&&MM I don't understand this concept of expected image info. Why we need it?
-    ImageUtilities::RgbImageInfo expectedImageInfo;
-    expectedImageInfo.width = GetTileSizeX(id);
-    expectedImageInfo.height = GetTileSizeY(id);
-    expectedImageInfo.hasAlpha = false;
-    expectedImageInfo.isBGR = false;
-    expectedImageInfo.isTopDown = true;
-
-#if 1 //&&MM not now. need our own tiledraster
     //      We are using tiledRaster but it should be extended to support more pixeltype and compression or have a new type?
     //      Maybe we should create a better Image object than RgbImageInfo and use that.
     RefCountedPtr<WmsTileData::RequestOptions> pOptions = WmsTileData::RequestOptions::Create(true, request);
@@ -360,6 +356,14 @@ DisplayTilePtr WmsSource::_QueryTile(TileId const& id, bool request)
         }
     else if (contentType.Equals ("image/jpeg"))
         {
+        //&&MM I don't understand this concept of expected image info. The fileRead should output that info.
+        ImageUtilities::RgbImageInfo expectedImageInfo;
+        expectedImageInfo.width = GetTileSizeX(id);
+        expectedImageInfo.height = GetTileSizeY(id);
+        expectedImageInfo.hasAlpha = false;
+        expectedImageInfo.isBGR = false;
+        expectedImageInfo.isTopDown = true;
+
         status = ImageUtilities::ReadImageFromJpgBuffer (m_decompressBuffer, actualImageInfo, data.data(), data.size(), expectedImageInfo);
         }
     else
@@ -377,9 +381,6 @@ DisplayTilePtr WmsSource::_QueryTile(TileId const& id, bool request)
     DisplayTilePtr pDisplayTile = DisplayTile::Create(actualImageInfo.width, actualImageInfo.height, pixelType, m_decompressBuffer.data(), 0/*notPadded*/);
 
     return pDisplayTile;
-#else 
-    return NULL;
-#endif
     }
 
 //----------------------------------------------------------------------------------------
@@ -416,18 +417,10 @@ Utf8String WmsSource::BuildTileUrl(TileId const& tileId)
         GetTileSizeX(tileId), GetTileSizeY(tileId), m_mapInfo.m_format.c_str());
        
     // Optional parameters
-    //&&MM todo
-//     if(!m_transparent.empty())
-//         {
-//         tileUrl.append("&TRANSPARENT=");
-//         tileUrl.append(m_transparent);
-//         }
-// 
-//     if(!m_backgroundColor.empty())
-//         {
-//         tileUrl.append("&BGCOLOR=");
-//         tileUrl.append(m_backgroundColor);
-//         }
+    if(m_mapInfo.m_transparent)
+        tileUrl.append("&TRANSPARENT=TRUE");
+    else
+        tileUrl.append("&TRANSPARENT=FALSE");
 
     if(!m_mapInfo.m_vendorSpecific.empty())
         {

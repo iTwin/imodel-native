@@ -234,6 +234,7 @@ BentleyStatus WmsModel::_LoadQuadTree()
         m_rasterTreeP = RasterQuadTree::Create(*pSource, GetDgnDb());
 
     //&&MM what about range or other stuff from the base?
+    //webmercator : props.m_range = db.Units().GetProjectExtents(); // The "range" of a map could be the whole world. We'll fall back on the project's full extents.
 
     return m_rasterTreeP.IsValid() ? BSISUCCESS : BSIERROR;
     }
