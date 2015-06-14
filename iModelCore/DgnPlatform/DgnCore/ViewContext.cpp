@@ -577,7 +577,7 @@ void ViewContext::GetViewIndTransform (TransformP trans, DPoint3dCP originLocal)
         }
     else
         {
-        rMatrix.initIdentity();
+        rMatrix.InitIdentity ();
         }
 
     // get transform about origin
@@ -1626,7 +1626,7 @@ void ViewContext::_DrawStyledLineString3d (int nPts, DPoint3dCP pts, DPoint3dCP 
     LineStyleSymbP  currLsSymb;
     ILineStyleCP    currLStyle = _GetCurrLineStyle(&currLsSymb);
 
-    if (currLStyle && (nPts > 2 || !pts->isEqual (pts+1)))
+    if (currLStyle && (nPts > 2 || !pts->IsEqual (pts[1])))
         {
         currLStyle->_GetComponent()->_StrokeLineString (this, currLsSymb, pts, nPts, closed);
         return;
@@ -1649,7 +1649,7 @@ void ViewContext::_DrawStyledLineString2d (int nPts, DPoint2dCP pts, double prio
     LineStyleSymbP  currLsSymb;
     ILineStyleCP    currLStyle = _GetCurrLineStyle(&currLsSymb);
 
-    if (currLStyle && (nPts > 2 || !pts->isEqual (pts+1)))
+    if (currLStyle && (nPts > 2 || !pts->IsEqual (pts[1])))
         {
         currLStyle->_GetComponent()->_StrokeLineString2d (this, currLsSymb, pts, nPts, priority, closed);
         return;

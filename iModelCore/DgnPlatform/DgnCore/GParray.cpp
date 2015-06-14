@@ -207,7 +207,7 @@ void            GPArray::Draw (IDrawGeomR drawGeom, bool closed, bool filled) co
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            GPArray::Transform (TransformCP transform)
     {
-    if (NULL != transform && !transform->isIdentity())
+    if (NULL != transform && !transform->IsIdentity ())
         this->Multiply (*transform);
     }
 

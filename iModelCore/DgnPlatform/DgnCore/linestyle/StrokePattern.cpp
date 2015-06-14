@@ -831,7 +831,7 @@ double          LsStrokePatternComponent::GenerateStrokes (ViewContextP context,
     DVec3d    normal;
     RotMatrix matrix;
     modifiers->GetPlaneAsMatrixRows (matrix);
-    matrix.getRow (&normal, 2);
+    matrix.GetRow (normal, 2);
 
     double  segmentRemaining = 0;
     double  cutLength = 0.0;
@@ -1868,7 +1868,7 @@ void            Centerline::Output (ViewContextP context, LsStrokeP pStroke, DPo
 
         // NEEDSWORK: According to Karin, it would be much more efficient to pass all the points in the centerline as a single array.  
         //    Need to restructure Centerline to do store them seperately.
-        if (1 == nPts || (2 == nPts && points->isEqual (points+1)))
+        if (1 == nPts || (2 == nPts && points->IsEqual (points[1])))
             output.DrawPointString3d (1, points, NULL);
         else
             output.DrawLineString3d (nPts, points, NULL);

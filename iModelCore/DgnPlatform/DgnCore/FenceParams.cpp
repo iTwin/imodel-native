@@ -134,12 +134,12 @@ void GetTestPointFrustum (DPoint3dR fencePt, ClipPrimitiveCR clipPrimitive)
 
     Transform   invTransform;
 
-    invTransform.inverseOf (m_fp->GetTransform ());
+    invTransform.InverseOf(*(m_fp->GetTransform ()));
 
     if (NULL != clipPrimitive.GetTransformFromClip())
-        invTransform.productOf (&invTransform, clipPrimitive.GetTransformFromClip());
+        invTransform.InitProduct (invTransform, *(clipPrimitive.GetTransformFromClip()));
 
-    invTransform.multiply (&fencePt);
+    invTransform.Multiply(fencePt);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -150,10 +150,10 @@ void GetTestDirectionFrustum (DVec3dR fenceDir)
     Transform       invTransform;
     ClipVectorPtr   clip = m_fp->GetClipVector();
 
-    invTransform.inverseOf (m_fp->GetTransform ());
+    invTransform.InverseOf(*(m_fp->GetTransform ()));
 
     if (clip.IsValid () && !clip->empty () && clip->front ()->GetTransformFromClip ())
-        invTransform.productOf (&invTransform, clip->front ()->GetTransformFromClip ());
+        invTransform.InitProduct (invTransform, *(clip->front ()->GetTransformFromClip ()));
 
     invTransform.GetMatrixColumn (fenceDir, 2);
     }
@@ -229,7 +229,7 @@ Transform const*    GetCurrentFenceAcceptTransform (TransformP transformP)
     if (placementTransP)
         *transformP = *placementTransP;
     else
-        transformP->initIdentity ();
+        transformP->InitIdentity ();
 
     return transformP;
     }
@@ -248,7 +248,7 @@ StatusInt ProcessPoints (DPoint3dCP points, int numPoints)
         {
         DPoint3d    tmpPt;
 
-        transform.multiply (&tmpPt, &points[iPoint]);
+        transform.Multiply(tmpPt, points[iPoint]);
 
         m_currentAccept = m_fp->PointInside (tmpPt);
 
@@ -288,7 +288,7 @@ StatusInt ProcessLinearSegments (DPoint3dCP points, int numPoints, bool closed, 
         {
         DPoint3d    *tmpPtsP = (DPoint3d *) alloca (numPoints * sizeof (DPoint3d));
 
-        transform.multiply (tmpPtsP, points, numPoints);
+        transform.Multiply (tmpPtsP, points, numPoints);
 
         m_currentAccept = m_fp->AcceptLineSegments (tmpPtsP, numPoints, closed);
         }
@@ -608,7 +608,7 @@ virtual void    _DrawQvElem (QvElem* qvElem, int subElemIndex) override
 
     DVec3d      viewNormal, fenceNormal;
 
-    m_context->GetViewport ()->GetRotMatrix ().getRow (&viewNormal, 2);
+    m_context->GetViewport ()->GetRotMatrix ().GetRow (viewNormal, 2);
     GetTestDirectionFrustum (fenceNormal);
 
     bool        alignedToView = TO_BOOL (fenceNormal.isParallelTo (&viewNormal));
@@ -627,7 +627,7 @@ virtual void    _DrawQvElem (QvElem* qvElem, int subElemIndex) override
             Transform   transform;
 
             LegacyMath::RMatrix::FromVectorToVector (&rMatrix, &fenceNormal, &viewNormal);
-            transform.initFromMatrixAndFixedPoint (&rMatrix, &fencePt);
+            transform.InitFromMatrixAndFixedPoint (rMatrix, fencePt);
 
             m_context->PushTransform (transform);
             }
@@ -649,7 +649,7 @@ virtual void    _DrawQvElem (QvElem* qvElem, int subElemIndex) override
         if (!gotHit)
             continue;
 
-        m_fp->GetTransform()->multiply (&hitPt);
+        m_fp->GetTransform()->Multiply(hitPt);
         if (!m_fp->PointInOtherClips (hitPt, primitive.get()))
             continue;
 
@@ -982,13 +982,13 @@ void            FenceParams::SetViewParams (DgnViewportP viewport)
     m_viewport = viewport;
 
     m_camera = false;
-    m_transform.initIdentity ();
+    m_transform.InitIdentity ();
     m_onTolerance = 1.5E-3; // Reduced from .25 for XM to 1.0E-4 (now that we use this uniformly I think smaller value makes sense).   RBB/RBB 03/06.
                             // Increased to 1.5E-3 to match/exceed CLIP_PLANE_BIAS.  - RBB 03/2011.  (TR# 293934).
 
     if (NULL != viewport && viewport->Is3dView())
         {
-        m_transform.initFrom (&viewport->GetRotMatrix());
+        m_transform.InitFrom (*(&viewport->GetRotMatrix()));
 
         m_camera = viewport->IsCameraOn();
         if (m_camera)
@@ -997,12 +997,12 @@ void            FenceParams::SetViewParams (DgnViewportP viewport)
             m_focalLength = camera.GetFocusDistance();
             DPoint3d eyePoint = camera.GetEyePoint();
 
-            m_transform.translateInLocalCoordinates (&m_transform, - eyePoint.x, - eyePoint.y, - eyePoint.z);
+            m_transform.TranslateInLocalCoordinates (m_transform, - eyePoint.x, - eyePoint.y, - eyePoint.z);
             m_zCameraLimit = -m_focalLength / fc_cameraPlaneRatio;
             }
         else
             {
-            m_transform.translateInLocalCoordinates (&m_transform, -viewport->GetViewOrigin()->x, -viewport->GetViewOrigin()->y, -viewport->GetViewOrigin()->z);
+            m_transform.TranslateInLocalCoordinates (m_transform, -viewport->GetViewOrigin()->x, -viewport->GetViewOrigin()->y, -viewport->GetViewOrigin()->z);
             }
         }
     }
@@ -1142,7 +1142,7 @@ int             nPoints
         DPoint3d    viewOrigin = *m_viewport->GetViewOrigin (), rotatedViewOrigin;
         RotMatrix   viewRMatrix = m_viewport->GetRotMatrix ();
 
-        m_transform.multiply (&rotatedViewOrigin, &viewOrigin);
+        m_transform.Multiply(rotatedViewOrigin, viewOrigin);
 
         if (!m_viewport->GetViewFlags()->noFrontClip)
             {
@@ -1172,7 +1172,7 @@ int             nPoints
             rFnc = (DPoint2d*) _alloca (nPoints * sizeof(DPoint2d));
 
             delta.differenceOf (&viewOrigin, &camera.GetEyePoint());
-            viewRMatrix.multiply (&delta);
+            viewRMatrix.Multiply(delta);
 
             double cameraScale;
             double centerZ = getViewCenterZ (*m_viewport);
@@ -1198,7 +1198,7 @@ int             nPoints
 
         RotMatrix   rMatrix;
 
-        rMatrix.initIdentity ();
+        rMatrix.InitIdentity ();
         ellipse.InitFromScaledRotMatrix (center, rMatrix, radius, radius, 0.0, msGeomConst_2pi);
 
         gpa->Add (ellipse);
@@ -1284,7 +1284,7 @@ static void     setFenceRangeFromInsideClip (DRange3dR fenceRange, ClipVectorCR 
 
     range.Get8Corners  (corners);
     if (NULL != clipPrimitive->GetTransformFromClip())
-        clipPrimitive->GetTransformFromClip()->multiply (corners, 8);
+        clipPrimitive->GetTransformFromClip()->Multiply(corners, 8);
 
     range.InitFrom (corners, 8);
     range.IntersectionOf (range, viewRange);

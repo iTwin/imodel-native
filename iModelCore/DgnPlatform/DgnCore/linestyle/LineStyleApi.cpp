@@ -413,7 +413,7 @@ StatusInt       LsComponent::_StrokeArc (ViewContextP context, LineStyleSymbP ls
 
     Transform   trans;
     LegacyMath::TMatrix::ComposeOrientationOriginScaleXYShear (&trans, NULL, rMatrix, origin, r0, r1, 0.0);
-    trans.multiply (pts, pts, nPts);
+    trans.Multiply (pts, pts, nPts);
 
     bool hasStartTan = lsSymb->HasStartTangent();
     bool hasEndTan   = lsSymb->HasEndTangent();
@@ -425,8 +425,8 @@ StatusInt       LsComponent::_StrokeArc (ViewContextP context, LineStyleSymbP ls
         startTang.init (r0 * sin (start), -r1 * cos (start), 0.0);
         endTang.init   (-r0 * sin (start + sweep), r1 * cos (start + sweep), 0.0);
 
-        rMatrix->multiply (&startTang);
-        rMatrix->multiply (&endTang);
+        rMatrix->Multiply(startTang);
+        rMatrix->Multiply(endTang);
 
         lsSymb->SetTangents (hasStartTan ? lsSymb->GetStartTangent() : &startTang, hasEndTan ? lsSymb->GetEndTangent() : &endTang);
         }

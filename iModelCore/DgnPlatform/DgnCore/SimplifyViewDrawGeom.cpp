@@ -1933,9 +1933,9 @@ static StatusInt calculateParamToWorld (TransformR transform, DPoint2dCP params,
         yColumn.z = rhSides[2][1];
         zColumn.normalizedCrossProduct (&xColumn, &yColumn);
 
-        rMatrix.initFromColumnVectors (&xColumn, &yColumn, &zColumn);
+        rMatrix.InitFromColumnVectors (xColumn, yColumn, zColumn);
 
-        transform.initFrom (&rMatrix);
+        transform.InitFrom (rMatrix);
         transform.form3d[0][3] = rhSides[0][2] + pointRange.low.x;
         transform.form3d[1][3] = rhSides[1][2] + pointRange.low.y;
         transform.form3d[2][3] = rhSides[2][2] + pointRange.low.z;
@@ -1950,7 +1950,7 @@ static double computePolygonNormal (DVec3dR normal, DPoint3dCP pXYZ, size_t numX
     {
     DVec3d      uVec, vVec, wVec;
 
-    normal.zero();
+    normal.Zero ();
     uVec.differenceOf (&pXYZ[1], &pXYZ[0]);
     for (size_t i = 2 ; i < numXYZ; i++)
         {

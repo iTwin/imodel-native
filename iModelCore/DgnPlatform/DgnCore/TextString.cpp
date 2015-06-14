@@ -278,7 +278,7 @@ void TextString::ComputeAndLayoutGlyphs()
 //---------------------------------------------------------------------------------------
 void TextString::TransformOrientationAndExtractScale(DPoint2dR scaleFactor, RotMatrixR orientation, TransformCR transform)
     {
-    orientation.productOf(&transform, &orientation);
+    orientation.InitProduct (transform, orientation);
 
     DVec3d xcol;
     orientation.GetColumn(xcol, 0);

@@ -18,7 +18,7 @@ RangeClip::RangeClip (ClipPlaneSetCP pClip, TransformCP pTransform)
     {
     m_isCamera = false;
     if (NULL == pTransform)
-        m_transform.initIdentity();
+        m_transform.InitIdentity ();
     else
         m_transform = *pTransform;
 
@@ -60,7 +60,7 @@ void RangeClip::ApplyTransform (DPoint3dP transformedPoints, DPoint3dCP points, 
         }
     else
         {
-        m_transform.multiply (transformedPoints, points, numPoints);
+        m_transform.Multiply (transformedPoints, points, numPoints);
         }
     }
 
@@ -402,7 +402,7 @@ bool computeRangePlanesFromCorners (ClipPlane rangePlanes[6], DPoint3d degenerat
     bool     zeroLength[3];
 
     for (size_t i=0; i<3; i++)
-        zeroLength[i] = corners[0].isEqual (&corners[(size_t) 1 << i]);
+        zeroLength[i] = corners[0].IsEqual (corners[(size_t) 1 << i]);
 
     // If the polyhedron degenerates to either a line or a point...
     for (int i=0; i<3; i++)

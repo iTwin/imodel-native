@@ -4236,7 +4236,7 @@ DgnGCS::DgnGCS () : BaseGCS()
     {
     m_uorsPerBaseUnit               = 1.0;
     m_paperScaleFromType66          = 1.0;
-    m_globalOrigin.zero();
+    m_globalOrigin.Zero ();
 
     m_datumOrEllipsoidFromUserLib   = false;
     }
@@ -4251,7 +4251,7 @@ WCharCP         coordinateSystemName
     {
     m_uorsPerBaseUnit               = 1.0;
     m_paperScaleFromType66          = 1.0;
-    m_globalOrigin.zero();
+    m_globalOrigin.Zero ();
     m_datumOrEllipsoidFromUserLib   = false;
     SetDatumOrEllipsoidInUserLibrary();
     }
@@ -4779,13 +4779,13 @@ DgnGCSCR                destMstnGCS         // => destination coordinate system
     DPoint3d transformedPoints[4];
     ReprojectStatus status = ReprojectUors (transformedPoints, NULL, NULL, points, 4, destMstnGCS);
 
-    frameA.initFrom4Points (&points[0], &points[1], &points[2], &points[3]);
-    frameAInverse.inverseOf (&frameA);
+    frameA.InitFrom4Points (points[0], points[1], points[2], points[3]);
+    frameAInverse.InverseOf(frameA);
 
-    frameB.initFrom4Points (&transformedPoints[0], &transformedPoints[1], &transformedPoints[2], &transformedPoints[3]);
+    frameB.InitFrom4Points (transformedPoints[0], transformedPoints[1], transformedPoints[2], transformedPoints[3]);
     RotMatrix axesA, axesB;
-    axesA.initFrom (&frameA);
-    axesB.initFrom (&frameB);
+    axesA.InitFrom (frameA);
+    axesB.InitFrom (frameB);
 
     // frameB is the direct image of the points.   Modify it per requests ....
     if (doScale)
@@ -4799,11 +4799,11 @@ DgnGCSCR                destMstnGCS         // => destination coordinate system
             // Get the ratio of x axis lengths.  Apply this to frameA axes, install in frameB.
             // uor scaling effects are already present in the vectors we inspect.
             DVec3d xVectorA, xVectorB;
-            axesA.getColumn (&xVectorA, 0);
-            axesB.getColumn (&xVectorB, 0);
+            axesA.GetColumn (xVectorA, 0);
+            axesB.GetColumn (xVectorB, 0);
             double scale = xVectorB.magnitude () / xVectorA.magnitude ();
-            axesB.scaleColumns (&axesA, scale, scale, scale);
-            frameB.setMatrix (&axesB);
+            axesB.ScaleColumns (axesA, scale, scale, scale);
+            frameB.SetMatrix (axesB);
             }
         }
     else
@@ -4814,19 +4814,19 @@ DgnGCSCR                destMstnGCS         // => destination coordinate system
             {
             // Accept the output directions but resize back to sReferenceFrameSize ...
             DVec3d xAxis, yAxis, zAxis;
-            axesB.getColumns (&xAxis, &yAxis, &zAxis);
+            axesB.GetColumns (xAxis, yAxis, zAxis);
             double f = ax / xAxis.magnitude ();
             xAxis.scale (f);
             yAxis.scale (f);
             zAxis.scale (f);
-            axesB.initFromColumnVectors (&xAxis, &yAxis, &zAxis);
-            frameB.setMatrix (&axesB);
+            axesB.InitFromColumnVectors (xAxis, yAxis, zAxis);
+            frameB.SetMatrix (axesB);
             }
         else
             {
             // No change except uor effects ...
-            axesB.initFromScaleFactors (ax, ax, ax);
-            frameB.setMatrix (&axesB);
+            axesB.InitFromScaleFactors (ax, ax, ax);
+            frameB.SetMatrix (axesB);
             }
         }
 
@@ -4834,16 +4834,16 @@ DgnGCSCR                destMstnGCS         // => destination coordinate system
     if (sDoPerpendicularAxes)
         {
         RotMatrix unitB;
-        axesB.initFrom (&frameB);
-        unitB.squareAndNormalizeColumns (&axesB, 0, 1);
+        axesB.InitFrom (frameB);
+        unitB.SquareAndNormalizeColumns(axesB, 0, 1);
         DVec3d xVectorB;
-        axesB.getColumn (&xVectorB, 0);
+        axesB.GetColumn (xVectorB, 0);
         double b = xVectorB.magnitude ();
-        axesB.scaleColumns  (&unitB, b, b, b);
+        axesB.ScaleColumns (unitB, b, b, b);
         }
 
 
-    outTransform->productOf (&frameB, &frameAInverse);
+    outTransform->InitProduct (frameB, frameAInverse);
     return status;
     }
 

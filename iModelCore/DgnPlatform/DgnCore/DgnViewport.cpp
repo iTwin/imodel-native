@@ -950,14 +950,14 @@ StatusInt DgnViewport::Zoom(DPoint3dCP newCenterRoot, double factor)
     DPoint3d newOrg = oldOrg;
     RotMatrix rotation = viewController->GetRotation();
 
-    rotation.multiply(&newOrg);
-    rotation.multiply(&center);
+    rotation.Multiply(newOrg);
+    rotation.Multiply(center);
 
     viewController->SetDelta(delta);
 
     newOrg.x = center.x - delta.x/2.0;
     newOrg.y = center.y - delta.y/2.0;
-    rotation.multiplyTranspose(&newOrg);
+    rotation.MultiplyTranspose (newOrg);
     viewController->SetOrigin(newOrg);
 
     _AdjustFencePts(rotation, oldOrg, newOrg);
@@ -1439,13 +1439,13 @@ static void roundGrid(double& num, double units)
 void DgnViewport::GridFix(DPoint3dR pointRoot, RotMatrixCR rMatrixRoot, DPoint3dCR originRoot, DPoint2dCR roundingDistanceRoot, bool isoGrid)
     {
     DVec3d planeNormal;
-    rMatrixRoot.getRow(&planeNormal, 2);
+    rMatrixRoot.GetRow (planeNormal, 2);
 
     DVec3d eyeVec;
     if (m_isCameraOn)
         eyeVec.NormalizedDifference(pointRoot, m_camera.GetEyePoint());
     else
-        m_rotMatrix.getRow(&eyeVec, 2);
+        m_rotMatrix.GetRow (eyeVec, 2);
 
     LegacyMath::Vec::LinePlaneIntersect(&pointRoot, &pointRoot, &eyeVec, &originRoot, &planeNormal, false);
 
@@ -1476,7 +1476,7 @@ void DgnViewport::GridFix(DPoint3dR pointRoot, RotMatrixCR rMatrixRoot, DPoint3d
     pointRootView.y += originRootView.y;
 
     // go back to root coordinate system
-    rMatrixRoot.multiplyTranspose(&pointRoot, &pointRootView);
+    rMatrixRoot.MultiplyTranspose (pointRoot,pointRootView);
     }
 
 /*---------------------------------------------------------------------------------**//**

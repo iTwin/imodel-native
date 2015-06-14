@@ -147,7 +147,7 @@ private: StatusInt        ValidateSectionClipObject ()  const
     clipPointsVec.normalizedDifference (&m_points[0], &m_points[1]);
 
     RotMatrix rMatrix = GetRotationMatrix ();
-    rMatrix.getColumn (&xVec, 0);
+    rMatrix.GetColumn (xVec, 0);
 
     // For the geometry that is far from origin and small in size, isParallelTo () check was not sufficient.
     // Use angle between the vector and compare it with a tolerance of 1 e-8
@@ -398,7 +398,7 @@ static bool             AreClipDataEqual (void const* data1, int numBytes1, void
         fabs (clipData1->backDepth      - clipData2->backDepth)     > distanceTolerance)
         return false;
 
-    if (!clipData1->rotMatrix.isEqual (&clipData2->rotMatrix, directionTolerance))
+    if (!clipData1->rotMatrix.IsEqual (clipData2->rotMatrix, directionTolerance))
         return false;
 
     return true;
@@ -418,7 +418,7 @@ static bool             AreClipPointsEqual (void const* data1, int numBytes1, vo
 
     for (int ipt = 0; ipt < numPts; ipt++)
         {
-        if (!pts1[ipt].isEqual (&pts2[ipt], distanceTolerance))
+        if (!pts1[ipt].IsEqual (pts2[ipt], distanceTolerance))
             return false;
         }
 
@@ -458,7 +458,7 @@ bool SectionClipObject::IsDraw3D (ViewContextR context, DVec3dCR zVec)
 
     RotMatrix       viewportRot = viewport->GetRotMatrix ();
     DVec3d          viewportZVec;
-    viewportRot.getColumn (&viewportZVec, 2);
+    viewportRot.GetColumn (viewportZVec, 2);
 
     return !zVec.isParallelTo (&viewportZVec);
     }
@@ -632,7 +632,7 @@ StatusInt       SectionClipObject::_ApplyTransform (TransformCR transform)
 
     // Transform rotMatrix
     bsiRotMatrix_multiplyTransformRotMatrix (&rMatrix, &transform, &rMatrix);
-    rMatrix.squareAndNormalizeColumns (&rMatrix, 0, 1);
+    rMatrix.SquareAndNormalizeColumns(rMatrix, 0, 1);
     this->SetRotationMatrix (rMatrix);
 
     return SUCCESS;
@@ -692,7 +692,7 @@ StatusInt   SectionClipObject::GetClipBoundaryByShape (ClipVectorPtr& clip, /*Dg
     RotMatrix       rotMatrix;
 
     // A non-orthornormal matrix causes all kinds of problemos.
-    rotMatrix.normalizeColumnsOf (&this->GetRotationMatrix (), &scale);
+    rotMatrix.NormalizeColumnsOf (*(&this->GetRotationMatrix ()),scale);
 
     clipMask = ClipMask::All;
 
@@ -741,13 +741,13 @@ StatusInt   SectionClipObject::GetClipBoundaryByShape (ClipVectorPtr& clip, /*Dg
             clipMask = clipMask & ~ClipMask::ZHigh;
 
         DVec3d xVec, zVec;
-        rotMatrix.getColumn (&xVec, 0);
-        rotMatrix.getColumn (&zVec, 2);
+        rotMatrix.GetColumn (xVec, 0);
+        rotMatrix.GetColumn (zVec, 2);
         zVec.scale (-1.0);
 
         RotMatrix newMatrix;
         newMatrix.initFrom2Vectors (&xVec, &zVec);
-        transform.initFrom (&newMatrix, &origin);
+        transform.InitFrom (newMatrix, origin);
         }
     else
         {
@@ -760,17 +760,17 @@ StatusInt   SectionClipObject::GetClipBoundaryByShape (ClipVectorPtr& clip, /*Dg
         if (!this->GetCrop (CLIPVOLUME_CROP_Top))
             clipMask = clipMask & ~ClipMask::ZHigh;
 
-        transform.initFrom (&rotMatrix, &origin);
+        transform.InitFrom (rotMatrix, origin);
         }
 
     //ClipUtil::GetMaxModelRange (maxRange, *target, vp, true, false); removed in graphite
 
-    inverse.inverseOf (&transform);
-    inverse.multiply (&transformedRange, &maxRange);
+    inverse.InverseOf(transform);
+    inverse.Multiply(transformedRange, maxRange);
     
     double          rangeMargin = transformedRange.low.distance (&transformedRange.high) * .01;
     
-    transformedRange.extend (rangeMargin);
+    transformedRange.Extend (rangeMargin);
     double          xLow  = (this->GetCrop (CLIPVOLUME_CROP_StartSide) && !noBoundaryClipping) ? 0.0                                    : transformedRange.low.x;
     double          xHigh = (this->GetCrop (CLIPVOLUME_CROP_EndSide)   && !noBoundaryClipping) ? (scale.x * this->GetWidth ()) : transformedRange.high.x;
 
@@ -789,7 +789,7 @@ StatusInt   SectionClipObject::GetClipBoundaryByShape (ClipVectorPtr& clip, /*Dg
         return SUCCESS;
         }
 
-    pointBuffer[nLoopPoints[0]++].zero();
+    pointBuffer[nLoopPoints[0]++].Zero ();
     size_t numPoints = this->GetNumPoints ();
 
     DPoint3dVector points;
@@ -798,7 +798,7 @@ StatusInt   SectionClipObject::GetClipBoundaryByShape (ClipVectorPtr& clip, /*Dg
     for (size_t index=0; index<numPoints; index++)
         {
         DPoint3d point = points[index];
-        inverse.multiply (&point);
+        inverse.Multiply(point);
         pointBuffer[nLoopPoints[0]++].init (&point);
         }
 
@@ -931,11 +931,11 @@ bool        SectionClipObject::_GetAuxTransform (TransformR transform, ClipVolum
     this->GetPoints (pts, 0, 1);
 
     DVec3d          reflectDirection;
-    this->GetRotationMatrix ().getColumn (&reflectDirection, 1);
+    this->GetRotationMatrix ().GetColumn (reflectDirection, 1);
 
     RotMatrix       reflectMatrix;
-    reflectMatrix.initFromDirectionAndScale (&reflectDirection, -1.0);
-    transform.initFromMatrixAndFixedPoint (&reflectMatrix, &pts[0]);
+    reflectMatrix.InitFromDirectionAndScale (reflectDirection, -1.0);
+    transform.InitFromMatrixAndFixedPoint (reflectMatrix, pts[0]);
     return true;
     }
 
@@ -945,8 +945,8 @@ bool        SectionClipObject::_GetAuxTransform (TransformR transform, ClipVolum
 StatusInt       SectionClipObject::_GetTransform (TransformR transform) const
     {
     DVec3d clipX, clipZ;
-    this->GetRotationMatrix ().getColumn (&clipX, 0);
-    this->GetRotationMatrix ().getColumn (&clipZ, 2);
+    this->GetRotationMatrix ().GetColumn (clipX, 0);
+    this->GetRotationMatrix ().GetColumn (clipZ, 2);
 
     if (this->GetSize (CLIPVOLUME_SIZE_FrontDepth) < 0)
         clipZ.negate ();
@@ -957,7 +957,7 @@ StatusInt       SectionClipObject::_GetTransform (TransformR transform) const
     DPoint3dVector pts;
     this->GetPoints (pts, 0, 1);
 
-    transform.initFrom (&matrix, &pts[0]);
+    transform.InitFrom (matrix, pts[0]);
 
     return SUCCESS;
     }
@@ -1024,7 +1024,7 @@ DynamicViewSettingsCR   settings
 
     RotMatrixCR         rMatrix = this->GetRotationMatrix();
     DVec3d              cutNormal;
-    rMatrix.getColumn (&cutNormal, 1);
+    rMatrix.GetColumn (cutNormal, 1);
   
     // First test for case where the cut plane is parallel to the view (the common case in 2D) and don't bother generating cuts for this as they would
     // be perpendicular to the screen anyway and not worth the expense of generating them as they would appear as lines.
@@ -1035,7 +1035,7 @@ DynamicViewSettingsCR   settings
     //    DPoint3d            testPoints[2];
     //    static double       s_skewTolerance = 1.0E-5;
     //
-    //    testPoints[0].zero();
+    //    testPoints[0].Zero ();
     //    testPoints[1] = cutNormal;
     //    viewContext.LocalToView (testPoints, testPoints, 2);
     //    if (testPoints[0].distanceXY (&testPoints[1]) < s_skewTolerance)
@@ -1047,7 +1047,7 @@ DynamicViewSettingsCR   settings
     clipMask = ClipMask::None;
     clipRange.Init();
 
-    rMatrix.getColumn (&yDirection, 2);
+    rMatrix.GetColumn (yDirection, 2);
     if (this->GetCrop (CLIPVOLUME_CROP_Bottom) && !settings.ShouldIgnoreBoundaryClipping())
         {
         clipMask = clipMask | ClipMask::YLow;
@@ -1063,7 +1063,7 @@ DynamicViewSettingsCR   settings
     double      frontDepth = this->GetSize (CLIPVOLUME_SIZE_FrontDepth);
     DVec3d      frontDirection;
 
-    rMatrix.getColumn (&frontDirection, 1);
+    rMatrix.GetColumn (frontDirection, 1);
 
     if (frontDepth < 0.0)
         {
@@ -1077,7 +1077,7 @@ DynamicViewSettingsCR   settings
 
     DPoint3d    startPoint = pts[0], endPoint = pts[this->GetNumPoints()-1];;
 
-    rMatrix.getColumn (&cutPlane.normal, 0);
+    rMatrix.GetColumn (*(&cutPlane.normal), 0);
     cutPlane.origin = pts[this->GetNumPoints()-1];
     xDirection = frontDirection;
 
@@ -1121,7 +1121,7 @@ DynamicViewSettingsCR   settings
 
     // Now create the cutting planes for the top and bottom planes. - We reuse the X direction range (and limits) and recompute
     // the Y Direction. Loop over steps and create separate planesets for each step.
-    rMatrix.getColumn (&yDirection, 0);
+    rMatrix.GetColumn (yDirection, 0);
 
     size_t numPoints = this->GetNumPoints ();
     DPoint3dVector points;
@@ -1133,7 +1133,7 @@ DynamicViewSettingsCR   settings
         clipMask = clipMask & ~(ClipMask::YLow | ClipMask::YHigh);
         startPoint = points[plane];
         endPoint   = points[plane + 1];
-        rMatrix.getColumn (&cutPlane.normal, 2);
+        rMatrix.GetColumn (*(&cutPlane.normal), 2);
 
         // For each step, shift range by step-depth
         if (0 < plane)
@@ -1218,7 +1218,7 @@ DynamicViewSettingsCR   settings
     if (0.0 == (segmentLength = xDirection.normalizedDifference (&point1, &point0)))
         return ERROR;
 
-    this->GetRotationMatrix ().getColumn (&yDirection, 2);
+    this->GetRotationMatrix ().GetColumn (yDirection, 2);
 
     DVec3d      directedY = yDirection;
     if (this->GetSize (CLIPVOLUME_SIZE_FrontDepth) < 0)
@@ -1278,7 +1278,7 @@ DynamicViewSettingsCR   settings
         DPoint3d        origin, minPoint, maxPoint;
         DVec3d          direction;
 
-        this->GetRotationMatrix ().getColumn (&direction, 0);
+        this->GetRotationMatrix ().GetColumn (direction, 0);
 
         DPoint3dVector        pts;
         this->GetPoints (pts, 0, 1);

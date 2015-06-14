@@ -1626,7 +1626,7 @@ void InitForDgnModel()
             Transform  frustumToLocal;
 
             frustumToLocal.InverseOf(*m_localToFrustum);
-            frustumToLocal.multiply(&m_cameraPosition);
+            frustumToLocal.Multiply(m_cameraPosition);
             }
         }
     else

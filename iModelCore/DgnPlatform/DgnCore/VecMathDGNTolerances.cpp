@@ -480,7 +480,7 @@ TransformCP in                     /* => rotation/scaling matrix */
 +---------------+---------------+---------------+---------------+---------------+------*/
 TransformInfo::TransformInfo ()
     {
-    m_trans.initIdentity();
+    m_trans.InitIdentity ();
     m_haveMirrorPlane       = false;
     }
 

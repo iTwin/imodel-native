@@ -995,11 +995,11 @@ ACSDisplayOptions   options
 
     memset (&center, 0, sizeof (center));
 
-    viewRMatrix.getRow (&xVec, 0);
-    viewRMatrix.getRow (&yVec, 1);
+    viewRMatrix.GetRow (xVec, 0);
+    viewRMatrix.GetRow (yVec, 1);
 
-    transformP->multiplyTransposeMatrixOnly (&xVec);
-    transformP->multiplyTransposeMatrixOnly (&yVec);
+    transformP->MultiplyTransposeMatrixOnly (xVec);
+    transformP->MultiplyTransposeMatrixOnly (yVec);
 
     xVec.normalize ();
     yVec.normalize ();

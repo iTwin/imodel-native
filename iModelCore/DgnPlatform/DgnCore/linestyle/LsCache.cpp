@@ -498,7 +498,7 @@ StatusInt       LsCompoundComponent::_DoStroke (ViewContextP context, DPoint3dCP
     DVec3d    normal;
     RotMatrix matrix;
     modifiers->GetPlaneAsMatrixRows(matrix);
-    matrix.getRow (&normal, 2);
+    matrix.GetRow (normal, 2);
 
     LineJoint*  joints = (LineJoint*) _alloca (nPoints * sizeof(LineJoint));
     LineJoint::FromVertices (joints, inPoints, nPoints, &normal, NULL, NULL);
