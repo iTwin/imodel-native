@@ -611,7 +611,7 @@ virtual void    _DrawQvElem (QvElem* qvElem, int subElemIndex) override
     m_context->GetViewport ()->GetRotMatrix ().GetRow (viewNormal, 2);
     GetTestDirectionFrustum (fenceNormal);
 
-    bool        alignedToView = TO_BOOL (fenceNormal.isParallelTo (&viewNormal));
+    bool        alignedToView = TO_BOOL (fenceNormal.IsParallelTo (viewNormal));
 
     // Test 1 point in each loop in case clip is disjoint clip mask...
     for (ClipPrimitivePtr const& primitive: *m_fp->GetClipVector())
@@ -1508,8 +1508,8 @@ DPoint3d        *norm           /* => norm (peterson) bvector to plane */
     DVec3d      xVec, yVec;
     RotMatrix   rotMatrix;
 
-    major = xVec.normalize ((DVec3d *) &ellipse.vector0);
-    minor = yVec.normalize ((DVec3d *) &ellipse.vector90);
+    major = xVec.Normalize (*((DVec3d *) &ellipse.vector0));
+    minor = yVec.Normalize (*((DVec3d *) &ellipse.vector90));
     rotMatrix.InitFrom2Vectors (xVec, yVec);
 
     double      a, b, c, discrim, xtmp, ytmp;
@@ -1646,7 +1646,7 @@ bool            FenceParams::ClipPlaneArcIntersect (ClipPrimitiveCR primitive, d
 
     for (int i=0; i<n; i++)
         {
-        isPnt[i].add (&ellipse.center);
+        isPnt[i].Add (ellipse.center);
         primitive.TransformFromClip (isPnt[i]);
 
         if (primitive.PointInside (isPnt[i], m_onTolerance))
@@ -1711,7 +1711,7 @@ bool            FenceParams::ArcIntersect (DPoint2dCP lineSegP, DEllipse3dCR ell
     planeNormal.x = (range.high.y - range.low.y);
     planeNormal.y = (range.low.x - range.high.x);
     planeNormal.z = 0.0;
-    planeNormal.normalize (&planeNormal);
+    planeNormal.Normalize (planeNormal);
 
     if (range.low.x > range.high.x)
         exchange_double (&range.low.x, &range.high.x);

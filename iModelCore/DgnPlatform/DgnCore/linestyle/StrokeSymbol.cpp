@@ -79,7 +79,7 @@ double LsSymbolReference::_GetMaxWidth (DgnModelP dgnModel) const
         return  0.0;
 
     double maxWidth = getDescrMaxOffset (*GetElements(), dgnModel, m_angle) / m_symbol->GetMuDef();
-    double offset   = m_offset.magnitude ();
+    double offset   = m_offset.Magnitude ();
 
     return  (offset + maxWidth) * 2.0;
     }
@@ -110,7 +110,7 @@ StatusInt LsSymbolReference::Output (ViewContextP context, LineStyleSymbCP modif
     DVec3d uVector, vVector, wVector;
     uVector = *(DVec3d*)dir;
     wVector = zVector;
-    vVector.normalizedCrossProduct (&wVector, &uVector);
+    vVector.NormalizedCrossProduct (wVector, uVector);
     transform.InitFromOriginAndVectors (*org, uVector, vVector, wVector);
 
     double      scale = (GetSymbolComponentCP()->IsNotScaled() ? 1.0 : modifiers->GetScale());
@@ -149,8 +149,8 @@ StatusInt LsSymbolReference::Output (ViewContextP context, LineStyleSymbCP modif
             planeByRows.Multiply(xDirTemp);
             if (xDirTemp.x < 0.0 || fabs (xDirTemp.y + 1.0) < .0001)
                 {
-                xDir.negate ();
-                yDir.negate ();
+                xDir.Negate ();
+                yDir.Negate ();
                 }
             transform.InitFromOriginAndVectors (org, xDir, yDir, zDir);
 
@@ -166,7 +166,7 @@ StatusInt LsSymbolReference::Output (ViewContextP context, LineStyleSymbCP modif
 
     scale = (GetSymbolComponentCP()->IsNotScaled() ? 1.0 : modifiers->GetScale() / m_symbol->GetMuDef());
     DPoint3d    scaleVec;
-    scaleVec.init (scale, scale, scale);
+    scaleVec.Init (scale, scale, scale);
     if (xScale)
         scaleVec.x *= *xScale;
 
@@ -179,7 +179,7 @@ StatusInt LsSymbolReference::Output (ViewContextP context, LineStyleSymbCP modif
         if (clipOrg)
             {
             DPoint3d revDir = *dir;
-            revDir.scale (-1.0);
+            revDir.Scale (-1.0);
             addClipPlane (convexClip, clipOrg, &revDir);
             }
 

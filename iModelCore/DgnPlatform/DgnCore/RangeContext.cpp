@@ -49,7 +49,7 @@ void RangeClip::ApplyTransform (DPoint3dP transformedPoints, DPoint3dCP points, 
             DPoint3d        tmpPoint;
             static double   s_cameraScaleLimit = 1.0 / 300.0;
                                                                                                                                              
-            tmpPoint.differenceOf (&points[i], &m_camera);
+            tmpPoint.DifferenceOf (points[i], m_camera);
 
             double      cameraScale =  MAX (s_cameraScaleLimit, -m_focalLength / tmpPoint.z);
 
@@ -382,9 +382,9 @@ void addPlaneFromPoints (ClipPlane& plane, DPoint3dCR origin, DPoint3dCR cross0,
     {
     DVec3d      normal;
 
-    normal.crossProductToPoints (&cross1, &cross0, &origin);
-    if (0.0 == normal.normalize ())                   // If the cross product is NULL then use ray from opposite end (to handle planar polyhedra).
-        normal.normalizedDifference (&rayEnd, &origin);
+    normal.CrossProductToPoints(cross1, cross0, origin);
+    if (0.0 == normal.Normalize ())                   // If the cross product is NULL then use ray from opposite end (to handle planar polyhedra).
+        normal.NormalizedDifference (rayEnd, origin);
 
     plane = ClipPlane (normal, origin);
     }
@@ -550,7 +550,7 @@ void RangeClipPlanes::ClipPoints (ElemRangeCalc* rangeCalculator, ClipStackCP cl
                 {
                 double      t = lastDistance / (lastDistance - thisDistance);
 
-                outputPoint->sumOf (NULL, pLastPoint, 1.0 - t, pThisPoint, t);
+                outputPoint->SumOf (*pLastPoint, 1.0 - t, *pThisPoint, t);
                 outputPoint++;
 
                 if ((nOutputPoints = static_cast<int>((outputPoint - outputPoints))) > 1)

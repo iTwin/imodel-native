@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/LsPointComponent.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -32,7 +32,7 @@ StatusInt       LsPointComponent::_DoStroke (ViewContextP context, DPoint3dCP in
 
     if (!modifiers->ContinuationXElems() && NULL != (sym = GetSymbolForVertexCP (LsSymbolReference::VERTEX_LineOrigin)))
         {
-        dir.normalizedDifference (org+1, org);
+        dir.NormalizedDifference (org[1], *org);
 
         if (SUCCESS != sym->Output (context, modifiers, org, &dir))
             return  ERROR;
@@ -40,7 +40,7 @@ StatusInt       LsPointComponent::_DoStroke (ViewContextP context, DPoint3dCP in
 
     if (NULL != (sym = GetSymbolForVertexCP (LsSymbolReference::VERTEX_LineEnd)))
         {
-        dir.normalizedDifference (end, end-1);
+        dir.NormalizedDifference (*end, *(end-1));
         if (SUCCESS != sym->Output (context, modifiers, end, &dir))
             return  ERROR;
         }
@@ -53,11 +53,11 @@ StatusInt       LsPointComponent::_DoStroke (ViewContextP context, DPoint3dCP in
         {
         for (org++ ;org < end; org++)
             {
-            dir1.normalizedDifference (org+1, org);
-            dir2.normalizedDifference (org, org-1);
+            dir1.NormalizedDifference (org[1], *org);
+            dir2.NormalizedDifference (*org, *(org-1));
 
             bsiDPoint3d_interpolate (&dir, &dir1, 0.5, &dir2);
-            dir.normalize ();
+            dir.Normalize ();
 
             if (SUCCESS != sym->Output (context, modifiers, org, &dir))
                 return  ERROR;
@@ -216,7 +216,7 @@ int               endCondition
             segOrg = *firstPoint;
             segEnd = centerline->GetCount() == 1 ? *(firstPoint) : *(firstPoint+1);
             centerline->GetDirectionVector (segDir, segOrg, segEnd);
-            symOrg.sumOf (&segOrg, &segDir, - *firstLen);
+            symOrg.SumOf (segOrg,segDir, - *firstLen);
             break;
 
         case LCPOINT_CENTER:
@@ -239,14 +239,14 @@ int               endCondition
                 segOrg = *pPoint;
                 segEnd = centerline->GetCount() == 1 ? *(pPoint) : *(pPoint + 1);
                 centerline->GetDirectionVector (segDir, segOrg, segEnd);
-                symOrg.sumOf(&segOrg, &segDir, centerOffset - *pLen);
+                symOrg.SumOf (segOrg,segDir, centerOffset - *pLen);
                 }
             else
                 {   // Symbol is within the segment or past the end
                 segOrg = centerline->GetCount() == 1 ? *(pPoint) : *(pPoint-1);
                 segEnd = *pPoint;
                 centerline->GetDirectionVector (segDir, segOrg, segEnd);
-                symOrg.sumOf (&segOrg, &segDir, centerOffset - *(pLen-1));
+                symOrg.SumOf (segOrg,segDir, centerOffset - *(pLen-1));
                 }
             }
             break;
@@ -258,7 +258,7 @@ int               endCondition
             segOrg = centerline->GetCount() == 1 ? *(lastPoint) : *(lastPoint-1);
             segEnd = *(lastPoint);
             centerline->GetDirectionVector (segDir, segOrg, segEnd);
-            symOrg.sumOf(&segEnd, &segDir, outStrokeLen - *lastLen);
+            symOrg.SumOf (segEnd,segDir, outStrokeLen - *lastLen);
             break;
 
         default:

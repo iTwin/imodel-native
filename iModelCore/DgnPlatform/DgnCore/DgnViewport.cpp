@@ -216,7 +216,7 @@ void DgnViewport::ViewToScreen(DPoint3dP screenPts, DPoint3dCP viewPts, int nPts
 
     Point2d screenOrg = GetScreenOrigin();
     DPoint3d org;
-    org.init(screenOrg.x, screenOrg.y, 0.0);
+    org.Init (screenOrg.x, screenOrg.y, 0.0);
     bsiDPoint3d_addDPoint3dArray(screenPts, &org, nPts);
     }
 
@@ -229,7 +229,7 @@ void DgnViewport::ScreenToView(DPoint3dP viewPts, DPoint3dCP screenPts, int nPts
     Point2d screenOrg = GetScreenOrigin();
 
     DPoint3d org;
-    org.init(screenOrg.x, screenOrg.y, 0.0);
+    org.Init (screenOrg.x, screenOrg.y, 0.0);
 
     bsiDPoint3d_subtractDPoint3dArray(viewPts, &org, nPts);
     }
@@ -384,9 +384,9 @@ StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double* compressi
         {
         frustFraction = 1.0;
         origin = inOrigin;
-        xExtent.scale(&xVector, delta.x);
-        yExtent.scale(&yVector, delta.y);
-        zExtent.scale(&zVector, delta.z);
+        xExtent.Scale (xVector, delta.x);
+        yExtent.Scale (yVector, delta.y);
+        zExtent.Scale (zVector, delta.z);
         }
 
     // calculate the root-to-npc mapping (using expanded frustum)
@@ -640,9 +640,9 @@ void DgnViewport::FixFrustumOrder(Frustum& frustum)
     DPoint3dP polyhedron=frustum.GetPtsP();
 
     DVec3d u, v, w;
-    u.differenceOf(polyhedron+NPC_001, polyhedron+NPC_000);
-    v.differenceOf(polyhedron+NPC_010, polyhedron+NPC_000);
-    w.differenceOf(polyhedron+NPC_100, polyhedron+NPC_000);
+    u.DifferenceOf (polyhedron[NPC_001], polyhedron[NPC_000]);
+    v.DifferenceOf (polyhedron[NPC_010], polyhedron[NPC_000]);
+    w.DifferenceOf (polyhedron[NPC_100], polyhedron[NPC_000]);
 
     if (u.TripleProduct(v, w) <= 0)
         return;
@@ -850,7 +850,7 @@ StatusInt DgnViewport::Scroll(Point2dCP screenDist) // => distance to scroll in 
 
     ViewToWorld(pts, pts, 2);
     DVec3d dist;
-    dist.differenceOf(pts+1, pts);
+    dist.DifferenceOf (pts[1], *pts);
 
     if (!m_is3dView)
         dist.z = 0.0;
@@ -1246,7 +1246,7 @@ double DgnViewport::GetPixelSizeAtPoint(DPoint3dCP rootPtP, DgnCoordSystem coord
             break;
         }
 
-    return rootPts[0].distance(rootPts+1);
+    return rootPts[0].Distance (rootPts[1]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1418,7 +1418,7 @@ void DgnViewport::GetGridRoundingDistance(DPoint2dR roundingDistance)
         }
 
     roundingDistance.y = roundingDistance.x * gridRatio;
-    roundingDistance.scale(&roundingDistance, GetGridScaleFactor());
+    roundingDistance.Scale (roundingDistance, GetGridScaleFactor());
 #endif
     }
 

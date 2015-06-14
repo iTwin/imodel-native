@@ -64,7 +64,7 @@ DPoint3dCP normal
     //  (And with nonzero angle, the bvector is a description of the effect, and does not appear in
     //   the z column as was incorrectly expected.)
     DVec3d xVec, yVec, zVec;
-    normal->getNormalizedTriad (&xVec, &yVec, &zVec);
+    ((DVec3d const *)normal)->GetNormalizedTriad(xVec, yVec, zVec);
     RotMatrix matrix;
     matrix.InitFromColumnVectors (xVec, yVec, zVec);
     SetPlaneAsMatrixRows (&matrix);
@@ -538,7 +538,7 @@ DPoint3dCP          endTangent
             DVec3d  xCol;
             localToFrustum.GetMatrixColumn (xCol, 0);
 
-            scale /= xCol.magnitude();
+            scale /= xCol.Magnitude ();
             }
         }
 

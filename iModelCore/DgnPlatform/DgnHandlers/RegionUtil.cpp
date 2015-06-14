@@ -389,7 +389,7 @@ void            RegionGraphicsDrawGeom::_SetDrawViewFlags (ViewFlagsCP flags)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            RegionGraphicsDrawGeom::ComputePostFlattenTransform (CurveVectorCR curves)
     {
-    if (!m_forcePlanar || 0.0 == m_flattenDir.magnitude ())
+    if (!m_forcePlanar || 0.0 == m_flattenDir.Magnitude ())
         return false;
 
     if (!m_flattenTrans.IsIdentity ()) // Once computed same transform must be applied to all loops!
@@ -423,7 +423,7 @@ bool            RegionGraphicsDrawGeom::ComputePostFlattenTransform (CurveVector
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            RegionGraphicsDrawGeom::ResetPostFlattenTransform ()
     {
-    if (!m_forcePlanar || 0.0 == m_flattenDir.magnitude ())
+    if (!m_forcePlanar || 0.0 == m_flattenDir.Magnitude ())
         return;
 
     m_flattenTrans.InitIdentity ();
@@ -819,7 +819,7 @@ BentleyStatus   RegionGraphicsDrawGeom::SetupGraph (double gapTolerance, bool me
 
     m_context->GetTransformClipStack ().PopAll (*m_context);
 
-    if (!zAxis.isParallelTo (&zAxisWorld) || m_context->GetViewport ())
+    if (!zAxis.IsParallelTo (zAxisWorld) || m_context->GetViewport ())
         {
         jmdlRG_multiplyByTransform (m_pRG, &activeToViewTrans);
         m_context->PushTransform (viewToActiveTrans);
@@ -1248,7 +1248,7 @@ bool            RegionGraphicsContext::GetAdjustedSeedPoints (bvector<DPoint3d>*
                 {
                 DVec3d      planeNormal;
 
-                if (0.0 != planeNormal.normalizedDifference (&tmpPt, &m_floodSeeds[iSeed].m_pt))
+                if (0.0 != planeNormal.NormalizedDifference (tmpPt, *(&m_floodSeeds[iSeed].m_pt)))
                     {
                     DVec3d      projectDir;
 

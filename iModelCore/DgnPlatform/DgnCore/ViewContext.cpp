@@ -569,8 +569,8 @@ void ViewContext::GetViewIndTransform (TransformP trans, DPoint3dCP originLocal)
             localPt[0].z = localPt[1].z = originLocal->z;
 
         DVec3d  u, v;
-        u.normalizedDifference (localPt,   originLocal);
-        v.normalizedDifference (localPt+1, originLocal);
+        u.NormalizedDifference (*localPt, *originLocal);
+        v.NormalizedDifference (localPt[1], *originLocal);
 
         // convert to rmatrix
         rMatrix.InitFrom2Vectors (u, v);
@@ -1249,7 +1249,7 @@ bool ViewContext::IsLocalPointVisible (DPoint3dCR localPoint, bool boresite)
         Transform       frustumToLocal;
 
         zPoints[0].Zero ();
-        zPoints[1].init (0.0, 0.0, 1.0);
+        zPoints[1].Init (0.0, 0.0, 1.0);
 
         NpcToFrustum (zPoints, zPoints, 2);
 
@@ -1317,8 +1317,8 @@ void ViewContext::SetSubRectFromViewRect(BSIRectCP viewRect)
     tRect.Expand (1);
 
     DRange3d viewRange;
-    viewRange.low.init  (tRect.origin.x, tRect.corner.y, 0.0);
-    viewRange.high.init (tRect.corner.x, tRect.origin.y, 0.0);
+    viewRange.low.Init (tRect.origin.x, tRect.corner.y, 0.0);
+    viewRange.high.Init (tRect.corner.x, tRect.origin.y, 0.0);
 
     GetViewport()->ViewToNpc (&viewRange.low, &viewRange.low, 2);
 
@@ -1814,7 +1814,7 @@ double ViewContext::GetPixelSizeAtPoint (DPoint3dCP inPoint) const
     // Convert pixels back to local coordinates and use the length as tolerance
     ViewToLocal (vec, vec, 2);
 
-    return vec[0].distance (vec+1);
+    return vec[0].Distance (vec[1]);
     }
 
 /*---------------------------------------------------------------------------------**//**

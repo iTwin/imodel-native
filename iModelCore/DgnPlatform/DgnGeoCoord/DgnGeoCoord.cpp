@@ -4450,8 +4450,8 @@ DPoint3dR               outCartesian,       // <= cartesian, units of coordinate
 DPoint3dCR              inUors              // => UORS
 ) const
     {
-    outCartesian.differenceOf (&inUors, &m_globalOrigin);
-    outCartesian.scale (m_csParameters->csdef.scale / m_uorsPerBaseUnit);
+    outCartesian.DifferenceOf (inUors, m_globalOrigin);
+    outCartesian.Scale (m_csParameters->csdef.scale / m_uorsPerBaseUnit);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4464,8 +4464,8 @@ DPoint3dCR              inCartesian         // => cartesian, units of coordinate
 ) const
     {
     outUors = inCartesian;
-    outUors.scale (m_uorsPerBaseUnit / m_csParameters->csdef.scale);
-    outUors.sumOf (&m_globalOrigin, &outUors);
+    outUors.Scale (m_uorsPerBaseUnit / m_csParameters->csdef.scale);
+    outUors.SumOf (m_globalOrigin,outUors);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4772,9 +4772,9 @@ DgnGCSCR                destMstnGCS         // => destination coordinate system
         }
 
     points[0] = elementOrigin;
-    points[1].init (elementOrigin.x + extent->x, elementOrigin.y, elementOrigin.z);
-    points[2].init (elementOrigin.x, elementOrigin.y + extent->y, elementOrigin.z);
-    points[3].init (elementOrigin.x, elementOrigin.y, elementOrigin.z + extent->z);
+    points[1].Init (elementOrigin.x + extent->x, elementOrigin.y, elementOrigin.z);
+    points[2].Init (elementOrigin.x, elementOrigin.y + extent->y, elementOrigin.z);
+    points[3].Init (elementOrigin.x, elementOrigin.y, elementOrigin.z + extent->z);
 
     DPoint3d transformedPoints[4];
     ReprojectStatus status = ReprojectUors (transformedPoints, NULL, NULL, points, 4, destMstnGCS);
@@ -4801,7 +4801,7 @@ DgnGCSCR                destMstnGCS         // => destination coordinate system
             DVec3d xVectorA, xVectorB;
             axesA.GetColumn (xVectorA, 0);
             axesB.GetColumn (xVectorB, 0);
-            double scale = xVectorB.magnitude () / xVectorA.magnitude ();
+            double scale = xVectorB.Magnitude () / xVectorA.Magnitude ();
             axesB.ScaleColumns (axesA, scale, scale, scale);
             frameB.SetMatrix (axesB);
             }
@@ -4815,10 +4815,10 @@ DgnGCSCR                destMstnGCS         // => destination coordinate system
             // Accept the output directions but resize back to sReferenceFrameSize ...
             DVec3d xAxis, yAxis, zAxis;
             axesB.GetColumns (xAxis, yAxis, zAxis);
-            double f = ax / xAxis.magnitude ();
-            xAxis.scale (f);
-            yAxis.scale (f);
-            zAxis.scale (f);
+            double f = ax / xAxis.Magnitude ();
+            xAxis.Scale (f);
+            yAxis.Scale (f);
+            zAxis.Scale (f);
             axesB.InitFromColumnVectors (xAxis, yAxis, zAxis);
             frameB.SetMatrix (axesB);
             }
@@ -4838,7 +4838,7 @@ DgnGCSCR                destMstnGCS         // => destination coordinate system
         unitB.SquareAndNormalizeColumns(axesB, 0, 1);
         DVec3d xVectorB;
         axesB.GetColumn (xVectorB, 0);
-        double b = xVectorB.magnitude ();
+        double b = xVectorB.Magnitude ();
         axesB.ScaleColumns (unitB, b, b, b);
         }
 

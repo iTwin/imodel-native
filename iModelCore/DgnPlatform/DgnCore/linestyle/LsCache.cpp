@@ -486,7 +486,7 @@ double              offset
         DPoint3dCP  end = src + nPts;
 
         for (;src < end; src++, outPts++, joints++)
-            outPts->sumOf (src, &joints->m_dir, offset * joints->m_scale);
+            outPts->SumOf (*src,joints->m_dir, offset * joints->m_scale);
         }
     }
 

@@ -425,7 +425,7 @@ DgnModelR    modelRef
     if (NULL != inLastPoint)
         {
         lastPoint = *inLastPoint;
-        lastPoint.subtract (&auxOrigin);
+        lastPoint.Subtract (auxOrigin);
         auxRMatrix.Multiply(lastPoint);
         }
     else
@@ -1001,8 +1001,8 @@ ACSDisplayOptions   options
     transformP->MultiplyTransposeMatrixOnly (xVec);
     transformP->MultiplyTransposeMatrixOnly (yVec);
 
-    xVec.normalize ();
-    yVec.normalize ();
+    xVec.Normalize ();
+    yVec.Normalize ();
 
     elemMatSymb.SetWidth (1);
     cached->ActivateMatSymb (&elemMatSymb);

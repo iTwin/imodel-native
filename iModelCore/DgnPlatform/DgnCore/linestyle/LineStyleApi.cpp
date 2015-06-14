@@ -62,7 +62,7 @@ static double  getLinearLength (DPoint3dCP pts, int nPts, int& disconnectPt)
             return 0.0;
             }
 
-        length += (point-1)->distance(point);
+        length += (point-1)->Distance (*point);
         point++;
         }
 
@@ -86,8 +86,8 @@ bool            LsComponent::IsWidthDiscernible (ViewContextP context, LineStyle
 
     DPoint3d    max;
 
-    max.init (_GetLength(), _GetMaxWidth(nullptr) * 1.5, 0);
-    max.scale (lsSymb->GetScale());
+    max.Init (_GetLength(), _GetMaxWidth(nullptr) * 1.5, 0);
+    max.Scale (lsSymb->GetScale());
 
     // see if there's a width modifier on the element, and if the linestyle is affected by it.
     if (_IsAffectedByWidth(true))
@@ -104,13 +104,13 @@ bool            LsComponent::IsWidthDiscernible (ViewContextP context, LineStyle
     DPoint3d    vec[2];
 
     vec[0] = pt;
-    vec[1].sumOf (vec, &max);
+    vec[1].SumOf (*vec,max);
 
     context->LocalToView (vec, vec, 2);
 
     double      minLODSize = context->GetMinLOD()*0.25;
 
-    return (vec[0].distanceSquaredXY (vec+1) > minLODSize);
+    return (vec[0].DistanceSquaredXY (vec[1]) > minLODSize);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -133,19 +133,19 @@ DPoint3dCR      pt
     double      length = _GetLength();
     DPoint3d    max;
 
-    max.init (length, length, 0);
-    max.scale (lsSymb->GetScale());
+    max.Init (length, length, 0);
+    max.Scale (lsSymb->GetScale());
 
     DPoint3d    vec[2];
 
     vec[0] = pt;
-    vec[1].sumOf (vec, &max);
+    vec[1].SumOf (*vec,max);
 
     context->LocalToView (vec, vec, 2);
 
     double      minLODSize = context->GetMinLOD()*0.25;
 
-    return (vec[0].distanceSquaredXY (vec+1) > minLODSize);
+    return (vec[0].DistanceSquaredXY (vec[1]) > minLODSize);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -389,7 +389,7 @@ StatusInt       LsComponent::_StrokeArc (ViewContextP context, LineStyleSymbP ls
         {
         context->LocalToView (vec, vec, 2);
 
-        double  dist = vec[0].distance (vec+1);
+        double  dist = vec[0].Distance (vec[1]);
 
         if (0.0 == context->GetArcTolerance())
             numVerts = 200;
@@ -422,8 +422,8 @@ StatusInt       LsComponent::_StrokeArc (ViewContextP context, LineStyleSymbP ls
         {
         DPoint3d    startTang, endTang;
 
-        startTang.init (r0 * sin (start), -r1 * cos (start), 0.0);
-        endTang.init   (-r0 * sin (start + sweep), r1 * cos (start + sweep), 0.0);
+        startTang.Init (r0 * sin (start), -r1 * cos (start), 0.0);
+        endTang.Init (-r0 * sin (start + sweep), r1 * cos (start + sweep), 0.0);
 
         rMatrix->Multiply(startTang);
         rMatrix->Multiply(endTang);
