@@ -846,7 +846,7 @@ StatusInt       IAuxCoordSys::GetGridSpacing (DPoint2dR spacing, Point2dR gridRe
     spacing.x = uorPerGrid;
     spacing.y = spacing.x * gridRatio;
 
-    spacing.scale (&spacing, (0 == gridPerRef) ? 1.0 : (double) gridPerRef);
+    spacing.Scale (spacing, (0 == gridPerRef) ? 1.0 : (double) gridPerRef);
 
     return SUCCESS;
     }

@@ -673,7 +673,7 @@ double          columnSpacing
         double  factor = (numTiles / MAX_AREA_PATTERN_TILES) * 0.5;
 
         // NOTE: Increase pattern scale and display *something* instead of useless message center alert...
-        spacing.scale (&spacing, factor);
+        spacing.Scale (spacing, factor);
         scale *= factor;
         }
 
@@ -1357,7 +1357,7 @@ DwgHatchDefLineP    lineP,
 double              rangeDiagonal
 )
     {
-    double      offsetMagnitude = lineP->offset.magnitude ();
+    double      offsetMagnitude = lineP->offset.Magnitude ();
 
     if (0.0 == offsetMagnitude || rangeDiagonal / offsetMagnitude > MAX_HATCH_ITERATIONS)
         return false;
@@ -1397,7 +1397,7 @@ bool                is3d
         boundRange.low.z = boundRange.high.z = 0.0;
 
     StatusInt       status = SUCCESS;
-    double          rangeDiagonal = boundRange.low.distance (&boundRange.high);
+    double          rangeDiagonal = boundRange.low.Distance (boundRange.high);
     GPArraySmartP   hatchGpa, dashGpa;
 
     // NOTE: In ACAD hatch definitions both the base angle and scale have already been applied to the definitions and MUST not be applied again!

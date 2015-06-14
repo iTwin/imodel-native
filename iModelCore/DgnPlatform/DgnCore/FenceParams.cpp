@@ -1171,7 +1171,7 @@ int             nPoints
 
             rFnc = (DPoint2d*) _alloca (nPoints * sizeof(DPoint2d));
 
-            delta.differenceOf (&viewOrigin, &camera.GetEyePoint());
+            delta.DifferenceOf(viewOrigin, *(&camera.GetEyePoint()));
             viewRMatrix.Multiply(delta);
 
             double cameraScale;
@@ -1747,8 +1747,8 @@ bool            FenceParams::ArcIntersect (DPoint2dCP lineSegP, DEllipse3dCR ell
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            FenceParams::ArcFenceIntersect (ClipPrimitiveCR clipPrimitive, DEllipse3dCR ellipse)
     {
-    if (LegacyMath::DEqual (ellipse.vector0.magnitude (), 0.0) ||
-        LegacyMath::DEqual (ellipse.vector90.magnitude (), 0.0))
+    if (LegacyMath::DEqual (ellipse.vector0.Magnitude (), 0.0) ||
+        LegacyMath::DEqual (ellipse.vector90.Magnitude (), 0.0))
         return false;
 
     DEllipse3d  rotatedEllipse;
@@ -1819,8 +1819,8 @@ double          onTolerance
         (clipPrimitive.ClipZHigh() && bRange.low.z  > clipPrimitive.GetZHigh()))
         return false;
 
-    deltaA.differenceOf (&clipPoints[1], &clipPoints[0]);
-    deltaB.differenceOf (&linePoints[1], &linePoints[0]);
+    deltaA.DifferenceOf(clipPoints[1], clipPoints[0]);
+    deltaB.DifferenceOf(linePoints[1], linePoints[0]);
 
     if (LegacyMath::DEqual (deltaA.x, 0.0))
         {
@@ -2042,7 +2042,7 @@ bool            FenceParams::AcceptLineSegments (DPoint3dP points, size_t numPoi
             }
         else
             {
-            testPoint.sumOf (NULL, testSegment, .5, testSegment+1, .5);
+            testPoint.SumOf (*testSegment, .5, testSegment[1], .5);
             }
         }
 
