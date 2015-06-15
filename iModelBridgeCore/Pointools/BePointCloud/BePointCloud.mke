@@ -9,7 +9,6 @@ PolicyFile=$(SrcRoot)Pointools/BePointCloud/BePointCloudPolicy.mki
 SolutionPolicyMki=$(PolicyFile)
 
 %include mdl.mki
-%include $(SrcRoot)BentleyApi/PublicMki/BentleyApi.mki 
 
 baseDir                     = $(_MakeFilePath)
 bePointCloudPublicApiSrc    = $(baseDir)PublicAPI/BePointCloud/
