@@ -581,7 +581,6 @@ ClassMapInfoPtr RelationshipClassMapInfo::Create (ECRelationshipClassCR relation
 +---------------+---------------+---------------+---------------+---------------+------*/
 RelationshipClassMapInfo::RelationshipClassMapInfo (ECRelationshipClassCR relationshipClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, ECDbMapStrategy mapStrategy)
      : ClassMapInfo (relationshipClass, ecDbMap, tableName, primaryKeyColumnName, mapStrategy),
-        m_userPreferredDirection (PreferredDirection::Unspecified), 
         m_allowDuplicateRelationships(TriState::Default)
     {}
 
@@ -610,11 +609,6 @@ BentleyStatus RelationshipClassMapInfo::_InitializeFromSchema ()
     auto relClassHint = RelationshipClassHintReader::ReadHint (*relClass);
     if (relClassHint.IsValid())
         {
-
-        PreferredDirection preferredDirection = PreferredDirection::Unspecified;
-        if (RelationshipClassHintReader::TryReadPreferredDirection (preferredDirection, *relClassHint))
-            m_userPreferredDirection = preferredDirection;
-
         TriState allowDuplicateRelationships = TriState::Default;
         if (RelationshipClassHintReader::TryReadAllowDuplicateRelationships (allowDuplicateRelationships, *relClassHint))
             m_allowDuplicateRelationships = allowDuplicateRelationships;
@@ -844,13 +838,6 @@ ECRelationshipClassCR relationshipClass
     // Allow user his choice if he made one
     if (GetMapStrategy ().IsEndTableMapping ())
         return GetMapStrategy ().GetStrategy ();
-
-    // PreferredDirection hint, indicates optimal traversal efficiency when querying rows from other end for a given row on this end.
-    // Querying target instances for a given source instance needs to be fast -> persist relation in target table (like a foreign key)
-    if (m_userPreferredDirection == PreferredDirection::SourceToTarget)
-        return Strategy::RelationshipTargetTable;
-    else if (m_userPreferredDirection == PreferredDirection::TargetToSource)
-        return Strategy::RelationshipSourceTable;
 
     // Pick the End at the start of the strength direction (same logic as for preferred direction)
     if (relationshipClass.GetStrengthDirection () == ECRelatedInstanceDirection::Forward)

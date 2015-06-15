@@ -138,9 +138,7 @@ private:
     enum class RelationshipIndexSpec
         {
         Source,
-        Target,
-        SourceAndTarget,
-        TargetAndSource,
+        Target
         };
 
 private:

@@ -1071,18 +1071,6 @@ void RelationshipClassLinkTableMap::AddIndices (ClassMapInfoCR mapInfo)
             if (relationshipClassMapInfo.GetAllowDuplicateRelationships () == RelationshipClassMapInfo::TriState::True)
                 addUniqueIndex = false;
 
-            RelationshipClassMapInfo::PreferredDirection preferredDirection = relationshipClassMapInfo.GetUserPreferredDirection ();
-            if (preferredDirection == RelationshipClassMapInfo::PreferredDirection::TargetToSource)
-                {
-                if (createOnSource)
-                    AddIndicesToRelationshipEnds(RelationshipIndexSpec::TargetAndSource, addUniqueIndex); // unique index starting with target
-                }
-            else
-                {
-                if (createOnTarget)
-                    AddIndicesToRelationshipEnds(RelationshipIndexSpec::SourceAndTarget, addUniqueIndex); // unique index starting with target
-                }
-
             break;
             }
         default:
@@ -1116,12 +1104,6 @@ ECDbSqlIndex* RelationshipClassLinkTableMap::CreateIndex (RelationshipIndexSpec 
             break;
         case RelationshipIndexSpec::Target:
             name.append ("Target");
-            break;
-        case RelationshipIndexSpec::SourceAndTarget:
-            name.append ("Source_Target");
-            break;
-        case RelationshipIndexSpec::TargetAndSource:
-            name.append ("Target_Source");
             break;
         default:
             break;
@@ -1187,16 +1169,6 @@ void RelationshipClassLinkTableMap::AddIndicesToRelationshipEnds (RelationshipIn
         case RelationshipIndexSpec::Target:
             {
             AddColumnsToIndex (*index, targetECInstanceIdColumn, targetECClassIdColumn, nullptr, nullptr);
-            break;
-            }
-        case RelationshipIndexSpec::SourceAndTarget:
-            {
-            AddColumnsToIndex (*index, sourceECInstanceIdColumn, sourceECClassIdColumn, targetECInstanceIdColumn, targetECClassIdColumn);
-            break;
-            }
-        case RelationshipIndexSpec::TargetAndSource:
-            {
-            AddColumnsToIndex (*index, targetECInstanceIdColumn, targetECClassIdColumn, sourceECInstanceIdColumn, sourceECClassIdColumn);
             break;
             }
         }

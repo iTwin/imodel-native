@@ -138,14 +138,6 @@ struct RelationshipConstraintInfo
 struct RelationshipClassMapInfo : public ClassMapInfo
 {
 public:
-    enum class PreferredDirection
-        {
-        SourceToTarget,
-        Bidirectional,
-        TargetToSource,
-        Unspecified
-        };
-
     enum class CardinalityType
         {
         ManyToMany,
@@ -162,7 +154,6 @@ public:
         };
 
 private:
-    PreferredDirection m_userPreferredDirection;
     TriState m_allowDuplicateRelationships;
     CardinalityType m_relationshipCardinality;
     Utf8String m_sourceECInstanceIdColumn;
@@ -192,7 +183,6 @@ public:
     static ClassMapInfoPtr Create (ECN::ECRelationshipClassCR relationshipClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, ECDbMapStrategy mapStrategy);
     virtual BentleyStatus _Initialize() override;
 
-    PreferredDirection GetUserPreferredDirection () const {return m_userPreferredDirection;}
     TriState GetAllowDuplicateRelationships() const {return m_allowDuplicateRelationships;}
     Utf8StringCR GetSourceECInstanceIdColumn() const {return m_sourceECInstanceIdColumn;}
     Utf8StringCR GetSourceECClassIdColumn() const {return m_sourceECClassIdColumn;}

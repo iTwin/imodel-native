@@ -198,7 +198,6 @@ enum ECContainerType
 //    V = ECPropertyValue
 
 #define BSCAP_AllowDuplicateRelationships L"AllowDuplicateRelationships"
-#define BSCAV_InParentTable             L"InParentTable"
 
 #define BSCAP_SourceECInstanceIdColumn  L"SourceECIdColumn"
 #define BSCAP_TargetECInstanceIdColumn  L"TargetECIdColumn"
@@ -206,19 +205,12 @@ enum ECContainerType
 #define BSCAP_TargetECClassIdColumn     L"TargetECClassIdColumn"
 
 #define BSCAC_ECDbRelationshipClassHint L"ECDbRelationshipClassHint"
-#define BSCAP_PreferredDirection        L"PreferredDirection"
-#define BSCAV_SourceToTarget            L"SourceToTarget"
-#define BSCAV_Bidirectional             L"Bidirectional"
-#define BSCAV_TargetToSource            L"TargetToSource"
-#define BSCAP_ExcludeFromColumnsReuse L"ExcludeFromColumnsReuse"
 
 #define ECDB_COL_ECInstanceId           "ECInstanceId"
 #define ECDB_COL_ECClassId              "ECClassId"
 #define ECDB_COL_ECPropertyPathId       "ECPropertyPathId"
 #define ECDB_COL_ParentECInstanceId     "ParentECInstanceId"
 #define ECDB_COL_ECArrayIndex           "ECArrayIndex"
-
-#define UTF8_Stricmp(S1,S2)  BeStringUtilities::Stricmp(S1, S2) 
 
 //=======================================================================================
 // For case-sensitive UTF-8 string comparisons in STL collections.

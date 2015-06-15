@@ -29,39 +29,6 @@ IECInstancePtr RelationshipClassHintReader::ReadHint (ECClassCR relClass)
 // @bsimethod                                 Ramanujam.Raman                07/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool RelationshipClassHintReader::TryReadPreferredDirection (RelationshipClassMapInfo::PreferredDirection& preferredDirection, IECInstanceCR relClassHint)
-    {
-    BeAssert (relClassHint.GetClass ().GetName ().Equals (BSCAC_ECDbRelationshipClassHint));
-
-    ECValue v;
-    relClassHint.GetValue (v, BSCAP_PreferredDirection);
-    bool found = false;
-    if (!v.IsNull ())
-        {
-        found = true;
-        WCharCP val = v.GetString ();
-        if (0 == BeStringUtilities::Wcsicmp (val, BSCAV_SourceToTarget))
-            preferredDirection = RelationshipClassMapInfo::PreferredDirection::SourceToTarget;
-        else if (0 == BeStringUtilities::Wcsicmp (val, BSCAV_TargetToSource))
-            preferredDirection = RelationshipClassMapInfo::PreferredDirection::TargetToSource;
-        else if (0 == BeStringUtilities::Wcsicmp (val, BSCAV_Bidirectional))
-            preferredDirection = RelationshipClassMapInfo::PreferredDirection::Bidirectional;
-        else
-            {
-            LOG.errorv (L"Unrecognized " BSCAP_PreferredDirection L" '%ls' in " BSCAC_ECDbRelationshipClassHint,
-                val);
-            preferredDirection = RelationshipClassMapInfo::PreferredDirection::Unspecified;
-            found = false;
-            }
-        }
-
-    return found;
-    }
-
-//---------------------------------------------------------------------------------
-// @bsimethod                                 Ramanujam.Raman                07/2012
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
 bool RelationshipClassHintReader::TryReadAllowDuplicateRelationships (RelationshipClassMapInfo::TriState& allowDuplicateRelationships, IECInstanceCR relClassHint)
     {
     BeAssert (relClassHint.GetClass ().GetName ().Equals (BSCAC_ECDbRelationshipClassHint));

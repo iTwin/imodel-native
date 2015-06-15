@@ -22,7 +22,6 @@ private:
 
 public:
     static ECN::IECInstancePtr ReadHint (ECN::ECClassCR relClass);
-    static bool TryReadPreferredDirection (RelationshipClassMapInfo::PreferredDirection& preferredDirection, ECN::IECInstanceCR relClassHint);
     static bool TryReadAllowDuplicateRelationships (RelationshipClassMapInfo::TriState& allowDuplicateRelationships, ECN::IECInstanceCR relClassHint);
     static bool TryReadSourceECInstanceIdColumnName (Utf8String& sourceECInstanceIdColumnName, ECN::IECInstanceCR relClassHint);
     static bool TryReadSourceECClassIdColumnName (Utf8String& sourceECClassIdColumnName, ECN::IECInstanceCR relClassHint);
