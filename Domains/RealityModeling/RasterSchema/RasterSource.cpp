@@ -106,7 +106,7 @@ static bool s_ComputeQuadrilateralToQuadrilateralTransfoModel(DMatrix4dR outMat,
     if(!invUnitToRasterModel.QrInverseOf(unitToRasterModel))
         return false;
     
-    outMat.productOf(&unitToProjectedRasterModel, &invUnitToRasterModel);   // A * B
+    outMat.InitProduct(unitToProjectedRasterModel, invUnitToRasterModel);   // A * B
 
     return true;
     }
@@ -245,7 +245,7 @@ BentleyStatus RasterSource::Initialize(DPoint3dCP corners, bvector<Resolution>co
     if(!s_ComputeQuadrilateralToQuadrilateralTransfoModel(m_physicalToCartesian, srcCorners, destCorners))
         {
         BeAssert(!"Cannot compute physicalToCartesian matrix"); // How that happen?
-        m_physicalToCartesian.initIdentity();
+        m_physicalToCartesian.InitIdentity();
         status = ERROR;
         }    
 

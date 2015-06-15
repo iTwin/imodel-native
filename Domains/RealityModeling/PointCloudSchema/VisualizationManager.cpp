@@ -157,14 +157,14 @@ void VisualizationManager::SetViewportInfo (ViewContextR context, Transform cons
     DRange3d scaledRange;
 #if 0
     RotMatrix rotOrg; rotOrg.initFromScale (1-0.0001);
-    rotOrg.multiply (&scaledRange.org, &vector.org, 1);
+    rotOrg.Multiply (&scaledRange.org, &vector.org, 1);
     RotMatrix rotEnd; rotEnd.initFromScale (1+0.0001);
-    rotEnd.multiply (&scaledRange.end, &vector.end, 1);
+    rotEnd.Multiply (&scaledRange.end, &vector.end, 1);
 #else
     Transform transOrg; transOrg.InitFrom (-1,-1,-1);
-    transOrg.multiply (&scaledRange.low, &range.low, 1);
+    transOrg.Multiply (&scaledRange.low, &range.low, 1);
     Transform transEnd; transEnd.InitFrom (1,1,1);
-    transEnd.multiply (&scaledRange.high, &range.high, 1);
+    transEnd.Multiply (&scaledRange.high, &range.high, 1);
 #endif
 
     if(context.IsCameraOn())
@@ -188,7 +188,7 @@ void VisualizationManager::SetViewportInfo (ViewContextR context, Transform cons
 void VisualizationManager::SetViewportProjectionFromSceneRange(ViewContextR context, Transform const& sceneToUor, DRange3d const& range)
     {
     Transform uorToScene;
-    uorToScene.inverseOf(&sceneToUor);
+    uorToScene.InverseOf(sceneToUor);
 
     // Get View Npc range
     DRange3d viewRange_npc; GetNpcViewRange(viewRange_npc, context);
@@ -216,7 +216,7 @@ void VisualizationManager::SetViewportProjectionFromSceneRange(ViewContextR cont
     DPoint3d subViewBox_local[NPC_CORNER_COUNT];
     context.ViewToLocal(subViewBox_local, subViewBox_view, NPC_CORNER_COUNT);
     DVec3d subViewBox_scene[NPC_CORNER_COUNT];
-    uorToScene.multiply(subViewBox_scene, subViewBox_local, NPC_CORNER_COUNT);
+    uorToScene.Multiply (subViewBox_scene, subViewBox_local, NPC_CORNER_COUNT);
 
     PerspectiveViewParams subViewParams;
     ViewParametersFromFrustum(subViewParams, subViewBox_scene);
@@ -278,7 +278,7 @@ void VisualizationManager::SetViewportOrtho(ViewContextR context, Transform cons
     GetUstnViewToOpenGLViewTransform (toOpenGL, viewRange_view.low.y, viewRange_view.high.y);
 
     DMatrix4d modelView;
-    modelView.productOf (&toOpenGL, &localToView, &sceneToUorMat);
+    modelView.InitProduct (toOpenGL, localToView, sceneToUorMat);
 
     PointCloudVortex::SetViewEyeMatrix (modelView.coff [0], true /* Row Major */);
     // invert the low and high Z for openGL, we think!
@@ -310,27 +310,27 @@ void VisualizationManager::LocalRangeToNpcRange(DRange3d& npcRange, DRange3d con
 +---------------+---------------+---------------+---------------+---------------+------*/
 void VisualizationManager::ViewParametersFromFrustum(PerspectiveViewParams& viewParams, DPoint3dCP frustum)
     {
-    viewParams.viewX.normalizedDifference (&frustum[NPC_101], &frustum[NPC_001]);
-    viewParams.viewY.normalizedDifference (&frustum[NPC_011], &frustum[NPC_001]);
-    viewParams.viewZ.normalizedCrossProduct(&viewParams.viewX, &viewParams.viewY);
+    viewParams.viewX.NormalizedDifference (frustum[NPC_101], frustum[NPC_001]);
+    viewParams.viewY.NormalizedDifference (frustum[NPC_011], frustum[NPC_001]);
+    viewParams.viewZ.NormalizedCrossProduct (viewParams.viewX, viewParams.viewY);
 
     // Calculate camera position and target from frustum directly. - Note we cannot take these directly from the viewport as those values
     // are not correct when processing viewlets.
     double  compressionFraction = ComputeFrustumScale (frustum);
     double  a = 1.0 / (1.0 - compressionFraction);  // compressionFaction tested < .999 before calling this method.
     
-    DVec3d  frustumZ; frustumZ.differenceOf (&frustum[NPC_001], &frustum[NPC_000]);
-    viewParams.cameraRoot.sumOf (&frustum[NPC_000], &frustumZ, a);
+    DVec3d  frustumZ; frustumZ.DifferenceOf (frustum[NPC_001], frustum[NPC_000]);
+    viewParams.cameraRoot.SumOf (frustum[NPC_000],frustumZ, a);
     
-    viewParams.xmin  = frustum[NPC_001].dotDifference (&viewParams.cameraRoot, &viewParams.viewX);
-    viewParams.xmax  = frustum[NPC_101].dotDifference (&viewParams.cameraRoot, &viewParams.viewX);
-    viewParams.ymin  = frustum[NPC_001].dotDifference (&viewParams.cameraRoot, &viewParams.viewY);
-    viewParams.ymax  = frustum[NPC_011].dotDifference (&viewParams.cameraRoot, &viewParams.viewY);
-    viewParams.front = -frustum[NPC_001].dotDifference (&viewParams.cameraRoot, &viewParams.viewZ);
-    viewParams.back  = -frustum[NPC_000].dotDifference (&viewParams.cameraRoot, &viewParams.viewZ);
+    viewParams.xmin  = frustum[NPC_001].DotDifference (viewParams.cameraRoot, viewParams.viewX);
+    viewParams.xmax  = frustum[NPC_101].DotDifference (viewParams.cameraRoot, viewParams.viewX);
+    viewParams.ymin  = frustum[NPC_001].DotDifference (viewParams.cameraRoot, viewParams.viewY);
+    viewParams.ymax  = frustum[NPC_011].DotDifference (viewParams.cameraRoot, viewParams.viewY);
+    viewParams.front = -frustum[NPC_001].DotDifference (viewParams.cameraRoot, viewParams.viewZ);
+    viewParams.back  = -frustum[NPC_000].DotDifference (viewParams.cameraRoot, viewParams.viewZ);
 
     // The "target" value is somewhat arbitrary - just calculate it at the back clipping plane.
-    viewParams.targetRoot.sumOf (&viewParams.cameraRoot, &viewParams.viewZ, -viewParams.back);
+    viewParams.targetRoot.SumOf (viewParams.cameraRoot,viewParams.viewZ, -viewParams.back);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -341,13 +341,13 @@ void VisualizationManager::GetUstnViewToOpenGLViewTransform(DMatrix4dR result, d
     double      yOffset = minY + (maxY - minY)/2;
 
     DPoint3d    scale;
-    scale.init (1, -1, 1);
+    scale.Init (1, -1, 1);
     DPoint3d    offset;
-    offset.init (0, 2 * yOffset, 0);
+    offset.Init (0, 2 * yOffset, 0);
 
     //  This equivalent to translating by -yOffset, scaling by -1,
     //  and then translating by yOffset.
-    result.initFromScaleAndTranslation (&scale, &offset);
+    bsiDMatrix4d_initScaleAndTranslate(&result, &scale, &offset);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -360,13 +360,13 @@ StatusInt VisualizationManager::LocalToViewAccountingForPointBehindCamera(DPoint
         DPoint4d point4d;
         static double   s_minW = .001;                  // Arbitrary front of eye lmit.
 
-        point4d.init (&localPoints[i], 1.0);
-        context.GetLocalToView().multiply(&point4d, &point4d);
+        point4d.Init (localPoints[i], 1.0);
+        context.GetLocalToView().Multiply(point4d, point4d);
 
         if (point4d.w < s_minW)
             return ERROR;
 
-        point4d.normalizeWeightInPlace ();
+        point4d.NormalizeWeightInPlace ();
         viewPoints[i].xyzOf(&point4d);
         }
 
@@ -489,7 +489,7 @@ void VisualizationManager::UpdateVortexShaders (RefCountedPtr<PointCloudSchema::
 
                 IACSManager::GetManager().GetActive (viewport)->GetRotation (rot);
                 rot.GetRow(direction, 2);
-                direction.normalize();
+                direction.Normalize ();
                 axis[0]= (float)direction.x;
                 axis[1]= (float)direction.y;
                 axis[2]= (float)direction.z;
@@ -533,7 +533,7 @@ void VisualizationManager::UpdateVortexShaders (RefCountedPtr<PointCloudSchema::
             DVec3d direction;
             IACSManager::GetManager().GetActive (viewport)->GetRotation (rot);
             rot.GetRow(direction,  2);
-            direction.normalize();
+            direction.Normalize ();
             axis[0]= (float)direction.x;
             axis[1]= (float)direction.y;
             axis[2]= (float)direction.z;
@@ -615,10 +615,10 @@ void VisualizationManager::GetNpcViewBox (DPoint3d npcPoints[8], ViewContextR co
 double VisualizationManager::ComputeFrustumScale(DPoint3dCP frustum)
     {
     DVec3d backViewX, frontViewX;
-    backViewX.differenceOf(&frustum[NPC_100], &frustum[NPC_000]);
-    frontViewX.differenceOf(&frustum[NPC_101], &frustum[NPC_001]);
+    backViewX.DifferenceOf (frustum[NPC_100], frustum[NPC_000]);
+    frontViewX.DifferenceOf (frustum[NPC_101], frustum[NPC_001]);
 
-    return  frontViewX.magnitude() / backViewX.magnitude();
+    return  frontViewX.Magnitude () / backViewX.Magnitude ();
     }
 
 /*---------------------------------------------------------------------------------**//**
