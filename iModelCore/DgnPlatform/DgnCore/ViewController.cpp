@@ -622,7 +622,7 @@ static bool findNearbyStandardViewMatrix(RotMatrixR rMatrix)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewFrustumStatus ViewController::SetupFromFrustum(Frustum const& inFrustum)
+ViewportStatus ViewController::SetupFromFrustum(Frustum const& inFrustum)
     {
     Frustum frustum=inFrustum;
     DgnViewport::FixFrustumOrder(frustum);
@@ -633,7 +633,7 @@ ViewFrustumStatus ViewController::SetupFromFrustum(Frustum const& inFrustum)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    11/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewFrustumStatus ViewController::_SetupFromFrustum(Frustum const& frustum)
+ViewportStatus ViewController::_SetupFromFrustum(Frustum const& frustum)
     {
     DPoint3dCP frustPts = frustum.GetPts();
     DPoint3d viewOrg = frustPts[NPC_000];
@@ -648,7 +648,7 @@ ViewFrustumStatus ViewController::_SetupFromFrustum(Frustum const& frustum)
     RotMatrix   frustMatrix;
     frustMatrix.InitFromColumnVectors(frustumX, frustumY, frustumZ);
     if (!frustMatrix.SquareAndNormalizeColumns(frustMatrix, 0, 1))
-        return VIEWFRUST_STATUS_InvalidWindow;
+        return ViewportStatus::InvalidWindow;
 
     findNearbyStandardViewMatrix(frustMatrix);
 
@@ -662,7 +662,7 @@ ViewFrustumStatus ViewController::_SetupFromFrustum(Frustum const& frustum)
     // Left handed frustum?
     double zSize = zDir.DotProduct(frustumZ);
     if (zSize < 0.0)
-        return VIEWFRUST_STATUS_InvalidWindow;
+        return ViewportStatus::InvalidWindow;
 
     DPoint3d viewDiagRoot;
     viewDiagRoot.SumOf(xDir, xDir.DotProduct(frustumX), yDir, yDir.DotProduct(frustumY));  // vectors on the back plane
@@ -675,23 +675,23 @@ ViewFrustumStatus ViewController::_SetupFromFrustum(Frustum const& frustum)
     DVec3d viewDelta;
     viewRot.Multiply(viewDelta, viewDiagRoot);
 
-    ViewFrustumStatus validSize = DgnViewport::ValidateWindowSize(viewDelta, false);
-    if (validSize != VIEWFRUST_STATUS_SUCCESS)
+    ViewportStatus validSize = DgnViewport::ValidateWindowSize(viewDelta, false);
+    if (validSize != ViewportStatus::Success)
         return validSize;
 
     SetOrigin(viewOrg);
     SetDelta(viewDelta);
     SetRotation(viewRot);
-    return VIEWFRUST_STATUS_SUCCESS;
+    return ViewportStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewFrustumStatus CameraViewController::_SetupFromFrustum(Frustum const& frustum)
+ViewportStatus CameraViewController::_SetupFromFrustum(Frustum const& frustum)
     {
     auto stat = T_Super::_SetupFromFrustum(frustum);
-    if (VIEWFRUST_STATUS_SUCCESS)
+    if (ViewportStatus::Success != stat)
         return stat;
 
     DPoint3dCP frustPts = frustum.GetPts();
@@ -702,14 +702,14 @@ ViewFrustumStatus CameraViewController::_SetupFromFrustum(Frustum const& frustum
 
     static double const s_flatViewFractionTolerance = 1.0e-6;
     if (xFront > xBack *(1.0 + s_flatViewFractionTolerance))
-        return VIEWFRUST_STATUS_InvalidWindow;
+        return ViewportStatus::InvalidWindow;
 
     // see if the frustum is tapered, and if so, set up camera eyepoint and adjust viewOrg and delta.
     double compression = xFront / xBack;
     if (!Allow3dManipulations() ||(compression >=(1.0 - s_flatViewFractionTolerance)))
         {
         SetCameraOn(false);
-        return VIEWFRUST_STATUS_SUCCESS;
+        return ViewportStatus::Success;
         }
 
     DPoint3d viewOrg     = frustPts[NPC_000];
@@ -735,7 +735,7 @@ ViewFrustumStatus CameraViewController::_SetupFromFrustum(Frustum const& frustum
     SetDelta(viewDelta);
     SetCameraOn(true);
     CalculateLensAngle();
-    return VIEWFRUST_STATUS_SUCCESS;
+    return ViewportStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -814,7 +814,7 @@ void ViewController::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
     if (physView && Allow3dManipulations() && !isCameraOn)
         {
         // make sure that the zDelta is large enough so that entire model will be visible from any rotation
-        double diag = newDelta.magnitudeXY();
+        double diag = newDelta.MagnitudeXY ();
         if (diag > newDelta.z)
             newDelta.z = diag;
         }
@@ -1365,26 +1365,26 @@ bool DrawingViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, 
 * See diagram in viewController.h
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewFrustumStatus CameraViewController::LookAt(DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVec,
+ViewportStatus CameraViewController::LookAt(DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVec,
                                                   DVec2dCP extentsIn, double const* frontDistIn, double const* backDistIn)
     {
     DVec3d yVec = upVec;
     if (yVec.Normalize() <= mgds_fc_epsilon) // up vector zero length?
-        return VIEWFRUST_STATUS_InvalidUpVector;
+        return ViewportStatus::InvalidUpVector;
 
     DVec3d zVec; // z defined by direction from eye to target
     zVec.DifferenceOf(eyePoint, targetPoint);
 
     double focusDist = zVec.Normalize(); // set focus at target point
     if (focusDist <= 1.0)                // eye and target are too close together
-        return VIEWFRUST_STATUS_InvalidTargetPoint;
+        return ViewportStatus::InvalidTargetPoint;
 
     DVec3d xVec; // x is the normal to the Up-Z plane
     if (xVec.NormalizedCrossProduct(yVec, zVec) <= mgds_fc_epsilon)
-        return VIEWFRUST_STATUS_InvalidUpVector;    // up is parallel to z
+        return ViewportStatus::InvalidUpVector;    // up is parallel to z
 
     if (yVec.NormalizedCrossProduct(zVec, xVec) <= mgds_fc_epsilon) // make sure up vector is perpendicular to z vector
-        return VIEWFRUST_STATUS_InvalidUpVector;
+        return ViewportStatus::InvalidUpVector;
 
     // we now have rows of the rotation matrix
     RotMatrix rotation = RotMatrix::FromRowVectors(xVec, yVec, zVec);
@@ -1400,12 +1400,12 @@ ViewFrustumStatus CameraViewController::LookAt(DPoint3dCR eyePoint, DPoint3dCR t
     delta.z =(backDist - frontDist);
 
     DVec3d frontDelta = DVec3d::FromScale(delta, frontDist/focusDist);
-    ViewFrustumStatus stat = DgnViewport::ValidateWindowSize(frontDelta, false); // validate window size on front (smallest) plane
-    if (VIEWFRUST_STATUS_SUCCESS != stat)
+    ViewportStatus stat = DgnViewport::ValidateWindowSize(frontDelta, false); // validate window size on front (smallest) plane
+    if (ViewportStatus::Success != stat)
         return  stat;
 
     if (delta.z > CalculateMaxDepth(delta, zVec)) // make sure we're not zoomed in too far
-        return VIEWFRUST_STATUS_MaxDisplayDepth;
+        return ViewportStatus::MaxDisplayDepth;
 
     // The origin is defined as the lower left of the view rectangle on the focus plane, projected to the back plane.
     // Start at eye point, and move to center of back plane, then move left half of width. and down half of height
@@ -1420,13 +1420,13 @@ ViewFrustumStatus CameraViewController::LookAt(DPoint3dCR eyePoint, DPoint3dCR t
     SetDelta(delta);
     CalculateLensAngle();
 
-    return VIEWFRUST_STATUS_SUCCESS;
+    return ViewportStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewFrustumStatus CameraViewController::LookAtUsingLensAngle(DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVec,
+ViewportStatus CameraViewController::LookAtUsingLensAngle(DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVec,
                                                   double lens, double const* frontDist, double const* backDist)
     {
     DVec3d zVec; // z defined by direction from eye to target
@@ -1434,10 +1434,10 @@ ViewFrustumStatus CameraViewController::LookAtUsingLensAngle(DPoint3dCR eyePoint
 
     double focusDist = zVec.Normalize(); // set focus at target point
     if (focusDist <= 1.0)                // eye and target are too close together
-        return VIEWFRUST_STATUS_InvalidTargetPoint;
+        return ViewportStatus::InvalidTargetPoint;
 
     if (lens < .0001 || lens > msGeomConst_pi)
-        return VIEWFRUST_STATUS_InvalidLens;
+        return ViewportStatus::InvalidLens;
 
     double extent = 2.0 * tan(lens/2.0) * focusDist;
 
@@ -1451,7 +1451,7 @@ ViewFrustumStatus CameraViewController::LookAtUsingLensAngle(DPoint3dCR eyePoint
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewFrustumStatus CameraViewController::MoveCameraWorld(DVec3dCR distance)
+ViewportStatus CameraViewController::MoveCameraWorld(DVec3dCR distance)
     {
     DPoint3d newTarget, newEyePt;
     newTarget.SumOf(GetTargetPoint(), distance);
@@ -1462,7 +1462,7 @@ ViewFrustumStatus CameraViewController::MoveCameraWorld(DVec3dCR distance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewFrustumStatus CameraViewController::MoveCameraLocal(DVec3dCR distanceLocal)
+ViewportStatus CameraViewController::MoveCameraLocal(DVec3dCR distanceLocal)
     {
     DVec3d distWorld = distanceLocal;
     GetRotation().MultiplyTranspose(distWorld);
@@ -1472,7 +1472,7 @@ ViewFrustumStatus CameraViewController::MoveCameraLocal(DVec3dCR distanceLocal)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewFrustumStatus CameraViewController::RotateCameraWorld(double radAngle, DVec3dCR axis, DPoint3dCP aboutPointIn)
+ViewportStatus CameraViewController::RotateCameraWorld(double radAngle, DVec3dCR axis, DPoint3dCP aboutPointIn)
     {
     DPoint3d about = aboutPointIn ? *aboutPointIn : GetEyePoint();
     RotMatrix rotation = RotMatrix::FromVectorAndRotationAngle(axis, radAngle);
@@ -1489,7 +1489,7 @@ ViewFrustumStatus CameraViewController::RotateCameraWorld(double radAngle, DVec3
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewFrustumStatus CameraViewController::RotateCameraLocal(double radAngle, DVec3dCR axis, DPoint3dCP aboutPointIn)
+ViewportStatus CameraViewController::RotateCameraLocal(double radAngle, DVec3dCR axis, DPoint3dCP aboutPointIn)
     {
     DVec3d axisWorld = axis;
     GetRotation().MultiplyTranspose(axisWorld);

@@ -486,7 +486,7 @@ double              offset
         DPoint3dCP  end = src + nPts;
 
         for (;src < end; src++, outPts++, joints++)
-            outPts->sumOf (src, &joints->m_dir, offset * joints->m_scale);
+            outPts->SumOf (*src,joints->m_dir, offset * joints->m_scale);
         }
     }
 
@@ -498,7 +498,7 @@ StatusInt       LsCompoundComponent::_DoStroke (ViewContextP context, DPoint3dCP
     DVec3d    normal;
     RotMatrix matrix;
     modifiers->GetPlaneAsMatrixRows(matrix);
-    matrix.getRow (&normal, 2);
+    matrix.GetRow (normal, 2);
 
     LineJoint*  joints = (LineJoint*) _alloca (nPoints * sizeof(LineJoint));
     LineJoint::FromVertices (joints, inPoints, nPoints, &normal, NULL, NULL);

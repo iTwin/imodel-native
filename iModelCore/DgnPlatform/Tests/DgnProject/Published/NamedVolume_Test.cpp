@@ -63,7 +63,7 @@ TEST(NamedVolume, CrudTest)
     cparms.SetSeedDb (BeFileName(tdmSeed.GetPath()));
     DbResult dgnFileStatus;
     DgnMarkupProjectPtr markupProject = DgnMarkupProject::CreateDgnDb (&dgnFileStatus, markupProjectFileName, cparms);
-    ASSERT_TRUE (dgnFileStatus == DGNFILE_STATUS_Success);
+    ASSERT_TRUE (dgnFileStatus == BE_SQLITE_OK);
     ASSERT_TRUE (markupProject.IsValid());
     
     // Create

@@ -468,6 +468,10 @@ bool TestCurveLocation (CurveVectorCR curvesLocal)
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual BentleyStatus _ProcessCurveVector (CurveVectorCR curves, bool isFilled) override
     {
+    // Quick exclude of geometry that didn't generate the hit...
+    if (m_snapContext.GetSnapDetail()->GetGeomDetail().GetGeomPrimitiveId() != m_context->GetGeomPrimitiveId())
+        return SUCCESS;
+
     TestCurveLocation(curves);
 
     return SUCCESS;
@@ -478,6 +482,10 @@ virtual BentleyStatus _ProcessCurveVector (CurveVectorCR curves, bool isFilled) 
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual BentleyStatus _ProcessFacets (PolyfaceQueryCR meshData, bool isFilled)
     {
+    // Quick exclude of geometry that didn't generate the hit...
+    if (m_snapContext.GetSnapDetail()->GetGeomDetail().GetGeomPrimitiveId() != m_context->GetGeomPrimitiveId())
+        return SUCCESS;
+
     PolyfaceVisitorPtr  visitor = PolyfaceVisitor::Attach(meshData);
     double              tolerance = 1e37; /*fc_hugeVal*/
 
@@ -514,14 +522,14 @@ SnapGraphicsProcessor (SnapContextR snapContext) : m_snapContext (snapContext) {
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool DoSnapUsingClosestCurve (GeometricElementCR element, SnapContextR snapContext)
     {
-    SnapGraphicsProcessor processor (snapContext);
+    SnapGraphicsProcessor processor(snapContext);
 
-    ElementGraphicsOutput::Process (processor, element);
+    ElementGraphicsOutput::Process(processor, element);
 
-    if (NULL == snapContext.GetSnapDetail ()->GetGeomDetail ().GetCurvePrimitive ())
+    if (NULL == snapContext.GetSnapDetail()->GetGeomDetail().GetCurvePrimitive())
         return false; // No edge found...
 
-    return (SnapStatus::Success == snapContext.DoSnapUsingCurve (snapContext.GetSnapMode ()) ? true : false);
+    return (SnapStatus::Success == snapContext.DoSnapUsingCurve(snapContext.GetSnapMode()) ? true : false);
     }
 
 }; // SnapEdgeProcessor

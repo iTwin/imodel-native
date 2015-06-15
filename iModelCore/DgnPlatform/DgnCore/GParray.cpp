@@ -207,7 +207,7 @@ void            GPArray::Draw (IDrawGeomR drawGeom, bool closed, bool filled) co
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            GPArray::Transform (TransformCP transform)
     {
-    if (NULL != transform && !transform->isIdentity())
+    if (NULL != transform && !transform->IsIdentity ())
         this->Multiply (*transform);
     }
 
@@ -563,7 +563,7 @@ double &dMax
     range.Init ();
     range.Extend (bezierPoles, order);
     double tolerance = m_abstol
-            + m_reltol * (range.low.maxAbs () + range.high.maxAbs ()) * order * order;
+            + m_reltol * (range.low.MaxAbs () + range.high.MaxAbs ()) * order * order;
 
     double lastKnot = knots[lastInteriorKnotIndex + 1];
     size_t lastPoleIndex = poles.size() - 1;
@@ -952,7 +952,7 @@ BentleyStatus   GPArray::GetTranslationTo (DVec3dR translation, GPArrayCR other,
     GetPrimitiveFractionPoint (&point0, 0, 0.0);
     other.GetPrimitiveFractionPoint (&point1, 0, 0.0);
 
-    translation.differenceOf (&point1, &point0);
+    translation.DifferenceOf (point1, point0);
     for (int i=0, iEnd; i<GetCount(); i = iEnd + 1)
         {
         GPCurveType curveType = GetCurveType (i);

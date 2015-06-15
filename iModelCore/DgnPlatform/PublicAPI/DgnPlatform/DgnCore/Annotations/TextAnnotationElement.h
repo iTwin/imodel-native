@@ -1,7 +1,10 @@
-//-------------------------------------------------------------------------------------- 
-//     $Source:  
-//  $Copyright:  
-//-------------------------------------------------------------------------------------- 
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicAPI/DgnPlatform/DgnCore/Annotations/TextAnnotationElement.h $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #pragma once
 
 //__PUBLISH_SECTION_START__
@@ -31,16 +34,16 @@ private:
     
     TextAnnotationPtr m_annotation;
 
-    DgnModelStatus UpdatePropertiesInDb();
+    DgnDbStatus UpdatePropertiesInDb();
     void UpdateGeometryRepresentation();
 
 protected:
     explicit PhysicalTextAnnotationElement(CreateParams const& params) : T_Super(params) {}
     PhysicalTextAnnotationElement(CreateParams const& params, TextAnnotationCR seedAnnotation) : T_Super(params) { SetAnnotation(seedAnnotation); }
-    DGNPLATFORM_EXPORT virtual DgnModelStatus _InsertInDb() override;
-    DGNPLATFORM_EXPORT virtual DgnModelStatus _UpdateInDb() override;
-    DGNPLATFORM_EXPORT virtual DgnModelStatus _LoadFromDb() override;
-    DGNPLATFORM_EXPORT virtual DgnModelStatus _CopyFrom(DgnElementCR) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertInDb() override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateInDb() override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _LoadFromDb() override;
+    DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
 
 public:
     static PhysicalTextAnnotationElementPtr Create(CreateParams const& params) { return new PhysicalTextAnnotationElement(params); }
@@ -54,7 +57,7 @@ public:
     static PhysicalTextAnnotationElementPtr GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<PhysicalTextAnnotationElement>(id); }
     PhysicalTextAnnotationElementCPtr Insert() { return GetDgnDb().Elements().Insert<PhysicalTextAnnotationElement>(*this); }
     PhysicalTextAnnotationElementCPtr Update() { return GetDgnDb().Elements().Update<PhysicalTextAnnotationElement>(*this); }
-    DgnModelStatus Delete() { return GetDgnDb().Elements().Delete(*this); }
+    DgnDbStatus Delete() { return GetDgnDb().Elements().Delete(*this); }
 };
 
 //=======================================================================================

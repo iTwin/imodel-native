@@ -71,10 +71,10 @@ TEST_F(DgnModelTests, GetName)
     EXPECT_TRUE(name.CompareTo("Splines")==0);
     Utf8String newName("New Long model name Longer than expectedNew Long model name Longer"
         " than expectedNew Long model name Longer than expectedNew Long model name Longer than expectedNew Long model");
-    DgnModelStatus status;
+    DgnDbStatus status;
     DgnModels& modelTable =  m_dgndb->Models();
     modelTable.CreateNewModelFromSeed(&status, newName.c_str(), m_modelP->GetModelId());
-    EXPECT_TRUE(status == DGNMODEL_STATUS_Success)<<"Failed to create model";
+    EXPECT_TRUE(status == DgnDbStatus::Success)<<"Failed to create model";
     DgnModelId id = modelTable.QueryModelId(newName.c_str());
     ASSERT_TRUE(id.IsValid());
     m_modelP =  modelTable.GetModel (id);
@@ -130,7 +130,7 @@ TEST_F(DgnModelTests, GetRangeOfEmptyModel)
 static int countSheets(DgnDbR db)
     {
     int count = 0;
-    for (auto const& sheet : db.Models().MakeSheetIterator())
+    for (auto const& sheet : db.Models().MakeIterator("Type=1"))
         {
         DgnModelType mtype = sheet.GetModelType();
         if (mtype != DgnModelType::Sheet)
@@ -193,23 +193,23 @@ TEST_F(DgnModelTests, SheetModelCRUD)
                                 s_sheet1Name, sheetSize);
         SheetModelPtr sheet1 = SheetModel::Create(params);
         ASSERT_TRUE( sheet1.IsValid() );
-        ASSERT_EQ( DGNMODEL_STATUS_Success, db->Models().Insert(*sheet1, "a sheet model (in mm)") );
+        ASSERT_EQ( DgnDbStatus::Success, db->Models().Insert(*sheet1, "a sheet model (in mm)") );
         ASSERT_TRUE( sheet1->GetModelId().IsValid() );
 
         ASSERT_EQ( 1 , countSheets(*db) );
 
         //  Test some insert errors
-        ASSERT_NE( DGNMODEL_STATUS_Success, db->Models().Insert(*sheet1, "") ) << "Should be illegal to add sheet that is already persistent";
+        ASSERT_NE( DgnDbStatus::Success, db->Models().Insert(*sheet1, "") ) << "Should be illegal to add sheet that is already persistent";
 
         SheetModelPtr sheetSameName = SheetModel::Create(params);
-        ASSERT_NE( DGNMODEL_STATUS_Success, db->Models().Insert(*sheetSameName, "") ) << "Should be illegal to add a second sheet with the same name";
+        ASSERT_NE( DgnDbStatus::Success, db->Models().Insert(*sheetSameName, "") ) << "Should be illegal to add a second sheet with the same name";
 
         //  Create a second sheet
         SheetModel::CreateParams params2(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SheetModel)),
                                 s_sheet2Name, sheetSize);
         SheetModelPtr sheet2 = SheetModel::Create(params2);
         ASSERT_TRUE( sheet1.IsValid() );
-        ASSERT_EQ( DGNMODEL_STATUS_Success, db->Models().Insert(*sheet2, "a second sheet model") );
+        ASSERT_EQ( DgnDbStatus::Success, db->Models().Insert(*sheet2, "a second sheet model") );
         ASSERT_TRUE( sheet2->GetModelId().IsValid() );
         ASSERT_NE( sheet2->GetModelId() , sheet1->GetModelId() );
 
@@ -252,7 +252,7 @@ TEST_F(DgnModelTests, SheetModelCRUD)
 
         // Delete Sheet2
         ASSERT_EQ( 2 , countSheets(*db) );
-        ASSERT_EQ( DGNMODEL_STATUS_Success, db->Models().DeleteModel(db->Models().QueryModelId(s_sheet2Name)) );
+        ASSERT_EQ( DgnDbStatus::Success, db->Models().DeleteModel(db->Models().QueryModelId(s_sheet2Name)) );
         ASSERT_EQ( 1 , countSheets(*db) );
         }        
 

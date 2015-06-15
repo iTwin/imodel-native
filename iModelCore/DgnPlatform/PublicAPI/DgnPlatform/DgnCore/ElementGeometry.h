@@ -277,6 +277,9 @@ struct Iterator : std::iterator<std::forward_iterator_tag, uint8_t const*>
     ViewContextP        m_context;
     ElementGeometryPtr  m_elementGeometry;
     DgnGeomPartPtr      m_partGeometry;
+    uint8_t const*      m_saveData;
+    size_t              m_saveDataOffset;
+    size_t              m_saveTotalDataSize;
     bool                m_useBRep;
 
     DGNPLATFORM_EXPORT void ToNext ();

@@ -857,6 +857,24 @@ BentleyStatus TxnManager::SaveUndoMark(Utf8CP name)
 #endif
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/12
++---------------+---------------+---------------+---------------+---------------+------*/
+TxnSummary::ElementIterator::Entry TxnSummary::ElementIterator::begin() const   
+    {
+    if (!m_stmt.IsValid())
+        m_db->GetCachedStatement(m_stmt, "SELECT ElementId,ModelId,ChangeType,LastMod FROM " TEMP_TABLE(TXN_TABLE_Elements));
+    else
+        m_stmt->Reset();
+
+    return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
+    }
+
+DgnElementId TxnSummary::ElementIterator::Entry::GetElementId() const {return m_sql->GetValueId<DgnElementId>(0);}
+DgnModelId TxnSummary::ElementIterator::Entry::GetModelId() const {return m_sql->GetValueId<DgnModelId>(1);}
+TxnSummary::ChangeType TxnSummary::ElementIterator::Entry::GetChangeType() const {return (TxnSummary::ChangeType) m_sql->GetValueInt(2);}
+double TxnSummary::ElementIterator::Entry::GetLastMod() const {return m_sql->GetValueDouble(3);}
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/08
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnPlatformLib::Host::TxnAdmin::AddTxnMonitor(TxnMonitor& monitor)

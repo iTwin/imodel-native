@@ -89,40 +89,24 @@ public:
     //! Application data attached to a DgnElement. Create a subclass of this to store non-persistent information on a DgnElement.
     struct AppData : RefCountedBase
     {
-        //! A unique identifier for this type of DgnElementAppData. Use a static instance of this class to identify your AppData.
+        //! A unique identifier for this type of AppData. Use a static instance of this class to identify your AppData.
         struct Key : NonCopyableClass {};
 
-        //! Called before this AppData's element is Inserted.
-        //! @param[in]  el the DgnElement holding this AppData
-        //! @return true to drop this appData, false to leave it attached to the DgnElement.
-        virtual bool _OnInsert(DgnElementCR el)  {return false;}
-
-        //! Called after this AppData's element was Inserted.
+        //! Called after the element was Inserted.
         //! @param[in]  el the new persistent DgnElement that was Inserted
         //! @return true to drop this appData, false to leave it attached to the DgnElement.
         //! @note el will not be the writable element onto which this AppData was attached. It will be the new persistent copy of that element.
         //! If you wish for your AppData to reside on the new element, call el.AddAppData(key,this) inside this method.
         virtual bool _OnInserted(DgnElementCR el){return false;}
 
-        //! Called before this AppData's element is Updated.
-        //! @param[in] orig the original DgnElement
-        //! @param[in] modified the modified DgnElement about to replace orig
-        //! @return true to drop this appData, false to leave it attached to the DgnElement.
-        //! @note This method is called for @b all AppData on both the original and the modified DgnElements.
-        virtual bool _OnUpdate(DgnElementCR orig, DgnElementCR modified)  {return false;}
-
-        //! Called after this AppData's element was Updated.
+        //! Called after the element was Updated.
         //! @param[in] modified the modified DgnElement
+        //! @param[in] original the original DgnElement
         //! @return true to drop this appData, false to leave it attached to the DgnElement.
         //! @note This method is called for @b all AppData on both the original and the modified DgnElements.
-        virtual bool _OnUpdated(DgnElementCR modified) {return false;}
+        virtual bool _OnUpdated(DgnElementCR modified, DgnElementCR original) {return false;}
 
-        //! Called before this AppData's element is Deleted.
-        //! @param[in]  el the DgnElement to be deleted
-        //! @return true to drop this appData, false to leave it attached to the DgnElement.
-        virtual bool _OnDelete(DgnElementCR el)  {return false;}
-
-        //! Called after this AppData's element was Deleted.
+        //! Called after the element was Deleted.
         //! @param[in]  el the DgnElement that was deleted
         //! @return true to drop this appData, false to leave it attached to the DgnElement.
         virtual bool _OnDeleted(DgnElementCR el) {return false;}
@@ -132,6 +116,7 @@ public:
 
 private:
     void UpdateLastModTime();
+    template<class T> void CallAppData(T const& caller) const;
 
 protected:
 
@@ -166,69 +151,91 @@ protected:
 
     //! Called to load properties of a DgnElement from the DgnDb. Override to load subclass properties.
     //! @note If you override this method, you @em must call T_Super::_LoadFromDb, forwarding its status.
-    virtual DgnModelStatus _LoadFromDb() {return DGNMODEL_STATUS_Success;}
+    virtual DgnDbStatus _LoadFromDb() {return DgnDbStatus::Success;}
+
+    //! Called when an element is about to be inserted into the DgnDb.
+    //! @return DgnDbStatus::Success to allow the insert, otherwise it will fail with the returned status.
+    //! @note If you override this method, you @em must call T_Super::_OnInsert, forwarding its status.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert();
 
     //! Called to insert a new DgnElement into the DgnDb. Override to save subclass properties.
     //! @note If you override this method, you @em must call T_Super::_InsertInDb, forwarding its status.
-    DGNPLATFORM_EXPORT virtual DgnModelStatus _InsertInDb();
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertInDb();
+
+    //! Called after a DgnElement was successfully inserted into the database.
+    //! @note If you override this method, you @em must call T_Super::_OnInserted.
+    DGNPLATFORM_EXPORT virtual void _OnInserted(DgnElementP copiedFrom) const;
+
+    //! Called when this element is about to be replace an original element in the DgnDb.
+    //! @param [in] original the original state of this element.
+    //! Subclasses may override this method to control whether their instances are updated.
+    //! @return DgnDbStatus::Success to allow the update, otherwise the update will fail with the returned status.
+    //! @note If you override this method, you @em must call T_Super::_OnUpdate, forwarding its status.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate(DgnElementCR original);
 
     //! Called to update a DgnElement in the DgnDb with new values. Override to update subclass properties.
     //! @note This method is called from DgnElements::Update, on the persistent element, after its values have been
     //! copied from the modified version. If the update fails, the original data will be copied back into this DgnElement.
     //! @note If you override this method, you @em must call T_Super::_UpdateInDb, forwarding its status.
-    DGNPLATFORM_EXPORT virtual DgnModelStatus _UpdateInDb();
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateInDb();
 
-    //! Called to delete a DgnElement from the DgnDb. Override to do any additional processing on delete.
-    //! @note If you override this method, you @em must call T_Super::_DeleteInDb, forwarding its status.
-    DGNPLATFORM_EXPORT virtual DgnModelStatus _DeleteInDb() const;
-
-    //! return code for _OnChild... methods
-    enum PreChange : bool {Ok=0, Block=1};
+    //! Called after a DgnElement was successfully updated. The element will be in its post-updated state.
+    //! @note If you override this method, you @em must call T_Super::_OnUpdated.
+    DGNPLATFORM_EXPORT virtual void _OnUpdated(DgnElementCR original) const;
 
     //! Called when an element is about to be deleted from the DgnDb.
     //! Subclasses may override this method to control when/if their instances are deleted.
-    //! @return PreChange::Ok to allow the delete, otherwise the delete will fail with DGNMODEL_STATUS_ElementBlockedChange.
-    virtual PreChange _OnDelete() const {return PreChange::Ok;}
+    //! @return DgnDbStatus::Success to allow the delete, otherwise the delete will fail with the returned status.
+    //! @note If you override this method, you @em must call T_Super::_OnDelete, forwarding its status.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete() const;
 
-    //! Called when an element is about to be updated in the DgnDb.
-    //! @param [in] replacement the modified state of this element.
-    //! Subclasses may override this method to control whether their instances are updated.
-    //! @return PreChange::Ok to allow the update, otherwise the delete will fail with DGNMODEL_STATUS_ElementBlockedChange.
-    virtual PreChange _OnUpdate(DgnElementCR replacement) {return PreChange::Ok;}
+    //! Called to delete a DgnElement from the DgnDb. Override to do any additional processing on delete.
+    //! @note If you override this method, you @em must call T_Super::_DeleteInDb, forwarding its status.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _DeleteInDb() const;
+
+    //! Called after a DgnElement was successfully deleted. Note that the element will not be marked as persistent when this is called.
+    //! @note If you override this method, you @em must call T_Super::_OnDeleted.
+    DGNPLATFORM_EXPORT virtual void _OnDeleted() const;
 
     //! Called when a new element is to be inserted into a DgnDb with this element as its parent.
     //! Subclasses may override this method to control which other elements may become children.
     //! @param[in] child the new element that will become a child of this element.
-    //! @return PreChange::Ok to allow child insert, otherwise the insert of child will fail with DGNMODEL_STATUS_ParentBlockedChange.
-    //! @note implementers should not presume that returning PreChange::Ok means that the element will become a child element,
+    //! @return DgnDbStatus::Success to allow the child insert, otherwise it will fail with the returned status.
+    //! @note implementers should not presume that returning DgnDbStatus::Success means that the element will become a child element,
     //! since the insert may fail for other reasons. Instead, rely on _OnChildInserted for that purpose.
-    virtual PreChange _OnChildInsert(DgnElementCR child) const {return PreChange::Ok;}
+    //! @note If you override this method, you @em must call T_Super::_OnChildInsert, forwarding its status.
+    virtual DgnDbStatus _OnChildInsert(DgnElementCR child) const {return DgnDbStatus::Success;}
 
     //! Called when an element that has this element as its parent is about to be updated in the DgnDb.
     //! Subclasses may override this method to control modifications to its children.
-    //! @param [in] child element in its original state
+    //! @param [in] original element in its original state
     //! @param [in] replacement the child element in its modified state
-    //! @return PreChange::Ok to allow child update, otherwise the update of child will fail with DGNMODEL_STATUS_ParentBlockedChange.
-    //! @note implementers should not presume that returning PreChange::Ok means that the element was updated,
+    //! @return DgnDbStatus::Success to allow the child update, otherwise it will fail with the returned status.
+    //! @note implementers should not presume that returning DgnDbStatus::Success means that the element was updated,
     //! since the update may fail for other reasons. Instead, rely on _OnChildUpdated for that purpose.
-    virtual PreChange _OnChildUpdate(DgnElementCR child, DgnElementCR replacement) const {return PreChange::Ok;}
+    //! @note If you override this method, you @em must call T_Super::_OnChildUpdate, forwarding its status.
+    virtual DgnDbStatus _OnChildUpdate(DgnElementCR original, DgnElementCR replacement) const {return DgnDbStatus::Success;}
 
     //! Called when an child element of this element is about to be deleted from the DgnDb.
     //! Subclasses may override this method to block deletion of their children.
     //! @param[in] child that will be deleted.
-    //! @return PreChange::Ok to allow child deletion, otherwise the delete will fail with DGNMODEL_STATUS_ParentBlockedChange.
-    //! @note implementers should not presume that returning PreChange::Ok means that the element was deleted,
+    //! @return DgnDbStatus::Success to allow the child deletion, otherwise it will fail with the returned status.
+    //! @note implementers should not presume that returning DgnDbStatus::Success means that the element was deleted,
     //! since the delete may fail for other reasons. Instead, rely on _OnChildDeleted for that purpose.
-    virtual PreChange _OnChildDelete(DgnElementCR child) const {return PreChange::Ok;}
+    //! @note If you override this method, you @em must call T_Super::_OnChildDelete, forwarding its status.
+    virtual DgnDbStatus _OnChildDelete(DgnElementCR child) const {return DgnDbStatus::Success;}
 
     //! Called after a new element was inserted with this element as its parent.
+    //! @note If you override this method, you @em must call T_Super::_OnChildInserted.
     virtual void _OnChildInserted(DgnElementCR child) const {}
 
     //! Called after an element, with this element as its parent, was successfully updated.
     //! @note if the parent of an element is changed, this method will @em not be paired with a call to _OnChildUpdate
+    //! @note If you override this method, you @em must call T_Super::_OnChildUpdated.
     virtual void _OnChildUpdated(DgnElementCR child) const {}
 
     //! Called after an element, with this element as its parent, was successfully deleted.
+    //! @note If you override this method, you @em must call T_Super::_OnChildDeleted.
     virtual void _OnChildDeleted(DgnElementCR child) const {}
 
     //! Get the size, in bytes, used by this DgnElement. This is used by the element memory management routines to gauge the "weight" of
@@ -240,11 +247,11 @@ protected:
 
     //! Virtual assignment method. If your subclass has member variables, it @b must override this method and copy those values from @a source.
     //! @param[in] source The element from which to copy
-    //! @note If you override this method, you @b must call T_Super::_CopyFrom, forwarding its status (that is, only return DGNMODEL_STATUS_Success if both your
+    //! @note If you override this method, you @b must call T_Super::_CopyFrom, forwarding its status (that is, only return DgnDbStatus::Success if both your
     //! implementation and your superclass succeed.)
     //! @note Implementers should be aware that your element starts in a valid state. Be careful to free existing state before overwriting it. Also note that
     //! @a source is not necessarily the same type as this DgnElement. See notes at CopyFrom.
-    DGNPLATFORM_EXPORT virtual DgnModelStatus _CopyFrom(DgnElementCR source);
+    DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source);
 
     //! Get the display label (for use in the GUI) for this DgnElement.
     //! The default implementation returns the label if set or the code if the label is not set.
@@ -253,21 +260,21 @@ protected:
 
     //! Change the parent (owner) of this DgnElement.
     //! The default implementation sets the parent without doing any checking.
-    //! @return DGNMODEL_STATUS_Success if the parentId was changed, error status otherwise.
-    //! Override to validate the parent/child relationship and return a value other than DGNMODEL_STATUS_Success to reject proposed new parent.
-    virtual DgnModelStatus _SetParentId(DgnElementId parentId) {m_parentId = parentId; return DGNMODEL_STATUS_Success;}
+    //! @return DgnDbStatus::Success if the parentId was changed, error status otherwise.
+    //! Override to validate the parent/child relationship and return a value other than DgnDbStatus::Success to reject proposed new parent.
+    virtual DgnDbStatus _SetParentId(DgnElementId parentId) {m_parentId = parentId; return DgnDbStatus::Success;}
 
     //! Change the category of this DgnElement.
     //! The default implementation sets the category without doing any checking.
     //! Override to validate the category.
-    //! @return DGNMODEL_STATUS_Success if the categoryId was changed, error status otherwise.
-    virtual DgnModelStatus _SetCategoryId(DgnCategoryId categoryId) {m_categoryId = categoryId; return DGNMODEL_STATUS_Success;}
+    //! @return DgnDbStatus::Success if the categoryId was changed, error status otherwise.
+    virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) {m_categoryId = categoryId; return DgnDbStatus::Success;}
 
     //! Change the code of this DgnElement.
     //! The default implementation sets the code without doing any checking.
     //! Override to validate the code.
-    //! @return DGNMODEL_STATUS_Success if the code was changed, error status otherwise.
-    virtual DgnModelStatus _SetCode(Utf8CP code) {m_code.AssignOrClear(code); return DGNMODEL_STATUS_Success;}
+    //! @return DgnDbStatus::Success if the code was changed, error status otherwise.
+    virtual DgnDbStatus _SetCode(Utf8CP code) {m_code.AssignOrClear(code); return DgnDbStatus::Success;}
 
     //! Override to customize how the DgnElement subclass generates its code.
     DGNPLATFORM_EXPORT virtual Utf8String _GenerateDefaultCode();
@@ -280,8 +287,7 @@ protected:
     virtual ElementGroupCP _ToElementGroup() const {return nullptr;}
 
     //! Construct a DgnElement from its params
-    explicit DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), m_dgnModel(params.m_model), m_classId(params.m_classId),
-             m_categoryId(params.m_categoryId), m_label(params.m_label), m_code(params.m_code), m_parentId(params.m_parentId), m_lastModTime(params.m_lastModTime) {}
+    DGNPLATFORM_EXPORT explicit DgnElement(CreateParams const& params);
 
     DGNPLATFORM_EXPORT void ClearAllAppData(); //!< @private
 
@@ -333,7 +339,7 @@ public:
     //! @param[in] source The other element whose content is copied into this element.
     //! @note This method @b does @b not change the DgnClassId, DgnModel or DgnElementId of this DgnElement. If the type of @a source is different
     //! than this element, then all of the data from subclasses in common are copied and the remaining data on this DgnElement are unchanged.
-    DgnModelStatus CopyFrom(DgnElementCR source) {return _CopyFrom(source);}
+    void CopyFrom(DgnElementCR source) {_CopyFrom(source);}
 
     //! Make a writable copy of this DgnElement so that the copy may be edited.
     //! @return a DgnElementPtr that holds the editable copy of this element.
@@ -348,15 +354,15 @@ public:
 
     //! Update the persistent state of a DgnElement in the DgnDb from this modified copy of it.
     //! This is merely a shortcut for el.GetDgnDb().Elements().Update(el, stat);
-    DGNPLATFORM_EXPORT DgnElementCPtr Update(DgnModelStatus* stat=nullptr);
+    DGNPLATFORM_EXPORT DgnElementCPtr Update(DgnDbStatus* stat=nullptr);
 
     //! Insert this DgnElement into the DgnDb.
     //! This is merely a shortcut for el.GetDgnDb().Elements().Insert(el, stat);
-    DGNPLATFORM_EXPORT DgnElementCPtr Insert(DgnModelStatus* stat=nullptr);
+    DGNPLATFORM_EXPORT DgnElementCPtr Insert(DgnDbStatus* stat=nullptr);
 
     //! Delete this DgnElement from the DgnDb,
     //! This is merely a shortcut for el.GetDgnDb().Elements().Delete(el);
-    DGNPLATFORM_EXPORT DgnModelStatus Delete() const;
+    DGNPLATFORM_EXPORT DgnDbStatus Delete() const;
 
     //! Get the ElementHandler for this DgnElement.
     DGNPLATFORM_EXPORT ElementHandlerR GetElementHandler() const;
@@ -419,9 +425,9 @@ public:
 
     //! Set the parent (owner) of this DgnElement.
     //! @see GetParentId, _SetParentId
-    //! @return DGNMODEL_STATUS_Success if the parent was set
+    //! @return DgnDbStatus::Success if the parent was set
     //! @note This call can fail if a DgnElement subclass overrides _SetParentId and rejects the parent.
-    DgnModelStatus SetParentId(DgnElementId parentId) {return _SetParentId(parentId);}
+    DgnDbStatus SetParentId(DgnElementId parentId) {return _SetParentId(parentId);}
 
     //! Get the category of this DgnElement.
     //! @see SetCategoryId
@@ -429,18 +435,18 @@ public:
 
     //! Set the category of this DgnElement.
     //! @see GetCategoryId, _SetCategoryId
-    //! @return DGNMODEL_STATUS_Success if the category was set
+    //! @return DgnDbStatus::Success if the category was set
     //! @note This call can fail if a subclass overrides _SetCategoryId and rejects the category.
-    DgnModelStatus SetCategoryId(DgnCategoryId categoryId) {return _SetCategoryId(categoryId);}
+    DgnDbStatus SetCategoryId(DgnCategoryId categoryId) {return _SetCategoryId(categoryId);}
 
     //! Get the code (business key) of this DgnElement.
     Utf8CP GetCode() const {return m_code.c_str();}
 
     //! Set the code (business key) of this DgnElement.
     //! @see GetCode, _SetCode
-    //! @return DGNMODEL_STATUS_Success if the code was set
+    //! @return DgnDbStatus::Success if the code was set
     //! @note This call can fail if a subclass overrides _SetCode and rejects the code.
-    DgnModelStatus SetCode(Utf8CP code) {return _SetCode(code);}
+    DgnDbStatus SetCode(Utf8CP code) {return _SetCode(code);}
 
     //! Get the optional label (user-friendly name) of this DgnElement.
     Utf8CP GetLabel() const {return m_label.c_str();}
@@ -615,13 +621,13 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
 protected:
     GeomStream m_geom;
 
-    DGNPLATFORM_EXPORT DgnModelStatus _LoadFromDb() override;
-    DGNPLATFORM_EXPORT DgnModelStatus _InsertInDb() override;
-    DGNPLATFORM_EXPORT DgnModelStatus _UpdateInDb() override;
-    DGNPLATFORM_EXPORT DgnModelStatus _CopyFrom(DgnElementCR) override;
-    virtual DgnModelStatus _BindPlacement(BeSQLite::Statement&) = 0;
+    DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _UpdateInDb() override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
+    virtual DgnDbStatus _BindPlacement(BeSQLite::Statement&) = 0;
     GeometricElementCP _ToGeometricElement() const override {return this;}
-    DgnModelStatus WriteGeomStream(BeSQLite::Statement&, DgnDbR);
+    DgnDbStatus WriteGeomStream(BeSQLite::Statement&, DgnDbR);
     explicit GeometricElement(CreateParams const& params) : T_Super(params) {}
     uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() +(sizeof(*this) - sizeof(T_Super)) + m_geom.GetAllocSize();}
     virtual AxisAlignedBox3d _CalculateRange3d() const = 0;
@@ -666,9 +672,9 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement3d : GeometricElement
 
 protected:
     Placement3d m_placement;
-    DGNPLATFORM_EXPORT DgnModelStatus _LoadFromDb() override;
-    DGNPLATFORM_EXPORT DgnModelStatus _BindPlacement(BeSQLite::Statement&) override;
-    DGNPLATFORM_EXPORT DgnModelStatus _CopyFrom(DgnElementCR) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _BindPlacement(BeSQLite::Statement&) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
     uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + (sizeof(*this) - sizeof(T_Super));}
     explicit DgnElement3d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {}
     DgnElement3dCP _ToElement3d() const override {return this;}
@@ -690,8 +696,8 @@ struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : DgnElement3d
 protected:
     friend struct PhysicalElementHandler;
 
-    DGNPLATFORM_EXPORT DgnModelStatus _InsertInDb() override;
-    DGNPLATFORM_EXPORT DgnModelStatus _UpdateInDb() override;
+    DGNPLATFORM_EXPORT void _OnInserted(DgnElementP) const override;
+    DGNPLATFORM_EXPORT void _OnUpdated(DgnElementCR original) const override;
     PhysicalElementCP _ToPhysicalElement() const override {return this;}
     explicit PhysicalElement(CreateParams const& params) : T_Super(params) {}
 
@@ -731,9 +737,9 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement2d : GeometricElement
 
 protected:
     Placement2d m_placement;
-    DGNPLATFORM_EXPORT DgnModelStatus _LoadFromDb() override;
-    DGNPLATFORM_EXPORT DgnModelStatus _BindPlacement(BeSQLite::Statement&) override;
-    DGNPLATFORM_EXPORT DgnModelStatus _CopyFrom(DgnElementCR) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _LoadFromDb() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _BindPlacement(BeSQLite::Statement&) override;
+    DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
     DgnElement2dCP _ToElement2d() const override {return this;}
     AxisAlignedBox3d _CalculateRange3d() const override {return m_placement.CalculateRange();}
     uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() +(sizeof(*this) - sizeof(T_Super));}
@@ -778,15 +784,15 @@ protected:
     ElementGroupCP _ToElementGroup() const override {return this;}
 
     //! Called when a member is about to be inserted into this ElementGroup
-    //! Override and return something other than DGNMODEL_STATUS_Success to prevent the member from being inserted into this ElementGroup.
-    virtual DgnModelStatus _OnMemberInsert(DgnElementCR member) const {return DGNMODEL_STATUS_Success;}
+    //! Override and return something other than DgnDbStatus::Success to prevent the member from being inserted into this ElementGroup.
+    virtual DgnDbStatus _OnMemberInsert(DgnElementCR member) const {return DgnDbStatus::Success;}
     //! Called after a member has been inserted into this ElementGroup
     //! Override if additional processing is required after a member was inserted.
     virtual void _OnMemberInserted(DgnElementCR member) const {}
 
     //! Called when a member is about to be deleted from this ElementGroup
-    //! Override and return something other than DGNMODEL_STATUS_Success to prevent the member from being deleted from this ElementGroup.
-    virtual DgnModelStatus _OnMemberDelete(DgnElementCR member) const {return DGNMODEL_STATUS_Success;}
+    //! Override and return something other than DgnDbStatus::Success to prevent the member from being deleted from this ElementGroup.
+    virtual DgnDbStatus _OnMemberDelete(DgnElementCR member) const {return DgnDbStatus::Success;}
     //! Called after a member has been deleted from this ElementGroup
     //! Override if additional processing is required after a member was deleted.
     virtual void _OnMemberDeleted(DgnElementCR member) const {}
@@ -801,12 +807,12 @@ public:
     //! @param[in] member The element to become a member of this ElementGroup.
     //! @note The ElementGroup and the specified DgnElement must have already been inserted (have valid DgnElementIds)
     //! @note This only affects the ElementGroupHasMembers ECRelationship (stored as a database link table).
-    DGNPLATFORM_EXPORT DgnModelStatus InsertMember(DgnElementCR member) const;
+    DGNPLATFORM_EXPORT DgnDbStatus InsertMember(DgnElementCR member) const;
 
     //! Deletes the ElementGroupHasMembers ECRelationship between this ElementGroup and the specified DgnElement
     //! @param[in] member The element to remove from this ElementGroup.
     //! @note This only affects the ElementGroupHasMembers ECRelationship (stored as a database link table).
-    DGNPLATFORM_EXPORT DgnModelStatus DeleteMember(DgnElementCR member) const;
+    DGNPLATFORM_EXPORT DgnDbStatus DeleteMember(DgnElementCR member) const;
 
     //! Query for the set of members of this ElementGroup
     //! @see QueryFromMember

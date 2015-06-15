@@ -40,13 +40,13 @@ struct ElementDrivesElement : DgnDomain::TableHandler
 protected:
     TABLEHANDLER_DECLARE_MEMBERS(DGN_TABLE(DGN_RELNAME_ElementDrivesElement), ElementDrivesElement, DGNPLATFORM_EXPORT)
 
-    virtual void _OnAdd(TxnSummary& summary, Changes::Change const& change) const override    {UpdateSummary(summary,change,TxnSummary::ChangeType::Add);}
+    virtual void _OnAdd(TxnSummary& summary, Changes::Change const& change) const override    {UpdateSummary(summary,change,TxnSummary::ChangeType::Insert);}
     virtual void _OnUpdate(TxnSummary& summary, Changes::Change const& change) const override {UpdateSummary(summary,change,TxnSummary::ChangeType::Update);}
     virtual void _OnDelete(TxnSummary& summary, Changes::Change const& change) const override {UpdateSummary(summary,change,TxnSummary::ChangeType::Delete);}
 
     void UpdateSummary(TxnSummary& summary, Changes::Change change, TxnSummary::ChangeType changeType) const
         {
-        Changes::Change::Stage stage = (TxnSummary::ChangeType::Add == changeType) ? Changes::Change::Stage::New : Changes::Change::Stage::Old;
+        Changes::Change::Stage stage = (TxnSummary::ChangeType::Insert == changeType) ? Changes::Change::Stage::New : Changes::Change::Stage::Old;
         ECInstanceId instanceId(change.GetValue(0, stage).GetValueInt64()); // primary key is column 0
         summary.AddAffectedDependency(instanceId, changeType);
         }
@@ -84,7 +84,7 @@ void DgnSchemaTableHandler::Element::AddChange(TxnSummary& summary, Changes::Cha
     Changes::Change::Stage stage;
     switch (changeType)
         {
-        case TxnSummary::ChangeType::Add:
+        case TxnSummary::ChangeType::Insert:
             stage = Changes::Change::Stage::New; 
             break;
 
@@ -127,7 +127,7 @@ void DgnSchemaTableHandler::Element::AddChange(TxnSummary& summary, Changes::Cha
 //---------------------------------------------------------------------------------------
 void DgnSchemaTableHandler::Element::_OnAdd(TxnSummary& summary, Changes::Change const& change) const 
     {
-    AddChange(summary, change, TxnSummary::ChangeType::Add);
+    AddChange(summary, change, TxnSummary::ChangeType::Insert);
     }
 
 //---------------------------------------------------------------------------------------

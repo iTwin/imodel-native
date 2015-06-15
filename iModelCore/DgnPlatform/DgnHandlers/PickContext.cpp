@@ -957,7 +957,7 @@ void            PickOutput::_DrawPointCloud (IPointCloudDrawParams* drawParams)
     FPoint3dCP  fPoints = drawParams->GetFPoints ();
     DPoint3d    offset;
 
-    offset.init (0, 0, 0);
+    offset.Init (0, 0, 0);
     drawParams->GetOrigin (&offset);
         
     for (uint32_t iPoint = 0; iPoint < nPoints; iPoint++)
@@ -968,7 +968,7 @@ void            PickOutput::_DrawPointCloud (IPointCloudDrawParams* drawParams)
         if (NULL != dPoints)
             localPt = dPoints[iPoint];
         else
-            localPt.init (fPoints[iPoint].x + offset.x, fPoints[iPoint].y + offset.y, fPoints[iPoint].z + offset.z);
+            localPt.Init (fPoints[iPoint].x + offset.x, fPoints[iPoint].y + offset.y, fPoints[iPoint].z + offset.z);
 
         m_context->LocalToView (&viewPt, &localPt, 1);
 
@@ -1220,7 +1220,7 @@ void PickContext::_DrawSymbol (IDisplaySymbol* symbol, TransformCP trans, ClipPl
     range.Get8Corners  (boxPts);
 
     if (trans)
-        trans->multiply (boxPts, boxPts, 8);
+        trans->Multiply (boxPts, boxPts, 8);
 
     // Remove display priority that may have come in on transform...
     if (!Is3dView ())

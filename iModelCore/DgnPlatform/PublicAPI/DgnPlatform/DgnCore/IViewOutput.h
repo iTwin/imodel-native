@@ -97,17 +97,6 @@ public:
     bool IsEraseMode() const {return (m_drawMode == DgnDrawMode::Erase);}
 };
 
-//! Status Values for DgnViewport methods
-enum class ViewportStatus   
-{
-    Success            = 0,
-    ViewNotInitialized = VIEWPORT_ERROR_BASE + 1,
-    AlreadyAttached    = VIEWPORT_ERROR_BASE + 2,
-    NotAttached        = VIEWPORT_ERROR_BASE + 3,
-    DrawFailure        = VIEWPORT_ERROR_BASE + 4,
-    NotResized         = VIEWPORT_ERROR_BASE + 5,
-    ModelNotFound      = VIEWPORT_ERROR_BASE + 6,
-};
 
 #define NPC_MIN         0.0
 #define NPC_MAX         1.0
