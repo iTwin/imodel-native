@@ -49,8 +49,7 @@ enum struct SetAnnotationTextStyleOptions
     
     Default = 0,
     Direct = PreserveOverrides | DontPropogate
-
-}; // SetAnnotationTextStyleOptions
+};
 
 //=======================================================================================
 //! This enumerates all possible annotation run types.
@@ -61,8 +60,7 @@ enum struct AnnotationRunType
     Text = 1,
     Fraction = 2,
     LineBreak = 3
-
-}; // AnnotationRunType
+};
 
 //=======================================================================================
 //! A "run" is typically a sequence of characters that share a single format/style, but other specialized run types exist. In the hierarchy of block/paragraph/run, run is the most granular piece of the block, and contains the actual character data. When laid out on screen, a single run may span multiple lines, but it can never span different formats/styles.
@@ -71,12 +69,11 @@ enum struct AnnotationRunType
 //=======================================================================================
 struct AnnotationRunBase : public RefCountedBase
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(RefCountedBase)
     friend struct AnnotationTextBlockPersistence;
     
-    void CopyFrom(AnnotationRunBaseCR);
+    DGNPLATFORM_EXPORT void CopyFrom(AnnotationRunBaseCR);
 
 protected:
     DgnDbP m_dgndb;
@@ -85,28 +82,23 @@ protected:
     AnnotationTextStylePropertyBag m_styleOverrides;
     
     DGNPLATFORM_EXPORT explicit AnnotationRunBase(DgnDbR);
-    DGNPLATFORM_EXPORT AnnotationRunBase(AnnotationRunBaseCR);
-    DGNPLATFORM_EXPORT AnnotationRunBaseR operator=(AnnotationRunBaseCR);
+    AnnotationRunBase(AnnotationRunBaseCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
+    AnnotationRunBaseR operator=(AnnotationRunBaseCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
 
     virtual AnnotationRunBasePtr _Clone() const = 0;
     virtual AnnotationRunType _GetType() const = 0;
 
 public:
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
-    DGNPLATFORM_EXPORT AnnotationRunBasePtr Clone() const;
+    AnnotationRunBasePtr Clone() const { return _Clone(); }
     
-    DGNPLATFORM_EXPORT DgnDbR GetDgnProjectR() const;
-    DGNPLATFORM_EXPORT AnnotationRunType GetType() const;
-    DGNPLATFORM_EXPORT DgnStyleId GetStyleId() const;
+    DgnDbR GetDbR() const { return *m_dgndb; }
+    AnnotationRunType GetType() const { return _GetType(); }
+    DgnStyleId GetStyleId() const { return m_styleID; }
     DGNPLATFORM_EXPORT void SetStyleId(DgnStyleId, SetAnnotationTextStyleOptions);
-    DGNPLATFORM_EXPORT AnnotationTextStylePtr CreateEffectiveStyle() const;
-    DGNPLATFORM_EXPORT AnnotationTextStylePropertyBagCR GetStyleOverrides() const;
-    DGNPLATFORM_EXPORT AnnotationTextStylePropertyBagR GetStyleOverridesR();
-    
-}; // AnnotationRunBase
-
-//__PUBLISH_SECTION_END__
+    AnnotationTextStylePtr CreateEffectiveStyle() const { return m_dgndb->Styles().AnnotationTextStyles().QueryById(m_styleID)->CreateEffectiveStyle(m_styleOverrides); }
+    AnnotationTextStylePropertyBagCR GetStyleOverrides() const { return m_styleOverrides; }
+    AnnotationTextStylePropertyBagR GetStyleOverridesR() { return m_styleOverrides; }
+};
 
 //=======================================================================================
 //! Specifies if an AnnotationTextRun is normal, subscript, or superscript.
@@ -118,10 +110,7 @@ enum struct AnnotationTextRunSubSuperScript
     Neither = 0,
     SubScript = 1,
     SuperScript = 2
-
-}; // AnnotationTextRunSubSuperScript
-
-//__PUBLISH_SECTION_START__
+};
 
 //=======================================================================================
 //! A text run is the most common specialization of AnnotationRunBase, and contains a sequence of characters.
@@ -129,42 +118,36 @@ enum struct AnnotationTextRunSubSuperScript
 //=======================================================================================
 struct AnnotationTextRun : public AnnotationRunBase
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(AnnotationRunBase);
     
     Utf8String m_content;
     AnnotationTextRunSubSuperScript m_subsuperscript;
 
-    void CopyFrom(AnnotationTextRunCR);
+    DGNPLATFORM_EXPORT void CopyFrom(AnnotationTextRunCR);
 
 protected:
-    virtual AnnotationRunBasePtr _Clone() const override;
-    virtual AnnotationRunType _GetType() const override;
+    virtual AnnotationRunBasePtr _Clone() const override { return CloneAsTextRun(); }
+    virtual AnnotationRunType _GetType() const override { return AnnotationRunType::Text; }
     
 public:
     DGNPLATFORM_EXPORT explicit AnnotationTextRun(DgnDbR);
-    DGNPLATFORM_EXPORT AnnotationTextRun(AnnotationTextRunCR);
-    DGNPLATFORM_EXPORT AnnotationTextRunR operator=(AnnotationTextRunCR);
-
-    DGNPLATFORM_EXPORT AnnotationTextRunSubSuperScript GetSubSuperScript() const;
-    DGNPLATFORM_EXPORT void SetSubSuperScript(AnnotationTextRunSubSuperScript);
-
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
-    DGNPLATFORM_EXPORT static AnnotationTextRunPtr Create(DgnDbR);
+    AnnotationTextRun(AnnotationTextRunCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
+    AnnotationTextRunR operator=(AnnotationTextRunCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
+    static AnnotationTextRunPtr Create(DgnDbR project) { return new AnnotationTextRun(project); }
     DGNPLATFORM_EXPORT static AnnotationTextRunPtr Create(DgnDbR, DgnStyleId);
     DGNPLATFORM_EXPORT static AnnotationTextRunPtr Create(DgnDbR, DgnStyleId, Utf8CP);
-    DGNPLATFORM_EXPORT AnnotationTextRunPtr CloneAsTextRun() const;
+    AnnotationTextRunPtr CloneAsTextRun() const { return new AnnotationTextRun(*this); }
 
-    DGNPLATFORM_EXPORT Utf8StringCR GetContent() const;
-    DGNPLATFORM_EXPORT void SetContent(Utf8CP);
-    DGNPLATFORM_EXPORT bool IsSubScript() const;
-    DGNPLATFORM_EXPORT void SetIsSubScript(bool);
-    DGNPLATFORM_EXPORT bool IsSuperScript() const;
-    DGNPLATFORM_EXPORT void SetIsSuperScript(bool);
-
-}; // AnnotationTextRun
+    Utf8StringCR GetContent() const { return m_content; }
+    void SetContent(Utf8CP value) { m_content = value; }
+    AnnotationTextRunSubSuperScript GetSubSuperScript() const { return m_subsuperscript; }
+    void SetSubSuperScript(AnnotationTextRunSubSuperScript value) { m_subsuperscript = value; }
+    bool IsSubScript() const { return AnnotationTextRunSubSuperScript::SubScript == m_subsuperscript; }
+    void SetIsSubScript(bool value) { m_subsuperscript = AnnotationTextRunSubSuperScript::SubScript; }
+    bool IsSuperScript() const { return AnnotationTextRunSubSuperScript::SuperScript == m_subsuperscript; }
+    void SetIsSuperScript(bool value) { m_subsuperscript = AnnotationTextRunSubSuperScript::SuperScript; }
+};
 
 //=======================================================================================
 //! A fraction run is a specialization of AnnotationRunBase that represents a stacked fraction.
@@ -172,37 +155,32 @@ public:
 //=======================================================================================
 struct AnnotationFractionRun: public AnnotationRunBase
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(AnnotationRunBase);
     
     Utf8String m_denominatorContent;
     Utf8String m_numeratorContent;
 
-    void CopyFrom(AnnotationFractionRunCR);
+    DGNPLATFORM_EXPORT void CopyFrom(AnnotationFractionRunCR);
 
 protected:
-    virtual AnnotationRunBasePtr _Clone() const override;
-    virtual AnnotationRunType _GetType() const override;
+    virtual AnnotationRunBasePtr _Clone() const override { return CloneAsFractionRun(); }
+    virtual AnnotationRunType _GetType() const override { return AnnotationRunType::Fraction; }
     
 public:
     DGNPLATFORM_EXPORT explicit AnnotationFractionRun(DgnDbR);
-    DGNPLATFORM_EXPORT AnnotationFractionRun(AnnotationFractionRunCR);
-    DGNPLATFORM_EXPORT AnnotationFractionRunR operator=(AnnotationFractionRunCR);
-    
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
-    DGNPLATFORM_EXPORT static AnnotationFractionRunPtr Create(DgnDbR);
+    AnnotationFractionRun(AnnotationFractionRunCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
+    AnnotationFractionRunR operator=(AnnotationFractionRunCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
+    static AnnotationFractionRunPtr Create(DgnDbR project) { return new AnnotationFractionRun(project); }
     DGNPLATFORM_EXPORT static AnnotationFractionRunPtr Create(DgnDbR, DgnStyleId);
     DGNPLATFORM_EXPORT static AnnotationFractionRunPtr Create(DgnDbR, DgnStyleId, Utf8CP numerator, Utf8CP denominator);
-    DGNPLATFORM_EXPORT AnnotationFractionRunPtr CloneAsFractionRun() const;
+    AnnotationFractionRunPtr CloneAsFractionRun() const { return new AnnotationFractionRun(*this); }
 
-    DGNPLATFORM_EXPORT Utf8StringCR GetDenominatorContent() const;
-    DGNPLATFORM_EXPORT void SetDenominatorContent(Utf8CP);
-    DGNPLATFORM_EXPORT Utf8StringCR GetNumeratorContent() const;
-    DGNPLATFORM_EXPORT void SetNumeratorContent(Utf8CP);
-
-}; // AnnotationFractionRun
+    Utf8StringCR GetDenominatorContent() const { return m_denominatorContent; }
+    void SetDenominatorContent(Utf8CP value) { m_denominatorContent = value; }
+    Utf8StringCR GetNumeratorContent() const { return m_numeratorContent; }
+    void SetNumeratorContent(Utf8CP value) { m_numeratorContent = value; }
+};
 
 //=======================================================================================
 //! A line break run is a specialization of AnnotationRunBase that manually breaks a line within a paragraph.
@@ -210,26 +188,21 @@ public:
 //=======================================================================================
 struct AnnotationLineBreakRun : public AnnotationRunBase
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(AnnotationRunBase);
     
 protected:
-    virtual AnnotationRunBasePtr _Clone() const override;
-    virtual AnnotationRunType _GetType() const override;
+    virtual AnnotationRunBasePtr _Clone() const override { return CloneAsLineBreakRun(); }
+    virtual AnnotationRunType _GetType() const override { return AnnotationRunType::LineBreak; }
     
 public:
     DGNPLATFORM_EXPORT explicit AnnotationLineBreakRun(DgnDbR);
-    DGNPLATFORM_EXPORT AnnotationLineBreakRun(AnnotationLineBreakRunCR);
-    DGNPLATFORM_EXPORT AnnotationLineBreakRunR operator=(AnnotationLineBreakRunCR);
-
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
-    DGNPLATFORM_EXPORT static AnnotationLineBreakRunPtr Create(DgnDbR);
+    AnnotationLineBreakRun(AnnotationLineBreakRunCR rhs) : T_Super(rhs) { }
+    AnnotationLineBreakRunR operator=(AnnotationLineBreakRunCR rhs) { T_Super::operator=(rhs); return *this;}
+    static AnnotationLineBreakRunPtr Create(DgnDbR project) { return new AnnotationLineBreakRun(project); }
     DGNPLATFORM_EXPORT static AnnotationLineBreakRunPtr Create(DgnDbR, DgnStyleId);
-    DGNPLATFORM_EXPORT AnnotationLineBreakRunPtr CloneAsLineBreakRun() const;
-
-}; // AnnotationLineBreakRun
+    AnnotationLineBreakRunPtr CloneAsLineBreakRun() const { return new AnnotationLineBreakRun(*this); }
+};
 
 //=======================================================================================
 //! A paragraph is a collection of runs. In a block, individual paragraphs are started on their own "line", similar to how an AnnotationLineBreakRun operates within a paragraph.
@@ -238,7 +211,6 @@ public:
 //=======================================================================================
 struct AnnotationParagraph : public RefCountedBase
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(RefCountedBase)
     friend struct AnnotationTextBlockPersistence;
@@ -250,30 +222,26 @@ private:
 
     AnnotationRunCollection m_runs;
 
-    void CopyFrom(AnnotationParagraphCR);
+    DGNPLATFORM_EXPORT void CopyFrom(AnnotationParagraphCR);
 
 public:
     DGNPLATFORM_EXPORT explicit AnnotationParagraph(DgnDbR);
-    DGNPLATFORM_EXPORT AnnotationParagraph(AnnotationParagraphCR);
-    DGNPLATFORM_EXPORT AnnotationParagraphR operator=(AnnotationParagraphCR);
-
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
-    DGNPLATFORM_EXPORT static AnnotationParagraphPtr Create(DgnDbR);
+    AnnotationParagraph(AnnotationParagraphCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
+    AnnotationParagraphR operator=(AnnotationParagraphCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
+    static AnnotationParagraphPtr Create(DgnDbR project) { return new AnnotationParagraph(project); }
     DGNPLATFORM_EXPORT static AnnotationParagraphPtr Create(DgnDbR, DgnStyleId);
     DGNPLATFORM_EXPORT static AnnotationParagraphPtr Create(DgnDbR, DgnStyleId, AnnotationRunBaseR);
-    DGNPLATFORM_EXPORT AnnotationParagraphPtr Clone() const;
+    AnnotationParagraphPtr Clone() const { return new AnnotationParagraph(*this); }
 
-    DGNPLATFORM_EXPORT DgnDbR GetDgnProjectR() const;
-    DGNPLATFORM_EXPORT DgnStyleId GetStyleId() const;
+    DgnDbR GetDbR() const { return *m_dgndb; }
+    DgnStyleId GetStyleId() const { return m_styleID; }
     DGNPLATFORM_EXPORT void SetStyleId(DgnStyleId, SetAnnotationTextStyleOptions);
-    DGNPLATFORM_EXPORT AnnotationTextStylePtr CreateEffectiveStyle() const;
-    DGNPLATFORM_EXPORT AnnotationTextStylePropertyBagCR GetStyleOverrides() const;
-    DGNPLATFORM_EXPORT AnnotationTextStylePropertyBagR GetStyleOverridesR();
-    DGNPLATFORM_EXPORT AnnotationRunCollectionCR GetRuns() const;
-    DGNPLATFORM_EXPORT AnnotationRunCollectionR GetRunsR();
-
-}; // AnnotationParagraph
+    AnnotationTextStylePtr CreateEffectiveStyle() const { return m_dgndb->Styles().AnnotationTextStyles().QueryById(m_styleID)->CreateEffectiveStyle(m_styleOverrides); }
+    AnnotationTextStylePropertyBagCR GetStyleOverrides() const { return m_styleOverrides; }
+    AnnotationTextStylePropertyBagR GetStyleOverridesR() { return m_styleOverrides; }
+    AnnotationRunCollectionCR GetRuns() const { return m_runs; }
+    AnnotationRunCollectionR GetRunsR() { return m_runs; }
+};
 
 //=======================================================================================
 //! A block is a collection of paragraphs, and contains some unique formatting properties that cannot be on paragraphs or runs, such as justification. AnnotationTextBlock is merely a data object; see AnnotationTextBlockLayout for size/position/lines, and AnnotationTextBlockDraw for drawing. By default, no word-wrapping occurs. You can define a physical word wrap distance by calling SetDocumentWidth; runs will then automatically be split according to line break rules when performing layout.
@@ -291,10 +259,8 @@ struct AnnotationTextBlock : public RefCountedBase
         Left = 1,
         Center = 2,
         Right = 3
-    
-    }; // HorizontalJustification
+    };
 
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(RefCountedBase)
     friend struct AnnotationTextBlockPersistence;
@@ -309,43 +275,37 @@ private:
     
     AnnotationParagraphCollection m_paragraphs;
 
-    void CopyFrom(AnnotationTextBlockCR);
+    DGNPLATFORM_EXPORT void CopyFrom(AnnotationTextBlockCR);
     void Reset();
 
 public:
     DGNPLATFORM_EXPORT explicit AnnotationTextBlock(DgnDbR);
-    DGNPLATFORM_EXPORT AnnotationTextBlock(AnnotationTextBlockCR);
-    DGNPLATFORM_EXPORT AnnotationTextBlockR operator=(AnnotationTextBlockCR);
-
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
-    DGNPLATFORM_EXPORT static AnnotationTextBlockPtr Create(DgnDbR);
+    AnnotationTextBlock(AnnotationTextBlockCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
+    AnnotationTextBlockR operator=(AnnotationTextBlockCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
+    static AnnotationTextBlockPtr Create(DgnDbR project) { return new AnnotationTextBlock(project); }
     DGNPLATFORM_EXPORT static AnnotationTextBlockPtr Create(DgnDbR, DgnStyleId);
     DGNPLATFORM_EXPORT static AnnotationTextBlockPtr Create(DgnDbR, DgnStyleId, AnnotationParagraphR);
     DGNPLATFORM_EXPORT static AnnotationTextBlockPtr Create(DgnDbR, DgnStyleId, Utf8CP);
-    DGNPLATFORM_EXPORT AnnotationTextBlockPtr Clone() const;
+    AnnotationTextBlockPtr Clone() const { return new AnnotationTextBlock(*this); }
 
-    DGNPLATFORM_EXPORT DgnDbR GetDgnProjectR() const;
-    DGNPLATFORM_EXPORT double GetDocumentWidth() const;
-    DGNPLATFORM_EXPORT void SetDocumentWidth(double);
-    DGNPLATFORM_EXPORT HorizontalJustification GetJustification() const;
-    DGNPLATFORM_EXPORT void SetJustification(HorizontalJustification);
-    DGNPLATFORM_EXPORT DgnStyleId GetStyleId() const;
+    DgnDbR GetDbR() const { return *m_dgndb; }
+    double GetDocumentWidth() const { return m_documentWidth; }
+    void SetDocumentWidth(double value) { m_documentWidth = value; }
+    HorizontalJustification GetJustification() const { return m_justification; }
+    void SetJustification(HorizontalJustification value) { m_justification = value; }
+    DgnStyleId GetStyleId() const { return m_styleID; }
     DGNPLATFORM_EXPORT void SetStyleId(DgnStyleId, SetAnnotationTextStyleOptions);
-    DGNPLATFORM_EXPORT AnnotationTextStylePtr CreateEffectiveStyle() const;
-    DGNPLATFORM_EXPORT AnnotationTextStylePropertyBagCR GetStyleOverrides() const;
-    DGNPLATFORM_EXPORT AnnotationTextStylePropertyBagR GetStyleOverridesR();
-    DGNPLATFORM_EXPORT AnnotationParagraphCollectionCR GetParagraphs() const;
-    DGNPLATFORM_EXPORT AnnotationParagraphCollectionR GetParagraphsR();
+    AnnotationTextStylePtr CreateEffectiveStyle() const { return m_dgndb->Styles().AnnotationTextStyles().QueryById(m_styleID)->CreateEffectiveStyle(m_styleOverrides); }
+    AnnotationTextStylePropertyBagCR GetStyleOverrides() const { return m_styleOverrides; }
+    AnnotationTextStylePropertyBagR GetStyleOverridesR() { return m_styleOverrides; }
+    AnnotationParagraphCollectionCR GetParagraphs() const { return m_paragraphs; }
+    AnnotationParagraphCollectionR GetParagraphsR() { return m_paragraphs; }
+    void AppendParagraph(AnnotationParagraphR par) { m_paragraphs.push_back(&par); }
     DGNPLATFORM_EXPORT void AppendParagraph();
-    DGNPLATFORM_EXPORT void AppendParagraph(AnnotationParagraphR);
     DGNPLATFORM_EXPORT void AppendRun(AnnotationRunBaseR);
-    DGNPLATFORM_EXPORT bool IsEmpty() const;
-
-}; // AnnotationTextBlock
+    bool IsEmpty() const { return ((0 == m_paragraphs.size()) || (0 == m_paragraphs[0]->GetRuns().size())); }
+};
 
 //! @endGroup
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
-
-//__PUBLISH_SECTION_END__

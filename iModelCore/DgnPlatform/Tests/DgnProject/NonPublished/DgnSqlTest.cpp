@@ -44,8 +44,6 @@ void SqlFunctionsTest::SetUp()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SqlFunctionsTest::TearDown()
     {
-    if (m_db.IsValid())
-        m_db->GetTxnManager().Deactivate(); // finalizes TxnManager's prepared statements
     }
 
 /*---------------------------------------------------------------------------------**//**

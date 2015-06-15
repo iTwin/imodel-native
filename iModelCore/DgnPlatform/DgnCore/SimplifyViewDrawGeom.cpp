@@ -267,21 +267,23 @@ BentleyStatus SimplifyViewDrawGeom::CurveVectorOutputProcessor (CurveVectorCR cu
     return SUCCESS;
     }
 
+BEGIN_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct IntersectDetail
+struct IntersectLocationDetail
     {
     size_t      m_index;
     double      m_fraction;
 
-    IntersectDetail (size_t index, double fraction) {m_index = index; m_fraction = fraction;}
+    IntersectLocationDetail (size_t index, double fraction) {m_index = index; m_fraction = fraction;}
     };
+END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static int compareCurveIntersections (IntersectDetail const* detail0, IntersectDetail const* detail1)
+static int compareCurveIntersections (IntersectLocationDetail const* detail0, IntersectLocationDetail const* detail1)
     {
     if (detail0->m_index < detail1->m_index)
         {
@@ -305,7 +307,7 @@ static int compareCurveIntersections (IntersectDetail const* detail0, IntersectD
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool computeInteriorPoint (DPoint3dR midPoint, CurveVectorCR curves, IntersectDetail& startDetail, IntersectDetail& endDetail)
+static bool computeInteriorPoint (DPoint3dR midPoint, CurveVectorCR curves, IntersectLocationDetail& startDetail, IntersectLocationDetail& endDetail)
     {
     size_t      midIndex;
     double      midFraction;
@@ -357,7 +359,7 @@ static bool clipAsOpenCurveVector (CurveVectorCR curves, ClipVectorCR clip, Simp
 
     curveRange.Extend (1.0); // UORs.   
 
-    bvector<IntersectDetail> intersectDetails;
+    bvector<IntersectLocationDetail> intersectDetails;
 
     for (ClipPrimitivePtr const& thisClip: clip)
         {
@@ -385,7 +387,7 @@ static bool clipAsOpenCurveVector (CurveVectorCR curves, ClipVectorCR clip, Simp
 
                     // Get curve index for sorting, can disregard 2nd detail in pair as both should be identical...
                     for (CurveLocationDetailPair pair: intersections)
-                        intersectDetails.push_back (IntersectDetail (curves.CurveLocationDetailIndex (pair.detailA), pair.detailA.fraction));
+                        intersectDetails.push_back (IntersectLocationDetail (curves.CurveLocationDetailIndex (pair.detailA), pair.detailA.fraction));
                     }
                 }
             }
@@ -401,16 +403,16 @@ static bool clipAsOpenCurveVector (CurveVectorCR curves, ClipVectorCR clip, Simp
         return !clip.PointInside (testPoint, 1.0e-5);
         }
 
-    qsort (&intersectDetails.front (), intersectDetails.size (), sizeof (IntersectDetail), (int (*) (void const*, void const*)) compareCurveIntersections);
+    qsort (&intersectDetails.front (), intersectDetails.size (), sizeof (IntersectLocationDetail), (int (*) (void const*, void const*)) compareCurveIntersections);
 
     // Add final point for last curve...
-    intersectDetails.push_back (IntersectDetail (curves.size ()-1, 1.0));
+    intersectDetails.push_back (IntersectLocationDetail (curves.size ()-1, 1.0));
 
-    bool            lastInside = false;
-    IntersectDetail insideStartDetail (0, 0.0);
-    IntersectDetail lastDetail (0, 0.0);
+    bool lastInside = false;
+    IntersectLocationDetail insideStartDetail (0, 0.0);
+    IntersectLocationDetail lastDetail (0, 0.0);
 
-    for (IntersectDetail thisDetail: intersectDetails)
+    for (IntersectLocationDetail thisDetail: intersectDetails)
         {
         if (thisDetail.m_index == lastDetail.m_index && (thisDetail.m_fraction - lastDetail.m_fraction) < 1.0e-4)
             continue;
@@ -1462,7 +1464,7 @@ void SimplifyViewDrawGeom::_DrawPointCloud (IPointCloudDrawParams* drawParams)
 
     DPoint3d    offsets;
 
-    offsets.init (0, 0, 0);
+    offsets.Init (0, 0, 0);
 
     bool        haveOffsets = drawParams->GetOrigin (&offsets);
     DPoint3dCP  dPoints = drawParams->GetDPoints ();
@@ -1585,7 +1587,7 @@ bool SimplifyViewDrawGeom::IsRangeTotallyInsideClip (DRange3dCR range)
     { 
     DPoint3d    corners[8];
     
-    range.get8Corners (corners);
+    range.Get8Corners  (corners);
 
     return ArePointsTotallyInsideClip (corners, 8);
     }
@@ -1893,7 +1895,7 @@ static StatusInt calculateParamToWorld (TransformR transform, DPoint2dCP params,
         {
         DPoint3d            point;
 
-        point.differenceOf (&points[i], &pointRange.low);
+        point.DifferenceOf (points[i], pointRange.low);
 
         aMatrix[0][0] += params[i].x * params[i].x;
         aMatrix[0][1] += params[i].x * params[i].y;
@@ -1929,11 +1931,11 @@ static StatusInt calculateParamToWorld (TransformR transform, DPoint2dCP params,
         yColumn.x = rhSides[0][1];
         yColumn.y = rhSides[1][1];
         yColumn.z = rhSides[2][1];
-        zColumn.normalizedCrossProduct (&xColumn, &yColumn);
+        zColumn.NormalizedCrossProduct (xColumn, yColumn);
 
-        rMatrix.initFromColumnVectors (&xColumn, &yColumn, &zColumn);
+        rMatrix.InitFromColumnVectors (xColumn, yColumn, zColumn);
 
-        transform.initFrom (&rMatrix);
+        transform.InitFrom (rMatrix);
         transform.form3d[0][3] = rhSides[0][2] + pointRange.low.x;
         transform.form3d[1][3] = rhSides[1][2] + pointRange.low.y;
         transform.form3d[2][3] = rhSides[2][2] + pointRange.low.z;
@@ -1948,16 +1950,16 @@ static double computePolygonNormal (DVec3dR normal, DPoint3dCP pXYZ, size_t numX
     {
     DVec3d      uVec, vVec, wVec;
 
-    normal.zero();
-    uVec.differenceOf (&pXYZ[1], &pXYZ[0]);
+    normal.Zero ();
+    uVec.DifferenceOf (pXYZ[1], pXYZ[0]);
     for (size_t i = 2 ; i < numXYZ; i++)
         {
-        vVec.differenceOf (pXYZ + i , &pXYZ[0]);
-        wVec.crossProduct (&uVec, &vVec);
+        vVec.DifferenceOf (pXYZ[ i], pXYZ[0]);
+        wVec.CrossProduct (uVec, vVec);
         normal.add (&wVec);
         uVec = vVec;
         }
-    return normal.normalize ();
+    return normal.Normalize ();
     }
 
 /*=================================================================================**//**
@@ -2023,7 +2025,7 @@ StatusInt SimplifyViewDrawGeom::ProcessFacetTextureOutlines (IPolyfaceConstructi
         SUCCESS != calculateParamToWorld (paramToWorld, params, points, nPoints))
         return ERROR;
 
-    tileRange.initFrom (floor (paramRange.low.x), floor (paramRange.low.y), ceil (paramRange.high.x), ceil (paramRange.high.y));
+    tileRange.InitFrom (floor (paramRange.low.x), floor (paramRange.low.y), ceil (paramRange.high.x), ceil (paramRange.high.y));
 
     ConvexClipPlaneSet  convexPlanes;
     bool                clockwise = params[1].crossProductToPoints (&params[0], &params[2]) > 0.0;
@@ -2031,12 +2033,12 @@ StatusInt SimplifyViewDrawGeom::ProcessFacetTextureOutlines (IPolyfaceConstructi
     for (size_t i=0; i<nPoints; i++)
         {
         DVec2d          delta;
-        if (0.0 != delta.normalizedDifference (&params[(i+1) % nPoints], &params[i]))
+        if (0.0 != delta.NormalizedDifference (params[(i+1) % nPoints], params[i]))
             {
             DVec3d          normal;
             double          distance;
 
-            normal.init (clockwise ? delta.y : -delta.y, clockwise ? -delta.x : delta.x, 0.0);
+            normal.Init (clockwise ? delta.y : -delta.y, clockwise ? -delta.x : delta.x, 0.0);
             distance = normal.x * params[i].x + normal.y * params[i].y;
 
             convexPlanes.push_back (ClipPlane (normal, distance, !edgeVisible[i]));

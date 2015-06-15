@@ -46,10 +46,10 @@ struct PTHandler : DgnPlatform::DgnElementDrivesElementDependencyHandler
 
     virtual void _GetLocalizedDescription(Utf8StringR descr, uint32_t desiredLength) override { descr = "The PT rule"; }
 
-    void _OnRootChanged(DgnDbR db, BeSQLite::EC::ECInstanceId relationshipId, DgnElementId source, DgnElementId target, TxnSummaryCR) override
+    void _OnRootChanged(DgnDbR db, BeSQLite::EC::ECInstanceId relationshipId, DgnElementId source, DgnElementId target, TxnSummaryR summary) override
     {
         if (s_ptShouldFail)
-            db.GetTxnManager().ReportValidationError(*new ITxnManager::ValidationError(ITxnManager::ValidationError::Severity::Warning, "PT failed"));
+            summary.ReportError(*new TxnSummary::ValidationError(TxnSummary::ValidationError::Severity::Warning, "PT failed"));
         m_relIds.push_back(relationshipId);
     }
 
@@ -129,7 +129,7 @@ struct PTestElementHandler : DgnPlatform::ElementHandler
         return db.Elements().Insert(*testElement)->GetElementKey();
     }
 
-    DgnModelStatus DeleteElement(DgnDbR db, DgnElementId eid)
+    DgnDbStatus DeleteElement(DgnDbR db, DgnElementId eid)
     {
         return db.Elements().Delete(eid);
     }
@@ -180,7 +180,6 @@ public:
     ~PerformanceElementItem()
     {
         FinalizeStatements();
-        m_db->GetTxnManager().Deactivate(); // finalizes TxnManager's prepared statements
     }
 
     void CloseDb()
@@ -248,7 +247,9 @@ DgnElementKey InsertElement(Utf8CP elementCode, DgnModelId mid = DgnModelId(), D
 void TwiddleTime(DgnElementKeyCR ekey)
 {
     BeThreadUtilities::BeSleep(1); // make sure the new timestamp is after the one that's on the Element now
+#if defined (NEEDS_WORK_TXN_MANAGER)
     m_db->Elements().UpdateLastModifiedTime(ekey.GetElementId());
+#endif
 }
 
 /*---------------------------------------------------------------------------------**//**

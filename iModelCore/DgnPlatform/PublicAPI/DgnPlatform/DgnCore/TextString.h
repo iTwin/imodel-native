@@ -15,18 +15,17 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //! @beginGroup
 
 //=======================================================================================
+//! Represents the visual style of a TextString.
 // @bsiclass                                                    Jeff.Marker     01/2015
 //=======================================================================================
 struct TextStringStyle : public RefCountedBase
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(RefCountedBase);
     friend struct TextString;
     friend struct TextStyleInterop;
     friend struct TextStringPersistence;
 
-    ColorDef m_color;
     DgnFontCP m_font;
     bool m_isBold;
     bool m_isItalic;
@@ -38,41 +37,38 @@ private:
     // *************************************************************
 
     void Reset();
-    void CopyFrom(TextStringStyleCR);
+    DGNPLATFORM_EXPORT void CopyFrom(TextStringStyleCR);
 
 public:
     DGNPLATFORM_EXPORT TextStringStyle();
-    DGNPLATFORM_EXPORT TextStringStyle(TextStringStyleCR);
-    DGNPLATFORM_EXPORT TextStringStyleR operator=(TextStringStyleCR);
-    
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
-    DGNPLATFORM_EXPORT static TextStringStylePtr Create();
-    DGNPLATFORM_EXPORT TextStringStylePtr Clone() const;
+    TextStringStyle(TextStringStyleCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
+    TextStringStyleR operator=(TextStringStyleCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this; }
+    static TextStringStylePtr Create() { return new TextStringStyle(); }
+    TextStringStylePtr Clone() const { return new TextStringStyle(*this); }
 
-    DGNPLATFORM_EXPORT ColorDefCR GetColor() const;
-    DGNPLATFORM_EXPORT void SetColor(ColorDefCR);
-    DGNPLATFORM_EXPORT DgnFontCR GetFont() const;
-    DGNPLATFORM_EXPORT void SetFont(DgnFontCR);
-    DGNPLATFORM_EXPORT bool IsBold() const;
-    DGNPLATFORM_EXPORT void SetIsBold(bool);
-    DGNPLATFORM_EXPORT bool IsItalic() const;
-    DGNPLATFORM_EXPORT void SetIsItalic(bool);
-    DGNPLATFORM_EXPORT bool IsUnderlined() const;
-    DGNPLATFORM_EXPORT void SetIsUnderlined(bool);
-    DGNPLATFORM_EXPORT DPoint2dCR GetSize() const;
-    DGNPLATFORM_EXPORT void SetSize(DPoint2dCR);
-
-    DGNPLATFORM_EXPORT double GetHeight() const;
-    DGNPLATFORM_EXPORT void SetHeight(double);
-    DGNPLATFORM_EXPORT double GetWidth() const;
-    DGNPLATFORM_EXPORT void SetWidth(double);
-    DGNPLATFORM_EXPORT void SetSize(double widthAndHeight);
-    DGNPLATFORM_EXPORT void SetSize(double width, double height);
-
-}; // TextStringStyle
+    DgnFontCR GetFont() const { return *m_font; }
+    void SetFont(DgnFontCR value) { m_font = &DgnFontManager::ResolveFont(&value); }
+    bool IsBold() const { return m_isBold; }
+    void SetIsBold(bool value) { m_isBold = value; }
+    bool IsItalic() const { return m_isItalic; }
+    void SetIsItalic(bool value) { m_isItalic = value; }
+    bool IsUnderlined() const { return m_isUnderlined; }
+    void SetIsUnderlined(bool value) { m_isUnderlined = value; }
+    DPoint2dCR GetSize() const { return m_size; }
+    void SetSize(DPoint2dCR value) { m_size = value; }
+    double GetHeight() const { return m_size.y; }
+    void SetHeight(double value) { m_size.y = value; }
+    double GetWidth() const { return m_size.x; }
+    void SetWidth(double value) { m_size.x = value; }
+    void SetSize(double widthAndHeight) { SetSize(widthAndHeight, widthAndHeight); }
+    void SetSize(double width, double height) { m_size.x = width; m_size.y = height; }
+};
 
 //=======================================================================================
+//! A light-weight object that represents a run of single-line, single-format characters for display purposes.
+//! Glyph-based computations can be expensive. If you repeatedly need glyph, glyph origin, or range results, you should compute them once and cache them. This object also defers glyph-based computations until actually requested. This allows you to create the object and configure it with no overhead; then, the next glyph-based computation requested will trigger the expensive glyph layout call, and the results are cached in this object until invalidated by a set method.
+//! Note that range and glyph origin values are local to this object, and do NOT automatically apply the origin and orientation transforms. If you need range and glyph origins in world coordinates, you must manually apply ComputeTransform to them.
+//! A TextString's origin is always its lower-left baseline, and it orients about this point. "Justification" origin can be translated via ComputeJustificationOrigin and SetOriginFromJustificationOrigin for orienting about a different anchor point.
 // @bsiclass                                                    Jeff.Marker     01/2015
 //=======================================================================================
 struct TextString : public RefCountedBase
@@ -80,26 +76,13 @@ struct TextString : public RefCountedBase
     //=======================================================================================
     // @bsiclass                                                    Jeff.Marker     01/2015
     //=======================================================================================
-    enum struct HorizontalJustification
-        {
-        Left,
-        Center,
-        Right
-
-        }; // HorizontalJustification
+    enum struct HorizontalJustification { Left, Center, Right };
     
     //=======================================================================================
     // @bsiclass                                                    Jeff.Marker     01/2015
     //=======================================================================================
-    enum struct VerticalJustification
-        {
-        Top,
-        Middle,
-        Bottom
+    enum struct VerticalJustification { Top, Middle, Bottom };
 
-        }; // VerticalJustification
-
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(RefCountedBase);
     friend struct TextStringPersistence;
@@ -116,53 +99,64 @@ private:
     bvector<DPoint3d> m_glyphOrigins;
 
     void Reset();
-    void CopyFrom(TextStringCR);
-    void Update() const;
-    void Update();
+    DGNPLATFORM_EXPORT void CopyFrom(TextStringCR);
+    void Update() const { const_cast<TextStringP>(this)->Update(); }
+    DGNPLATFORM_EXPORT void Update();
     void ComputeAndLayoutGlyphs();
     DVec2d ComputeOffsetToJustification(HorizontalJustification, VerticalJustification) const;
 
 public:
     DGNPLATFORM_EXPORT TextString();
-    DGNPLATFORM_EXPORT TextString(TextStringCR);
-    DGNPLATFORM_EXPORT TextStringR operator=(TextStringCR);
+    TextString(TextStringCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
+    TextStringR operator=(TextStringCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this; }
+    static TextStringPtr Create() { return new TextString(); }
+    TextStringPtr Clone() const { return new TextString(*this); }
 
-    DGNPLATFORM_EXPORT void ComputeBoundingShape(DPoint3dP) const;
-    DGNPLATFORM_EXPORT void ComputeBoundingShape(DPoint3dP, double uniformPadding) const;
+    Utf8StringCR GetText() const { return m_text; }
+    void SetText(Utf8CP value) { Invalidate(); m_text.AssignOrClear(value); }
+    TextStringStyleCR GetStyle() const { return m_style; }
+    TextStringStyleR GetStyleR() { Invalidate(); return m_style; }
+    void SetStyle(TextStringStyleCR value) { Invalidate(); m_style = value; }
+    DPoint3dCR GetOrigin() const { return m_origin; }
+    void SetOrigin(DPoint3dCR value) { m_origin = value; }
+    RotMatrixCR GetOrientation() const { return m_orientation; }
+    void SetOrientation(RotMatrixCR value) { m_orientation = value; }
+
+    //! Causes the next call to get glyph-based results (e.g. glyphs, glyph origins, range) to perform a new glyph layout pass. Glyph layout can be slow, so it is best to minimize the number of times this is called.
+    void Invalidate() { m_isValid = false; }
+    //! @note This is a glyph-based computation. It is relatively expensive the first time, and is forced to re-compute each time this object is invalidated (e.g. by a call to a set method).
+    DRange2dCR GetRange() const { Update(); return m_range; }
+    //! @note This is a glyph-based computation. It is relatively expensive the first time, and is forced to re-compute each time this object is invalidated (e.g. by a call to a set method).
+    size_t GetNumGlyphs() const { Update(); return m_glyphIds.size(); }
+    //! @note This is a glyph-based computation. It is relatively expensive the first time, and is forced to re-compute each time this object is invalidated (e.g. by a call to a set method).
+    DgnGlyphCP const* GetGlyphs() const { Update(); return &m_glyphs[0]; }
+    //! @note This is a glyph-based computation. It is relatively expensive the first time, and is forced to re-compute each time this object is invalidated (e.g. by a call to a set method).
+    DgnGlyph::T_Id const* GetGlyphIds() const { Update(); return &m_glyphIds[0]; }
+    //! @note This is a glyph-based computation. It is relatively expensive the first time, and is forced to re-compute each time this object is invalidated (e.g. by a call to a set method).
+    DPoint3dCP GetGlyphOrigins() const { Update(); return &m_glyphOrigins[0]; }
+    //! @note This is a glyph-based computation. It is relatively expensive the first time, and is forced to re-compute each time this object is invalidated (e.g. by a call to a set method).
+    void ComputeBoundingShape(DPoint3dP boxPts) const { ComputeBoundingShape(boxPts, 0.0, 0.0); }
+    //! @note This is a glyph-based computation. It is relatively expensive the first time, and is forced to re-compute each time this object is invalidated (e.g. by a call to a set method).
+    void ComputeBoundingShape(DPoint3dP boxPts, double uniformPadding) const { ComputeBoundingShape(boxPts, uniformPadding, uniformPadding); }
+    //! @note This is a glyph-based computation. It is relatively expensive the first time, and is forced to re-compute each time this object is invalidated (e.g. by a call to a set method).
     DGNPLATFORM_EXPORT void ComputeBoundingShape(DPoint3dP, double horizontalPadding, double verticalPadding) const;
-    DGNPLATFORM_EXPORT void ComputeGlyphAxes(DVec3dR, DVec3dR) const;
-    DGNPLATFORM_EXPORT Transform ComputeTransform() const;
-    DGNPLATFORM_EXPORT void DrawTextAdornments(ViewContextR) const;
-    DGNPLATFORM_EXPORT void GetGlyphSymbology(ElemDisplayParamsR) const;
-    DGNPLATFORM_EXPORT static void TransformOrientationAndExtractScale(DPoint2dR scaleFactor, RotMatrixR orientation, TransformCR transform);
-
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
-
-    DGNPLATFORM_EXPORT static TextStringPtr Create();
-    DGNPLATFORM_EXPORT TextStringPtr Clone() const;
-    
-    DGNPLATFORM_EXPORT Utf8StringCR GetText() const;
-    DGNPLATFORM_EXPORT void SetText(Utf8CP);
-    DGNPLATFORM_EXPORT TextStringStyleCR GetStyle() const;
-    DGNPLATFORM_EXPORT TextStringStyleR GetStyleR();
-    DGNPLATFORM_EXPORT void SetStyle(TextStringStyleCR);
-    DGNPLATFORM_EXPORT DPoint3dCR GetOrigin() const;
-    DGNPLATFORM_EXPORT void SetOrigin(DPoint3dCR);
-    DGNPLATFORM_EXPORT RotMatrixCR GetOrientation() const;
-    DGNPLATFORM_EXPORT void SetOrientation(RotMatrixCR);
-    
-    DGNPLATFORM_EXPORT void Invalidate();
-    DGNPLATFORM_EXPORT DRange2dCR GetRange() const;
-    DGNPLATFORM_EXPORT size_t GetNumGlyphs() const;
-    DGNPLATFORM_EXPORT DgnGlyphCP const* GetGlyphs() const;
-    DGNPLATFORM_EXPORT DgnGlyph::T_Id const* GetGlyphIds() const;
-    DGNPLATFORM_EXPORT DPoint3dCP GetGlyphOrigins() const;
-
+    Transform ComputeTransform() const { return Transform::From(m_orientation, m_origin); }
     DGNPLATFORM_EXPORT DPoint3d ComputeJustificationOrigin(HorizontalJustification, VerticalJustification) const;
     DGNPLATFORM_EXPORT void SetOriginFromJustificationOrigin(DPoint3dCR, HorizontalJustification, VerticalJustification);
-
-}; // TextString
+    
+    //! Computes scaled X and Y axes for providing to rendering systems. Non-italic text will have perpendicular axes; italic text will have a skewed Y axis.
+    //! @private
+    DGNPLATFORM_EXPORT void ComputeGlyphAxes(DVec3dR, DVec3dR) const;
+    //! This is typically used, internally, to draw the "adornments" of text (e.g. underline), which can be distinct from drawing the actual glyphs in some APIs.
+    //! @private
+    DGNPLATFORM_EXPORT void DrawTextAdornments(ViewContextR) const;
+    //! Applies the relevant TextStringStyle properties to an ElemDisplayParams. Most ElemDisplayParams members are left untouched.
+    //! @private
+    DGNPLATFORM_EXPORT void GetGlyphSymbology(ElemDisplayParamsR) const;
+    //! Decomposes a Transform into an orientation and a 2D scale factor. This is useful for text, because scale should be transferred to the style's height and width, but orientation should remain as RotMatrix on the TextString.
+    //! @private
+    DGNPLATFORM_EXPORT static void TransformOrientationAndExtractScale(DPoint2dR scaleFactor, RotMatrixR orientation, TransformCR transform);
+};
 
 //! @endGroup
 

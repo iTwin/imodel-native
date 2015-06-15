@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/NotificationManager.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -36,7 +36,7 @@ public:
     //! @param[in]  detailedMsg     A comprehensive message that explains the issue in detail and potentially offers a solution.
     //! @param[in]  msgAttr         Any combination of the MLTEXTATTR_xxx values from dlogbox.r.h.
     //! @param[in]  openAlert       Whether an alert box should be displayed or not, and if so what kind.
-    NotifyMessageDetails (OutputMessagePriority priority, Utf8CP briefMsg, Utf8CP detailedMsg=NULL, long msgAttr=0, OutputMessageAlert openAlert=OutputMessageAlert::None)
+    NotifyMessageDetails(OutputMessagePriority priority, Utf8CP briefMsg, Utf8CP detailedMsg=NULL, long msgAttr=0, OutputMessageAlert openAlert=OutputMessageAlert::None)
         {
         if (briefMsg)
             m_briefMsg.assign(briefMsg);
@@ -49,11 +49,11 @@ public:
         m_msgAttributes = msgAttr;
         }
 
-    OutputMessagePriority GetPriority () const { return m_priority; } //!< Get the priority value of this NotifyMessageDetails.
-    OutputMessageAlert GetOpenAlert () const { return m_openAlert; } //!< Get the OpenAlert value of this NotifyMessageDetails
-    long GetMsgAttributes () const { return m_msgAttributes; } //!< Get the MsgAttributes value of this NotifyMessageDetails.
-    Utf8StringCR GetBriefMsg () const { return m_briefMsg; } //!< Get the brief message for this NotifyMessageDetails.
-    Utf8StringCR GetDetailedMsg () const { return m_detailedMsg; } //!< Get the detailed message for this NotifyMessageDetails.
+    OutputMessagePriority GetPriority() const { return m_priority; } //!< Get the priority value of this NotifyMessageDetails.
+    OutputMessageAlert GetOpenAlert() const { return m_openAlert; } //!< Get the OpenAlert value of this NotifyMessageDetails
+    long GetMsgAttributes() const { return m_msgAttributes; } //!< Get the MsgAttributes value of this NotifyMessageDetails.
+    Utf8StringCR GetBriefMsg() const { return m_briefMsg; } //!< Get the brief message for this NotifyMessageDetails.
+    Utf8StringCR GetDetailedMsg() const { return m_detailedMsg; } //!< Get the detailed message for this NotifyMessageDetails.
 };
 
 //=======================================================================================
@@ -62,7 +62,7 @@ public:
 //! non-interactive sessions, these messages may be saved to a log file or simply discarded.
 // @bsiclass                                                      Keith.Bentley   10/07
 //=======================================================================================
-struct          NotificationManager
+struct NotificationManager
 {
 public:
     enum MessageBoxType
@@ -103,19 +103,19 @@ public:
 public:
     //! Output a prompt to the user. A 'prompt' is intended to indicate an action the user should take to proceed.
     //! @param[in] prompt       The prompt string.
-    DGNPLATFORM_EXPORT static void OutputPrompt (Utf8CP prompt);
+    DGNPLATFORM_EXPORT static void OutputPrompt(Utf8CP prompt);
 
     //! Output a message and/or alert to the user.
     //! @param[in] message      The message details.
     //! @return SUCCESS if the message was displayed, ERROR if an invalid priority is specified.
-    DGNPLATFORM_EXPORT static StatusInt OutputMessage (NotifyMessageDetails const& message);
+    DGNPLATFORM_EXPORT static StatusInt OutputMessage(NotifyMessageDetails const& message);
 
     //! Output a MessageBox and wait for response from the user.
     //! @param[in] mbType       The MessageBox type.
     //! @param[in] message      The message to display.
     //! @param[in] icon         The MessageBox icon type.
     //! @return the response from the user.
-    DGNPLATFORM_EXPORT static MessageBoxValue OpenMessageBox (MessageBoxType mbType, Utf8CP message, MessageBoxIconType icon);
+    DGNPLATFORM_EXPORT static MessageBoxValue OpenMessageBox(MessageBoxType mbType, Utf8CP message, MessageBoxIconType icon);
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

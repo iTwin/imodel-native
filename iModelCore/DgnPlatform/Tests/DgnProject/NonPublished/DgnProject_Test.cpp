@@ -556,7 +556,7 @@ TEST_F(DgnProjectPackageTest, CreatePackageUsingDefaults)
     CreateIModelParams createParams;
     createParams.SetOverwriteExisting(true);
     status =  DgnIModel::Create(packageFile, testFile, createParams);
-    ASSERT_EQ (DGNFILE_STATUS_Success, status); 
+    ASSERT_TRUE ((int) DgnDbStatus::Success == status); 
     BeSQLite::Db        db;
     Db::OpenParams      openParams(Db::OPEN_Readonly);
     DbResult dbResult = db.OpenBeSQLiteDb(packageFile, openParams);
@@ -599,7 +599,7 @@ TEST_F(DgnProjectPackageTest, ExtractFromPackage)
     CreateIModelParams createParams;
     createParams.SetOverwriteExisting(true);
     status =  DgnIModel::Create(packageFile, testFile, createParams);
-    EXPECT_EQ (DGNFILE_STATUS_Success, status);
+    ASSERT_TRUE ((int) DgnDbStatus::Success == status); 
     //Extract package
     DbResult dbResult;
     //Prepare directory where file will be extracted
@@ -610,7 +610,7 @@ TEST_F(DgnProjectPackageTest, ExtractFromPackage)
     Utf8String fileName;
     BeStringUtilities::WCharToUtf8(fileName, testDatabase);
     auto filestat = DgnIModel::Extract(dbResult, extractedFileDir.GetNameUtf8().c_str(), fileName.c_str(), packageFile, true);
-    EXPECT_EQ(DGNFILE_STATUS_Success, filestat);
+    EXPECT_EQ(DgnDbStatus::Success, filestat);
     EXPECT_TRUE(BE_SQLITE_OK == dbResult);
     //Open project that was extracted from package  
     DgnDbPtr dgnProjV;
@@ -655,12 +655,12 @@ TEST_F(DgnProjectPackageTest, ExtractPackageUsingDefaults)
     CreateIModelParams createParams;
     createParams.SetOverwriteExisting(true);
     status =  DgnIModel::Create(packageFile, testFile, createParams);
-    EXPECT_EQ (DGNFILE_STATUS_Success, status);
+    ASSERT_TRUE ((int) DgnDbStatus::Success == status); 
     //Extract file from package
     DbResult dbResult;
     BeFileName extractedFile = DgnDbTestDgnManager::GetOutputFilePath (L"extractedUsingDefaults.idgndb");
     auto fileStatus = DgnIModel::ExtractUsingDefaults(dbResult, extractedFile, packageFile, true);
-    EXPECT_EQ(DGNFILE_STATUS_Success, fileStatus);
+    EXPECT_EQ(DgnDbStatus::Success, fileStatus);
     EXPECT_TRUE(BE_SQLITE_OK == dbResult);
    
     //Open file for verification

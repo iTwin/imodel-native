@@ -46,7 +46,7 @@ WebMercatorDepends = $(DgnCoreAPISrc)WebMercator.h $(DgnCoreAPISrc)DgnDbTables.h
 PointCloudBaseModelDepends = $(DgnCoreAPISrc)PointCloudBaseModel.h $(DgnCoreAPISrc)DgnDbTables.h
 RasterBaseModelDepends     = $(DgnCoreAPISrc)RasterBaseModel.h $(DgnCoreAPISrc)DgnDbTables.h
 
-txnManagerDepends = $(DgnCoreAPISrc)ITxnManager.h
+txnManagerDepends = $(DgnCoreAPISrc)TxnManager.h
 toolsHeaders   = $(DgnPlatformToolsPublicApiSrc)KeyTree.h
 LsLocalDepends = $(DgnCoreAPISrc)LsLocal.h $(DgnCoreAPISrc)LineStyle.h $(contextDepends)
 
@@ -274,17 +274,31 @@ $(coreObjs)DgnLink$(oext): $(DgnCoreDir)DgnLink.cpp $(DgnCoreAPISrc)DgnDbTables.
 
 $(coreObjs)DgnSchemaDomain$(oext): $(DgnCoreDir)DgnSchemaDomain.cpp ${MultiCompileDepends}
 
+$(coreObjs)DgnHandlers$(oext): $(DgnHandlersDir)DgnHandlers.cpp $(DgnPlatformPublicAPISrc)DgnPlatform/DgnPlatformLib.h ${MultiCompileDepends}
+
+$(coreObjs)HitPath$(oext): $(DgnHandlersDir)HitPath.cpp $(HandlerDepends) ${MultiCompileDepends}
+
+$(coreObjs)PickContext$(oext): $(DgnHandlersDir)PickContext.cpp  $(DgnCoreAPISrc)HitPath.h $(contextDepends) $(DgnCoreAPISrc)SimplifyViewDrawGeom.h ${MultiCompileDepends}
+
+$(coreObjs)RegionUtil$(oext): $(DgnHandlersDir)RegionUtil.cpp $(contextDepends) ${MultiCompileDepends}
+
+$(coreObjs)ScopedDgnHost$(oext) : $(DgnHandlersDir)ScopedDgnHost.cpp  ${MultiCompileDepends}
+
+$(coreObjs)NamedVolume$(oext) : $(DgnHandlersDir)NamedVolume.cpp $(DgnHandlersAPISrc)NamedVolume.h ${MultiCompileDepends}
+
+$(coreObjs)DgnECSymbolProvider$(oext) : $(DgnHandlersDir)DgnECSymbolProvider.cpp $(DgnHandlersAPISrc)DgnECSymbolProvider.h ${MultiCompileDepends}
+
 #----------------------------------------------------------------------
 #   DgnGeoCoord
 #----------------------------------------------------------------------
 
-$(o)DgnGeoCoord$(oext)          :     $(DgnGeoCoordDir)DgnGeoCoord.cpp          $(DgnPlatformAPISrc)DgnGeoCoord.h $(BaseGeoCoordAPISrc)BaseGeoCoord.h       ${MultiCompileDepends}
+$(o)DgnGeoCoord$(oext): $(DgnGeoCoordDir)DgnGeoCoord.cpp $(DgnPlatformAPISrc)DgnGeoCoord.h $(BaseGeoCoordAPISrc)BaseGeoCoord.h ${MultiCompileDepends}
 
-#$(o)ReprojectCache$(oext)       :     $(DgnGeoCoordDir)ReprojectCache.cpp       $(DgnPlatformAPISrc)DgnGeoCoord.h $(BaseGeoCoordAPISrc)BaseGeoCoord.h      ${MultiCompileDepends}
+#$(o)ReprojectCache$(oext): $(DgnGeoCoordDir)ReprojectCache.cpp $(DgnPlatformAPISrc)DgnGeoCoord.h $(BaseGeoCoordAPISrc)BaseGeoCoord.h ${MultiCompileDepends}
 
-$(o)GeoCoordServices$(oext)     :     $(DgnGeoCoordDir)GeoCoordServices.cpp     $(DgnPlatformAPISrc)DgnGeoCoord.h $(BaseGeoCoordAPISrc)BaseGeoCoord.h       ${MultiCompileDepends}
+$(o)GeoCoordServices$(oext): $(DgnGeoCoordDir)GeoCoordServices.cpp $(DgnPlatformAPISrc)DgnGeoCoord.h $(BaseGeoCoordAPISrc)BaseGeoCoord.h ${MultiCompileDepends}
 
-#$(o)AuxCoordSysProcessor$(oext) :     $(DgnGeoCoordDir)AuxCoordSysProcessor.cpp $(DgnPlatformAPISrc)DgnGeoCoord.h $(BaseGeoCoordAPISrc)BaseGeoCoord.h      ${MultiCompileDepends}
+#$(o)AuxCoordSysProcessor$(oext): $(DgnGeoCoordDir)AuxCoordSysProcessor.cpp $(DgnPlatformAPISrc)DgnGeoCoord.h $(BaseGeoCoordAPISrc)BaseGeoCoord.h ${MultiCompileDepends}
 
 #----------------------------------------------------------------------
 #   Annotations
@@ -318,55 +332,43 @@ AnnotationsHeaders = \
     $(AnnotationsPrivateApi)TextAnnotationPersistence.h \
     $(AnnotationsPrivateApi)TextAnnotationSeedPersistence.h
 
-$(coreObjs)AnnotationFrame$(oext) : $(AnnotationsSrc)AnnotationFrame.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+$(coreObjs)AnnotationFrame$(oext): $(AnnotationsSrc)AnnotationFrame.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
 
-$(coreObjs)AnnotationFrameDraw$(oext) : $(AnnotationsSrc)AnnotationFrameDraw.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+$(coreObjs)AnnotationFrameDraw$(oext): $(AnnotationsSrc)AnnotationFrameDraw.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
 
-$(coreObjs)AnnotationFrameLayout$(oext) : $(AnnotationsSrc)AnnotationFrameLayout.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+$(coreObjs)AnnotationFrameLayout$(oext): $(AnnotationsSrc)AnnotationFrameLayout.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
 
-$(coreObjs)AnnotationFrameStyle$(oext) : $(AnnotationsSrc)AnnotationFrameStyle.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+$(coreObjs)AnnotationFrameStyle$(oext): $(AnnotationsSrc)AnnotationFrameStyle.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
 
-$(coreObjs)AnnotationLeader$(oext) : $(AnnotationsSrc)AnnotationLeader.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+$(coreObjs)AnnotationLeader$(oext): $(AnnotationsSrc)AnnotationLeader.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
 
-$(coreObjs)AnnotationLeaderDraw$(oext) : $(AnnotationsSrc)AnnotationLeaderDraw.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+$(coreObjs)AnnotationLeaderDraw$(oext): $(AnnotationsSrc)AnnotationLeaderDraw.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
 
-$(coreObjs)AnnotationLeaderLayout$(oext) : $(AnnotationsSrc)AnnotationLeaderLayout.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+$(coreObjs)AnnotationLeaderLayout$(oext): $(AnnotationsSrc)AnnotationLeaderLayout.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
 
-$(coreObjs)AnnotationLeaderStyle$(oext) : $(AnnotationsSrc)AnnotationLeaderStyle.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+$(coreObjs)AnnotationLeaderStyle$(oext): $(AnnotationsSrc)AnnotationLeaderStyle.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
 
-$(coreObjs)AnnotationParagraph$(oext) : $(AnnotationsSrc)AnnotationParagraph.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+$(coreObjs)AnnotationParagraph$(oext): $(AnnotationsSrc)AnnotationParagraph.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
 
-$(coreObjs)AnnotationPropertyBag$(oext) : $(AnnotationsSrc)AnnotationPropertyBag.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+$(coreObjs)AnnotationPropertyBag$(oext): $(AnnotationsSrc)AnnotationPropertyBag.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
 
-$(coreObjs)AnnotationRuns$(oext) : $(AnnotationsSrc)AnnotationRuns.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+$(coreObjs)AnnotationRuns$(oext): $(AnnotationsSrc)AnnotationRuns.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
 
-$(coreObjs)AnnotationTextBlock$(oext) : $(AnnotationsSrc)AnnotationTextBlock.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+$(coreObjs)AnnotationTextBlock$(oext): $(AnnotationsSrc)AnnotationTextBlock.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
 
-$(coreObjs)AnnotationTextBlockDraw$(oext) : $(AnnotationsSrc)AnnotationTextBlockDraw.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+$(coreObjs)AnnotationTextBlockDraw$(oext): $(AnnotationsSrc)AnnotationTextBlockDraw.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
 
-$(coreObjs)AnnotationTextBlockLayout$(oext) : $(AnnotationsSrc)AnnotationTextBlockLayout.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+$(coreObjs)AnnotationTextBlockLayout$(oext): $(AnnotationsSrc)AnnotationTextBlockLayout.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
 
-$(coreObjs)AnnotationTextStyle$(oext) : $(AnnotationsSrc)AnnotationTextStyle.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+$(coreObjs)AnnotationTextStyle$(oext): $(AnnotationsSrc)AnnotationTextStyle.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
 
-$(coreObjs)TextAnnotation$(oext) : $(AnnotationsSrc)TextAnnotation.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+$(coreObjs)TextAnnotation$(oext): $(AnnotationsSrc)TextAnnotation.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
 
-$(coreObjs)TextAnnotationDraw$(oext) : $(AnnotationsSrc)TextAnnotationDraw.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+$(coreObjs)TextAnnotationDraw$(oext): $(AnnotationsSrc)TextAnnotationDraw.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
 
-$(coreObjs)TextAnnotationSeed$(oext) : $(AnnotationsSrc)TextAnnotationSeed.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
+$(coreObjs)TextAnnotationElement$(oext): $(AnnotationsSrc)TextAnnotationElement.cpp $(AnnotationsHeaders) $(AnnotationsApi)TextAnnotationElement.h ${MultiCompileDepends}
 
-$(coreObjs)DgnHandlers$(oext): $(DgnHandlersDir)DgnHandlers.cpp $(DgnPlatformPublicAPISrc)DgnPlatform/DgnPlatformLib.h ${MultiCompileDepends}
-
-$(coreObjs)HitPath$(oext): $(DgnHandlersDir)HitPath.cpp $(HandlerDepends) ${MultiCompileDepends}
-
-$(coreObjs)PickContext$(oext): $(DgnHandlersDir)PickContext.cpp  $(DgnCoreAPISrc)HitPath.h $(contextDepends) $(DgnCoreAPISrc)SimplifyViewDrawGeom.h ${MultiCompileDepends}
-
-$(coreObjs)RegionUtil$(oext): $(DgnHandlersDir)RegionUtil.cpp $(contextDepends) ${MultiCompileDepends}
-
-$(coreObjs)ScopedDgnHost$(oext)          : $(DgnHandlersDir)ScopedDgnHost.cpp  ${MultiCompileDepends}
-
-$(coreObjs)NamedVolume$(oext) : $(DgnHandlersDir)NamedVolume.cpp $(DgnHandlersAPISrc)NamedVolume.h ${MultiCompileDepends}
-
-$(coreObjs)DgnECSymbolProvider$(oext) : $(DgnHandlersDir)DgnECSymbolProvider.cpp $(DgnHandlersAPISrc)DgnECSymbolProvider.h ${MultiCompileDepends}
+$(coreObjs)TextAnnotationSeed$(oext): $(AnnotationsSrc)TextAnnotationSeed.cpp $(AnnotationsHeaders) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 
@@ -470,11 +472,6 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(ToolsubsLib) \
 
 SQLANG_CHeader      = $(DgnPlatformInternalDir)DgnCore/DgnCoreL10N.h
 SQLANG_Xliff        = $(o)xliffs/DgnCoreMessages_en.xliff
-
-%include $(sharedMki)CHeaderToXliff.mki
-
-SQLANG_CHeader      = $(DgnPlatformInternalDir)DgnHandlers/DgnHandlersMessage.h
-SQLANG_Xliff        = $(o)xliffs/DgnHandlersMessages_en.xliff
 
 %include $(sharedMki)CHeaderToXliff.mki
 

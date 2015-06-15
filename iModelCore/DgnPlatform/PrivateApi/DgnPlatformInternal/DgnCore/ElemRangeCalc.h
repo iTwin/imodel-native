@@ -112,7 +112,7 @@ private:
     DRange3d        m_range;
 
 public:
-    bool  IsValid () {return !m_range.isNull(); }
+    bool  IsValid () {return !m_range.IsNull(); }
 
     DGNPLATFORM_EXPORT ElemRangeCalc ();
     DGNPLATFORM_EXPORT StatusInt GetRange (DRange3dR range);

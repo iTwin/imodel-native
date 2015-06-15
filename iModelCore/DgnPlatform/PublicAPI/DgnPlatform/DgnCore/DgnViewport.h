@@ -15,9 +15,6 @@
 #include "ViewController.h"
 #include <BeSQLite/RTreeMatch.h>
 
-//__PUBLISH_SECTION_END__
-DGNPLATFORM_TYPEDEFS(QvOutput)
-//__PUBLISH_SECTION_START__
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -39,44 +36,16 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
   - \c DgnCoordSystem::World  - For PhyscialViews, the <i>world</i> coordinate system is the DgnDb coordinate system. For DrawingViews, 
                          the world coordinate system is the drawing's coordinate system.
 
-  \b Note: ViewContext has an additional type of coordinate system called \c DgnCoordSystem::Local since it supports pushing and popping of transformations.
+  \b Note: ViewContext has an additional type of coordinate system called "local" since it supports pushing and popping of transformations.
            When an ViewContext is first attached to a DgnViewport, the "local" coordinate system will be the DgnViewport's world coordinate system.
 
   @see DgnCoordSystem
-
-@if BENTLEY_SDK_Internal
-  <h2>Output Buffers</h2>
-  Each DgnViewport has multiple output buffers associated with it that are used to compose the result (the "scene", see below)
-  that is visible to the user. Buffers are selected using DgnDrawBuffer:
-    - \c DgnDrawBuffer::Screen - This is the only buffer that is visible to the user. The Screen buffer is <em>not</em> a drawable buffer. The scene
-                          is composed using one of the non-visible offscreen buffers and then is copied to the screen by the application at the appropriate time.
-    - \c DgnDrawBuffer::Dynamic - This is typically (but not always) an accelerated offscreen buffer, if the viewport is attached to one of the views.
-                           However, if the viewport is to a different device (e.g. a plotter), or if the graphics device is not accelerated, the dynamic
-                           buffer and the Drawing buffer will be mapped to the same buffer. The Dynamic buffer also cannot be copied to the BackingStore.
-                           For this reason, the Dynamic buffer is almost exclusively use for <i>viewing dynamics</i> (e.g. panning and zooming).
-    - \c DgnDrawBuffer::BackingStore  - A complete copy of the most recent scene. This is not a drawable buffer but is used to restore the scene when it
-                                becomes damaged, for example during element dynamics.
-    - \c DgnDrawBuffer::Drawing  - A drawable offscreen buffer. This buffer will be accelerated if possible, as supported by the graphics device.
-                            Most drawing is to this buffer.
-
-  <h2>Scene Creation</h2>
-  The current image visible within a DgnViewport is called the \e Scene. To provide feedback to the user during a session, a DgnViewport's scene
-  may change repeatedly (e.g. when moving the camera or while modifying elements) as a series of steps called \e Frames. For each frame, the scene differs from the preceding
-  frame only slightly. Each scene is \e composed by drawing to offscreen (non-visible) buffers and only the final result is then copied
-  to the visible buffer. This way the user does not see the intervening scene composition states and the scene does not appear to
-  flicker as its contents change. The process of composing a Scene starts by drawing all of the visible elements (those in the DgnViewport's
-  DgnModels, plus all relevant "Transient" elements.) The resultant image represents the \e static part of the
-  scene, and typically takes a relatively long time to create. Therefore, the static image is saved into the \c DgnDrawBuffer::BackingStore so that it can be reused.
-
-  When Each frame begins with the static image copied from the \c DgnDrawBuffer::BackingStore to the \c DgnDrawBuffer::Drawing as the background of the Scene.
-  It is then "decorated" by its ViewController with frame-specific graphics before it is copied to the \c DgnDrawBuffer::Screen and becomes visible. For each frame,
-  all decorations must be redrawn or they disappear.
-@endif
 */
 
-/*=================================================================================**//**
-* @bsiclass                                                     KeithBentley    10/02
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! Parameters for the "fit view" operation
+// @bsiclass                                                    Keith.Bentley   06/15
+//=======================================================================================
 struct FitViewParams
 {
     RotMatrixCP     m_rMatrix;
@@ -88,8 +57,6 @@ struct FitViewParams
     bool            m_fitMinDepth;
     bool            m_fitMaxDepth;
     bool            m_return3dRangeIn2dViews;
-    bool            m_unused1;
-    bool            m_unused2;
 
     enum FitModes
         {
@@ -98,16 +65,15 @@ struct FitViewParams
         FITMODE_Raster     = 3,
         };
 
-    FitViewParams ()
+    FitViewParams()
         {
         m_rMatrix = NULL;
         m_modelIfNoViewport = NULL;
         m_fitRasterRefs = m_rasterElementsOnly = m_includeTransients = false;
         m_useScanRange = m_fitMinDepth = m_fitMaxDepth = m_return3dRangeIn2dViews = false;
-        m_unused1 = m_unused2 = false;
         }
 
-    DGNPLATFORM_EXPORT void SetupFitMode (FitModes fitModes);
+    DGNPLATFORM_EXPORT void SetupFitMode(FitModes fitModes);
 };
 
 //=======================================================================================
@@ -167,7 +133,7 @@ struct RtreeViewFilter : BeSQLite::RTreeAcceptFunction::Tester
     bool AllPointsClippedByOnePlane(ConvexClipPlaneSetCR cps, size_t nPoints, DPoint3dCP points) const;
     void SetClipVector(ClipVectorR clip) {m_clips = &clip;}
     bool SkewTest(BeSQLite::RTree3dValCP);
-    DGNPLATFORM_EXPORT RtreeViewFilter(DgnViewportCR, BeSQLiteDbR db, double minimumSizeScreenPixels, DgnElementIdSet const* exclude);
+    DGNPLATFORM_EXPORT RtreeViewFilter(DgnViewportCR, BeSQLite::DbR db, double minimumSizeScreenPixels, DgnElementIdSet const* exclude);
     };
 
 //=======================================================================================
@@ -189,7 +155,7 @@ struct ProgressiveViewFilter : RefCounted<IProgressiveDisplay>, RtreeViewFilter
     BeSQLite::CachedStatementPtr m_rangeStmt;
     static const double          s_purgeFactor ;
     ProgressiveViewFilter(DgnViewportCR vp, DgnDbR dgndb, DgnModelR existing, DgnElementIdSet const* exclude, uint64_t maxMemory, BeSQLite::CachedStatement* stmt)
-         : RtreeViewFilter (vp, dgndb, 0.0, exclude), m_dgndb(dgndb), m_existing(existing), m_elementReleaseTrigger(maxMemory), m_purgeTrigger(maxMemory), m_rangeStmt(stmt) 
+         : RtreeViewFilter(vp, dgndb, 0.0, exclude), m_dgndb(dgndb), m_existing(existing), m_elementReleaseTrigger(maxMemory), m_purgeTrigger(maxMemory), m_rangeStmt(stmt) 
         {
         m_nThisPass = m_nLastPass = 0;
         m_drewElementThisPass = m_setTimeout = false;
@@ -202,7 +168,6 @@ struct ProgressiveViewFilter : RefCounted<IProgressiveDisplay>, RtreeViewFilter
     virtual bool _WantTimeoutSet(uint32_t& limit) override;
     virtual Completion _Process(ViewContextR context) override;
 };
-
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/11
@@ -241,7 +206,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDbRTree3dViewFilter : RtreeViewFilter
     double MaxOcclusionScore();
 
 public:
-    DGNPLATFORM_EXPORT DgnDbRTree3dViewFilter(DgnViewportCR, ICheckStopP, BeSQLiteDbR db, uint32_t hitLimit, double minimumSizeScreenPixels, DgnElementIdSet const* alwaysDraw, DgnElementIdSet const* neverDraw);
+    DGNPLATFORM_EXPORT DgnDbRTree3dViewFilter(DgnViewportCR, ICheckStopP, BeSQLite::DbR db, uint32_t hitLimit, double minimumSizeScreenPixels, DgnElementIdSet const* alwaysDraw, DgnElementIdSet const* neverDraw);
     void SetChceckStop(ICheckStopP checkStop) {m_checkStop = checkStop;}
     void InitializeSecondaryTest(DRange3dCR volume, uint32_t hitLimit);
     void GetStats(uint32_t& nAcceptCalls, uint32_t&nScores) { nAcceptCalls = m_nCalls; nScores = m_nScores; }
@@ -259,7 +224,7 @@ struct DgnDbRTreeFitFilter : BeSQLite::RTreeAcceptFunction::Tester
     virtual void _StepRange(BeSQLite::DbFunction::Context&, int nArgs, BeSQLite::DbValue* args) override {m_fitRange.Extend(m_lastRange);}
 
 public:
-    DgnDbRTreeFitFilter(BeSQLiteDbR db) : Tester(db) {m_fitRange = DRange3d::NullRange();}
+    DgnDbRTreeFitFilter(BeSQLite::DbR db) : Tester(db) {m_fitRange = DRange3d::NullRange();}
     DRange3dCR GetRange() const {return m_fitRange;}
     };
 
@@ -300,24 +265,24 @@ private:
     bool m_createSavedViewDisplayableForClipping;
 
 public:
-    DGNPLATFORM_EXPORT ViewportApplyOptions (bool initFromActive);
-    ViewportResizeMode GetViewportResizeMode () const {return m_resizeMode;}
-    bool GetApplyVolume () const {return m_applyVolume;}
-    bool GetApplyAttributes () const {return m_applyAttributes;}
-    bool GetApplyLevels () const {return m_applyLevels;}
-    bool GetApplyRefLevels () const {return m_applyRefLevels;}
-    bool GetApplyClipVolume () const {return m_applyClipVolume;}
-    bool GetApplyModel () const {return m_applyModel;}
-    bool GetCreateSavedViewDisplayableForClipping () const {return m_createSavedViewDisplayableForClipping;}
-    void SetViewportResizeMode (ViewportResizeMode mode) {m_resizeMode = mode;}
-    void SetApplyVolume (bool state) {m_applyVolume = state;}
-    void SetApplyAttributes (bool state) {m_applyAttributes = state;}
-    void SetApplyLevels (bool state) {m_applyLevels = state;}
-    void SetApplyRefLevels (bool state) {m_applyRefLevels = state;}
-    void SetApplyClipVolume (bool state) {m_applyClipVolume = state;}
-    void SetApplyModel (bool state) {m_applyModel = state;}
-    void SetCreateSavedViewDisplayableForClipping (bool state) {m_createSavedViewDisplayableForClipping = state;}
-    DGNPLATFORM_EXPORT void SetApplyAll (bool state);
+    DGNPLATFORM_EXPORT ViewportApplyOptions(bool initFromActive);
+    ViewportResizeMode GetViewportResizeMode() const {return m_resizeMode;}
+    bool GetApplyVolume() const {return m_applyVolume;}
+    bool GetApplyAttributes() const {return m_applyAttributes;}
+    bool GetApplyLevels() const {return m_applyLevels;}
+    bool GetApplyRefLevels() const {return m_applyRefLevels;}
+    bool GetApplyClipVolume() const {return m_applyClipVolume;}
+    bool GetApplyModel() const {return m_applyModel;}
+    bool GetCreateSavedViewDisplayableForClipping() const {return m_createSavedViewDisplayableForClipping;}
+    void SetViewportResizeMode(ViewportResizeMode mode) {m_resizeMode = mode;}
+    void SetApplyVolume(bool state) {m_applyVolume = state;}
+    void SetApplyAttributes(bool state) {m_applyAttributes = state;}
+    void SetApplyLevels(bool state) {m_applyLevels = state;}
+    void SetApplyRefLevels(bool state) {m_applyRefLevels = state;}
+    void SetApplyClipVolume(bool state) {m_applyClipVolume = state;}
+    void SetApplyModel(bool state) {m_applyModel = state;}
+    void SetCreateSavedViewDisplayableForClipping(bool state) {m_createSavedViewDisplayableForClipping = state;}
+    DGNPLATFORM_EXPORT void SetApplyAll(bool state);
 };
 
 /*=================================================================================**//**
@@ -365,7 +330,7 @@ struct StopEvents
         m_touchLimit = 0;
         }
 
-    StopEvents (int mask)
+    StopEvents(int mask)
         {
         if (mask & AnyEvent)
             mask = -1;
@@ -384,10 +349,10 @@ struct StopEvents
         m_touchLimit = 0;
         }
 
-    void SetTouchLimit (uint32_t limit, uint32_t numTouches, Point2dCP touches);
+    void SetTouchLimit(uint32_t limit, uint32_t numTouches, Point2dCP touches);
 
     // Stop when the ctrl or shift key is pressed or released.
-    void SetStopOnModifierKey (bool stop) {m_modifierKeyTransition = stop;}
+    void SetStopOnModifierKey(bool stop) {m_modifierKeyTransition = stop;}
     };
 
 //=======================================================================================
@@ -410,7 +375,7 @@ private:
     FenceParamsP        m_fenceParams;
 
 public:
-    FullUpdateInfo () : m_stopEvents(StopEvents::ForFullUpdate)
+    FullUpdateInfo() : m_stopEvents(StopEvents::ForFullUpdate)
         {
         m_incremental       = false;
         m_deferShadows      = true;
@@ -421,17 +386,17 @@ public:
         m_fenceParams       = NULL;
         }
 
-    void SetStopEvents (StopEvents stopEvents) {m_stopEvents = stopEvents;}
-    void SetIncremental (bool incremental) {m_incremental = incremental;}
-    void SetDeferShadows (bool deferShadows) {m_deferShadows = deferShadows;}
-    void SetStartEndMsg (bool startEndMsg) {m_startEndMsg = startEndMsg;}
-    void SetStartAbortState (bool startAbortState) {m_startAbortState = startAbortState;}
-    void SetUseCachedElems (bool useCachedElems) {m_useCachedElems = useCachedElems;}
-    void SetSubRect (BSIRect const* subRect) {m_subRect = subRect;}
-    void SetFenceParams (FenceParamsP fp) {m_fenceParams = fp;}
-    bool GetIncremental () const {return m_incremental;}
+    void SetStopEvents(StopEvents stopEvents) {m_stopEvents = stopEvents;}
+    void SetIncremental(bool incremental) {m_incremental = incremental;}
+    void SetDeferShadows(bool deferShadows) {m_deferShadows = deferShadows;}
+    void SetStartEndMsg(bool startEndMsg) {m_startEndMsg = startEndMsg;}
+    void SetStartAbortState(bool startAbortState) {m_startAbortState = startAbortState;}
+    void SetUseCachedElems(bool useCachedElems) {m_useCachedElems = useCachedElems;}
+    void SetSubRect(BSIRect const* subRect) {m_subRect = subRect;}
+    void SetFenceParams(FenceParamsP fp) {m_fenceParams = fp;}
+    bool GetIncremental() const {return m_incremental;}
     bool GetStartEndMsg() const {return m_startEndMsg;}
-    void SetTouchCheckStopLimit (bool enabled, uint32_t pixels, uint32_t numberTouches, Point2dCP touches);
+    void SetTouchCheckStopLimit(bool enabled, uint32_t pixels, uint32_t numberTouches, Point2dCP touches);
     };
 
 //=======================================================================================
@@ -462,15 +427,15 @@ public:
     int GetMinLodDelta() {return m_minLodDelta;}
     bool GetDoBackingStore() {return m_doBackingStore;}
     StopEvents GetStopEvents() {return m_stopEvents;}
-    void ClearLastMotion () {m_haveLastMotion = false; m_lastTotalMotion = 0; m_lastCursorPos.x = m_lastCursorPos.y = 0;}
-    void SetStopEvents (StopEvents stopEvents) {m_stopEvents = stopEvents;}
-    void SetDoBackingStore (bool doBackingStore) {m_doBackingStore = doBackingStore;}
-    void SetDeferShadows (bool deferShadows) {m_deferShadows = deferShadows;}
-    void SetMaxFrameTime (int maxFrameTime) {m_maxFrameTime = maxFrameTime;}
-    void SetMinLODDelta (int minLodDelta) {m_minLodDelta = minLodDelta;}
-    void SetDynamicsStopInterval (int dynamicsStopInterval) {m_dynamicsStopInterval = dynamicsStopInterval;}
-    void SetDynamicsMotionTolerance (int dynamicsMotionTolerance) {m_dynamicsMotionTolerance = dynamicsMotionTolerance;}
-    void SetTouchCheckStopLimit (bool enabled, uint32_t pixels, uint32_t numberTouches, Point2dCP touches);
+    void ClearLastMotion() {m_haveLastMotion = false; m_lastTotalMotion = 0; m_lastCursorPos.x = m_lastCursorPos.y = 0;}
+    void SetStopEvents(StopEvents stopEvents) {m_stopEvents = stopEvents;}
+    void SetDoBackingStore(bool doBackingStore) {m_doBackingStore = doBackingStore;}
+    void SetDeferShadows(bool deferShadows) {m_deferShadows = deferShadows;}
+    void SetMaxFrameTime(int maxFrameTime) {m_maxFrameTime = maxFrameTime;}
+    void SetMinLODDelta(int minLodDelta) {m_minLodDelta = minLodDelta;}
+    void SetDynamicsStopInterval(int dynamicsStopInterval) {m_dynamicsStopInterval = dynamicsStopInterval;}
+    void SetDynamicsMotionTolerance(int dynamicsMotionTolerance) {m_dynamicsMotionTolerance = dynamicsMotionTolerance;}
+    void SetTouchCheckStopLimit(bool enabled, uint32_t pixels, uint32_t numberTouches, Point2dCP touches);
     };
 
 //=======================================================================================
@@ -494,7 +459,6 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : NonCopyableClass
 {
 public:
-//__PUBLISH_SECTION_END__
     friend struct ViewManager;
     friend struct UpdateContext;
     friend struct QvOutput;
@@ -528,110 +492,108 @@ protected:
     ViewControllerPtr m_viewController;
     bvector<IProgressiveDisplayPtr> m_progressiveDisplay;    // progressive display of a query view and reality data.
 
-    void AdjustOrgAndDelta (ViewControllerR);
+    void AdjustOrgAndDelta(ViewControllerR);
     DGNPLATFORM_EXPORT void DestroyViewport();
 
     virtual void _AdjustZPlanesToModel(DPoint3dR origin, DVec3dR delta, ViewControllerCR) const = 0;
-    virtual bool _IsSheetView () const {return m_isSheetView;}
-    virtual bool _IsGridOn () const {return m_rootViewFlags.grid;}
-    virtual DPoint3dCP _GetViewDelta () const {return &m_viewDelta;}
-    virtual DPoint3dCP _GetViewOrigin () const {return &m_viewOrg;}
-    virtual void _AllocateOutput () = 0;
-    virtual void _CallDecorators (bool& stopFlag) {}
-    virtual void _SetNeedsHeal () {m_needsRefresh = true;}
-    virtual void _SetNeedsRefresh () {m_needsRefresh = true;}
-    virtual ICachedDrawP _GetICachedDraw () = 0;
-    virtual IViewDrawP _GetIViewDraw () {return m_output;}
-    virtual IViewOutputP _GetIViewOutput () {return m_output;}
+    virtual bool _IsSheetView() const {return m_isSheetView;}
+    virtual bool _IsGridOn() const {return m_rootViewFlags.grid;}
+    virtual DPoint3dCP _GetViewDelta() const {return &m_viewDelta;}
+    virtual DPoint3dCP _GetViewOrigin() const {return &m_viewOrg;}
+    virtual void _AllocateOutput() = 0;
+    virtual void _CallDecorators(bool& stopFlag) {}
+    virtual void _SetNeedsHeal() {m_needsRefresh = true;}
+    virtual void _SetNeedsRefresh() {m_needsRefresh = true;}
+    virtual ICachedDrawP _GetICachedDraw() = 0;
+    virtual IViewDrawP _GetIViewDraw() {return m_output;}
+    virtual IViewOutputP _GetIViewOutput() {return m_output;}
     virtual AntiAliasPref _WantAntiAliasLines() const {return AntiAliasPref::Detect;}
     virtual AntiAliasPref _WantAntiAliasText() const {return AntiAliasPref::Detect;}
-    virtual void _AdjustFencePts (RotMatrixCR viewRot, DPoint3dCR oldOrg, DPoint3dCR newOrg) const {}
-    virtual ColorDef _GetHiliteColor () const {return ColorDef::Magenta();}
-    virtual void _SynchViewTitle () {}
-    virtual void _DrawStandardGrid (DPoint3dR gridOrigin, RotMatrixR rMatrix, Point2dCP fixedRepetitions) {}
+    virtual void _AdjustFencePts(RotMatrixCR viewRot, DPoint3dCR oldOrg, DPoint3dCR newOrg) const {}
+    virtual ColorDef _GetHiliteColor() const {return ColorDef::Magenta();}
+    virtual void _SynchViewTitle() {}
+    virtual void _DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix, Point2dCP fixedRepetitions) {}
     virtual BSIRect _GetClientRect() const = 0;
     virtual Point2d _GetScreenOrigin() const  {Point2d pt={0,0}; return pt;}
-    virtual DVec2d _GetDpiScale () const {return DVec2d::From (1,1);}
-    virtual void _Destroy () {DestroyViewport();}
-    DGNPLATFORM_EXPORT virtual void _GetViewName (WStringR) const;
-    DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio (ViewControllerR, bool expandView);
-    DGNPLATFORM_EXPORT virtual StatusInt _ConnectToOutput ();
-    DGNPLATFORM_EXPORT virtual int _GetIndexedLineWidth (int index) const;
-    DGNPLATFORM_EXPORT virtual uint32_t _GetIndexedLinePattern (int index) const;
-    DGNPLATFORM_EXPORT virtual void _GetViewCorners (DPoint3dR low, DPoint3dR high) const;
-    DGNPLATFORM_EXPORT virtual StatusInt _SetupFromViewController ();
-    DGNPLATFORM_EXPORT virtual ViewportStatus _Activate (QvPaintOptions const&);
-    DGNPLATFORM_EXPORT virtual void _SetFrustumFromRootCorners (DPoint3dCP rootBox, double compressionFraction);
-    DGNPLATFORM_EXPORT virtual void _SynchWithViewController (bool saveInUndo);
-    DGNPLATFORM_EXPORT static double GetViewNoClipZMargin ();
-    DGNPLATFORM_EXPORT static double GetMinViewDelta ();
-    virtual DgnDisplayCoreTypes::DeviceContextP _GetDcForView () const = 0;
-    virtual uintptr_t _GetBackDropTextureId () {return 0;}
+    virtual DVec2d _GetDpiScale() const {return DVec2d::From(1,1);}
+    virtual void _Destroy() {DestroyViewport();}
+    DGNPLATFORM_EXPORT virtual void _GetViewName(WStringR) const;
+    DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(ViewControllerR, bool expandView);
+    DGNPLATFORM_EXPORT virtual StatusInt _ConnectToOutput();
+    DGNPLATFORM_EXPORT virtual int _GetIndexedLineWidth(int index) const;
+    DGNPLATFORM_EXPORT virtual uint32_t _GetIndexedLinePattern(int index) const;
+    DGNPLATFORM_EXPORT virtual void _GetViewCorners(DPoint3dR low, DPoint3dR high) const;
+    DGNPLATFORM_EXPORT virtual ViewportStatus _SetupFromViewController();
+    DGNPLATFORM_EXPORT virtual ViewportStatus _Activate(QvPaintOptions const&);
+    DGNPLATFORM_EXPORT virtual void _SetFrustumFromRootCorners(DPoint3dCP rootBox, double compressionFraction);
+    DGNPLATFORM_EXPORT virtual void _SynchWithViewController(bool saveInUndo);
+    DGNPLATFORM_EXPORT static double GetViewNoClipZMargin();
+    DGNPLATFORM_EXPORT static double GetMinViewDelta();
+    virtual DgnDisplayCoreTypes::DeviceContextP _GetDcForView() const = 0;
+    virtual uintptr_t _GetBackDropTextureId() {return 0;}
     DGNPLATFORM_EXPORT virtual ColorDef _GetWindowBgColor() const;
-    virtual BentleyStatus _RefreshViewport (bool always, bool synchHealingFromBs, bool& stopFlag) = 0;
-    virtual void _SetICachedDraw (ICachedDrawP cachedOutput) = 0;
+    virtual BentleyStatus _RefreshViewport(bool always, bool synchHealingFromBs, bool& stopFlag) = 0;
+    virtual void _SetICachedDraw(ICachedDrawP cachedOutput) = 0;
     virtual double _GetMinimumLOD () const {return m_minLOD;}
 
 public:
-    DGNPLATFORM_EXPORT DgnViewport ();
-    virtual ~DgnViewport () {DestroyViewport();}
+    DGNPLATFORM_EXPORT DgnViewport();
+    virtual ~DgnViewport() {DestroyViewport();}
 
-    BSIRectCP GetShadowDirtyRect ();
-    void SetShadowDirtyRect (BSIRectCP rect);
-    bool CheckNeedsRefresh () const {return m_needsRefresh;}
-    bool ShadowCastingLightsExist () const;
+    BSIRectCP GetShadowDirtyRect();
+    void SetShadowDirtyRect(BSIRectCP rect);
+    bool CheckNeedsRefresh() const {return m_needsRefresh;}
+    bool ShadowCastingLightsExist() const;
     double GetXScale() const {return m_scale.x;}
     double GetYScale() const {return m_scale.y;}
     double GetZScale() const {return m_scale.z;}
     ViewFlagsP GetViewFlagsP () {return &m_rootViewFlags;}
-    bool GetGridRange (DRange3d* range);
-    DGNPLATFORM_EXPORT double GetGridScaleFactor ();
-    DGNPLATFORM_EXPORT void PointToStandardGrid (DPoint3dR point, DPoint3dR gridOrigin, RotMatrixR rMatrix);
-    DGNPLATFORM_EXPORT void GetGridRoundingDistance (DPoint2dR roundingDistance);
-    DGNPLATFORM_EXPORT void GridFix (DPoint3dR point, RotMatrixCR rMatrixRoot, DPoint3dCR originRoot, DPoint2dCR roundingDistanceRoot, bool isoGrid);
-    DGNPLATFORM_EXPORT void DrawStandardGrid (DPoint3dR gridOrigin, RotMatrixR rMatrix, Point2dCP fixedRepetitions = NULL);
+    bool GetGridRange(DRange3d* range);
+    DGNPLATFORM_EXPORT double GetGridScaleFactor();
+    DGNPLATFORM_EXPORT void PointToStandardGrid(DPoint3dR point, DPoint3dR gridOrigin, RotMatrixR rMatrix);
+    DGNPLATFORM_EXPORT void GetGridRoundingDistance(DPoint2dR roundingDistance);
+    DGNPLATFORM_EXPORT void GridFix(DPoint3dR point, RotMatrixCR rMatrixRoot, DPoint3dCR originRoot, DPoint2dCR roundingDistanceRoot, bool isoGrid);
+    DGNPLATFORM_EXPORT void DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix, Point2dCP fixedRepetitions = NULL);
     DGNPLATFORM_EXPORT BSIRect GetClientRect() const;
     DGNPLATFORM_EXPORT Point2d GetScreenOrigin() const;
-    DGNPLATFORM_EXPORT void CalcNpcToView (DMap4dR npcToView);
-    void ClearNeedsRefresh () {m_needsRefresh = false;}
-    void SetIViewOutput (IViewOutputP output) {m_output = output;}
-    void SetBackgroundColor (ColorDef color) {m_backgroundColor = color; m_backgroundColor.SetAlpha(0);}
-    void AlignWithRootZ ();
+    DGNPLATFORM_EXPORT void CalcNpcToView(DMap4dR npcToView);
+    void ClearNeedsRefresh() {m_needsRefresh = false;}
+    void SetIViewOutput(IViewOutputP output) {m_output = output;}
+    void SetBackgroundColor(ColorDef color) {m_backgroundColor = color; m_backgroundColor.SetAlpha(0);}
+    void AlignWithRootZ();
     DGNPLATFORM_EXPORT ColorDef GetWindowBgColor() const;
-    DGNPLATFORM_EXPORT double GetMinimumLOD () const;
+    DGNPLATFORM_EXPORT double GetMinimumLOD() const;
     IProgressiveDisplay::Completion DoProgressiveDisplay();
     void ClearProgressiveDisplay() {m_progressiveDisplay.clear();}
     DGNPLATFORM_EXPORT void ScheduleProgressiveDisplay(IProgressiveDisplay& pd);
-    void SynchShadowList ();
-    void UpdateShadowList (DgnDrawMode, DrawPurpose);
+    void SynchShadowList();
+    void UpdateShadowList(DgnDrawMode, DrawPurpose);
     DGNPLATFORM_EXPORT double GetFocusPlaneNpc();
-    DGNPLATFORM_EXPORT static StatusInt RootToNpcFromViewDef (DMap4d&, double*, CameraInfo const*, DPoint3dCR, DPoint3dCR, RotMatrixCR, DgnModelP targetModel);
-    DGNPLATFORM_EXPORT static int32_t GetMaxDisplayPriority ();
+    DGNPLATFORM_EXPORT static StatusInt RootToNpcFromViewDef(DMap4d&, double*, CameraInfo const*, DPoint3dCR, DPoint3dCR, RotMatrixCR, DgnModelP targetModel);
+    DGNPLATFORM_EXPORT static int32_t GetMaxDisplayPriority();
     DGNPLATFORM_EXPORT static int32_t GetDisplayPriorityFrontPlane();
-    DGNPLATFORM_EXPORT static ViewFrustumStatus ValidateWindowSize (DPoint3dR delta, bool displayMessage);
+    DGNPLATFORM_EXPORT static ViewportStatus ValidateWindowSize(DPoint3dR delta, bool displayMessage);
     DGNPLATFORM_EXPORT static void FixFrustumOrder(Frustum&);
-    DGNPLATFORM_EXPORT void InitViewSettings (bool useBgTexture);
-    DGNPLATFORM_EXPORT void SetDisplayFlagFill (bool fill);
-    DGNPLATFORM_EXPORT void SetDisplayFlagPatterns (bool patternsOn);
-    DGNPLATFORM_EXPORT void SetDisplayFlagLevelSymb (bool levelSymbOn);
-    DGNPLATFORM_EXPORT StatusInt SetupFromViewController ();
-    DGNPLATFORM_EXPORT void SetFrustumFromRootCorners (DPoint3dCP rootBox, double compressionFraction);
-    DGNPLATFORM_EXPORT StatusInt ChangeArea (DPoint3dCP pts);
-    DGNPLATFORM_EXPORT void Destroy ();
-    DGNPLATFORM_EXPORT StatusInt ComputeTransientRange (DRange3dP range, RotMatrixP rMatrix, bool checkLevelClass) const;
-    DGNPLATFORM_EXPORT StatusInt ComputeViewRange (DRange3dR, FitViewParams& params) ;
-    DGNPLATFORM_EXPORT void SetNeedsHeal ();
-    DGNPLATFORM_EXPORT bool UseClipVolume (DgnModelCP) const;
-    DGNPLATFORM_EXPORT StatusInt RefreshViewport (bool always, bool synchHealingFromBs, bool& stopFlag);
-    DGNPLATFORM_EXPORT static int GetDefaultIndexedLineWidth (int index);
-    DGNPLATFORM_EXPORT static uint32_t GetDefaultIndexedLinePattern (int index);
-    DGNPLATFORM_EXPORT static void OutputFrustumErrorMessage (StatusInt errorStatus);
-    bool Allow3dManipulations () const {return m_viewController->Allow3dManipulations();}
+    DGNPLATFORM_EXPORT void InitViewSettings(bool useBgTexture);
+    DGNPLATFORM_EXPORT void SetDisplayFlagFill(bool fill);
+    DGNPLATFORM_EXPORT void SetDisplayFlagPatterns(bool patternsOn);
+    DGNPLATFORM_EXPORT void SetDisplayFlagLevelSymb(bool levelSymbOn);
+    ViewportStatus SetupFromViewController() {return _SetupFromViewController();}
+    DGNPLATFORM_EXPORT void SetFrustumFromRootCorners(DPoint3dCP rootBox, double compressionFraction);
+    DGNPLATFORM_EXPORT ViewportStatus ChangeArea(DPoint3dCP pts);
+    DGNPLATFORM_EXPORT void Destroy();
+    DGNPLATFORM_EXPORT StatusInt ComputeTransientRange(DRange3dP range, RotMatrixP rMatrix, bool checkLevelClass) const;
+    DGNPLATFORM_EXPORT StatusInt ComputeViewRange(DRange3dR, FitViewParams& params) ;
+    DGNPLATFORM_EXPORT void SetNeedsHeal();
+    DGNPLATFORM_EXPORT bool UseClipVolume(DgnModelCP) const;
+    DGNPLATFORM_EXPORT StatusInt RefreshViewport(bool always, bool synchHealingFromBs, bool& stopFlag);
+    DGNPLATFORM_EXPORT static int GetDefaultIndexedLineWidth(int index);
+    DGNPLATFORM_EXPORT static uint32_t GetDefaultIndexedLinePattern(int index);
+    DGNPLATFORM_EXPORT static void OutputFrustumErrorMessage(ViewportStatus errorStatus);
+    bool Allow3dManipulations() const {return m_viewController->Allow3dManipulations();}
     DGNVIEW_EXPORT BentleyStatus PixelsFromInches(double& pixels, double inches) const;
     void DrawToolGraphics(ViewContextR context, bool isPreUpdate);
 
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 public:
     //! @return the current Camera for this DgnViewport. Note that the DgnViewport's camera may not match its ViewController's camera
     //! due to adjustments made for front/back clipping being turned off.
@@ -665,17 +627,17 @@ public:
     //! from the mapping table for this DgnViewport.
     //! @param[in] index the line weight value in the range of 0 to 31.
     //! @return  the number of pixels for lineWeightValue
-    DGNPLATFORM_EXPORT int GetIndexedLineWidth (int index) const;
+    DGNPLATFORM_EXPORT int GetIndexedLineWidth(int index) const;
 
     //! Get the 32 bit on-off "line pattern" for a line code value for this DgnViewport. Users select, and elements store a "line code"
     //! value in the range of 0 to 7. Output devices can change the on-off patterns based on resolution, etc. This method returns the line pattern
     //! for a given line code value from the mapping table for this DgnViewport.
     //! @param[in] index a the range of 0 to 7.
     //! @return  the line pattern for lineCodeValue
-    DGNPLATFORM_EXPORT uint32_t GetIndexedLinePattern (int index) const;
+    DGNPLATFORM_EXPORT uint32_t GetIndexedLinePattern(int index) const;
 
     //! Compute the range of the element when displayed in this DgnViewport
-    DGNPLATFORM_EXPORT StatusInt ComputeFittedElementRange (DRange3dR range, DgnElementIdSet const& elements, RotMatrixCP rMatrix=nullptr);
+    DGNPLATFORM_EXPORT StatusInt ComputeFittedElementRange(DRange3dR range, DgnElementIdSet const& elements, RotMatrixCP rMatrix=nullptr);
 
     DGNPLATFORM_EXPORT void SetMinimumLOD (double minLOD);
     /** @} */
@@ -685,10 +647,10 @@ public:
     /** @{ */
     //! Get the RGB color of the background for this DgnViewport.
     //! @return background RGB color
-    DGNPLATFORM_EXPORT ColorDef GetBackgroundColor () const;
+    DGNPLATFORM_EXPORT ColorDef GetBackgroundColor() const;
 
     //! @return either white or black, whichever has more contrast to the background color of this DgnViewport.
-    DGNPLATFORM_EXPORT ColorDef GetContrastToBackgroundColor () const;
+    DGNPLATFORM_EXPORT ColorDef GetContrastToBackgroundColor() const;
 
     //! Adjust a color such that there is visible contrast to another color. This method is useful for adjusting a
     //! color slightly so that it can be discerned by the user in the context of other objects or against the background color.
@@ -698,13 +660,13 @@ public:
     //! @param[in] thisColor Starting color
     //! @param[in] againstColor Color against which the result must contrast.
     //! @return  the adjusted, contrasting color
-    DGNPLATFORM_EXPORT ColorDef AdjustColorForContrast (ColorDef thisColor, ColorDef againstColor) const;
+    DGNPLATFORM_EXPORT ColorDef AdjustColorForContrast(ColorDef thisColor, ColorDef againstColor) const;
 
     //! Adjust the transparency value of a TRGB color, leaving the Red, Blue, and Green components unchanged.
     //! @param[in] color               Original color
     //! @param[in] transparency        New transparency (0=opaque, 255=fully transparent)
     //! @return color with transparency adjusted.
-    DGNPLATFORM_EXPORT static ColorDef MakeColorTransparency (ColorDef color, int transparency);
+    DGNPLATFORM_EXPORT static ColorDef MakeColorTransparency(ColorDef color, int transparency);
 
     //! Adjust the transparency value of a TRGB color, leaving the Red, Blue, and Green components unchanged, but ONLY IF
     //! the current transparency value of the color is opaque. If the color already has a transparency value, this method
@@ -712,24 +674,24 @@ public:
     //! @param[in] color Original color
     //! @param[in] transparency New transparency (0=opaque, 255=fully transparent)
     //! @return color with transparency adjusted.
-    DGNPLATFORM_EXPORT static ColorDef MakeTransparentIfOpaque (ColorDef color, int transparency);
+    DGNPLATFORM_EXPORT static ColorDef MakeTransparentIfOpaque(ColorDef color, int transparency);
 
     //! Get the current TBGR color value of the user-selected hilite color for this DgnViewport.
     //! @return the current TBGR hilite color.
-    DGNPLATFORM_EXPORT ColorDef GetHiliteColor () const;
+    DGNPLATFORM_EXPORT ColorDef GetHiliteColor() const;
 
     //! Get the hilite color value for an element. Elements currently in the Selection Set
     //! are hilited with the Selection Set Color and elements that are not in the selection set use the normal hilite color.
     //! @param[in]          element to check
     //! @return             the hilite color for \c path
-    DGNPLATFORM_EXPORT ColorDef GetHiliteColor (GeometricElementCR element) const;
+    DGNPLATFORM_EXPORT ColorDef GetHiliteColor(GeometricElementCR element) const;
 
     //! Set the current display symbology for this DgnViewport by TBGR color values, a pixel width, and 0-7 line code.
     //! @param[in]          lineColor Line color
     //! @param[in]          fillColor Fill color
     //! @param[in]          lineWidth       Line width in pixels (1 or greater)
     //! @param[in]          lineCodeIndex   Line code index (0-7)
-    DGNPLATFORM_EXPORT void SetSymbologyRgb (ColorDef lineColor, ColorDef fillColor, int lineWidth, int lineCodeIndex);
+    DGNPLATFORM_EXPORT void SetSymbologyRgb(ColorDef lineColor, ColorDef fillColor, int lineWidth, int lineCodeIndex);
     /** @} */
 
     /** @name Coordinate Query and Conversion */
@@ -737,11 +699,11 @@ public:
     //! Get the Rotation Matrix for this DgnViewport. The concept of a DgnViewport's Rotation Matrix is somewhat limiting since it does not
     //! support perspective transformations. This method is provided for compatibility with previous API only.
     //! @see the Coordinate Coordinate Query and Conversion functions and #GetWorldToViewMap
-    DGNPLATFORM_EXPORT RotMatrixCR GetRotMatrix () const;
+    DGNPLATFORM_EXPORT RotMatrixCR GetRotMatrix() const;
 
     //! Get the Scale Factors for X, Y, Z for this DgnViewport.
     //! @see the Coordinate Coordinate Query and Conversion functions and #GetWorldToViewMap
-    DGNPLATFORM_EXPORT DPoint3dCP GetScale () const;
+    DGNPLATFORM_EXPORT DPoint3dCP GetScale() const;
 
     //! Get the DgnViewport rectangle in DgnCoordSystem::View.
     DGNPLATFORM_EXPORT BSIRect GetViewRect() const;
@@ -749,10 +711,10 @@ public:
     //! Get the DgnCoordSystem::View coordinates of lower-left-back and upper-right-front corners of a viewport.
     //! @param[out] low The lower left back corner of the view
     //! @param[out] high The upper right front corner of the view
-    DGNPLATFORM_EXPORT void GetViewCorners (DPoint3dR low, DPoint3dR high) const;
+    DGNPLATFORM_EXPORT void GetViewCorners(DPoint3dR low, DPoint3dR high) const;
 
     //! Get the DPI scale which can be used for conversion between physical pixels and device-independent pixels (DIPs).
-    DGNPLATFORM_EXPORT DVec2d GetDpiScale () const;
+    DGNPLATFORM_EXPORT DVec2d GetDpiScale() const;
 
     //! Get an 8-point frustum corresponding to the 8 corners of the DgnViewport in the specified coordinate system.
     //! When front or back clipping is turned \em off, there are two sets of corners that may be of interest.
@@ -773,21 +735,21 @@ public:
     //! @param[in] rootPt      The point in DgnCoordSystem::World for determining pixel size. If NULL, use the center of the DgnViewport.
     //! @param[in] coordSys    The coordinate system for the returned distance.
     //! @return the size of the pixel at point \c rootPt.
-    DGNPLATFORM_EXPORT double GetPixelSizeAtPoint (DPoint3dCP rootPt, DgnCoordSystem coordSys = DgnCoordSystem::World) const;
+    DGNPLATFORM_EXPORT double GetPixelSizeAtPoint(DPoint3dCP rootPt, DgnCoordSystem coordSys = DgnCoordSystem::World) const;
 
     //! Get the DMap4d to convert between DgnCoordSystem::World and DgnCoordSystem::View coordinates for this DgnViewport.
     //! @return the current WorldToView map for this DgnViewport.
-    DGNPLATFORM_EXPORT DMap4dCP GetWorldToViewMap () const;
+    DGNPLATFORM_EXPORT DMap4dCP GetWorldToViewMap() const;
 
     //! Get the DMap4d to convert between DgnCoordSystem::World and DgnCoordSystem::Npc coordinates for this DgnViewport.
     //! @return the current WorldToNpc map for this DgnViewport.
-    DGNPLATFORM_EXPORT DMap4dCP GetWorldToNpcMap () const;
+    DGNPLATFORM_EXPORT DMap4dCP GetWorldToNpcMap() const;
 
     //! Transfrom an array of points in DgnCoordSystem::Npc into DgnCoordSystem::View.
     //! @param[out] viewPts An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
     //! @param[in] npcPts Input array in DgnCoordSystem::Npc
     //! @param[in] nPts Number of points in both arrays.
-    DGNPLATFORM_EXPORT void NpcToView (DPoint3dP viewPts, DPoint3dCP npcPts, int nPts) const;
+    DGNPLATFORM_EXPORT void NpcToView(DPoint3dP viewPts, DPoint3dCP npcPts, int nPts) const;
 
     //! Transforma a point from DgnCoordSystem::Npc into DgnCoordSystem::View.
     DPoint3d NpcToView(DPoint3dCR npcPt) {DPoint3d viewPt; NpcToView(&viewPt, &npcPt, 1); return viewPt;}
@@ -796,7 +758,7 @@ public:
     //! @param[out] npcPts An array to receive the points in DgnCoordSystem::Npc. Must be dimensioned to hold \c nPts points.
     //! @param[in] viewPts Input array in DgnCoordSystem::View
     //! @param[in] nPts Number of points in both arrays.
-    DGNPLATFORM_EXPORT void ViewToNpc (DPoint3dP npcPts, DPoint3dCP viewPts, int nPts) const;
+    DGNPLATFORM_EXPORT void ViewToNpc(DPoint3dP npcPts, DPoint3dCP viewPts, int nPts) const;
 
     //! Transforma a point from DgnCoordSystem::View into DgnCoordSystem::Npc.
     DPoint3d ViewToNpc(DPoint3dCR viewPt) {DPoint3d npcPt; ViewToNpc(&npcPt, &viewPt, 1); return npcPt;}
@@ -805,19 +767,19 @@ public:
     //! @param[out] screenPts An array to receive the points in DgnCoordSystem::Screen. Must be dimensioned to hold \c nPts points.
     //! @param[in] viewPts Input array in DgnCoordSystem::View
     //! @param[in] nPts Number of points in both arrays.
-    DGNPLATFORM_EXPORT void ViewToScreen (DPoint3dP screenPts, DPoint3dCP viewPts, int nPts) const;
+    DGNPLATFORM_EXPORT void ViewToScreen(DPoint3dP screenPts, DPoint3dCP viewPts, int nPts) const;
 
     //! Transfrom an array of points in DgnCoordSystem::Screen into DgnCoordSystem::View.
     //! @param[out] viewPts An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
     //! @param[in] screenPts Input array in DgnCoordSystem::Screen
     //! @param[in] nPts Number of points in both arrays.
-    DGNPLATFORM_EXPORT void ScreenToView (DPoint3dP viewPts, DPoint3dCP screenPts, int nPts) const;
+    DGNPLATFORM_EXPORT void ScreenToView(DPoint3dP viewPts, DPoint3dCP screenPts, int nPts) const;
 
     //! Transfrom an array of points in DgnCoordSystem::Npc into DgnCoordSystem::World.
     //! @param[out] worldPts An array to receive the points in DgnCoordSystem::World. Must be dimensioned to hold \c nPts points.
     //! @param[in] npcPts Input array in DgnCoordSystem::Npc
     //! @param[in] nPts Number of points in both arrays.
-    DGNPLATFORM_EXPORT void NpcToWorld (DPoint3dP worldPts, DPoint3dCP npcPts, int nPts) const;
+    DGNPLATFORM_EXPORT void NpcToWorld(DPoint3dP worldPts, DPoint3dCP npcPts, int nPts) const;
 
     //! Transforma a point from DgnCoordSystem::Npc into DgnCoordSystem::World.
     DPoint3d NpcToWorld(DPoint3dCR npcPt) {DPoint3d worldPt; NpcToWorld(&worldPt, &npcPt, 1); return worldPt;}
@@ -826,7 +788,7 @@ public:
     //! @param[out] npcPts An array to receive the points in DgnCoordSystem::Npc. Must be dimensioned to hold \c nPts points.
     //! @param[in] worldPts Input array in DgnCoordSystem::World
     //! @param[in] nPts  Number of points in both arrays.
-    DGNPLATFORM_EXPORT void WorldToNpc (DPoint3dP npcPts, DPoint3dCP worldPts, int nPts) const;
+    DGNPLATFORM_EXPORT void WorldToNpc(DPoint3dP npcPts, DPoint3dCP worldPts, int nPts) const;
 
     //! Transforma a point from DgnCoordSystem::World into DgnCoordSystem::Npc.
     DPoint3d WorldToNpc(DPoint3dCR worldPt) {DPoint3d npcPt; WorldToNpc(&npcPt, &worldPt, 1); return npcPt;}
@@ -835,19 +797,19 @@ public:
     //! @param[out] viewPts  An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
     //! @param[in] worldPts Input array in DgnCoordSystem::World
     //! @param[in] nPts Number of points in both arrays.
-    DGNPLATFORM_EXPORT void WorldToView (DPoint4dP viewPts, DPoint3dCP worldPts, int nPts) const;
+    DGNPLATFORM_EXPORT void WorldToView(DPoint4dP viewPts, DPoint3dCP worldPts, int nPts) const;
 
     //! Transfrom an array of points in DgnCoordSystem::View into DgnCoordSystem::World.
     //! @param[out] worldPts An array to receive the points in DgnCoordSystem::World. Must be dimensioned to hold \c nPts points.
     //! @param[in] viewPts Input array of DPoint4d coordinates in DgnCoordSystem::View
     //! @param[in] nPts Number of points in both arrays.
-    DGNPLATFORM_EXPORT void ViewToWorld (DPoint3dP worldPts, DPoint4dCP viewPts, int nPts) const;
+    DGNPLATFORM_EXPORT void ViewToWorld(DPoint3dP worldPts, DPoint4dCP viewPts, int nPts) const;
 
     //! Transfrom an array of points in DgnCoordSystem::World into DgnCoordSystem::View.
     //! @param[out] viewPts An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
     //! @param[in] worldPts Input array in DgnCoordSystem::World
     //! @param[in] nPts Number of points in both arrays.
-    DGNPLATFORM_EXPORT void WorldToView (DPoint3dP viewPts, DPoint3dCP worldPts, int nPts) const;
+    DGNPLATFORM_EXPORT void WorldToView(DPoint3dP viewPts, DPoint3dCP worldPts, int nPts) const;
 
     //! Transforma a point from DgnCoordSystem::World into DgnCoordSystem::View.
     DPoint3d WorldToView(DPoint3dCR worldPt) {DPoint3d viewPt; WorldToView(&viewPt, &worldPt, 1); return viewPt;}
@@ -856,13 +818,13 @@ public:
     //! @param[out] viewPts An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
     //! @param[in] worldPts Input array in DgnCoordSystem::World
     //! @param[in] nPts Number of points in both arrays.
-    DGNPLATFORM_EXPORT void WorldToView2d (DPoint2dP viewPts, DPoint3dCP worldPts, int nPts) const;
+    DGNPLATFORM_EXPORT void WorldToView2d(DPoint2dP viewPts, DPoint3dCP worldPts, int nPts) const;
 
     //! Transfrom an array of points in DgnCoordSystem::View into DgnCoordSystem::World.
     //! @param[out] worldPts An array to receive the points in DgnCoordSystem::World. Must be dimensioned to hold \c nPts points.
     //! @param[in] viewPts Input array in DgnCoordSystem::View
     //! @param[in] nPts Number of points in both arrays.
-    DGNPLATFORM_EXPORT void ViewToWorld (DPoint3dP worldPts, DPoint3dCP viewPts, int nPts) const;
+    DGNPLATFORM_EXPORT void ViewToWorld(DPoint3dP worldPts, DPoint3dCP viewPts, int nPts) const;
 
     //! Transforma a point from DgnCoordSystem::View into DgnCoordSystem::World.
     DPoint3d ViewToWorld(DPoint3dCR viewPt) {DPoint3d worldPt; ViewToWorld(&worldPt, &viewPt, 1); return worldPt;}
@@ -873,85 +835,84 @@ public:
     //! Determine whether this DgnViewport is currently active. Viewports become "active" after they have
     //! been initialized and connected to an output device.
     //! @return true if the DgnViewport is active.
-    DGNPLATFORM_EXPORT bool IsActive () const;
+    DGNPLATFORM_EXPORT bool IsActive() const;
 
     //! Determine whether this DgnViewport currently has a camera enabled. In this context, the "camera" is on
     //! if the WorldToView transform contains a perspective transformation.
     //! @remarks Applicable only to physical views.
     //! @return true if the camera is on.
-    DGNPLATFORM_EXPORT bool IsCameraOn () const;
+    DGNPLATFORM_EXPORT bool IsCameraOn() const;
 
     //! Determine whether the Grid display is currently enabled in this DgnViewport.
     //! @return true if the grid display is on.
-    DGNPLATFORM_EXPORT bool IsGridOn () const;
+    DGNPLATFORM_EXPORT bool IsGridOn() const;
 
     //! Determine whether this viewport is a 3D view.
     //! @remarks Will be true only for a physical view.
-    DGNPLATFORM_EXPORT bool Is3dView () const;
+    DGNPLATFORM_EXPORT bool Is3dView() const;
 
     //__PUBLISH_SECTION_END__
     //! Determine whether the root model of this viewport is a Sheet model.
-    DGNPLATFORM_EXPORT bool IsSheetView () const;
+    DGNPLATFORM_EXPORT bool IsSheetView() const;
     //__PUBLISH_SECTION_START__
-
-    DGNPLATFORM_EXPORT IViewDrawP GetIViewDraw ();
-    DGNPLATFORM_EXPORT IViewOutputP GetIViewOutput ();
+    IViewDrawP GetIViewDraw() {return _GetIViewDraw();}
+    DGNPLATFORM_EXPORT IViewOutputP GetIViewOutput();
 
     /** @cond BENTLEY_SDK_Scope1 */
-    DGNPLATFORM_EXPORT ICachedDrawP GetICachedDraw ();
+    DGNPLATFORM_EXPORT ICachedDrawP GetICachedDraw();
     /** @endcond */
 
     //! Get a pointer to the ViewController associated with this DgnViewport.
-    DGNPLATFORM_EXPORT ViewControllerCR GetViewController () const;
+    DGNPLATFORM_EXPORT ViewControllerCR GetViewController() const;
 
     //! Get a pointer to the ViewController associated with this DgnViewport.
     DGNPLATFORM_EXPORT ViewControllerR GetViewControllerR() const;
 
     //! If this view is a physical view, get the physical view controller.
-    PhysicalViewControllerCP GetPhysicalViewControllerCP () const {return GetViewController()._ToPhysicalView();}
+    PhysicalViewControllerCP GetPhysicalViewControllerCP() const {return GetViewController()._ToPhysicalView();}
     //! If this view is a physical view, get a writeable pointer to the physical view controller.
-    PhysicalViewControllerP GetPhysicalViewControllerP ()         {return (PhysicalViewControllerP) GetPhysicalViewControllerCP();}
+    PhysicalViewControllerP GetPhysicalViewControllerP() {return (PhysicalViewControllerP) GetPhysicalViewControllerCP();}
     //! If this view is a camera view, get the camera physical view controller.
-    CameraViewControllerCP GetCameraViewControllerCP () const {return GetViewController()._ToCameraView();}
+    CameraViewControllerCP GetCameraViewControllerCP() const {return GetViewController()._ToCameraView();}
     //! If this view is a camera view, get a writeable pointer to the camera physical view controller.
-    CameraViewControllerP GetCameraViewControllerP ()         {return (CameraViewControllerP) GetCameraViewControllerCP();}
+    CameraViewControllerP GetCameraViewControllerP() {return (CameraViewControllerP) GetCameraViewControllerCP();}
 
     //! If this view is a drawing view, get the drawing view controller.
-    DrawingViewControllerCP GetDrawingViewControllerCP () const   {return GetViewController()._ToDrawingView();}
+    DrawingViewControllerCP GetDrawingViewControllerCP() const {return GetViewController()._ToDrawingView();}
     //! If this view is a drawing view, get a writeable pointer to the drawing view controller.
-    DrawingViewControllerP GetDrawingViewControllerP ()           {return (DrawingViewControllerP) GetDrawingViewControllerCP();}
+    DrawingViewControllerP GetDrawingViewControllerP() {return (DrawingViewControllerP) GetDrawingViewControllerCP();}
 
     //__PUBLISH_SECTION_END__
     //! If this view is a sheet view, get the sheet view controller.
-    SheetViewControllerCP GetSheetViewControllerCP () const       {return GetViewController()._ToSheetView();}
+    SheetViewControllerCP GetSheetViewControllerCP() const {return GetViewController()._ToSheetView();}
     //! If this view is a sheet view, get a writeable pointer to the sheet view controller.
-    SheetViewControllerP GetSheetViewControllerP ()               {return (SheetViewControllerP) GetSheetViewControllerCP();}
+    SheetViewControllerP GetSheetViewControllerP() {return (SheetViewControllerP) GetSheetViewControllerCP();}
     //__PUBLISH_SECTION_START__
 
     //! Get the name for this view.
     //! @param[out] name A string to be filled with the current name of this view.
-    DGNPLATFORM_EXPORT void GetViewName (WStringR name) const;
+    DGNPLATFORM_EXPORT void GetViewName(WStringR name) const;
 
     //! Get the view number of this DgnViewport. If this DgnViewport is one of the 8 numbered views (i.e. "View 1" through
     //! "View 8"), then return the index of view number (e.g. "View 1" is view index 0, "View 8" is view index 7). If the DgnViewport
     //! is not one of the 8 numbered views, this method will return -1.
     //! @return the view index of this DgnViewport, or -1 if it is not one of the numbered views.
-    DGNPLATFORM_EXPORT int GetViewNumber () const;
+    DGNPLATFORM_EXPORT int GetViewNumber() const;
 
     //! Get the screen number on which this DgnViewport resides.
-    DGNPLATFORM_EXPORT int GetScreenNumber () const;
+    DGNPLATFORM_EXPORT int GetScreenNumber() const;
 
     //! Get View Origin for this DgnViewport.
     //! @return the root coordinates of the lower left back corner of the DgnViewport.
-    DGNPLATFORM_EXPORT DPoint3dCP GetViewOrigin () const;
+    DGNPLATFORM_EXPORT DPoint3dCP GetViewOrigin() const;
 
     //! Get the View Delta (size) of this DgnViewport in root coordinate distances.
     //! @return the view delta in root coordinate distances.
-    DGNPLATFORM_EXPORT DPoint3dCP GetViewDelta () const;
+    DGNPLATFORM_EXPORT DPoint3dCP GetViewDelta() const;
 
     //! Get the current View Flags for this DgnViewport.
     //! @return the View flags for this DgnViewport.
-    DGNPLATFORM_EXPORT ViewFlagsCP GetViewFlags () const;
+    DGNPLATFORM_EXPORT ViewFlagsCP GetViewFlags() const;
 
     //! Synchronized this DgnViewport with the current state of its ViewController. A DgnViewport may hold local copies of the information
     //! in its ViewController. Therefore, when changes are made to the state of a ViewController, it must be synchronized with the
@@ -959,9 +920,9 @@ public:
     //! the changes between states of a ViewController to support the "view undo" command.
     //! @param[in] saveInUndo If true, the new state of the ViewController is compared to the previous state and changes are saved in the View Undo stack.
     //! If the user issues the "view undo" command, the changes are reversed and the ViewController is reverted to the previous state.
-    DGNPLATFORM_EXPORT void SynchWithViewController (bool saveInUndo);
+    void SynchWithViewController(bool saveInUndo) {_SynchWithViewController(saveInUndo);}
 
-    DGNPLATFORM_EXPORT void SetNeedsRefresh ();
+    DGNPLATFORM_EXPORT void SetNeedsRefresh();
     /** @} */
 
     /** @name Changing DgnViewport Frustum */
@@ -972,7 +933,7 @@ public:
     //! @param[in]      viewDist    The distance to scroll, in pixels.
     //! @note To update the view, see ViewManager::UpdateView or ViewManager::UpdateViewDynamic. To save the change to the ViewController
     //!       in the view undo buffer, see SynchWithViewController.
-    DGNPLATFORM_EXPORT StatusInt Scroll (Point2dCP viewDist);
+    DGNPLATFORM_EXPORT ViewportStatus Scroll(Point2dCP viewDist);
 
     //! Change the size of this DgnViewport's frustum by a ratio to its current size. Also, specify a new center point
     //! for the frustum in DgnCoordSystem::World coordinates.
@@ -983,7 +944,7 @@ public:
     //!                                   frustum gets larger and shows more of the model), and scale factors less than 1.0 zoom in.
     //! @note To update the view, see ViewManager::UpdateView or ViewManager::UpdateViewDynamic. To save the change to the ViewController
     //!       in the view undo buffer, see SynchWithViewController.
-    DGNPLATFORM_EXPORT StatusInt Zoom (DPoint3dCP newCenterRoot, double factor);
+    DGNPLATFORM_EXPORT ViewportStatus Zoom(DPoint3dCP newCenterRoot, double factor);
 
     //! Change the frustum for this DgnViewport. The frustum is an 8-point array of points in DgnCoordSystem::World coordinates
     //! in the order specified by NpcCorners.
@@ -991,15 +952,14 @@ public:
     //! to be a visible View.) This method \em does change the ViewController associated with the DgnViewport.
     //! @note To update the view, see ViewManager::UpdateView or ViewManager::UpdateViewDynamic. To save the change to the ViewController
     //!       in the view undo buffer, see SynchWithViewController.
-    DGNPLATFORM_EXPORT StatusInt SetupFromFrustum (Frustum const& frustPts);
+    DGNPLATFORM_EXPORT ViewportStatus SetupFromFrustum(Frustum const& frustPts);
     /** @} */
 
     //__PUBLISH_SECTION_END__
-    DGNPLATFORM_EXPORT ColorDef GetSolidFillEdgeColor (ColorDef inColor);
+    DGNPLATFORM_EXPORT ColorDef GetSolidFillEdgeColor(ColorDef inColor);
     //__PUBLISH_SECTION_START__
 };
 
-//__PUBLISH_SECTION_END__
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   01/10
 //=======================================================================================
@@ -1010,9 +970,9 @@ protected:
     virtual void _AllocateOutput() override {}
     virtual ICachedDrawP _GetICachedDraw() override { return NULL; }
     virtual void _SetICachedDraw(ICachedDrawP cachedOutput) override {}
-    virtual ColorDef _GetWindowBgColor () const override {return ColorDef::Black();}
+    virtual ColorDef _GetWindowBgColor() const override {return ColorDef::Black();}
     virtual StatusInt _ConnectToOutput() override { return SUCCESS; }
-    virtual void _AdjustZPlanesToModel (DPoint3dR, DVec3dR, ViewControllerCR) const override {}
+    virtual void _AdjustZPlanesToModel(DPoint3dR, DVec3dR, ViewControllerCR) const override {}
     virtual BSIRect _GetClientRect() const override
         {
         BSIRect rect;
@@ -1021,15 +981,13 @@ protected:
         return rect;
         }
 
-    virtual BentleyStatus _RefreshViewport (bool always, bool synchHealingFromBs, bool& stopFlag) override { return ERROR; }
-    virtual void _SetFrustumFromRootCorners (DPoint3dCP worldBox, double compressFraction) override {}
-    virtual void _AdjustAspectRatio (ViewControllerR viewController, bool expandView) override {}
+    virtual BentleyStatus _RefreshViewport(bool always, bool synchHealingFromBs, bool& stopFlag) override { return ERROR; }
+    virtual void _SetFrustumFromRootCorners(DPoint3dCP worldBox, double compressFraction) override {}
+    virtual void _AdjustAspectRatio(ViewControllerR viewController, bool expandView) override {}
 
 public:
-    NonVisibleViewport (ViewControllerR viewController) {m_viewController = &viewController; SetupFromViewController();}
+    NonVisibleViewport(ViewControllerR viewController) {m_viewController = &viewController; SetupFromViewController();}
 };
-
-//__PUBLISH_SECTION_START__
 
 //! @endGroup
 

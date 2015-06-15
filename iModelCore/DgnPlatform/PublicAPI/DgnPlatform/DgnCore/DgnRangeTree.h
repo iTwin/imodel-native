@@ -128,7 +128,6 @@ struct DgnRangeTree
         size_t GetNodeCount();
         size_t GetElementCount();
         size_t GetMaxChildDepth();
-        ;
     };
 
 private:
@@ -148,7 +147,6 @@ private:
     LeafNode* AllocateLeafNode() {return new (m_leafNodes.AllocateNode()) LeafNode(m_is3d);}
     void FreeInternalNode(InternalNode* node) {m_internalNodes.FreeNode(node);}
     void FreeLeafNode(LeafNode* node) {m_leafNodes.FreeNode(node);}
-    void AddElement(Entry const&);
 
 public:
     void LoadTree(DgnModelCR);
@@ -160,11 +158,11 @@ public:
     void SetNodeSizes(size_t internalNodeSize, size_t leafNodeSize);
     bool Is3d() const {return m_is3d;}
     Match FindMatches(Traverser&);
+    void AddElement(Entry const&);
     void AddGeomElement(GeometricElementCR geom){AddElement(Entry(geom.CalculateRange3d(), geom));}
     StatusInt RemoveElement(Entry const&);
 
     DGNPLATFORM_EXPORT void ProcessOcclusionSorted(ViewContextR, DgnModelP, ProgressMonitor* monitor, bool doFrustumCull, uint32_t* timeOut);
 };
-
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

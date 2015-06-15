@@ -1818,9 +1818,9 @@ struct          IDimElementHelper : public RefCountedBase
         virtual int             GetNumberofSegments () const = 0;
         virtual StatusInt       StrokeDimension (AdimProcess&) const = 0;
         virtual StatusInt       ReEvaluateElement (EditElementHandleR dimElement) const {return SUCCESS;}
-        virtual bool            IsVertexDeletable (HitPathCP hitPath) const = 0;
+        virtual bool            IsVertexDeletable (HitDetailCP hitPath) const = 0;
         virtual BentleyStatus   DeleteVertex (EditElementHandleR dimElement, int pointNo);
-        virtual BentleyStatus   InsertVertex (EditElementHandleR dimElement, DPoint3dCR point, HitPathCR hitPath, DimensionStyleCR dimStyle) = 0;
+        virtual BentleyStatus   InsertVertex (EditElementHandleR dimElement, DPoint3dCR point, HitDetailCR hitPath, DimensionStyleCR dimStyle) = 0;
         virtual bool            HasText () const {return true;}
     };
 
@@ -1837,9 +1837,9 @@ struct          AngularDimensionHelper: public IDimElementHelper
     BentleyStatus   DropToSegment (ElementAgendaR droppedDimension) const override;
     int             GetNumberofSegments () const override {return m_hdlr.GetNumPoints (m_dimension) - 2;}
     StatusInt       StrokeDimension (AdimProcess&) const override;
-    bool            IsVertexDeletable (HitPathCP hitPath) const override {return m_hdlr.GetNumPoints (m_dimension) > 3;}
+    bool            IsVertexDeletable (HitDetailCP hitPath) const override {return m_hdlr.GetNumPoints (m_dimension) > 3;}
     BentleyStatus   DeleteVertex (EditElementHandleR dimElement, int pointNo) override;
-    BentleyStatus   InsertVertex (EditElementHandleR dimElement, DPoint3dCR point, HitPathCR hitPath, DimensionStyleCR dimStyle) override;
+    BentleyStatus   InsertVertex (EditElementHandleR dimElement, DPoint3dCR point, HitDetailCR hitPath, DimensionStyleCR dimStyle) override;
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1859,9 +1859,9 @@ struct          LinearDimensionHelper: public IDimElementHelper
     BentleyStatus   DropToSegment (ElementAgendaR droppedDimension) const override;
     int             GetNumberofSegments () const override{return m_hdlr.GetNumPoints (m_dimension) -1;}
     StatusInt       StrokeDimension (AdimProcess&) const override;
-    bool            IsVertexDeletable (HitPathCP hitPath) const override {return m_hdlr.GetNumPoints (m_dimension) > 2;}
+    bool            IsVertexDeletable (HitDetailCP hitPath) const override {return m_hdlr.GetNumPoints (m_dimension) > 2;}
     BentleyStatus   DeleteVertex (EditElementHandleR dimElement, int pointNo) override;
-    BentleyStatus   InsertVertex (EditElementHandleR dimElement, DPoint3dCR point, HitPathCR hitPath, DimensionStyleCR dimStyle) override;
+    BentleyStatus   InsertVertex (EditElementHandleR dimElement, DPoint3dCR point, HitDetailCR hitPath, DimensionStyleCR dimStyle) override;
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1881,8 +1881,8 @@ struct          OrdinateDimensionHelper : public IDimElementHelper
     int             GetNumberofSegments () const override {return m_hdlr.GetNumPoints (m_dimension);}
     StatusInt       StrokeDimension (AdimProcess&) const override;
     StatusInt       ReEvaluateElement (EditElementHandleR dimElement) const override;
-    bool            IsVertexDeletable (HitPathCP hitPath) const override {return m_hdlr.GetNumPoints (m_dimension) > 2;}
-    BentleyStatus   InsertVertex (EditElementHandleR dimElement, DPoint3dCR point, HitPathCR hitPath, DimensionStyleCR dimStyle) override;
+    bool            IsVertexDeletable (HitDetailCP hitPath) const override {return m_hdlr.GetNumPoints (m_dimension) > 2;}
+    BentleyStatus   InsertVertex (EditElementHandleR dimElement, DPoint3dCR point, HitDetailCR hitPath, DimensionStyleCR dimStyle) override;
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1897,8 +1897,8 @@ struct          RadialDimensionHelper : public IDimElementHelper
     int             GetNumberofSegments () const override {return 1;}
     StatusInt       StrokeDimension (AdimProcess&) const override;
     StatusInt       ReEvaluateElement (EditElementHandleR dimElement) const override;
-    bool            IsVertexDeletable (HitPathCP hitPath) const override;
-    BentleyStatus   InsertVertex (EditElementHandleR dimElement, DPoint3dCR point, HitPathCR hitPath, DimensionStyleCR dimStyle) override;
+    bool            IsVertexDeletable (HitDetailCP hitPath) const override;
+    BentleyStatus   InsertVertex (EditElementHandleR dimElement, DPoint3dCR point, HitDetailCR hitPath, DimensionStyleCR dimStyle) override;
     bool            HasText () const override;
     };
 
@@ -1914,8 +1914,8 @@ struct          LabelLineHelper: public IDimElementHelper
     int             GetNumberofSegments () const override {return 1;}
     StatusInt       StrokeDimension (AdimProcess&) const override;
     StatusInt       ReEvaluateElement (EditElementHandleR dimElement) const override;
-    bool            IsVertexDeletable (HitPathCP hitPath) const override {return false;}
-    BentleyStatus   InsertVertex (EditElementHandleR dimElement, DPoint3dCR point, HitPathCR hitPath, DimensionStyleCR dimStyle) override{return ERROR;}
+    bool            IsVertexDeletable (HitDetailCP hitPath) const override {return false;}
+    BentleyStatus   InsertVertex (EditElementHandleR dimElement, DPoint3dCR point, HitDetailCR hitPath, DimensionStyleCR dimStyle) override{return ERROR;}
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1929,9 +1929,9 @@ struct          NoteDimensionHelper: public IDimElementHelper
     NoteDimensionHelper (ElementHandleCR dimension, DimensionHandler& hdlr):IDimElementHelper (dimension, hdlr) {}
     int             GetNumberofSegments () const override {return 1;}
     StatusInt       StrokeDimension (AdimProcess&) const override;
-    bool            IsVertexDeletable (HitPathCP hitPath) const override {return m_hdlr.GetNumPoints (m_dimension) > 2;}
+    bool            IsVertexDeletable (HitDetailCP hitPath) const override {return m_hdlr.GetNumPoints (m_dimension) > 2;}
     BentleyStatus   DeleteVertex (EditElementHandleR dimElement, int pointNo) override;
-    BentleyStatus   InsertVertex (EditElementHandleR dimElement, DPoint3dCR point, HitPathCR hitPath, DimensionStyleCR dimStyle) override;
+    BentleyStatus   InsertVertex (EditElementHandleR dimElement, DPoint3dCR point, HitDetailCR hitPath, DimensionStyleCR dimStyle) override;
     bool            HasText () const override;
     };
 #endif

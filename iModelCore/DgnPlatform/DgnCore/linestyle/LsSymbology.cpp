@@ -29,7 +29,7 @@ void            LineStyleSymb::Init (ILineStyleCP lStyle)
     m_scale       = m_dashScale = m_gapScale = 1.0;
     m_orgWidth    = m_endWidth  = m_phaseShift  = m_autoPhase = 0.0;
     m_maxCompress = 0.3;
-    m_planeByRows.initIdentity();
+    m_planeByRows.InitIdentity ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -44,7 +44,7 @@ void            LineStyleSymb::SetPlaneAsMatrixRows (RotMatrixCP pPlane)
         }
     else
         {
-        m_planeByRows.initIdentity();
+        m_planeByRows.InitIdentity ();
         m_options.plane = false;
         }
     }
@@ -58,14 +58,14 @@ DPoint3dCP normal
 )
     {
     // BEIJING_WIP The previous implementation invoked
-    //     initFromVectorAndRotationAngle ((DVec3d const *)normal, 0.0);
+    //     InitFromVectorAndRotationAngle (*((DVec3d const *)normal), 0.0);
     //  With angle zero, that always retunred an identity matrix.
     //  (And with nonzero angle, the bvector is a description of the effect, and does not appear in
     //   the z column as was incorrectly expected.)
     DVec3d xVec, yVec, zVec;
-    normal->getNormalizedTriad (&xVec, &yVec, &zVec);
+    ((DVec3d const *)normal)->GetNormalizedTriad(xVec, yVec, zVec);
     RotMatrix matrix;
-    matrix.initFromColumnVectors (&xVec, &yVec, &zVec);
+    matrix.InitFromColumnVectors (xVec, yVec, zVec);
     SetPlaneAsMatrixRows (&matrix);
     }
 
@@ -526,9 +526,9 @@ DPoint3dCP          endTangent
         if (SUCCESS == context.GetCurrLocalToFrustumTrans (localToFrustum))
             {
             DVec3d  xCol;
-            localToFrustum.getMatrixColumn (&xCol, 0);
+            localToFrustum.GetMatrixColumn (xCol, 0);
 
-            scale /= xCol.magnitude();
+            scale /= xCol.Magnitude ();
             }
         }
 

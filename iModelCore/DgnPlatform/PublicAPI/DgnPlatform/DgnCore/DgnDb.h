@@ -57,14 +57,14 @@ public:
     //! ctor for CreateDgnDbParams.
     //! @param[in] guid The BeDbGuid to store in the newly created DgnDb. If invalid (the default), a new BeDbGuid is created.
     //! The new BeProjectGuid can be obtained via GetGuid.
-    CreateDgnDbParams (BeDbGuid guid=BeDbGuid()) : BeSQLite::Db::CreateParams(), m_guid(guid) {if (!m_guid.IsValid()) m_guid.Create(); }
+    CreateDgnDbParams(BeDbGuid guid=BeDbGuid()) : BeSQLite::Db::CreateParams(), m_guid(guid) {if (!m_guid.IsValid()) m_guid.Create(); }
 
     //! Set the value to be stored as the ProjectName property in the new DgnDb created using this CreateDgnDbParams/
     //! @note This value is stored as a property in the project. It does *not* refer to a file name.
-    void SetProjectName(Utf8CP name) {m_name.AssignOrClear (name);}
+    void SetProjectName(Utf8CP name) {m_name.AssignOrClear(name);}
 
     //! Set the value to be stored as the ProjectDescription property in the new DgnDb created using this CreateDgnDbParams.
-    void SetProjectDescription (Utf8CP description) {m_description.AssignOrClear (description);}
+    void SetProjectDescription(Utf8CP description) {m_description.AssignOrClear(description);}
 
     //! Set the value to be stored as the Client property in the new DgnDb created using this CreateDgnDbParams.
     void SetClient(Utf8CP client) {m_client = client;}
@@ -75,7 +75,7 @@ public:
     //! @note The default is to create a new database from scratch (in other words, no seed database).
     //! @note When using a seed database, it determines the page size, encoding, compression, user_version, etc, for the database. Make sure they are appropriate
     //! for your needs.
-    void SetSeedDb (BeFileNameCR seedDb) {m_seedDb = seedDb;}
+    void SetSeedDb(BeFileNameCR seedDb) {m_seedDb = seedDb;}
 
     //! Get the BeDbGuid to be stored in the newly created DgnDb. This is only necessary if you don't supply a valid BeDbGuid
     //! to the ctor.
@@ -83,7 +83,7 @@ public:
 
     //! Determine whether to overwrite an existing file in DgnDb::CreateDgnDb. The default is to fail if a file by the supplied name
     //! already exists.
-    void SetOverwriteExisting (bool val) {m_overwriteExisting = val;}
+    void SetOverwriteExisting(bool val) {m_overwriteExisting = val;}
 };
 
 /** @endcond */
@@ -94,8 +94,8 @@ public:
 //=======================================================================================
 struct DgnVersion : BeSQLite::SchemaVersion
 {
-    DgnVersion (uint16_t major, uint16_t minor, uint16_t sub1, uint16_t sub2) : SchemaVersion(major, minor, sub1, sub2) {}
-    DgnVersion (Utf8CP val) : SchemaVersion(val){}
+    DgnVersion(uint16_t major, uint16_t minor, uint16_t sub1, uint16_t sub2) : SchemaVersion(major, minor, sub1, sub2) {}
+    DgnVersion(Utf8CP val) : SchemaVersion(val){}
 };
 
 //=======================================================================================
@@ -119,37 +119,36 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
         DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _DoUpgrade(DgnDbR, DgnVersion& from) const;
     };
 
-
 private:
     void Destroy();
 
 protected:
-    friend struct ITxnManager;
+    friend struct Txns;
     friend struct DgnElement;
 
-    DgnVersion          m_schemaVersion;
-    DgnDomains          m_domains;
-    DgnFonts            m_fonts;
-    DgnColors           m_colors;
-    DgnCategories       m_categories;
-    DgnStyles           m_styles;
-    DgnModels           m_models;
-    DgnElements         m_elements;
-    DgnUnits            m_units;
-    DgnViews            m_views;
-    DgnGeomParts        m_geomParts;
-    DgnMaterials        m_materials;
-    DgnLinks            m_links;
-    BeFileName          m_fileName;
-    ITxnManagerP        m_txnManager;
+    Utf8String      m_fileName;
+    DgnElements     m_elements;
+    DgnModels       m_models;
+    DgnVersion      m_schemaVersion;
+    DgnDomains      m_domains;
+    DgnFonts        m_fonts;
+    DgnColors       m_colors;
+    DgnCategories   m_categories;
+    DgnStyles       m_styles;
+    DgnUnits        m_units;
+    DgnViews        m_views;
+    DgnGeomParts    m_geomParts;
+    DgnMaterials    m_materials;
+    DgnLinks        m_links;
+    TxnManagerPtr   m_txnManager;
 
     BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
 
-    DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _VerifySchemaVersion (BeSQLite::Db::OpenParams const& params) override;
-    BeSQLite::DbResult CreateNewDgnDb (BeFileNameCR boundFileName, CreateDgnDbParams const& params);
+    DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _VerifySchemaVersion(BeSQLite::Db::OpenParams const& params) override;
+    BeSQLite::DbResult CreateNewDgnDb(BeFileNameCR boundFileName, CreateDgnDbParams const& params);
 
 public:
-    BeSQLite::DbResult InitializeDgnDb (CreateDgnDbParams const& params);
+    BeSQLite::DbResult InitializeDgnDb(CreateDgnDbParams const& params);
     BeSQLite::DbResult CreateProjectTables();
 
     DgnDb();
@@ -161,12 +160,9 @@ public:
 
     BeSQLite::DbResult SaveDgnDbSchemaVersion(DgnVersion version=DgnVersion(DGNDB_CURRENT_VERSION_Major,DGNDB_CURRENT_VERSION_Minor,DGNDB_CURRENT_VERSION_Sub1,DGNDB_CURRENT_VERSION_Sub2));
 
-public:
-    DGNPLATFORM_EXPORT ITxnManagerR GetTxnManager();
-
-    //! Get the file name for this DgnDb.
+    //! Get ae BeFileName for this DgnDb.
     //! @note The superclass method BeSQLite::Db::GetDbFileName may also be used to get the same value, as a Utf8CP.
-    DGNPLATFORM_EXPORT BeFileNameCR GetFileName() const;
+    BeFileName GetFileName() const {return BeFileName(m_fileName);}
 
     //! Get the schema version of an opened DgnDb.
     DGNPLATFORM_EXPORT DgnVersion GetSchemaVersion();
@@ -180,7 +176,7 @@ public:
     //! @note If this method succeeds, it will return a valid DgnDbPtr. The project will be automatically closed when the last reference
     //! to it is released. There is no way to hold a pointer to a "closed project".
     //! @note A DgnDb can have an expiration date. See Db::IsExpired
-    DGNPLATFORM_EXPORT static DgnDbPtr OpenDgnDb (BeSQLite::DbResult* status, BeFileNameCR filename, OpenParams const& openParams);
+    DGNPLATFORM_EXPORT static DgnDbPtr OpenDgnDb(BeSQLite::DbResult* status, BeFileNameCR filename, OpenParams const& openParams);
 
     //! Create and open a new DgnDb file.
     //! @param[out] status BE_SQLITE_OK if the DgnDb file was successfully created, error code otherwise. May be NULL.
@@ -190,14 +186,7 @@ public:
     //! @return a reference counted pointer to the newly created DgnDb. Its IsValid() method will return false if the open failed for any reason.
     //! @note If this method succeeds, it will return a valid DgnDbPtr. The DgnDb will be automatically closed when the last reference
     //! to it is released. There is no way to hold a pointer to a "closed project".
-    DGNPLATFORM_EXPORT static DgnDbPtr CreateDgnDb (BeSQLite::DbResult* status, BeFileNameCR filename, CreateDgnDbParams const& params);
-
-    //! Get the next available (unused) value for a BeServerIssuedId for the supplied Table/Column.
-    //! @param [in,out] value
-    //! @param [in] tableName
-    //! @param [in] columnName
-    //! @param [in] minimumId
-    DGNPLATFORM_EXPORT BeSQLite::DbResult GetNextServerIssuedId (BeServerIssuedId& value, Utf8CP tableName, Utf8CP columnName, uint32_t minimumId=1);
+    DGNPLATFORM_EXPORT static DgnDbPtr CreateDgnDb(BeSQLite::DbResult* status, BeFileNameCR filename, CreateDgnDbParams const& params);
 
     DGNPLATFORM_EXPORT DgnModels& Models() const;                   //!< Information about models for this DgnDb
     DGNPLATFORM_EXPORT DgnElements& Elements() const;               //!< Information about graphic elements for this DgnDb
@@ -209,9 +198,10 @@ public:
     DGNPLATFORM_EXPORT DgnGeomParts& GeomParts() const;             //!< Information about the geometry parts for this DgnDb
     DGNPLATFORM_EXPORT DgnFonts& Fonts() const;                     //!< Information about fonts for this DgnDb
     DGNPLATFORM_EXPORT DgnLinks& Links() const;                     //!< Information about DgnLinks for this DgnDb
-    DGNPLATFORM_EXPORT DgnDomains& Domains() const;           //!< The DgnDomains associated with this DgnDb.
+    DGNPLATFORM_EXPORT DgnDomains& Domains() const;                 //!< The DgnDomains associated with this DgnDb.
+    DGNPLATFORM_EXPORT TxnManagerR Txns();
 
-    DGNPLATFORM_EXPORT DgnFileStatus CompactFile ();
+    DGNPLATFORM_EXPORT DgnDbStatus CompactFile();
 
 //__PUBLISH_SECTION_END__
     DGNPLATFORM_EXPORT DgnMaterials& Materials() const;       //!< Information about materials for this DgnDb
@@ -221,25 +211,16 @@ public:
     //! Gets a cached and prepared ECSqlStatement.
     //! @remarks This is only to be used by DgnPlatform internally to avoid misuse and unexpected caching behavior.
     //! Therefore it is not inlined.
-    DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetPreparedECSqlStatement (Utf8CP ecsql) const;
-
-    //! Create a "PatchSet" by comparing db with a different version if itself. 
-    //! @note This function will return an error if the two files have different DbGuids. 'baseFile' must identify a version of Db.
-    //! @param[out] cset The generated ChangeSet
-    //! @param[out] errMsg  If not null, an explanatory error message is returned in case of failure
-    //! @param[in] baseFile A different version of the same db
-    //! @return BE_SQLITE_OK if patchset was created; else a non-zero error status if the diff failed. Returns BE_SQLITE_MISMATCH if the two Dbs have different GUIDs.
-    DGNPLATFORM_EXPORT BeSQLite::DbResult CreatePatchSetFromDiff(BeSQLite::ChangeSet& cset, Utf8StringP errMsg, BeFileNameCR baseFile);
-
+    DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetPreparedECSqlStatement(Utf8CP ecsql) const;
 };
 
 #if !defined (DOCUMENTATION_GENERATOR)
-inline BeSQLite::DbResult DgnViews::QueryProperty (void* value, uint32_t size, DgnViewId viewId, DgnViewPropertySpecCR spec, uint64_t id)const {return m_dgndb.QueryProperty(value, size, spec, viewId.GetValue(), id);}
-inline BeSQLite::DbResult DgnViews::QueryProperty (Utf8StringR value, DgnViewId viewId, DgnViewPropertySpecCR spec, uint64_t id) const{return m_dgndb.QueryProperty (value, spec, viewId.GetValue(), id);}
-inline BeSQLite::DbResult DgnViews::QueryPropertySize (uint32_t& size, DgnViewId viewId, DgnViewPropertySpecCR spec, uint64_t id) const{return m_dgndb.QueryPropertySize (size, spec, viewId.GetValue(), id);}
-inline BeSQLite::DbResult DgnViews::SaveProperty (DgnViewId viewId, DgnViewPropertySpecCR spec, void const* value, uint32_t size, uint64_t id) {return m_dgndb.SaveProperty (spec, value, size, viewId.GetValue(), id);}
-inline BeSQLite::DbResult DgnViews::SavePropertyString (DgnViewId viewId, DgnViewPropertySpecCR spec, Utf8StringCR value, uint64_t id) {return m_dgndb.SavePropertyString (spec, value, viewId.GetValue(), id);}
-inline BeSQLite::DbResult DgnViews::DeleteProperty (DgnViewId viewId, DgnViewPropertySpecCR spec, uint64_t id) {return m_dgndb.DeleteProperty (spec, viewId.GetValue(), id);}
+inline BeSQLite::DbResult DgnViews::QueryProperty(void* value, uint32_t size, DgnViewId viewId, DgnViewPropertySpecCR spec, uint64_t id)const {return m_dgndb.QueryProperty(value, size, spec, viewId.GetValue(), id);}
+inline BeSQLite::DbResult DgnViews::QueryProperty(Utf8StringR value, DgnViewId viewId, DgnViewPropertySpecCR spec, uint64_t id) const{return m_dgndb.QueryProperty(value, spec, viewId.GetValue(), id);}
+inline BeSQLite::DbResult DgnViews::QueryPropertySize(uint32_t& size, DgnViewId viewId, DgnViewPropertySpecCR spec, uint64_t id) const{return m_dgndb.QueryPropertySize(size, spec, viewId.GetValue(), id);}
+inline BeSQLite::DbResult DgnViews::SaveProperty(DgnViewId viewId, DgnViewPropertySpecCR spec, void const* value, uint32_t size, uint64_t id) {return m_dgndb.SaveProperty(spec, value, size, viewId.GetValue(), id);}
+inline BeSQLite::DbResult DgnViews::SavePropertyString(DgnViewId viewId, DgnViewPropertySpecCR spec, Utf8StringCR value, uint64_t id) {return m_dgndb.SavePropertyString(spec, value, viewId.GetValue(), id);}
+inline BeSQLite::DbResult DgnViews::DeleteProperty(DgnViewId viewId, DgnViewPropertySpecCR spec, uint64_t id) {return m_dgndb.DeleteProperty(spec, viewId.GetValue(), id);}
 
 #endif // DOCUMENTATION_GENERATOR
 

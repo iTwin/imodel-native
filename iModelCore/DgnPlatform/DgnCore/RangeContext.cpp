@@ -18,7 +18,7 @@ RangeClip::RangeClip (ClipPlaneSetCP pClip, TransformCP pTransform)
     {
     m_isCamera = false;
     if (NULL == pTransform)
-        m_transform.initIdentity();
+        m_transform.InitIdentity ();
     else
         m_transform = *pTransform;
 
@@ -49,7 +49,7 @@ void RangeClip::ApplyTransform (DPoint3dP transformedPoints, DPoint3dCP points, 
             DPoint3d        tmpPoint;
             static double   s_cameraScaleLimit = 1.0 / 300.0;
                                                                                                                                              
-            tmpPoint.differenceOf (&points[i], &m_camera);
+            tmpPoint.DifferenceOf (points[i], m_camera);
 
             double      cameraScale =  MAX (s_cameraScaleLimit, -m_focalLength / tmpPoint.z);
 
@@ -60,7 +60,7 @@ void RangeClip::ApplyTransform (DPoint3dP transformedPoints, DPoint3dCP points, 
         }
     else
         {
-        m_transform.multiply (transformedPoints, points, numPoints);
+        m_transform.Multiply (transformedPoints, points, numPoints);
         }
     }
 
@@ -170,22 +170,22 @@ void RangeClip::ClipEllipse (ElemRangeCalc* rangeCalculator, ClipStackCP clipSta
 
     if (m_isCamera)
         {
-        ellipse.getRange (&range);
-        range.get8Corners (corners);
+        ellipse.GetRange (range);
+        range.Get8Corners  (corners);
         ClipRange (rangeCalculator, clipStack, corners, clipIndex, false);
         return;
         }
 
     DEllipse3d          transformedEllipse;
-    transformedEllipse.productOf (&m_transform, &ellipse);
+    m_transform.Multiply (transformedEllipse, ellipse);
     if (m_planeSets.empty())
         {
         clipStack->ClipEllipse (rangeCalculator, transformedEllipse, clipIndex);
         }
     else
         {
-        transformedEllipse.getRange (&range);
-        range.get8Corners (corners);
+        transformedEllipse.GetRange (range);
+        range.Get8Corners  (corners);
 
         for (size_t i=0, count=m_planeSets.size(); i<count; i++)
             if (!m_planeSets[i].ClipRange (rangeCalculator, clipStack, corners,  clipIndex, false))
@@ -218,7 +218,7 @@ void RangeClip::ClipRange (ElemRangeCalc* rangeCalculator, ClipStackCP clipStack
 +===============+===============+===============+===============+===============+======*/
 StatusInt       ElemRangeCalc::GetRange (DRange3dR range)
     {
-    if (m_range.isNull())
+    if (m_range.IsNull())
         {
         memset (&range, 0, sizeof (range));
         return ERROR;
@@ -228,8 +228,8 @@ StatusInt       ElemRangeCalc::GetRange (DRange3dR range)
     return SUCCESS;
     }
 
-            ElemRangeCalc::ElemRangeCalc ()             { m_range.init (); }
-void        ElemRangeCalc::Invalidate ()                { m_range.init (); }
+            ElemRangeCalc::ElemRangeCalc ()             { m_range.Init (); }
+void        ElemRangeCalc::Invalidate ()                { m_range.Init (); }
 void        ElemRangeCalc::SetRange (DRange3dCR range)  { m_range = range; }
 
 static const double RMINDESIGNRANGE = (-4503599627370496.0);
@@ -248,7 +248,7 @@ void            ElemRangeCalc::Union (int numPoints, DPoint3dCP points, ClipStac
             if (points->x > RMINDESIGNRANGE && points->y > RMINDESIGNRANGE && points->z > RMINDESIGNRANGE &&
                 points->x < RMAXDESIGNRANGE && points->y < RMAXDESIGNRANGE && points->z < RMAXDESIGNRANGE)         // This will handle disconnects.
                 {
-                m_range.extend (points);
+                m_range.Extend (*points);
                 }
             }
         }
@@ -277,7 +277,7 @@ void ElemRangeCalc::Union (int numPoints, DPoint2dCP points, ClipStackCP currCli
                 tPt.y = points->y;
                 tPt.z = 0.0;
 
-                m_range.extend (&tPt);
+                m_range.Extend (tPt);
                 }
             }
         }
@@ -299,13 +299,13 @@ void            ElemRangeCalc::Union (DRange3dCP in, ClipStackCP currClip)
     {
     if (NULL == currClip)
         {
-        m_range.extend (in);
+        m_range.Extend (*in);
         }
     else
         {
         DPoint3d            corners[8];
 
-        in->get8Corners (corners);
+        in->Get8Corners  (corners);
         currClip->ClipRange (this, corners, false);
         }
     }
@@ -320,8 +320,8 @@ void            ElemRangeCalc::Union (DEllipse3dCP ellipse, ClipStackCP currClip
         {
         DRange3d    ellipseRange;
 
-        ellipse->getRange (&ellipseRange);
-        m_range.extend (&ellipseRange);
+        ellipse->GetRange (ellipseRange);
+        m_range.Extend (ellipseRange);
         }
     else
         {
@@ -382,9 +382,9 @@ void addPlaneFromPoints (ClipPlane& plane, DPoint3dCR origin, DPoint3dCR cross0,
     {
     DVec3d      normal;
 
-    normal.crossProductToPoints (&cross1, &cross0, &origin);
-    if (0.0 == normal.normalize ())                   // If the cross product is NULL then use ray from opposite end (to handle planar polyhedra).
-        normal.normalizedDifference (&rayEnd, &origin);
+    normal.CrossProductToPoints(cross1, cross0, origin);
+    if (0.0 == normal.Normalize ())                   // If the cross product is NULL then use ray from opposite end (to handle planar polyhedra).
+        normal.NormalizedDifference (rayEnd, origin);
 
     plane = ClipPlane (normal, origin);
     }
@@ -402,7 +402,7 @@ bool computeRangePlanesFromCorners (ClipPlane rangePlanes[6], DPoint3d degenerat
     bool     zeroLength[3];
 
     for (size_t i=0; i<3; i++)
-        zeroLength[i] = corners[0].isEqual (&corners[(size_t) 1 << i]);
+        zeroLength[i] = corners[0].IsEqual (corners[(size_t) 1 << i]);
 
     // If the polyhedron degenerates to either a line or a point...
     for (int i=0; i<3; i++)
@@ -471,7 +471,7 @@ bool                    fastClip
         {
         DPoint3d        intersectCorners[8];
 
-        intersectRange.get8Corners (intersectCorners);
+        intersectRange.Get8Corners  (intersectCorners);
 
         clipStack->ClipRange (rangeCalculator, intersectCorners, clipIndex, fastClip);
         }
@@ -550,7 +550,7 @@ void RangeClipPlanes::ClipPoints (ElemRangeCalc* rangeCalculator, ClipStackCP cl
                 {
                 double      t = lastDistance / (lastDistance - thisDistance);
 
-                outputPoint->sumOf (NULL, pLastPoint, 1.0 - t, pThisPoint, t);
+                outputPoint->SumOf (*pLastPoint, 1.0 - t, *pThisPoint, t);
                 outputPoint++;
 
                 if ((nOutputPoints = static_cast<int>((outputPoint - outputPoints))) > 1)
@@ -846,7 +846,7 @@ void _DrawSymbol (IDisplaySymbol* symbol, TransformCP trans, ClipPlaneSetP clip,
     
     DPoint3d    corners [8];
 
-    range.get8Corners (corners);
+    range.Get8Corners  (corners);
 
     if (NULL != clip)
         PushClipPlanes (*clip);
@@ -909,7 +909,7 @@ bool IsRangeContainedInCurrentRange (DRange3dCR range, bool is3d)
     if (!is3d)
         dRange.low.z = dRange.high.z = 0;
 
-    dRange.get8Corners (dRangeCorners);
+    dRange.Get8Corners  (dRangeCorners);
     m_output.GetCurrRangeClip()->ClipRange (&elemRangeCalc, dRangeCorners, 0, true);
 
     if (SUCCESS != elemRangeCalc.GetRange (dRange))
@@ -994,7 +994,7 @@ StatusInt DgnViewport::ComputeViewRange (DRange3dR range, FitViewParams& params)
     FitContext  context (params);
     context.AllocateScanCriteria ();
 
-    if (SUCCESS != SetupFromViewController()) // can't proceed if viewport isn't valid (e.g. not active)
+    if (ViewportStatus::Success != SetupFromViewController()) // can't proceed if viewport isn't valid (e.g. not active)
         return ERROR;
 
     context.SetViewport(this); // Don't want to attach...but transients have view display mask!
@@ -1147,7 +1147,7 @@ StatusInt       IViewTransients::ComputeRange (DRange3dR range, DgnViewportP vp)
     // NEEDSWORK_WIP_RANGE - Do we need to keep this method if fit starts using project extents???
     //                       Can maybe just have a virtual _GetRange method on IViewTransient and
     //                       require implemention to keep "geometry" range if needed...
-    if (SUCCESS != vp->SetupFromViewController()) // can't proceed if viewport isn't valid (e.g. not active)
+    if (ViewportStatus::Success != vp->SetupFromViewController()) // can't proceed if viewport isn't valid (e.g. not active)
         return  ERROR;
 
     FitViewParams params;

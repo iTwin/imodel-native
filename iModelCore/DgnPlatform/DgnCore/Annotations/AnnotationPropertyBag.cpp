@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: DgnCore/Annotations/AnnotationPropertyBag.cpp $
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
  
 #include <DgnPlatformInternal.h>
@@ -22,8 +22,6 @@ AnnotationPropertyBag::AnnotationPropertyBag() :
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-AnnotationPropertyBag::AnnotationPropertyBag(AnnotationPropertyBagCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
-AnnotationPropertyBagR AnnotationPropertyBag::operator=(AnnotationPropertyBagCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
 void AnnotationPropertyBag::CopyFrom(AnnotationPropertyBagCR rhs)
     {
     m_integerProperties = rhs.m_integerProperties;

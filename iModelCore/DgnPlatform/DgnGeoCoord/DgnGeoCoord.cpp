@@ -4236,7 +4236,7 @@ DgnGCS::DgnGCS () : BaseGCS()
     {
     m_uorsPerBaseUnit               = 1.0;
     m_paperScaleFromType66          = 1.0;
-    m_globalOrigin.zero();
+    m_globalOrigin.Zero ();
 
     m_datumOrEllipsoidFromUserLib   = false;
     }
@@ -4251,7 +4251,7 @@ WCharCP         coordinateSystemName
     {
     m_uorsPerBaseUnit               = 1.0;
     m_paperScaleFromType66          = 1.0;
-    m_globalOrigin.zero();
+    m_globalOrigin.Zero ();
     m_datumOrEllipsoidFromUserLib   = false;
     SetDatumOrEllipsoidInUserLibrary();
     }
@@ -4450,8 +4450,8 @@ DPoint3dR               outCartesian,       // <= cartesian, units of coordinate
 DPoint3dCR              inUors              // => UORS
 ) const
     {
-    outCartesian.differenceOf (&inUors, &m_globalOrigin);
-    outCartesian.scale (m_csParameters->csdef.scale / m_uorsPerBaseUnit);
+    outCartesian.DifferenceOf (inUors, m_globalOrigin);
+    outCartesian.Scale (m_csParameters->csdef.scale / m_uorsPerBaseUnit);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4464,8 +4464,8 @@ DPoint3dCR              inCartesian         // => cartesian, units of coordinate
 ) const
     {
     outUors = inCartesian;
-    outUors.scale (m_uorsPerBaseUnit / m_csParameters->csdef.scale);
-    outUors.sumOf (&m_globalOrigin, &outUors);
+    outUors.Scale (m_uorsPerBaseUnit / m_csParameters->csdef.scale);
+    outUors.SumOf (m_globalOrigin,outUors);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4772,20 +4772,20 @@ DgnGCSCR                destMstnGCS         // => destination coordinate system
         }
 
     points[0] = elementOrigin;
-    points[1].init (elementOrigin.x + extent->x, elementOrigin.y, elementOrigin.z);
-    points[2].init (elementOrigin.x, elementOrigin.y + extent->y, elementOrigin.z);
-    points[3].init (elementOrigin.x, elementOrigin.y, elementOrigin.z + extent->z);
+    points[1].Init (elementOrigin.x + extent->x, elementOrigin.y, elementOrigin.z);
+    points[2].Init (elementOrigin.x, elementOrigin.y + extent->y, elementOrigin.z);
+    points[3].Init (elementOrigin.x, elementOrigin.y, elementOrigin.z + extent->z);
 
     DPoint3d transformedPoints[4];
     ReprojectStatus status = ReprojectUors (transformedPoints, NULL, NULL, points, 4, destMstnGCS);
 
-    frameA.initFrom4Points (&points[0], &points[1], &points[2], &points[3]);
-    frameAInverse.inverseOf (&frameA);
+    frameA.InitFrom4Points (points[0], points[1], points[2], points[3]);
+    frameAInverse.InverseOf(frameA);
 
-    frameB.initFrom4Points (&transformedPoints[0], &transformedPoints[1], &transformedPoints[2], &transformedPoints[3]);
+    frameB.InitFrom4Points (transformedPoints[0], transformedPoints[1], transformedPoints[2], transformedPoints[3]);
     RotMatrix axesA, axesB;
-    axesA.initFrom (&frameA);
-    axesB.initFrom (&frameB);
+    axesA.InitFrom (frameA);
+    axesB.InitFrom (frameB);
 
     // frameB is the direct image of the points.   Modify it per requests ....
     if (doScale)
@@ -4799,11 +4799,11 @@ DgnGCSCR                destMstnGCS         // => destination coordinate system
             // Get the ratio of x axis lengths.  Apply this to frameA axes, install in frameB.
             // uor scaling effects are already present in the vectors we inspect.
             DVec3d xVectorA, xVectorB;
-            axesA.getColumn (&xVectorA, 0);
-            axesB.getColumn (&xVectorB, 0);
-            double scale = xVectorB.magnitude () / xVectorA.magnitude ();
-            axesB.scaleColumns (&axesA, scale, scale, scale);
-            frameB.setMatrix (&axesB);
+            axesA.GetColumn (xVectorA, 0);
+            axesB.GetColumn (xVectorB, 0);
+            double scale = xVectorB.Magnitude () / xVectorA.Magnitude ();
+            axesB.ScaleColumns (axesA, scale, scale, scale);
+            frameB.SetMatrix (axesB);
             }
         }
     else
@@ -4814,19 +4814,19 @@ DgnGCSCR                destMstnGCS         // => destination coordinate system
             {
             // Accept the output directions but resize back to sReferenceFrameSize ...
             DVec3d xAxis, yAxis, zAxis;
-            axesB.getColumns (&xAxis, &yAxis, &zAxis);
-            double f = ax / xAxis.magnitude ();
-            xAxis.scale (f);
-            yAxis.scale (f);
-            zAxis.scale (f);
-            axesB.initFromColumnVectors (&xAxis, &yAxis, &zAxis);
-            frameB.setMatrix (&axesB);
+            axesB.GetColumns (xAxis, yAxis, zAxis);
+            double f = ax / xAxis.Magnitude ();
+            xAxis.Scale (f);
+            yAxis.Scale (f);
+            zAxis.Scale (f);
+            axesB.InitFromColumnVectors (xAxis, yAxis, zAxis);
+            frameB.SetMatrix (axesB);
             }
         else
             {
             // No change except uor effects ...
-            axesB.initFromScaleFactors (ax, ax, ax);
-            frameB.setMatrix (&axesB);
+            axesB.InitFromScaleFactors (ax, ax, ax);
+            frameB.SetMatrix (axesB);
             }
         }
 
@@ -4834,16 +4834,16 @@ DgnGCSCR                destMstnGCS         // => destination coordinate system
     if (sDoPerpendicularAxes)
         {
         RotMatrix unitB;
-        axesB.initFrom (&frameB);
-        unitB.squareAndNormalizeColumns (&axesB, 0, 1);
+        axesB.InitFrom (frameB);
+        unitB.SquareAndNormalizeColumns(axesB, 0, 1);
         DVec3d xVectorB;
-        axesB.getColumn (&xVectorB, 0);
-        double b = xVectorB.magnitude ();
-        axesB.scaleColumns  (&unitB, b, b, b);
+        axesB.GetColumn (xVectorB, 0);
+        double b = xVectorB.Magnitude ();
+        axesB.ScaleColumns (unitB, b, b, b);
         }
 
 
-    outTransform->productOf (&frameB, &frameAInverse);
+    outTransform->InitProduct (frameB, frameAInverse);
     return status;
     }
 
@@ -4999,7 +4999,7 @@ static BeSQLite::DbAppData::Key const& GetKey()
     return s_key;
     }
 
-    virtual void        _OnCleanup (BeSQLiteDbR) override {delete this;}
+    virtual void _OnCleanup(DbR) override {delete this;}
 };
 
 /*=================================================================================**//**
@@ -5015,7 +5015,7 @@ static BeSQLite::DbAppData::Key const& GetKey()
     return s_key;
     }
 
-    virtual void        _OnCleanup (BeSQLiteDbR) override {delete this;}
+    virtual void _OnCleanup(DbR) override {delete this;}
 
     DgnGCSAppData (DgnGCS& gcs) : m_gcs(&gcs) {;}
 };

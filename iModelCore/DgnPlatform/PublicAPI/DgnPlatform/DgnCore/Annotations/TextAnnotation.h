@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: PublicAPI/DgnPlatform/DgnCore/Annotations/TextAnnotation.h $ 
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $ 
+//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $ 
 //-------------------------------------------------------------------------------------- 
 #pragma once
 
@@ -31,7 +31,6 @@ typedef AnnotationLeaderCollection const& AnnotationLeaderCollectionCR;
 //=======================================================================================
 struct TextAnnotation : public RefCountedBase
 {
-//__PUBLISH_SECTION_END__
 private:
     DEFINE_T_SUPER(RefCountedBase)
 
@@ -41,35 +40,29 @@ private:
     AnnotationFramePtr m_frame;
     AnnotationLeaderCollection m_leaders;
 
-    void CopyFrom(TextAnnotationCR);
+    DGNPLATFORM_EXPORT void CopyFrom(TextAnnotationCR);
     void Reset();
 
 public:
     DGNPLATFORM_EXPORT explicit TextAnnotation(DgnDbR);
-    DGNPLATFORM_EXPORT TextAnnotation(TextAnnotationCR);
-    DGNPLATFORM_EXPORT TextAnnotationR operator=(TextAnnotationCR);
-
-//__PUBLISH_SECTION_START__
-//__PUBLISH_CLASS_VIRTUAL__
-    DGNPLATFORM_EXPORT static TextAnnotationPtr Create(DgnDbR);
+    TextAnnotation(TextAnnotationCR rhs) : T_Super(rhs) { CopyFrom(rhs); }
+    TextAnnotationR operator=(TextAnnotationCR rhs) { T_Super::operator=(rhs); if (&rhs != this) CopyFrom(rhs); return *this;}
+    static TextAnnotationPtr Create(DgnDbR project) { return new TextAnnotation(project); }
     DGNPLATFORM_EXPORT static TextAnnotationPtr Create(DgnDbR, DgnStyleId);
-    DGNPLATFORM_EXPORT TextAnnotationPtr Clone() const;
+    TextAnnotationPtr Clone() const { return new TextAnnotation(*this); }
 
-    DGNPLATFORM_EXPORT DgnDbR GetDgnProjectR() const;
+    DgnDbR GetDbR() const { return *m_dgndb; }
+    AnnotationTextBlockCP GetTextCP() const { return m_text.get(); }
+    AnnotationTextBlockP GetTextP() { return m_text.get(); }
+    void SetText(AnnotationTextBlockCP value) { m_text = const_cast<AnnotationTextBlockP>(value); }
+    AnnotationFrameCP GetFrameCP() const { return m_frame.get(); }
+    AnnotationFrameP GetFrameP() { return m_frame.get(); }
+    void SetFrame(AnnotationFrameCP value) { m_frame = const_cast<AnnotationFrameP>(value); }
+    AnnotationLeaderCollectionCR GetLeaders() const { return m_leaders; }
+    AnnotationLeaderCollectionR GetLeadersR() { return m_leaders; }
     DGNPLATFORM_EXPORT void ApplySeed(DgnStyleId);
-    DGNPLATFORM_EXPORT AnnotationTextBlockCP GetTextCP() const;
-    DGNPLATFORM_EXPORT AnnotationTextBlockP GetTextP();
-    DGNPLATFORM_EXPORT void SetText(AnnotationTextBlockCP);
-    DGNPLATFORM_EXPORT AnnotationFrameCP GetFrameCP() const;
-    DGNPLATFORM_EXPORT AnnotationFrameP GetFrameP();
-    DGNPLATFORM_EXPORT void SetFrame(AnnotationFrameCP);
-    DGNPLATFORM_EXPORT AnnotationLeaderCollectionCR GetLeaders() const;
-    DGNPLATFORM_EXPORT AnnotationLeaderCollectionR GetLeadersR();
-
-}; // TextAnnotation
+};
 
 //! @endGroup
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
-
-//__PUBLISH_SECTION_END__

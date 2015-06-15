@@ -31,26 +31,26 @@ static Utf8CP DGNPROPERTYJSON_Label                 = "label";
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-void UnitDefinition::FromJson (JsonValueCR inValue)
+void UnitDefinition::FromJson(JsonValueCR inValue)
     {
-    UnitBase base      = (UnitBase) inValue.get(DGNPROPERTYJSON_Base, (uint32_t)UnitBase::Meter).asUInt();
-    UnitSystem system  = (UnitSystem) inValue.get(DGNPROPERTYJSON_System, (uint32_t)UnitSystem::Metric).asUInt();
+    UnitBase base      = (UnitBase) inValue.get(DGNPROPERTYJSON_Base,(uint32_t)UnitBase::Meter).asUInt();
+    UnitSystem system  = (UnitSystem) inValue.get(DGNPROPERTYJSON_System,(uint32_t)UnitSystem::Metric).asUInt();
     double numerator   = JsonUtils::GetDouble(inValue[DGNPROPERTYJSON_Numerator], 1.0);
     double denominator = JsonUtils::GetDouble(inValue[DGNPROPERTYJSON_Denominator], 1.0);
 
-    WString label (BeJsonUtilities::CStringFromStringValue (inValue[DGNPROPERTYJSON_Label], "m"), true);
+    WString label(BeJsonUtilities::CStringFromStringValue(inValue[DGNPROPERTYJSON_Label], "m"), true);
 
-    Init (base,  system, numerator, denominator, label.c_str());
+    Init(base,  system, numerator, denominator, label.c_str());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-void UnitDefinition::ToJson (JsonValueR outValue) const
+void UnitDefinition::ToJson(JsonValueR outValue) const
     {
     outValue[DGNPROPERTYJSON_Base] = (uint32_t) GetBase();
     outValue[DGNPROPERTYJSON_System] = (uint32_t) GetSystem();
-    outValue[DGNPROPERTYJSON_Label] = Utf8String (GetLabel());
+    outValue[DGNPROPERTYJSON_Label] = Utf8String(GetLabel());
     outValue[DGNPROPERTYJSON_Numerator] = GetNumerator();
     outValue[DGNPROPERTYJSON_Denominator] = GetDenominator();
     }
@@ -58,7 +58,7 @@ void UnitDefinition::ToJson (JsonValueR outValue) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-void DgnModel::Properties::FormatterFlags::FromJson (JsonValueCR inValue)
+void DgnModel::Properties::FormatterFlags::FromJson(JsonValueCR inValue)
     {
     m_linearUnitMode     = inValue[DGNPROPERTYJSON_LinearUnitMode].asUInt();
     m_linearPrecType     = inValue[DGNPROPERTYJSON_LinearPrecType].asUInt();
@@ -72,7 +72,7 @@ void DgnModel::Properties::FormatterFlags::FromJson (JsonValueCR inValue)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-void DgnModel::Properties::FormatterFlags::ToJson (JsonValueR outValue) const
+void DgnModel::Properties::FormatterFlags::ToJson(JsonValueR outValue) const
     {
     outValue[DGNPROPERTYJSON_LinearUnitMode]     = (uint32_t) m_linearUnitMode;
     outValue[DGNPROPERTYJSON_LinearPrecType]     = (uint32_t) m_linearPrecType;
@@ -101,12 +101,12 @@ void DgnModel::Properties::FromJson(JsonValueCR inValue)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-void DgnModel::Properties::ToJson (JsonValueR outValue) const
+void DgnModel::Properties::ToJson(JsonValueR outValue) const
     {
-    m_formatterFlags.ToJson (outValue[DGNPROPERTYJSON_FormatterFlags]);
+    m_formatterFlags.ToJson(outValue[DGNPROPERTYJSON_FormatterFlags]);
 
-    m_masterUnit.ToJson (outValue[DGNPROPERTYJSON_MasterUnit]);
-    m_subUnit.ToJson (outValue[DGNPROPERTYJSON_SubUnit]);
+    m_masterUnit.ToJson(outValue[DGNPROPERTYJSON_MasterUnit]);
+    m_subUnit.ToJson(outValue[DGNPROPERTYJSON_SubUnit]);
 
     outValue[DGNPROPERTYJSON_RoundoffUnit] = m_roundoffUnit;
     outValue[DGNPROPERTYJSON_RoundoffRatio]    = m_roundoffRatio;
