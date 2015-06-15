@@ -75,7 +75,8 @@ void LsComponent::GetNextComponentId (LsComponentId& id, DgnDbR project, BeSQLit
         return;
         }
 
-    id = LsComponentId(stmt.GetValueInt(0) + 1);
+    //  NOTNOW -- unclear what will happen to the magic values.  For now, avoid any collision with them.
+    id = LsComponentId(std::max(stmt.GetValueInt(0) + 1, MAX_LINECODE+1));
     }
 
 //---------------------------------------------------------------------------------------
@@ -581,7 +582,7 @@ LsLocation&     location
 StatusInt LsDefinition::UpdateStyleTable () const
     {
     DgnDbP project = GetLocation()->GetDgnDb();
-    project->Styles ().LineStyles().Update (DgnStyleId(m_styleNumber), _GetName(), GetLocation()->GetComponentId(),
+    project->Styles ().LineStyles().Update (DgnStyleId(m_styleId), _GetName(), GetLocation()->GetComponentId(),
                                             GetLocation()->GetComponentType(), GetAttributes(), m_unitDef);
 
     return BSISUCCESS;

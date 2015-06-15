@@ -382,11 +382,10 @@ DPoint3dCP          startTangent,
 DPoint3dCP          endTangent
 )
     {
-#if defined (WIP_LINESTYLES)
-    // 0 - 7 use hardware linestyles.
-    if (IS_LINECODE (styleNo))
-        return styleNo;
-#endif
+    //  NOTNOW -- unclear what will happen to the magic values.  For now, avoid any collision with them.
+    if (IS_LINECODE (styleInfo->GetStyleId().GetValueUnchecked()))
+        return 0; //  styleNo;
+
     LsCacheP lsCache = LsCache::GetDgnDbCache(context.GetDgnDb ());
     LsDefinitionP   nameRec = lsCache->GetLineStyleP(styleInfo->GetStyleId());
 

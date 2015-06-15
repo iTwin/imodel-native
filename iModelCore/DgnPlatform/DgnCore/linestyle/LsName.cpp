@@ -63,7 +63,7 @@ void LsDefinition::Init(Utf8CP name, Json::Value& lsDefinition, DgnStyleId style
 
     m_attributes        = GetAttributes(lsDefinition);
     m_unitDef           = GetUnitDef(lsDefinition);
-    m_styleNumber       = styleId;
+    m_styleId       = styleId;
 
     m_hardwareLineCode  = -1;
     m_uorsPerMeter      = 0.0;
@@ -138,11 +138,9 @@ Utf8String         LsDefinition::GetStyleName () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    John.Gooding    09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            LsCache::AddIdEntry(DgnStyleId id, LsDefinitionP nameRec, bool resolves)
+void            LsCache::AddIdEntry(LsDefinitionP nameRec)
     {
-    Utf8CP       name = nameRec->_GetName ();
-
-    LsIdNode        idRec (id.GetValue(), name, nameRec, resolves);
+    LsIdNode        idRec (nameRec->GetStyleId().GetValue(), nameRec->_GetName (), nameRec);
 
     m_idTree.Add (&idRec);
     }
@@ -152,7 +150,7 @@ void            LsCache::AddIdEntry(DgnStyleId id, LsDefinitionP nameRec, bool r
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus       LsCache::RemoveIdEntry (DgnStyleId id)
     {
-    LsIdNode    node (0,0,0, true);
+    LsIdNode    node (0,0,0);
 
     if (SUCCESS != m_idTree.Remove (id.GetValue(), &node))
         return  ERROR;
@@ -172,18 +170,11 @@ LsCacheP  LsCache::GetDgnDbCache (DgnDbR project, bool loadIfNotLoaded)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-LsIdNode::LsIdNode
-(
-int64_t         id,
-Utf8CP       name,
-LsDefinitionP   nameRec,
-bool            resolves
-)
+LsIdNode::LsIdNode(int64_t id, Utf8CP name, LsDefinitionP nameRec)
     {
     m_id      = id;
     m_name    = NULL;
     m_nameRec = nameRec;
-    m_resolves = resolves;
 
     SetName (name);
     }
@@ -257,41 +248,31 @@ DgnDbCR    LsCache::GetDgnDb () const
 /*----------------------------------------------------------------------------------*//**
 * @bsimethod                                                    ChuckKirschman  01/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-//static StatusInt insertIntoNameMap(LsCache* lsInfo, Utf8CP name, DgnStyleId id, Utf8String& data, DgnDbR project)
-//    {
-//    Json::Value  jsonObj (Json::objectValue);
-//    if (!Json::Reader::Parse(data, jsonObj))
-//        return ERROR;
-//
-//    lsInfo->AddNameEntry (name, (int32_t)id.GetValue(), project, jsonObj);
-//
-//    return SUCCESS;
-//    }
-
-/*----------------------------------------------------------------------------------*//**
-* @bsimethod                                                    ChuckKirschman  01/01
-+---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus       LsCache::Load ()
     {
-    //if (IsLoaded())
-    //    return SUCCESS;
+    if (IsLoaded())
+        return SUCCESS;
 
-    //TreeLoaded ();
+    TreeLoaded ();
 
-    //DgnStyles::Iterator lineStyles = m_dgnDb.Styles ().LineStyles().MakeIterator ();
-    //for (DgnStyles::Iterator::Entry iter = lineStyles.begin (); lineStyles.end () != iter; ++iter)
-    //    {
-    //    Utf8String  data ((Utf8CP)iter.GetData());
-    //    insertIntoNameMap (this, iter.GetName(), iter.GetId(), data, this->m_dgnDb);
-    //    AddIdEntry (iter.GetId().GetValue(), m_dgnDb, iter.GetName(), true);
-    //    }
+    Statement stmt;
+    m_dgnDb.Styles().LineStyles().PrepareToQueryAllLineStyles(stmt);
 
-    //// Update the dialog if any names were loaded.  Can't do this until the line style system is loaded
-    //// since it calls into the level system which updates the local file from dgn libs.
-    //T_HOST.GetLineStyleAdmin()._LoadedNameMap (m_dgnDb);
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        DgnStyleId  styleId ((int64_t)stmt.GetValueInt(0));
+        Utf8String name(stmt.GetValueText(2));
+        Utf8String  data ((Utf8CP)stmt.GetValueBlob(4));
 
-    //return SUCCESS;
-    return ERROR;
+        Json::Value  jsonObj (Json::objectValue);
+        if (!Json::Reader::Parse(data, jsonObj))
+            return ERROR;
+
+        LsDefinition* lsDef = new LsDefinition (name.c_str(), m_dgnDb, jsonObj, styleId);
+        AddIdEntry(lsDef);
+        }
+
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -403,11 +384,7 @@ LsDefinitionP     LsCache::FindInMap (DgnDbR dgndb, DgnStyleId styleId)
 LsIdNodeP       LsCache::FindId (DgnStyleId styleId) const
     {
     LsIdNodeP   retval = m_idTree.Get (styleId.GetValue());
-    
-    if (NULL != retval && retval->Resolves ())
-        return retval;
-        
-    return NULL;
+    return retval;
     }
 
 /*---------------------------------------------------------------------------------**//**

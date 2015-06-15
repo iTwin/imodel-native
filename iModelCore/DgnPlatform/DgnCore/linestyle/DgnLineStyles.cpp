@@ -85,3 +85,11 @@ LsCacheP DgnLineStyles::GetLsCacheP (bool loadIfNull)
 
     return m_lineStyleMap.get();
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    06/2015
+//---------------------------------------------------------------------------------------
+void DgnLineStyles::PrepareToQueryAllLineStyles(BeSQLite::Statement & stmt)
+    {
+    stmt.Prepare(m_dgndb, "SELECT * FROM " DGN_TABLE(DGN_CLASSNAME_Style) " WHERE Type = " DGN_STYLE_TYPE_Line );
+    }

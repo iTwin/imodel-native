@@ -644,11 +644,10 @@ void                LsSymbolReference::SetAngle(double value)       {m_angle = v
 void                LsSymbolReference::SetStrokeNumber(int value)   {m_strokeNo = value;}
 void                LsSymbolReference::SetSymbolComponent(LsSymbolComponentR symbolComponent) { m_symbol = &symbolComponent; }
 
-int64_t             LsCacheStyleEntry::GetStyleNumber ()           const { return m_id; }
 LsDefinitionP       LsCacheStyleEntry::GetLineStyleP ()            const { return m_nameRec; }
 LsDefinitionCP      LsCacheStyleEntry::GetLineStyleCP ()           const { return m_nameRec; }
 
-DgnStyleId          LsDefinition::GetStyleId()            const {return DgnStyleId (m_styleNumber); }
+DgnStyleId          LsDefinition::GetStyleId()            const {return DgnStyleId (m_styleId); }
 double              LsDefinition::GetUnitsDefinition()    const {return m_unitDef;}
 LsUnit              LsDefinition::GetUnitsType()          const {return (LsUnit)(m_attributes & LSATTR_UNITMASK);}
 double              LsDefinition::_GetMaxWidth()           const {return m_maxWidth;}

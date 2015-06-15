@@ -1184,7 +1184,7 @@ struct          LsDefinition
 private:
     bool                m_isDirty;
     bool                m_componentLookupFailed;
-    DgnStyleId          m_styleNumber;
+    DgnStyleId          m_styleId;
     MSCharIKey          m_name;
     LsLocation          m_location;             // Where to find components of resource
     LsComponentPtr      m_lsComp;
@@ -1228,8 +1228,8 @@ public:
     void ClearPostProcess ();
     void SetName (Utf8CP name);
     void SetAttributes (uint32_t attr) {m_attributes = attr;}
-    void SetStyleNumber (DgnStyleId number) { m_styleNumber = number; }
-    DgnStyleId GetStyleNumber () { return m_styleNumber; }
+    void SetStyleId (DgnStyleId number) { m_styleId = number; }
+    DgnStyleId GetStyleId () { return m_styleId; }
 
     DGNPLATFORM_EXPORT double GetTrueScale (DgnModelP styleDgnModel) const;
 
@@ -1317,12 +1317,10 @@ private:
     int64_t             m_id;
     Utf8P               m_name;
     LsDefinitionP       m_nameRec;
-    bool                m_resolves;
 
 public:
-    LsIdNode (int64_t id, Utf8CP name, LsDefinitionP nameRec, bool resolves);
+    LsIdNode (int64_t id, Utf8CP name, LsDefinitionP nameRec);
 
-    bool Resolves () const { return m_resolves; }
     void Clear ();
     int64_t GetKey () const {return m_id;}
     LsDefinitionP GetValue () const {return m_nameRec;}
@@ -1355,7 +1353,7 @@ public:
     //! Get the line style number. For an LsCacheStyleEntry from an LsDgnFileMap this is the number
     //! that is used to translate from the number in an element's symbology to a line style name.
     //! For an LsCacheStyleEntry from a system map, the style number normally is meaningless.
-    DGNPLATFORM_EXPORT int64_t GetStyleNumber () const;
+    DGNPLATFORM_EXPORT int64_t GetStyleId () const;
     //! Get the LsDefinition for the line style associated with the LsCacheStyleEntry.
     DGNPLATFORM_EXPORT LsDefinitionP GetLineStyleP () const;
     //! Get the LsDefinition for the line style associated with the LsCacheStyleEntry.
@@ -1368,7 +1366,7 @@ public:
 //!@code
 //!   for each (LsCacheStyleEntryCR  ls in *systemLsCache)
 //!       {
-//!       Int32           styleNo = ls.GetStyleNumber ();
+//!       Int32           styleNo = ls.GetStyleId ();
 //!       Utf8String         name = ls.GetStyleName ();
 //!       }
 //!@endcode
@@ -1423,7 +1421,7 @@ public:
     DGNPLATFORM_EXPORT LsIdNodeP                FindId                   (DgnStyleId styleId) const;
     DGNPLATFORM_EXPORT void                     EmptyMaps                ();   //  Empty both the name tree and the id tree
     T_LsIdIterator                              FirstId                  () {return m_idTree.FirstEntry();}
-    void                                        AddIdEntry               (DgnStyleId id, LsDefinitionP nameRec, bool resolves);
+    void                                        AddIdEntry               (LsDefinitionP nameRec);
     DGNPLATFORM_EXPORT BentleyStatus            RemoveIdEntry            (DgnStyleId id);
     T_LsIdTree*                                 GetIdMap                 () {return &m_idTree;}
     DGNPLATFORM_EXPORT LsIdNodeP                SearchIdsForName         (Utf8CP name) const;
@@ -1494,6 +1492,7 @@ private:
     DgnLineStyles(DgnDbR db) : T_Super(db) {}
 
 public:
+    DGNPLATFORM_EXPORT void PrepareToQueryAllLineStyles(BeSQLite::Statement & stmt);
 //__PUBLISH_SECTION_START__
     //! Adds a new line style to the project. If a style already exists by-name, no action is performed.
     DGNPLATFORM_EXPORT BentleyStatus Insert(DgnStyleId& newStyleId, Utf8CP name, LsComponentId id, LsComponentType componentType, uint32_t flags, double unitDefinition);
