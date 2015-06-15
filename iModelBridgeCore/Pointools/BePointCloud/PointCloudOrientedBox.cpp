@@ -15,10 +15,10 @@ USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
 +---------------+---------------+---------------+---------------+---------------+------*/
 OrientedBox::OrientedBox () 
     {
-    m_xVec.init(1.0, 0.0, 0.0);
-    m_yVec.init(0.0, 1.0, 0.0);
-    m_zVec.init(0.0, 0.0, 1.0);
-    m_origin.init(0.0, 0.0, 0.0);
+    m_xVec.Init (1.0, 0.0, 0.0);
+    m_yVec.Init (0.0, 1.0, 0.0);
+    m_zVec.Init (0.0, 0.0, 1.0);
+    m_origin.Init (0.0, 0.0, 0.0);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    StephanePoulin  10/2009
@@ -67,12 +67,12 @@ DPoint3d const& OrientedBox::GetOrigin() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void OrientedBox::ApplyTransform(TransformCR trn)
     {
-    Transform mat; mat.initFromOriginAndVectors(&m_origin, &m_xVec, &m_yVec, &m_zVec);
-    mat.productOf(&trn, &mat);
-    mat.getMatrixColumn(&m_xVec, 0);
-    mat.getMatrixColumn(&m_yVec, 1);
-    mat.getMatrixColumn(&m_zVec, 2);
-    mat.getTranslation(&m_origin);
+    Transform mat; mat.InitFromOriginAndVectors (m_origin, m_xVec, m_yVec, m_zVec);
+    mat.InitProduct (trn, mat);
+    mat.GetMatrixColumn (m_xVec, 0);
+    mat.GetMatrixColumn (m_yVec, 1);
+    mat.GetMatrixColumn (m_zVec, 2);
+    mat.GetTranslation(m_origin);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -92,49 +92,49 @@ void OrientedBox::ApplyTransform(TransformCR trn)
 void OrientedBox::ComputeCornersFromOrientedBox (DPoint3d corners[8], OrientedBox const& clipBox, bool ccwOrder)
     {
     DVec3d normal;
-    normal.crossProduct (&clipBox.GetXVec (), &clipBox.GetYVec ());
+    normal.CrossProduct (*(&clipBox.GetXVec ()), *(&clipBox.GetYVec ()));
 
-    double dot = normal.dotProduct (&clipBox.GetZVec ());
+    double dot = normal.DotProduct (*(&clipBox.GetZVec ()));
 
     if (dot > 0)
         {
         corners[0] = clipBox.GetOrigin();
-        corners[1].sumOf(&corners[0], &clipBox.GetXVec());
+        corners[1].SumOf (corners[0],*(&clipBox.GetXVec()));
         if (ccwOrder)
             {
-            corners[2].sumOf(&corners[1], &clipBox.GetYVec());
-            corners[3].sumOf(&corners[0], &clipBox.GetYVec());
+            corners[2].SumOf (corners[1],*(&clipBox.GetYVec()));
+            corners[3].SumOf (corners[0],*(&clipBox.GetYVec()));
             }
         else
             {
-            corners[2].sumOf(&corners[0], &clipBox.GetYVec());
-            corners[3].sumOf(&corners[1], &clipBox.GetYVec());
+            corners[2].SumOf (corners[0],*(&clipBox.GetYVec()));
+            corners[3].SumOf (corners[1],*(&clipBox.GetYVec()));
             }
 
-        corners[4].sumOf(&corners[0], &clipBox.GetZVec());
-        corners[5].sumOf(&corners[1], &clipBox.GetZVec());
-        corners[6].sumOf(&corners[2], &clipBox.GetZVec());
-        corners[7].sumOf(&corners[3], &clipBox.GetZVec());
+        corners[4].SumOf (corners[0],*(&clipBox.GetZVec()));
+        corners[5].SumOf (corners[1],*(&clipBox.GetZVec()));
+        corners[6].SumOf (corners[2],*(&clipBox.GetZVec()));
+        corners[7].SumOf (corners[3],*(&clipBox.GetZVec()));
         }
     else
         {
         corners[0] = clipBox.GetOrigin();
-        corners[1].sumOf(&corners[0], &clipBox.GetYVec());
+        corners[1].SumOf (corners[0],*(&clipBox.GetYVec()));
         if (ccwOrder)
             {
-            corners[2].sumOf(&corners[1], &clipBox.GetXVec());
-            corners[3].sumOf(&corners[0], &clipBox.GetXVec());
+            corners[2].SumOf (corners[1],*(&clipBox.GetXVec()));
+            corners[3].SumOf (corners[0],*(&clipBox.GetXVec()));
             }
         else
             {
-            corners[2].sumOf(&corners[0], &clipBox.GetXVec());
-            corners[3].sumOf(&corners[1], &clipBox.GetXVec());
+            corners[2].SumOf (corners[0],*(&clipBox.GetXVec()));
+            corners[3].SumOf (corners[1],*(&clipBox.GetXVec()));
             }
 
-        corners[4].sumOf(&corners[0], &clipBox.GetZVec());
-        corners[5].sumOf(&corners[1], &clipBox.GetZVec());
-        corners[6].sumOf(&corners[2], &clipBox.GetZVec());
-        corners[7].sumOf(&corners[3], &clipBox.GetZVec());
+        corners[4].SumOf (corners[0],*(&clipBox.GetZVec()));
+        corners[5].SumOf (corners[1],*(&clipBox.GetZVec()));
+        corners[6].SumOf (corners[2],*(&clipBox.GetZVec()));
+        corners[7].SumOf (corners[3],*(&clipBox.GetZVec()));
         }
     }
 
