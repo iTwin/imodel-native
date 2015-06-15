@@ -71,7 +71,11 @@ BentleyStatus AnnotationTextBlockDraw::DrawTextRun(AnnotationLayoutRunCR layoutR
     adjustForSubOrSuperScript(ts, run);
     
     context.GetCurrentDisplayParams()->ResetAppearance();
-    context.GetCurrentDisplayParams()->SetLineColor(effectiveStyle->GetColor());
+    
+    ElementColor color = effectiveStyle->GetColor();
+    if (!color.IsByCategory())
+        context.GetCurrentDisplayParams()->SetLineColor(*color.GetColorCP());
+    
     context.CookDisplayParams();
     context.DrawTextString(ts);
     

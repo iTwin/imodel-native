@@ -39,20 +39,19 @@ enum AnnotationTextStyleProperty {
   AnnotationTextStyleProperty_Height = 3,
   AnnotationTextStyleProperty_LineSpacingFactor = 4,
   AnnotationTextStyleProperty_IsBold = 5,
-  AnnotationTextStyleProperty_IsColorByCategory = 6,
-  AnnotationTextStyleProperty_IsItalic = 7,
-  AnnotationTextStyleProperty_IsUnderlined = 8,
-  AnnotationTextStyleProperty_StackedFractionScale = 9,
-  AnnotationTextStyleProperty_StackedFractionType = 10,
-  AnnotationTextStyleProperty_SubScriptOffsetFactor = 11,
-  AnnotationTextStyleProperty_SubScriptScale = 12,
-  AnnotationTextStyleProperty_SuperScriptOffsetFactor = 13,
-  AnnotationTextStyleProperty_SuperScriptScale = 14,
-  AnnotationTextStyleProperty_WidthFactor = 15
+  AnnotationTextStyleProperty_IsItalic = 6,
+  AnnotationTextStyleProperty_IsUnderlined = 7,
+  AnnotationTextStyleProperty_StackedFractionScale = 8,
+  AnnotationTextStyleProperty_StackedFractionType = 9,
+  AnnotationTextStyleProperty_SubScriptOffsetFactor = 10,
+  AnnotationTextStyleProperty_SubScriptScale = 11,
+  AnnotationTextStyleProperty_SuperScriptOffsetFactor = 12,
+  AnnotationTextStyleProperty_SuperScriptScale = 13,
+  AnnotationTextStyleProperty_WidthFactor = 14
 };
 
 inline const char **EnumNamesAnnotationTextStyleProperty() {
-  static const char *names[] = { "Color", "FontId", "Height", "LineSpacingFactor", "IsBold", "IsColorByCategory", "IsItalic", "IsUnderlined", "StackedFractionScale", "StackedFractionType", "SubScriptOffsetFactor", "SubScriptScale", "SuperScriptOffsetFactor", "SuperScriptScale", "WidthFactor", nullptr };
+  static const char *names[] = { "Color", "FontId", "Height", "LineSpacingFactor", "IsBold", "IsItalic", "IsUnderlined", "StackedFractionScale", "StackedFractionType", "SubScriptOffsetFactor", "SubScriptScale", "SuperScriptOffsetFactor", "SuperScriptScale", "WidthFactor", nullptr };
   return names;
 }
 
@@ -103,42 +102,38 @@ enum AnnotationFrameStyleProperty {
   AnnotationFrameStyleProperty_FillColor = 3,
   AnnotationFrameStyleProperty_FillTransparency = 4,
   AnnotationFrameStyleProperty_HorizontalPadding = 5,
-  AnnotationFrameStyleProperty_IsFillColorByCategory = 6,
-  AnnotationFrameStyleProperty_IsFillEnabled = 7,
-  AnnotationFrameStyleProperty_IsStrokeCloud = 8,
-  AnnotationFrameStyleProperty_IsStrokeColorByCategory = 9,
-  AnnotationFrameStyleProperty_IsStrokeEnabled = 10,
-  AnnotationFrameStyleProperty_StrokeColor = 11,
-  AnnotationFrameStyleProperty_StrokeWeight = 12,
-  AnnotationFrameStyleProperty_Type = 13,
-  AnnotationFrameStyleProperty_VerticalPadding = 14
+  AnnotationFrameStyleProperty_IsFillEnabled = 6,
+  AnnotationFrameStyleProperty_IsStrokeCloud = 7,
+  AnnotationFrameStyleProperty_IsStrokeEnabled = 8,
+  AnnotationFrameStyleProperty_StrokeColor = 9,
+  AnnotationFrameStyleProperty_StrokeWeight = 10,
+  AnnotationFrameStyleProperty_Type = 11,
+  AnnotationFrameStyleProperty_VerticalPadding = 12
 };
 
 inline const char **EnumNamesAnnotationFrameStyleProperty() {
-  static const char *names[] = { "CloudBulgeFactor", "CloudDiameterFactor", "FillColor", "FillTransparency", "HorizontalPadding", "IsFillColorByCategory", "IsFillEnabled", "IsStrokeCloud", "IsStrokeColorByCategory", "IsStrokeEnabled", "StrokeColor", "StrokeWeight", "Type", "VerticalPadding", nullptr };
+  static const char *names[] = { "CloudBulgeFactor", "CloudDiameterFactor", "FillColor", "FillTransparency", "HorizontalPadding", "IsFillEnabled", "IsStrokeCloud", "IsStrokeEnabled", "StrokeColor", "StrokeWeight", "Type", "VerticalPadding", nullptr };
   return names;
 }
 
 inline const char *EnumNameAnnotationFrameStyleProperty(AnnotationFrameStyleProperty e) { return EnumNamesAnnotationFrameStyleProperty()[e - AnnotationFrameStyleProperty_CloudBulgeFactor]; }
 
 enum AnnotationLeaderStyleProperty {
-  AnnotationLeaderStyleProperty_IsLineColorByCategory = 1,
-  AnnotationLeaderStyleProperty_IsTerminatorColorByCategory = 2,
-  AnnotationLeaderStyleProperty_LineColor = 3,
-  AnnotationLeaderStyleProperty_LineType = 4,
-  AnnotationLeaderStyleProperty_LineWeight = 5,
-  AnnotationLeaderStyleProperty_TerminatorColor = 6,
-  AnnotationLeaderStyleProperty_TerminatorScaleFactor = 7,
-  AnnotationLeaderStyleProperty_TerminatorType = 8,
-  AnnotationLeaderStyleProperty_TerminatorWeight = 9
+  AnnotationLeaderStyleProperty_LineColor = 1,
+  AnnotationLeaderStyleProperty_LineType = 2,
+  AnnotationLeaderStyleProperty_LineWeight = 3,
+  AnnotationLeaderStyleProperty_TerminatorColor = 4,
+  AnnotationLeaderStyleProperty_TerminatorScaleFactor = 5,
+  AnnotationLeaderStyleProperty_TerminatorType = 6,
+  AnnotationLeaderStyleProperty_TerminatorWeight = 7
 };
 
 inline const char **EnumNamesAnnotationLeaderStyleProperty() {
-  static const char *names[] = { "IsLineColorByCategory", "IsTerminatorColorByCategory", "LineColor", "LineType", "LineWeight", "TerminatorColor", "TerminatorScaleFactor", "TerminatorType", "TerminatorWeight", nullptr };
+  static const char *names[] = { "LineColor", "LineType", "LineWeight", "TerminatorColor", "TerminatorScaleFactor", "TerminatorType", "TerminatorWeight", nullptr };
   return names;
 }
 
-inline const char *EnumNameAnnotationLeaderStyleProperty(AnnotationLeaderStyleProperty e) { return EnumNamesAnnotationLeaderStyleProperty()[e - AnnotationLeaderStyleProperty_IsLineColorByCategory]; }
+inline const char *EnumNameAnnotationLeaderStyleProperty(AnnotationLeaderStyleProperty e) { return EnumNamesAnnotationLeaderStyleProperty()[e - AnnotationLeaderStyleProperty_LineColor]; }
 
 enum AnnotationLeaderSourceAttachmentType {
   AnnotationLeaderSourceAttachmentType_Invalid = 0,

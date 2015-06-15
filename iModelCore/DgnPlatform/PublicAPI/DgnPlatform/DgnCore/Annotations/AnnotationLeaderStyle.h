@@ -48,15 +48,13 @@ enum struct AnnotationLeaderTerminatorType
 //=======================================================================================
 enum struct AnnotationLeaderStyleProperty
 {
-    IsLineColorByCategory = 1, //!< (integer) @note 0 or 1 boolean
-    IsTerminatorColorByCategory = 2, //!< (integer) @note 0 or 1 boolean
-    LineColor = 3, //!< (integer) @note Equivalent to ColorDef as an integer
-    LineType = 4, //!< (integer) @note Must exist in the AnnotationLeaderLineType enumeration
-    LineWeight = 5, //!< (integer) @note Must be a standard line weight
-    TerminatorColor = 6, //!< (integer) @note Equivalent to ColorDef as an integer
-    TerminatorScaleFactor = 7, //!< (real) @note Generally describes the length of the side of the box encompassing the terminator, as a factor of the first character's text height
-    TerminatorType = 8, //!< (integer) @note Must exist in the AnnotationLeaderTerminatorType enumeration
-    TerminatorWeight = 9 //!< (integer) @note Must be a standard line weight
+    LineColor = 1, //!< (integer) @note int64_t representation of ElementColor
+    LineType = 2, //!< (integer) @note Must exist in the AnnotationLeaderLineType enumeration
+    LineWeight = 3, //!< (integer) @note Must be a standard line weight
+    TerminatorColor = 4, //!< (integer) @note int64_t representation of ElementColor
+    TerminatorScaleFactor = 5, //!< (real) @note Generally describes the length of the side of the box encompassing the terminator, as a factor of the first character's text height
+    TerminatorType = 6, //!< (integer) @note Must exist in the AnnotationLeaderTerminatorType enumeration
+    TerminatorWeight = 7 //!< (integer) @note Must be a standard line weight
 };
 
 //=======================================================================================
@@ -127,18 +125,14 @@ public:
     Utf8StringCR GetDescription() const { return m_description; }
     void SetDescription(Utf8CP value) { m_description = value; }
 
-    DGNPLATFORM_EXPORT bool IsLineColorByCategory() const;
-    DGNPLATFORM_EXPORT void SetIsLineColorByCategory(bool);
-    DGNPLATFORM_EXPORT bool IsTerminatorColorByCategory() const;
-    DGNPLATFORM_EXPORT void SetIsTerminatorColorByCategory(bool);
-    DGNPLATFORM_EXPORT ColorDef GetLineColor() const;
-    DGNPLATFORM_EXPORT void SetLineColor(ColorDef);
+    DGNPLATFORM_EXPORT ElementColor GetLineColor() const;
+    DGNPLATFORM_EXPORT void SetLineColor(ElementColor);
     DGNPLATFORM_EXPORT AnnotationLeaderLineType GetLineType() const;
     DGNPLATFORM_EXPORT void SetLineType(AnnotationLeaderLineType);
     DGNPLATFORM_EXPORT uint32_t GetLineWeight() const;
     DGNPLATFORM_EXPORT void SetLineWeight(uint32_t);
-    DGNPLATFORM_EXPORT ColorDef GetTerminatorColor() const;
-    DGNPLATFORM_EXPORT void SetTerminatorColor(ColorDef);
+    DGNPLATFORM_EXPORT ElementColor GetTerminatorColor() const;
+    DGNPLATFORM_EXPORT void SetTerminatorColor(ElementColor);
     DGNPLATFORM_EXPORT double GetTerminatorScaleFactor() const;
     DGNPLATFORM_EXPORT void SetTerminatorScaleFactor(double);
     DGNPLATFORM_EXPORT AnnotationLeaderTerminatorType GetTerminatorType() const;

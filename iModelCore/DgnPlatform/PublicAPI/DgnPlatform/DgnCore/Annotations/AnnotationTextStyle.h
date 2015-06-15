@@ -36,21 +36,20 @@ enum struct AnnotationStackedFractionType
 //=======================================================================================
 enum struct AnnotationTextStyleProperty
 {
-    Color = 1, //!< (integer, per-run) @note Equivalent to ColorDef as an integer
+    Color = 1, //!< (integer, per-run) @note int64_t representation of ElementColor
     FontId = 2, //!< (integer, per-run) @note Must be a valid font ID in the project
     Height = 3, //!< (real, per-document) @note In project UORs
     LineSpacingFactor = 4, //!< (real, per-document) @note Factor of height
     IsBold = 5, //!< (integer, per-run) @note 0 or 1 boolean
-    IsColorByCategory = 6, //!< (integer, per-run) @note 0 or 1 boolean
-    IsItalic = 7, //!< (integer, per-run) @note 0 or 1 boolean
-    IsUnderlined = 8, //!< (integer, per-run) @note 0 or 1 boolean
-    StackedFractionScale = 9, //!< (real, per-run) @note Factor of height
-    StackedFractionType = 10, //!< (integer, per-run) @note Must exist in the AnnotationStackedFractionType enumeration
-    SubScriptOffsetFactor = 11, //!< (real, per-run) @note Factor of height
-    SubScriptScale = 12, //!< (real, per-run) @note Factor of height
-    SuperScriptOffsetFactor = 13, //!< (real, per-run) @note Factor of height
-    SuperScriptScale = 14, //!< (real, per-run) @note Factor of height
-    WidthFactor = 15 //!< (real, per-document) @note Factor of height
+    IsItalic = 6, //!< (integer, per-run) @note 0 or 1 boolean
+    IsUnderlined = 7, //!< (integer, per-run) @note 0 or 1 boolean
+    StackedFractionScale = 8, //!< (real, per-run) @note Factor of height
+    StackedFractionType = 9, //!< (integer, per-run) @note Must exist in the AnnotationStackedFractionType enumeration
+    SubScriptOffsetFactor = 10, //!< (real, per-run) @note Factor of height
+    SubScriptScale = 11, //!< (real, per-run) @note Factor of height
+    SuperScriptOffsetFactor = 12, //!< (real, per-run) @note Factor of height
+    SuperScriptScale = 13, //!< (real, per-run) @note Factor of height
+    WidthFactor = 14 //!< (real, per-document) @note Factor of height
 
 //__PUBLISH_SECTION_END__
     // *********************************************************************************************
@@ -129,8 +128,8 @@ public:
     Utf8StringCR GetDescription() const { return m_description; }
     void SetDescription(Utf8CP value) { m_description = value; }
 
-    DGNPLATFORM_EXPORT ColorDef GetColor() const;
-    DGNPLATFORM_EXPORT void SetColor(ColorDef);
+    DGNPLATFORM_EXPORT ElementColor GetColor() const;
+    DGNPLATFORM_EXPORT void SetColor(ElementColor);
     DGNPLATFORM_EXPORT DgnFontId GetFontId() const;
     DGNPLATFORM_EXPORT void SetFontId(DgnFontId);
     DGNPLATFORM_EXPORT double GetHeight() const;
@@ -139,8 +138,6 @@ public:
     DGNPLATFORM_EXPORT void SetLineSpacingFactor(double);
     DGNPLATFORM_EXPORT bool IsBold() const;
     DGNPLATFORM_EXPORT void SetIsBold(bool);
-    DGNPLATFORM_EXPORT bool IsColorByCategory() const;
-    DGNPLATFORM_EXPORT void SetIsColorByCategory(bool);
     DGNPLATFORM_EXPORT bool IsItalic() const;
     DGNPLATFORM_EXPORT void SetIsItalic(bool);
     DGNPLATFORM_EXPORT bool IsUnderlined() const;

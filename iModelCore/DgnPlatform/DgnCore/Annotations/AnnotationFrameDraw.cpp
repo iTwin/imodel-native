@@ -28,7 +28,7 @@ void AnnotationFrameDraw::CopyFrom(AnnotationFrameDrawCR rhs)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-static void setStrokeSymbology(ViewContextR context, bool isColorByCategory, ColorDef color, uint32_t weight)
+static void setStrokeSymbology(ViewContextR context, ElementColor color, uint32_t weight)
     {
     ElemDisplayParamsP displayParams = context.GetCurrentDisplayParams();
     PRECONDITION(NULL != displayParams, );
@@ -38,8 +38,8 @@ static void setStrokeSymbology(ViewContextR context, bool isColorByCategory, Col
     displayParams->SetWeight(weight);
     displayParams->SetFillDisplay(FillDisplay::Never);
 
-    if (!isColorByCategory)
-        displayParams->SetLineColor(color);
+    if (!color.IsByCategory())
+        displayParams->SetLineColor(*color.GetColorCP());
 
     context.CookDisplayParams();
     }
@@ -47,7 +47,7 @@ static void setStrokeSymbology(ViewContextR context, bool isColorByCategory, Col
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-static void setFillSymbology(ViewContextR context, bool isColorByCategory, ColorDef color, double transparency)
+static void setFillSymbology(ViewContextR context, ElementColor color, double transparency)
     {
     ElemDisplayParamsP displayParams = context.GetCurrentDisplayParams();
     PRECONDITION(NULL != displayParams, );
@@ -57,8 +57,8 @@ static void setFillSymbology(ViewContextR context, bool isColorByCategory, Color
     displayParams->SetTransparency(transparency);
     displayParams->SetFillDisplay(FillDisplay::Blanking);
 
-    if (!isColorByCategory)
-        displayParams->SetFillColor(color);
+    if (!color.IsByCategory())
+        displayParams->SetFillColor(*color.GetColorCP());
 
     context.CookDisplayParams();
     }
@@ -88,14 +88,14 @@ BentleyStatus AnnotationFrameDraw::Draw(ViewContextR context) const
     
     if (frameStyle->IsStrokeEnabled())
         {
-        setStrokeSymbology(context, frameStyle->IsStrokeColorByCategory(), frameStyle->GetStrokeColor(), frameStyle->GetStrokeWeight());
+        setStrokeSymbology(context, frameStyle->GetStrokeColor(), frameStyle->GetStrokeWeight());
         frameGeometry->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Open);
         output.DrawCurveVector(*frameGeometry, false);
         }
 
     if (frameStyle->IsFillEnabled())
         {
-        setFillSymbology(context, frameStyle->IsFillColorByCategory(), frameStyle->GetFillColor(), frameStyle->GetFillTransparency());
+        setFillSymbology(context, frameStyle->GetFillColor(), frameStyle->GetFillTransparency());
         frameGeometry->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Outer);
         output.DrawCurveVector(*frameGeometry, true);
         }

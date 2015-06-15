@@ -1017,6 +1017,32 @@ public:
     static ColorDef Maroon()     {return ColorDef(0x80,0,0);}
 };
 
+//=======================================================================================
+//! Colors in elements should typically be either by-category or a specific RGBA. This wraps a bool and a ColorDef to encourage and enforce this pattern, where a color is either by-category or a ColorDef, not both at the same time. This means that the ColorDef is not available when by-category, but is always available otherwise. This structure will not clear the its color when toggling by-category on, so it can be recovered later. Your specific scenario may or may not want to persist this way, but this structure allows it.
+// @bsiclass                                                    Jeff.Marker     06/2015
+//=======================================================================================
+struct ElementColor
+{
+private:
+    static const int64_t COLOR_VALUE_MASK = 0x00000000FFFFFFFF;
+    static const int64_t BY_CATEGORY_MASK = 0x8000000000000000;
+    bool m_isByCategory;
+    ColorDef m_color;
+
+public:
+    ElementColor() : m_isByCategory(true) {}
+    explicit ElementColor(ColorDef color) : m_isByCategory(false), m_color(color) {}
+    explicit ElementColor(int64_t value) : m_isByCategory(BY_CATEGORY_MASK == (BY_CATEGORY_MASK & value)), m_color((uint32_t)(COLOR_VALUE_MASK & value)) {}
+    bool operator==(ElementColor const& rhs) const { return m_isByCategory == rhs.m_isByCategory && m_color == rhs.m_color; }
+    bool IsByCategory() const { return m_isByCategory; }
+    void SetIsByCategory(bool value) { m_isByCategory = value; }
+    ColorDefCP GetColorCP() const { return m_isByCategory ? nullptr : &m_color; }
+    ColorDefP GetColorP() { return m_isByCategory ? nullptr : &m_color; }
+    void SetColor(ColorDef value) { m_isByCategory = false; m_color = value; }
+    void SetColor(ColorDefCP value) { m_isByCategory = (nullptr == value); if (value) m_color = *value; }
+    int64_t ToInt64() const { int64_t value = (int64_t)m_color.GetValue(); if (m_isByCategory) value |= BY_CATEGORY_MASK; return value; }
+};
+
 //__PUBLISH_SECTION_END__
 
 #define QV_RESERVED_DISPLAYPRIORITY     (32)

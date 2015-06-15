@@ -133,9 +133,9 @@ static void setRealValue(AnnotationTextStylePropertyBagR data, AnnotationTextSty
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2014
 //---------------------------------------------------------------------------------------
-static const AnnotationTextStylePropertyBag::T_Integer DEFAULT_COLOR_VALUE = 0;
-ColorDef AnnotationTextStyle::GetColor() const { return ColorDef((uint32_t)getIntegerValue(m_data, AnnotationTextStyleProperty::Color, DEFAULT_COLOR_VALUE)); }
-void AnnotationTextStyle::SetColor(ColorDef value) { SetIsColorByCategory(false); setIntegerValue(m_data, AnnotationTextStyleProperty::Color, DEFAULT_COLOR_VALUE, value.GetValue()); }
+static const AnnotationTextStylePropertyBag::T_Integer DEFAULT_COLOR_VALUE = ElementColor().ToInt64();
+ElementColor AnnotationTextStyle::GetColor() const { return ElementColor(getIntegerValue(m_data, AnnotationTextStyleProperty::Color, DEFAULT_COLOR_VALUE)); }
+void AnnotationTextStyle::SetColor(ElementColor value) { setIntegerValue(m_data, AnnotationTextStyleProperty::Color, DEFAULT_COLOR_VALUE, value.ToInt64()); }
 
 static const AnnotationTextStylePropertyBag::T_Integer DEFAULT_FONTID_VALUE = 0;
 DgnFontId AnnotationTextStyle::GetFontId() const { return DgnFontId((uint32_t)getIntegerValue(m_data, AnnotationTextStyleProperty::FontId, DEFAULT_FONTID_VALUE)); }
@@ -152,10 +152,6 @@ void AnnotationTextStyle::SetLineSpacingFactor(double value) { setRealValue(m_da
 static const AnnotationTextStylePropertyBag::T_Integer DEFAULT_ISBOLD_VALUE = 0;
 bool AnnotationTextStyle::IsBold() const { return (0 != getIntegerValue(m_data, AnnotationTextStyleProperty::IsBold, DEFAULT_ISBOLD_VALUE)); }
 void AnnotationTextStyle::SetIsBold(bool value) { setIntegerValue(m_data, AnnotationTextStyleProperty::IsBold, DEFAULT_ISBOLD_VALUE, (value ? 1 : 0)); }
-
-static const AnnotationTextStylePropertyBag::T_Integer DEFAULT_ISCOLORBYCATEGORY_VALUE = 1;
-bool AnnotationTextStyle::IsColorByCategory() const { return (0 != getIntegerValue(m_data, AnnotationTextStyleProperty::IsColorByCategory, DEFAULT_ISCOLORBYCATEGORY_VALUE)); }
-void AnnotationTextStyle::SetIsColorByCategory(bool value) { if (value) SetColor(ColorDef()); setIntegerValue(m_data, AnnotationTextStyleProperty::IsColorByCategory, DEFAULT_ISCOLORBYCATEGORY_VALUE, (value ? 1 : 0)); }
 
 static const AnnotationTextStylePropertyBag::T_Integer DEFAULT_ISITALIC_VALUE = 0;
 bool AnnotationTextStyle::IsItalic() const { return (0 != getIntegerValue(m_data, AnnotationTextStyleProperty::IsItalic, DEFAULT_ISITALIC_VALUE)); }
@@ -268,7 +264,6 @@ BentleyStatus AnnotationTextStylePersistence::EncodeAsFlatBuf(FB::AnnotationText
     appendRealSetter(setters, data, AnnotationTextStyleProperty::Height, FB::AnnotationTextStyleProperty_Height, DEFAULT_HEIGHT_VALUE);
     appendRealSetter(setters, data, AnnotationTextStyleProperty::LineSpacingFactor, FB::AnnotationTextStyleProperty_LineSpacingFactor, DEFAULT_LINESPACINGFACTOR_VALUE);
     appendIntegerSetter(setters, data, AnnotationTextStyleProperty::IsBold, FB::AnnotationTextStyleProperty_IsBold, DEFAULT_ISBOLD_VALUE);
-    appendIntegerSetter(setters, data, AnnotationTextStyleProperty::IsColorByCategory, FB::AnnotationTextStyleProperty_IsColorByCategory, DEFAULT_ISCOLORBYCATEGORY_VALUE);
     appendIntegerSetter(setters, data, AnnotationTextStyleProperty::IsItalic, FB::AnnotationTextStyleProperty_IsItalic, DEFAULT_ISITALIC_VALUE);
     appendIntegerSetter(setters, data, AnnotationTextStyleProperty::IsUnderlined, FB::AnnotationTextStyleProperty_IsUnderlined, DEFAULT_ISUNDERLINED_VALUE);
     appendRealSetter(setters, data, AnnotationTextStyleProperty::StackedFractionScale, FB::AnnotationTextStyleProperty_StackedFractionScale, DEFAULT_STACKEDFRACTIONSCALE_VALUE);
@@ -352,7 +347,6 @@ BentleyStatus AnnotationTextStylePersistence::DecodeFromFlatBuf(AnnotationTextSt
             case FB::AnnotationTextStyleProperty_Height: data.SetRealProperty(AnnotationTextStyleProperty::Height, setter.realValue()); break;
             case FB::AnnotationTextStyleProperty_LineSpacingFactor: data.SetRealProperty(AnnotationTextStyleProperty::LineSpacingFactor, setter.realValue()); break;
             case FB::AnnotationTextStyleProperty_IsBold: data.SetIntegerProperty(AnnotationTextStyleProperty::IsBold, setter.integerValue()); break;
-            case FB::AnnotationTextStyleProperty_IsColorByCategory: data.SetIntegerProperty(AnnotationTextStyleProperty::IsColorByCategory, setter.integerValue()); break;
             case FB::AnnotationTextStyleProperty_IsItalic: data.SetIntegerProperty(AnnotationTextStyleProperty::IsItalic, setter.integerValue()); break;
             case FB::AnnotationTextStyleProperty_IsUnderlined: data.SetIntegerProperty(AnnotationTextStyleProperty::IsUnderlined, setter.integerValue()); break;
             case FB::AnnotationTextStyleProperty_StackedFractionScale: data.SetRealProperty(AnnotationTextStyleProperty::StackedFractionScale, setter.realValue()); break;

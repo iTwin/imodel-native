@@ -28,7 +28,7 @@ void AnnotationLeaderDraw::CopyFrom(AnnotationLeaderDrawCR rhs)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-static void setStrokeSymbology(ViewContextR context, bool isColorByCategory, ColorDef color, uint32_t weight)
+static void setStrokeSymbology(ViewContextR context, ElementColor color, uint32_t weight)
     {
     ElemDisplayParamsP displayParams = context.GetCurrentDisplayParams();
     PRECONDITION(NULL != displayParams, );
@@ -38,8 +38,8 @@ static void setStrokeSymbology(ViewContextR context, bool isColorByCategory, Col
     displayParams->SetWeight(weight);
     displayParams->SetFillDisplay(FillDisplay::Never);
 
-    if (!isColorByCategory)
-        displayParams->SetLineColor(color);
+    if (!color.IsByCategory())
+        displayParams->SetLineColor(*color.GetColorCP());
 
     context.CookDisplayParams();
     }
@@ -47,7 +47,7 @@ static void setStrokeSymbology(ViewContextR context, bool isColorByCategory, Col
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-static void setFillSymbology(ViewContextR context, bool isColorByCategory, ColorDef color, double transparency)
+static void setFillSymbology(ViewContextR context, ElementColor color, double transparency)
     {
     ElemDisplayParamsP displayParams = context.GetCurrentDisplayParams();
     PRECONDITION(NULL != displayParams, );
@@ -57,8 +57,8 @@ static void setFillSymbology(ViewContextR context, bool isColorByCategory, Color
     displayParams->SetTransparency(transparency);
     displayParams->SetFillDisplay(FillDisplay::Always);
 
-    if (!isColorByCategory)
-        displayParams->SetFillColor(color);
+    if (!color.IsByCategory())
+        displayParams->SetFillColor(*color.GetColorCP());
 
     context.CookDisplayParams();
     }
@@ -206,7 +206,7 @@ BentleyStatus AnnotationLeaderDraw::Draw(ViewContextR context) const
         CurveVectorPtr effectiveLineGeometry = createEffectiveLineGeometry(m_leaderLayout->GetLineGeometry(), transformedTerminatorGeometry.get());
         if (effectiveLineGeometry.IsValid())
             {
-            setStrokeSymbology(context, leaderStyle->IsLineColorByCategory(), leaderStyle->GetLineColor(), leaderStyle->GetLineWeight());
+            setStrokeSymbology(context, leaderStyle->GetLineColor(), leaderStyle->GetLineWeight());
             output.DrawCurveVector(*effectiveLineGeometry, false);
             }
         }
@@ -219,12 +219,12 @@ BentleyStatus AnnotationLeaderDraw::Draw(ViewContextR context) const
 
         if (CurveVector::BOUNDARY_TYPE_Open == terminatorGeometry.GetBoundaryType())
             {
-            setStrokeSymbology(context, leaderStyle->IsTerminatorColorByCategory(), leaderStyle->GetTerminatorColor(), leaderStyle->GetTerminatorWeight());
+            setStrokeSymbology(context, leaderStyle->GetTerminatorColor(), leaderStyle->GetTerminatorWeight());
             output.DrawCurveVector(terminatorGeometry, false);
             }
         else
             {
-            setFillSymbology(context, leaderStyle->IsTerminatorColorByCategory(), leaderStyle->GetTerminatorColor(), 0.0);
+            setFillSymbology(context, leaderStyle->GetTerminatorColor(), 0.0);
             output.DrawCurveVector(terminatorGeometry, true);
             }
         

@@ -20,7 +20,7 @@ static DgnStyleId ensureAnnotationTextStyle1(DgnDbR db)
         return existingStyle->GetId();
     
     AnnotationTextStyle style(db);
-    style.SetColor(ColorDef(0x00, 0xff, 0x00));
+    style.SetColor(ElementColor(ColorDef(0x00, 0xff, 0x00)));
     style.SetFontId(db.Fonts().AcquireId(DgnFontManager::GetAnyLastResortFont()));
     style.SetHeight(1000.0);
     style.SetName(STYLE_NAME);
