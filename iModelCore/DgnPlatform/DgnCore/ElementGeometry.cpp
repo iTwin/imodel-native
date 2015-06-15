@@ -1196,7 +1196,7 @@ void ElementGeomIO::Writer::Append (ElementGeometryCR elemGeom)
 void ElementGeomIO::Writer::Append(TextStringCR text)
     {
     bvector<Byte> data;
-    if (SUCCESS != TextStringPersistence::EncodeAsFlatBuf(data, text, m_db))
+    if (SUCCESS != TextStringPersistence::EncodeAsFlatBuf(data, text, m_db, TextStringPersistence::FlatBufEncodeOptions::IncludeGlyphLayoutData))
         return;
 
     Append(Operation(OpCode::TextString, (uint32_t)data.size(), &data[0]));
