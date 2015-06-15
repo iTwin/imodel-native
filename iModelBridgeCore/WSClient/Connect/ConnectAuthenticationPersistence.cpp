@@ -54,7 +54,7 @@ ConnectAuthenticationPersistence::ConnectAuthenticationPersistence
 ILocalState* customLocalState,
 std::shared_ptr<ISecureStore> customSecureStore
 ) :
-m_localState (customLocalState ? *customLocalState : MobileDgnApplication::App ().LocalState ()),
+m_localState (customLocalState ? *customLocalState : MobileDgnCommon::LocalState ()),
 m_secureStore (customSecureStore ? customSecureStore : std::make_shared<SecureStore> (&m_localState))
     {
     }
