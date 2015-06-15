@@ -177,8 +177,8 @@ void ScalableMeshProgressiveDisplay::_GetMeshNodes(bvector<IMrDTMNodePtr>& meshN
     context.NpcToFrustum(viewBox, s_npcViewBox, 8);
 
     context.GetCurrLocalToFrustumTrans(ltf);
-    ftl.inverseOf(&ltf);
-    ftl.multiply(viewBox, 8);
+    ftl.InverseOf(ltf);
+    ftl.Multiply(viewBox, 8);
 
     //DMatrix4d rootToStorage;
 

@@ -122,7 +122,7 @@ BentleyStatus PointCloudGcsFacility::ComputeLocalTransform(DRange3dCR range, Dgn
     
     // Compute the extent to compute the linear transform
     DPoint3d extent;
-    extent.differenceOf(&rangePts[1], &rangePts[0]);
+    extent.DifferenceOf (rangePts[1], rangePts[0]);
 
     // Compute a linear transform that approximate the reprojection transformation.
     StatusInt status = src.GetLocalTransform(&approxTransform, rangePts[0], &extent, true/*doRotate*/, true/*doScale*/, dst);
@@ -145,7 +145,7 @@ BentleyStatus PointCloudGcsFacility::GetTransformToUor(TransformR transform, WSt
     {
     // Transformation to UOR
     Transform sceneToUor;
-    sceneToUor.initIdentity();
+    sceneToUor.InitIdentity ();
     sceneToUor.ScaleMatrixColumns(UOR_PER_METER, UOR_PER_METER, UOR_PER_METER);
 
     // Include transformation for the coordinate system if required
@@ -153,10 +153,10 @@ BentleyStatus PointCloudGcsFacility::GetTransformToUor(TransformR transform, WSt
     if (SUCCESS != GetLocalTransformForReprojection(reproTrf, wktStringGeoreference, rangeUOR, dgnDb))
         {
         // No reprojection to the local coordinate system occurred.
-        reproTrf.initIdentity();
+        reproTrf.InitIdentity ();
         }
 
-    transform.productOf(&reproTrf, &sceneToUor);
+    transform.InitProduct (reproTrf, sceneToUor);
     return BSISUCCESS;
     }
 
@@ -165,7 +165,7 @@ BentleyStatus PointCloudGcsFacility::GetTransformToUor(TransformR transform, WSt
 //----------------------------------------------------------------------------------------
 BentleyStatus PointCloudGcsFacility::GetLocalTransformForReprojection(TransformR transform, WString wktStringGeoreference, DRange3dCR rangeUOR, DgnDbR dgnDb)
     {
-    transform.initIdentity();
+    transform.InitIdentity ();
 
     // Must be able to create a valid GCS
     DgnGCSPtr pDstGcs(dgnDb.Units().GetDgnGCS());

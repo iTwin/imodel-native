@@ -138,7 +138,7 @@ void PointCloudDrawParams::_InitFrom(uint32_t begin, uint32_t end, Transform con
     if (source->GetPointChannel() && source->GetPointChannel()->GetChannelBuffer())
         {
         if (pTransform)
-            pTransform->multiply(m_points->GetChannelBuffer(), source->GetPointChannel()->GetChannelBuffer() + begin, count);
+            pTransform->Multiply (m_points->GetChannelBuffer(), source->GetPointChannel()->GetChannelBuffer() + begin, count);
         else
             memcpy(m_points->GetChannelBuffer(), source->GetPointChannel()->GetChannelBuffer() + begin, count * sizeof(DPoint3d));
         }

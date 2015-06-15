@@ -367,7 +367,7 @@ StatusInt VisualizationManager::LocalToViewAccountingForPointBehindCamera(DPoint
             return ERROR;
 
         point4d.NormalizeWeightInPlace ();
-        viewPoints[i].xyzOf(&point4d);
+        viewPoints[i].XyzOf(point4d);
         }
 
     return SUCCESS;
