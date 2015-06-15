@@ -61,7 +61,7 @@ static Utf8CP DGNPROPERTYJSON_Azimuth         = "azimuth";
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnFileStatus DgnUnits::Load()
+DgnDbStatus DgnUnits::Load()
     {
     Json::Value  jsonObj;
     Utf8String value;
@@ -70,14 +70,14 @@ DgnFileStatus DgnUnits::Load()
     if (BE_SQLITE_ROW != result || !Json::Reader::Parse(value, jsonObj))
         {
         BeAssert(false);
-        return DGNDB_ERROR_UnitsMissing;
+        return DgnDbStatus::UnitsMissing;
         }
 
     JsonUtils::DPoint3dFromJson(m_globalOrigin, jsonObj[DGNPROPERTYJSON_GlobalOrigin]);
 
     m_azimuth = jsonObj[DGNPROPERTYJSON_Azimuth].asDouble();
     LoadProjectExtents();
-    return  DGNFILE_STATUS_Success;
+    return  DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

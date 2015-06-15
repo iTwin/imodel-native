@@ -278,7 +278,7 @@ StatusInt ScanCriteria::Scan(ViewContextP context)
 StatusInt ScanCriteria::SetDgnModel (DgnModelP model)
     {
     if (NULL == (m_model = model))
-        return DGNMODEL_STATUS_BadModel;
+        return ERROR;
 
     return SUCCESS;
     }

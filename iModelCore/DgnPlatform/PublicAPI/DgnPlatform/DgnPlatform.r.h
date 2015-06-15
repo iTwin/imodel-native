@@ -17,14 +17,12 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //! Identifies the type or purpose of a model
 enum class DgnModelType : uint16_t
     {
-    Physical                 = 0,   //!< a physical model.
-    Sheet                    = 1,   //!< a sheet model.
-    __UNUSED_2__             = 2,   // unused -- available
-    Drawing                  = 3,   //!< a 2d drawing model.
-    Component                = 4,   //!< a 3d component model.
-    Query                    = 5,   //!< a query model
-    __UNUSED_6__             = 2,   // unused -- available
-    Illegal                  = 999, //!< @private
+    Physical        = 0,   //!< a physical model.
+    Sheet           = 1,   //!< a sheet model.
+    Drawing         = 3,   //!< a 2d drawing model.
+    Component       = 4,   //!< a 3d component model.
+    Query           = 5,   //!< a query model
+    Illegal         = 999, //!< @private
     };
 
 /** @endcond */

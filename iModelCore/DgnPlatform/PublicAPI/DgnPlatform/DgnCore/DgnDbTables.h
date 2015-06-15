@@ -728,7 +728,7 @@ public:
         ModelIterate   m_itType;
 
     public:
-        Iterator(DgnDbCR db, ModelIterate itType) : DbTableIterator((BeSQLite::DbCR)db) {m_itType = itType;}
+        Iterator(DgnDbCR db, Utf8CP where, ModelIterate itType) : DbTableIterator((BeSQLite::DbCR) db), m_itType(itType) {if (where) m_params.SetWhere(where);}
         struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
         {
         private:
@@ -785,7 +785,7 @@ public:
 
     //! Delete a model.
     //! @note All elements from this model are deleted as well.
-    DGNPLATFORM_EXPORT DgnModelStatus DeleteModel(DgnModelId id);
+    DGNPLATFORM_EXPORT DgnDbStatus DeleteModel(DgnModelId id);
 
     DGNPLATFORM_EXPORT BentleyStatus QueryModelById(Model* out, DgnModelId id) const;
     DGNPLATFORM_EXPORT BentleyStatus GetModelName(Utf8StringR, DgnModelId id) const;
@@ -801,29 +801,14 @@ public:
     DGNPLATFORM_EXPORT BentleyStatus QueryModelDependencyIndexAndType(uint64_t& didx, DgnModelType& mtype, DgnModelId mid);
 
     //! Make an iterator over the models in this DgnDb.
-    Iterator MakeIterator(ModelIterate itType=ModelIterate::All) const {return Iterator(m_dgndb, itType);}
-
-    //! Make an iterator over the physical models in this DgnDb.
-    Iterator MakePhysicalIterator() const {Iterator it(m_dgndb, ModelIterate::All); it.Params().SetWhere("Type=0"); return it;}
-
-    //! Make an iterator over the drawing models in this DgnDb.
-    Iterator MakeDrawingIterator() const {Iterator it(m_dgndb, ModelIterate::All); it.Params().SetWhere("Type=3"); return it;}
-
-    //! Make an iterator over the sheet models in this DgnDb.
-    Iterator MakeSheetIterator() const {Iterator it(m_dgndb, ModelIterate::All); it.Params().SetWhere("Type=1"); return it;}
-
-    //! Make an iterator over the Redline models in this DgnDb.
-    Iterator MakeRedlineIterator() const {Iterator it(m_dgndb, ModelIterate::All); it.Params().SetWhere("Type=2"); return it;}
-
-    //! Make an iterator over the PhysicalRedline models in this DgnDb.
-    Iterator MakePhysicalRedlineIterator() const {Iterator it(m_dgndb, ModelIterate::All); it.Params().SetWhere("Type=12"); return it;}
+    Iterator MakeIterator(Utf8CP where=nullptr, ModelIterate itType=ModelIterate::All) const {return Iterator(m_dgndb, where, itType);}
     //@}
 
     //! Insert a new model.
-    //! @return DGNMODEL_STATUS_Success if the new model was successfully create or error otherwise.
-    DGNPLATFORM_EXPORT DgnModelStatus Insert(DgnModelR model, Utf8CP description=nullptr, bool inGuiList=true);
+    //! @return DgnDbStatus::Success if the new model was successfully create or error otherwise.
+    DGNPLATFORM_EXPORT DgnDbStatus Insert(DgnModelR model, Utf8CP description=nullptr, bool inGuiList=true);
 
-    DGNPLATFORM_EXPORT DgnModelP CreateNewModelFromSeed(DgnModelStatus* result, Utf8CP name, DgnModelId seedModelId);
+    DGNPLATFORM_EXPORT DgnModelP CreateNewModelFromSeed(DgnDbStatus* result, Utf8CP name, DgnModelId seedModelId);
 
     //! Generate a model name that is not currently in use in this file
     //! @param[in]  baseName base model name to start with (optional)
@@ -894,26 +879,27 @@ private:
     BeSQLite::SnappyToBlob      m_snappyTo;
     mutable BeSQLite::BeDbMutex m_mutex;
 
-    template<class T> static void CallAppData(T const& caller, DgnElementCR el);
     void OnReclaimed(DgnElementCR);
     void OnUnreferenced(DgnElementCR);
     void Destroy();
-    void AddToPool(DgnElementR) const;
+    void AddToPool(DgnElementCR) const;
     void DropFromPool(DgnElementCR) const;
     void SendOnLoadedEvent(DgnElementR elRef) const;
     void OnChangesetApply(TxnSummary const&);
     void OnChangesetApplied(TxnSummary const&);
+    void FinishUpdate(DgnElementCR replacement, DgnElementCR original);
     DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, bool makePersistent) const;
     DgnElementCPtr LoadElement(DgnElementId elementId, bool makePersistent) const;
     bool IsElementIdUsed(DgnElementId id) const;
     DgnElementId GetHighestElementId();
     DgnElementId MakeNewElementId();
-    DgnModelStatus PerformDelete(DgnElementCR);
+    DgnElementCPtr PerformInsert(DgnElementR element, DgnDbStatus&);
+    DgnDbStatus PerformDelete(DgnElementCR);
     explicit DgnElements(DgnDbR db);
     ~DgnElements();
 
-    DGNPLATFORM_EXPORT DgnElementCPtr InsertElement(DgnElementR element, DgnModelStatus* stat);
-    DGNPLATFORM_EXPORT DgnElementCPtr UpdateElement(DgnElementR element, DgnModelStatus* stat);
+    DGNPLATFORM_EXPORT DgnElementCPtr InsertElement(DgnElementR element, DgnDbStatus* stat);
+    DGNPLATFORM_EXPORT DgnElementCPtr UpdateElement(DgnElementR element, DgnDbStatus* stat);
 
 public:
     BeSQLite::SnappyFromBlob& GetSnappyFrom() {return m_snappyFrom;}
@@ -969,25 +955,25 @@ public:
 
     //! Insert a copy of the supplied DgnElement into this DgnDb.
     //! @param[in] element The DgnElement to insert.
-    //! @param[in] stat An optional status value. Will be DGNMODEL_STATUS_Success if the insert was successful, error status otherwise.
+    //! @param[in] stat An optional status value. Will be DgnDbStatus::Success if the insert was successful, error status otherwise.
     //! @return RefCountedCPtr to the newly persisted /b copy of /c element. Will be invalid if the insert failed.
-    template<class T> RefCountedCPtr<T> Insert(T& element, DgnModelStatus* stat=nullptr) {return (T const*) InsertElement(element, stat).get();}
+    template<class T> RefCountedCPtr<T> Insert(T& element, DgnDbStatus* stat=nullptr) {return (T const*) InsertElement(element, stat).get();}
 
     //! Update the original persistent DgnElement from which the supplied DgnElement was copied.
     //! @param[in] element The modified copy of element to update.
-    //! @param[in] stat An optional status value. Will be DGNMODEL_STATUS_Success if the update was successful, error status otherwise.
+    //! @param[in] stat An optional status value. Will be DgnDbStatus::Success if the update was successful, error status otherwise.
     //! @return RefCountedCPtr to the modified persistent element. Will be invalid if the update failed.
-    template<class T> RefCountedCPtr<T> Update(T& element, DgnModelStatus* stat=nullptr) {return (T const*) UpdateElement(element, stat).get();}
+    template<class T> RefCountedCPtr<T> Update(T& element, DgnDbStatus* stat=nullptr) {return (T const*) UpdateElement(element, stat).get();}
 
     //! Delete a DgnElement from this DgnDb.
     //! @param[in] element The element to delete.
-    //! @return DGNMODEL_STATUS_Success if the element was deleted, error status otherwise.
-    DGNPLATFORM_EXPORT DgnModelStatus Delete(DgnElementCR element);
+    //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.
+    DGNPLATFORM_EXPORT DgnDbStatus Delete(DgnElementCR element);
 
     //! Delete a DgnElement from this DgnDb by DgnElementId.
-    //! @return DGNMODEL_STATUS_Success if the element was deleted, error status otherwise.
+    //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.
     //! @note This method is merely a shortcut to #GetElement and then #Delete
-    DgnModelStatus Delete(DgnElementId id) {auto el=GetElement(id); return el.IsValid() ? Delete(*el) : DGNMODEL_STATUS_ElementNotFound;}
+    DgnDbStatus Delete(DgnElementId id) {auto el=GetElement(id); return el.IsValid() ? Delete(*el) : DgnDbStatus::ElementNotFound;}
 
     //! Get the Heapzone for this DgnDb.
     HeapZone& GetHeapZone() {return m_heapZone;}
@@ -1354,7 +1340,7 @@ private:
 
 public:
     DGNPLATFORM_EXPORT void Save();
-    DGNPLATFORM_EXPORT DgnFileStatus Load();
+    DGNPLATFORM_EXPORT DgnDbStatus Load();
 
     DgnDbR GetDgnDb() const {return m_dgndb;}
 

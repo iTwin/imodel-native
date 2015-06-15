@@ -197,7 +197,7 @@ protected:
     virtual double _GetAspectRatioSkew() const {return 1.0;}
 
     DGNPLATFORM_EXPORT virtual void _FillModels();
-    DGNPLATFORM_EXPORT virtual ViewFrustumStatus _SetupFromFrustum(Frustum const& inFrustum);
+    DGNPLATFORM_EXPORT virtual ViewportStatus _SetupFromFrustum(Frustum const& inFrustum);
 
     //! @return true to project un-snapped points to the view's ACS plane.
     //! @note Normally true for a 3d view. A 3d digitizier supplying real z values would not want this...maybe this would be a special ViewController?
@@ -539,7 +539,7 @@ public:
     //! Establish the view parameters from an 8-point frustum.
     //! @param[in] frustum The 8-point frustum from which to establish the parameters of this ViewController
     //! @note The order of the points in the frustum is defined by the NpcCorners enum.
-    DGNPLATFORM_EXPORT ViewFrustumStatus SetupFromFrustum(Frustum const& frustum);
+    DGNPLATFORM_EXPORT ViewportStatus SetupFromFrustum(Frustum const& frustum);
 
     //! Change the volume that this view displays, keeping its current rotation.
     //! @param[in] worldVolume The new volume, in world-coordinates, for the view. The resulting view will show all of worldVolume, by fitting a
@@ -718,7 +718,7 @@ protected:
     DGNPLATFORM_EXPORT virtual bool _OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) override;
     DGNPLATFORM_EXPORT virtual bool _OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui) override;
     DGNPLATFORM_EXPORT virtual ClipVectorPtr _GetClipVector() const override;
-    DGNPLATFORM_EXPORT virtual ViewFrustumStatus _SetupFromFrustum(Frustum const&) override;
+    DGNPLATFORM_EXPORT virtual ViewportStatus _SetupFromFrustum(Frustum const&) override;
     DGNPLATFORM_EXPORT virtual void _SaveToSettings(JsonValueR) const override;
     DGNPLATFORM_EXPORT virtual void _RestoreFromSettings(JsonValueCR) override;
 
@@ -755,12 +755,12 @@ public:
     //! If viewDelta is nullptr, the existing size is unchanged.
     //! @param[in] frontDistance The distance from the eyePoint to the front plane. If nullptr, the existing front distance is used.
     //! @param[in] backDistance The distance from the eyePoint to the back plane. If nullptr, the existing back distance is used.
-    //! @return a status indicating whether the camera was successfully positioned. See values at #ViewFrustumStatus for possible errors.
+    //! @return a status indicating whether the camera was successfully positioned. See values at #ViewportStatus for possible errors.
     //! @note If the aspect ratio of viewDelta does not match the aspect ratio of a DgnViewport into which this view is displayed, it will be
     //! adjusted when the DgnViewport is synchronized from this view.
     //! @note This method modifies this ViewController. If this ViewController is attached to DgnViewport, you must call DgnViewport::SynchWithViewController
     //! to see the new changes in the DgnViewport.
-    DGNPLATFORM_EXPORT ViewFrustumStatus LookAt(DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVector,
+    DGNPLATFORM_EXPORT ViewportStatus LookAt(DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVector,
                                              DVec2dCP viewDelta=nullptr, double const* frontDistance=nullptr, double const* backDistance=nullptr);
 
     //! Position the camera for this view and point it at a new target point, using a specified lens angle.
@@ -770,26 +770,26 @@ public:
     //! @param[in] fov The angle, in radians, that defines the field-of-view for the camera. Must be between .0001 and pi.
     //! @param[in] frontDistance The distance from the eyePoint to the front plane. If nullptr, the existing front distance is used.
     //! @param[in] backDistance The distance from the eyePoint to the back plane. If nullptr, the existing back distance is used.
-    //! @return Status indicating whether the camera was successfully positioned. See values at #ViewFrustumStatus for possible errors.
+    //! @return Status indicating whether the camera was successfully positioned. See values at #ViewportStatus for possible errors.
     //! @note The aspect ratio of the view remains unchanged.
     //! @note This method modifies this ViewController. If this ViewController is attached to DgnViewport, you must call DgnViewport::SynchWithViewController
     //! to see the new changes in the DgnViewport.
-    DGNPLATFORM_EXPORT ViewFrustumStatus LookAtUsingLensAngle(DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVector,
+    DGNPLATFORM_EXPORT ViewportStatus LookAtUsingLensAngle(DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVector,
                                              double fov, double const* frontDistance=nullptr, double const* backDistance=nullptr);
 
     //! Move the camera relative to its current location by a distance in camera coordinates.
     //! @param[in] distance to move camera. Length is in world units, direction relative to current camera orientation.
-    //! @return Status indicating whether the camera was successfully positioned. See values at #ViewFrustumStatus for possible errors.
+    //! @return Status indicating whether the camera was successfully positioned. See values at #ViewportStatus for possible errors.
     //! @note This method modifies this ViewController. If this ViewController is attached to DgnViewport, you must call DgnViewport::SynchWithViewController
     //! to see the new changes in the DgnViewport.
-    DGNPLATFORM_EXPORT ViewFrustumStatus MoveCameraLocal(DVec3dCR distance);
+    DGNPLATFORM_EXPORT ViewportStatus MoveCameraLocal(DVec3dCR distance);
 
     //! Move the camera relative to its current location by a distance in world coordinates.
     //! @param[in] distance in world units.
-    //! @return Status indicating whether the camera was successfully positioned. See values at #ViewFrustumStatus for possible errors.
+    //! @return Status indicating whether the camera was successfully positioned. See values at #ViewportStatus for possible errors.
     //! @note This method modifies this ViewController. If this ViewController is attached to DgnViewport, you must call DgnViewport::SynchWithViewController
     //! to see the new changes in the DgnViewport.
-    DGNPLATFORM_EXPORT ViewFrustumStatus MoveCameraWorld(DVec3dCR distance);
+    DGNPLATFORM_EXPORT ViewportStatus MoveCameraWorld(DVec3dCR distance);
 
     //! Rotate the camera from its current location about an axis relative to its current orientation.
     //! @param[in] angle The angle to rotate the camera, in radians.
@@ -797,20 +797,20 @@ public:
     //! @param[in] aboutPt The point, in world coordinates, about which the camera is rotated. If aboutPt is nullptr, the camera rotates in place
     //! (i.e. about the current eyePoint).
     //! @note Even though the axis is relative to the current camera orientation, the aboutPt is in world coordinates, \b not relative to the camera.
-    //! @return Status indicating whether the camera was successfully positioned. See values at #ViewFrustumStatus for possible errors.
+    //! @return Status indicating whether the camera was successfully positioned. See values at #ViewportStatus for possible errors.
     //! @note This method modifies this ViewController. If this ViewController is attached to DgnViewport, you must call DgnViewport::SynchWithViewController
     //! to see the new changes in the DgnViewport.
-    DGNPLATFORM_EXPORT ViewFrustumStatus RotateCameraLocal(double angle, DVec3dCR axis, DPoint3dCP aboutPt=nullptr);
+    DGNPLATFORM_EXPORT ViewportStatus RotateCameraLocal(double angle, DVec3dCR axis, DPoint3dCP aboutPt=nullptr);
 
     //! Rotate the camera from its current location about an axis in world coordinates.
     //! @param[in] angle The angle to rotate the camera, in radians.
     //! @param[in] axis The world-based axis (direction) about which to rotate the camera.
     //! @param[in] aboutPt The point, in world coordinates, about which the camera is rotated. If aboutPt is nullptr, the camera rotates in place
     //! (i.e. about the current eyePoint).
-    //! @return Status indicating whether the camera was successfully positioned. See values at #ViewFrustumStatus for possible errors.
+    //! @return Status indicating whether the camera was successfully positioned. See values at #ViewportStatus for possible errors.
     //! @note This method modifies this ViewController. If this ViewController is attached to DgnViewport, you must call DgnViewport::SynchWithViewController
     //! to see the new changes in the DgnViewport.
-    DGNPLATFORM_EXPORT ViewFrustumStatus RotateCameraWorld(double angle, DVec3dCR axis, DPoint3dCP aboutPt=nullptr);
+    DGNPLATFORM_EXPORT ViewportStatus RotateCameraWorld(double angle, DVec3dCR axis, DPoint3dCP aboutPt=nullptr);
 
     //! Get the distance from the eyePoint to the back plane for this view.
     DGNPLATFORM_EXPORT double GetBackDistance() const;

@@ -1973,10 +1973,57 @@ bool IsGeometryVisible()
 
 }; // DrawState
 
+//=======================================================================================
+//! Helper class for setting GeomStream entry identifier
+//=======================================================================================
+struct GeomPrimitiveIdHelper
+{
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void incrementGeomPrimitiveId (ViewContextR context)
+static void Init (ViewContextR context)
+    {
+    context.SetGeomPrimitiveId(make_bpair(-1, -1));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool Activate (ViewContextR context)
+    {
+    T_GeomPrimitiveId geomId = context.GetGeomPrimitiveId();
+
+    if (-1 == geomId.first)
+        {
+        // Activate non-DgnGeomPartId primitive index
+        context.SetGeomPrimitiveId(make_bpair(0, -1));
+
+        return true;
+        }
+
+    // Activate DgnGeomPartId primitive index
+    context.SetGeomPrimitiveId(make_bpair(geomId.first, 0));
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+static void Deactivate (ViewContextR context)
+    {
+    T_GeomPrimitiveId geomId = context.GetGeomPrimitiveId();
+
+    if (-1 == geomId.second)
+        context.SetGeomPrimitiveId(make_bpair(-1, -1)); // Deactivate non-DgnGeomPartId primitive index
+    else
+        context.SetGeomPrimitiveId(make_bpair(geomId.first, -1)); // Deactivate DgnGeomPartId primitive index
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+static void Increment (ViewContextR context)
     {
     T_GeomPrimitiveId geomId = context.GetGeomPrimitiveId();
 
@@ -1986,6 +2033,8 @@ static void incrementGeomPrimitiveId (ViewContextR context)
     else
         context.SetGeomPrimitiveId(make_bpair(geomId.first+1, geomId.second));
     }
+
+}; // GeomPrimitiveIdHelper
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/2014
@@ -2008,10 +2057,9 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
             case ElementGeomIO::OpCode::Header:
                 {
                 // Current display params is already setup when displaying a geom part...DON'T INITIALIZE!!!
-                if (-1 != context.GetGeomPrimitiveId().second)
+                if (!GeomPrimitiveIdHelper::Activate(context))
                     break;
-
-                context.SetGeomPrimitiveId(make_bpair(0, -1)); // Activate non-DgnGeomPartId primitive index
+                
                 state.InitDisplayParams(category);
                 break;
                 }
@@ -2058,16 +2106,14 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
 
                 ElementGeomIO::Collection collection(partGeometry->GetGeomStream().GetData(), partGeometry->GetGeomStream().GetSize());
 
-                context.SetGeomPrimitiveId(make_bpair(context.GetGeomPrimitiveId().first, 0)); // Activate DgnGeomPartId primitive index
                 state.CookElemDisplayParams();
                 collection.Draw(context, category, flags);
-                context.SetGeomPrimitiveId(make_bpair(context.GetGeomPrimitiveId().first, -1)); // Deactivate DgnGeomPartId primitive index
                 break;
                 }
 
             case ElementGeomIO::OpCode::PointPrimitive2d:
                 {
-                incrementGeomPrimitiveId(context);
+                GeomPrimitiveIdHelper::Increment(context);
 
                 if (!state.IsGeometryVisible())
                     break;
@@ -2100,7 +2146,7 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
 
             case ElementGeomIO::OpCode::PointPrimitive:
                 {
-                incrementGeomPrimitiveId(context);
+                GeomPrimitiveIdHelper::Increment(context);
 
                 if (!state.IsGeometryVisible())
                     break;
@@ -2133,7 +2179,7 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
 
             case ElementGeomIO::OpCode::ArcPrimitive:
                 {
-                incrementGeomPrimitiveId(context);
+                GeomPrimitiveIdHelper::Increment(context);
 
                 if (!state.IsGeometryVisible())
                     break;
@@ -2164,7 +2210,7 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
 
             case ElementGeomIO::OpCode::CurvePrimitive:
                 {
-                incrementGeomPrimitiveId(context);
+                GeomPrimitiveIdHelper::Increment(context);
 
                 if (!state.IsGeometryVisible())
                     break;
@@ -2191,7 +2237,7 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
 
             case ElementGeomIO::OpCode::CurveVector:
                 {
-                incrementGeomPrimitiveId(context);
+                GeomPrimitiveIdHelper::Increment(context);
 
                 if (!state.IsGeometryVisible())
                     break;
@@ -2215,7 +2261,7 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
 
             case ElementGeomIO::OpCode::Polyface:
                 {
-                incrementGeomPrimitiveId(context);
+                GeomPrimitiveIdHelper::Increment(context);
 
                 if (!state.IsGeometryVisible())
                     break;
@@ -2232,7 +2278,7 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
 
             case ElementGeomIO::OpCode::SolidPrimitive:
                 {
-                incrementGeomPrimitiveId(context);
+                GeomPrimitiveIdHelper::Increment(context);
 
                 if (!state.IsGeometryVisible())
                     break;
@@ -2249,7 +2295,7 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
 
             case ElementGeomIO::OpCode::BsplineSurface:
                 {
-                incrementGeomPrimitiveId(context);
+                GeomPrimitiveIdHelper::Increment(context);
 
                 if (!state.IsGeometryVisible())
                     break;
@@ -2266,7 +2312,7 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
 
             case ElementGeomIO::OpCode::ParasolidBRep:
                 {
-                incrementGeomPrimitiveId(context);
+                GeomPrimitiveIdHelper::Increment(context);
 
                 if (!useBRep)
                     break;
@@ -2360,7 +2406,7 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
             
             case ElementGeomIO::OpCode::TextString:
                 {
-                incrementGeomPrimitiveId(context);
+                GeomPrimitiveIdHelper::Increment(context);
 
                 if (!state.IsGeometryVisible())
                     break;
@@ -2380,8 +2426,7 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
             }
         }
 
-    if (-1 == context.GetGeomPrimitiveId().second)
-        context.SetGeomPrimitiveId(make_bpair(-1, -1)); // Deactivate non-DgnGeomPartId primitive index
+    GeomPrimitiveIdHelper::Deactivate(context);
     }
 
 /*=================================================================================**//**
@@ -2439,6 +2484,7 @@ virtual double _GetDisplayPriority (ViewContextR context) const override
 
 virtual void _StrokeForCache (ViewContextR context, double pixelSize) override
     {
+    GeomPrimitiveIdHelper::Init(context); // Just to be sure of initial state...
     ElementGeomIO::Collection(m_element.GetGeomStream().GetData(), m_element.GetGeomStream().GetSize()).Draw(context, m_element.GetCategoryId(), m_flags);
     }
 
@@ -2545,56 +2591,22 @@ void ElementGeometryCollection::Iterator::ToNext()
     {
     do
         {
-        if (m_partGeometry.IsValid())
-            {
-#if defined (NOT_NOW)
-            // NEEDSWORK: This ignores m_useBrep...and index will be wrong for multisymb breps w/o parasolid. :(
-            //            Going to have to use a nested iterator to do this correctly...
-/**/
-                m_elementGeometry = partGeometry->GetGeometry().front();
-
-                if (!m_elementGeometry.IsValid())
-                    break; // Ignore failure...
-
-                if (DrawPurpose::NotSpecified != m_context->GetDrawPurpose())
-                    m_context->GetCurrentDisplayParams()->Resolve(*m_context); // Resolve sub-category appearance...
-
-                m_partGeometry = partGeometry;
-/**/
-            int32_t partGeomIndex = 0;
-
-            for (ElementGeometryPtr elemGeom : m_partGeometry->GetGeometry())
-                {
-                if (!elemGeom.IsValid())
-                    continue;
-
-                partGeomIndex++;
-
-                if (!m_elementGeometry.IsValid())
-                    {
-                    m_context->SetGeomPrimitiveId(make_bpair(m_context->GetGeomPrimitiveId().first, partGeomIndex)); // Activate DgnGeomPartId primitive index
-                    m_elementGeometry = elemGeom;
-                    break;
-                    }
-                
-                if (elemGeom.get() == m_elementGeometry.get())
-                    m_elementGeometry = nullptr;
-                }
-
-            if (m_elementGeometry.IsValid())
-                return;
-#endif
-
-            m_context->SetGeomPrimitiveId(make_bpair(m_context->GetGeomPrimitiveId().first, -1)); // Deactivate DgnGeomPartId primitive index
-            m_partGeometry = nullptr;
-            }
-
         if (m_dataOffset >= m_totalDataSize)
             {
-            m_data = nullptr;
-            m_dataOffset = 0;
+            GeomPrimitiveIdHelper::Deactivate(*m_context);
 
-            return;
+            if (!m_partGeometry.IsValid())
+                {
+                m_data = nullptr;
+                m_dataOffset = 0;
+                return;
+                }
+
+            m_data = m_saveData;
+            m_dataOffset = m_saveDataOffset;
+            m_totalDataSize = m_saveTotalDataSize;;
+
+            m_partGeometry = nullptr;
             }
 
         uint32_t        opCode = *((uint32_t *) (m_data));
@@ -2612,7 +2624,7 @@ void ElementGeometryCollection::Iterator::ToNext()
             {
             case ElementGeomIO::OpCode::Header:
                 {
-                m_context->SetGeomPrimitiveId(make_bpair(0, -1)); // Activate non-DgnGeomPartId primitive index
+                GeomPrimitiveIdHelper::Activate(*m_context);
                 break;
                 }
 
@@ -2659,12 +2671,25 @@ void ElementGeometryCollection::Iterator::ToNext()
                     break;
 
                 m_partGeometry = m_context->GetDgnDb().GeomParts().LoadGeomPart(geomPartId);
+
+                if (!m_partGeometry.IsValid())
+                    break;
+
+                // Save current data position...
+                m_saveData = m_data;
+                m_saveDataOffset = m_dataOffset;
+                m_saveTotalDataSize = m_totalDataSize;
+
+                // Switch to iterate over part geometry...
+                m_data = m_partGeometry->GetGeomStream().GetData();
+                m_dataOffset = 0;
+                m_totalDataSize = m_partGeometry->GetGeomStream().GetSize();
                 break;
                 }
 
             case ElementGeomIO::OpCode::ParasolidBRep:
                 {
-                incrementGeomPrimitiveId(*m_context);
+                GeomPrimitiveIdHelper::Increment(*m_context);
 
                 if (!m_useBRep)
                     break;
@@ -2705,7 +2730,7 @@ void ElementGeometryCollection::Iterator::ToNext()
                 if (!reader.Get(egOp, m_elementGeometry) || !m_elementGeometry.IsValid())
                     break; // Ignore non-geometry opCode (or failures)...
 
-                incrementGeomPrimitiveId(*m_context);
+                GeomPrimitiveIdHelper::Increment(*m_context);
 
                 if (DrawPurpose::NotSpecified != m_context->GetDrawPurpose())
                     m_context->GetCurrentDisplayParams()->Resolve(*m_context); // Resolve sub-category appearance...
