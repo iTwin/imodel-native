@@ -22,19 +22,8 @@ struct EXPORT_VTABLE_ATTRIBUTE RasterBaseModel : PhysicalModel
 {
     DEFINE_T_SUPER(PhysicalModel)
 
-    struct Properties
-        {
-        AxisAlignedBox3d    m_range;
-        Utf8String          m_URL;  
-
-        void ToJson(Json::Value&) const;
-        void FromJson(Json::Value const&);
-        };
-
 protected:
     friend struct RasterBaseModelHandler;
-
-    Properties m_properties;
 
 public:
     //! Create a new RasterBaseModel object, in preparation for loading it from the DgnDb.
