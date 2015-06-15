@@ -54,14 +54,6 @@ void RasterModel::_AddGraphicsToScene (ViewContextR context)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-AxisAlignedBox3d RasterModel::_QueryModelRange() const
-    {
-    return m_properties.m_range;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     4/2015
-//----------------------------------------------------------------------------------------
 void RasterModel::_ToPropertiesJson(Json::Value& v) const
     {
     T_Super::_ToPropertiesJson(v);

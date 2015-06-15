@@ -19,11 +19,34 @@ USING_NAMESPACE_BENTLEY_RASTERSCHEMA
 HANDLER_DEFINE_MEMBERS(RasterFileModelHandler)
 
 //----------------------------------------------------------------------------------------
+//-------------------------------  RasterFileProperties  ---------------------------------
+//----------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  6/2015
+//----------------------------------------------------------------------------------------
+void RasterFileProperties::ToJson(Json::Value& v) const
+    {
+    v["url"] = m_url.c_str();
+
+    //&&EP todo DRange2dToJson(v["bbox"], m_boundingBox);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  6/2015
+//----------------------------------------------------------------------------------------
+void RasterFileProperties::FromJson(Json::Value const& v)
+    {
+    m_url = v["url"].asString();
+
+    //&&EP todo DRange2dFromJson(m_boundingBox, v["bbox"]);
+    }
+
+//----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
 DgnModelId RasterFileModelHandler::CreateRasterFileModel(DgnDbR db, BeFileName fileName)
     {
-    DgnClassId classId(db.Schemas().GetECClassId(BENTLEY_RASTER_SCHEMA_NAME, "RasterFileModel"));
+    DgnClassId classId(db.Schemas().GetECClassId(BENTLEY_RASTER_SCHEMA_NAME, RASTER_CLASSNAME_RasterFileModel));
     BeAssert(classId.IsValid());
 
     WString dev;
@@ -33,8 +56,7 @@ DgnModelId RasterFileModelHandler::CreateRasterFileModel(DgnDbR db, BeFileName f
     fileName.ParseName(&dev, &dir, &name, &ext);
 
     // Just keep model name (no path or extension) and convert it to Utf8CP
-    Utf8String utf8Name;
-    BeStringUtilities::WCharToUtf8 (utf8Name, name.c_str());
+    Utf8String utf8Name(name);
     Utf8CP modelName = utf8Name.c_str();
 
     // Set RasterFileProperties
@@ -53,10 +75,6 @@ DgnModelId RasterFileModelHandler::CreateRasterFileModel(DgnDbR db, BeFileName f
 
     Point2d sizePixels;
     rasterFilePtr->GetSize(&sizePixels);
-
-//&&ep    maybe call this width, height and no need for m_boundingBox ?
-    props.m_metaWidth = sizePixels.x;
-    props.m_metaHeight = sizePixels.y;
 
      
     RasterFileModelPtr model = new RasterFileModel(DgnModel::CreateParams(db, classId, modelName), props);
@@ -90,7 +108,7 @@ RasterFileModel::RasterFileModel(CreateParams const& params)
 //----------------------------------------------------------------------------------------
 RasterFileModel::RasterFileModel(CreateParams const& params, RasterFileProperties const& properties) 
 :T_Super (params),
- m_properties(properties)
+ m_fileProperties(properties)
     {
 //&&ep need this here ? or maybe in Register domain instead.
     // Make sure GCS is initialized
@@ -112,7 +130,7 @@ BentleyStatus RasterFileModel::_LoadQuadTree()
     {
     m_rasterTreeP = nullptr;
 
-    RasterSourcePtr pSource = RasterFileSource::Create(m_properties);
+    RasterSourcePtr pSource = RasterFileSource::Create(m_fileProperties);
     if(pSource.IsValid())
         m_rasterTreeP = RasterQuadTree::Create(*pSource, GetDgnDb());
 
@@ -126,31 +144,14 @@ BentleyStatus RasterFileModel::_LoadQuadTree()
     return m_rasterTreeP.IsValid() ? BSISUCCESS : BSIERROR;
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     4/2015
-//----------------------------------------------------------------------------------------
-/* &&ep d
-void RasterFileModel::_AddGraphicsToScene (ViewContextR context)
-    {
-    RasterFilePtr rasterFilePtr = GetRasterFilePtr();
-    BeAssert (rasterFilePtr != nullptr);
-    if (rasterFilePtr->GetHRFRasterFileP() != nullptr)
-        {
-        RefCountedPtr<RasterFileProgressiveDisplay> display = new RasterFileProgressiveDisplay(*this);
-        display->DrawView(context);
-        }
-    }
-*/
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-/* &&ep d
 AxisAlignedBox3d RasterFileModel::_QueryModelRange() const
     {
-    return m_properties.m_range;
+    return AxisAlignedBox3d(m_fileProperties.m_boundingBox);
     }
-*/
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
@@ -159,8 +160,8 @@ BentleyStatus RasterFileModel::SetProperties (BeFileNameCR fileName)
     {
     WString fileNameWithPath;
     BeFileName::BuildName (fileNameWithPath, fileName.GetDevice().c_str(), fileName.GetDirectoryWithoutDevice().c_str(), fileName.GetFileNameWithoutExtension().c_str(), fileName.GetExtension().c_str());
-//&&ep o    BeStringUtilities::WCharToUtf8 (m_properties.m_URL, fileNameWithPath.c_str());
-    BeStringUtilities::WCharToUtf8 (m_properties.m_url, fileNameWithPath.c_str());
+//&&ep o    BeStringUtilities::WCharToUtf8 (m_fileProperties.m_URL, fileNameWithPath.c_str());
+    BeStringUtilities::WCharToUtf8 (m_fileProperties.m_url, fileNameWithPath.c_str());
 
 //&&ep o    HFCPtr<HRFRasterFile> rasterFile = GetRasterFile(fileNameWithPath.c_str());
 //&&ep d    m_rasterFilePtr = RasterFile::Create(fileNameWithPath.c_str());
@@ -169,7 +170,7 @@ BentleyStatus RasterFileModel::SetProperties (BeFileNameCR fileName)
     if (GetRasterFilePtr()->GetHRFRasterFileP() == nullptr)
         return ERROR;
 
-//    m_properties.m_range = GetSceneRange();
+//    m_fileProperties.m_range = GetSceneRange();
 
     return SUCCESS;
     }
@@ -180,6 +181,7 @@ BentleyStatus RasterFileModel::SetProperties (BeFileNameCR fileName)
 void RasterFileModel::_ToPropertiesJson(Json::Value& v) const
     {
     T_Super::_ToPropertiesJson(v);
+    m_fileProperties.ToJson(v);
     }
 
 //----------------------------------------------------------------------------------------
@@ -188,6 +190,7 @@ void RasterFileModel::_ToPropertiesJson(Json::Value& v) const
 void RasterFileModel::_FromPropertiesJson(Json::Value const& v)
     {
     T_Super::_FromPropertiesJson(v);
+    m_fileProperties.FromJson(v);
     }
 
 //----------------------------------------------------------------------------------------
@@ -198,9 +201,9 @@ RasterFilePtr RasterFileModel::GetRasterFilePtr()
     if (m_rasterFilePtr == nullptr)
         {
         // Open raster file
-//&&ep o        Utf8CP urlUtf8 = m_properties.m_URL.c_str();
-        Utf8CP urlUtf8 = m_properties.m_url.c_str();
-        WString fileName(WString(urlUtf8,BentleyCharEncoding::Utf8).c_str());
+//&&ep o        Utf8CP urlUtf8 = m_fileProperties.m_URL.c_str();
+        Utf8CP urlUtf8 = m_fileProperties.m_url.c_str();
+        WString fileName(urlUtf8,BentleyCharEncoding::Utf8);
         m_rasterFilePtr = RasterFile::Create(fileName.c_str());
         }
 

@@ -211,7 +211,7 @@ WmsModel::WmsModel(CreateParams const& params, WmsMap const& wmsMap)
 :T_Super (params),
  m_map(wmsMap)
     {
-    // Make sure GCS is initialized. required to init csmap data.
+    //&&MM init that someplace else? Make sure GCS is initialized. required to init csmap data.
     T_HOST.GetGeoCoordinationAdmin()._GetServices();
     }
 
@@ -255,5 +255,13 @@ void WmsModel::_FromPropertiesJson(Json::Value const& v)
     {
     T_Super::_FromPropertiesJson(v);
     m_map.FromJson(v);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  6/2015
+//----------------------------------------------------------------------------------------
+DgnPlatform::AxisAlignedBox3d WmsModel::_QueryModelRange() const
+    {
+    return AxisAlignedBox3d(m_map.m_boundingBox);
     }
 

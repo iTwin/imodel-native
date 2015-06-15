@@ -30,4 +30,5 @@
 //-----------------------------------------------------------------------------------------
 #define RASTER_CLASSNAME_RasterModel        "RasterModel"
 #define RASTER_CLASSNAME_WmsModel           "WmsModel"
+#define RASTER_CLASSNAME_RasterFileModel    "RasterFileModel"
 

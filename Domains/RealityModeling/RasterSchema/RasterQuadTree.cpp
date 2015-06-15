@@ -179,6 +179,7 @@ bool RasterTile::Draw(ViewContextR context)
         }
     else
         {
+        BeSQLite::HighPriorityOperationBlock highPriority; //&&MM review.
         auto extents = context.GetViewport()->GetViewController().GetProjectExtents();
         for (auto& pt : uvPts)
             pt.z = extents.low.z - 1;

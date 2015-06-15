@@ -31,12 +31,6 @@ m_properties.m_boundingBox.low.x = 0;
 m_properties.m_boundingBox.high.x = 10;  
 m_properties.m_boundingBox.low.y = 0; 
 m_properties.m_boundingBox.high.y = 20; 
-//double xLength = m_properties.m_boundingBox.high.x - m_properties.m_boundingBox.low.x;
-//double yLength = m_properties.m_boundingBox.high.y - m_properties.m_boundingBox.low.y;
-//m_properties.m_metaWidth = 2048*256;  // arbitrary size. &&MM let the user decide? compute something automatically using bbox? server res? or a default?
-//m_properties.m_metaHeight = (uint32_t)((yLength/xLength) * m_properties.m_metaWidth);
-m_properties.m_metaWidth = 1000;  // arbitrary size. &&MM let the user decide? compute something automatically using bbox? server res? or a default?
-m_properties.m_metaHeight = 2000;
 
 
     // WMS BBOX are in CRS units. i.e. cartesian.       // &&ep is this true ?
@@ -47,9 +41,10 @@ m_properties.m_metaHeight = 2000;
     corners[2].y = corners[3].y = m_properties.m_boundingBox.high.y; 
     corners[0].z = corners[1].z = corners[2].z = corners[3].z = 0;
 
-    // for WMS we define a 256x256 multi-resolution image.
+    //&&EP raster width and height must come from the raster file.
+    //     and resolution definition should come from the raster resolution descriptor.
     bvector<Resolution> resolution;
-    RasterSource::GenerateResolution(resolution, m_properties.m_metaWidth, m_properties.m_metaHeight, 512, 512);
+    RasterSource::GenerateResolution(resolution, 1000, 2000, 256, 256);
 
 /* &&ep - need this ? if no gcs ?
     GeoCoordinates::BaseGCSPtr pGcs = CreateBaseGcsFromWmsGcs(properties.m_csLabel);

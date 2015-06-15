@@ -41,7 +41,9 @@ BENTLEY_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
 #--------------------------------------------------------------------------------------
 #   Set up build dependencies
 #--------------------------------------------------------------------------------------
-rasterSchemaDepends             = $(rasterSchemaPublicApiSrc)RasterDomain.h                 \
+rasterSchemaDepends             = $(BuildContext)PublicAPI/DgnPlatform/DgnCore/DgnModel.h \
+                                  $(BuildContext)PublicAPI/DgnPlatform/DgnCore/RasterBaseModel.h \
+                                  $(rasterSchemaPublicApiSrc)RasterDomain.h                 \
                                   $(rasterSchemaPublicApiSrc)RasterSchemaApi.h              \
                                   $(rasterSchemaPublicApiSrc)RasterSchemaCommon.h           \
                                   $(rasterSchemaPublicApiSrc)RasterSchemaTypes.h            \

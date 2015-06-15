@@ -33,7 +33,6 @@ protected:
     virtual void _AddGraphicsToScene(ViewContextR) override;
     virtual void _ToPropertiesJson(Json::Value&) const override;
     virtual void _FromPropertiesJson(Json::Value const&) override;
-    virtual DgnPlatform::AxisAlignedBox3d _QueryModelRange() const override;
 
     virtual BentleyStatus _LoadQuadTree() {return BSIERROR;}
 
