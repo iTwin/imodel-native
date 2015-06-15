@@ -216,7 +216,7 @@ void DgnViewport::ViewToScreen(DPoint3dP screenPts, DPoint3dCP viewPts, int nPts
 
     Point2d screenOrg = GetScreenOrigin();
     DPoint3d org;
-    org.init(screenOrg.x, screenOrg.y, 0.0);
+    org.Init (screenOrg.x, screenOrg.y, 0.0);
     bsiDPoint3d_addDPoint3dArray(screenPts, &org, nPts);
     }
 
@@ -229,7 +229,7 @@ void DgnViewport::ScreenToView(DPoint3dP viewPts, DPoint3dCP screenPts, int nPts
     Point2d screenOrg = GetScreenOrigin();
 
     DPoint3d org;
-    org.init(screenOrg.x, screenOrg.y, 0.0);
+    org.Init (screenOrg.x, screenOrg.y, 0.0);
 
     bsiDPoint3d_subtractDPoint3dArray(viewPts, &org, nPts);
     }
@@ -384,9 +384,9 @@ StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double* compressi
         {
         frustFraction = 1.0;
         origin = inOrigin;
-        xExtent.scale(&xVector, delta.x);
-        yExtent.scale(&yVector, delta.y);
-        zExtent.scale(&zVector, delta.z);
+        xExtent.Scale (xVector, delta.x);
+        yExtent.Scale (yVector, delta.y);
+        zExtent.Scale (zVector, delta.z);
         }
 
     // calculate the root-to-npc mapping (using expanded frustum)
@@ -640,9 +640,9 @@ void DgnViewport::FixFrustumOrder(Frustum& frustum)
     DPoint3dP polyhedron=frustum.GetPtsP();
 
     DVec3d u, v, w;
-    u.differenceOf(polyhedron+NPC_001, polyhedron+NPC_000);
-    v.differenceOf(polyhedron+NPC_010, polyhedron+NPC_000);
-    w.differenceOf(polyhedron+NPC_100, polyhedron+NPC_000);
+    u.DifferenceOf (polyhedron[NPC_001], polyhedron[NPC_000]);
+    v.DifferenceOf (polyhedron[NPC_010], polyhedron[NPC_000]);
+    w.DifferenceOf (polyhedron[NPC_100], polyhedron[NPC_000]);
 
     if (u.TripleProduct(v, w) <= 0)
         return;
@@ -850,7 +850,7 @@ ViewportStatus DgnViewport::Scroll(Point2dCP screenDist) // => distance to scrol
 
     ViewToWorld(pts, pts, 2);
     DVec3d dist;
-    dist.differenceOf(pts+1, pts);
+    dist.DifferenceOf (pts[1], *pts);
 
     if (!m_is3dView)
         dist.z = 0.0;
@@ -950,14 +950,14 @@ ViewportStatus DgnViewport::Zoom(DPoint3dCP newCenterRoot, double factor)
     DPoint3d newOrg = oldOrg;
     RotMatrix rotation = viewController->GetRotation();
 
-    rotation.multiply(&newOrg);
-    rotation.multiply(&center);
+    rotation.Multiply(newOrg);
+    rotation.Multiply(center);
 
     viewController->SetDelta(delta);
 
     newOrg.x = center.x - delta.x/2.0;
     newOrg.y = center.y - delta.y/2.0;
-    rotation.multiplyTranspose(&newOrg);
+    rotation.MultiplyTranspose (newOrg);
     viewController->SetOrigin(newOrg);
 
     _AdjustFencePts(rotation, oldOrg, newOrg);
@@ -1246,7 +1246,7 @@ double DgnViewport::GetPixelSizeAtPoint(DPoint3dCP rootPtP, DgnCoordSystem coord
             break;
         }
 
-    return rootPts[0].distance(rootPts+1);
+    return rootPts[0].Distance (rootPts[1]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1428,7 +1428,7 @@ void DgnViewport::GetGridRoundingDistance(DPoint2dR roundingDistance)
         }
 
     roundingDistance.y = roundingDistance.x * gridRatio;
-    roundingDistance.scale(&roundingDistance, GetGridScaleFactor());
+    roundingDistance.Scale (roundingDistance, GetGridScaleFactor());
 #endif
     }
 
@@ -1449,13 +1449,13 @@ static void roundGrid(double& num, double units)
 void DgnViewport::GridFix(DPoint3dR pointRoot, RotMatrixCR rMatrixRoot, DPoint3dCR originRoot, DPoint2dCR roundingDistanceRoot, bool isoGrid)
     {
     DVec3d planeNormal;
-    rMatrixRoot.getRow(&planeNormal, 2);
+    rMatrixRoot.GetRow (planeNormal, 2);
 
     DVec3d eyeVec;
     if (m_isCameraOn)
         eyeVec.NormalizedDifference(pointRoot, m_camera.GetEyePoint());
     else
-        m_rotMatrix.getRow(&eyeVec, 2);
+        m_rotMatrix.GetRow (eyeVec, 2);
 
     LegacyMath::Vec::LinePlaneIntersect(&pointRoot, &pointRoot, &eyeVec, &originRoot, &planeNormal, false);
 
@@ -1486,7 +1486,7 @@ void DgnViewport::GridFix(DPoint3dR pointRoot, RotMatrixCR rMatrixRoot, DPoint3d
     pointRootView.y += originRootView.y;
 
     // go back to root coordinate system
-    rMatrixRoot.multiplyTranspose(&pointRoot, &pointRootView);
+    rMatrixRoot.MultiplyTranspose (pointRoot,pointRootView);
     }
 
 /*---------------------------------------------------------------------------------**//**

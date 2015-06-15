@@ -1202,7 +1202,7 @@ void OcclusionScorer::InitForViewport(DgnViewportCR viewport, double minimumSize
         DPoint3d viewDirection[2] = {{0,0,0}, {0.0, 0.0, 1.0}};
         DPoint3d viewDirRoot[2];
         viewport.NpcToWorld(viewDirRoot, viewDirection, 2);
-        viewDirRoot[1].subtract(&viewDirRoot[0]);
+        viewDirRoot[1].Subtract (viewDirRoot[0]);
 
         m_orthogonalProjectionIndex = ((viewDirRoot[1].x < 0.0) ? 1  : 0) +
                                       ((viewDirRoot[1].x > 0.0) ? 2  : 0) +
@@ -1626,7 +1626,7 @@ void InitForDgnModel()
             Transform  frustumToLocal;
 
             frustumToLocal.InverseOf(*m_localToFrustum);
-            frustumToLocal.multiply(&m_cameraPosition);
+            frustumToLocal.Multiply(m_cameraPosition);
             }
         }
     else

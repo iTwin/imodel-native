@@ -1464,7 +1464,7 @@ void SimplifyViewDrawGeom::_DrawPointCloud (IPointCloudDrawParams* drawParams)
 
     DPoint3d    offsets;
 
-    offsets.init (0, 0, 0);
+    offsets.Init (0, 0, 0);
 
     bool        haveOffsets = drawParams->GetOrigin (&offsets);
     DPoint3dCP  dPoints = drawParams->GetDPoints ();
@@ -1895,7 +1895,7 @@ static StatusInt calculateParamToWorld (TransformR transform, DPoint2dCP params,
         {
         DPoint3d            point;
 
-        point.differenceOf (&points[i], &pointRange.low);
+        point.DifferenceOf (points[i], pointRange.low);
 
         aMatrix[0][0] += params[i].x * params[i].x;
         aMatrix[0][1] += params[i].x * params[i].y;
@@ -1931,11 +1931,11 @@ static StatusInt calculateParamToWorld (TransformR transform, DPoint2dCP params,
         yColumn.x = rhSides[0][1];
         yColumn.y = rhSides[1][1];
         yColumn.z = rhSides[2][1];
-        zColumn.normalizedCrossProduct (&xColumn, &yColumn);
+        zColumn.NormalizedCrossProduct (xColumn, yColumn);
 
-        rMatrix.initFromColumnVectors (&xColumn, &yColumn, &zColumn);
+        rMatrix.InitFromColumnVectors (xColumn, yColumn, zColumn);
 
-        transform.initFrom (&rMatrix);
+        transform.InitFrom (rMatrix);
         transform.form3d[0][3] = rhSides[0][2] + pointRange.low.x;
         transform.form3d[1][3] = rhSides[1][2] + pointRange.low.y;
         transform.form3d[2][3] = rhSides[2][2] + pointRange.low.z;
@@ -1950,16 +1950,16 @@ static double computePolygonNormal (DVec3dR normal, DPoint3dCP pXYZ, size_t numX
     {
     DVec3d      uVec, vVec, wVec;
 
-    normal.zero();
-    uVec.differenceOf (&pXYZ[1], &pXYZ[0]);
+    normal.Zero ();
+    uVec.DifferenceOf (pXYZ[1], pXYZ[0]);
     for (size_t i = 2 ; i < numXYZ; i++)
         {
-        vVec.differenceOf (pXYZ + i , &pXYZ[0]);
-        wVec.crossProduct (&uVec, &vVec);
+        vVec.DifferenceOf (pXYZ[ i], pXYZ[0]);
+        wVec.CrossProduct (uVec, vVec);
         normal.add (&wVec);
         uVec = vVec;
         }
-    return normal.normalize ();
+    return normal.Normalize ();
     }
 
 /*=================================================================================**//**
@@ -2033,12 +2033,12 @@ StatusInt SimplifyViewDrawGeom::ProcessFacetTextureOutlines (IPolyfaceConstructi
     for (size_t i=0; i<nPoints; i++)
         {
         DVec2d          delta;
-        if (0.0 != delta.normalizedDifference (&params[(i+1) % nPoints], &params[i]))
+        if (0.0 != delta.NormalizedDifference (params[(i+1) % nPoints], params[i]))
             {
             DVec3d          normal;
             double          distance;
 
-            normal.init (clockwise ? delta.y : -delta.y, clockwise ? -delta.x : delta.x, 0.0);
+            normal.Init (clockwise ? delta.y : -delta.y, clockwise ? -delta.x : delta.x, 0.0);
             distance = normal.x * params[i].x + normal.y * params[i].y;
 
             convexPlanes.push_back (ClipPlane (normal, distance, !edgeVisible[i]));

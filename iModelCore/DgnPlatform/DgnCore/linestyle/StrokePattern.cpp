@@ -291,7 +291,7 @@ StatusInt       LsStrokePatternComponent::ProcessStroke (ViewContextP context, I
             startTangent = *modifiers->GetStartTangent();
         else
             {
-            if (0.0 == startTangent.normalizedDifference (inPoints, inPoints+1))
+            if (0.0 == startTangent.NormalizedDifference (*inPoints, inPoints[1]))
                 tan1 = NULL;
             }
 
@@ -300,15 +300,15 @@ StatusInt       LsStrokePatternComponent::ProcessStroke (ViewContextP context, I
         else
             {
             DPoint3dCP pLast = inPoints + (nPoints-1);
-            if (0 == endTangent.normalizedDifference (pLast, pLast-1))
+            if (0 == endTangent.NormalizedDifference (*pLast, *(pLast-1)))
                 tan2 = NULL;
             }
 
         // for closed elements, attempt to set the start and end tangents so first/last points join
-        if (modifiers->IsElementClosed() && tan1 && tan2 && (-TOLERANCE_MitreLimit > startTangent.dotProduct (&endTangent)))
+        if (modifiers->IsElementClosed() && tan1 && tan2 && (-TOLERANCE_MitreLimit > startTangent.DotProduct (endTangent)))
             {
-            if (0.0 != endTangent.normalizedDifference (&startTangent, &endTangent))
-                startTangent.scale (&endTangent, -1.0);
+            if (0.0 != endTangent.NormalizedDifference (startTangent, endTangent))
+                startTangent.Scale (endTangent, -1.0);
             }
         }
 
@@ -319,7 +319,7 @@ StatusInt       LsStrokePatternComponent::ProcessStroke (ViewContextP context, I
 
         DPoint3d    prevDir, thisDir, nextDir;
 
-        thisDir.normalizedDifference (currPoint+1, currPoint);
+        thisDir.NormalizedDifference (currPoint[1], *currPoint);
         prevDir = thisDir;
 
         int segFlag = FLAG_FirstSeg | FLAG_NoEndPhase;
@@ -332,7 +332,7 @@ StatusInt       LsStrokePatternComponent::ProcessStroke (ViewContextP context, I
                 }
             else
                 {
-                nextDir.normalizedDifference (currPoint+2, currPoint+1);
+                nextDir.NormalizedDifference (currPoint[2], currPoint[1]);
                 }
 
             if (hasWidth)
@@ -341,7 +341,7 @@ StatusInt       LsStrokePatternComponent::ProcessStroke (ViewContextP context, I
                 tan2 = currPoint+1==lastPoint ? &endTangent : &thisDir;
                 }
 
-            StrokeLocal (context, symbolProcessor, currPoint, 2, currPoint->distance(currPoint+1), modifiers, tan1, tan2, segFlag);
+            StrokeLocal (context, symbolProcessor, currPoint, 2, currPoint->Distance (currPoint[1]), modifiers, tan1, tan2, segFlag);
             segFlag  = FLAG_NoEndPhase;
 
             prevDir = thisDir;
@@ -831,7 +831,7 @@ double          LsStrokePatternComponent::GenerateStrokes (ViewContextP context,
     DVec3d    normal;
     RotMatrix matrix;
     modifiers->GetPlaneAsMatrixRows (matrix);
-    matrix.getRow (&normal, 2);
+    matrix.GetRow (normal, 2);
 
     double  segmentRemaining = 0;
     double  cutLength = 0.0;
@@ -1468,7 +1468,7 @@ void            StrokeGenerator::GenerateNormalStroke (double strokeLength, doub
             This stroke fits within the current segment
             ---------------------------------------------------------------------------*/
             DPoint3d    tmpPoint;
-            tmpPoint.sumOf(&m_lastGeneratedPoint, &m_segmentDirection, m_strokeRemaining);
+            tmpPoint.SumOf (m_lastGeneratedPoint,m_segmentDirection, m_strokeRemaining);
 
             m_currentPhase      += m_strokeRemaining;
             m_segmentRemaining  -= m_strokeRemaining;
@@ -1507,7 +1507,7 @@ StatusInt       StrokeGenerator::GenerateRigidStroke (double strokeLength, doubl
     double      distance;
     do
         {
-        distance = m_lastGeneratedPoint.distance(m_next);
+        distance = m_lastGeneratedPoint.Distance (*m_next);
         } while (distance < m_strokeLength && IncrementSegment());
 
     if (distance >= m_strokeLength)
@@ -1524,16 +1524,16 @@ StatusInt       StrokeGenerator::GenerateRigidStroke (double strokeLength, doubl
         DPoint3d    rayDir, intPoint, strokeVec;
         double      dot, mag, radSq;
 
-        strokeVec.differenceOf (&m_lastGeneratedPoint, m_next);
-        rayDir.scale(&m_segmentDirection, -1.0);
-        dot     = rayDir.dotProduct(&strokeVec);
+        strokeVec.DifferenceOf (m_lastGeneratedPoint, *m_next);
+        rayDir.Scale (m_segmentDirection, -1.0);
+        dot     = rayDir.DotProduct (strokeVec);
 
-        mag     = strokeVec.dotProduct(&strokeVec);
+        mag     = strokeVec.DotProduct (strokeVec);
         radSq   = m_strokeLength * m_strokeLength;
         mag     = dot - sqrt(radSq - (mag - dot*dot));;
-        intPoint.sumOf(m_next, &rayDir, mag);
+        intPoint.SumOf (*m_next,rayDir, mag);
 
-        m_segmentRemaining  = intPoint.distance(m_next);
+        m_segmentRemaining  = intPoint.Distance (*m_next);
         m_strokeRemaining   = 0.0;
 
         InsertOutputPoint(&intPoint);
@@ -1541,7 +1541,7 @@ StatusInt       StrokeGenerator::GenerateRigidStroke (double strokeLength, doubl
     else
         {
         // If single repetition spans entire element no direction is defined, don't draw anything...
-        double      dist = m_lastGeneratedPoint.distance(m_next);
+        double      dist = m_lastGeneratedPoint.Distance (*m_next);
 
         if (0.0 == dist)
             return ERROR;
@@ -1590,7 +1590,7 @@ bool            StrokeGenerator::IncrementSegment ()
         {
         m_next++;
 
-        if (0.0 == (m_segmentLength = m_segmentDirection.normalizedDifference (m_next, m_next-1)))
+        if (0.0 == (m_segmentLength = m_segmentDirection.NormalizedDifference (*m_next, *(m_next-1))))
             continue;
 
         m_segmentRemaining  = m_segmentLength;
@@ -1611,14 +1611,14 @@ bool            StrokeGenerator::IncrementSegment ()
 static void    extendEndPoints (DPoint3dP pt, double const* width, int nPts)
     {
     DPoint3d    segDir;
-    segDir.normalizedDifference (pt, pt+1);
-    pt->sumOf (pt, &segDir, *width / 2.0);
+    segDir.NormalizedDifference (*pt, pt[1]);
+    pt->SumOf (*pt,segDir, *width / 2.0);
 
     pt     += nPts-1;
     width  += nPts-1;
 
-    segDir.normalizedDifference (pt, pt-1);
-    pt->sumOf (pt, &segDir, *width / 2.0);
+    segDir.NormalizedDifference (*pt, *(pt-1));
+    pt->SumOf (*pt,segDir, *width / 2.0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1644,7 +1644,7 @@ int              widthMode
     if ((widthMode & 0x1) != 0) // upper half
         {
         for (; src < end; src++, dst++, joint++, width++)
-            dst->sumOf (src, &joint->m_dir, ((*width)/2.0) * joint->m_scale);
+            dst->SumOf (*src,joint->m_dir, ((*width)/2.0) * joint->m_scale);
         }
     else
         {
@@ -1661,7 +1661,7 @@ int              widthMode
     if ((widthMode & 0x2) != 0) // lower half
         {
         for (; src >= end; src--, dst++, joint--, width--)
-            dst->sumOf (src, &joint->m_dir, -(((*width)/2.0) * joint->m_scale));
+            dst->SumOf (*src,joint->m_dir, -(((*width)/2.0) * joint->m_scale));
         }
     else
         {
@@ -1689,14 +1689,14 @@ static void    createTristrip (DPoint3dP tristrip, int nPts, DPoint3dCP centerLi
     for (DPoint3dP dst = tristrip; src < end; src++, dst++, joint++, width++)
         {
         if (doUpper)
-            dst->sumOf (src, &joint->m_dir, ((*width)/2.0) * joint->m_scale);
+            dst->SumOf (*src,joint->m_dir, ((*width)/2.0) * joint->m_scale);
         else
             *dst = *src;
 
         dst++;
 
         if (doLower)
-            dst->sumOf (src, &joint->m_dir, -(((*width)/2.0) * joint->m_scale));
+            dst->SumOf (*src,joint->m_dir, -(((*width)/2.0) * joint->m_scale));
         else
             *dst = *src;
         }
@@ -1709,20 +1709,20 @@ static void     outputCapArc (IDrawGeom* output, DPoint3dCP pt1, DPoint3dCP pt2,
     {
     DVec3d      xDir, yDir, zDir;
 
-    if (0.0 == yDir.normalizedDifference (pt1, pt2))
+    if (0.0 == yDir.NormalizedDifference (*pt1, *pt2))
         return;
 
-    if (0.0 == xDir.normalizedDifference (pt3, pt1))
+    if (0.0 == xDir.NormalizedDifference (*pt3, *pt1))
         return;
 
-    zDir.crossProduct (&xDir, &yDir);
-    yDir.normalizedCrossProduct (&zDir, &xDir);
+    zDir.CrossProduct (xDir, yDir);
+    yDir.NormalizedCrossProduct (zDir, xDir);
 
     DPoint3d    origin;
 
-    origin.interpolate (pt1, .5, pt3);
+    origin.Interpolate (*pt1, .5, *pt3);
 
-    double      radius = origin.distance (pt1);
+    double      radius = origin.Distance (*pt1);
     DEllipse3d  ellipse;
 
     ellipse.InitFromDGNFields3d (origin, xDir, yDir, radius, radius, 0.0, msGeomConst_pi);
@@ -1831,7 +1831,7 @@ void            Centerline::GetDirectionVector (DPoint3dR segDir, DPoint3dCR org
     if (1 == GetCount())
         segDir = *GetDirection ();
     else
-        segDir.normalizedDifference (&end, &org);
+        segDir.NormalizedDifference (end, org);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1868,7 +1868,7 @@ void            Centerline::Output (ViewContextP context, LsStrokeP pStroke, DPo
 
         // NEEDSWORK: According to Karin, it would be much more efficient to pass all the points in the centerline as a single array.  
         //    Need to restructure Centerline to do store them seperately.
-        if (1 == nPts || (2 == nPts && points->isEqual (points+1)))
+        if (1 == nPts || (2 == nPts && points->IsEqual (points[1])))
             output.DrawPointString3d (1, points, NULL);
         else
             output.DrawLineString3d (nPts, points, NULL);
@@ -1892,11 +1892,11 @@ void            Centerline::Output (ViewContextP context, LsStrokeP pStroke, DPo
         {
         DPoint3d normal1, normal2;
 
-        normal1.normalizedDifference (m_pts, m_pts+1);
+        normal1.NormalizedDifference (*m_pts, m_pts[1]);
         for (int i=1; i<nPts-1; i++)
             {
-            normal2.normalizedDifference (m_pts+i, m_pts+i+1);
-            if (TOLERANCE_MitreLimit > normal1.dotProduct (&normal2))
+            normal2.NormalizedDifference (m_pts[i], m_pts[i+1]);
+            if (TOLERANCE_MitreLimit > normal1.DotProduct (normal2))
                 {
                 outputPolygon (&output, i-start+1, m_pts+start, m_widths+start, widthMode, capMode, normal, startTangent, NULL, false);
                 startTangent = NULL;
@@ -1916,8 +1916,8 @@ void            Centerline::Output (ViewContextP context, LsStrokeP pStroke, DPo
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void    getParallelandPerpVecs (DVec3dR parvec, DPoint3dR perpvec, DPoint3dCR normal, DPoint3dCP lineseg)
     {
-    parvec.differenceOf (lineseg, lineseg+1);
-    if (0.0 == perpvec.normalizedCrossProduct (&parvec, (DVec3d*) &normal))
+    parvec.DifferenceOf (*lineseg, lineseg[1]);
+    if (0.0 == perpvec.NormalizedCrossProduct (parvec, *((DVec3d*) &normal)))
         perpvec.x = 1.0;   // zero length bvector
     }
 
@@ -1928,7 +1928,7 @@ static inline double    getPerpScale (DPoint3dCP perp1, DPoint3dCP perp2)
     {
     static const double MAX_PERP_SCALE = 50.0;
 
-    double dot = perp1->dotProduct (perp2);
+    double dot = perp1->DotProduct (*perp2);
     return  fabs (dot) < 1.0/MAX_PERP_SCALE ? MAX_PERP_SCALE : 1.0 / dot;
     }
 
@@ -1954,13 +1954,13 @@ DPoint3dCP pEndTangent
     if (NULL != pStartTangent)
         {
         DVec3d cross;
-        cross.crossProduct (pStartTangent, &parVec);
+        cross.CrossProduct (*pStartTangent, parVec);
 
         // if the start tangent is not parallel to the normal bvector, we're "twisting" from element-to-element. Skip it.
-        if (cross.isParallelTo ((DVec3d*)normal))
+        if (cross.IsParallelTo (*((DVec3d*)normal)))
             {
             DPoint3d    perpVec = joint->m_dir;
-            joint->m_dir.normalizedCrossProduct (normal, pStartTangent);
+            joint->m_dir.NormalizedCrossProduct (*normal, *pStartTangent);
             joint->m_scale = getPerpScale (&perpVec, &joint->m_dir);
             }
         }
@@ -1974,8 +1974,8 @@ DPoint3dCP pEndTangent
 
         joint++;
 
-        joint->m_dir.interpolate (&perpVec1, 0.5, &perpVec2);
-        joint->m_dir.normalize();
+        joint->m_dir.Interpolate (perpVec1, 0.5, perpVec2);
+        joint->m_dir.Normalize ();
         joint->m_scale = getPerpScale (&perpVec2, &joint->m_dir);
         }
 
@@ -1986,12 +1986,12 @@ DPoint3dCP pEndTangent
     if (NULL != pEndTangent)
         {
         DVec3d cross;
-        cross.crossProduct (pEndTangent, &parVec);
+        cross.CrossProduct (*pEndTangent, parVec);
 
-        if (cross.isParallelTo ((DVec3d*)normal))
+        if (cross.IsParallelTo (*((DVec3d*)normal)))
             {
             DPoint3d    perpVec = joint->m_dir;
-            joint->m_dir.normalizedCrossProduct (normal, pEndTangent);
+            joint->m_dir.NormalizedCrossProduct (*normal, *pEndTangent);
             joint->m_scale = getPerpScale (&perpVec, &joint->m_dir);
             }
         }
