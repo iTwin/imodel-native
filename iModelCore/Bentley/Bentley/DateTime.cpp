@@ -2,61 +2,12 @@
 |
 |     $Source: Bentley/DateTime.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/DateTime.h>
 #include "DateTimeConverter.h"
 #include <Bentley/BeTimeUtilities.h>
-
-//*********************** DateTime::Info *****************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                  02/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-DateTime::Info::Info ()
-    : m_kind (Kind::Unspecified), m_component (Component::DateAndTime)
-    {
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                  02/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-DateTime::Info::Info (DateTime::Kind kind, DateTime::Component component)
-    : m_kind (kind), m_component (component)
-    {
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                  02/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-bool DateTime::Info::operator == (DateTime::Info const& rhs) const
-    {
-    return m_kind == rhs.m_kind && m_component == rhs.m_component;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                  02/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-bool DateTime::Info::operator != (DateTime::Info const& rhs) const
-    {
-    return !(*this == rhs);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                  02/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-DateTime::Kind DateTime::Info::GetKind () const
-    {
-    return m_kind;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                  02/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-DateTime::Component DateTime::Info::GetComponent () const
-    {
-    return m_component;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  02/2013
