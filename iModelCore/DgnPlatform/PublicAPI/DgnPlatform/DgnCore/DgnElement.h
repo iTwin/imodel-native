@@ -89,24 +89,24 @@ public:
     //! Application data attached to a DgnElement. Create a subclass of this to store non-persistent information on a DgnElement.
     struct AppData : RefCountedBase
     {
-        //! A unique identifier for this type of DgnElementAppData. Use a static instance of this class to identify your AppData.
+        //! A unique identifier for this type of AppData. Use a static instance of this class to identify your AppData.
         struct Key : NonCopyableClass {};
 
-        //! Called after this AppData's element was Inserted.
+        //! Called after the element was Inserted.
         //! @param[in]  el the new persistent DgnElement that was Inserted
         //! @return true to drop this appData, false to leave it attached to the DgnElement.
         //! @note el will not be the writable element onto which this AppData was attached. It will be the new persistent copy of that element.
         //! If you wish for your AppData to reside on the new element, call el.AddAppData(key,this) inside this method.
         virtual bool _OnInserted(DgnElementCR el){return false;}
 
-        //! Called after this AppData's element was Updated.
+        //! Called after the element was Updated.
         //! @param[in] modified the modified DgnElement
         //! @param[in] original the original DgnElement
         //! @return true to drop this appData, false to leave it attached to the DgnElement.
         //! @note This method is called for @b all AppData on both the original and the modified DgnElements.
         virtual bool _OnUpdated(DgnElementCR modified, DgnElementCR original) {return false;}
 
-        //! Called after this AppData's element was Deleted.
+        //! Called after the element was Deleted.
         //! @param[in]  el the DgnElement that was deleted
         //! @return true to drop this appData, false to leave it attached to the DgnElement.
         virtual bool _OnDeleted(DgnElementCR el) {return false;}

@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
-typedef DgnElementP* DgnElementH;
+typedef DgnElementCP* DgnElementH;
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 /*=================================================================================**//**
@@ -80,7 +80,7 @@ protected:
 public:
     ElemIdRangeNode(ElemIdTree& root, ElemIdParent* parent, bool leaf) : m_treeRoot(root),m_parent(parent),m_isLeaf(leaf) {m_nEntries=0; m_isSloppy=false; m_allReferenced=false; InitRange(); m_lastUnreferenced=0;}
     virtual void _CalculateNodeRange() const = 0;
-    virtual void _Add(DgnElementR entry, uint64_t counter) = 0;
+    virtual void _Add(DgnElementCR entry, uint64_t counter) = 0;
     virtual struct ElemIdLeafNode const* _GetFirstNode() const = 0;
     virtual ElemPurge _Purge(int64_t memTarget) = 0;
     virtual ElemPurge _Drop(uint64_t key) = 0;
@@ -101,7 +101,7 @@ public:
     uint64_t GetLastUnReferenced() const {return m_lastUnreferenced;}
     uint64_t GetLowestId() const {return m_range.m_low;}
     bool AreAllReferenced() const {return m_allReferenced;}
-    DgnElementP Find(uint64_t key, bool) const;
+    DgnElementCP Find(uint64_t key, bool) const;
 };
 
 /*=================================================================================**//**
@@ -111,25 +111,25 @@ public:
 struct ElemIdLeafNode : ElemIdRangeNode
 {
 private:
-    DgnElementP m_elems[NUM_LEAFENTRIES];
+    DgnElementCP m_elems[NUM_LEAFENTRIES];
 
     void CalculateLeafRange() const {if (0==m_nEntries) {InitRange(); return;} InitRange(m_elems[0]->GetElementId().GetValue(),(*LastEntry())->GetElementId().GetValue());}
 
     virtual ElemIdLeafNode const* _GetFirstNode() const {return this;}
     virtual void _CalculateNodeRange() const override {CalculateLeafRange();}
-    virtual void _Add(DgnElementR entry, uint64_t counter) override;
+    virtual void _Add(DgnElementCR entry, uint64_t counter) override;
     virtual ElemPurge _Purge(int64_t) override;
     virtual ElemPurge _Drop(uint64_t key) override;
     virtual void _Empty() override;
 
 public:
-    DgnElementP GetEntry(int index) const {return m_elems[index];}
-    DgnElementP const* FirstEntry() const {return m_elems;}
-    DgnElementP const* LastEntry() const {return &m_elems[m_nEntries-1];}
+    DgnElementCP GetEntry(int index) const {return m_elems[index];}
+    DgnElementCP const* FirstEntry() const {return m_elems;}
+    DgnElementCP const* LastEntry() const {return &m_elems[m_nEntries-1];}
     ElemIdLeafNode(ElemIdTree& root, ElemIdParent* parent) : ElemIdRangeNode(root, parent, true) {}
-    void AddEntry(DgnElementR entry);
+    void AddEntry(DgnElementCR entry);
     void SplitLeafNode();
-    DgnElementP FindLeaf(uint64_t key, bool) const;
+    DgnElementCP FindLeaf(uint64_t key, bool) const;
 };
 
 /*=================================================================================**//**
@@ -141,7 +141,7 @@ struct ElemIdInternalNode : public ElemIdRangeNode, ElemIdParent
 protected:
     ElemIdRangeNodeP m_children[NUM_INTERNALENTRIES];
 
-    virtual void _Add(DgnElementR entry, uint64_t counter) override {SetLastUnReferenced(counter); ChooseBestNode(entry.GetElementId().GetValue())->_Add(entry, counter);}
+    virtual void _Add(DgnElementCR entry, uint64_t counter) override {SetLastUnReferenced(counter); ChooseBestNode(entry.GetElementId().GetValue())->_Add(entry, counter);}
     virtual void _IncreaseRange(ElemIdRange const&) override;
     virtual void _CalculateNodeRange() const override;
     virtual ElemIdLeafNode const* _GetFirstNode() const override {return (*FirstEntryC())->_GetFirstNode();}
@@ -165,7 +165,7 @@ public:
     ElemIdRangeNodeP ChooseBestNode(uint64_t key);
     bool Contains(ElemIdRangeNodeP child);
     void SplitInternalNode();
-    DgnElementP FindInternal(uint64_t key, bool) const;
+    DgnElementCP FindInternal(uint64_t key, bool) const;
 };
 
 struct MyStats : DgnElements::Statistics
@@ -176,7 +176,7 @@ void Reset() {m_newElements=m_unReferenced=m_reReferenced=m_purged = 0 ;}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-inline DgnElementP ElemIdRangeNode::Find(uint64_t key, bool setFreeEntryFlag) const
+inline DgnElementCP ElemIdRangeNode::Find(uint64_t key, bool setFreeEntryFlag) const
    {
    return m_isLeaf ?((ElemIdLeafNode const*) this)->FindLeaf(key,setFreeEntryFlag) : ((ElemIdInternalNode const*) this)->FindInternal(key,setFreeEntryFlag);
    }
@@ -223,9 +223,9 @@ public:
     bool ContainsKey(DgnElementId key) {return (nullptr != FindElement(key, false));}
     ElemIdRangeNodeP GetRoot() {return m_root;}
     DgnElementP FindElement(DgnElementId key, bool setAccessed);
-    void AddElement(DgnElementR);
+    void AddElement(DgnElementCR);
     void DropElement(DgnElementCR);
-    void KillElement(DgnElementR el, bool wholeTree) {BeAssert(0 == el.GetRefCount()); RemoveElement(el, wholeTree); delete &el;}
+    void KillElement(DgnElementCR el, bool wholeTree) {BeAssert(0 == el.GetRefCount()); RemoveElement(el, wholeTree); delete &el;}
     void RemoveElement(DgnElementCR element, bool wholeTree);
     void Purge(int64_t memTarget);
     void Destroy();
@@ -248,7 +248,7 @@ ElemPurge ElemIdLeafNode::_Drop(uint64_t key)
         else
             {
             //  this is the entry to delete
-            DgnElementP target = m_elems[index]; // save the target element
+            DgnElementCP target = m_elems[index]; // save the target element
             m_isSloppy = true; // we can't tell whether we may have dropped the first or last entry.
 
             m_nEntries -= 1;
@@ -276,7 +276,7 @@ ElemPurge ElemIdLeafNode::_Purge(int64_t memTarget)
     DgnElementH end = m_elems + m_nEntries;
 
     unsigned killedIndex = 0;
-    DgnElementP killed[NUM_LEAFENTRIES];
+    DgnElementCP killed[NUM_LEAFENTRIES];
 
     for (;curr < end; ++curr)
         {
@@ -441,7 +441,7 @@ void ElemIdTree::Purge(int64_t memTarget)
 * add an element to this node, sorted by DgnElementId
 * @bsimethod                                    Keith.Bentley                   10/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElemIdLeafNode::AddEntry(DgnElementR entry)
+void ElemIdLeafNode::AddEntry(DgnElementCR entry)
     {
     int index = m_nEntries;
     uint64_t key = entry.GetElementId().GetValue();
@@ -464,7 +464,7 @@ void ElemIdLeafNode::AddEntry(DgnElementR entry)
                 }
             }
 
-        DgnElementP const*  tEntry = m_elems + index;
+        DgnElementCP const*  tEntry = m_elems + index;
         memmove((void*)(tEntry+1), tEntry,(m_nEntries-index) * sizeof(DgnElementP));
         }
 
@@ -475,7 +475,7 @@ void ElemIdLeafNode::AddEntry(DgnElementR entry)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElemIdLeafNode::_Add(DgnElementR entry, uint64_t counter)
+void ElemIdLeafNode::_Add(DgnElementCR entry, uint64_t counter)
     {
     // since elements are always unreferenced when we add them to the tree, this correctly marks this node as not "allUnreferenced"
     SetLastUnReferenced(counter);
@@ -499,7 +499,7 @@ void ElemIdLeafNode::_Add(DgnElementR entry, uint64_t counter)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementP ElemIdLeafNode::FindLeaf(uint64_t key, bool setFreeEntryFlag) const
+DgnElementCP ElemIdLeafNode::FindLeaf(uint64_t key, bool setFreeEntryFlag) const
     {
     if (setFreeEntryFlag) // this means that the last reference to an element in this node was just released.
         m_allReferenced = false;
@@ -587,7 +587,7 @@ ElemIdRangeNodeP ElemIdInternalNode::ChooseBestNode(uint64_t key)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementP ElemIdInternalNode::FindInternal(uint64_t key, bool setFreeEntryFlag) const
+DgnElementCP ElemIdInternalNode::FindInternal(uint64_t key, bool setFreeEntryFlag) const
     {
     if (setFreeEntryFlag) // this means that the last reference to an element in this node was just released.
         m_allReferenced = false;
@@ -739,7 +739,7 @@ ElemIdLeafNode const* ElemIdInternalNode::_NextSibling(ElemIdRangeNodeCP from) c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElemIdTree::AddElement(DgnElementR entry)
+void ElemIdTree::AddElement(DgnElementCR entry)
     {
     if (nullptr == m_root)
         m_root = NewLeafNode(this);
@@ -909,7 +909,7 @@ void DgnElements::OnUnreferenced(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::AddToPool(DgnElementR element) const
+void DgnElements::AddToPool(DgnElementCR element) const
     {
     BeDbMutexHolder _v_v(m_mutex);
     BeAssert(!element.IsPersistent());
@@ -1207,17 +1207,10 @@ DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat
     if (parent.IsValid() && DgnDbStatus::Success != (stat=parent->_OnChildInsert(element)))
         return nullptr;
 
+    if (DgnDbStatus::Success != (stat=element._InsertInDb()))
+        return nullptr;
 
     DgnElementPtr newElement = element.CopyForEdit();
-    if (!newElement.IsValid())
-        {
-        stat = DgnDbStatus::BadElement;
-        return nullptr;
-        }
-
-    if (DgnDbStatus::Success != (stat=newElement->_InsertInDb()))
-        return nullptr;
-
     AddToPool(*newElement);
 
     newElement->_OnInserted(&element);

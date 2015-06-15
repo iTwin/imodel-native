@@ -882,7 +882,7 @@ private:
     void OnReclaimed(DgnElementCR);
     void OnUnreferenced(DgnElementCR);
     void Destroy();
-    void AddToPool(DgnElementR) const;
+    void AddToPool(DgnElementCR) const;
     void DropFromPool(DgnElementCR) const;
     void SendOnLoadedEvent(DgnElementR elRef) const;
     void OnChangesetApply(TxnSummary const&);
