@@ -26,9 +26,7 @@ BuddiError::BuddiError(Status status)
     {
     m_status = status;
     if (Status::UrlNotConfigured == status)
-        {
-        m_message = BuddiErrorLocalizedString(MESSAGE_UrlConfigurationError);
-        }
+        m_message = BuddiErrorL10N::GetString(BuddiErrorL10N::UrlConfigurationError());
     }
 
 /*--------------------------------------------------------------------------------------+
