@@ -229,6 +229,7 @@
         <SubPart    PartName="BeSQLiteUnitTests"        PartFile="BeSQLite"             Repository="BeSQLite" />
         <SubPart    PartName="ECDbUnitTests"            PartFile="ECDb"                 Repository="ECDb" />
         <SubPart    PartName="DgnProjectUnitTests"      PartFile="DgnPlatform"          Repository="DgnPlatform" />
+        <SubPart    PartName="DgnDisplayUnitTests"      PartFile="DgnDisplay"           Repository="DgnDisplay" />
         <SubPart    PartName="PlanningUnitTests"        PartFile="Planning"             Repository="DgnDomains-Planning"/>
         <SubPart    PartName="WSClientUnitTests"        PartFile="WSClient"             Repository="WSClient" />
         <SubPart    PartName="ConstructionSchemaUnitTests"  PartFile="ConstructionSchema"   Repository="ConstructionSchema" />
@@ -241,6 +242,7 @@
         <SubPart    PartName="BeSQLiteUnitTests"        PartFile="BeSQLite"             Repository="BeSQLite"               LibType="Static" />
         <SubPart    PartName="ECDbUnitTests"            PartFile="ECDb"                 Repository="ECDb"                   LibType="Static" />
         <SubPart    PartName="DgnProjectUnitTests"      PartFile="DgnPlatform"          Repository="DgnPlatform"            LibType="Static" />
+        <SubPart    PartName="DgnDisplayUnitTests"      PartFile="DgnDisplay"           Repository="DgnDisplay" />
         <SubPart    PartName="PlanningUnitTests"        PartFile="Planning"             Repository="DgnDomains-Planning"    LibType="Static" />
         <SubPart    PartName="WSClientUnitTests"        PartFile="WSClient"             Repository="WSClient"               LibType="Static" />
         <SubPart    PartName="ConstructionSchemaUnitTests"  PartFile="ConstructionSchema"   Repository="ConstructionSchema"     LibType="Static" />
