@@ -53,7 +53,7 @@ bool PropertyMapSystem::_IsSystemPropertyMap () const
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+-
-MapStatus PropertyMapSystem::_FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfoCP classMapInfo)
+MapStatus PropertyMapSystem::_FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfo const* classMapInfo)
     {
     //System columns were already created
     return MapStatus::Success;

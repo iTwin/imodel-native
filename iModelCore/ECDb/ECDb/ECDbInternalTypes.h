@@ -12,14 +12,12 @@
 #include <Bentley/BeAssert.h>
 #include "ECDbLogger.h"
 
-ECDB_TYPEDEFS(RelationshipClassMapInfo);
 ECDB_TYPEDEFS_PTR (ClassMap);
 ECDB_TYPEDEFS_PTR (PropertyMap);
 ECDB_TYPEDEFS(PropertyMapToColumn);
 ECDB_TYPEDEFS_PTR(PropertyMapToInLineStruct);
 ECDB_TYPEDEFS_PTR(PropertyMapToTable);
 ECDB_TYPEDEFS_PTR(PropertyMapArrayOfPrimitives);
-ECDB_TYPEDEFS_PTR(ClassMapInfo);
 ECDB_TYPEDEFS_PTR(MappedTable);
 ECDB_TYPEDEFS_PTR(RelationshipClassMap);
 ECDB_TYPEDEFS_PTR(RelationshipClassEndTableMap);
@@ -191,20 +189,6 @@ enum ECContainerType
 // Even if we end up changing this, it seems reasonable to distinguish "key" values from data values.
 #define PRIMITIVETYPE_DbKey   PrimitiveType(0xCEE) /* A "Fake" PrimitiveType to distinguish columns used as keys */
 #define PRIMITIVETYPE_Unknown PrimitiveType(0x000) /* A "Fake" PrimitiveType  */
-
-// BSCA = Bentley_Standard_CustomAttributes (ECSchema)
-//    C = ECClass
-//    P = ECProperty
-//    V = ECPropertyValue
-
-#define BSCAP_AllowDuplicateRelationships L"AllowDuplicateRelationships"
-
-#define BSCAP_SourceECInstanceIdColumn  L"SourceECIdColumn"
-#define BSCAP_TargetECInstanceIdColumn  L"TargetECIdColumn"
-#define BSCAP_SourceECClassIdColumn     L"SourceECClassIdColumn"
-#define BSCAP_TargetECClassIdColumn     L"TargetECClassIdColumn"
-
-#define BSCAC_ECDbRelationshipClassHint L"ECDbRelationshipClassHint"
 
 #define ECDB_COL_ECInstanceId           "ECInstanceId"
 #define ECDB_COL_ECClassId              "ECClassId"

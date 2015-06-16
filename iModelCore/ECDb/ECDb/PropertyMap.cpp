@@ -291,7 +291,7 @@ NativeSqlBuilder::List PropertyMap::_ToNativeSql(Utf8CP classIdentifier, ECSqlTy
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-MapStatus PropertyMap::FindOrCreateColumnsInTable(ClassMap& classMap,ClassMapInfoCP classMapInfo)
+MapStatus PropertyMap::FindOrCreateColumnsInTable(ClassMap& classMap,ClassMapInfo const* classMapInfo)
     {
     return _FindOrCreateColumnsInTable(classMap, classMapInfo);
     }
@@ -307,7 +307,7 @@ WString PropertyMap::ToString() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-MapStatus PropertyMap::_FindOrCreateColumnsInTable (ClassMap& classMap , ClassMapInfoCP classMapInfo)
+MapStatus PropertyMap::_FindOrCreateColumnsInTable (ClassMap& classMap , ClassMapInfo const* classMapInfo)
     {
     // Base implementation does nothing, but is implemented so PropertyMap can serve as a placeholder
     return MapStatus::Success;
@@ -656,7 +656,7 @@ BentleyStatus PropertyMapToInLineStruct::Initialize(ECDbMapCR map)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan     09/2013
 //---------------------------------------------------------------------------------------
-MapStatus PropertyMapToInLineStruct::_FindOrCreateColumnsInTable (ClassMap& classMap,ClassMapInfoCP classMapInfo)
+MapStatus PropertyMapToInLineStruct::_FindOrCreateColumnsInTable (ClassMap& classMap,ClassMapInfo const* classMapInfo)
     {
     for(auto childPropMap : m_children)
         {
@@ -787,7 +787,7 @@ void PropertyMapToTable::_GetColumns(std::vector<ECDbSqlColumn const*>& columns)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-MapStatus PropertyMapToTable::_FindOrCreateColumnsInTable( ClassMap& classMap, ClassMapInfoCP classMapInfo)
+MapStatus PropertyMapToTable::_FindOrCreateColumnsInTable( ClassMap& classMap, ClassMapInfo const* classMapInfo)
     {
     return MapStatus::Success; // PropertyMapToTable adds no columns in the main table. The other table has a FK that points to the main table
     }
@@ -824,7 +824,7 @@ bool PropertyMapToColumn::_IsVirtual () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-MapStatus PropertyMapToColumn::_FindOrCreateColumnsInTable (ClassMap& classMap , ClassMapInfoCP classMapInfor)
+MapStatus PropertyMapToColumn::_FindOrCreateColumnsInTable (ClassMap& classMap , ClassMapInfo const* classMapInfor)
     {
     Utf8CP        columnName = m_columnInfo.GetName ();
     PrimitiveType primitiveType = m_columnInfo.GetColumnType ();
@@ -982,7 +982,7 @@ WString PropertyMapPoint::_ToString() const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-MapStatus PropertyMapPoint::_FindOrCreateColumnsInTable(ClassMap& classMap,  ClassMapInfoCP classMapInfo)
+MapStatus PropertyMapPoint::_FindOrCreateColumnsInTable(ClassMap& classMap,  ClassMapInfo const* classMapInfo)
     {
     PrimitiveType primitiveType = PRIMITIVETYPE_Double;
 

@@ -9,6 +9,7 @@
 //__BENTLEY_INTERNAL_ONLY__
 
 #include "PropertyMap.h"
+#include "ClassMapInfo.h"
 #include <Bentley/NonCopyableClass.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -320,8 +321,8 @@ struct ClassMap : public IClassMap, RefCountedBase
         std::unique_ptr<ClassDbView> m_dbView;
         ColumnFactory               m_columnFactory;
     private:
-        MapStatus ProcessIndices (ClassMapInfoCR classMapInfo);
-        void ProcessStandardKeySpecifications (ClassMapInfoCR mapInfo);
+        MapStatus ProcessIndices (ClassMapInfo const& classMapInfo);
+        void ProcessStandardKeySpecifications (ClassMapInfo const& mapInfo);
         void SetUserProvidedIndex (bvector<ClassIndexInfoPtr> const& indexes)
             {
             m_indexes = indexes;
@@ -336,12 +337,12 @@ struct ClassMap : public IClassMap, RefCountedBase
     protected:
         ClassMap (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty);
 
-        virtual MapStatus _InitializePart1 (ClassMapInfoCR classMapInfo, IClassMap const* parentClassMap);
-        virtual MapStatus _InitializePart2 (ClassMapInfoCR classMapInfo, IClassMap const* parentClassMap);
+        virtual MapStatus _InitializePart1 (ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap);
+        virtual MapStatus _InitializePart2 (ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap);
         virtual BentleyStatus _Save (std::set<ClassMap const*>& savedGraph);
         virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap);
 
-        MapStatus AddPropertyMaps (IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo, ClassMapInfoCP classMapInfo);
+        MapStatus AddPropertyMaps (IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo, ClassMapInfo const* classMapInfo);
         void SetTable (ECDbSqlTable* newTable) { m_table = newTable; }
         virtual PropertyMapCollection const& _GetPropertyMaps () const;
         virtual ECDbSqlTable& _GetTable () const override { return *m_table; }
@@ -358,7 +359,7 @@ struct ClassMap : public IClassMap, RefCountedBase
         static ClassMapPtr Create (ECN::ECClassCR ecClass, ECDbMapCR ecdbMap, ECDbMapStrategy mapStrategy, bool setIsDirty) { return new ClassMap (ecClass, ecdbMap, mapStrategy, setIsDirty); }
         //! Builds the list of PropertyMaps for this ClassMap
         //! @param  classMapInfo This will contain information cleaned from ClassMap custom attribute
-        MapStatus Initialize (ClassMapInfoCR classMapInfo);
+        MapStatus Initialize (ClassMapInfo const& classMapInfo);
  
     
     //! Used when finding/creating DbColumns that are mapped to ECProperties of the ECClass
@@ -366,7 +367,7 @@ struct ClassMap : public IClassMap, RefCountedBase
     ECDbSqlColumn* FindOrCreateColumnForProperty
         (
         ClassMapCR classMap,
-        ClassMapInfoCP classMapInfo,
+        ClassMapInfo const* classMapInfo,
         PropertyMapR propertyMap, 
         Utf8CP requestedColumnName, 
         ECN::PrimitiveType primitiveType, 

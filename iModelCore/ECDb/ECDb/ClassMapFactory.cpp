@@ -106,7 +106,7 @@ ClassMapPtr ClassMapFactory::Create (MapStatus& mapStatus, SchemaImportContext c
 
     BeAssert (ecdbMap.GetClassMap (ecClass, false) == nullptr);
 
-    auto classMapInfo = ClassMapInfoFactory::CreateFromECDbMapCustomAttributes (mapStatus, schemaImportContext, ecClass, ecdbMap);
+    auto classMapInfo = ClassMapInfoFactory::Create (mapStatus, schemaImportContext, ecClass, ecdbMap);
     if (classMapInfo == nullptr)
         return nullptr;
 
@@ -116,7 +116,7 @@ ClassMapPtr ClassMapFactory::Create (MapStatus& mapStatus, SchemaImportContext c
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    02/2014
 //---------------------------------------------------------------------------------------
-ClassMapPtr ClassMapFactory::CreateInstance (MapStatus& mapStatus, ClassMapInfoCR mapInfo, bool setIsDirty)
+ClassMapPtr ClassMapFactory::CreateInstance (MapStatus& mapStatus, ClassMapInfo const& mapInfo, bool setIsDirty)
     {
     auto const& ecClass = mapInfo.GetECClass();
     auto const& ecdbMap = mapInfo.GetECDbMap();

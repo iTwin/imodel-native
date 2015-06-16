@@ -26,7 +26,7 @@ FieldEngineer.RelationshipIssue
 #TFS Defects 186409,186444, 186457, 186461
 ECDbMapPersistenceTests.MappingStrategyTest
 #TFS Defect 201187
-ECDbHintTests.RelationshipTest_AllowDuplicateRelationships
+ECDbMapCATests.RelationshipTest_AllowDuplicateRelationships
 
 
 #----------------------------------------------------------------------------------------

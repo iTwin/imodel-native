@@ -10,7 +10,7 @@
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-struct ECDbHintTests : public ::testing::Test
+struct ECDbMapCATests : public ::testing::Test
     {
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                   Affan.Khan                         02/15
@@ -103,15 +103,15 @@ struct ECDbHintTests : public ::testing::Test
         PrimitiveECPropertyP prim;
         auto readContext = ECSchemaReadContext::CreateContext ();
         readContext->AddSchemaLocater (ecdb.GetSchemaLocater ());
-        auto bscaKey = SchemaKey (L"Bentley_Standard_CustomAttributes", 1, 11);
-        auto bscaSchema = readContext->LocateSchema (bscaKey, SchemaMatchType::SCHEMAMATCHTYPE_LatestCompatible);
-        ASSERT_TRUE (bscaSchema.IsValid ());
+        auto ecdbmapKey = SchemaKey (L"ECDbMap", 1, 0);
+        auto ecdbmapSchema = readContext->LocateSchema (ecdbmapKey, SchemaMatchType::SCHEMAMATCHTYPE_LatestCompatible);
+        ASSERT_TRUE (ecdbmapSchema.IsValid ());
 
         ECSchema::CreateSchema (testSchema, L"TestSchema", 1, 0);
         ASSERT_TRUE (testSchema.IsValid ());
 
         testSchema->SetNamespacePrefix (L"ts");
-        testSchema->AddReferencedSchema (*bscaSchema);
+        testSchema->AddReferencedSchema (*ecdbmapSchema);
 
         testSchema->CreateClass (foo, L"Foo");
         testSchema->CreateClass (goo, L"Goo");
@@ -154,33 +154,33 @@ struct ECDbHintTests : public ::testing::Test
 
         if (allowDuplicateRelationships)
             {
-            auto hintClass = bscaSchema->GetClassCP (L"ECDbRelationshipClassHint");
-            ASSERT_TRUE (hintClass != nullptr);
-            auto hint = hintClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-            ASSERT_TRUE (hint != nullptr);
-            ASSERT_TRUE (hint->SetValue (L"AllowDuplicateRelationships", ECValue (true)) == ECOBJECTS_STATUS_Success);
-            ASSERT_TRUE (oneFooHasOneGoo->SetCustomAttribute (*hint) == ECOBJECTS_STATUS_Success);
-            ASSERT_TRUE (oneFooHasManyGoo->SetCustomAttribute (*hint) == ECOBJECTS_STATUS_Success);
-            ASSERT_TRUE (manyFooHasManyGoo->SetCustomAttribute (*hint) == ECOBJECTS_STATUS_Success);
+            auto caInstClass = ecdbmapSchema->GetClassCP (L"LinkTableRelationshipMap");
+            ASSERT_TRUE (caInstClass != nullptr);
+            auto caInst = caInstClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
+            ASSERT_TRUE (caInst != nullptr);
+            ASSERT_TRUE (caInst->SetValue (L"AllowDuplicateRelationships", ECValue (true)) == ECOBJECTS_STATUS_Success);
+            ASSERT_TRUE (oneFooHasOneGoo->SetCustomAttribute (*caInst) == ECOBJECTS_STATUS_Success);
+            ASSERT_TRUE (oneFooHasManyGoo->SetCustomAttribute (*caInst) == ECOBJECTS_STATUS_Success);
+            ASSERT_TRUE (manyFooHasManyGoo->SetCustomAttribute (*caInst) == ECOBJECTS_STATUS_Success);
             }
 
         if (allowForeignKeyConstraint)
             {
-            auto constraintClassHint = bscaSchema->GetClassCP (L"ECDbRelationshipConstraintHint");
-            ASSERT_TRUE (constraintClassHint != nullptr);
-            auto hint = constraintClassHint->GetDefaultStandaloneEnabler ()->CreateInstance ();
-            ASSERT_TRUE (hint != nullptr);
-            const WCharCP enforceReferentialIntegrityProperty = L"ForeignKeyConstraint.EnforceReferentialIntegrityCheck";
-            ASSERT_TRUE (hint->SetValue (enforceReferentialIntegrityProperty, ECValue (true)) == ECOBJECTS_STATUS_Success);
+            auto fkMapClass = ecdbmapSchema->GetClassCP (L"ForeignKeyRelationshipMap");
+            ASSERT_TRUE (fkMapClass != nullptr);
+            auto caInst = fkMapClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
+            ASSERT_TRUE (caInst != nullptr);
+            const WCharCP enforceReferentialIntegrityProperty = L"ForeignKey.EnforceReferentialIntegrity";
+            ASSERT_TRUE (caInst->SetValue (enforceReferentialIntegrityProperty, ECValue (true)) == ECOBJECTS_STATUS_Success);
 
             ECRelationshipConstraintR targetOnetoOne = oneFooHasOneGoo->GetTarget ();
-            ASSERT_TRUE (targetOnetoOne.SetCustomAttribute (*hint) == ECOBJECTS_STATUS_Success);
+            ASSERT_TRUE (targetOnetoOne.SetCustomAttribute (*caInst) == ECOBJECTS_STATUS_Success);
 
             ECRelationshipConstraintR targetOneToMany = oneFooHasManyGoo->GetTarget ();
-            ASSERT_TRUE (targetOneToMany.SetCustomAttribute (*hint) == ECOBJECTS_STATUS_Success);
+            ASSERT_TRUE (targetOneToMany.SetCustomAttribute (*caInst) == ECOBJECTS_STATUS_Success);
 
             ECRelationshipConstraintR targetManyToMany = manyFooHasManyGoo->GetTarget ();
-            ASSERT_TRUE (targetManyToMany.SetCustomAttribute (*hint) == ECOBJECTS_STATUS_Success);
+            ASSERT_TRUE (targetManyToMany.SetCustomAttribute (*caInst) == ECOBJECTS_STATUS_Success);
             }
 
         ASSERT_EQ (ecdb.Schemas ().ImportECSchemas (readContext->GetCache ()), BentleyStatus::SUCCESS);
@@ -286,10 +286,10 @@ struct ECDbHintTests : public ::testing::Test
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                              Muhammad Hassan                         04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECDbHintTests, ForeignKeyConstraint_EnforceReferentialIntegrityCheck)
+TEST_F (ECDbMapCATests, ForeignKeyRelationshipMap_EnforceReferentialIntegrity)
     {
     ECDbTestProject test;
-    ECDbR ecdb = test.Create ("ForeignKeyConstraint_EnforceReferentialIntegrityCheck.ecdb");
+    ECDbR ecdb = test.Create ("ForeignKeyRelationshipMap_EnforceReferentialIntegrity.ecdb");
     ExecuteRelationshipInsertionIntegrityTest (ecdb, false, true);
     //when AllowDuplicate is turned of, OneFooHasManyGoo will also be mapped as endtable therefore ReferentialIntegrityCheck will be performed for it, so there will be two rows in the ForeignKey table
     ASSERT_FALSE (ecdb.TableExists ("ts_OneFooHasOneGoo"));
@@ -312,7 +312,7 @@ TEST_F (ECDbHintTests, ForeignKeyConstraint_EnforceReferentialIntegrityCheck)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                              Muhammad Hassan                         04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECDbHintTests, ForeignKeyConstraint_EnforceReferentialIntegrityCheck_AllowDuplicateRelation)
+TEST_F (ECDbMapCATests, ForeignKeyConstraint_EnforceReferentialIntegrityCheck_AllowDuplicateRelation)
     {
     ECDbTestProject test;
     ECDbR ecdb = test.Create ("ForeignKeyConstraint_EnforceReferentialIntegrityCheck_AllowDuplicateRelation.ecdb");
@@ -338,7 +338,7 @@ TEST_F (ECDbHintTests, ForeignKeyConstraint_EnforceReferentialIntegrityCheck_All
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                         02/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECDbHintTests, RelationshipTest_DoNotAllowDupilcateRelationships)
+TEST_F (ECDbMapCATests, RelationshipTest_DoNotAllowDupilcateRelationships)
     {
     ECDbTestProject test;
     ECDbR ecdb = test.Create ("RelationshipCardinalityTest.ecdb");
@@ -353,7 +353,7 @@ TEST_F (ECDbHintTests, RelationshipTest_DoNotAllowDupilcateRelationships)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                         02/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECDbHintTests, RelationshipTest_AllowDuplicateRelationships)
+TEST_F (ECDbMapCATests, RelationshipTest_AllowDuplicateRelationships)
     {
     ECDbTestProject test;
     ECDbR ecdb = test.Create ("RelationshipCardinalityTest_AllowDuplicateRelationships.ecdb");
@@ -368,7 +368,7 @@ TEST_F (ECDbHintTests, RelationshipTest_AllowDuplicateRelationships)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECDbHintTests, AbstractClassWithTablePerHierarchyAndSharedTableForThisClass)
+TEST_F (ECDbMapCATests, AbstractClassWithTablePerHierarchyAndSharedTableForThisClass)
     {
     auto const schema =
         L"<?xml version='1.0' encoding='utf-8'?>"
@@ -444,7 +444,7 @@ TEST_F (ECDbHintTests, AbstractClassWithTablePerHierarchyAndSharedTableForThisCl
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECDbHintTests, TablePerHierarchy_WithReuseColumns)
+TEST_F (ECDbMapCATests, TablePerHierarchy_WithReuseColumns)
     {
     auto const schema =
         L"<?xml version='1.0' encoding='utf-8'?>"
@@ -533,7 +533,7 @@ TEST_F (ECDbHintTests, TablePerHierarchy_WithReuseColumns)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECDbHintTests, TablePerHierarchy_ReuseColumns_DisableReuseColumnsForThisClass)
+TEST_F (ECDbMapCATests, TablePerHierarchy_ReuseColumns_DisableReuseColumnsForThisClass)
     {
     Utf8CP schemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -626,7 +626,7 @@ TEST_F (ECDbHintTests, TablePerHierarchy_ReuseColumns_DisableReuseColumnsForThis
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECDbHintTests, TestInvalidMapStrategyValue)
+TEST_F (ECDbMapCATests, TestInvalidMapStrategyValue)
     {
     Utf8CP schemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -648,7 +648,7 @@ TEST_F (ECDbHintTests, TestInvalidMapStrategyValue)
 
     ECDbTestProject::Initialize ();
     ECDb ecdb;
-    ASSERT_EQ (BE_SQLITE_OK, ECDbTestUtility::CreateECDb (ecdb, nullptr, L"SchemaHintDb.ecdb")) << "ECDb couldn't be created";
+    ASSERT_EQ (BE_SQLITE_OK, ECDbTestUtility::CreateECDb (ecdb, nullptr, L"SchemaMap.ecdb")) << "ECDb couldn't be created";
 
     auto readContext = ECSchemaReadContext::CreateContext ();
     ECSchemaPtr testSchema = nullptr;
@@ -661,7 +661,7 @@ TEST_F (ECDbHintTests, TestInvalidMapStrategyValue)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECDbHintTests, UniqueIndexesSupportFor1to1RelationshipWithTablePerHierarchy)
+TEST_F (ECDbMapCATests, UniqueIndexesSupportFor1to1RelationshipWithTablePerHierarchy)
     {
     ECDbTestProject testproject;
     ECDbR ecdb = testproject.Create ("PartialIndexWithMultipleRelationshipInSameTable_Db.ecdb", L"TablePerHierarchy.01.00.ecschema.xml", false);
@@ -710,10 +710,10 @@ TEST_F (ECDbHintTests, UniqueIndexesSupportFor1to1RelationshipWithTablePerHierar
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECDbHintTests, InstanceInsertionForRelationshipsMappedToSameTable)
+TEST_F (ECDbMapCATests, InstanceInsertionForRelationshipsMappedToSameTable)
     {
     ECDbTestProject testproject;
-    ECDbR ecdb = testproject.Create ("RelationshipsWithMappingHintTablePerHierarchy_Db.ecdb", L"TablePerHierarchy.01.00.ecschema.xml", false);
+    ECDbR ecdb = testproject.Create ("RelationshipsWithTablePerHierarchy.ecdb", L"TablePerHierarchy.01.00.ecschema.xml", false);
 
     ASSERT_TRUE (ecdb.TableExists ("tph_TPHOwnsTPH"));
     ASSERT_FALSE (ecdb.TableExists ("tph_TPHhasClassA"));
@@ -860,12 +860,12 @@ TEST_F (ECDbHintTests, InstanceInsertionForRelationshipsMappedToSameTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/15
 //+---------------+---------------+---------------+---------------+---------------+------
-//Base class has mapping hint TablerPerHierarchy and Derived Classes also implement TablerPerHierarchy
-TEST_F (ECDbHintTests, TablePerHierarchy)
+//Base class has mapping TablerPerHierarchy and Derived Classes also implement TablerPerHierarchy
+TEST_F (ECDbMapCATests, TablePerHierarchy)
     {
     const int rowsPerInstances = 3;
     ECDbTestProject testproject;
-    auto& ecdb = testproject.Create ("SchemaHint_Db.ecdb", L"TablePerHierarchy.01.00.ecschema.xml", rowsPerInstances);
+    auto& ecdb = testproject.Create ("tableperhierarchy.ecdb", L"TablePerHierarchy.01.00.ecschema.xml", rowsPerInstances);
 
     ASSERT_TRUE (ecdb.TableExists ("tph_TPH"));
     ASSERT_FALSE (ecdb.TableExists ("tph_DerivesTablePerHierarchy"));
@@ -898,12 +898,12 @@ TEST_F (ECDbHintTests, TablePerHierarchy)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/15
 //+---------------+---------------+---------------+---------------+---------------+------
-//Base class has mapping hint TablerPerHierarchy and Derived Classes implement DoNotMap and DoNotMapHierarchy
-TEST_F (ECDbHintTests, TablePerHierarchy_DoNotMapHierarchy)
+//Base class has mapping TablerPerHierarchy and Derived Classes implement DoNotMap and DoNotMapHierarchy
+TEST_F (ECDbMapCATests, TablePerHierarchy_DoNotMapHierarchy)
     {
     const int rowsPerInstances = 3;
     ECDbTestProject testproject;
-    auto& ecdb = testproject.Create ("SchemaHint_Db.ecdb", L"TablePerHierarchy.01.00.ecschema.xml", rowsPerInstances);
+    auto& ecdb = testproject.Create ("TablePerHierarchy_DoNotMapHierarchy.ecdb", L"TablePerHierarchy.01.00.ecschema.xml", rowsPerInstances);
 
     ASSERT_TRUE (ecdb.TableExists ("tph_TPH1"));
     EXPECT_TRUE (ecdb.TableExists ("tph_ClassD"));/*this class should be mapped along the base class*/
@@ -935,12 +935,12 @@ TEST_F (ECDbHintTests, TablePerHierarchy_DoNotMapHierarchy)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/15
 //+---------------+---------------+---------------+---------------+---------------+------
-//Base class has mapping hint TablerPerHierarchy and Derived Classes implement TableForThisClass and TablePerClass
-TEST_F (ECDbHintTests, TablePerHierarchy_TablePerClass)
+//Base class has mapping TablerPerHierarchy and Derived Classes implement TableForThisClass and TablePerClass
+TEST_F (ECDbMapCATests, TablePerHierarchy_TablePerClass)
     {
     const int rowsPerInstances = 3;
     ECDbTestProject testproject;
-    auto& ecdb = testproject.Create ("SchemaHint_Db.ecdb", L"TablePerHierarchy.01.00.ecschema.xml", rowsPerInstances);
+    auto& ecdb = testproject.Create ("TablePerHierarchy_TablePerClass.ecdb", L"TablePerHierarchy.01.00.ecschema.xml", rowsPerInstances);
 
     ASSERT_TRUE (ecdb.TableExists ("tph_TPH2"));
     EXPECT_FALSE (ecdb.TableExists ("tph_DerivesTableForThisClass"));/*Seperate table should exist for this class*/
@@ -954,7 +954,7 @@ TEST_F (ECDbHintTests, TablePerHierarchy_TablePerClass)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Muhammad Hassan                  05/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST (ECDbTests, TestStructClassInTablePerHierarchy)
+TEST (ECDbMapCATests, TestStructClassInTablePerHierarchy)
     {
     Utf8CP schemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"

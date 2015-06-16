@@ -11,6 +11,9 @@
 #include "MapStrategy.h"
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+struct IClassMap;
+struct ClassMapInfo;
+
 //======================================================================================
 // @bsiclass                                                 Krischan.Eberle  02/2014
 //+===============+===============+===============+===============+===============+======
@@ -20,10 +23,10 @@ private:
     ClassMapInfoFactory ();
     ~ClassMapInfoFactory ();
 
-    static ClassMapInfoPtr CreateInstance(ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, ECDbMapStrategy mapStrategy);
+    static std::shared_ptr<ClassMapInfo> Create(MapStatus&, ECN::ECClassCR, ECDbMapCR);
 
 public:
-    static ClassMapInfoPtr CreateFromECDbMapCustomAttributes (MapStatus& mapStatus, SchemaImportContext const& schemaImportContext, ECN::ECClassCR ecClass, ECDbMapCR ecDbMap);
+    static std::shared_ptr<ClassMapInfo> Create(MapStatus&, SchemaImportContext const&, ECN::ECClassCR, ECDbMapCR);
     };
 
 //======================================================================================
@@ -32,7 +35,7 @@ public:
 //! rules like checking if isDomainClass=False, building standard table name, etc.
 // @bsiclass                                                     Casey.Mullen      11/2011
 //+===============+===============+===============+===============+===============+======
-struct ClassMapInfo : public RefCountedBase, NonCopyableClass
+struct ClassMapInfo : NonCopyableClass
 {
 private:
     Utf8String m_tableName;
@@ -41,11 +44,11 @@ private:
     bvector<ClassIndexInfoPtr> m_dbIndexes; 
     IClassMap const* m_parentClassMap;
     bool m_isMapToVirtualTable;
-    ECN::ECPropertyP m_ClassHasCurrentTimeStampProperty;
+    ECN::ECPropertyCP m_classHasCurrentTimeStampProperty;
     ECDbMapStrategy m_strategy;
-protected:
 
-    ECDbMapCR m_ecDbMap;
+protected:
+    ECDbMapCR m_ecdbMap;
     ECN::ECClassCR m_ecClass;
 
 private:
@@ -63,26 +66,22 @@ private:
     MapStatus ReportError_OneClassMappedByTableInHierarchyFromTwoDifferentAncestors (ECN::ECClassCR ecClass, bvector<IClassMap const*> tphMaps) const;
 
 protected:
-    ClassMapInfo (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, ECDbMapStrategy mapStrategy);
-    virtual ~ClassMapInfo() {}
     virtual BentleyStatus _InitializeFromSchema();
-    virtual MapStatus _EvaluateMapStrategy ();
+    virtual MapStatus _EvaluateMapStrategy();
 
     static void LogClassNotMapped (NativeLogging::SEVERITY severity, ECN::ECClassCR ecClass, Utf8CP explanation);
 
 public:
-    ECN::ECPropertyP GetClassHasCurrentTimeStampProperty() const { return m_ClassHasCurrentTimeStampProperty; }
-    static ClassMapInfoPtr Create (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, ECDbMapStrategy mapStrategy);
-    virtual BentleyStatus _Initialize();
+    ClassMapInfo(ECN::ECClassCR, ECDbMapCR);
+    virtual ~ClassMapInfo() {}
+
+    ECN::ECPropertyCP GetClassHasCurrentTimeStampProperty() const { return m_classHasCurrentTimeStampProperty; }
+    virtual MapStatus _Initialize();
 
     ECDbMapStrategy const& GetMapStrategy () const{ return m_strategy; }
     ECDbMapStrategy& GetMapStrategyR (){ return m_strategy; }
-    //! Evaluates the MapStrategy for the ECClass represented by this ClassMapInfo based on ClassMap ECCustomAttribute and
-    //! default mapping rules. The results are stored in ClassMapInfo
-    //! @remarks Assumes all base classes have been mapped already. 
-    MapStatus EvaluateMapStrategy ();
 
-    ECDbMapCR GetECDbMap() const {return m_ecDbMap;}
+    ECDbMapCR GetECDbMap() const {return m_ecdbMap;}
     ECN::ECClassCR GetECClass() const {return m_ecClass;}
     bvector<ClassIndexInfoPtr> const& GetIndexInfo() const { return m_dbIndexes;}
     Utf8CP GetTableName() const {return m_tableName.c_str();}
@@ -96,49 +95,16 @@ public:
     void RestoreSaveSettings (ECDbMapStrategy mapStrategy, Utf8CP tableName){ m_strategy = mapStrategy; if (tableName != nullptr) m_tableName = tableName; }
     };
 
-/*=================================================================================**//**
-* This class grabs information from ECDbRelationshipConstraintHint ECCustomAttribute
-* @bsiclass                                                     Affan.Khan       09/2014
-+===============+===============+===============+===============+===============+======*/
-struct RelationshipConstraintInfo
+
+//======================================================================================
+//!This class grabs information from ForeignKeyRelationshipMap or LinkTableRelationshipMap ECCustomAttribute and evaluates
+//! it along with other standard metadata on the ECRelationshipClass
+// @bsiclass                                                     Krischan.Eberle     06/2015
+//+===============+===============+===============+===============+===============+======
+struct RelationshipMapInfo : public ClassMapInfo
     {
-    private:
-        Utf8String m_ecClassIdColumn;
-        Utf8String m_ecInstanceIdColumn;
-        bool       m_enforceIntegrityCheck;
-        ECDbSqlForeignKeyConstraint::ActionType m_onDeleteAction;
-        ECDbSqlForeignKeyConstraint::ActionType m_onUpdateAction;
-        ECDbSqlForeignKeyConstraint::MatchType  m_matchType;
-        bool       m_generateDefaultIndex;
-        bool       m_isEmpty;
-
-    public:
-        RelationshipConstraintInfo ()
-            : m_enforceIntegrityCheck (false), m_onDeleteAction (ECDbSqlForeignKeyConstraint::ActionType::NotSpecified), m_onUpdateAction (ECDbSqlForeignKeyConstraint::ActionType::NotSpecified), m_isEmpty (true), m_generateDefaultIndex (true), m_matchType (ECDbSqlForeignKeyConstraint::MatchType::NotSpecified)
-            {}
-
-        Utf8StringCR GetECClassIdColumn () const { return m_ecClassIdColumn; }
-        Utf8StringCR GetECInstanceIdColumn () const { return m_ecInstanceIdColumn; }
-        bool DoEnforceIntegrityCheck () const { return m_enforceIntegrityCheck; }
-        ECDbSqlForeignKeyConstraint::ActionType GetOnDeleteAction () const { return m_onDeleteAction; }
-        ECDbSqlForeignKeyConstraint::ActionType GetOnUpdateAction () const { return m_onUpdateAction; }
-        ECDbSqlForeignKeyConstraint::MatchType  GetMatchType () const { return m_matchType; }
-        bool IsEmpty () const { return m_isEmpty; }
-        bool GenerateDefaultIndex () const { return m_generateDefaultIndex; }
-
-        static void ReadFromConstraint (RelationshipConstraintInfo& info, ECN::ECRelationshipConstraintCR constraint);
-    };
-
-/*=================================================================================**//**
-* This class grabs information from ECDbRelationshipClassHint ECCustomAttribute and evaluates
-* it along with other standard metadata on the ECClass... applying default 
-* rules like checking if isDomainClass=False, building standard table name, etc.
-* @bsiclass                                                     Casey.Mullen      11/2011
-+===============+===============+===============+===============+===============+======*/
-struct RelationshipClassMapInfo : public ClassMapInfo
-{
 public:
-    enum class CardinalityType
+    enum class Cardinality
         {
         ManyToMany,
         OneToMany,
@@ -146,54 +112,49 @@ public:
         OneToOne
         };
 
-    enum class TriState
+    enum class CustomMapType
         {
-        True,
-        False,
-        Default,
+        None,
+        ForeignKeyOnTarget,
+        ForeignKeyOnSource,
+        LinkTable
         };
 
 private:
-    TriState m_allowDuplicateRelationships;
-    CardinalityType m_relationshipCardinality;
-    Utf8String m_sourceECInstanceIdColumn;
-    Utf8String m_sourceECClassIdColumn;
-    Utf8String m_targetECInstanceIdColumn;
-    Utf8String m_targetECClassIdColumn;
-    RelationshipConstraintInfo m_sourceInfo, m_targetInfo;
+    Cardinality m_cardinality;
+    bool m_allowDuplicateRelationships;
+    bool m_sourceMapInfoIsNull;
+    ECN::ECDbRelationshipConstraintMap m_sourceMapInfo;
+    bool m_targetMapInfoIsNull;
+    ECN::ECDbRelationshipConstraintMap m_targetMapInfo;
+    CustomMapType m_customMapType;
 
-    virtual BentleyStatus _InitializeFromSchema () override;
-    virtual MapStatus _EvaluateMapStrategy ();
+    virtual BentleyStatus _InitializeFromSchema() override;
+    virtual MapStatus _EvaluateMapStrategy();
+    MapStatus DetermineImpliedMapStrategy(bool& mapStrategyAlreadyEvaluated);
+    MapStatus EvaluateCustomMapping(bool mapStrategyAlreadyEvaluated);
 
-    MapStatus DetermineRelationshipMapStrategy ();
-    void DetermineCardinality ();
-    bool ValidateRelatedClasses () const;
+    void DetermineCardinality();
+    bool VerifyRelatedClasses() const;
 
-    Strategy Get11RelationshipMapStrategy (ECN::ECRelationshipConstraintR source, ECN::ECRelationshipConstraintR target, ECN::ECRelationshipClassCR relationshipClass) const;
-    Strategy Get1MRelationshipMapStrategy (ECN::ECRelationshipConstraintR source, ECN::ECRelationshipConstraintR target, ECN::ECRelationshipClassCR relationshipClass) const;
-    static CardinalityType CalculateRelationshipCardinality (ECN::ECRelationshipConstraintCR source, ECN::ECRelationshipConstraintCR target);
-    static bool ContainsRelationshipClass (std::vector<ECN::ECClassCP> const& endClasses);
-
-protected:
-    RelationshipClassMapInfo (ECN::ECRelationshipClassCR relationshipClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, ECDbMapStrategy mapStrategy);
-    ~RelationshipClassMapInfo () {} // RefCounted pattern
-
+    bool TryDetermine11RelationshipMapStrategy(Strategy&, ECN::ECRelationshipConstraintR source, ECN::ECRelationshipConstraintR target, ECN::ECRelationshipClassCR relationshipClass) const;
+    bool TryDetermine1MRelationshipMapStrategy(Strategy&, ECN::ECRelationshipConstraintR source, ECN::ECRelationshipConstraintR target, ECN::ECRelationshipClassCR relationshipClass) const;
+    static bool ContainsRelationshipClass(std::vector<ECN::ECClassCP> const& endClasses);
 
 public:
-    static ClassMapInfoPtr Create (ECN::ECRelationshipClassCR relationshipClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, ECDbMapStrategy mapStrategy);
-    virtual BentleyStatus _Initialize() override;
+    RelationshipMapInfo(ECN::ECRelationshipClassCR relationshipClass, ECDbMapCR ecdbMap)
+        : ClassMapInfo(relationshipClass, ecdbMap), m_allowDuplicateRelationships (false), m_sourceMapInfoIsNull(true), m_targetMapInfoIsNull(true), m_customMapType(CustomMapType::None)
+        {}
 
-    TriState GetAllowDuplicateRelationships() const {return m_allowDuplicateRelationships;}
-    Utf8StringCR GetSourceECInstanceIdColumn() const {return m_sourceECInstanceIdColumn;}
-    Utf8StringCR GetSourceECClassIdColumn() const {return m_sourceECClassIdColumn;}
-    Utf8StringCR GetTargetECInstanceIdColumn() const {return m_targetECInstanceIdColumn;}
-    Utf8StringCR GetTargetECClassIdColumn() const {return m_targetECClassIdColumn;}
+    virtual ~RelationshipMapInfo() {}
+    virtual MapStatus _Initialize() override;
 
-    CardinalityType GetCardinality() const {return m_relationshipCardinality;}
+    Cardinality GetCardinality() const { return m_cardinality; }
+    bool AllowDuplicateRelationships() const { return m_allowDuplicateRelationships; }
+    ECN::ECDbRelationshipConstraintMap const& GetSourceInfo() const { BeAssert(m_customMapType != CustomMapType::ForeignKeyOnTarget && GetMapStrategy ().GetStrategy () != Strategy::RelationshipTargetTable); return m_sourceMapInfo; }
+    ECN::ECDbRelationshipConstraintMap const& GetTargetInfo() const { BeAssert(m_customMapType != CustomMapType::ForeignKeyOnSource && GetMapStrategy().GetStrategy() != Strategy::RelationshipSourceTable); return m_targetMapInfo; }
+    };
 
-    RelationshipConstraintInfo const& GetSourceInfo () const { return m_sourceInfo; }
-    RelationshipConstraintInfo const& GetTargetInfo () const { return m_targetInfo; }
-};
 
 //======================================================================================
 // @bsiclass                                                Affan.Khan  02/2012

@@ -451,9 +451,7 @@
       <Filter>ECSql\ECSqlPrepare</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
-    <ClInclude Include="MapHintReader.h">
-      <Filter>ECDbMap</Filter>
-    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
@@ -822,9 +820,6 @@
     </ClCompile>
     <ClCompile Include="ECSql\SystemColumnPreparer.cpp">
       <Filter>ECSql\ECSqlPrepare</Filter>
-    </ClCompile>
-    <ClCompile Include="MapHintReader.cpp">
-      <Filter>ECDbMap</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
