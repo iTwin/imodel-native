@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-#include <DgnPlatform/DgnCore/HitPath.h>
+#include <DgnPlatform/DgnCore/HitDetail.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
