@@ -25,7 +25,7 @@ InstanceCRUDTests.InsertUpdateDeleteTest
 ECDbMapPersistenceTests.MappingStrategyTest
 #TFS Defect 201187
 ECDbMapCATests.RelationshipTest_AllowDuplicateRelationships
-
+ECDbMapCATests.*
 
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
