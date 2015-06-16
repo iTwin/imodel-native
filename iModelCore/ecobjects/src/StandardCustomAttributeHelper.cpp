@@ -775,7 +775,11 @@ ECObjectsStatus ECDbForeignKeyRelationshipMap::TryGetForeignKeyEnd(ECRelationshi
         return ECOBJECTS_STATUS_Error;
 
     Utf8String foreignKeyEndStr;
-    if (!CustomAttributeReader::TryGetTrimmedValue(foreignKeyEndStr, *m_ca, L"ForeignKeyEnd"))
+    ECObjectsStatus stat = CustomAttributeReader::TryGetTrimmedValue(foreignKeyEndStr, *m_ca, L"ForeignKeyEnd");
+    if (ECOBJECTS_STATUS_Success != stat)
+        return stat;
+
+    if (foreignKeyEndStr.empty())
         return ECOBJECTS_STATUS_Success;
 
     if (foreignKeyEndStr.EqualsI("source"))
@@ -823,7 +827,7 @@ ECObjectsStatus ECDbRelationshipConstraintMapHelper::TryRead(ECDbRelationshipCon
     accessString = propName;
     accessString.append(L".ECClassIdColumn");
     Utf8String ecClassIdColumnName;
-    stat = CustomAttributeReader::TryGetTrimmedValue(ecInstanceIdColumnName, ca, accessString.c_str());
+    stat = CustomAttributeReader::TryGetTrimmedValue(ecClassIdColumnName, ca, accessString.c_str());
     if (ECOBJECTS_STATUS_Success != stat)
         return stat;
 
