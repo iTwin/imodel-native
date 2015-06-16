@@ -59,6 +59,7 @@
     <ClCompile Include="Client\ClientConnection.cpp" />
     <ClCompile Include="Client\ClientInfo.cpp" />
     <ClCompile Include="Client\ClientInternal.cpp" />
+    <ClCompile Include="Configuration\BuddiClient.cpp" />
     <ClCompile Include="Connect\Authentication.cpp" />
     <ClCompile Include="Connect\AuthenticationData.cpp" />
     <ClCompile Include="Connect\Connect.cpp" />
@@ -108,6 +109,7 @@
     <ClInclude Include="Client\WebApi\WebApiV2.h" />
     <ClInclude Include="Client\WSError.xliff.h" />
     <ClInclude Include="Client\ChunkedUploadRequest.h" />
+    <ClInclude Include="PublicAPI\WebServices\Configuration\BuddiClient.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\Authentication.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\Connect.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectAuthenticationHandler.h" />
