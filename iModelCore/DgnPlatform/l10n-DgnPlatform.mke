@@ -2,7 +2,7 @@
 #
 #     $Source: l10n-DgnPlatform.mke $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 PolicyFile = $(InternalSystemPolicy)
@@ -18,4 +18,7 @@ $(BuildContext)Delivery/l10n/$(L10N_LANGUAGE_TAG)/DgnCoreMessages_$(L10N_LANGUAG
     $(LinkFirstDepToFirstTarget)
 
 $(BuildContext)Delivery/l10n/$(L10N_LANGUAGE_TAG)/DgnHandlersMessages_$(L10N_LANGUAGE_TAG).xliff : $(xliffDir)DgnHandlersMessages_$(L10N_LANGUAGE_TAG).xliff
+    $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)Delivery/l10n/$(L10N_LANGUAGE_TAG)/ForeignFormat_$(L10N_LANGUAGE_TAG).xliff : $(xliffDir)ForeignFormat_$(L10N_LANGUAGE_TAG).xliff
     $(LinkFirstDepToFirstTarget)
