@@ -214,7 +214,7 @@ DgnDbStatus DgnElement::_OnInsert()
     if (m_code.empty())
         m_code = _GenerateDefaultCode();
 
-    for (auto entry=m_appData.begin(); entry!=m_appData.end(); )
+    for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)
         {
         DgnDbStatus stat = entry->second->_OnInsert(*this);
         if (DgnDbStatus::Success != stat)
@@ -251,7 +251,7 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
         return DgnDbStatus::WrongClass;
 
     UpdateLastModTime();
-    for (auto entry=m_appData.begin(); entry!=m_appData.end(); )
+    for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)
         {
         DgnDbStatus stat = entry->second->_OnUpdate(*this, original);
         if (DgnDbStatus::Success != stat)
@@ -285,7 +285,7 @@ void DgnElement::_OnUpdated(DgnElementCR original) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_OnDelete() const
     {
-    for (auto entry=m_appData.begin(); entry!=m_appData.end(); )
+    for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)
         {
         DgnDbStatus stat = entry->second->_OnDelete(*this);
         if (DgnDbStatus::Success != stat)
