@@ -657,10 +657,10 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <Target cardinality="(0,N)" roleLabel="has N elements" polymorphic="True">
           <ECCustomAttributes>
             <ECDbRelationshipConstraintHint xmlns="Bentley_Standard_CustomAttributes.01.12">
-<!--              <ForeignKeyConstraint>
+	      <ForeignKeyConstraint>
                 <EnforceReferentialIntegrityCheck>True</EnforceReferentialIntegrityCheck>
                 <OnDeleteAction>NoAction</OnDeleteAction>
-              </ForeignKeyConstraint> -->
+              </ForeignKeyConstraint>
             </ECDbRelationshipConstraintHint>
           </ECCustomAttributes>
           <Class class="Element" >
