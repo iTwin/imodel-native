@@ -15,7 +15,7 @@
 
 appName         = PointCloudSchema
 o               = $(OutputRootDir)build/PointCloudSchema/
-repositoryRoot  = $(SrcRoot)RealityModFramework/
+repositoryRoot  = $(SrcRoot)DgnDomains/RealityModeling/
 
 DLM_NAME    = $(appName)
 CCompPDBName = $(appName)

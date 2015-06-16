@@ -185,7 +185,7 @@ bool RasterTile::Draw(ViewContextR context)
             pt.z = extents.low.z - 1;
         }
 
-    static bool s_DrawTileShape = true;
+    static bool s_DrawTileShape = m_pDisplayTile.IsNull();    //&&MM for testing.
     if(s_DrawTileShape)
         {
         ElemMatSymb elemMatSymb;

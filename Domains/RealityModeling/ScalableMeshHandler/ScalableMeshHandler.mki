@@ -1,0 +1,36 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: ScalableMeshHandler/ScalableMeshHandler.mki $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+
+%include $(SrcBsiCommon)sharedmki/InternalSystemPolicy.mki
+%include $(SharedMki)DefinePublicApiIncludes.mki
+%include $(SharedMki)CommonCompileLinkPolicy.mki
+%include $(SrcRoot)BentleyApi/PublicMki/BentleyApi.mki
+
+%include DefaultToolSet.mki
+
+#----------------------------------------------------------
+# outdirs
+#----------------------------------------------------------
+BuildContextPublicApiDir = $(BuildContext)PublicAPI/
+
+%ifndef appName
+    %error appName must defined
+%endif
+
+o = $(OutputRootDir)build/$(appName)/
+
+# dlmlink.mki common options.
+DLM_DEST                    = $(o)
+DLM_SYMB_DEST               = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_OBJECT_DEST             = $(o)
+DLM_NO_DEF                  = 1
+DLM_NOMSBUILTINS            = 1
+DLM_NO_DLS                  = 1
+DLM_NOENTRY                 = 1
+

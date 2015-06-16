@@ -15,7 +15,7 @@
 
 appName         = RasterSchema
 o               = $(OutputRootDir)build/RasterSchema/
-repositoryRoot  = $(SrcRoot)RealityModFramework/
+repositoryRoot  = $(SrcRoot)DgnDomains/RealityModeling/
 
 DLM_NAME    = $(appName)
 CCompPDBName = $(appName)
