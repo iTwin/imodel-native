@@ -9,8 +9,6 @@
 #include FT_FREETYPE_H
 #include FT_OUTLINE_H
 
-#define FONT_LOG (*LoggingManager::GetLogger(L"DgnFont"))
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     04/2015
 //---------------------------------------------------------------------------------------
@@ -22,10 +20,7 @@ FT_Library DgnPlatformLib::Host::FontAdmin::_GetFreeTypeLibrary()
 
         FT_Error loadStatus = FT_Init_FreeType(&m_ftLibrary);
         if ((nullptr == m_ftLibrary) || (FT_Err_Ok != loadStatus))
-            {
-            FONT_LOG.errorv("Failed to load the freetype2 library (error code %i). TrueType fonts may be unusable.", (int)loadStatus);
-            BeAssert(false);
-            }
+            { BeAssert(false); }
         }
 
     return m_ftLibrary;

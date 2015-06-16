@@ -18,10 +18,7 @@ HANDLER_DEFINE_MEMBERS(PhysicalTextAnnotationElementHandler);
 BentleyStatus PhysicalTextAnnotationElement::SetAnnotation(TextAnnotationCR value)
     {
     if (&value.GetDbR() != &GetDgnDb())
-        {
-        DGNCORELOG->error("PhysicalTextAnnotationElement::SetText - New value must be in the same database.");
         return ERROR;
-        }
     
     m_annotation = value.Clone();
     UpdateGeometryRepresentation();
@@ -124,18 +121,12 @@ DgnDbStatus PhysicalTextAnnotationElement::UpdatePropertiesInDb()
     if (m_annotation.IsValid())
         {
         if (SUCCESS != TextAnnotationPersistence::EncodeAsFlatBuf(annotationBlob, *m_annotation))
-            {
-            DGNCORELOG->error("PhysicalTextAnnotationElement::UpdatePropertiesInDb - TextAnnotation serialization failed.");
             return DgnDbStatus::ElementWriteError;
-            }
         }
     
     CachedECSqlStatementPtr statement = GetDgnDb().GetPreparedECSqlStatement("UPDATE " DGN_SCHEMA(DGN_CLASSNAME_PhysicalTextAnnotationElement) " SET TextAnnotationBlob=? WHERE ECInstanceId=?");
     if (!statement.IsValid())
-        {
-        DGNCORELOG->error("PhysicalTextAnnotationElement::UpdatePropertiesInDb - Update ECSql statement failed to prepare.");
         return DgnDbStatus::ElementWriteError;
-        }
 
     if (annotationBlob.empty())
         statement->BindNull(1);
@@ -145,10 +136,7 @@ DgnDbStatus PhysicalTextAnnotationElement::UpdatePropertiesInDb()
     statement->BindId(2, GetElementId());
 
     if (ECSqlStepStatus::Done != statement->Step())
-        {
-        DGNCORELOG->error("PhysicalTextAnnotationElement::UpdatePropertiesInDb - Update ECSql statement failed to step.");
         return DgnDbStatus::ElementWriteError;
-        }
 
     return DgnDbStatus::Success;
     }
@@ -188,19 +176,13 @@ DgnDbStatus PhysicalTextAnnotationElement::_LoadFromDb()
     
     CachedECSqlStatementPtr statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TextAnnotationBlob FROM " DGN_SCHEMA(DGN_CLASSNAME_PhysicalTextAnnotationElement) " WHERE ECInstanceId=?");
     if (!statement.IsValid())
-        {
-        DGNCORELOG->error("PhysicalTextAnnotationElement::_LoadFromDb - Select ECSql statement failed to prepare.");
         return DgnDbStatus::ElementReadError;
-        }
 
     statement->BindId(1, GetElementId());
     
     // Should always be able to find this row by-ID, even if data is null...
     if (ECSqlStepStatus::HasRow != statement->Step())
-        {
-        DGNCORELOG->error("PhysicalTextAnnotationElement::_LoadFromDb - Select ECSql statement failed to step.");
         return DgnDbStatus::ElementReadError;
-        }
 
     // An annotation element with no annotation is pretty meaningless, but not strictly a read error either...
     if (statement->IsValueNull(0))
@@ -219,10 +201,7 @@ DgnDbStatus PhysicalTextAnnotationElement::_LoadFromDb()
         m_annotation = TextAnnotation::Create(GetDgnDb());
     
     if (SUCCESS != TextAnnotationPersistence::DecodeFromFlatBuf(*m_annotation, data, (size_t)dataSize))
-        {
-        DGNCORELOG->error("PhysicalTextAnnotationElement::_LoadFromDb - TextAnnotation deserialization failed.");
         return DgnDbStatus::ElementReadError;
-        }
 
     return DgnDbStatus::Success;
     }
