@@ -66,7 +66,6 @@ void LsDefinition::Init(Utf8CP name, Json::Value& lsDefinition, DgnStyleId style
     m_styleId       = styleId;
 
     m_hardwareLineCode  = -1;
-    m_uorsPerMeter      = 0.0;
     m_maxWidth          = 0.0;
     m_componentLoadPostProcessed = false;
 
@@ -105,21 +104,6 @@ StatusInt       LsDefinition::Commit ()
     BeAssert (0 && "unable to commit definition");
     
     return ERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Chuck.Kirschman 01/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-double  LsDefinition::GetTrueScale (DgnModelP  dgnCache) const
-    {
-#if defined (NEEDS_WORK_VIEW_CONTROLLER)
-    BeAssert (NULL != dgnCache);
-    if (NULL == dgnCache || 0.0 == m_uorsPerMeter || !IsUnitsUOR() || dgnCache->IsDictionaryModel())
-        return 1.0;
-
-    return dgnModel_getUorPerMeter (dgnCache) / m_uorsPerMeter;
-#endif
-    return  1.0;
     }
 
 /*---------------------------------------------------------------------------------**//**

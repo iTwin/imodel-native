@@ -486,7 +486,7 @@ DPoint3dCP          endTangent
     else if (nameRec->IsUnitsUOR ())
         {
         // Get True Scale factor
-        unitDef *= nameRec->GetTrueScale (nullptr);
+        //  unitDef *= nameRec->GetTrueScale (nullptr);
 
         // Historically distance shifts are stored in master units.  This used to match the line styles.  Now
         // with imported styles, we need to convert the shift to UORs.

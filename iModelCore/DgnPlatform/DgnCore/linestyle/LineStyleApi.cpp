@@ -651,7 +651,6 @@ DgnStyleId          LsDefinition::GetStyleId()            const {return DgnStyle
 double              LsDefinition::GetUnitsDefinition()    const {return m_unitDef;}
 LsUnit              LsDefinition::GetUnitsType()          const {return (LsUnit)(m_attributes & LSATTR_UNITMASK);}
 double              LsDefinition::_GetMaxWidth()           const {return m_maxWidth;}
-double              LsDefinition::GetUorsPerMeter()       const {return m_uorsPerMeter;}
 int                 LsDefinition::GetHardwareStyle ()     const {return (m_hardwareLineCode > 0 ? m_hardwareLineCode : 0);}
 
 bool                LsDefinition::IsContinuous ()         const {return 0 != (m_attributes & LSATTR_CONTINUOUS);}

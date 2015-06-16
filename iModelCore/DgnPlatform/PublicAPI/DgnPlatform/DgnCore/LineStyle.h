@@ -1192,14 +1192,10 @@ private:
     double              m_maxWidth;
     uint32_t            m_attributes;
     int                 m_hardwareLineCode;
-    double              m_uorsPerMeter;         // Used to True Scale between models when it is units UOR
     bool                m_componentLoadPostProcessed;
 
     void Init (CharCP nName, Json::Value& lsDefinition, DgnStyleId styleId);
     void SetHWStyle (LsComponentType componentType, LsComponentId componentID);
-    //  m_uorsPerMeter is only set when the line style is loaded from a DGN file.
-    //  It is used only to compute the true scale value when units is UOR.
-    double              GetUorsPerMeter         () const;
     int                 GetUnits                () const {return m_attributes & LSATTR_UNITMASK;}
 
 public:
@@ -1230,8 +1226,6 @@ public:
     void SetAttributes (uint32_t attr) {m_attributes = attr;}
     void SetStyleId (DgnStyleId number) { m_styleId = number; }
     DgnStyleId GetStyleId () { return m_styleId; }
-
-    DGNPLATFORM_EXPORT double GetTrueScale (DgnModelP styleDgnModel) const;
 
     //  There should no reason to provide set methods or to expose this outside of DgnPlatform.
     DGNPLATFORM_EXPORT double _GetMaxWidth () const;
