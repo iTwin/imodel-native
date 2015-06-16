@@ -31,11 +31,11 @@ struct VisualizationManager
         void        SetEnabledState(PTenum option, int32_t value);
         void        GetNpcViewRange(DRange3d& npcRange, ViewContextR context);
         void        GetNpcViewBox(DPoint3d npcPoints[8], ViewContextR context);
-        double      ComputeFrustumScale(DPoint3dCP frustum);
+        double      ComputeWorldScale(DPoint3dCP world);
         void        SetViewportProjectionFromSceneRange(ViewContextR context, Transform const& sceneToUor, DRange3d const& range);
         void        SetViewportOrtho(ViewContextR context, Transform const& sceneToUor, DRange3d const& vector);
         void        LocalRangeToNpcRange(DRange3d& npcRange, DRange3d const& localRange, ViewContextR context);
-        void        ViewParametersFromFrustum(PerspectiveViewParams& viewParams, DPoint3dCP frustum);
+        void        ViewParametersFromWorld(PerspectiveViewParams& viewParams, DPoint3dCP world);
         void        GetUstnViewToOpenGLViewTransform(DMatrix4dR result, double minY, double maxY);
         StatusInt   LocalToViewAccountingForPointBehindCamera(DPoint3dP viewPoints, DPoint3dCP localPoints, uint32_t nbPoints, ViewContextR context);
 
