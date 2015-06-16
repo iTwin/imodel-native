@@ -57,6 +57,7 @@ public:
     DGNPLATFORM_EXPORT ISolidKernelEntityPtr GetAsISolidKernelEntity() const;
     DGNPLATFORM_EXPORT TextStringPtr GetAsTextString() const;
 
+    DGNPLATFORM_EXPORT void Draw(ViewContextR) const;
     DGNPLATFORM_EXPORT bool GetLocalCoordinateFrame(TransformR localToWorld) const;
     DGNPLATFORM_EXPORT bool GetLocalRange(DRange3dR localRange, TransformR localToWorld) const; // Expensive - copies geometry!
     DGNPLATFORM_EXPORT bool GetRange(DRange3dR range, TransformCP transform = nullptr) const;
@@ -137,6 +138,8 @@ struct Operation
 
     Operation() : m_opCode(OpCode::Invalid), m_dataSize(0), m_data(nullptr) {}
     Operation(OpCode opCode, uint32_t dataSize = 0, uint8_t const* data = nullptr) : m_opCode(opCode), m_dataSize(dataSize), m_data(data) {}
+
+    bool IsGeometryOp() const;
 
     }; // Operation
 
@@ -252,7 +255,6 @@ struct Collection
     const_iterator end() const {return const_iterator();}
 
     void GetGeomPartIds(IdSet<DgnGeomPartId>&, DgnDbR) const;
-
     void Draw(ViewContextR, DgnCategoryId, ViewFlagsCR) const;
 
     }; // Collection
@@ -264,6 +266,15 @@ struct Collection
 //=======================================================================================
 struct ElementGeometryCollection
 {
+enum class BRepOutput
+    {
+    None    = 0,       //!< Output nothing.
+    BRep    = 1,       //!< Output ISolidKernelEntity when solids kernel is available and Polyface(s) when it is not. (Default)
+    Mesh    = 1 << 1,  //!< Output Polyface(s) even if solids kernel is available.
+    Edges   = 1 << 2,  //!< Output CurveVector for edges.
+    FaceIso = 1 << 3,  //!< Output CurveVector for face hatch lines.
+    };
+
 //=======================================================================================
 //! Iterator
 //=======================================================================================
@@ -280,12 +291,12 @@ struct Iterator : std::iterator<std::forward_iterator_tag, uint8_t const*>
     uint8_t const*      m_saveData;
     size_t              m_saveDataOffset;
     size_t              m_saveTotalDataSize;
-    bool                m_useBRep;
+    BRepOutput          m_bRepOutput;
 
     DGNPLATFORM_EXPORT void ToNext ();
 
-    Iterator (uint8_t const* data, size_t totalDataSize, ViewContextP context, bool useBRep) : m_data(data), m_totalDataSize(totalDataSize), m_dataOffset(0), m_context(context), m_useBRep(useBRep) {ToNext();}
-    Iterator () : m_data(nullptr), m_totalDataSize(0), m_dataOffset(0), m_context(nullptr), m_useBRep(false) {}
+    Iterator (uint8_t const* data, size_t totalDataSize, ViewContextP context, BRepOutput bRep) : m_data(data), m_totalDataSize(totalDataSize), m_dataOffset(0), m_context(context), m_bRepOutput(bRep) {ToNext();}
+    Iterator () : m_data(nullptr), m_totalDataSize(0), m_dataOffset(0), m_context(nullptr), m_bRepOutput(BRepOutput::BRep) {}
 
     friend struct ElementGeometryCollection;
 
@@ -306,21 +317,20 @@ ViewContextP        m_context;
 Transform           m_elemToWorld;
 Transform           m_geomToElem;
 Transform           m_geomToWorld;
-bool                m_useBRep;
+BRepOutput          m_bRepOutput;
 
 public:
 
 typedef Iterator const_iterator;
 typedef const_iterator iterator; //!< only const iteration is possible
     
-const_iterator begin () const {return const_iterator (m_data, m_dataSize, m_context, m_useBRep);}
+const_iterator begin () const {return const_iterator (m_data, m_dataSize, m_context, m_bRepOutput);}
 const_iterator end   () const {return const_iterator ();}
 
-void SetIgnoreBreps() {m_useBRep = false;} //!< Iterator will use simplified BRep representation when solids kernel is available (performance optimization when exact geometry isn't required).
+void SetBRepOutput(BRepOutput bRep) {m_bRepOutput = bRep;}
 
 DGNPLATFORM_EXPORT ElemDisplayParamsCR GetElemDisplayParams();
-DGNPLATFORM_EXPORT DgnGeomPartId GetDgnGeomPartId(); //!< Returns invalid id if current geometry is not from a part
-DGNPLATFORM_EXPORT T_GeomPrimitiveId GetGeomPrimitiveId(); //!< Returns primitive id for current geometry
+DGNPLATFORM_EXPORT GeomStreamEntryId GetGeomStreamEntryId(); //!< Returns primitive id for current geometry
 DGNPLATFORM_EXPORT TransformCR GetElementToWorld();
 DGNPLATFORM_EXPORT TransformCR GetGeometryToWorld();
 DGNPLATFORM_EXPORT TransformCR GetGeometryToElement();
@@ -332,6 +342,8 @@ DGNPLATFORM_EXPORT ~ElementGeometryCollection ();
 }; // ElementGeometryCollection
 
 typedef RefCountedPtr<ElementGeometryBuilder> ElementGeometryBuilderPtr;
+
+ENUM_IS_FLAGS(ElementGeometryCollection::BRepOutput)
 
 //=======================================================================================
 //! ElementGeometryBuilder provides methods for setting up an element's GeomStream and Placement(2d/3d).

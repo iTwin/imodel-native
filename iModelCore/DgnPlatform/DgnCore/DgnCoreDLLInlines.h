@@ -274,8 +274,8 @@ DG_INLINE ViewContext::ContextMark::~ContextMark() {Pop();}
 
 DG_INLINE IElemTopologyCP   ViewContext::GetElemTopology() const {return(m_currElemTopo.IsValid() ? m_currElemTopo.get() : nullptr);}
 DG_INLINE void              ViewContext::SetElemTopology(IElemTopologyP topo) {m_currElemTopo = topo;}
-DG_INLINE T_GeomPrimitiveId ViewContext::GetGeomPrimitiveId() const {return m_currGeomPrimitiveId;}
-DG_INLINE void              ViewContext::SetGeomPrimitiveId(T_GeomPrimitiveId geomId) {m_currGeomPrimitiveId = geomId;}
+DG_INLINE GeomStreamEntryId ViewContext::GetGeomStreamEntryId() const {return m_currGeomStreamEntryId;}
+DG_INLINE void              ViewContext::SetGeomStreamEntryId(GeomStreamEntryId geomId) {m_currGeomStreamEntryId = geomId;}
 
 DG_INLINE IDrawGeom::IDrawGeom() { }
 

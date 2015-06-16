@@ -28,53 +28,39 @@ void AnnotationFrameDraw::CopyFrom(AnnotationFrameDrawCR rhs)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-#ifdef MERGE_0501_06_JEFF
-static void recookDisplayParams(ViewContextR context, ElemDisplayParamsR displayParams)
+static void setStrokeSymbology(ViewContextR context, ElementColor color, uint32_t weight)
     {
-    DgnModelP model = context.GetCurrentModel();
-    PRECONDITION(NULL != model, );
-
-    displayParams.SetElementColorFlags(model);
-    displayParams.SetFillColorFlags(model);
-
-    context.ResolveEffectiveDisplayParams(displayParams, NULL);
-    context.CookDisplayParams(0);
-    }
-#endif
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     06/2014
-//---------------------------------------------------------------------------------------
-static void setStrokeSymbology(ViewContextR context, ColorDef color, int32_t style, uint32_t weight)
-    {
-#ifdef MERGE_0501_06_JEFF
     ElemDisplayParamsP displayParams = context.GetCurrentDisplayParams();
     PRECONDITION(NULL != displayParams, );
 
-    displayParams->m_symbology.color = color;
-    displayParams->m_symbology.style = style;
-    displayParams->m_symbology.weight = weight;
-    displayParams->m_fillDisplay = FillDisplay::Never;
+    displayParams->ResetAppearance();
 
-    recookDisplayParams(context, *displayParams);
-#endif
+    displayParams->SetWeight(weight);
+    displayParams->SetFillDisplay(FillDisplay::Never);
+
+    if (!color.IsByCategory())
+        displayParams->SetLineColor(*color.GetColorCP());
+
+    context.CookDisplayParams();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-static void setFillSymbology(ViewContextR context, ColorDef color, double transparency)
+static void setFillSymbology(ViewContextR context, ElementColor color, double transparency)
     {
-#ifdef MERGE_0501_06_JEFF
     ElemDisplayParamsP displayParams = context.GetCurrentDisplayParams();
     PRECONDITION(NULL != displayParams, );
 
-    displayParams->m_fillColor = color;
-    displayParams->m_transparency = transparency;
-    displayParams->m_fillDisplay = FillDisplay::Blanking;
+    displayParams->ResetAppearance();
 
-    recookDisplayParams(context, *displayParams);
-#endif
+    displayParams->SetTransparency(transparency);
+    displayParams->SetFillDisplay(FillDisplay::Blanking);
+
+    if (!color.IsByCategory())
+        displayParams->SetFillColor(*color.GetColorCP());
+
+    context.CookDisplayParams();
     }
 
 //---------------------------------------------------------------------------------------
@@ -102,7 +88,7 @@ BentleyStatus AnnotationFrameDraw::Draw(ViewContextR context) const
     
     if (frameStyle->IsStrokeEnabled())
         {
-        setStrokeSymbology(context, frameStyle->GetStrokeColor(), frameStyle->GetStrokeStyle(), frameStyle->GetStrokeWeight());
+        setStrokeSymbology(context, frameStyle->GetStrokeColor(), frameStyle->GetStrokeWeight());
         frameGeometry->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Open);
         output.DrawCurveVector(*frameGeometry, false);
         }

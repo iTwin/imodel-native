@@ -8,7 +8,7 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include "HitPath.h"
+#include "HitDetail.h"
 #include "ViewContext.h"
 //__PUBLISH_SECTION_END__
 #include "NullContext.h"

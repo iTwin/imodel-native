@@ -814,7 +814,7 @@ void ViewController::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
     if (physView && Allow3dManipulations() && !isCameraOn)
         {
         // make sure that the zDelta is large enough so that entire model will be visible from any rotation
-        double diag = newDelta.magnitudeXY();
+        double diag = newDelta.MagnitudeXY ();
         if (diag > newDelta.z)
             newDelta.z = diag;
         }

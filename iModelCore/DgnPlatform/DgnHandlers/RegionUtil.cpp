@@ -26,7 +26,7 @@ RegionParams::RegionParams ()
     m_gapTolerance      = 0.0;
     m_textMarginFactor  = 0.0;
 
-    m_flatten.initIdentity ();
+    m_flatten.InitIdentity ();
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  08/09
@@ -324,8 +324,8 @@ RegionGraphicsDrawGeom::RegionGraphicsDrawGeom ()
     m_interiorText = false;
 
     m_forcePlanar = false;
-    m_flattenTrans.initIdentity ();
-    m_flattenDir.zero ();
+    m_flattenTrans.InitIdentity ();
+    m_flattenDir.Zero ();
 
     m_regionError = REGION_ERROR_None;
     m_isFlood = false;
@@ -389,7 +389,7 @@ void            RegionGraphicsDrawGeom::_SetDrawViewFlags (ViewFlagsCP flags)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            RegionGraphicsDrawGeom::ComputePostFlattenTransform (CurveVectorCR curves)
     {
-    if (!m_forcePlanar || 0.0 == m_flattenDir.magnitude ())
+    if (!m_forcePlanar || 0.0 == m_flattenDir.Magnitude ())
         return false;
 
     if (!m_flattenTrans.IsIdentity ()) // Once computed same transform must be applied to all loops!
@@ -423,10 +423,10 @@ bool            RegionGraphicsDrawGeom::ComputePostFlattenTransform (CurveVector
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            RegionGraphicsDrawGeom::ResetPostFlattenTransform ()
     {
-    if (!m_forcePlanar || 0.0 == m_flattenDir.magnitude ())
+    if (!m_forcePlanar || 0.0 == m_flattenDir.Magnitude ())
         return;
 
-    m_flattenTrans.initIdentity ();
+    m_flattenTrans.InitIdentity ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -777,7 +777,7 @@ int             RegionGraphicsDrawGeom::GetCurrentGeomMarkerId ()
 BentleyStatus   RegionGraphicsDrawGeom::SetupGraph (double gapTolerance, bool mergeHoles)
     {
     // Apply explicit flatten to plane transform to entire graph, not pushed on context since it's non-invertable...
-    if (m_forcePlanar && !m_flattenTrans.isIdentity ())
+    if (m_forcePlanar && !m_flattenTrans.IsIdentity ())
         jmdlRG_multiplyByTransform (m_pRG, &m_flattenTrans);
 
     Transform   activeToViewTrans, viewToActiveTrans;
@@ -804,7 +804,7 @@ BentleyStatus   RegionGraphicsDrawGeom::SetupGraph (double gapTolerance, bool me
         }
     else
         {
-        if (!jmdlRG_getPlaneTransform (m_pRG, &viewToActiveTrans, NULL) || !activeToViewTrans.inverseOf (&viewToActiveTrans))
+        if (!jmdlRG_getPlaneTransform (m_pRG, &viewToActiveTrans, NULL) || !activeToViewTrans.InverseOf(viewToActiveTrans))
             {
             m_regionError = REGION_ERROR_NonCoplanar;
 
@@ -819,7 +819,7 @@ BentleyStatus   RegionGraphicsDrawGeom::SetupGraph (double gapTolerance, bool me
 
     m_context->GetTransformClipStack ().PopAll (*m_context);
 
-    if (!zAxis.isParallelTo (&zAxisWorld) || m_context->GetViewport ())
+    if (!zAxis.IsParallelTo (zAxisWorld) || m_context->GetViewport ())
         {
         jmdlRG_multiplyByTransform (m_pRG, &activeToViewTrans);
         m_context->PushTransform (viewToActiveTrans);
@@ -1221,7 +1221,7 @@ void            RegionGraphicsContext::InitRegionParams (RegionParams& params)
         {
         RotMatrix   flatten;
 
-        m_output.GetFlattenBoundary ()->getMatrix (&flatten);
+        m_output.GetFlattenBoundary ()->GetMatrix (flatten);
         params.SetFlattenBoundary (true, &flatten);
         }
     }
@@ -1242,17 +1242,17 @@ bool            RegionGraphicsContext::GetAdjustedSeedPoints (bvector<DPoint3d>*
 
         if (NULL != m_output.GetFlattenBoundary ()) // project seeds into plane of region...
             {
-            m_output.GetFlattenBoundary ()->multiply (&tmpPt);
+            m_output.GetFlattenBoundary ()->Multiply(tmpPt);
 
             if (placementTransP)
                 {
                 DVec3d      planeNormal;
 
-                if (0.0 != planeNormal.normalizedDifference (&tmpPt, &m_floodSeeds[iSeed].m_pt))
+                if (0.0 != planeNormal.NormalizedDifference (tmpPt, *(&m_floodSeeds[iSeed].m_pt)))
                     {
                     DVec3d      projectDir;
 
-                    placementTransP->getMatrixColumn (&projectDir, 2);
+                    placementTransP->GetMatrixColumn (projectDir, 2);
                     LegacyMath::Vec::LinePlaneIntersect (&tmpPt, &m_floodSeeds[iSeed].m_pt, &projectDir, &tmpPt, &planeNormal, false);
                     }
                 }

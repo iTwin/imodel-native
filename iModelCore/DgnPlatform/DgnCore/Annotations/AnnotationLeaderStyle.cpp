@@ -19,12 +19,10 @@ bool AnnotationLeaderStylePropertyBag::_IsIntegerProperty(T_Key key) const
     {
     switch ((AnnotationLeaderStyleProperty)key)
         {
-        case AnnotationLeaderStyleProperty::LineColorId:
-        case AnnotationLeaderStyleProperty::LineStyle:
+        case AnnotationLeaderStyleProperty::LineColor:
         case AnnotationLeaderStyleProperty::LineType:
         case AnnotationLeaderStyleProperty::LineWeight:
-        case AnnotationLeaderStyleProperty::TerminatorColorId:
-        case AnnotationLeaderStyleProperty::TerminatorStyle:
+        case AnnotationLeaderStyleProperty::TerminatorColor:
         case AnnotationLeaderStyleProperty::TerminatorType:
         case AnnotationLeaderStyleProperty::TerminatorWeight:
             return true;
@@ -123,39 +121,31 @@ static void setRealValue(AnnotationLeaderStylePropertyBagR data, AnnotationLeade
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
 //---------------------------------------------------------------------------------------
-static const uint32_t DEFAULT_LINECOLORID_VALUE = 0;
-ColorDef AnnotationLeaderStyle::GetLineColor() const { return ColorDef((uint32_t)getIntegerValue(m_data, AnnotationLeaderStyleProperty::LineColorId, DEFAULT_LINECOLORID_VALUE)); }
-void AnnotationLeaderStyle::SetLineColor(ColorDef value) { setIntegerValue(m_data, AnnotationLeaderStyleProperty::LineColorId, DEFAULT_LINECOLORID_VALUE, value.GetValue()); }
+static const AnnotationLeaderStylePropertyBag::T_Integer DEFAULT_LINECOLOR_VALUE = ElementColor().ToInt64();
+ElementColor AnnotationLeaderStyle::GetLineColor() const { return ElementColor(getIntegerValue(m_data, AnnotationLeaderStyleProperty::LineColor, DEFAULT_LINECOLOR_VALUE)); }
+void AnnotationLeaderStyle::SetLineColor(ElementColor value) { setIntegerValue(m_data, AnnotationLeaderStyleProperty::LineColor, DEFAULT_LINECOLOR_VALUE, value.ToInt64()); }
 
-static const uint32_t DEFAULT_LINESTYLE_VALUE = 0;
-int32_t AnnotationLeaderStyle::GetLineStyle() const { return (int32_t)getIntegerValue(m_data, AnnotationLeaderStyleProperty::LineStyle, DEFAULT_LINESTYLE_VALUE); }
-void AnnotationLeaderStyle::SetLineStyle(int32_t value) { setIntegerValue(m_data, AnnotationLeaderStyleProperty::LineStyle, DEFAULT_LINESTYLE_VALUE, (uint32_t)value); }
-
-static const uint32_t DEFAULT_LINETYPE_VALUE = (uint32_t)AnnotationLeaderLineType::None;
+static const AnnotationLeaderStylePropertyBag::T_Integer DEFAULT_LINETYPE_VALUE = (AnnotationLeaderStylePropertyBag::T_Integer)AnnotationLeaderLineType::None;
 AnnotationLeaderLineType AnnotationLeaderStyle::GetLineType() const { return (AnnotationLeaderLineType)getIntegerValue(m_data, AnnotationLeaderStyleProperty::LineType, DEFAULT_LINETYPE_VALUE); }
 void AnnotationLeaderStyle::SetLineType(AnnotationLeaderLineType value) { setIntegerValue(m_data, AnnotationLeaderStyleProperty::LineType, DEFAULT_LINETYPE_VALUE, (uint32_t)value); }
 
-static const uint32_t DEFAULT_LINEWEIGHT_VALUE = 0;
+static const AnnotationLeaderStylePropertyBag::T_Integer DEFAULT_LINEWEIGHT_VALUE = 0;
 uint32_t AnnotationLeaderStyle::GetLineWeight() const { return (uint32_t)getIntegerValue(m_data, AnnotationLeaderStyleProperty::LineWeight, DEFAULT_LINEWEIGHT_VALUE); }
 void AnnotationLeaderStyle::SetLineWeight(uint32_t value) { setIntegerValue(m_data, AnnotationLeaderStyleProperty::LineWeight, DEFAULT_LINEWEIGHT_VALUE, value); }
 
-static const uint32_t DEFAULT_TERMINATORCOLORID_VALUE = 0;
-ColorDef AnnotationLeaderStyle::GetTerminatorColor() const { return ColorDef((uint32_t)getIntegerValue(m_data, AnnotationLeaderStyleProperty::TerminatorColorId, DEFAULT_TERMINATORCOLORID_VALUE)); }
-void AnnotationLeaderStyle::SetTerminatorColor(ColorDef value) { setIntegerValue(m_data, AnnotationLeaderStyleProperty::TerminatorColorId, DEFAULT_TERMINATORCOLORID_VALUE, value.GetValue()); }
+static const AnnotationLeaderStylePropertyBag::T_Integer DEFAULT_TERMINATORCOLOR_VALUE = ElementColor().ToInt64();
+ElementColor AnnotationLeaderStyle::GetTerminatorColor() const { return ElementColor(getIntegerValue(m_data, AnnotationLeaderStyleProperty::TerminatorColor, DEFAULT_TERMINATORCOLOR_VALUE)); }
+void AnnotationLeaderStyle::SetTerminatorColor(ElementColor value) { setIntegerValue(m_data, AnnotationLeaderStyleProperty::TerminatorColor, DEFAULT_TERMINATORCOLOR_VALUE, value.ToInt64()); }
 
-static const double DEFAULT_TERMINATORSCALEFACTOR_VALUE = 1.0;
+static const AnnotationLeaderStylePropertyBag::T_Real DEFAULT_TERMINATORSCALEFACTOR_VALUE = 1.0;
 double AnnotationLeaderStyle::GetTerminatorScaleFactor() const { return getRealValue(m_data, AnnotationLeaderStyleProperty::TerminatorScaleFactor, DEFAULT_TERMINATORSCALEFACTOR_VALUE); }
 void AnnotationLeaderStyle::SetTerminatorScaleFactor(double value) { setRealValue(m_data, AnnotationLeaderStyleProperty::TerminatorScaleFactor, DEFAULT_TERMINATORSCALEFACTOR_VALUE, value); }
 
-static const uint32_t DEFAULT_TERMINATORSTYLE_VALUE = 0;
-int32_t AnnotationLeaderStyle::GetTerminatorStyle() const { return (int32_t)getIntegerValue(m_data, AnnotationLeaderStyleProperty::TerminatorStyle, DEFAULT_TERMINATORSTYLE_VALUE); }
-void AnnotationLeaderStyle::SetTerminatorStyle(int32_t value) { setIntegerValue(m_data, AnnotationLeaderStyleProperty::TerminatorStyle, DEFAULT_TERMINATORSTYLE_VALUE, (uint32_t)value); }
-
-static const uint32_t DEFAULT_TERMINATORTYPE_VALUE = (uint32_t)AnnotationLeaderTerminatorType::None;
+static const AnnotationLeaderStylePropertyBag::T_Integer DEFAULT_TERMINATORTYPE_VALUE = (AnnotationLeaderStylePropertyBag::T_Integer)AnnotationLeaderTerminatorType::None;
 AnnotationLeaderTerminatorType AnnotationLeaderStyle::GetTerminatorType() const { return (AnnotationLeaderTerminatorType)getIntegerValue(m_data, AnnotationLeaderStyleProperty::TerminatorType, DEFAULT_TERMINATORTYPE_VALUE); }
 void AnnotationLeaderStyle::SetTerminatorType(AnnotationLeaderTerminatorType value) { setIntegerValue(m_data, AnnotationLeaderStyleProperty::TerminatorType, DEFAULT_TERMINATORTYPE_VALUE, (uint32_t)value); }
 
-static const uint32_t DEFAULT_TERMINATORWEIGHT_VALUE = 0;
+static const AnnotationLeaderStylePropertyBag::T_Integer DEFAULT_TERMINATORWEIGHT_VALUE = 0;
 uint32_t AnnotationLeaderStyle::GetTerminatorWeight() const { return (uint32_t)getIntegerValue(m_data, AnnotationLeaderStyleProperty::TerminatorWeight, DEFAULT_TERMINATORWEIGHT_VALUE); }
 void AnnotationLeaderStyle::SetTerminatorWeight(uint32_t value) { setIntegerValue(m_data, AnnotationLeaderStyleProperty::TerminatorWeight, DEFAULT_TERMINATORWEIGHT_VALUE, value); }
 
@@ -229,13 +219,11 @@ decltype(declval<FB::AnnotationLeaderStyleSetter>().realValue()) defaultValue
 //---------------------------------------------------------------------------------------
 BentleyStatus AnnotationLeaderStylePersistence::EncodeAsFlatBuf(FB::AnnotationLeaderStyleSetters& setters, AnnotationLeaderStylePropertyBagCR data)
     {
-    appendIntegerSetter(setters, data, AnnotationLeaderStyleProperty::LineColorId, FB::AnnotationLeaderStyleProperty_LineColorId, DEFAULT_LINECOLORID_VALUE);
-    appendIntegerSetter(setters, data, AnnotationLeaderStyleProperty::LineStyle, FB::AnnotationLeaderStyleProperty_LineStyle, DEFAULT_LINESTYLE_VALUE);
+    appendIntegerSetter(setters, data, AnnotationLeaderStyleProperty::LineColor, FB::AnnotationLeaderStyleProperty_LineColor, DEFAULT_LINECOLOR_VALUE);
     appendIntegerSetter(setters, data, AnnotationLeaderStyleProperty::LineType, FB::AnnotationLeaderStyleProperty_LineType, DEFAULT_LINETYPE_VALUE);
     appendIntegerSetter(setters, data, AnnotationLeaderStyleProperty::LineWeight, FB::AnnotationLeaderStyleProperty_LineWeight, DEFAULT_LINEWEIGHT_VALUE);
-    appendIntegerSetter(setters, data, AnnotationLeaderStyleProperty::TerminatorColorId, FB::AnnotationLeaderStyleProperty_TerminatorColorId, DEFAULT_TERMINATORCOLORID_VALUE);
+    appendIntegerSetter(setters, data, AnnotationLeaderStyleProperty::TerminatorColor, FB::AnnotationLeaderStyleProperty_TerminatorColor, DEFAULT_TERMINATORCOLOR_VALUE);
     appendRealSetter(setters, data, AnnotationLeaderStyleProperty::TerminatorScaleFactor, FB::AnnotationLeaderStyleProperty_TerminatorScaleFactor, DEFAULT_TERMINATORSCALEFACTOR_VALUE);
-    appendIntegerSetter(setters, data, AnnotationLeaderStyleProperty::TerminatorStyle, FB::AnnotationLeaderStyleProperty_TerminatorStyle, DEFAULT_TERMINATORSTYLE_VALUE);
     appendIntegerSetter(setters, data, AnnotationLeaderStyleProperty::TerminatorType, FB::AnnotationLeaderStyleProperty_TerminatorType, DEFAULT_TERMINATORTYPE_VALUE);
     appendIntegerSetter(setters, data, AnnotationLeaderStyleProperty::TerminatorWeight, FB::AnnotationLeaderStyleProperty_TerminatorWeight, DEFAULT_TERMINATORWEIGHT_VALUE);
 
@@ -307,13 +295,11 @@ BentleyStatus AnnotationLeaderStylePersistence::DecodeFromFlatBuf(AnnotationLead
         {
         switch (setter.key())
             {
-            case FB::AnnotationLeaderStyleProperty_LineColorId: data.SetIntegerProperty(AnnotationLeaderStyleProperty::LineColorId, setter.integerValue()); break;
-            case FB::AnnotationLeaderStyleProperty_LineStyle: data.SetIntegerProperty(AnnotationLeaderStyleProperty::LineStyle, setter.integerValue()); break;
+            case FB::AnnotationLeaderStyleProperty_LineColor: data.SetIntegerProperty(AnnotationLeaderStyleProperty::LineColor, setter.integerValue()); break;
             case FB::AnnotationLeaderStyleProperty_LineType: data.SetIntegerProperty(AnnotationLeaderStyleProperty::LineType, setter.integerValue()); break;
             case FB::AnnotationLeaderStyleProperty_LineWeight: data.SetIntegerProperty(AnnotationLeaderStyleProperty::LineWeight, setter.integerValue()); break;
-            case FB::AnnotationLeaderStyleProperty_TerminatorColorId: data.SetIntegerProperty(AnnotationLeaderStyleProperty::TerminatorColorId, setter.integerValue()); break;
+            case FB::AnnotationLeaderStyleProperty_TerminatorColor: data.SetIntegerProperty(AnnotationLeaderStyleProperty::TerminatorColor, setter.integerValue()); break;
             case FB::AnnotationLeaderStyleProperty_TerminatorScaleFactor: data.SetRealProperty(AnnotationLeaderStyleProperty::TerminatorScaleFactor, setter.realValue()); break;
-            case FB::AnnotationLeaderStyleProperty_TerminatorStyle: data.SetIntegerProperty(AnnotationLeaderStyleProperty::TerminatorStyle, setter.integerValue()); break;
             case FB::AnnotationLeaderStyleProperty_TerminatorType: data.SetIntegerProperty(AnnotationLeaderStyleProperty::TerminatorType, setter.integerValue()); break;
             case FB::AnnotationLeaderStyleProperty_TerminatorWeight: data.SetIntegerProperty(AnnotationLeaderStyleProperty::TerminatorWeight, setter.integerValue()); break;
             }

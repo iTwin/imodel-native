@@ -5,6 +5,8 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatformInternal/DgnCore/TextStringPersistence.h>
 
+template<typename T> static bool isEnumFlagSet(T testBit, T options) { return 0 != ((int)options & (int)testBit); }
+
 using namespace flatbuffers;
 
 //*****************************************************************************************************************************************************************************************************
@@ -112,8 +114,8 @@ void TextString::ComputeGlyphAxes(DVec3dR xAxis, DVec3dR yAxis) const
     {
     DPoint2d size = m_style.GetSize();
 
-    xAxis.init(size.x, 0.0, 0.0);
-    yAxis.init(0.0, size.y, 0.0);
+    xAxis.Init (size.x, 0.0, 0.0);
+    yAxis.Init (0.0, size.y, 0.0);
 
     if (m_style.IsItalic() && (DgnFontType::TrueType != m_style.GetFont().GetType()))
         yAxis.x = (tan(DEFAULT_ITALIC_ANGLE) * size.y);
@@ -278,7 +280,7 @@ void TextString::ComputeAndLayoutGlyphs()
 //---------------------------------------------------------------------------------------
 void TextString::TransformOrientationAndExtractScale(DPoint2dR scaleFactor, RotMatrixR orientation, TransformCR transform)
     {
-    orientation.productOf(&transform, &orientation);
+    orientation.InitProduct (transform, orientation);
 
     DVec3d xcol;
     orientation.GetColumn(xcol, 0);
@@ -311,7 +313,7 @@ void TextString::TransformOrientationAndExtractScale(DPoint2dR scaleFactor, RotM
         double scale = (1.0 / scaleFactor.x);
 
         if (scale > 1.0e-15)
-            xcol.scale(scale);
+            xcol.Scale (scale);
         else
             xcol.Init(1.0, 0.0, 0.0);
 
@@ -325,6 +327,27 @@ void TextString::TransformOrientationAndExtractScale(DPoint2dR scaleFactor, RotM
 
         orientation.InitFromColumnVectors(xcol, ycol, zcol);
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     06/2015
+//---------------------------------------------------------------------------------------
+void TextString::ApplyTransform(TransformCR transform)
+    {
+    DPoint3d newOrigin = GetOrigin();
+    transform.Multiply(newOrigin);
+
+    RotMatrix newOrientation = GetOrientation();
+    DPoint2d scaleFactor;
+    TextString::TransformOrientationAndExtractScale(scaleFactor, newOrientation, transform);
+
+    DPoint2d newSize = GetStyleR().GetSize();
+    newSize.x *= scaleFactor.x;
+    newSize.y *= scaleFactor.y;
+
+    SetOrigin(newOrigin);
+    SetOrientation(newOrientation);
+    GetStyleR().SetSize(newSize);
     }
 
 //---------------------------------------------------------------------------------------
@@ -386,7 +409,7 @@ static const uint8_t CURRENT_MINOR_VERSION = 0;
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus TextStringPersistence::EncodeAsFlatBuf(Offset<FB::TextString>& textStringOffset, FlatBufferBuilder& encoder, TextStringCR text, DgnDbR db)
+BentleyStatus TextStringPersistence::EncodeAsFlatBuf(Offset<FB::TextString>& textStringOffset, FlatBufferBuilder& encoder, TextStringCR text, DgnDbR db, FlatBufEncodeOptions options)
     {
     // I prefer to ensure encoders write default values instead of it being unknown later if it's really a default value, or if the encoder missed it and it's bad data.
     TemporaryForceDefaults forceDefaults(encoder, true);
@@ -412,6 +435,27 @@ BentleyStatus TextStringPersistence::EncodeAsFlatBuf(Offset<FB::TextString>& tex
     Offset<FB::TextStringStyle> fbStyleOffset = fbStyle.Finish();
 
     //.............................................................................................
+    Offset<Vector<uint32_t>> glypIdsOffset;
+    Offset<Vector<FB::TextStringGlyphOrigin const*>> glypOriginsOffset;
+    if (isEnumFlagSet(FlatBufEncodeOptions::IncludeGlyphLayoutData, options))
+        {
+        // Glyph IDs should ideally be 32-bit, however QV is limited to 16-bit at this time. This is why glyph IDs are still 16-bit at runtime. However, we want to store 32-bit in the file for future proofing.
+        // At runtime, TextString stores glyph origins as DPoint3d so they can be fed into QV without converting from 2D to 3D, when in reality glyph origins only need 2D.
+        bvector<uint32_t> glyphIds;
+        bvector<FB::TextStringGlyphOrigin> glyphOrigins;
+        for (size_t iGlyph = 0; iGlyph < text.GetNumGlyphs(); ++iGlyph)
+            {
+            glyphIds.push_back(text.GetGlyphIds()[iGlyph]);
+            
+            DPoint3dCR glyphOrigin = text.GetGlyphOrigins()[iGlyph];
+            glyphOrigins.push_back(FB::TextStringGlyphOrigin(glyphOrigin.x, glyphOrigin.y));
+            }
+        
+        glypIdsOffset = encoder.CreateVector(glyphIds);
+        glypOriginsOffset = encoder.CreateVectorOfStructs(glyphOrigins);
+        }
+
+    //.............................................................................................
     Offset<String> textValueOffset = encoder.CreateString(text.m_text);
     Transform textTransform = Transform::From(text.m_orientation, text.m_origin);
 
@@ -424,6 +468,13 @@ BentleyStatus TextStringPersistence::EncodeAsFlatBuf(Offset<FB::TextString>& tex
     if (!textTransform.IsIdentity())
         fbText.add_transform(reinterpret_cast<FB::TextStringTransform*>(const_cast<TransformP>(&textTransform)));
 
+    if (isEnumFlagSet(FlatBufEncodeOptions::IncludeGlyphLayoutData, options))
+        {
+        fbText.add_range(reinterpret_cast<FB::TextStringRange const*>(&text.GetRange()));
+        fbText.add_glyphIds(glypIdsOffset);
+        fbText.add_glyphOrigins(glypOriginsOffset);
+        }
+
     textStringOffset = fbText.Finish();
 
     return SUCCESS;
@@ -432,13 +483,13 @@ BentleyStatus TextStringPersistence::EncodeAsFlatBuf(Offset<FB::TextString>& tex
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus TextStringPersistence::EncodeAsFlatBuf(bvector<Byte>& buffer, TextStringCR text, DgnDbR db)
+BentleyStatus TextStringPersistence::EncodeAsFlatBuf(bvector<Byte>& buffer, TextStringCR text, DgnDbR db, FlatBufEncodeOptions options)
     {
     FlatBufferBuilder encoder;
 
     //.............................................................................................
     Offset<FB::TextString> textOffset;
-    if (SUCCESS != EncodeAsFlatBuf(textOffset, encoder, text, db))
+    if (SUCCESS != EncodeAsFlatBuf(textOffset, encoder, text, db, options))
         return ERROR;
 
     //.............................................................................................
@@ -481,7 +532,8 @@ BentleyStatus TextStringPersistence::DecodeFromFlatBuf(TextStringR text, FB::Tex
     FB::TextStringStyle const& fbStyle = *fbText.style();
     TextStringStyle& style = text.m_style;
 
-    style.SetFont(T_HOST.GetFontAdmin().ResolveFont(db.Fonts().FindFontById(DgnFontId(fbStyle.fontId()))));
+    DgnFontCP dbFont = db.Fonts().FindFontById(DgnFontId(fbStyle.fontId()));
+    style.SetFont(T_HOST.GetFontAdmin().ResolveFont(dbFont));
     if (fbStyle.has_isBold()) style.SetIsBold(0 != fbStyle.isBold());
     if (fbStyle.has_isItalic()) style.SetIsItalic(0 != fbStyle.isItalic());
     if (fbStyle.has_isUnderlined()) style.SetIsUnderlined(0 != fbStyle.isUnderlined());
@@ -492,6 +544,34 @@ BentleyStatus TextStringPersistence::DecodeFromFlatBuf(TextStringR text, FB::Tex
     else
         style.m_size.x = style.m_size.y;
     
+    //.............................................................................................
+    bool hasCachedGlyphLayoutData = (fbText.has_range() && fbText.has_glyphIds() && fbText.has_glyphOrigins());
+    bool isFontValid = (dbFont == style.m_font); // i.e. did not remap to a fallback font
+    if (hasCachedGlyphLayoutData && isFontValid)
+        {
+        text.m_range = *reinterpret_cast<DRange2dCP>(fbText.range());
+
+        DgnFontCR font = text.m_style.GetFont();
+        DgnFontStyle fontStyle = DgnFontStyle::Regular;
+        if (text.m_style.m_isBold && text.m_style.m_isItalic)
+            fontStyle = DgnFontStyle::BoldItalic;
+        else if (text.m_style.m_isBold)
+            fontStyle = DgnFontStyle::Bold;
+        if (text.m_style.m_isItalic)
+            fontStyle = DgnFontStyle::Italic;
+        
+        // See comments in TextStringPersistence::EncodeAsFlatBuf as to why these transforms occur.
+        for (uoffset_t iGlyph = 0; iGlyph < fbText.glyphIds()->size(); ++iGlyph)
+            {
+            DgnGlyph::T_Id glyphId = (DgnGlyph::T_Id)fbText.glyphIds()->Get(iGlyph);
+            text.m_glyphIds.push_back(glyphId);
+            text.m_glyphOrigins.push_back(DPoint3d::From(*reinterpret_cast<DPoint2dCP>(fbText.glyphOrigins()->Get(iGlyph))));
+            text.m_glyphs.push_back(font._FindGlyphCP(glyphId, fontStyle));
+            }
+        
+        text.m_isValid = true;
+        }
+
     return SUCCESS;
     }
 

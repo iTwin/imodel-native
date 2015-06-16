@@ -525,6 +525,23 @@ bool DgnTrueTypeGlyph::_IsBlank() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2015
 //---------------------------------------------------------------------------------------
+static FT_Face determineFace(DgnFontStyle& style, bool isBold, bool isItalic, IDgnTrueTypeFontData& data)
+    {
+    style = DgnFontStyle::Regular;
+    if (isBold && isItalic) style = DgnFontStyle::BoldItalic;
+    else if (isBold) style = DgnFontStyle::Bold;
+    else if (isItalic) style = DgnFontStyle::Italic;
+
+    FT_Face face = data._GetFaceP(style);
+    if (nullptr == face)
+        face = data._GetFaceP(DgnFontStyle::Regular);
+
+    return face;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     05/2015
+//---------------------------------------------------------------------------------------
 DgnGlyphCP DgnTrueTypeFont::FindGlyphCP(FT_Face face, FT_UInt id, DgnFontStyle style) const
     {
     T_GlyphCacheMap::iterator foundCache = m_glyphCache.find(style);
@@ -546,6 +563,21 @@ DgnGlyphCP DgnTrueTypeFont::FindGlyphCP(FT_Face face, FT_UInt id, DgnFontStyle s
     DgnGlyphP glyph = new DgnTrueTypeGlyph(face, id);
     glyphCache->Insert(id, glyph);
     return glyph;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     06/2015
+//---------------------------------------------------------------------------------------
+DgnGlyphCP DgnTrueTypeFont::_FindGlyphCP(DgnGlyph::T_Id glyphId, DgnFontStyle fontStyle) const
+    {
+    if (!IsResolved())
+        return nullptr;
+    
+    bool isBold = ((DgnFontStyle::Bold == fontStyle) || (DgnFontStyle::BoldItalic == fontStyle));
+    bool isItalic = ((DgnFontStyle::Italic == fontStyle) || (DgnFontStyle::BoldItalic == fontStyle));
+    FT_Face effectiveFace = determineFace(fontStyle, isBold, isItalic, (IDgnTrueTypeFontData&)*m_data);
+
+    return FindGlyphCP(effectiveFace, glyphId, fontStyle);
     }
 
 //---------------------------------------------------------------------------------------
@@ -606,23 +638,6 @@ BentleyStatus DgnTrueTypeFont::ComputeAdvanceWidths(T_DoubleVectorR advanceWidth
         }
 
     return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     05/2015
-//---------------------------------------------------------------------------------------
-static FT_Face determineFace(DgnFontStyle& style, bool isBold, bool isItalic, IDgnTrueTypeFontData& data)
-    {
-    style = DgnFontStyle::Regular;
-    if (isBold && isItalic) style = DgnFontStyle::BoldItalic;
-    else if (isBold) style = DgnFontStyle::Bold;
-    else if (isItalic) style = DgnFontStyle::Italic;
-
-    FT_Face face = data._GetFaceP(style);
-    if (nullptr == face)
-        face = data._GetFaceP(DgnFontStyle::Regular);
-    
-    return face;
     }
 
 //---------------------------------------------------------------------------------------

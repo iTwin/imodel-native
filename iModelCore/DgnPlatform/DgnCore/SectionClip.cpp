@@ -144,15 +144,15 @@ private: StatusInt        ValidateSectionClipObject ()  const
     // SectionclipObject is well formed. We compare the vector of two clip points with the xvec of rotation
     // matrix. If those are not parallel to each other, we assert.
     DVec3d  xVec, clipPointsVec;
-    clipPointsVec.normalizedDifference (&m_points[0], &m_points[1]);
+    clipPointsVec.NormalizedDifference (m_points[0], m_points[1]);
 
     RotMatrix rMatrix = GetRotationMatrix ();
-    rMatrix.getColumn (&xVec, 0);
+    rMatrix.GetColumn (xVec, 0);
 
-    // For the geometry that is far from origin and small in size, isParallelTo () check was not sufficient.
+    // For the geometry that is far from origin and small in size, IsParallelTo (*()) check was not sufficient.
     // Use angle between the vector and compare it with a tolerance of 1 e-8
     double  tolerance = 0.00000001; 
-    if (clipPointsVec.smallerUnorientedAngleTo (&xVec) > tolerance)
+    if (clipPointsVec.SmallerUnorientedAngleTo(xVec) > tolerance)
         {
         BeAssert (false && "Section clip object is not well formed");
         return ERROR;
@@ -332,8 +332,8 @@ public:
 virtual double  _GetWidth () const override
     {
     DVec3d startSegVector, StartEndScalar;
-    startSegVector.normalizedDifference (&m_points[1], &m_points[0]);
-    StartEndScalar.differenceOf (&m_points[m_points.size()-1], &m_points[0]);
+    startSegVector.NormalizedDifference (m_points[1], m_points[0]);
+    StartEndScalar.DifferenceOf (m_points[m_points.size()-1], m_points[0]);
     return startSegVector.DotProduct (StartEndScalar);
     }
 
@@ -343,18 +343,18 @@ virtual double  _GetWidth () const override
 virtual void    _SetWidth (double newWidth) override
     {
     DVec3d startSegVector;
-    startSegVector.normalizedDifference (&m_points[1], &m_points[0]);
+    startSegVector.NormalizedDifference (m_points[1], m_points[0]);
 
     double original = GetWidth ();
     double change = newWidth - original;
 
-    startSegVector.scale (change);
+    startSegVector.Scale (change);
 
     DPoint3d        testPoint = m_points [m_points.size()-1];
-    testPoint.add (&startSegVector);
+    testPoint.Add (startSegVector);
 
-    double lastSegDistance    = m_points[m_points.size()-2].distance (&m_points[m_points.size()-1]);
-    double newLastSegDistance = testPoint.distance (&m_points[m_points.size()-1]);
+    double lastSegDistance    = m_points[m_points.size()-2].Distance (m_points[m_points.size()-1]);
+    double newLastSegDistance = testPoint.Distance (m_points[m_points.size()-1]);
     if (change < 0.0  && newLastSegDistance > lastSegDistance)
         return;
 
@@ -398,7 +398,7 @@ static bool             AreClipDataEqual (void const* data1, int numBytes1, void
         fabs (clipData1->backDepth      - clipData2->backDepth)     > distanceTolerance)
         return false;
 
-    if (!clipData1->rotMatrix.isEqual (&clipData2->rotMatrix, directionTolerance))
+    if (!clipData1->rotMatrix.IsEqual (clipData2->rotMatrix, directionTolerance))
         return false;
 
     return true;
@@ -418,7 +418,7 @@ static bool             AreClipPointsEqual (void const* data1, int numBytes1, vo
 
     for (int ipt = 0; ipt < numPts; ipt++)
         {
-        if (!pts1[ipt].isEqual (&pts2[ipt], distanceTolerance))
+        if (!pts1[ipt].IsEqual (pts2[ipt], distanceTolerance))
             return false;
         }
 
@@ -458,9 +458,9 @@ bool SectionClipObject::IsDraw3D (ViewContextR context, DVec3dCR zVec)
 
     RotMatrix       viewportRot = viewport->GetRotMatrix ();
     DVec3d          viewportZVec;
-    viewportRot.getColumn (&viewportZVec, 2);
+    viewportRot.GetColumn (viewportZVec, 2);
 
-    return !zVec.isParallelTo (&viewportZVec);
+    return !zVec.IsParallelTo (viewportZVec);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -501,7 +501,7 @@ ViewContextR        context
     double bottomHeight = this->GetSize (CLIPVOLUME_SIZE_BottomHeight);
 
     double  pixelBasedLength = 20 * context.GetPixelSizeAtPoint (&points[0]);
-    double  maxLength = 0.1 * points[0].distance (&points[1]);
+    double  maxLength = 0.1 * points[0].Distance (points[1]);
     double  cornerEdgeLen = MIN (pixelBasedLength, maxLength);
 
     // Draw linestring
@@ -513,10 +513,10 @@ ViewContextR        context
     for (size_t iseg = 0; iseg < numPoints-1; iseg++)
         {
         // Draw shape for every plane
-        shape[0].sumOf (&points[iseg], &zVec, bottomHeight);
-        shape[1].sumOf (&points[iseg+1], &zVec, bottomHeight);
-        shape[2].sumOf (&points[iseg+1], &zVec, topHeight);
-        shape[3].sumOf (&points[iseg], &zVec, topHeight);
+        shape[0].SumOf (points[iseg],zVec, bottomHeight);
+        shape[1].SumOf (points[iseg+1],zVec, bottomHeight);
+        shape[2].SumOf (points[iseg+1],zVec, topHeight);
+        shape[3].SumOf (points[iseg],zVec, topHeight);
         shape[4] = shape[0];
 
         SetDrawSymbology (context, ColorDef::White(), 0, 4);
@@ -527,58 +527,58 @@ ViewContextR        context
             {
             for (size_t iseg = 0; iseg < numPoints-1; iseg++)
                 {
-                segVec.normalizedDifference (&points[iseg+1], &points[iseg]);
+                segVec.NormalizedDifference (points[iseg+1], points[iseg]);
                 SetDrawSymbology (context, ColorDef::White(), 2, 0);
 
                 cornerPts[0] = points[iseg];
-                cornerPts[1].sumOf (&cornerPts[0], &segVec, cornerEdgeLen);
+                cornerPts[1].SumOf (cornerPts[0],segVec, cornerEdgeLen);
                 output.DrawLineString3d (2, cornerPts, NULL);
 
                 cornerPts[0] = points[iseg+1];
-                cornerPts[1].sumOf (&cornerPts[0], &segVec, -cornerEdgeLen);
+                cornerPts[1].SumOf (cornerPts[0],segVec, -cornerEdgeLen);
                 output.DrawLineString3d (2, cornerPts, NULL);
                 }
             }
         else
             {
-            segVec.normalizedDifference (&points[iseg+1], &points[iseg]);
+            segVec.NormalizedDifference (points[iseg+1], points[iseg]);
             SetDrawSymbology (context, ColorDef::White(), 2, 0);
 
             cornerPts[0] = shape[0];
-            cornerPts[1].sumOf (&cornerPts[0], &segVec, cornerEdgeLen);
+            cornerPts[1].SumOf (cornerPts[0],segVec, cornerEdgeLen);
             output.DrawLineString3d (2, cornerPts, NULL);
 
             cornerPts[0] = shape[1];
-            cornerPts[1].sumOf (&cornerPts[0], &segVec, -cornerEdgeLen);
+            cornerPts[1].SumOf (cornerPts[0],segVec, -cornerEdgeLen);
             output.DrawLineString3d (2, cornerPts, NULL);
 
             cornerPts[0] = shape[2];
-            cornerPts[1].sumOf (&cornerPts[0], &segVec, -cornerEdgeLen);
+            cornerPts[1].SumOf (cornerPts[0],segVec, -cornerEdgeLen);
             output.DrawLineString3d (2, cornerPts, NULL);
 
             cornerPts[0] = shape[3];
-            cornerPts[1].sumOf (&cornerPts[0], &segVec, cornerEdgeLen);
+            cornerPts[1].SumOf (cornerPts[0],segVec, cornerEdgeLen);
             output.DrawLineString3d (2, cornerPts, NULL);
 
             if (iseg == 0)
                 {
                 cornerPts[0] = shape[0];
-                cornerPts[1].sumOf (&cornerPts[0], &zVec, cornerEdgeLen);
+                cornerPts[1].SumOf (cornerPts[0],zVec, cornerEdgeLen);
                 output.DrawLineString3d (2, cornerPts, NULL);
 
                 cornerPts[0] = shape[3];
-                cornerPts[1].sumOf (&cornerPts[0], &zVec, -cornerEdgeLen);
+                cornerPts[1].SumOf (cornerPts[0],zVec, -cornerEdgeLen);
                 output.DrawLineString3d (2, cornerPts, NULL);
                 }
 
             if (iseg == numPoints-2)
                 {
                 cornerPts[0] = shape[1];
-                cornerPts[1].sumOf (&cornerPts[0], &zVec, cornerEdgeLen);
+                cornerPts[1].SumOf (cornerPts[0],zVec, cornerEdgeLen);
                 output.DrawLineString3d (2, cornerPts, NULL);
 
                 cornerPts[0] = shape[2];
-                cornerPts[1].sumOf (&cornerPts[0], &zVec, -cornerEdgeLen);
+                cornerPts[1].SumOf (cornerPts[0],zVec, -cornerEdgeLen);
                 output.DrawLineString3d (2, cornerPts, NULL);
                 }
             }
@@ -632,7 +632,7 @@ StatusInt       SectionClipObject::_ApplyTransform (TransformCR transform)
 
     // Transform rotMatrix
     bsiRotMatrix_multiplyTransformRotMatrix (&rMatrix, &transform, &rMatrix);
-    rMatrix.squareAndNormalizeColumns (&rMatrix, 0, 1);
+    rMatrix.SquareAndNormalizeColumns(rMatrix, 0, 1);
     this->SetRotationMatrix (rMatrix);
 
     return SUCCESS;
@@ -692,7 +692,7 @@ StatusInt   SectionClipObject::GetClipBoundaryByShape (ClipVectorPtr& clip, /*Dg
     RotMatrix       rotMatrix;
 
     // A non-orthornormal matrix causes all kinds of problemos.
-    rotMatrix.normalizeColumnsOf (&this->GetRotationMatrix (), &scale);
+    rotMatrix.NormalizeColumnsOf (*(&this->GetRotationMatrix ()),scale);
 
     clipMask = ClipMask::All;
 
@@ -741,13 +741,13 @@ StatusInt   SectionClipObject::GetClipBoundaryByShape (ClipVectorPtr& clip, /*Dg
             clipMask = clipMask & ~ClipMask::ZHigh;
 
         DVec3d xVec, zVec;
-        rotMatrix.getColumn (&xVec, 0);
-        rotMatrix.getColumn (&zVec, 2);
-        zVec.scale (-1.0);
+        rotMatrix.GetColumn (xVec, 0);
+        rotMatrix.GetColumn (zVec, 2);
+        zVec.Scale (-1.0);
 
         RotMatrix newMatrix;
         newMatrix.initFrom2Vectors (&xVec, &zVec);
-        transform.initFrom (&newMatrix, &origin);
+        transform.InitFrom (newMatrix, origin);
         }
     else
         {
@@ -760,17 +760,17 @@ StatusInt   SectionClipObject::GetClipBoundaryByShape (ClipVectorPtr& clip, /*Dg
         if (!this->GetCrop (CLIPVOLUME_CROP_Top))
             clipMask = clipMask & ~ClipMask::ZHigh;
 
-        transform.initFrom (&rotMatrix, &origin);
+        transform.InitFrom (rotMatrix, origin);
         }
 
     //ClipUtil::GetMaxModelRange (maxRange, *target, vp, true, false); removed in graphite
 
-    inverse.inverseOf (&transform);
-    inverse.multiply (&transformedRange, &maxRange);
+    inverse.InverseOf(transform);
+    inverse.Multiply(transformedRange, maxRange);
     
-    double          rangeMargin = transformedRange.low.distance (&transformedRange.high) * .01;
+    double          rangeMargin = transformedRange.low.Distance (transformedRange.high) * .01;
     
-    transformedRange.extend (rangeMargin);
+    transformedRange.Extend (rangeMargin);
     double          xLow  = (this->GetCrop (CLIPVOLUME_CROP_StartSide) && !noBoundaryClipping) ? 0.0                                    : transformedRange.low.x;
     double          xHigh = (this->GetCrop (CLIPVOLUME_CROP_EndSide)   && !noBoundaryClipping) ? (scale.x * this->GetWidth ()) : transformedRange.high.x;
 
@@ -779,17 +779,17 @@ StatusInt   SectionClipObject::GetClipBoundaryByShape (ClipVectorPtr& clip, /*Dg
         double          yLow  = (this->GetCrop (CLIPVOLUME_CROP_Bottom) && !noBoundaryClipping) ? (scale.z * fabs (bottomHeight)) : (transformedRange.low.y);
         double          yHigh = (this->GetCrop (CLIPVOLUME_CROP_Top)    && !noBoundaryClipping) ? (scale.z * -topHeight)          : (transformedRange.high.y);
 
-        pointBuffer[nLoopPoints[0]++].setComponents (xLow, yLow);
-        pointBuffer[nLoopPoints[0]++].setComponents (xHigh, yLow);
-        pointBuffer[nLoopPoints[0]++].setComponents (xHigh, yHigh);
-        pointBuffer[nLoopPoints[0]++].setComponents (xLow, yHigh);
+        pointBuffer[nLoopPoints[0]++].SetComponents (xLow, yLow);
+        pointBuffer[nLoopPoints[0]++].SetComponents (xHigh, yLow);
+        pointBuffer[nLoopPoints[0]++].SetComponents (xHigh, yHigh);
+        pointBuffer[nLoopPoints[0]++].SetComponents (xLow, yHigh);
         pointBuffer[nLoopPoints[0]++] = pointBuffer[0];
 
         pushClipBoundaryLoops (clip, nLoops, nLoopPoints, loopPoints, zBack, zFront, transform, clipMask, pass == ClipVolumePass::Outside);
         return SUCCESS;
         }
 
-    pointBuffer[nLoopPoints[0]++].zero();
+    pointBuffer[nLoopPoints[0]++].Zero ();
     size_t numPoints = this->GetNumPoints ();
 
     DPoint3dVector points;
@@ -798,7 +798,7 @@ StatusInt   SectionClipObject::GetClipBoundaryByShape (ClipVectorPtr& clip, /*Dg
     for (size_t index=0; index<numPoints; index++)
         {
         DPoint3d point = points[index];
-        inverse.multiply (&point);
+        inverse.Multiply(point);
         pointBuffer[nLoopPoints[0]++].init (&point);
         }
 
@@ -807,10 +807,10 @@ StatusInt   SectionClipObject::GetClipBoundaryByShape (ClipVectorPtr& clip, /*Dg
     double      yHigh       = (this->GetCrop (CLIPVOLUME_CROP_Front)     && !noBoundaryClipping) ? ( scale.y * frontDepth * depthScale)   : (flipped ? transformedRange.low.y   : transformedRange.high.y);
     double      yLimit      = (ClipVolumePass::InsideForward == pass) ? yHigh : yLow;
 
-    pointBuffer[nLoopPoints[0]++].setComponents (xHigh, lastPoint.y);
-    pointBuffer[nLoopPoints[0]++].setComponents (xHigh, yLimit);
-    pointBuffer[nLoopPoints[0]++].setComponents (xLow,  yLimit);
-    pointBuffer[nLoopPoints[0]++].setComponents (xLow, firstPoint.x);
+    pointBuffer[nLoopPoints[0]++].SetComponents (xHigh, lastPoint.y);
+    pointBuffer[nLoopPoints[0]++].SetComponents (xHigh, yLimit);
+    pointBuffer[nLoopPoints[0]++].SetComponents (xLow,  yLimit);
+    pointBuffer[nLoopPoints[0]++].SetComponents (xLow, firstPoint.x);
     pointBuffer[nLoopPoints[0]++] = firstPoint;
 
     pushClipBoundaryLoops (clip, nLoops, nLoopPoints, loopPoints, zBack, zFront, transform, clipMask, false);
@@ -847,7 +847,7 @@ StatusInt   SectionClipObject::_GetClipBoundary (ClipVectorPtr& clip, /*DgnModel
     if (frontDepth < 0.0)
         {
         frontDepth = -frontDepth;
-        dMatrix.column[1].negate ();
+        dMatrix.column[1].Negate ();
         }
 
     switch (pass)
@@ -867,12 +867,12 @@ StatusInt   SectionClipObject::_GetClipBoundary (ClipVectorPtr& clip, /*DgnModel
         {
         normal.negate ((DVec3d *)&dMatrix.column[1]);
 
-        convexSet.push_back  (ClipPlane (normal, normal.dotProduct (&origin) - frontDepth, false /* Invisible*/));
+        convexSet.push_back  (ClipPlane (normal, normal.DotProduct (origin) - frontDepth, false /* Invisible*/));
         }
 
     if (this->GetCrop (CLIPVOLUME_CROP_Back) && pass != ClipVolumePass::InsideForward)
         {
-        convexSet.push_back (ClipPlane (dMatrix.column[1], dMatrix.column[1].dotProduct (&origin) - backDepth, false /* Invisible*/));
+        convexSet.push_back (ClipPlane (dMatrix.column[1], dMatrix.column[1].DotProduct (origin) - backDepth, false /* Invisible*/));
         }
 
     // These are the boundary clips.  
@@ -887,18 +887,18 @@ StatusInt   SectionClipObject::_GetClipBoundary (ClipVectorPtr& clip, /*DgnModel
         {
         normal.negate ((DVec3d *) &dMatrix.column[0]);
 
-        convexSet.push_back (ClipPlane (normal, normal.dotProduct (&origin) - this->GetWidth(), !displayBoundaryCutPlanes));
+        convexSet.push_back (ClipPlane (normal, normal.DotProduct (origin) - this->GetWidth(), !displayBoundaryCutPlanes));
         }
 
     if (this->GetCrop (CLIPVOLUME_CROP_Bottom) && !noClipBoundary)
         {
-        convexSet.push_back (ClipPlane (dMatrix.column[2], dMatrix.column[2].dotProduct (&origin) + this->GetSize (CLIPVOLUME_SIZE_BottomHeight), !displayBoundaryCutPlanes));
+        convexSet.push_back (ClipPlane (dMatrix.column[2], dMatrix.column[2].DotProduct (origin) + this->GetSize (CLIPVOLUME_SIZE_BottomHeight), !displayBoundaryCutPlanes));
         }
 
     if (this->GetCrop (CLIPVOLUME_CROP_Top) && !noClipBoundary)
         {
         normal.negate ((DVec3d *)&dMatrix.column[2]);
-        convexSet.push_back (ClipPlane (normal, normal.dotProduct (&origin) - this->GetSize (CLIPVOLUME_SIZE_TopHeight), !displayBoundaryCutPlanes));
+        convexSet.push_back (ClipPlane (normal, normal.DotProduct (origin) - this->GetSize (CLIPVOLUME_SIZE_TopHeight), !displayBoundaryCutPlanes));
         }
    
     clip = ClipVector::CreateFromPrimitive (ClipPrimitive::CreateFromClipPlanes (ClipPlaneSet (convexSet)));
@@ -931,11 +931,11 @@ bool        SectionClipObject::_GetAuxTransform (TransformR transform, ClipVolum
     this->GetPoints (pts, 0, 1);
 
     DVec3d          reflectDirection;
-    this->GetRotationMatrix ().getColumn (&reflectDirection, 1);
+    this->GetRotationMatrix ().GetColumn (reflectDirection, 1);
 
     RotMatrix       reflectMatrix;
-    reflectMatrix.initFromDirectionAndScale (&reflectDirection, -1.0);
-    transform.initFromMatrixAndFixedPoint (&reflectMatrix, &pts[0]);
+    reflectMatrix.InitFromDirectionAndScale (reflectDirection, -1.0);
+    transform.InitFromMatrixAndFixedPoint (reflectMatrix, pts[0]);
     return true;
     }
 
@@ -945,11 +945,11 @@ bool        SectionClipObject::_GetAuxTransform (TransformR transform, ClipVolum
 StatusInt       SectionClipObject::_GetTransform (TransformR transform) const
     {
     DVec3d clipX, clipZ;
-    this->GetRotationMatrix ().getColumn (&clipX, 0);
-    this->GetRotationMatrix ().getColumn (&clipZ, 2);
+    this->GetRotationMatrix ().GetColumn (clipX, 0);
+    this->GetRotationMatrix ().GetColumn (clipZ, 2);
 
     if (this->GetSize (CLIPVOLUME_SIZE_FrontDepth) < 0)
-        clipZ.negate ();
+        clipZ.Negate ();
 
     RotMatrix matrix;
     matrix.initFrom2Vectors (&clipX, &clipZ);
@@ -957,7 +957,7 @@ StatusInt       SectionClipObject::_GetTransform (TransformR transform) const
     DPoint3dVector pts;
     this->GetPoints (pts, 0, 1);
 
-    transform.initFrom (&matrix, &pts[0]);
+    transform.InitFrom (matrix, pts[0]);
 
     return SUCCESS;
     }
@@ -994,7 +994,7 @@ static double getNormalForwardComponent (DVec3dCR normal, DPoint3dCR origin, Vie
     DVec3d          testNormal;
 
     normalTestPoints[0] = origin;
-    normalTestPoints[1].sumOf (&normalTestPoints[0], &normal);
+    normalTestPoints[1].SumOf (normalTestPoints[0],normal);
 
     viewContext.LocalToView (normalTestPoints, normalTestPoints, 2);
     testNormal.NormalizedDifference (normalTestPoints[1], normalTestPoints[0]);
@@ -1024,7 +1024,7 @@ DynamicViewSettingsCR   settings
 
     RotMatrixCR         rMatrix = this->GetRotationMatrix();
     DVec3d              cutNormal;
-    rMatrix.getColumn (&cutNormal, 1);
+    rMatrix.GetColumn (cutNormal, 1);
   
     // First test for case where the cut plane is parallel to the view (the common case in 2D) and don't bother generating cuts for this as they would
     // be perpendicular to the screen anyway and not worth the expense of generating them as they would appear as lines.
@@ -1035,10 +1035,10 @@ DynamicViewSettingsCR   settings
     //    DPoint3d            testPoints[2];
     //    static double       s_skewTolerance = 1.0E-5;
     //
-    //    testPoints[0].zero();
+    //    testPoints[0].Zero ();
     //    testPoints[1] = cutNormal;
     //    viewContext.LocalToView (testPoints, testPoints, 2);
-    //    if (testPoints[0].distanceXY (&testPoints[1]) < s_skewTolerance)
+    //    if (testPoints[0].DistanceXY (testPoints[1]) < s_skewTolerance)
     //        return ERROR;
     //    }
 
@@ -1047,7 +1047,7 @@ DynamicViewSettingsCR   settings
     clipMask = ClipMask::None;
     clipRange.Init();
 
-    rMatrix.getColumn (&yDirection, 2);
+    rMatrix.GetColumn (yDirection, 2);
     if (this->GetCrop (CLIPVOLUME_CROP_Bottom) && !settings.ShouldIgnoreBoundaryClipping())
         {
         clipMask = clipMask | ClipMask::YLow;
@@ -1063,12 +1063,12 @@ DynamicViewSettingsCR   settings
     double      frontDepth = this->GetSize (CLIPVOLUME_SIZE_FrontDepth);
     DVec3d      frontDirection;
 
-    rMatrix.getColumn (&frontDirection, 1);
+    rMatrix.GetColumn (frontDirection, 1);
 
     if (frontDepth < 0.0)
         {
         frontDepth = -frontDepth;
-        frontDirection.negate ();
+        frontDirection.Negate ();
         }
 
 
@@ -1077,7 +1077,7 @@ DynamicViewSettingsCR   settings
 
     DPoint3d    startPoint = pts[0], endPoint = pts[this->GetNumPoints()-1];;
 
-    rMatrix.getColumn (&cutPlane.normal, 0);
+    rMatrix.GetColumn (*(&cutPlane.normal), 0);
     cutPlane.origin = pts[this->GetNumPoints()-1];
     xDirection = frontDirection;
 
@@ -1095,7 +1095,7 @@ DynamicViewSettingsCR   settings
 
     if (this->GetCrop (CLIPVOLUME_CROP_StartSide) && index == sideIndex++)
         {
-        cutPlane.normal.negate();       
+        cutPlane.normal.Negate ();       
         cutPlane.origin = startPoint;
         return SUCCESS;
         }
@@ -1109,7 +1109,7 @@ DynamicViewSettingsCR   settings
         // If there are steps, shift range by offset between first-last step
         if (this->GetNumPoints() > 2)
             {
-            double startToEndDepth = xDirection.dotProduct (&endPoint) - xDirection.dotProduct (&startPoint);
+            double startToEndDepth = xDirection.DotProduct (endPoint) - xDirection.DotProduct (startPoint);
             if (settings.ShouldDisplayForward())
                 clipRange.high.x -= startToEndDepth;
             if (settings.ShouldDisplayBackward ())
@@ -1121,7 +1121,7 @@ DynamicViewSettingsCR   settings
 
     // Now create the cutting planes for the top and bottom planes. - We reuse the X direction range (and limits) and recompute
     // the Y Direction. Loop over steps and create separate planesets for each step.
-    rMatrix.getColumn (&yDirection, 0);
+    rMatrix.GetColumn (yDirection, 0);
 
     size_t numPoints = this->GetNumPoints ();
     DPoint3dVector points;
@@ -1133,14 +1133,14 @@ DynamicViewSettingsCR   settings
         clipMask = clipMask & ~(ClipMask::YLow | ClipMask::YHigh);
         startPoint = points[plane];
         endPoint   = points[plane + 1];
-        rMatrix.getColumn (&cutPlane.normal, 2);
+        rMatrix.GetColumn (*(&cutPlane.normal), 2);
 
         // For each step, shift range by step-depth
         if (0 < plane)
             {
             DPoint3d firstPoint = pts[0];
 
-            double stepFromStart = xDirection.dotProduct (&startPoint) - xDirection.dotProduct (&firstPoint);
+            double stepFromStart = xDirection.DotProduct (startPoint) - xDirection.DotProduct (firstPoint);
             if (settings.ShouldDisplayForward())
                 clipRange.high.x = fullRangeXHigh - stepFromStart;
             if (settings.ShouldDisplayBackward ())
@@ -1158,19 +1158,19 @@ DynamicViewSettingsCR   settings
         if (plane != (numPoints-2) || this->GetCrop (CLIPVOLUME_CROP_EndSide))
             {
             clipMask = clipMask | ClipMask::YHigh;
-            clipRange.high.y = yDirection.dotProduct (&endPoint) - yDirection.dotProduct (&startPoint);
+            clipRange.high.y = yDirection.DotProduct (endPoint) - yDirection.DotProduct (startPoint);
             }
 
         if (this->GetCrop (CLIPVOLUME_CROP_Bottom) && index == sideIndex++)
             {
-            cutPlane.origin.sumOf (&startPoint, &cutPlane.normal, this->GetSize (CLIPVOLUME_SIZE_BottomHeight));
-            cutPlane.normal.negate();       
+            cutPlane.origin.SumOf (startPoint,cutPlane.normal, this->GetSize (CLIPVOLUME_SIZE_BottomHeight));
+            cutPlane.normal.Negate ();       
             return SUCCESS;
             }
 
         if (this->GetCrop (CLIPVOLUME_CROP_Top) && index == sideIndex++)
             {
-            cutPlane.origin.sumOf (&startPoint, &cutPlane.normal, this->GetSize (CLIPVOLUME_SIZE_TopHeight));
+            cutPlane.origin.SumOf (startPoint,cutPlane.normal, this->GetSize (CLIPVOLUME_SIZE_TopHeight));
             return SUCCESS;
             } 
         }
@@ -1215,14 +1215,14 @@ DynamicViewSettingsCR   settings
 
     DPoint3d        point0 = pts[0], point1 = pts[1];
 
-    if (0.0 == (segmentLength = xDirection.normalizedDifference (&point1, &point0)))
+    if (0.0 == (segmentLength = xDirection.NormalizedDifference (point1, point0)))
         return ERROR;
 
-    this->GetRotationMatrix ().getColumn (&yDirection, 2);
+    this->GetRotationMatrix ().GetColumn (yDirection, 2);
 
     DVec3d      directedY = yDirection;
     if (this->GetSize (CLIPVOLUME_SIZE_FrontDepth) < 0)
-        directedY.negate ();
+        directedY.Negate ();
 
     isForwardFacing = true;
     if (settings.ShouldDisplayForward())
@@ -1232,10 +1232,10 @@ DynamicViewSettingsCR   settings
         }
     else if (settings.ShouldDisplayBackward() && !settings.ShouldReflectBackward())
         {
-        directedY.negate();
+        directedY.Negate ();
         }
 
-    cutPlane.normal.normalizedCrossProduct (&directedY, &xDirection);
+    cutPlane.normal.NormalizedCrossProduct (directedY, xDirection);
     cutPlane.origin = point0;
 
     // We'll set forward visible if all planes are front facing.  - Forward visibile
@@ -1245,10 +1245,10 @@ DynamicViewSettingsCR   settings
         {
         DVec3d      testNormal, testXDirection;
 
-        if (0.0 == testXDirection.normalizedDifference (&segPoints[1], &segPoints[0]))      // TR# 330768 - xDirection was not being recalculated for each segment.
+        if (0.0 == testXDirection.NormalizedDifference (segPoints[1], segPoints[0]))      // TR# 330768 - xDirection was not being recalculated for each segment.
             continue;
 
-        testNormal.normalizedCrossProduct (&directedY, &testXDirection);
+        testNormal.NormalizedCrossProduct (directedY, testXDirection);
 
         if (getNormalForwardComponent (testNormal, segPoints[0], viewContext) > s_forwardFacingNormalTolerance) // These cutting planes are inward facing. (Unlike the side planes).
             {
@@ -1278,7 +1278,7 @@ DynamicViewSettingsCR   settings
         DPoint3d        origin, minPoint, maxPoint;
         DVec3d          direction;
 
-        this->GetRotationMatrix ().getColumn (&direction, 0);
+        this->GetRotationMatrix ().GetColumn (direction, 0);
 
         DPoint3dVector        pts;
         this->GetPoints (pts, 0, 1);
@@ -1286,7 +1286,7 @@ DynamicViewSettingsCR   settings
         origin = pts[0];
 
         minPoint = origin;
-        maxPoint.sumOf (&origin, &direction, this->GetWidth ());
+        maxPoint.SumOf (origin,direction, this->GetWidth ());
 
         double          param;
         DPoint3d        intersection;

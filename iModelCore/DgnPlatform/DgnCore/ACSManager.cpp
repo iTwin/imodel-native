@@ -425,7 +425,7 @@ DgnModelR    modelRef
     if (NULL != inLastPoint)
         {
         lastPoint = *inLastPoint;
-        lastPoint.subtract (&auxOrigin);
+        lastPoint.Subtract (auxOrigin);
         auxRMatrix.Multiply(lastPoint);
         }
     else
@@ -846,7 +846,7 @@ StatusInt       IAuxCoordSys::GetGridSpacing (DPoint2dR spacing, Point2dR gridRe
     spacing.x = uorPerGrid;
     spacing.y = spacing.x * gridRatio;
 
-    spacing.scale (&spacing, (0 == gridPerRef) ? 1.0 : (double) gridPerRef);
+    spacing.Scale (spacing, (0 == gridPerRef) ? 1.0 : (double) gridPerRef);
 
     return SUCCESS;
     }
@@ -995,14 +995,14 @@ ACSDisplayOptions   options
 
     memset (&center, 0, sizeof (center));
 
-    viewRMatrix.getRow (&xVec, 0);
-    viewRMatrix.getRow (&yVec, 1);
+    viewRMatrix.GetRow (xVec, 0);
+    viewRMatrix.GetRow (yVec, 1);
 
-    transformP->multiplyTransposeMatrixOnly (&xVec);
-    transformP->multiplyTransposeMatrixOnly (&yVec);
+    transformP->MultiplyTransposeMatrixOnly (xVec);
+    transformP->MultiplyTransposeMatrixOnly (yVec);
 
-    xVec.normalize ();
-    yVec.normalize ();
+    xVec.Normalize ();
+    yVec.Normalize ();
 
     elemMatSymb.SetWidth (1);
     cached->ActivateMatSymb (&elemMatSymb);

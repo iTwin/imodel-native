@@ -271,10 +271,44 @@ virtual void _CookDisplayParams (ElemDisplayParamsR elParams, ElemMatSymbR elMat
 void ElementGraphicsOutput::Process (IElementGraphicsProcessorR dropObj, GeometricElementCR element)
     {
     ElementGraphicsDrawGeom output;
-    ElementGraphicsContext  context (&dropObj, output);
+    ElementGraphicsContext  context(&dropObj, output);
 
     context.SetDgnDb (element.GetDgnDb());
-    context.VisitElement (element);
+    
+    if (nullptr != element.ToElement3d())
+        {
+        // NOTE: The processor only wants curves/edges. Don't output brep polyface when Parasolid isn't
+        //       available, output the exact pre-computed wireframe geometry instead. Also better to avoid
+        //       creating a ISolidKernelEntity un-neccesarily even when Parasolid is available.
+        if (!dropObj._ProcessAsBody(true) && !dropObj._ProcessAsFacets(false))
+            {
+            if (context.ElementIsUndisplayed(element))
+                return;
+
+            context.SetCurrentElement(&element);
+
+            ElementGeometryCollection collection(element);
+
+            collection.SetBRepOutput(ElementGeometryCollection::BRepOutput::Edges | ElementGeometryCollection::BRepOutput::FaceIso);
+
+            for (ElementGeometryPtr elemGeom : collection)
+                {
+                context.SetGeomStreamEntryId(collection.GetGeomStreamEntryId());
+
+                *context.GetCurrentDisplayParams() = collection.GetElemDisplayParams();
+                context.CookDisplayParams();
+
+                context.PushTransform(collection.GetGeometryToWorld());
+                elemGeom->Draw(context);
+                context.PopTransformClip();
+                }
+
+            context.SetCurrentElement(nullptr);
+            return;
+            }
+        }
+    
+    context.VisitElement(element);
     }
 
 /*----------------------------------------------------------------------------------*//**
@@ -283,12 +317,12 @@ void ElementGraphicsOutput::Process (IElementGraphicsProcessorR dropObj, Geometr
 void ElementGraphicsOutput::Process (IElementGraphicsProcessorR dropObj, DgnDbR dgnDb)
     {
     ElementGraphicsDrawGeom output;
-    ElementGraphicsContext  context (&dropObj, output);
+    ElementGraphicsContext  context(&dropObj, output);
 
     context.GetCurrentDisplayParams()->Init();
-    context.SetDgnDb (dgnDb);
+    context.SetDgnDb(dgnDb);
 
-    dropObj._OutputGraphics (context);
+    dropObj._OutputGraphics(context);
     }
 
 /*---------------------------------------------------------------------------------**//**
