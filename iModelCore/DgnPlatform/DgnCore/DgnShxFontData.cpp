@@ -5,8 +5,6 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnCore/DgnFontData.h>
 
-#define FONT_LOG (*LoggingManager::GetLogger(L"DgnFont"))
-
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     07/2012
 //=======================================================================================
@@ -278,18 +276,12 @@ BentleyStatus DgnShxDbFontData::_Embed(DgnFonts::DbFaceDataDirect& faceData)
     
     DgnFonts::DbFaceDataDirect::FaceKey regularFace(DgnFontType::Shx, m_familyName.c_str(), DgnFonts::DbFaceDataDirect::FaceKey::FACE_NAME_Regular);    
     if (faceData.Exists(regularFace))
-        {
-        FONT_LOG.infov("Embedded data for SHX family '%s' already exists; it will not be automatically replaced.", regularFace.m_familyName.c_str());
         return ERROR;
-        }
     
     DgnFonts::DbFaceDataDirect::T_FaceMap faces;
     faces[0] = regularFace;
     if (SUCCESS != faceData.Insert(&m_fontData[0], m_fontData.size(), faces))
-        {
-        FONT_LOG.errorv("Unable to write embedded font data for SHX family '%s'.", regularFace.m_familyName.c_str());
         return ERROR;
-        }
     
     return SUCCESS;
     }
@@ -307,10 +299,7 @@ BentleyStatus DgnShxDbFontData::_AddDataRef()
     
     DgnFonts::DbFaceDataDirect::FaceSubId ignored;
     if (SUCCESS != m_dbFaceData.QueryByFace(m_fontData, ignored, DgnFonts::DbFaceDataDirect::FaceKey(DgnFontType::Shx, m_familyName.c_str(), DgnFonts::DbFaceDataDirect::FaceKey::FACE_NAME_Regular)))
-        {
-        FONT_LOG.warningv("Could not load SHX font data from database with name '%s'. This font will be considered unresolved.", m_familyName.c_str());
         return ERROR;
-        }
 
     ++m_openCount;
     m_dataPosition = 0;
@@ -430,25 +419,16 @@ BentleyStatus DgnShxFileFontData::_Embed(DgnFonts::DbFaceDataDirect& faceData)
     
     bvector<Byte> fontData;
     if (BeFileStatus::Success != m_file.ReadEntireFile(fontData))
-        {
-        FONT_LOG.warningv("Could not read SHX file data for embedding from file '%s'.", Utf8String(m_path).c_str());
         return ERROR;
-        }
 
     DgnFonts::DbFaceDataDirect::FaceKey regularFace(DgnFontType::Shx, Utf8String(m_path.GetFileNameWithoutExtension().c_str()).c_str(), DgnFonts::DbFaceDataDirect::FaceKey::FACE_NAME_Regular);
     if (faceData.Exists(regularFace))
-        {
-        FONT_LOG.infov("Embedded data for SHX family '%s' already exists; it will not be automatically replaced.", regularFace.m_familyName.c_str());
         return ERROR;
-        }
 
     DgnFonts::DbFaceDataDirect::T_FaceMap faces;
     faces[0] = regularFace;
     if (SUCCESS != faceData.Insert(&fontData[0], fontData.size(), faces))
-        {
-        FONT_LOG.errorv("Unable to write embedded font data for SHX family '%s'.", regularFace.m_familyName.c_str());
         return ERROR;
-        }
 
     return SUCCESS;
     }
@@ -465,10 +445,7 @@ BentleyStatus DgnShxFileFontData::_AddDataRef()
         }
 
     if (BeFileStatus::Success != m_file.Open(m_path, BeFileAccess::Read))
-        {
-        FONT_LOG.warningv("Could not open SHX font file '%s'. This font will be considered unresolved.", Utf8String(m_path).c_str());
         return ERROR;
-        }
 
     ++m_openCount;
 
@@ -489,8 +466,7 @@ void DgnShxFileFontData::_ReleaseDataRef()
     if (--m_openCount > 0)
         return;
 
-    if (BeFileStatus::Success != m_file.Close())
-        FONT_LOG.warningv("Could not close SHX font file '%s'.", Utf8String(m_path).c_str());
+    m_file.Close();
     }
 
 //---------------------------------------------------------------------------------------
@@ -589,8 +565,7 @@ DgnFontPtr DgnFontPersistence::Db::DgnShxFontFromDb(DgnFonts& dbFonts, DgnFontId
     {
     DgnShxFontP font = new DgnShxFont(name, new DgnShxDbFontData(dbFonts.DbFaceData(), name));
     
-    if (SUCCESS != metadataFromJsonBlob(font->GetMetadataR(), metadata, metadataSize))
-        FONT_LOG.warningv("Could not parse metadata for font of id/type/name %i/%i/'%s'.", (int)id.GetValue(), (int)font->GetType(), name);
+    metadataFromJsonBlob(font->GetMetadataR(), metadata, metadataSize);
 
     return font;
     }

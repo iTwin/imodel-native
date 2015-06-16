@@ -129,8 +129,11 @@ static DRange2d computeRangeForText(DRange2dP justificationRange, Utf8CP chars, 
     layoutContext.m_isItalic = (effectiveStyle.IsItalic() && DgnFontType::TrueType == font.GetType());
     
     DgnGlyphLayoutResult layoutResult;
-    if (UNEXPECTED_CONDITION(SUCCESS != font.LayoutGlyphs(layoutResult, layoutContext)))
+    if (SUCCESS != font.LayoutGlyphs(layoutResult, layoutContext))
+        {
+        BeAssert(false);
         return range;
+        }
     
     range = layoutResult.m_range;
 
@@ -466,13 +469,19 @@ AnnotationLayoutLinePtr AnnotationTextBlockLayout::FlushLine(AnnotationLayoutLin
     if (line.GetRuns().empty())
         {
         // Based on comments in Update, if we're empty, there should always be a preceeding run, and it should always be a line break.
-        if (UNEXPECTED_CONDITION(m_lines.empty() || m_lines.back()->GetRuns().empty()))
+        if (m_lines.empty() || m_lines.back()->GetRuns().empty())
+            {
+            BeAssert(false);
             return AnnotationLayoutLine::Create();
+            }
             
         // While we could technically make the following code agnostic of run type, this should always be true, and other things must be fixed instead of working around it here.
         AnnotationRunBaseCR previousRun = m_lines.back()->GetRuns().back()->GetSeedRun();
-        if (UNEXPECTED_CONDITION(AnnotationRunType::LineBreak != previousRun.GetType()))
+        if (AnnotationRunType::LineBreak != previousRun.GetType())
+            {
+            BeAssert(false);
             return AnnotationLayoutLine::Create();
+            }
 
         AnnotationLineBreakRunPtr lineBreak = ((AnnotationLineBreakRunCR)previousRun).CloneAsLineBreakRun();
         line.AppendRun(*AnnotationLayoutRun::Create(*lineBreak));

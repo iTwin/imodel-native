@@ -7,8 +7,6 @@
 #include <DgnPlatform/DgnCore/DgnRscFontStructures.h>
 #include <DgnPlatform/DgnCore/DgnFont.fb.h>
 
-#define FONT_LOG (*LoggingManager::GetLogger(L"DgnFont"))
-
 using namespace flatbuffers;
 
 //=======================================================================================
@@ -52,16 +50,10 @@ BentleyStatus DgnRscDbFontData::_Embed(DgnFonts::DbFaceDataDirect& faceData)
     faces[0] = regularFace;
 
     if (faceData.Exists(regularFace))
-        {
-        FONT_LOG.infov("Embedded data for RSC family/DGN face style '%s'/%i already exists; it will not be replaced.", regularFace.m_familyName.c_str(), (int)DgnFontStyle::Regular);
         return ERROR;
-        }
 
     if (SUCCESS != faceData.Insert(&m_fontData[0], m_fontData.size(), faces))
-        {
-        FONT_LOG.errorv("Unable to write embedded font data for RSC family '%s'.", regularFace.m_familyName.c_str());
         return ERROR;
-        }
 
     return SUCCESS;
     }
@@ -79,16 +71,12 @@ BentleyStatus DgnRscDbFontData::_AddDataRef()
 
     DgnFonts::DbFaceDataDirect::FaceSubId unused;
     if (SUCCESS != m_dbFaceData.QueryByFace(m_fontData, unused, DgnFonts::DbFaceDataDirect::FaceKey(DgnFontType::Rsc, m_familyName.c_str(), DgnFonts::DbFaceDataDirect::FaceKey::FACE_NAME_Regular)))
-        {
-        FONT_LOG.warningv("Could not load RSC font data from database for family '%s'. This font will be considered unresolved.", m_familyName.c_str());
         return ERROR;
-        }
     
     ++m_openCount;
 
     if (1 != GetFB()->majorVersion())
         {
-        FONT_LOG.warningv("RSC font data is in an unsupported format from database for family '%s'. This font will be considered unresolved.", m_familyName.c_str());
         _ReleaseDataRef();
         return ERROR;
         }
@@ -255,8 +243,7 @@ DgnFontPtr DgnFontPersistence::Db::DgnRscFontFromDb(DgnFonts& dbFonts, DgnFontId
     {
     DgnRscFontP font = new DgnRscFont(name, new DgnRscDbFontData(dbFonts.DbFaceData(), name));
 
-    if (SUCCESS != metadataFromJsonBlob(font->GetMetadataR(), metadata, metadataSize))
-        FONT_LOG.warningv("Could not parse metadata for font of id/type/name %i/%i/'%s'.", (int)id.GetValue(), (int)font->GetType(), name);
+    metadataFromJsonBlob(font->GetMetadataR(), metadata, metadataSize);
 
     return font;
     }
