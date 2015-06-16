@@ -16,7 +16,7 @@ USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_MOBILEDGN
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
-std::shared_ptr<rapidjson::Document> Bentley::WSC::UnitTests::ToRapidJson (Utf8StringCR jsonString)
+std::shared_ptr<rapidjson::Document> BentleyApi::WSC::UnitTests::ToRapidJson (Utf8StringCR jsonString)
     {
     auto json = std::make_shared<rapidjson::Document>();
     bool fail = json->Parse<rapidjson::kParseDefaultFlags> (jsonString.c_str()).HasParseError();
@@ -24,7 +24,7 @@ std::shared_ptr<rapidjson::Document> Bentley::WSC::UnitTests::ToRapidJson (Utf8S
     return json;
     }
 
-Json::Value Bentley::WSC::UnitTests::ToJson (Utf8StringCR jsonString)
+Json::Value BentleyApi::WSC::UnitTests::ToJson (Utf8StringCR jsonString)
     {
     Json::Value json;
     bool success = Json::Reader::Parse (jsonString, json);
@@ -32,7 +32,7 @@ Json::Value Bentley::WSC::UnitTests::ToJson (Utf8StringCR jsonString)
     return json;
     }
 
-ECSchemaPtr Bentley::WSC::UnitTests::ParseSchema (Utf8StringCR schemaXml, ECSchemaReadContextPtr context)
+ECSchemaPtr BentleyApi::WSC::UnitTests::ParseSchema (Utf8StringCR schemaXml, ECSchemaReadContextPtr context)
     {
     if (context.IsNull ())
         {

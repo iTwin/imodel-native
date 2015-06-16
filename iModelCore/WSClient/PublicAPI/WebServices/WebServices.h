@@ -7,12 +7,12 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-#include <BentleyApi/BentleyApi.h>
+#include <Bentley/Bentley.h>
 
 #define LOGGER_NAMESPACE_WSCLIENT "WSClient"
 
-#define BEGIN_BENTLEY_WEBSERVICES_NAMESPACE    BEGIN_BENTLEY_API_NAMESPACE namespace WebServices {
-#define END_BENTLEY_WEBSERVICES_NAMESPACE      } END_BENTLEY_API_NAMESPACE
+#define BEGIN_BENTLEY_WEBSERVICES_NAMESPACE    BEGIN_BENTLEY_NAMESPACE namespace WebServices {
+#define END_BENTLEY_WEBSERVICES_NAMESPACE      } END_BENTLEY_NAMESPACE
 #define USING_NAMESPACE_BENTLEY_WEBSERVICES    using namespace BentleyApi::WebServices;
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE

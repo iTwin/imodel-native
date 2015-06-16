@@ -446,7 +446,7 @@ bool ConnectSpaces::ParseFixedNumber(const std::string &numberString, int &resul
     return true;
     }
 
-bool ConnectSpaces::ParseLastModified(const std::string &lastModified, Bentley::DateTime &dateTime)
+bool ConnectSpaces::ParseLastModified(const std::string &lastModified, BentleyApi::DateTime &dateTime)
     {
     // 0         1         2
     // 01234567890123456789012345678
@@ -504,7 +504,7 @@ bool ConnectSpaces::ParseLastModified(const std::string &lastModified, Bentley::
 
 // The commented out code below works fine, but it requires std::regex in order to work,
 // and GCC (used for Android) doesn't yet support std::regex.
-//bool ConnectSpaces::ParseLastModified(const std::string &lastModified, Bentley::DateTime &dateTime)
+//bool ConnectSpaces::ParseLastModified(const std::string &lastModified, BentleyApi::DateTime &dateTime)
 //    {
 //    std::string regexStr(
 //        "^"
