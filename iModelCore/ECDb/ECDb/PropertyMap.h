@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include "ECDbInternalTypes.h"
-#include "ClassMap.h"
+#include "ClassMapInfo.h"
 #include "ColumnInfo.h"
 
 #include "ECDbSystemSchemaHelper.h"
@@ -22,6 +22,7 @@ enum class TraversalFeedback
     Next //! if there is children of current node process them first and then go to nextr sibling
     };
 
+struct ClassMap;
 //=======================================================================================
 // Represents an iterable collection of property maps
 // @bsiclass                                                Krischan.Eberle      06/2013
@@ -95,7 +96,7 @@ protected:
     virtual Utf8CP _GetColumnBaseName() const;
 
     //! Make sure our table has the necessary columns, if any
-    virtual MapStatus _FindOrCreateColumnsInTable(ClassMap& classMap,ClassMapInfoCP classMapInfo);
+    virtual MapStatus _FindOrCreateColumnsInTable(ClassMap& classMap,ClassMapInfo const* classMapInfo);
 
 
     virtual PropertyMapToColumnCP _GetAsPropertyMapToColumn () const { return nullptr; }
@@ -193,7 +194,7 @@ public:
     WCharCP GetPropertyAccessString () const;
 
     //! Make sure our table has the necessary columns, if any
-    MapStatus FindOrCreateColumnsInTable (ClassMap& classMap,ClassMapInfoCP classMapInfo);
+    MapStatus FindOrCreateColumnsInTable (ClassMap& classMap,ClassMapInfo const* classMapInfo);
 
     //! Returns whether this property map refers to the ECInstanceId system property or not.
     //! @return true if the property map refers to the ECInstanceId system property. false otherwise.
@@ -275,7 +276,7 @@ protected:
     virtual PropertyMapToColumnCP _GetAsPropertyMapToColumn () const override { return this; }
 
     //! Make sure our table has the necessary columns, if any
-    virtual MapStatus _FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfoCP classMapInfo) override;
+    virtual MapStatus _FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfo const* classMapInfo) override;
 
     //! @see PropertyMap::GetColumns
     virtual void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const;
@@ -306,7 +307,7 @@ protected:
     BentleyStatus Initialize(ECDbMapCR map);
 
     virtual void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const override;
-    virtual MapStatus _FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfoCP classMapInfo) override;
+    virtual MapStatus _FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfo const* classMapInfo) override;
 
 public:
     static PropertyMapToInLineStructPtr Create (ECN::ECPropertyCR prop, ECDbMapCR ecDbMap, WCharCP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
@@ -330,7 +331,7 @@ private:
 
 protected:
     PropertyMapToTable (ECN::ECPropertyCR ecProperty, ECN::ECClassCR elementType, WCharCP propertyAccessString, ECDbSqlTable const* primaryTable, PropertyMapCP parentPropertyMap);
-    virtual MapStatus _FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfoCP classMapInfo) override;
+    virtual MapStatus _FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfo const* classMapInfo) override;
     virtual PropertyMapToTableCP _GetAsPropertyMapToTable () const override { return this; }
     virtual void _GetColumns(std::vector<ECDbSqlColumn const*>& columns) const override;
     virtual DbResult _Save (ECDbClassMapInfo & classMapInfo) const override;
@@ -385,7 +386,7 @@ private:
     PropertyMapPoint (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, ECDbSqlTable const* primaryTable, ColumnInfoCR columnInfo, PropertyMapCP parentPropertyMap);
     
     //! Make sure our table has the necessary columns, if any
-    MapStatus _FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfoCP classMapInfo) override;
+    MapStatus _FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfo const* classMapInfo) override;
 
     //! @see PropertyMap::GetColumns
     void _GetColumns (std::vector<ECDbSqlColumn const*>& columns) const;

@@ -60,7 +60,6 @@ ECDbAllHeaders = \
                 $(baseDir)ECSchemaValidator.h \
                 $(baseDir)SchemaImportContext.h \
                 $(baseDir)ClassMapInfo.h \
-                $(baseDir)MapHintReader.h \
                 $(baseDir)ViewGenerator.h \
                 $(baseDir)ECDbClassDependencyAnalyzer.h \
                 $(baseDir)ECDbProfileManager.h \
@@ -171,8 +170,6 @@ $(o)BeRepositoryBasedIdSequence$(oext):						$(baseDir)BeRepositoryBasedIdSequen
 $(o)ECDbMap$(oext):											$(baseDir)ECDbMap.cpp                       $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSchemaComparers$(oext):								$(baseDir)ECSchemaComparers.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)MapHintReader$(oext):									$(baseDir)MapHintReader.cpp                 $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ClassMapInfo$(oext):									$(baseDir)ClassMapInfo.cpp                  $(ECDbAllHeaders) ${MultiCompileDepends}
 

@@ -120,7 +120,6 @@
     <ClCompile Include="ECSql\ValueExp.cpp" />
     <ClCompile Include="ECSql\WhereExp.cpp" />
     <ClCompile Include="MapGenerator.cpp" />
-    <ClCompile Include="MapHintReader.cpp" />
     <ClCompile Include="PropertyMap.cpp" />
     <ClCompile Include="RelationshipClassMap.cpp" />
     <ClCompile Include="SchemaImportContext.cpp" />
@@ -235,7 +234,6 @@
     <ClInclude Include="ECSql\ValueExp.h" />
     <ClInclude Include="ECSql\WhereExp.h" />
     <ClInclude Include="MapGenerator.h" />
-    <ClInclude Include="MapHintReader.h" />
     <ClInclude Include="MapStrategy.h" />
     <ClInclude Include="PropertyMap.h" />
     <ClInclude Include="RelationshipClassMap.h" />

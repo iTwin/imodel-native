@@ -25,7 +25,6 @@
 #include "ClassMapSubclasses.h"
 #include "RelationshipClassMap.h"
 #include "ClassMapInfo.h"
-#include "MapHintReader.h"
 #include "ECDbProfileManager.h"
 #include "ECDbProfileUpgrader.h"
 #include "ECDbSystemSchemaHelper.h"

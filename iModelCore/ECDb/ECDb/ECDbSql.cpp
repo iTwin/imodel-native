@@ -989,7 +989,17 @@ const std::vector<ECDbSqlTable const*> ECDbSqlDb::GetTables () const
 
     return tables;
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+const std::vector<ECDbSqlTable*> ECDbSqlDb::GetTablesR ()
+    {
+    std::vector<ECDbSqlTable*> tables;
+    for (auto const& key : m_tables)
+        tables.push_back (key.second.get ());
 
+    return tables;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
@@ -1076,24 +1086,6 @@ bool ECDbSqlForeignKeyConstraint::ContainsInTarget (Utf8CP columnName) const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      09/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-//static 
-Utf8CP ECDbSqlForeignKeyConstraint::ToSQL (ECDbSqlForeignKeyConstraint::MatchType matchType)
-    {
-    switch (matchType)
-        {
-        case MatchType::Full:
-            return "FULL";
-        case MatchType::Partial:
-            return "PARTIAL";
-        case MatchType::Simple:
-            return "SIMPLE";
-        }
-
-    return nullptr;
-    }
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    affan.khan      09/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
 //static
 Utf8CP ECDbSqlForeignKeyConstraint::ToSQL (ECDbSqlForeignKeyConstraint::ActionType actionType)
     {
@@ -1113,42 +1105,22 @@ Utf8CP ECDbSqlForeignKeyConstraint::ToSQL (ECDbSqlForeignKeyConstraint::ActionTy
 
     return nullptr;
     }
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    affan.khan      09/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-//static
-ECDbSqlForeignKeyConstraint::MatchType ECDbSqlForeignKeyConstraint::ParseMatchType (WCharCP matchType)
-    {
-    if (WString (L"Simple").EqualsI (matchType))
-        return MatchType::Simple;
 
-    if (WString (L"Full").EqualsI (matchType))
-        return MatchType::Full;
-
-    if (WString (L"Partial").EqualsI (matchType))
-        return MatchType::Partial;
-
-    return MatchType::Full;
-    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-//static 
-ECDbSqlForeignKeyConstraint::ActionType ECDbSqlForeignKeyConstraint::ParseActionType (WCharCP actionType)
+ECDbSqlForeignKeyConstraint::ActionType ECDbSqlForeignKeyConstraint::ToActionType(Utf8CP str)
     {
-    if (WString (L"Cascade").EqualsI (actionType))
+    if (BeStringUtilities::Stricmp(str, "Cascade") == 0)
         return ActionType::Cascade;
 
-    if (WString (L"NoAction").EqualsI (actionType))
-        return ActionType::NoAction;
-
-    if (WString (L"SetNull").EqualsI (actionType))
+    if (BeStringUtilities::Stricmp(str, "SetNull") == 0)
         return ActionType::SetNull;
 
-    if (WString (L"SetDefault").EqualsI (actionType))
+    if (BeStringUtilities::Stricmp(str, "SetDefault") == 0)
         return ActionType::SetDefault;
 
-    if (WString (L"Restrict").EqualsI (actionType))
+    if (BeStringUtilities::Stricmp(str, "Restrict") == 0)
         return ActionType::Restrict;
 
     return ActionType::NoAction;
@@ -1650,13 +1622,7 @@ Utf8String DDLGenerator::GetForeignKeyConstraintDDL (ECDbSqlForeignKeyConstraint
         .append (GetColumnList (constraint.GetTargetColumns ()))
         .append (")");
 
-
-    if (constraint.GetMatchType () != ECDbSqlForeignKeyConstraint::MatchType::NotSpecified)
-            {
-            sql.append (" MATCH ");
-            sql.append (ECDbSqlForeignKeyConstraint::ToSQL (constraint.GetMatchType ()));
-            }
-    
+   
     if (constraint.GetOnDeleteAction () != ECDbSqlForeignKeyConstraint::ActionType::NotSpecified)
             {
             sql.append (" ON DELETE ");
@@ -2350,7 +2316,29 @@ DbResult ECDbSqlPersistence::Read (ECDbSqlDb& o)
 
     return stat;
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        01/2015
+//---------------------------------------------------------------------------------------
+DbResult ECDbSqlPersistence::ReadForignKeys (ECDbSqlDb& o)
+    {
+    auto stat = BE_SQLITE_DONE;
+    for (auto table : o.GetTablesR())
+        {
+        auto canEdit = table->GetEditHandle ().CanEdit ();
+        if (!canEdit)
+            table->GetEditHandleR ().BeginEdit ();
 
+        //read foreign key
+        auto stat = ReadForeignKeys (*table);
+        if (stat != BE_SQLITE_DONE)
+            return stat;
+
+        if (!canEdit)
+            table->GetEditHandleR ().EndEdit ();
+        }
+
+    return stat;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
@@ -2370,6 +2358,8 @@ DbResult ECDbSqlPersistence::ReadTables (ECDbSqlDb& o)
 
     if (stat != BE_SQLITE_DONE)
         return stat;
+
+
 
     return stat;
     }
@@ -2402,11 +2392,6 @@ DbResult ECDbSqlPersistence::ReadTable (Statement& stmt, ECDbSqlDb& o)
     n->SetId (id);
     // Read columns
     DbResult stat = ReadColumns (*n);
-    if (stat != BE_SQLITE_DONE)
-        return stat;
-
-    //read foreign key
-    stat = ReadForeignKeys (*n);
     if (stat != BE_SQLITE_DONE)
         return stat;
 
@@ -2593,13 +2578,12 @@ DbResult ECDbSqlPersistence::ReadForeignKeys (ECDbSqlTable& o)
 //---------------------------------------------------------------------------------------
 DbResult ECDbSqlPersistence::ReadForeignKey (Statement& stmt, ECDbSqlTable& o)
     {
-    //F.Id, P.Name, R.Name, F.Name, F.OnDelete, F.OnUpdate, F.MatchType
+    //F.Id, P.Name, R.Name, F.Name, F.OnDelete, F.OnUpdate
     auto id = stmt.GetValueInt64 (0);
     auto referenceTableName = stmt.GetValueText (1);
     auto name = stmt.IsColumnNull (2) ? nullptr : stmt.GetValueText (2);
     auto onDelete = stmt.IsColumnNull (3) ? ECDbSqlForeignKeyConstraint::ActionType::NotSpecified : static_cast<ECDbSqlForeignKeyConstraint::ActionType>(stmt.GetValueInt (3));
     auto onUpdate = stmt.IsColumnNull (4) ? ECDbSqlForeignKeyConstraint::ActionType::NotSpecified : static_cast<ECDbSqlForeignKeyConstraint::ActionType>(stmt.GetValueInt (4));
-    auto matchType = stmt.IsColumnNull (5) ? ECDbSqlForeignKeyConstraint::MatchType::NotSpecified : static_cast<ECDbSqlForeignKeyConstraint::MatchType>(stmt.GetValueInt (5));
 
     auto referenceTable = o.GetDbDef ().FindTable (referenceTableName);
     if (!referenceTable)
@@ -2619,7 +2603,6 @@ DbResult ECDbSqlPersistence::ReadForeignKey (Statement& stmt, ECDbSqlTable& o)
         n->SetName (name);
 
     n->SetId (id);
-    n->SetMatchType (matchType);
     n->SetOnDeleteAction (onDelete);
     n->SetOnUpdateAction (onUpdate);
 
@@ -2831,9 +2814,6 @@ DbResult ECDbSqlPersistence::InsertForeignKey (ECDbSqlForeignKeyConstraint const
 
     if (o.GetOnUpdateAction () != ECDbSqlForeignKeyConstraint::ActionType::NotSpecified)
         stmt->BindInt (6, static_cast<int>(o.GetOnUpdateAction ()));
-
-    if (o.GetMatchType () != ECDbSqlForeignKeyConstraint::MatchType::NotSpecified)
-        stmt->BindInt (7, static_cast<int>(o.GetMatchType ()));
 
     auto stat = stmt->Step ();
     if (stat != BE_SQLITE_DONE)

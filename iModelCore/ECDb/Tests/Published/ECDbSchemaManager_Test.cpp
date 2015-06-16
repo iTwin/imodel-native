@@ -526,6 +526,7 @@ TEST(ECDbMap, RelationshipConstraintHintOnSubclasses)
     Utf8CP testSchemaXml =
         "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
+        "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
         "  <ECSchemaReference name = 'dgn' version = '02.00' prefix = 'dgn' />"
         "  <ECClass typeName='MyElement' >"
         "    <BaseClass>dgn:Element</BaseClass>"
@@ -536,21 +537,18 @@ TEST(ECDbMap, RelationshipConstraintHintOnSubclasses)
         "    <ECProperty propertyName='YourName' typeName='string' />"
         "  </ECClass>"
         "  <ECRelationshipClass typeName='MyElementHasYourElements' isDomainClass='True' strength='embedding'>"
+        "    <ECCustomAttributes>"
+        "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
+        "            <ForeignKey>"
+        "                <ECInstanceIdColumn>ParentId</ECInstanceIdColumn>"
+        "            </ForeignKey>"
+        "        </ForeignKeyRelationshipMap>"
+        "    </ECCustomAttributes>"
         "   <BaseClass>dgn:ElementOwnsChildElements</BaseClass>"
         "    <Source cardinality='(1,1)' polymorphic='True'>"
-        "       <ECCustomAttributes>"
-        "           <ECDbRelationshipConstraintHint xmlns='Bentley_Standard_CustomAttributes.01.12'>"
-        "               <ECIdColumn>ParentId</ECIdColumn>"
-        "           </ECDbRelationshipConstraintHint>"
-        "        </ECCustomAttributes>"
         "      <Class class = 'MyElement' />"
         "    </Source>"
         "    <Target cardinality='(0,N)' polymorphic='True'>"
-        "       <ECCustomAttributes>"
-        "           <ECDbRelationshipConstraintHint xmlns='Bentley_Standard_CustomAttributes.01.12'>"
-        "               <ECIdColumn>Id</ECIdColumn>"
-        "           </ECDbRelationshipConstraintHint>"
-        "        </ECCustomAttributes>"
         "      <Class class = 'YourElement' />"
         "    </Target>"
         "  </ECRelationshipClass>"
@@ -570,11 +568,11 @@ TEST(ECDbMap, RelationshipConstraintHintOnSubclasses)
 
     bvector<Utf8String> columns;
     ASSERT_TRUE (ecdb.GetColumns(columns, "dgn_element"));
-    ASSERT_EQ(11, columns.size()) << "dgn_element table should not contain an extra foreign key columns as the relationship constraint hint specifies to use the ParentId column";
+    ASSERT_EQ(11, columns.size()) << "dgn_element table should not contain an extra foreign key column as the relationship map specifies to use the ParentId column";
     
     auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
     auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
-    ASSERT_TRUE(it == columns.end()) << "dgn_element table should not contain an extra foreign key columns as the relationship constraint hint specifies to use the ParentId column";
+    ASSERT_TRUE(it == columns.end()) << "dgn_element table should not contain an extra foreign key column as the relationship map specifies to use the ParentId column";
     }
 
 //---------------------------------------------------------------------------------------
@@ -1235,7 +1233,7 @@ TEST (ECDbSchemaManager, ImportSchemaWithSubclassesToBaseClassInExistingSchema)
     {
     Utf8CP baseSchemaXmlTemplate =
         "<ECSchema schemaName=\"BaseSchema\" nameSpacePrefix=\"b\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-        "  <ECSchemaReference name = \"Bentley_Standard_CustomAttributes\" version = \"01.10\" prefix = \"bsca\" />"
+        "  <ECSchemaReference name = \"ECDbMap\" version = \"01.00\" prefix = \"ecdbmap\" />"
         "  <ECClass typeName=\"A\" >"
         "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
         "  </ECClass>"
@@ -1243,8 +1241,8 @@ TEST (ECDbSchemaManager, ImportSchemaWithSubclassesToBaseClassInExistingSchema)
         "    <ECProperty propertyName=\"Id\" typeName=\"long\" />"
         "  </ECClass>"
         "  <ECRelationshipClass typeName = \"Rel\" isDomainClass = \"True\" strength = \"holding\" strengthDirection = \"forward\">"
-        "    <Source cardinality = \"(0, 1)\" polymorphic = \"True\">"
         "      %s"
+        "    <Source cardinality = \"(0, 1)\" polymorphic = \"True\">"
         "      <Class class = \"A\" />"
         "    </Source>"
         "    <Target cardinality = \"(0, N)\" polymorphic = \"True\">"
@@ -1302,10 +1300,12 @@ TEST (ECDbSchemaManager, ImportSchemaWithSubclassesToBaseClassInExistingSchema)
         Utf8String ecdbPath;
         Utf8CP customAttributeXml =
             "<ECCustomAttributes>"
-            "  <ECDbRelationshipConstraintHint xmlns = \"Bentley_Standard_CustomAttributes.01.10\">"
-            "     <ECIdColumn>SourceECInstanceId</ECIdColumn>"
-            "     <ECClassIdColumn>SourceECClassId</ECClassIdColumn>"
-            "  </ECDbRelationshipConstraintHint>"
+            "  <ForeignKeyRelationshipMap xmlns = \"ECDbMap.01.00\">"
+            "     <ForeignKey>"
+            "        <ECInstanceIdColumn>SourceECInstanceId</ECInstanceIdColumn>"
+            "        <ECClassIdColumn>SourceECClassId</ECClassIdColumn>"
+            "      </ForeignKey>"
+            "  </ForeignKeyRelationshipMap>"
             "</ECCustomAttributes>";
 
         Utf8String baseSchemaXml;

@@ -791,8 +791,7 @@ Db& db
         "ReferenceTableId INTEGER NOT NULL REFERENCES ec_Table (Id) ON DELETE CASCADE,"
         "Name TEXT COLLATE NOCASE,"
         "OnDelete INTEGER,"
-        "OnUpdate INTEGER,"
-        "MatchType INTEGER"
+        "OnUpdate INTEGER"
         ");");
     }
 

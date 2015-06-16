@@ -188,7 +188,7 @@
     - Type of ECClasses that are mapped using the @b TableForThisClass strategy by default.
         - Domain ECClasses
         - Struct ECClasses
-    - ECRelationshipClasses are either mapped to the table of one of the constraint ends (aka foreign key mapping or EndTable mapping)
+    - ECRelationshipClasses are either mapped to the table of one of the constraint ends (ForeignKey mapping)
     or to a link table.
         - ECRelationshipClasses with cardinality 1:1 or 0:N
             - If source or target constraints end-up in a single table on each side then @b EndTable mapping will be used.
@@ -197,11 +197,11 @@
             - <em>ECDbRelationshipClassHint.PreferredDirection</em> can be use to specify which direction to optimize. This effect default indexes.
         - Relationship with cardinality N:N is always mapped using the @b LinkTable mapping.
         - A default index is created on the key columns in accordance with the cardinality. 
-        - <em>ECDbRelationshipClassHint.AllowDuplicateRelationships</em> is set to false by default.
-        - No referential integrity constraints are added. (See @ref ECDbRelationshipConstraintHintDescription for how to overwrite this)
+        - No referential integrity constraints are created. (See @ref CustomRelationshipMapDescription for how to overwrite this)
 
     @section CustomSchemaMapDescription Custom mapping or ECSchemas
     
+    Customizing the mapping on the schema level is done by applying the @b SchemaMap custom attribute to the respective ECSchema.
     Description of the SchemaMap properties:
     - TablePrefix: Specifies a prefix for generated tables. If not specified, the namespace prefix of the ECSchema is used. 
     The prefix should be 2-4 letters long followed by an underbar, e.g. plnt_. This setting will affect all tables that are created 
@@ -217,6 +217,7 @@
 
     @section CustomClassMapDescription Custom mapping for ECClasses
     
+    Customizing the mapping for an ECClass is done by applying the @b ClassMap custom attribute to the respective ECClass.
     (ECDb will only look for it in local attributes on the ECClass).
     
     Description of the ClassMap properties:
@@ -305,11 +306,12 @@
             ...
         </ECClass>
     
-    @section ECDbPropertyHintDescription Mapping Hints for ECProperty
+    @section CustomPropertyMapDescription Custom mapping for ECProperties
     
+    Customizing the mapping for an ECProperty is done by applying the @b PropertyMap custom attribute to the respective ECProperty.
     (ECDb will only look for it in local attributes on the ECProperty)
     
-    Description of the ECDbPropertyHint properties:
+    Description of the PropertyMap properties:
     
     - <b>ColumnName</b> (optional): Specifies the column name. If not specified, the ECProperty name is used. The column name must
     follow EC naming rules.
@@ -342,31 +344,59 @@
             </ECCustomAttributes>
         </ECProperty>
     
-    @section ECDbRelationshipClassHintDescription Mapping Hints for ECRelationshipClasses
-    (ECDb will only look for it in local attributes on the ECRelationshipClass) 
-    
-    Description of the ECDbRelationshipClassHint properties:
+    @section CustomRelationshipMapDescription Custom mapping for ECRelationshipClasses
 
-    - <b>PreferredDirection</b>: Specify preferred direction in N:N and 1:1 relation will be used more often. It is use as hint to optimize querying. Possible values are as following
-        - <CODE>SourceToTarget</CODE> : Optimize for source to target traversal. 
-        - <CODE>Bidirectional</CODE> : Optimize for source to target and target to source traversal. 
-        - <CODE>TargetToSource</CODE> : Optimize for target to source traversal.
-    - <b>AllowDuplicateRelationships</b>: By default relationships need to be unique. If true, duplicate values are allowed
-    The effect mapping as well. If duplication is allowed the relationship will always be mapped as LinkTable (will have its own table instead of using EndTable which use Foriegn Key).
-        - 1:N will be mapped as LinkTable instead of EndTable if duplication is allowed.
-    - <b>SourceECIdColumn</b> (deprecated): Use <em>ECDbRelationshipConstraintHint.ECIdColumn</em> instead.
-    - <b>SourceECClassIdColumn</b> (deprecated): Use <em>ECDbRelationshipConstraintHint.ECClassIdColumn</em> instead.
-    - <b>TargetECIdColumn</b> (deprecated): Use <em>ECDbRelationshipConstraintHint.ECIdColumn</em> instead.
-    - <b>TargetECClassIdColumn</b> (deprecated): Use <em>ECDbRelationshipConstraintHint.ECClassIdColumn</em> instead.
-    
+    Customizing the mapping for an ECRelationshipClass is done by applying either the @b ForeignKeyRelationshipMap or the @b LinkTableRelationshipMap
+    custom attribute to the respective ECRelationshipClass.
+    (ECDb will only look for it in local attributes on the ECRelationshipClass)
+
+    @note You have to decide upfront whether the relationship class should be mapped as a foreign key relationship or as a link table. Once decided you
+    apply the respective custom attribute to the ECRelationshipClass.
+    @note Any ECRelationship can be mapped as a link table. However not all ECRelationships can be mapped as foreign key relationships. In that 
+    case ECDb will fail the schema import.
+
+    Description of the @b ForeignKeyRelationshipMap properties:
+    - <b>ForeignKeyEnd</b>: (optional) Possible values: Target (default) or Source. If specified it indicates which end of the
+    ECRelationship will carry the foreign key constraint. Usually this is the target end as the usual metaphor for a foreign key relationship
+    is a parent child relationship where parent is source and child is target.
+    - <b>ForeignKey</b>: (optional) Defines the foreign key (See @ref CustomRelationshipConstraintMapDescription for details)
+    If not specified, default values are assumed by %ECDb.
+
+    Description of the @b LinkTableRelationshipMap properties:
+    - <b>Source</b>: (optional) Defines how the source end of the relationship is mapped to the link table (See @ref CustomRelationshipConstraintMapDescription for details).
+    If not specified, default values are assumed by %ECDb.
+    - <b>Target</b>: (optional) Defines how the target end of the relationship is mapped to the link table (See @ref CustomRelationshipConstraintMapDescription for details)
+    If not specified, default values are assumed by %ECDb.
+    - <b>AllowDuplicateRelationship</b>: (optional) If false (default), no duplicate entries for a given relationship instance
+    can be inserted. If true, duplcate relationship instances can be inserted. Cardinality must not be violated though. E.g. 
+    there cannot be duplicate relationships with a cardinality of 1:1.
+
+    @subsection CustomRelationshipConstraintMapDescription RelationshipConstraintMap Description
+
+    Description of the RelationshipConstraintMap ECStruct used by the ForeignKeyRelationshipMap and in the
+    LinkTableRelationshipMap custom attributes:
+    - <b>ECInstanceIdColumn</b>: Optional. Name of the column to which the SourceECInstanceId/TargetECInstanceId property is mapped to.
+    If not specified, %ECDb will auto-generate a name.
+    - <b>ECInstanceIdColumn</b>: Optional. Name of the column to which the SourceECClassId/TargetECClassId property is mapped to.
+    If not specified, %ECDb will auto-generate a name. It is also possible that ECDb will omit the class id column if it finds out that it is not needed.
+    In this case the property will ignored.
+    - <b>CreateDefaultIndex</b>: If true (default), %ECDb will create a database index on the key columns ( for this constraint. If false, no index is created.
+    - <b>EnforceReferentialIntegrity</b>: If true, referential integrity constraints are created for the relationship. If false (default), no referential integrity constraints are created.
+    - <b>OnDeleteAction</b>: Possible values: NoAction (default) or Cascade (deletes child rows when parent row is deleted). @b EnforceReferentialIntegrity must be set to true.
+    - <b>OnUpdateAction</b>: Possible values: NoAction (default) or Cascade (updates child foreign key when parent primary key is updated). @b EnforceReferentialIntegrity must be set to true.
+
     ####Examples
         
-        <ECRelationshipClass typeName="EmployeeHardware" isDomainClass="True" strength="referencing" strengthDirection="forward">
+        <ECRelationshipClass typeName="HardwareUsedByEmployee" isDomainClass="True" strength="referencing">
             <ECCustomAttributes>
-                <ECDbRelationshipClassHint  xmlns="Bentley_Standard_CustomAttributes.01.11">
-                    <PreferredDirection>TargetToSource</PreferredDirection>
-                    <AllowDuplicateRelationships>True</AllowDuplicateRelationships>
-                </ECDbRelationshipClassHint>
+                <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
+                    <Source>
+                        <ECInstanceIdColumn>EmployeeId</ECIdColumn>
+                    </Source>
+                    <Target>
+                        <ECInstanceIdColumn>HardwareId</ECIdColumn>
+                    </Target>
+                </LinkTableRelationshipMap>
             </ECCustomAttributes>
             <BaseClass>AssetRelationshipsBase</BaseClass>
             <BaseClass>EmployeeRelationshipsBase</BaseClass>
@@ -377,49 +407,27 @@
                 <Class class="Hardware" />
             </Target>
         </ECRelationshipClass>
-    
-    @section ECDbRelationshipConstraintHintDescription Mapping Hints for constraints of an ECRelationshipClass
-    It allows to customize key columns, index and integrity constraints.
-
-    - <b>ECClassIdColumn</b>: Optional. Allow user to override the default name generated by %ECDb for SourceECClassId or TargetECClassId column depending on which constraint it was applied to.
-    - <b>ECIdColumn</b>: Optional. Allow user to override the default name generated by %ECDbfor SourceECInstanceId or TargetECInstanceId column depending on which constraint it was applied to.
-    - <b>GenerateDefaultIndex</b>: Optional and default value is 'True'. If 'False' %ECDb will not generate database index for the this relationship.
-    - <b>ForeignKeyConstraint</b>: Optional. It allow to create referential constraint at database level for the given relationship.
-        - <b>EnforceReferentialIntegrityCheck</b>: This enable referential integrity. Default is 'false'.
-            - <b>OnDeleteAction</b>: Optional and only used if <code>EnforceReferentialIntegrityCheck=True</code>. Possible values are <code>NoAction</code> (default) and <code>Cascade</code> which delete child rows when parent row is deleted.
-            - <b>OnUpdateAction</b>: Optional and only used if <code>EnforceReferentialIntegrityCheck=True</code>. Possible values are <code>NoAction</code> (default) and <code>Cascade</code> which update child foreign key when parent primary key is updated.
-            - <b>MatchType</b>: Optional default value is <code>Full</code>. This is reserved for future use.
-    
-    ####Examples
+   
         
-        <ECRelationshipClass typeName="SourceToTarget_Embedding" isDomainClass="True" strength="embedding" strengthDirection="forward">
+        <ECRelationshipClass typeName="FolderHasFiles" isDomainClass="True" strength="embedding" >
+            <ECCustomAttributes>
+                <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                    <ForeignKey>
+                        <ECInstanceIdColumn>FolderId</ECIdColumn>
+                        <EnforceReferentialIntegrity>True</EnforceReferentialIntegrity>
+                        <OnDeleteAction>Cascade</OnDeleteAction>
+                        <OnUpdateAction>Cascade</OnUpdateAction>
+                    </ForeignKey>
+                </ForeignKeyRelationshipMap>
+            </ECCustomAttributes>
             <Source cardinality="(1,1)" polymorphic="True">
-                <ECCustomAttributes>
-                    <ECDbRelationshipConstraintHint xmlns="Bentley_Standard_CustomAttributes.01.10">
-                        <ECClassIdColumn>SourceEClassId</ECClassIdColumn>
-                        <ECIdColumn>SourceECInstanceId</ECIdColumn>
-                        <GenerateDefaultIndex>False</GenerateDefaultIndex>
-                    </ECDbRelationshipConstraintHint>
-                </ECCustomAttributes> 
-                <Class class="SourceBase" />
+                <Class class="Folder" />
             </Source>
-            <Target cardinality="(1,N)" polymorphic="True">
-                <ECCustomAttributes>
-                    <ECDbRelationshipConstraintHint xmlns="Bentley_Standard_CustomAttributes.01.10">
-                        <ECClassIdColumn>TargetEClassId</ECClassIdColumn>
-                        <ECIdColumn>TargetECInstanceId</ECIdColumn>
-                        <GenerateDefaultIndex>False</GenerateDefaultIndex>
-                        <ForeignKeyConstraint>
-                            <EnforceReferentialIntegrityCheck>True</EnforceReferentialIntegrityCheck>
-                            <OnDeleteAction>Cascade</OnDeleteAction>
-                            <OnUpdateAction>NoAction</OnUpdateAction>
-                            <MatchType>Full</MatchType>
-                        </ForeignKeyConstraint>
-                    </ECDbRelationshipConstraintHint>
-                </ECCustomAttributes>
-                <Class class="TargetBase" />
+            <Target cardinality="(0,N)" polymorphic="True">
+                <Class class="File" />
             </Target>
         </ECRelationshipClass>
+
 
     @see @ref ECDbOverview
     */

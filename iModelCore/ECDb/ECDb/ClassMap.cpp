@@ -231,7 +231,16 @@ bool IClassMap::IsAbstractECClass () const
 //static
 bool IClassMap::IsAbstractECClass (ECClassCR ecclass)
     {
-    return !ecclass.GetIsDomainClass () && !ecclass.GetIsStruct () && !ecclass.GetIsCustomAttributeClass ();
+    if (!ecclass.GetIsDomainClass() && !ecclass.GetIsStruct() && !ecclass.GetIsCustomAttributeClass())
+        return true;
+
+    //for relationship classes there is another criterion for abstractness: if one of the constraints doesn't have
+    //any classes, then it is abstract. So check for that here now
+    ECRelationshipClassCP relClass = ecclass.GetRelationshipClassCP();
+    if (relClass == nullptr)
+        return false;
+        
+    return relClass->GetSource().GetClasses().empty() || relClass->GetTarget().GetClasses().empty();
     }
 
 
@@ -315,7 +324,7 @@ m_parentMapClassId (0LL), m_dbView (nullptr), m_isDirty (setIsDirty), m_columnFa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MapStatus ClassMap::Initialize (ClassMapInfoCR mapInfo)
+MapStatus ClassMap::Initialize (ClassMapInfo const& mapInfo)
     {
     const auto mapStrategy = GetMapStrategy ();
     IClassMap const* effectiveParentClassMap = mapStrategy.IsInParentTable() ? mapInfo.GetParentClassMap () : nullptr;
@@ -334,7 +343,7 @@ MapStatus ClassMap::Initialize (ClassMapInfoCR mapInfo)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MapStatus ClassMap::_InitializePart1 (ClassMapInfoCR mapInfo, IClassMap const* parentClassMap)
+MapStatus ClassMap::_InitializePart1 (ClassMapInfo const& mapInfo, IClassMap const* parentClassMap)
     {
     m_dbView = std::unique_ptr<ClassDbView> (new ClassDbView (*this));
 
@@ -379,7 +388,7 @@ MapStatus ClassMap::_InitializePart1 (ClassMapInfoCR mapInfo, IClassMap const* p
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MapStatus ClassMap::_InitializePart2 (ClassMapInfoCR mapInfo, IClassMap const* parentClassMap)
+MapStatus ClassMap::_InitializePart2 (ClassMapInfo const& mapInfo, IClassMap const* parentClassMap)
     {
     auto stat = AddPropertyMaps (parentClassMap, nullptr,&mapInfo);
     if (stat != MapStatus::Success)
@@ -425,7 +434,7 @@ MapStatus ClassMap::_OnInitialized ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MapStatus ClassMap::AddPropertyMaps (IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo,ClassMapInfoCP classMapInfo)
+MapStatus ClassMap::AddPropertyMaps (IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo,ClassMapInfo const* classMapInfo)
     {
     std::vector<ECPropertyP> propertiesToMap;
     PropertyMapPtr propMap = nullptr;
@@ -481,7 +490,7 @@ MapStatus ClassMap::AddPropertyMaps (IClassMap const* parentClassMap, ECDbClassM
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      12/2013
 //---------------------------------------------------------------------------------------
-MapStatus ClassMap::ProcessIndices (ClassMapInfoCR mapInfo)
+MapStatus ClassMap::ProcessIndices (ClassMapInfo const& mapInfo)
     {
     //! we delay the index create tell mapping finishes
     SetUserProvidedIndex (mapInfo.GetIndexInfo ());
@@ -492,7 +501,7 @@ MapStatus ClassMap::ProcessIndices (ClassMapInfoCR mapInfo)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Affan.Khan                           09/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClassMap::ProcessStandardKeySpecifications (ClassMapInfoCR mapInfo)
+void ClassMap::ProcessStandardKeySpecifications (ClassMapInfo const& mapInfo)
     {
     std::set<PropertyMapCP> doneList;
     std::set<WString> specList;
@@ -756,7 +765,7 @@ void ClassMap::CreateIndices ()
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    casey.mullen      11 / 2011
 //------------------------------------------------------------------------------------------
-ECDbSqlColumn* ClassMap::FindOrCreateColumnForProperty (ClassMapCR classMap,ClassMapInfoCP classMapInfo, PropertyMapR propertyMap, Utf8CP requestedColumnName, PrimitiveType columnType, bool nullable, bool unique, ECDbSqlColumn::Constraint::Collation collation, Utf8CP accessStringPrefix)
+ECDbSqlColumn* ClassMap::FindOrCreateColumnForProperty (ClassMapCR classMap,ClassMapInfo const* classMapInfo, PropertyMapR propertyMap, Utf8CP requestedColumnName, PrimitiveType columnType, bool nullable, bool unique, ECDbSqlColumn::Constraint::Collation collation, Utf8CP accessStringPrefix)
     {
     ColumnFactory::Specification::Strategy strategy = ColumnFactory::Specification::Strategy::CreateOrReuse;
     ColumnFactory::Specification::GenerateColumnNameOptions generateColumnNameOpts = ColumnFactory::Specification::GenerateColumnNameOptions::NameBasedOnClassIdAndCaseSaveAccessString;

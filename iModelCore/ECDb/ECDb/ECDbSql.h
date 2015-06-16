@@ -271,6 +271,7 @@ struct ECDbSqlDb : NonCopyableClass
         const std::vector<ECDbSqlIndex const*> GetIndexes () const;
         std::vector<ECDbSqlIndex*> GetIndexesR ();
         const std::vector<ECDbSqlTable const*> GetTables () const;
+        const std::vector<ECDbSqlTable*> GetTablesR ();
         virtual  ~ECDbSqlDb () {}
         StringPool const& GetStringPool () const { return m_stringPool; }
         StringPool& GetStringPoolR ()  { return m_stringPool; }
@@ -569,25 +570,17 @@ struct ECDbSqlForeignKeyConstraint : ECDbSqlConstraint
         Restrict,
         };
 
-    enum class MatchType
-        {
-        NotSpecified,
-        Simple,
-        Full,
-        Partial
-        };
     private:
         ECDbSqlTable const& m_targetTable;
         std::vector<ECDbSqlColumn const*> m_sourceColumns;
         std::vector<ECDbSqlColumn const*> m_targetColumns;
         ActionType m_onDeleteAction;
         ActionType m_onUpdateAction;
-        MatchType m_matchType;
         Utf8String m_name;
         ECDbConstraintId m_id;
     public:
         ECDbSqlForeignKeyConstraint (ECDbSqlTable const& sourceTable, ECDbSqlTable const& targetTable, ECDbConstraintId id)
-            :ECDbSqlConstraint (ECDbSqlConstraint::Type::ForeignKey, sourceTable), m_id (id), m_targetTable (targetTable), m_matchType (MatchType::NotSpecified), m_onDeleteAction (ActionType::NotSpecified), m_onUpdateAction (ActionType::NotSpecified)
+            :ECDbSqlConstraint (ECDbSqlConstraint::Type::ForeignKey, sourceTable), m_id (id), m_targetTable (targetTable), m_onDeleteAction (ActionType::NotSpecified), m_onUpdateAction (ActionType::NotSpecified)
             {}
 
         ECDbConstraintId GetId () const { return m_id; }
@@ -596,11 +589,9 @@ struct ECDbSqlForeignKeyConstraint : ECDbSqlConstraint
         void SetName (Utf8CP name) { m_name = name; }
         void SetOnDeleteAction (ActionType action) { m_onDeleteAction = action; }
         void SetOnUpdateAction (ActionType action) { m_onUpdateAction = action; }
-        void SetMatchType (MatchType matchType) { m_matchType = matchType; }
 
         ActionType GetOnDeleteAction () const { return m_onDeleteAction; }
         ActionType GetOnUpdateAction () const { return m_onUpdateAction; }
-        MatchType GetMatchType () const { return m_matchType; }
 
         BentleyStatus Add (Utf8CP sourceColumn, Utf8CP targetColumn);
         BentleyStatus Remove (size_t index);
@@ -612,10 +603,8 @@ struct ECDbSqlForeignKeyConstraint : ECDbSqlConstraint
         bool ContainsInTarget (Utf8CP columnName) const;
         BentleyStatus Remove (Utf8CP sourceColumn, Utf8CP targetColumn);
         size_t Count () const { return m_targetColumns.size (); }
-        static ActionType ParseActionType (WCharCP actionType);
-        static MatchType ParseMatchType (WCharCP matchType);
-        static Utf8CP ToSQL (ActionType actionType);
-        static Utf8CP ToSQL (MatchType matchType);       
+        static ActionType ToActionType(Utf8CP str);
+        static Utf8CP ToSQL(ActionType actionType);
         virtual ~ECDbSqlForeignKeyConstraint (){}
     };
 
@@ -1031,13 +1020,13 @@ struct ECDbSqlPersistence : NonCopyableClass
         const Utf8CP Sql_InsertColumn = "INSERT OR REPLACE INTO ec_Column (Id, TableId, Name, Type, IsVirtual, Ordinal, Constraint_NotNull, Constraint_Unique, Constraint_Check, Constraint_Default, Constraint_Collation, PrimaryKey_Ordinal, UserData) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         const Utf8CP Sql_InsertIndex = "INSERT OR REPLACE INTO ec_Index (Id, TableId, Name, IsUnique, WhereClause) VALUES (?, ?, ?, ?, ?)";
         const Utf8CP Sql_InsertIndexColumn = "INSERT OR REPLACE INTO ec_IndexColumn (IndexId, ColumnId, Ordinal) VALUES (?, ?, ?)";
-        const Utf8CP Sql_InsertForeignKey = "INSERT OR REPLACE INTO ec_ForeignKey (Id, TableId, ReferenceTableId, Name, OnDelete, OnUpdate, MatchType) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        const Utf8CP Sql_InsertForeignKey = "INSERT OR REPLACE INTO ec_ForeignKey (Id, TableId, ReferenceTableId, Name, OnDelete, OnUpdate) VALUES (?, ?, ?, ?, ?, ?)";
         const Utf8CP Sql_InsertForeignKeyColumn = "INSERT OR REPLACE INTO ec_ForeignKeyColumn (ForeignKeyId, ColumnId, ReferenceColumnId, Ordinal) VALUES (?, ?, ?, ?)";
         const Utf8CP Sql_SelectTable = "SELECT Id, Name, IsOwnedByECDb, IsVirtual FROM ec_Table";
         const Utf8CP Sql_SelectColumn = "SELECT Id, Name, Type, IsVirtual, Constraint_NotNull, Constraint_Unique, Constraint_Check, Constraint_Default, Constraint_Collation, PrimaryKey_Ordinal, UserData FROM ec_Column WHERE TableId = ? ORDER BY Ordinal";
         const Utf8CP Sql_SelectIndex = "SELECT I.Id, T.Name, I.Name, I.IsUnique, I.WhereClause FROM ec_Index I INNER JOIN ec_Table T ON T.Id = I.TableId";
         const Utf8CP Sql_SelectIndexColumn = "SELECT C.Name FROM ec_IndexColumn I INNER JOIN ec_Column C ON C.Id = I.ColumnId WHERE I.IndexId = ? ORDER BY I.Ordinal";
-        const Utf8CP Sql_SelectForeignKey = "SELECT F.Id, R.Name, F.Name, F.OnDelete, F.OnUpdate, F.MatchType FROM ec_ForeignKey F INNER JOIN ec_Table R ON R.Id = F.ReferenceTableId WHERE F.TableId = ?";
+        const Utf8CP Sql_SelectForeignKey = "SELECT F.Id, R.Name, F.Name, F.OnDelete, F.OnUpdate FROM ec_ForeignKey F INNER JOIN ec_Table R ON R.Id = F.ReferenceTableId WHERE F.TableId = ?";
         const Utf8CP Sql_SelectForeignKeyColumn = "SELECT A.Name, B.Name FROM ec_ForeignKeyColumn F INNER JOIN ec_Column A ON F.ColumnId = A.Id INNER JOIN ec_Column B ON F.ReferenceColumnId = B.Id  WHERE F.ForeignKeyId = ? ORDER BY F.Ordinal";
 
         enum class StatementType
@@ -1069,6 +1058,7 @@ struct ECDbSqlPersistence : NonCopyableClass
         DbResult ReadTable (Statement& stmt, ECDbSqlDb& o);
         DbResult ReadColumns (ECDbSqlTable& o);
         DbResult ReadIndexes (ECDbSqlDb& o);
+        DbResult ReadForignKeys (ECDbSqlDb& o);
         DbResult ReadColumn (Statement& stmt, ECDbSqlTable& o, std::map<size_t, ECDbSqlColumn const*>& primaryKeys);
         DbResult ReadIndex (Statement& stmt, ECDbSqlDb& o);
         DbResult ReadForeignKeys (ECDbSqlTable& o);
