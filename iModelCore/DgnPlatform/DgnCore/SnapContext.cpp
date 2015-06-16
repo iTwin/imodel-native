@@ -469,7 +469,7 @@ bool TestCurveLocation (CurveVectorCR curvesLocal)
 virtual BentleyStatus _ProcessCurveVector (CurveVectorCR curves, bool isFilled) override
     {
     // Quick exclude of geometry that didn't generate the hit...
-    if (m_snapContext.GetSnapDetail()->GetGeomDetail().GetGeomPrimitiveId() != m_context->GetGeomPrimitiveId())
+    if (m_snapContext.GetSnapDetail()->GetGeomDetail().GetGeomStreamEntryId() != m_context->GetGeomStreamEntryId())
         return SUCCESS;
 
     TestCurveLocation(curves);
@@ -483,7 +483,7 @@ virtual BentleyStatus _ProcessCurveVector (CurveVectorCR curves, bool isFilled) 
 virtual BentleyStatus _ProcessFacets (PolyfaceQueryCR meshData, bool isFilled)
     {
     // Quick exclude of geometry that didn't generate the hit...
-    if (m_snapContext.GetSnapDetail()->GetGeomDetail().GetGeomPrimitiveId() != m_context->GetGeomPrimitiveId())
+    if (m_snapContext.GetSnapDetail()->GetGeomDetail().GetGeomStreamEntryId() != m_context->GetGeomStreamEntryId())
         return SUCCESS;
 
     PolyfaceVisitorPtr  visitor = PolyfaceVisitor::Attach(meshData);
@@ -515,7 +515,7 @@ virtual BentleyStatus _ProcessFacets (PolyfaceQueryCR meshData, bool isFilled)
 
 public:
 
-SnapGraphicsProcessor (SnapContextR snapContext) : m_snapContext (snapContext) {m_isVisible = false;}
+SnapGraphicsProcessor (SnapContextR snapContext) : m_snapContext(snapContext) {m_isVisible = false;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   11/13

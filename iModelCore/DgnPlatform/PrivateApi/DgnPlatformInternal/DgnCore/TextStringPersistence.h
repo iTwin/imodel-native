@@ -18,12 +18,21 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 struct TextStringPersistence : public NonCopyableClass
 {
+    //=======================================================================================
+    // @bsiclass                                                    Jeff.Marker     06/2014
+    //=======================================================================================
+    enum struct FlatBufEncodeOptions
+    {
+        IncludeGlyphLayoutData = 1 << 0,
+        Default = 0
+    };
+
 private:
     TextStringPersistence(){}
 
 public:
-    static BentleyStatus EncodeAsFlatBuf(flatbuffers::Offset<FB::TextString>&, flatbuffers::FlatBufferBuilder&, TextStringCR, DgnDbR);
-    static BentleyStatus EncodeAsFlatBuf(bvector<Byte>&, TextStringCR, DgnDbR);
+    static BentleyStatus EncodeAsFlatBuf(flatbuffers::Offset<FB::TextString>&, flatbuffers::FlatBufferBuilder&, TextStringCR, DgnDbR, FlatBufEncodeOptions);
+    static BentleyStatus EncodeAsFlatBuf(bvector<Byte>&, TextStringCR, DgnDbR, FlatBufEncodeOptions);
     static BentleyStatus DecodeFromFlatBuf(TextStringR, FB::TextString const&, DgnDbCR);
     static BentleyStatus DecodeFromFlatBuf(TextStringR, ByteCP, size_t numBytes, DgnDbCR);
 };

@@ -18,8 +18,6 @@
 #include FT_SFNT_NAMES_H
 #include FT_TRUETYPE_IDS_H
 
-#define FONT_LOG (*LoggingManager::GetLogger(L"DgnFont"))
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     04/2015
 //---------------------------------------------------------------------------------------
@@ -89,14 +87,7 @@ static BentleyStatus createAndConfigFace(FT_Face& face, FT_Long faceIndex, Utf8C
         ftStatus = FT_New_Memory_Face(ftLib, buffer, (FT_Long)bufferSize, faceIndex, &face);
     
     if ((FT_Err_Ok != ftStatus) || (nullptr == face))
-        {
-        if (!Utf8String::IsNullOrEmpty(path))
-            FONT_LOG.warningv("Could not open face %i from path '%s' (error code %i).", (int)faceIndex, path, (int)ftStatus);
-        else
-            FONT_LOG.errorv("Failed to load font face %i for family '%s' from database. This font will be considered unresolved and may be subject to substitution.", (int)faceIndex, bufferFamilyName);
-        
         return ERROR;
-        }
 
 #ifdef FONT_DESIGNER_SCALE
     /*
@@ -110,7 +101,7 @@ static BentleyStatus createAndConfigFace(FT_Face& face, FT_Long faceIndex, Utf8C
             ascender - The general distance of ascenders in the font. Useful with ratios.
             descender - The general distance of descenders in the font. Useful with ratios.
             line gap (derived as height - ascender - descender) - the residual distance between the EM box and the line height.
-        All of the above is easily to correlate in Word, for example. What is harder to find documentation for is how to distribute the line gap above and below the EM box.
+        All of the above is easy to correlate in Word, for example. What is harder to find documentation for is how to distribute the line gap above and below the EM box.
         Empirically, this seems distributed as a ratio of ascender/units_per_EM and descender/units_per_EM.
         While utilizing all of this is well and good, it makes TrueType act unlike RSC and SHX, and makes DgnV8 import more difficult.
         We should perhaps consider allowing this for "annotation" text (vs. "physical text").
@@ -126,10 +117,7 @@ static BentleyStatus createAndConfigFace(FT_Face& face, FT_Long faceIndex, Utf8C
 #endif
     
     if (FT_Err_Ok != FT_Set_Pixel_Sizes(face, pixelScale, 0))
-        {
-        FONT_LOG.errorv("Failed to scale font face %i for family '%s'. This font will be considered unresolved and may be subject to substitution.", (int)faceIndex, face->family_name);
         return ERROR;
-        }
 
     return SUCCESS;
     }
@@ -170,7 +158,7 @@ void DgnTrueTypeFileFontData::FreeAllFaces()
         {
         FT_Error ftStatus = FT_Done_Face(faceMapEntry.second);
         if (FT_Err_Ok != ftStatus)
-            FONT_LOG.warningv("Could not close face from family '%s' with DGN style %i (error code %i). This may be the source of a leak.", m_familyName.c_str(), (int)faceMapEntry.first, (int)ftStatus);
+            { BeAssert(false); }
         }
     
     m_faceMap.clear();
@@ -231,21 +219,15 @@ BentleyStatus DgnTrueTypeFileFontData::_Embed(DgnFonts::DbFaceDataDirect& faceDa
         {
         BeFile fontDataFile;
         if (BeFileStatus::Success != fontDataFile.Open(file.first, BeFileAccess::Read))
-            {
-            FONT_LOG.errorv("Could not open TrueType file '%s' for read access to embed font data.", file.first.c_str());
             continue;
-            }
         
         bvector<Byte> fontData;
         if (BeFileStatus::Success != fontDataFile.ReadEntireFile(fontData))
-            {
-            FONT_LOG.warningv("Could not read TrueType file data for embedding from file '%s'.", file.first.c_str());
             continue;
-            }
         
         if (BeFileStatus::Success != fontDataFile.Close())
             {
-            FONT_LOG.warningv("Could not close TrueType file '%s' after extracting font data for embedding.", file.first.c_str());
+            BeAssert(false);
             continue;
             }
 
@@ -263,10 +245,7 @@ BentleyStatus DgnTrueTypeFileFontData::_Embed(DgnFonts::DbFaceDataDirect& faceDa
                 numFaces = face->num_faces;
 
             if (!haveEmbeddingRights(face))
-                {
-                FONT_LOG.warningv("Could not embed face %i from path '%s'; it does not grant the right to embed.", (int)iFace, Utf8String(file.first).c_str());
                 continue;
-                }
             
             Utf8String familyName;
             IDgnTrueTypeFontData::GetFamilyName(familyName, face);
@@ -276,19 +255,13 @@ BentleyStatus DgnTrueTypeFileFontData::_Embed(DgnFonts::DbFaceDataDirect& faceDa
             DgnFonts::DbFaceDataDirect::FaceKey key(DgnFontType::TrueType, familyName.c_str(), styleName.c_str());
             
             if (faceData.Exists(key))
-                {
-                FONT_LOG.infov("Not attributing family/DGN face style '%s'/'%s' to new embedding data because it already exists in the database.", familyName.c_str(), styleName.c_str());
                 continue;
-                }
             
             faceMap[face->face_index] = key;
             }
 
         if (faceMap.empty())
-            {
-            FONT_LOG.infov("No new faces found in '%s' for embedding.", Utf8String(file.first).c_str());
             continue;
-            }
         
         faceData.Insert(&fontData[0], fontData.size(), faceMap);
         }
@@ -320,9 +293,7 @@ BentleyStatus DgnTrueTypeFileFontData::_AddDataRef()
                 continue;
             
             DgnFontStyle style = ftStyleIndexToDgnFontStyle(face->style_flags);
-            if (m_faceMap.end() != m_faceMap.find(style))
-                FONT_LOG.warningv("Face %i from path '%s' has DGN style %i, but a face with that style already exists; subsequent ones will be ignored.", (int)faceIndex, Utf8String(fileMapEntry.first).c_str(), (int)style);
-            else
+            if (m_faceMap.end() == m_faceMap.find(style))
                 m_faceMap[style] = face;
             }
         }
@@ -340,7 +311,6 @@ BentleyStatus DgnTrueTypeFileFontData::_AddDataRef()
 
         if (m_faceMap.end() == foundFace)
             {
-            FONT_LOG.errorv("Could not load any face as a 'regular' face for family '%s'. This font will be considered missing, and may be substituted.", m_familyName.c_str());
             FreeAllFaces();
             return ERROR;
             }
@@ -427,10 +397,7 @@ BentleyStatus DgnTrueTypeDbFontData::FreeAllFaces()
         {
         FT_Error ftStatus = FT_Done_Face(faceEntry.second->m_face);
         if (FT_Err_Ok != ftStatus)
-            {
             didAnyFail = true;
-            FONT_LOG.warningv("Failed to free font face from family/DGN face style '%s'/%i from database. This may be a source of a leak.", faceEntry.second->m_face->family_name, (int)faceEntry.second->m_face->face_index);
-            }
         
         delete faceEntry.second;
         }
@@ -478,16 +445,12 @@ BentleyStatus DgnTrueTypeDbFontData::_Embed(DgnFonts::DbFaceDataDirect& faceData
             }
         
         if (facesToTransfer.empty())
-            {
-            FONT_LOG.infov("Embedded data entry %i from source has no new faces for destination when attempting to copy embedded data for family '%s'.", (int)embeddedDataEntry.GetId(), m_familyName.c_str());
             continue;
-            }
         
         bvector<Byte> fontData;
         if (SUCCESS != m_dbFaceData.QueryById(fontData, embeddedDataEntry.GetId()))
             {
             didAnyFail |= true;
-            FONT_LOG.errorv("Could not read font data to copy embedded data for family '%s'.", m_familyName.c_str());
             continue;
             }
 
@@ -496,7 +459,6 @@ BentleyStatus DgnTrueTypeDbFontData::_Embed(DgnFonts::DbFaceDataDirect& faceData
         if (SUCCESS != faceData.Insert(&fontData[0], fontData.size(), facesToTransfer))
             {
             didAnyFail |= true;
-            FONT_LOG.warningv("Could not write font data to copy embedded data for family '%s'.", m_familyName.c_str());
             continue;
             }
         }
@@ -560,7 +522,6 @@ BentleyStatus DgnTrueTypeDbFontData::_AddDataRef()
 
         if (m_faceMap.end() == foundFace)
             {
-            FONT_LOG.errorv("Could not load any face as a 'regular' face for family '%s'. This font will be considered missing, and may be substituted.", m_familyName.c_str());
             FreeAllFaces();
             return ERROR;
             }
@@ -706,10 +667,7 @@ BentleyStatus Win32TrueTypeFontData::FreeAllFaces()
         {
         FT_Error ftStatus = FT_Done_Face(faceEntry.second->m_face);
         if (FT_Err_Ok != ftStatus)
-            {
             didAnyFail = true;
-            FONT_LOG.warningv("Failed to free font face from family/DGN face style '%s'/%i from database. This may be a source of a leak.", faceEntry.second->m_face->family_name, (int)faceEntry.second->m_face->face_index);
-            }
 
         delete faceEntry.second;
         }
@@ -737,10 +695,7 @@ BentleyStatus Win32TrueTypeFontData::GetFontData(bvector<Byte>& data, DgnFontSty
         DEFAULT_CHARSET, OUT_TT_ONLY_PRECIS, CLIP_DEFAULT_PRECIS, NONANTIALIASED_QUALITY, DEFAULT_PITCH, fontName.c_str());
 
     if (nullptr == newFont)
-        {
-        FONT_LOG.errorv("Could not find DgnFontStyle %i for family '%s' from Windows. This font will be considered unresolved and may be subject to substitution.", (int)style, m_familyName.c_str());
         return ERROR;
-        }
 
     HFONT previousFont = (HFONT)::SelectObject(fontDC, newFont);
     if (NULL != previousFont)
@@ -751,18 +706,12 @@ BentleyStatus Win32TrueTypeFontData::GetFontData(bvector<Byte>& data, DgnFontSty
     DWORD dwTable = 0;
     DWORD fontDataSize = ::GetFontData(fontDC, dwTable, 0, NULL, 0);
     if ((GDI_ERROR == fontDataSize) || (0 == fontDataSize))
-        {
-        FONT_LOG.errorv("Could not get data size for DgnFontStyle %i for family '%s' from Windows. This font will be considered unresolved and may be subject to substitution.", (int)style, m_familyName.c_str());
         return ERROR;
-        }
 
     data.resize((size_t)fontDataSize);
     DWORD bytesRetrieved = ::GetFontData(fontDC, dwTable, 0, &data[0], fontDataSize);
     if ((GDI_ERROR == bytesRetrieved) || (0 == bytesRetrieved))
-        {
-        FONT_LOG.errorv("Could not get data for DgnFontStyle %i for family '%s' from Windows. This font will be considered unresolved and may be subject to substitution.", (int)style, m_familyName.c_str());
         return ERROR;
-        }
 
     return SUCCESS;
     }
@@ -815,10 +764,7 @@ BentleyStatus Win32TrueTypeFontData::EmbedFace(DgnFonts::DbFaceDataDirect& faceD
             numFaces = face->num_faces;
 
         if (!haveEmbeddingRights(face))
-            {
-            FONT_LOG.warningv("Could not embed face %i from Windows for DgnFontStyle %i for family '%s'; it does not grant the right to embed.", (int)iFace, (int)style, m_familyName.c_str());
             continue;
-            }
 
         Utf8String familyName;
         IDgnTrueTypeFontData::GetFamilyName(familyName, face);
@@ -828,19 +774,13 @@ BentleyStatus Win32TrueTypeFontData::EmbedFace(DgnFonts::DbFaceDataDirect& faceD
         DgnFonts::DbFaceDataDirect::FaceKey key(DgnFontType::TrueType, familyName.c_str(), styleName.c_str());
 
         if (faceData.Exists(key))
-            {
-            FONT_LOG.infov("Not attributing family/DGN face style '%s'/'%s' to new embedding data because it already exists in the database.", familyName.c_str(), styleName.c_str());
             continue;
-            }
 
         faceMap[face->face_index] = key;
         }
 
     if (faceMap.empty())
-        {
-        FONT_LOG.infov("No new faces found in Windows for DgnFontStyle %i for family '%s'.",(int)style, m_familyName.c_str());
         return ERROR;
-        }
 
     faceData.Insert(&data[0], data.size(), faceMap);
 
@@ -898,7 +838,6 @@ BentleyStatus Win32TrueTypeFontData::_AddDataRef()
 
         if (m_faceMap.end() == foundFace)
             {
-            FONT_LOG.errorv("Could not load any face as a 'regular' face for family '%s'. This font will be considered missing, and may be substituted.", m_familyName.c_str());
             FreeAllFaces();
             return ERROR;
             }
@@ -1096,14 +1035,12 @@ BentleyStatus IDgnTrueTypeFontData::GetFamilyName(Utf8StringR familyNameStr, FT_
 
     if (!hasFamilyName)
         {
-        FONT_LOG.warningv("Could not determine the real family name of font face %i; using '%s' instead.", (int)face->face_index, face->family_name);
         familyNameStr = face->family_name;
         return ERROR;
         }
 
     if (SUCCESS != convertTTNameString(familyNameStr, familyName))
         {
-        FONT_LOG.warningv("Could not decode the real family name of font face %i; using '%s' instead.", (int)face->face_index, face->family_name);
         familyNameStr = face->family_name;
         return ERROR;
         }
@@ -1161,7 +1098,7 @@ T_DgnFontPtrs DgnFontPersistence::File::FromTrueTypeFiles(bvector<BeFileName> co
             FT_Error ftStatus = FT_Done_Face(face);
             if (FT_Err_Ok != ftStatus)
                 {
-                FONT_LOG.warningv("Could not close face %i from path '%s' (error code %i). This may be the source of a leak.", (int)iFace, Utf8String(path).c_str(), (int)ftStatus);
+                BeAssert(false);
                 continue;
                 }
             }

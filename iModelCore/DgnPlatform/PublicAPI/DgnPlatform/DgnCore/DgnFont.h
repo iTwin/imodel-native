@@ -134,6 +134,8 @@ public:
     virtual bool _CanDrawWithLineWeight() const = 0;
     bool CanDrawWithLineWeight() const { return _CanDrawWithLineWeight(); }
     DGNPLATFORM_EXPORT bool IsResolved() const;
+    virtual DgnGlyphCP _FindGlyphCP(DgnGlyph::T_Id, DgnFontStyle) const = 0;
+    DgnGlyphCP FindGlyphCP(DgnGlyph::T_Id glyphId, DgnFontStyle fontStyle) const { return _FindGlyphCP(glyphId, fontStyle); }
 };
 
 //=======================================================================================
@@ -160,6 +162,7 @@ public:
     DGNPLATFORM_EXPORT virtual BentleyStatus _LayoutGlyphs(DgnGlyphLayoutResultR, DgnGlyphLayoutContextCR) const override;
     virtual bool _CanDrawWithLineWeight() const override { return false; }
     DGNPLATFORM_EXPORT static BentleyStatus GetTrueTypeGlyphDataDirect(bvector<Byte>&, double& scaleFactor, DgnGlyphCR);
+    DGNPLATFORM_EXPORT virtual DgnGlyphCP _FindGlyphCP(DgnGlyph::T_Id, DgnFontStyle) const override;
 };
 
 //=======================================================================================
@@ -194,7 +197,7 @@ private:
     mutable bool m_hasLoadedFractions;
 
     void LoadGlyphs() const;
-    DgnGlyphCP FindGlyphCP(DgnGlyph::T_Id) const;
+    DGNPLATFORM_EXPORT DgnGlyphCP FindGlyphCP(DgnGlyph::T_Id) const;
     DgnGlyphCP GetDefaultGlyphCP() const;
     DgnGlyph::T_Id FindFractionGlyphCode(uint8_t numerator, uint8_t denominator) const;
     DgnGlyph::T_Id Ucs4CharToFontChar(uint32_t, CharCP codePageString, bvector<Byte>& localeBuffer) const;
@@ -211,6 +214,7 @@ public:
     virtual bool _CanDrawWithLineWeight() const override { return true; }
     Metadata const& GetMetadata() const { return m_metadata; }
     Metadata& GetMetadataR() { return m_metadata; }
+    virtual DgnGlyphCP _FindGlyphCP(DgnGlyph::T_Id glyphId, DgnFontStyle) const override { return FindGlyphCP(glyphId); }
 };
 
 //=======================================================================================
@@ -248,7 +252,7 @@ private:
     typedef bmap<DgnGlyph::T_Id, DgnGlyphCP> T_GlyphCache;
     mutable T_GlyphCache m_glyphCache;
 
-    DgnGlyphCP FindGlyphCP(DgnGlyph::T_Id) const;
+    DGNPLATFORM_EXPORT DgnGlyphCP FindGlyphCP(DgnGlyph::T_Id) const;
     DgnGlyph::T_Id Ucs4CharToFontChar(uint32_t, CharCP codePageString, bvector<Byte>& localeBuffer) const;
     bvector<DgnGlyph::T_Id> Utf8ToFontChars(Utf8StringCR) const;
 
@@ -263,6 +267,7 @@ public:
     DGNPLATFORM_EXPORT ShxType GetShxType() const;
     Metadata const& GetMetadata() const { return m_metadata; }
     Metadata& GetMetadataR() { return m_metadata; }
+    virtual DgnGlyphCP _FindGlyphCP(DgnGlyph::T_Id glyphId, DgnFontStyle) const override { return FindGlyphCP(glyphId); }
 };
 
 //=======================================================================================

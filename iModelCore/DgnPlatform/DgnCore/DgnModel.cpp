@@ -424,7 +424,7 @@ void DgnModel::UpdateRangeIndex(DgnElementCR modified, DgnElementCR original)
         return;
 
     GeometricElementCP origGeom = original._ToGeometricElement();
-    if (nullptr != origGeom)
+    if (nullptr == origGeom)
         return;
 
     GeometricElementCP newGeom = (GeometricElementCP) &modified;
