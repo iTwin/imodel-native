@@ -457,21 +457,16 @@ private:
 public:
     ECDbForeignKeyRelationshipMap() : m_relClass(nullptr), m_ca(nullptr) {}
 
-    //! Tries to get the value of the ForeignKeyOnTarget property from the ForeignKeyRelationshipMap.
-    //! @param[out] foreignKeyOnTargetFlag ForeignKeyOnTarget flag. If true, the foreign key is on the target end of the ECRelationshipClass.
-    //! If false, the foreign key is on the source end of the ECRelationshipClass. @p foreignKeyOnTargetFlag remains unchanged, 
-    //! if the ForeignKeyOnTarget property wasn't set in the ForeignKeyRelationshipMap.
-    //! @return ECOBJECTSTATUS_Success if ForeignKeyOnTarget was set or unset in the ForeignKeyRelationshipMap, Error codes otherwise
-    ECOBJECTS_EXPORT ECObjectsStatus TryGetForeignKeyOnTarget(bool& foreignKeyOnTargetFlag) const;
+    //! Tries to get the value of the ForeignKeyEnd property from the ForeignKeyRelationshipMap.
+    //! @param[out] foreignKeyEnd End of the relationship which carries the foreign key. @p foreignKeyEnd remains unchanged, 
+    //! if the ForeignKeyEnd property wasn't set in the ForeignKeyRelationshipMap.
+    //! @return ECOBJECTSTATUS_Success if ForeignKeyEnd was set or unset in the ForeignKeyRelationshipMap, Error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetForeignKeyEnd(ECRelationshipEnd& foreignKeyEnd) const;
     //! Tries to get the value of the ForeignKey property from the ForeignKeyRelationshipMap.
     //! @param[out] foreignKeyConstraint Mapping information for the foreign key constraint of the relationship. 
     //! It remains unchanged, if the ForeignKey property wasn't set in the ForeignKeyRelationshipMap.
     //! @return ECOBJECTSTATUS_Success if ForeignKey was set or unset in the ForeignKeyRelationshipMap, error codes otherwise
     ECOBJECTS_EXPORT ECObjectsStatus TryGetForeignKey(ECDbRelationshipConstraintMap& foreignKeyConstraint) const;
-    //! Tries to get the value of the AllowDuplicateRelationships property from the ForeignKeyRelationshipMap.
-    //! @param[out] allowDuplicateRelationships AllowDuplicateRelationships flag. It remains unchanged, if the AllowDuplicateRelationships property wasn't set in the ForeignKeyRelationshipMap.
-    //! @return ECOBJECTSTATUS_Success if AllowDuplicateRelationships was set or unset in the ForeignKeyRelationshipMap, Error codes otherwise
-    ECOBJECTS_EXPORT ECObjectsStatus TryGetAllowDuplicateRelationships(bool& allowDuplicateRelationships) const;
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

@@ -769,12 +769,23 @@ ECDbForeignKeyRelationshipMap::ECDbForeignKeyRelationshipMap(ECRelationshipClass
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECDbForeignKeyRelationshipMap::TryGetForeignKeyOnTarget(bool& foreignKeyOnTargetFlag) const
+ECObjectsStatus ECDbForeignKeyRelationshipMap::TryGetForeignKeyEnd(ECRelationshipEnd& foreignKeyEnd) const
     {
     if (m_ca == nullptr)
         return ECOBJECTS_STATUS_Error;
 
-    return CustomAttributeReader::TryGetBooleanValue(foreignKeyOnTargetFlag, *m_ca, L"ForeignKeyOnTarget");
+    Utf8String foreignKeyEndStr;
+    if (!CustomAttributeReader::TryGetTrimmedValue(foreignKeyEndStr, *m_ca, L"ForeignKeyEnd"))
+        return ECOBJECTS_STATUS_Success;
+
+    if (foreignKeyEndStr.EqualsI("source"))
+        foreignKeyEnd = ECRelationshipEnd_Source;
+    else if (foreignKeyEndStr.EqualsI("target"))
+        foreignKeyEnd = ECRelationshipEnd_Target;
+    else
+        return ECOBJECTS_STATUS_Error;
+
+    return ECOBJECTS_STATUS_Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -786,17 +797,6 @@ ECObjectsStatus ECDbForeignKeyRelationshipMap::TryGetForeignKey(ECDbRelationship
         return ECOBJECTS_STATUS_Error;
 
     return ECDbRelationshipConstraintMapHelper::TryRead(foreignKeyConstraint, *m_ca, L"ForeignKey");
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                               Krischan.Eberle   06 / 2015
-//+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECDbForeignKeyRelationshipMap::TryGetAllowDuplicateRelationships(bool& allowDuplicateRelationshipsFlag) const
-    {
-    if (m_ca == nullptr)
-        return ECOBJECTS_STATUS_Error;
-
-    return CustomAttributeReader::TryGetBooleanValue(allowDuplicateRelationshipsFlag, *m_ca, L"AllowDuplicateRelationships");
     }
 
 
