@@ -5,8 +5,6 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnCore/DgnFontData.h>
 
-#define FONT_LOG (*LoggingManager::GetLogger(L"DgnFont"))
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     03/2015
 //---------------------------------------------------------------------------------------
