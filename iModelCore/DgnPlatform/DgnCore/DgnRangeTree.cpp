@@ -1118,12 +1118,12 @@ DgnRangeTree::Match DgnRangeTree::FindMatches(DgnRangeTree::Traverser& traverser
 +===============+===============+===============+===============+===============+======*/
 struct DRTViewNode
 {
-    DRTLeafNodeP  m_leaf;
-    DgnModelP  m_modelRef;
-    TransformP    m_localToFrust;
-    double    m_score;
-    bool      m_overlap;
-    bool      m_spansEyePlane;
+    DRTLeafNodeP    m_leaf;
+    DgnModelP       m_modelRef;
+    TransformP      m_localToWorld;
+    double          m_score;
+    bool            m_overlap;
+    bool            m_spansEyePlane;
 
     bool    TestOcclusion() { return !m_spansEyePlane && m_score < s_prefs.m_maxOcclusionTestArea; }
     size_t  GetElementCount() { return m_leaf->GetEntryCount(); }
@@ -1131,11 +1131,11 @@ struct DRTViewNode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-DRTViewNode(DRTLeafNodeP leaf, DgnModelP modelRef, TransformP localToFrust, double score, bool overlap, bool spansEyePlane)
+DRTViewNode(DRTLeafNodeP leaf, DgnModelP modelRef, TransformP localToWorld, double score, bool overlap, bool spansEyePlane)
     {
     m_leaf          = leaf;
     m_modelRef      = modelRef;
-    m_localToFrust  = localToFrust;
+    m_localToWorld  = localToWorld;
     m_score         = score;
     m_overlap       = overlap;
     m_spansEyePlane = spansEyePlane;
@@ -1537,24 +1537,24 @@ bool OcclusionScorer::ComputeOcclusionScore(double* score, bool& overlap, bool& 
 +===============+===============+===============+===============+===============+======*/
 struct OcclusionSortedProcessor : OcclusionScorer
 {
-    double                      m_frameTime;
-    double                      m_minLODArea;
-    ViewContextR                m_viewContext;
-    ScanCriteriaCP              m_scanCriteria;
-    DgnViewportP                   m_viewport;
-    DgnRangeTree::ProgressMonitor*   m_progressMonitor;
-    uint32_t                    m_visitElementCount;
-    DgnModelP                m_currDgnModel;
-    DgnModelP                m_rootModel;
-    uint32_t                    m_occlusionTestCount;
-    DgnMemoryPool<Transform,128> m_localToFrustTrans;
-    TransformP                  m_localToFrustum;
-    T_ViewNodes                 m_viewNodes;
-    size_t                      m_viewNodesProcessed;
-    uint32_t                    m_targetElementCount;
-    bool                        m_isDynamicUpdate;
-    bool                        m_doOcclusionCull;
-    bool                        m_doFrustumCull;
+    double                          m_frameTime;
+    double                          m_minLODArea;
+    ViewContextR                    m_viewContext;
+    ScanCriteriaCP                  m_scanCriteria;
+    DgnViewportP                    m_viewport;
+    DgnRangeTree::ProgressMonitor*  m_progressMonitor;
+    uint32_t                        m_visitElementCount;
+    DgnModelP                       m_currDgnModel;
+    DgnModelP                       m_rootModel;
+    uint32_t                        m_occlusionTestCount;
+    DgnMemoryPool<Transform,128>    m_localToWorldTrans;
+    TransformP                      m_localToWorld;
+    T_ViewNodes                     m_viewNodes;
+    size_t                          m_viewNodesProcessed;
+    uint32_t                        m_targetElementCount;
+    bool                            m_isDynamicUpdate;
+    bool                            m_doOcclusionCull;
+    bool                            m_doFrustumCull;
 
     uint32_t GetVisitElementCount() {return m_visitElementCount;}
     static bool CompareOcclusionScore(DRTViewNodeCR lhs, DRTViewNodeCR rhs) { return lhs.m_score > rhs.m_score; }
@@ -1602,31 +1602,33 @@ OcclusionSortedProcessor(ViewContextR viewContext, DgnModelP startModel, bool do
 +---------------+---------------+---------------+---------------+---------------+------*/
 void InitForDgnModel()
     {
-    m_localToNpc = m_viewContext.GetFrustumToNpc().M0;
+    m_localToNpc = m_viewContext.GetWorldToNpc().M0;
 
     // Use viewport camera position.
     m_cameraPosition = m_viewport->GetCamera().GetEyePoint();
 
-    Transform localToFrustum;
+    Transform localToWorld;
 
-    if (SUCCESS == m_viewContext.GetCurrLocalToFrustumTrans(localToFrustum))
+    if (SUCCESS == m_viewContext.GetCurrLocalToWorldTrans(localToWorld))
         {
-        m_localToFrustum =  m_localToFrustTrans.AllocateNode();
-        *m_localToFrustum = localToFrustum;
+        m_localToWorld = m_localToWorldTrans.AllocateNode();
+        *m_localToWorld = localToWorld;
 
-        m_localToNpc.InitProduct(m_localToNpc, DMatrix4d::From(*m_localToFrustum));
+        m_localToNpc.InitProduct(m_localToNpc, DMatrix4d::From(*m_localToWorld));
         }
     else
-        m_localToFrustum = nullptr;
+        {
+        m_localToWorld = nullptr;
+        }
 
     if (m_cameraOn)
         {
-        if (m_localToFrustum)
+        if (m_localToWorld)
             {
-            Transform  frustumToLocal;
+            Transform  worldToLocal;
 
-            frustumToLocal.InverseOf(*m_localToFrustum);
-            frustumToLocal.Multiply(m_cameraPosition);
+            worldToLocal.InverseOf(*m_localToWorld);
+            worldToLocal.Multiply(m_cameraPosition);
             }
         }
     else
@@ -1736,7 +1738,7 @@ bool ProcessViewNodesBatch(T_ViewNodeIterator begin, T_ViewNodeIterator end, boo
             {
             if (curr->TestOcclusion())
                 {
-                corners[nNodes].InitFromRange(curr->m_leaf->GetRange(), curr->m_localToFrust);
+                corners[nNodes].InitFromRange(curr->m_leaf->GetRange(), curr->m_localToWorld);
 
 #ifdef DRT_DEBUGGING
                 s_statistics.m_traverse.m_elementsOcclusionTested += curr->GetElementCount();
@@ -1836,7 +1838,7 @@ void FindVisibleLeafs(DRTNodeR node, DgnModelR modelRef, bool testRange)
             return;
             }
 
-        m_viewNodes.push_back(DRTViewNode((DRTLeafNodeP) &node, &modelRef, m_localToFrustum, score, testRange && overlap, spansEye));
+        m_viewNodes.push_back(DRTViewNode((DRTLeafNodeP) &node, &modelRef, m_localToWorld, score, testRange && overlap, spansEye));
         }
     else
         {

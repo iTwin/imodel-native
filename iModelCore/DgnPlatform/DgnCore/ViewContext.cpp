@@ -64,7 +64,6 @@ ViewContext::ViewContext()
     m_edgeMaskState             = EdgeMaskState_None;
     m_hiliteState               = DgnElement::Hilited::None;
     m_isCameraOn                = false;
-    m_frustumTransClipDepth     = 0;
     m_edgeMaskState             = EdgeMaskState_None;
 
     m_rasterDisplayParams.SetFlags(0);
@@ -72,8 +71,8 @@ ViewContext::ViewContext()
     m_scanRangeValid        = false;
     m_levelOfDetail         = 1.0;
 
-    m_frustumToNpc.InitIdentity();
-    m_frustumToView.InitIdentity();
+    m_worldToNpc.InitIdentity();
+    m_worldToView.InitIdentity();
 
     // Draw any plane
     ResetRasterPlane();
@@ -106,25 +105,12 @@ int             ViewContext::_GetViewNumber() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  08/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ViewContext::GetCurrLocalToWorldTrans(DMatrix4dR localToWorld) const
-    {
-    Transform       localToFrustum;
-
-    m_transformClipStack.GetTransform(localToFrustum); // NOTE: Returns ERROR if transform doesn't need to be pushed (identity)...so don't check status!
-    localToWorld = DMatrix4d::From(localToFrustum);
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::ViewToNpc(DPoint3dP npcVec, DPoint3dCP screenVec, int nPts) const
     {
-    ViewToFrustum(npcVec, screenVec, nPts);
-    m_frustumToNpc.M0.MultiplyAndRenormalize(npcVec, npcVec, nPts);
+    ViewToWorld(npcVec, screenVec, nPts);
+    m_worldToNpc.M0.MultiplyAndRenormalize(npcVec, npcVec, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -132,16 +118,16 @@ void ViewContext::ViewToNpc(DPoint3dP npcVec, DPoint3dCP screenVec, int nPts) co
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::NpcToView(DPoint3dP viewVec, DPoint3dCP npcVec, int nPts) const
     {
-    NpcToFrustum(viewVec, npcVec, nPts);
-    FrustumToView(viewVec, viewVec, nPts);
+    NpcToWorld(viewVec, npcVec, nPts);
+    WorldToView(viewVec, viewVec, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::NpcToFrustum(DPoint3dP frustumPts, DPoint3dCP npcPts, int nPts) const
+void ViewContext::NpcToWorld(DPoint3dP worldPts, DPoint3dCP npcPts, int nPts) const
     {
-    m_frustumToNpc.M1.MultiplyAndRenormalize(frustumPts, npcPts, nPts);
+    m_worldToNpc.M1.MultiplyAndRenormalize(worldPts, npcPts, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -164,9 +150,8 @@ StatusInt ViewContext::_InitContextForView()
     m_ovrMatSymb.Clear();
     m_rasterDisplayParams.SetFlags(0);
 
-    m_frustumTransClipDepth = 0;
-    m_frustumToNpc  = *m_viewport->GetWorldToNpcMap();
-    m_frustumToView = *m_viewport->GetWorldToViewMap();
+    m_worldToNpc  = *m_viewport->GetWorldToNpcMap();
+    m_worldToView = *m_viewport->GetWorldToViewMap();
     m_transformClipStack.Clear();
     m_scanRangeValid = false;
 
@@ -181,6 +166,7 @@ StatusInt ViewContext::_InitContextForView()
     m_displayStyleStackMark = 0;
 
     SetDgnDb(GetViewport()->GetViewController().GetDgnDb());
+
     return SUCCESS;
     }
 
@@ -204,7 +190,7 @@ Frustum ViewContext::GetFrustum()
             frustum = m_viewport->GetFrustum(DgnCoordSystem::Npc, true);
         }
 
-    m_frustumToNpc.M1.MultiplyAndRenormalize(frustPts, frustPts, NPC_CORNER_COUNT);
+    m_worldToNpc.M1.MultiplyAndRenormalize(frustPts, frustPts, NPC_CORNER_COUNT);
     DgnViewport::FixFrustumOrder(frustum);
     return frustum;
     }
@@ -276,7 +262,7 @@ void ViewContext::_PushTransform(TransformCR trans)
 void ViewContext::_PushViewIndependentOrigin(DPoint3dCP origin)
     {
     Transform   viTrans;
-    GetViewIndTransform(&viTrans, origin);
+    GetViewIndependentTransform(&viTrans, origin);
     _PushTransform(viTrans);
     m_transformClipStack.SetViewIndependent();
     }
@@ -464,30 +450,30 @@ void ViewContext::ViewToLocal (DPoint3dP localPts, DPoint3dCP viewPts, int nPts)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::FrustumToView (DPoint4dP viewPts, DPoint3dCP frustumPts, int nPts) const
+void ViewContext::WorldToView (DPoint4dP viewPts, DPoint3dCP worldPts, int nPts) const
     {
-    m_frustumToView.M0.Multiply (viewPts, frustumPts, NULL, nPts);
+    m_worldToView.M0.Multiply (viewPts, worldPts, NULL, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::FrustumToView (DPoint3dP viewPts, DPoint3dCP frustumPts, int nPts) const
+void ViewContext::WorldToView (DPoint3dP viewPts, DPoint3dCP worldPts, int nPts) const
     {
-    m_frustumToView.M0.MultiplyAndRenormalize(viewPts, frustumPts, nPts);
+    m_worldToView.M0.MultiplyAndRenormalize(viewPts, worldPts, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::FrustumToView (Point2dP viewPts, DPoint3dCP frustumPts, int nPts) const
+void ViewContext::WorldToView (Point2dP viewPts, DPoint3dCP worldPts, int nPts) const
     {
     DPoint3d  tPt;
     DPoint4d  t4dPt;
 
     for (int i=0; i<nPts; i++)
         {
-        FrustumToView (&t4dPt, frustumPts+i, 1);
+        WorldToView (&t4dPt, worldPts+i, 1);
 
         bsiDPoint4d_normalize (&t4dPt, &tPt);
 
@@ -499,49 +485,49 @@ void ViewContext::FrustumToView (Point2dP viewPts, DPoint3dCP frustumPts, int nP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::ViewToFrustum (DPoint3dP frustumPts, DPoint4dCP viewPts, int nPts) const
+void ViewContext::ViewToWorld (DPoint3dP worldPts, DPoint4dCP viewPts, int nPts) const
     {
-    m_frustumToView.M1.MultiplyAndNormalize (frustumPts, viewPts, nPts);
+    m_worldToView.M1.MultiplyAndNormalize (worldPts, viewPts, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::ViewToFrustum (DPoint3dP frustumPts, DPoint3dCP viewPts, int nPts) const
+void ViewContext::ViewToWorld (DPoint3dP worldPts, DPoint3dCP viewPts, int nPts) const
     {
-    m_frustumToView.M1.MultiplyAndRenormalize(frustumPts, viewPts, nPts);
+    m_worldToView.M1.MultiplyAndRenormalize(worldPts, viewPts, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::LocalToFrustum (DPoint3dP frustumPts, DPoint3dCP localPts, int nPts) const
+void ViewContext::LocalToWorld (DPoint3dP worldPts, DPoint3dCP localPts, int nPts) const
     {
-    Transform   localToFrustum;
+    Transform   localToWorld;
 
-    if (SUCCESS == m_transformClipStack.GetTransform (localToFrustum))
-        localToFrustum.Multiply (frustumPts, localPts, nPts);
+    if (SUCCESS == m_transformClipStack.GetTransform (localToWorld))
+        localToWorld.Multiply (worldPts, localPts, nPts);
     else
-        memcpy (frustumPts, localPts, nPts * sizeof(DPoint3d));
+        memcpy (worldPts, localPts, nPts * sizeof(DPoint3d));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::FrustumToLocal (DPoint3dP localPts, DPoint3dCP frustumPts, int nPts) const
+void ViewContext::WorldToLocal (DPoint3dP localPts, DPoint3dCP worldPts, int nPts) const
     {
-    Transform   frustumToLocal;
+    Transform   worldToLocal;
 
-    if (SUCCESS == m_transformClipStack.GetInverseTransform (frustumToLocal))
-        frustumToLocal.Multiply (localPts, frustumPts, nPts);
+    if (SUCCESS == m_transformClipStack.GetInverseTransform (worldToLocal))
+        worldToLocal.Multiply (localPts, worldPts, nPts);
     else
-        memcpy (localPts, frustumPts, nPts * sizeof(DPoint3d));
+        memcpy (localPts, worldPts, nPts * sizeof(DPoint3d));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::GetViewIndTransform (TransformP trans, DPoint3dCP originLocal)
+void ViewContext::GetViewIndependentTransform (TransformP trans, DPoint3dCP originLocal)
     {
     RotMatrix   rMatrix;
     DgnViewportP vp = GetViewport();
@@ -694,15 +680,15 @@ QvElem* Find (QvUnsizedKeyP* foundKey, double size, QvUnsizedKeyCR unsizedKey)
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t        ViewContext::GetLocalTransformKey() const
     {
-    Transform   localToFrustum;
+    Transform   localToWorld;
 
-    if (SUCCESS != m_transformClipStack.GetTransform (localToFrustum))
+    if (SUCCESS != m_transformClipStack.GetTransform (localToWorld))
         return 0;
 
-    static      DPoint3d  s_ramdomLocalToFrustTransformRefPoint = { 1234567.0, 7654321.0, 233425.0};
+    static      DPoint3d  s_randomLocalToWorldTransformRefPoint = { 1234567.0, 7654321.0, 233425.0};
     DPoint3d    transformedPoint;
 
-    localToFrustum.Multiply (&transformedPoint, &s_ramdomLocalToFrustTransformRefPoint, 1);
+    localToWorld.Multiply (&transformedPoint, &s_randomLocalToWorldTransformRefPoint, 1);
 
     return (uint32_t) transformedPoint.x + (uint32_t) transformedPoint.y + (uint32_t) transformedPoint.z;
     }
@@ -859,7 +845,7 @@ bool ViewContext::_ScanRangeFromPolyhedron()
     {
     Frustum polyhedron = GetFrustum();
 
-    FrustumToLocal (polyhedron.GetPtsP(), polyhedron.GetPts(), 8);
+    WorldToLocal (polyhedron.GetPtsP(), polyhedron.GetPts(), 8);
 
     // get enclosing bounding box around polyhedron (outside scan range).
     DRange3d scanRange = polyhedron.ToRange();
@@ -1213,11 +1199,11 @@ ScanCriteria::Result  ViewContext::_CheckNodeRange(ScanCriteriaCR scanCriteria, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::IsFrustumPointVisible (DPoint3dCR frustumPoint, bool boresite)
+bool ViewContext::IsWorldPointVisible (DPoint3dCR worldPoint, bool boresite)
     {
     DPoint3d    localPoint;
 
-    FrustumToLocal (&localPoint, &frustumPoint, 1);
+    WorldToLocal (&localPoint, &worldPoint, 1);
 
     return IsLocalPointVisible (localPoint, boresite);
     }
@@ -1239,24 +1225,24 @@ bool ViewContext::IsLocalPointVisible (DPoint3dCR localPoint, bool boresite)
         {
         DPoint3d        localCamera;
         
-        FrustumToLocal (&localCamera, &GetViewport()->GetCamera().GetEyePoint(), 1);
+        WorldToLocal (&localCamera, &GetViewport()->GetCamera().GetEyePoint(), 1);
         localZVec.NormalizedDifference (localPoint, localCamera);
         }
     else
         {
         DPoint3d        zPoints[2];
-        Transform       frustumToLocal;
+        Transform       worldToLocal;
 
         zPoints[0].Zero ();
         zPoints[1].Init (0.0, 0.0, 1.0);
 
-        NpcToFrustum (zPoints, zPoints, 2);
+        NpcToWorld (zPoints, zPoints, 2);
 
         localZVec.NormalizedDifference (zPoints[1], zPoints[0]);
 
-        if (GetCurrFrustumToLocalTrans (frustumToLocal))
+        if (GetCurrWorldToLocalTrans (worldToLocal))
             {
-            frustumToLocal.MultiplyMatrixOnly (localZVec);
+            worldToLocal.MultiplyMatrixOnly (localZVec);
             localZVec.Normalize();
             }
         }
@@ -1543,18 +1529,18 @@ bool ViewContext::CheckThicknessVector()
     if (NULL == thicknessDir)
         return false;
 
-    DPoint3d    npcPt[2], frustumPt[2];
+    DPoint3d    npcPt[2], worldPt[2];
     DVec3d      zVector, testVec = *thicknessDir;
 
     npcPt[0] = s_frustPts[FRUST_Org];
     npcPt[1] = s_frustPts[FRUST_Z];
 
-    NpcToFrustum (frustumPt, npcPt, 2);
-    zVector.NormalizedDifference (frustumPt[0], frustumPt[1]);
+    NpcToWorld (worldPt, npcPt, 2);
+    zVector.NormalizedDifference (worldPt[0], worldPt[1]);
 
     Transform   transform;
 
-    if (SUCCESS == GetCurrLocalToFrustumTrans (transform))
+    if (SUCCESS == GetCurrLocalToWorldTrans (transform))
         transform.MultiplyMatrixOnly (testVec, testVec);
 
     return (LegacyMath::Vec::AreParallel (&zVector, &testVec) ? false : true);
@@ -1763,13 +1749,13 @@ void ViewContext::_DrawStyledBSplineCurve2d (MSBsplineCurveCR bcurve, double zDe
 +---------------+---------------+---------------+---------------+---------------+------*/
 DMatrix4d ViewContext::GetViewToLocal() const
     {
-    DMatrix4d  viewToLocal = GetFrustumToView().M1;
-    Transform  frustumToLocalTransform;
+    DMatrix4d  viewToLocal = GetWorldToView().M1;
+    Transform  worldToLocalTransform;
 
-    if (SUCCESS == GetCurrFrustumToLocalTrans(frustumToLocalTransform) && !frustumToLocalTransform.IsIdentity())
+    if (SUCCESS == GetCurrWorldToLocalTrans(worldToLocalTransform) && !worldToLocalTransform.IsIdentity())
         {
-        DMatrix4d frustumToLocal = DMatrix4d::From(frustumToLocalTransform);
-        viewToLocal.InitProduct (frustumToLocal, viewToLocal);
+        DMatrix4d worldToLocal = DMatrix4d::From(worldToLocalTransform);
+        viewToLocal.InitProduct (worldToLocal, viewToLocal);
         }
 
     return viewToLocal;
@@ -1780,13 +1766,13 @@ DMatrix4d ViewContext::GetViewToLocal() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DMatrix4d ViewContext::GetLocalToView() const
     {
-    DMatrix4d localToView    = GetFrustumToView().M0;
-    Transform localToFrustumTransform;
+    DMatrix4d localToView = GetWorldToView().M0;
+    Transform localToWorldTransform;
 
-    if (SUCCESS == GetCurrLocalToFrustumTrans(localToFrustumTransform) && !localToFrustumTransform.IsIdentity())
+    if (SUCCESS == GetCurrLocalToWorldTrans(localToWorldTransform) && !localToWorldTransform.IsIdentity())
         {
-        DMatrix4d   localToFrustum = DMatrix4d::From(localToFrustumTransform);
-        localToView.InitProduct (localToView, localToFrustum);
+        DMatrix4d   localToWorld = DMatrix4d::From(localToWorldTransform);
+        localToView.InitProduct (localToView, localToWorld);
         }
 
     return localToView;
@@ -2624,14 +2610,14 @@ void ViewContext::_DrawAligned (DVec3dCR axis, DPoint3dCR origin, AlignmentMode 
     {
     DPoint4d            zColumn4d;
     DVec3d              zColumn;
-    DMatrix4d           toNpc = GetFrustumToNpc().M0;
-    Transform           localToFrustumTransform;
+    DMatrix4d           toNpc = GetWorldToNpc().M0;
+    Transform           localToWorldTransform;
 
-    if (SUCCESS == GetCurrLocalToFrustumTrans (localToFrustumTransform))
+    if (SUCCESS == GetCurrLocalToWorldTrans (localToWorldTransform))
         {
-        DMatrix4d       localToFrustum = DMatrix4d::From (localToFrustumTransform);
+        DMatrix4d       localToWorld = DMatrix4d::From (localToWorldTransform);
 
-        toNpc.InitProduct (toNpc, localToFrustum);
+        toNpc.InitProduct (toNpc, localToWorld);
         }
 
     DVec3d      axisLocal;

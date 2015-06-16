@@ -2778,7 +2778,7 @@ void ElementGeometryCollection::Iterator::ToNext()
                 if (!reader.Get(egOp, subCategory, geomToWorld))
                     break;
 
-                if (nullptr != m_context->GetCurrLocalToFrustumTransformCP())
+                if (nullptr != m_context->GetCurrLocalToWorldTransformCP())
                     m_context->PopTransformClip(); // Pop previous sub-category/transform...
 
                 m_context->PushTransform(geomToWorld);
@@ -2955,7 +2955,7 @@ TransformCR ElementGeometryCollection::GetElementToWorld()
 +---------------+---------------+---------------+---------------+---------------+------*/
 TransformCR ElementGeometryCollection::GetGeometryToWorld()
     {
-    TransformCP currentTrans = m_context->GetCurrLocalToFrustumTransformCP();
+    TransformCP currentTrans = m_context->GetCurrLocalToWorldTransformCP();
 
     if (nullptr != currentTrans)
         m_geomToWorld = *currentTrans;

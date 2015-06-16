@@ -54,7 +54,7 @@ void AnnounceCurrentState()
 
     GetCurrentMatSymb (currentMatSymb);
 
-    m_dropObj->_AnnounceTransform (m_context->GetCurrLocalToFrustumTransformCP());
+    m_dropObj->_AnnounceTransform (m_context->GetCurrLocalToWorldTransformCP());
     m_dropObj->_AnnounceElemMatSymb (currentMatSymb);
     m_dropObj->_AnnounceElemDisplayParams (*m_context->GetCurrentDisplayParams());
     }
