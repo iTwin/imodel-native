@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-#include <BentleyApi/BentleyApi.h>
+#include <Bentley/Bentley.h>
 #include <Bentley/bset.h>
 
 /** @namespace BentleyApi::BeSQLite Classes used to access a SQLite database. */
@@ -139,8 +139,8 @@ character set. However, applications can extend BeSQLite by implementing the #Be
 #define PROPERTY_APPNAME_Package "pkge_Main"
 #define PROPERTY_APPNAME_Imodel  "imodel"
 
-#define BEGIN_BENTLEY_SQLITE_NAMESPACE BEGIN_BENTLEY_API_NAMESPACE namespace BeSQLite {
-#define END_BENTLEY_SQLITE_NAMESPACE   } END_BENTLEY_API_NAMESPACE
+#define BEGIN_BENTLEY_SQLITE_NAMESPACE BEGIN_BENTLEY_NAMESPACE namespace BeSQLite {
+#define END_BENTLEY_SQLITE_NAMESPACE   } END_BENTLEY_NAMESPACE
 #define USING_NAMESPACE_BENTLEY_SQLITE using namespace BentleyApi::BeSQLite;
 
 #include <Bentley/BeFile.h>
@@ -166,7 +166,7 @@ character set. However, applications can extend BeSQLite by implementing the #Be
 #define BESQLITE_TYPEDEFS(_name_) \
     BEGIN_BENTLEY_SQLITE_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_SQLITE_NAMESPACE
 
-BENTLEY_API_TYPEDEFS (BeGuid);
+BENTLEY_NAMESPACE_TYPEDEFS (BeGuid);
 BESQLITE_TYPEDEFS (Db);
 BESQLITE_TYPEDEFS (DbFile);
 BESQLITE_TYPEDEFS (Statement);
@@ -187,7 +187,7 @@ typedef struct _CLzma2EncProps CLzma2EncProps;
 typedef struct _CLzmaEncProps CLzmaEncProps;
 #endif // DOCUMENTATION_GENERATOR
 
-BEGIN_BENTLEY_API_NAMESPACE
+BEGIN_BENTLEY_NAMESPACE
 typedef struct BeGuid BeDbGuid;
 typedef Byte const* ByteCP;
 
@@ -444,7 +444,7 @@ struct BeLuid
     BE_SQLITE_EXPORT void CreateRandom();
 };
 
-END_BENTLEY_API_NAMESPACE
+END_BENTLEY_NAMESPACE
 
 BEGIN_BENTLEY_SQLITE_NAMESPACE
 

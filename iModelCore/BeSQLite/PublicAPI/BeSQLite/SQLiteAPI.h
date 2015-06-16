@@ -40,12 +40,12 @@
 #define _SQLITE3_H_
 #include <stdarg.h>     /* Needed for the definition of va_list */
 
-#include <BentleyApi/BentleyApi.h>
+#include <Bentley/Bentley.h>
 /*
 ** Make sure we can call this stuff from C++.
 */
-#define BEGIN_BENTLEY_SQLITE_NAMESPACE BEGIN_BENTLEY_API_NAMESPACE namespace BeSQLite {
-#define END_BENTLEY_SQLITE_NAMESPACE   } END_BENTLEY_API_NAMESPACE
+#define BEGIN_BENTLEY_SQLITE_NAMESPACE BEGIN_BENTLEY_NAMESPACE namespace BeSQLite {
+#define END_BENTLEY_SQLITE_NAMESPACE   } END_BENTLEY_NAMESPACE
 #define USING_NAMESPACE_BENTLEY_SQLITE using namespace BentleyApi::BeSQLite;
 
 BEGIN_BENTLEY_SQLITE_NAMESPACE 
