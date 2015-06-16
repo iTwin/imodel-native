@@ -188,7 +188,7 @@
     - Type of ECClasses that are mapped using the @b TableForThisClass strategy by default.
         - Domain ECClasses
         - Struct ECClasses
-    - ECRelationshipClasses are either mapped to the table of one of the constraint ends (aka foreign key mapping or EndTable mapping)
+    - ECRelationshipClasses are either mapped to the table of one of the constraint ends (ForeignKey mapping)
     or to a link table.
         - ECRelationshipClasses with cardinality 1:1 or 0:N
             - If source or target constraints end-up in a single table on each side then @b EndTable mapping will be used.
@@ -197,8 +197,7 @@
             - <em>ECDbRelationshipClassHint.PreferredDirection</em> can be use to specify which direction to optimize. This effect default indexes.
         - Relationship with cardinality N:N is always mapped using the @b LinkTable mapping.
         - A default index is created on the key columns in accordance with the cardinality. 
-        - <em>ECDbRelationshipClassHint.AllowDuplicateRelationships</em> is set to false by default.
-        - No referential integrity constraints are added. (See @ref ECDbRelationshipConstraintHintDescription for how to overwrite this)
+        - No referential integrity constraints are created. (See @ref CustomRelationshipMapDescription for how to overwrite this)
 
     @section CustomSchemaMapDescription Custom mapping or ECSchemas
     
