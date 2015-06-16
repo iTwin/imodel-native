@@ -213,7 +213,7 @@
             <SchemaMap xmlns="ECDbMap.01.00">
                 <TablePrefix>sp</TablePrefix>
             </SchemaMap>
-        </ECCustomAttributes>​
+        </ECCustomAttributes>
 
     @section CustomClassMapDescription Custom mapping for ECClasses
     
