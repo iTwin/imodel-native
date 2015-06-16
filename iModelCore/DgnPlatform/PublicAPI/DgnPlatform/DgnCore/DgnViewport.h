@@ -680,12 +680,6 @@ public:
     //! @return the current TBGR hilite color.
     DGNPLATFORM_EXPORT ColorDef GetHiliteColor() const;
 
-    //! Get the hilite color value for an element. Elements currently in the Selection Set
-    //! are hilited with the Selection Set Color and elements that are not in the selection set use the normal hilite color.
-    //! @param[in]          element to check
-    //! @return             the hilite color for \c path
-    DGNPLATFORM_EXPORT ColorDef GetHiliteColor(GeometricElementCR element) const;
-
     //! Set the current display symbology for this DgnViewport by TBGR color values, a pixel width, and 0-7 line code.
     //! @param[in]          lineColor Line color
     //! @param[in]          fillColor Fill color

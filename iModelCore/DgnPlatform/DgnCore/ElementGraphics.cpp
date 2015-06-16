@@ -282,6 +282,11 @@ void ElementGraphicsOutput::Process (IElementGraphicsProcessorR dropObj, Geometr
         //       creating a ISolidKernelEntity un-neccesarily even when Parasolid is available.
         if (!dropObj._ProcessAsBody(true) && !dropObj._ProcessAsFacets(false))
             {
+            if (context.ElementIsUndisplayed(element))
+                return;
+
+            context.SetCurrentElement(&element);
+
             ElementGeometryCollection collection(element);
 
             collection.SetBRepOutput(ElementGeometryCollection::BRepOutput::Edges | ElementGeometryCollection::BRepOutput::FaceIso);
@@ -298,6 +303,7 @@ void ElementGraphicsOutput::Process (IElementGraphicsProcessorR dropObj, Geometr
                 context.PopTransformClip();
                 }
 
+            context.SetCurrentElement(nullptr);
             return;
             }
         }
