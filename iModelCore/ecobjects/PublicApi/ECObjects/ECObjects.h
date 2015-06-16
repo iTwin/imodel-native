@@ -8,7 +8,7 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-#include <BentleyApi/BentleyApi.h>
+#include <Bentley/Bentley.h>
 #include <Bentley/BeAssert.h>
 
 #ifdef __ECOBJECTS_BUILD__
@@ -17,8 +17,8 @@
     #define ECOBJECTS_EXPORT IMPORT_ATTRIBUTE
 #endif
 
-#define BEGIN_BENTLEY_ECOBJECT_NAMESPACE    BEGIN_BENTLEY_API_NAMESPACE namespace ECN {
-#define END_BENTLEY_ECOBJECT_NAMESPACE      } END_BENTLEY_API_NAMESPACE
+#define BEGIN_BENTLEY_ECOBJECT_NAMESPACE    BEGIN_BENTLEY_NAMESPACE namespace ECN {
+#define END_BENTLEY_ECOBJECT_NAMESPACE      } END_BENTLEY_NAMESPACE
 #define USING_NAMESPACE_EC                  using namespace BentleyApi::ECN;
 
 #define EC_TYPEDEFS(_name_)  \
