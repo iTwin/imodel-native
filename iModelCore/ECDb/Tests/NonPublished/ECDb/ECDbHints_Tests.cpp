@@ -159,8 +159,6 @@ struct ECDbMapCATests : public ::testing::Test
             auto caInst = caInstClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
             ASSERT_TRUE (caInst != nullptr);
             ASSERT_TRUE (caInst->SetValue (L"AllowDuplicateRelationships", ECValue (true)) == ECOBJECTS_STATUS_Success);
-            ASSERT_TRUE (oneFooHasOneGoo->SetCustomAttribute (*caInst) == ECOBJECTS_STATUS_Success);
-            ASSERT_TRUE (oneFooHasManyGoo->SetCustomAttribute (*caInst) == ECOBJECTS_STATUS_Success);
             ASSERT_TRUE (manyFooHasManyGoo->SetCustomAttribute (*caInst) == ECOBJECTS_STATUS_Success);
             }
 
@@ -172,15 +170,7 @@ struct ECDbMapCATests : public ::testing::Test
             ASSERT_TRUE (caInst != nullptr);
             const WCharCP enforceReferentialIntegrityProperty = L"ForeignKey.EnforceReferentialIntegrity";
             ASSERT_TRUE (caInst->SetValue (enforceReferentialIntegrityProperty, ECValue (true)) == ECOBJECTS_STATUS_Success);
-
-            ECRelationshipConstraintR targetOnetoOne = oneFooHasOneGoo->GetTarget ();
-            ASSERT_TRUE (targetOnetoOne.SetCustomAttribute (*caInst) == ECOBJECTS_STATUS_Success);
-
-            ECRelationshipConstraintR targetOneToMany = oneFooHasManyGoo->GetTarget ();
-            ASSERT_TRUE (targetOneToMany.SetCustomAttribute (*caInst) == ECOBJECTS_STATUS_Success);
-
-            ECRelationshipConstraintR targetManyToMany = manyFooHasManyGoo->GetTarget ();
-            ASSERT_TRUE (targetManyToMany.SetCustomAttribute (*caInst) == ECOBJECTS_STATUS_Success);
+            ASSERT_TRUE(oneFooHasOneGoo->SetCustomAttribute(*caInst) == ECOBJECTS_STATUS_Success);
             }
 
         ASSERT_EQ (ecdb.Schemas ().ImportECSchemas (readContext->GetCache ()), BentleyStatus::SUCCESS);

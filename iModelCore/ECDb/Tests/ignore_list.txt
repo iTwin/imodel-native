@@ -21,8 +21,6 @@ FieldEngineer.RelationshipIssue
 # TFS Defect 170652 and 170717
 InstanceCRUDTests.InsertUpdateDeleteTest
 
-#this fail due to addition of a new version of schema. Since reference schema is loaded using latest version it load the new once
-FieldEngineer.RelationshipIssue
 #TFS Defects 186409,186444, 186457, 186461
 ECDbMapPersistenceTests.MappingStrategyTest
 #TFS Defect 201187

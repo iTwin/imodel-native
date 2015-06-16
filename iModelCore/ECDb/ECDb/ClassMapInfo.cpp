@@ -569,8 +569,45 @@ BentleyStatus RelationshipMapInfo::_InitializeFromSchema()
 
     auto relClass = GetECClass ().GetRelationshipClassCP ();
     BeAssert (relClass != nullptr);
+
+    ECDbForeignKeyRelationshipMap foreignKeyRelMap;
+    const bool hasForeignKeyRelMap = ECDbMapCustomAttributeHelper::TryGetForeignKeyRelationshipMap(foreignKeyRelMap, *relClass);
     ECDbLinkTableRelationshipMap linkTableRelationMap;
-    if (ECDbMapCustomAttributeHelper::TryGetLinkTableRelationshipMap(linkTableRelationMap, *relClass))
+    const bool hasLinkTableRelMap = ECDbMapCustomAttributeHelper::TryGetLinkTableRelationshipMap(linkTableRelationMap, *relClass);
+
+    if (hasForeignKeyRelMap && hasLinkTableRelMap)
+        {
+        LOG.errorv(L"ECRelationshipClass '%ls' can only have either the ForeignKeyRelationshipMap or the LinkTableRelationshipMap custom attribute but not both.",
+                   GetECClass().GetFullName());
+        return ERROR;
+        }
+
+    if (hasForeignKeyRelMap)
+        {
+        ECRelationshipEnd foreignKeyEnd = ECRelationshipEnd_Target;
+        if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetForeignKeyEnd(foreignKeyEnd))
+            return ERROR;
+
+        ECDbRelationshipConstraintMap* foreignKeyMap = nullptr;
+        if (foreignKeyEnd == ECRelationshipEnd_Target)
+            {
+            foreignKeyMap = &m_targetMapInfo;
+            m_sourceMapInfoIsNull = true;
+            m_targetMapInfoIsNull = false;
+            m_customMapType = RelationshipMapInfo::CustomMapType::ForeignKeyOnTarget;
+            }
+        else
+            {
+            foreignKeyMap = &m_sourceMapInfo;
+            m_sourceMapInfoIsNull = false;
+            m_targetMapInfoIsNull = true;
+            m_customMapType = RelationshipMapInfo::CustomMapType::ForeignKeyOnSource;
+            }
+
+        return (ECOBJECTS_STATUS_Success == foreignKeyRelMap.TryGetForeignKey(*foreignKeyMap)) ? SUCCESS : ERROR;
+        }
+    
+    if (hasLinkTableRelMap)
         {
         if (ECOBJECTS_STATUS_Success != linkTableRelationMap.TryGetAllowDuplicateRelationships(m_allowDuplicateRelationships))
             return ERROR;
@@ -580,39 +617,10 @@ BentleyStatus RelationshipMapInfo::_InitializeFromSchema()
 
         if (ECOBJECTS_STATUS_Success != linkTableRelationMap.TryGetTarget(m_targetMapInfo))
             return ERROR;
-        
+
         m_sourceMapInfoIsNull = false;
         m_targetMapInfoIsNull = false;
         m_customMapType = RelationshipMapInfo::CustomMapType::LinkTable;
-        }
-    else
-        {
-        ECDbForeignKeyRelationshipMap foreignKeyRelMap;
-        if (ECDbMapCustomAttributeHelper::TryGetForeignKeyRelationshipMap(foreignKeyRelMap, *relClass))
-            {
-            ECRelationshipEnd foreignKeyEnd = ECRelationshipEnd_Target;
-            if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetForeignKeyEnd(foreignKeyEnd))
-                return ERROR;
-
-            ECDbRelationshipConstraintMap* foreignKeyMap = nullptr;
-            if (foreignKeyEnd == ECRelationshipEnd_Target)
-                {
-                foreignKeyMap = &m_targetMapInfo;
-                m_sourceMapInfoIsNull = true;
-                m_targetMapInfoIsNull = false;
-                m_customMapType = RelationshipMapInfo::CustomMapType::ForeignKeyOnTarget;
-                }
-            else
-                {
-                foreignKeyMap = &m_sourceMapInfo;
-                m_sourceMapInfoIsNull = false;
-                m_targetMapInfoIsNull = true;
-                m_customMapType = RelationshipMapInfo::CustomMapType::ForeignKeyOnSource;
-                }
-
-            if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetForeignKey(*foreignKeyMap))
-                return ERROR;
-            }
         }
 
     return SUCCESS;
@@ -880,7 +888,7 @@ ECRelationshipClassCR relationshipClass
     if (!(nSourceTables == 1 && nTargetTables == 1))
         {
         // We don't persist at an end that has more than one table
-        LOG.warningv(L"Cannot map ECRelationshipClass %ls to end table as more than one end table exists on either end. Mapping to link table instead.",
+        LOG.infov(L"ECRelationshipClass %ls is mapped to link table as more than one end tables exists on either end.",
                      relationshipClass.GetFullName());
         strategy = Strategy::TableForThisClass;
         return true;
