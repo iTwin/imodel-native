@@ -989,7 +989,17 @@ const std::vector<ECDbSqlTable const*> ECDbSqlDb::GetTables () const
 
     return tables;
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+const std::vector<ECDbSqlTable*> ECDbSqlDb::GetTablesR ()
+    {
+    std::vector<ECDbSqlTable*> tables;
+    for (auto const& key : m_tables)
+        tables.push_back (key.second.get ());
 
+    return tables;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
@@ -2306,7 +2316,29 @@ DbResult ECDbSqlPersistence::Read (ECDbSqlDb& o)
 
     return stat;
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        01/2015
+//---------------------------------------------------------------------------------------
+DbResult ECDbSqlPersistence::ReadForignKeys (ECDbSqlDb& o)
+    {
+    auto stat = BE_SQLITE_DONE;
+    for (auto table : o.GetTablesR())
+        {
+        auto canEdit = table->GetEditHandle ().CanEdit ();
+        if (!canEdit)
+            table->GetEditHandleR ().BeginEdit ();
 
+        //read foreign key
+        auto stat = ReadForeignKeys (*table);
+        if (stat != BE_SQLITE_DONE)
+            return stat;
+
+        if (!canEdit)
+            table->GetEditHandleR ().EndEdit ();
+        }
+
+    return stat;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
@@ -2326,6 +2358,8 @@ DbResult ECDbSqlPersistence::ReadTables (ECDbSqlDb& o)
 
     if (stat != BE_SQLITE_DONE)
         return stat;
+
+
 
     return stat;
     }
@@ -2358,11 +2392,6 @@ DbResult ECDbSqlPersistence::ReadTable (Statement& stmt, ECDbSqlDb& o)
     n->SetId (id);
     // Read columns
     DbResult stat = ReadColumns (*n);
-    if (stat != BE_SQLITE_DONE)
-        return stat;
-
-    //read foreign key
-    stat = ReadForeignKeys (*n);
     if (stat != BE_SQLITE_DONE)
         return stat;
 

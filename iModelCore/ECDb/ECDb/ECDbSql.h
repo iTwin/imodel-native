@@ -271,6 +271,7 @@ struct ECDbSqlDb : NonCopyableClass
         const std::vector<ECDbSqlIndex const*> GetIndexes () const;
         std::vector<ECDbSqlIndex*> GetIndexesR ();
         const std::vector<ECDbSqlTable const*> GetTables () const;
+        const std::vector<ECDbSqlTable*> GetTablesR ();
         virtual  ~ECDbSqlDb () {}
         StringPool const& GetStringPool () const { return m_stringPool; }
         StringPool& GetStringPoolR ()  { return m_stringPool; }
@@ -1057,6 +1058,7 @@ struct ECDbSqlPersistence : NonCopyableClass
         DbResult ReadTable (Statement& stmt, ECDbSqlDb& o);
         DbResult ReadColumns (ECDbSqlTable& o);
         DbResult ReadIndexes (ECDbSqlDb& o);
+        DbResult ReadForignKeys (ECDbSqlDb& o);
         DbResult ReadColumn (Statement& stmt, ECDbSqlTable& o, std::map<size_t, ECDbSqlColumn const*>& primaryKeys);
         DbResult ReadIndex (Statement& stmt, ECDbSqlDb& o);
         DbResult ReadForeignKeys (ECDbSqlTable& o);
