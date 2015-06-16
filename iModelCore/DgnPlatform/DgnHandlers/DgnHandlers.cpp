@@ -124,33 +124,6 @@ void DgnPlatformLib::Initialize (Host& host, bool loadResources, bool adoptHost)
         }
     }
 
-#if defined (BENTLEY_WIN32)
-#include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
-//=======================================================================================
-// WIP: experimental Graphite / Vancouver interop
-// @bsiclass                                    Shaun.Sewall                    03/14
-//=======================================================================================
-struct DefaultLibraryHost : DgnPlatformLib::Host
-{
-    virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override {return *new WindowsKnownLocationsAdmin();}
-    virtual void _SupplyProductName (Utf8StringR name) override {name.assign ("DefaultLibraryHost");}
-    virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() {return BeSQLite::L10N::SqlangFiles(BeFileName());} // no translatable strings
-};
-#endif
-
-//---------------------------------------------------------------------------------------
-// WIP: experimental Graphite / Vancouver interop
-// @bsimethod                                   Shaun.Sewall                    03/14
-//---------------------------------------------------------------------------------------
-void DgnPlatformLib::Initialize ()
-    {
-#if defined (BENTLEY_WIN32)
-    DgnPlatformLib::Initialize (*new DefaultLibraryHost(), true);
-#else
-    BeAssert (false);
-#endif
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/09
 +---------------+---------------+---------------+---------------+---------------+------*/

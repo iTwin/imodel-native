@@ -212,16 +212,15 @@ protected:
     DGNPLATFORM_EXPORT virtual void _ToPropertiesJson(Json::Value&) const;
     DGNPLATFORM_EXPORT virtual void _FromPropertiesJson(Json::Value const&);
     DGNPLATFORM_EXPORT virtual DPoint3d _GetGlobalOrigin() const;
-    DGNPLATFORM_EXPORT virtual DgnModelStatus _OnUpdateElement(DgnElementCR original, DgnElementR replacement);
-    DGNPLATFORM_EXPORT virtual void _OnUpdatedElement(DgnElementCR element);
-    DGNPLATFORM_EXPORT virtual void _OnUpdateElementFailed(DgnElementCR original);
-    DGNPLATFORM_EXPORT virtual DgnModelStatus _OnInsertElement(DgnElementR element);
-    DGNPLATFORM_EXPORT virtual DgnModelStatus _OnDeleteElement(DgnElementCR element);
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdateElement(DgnElementCR modified, DgnElementCR original);
+    DGNPLATFORM_EXPORT virtual void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original);
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element);
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDeleteElement(DgnElementCR element);
     DGNPLATFORM_EXPORT virtual void _OnLoadedElement(DgnElementCR el);
     DGNPLATFORM_EXPORT virtual void _OnInsertedElement(DgnElementCR el);
     DGNPLATFORM_EXPORT virtual void _OnDeletedElement(DgnElementCR element);
     DGNPLATFORM_EXPORT virtual void _OnModelFillComplete();
-    DGNPLATFORM_EXPORT virtual DgnFileStatus _FillModel();
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _FillModel();
     virtual DgnModel2dCP _ToDgnModel2d() const {return nullptr;}
     virtual DgnModel3dCP _ToDgnModel3d() const {return nullptr;}
     virtual PhysicalModelCP _ToPhysicalModel() const {return nullptr;}
@@ -235,6 +234,7 @@ protected:
     void ReleaseAllElements();
     void AddToRangeIndex(DgnElementCR);
     void RemoveFromRangeIndex(DgnElementCR);
+    void UpdateRangeIndex(DgnElementCR modified, DgnElementCR original);
 
 public:
     //! Add non-element graphics for this DgnModel to the scene.
@@ -272,8 +272,8 @@ public:
     DGNPLATFORM_EXPORT void Empty();
 
     //! Load all elements of this DgnModel.
-    //! @note if this DgnModel is already filled, this method does nothing and returns DGNFILE_STATUS_Success.
-    DgnFileStatus FillModel() {return _FillModel();}
+    //! @note if this DgnModel is already filled, this method does nothing and returns DgnDbStatus::Success.
+    DgnDbStatus FillModel() {return _FillModel();}
 
     //! Determine whether this DgnModel has been "filled" from disk or not.
     //! @return true if the DgnModel is filled.
@@ -383,7 +383,7 @@ protected:
     DPoint3d _GetGlobalOrigin() const override {return DPoint3d::From(m_globalOrigin);}
     DgnModel2dCP _ToDgnModel2d() const override {return this;}
 
-    DGNPLATFORM_EXPORT virtual DgnModelStatus _OnInsertElement(DgnElementR element);
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element);
 
 public:
     void SetGlobalOrigin(DPoint2dCR org) {m_globalOrigin = org;}
@@ -491,8 +491,8 @@ public:
 
 //=======================================================================================
 //! A sheet model is a GraphicsModel2d that has the following characteristics:
-//! -- Has fixed extents (is not infinite), specified in meters.
-//! -- Can contain @b views of other models, like pictures pasted on a photo album.
+//!     - Has fixed extents (is not infinite), specified in meters.
+//!     - Can contain @b views of other models, like pictures pasted on a photo album.
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================

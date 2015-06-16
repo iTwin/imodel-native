@@ -40,6 +40,8 @@ DGNPLATFORM_TYPEDEFS(DimArcInfo)
 DGNPLATFORM_TYPEDEFS(DimDerivedData)
 DGNPLATFORM_TYPEDEFS(DimOptionBlockHeader)
 
+#define DIM_BLOCK_ALIGNED(typeName,pointerName) typeName localVar; if (NULL != pointerName) {memcpy (&localVar, pointerName, sizeof(typeName)); pointerName = &localVar; }
+
 /*======================================================================+
 |                                                                       |
 |   Function Definitions                                                |

@@ -271,7 +271,7 @@ bool BeSQLiteRealityDataStorage::wt_Prepare(DatabasePrepareAndCleanupHandler con
         // Stop all current transactions with savepoint <commit>. Enable auto VACUUM for database. Resume operations with <begin>.
         BeSQLite::Savepoint* savepoint = m_database.GetSavepoint(0);
         if (NULL != savepoint)
-            savepoint->Commit();
+            savepoint->Commit(nullptr);
 
         m_database.TryExecuteSql("PRAGMA auto_vacuum = FULL");
         m_database.TryExecuteSql("VACUUM");

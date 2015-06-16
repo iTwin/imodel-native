@@ -133,8 +133,6 @@ protected:
     //! logic to affect that purpose, plus filters for category and models. To add additional, application-specific criteria to the query, override this method, call
     //! T_Super::_GetRTreeMatchSql, and append your filters as additional "AND" clauses on that string. Then, return the new combined SQL statement.
     //! @param viewport The viewport where the query model is to be displayed.
-    //! @note It is very important that the "rTreeMatch" function be the primary discriminator in the query plan. To ensure that, you must always precede
-    //! column names in your SQL with a "+" to force SQLite to ignore any indexes on that column.
     /**
        $SAMPLECODE_BEGIN[QueryView_GetRTreeMatchSql,Example]
 __PUBLISH_INSERT_FILE__  QueryView_GetRTreeMatchSql.sampleCode
@@ -142,7 +140,7 @@ __PUBLISH_INSERT_FILE__  QueryView_GetRTreeMatchSql.sampleCode
      */
     DGNPLATFORM_EXPORT virtual Utf8String _GetRTreeMatchSql (DgnViewportR viewport);
 
-    DGNPLATFORM_EXPORT void BindModelAndCategory (BeSQLiteStatementR stmt) const;
+    DGNPLATFORM_EXPORT void BindModelAndCategory (BeSQLite::StatementR stmt) const;
 
     //! Compute the range of the elements and graphics in the QueryModel.
     //! @remarks This function may also load elements to determine the range.

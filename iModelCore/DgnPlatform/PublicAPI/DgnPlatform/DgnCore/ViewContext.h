@@ -382,8 +382,8 @@ protected:
     EdgeMaskState           m_edgeMaskState;
     DgnElement::Hilited     m_hiliteState;
     RasterDisplayParams     m_rasterDisplayParams;
-    IElemTopologyP          m_currElemTopo;
-    DgnGeomPartId           m_currGeomPart;
+    IElemTopologyPtr        m_currElemTopo;
+    T_GeomPrimitiveId       m_currGeomPrimitiveId;
 
     bool                    m_scanRangeValid;
     double                  m_levelOfDetail;
@@ -449,8 +449,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _ClearZ ();
     DGNPLATFORM_EXPORT virtual ScanCriteria::Result _CheckNodeRange(ScanCriteriaCR, DRange3dCR, bool is3d);
     DGNPLATFORM_EXPORT virtual void _DrawAligned (DVec3dCR axis, DPoint3dCR origin, AlignmentMode type, IStrokeAligned& stroker);
-    DGNPLATFORM_EXPORT virtual void _SetLocatePriority (int priority);
-    DGNPLATFORM_EXPORT virtual void _SetNonSnappable (bool unsnappable);
 
     DGNPLATFORM_EXPORT ViewContext ();
     DGNPLATFORM_EXPORT virtual ~ViewContext ();
@@ -485,7 +483,7 @@ public:
     DGNPLATFORM_EXPORT void Detach ();
     DGNPLATFORM_EXPORT bool VisitAllModelElements (bool includeTransients); // DgnModelListP includeList, bool useUpdateSequence, bool includeRefs, bool includeTransients);
     DGNPLATFORM_EXPORT bool VisitAllViewElements (bool includeTransients, BSIRectCP updateRect); // DgnModelListP includeList, bool useUpdateSequence, bool includeRefs, bool includeTransients);
-    DGNPLATFORM_EXPORT StatusInt VisitHit (HitPathCR hit);
+    DGNPLATFORM_EXPORT StatusInt VisitHit (HitDetailCR hit);
     DGNPLATFORM_EXPORT void VisitTransientGraphics (bool isPreUpdate);
     DGNPLATFORM_EXPORT BentleyStatus GetCurrLocalToWorldTrans (DMatrix4dR localToWorld) const;
     DGNPLATFORM_EXPORT void DrawBox (DPoint3dP box, bool is3d);
@@ -905,19 +903,19 @@ DGNPLATFORM_EXPORT IPickGeomP GetIPickGeom ();
 
 /// @name Identifying element "topology".
 //@{
-//! Query the current IElementTopology. @note do not delete this pointer.
+//! Query the current IElementTopology.
 //! @return An object that holds additional information about the graphics that are currently being drawn.
-DGNPLATFORM_EXPORT IElemTopologyP GetElemTopology ();
+DGNPLATFORM_EXPORT IElemTopologyCP GetElemTopology () const;
 
-//! Set the current IElementTopology. @note ViewContext stores this pointer. Do not delete this pointer while the ViewContext is holding it. Call SetElemTopology(nullptr) to clear the pointer held by ViewContext.
-//! @param topo  An object that holds additional information about the graphics that are currently being drawn or nullptr to clear the current topology pointer.
+//! Set the current IElementTopology.
+//! @param topo An object holding additional information about the graphics to be drawn or nullptr to clear the current topology pointer.
 DGNPLATFORM_EXPORT void SetElemTopology (IElemTopologyP topo);
 
-//! Query the current DgnGeomPartId. Only valid when drawing instanced geometry.
-DGNPLATFORM_EXPORT DgnGeomPartId GetDgnGeomPartId ();
+//! Query the current T_GeomPrimitiveId.
+DGNPLATFORM_EXPORT T_GeomPrimitiveId GetGeomPrimitiveId () const;
 
-//! Set the current DgnGeomPartId. Only valid when drawing instanced geometry.
-DGNPLATFORM_EXPORT void SetDgnGeomPartId (DgnGeomPartId partId);
+//! Set the current T_GeomPrimitiveId.
+DGNPLATFORM_EXPORT void SetGeomPrimitiveId (T_GeomPrimitiveId geomId);
 
 //@}
 

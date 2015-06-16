@@ -12,15 +12,12 @@
 //=======================================================================================
 struct GeomBlobHeader
 {
-enum
-    {
-    DB_GeomSignature06 = 0x0600, // Graphite06
-    };
+enum {Signature = 0x0600,}; // DgnDb06
 
-uint32_t m_signature;    // write this so we can detect errors on read
+uint32_t m_signature; // write this so we can detect errors on read
 uint32_t m_size;
-GeomBlobHeader(uint32_t size) {m_signature = DB_GeomSignature06; m_size=size;}
-GeomBlobHeader(BeSQLite::SnappyReader& in) {uint32_t actuallyRead; in._Read ((Byte*) this, sizeof(*this), actuallyRead);}
+GeomBlobHeader(GeomStream const& geom) {m_signature = Signature; m_size=geom.GetSize();}
+GeomBlobHeader(BeSQLite::SnappyReader& in) {uint32_t actuallyRead; in._Read((Byte*) this, sizeof(*this), actuallyRead);}
 };
 
 //=======================================================================================
@@ -36,17 +33,17 @@ protected:
     void ExecStatement();
     void PrepareInsertStatement();
     void PrepareUpdateStatement();
-    StatusInt SaveGeomPartToRow (const void* geometryBlob, int geometryBlobSize, Utf8CP code, DgnGeomPartId geomPartId);
+    StatusInt SaveGeomPartToRow(GeomStreamCR, Utf8CP code, DgnGeomPartId geomPartId);
 
 public:
-    DbGeomPartsWriter (DgnDbR db) : m_dgndb(db) {}
+    DbGeomPartsWriter(DgnDbR db) : m_dgndb(db) {}
 
-    DgnGeomPartId InsertGeomPart (const void* geometryBlob, int geometryBlobSize, Utf8CP code);
-    BentleyStatus UpdateGeomPart (DgnGeomPartId geomPartId, const void* geometryBlob, int geometryBlobSize, Utf8CP code);
+    DgnGeomPartId InsertGeomPart(GeomStreamCR, Utf8CP code);
+    BentleyStatus UpdateGeomPart(DgnGeomPartId geomPartId, GeomStreamCR, Utf8CP code);
 
-    static int GetColumnIndexForId()            {return 1;}     // Must match columns in PrepareInsertStatement & PrepareUpdateStatement
-    static int GetColumnIndexForCode()          {return 2;}     // Must match columns in PrepareInsertStatement & PrepareUpdateStatement
-    static int GetColumnIndexForGeom()          {return 3;}     // Must match columns in PrepareInsertStatement & PrepareUpdateStatement
+    static int GetColumnIndexForId()   {return 1;} // Must match columns in PrepareInsertStatement & PrepareUpdateStatement
+    static int GetColumnIndexForCode() {return 2;} // Must match columns in PrepareInsertStatement & PrepareUpdateStatement
+    static int GetColumnIndexForGeom() {return 3;} // Must match columns in PrepareInsertStatement & PrepareUpdateStatement
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -61,7 +58,7 @@ void DbGeomPartsWriter::PrepareInsertStatement()
                 "Geom"  // 3
             ")VALUES(?,?,?)";
 
-    m_dgndb.GetCachedStatement (m_stmt, insertSql);
+    m_dgndb.GetCachedStatement(m_stmt, insertSql);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -75,7 +72,7 @@ void DbGeomPartsWriter::PrepareUpdateStatement()
                 "Geom=?3,"
             " WHERE Id=?1";
 
-    m_dgndb.GetCachedStatement (m_stmt, updateSql);
+    m_dgndb.GetCachedStatement(m_stmt, updateSql);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -96,7 +93,7 @@ void DbGeomPartsWriter::ExecStatement()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DbGeomPartsWriter::SaveGeomPartToRow(const void* geometryBlob, int geometryBlobSize, Utf8CP code, DgnGeomPartId geomPartId)
+StatusInt DbGeomPartsWriter::SaveGeomPartToRow(GeomStreamCR geom, Utf8CP code, DgnGeomPartId geomPartId)
     {
     m_stmt->BindId(GetColumnIndexForId(), geomPartId);
 
@@ -105,17 +102,17 @@ StatusInt DbGeomPartsWriter::SaveGeomPartToRow(const void* geometryBlob, int geo
     else
         m_stmt->BindNull(GetColumnIndexForCode());
 
-    if (0 == geometryBlobSize)
+    if (0 == geom.GetSize())
         {
         ExecStatement();
         return SUCCESS; // Is this an error?!?
         }
 
-    GeomBlobHeader  header((uint32_t) geometryBlobSize);
+    GeomBlobHeader  header(geom);
 
     m_snappy.Init();
-    m_snappy.Write((ByteCP) &header, sizeof (header));
-    m_snappy.Write((ByteCP) geometryBlob, (uint32_t)geometryBlobSize);
+    m_snappy.Write((ByteCP) &header, sizeof(header));
+    m_snappy.Write(geom.GetData(), geom.GetSize());
 
     uint32_t zipSize = m_snappy.GetCompressedSize();
 
@@ -129,13 +126,13 @@ StatusInt DbGeomPartsWriter::SaveGeomPartToRow(const void* geometryBlob, int geo
     m_stmt->BindZeroBlob(GetColumnIndexForGeom(), zipSize); // more than one chunk in graphics stream
     ExecStatement();
 
-    return m_snappy.SaveToRow (m_dgndb, DGN_TABLE(DGN_CLASSNAME_GeomPart), "Geom", geomPartId.GetValue());
+    return m_snappy.SaveToRow(m_dgndb, DGN_TABLE(DGN_CLASSNAME_GeomPart), "Geom", geomPartId.GetValue());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnGeomPartId DbGeomPartsWriter::InsertGeomPart(const void* geometryBlob, int geometryBlobSize, Utf8CP code)
+DgnGeomPartId DbGeomPartsWriter::InsertGeomPart(GeomStreamCR geom, Utf8CP code)
     {
     DgnGeomPartId geomPartId = m_dgndb.GeomParts().MakeNewGeomPartId();
 
@@ -144,20 +141,20 @@ DgnGeomPartId DbGeomPartsWriter::InsertGeomPart(const void* geometryBlob, int ge
 
     PrepareInsertStatement();
 
-    return (SUCCESS == SaveGeomPartToRow(geometryBlob, geometryBlobSize, code, geomPartId) ? geomPartId : DgnGeomPartId());
+    return (SUCCESS == SaveGeomPartToRow(geom, code, geomPartId) ? geomPartId : DgnGeomPartId());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DbGeomPartsWriter::UpdateGeomPart (DgnGeomPartId geomPartId, const void* geometryBlob, int geometryBlobSize, Utf8CP code)
+BentleyStatus DbGeomPartsWriter::UpdateGeomPart(DgnGeomPartId geomPartId, GeomStreamCR geom, Utf8CP code)
     {
     if (!geomPartId.IsValid())
         return ERROR;
 
     PrepareUpdateStatement();
 
-    return (SUCCESS == SaveGeomPartToRow(geometryBlob, geometryBlobSize, code, geomPartId) ? SUCCESS : ERROR);
+    return (SUCCESS == SaveGeomPartToRow(geom, code, geomPartId) ? SUCCESS : ERROR);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -170,12 +167,12 @@ DgnGeomPartId DgnGeomParts::GetHighestGeomPartId()
         BeLuid nextRepo(m_dgndb.GetRepositoryId().GetNextRepositoryId().GetValue(),0);
         Statement stmt;
         
-        stmt.Prepare (m_dgndb, "SELECT max(Id) FROM " DGN_TABLE(DGN_CLASSNAME_GeomPart) " WHERE Id<?");
-        stmt.BindInt64 (1,nextRepo.GetValue());
+        stmt.Prepare(m_dgndb, "SELECT max(Id) FROM " DGN_TABLE(DGN_CLASSNAME_GeomPart) " WHERE Id<?");
+        stmt.BindInt64(1,nextRepo.GetValue());
 
         DbResult result = stmt.Step();
         UNUSED_VARIABLE(result);
-        BeAssert (result == BE_SQLITE_ROW);
+        BeAssert(result == BE_SQLITE_ROW);
 
         m_highestGeomPartId.m_id = stmt.GetValueInt64(0);
         }
@@ -199,20 +196,9 @@ DgnGeomPartId DgnGeomParts::MakeNewGeomPartId()
 //---------------------------------------------------------------------------------------
 BentleyStatus DgnGeomParts::InsertGeomPart(DgnGeomPartR geomPart)
     {
-    ElementGeomIO::Writer writer(m_dgndb);
+    DbGeomPartsWriter writer(GetDgnDb());
+    DgnGeomPartId geomPartId = writer.InsertGeomPart(geomPart.GetGeomStream(), geomPart.GetCode());
 
-    for (ElementGeometryPtr elemGeom : geomPart.GetGeometry())
-        {
-        if (!elemGeom.IsValid())
-            continue;
-
-        writer.Append(*elemGeom);
-        }
-
-    if (0 == writer.m_buffer.size())
-        return BentleyStatus::ERROR;
-
-    DgnGeomPartId geomPartId = InsertGeomPart(&writer.m_buffer.front(), (uint32_t) writer.m_buffer.size(), geomPart.GetCode());
     if (!geomPartId.IsValid())
         return BentleyStatus::ERROR;
 
@@ -222,45 +208,12 @@ BentleyStatus DgnGeomParts::InsertGeomPart(DgnGeomPartR geomPart)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    01/2015
-//---------------------------------------------------------------------------------------
-DgnGeomPartId DgnGeomParts::InsertGeomPart(const void* geometryBlob, int geometryBlobSize, Utf8CP code)
-    {
-    if (0 == geometryBlobSize)
-        return DgnGeomPartId();
-
-    DbGeomPartsWriter writer(GetDgnDb());
-    return writer.InsertGeomPart (geometryBlob, geometryBlobSize, code);
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  02/2015
 //---------------------------------------------------------------------------------------
 BentleyStatus DgnGeomParts::UpdateGeomPart(DgnGeomPartR geomPart)
     {
-    ElementGeomIO::Writer writer(m_dgndb);
-
-    for (ElementGeometryPtr elemGeom : geomPart.GetGeometry())
-        {
-        if (!elemGeom.IsValid())
-            continue;
-
-        writer.Append(*elemGeom);
-        }
-
-    if (0 == writer.m_buffer.size())
-        return BentleyStatus::ERROR;
-
-    return UpdateGeomPart(geomPart.GetId(), &writer.m_buffer.front(), (uint32_t) writer.m_buffer.size(), geomPart.GetCode());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                  02/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus DgnGeomParts::UpdateGeomPart(DgnGeomPartId geomPartId, const void* geometryBlob, int geometryBlobSize, Utf8CP code)
-    {
     DbGeomPartsWriter writer(GetDgnDb());
-    return writer.UpdateGeomPart (geomPartId, geometryBlob, geometryBlobSize, code);
+    return writer.UpdateGeomPart(geomPart.GetId(), geomPart.GetGeomStream(), geomPart.GetCode());
     }
 
 //---------------------------------------------------------------------------------------
@@ -298,41 +251,37 @@ DgnGeomPartPtr DgnGeomParts::LoadGeomPart(DgnGeomPartId geomPartId)
    
     auto& elements = m_dgndb.Elements();
 
-    BeSQLite::CachedStatementPtr selectStmt;
-    elements.GetStatement(selectStmt, "SELECT Code FROM " DGN_TABLE(DGN_CLASSNAME_GeomPart) " WHERE Id=?");
-    selectStmt->BindId(1, geomPartId);
+    CachedStatementPtr stmt=elements.GetStatement("SELECT Code FROM " DGN_TABLE(DGN_CLASSNAME_GeomPart) " WHERE Id=?");
+    stmt->BindId(1, geomPartId);
 
-    DbResult result = selectStmt->Step();
+    DbResult result = stmt->Step();
     if (BE_SQLITE_ROW != result)
         return nullptr;
 
     SnappyFromBlob& snappy = elements.GetSnappyFrom();
     
-    if (ZIP_SUCCESS != snappy.Init (m_dgndb, DGN_TABLE(DGN_CLASSNAME_GeomPart), "Geom", geomPartId.GetValue()))
+    if (ZIP_SUCCESS != snappy.Init(m_dgndb, DGN_TABLE(DGN_CLASSNAME_GeomPart), "Geom", geomPartId.GetValue()))
         return nullptr;
 
-    GeomBlobHeader header (snappy);
-    if ((GeomBlobHeader::DB_GeomSignature06 != header.m_signature) || 0 == header.m_size)
+    GeomBlobHeader header(snappy);
+    if ((GeomBlobHeader::Signature != header.m_signature) || 0 == header.m_size)
         {
-        BeAssert (false);
+        BeAssert(false);
         return nullptr;
         }
 
-    ScopedArray<Byte, 8192> geometryBlob(header.m_size);
-    uint32_t actuallyRead;
-    snappy.ReadAndFinish(geometryBlob.GetData(), header.m_size, actuallyRead);
+    DgnGeomPartPtr geomPartPtr = new DgnGeomPart(stmt->GetValueText(0));
+    GeomStreamR    geom = geomPartPtr->GetGeomStreamR();
 
-    if (actuallyRead != header.m_size)
+    geom.ReserveMemory(header.m_size);
+    uint32_t actuallyRead;
+    snappy.ReadAndFinish(geom.GetDataR(), geom.GetSize(), actuallyRead);
+
+    if (actuallyRead != geom.GetSize())
         return nullptr;
 
-    DgnGeomPartPtr geomPartPtr = new DgnGeomPart(selectStmt->GetValueText(0));
-
-    ElementGeometryCollection collection(m_dgndb, geometryBlob.GetDataCP(), header.m_size);
-
-    for (ElementGeometryPtr geom : collection)
-        geomPartPtr->GetGeometryR().push_back (geom);
-
     geomPartPtr->SetId(geomPartId);
+
     return geomPartPtr;
     }
 
@@ -344,68 +293,9 @@ DgnGeomPartId DgnGeomParts::QueryGeomPartId(Utf8CP code)
     if (!code || !*code)
         return DgnGeomPartId();
 
-    CachedStatementPtr statement;
-    GetDgnDb().Elements().GetStatement(statement, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_GeomPart) " WHERE Code=?");
-
-    if (!statement.IsValid())
-        return DgnGeomPartId();
-
-    statement->BindText(1, code, Statement::MakeCopy::No);
-    if (BE_SQLITE_ROW != statement->Step())
-        return DgnGeomPartId();
-
-    return statement->GetValueId<DgnGeomPartId>(0);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Brien.Bastings              05/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus DgnGeomParts::Draw (DgnGeomPartId geomPartId, ViewContextR context, DgnCategoryId categoryId, ViewFlagsCR flags)
-    {
-    if (!geomPartId.IsValid())
-        return ERROR;
-
-    if (context.GetCurrentDisplayParams()->GetCategoryId() != categoryId)
-        return ERROR;
-
-    HighPriorityOperationBlock hpo;
-   
-    auto& elements = context.GetDgnDb().Elements();
-
-    BeSQLite::CachedStatementPtr selectStmt;
-    elements.GetStatement(selectStmt, "SELECT Code FROM " DGN_TABLE(DGN_CLASSNAME_GeomPart) " WHERE Id=?");
-    selectStmt->BindId(1, geomPartId);
-
-    DbResult result = selectStmt->Step();
-    if (BE_SQLITE_ROW != result)
-        return ERROR;
-
-    SnappyFromBlob& snappy = elements.GetSnappyFrom();
-    
-    if (ZIP_SUCCESS != snappy.Init (context.GetDgnDb(), DGN_TABLE(DGN_CLASSNAME_GeomPart), "Geom", geomPartId.GetValue()))
-        return ERROR;
-
-    GeomBlobHeader header (snappy);
-    if ((GeomBlobHeader::DB_GeomSignature06 != header.m_signature) || 0 == header.m_size)
-        {
-        BeAssert (false);
-        return ERROR;
-        }
-
-    ScopedArray<Byte, 8192> geometryBlob(header.m_size);
-    uint32_t actuallyRead;
-    snappy.ReadAndFinish(geometryBlob.GetData(), header.m_size, actuallyRead);
-
-    if (actuallyRead != header.m_size)
-        return ERROR;
-
-    ElementGeomIO::Collection collection(geometryBlob.GetDataCP(), header.m_size);
-
-    context.SetDgnGeomPartId (geomPartId); // Announce geom part id for picking, etc.
-    collection.Draw(context, categoryId, flags);
-    context.SetDgnGeomPartId (DgnGeomPartId());
-
-    return SUCCESS;
+    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_GeomPart) " WHERE Code=?");
+    stmt->BindText(1, code, Statement::MakeCopy::No);
+    return (BE_SQLITE_ROW != stmt->Step()) ? DgnGeomPartId() : stmt->GetValueId<DgnGeomPartId>(0);
     }
 
 //---------------------------------------------------------------------------------------

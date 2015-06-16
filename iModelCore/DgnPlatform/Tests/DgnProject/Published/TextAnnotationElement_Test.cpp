@@ -61,7 +61,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
 
         DbResult createStatus;
         DgnDbPtr db = DgnDb::CreateDgnDb(&createStatus, dbPath, dbCreateParams);
-        ASSERT_TRUE(DGNFILE_STATUS_Success == createStatus);
+        ASSERT_TRUE(BE_SQLITE_OK == createStatus);
         ASSERT_TRUE(db.IsValid());
         
         DgnCategories::Category physicalCategory1("Physical Category 1", DgnCategories::Scope::Physical);
@@ -72,7 +72,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
         ASSERT_TRUE(physicalCategory1Id.IsValid());
 
         DgnModelPtr physicalModel1 = new PhysicalModel(DgnModel::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel)), "Physical Model 1"));
-        ASSERT_TRUE(DGNMODEL_STATUS_Success == db->Models().Insert(*physicalModel1));
+        ASSERT_TRUE(DgnDbStatus::Success == db->Models().Insert(*physicalModel1));
 
         physicalModel1Id = physicalModel1->GetModelId();
         ASSERT_TRUE(physicalModel1Id.IsValid());
@@ -118,7 +118,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
         {
         DbResult openStatus;
         DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Exclusive));
-        ASSERT_TRUE(DGNFILE_STATUS_Success == openStatus);
+        ASSERT_TRUE(BE_SQLITE_OK == openStatus);
         ASSERT_TRUE(db.IsValid());
         
         PhysicalTextAnnotationElementCPtr annotationElementC = PhysicalTextAnnotationElement::Get(*db, annotationElement1Id);
@@ -162,7 +162,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
         {
         DbResult openStatus;
         DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Exclusive));
-        ASSERT_TRUE(DGNFILE_STATUS_Success == openStatus);
+        ASSERT_TRUE(BE_SQLITE_OK == openStatus);
         ASSERT_TRUE(db.IsValid());
 
         PhysicalTextAnnotationElementCPtr annotationElementC = PhysicalTextAnnotationElement::Get(*db, annotationElement1Id);

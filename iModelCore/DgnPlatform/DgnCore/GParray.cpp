@@ -140,7 +140,7 @@ bool    GPArray::GetClosestPoint (DPoint3dP closePoint, GPArrayParamP closeParam
         return false;
 
     if (NULL != closePoint)
-        proximityData.closePoint.getXYZ (closePoint);
+        proximityData.closePoint.GetXYZ (*closePoint);
 
     if (NULL != closeParam)
         {
@@ -207,7 +207,7 @@ void            GPArray::Draw (IDrawGeomR drawGeom, bool closed, bool filled) co
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            GPArray::Transform (TransformCP transform)
     {
-    if (NULL != transform && !transform->isIdentity())
+    if (NULL != transform && !transform->IsIdentity ())
         this->Multiply (*transform);
     }
 
@@ -360,9 +360,9 @@ BentleyStatus   GPArray::GetConicOrEllipse (int* index, DConic4dP conic, DEllips
 
     if (bsiDConic4d_getCommonAxes (conic, &axes, &basis, &curveType) && curveType == 1)
         {
-        axes.center.getXYZ (&ellipse->center);
-        axes.vector0.getXYZ (&ellipse->vector0);
-        axes.vector90.getXYZ (&ellipse->vector90);
+        axes.center.GetXYZ (ellipse->center);
+        axes.vector0.GetXYZ (ellipse->vector0);
+        axes.vector90.GetXYZ (ellipse->vector90);
         ellipse->start = axes.start;
         ellipse->sweep = axes.sweep;
         isEllipse = true;
@@ -400,9 +400,9 @@ BentleyStatus   GPArray::GetEllipse (int* index, DEllipse3dP ellipse, bool flatt
 
     if (bsiDConic4d_getCommonAxes (&conic, &axes, &basis, &curveType) && curveType == 1)
         {
-        axes.center.getXYZ (&ellipse->center);
-        axes.vector0.getXYZ (&ellipse->vector0);
-        axes.vector90.getXYZ (&ellipse->vector90);
+        axes.center.GetXYZ (ellipse->center);
+        axes.vector0.GetXYZ (ellipse->vector0);
+        axes.vector90.GetXYZ (ellipse->vector90);
         ellipse->start = axes.start;
         ellipse->sweep = axes.sweep;
 
@@ -560,17 +560,17 @@ double &dMax
     dMax = 0.0;
     ptrdiff_t lastInteriorKnotIndex = (ptrdiff_t)knots.size () - order;
     DRange3d range;
-    range.init ();
-    range.extend (bezierPoles, order);
+    range.Init ();
+    range.Extend (bezierPoles, order);
     double tolerance = m_abstol
-            + m_reltol * (range.low.maxAbs () + range.high.maxAbs ()) * order * order;
+            + m_reltol * (range.low.MaxAbs () + range.high.MaxAbs ()) * order * order;
 
     double lastKnot = knots[lastInteriorKnotIndex + 1];
     size_t lastPoleIndex = poles.size() - 1;
     DPoint3d localOrigin;
-    poles[0].getProjectedXYZ (&localOrigin);
+    poles[0].GetProjectedXYZ (localOrigin);
     if (s_zeroOrigin)
-        localOrigin.zero ();
+        localOrigin.Zero ();
     for (int i = 0; i < order; i++)
         {
         double interiorKnot = knots[lastInteriorKnotIndex - i];
@@ -701,8 +701,8 @@ int &nextReadIndex
     if (jmdlGraphicsPointArray_getBezier (&source, &myReadIndex, newPoles, &newOrder, MAX_BEZIER_CURVE_ORDER))
         {
         DRange3d bezierRange;
-        bezierRange.init ();
-        bezierRange.extend (newPoles, newOrder);
+        bezierRange.Init ();
+        bezierRange.Extend (newPoles, newOrder);
         GraphicsPoint gp;
         double knot0, knot1;
         jmdlGraphicsPointArray_getGraphicsPoint (&source, &gp, readIndex0);
@@ -952,7 +952,7 @@ BentleyStatus   GPArray::GetTranslationTo (DVec3dR translation, GPArrayCR other,
     GetPrimitiveFractionPoint (&point0, 0, 0.0);
     other.GetPrimitiveFractionPoint (&point1, 0, 0.0);
 
-    translation.differenceOf (&point1, &point0);
+    translation.DifferenceOf (point1, point0);
     for (int i=0, iEnd; i<GetCount(); i = iEnd + 1)
         {
         GPCurveType curveType = GetCurveType (i);

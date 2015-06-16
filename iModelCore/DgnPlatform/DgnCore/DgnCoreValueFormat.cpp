@@ -1352,7 +1352,7 @@ AreaFormatterPtr    AreaFormatter::Create (DgnViewportR viewport)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static  void    appendUnitLabel (WStringR str, WCharCP label, DgnCoreL10N::Number decoratorId, bool asSuffix)
+static  void    appendUnitLabel (WStringR str, WCharCP label, L10N::StringId decoratorId, bool asSuffix)
     {
     if ('\0' == *label)
         return;
@@ -1387,7 +1387,7 @@ WString AreaFormatter::ToString (double meters) const
     WString outString = T_Super::ToStringBasic(area);
 
     if (m_showUnitLabel)
-        appendUnitLabel (outString, m_masterUnit.GetLabelCP(), m_labelDecoratorAsSuffix ? DgnCoreL10N::UNIT_LABEL_SUFFIX_Area : DgnCoreL10N::UNIT_LABEL_PREFIX_Area, m_labelDecoratorAsSuffix);
+        appendUnitLabel (outString, m_masterUnit.GetLabelCP(), m_labelDecoratorAsSuffix ? DgnCoreL10N::UNIT_LABEL_SUFFIX_Area() : DgnCoreL10N::UNIT_LABEL_PREFIX_Area(), m_labelDecoratorAsSuffix);
 
     return outString;
     }
@@ -1449,7 +1449,7 @@ WString VolumeFormatter::ToString (double meters) const
     WString outString = T_Super::ToStringBasic(cube);
 
     if (m_showUnitLabel)
-        appendUnitLabel (outString, m_masterUnit.GetLabelCP(), m_labelDecoratorAsSuffix ? DgnCoreL10N::UNIT_LABEL_SUFFIX_Volume : DgnCoreL10N::UNIT_LABEL_PREFIX_Volume, m_labelDecoratorAsSuffix);
+        appendUnitLabel (outString, m_masterUnit.GetLabelCP(), m_labelDecoratorAsSuffix ? DgnCoreL10N::UNIT_LABEL_SUFFIX_Volume() : DgnCoreL10N::UNIT_LABEL_PREFIX_Volume(), m_labelDecoratorAsSuffix);
 
     return outString;
     }
@@ -1571,8 +1571,27 @@ void DateTimeFormatter::AppendFormatPart (DateTimeFormatPart part)
 static WString getDayName (int d, bool useShort)
     {
     BeAssert (7 > d);
-    uint32_t base = useShort ? DgnCoreL10N::DATETIME_DAY_SHORT_0 : DgnCoreL10N::DATETIME_DAY_0;
-    return DgnCoreL10N::GetStringW((DgnCoreL10N::Number)(base + d));
+    DgnCoreL10N::StringId longNames[]={
+        DgnCoreL10N::DATETIME_DAY_0(),
+        DgnCoreL10N::DATETIME_DAY_1(),
+        DgnCoreL10N::DATETIME_DAY_2(),
+        DgnCoreL10N::DATETIME_DAY_3(),
+        DgnCoreL10N::DATETIME_DAY_4(),
+        DgnCoreL10N::DATETIME_DAY_5(),
+        DgnCoreL10N::DATETIME_DAY_6(),
+        };
+    DgnCoreL10N::StringId shortNames[]={
+        DgnCoreL10N::DATETIME_DAY_SHORT_0(),
+        DgnCoreL10N::DATETIME_DAY_SHORT_1(),
+        DgnCoreL10N::DATETIME_DAY_SHORT_2(),
+        DgnCoreL10N::DATETIME_DAY_SHORT_3(),
+        DgnCoreL10N::DATETIME_DAY_SHORT_4(),
+        DgnCoreL10N::DATETIME_DAY_SHORT_5(),
+        DgnCoreL10N::DATETIME_DAY_SHORT_6(),
+        };
+
+    DgnCoreL10N::StringId* base = useShort ? shortNames : longNames;
+    return DgnCoreL10N::GetStringW(*(base + d));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1581,8 +1600,39 @@ static WString getDayName (int d, bool useShort)
 static WString getMonthName (int m, bool useShort)
     {
     BeAssert (12 > m);
-    uint32_t base = useShort ? DgnCoreL10N::DATETIME_MONTH_SHORT_0 : DgnCoreL10N::DATETIME_MONTH_0;
-    return DgnCoreL10N::GetStringW((DgnCoreL10N::Number)(base + m));
+
+    DgnCoreL10N::StringId longNames[]={
+        DgnCoreL10N::DATETIME_MONTH_0(),
+        DgnCoreL10N::DATETIME_MONTH_1(),
+        DgnCoreL10N::DATETIME_MONTH_2(),
+        DgnCoreL10N::DATETIME_MONTH_3(),
+        DgnCoreL10N::DATETIME_MONTH_4(),
+        DgnCoreL10N::DATETIME_MONTH_5(),
+        DgnCoreL10N::DATETIME_MONTH_6(),
+        DgnCoreL10N::DATETIME_MONTH_7(),
+        DgnCoreL10N::DATETIME_MONTH_8(),
+        DgnCoreL10N::DATETIME_MONTH_9(),
+        DgnCoreL10N::DATETIME_MONTH_10(),
+        DgnCoreL10N::DATETIME_MONTH_11(),
+        };
+
+    DgnCoreL10N::StringId shortNames[]={
+        DgnCoreL10N::DATETIME_MONTH_SHORT_0(),
+        DgnCoreL10N::DATETIME_MONTH_SHORT_1(),
+        DgnCoreL10N::DATETIME_MONTH_SHORT_2(),
+        DgnCoreL10N::DATETIME_MONTH_SHORT_3(),
+        DgnCoreL10N::DATETIME_MONTH_SHORT_4(),
+        DgnCoreL10N::DATETIME_MONTH_SHORT_5(),
+        DgnCoreL10N::DATETIME_MONTH_SHORT_6(),
+        DgnCoreL10N::DATETIME_MONTH_SHORT_7(),
+        DgnCoreL10N::DATETIME_MONTH_SHORT_8(),
+        DgnCoreL10N::DATETIME_MONTH_SHORT_9(),
+        DgnCoreL10N::DATETIME_MONTH_SHORT_10(),
+        DgnCoreL10N::DATETIME_MONTH_SHORT_11(),
+        };
+
+    DgnCoreL10N::StringId* base = useShort ? shortNames : longNames;
+    return DgnCoreL10N::GetStringW(*(base + m));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1590,8 +1640,17 @@ static WString getMonthName (int m, bool useShort)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static WString getAmPmName (bool pm, bool useShort)
     {
-    uint32_t base = useShort ? DgnCoreL10N::DATETIME_AM_SHORT : DgnCoreL10N::DATETIME_AM;
-    return DgnCoreL10N::GetStringW((DgnCoreL10N::Number)(base + (pm ? 1 : 0)));
+    DgnCoreL10N::StringId longNames[]={
+        DgnCoreL10N::DATETIME_AM(),
+        DgnCoreL10N::DATETIME_PM(),
+        };
+    DgnCoreL10N::StringId shortNames[]={
+        DgnCoreL10N::DATETIME_AM_SHORT(),
+        DgnCoreL10N::DATETIME_PM_SHORT(),
+        };
+
+    DgnCoreL10N::StringId* base = useShort ? shortNames : longNames;
+    return DgnCoreL10N::GetStringW(*(base + (pm ? 1 : 0)));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1694,7 +1753,7 @@ WString DateTimeFormatter::ToString (DateTimeCR dtIn) const
         case DATETIME_PART_Space:               result.append (1, ' '); break;
         case DATETIME_PART_AMPM:                result.append(getAmPmName(12 <= dt.GetHour(), false)); break;
         case DATETIME_PART_AP:                  result.append(getAmPmName(12 <= dt.GetHour(), true)); break;
-        case DATETIME_PART_UTC:                 result.AppendUtf8 (DgnCoreL10N::GetString(DgnCoreL10N::DATETIME_UTC).c_str()); break;
+        case DATETIME_PART_UTC:                 result.AppendUtf8 (DgnCoreL10N::GetString(DgnCoreL10N::DATETIME_UTC()).c_str()); break;
         case DATETIME_PART_Y:                   tmp.Sprintf(L"%d", dt.GetYear() % 100); result.append(tmp); break;
         case DATETIME_PART_YY:                  tmp.Sprintf(L"%02d", dt.GetYear() % 100); result.append(tmp); break;
         case DATETIME_PART_YYY:                 tmp.Sprintf(L"%03d", dt.GetYear()); result.append(tmp); break;

@@ -139,9 +139,9 @@ DgnDbTestDgnManager tdm
         StatusInt stat2 = DgnECPersistence::SetPrimaryInstanceOnElement (*elemHandle, ECInstanceKey (testClass->GetId(), ecInstanceId), *tdm.GetDgnProjectP());
         ASSERT_EQ (SUCCESS, stat2);
 #endif
-        DgnModelStatus modelStatus;
+        DgnDbStatus modelStatus;
         model->GetDgnDb().Elements().Insert(*element, &modelStatus);
-        ASSERT_EQ (SUCCESS, modelStatus);
+        ASSERT_TRUE (DgnDbStatus::Success==modelStatus);
         }
     attachingTimer.Stop();
     totalInsertingStopwatch.Stop();

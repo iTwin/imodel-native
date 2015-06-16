@@ -128,7 +128,7 @@ ViewControllerPtr DgnViews::LoadViewController(DgnViewId viewId, FillModels fill
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewFlags::FromBaseJson(JsonValueCR val)
     {
-    memset (this, 0, sizeof(*this));
+    memset(this, 0, sizeof(*this));
 
     constructions = val[VIEWFLAG_construction].asBool();
     text = !val[VIEWFLAG_noText].asBool();
@@ -165,7 +165,7 @@ void ViewFlags::From3dJson(JsonValueCR val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewFlags::ToBaseJson (JsonValueR val) const
+void ViewFlags::ToBaseJson(JsonValueR val) const
     {
     if (constructions) val[VIEWFLAG_construction] = true;
     if (!text) val[VIEWFLAG_noText] = true;
@@ -183,7 +183,7 @@ void ViewFlags::ToBaseJson (JsonValueR val) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewFlags::To3dJson (JsonValueR val) const
+void ViewFlags::To3dJson(JsonValueR val) const
     {
     if (!textures) val[VIEWFLAG_noTexture] = true;
     if (!materials) val[VIEWFLAG_noMaterial] = true;
@@ -195,7 +195,7 @@ void ViewFlags::To3dJson (JsonValueR val) const
     if (!noBackClip) val[VIEWFLAG_backClip] = true;
     if (noClipVolume) val[VIEWFLAG_noClipVolume] = true;
 
-    val[VIEWFLAG_renderMode] = (uint8_t) m_renderMode;
+    val[VIEWFLAG_renderMode] =(uint8_t) m_renderMode;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -215,7 +215,7 @@ DgnCategories::SubCategory::Appearance ViewController::GetSubCategoryAppearance(
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_ChangeModelDisplay (DgnModelId modelId, bool onOff)
+void ViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
     {
     if (onOff)
         m_viewedModels.insert(modelId);
@@ -226,7 +226,7 @@ void ViewController::_ChangeModelDisplay (DgnModelId modelId, bool onOff)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_ChangeCategoryDisplay (DgnCategoryId categoryId, bool onOff)
+void ViewController::_ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff)
     {
     if (onOff)
         m_viewedCategories.insert(categoryId);
@@ -242,13 +242,13 @@ DgnModelP ViewController::_GetTargetModel() const {return m_dgndb.Models().GetMo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewController::ViewController (DgnDbR dgndb, DgnViewId viewId) : m_dgndb(dgndb)
+ViewController::ViewController(DgnDbR dgndb, DgnViewId viewId) : m_dgndb(dgndb)
     {
     m_viewId = viewId;
     m_viewFlags.InitDefaults();
     m_defaultDeviceOrientation.InitIdentity();
     m_defaultDeviceOrientationValid = false;
-    memset (&m_backgroundColor, 0, sizeof (m_backgroundColor));
+    memset(&m_backgroundColor, 0, sizeof(m_backgroundColor));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -272,14 +272,14 @@ void ViewController::LoadCategories(JsonValueCR settings)
         JsonValueCR val=facetJson[i];
         DgnSubCategoryId subCategoryId(val[VIEW_SubCategoryId].asInt64());
         if (subCategoryId.IsValid())
-            OverrideSubCategory (subCategoryId, DgnCategories::SubCategory::Override(val));
+            OverrideSubCategory(subCategoryId, DgnCategories::SubCategory::Override(val));
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_RestoreFromSettings (JsonValueCR settings)
+void ViewController::_RestoreFromSettings(JsonValueCR settings)
     {
     if (!settings.isMember(VIEW_SETTING_Flags))
         m_viewFlags.InitDefaults();
@@ -305,22 +305,22 @@ DbResult ViewController::Load()
     DgnViews::View entry = m_dgndb.Views().QueryView(m_viewId);
     if (!entry.IsValid())
         {
-        BeAssert (false);
+        BeAssert(false);
         return  BE_SQLITE_ERROR;
         }
 
     m_viewedModels.clear();
     m_baseModelId = m_targetModelId = entry.GetBaseModelId();
-    m_viewedModels.insert (m_baseModelId);
+    m_viewedModels.insert(m_baseModelId);
 
     Utf8String settingsStr;
     //  The QueryModel calls GetModel in the QueryModel thread.  produces a thread race condition if it calls QueryModelById and
-    DbResult  rc = GetDgnDb().Views().QueryProperty (settingsStr, GetViewId(), DgnViewProperty::Settings());
+    DbResult  rc = GetDgnDb().Views().QueryProperty(settingsStr, GetViewId(), DgnViewProperty::Settings());
     if (BE_SQLITE_ROW != rc)
         return rc;
 
     Json::Value json;
-    Json::Reader::Parse (settingsStr, json);
+    Json::Reader::Parse(settingsStr, json);
     _RestoreFromSettings(json);
 
     //  The QueryModel calls GetModel in the QueryModel thread.  produces a thread race condition if it calls QueryModelById and
@@ -334,7 +334,7 @@ DbResult ViewController::Load()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_SaveToSettings (JsonValueR settings) const
+void ViewController::_SaveToSettings(JsonValueR settings) const
     {
     m_viewFlags.ToBaseJson(settings[VIEW_SETTING_Flags]);
 
@@ -370,7 +370,7 @@ DbResult ViewController::Save()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ViewController::SaveAs (Utf8CP newName)
+DbResult ViewController::SaveAs(Utf8CP newName)
     {
     DgnViews::View newRow(m_dgndb.Views().QueryView(m_viewId));
     newRow.SetName(newName);
@@ -393,10 +393,10 @@ DbResult ViewController::SaveAs (Utf8CP newName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ViewController::SaveTo(Utf8CP newName, DgnViewId& newId)
     {
-    AutoRestore<DgnViewId> saveId (&m_viewId);
+    AutoRestore<DgnViewId> saveId(&m_viewId);
 
     DbResult rc = SaveAs(newName);
-    newId = (BE_SQLITE_OK == rc) ? m_viewId : DgnViewId();
+    newId =(BE_SQLITE_OK == rc) ? m_viewId : DgnViewId();
     return rc;
     }
 
@@ -469,9 +469,9 @@ void ViewController::DropSubCategoryOverride(DgnSubCategoryId id)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewController::_IsPointAdjustmentRequired (DgnViewportR vp) const {return vp.Is3dView ();}
-bool ViewController::_IsSnapAdjustmentRequired  (DgnViewportR vp, bool snapLockEnabled) const {return snapLockEnabled && vp.Is3dView ();}
-bool ViewController::_IsContextRotationRequired (DgnViewportR vp, bool contextLockEnabled) const {return contextLockEnabled;}
+bool ViewController::_IsPointAdjustmentRequired(DgnViewportR vp) const {return vp.Is3dView();}
+bool ViewController::_IsSnapAdjustmentRequired(DgnViewportR vp, bool snapLockEnabled) const {return snapLockEnabled && vp.Is3dView();}
+bool ViewController::_IsContextRotationRequired(DgnViewportR vp, bool contextLockEnabled) const {return contextLockEnabled;}
 
 /////////////////////////////////////////////////////////////////////////////////////
 ///
@@ -479,13 +479,13 @@ bool ViewController::_IsContextRotationRequired (DgnViewportR vp, bool contextLo
 ///
 /////////////////////////////////////////////////////////////////////////////////////
 
-static bool equalOne (double r1) {return BeNumerical::Compare (r1, 1.0) == 0;}
-static bool equalMinusOne (double r1) {return BeNumerical::Compare (r1, -1.0) == 0;}
+static bool equalOne(double r1) {return BeNumerical::Compare(r1, 1.0) == 0;}
+static bool equalMinusOne(double r1) {return BeNumerical::Compare(r1, -1.0) == 0;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   03/89
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandardView ViewController::IsStandardViewRotation (RotMatrixCR rMatrix, bool check3d)
+StandardView ViewController::IsStandardViewRotation(RotMatrixCR rMatrix, bool check3d)
     {
     if (check3d)
         {
@@ -494,22 +494,22 @@ StandardView ViewController::IsStandardViewRotation (RotMatrixCR rMatrix, bool c
         //   b) Once ones are found, the third row and column are known by cross product rules.
         // Hence just two one or minus one entries fully identifies primary flat views.
         // Dot products with two vectors from known iso views is also complete.
-        if (equalOne (rMatrix.form3d[0][0]))
+        if (equalOne(rMatrix.form3d[0][0]))
             {
-            if (equalOne (rMatrix.form3d[1][1]))
+            if (equalOne(rMatrix.form3d[1][1]))
                 return StandardView::Top;
-            if (equalMinusOne (rMatrix.form3d[1][1]))
+            if (equalMinusOne(rMatrix.form3d[1][1]))
                 return StandardView::Bottom;
-            if (equalOne (rMatrix.form3d[1][2]))
+            if (equalOne(rMatrix.form3d[1][2]))
                 return StandardView::Front;
             }
-        else if (equalOne (rMatrix.form3d[1][2]))
+        else if (equalOne(rMatrix.form3d[1][2]))
             {
-            if (equalOne (rMatrix.form3d[0][1]))
+            if (equalOne(rMatrix.form3d[0][1]))
                 return StandardView::Right;
-            if (equalMinusOne (rMatrix.form3d[0][1]))
+            if (equalMinusOne(rMatrix.form3d[0][1]))
                 return StandardView::Left;
-            if (equalMinusOne (rMatrix.form3d[0][0]))
+            if (equalMinusOne(rMatrix.form3d[0][0]))
                 return StandardView::Back;
             }
         else                    /* Check For (left) IsoMetric */
@@ -517,19 +517,19 @@ StandardView ViewController::IsStandardViewRotation (RotMatrixCR rMatrix, bool c
             RotMatrix  isoMatrix;
             bsiRotMatrix_getStandardRotation(&isoMatrix, static_cast<int>(StandardView::Iso));
 
-            if (equalOne (bsiDVec3d_dotProduct ((DVec3d*)isoMatrix.form3d[0], (DVec3d*)rMatrix.form3d[0])) &&
-                equalOne (bsiDVec3d_dotProduct ((DVec3d*)isoMatrix.form3d[1], (DVec3d*)rMatrix.form3d[1])))
+            if (equalOne(bsiDVec3d_dotProduct((DVec3d*)isoMatrix.form3d[0],(DVec3d*)rMatrix.form3d[0])) &&
+                equalOne(bsiDVec3d_dotProduct((DVec3d*)isoMatrix.form3d[1],(DVec3d*)rMatrix.form3d[1])))
                 return StandardView::Iso;
 
             bsiRotMatrix_getStandardRotation(&isoMatrix, static_cast<int>(StandardView::RightIso));
-            if (equalOne (bsiDVec3d_dotProduct ((DVec3d*)isoMatrix.form3d[0], (DVec3d*)rMatrix.form3d[0])) &&
-                equalOne (bsiDVec3d_dotProduct ((DVec3d*)isoMatrix.form3d[1], (DVec3d*)rMatrix.form3d[1])))
+            if (equalOne(bsiDVec3d_dotProduct((DVec3d*)isoMatrix.form3d[0],(DVec3d*)rMatrix.form3d[0])) &&
+                equalOne(bsiDVec3d_dotProduct((DVec3d*)isoMatrix.form3d[1],(DVec3d*)rMatrix.form3d[1])))
                 return StandardView::RightIso;
             }
         }
     else
         {
-        if (equalOne (rMatrix.form3d[0][0]) && equalOne (rMatrix.form3d[1][1]))
+        if (equalOne(rMatrix.form3d[0][0]) && equalOne(rMatrix.form3d[1][1]))
             return StandardView::Top;
         }
 
@@ -539,31 +539,42 @@ StandardView ViewController::IsStandardViewRotation (RotMatrixCR rMatrix, bool c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ViewController::GetStandardViewName (WStringR name, StandardView viewID)
+BentleyStatus ViewController::GetStandardViewName(WStringR name, StandardView viewID)
     {
     name = L"";
     if (viewID < StandardView::Top || viewID > StandardView::RightIso)
         return ERROR;
 
-    name = DgnCoreL10N::GetStringW((DgnCoreL10N::Number)(static_cast<int>(viewID) - 1 + DgnCoreL10N::VIEWTITLE_MessageID_Top));
+    L10N::StringId names[]={
+        DgnCoreL10N::VIEWTITLE_MessageID_Top(),   
+        DgnCoreL10N::VIEWTITLE_MessageID_Bottom(),
+        DgnCoreL10N::VIEWTITLE_MessageID_Left(), 
+        DgnCoreL10N::VIEWTITLE_MessageID_Right(), 
+        DgnCoreL10N::VIEWTITLE_MessageID_Front(),    
+        DgnCoreL10N::VIEWTITLE_MessageID_Back(),     
+        DgnCoreL10N::VIEWTITLE_MessageID_Iso(),      
+        DgnCoreL10N::VIEWTITLE_MessageID_RightIso(), 
+        };
+
+    name = DgnCoreL10N::GetStringW(*(static_cast<int>(viewID) - 1 + names));
     return  SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ViewController::GetStandardViewByName (RotMatrix* rotP, StandardView* standardIdP, WCharCP viewName)
+BentleyStatus ViewController::GetStandardViewByName(RotMatrix* rotP, StandardView* standardIdP, WCharCP viewName)
     {
     WString tName;
-    for (int i = static_cast<int>(StandardView::Top); SUCCESS == GetStandardViewName(tName, (StandardView)i); ++i)
+    for (int i = static_cast<int>(StandardView::Top); SUCCESS == GetStandardViewName(tName,(StandardView)i); ++i)
         {
-        if (0 == BeStringUtilities::Wcsicmp (viewName, tName.c_str()))
+        if (0 == BeStringUtilities::Wcsicmp(viewName, tName.c_str()))
             {
             if (NULL != rotP)
-                bsiRotMatrix_getStandardRotation (rotP, i);
+                bsiRotMatrix_getStandardRotation(rotP, i);
 
             if (NULL != standardIdP)
-                *standardIdP = (StandardView) i;
+                *standardIdP =(StandardView) i;
 
             return SUCCESS;
             }
@@ -575,13 +586,13 @@ BentleyStatus ViewController::GetStandardViewByName (RotMatrix* rotP, StandardVi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ViewController::SetStandardViewRotation (StandardView standardView)
+BentleyStatus ViewController::SetStandardViewRotation(StandardView standardView)
     {
     RotMatrix rMatrix;
     if (!bsiRotMatrix_getStandardRotation(&rMatrix, static_cast<int>(standardView)))
         return  ERROR;
 
-    SetRotation (rMatrix);
+    SetRotation(rMatrix);
     return  SUCCESS;
     }
 
@@ -589,13 +600,13 @@ BentleyStatus ViewController::SetStandardViewRotation (StandardView standardView
 * Search the (8) standard view matrices for one that is close to given matrix.
 * @bsimethod                                                    EarlinLutz      05/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool findNearbyStandardViewMatrix (RotMatrixR rMatrix)
+static bool findNearbyStandardViewMatrix(RotMatrixR rMatrix)
     {
     static double const s_viewMatrixTolerance = 1.0e-7;
     RotMatrix   test;
 
     // Standard views are numbered from 1 ....
-    for (int i = 1; bsiRotMatrix_getStandardRotation (&test, i); i++)
+    for (int i = 1; bsiRotMatrix_getStandardRotation(&test, i); i++)
         {
         double a = test.MaxDiff(rMatrix);
         if (a < s_viewMatrixTolerance)
@@ -611,10 +622,10 @@ static bool findNearbyStandardViewMatrix (RotMatrixR rMatrix)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewFrustumStatus ViewController::SetupFromFrustum (Frustum const& inFrustum)
+ViewportStatus ViewController::SetupFromFrustum(Frustum const& inFrustum)
     {
     Frustum frustum=inFrustum;
-    DgnViewport::FixFrustumOrder (frustum);
+    DgnViewport::FixFrustumOrder(frustum);
 
     return _SetupFromFrustum(frustum);
     }
@@ -622,7 +633,7 @@ ViewFrustumStatus ViewController::SetupFromFrustum (Frustum const& inFrustum)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    11/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewFrustumStatus ViewController::_SetupFromFrustum (Frustum const& frustum)
+ViewportStatus ViewController::_SetupFromFrustum(Frustum const& frustum)
     {
     DPoint3dCP frustPts = frustum.GetPts();
     DPoint3d viewOrg = frustPts[NPC_000];
@@ -630,28 +641,28 @@ ViewFrustumStatus ViewController::_SetupFromFrustum (Frustum const& frustum)
     // frustumX, frustumY, frustumZ are vectors along edges of the frustum. They are NOT unit vectors.
     // X and Y should be perpendicular, and Z should be right handed.
     DVec3d frustumX, frustumY, frustumZ;
-    frustumX.DifferenceOf (frustPts[NPC_100], viewOrg);
-    frustumY.DifferenceOf (frustPts[NPC_010], viewOrg);
-    frustumZ.DifferenceOf (frustPts[NPC_001], viewOrg);
+    frustumX.DifferenceOf(frustPts[NPC_100], viewOrg);
+    frustumY.DifferenceOf(frustPts[NPC_010], viewOrg);
+    frustumZ.DifferenceOf(frustPts[NPC_001], viewOrg);
 
     RotMatrix   frustMatrix;
-    frustMatrix.InitFromColumnVectors (frustumX, frustumY, frustumZ);
-    if (!frustMatrix.SquareAndNormalizeColumns (frustMatrix, 0, 1))
-        return VIEWFRUST_STATUS_InvalidWindow;
+    frustMatrix.InitFromColumnVectors(frustumX, frustumY, frustumZ);
+    if (!frustMatrix.SquareAndNormalizeColumns(frustMatrix, 0, 1))
+        return ViewportStatus::InvalidWindow;
 
-    findNearbyStandardViewMatrix (frustMatrix);
+    findNearbyStandardViewMatrix(frustMatrix);
 
     DVec3d xDir, yDir, zDir;
-    frustMatrix.GetColumns (xDir, yDir, zDir);
+    frustMatrix.GetColumns(xDir, yDir, zDir);
 
     // set up view Rotation matrix as rows of frustum matrix.
     RotMatrix viewRot;
-    viewRot.InverseOf (frustMatrix);
+    viewRot.InverseOf(frustMatrix);
 
     // Left handed frustum?
-    double zSize = zDir.DotProduct (frustumZ);
+    double zSize = zDir.DotProduct(frustumZ);
     if (zSize < 0.0)
-        return VIEWFRUST_STATUS_InvalidWindow;
+        return ViewportStatus::InvalidWindow;
 
     DPoint3d viewDiagRoot;
     viewDiagRoot.SumOf(xDir, xDir.DotProduct(frustumX), yDir, yDir.DotProduct(frustumY));  // vectors on the back plane
@@ -662,25 +673,25 @@ ViewFrustumStatus ViewController::_SetupFromFrustum (Frustum const& frustum)
 
     // delta is in view coordinates
     DVec3d viewDelta;
-    viewRot.Multiply (viewDelta, viewDiagRoot);
+    viewRot.Multiply(viewDelta, viewDiagRoot);
 
-    ViewFrustumStatus validSize = DgnViewport::ValidateWindowSize (viewDelta, false);
-    if (validSize != VIEWFRUST_STATUS_SUCCESS)
+    ViewportStatus validSize = DgnViewport::ValidateWindowSize(viewDelta, false);
+    if (validSize != ViewportStatus::Success)
         return validSize;
 
-    SetOrigin (viewOrg);
-    SetDelta (viewDelta);
-    SetRotation (viewRot);
-    return VIEWFRUST_STATUS_SUCCESS;
+    SetOrigin(viewOrg);
+    SetDelta(viewDelta);
+    SetRotation(viewRot);
+    return ViewportStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewFrustumStatus CameraViewController::_SetupFromFrustum (Frustum const& frustum)
+ViewportStatus CameraViewController::_SetupFromFrustum(Frustum const& frustum)
     {
     auto stat = T_Super::_SetupFromFrustum(frustum);
-    if (VIEWFRUST_STATUS_SUCCESS)
+    if (ViewportStatus::Success != stat)
         return stat;
 
     DPoint3dCP frustPts = frustum.GetPts();
@@ -690,26 +701,26 @@ ViewFrustumStatus CameraViewController::_SetupFromFrustum (Frustum const& frustu
     double xFront = frustPts[NPC_001].Distance(frustPts[NPC_101]);
 
     static double const s_flatViewFractionTolerance = 1.0e-6;
-    if (xFront > xBack * (1.0 + s_flatViewFractionTolerance))
-        return VIEWFRUST_STATUS_InvalidWindow;
+    if (xFront > xBack *(1.0 + s_flatViewFractionTolerance))
+        return ViewportStatus::InvalidWindow;
 
     // see if the frustum is tapered, and if so, set up camera eyepoint and adjust viewOrg and delta.
     double compression = xFront / xBack;
-    if (!Allow3dManipulations() || (compression >= (1.0 - s_flatViewFractionTolerance)))
+    if (!Allow3dManipulations() ||(compression >=(1.0 - s_flatViewFractionTolerance)))
         {
         SetCameraOn(false);
-        return VIEWFRUST_STATUS_SUCCESS;
+        return ViewportStatus::Success;
         }
 
     DPoint3d viewOrg     = frustPts[NPC_000];
     DVec3d viewDelta     = GetDelta();
     DVec3d zDir          = GetZVector();
     DVec3d frustumZ      = DVec3d::FromStartEnd(viewOrg, frustPts[NPC_001]);
-    DVec3d frustOrgToEye = DVec3d::FromScale(frustumZ, 1.0 / (1.0 - compression));
+    DVec3d frustOrgToEye = DVec3d::FromScale(frustumZ, 1.0 /(1.0 - compression));
     DPoint3d eyePoint    = DPoint3d::FromSumOf(viewOrg, frustOrgToEye);
 
     double backDistance  = frustOrgToEye.DotProduct(zDir);         // distance from eye to back plane of frustum
-    double focusDistance = backDistance - (viewDelta.z / 2.0);
+    double focusDistance = backDistance -(viewDelta.z / 2.0);
     double focalFraction = focusDistance / backDistance;           // ratio of focus plane distance to back plane distance
 
     viewOrg.SumOf(eyePoint, frustOrgToEye, -focalFraction);        // project point along org-to-eye vector onto focus plane
@@ -724,28 +735,28 @@ ViewFrustumStatus CameraViewController::_SetupFromFrustum (Frustum const& frustu
     SetDelta(viewDelta);
     SetCameraOn(true);
     CalculateLensAngle();
-    return VIEWFRUST_STATUS_SUCCESS;
+    return ViewportStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::LookAtVolume (DRange3dCR volume, double const* aspect, MarginPercent const* margin, bool expandClippingPlanes)
+void ViewController::LookAtVolume(DRange3dCR volume, double const* aspect, MarginPercent const* margin, bool expandClippingPlanes)
     {
     DPoint3d rangebox[8];
-    volume.Get8Corners (rangebox);
-    GetRotation().Multiply (rangebox, rangebox, 8);
+    volume.Get8Corners(rangebox);
+    GetRotation().Multiply(rangebox, rangebox, 8);
 
     DRange3d viewAlignedVolume;
-    viewAlignedVolume.InitFrom (rangebox, 8);
+    viewAlignedVolume.InitFrom(rangebox, 8);
 
-    return LookAtViewAlignedVolume (viewAlignedVolume, aspect, margin, expandClippingPlanes);
+    return LookAtViewAlignedVolume(viewAlignedVolume, aspect, margin, expandClippingPlanes);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::LookAtViewAlignedVolume (DRange3dCR volume, double const* aspect, MarginPercent const* margin, bool expandClippingPlanes)
+void ViewController::LookAtViewAlignedVolume(DRange3dCR volume, double const* aspect, MarginPercent const* margin, bool expandClippingPlanes)
     {
     DPoint3d    oldDelta = GetDelta();
     DPoint3d    oldOrg   = GetOrigin();
@@ -753,17 +764,17 @@ void ViewController::LookAtViewAlignedVolume (DRange3dCR volume, double const* a
 
     DPoint3d  newOrigin = volume.low;
     DVec3d    newDelta;
-    newDelta.DifferenceOf (volume.high, volume.low);
+    newDelta.DifferenceOf(volume.high, volume.low);
 
     double minimumDepth = 1000.0 / 1.01;
     if (newDelta.z < minimumDepth)
         {
-        newOrigin.z -= (minimumDepth - newDelta.z)/2.0;
+        newOrigin.z -=(minimumDepth - newDelta.z)/2.0;
         newDelta.z = minimumDepth;
         }
 
-    PhysicalViewControllerP physView = (PhysicalViewControllerP) _ToPhysicalView();
-    CameraViewControllerP cameraView = (CameraViewControllerP) _ToCameraView();
+    PhysicalViewControllerP physView =(PhysicalViewControllerP) _ToPhysicalView();
+    CameraViewControllerP cameraView =(CameraViewControllerP) _ToCameraView();
     DPoint3d origNewDelta = newDelta;
 
     bool isCameraOn = cameraView && cameraView->IsCameraOn();
@@ -803,22 +814,22 @@ void ViewController::LookAtViewAlignedVolume (DRange3dCR volume, double const* a
     if (physView && Allow3dManipulations() && !isCameraOn)
         {
         // make sure that the zDelta is large enough so that entire model will be visible from any rotation
-        double diag = newDelta.magnitudeXY();
+        double diag = newDelta.MagnitudeXY ();
         if (diag > newDelta.z)
             newDelta.z = diag;
         }
 
-    DgnViewport::ValidateWindowSize (newDelta, true);
+    DgnViewport::ValidateWindowSize(newDelta, true);
 
     SetDelta(newDelta);
     if (aspect)
-        AdjustAspectRatio (*aspect, true);
+        AdjustAspectRatio(*aspect, true);
 
     newDelta = GetDelta();
 
-    newOrigin.x -= (newDelta.x - origNewDelta.x) / 2.0;
-    newOrigin.y -= (newDelta.y - origNewDelta.y) / 2.0;
-    newOrigin.z -= (newDelta.z - origNewDelta.z) / 2.0;
+    newOrigin.x -=(newDelta.x - origNewDelta.x) / 2.0;
+    newOrigin.y -=(newDelta.y - origNewDelta.y) / 2.0;
+    newOrigin.z -=(newDelta.z - origNewDelta.z) / 2.0;
 
     // if they don't want the clipping planes to change, set them back to where they were
     if (NULL != physView && !expandClippingPlanes && Allow3dManipulations())
@@ -828,19 +839,19 @@ void ViewController::LookAtViewAlignedVolume (DRange3dCR volume, double const* a
 
         DVec3d delta = GetDelta();
         delta.z = oldDelta.z;
-        SetDelta (delta);
+        SetDelta(delta);
         }
 
     DPoint3d newOrgView;
     viewRot.MultiplyTranspose(&newOrgView, &newOrigin, 1);
-    SetOrigin (newOrgView);
+    SetOrigin(newOrgView);
 
     if (nullptr == cameraView)
         return;
 
     cameraView->GetCameraR().ValidateLens();
     // move the camera back so the entire x,y range is visible at front plane
-    double frontDist = std::max(newDelta.x, newDelta.y) / (2.0*tan(cameraView->GetLensAngle()/2.0));
+    double frontDist = std::max(newDelta.x, newDelta.y) /(2.0*tan(cameraView->GetLensAngle()/2.0));
     double backDist = frontDist + newDelta.z;
 
     cameraView->SetFocusDistance(frontDist); // do this even if the camera isn't currently on.
@@ -866,7 +877,7 @@ void ViewController::_FillModels()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalViewController::PhysicalViewController (DgnDbR dgndb, DgnViewId viewId) : ViewController(dgndb, viewId)
+PhysicalViewController::PhysicalViewController(DgnDbR dgndb, DgnViewId viewId) : ViewController(dgndb, viewId)
     {
     // not valid, but better than random
     m_origin.Zero();
@@ -877,7 +888,7 @@ PhysicalViewController::PhysicalViewController (DgnDbR dgndb, DgnViewId viewId) 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PhysicalViewController::_OnTransform (TransformCR trans)
+void PhysicalViewController::_OnTransform(TransformCR trans)
     {
     RotMatrix rMatrix;
     trans.GetMatrix(rMatrix);
@@ -892,9 +903,9 @@ void PhysicalViewController::_OnTransform (TransformCR trans)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CameraViewController::_OnTransform (TransformCR trans)
+void CameraViewController::_OnTransform(TransformCR trans)
     {
-    T_Super::_OnTransform (trans);
+    T_Super::_OnTransform(trans);
     DPoint3d eye = GetEyePoint();
     trans.Multiply(eye);
     SetEyePoint(eye);
@@ -903,17 +914,17 @@ void CameraViewController::_OnTransform (TransformCR trans)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PhysicalViewController::TransformBy (TransformCR trans)
+void PhysicalViewController::TransformBy(TransformCR trans)
     {
-    _OnTransform (trans);
+    _OnTransform(trans);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PhysicalViewController::_SetDelta (DVec3dCR delta)     {m_delta = delta;}
-void PhysicalViewController::_SetOrigin (DPoint3dCR origin) {m_origin = origin;}
-void PhysicalViewController::_SetRotation (RotMatrixCR rot) {m_rotation = rot;}
+void PhysicalViewController::_SetDelta(DVec3dCR delta)     {m_delta = delta;}
+void PhysicalViewController::_SetOrigin(DPoint3dCR origin) {m_origin = origin;}
+void PhysicalViewController::_SetRotation(RotMatrixCR rot) {m_rotation = rot;}
 DPoint3d PhysicalViewController::_GetOrigin() const {return m_origin;}
 DVec3d PhysicalViewController::_GetDelta() const {return m_delta;}
 RotMatrix PhysicalViewController::_GetRotation() const {return m_rotation;}
@@ -921,7 +932,7 @@ RotMatrix PhysicalViewController::_GetRotation() const {return m_rotation;}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PhysicalViewController::SetTargetModel (DgnModelP target)
+BentleyStatus PhysicalViewController::SetTargetModel(DgnModelP target)
     {
     if (!m_viewedModels.Contains(target->GetModelId()))
         return  ERROR;
@@ -935,7 +946,7 @@ BentleyStatus PhysicalViewController::SetTargetModel (DgnModelP target)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SectioningViewControllerPtr SectionDrawingViewController::GetSectioningViewController() const
     {
-#if defined (NEEDS_WORK_DRAWINGS)
+#if defined(NEEDS_WORK_DRAWINGS)
     if (m_sectionView.IsValid())
         return m_sectionView;
 
@@ -943,7 +954,7 @@ SectioningViewControllerPtr SectionDrawingViewController::GetSectioningViewContr
     if (drawing == NULL)
         return NULL;
 
-    auto sectionViewId = GetDgnDb().GeneratedDrawings().QuerySourceView (drawing->GetModelId());
+    auto sectionViewId = GetDgnDb().GeneratedDrawings().QuerySourceView(drawing->GetModelId());
     return dynamic_cast<SectioningViewController*>(GetDgnDb().Views().LoadViewController(sectionViewId, DgnViews::FillModels::Yes).get());
 #else
     return nullptr;
@@ -961,28 +972,28 @@ ClipVectorPtr SectionDrawingViewController::GetProjectClipVector() const
     return sectionView->GetInsideForwardClipVector();
     }
 
-#if defined (NEEDS_WORK_ELEMENTS_API)
+#if defined(NEEDS_WORK_ELEMENTS_API)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-Transform SectionDrawingViewController::GetFlatteningMatrix (double zdelta) const
+Transform SectionDrawingViewController::GetFlatteningMatrix(double zdelta) const
     {
     auto drawing = GetSectionDrawing();
     if (drawing == NULL)
         return Transform::FromIdentity();
 
-    return drawing->GetFlatteningMatrix (zdelta);
+    return drawing->GetFlatteningMatrix(zdelta);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-Transform SectionDrawingViewController::GetFlatteningMatrixIf2D (ViewContextR context, double zdelta) const
+Transform SectionDrawingViewController::GetFlatteningMatrixIf2D(ViewContextR context, double zdelta) const
     {
     if (!context.GetViewport() || context.GetViewport()->Is3dView())
         return Transform::FromIdentity();
 
-    return GetFlatteningMatrix (zdelta);
+    return GetFlatteningMatrix(zdelta);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1013,12 +1024,12 @@ bool SectionDrawingViewController::GetSectionHasDogLeg() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt SectionDrawingViewController::_VisitHit(HitPathCR hit, ViewContextR context) const
+StatusInt SectionDrawingViewController::_VisitHit(HitDetailCR hit, ViewContextR context) const
     {
-#if defined (NEEDS_WORK_ELEMENTS_API)
-    context.PushTransform (GetFlatteningMatrixIf2D(context));
+#if defined(NEEDS_WORK_ELEMENTS_API)
+    context.PushTransform(GetFlatteningMatrixIf2D(context));
 #endif
-    StatusInt status = T_Super::_VisitHit (hit, context);
+    StatusInt status = T_Super::_VisitHit(hit, context);
     context.PopTransformClip();
     return status;
     }
@@ -1026,12 +1037,12 @@ StatusInt SectionDrawingViewController::_VisitHit(HitPathCR hit, ViewContextR co
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  03/14
 //--------------+------------------------------------------------------------------------
-void SectionDrawingViewController::_DrawView (ViewContextR context)
+void SectionDrawingViewController::_DrawView(ViewContextR context)
     {
-#if defined (NEEDS_WORK_ELEMENTS_API)
-    context.PushTransform (GetFlatteningMatrixIf2D(context));
+#if defined(NEEDS_WORK_ELEMENTS_API)
+    context.PushTransform(GetFlatteningMatrixIf2D(context));
 #endif
-    T_Super::_DrawView (context);
+    T_Super::_DrawView(context);
     context.PopTransformClip();
     }
 
@@ -1040,26 +1051,26 @@ void SectionDrawingViewController::_DrawView (ViewContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SectionDrawingViewController::_DrawElement(ViewContextR context, GeometricElementCR element)
     {
-#if defined (NEEDS_WORK_VIEW_CONTROLLER)
+#if defined(NEEDS_WORK_VIEW_CONTROLLER)
     if (context.GetViewport() != NULL)
         {
         auto hyper = context.GetViewport()->GetViewControllerP()->ToHypermodelingViewController();
-        if (hyper != NULL && !hyper->ShouldDrawAnnotations() && !ProxyDisplayHandlerUtils::IsProxyDisplayHandler (elIter.GetHandler()))
+        if (hyper != NULL && !hyper->ShouldDrawAnnotations() && !ProxyDisplayHandlerUtils::IsProxyDisplayHandler(elIter.GetHandler()))
             return;
         }
 #endif
 
-    T_Super::_DrawElement (context, element);
+    T_Super::_DrawElement(context, element);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-CameraViewController::CameraViewController (DgnDbR project, DgnViewId viewId) : PhysicalViewController (project, viewId)
+CameraViewController::CameraViewController(DgnDbR project, DgnViewId viewId) : PhysicalViewController(project, viewId)
     {
     // not valid, but better than random
     m_isCameraOn = false;
-    memset (&m_camera, 0, sizeof (m_camera));
+    memset(&m_camera, 0, sizeof(m_camera));
     m_camera.InvalidateFocus();
     }
 
@@ -1078,11 +1089,11 @@ void CameraViewController::CalculateLensAngle()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CameraViewController::CenterEyePoint(double const* backDistanceIn)
     {
-    BeAssert (IsCameraValid());
+    BeAssert(IsCameraValid());
 
     DVec3d delta = GetDelta();
     DPoint3d eyePoint;
-    eyePoint.Scale (delta, 0.5);
+    eyePoint.Scale(delta, 0.5);
     eyePoint.z = backDistanceIn ? *backDistanceIn : GetBackDistance();
 
     GetRotation().MultiplyTranspose(eyePoint);
@@ -1106,7 +1117,7 @@ void CameraViewController::CenterFocusDistance()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-double PhysicalViewController::CalculateMaxDepth (DVec3dCR delta, DVec3dCR zVec)
+double PhysicalViewController::CalculateMaxDepth(DVec3dCR delta, DVec3dCR zVec)
     {
     // We are going to limit maximum depth to a value that will avoid subtractive cancellation
     // errors on the inverse frustum matrix. - These values will occur when the Z'th row values
@@ -1117,20 +1128,20 @@ double PhysicalViewController::CalculateMaxDepth (DVec3dCR delta, DVec3dCR zVec)
     static double   s_depthRatioLimit       = 1.0E8;          // Limit for depth Ratio.
     static double   s_maxTransformRowRatio  = 1.0E5;
 
-    double minXYComponent = std::min (fabs(zVec.x), fabs(zVec.y));
-    double maxDepthRatio = (0.0 == minXYComponent) ? s_depthRatioLimit : std::min ((s_maxTransformRowRatio / minXYComponent), s_depthRatioLimit);
+    double minXYComponent = std::min(fabs(zVec.x), fabs(zVec.y));
+    double maxDepthRatio =(0.0 == minXYComponent) ? s_depthRatioLimit : std::min((s_maxTransformRowRatio / minXYComponent), s_depthRatioLimit);
 
-    return  std::max (delta.x, delta.y) * maxDepthRatio;
+    return  std::max(delta.x, delta.y) * maxDepthRatio;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     12/13
 //---------------------------------------------------------------------------------------
-static bool convertToWorldPointWithStatus (DPoint3dR worldPoint, GeoLocationEventStatus& status, DgnUnits const& units, GeoPointCR location)
+static bool convertToWorldPointWithStatus(DPoint3dR worldPoint, GeoLocationEventStatus& status, DgnUnits const& units, GeoPointCR location)
     {
-    if (SUCCESS != units.UorsFromLatLong (worldPoint, location))
+    if (SUCCESS != units.UorsFromLatLong(worldPoint, location))
         {
-        BeAssert (false);
+        BeAssert(false);
         status = GeoLocationEventStatus::EventIgnored;
         return false;
         }
@@ -1142,23 +1153,23 @@ static bool convertToWorldPointWithStatus (DPoint3dR worldPoint, GeoLocationEven
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     11/13
 //---------------------------------------------------------------------------------------
-bool CameraViewController::_OnGeoLocationEvent (GeoLocationEventStatus& status, GeoPointCR location)
+bool CameraViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR location)
     {
     if (!IsCameraOn())
-        return T_Super::_OnGeoLocationEvent (status, location);
+        return T_Super::_OnGeoLocationEvent(status, location);
 
     DPoint3d worldPoint;
-    if (!convertToWorldPointWithStatus (worldPoint, status, m_dgndb.Units(), location))
+    if (!convertToWorldPointWithStatus(worldPoint, status, m_dgndb.Units(), location))
         return false;
 
     worldPoint.z = GetEyePoint().z;
     DPoint3d targetPoint = GetTargetPoint();
     targetPoint.z = worldPoint.z;
     DVec3d newViewZ;
-    newViewZ.DifferenceOf (targetPoint, worldPoint);
+    newViewZ.DifferenceOf(targetPoint, worldPoint);
     newViewZ.Normalize();
-    targetPoint.SumOf (worldPoint, newViewZ, GetFocusDistance());
-    LookAt (worldPoint, targetPoint, DVec3d::From (0.0, 0.0, 1.0));
+    targetPoint.SumOf(worldPoint, newViewZ, GetFocusDistance());
+    LookAt(worldPoint, targetPoint, DVec3d::From(0.0, 0.0, 1.0));
 
     return true;
     }
@@ -1166,22 +1177,22 @@ bool CameraViewController::_OnGeoLocationEvent (GeoLocationEventStatus& status, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     11/13
 //---------------------------------------------------------------------------------------
-bool PhysicalViewController::_OnGeoLocationEvent (GeoLocationEventStatus& status, GeoPointCR location)
+bool PhysicalViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR location)
     {
     DPoint3d worldPoint;
-    if (!convertToWorldPointWithStatus (worldPoint, status, m_dgndb.Units(), location))
+    if (!convertToWorldPointWithStatus(worldPoint, status, m_dgndb.Units(), location))
         return false;
 
     // If there's no perspective, just center the current location in the view.
     RotMatrix viewInverse;
-    viewInverse.InverseOf (GetRotation());
+    viewInverse.InverseOf(GetRotation());
 
     DPoint3d delta = GetDelta();
-    delta.Scale (0.5);
-    viewInverse.Multiply (delta);
+    delta.Scale(0.5);
+    viewInverse.Multiply(delta);
 
-    worldPoint.DifferenceOf (worldPoint, delta);
-    SetOrigin (worldPoint);
+    worldPoint.DifferenceOf(worldPoint, delta);
+    SetOrigin(worldPoint);
 
     return true;
     }
@@ -1206,7 +1217,7 @@ static DVec3d s_defaultForward, s_defaultUp;
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     11/13
 //---------------------------------------------------------------------------------------
-bool ViewController::OnOrientationEvent (RotMatrixCR matrix, OrientationMode mode, UiOrientation ui)
+bool ViewController::OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui)
     {
     if (!m_defaultDeviceOrientationValid)
         {
@@ -1221,37 +1232,37 @@ bool ViewController::OnOrientationEvent (RotMatrixCR matrix, OrientationMode mod
         s_defaultForward = GetZVector();
         }
 
-    return _OnOrientationEvent (matrix, mode, ui);
+    return _OnOrientationEvent(matrix, mode, ui);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     11/13
 //---------------------------------------------------------------------------------------
-bool PhysicalViewController::ViewVectorsFromOrientation (DVec3dR forward, DVec3dR up, RotMatrixCR orientation, OrientationMode mode, UiOrientation ui)
+bool PhysicalViewController::ViewVectorsFromOrientation(DVec3dR forward, DVec3dR up, RotMatrixCR orientation, OrientationMode mode, UiOrientation ui)
     {
     double azimuthCorrection = 0.0;
     DVec3d currForward = GetZVector();
 
-    orientation.GetColumn (forward, 2);
-    switch (mode)
+    orientation.GetColumn(forward, 2);
+    switch(mode)
         {
         case OrientationMode::CompassHeading:
-            azimuthCorrection = msGeomConst_radiansPerDegree * (90.0 + m_dgndb.Units().GetAzimuth());
-            forward.RotateXY (azimuthCorrection);
+            azimuthCorrection = msGeomConst_radiansPerDegree *(90.0 + m_dgndb.Units().GetAzimuth());
+            forward.RotateXY(azimuthCorrection);
             break;
         case OrientationMode::IgnoreHeading:
             forward.x = currForward.x;
             forward.y = currForward.y;
             break;
         case OrientationMode::RelativeHeading:
-            forward.x = s_defaultForward.x + (orientation.form3d[0][2] - m_defaultDeviceOrientation.form3d[0][2]);
-            forward.y = s_defaultForward.y + (orientation.form3d[1][2] - m_defaultDeviceOrientation.form3d[1][2]);
+            forward.x = s_defaultForward.x +(orientation.form3d[0][2] - m_defaultDeviceOrientation.form3d[0][2]);
+            forward.y = s_defaultForward.y +(orientation.form3d[1][2] - m_defaultDeviceOrientation.form3d[1][2]);
             break;
         }
     forward.Normalize();
 
     // low pass filter
-    if (fabs (currForward.AngleTo (forward)) < 0.025)
+    if (fabs(currForward.AngleTo(forward)) < 0.025)
         return false;
 
     // Since roll isn't desired for any of the standard orientation modes, just ignore the device's real up vector
@@ -1261,8 +1272,8 @@ bool PhysicalViewController::ViewVectorsFromOrientation (DVec3dR forward, DVec3d
     up.Normalize();
 
     DVec3d right;
-    right.NormalizedCrossProduct (up, forward);
-    up.NormalizedCrossProduct (forward, right);
+    right.NormalizedCrossProduct(up, forward);
+    up.NormalizedCrossProduct(forward, right);
 
     return true;
     }
@@ -1270,40 +1281,40 @@ bool PhysicalViewController::ViewVectorsFromOrientation (DVec3dR forward, DVec3d
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     11/13
 //---------------------------------------------------------------------------------------
-bool PhysicalViewController::_OnOrientationEvent (RotMatrixCR orientation, OrientationMode mode, UiOrientation ui)
+bool PhysicalViewController::_OnOrientationEvent(RotMatrixCR orientation, OrientationMode mode, UiOrientation ui)
     {
     DVec3d forward, up;
-    if (!ViewVectorsFromOrientation (forward, up, orientation, mode, ui))
+    if (!ViewVectorsFromOrientation(forward, up, orientation, mode, ui))
         return false;
 
     // No camera, have to manually define origin, etc.
     RotMatrix viewMatrix = GetRotation();
     RotMatrix viewInverse;
-    viewInverse.InverseOf (viewMatrix);
+    viewInverse.InverseOf(viewMatrix);
 
     DVec3d delta = GetDelta();
-    delta.Scale (0.5);
+    delta.Scale(0.5);
     DPoint3d worldDelta = delta;
-    viewInverse.Multiply (worldDelta);
+    viewInverse.Multiply(worldDelta);
 
     // This is the point we want to rotate about.
     DPoint3d eyePoint;
-    eyePoint.SumOf (GetOrigin(), worldDelta);
+    eyePoint.SumOf(GetOrigin(), worldDelta);
 
     DVec3d xVector;
-    xVector.CrossProduct (forward, up);
-    viewMatrix.SetRow (xVector, 0);
-    viewMatrix.SetRow (up, 1);
-    viewMatrix.SetRow (forward, 2);
-    SetRotation (viewMatrix);
+    xVector.CrossProduct(forward, up);
+    viewMatrix.SetRow(xVector, 0);
+    viewMatrix.SetRow(up, 1);
+    viewMatrix.SetRow(forward, 2);
+    SetRotation(viewMatrix);
 
     // Now that we have the new rotation, we can work backward from the eye point to get the new origin.
-    viewInverse.InverseOf (viewMatrix);
+    viewInverse.InverseOf(viewMatrix);
     worldDelta = delta;
-    viewInverse.Multiply (worldDelta);
+    viewInverse.Multiply(worldDelta);
     DPoint3d newOrigin;
-    newOrigin.DifferenceOf (eyePoint, worldDelta);
-    SetOrigin (newOrigin);
+    newOrigin.DifferenceOf(eyePoint, worldDelta);
+    SetOrigin(newOrigin);
 
     return true;
     }
@@ -1311,19 +1322,19 @@ bool PhysicalViewController::_OnOrientationEvent (RotMatrixCR orientation, Orien
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     11/13
 //---------------------------------------------------------------------------------------
-bool CameraViewController::_OnOrientationEvent (RotMatrixCR orientation, OrientationMode mode, UiOrientation ui)
+bool CameraViewController::_OnOrientationEvent(RotMatrixCR orientation, OrientationMode mode, UiOrientation ui)
     {
     if (!IsCameraOn())
-        return T_Super::_OnOrientationEvent (orientation, mode, ui);
+        return T_Super::_OnOrientationEvent(orientation, mode, ui);
 
     DVec3d forward, up;
-    if (!ViewVectorsFromOrientation (forward, up, orientation, mode, ui))
+    if (!ViewVectorsFromOrientation(forward, up, orientation, mode, ui))
         return false;
 
     DPoint3d eyePoint = GetEyePoint(), newTarget;
-    newTarget.SumOf (eyePoint, forward, -GetFocusDistance());
+    newTarget.SumOf(eyePoint, forward, -GetFocusDistance());
 
-    LookAt (eyePoint, newTarget, up);
+    LookAt(eyePoint, newTarget, up);
 
     return true;
     }
@@ -1331,21 +1342,21 @@ bool CameraViewController::_OnOrientationEvent (RotMatrixCR orientation, Orienta
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     11/13
 //---------------------------------------------------------------------------------------
-bool DrawingViewController::_OnGeoLocationEvent (GeoLocationEventStatus& status, GeoPointCR location)
+bool DrawingViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR location)
     {
     DPoint3d worldPoint;
-    if (!convertToWorldPointWithStatus (worldPoint, status, m_dgndb.Units(), location))
+    if (!convertToWorldPointWithStatus(worldPoint, status, m_dgndb.Units(), location))
         return false;
 
     RotMatrix viewInverse;
-    viewInverse.InverseOf (GetRotation());
+    viewInverse.InverseOf(GetRotation());
 
     DPoint3d delta = GetDelta();
-    delta.Scale (0.5);
-    viewInverse.Multiply (delta);
+    delta.Scale(0.5);
+    viewInverse.Multiply(delta);
 
-    worldPoint.DifferenceOf (worldPoint, delta);
-    SetOrigin (worldPoint);
+    worldPoint.DifferenceOf(worldPoint, delta);
+    SetOrigin(worldPoint);
 
     return true;
     }
@@ -1354,29 +1365,29 @@ bool DrawingViewController::_OnGeoLocationEvent (GeoLocationEventStatus& status,
 * See diagram in viewController.h
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewFrustumStatus CameraViewController::LookAt (DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVec,
+ViewportStatus CameraViewController::LookAt(DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVec,
                                                   DVec2dCP extentsIn, double const* frontDistIn, double const* backDistIn)
     {
     DVec3d yVec = upVec;
     if (yVec.Normalize() <= mgds_fc_epsilon) // up vector zero length?
-        return VIEWFRUST_STATUS_InvalidUpVector;
+        return ViewportStatus::InvalidUpVector;
 
     DVec3d zVec; // z defined by direction from eye to target
-    zVec.DifferenceOf (eyePoint, targetPoint);
+    zVec.DifferenceOf(eyePoint, targetPoint);
 
     double focusDist = zVec.Normalize(); // set focus at target point
     if (focusDist <= 1.0)                // eye and target are too close together
-        return VIEWFRUST_STATUS_InvalidTargetPoint;
+        return ViewportStatus::InvalidTargetPoint;
 
     DVec3d xVec; // x is the normal to the Up-Z plane
     if (xVec.NormalizedCrossProduct(yVec, zVec) <= mgds_fc_epsilon)
-        return VIEWFRUST_STATUS_InvalidUpVector;    // up is parallel to z
+        return ViewportStatus::InvalidUpVector;    // up is parallel to z
 
     if (yVec.NormalizedCrossProduct(zVec, xVec) <= mgds_fc_epsilon) // make sure up vector is perpendicular to z vector
-        return VIEWFRUST_STATUS_InvalidUpVector;
+        return ViewportStatus::InvalidUpVector;
 
     // we now have rows of the rotation matrix
-    RotMatrix rotation = RotMatrix::FromRowVectors (xVec, yVec, zVec);
+    RotMatrix rotation = RotMatrix::FromRowVectors(xVec, yVec, zVec);
 
     double backDist  = backDistIn  ? *backDistIn  : GetBackDistance();
     double frontDist = frontDistIn ? *frontDistIn : GetFrontDistance();
@@ -1385,21 +1396,21 @@ ViewFrustumStatus CameraViewController::LookAt (DPoint3dCR eyePoint, DPoint3dCR 
     frontDist = std::max(frontDist, 1.0);
     backDist  = std::max(backDist, focusDist+1.0);
 
-    BeAssert (backDist > frontDist);
-    delta.z = (backDist - frontDist);
+    BeAssert(backDist > frontDist);
+    delta.z =(backDist - frontDist);
 
     DVec3d frontDelta = DVec3d::FromScale(delta, frontDist/focusDist);
-    ViewFrustumStatus stat = DgnViewport::ValidateWindowSize (frontDelta, false); // validate window size on front (smallest) plane
-    if (VIEWFRUST_STATUS_SUCCESS != stat)
+    ViewportStatus stat = DgnViewport::ValidateWindowSize(frontDelta, false); // validate window size on front (smallest) plane
+    if (ViewportStatus::Success != stat)
         return  stat;
 
     if (delta.z > CalculateMaxDepth(delta, zVec)) // make sure we're not zoomed in too far
-        return VIEWFRUST_STATUS_MaxDisplayDepth;
+        return ViewportStatus::MaxDisplayDepth;
 
     // The origin is defined as the lower left of the view rectangle on the focus plane, projected to the back plane.
     // Start at eye point, and move to center of back plane, then move left half of width. and down half of height
     DPoint3d origin;
-    origin.SumOf (eyePoint, zVec, -backDist, xVec, -0.5*delta.x, yVec, -0.5*delta.y);
+    origin.SumOf(eyePoint, zVec, -backDist, xVec, -0.5*delta.x, yVec, -0.5*delta.y);
 
     SetCameraOn(true);
     SetEyePoint(eyePoint);
@@ -1409,30 +1420,30 @@ ViewFrustumStatus CameraViewController::LookAt (DPoint3dCR eyePoint, DPoint3dCR 
     SetDelta(delta);
     CalculateLensAngle();
 
-    return VIEWFRUST_STATUS_SUCCESS;
+    return ViewportStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewFrustumStatus CameraViewController::LookAtUsingLensAngle (DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVec,
+ViewportStatus CameraViewController::LookAtUsingLensAngle(DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVec,
                                                   double lens, double const* frontDist, double const* backDist)
     {
     DVec3d zVec; // z defined by direction from eye to target
-    zVec.DifferenceOf (eyePoint, targetPoint);
+    zVec.DifferenceOf(eyePoint, targetPoint);
 
     double focusDist = zVec.Normalize(); // set focus at target point
     if (focusDist <= 1.0)                // eye and target are too close together
-        return VIEWFRUST_STATUS_InvalidTargetPoint;
+        return ViewportStatus::InvalidTargetPoint;
 
     if (lens < .0001 || lens > msGeomConst_pi)
-        return VIEWFRUST_STATUS_InvalidLens;
+        return ViewportStatus::InvalidLens;
 
     double extent = 2.0 * tan(lens/2.0) * focusDist;
 
-    DVec2d delta  = DVec2d::From (GetDelta().x, GetDelta().y);
+    DVec2d delta  = DVec2d::From(GetDelta().x, GetDelta().y);
     double longAxis = std::max(delta.x, delta.y);
-    delta.Scale (extent/longAxis);
+    delta.Scale(extent/longAxis);
 
     return LookAt(eyePoint, targetPoint, upVec, &delta, frontDist, backDist);
     }
@@ -1440,18 +1451,18 @@ ViewFrustumStatus CameraViewController::LookAtUsingLensAngle (DPoint3dCR eyePoin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewFrustumStatus CameraViewController::MoveCameraWorld (DVec3dCR distance)
+ViewportStatus CameraViewController::MoveCameraWorld(DVec3dCR distance)
     {
     DPoint3d newTarget, newEyePt;
-    newTarget.SumOf (GetTargetPoint(), distance);
-    newEyePt.SumOf (GetEyePoint(), distance);
+    newTarget.SumOf(GetTargetPoint(), distance);
+    newEyePt.SumOf(GetEyePoint(), distance);
     return LookAt(newEyePt, newTarget, GetYVector());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewFrustumStatus CameraViewController::MoveCameraLocal (DVec3dCR distanceLocal)
+ViewportStatus CameraViewController::MoveCameraLocal(DVec3dCR distanceLocal)
     {
     DVec3d distWorld = distanceLocal;
     GetRotation().MultiplyTranspose(distWorld);
@@ -1461,14 +1472,14 @@ ViewFrustumStatus CameraViewController::MoveCameraLocal (DVec3dCR distanceLocal)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewFrustumStatus CameraViewController::RotateCameraWorld (double radAngle, DVec3dCR axis, DPoint3dCP aboutPointIn)
+ViewportStatus CameraViewController::RotateCameraWorld(double radAngle, DVec3dCR axis, DPoint3dCP aboutPointIn)
     {
     DPoint3d about = aboutPointIn ? *aboutPointIn : GetEyePoint();
     RotMatrix rotation = RotMatrix::FromVectorAndRotationAngle(axis, radAngle);
     Transform trans    = Transform::FromMatrixAndFixedPoint(rotation, about);
 
     DPoint3d newTarget = GetTargetPoint();
-    trans.Multiply (newTarget);
+    trans.Multiply(newTarget);
     DVec3d upVec = GetYVector();
     rotation.Multiply(upVec);
 
@@ -1478,7 +1489,7 @@ ViewFrustumStatus CameraViewController::RotateCameraWorld (double radAngle, DVec
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewFrustumStatus CameraViewController::RotateCameraLocal (double radAngle, DVec3dCR axis, DPoint3dCP aboutPointIn)
+ViewportStatus CameraViewController::RotateCameraLocal(double radAngle, DVec3dCR axis, DPoint3dCP aboutPointIn)
     {
     DVec3d axisWorld = axis;
     GetRotation().MultiplyTranspose(axisWorld);
@@ -1494,15 +1505,15 @@ double CameraViewController::GetBackDistance() const
     // backDist is the z component of the vector from the eyePoint to the origin.
     DPoint3d eyeOrg;
     eyeOrg.DifferenceOf(GetEyePoint(), GetOrigin());
-    GetRotation().Multiply (eyeOrg); // orient to view
+    GetRotation().Multiply(eyeOrg); // orient to view
     return eyeOrg.z;
     }
 
-DPoint3d ViewController2d::_GetOrigin() const {return DPoint3d::From (m_origin.x, m_origin.y);}
+DPoint3d ViewController2d::_GetOrigin() const {return DPoint3d::From(m_origin.x, m_origin.y);}
 void     ViewController2d::_SetDelta(DVec3dCR delta) {m_delta.x = delta.x; m_delta.y = delta.y;}
 void     ViewController2d::_SetOrigin(DPoint3dCR origin) {m_origin.x = origin.x; m_origin.y = origin.y;}
-void     ViewController2d::_SetRotation(RotMatrixCR rot) {DVec3d xColumn; rot.GetColumn (xColumn, 0); m_rotAngle = atan2 (xColumn.y, xColumn.x);}
-DVec3d   ViewController2d::_GetDelta() const {return DVec3d::From (m_delta.x, m_delta.y);}
+void     ViewController2d::_SetRotation(RotMatrixCR rot) {DVec3d xColumn; rot.GetColumn(xColumn, 0); m_rotAngle = atan2(xColumn.y, xColumn.x);}
+DVec3d   ViewController2d::_GetDelta() const {return DVec3d::From(m_delta.x, m_delta.y);}
 RotMatrix ViewController2d::_GetRotation() const {return RotMatrix::FromAxisAndRotationAngle(2, m_rotAngle);}
 
 /*---------------------------------------------------------------------------------**//**
@@ -1511,10 +1522,10 @@ RotMatrix ViewController2d::_GetRotation() const {return RotMatrix::FromAxisAndR
 DPoint3d ViewController::GetCenter() const
     {
     DPoint3d delta;
-    GetRotation().MultiplyTranspose (delta, GetDelta());
+    GetRotation().MultiplyTranspose(delta, GetDelta());
 
     DPoint3d center;
-    center.SumOf (GetOrigin(), delta, 0.5);
+    center.SumOf(GetOrigin(), delta, 0.5);
     return  center;
     }
 
@@ -1532,16 +1543,16 @@ DPoint3d CameraViewController::_GetTargetPoint() const
         return T_Super::_GetTargetPoint();
 
     DVec3d viewZ;
-    GetRotation().GetRow (viewZ, 2);
+    GetRotation().GetRow(viewZ, 2);
     DPoint3d target;
-    target.SumOf (GetEyePoint(), viewZ, -1.0 * GetFocusDistance());
+    target.SumOf(GetEyePoint(), viewZ, -1.0 * GetFocusDistance());
     return  target;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      03/14
 //---------------------------------------------------------------------------------------
-void CameraViewController::_RestoreFromSettings (JsonValueCR jsonObj)
+void CameraViewController::_RestoreFromSettings(JsonValueCR jsonObj)
     {
     T_Super::_RestoreFromSettings(jsonObj);
 
@@ -1550,26 +1561,31 @@ void CameraViewController::_RestoreFromSettings (JsonValueCR jsonObj)
     m_camera.SetFocusDistance(jsonObj[VIEW_SETTING_CameraFocalLength].asDouble());
 
     DPoint3d eyePt;
-    JsonUtils::DPoint3dFromJson (eyePt, jsonObj[VIEW_SETTING_CameraPosition]);
+    JsonUtils::DPoint3dFromJson(eyePt, jsonObj[VIEW_SETTING_CameraPosition]);
     m_camera.SetEyePoint(eyePt);
 
 #ifdef WIP_PERSISTENT_CLIP_VECTOR // need to change the clip tool to recognize and use saved clip vector
-    if (jsonObj.isMember (VIEW_SETTING_ClipVector))
+    if (jsonObj.isMember(VIEW_SETTING_ClipVector))
         {
         m_clipVector = ClipVector::Create();
-        JsonUtils::ClipVectorFromJson (*m_clipVector, jsonObj[VIEW_SETTING_ClipVector]);
+        JsonUtils::ClipVectorFromJson(*m_clipVector, jsonObj[VIEW_SETTING_ClipVector]);
         }
     else
         {
         m_clipVector = NULL;
         }
 #endif
+
+    //  Anything is better than garbage
+    if (m_delta.x <= DBL_EPSILON) m_delta.x = (m_delta.y + m_delta.z)/2;
+    if (m_delta.y <= DBL_EPSILON) m_delta.y = (m_delta.x + m_delta.z)/2;
+    if (m_delta.z <= DBL_EPSILON) m_delta.z = (m_delta.x + m_delta.y)/2;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-void PhysicalViewController::_RestoreFromSettings (JsonValueCR jsonObj)
+void PhysicalViewController::_RestoreFromSettings(JsonValueCR jsonObj)
     {
     T_Super::_RestoreFromSettings(jsonObj);
 
@@ -1578,42 +1594,42 @@ void PhysicalViewController::_RestoreFromSettings (JsonValueCR jsonObj)
 
     m_viewFlags.From3dJson(jsonObj[VIEW_SETTING_Flags]);
 
-    JsonUtils::DPoint3dFromJson (m_origin, jsonObj[VIEW_SETTING_Origin]);
-    JsonUtils::DPoint3dFromJson (m_delta, jsonObj[VIEW_SETTING_Delta]);
-    JsonUtils::RotMatrixFromJson (m_rotation, jsonObj[VIEW_SETTING_Rotation]);
+    JsonUtils::DPoint3dFromJson(m_origin, jsonObj[VIEW_SETTING_Origin]);
+    JsonUtils::DPoint3dFromJson(m_delta, jsonObj[VIEW_SETTING_Delta]);
+    JsonUtils::RotMatrixFromJson(m_rotation, jsonObj[VIEW_SETTING_Rotation]);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-void CameraViewController::_SaveToSettings (JsonValueR jsonObj) const
+void CameraViewController::_SaveToSettings(JsonValueR jsonObj) const
     {
-    T_Super::_SaveToSettings (jsonObj);
+    T_Super::_SaveToSettings(jsonObj);
 
     jsonObj[VIEW_SETTING_IsCameraOn] = m_isCameraOn;
     jsonObj[VIEW_SETTING_CameraAngle] = m_camera.GetLensAngle();
-    JsonUtils::DPoint3dToJson (jsonObj[VIEW_SETTING_CameraPosition], m_camera.GetEyePoint());
+    JsonUtils::DPoint3dToJson(jsonObj[VIEW_SETTING_CameraPosition], m_camera.GetEyePoint());
     jsonObj[VIEW_SETTING_CameraFocalLength] = m_camera.GetFocusDistance();
 
 #ifdef WIP_PERSISTENT_CLIP_VECTOR // need to change the clip tool to recognize and use saved clip vector
     if (m_clipVector.IsValid())
-        JsonUtils::ClipVectorToJson (jsonObj[VIEW_SETTING_ClipVector], *m_clipVector);
+        JsonUtils::ClipVectorToJson(jsonObj[VIEW_SETTING_ClipVector], *m_clipVector);
 #endif
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-void PhysicalViewController::_SaveToSettings (JsonValueR jsonObj) const
+void PhysicalViewController::_SaveToSettings(JsonValueR jsonObj) const
     {
-    T_Super::_SaveToSettings (jsonObj);
+    T_Super::_SaveToSettings(jsonObj);
 
     m_viewFlags.To3dJson(jsonObj[VIEW_SETTING_Flags]);
     m_viewedModels.ToJson(jsonObj[VIEW_SETTING_Models]);
 
-    JsonUtils::DPoint3dToJson (jsonObj[VIEW_SETTING_Origin], m_origin);
-    JsonUtils::DPoint3dToJson (jsonObj[VIEW_SETTING_Delta], m_delta);
-    JsonUtils::RotMatrixToJson (jsonObj[VIEW_SETTING_Rotation], m_rotation);
+    JsonUtils::DPoint3dToJson(jsonObj[VIEW_SETTING_Origin], m_origin);
+    JsonUtils::DPoint3dToJson(jsonObj[VIEW_SETTING_Delta], m_delta);
+    JsonUtils::RotMatrixToJson(jsonObj[VIEW_SETTING_Rotation], m_rotation);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1624,11 +1640,11 @@ IAuxCoordSysP PhysicalViewController::_GetAuxCoordinateSystem() const
 #ifdef DGNV10FORMAT_CHANGES_WIP
     // if we don't have an ACS when this is called, try to get one.
     if (!m_auxCoordSys.IsValid())
-        IACSManager::GetManager().ReadSettings (const_cast <ViewControllerP>(this), GetDgnElement(), GetRootModelP(false));
+        IACSManager::GetManager().ReadSettings(const_cast <ViewControllerP>(this), GetDgnElement(), GetRootModelP(false));
 
     IAuxCoordSysP   acs = m_auxCoordSys.get();
 
-     if (NULL != acs && SUCCESS == acs->CompleteSetupFromViewController (this))
+     if (NULL != acs && SUCCESS == acs->CompleteSetupFromViewController(this))
         return acs;
 #endif
 
@@ -1638,7 +1654,7 @@ IAuxCoordSysP PhysicalViewController::_GetAuxCoordinateSystem() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  11/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PhysicalViewController::SetAuxCoordinateSystem (IAuxCoordSysP acs)
+void PhysicalViewController::SetAuxCoordinateSystem(IAuxCoordSysP acs)
     {
     // if no change, return.
     if (m_auxCoordSys.get() != acs)
@@ -1650,7 +1666,7 @@ void PhysicalViewController::SetAuxCoordinateSystem (IAuxCoordSysP acs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewFlags::InitDefaults()
     {
-    memset (this, 0, sizeof(ViewFlags));
+    memset(this, 0, sizeof(ViewFlags));
 
     text = true;
     dimensions = true;
@@ -1673,11 +1689,11 @@ void PhysicalViewController::_AdjustAspectRatio(double windowAspect, bool expand
     windowAspect *= GetAspectRatioSkew();
 
     // first, make sure none of the deltas are negative
-    m_delta.x = fabs (m_delta.x);
-    m_delta.y = fabs (m_delta.y);
-    m_delta.z = fabs (m_delta.z);
+    m_delta.x = fabs(m_delta.x);
+    m_delta.y = fabs(m_delta.y);
+    m_delta.z = fabs(m_delta.z);
 
-    double maxAbs = max (m_delta.x, m_delta.y);
+    double maxAbs = max(m_delta.x, m_delta.y);
 
     // if all deltas are zero, set to 100 (what else can we do?)
     if (0.0 == maxAbs)
@@ -1691,7 +1707,7 @@ void PhysicalViewController::_AdjustAspectRatio(double windowAspect, bool expand
 
     double viewAspect  = m_delta.x / m_delta.y;
 
-    if (fabs(1.0 - (viewAspect / windowAspect)) < 1.0e-9)
+    if (fabs(1.0 -(viewAspect / windowAspect)) < 1.0e-9)
         return;
 
     DVec3d oldDelta = m_delta;
@@ -1704,7 +1720,7 @@ void PhysicalViewController::_AdjustAspectRatio(double windowAspect, bool expand
             m_delta.x = m_delta.y;
         }
 
-    if (expandView ? (viewAspect > windowAspect) : (windowAspect > 1.0))
+    if (expandView ?(viewAspect > windowAspect) :(windowAspect > 1.0))
         {
         double rtmp = m_delta.x / windowAspect;
         if (rtmp < MAX_VDELTA)
@@ -1728,22 +1744,22 @@ void PhysicalViewController::_AdjustAspectRatio(double windowAspect, bool expand
         }
 
     DPoint3d origin;
-    m_rotation.Multiply (&origin, &m_origin, 1);
-    origin.x += (oldDelta.x - m_delta.x) / 2.0;
-    origin.y += (oldDelta.y - m_delta.y) / 2.0;
-    m_rotation.MultiplyTranspose (m_origin, origin);
+    m_rotation.Multiply(&origin, &m_origin, 1);
+    origin.x +=(oldDelta.x - m_delta.x) / 2.0;
+    origin.y +=(oldDelta.y - m_delta.y) / 2.0;
+    m_rotation.MultiplyTranspose(m_origin, origin);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController2d::_AdjustAspectRatio (double windowAspect, bool expandView)
+void ViewController2d::_AdjustAspectRatio(double windowAspect, bool expandView)
     {
     // first, make sure none of the deltas are negative
-    m_delta.x = fabs (m_delta.x);
-    m_delta.y = fabs (m_delta.y);
+    m_delta.x = fabs(m_delta.x);
+    m_delta.y = fabs(m_delta.y);
 
-    double maxAbs = max (m_delta.x, m_delta.y);
+    double maxAbs = max(m_delta.x, m_delta.y);
 
     // if all deltas are zero, set to 100 (what else can we do?)
     if (0.0 == maxAbs)
@@ -1756,7 +1772,7 @@ void ViewController2d::_AdjustAspectRatio (double windowAspect, bool expandView)
         m_delta.y = maxAbs;
 
     double viewAspect  = m_delta.x / m_delta.y;
-    if (fabs(1.0 - (viewAspect / windowAspect)) < 1.0e-9)
+    if (fabs(1.0 -(viewAspect / windowAspect)) < 1.0e-9)
         return;
 
     DVec2d oldDelta = m_delta;
@@ -1768,7 +1784,7 @@ void ViewController2d::_AdjustAspectRatio (double windowAspect, bool expandView)
             m_delta.x = m_delta.y;
         }
 
-    if (expandView ? (viewAspect > windowAspect) : (windowAspect > 1.0))
+    if (expandView ?(viewAspect > windowAspect) :(windowAspect > 1.0))
         {
         double rtmp = m_delta.x / windowAspect;
         if (rtmp < MAX_VDELTA)
@@ -1793,11 +1809,11 @@ void ViewController2d::_AdjustAspectRatio (double windowAspect, bool expandView)
 
     DPoint2d origin;
     RotMatrix rMatrix = GetRotation();
-    rMatrix.Multiply (&origin, &m_origin, 1);
-    origin.x += (oldDelta.x - m_delta.x) / 2.0;
-    origin.y += (oldDelta.y - m_delta.y) / 2.0;
+    rMatrix.Multiply(&origin, &m_origin, 1);
+    origin.x +=(oldDelta.x - m_delta.x) / 2.0;
+    origin.y +=(oldDelta.y - m_delta.y) / 2.0;
     rMatrix.Transpose();
-    rMatrix.Multiply (&m_origin, &origin, 1);
+    rMatrix.Multiply(&m_origin, &origin, 1);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1809,29 +1825,29 @@ void ViewController2d::_RestoreFromSettings(JsonValueCR settings)
 
     JsonValueCR area2d = settings[VIEW_SETTING_Area2d];
 
-    JsonUtils::DPoint2dFromJson (m_origin, area2d[VIEW_SETTING_Origin]);
-    JsonUtils::DPoint2dFromJson (m_delta, area2d[VIEW_SETTING_Delta]);
+    JsonUtils::DPoint2dFromJson(m_origin, area2d[VIEW_SETTING_Origin]);
+    JsonUtils::DPoint2dFromJson(m_delta, area2d[VIEW_SETTING_Delta]);
     m_rotAngle = area2d[VIEW_SETTING_RotAngle].asDouble();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
-void ViewController2d::_SaveToSettings (JsonValueR settings) const
+void ViewController2d::_SaveToSettings(JsonValueR settings) const
     {
     T_Super::_SaveToSettings(settings);
 
     JsonValueR area2d = settings[VIEW_SETTING_Area2d];
 
-    JsonUtils::DPoint2dToJson (area2d[VIEW_SETTING_Origin], m_origin);
-    JsonUtils::DPoint2dToJson (area2d[VIEW_SETTING_Delta], m_delta);
+    JsonUtils::DPoint2dToJson(area2d[VIEW_SETTING_Origin], m_origin);
+    JsonUtils::DPoint2dToJson(area2d[VIEW_SETTING_Delta], m_delta);
     area2d[VIEW_SETTING_RotAngle] = m_rotAngle;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley  10/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ViewController::_VisitHit (HitPathCR hit, ViewContextR context) const
+StatusInt ViewController::_VisitHit (HitDetailCR hit, ViewContextR context) const
     {
     GeometricElementCPtr element = hit.GetElement();
 
@@ -1841,7 +1857,7 @@ StatusInt ViewController::_VisitHit (HitPathCR hit, ViewContextR context) const
     ViewContext::ContextMark mark(&context);
 
     // Allow element sub-class involvement for flashing sub-entities...
-    if (element->_DrawHit (hit, context))
+    if (element->_DrawHit(hit, context))
         return SUCCESS;
 
     return context.VisitElement(*element);
@@ -1850,8 +1866,8 @@ StatusInt ViewController::_VisitHit (HitPathCR hit, ViewContextR context) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley  10/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::_DrawView (ViewContextR context) 
+void ViewController::_DrawView(ViewContextR context) 
     {
     for (auto modelId : m_viewedModels)
-        context.VisitDgnModel (m_dgndb.Models().GetModel(modelId));
+        context.VisitDgnModel(m_dgndb.Models().GetModel(modelId));
     }

@@ -88,6 +88,7 @@ TEST(DgnMarkupProjectTest, CreateDgnMarkupProject)
 
     ASSERT_EQ( rdlModel->GetDgnMarkupProject(), mproject.get() );
 
+#ifdef WIP_REDLINE_ECINSTANCE
     // Work with redline properties
     ECN::ECClassCP rdlClass = rdlModel->GetECClass();
     
@@ -124,7 +125,7 @@ TEST(DgnMarkupProjectTest, CreateDgnMarkupProject)
         ASSERT_TRUE (selectStmt.Step() == ECSqlStepStatus::HasRow);
         ASSERT_STREQ( selectStmt.GetValueText(0), "Some Description" );
         }
-
+#endif
 
     // Create a redline model view
     BSIRect rect;
@@ -133,25 +134,4 @@ TEST(DgnMarkupProjectTest, CreateDgnMarkupProject)
 
     // *** WIP Create association - to do that, we'd need a real ViewInfo
     // rdlModel->SetAssociation (*dgnProject, dgnProjectViewInfo);
-
-    ASSERT_TRUE( rdlModel->GetViewId().IsValid() );
-
-    // ----------------------------------------------------------
-    // Markups
-    ECN::ECClassCP markupClass = mproject->Schemas().GetECClass ("Bentley_Markup", "Markup");
-    ECN::IECInstancePtr markupECInstance = markupClass->GetDefaultStandaloneEnabler ()->CreateInstance (3);
-    ECN::ECValue value;
-
-    value.SetString (L"markup1");    
-    markupECInstance->SetValue (L"Name", value); 
-
-    value.SetDateTime (DateTime::GetCurrentTimeUtc());
-    markupECInstance->SetValue (L"CreateDate", value); 
-
-    ECInstanceInserter inserter (*mproject, *markupClass);
-    ASSERT_TRUE( inserter.IsValid ());
-    ECInstanceKey newECInstanceKey;
-    ASSERT_EQ( SUCCESS, inserter.Insert (newECInstanceKey, *markupECInstance) );
-
-    mproject->SaveChanges();
     }

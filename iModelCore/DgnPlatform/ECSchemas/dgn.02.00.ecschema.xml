@@ -8,6 +8,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca" />
     <ECSchemaReference name="Bentley_Standard_Classes" version="01.00" prefix="bsm" />
+    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
 
     <ECCustomAttributes>
         <SystemSchema xmlns="Bentley_Standard_CustomAttributes.01.12"/>
@@ -15,11 +16,11 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
 
     <ECClass typeName="ElementRTree" isDomainClass="True" >
         <ECCustomAttributes>
-            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.12">
+            <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>MapToExistingTable</MapStrategy>
                 <TableName>dgn_RTree3d</TableName>
-                <ECIdColumn>ElementId</ECIdColumn>
-            </ECDbClassHint>
+                <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
+            </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="MinX" typeName="double"/>
         <ECProperty propertyName="MaxX" typeName="double"/>
@@ -31,18 +32,18 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
 
     <ECClass typeName="Model" isDomainClass="True" >
         <ECCustomAttributes>
-            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.12">
+            <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
-                <ECIdColumn>Id</ECIdColumn>
-            </ECDbClassHint>
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="Name" displayLabel="Model" typeName="string" description="Name of model">
             <ECCustomAttributes>
-                <ECDbPropertyHint xmlns="Bentley_Standard_CustomAttributes.01.12">
-                    <Collate>NOCASE</Collate>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <Collation>NoCase</Collation>
                     <IsNullable>False</IsNullable>
                     <IsUnique>True</IsUnique>
-                </ECDbPropertyHint>
+                </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
@@ -76,6 +77,9 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECClass typeName="RedlineModel" isDomainClass="True">
         <BaseClass>SheetModel</BaseClass>
     </ECClass>
+    <ECClass typeName="PhysicalRedlineModel" isDomainClass="True">
+        <BaseClass>PhysicalModel</BaseClass>
+    </ECClass>
     <ECClass typeName="ComponentModel" isDomainClass="True">
         <BaseClass>Model3d</BaseClass>
     </ECClass>
@@ -105,26 +109,26 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
 
     <ECClass typeName="Category" isDomainClass="True" >
         <ECCustomAttributes>
-            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.12">
+             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>TablePerClass</MapStrategy>
-                <ECIdColumn>Id</ECIdColumn>
-            </ECDbClassHint>
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="Code" typeName="string" description="Code for a category" >
             <ECCustomAttributes>
-                <ECDbPropertyHint xmlns="Bentley_Standard_CustomAttributes.01.12">
-                    <Collate>NOCASE</Collate>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <Collation>NoCase</Collation>
                     <IsNullable>False</IsNullable>
                     <IsUnique>True</IsUnique>
-                </ECDbPropertyHint>
+                </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Label" displayLabel="Category" typeName="string">
             <ECCustomAttributes>
-                <ECDbPropertyHint xmlns="Bentley_Standard_CustomAttributes.01.12">
-                    <Collate>NOCASE</Collate>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <Collation>NoCase</Collation>
                     <IsNullable>False</IsNullable>
-                </ECDbPropertyHint>
+                </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
@@ -135,34 +139,34 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
 
     <ECClass typeName="Color" isDomainClass="True" >
         <ECCustomAttributes>
-            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.12">
+            <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>TablePerClass</MapStrategy>
-                <ECIdColumn>Id</ECIdColumn>
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
                 <Indexes>
-                    <ECDbIndex>
+                    <DbIndex>
                         <IsUnique>True</IsUnique>
                         <Properties>
                             <string>Color.Name</string>
                             <string>Color.Book</string>
                         </Properties>
-                    </ECDbIndex>
+                    </DbIndex>
                 </Indexes>
-            </ECDbClassHint>
+            </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="Name" displayLabel="" typeName="string" description="Name of Color" >
             <ECCustomAttributes>
-                <ECDbPropertyHint xmlns="Bentley_Standard_CustomAttributes.01.12">
-                    <Collate>NOCASE</Collate>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <Collation>NoCase</Collation>
                     <IsNullable>False</IsNullable>
-                </ECDbPropertyHint>
+                </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Book" displayLabel="" typeName="string" description="Name of Book" >
             <ECCustomAttributes>
-                <ECDbPropertyHint xmlns="Bentley_Standard_CustomAttributes.01.12">
-                    <Collate>NOCASE</Collate>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <Collation>NoCase</Collation>
                     <IsNullable>False</IsNullable>
-                </ECDbPropertyHint>
+                </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Value" displayLabel="" typeName="int" />
@@ -196,30 +200,30 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
 
     <ECClass typeName="SubCategory" isDomainClass="True">
         <ECCustomAttributes>
-            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.12">
-                <ECIdColumn>Id</ECIdColumn>
-            </ECDbClassHint>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="CategoryId" typeName="long">
             <!-- Foreign key relationship: CategoryOwnsSubCategories.CategoryId -->
             <ECCustomAttributes>
-                <ECDbPropertyHint xmlns="Bentley_Standard_CustomAttributes.01.12">
+                <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>False</IsNullable>
-                </ECDbPropertyHint>
+                </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Code" typeName="string" description="Code for a subcategory">
             <ECCustomAttributes>
-                <ECDbPropertyHint xmlns="Bentley_Standard_CustomAttributes.01.12">
-                    <Collate>NOCASE</Collate>
-                </ECDbPropertyHint>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <Collation>NoCase</Collation>
+                </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Label" displayLabel="SubCategory" typeName="string">
             <ECCustomAttributes>
-                <ECDbPropertyHint xmlns="Bentley_Standard_CustomAttributes.01.12">
-                    <Collate>NOCASE</Collate>
-                </ECDbPropertyHint>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <Collation>NoCase</Collation>
+                </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string"/>
@@ -228,19 +232,19 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
 
     <ECClass typeName="View" isDomainClass="True" >
         <ECCustomAttributes>
-            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.12">
+            <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
-                <ECIdColumn>Id</ECIdColumn>
-            </ECDbClassHint>
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="ViewType" typeName="int" />
         <ECProperty propertyName="Name" typeName="string" description="Name of view">
             <ECCustomAttributes>
-                <ECDbPropertyHint xmlns="Bentley_Standard_CustomAttributes.01.12">
-                    <Collate>NOCASE</Collate>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <Collation>NoCase</Collation>
                     <IsNullable>False</IsNullable>
                     <IsUnique>True</IsUnique>
-                </ECDbPropertyHint>
+                </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
@@ -269,11 +273,11 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECRelationshipClass typeName="ElementDrivesElement" isDomainClass="True" strength="referencing" strengthDirection="forward">
         <!-- Relationship that indicates that an Element drives (controls the lifecyle or structure of) a dependent Element -->
         <ECCustomAttributes>
-            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.12">
+            <ClassMap xmlns="ECDbMap.01.00">
                 <!-- We must insist that all instances of all possible subclasses are stored together in a single table. 
                      TxnManager knows about this table, and expects to find all instances this kind of relationship there. -->
                 <MapStrategy>TablePerHierarchy</MapStrategy>
-            </ECDbClassHint>
+            </ClassMap>
             <ECDbRelationshipClassHint xmlns="Bentley_Standard_CustomAttributes.01.12">
                 <AllowDuplicateRelationships>True</AllowDuplicateRelationships>
             </ECDbRelationshipClassHint>
@@ -308,9 +312,9 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
 
     <ECRelationshipClass typeName="ElementGroupHasMembers" isDomainClass="True" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
-            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.12">
-                <ECIdColumn>Id</ECIdColumn>
-            </ECDbClassHint>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
         </ECCustomAttributes>
         <Source cardinality="(0,N)" polymorphic="True">
             <ECCustomAttributes>
@@ -335,9 +339,9 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECRelationshipClass typeName="ModelDrivesModel" isDomainClass="True" strength="referencing" strengthDirection="forward">
         <!-- Relationship that indicates that a Model drives (controls the lifecyle or structure of) a dependent Model -->
         <ECCustomAttributes>
-            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.12">
+            <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
-            </ECDbClassHint>
+            </ClassMap>
         </ECCustomAttributes>
         <Source cardinality="(0,N)" polymorphic="True">
             <ECCustomAttributes>
@@ -362,10 +366,21 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <!-- Abstract -->
     <ECClass typeName="Element" isDomainClass="False" isStruct="False" isCustomAttributeClass="False">
         <ECCustomAttributes>
-            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.12">
+            <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
-                <ECIdColumn>Id</ECIdColumn>
-            </ECDbClassHint>
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+                <!-- WIP: Why does this add "WHERE ECClassId = xxx"?
+                <Indexes>
+                    <DbIndex>
+                        <Name>idx_dgn_Element_Code</Name>
+                        <IsUnique>False</IsUnique>
+                        <Properties>
+                            <string>Code</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
+                -->
+            </ClassMap>
             <ClassHasCurrentTimeStampProperty xmlns="Bentley_Standard_CustomAttributes.01.12">
                 <PropertyName>LastMod</PropertyName>
             </ClassHasCurrentTimeStampProperty>
@@ -373,42 +388,44 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="ModelId" typeName="long">
             <!-- Foreign key relationship: ModelContainsElements.ModelId -->
             <ECCustomAttributes>
-                <ECDbPropertyHint xmlns="Bentley_Standard_CustomAttributes.01.12">
+                <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>False</IsNullable>
-                </ECDbPropertyHint>
+                </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="CategoryId" typeName="long">
             <!-- Foreign key relationship: ElementIsInCategory.CategoryId -->
             <ECCustomAttributes>
-                <ECDbPropertyHint xmlns="Bentley_Standard_CustomAttributes.01.12">
+                <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>False</IsNullable>
-                </ECDbPropertyHint>
+                </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="ParentId" typeName="long">
             <!-- Foreign key relationship: ElementOwnsChildElements.ParentId -->
             <ECCustomAttributes>
-                <ECDbPropertyHint xmlns="Bentley_Standard_CustomAttributes.01.12">
+                <PropertyMap xmlns="ECDbMap.01.00">
                     <!-- Null means a "root level" element -->
                     <IsNullable>True</IsNullable>
-                </ECDbPropertyHint>
+                </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Code" typeName="string">
             <!-- The "business key" for this Element. Typically used to link this Element with a record in an external system. -->
             <ECCustomAttributes>
-                <ECDbPropertyHint xmlns="Bentley_Standard_CustomAttributes.01.12">
+                <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>False</IsNullable>
-                </ECDbPropertyHint>
+                    <!-- Code is usually, but not necessarily, unique -->
+                    <IsUnique>False</IsUnique>
+                </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Label" typeName="string">
             <!-- An optional "friendly" way of referring to this Element. This is typically a string that the user typed in. -->
             <ECCustomAttributes>
-                <ECDbPropertyHint xmlns="Bentley_Standard_CustomAttributes.01.12">
+                <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>True</IsNullable>
-                </ECDbPropertyHint>
+                </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="LastMod" typeName="dateTime">
@@ -451,12 +468,12 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <!-- The aspect that holds the intrinsic characteristics of the element (properties that are independent of the functional spec which is stored directly on the Element) -->
         <BaseClass>ElementAspect</BaseClass>
         <ECCustomAttributes>
-            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.12">
+            <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
-                <MapStrategyOption>ReuseColumns</MapStrategyOption>
+                <MapStrategyOptions>ReuseColumns</MapStrategyOptions>
                 <!-- The ECInstanceId for ElementGeom is the same as the Id of the owning Element -->
-                <ECIdColumn>ElementId</ECIdColumn>
-            </ECDbClassHint>
+                <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
+            </ClassMap>
         </ECCustomAttributes>
     </ECClass>
 
@@ -465,10 +482,10 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <!-- This aspect is not subclassed -->
         <BaseClass>ElementAspect</BaseClass>
         <ECCustomAttributes>
-            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.12">
+            <ClassMap xmlns="ECDbMap.01.00">
                 <!-- The ECInstanceId for ElementGeom is the same as the Id of the owning Element -->
-                <ECIdColumn>ElementId</ECIdColumn>
-            </ECDbClassHint>
+                <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
+            </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="Placement" typeName="binary"/>
         <ECProperty propertyName="Geom" typeName="binary"/>
@@ -477,9 +494,9 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECRelationshipClass typeName="ElementGeomUsesParts" isDomainClass="True" strength="referencing" strengthDirection="forward">
         <!-- Used to indicate that an ElementGeom uses a GeomPart.  This is useful for "garbage collecting" or finding Elements that would be affected by a change to a GeomPart. -->
         <ECCustomAttributes>
-            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.12">
-                <ECIdColumn>Id</ECIdColumn>
-            </ECDbClassHint>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
         </ECCustomAttributes>
         <Source cardinality="(0,N)" polymorphic="False">
             <ECCustomAttributes>
@@ -502,41 +519,41 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECClass typeName="GeomPart" isDomainClass="True">
         <!-- WIP: need to create a partial index on Code -->
         <ECCustomAttributes>
-            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.12">
-                <ECIdColumn>Id</ECIdColumn>
-            </ECDbClassHint>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="Code" typeName="string">
             <!-- "Code" must be unique (or Null). Typically programmatically-generated -->
             <ECCustomAttributes>
-                <ECDbPropertyHint xmlns="Bentley_Standard_CustomAttributes.01.12">
+                <PropertyMap xmlns="ECDbMap.01.00">
                     <!-- Null means an "anonymous" GeomPart that can only be looked up by Id -->
                     <IsNullable>True</IsNullable>
-                </ECDbPropertyHint>
+                </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Geom" typeName="binary">
             <ECCustomAttributes>
-                <ECDbPropertyHint xmlns="Bentley_Standard_CustomAttributes.01.12">
+                <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>False</IsNullable>
-                </ECDbPropertyHint>
+                </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
     </ECClass>
 
     <ECClass typeName="PhysicalMaterial" isDomainClass="True" >
         <ECCustomAttributes>
-            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.12">
-                <ECIdColumn>Id</ECIdColumn>
-            </ECDbClassHint>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="Name" displayLabel="Material" typeName="string" description="Name of material" >
             <ECCustomAttributes>
-                <ECDbPropertyHint xmlns="Bentley_Standard_CustomAttributes.01.12">
-                    <Collate>NOCASE</Collate>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <Collation>NoCase</Collation>
                     <IsNullable>False</IsNullable>
                     <IsUnique>True</IsUnique>
-                </ECDbPropertyHint>
+                </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
@@ -638,7 +655,15 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <Class class="Model" />
         </Source>
         <Target cardinality="(0,N)" roleLabel="has N elements" polymorphic="True">
-            <Class class="Element" >
+          <ECCustomAttributes>
+            <ECDbRelationshipConstraintHint xmlns="Bentley_Standard_CustomAttributes.01.12">
+<!--              <ForeignKeyConstraint>
+                <EnforceReferentialIntegrityCheck>True</EnforceReferentialIntegrityCheck>
+                <OnDeleteAction>NoAction</OnDeleteAction>
+              </ForeignKeyConstraint> -->
+            </ECDbRelationshipConstraintHint>
+          </ECCustomAttributes>
+          <Class class="Element" >
                 <Key>
                     <Property name="ModelId" />
                 </Key>
@@ -648,22 +673,22 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
 
     <ECClass typeName="Link" description="Base class for links from elements to other objects (e.g. URLs and embedded files).">
         <ECCustomAttributes>
-            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.12">
-                <ECIdColumn>Id</ECIdColumn>
-            </ECDbClassHint>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="Type" typeName="int" description="Type of style; see DGN_LINK_TYPE_*">
             <ECCustomAttributes>
-                <ECDbPropertyHint xmlns="Bentley_Standard_CustomAttributes.01.12">
+                <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>False</IsNullable>
-                </ECDbPropertyHint>
+                </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="DisplayLabel" typeName="string" description="Display label for this node">
             <ECCustomAttributes>
-                <ECDbPropertyHint xmlns="Bentley_Standard_CustomAttributes.01.12">
+                <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>False</IsNullable>
-                </ECDbPropertyHint>
+                </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Data" typeName="binary" description="Encoded link properties"/>
@@ -671,9 +696,9 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
 
     <ECRelationshipClass typeName="ElementHasLinks" description="Associates links to an entity.">
         <ECCustomAttributes>
-            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.12">
-                <ECIdColumn>Id</ECIdColumn>
-            </ECDbClassHint>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
         </ECCustomAttributes>
         <Source cardinality="(1,N)" roleLabel="has 0 to N links" polymorphic="True">
             <ECCustomAttributes>
@@ -697,32 +722,32 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
 
     <ECClass typeName="Style" description="Styles help define properties and standards shared among many elements, such as formatting peroperties for text.">
         <ECCustomAttributes>
-            <ECDbClassHint xmlns="Bentley_Standard_CustomAttributes.01.12">
-                <ECIdColumn>Id</ECIdColumn>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
                 <Indexes>
-                    <ECDbIndex>
+                    <DbIndex>
                         <IsUnique>True</IsUnique>
                         <Properties>
                             <string>Style.Type</string>
                             <string>Style.Name</string>
                         </Properties>
-                    </ECDbIndex>
+                    </DbIndex>
                 </Indexes>
-            </ECDbClassHint>
+            </ClassMap>
         </ECCustomAttributes>
         <ECProperty propertyName="Type" typeName="int" description="Type of style; see DGN_STYLE_TYPE_*">
             <ECCustomAttributes>
-                <ECDbPropertyHint xmlns="Bentley_Standard_CustomAttributes.01.12">
+                <PropertyMap xmlns="ECDbMap.01.00">
                     <IsNullable>False</IsNullable>
-                </ECDbPropertyHint>
+                </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="Name" typeName="string" description="Name of the style; all styles must be unique by type and name (NOCASE)">
+        <ECProperty propertyName="Name" typeName="string" description="Name of the style; all styles must be unique by type and name (NoCase)">
             <ECCustomAttributes>
-                <ECDbPropertyHint xmlns="Bentley_Standard_CustomAttributes.01.12">
-                    <Collate>NOCASE</Collate>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <Collation>NoCase</Collation>
                     <IsNullable>False</IsNullable>
-                </ECDbPropertyHint>
+                </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Descr" typeName="string" description="Description of the style"/>

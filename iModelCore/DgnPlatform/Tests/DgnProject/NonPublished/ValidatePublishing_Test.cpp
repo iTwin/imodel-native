@@ -152,9 +152,9 @@ void ValidatePublishing::saveFileName()
 DgnDbPtr ValidatePublishing::openDgnDb()
 {
     DgnDbPtr      dgnProj;
-    DgnFileStatus status;
+    DgnDbStatus status;
     dgnProj = DgnDb::OpenDgnDb(&status, BeFileName(DgnDbFullFileName.c_str()), DgnDb::OpenParams(BeSQLite::Db::OPEN_Readonly));
-    EXPECT_EQ(DGNFILE_STATUS_Success, status) << status;
+    EXPECT_EQ(DgnDbStatus::Success, status) << status;
     if (dgnProj != NULL)
         return dgnProj;
     else

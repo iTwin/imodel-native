@@ -102,7 +102,7 @@ public:
     
     ~ElementAndItemTests()
         {
-        m_db->GetTxnManager().Deactivate(); // finalizes TxnManager's prepared statements
+        m_db->GetTxnManager().Deactivate(); // finalizes Txns's prepared statements
         }
 
     void SetupProject (WCharCP projFile, WCharCP testFile, BeSQLite::Db::OpenMode mode);

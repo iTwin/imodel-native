@@ -37,7 +37,7 @@ static double getDescrMaxOffset (DgnElementPtrVec const& elems, DgnModelP model,
     double      maxWidth = 0, test;
 
     Transform transform;
-    transform.initFromPrincipleAxisRotations(NULL, 0.0, 0.0, angle);
+    transform.InitFromPrincipleAxisRotations (RotMatrix::FromIdentity (), 0.0, 0.0, angle);
 
     for (auto descr: elems)
         {
@@ -79,7 +79,7 @@ double LsSymbolReference::_GetMaxWidth (DgnModelP dgnModel) const
         return  0.0;
 
     double maxWidth = getDescrMaxOffset (*GetElements(), dgnModel, m_angle) / m_symbol->GetMuDef();
-    double offset   = m_offset.magnitude ();
+    double offset   = m_offset.Magnitude ();
 
     return  (offset + maxWidth) * 2.0;
     }
@@ -105,16 +105,16 @@ StatusInt LsSymbolReference::Output (ViewContextP context, LineStyleSymbCP modif
     RotMatrix   planeByRows;
     modifiers->GetPlaneAsMatrixRows (planeByRows);
     DVec3d xVector, yVector, zVector;
-    planeByRows.getRows (&xVector, &yVector, &zVector);
+    planeByRows.GetRows(xVector, yVector, zVector);
 
     DVec3d uVector, vVector, wVector;
     uVector = *(DVec3d*)dir;
     wVector = zVector;
-    vVector.normalizedCrossProduct (&wVector, &uVector);
-    transform.initFromOriginAndVectors (org, &uVector, &vVector, &wVector);
+    vVector.NormalizedCrossProduct (wVector, uVector);
+    transform.InitFromOriginAndVectors (*org, uVector, vVector, wVector);
 
     double      scale = (GetSymbolComponentCP()->IsNotScaled() ? 1.0 : modifiers->GetScale());
-    transform.translateInLocalCoordinates (&transform, m_offset.x * scale, m_offset.y * scale, 0.0);
+    transform.TranslateInLocalCoordinates (transform, m_offset.x * scale, m_offset.y * scale, 0.0);
 
     // Add rotation modifiers. Rotation is about the Z axis of the transform.
     switch (GetRotationMode())
@@ -123,19 +123,19 @@ StatusInt LsSymbolReference::Output (ViewContextP context, LineStyleSymbCP modif
             {
             // Can't call initFromPrincipleAxisRotations directly since it will multiply matrices in wrong order.
             RotMatrix rotation, product, baseMatrix;
-            rotation.initFromPrincipleAxisRotations (NULL, 0.0, 0.0, m_angle);
-            transform.getMatrix (&baseMatrix);
-            product.productOf (&baseMatrix, &rotation);
-            transform.setMatrix (&product);
+            rotation.InitFromPrincipleAxisRotations (RotMatrix::FromIdentity (), 0.0, 0.0, m_angle);
+            transform.GetMatrix (baseMatrix);
+            product.InitProduct (baseMatrix, rotation);
+            transform.SetMatrix (product);
             break;
             }
 
         case ROTATE_Absolute:
             {
             RotMatrix planeByColumns, rotatedMatrix;
-            planeByColumns.initFromColumnVectors (&xVector, &yVector, &zVector);
-            rotatedMatrix.initFromPrincipleAxisRotations (&planeByColumns, 0.0, 0.0, m_angle);
-            transform.setMatrix (&rotatedMatrix);
+            planeByColumns.InitFromColumnVectors (xVector, yVector, zVector);
+            rotatedMatrix.InitFromPrincipleAxisRotations (planeByColumns, 0.0, 0.0, m_angle);
+            transform.SetMatrix (rotatedMatrix);
             }
             break;
 
@@ -144,21 +144,21 @@ StatusInt LsSymbolReference::Output (ViewContextP context, LineStyleSymbCP modif
             // Adjust so that the X direction is left to right with vertical adjusted to read "up hill" (-y to +y)
             DVec3d xDir, yDir, zDir;
             DPoint3d org;
-            transform.getOriginAndVectors (&org, &xDir, &yDir, &zDir);
+            transform.GetOriginAndVectors (org, xDir, yDir, zDir);
             DVec3d xDirTemp = xDir;
-            planeByRows.multiply (&xDirTemp);
+            planeByRows.Multiply(xDirTemp);
             if (xDirTemp.x < 0.0 || fabs (xDirTemp.y + 1.0) < .0001)
                 {
-                xDir.negate ();
-                yDir.negate ();
+                xDir.Negate ();
+                yDir.Negate ();
                 }
-            transform.initFromOriginAndVectors (&org, &xDir, &yDir, &zDir);
+            transform.InitFromOriginAndVectors (org, xDir, yDir, zDir);
 
             RotMatrix rotation, product, baseMatrix;
-            rotation.initFromPrincipleAxisRotations (NULL, 0.0, 0.0, m_angle);
-            transform.getMatrix (&baseMatrix);
-            product.productOf (&baseMatrix, &rotation);
-            transform.setMatrix (&product);
+            rotation.InitFromPrincipleAxisRotations (RotMatrix::FromIdentity (), 0.0, 0.0, m_angle);
+            transform.GetMatrix (baseMatrix);
+            product.InitProduct (baseMatrix, rotation);
+            transform.SetMatrix (product);
             }
             break;
         }
@@ -166,11 +166,11 @@ StatusInt LsSymbolReference::Output (ViewContextP context, LineStyleSymbCP modif
 
     scale = (GetSymbolComponentCP()->IsNotScaled() ? 1.0 : modifiers->GetScale() / m_symbol->GetMuDef());
     DPoint3d    scaleVec;
-    scaleVec.init (scale, scale, scale);
+    scaleVec.Init (scale, scale, scale);
     if (xScale)
         scaleVec.x *= *xScale;
 
-    transform.scaleMatrixColumns (&transform, scaleVec.x, scaleVec.y, scaleVec.z);
+    transform.ScaleMatrixColumns (transform, scaleVec.x, scaleVec.y, scaleVec.z);
  
     ConvexClipPlaneSet  convexClip;
     // if there is clip at either the beginning or the end of the symbol, set up the clip planes
@@ -179,7 +179,7 @@ StatusInt LsSymbolReference::Output (ViewContextP context, LineStyleSymbCP modif
         if (clipOrg)
             {
             DPoint3d revDir = *dir;
-            revDir.scale (-1.0);
+            revDir.Scale (-1.0);
             addClipPlane (convexClip, clipOrg, &revDir);
             }
 

@@ -49,7 +49,7 @@ struct DgnIModel
 {
 public:
     //! Extracts a DgnDb file from an imodel.
-    //! @param[out] dbResult When Extract returns DGNFILE_ERROR_SQLiteError, the actual DB error is stored in dbResult.
+    //! @param[out] dbResult When Extract returns DgnDbStatus::SQLiteError, the actual DB error is stored in dbResult.
     //! @param[in] outputDirectory Where to store the extracted DgnDb file.
     //! @param[in] dbName Combined with the outputDirectory parameter to form the full path name of the extracted file.
     //! @param[in] imodelFile Name (full path) of the input file.
@@ -59,10 +59,10 @@ public:
     //! @if BENTLEY_SDK_Publisher
     //!     @ingroup DgnDbGroup
     //! @endif
-    DGNPLATFORM_EXPORT static DgnFileStatus Extract(BeSQLite::DbResult& dbResult, Utf8CP outputDirectory, Utf8CP dbName, BeFileNameCR imodelFile, bool overwriteExisting, BeSQLite::ICompressProgressTracker* progress = NULL);
+    DGNPLATFORM_EXPORT static DgnDbStatus Extract(BeSQLite::DbResult& dbResult, Utf8CP outputDirectory, Utf8CP dbName, BeFileNameCR imodelFile, bool overwriteExisting, BeSQLite::ICompressProgressTracker* progress = NULL);
 
     //! Extracts a DgnDb file from an imodel.
-    //! @param[out] dbResult When ExtractUsingDefaults returns DGNFILE_ERROR_SQLiteError, the actual DB error is stored in dbResult.
+    //! @param[out] dbResult When ExtractUsingDefaults returns DgnDbStatus::SQLiteError, the actual DB error is stored in dbResult.
     //! @param[in] dgndbFile Name of the output file.
     //! @param[in] imodelFile Name of the input file.
     //! @param[in] overwriteExisting  Pass true to enable overwriting an existing file.
@@ -73,7 +73,7 @@ public:
     //! @remarks See BeSQLite::ExtractDb for information about the expected BeSQLite::DbResult error codes.
     //! @see BeSQLite::DbEmbeddedFileTable
     //! @private
-    DGNPLATFORM_EXPORT static DgnFileStatus ExtractUsingDefaults(BeSQLite::DbResult& dbResult, BeFileNameCR dgndbFile, BeFileNameCR imodelFile, bool overwriteExisting, BeSQLite::ICompressProgressTracker* progress = NULL);
+    DGNPLATFORM_EXPORT static DgnDbStatus ExtractUsingDefaults(BeSQLite::DbResult& dbResult, BeFileNameCR dgndbFile, BeFileNameCR imodelFile, bool overwriteExisting, BeSQLite::ICompressProgressTracker* progress = NULL);
 
     //! Creates a compressed file that contains a DgnDb database file.
     //! @param[in] outFile The name of the file to create.  The name is used exactly as specified. CreatePackageUsingDefaults does not add an extension or directory.
@@ -81,11 +81,11 @@ public:
     //! @param[in] params Specifies parameters that control the creation of the output file.  Call params.SetOverwriteExisting(true) to enable overwriting an existing file.
     //! @remarks The compressed image is stored as a BeSQLite embedded file. Many of the properties of the compressed image are copied into the properties table
     //! of the output file making it possible to interrogate these properties without extracting the compressed file.
-    //! @remarks Create deletes the output file if it encounters an error other than DGNOPEN_STATUS_FileAlreadyExists.  
-    //! @remarks If Create returns DGNOPEN_STATUS_SharingViolation it means that the file specified via dgndbFile has a pending SQLite write or is open with DefaultTxn_Immediate
+    //! @remarks Create deletes the output file if it encounters an error other than DgnDbStatus::FileAlreadyExists.  
+    //! @remarks If Create returns DgnDbStatus::SharingViolation it means that the file specified via dgndbFile has a pending SQLite write or is open with DefaultTxn_Immediate
     //! or DefaultTxn_Exclusive transaction mode. 
-    //! @remarks Create returns DGNOPEN_STATUS_CorruptFile if the input file if not a valid SQLite database or if there is a journal file for the DgnDb file.
-    //! @remarks Create can also return DGNFILE_ERROR_ReadError, DGNFILE_ERROR_WriteError and any standard status values that DgnDb::OpenDgnDb returns.
+    //! @remarks Create returns DgnDbStatus::CorruptFile if the input file if not a valid SQLite database or if there is a journal file for the DgnDb file.
+    //! @remarks Create can also return DgnDbStatus::ReadError, DgnDbStatus::WriteError and any standard status values that DgnDb::OpenDgnDb returns.
     //! @see ExtractUsingDefaults, BeSQLite::DbEmbeddedFileTable
     //! @private
     DGNPLATFORM_EXPORT static BeSQLite::DbResult Create(BeFileNameCR outFile, BeFileNameCR dgndbFile, CreateIModelParams params);

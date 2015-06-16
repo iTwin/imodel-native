@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnHandlers/IEditActionSource.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,7 +24,7 @@ struct     IEditActionSource
 protected:
 
 /*---------------------------------------------------------------------------------**//**
-* Test a HitPathCP and add EditActions to the IEditActionArray as appropriate. This method is called
+* Test a HitDetailCP and add EditActions to the IEditActionArray as appropriate. This method is called
 *               every time the user presses the right mouse button from the Select Tool. If the mouse is not over any
 *               element, path will be NULL, which indicates the user is requesting EditActions that apply to the view.
 * @param        point  IN the active coordinate location of the mouse
@@ -33,7 +33,7 @@ protected:
 * @param        actionArray IN the current array of EditActions. Add new EditActions to this array by calling ~mAddEditAction.
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void    _TestPath (DPoint3dCP point, int view, HitPathCP path, IEditActionArrayP actionArray) = 0;
+virtual void    _TestPath (DPoint3dCP point, int view, HitDetailCP path, IEditActionArrayP actionArray) = 0;
 
 }; // IEditActionSource
 

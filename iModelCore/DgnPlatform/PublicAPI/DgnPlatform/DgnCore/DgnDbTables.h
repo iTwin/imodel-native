@@ -44,12 +44,11 @@
 //-----------------------------------------------------------------------------------------
 // DgnDb table names
 //-----------------------------------------------------------------------------------------
-#define DGN_TABLE_Domain            DGN_TABLE("Domain")
-#define DGN_TABLE_Font              DGN_TABLE("Font")
-#define DGN_TABLE_Handler           DGN_TABLE("Handler")
-#define DGN_TABLE_Session           DGN_TABLE("Session")
-
-#define DGN_VTABLE_RTree3d         DGN_TABLE("RTree3d")
+#define DGN_TABLE_Domain        DGN_TABLE("Domain")
+#define DGN_TABLE_Font          DGN_TABLE("Font")
+#define DGN_TABLE_Handler       DGN_TABLE("Handler")
+#define DGN_TABLE_Txns          DGN_TABLE("Txns")
+#define DGN_VTABLE_RTree3d      DGN_TABLE("RTree3d")
 
 //-----------------------------------------------------------------------------------------
 // ECRelationshipClass names (combine with DGN_SCHEMA macro for use in ECSql)
@@ -72,8 +71,6 @@
 #include <Bentley/HeapZone.h>
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
-
-struct TxnElementSummary;
 
 //! Map of ID to DgnFont object. See method FontNumberMap.
 typedef bmap<uint32_t, DgnFontCP> T_FontNumberMap;
@@ -179,7 +176,7 @@ struct DgnCategories : DgnDbTable
             int32_t GetDisplayPriority() const {return m_displayPriority;}
             DgnMaterialId GetMaterial() const {return m_material;}
             double GetTransparency() const {return m_transparency;}
-            DGNPLATFORM_EXPORT bool operator==(Appearance const& other) const;
+            DGNPLATFORM_EXPORT bool operator== (Appearance const& other) const;
             bool IsEqual(Appearance const& other) const {return *this==other;}
             void FromJson(Utf8StringCR); //!< initialize this appearance from a previously saved json string
             DGNPLATFORM_EXPORT Utf8String ToJson() const;   //!< convert this appearance to a json string
@@ -300,14 +297,14 @@ struct DgnCategories : DgnDbTable
     struct Iterator : BeSQLite::DbTableIterator
     {
     public:
-        explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLiteDbCR) db) {}
+        explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR) db) {}
 
         //! An entry in the table.
         struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
         {
         private:
             friend struct Iterator;
-            Entry(BeSQLiteStatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
+            Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
         public:
             DGNPLATFORM_EXPORT DgnCategoryId GetCategoryId() const; //!< The category id. Unique. This is an internal identifier and is not displayed in the GUI.
             DGNPLATFORM_EXPORT Rank GetRank() const; //!< The category's rank
@@ -337,14 +334,14 @@ struct DgnCategories : DgnDbTable
         //! construct a SubCategoryIterator
         //! @param[in] db The database for the SubCategory table
         //! @param[in] category Limit the iterator to SubCategories of this category. If invalid, iterate all SubCategories of all categories.
-        SubCategoryIterator(DgnDbCR db, DgnCategoryId category) : DbTableIterator((BeSQLiteDbCR)db), m_categoryId(category) {}
+        SubCategoryIterator(DgnDbCR db, DgnCategoryId category) : DbTableIterator((BeSQLite::DbCR)db), m_categoryId(category) {}
 
         //! An entry in the table.
         struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
         {
         private:
             friend struct SubCategoryIterator;
-            Entry(BeSQLiteStatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
+            Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
         public:
             DGNPLATFORM_EXPORT DgnCategoryId GetCategoryId() const; //! The Category id.
             DGNPLATFORM_EXPORT DgnSubCategoryId GetSubCategoryId() const; //!< The SubCategory id.
@@ -567,14 +564,14 @@ public:
         int  m_typeMask;
 
     public:
-        Iterator(DgnDbCR db, int viewTypeMask) : DbTableIterator((BeSQLiteDbCR)db) {m_typeMask = viewTypeMask;}
+        Iterator(DgnDbCR db, int viewTypeMask) : DbTableIterator((BeSQLite::DbCR)db) {m_typeMask = viewTypeMask;}
 
         //! An entry in the table
         struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
         {
         private:
             friend struct Iterator;
-            Entry(BeSQLiteStatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
+            Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
         public:
             DGNPLATFORM_EXPORT DgnViewId GetDgnViewId() const;
             DGNPLATFORM_EXPORT DgnModelId GetBaseModelId() const;
@@ -583,7 +580,7 @@ public:
             DGNPLATFORM_EXPORT Utf8CP GetName() const;
             DGNPLATFORM_EXPORT Utf8CP GetDescription() const;
             DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
-            Entry const& operator* () const {return *this;}
+            Entry const& operator*() const {return *this;}
         }; // Entry
 
     typedef Entry const_iterator;
@@ -635,7 +632,7 @@ public:
     BeSQLite::DbResult DeleteProperty(DgnViewId viewId, DgnViewPropertySpecCR spec, uint64_t id=0);
 
     //! Get an iterator over the Views in this DgnDb.
-    Iterator MakeIterator(int viewTypeMask=(int)DgnViewType::All) const {return Iterator(m_dgndb, viewTypeMask);}
+    Iterator MakeIterator(int viewTypeMask= (int)DgnViewType::All) const {return Iterator(m_dgndb, viewTypeMask);}
 };
 
 enum class ModelIterate
@@ -731,12 +728,12 @@ public:
         ModelIterate   m_itType;
 
     public:
-        Iterator(DgnDbCR db, ModelIterate itType) : DbTableIterator((BeSQLiteDbCR)db) {m_itType = itType;}
+        Iterator(DgnDbCR db, Utf8CP where, ModelIterate itType) : DbTableIterator((BeSQLite::DbCR) db), m_itType(itType) {if (where) m_params.SetWhere(where);}
         struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
         {
         private:
             friend struct Iterator;
-            Entry(BeSQLiteStatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
+            Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
 
         public:
             DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
@@ -749,7 +746,7 @@ public:
 
             bool Is3d() const {return GetModelType()==DgnModelType::Physical;}
             bool InModelGui() const {return 0 != ((int)ModelIterate::Gui & GetVisibility());}
-            Entry const& operator* () const {return *this;}
+            Entry const& operator*() const {return *this;}
         };
 
         typedef Entry const_iterator;
@@ -788,7 +785,7 @@ public:
 
     //! Delete a model.
     //! @note All elements from this model are deleted as well.
-    DGNPLATFORM_EXPORT DgnModelStatus DeleteModel(DgnModelId id);
+    DGNPLATFORM_EXPORT DgnDbStatus DeleteModel(DgnModelId id);
 
     DGNPLATFORM_EXPORT BentleyStatus QueryModelById(Model* out, DgnModelId id) const;
     DGNPLATFORM_EXPORT BentleyStatus GetModelName(Utf8StringR, DgnModelId id) const;
@@ -804,29 +801,14 @@ public:
     DGNPLATFORM_EXPORT BentleyStatus QueryModelDependencyIndexAndType(uint64_t& didx, DgnModelType& mtype, DgnModelId mid);
 
     //! Make an iterator over the models in this DgnDb.
-    Iterator MakeIterator(ModelIterate itType=ModelIterate::All) const {return Iterator(m_dgndb, itType);}
-
-    //! Make an iterator over the physical models in this DgnDb.
-    Iterator MakePhysicalIterator() const {Iterator it(m_dgndb, ModelIterate::All); it.Params().SetWhere("Type=0"); return it;}
-
-    //! Make an iterator over the drawing models in this DgnDb.
-    Iterator MakeDrawingIterator() const {Iterator it(m_dgndb, ModelIterate::All); it.Params().SetWhere("Type=3"); return it;}
-
-    //! Make an iterator over the sheet models in this DgnDb.
-    Iterator MakeSheetIterator() const {Iterator it(m_dgndb, ModelIterate::All); it.Params().SetWhere("Type=1"); return it;}
-
-    //! Make an iterator over the Redline models in this DgnDb.
-    Iterator MakeRedlineIterator() const {Iterator it(m_dgndb, ModelIterate::All); it.Params().SetWhere("Type=2"); return it;}
-
-    //! Make an iterator over the PhysicalRedline models in this DgnDb.
-    Iterator MakePhysicalRedlineIterator() const {Iterator it(m_dgndb, ModelIterate::All); it.Params().SetWhere("Type=12"); return it;}
+    Iterator MakeIterator(Utf8CP where=nullptr, ModelIterate itType=ModelIterate::All) const {return Iterator(m_dgndb, where, itType);}
     //@}
 
     //! Insert a new model.
-    //! @return DGNMODEL_STATUS_Success if the new model was successfully create or error otherwise.
-    DGNPLATFORM_EXPORT DgnModelStatus Insert(DgnModelR model, Utf8CP description=nullptr, bool inGuiList=true);
+    //! @return DgnDbStatus::Success if the new model was successfully create or error otherwise.
+    DGNPLATFORM_EXPORT DgnDbStatus Insert(DgnModelR model, Utf8CP description=nullptr, bool inGuiList=true);
 
-    DGNPLATFORM_EXPORT DgnModelP CreateNewModelFromSeed(DgnModelStatus* result, Utf8CP name, DgnModelId seedModelId);
+    DGNPLATFORM_EXPORT DgnModelP CreateNewModelFromSeed(DgnDbStatus* result, Utf8CP name, DgnModelId seedModelId);
 
     //! Generate a model name that is not currently in use in this file
     //! @param[in]  baseName base model name to start with (optional)
@@ -859,7 +841,7 @@ struct DgnElements : DgnDbTable
     friend struct DgnModel;
     friend struct DgnModels;
     friend struct ElementHandler;
-    friend struct ITxnManager;
+    friend struct TxnManager;
     friend struct ProgressiveViewFilter;
 
     //! The totals for loaded DgnElements in this DgnDb. These values reflect the current state of the loaded elements.
@@ -897,31 +879,32 @@ private:
     BeSQLite::SnappyToBlob      m_snappyTo;
     mutable BeSQLite::BeDbMutex m_mutex;
 
-    template<class T> static void CallAppData(T const& caller, DgnElementCR el);
     void OnReclaimed(DgnElementCR);
     void OnUnreferenced(DgnElementCR);
     void Destroy();
-    void AddToPool(DgnElementR) const;
+    void AddToPool(DgnElementCR) const;
     void DropFromPool(DgnElementCR) const;
     void SendOnLoadedEvent(DgnElementR elRef) const;
+    void OnChangesetApply(TxnSummary const&);
     void OnChangesetApplied(TxnSummary const&);
-    void OnChangesetCanceled(TxnSummary const&);
+    void FinishUpdate(DgnElementCR replacement, DgnElementCR original);
     DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, bool makePersistent) const;
     DgnElementCPtr LoadElement(DgnElementId elementId, bool makePersistent) const;
     bool IsElementIdUsed(DgnElementId id) const;
     DgnElementId GetHighestElementId();
     DgnElementId MakeNewElementId();
-    DgnModelStatus PerformDelete(DgnElementCR);
+    DgnElementCPtr PerformInsert(DgnElementR element, DgnDbStatus&);
+    DgnDbStatus PerformDelete(DgnElementCR);
     explicit DgnElements(DgnDbR db);
     ~DgnElements();
 
-    DGNPLATFORM_EXPORT DgnElementCPtr InsertElement(DgnElementR element, DgnModelStatus* stat);
-    DGNPLATFORM_EXPORT DgnElementCPtr UpdateElement(DgnElementR element, DgnModelStatus* stat);
+    DGNPLATFORM_EXPORT DgnElementCPtr InsertElement(DgnElementR element, DgnDbStatus* stat);
+    DGNPLATFORM_EXPORT DgnElementCPtr UpdateElement(DgnElementR element, DgnDbStatus* stat);
 
 public:
     BeSQLite::SnappyFromBlob& GetSnappyFrom() {return m_snappyFrom;}
     BeSQLite::SnappyToBlob& GetSnappyTo() {return m_snappyTo;}
-    DGNPLATFORM_EXPORT BeSQLite::DbResult GetStatement(BeSQLite::CachedStatementPtr& stmt, Utf8CP sql) const;
+    DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const;
     DGNPLATFORM_EXPORT void ChangeMemoryUsed(int32_t delta) const;
 
     //! Look up an element in the pool of loaded elements for this DgnDb.
@@ -930,7 +913,12 @@ public:
     DGNPLATFORM_EXPORT DgnElementCP FindElement(DgnElementId id) const;
 
     //! Query the DgnModelId of the specified DgnElementId.
-    DGNPLATFORM_EXPORT DgnModelId QueryModelId(DgnElementId elementId);
+    //! @private
+    DGNPLATFORM_EXPORT DgnModelId QueryModelId(DgnElementId elementId) const;
+
+    //! Query for the DgnElementId of the element that has the specified code
+    //! @note Element codes are usually, but not necessarily, unique. If not unique, this method returns the first one found.
+    DGNPLATFORM_EXPORT DgnElementId QueryElementIdByCode(Utf8CP code) const;
 
     //! Free unreferenced elements in the pool until the total amount of memory used by the pool is no more than a target number of bytes.
     //! @param[in] memTarget The target number of bytes used by elements in the pool. If the pool is currently using more than this target,
@@ -963,41 +951,32 @@ public:
 
     //! Get an editable copy of an element by DgnElementId.
     //! @return Invalid if the element does not exist, or if it cannot be edited.
-    template<class T> RefCountedPtr<T> GetForEdit(DgnElementId id) const {RefCountedCPtr<T> orig=Get<T>(id); return orig.IsValid() ? (T*)orig->CopyForEdit().get() : nullptr;}
+    template<class T> RefCountedPtr<T> GetForEdit(DgnElementId id) const {RefCountedCPtr<T> orig=Get<T>(id); return orig.IsValid() ?(T*)orig->CopyForEdit().get() : nullptr;}
 
     //! Insert a copy of the supplied DgnElement into this DgnDb.
     //! @param[in] element The DgnElement to insert.
-    //! @param[in] stat An optional status value. Will be DGNMODEL_STATUS_Success if the insert was successful, error status otherwise.
+    //! @param[in] stat An optional status value. Will be DgnDbStatus::Success if the insert was successful, error status otherwise.
     //! @return RefCountedCPtr to the newly persisted /b copy of /c element. Will be invalid if the insert failed.
-    template<class T> RefCountedCPtr<T> Insert(T& element, DgnModelStatus* stat=nullptr) {return (T const*) InsertElement(element, stat).get();}
+    template<class T> RefCountedCPtr<T> Insert(T& element, DgnDbStatus* stat=nullptr) {return (T const*) InsertElement(element, stat).get();}
 
     //! Update the original persistent DgnElement from which the supplied DgnElement was copied.
     //! @param[in] element The modified copy of element to update.
-    //! @param[in] stat An optional status value. Will be DGNMODEL_STATUS_Success if the update was successful, error status otherwise.
+    //! @param[in] stat An optional status value. Will be DgnDbStatus::Success if the update was successful, error status otherwise.
     //! @return RefCountedCPtr to the modified persistent element. Will be invalid if the update failed.
-    template<class T> RefCountedCPtr<T> Update(T& element, DgnModelStatus* stat=nullptr) {return (T const*) UpdateElement(element, stat).get();}
+    template<class T> RefCountedCPtr<T> Update(T& element, DgnDbStatus* stat=nullptr) {return (T const*) UpdateElement(element, stat).get();}
 
     //! Delete a DgnElement from this DgnDb.
     //! @param[in] element The element to delete.
-    //! @return DGNMODEL_STATUS_Success if the element was deleted, error status otherwise.
-    DGNPLATFORM_EXPORT DgnModelStatus Delete(DgnElementCR element);
+    //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.
+    DGNPLATFORM_EXPORT DgnDbStatus Delete(DgnElementCR element);
 
     //! Delete a DgnElement from this DgnDb by DgnElementId.
-    //! @return DGNMODEL_STATUS_Success if the element was deleted, error status otherwise.
+    //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.
     //! @note This method is merely a shortcut to #GetElement and then #Delete
-    DgnModelStatus Delete(DgnElementId id) {auto el=GetElement(id); return el.IsValid() ? Delete(*el) : DGNMODEL_STATUS_ElementNotFound;}
+    DgnDbStatus Delete(DgnElementId id) {auto el=GetElement(id); return el.IsValid() ? Delete(*el) : DgnDbStatus::ElementNotFound;}
 
     //! Get the Heapzone for this DgnDb.
     HeapZone& GetHeapZone() {return m_heapZone;}
-
-    //! Update the last modified timestamp of the specified element
-    //! @note Updates to the element class automatically cause the last modified time to be updated (via a database trigger).
-    //! This method should only be used to indicate that aspect of the element has changed and that change should be
-    //! considered to be a change to the element itself for change propagation purposes.
-    DGNPLATFORM_EXPORT BentleyStatus UpdateLastModifiedTime(DgnElementId elementId);
-
-    //! Query the last modified time from the specified element
-    DGNPLATFORM_EXPORT DateTime QueryLastModifiedTime(DgnElementId elementId) const;
 
     //! Query the DgnElementKey for a DgnElement from this DgnDb by its DgnElementId.
     //! @return Invalid key if the element does not exist.
@@ -1026,7 +1005,6 @@ private:
 public:
     DgnGeomPartId GetHighestGeomPartId();
     DgnGeomPartId MakeNewGeomPartId();
-    static BentleyStatus Draw(DgnGeomPartId, ViewContextR, DgnCategoryId, ViewFlagsCR);
 
 public:
     //! Load a geometry part by ID.
@@ -1042,27 +1020,10 @@ public:
     //! @note This method will update the DgnGeomPartId in geomPart.
     DGNPLATFORM_EXPORT BentleyStatus InsertGeomPart(DgnGeomPartR geomPart);
 
-    //! Insert a geometry part into the DgnDb.
-    //! @param[in] geometryBlob binary geometry data
-    //! @param[in] geometryBlobSize size of geometryBlob in bytes
-    //! @param[in] code the optional code for the specified geometry part
-    //! @note This method is intended for importers.  Most applications with insert a DgnGeomPart.
-    //! @private
-    DGNPLATFORM_EXPORT DgnGeomPartId InsertGeomPart(const void* geometryBlob, int geometryBlobSize, Utf8CP code=nullptr);
-
     //! Update an existing geometry part in the DgnDb.
     //! @param[in] geomPart geometry part. Its ID identifies the existing geom part. Its geometry is written to the DgnDb.
     //! @return non-zero error status if the geom part does not exist or if its ID is invalid
     DGNPLATFORM_EXPORT BentleyStatus UpdateGeomPart(DgnGeomPartR geomPart);
-
-    //! Update an existing geometry part in the DgnDb.
-    //! @param[in] geomPartId ID of the part to update
-    //! @param[in] geometryBlob binary geometry data
-    //! @param[in] geometryBlobSize size of geometryBlob in bytes
-    //! @param[in] code the optional code for the specified geometry part
-    //! @return non-zero error status if the geom part does not exist or if its ID is invalid
-    //! @private
-    DGNPLATFORM_EXPORT BentleyStatus UpdateGeomPart(DgnGeomPartId geomPartId, const void* geometryBlob, int geometryBlobSize, Utf8CP code=nullptr);
 
     //! Insert the ElementGeomUsesParts relationship between an element and the geom parts it uses.
     //! @note Most apps will not need to call this directly.
@@ -1119,19 +1080,19 @@ public:
     struct Iterator : BeSQLite::DbTableIterator
     {
     public:
-        explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLiteDbCR)db) {}
+        explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR)db) {}
 
         struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
         {
         private:
             friend struct Iterator;
-            Entry(BeSQLiteStatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
+            Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
         public:
             DGNPLATFORM_EXPORT DgnTrueColorId GetId() const;
             DGNPLATFORM_EXPORT ColorDef GetColorValue() const;
             DGNPLATFORM_EXPORT Utf8CP GetName() const;
             DGNPLATFORM_EXPORT Utf8CP GetBookName() const;
-            Entry const& operator* () const {return *this;}
+            Entry const& operator*() const {return *this;}
         };
 
     typedef Entry const_iterator;
@@ -1176,7 +1137,7 @@ struct DgnFonts : NonCopyableClass
             {
             private:
                 friend struct Iterator;
-                Entry(BeSQLiteStatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) {}
+                Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) {}
 
             public:
                 DGNPLATFORM_EXPORT DgnFontId GetId() const;
@@ -1243,7 +1204,7 @@ struct DgnFonts : NonCopyableClass
             {
             private:
                 friend struct Iterator;
-                Entry(BeSQLiteStatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) {}
+                Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid) {}
 
             public:
                 DGNPLATFORM_EXPORT uint64_t GetId() const;
@@ -1275,7 +1236,7 @@ struct DgnFonts : NonCopyableClass
 private:
     DbFontMapDirect m_dbFontMap;
     DbFaceDataDirect m_dbFaceData;
-    BeSQLiteDbR m_db;
+    BeSQLite::DbR m_db;
     Utf8String m_tableName;
     bool m_isFontMapLoaded;
     T_FontMap m_fontMap;
@@ -1283,7 +1244,7 @@ private:
     void Update();
 
 public:
-    DgnFonts(BeSQLiteDbR db, Utf8CP tableName) : m_dbFontMap(*this), m_dbFaceData(*this), m_db(db), m_tableName(tableName), m_isFontMapLoaded(false) {}
+    DgnFonts(BeSQLite::DbR db, Utf8CP tableName) : m_dbFontMap(*this), m_dbFaceData(*this), m_db(db), m_tableName(tableName), m_isFontMapLoaded(false) {}
 
     DbFontMapDirect& DbFontMap() { return m_dbFontMap; }
     DbFaceDataDirect& DbFaceData() { return m_dbFaceData; }
@@ -1329,18 +1290,18 @@ public:
     struct Iterator : BeSQLite::DbTableIterator
     {
     public:
-        explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLiteDbCR)db) { }
+        explicit Iterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR)db) { }
 
         struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
         {
         private:
             friend struct Iterator;
-            Entry(BeSQLiteStatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
+            Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
         public:
             DGNPLATFORM_EXPORT DgnMaterialId GetId() const;
             DGNPLATFORM_EXPORT Utf8CP GetName() const;
             DGNPLATFORM_EXPORT Utf8CP GetPalette() const;
-            Entry const& operator* () const {return *this;}
+            Entry const& operator*() const {return *this;}
         };
 
     typedef Entry const_iterator;
@@ -1379,7 +1340,7 @@ private:
 
 public:
     DGNPLATFORM_EXPORT void Save();
-    DGNPLATFORM_EXPORT DgnFileStatus Load();
+    DGNPLATFORM_EXPORT DgnDbStatus Load();
 
     DgnDbR GetDgnDb() const {return m_dgndb;}
 
@@ -1473,7 +1434,7 @@ public:
         DEFINE_T_SUPER(BeSQLite::DbTableIterator);
 
     public:
-        Iterator(DgnDbCR db) : T_Super((BeSQLiteDbCR)db) {}
+        Iterator(DgnDbCR db) : T_Super((BeSQLite::DbCR)db) {}
 
         //=======================================================================================
         // @bsiclass
@@ -1484,13 +1445,13 @@ public:
             DEFINE_T_SUPER(DbTableIterator::Entry);
             friend struct Iterator;
 
-            Entry(BeSQLiteStatementP sql, bool isValid) : T_Super(sql, isValid) {}
+            Entry(BeSQLite::StatementP sql, bool isValid) : T_Super(sql, isValid) {}
 
         public:
             DGNPLATFORM_EXPORT DgnLinkId GetId() const;
             DGNPLATFORM_EXPORT DgnLinkType GetType() const;
             DGNPLATFORM_EXPORT Utf8CP GetDisplayLabel() const;
-            Entry const& operator* () const { return *this; }
+            Entry const& operator*() const { return *this; }
         }; // Entry
 
         typedef Entry const_iterator;
@@ -1511,7 +1472,7 @@ public:
         DgnElementKey m_elementKey;
 
     public:
-        OnElementIterator(DgnDbCR db, DgnElementKey elementKey) : T_Super((BeSQLiteDbCR)db), m_elementKey(elementKey) {}
+        OnElementIterator(DgnDbCR db, DgnElementKey elementKey) : T_Super((BeSQLite::DbCR)db), m_elementKey(elementKey) {}
 
         //=======================================================================================
         // @bsiclass
@@ -1522,13 +1483,13 @@ public:
             DEFINE_T_SUPER(DbTableIterator::Entry);
             friend struct OnElementIterator;
 
-            Entry(BeSQLiteStatementP sql, bool isValid) : T_Super(sql, isValid) {}
+            Entry(BeSQLite::StatementP sql, bool isValid) : T_Super(sql, isValid) {}
 
         public:
             DGNPLATFORM_EXPORT DgnLinkId GetId() const;
             DGNPLATFORM_EXPORT DgnLinkType GetType() const;
             DGNPLATFORM_EXPORT Utf8CP GetDisplayLabel() const;
-            Entry const& operator* () const { return *this; }
+            Entry const& operator*() const { return *this; }
 
         }; // Entry
 
@@ -1550,7 +1511,7 @@ public:
         DgnLinkId m_linkId;
 
     public:
-        ReferencesLinkIterator(DgnDbCR db, DgnLinkId linkId) : T_Super((BeSQLiteDbCR)db), m_linkId(linkId) {}
+        ReferencesLinkIterator(DgnDbCR db, DgnLinkId linkId) : T_Super((BeSQLite::DbCR)db), m_linkId(linkId) {}
 
         //=======================================================================================
         // @bsiclass
@@ -1561,11 +1522,11 @@ public:
             DEFINE_T_SUPER(DbTableIterator::Entry);
             friend struct OnElementIterator;
 
-            Entry(BeSQLiteStatementP sql, bool isValid) : T_Super(sql, isValid) {}
+            Entry(BeSQLite::StatementP sql, bool isValid) : T_Super(sql, isValid) {}
 
         public:
             DGNPLATFORM_EXPORT DgnElementKey GetKey() const;
-            Entry const& operator* () const { return *this; }
+            Entry const& operator*() const { return *this; }
 
         }; // Entry
 

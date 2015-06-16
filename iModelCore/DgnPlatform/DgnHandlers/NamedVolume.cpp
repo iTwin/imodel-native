@@ -156,7 +156,7 @@ void NamedVolume::SetClip (DgnViewport& viewport) const
     DPoint3d origin = this->GetOrigin();
 
     DVec3d direction;
-    direction.init (0, 0, 1.0);
+    direction.Init (0, 0, 1.0);
 
     // Transform the local shape points to the Project Csys
     bvector<DPoint3d> shape;
@@ -241,7 +241,7 @@ void NamedVolume::Draw (uint32_t color, ViewContextR context) const
     this->Get3dShape (bottomFace);
 
     DVec3d direction;
-    direction.init (0, 0, 1.0);
+    direction.Init (0, 0, 1.0);
 
     bvector<DPoint3d> topFace;
     for (int ii=0; ii < (int) bottomFace.size(); ii++)
@@ -341,7 +341,7 @@ void NamedVolume::GetRange(DRange3d& range) const
     this->Get3dShape (bottomShape);
 
     DVec3d direction;
-    direction.init (0, 0, 1.0);
+    direction.Init (0, 0, 1.0);
 
     bvector<DPoint3d> topShape;
     for (const DPoint3d& bottomPoint : bottomShape)

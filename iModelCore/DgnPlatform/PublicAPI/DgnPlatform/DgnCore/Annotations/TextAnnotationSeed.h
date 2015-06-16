@@ -129,7 +129,7 @@ public:
         DEFINE_T_SUPER(BeSQLite::DbTableIterator);
 
     public:
-        Iterator(DgnDbCR db) : T_Super((BeSQLiteDbCR)db) {}
+        Iterator(DgnDbCR db) : T_Super((BeSQLite::DbCR)db) {}
 
         //=======================================================================================
         // @bsiclass
@@ -140,7 +140,7 @@ public:
             DEFINE_T_SUPER(DbTableIterator::Entry);
             friend struct Iterator;
             
-            Entry(BeSQLiteStatementP sql, bool isValid) : T_Super(sql, isValid) {}
+            Entry(BeSQLite::StatementP sql, bool isValid) : T_Super(sql, isValid) {}
 
         public:
             DgnStyleId GetId() const { Verify(); return m_sql->GetValueId<DgnStyleId>(0); }

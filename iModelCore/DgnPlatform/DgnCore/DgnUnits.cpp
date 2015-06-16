@@ -61,7 +61,7 @@ static Utf8CP DGNPROPERTYJSON_Azimuth         = "azimuth";
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnFileStatus DgnUnits::Load()
+DgnDbStatus DgnUnits::Load()
     {
     Json::Value  jsonObj;
     Utf8String value;
@@ -70,14 +70,14 @@ DgnFileStatus DgnUnits::Load()
     if (BE_SQLITE_ROW != result || !Json::Reader::Parse(value, jsonObj))
         {
         BeAssert(false);
-        return DGNDB_ERROR_UnitsMissing;
+        return DgnDbStatus::UnitsMissing;
         }
 
     JsonUtils::DPoint3dFromJson(m_globalOrigin, jsonObj[DGNPROPERTYJSON_GlobalOrigin]);
 
     m_azimuth = jsonObj[DGNPROPERTYJSON_Azimuth].asDouble();
     LoadProjectExtents();
-    return  DGNFILE_STATUS_Success;
+    return  DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -110,10 +110,9 @@ DbResult DgnUnits::SaveProjectExtents(AxisAlignedBox3dCR newExtents)
 AxisAlignedBox3d DgnUnits::ComputeProjectExtents()
     {
     RTree3dBoundsTest bounds(m_dgndb);
-    Statement stmt;
-    DbResult rc = stmt.Prepare(m_dgndb, "SELECT 1 FROM " DGN_VTABLE_RTree3d " WHERE ElementId MATCH rTreeMatch(1)");
+    Statement stmt(m_dgndb, "SELECT 1 FROM " DGN_VTABLE_RTree3d " WHERE ElementId MATCH rTreeMatch(1)");
     bounds.m_bounds.Invalidate();
-    rc=bounds.StepRTree(stmt);
+    auto rc=bounds.StepRTree(stmt);
     BeAssert(rc==BE_SQLITE_DONE);
     bounds.m_bounds.ToRange(m_extent);
     return m_extent;

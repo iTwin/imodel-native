@@ -46,7 +46,7 @@ WebMercatorDepends = $(DgnCoreAPISrc)WebMercator.h $(DgnCoreAPISrc)DgnDbTables.h
 PointCloudBaseModelDepends = $(DgnCoreAPISrc)PointCloudBaseModel.h $(DgnCoreAPISrc)DgnDbTables.h
 RasterBaseModelDepends     = $(DgnCoreAPISrc)RasterBaseModel.h $(DgnCoreAPISrc)DgnDbTables.h
 
-txnManagerDepends = $(DgnCoreAPISrc)ITxnManager.h
+txnManagerDepends = $(DgnCoreAPISrc)TxnManager.h
 toolsHeaders   = $(DgnPlatformToolsPublicApiSrc)KeyTree.h
 LsLocalDepends = $(DgnCoreAPISrc)LsLocal.h $(DgnCoreAPISrc)LineStyle.h $(contextDepends)
 
@@ -474,11 +474,6 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(ToolsubsLib) \
 
 SQLANG_CHeader      = $(DgnPlatformInternalDir)DgnCore/DgnCoreL10N.h
 SQLANG_Xliff        = $(o)xliffs/DgnCoreMessages_en.xliff
-
-%include $(sharedMki)CHeaderToXliff.mki
-
-SQLANG_CHeader      = $(DgnPlatformInternalDir)DgnHandlers/DgnHandlersMessage.h
-SQLANG_Xliff        = $(o)xliffs/DgnHandlersMessages_en.xliff
 
 %include $(sharedMki)CHeaderToXliff.mki
 

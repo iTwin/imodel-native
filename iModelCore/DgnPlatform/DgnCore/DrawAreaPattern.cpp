@@ -71,7 +71,7 @@ PatternParamsPtr PatternParams::CreateFromExisting (PatternParamsCR params)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PatternParams::Copy (PatternParamsCR params) 
     {
-    rMatrix.copy (&params.rMatrix);
+    rMatrix = params.rMatrix;
     offset = params.offset;
     space1 = params.space1;
     angle1 = params.angle1;
@@ -107,7 +107,7 @@ bool PatternParams::IsEqual (PatternParamsCR params, PatternParamsCompareFlags c
 
         if (PatternParamsModifierFlags::None != (modifiers & PatternParamsModifierFlags::RotMatrix))
             {
-            if (!rMatrix.isEqual (&params.rMatrix))
+            if (!rMatrix.IsEqual (*(&params.rMatrix)))
                 return false;
             }
         }
@@ -486,7 +486,7 @@ PatternSymbol (DgnGeomPartId partId, DgnDbR project)
         Transform   flattenTrans;
 
         flattenDir.init (0.0, 0.0, 1.0);
-        flattenTrans.initIdentity ();              
+        flattenTrans.InitIdentity ();              
         flattenTrans.form3d[2][2] = 0.0;
 
         m_eeh.GetHandler ().ConvertTo2d (m_eeh, flattenTrans, flattenDir);
@@ -628,9 +628,9 @@ double          columnSpacing
     RotMatrix   invMatrix;
     Transform   transform;
 
-    invMatrix.inverseOf (&rMatrix);
-    transform.initFrom (&invMatrix);
-    transform.translateInLocalCoordinates (&transform, -origin.x, -origin.y, -origin.z);
+    invMatrix.InverseOf(rMatrix);
+    transform.InitFrom (invMatrix);
+    transform.TranslateInLocalCoordinates (transform, -origin.x, -origin.y, -origin.z);
 
     CurveVectorPtr  boundaryCurve = boundary.GetCurveVector ();
 
@@ -673,7 +673,7 @@ double          columnSpacing
         double  factor = (numTiles / MAX_AREA_PATTERN_TILES) * 0.5;
 
         // NOTE: Increase pattern scale and display *something* instead of useless message center alert...
-        spacing.scale (&spacing, factor);
+        spacing.Scale (spacing, factor);
         scale *= factor;
         }
 
@@ -697,8 +697,8 @@ double          patternScale
     {
     RotMatrix   angleRot;
     
-    angleRot.initFromAxisAndRotationAngle (2, patternAngle);
-    rMatrix.productOf (&patternRMatrix, &angleRot);
+    angleRot.InitFromAxisAndRotationAngle (2, patternAngle);
+    rMatrix.InitProduct (patternRMatrix, angleRot);
     scale = patternScale ? patternScale : 1.0;
     }
 
@@ -815,7 +815,7 @@ double          scale
     if (DrawPurpose::Plot == context.GetDrawPurpose())      // Opt for slower, higher quality when plotting.
         return false;
 
-#if !defined(BENTLEYCONFIG_GRAPHICS_OPENGLES)  //  We always want to use geometry map with OpenGL ES because the our OpenGL implementation of PushClipStencil does not work
+#if 1 || !defined(BENTLEYCONFIG_GRAPHICS_OPENGLES)  //  We always want to use geometry map with OpenGL ES because the our OpenGL implementation of PushClipStencil does not work
     double          pixelSize = context.GetPixelSizeAtPoint (NULL);
     double          tilePixels = MAX (spacing.x, spacing.y) / pixelSize;
     static double   s_maxGeometryMapTile = 32.0;
@@ -1033,7 +1033,7 @@ double          contextScale
 
     // Setup initial pattern instance transform
     LegacyMath::TMatrix::ComposeOrientationOriginScaleXYShear (&orgTrans, NULL, &rMatrix, &origin, scale, scale, 0.0);
-    cellRange.get8Corners (cellCorners);
+    cellRange.Get8Corners  (cellCorners);
 
     if (isQVOutput)
         {
@@ -1045,9 +1045,9 @@ double          contextScale
             DPoint3d    viewPts[8];
             DRange2d    viewRange;
 
-            orgTrans.multiply (viewPts, cellCorners, 8);
+            orgTrans.Multiply (viewPts, cellCorners, 8);
             context.LocalToView (viewPts, viewPts, 8);
-            viewRange.initFrom (viewPts, 8);
+            viewRange.InitFrom (*viewPts, *8);
 
             if (symbCell.IsPointCellSymbol ())
                 drawFiltered = (viewRange.extentSquared () < context.GetMinLOD ());
@@ -1317,6 +1317,7 @@ DPoint3dR       origin
 #else
     bool            useStencil = false;
 #endif
+    useStencil = false;
     GPArraySmartP   boundGpa (PatternHelper::GetBoundaryGPA (boundary, params->rMatrix, origin, useStencil));
 
     if (NULL == boundGpa || 0 == boundGpa->GetCount ())
@@ -1333,9 +1334,9 @@ DPoint3dR       origin
     Transform       baseTransform, invBaseTransform;
     Transform       hatchTransform;
 
-    hatchTransform.initFromRowValues (1,0,0, 0, 0,0,0, 0, 0,-1,0, 0);
-    baseTransform.initFrom (&params->rMatrix, &origin);
-    invBaseTransform.inverseOf (&baseTransform);
+    hatchTransform.InitFromRowValues (1,0,0, 0, 0,0,0, 0, 0,-1,0, 0);
+    baseTransform.InitFrom (params->rMatrix, origin);
+    invBaseTransform.InverseOf(baseTransform);
 
     boundGpa->Transform (&invBaseTransform);
 
@@ -1356,7 +1357,7 @@ DwgHatchDefLineP    lineP,
 double              rangeDiagonal
 )
     {
-    double      offsetMagnitude = lineP->offset.magnitude ();
+    double      offsetMagnitude = lineP->offset.Magnitude ();
 
     if (0.0 == offsetMagnitude || rangeDiagonal / offsetMagnitude > MAX_HATCH_ITERATIONS)
         return false;
@@ -1396,7 +1397,7 @@ bool                is3d
         boundRange.low.z = boundRange.high.z = 0.0;
 
     StatusInt       status = SUCCESS;
-    double          rangeDiagonal = boundRange.low.distance (&boundRange.high);
+    double          rangeDiagonal = boundRange.low.Distance (boundRange.high);
     GPArraySmartP   hatchGpa, dashGpa;
 
     // NOTE: In ACAD hatch definitions both the base angle and scale have already been applied to the definitions and MUST not be applied again!
@@ -1508,20 +1509,20 @@ DPoint3dR           origin
     // NOTE: Setup symbology AFTER visit to compute stencil/clip since that may change current display params!
     PatternHelper::CookPatternSymbology (*params, context);
 
-    hatchTransform.initFromRowValues (1,0,0, 0, 0,0,0, 0, 0,-1,0, 0);
+    hatchTransform.InitFromRowValues (1,0,0, 0, 0,0,0, 0, 0,-1,0, 0);
 
     DPoint3d    hatchOrigin = origin;
 
     if (PatternParamsModifierFlags::None == (params->modifiers & PatternParamsModifierFlags::DwgHatchOrigin))
         {
         // Old style DWG Hatch Definitions are implicitly about (0,0)
-        params->rMatrix.multiplyTranspose (&hatchOrigin);
+        params->rMatrix.MultiplyTranspose (hatchOrigin);
         hatchOrigin.x = hatchOrigin.y = 0.0;
-        params->rMatrix.multiply (&hatchOrigin);
+        params->rMatrix.Multiply(hatchOrigin);
         }
 
-    baseTransform.initFrom (&params->rMatrix, &hatchOrigin);
-    invBaseTransform.inverseOf (&baseTransform);
+    baseTransform.InitFrom (params->rMatrix, hatchOrigin);
+    invBaseTransform.InverseOf(baseTransform);
 
     boundGpa->Transform (&invBaseTransform);
 
@@ -1637,7 +1638,6 @@ void ViewContext::_DrawAreaPattern (ClipStencil& boundary)
     if (nullptr == params)
         return;
 
-    int         patternIndex = 0; // NEEDSWORK: No more mlines...
     DPoint3d    origin = params->origin;
 
     // Can greatly speed up fit calculation by just drawing boundary...
@@ -1645,13 +1645,12 @@ void ViewContext::_DrawAreaPattern (ClipStencil& boundary)
         return boundary.GetStroker ()._StrokeForCache (*this);
 
     IPickGeom*  pickGeom = GetIPickGeom();
-    GeomDetailP detail = pickGeom ? &pickGeom->GetGeomDetail () : NULL;
+    GeomDetailP detail = pickGeom ? &pickGeom->_GetGeomDetail () : NULL;
     bool        wasSnappable = true;
 
     if (NULL != detail)
         {
         wasSnappable = detail->IsSnappable ();
-        detail->SetPatternIndex (patternIndex);
         detail->SetNonSnappable (PatternParamsModifierFlags::None == (params->modifiers & PatternParamsModifierFlags::Snap));
         }
 
@@ -1676,10 +1675,7 @@ void ViewContext::_DrawAreaPattern (ClipStencil& boundary)
         PatternHelper::ProcessHatchPattern (*this, boundary, cookedParams.get(), origin);
 
     if (NULL != detail)
-        {
-        detail->SetPatternIndex (0);
         detail->SetNonSnappable (!wasSnappable);
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**

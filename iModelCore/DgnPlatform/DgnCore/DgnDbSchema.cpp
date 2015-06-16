@@ -18,30 +18,28 @@ static DgnVersion getCurrentSchemaVerion()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void importDgnSchema (DgnDbR project, bool updateExisting)
+static void importDgnSchema(DgnDbR project, bool updateExisting)
     {
-    ECN::ECSchemaReadContextPtr ecSchemaContext = ECN::ECSchemaReadContext::CreateContext();
-    ecSchemaContext->AddSchemaLocater (project.GetSchemaLocater());
+    ECSchemaReadContextPtr ecSchemaContext = ECN::ECSchemaReadContext::CreateContext();
+    ecSchemaContext->AddSchemaLocater(project.GetSchemaLocater());
 
     BeFileName ecSchemaPath = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-    ecSchemaPath.AppendToPath (L"ECSchemas");
+    ecSchemaPath.AppendToPath(L"ECSchemas");
 
     BeFileName dgnSchemaPath = ecSchemaPath;
-    dgnSchemaPath.AppendToPath (L"Dgn");
-    ecSchemaContext->AddSchemaPath (dgnSchemaPath);
+    dgnSchemaPath.AppendToPath(L"Dgn");
+    ecSchemaContext->AddSchemaPath(dgnSchemaPath);
 
     BeFileName standardSchemaPath = ecSchemaPath;
-    standardSchemaPath.AppendToPath (L"Standard");
-    ecSchemaContext->AddSchemaPath (standardSchemaPath);
+    standardSchemaPath.AppendToPath(L"Standard");
+    ecSchemaContext->AddSchemaPath(standardSchemaPath);
 
-    SchemaKey dgnschemaKey (L"dgn", 2, 0);
-    ECSchemaPtr dgnschema = ECSchema::LocateSchema (dgnschemaKey, *ecSchemaContext);
-    BeAssert (dgnschema != NULL);
+    SchemaKey dgnschemaKey(L"dgn", 2, 0);
+    ECSchemaPtr dgnschema = ECSchema::LocateSchema(dgnschemaKey, *ecSchemaContext);
+    BeAssert(dgnschema != NULL);
 
-    BentleyStatus status = project.Schemas().ImportECSchemas (ecSchemaContext->GetCache(),
-        ECDbSchemaManager::ImportOptions (false, updateExisting));
-
-    BeAssert (status == SUCCESS);
+    BentleyStatus status = project.Schemas().ImportECSchemas(ecSchemaContext->GetCache(), ECDbSchemaManager::ImportOptions(false, updateExisting));
+    BeAssert(status == SUCCESS);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -59,16 +57,22 @@ DbResult DgnDb::CreateProjectTables()
                                      "Permissions INT,"
                                      "CONSTRAINT names UNIQUE(Domain,Name)");
 
+    CreateTable(DGN_TABLE_Txns, "SessionId BLOB NOT NULL," // Note: *cannot* have a primary key! This table is not change-tracked.
+                           "TxnId INTEGER NOT NULL,"
+                           "Deleted BOOL,"
+                           "Operation CHAR NOT NULL,"
+                           "Mark CHAR,"
+                           "Settings BOOL,"
+                           "Time TIMESTAMP DEFAULT(julianday('now')),"
+                           "Change BLOB");
+
+    ExecuteSql("CREATE INDEX txn_session ON " DGN_TABLE_Txns "(SessionId,TxnId)");
+
     Fonts().DbFontMap().CreateFontTable();
 
     ExecuteSql("CREATE VIRTUAL TABLE " DGN_VTABLE_RTree3d " USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ)"); // Define this before importing dgn schema!
 
     importDgnSchema(*this, false);
-
-    CreateTable(DGN_TABLE_Session,   "Id INTEGER PRIMARY KEY,"
-                                     "Name CHAR NOT NULL COLLATE NOCASE UNIQUE,"
-                                     "Descr CHAR,"
-                                     "Data BLOB");
 
     ExecuteSql("CREATE TRIGGER dgn_prjrange_del AFTER DELETE ON " DGN_TABLE(DGN_CLASSNAME_ElementGeom)
                " BEGIN DELETE FROM " DGN_VTABLE_RTree3d " WHERE ElementId=old.ElementId; END");
@@ -85,13 +89,13 @@ DbResult DgnDb::CreateProjectTables()
 DbResult DgnDb::SaveDgnDbSchemaVersion(DgnVersion version)
     {
     m_schemaVersion = version;
-    return  SavePropertyString (DgnProjectProperty::SchemaVersion(), m_schemaVersion.ToJson());
+    return  SavePropertyString(DgnProjectProperty::SchemaVersion(), m_schemaVersion.ToJson());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::InitializeDgnDb (CreateDgnDbParams const& params)
+DbResult DgnDb::InitializeDgnDb(CreateDgnDbParams const& params)
     {
     if (params.GetGuid().IsValid())
         ChangeDbGuid(params.GetGuid());
@@ -119,7 +123,7 @@ DbResult DgnDb::InitializeDgnDb (CreateDgnDbParams const& params)
 struct ProjectSchemaUpgrader
 {
     virtual DgnVersion _GetVersion() = 0;
-    virtual DbResult _Upgrade (DgnDbR project, DgnVersion version) = 0;
+    virtual DbResult _Upgrade(DgnDbR project, DgnVersion version) = 0;
 };
 
 
@@ -136,14 +140,14 @@ static ProjectSchemaUpgrader* s_upgraders[] =
 * Each call to _DoUpgrade will upgrade the schema from its stored version to the immediately succeeding version.
 * @bsimethod                                    Keith.Bentley                   05/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::OpenParams::_DoUpgrade (DgnDbR project, DgnVersion& version) const
+DbResult DgnDb::OpenParams::_DoUpgrade(DgnDbR project, DgnVersion& version) const
     {
 #if defined (WHEN_FIRST_UPGRADER)
     for (auto upgrader : s_upgraders)
         {
         if (version < upgrader->_GetVersion())
             {
-            DbResult stat = upgrader->_Upgrade (project, version);
+            DbResult stat = upgrader->_Upgrade(project, version);
             if (stat == BE_SQLITE_OK)
                 version = upgrader->_GetVersion();
 
@@ -151,7 +155,7 @@ DbResult DgnDb::OpenParams::_DoUpgrade (DgnDbR project, DgnVersion& version) con
             }
         }
 
-    BeAssert (false); // if no upgrade code necessary, add an upgrader that does nothing
+    BeAssert(false); // if no upgrade code necessary, add an upgrader that does nothing
     version = getCurrentSchemaVerion();
 #endif
     return  BE_SQLITE_OK;
@@ -163,7 +167,7 @@ DbResult DgnDb::OpenParams::_DoUpgrade (DgnDbR project, DgnVersion& version) con
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::OpenParams::UpgradeSchema(DgnDbR project) const
     {
-    if (!_ReopenForSchemaUpgrade (project))
+    if (!_ReopenForSchemaUpgrade(project))
         return BE_SQLITE_ERROR_ProfileUpgradeFailedCannotOpenForWrite;
 
     DgnVersion version = project.GetSchemaVersion();
@@ -188,24 +192,23 @@ DgnVersion DgnDb::GetSchemaVersion() {return m_schemaVersion;}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::_VerifySchemaVersion (Db::OpenParams const& params)
+DbResult DgnDb::_VerifySchemaVersion(Db::OpenParams const& params)
     {
     DbResult stat = T_Super::_VerifySchemaVersion(params);
     if (BE_SQLITE_OK != stat)
         return stat;
 
     Utf8String versionString;
-    stat = QueryProperty (versionString, DgnProjectProperty::SchemaVersion());
+    stat = QueryProperty(versionString, DgnProjectProperty::SchemaVersion());
     if (BE_SQLITE_ROW != stat)
         return BE_SQLITE_ERROR_InvalidProfileVersion;
 
     m_schemaVersion.FromJson(versionString.c_str());
     DgnVersion expectedVersion = getCurrentSchemaVerion();
-    DgnVersion minimumAutoUpgradableVersion (DGNDB_SUPPORTED_VERSION_Major, DGNDB_SUPPORTED_VERSION_Minor, 0, 0);
+    DgnVersion minimumAutoUpgradableVersion(DGNDB_SUPPORTED_VERSION_Major, DGNDB_SUPPORTED_VERSION_Minor, 0, 0);
 
     bool profileIsAutoUpgradable = false;
-    stat = CheckProfileVersion (profileIsAutoUpgradable, expectedVersion, m_schemaVersion, minimumAutoUpgradableVersion, params.IsReadonly(), "DgnDb");
+    stat = CheckProfileVersion(profileIsAutoUpgradable, expectedVersion, m_schemaVersion, minimumAutoUpgradableVersion, params.IsReadonly(), "DgnDb");
 
-    return profileIsAutoUpgradable ? ((DgnDb::OpenParams&)params).UpgradeSchema(*this) : stat;
+    return profileIsAutoUpgradable ?((DgnDb::OpenParams&)params).UpgradeSchema(*this) : stat;
     }
-

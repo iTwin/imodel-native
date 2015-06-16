@@ -207,8 +207,8 @@ static bool intersectPlaneEdgesWithPlanes (DRange3dR intersectRange, T_ClipPlane
             DPoint3d        origin, otherOrigin, intersectionOrigin;
             DVec3d          intersectionNormal;
 
-            origin.sumOf (NULL, &(*curr)->GetNormal(), (*curr)->GetDistance());
-            otherOrigin.sumOf (NULL, &(*other)->GetNormal(), (*other)->GetDistance());
+            origin.Scale ((*curr)->GetNormal(), (*curr)->GetDistance());
+            otherOrigin.Scale ((*other)->GetNormal(), (*other)->GetDistance());
 
             if (bsiGeom_planePlaneIntersection (&intersectionOrigin, &intersectionNormal, &origin, &(*curr)->GetNormal(), &otherOrigin, &(*other)->GetNormal()))
                 {
@@ -219,9 +219,9 @@ static bool intersectPlaneEdgesWithPlanes (DRange3dR intersectRange, T_ClipPlane
                     {
                     DPoint3d        points[2];
 
-                    points[0].sumOf (&intersectionOrigin, &intersectionNormal, tNear);
-                    points[1].sumOf (&intersectionOrigin, &intersectionNormal, tFar);
-                    intersectRange.extend (points, 2);
+                    points[0].SumOf (intersectionOrigin,intersectionNormal, tNear);
+                    points[1].SumOf (intersectionOrigin,intersectionNormal, tFar);
+                    intersectRange.Extend (points, 2);
                     }
                 }
             }
@@ -233,7 +233,7 @@ static bool intersectPlaneEdgesWithPlanes (DRange3dR intersectRange, T_ClipPlane
             {
             for (other = curr, ++other; other != end; other++)
                 {
-                if ((*curr)->GetNormal().dotProduct(&(*other)->GetNormal()) < 0.0 &&
+                if ((*curr)->GetNormal().DotProduct (*(&(*other)->GetNormal())) < 0.0 &&
                     (*curr)->GetDistance() > -(*other)->GetDistance())
                     return false;
                 }
@@ -241,7 +241,7 @@ static bool intersectPlaneEdgesWithPlanes (DRange3dR intersectRange, T_ClipPlane
         return true;
         }
 
-    return !intersectRange.isNull();
+    return !intersectRange.IsNull();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -255,7 +255,7 @@ bool ClipUtil::IntersectClipPlaneSets (DRange3dP intersectRange, ClipPlaneCP pla
     if (NULL == intersectRange)
         intersectRange = &tmpRange;
 
-    intersectRange->init ();
+    intersectRange->Init ();
 
     for (size_t i=0; i<nPlanes1; i++)
         combinedPlanes.push_back (planeSet1 + i);
