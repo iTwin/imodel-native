@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/NonPublished/ECDb/ECDbHints_Tests.cpp $
+|  $Source: Tests/NonPublished/ECDb/ECDbMapCA_Tests.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
