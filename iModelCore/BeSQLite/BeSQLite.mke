@@ -81,6 +81,8 @@ $(o)snappy$(oext)       : $(snappyDir)snappy.cpp ${MultiCompileDepends}
 
 $(o)BeSQLite$(oext)     : $(baseDir)BeSQLite.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h  $(baseDir)/PublicAPI/BeSQLite/DownloadAdmin.h ${MultiCompileDepends}
 
+$(o)ChangeSet$(oext)     : $(baseDir)ChangeSet.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h  $(baseDir)/PublicAPI/BeSQLite/ChangeSet.h ${MultiCompileDepends}
+
 $(o)BeSQLiteProfileManager$(oext) : $(baseDir)BeSQLiteProfileManager.cpp $(baseDir)/BeSQLiteProfileManager.h  $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h ${MultiCompileDepends}
 
 $(o)DownloadVfs$(oext)  : $(SQLiteDir)DownloadVfs.cpp $(baseDir)/PublicAPI/BeSQLite/BeSQLite.h $(baseDir)/PublicAPI/BeSQLite/DownloadAdmin.h ${MultiCompileDepends}
