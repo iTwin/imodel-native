@@ -29,9 +29,9 @@ static bool s_abcShouldFail;
 //! A test IDgnElementDependencyHandler
 // @bsiclass                                                     Sam.Wilson      01/15
 //=======================================================================================
-struct ABCHandler : DgnPlatform::DgnElementDrivesElementDependencyHandler
+struct ABCHandler : Dgn::DgnElementDrivesElementDependencyHandler
     {
-    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME, ABCHandler, DgnPlatform::DgnDomain::Handler, )
+    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME, ABCHandler, Dgn::DgnDomain::Handler, )
 
     bvector<EC::ECInstanceId> m_relIds;
     void _OnRootChanged(DgnDbR db, ECInstanceId relationshipId, DgnElementId source, DgnElementId target, TxnSummaryR) override;
@@ -55,9 +55,9 @@ struct TestElementHandler;
 //! A test Element. Has an item.
 // @bsiclass                                                     Sam.Wilson      04/15
 //=======================================================================================
-struct TestElement : DgnPlatform::PhysicalElement
+struct TestElement : Dgn::PhysicalElement
 {
-    DEFINE_T_SUPER(DgnPlatform::PhysicalElement)
+    DEFINE_T_SUPER(Dgn::PhysicalElement)
 
     friend struct TestElementHandler;
 
@@ -101,9 +101,9 @@ typedef TestElement const& TestElementCR;
 //! A test ElementHandler
 // @bsiclass                                                     Sam.Wilson      01/15
 //=======================================================================================
-struct TestElementHandler : DgnPlatform::ElementHandler
+struct TestElementHandler : Dgn::ElementHandler
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS("TestElement", TestElement, TestElementHandler, DgnPlatform::ElementHandler, )
+    ELEMENTHANDLER_DECLARE_MEMBERS("TestElement", TestElement, TestElementHandler, Dgn::ElementHandler, )
 };
 
 HANDLER_DEFINE_MEMBERS(TestElementHandler)

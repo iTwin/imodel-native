@@ -247,6 +247,6 @@ public:
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
-BEGIN_BENTLEY_API_NAMESPACE
-typedef DgnPlatform::LocateFailureValue LocateFailure;
-END_BENTLEY_API_NAMESPACE
+BEGIN_BENTLEY_NAMESPACE
+typedef Dgn::LocateFailureValue LocateFailure;
+END_BENTLEY_NAMESPACE

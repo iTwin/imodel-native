@@ -24,7 +24,7 @@ namespace {
 //=======================================================================================
 struct TestElementHandler : PhysicalElementHandler
 {
-    DEFINE_T_SUPER (DgnPlatform::PhysicalElementHandler)
+    DEFINE_T_SUPER (Dgn::PhysicalElementHandler)
 
 protected:
     static TestElementHandler* s_handler;
@@ -39,10 +39,10 @@ static TestElementHandler s_testElementHandler;
 //=======================================================================================
 // @bsiclass                                                BentleySystems
 //=======================================================================================
-struct TestItemHandler : DgnPlatform::ElementItemHandler
+struct TestItemHandler : Dgn::ElementItemHandler
 {
     friend struct MoveReferencePlaneTool;
-    DEFINE_T_SUPER(DgnPlatform::ElementItemHandler)
+    DEFINE_T_SUPER(Dgn::ElementItemHandler)
     
 protected:
     virtual Utf8CP _GetItemSchemaName() const {return TMTEST_SCHEMA_NAME;}

@@ -378,7 +378,7 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 DGNPLATFORM_TYPEDEFS(AdimProcess)
 
-BEGIN_BENTLEY_API_NAMESPACE
+BEGIN_BENTLEY_NAMESPACE
 
 void    shiftElementData (DgnPlatform::DimensionElm *dim, char *pStart, int nMove);
 
@@ -1779,7 +1779,7 @@ element.
 
 int     adim_strokeDimension (AdimProcessR ep);
 
-END_BENTLEY_API_NAMESPACE
+END_BENTLEY_NAMESPACE
 
 DGNPLATFORM_TYPEDEFS (IDimElementHelper)
 

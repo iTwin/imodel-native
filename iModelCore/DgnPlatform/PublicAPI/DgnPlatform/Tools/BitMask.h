@@ -12,7 +12,7 @@
 
 #include <stdio.h>
 
-BEGIN_BENTLEY_API_NAMESPACE
+BEGIN_BENTLEY_NAMESPACE
 
 enum class BitMaskOperation
     {
@@ -377,4 +377,4 @@ const Byte*     pByteArray
 
 //__PUBLISH_SECTION_START__
 
-END_BENTLEY_API_NAMESPACE
+END_BENTLEY_NAMESPACE

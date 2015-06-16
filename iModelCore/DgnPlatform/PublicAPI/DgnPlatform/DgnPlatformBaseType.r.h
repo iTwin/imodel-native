@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnPlatformBaseType.r.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -25,8 +25,8 @@
     #define END_BENTLEY_DGNPLATFORM_NAMESPACE
 #else
 
-    #define BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE BEGIN_BENTLEY_API_NAMESPACE namespace DgnPlatform {
-    #define END_BENTLEY_DGNPLATFORM_NAMESPACE   } END_BENTLEY_API_NAMESPACE
+    #define BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE BEGIN_BENTLEY_NAMESPACE namespace Dgn {
+    #define END_BENTLEY_DGNPLATFORM_NAMESPACE   } END_BENTLEY_NAMESPACE
 
 #endif // (mdl_resource_compiler) || defined (mdl_type_resource_generator)
 

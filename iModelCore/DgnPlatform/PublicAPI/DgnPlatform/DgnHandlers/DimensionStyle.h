@@ -677,7 +677,7 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 * Function declarations
 *
 +===============+===============+===============+===============+===============+======*/
-BEGIN_BENTLEY_API_NAMESPACE
+BEGIN_BENTLEY_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/04
@@ -720,7 +720,7 @@ DGNPLATFORM_EXPORT StatusInt    mdlDimStyle_unapplyAnnotationScaleToScaledTextSi
 DgnDimStyleP            dgnDimStyleP
 );
 
-END_BENTLEY_API_NAMESPACE
+END_BENTLEY_NAMESPACE
 
 /*===========================================================================
   Relationship between bUsingAnnotationScale, UseAnnotationScale Lock and

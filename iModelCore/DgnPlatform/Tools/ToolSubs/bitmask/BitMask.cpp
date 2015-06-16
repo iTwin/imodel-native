@@ -21,7 +21,7 @@
 #define SHORT_INDEX_FROM_BIT(arg)               (arg / 16)
 #define SHORT_MASK_FROM_BIT(arg)                (1 << ((arg) % 16))
 
-BEGIN_BENTLEY_API_NAMESPACE
+BEGIN_BENTLEY_NAMESPACE
 
 /*======================================================================+
 |   Private code section                                                |
@@ -974,4 +974,4 @@ Byte**  pByteArray            /* => buffer to free */
     }
 
 
-END_BENTLEY_API_NAMESPACE
+END_BENTLEY_NAMESPACE

@@ -121,28 +121,28 @@ virtual void       _End         (size_t handle) = 0;
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
-BEGIN_BENTLEY_API_NAMESPACE
+BEGIN_BENTLEY_NAMESPACE
 
 //  Line style definition element functions
 DGNPLATFORM_EXPORT int          lstyleElm_rscToElm
 (
-DgnElementP*     ppDefElm,                   // <= Definition Element; returned with a unique ID set. May have attached point symbol element.
-void*               pRsc,                       // => The resource structure to use.
-int                 rscType,                    // => Type of resource.
-uint32_t const*       rscId,                      // => ID of resource; NULL if unknown.
-WCharCP           name,                       // => Name of style - should match name in map.
-DgnModelP        modelRef,                   // => modelRef these will be written to - for creating unique ID's.
-DgnPlatform::DgnElementId           inputID,       // => Input element ID (or 0 for next highest).
-RscFileHandle       rscFile,                    // => Only needed if extracting recursively from resource file.
-DgnPlatform::AddComponentsToDefElm*info        // => Only needed if extracting recursively from resource file.
+Dgn::DgnElementP*           ppDefElm,   // <= Definition Element; returned with a unique ID set. May have attached point symbol element.
+void*                       pRsc,       // => The resource structure to use.
+int                         rscType,    // => Type of resource.
+uint32_t const*             rscId,      // => ID of resource; NULL if unknown.
+WCharCP                     name,       // => Name of style - should match name in map.
+Dgn::DgnModelP              modelRef,   // => modelRef these will be written to - for creating unique ID's.
+Dgn::DgnElementId           inputID,    // => Input element ID (or 0 for next highest).
+RscFileHandle               rscFile,    // => Only needed if extracting recursively from resource file.
+Dgn::AddComponentsToDefElm* info        // => Only needed if extracting recursively from resource file.
 );
 
 DGNPLATFORM_EXPORT StatusInt    LineStyle_elementToRsc
 (
-void                **ppRsc,            // <=
-uint32_t            *rscType,           // <=
-DgnElementCP    pElm,               // =>
-DgnModelP        modelRef,
+void**              ppRsc,              // <=
+uint32_t*           rscType,            // <=
+Dgn::DgnElementCP   pElm,               // =>
+Dgn::DgnModelP      modelRef,
 bool                asV7Element,        // => true if point symbol should be V7 element.
 bool                forResourceFile     // => true if symbols are to be written to a resource file; ignored if V7 is true.
 );
@@ -155,14 +155,14 @@ void            **ppRsc                 // <=
 //  Name map functions
 DGNPLATFORM_EXPORT int          lineStyle_nameInsert
 (
-Utf8CP          styleName,          // => New style name for name map.
-uint32_t        rscHandle,          // => Resource file handle.
-uint32_t        rscType,            // => UDLS resource type.
-DgnPlatform::DgnElementId       rscID, // => UDLS resource ID.
-uint32_t        nameAttributes,     // => Name attributes.
-long            id,                 // => Pass 0 for generated seed id.
-uint32_t        option,             // => Function options.
-DgnModelP    modelRef
+Utf8CP              styleName,          // => New style name for name map.
+uint32_t            rscHandle,          // => Resource file handle.
+uint32_t            rscType,            // => UDLS resource type.
+Dgn::DgnElementId   rscID,              // => UDLS resource ID.
+uint32_t            nameAttributes,     // => Name attributes.
+long                id,                 // => Pass 0 for generated seed id.
+uint32_t            option,             // => Function options.
+Dgn::DgnModelP      modelRef
 );
 
 DGNPLATFORM_EXPORT StatusInt    LineStyle_nameDeleteEx
@@ -177,7 +177,7 @@ DGNPLATFORM_EXPORT StatusInt    LineStyle_nameDelete (WCharCP pStyleName, long o
 
 DGNPLATFORM_EXPORT  void        LineStyle_setDgnLibIterator
 (
-DgnPlatform::ILineStyleDgnLibIterator* iter
+Dgn::ILineStyleDgnLibIterator* iter
 );
 
 #if defined (NEEDS_WORK_DGNITEM)
@@ -190,12 +190,12 @@ int32_t             pStyleNo,
 LineStyleParamsP    pParams
 );
 
-DGNPLATFORM_EXPORT bool         elemUtil_supportsLineStyle  (ElementHandleR eh);
+DGNPLATFORM_EXPORT bool elemUtil_supportsLineStyle  (ElementHandleR eh);
 #endif
 
-StatusInt                   createDefElement
+StatusInt createDefElement
 (
-DgnElementP* ppElm,          // <=
+Dgn::DgnElementP* ppElm,          // <=
 void*           data,           // =>
 size_t          dataSize,       // =>
 size_t          dependentCount, // =>
@@ -205,36 +205,36 @@ uint16_t        type           // => Type to set element to.
 
 DGNPLATFORM_EXPORT  StatusInt   lineStyle_nameDelete
 (
-WCharCP             styleName,
-LsMapP              lsMap,
-long                option,
-DgnDbP            dgnFile
+WCharCP         styleName,
+Dgn::LsMapP     lsMap,
+long            option,
+Dgn::DgnDbP     dgnFile
 );
 
-DGNPLATFORM_EXPORT double    lsutil_getMasterToUorConversionFactor (DgnModelP destDgnModel);
+DGNPLATFORM_EXPORT double lsutil_getMasterToUorConversionFactor (Dgn::DgnModelP destDgnModel);
 
 // Used when deleting definitions
 struct UsedElementCount
     {
-    DgnPlatform::DgnElementId  uniqueID;
-    int                     useCt;
-    bool                    inNameMap;
-    bool                    toBeDeleted;
+    Dgn::DgnElementId  uniqueID;
+    int                useCt;
+    bool               inNameMap;
+    bool               toBeDeleted;
     } ;
 
-typedef     bmap<DgnPlatform::DgnElementId, UsedElementCount>       LineStyleDefUseMap;
+typedef bmap<Dgn::DgnElementId, UsedElementCount> LineStyleDefUseMap;
 
-DGNPLATFORM_EXPORT BentleyStatus   lstyleElm_getAllDefsUsed (LineStyleDefUseMap& defUseMap, DgnDbP dgnFile);
-DGNPLATFORM_EXPORT BentleyStatus   lstyleElm_markDeleteDefinition (DgnModelP modelRef, DgnPlatform::DgnElementId elId, LineStyleDefUseMap& pDefDependMap);
+DGNPLATFORM_EXPORT BentleyStatus   lstyleElm_getAllDefsUsed (LineStyleDefUseMap& defUseMap, Dgn::DgnDbP dgnFile);
+DGNPLATFORM_EXPORT BentleyStatus   lstyleElm_markDeleteDefinition (Dgn::DgnModelP modelRef, Dgn::DgnElementId elId, LineStyleDefUseMap& pDefDependMap);
 
 DGNPLATFORM_EXPORT void lineStyle_changeAllElementIdsForDwg
 (
-bool*                   madeChanges,
-DgnElementP         pDefinitionTable,
-DgnElementP         pNameTable,
-DgnPlatform::DgnElementId  minID,
-DgnPlatform::DgnElementId  maxID,
-DgnDbP                pFile
+bool*               madeChanges,
+Dgn::DgnElementP    pDefinitionTable,
+Dgn::DgnElementP    pNameTable,
+Dgn::DgnElementId   minID,
+Dgn::DgnElementId   maxID,
+Dgn::DgnDbP         pFile
 );
 
 //  Non-exported functions
@@ -242,36 +242,36 @@ DgnDbP                pFile
 
 int32_t  lineStyle_addStyle
 (
-WCharCP       name,           // => Line style name.
-DgnModelP    modelRef,       // => Model ref.
+WCharCP         name,           // => Line style name.
+Dgn::DgnModelP  modelRef,       // => Model ref.
 long            seedID
 );
 
 int32_t  lineStyle_getStyleID
 (
-WCharCP       name,           // => Line style name.
-DgnModelP    modelRef,       // => Model ref.
+WCharCP         name,           // => Line style name.
+Dgn::DgnModelP  modelRef,       // => Model ref.
 int             create          // => true=create ID entry if necessary.
 );
 
 int addDependency
 (
-DgnElementP pElm,                       // =>
-DgnPlatform::DgnElementId       uniqueID       // => ID to add.
+Dgn::DgnElementP    pElm,       // =>
+Dgn::DgnElementId   uniqueID    // => ID to add.
 );
 
 //  Internal utilities
-DgnPlatform::LsElementType   remapRscTypeToElmType (uint32_t rscType);
-uint32_t                     remapElmTypeToRscType (DgnPlatform::LsElementType  elmType);
+Dgn::LsElementType   remapRscTypeToElmType (uint32_t rscType);
+uint32_t                     remapElmTypeToRscType (Dgn::LsElementType  elmType);
 
 bool   mdlLineStyle_typeIsElement  (uint32_t rscType);
 
-DgnPlatform::DgnElementId       lstyleElm_getDependency
+Dgn::DgnElementId       lstyleElm_getDependency
 (
-GeometricElementCP     pElm,                   // =>
-int             index                   // => ID desired.
+Dgn::GeometricElementCP pElm,   // =>
+int                     index   // => ID desired.
 );
 
 #endif // defined (__DGNPLATFORM_BUILD__)
 
-END_BENTLEY_API_NAMESPACE
+END_BENTLEY_NAMESPACE

@@ -11,7 +11,7 @@
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  12/07
 +===============+===============+===============+===============+===============+======*/
-struct DgnPlatform::SimplifyDrawUnClippedProcessor
+struct Dgn::SimplifyDrawUnClippedProcessor
     {
     virtual StatusInt _ProcessUnClipped () { return ERROR; }
 
