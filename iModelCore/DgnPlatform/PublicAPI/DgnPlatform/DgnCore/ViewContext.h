@@ -352,12 +352,11 @@ protected:
     bool                    m_ignoreViewRange;
     Byte                    m_filterLOD;
     size_t                  m_refTransClipDepth;
-    size_t                  m_frustumTransClipDepth;   // stack depth when starting a frustum change
     DrawPurpose             m_purpose;
     DRange3d                m_npcSubRange;
-    DMap4d                  m_frustumToNpc;
-    DMap4d                  m_frustumToView;
-    double                  m_cameraFraction;           // ratio of front plane to back plane.
+    DMap4d                  m_worldToNpc;
+    DMap4d                  m_worldToView;
+    double                  m_cameraFraction;       // ratio of front plane to back plane.
     TransformClipStack      m_transformClipStack;
     DgnViewportP            m_viewport;
     IViewDrawP              m_IViewDraw;
@@ -383,7 +382,7 @@ protected:
     DgnElement::Hilited     m_hiliteState;
     RasterDisplayParams     m_rasterDisplayParams;
     IElemTopologyPtr        m_currElemTopo;
-    T_GeomPrimitiveId       m_currGeomPrimitiveId;
+    GeomStreamEntryId       m_currGeomStreamEntryId;
 
     bool                    m_scanRangeValid;
     double                  m_levelOfDetail;
@@ -460,8 +459,8 @@ public:
                        static void DeleteSymbolStampMap(StampQvElemMapP symbolStampMap);
     DGNPLATFORM_EXPORT static void MergeViewFlagsFromRef (ViewFlagsR flags, ViewFlagsCR refFlags, bool retainRenderMode, bool useRefFlags);
 
-    DMap4dCR GetFrustumToView () const {return m_frustumToView;}
-    DMap4dCR GetFrustumToNpc () const {return m_frustumToNpc;}
+    DMap4dCR GetWorldToView () const {return m_worldToView;}
+    DMap4dCR GetWorldToNpc () const {return m_worldToNpc;}
     bool GetWantMaterials () {return m_wantMaterials;};
     void SetIViewDraw (IViewDrawR output) { m_IViewDraw = &output; m_IDrawGeom = &output;}
     void SetIDrawGeom (IDrawGeomR drawGeom) { m_IDrawGeom = &drawGeom; }
@@ -485,10 +484,9 @@ public:
     DGNPLATFORM_EXPORT bool VisitAllViewElements (bool includeTransients, BSIRectCP updateRect); // DgnModelListP includeList, bool useUpdateSequence, bool includeRefs, bool includeTransients);
     DGNPLATFORM_EXPORT StatusInt VisitHit (HitDetailCR hit);
     DGNPLATFORM_EXPORT void VisitTransientGraphics (bool isPreUpdate);
-    DGNPLATFORM_EXPORT BentleyStatus GetCurrLocalToWorldTrans (DMatrix4dR localToWorld) const;
     DGNPLATFORM_EXPORT void DrawBox (DPoint3dP box, bool is3d);
     DGNPLATFORM_EXPORT StatusInt InitContextForView ();
-    DGNPLATFORM_EXPORT bool IsFrustumPointVisible (DPoint3dCR frustumPoint, bool boresite);
+    DGNPLATFORM_EXPORT bool IsWorldPointVisible (DPoint3dCR worldPoint, bool boresite);
     DGNPLATFORM_EXPORT bool IsLocalPointVisible (DPoint3dCR localPoint, bool boresite);
     DGNPLATFORM_EXPORT bool PointInsideClip (DPoint3dCR point);
     DGNPLATFORM_EXPORT bool GetRayClipIntersection (double& distance, DPoint3dCR origin, DVec3dCR direction);
@@ -551,11 +549,11 @@ DGNPLATFORM_EXPORT StatusInt VisitElement (GeometricElementCR);
 /// @name Coordinate Query and Conversion
 //@{
 
-//! Transform an array of points in the current local coordinate system into DgnCoordSystem::Frustum coordinates.
-//! @param[out]     frustumPts  An array to receive the points in DgnCoordSystem::Frustum. Must be dimensioned to hold \c nPts points.
+//! Transform an array of points in the current local coordinate system into DgnCoordSystem::World coordinates.
+//! @param[out]     worldPts    An array to receive the points in DgnCoordSystem::World. Must be dimensioned to hold \c nPts points.
 //! @param[in]      localPts    Input array in current local coordinates,
 //! @param[in]      nPts        Number of points in both arrays.
-DGNPLATFORM_EXPORT void LocalToFrustum (DPoint3dP frustumPts, DPoint3dCP localPts, int nPts) const;
+DGNPLATFORM_EXPORT void LocalToWorld (DPoint3dP worldPts, DPoint3dCP localPts, int nPts) const;
 
 //! Transform an array of points in the current local coordinate system into DgnCoordSystem::View coordinates.
 //! @param[out]     viewPts     An array to receive the points in DgnCoordSystem::View. Must be dimensioned to hold \c nPts points.
@@ -569,11 +567,11 @@ DGNPLATFORM_EXPORT void LocalToView (DPoint4dP viewPts, DPoint3dCP localPts, int
 //! @param[in]      nPts        Number of points in both arrays.
 DGNPLATFORM_EXPORT void LocalToView (DPoint3dP viewPts, DPoint3dCP localPts, int nPts) const;
 
-//! Transform an array of points in DgnCoordSystem::Frustum into the current local coordinate system.
+//! Transform an array of points in DgnCoordSystem::World into the current local coordinate system.
 //! @param[out]     localPts    An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-//! @param[in]      frustumPts  Input array in DgnCoordSystem::Frustum.
+//! @param[in]      worldPts    Input array in DgnCoordSystem::World.
 //! @param[in]      nPts        Number of points in both arrays.
-DGNPLATFORM_EXPORT void FrustumToLocal (DPoint3dP localPts, DPoint3dCP frustumPts, int nPts) const;
+DGNPLATFORM_EXPORT void WorldToLocal (DPoint3dP localPts, DPoint3dCP worldPts, int nPts) const;
 
 //! Transform an array of points in DgnCoordSystem::View into the current local coordinate system.
 //! @param[out]     localPts    An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
@@ -599,57 +597,61 @@ DGNPLATFORM_EXPORT void NpcToView (DPoint3dP viewPts, DPoint3dCP npcPts, int nPt
 //! @param[in]      nPts        Number of points in both arrays.
 DGNPLATFORM_EXPORT void ViewToNpc (DPoint3dP npcPts, DPoint3dCP viewPts, int nPts) const;
 
-//! Transform an array of points in DgnCoordSystem::Npc into DgnCoordSystem::Frustum.
-//! @param[out]     frustumPts  An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+//! Transform an array of points in DgnCoordSystem::Npc into DgnCoordSystem::World.
+//! @param[out]     worldPts    An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
 //! @param[in]      npcPts      Input array in DgnCoordSystem::Npc.
 //! @param[in]      nPts        Number of points in both arrays.
-DGNPLATFORM_EXPORT void NpcToFrustum (DPoint3dP frustumPts, DPoint3dCP npcPts, int nPts) const;
+DGNPLATFORM_EXPORT void NpcToWorld (DPoint3dP worldPts, DPoint3dCP npcPts, int nPts) const;
 
-//! Transform an array of points in DgnCoordSystem::Frustum into DgnCoordSystem::View.
-//!
+//! Transform an array of points in DgnCoordSystem::World into DgnCoordSystem::View.
 //! @param[out]     viewPts     An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-//! @param[in]      frustumPts  Input array in DgnCoordSystem::Frustum.
+//! @param[in]      worldPts    Input array in DgnCoordSystem::World.
 //! @param[in]      nPts        Number of points in both arrays.
-DGNPLATFORM_EXPORT void FrustumToView (DPoint4dP viewPts, DPoint3dCP frustumPts, int nPts) const;
+DGNPLATFORM_EXPORT void WorldToView (DPoint4dP viewPts, DPoint3dCP worldPts, int nPts) const;
 
-//! Transform an array of points in DgnCoordSystem::Frustum into DgnCoordSystem::View.
+//! Transform an array of points in DgnCoordSystem::World into DgnCoordSystem::View.
 //! @param[out]     viewPts     An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
-//! @param[in]      frustumPts  Input array in DgnCoordSystem::Frustum.
+//! @param[in]      worldPts    Input array in DgnCoordSystem::World.
 //! @param[in]      nPts        Number of points in both arrays.
-DGNPLATFORM_EXPORT void FrustumToView (Point2d* viewPts, DPoint3dCP frustumPts, int nPts) const;
+DGNPLATFORM_EXPORT void WorldToView (DPoint3dP viewPts, DPoint3dCP worldPt, int nPts) const;
 
-//! Transform an array of points in DgnCoordSystem::View into DgnCoordSystem::Frustum.
-//! @param[out]     frustumPts  An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+//! Transform an array of points in DgnCoordSystem::World into DgnCoordSystem::View.
+//! @param[out]     viewPts     An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+//! @param[in]      worldPts    Input array in DgnCoordSystem::World.
+//! @param[in]      nPts        Number of points in both arrays.
+DGNPLATFORM_EXPORT void WorldToView (Point2dP viewPts, DPoint3dCP worldPts, int nPts) const;
+
+//! Transform an array of points in DgnCoordSystem::View into DgnCoordSystem::World.
+//! @param[out]     worldPts    An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
 //! @param[in]      viewPts     Input array in DgnCoordSystem::View.
 //! @param[in]      nPts        Number of points in both arrays.
-DGNPLATFORM_EXPORT void ViewToFrustum (DPoint3dP frustumPts, DPoint4dCP viewPts, int nPts) const;
+DGNPLATFORM_EXPORT void ViewToWorld (DPoint3dP worldPts, DPoint4dCP viewPts, int nPts) const;
 
-//! Transform an array of points in DgnCoordSystem::View into DgnCoordSystem::Frustum.
-//! @param[out]     frustumPts  An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
+//! Transform an array of points in DgnCoordSystem::View into DgnCoordSystem::World.
+//! @param[out]     worldPts    An array to receive the transformed points. Must be dimensioned to hold \c nPts points.
 //! @param[in]      viewPts     Input array in DgnCoordSystem::View.
 //! @param[in]      nPts        Number of points in both arrays.
-DGNPLATFORM_EXPORT void ViewToFrustum (DPoint3dP frustumPts, DPoint3dCP viewPts, int nPts) const;
+DGNPLATFORM_EXPORT void ViewToWorld (DPoint3dP WorldPts, DPoint3dCP viewPts, int nPts) const;
 
-//! Retrieve a pointer to the the transform from the current local coordinate system into DgnCoordSystem::Frustum.
+//! Retrieve a pointer to the the transform from the current local coordinate system into DgnCoordSystem::World.
 //! @return   NULL if no transform present.
-DGNPLATFORM_EXPORT TransformCP GetCurrLocalToFrustumTransformCP () const;
+DGNPLATFORM_EXPORT TransformCP GetCurrLocalToWorldTransformCP () const;
 
-
-//! Retrieve a copy of the transform from the current local coordinate system into DgnCoordSystem::Frustum.
-//! @param[out]     trans       Transform from current local coordinate system to DgnCoordSystem::Frustum
+//! Retrieve a copy of the transform from the current local coordinate system into DgnCoordSystem::World.
+//! @param[out]     trans       Transform from current local coordinate system to DgnCoordSystem::World
 //! @return   SUCCESS if there is a current local coordinate system.
-DGNPLATFORM_EXPORT BentleyStatus GetCurrLocalToFrustumTrans (TransformR trans) const;
+DGNPLATFORM_EXPORT BentleyStatus GetCurrLocalToWorldTrans (TransformR trans) const;
 
-//! Retrieve a copy of the transform from the DgnCoordSystem::Frustum to current local coordinate system.
-//! @param[out]     trans       Transform from DgnCoordSystem::Frustum to current local coordinate system
+//! Retrieve a copy of the transform from the DgnCoordSystem::World to current local coordinate system.
+//! @param[out]     trans       Transform from DgnCoordSystem::World to current local coordinate system
 //! @return   SUCCESS if there is a current local coordinate system.
-DGNPLATFORM_EXPORT BentleyStatus GetCurrFrustumToLocalTrans (TransformR trans) const;
+DGNPLATFORM_EXPORT BentleyStatus GetCurrWorldToLocalTrans (TransformR trans) const;
 
-//! Retrieve a copy of the transform from the local coordinate system at the specified index into DgnCoordSystem::Frustum.
-//! @param[out]    trans  Transform from local coordinate system at the specified index to DgnCoordSystem::Frustum
-//! @param[in]      index       Index into transform stack to return transform for.
+//! Retrieve a copy of the transform from the local coordinate system at the specified index into DgnCoordSystem::World.
+//! @param[out]     trans  Transform from local coordinate system at the specified index to DgnCoordSystem::World
+//! @param[in]      index  Index into transform stack to return transform for.
 //! @return   SUCCESS if there is a local coordinate system.
-DGNPLATFORM_EXPORT BentleyStatus GetLocalToFrustumTrans (TransformR trans, size_t index) const;
+DGNPLATFORM_EXPORT BentleyStatus GetLocalToWorldTrans (TransformR trans, size_t index) const;
 
 //! Calculate the size of a "pixel" at a given point in the current local coordinate system. This method can be used to
 //! approximate how large geometry in local coordinates will appear in DgnCoordSystem::View units.
@@ -658,9 +660,8 @@ DGNPLATFORM_EXPORT BentleyStatus GetLocalToFrustumTrans (TransformR trans, size_
 //! @return the length, in the current coordinate system units, of a unit bvector in the x direction in DgnCoordSystem::View, starting at \c origin.
 DGNPLATFORM_EXPORT double GetPixelSizeAtPoint (DPoint3dCP origin) const;
 
-DGNPLATFORM_EXPORT void FrustumToView (DPoint3dP viewPts, DPoint3dCP frustumPt, int nPts) const;
-
-DGNPLATFORM_EXPORT void GetViewIndTransform (TransformP trans, DPoint3dCP originLocal);
+//! Get transform aligned with current view rotation.
+DGNPLATFORM_EXPORT void GetViewIndependentTransform (TransformP trans, DPoint3dCP originLocal);
 
 //! Check whether the current transform is view independent. Several MicroStation element types can display
 //! as "View independent" (e.g. text, text nodes, point cells). They do this by pushing the inverse of the current
@@ -911,11 +912,11 @@ DGNPLATFORM_EXPORT IElemTopologyCP GetElemTopology () const;
 //! @param topo An object holding additional information about the graphics to be drawn or nullptr to clear the current topology pointer.
 DGNPLATFORM_EXPORT void SetElemTopology (IElemTopologyP topo);
 
-//! Query the current T_GeomPrimitiveId.
-DGNPLATFORM_EXPORT T_GeomPrimitiveId GetGeomPrimitiveId () const;
+//! Query the current GeomStreamEntryId.
+DGNPLATFORM_EXPORT GeomStreamEntryId GetGeomStreamEntryId () const;
 
-//! Set the current T_GeomPrimitiveId.
-DGNPLATFORM_EXPORT void SetGeomPrimitiveId (T_GeomPrimitiveId geomId);
+//! Set the current GeomStreamEntryId.
+DGNPLATFORM_EXPORT void SetGeomStreamEntryId (GeomStreamEntryId geomId);
 
 //@}
 

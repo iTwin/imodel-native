@@ -844,12 +844,13 @@ struct DgnElements : DgnDbTable
     friend struct TxnManager;
     friend struct ProgressiveViewFilter;
 
-    //! The totals for loaded DgnElements in this DgnDb. These values reflect the current state of the loaded elements.
+    //! The totals for persistent DgnElements in this DgnDb. These values reflect the current state of the loaded elements.
     struct Totals
     {
-        uint32_t m_entries;        //! total number of elements (referenced and unreferenced) in the tree
-        uint32_t m_unreferenced;   //! total number of unreferenced elements in the tree
-        int64_t  m_allocedBytes;   //! total number of bytes of data held by elements in the tree
+        uint32_t m_extant;         //! total number of DgnElements extant (persistent and non-persistent)
+        uint32_t m_entries;        //! total number of persistent elements 
+        uint32_t m_unreferenced;   //! total number of unreferenced persistent elements 
+        int64_t  m_allocedBytes;   //! total number of bytes of data held by persistent elements 
     };
 
     //! Statistics for element activity in this DgnDb. these values can be reset at any point to gauge "element flux"
@@ -885,7 +886,6 @@ private:
     void AddToPool(DgnElementCR) const;
     void DropFromPool(DgnElementCR) const;
     void SendOnLoadedEvent(DgnElementR elRef) const;
-    void OnChangesetApply(TxnSummary const&);
     void OnChangesetApplied(TxnSummary const&);
     void FinishUpdate(DgnElementCR replacement, DgnElementCR original);
     DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, bool makePersistent) const;

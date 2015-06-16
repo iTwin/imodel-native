@@ -25,6 +25,26 @@ struct TextStringTransform
 }
 
 //=======================================================================================
+// @bsiclass                                                    Jeff.Marker     06/2015
+//=======================================================================================
+struct TextStringRange
+{
+    lowx:double;
+    lowy:double;
+    highx:double;
+    highy:double;
+}
+
+//=======================================================================================
+// @bsiclass                                                    Jeff.Marker     06/2015
+//=======================================================================================
+struct TextStringGlyphOrigin
+{
+    x:double;
+    y:double;
+}
+
+//=======================================================================================
 // @bsiclass                                                    Jeff.Marker     05/2015
 //=======================================================================================
 table TextStringStyle
@@ -49,4 +69,9 @@ table TextString
     text:string;
     style:TextStringStyle;
     transform:TextStringTransform;
+    
+    // These are optional cached layout properties
+    range:TextStringRange;
+    glyphIds:[uint]; // 32-bit for future-proofing
+    glyphOrigins:[TextStringGlyphOrigin];
 }

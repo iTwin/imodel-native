@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnHandlers/HitPath.cpp $
+|     $Source: DgnHandlers/HitDetail.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -19,8 +19,8 @@ void GeomDetail::Init ()
     m_nonSnappable  = false;
     m_viewDist      = 0.0;
     m_viewZ         = 0.0;
-    m_geomId        = make_bpair(-1, -1);
 
+    m_geomId.Init();
     m_closePoint.Zero();
     m_normal.Zero();
     }

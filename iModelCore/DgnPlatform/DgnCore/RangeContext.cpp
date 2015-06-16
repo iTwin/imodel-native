@@ -869,10 +869,9 @@ void _DrawSymbol (IDisplaySymbol* symbol, TransformCP trans, ClipPlaneSetP clip,
 void InitFitContext ()
     {
     InvalidateScanRange ();
-    m_frustumTransClipDepth = 0;
 
-    m_frustumToNpc  = *m_viewport->GetWorldToNpcMap();
-    m_frustumToView = *m_viewport->GetWorldToViewMap();
+    m_worldToNpc  = *m_viewport->GetWorldToNpcMap();
+    m_worldToView = *m_viewport->GetWorldToViewMap();
     m_output.SetViewFlags (*m_viewport->GetViewFlags());
 
     if (m_params.m_rMatrix || m_viewport)

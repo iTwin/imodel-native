@@ -15,6 +15,8 @@ namespace Dgn {
 namespace FB {
 
 struct TextStringTransform;
+struct TextStringRange;
+struct TextStringGlyphOrigin;
 struct TextStringStyle;
 struct TextString;
 
@@ -51,6 +53,38 @@ MANUALLY_ALIGNED_STRUCT(8) TextStringTransform {
   double form3d23() const { return flatbuffers::EndianScalar(form3d23_); }
 };
 STRUCT_END(TextStringTransform, 96);
+
+MANUALLY_ALIGNED_STRUCT(8) TextStringRange {
+ private:
+  double lowx_;
+  double lowy_;
+  double highx_;
+  double highy_;
+
+ public:
+  TextStringRange(double lowx, double lowy, double highx, double highy)
+    : lowx_(flatbuffers::EndianScalar(lowx)), lowy_(flatbuffers::EndianScalar(lowy)), highx_(flatbuffers::EndianScalar(highx)), highy_(flatbuffers::EndianScalar(highy)) { }
+
+  double lowx() const { return flatbuffers::EndianScalar(lowx_); }
+  double lowy() const { return flatbuffers::EndianScalar(lowy_); }
+  double highx() const { return flatbuffers::EndianScalar(highx_); }
+  double highy() const { return flatbuffers::EndianScalar(highy_); }
+};
+STRUCT_END(TextStringRange, 32);
+
+MANUALLY_ALIGNED_STRUCT(8) TextStringGlyphOrigin {
+ private:
+  double x_;
+  double y_;
+
+ public:
+  TextStringGlyphOrigin(double x, double y)
+    : x_(flatbuffers::EndianScalar(x)), y_(flatbuffers::EndianScalar(y)) { }
+
+  double x() const { return flatbuffers::EndianScalar(x_); }
+  double y() const { return flatbuffers::EndianScalar(y_); }
+};
+STRUCT_END(TextStringGlyphOrigin, 16);
 
 struct TextStringStyle : private flatbuffers::Table {
   uint8_t majorVersion() const { return GetField<uint8_t>(4, 0); }
@@ -129,6 +163,9 @@ struct TextString : private flatbuffers::Table {
   const flatbuffers::String *text() const { return GetPointer<const flatbuffers::String *>(8); }
   const TextStringStyle *style() const { return GetPointer<const TextStringStyle *>(10); }
   const TextStringTransform *transform() const { return GetStruct<const TextStringTransform *>(12); }
+  const TextStringRange *range() const { return GetStruct<const TextStringRange *>(14); }
+  const flatbuffers::Vector<uint32_t> *glyphIds() const { return GetPointer<const flatbuffers::Vector<uint32_t> *>(16); }
+  const flatbuffers::Vector<const TextStringGlyphOrigin *> *glyphOrigins() const { return GetPointer<const flatbuffers::Vector<const TextStringGlyphOrigin *> *>(18); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint8_t>(verifier, 4 /* majorVersion */) &&
@@ -138,6 +175,11 @@ struct TextString : private flatbuffers::Table {
            VerifyField<flatbuffers::uoffset_t>(verifier, 10 /* style */) &&
            verifier.VerifyTable(style()) &&
            VerifyField<TextStringTransform>(verifier, 12 /* transform */) &&
+           VerifyField<TextStringRange>(verifier, 14 /* range */) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, 16 /* glyphIds */) &&
+           verifier.Verify(glyphIds()) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, 18 /* glyphOrigins */) &&
+           verifier.Verify(glyphOrigins()) &&
            verifier.EndTable();
   }
   bool has_majorVersion() const { return CheckField(4); }
@@ -145,6 +187,9 @@ struct TextString : private flatbuffers::Table {
   bool has_text() const { return CheckField(8); }
   bool has_style() const { return CheckField(10); }
   bool has_transform() const { return CheckField(12); }
+  bool has_range() const { return CheckField(14); }
+  bool has_glyphIds() const { return CheckField(16); }
+  bool has_glyphOrigins() const { return CheckField(18); }
 };
 
 struct TextStringBuilder {
@@ -155,10 +200,13 @@ struct TextStringBuilder {
   void add_text(flatbuffers::Offset<flatbuffers::String> text) { fbb_.AddOffset(8, text); }
   void add_style(flatbuffers::Offset<TextStringStyle> style) { fbb_.AddOffset(10, style); }
   void add_transform(const TextStringTransform *transform) { fbb_.AddStruct(12, transform); }
+  void add_range(const TextStringRange *range) { fbb_.AddStruct(14, range); }
+  void add_glyphIds(flatbuffers::Offset<flatbuffers::Vector<uint32_t>> glyphIds) { fbb_.AddOffset(16, glyphIds); }
+  void add_glyphOrigins(flatbuffers::Offset<flatbuffers::Vector<const TextStringGlyphOrigin *>> glyphOrigins) { fbb_.AddOffset(18, glyphOrigins); }
   TextStringBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   TextStringBuilder &operator=(const TextStringBuilder &);
   flatbuffers::Offset<TextString> Finish() {
-    auto o = flatbuffers::Offset<TextString>(fbb_.EndTable(start_, 5));
+    auto o = flatbuffers::Offset<TextString>(fbb_.EndTable(start_, 8));
     return o;
   }
 };
@@ -168,8 +216,14 @@ inline flatbuffers::Offset<TextString> CreateTextString(flatbuffers::FlatBufferB
    uint8_t minorVersion = 0,
    flatbuffers::Offset<flatbuffers::String> text = 0,
    flatbuffers::Offset<TextStringStyle> style = 0,
-   const TextStringTransform *transform = 0) {
+   const TextStringTransform *transform = 0,
+   const TextStringRange *range = 0,
+   flatbuffers::Offset<flatbuffers::Vector<uint32_t>> glyphIds = 0,
+   flatbuffers::Offset<flatbuffers::Vector<const TextStringGlyphOrigin *>> glyphOrigins = 0) {
   TextStringBuilder builder_(_fbb);
+  builder_.add_glyphOrigins(glyphOrigins);
+  builder_.add_glyphIds(glyphIds);
+  builder_.add_range(range);
   builder_.add_transform(transform);
   builder_.add_style(style);
   builder_.add_text(text);

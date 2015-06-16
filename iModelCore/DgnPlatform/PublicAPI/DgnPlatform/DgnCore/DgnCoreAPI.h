@@ -23,7 +23,7 @@
 #include "ElementGraphics.h"
 #include "FenceParams.h"
 #include "GPArray.h"
-#include "HitPath.h"
+#include "HitDetail.h"
 #include "IAuxCoordSys.h"
 #include "IPickGeom.h"
 #include "TxnManager.h"

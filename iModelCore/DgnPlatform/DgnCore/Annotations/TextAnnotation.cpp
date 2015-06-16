@@ -105,19 +105,23 @@ BentleyStatus TextAnnotationPersistence::EncodeAsFlatBuf(bvector<Byte>& buffer, 
     //.............................................................................................
     Offset<FB::AnnotationTextBlock> documentOffset;
     if (annotation.m_text.IsValid())
-        EXPECTED_CONDITION(SUCCESS == AnnotationTextBlockPersistence::EncodeAsFlatBuf(documentOffset, encoder, *annotation.m_text));
+        if (SUCCESS != AnnotationTextBlockPersistence::EncodeAsFlatBuf(documentOffset, encoder, *annotation.m_text))
+            { BeAssert(false); }
 
     //.............................................................................................
     Offset<FB::AnnotationFrame> frameOffset;
     if (annotation.m_frame.IsValid())
-        EXPECTED_CONDITION(SUCCESS == AnnotationFramePersistence::EncodeAsFlatBuf(frameOffset, encoder, *annotation.m_frame));
+        if (SUCCESS != AnnotationFramePersistence::EncodeAsFlatBuf(frameOffset, encoder, *annotation.m_frame))
+            { BeAssert(false); }
 
     //.............................................................................................
     FB::AnnotationLeaderOffsets leaderOffsets;
     for (auto const& leader : annotation.m_leaders)
         {
         FB::AnnotationLeaderOffset leaderOffset;
-        EXPECTED_CONDITION(SUCCESS == AnnotationLeaderPersistence::EncodeAsFlatBuf(leaderOffset, encoder, *leader));
+        if (SUCCESS != AnnotationLeaderPersistence::EncodeAsFlatBuf(leaderOffset, encoder, *leader))
+            { BeAssert(false); }
+
         leaderOffsets.push_back(leaderOffset);
         }
 
@@ -167,7 +171,8 @@ BentleyStatus TextAnnotationPersistence::DecodeFromFlatBuf(TextAnnotationR annot
         if (!annotation.m_text.IsValid())
             annotation.m_text = AnnotationTextBlock::Create(*annotation.m_dgndb);
         
-        EXPECTED_CONDITION(SUCCESS == AnnotationTextBlockPersistence::DecodeFromFlatBuf(*annotation.m_text, *fbAnnotation.document()));
+        if (SUCCESS != AnnotationTextBlockPersistence::DecodeFromFlatBuf(*annotation.m_text, *fbAnnotation.document()))
+            { BeAssert(false); }
         }
     else if (annotation.m_text.IsValid())
         {
@@ -179,7 +184,8 @@ BentleyStatus TextAnnotationPersistence::DecodeFromFlatBuf(TextAnnotationR annot
         if (!annotation.m_frame.IsValid())
             annotation.m_frame = AnnotationFrame::Create(*annotation.m_dgndb);
         
-        EXPECTED_CONDITION(SUCCESS == AnnotationFramePersistence::DecodeFromFlatBuf(*annotation.m_frame, *fbAnnotation.frame()));
+        if (SUCCESS != AnnotationFramePersistence::DecodeFromFlatBuf(*annotation.m_frame, *fbAnnotation.frame()))
+            { BeAssert(false); }
         }
     else if (annotation.m_frame.IsValid())
         {
@@ -194,8 +200,11 @@ BentleyStatus TextAnnotationPersistence::DecodeFromFlatBuf(TextAnnotationR annot
         for (auto const& fbLeader : *fbAnnotation.leaders())
             {
             auto leader = AnnotationLeader::Create(*annotation.m_dgndb);
-            if (UNEXPECTED_CONDITION(SUCCESS != AnnotationLeaderPersistence::DecodeFromFlatBuf(*leader, fbLeader)))
+            if (SUCCESS != AnnotationLeaderPersistence::DecodeFromFlatBuf(*leader, fbLeader))
+                {
+                BeAssert(false);
                 continue;
+                }
 
             annotation.m_leaders.push_back(leader);
             }

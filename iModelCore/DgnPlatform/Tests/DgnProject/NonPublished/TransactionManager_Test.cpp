@@ -90,6 +90,7 @@ public:
     Utf8String GetTestItemProperty() const {return HasTestItem()? m_testItemProperty: "";}
     void SetTestItemProperty(Utf8CP value);
     void DeleteTestItem() {if (HasTestItem()) m_itemState=ItemState::Deleted;}
+    void ChangeElement(double len);
 };
 
 typedef RefCountedPtr<TestElement> TestElementPtr;
@@ -427,15 +428,14 @@ ECInstanceKey ElementDependencyGraph::InsertElementDrivesElementRelationship(Dgn
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
-static CurveVectorPtr computeShape()
+static CurveVectorPtr computeShape(double len)
     {
-    static const double PLANE_LEN = 100;
 
     DPoint3d pts[6];
-    pts[0] = DPoint3d::From(-PLANE_LEN,-PLANE_LEN);
-    pts[1] = DPoint3d::From(+PLANE_LEN,-PLANE_LEN);
-    pts[2] = DPoint3d::From(+PLANE_LEN,+PLANE_LEN);
-    pts[3] = DPoint3d::From(-PLANE_LEN,+PLANE_LEN);
+    pts[0] = DPoint3d::From(-len,-len);
+    pts[1] = DPoint3d::From(+len,-len);
+    pts[2] = DPoint3d::From(+len,+len);
+    pts[3] = DPoint3d::From(-len,+len);
     pts[4] = pts[0];
     pts[5] = pts[0];
     pts[5].z = 1;
@@ -452,15 +452,26 @@ TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId cate
 
     TestElementPtr testElement = new TestElement(CreateParams(*model, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId));
 
+    static const double PLANE_LEN = 100;
     //  Add some hard-wired geometry
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*testElement);
-    builder->Append(*computeShape());
+    builder->Append(*computeShape(PLANE_LEN));
     if (SUCCESS != builder->SetGeomStreamAndPlacement(*testElement))
         return nullptr;
 
     testElement->m_itemState = ItemState::DoesNotExist;
 
     return testElement;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void TestElement::ChangeElement(double len)
+    {
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*this);
+    builder->Append(*computeShape(len));
+    builder->SetGeomStreamAndPlacement(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2035,5 +2046,15 @@ TEST_F(TransactionManagerTests, UndoRedo)
 
     templateEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "");
     DgnElementCPtr el2 = templateEl->Insert();
-    m_db->SaveChanges("change 2");
+    m_db->SaveChanges("create new");
+
+    templateEl->ChangeElement(201.);
+    templateEl->Update();
+    m_db->SaveChanges("update one");
+
+    stat = txns.ReverseSingleTxn();
+    ASSERT_EQ(stat, SUCCESS);
+
+    stat = txns.ReinstateTxn();  // redo the update
+    ASSERT_EQ(stat, SUCCESS);
     }

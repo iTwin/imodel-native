@@ -348,8 +348,8 @@ virtual BentleyStatus _ProcessCurveVector (CurveVectorCR curves, bool isFilled) 
 
     m_boundary = curves.Clone ();
 
-    if (NULL != m_context->GetCurrLocalToFrustumTransformCP ())
-        m_boundary->TransformInPlace (*m_context->GetCurrLocalToFrustumTransformCP ());
+    if (NULL != m_context->GetCurrLocalToWorldTransformCP ())
+        m_boundary->TransformInPlace (*m_context->GetCurrLocalToWorldTransformCP ());
 
     return SUCCESS;
     }

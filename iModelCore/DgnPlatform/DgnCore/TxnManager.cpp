@@ -321,7 +321,7 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
             indirectChanges.FromChangeTrack(*this);
             Restart();
 
-            summary.AddChangeSet(indirectChanges); // so admins will see entire changeset
+            summary.AddChangeSet(indirectChanges); // so summary will hold entire changeset
             changeset.ConcatenateWith(indirectChanges);
             }
         }
@@ -493,8 +493,6 @@ DbResult TxnManager::ApplyChangeSet(ChangeSet& changeset, TxnDirection isUndo)
     {
     TxnSummary summary(m_dgndb, isUndo);
     summary.AddChangeSet(changeset);
-
-    m_dgndb.Elements().OnChangesetApply(summary);
 
     // notify monitors that changeset is about to be applied
     T_HOST.GetTxnAdmin()._OnTxnReverse(summary);
