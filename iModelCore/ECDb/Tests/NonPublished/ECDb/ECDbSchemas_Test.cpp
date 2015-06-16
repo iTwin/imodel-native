@@ -830,7 +830,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE (ColumnExist (db, tblFurniture, L"Length")); 
     
     //relation key
-    EXPECT_TRUE (ColumnExist (db, tblFurniture, L"Chair_or_Desk_0N_trg__id")); 
+    EXPECT_TRUE (ColumnExist (db, tblFurniture, L"Employee__src_01_id")); 
     
     //========================[sc_Employee]======================================================
     //Related to Furniture. Employee can have one or more furniture
