@@ -602,6 +602,14 @@ DgnClassId PhysicalElement::QueryClassId(DgnDbR db)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnClassId DrawingElement::QueryClassId(DgnDbR db)
+    {
+    return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_DrawingElement));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * A physical element was just successfully added to the database. We need to add the corresponding entry into the persistent range tree.
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -766,6 +766,10 @@ protected:
 public:
     //! Create a DrawingElement from CreateParams.
     static DrawingElementPtr Create(CreateParams const& params) {return new DrawingElement(params);}
+
+    //! Query the DgnClassId for the dgn.DrawingElement class in the specified DgnDb.
+    //! @note This is a static method that always returns the DgnClassId of the dgn.DrawingElement class - it does @b not return the class of a specific instance.
+    DGNPLATFORM_EXPORT static DgnClassId QueryClassId(DgnDbR db);
 };
 
 //=======================================================================================
