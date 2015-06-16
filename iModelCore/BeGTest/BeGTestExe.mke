@@ -65,7 +65,7 @@ LOCAL_GUNITTEST_OBJS + $[@wildcard $(unitTestsDir)*$(oext)]
 GUNITTEST_LIBS       + $[@wildcard $(BuildContext)SubParts/Libs/*$(libext)]
 GUNITTEST_LIBS       + $[@readfile $(tmp)libraries.list]
 %if $(TARGET_PLATFORM)=="Windows"
-    GUNITTEST_LIBS   + advapi32$(libext) rpcrt4$(libext) Shlwapi$(libext) version$(libext)
+    GUNITTEST_LIBS   + advapi32$(libext) rpcrt4$(libext) Shlwapi$(libext) version$(libext) user32.lib
 %elif $(TARGET_PLATFORM)=="Linux"
     GUNITTEST_LIBS   + -lpthread
 %endif
