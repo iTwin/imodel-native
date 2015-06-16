@@ -9,7 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <DgnPlatform/DgnPlatform.h>
-#include "HitPath.h"
+#include "HitDetail.h"
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
