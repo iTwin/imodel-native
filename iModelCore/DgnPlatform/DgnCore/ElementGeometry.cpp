@@ -2487,7 +2487,7 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
 
                     pointIndex.reserve(meshData.GetPointIndexCount());
 
-                    for (int i=0; i<meshData.GetPointIndexCount(); i++)
+                    for (size_t i=0; i<meshData.GetPointIndexCount(); i++)
                         {
                         int32_t thisIndex = *(meshData.GetPointIndexCP()+i);
 
