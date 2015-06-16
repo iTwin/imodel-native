@@ -90,10 +90,7 @@ DG_INLINE ColorDef DgnViewport::GetBackgroundColor() const {return m_backgroundC
 DG_INLINE void DgnViewport::GetViewCorners(DPoint3dR low, DPoint3dR high) const {_GetViewCorners(low,high);}
 DG_INLINE int DgnViewport::GetIndexedLineWidth(int index) const {return _GetIndexedLineWidth(index);}
 DG_INLINE uint32_t        DgnViewport::GetIndexedLinePattern(int index) const {return _GetIndexedLinePattern(index);}
-DG_INLINE void DgnViewport::SynchWithViewController(bool saveInUndo) {_SynchWithViewController(saveInUndo);}
-DG_INLINE StatusInt DgnViewport::SetupFromViewController() {return _SetupFromViewController();}
 DG_INLINE void DgnViewport::SetFrustumFromRootCorners(DPoint3dCP rootBox, double compressionFraction) {_SetFrustumFromRootCorners(rootBox, compressionFraction);}
-DG_INLINE IViewDrawP DgnViewport::GetIViewDraw() {return _GetIViewDraw();}
 DG_INLINE IViewOutputP DgnViewport::GetIViewOutput() {return _GetIViewOutput();}
 DG_INLINE ICachedDrawP DgnViewport::GetICachedDraw() {return _GetICachedDraw();}
 DG_INLINE void DgnViewport::SetNeedsRefresh() {_SetNeedsRefresh();}
@@ -277,8 +274,8 @@ DG_INLINE ViewContext::ContextMark::~ContextMark() {Pop();}
 
 DG_INLINE IElemTopologyCP   ViewContext::GetElemTopology() const {return(m_currElemTopo.IsValid() ? m_currElemTopo.get() : nullptr);}
 DG_INLINE void              ViewContext::SetElemTopology(IElemTopologyP topo) {m_currElemTopo = topo;}
-DG_INLINE T_GeomPrimitiveId ViewContext::GetGeomPrimitiveId() const {return m_currGeomPrimitiveId;}
-DG_INLINE void              ViewContext::SetGeomPrimitiveId(T_GeomPrimitiveId geomId) {m_currGeomPrimitiveId = geomId;}
+DG_INLINE GeomStreamEntryId ViewContext::GetGeomStreamEntryId() const {return m_currGeomStreamEntryId;}
+DG_INLINE void              ViewContext::SetGeomStreamEntryId(GeomStreamEntryId geomId) {m_currGeomStreamEntryId = geomId;}
 
 DG_INLINE IDrawGeom::IDrawGeom() { }
 

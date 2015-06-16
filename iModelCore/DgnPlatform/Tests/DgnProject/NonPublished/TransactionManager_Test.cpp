@@ -19,6 +19,7 @@
 #define TMTEST_TEST_ITEM_TestItemProperty                "TestItemProperty"
 
 USING_NAMESPACE_BENTLEY_SQLITE
+USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 BEGIN_UNNAMED_NAMESPACE
 
@@ -33,7 +34,7 @@ struct ABCHandler : DgnPlatform::DgnElementDrivesElementDependencyHandler
     DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME, ABCHandler, DgnPlatform::DgnDomain::Handler, )
 
     bvector<EC::ECInstanceId> m_relIds;
-    void _OnRootChanged(DgnDbR db, BeSQLite::EC::ECInstanceId relationshipId, DgnElementId source, DgnElementId target, TxnSummaryR) override;
+    void _OnRootChanged(DgnDbR db, ECInstanceId relationshipId, DgnElementId source, DgnElementId target, TxnSummaryR) override;
     void Clear() {m_relIds.clear();}
     };
 
@@ -73,10 +74,10 @@ private:
     ItemState  m_itemState;
     Utf8String m_testItemProperty;
 
-    virtual DgnModelStatus _InsertInDb() override;
-    virtual DgnModelStatus _UpdateInDb() override;
-    virtual DgnModelStatus _LoadFromDb() override;
-    virtual DgnModelStatus _CopyFrom(DgnElementCR) override;
+    virtual DgnDbStatus _InsertInDb() override;
+    virtual DgnDbStatus _UpdateInDb() override;
+    virtual DgnDbStatus _LoadFromDb() override;
+    virtual void _CopyFrom(DgnElementCR) override;
 
 public:
     TestElement(CreateParams const& params) : T_Super(params), m_itemState(ItemState::Unknown) {} 
@@ -128,7 +129,7 @@ struct TxnMonitorVerifier : TxnMonitor
     bool m_OnTxnClosedCalled;
     bool m_OnTxnReverseCalled;
     bool m_OnTxnReversedCalled;
-    bset<EC::ECInstanceId> m_adds, m_deletes, m_mods;
+    bset<ECInstanceId> m_adds, m_deletes, m_mods;
 
     TxnMonitorVerifier();
     ~TxnMonitorVerifier();
@@ -153,7 +154,7 @@ public:
     ~TransactionManagerTests();
     void CloseDb() {m_db->CloseDb();}
     DgnModelR GetDefaultModel() {return *m_db->Models().GetModel(m_defaultModelId);}
-    void SetupProject(WCharCP projFile, WCharCP testFile, BeSQLite::Db::OpenMode mode);
+    void SetupProject(WCharCP projFile, WCharCP testFile, Db::OpenMode mode);
     DgnElementCPtr InsertElement(Utf8CP elementCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId());
     void TwiddleTime(DgnElementCPtr);
 };
@@ -168,18 +169,18 @@ struct ElementDependencyGraph : TransactionManagerTests
     struct ElementsAndRelationships
         {
         DgnElementCPtr e99, e3, e31, e2, e1;
-        EC::ECInstanceKey r99_3, r99_31, r3_2, r31_2, r2_1;
+        ECInstanceKey r99_3, r99_31, r3_2, r31_2, r2_1;
         };
 
     WString GetTestFileName(WCharCP testname);
     ECN::ECClassCR GetElementDrivesElementClass();
 
-    EC::CachedECSqlStatementPtr GetSelectElementDrivesElementById();
+    CachedECSqlStatementPtr GetSelectElementDrivesElementById();
     void SetUpForRelationshipTests(WCharCP testname);
-    EC::ECInstanceKey InsertElementDrivesElementRelationship(DgnElementCPtr root, DgnElementCPtr dependent);
+    ECInstanceKey InsertElementDrivesElementRelationship(DgnElementCPtr root, DgnElementCPtr dependent);
 
     void TestTPS(DgnElementCPtr e1, DgnElementCPtr e2, size_t ntimes);
-    void TestOverlappingOrder(DgnElementCPtr r1, EC::ECInstanceKeyCR r1_d3, EC::ECInstanceKeyCR r2_d3, bool r1First);
+    void TestOverlappingOrder(DgnElementCPtr r1, ECInstanceKeyCR r1_d3, ECInstanceKeyCR r2_d3, bool r1First);
     void TestRelationships(DgnDb& db, ElementsAndRelationships const&);
 };
 
@@ -197,7 +198,7 @@ END_UNNAMED_NAMESPACE
 * set up method that opens an existing .dgndb project file after copying it to out
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool isElementIdInKeySet(bset<EC::ECInstanceId> const& theSet, DgnElementId element)
+static bool isElementIdInKeySet(bset<ECInstanceId> const& theSet, DgnElementId element)
     {
     return theSet.find(element) != theSet.end();
     }
@@ -205,7 +206,7 @@ static bool isElementIdInKeySet(bset<EC::ECInstanceId> const& theSet, DgnElement
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
-static bvector<EC::ECInstanceId>::const_iterator findRelId(bvector<EC::ECInstanceId> const& rels, EC::ECInstanceKey eid)
+static bvector<ECInstanceId>::const_iterator findRelId(bvector<ECInstanceId> const& rels, ECInstanceKey eid)
     {
     return std::find(rels.begin(), rels.end(), eid.GetECInstanceId());
     }
@@ -248,7 +249,7 @@ void TxnMonitorVerifier::_OnTxnCommit(TxnSummaryCR summary)
         auto eid = stmt.GetValueId<DgnElementId>(0);
         switch (stmt.GetValueInt(1))
             {
-            case (int)TxnSummary::ChangeType::Add:    m_adds.insert(eid); break;
+            case (int)TxnSummary::ChangeType::Insert: m_adds.insert(eid); break;
             case (int)TxnSummary::ChangeType::Delete: m_deletes.insert(eid); break;
             case (int)TxnSummary::ChangeType::Update: m_mods.insert(eid); break;
             default:
@@ -269,7 +270,7 @@ TransactionManagerTestDomain::TransactionManagerTestDomain() : DgnDomain(TMTEST_
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
-void ABCHandler::_OnRootChanged(DgnDbR db, BeSQLite::EC::ECInstanceId relationshipId, DgnElementId source, DgnElementId target, TxnSummaryR summary)
+void ABCHandler::_OnRootChanged(DgnDbR db, ECInstanceId relationshipId, DgnElementId source, DgnElementId target, TxnSummaryR summary)
     {
     if (s_abcShouldFail)
         summary.ReportError(*new TxnSummary::ValidationError(TxnSummary::ValidationError::Severity::Warning, "ABC failed"));
@@ -296,7 +297,7 @@ TransactionManagerTests::~TransactionManagerTests()
 * set up method that opens an existing .dgndb project file after copying it to out
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TransactionManagerTests::SetupProject(WCharCP projFile, WCharCP testFile, BeSQLite::Db::OpenMode mode)
+void TransactionManagerTests::SetupProject(WCharCP projFile, WCharCP testFile, Db::OpenMode mode)
     {
     BeFileName outFileName;
     ASSERT_EQ(SUCCESS, DgnDbTestDgnManager::GetTestDataOut(outFileName, projFile, testFile, __FILE__));
@@ -368,9 +369,9 @@ ECN::ECClassCR ElementDependencyGraph::GetElementDrivesElementClass()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-EC::CachedECSqlStatementPtr ElementDependencyGraph::GetSelectElementDrivesElementById()
+CachedECSqlStatementPtr ElementDependencyGraph::GetSelectElementDrivesElementById()
     {
-    BeSQLite::EC::ECSqlSelectBuilder b;
+    ECSqlSelectBuilder b;
     #ifdef WIP_ECSQL_BUG
         // ERROR ECDb - Invalid ECSQL 'SELECT DependentElementId,DependentElementClassId,RootElementId,RootElementClassId,HandlerId,Status FROM ONLY [dgn].[ElementDrivesElement] WHERE ECInstanceId=?': ECProperty 'DependentElementId' not found in any of the ECClasses used in the ECSQL statement.
         b.Select("DependentElementId,DependentElementClassId,RootElementId,RootElementClassId,Status").From(GetElementDrivesElementClass(),false).Where("ECInstanceId=?");
@@ -386,7 +387,7 @@ EC::CachedECSqlStatementPtr ElementDependencyGraph::GetSelectElementDrivesElemen
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElementDependencyGraph::SetUpForRelationshipTests(WCharCP testname)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", GetTestFileName(testname).c_str(), BeSQLite::Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", GetTestFileName(testname).c_str(), Db::OPEN_ReadWrite);
 
     auto abcHandlerInternalId = m_db->Domains().GetClassId(ABCHandler::GetHandler());
 
@@ -400,25 +401,25 @@ void ElementDependencyGraph::SetUpForRelationshipTests(WCharCP testname)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-EC::ECInstanceKey ElementDependencyGraph::InsertElementDrivesElementRelationship(DgnElementCPtr root, DgnElementCPtr dependent)
+ECInstanceKey ElementDependencyGraph::InsertElementDrivesElementRelationship(DgnElementCPtr root, DgnElementCPtr dependent)
     {
-    EC::ECSqlInsertBuilder b;
+    ECSqlInsertBuilder b;
     b.InsertInto(GetElementDrivesElementClass());
     b.AddValue("SourceECClassId", "?");
     b.AddValue("SourceECInstanceId", "?");
     b.AddValue("TargetECClassId", "?");
     b.AddValue("TargetECInstanceId", "?");
 
-    EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement(b.ToString().c_str());
+    CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement(b.ToString().c_str());
 
     stmt->BindId(1, root->GetElementClassId());
     stmt->BindId(2, root->GetElementId());
     stmt->BindId(3, dependent->GetElementClassId());
     stmt->BindId(4, dependent->GetElementId());
 
-    EC::ECInstanceKey rkey;
-    if (EC::ECSqlStepStatus::Done != stmt->Step(rkey))
-        return EC::ECInstanceKey();
+    ECInstanceKey rkey;
+    if (ECSqlStepStatus::Done != stmt->Step(rkey))
+        return ECInstanceKey();
 
     return rkey;
     }
@@ -474,68 +475,68 @@ void TestElement::SetTestItemProperty(Utf8CP value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus TestElement::_InsertInDb()
+DgnDbStatus TestElement::_InsertInDb()
     {
-    DgnModelStatus status = T_Super::_InsertInDb();
-    if (DGNMODEL_STATUS_Success != status)
+    DgnDbStatus status = T_Super::_InsertInDb();
+    if (DgnDbStatus::Success != status)
         return status;
 
     if (HasTestItem())
         {
-        BeSQLite::EC::CachedECSqlStatementPtr insertStmt = GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME "(ECInstanceId," TMTEST_TEST_ITEM_TestItemProperty ") VALUES(?,?)");
+        CachedECSqlStatementPtr insertStmt = GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME "(ECInstanceId," TMTEST_TEST_ITEM_TestItemProperty ") VALUES(?,?)");
         insertStmt->BindId(1, GetElementId());
-        insertStmt->BindText(2, m_testItemProperty.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-        if (BeSQLite::EC::ECSqlStepStatus::Done != insertStmt->Step())
-            return DGNMODEL_STATUS_ElementWriteError;
+        insertStmt->BindText(2, m_testItemProperty.c_str(), IECSqlBinder::MakeCopy::No);
+        if (ECSqlStepStatus::Done != insertStmt->Step())
+            return DgnDbStatus::ElementWriteError;
         }
 
-    return DGNMODEL_STATUS_Success;
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus TestElement::_UpdateInDb()
+DgnDbStatus TestElement::_UpdateInDb()
     {
-    DgnModelStatus status = T_Super::_UpdateInDb();
-    if (DGNMODEL_STATUS_Success != status)
+    DgnDbStatus status = T_Super::_UpdateInDb();
+    if (DgnDbStatus::Success != status)
         return status;
 
-    BeSQLite::EC::ECSqlStepStatus rc = BeSQLite::EC::ECSqlStepStatus::Done;
+    ECSqlStepStatus rc = ECSqlStepStatus::Done;
     if (ItemState::Deleted == m_itemState)
         {
-        BeSQLite::EC::CachedECSqlStatementPtr delStmt = GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME " WHERE(ECInstanceId=?)");
+        CachedECSqlStatementPtr delStmt = GetDgnDb().GetPreparedECSqlStatement("DELETE FROM " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME " WHERE(ECInstanceId=?)");
         delStmt->BindId(1, GetElementId());
         rc = delStmt->Step();
-        if (BeSQLite::EC::ECSqlStepStatus::Done == rc)
+        if (ECSqlStepStatus::Done == rc)
             m_itemState = ItemState::DoesNotExist;
         }
     else if (ItemState::Modified == m_itemState)
         {
 #ifdef ECSQL_SUPPORTS_INSERT_OR_REPLACE
-        BeSQLite::EC::CachedECSqlStatementPtr writeStmt = GetDgnDb().GetPreparedECSqlStatement("INSERT OR REPLACE INTO " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME "(ECInstanceId," TMTEST_TEST_ITEM_TestItemProperty ") VALUES(?,?)");
+        CachedECSqlStatementPtr writeStmt = GetDgnDb().GetPreparedECSqlStatement("INSERT OR REPLACE INTO " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME "(ECInstanceId," TMTEST_TEST_ITEM_TestItemProperty ") VALUES(?,?)");
         writeStmt->BindId(2, GetElementId());
-        writeStmt->BindText(1, m_testItemProperty.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+        writeStmt->BindText(1, m_testItemProperty.c_str(), IECSqlBinder::MakeCopy::No);
         rc = writeStmt->Step();
 #else
-        BeSQLite::EC::CachedECSqlStatementPtr updStmt = GetDgnDb().GetPreparedECSqlStatement("UPDATE " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME " SET " TMTEST_TEST_ITEM_TestItemProperty "=? WHERE(ECInstanceId=?)");
+        CachedECSqlStatementPtr updStmt = GetDgnDb().GetPreparedECSqlStatement("UPDATE " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME " SET " TMTEST_TEST_ITEM_TestItemProperty "=? WHERE(ECInstanceId=?)");
         updStmt->BindId(2, GetElementId());
-        updStmt->BindText(1, m_testItemProperty.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-        if (BeSQLite::EC::ECSqlStepStatus::Done !=(rc = updStmt->Step()))
+        updStmt->BindText(1, m_testItemProperty.c_str(), IECSqlBinder::MakeCopy::No);
+        if (ECSqlStepStatus::Done !=(rc = updStmt->Step()))
             {
             // Update failed. There's no way to tell why. Maybe it's because the item doesn't exist yet in the DB. Try an insert.
-            BeSQLite::EC::CachedECSqlStatementPtr insertStmt = GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME "(ECInstanceId," TMTEST_TEST_ITEM_TestItemProperty ") VALUES(?,?)");
+            CachedECSqlStatementPtr insertStmt = GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME "(ECInstanceId," TMTEST_TEST_ITEM_TestItemProperty ") VALUES(?,?)");
             insertStmt->BindId(1, GetElementId());
-            insertStmt->BindText(2, m_testItemProperty.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+            insertStmt->BindText(2, m_testItemProperty.c_str(), IECSqlBinder::MakeCopy::No);
             rc = insertStmt->Step();
             }
 #endif
-        if (BeSQLite::EC::ECSqlStepStatus::Done == rc)
+        if (ECSqlStepStatus::Done == rc)
             m_itemState = ItemState::Exists;
         }
 
-    if (BeSQLite::EC::ECSqlStepStatus::Done != rc)
-        status = DGNMODEL_STATUS_ElementWriteError;
+    if (ECSqlStepStatus::Done != rc)
+        status = DgnDbStatus::ElementWriteError;
 
     return status;
     }
@@ -543,16 +544,16 @@ DgnModelStatus TestElement::_UpdateInDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus TestElement::_LoadFromDb()
+DgnDbStatus TestElement::_LoadFromDb()
     {
-    DgnModelStatus status = T_Super::_LoadFromDb();
-    if (DGNMODEL_STATUS_Success != status)
+    DgnDbStatus status = T_Super::_LoadFromDb();
+    if (DgnDbStatus::Success != status)
         return status;
 
-    BeSQLite::EC::CachedECSqlStatementPtr itemStmt = GetDgnDb().GetPreparedECSqlStatement("SELECT " TMTEST_TEST_ITEM_TestItemProperty " FROM " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME " WHERE(ECInstanceId=?)");
+    CachedECSqlStatementPtr itemStmt = GetDgnDb().GetPreparedECSqlStatement("SELECT " TMTEST_TEST_ITEM_TestItemProperty " FROM " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME " WHERE(ECInstanceId=?)");
     itemStmt->BindId(1, GetElementId());
 
-    if (BeSQLite::EC::ECSqlStepStatus::HasRow == itemStmt->Step())
+    if (ECSqlStepStatus::HasRow == itemStmt->Step())
         {
         m_testItemProperty = itemStmt->GetValueText(0);
         m_itemState = ItemState::Exists;
@@ -568,17 +569,13 @@ DgnModelStatus TestElement::_LoadFromDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus TestElement::_CopyFrom(DgnElementCR rhs)
+void TestElement::_CopyFrom(DgnElementCR rhs)
     {
-    DgnModelStatus status = T_Super::_CopyFrom(rhs);
-    if (DGNMODEL_STATUS_Success != status)
-        return status;
+    T_Super::_CopyFrom(rhs);
 
     auto trhs = dynamic_cast<TestElement const*>(&rhs);
     m_testItemProperty = trhs->m_testItemProperty;
     m_itemState = trhs->m_itemState;
-
-    return DGNMODEL_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -587,7 +584,7 @@ DgnModelStatus TestElement::_CopyFrom(DgnElementCR rhs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, StreetMapModel)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests_StreetMapModel.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests_StreetMapModel.idgndb", Db::OPEN_ReadWrite);
 
     auto newModelId = StreetMapModelHandler::CreateStreetMapModel(*m_db, StreetMapModelHandler::MapService::MapQuest, StreetMapModelHandler::MapType::SatelliteImage, true);
     ASSERT_TRUE( newModelId.IsValid() );
@@ -605,7 +602,7 @@ TEST_F(TransactionManagerTests, StreetMapModel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, CRUD)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests_CRUD.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests_CRUD.idgndb", Db::OPEN_ReadWrite);
 
     m_db->SaveChanges();
     m_db->Txns().EnableTracking(true);
@@ -649,7 +646,7 @@ TEST_F(TransactionManagerTests, CRUD)
     //  Test deletes
     //  -------------------------------------------------------------
     auto delStatus = key2->Delete();
-    ASSERT_TRUE( BSISUCCESS == delStatus );
+    ASSERT_TRUE( DgnDbStatus::Success == delStatus );
 
     m_db->SaveChanges();
 
@@ -668,7 +665,7 @@ TEST_F(TransactionManagerTests, CRUD)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, ElementInstance)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", Db::OPEN_ReadWrite);
 
     auto key1 = InsertElement("E1");
     ASSERT_TRUE( key1->GetElementId().IsValid() );
@@ -706,7 +703,7 @@ TEST_F(TransactionManagerTests, ElementItem)
     Utf8CP initialTestPropValue = "Test";
     Utf8CP changedTestPropValue = "Test - changed";
 
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", Db::OPEN_ReadWrite);
 
     ECN::ECClassCP testItemClass = m_db->Schemas().GetECClass(TMTEST_SCHEMA_NAME, TMTEST_TEST_ITEM_CLASS_NAME);
     ASSERT_NE( nullptr , testItemClass );
@@ -723,12 +720,12 @@ TEST_F(TransactionManagerTests, ElementItem)
 
     TestElementPtr mod = m_db->Elements().GetForEdit<TestElement>(el->GetElementId());
 
-    DgnModelStatus mstatus;
+    DgnDbStatus mstatus;
 
     //  Add an item
     mod->SetTestItemProperty(initialTestPropValue);
     mod->Update(&mstatus);
-    ASSERT_EQ( DGNMODEL_STATUS_Success , mstatus );
+    ASSERT_EQ( DgnDbStatus::Success , mstatus );
 
     // *** NB: I am assuming that 'el' is still valid and still points to the REAL element!
 
@@ -737,14 +734,14 @@ TEST_F(TransactionManagerTests, ElementItem)
     //  Update the item
     mod->SetTestItemProperty(changedTestPropValue);
     mod->Update(&mstatus);
-    ASSERT_EQ( DGNMODEL_STATUS_Success , mstatus );
+    ASSERT_EQ( DgnDbStatus::Success , mstatus );
 
     checkItemProperty(*el, true, changedTestPropValue); // item should now be in the DB
 
     //  Delete the item
     mod->DeleteTestItem();
     mod->Update(&mstatus);
-    ASSERT_EQ( DGNMODEL_STATUS_Success , mstatus );
+    ASSERT_EQ( DgnDbStatus::Success , mstatus );
 
     checkItemProperty(*el, false, nullptr); // item should now be gone in the DB
     }
@@ -969,7 +966,7 @@ TEST_F(Performance_ElementDependencyGraph, PerformanceDeep1)
     static size_t s_nElements = 512;
 
     //  Create 10000 Elements, and make each depend on the previous one.
-    EC::ECInstanceKey firstRel,previousRel,thisRel,lastRel;
+    ECInstanceKey firstRel,previousRel,thisRel,lastRel;
     DgnElementCPtr firstElement, previousElement, thisElement, lastElement;
 
     if (true)
@@ -1059,7 +1056,7 @@ void Performance_ElementDependencyGraph::DoPerformanceShallow(size_t depCount)
     DgnElementCPtr rootElement = InsertElement("Root");
 
     //  Create a bunch of Elements, and make each depend on the single rootElement
-    EC::ECInstanceKey firstRel, lastRel;
+    ECInstanceKey firstRel, lastRel;
     DgnElementCPtr firstDependentElement, lastDependentElement;
     if (true)
         {
@@ -1209,7 +1206,7 @@ TEST_F(ElementDependencyGraph, NonDependencyOrderTest)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementDependencyGraph::TestOverlappingOrder(DgnElementCPtr r1, EC::ECInstanceKeyCR r1_d3, EC::ECInstanceKeyCR r2_d3, bool r1First)
+void ElementDependencyGraph::TestOverlappingOrder(DgnElementCPtr r1, ECInstanceKeyCR r1_d3, ECInstanceKeyCR r2_d3, bool r1First)
     {
     m_db->SaveChanges();
 
@@ -1271,14 +1268,14 @@ TEST_F(ElementDependencyGraph, FailureTest1)
 
     DgnElementCPtr e1 = InsertElement("E1");
     DgnElementCPtr e2 = InsertElement("E2");
-    EC::ECInstanceKey e1_e2 = InsertElementDrivesElementRelationship(e1, e2);
+    ECInstanceKey e1_e2 = InsertElementDrivesElementRelationship(e1, e2);
 
-    EC::CachedECSqlStatementPtr selectDepRel = GetSelectElementDrivesElementById();
+    CachedECSqlStatementPtr selectDepRel = GetSelectElementDrivesElementById();
     selectDepRel->BindId(1, e1_e2.GetECInstanceId());
 
     m_db->SaveChanges();
 
-    ASSERT_EQ( selectDepRel->Step(), EC::ECSqlStepStatus::HasRow );
+    ASSERT_EQ( selectDepRel->Step(), ECSqlStepStatus::HasRow );
     ASSERT_EQ( selectDepRel->GetValueInt((int)ElementDrivesElementColumn::Status),(int)DgnElementDependencyGraph::EdgeStatus::EDGESTATUS_Satisfied );
 
     AbcShouldFail fail;
@@ -1286,7 +1283,7 @@ TEST_F(ElementDependencyGraph, FailureTest1)
     m_db->SaveChanges();
 
     selectDepRel->Reset();
-    ASSERT_EQ( selectDepRel->Step(), EC::ECSqlStepStatus::HasRow );
+    ASSERT_EQ( selectDepRel->Step(), ECSqlStepStatus::HasRow );
     ASSERT_EQ( selectDepRel->GetValueInt((int)ElementDrivesElementColumn::Status),(int)DgnElementDependencyGraph::EdgeStatus::EDGESTATUS_Failed );
     }
 
@@ -1325,12 +1322,12 @@ TEST_F(ElementDependencyGraph, CycleTest1)
 
 
         // Verify that the txn was rolled back. If so, my insert of e2_e1 should have been cancelled, and e2_e1 should not exist.
-        EC::ECSqlSelectBuilder b;
+        ECSqlSelectBuilder b;
         b.Select("*").From(*m_db->Schemas().GetECClass(e2_e1.GetECClassId())).Where("ECInstanceId = ?");
-        EC::ECSqlStatement s;
+        ECSqlStatement s;
         s.Prepare(*m_db, b.ToString().c_str());
         s.BindId(1, e2_e1.GetECInstanceId());
-        ASSERT_EQ( s.Step() , EC::ECSqlStepStatus::Done );
+        ASSERT_EQ( s.Step() , ECSqlStepStatus::Done );
         }
     }
 
@@ -1357,7 +1354,7 @@ TEST_F(ElementDependencyGraph, CycleTest2)
     if (true)
         {
         // Attempt to create backward relationship, which would cause a cycle.
-        EC::ECInstanceKey e4_e2 = InsertElementDrivesElementRelationship(e4, e2);
+        ECInstanceKey e4_e2 = InsertElementDrivesElementRelationship(e4, e2);
 
         // Trigger graph evaluation, which will detect the cycle.
         TwiddleTime(e1);
@@ -1366,9 +1363,9 @@ TEST_F(ElementDependencyGraph, CycleTest2)
         m_db->SaveChanges();
  
         // Verify that the txn was rolled back. If so, my insert of e2_e1 should have been cancelled, and e2_e1 should not exist.
-        EC::CachedECSqlStatementPtr getRelDep = GetSelectElementDrivesElementById();
+        CachedECSqlStatementPtr getRelDep = GetSelectElementDrivesElementById();
         getRelDep->BindId(1, e4_e2.GetECInstanceId());
-        ASSERT_EQ( getRelDep->Step() , EC::ECSqlStepStatus::Done );
+        ASSERT_EQ( getRelDep->Step() , ECSqlStepStatus::Done );
         }
     }
 
@@ -1532,13 +1529,13 @@ TEST_F(ElementDependencyGraph, ModelDependenciesTest)
     //
 
     auto modelClassId = m_db->Schemas().GetECClass("dgn", "Model")->GetId();
-    auto m1key = EC::ECInstanceKey(modelClassId, EC::ECInstanceId(m1id.GetValue()));
-    auto m2key = EC::ECInstanceKey(modelClassId, EC::ECInstanceId(m2id.GetValue()));
-    auto m3key = EC::ECInstanceKey(modelClassId, EC::ECInstanceId(m3id.GetValue()));
-    auto m4key = EC::ECInstanceKey(modelClassId, EC::ECInstanceId(m4id.GetValue()));
+    auto m1key = ECInstanceKey(modelClassId, ECInstanceId(m1id.GetValue()));
+    auto m2key = ECInstanceKey(modelClassId, ECInstanceId(m2id.GetValue()));
+    auto m3key = ECInstanceKey(modelClassId, ECInstanceId(m3id.GetValue()));
+    auto m4key = ECInstanceKey(modelClassId, ECInstanceId(m4id.GetValue()));
 
-    EC::ECSqlStatement mrelstmt;
-    EC::ECInstanceKey rkey;
+    ECSqlStatement mrelstmt;
+    ECInstanceKey rkey;
     DgnDbUtilities::InsertRelationship(rkey, mrelstmt, *m_db, DGN_SCHEMA(DGN_RELNAME_ModelDrivesModel), m1key, m2key);
     DgnDbUtilities::InsertRelationship(rkey, mrelstmt, *m_db, DGN_SCHEMA(DGN_RELNAME_ModelDrivesModel), m1key, m3key);
     DgnDbUtilities::InsertRelationship(rkey, mrelstmt, *m_db, DGN_SCHEMA(DGN_RELNAME_ModelDrivesModel), m2key, m4key);
@@ -1626,13 +1623,13 @@ TEST_F(ElementDependencyGraph, ModelDependenciesWithCycleTest)
     //
 
     auto modelClassId = m_db->Schemas().GetECClass ("dgn", "PhysicalModel")->GetId();
-    auto m1key = EC::ECInstanceKey (modelClassId, EC::ECInstanceId(m1id.GetValue()));
-    auto m2key = EC::ECInstanceKey (modelClassId, EC::ECInstanceId(m2id.GetValue()));
-    auto m3key = EC::ECInstanceKey (modelClassId, EC::ECInstanceId(m3id.GetValue()));
-    auto m4key = EC::ECInstanceKey (modelClassId, EC::ECInstanceId(m4id.GetValue()));
+    auto m1key = ECInstanceKey (modelClassId, ECInstanceId(m1id.GetValue()));
+    auto m2key = ECInstanceKey (modelClassId, ECInstanceId(m2id.GetValue()));
+    auto m3key = ECInstanceKey (modelClassId, ECInstanceId(m3id.GetValue()));
+    auto m4key = ECInstanceKey (modelClassId, ECInstanceId(m4id.GetValue()));
 
-    EC::ECSqlStatement mrelstmt;
-    EC::ECInstanceKey rkey;
+    ECSqlStatement mrelstmt;
+    ECInstanceKey rkey;
     DgnDbUtilities::InsertRelationship(rkey, mrelstmt, *m_db, DGN_SCHEMA(DGN_RELNAME_ModelDrivesModel), m1key, m2key);
     DgnDbUtilities::InsertRelationship(rkey, mrelstmt, *m_db, DGN_SCHEMA(DGN_RELNAME_ModelDrivesModel), m1key, m3key);
     DgnDbUtilities::InsertRelationship(rkey, mrelstmt, *m_db, DGN_SCHEMA(DGN_RELNAME_ModelDrivesModel), m2key, m4key);
@@ -1671,11 +1668,11 @@ TEST_F(ElementDependencyGraph, ModelDependenciesInvalidDirectionTest)
 
     // Make m2 depend on m1
     auto modelClassId = m_db->Schemas().GetECClass("dgn", "PhysicalModel")->GetId();
-    auto m1key = EC::ECInstanceKey(modelClassId, EC::ECInstanceId(m1id.GetValue()));
-    auto m2key = EC::ECInstanceKey(modelClassId, EC::ECInstanceId(m2id.GetValue()));
+    auto m1key = ECInstanceKey(modelClassId, ECInstanceId(m1id.GetValue()));
+    auto m2key = ECInstanceKey(modelClassId, ECInstanceId(m2id.GetValue()));
 
-    EC::ECSqlStatement mrelstmt;
-    EC::ECInstanceKey rkey;                                                                          /* source  target */
+    ECSqlStatement mrelstmt;
+    ECInstanceKey rkey;                                                                          /* source  target */
     DgnDbUtilities::InsertRelationship(rkey, mrelstmt, *m_db, DGN_SCHEMA(DGN_RELNAME_ModelDrivesModel), m1key, m2key);
     m_db->SaveChanges();
 
@@ -1713,12 +1710,12 @@ TEST_F(ElementDependencyGraph, ModelDependenciesInvalidDirectionTest)
     ABCHandler::GetHandler().Clear();
     m_db->SaveChanges();
     // Verify that the txn was rolled back. If so, my insert of e22_e1 should have been cancelled, and e22_e1 should not exist.
-    EC::ECSqlSelectBuilder b;
+    ECSqlSelectBuilder b;
     b.Select("COUNT(*)").From(*m_db->Schemas().GetECClass(e22_e1.GetECClassId())).Where("ECInstanceId = ?");
-    EC::ECSqlStatement s;
+    ECSqlStatement s;
     s.Prepare(*m_db, b.ToString().c_str());
     s.BindId(1, e22_e1.GetECInstanceId());
-    ASSERT_EQ( s.Step() , EC::ECSqlStepStatus::HasRow );
+    ASSERT_EQ( s.Step() , ECSqlStepStatus::HasRow );
     ASSERT_EQ( s.GetValueInt(0) , 0 );
     }
 
@@ -1743,9 +1740,9 @@ TEST_F(ElementDependencyGraph, PersistentHandlerTest)
 
     // Make sure that we can reopen the file. Opening the file entails checking that all registered handlers are supplied.
     DbResult result;
-    m_db = DgnDb::OpenDgnDb(&result, theFile, DgnDb::OpenParams(BeSQLite::Db::OPEN_Readonly));
+    m_db = DgnDb::OpenDgnDb(&result, theFile, DgnDb::OpenParams(Db::OPEN_Readonly));
     ASSERT_TRUE( m_db.IsValid() );
-    ASSERT_EQ( result, BeSQLite::BE_SQLITE_OK );
+    ASSERT_EQ( result, BE_SQLITE_OK );
 
     //  Make sure that the handler is still registered
     auto abcHandlerInternalId = m_db->Domains().GetClassId(ABCHandler::GetHandler());
@@ -1778,7 +1775,7 @@ TEST_F(ElementDependencyGraph, ChangeDepTest)
     ECSqlStatement stmt;
     stmt.Prepare(*m_db, "UPDATE ONLY " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME " SET Property1='changed'  WHERE(ECInstanceId=?)");
     stmt.BindId(1, rel.GetECInstanceId());
-    ASSERT_EQ( stmt.Step(), EC::ECSqlStepStatus::Done );
+    ASSERT_EQ( stmt.Step(), ECSqlStepStatus::Done );
 
     // Commit this change. 
     ABCHandler::GetHandler().Clear();
@@ -1794,7 +1791,7 @@ TEST_F(ElementDependencyGraph, ChangeDepTest)
 struct TestEdgeProcessor : DgnElementDependencyGraph::IEdgeProcessor
     {
     bool m_hadError;
-    bvector<EC::ECInstanceId> m_relIds;
+    bvector<ECInstanceId> m_relIds;
 
     TestEdgeProcessor() : m_hadError(false) {;}
 
@@ -1843,7 +1840,7 @@ TEST_F(ElementDependencyGraph, WhatIfTest1)
 
     // Prepare the list of elements for what-if
     bvector<DgnElementId> changedEntities;
-    bvector<BeSQLite::EC::ECInstanceId> changedDepRels;
+    bvector<ECInstanceId> changedDepRels;
     changedEntities.push_back(e1->GetElementId());
 
     e1=nullptr; // can't keep these after we close the file.
@@ -1865,9 +1862,9 @@ TEST_F(ElementDependencyGraph, WhatIfTest1)
     BeFileName theFile = m_db->GetFileName();
     CloseDb();
     DbResult result;
-    m_db = DgnDb::OpenDgnDb(&result, theFile, DgnDb::OpenParams(BeSQLite::Db::OPEN_ReadWrite));
+    m_db = DgnDb::OpenDgnDb(&result, theFile, DgnDb::OpenParams(Db::OPEN_ReadWrite));
     ASSERT_TRUE( m_db.IsValid() );
-    ASSERT_EQ( result, BeSQLite::BE_SQLITE_OK );
+    ASSERT_EQ( result, BE_SQLITE_OK );
 
     ABCHandler::GetHandler().Clear();
         {
@@ -1899,7 +1896,7 @@ TEST_F(ElementDependencyGraph, TestPriority)
 
     // Prepare the list of elements for what-if
     bvector<DgnElementId> changedEntities;
-    bvector<BeSQLite::EC::ECInstanceId> changedDepRels;
+    bvector<ECInstanceId> changedDepRels;
     changedEntities.push_back(e2->GetElementId());
 
     // Check that we get e11_e2, then e12_e2
@@ -1952,7 +1949,7 @@ TEST_F(ElementDependencyGraph, TestPriority)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, ElementAssembly)
 {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", Db::OPEN_ReadWrite);
 
     DgnClassId testClass(TestElement::GetTestElementECClass(*m_db)->GetId());
     DgnModelP model = m_db->Models().GetModel(m_defaultModelId);
@@ -1977,7 +1974,7 @@ TEST_F(TransactionManagerTests, ElementAssembly)
     ASSERT_EQ(count, 2);
 
     auto stat = el3->Delete();      // delete one of the children
-    ASSERT_EQ(stat, DGNMODEL_STATUS_Success);
+    ASSERT_EQ(stat, DgnDbStatus::Success);
     ASSERT_TRUE(!el3->IsPersistent()); // make sure it is no longer persistent
 
     count =(int) el1->QueryChildren().size(); // should be down to 1 child
@@ -1987,7 +1984,7 @@ TEST_F(TransactionManagerTests, ElementAssembly)
     ASSERT_TRUE(el2->IsPersistent());
 
     stat = el1->Delete();               // delete the parent, should also delete child.
-    ASSERT_EQ(stat, DGNMODEL_STATUS_Success);
+    ASSERT_EQ(stat, DgnDbStatus::Success);
 
     ASSERT_TRUE(!el1->IsPersistent());  // neither should now be persistent
     ASSERT_TRUE(!el2->IsPersistent());
@@ -1998,7 +1995,7 @@ TEST_F(TransactionManagerTests, ElementAssembly)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, UndoRedo)
 {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", Db::OPEN_ReadWrite);
     auto& txns = m_db->Txns(); 
     txns.EnableTracking(true);
 

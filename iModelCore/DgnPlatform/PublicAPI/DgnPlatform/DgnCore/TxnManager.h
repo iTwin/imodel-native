@@ -103,12 +103,36 @@ private:
     bool m_modelDepsChanged;
     bool m_elementDepsChanged;
     bvector<ValidationError> m_validationErrors; //!< Validation errors detected on the last boundary check
+    DgnModelIdSet m_modelsInTxn;
+    DgnElementIdSet m_failedTargets;
 
 public:
-    DgnModelIdSet   m_modelsInTxn;
-    bset<DgnElementId> m_failedDependencyTargets;
+    enum class ChangeType : int {Insert, Update, Delete};
 
-    enum class ChangeType : int {Add, Update, Delete};
+    struct ElementIterator : BeSQLite::DbTableIterator
+    {
+    public:
+        ElementIterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR)db) {}
+        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
+        {
+        private:
+            friend struct ElementIterator;
+            Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
+
+        public:
+            DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
+            DGNPLATFORM_EXPORT DgnElementId GetElementId() const;
+            DGNPLATFORM_EXPORT ChangeType GetChangeType() const;
+            DGNPLATFORM_EXPORT double GetLastMod() const;
+            Entry const& operator*() const {return *this;}
+        };
+
+        typedef Entry const_iterator;
+        typedef Entry iterator;
+        DGNPLATFORM_EXPORT const_iterator begin() const;
+        const_iterator end() const {return Entry(nullptr, false);}
+    };
+
     DGNPLATFORM_EXPORT explicit TxnSummary(DgnDbR db, TxnDirection);
     DGNPLATFORM_EXPORT ~TxnSummary();
     void AddChangeSet(BeSQLite::ChangeSet&);
@@ -119,10 +143,12 @@ public:
     //! Table handler should call this function to record the fact that the specified relationship with a dependency was changed in the current txn.
     DGNPLATFORM_EXPORT void AddAffectedDependency(BeSQLite::EC::ECInstanceId const&, ChangeType);
 
-    void AddFailedDependencyTarget(DgnElementId eid) {m_failedDependencyTargets.insert(eid);}
+    void AddFailedTarget(DgnElementId eid) {m_failedTargets.insert(eid);}
     void SetModelDependencyChanges() {m_modelDepsChanged=true;}
     void SetElementDependencyChanges() {m_elementDepsChanged=true;}
     void UpdateModelDependencyIndex();
+    DgnModelIdSet const& GetModelSet() const {return m_modelsInTxn;}
+    DgnElementIdSet const& GetFailedTargets() const {return m_failedTargets;}
 
     //! Get the DgnDb for this TxnSummary
     DgnDbR GetDgnDb() const {return m_dgndb;}
@@ -142,6 +168,8 @@ public:
 
     //! Query if any Fatal validation errors were reported during the last boundary check.
     DGNPLATFORM_EXPORT bool HasFatalErrors() const;
+
+    ElementIterator MakeElementIterator() const {return ElementIterator(m_dgndb);}
 };
 
 //=======================================================================================

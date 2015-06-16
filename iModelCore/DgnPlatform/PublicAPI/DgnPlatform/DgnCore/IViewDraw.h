@@ -23,7 +23,45 @@ DGNPLATFORM_TYPEDEFS (Material)
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-typedef bpair<int32_t, int32_t> T_GeomPrimitiveId;
+//=======================================================================================
+//! The GeomStreamEntryId class identifies a geometric primitive in a GeomStream.
+//=======================================================================================
+struct GeomStreamEntryId
+{
+enum class Type
+    {
+    Invalid = 0,
+    Indexed = 1,
+    };
+
+private:
+
+Type            m_type;
+DgnGeomPartId   m_partId;
+uint32_t        m_index;
+uint32_t        m_partIndex;
+
+public:
+
+GeomStreamEntryId() {Init();}
+GeomStreamEntryId(GeomStreamEntryIdCR rhs) {m_type = rhs.m_type; m_partId = rhs.m_partId; m_index = rhs.m_index; m_partIndex = rhs.m_partIndex;}
+
+DGNPLATFORM_EXPORT bool operator==(GeomStreamEntryIdCR rhs) const;
+DGNPLATFORM_EXPORT bool operator!=(GeomStreamEntryIdCR rhs) const;
+DGNPLATFORM_EXPORT GeomStreamEntryIdR operator=(GeomStreamEntryIdCR rhs);
+
+void Init() {m_type = Type::Invalid; m_index = 0; m_partIndex = 0; m_partId = DgnGeomPartId();}
+void SetType(Type type) {m_type = type;}
+void SetGeomPartId(DgnGeomPartId partId) {m_partId = partId; m_partIndex = 0;}
+void SetIndex(uint32_t index) {m_index = index;}
+void SetPartIndex(uint32_t partIndex) {m_partIndex = partIndex;}
+
+Type GetType() const {return m_type;}
+DgnGeomPartId GetGeomPartId() const {return m_partId;}
+uint32_t GetIndex() const {return m_index;}
+uint32_t GetPartIndex() const {return m_partIndex;}
+
+}; // GeomStreamEntryId
 
 //=======================================================================================
 //! Line style parameters
@@ -418,6 +456,7 @@ DGNPLATFORM_EXPORT ElemDisplayParams ();
 DGNPLATFORM_EXPORT explicit ElemDisplayParams (ElemDisplayParamsCR rhs);
 
 DGNPLATFORM_EXPORT void     Init ();
+DGNPLATFORM_EXPORT void     ResetAppearance(); //!< Like Init, but saves and restores category and sub-category around the call to Init. This is particularly useful when a single element draws objects of different symbology, but its draw code does not have easy access to reset the category.
 DGNPLATFORM_EXPORT void     Resolve (ViewContextR); // Resolve effective values
 DGNPLATFORM_EXPORT void     SetCategoryId (DgnCategoryId); // Setting the Category Id also sets the SubCategory to the default.
 DGNPLATFORM_EXPORT void     SetSubCategoryId (DgnSubCategoryId);

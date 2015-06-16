@@ -10,68 +10,68 @@
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    03/2013
 //---------------------------------------------------------------------------------------
-static DgnFileStatus performEmbeddedProjectVersionChecks(DbResult& dbResult, Db& db, BeRepositoryBasedId id)
+static DgnDbStatus performEmbeddedProjectVersionChecks(DbResult& dbResult, Db& db, BeRepositoryBasedId id)
     {
     Utf8String versionString;
-    dbResult = db.QueryProperty (versionString, DgnEmbeddedProjectProperty::SchemaVersion(), id.GetValue());
+    dbResult = db.QueryProperty(versionString, DgnEmbeddedProjectProperty::SchemaVersion(), id.GetValue());
     if (BE_SQLITE_ROW != dbResult)
-        return DGNSCHEMA_STATUS_VersionTooOld;
+        return DgnDbStatus::VersionTooOld;
 
     DgnVersion actualDgnProfileVersion(0,0,0,0);
     actualDgnProfileVersion.FromJson(versionString.c_str());
-    DgnVersion expectedDgnProfileVersion (DGNDB_CURRENT_VERSION_Major, DGNDB_CURRENT_VERSION_Minor, DGNDB_CURRENT_VERSION_Sub1, DGNDB_CURRENT_VERSION_Sub2);
-    DgnVersion minimumAutoUpgradableDgnProfileVersion (DGNDB_SUPPORTED_VERSION_Major, DGNDB_SUPPORTED_VERSION_Minor, 0, 0);
+    DgnVersion expectedDgnProfileVersion(DGNDB_CURRENT_VERSION_Major, DGNDB_CURRENT_VERSION_Minor, DGNDB_CURRENT_VERSION_Sub1, DGNDB_CURRENT_VERSION_Sub2);
+    DgnVersion minimumAutoUpgradableDgnProfileVersion(DGNDB_SUPPORTED_VERSION_Major, DGNDB_SUPPORTED_VERSION_Minor, 0, 0);
 
     bool isProfileAutoUpgradable = false; //unused as this method is not attempting to auto-upgrade
-    dbResult = Db::CheckProfileVersion (isProfileAutoUpgradable, expectedDgnProfileVersion, actualDgnProfileVersion, minimumAutoUpgradableDgnProfileVersion, db.IsReadonly(), "DgnDb");
+    dbResult = Db::CheckProfileVersion(isProfileAutoUpgradable, expectedDgnProfileVersion, actualDgnProfileVersion, minimumAutoUpgradableDgnProfileVersion, db.IsReadonly(), "DgnDb");
     switch (dbResult)
         {
         case BE_SQLITE_ERROR_ProfileTooOld:
-            return DGNSCHEMA_STATUS_VersionTooOld;
+            return DgnDbStatus::VersionTooOld;
 
         case BE_SQLITE_ERROR_ProfileTooNew:
-            return DGNSCHEMA_STATUS_VersionTooNew;
+            return DgnDbStatus::VersionTooNew;
         }
 
-    return DGNFILE_STATUS_Success;
+    return DgnDbStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    03/2013
 //---------------------------------------------------------------------------------------
-static DgnFileStatus performPackageVersionChecks(DbResult& dbResult, Db& db)
+static DgnDbStatus performPackageVersionChecks(DbResult& dbResult, Db& db)
     {
     Utf8String versionString;
-    dbResult = db.QueryProperty (versionString, PackageProperty::SchemaVersion());
+    dbResult = db.QueryProperty(versionString, PackageProperty::SchemaVersion());
     if (BE_SQLITE_ROW != dbResult)
-        return DGNSCHEMA_STATUS_VersionTooOld;
+        return DgnDbStatus::VersionTooOld;
 
     SchemaVersion actualPackageSchemaVersion(0,0,0,0);
     actualPackageSchemaVersion.FromJson(versionString.c_str());
-    SchemaVersion expectedPackageVersion (PACKAGE_CURRENT_VERSION_Major, PACKAGE_CURRENT_VERSION_Minor, PACKAGE_CURRENT_VERSION_Sub1, PACKAGE_CURRENT_VERSION_Sub2);
-    SchemaVersion minimumAutoUpgradablePackageVersion (PACKAGE_SUPPORTED_VERSION_Major, PACKAGE_SUPPORTED_VERSION_Minor, PACKAGE_SUPPORTED_VERSION_Sub1, PACKAGE_SUPPORTED_VERSION_Sub2);
+    SchemaVersion expectedPackageVersion(PACKAGE_CURRENT_VERSION_Major, PACKAGE_CURRENT_VERSION_Minor, PACKAGE_CURRENT_VERSION_Sub1, PACKAGE_CURRENT_VERSION_Sub2);
+    SchemaVersion minimumAutoUpgradablePackageVersion(PACKAGE_SUPPORTED_VERSION_Major, PACKAGE_SUPPORTED_VERSION_Minor, PACKAGE_SUPPORTED_VERSION_Sub1, PACKAGE_SUPPORTED_VERSION_Sub2);
 
     bool isProfileAutoUpgradable = false; //unused as this method is not attempting to auto-upgrade
-    dbResult = Db::CheckProfileVersion (isProfileAutoUpgradable, expectedPackageVersion, actualPackageSchemaVersion, minimumAutoUpgradablePackageVersion, db.IsReadonly(), "Package");
+    dbResult = Db::CheckProfileVersion(isProfileAutoUpgradable, expectedPackageVersion, actualPackageSchemaVersion, minimumAutoUpgradablePackageVersion, db.IsReadonly(), "Package");
     switch (dbResult)
         {
         case BE_SQLITE_ERROR_ProfileTooOld:
-            return DGNSCHEMA_STATUS_VersionTooOld;
+            return DgnDbStatus::VersionTooOld;
 
         case BE_SQLITE_ERROR_ProfileTooNew:
-            return DGNSCHEMA_STATUS_VersionTooNew;
+            return DgnDbStatus::VersionTooNew;
         }
 
-    return DGNFILE_STATUS_Success;
+    return DgnDbStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    03/2013
 //---------------------------------------------------------------------------------------
-DgnFileStatus DgnIModel::ExtractUsingDefaults(DbResult& dbResult, BeFileNameCR dgndbFile, BeFileNameCR packageFile, bool overwriteExisting, ICompressProgressTracker* progress)
+DgnDbStatus DgnIModel::ExtractUsingDefaults(DbResult& dbResult, BeFileNameCR dgndbFile, BeFileNameCR packageFile, bool overwriteExisting, ICompressProgressTracker* progress)
     {
     if (!BeFileName::DoesPathExist(packageFile))
-        return DGNOPEN_STATUS_FileNotFound;
+        return DgnDbStatus::FileNotFound;
 
     Utf8CP dbName = NULL;
     Db  db;
@@ -87,11 +87,11 @@ DgnFileStatus DgnIModel::ExtractUsingDefaults(DbResult& dbResult, BeFileNameCR d
     dbName = utf8Name.c_str();
 
     if ((dbResult = db.OpenBeSQLiteDb(packageFile, openParams)) != BE_SQLITE_OK)
-        return DGNFILE_ERROR_SQLiteError;
+        return DgnDbStatus::SQLiteError;
 
-    DgnFileStatus schemaStatus = performPackageVersionChecks(dbResult, db);
-    if (DGNFILE_STATUS_Success != schemaStatus)
-        return DGNFILE_ERROR_InvalidFileSchema;
+    DgnDbStatus schemaStatus = performPackageVersionChecks(dbResult, db);
+    if (DgnDbStatus::Success != schemaStatus)
+        return DgnDbStatus::InvalidFileSchema;
 
     DbEmbeddedFileTable& embeddedFiles = db.EmbeddedFiles();
     Utf8String  fileType;
@@ -104,7 +104,7 @@ DgnFileStatus DgnIModel::ExtractUsingDefaults(DbResult& dbResult, BeFileNameCR d
         if (iterator.QueryCount() != 1)
             {
             dbResult = BE_SQLITE_NOTFOUND;
-            return DGNFILE_ERROR_SQLiteError;
+            return DgnDbStatus::SQLiteError;
             }
 
         DbEmbeddedFileTable::Iterator::Entry entry = iterator.begin();
@@ -118,35 +118,35 @@ DgnFileStatus DgnIModel::ExtractUsingDefaults(DbResult& dbResult, BeFileNameCR d
         {
         //  If there is only 1 use it regardless of name.
         dbResult = BE_SQLITE_NOTFOUND;
-        return DGNFILE_ERROR_SQLiteError;
+        return DgnDbStatus::SQLiteError;
         }
 
-    if (DGNFILE_STATUS_Success != (schemaStatus = performEmbeddedProjectVersionChecks(dbResult, db, id)))
+    if (DgnDbStatus::Success != (schemaStatus = performEmbeddedProjectVersionChecks(dbResult, db, id)))
         return schemaStatus;
 
     if (BeFileName::DoesPathExist(dgndbFile.GetName()))
         {
         if (!overwriteExisting)
-            return DGNOPEN_STATUS_FileAlreadyExists;
+            return DgnDbStatus::FileAlreadyExists;
 
-        if (BeFileNameStatus::Success != BeFileName::BeDeleteFile (dgndbFile))
-            return DGNOPEN_STATUS_FileAlreadyExists;
+        if (BeFileNameStatus::Success != BeFileName::BeDeleteFile(dgndbFile))
+            return DgnDbStatus::FileAlreadyExists;
         }
 
     Utf8String  u8outputName(dgndbFile.GetName());
-    if ((dbResult = embeddedFiles.ExportDbFile (u8outputName.c_str(), dbName, progress)) != BE_SQLITE_OK)
-        return DGNFILE_ERROR_SQLiteError;
+    if ((dbResult = embeddedFiles.ExportDbFile(u8outputName.c_str(), dbName, progress)) != BE_SQLITE_OK)
+        return DgnDbStatus::SQLiteError;
 
-    return DGNFILE_STATUS_Success;
+    return DgnDbStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    03/2013
 //---------------------------------------------------------------------------------------
-DgnFileStatus DgnIModel::Extract(BeSQLite::DbResult& dbResult, Utf8CP outputDirectory, Utf8CP dbName, BeFileNameCR packageFile, bool overwriteExisting, ICompressProgressTracker* progress)
+DgnDbStatus DgnIModel::Extract(BeSQLite::DbResult& dbResult, Utf8CP outputDirectory, Utf8CP dbName, BeFileNameCR packageFile, bool overwriteExisting, ICompressProgressTracker* progress)
     {
     if (!BeFileName::DoesPathExist(packageFile))
-        return DGNOPEN_STATUS_FileNotFound;
+        return DgnDbStatus::FileNotFound;
 
     BeSQLite::Db        db;
     Db::OpenParams      openParams(Db::OPEN_Readonly);
@@ -164,23 +164,23 @@ DgnFileStatus DgnIModel::Extract(BeSQLite::DbResult& dbResult, Utf8CP outputDire
         }
 
     if ((dbResult = db.OpenBeSQLiteDb(packageFile, openParams)) != BE_SQLITE_OK)
-        return DGNFILE_ERROR_SQLiteError;
+        return DgnDbStatus::SQLiteError;
 
     Utf8String versionString;
-    dbResult = db.QueryProperty (versionString, PackageProperty::SchemaVersion());
+    dbResult = db.QueryProperty(versionString, PackageProperty::SchemaVersion());
     if (BE_SQLITE_ROW != dbResult)
-        return DGNDB_ERROR_InvalidSchemaVersion;
+        return DgnDbStatus::InvalidSchemaVersion;
 
     SchemaVersion packageSchemaVersion(0,0,0,0);
     packageSchemaVersion.FromJson(versionString.c_str());
-    SchemaVersion currentPackageVersion (PACKAGE_CURRENT_VERSION_Major, PACKAGE_CURRENT_VERSION_Minor, PACKAGE_CURRENT_VERSION_Sub1, PACKAGE_CURRENT_VERSION_Sub2);
-    SchemaVersion supportedPackageVersion (PACKAGE_SUPPORTED_VERSION_Major, PACKAGE_SUPPORTED_VERSION_Minor, PACKAGE_SUPPORTED_VERSION_Sub1, PACKAGE_SUPPORTED_VERSION_Sub2);
+    SchemaVersion currentPackageVersion(PACKAGE_CURRENT_VERSION_Major, PACKAGE_CURRENT_VERSION_Minor, PACKAGE_CURRENT_VERSION_Sub1, PACKAGE_CURRENT_VERSION_Sub2);
+    SchemaVersion supportedPackageVersion(PACKAGE_SUPPORTED_VERSION_Major, PACKAGE_SUPPORTED_VERSION_Minor, PACKAGE_SUPPORTED_VERSION_Sub1, PACKAGE_SUPPORTED_VERSION_Sub2);
 
     if (packageSchemaVersion.CompareTo(supportedPackageVersion, SchemaVersion::VERSION_MajorMinor) < 0)
-        return DGNSCHEMA_STATUS_VersionTooOld;
+        return DgnDbStatus::VersionTooOld;
 
     if (packageSchemaVersion.CompareTo(currentPackageVersion,   SchemaVersion::VERSION_MajorMinor) > 0)
-        return DGNSCHEMA_STATUS_VersionTooNew;
+        return DgnDbStatus::VersionTooNew;
 
     DbEmbeddedFileTable& embeddedFiles = db.EmbeddedFiles();
     Utf8String  fileType;
@@ -188,23 +188,23 @@ DgnFileStatus DgnIModel::Extract(BeSQLite::DbResult& dbResult, Utf8CP outputDire
     if (!id.IsValid() || strcmp("dgndb", fileType.c_str()))
         {
         dbResult = BE_SQLITE_NOTFOUND;
-        return DGNFILE_ERROR_SQLiteError;
+        return DgnDbStatus::SQLiteError;
         }
 
-    dbResult = db.QueryProperty (versionString, DgnEmbeddedProjectProperty::SchemaVersion(), id.GetValue());
+    dbResult = db.QueryProperty(versionString, DgnEmbeddedProjectProperty::SchemaVersion(), id.GetValue());
     if (BE_SQLITE_ROW != dbResult)
-        return DGNDB_ERROR_InvalidSchemaVersion;
+        return DgnDbStatus::InvalidSchemaVersion;
 
     DgnVersion dgnSchemaVersion(0,0,0,0);
     dgnSchemaVersion.FromJson(versionString.c_str());
-    DgnVersion currentVersion (DGNDB_CURRENT_VERSION_Major, DGNDB_CURRENT_VERSION_Minor, DGNDB_CURRENT_VERSION_Sub1, DGNDB_CURRENT_VERSION_Sub2);
-    DgnVersion supportedVersion (DGNDB_SUPPORTED_VERSION_Major, DGNDB_SUPPORTED_VERSION_Minor, 0, 0);
+    DgnVersion currentVersion(DGNDB_CURRENT_VERSION_Major, DGNDB_CURRENT_VERSION_Minor, DGNDB_CURRENT_VERSION_Sub1, DGNDB_CURRENT_VERSION_Sub2);
+    DgnVersion supportedVersion(DGNDB_SUPPORTED_VERSION_Major, DGNDB_SUPPORTED_VERSION_Minor, 0, 0);
 
     if (dgnSchemaVersion.CompareTo(supportedVersion, DgnVersion::VERSION_MajorMinor) < 0)
-        return DGNSCHEMA_STATUS_VersionTooOld;
+        return DgnDbStatus::VersionTooOld;
 
     if (dgnSchemaVersion.CompareTo(currentVersion,   DgnVersion::VERSION_MajorMinor) > 0)
-        return DGNSCHEMA_STATUS_VersionTooNew;
+        return DgnDbStatus::VersionTooNew;
 
     WString wcOutputDirectory;
     WString wcDbName;
@@ -223,18 +223,18 @@ DgnFileStatus DgnIModel::Extract(BeSQLite::DbResult& dbResult, Utf8CP outputDire
     if (BeFileName::DoesPathExist(outputFileName))
         {
         if (!overwriteExisting)
-            return DGNOPEN_STATUS_FileAlreadyExists;
+            return DgnDbStatus::FileAlreadyExists;
 
-        if (BeFileNameStatus::Success != BeFileName::BeDeleteFile (outputFileName))
-            return DGNOPEN_STATUS_FileAlreadyExists;
+        if (BeFileNameStatus::Success != BeFileName::BeDeleteFile(outputFileName))
+            return DgnDbStatus::FileAlreadyExists;
         }
 
     Utf8String  u8outputName(outputFileName.GetName());
 
-    if ((dbResult = embeddedFiles.ExportDbFile (u8outputName.c_str(), dbName, progress)) != BE_SQLITE_OK)
-        return DGNFILE_ERROR_SQLiteError;
+    if ((dbResult = embeddedFiles.ExportDbFile(u8outputName.c_str(), dbName, progress)) != BE_SQLITE_OK)
+        return DgnDbStatus::SQLiteError;
 
-    return DGNFILE_STATUS_Success;
+    return DgnDbStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -268,7 +268,7 @@ DbResult DgnIModel::Create(BeFileNameCR packageFile, BeFileNameCR dgndbFile, Cre
     if (!sourceProject.IsValid())
         return result;
 
-    Utf8String  dgndbFileUtf8 (dgndbFile.GetName());
+    Utf8String  dgndbFileUtf8(dgndbFile.GetName());
 
     WString     base;
     WString     ext;
@@ -278,11 +278,11 @@ DbResult DgnIModel::Create(BeFileNameCR packageFile, BeFileNameCR dgndbFile, Cre
     BeFileName::BuildName(embeddedName, NULL, NULL, base.c_str(), ext.c_str());
     Utf8String  embeddedUtf8(embeddedName.c_str());
 
-    createParams.SetStartDefaultTxn (DefaultTxn_Exclusive);
+    createParams.SetStartDefaultTxn(DefaultTxn_Exclusive);
 
     if (createParams.m_overwriteExisting && BeFileName::DoesPathExist(packageFile))
         {
-        if (BeFileNameStatus::Success != BeFileName::BeDeleteFile (packageFile))
+        if (BeFileNameStatus::Success != BeFileName::BeDeleteFile(packageFile))
             {
             LOG.errorv(L"Unable to create DgnPackage because '%ls' cannot be deleted.", packageFile.GetName());
             return BE_SQLITE_ERROR_FileExists;
@@ -290,7 +290,7 @@ DbResult DgnIModel::Create(BeFileNameCR packageFile, BeFileNameCR dgndbFile, Cre
         }
 
     BeSQLite::Db db;
-    result = db.CreateNewDb (packageFile, createParams.GetGuid(), createParams);
+    result = db.CreateNewDb(packageFile, createParams.GetGuid(), createParams);
     if (BE_SQLITE_OK != result)
         return result;
 
@@ -306,7 +306,7 @@ DbResult DgnIModel::Create(BeFileNameCR packageFile, BeFileNameCR dgndbFile, Cre
         }
 
     //  Imported the file into a compressed format.  Now copy properties.
-    BeRepositoryBasedId id = embeddedFiles.QueryFile (embeddedUtf8.c_str(), NULL, NULL, NULL, NULL);
+    BeRepositoryBasedId id = embeddedFiles.QueryFile(embeddedUtf8.c_str(), NULL, NULL, NULL, NULL);
 
     DgnViewId defaultViewID;
     if (BE_SQLITE_ROW != sourceProject->QueryProperty(&defaultViewID, (uint32_t)sizeof(defaultViewID), DgnViewProperty::DefaultView()))
@@ -321,7 +321,7 @@ DbResult DgnIModel::Create(BeFileNameCR packageFile, BeFileNameCR dgndbFile, Cre
     if (defaultViewID.IsValid())  //  This should be valid unless the project has no views
         {
         Statement stmt;
-        result = stmt.Prepare (*sourceProject, "SELECT SubId from be_Prop where Namespace = 'dgn_View' AND Name = 'Thumbnail' AND Id=? LIMIT 1");
+        result = stmt.Prepare(*sourceProject, "SELECT SubId from be_Prop where Namespace = 'dgn_View' AND Name = 'Thumbnail' AND Id=? LIMIT 1");
         BeAssert(BE_SQLITE_OK == result);
         stmt.BindInt64(1, defaultViewID.GetValue());
         result = stmt.Step();
@@ -338,12 +338,12 @@ DbResult DgnIModel::Create(BeFileNameCR packageFile, BeFileNameCR dgndbFile, Cre
                 { BeAssert(false); }
 
             result = db.SaveProperty(DgnEmbeddedProjectProperty::Thumbnail(), thumbnail.GetData(), imageSize, id.GetValue(), resolution);
-            BeAssert (BE_SQLITE_OK == result);
+            BeAssert(BE_SQLITE_OK == result);
             }
         }
 
     SchemaVersion  schemaVersion(PACKAGE_CURRENT_VERSION_Major, PACKAGE_CURRENT_VERSION_Minor, PACKAGE_CURRENT_VERSION_Sub1, PACKAGE_CURRENT_VERSION_Sub2);
-    db.SavePropertyString (PackageProperty::SchemaVersion(), schemaVersion.ToJson());
+    db.SavePropertyString(PackageProperty::SchemaVersion(), schemaVersion.ToJson());
     db.SaveCreationDate();
 
     copyProjectPropertyToIModel(db, *sourceProject, DgnProjectProperty::SchemaVersion(), DgnEmbeddedProjectProperty::SchemaVersion(), id);
@@ -355,8 +355,8 @@ DbResult DgnIModel::Create(BeFileNameCR packageFile, BeFileNameCR dgndbFile, Cre
     
     // Set the ExpirationDate of the .imodel file itself. This will be returned by Db::GetExpirationDate.
     DateTime expdate;
-    sourceProject->QueryExpirationDate (expdate);
-    if (expdate.IsValid ()) //only set date if source project has it set
+    sourceProject->QueryExpirationDate(expdate);
+    if (expdate.IsValid()) //only set date if source project has it set
         db.SaveExpirationDate(expdate);
 
     return BE_SQLITE_OK;

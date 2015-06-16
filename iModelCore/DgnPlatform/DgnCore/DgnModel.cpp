@@ -15,7 +15,7 @@ DbResult DgnModels::InsertModel(Model& row)
     DbResult status = m_dgndb.GetNextRepositoryBasedId(row.m_id, DGN_TABLE(DGN_CLASSNAME_Model), "Id");
     BeAssert(status == BE_SQLITE_OK);
 
-    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) " (Id,Name,Descr,Type,ECClassId,Space,Visibility) VALUES(?,?,?,?,?,?,?)");
+    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) "(Id,Name,Descr,Type,ECClassId,Space,Visibility) VALUES(?,?,?,?,?,?,?)");
     stmt.BindId(1, row.GetId());
     stmt.BindText(2, row.GetNameCP(), Statement::MakeCopy::No);
     stmt.BindText(3, row.GetDescription(), Statement::MakeCopy::No);
@@ -32,11 +32,11 @@ DbResult DgnModels::InsertModel(Model& row)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnModels::DeleteModel(DgnModelId modelId)
+DgnDbStatus DgnModels::DeleteModel(DgnModelId modelId)
     {
     Statement stmt(m_dgndb, "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
     stmt.BindId(1, modelId);
-    return BE_SQLITE_DONE == stmt.Step() ? DGNMODEL_STATUS_Success : DGNMODEL_STATUS_InvalidModel;
+    return BE_SQLITE_DONE == stmt.Step() ? DgnDbStatus::Success : DgnDbStatus::InvalidModel;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -298,73 +298,15 @@ void DgnModel2d::_FromPropertiesJson(Json::Value const& val)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnModel2d::_OnInsertElement(DgnElementR element)
+DgnDbStatus DgnModel2d::_OnInsertElement(DgnElementR element)
     {
-    DgnModelStatus status = T_Super::_OnInsertElement(element);
-    if (DGNMODEL_STATUS_Success != status)
+    DgnDbStatus status = T_Super::_OnInsertElement(element);
+    if (DgnDbStatus::Success != status)
         return status;
-    if (element.ToPhysicalElement() != nullptr)
-        return DGNMODEL_STATUS_2d3dMismatch;
-    return DGNMODEL_STATUS_Success;
+
+    // if it is a geometric element, it must be a 2d element.
+    return element.Is3d() ? DgnDbStatus::Mismatch2d3d : DgnDbStatus::Success;
     }
-
-#if defined(NEEDS_WORK_ELEMENTS_API)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SectionDrawingModel::_ToPropertiesJson(Json::Value& val) const
-    {
-    T_Super::_ToPropertiesJson(val);
-
-    val["annotation_scale"] = m_annotationScale;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SectionDrawingModel::_FromPropertiesJson(Json::Value const& val) 
-    {
-    T_Super::_FromPropertiesJson(val);
-
-    if (val.isMember("annotation_scale"))
-        m_annotationScale = val["annotation_scale"].asDouble();
-    else
-        m_annotationScale = 1.0;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      02/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-Transform SectionDrawingModel::GetFlatteningMatrix(double zdelta) const
-    {
-    if (m_zrange.IsNull())
-        return Transform::FromIdentity();
-
-    double nearlyZero = 1.0e-12;
-    
-    RotMatrix   flattenRMatrix;
-    flattenRMatrix.initFromScaleFactors(1.0, 1.0, nearlyZero);
-
-    RotMatrix   mustBeInvertible;
-    while (!mustBeInvertible.InverseOf(flattenRMatrix))
-        {
-        printf("nearlyZero=%lg too small\n", nearlyZero);
-        nearlyZero *= 10;
-        flattenRMatrix.initFromScaleFactors(1.0, 1.0, nearlyZero);
-        }
-
-    auto trans = Transform::From(flattenRMatrix);
-
-    if (zdelta != 0.0)
-        {
-        auto xlat = Transform::FromIdentity();
-        xlat.SetTranslation(DPoint3d::FromXYZ(0,0,zdelta));
-        trans = Transform::FromProduct(xlat, trans);  // flatten and then translate (in z)
-        }
-
-    return trans;
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/12
@@ -474,6 +416,32 @@ void DgnModel::RemoveFromRangeIndex(DgnElementCR element)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel::UpdateRangeIndex(DgnElementCR modified, DgnElementCR original)
+    {
+    if (nullptr==m_rangeIndex)
+        return;
+
+    GeometricElementCP origGeom = original._ToGeometricElement();
+    if (nullptr != origGeom)
+        return;
+
+    GeometricElementCP newGeom = (GeometricElementCP) &modified;
+    AxisAlignedBox3d origBox = origGeom->HasGeometry() ? origGeom->CalculateRange3d() : AxisAlignedBox3d();
+    AxisAlignedBox3d newBox  = newGeom->HasGeometry() ? newGeom->CalculateRange3d() : AxisAlignedBox3d();
+
+    if (origBox.IsEqual(newBox)) // many changes don't affect range
+        return;
+
+    if (origBox.IsValid())
+        m_rangeIndex->RemoveElement(DgnRangeTree::Entry(origBox, *origGeom));
+
+    if (newBox.IsValid())
+        m_rangeIndex->AddElement(DgnRangeTree::Entry(newBox, *origGeom));  // origGeom has the address that will be used after update completes
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::RegisterElement(DgnElementCR element)
@@ -495,9 +463,9 @@ void DgnModel::_OnLoadedElement(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnModel::_OnInsertElement(DgnElementR element)
+DgnDbStatus DgnModel::_OnInsertElement(DgnElementR element)
     {
-    return m_readonly ? DGNMODEL_STATUS_ReadOnly : DGNMODEL_STATUS_Success;
+    return m_readonly ? DgnDbStatus::ReadOnly : DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -511,9 +479,9 @@ void DgnModel::_OnInsertedElement(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnModel::_OnDeleteElement(DgnElementCR element)
+DgnDbStatus DgnModel::_OnDeleteElement(DgnElementCR element)
     {
-    return m_readonly ? DGNMODEL_STATUS_ReadOnly : DGNMODEL_STATUS_Success;
+    return m_readonly ? DgnDbStatus::ReadOnly : DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -521,47 +489,25 @@ DgnModelStatus DgnModel::_OnDeleteElement(DgnElementCR element)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::_OnDeletedElement(DgnElementCR element)
     {
+    RemoveFromRangeIndex(element);
     if (m_wasFilled)
         m_elements.erase(element.GetElementId());
-
-    RemoveFromRangeIndex(element);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnModel::_OnUpdateElement(DgnElementCR element, DgnElementR replacement)
+DgnDbStatus DgnModel::_OnUpdateElement(DgnElementCR modified, DgnElementCR original)
     {
-    if (this !=(&replacement.GetDgnModel()) ||(this != &element.GetDgnModel()))
-        {
-        BeAssert(false);
-        return DGNMODEL_STATUS_WrongModel;
-        }
-
-    if (IsReadOnly())
-        return DGNMODEL_STATUS_ReadOnly;
-
-    if (element.m_classId != replacement.m_classId)
-        return DGNMODEL_STATUS_WrongClass;
-
-    RemoveFromRangeIndex(element); // we need to do this BEFORE the update so we can find the element in the range tree
-    return DGNMODEL_STATUS_Success;
+    return IsReadOnly() ? DgnDbStatus::ReadOnly : DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_OnUpdatedElement(DgnElementCR element)
+void DgnModel::_OnUpdatedElement(DgnElementCR modified, DgnElementCR original)
     {
-    AddToRangeIndex(element);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_OnUpdateElementFailed(DgnElementCR element)
-    {
-    AddToRangeIndex(element);
+    UpdateRangeIndex(modified, original);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -613,13 +559,13 @@ bool DgnModels::FreeQvCache()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelStatus DgnModels::Insert(DgnModelR model, Utf8CP description, bool inGuiList)
+DgnDbStatus DgnModels::Insert(DgnModelR model, Utf8CP description, bool inGuiList)
     {
     if (model.m_modelId.IsValid())
-        return DGNMODEL_STATUS_IdExists;
+        return DgnDbStatus::IdExists;
 
     if (&model.m_dgndb != &m_dgndb)
-        return DGNMODEL_STATUS_WrongDgnDb;
+        return DgnDbStatus::WrongDgnDb;
 
     DgnModels::Model row(model.m_name.c_str(), model._GetModelType(), model._GetCoordinateSpace(), model.GetClassId());
     row.SetDescription(description);
@@ -630,18 +576,18 @@ DgnModelStatus DgnModels::Insert(DgnModelR model, Utf8CP description, bool inGui
     if (!IsValidName(row.GetName()))
         {
         BeAssert(false);
-        return  DGNMODEL_STATUS_InvalidModelName;
+        return  DgnDbStatus::InvalidModelName;
         }
 
     if (QueryModelId(row.GetNameCP()).IsValid()) // can't allow two models with the same name
-        return DGNMODEL_STATUS_DuplicateModelName;
+        return DgnDbStatus::DuplicateModelName;
 
     if (BE_SQLITE_OK != InsertModel(row))
-        return DGNMODEL_STATUS_ModelTableWriteError;
+        return DgnDbStatus::ModelTableWriteError;
 
     model.m_modelId = row.GetId(); // retrieve new modelId
     m_models[model.m_modelId] = &model;  // this holds the reference count
-    return (BE_SQLITE_OK == model.SaveProperties()) ? DGNMODEL_STATUS_Success : DGNMODEL_STATUS_BadRequest;
+    return (BE_SQLITE_OK == model.SaveProperties()) ? DgnDbStatus::Success : DgnDbStatus::BadRequest;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -675,25 +621,25 @@ ModelHandlerR DgnModel::GetModelHandler() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelP DgnModels::CreateNewModelFromSeed(DgnModelStatus* result, Utf8CP name, DgnModelId seedModelId)
+DgnModelP DgnModels::CreateNewModelFromSeed(DgnDbStatus* result, Utf8CP name, DgnModelId seedModelId)
     {
-    DgnModelStatus t, &status(result ? *result : t);
+    DgnDbStatus t, &status(result ? *result : t);
     if (!seedModelId.IsValid())
         {
-        status = DGNMODEL_STATUS_BadSeedModel;
+        status = DgnDbStatus::BadSeedModel;
         return nullptr;
         }
 
     DgnModelP seedModel = GetModel(seedModelId);
     if (nullptr == seedModel)
         {
-        status = DGNMODEL_STATUS_BadSeedModel;
+        status = DgnDbStatus::BadSeedModel;
         return nullptr;
         }
 
     DgnModelPtr newModel = seedModel->Duplicate(name);
     status = Insert(*newModel);
-    if (DGNMODEL_STATUS_Success != status)
+    if (DgnDbStatus::Success != status)
         return nullptr;
 
     return newModel.get();
@@ -782,7 +728,7 @@ Utf8String DgnModels::GetUniqueModelName(Utf8CP baseName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelId DgnModels::QueryFirstModelId() const
     {
-    return MakeIterator(ModelIterate::All).begin().GetModelId();
+    return MakeIterator().begin().GetModelId();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -804,17 +750,6 @@ DPoint3d DgnModel::_GetGlobalOrigin() const
     return GetDgnDb().Units().GetGlobalOrigin();
     }
 
-#if defined(NEEDS_WORK_ELEMENTS_API)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-SectioningViewControllerPtr SectionDrawingModel::GetSourceView()
-    {
-    auto sectioningViewId = GetDgnDb().GeneratedDrawings().QuerySourceView(GetModelId());
-    return dynamic_cast<SectioningViewController*>(GetDgnDb().Views().LoadViewController(sectioningViewId, DgnViews::FillModels::No).get());
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    ChuckKirschman  04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -834,10 +769,10 @@ double DgnModel::GetSubPerMaster() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnFileStatus DgnModel::_FillModel()
+DgnDbStatus DgnModel::_FillModel()
     {
     if (IsFilled())
-        return  DGNFILE_STATUS_Success;
+        return DgnDbStatus::Success;
 
     enum Column : int {Id=0,ClassId=1,CategoryId=2,Label=3,Code=4,ParentId=5};
     Statement stmt(m_dgndb, "SELECT Id,ECClassId,CategoryId,Label,Code,ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
@@ -865,7 +800,7 @@ DgnFileStatus DgnModel::_FillModel()
 
     _OnModelFillComplete();
 
-    return  DGNFILE_STATUS_Success;
+    return  DgnDbStatus::Success;
     }
 
 /*--------------------------------------------------------------------------------**//**

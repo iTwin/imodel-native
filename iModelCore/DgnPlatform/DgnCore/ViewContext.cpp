@@ -66,7 +66,6 @@ ViewContext::ViewContext()
     m_isCameraOn                = false;
     m_frustumTransClipDepth     = 0;
     m_edgeMaskState             = EdgeMaskState_None;
-    m_currGeomPrimitiveId       = make_bpair(-1, -1);
 
     m_rasterDisplayParams.SetFlags(0);
 
@@ -569,15 +568,15 @@ void ViewContext::GetViewIndTransform (TransformP trans, DPoint3dCP originLocal)
             localPt[0].z = localPt[1].z = originLocal->z;
 
         DVec3d  u, v;
-        u.normalizedDifference (localPt,   originLocal);
-        v.normalizedDifference (localPt+1, originLocal);
+        u.NormalizedDifference (*localPt, *originLocal);
+        v.NormalizedDifference (localPt[1], *originLocal);
 
         // convert to rmatrix
         rMatrix.InitFrom2Vectors (u, v);
         }
     else
         {
-        rMatrix.initIdentity();
+        rMatrix.InitIdentity ();
         }
 
     // get transform about origin
@@ -1249,7 +1248,7 @@ bool ViewContext::IsLocalPointVisible (DPoint3dCR localPoint, bool boresite)
         Transform       frustumToLocal;
 
         zPoints[0].Zero ();
-        zPoints[1].init (0.0, 0.0, 1.0);
+        zPoints[1].Init (0.0, 0.0, 1.0);
 
         NpcToFrustum (zPoints, zPoints, 2);
 
@@ -1317,8 +1316,8 @@ void ViewContext::SetSubRectFromViewRect(BSIRectCP viewRect)
     tRect.Expand (1);
 
     DRange3d viewRange;
-    viewRange.low.init  (tRect.origin.x, tRect.corner.y, 0.0);
-    viewRange.high.init (tRect.corner.x, tRect.origin.y, 0.0);
+    viewRange.low.Init (tRect.origin.x, tRect.corner.y, 0.0);
+    viewRange.high.Init (tRect.corner.x, tRect.origin.y, 0.0);
 
     GetViewport()->ViewToNpc (&viewRange.low, &viewRange.low, 2);
 
@@ -1626,7 +1625,7 @@ void ViewContext::_DrawStyledLineString3d (int nPts, DPoint3dCP pts, DPoint3dCP 
     LineStyleSymbP  currLsSymb;
     ILineStyleCP    currLStyle = _GetCurrLineStyle(&currLsSymb);
 
-    if (currLStyle && (nPts > 2 || !pts->isEqual (pts+1)))
+    if (currLStyle && (nPts > 2 || !pts->IsEqual (pts[1])))
         {
         currLStyle->_GetComponent()->_StrokeLineString (this, currLsSymb, pts, nPts, closed);
         return;
@@ -1649,7 +1648,7 @@ void ViewContext::_DrawStyledLineString2d (int nPts, DPoint2dCP pts, double prio
     LineStyleSymbP  currLsSymb;
     ILineStyleCP    currLStyle = _GetCurrLineStyle(&currLsSymb);
 
-    if (currLStyle && (nPts > 2 || !pts->isEqual (pts+1)))
+    if (currLStyle && (nPts > 2 || !pts->IsEqual (pts[1])))
         {
         currLStyle->_GetComponent()->_StrokeLineString2d (this, currLsSymb, pts, nPts, priority, closed);
         return;
@@ -1814,7 +1813,7 @@ double ViewContext::GetPixelSizeAtPoint (DPoint3dCP inPoint) const
     // Convert pixels back to local coordinates and use the length as tolerance
     ViewToLocal (vec, vec, 2);
 
-    return vec[0].distance (vec+1);
+    return vec[0].Distance (vec[1]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2385,6 +2384,21 @@ void ElemDisplayParams::Init()
     m_gradient  = nullptr;
     m_pattern   = nullptr;
     m_plotInfo  = nullptr;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     06/2015
+//---------------------------------------------------------------------------------------
+void ElemDisplayParams::ResetAppearance()
+    {
+    DgnCategoryId categoryId = m_categoryId;
+    DgnSubCategoryId subCategoryId = m_subCategoryId;
+    
+    Init();
+    
+    SetCategoryId(categoryId);
+    SetSubCategoryId(subCategoryId);
     }
 
 /*---------------------------------------------------------------------------------**//**

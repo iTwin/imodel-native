@@ -2,7 +2,7 @@
 |
 |   $Source: DgnCore/MaterialSettings.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -1260,8 +1260,8 @@ void MaterialMap::InitDefaults ()
     m_linkType  = MAPTYPE_None;
     m_enabled   = true;
     m_value     = 1.0;
-    m_projectionOffset.zero ();
-    m_projectionRotation.zero ();
+    m_projectionOffset.Zero ();
+    m_projectionRotation.Zero ();
     m_projectionScale.One ();
     m_layers.InitDefaults ();
     }
@@ -2073,7 +2073,7 @@ void MaterialMapLayer::InitDefaults ()
     m_units                 = MapUnits::Relative;
     m_rotation              = 0.0;
     m_scale.One ();
-    m_offset.zero ();
+    m_offset.Zero ();
     m_opacity               = 1.0;
     m_gamma                 = 1.0;
     m_invert                = false;
@@ -3693,7 +3693,7 @@ void LxoFloatEnvelopeKey::Copy (LxoFloatEnvelopeKeyCR rhs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool LxoFloatEnvelopeKey::Equals (LxoFloatEnvelopeKeyCR rhs) const
     {
-    return TO_BOOL (m_value.isEqual (&rhs.m_value, 1.0E-4));
+    return TO_BOOL (m_value.IsEqual (rhs.m_value, 1.0E-4));
     }
 
 /*---------------------------------------------------------------------------------**//**

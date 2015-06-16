@@ -217,22 +217,22 @@ DgnDbPtr DgnDb::CreateDgnDb(DbResult* result, BeFileNameCR fileName, CreateDgnDb
 * Reclaims disk space by vacuuming the database
 * @bsimethod                                                    KeithBentley    12/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnFileStatus DgnDb::CompactFile()
+DgnDbStatus DgnDb::CompactFile()
     {
     if (1 < GetCurrentSavepointDepth())
-        return  DGNFILE_ERROR_TransactionActive;
+        return  DgnDbStatus::TransactionActive;
 
     Savepoint* savepoint = GetSavepoint(0);
     if (savepoint)
         savepoint->Commit(nullptr);
 
     if (BE_SQLITE_OK != TryExecuteSql("VACUUM"))
-        return  DGNFILE_ERROR_SQLiteError;
+        return  DgnDbStatus::SQLiteError;
     
     if (savepoint)
         savepoint->Begin();
 
-    return DGNFILE_STATUS_Success;
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -143,6 +143,8 @@ public:
     Transform ComputeTransform() const { return Transform::From(m_orientation, m_origin); }
     DGNPLATFORM_EXPORT DPoint3d ComputeJustificationOrigin(HorizontalJustification, VerticalJustification) const;
     DGNPLATFORM_EXPORT void SetOriginFromJustificationOrigin(DPoint3dCR, HorizontalJustification, VerticalJustification);
+    //! This will attempt to intelligently transform this instance. This means scale is extracted an applied to the style's height and width, translation is applied to the origin, and the remainder is applied to the orientation.
+    DGNPLATFORM_EXPORT void ApplyTransform(TransformCR);
     
     //! Computes scaled X and Y axes for providing to rendering systems. Non-italic text will have perpendicular axes; italic text will have a skewed Y axis.
     //! @private

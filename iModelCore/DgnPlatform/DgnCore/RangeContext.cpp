@@ -18,7 +18,7 @@ RangeClip::RangeClip (ClipPlaneSetCP pClip, TransformCP pTransform)
     {
     m_isCamera = false;
     if (NULL == pTransform)
-        m_transform.initIdentity();
+        m_transform.InitIdentity ();
     else
         m_transform = *pTransform;
 
@@ -49,7 +49,7 @@ void RangeClip::ApplyTransform (DPoint3dP transformedPoints, DPoint3dCP points, 
             DPoint3d        tmpPoint;
             static double   s_cameraScaleLimit = 1.0 / 300.0;
                                                                                                                                              
-            tmpPoint.differenceOf (&points[i], &m_camera);
+            tmpPoint.DifferenceOf (points[i], m_camera);
 
             double      cameraScale =  MAX (s_cameraScaleLimit, -m_focalLength / tmpPoint.z);
 
@@ -60,7 +60,7 @@ void RangeClip::ApplyTransform (DPoint3dP transformedPoints, DPoint3dCP points, 
         }
     else
         {
-        m_transform.multiply (transformedPoints, points, numPoints);
+        m_transform.Multiply (transformedPoints, points, numPoints);
         }
     }
 
@@ -382,9 +382,9 @@ void addPlaneFromPoints (ClipPlane& plane, DPoint3dCR origin, DPoint3dCR cross0,
     {
     DVec3d      normal;
 
-    normal.crossProductToPoints (&cross1, &cross0, &origin);
-    if (0.0 == normal.normalize ())                   // If the cross product is NULL then use ray from opposite end (to handle planar polyhedra).
-        normal.normalizedDifference (&rayEnd, &origin);
+    normal.CrossProductToPoints(cross1, cross0, origin);
+    if (0.0 == normal.Normalize ())                   // If the cross product is NULL then use ray from opposite end (to handle planar polyhedra).
+        normal.NormalizedDifference (rayEnd, origin);
 
     plane = ClipPlane (normal, origin);
     }
@@ -402,7 +402,7 @@ bool computeRangePlanesFromCorners (ClipPlane rangePlanes[6], DPoint3d degenerat
     bool     zeroLength[3];
 
     for (size_t i=0; i<3; i++)
-        zeroLength[i] = corners[0].isEqual (&corners[(size_t) 1 << i]);
+        zeroLength[i] = corners[0].IsEqual (corners[(size_t) 1 << i]);
 
     // If the polyhedron degenerates to either a line or a point...
     for (int i=0; i<3; i++)
@@ -550,7 +550,7 @@ void RangeClipPlanes::ClipPoints (ElemRangeCalc* rangeCalculator, ClipStackCP cl
                 {
                 double      t = lastDistance / (lastDistance - thisDistance);
 
-                outputPoint->sumOf (NULL, pLastPoint, 1.0 - t, pThisPoint, t);
+                outputPoint->SumOf (*pLastPoint, 1.0 - t, *pThisPoint, t);
                 outputPoint++;
 
                 if ((nOutputPoints = static_cast<int>((outputPoint - outputPoints))) > 1)
@@ -994,7 +994,7 @@ StatusInt DgnViewport::ComputeViewRange (DRange3dR range, FitViewParams& params)
     FitContext  context (params);
     context.AllocateScanCriteria ();
 
-    if (SUCCESS != SetupFromViewController()) // can't proceed if viewport isn't valid (e.g. not active)
+    if (ViewportStatus::Success != SetupFromViewController()) // can't proceed if viewport isn't valid (e.g. not active)
         return ERROR;
 
     context.SetViewport(this); // Don't want to attach...but transients have view display mask!
@@ -1147,7 +1147,7 @@ StatusInt       IViewTransients::ComputeRange (DRange3dR range, DgnViewportP vp)
     // NEEDSWORK_WIP_RANGE - Do we need to keep this method if fit starts using project extents???
     //                       Can maybe just have a virtual _GetRange method on IViewTransient and
     //                       require implemention to keep "geometry" range if needed...
-    if (SUCCESS != vp->SetupFromViewController()) // can't proceed if viewport isn't valid (e.g. not active)
+    if (ViewportStatus::Success != vp->SetupFromViewController()) // can't proceed if viewport isn't valid (e.g. not active)
         return  ERROR;
 
     FitViewParams params;

@@ -201,7 +201,7 @@ public:
     DGNPLATFORM_EXPORT DgnDomains& Domains() const;                 //!< The DgnDomains associated with this DgnDb.
     DGNPLATFORM_EXPORT TxnManagerR Txns();
 
-    DGNPLATFORM_EXPORT DgnFileStatus CompactFile();
+    DGNPLATFORM_EXPORT DgnDbStatus CompactFile();
 
 //__PUBLISH_SECTION_END__
     DGNPLATFORM_EXPORT DgnMaterials& Materials() const;       //!< Information about materials for this DgnDb
