@@ -321,7 +321,7 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
             indirectChanges.FromChangeTrack(*this);
             Restart();
 
-            summary.AddChangeSet(indirectChanges); // so admins will see entire changeset
+            summary.AddChangeSet(indirectChanges); // so summary will hold entire changeset
             changeset.ConcatenateWith(indirectChanges);
             }
         }

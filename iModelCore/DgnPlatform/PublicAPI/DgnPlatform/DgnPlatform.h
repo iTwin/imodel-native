@@ -23,6 +23,7 @@
 #include "DgnPlatformErrors.r.h"
 #include "DgnHost.h"
 #include <BeSQLite/BeSQLite.h>
+#include <BeSQLite/ChangeSet.h>
 #include <ECDb/ECDbApi.h>
 
 #define USING_NAMESPACE_BENTLEY_DGNPLATFORM using namespace BentleyApi::DgnPlatform;

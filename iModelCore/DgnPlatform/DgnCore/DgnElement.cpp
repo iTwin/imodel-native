@@ -9,14 +9,6 @@
 #include <DgnPlatform/DgnCore/QvElemSet.h>
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), m_dgnModel(params.m_model), m_classId(params.m_classId),
-             m_categoryId(params.m_categoryId), m_label(params.m_label), m_code(params.m_code), m_parentId(params.m_parentId), m_lastModTime(params.m_lastModTime) 
-    {
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::AddRef() const
@@ -163,15 +155,6 @@ void DgnElement::SetInSelectionSet(bool yesNo) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   03/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::~DgnElement()
-    {
-    BeAssert(!IsPersistent());
-    ClearAllAppData();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnClassId DgnElement::QueryClassId(DgnDbR db)
@@ -215,7 +198,7 @@ template<class T> void DgnElement::CallAppData(T const& caller) const
     {
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); )
         {
-        if (caller(*entry->second, *this))
+        if (DgnElement::AppData::DropMe::Yes == caller(*entry->second, *this))
             entry = m_appData.erase(entry);
         else
             ++entry;
@@ -231,6 +214,13 @@ DgnDbStatus DgnElement::_OnInsert()
     if (m_code.empty())
         m_code = _GenerateDefaultCode();
 
+    for (auto entry=m_appData.begin(); entry!=m_appData.end(); )
+        {
+        DgnDbStatus stat = entry->_OnInsert(*this);
+        if (DgnDbStatus::Success != stat)
+            return stat;
+        }
+
     return m_dgnModel._OnInsertElement(*this);
     }
 
@@ -238,7 +228,7 @@ struct OnInsertedCaller
     {
     DgnElementCR m_newEl;
     OnInsertedCaller(DgnElementCR newEl) : m_newEl(newEl){}
-    bool operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnInserted(m_newEl);}   
+    DgnElement::AppData::DropMe operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnInserted(m_newEl);}   
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -261,6 +251,13 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
         return DgnDbStatus::WrongClass;
 
     UpdateLastModTime();
+    for (auto entry=m_appData.begin(); entry!=m_appData.end(); )
+        {
+        DgnDbStatus stat = entry->_OnUpdate(*this, original);
+        if (DgnDbStatus::Success != stat)
+            return stat;
+        }
+
     return m_dgnModel._OnUpdateElement(*this, original);
     }
 
@@ -268,7 +265,7 @@ struct OnUpdatedCaller
     {
     DgnElementCR m_updated, m_original;
     OnUpdatedCaller(DgnElementCR updated, DgnElementCR original) : m_updated(updated), m_original(original){}
-    bool operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnUpdated(m_updated, m_original);}   
+    DgnElement::AppData::DropMe operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnUpdated(m_updated, m_original);}   
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -288,10 +285,17 @@ void DgnElement::_OnUpdated(DgnElementCR original) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::_OnDelete() const
     {
+    for (auto entry=m_appData.begin(); entry!=m_appData.end(); )
+        {
+        DgnDbStatus stat = entry->_OnDelete(*this, original);
+        if (DgnDbStatus::Success != stat)
+            return stat;
+        }
+
     return m_dgnModel._OnDeleteElement(*this);
     }
 
-struct OnDeletedCaller  {bool operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnDeleted(el);}};
+struct OnDeletedCaller  {DgnElement::AppData::DropMe operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnDeleted(el);}};
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -599,52 +603,6 @@ PhysicalElementPtr PhysicalElement::Create(PhysicalModelR model, DgnCategoryId c
 DgnClassId PhysicalElement::QueryClassId(DgnDbR db)
     {
     return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* A physical element was just successfully added to the database. We need to add the corresponding entry into the persistent range tree.
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PhysicalElement::_OnInserted(DgnElementP from) const
-    {
-    T_Super::_OnInserted(from);
-
-    if (!m_placement.IsValid()) // this is an invisible element
-        return;
-
-    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("INSERT INTO " DGN_VTABLE_RTree3d " (ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ) VALUES (?,?,?,?,?,?,?)");
-    stmt->BindId(1, m_elementId);
-    AxisAlignedBox3dCR range = m_placement.CalculateRange();
-    stmt->BindDouble(2, range.low.x);
-    stmt->BindDouble(3, range.high.x);
-    stmt->BindDouble(4, range.low.y);
-    stmt->BindDouble(5, range.high.y);
-    stmt->BindDouble(6, range.low.z);
-    stmt->BindDouble(7, range.high.z);
-    stmt->Step();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* A physical element was just successfully updated in the database. We need to update the corresponding entry in the persistent range tree.
-* @bsimethod                                    Sam.Wilson                      04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PhysicalElement::_OnUpdated(DgnElementCR from) const
-    {
-    T_Super::_OnUpdated(from);
-
-    if (!m_placement.IsValid()) // this is an invisible element
-        return;
-
-    CachedStatementPtr stmt=GetDgnDb().Elements().GetStatement("UPDATE " DGN_VTABLE_RTree3d " SET MinX=?,MaxX=?,MinY=?,MaxY=?,MinZ=?,MaxZ=? WHERE ElementId=?");
-    AxisAlignedBox3dCR range = m_placement.CalculateRange();
-    stmt->BindDouble(1, range.low.x);
-    stmt->BindDouble(2, range.high.x);
-    stmt->BindDouble(3, range.low.y);
-    stmt->BindDouble(4, range.high.y);
-    stmt->BindDouble(5, range.low.z);
-    stmt->BindDouble(6, range.high.z);
-    stmt->BindId(7, m_elementId);
-    stmt->Step();
     }
 
 /*---------------------------------------------------------------------------------**//**

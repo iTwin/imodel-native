@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 
+BEGIN_UNNAMED_NAMESPACE
+
 typedef DgnRangeTree::Node&         DRTNodeR;
 typedef DgnRangeTree::Node*         DRTNodeP;
 typedef DRTNodeP*                   DRTNodeH;
@@ -233,6 +235,7 @@ static WString memoryString(size_t bytes)
     return WString(string);
     }
 
+
 /*=================================================================================**//**
 * @bsiclass                                                     RayBentley      10/2009
 +===============+===============+===============+===============+===============+======*/
@@ -281,15 +284,6 @@ void DRTStatistics::DumpCreate(DgnRangeTreeR tree)
 #define BEGIN_NET_TIMER(t)
 #define END_NET_TIMER(t)
 #endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-inline size_t DgnRangeTree::Node::GetEntryCount()
-    {
-    DRTLeafNodeP leaf = ToLeaf();
-    return leaf ? leaf->GetEntryCount() : ((DRTInternalNodeP) this)->GetEntryCount();
-    }
 
 /*=================================================================================**//**
 * @bsiclass                                                     RayBentley      10/2009
@@ -410,7 +404,9 @@ struct DRTSplitEntry
     int         m_groupNumber[3];
 };
 
-GLOBAL_TYPEDEF (DRTSplitEntry,DRTSplitEntry)
+typedef DRTSplitEntry* DRTSplitEntryP;
+typedef DRTSplitEntry const * DRTSplitEntryCP;
+typedef DRTSplitEntry const& DRTSplitEntryCR;
 typedef DgnRangeTree::ProgressMonitor* ProgressMonitorP;
 
 static inline bool compareX(DRTSplitEntryCR entry1, DRTSplitEntryCR entry2) {return entry1.m_range.low.x < entry2.m_range.low.x;}
@@ -530,6 +526,16 @@ static double checkSeparation(DRTSplitEntryP entries, size_t count, SplitAxis ax
         }
 
     return  maxSeparation;
+    }
+END_UNNAMED_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/10
++---------------+---------------+---------------+---------------+---------------+------*/
+inline size_t DgnRangeTree::Node::GetEntryCount()
+    {
+    DRTLeafNodeP leaf = ToLeaf();
+    return leaf ? leaf->GetEntryCount() : ((DRTInternalNodeP) this)->GetEntryCount();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1142,7 +1148,6 @@ DRTViewNode(DRTLeafNodeP leaf, DgnModelP modelRef, TransformP localToFrust, doub
     }
 };
 
-GLOBAL_TYPEDEF(DRTViewNode,DRTViewNode)
 typedef bvector<DRTViewNode>    T_ViewNodes;
 typedef T_ViewNodes::iterator   T_ViewNodeIterator;
 typedef bvector<TransformP>     T_Transforms;
@@ -1557,7 +1562,7 @@ struct OcclusionSortedProcessor : OcclusionScorer
     bool                        m_doFrustumCull;
 
     uint32_t GetVisitElementCount() {return m_visitElementCount;}
-    static bool CompareOcclusionScore(DRTViewNodeCR lhs, DRTViewNodeCR rhs) { return lhs.m_score > rhs.m_score; }
+    static bool CompareOcclusionScore(DRTViewNode const& lhs, DRTViewNode const& rhs) { return lhs.m_score > rhs.m_score; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2009
@@ -1698,7 +1703,7 @@ bool VisitRangeElement(GeometricElementCP element, DgnModelP modelRef, bool test
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ProcessViewNode(DRTViewNodeR viewNode)
+bool ProcessViewNode(DRTViewNode& viewNode)
     {
 #ifdef DRT_DEBUGGING
     s_statistics.m_traverse.m_leafVisitCount++;

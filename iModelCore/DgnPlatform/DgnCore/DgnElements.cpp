@@ -170,7 +170,7 @@ public:
 
 struct MyStats : DgnElements::Statistics
 {
-void Reset() {m_newElements=m_unReferenced=m_reReferenced=m_purged = 0 ;}
+    void Reset() {m_newElements=m_unReferenced=m_reReferenced=m_purged = 0 ;}
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -211,6 +211,7 @@ public:
         m_totals.m_entries        = 0;
         m_totals.m_unreferenced   = 0;
         m_totals.m_allocedBytes   = 0;
+        m_totals.m_extant         = 0;
         m_counter           = 0;
         m_leafPool.SetSize(sizeof(ElemIdLeafNode), 4);
         m_internalPool.SetSize(sizeof(ElemIdInternalNode), 4);
@@ -225,8 +226,8 @@ public:
     DgnElementP FindElement(DgnElementId key, bool setAccessed);
     void AddElement(DgnElementCR);
     void DropElement(DgnElementCR);
-    void KillElement(DgnElementCR el, bool wholeTree) {BeAssert(0 == el.GetRefCount()); RemoveElement(el, wholeTree); delete &el;}
-    void RemoveElement(DgnElementCR element, bool wholeTree);
+    void KillElement(DgnElementCR el) {BeAssert(0 == el.GetRefCount()); RemoveElement(el); delete &el;}
+    void RemoveElement(DgnElementCR element);
     void Purge(int64_t memTarget);
     void Destroy();
 };
@@ -255,7 +256,7 @@ ElemPurge ElemIdLeafNode::_Drop(uint64_t key)
             memmove(m_elems + index, m_elems + index + 1,(m_nEntries-index) * sizeof(DgnElementP));
 
             // mark it as not in pool and adjust pool stats
-            m_treeRoot.RemoveElement(*target, false);
+            m_treeRoot.RemoveElement(*target);
             break;
             }
         }
@@ -299,7 +300,7 @@ ElemPurge ElemIdLeafNode::_Purge(int64_t memTarget)
 
     // this call deletes the element data, and all its AppData (e.g. XAttributes). It also keeps the total element/bytes count up to date.
     for (unsigned i = 0; i < killedIndex; i++)
-        m_treeRoot.KillElement(*killed[i], false);
+        m_treeRoot.KillElement(*killed[i]);
 
     return (0 == m_nEntries) ? ElemPurge::Deleted : ElemPurge::Kept;
     }
@@ -407,9 +408,9 @@ ElemPurge ElemIdInternalNode::_Purge(int64_t memTarget)
     return 0==nLeft ? ElemPurge::Deleted : ElemPurge::Kept;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    06/2014
-//---------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
 void ElemIdTree::DropElement(DgnElementCR element)
     {
     if (nullptr == m_root ||(ElemPurge::Deleted != m_root->_Drop(element.GetElementId().GetValue())))
@@ -739,31 +740,37 @@ ElemIdLeafNode const* ElemIdInternalNode::_NextSibling(ElemIdRangeNodeCP from) c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElemIdTree::AddElement(DgnElementCR entry)
+void ElemIdTree::AddElement(DgnElementCR element)
     {
     if (nullptr == m_root)
         m_root = NewLeafNode(this);
 
     ++m_totals.m_entries;
-    ++m_totals.m_unreferenced;
-    m_root->_Add(entry, ++m_counter);
+    if (0 == element.GetRefCount())
+       ++m_totals.m_unreferenced;
+
+    BeAssert(m_totals.m_entries >= m_totals.m_unreferenced);
+    m_root->_Add(element, ++m_counter);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElemIdTree::RemoveElement(DgnElementCR element, bool killingWholeTree)
+void ElemIdTree::RemoveElement(DgnElementCR element)
     {
-    if (!killingWholeTree)
+    BeAssert(0 != m_totals.m_entries);
+    --m_totals.m_entries;
+
+    if (0 == element.GetRefCount())
         {
-        BeAssert(0 != m_totals.m_entries);
         BeAssert(0 != m_totals.m_unreferenced);
-        --m_totals.m_entries;
         --m_totals.m_unreferenced;
-        ++m_stats.m_purged;
         }
 
-    m_dgndb.Elements().ChangeMemoryUsed(0 -(int32_t) element._GetMemSize());
+    BeAssert(m_totals.m_entries >= m_totals.m_unreferenced);
+    ++m_stats.m_purged;
+
+    m_dgndb.Elements().ChangeMemoryUsed(0 - (int32_t) element._GetMemSize());
     element.SetPersistent(false);
     }
 
@@ -818,7 +825,7 @@ void ElemIdLeafNode::_Empty()
     DgnElementH end = m_elems + m_nEntries;
 
     for (DgnElementH curr = m_elems; curr < end; ++curr)
-        m_treeRoot.KillElement(**curr, true);
+        m_treeRoot.KillElement(**curr);
 
     m_nEntries = 0;
     }
@@ -843,6 +850,11 @@ void ElemIdTree::Destroy()
     {
     if (m_root)
         m_root->_Empty(); // this frees all of the elements and their data
+
+    BeAssert(0==m_totals.m_extant);       // make sure nobody has any DgnElements around from this DgnDb
+    BeAssert(0==m_totals.m_allocedBytes); // we should have returned all the memory too.
+    BeAssert(0==m_totals.m_entries);
+    BeAssert(0==m_totals.m_unreferenced);
 
     m_root = nullptr;
     m_leafPool.purge_memory_and_reinitialize();
@@ -874,7 +886,7 @@ void DgnElements::Destroy()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElements::ChangeMemoryUsed(int32_t delta) const
     {
-    if (delta==0) // nothing happened, don't bother to get mutex
+    if (0==delta) // nothing happened, don't bother to get mutex
         return;
 
     BeDbMutexHolder _v(m_mutex);
@@ -890,6 +902,7 @@ void DgnElements::OnReclaimed(DgnElementCR el)
     {
     BeDbMutexHolder _v_v(m_mutex);
     BeAssert(0 != m_tree->m_totals.m_unreferenced);
+    BeAssert(m_tree->m_totals.m_entries >= m_tree->m_totals.m_unreferenced);
     --m_tree->m_totals.m_unreferenced;
     ++m_tree->m_stats.m_reReferenced;
     }
@@ -901,9 +914,10 @@ void DgnElements::OnReclaimed(DgnElementCR el)
 void DgnElements::OnUnreferenced(DgnElementCR el)
     {
     BeDbMutexHolder _v_v(m_mutex);
-    m_tree->FindElement(el.GetElementId(), true);   // mark this entry as having free content
+    m_tree->FindElement(el.GetElementId(), true);   // mark this entry as having purgable elements
     ++m_tree->m_totals.m_unreferenced;
     ++m_tree->m_stats.m_unReferenced;
+    BeAssert(m_tree->m_totals.m_entries >= m_tree->m_totals.m_unreferenced);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -926,7 +940,7 @@ void DgnElements::AddToPool(DgnElementCR element) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElements::DropFromPool(DgnElementCR element) const
     {
-    if (element.GetRefCount() == 0)
+    if (0 == element.GetRefCount())
         {
         BeAssert(false); // somebody else must own it or we cannot drop it from the pool
         return;
@@ -964,6 +978,26 @@ CachedStatementPtr DgnElements::GetStatement(Utf8CP sql) const
     return stmt;
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), m_dgnModel(params.m_model), m_classId(params.m_classId),
+             m_categoryId(params.m_categoryId), m_label(params.m_label), m_code(params.m_code), m_parentId(params.m_parentId), m_lastModTime(params.m_lastModTime) 
+    {
+    ++GetDgnDb().Elements().m_tree->m_totals.m_extant;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Keith.Bentley   03/04
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::~DgnElement()
+    {
+    BeAssert(!IsPersistent());
+    ClearAllAppData();
+    
+    --GetDgnDb().Elements().m_tree->m_totals.m_extant;
+    }
+
 DgnElements::Totals DgnElements::GetTotals() const {return m_tree->m_totals;}
 DgnElements::Statistics DgnElements::GetStatistics() const {return m_tree->m_stats;}
 void DgnElements::ResetStatistics() {m_tree->m_stats.Reset();}
