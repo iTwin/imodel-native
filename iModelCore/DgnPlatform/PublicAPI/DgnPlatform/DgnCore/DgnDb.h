@@ -38,8 +38,6 @@ enum DgnDbSchemaValues : int32_t
     DGNDB_SUPPORTED_VERSION_Minor = 2,
     };
 
-/** @cond BENTLEY_SDK_Internal */
-
 //=======================================================================================
 //! Supplies the parameters necessary to create new DgnDbs.
 // @bsiclass
@@ -85,8 +83,6 @@ public:
     //! already exists.
     void SetOverwriteExisting(bool val) {m_overwriteExisting = val;}
 };
-
-/** @endcond */
 
 //=======================================================================================
 //! A 4-digit number that specifies a serializable version of something in a DgnDb.
@@ -141,24 +137,21 @@ protected:
     DgnMaterials    m_materials;
     DgnLinks        m_links;
     TxnManagerPtr   m_txnManager;
-
     BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
 
     DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _VerifySchemaVersion(BeSQLite::Db::OpenParams const& params) override;
-    BeSQLite::DbResult CreateNewDgnDb(BeFileNameCR boundFileName, CreateDgnDbParams const& params);
-
-public:
-    BeSQLite::DbResult InitializeDgnDb(CreateDgnDbParams const& params);
-    BeSQLite::DbResult CreateProjectTables();
-
-    DgnDb();
-    virtual ~DgnDb();
-
-    BeSQLite::DbResult DoOpenDgnDb(BeFileNameCR projectNameIn, OpenParams const&);
     DGNPLATFORM_EXPORT virtual void _OnDbClose() override;
     DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _OnDbOpened() override;
 
+    BeSQLite::DbResult CreateNewDgnDb(BeFileNameCR boundFileName, CreateDgnDbParams const& params);
+    BeSQLite::DbResult CreateProjectTables();
+    BeSQLite::DbResult InitializeDgnDb(CreateDgnDbParams const& params);
     BeSQLite::DbResult SaveDgnDbSchemaVersion(DgnVersion version=DgnVersion(DGNDB_CURRENT_VERSION_Major,DGNDB_CURRENT_VERSION_Minor,DGNDB_CURRENT_VERSION_Sub1,DGNDB_CURRENT_VERSION_Sub2));
+    BeSQLite::DbResult DoOpenDgnDb(BeFileNameCR projectNameIn, OpenParams const&);
+
+public:
+    DgnDb();
+    virtual ~DgnDb();
 
     //! Get ae BeFileName for this DgnDb.
     //! @note The superclass method BeSQLite::Db::GetDbFileName may also be used to get the same value, as a Utf8CP.
@@ -201,27 +194,22 @@ public:
     DGNPLATFORM_EXPORT DgnDomains& Domains() const;                 //!< The DgnDomains associated with this DgnDb.
     DGNPLATFORM_EXPORT TxnManagerR Txns();
 
-    DGNPLATFORM_EXPORT DgnDbStatus CompactFile();
 
 //__PUBLISH_SECTION_END__
     DGNPLATFORM_EXPORT DgnMaterials& Materials() const;       //!< Information about materials for this DgnDb
-
 //__PUBLISH_SECTION_START__
 
     //! Gets a cached and prepared ECSqlStatement.
-    //! @remarks This is only to be used by DgnPlatform internally to avoid misuse and unexpected caching behavior.
-    //! Therefore it is not inlined.
     DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetPreparedECSqlStatement(Utf8CP ecsql) const;
+
+    DGNPLATFORM_EXPORT DgnDbStatus CompactFile();
 };
 
-#if !defined (DOCUMENTATION_GENERATOR)
 inline BeSQLite::DbResult DgnViews::QueryProperty(void* value, uint32_t size, DgnViewId viewId, DgnViewPropertySpecCR spec, uint64_t id)const {return m_dgndb.QueryProperty(value, size, spec, viewId.GetValue(), id);}
 inline BeSQLite::DbResult DgnViews::QueryProperty(Utf8StringR value, DgnViewId viewId, DgnViewPropertySpecCR spec, uint64_t id) const{return m_dgndb.QueryProperty(value, spec, viewId.GetValue(), id);}
 inline BeSQLite::DbResult DgnViews::QueryPropertySize(uint32_t& size, DgnViewId viewId, DgnViewPropertySpecCR spec, uint64_t id) const{return m_dgndb.QueryPropertySize(size, spec, viewId.GetValue(), id);}
 inline BeSQLite::DbResult DgnViews::SaveProperty(DgnViewId viewId, DgnViewPropertySpecCR spec, void const* value, uint32_t size, uint64_t id) {return m_dgndb.SaveProperty(spec, value, size, viewId.GetValue(), id);}
 inline BeSQLite::DbResult DgnViews::SavePropertyString(DgnViewId viewId, DgnViewPropertySpecCR spec, Utf8StringCR value, uint64_t id) {return m_dgndb.SavePropertyString(spec, value, viewId.GetValue(), id);}
 inline BeSQLite::DbResult DgnViews::DeleteProperty(DgnViewId viewId, DgnViewPropertySpecCR spec, uint64_t id) {return m_dgndb.DeleteProperty(spec, viewId.GetValue(), id);}
-
-#endif // DOCUMENTATION_GENERATOR
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

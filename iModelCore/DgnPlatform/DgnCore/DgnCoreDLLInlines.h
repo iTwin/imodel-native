@@ -260,11 +260,11 @@ DG_INLINE bool ViewContext::WantShowDefaultFieldBackground() {return _WantShowDe
 DG_INLINE void ViewContext::DeleteSymbol(IDisplaySymbol* symbol) {_DeleteSymbol(symbol);}
 DG_INLINE bool ViewContext::_WantShowDefaultFieldBackground() {return T_HOST.GetGraphicsAdmin()._WantShowDefaultFieldBackground();}
 DG_INLINE bool ViewContext::_WantSaveQvElem(DrawExpense expense) {return T_HOST.GetGraphicsAdmin()._WantSaveQvElem(static_cast<int>(expense));}
-DG_INLINE BentleyStatus ViewContext::GetCurrLocalToFrustumTrans(TransformR trans) const { return m_transformClipStack.GetTransform(trans); }
-DG_INLINE BentleyStatus ViewContext::GetCurrFrustumToLocalTrans(TransformR trans) const { return m_transformClipStack.GetInverseTransform(trans); }
-DG_INLINE TransformCP ViewContext::GetCurrLocalToFrustumTransformCP() const { return m_transformClipStack.GetTransformCP(); }
+DG_INLINE BentleyStatus ViewContext::GetCurrLocalToWorldTrans(TransformR trans) const { return m_transformClipStack.GetTransform(trans); }
+DG_INLINE BentleyStatus ViewContext::GetCurrWorldToLocalTrans(TransformR trans) const { return m_transformClipStack.GetInverseTransform(trans); }
+DG_INLINE TransformCP ViewContext::GetCurrLocalToWorldTransformCP() const { return m_transformClipStack.GetTransformCP(); }
 DG_INLINE void ViewContext::DrawTextString(TextStringCR textString) {_DrawTextString(textString);}
-DG_INLINE BentleyStatus ViewContext::GetLocalToFrustumTrans(TransformR trans, size_t index) const { return m_transformClipStack.GetTransformFromIndex(trans, index); }
+DG_INLINE BentleyStatus ViewContext::GetLocalToWorldTrans(TransformR trans, size_t index) const { return m_transformClipStack.GetTransformFromIndex(trans, index); }
 DG_INLINE bool ViewContext::IsViewIndependent() { return m_transformClipStack.IsViewIndependent(); }
 DG_INLINE bool ViewContext::WantUndisplayedClips() { return _WantUndisplayedClips(); }
 
@@ -274,8 +274,8 @@ DG_INLINE ViewContext::ContextMark::~ContextMark() {Pop();}
 
 DG_INLINE IElemTopologyCP   ViewContext::GetElemTopology() const {return(m_currElemTopo.IsValid() ? m_currElemTopo.get() : nullptr);}
 DG_INLINE void              ViewContext::SetElemTopology(IElemTopologyP topo) {m_currElemTopo = topo;}
-DG_INLINE T_GeomPrimitiveId ViewContext::GetGeomPrimitiveId() const {return m_currGeomPrimitiveId;}
-DG_INLINE void              ViewContext::SetGeomPrimitiveId(T_GeomPrimitiveId geomId) {m_currGeomPrimitiveId = geomId;}
+DG_INLINE GeomStreamEntryId ViewContext::GetGeomStreamEntryId() const {return m_currGeomStreamEntryId;}
+DG_INLINE void              ViewContext::SetGeomStreamEntryId(GeomStreamEntryId geomId) {m_currGeomStreamEntryId = geomId;}
 
 DG_INLINE IDrawGeom::IDrawGeom() { }
 

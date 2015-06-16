@@ -37,7 +37,7 @@ TEST(BasicAnnotationTextStyleTest, PropertyBagTypes)
     {
     AnnotationTextStylePropertyBagPtr data = AnnotationTextStylePropertyBag::Create();
 
-    data->SetIntegerProperty(AnnotationTextStyleProperty::ColorId, 2);
+    data->SetIntegerProperty(AnnotationTextStyleProperty::Color, 2);
     data->SetIntegerProperty(AnnotationTextStyleProperty::FontId, 2);
     data->SetRealProperty(AnnotationTextStyleProperty::Height, 2.0);
     data->SetIntegerProperty(AnnotationTextStyleProperty::IsBold, 1);
@@ -53,7 +53,7 @@ TEST(BasicAnnotationTextStyleTest, PropertyBagTypes)
 #define DECLARE_AND_SET_DATA_1(STYLE_PTR)\
     Utf8String name = "MyStyle";                                                                STYLE_PTR->SetName(name.c_str());\
     Utf8String description = "MyDescription";                                                   STYLE_PTR->SetDescription(description.c_str());\
-    uint32_t colorId = 11;                                                                      STYLE_PTR->SetColor(ColorDef(colorId));\
+    ElementColor color(ColorDef(0xff, 0x00, 0x00));                                             STYLE_PTR->SetColor(color);\
     DgnFontId fontId(21);                                                                       STYLE_PTR->SetFontId(fontId);\
     double height = 31.31;                                                                      STYLE_PTR->SetHeight(height);\
     bool isBold = true;                                                                         STYLE_PTR->SetIsBold(isBold);\
@@ -65,7 +65,7 @@ TEST(BasicAnnotationTextStyleTest, PropertyBagTypes)
 #define VERIFY_DATA_1(STYLE_PTR)\
     EXPECT_TRUE(name.Equals(STYLE_PTR->GetName()));\
     EXPECT_TRUE(description.Equals(STYLE_PTR->GetDescription()));\
-    EXPECT_TRUE(colorId == STYLE_PTR->GetColor().GetValue());\
+    EXPECT_TRUE(color == STYLE_PTR->GetColor());\
     EXPECT_TRUE(fontId == STYLE_PTR->GetFontId());\
     EXPECT_TRUE(height == STYLE_PTR->GetHeight());\
     EXPECT_TRUE(isBold == STYLE_PTR->IsBold());\
@@ -95,10 +95,8 @@ TEST_F(AnnotationTextStyleTest, DefaultsAndAccessors)
     // Defaults
     EXPECT_TRUE(style->GetName().empty());
     EXPECT_TRUE(style->GetDescription().empty());
-    EXPECT_TRUE(0 == style->GetColor().GetValue());
-#ifdef WIP_ANNOTATION_TEXTSTYLE_TEST
+    EXPECT_TRUE(style->GetColor().IsByCategory());
     EXPECT_TRUE(!style->GetFontId().IsValid());
-#endif
     EXPECT_TRUE(1.0 == style->GetHeight());
     EXPECT_TRUE(!style->IsBold());
     EXPECT_TRUE(!style->IsItalic());
@@ -186,9 +184,9 @@ TEST_F(AnnotationTextStyleTest, TableReadWrite)
     ASSERT_TRUE(mutatedStyle.IsValid());
 
     name = "DifferentName"; mutatedStyle->SetName(name.c_str());
-    colorId *= 100;         mutatedStyle->SetColor(ColorDef(colorId));
-    height *= 100.0;        mutatedStyle->SetHeight(height);
-    isBold = false;         mutatedStyle->SetIsBold(isBold);
+    color = ElementColor(ColorDef(0x00, 0xff, 0x00)); mutatedStyle->SetColor(color);
+    height *= 100.0; mutatedStyle->SetHeight(height);
+    isBold = false; mutatedStyle->SetIsBold(isBold);
 
     ASSERT_TRUE(SUCCESS == project.Styles().AnnotationTextStyles().Update(*mutatedStyle));
 

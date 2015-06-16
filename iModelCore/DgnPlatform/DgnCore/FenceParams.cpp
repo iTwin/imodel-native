@@ -121,7 +121,7 @@ virtual void    _PopTransClip () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   11/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GetTestPointFrustum (DPoint3dR fencePt, ClipPrimitiveCR clipPrimitive)
+void GetTestPointWorld (DPoint3dR fencePt, ClipPrimitiveCR clipPrimitive)
     {
     ClipPolygonCP   clipPolygon;
 
@@ -145,7 +145,7 @@ void GetTestPointFrustum (DPoint3dR fencePt, ClipPrimitiveCR clipPrimitive)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   11/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GetTestDirectionFrustum (DVec3dR fenceDir)
+void GetTestDirectionWorld (DVec3dR fenceDir)
     {
     Transform       invTransform;
     ClipVectorPtr   clip = m_fp->GetClipVector();
@@ -176,8 +176,8 @@ void GetBoresiteLocations (bvector<DRay3d>& out)
         DPoint3d    fencePt, localPt;
         DRay3d      boresite;
 
-        GetTestPointFrustum (fencePt, *clipPrimitive);
-        m_context->FrustumToLocal (&localPt, &fencePt, 1);
+        GetTestPointWorld (fencePt, *clipPrimitive);
+        m_context->WorldToLocal (&localPt, &fencePt, 1);
         PickContext::InitBoresite (boresite, localPt, viewToLocal);
 
         out.push_back (boresite);
@@ -222,9 +222,9 @@ void            CheckCurrentAccept ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-Transform const*    GetCurrentFenceAcceptTransform (TransformP transformP)
+TransformCP GetCurrentFenceAcceptTransform (TransformP transformP)
     {
-    Transform const* placementTransP = m_context->GetCurrLocalToFrustumTransformCP ();
+    TransformCP placementTransP = m_context->GetCurrLocalToWorldTransformCP ();
 
     if (placementTransP)
         *transformP = *placementTransP;
@@ -609,7 +609,7 @@ virtual void    _DrawQvElem (QvElem* qvElem, int subElemIndex) override
     DVec3d      viewNormal, fenceNormal;
 
     m_context->GetViewport ()->GetRotMatrix ().GetRow (viewNormal, 2);
-    GetTestDirectionFrustum (fenceNormal);
+    GetTestDirectionWorld (fenceNormal);
 
     bool        alignedToView = TO_BOOL (fenceNormal.IsParallelTo (viewNormal));
 
@@ -618,7 +618,7 @@ virtual void    _DrawQvElem (QvElem* qvElem, int subElemIndex) override
         {
         DPoint3d    fencePt;
 
-        GetTestPointFrustum (fencePt, *primitive);
+        GetTestPointWorld (fencePt, *primitive);
 
         // qvi_locateElementCB doesn't allow bore direction to be specified...must rotate view...
         if (!alignedToView)
@@ -635,7 +635,7 @@ virtual void    _DrawQvElem (QvElem* qvElem, int subElemIndex) override
         DPoint3d    pickPt;
         DPoint4d    pickPtView;
 
-        m_context->FrustumToView (&pickPtView, &fencePt, 1);
+        m_context->WorldToView (&pickPtView, &fencePt, 1);
         pickPtView.GetProjectedXYZ (pickPt);
 
         bool        gotHit = false;

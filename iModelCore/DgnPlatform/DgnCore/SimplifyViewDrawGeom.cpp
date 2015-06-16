@@ -548,7 +548,7 @@ void SimplifyViewDrawGeom::ClipAndProcessCurveVector (CurveVectorCR curves, bool
             {
             bvector<CurveVectorPtr> insideCurves;
 
-            if (SUCCESS == T_HOST.GetSolidsKernelAdmin()._ClipCurveVector (insideCurves, curves, *GetCurrClip(), m_context->GetCurrLocalToFrustumTransformCP()))
+            if (SUCCESS == T_HOST.GetSolidsKernelAdmin()._ClipCurveVector (insideCurves, curves, *GetCurrClip(), m_context->GetCurrLocalToWorldTransformCP()))
                 {
                 for (CurveVectorPtr tmpCurves: insideCurves)
                     CurveVectorOutputProcessor (*tmpCurves, filled);
@@ -2114,7 +2114,7 @@ StatusInt SimplifyViewDrawGeom::ProcessTextureOutlines (PolyfaceQueryCR facets)
         {
         size_t  nFacetPoints = visitor->NumEdgesThisFace();
 
-        material->ComputeUVParams (facetParams, m_context->GetCurrLocalToFrustumTransformCP(), projectionInfo, *visitor, layer);
+        material->ComputeUVParams (facetParams, m_context->GetCurrLocalToWorldTransformCP(), projectionInfo, *visitor, layer);
         ProcessFacetTextureOutlines (*builder, visitor->GetPointCP(), &facetParams[0], visitor->GetVisibleCP(), nFacetPoints, outlinePoints, triangulatedOutlineIndices);
         }
 

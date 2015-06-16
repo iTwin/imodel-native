@@ -70,9 +70,14 @@ BentleyStatus AnnotationTextBlockDraw::DrawTextRun(AnnotationLayoutRunCR layoutR
     
     adjustForSubOrSuperScript(ts, run);
     
-#ifdef MERGE_0501_06_JEFF
-    ts.Draw(context);
-#endif
+    context.GetCurrentDisplayParams()->ResetAppearance();
+    
+    ElementColor color = effectiveStyle->GetColor();
+    if (!color.IsByCategory())
+        context.GetCurrentDisplayParams()->SetLineColor(*color.GetColorCP());
+    
+    context.CookDisplayParams();
+    context.DrawTextString(ts);
     
     return SUCCESS;
     }
@@ -140,9 +145,7 @@ BentleyStatus AnnotationTextBlockDraw::DrawFractionRun(AnnotationLayoutRunCR lay
         TextStyleInterop::AnnotationToTextString(tsNumerator.GetStyleR(), *effectiveStyle);
         tsNumerator.GetStyleR().SetSize(fontSize);
 
-#ifdef MERGE_0501_06_JEFF
-        tsNumerator.Draw(context);
-#endif
+        context.DrawTextString(tsNumerator);
         }
     
     if (!run.GetDenominatorContent().empty())
@@ -153,9 +156,7 @@ BentleyStatus AnnotationTextBlockDraw::DrawFractionRun(AnnotationLayoutRunCR lay
         TextStyleInterop::AnnotationToTextString(tsDenominator.GetStyleR(), *effectiveStyle);
         tsDenominator.GetStyleR().SetSize(fontSize);
 
-#ifdef MERGE_0501_06_JEFF
-        tsDenominator.Draw(context);
-#endif
+        context.DrawTextString(tsDenominator);
         }
     
     return SUCCESS;
