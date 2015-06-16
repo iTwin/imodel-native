@@ -95,7 +95,7 @@ struct ECDbMapCATests : public ::testing::Test
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                   Affan.Khan                         02/15
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void ExecuteRelationshipInsertionIntegrityTest (ECDbR ecdb, bool allowDuplicateRelationships, bool allowForeignKeyConstraint)
+    void ExecuteRelationshipInsertionIntegrityTest (ECDbR ecdb, bool allowDuplicateRelationships, bool allowForeignKeyConstraint, bool schemaImportExpectedToSucceed)
         {
         ECSchemaPtr testSchema;
         ECClassP foo = nullptr, goo = nullptr;
@@ -173,7 +173,13 @@ struct ECDbMapCATests : public ::testing::Test
             ASSERT_TRUE(oneFooHasOneGoo->SetCustomAttribute(*caInst) == ECOBJECTS_STATUS_Success);
             }
 
-        ASSERT_EQ (ecdb.Schemas ().ImportECSchemas (readContext->GetCache ()), BentleyStatus::SUCCESS);
+        if (schemaImportExpectedToSucceed)
+            ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (readContext->GetCache ()));
+        else
+            {
+            ASSERT_EQ(ERROR, ecdb.Schemas().ImportECSchemas(readContext->GetCache()));
+            return;
+            }
 
         std::vector<ECInstanceKey> fooKeys, gooKeys;
         const int maxFooInstances = 3;
@@ -280,7 +286,7 @@ TEST_F (ECDbMapCATests, ForeignKeyRelationshipMap_EnforceReferentialIntegrity)
     {
     ECDbTestProject test;
     ECDbR ecdb = test.Create ("ForeignKeyRelationshipMap_EnforceReferentialIntegrity.ecdb");
-    ExecuteRelationshipInsertionIntegrityTest (ecdb, false, true);
+    ExecuteRelationshipInsertionIntegrityTest (ecdb, false, true, true);
     //when AllowDuplicate is turned of, OneFooHasManyGoo will also be mapped as endtable therefore ReferentialIntegrityCheck will be performed for it, so there will be two rows in the ForeignKey table
     ASSERT_FALSE (ecdb.TableExists ("ts_OneFooHasOneGoo"));
     ASSERT_FALSE (ecdb.TableExists ("ts_OneFooHasManyGoo"));
@@ -306,33 +312,17 @@ TEST_F (ECDbMapCATests, ForeignKeyConstraint_EnforceReferentialIntegrityCheck_Al
     {
     ECDbTestProject test;
     ECDbR ecdb = test.Create ("ForeignKeyConstraint_EnforceReferentialIntegrityCheck_AllowDuplicateRelation.ecdb");
-    ExecuteRelationshipInsertionIntegrityTest (ecdb, true, true);
-    //when AllowDuplicate is turned on, OneFooHasManyGoo will also be mapped as linktable therefore ReferentialIntegrityCheck will not be performed for it, so there will be only one row in the ForeignKey table
-    ASSERT_TRUE (ecdb.TableExists ("ts_OneFooHasOneGoo"));
-    ASSERT_TRUE (ecdb.TableExists ("ts_OneFooHasManyGoo"));
-
-    BeSQLite::Statement sqlStatment;
-    auto stat = sqlStatment.Prepare (ecdb, "SELECT ec_Column.[Name] FROM ec_Column JOIN ec_ForeignKey ON ec_ForeignKey.[TableId] = ec_Column.[TableId] JOIN ec_ForeignKeyColumn ON ec_ForeignKeyColumn.[ColumnId] = ec_Column.[Id] WHERE ec_ForeignKey.[Id] = 1");
-    ASSERT_EQ (stat, DbResult::BE_SQLITE_OK);
-    size_t rowCount = 0;
-    while (sqlStatment.Step () != DbResult::BE_SQLITE_DONE)
-        {
-        rowCount++;
-        }
-    ASSERT_EQ (0, rowCount);
-
-    sqlStatment.Finalize ();
-    ecdb.CloseDb ();
+    ExecuteRelationshipInsertionIntegrityTest (ecdb, true, true, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                         02/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (ECDbMapCATests, RelationshipTest_DoNotAllowDupilcateRelationships)
+TEST_F (ECDbMapCATests, RelationshipTest_DoNotAllowDuplicateRelationships)
     {
     ECDbTestProject test;
     ECDbR ecdb = test.Create ("RelationshipCardinalityTest.ecdb");
-    ExecuteRelationshipInsertionIntegrityTest (ecdb, false, false);
+    ExecuteRelationshipInsertionIntegrityTest (ecdb, false, false, true);
     ASSERT_TRUE (ecdb.TableExists ("ts_Foo"));
     ASSERT_TRUE (ecdb.TableExists ("ts_Goo"));
     ASSERT_FALSE (ecdb.TableExists ("ts_OneFooHasOneGoo"));
@@ -347,7 +337,7 @@ TEST_F (ECDbMapCATests, RelationshipTest_AllowDuplicateRelationships)
     {
     ECDbTestProject test;
     ECDbR ecdb = test.Create ("RelationshipCardinalityTest_AllowDuplicateRelationships.ecdb");
-    ExecuteRelationshipInsertionIntegrityTest (ecdb, true, false);
+    ExecuteRelationshipInsertionIntegrityTest (ecdb, true, false, true);
     ASSERT_TRUE (ecdb.TableExists ("ts_Foo"));
     ASSERT_TRUE (ecdb.TableExists ("ts_Goo"));
     ASSERT_TRUE (ecdb.TableExists ("ts_OneFooHasOneGoo"));
