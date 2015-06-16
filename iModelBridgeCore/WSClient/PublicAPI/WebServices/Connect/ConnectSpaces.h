@@ -76,7 +76,7 @@ public:
     WSCLIENT_EXPORT static bool IsInitialized();
     WSCLIENT_EXPORT static void Uninitialize();
 
-    WSCLIENT_EXPORT static bool ParseLastModified(const std::string &lastModified, Bentley::DateTime &dateTime);
+    WSCLIENT_EXPORT static bool ParseLastModified(const std::string &lastModified, BentleyApi::DateTime &dateTime);
 
     WSCLIENT_EXPORT bool OnMessageReceived(Utf8CP messageType, JsonValueCR messageObj);
 
