@@ -393,21 +393,7 @@ bool ElementGeometry::TransformInPlace (TransformCR transform)
         case GeometryType::TextString:
             {
             TextStringR text = *GetAsTextString();
-            
-            DPoint3d newOrigin = text.GetOrigin();
-            transform.Multiply(newOrigin);
-
-            RotMatrix newOrientation = text.GetOrientation();
-            DPoint2d scaleFactor;
-            TextString::TransformOrientationAndExtractScale(scaleFactor, newOrientation, transform);
-
-            DPoint2d newSize = text.GetStyle().GetSize();
-            newSize.x *= scaleFactor.x;
-            newSize.y *= scaleFactor.y;
-
-            text.SetOrigin(newOrigin);
-            text.SetOrientation(newOrientation);
-            text.GetStyleR().SetSize(newSize);
+            text.ApplyTransform(transform);
 
             return true;
             }
@@ -1351,7 +1337,7 @@ void ElementGeomIO::Writer::Append (ElementGeometryCR elemGeom)
 void ElementGeomIO::Writer::Append(TextStringCR text)
     {
     bvector<Byte> data;
-    if (SUCCESS != TextStringPersistence::EncodeAsFlatBuf(data, text, m_db))
+    if (SUCCESS != TextStringPersistence::EncodeAsFlatBuf(data, text, m_db, TextStringPersistence::FlatBufEncodeOptions::IncludeGlyphLayoutData))
         return;
 
     Append(Operation(OpCode::TextString, (uint32_t)data.size(), &data[0]));

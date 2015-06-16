@@ -39,7 +39,7 @@ private:
 
 protected:
     explicit PhysicalTextAnnotationElement(CreateParams const& params) : T_Super(params) {}
-    PhysicalTextAnnotationElement(CreateParams const& params, TextAnnotationCR seedAnnotation) : T_Super(params), m_annotation(seedAnnotation.Clone()) {}
+    PhysicalTextAnnotationElement(CreateParams const& params, TextAnnotationCR seedAnnotation) : T_Super(params) { SetAnnotation(seedAnnotation); }
     DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertInDb() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateInDb() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _LoadFromDb() override;

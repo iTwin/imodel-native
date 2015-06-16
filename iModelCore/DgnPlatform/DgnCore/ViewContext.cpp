@@ -2386,6 +2386,21 @@ void ElemDisplayParams::Init()
     m_plotInfo  = nullptr;
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     06/2015
+//---------------------------------------------------------------------------------------
+void ElemDisplayParams::ResetAppearance()
+    {
+    DgnCategoryId categoryId = m_categoryId;
+    DgnSubCategoryId subCategoryId = m_subCategoryId;
+    
+    Init();
+    
+    SetCategoryId(categoryId);
+    SetSubCategoryId(subCategoryId);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
