@@ -660,10 +660,10 @@ TEST(ECDbSchemaManager, UpdateExistingSchema)
     ASSERT_TRUE(schemaPtr != NULL);
     schemaCache->AddSchema(*schemaPtr);
 
-    Bentley::BeTest::SetFailOnAssert(false);
+    BeTest::SetFailOnAssert(false);
     Savepoint s(ecdbr, "test");
     ASSERT_EQ(ERROR, ecdbr.Schemas().ImportECSchemas(*schemaCache, ECDbSchemaManager::ImportOptions(false, true))) << "couldn't update the existing schema";
-    Bentley::BeTest::SetFailOnAssert(true);
+    BeTest::SetFailOnAssert(true);
     s.Cancel();
 
     ECSchemaCP schemap = ecdbr. Schemas ().GetECSchema ("TestSchema", true);

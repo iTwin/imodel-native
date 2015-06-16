@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/Parser/SqlTypes.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -11,7 +11,7 @@
 #include <Bentley/Bentley.h>
 #include <stdlib.h>
 #include "TextEncoding.h"
-using namespace Bentley;
+
 #define OOO_DLLPUBLIC_DBTOOLS 
 ////////////////////////OSL//////////////////////////////////////////////////
 //#if OSL_DEBUG_LEVEL > 0

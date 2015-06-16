@@ -120,10 +120,10 @@
     definition of the ECClasses and ECProperties used in the ECSQL statement.
 
     @section ECDbCodeSampleECSqlStatementAndDateTimeProperties ECSqlStatement and date time properties
-    In the API date time values are represented by the Bentley::DateTime class (as in @ref ECObjectsGroup).
-    Each DateTime instance can contain metadata about the actual date time value (see also Bentley::DateTime::Info).
+    In the API date time values are represented by the BentleyApi::DateTime class (as in @ref ECObjectsGroup).
+    Each DateTime instance can contain metadata about the actual date time value (see also BentleyApi::DateTime::Info).
     ECDb persists date times in the Julian Day format which is one of the preferred formats to store date times in SQLite
-    (see Bentley::DateTime::ToJulianDay).
+    (see BentleyApi::DateTime::ToJulianDay).
     The metadata that comes along with a DateTime instance is not persisted per-instance. Instead, clients can
     decorate the respective ECProperty with the @b %DateTimeInfo custom attribute from the standard ECSchema
     @b Bentley_Standard_CustomAttributes. So all date times within a given ECProperty have the same date time metadata.

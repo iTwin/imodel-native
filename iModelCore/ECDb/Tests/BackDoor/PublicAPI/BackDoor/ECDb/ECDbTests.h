@@ -23,13 +23,13 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 struct ECDbTestLogger
     {
     private:
-        static Bentley::NativeLogging::ILogger* s_logger;
+        static BentleyApi::NativeLogging::ILogger* s_logger;
 
         ECDbTestLogger ();
         ~ECDbTestLogger ();
 
     public:
-        static Bentley::NativeLogging::ILogger& Get ();
+        static BentleyApi::NativeLogging::ILogger& Get ();
     };
 
 #define LOG (ECDbTestLogger::Get())

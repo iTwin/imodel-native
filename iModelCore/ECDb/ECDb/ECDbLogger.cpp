@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbLogger.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -14,14 +14,13 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                 Krischan.Eberle                    03/2014
 //---------------------------------------------------------------------------------------
 //static member initialization
-Bentley::NativeLogging::ILogger* ECDbLogger::s_logger = nullptr;
-
+BentleyApi::NativeLogging::ILogger* ECDbLogger::s_logger = nullptr;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    03/2014
 //---------------------------------------------------------------------------------------
 //static
-Bentley::NativeLogging::ILogger& ECDbLogger::Get ()
+BentleyApi::NativeLogging::ILogger& ECDbLogger::Get ()
     {
     if (s_logger == nullptr)
         s_logger = NativeLogging::LoggingManager::GetLogger (L"ECDb");

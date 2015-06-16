@@ -65,7 +65,7 @@
 
     In order to help applications analyze which statements to reuse and which not, applications can turn on
     ECSqlStatement preparation diagnostics:
-    - turn on the log4cxx based @ref Bentley::NativeLogging "Bentley logging"
+    - turn on the log4cxx based @ref BentleyApi::NativeLogging "Bentley logging"
     - in the <b>log4cxx configuration</b> define a @b logger or a <b>logging category</b> with the
     name <b>Diagnostics.ECSqlStatement.Prepare</b> and assign it the log severity @c @b TRACE.
     With that enabled, %ECDb logs all prepared ECSQL statements (i.e. all calls to BentleyApi::BeSQLite::EC::ECSqlStatement::Prepare). For each call

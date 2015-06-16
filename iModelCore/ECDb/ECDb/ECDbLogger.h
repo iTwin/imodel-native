@@ -10,7 +10,6 @@
 #include <ECDb/ECDbTypes.h>
 #include <Logging/bentleylogging.h>
 
-
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
@@ -22,13 +21,13 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ECDbLogger
     {
 private:
-    static Bentley::NativeLogging::ILogger* s_logger;
+    static BentleyApi::NativeLogging::ILogger* s_logger;
 
     ECDbLogger ();
     ~ECDbLogger ();
 
 public:
-    static Bentley::NativeLogging::ILogger& Get ();
+    static BentleyApi::NativeLogging::ILogger& Get ();
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
