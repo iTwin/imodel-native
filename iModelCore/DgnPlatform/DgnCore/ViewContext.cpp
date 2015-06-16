@@ -66,7 +66,6 @@ ViewContext::ViewContext()
     m_isCameraOn                = false;
     m_frustumTransClipDepth     = 0;
     m_edgeMaskState             = EdgeMaskState_None;
-    m_currGeomPrimitiveId       = make_bpair(-1, -1);
 
     m_rasterDisplayParams.SetFlags(0);
 
@@ -2385,6 +2384,21 @@ void ElemDisplayParams::Init()
     m_gradient  = nullptr;
     m_pattern   = nullptr;
     m_plotInfo  = nullptr;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     06/2015
+//---------------------------------------------------------------------------------------
+void ElemDisplayParams::ResetAppearance()
+    {
+    DgnCategoryId categoryId = m_categoryId;
+    DgnSubCategoryId subCategoryId = m_subCategoryId;
+    
+    Init();
+    
+    SetCategoryId(categoryId);
+    SetSubCategoryId(subCategoryId);
     }
 
 /*---------------------------------------------------------------------------------**//**

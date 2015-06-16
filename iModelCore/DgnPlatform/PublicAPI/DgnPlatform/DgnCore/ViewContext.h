@@ -383,7 +383,7 @@ protected:
     DgnElement::Hilited     m_hiliteState;
     RasterDisplayParams     m_rasterDisplayParams;
     IElemTopologyPtr        m_currElemTopo;
-    T_GeomPrimitiveId       m_currGeomPrimitiveId;
+    GeomStreamEntryId       m_currGeomStreamEntryId;
 
     bool                    m_scanRangeValid;
     double                  m_levelOfDetail;
@@ -911,11 +911,11 @@ DGNPLATFORM_EXPORT IElemTopologyCP GetElemTopology () const;
 //! @param topo An object holding additional information about the graphics to be drawn or nullptr to clear the current topology pointer.
 DGNPLATFORM_EXPORT void SetElemTopology (IElemTopologyP topo);
 
-//! Query the current T_GeomPrimitiveId.
-DGNPLATFORM_EXPORT T_GeomPrimitiveId GetGeomPrimitiveId () const;
+//! Query the current GeomStreamEntryId.
+DGNPLATFORM_EXPORT GeomStreamEntryId GetGeomStreamEntryId () const;
 
-//! Set the current T_GeomPrimitiveId.
-DGNPLATFORM_EXPORT void SetGeomPrimitiveId (T_GeomPrimitiveId geomId);
+//! Set the current GeomStreamEntryId.
+DGNPLATFORM_EXPORT void SetGeomStreamEntryId (GeomStreamEntryId geomId);
 
 //@}
 
