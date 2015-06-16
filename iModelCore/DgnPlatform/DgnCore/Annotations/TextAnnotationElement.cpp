@@ -44,7 +44,7 @@ struct TextAnnotationGraphicsProcessor : IElementGraphicsProcessor
     TextAnnotationGraphicsProcessor(TextAnnotationCR annotation, DgnCategoryId categoryId, ElementGeometryBuilderR builder) :
         m_annotation(annotation), m_categoryId(categoryId), m_builder(builder), m_transform(Transform::FromIdentity()) {}
 
-    virtual void _AnnounceTransform(TransformCP transform) override { (nullptr != transform) ? m_transform = *transform : m_transform.InitIdentity(); }
+    virtual void _AnnounceTransform(TransformCP transform) override { if (nullptr != transform) { m_transform = *transform; } else { m_transform.InitIdentity(); } }
     virtual void _AnnounceElemDisplayParams(ElemDisplayParamsCR params) override { m_builder.Append(params); }
     virtual BentleyStatus _ProcessTextString(TextStringCR) override;
     virtual BentleyStatus _ProcessCurveVector(CurveVectorCR, bool isFilled) override;
