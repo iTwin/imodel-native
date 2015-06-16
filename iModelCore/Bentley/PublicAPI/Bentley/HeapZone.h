@@ -14,9 +14,9 @@
 #include <Bentley/bpool.h>
 #include <Bentley/BentleyAllocator.h>
 
-namespace BENTLEY_API_NAMESPACE_NAME {struct HeapZone; typedef struct HeapZone* HeapZoneP;}
+namespace BENTLEY_NAMESPACE_NAME {struct HeapZone; typedef struct HeapZone* HeapZoneP;}
 
-BEGIN_BENTLEY_API_NAMESPACE
+BEGIN_BENTLEY_NAMESPACE
 
 /*=================================================================================**//**
 * @bsiclass                                                     Keith.Bentley   10/04
@@ -305,6 +305,6 @@ void EmptyAll()
     }
 };
 
-END_BENTLEY_API_NAMESPACE
+END_BENTLEY_NAMESPACE
 
 /** @endcond */

@@ -145,11 +145,27 @@
 #define INT64_MIN   LLONG_MIN
 #endif
 
-/** @namespace Bentley Contains types defined by %Bentley Systems that will have the same data layout across releases. */
-#define BENTLEY_NAMESPACE_NAME Bentley
+/** @namespace Bentley Contains types defined by %Bentley Systems. */
+#if defined (DOCUMENTATION_GENERATOR)
+    // Hold the namespace name constant from an SDK documentation perspective
+    #define BENTLEY_NAMESPACE_NAME BentleyApi
+#else
+    // The actual version-specific namespace name from a code/type perspective
+    #define BENTLEY_NAMESPACE_NAME BentleyG06
+#endif
+
 #define BEGIN_BENTLEY_NAMESPACE namespace BENTLEY_NAMESPACE_NAME {
 #define END_BENTLEY_NAMESPACE   }
 #define USING_NAMESPACE_BENTLEY using namespace BENTLEY_NAMESPACE_NAME;
+
+// create the Bentley namespace
+BEGIN_BENTLEY_NAMESPACE
+END_BENTLEY_NAMESPACE
+
+#if !defined (DOCUMENTATION_GENERATOR)
+    // namespace alias that always refers to the current version.
+    namespace BentleyApi = BENTLEY_NAMESPACE_NAME;
+#endif
 
 // use unnamed namespace instead of static in C++ source files.
 #define BEGIN_UNNAMED_NAMESPACE namespace {
@@ -170,9 +186,8 @@
     typedef structclass _namespace_ :: _sourceName_ const&    _name_##CR; }
 
 #define ADD_BENTLEY_NAMESPACE_TYPEDEFS(_namespace_,_name_) ADD_BENTLEY_NAMESPACE_TYPEDEFS1(_namespace_,_name_,_name_,struct)
-#define ADD_BENTLEY_ENUM_TYPEDEF(_namespace_,_name_,_tEnum_) namespace BENTLEY_NAMESPACE_NAME {typedef enum _namespace_ :: _name_ _tEnum_;}
 #define BENTLEY_NAMESPACE_TYPEDEF(t,tP)    namespace BENTLEY_NAMESPACE_NAME {struct t; typedef struct BENTLEY_NAMESPACE_NAME::t*   tP;}
-#define BENTLEY_NAMESPACE_TYPEDEFS(_name_) namespace BENTLEY_NAMESPACE_NAME {struct _name_;} ADD_BENTLEY_NAMESPACE_TYPEDEFS(BENTLEY_NAMESPACE_NAME,_name_)
+#define BENTLEY_NAMESPACE_TYPEDEFS(_name_) BEGIN_BENTLEY_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_NAMESPACE
 #define BENTLEY_REF_COUNTED_PTR(_sname_) namespace BENTLEY_NAMESPACE_NAME {struct _sname_; typedef RefCountedPtr<_sname_> _sname_##Ptr;}
 
 #if !defined (NULL)

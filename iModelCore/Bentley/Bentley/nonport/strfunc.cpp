@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/strfunc.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <Bentley/Bentley.h>
@@ -2134,7 +2134,7 @@ static int dovprintf (PrintSink& ps, CharCP fmt, va_list args, bool isNaturalWch
     return ps.GetError() != 0? EOF: (int)ps.GetCount();
     }
 
-int Bentley::BeUtf8StringSprintf (Utf8String& buffer, CharCP fmt, va_list ap, int /*initialLengthGuess*/)
+int BentleyApi::BeUtf8StringSprintf (Utf8String& buffer, CharCP fmt, va_list ap, int /*initialLengthGuess*/)
     {
     buffer.clear();
     Utf8StringPrintSink ups (buffer);
@@ -2142,7 +2142,7 @@ int Bentley::BeUtf8StringSprintf (Utf8String& buffer, CharCP fmt, va_list ap, in
     return (ups.GetError() != 0 ? EOF : (int)ups.GetCount());
     }
 
-int Bentley::BeWStringSprintf (WString& buffer, WCharCP fmt, va_list ap, int /*initialLengthGuess*/)
+int BentleyApi::BeWStringSprintf (WString& buffer, WCharCP fmt, va_list ap, int /*initialLengthGuess*/)
     {
     buffer.clear();
     WStringPrintSink ups (buffer);

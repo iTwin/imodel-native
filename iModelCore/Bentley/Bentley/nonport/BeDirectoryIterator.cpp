@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/BeDirectoryIterator.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)||defined(BENTLEY_WINRT)
@@ -86,7 +86,7 @@ static WString fromUtf8 (char const* u)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Bentley::FileNamePattern::Parse (BeFileName& dir, WString& glob, BeFileNameCR pathAndPattern)
+void BentleyApi::FileNamePattern::Parse (BeFileName& dir, WString& glob, BeFileNameCR pathAndPattern)
     {
     WCharCP endPath = wcsrchr (pathAndPattern, DIR_SEPARATOR_CHAR);
 
@@ -121,7 +121,7 @@ void Bentley::FileNamePattern::Parse (BeFileName& dir, WString& glob, BeFileName
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Bentley::FileNamePattern::MatchesGlob (BeFileNameCR name, WCharCP glob)
+bool BentleyApi::FileNamePattern::MatchesGlob (BeFileNameCR name, WCharCP glob)
     {
 #if defined (BENTLEY_WINRT)
     WString lname (name);

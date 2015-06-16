@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/WString_test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -11,8 +11,6 @@
 #include <thread>
 #include <map>
 #include <vector>
-
-using namespace Bentley;
 
 #define VERIFY(X) ASSERT_TRUE(X)
 

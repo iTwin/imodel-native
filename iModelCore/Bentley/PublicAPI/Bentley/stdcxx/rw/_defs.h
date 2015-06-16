@@ -59,9 +59,9 @@
 #endif   //_RWSTD_RW_CONFIG_H_INCLUDED
 
 // *** BENTLEY_CHANGE
-#define BENTLEY_BSTDCXX Bentley::Bstdcxx
-#define NAMESPACE_BENTLEY_BSTDCXX_BEGIN namespace BENTLEY_NAMESPACE_NAME { namespace Bstdcxx {
-#define NAMESPACE_BENTLEY_BSTDCXX_END   }}
+#define BENTLEY_BSTDCXX BentleyApi::Bstdcxx
+#define NAMESPACE_BENTLEY_BSTDCXX_BEGIN BEGIN_BENTLEY_NAMESPACE namespace Bstdcxx {
+#define NAMESPACE_BENTLEY_BSTDCXX_END   } END_BENTLEY_NAMESPACE
 
 // provide definitions for C++ versions of standard C headers
 // if a header is not available its name is #defined to the name of

@@ -22,6 +22,7 @@
             <Files ProductDirectoryName="VendorNotices" Required="true">Delivery/bentley-notice.txt</Files>
             <Files ProductDirectoryName="VendorNotices" Required="true">Delivery/btree-notice.txt</Files>
             <Files ProductDirectoryName="VendorNotices" Required="true">Delivery/bvector-notice.txt</Files>
+            <Files ProductDirectoryName="BentleyApiPublicMki" SubPartDirectory="PublicMki" Required="false">PublicMki/BentleyApi.mki</Files>
         </Bindings>
     </Part>
 

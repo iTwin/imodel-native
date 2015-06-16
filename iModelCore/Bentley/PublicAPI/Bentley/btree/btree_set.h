@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/btree/btree_set.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -67,7 +67,7 @@ To understand the @c bset class, consult the documentation for @c std::set.
 @ingroup BeCollectionsGroup
 */
 template <typename Key, typename Compare = std::less<Key>, uint16_t EntriesPerNode = 32,
-          typename Alloc = Bentley::BentleyAllocator<Key> >
+          typename Alloc = BentleyApi::BentleyAllocator<Key> >
 class bset : public btree_unique_container<
   btree<btree_set_params<Key, Compare, Alloc, EntriesPerNode*sizeof(Key)> > > {
 
@@ -117,7 +117,7 @@ inline void swap(bset<K, C, N, A> &x,
 
 // The btree_multiset class is needed mainly for its constructors.
 template <typename Key, typename Compare = std::less<Key>, uint16_t EntriesPerNode = 32,
-          typename Alloc = Bentley::BentleyAllocator<Key> >
+          typename Alloc = BentleyApi::BentleyAllocator<Key> >
 class bmultiset : public btree_multi_container<
   btree<btree_set_params<Key, Compare, Alloc, EntriesPerNode*sizeof(Key)> > > {
 

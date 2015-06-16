@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/DateTimeTestHelpers.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -24,25 +24,23 @@
   #endif
 #endif
 
-USING_NAMESPACE_BENTLEY
-
 //************ DateTimeLogger ********************
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    03/2014
 //---------------------------------------------------------------------------------------
 //static member initialization
-Bentley::NativeLogging::ILogger* DateTimeLogger::s_logger = nullptr;
+BentleyApi::NativeLogging::ILogger* DateTimeLogger::s_logger = nullptr;
 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    03/2014
 //---------------------------------------------------------------------------------------
 //static
-Bentley::NativeLogging::ILogger& DateTimeLogger::Get ()
+BentleyApi::NativeLogging::ILogger& DateTimeLogger::Get ()
     {
     if (s_logger == nullptr)
-        s_logger = Bentley::NativeLogging::LoggingManager::GetLogger (L"DateTimeTests");
+        s_logger = BentleyApi::NativeLogging::LoggingManager::GetLogger (L"DateTimeTests");
 
     return *s_logger;
     }
