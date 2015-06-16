@@ -216,7 +216,7 @@ DgnDbStatus DgnElement::_OnInsert()
 
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); )
         {
-        DgnDbStatus stat = entry->_OnInsert(*this);
+        DgnDbStatus stat = entry->second->_OnInsert(*this);
         if (DgnDbStatus::Success != stat)
             return stat;
         }
@@ -253,7 +253,7 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
     UpdateLastModTime();
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); )
         {
-        DgnDbStatus stat = entry->_OnUpdate(*this, original);
+        DgnDbStatus stat = entry->second->_OnUpdate(*this, original);
         if (DgnDbStatus::Success != stat)
             return stat;
         }
@@ -287,7 +287,7 @@ DgnDbStatus DgnElement::_OnDelete() const
     {
     for (auto entry=m_appData.begin(); entry!=m_appData.end(); )
         {
-        DgnDbStatus stat = entry->_OnDelete(*this, original);
+        DgnDbStatus stat = entry->second->_OnDelete(*this);
         if (DgnDbStatus::Success != stat)
             return stat;
         }

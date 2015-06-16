@@ -886,7 +886,6 @@ private:
     void AddToPool(DgnElementCR) const;
     void DropFromPool(DgnElementCR) const;
     void SendOnLoadedEvent(DgnElementR elRef) const;
-    void OnChangesetApply(TxnSummary const&);
     void OnChangesetApplied(TxnSummary const&);
     void FinishUpdate(DgnElementCR replacement, DgnElementCR original);
     DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, bool makePersistent) const;

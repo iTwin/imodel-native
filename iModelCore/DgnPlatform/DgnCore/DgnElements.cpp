@@ -1012,30 +1012,6 @@ DgnElements::DgnElements(DgnDbR dgndb) : DgnDbTable(dgndb), m_heapZone(0, false)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* A changeset is about to be applied to the database. The database is currently entirely in its pre-changed state.
-* @bsimethod                                    Keith.Bentley                   06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::OnChangesetApply(TxnSummary const& summary)
-    {
-    for (auto const& iter : summary.MakeElementIterator())
-        {
-        switch (iter.GetChangeType())
-            {
-            // For update and delete, we need the pre-changed version of the element in memory before we can apply the changeset
-            // For Inserts, there is no pre-changed state, of course.
-            case TxnSummary::ChangeType::Update:
-            case TxnSummary::ChangeType::Delete:
-                {
-                auto el = GetElement(iter.GetElementId()); 
-                BeAssert(el.IsValid());
-                UNUSED_VARIABLE(el);
-                }
-                break;
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * A changeset was just applied to the database. That means that the element data in memory potentially does not match
 * what is now in the database. We need to find any elements in memory that were affected by the changeset and fix them.
 * Note that it is entirely possible that some elements in the changeset are not currently in memory. That's fine, we
@@ -1046,25 +1022,28 @@ void DgnElements::OnChangesetApplied(TxnSummary const& summary)
     {
     for (auto const& iter : summary.MakeElementIterator())
         {
-        auto el = GetElement(iter.GetElementId()); // get pre-changed state
-        BeAssert(el.IsValid());
-
         switch (iter.GetChangeType())
             {
-            case TxnSummary::ChangeType::Insert: // for inserts, "el" is the post-changed version of the element (since it was not in memory, we must have loaded it above)
-                el->_OnInserted(nullptr);
+            case TxnSummary::ChangeType::Insert: // for inserts, we don't need to do anything
                 break;
 
             case TxnSummary::ChangeType::Delete:
-                el->_OnDeleted();
+                {
+                DgnElementP el = (DgnElementP) FindElement(iter.GetElementId());
+                if (el)
+                    el->_OnDeleted();
+                }
                 break;
 
             case TxnSummary::ChangeType::Update:
                 {
-                DgnElementCPtr postModified = LoadElement(el->GetElementId(), false);
-
-                BeAssert(postModified.IsValid());
-                FinishUpdate(*postModified.get(), *el.get());
+                DgnElementP el = (DgnElementP) FindElement(iter.GetElementId());
+                if (el)
+                    {
+                    DgnElementCPtr postModified = LoadElement(el->GetElementId(), false);
+                    BeAssert(postModified.IsValid());
+                    FinishUpdate(*postModified.get(), *el);
+                    }
                 }
                 break;
             }

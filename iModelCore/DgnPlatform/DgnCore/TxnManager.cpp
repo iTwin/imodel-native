@@ -494,8 +494,6 @@ DbResult TxnManager::ApplyChangeSet(ChangeSet& changeset, TxnDirection isUndo)
     TxnSummary summary(m_dgndb, isUndo);
     summary.AddChangeSet(changeset);
 
-    m_dgndb.Elements().OnChangesetApply(summary);
-
     // notify monitors that changeset is about to be applied
     T_HOST.GetTxnAdmin()._OnTxnReverse(summary);
 
