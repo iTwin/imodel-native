@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECObjectsAPIOverview.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -93,7 +93,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //!
 //!
 //! @section ECInstancesDateTimePropertiesHowTos ECInstances and DateTime properties
-//! %DateTime values in ECObjects are represented by the Bentley::DateTime class. Each DateTime instance
+//! %DateTime values in ECObjects are represented by the BentleyApi::DateTime class. Each DateTime instance
 //! can contain metadata about the actual date time value (see also DateTime::Info). 
 //! In order to preserve the metadata when persisting a DateTime, clients can decorate the respective
 //! ECProperty with the @b %DateTimeInfo custom attribute from the standard ECSchema @b Bentley_Standard_CustomAttributes.
