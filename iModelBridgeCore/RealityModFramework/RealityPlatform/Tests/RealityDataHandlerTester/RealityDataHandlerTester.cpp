@@ -26,20 +26,20 @@ USING_BENTLEY_NAMESPACE_WMSPARSER
 //-----------------------------------------------------------------------------
 // This function print out the usage for the current program.
 //-----------------------------------------------------------------------------
-//static void ShowUsage()
-//    {
-//    // Check that we have the right number of parameters.
-//    cout << "PropertiesTests --- " << __DATE__ << endl
-//        << endl
-//        << "Usage:  PropertiesTests <drive:\\SourceFile[all raster or .pod]>  <drive:\\DestFile.[jpg, Png]>  <[Top|Front|Right|Iso]>" << endl
-//        << "Note:   <[Top|Front|Right|Iso]> option is relevant only for a point cloud" << endl
-//        << endl;
-//    }
-//
-//bool IsURL(String^ filename)
-//    {
-//    return filename->Contains("http");
-//    }
+static void ShowUsage()
+    {
+    // Check that we have the right number of parameters.
+    cout << "PropertiesTests --- " << __DATE__ << endl
+        << endl
+        << "Usage:  PropertiesTests <drive:\\SourceFile[all raster or .pod]>  <drive:\\DestFile.[jpg, Png]>  <[Top|Front|Right|Iso]>" << endl
+        << "Note:   <[Top|Front|Right|Iso]> option is relevant only for a point cloud" << endl
+        << endl;
+    }
+
+bool IsURL(String^ filename)
+    {
+    return filename->Contains("http");
+    }
 
 
 int main(array<System::String ^> ^args)
@@ -53,6 +53,7 @@ int main(array<System::String ^> ^args)
     //WCharCP url = L"http://gdr.ess.nrcan.gc.ca/wmsconnector/com.esri.wms.Esrimap/energy_e?SERVICE=WMS&REQUEST=GetCapabilities";
     //WCharCP url = L"http://sampleserver1.arcgisonline.com/ArcGIS/services/Specialty/ESRI_StatesCitiesRivers_USA/MapServer/WMSServer?service=WMS&request=GetCapabilities";
     //WCharCP url = L"http://tilecache.osgeo.org/wms-c/tilecache.py?SERVICE=WMS&REQUEST=GetCapabilities";
+    //WCharCP url = L"http://ws.carmen.developpement-durable.gouv.fr/WMS/11/Carte_stations_hydro_region?language=fre&SERVICE=WMS&REQUEST=GetCapabilities";
     WCharCP url = L"http://spatial.dcenr.gov.ie/wmsconnector/com.esri.wms.Esrimap/INFOMAR?SERVICE=WMS&REQUEST=GetCapabilities";
     WMSParserStatus status;
     WMSCapabilitiesPtr capabilities = WMSCapabilities::CreateAndReadFromUrl(status, url);
@@ -65,7 +66,7 @@ int main(array<System::String ^> ^args)
 
 
 
-    /*
+    
     cout << "Copyright (c) Bentley Systems Inc, PropertiesTester " << "version 1.0 --- " << __DATE__ << endl;
 
     // Check that we have the right number of parameters.
@@ -192,7 +193,7 @@ int main(array<System::String ^> ^args)
             Console::WriteLine("Footprint error.");
             }
         }
-    */
+    
     Console::WriteLine("Done.");
 
     return 0;
