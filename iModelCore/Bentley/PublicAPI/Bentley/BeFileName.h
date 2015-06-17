@@ -59,7 +59,7 @@ static WChar    const  WCSPATH_SEPARATOR_CHAR    = L';';
 
 /**
 * @addtogroup BeFileGroup
-* The Bentley::BeFileName and Bentley::BeFile classes contain cross-platform utilities for working with files.
+* The BentleyApi::BeFileName and BentleyApi::BeFile classes contain cross-platform utilities for working with files.
 */
 
 //! Status codes for BeFileName operations

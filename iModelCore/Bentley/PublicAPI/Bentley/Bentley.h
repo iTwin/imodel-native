@@ -145,7 +145,13 @@
 #define INT64_MIN   LLONG_MIN
 #endif
 
-/** @namespace Bentley Contains types defined by %Bentley Systems. */
+/** @namespace BentleyApi Contains types defined by %Bentley Systems. 
+    The %Bentley API strategy includes a major-version-specific suffix on the top-level %Bentley namespace.
+    This prevents conflicts and allows a single process to link with multiple versions of the %Bentley API
+    (which is critical for data upgrade and conversion scenarios).  By default, a @c using for the %Bentley namespace
+    is configured when Bentley/Bentley.h is included.  A @c %BentleyApi namespace alias is also configured.
+    This makes it so a developer does not have to worry about the actual %Bentley namespace name.
+*/
 #if defined (DOCUMENTATION_GENERATOR)
     // Hold the namespace name constant from an SDK documentation perspective
     #define BENTLEY_NAMESPACE_NAME BentleyApi

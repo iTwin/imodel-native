@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeDebugLog.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -30,6 +30,6 @@ END_BENTLEY_NAMESPACE
     #define BeDebugLog(message)
 #else
     //! Write \a message to the platform-specific log.
-    //! @See Bentley::BeDebugLogFunctions::PerformBeDebugLog for arguments
+    //! @see BentleyApi::BeDebugLogFunctions::PerformBeDebugLog for arguments
     #define BeDebugLog(message) (BeDebugLogFunctions::PerformBeDebugLog (message, __FILE__, __LINE__))
 #endif
