@@ -149,7 +149,7 @@ static WString getAssertTypeDesc (BeAssertFunctions::AssertType t)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Bentley::BeAssertFunctions::DefaultAssertionFailureHandler (WCharCP message, WCharCP file, unsigned line)
+void BentleyApi::BeAssertFunctions::DefaultAssertionFailureHandler (WCharCP message, WCharCP file, unsigned line)
     {
 #if !defined (BENTLEY_WINRT) // *** WIP_WINRT_GETENV
     CharCP env = getenv ("MS_IGNORE_ASSERTS");
@@ -157,7 +157,7 @@ void Bentley::BeAssertFunctions::DefaultAssertionFailureHandler (WCharCP message
         return;
 #endif
 
-    Bentley::NativeLogging::LoggingManager::GetLogger (L"BeAssert")->errorv (L"ASSERTION FAILURE: %ls (%ls:%d)\n", message, file, line);
+    BentleyApi::NativeLogging::LoggingManager::GetLogger (L"BeAssert")->errorv (L"ASSERTION FAILURE: %ls (%ls:%d)\n", message, file, line);
 
     #ifndef NDEBUG
         #if defined (BENTLEY_WIN32)||defined(BENTLEY_WINRT)
@@ -174,7 +174,7 @@ void Bentley::BeAssertFunctions::DefaultAssertionFailureHandler (WCharCP message
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    05/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Bentley::BeAssertFunctions::PerformBeAssert (WCharCP message, WCharCP file, unsigned line)
+void BentleyApi::BeAssertFunctions::PerformBeAssert (WCharCP message, WCharCP file, unsigned line)
     {
     s_bentleyCS.lock();
     T_BeAssertHandler* host = s_assertHandler;
@@ -194,7 +194,7 @@ void Bentley::BeAssertFunctions::PerformBeAssert (WCharCP message, WCharCP file,
 * Will assert on developer's box, but not in Filecheck where bad data must be handled.
 * @bsimethod                                    Chuck.Kirschman                    04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-void     Bentley::BeAssertFunctions::PerformBeDataAssert (WCharCP message, WCharCP file, unsigned line)
+void BentleyApi::BeAssertFunctions::PerformBeDataAssert (WCharCP message, WCharCP file, unsigned line)
     {
 #if !defined (BENTLEY_WINRT) // *** WIP_WINRT_GETENV
     CharCP env = getenv ("MS_IGNORE_DATA_ASSERTS");
@@ -218,7 +218,7 @@ void     Bentley::BeAssertFunctions::PerformBeDataAssert (WCharCP message, WChar
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void     Bentley::BeAssertFunctions::SetBeAssertHandler (T_BeAssertHandler* h)
+void BentleyApi::BeAssertFunctions::SetBeAssertHandler (T_BeAssertHandler* h)
     {
     s_bentleyCS.lock();
     if (s_assertHandlerCanBeChanged)
@@ -229,7 +229,7 @@ void     Bentley::BeAssertFunctions::SetBeAssertHandler (T_BeAssertHandler* h)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void     Bentley::BeAssertFunctions::SetBeTestAssertHandler (T_BeAssertHandler* h)
+void BentleyApi::BeAssertFunctions::SetBeTestAssertHandler (T_BeAssertHandler* h)
     {
     s_bentleyCS.lock();
     s_assertHandlerCanBeChanged = false;
@@ -292,7 +292,7 @@ static void beTestAssertionFailureHandler (WCharCP _Message, WCharCP _File, unsi
 
     if (!failOnAssert)
         {
-        Bentley::NativeLogging::LoggingManager::GetLogger (L"BeAssert")->infov (L"Ignoring assert %ls at %ls:%d\n", _Message, _File, _Line);
+        BentleyApi::NativeLogging::LoggingManager::GetLogger (L"BeAssert")->infov (L"Ignoring assert %ls at %ls:%d\n", _Message, _File, _Line);
         return;
         }
 
@@ -305,7 +305,7 @@ static void beTestAssertionFailureHandler (WCharCP _Message, WCharCP _File, unsi
     BeStringUtilities::Snwprintf (buf, L" %d %d", _Line, atype);
     assertionFailure.append (buf);
     
-    Bentley::NativeLogging::LoggingManager::GetLogger (L"BeAssert")->error (assertionFailure.c_str());
+    BentleyApi::NativeLogging::LoggingManager::GetLogger (L"BeAssert")->error (assertionFailure.c_str());
 
     if (BeTest::GetBreakOnFailure())
         {
@@ -348,7 +348,7 @@ uintptr_t pReserved
         parameterFailure.append(buf);
         }
 
-    Bentley::NativeLogging::LoggingManager::GetLogger(L"BeAssert")->error(parameterFailure.c_str());
+    BentleyApi::NativeLogging::LoggingManager::GetLogger(L"BeAssert")->error(parameterFailure.c_str());
 
     if (BeTest::GetBreakOnFailure())
         {
@@ -630,7 +630,7 @@ BeTest::ExpectedResult::~ExpectedResult() THROW_SPECIFIER(CharCP)
     if (m_message.empty())
         return;
     BeTest::IncrementErrorCount ();
-    Bentley::NativeLogging::LoggingManager::GetLogger(L"TestRunner")->errorv ("%s\n", m_message.c_str());
+    BentleyApi::NativeLogging::LoggingManager::GetLogger(L"TestRunner")->errorv ("%s\n", m_message.c_str());
     if (m_abortImmediately)
         {
         if (BeTest::GetBreakOnFailure())
@@ -889,7 +889,7 @@ void    BeTest::RecordFailedTest (testing::Test const& t)
     Utf8String tname = t.GetTestCaseNameA();
     tname.append (".");
     tname.append (t.GetTestNameA());
-    Bentley::NativeLogging::LoggingManager::GetLogger(L"TestRunner")->errorv ("%s FAILED\n", tname.c_str());
+    BentleyApi::NativeLogging::LoggingManager::GetLogger(L"TestRunner")->errorv ("%s FAILED\n", tname.c_str());
     s_failedTests.insert (tname);
     }
 
@@ -947,7 +947,7 @@ void testing::Test::RunTest()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void testing::Test::Run()
     {
-    Bentley::NativeLogging::LoggingManager::GetLogger(L"TestRunner")->infov ("%s.%s", GetTestCaseNameA(), GetTestNameA());
+    BentleyApi::NativeLogging::LoggingManager::GetLogger(L"TestRunner")->infov ("%s.%s", GetTestCaseNameA(), GetTestNameA());
     
     size_t e = BeTest::GetErrorCount();
     

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/DateTimeTestHelpers.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,20 +12,19 @@
 #include <Logging/bentleylogging.h>
 #include <Bentley/DateTime.h>
 
-
 //=======================================================================================    
 //! @bsiclass                                           Krischan.Eberle             03/14
 //=======================================================================================    
 struct DateTimeLogger
     {
 private:
-    static Bentley::NativeLogging::ILogger* s_logger;
+    static BentleyApi::NativeLogging::ILogger* s_logger;
 
     DateTimeLogger ();
     ~DateTimeLogger ();
 
 public:
-    static Bentley::NativeLogging::ILogger& Get ();
+    static BentleyApi::NativeLogging::ILogger& Get ();
     };
 
 #define LOG (DateTimeLogger::Get ())
@@ -104,9 +103,9 @@ public:
     static void Assert (const DateTimeTestItemList& testItemList);
     static void Assert (const DateTimeTestItem& testItem);
 
-    static void Assert (const Bentley::DateTime& expected, const Bentley::DateTime& actual, WCharCP assertMessage = L"");
-    static void Assert (const Bentley::DateTime& expected, const Bentley::DateTime& actual, bool millisecondsAccuracyOnly, WCharCP assertMessage);
-    static void Assert (const Bentley::DateTime& expected, const Bentley::DateTime& actual, bool ignoreDateTimeComponent, bool millisecondsAccuracyOnly, WCharCP assertMessage);
+    static void Assert (const BentleyApi::DateTime& expected, const BentleyApi::DateTime& actual, WCharCP assertMessage = L"");
+    static void Assert (const BentleyApi::DateTime& expected, const BentleyApi::DateTime& actual, bool millisecondsAccuracyOnly, WCharCP assertMessage);
+    static void Assert (const BentleyApi::DateTime& expected, const BentleyApi::DateTime& actual, bool ignoreDateTimeComponent, bool millisecondsAccuracyOnly, WCharCP assertMessage);
 
     static void AssertStringConversion (DateTimeCR expectedDateTime, Utf8CP expectedIsoDate);
     static void AssertFromString (Utf8CP iso8601DateTime, DateTimeCR expectedDateTime, bool expectedIsEqual);
@@ -124,10 +123,10 @@ private:
     DateTimeTestHelper ();
     ~DateTimeTestHelper ();
 
-    static bool IsInUnixEpoch (const Bentley::DateTime& dateTime);
+    static bool IsInUnixEpoch (const BentleyApi::DateTime& dateTime);
 
-    static void DateTimeToTm (struct tm& out, const Bentley::DateTime& in);
-    static void TmToDateTime (Bentley::DateTime& out, const tm& in, uint32_t hectoNanosecond, Bentley::DateTime::Kind targetKind);
+    static void DateTimeToTm (struct tm& out, const BentleyApi::DateTime& in);
+    static void TmToDateTime (BentleyApi::DateTime& out, const tm& in, uint32_t hectoNanosecond, BentleyApi::DateTime::Kind targetKind);
 
 public:
     static const int64_t HNS_IN_MSEC;
@@ -140,8 +139,8 @@ public:
     static const int64_t UNIXEPOCH_END_MSEC;
 
 
-    static BentleyStatus LocalToUtcViaCRT (Bentley::DateTime& utc, const Bentley::DateTime& local);
-    static BentleyStatus UtcToLocalViaCRT (Bentley::DateTime& local, const Bentley::DateTime& utc);
+    static BentleyStatus LocalToUtcViaCRT (BentleyApi::DateTime& utc, const BentleyApi::DateTime& local);
+    static BentleyStatus UtcToLocalViaCRT (BentleyApi::DateTime& local, const BentleyApi::DateTime& utc);
     static BentleyStatus DateTimeToUnixMillisecsCRT (uint64_t& unixMillisecs, const DateTime& dateTime);
     };
 

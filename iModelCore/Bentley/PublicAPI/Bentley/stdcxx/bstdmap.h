@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/stdcxx/bstdmap.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -104,7 +104,7 @@ To understand the @c bstdmap class, consult the documentation for @c std::map.
 //=======================================================================================
 template <class _Key, class _TypeT,
           class _Compare = std::less<_Key>,
-          class _Allocator = Bentley::BentleyAllocator<bpair<const _Key, _TypeT> > >
+          class _Allocator = BentleyApi::BentleyAllocator<bpair<const _Key, _TypeT> > >
 class bstdmap
 {
 public:
@@ -315,7 +315,7 @@ public:
 //! A template that has many of the capabilities of std::multimap
 template <class _Key, class _TypeT,
           class _Compare = std::less<_Key>,
-          class _Allocator = Bentley::BentleyAllocator<bpair<const _Key, _TypeT> > >
+          class _Allocator = BentleyApi::BentleyAllocator<bpair<const _Key, _TypeT> > >
 class bstdmultimap
 {
 public:

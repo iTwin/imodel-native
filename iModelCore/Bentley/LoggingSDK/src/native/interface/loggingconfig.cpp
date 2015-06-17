@@ -10,7 +10,7 @@
 
 USING_NAMESPACE_BENTLEY_LOGGING
 
-MaxMessageSize Bentley::NativeLogging::g_maxMessageSize;
+MaxMessageSize BentleyApi::NativeLogging::g_maxMessageSize;
 
 typedef Provider::ILogProvider* (*pfn_InstanceLoggingProvider) ( void );
 

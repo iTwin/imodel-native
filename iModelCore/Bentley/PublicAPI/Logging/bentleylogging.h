@@ -10,13 +10,13 @@
 #include <Bentley/Bentley.h>
 #include <Bentley/WString.h>
 
-/** @namespace Bentley::NativeLogging Cross-platform logging utilities */
+/** @namespace BentleyApi::NativeLogging Cross-platform logging utilities */
 #define BEGIN_BENTLEY_LOGGING_NAMESPACE BEGIN_BENTLEY_NAMESPACE namespace NativeLogging {
-#define END_BENTLEY_LOGGING_NAMESPACE   } }
-#define USING_NAMESPACE_BENTLEY_LOGGING using namespace Bentley::NativeLogging;
+#define END_BENTLEY_LOGGING_NAMESPACE   } END_BENTLEY_NAMESPACE
+#define USING_NAMESPACE_BENTLEY_LOGGING using namespace BentleyApi::NativeLogging;
 
 //__PUBLISH_SECTION_END__
-#define USING_NAMESPACE_BENTLEY_LOGGING_PROVIDER using namespace Bentley::NativeLogging::Provider;
+#define USING_NAMESPACE_BENTLEY_LOGGING_PROVIDER using namespace BentleyApi::NativeLogging::Provider;
 
 //__PUBLISH_SECTION_START__
 BEGIN_BENTLEY_LOGGING_NAMESPACE
@@ -596,4 +596,4 @@ END_BENTLEY_LOGGING_NAMESPACE
 /*----------------------------------------------------------------------------------*//**
 This is a helper macro
 *//*------------+---------------+---------------+---------------+---------------+------*/
-#define ENABLE_SCOPE_LOGGING(log)   Bentley::NativeLogging::_AutoScopeLogger_t_ LOGNAME ( log, __FUNCDNAME__ )
+#define ENABLE_SCOPE_LOGGING(log) BentleyApi::NativeLogging::_AutoScopeLogger_t_ LOGNAME ( log, __FUNCDNAME__ )

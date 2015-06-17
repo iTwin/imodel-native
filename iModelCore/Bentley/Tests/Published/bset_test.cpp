@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/bset_test.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -16,8 +16,6 @@
 //  Adapted from unit tests that are part of GCC 
 // Copyright (C) 1999, 2000, 2001, 2002, 2003, 2009
 // Free Software Foundation, Inc.
-
-using namespace Bentley;
 
 TEST(bset_test, Basic)
     {

@@ -75,7 +75,7 @@
 NAMESPACE_BENTLEY_BSTDCXX_BEGIN
 
 _EXPORT
-template <class _TypeT, class _Allocator = ::Bentley::BentleyAllocator<_TypeT> >
+template <class _TypeT, class _Allocator = ::BentleyApi::BentleyAllocator<_TypeT> >
 class bvector;
 
 

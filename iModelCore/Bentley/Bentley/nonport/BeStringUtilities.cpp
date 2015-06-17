@@ -1707,7 +1707,7 @@ int BeStringUtilities::Vsnwprintf (WCharP buffer, size_t numCharsInBuffer, WChar
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-int Bentley::BeUtf8StringGuessLength (CharCP fmt, va_list ap)
+int BentleyApi::BeUtf8StringGuessLength (CharCP fmt, va_list ap)
     {
 #ifdef _MSC_VER
     return _vscprintf (fmt, ap);
@@ -1719,7 +1719,7 @@ int Bentley::BeUtf8StringGuessLength (CharCP fmt, va_list ap)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-int Bentley::BeWStringGuessLength (WCharCP fmt, va_list ap)
+int BentleyApi::BeWStringGuessLength (WCharCP fmt, va_list ap)
     {
 #ifdef _MSC_VER
     return _vscwprintf (fmt, ap);
@@ -1732,7 +1732,7 @@ int Bentley::BeWStringGuessLength (WCharCP fmt, va_list ap)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-int Bentley::BeUtf8StringSprintf (Utf8String& outStr, CharCP fmt, va_list ap, int initialLengthGuess)
+int BentleyApi::BeUtf8StringSprintf (Utf8String& outStr, CharCP fmt, va_list ap, int initialLengthGuess)
     {
     // See Notes in BeWStringSprintf
 
@@ -1756,7 +1756,7 @@ int Bentley::BeUtf8StringSprintf (Utf8String& outStr, CharCP fmt, va_list ap, in
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-int Bentley::BeWStringSprintf (WString& outStr, WCharCP fmt, va_list ap, int initialLengthGuess)
+int BentleyApi::BeWStringSprintf (WString& outStr, WCharCP fmt, va_list ap, int initialLengthGuess)
     {
     // *** NB: DO NOT MAKE TWO PASSES, calling vsnprintf once to get the length and again to do the formatting.
     // ***     vsnprintf modifies ap. The second time you call it, ap is garbage.
@@ -1786,7 +1786,7 @@ int Bentley::BeWStringSprintf (WString& outStr, WCharCP fmt, va_list ap, int ini
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-int Bentley::Bevsnprintf (CharP buffer, size_t numCharsInBuffer, CharCP fmt, va_list ap)
+int BentleyApi::Bevsnprintf (CharP buffer, size_t numCharsInBuffer, CharCP fmt, va_list ap)
     {
     //                                         ^^^^^^^^^^^^^^^^ Note that numCharsInBuffer includes trailing \0
 
@@ -1824,7 +1824,7 @@ int Bentley::Bevsnprintf (CharP buffer, size_t numCharsInBuffer, CharCP fmt, va_
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-int  Bentley::Bevsnwprintf (WCharP buffer, size_t numCharsInBuffer, WCharCP fmt, va_list ap)
+int BentleyApi::Bevsnwprintf (WCharP buffer, size_t numCharsInBuffer, WCharCP fmt, va_list ap)
     {
     //                                            ^^^^^^^^^^^^^^^^ Note that numCharsInBuffer includes trailing \0
 

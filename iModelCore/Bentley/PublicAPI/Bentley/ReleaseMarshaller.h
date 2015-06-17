@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/ReleaseMarshaller.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #pragma once
@@ -48,7 +48,7 @@ BEGIN_BENTLEY_NAMESPACE
 //  mechanism, all the queued up instances are released, in the thread where they
 //  were created (rather than the Finalizer thread).
 
-typedef bvector<Bentley::IRefCounted*>      ReleaseMarshallerQueue_T;
+typedef bvector<BentleyApi::IRefCounted*>   ReleaseMarshallerQueue_T;
 typedef ReleaseMarshallerQueue_T::iterator  ReleaseMarshallerQueueIterator_T;
 
 class ReleaseMarshaller

@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/BeIconUtilities.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
@@ -257,7 +257,7 @@ BentleyStatus BeIconUtilities::GetDIBits (bvector<uint32_t>& iconBits, bvector<u
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void* Bentley::BeGetBinaryResourceSource (void* addr)
+void* BentleyApi::BeGetBinaryResourceSource (void* addr)
     {
 #if defined (BENTLEYCONFIG_OS_WINDOWS)
     MEMORY_BASIC_INFORMATION mbi;

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/stdcxx/basic_string.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -55,7 +55,7 @@
 #include <Bentley/stdcxx/rw/_defs.h>
 
 // *** BENTLEY_CHANGE
-/** \namespace Bentley::Bstdcxx 
+/** @namespace BentleyApi::Bstdcxx 
 
 string and container templates.
 

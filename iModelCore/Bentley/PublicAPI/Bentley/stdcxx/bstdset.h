@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/stdcxx/bstdset.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -102,7 +102,7 @@ To understand the @c bstdset class, consult the documentation for @c std::set.
 //=======================================================================================
 template <class _Key,
           class _Compare = std::less<_Key>,
-          class _Allocator = ::Bentley::BentleyAllocator<_Key> >
+          class _Allocator = ::BentleyApi::BentleyAllocator<_Key> >
 class bstdset
 {
 public:
@@ -311,7 +311,7 @@ public:
 //! A template that has many of the capabilities of std::multiset
 template <class _Key, 
           class _Compare = std::less<_Key>,
-          class _Allocator = ::Bentley::BentleyAllocator<_Key> >
+          class _Allocator = ::BentleyApi::BentleyAllocator<_Key> >
 class bstdmultiset
 {
 public:

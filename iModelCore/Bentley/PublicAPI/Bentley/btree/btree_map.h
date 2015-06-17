@@ -73,7 +73,7 @@ To understand the @c bmap class, consult the documentation for @c std::map.
 */
 //=======================================================================================
 template <typename Key, typename Value, typename Compare = std::less<Key>, uint16_t EntriesPerNode = 32,
-          typename Alloc = Bentley::BentleyAllocator<bpair<const Key, Value> > >
+          typename Alloc = BentleyApi::BentleyAllocator<bpair<const Key, Value> > >
 class bmap : public bmap_container<
       btree<bmap_params<Key, Value, Compare, Alloc, EntriesPerNode*sizeof(bpair<Key, Value>) > > > {
 
@@ -129,7 +129,7 @@ inline void swap(bmap<K, V, C, N, A> &x,
 
 // The btree_multimap class is needed mainly for its constructors.
 template <typename Key, typename Value, typename Compare = std::less<Key>, uint16_t EntriesPerNode = 32,
-          typename Alloc = Bentley::BentleyAllocator<bpair<const Key, Value> > >
+          typename Alloc = BentleyApi::BentleyAllocator<bpair<const Key, Value> > >
 class bmultimap : public btree_multi_container<
   btree<bmap_params<Key, Value, Compare, Alloc, EntriesPerNode*sizeof(bpair<Key, Value>)> > > {
 

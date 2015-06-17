@@ -57,7 +57,7 @@ USING_NAMESPACE_BENTLEY_LOGGING_PROVIDER
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    TonyCleveland   06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP Bentley::NativeLogging::Provider::GetSeverityText (SEVERITY sev)
+WCharCP BentleyApi::NativeLogging::Provider::GetSeverityText (SEVERITY sev)
     {
     switch ( sev )
         {
@@ -74,7 +74,7 @@ WCharCP Bentley::NativeLogging::Provider::GetSeverityText (SEVERITY sev)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    TonyCleveland   06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP Bentley::NativeLogging::Provider::GetSeverityUtf8Text (SEVERITY sev)
+Utf8CP BentleyApi::NativeLogging::Provider::GetSeverityUtf8Text (SEVERITY sev)
     {
     switch ( sev )
         {
@@ -91,7 +91,7 @@ Utf8CP Bentley::NativeLogging::Provider::GetSeverityUtf8Text (SEVERITY sev)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    TonyCleveland   06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-SEVERITY Bentley::NativeLogging::Provider::GetSeverityFromText
+SEVERITY BentleyApi::NativeLogging::Provider::GetSeverityFromText
 (
 WCharCP sev
 )
