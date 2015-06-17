@@ -102,15 +102,6 @@
         </Bindings>
     </Part>
 
-    <!-- "VersionedApi" is a special copy of the internal DgnPlatform API where all headers are shifted down into a version-specific directory -->
-    <!-- This is important for Graphite components (like DgnDbFileIO) that run in-process with Vancouver -->
-    <Part Name="VersionedApi" BentleyBuildMakeFile="VersionedApi.mke" OnlyPlatforms="x64,x86">
-        <SubPart PartName="DgnPlatformDLL"/>
-        <Bindings>
-            <Directory SourceName="Delivery/VersionedApi" ProductDirectoryName="VersionedApi" SubPartDirectory="VersionedApi" Required="true"/>
-        </Bindings>
-    </Part>
-
     <Part Name="DgnProjectUnitTests" BentleyBuildMakeFile="../bsicommon/sharedmki/BuildPlatformUnitTests.mke" BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)DgnPlatform/Tests/DgnProject/ -dBEGTEST_NAME=DgnProject -dBEGTEST_DEPENDENCIES=$(SrcRoot)DgnPlatform/Tests/DgnProject/dependencies.mki">
         <!-- Get GTest API directory -->
         <SubPart    PartName="google_gtest_lib"                 PartFile="gtest"        Repository="util-gtest" />
