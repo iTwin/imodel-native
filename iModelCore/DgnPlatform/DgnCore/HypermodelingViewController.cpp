@@ -170,10 +170,9 @@ StatusInt HypermodelingViewController::_VisitHit(HitDetailCR hit, ViewContextR c
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  03/14
 //--------------+------------------------------------------------------------------------
-struct RangeDgnModelAppData : DgnModelAppData
+struct RangeDgnModelAppData : DgnModel::AppData
     {
     DRange3d m_range;
-    virtual void _OnCleanup (DgnModelR host) override {delete this;}
     };
 
 static RangeDgnModelAppData::Key s_RangeDgnModelAppDataKey;
