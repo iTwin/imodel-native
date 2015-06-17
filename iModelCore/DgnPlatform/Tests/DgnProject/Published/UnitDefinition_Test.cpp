@@ -160,7 +160,7 @@ TEST (UnitDefinition, CompareByScale_Error)
     UnitDefinition s1 = GenerateMeter_1_10();
     UnitDefinition s2 = GenerateDegree_1_10();
 
-    ASSERT_TRUE (Bentley::ERROR == s1.CompareByScale (s2));
+    ASSERT_TRUE (BentleyApi::ERROR == s1.CompareByScale (s2));
     }
 
 /*---------------------------------------------------------------------------------**//**

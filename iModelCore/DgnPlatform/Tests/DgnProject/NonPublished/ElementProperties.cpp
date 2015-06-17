@@ -24,9 +24,9 @@ struct TestElementHandler;
 //! A test Element
 //@bsiclass                                                     Sam.Wilson      04/15
 //=======================================================================================
-struct TestElement : DgnPlatform::PhysicalElement
+struct TestElement : Dgn::PhysicalElement
     {
-    DEFINE_T_SUPER (DgnPlatform::PhysicalElement)
+    DEFINE_T_SUPER (Dgn::PhysicalElement)
 
     private:
         friend struct TestElementHandler;
@@ -53,9 +53,9 @@ static CurveVectorPtr computeShape ()
 //! A test ElementHandler
 // @bsiclass                                                     Sam.Wilson      01/15
 //=======================================================================================
-struct TestElementHandler : DgnPlatform::ElementHandler
+struct TestElementHandler : Dgn::ElementHandler
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS ("TestElement", TestElement, TestElementHandler, DgnPlatform::ElementHandler, )
+    ELEMENTHANDLER_DECLARE_MEMBERS ("TestElement", TestElement, TestElementHandler, Dgn::ElementHandler, )
 
     ECN::ECClassCP GetTestElementECClass (DgnDbR db)
         {

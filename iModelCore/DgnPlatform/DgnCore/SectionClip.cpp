@@ -16,8 +16,8 @@ namespace {
 +===============+===============+===============+===============+===============+======*/
 struct          SectionClipObject : IViewClipObject
 {
-friend struct DgnPlatform::SectionClipObjectFactory;
-friend struct DgnPlatform::SectionClipObjectLegacyData;
+friend struct Dgn::SectionClipObjectFactory;
+friend struct Dgn::SectionClipObjectLegacyData;
 
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS 
 

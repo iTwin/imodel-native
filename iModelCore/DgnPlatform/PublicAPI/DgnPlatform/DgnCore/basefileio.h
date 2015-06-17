@@ -11,7 +11,7 @@
 #include <Geom/msgeomstructs.hpp>
 #include <DgnPlatform/DgnCore/DgnFileIO.h>
 
-BEGIN_BENTLEY_API_NAMESPACE
+BEGIN_BENTLEY_NAMESPACE
 
 //=======================================================================================
 //! @bsiclass                                                     Ray.Bentley   10/05
@@ -102,4 +102,4 @@ protected:
     DRange3d                    m_range;
 };
 
-END_BENTLEY_API_NAMESPACE
+END_BENTLEY_NAMESPACE

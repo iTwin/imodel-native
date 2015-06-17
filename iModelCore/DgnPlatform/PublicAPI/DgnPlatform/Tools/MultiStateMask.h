@@ -11,7 +11,7 @@
 #include <math.h>
 #include <vector>
 
-BEGIN_BENTLEY_API_NAMESPACE
+BEGIN_BENTLEY_NAMESPACE
 /*=================================================================================**//**
 * @bsiclass                                                     Deepak.Malkan   06/2006
 +===============+===============+===============+===============+===============+======*/
@@ -66,4 +66,4 @@ public:
     DGNPLATFORM_EXPORT void                    CopyTo (uint16_t *pArrayOut);
 
 };
-END_BENTLEY_API_NAMESPACE
+END_BENTLEY_NAMESPACE

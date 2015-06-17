@@ -39,9 +39,9 @@ static bool s_ptShouldFail;
 //! A test IDgnElementDependencyHandler
 // @bsiclass                                                     Sam.Wilson      01/15
 //=======================================================================================
-struct PTHandler : DgnPlatform::DgnElementDrivesElementDependencyHandler
+struct PTHandler : Dgn::DgnElementDrivesElementDependencyHandler
 {
-    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME, PTHandler, DgnPlatform::DgnDomain::Handler, )
+    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME, PTHandler, Dgn::DgnDomain::Handler, )
 
     bvector<EC::ECInstanceId> m_relIds;
 
@@ -71,9 +71,9 @@ struct PTestElementHandler;
 //! A test Element
 // @bsiclass                                                     Sam.Wilson      04/15
 //=======================================================================================
-struct PTestElement : DgnPlatform::PhysicalElement
+struct PTestElement : Dgn::PhysicalElement
 {
-    DEFINE_T_SUPER(DgnPlatform::PhysicalElement)
+    DEFINE_T_SUPER(Dgn::PhysicalElement)
 
 private:
     friend struct PTestElementHandler;
@@ -104,9 +104,9 @@ static CurveVectorPtr computeShape()
 //! A test ElementHandler
 // @bsiclass                                                     Sam.Wilson      01/15
 //=======================================================================================
-struct PTestElementHandler : DgnPlatform::ElementHandler
+struct PTestElementHandler : Dgn::ElementHandler
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS("TestElement", PTestElement, PTestElementHandler, DgnPlatform::ElementHandler, )
+    ELEMENTHANDLER_DECLARE_MEMBERS("TestElement", PTestElement, PTestElementHandler, Dgn::ElementHandler, )
 
 
     ECN::ECClassCP GetTestElementECClass(DgnDbR db)

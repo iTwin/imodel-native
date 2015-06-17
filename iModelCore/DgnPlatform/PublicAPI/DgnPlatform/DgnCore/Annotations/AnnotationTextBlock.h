@@ -10,8 +10,6 @@
 #include <Bentley/WString.h>
 #include "AnnotationTextStyle.h"
 
-DGNPLATFORM_TYPEDEFS(AnnotationInsertionPoint);
-DGNPLATFORM_REF_COUNTED_PTR(AnnotationInsertionPoint);
 DGNPLATFORM_TYPEDEFS(AnnotationRunBase);
 DGNPLATFORM_REF_COUNTED_PTR(AnnotationRunBase);
 DGNPLATFORM_TYPEDEFS(AnnotationTextRun);

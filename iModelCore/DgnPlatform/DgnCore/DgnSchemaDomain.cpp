@@ -176,7 +176,7 @@ void DgnSchemaTableHandler::ModelDrivesModel::CheckDirection(TxnSummary& summary
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ElementHandler::FenceClip(ElementAgendaP inside, ElementAgendaP outside, ElementHandleCR eh, FenceParamsP fp, DgnPlatform::FenceClipFlags options)
+StatusInt ElementHandler::FenceClip(ElementAgendaP inside, ElementAgendaP outside, ElementHandleCR eh, FenceParamsP fp, Dgn::FenceClipFlags options)
     {
     StatusInt   status = SUCCESS;
 

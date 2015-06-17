@@ -47,7 +47,7 @@ DGNPLATFORM_TYPEDEFS(DimOptionBlockHeader)
 |   Function Definitions                                                |
 |                                                                       |
 +======================================================================*/
-BEGIN_BENTLEY_API_NAMESPACE
+BEGIN_BENTLEY_NAMESPACE
 
 DGNPLATFORM_EXPORT int mdlDim_extractStringsWide
 (
@@ -2574,7 +2574,7 @@ ElementHandleCR pElementIn
 
 DGNPLATFORM_EXPORT  void adim_initDimText (ElementHandleCR dimElement, int, DgnPlatform::DimText*, DimensionStyleCR);
 
-END_BENTLEY_API_NAMESPACE
+END_BENTLEY_NAMESPACE
 
 //__PUBLISH_SECTION_START__
 
