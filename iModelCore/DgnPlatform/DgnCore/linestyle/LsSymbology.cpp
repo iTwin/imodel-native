@@ -520,6 +520,8 @@ DPoint3dCP          endTangent
 
     if (nameRec->IsSCScaleIndependent()) // linestyles that are independent of sharedcell's scale.
         {
+        BeAssert(nameRec->IsSCScaleIndependent());
+#if defined(NEEDSWORK_LINESTYLES)
         Transform       localToFrustum;
 
         // get the scale from the current localToFrustum to the current modelRef's scale, and back that out of the linestyle scale.
@@ -530,6 +532,7 @@ DPoint3dCP          endTangent
 
             scale /= xCol.Magnitude ();
             }
+#endif
         }
 
     SetScale (scale);
