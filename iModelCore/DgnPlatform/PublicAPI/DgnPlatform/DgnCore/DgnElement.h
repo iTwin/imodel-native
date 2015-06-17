@@ -87,7 +87,7 @@ public:
     };
 
     //! Application data attached to a DgnElement. Create a subclass of this to store non-persistent information on a DgnElement.
-    struct AppData : RefCountedBase
+    struct EXPORT_VTABLE_ATTRIBUTE AppData : RefCountedBase
     {
         //! A unique identifier for this type of AppData. Use a static instance of this class to identify your AppData.
         struct Key : NonCopyableClass {};
@@ -116,6 +116,120 @@ public:
         //! @param[in]  el the DgnElement that was deleted
         //! @return true to drop this appData, false to leave it attached to the DgnElement.
         virtual DropMe _OnDeleted(DgnElementCR el) {return DropMe::No;}
+    };
+
+    //! Abstract base class that Buffers changes to an ElementAspect
+    struct EXPORT_VTABLE_ATTRIBUTE AspectBase : AppData
+    {
+    private:
+        DGNPLATFORM_EXPORT DropMe _OnInserted(DgnElementCR el) override;
+        DGNPLATFORM_EXPORT DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original) override final;
+
+    protected:
+        enum class ChangeType{None, Write, Drop};
+
+        ChangeType m_changeType;
+
+        DgnDbStatus DeleteThis(DgnElementCR el);
+        DgnDbStatus InsertThis(DgnElementCR el);
+        DgnClassId  GetThisECClassId(DgnDbR);
+        Utf8String  GetFullEcSqlClassName() {return _GetECSchemaName().append(".").append(_GetECClassName());}
+
+        DGNPLATFORM_EXPORT AspectBase();
+
+        //! The subclass must implement this method to report the ID of this aspect instance.
+        //! @param el   The host element
+        virtual BeSQLite::EC::ECInstanceId _GetECInstanceId(DgnElementCR el) = 0;
+
+        //! The subclass must implement this method to return the full class name (in ECSql schema.class format) of the instance.
+        virtual Utf8String _GetECSchemaName() = 0;
+
+        //! The subclass must implement this method to return the full class name (in ECSql schema.class format) of the instance.
+        virtual Utf8String _GetECClassName() = 0;
+
+        virtual Key const& _GetAppDataKey() = 0;
+
+        //! The subclass must implement this method to report an existing instance on the host element that this instance will replace.
+        virtual BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) = 0;
+
+        //! The subclass must override this method in order to insert an empty instance into the Db and associates it with the host element.
+        //! @param el   The host element
+        //! @note The caller will call _UpdateProperties immediately after calling this method.
+        virtual DgnDbStatus _InsertInstance(DgnElementCR el) = 0;
+
+        //! The subclass must implement this method to update the instance properties.
+        virtual DgnDbStatus _UpdateProperties(DgnElementCR el) = 0;
+
+        //! The subclass must implement this method to load properties from the Db.
+        //! @param el   The host element
+        //! @param instanceId   The Id of this aspect
+        virtual DgnDbStatus _LoadProperties(DgnElementCR el) = 0;
+    };
+
+    //! Buffers changes to an aspect other than the item
+    struct EXPORT_VTABLE_ATTRIBUTE Aspect : AspectBase
+    {
+        static Key s_key;
+        
+        BeSQLite::EC::ECInstanceId m_instanceId;
+
+        DGNPLATFORM_EXPORT Key const& _GetAppDataKey() override final;
+        BeSQLite::EC::ECInstanceId _GetECInstanceId(DgnElementCR el) override final {return m_instanceId;}
+        DgnDbStatus _InsertInstance(DgnElementCR el) override final;
+        BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) override {return BeSQLite::EC::ECInstanceKey();} // assume that all writes are updates or inserts
+    };
+
+    //! Buffers changes to an ElementItem
+    struct EXPORT_VTABLE_ATTRIBUTE Item : AspectBase
+    {
+    private:
+        static Key s_key;
+
+        static Item* Find(DgnElementCR);
+        static Item* Load(DgnElementCR);
+
+        DGNPLATFORM_EXPORT Key const& _GetAppDataKey() override final;
+        BeSQLite::EC::ECInstanceId _GetECInstanceId(DgnElementCR el) override final {return el.GetElementId();}
+        DGNPLATFORM_EXPORT DgnDbStatus _InsertInstance(DgnElementCR el) override final;
+        DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) override final;
+
+    protected:
+        //! The subclass must implement this method to generate geometry and store it on \a el
+        //! @param el   The element to be updated.
+        virtual DgnDbStatus _GenerateElementGeometry(GeometricElementR el) = 0;
+
+    public:
+        //! Query the class name of the element item in the Db.
+        DGNPLATFORM_EXPORT Utf8String QueryFullEcSqlClassName(DgnElementCR el);
+
+        //! Set up to insert or update an Item for the specified element
+        //! @param el   The host element
+        //! @param item The new item to be adopted by the host.
+        //! @note \a el will add a reference to \a item and will hold onto it.
+        //! @note The item will not actually be inserted into the Db until you call DgnElements::Insert or DgnElements::Update on \a el
+        DGNPLATFORM_EXPORT static void SetItem(DgnElementCR el, Item& item);
+
+        //! Get read-write access to the Item for the specified element
+        //! @param el   The host element
+        //! @note call this method if you plan to modify the item
+        //! @note The item will not actually be updated in the Db until you call DgnElements::Update on \a el
+        DGNPLATFORM_EXPORT static Item* GetItemP(DgnElementCR el);
+
+        template<typename T> static T* GetP(DgnElementCR el) {return dynamic_cast<T*>(GetItemP(el));}
+
+        //! Get read-only access to the Item for the specified element
+        //! @param el   The host element
+        //! @note call this method if you do not plan to modify the item
+        DGNPLATFORM_EXPORT static Item const* GetItem(DgnElementCR el);
+
+        template<typename T> static T const* Get(DgnElementCR el) {return dynamic_cast<T const*>(GetItem(el));}
+
+        //! Set up to delete the existing Item for the specified element
+        //! @param el   The host element
+        //! @note The item will not actually be deleted in the Db until you call DgnElements::Update on \a el
+        DGNPLATFORM_EXPORT static void DropItem(DgnElementCR el);
+
+        DGNPLATFORM_EXPORT static DgnClassId QueryExistingItemClass(DgnElementCR);
     };
 
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
