@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
 #include "DgnSqlTestDomain.h"
+#include <DgnPlatform/DgnPlatformLib.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE 
 using namespace DgnSqlTestNamespace;

@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include <DgnPlatform/DgnPlatformApi.h>
+#include <DgnPlatform/DgnPlatformLib.h>
 #include <Bentley/BeTest.h>
 #include <DgnPlatform/DgnHandlers/ScopedDgnHost.h>
 #include <Bentley/BeTimeUtilities.h>
