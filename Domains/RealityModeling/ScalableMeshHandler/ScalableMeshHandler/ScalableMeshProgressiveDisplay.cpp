@@ -174,9 +174,9 @@ void ScalableMeshProgressiveDisplay::_GetMeshNodes(bvector<IMrDTMNodePtr>& meshN
     
     DPoint3d viewBox[8];
     Transform    ltf, ftl;
-    context.NpcToFrustum(viewBox, s_npcViewBox, 8);
+    context.NpcToWorld(viewBox, s_npcViewBox, 8);
 
-    context.GetCurrLocalToFrustumTrans(ltf);
+    context.GetCurrLocalToWorldTrans(ltf);
     ftl.InverseOf(ltf);
     ftl.Multiply(viewBox, 8);
 

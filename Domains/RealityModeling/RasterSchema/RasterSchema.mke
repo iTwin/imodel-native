@@ -6,22 +6,18 @@
 #
 #--------------------------------------------------------------------------------------
 
-PolicyFile=$(SrcRoot)RealityModFramework/RasterSchema/RasterSchemaPolicy.mki
+PolicyFile=$(SrcRoot)DgnDomains/RealityModeling/RasterSchema/RasterSchemaPolicy.mki
 SolutionPolicyMki=$(PolicyFile)
 
 %include mdl.mki
-%include $(SrcRoot)BentleyApi/PublicMki/BentleyApi.mki 
+%include $(BuildContext)SubParts/PublicMki/BentleyApi.mki
 
 baseDir                         = $(_MakeFilePath)
 rasterSchemaPublicApiSrc        = $(repositoryRoot)PublicAPI/RasterSchema/
 rasterSchemaSrc                 = $(baseDir)
-buildContextVendorAPI           = $(BuildContext)VendorAPI/
 
 always:
     !~@mkdir $(o)
-
-$(OutBuildContexts)RealityModFramework/PublicAPI/RasterSchema : $(repositoryRoot)PublicAPI/RasterSchema
-    $(LinkFirstDepToFirstTargetAsDirectory)
 
 #--------------------------------------------------------------------------------------
 #   BENTLEY_LIBRARIES

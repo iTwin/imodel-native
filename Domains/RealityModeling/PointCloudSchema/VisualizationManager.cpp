@@ -172,8 +172,8 @@ void VisualizationManager::SetViewportInfo (ViewContextR context, Transform cons
         DVec3d      npcPoints[8], viewPoints [8];
 
         GetNpcViewBox (npcPoints, context);
-        context.NpcToFrustum (viewPoints, npcPoints, 8);
-        double scale = ComputeFrustumScale(viewPoints);
+        context.NpcToWorld (viewPoints, npcPoints, 8);
+        double scale = ComputeWorldScale(viewPoints);
 
         if (scale <= 0.999)
              return SetViewportProjectionFromSceneRange(context, sceneToUor, scaledRange);
@@ -219,7 +219,7 @@ void VisualizationManager::SetViewportProjectionFromSceneRange(ViewContextR cont
     uorToScene.Multiply (subViewBox_scene, subViewBox_local, NPC_CORNER_COUNT);
 
     PerspectiveViewParams subViewParams;
-    ViewParametersFromFrustum(subViewParams, subViewBox_scene);
+    ViewParametersFromWorld(subViewParams, subViewBox_scene);
 
     PointCloudVortex::SetViewEyeLookAt((double*)&subViewParams.cameraRoot, (double*)&subViewParams.targetRoot, (double*)&subViewParams.viewY );
     PointCloudVortex::SetViewProjectionFrustum( subViewParams.xmin, subViewParams.xmax, subViewParams.ymin, subViewParams.ymax, subViewParams.front, subViewParams.back );
@@ -308,26 +308,26 @@ void VisualizationManager::LocalRangeToNpcRange(DRange3d& npcRange, DRange3d con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Stephane.Poulin                 04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void VisualizationManager::ViewParametersFromFrustum(PerspectiveViewParams& viewParams, DPoint3dCP frustum)
+void VisualizationManager::ViewParametersFromWorld(PerspectiveViewParams& viewParams, DPoint3dCP world)
     {
-    viewParams.viewX.NormalizedDifference (frustum[NPC_101], frustum[NPC_001]);
-    viewParams.viewY.NormalizedDifference (frustum[NPC_011], frustum[NPC_001]);
+    viewParams.viewX.NormalizedDifference (world[NPC_101], world[NPC_001]);
+    viewParams.viewY.NormalizedDifference (world[NPC_011], world[NPC_001]);
     viewParams.viewZ.NormalizedCrossProduct (viewParams.viewX, viewParams.viewY);
 
     // Calculate camera position and target from frustum directly. - Note we cannot take these directly from the viewport as those values
     // are not correct when processing viewlets.
-    double  compressionFraction = ComputeFrustumScale (frustum);
+    double  compressionFraction = ComputeWorldScale(world);
     double  a = 1.0 / (1.0 - compressionFraction);  // compressionFaction tested < .999 before calling this method.
     
-    DVec3d  frustumZ; frustumZ.DifferenceOf (frustum[NPC_001], frustum[NPC_000]);
-    viewParams.cameraRoot.SumOf (frustum[NPC_000],frustumZ, a);
+    DVec3d  worldZ; worldZ.DifferenceOf (world[NPC_001], world[NPC_000]);
+    viewParams.cameraRoot.SumOf (world[NPC_000],worldZ, a);
     
-    viewParams.xmin  = frustum[NPC_001].DotDifference (viewParams.cameraRoot, viewParams.viewX);
-    viewParams.xmax  = frustum[NPC_101].DotDifference (viewParams.cameraRoot, viewParams.viewX);
-    viewParams.ymin  = frustum[NPC_001].DotDifference (viewParams.cameraRoot, viewParams.viewY);
-    viewParams.ymax  = frustum[NPC_011].DotDifference (viewParams.cameraRoot, viewParams.viewY);
-    viewParams.front = -frustum[NPC_001].DotDifference (viewParams.cameraRoot, viewParams.viewZ);
-    viewParams.back  = -frustum[NPC_000].DotDifference (viewParams.cameraRoot, viewParams.viewZ);
+    viewParams.xmin  = world[NPC_001].DotDifference (viewParams.cameraRoot, viewParams.viewX);
+    viewParams.xmax  = world[NPC_101].DotDifference (viewParams.cameraRoot, viewParams.viewX);
+    viewParams.ymin  = world[NPC_001].DotDifference (viewParams.cameraRoot, viewParams.viewY);
+    viewParams.ymax  = world[NPC_011].DotDifference (viewParams.cameraRoot, viewParams.viewY);
+    viewParams.front = -world[NPC_001].DotDifference (viewParams.cameraRoot, viewParams.viewZ);
+    viewParams.back  = -world[NPC_000].DotDifference (viewParams.cameraRoot, viewParams.viewZ);
 
     // The "target" value is somewhat arbitrary - just calculate it at the back clipping plane.
     viewParams.targetRoot.SumOf (viewParams.cameraRoot,viewParams.viewZ, -viewParams.back);
@@ -612,11 +612,11 @@ void VisualizationManager::GetNpcViewBox (DPoint3d npcPoints[8], ViewContextR co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    StephanePoulin  11/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-double VisualizationManager::ComputeFrustumScale(DPoint3dCP frustum)
+double VisualizationManager::ComputeWorldScale(DPoint3dCP world)
     {
     DVec3d backViewX, frontViewX;
-    backViewX.DifferenceOf (frustum[NPC_100], frustum[NPC_000]);
-    frontViewX.DifferenceOf (frustum[NPC_101], frustum[NPC_001]);
+    backViewX.DifferenceOf (world[NPC_100], world[NPC_000]);
+    frontViewX.DifferenceOf (world[NPC_101], world[NPC_001]);
 
     return  frontViewX.Magnitude () / backViewX.Magnitude ();
     }

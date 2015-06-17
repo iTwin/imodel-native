@@ -185,7 +185,7 @@ bool RasterTile::Draw(ViewContextR context)
             pt.z = extents.low.z - 1;
         }
 
-    static bool s_DrawTileShape = true;
+    static bool s_DrawTileShape = m_pDisplayTile.IsNull();    //&&MM for testing.
     if(s_DrawTileShape)
         {
         ElemMatSymb elemMatSymb;
@@ -340,8 +340,8 @@ bool RasterTile::IsVisible (ViewContextR viewContext, double& factor) const
     DPoint3d npcCorners[4];
     DPoint3d frustCorners[4];
 
-    viewContext.LocalToFrustum(frustCorners, m_corners, 4);
-    viewContext.GetFrustumToNpc().M0.MultiplyAndRenormalize(npcCorners, frustCorners, 4);
+    viewContext.LocalToWorld(frustCorners, m_corners, 4);
+    viewContext.GetWorldToNpc().M0.MultiplyAndRenormalize(npcCorners, frustCorners, 4);
 
     DPoint3d npcOrigin;
     npcOrigin.x = MIN(MIN(npcCorners[0].x, npcCorners[1].x), MIN(npcCorners[2].x, npcCorners[3].x));
@@ -365,7 +365,7 @@ bool RasterTile::IsVisible (ViewContextR viewContext, double& factor) const
 
     // compute scale factor of this tile
     DPoint3d viewCorners[4];
-    viewContext.FrustumToView(viewCorners, frustCorners, 4);
+    viewContext.WorldToView(viewCorners, frustCorners, 4);
 
     uint64_t physWidth = m_tree.GetSource().GetTileSizeX(m_tileId);
     uint64_t physHeight = m_tree.GetSource().GetTileSizeY(m_tileId);

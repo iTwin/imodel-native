@@ -7,7 +7,7 @@
 #----------------------------------------------------------------------------------------
 
 baseDir         = $(_MakeFilePath)
-PolicyFile      = $(SrcRoot)RealityModFramework/mki/AssertRealityModFrameworkPolicy.mki
+PolicyFile      = $(SrcRoot)DgnDomains/RealityModeling/ScalableMeshHandler/ScalableMeshHandler.mki
 
 
 appName     = ScalableMeshHandler

@@ -6,22 +6,18 @@
 #
 #--------------------------------------------------------------------------------------
 
-PolicyFile=$(SrcRoot)RealityModFramework/PointCloudSchema/PointCloudSchemaPolicy.mki
+PolicyFile=$(SrcRoot)DgnDomains/RealityModeling/PointCloudSchema/PointCloudSchemaPolicy.mki
 SolutionPolicyMki=$(PolicyFile)
 
 %include mdl.mki
-%include $(SrcRoot)BentleyApi/PublicMki/BentleyApi.mki 
+%include $(BuildContext)SubParts/PublicMki/BentleyApi.mki
 
 baseDir                         = $(_MakeFilePath)
 pointCloudSchemaPublicApiSrc    = $(repositoryRoot)PublicAPI/PointCloudSchema/
 pointCloudSchemaSrc             = $(baseDir)
-buildContextVendorAPI           = $(BuildContext)VendorAPI/
 
 always:
     !~@mkdir $(o)
-
-$(OutBuildContexts)RealityModFramework/PublicAPI/PointCloudSchema : $(repositoryRoot)PublicAPI/PointCloudSchema
-    $(LinkFirstDepToFirstTargetAsDirectory)
 
 #--------------------------------------------------------------------------------------
 #   BENTLEY_LIBRARIES
