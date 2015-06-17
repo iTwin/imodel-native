@@ -27,7 +27,7 @@ struct ServerInfoProvider
     {
     private:
         std::shared_ptr<const ClientConfiguration> m_configuration;
-        WorkerThreadPtr m_thread;
+        std::shared_ptr<WorkerThread> m_thread;
         std::vector<std::weak_ptr<IWSClient::IServerInfoListener>> m_listeners;
 
         mutable WSInfo m_serverInfo;

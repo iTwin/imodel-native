@@ -23,7 +23,7 @@ struct ConnectAuthenticationHandler : public AuthenticationHandler
     private:
         Utf8String m_urlBaseToAuth;
         std::shared_ptr<IConnectTokenProvider> m_tokenProvider;
-        WorkerThreadPtr m_thread;
+        std::shared_ptr<WorkerThread> m_thread;
 
     private:
         bool ShouldStopSendingToken (AttemptCR previousAttempt) const;
