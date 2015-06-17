@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeSQLite/BeAppData.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -17,7 +17,7 @@ BEGIN_BENTLEY_SQLITE_NAMESPACE
 //! of this class to identify each subclass of AppData.
 //! @bsiclass                                                     Keith.Bentley   10/07
 //=======================================================================================
-struct   AppDataKey
+struct   AppDataKey : NonCopyableClass
 {
 private:
     AppDataKey (AppDataKey const&);                  // illegal
