@@ -97,10 +97,6 @@ RasterFileModel::RasterFileModel(CreateParams const& params)
     {
 //&&ep - not needed ?
     m_rasterFilePtr = nullptr;
-
-//&&ep need this here ? or maybe in Register domain instead.
-    // Make sure GCS is initialized
-    T_HOST.GetGeoCoordinationAdmin()._GetServices();
     }
 
 //----------------------------------------------------------------------------------------
@@ -110,9 +106,6 @@ RasterFileModel::RasterFileModel(CreateParams const& params, RasterFilePropertie
 :T_Super (params),
  m_fileProperties(properties)
     {
-//&&ep need this here ? or maybe in Register domain instead.
-    // Make sure GCS is initialized
-    T_HOST.GetGeoCoordinationAdmin()._GetServices();
 
     }
 
@@ -138,8 +131,6 @@ BentleyStatus RasterFileModel::_LoadQuadTree()
     RasterSourcePtr pSource = WmsSource::Create(m_map);
     if(pSource.IsValid())
         m_rasterTreeP = RasterQuadTree::Create(*pSource, GetDgnDb());
-
-    //&&MM what about range or other stuff from the base?
 */
     return m_rasterTreeP.IsValid() ? BSISUCCESS : BSIERROR;
     }

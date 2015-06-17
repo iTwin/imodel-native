@@ -225,7 +225,7 @@ bool RasterTile::Draw(ViewContextR context)
     if(!m_pDisplayTile.IsValid())
         return false;
 
-    static bool s_invert = true;
+    static bool s_invert = true;    //&&MM I don't understand why I need to that. investigate.
     if (s_invert)
         {
         std::swap (uvPts[0], uvPts[2]);
@@ -304,8 +304,7 @@ void RasterTile::QueryVisible(bvector<RasterTilePtr>& visibles, ViewContextR con
     double factor;
     if (IsVisible(context, factor))
         {
-        static double s_qualityFactor = /*1.25*/1.0001; //&&MM make that an option to adjust speed vs quality? 1.0 is better for wms
-        if (!IsLeaf() && factor > s_qualityFactor)
+        if (!IsLeaf() && factor > m_tree.GetVisibleQualityFactor())
             {
             AllocateChildren(); 
 
@@ -421,6 +420,8 @@ RasterQuadTree::RasterQuadTree(RasterSourceR source, DgnDbR dgnDb)
     {    
     // Create the lowest LOD but do not load its data yet.
     m_pRoot = RasterTile::CreateRoot(*this);
+
+    m_visibleQualityFactor = 1.25; 
     }
 
 //----------------------------------------------------------------------------------------

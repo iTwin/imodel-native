@@ -173,6 +173,7 @@ protected:
 
     void SetGcsP(GeoCoordinates::BaseGCSP pNewGcs) {m_pGcs = pNewGcs/*Hold a ref*/;} 
 
+    //&&MM source should return raster data so caller can do what they want with it.
     virtual DisplayTilePtr _QueryTile(TileId const& id, bool request) = 0;
 
     //! default empty constructor. Must call Initialize afterward.
