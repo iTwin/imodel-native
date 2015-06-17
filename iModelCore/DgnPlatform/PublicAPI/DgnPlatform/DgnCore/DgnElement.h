@@ -803,6 +803,15 @@ protected:
     explicit ElementGroup(CreateParams const& params) : T_Super(params) {}
 
 public:
+    //! Create a new instance of a DgnElement using the specified CreateParams.
+    //! @note This is a static method that only creates instances of the ElementGroup class. To create instances of subclasses,
+    //! use a static method on the subclass.
+    static ElementGroupPtr Create(CreateParams const& params) { return new ElementGroup(params); }
+
+    //! Query the DgnClassId for the dgn.ElementGroup class in the specified DgnDb.
+    //! @note This is a static method that always returns the DgnClassId of the dgn.ElementGroup class - it does @b not return the class of a specific instance.
+    DGNPLATFORM_EXPORT static DgnClassId QueryClassId(DgnDbR db);
+
     //! Insert a member into this ElementGroup. This creates an ElementGroupHasMembers ECRelationship between this ElementGroup and the specified DgnElement
     //! @param[in] member The element to become a member of this ElementGroup.
     //! @note The ElementGroup and the specified DgnElement must have already been inserted (have valid DgnElementIds)
