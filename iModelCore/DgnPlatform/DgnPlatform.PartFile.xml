@@ -219,6 +219,7 @@
         <Bindings>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="cs" SubPartDirectory="l10n/cs">Delivery/l10n/cs/DgnCoreMessages_cs.xliff</Files>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="cs" SubPartDirectory="l10n/cs">Delivery/l10n/cs/DgnHandlersMessages_cs.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="cs" SubPartDirectory="l10n/cs">Delivery/l10n/cs/ForeignFormat_cs.xliff</Files>
         </Bindings>
     </Part>
 
@@ -228,6 +229,7 @@
         <Bindings>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="de" SubPartDirectory="l10n/de">Delivery/l10n/de/DgnCoreMessages_de.xliff</Files>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="de" SubPartDirectory="l10n/de">Delivery/l10n/de/DgnHandlersMessages_de.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="de" SubPartDirectory="l10n/cs">Delivery/l10n/de/ForeignFormat_de.xliff</Files>
         </Bindings>
     </Part>
 
@@ -237,6 +239,7 @@
         <Bindings>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="es" SubPartDirectory="l10n/es">Delivery/l10n/es/DgnCoreMessages_es.xliff</Files>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="es" SubPartDirectory="l10n/es">Delivery/l10n/es/DgnHandlersMessages_es.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="es" SubPartDirectory="l10n/es">Delivery/l10n/es/ForeignFormat_es.xliff</Files>
         </Bindings>
     </Part>
 
@@ -246,6 +249,7 @@
         <Bindings>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="fi" SubPartDirectory="l10n/fi">Delivery/l10n/fi/DgnCoreMessages_fi.xliff</Files>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="fi" SubPartDirectory="l10n/fi">Delivery/l10n/fi/DgnHandlersMessages_fi.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="fi" SubPartDirectory="l10n/fi">Delivery/l10n/fi/ForeignFormat_fi.xliff</Files>
         </Bindings>
     </Part>
 
@@ -255,6 +259,7 @@
         <Bindings>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="fr" SubPartDirectory="l10n/fr">Delivery/l10n/fr/DgnCoreMessages_fr.xliff</Files>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="fr" SubPartDirectory="l10n/fr">Delivery/l10n/fr/DgnHandlersMessages_fr.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="fr" SubPartDirectory="l10n/cs">Delivery/l10n/fr/ForeignFormat_fr.xliff</Files>
         </Bindings>
     </Part>
 
@@ -264,6 +269,7 @@
         <Bindings>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="it" SubPartDirectory="l10n/it">Delivery/l10n/it/DgnCoreMessages_it.xliff</Files>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="it" SubPartDirectory="l10n/it">Delivery/l10n/it/DgnHandlersMessages_it.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="it" SubPartDirectory="l10n/it">Delivery/l10n/it/ForeignFormat_it.xliff</Files>
         </Bindings>
     </Part>
 
@@ -273,6 +279,7 @@
         <Bindings>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="ja" SubPartDirectory="l10n/ja">Delivery/l10n/ja/DgnCoreMessages_ja.xliff</Files>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="ja" SubPartDirectory="l10n/ja">Delivery/l10n/ja/DgnHandlersMessages_ja.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="ja" SubPartDirectory="l10n/ja">Delivery/l10n/ja/ForeignFormat_ja.xliff</Files>
         </Bindings>
     </Part>
 
@@ -282,6 +289,7 @@
         <Bindings>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="ko" SubPartDirectory="l10n/ko">Delivery/l10n/ko/DgnCoreMessages_ko.xliff</Files>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="ko" SubPartDirectory="l10n/ko">Delivery/l10n/ko/DgnHandlersMessages_ko.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="ko" SubPartDirectory="l10n/ko">Delivery/l10n/ko/ForeignFormat_ko.xliff</Files>
         </Bindings>
     </Part>
 
@@ -291,6 +299,7 @@
         <Bindings>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="nl" SubPartDirectory="l10n/nl">Delivery/l10n/nl/DgnCoreMessages_nl.xliff</Files>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="nl" SubPartDirectory="l10n/nl">Delivery/l10n/nl/DgnHandlersMessages_nl.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="nl" SubPartDirectory="l10n/nl">Delivery/l10n/nl/ForeignFormat_nl.xliff</Files>
         </Bindings>
     </Part>
 
@@ -300,6 +309,7 @@
         <Bindings>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="pl" SubPartDirectory="l10n/pl">Delivery/l10n/pl/DgnCoreMessages_pl.xliff</Files>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="pl" SubPartDirectory="l10n/pl">Delivery/l10n/pl/DgnHandlersMessages_pl.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="pl" SubPartDirectory="l10n/pl">Delivery/l10n/pl/ForeignFormat_pl.xliff</Files>
         </Bindings>
     </Part>
 
@@ -309,6 +319,7 @@
         <Bindings>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="pt" SubPartDirectory="l10n/pt">Delivery/l10n/pt/DgnCoreMessages_pt.xliff</Files>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="pt" SubPartDirectory="l10n/pt">Delivery/l10n/pt/DgnHandlersMessages_pt.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="pt" SubPartDirectory="l10n/pt">Delivery/l10n/pt/ForeignFormat_pt.xliff</Files>
         </Bindings>
     </Part>
 
@@ -318,6 +329,7 @@
         <Bindings>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="ru" SubPartDirectory="l10n/ru">Delivery/l10n/ru/DgnCoreMessages_ru.xliff</Files>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="ru" SubPartDirectory="l10n/ru">Delivery/l10n/ru/DgnHandlersMessages_ru.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="ru" SubPartDirectory="l10n/ru">Delivery/l10n/ru/ForeignFormat_ru.xliff</Files>
         </Bindings>
     </Part>
 
@@ -327,6 +339,7 @@
         <Bindings>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="sv" SubPartDirectory="l10n/sv">Delivery/l10n/sv/DgnCoreMessages_sv.xliff</Files>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="sv" SubPartDirectory="l10n/sv">Delivery/l10n/sv/DgnHandlersMessages_sv.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="sv" SubPartDirectory="l10n/sv">Delivery/l10n/sv/ForeignFormat_sv.xliff</Files>
         </Bindings>
     </Part>
 
@@ -336,6 +349,7 @@
         <Bindings>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="tr" SubPartDirectory="l10n/tr">Delivery/l10n/tr/DgnCoreMessages_tr.xliff</Files>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="tr" SubPartDirectory="l10n/tr">Delivery/l10n/tr/DgnHandlersMessages_tr.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="tr" SubPartDirectory="l10n/tr">Delivery/l10n/tr/ForeignFormat_tr.xliff</Files>
         </Bindings>
     </Part>
 
@@ -345,6 +359,7 @@
         <Bindings>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="zh-cn" SubPartDirectory="l10n/zh-cn">Delivery/l10n/zh-cn/DgnCoreMessages_zh-cn.xliff</Files>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="zh-cn" SubPartDirectory="l10n/zh-cn">Delivery/l10n/zh-cn/DgnHandlersMessages_zh-cn.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="zh-cn" SubPartDirectory="l10n/zh-cn">Delivery/l10n/zh-cn/ForeignFormat_zh-cn.xliff</Files>
         </Bindings>
     </Part>
 
@@ -354,6 +369,7 @@
         <Bindings>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="zh-tw" SubPartDirectory="l10n/zh-tw">Delivery/l10n/zh-tw/DgnCoreMessages_zh-tw.xliff</Files>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="zh-tw" SubPartDirectory="l10n/zh-tw">Delivery/l10n/zh-tw/DgnHandlersMessages_zh-tw.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="zh-tw" SubPartDirectory="l10n/zh-tw">Delivery/l10n/zh-tw/ForeignFormat_zh-tw.xliff</Files>
         </Bindings>
     </Part>
 

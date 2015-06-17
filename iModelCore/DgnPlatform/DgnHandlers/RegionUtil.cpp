@@ -438,7 +438,7 @@ BentleyStatus   RegionGraphicsDrawGeom::GetMarkedRegions (CurveVectorPtr& region
     TransformCP       localToWorldP = NULL;
 
     if (NULL != m_context)
-        localToWorldP = m_context->GetCurrLocalToFrustumTransformCP ();
+        localToWorldP = m_context->GetCurrLocalToWorldTransformCP ();
 
     if (!baseRegion.IsValid ())
         return ERROR;
@@ -633,7 +633,7 @@ GeometricElementCP RegionGraphicsDrawGeom::GetCurrentElement ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       RegionGraphicsDrawGeom::_ProcessCurvePrimitive (ICurvePrimitiveCR primitive, bool closed, bool filled)
     {
-    TransformCP placementTrans = m_context->GetCurrLocalToFrustumTransformCP ();
+    TransformCP placementTrans = m_context->GetCurrLocalToWorldTransformCP ();
 #if defined (NEEDS_WORK_DGNITEM)
     GeometricElementCP element = GetCurrentElement ();
 
@@ -712,7 +712,7 @@ StatusInt       RegionGraphicsDrawGeom::_ProcessCurveVector (CurveVectorCR curve
         {
         if (curves.IsClosedPath () && ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Invalid != curves.HasSingleCurvePrimitive ())
             {
-            TransformCP     placementTransform = m_context->GetCurrLocalToFrustumTransformCP ();
+            TransformCP     placementTransform = m_context->GetCurrLocalToWorldTransformCP ();
             CurveVectorPtr  textBox = curves.Clone ();
 
             if (NULL != placementTransform)
@@ -825,7 +825,7 @@ BentleyStatus   RegionGraphicsDrawGeom::SetupGraph (double gapTolerance, bool me
         m_context->PushTransform (viewToActiveTrans);
         }
 
-    TransformCP placementTransform = m_context->GetCurrLocalToFrustumTransformCP ();
+    TransformCP placementTransform = m_context->GetCurrLocalToWorldTransformCP ();
 
     if (NULL != placementTransform)
         {
@@ -915,7 +915,7 @@ bool            RegionGraphicsDrawGeom::IsFaceLoopSelected (MTGNodeId faceNodeId
 void            RegionGraphicsDrawGeom::CollectFaceLoopsAtPoint (bvector<MTGNodeId>* faceNodeIds, DPoint3dCR seedPoint, RegionLoops floodSelect, bool stepOutOfHoles)
     {
     DPoint3d    tmpPt = seedPoint;
-    TransformCP placementTransP = m_context->GetCurrLocalToFrustumTransformCP ();
+    TransformCP placementTransP = m_context->GetCurrLocalToWorldTransformCP ();
 
     if (placementTransP)
         {
@@ -1234,7 +1234,7 @@ bool            RegionGraphicsContext::GetAdjustedSeedPoints (bvector<DPoint3d>*
     if (RegionType::Flood != m_operation)
         return false;
 
-    TransformCP placementTransP = GetCurrLocalToFrustumTransformCP ();
+    TransformCP placementTransP = GetCurrLocalToWorldTransformCP ();
 
     for (size_t iSeed = 0; iSeed < m_floodSeeds.size (); iSeed++)
         {
