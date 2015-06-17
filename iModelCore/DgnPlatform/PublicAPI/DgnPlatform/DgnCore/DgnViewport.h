@@ -583,6 +583,7 @@ public:
     DGNPLATFORM_EXPORT ViewportStatus ChangeArea(DPoint3dCP pts);
     DGNPLATFORM_EXPORT void Destroy();
     DGNPLATFORM_EXPORT StatusInt ComputeTransientRange(DRange3dP range, RotMatrixP rMatrix, bool checkLevelClass) const;
+    DGNPLATFORM_EXPORT StatusInt ComputeVisibleDepthRange (double& minDepth, double& maxDepth, bool ignoreViewExtent = false);
     DGNPLATFORM_EXPORT StatusInt ComputeViewRange(DRange3dR, FitViewParams& params) ;
     DGNPLATFORM_EXPORT void SetNeedsHeal();
     DGNPLATFORM_EXPORT bool UseClipVolume(DgnModelCP) const;
