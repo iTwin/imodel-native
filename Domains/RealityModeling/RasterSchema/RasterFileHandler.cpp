@@ -77,7 +77,7 @@ DgnModelId RasterFileModelHandler::CreateRasterFileModel(DgnDbR db, BeFileName f
      
     RasterFileModelPtr model = new RasterFileModel(DgnModel::CreateParams(db, classId, modelName), props);
 
-    db.Models().Insert(*model);
+    model->Insert();
     return model->GetModelId();
     }
 

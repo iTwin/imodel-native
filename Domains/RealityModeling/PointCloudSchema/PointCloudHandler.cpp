@@ -38,7 +38,7 @@ DgnModelId PointCloudModelHandler::CreatePointCloudModel(DgnDbR db, BeFileName f
         // Can't create model; probably that file name is invalid. Return an invalid model id.
         return DgnModelId();
 
-    db.Models().Insert(*model);
+    model->Insert();
     return model->GetModelId();
     }
 

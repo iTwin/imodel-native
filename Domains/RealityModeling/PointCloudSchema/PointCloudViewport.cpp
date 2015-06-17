@@ -52,15 +52,15 @@ struct  ViewPortManager
 
 
 // Empty data used to be informed when models are destroyed
-static DgnPlatform::DgnModelAppData::Key s_uDataKey;
-struct _uData : public DgnPlatform::DgnModelAppData
+static DgnPlatform::DgnModel::AppData::Key s_uDataKey;
+struct _uData : public DgnPlatform::DgnModel::AppData
     {
-        virtual void    _OnCleanup (DgnModelR dgnModel) override
+        virtual void    _OnEmpty (DgnModelCR dgnModel) override
             {
-            ModelViewportManager::Get().Remove (&dgnModel); 
+            ModelViewportManager::Get().Remove ((DgnModelP)&dgnModel); 
             delete this;
             }
-        virtual void    _OnModelDelete (DgnModelR dgnModel) override
+        virtual void    _OnDelete (DgnModelCR dgnModel) override
             {
             }
     };

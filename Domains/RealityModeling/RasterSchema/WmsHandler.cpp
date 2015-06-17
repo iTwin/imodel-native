@@ -190,7 +190,7 @@ DgnPlatform::DgnModelId WmsModelHandler::CreateWmsModel(DgnDbR db, Utf8CP modelN
 
     WmsModelPtr modelP = new WmsModel(DgnModel::CreateParams(db, classId, modelName), mapInfo);
 
-    db.Models().Insert(*modelP);
+    modelP->Insert();
     return modelP->GetModelId();
     }
 
