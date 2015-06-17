@@ -8,20 +8,6 @@
 #pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
 
-#if defined(NOTNOW)
-        #include    "../Tools/KeyTree.h"
-        #include    "RmgrTools/Tools/msavltre.h"
-        #include    "ViewContext.h"
-        #include    "LineStyle.h"
-        #include    "RmgrTools/Tools/msstrlst.h"
-        #include    "../DgnPlatformBaseType.r.h"
-
-        #define LCCAP_MAXVECS       90
-
-        typedef uint32_t RscFileHandle;
-        struct dwgLineStyleInfo;   // this is outside the linestyle namespace.
-#endif
-
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //=======================================================================================
