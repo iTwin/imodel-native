@@ -1802,7 +1802,7 @@ RedlineModelP DgnMarkupProject::CreateRedlineModel (Utf8CP name, DgnModelId temp
     if (!rdlModel.IsValid())
         return nullptr;
 
-    Models().Insert(*rdlModel); // Takes ownership of the rdlModel, adding a reference to it.
+    rdlModel->Insert(); // Takes ownership of the rdlModel, adding a reference to it.
 
     SaveChanges();
 
@@ -1822,7 +1822,7 @@ PhysicalRedlineModelP DgnMarkupProject::CreatePhysicalRedlineModel (Utf8CP name,
     if (!rdlModel.IsValid())
         return nullptr;
 
-    Models().Insert(*rdlModel); // Takes ownership of the rdlModel, adding a reference to it.
+    rdlModel->Insert(); // Takes ownership of the rdlModel, adding a reference to it.
 
     SaveChanges();
 
