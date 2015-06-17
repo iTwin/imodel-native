@@ -385,12 +385,12 @@ ViewFlagsCR         viewFlags,
 GeomDetailCR        geomDetail
 ) : m_viewport(viewport)
     {
-    m_elementId     = element.GetElementId();
-    m_locateSource  = source;
-    m_testPoint     = testPoint;
-    m_viewFlags     = viewFlags;
-    m_geomDetail    = geomDetail;
-    m_componentMode = ComponentMode::None;
+    m_elementId         = element.GetElementId();
+    m_locateSource      = source;
+    m_testPoint         = testPoint;
+    m_viewFlags         = viewFlags;
+    m_geomDetail        = geomDetail;
+    m_subSelectionMode  = SubSelectionMode::None;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -398,13 +398,13 @@ GeomDetailCR        geomDetail
 +---------------+---------------+---------------+---------------+---------------+------*/
 HitDetail::HitDetail (HitDetail const& from) : m_viewport(from.m_viewport)
     {
-    m_elementId     = from.m_elementId;
-    m_locateSource  = from.m_locateSource;
-    m_testPoint     = from.m_testPoint;
-    m_viewFlags     = from.m_viewFlags;
-    m_geomDetail    = from.m_geomDetail;
-    m_elemTopo      = from.m_elemTopo.IsValid() ? from.m_elemTopo->_Clone() : nullptr;
-    m_componentMode = from.m_componentMode;
+    m_elementId         = from.m_elementId;
+    m_locateSource      = from.m_locateSource;
+    m_testPoint         = from.m_testPoint;
+    m_viewFlags         = from.m_viewFlags;
+    m_geomDetail        = from.m_geomDetail;
+    m_elemTopo          = from.m_elemTopo.IsValid() ? from.m_elemTopo->_Clone() : nullptr;
+    m_subSelectionMode  = from.m_subSelectionMode;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -723,7 +723,7 @@ void IntersectDetail::_DrawInVp (DgnViewportP vp, DgnDrawMode drawMode, DrawPurp
     if (DrawPurpose::Flash == drawPurpose)
         tmpSnapDetail.SetHilited (DgnElement::Hilited::Dashed);
 
-    tmpSnapDetail.SetComponentMode (GetComponentMode ()); // Set correct component flash mode...
+    tmpSnapDetail.SetSubSelectionMode (GetSubSelectionMode()); // Set correct flash mode...
     tmpSnapDetail.DrawInVp (vp, drawMode, drawPurpose, stopFlag);
 
     if (DrawPurpose::Flash == drawPurpose)
