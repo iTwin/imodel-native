@@ -71,7 +71,7 @@ private:
 
     Utf8String _GetECSchemaName() override {return TMTEST_SCHEMA_NAME;}
     Utf8String _GetECClassName() override {return TMTEST_TEST_ITEM_CLASS_NAME;}
-    DgnDbStatus _GenerateElementGeometry(GeometricElementR el) override{BeAssert(false); return DgnDbStatus::NotEnabled;}
+    DgnDbStatus _GenerateElementGeometry(GeometricElementR el) override;
     DgnDbStatus _LoadProperties(DgnElementCR el) override;
     DgnDbStatus _UpdateProperties(DgnElementCR el) override;
 
@@ -188,41 +188,36 @@ void ElementItemTests::SetupProject(WCharCP projFile, WCharCP testFile, Db::Open
     m_defaultCategoryId = m_db->Categories().MakeIterator().begin().GetCategoryId();
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   BentleySystems
-//---------------------------------------------------------------------------------------
-static CurveVectorPtr computeShape(double len)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TestItem::_GenerateElementGeometry(GeometricElementR el)
     {
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(el);
+    
+    // We make the element geometry depend on the item's property. 
+    //  In a real app, of course, this property would be something realistic, not a string.
+    if (m_testItemProperty.EqualsI("Line"))
+        builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(1,1,1))));
+    else if (m_testItemProperty.EqualsI("Circle"))
+        builder->Append(*ICurvePrimitive::CreateArc(DEllipse3d::FromXYMajorMinor(0,0,0, 10,10, 0,0, Angle::PiOver2())));
+    else
+        return DgnDbStatus::ElementWriteError;
+    
+    if (BSISUCCESS != builder->SetGeomStreamAndPlacement(el))
+        return DgnDbStatus::ElementWriteError;
 
-    DPoint3d pts[6];
-    pts[0] = DPoint3d::From(-len,-len);
-    pts[1] = DPoint3d::From(+len,-len);
-    pts[2] = DPoint3d::From(+len,+len);
-    pts[3] = DPoint3d::From(-len,+len);
-    pts[4] = pts[0];
-    pts[5] = pts[0];
-    pts[5].z = 1;
-
-    return CurveVector::CreateLinear(pts, _countof(pts), CurveVector::BOUNDARY_TYPE_Open);
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      01/15
+* @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
     {
     DgnModelP model = db.Models().GetModel(mid);
 
     TestElementPtr testElement = new TestElement(CreateParams(*model, QueryClassId(db), categoryId));
-
-
-    // *** WIP_ITEM - move this into the item's _GenerateElementGeometry method
-
-    //  Add some hard-wired geometry
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*testElement);
-    builder->Append(*computeShape(100));
-    if (SUCCESS != builder->SetGeomStreamAndPlacement(*testElement))
-        return nullptr;
 
     return testElement;
     }
@@ -269,7 +264,7 @@ TEST_F(ElementItemTests, ItemCRUD)
         TestElementPtr tempEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement");
         ASSERT_EQ( nullptr , DgnElement::Item::GetItem(*tempEl) ) << "element should not yet have an item";
         //  ... with an item
-        DgnElement::Item::SetItem(*tempEl, *TestItem::Create("TestItem"));
+        DgnElement::Item::SetItem(*tempEl, *TestItem::Create("Line"));  // Initial geometry should be a line
         ASSERT_NE( nullptr , DgnElement::Item::GetItem(*tempEl) ) << "element should have a scheduled item";
         el = m_db->Elements().Insert(*tempEl);
         }
@@ -281,7 +276,18 @@ TEST_F(ElementItemTests, ItemCRUD)
         //  Verify that item was saved in the Db
         TestItemCP item = DgnElement::Item::Get<TestItem>(*el);
         ASSERT_NE( nullptr , item ) << "element should have a peristent item";
-        ASSERT_STREQ( "TestItem" , item->GetTestItemProperty().c_str() );
+        ASSERT_STREQ( "Line" , item->GetTestItemProperty().c_str() );
+    
+        //  Verify that item generated a line
+        size_t count=0;
+        for (ElementGeometryPtr geom : ElementGeometryCollection (*el))
+            {
+            ICurvePrimitivePtr curve = geom->GetAsICurvePrimitive();
+            ASSERT_TRUE( curve.IsValid() );
+            ASSERT_TRUE( curve->GetLineStringCP() != nullptr );
+            ++count;
+            }
+        ASSERT_EQ( 1 , count );
         }
 
     if (true)
@@ -289,9 +295,9 @@ TEST_F(ElementItemTests, ItemCRUD)
         //  Update the item
         TestElementPtr tempEl = el->MakeCopy<TestElement>();
         TestItemP item = DgnElement::Item::GetP<TestItem>(*tempEl);
-        item->SetTestItemProperty("Changed");
+        item->SetTestItemProperty("2");
         TestItemCP originalItem = DgnElement::Item::Get<TestItem>(*el);
-        ASSERT_STREQ( "TestItem" , originalItem->GetTestItemProperty().c_str() ) << "persistent item should remain unchanged until I call Update on the host element";
+        ASSERT_STREQ( "Line" , originalItem->GetTestItemProperty().c_str() ) << "persistent item should remain unchanged until I call Update on the host element";
         ASSERT_TRUE( m_db->Elements().Update(*tempEl).IsValid() );
         }
 
@@ -301,7 +307,18 @@ TEST_F(ElementItemTests, ItemCRUD)
         //  Verify that persistent item was changed
         TestItemCP item = DgnElement::Item::Get<TestItem>(*el);
         ASSERT_NE( nullptr , item ) << "element should have a peristent item";
-        ASSERT_STREQ( "Changed" , item->GetTestItemProperty().c_str() ) << "I should see the changed value of the item now";
+        ASSERT_STREQ( "Circle" , item->GetTestItemProperty().c_str() ) << "I should see the changed value of the item now";
+
+        //  Verify that item generated a circle
+        size_t count=0;
+        for (ElementGeometryPtr geom : ElementGeometryCollection (*el))
+            {
+            ICurvePrimitivePtr curve = geom->GetAsICurvePrimitive();
+            ASSERT_TRUE( curve.IsValid() );
+            ASSERT_TRUE( curve->GetArcCP() != nullptr );
+            ++count;
+            }
+        ASSERT_EQ( 1 , count );
         }
     }
 

@@ -122,7 +122,7 @@ public:
     struct EXPORT_VTABLE_ATTRIBUTE AspectBase : AppData
     {
     private:
-        DGNPLATFORM_EXPORT DropMe _OnInserted(DgnElementCR el) override;
+        DGNPLATFORM_EXPORT DropMe _OnInserted(DgnElementCR el) override final;
         DGNPLATFORM_EXPORT DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original) override final;
 
     protected:
@@ -192,6 +192,10 @@ public:
         BeSQLite::EC::ECInstanceId _GetECInstanceId(DgnElementCR el) override final {return el.GetElementId();}
         DGNPLATFORM_EXPORT DgnDbStatus _InsertInstance(DgnElementCR el) override final;
         DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) override final;
+        DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(DgnElementR el) override final {return CallGenerateElementGeometry(el);}
+        DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementR el, DgnElementCR original) override final {return CallGenerateElementGeometry(el);}
+
+        DgnDbStatus CallGenerateElementGeometry(DgnElementR);
 
     protected:
         //! The subclass must implement this method to generate geometry and store it on \a el

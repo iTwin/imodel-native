@@ -1192,7 +1192,19 @@ DgnElement::Item* DgnElement::Item::Load(DgnElementCR el)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      01/15
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::Item::CallGenerateElementGeometry(DgnElementR el)
+    {
+    GeometricElementP gel = el.ToGeometricElementP();
+    if (nullptr == gel)
+        return DgnDbStatus::Success;
+
+    return _GenerateElementGeometry(*gel);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElementAspectHandler* ElementAspectHandler::FindHandler(DgnDbR db, DgnClassId handlerId) 
     {
