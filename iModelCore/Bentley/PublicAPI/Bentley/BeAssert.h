@@ -51,7 +51,7 @@ END_BENTLEY_NAMESPACE
 //! Assert that \a _Expression is true
 #define BeAssert(_Expression) (void)( (!!(_Expression)) || (BentleyApi::BeAssertFunctions::PerformBeAssert(_CRT_WIDE(#_Expression), _CRT_WIDE(__FILE__), __LINE__), 0) )
 //! Assert that \a _Expression is true, when the test relates to input data.
-#define BeDataAssert(_Expression) (void)( (!!(_Expression)) || BentleyApi::(BeAssertFunctions::PerformBeDataAssert(_CRT_WIDE(#_Expression), _CRT_WIDE(__FILE__), __LINE__), 0) )
+#define BeDataAssert(_Expression) (void)( (!!(_Expression)) || (BentleyApi::BeAssertFunctions::PerformBeDataAssert(_CRT_WIDE(#_Expression), _CRT_WIDE(__FILE__), __LINE__), 0) )
 //! Assert that \a _Expression is true
 #define BeAssertOnce(_Expression)               \
         do {                                    \
