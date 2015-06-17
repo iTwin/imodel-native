@@ -10,7 +10,7 @@ PolicyFile=$(SrcRoot)DgnDomains/RealityModeling/RasterSchema/RasterSchemaPolicy.
 SolutionPolicyMki=$(PolicyFile)
 
 %include mdl.mki
-%include $(SrcRoot)BentleyApi/PublicMki/BentleyApi.mki 
+%include $(BuildContext)SubParts/PublicMki/BentleyApi.mki
 
 baseDir                         = $(_MakeFilePath)
 rasterSchemaPublicApiSrc        = $(repositoryRoot)PublicAPI/RasterSchema/

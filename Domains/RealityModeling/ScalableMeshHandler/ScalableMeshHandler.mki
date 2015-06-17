@@ -9,7 +9,7 @@
 %include $(SrcBsiCommon)sharedmki/InternalSystemPolicy.mki
 %include $(SharedMki)DefinePublicApiIncludes.mki
 %include $(SharedMki)CommonCompileLinkPolicy.mki
-%include $(SrcRoot)BentleyApi/PublicMki/BentleyApi.mki
+%include $(BuildContext)SubParts/PublicMki/BentleyApi.mki
 
 %include DefaultToolSet.mki
 
