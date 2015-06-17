@@ -435,6 +435,12 @@ DbResult DbFile::StartSavepoint(Savepoint& txn, BeSQLiteTxnMode txnMode)
     if (txn.IsActive())
         return BE_SQLITE_ERROR;
 
+    if (m_tracker.IsValid() && 0 < m_txns.size()) // if a change tracker is active, it is illegal to start a nested transaction
+        {
+        BeAssert(false);
+        return BE_SQLITE_ERROR_ChangeTrackError;
+        }
+
     // we need to save the cached properties/rlvs in case nested txn is cancelled
     SaveCachedProperties(true);
     SaveCachedRlvs(true);
@@ -497,11 +503,11 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit, Utf8CP operation)
 
     m_inCommit = true;
 
-    // we can't commit or rollback if any active changetrack has changes.
-    for (auto const& tracker : m_trackers)
+    // we can't commit or rollback if changetrack has any changes.
+    if (m_tracker.IsValid())
         {
         // Give trackers a chance to save the changes.
-        if (tracker.second->HasChanges() && ChangeTracker::OnCommitStatus::Abort == tracker.second->_OnCommit(isCommit, operation))
+        if (m_tracker->HasChanges() && ChangeTracker::OnCommitStatus::Abort == m_tracker->_OnCommit(isCommit, operation))
             {
             BeAssert(false);
             return  BE_SQLITE_ERROR_ChangeTrackError;
@@ -1100,8 +1106,8 @@ void DbFile::SaveSettings(Utf8CP changesetName)
     txn->Save(nullptr); // all persistent changes must be saved before we can save settings (they must be in their own transaction so it can be marked to skip for undo).
 
     // we don't want changes to settings in the persistent properties table to be undoable.
-    for (auto tracker : m_trackers)
-        tracker.second->_OnSettingsSave();
+    if (m_tracker.IsValid())
+        m_tracker->_OnSettingsSave();
 
     m_settingsDirty = false;
     DbResult rc = (DbResult) sqlite3_exec(m_sqlDb,"INSERT OR REPLACE INTO " BEDB_TABLE_Property " (Namespace,Name,Id,SubId,TxnMode,RawSize,Data,StrData) "
@@ -1113,8 +1119,8 @@ void DbFile::SaveSettings(Utf8CP changesetName)
 
     txn->Save(changesetName); // save the settings changes.
 
-    for (auto tracker : m_trackers)
-        tracker.second->_OnSettingsSaved();
+    if (m_tracker.IsValid())
+        m_tracker->_OnSettingsSaved();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1701,7 +1707,7 @@ DbFile::~DbFile()
     if (nullptr == m_sqlDb)
         return;
 
-    m_trackers.clear();
+    m_tracker = nullptr;
 
     if (0 != m_txns.size())
         {
@@ -2214,42 +2220,16 @@ int DbFile::RemoveFunction(DbFunction& function) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::AddChangeTracker(ChangeTracker& tracker)
+void Db::SetChangeTracker(ChangeTracker* tracker)
     {
-    if (tracker.GetDb() != nullptr)
-        {
-        BeAssert(false);      // already attached???
-        return BE_SQLITE_ERROR;
-        }
+    if (m_dbFile->m_tracker.get() == tracker)
+        return;
 
-    if (!m_dbFile->m_trackers.Insert(tracker.GetName(), &tracker).second)
-        return BE_SQLITE_ERROR;
+    if (tracker != nullptr)
+        tracker->SetDb(this);
 
-    tracker.SetDb(this);
-    return BE_SQLITE_OK;
+    m_dbFile->m_tracker = tracker;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::DropChangeTracker(Utf8CP name)
-    {
-    auto tracker = m_dbFile->m_trackers.find(name);
-    if (tracker == m_dbFile->m_trackers.end())
-        return BE_SQLITE_ERROR;
-
-    m_dbFile->m_trackers.erase(tracker);
-    return BE_SQLITE_OK;
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-ChangeTracker* Db::FindChangeTracker(Utf8CP name)
-    {
-    auto tracker = m_dbFile->m_trackers.find(name);
-    return (tracker == m_dbFile->m_trackers.end()) ? nullptr : tracker->second.get();
-    }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   04/12

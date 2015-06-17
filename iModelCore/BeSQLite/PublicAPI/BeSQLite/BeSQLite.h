@@ -391,9 +391,9 @@ struct BeServerIssuedId : BeUInt32Id<BeServerIssuedId,0xffffffff>
     BeServerIssuedId() {Invalidate();}
 
     //! Construct a BeServerIssuedId from a 32 bit value.
-    explicit BeServerIssuedId(uint32_t u) : BeUInt32Id (u) {}
+    explicit BeServerIssuedId(uint32_t u) : BeUInt32Id(u) {}
 
-    void CheckValue() const { BeAssert (IsValid()); }
+    void CheckValue() const {BeAssert(IsValid());}
 };
 
 #define BESERVER_ISSUED_ID_CLASS(classname) struct classname : BeServerIssuedId {classname() : BeServerIssuedId() {} explicit classname(uint32_t u) : BeServerIssuedId(u) {}};
@@ -1029,7 +1029,7 @@ struct DbValue
     BE_SQLITE_EXPORT double      GetValueDouble() const;    //!< see sqlite3_value_double
     BE_SQLITE_EXPORT BeLuid      GetValueLuid() const;      //!< get the value as a Locally unique id
     BE_SQLITE_EXPORT BeGuid      GetValueGuid() const;      //!< get the value as a GUID
-    template <class T_Id> T_Id   GetValueId() const {return T_Id (GetValueInt64());}
+    template <class T_Id> T_Id   GetValueId() const {return T_Id(GetValueInt64());}
 
     BE_SQLITE_EXPORT Utf8String Format(int detailLevel) const; //!< for debugging purposes.
 };
@@ -1549,7 +1549,7 @@ public:
     //!     - BE_SQLITE_IOERR if ImportDbFile failed to read the proper number of bytes from the file.
     //!     - BE_SQLITE_IOERR_WRITE if a write failed.
     //!     - BE_SQLITE_ERROR if there was an SQLite error and it was not possible to provide more detail.
-    BE_SQLITE_EXPORT BeRepositoryBasedId ImportDbFile (DbResult& stat, Utf8CP name, Utf8CP localFileName, Utf8CP typeStr, Utf8CP description = nullptr, DateTime const* lastModified = nullptr, uint32_t chunkSize = 500 * 1024, bool supportRandomAccess = true);
+    BE_SQLITE_EXPORT BeRepositoryBasedId ImportDbFile(DbResult& stat, Utf8CP name, Utf8CP localFileName, Utf8CP typeStr, Utf8CP description = nullptr, DateTime const* lastModified = nullptr, uint32_t chunkSize = 500 * 1024, bool supportRandomAccess = true);
 
     //! Import a copy of an existing file from the local filesystem into this BeSQLite::Db.
     //! @param[out] stat Success or error code. May be NULL.
@@ -1600,7 +1600,7 @@ public:
     //!     - BE_SQLITE_IOERR_WRITE if a write failed with an error other than disk full.
     //!     - BE_SQLITE_IOERR_READ, BE_SQLITE_IOERR_SHORT_READ if the extracted file is not the expected size; the DbEmbeddedFileTable specifies the expected file size.
     //!     - BE_SQLITE_ABORT if the ICompressProgressTracker provided via the progress argument requested the operation be aborted.
-    BE_SQLITE_EXPORT DbResult ExportDbFile (Utf8CP localFileName, Utf8CP name, ICompressProgressTracker* progress=nullptr);
+    BE_SQLITE_EXPORT DbResult ExportDbFile(Utf8CP localFileName, Utf8CP name, ICompressProgressTracker* progress=nullptr);
 
     //! Create a new file on the local file system with a copy of the content of an embedded file, by name.
     //! @param[in] localFileName the name for the new file. This method will fail if the file already exists or cannot be created.
@@ -1992,7 +1992,7 @@ protected:
     BeDbGuid        m_dbGuid;
     Savepoint       m_defaultTxn;
     BeRepositoryId  m_repositoryId;
-    bmap<Utf8String,ChangeTrackerPtr> m_trackers;
+    ChangeTrackerPtr m_tracker;
     StatementCache  m_statements;
     typedef bvector<Savepoint*> DbTxns;
     typedef DbTxns::iterator DbTxnIter;
@@ -2647,9 +2647,7 @@ public:
     BE_SQLITE_EXPORT DbResult ChangeRepositoryId(BeRepositoryId);
 
 //__PUBLISH_SECTION_END__
-    BE_SQLITE_EXPORT DbResult AddChangeTracker(ChangeTracker&);
-    BE_SQLITE_EXPORT DbResult DropChangeTracker(Utf8CP name);
-    BE_SQLITE_EXPORT ChangeTracker* FindChangeTracker(Utf8CP name);
+    BE_SQLITE_EXPORT void SetChangeTracker(ChangeTracker*);
     Savepoint* GetDefaultTransaction() const {return (m_dbFile != nullptr) ? &m_dbFile->m_defaultTxn : nullptr;}
 
     //! Checks a file's profile compatibility to be opened with the current version of the profile's API.
@@ -2689,13 +2687,13 @@ public:
     //! @param[out] xdate   The expiration date, if any.
     //! @return BE_SQLITE_ROW if the ExpirationDate property was successfully found, BE_SQLITE_NOTFOUND if this database does not have an expiration data, or BE_SQLITE_ERROR if the expiration date could not be read.
     //! @see SaveExpirationDate, IsExpired
-    BE_SQLITE_EXPORT DbResult QueryExpirationDate (DateTime& xdate) const;
+    BE_SQLITE_EXPORT DbResult QueryExpirationDate(DateTime& xdate) const;
 
     //! Saves the specified date as the ExpirationDate property of the database.
     //! @param[in] xdate   The expiration date. <em>Must be UTC.</em>
     //! @return BE_SQLITE_OK if property was successfully saved, or a non-zero error status if the expiration date is invalid, is not UTC, or could not be saved to the database.
     //! @see QueryExpirationDate, IsExpired
-    BE_SQLITE_EXPORT DbResult SaveExpirationDate (DateTime const& xdate);
+    BE_SQLITE_EXPORT DbResult SaveExpirationDate(DateTime const& xdate);
 };
 
 //=======================================================================================
