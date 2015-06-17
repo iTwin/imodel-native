@@ -177,6 +177,17 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
             m_dgndb(dgndb), m_id(id), m_classId(classId), m_name(name), m_props(props) {}
     };
 
+private:
+    template<class T> void CallAppData(T const& caller) const;
+    void RegisterElement(DgnElementCR);
+    void SetFilled() {m_filled=true; AllocateRangeIndex();}
+    void AllocateRangeIndex() const;
+    void ClearRangeIndex();
+    void ReleaseAllElements();
+    void AddToRangeIndex(DgnElementCR);
+    void RemoveFromRangeIndex(DgnElementCR);
+    void UpdateRangeIndex(DgnElementCR modified, DgnElementCR original);
+
 protected:
     DgnDbR          m_dgndb;
     DgnModelId      m_modelId;
@@ -190,7 +201,6 @@ protected:
     bool            m_filled;       // true if the list was filled from db
     bool            m_readonly;     // true if this model is from a read-only file.
 
-    template<class T> void CallAppData(T const& caller) const;
     explicit DGNPLATFORM_EXPORT DgnModel(CreateParams const&);
     DGNPLATFORM_EXPORT virtual ~DgnModel();
 
@@ -203,35 +213,57 @@ protected:
     DGNPLATFORM_EXPORT virtual void _FromPropertiesJson(Json::Value const&);
     DGNPLATFORM_EXPORT virtual DPoint3d _GetGlobalOrigin() const;
 
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdateElement(DgnElementCR modified, DgnElementCR original);
-    DGNPLATFORM_EXPORT virtual void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original);
+    /** @name Events for the DgnElements of a DgnModel */
+    /** @{ */
+    //! Called when a DgnElement in this DgnModel is about to be inserted.
+    //! @note If you override this method, you @em must call the T_Super implementation, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element);
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDeleteElement(DgnElementCR element);
-    DGNPLATFORM_EXPORT virtual void _OnLoadedElement(DgnElementCR el);
-    DGNPLATFORM_EXPORT virtual void _OnInsertedElement(DgnElementCR el);
-    DGNPLATFORM_EXPORT virtual void _OnDeletedElement(DgnElementCR element);
 
+    //! Called when a DgnElement in this DgnModel is about to be updated.
+    //! @note If you override this method, you @em must call the T_Super implementation, forwarding its status.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdateElement(DgnElementCR modified, DgnElementCR original);
+
+    //! Called when a DgnElement in this DgnModel is about to be deleted.
+    //! @note If you override this method, you @em must call the T_Super implementation, forwarding its status.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDeleteElement(DgnElementCR element);
+
+    //! Called after a DgnElement in this DgnModel has been loaded into memory.
+    //! @note If you override this method, you @em must call the T_Super implementation.
+    //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
+    DGNPLATFORM_EXPORT virtual void _OnLoadedElement(DgnElementCR el);
+
+    //! @note If you override this method, you @em must call the T_Super implementation.
+    //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
+    DGNPLATFORM_EXPORT virtual void _OnInsertedElement(DgnElementCR el);
+
+    //! Called after a DgnElement in this DgnModel has been updated.
+    //! @note If you override this method, you @em must call the T_Super implementation.
+    //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
+    DGNPLATFORM_EXPORT virtual void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original);
+
+    //! @note If you override this method, you @em must call the T_Super implementation.
+    //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
+    DGNPLATFORM_EXPORT virtual void _OnDeletedElement(DgnElementCR element);
+    /** @} */
+
+    /** @name Events for a DgnModel */
+    /** @{ */
     DGNPLATFORM_EXPORT virtual void _FillModel();
     DGNPLATFORM_EXPORT virtual void _OnLoaded();
     DGNPLATFORM_EXPORT virtual void _OnInserted();
     DGNPLATFORM_EXPORT virtual void _OnDeleted();
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert();
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete();
+    /** @} */
 
+    /** @name Dynamic cast shortcuts for a DgnModel */
+    /** @{ */
     virtual DgnModel2dCP _ToDgnModel2d() const {return nullptr;}
     virtual DgnModel3dCP _ToDgnModel3d() const {return nullptr;}
     virtual PhysicalModelCP _ToPhysicalModel() const {return nullptr;}
     virtual PlanarPhysicalModelCP _ToPlanarPhysicalModel() const {return nullptr;}
     virtual SheetModelCP _ToSheetModel() const {return nullptr;}
-
-    void RegisterElement(DgnElementCR);
-    void SetFilled() {m_filled=true; AllocateRangeIndex();}
-    void AllocateRangeIndex() const;
-    void ClearRangeIndex();
-    void ReleaseAllElements();
-    void AddToRangeIndex(DgnElementCR);
-    void RemoveFromRangeIndex(DgnElementCR);
-    void UpdateRangeIndex(DgnElementCR modified, DgnElementCR original);
+    /** @} */
 
     //! Add non-element graphics for this DgnModel to the scene.
     //! Normally, the scene is generated by QueryViewController from the elements in a model.
@@ -275,6 +307,9 @@ public:
     //! @return true if the DgnModel is filled.
     bool IsFilled() const {return m_filled;}
 
+    //! Determine whether this DgnModel is a persistent model.
+    bool IsPersistent() const {return m_persistent;}
+
     //! Get the number of elements in this DgnModel.
     //! @return the number of elements in this DgnModel.
     //! @note The DgnModel must be filled before calling this method.
@@ -299,8 +334,14 @@ public:
 
     //! Get the name of this DgnModel
     Utf8CP GetModelName() const {return m_name.c_str();}
+
+    //! Get the type of this DgnModel
     DgnModelType GetModelType() const {return _GetModelType();}
+
+    //! Get the DgnClassId of this DgnModel
     DgnClassId GetClassId() const {return m_classId;}
+
+    //! Get the DgnModelId of this DgnModel
     DgnModelId GetModelId() const {return m_modelId;}
 
     DgnModel2dCP ToDgnModel2d() const {return _ToDgnModel2d();}
@@ -316,13 +357,14 @@ public:
 
     //! Determine whether this is a readonly DgnModel or not.
     bool IsReadOnly() const {return m_readonly;}
+
     void SetReadOnly(bool val) {m_readonly = val;}
 
     //! Get the DgnDb that contains this model.
     //! @return the DgnDb that contains this model.
     DgnDbR GetDgnDb() const {return m_dgndb;}
 
-    //! Insert a new model into the DgnDb
+    //! Insert this model into the DgnDb.
     //! @return DgnDbStatus::Success if this model was successfully inserted, error otherwise.
     DGNPLATFORM_EXPORT DgnDbStatus Insert(Utf8CP description=nullptr, bool inGuiList=true);
 
