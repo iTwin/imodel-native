@@ -135,7 +135,7 @@
     <!-- <SubPart PartName="Pointools_SDK_VS2012_x64_Bundle_InstallerFiles" /> -->
   </Product>
 
-  <Product Name="Pointools_SDK_VS2012_x64">
+  <Product Name="Pointools_SDK_VS2012_x64" BuildInstallSet="true" SaveProduct="true">
     <SubPart PartName ="InstallFrameworkBase" PartFile ="InstallFramework" Repository="InstallFramework"/>
     <SubProduct ProductName="PointoolsVortexAPI_SDK_VS2012_x64"/>
     <SubProduct ProductName="PointoolsIO_SDK_VS2012_x64" PartFile="${srcroot}\Pointools\PointoolsIO\PointoolsIO_VS2012" Repository="PointoolsIO"/>
