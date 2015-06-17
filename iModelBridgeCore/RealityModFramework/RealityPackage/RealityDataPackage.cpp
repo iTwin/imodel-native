@@ -570,7 +570,7 @@ RealityPackageStatus ImageryData::_Write(BeXmlNodeR dataNode) const
 //----------------------------------------------------------------------------------------
 bool ImageryData::HasValidCorners(DPoint2dCP pCorners)
     {
-    if(NULL == pCorners || pCorners[0].isEqual(&pCorners[1]))
+    if(NULL == pCorners || pCorners[0].IsEqual(pCorners[1]))
         return false;
 
     for(size_t i=0; i < 4; ++i)
