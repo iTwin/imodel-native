@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/OsEnvUnitTests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -656,7 +656,7 @@ static void testPosixRegex (char const* regexPattern, char const* str, size_t nm
     
     if (0 != status)
         {
-        Bentley::NativeLogging::LoggingManager::GetLogger(L"TestRunner")->tracev (L"%hs %hs", regexPattern, str);
+        NativeLogging::LoggingManager::GetLogger(L"TestRunner")->tracev (L"%hs %hs", regexPattern, str);
         char errbuf[256];
         regerror(status, &regex, errbuf, sizeof(errbuf));
         regfree (&regex);
@@ -672,14 +672,14 @@ static void testPosixRegex (char const* regexPattern, char const* str, size_t nm
             continue;
         nfound++;
         if (so < 0 || so >= strlen (str))
-            Bentley::NativeLogging::LoggingManager::GetLogger(L"TestRunner")->tracev (L"[%d] %d - out of range?!", i, so);
+            NativeLogging::LoggingManager::GetLogger(L"TestRunner")->tracev (L"[%d] %d - out of range?!", i, so);
         else
             {
             if (nfound==1)
-                Bentley::NativeLogging::LoggingManager::GetLogger(L"TestRunner")->tracev (L"%hs matches %hs:", regexPattern, str);
+                NativeLogging::LoggingManager::GetLogger(L"TestRunner")->tracev (L"%hs matches %hs:", regexPattern, str);
 
             Utf8String substr (str+so, str+eo);
-            Bentley::NativeLogging::LoggingManager::GetLogger(L"TestRunner")->tracev (L"[%d] %hs", i, substr.c_str());
+            NativeLogging::LoggingManager::GetLogger(L"TestRunner")->tracev (L"[%d] %hs", i, substr.c_str());
             }
         }
 
