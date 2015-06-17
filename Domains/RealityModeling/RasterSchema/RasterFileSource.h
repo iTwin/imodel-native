@@ -20,6 +20,7 @@ struct RasterFileSource : public RasterSource
 private:
     RasterFileProperties    m_properties;
     bvector<Byte>           m_tileBuffer;
+    RasterFilePtr           m_rasterFilePtr;
 
 private:
             RasterFileSource(RasterFileProperties const& properties);

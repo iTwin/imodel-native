@@ -185,7 +185,7 @@ DisplayTilePtr DisplayTile::Create(uint32_t width, uint32_t height, DisplayTile:
     Point2d size = {width, height};
 
     pTile->m_haveTexture = true;
-    T_HOST.GetGraphicsAdmin()._DefineTile(pTile->GetTextureId(), NULL, size, true/*enableAlpha*/, static_cast<uint32_t>(pixelType), pitch, pData);
+    T_HOST.GetGraphicsAdmin()._DefineTile(pTile->GetTextureId(), NULL, size, true/*enableAlpha &&MM - add as parameter */, static_cast<uint32_t>(pixelType), pitch, pData);
     return pTile;
     }
 

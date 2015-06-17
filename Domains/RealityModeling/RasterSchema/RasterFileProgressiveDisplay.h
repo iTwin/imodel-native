@@ -21,9 +21,6 @@ struct RasterFileProgressiveDisplay : DgnPlatform::IProgressiveDisplay, NonCopya
     friend struct RasterFileModel;
 
 private:
-    uint64_t    m_nextRetryTime;                             //!< When to re-try to query points. unix millis UTC
-    uint64_t    m_waitTime;                                  //!< How long to wait before re-trying to query points. millis 
-
     bool        ShouldDrawInContext (ViewContextR context) const;
 
 protected:

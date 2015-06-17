@@ -12,14 +12,6 @@
 #include <RasterSchema/RasterHandler.h>
 #include <RasterSchema/RasterSchemaTypes.h>
 
-
-/*&&ep d
-class HRFRasterFile;
-//template<class T> class HNOVTABLEINIT HFCPtr
-//template<class T> class HFCPtr;
-class HFCPtr<HRFRasterFile>;
-*/
-
 BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
 
 struct RasterFileModelHandler;
@@ -45,8 +37,6 @@ struct EXPORT_VTABLE_ATTRIBUTE RasterFileModel : RasterModel
     DEFINE_T_SUPER(RasterModel)
 
 private:
-    RasterFilePtr           m_rasterFilePtr;    //&&ep - maybe not needed
- 
     RasterFileProperties    m_fileProperties;     //&&ep need a way to avoid duplication of information between RasterModel/RasterFileModel/RasterFileSource.
 
 protected:
@@ -66,14 +56,7 @@ protected:
     virtual BentleyStatus   _LoadQuadTree() override;
     virtual DgnPlatform::AxisAlignedBox3d _QueryModelRange() const override;
 
-    //! Call this after creating a new model, in order to set up subclass-specific properties.
-//&&ep needed ?
-    BentleyStatus           SetProperties (BeFileNameCR fileName);
-
 public:
-    //! Provide a pointer to a HFCPtr<HRFRasterFile>. 
-//&&ep needed ?
-    RasterFilePtr           GetRasterFilePtr();
 
 };
 

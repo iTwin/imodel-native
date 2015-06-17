@@ -17,24 +17,22 @@ BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
 struct RasterFile : public RefCountedBase
 {
 private:
-            HFCPtr<HRFRasterFile>   m_HRFRasterFilePtr;
-            HFCPtr<HRAStoredRaster> m_storedRasterPtr;
+            HFCPtr<HRFRasterFile>       m_HRFRasterFilePtr;
+            HFCPtr<HRAStoredRaster>     m_storedRasterPtr;
 
-                                    RasterFile(WCharCP inFilename);
-            int                     ComputeBufferSize(size_t& bufferSize, const Point2d& imageSize, int imageFormat) const;
+                                        RasterFile(WCharCP inFilename);
+            int                         ComputeBufferSize(size_t& bufferSize, const Point2d& imageSize, int imageFormat) const;
 public:
-    static  RasterFilePtr           Create(WCharCP inFilename);
-            HFCPtr<HRFRasterFile>   OpenRasterFile(WCharCP inFilename);
-            HRFRasterFile*          GetHRFRasterFileP() const;
-
-//&&ep - make this private ?
-            uint32_t                GetWidth() const;
-            uint32_t                GetHeight() const;
-            void                    GetSize(Point2d* sizeP) const;
-            void                    GetBitmap(HFCPtr<HRABitmapBase> pBitmap);
-            HFCPtr<HRAStoredRaster> GetStoredRaster();
-            BentleyStatus           ReadFileToBitmap(Byte** imageBufferPP, Point2d *imageSizeP);
-            HFCPtr<HGF2DCoordSys>   GetPhysicalCoordSys();
+    static  RasterFilePtr               Create(WCharCP inFilename);
+            HFCPtr<HRFRasterFile>       OpenRasterFile(WCharCP inFilename);
+            HRFRasterFile*              GetHRFRasterFileP() const;
+            uint32_t                    GetWidth() const;
+            uint32_t                    GetHeight() const;
+            void                        GetSize(Point2d* sizeP) const;
+            void                        GetBitmap(HFCPtr<HRABitmapBase> pBitmap);
+            HFCPtr<HRAStoredRaster>     GetStoredRaster();
+            HFCPtr<HGF2DCoordSys>       GetPhysicalCoordSys();
+            HFCPtr<HGF2DTransfoModel>   GetSLOTransfoModel() const;
 };
 
 END_BENTLEY_RASTERSCHEMA_NAMESPACE

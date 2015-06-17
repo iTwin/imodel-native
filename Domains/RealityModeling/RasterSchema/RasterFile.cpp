@@ -16,28 +16,18 @@ USING_NAMESPACE_BENTLEY_RASTERSCHEMA
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-RasterFile::RasterFile(WCharCP inFilename) //&&ep - remove inFilename param
+RasterFile::RasterFile(WCharCP inFilename)
     {
     m_storedRasterPtr = nullptr;
     m_HRFRasterFilePtr = OpenRasterFile(inFilename);
-
-//&&ep    return exception if m_HRFRasterFilePtr is null ? work in concordance with RasterFileHandler
-// A. No. see below (OpenRasterFile)
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-RasterFilePtr RasterFile::Create(WCharCP inFilename) //&&ep - should be url ?
+RasterFilePtr RasterFile::Create(WCharCP inFilename)
     {
-//&&ep o    return new RasterFile(inFilename);
     RasterFilePtr rasterFilePtr = new RasterFile(inFilename);
-/* &&ep d
-    if (rasterFilePtr->OpenRasterFile(inFilename) != SUCCESS)
-        {
-        return nullptr;
-        }
-*/
     if (rasterFilePtr->GetHRFRasterFileP() == nullptr)
         {
         // Could not open raster file
@@ -50,145 +40,10 @@ RasterFilePtr RasterFile::Create(WCharCP inFilename) //&&ep - should be url ?
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     6/2015
 //----------------------------------------------------------------------------------------
-/*&&ep d
-HFCPtr<HRFRasterFile>   RasterFile::GetHRFRasterFilePtr() const
-    {
-    return m_HRFRasterFilePtr;  //&&ep return a P or R
-    }
-*/
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     6/2015
-//----------------------------------------------------------------------------------------
 HRFRasterFile*   RasterFile::GetHRFRasterFileP() const
     {
     return m_HRFRasterFilePtr.GetPtr();
     }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     6/2015
-//----------------------------------------------------------------------------------------
-BentleyStatus RasterFile::ReadFileToBitmap(Byte** imageBufferPP, Point2d *imageSizeP)
-    {
-    BentleyStatus status = SUCCESS;
-
-
-//&&ep - not now
-#if defined (notNow)
-
-    Point2d dummy_imageSize;
-    if(NULL == imageSizeP)
-        imageSizeP = &dummy_imageSize;
-
-    *imageBufferPP = NULL;
-            
-/* &&ep o
-
-    if (requestedSizeP)
-        *imageSizeP = *requestedSizeP;
-    else
-        pRaster->GetSize(imageSizeP);
-*/
-
-    GetSize(imageSizeP);
-
-
-/* &&ep o (uses HGFDistance); and Stretch
-    Point2d bitmapSize = *imageSizeP;  
-    HGF2DStretch Stretch(HGF2DDisplacement(HGFDistance(0, HGFDistanceUnit(1)), HGFDistance(0, HGFDistanceUnit(1))), 
-                         GetWidth() / (double)bitmapSize.x, 
-                         GetHeight() / (double)bitmapSize.y);
-
-    HFCPtr<HRABitmap> pBitmap = new HRABitmap(bitmapSize.x, bitmapSize.y, &Stretch, pRaster->GetPhysicalCoordSys(), new HRPPixelTypeV24R8G8B8());
-*/
-    Point2d bitmapSize = *imageSizeP;  
-    HFCPtr<HRABitmap> pBitmap = HRABitmap::Create (bitmapSize.x, bitmapSize.y, GetStoredRaster()->GetTransfoModel(), GetPhysicalCoordSys(), new HRPPixelTypeV24R8G8B8());
-
-
-    // Need intermediate buffer (non separated)
-
-//&&ep - devrait pas avoir besoin; mon buffer size devrait etre 256*256
-    size_t bufferSize;
-    if (SUCCESS != ComputeBufferSize(bufferSize, bitmapSize, IMAGEFORMAT_RGB))
-//&&ep o        return IMGALIB_STATUS_InsufficientMemory;
-        return ERROR;
-
-//&&ep creer le buffer 1 seule fois; chaque source a son buffer; tile size: 256
-    HFCPtr<HCDPacket> pPacket = new HCDPacket(new HCDCodecIdentity(), new Byte[bufferSize], bufferSize, bufferSize);
-    pPacket->SetBufferOwnership(true);
-
-    if(pPacket->GetBufferAddress() == NULL)
-//&&ep o        return IMGALIB_STATUS_InsufficientMemory;
-        return ERROR;
-
-    pBitmap->SetPacket(pPacket);   
-
-    // Alloc buffer to receive the data
-//&&ep o    if (NULL == (*imageBufferPP = (Byte*)IMAGELIB_MALLOC (bufferSize)))   
-    if (NULL == (*imageBufferPP = (Byte*)ImagelibMemoryMngr::Malloc(bufferSize)))   
-
-//&&ep o        return IMGALIB_STATUS_InsufficientMemory;
-        return ERROR;
-
-    // Query data.
-//&&ep o    pRaster->GetBitmap(pBitmap.GetPtr());
-    GetBitmap(pBitmap.GetPtr());
-
-
-#endif
-
-
-
-    return status;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     6/2015
-//----------------------------------------------------------------------------------------
-/* &&ep - maybe not needed
-
-int RasterFile::ComputeBufferSize 
-(
-    size_t&         bufferSize,     // <= size of the buffer that can hold an image of the specified size and format
-    const Point2d&  imageSize,      // => size of the image
-    int             imageFormat     // => image format
-) const
-    {
-    uint64_t& bufferSizeRef = bufferSize;
-
-    switch (imageFormat)
-        {
-        case IMAGEFORMAT_RGB:
-        case IMAGEFORMAT_BGRSeparate:
-            bufferSizeRef = (uint64_t)imageSize.x*(uint64_t)imageSize.y*3; 
-            break;
-        case IMAGEFORMAT_RGBA:
-        case IMAGEFORMAT_RGBASeparate:
-        case IMAGEFORMAT_BGRA:
-            bufferSizeRef = (uint64_t)imageSize.x*(uint64_t)imageSize.y*4; 
-            break;
-        case IMAGEFORMAT_BitMap:
-            bufferSizeRef = BITMAP_ROWBYTES((uint64_t)imageSize.x) * (uint64_t)imageSize.y;
-            break;
-        case IMAGEFORMAT_ByteMap:
-        case IMAGEFORMAT_GreyScale:
-            bufferSizeRef = (uint64_t)imageSize.x*(uint64_t)imageSize.y;
-            break;
-        default:
-            BeAssert(!"Not implemented yet");
-            return IMGALIB_STATUS_BadArg;
-        }
-
-    // NOTE: The system could not allocate buffer of greater size
-    // then INT_MAX because of the signature of the allocation
-    // functions. e.g.: malloc.
-    // TDORAY: Remove if malloc and other are adapted for size_t in Beijing.
-    if (bufferSize > INT_MAX) 
-        return IMGALIB_STATUS_InsufficientMemory;
-
-    return SUCCESS;
-    }
-*/
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     6/2015
@@ -205,9 +60,6 @@ void RasterFile::GetBitmap(HFCPtr<HRABitmapBase> pBitmap)
         opts.SetAlphaBlend(true);       
         }
         
-//&&ep o    pBitmap->CopyFrom(GetRaster().GetPtr(), opts);
-//    HFCPtr<HRAStoredRaster> srPtr;
-//    GetStoredRaster();
     pBitmap->CopyFrom(*GetStoredRaster(), opts);
     }
 
@@ -222,11 +74,6 @@ HFCPtr<HRAStoredRaster> RasterFile::GetStoredRaster() //&&ep return R ou P
         return m_storedRasterPtr;
 
     // load raster file in memory in a single chunk
-/* &&ep o
-    if (!HRFRasterFileBlockAdapter::CanAdapt(m_HRFRasterFilePtr, HRFBlockType::IMAGE, HRF_EQUAL_TO_RESOLUTION_WIDTH, HRF_EQUAL_TO_RESOLUTION_HEIGHT) &&
-        m_HRFRasterFilePtr->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockType() != HRFBlockType::IMAGE) //Make sure we don't try to adapt something we don't have to adapt
-        throw HRFException(HFC_CANNOT_OPEN_FILE_EXCEPTION, m_HRFRasterFilePtr->GetURL()->GetURL());
-*/                
     if (!HRFRasterFileBlockAdapter::CanAdapt(m_HRFRasterFilePtr, HRFBlockType::IMAGE, HRF_EQUAL_TO_RESOLUTION_WIDTH, HRF_EQUAL_TO_RESOLUTION_HEIGHT) &&
         m_HRFRasterFilePtr->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockType() != HRFBlockType::IMAGE) //Make sure we don't try to adapt something we don't have to adapt
         //&&ep handle error correctly
@@ -278,21 +125,103 @@ uint32_t    RasterFile::GetHeight() const
     }
 
 //----------------------------------------------------------------------------------------
+// @bsimethod                                                       Eric.Paquet     4/2015
+//----------------------------------------------------------------------------------------
+HFCPtr<HGF2DTransfoModel> RasterFile::GetSLOTransfoModel() const
+    {
+    uint32_t width = GetWidth();
+    uint32_t height = GetHeight();
+
+    HFCPtr<HGF2DAffine> pModel(new HGF2DAffine());
+
+    switch(m_HRFRasterFilePtr->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetScanlineOrientation().m_ScanlineOrientation)
+        {
+        // SLO 0
+        case HRFScanlineOrientation::UPPER_LEFT_VERTICAL:
+            {
+            pModel->SetByMatrixParameters(0.0, 0.0, 1.0, 0.0, 1.0, 0.0);
+            }
+        break;
+
+        // SLO 1
+        case HRFScanlineOrientation::UPPER_RIGHT_VERTICAL:
+            {
+            pModel->SetByMatrixParameters(width, 0.0, -1.0, 0.0, 1.0, 0.0);        
+            }
+        break;
+
+        // SLO 2
+        case HRFScanlineOrientation::LOWER_LEFT_VERTICAL:
+            {
+            pModel->SetByMatrixParameters(0.0, 0.0, 1.0, height, -1.0, 0.0);
+            }
+        break;
+
+        // SLO 3
+        case HRFScanlineOrientation::LOWER_RIGHT_VERTICAL:
+            {
+            pModel->SetByMatrixParameters(width, 0.0, -1.0, height, -1.0, 0.0);
+            }
+        break;
+
+        // SLO 4
+        case HRFScanlineOrientation::UPPER_LEFT_HORIZONTAL:
+            {
+            pModel->SetByMatrixParameters(0.0, 1.0, 0.0, 0.0, 0.0, 1.0);
+            }
+        break;
+
+        // SLO 5
+        case HRFScanlineOrientation::UPPER_RIGHT_HORIZONTAL:
+            {
+            pModel->SetByMatrixParameters(width, -1.0, 0.0, 0.0, 0.0, 1.0);
+            }
+        break;
+
+        // SLO 6
+        case HRFScanlineOrientation::LOWER_LEFT_HORIZONTAL:
+            {
+            pModel->SetByMatrixParameters(0.0, 1.0, 0.0, height, 0.0, -1.0);
+            }
+        break;
+
+        // SLO 7
+        case HRFScanlineOrientation::LOWER_RIGHT_HORIZONTAL:
+            {
+            pModel->SetByMatrixParameters(width, -1.0, 0.0, height, 0.0, -1.0);
+            }
+        break;
+
+        default:
+            BeAssert(!"HIEUSSLO::Get2DTransfoModel(...) Unknown SLO");
+        break;
+        }
+
+    HFCPtr<HGF2DTransfoModel> pSimplifiedModel (pModel->CreateSimplifiedModel());
+    if (pSimplifiedModel)
+        return pSimplifiedModel;
+
+    return pModel.GetPtr();
+    }
+
+//----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     6/2015
 //----------------------------------------------------------------------------------------
-
-/* &&ep - later
 HFCPtr<HGF2DCoordSys> RasterFile::GetPhysicalCoordSys() 
     {
+/* &&ep - needswork (for bmp, monochrome)
     // Create a transformation model from the raster file SLOx to SLO4
     HFCPtr<HGF2DTransfoModel> pSloTransfo = GetSLOTransfoModel();
 
     // Reverse the model (SLO4->SLOx) 
     pSloTransfo->Reverse();
 
-    return new HGF2DCoordSys(*pSloTransfo, GetRaster()->GetPhysicalCoordSys());
-    }
+    return new HGF2DCoordSys(*pSloTransfo, GetStoredRaster()->GetPhysicalCoordSys());
 */
+    return GetStoredRaster()->GetPhysicalCoordSys();
+
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Marc.Bedard                     11/2014
@@ -322,7 +251,6 @@ struct FactoryScanOnOpenGuard
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-//&&ep o static HFCPtr<HRFRasterFile> GetRasterFile(WCharCP inFilename)
 HFCPtr<HRFRasterFile> RasterFile::OpenRasterFile(WCharCP inFilename)
     {
     HFCPtr<HRFRasterFile> rasterFile;

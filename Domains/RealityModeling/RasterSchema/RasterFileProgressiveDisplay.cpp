@@ -5,6 +5,9 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+
+//&&ep - Can eliminate completely RasterFileProgressiveDisplay ?
+
 #include <RasterSchemaInternal.h>
 
 #include <Logging/bentleylogging.h>
@@ -24,11 +27,7 @@ USING_NAMESPACE_BENTLEY_RASTERSCHEMA
 //----------------------------------------------------------------------------------------
 RasterFileProgressiveDisplay::RasterFileProgressiveDisplay (RasterFileModel& model) 
     :
-    m_model(model),
-
-//&&ep need this ?
-    m_waitTime(0),
-    m_nextRetryTime(0)
+    m_model(model)
     {
     // Default initialization for ref counted
     DEFINE_BENTLEY_REF_COUNTED_MEMBER_INIT
@@ -60,6 +59,7 @@ void RasterFileProgressiveDisplay::DrawView (ViewContextR context)
 
 
 //&&ep test
+/*
 {
     uint32_t wid = m_model.GetRasterFilePtr()->GetWidth();
     if (wid == 7) return;
@@ -96,7 +96,7 @@ void RasterFileProgressiveDisplay::DrawView (ViewContextR context)
     context.GetIViewDraw().DrawRaster (rasterPoints, width*4, width, height, enableAlpha, QV_BGRA_FORMAT, pixels, NULL);
 
 }
-
+*/
 
 /* &&ep d
 
