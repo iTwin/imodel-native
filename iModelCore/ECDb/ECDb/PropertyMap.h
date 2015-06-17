@@ -399,38 +399,4 @@ private:
     //! For debugging and logging
     WString _ToString() const override;
 };
-//
-//struct PropertyMapFactory
-//    {
-//    private:
-//        std::map<ECDbSqlTable const*, std::map<ECN::ECClassId, std::map<WCharCP, PropertyMapPtr, CompareWChar>>> m_cache;
-//        PropertyMapCP Find (ECDbSqlTable const& table, ECN::ECClassId rootClassId, WCharCP accessString)const
-//            {
-//            auto& perTable = m_cache;
-//            auto i0 = perTable.find (&table);
-//            if (i0 != perTable.end ())
-//                {
-//                auto& perClassId = i0->second;
-//                auto i1 = perClassId.find (rootClassId);
-//                if (i1 != perClassId.end ())
-//                    {
-//                    auto& perAccessString = i1->second;
-//                    auto i2 = perAccessString.find (accessString);
-//                    if (i2 != perAccessString.end ())
-//                        {
-//                        return i2->second.get ();
-//                        }
-//                    }
-//                }
-//
-//            return nullptr;
-//            }
-//
-//        void Insert (ECDbSqlTable const& table, PropertyMapPtr& propertyMap)
-//            {
-//            m_cache[&table][propertyMap->GetProperty ().GetClass ().GetId ()][propertyMap->GetPropertyAccessString ()] = propertyMap;
-//            }
-//    public:
-//        PropertyMapPtr CreatePropertyMap (ECDbSqlTable& table, ECPropertyCR ecProperty, WCharCP propertyAccessString);
-//    };
 END_BENTLEY_SQLITE_EC_NAMESPACE

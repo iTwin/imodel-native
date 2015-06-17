@@ -921,11 +921,11 @@ struct ECDbMapStorage
     {
     private:
 
-        const Utf8CP Sql_InsertPropertyPath = "INSERT OR REPLACE INTO ec_PropertyPath (Id, RootECPropertyId, AccessString) VALUES (?, ?, ?)";
-        const Utf8CP Sql_InsertClassMap = "INSERT OR REPLACE INTO ec_ClassMap(Id, ParentId, ECClassId, MapStrategy) VALUES (?, ?, ?, ?)";
+        const Utf8CP Sql_InsertPropertyPath = "INSERT OR REPLACE INTO ec_PropertyPath (Id, RootPropertyId, AccessString) VALUES (?, ?, ?)";
+        const Utf8CP Sql_InsertClassMap = "INSERT OR REPLACE INTO ec_ClassMap(Id, ParentId, ClassId, MapStrategy) VALUES (?, ?, ?, ?)";
         const Utf8CP Sql_InsertPropertyMap = "INSERT OR REPLACE INTO ec_PropertyMap (ClassMapId, PropertyPathId, ColumnId) VALUES (?, ?, ?)";
-        const Utf8CP Sql_SelectPropertyPath = "SELECT Id, RootECPropertyId, AccessString FROM ec_PropertyPath";
-        const Utf8CP Sql_SelectClassMap = "SELECT Id, ParentId, ECClassId, MapStrategy FROM ec_ClassMap ORDER BY Id, ParentId";
+        const Utf8CP Sql_SelectPropertyPath = "SELECT Id, RootPropertyId, AccessString FROM ec_PropertyPath";
+        const Utf8CP Sql_SelectClassMap = "SELECT Id, ParentId, ClassId, MapStrategy FROM ec_ClassMap ORDER BY Id, ParentId";
         const Utf8CP Sql_SelectPropertyMap = "SELECT PropertyPathId, T.Name TableName, C.Name ColumnName FROM ec_PropertyMap P INNER JOIN ec_Column C ON C.Id = P.ColumnId INNER JOIN ec_Table T ON T.Id = C.TableId WHERE P.ClassMapId = ?";
         enum class StatementType
             {
@@ -1017,17 +1017,17 @@ struct ECDbSqlPersistence : NonCopyableClass
     {
     private:
         const Utf8CP Sql_InsertTable = "INSERT OR REPLACE INTO ec_Table (Id, Name, IsOwnedByECDb, IsVirtual) VALUES (?, ?, ?, ?)";
-        const Utf8CP Sql_InsertColumn = "INSERT OR REPLACE INTO ec_Column (Id, TableId, Name, Type, IsVirtual, Ordinal, Constraint_NotNull, Constraint_Unique, Constraint_Check, Constraint_Default, Constraint_Collation, PrimaryKey_Ordinal, UserData) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        const Utf8CP Sql_InsertColumn = "INSERT OR REPLACE INTO ec_Column (Id, TableId, Name, Type, IsVirtual, Ordinal, NotNull, Unique, CheckConstraint, DefaultConstraint, CollationConstraint, OrdinalInPrimaryKey, UserData) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         const Utf8CP Sql_InsertIndex = "INSERT OR REPLACE INTO ec_Index (Id, TableId, Name, IsUnique, WhereClause) VALUES (?, ?, ?, ?, ?)";
         const Utf8CP Sql_InsertIndexColumn = "INSERT OR REPLACE INTO ec_IndexColumn (IndexId, ColumnId, Ordinal) VALUES (?, ?, ?)";
-        const Utf8CP Sql_InsertForeignKey = "INSERT OR REPLACE INTO ec_ForeignKey (Id, TableId, ReferenceTableId, Name, OnDelete, OnUpdate) VALUES (?, ?, ?, ?, ?, ?)";
-        const Utf8CP Sql_InsertForeignKeyColumn = "INSERT OR REPLACE INTO ec_ForeignKeyColumn (ForeignKeyId, ColumnId, ReferenceColumnId, Ordinal) VALUES (?, ?, ?, ?)";
+        const Utf8CP Sql_InsertForeignKey = "INSERT OR REPLACE INTO ec_ForeignKey (Id, TableId, ReferencedTableId, Name, OnDelete, OnUpdate) VALUES (?, ?, ?, ?, ?, ?)";
+        const Utf8CP Sql_InsertForeignKeyColumn = "INSERT OR REPLACE INTO ec_ForeignKeyColumn (ForeignKeyId, ColumnId, ReferencedColumnId, Ordinal) VALUES (?, ?, ?, ?)";
         const Utf8CP Sql_SelectTable = "SELECT Id, Name, IsOwnedByECDb, IsVirtual FROM ec_Table";
-        const Utf8CP Sql_SelectColumn = "SELECT Id, Name, Type, IsVirtual, Constraint_NotNull, Constraint_Unique, Constraint_Check, Constraint_Default, Constraint_Collation, PrimaryKey_Ordinal, UserData FROM ec_Column WHERE TableId = ? ORDER BY Ordinal";
+        const Utf8CP Sql_SelectColumn = "SELECT Id, Name, Type, IsVirtual, NotNull, Unique, CheckConstraint, DefaultConstraint, CollationConstraint, OrdinalInPrimaryKey, UserData FROM ec_Column WHERE TableId = ? ORDER BY Ordinal";
         const Utf8CP Sql_SelectIndex = "SELECT I.Id, T.Name, I.Name, I.IsUnique, I.WhereClause FROM ec_Index I INNER JOIN ec_Table T ON T.Id = I.TableId";
         const Utf8CP Sql_SelectIndexColumn = "SELECT C.Name FROM ec_IndexColumn I INNER JOIN ec_Column C ON C.Id = I.ColumnId WHERE I.IndexId = ? ORDER BY I.Ordinal";
-        const Utf8CP Sql_SelectForeignKey = "SELECT F.Id, R.Name, F.Name, F.OnDelete, F.OnUpdate FROM ec_ForeignKey F INNER JOIN ec_Table R ON R.Id = F.ReferenceTableId WHERE F.TableId = ?";
-        const Utf8CP Sql_SelectForeignKeyColumn = "SELECT A.Name, B.Name FROM ec_ForeignKeyColumn F INNER JOIN ec_Column A ON F.ColumnId = A.Id INNER JOIN ec_Column B ON F.ReferenceColumnId = B.Id  WHERE F.ForeignKeyId = ? ORDER BY F.Ordinal";
+        const Utf8CP Sql_SelectForeignKey = "SELECT F.Id, R.Name, F.Name, F.OnDelete, F.OnUpdate FROM ec_ForeignKey F INNER JOIN ec_Table R ON R.Id = F.ReferencedTableId WHERE F.TableId = ?";
+        const Utf8CP Sql_SelectForeignKeyColumn = "SELECT A.Name, B.Name FROM ec_ForeignKeyColumn F INNER JOIN ec_Column A ON F.ColumnId = A.Id INNER JOIN ec_Column B ON F.ReferencedColumnId = B.Id  WHERE F.ForeignKeyId = ? ORDER BY F.Ordinal";
 
         enum class StatementType
             {

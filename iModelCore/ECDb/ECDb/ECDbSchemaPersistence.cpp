@@ -148,12 +148,12 @@ DbResult ECDbSchemaPersistence::Step (DbECSchemaInfoR info,  BeSQLite::Statement
 DbResult ECDbSchemaPersistence::InsertECClassInfo (BeSQLite::Db& db, DbECClassInfoCR info)
     {
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement (stmt, "INSERT INTO ec_Class (Id, ECSchemaId, Name, DisplayLabel, Description, IsDomainClass, IsStruct, IsCustomAttribute, RelationStrength, RelationStrengthDirection, IsRelationship) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    auto stat = db.GetCachedStatement (stmt, "INSERT INTO ec_Class (Id, SchemaId, Name, DisplayLabel, Description, IsDomainClass, IsStruct, IsCustomAttribute, RelationStrength, RelationStrengthDirection, IsRelationship) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
     if (info.ColsInsert & DbECClassInfo::COL_Id                       ) stmt->BindInt64 (1, info.m_ecClassId);
-    if (info.ColsInsert & DbECClassInfo::COL_ECSchemaId               ) stmt->BindInt64 (2, info.m_ecSchemaId);
+    if (info.ColsInsert & DbECClassInfo::COL_SchemaId               ) stmt->BindInt64 (2, info.m_ecSchemaId);
     if (info.ColsInsert & DbECClassInfo::COL_Name                     ) stmt->BindText (3, info.m_name, Statement::MakeCopy::No);
     if (info.ColsInsert & DbECClassInfo::COL_DisplayLabel             ) stmt->BindText (4, info.m_displayLabel, Statement::MakeCopy::No); 
     if (info.ColsInsert & DbECClassInfo::COL_Description              ) stmt->BindText (5, info.m_description, Statement::MakeCopy::No);
@@ -175,7 +175,7 @@ DbResult ECDbSchemaPersistence::FindECClassInfo (BeSQLite::CachedStatementPtr& s
     //prepare select list
     SqlClauseBuilder selectClause (",");
     if (info.ColsSelect & DbECClassInfo::COL_Id) selectClause.AddItem ("Id");
-    if (info.ColsSelect & DbECClassInfo::COL_ECSchemaId) selectClause.AddItem ("ECSchemaId");
+    if (info.ColsSelect & DbECClassInfo::COL_SchemaId) selectClause.AddItem ("SchemaId");
     if (info.ColsSelect & DbECClassInfo::COL_Name) selectClause.AddItem ("[Name]");
     if (info.ColsSelect & DbECClassInfo::COL_DisplayLabel) selectClause.AddItem ("DisplayLabel");
     if (info.ColsSelect & DbECClassInfo::COL_Description) selectClause.AddItem ("Description");
@@ -194,7 +194,7 @@ DbResult ECDbSchemaPersistence::FindECClassInfo (BeSQLite::CachedStatementPtr& s
     //prepare where
     SqlClauseBuilder whereClause ("AND");
     if (info.ColsWhere & DbECClassInfo::COL_Id) whereClause.AddItem ("Id=?");
-    if (info.ColsWhere & DbECClassInfo::COL_ECSchemaId) whereClause.AddItem ("ECSchemaId=?");
+    if (info.ColsWhere & DbECClassInfo::COL_SchemaId) whereClause.AddItem ("SchemaId=?");
     if (info.ColsWhere & DbECClassInfo::COL_Name) whereClause.AddItem ("[Name]=?");
     if (info.ColsWhere & DbECClassInfo::COL_IsDomainClass) whereClause.AddItem ("IsDomainClass=?");
     if (info.ColsWhere & DbECClassInfo::COL_IsStruct) whereClause.AddItem ("IsStruct=?");
@@ -209,7 +209,7 @@ DbResult ECDbSchemaPersistence::FindECClassInfo (BeSQLite::CachedStatementPtr& s
 
     int nCol = 1;
     if (info.ColsWhere & DbECClassInfo::COL_Id                       ) stmt->BindInt64      (nCol++, info.m_ecClassId);
-    if (info.ColsWhere & DbECClassInfo::COL_ECSchemaId               ) stmt->BindInt64      (nCol++, info.m_ecSchemaId);
+    if (info.ColsWhere & DbECClassInfo::COL_SchemaId               ) stmt->BindInt64      (nCol++, info.m_ecSchemaId);
     if (info.ColsWhere & DbECClassInfo::COL_Name                     ) stmt->BindText (nCol++, info.m_name, Statement::MakeCopy::No);
     if (info.ColsWhere & DbECClassInfo::COL_Description              ) stmt->BindText (nCol++, info.m_description, Statement::MakeCopy::No);
     if (info.ColsWhere & DbECClassInfo::COL_IsDomainClass            ) stmt->BindInt        (nCol++, info.m_isDomainClass? 1 : 0);
@@ -231,8 +231,8 @@ DbResult ECDbSchemaPersistence::Step (DbECClassInfoR info,  BeSQLite::Statement&
         info.ColsNull = 0;
         if (info.ColsSelect & DbECClassInfo::COL_Id                )
             if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECClassInfo::COL_Id;                        nCol++; } else info.m_ecClassId                 = stmt.GetValueInt64(nCol++);
-        if (info.ColsSelect & DbECClassInfo::COL_ECSchemaId               )
-            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECClassInfo::COL_ECSchemaId;                nCol++; } else info.m_ecSchemaId                = stmt.GetValueInt64(nCol++);
+        if (info.ColsSelect & DbECClassInfo::COL_SchemaId               )
+            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECClassInfo::COL_SchemaId;                nCol++; } else info.m_ecSchemaId                = stmt.GetValueInt64(nCol++);
         if (info.ColsSelect & DbECClassInfo::COL_Name                     )
             if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECClassInfo::COL_Name;                      nCol++; } else info.m_name                      = stmt.GetValueText (nCol++);
         if (info.ColsSelect & DbECClassInfo::COL_DisplayLabel             )
@@ -325,7 +325,7 @@ DbResult ECDbSchemaPersistence::UpdateECClassInfo (BeSQLite::Db& db, DbECClassIn
 
     SqlClauseBuilder setClause (",");
     if (info.ColsUpdate & DbECClassInfo::COL_Id) setClause.AddItem ("Id=?");
-    if (info.ColsUpdate & DbECClassInfo::COL_ECSchemaId) setClause.AddItem ("ECSchemaId=?");
+    if (info.ColsUpdate & DbECClassInfo::COL_SchemaId) setClause.AddItem ("SchemaId=?");
     if (info.ColsUpdate & DbECClassInfo::COL_Name) setClause.AddItem ("[Name]=?");
     if (info.ColsUpdate & DbECClassInfo::COL_DisplayLabel) setClause.AddItem ("DisplayLabel=?");
     if (info.ColsUpdate & DbECClassInfo::COL_Description) setClause.AddItem ("Description=?");
@@ -340,7 +340,7 @@ DbResult ECDbSchemaPersistence::UpdateECClassInfo (BeSQLite::Db& db, DbECClassIn
 
     SqlClauseBuilder whereClause ("AND");
     if (info.ColsWhere & DbECClassInfo::COL_Id) whereClause.AddItem ("Id=?");
-    if (info.ColsWhere & DbECClassInfo::COL_ECSchemaId) whereClause.AddItem ("ECSchemaId=?");
+    if (info.ColsWhere & DbECClassInfo::COL_SchemaId) whereClause.AddItem ("SchemaId=?");
     if (info.ColsWhere & DbECClassInfo::COL_Name) whereClause.AddItem ("[Name]=?");
     if (info.ColsWhere & DbECClassInfo::COL_DisplayLabel) whereClause.AddItem ("DisplayLabel=?");
     if (info.ColsWhere & DbECClassInfo::COL_Description) whereClause.AddItem ("Description=?");
@@ -363,8 +363,8 @@ DbResult ECDbSchemaPersistence::UpdateECClassInfo (BeSQLite::Db& db, DbECClassIn
 
     if (info.ColsUpdate & DbECClassInfo::COL_Id                )
         if (info.ColsNull & DbECClassInfo::COL_Id) nCol++; else stmt->BindInt64 (nCol++, info.m_ecClassId);
-    if (info.ColsUpdate & DbECClassInfo::COL_ECSchemaId               )
-        if (info.ColsNull & DbECClassInfo::COL_ECSchemaId) nCol++; else stmt->BindInt64(nCol++, info.m_ecSchemaId);
+    if (info.ColsUpdate & DbECClassInfo::COL_SchemaId               )
+        if (info.ColsNull & DbECClassInfo::COL_SchemaId) nCol++; else stmt->BindInt64(nCol++, info.m_ecSchemaId);
     if (info.ColsUpdate & DbECClassInfo::COL_Name                     )
         if (info.ColsNull & DbECClassInfo::COL_Name) nCol++; else stmt->BindText (nCol++, info.m_name, Statement::MakeCopy::No);
     if (info.ColsUpdate & DbECClassInfo::COL_DisplayLabel             )
@@ -385,7 +385,7 @@ DbResult ECDbSchemaPersistence::UpdateECClassInfo (BeSQLite::Db& db, DbECClassIn
         if (info.ColsNull & DbECClassInfo::COL_IsRelationship) nCol++; else stmt->BindInt (nCol++, info.m_isRelationship? 1 : 0 );
 
     if (info.ColsWhere & DbECClassInfo::COL_Id                       ) stmt->BindInt64      (nCol++, info.m_ecClassId);
-    if (info.ColsWhere & DbECClassInfo::COL_ECSchemaId               ) stmt->BindInt64      (nCol++, info.m_ecSchemaId);
+    if (info.ColsWhere & DbECClassInfo::COL_SchemaId               ) stmt->BindInt64      (nCol++, info.m_ecSchemaId);
     if (info.ColsWhere & DbECClassInfo::COL_Name                     ) stmt->BindText (nCol++, info.m_name, Statement::MakeCopy::No);
     if (info.ColsWhere & DbECClassInfo::COL_DisplayLabel             ) stmt->BindText (nCol++, info.m_displayLabel, Statement::MakeCopy::No);
     if (info.ColsWhere & DbECClassInfo::COL_Description              ) stmt->BindText (nCol++, info.m_description, Statement::MakeCopy::No);
@@ -407,13 +407,13 @@ DbResult ECDbSchemaPersistence::UpdateECClassInfo (BeSQLite::Db& db, DbECClassIn
 DbResult ECDbSchemaPersistence::InsertBaseClass (BeSQLite::Db& db, DbBaseClassInfoCR info)
     {
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement (stmt, "INSERT INTO ec_BaseClass (ECClassId, BaseECClassId, ECIndex) VALUES (?, ?, ?)");
+    auto stat = db.GetCachedStatement (stmt, "INSERT INTO ec_BaseClass (ClassId, BaseClassId, Ordinal) VALUES (?, ?, ?)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    if (info.ColsInsert & DbBaseClassInfo::COL_ECClassId) stmt->BindInt64 (1, info.m_ecClassId);
-    if (info.ColsInsert & DbBaseClassInfo::COL_BaseECClassId) stmt->BindInt64 (2, info.m_baseECClassId);
-    if (info.ColsInsert & DbBaseClassInfo::COL_ECIndex) stmt->BindInt (3, info.m_ecIndex);
+    if (info.ColsInsert & DbBaseClassInfo::COL_ClassId) stmt->BindInt64 (1, info.m_ecClassId);
+    if (info.ColsInsert & DbBaseClassInfo::COL_BaseClassId) stmt->BindInt64 (2, info.m_baseECClassId);
+    if (info.ColsInsert & DbBaseClassInfo::COL_Ordinal) stmt->BindInt (3, info.m_ecIndex);
 
     return stmt->Step();
     }
@@ -425,9 +425,9 @@ DbResult ECDbSchemaPersistence::FindBaseClassInfo (BeSQLite::CachedStatementPtr&
     {
     //prepare select list
     SqlClauseBuilder selectClause (",");
-    if (info.ColsSelect & DbBaseClassInfo::COL_ECClassId) selectClause.AddItem ("ECClassId");
-    if (info.ColsSelect & DbBaseClassInfo::COL_BaseECClassId) selectClause.AddItem ("BaseECClassId");
-    if (info.ColsSelect & DbBaseClassInfo::COL_ECIndex) selectClause.AddItem ("ECIndex");
+    if (info.ColsSelect & DbBaseClassInfo::COL_ClassId) selectClause.AddItem ("ClassId");
+    if (info.ColsSelect & DbBaseClassInfo::COL_BaseClassId) selectClause.AddItem ("BaseClassId");
+    if (info.ColsSelect & DbBaseClassInfo::COL_Ordinal) selectClause.AddItem ("Ordinal");
     BeAssert (!selectClause.IsEmpty ());
 
     Utf8String sql ("SELECT ");
@@ -435,23 +435,23 @@ DbResult ECDbSchemaPersistence::FindBaseClassInfo (BeSQLite::CachedStatementPtr&
 
     //prepare where
     SqlClauseBuilder whereClause ("AND");
-    if (info.ColsWhere & DbBaseClassInfo::COL_ECClassId) whereClause.AddItem ("ECClassId=?");
-    if (info.ColsWhere & DbBaseClassInfo::COL_BaseECClassId) whereClause.AddItem ("BaseECClassId=?");
-    if (info.ColsWhere & DbBaseClassInfo::COL_ECIndex) whereClause.AddItem ("ECIndex=?");
+    if (info.ColsWhere & DbBaseClassInfo::COL_ClassId) whereClause.AddItem ("ClassId=?");
+    if (info.ColsWhere & DbBaseClassInfo::COL_BaseClassId) whereClause.AddItem ("BaseClassId=?");
+    if (info.ColsWhere & DbBaseClassInfo::COL_Ordinal) whereClause.AddItem ("Ordinal=?");
     
     if (!whereClause.IsEmpty ())
         sql.append (" WHERE ").append (whereClause.ToString ());
 
-    sql.append (" ORDER BY ECIndex");
+    sql.append (" ORDER BY Ordinal");
 
     auto stat = db.GetCachedStatement (stmt, sql.c_str ());
     if (BE_SQLITE_OK != stat)
         return stat;
     
     int nCol = 1;
-    if (info.ColsWhere & DbBaseClassInfo::COL_ECClassId) stmt->BindInt64 (nCol++, info.m_ecClassId);
-    if (info.ColsWhere & DbBaseClassInfo::COL_BaseECClassId) stmt->BindInt64 (nCol++, info.m_baseECClassId);
-    if (info.ColsWhere & DbBaseClassInfo::COL_ECIndex) stmt->BindInt (nCol++, info.m_ecIndex);
+    if (info.ColsWhere & DbBaseClassInfo::COL_ClassId) stmt->BindInt64 (nCol++, info.m_ecClassId);
+    if (info.ColsWhere & DbBaseClassInfo::COL_BaseClassId) stmt->BindInt64 (nCol++, info.m_baseECClassId);
+    if (info.ColsWhere & DbBaseClassInfo::COL_Ordinal) stmt->BindInt (nCol++, info.m_ecIndex);
 
     return stat;
     }
@@ -466,9 +466,9 @@ DbResult ECDbSchemaPersistence::Step (DbBaseClassInfoR info , BeSQLite::Statemen
         {
         int nCol = 0;
         info.ColsNull = 0;
-        if (info.ColsSelect & DbBaseClassInfo::COL_ECClassId) info.m_ecClassId = stmt.GetValueInt64 (nCol++);
-        if (info.ColsSelect & DbBaseClassInfo::COL_BaseECClassId) info.m_baseECClassId = stmt.GetValueInt64 (nCol++);
-        if (info.ColsSelect & DbBaseClassInfo::COL_ECIndex) info.m_ecIndex = stmt.GetValueInt (nCol++);
+        if (info.ColsSelect & DbBaseClassInfo::COL_ClassId) info.m_ecClassId = stmt.GetValueInt64 (nCol++);
+        if (info.ColsSelect & DbBaseClassInfo::COL_BaseClassId) info.m_baseECClassId = stmt.GetValueInt64 (nCol++);
+        if (info.ColsSelect & DbBaseClassInfo::COL_Ordinal) info.m_ecIndex = stmt.GetValueInt (nCol++);
         }
     return r;
     }
@@ -482,8 +482,8 @@ DbResult ECDbSchemaPersistence::FindECSchemaReferenceInfo (BeSQLite::CachedState
 
     //prepare select list
     SqlClauseBuilder selectClause (",");
-    if (info.ColsSelect & DbECSchemaReferenceInfo::COL_ECSchemaId) selectClause.AddItem ("ECSchemaId");
-    if (info.ColsSelect & DbECSchemaReferenceInfo::COL_ReferenceECSchemaId) selectClause.AddItem ("ReferenceECSchemaId");
+    if (info.ColsSelect & DbECSchemaReferenceInfo::COL_SchemaId) selectClause.AddItem ("SchemaId");
+    if (info.ColsSelect & DbECSchemaReferenceInfo::COL_ReferencedSchemaId) selectClause.AddItem ("ReferencedSchemaId");
 
     BeAssert (!selectClause.IsEmpty ());
 
@@ -491,8 +491,8 @@ DbResult ECDbSchemaPersistence::FindECSchemaReferenceInfo (BeSQLite::CachedState
 
     //prepare where
     SqlClauseBuilder whereClause ("AND");
-    if (info.ColsWhere & DbECSchemaReferenceInfo::COL_ECSchemaId) whereClause.AddItem ("ECSchemaId=?");
-    if (info.ColsWhere & DbECSchemaReferenceInfo::COL_ReferenceECSchemaId) whereClause.AddItem ("ReferenceECSchemaId=?");
+    if (info.ColsWhere & DbECSchemaReferenceInfo::COL_SchemaId) whereClause.AddItem ("SchemaId=?");
+    if (info.ColsWhere & DbECSchemaReferenceInfo::COL_ReferencedSchemaId) whereClause.AddItem ("ReferencedSchemaId=?");
 
     if (!whereClause.IsEmpty ())
         sql.append (" WHERE ").append (whereClause.ToString ());
@@ -502,8 +502,8 @@ DbResult ECDbSchemaPersistence::FindECSchemaReferenceInfo (BeSQLite::CachedState
         return stat;
 
     int nCol = 1;
-    if (info.ColsWhere & DbECSchemaReferenceInfo::COL_ECSchemaId) stmt->BindInt64 (nCol++, info.m_ecSchemaId);
-    if (info.ColsWhere & DbECSchemaReferenceInfo::COL_ReferenceECSchemaId) stmt->BindInt64 (nCol++, info.m_referenceECSchemaId);
+    if (info.ColsWhere & DbECSchemaReferenceInfo::COL_SchemaId) stmt->BindInt64 (nCol++, info.m_ecSchemaId);
+    if (info.ColsWhere & DbECSchemaReferenceInfo::COL_ReferencedSchemaId) stmt->BindInt64 (nCol++, info.m_referencedECSchemaId);
 
     return stat;
     }
@@ -518,8 +518,8 @@ DbResult ECDbSchemaPersistence::Step (DbECSchemaReferenceInfoR info, BeSQLite::S
         {
         int nCol = 0;
         info.ColsNull = 0;
-        if (info.ColsSelect & DbECSchemaReferenceInfo::COL_ECSchemaId) info.m_ecSchemaId = stmt.GetValueInt64 (nCol++);
-        if (info.ColsSelect & DbECSchemaReferenceInfo::COL_ReferenceECSchemaId) info.m_referenceECSchemaId = stmt.GetValueInt64 (nCol++);
+        if (info.ColsSelect & DbECSchemaReferenceInfo::COL_SchemaId) info.m_ecSchemaId = stmt.GetValueInt64 (nCol++);
+        if (info.ColsSelect & DbECSchemaReferenceInfo::COL_ReferencedSchemaId) info.m_referencedECSchemaId = stmt.GetValueInt64 (nCol++);
         }
     return r;
     }
@@ -530,26 +530,25 @@ DbResult ECDbSchemaPersistence::Step (DbECSchemaReferenceInfoR info, BeSQLite::S
 DbResult ECDbSchemaPersistence::InsertECPropertyInfo (BeSQLite::Db& db, DbECPropertyInfoCR info)
     {
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement (stmt, "INSERT INTO ec_Property (Id, ECClassId, Name, DisplayLabel, Description, IsArray, TypeCustom, TypeECPrimitive, TypeECStruct, ECIndex, IsReadOnly, MinOccurs, MaxOccurs) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)");
+    auto stat = db.GetCachedStatement (stmt, "INSERT INTO ec_Property (Id, ClassId, Name, DisplayLabel, Description, IsArray, PrimitiveType, StructType, Ordinal, IsReadOnly, MinOccurs, MaxOccurs) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
     if (info.ColsInsert & DbECPropertyInfo::COL_Id) stmt->BindInt64(1, info.m_ecPropertyId);
-    if (info.ColsInsert & DbECPropertyInfo::COL_ECClassId) stmt->BindInt64(2, info.m_ecClassId);
+    if (info.ColsInsert & DbECPropertyInfo::COL_ClassId) stmt->BindInt64(2, info.m_ecClassId);
     if (info.ColsInsert & DbECPropertyInfo::COL_Name) stmt->BindText (3, info.m_name, Statement::MakeCopy::No);
     if (info.ColsInsert & DbECPropertyInfo::COL_DisplayLabel) stmt->BindText (4, info.m_displayLabel, Statement::MakeCopy::No);
     if (info.ColsInsert & DbECPropertyInfo::COL_Description) stmt->BindText (5, info.m_description, Statement::MakeCopy::No);
     if (info.ColsInsert & DbECPropertyInfo::COL_IsArray) stmt->BindInt (6, info.m_isArray ? 1 : 0);
-    if (info.ColsInsert & DbECPropertyInfo::COL_TypeCustom) stmt->BindText (7, info.m_typeCustom, Statement::MakeCopy::No);
-    if (info.ColsInsert & DbECPropertyInfo::COL_TypeECPrimitive) stmt->BindInt (8, info.m_typeECPrimitive);
-    if (info.ColsInsert & DbECPropertyInfo::COL_TypeECStruct) stmt->BindInt64 (9, info.m_typeECStruct);
-    if (info.ColsInsert & DbECPropertyInfo::COL_ECIndex) stmt->BindInt (10, info.m_ecIndex);
-    if (info.ColsInsert & DbECPropertyInfo::COL_IsReadOnly) stmt->BindInt (11, info.m_isReadOnly ? 1 : 0);
+    if (info.ColsInsert & DbECPropertyInfo::COL_PrimitiveType) stmt->BindInt (7, info.m_primitiveType);
+    if (info.ColsInsert & DbECPropertyInfo::COL_StructType) stmt->BindInt64 (8, info.m_structType);
+    if (info.ColsInsert & DbECPropertyInfo::COL_Ordinal) stmt->BindInt (9, info.m_ordinal);
+    if (info.ColsInsert & DbECPropertyInfo::COL_IsReadOnly) stmt->BindInt (10, info.m_isReadOnly ? 1 : 0);
 
     if (info.m_isArray)
         {
-        if (info.ColsInsert & DbECPropertyInfo::COL_MinOccurs) stmt->BindInt (12, (int32_t) info.m_minOccurs);
-        if (info.ColsInsert & DbECPropertyInfo::COL_MaxOccurs) stmt->BindInt (13, (int32_t) info.m_maxOccurs);
+        if (info.ColsInsert & DbECPropertyInfo::COL_MinOccurs) stmt->BindInt (11, (int32_t) info.m_minOccurs);
+        if (info.ColsInsert & DbECPropertyInfo::COL_MaxOccurs) stmt->BindInt (12, (int32_t) info.m_maxOccurs);
         }
 
     return stmt->Step ();
@@ -565,15 +564,14 @@ DbResult ECDbSchemaPersistence::FindECPropertyInfo (BeSQLite::CachedStatementPtr
     //prepare select list
     SqlClauseBuilder selectClause (",");
     if (info.ColsSelect & DbECPropertyInfo::COL_Id) selectClause.AddItem("Id");
-    if (info.ColsSelect & DbECPropertyInfo::COL_ECClassId) selectClause.AddItem("ECClassId");
-    if (info.ColsSelect & DbECPropertyInfo::COL_Name) selectClause.AddItem ("[Name]");
+    if (info.ColsSelect & DbECPropertyInfo::COL_ClassId) selectClause.AddItem("ClassId");
+    if (info.ColsSelect & DbECPropertyInfo::COL_Name) selectClause.AddItem ("Name");
     if (info.ColsSelect & DbECPropertyInfo::COL_DisplayLabel) selectClause.AddItem ("DisplayLabel");
     if (info.ColsSelect & DbECPropertyInfo::COL_Description) selectClause.AddItem ("Description");
     if (info.ColsSelect & DbECPropertyInfo::COL_IsArray) selectClause.AddItem ("IsArray");
-    if (info.ColsSelect & DbECPropertyInfo::COL_TypeCustom) selectClause.AddItem ("TypeCustom");
-    if (info.ColsSelect & DbECPropertyInfo::COL_TypeECPrimitive) selectClause.AddItem ("TypeECPrimitive");
-    if (info.ColsSelect & DbECPropertyInfo::COL_TypeECStruct) selectClause.AddItem ("TypeECStruct");
-    if (info.ColsSelect & DbECPropertyInfo::COL_ECIndex) selectClause.AddItem ("ECIndex");
+    if (info.ColsSelect & DbECPropertyInfo::COL_PrimitiveType) selectClause.AddItem ("PrimitiveType");
+    if (info.ColsSelect & DbECPropertyInfo::COL_StructType) selectClause.AddItem ("StructType");
+    if (info.ColsSelect & DbECPropertyInfo::COL_Ordinal) selectClause.AddItem ("Ordinal");
     if (info.ColsSelect & DbECPropertyInfo::COL_IsReadOnly) selectClause.AddItem ("IsReadOnly");
     if (info.ColsSelect & DbECPropertyInfo::COL_MinOccurs) selectClause.AddItem ("MinOccurs");
     if (info.ColsSelect & DbECPropertyInfo::COL_MaxOccurs) selectClause.AddItem ("MaxOccurs");
@@ -583,21 +581,21 @@ DbResult ECDbSchemaPersistence::FindECPropertyInfo (BeSQLite::CachedStatementPtr
 
     //prepare where
     SqlClauseBuilder whereClause ("AND");
-    if (info.ColsWhere & DbECPropertyInfo::COL_ECClassId) whereClause.AddItem ("ECClassId=?");
+    if (info.ColsWhere & DbECPropertyInfo::COL_ClassId) whereClause.AddItem ("ClassId=?");
     if (info.ColsWhere & DbECPropertyInfo::COL_Id) whereClause.AddItem ("Id=?");
-    if (info.ColsWhere & DbECPropertyInfo::COL_Name) whereClause.AddItem ("[Name]=?");
+    if (info.ColsWhere & DbECPropertyInfo::COL_Name) whereClause.AddItem ("Name=?");
 
     if (!whereClause.IsEmpty ())
         sql.append (" WHERE ").append (whereClause.ToString ());
 
-    sql.append (" ORDER BY ECIndex");
+    sql.append (" ORDER BY Ordinal");
 
     auto stat = db.GetCachedStatement (stmt, sql.c_str ());
     if (stat != BE_SQLITE_OK)
         return stat;
 
     int nCol = 1;
-    if (info.ColsWhere & DbECPropertyInfo::COL_ECClassId) stmt->BindInt64 (nCol++, info.m_ecClassId);
+    if (info.ColsWhere & DbECPropertyInfo::COL_ClassId) stmt->BindInt64 (nCol++, info.m_ecClassId);
     if (info.ColsWhere & DbECPropertyInfo::COL_Id) stmt->BindInt64 (nCol++, info.m_ecPropertyId);
     if (info.ColsWhere & DbECPropertyInfo::COL_Name) stmt->BindText (nCol++, info.m_name, Statement::MakeCopy::No);
 
@@ -617,8 +615,8 @@ DbResult ECDbSchemaPersistence::Step(DbECPropertyInfoR info , BeSQLite::Statemen
 
         if (info.ColsSelect & DbECPropertyInfo::COL_Id)
             if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECPropertyInfo::COL_Id;              nCol++; } else info.m_ecPropertyId = stmt.GetValueInt64(nCol++);
-        if (info.ColsSelect & DbECPropertyInfo::COL_ECClassId)
-            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECPropertyInfo::COL_ECClassId;       nCol++; } else info.m_ecClassId = stmt.GetValueInt64 (nCol++);            
+        if (info.ColsSelect & DbECPropertyInfo::COL_ClassId)
+            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECPropertyInfo::COL_ClassId;       nCol++; } else info.m_ecClassId = stmt.GetValueInt64 (nCol++);            
         if (info.ColsSelect & DbECPropertyInfo::COL_Name)
             if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECPropertyInfo::COL_Name;            nCol++; } else info.m_name = stmt.GetValueText (nCol++);
         if (info.ColsSelect & DbECPropertyInfo::COL_DisplayLabel)
@@ -627,14 +625,12 @@ DbResult ECDbSchemaPersistence::Step(DbECPropertyInfoR info , BeSQLite::Statemen
             if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECPropertyInfo::COL_Description;     nCol++; } else info.m_description = stmt.GetValueText (nCol++);
         if (info.ColsSelect & DbECPropertyInfo::COL_IsArray)
             if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECPropertyInfo::COL_IsArray;         nCol++; } else info.m_isArray = stmt.GetValueInt  (nCol++) == 1;
-        if (info.ColsSelect & DbECPropertyInfo::COL_TypeCustom)
-            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECPropertyInfo::COL_TypeCustom;      nCol++; } else info.m_typeCustom = stmt.GetValueText (nCol++);
-        if (info.ColsSelect & DbECPropertyInfo::COL_TypeECPrimitive)
-            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECPropertyInfo::COL_TypeECPrimitive; nCol++; } else info.m_typeECPrimitive = (ECN::PrimitiveType)stmt.GetValueInt (nCol++);
-        if (info.ColsSelect & DbECPropertyInfo::COL_TypeECStruct)
-            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECPropertyInfo::COL_TypeECStruct;    nCol++; } else info.m_typeECStruct = stmt.GetValueInt64 (nCol++);
-        if (info.ColsSelect & DbECPropertyInfo::COL_ECIndex)
-            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECPropertyInfo::COL_ECIndex;         nCol++; } else info.m_ecIndex = stmt.GetValueInt (nCol++);
+        if (info.ColsSelect & DbECPropertyInfo::COL_PrimitiveType)
+            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECPropertyInfo::COL_PrimitiveType; nCol++; } else info.m_primitiveType = (ECN::PrimitiveType)stmt.GetValueInt (nCol++);
+        if (info.ColsSelect & DbECPropertyInfo::COL_StructType)
+            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECPropertyInfo::COL_StructType;    nCol++; } else info.m_structType = stmt.GetValueInt64 (nCol++);
+        if (info.ColsSelect & DbECPropertyInfo::COL_Ordinal)
+            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECPropertyInfo::COL_Ordinal;         nCol++; } else info.m_ordinal = stmt.GetValueInt (nCol++);
         if (info.ColsSelect & DbECPropertyInfo::COL_IsReadOnly)
             if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbECPropertyInfo::COL_IsReadOnly;      nCol++; } else info.m_isReadOnly = stmt.GetValueInt (nCol++) == 1;
         if (info.ColsSelect & DbECPropertyInfo::COL_MinOccurs)
@@ -655,15 +651,14 @@ DbResult ECDbSchemaPersistence::UpdateECPropertyInfo (BeSQLite::Db& db, DbECProp
 
     SqlClauseBuilder setClause (",");
     if (info.ColsUpdate & DbECPropertyInfo::COL_Id) setClause.AddItem("Id=?");
-    if (info.ColsUpdate & DbECPropertyInfo::COL_ECClassId) setClause.AddItem("ECClassId=?");
-    if (info.ColsUpdate & DbECPropertyInfo::COL_Name) setClause.AddItem ("[Name]=?");
+    if (info.ColsUpdate & DbECPropertyInfo::COL_ClassId) setClause.AddItem("ClassId=?");
+    if (info.ColsUpdate & DbECPropertyInfo::COL_Name) setClause.AddItem ("Name=?");
     if (info.ColsUpdate & DbECPropertyInfo::COL_DisplayLabel) setClause.AddItem ("DisplayLabel=?");
     if (info.ColsUpdate & DbECPropertyInfo::COL_Description) setClause.AddItem ("Description=?");
     if (info.ColsUpdate & DbECPropertyInfo::COL_IsArray) setClause.AddItem ("IsArray=?");
-    if (info.ColsUpdate & DbECPropertyInfo::COL_TypeCustom) setClause.AddItem ("TypeCustom=?");
-    if (info.ColsUpdate & DbECPropertyInfo::COL_TypeECPrimitive) setClause.AddItem ("TypeECPrimitive=?");
-    if (info.ColsUpdate & DbECPropertyInfo::COL_TypeECStruct) setClause.AddItem ("TypeECStruct=?");
-    if (info.ColsUpdate & DbECPropertyInfo::COL_ECIndex) setClause.AddItem ("ECIndex=?");
+    if (info.ColsUpdate & DbECPropertyInfo::COL_PrimitiveType) setClause.AddItem ("PrimitiveType=?");
+    if (info.ColsUpdate & DbECPropertyInfo::COL_StructType) setClause.AddItem ("StructType=?");
+    if (info.ColsUpdate & DbECPropertyInfo::COL_Ordinal) setClause.AddItem ("Ordinal=?");
     if (info.ColsUpdate & DbECPropertyInfo::COL_IsReadOnly) setClause.AddItem ("IsReadOnly=?");
     if (info.ColsUpdate & DbECPropertyInfo::COL_MinOccurs) setClause.AddItem ("MinOccurs=?");
     if (info.ColsUpdate & DbECPropertyInfo::COL_MaxOccurs) setClause.AddItem ("MaxOccurs=?");
@@ -673,15 +668,14 @@ DbResult ECDbSchemaPersistence::UpdateECPropertyInfo (BeSQLite::Db& db, DbECProp
 
     SqlClauseBuilder whereClause ("AND");
     if (info.ColsWhere & DbECPropertyInfo::COL_Id) whereClause.AddItem("Id=?");
-    if (info.ColsWhere & DbECPropertyInfo::COL_ECClassId) whereClause.AddItem("ECClassId=?");
-    if (info.ColsWhere & DbECPropertyInfo::COL_Name) whereClause.AddItem ("[Name]=?");
+    if (info.ColsWhere & DbECPropertyInfo::COL_ClassId) whereClause.AddItem("ClassId=?");
+    if (info.ColsWhere & DbECPropertyInfo::COL_Name) whereClause.AddItem ("Name=?");
     if (info.ColsWhere & DbECPropertyInfo::COL_DisplayLabel) whereClause.AddItem ("DisplayLabel=?");
     if (info.ColsWhere & DbECPropertyInfo::COL_Description) whereClause.AddItem ("Description=?");
     if (info.ColsWhere & DbECPropertyInfo::COL_IsArray) whereClause.AddItem ("IsArray=?");
-    if (info.ColsWhere & DbECPropertyInfo::COL_TypeCustom) whereClause.AddItem ("TypeCustom=?");
-    if (info.ColsWhere & DbECPropertyInfo::COL_TypeECPrimitive) whereClause.AddItem ("TypeECPrimitive=?");
-    if (info.ColsWhere & DbECPropertyInfo::COL_TypeECStruct) whereClause.AddItem ("TypeECStruct=?");
-    if (info.ColsWhere & DbECPropertyInfo::COL_ECIndex) whereClause.AddItem ("ECIndex=?");
+    if (info.ColsWhere & DbECPropertyInfo::COL_PrimitiveType) whereClause.AddItem ("PrimitiveType=?");
+    if (info.ColsWhere & DbECPropertyInfo::COL_StructType) whereClause.AddItem ("StructType=?");
+    if (info.ColsWhere & DbECPropertyInfo::COL_Ordinal) whereClause.AddItem ("Ordinal=?");
     if (info.ColsWhere & DbECPropertyInfo::COL_IsReadOnly) whereClause.AddItem ("IsReadOnly=?");
 
     if (!whereClause.IsEmpty ())
@@ -695,8 +689,8 @@ DbResult ECDbSchemaPersistence::UpdateECPropertyInfo (BeSQLite::Db& db, DbECProp
     int nCol = 1;
     if (info.ColsUpdate & DbECPropertyInfo::COL_Id)
         if (info.ColsNull & DbECPropertyInfo::COL_Id)  nCol++; else stmt->BindInt64(nCol++, info.m_ecPropertyId);
-    if (info.ColsUpdate & DbECPropertyInfo::COL_ECClassId)
-        if (info.ColsNull & DbECPropertyInfo::COL_ECClassId)  nCol++; else stmt->BindInt64 (nCol++, info.m_ecClassId);
+    if (info.ColsUpdate & DbECPropertyInfo::COL_ClassId)
+        if (info.ColsNull & DbECPropertyInfo::COL_ClassId)  nCol++; else stmt->BindInt64 (nCol++, info.m_ecClassId);
     if (info.ColsUpdate & DbECPropertyInfo::COL_Name)
         if (info.ColsNull & DbECPropertyInfo::COL_Name) nCol++; else stmt->BindText (nCol++, info.m_name, Statement::MakeCopy::No);
     if (info.ColsUpdate & DbECPropertyInfo::COL_DisplayLabel)
@@ -705,14 +699,12 @@ DbResult ECDbSchemaPersistence::UpdateECPropertyInfo (BeSQLite::Db& db, DbECProp
         if (info.ColsNull & DbECPropertyInfo::COL_Description)  nCol++; else stmt->BindText (nCol++, info.m_description, Statement::MakeCopy::No);
     if (info.ColsUpdate & DbECPropertyInfo::COL_IsArray)
         if (info.ColsNull & DbECPropertyInfo::COL_IsArray) nCol++; else stmt->BindInt (nCol++, info.m_isArray ? 1 : 0);
-    if (info.ColsUpdate & DbECPropertyInfo::COL_TypeCustom)
-        if (info.ColsNull & DbECPropertyInfo::COL_TypeCustom) nCol++; else stmt->BindText (nCol++, info.m_typeCustom, Statement::MakeCopy::No);
-    if (info.ColsUpdate & DbECPropertyInfo::COL_TypeECPrimitive)
-        if (info.ColsNull & DbECPropertyInfo::COL_TypeECPrimitive) nCol++; else stmt->BindInt (nCol++, info.m_typeECPrimitive);
-    if (info.ColsUpdate & DbECPropertyInfo::COL_TypeECStruct)
-        if (info.ColsNull & DbECPropertyInfo::COL_TypeECStruct) nCol++; else stmt->BindInt64 (nCol++, info.m_typeECStruct);
-    if (info.ColsUpdate & DbECPropertyInfo::COL_ECIndex)
-        if (info.ColsNull & DbECPropertyInfo::COL_ECIndex) nCol++; else stmt->BindInt (nCol++, info.m_ecIndex);
+    if (info.ColsUpdate & DbECPropertyInfo::COL_PrimitiveType)
+        if (info.ColsNull & DbECPropertyInfo::COL_PrimitiveType) nCol++; else stmt->BindInt (nCol++, info.m_primitiveType);
+    if (info.ColsUpdate & DbECPropertyInfo::COL_StructType)
+        if (info.ColsNull & DbECPropertyInfo::COL_StructType) nCol++; else stmt->BindInt64 (nCol++, info.m_structType);
+    if (info.ColsUpdate & DbECPropertyInfo::COL_Ordinal)
+        if (info.ColsNull & DbECPropertyInfo::COL_Ordinal) nCol++; else stmt->BindInt (nCol++, info.m_ordinal);
     if (info.ColsUpdate & DbECPropertyInfo::COL_IsReadOnly)
         if (info.ColsNull & DbECPropertyInfo::COL_IsReadOnly) nCol++; else stmt->BindInt (nCol++, info.m_isReadOnly ? 1 : 0);
     if (info.ColsUpdate & DbECPropertyInfo::COL_MinOccurs)
@@ -721,15 +713,14 @@ DbResult ECDbSchemaPersistence::UpdateECPropertyInfo (BeSQLite::Db& db, DbECProp
         if (info.ColsNull & DbECPropertyInfo::COL_MaxOccurs) nCol++; else stmt->BindInt (nCol++, (int32_t) info.m_maxOccurs);
 
     if (info.ColsWhere & DbECPropertyInfo::COL_Id) stmt->BindInt64(nCol++, info.m_ecPropertyId);
-    if (info.ColsWhere & DbECPropertyInfo::COL_ECClassId) stmt->BindInt64(nCol++, info.m_ecClassId);
+    if (info.ColsWhere & DbECPropertyInfo::COL_ClassId) stmt->BindInt64(nCol++, info.m_ecClassId);
     if (info.ColsWhere & DbECPropertyInfo::COL_Name) stmt->BindText (nCol++, info.m_name, Statement::MakeCopy::No);
     if (info.ColsWhere & DbECPropertyInfo::COL_DisplayLabel) stmt->BindText (nCol++, info.m_displayLabel, Statement::MakeCopy::No);
     if (info.ColsWhere & DbECPropertyInfo::COL_Description) stmt->BindText (nCol++, info.m_description, Statement::MakeCopy::No);
     if (info.ColsWhere & DbECPropertyInfo::COL_IsArray) stmt->BindInt (nCol++, info.m_isArray ? 1 : 0);
-    if (info.ColsWhere & DbECPropertyInfo::COL_TypeCustom) stmt->BindText (nCol++, info.m_typeCustom, Statement::MakeCopy::No);
-    if (info.ColsWhere & DbECPropertyInfo::COL_TypeECPrimitive) stmt->BindInt (nCol++, info.m_typeECPrimitive);
-    if (info.ColsWhere & DbECPropertyInfo::COL_TypeECStruct) stmt->BindInt64 (nCol++, info.m_typeECStruct);
-    if (info.ColsWhere & DbECPropertyInfo::COL_ECIndex) stmt->BindInt (nCol++, info.m_ecIndex);
+    if (info.ColsWhere & DbECPropertyInfo::COL_PrimitiveType) stmt->BindInt (nCol++, info.m_primitiveType);
+    if (info.ColsWhere & DbECPropertyInfo::COL_StructType) stmt->BindInt64 (nCol++, info.m_structType);
+    if (info.ColsWhere & DbECPropertyInfo::COL_Ordinal) stmt->BindInt (nCol++, info.m_ordinal);
     if (info.ColsWhere & DbECPropertyInfo::COL_IsReadOnly) stmt->BindInt (nCol++, info.m_isReadOnly ? 1 : 0);
 
     stat = stmt->Step ();
@@ -742,12 +733,12 @@ DbResult ECDbSchemaPersistence::UpdateECPropertyInfo (BeSQLite::Db& db, DbECProp
 DbResult ECDbSchemaPersistence::InsertECRelationConstraintInfo (BeSQLite::Db& db, DbECRelationshipConstraintInfoCR info)
     {
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement (stmt, "INSERT INTO ec_RelationshipConstraint (ECClassId, ECRelationshipEnd, CardinalityLowerLimit, CardinalityUpperLimit, RoleLabel, IsPolymorphic) VALUES (?, ?, ?, ?, ?, ?)");
+    auto stat = db.GetCachedStatement (stmt, "INSERT INTO ec_RelationshipConstraint (ClassId, RelationshipEnd, CardinalityLowerLimit, CardinalityUpperLimit, RoleLabel, IsPolymorphic) VALUES (?, ?, ?, ?, ?, ?)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    if (info.ColsInsert & DbECRelationshipConstraintInfo::COL_ECClassId) stmt->BindInt64 (1, info.m_ecClassId);
-    if (info.ColsInsert & DbECRelationshipConstraintInfo::COL_ECRelationshipEnd) stmt->BindInt (2, info.m_ecRelationshipEnd);
+    if (info.ColsInsert & DbECRelationshipConstraintInfo::COL_ClassId) stmt->BindInt64 (1, info.m_ecClassId);
+    if (info.ColsInsert & DbECRelationshipConstraintInfo::COL_RelationshipEnd) stmt->BindInt (2, info.m_ecRelationshipEnd);
     if (info.ColsInsert & DbECRelationshipConstraintInfo::COL_CardinalityLowerLimit) stmt->BindInt (3, info.m_cardinalityLowerLimit);
     if (info.ColsInsert & DbECRelationshipConstraintInfo::COL_CardinalityUpperLimit) stmt->BindInt (4, info.m_cardinalityUpperLimit);
     if (info.ColsInsert & DbECRelationshipConstraintInfo::COL_RoleLabel) stmt->BindText (5, info.m_roleLabel, Statement::MakeCopy::No);
@@ -765,11 +756,11 @@ DbResult ECDbSchemaPersistence::UpdateECRelationConstraintInfo (BeSQLite::Db& db
 
     SqlClauseBuilder setClause (",");
 
-    if (info.ColsUpdate & DbECRelationshipConstraintInfo::COL_ECClassId) 
-        setClause.AddItem ("ECClassId=?");
+    if (info.ColsUpdate & DbECRelationshipConstraintInfo::COL_ClassId) 
+        setClause.AddItem ("ClassId=?");
     
-    if (info.ColsUpdate & DbECRelationshipConstraintInfo::COL_ECRelationshipEnd) 
-        setClause.AddItem ("ECRelationshipEnd=?");
+    if (info.ColsUpdate & DbECRelationshipConstraintInfo::COL_RelationshipEnd) 
+        setClause.AddItem ("RelationshipEnd=?");
     
     if (info.ColsUpdate & DbECRelationshipConstraintInfo::COL_RoleLabel) 
         setClause.AddItem ("RoleLabel=?");
@@ -787,11 +778,11 @@ DbResult ECDbSchemaPersistence::UpdateECRelationConstraintInfo (BeSQLite::Db& db
     sql.append (setClause.ToString ());
 
     SqlClauseBuilder whereClause ("AND");
-    if (info.ColsWhere & DbECRelationshipConstraintInfo::COL_ECClassId)
-        whereClause.AddItem ("ECClassId=?");
+    if (info.ColsWhere & DbECRelationshipConstraintInfo::COL_ClassId)
+        whereClause.AddItem ("ClassId=?");
 
-    if (info.ColsWhere & DbECRelationshipConstraintInfo::COL_ECRelationshipEnd)
-        whereClause.AddItem ("ECRelationshipEnd=?");
+    if (info.ColsWhere & DbECRelationshipConstraintInfo::COL_RelationshipEnd)
+        whereClause.AddItem ("RelationshipEnd=?");
 
     if (!whereClause.IsEmpty ())
         sql.append (" WHERE ").append (whereClause.ToString ());
@@ -802,14 +793,14 @@ DbResult ECDbSchemaPersistence::UpdateECRelationConstraintInfo (BeSQLite::Db& db
         return stat;
 
     int nCol= 1;
-    if (info.ColsUpdate & DbECRelationshipConstraintInfo::COL_ECClassId)
-        if (info.ColsNull & DbECRelationshipConstraintInfo::COL_ECClassId) 
+    if (info.ColsUpdate & DbECRelationshipConstraintInfo::COL_ClassId)
+        if (info.ColsNull & DbECRelationshipConstraintInfo::COL_ClassId) 
             nCol++; 
         else 
             stmt->BindInt64 (nCol++, info.m_ecClassId);
 
-    if (info.ColsUpdate & DbECRelationshipConstraintInfo::COL_ECRelationshipEnd)
-        if (info.ColsNull & DbECRelationshipConstraintInfo::COL_ECRelationshipEnd) 
+    if (info.ColsUpdate & DbECRelationshipConstraintInfo::COL_RelationshipEnd)
+        if (info.ColsNull & DbECRelationshipConstraintInfo::COL_RelationshipEnd) 
             nCol++; 
         else 
             stmt->BindInt (nCol++, info.m_ecRelationshipEnd);
@@ -838,10 +829,10 @@ DbResult ECDbSchemaPersistence::UpdateECRelationConstraintInfo (BeSQLite::Db& db
         else 
             stmt->BindInt (nCol++, info.m_cardinalityUpperLimit);
 
-    if (info.ColsWhere & DbECRelationshipConstraintInfo::COL_ECClassId)
+    if (info.ColsWhere & DbECRelationshipConstraintInfo::COL_ClassId)
         stmt->BindInt64 (nCol++, info.m_ecClassId);
 
-    if (info.ColsWhere & DbECRelationshipConstraintInfo::COL_ECRelationshipEnd) 
+    if (info.ColsWhere & DbECRelationshipConstraintInfo::COL_RelationshipEnd) 
         stmt->BindInt   (nCol++, info.m_ecRelationshipEnd);
 
     stat = stmt->Step();
@@ -858,8 +849,8 @@ DbResult ECDbSchemaPersistence::FindECRelationshipConstraintInfo (BeSQLite::Cach
 
     //prepare select list
     SqlClauseBuilder selectClause (",");
-    if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_ECClassId) selectClause.AddItem ("ECClassId");
-    if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_ECRelationshipEnd) selectClause.AddItem ("ECRelationshipEnd");
+    if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_ClassId) selectClause.AddItem ("ClassId");
+    if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_RelationshipEnd) selectClause.AddItem ("RelationshipEnd");
     if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_CardinalityLowerLimit) selectClause.AddItem ("CardinalityLowerLimit");
     if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_CardinalityUpperLimit) selectClause.AddItem ("CardinalityUpperLimit");
     if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_RoleLabel) selectClause.AddItem ("RoleLabel");
@@ -871,8 +862,8 @@ DbResult ECDbSchemaPersistence::FindECRelationshipConstraintInfo (BeSQLite::Cach
 
     //prepare where
     SqlClauseBuilder whereClause ("AND");
-    if (info.ColsWhere & DbECRelationshipConstraintInfo::COL_ECClassId) whereClause.AddItem ("ECClassId=?");
-    if (info.ColsWhere & DbECRelationshipConstraintInfo::COL_ECRelationshipEnd) whereClause.AddItem ("ECRelationshipEnd=?");
+    if (info.ColsWhere & DbECRelationshipConstraintInfo::COL_ClassId) whereClause.AddItem ("ClassId=?");
+    if (info.ColsWhere & DbECRelationshipConstraintInfo::COL_RelationshipEnd) whereClause.AddItem ("RelationshipEnd=?");
 
     if (!whereClause.IsEmpty ())
         sql.append (" WHERE ").append (whereClause.ToString ());
@@ -882,8 +873,8 @@ DbResult ECDbSchemaPersistence::FindECRelationshipConstraintInfo (BeSQLite::Cach
         return stat;
 
     int nCol = 1;
-    if (info.ColsWhere & DbECRelationshipConstraintInfo::COL_ECClassId) stmt->BindInt64 (nCol++, info.m_ecClassId);
-    if (info.ColsWhere & DbECRelationshipConstraintInfo::COL_ECRelationshipEnd) stmt->BindInt (nCol++, info.m_ecRelationshipEnd);
+    if (info.ColsWhere & DbECRelationshipConstraintInfo::COL_ClassId) stmt->BindInt64 (nCol++, info.m_ecClassId);
+    if (info.ColsWhere & DbECRelationshipConstraintInfo::COL_RelationshipEnd) stmt->BindInt (nCol++, info.m_ecRelationshipEnd);
     return stat;
     }
 
@@ -897,8 +888,8 @@ DbResult ECDbSchemaPersistence::Step (DbECRelationshipConstraintInfoR info, BeSQ
         {
         int nCol = 0;
         info.ColsNull = 0;
-        if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_ECClassId) info.m_ecClassId = stmt.GetValueInt64 (nCol++);
-        if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_ECRelationshipEnd) info.m_ecRelationshipEnd = (ECN::ECRelationshipEnd)stmt.GetValueInt (nCol++);
+        if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_ClassId) info.m_ecClassId = stmt.GetValueInt64 (nCol++);
+        if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_RelationshipEnd) info.m_ecRelationshipEnd = (ECN::ECRelationshipEnd)stmt.GetValueInt (nCol++);
         if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_CardinalityLowerLimit) info.m_cardinalityLowerLimit = stmt.GetValueInt (nCol++);
         if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_CardinalityUpperLimit) info.m_cardinalityUpperLimit = stmt.GetValueInt (nCol++);
         if (info.ColsSelect & DbECRelationshipConstraintInfo::COL_RoleLabel)
@@ -915,13 +906,13 @@ DbResult ECDbSchemaPersistence::Step (DbECRelationshipConstraintInfoR info, BeSQ
 DbResult ECDbSchemaPersistence::InsertECRelationConstraintClassInfo (BeSQLite::Db& db, DbECRelationshipConstraintClassInfoCR info)
     {
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement (stmt, "INSERT INTO ec_RelationshipConstraintClass (ECClassId, ECRelationshipEnd, RelationECClassId) VALUES (?, ?, ?)");
+    auto stat = db.GetCachedStatement (stmt, "INSERT INTO ec_RelationshipConstraintClass (ClassId, RelationshipEnd, RelationClassId) VALUES (?, ?, ?)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    if (info.ColsInsert & DbECRelationshipConstraintClassInfo::COL_ECClassId) stmt->BindInt64 (1, info.m_ecClassId);
-    if (info.ColsInsert & DbECRelationshipConstraintClassInfo::COL_ECRelationshipEnd) stmt->BindInt (2, info.m_ecRelationshipEnd);
-    if (info.ColsInsert & DbECRelationshipConstraintClassInfo::COL_RelationECClassId) stmt->BindInt64 (3, info.m_relationECClassId);
+    if (info.ColsInsert & DbECRelationshipConstraintClassInfo::COL_ClassId) stmt->BindInt64 (1, info.m_ecClassId);
+    if (info.ColsInsert & DbECRelationshipConstraintClassInfo::COL_RelationshipEnd) stmt->BindInt (2, info.m_ecRelationshipEnd);
+    if (info.ColsInsert & DbECRelationshipConstraintClassInfo::COL_RelationClassId) stmt->BindInt64 (3, info.m_relationECClassId);
     return stmt->Step ();
     }
 
@@ -934,18 +925,18 @@ DbResult ECDbSchemaPersistence::FindECRelationConstraintClassInfo (BeSQLite::Cac
 
     //prepare select list
     SqlClauseBuilder selectClause (",");
-    if (info.ColsSelect & DbECRelationshipConstraintClassInfo::COL_ECClassId) selectClause.AddItem ("ECClassId");
-    if (info.ColsSelect & DbECRelationshipConstraintClassInfo::COL_ECRelationshipEnd) selectClause.AddItem ("ECRelationshipEnd");
-    if (info.ColsSelect & DbECRelationshipConstraintClassInfo::COL_RelationECClassId) selectClause.AddItem ("RelationECClassId");
+    if (info.ColsSelect & DbECRelationshipConstraintClassInfo::COL_ClassId) selectClause.AddItem ("ClassId");
+    if (info.ColsSelect & DbECRelationshipConstraintClassInfo::COL_RelationshipEnd) selectClause.AddItem ("RelationshipEnd");
+    if (info.ColsSelect & DbECRelationshipConstraintClassInfo::COL_RelationClassId) selectClause.AddItem ("RelationClassId");
 
     BeAssert (!selectClause.IsEmpty ());
     sql.append (selectClause.ToString ()).append (" FROM ec_RelationshipConstraintClass");
 
     //prepare where
     SqlClauseBuilder whereClause ("AND");
-    if (info.ColsWhere & DbECRelationshipConstraintClassInfo::COL_ECClassId) whereClause.AddItem ("ECClassId=?");
-    if (info.ColsWhere & DbECRelationshipConstraintClassInfo::COL_ECRelationshipEnd) whereClause.AddItem ("ECRelationshipEnd=?");
-    if (info.ColsWhere & DbECRelationshipConstraintClassInfo::COL_RelationECClassId) whereClause.AddItem ("RelationECClassId=?");
+    if (info.ColsWhere & DbECRelationshipConstraintClassInfo::COL_ClassId) whereClause.AddItem ("ClassId=?");
+    if (info.ColsWhere & DbECRelationshipConstraintClassInfo::COL_RelationshipEnd) whereClause.AddItem ("RelationshipEnd=?");
+    if (info.ColsWhere & DbECRelationshipConstraintClassInfo::COL_RelationClassId) whereClause.AddItem ("RelationClassId=?");
 
     if (!whereClause.IsEmpty ())
         sql.append (" WHERE ").append (whereClause.ToString ());
@@ -955,9 +946,9 @@ DbResult ECDbSchemaPersistence::FindECRelationConstraintClassInfo (BeSQLite::Cac
         return stat;
 
     int nCol = 1;
-    if (info.ColsWhere & DbECRelationshipConstraintClassInfo::COL_ECClassId) stmt->BindInt64 (nCol++, info.m_ecClassId);
-    if (info.ColsWhere & DbECRelationshipConstraintClassInfo::COL_ECRelationshipEnd) stmt->BindInt (nCol++, info.m_ecRelationshipEnd);
-    if (info.ColsWhere & DbECRelationshipConstraintClassInfo::COL_RelationECClassId) stmt->BindInt64 (nCol++, info.m_relationECClassId);
+    if (info.ColsWhere & DbECRelationshipConstraintClassInfo::COL_ClassId) stmt->BindInt64 (nCol++, info.m_ecClassId);
+    if (info.ColsWhere & DbECRelationshipConstraintClassInfo::COL_RelationshipEnd) stmt->BindInt (nCol++, info.m_ecRelationshipEnd);
+    if (info.ColsWhere & DbECRelationshipConstraintClassInfo::COL_RelationClassId) stmt->BindInt64 (nCol++, info.m_relationECClassId);
     return stat;
     }
 
@@ -971,9 +962,9 @@ DbResult ECDbSchemaPersistence::Step (DbECRelationshipConstraintClassInfoR info,
         {
         int nCol = 0;
         info.ColsNull = 0;
-        if (info.ColsSelect & DbECRelationshipConstraintClassInfo::COL_ECClassId) info.m_ecClassId = stmt.GetValueInt64 (nCol++);
-        if (info.ColsSelect & DbECRelationshipConstraintClassInfo::COL_ECRelationshipEnd) info.m_ecRelationshipEnd = (ECRelationshipEnd) stmt.GetValueInt (nCol++);
-        if (info.ColsSelect & DbECRelationshipConstraintClassInfo::COL_RelationECClassId) info.m_relationECClassId = stmt.GetValueInt64 (nCol++);
+        if (info.ColsSelect & DbECRelationshipConstraintClassInfo::COL_ClassId) info.m_ecClassId = stmt.GetValueInt64 (nCol++);
+        if (info.ColsSelect & DbECRelationshipConstraintClassInfo::COL_RelationshipEnd) info.m_ecRelationshipEnd = (ECRelationshipEnd) stmt.GetValueInt (nCol++);
+        if (info.ColsSelect & DbECRelationshipConstraintClassInfo::COL_RelationClassId) info.m_relationECClassId = stmt.GetValueInt64 (nCol++);
         }
     return r;
     }
@@ -992,9 +983,9 @@ DbResult ECDbSchemaPersistence::UpdateECRelationshipConstraintClass (BeSQLite::D
     sql.append (setClause.ToString ());
 
     SqlClauseBuilder whereClause ("AND");
-    if (info.ColsWhere & DbECRelationshipConstraintClassInfo::COL_ECClassId) whereClause.AddItem ("ECClassId=?");
-    if (info.ColsWhere & DbECRelationshipConstraintClassInfo::COL_ECRelationshipEnd) whereClause.AddItem ("ECRelationshipEnd=?");
-    if (info.ColsWhere & DbECRelationshipConstraintClassInfo::COL_RelationECClassId) whereClause.AddItem ("RelationECClassId=?");
+    if (info.ColsWhere & DbECRelationshipConstraintClassInfo::COL_ClassId) whereClause.AddItem ("ClassId=?");
+    if (info.ColsWhere & DbECRelationshipConstraintClassInfo::COL_RelationshipEnd) whereClause.AddItem ("RelationshipEnd=?");
+    if (info.ColsWhere & DbECRelationshipConstraintClassInfo::COL_RelationClassId) whereClause.AddItem ("RelationClassId=?");
 
     if (!whereClause.IsEmpty ())
         sql.append (" WHERE ").append (whereClause.ToString ());
@@ -1005,9 +996,9 @@ DbResult ECDbSchemaPersistence::UpdateECRelationshipConstraintClass (BeSQLite::D
         return stat;
 
     int nCol = 1;
-    if (info.ColsWhere & DbECRelationshipConstraintClassInfo::COL_ECClassId) stmt->BindInt64 (nCol++, info.m_ecClassId);
-    if (info.ColsWhere & DbECRelationshipConstraintClassInfo::COL_ECRelationshipEnd) stmt->BindInt (nCol++, info.m_ecRelationshipEnd);
-    if (info.ColsWhere & DbECRelationshipConstraintClassInfo::COL_RelationECClassId) stmt->BindInt64 (nCol++, info.m_relationECClassId);
+    if (info.ColsWhere & DbECRelationshipConstraintClassInfo::COL_ClassId) stmt->BindInt64 (nCol++, info.m_ecClassId);
+    if (info.ColsWhere & DbECRelationshipConstraintClassInfo::COL_RelationshipEnd) stmt->BindInt (nCol++, info.m_ecRelationshipEnd);
+    if (info.ColsWhere & DbECRelationshipConstraintClassInfo::COL_RelationClassId) stmt->BindInt64 (nCol++, info.m_relationECClassId);
 
     return stmt->Step ();
     }
@@ -1018,14 +1009,14 @@ DbResult ECDbSchemaPersistence::UpdateECRelationshipConstraintClass (BeSQLite::D
 DbResult ECDbSchemaPersistence::InsertCustomAttributeInfo (BeSQLite::Db& db, DbCustomAttributeInfoCR info)
     {
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement (stmt, "INSERT INTO ec_CustomAttribute (ContainerId, ContainerType, ECClassId, [Index], Instance) VALUES(?, ?, ?, ?, ?)");
+    auto stat = db.GetCachedStatement (stmt, "INSERT INTO ec_CustomAttribute (ContainerId, ContainerType, ClassId, Ordinal, Instance) VALUES(?, ?, ?, ?, ?)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
     if (info.ColsInsert & DbCustomAttributeInfo::COL_ContainerId) stmt->BindInt64 (1, info.m_containerId);
     if (info.ColsInsert & DbCustomAttributeInfo::COL_ContainerType) stmt->BindInt (2, info.m_containerType);
-    if (info.ColsInsert & DbCustomAttributeInfo::COL_ECClassId) stmt->BindInt64 (3, info.m_ecClassId);
-    if (info.ColsInsert & DbCustomAttributeInfo::COL_Index) stmt->BindInt (4, info.m_index);
+    if (info.ColsInsert & DbCustomAttributeInfo::COL_ClassId) stmt->BindInt64 (3, info.m_ecClassId);
+    if (info.ColsInsert & DbCustomAttributeInfo::COL_Ordinal) stmt->BindInt (4, info.m_index);
     if (info.ColsInsert & DbCustomAttributeInfo::COL_Instance)
         {
         DbResult stat = stmt->BindText (5, info.GetCaInstanceXml (), Statement::MakeCopy::No);
@@ -1048,8 +1039,8 @@ DbResult ECDbSchemaPersistence::FindCustomAttributeInfo (BeSQLite::CachedStateme
     //prepare select list
     if (info.ColsSelect & DbCustomAttributeInfo::COL_ContainerId) selectClause.AddItem ("ContainerId");
     if (info.ColsSelect & DbCustomAttributeInfo::COL_ContainerType) selectClause.AddItem ("ContainerType");
-    if (info.ColsSelect & DbCustomAttributeInfo::COL_ECClassId) selectClause.AddItem ("ECClassId");
-    if (info.ColsSelect & DbCustomAttributeInfo::COL_Index) selectClause.AddItem ("[Index]");
+    if (info.ColsSelect & DbCustomAttributeInfo::COL_ClassId) selectClause.AddItem ("ClassId");
+    if (info.ColsSelect & DbCustomAttributeInfo::COL_Ordinal) selectClause.AddItem ("Ordinal");
     if (info.ColsSelect & DbCustomAttributeInfo::COL_Instance) selectClause.AddItem ("Instance");
 
     BeAssert (!selectClause.IsEmpty ());
@@ -1061,15 +1052,15 @@ DbResult ECDbSchemaPersistence::FindCustomAttributeInfo (BeSQLite::CachedStateme
         whereClause.AddItem ("ContainerId=?");
     if (info.ColsWhere & DbCustomAttributeInfo::COL_ContainerType)
         whereClause.AddItem ("ContainerType=?");
-    if (info.ColsWhere & DbCustomAttributeInfo::COL_ECClassId)
-        whereClause.AddItem ("ECClassId=?");
-    if (info.ColsWhere & DbCustomAttributeInfo::COL_Index)
-        whereClause.AddItem ("[Index]=?");
+    if (info.ColsWhere & DbCustomAttributeInfo::COL_ClassId)
+        whereClause.AddItem ("ClassId=?");
+    if (info.ColsWhere & DbCustomAttributeInfo::COL_Ordinal)
+        whereClause.AddItem ("Ordinal=?");
 
     if (!whereClause.IsEmpty ())
         sql.append (" WHERE ").append (whereClause.ToString ());
 
-    sql.append (" ORDER BY [Index]");
+    sql.append (" ORDER BY Ordinal");
 
     auto stat = db.GetCachedStatement (stmt, sql.c_str ());
     if (stat != BE_SQLITE_OK)
@@ -1078,8 +1069,8 @@ DbResult ECDbSchemaPersistence::FindCustomAttributeInfo (BeSQLite::CachedStateme
     int nCol = 1;
     if (~info.ColsNull & info.ColsWhere & DbCustomAttributeInfo::COL_ContainerId)            stmt->BindInt64 (nCol++, info.m_containerId);
     if (~info.ColsNull & info.ColsWhere & DbCustomAttributeInfo::COL_ContainerType)          stmt->BindInt (nCol++, info.m_containerType);
-    if (~info.ColsNull & info.ColsWhere & DbCustomAttributeInfo::COL_ECClassId)              stmt->BindInt64 (nCol++, info.m_ecClassId);
-    if (~info.ColsNull & info.ColsWhere & DbCustomAttributeInfo::COL_Index)                  stmt->BindInt (nCol++, info.m_index);
+    if (~info.ColsNull & info.ColsWhere & DbCustomAttributeInfo::COL_ClassId)              stmt->BindInt64 (nCol++, info.m_ecClassId);
+    if (~info.ColsNull & info.ColsWhere & DbCustomAttributeInfo::COL_Ordinal)                  stmt->BindInt (nCol++, info.m_index);
     return stat;
     }
 
@@ -1104,11 +1095,11 @@ DbResult ECDbSchemaPersistence::UpdateCustomAttributeInfo (BeSQLite::Db& db, DbC
     if (info.ColsWhere & DbCustomAttributeInfo::COL_ContainerType)
         whereClause.AddItem ("ContainerType=?");
 
-    if (info.ColsWhere & DbCustomAttributeInfo::COL_ECClassId)
-        whereClause.AddItem ("ECClassId=?");
+    if (info.ColsWhere & DbCustomAttributeInfo::COL_ClassId)
+        whereClause.AddItem ("ClassId=?");
 
-    if (info.ColsWhere & DbCustomAttributeInfo::COL_Index)
-        whereClause.AddItem ("[Index]=?");
+    if (info.ColsWhere & DbCustomAttributeInfo::COL_Ordinal)
+        whereClause.AddItem ("Ordinal=?");
 
     if (!whereClause.IsEmpty ())
         sql.append (" WHERE ").append (whereClause.ToString ());
@@ -1127,8 +1118,8 @@ DbResult ECDbSchemaPersistence::UpdateCustomAttributeInfo (BeSQLite::Db& db, DbC
         }
     if (~info.ColsNull & info.ColsWhere & DbCustomAttributeInfo::COL_ContainerId) stmt->BindInt64 (nCol++, info.m_containerId);
     if (~info.ColsNull & info.ColsWhere & DbCustomAttributeInfo::COL_ContainerType) stmt->BindInt (nCol++, info.m_containerType);
-    if (~info.ColsNull & info.ColsWhere & DbCustomAttributeInfo::COL_ECClassId) stmt->BindInt64 (nCol++, info.m_ecClassId);
-    if (~info.ColsNull & info.ColsWhere & DbCustomAttributeInfo::COL_Index) stmt->BindInt (nCol++, info.m_index);
+    if (~info.ColsNull & info.ColsWhere & DbCustomAttributeInfo::COL_ClassId) stmt->BindInt64 (nCol++, info.m_ecClassId);
+    if (~info.ColsNull & info.ColsWhere & DbCustomAttributeInfo::COL_Ordinal) stmt->BindInt (nCol++, info.m_index);
 
     return stmt->Step ();
     }
@@ -1147,10 +1138,10 @@ DbResult ECDbSchemaPersistence::Step (DbCustomAttributeInfoR info, BeSQLite::Sta
             if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbCustomAttributeInfo::COL_ContainerId; nCol++; } else info.m_containerId = stmt.GetValueInt64 (nCol++);
         if (info.ColsSelect & DbCustomAttributeInfo::COL_ContainerType) 
             if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbCustomAttributeInfo::COL_ContainerType; nCol++; } else info.m_containerType = (ECContainerType)stmt.GetValueInt (nCol++);
-        if (info.ColsSelect & DbCustomAttributeInfo::COL_ECClassId)
-            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbCustomAttributeInfo::COL_ECClassId; nCol++; } else info.m_ecClassId = stmt.GetValueInt64 (nCol++);
-        if (info.ColsSelect & DbCustomAttributeInfo::COL_Index) 
-            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbCustomAttributeInfo::COL_Index; nCol++; } else info.m_index = stmt.GetValueInt(nCol++);
+        if (info.ColsSelect & DbCustomAttributeInfo::COL_ClassId)
+            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbCustomAttributeInfo::COL_ClassId; nCol++; } else info.m_ecClassId = stmt.GetValueInt64 (nCol++);
+        if (info.ColsSelect & DbCustomAttributeInfo::COL_Ordinal) 
+            if (stmt.IsColumnNull(nCol)) { info.ColsNull |= DbCustomAttributeInfo::COL_Ordinal; nCol++; } else info.m_index = stmt.GetValueInt(nCol++);
         if (info.ColsSelect & DbCustomAttributeInfo::COL_Instance)
             if (stmt.IsColumnNull(nCol)) 
                 { 
@@ -1173,7 +1164,7 @@ DbResult ECDbSchemaPersistence::Step (DbCustomAttributeInfoR info, BeSQLite::Sta
 DbResult ECDbSchemaPersistence::InsertECRelationConstraintClassPropertyInfo (BeSQLite::Db& db, DbECRelationshipConstraintClassPropertyInfoCR info)
     {
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement (stmt, "INSERT INTO ec_RelationshipConstraintClassProperty (ECClassId, ECRelationshipEnd, RelationECClassId, RelationECPropertyId) VALUES (?, ?, ?, ?)");
+    auto stat = db.GetCachedStatement (stmt, "INSERT INTO ec_RelationshipConstraintClassProperty (ClassId, RelationshipEnd, RelationClassId, RelationPropertyId) VALUES (?, ?, ?, ?)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -1190,12 +1181,12 @@ DbResult ECDbSchemaPersistence::InsertECRelationConstraintClassPropertyInfo (BeS
 DbResult ECDbSchemaPersistence::InsertECSchemaReferenceInfo (BeSQLite::Db& db, DbECSchemaReferenceInfoCR info)
     {
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement (stmt, "INSERT INTO ec_SchemaReference (ECSchemaId, ReferenceECSchemaId) VALUES(?, ?)");
+    auto stat = db.GetCachedStatement (stmt, "INSERT INTO ec_SchemaReference (SchemaId, ReferencedSchemaId) VALUES(?, ?)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
     stmt->BindInt64 (1, info.m_ecSchemaId);
-    stmt->BindInt64 (2, info.m_referenceECSchemaId);
+    stmt->BindInt64 (2, info.m_referencedECSchemaId);
     return stmt->Step ();
     }
 
@@ -1218,15 +1209,15 @@ bool ECDbSchemaPersistence::ContainsECClass (BeSQLite::Db& db, ECClassCR ecClass
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDbSchemaPersistence::ContainsECSchemaReference (BeSQLite::Db& db, ECSchemaId ecPrimarySchemaId, ECSchemaId ecReferenceSchemaId)
+bool ECDbSchemaPersistence::ContainsECSchemaReference (BeSQLite::Db& db, ECSchemaId ecPrimarySchemaId, ECSchemaId ecReferencedSchemaId)
     {
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement (stmt, "SELECT ECSchemaId FROM ec_SchemaReference WHERE ECSchemaId = ? AND ReferenceECSchemaId = ?");
+    auto stat = db.GetCachedStatement (stmt, "SELECT SchemaId FROM ec_SchemaReference WHERE SchemaId = ? AND ReferencedSchemaId = ?");
     if (BE_SQLITE_OK != stat)
         return false;
 
     stmt->BindInt64 (1, ecPrimarySchemaId);
-    stmt->BindInt64 (2, ecReferenceSchemaId);
+    stmt->BindInt64 (2, ecReferencedSchemaId);
     return stmt->Step () == BE_SQLITE_ROW;
     }
 
@@ -1236,7 +1227,7 @@ bool ECDbSchemaPersistence::ContainsECSchemaReference (BeSQLite::Db& db, ECSchem
 DbResult ECDbSchemaPersistence::ResolveECClassId (Utf8StringR schemaName, uint32_t& versionMajor, uint32_t& versionMinor, Utf8StringR className, ECClassId ecClassId, BeSQLite::Db& db)
     {
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement (stmt, "SELECT s.Name, s.VersionMajor, s.VersionMinor, c.Name FROM ec_Class c INNER JOIN ec_Schema s ON s.Id = c.ECSchemaId WHERE c.Id = ?");
+    auto stat = db.GetCachedStatement (stmt, "SELECT s.Name, s.VersionMajor, s.VersionMinor, c.Name FROM ec_Class c INNER JOIN ec_Schema s ON s.Id = c.SchemaId WHERE c.Id = ?");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -1259,7 +1250,7 @@ DbResult ECDbSchemaPersistence::ResolveECClassId (Utf8StringR schemaName, uint32
 DbResult ECDbSchemaPersistence::ResolveECClassId (DbECClassEntryR key, ECClassId ecClassId, BeSQLite::Db& db)
     {
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement (stmt, "SELECT Name, ECSchemaId  FROM ec_Class WHERE Id = ?");
+    auto stat = db.GetCachedStatement (stmt, "SELECT Name, SchemaId  FROM ec_Class WHERE Id = ?");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -1282,7 +1273,7 @@ DbResult ECDbSchemaPersistence::ResolveECClassId (DbECClassEntryR key, ECClassId
 DbResult ECDbSchemaPersistence::ResolveECSchemaId (DbECSchemaEntryR key, ECSchemaId ecSchemaId, BeSQLite::Db& db)
     {
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement (stmt, "SELECT S.Id, S.Name, S.VersionMajor, S.VersionMinor, (SELECT COUNT(*) FROM ec_Class C WHERE S.Id = C.ECSchemaID) FROM ec_Schema S WHERE S.Id = ?");
+    auto stat = db.GetCachedStatement (stmt, "SELECT S.Id, S.Name, S.VersionMajor, S.VersionMinor, (SELECT COUNT(*) FROM ec_Class C WHERE S.Id = C.SchemaID) FROM ec_Schema S WHERE S.Id = ?");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -1367,7 +1358,7 @@ DbResult ECDbSchemaPersistence::DeleteECClass (ECClassId ecClassId, BeSQLite::Db
 DbResult ECDbSchemaPersistence::DeleteCustomAttribute (ECContainerId containerId, ECContainerType containerType, ECClassId customAttributeClassId, BeSQLite::Db& db)
     {
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement (stmt, "DELETE FROM ec_CustomAttribute WHERE ContainerId = ? AND ContainerType = ? AND ECClassId = ?");
+    auto stat = db.GetCachedStatement (stmt, "DELETE FROM ec_CustomAttribute WHERE ContainerId = ? AND ContainerType = ? AND ClassId = ?");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -1438,7 +1429,7 @@ ECSchemaId ECDbSchemaPersistence::GetECSchemaId (BeSQLite::Db& db, ECSchemaCR ec
 DbResult ECDbSchemaPersistence::GetDerivedECClasses (ECClassIdListR classIds, ECClassId baseClassId, BeSQLite::Db& db)
     {
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement (stmt, "SELECT ECClassId FROM ec_BaseClass WHERE BaseECClassId = ?");
+    auto stat = db.GetCachedStatement (stmt, "SELECT ClassId FROM ec_BaseClass WHERE BaseClassId = ?");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -1454,7 +1445,7 @@ DbResult ECDbSchemaPersistence::GetDerivedECClasses (ECClassIdListR classIds, EC
 bool ECDbSchemaPersistence::IsCustomAttributeDefined (BeSQLite::Db& db, ECClassId classId, ECContainerId containerId, ECContainerType containerType)
     {
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement (stmt, "SELECT COUNT(*) FROM ec_CustomAttribute WHERE ContainerId = ? AND ContainerType = ? AND ECClassId = ?");
+    auto stat = db.GetCachedStatement (stmt, "SELECT COUNT(*) FROM ec_CustomAttribute WHERE ContainerId = ? AND ContainerType = ? AND ClassId = ?");
     if (BE_SQLITE_OK != stat)
         return false;
 
@@ -1488,7 +1479,7 @@ DbResult ECDbSchemaPersistence::DeleteECProperty (ECPropertyId propertyId, BeSQL
 DbResult ECDbSchemaPersistence::GetBaseECClasses (ECClassIdListR baseClassIds, ECClassId ecClassId, BeSQLite::Db& db)  // WIP_FNV: take a name, instead... and modify the where clause
     {
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement (stmt, "SELECT BaseECClassId FROM ec_BaseClass WHERE ECClassId = ? ORDER BY ECIndex");
+    auto stat = db.GetCachedStatement (stmt, "SELECT BaseClassId FROM ec_BaseClass WHERE ClassId = ? ORDER BY Ordinal");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -1506,7 +1497,7 @@ DbResult ECDbSchemaPersistence::GetECClassKeys (ECClassKeys& keys, ECSchemaId sc
     {
     keys.clear ();
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement (stmt, "SELECT Id, Name, DisplayLabel FROM ec_Class WHERE ECSchemaId = ? ORDER BY Name");
+    auto stat = db.GetCachedStatement (stmt, "SELECT Id, Name, DisplayLabel FROM ec_Class WHERE SchemaId = ? ORDER BY Name");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -1562,19 +1553,19 @@ DbResult ECDbSchemaPersistence::GetClassesMappedToTable (std::vector<ECClassId>&
     BeSQLite::Statement stmt;
     auto stat = skipRelationships ?
         stmt.Prepare(db,         
-        "SELECT DISTINCT ec_ClassMap.ECClassId  FROM ec_ClassMap"
+        "SELECT DISTINCT ec_ClassMap.ClassId  FROM ec_ClassMap"
         "   INNER JOIN ec_PropertyMap ON ec_PropertyMap.ClassMapId = ec_ClassMap.Id"
         "   INNER JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId"
         "   INNER JOIN ec_Table ON ec_Table.Id = ec_Column.TableId"
-        "   INNER JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ECClassId"
+        "   INNER JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId"
         "   WHERE ec_Table.Id = ? AND ec_Class.IsRelationship = 0"
         ) :
         stmt.Prepare (db,
-        "SELECT DISTINCT ec_ClassMap.ECClassId  FROM ec_ClassMap"
+        "SELECT DISTINCT ec_ClassMap.ClassId  FROM ec_ClassMap"
         "   INNER JOIN ec_PropertyMap ON ec_PropertyMap.ClassMapId = ec_ClassMap.Id"
         "   INNER JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId"
         "   INNER JOIN ec_Table ON ec_Table.Id = ec_Column.TableId"
-        "   INNER JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ECClassId"
+        "   INNER JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId"
         "   WHERE ec_Table.Id = ?"
         );
 
@@ -1610,7 +1601,7 @@ bool ECDbSchemaPersistence::IsECSchemaMapped (bool* schemaNotFound, ECN::ECSchem
         }
 
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement (stmt, "SELECT COUNT(*) FROM ec_ClassMap INNER JOIN ec_Class ON ecClass.Id = ec_ClassMap.ECClassId WHERE ec_Class.ECSchemaId = ?");
+    auto stat = db.GetCachedStatement (stmt, "SELECT COUNT(*) FROM ec_ClassMap INNER JOIN ec_Class ON ecClass.Id = ec_ClassMap.ClassId WHERE ec_Class.SchemaId = ?");
     if (BE_SQLITE_OK != stat)
         return false;
 
@@ -1632,7 +1623,7 @@ bool ECDbSchemaPersistence::IsECSchemaMapped (bool* schemaNotFound, ECN::ECSchem
 ECClassId ECDbSchemaPersistence::GetECClassIdBySchemaName (BeSQLite::Db& db, Utf8CP schemaName, Utf8CP className)
     {
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement (stmt, "SELECT c.Id FROM ec_Class c JOIN ec_Schema s WHERE c.ECSchemaId = s.Id AND s.Name = ? AND c.Name = ?");
+    auto stat = db.GetCachedStatement (stmt, "SELECT c.Id FROM ec_Class c JOIN ec_Schema s WHERE c.SchemaId = s.Id AND s.Name = ? AND c.Name = ?");
     if (BE_SQLITE_OK != stat)
         return 0LL;
 
@@ -1651,7 +1642,7 @@ ECClassId ECDbSchemaPersistence::GetECClassIdBySchemaName (BeSQLite::Db& db, Utf
 ECClassId ECDbSchemaPersistence::GetECClassIdBySchemaNameSpacePrefix(BeSQLite::Db& db, Utf8CP schemaName, Utf8CP className)
     {
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement(stmt, "SELECT c.Id FROM ec_Class c JOIN ec_Schema s WHERE c.ECSchemaId = s.Id AND s.NamespacePrefix = ? AND c.Name = ?");
+    auto stat = db.GetCachedStatement(stmt, "SELECT c.Id FROM ec_Class c JOIN ec_Schema s WHERE c.SchemaId = s.Id AND s.NamespacePrefix = ? AND c.Name = ?");
     if (BE_SQLITE_OK != stat)
         return 0LL;
 
@@ -1669,7 +1660,7 @@ ECClassId ECDbSchemaPersistence::GetECClassIdBySchemaNameSpacePrefix(BeSQLite::D
 ECPropertyId ECDbSchemaPersistence::GetECPropertyId (BeSQLite::Db& db, Utf8CP schemaName, Utf8CP className, Utf8CP propertyName)
     {
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement(stmt, "SELECT p.Id FROM ec_Property p INNER JOIN ec_Class c ON p.ECClassId = c.Id INNER JOIN ec_Schema s WHERE c.ECSchemaId = s.Id AND s.Name = ? AND c.Name = ? AND p.Name = ?");
+    auto stat = db.GetCachedStatement(stmt, "SELECT p.Id FROM ec_Property p INNER JOIN ec_Class c ON p.ClassId = c.Id INNER JOIN ec_Schema s WHERE c.SchemaId = s.Id AND s.Name = ? AND c.Name = ? AND p.Name = ?");
     if (BE_SQLITE_OK != stat)
         return 0LL;
 
@@ -1861,7 +1852,7 @@ Utf8CP DbCustomAttributeInfo::GetCaInstanceXml () const
 ECDbPropertyPathId ECDbSchemaPersistence::GetECPropertyPathId (ECPropertyId rootECPropertyId, Utf8CP accessString, BeSQLite::Db& db)
     {
     Statement stmt;
-    auto stat = stmt.Prepare (db, "SELECT Id FROM ec_PropertyPath WHERE RootECPropertyId = ? AND AccessString = ?");
+    auto stat = stmt.Prepare (db, "SELECT Id FROM ec_PropertyPath WHERE RootPropertyId = ? AND AccessString = ?");
     if (stat != BE_SQLITE_OK)
         {
         BeAssert (false && "Failed to prepare statement");

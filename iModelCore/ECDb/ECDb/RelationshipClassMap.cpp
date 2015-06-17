@@ -569,7 +569,7 @@ ECClassId defaultOtherEndClassId
         }
 
     auto thisEndECInstanceIdColumn = const_cast<ECDbSqlColumn*>(systemColumns.front ());
-    auto thisEndECClassIdColumn = GetTable ().FindColumnP ("ECClassId");
+    auto thisEndECClassIdColumn = GetTable ().FindColumnP ("ClassId");
 
     ECDbSqlColumn* sourceECInstanceIdColumn = nullptr;
     Utf8CP sourceECInstanceIdViewColumnAlias = DEFAULT_SOURCEECINSTANCEID_COLUMNNAME;
