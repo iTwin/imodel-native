@@ -1029,6 +1029,7 @@ void DgnElements::OnChangesetApplied(TxnSummary const& summary)
 
             case TxnSummary::ChangeType::Delete:
                 {
+                // see if we have this element in memory, if so call its _OnDelete method.
                 DgnElementP el = (DgnElementP) FindElement(iter.GetElementId());
                 if (el)
                     el->_OnDeleted();

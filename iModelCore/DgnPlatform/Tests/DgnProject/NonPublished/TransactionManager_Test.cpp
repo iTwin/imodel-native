@@ -1523,10 +1523,16 @@ TEST_F(ElementDependencyGraph, ModelDependenciesTest)
 
     //  Create models 1-4
     auto seedModelId = m_defaultModelId;
-    auto m4 = m_db->Models().CreateNewModelFromSeed(NULL, "m4", seedModelId);
-    auto m3 = m_db->Models().CreateNewModelFromSeed(NULL, "m3", seedModelId);
-    auto m1 = m_db->Models().CreateNewModelFromSeed(NULL, "m1", seedModelId);
-    auto m2 = m_db->Models().CreateNewModelFromSeed(NULL, "m2", seedModelId);
+
+    DgnModelP seedModel = m_db->Models().GetModel(seedModelId);
+    auto m4 = seedModel->Clone("m4");
+    auto m3 = seedModel->Clone("m3");
+    auto m1 = seedModel->Clone("m1");
+    auto m2 = seedModel->Clone("m2");
+    m4->Insert();
+    m3->Insert();
+    m1->Insert();
+    m2->Insert();
 
     auto m1id = m1->GetModelId();
     auto m2id = m2->GetModelId();
@@ -1616,10 +1622,15 @@ TEST_F(ElementDependencyGraph, ModelDependenciesWithCycleTest)
 
     //  Create models 1-4
     auto seedModelId = m_defaultModelId;
-    auto m4 = m_db->Models().CreateNewModelFromSeed(NULL, "m4", seedModelId);
-    auto m3 = m_db->Models().CreateNewModelFromSeed(NULL, "m3", seedModelId);
-    auto m1 = m_db->Models().CreateNewModelFromSeed(NULL, "m1", seedModelId);
-    auto m2 = m_db->Models().CreateNewModelFromSeed(NULL, "m2", seedModelId);
+    DgnModelP seedModel = m_db->Models().GetModel(seedModelId);
+    auto m4 = seedModel->Clone("m4");
+    auto m3 = seedModel->Clone("m3");
+    auto m1 = seedModel->Clone("m1");
+    auto m2 = seedModel->Clone("m2");
+    m4->Insert();
+    m3->Insert();
+    m1->Insert();
+    m2->Insert();
 
     auto m1id = m1->GetModelId();
     auto m2id = m2->GetModelId();
@@ -1672,8 +1683,11 @@ TEST_F(ElementDependencyGraph, ModelDependenciesInvalidDirectionTest)
 
     //  Create models 1 and 2
     auto seedModelId = m_defaultModelId;
-    auto m1 = m_db->Models().CreateNewModelFromSeed(NULL, "m1", seedModelId);
-    auto m2 = m_db->Models().CreateNewModelFromSeed(NULL, "m2", seedModelId);
+    DgnModelP seedModel = m_db->Models().GetModel(seedModelId);
+    auto m1 = seedModel->Clone("m1");
+    auto m2 = seedModel->Clone("m2");
+    m1->Insert();
+    m2->Insert();
 
     auto m1id = m1->GetModelId();
     auto m2id = m2->GetModelId();
