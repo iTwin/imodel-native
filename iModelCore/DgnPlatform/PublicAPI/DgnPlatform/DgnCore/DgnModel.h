@@ -59,6 +59,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
     friend struct DgnModels;
     friend struct DgnElement;
     friend struct DgnElements;
+    friend struct QueryModel;
 
     //========================================================================================
     //! Application data attached to a DgnModel. Create a subclass of this to store non-persistent information on a DgnModel.
@@ -89,6 +90,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
 
     //=======================================================================================
     //! The properties for a DgnModel. These are stored as a JSON string in the "Props" column of the DgnModel table.
+    //! These properties are saved by calling DgnModel::SaveProperties
     //! @ingroup DgnModelGroup
     //=======================================================================================
     struct Properties
@@ -109,7 +111,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
             void ToJson(Json::Value& outValue) const;
         };
 
-        FormatterFlags m_formatterFlags;               //!< Flags saved on "save settings"
+        FormatterFlags m_formatterFlags;               //!< format flags 
         UnitDefinition m_masterUnit;                   //!< Master Unit information
         UnitDefinition m_subUnit;                      //!< Sub Unit information
         double         m_roundoffUnit;                 //!< unit lock roundoff val in uors
@@ -197,8 +199,8 @@ protected:
     DgnElementMap   m_elements;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
     mutable DgnRangeTreeP m_rangeIndex;
-    mutable bool    m_persistent;
-    bool            m_filled;       // true if the list was filled from db
+    mutable bool    m_persistent;   // true of this DgnModel is in the DgnModels "loaded models" list.
+    bool            m_filled;       // true if the FillModel was called on this DgnModel.
     bool            m_readonly;     // true if this model is from a read-only file.
 
     explicit DGNPLATFORM_EXPORT DgnModel(CreateParams const&);
@@ -289,8 +291,7 @@ public:
     DGNPLATFORM_EXPORT BeSQLite::DbResult SaveProperties();
     void AddGraphicsToScene(ViewContextR context) {_AddGraphicsToScene(context);}
 
-    DGNPLATFORM_EXPORT void ClearAllDirtyFlags();
-    void ClearAllQvElems();
+    void ClearAllQvElems(); //!< @private
 
     DGNPLATFORM_EXPORT double GetMillimetersPerMaster() const;
     DGNPLATFORM_EXPORT double GetSubPerMaster() const;
@@ -299,7 +300,8 @@ public:
     //! Empty the contents of this DgnModel. This will release any references to DgnElements held by this DgnModel.
     DGNPLATFORM_EXPORT void Empty();
 
-    //! Load all elements of this DgnModel.
+    //! Load all elements of this DgnModel. 
+    //! After this call, all of the DgnElements of this model are loaded and are held in memory by this DgnModel.
     //! @note if this DgnModel is already filled, this method does nothing and returns DgnDbStatus::Success.
     void FillModel() {_FillModel();}
 
@@ -372,18 +374,19 @@ public:
     //! @note All elements from this model are deleted as well.
     DGNPLATFORM_EXPORT DgnDbStatus Delete();
 
-    /** @name AppData */
+    /** @name DgnModel AppData */
     /** @{ */
-    //! Add (or replace) AppData to this model.
+    //! Add (or replace) AppData on this DgnModel.
     //! @note It is illegal to add or remove AppData from within
     //! any of the AppData "_On" methods. If an entry with \a key already exists, it will be dropped and replaced with \a appData.
     DGNPLATFORM_EXPORT void AddAppData(AppData::Key const& key, AppData* appData);
 
+    //! Remove AppData from thsis DgnModel
     //! @return SUCCESS if appData with key is found and was dropped.
     //! @remarks Calls the app data object's _OnCleanup method.
     DGNPLATFORM_EXPORT StatusInt DropAppData(AppData::Key const& key);
 
-    //! Search for appData on this model that was added with the specified key.
+    //! Search for AppData on this model by AppData::Key.
     //! @return the AppData with \a key, or nullptr.
     DGNPLATFORM_EXPORT AppData* FindAppData(AppData::Key const& key) const;
     /** @} */
