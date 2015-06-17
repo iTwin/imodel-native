@@ -21,6 +21,10 @@
 #define DGNVIEW_EXPORT            EXPORT_ATTRIBUTE
 #endif
 
+#if defined (__VISEDGESLIB_BUILD__)
+#define VISEDGESLIB_EXPORT            EXPORT_ATTRIBUTE
+#endif
+
 #if defined (__DGNTOOLS_BUILD__)
 #define DGNTOOLS_EXPORT EXPORT_ATTRIBUTE
 #endif
@@ -142,6 +146,9 @@
 #endif
 #if !defined (DGNVIEW_EXPORT)
 #define DGNVIEW_EXPORT  IMPORT_ATTRIBUTE
+#endif
+#if !defined (VISEDGESLIB_EXPORT)
+#define VISEDGESLIB_EXPORT  IMPORT_ATTRIBUTE
 #endif
 #if !defined (DGNTOOLS_EXPORT)
 #define DGNTOOLS_EXPORT IMPORT_ATTRIBUTE

@@ -3140,7 +3140,7 @@ bool ElementGeometryBuilder::Append (DgnGeomPartId geomPartId, TransformCR geomT
     if (!geomPart.IsValid())
         return false;
 
-    DRange3d localRange;
+    DRange3d localRange = DRange3d::NullRange();
     ElementGeometryCollection collection(m_dgnDb, geomPart->GetGeomStream());
 
     collection.SetBRepOutput(ElementGeometryCollection::BRepOutput::Mesh); // Can just use the mesh and avoid creating the ISolidKernelEntity...
