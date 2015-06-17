@@ -31,7 +31,7 @@ typedef RefCountedPtr<VolumeParser>         VolumeParserPtr;
 
 //=======================================================================================
 //! Used to parse values. 
-//! @bsiclass
+// @bsiclass
 //=======================================================================================
 struct DoubleParser : RefCountedBase
 {
@@ -57,7 +57,7 @@ public: DGNPLATFORM_EXPORT BentleyStatus ToValue (double& out, WCharCP in) const
 //! Default parsing mode is in radians, results are always in degrees.
 //! This assumes input is ready to be parsed as an angle.
 //! If it is just a number the AngleMode determines how the number will be interpreted.
-//! @bsiclass
+// @bsiclass
 //=======================================================================================
 struct AngleParser : RefCountedBase
 {
@@ -103,7 +103,7 @@ public: DGNPLATFORM_EXPORT BentleyStatus ToValue (double& out, WCharCP in) const
 //! Default parsing mode is in radians, results are always in degrees.
 //! This assumes input is ready to be parsed as an angle.
 //! If it is just a number the AngleMode determines how the number will be interpreted.
-//! @bsiclass
+// @bsiclass
 //=======================================================================================
 struct DirectionParser : RefCountedBase
 {
@@ -171,7 +171,7 @@ public: DGNPLATFORM_EXPORT BentleyStatus ToValue (double& out, WCharCP in);
 }; // DirectionParser 
 
 //=======================================================================================
-//! @bsiclass
+// @bsiclass
 //=======================================================================================
 struct DistanceParser : RefCountedBase
 {
@@ -244,7 +244,7 @@ public: DGNPLATFORM_EXPORT BentleyStatus ToValue (double& out, WCharCP in);
 }; // DistanceParser 
 
 //=======================================================================================
-//! @bsiclass
+// @bsiclass
 //=======================================================================================
 struct PointParser : RefCountedBase
 {
@@ -305,7 +305,7 @@ public: DGNPLATFORM_EXPORT bool GetIs3d () const;
 }; // PointParser 
 
 //=======================================================================================
-//! @bsiclass
+// @bsiclass
 //=======================================================================================
 struct AreaOrVolumeParser : RefCountedBase
 {
@@ -350,7 +350,7 @@ public: DGNPLATFORM_EXPORT BentleyStatus ToValue (double& out, WCharCP in);
 }; // AreaOrVolumeParser 
 
 //=======================================================================================
-//! @bsiclass
+// @bsiclass
 //=======================================================================================
 struct AreaParser : AreaOrVolumeParser
 {
@@ -375,7 +375,7 @@ public: DGNPLATFORM_EXPORT  AreaParserPtr    Clone () const;
 };  //AreaParser
 
 //=======================================================================================
-//! @bsiclass
+// @bsiclass
 //=======================================================================================
 struct VolumeParser : AreaOrVolumeParser
 {

@@ -8,9 +8,9 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-/** @namespace BentleyApi::DgnPlatform Types defined by the %DgnPlatform. */
-
-/** @cond BENTLEY_SDK_Internal */
+/** @namespace BentleyApi::Dgn Types defined by the %DgnPlatform. 
+    @ref PAGE_DgnPlatform
+*/
 
 #include <Bentley/Bentley.h>
 #include <Bentley/RefCounted.h>
@@ -59,7 +59,6 @@ BENTLEY_NAMESPACE_TYPEDEFS (DataExternalizer)
 BENTLEY_NAMESPACE_TYPEDEFS (GPArray)
 BENTLEY_NAMESPACE_TYPEDEFS (GraphicsPointArray)
 BENTLEY_NAMESPACE_TYPEDEFS (IRefCounted)
-/** @endcond */
 
 DGNPLATFORM_TYPEDEFS (ColorDef)
 DGNPLATFORM_TYPEDEFS (BoundingBox2d)

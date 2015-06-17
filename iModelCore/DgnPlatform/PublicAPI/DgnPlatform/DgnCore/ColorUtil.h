@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/ColorUtil.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -13,7 +13,7 @@
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //=======================================================================================
-//! @bsiclass                                                     Brien.Bastings  05/09
+// @bsiclass                                                     Brien.Bastings  05/09
 //=======================================================================================
 struct ColorUtil
 {
@@ -27,7 +27,6 @@ DGNPLATFORM_EXPORT static void ConvertFloatRgbToInt (ColorDef &intColor, FPoint3
 DGNPLATFORM_EXPORT static void ConvertRgbFactorToColorDef (ColorDefR colorDef, RgbFactorCR rgbFactor);
 DGNPLATFORM_EXPORT static void ConvertColorDefToRgbFactor (RgbFactorR rgbFactpr, ColorDef colorDef);
 DGNPLATFORM_EXPORT static void InterpolateColorsRGB (ColorDefP interpolatedColors, size_t nInterpolatedColors, ColorDef startColor, ColorDef endColor);
-
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
