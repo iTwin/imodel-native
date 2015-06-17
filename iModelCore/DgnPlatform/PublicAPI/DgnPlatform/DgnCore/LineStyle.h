@@ -1012,7 +1012,7 @@ public:
     void        SetCapMode          (int mode)    {m_capMode = (Byte)mode;}
 
     bool        HasWidth            () const {return IsDash() && (0 != GetWidthMode());}
-    // WIP_LINESTYLE *** (LCWIDTH_FULL == GetWidthMode()) => warning: comparison between 'enum DgnPlatform::LineCodeWidth' and 'enum DgnPlatform::LsStroke::WidthMode'
+    // WIP_LINESTYLE *** (LCWIDTH_FULL == GetWidthMode()) => warning: comparison between 'enum Dgn::LineCodeWidth' and 'enum Dgn::LsStroke::WidthMode'
     bool        _HasUniformFullWidth () const {return !IsDash() || (LCWIDTH_Full == GetWidthMode() && m_orgWidth == m_endWidth);}
 
     #define TESTSTROKEMODE(flag) const {return ((m_strokeMode & flag) == 0) ? false : true;}

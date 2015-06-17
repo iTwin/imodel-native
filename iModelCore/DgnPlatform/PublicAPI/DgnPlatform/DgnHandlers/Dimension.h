@@ -170,7 +170,7 @@ ElementHandleCR elmP,                  /*  => element to test */
 unsigned short  type                   /*  => app value to look for **/
 );
 
-DGNPLATFORM_EXPORT DgnPlatform::AngleFormatVals    adim_getAngleFormat
+DGNPLATFORM_EXPORT Dgn::AngleFormatVals    adim_getAngleFormat
 (
 ElementHandleCR pDim
 );
@@ -445,26 +445,26 @@ uint16_t    *pValueIn
 
 DGNPLATFORM_EXPORT  StatusInt     mdlDim_getNoteHorizontalJustification
 (
-DgnPlatform::DimStyleProp_MLNote_Justification   *eJust,
+Dgn::DimStyleProp_MLNote_Justification   *eJust,
 ElementHandleCR dimElement
 );
 
 DGNPLATFORM_EXPORT  StatusInt   mdlDim_setNoteHorizontalJustification
 (
 EditElementHandleR dimElement,
-DgnPlatform::DimStyleProp_MLNote_Justification   eJust
+Dgn::DimStyleProp_MLNote_Justification   eJust
 );
 
 DGNPLATFORM_EXPORT  StatusInt     mdlDim_getNoteFrameType
 (
-DgnPlatform::DimStyleProp_MLNote_FrameType   *eFrameType,
+Dgn::DimStyleProp_MLNote_FrameType   *eFrameType,
 ElementHandleCR dimElement
 );
 
 DGNPLATFORM_EXPORT  StatusInt   mdlDim_setNoteFrameType
 (
 EditElementHandleR dimElement,
-DgnPlatform::DimStyleProp_MLNote_FrameType   eFrameType
+Dgn::DimStyleProp_MLNote_FrameType   eFrameType
 );
 
 DGNPLATFORM_EXPORT  StatusInt   mdlDim_getNoteLeaderDisplay
@@ -622,7 +622,7 @@ WCharCP       pwPlaceholderStr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    petri.niiranen  06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-DGNPLATFORM_EXPORT DgnPlatform::DimFormattedText      *mdlDimText_getFormatter
+DGNPLATFORM_EXPORT Dgn::DimFormattedText      *mdlDimText_getFormatter
 (
 DimMLTextCP pText,
 const int         nth
@@ -634,13 +634,13 @@ const int         nth
 DGNPLATFORM_EXPORT StatusInt        mdlDimText_addFormatter
 (
 DimMLTextP pText,
-DgnPlatform::DimFormattedText    *pFmt
+Dgn::DimFormattedText    *pFmt
 );
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    petri.niiranen  10/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-DGNPLATFORM_EXPORT DgnPlatform::DimFormattedText         *mdlDimText_getNodeFormatter
+DGNPLATFORM_EXPORT Dgn::DimFormattedText         *mdlDimText_getNodeFormatter
 (
 DimMLTextCP pText
 );
@@ -650,7 +650,7 @@ DimMLTextCP pText
 +---------------+---------------+---------------+---------------+---------------+------*/
 typedef StatusInt (*PFDimTextFmtTraverseFunction)
     (
-    DgnPlatform::DimFormattedText    **ppFmt,
+    Dgn::DimFormattedText    **ppFmt,
     void                *pData,
     DgnModelP        modelRef,
     DimMLTextP pText,
@@ -662,15 +662,15 @@ typedef StatusInt (*PFDimTextFmtTraverseFunction)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BentleySystems  03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-DGNPLATFORM_EXPORT DgnPlatform::UnitDefinition    adim_getUnitDefFromDimUnit
+DGNPLATFORM_EXPORT Dgn::UnitDefinition    adim_getUnitDefFromDimUnit
 (
-DgnPlatform::DimUnits const&   dimUnit
+Dgn::DimUnits const&   dimUnit
 );
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BentleySystems  03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-DGNPLATFORM_EXPORT DgnPlatform::DimUnits      adim_getDimUnitFromUnitDef
+DGNPLATFORM_EXPORT Dgn::DimUnits      adim_getDimUnitFromUnitDef
 (
 UnitDefinitionCR unitDef
 );
@@ -765,7 +765,7 @@ int         closeVertex
 
 DGNPLATFORM_EXPORT StatusInt   mdlDim_getPartSymbology
 (
-DgnPlatform::Symbology  *pSymbology,
+Dgn::Symbology  *pSymbology,
 ElementHandleCR elementIn,
 uint32_t     partName
 );
@@ -980,7 +980,7 @@ int                 pointNo
 DGNPLATFORM_EXPORT StatusInt     mdlDim_setPointOverride
 (
 EditElementHandleR pElementIn,
-DgnPlatform::DimPointOverrides   *pOverrides,
+Dgn::DimPointOverrides   *pOverrides,
 int                 pointNo
 );
 
@@ -995,7 +995,7 @@ int                 pointNo
 +---------------+---------------+---------------+---------------+---------------+------*/
 DGNPLATFORM_EXPORT StatusInt     mdlDim_getPointOverride
 (
-DgnPlatform::DimPointOverrides   *pOverridesOut,
+Dgn::DimPointOverrides   *pOverridesOut,
 ElementHandleCR pElementIn,
 int                  pointNo
 );
@@ -1026,7 +1026,7 @@ int             segmentNo
 DGNPLATFORM_EXPORT StatusInt     mdlDim_setSegmentOverride
 (
 EditElementHandleR     elementIn,
-DgnPlatform::DimSegmentOverrides *pOverrides,
+Dgn::DimSegmentOverrides *pOverrides,
 int                 segmentNo
 );
 
@@ -1045,7 +1045,7 @@ overrides from.
 +---------------+---------------+---------------+---------------+---------------+------*/
 DGNPLATFORM_EXPORT StatusInt     mdlDim_getSegmentOverride
 (
-DgnPlatform::DimSegmentOverrides *pOverridesOut,
+Dgn::DimSegmentOverrides *pOverridesOut,
 ElementHandleCR        dimElement,
 int                 pointNo
 );
@@ -1076,7 +1076,7 @@ int             segmentNo
 DGNPLATFORM_EXPORT StatusInt     mdlDim_setSegmentFlagOverride
 (
 EditElementHandleR pElementIn,
-DgnPlatform::DimSegmentFlagOverrides *pOverrides,
+Dgn::DimSegmentFlagOverrides *pOverrides,
 int                     segmentNo
 );
 
@@ -1096,7 +1096,7 @@ information from.
 +---------------+---------------+---------------+---------------+---------------+------*/
 DGNPLATFORM_EXPORT StatusInt     mdlDim_getSegmentFlagOverride
 (
-DgnPlatform::DimSegmentFlagOverrides *pOverridesOut,
+Dgn::DimSegmentFlagOverrides *pOverridesOut,
 ElementHandleCR pElementIn,
 int                     segmentNo
 );
@@ -1124,7 +1124,7 @@ EditElementHandleR pElementIn
 DGNPLATFORM_EXPORT StatusInt     mdlDim_setOverallOverride
 (
 EditElementHandleR pElementIn,
-DgnPlatform::DimOverallOverrides *pOverrides
+Dgn::DimOverallOverrides *pOverrides
 );
 
 /*------------------------------------------------------------------------*//**
@@ -1140,7 +1140,7 @@ element.
 +---------------+---------------+---------------+---------------+---------------+------*/
 DGNPLATFORM_EXPORT StatusInt     mdlDim_getOverallOverride
 (
-DgnPlatform::DimOverallOverrides     *pOverridesOut,
+Dgn::DimOverallOverrides     *pOverridesOut,
 ElementHandleCR pElementIn
 );
 
@@ -1167,7 +1167,7 @@ EditElementHandleR pElementIn
 DGNPLATFORM_EXPORT StatusInt     mdlDim_setStyleExtension
 (
 EditElementHandleR             pElementIn,
-DgnPlatform::DimStyleExtensions const*   pExtensions
+Dgn::DimStyleExtensions const*   pExtensions
 );
 
 
@@ -1194,7 +1194,7 @@ EditElementHandleR pElementIn
 DGNPLATFORM_EXPORT StatusInt     mdlDim_setOrdinateOverride
 (
 EditElementHandleR pElementIn,
-DgnPlatform::DimOrdinateOverrides *pOverrides
+Dgn::DimOrdinateOverrides *pOverrides
 );
 
 /*---------------------------------------------------------------------------------**//**
@@ -1207,7 +1207,7 @@ DgnPlatform::DimOrdinateOverrides *pOverrides
 +---------------+---------------+---------------+---------------+---------------+------*/
 DGNPLATFORM_EXPORT StatusInt     mdlDim_getOrdinateOverride
 (
-DgnPlatform::DimOrdinateOverrides *pOverridesOut,
+Dgn::DimOrdinateOverrides *pOverridesOut,
 ElementHandleCR pElementIn
 );
 
@@ -2121,7 +2121,7 @@ ElementHandleCR pElm
 +---------------+---------------+---------------+---------------+---------------+------*/
 DGNPLATFORM_EXPORT StatusInt         mdlDim_getTextLocation
 (
-DgnPlatform::DimStyleProp_Text_Location  *pValueOut,
+Dgn::DimStyleProp_Text_Location  *pValueOut,
 ElementHandleCR pElm
 );
 
@@ -2138,7 +2138,7 @@ ElementHandleCR pElm
 DGNPLATFORM_EXPORT StatusInt         mdlDim_setTextLocation
 (
 EditElementHandleR pElm,
-DgnPlatform::DimStyleProp_Text_Location  *pValueIn
+Dgn::DimStyleProp_Text_Location  *pValueIn
 );
 
 /*---------------------------------------------------------------------------------**//**
@@ -2512,38 +2512,38 @@ DimensionStyleCP    dgnDimStyleP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    SunandSandurkar 09/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-DGNPLATFORM_EXPORT DgnPlatform::DimensionType    adim_getTemplateNumber
+DGNPLATFORM_EXPORT Dgn::DimensionType    adim_getTemplateNumber
 (
 ElementHandleCR dimElement
 );
 
 DGNPLATFORM_EXPORT StatusInt        mdlDimLinkage_convertFromPointLinkage
 (
-DgnPlatform::DimPointOverrides *   pOverridesOut,
+Dgn::DimPointOverrides *   pOverridesOut,
 LinkageHeaderP          pLinkageIn
 );
 
 DGNPLATFORM_EXPORT StatusInt        mdlDimLinkage_convertFromSegmentLinkage
 (
-DgnPlatform::DimSegmentOverrides *   pOverridesOut,
+Dgn::DimSegmentOverrides *   pOverridesOut,
 LinkageHeaderP          pLinkageIn
 );
 
 DGNPLATFORM_EXPORT StatusInt        mdlDimLinkage_convertFromOverallLinkage
 (
-DgnPlatform::DimOverallOverrides *   pOverridesOut,
+Dgn::DimOverallOverrides *   pOverridesOut,
 LinkageHeaderP          pLinkageIn
 );
 
 DGNPLATFORM_EXPORT StatusInt        mdlDimLinkage_convertFromStyleExtensionLinkage
 (
-DgnPlatform::DimStyleExtensions *    pOverridesOut,
+Dgn::DimStyleExtensions *    pOverridesOut,
 LinkageHeaderP          pLinkageIn
 );
 
 DGNPLATFORM_EXPORT StatusInt        mdlDimLinkage_convertFromOrdinateLinkage
 (
-DgnPlatform::DimOrdinateOverrides *  pOverridesOut,
+Dgn::DimOrdinateOverrides *  pOverridesOut,
 LinkageHeaderP          pLinkageIn
 );
 
@@ -2560,7 +2560,7 @@ element.
 +---------------+---------------+---------------+---------------+---------------+------*/
 DGNPLATFORM_EXPORT StatusInt    mdlDim_getStyleExtension
 (
-DgnPlatform::DimStyleExtensions*    pExtensionsOut,
+Dgn::DimStyleExtensions*    pExtensionsOut,
 ElementHandleCR                     dimElement
 );
 
@@ -2572,7 +2572,7 @@ DGNPLATFORM_EXPORT uint64_t mdlDim_getDimStyleID
 ElementHandleCR pElementIn
 );
 
-DGNPLATFORM_EXPORT  void adim_initDimText (ElementHandleCR dimElement, int, DgnPlatform::DimText*, DimensionStyleCR);
+DGNPLATFORM_EXPORT  void adim_initDimText (ElementHandleCR dimElement, int, Dgn::DimText*, DimensionStyleCR);
 
 END_BENTLEY_NAMESPACE
 

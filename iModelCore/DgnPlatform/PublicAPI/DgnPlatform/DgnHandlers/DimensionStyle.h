@@ -493,7 +493,7 @@ struct DimStyleIterator : std::iterator<std::forward_iterator_tag, DimensionStyl
 {
 private:
     friend struct DimStyleCollection;
-    DgnPlatform::ChildElemIter  m_elemIter;
+    Dgn::ChildElemIter  m_elemIter;
     mutable DimensionStylePtr   m_current;
     
     DimStyleIterator (DgnDbP file);
@@ -682,7 +682,7 @@ BEGIN_BENTLEY_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-DGNPLATFORM_EXPORT  DgnPlatform::PropToOverrideMap* dgnDimStyle_getPropToOverridesMap
+DGNPLATFORM_EXPORT  Dgn::PropToOverrideMap* dgnDimStyle_getPropToOverridesMap
 (
 int                         *pNumMaps   // <=
 );

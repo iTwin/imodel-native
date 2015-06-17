@@ -23,7 +23,7 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_LOGGING
 USING_DGNDB_UNIT_TESTS_NAMESPACE
 
-#define LOG (*Bentley::NativeLogging::LoggingManager::GetLogger (L"Performance"))
+#define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (L"Performance"))
 
 extern int GetSeedInstances (ECInstanceKeyMultiMap& instanceKeyMap, DgnDbR project, ECClassId ecClassId, Utf8CP ecSqlToGetInstanceIds);
 
