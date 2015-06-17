@@ -382,6 +382,7 @@ DPoint3dCP          startTangent,
 DPoint3dCP          endTangent
 )
     {
+#if defined(NOTNOW) // temporarily disable so my WIP doesn't affect anyopne
     //  NOTNOW -- unclear what will happen to the magic values.  For now, avoid any collision with them.
     if (IS_LINECODE (styleInfo->GetStyleId().GetValueUnchecked()))
         return 0; //  styleNo;
@@ -536,6 +537,7 @@ DPoint3dCP          endTangent
         }
 
     SetScale (scale);
+#endif
 
     return 0;
     }
