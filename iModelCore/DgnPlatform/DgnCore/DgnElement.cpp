@@ -606,6 +606,14 @@ DgnClassId PhysicalElement::QueryClassId(DgnDbR db)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnClassId DrawingElement::QueryClassId(DgnDbR db)
+    {
+    return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_DrawingElement));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement2d::_BindPlacement(Statement& stmt)
