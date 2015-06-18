@@ -111,7 +111,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ElementGroupHandler : ElementHandler
 
 
 //=======================================================================================
-//! An ElementAspectHandler creates instances of (a subclass of) DgnElement::AspectBase.
+//! An ElementAspectHandler creates instances of (a subclass of) DgnElement::Aspect.
 //! @see DgnElement
 //! @ingroup DgnElementGroup
 //=======================================================================================
@@ -120,7 +120,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ElementAspectHandler : DgnDomain::Handler
     friend struct DgnElement;
     DOMAINHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_ElementAspect, ElementAspectHandler, DgnDomain::Handler, DGNPLATFORM_EXPORT)
 
-    virtual RefCountedPtr<DgnElement::AspectBase> _CreateInstance() {return nullptr;}
+    virtual RefCountedPtr<DgnElement::Aspect> _CreateInstance() {return nullptr;}
 
     //! Find the ElementHandler for a DgnClassId within a supplied DgnDb.
     DGNPLATFORM_EXPORT static ElementAspectHandler* FindHandler(DgnDbR dgndb, DgnClassId classId);

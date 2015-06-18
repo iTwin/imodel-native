@@ -8,7 +8,6 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnCore/QvElemSet.h>
 
-DgnElement::Aspect::Key DgnElement::Aspect::s_key;
 DgnElement::Item::Key   DgnElement::Item::s_key;
 
 /*---------------------------------------------------------------------------------**//**
@@ -957,14 +956,32 @@ DgnElementId ElementGroup::QueryFromMember(DgnDbR db, DgnClassId groupClassId, D
     }
 
 
-// .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  
-
-//  *** WIP_ITEM - maybe move the functions below into DgnElementAspect.cpp?
+//    _/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
+//   _/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
+//  _/  *** WIP_ITEM - maybe move the functions below into DgnElementAspect.cpp?  _/_/
+// _/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
+//_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::AspectBase::AspectBase()
+ElementAspectHandler* ElementAspectHandler::FindHandler(DgnDbR db, DgnClassId handlerId) 
+    {
+    // quick check for a handler already known
+    DgnDomain::Handler* handler = db.Domains().LookupHandler(handlerId);
+    if (nullptr != handler)
+        return dynamic_cast<ElementAspectHandler*>(handler);
+
+    // not there, check via base classes
+    handler = db.Domains().FindHandler(handlerId, db.Domains().GetClassId(GetHandler()));
+    return handler ? dynamic_cast<ElementAspectHandler*>(handler) : nullptr;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::Aspect::Aspect()
     {
     m_changeType = ChangeType::None;
     }
@@ -972,26 +989,18 @@ DgnElement::AspectBase::AspectBase()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::AspectBase::DeleteThis(DgnElementCR el)
+DgnDbStatus DgnElement::NonItemAspect::_DeleteInstance(DgnElementCR el)
     {
-    CachedECSqlStatementPtr stmt;
-#ifdef WIP_ECSQL_BUG // *** polymorphic delete
-    if (nullptr != dynamic_cast<Item*>(this))
-        stmt = el.GetDgnDb().GetPreparedECSqlStatement("DELETE FROM ONLY " DGN_SCHEMA(DGN_CLASSNAME_ElementItem) " WHERE(ECInstanceId=?)");
-    else
-#endif
-    stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
-
-    stmt->BindId(1, _GetECInstanceId(el));
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
+    stmt->BindId(1, m_instanceId);
     BeSQLite::EC::ECSqlStepStatus status = stmt->Step();
-    
     return (BeSQLite::EC::ECSqlStepStatus::Done == status)? DgnDbStatus::Success: DgnDbStatus::WriteError;
     }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::AspectBase::InsertThis(DgnElementCR el)
+DgnDbStatus DgnElement::Aspect::InsertThis(DgnElementCR el)
     {
     DgnDbStatus status = _InsertInstance(el);
     if (DgnDbStatus::Success != status)
@@ -1002,9 +1011,214 @@ DgnDbStatus DgnElement::AspectBase::InsertThis(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnClassId  DgnElement::AspectBase::GetThisECClassId(DgnDbR db)
+DgnClassId  DgnElement::Aspect::GetThisECClassId(DgnDbR db)
     {
     return DgnClassId(db.Schemas().GetECClassId(_GetECSchemaName().c_str(), _GetECClassName().c_str()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ECN::ECClassCP  DgnElement::Aspect::GetThisECClass(DgnDbR db)
+    {
+    return db.Schemas().GetECClass(_GetECSchemaName().c_str(), _GetECClassName().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::AppData::DropMe DgnElement::Aspect::_OnInserted(DgnElementCR el)
+    {
+    if (ChangeType::Write == m_changeType)
+        InsertThis(el);
+    
+    m_changeType = ChangeType::None; // (Just in case)
+
+    return DropMe::Yes;     // this scheduled change has been processed, so remove it.
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::AppData::DropMe DgnElement::Aspect::_OnUpdated(DgnElementCR modified, DgnElementCR original)
+    {
+    if (ChangeType::None == m_changeType)
+        return DropMe::Yes;     // Was just a cached instance? Drop it now, so that it does not become stale.
+
+    if (ChangeType::Delete == m_changeType)
+        {
+        _DeleteInstance(modified);
+        }
+    else
+        {
+        DgnDbR db = modified.GetDgnDb();
+        BeSQLite::EC::ECInstanceKey existing = _QueryExistingInstanceKey(modified);
+        if (existing.IsValid() && (existing.GetECClassId() != GetThisECClassId(db).GetValue()))
+            _DeleteInstance(modified);
+            
+        if (!existing.IsValid())
+            InsertThis(modified);
+        else
+            _UpdateProperties(modified);
+        }
+
+    m_changeType = ChangeType::None; // (Just in case)
+
+    return DropMe::Yes; // this scheduled change has been processed, so remove it.
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Sam.Wilson                    03/2015
+//---------------------------------------------------------------------------------------
+BeSQLite::EC::ECInstanceId DgnElement::NonItemAspect::QueryExistingInstanceId(DgnElementCR el, DgnClassId classId)
+    {
+    BeSQLite::EC::CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " DGN_SCHEMA(DGN_RELNAME_ElementOwnsAspects) 
+                                                                                            " WHERE(SourceECInstanceId=?) AND (TargetECClassId=?)");
+    stmt->BindId(1, el.GetElementId());
+    stmt->BindId(2, classId);
+    if (stmt->Step() != BeSQLite::EC::ECSqlStepStatus::HasRow)
+        return BeSQLite::EC::ECInstanceId();
+    return stmt->GetValueId<EC::ECInstanceId>(0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Sam.Wilson                    03/2015
+//---------------------------------------------------------------------------------------
+static DgnDbStatus insertElementOwnsAspectRelationship(DgnElementCR sourceElement, BeSQLite::EC::ECInstanceKey aspectKey)
+    {
+    if (!aspectKey.IsValid())
+        return DgnDbStatus::WriteError;
+
+    CachedECSqlStatementPtr statementPtr = sourceElement.GetDgnDb().GetPreparedECSqlStatement(
+        "INSERT INTO " DGN_SCHEMA(DGN_RELNAME_ElementOwnsAspects) " (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES (?,?,?,?)");
+
+    if (!statementPtr.IsValid())
+        return DgnDbStatus::WriteError;
+
+    statementPtr->BindId(1, sourceElement.GetElementClassId());
+    statementPtr->BindId(2, sourceElement.GetElementId());
+    statementPtr->BindInt64(3, aspectKey.GetECClassId());
+    statementPtr->BindId(4, aspectKey.GetECInstanceId());
+
+    return ECSqlStepStatus::Done != statementPtr->Step() ? DgnDbStatus::WriteError: DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::NonItemAspect::_InsertInstance(DgnElementCR el)
+    {
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s VALUES (NULL)", GetFullEcSqlClassName().c_str()));
+    BeSQLite::EC::ECInstanceKey key;
+    stmt->Step(key);
+    return insertElementOwnsAspectRelationship(el, key);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::Aspect1_1* DgnElement::Aspect1_1::Find(DgnElementCR el, ECN::ECClassCR cls)
+    {
+    return (DgnElement::Aspect1_1*)el.FindAppData(GetKey(cls));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::Aspect1_1::SetAspect(DgnElementCR el, Aspect1_1& newItem)
+    {
+    el.DropAppData(newItem.GetKey(el.GetDgnDb()));  // remove any existing cached Item
+    el.AddAppData(newItem.GetKey(el.GetDgnDb()), &newItem);
+    newItem.m_changeType = ChangeType::Write;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::Aspect1_1 const* DgnElement::Aspect1_1::GetAspect(DgnElementCR el, ECN::ECClassCR cls)
+    {
+    Aspect1_1 const* aspect = Find(el,cls);
+    if (nullptr == aspect)
+        {
+        aspect = Load(el,cls);
+        }
+    else
+        {
+        if (aspect->m_changeType == ChangeType::Delete)
+            aspect = nullptr;
+        }
+
+    return aspect;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::Aspect1_1* DgnElement::Aspect1_1::GetAspectP(DgnElementCR el, ECN::ECClassCR cls)
+    {
+    Aspect1_1* aspect = const_cast<Aspect1_1*>(GetAspect(el,cls));
+    if (nullptr == aspect)
+        return aspect;
+    aspect->m_changeType = ChangeType::Write;
+    return aspect;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::Aspect1_1::DeleteAspect(DgnElementCR el, ECN::ECClassCR cls)
+    {
+    DgnElement::Aspect1_1* aspect = GetAspectP(el,cls);
+    if (nullptr == aspect)
+        return;
+    aspect->m_changeType = ChangeType::Delete;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::Aspect1_1* DgnElement::Aspect1_1::Load(DgnElementCR el, ECN::ECClassCR cls)
+    {
+    if (!el.GetElementId().IsValid())
+        return nullptr;
+
+    ElementAspectHandler* handler = ElementAspectHandler::FindHandler(el.GetDgnDb(), DgnClassId(cls.GetId()));
+    if (nullptr == handler)
+        return nullptr;
+
+    RefCountedPtr<DgnElement::Aspect1_1> aspect = dynamic_cast<DgnElement::Aspect1_1*>(handler->_CreateInstance().get());
+    if (!aspect.IsValid())
+        return nullptr;
+
+    aspect->m_instanceId = QueryExistingInstanceId(el, DgnClassId(cls.GetId()));
+    if (!aspect->m_instanceId.IsValid())
+        return nullptr;
+
+    aspect->_LoadProperties(el);
+
+    SetAspect(el, *aspect);  // (Sets changetype)
+    aspect->m_changeType = ChangeType::None; // aspect starts out clean
+    return aspect.get();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Sam.Wilson                    03/2015
+//---------------------------------------------------------------------------------------
+BeSQLite::EC::ECInstanceKey DgnElement::Aspect1_1::_QueryExistingInstanceKey(DgnElementCR el)
+    {
+    DgnClassId classId = GetThisECClassId(el.GetDgnDb());
+    return BeSQLite::EC::ECInstanceKey(classId.GetValue(), QueryExistingInstanceId(el, classId));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::Item::_DeleteInstance(DgnElementCR el)
+    {
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement("DELETE FROM ONLY " DGN_SCHEMA(DGN_CLASSNAME_ElementItem) " WHERE(ECInstanceId=?)");
+    stmt->BindId(1, el.GetElementId());
+    BeSQLite::EC::ECSqlStepStatus status = stmt->Step();
+    return (BeSQLite::EC::ECSqlStepStatus::Done == status)? DgnDbStatus::Success: DgnDbStatus::WriteError;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1028,37 +1242,6 @@ DgnClassId DgnElement::Item::QueryExistingItemClass(DgnElementCR el)
     return DgnClassId(getItemClass->GetValueId<DgnClassId>(0));
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                  Sam.Wilson                    03/2015
-//---------------------------------------------------------------------------------------
-static DgnDbStatus insertElementOwnsAspectRelationship(DgnElementCR sourceElement, ECInstanceId const& aspectId)
-    {
-    if (!aspectId.IsValid())
-        return DgnDbStatus::WriteError;
-
-    CachedECSqlStatementPtr statementPtr = sourceElement.GetDgnDb().GetPreparedECSqlStatement(
-        "INSERT INTO " DGN_SCHEMA(DGN_RELNAME_ElementOwnsAspects) " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)");
-
-    if (!statementPtr.IsValid())
-        return DgnDbStatus::WriteError;
-
-    statementPtr->BindId(1, sourceElement.GetElementId());
-    statementPtr->BindId(2, aspectId);
-
-    return ECSqlStepStatus::Done != statementPtr->Step() ? DgnDbStatus::WriteError: DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::Aspect::_InsertInstance(DgnElementCR el)
-    {
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s", GetFullEcSqlClassName().c_str()));
-    BeSQLite::EC::ECInstanceKey key;
-    stmt->Step(key);
-    return insertElementOwnsAspectRelationship(el, key.GetECInstanceId());
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1070,50 +1253,6 @@ DgnDbStatus DgnElement::Item::_InsertInstance(DgnElementCR el)
     return (BeSQLite::EC::ECSqlStepStatus::Done == status)? DgnDbStatus::Success: DgnDbStatus::WriteError;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::Aspect::DropMe DgnElement::AspectBase::_OnInserted(DgnElementCR el)
-    {
-    if (ChangeType::Drop == m_changeType)
-        return DropMe::Yes;
-
-    InsertThis(el);
-
-    return DropMe::No;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::Aspect::DropMe DgnElement::AspectBase::_OnUpdated(DgnElementCR modified, DgnElementCR original)
-    {
-    if (ChangeType::None == m_changeType)
-        return DropMe::No;
-
-    original.DropAppData(_GetAppDataKey()); // make sure original does not have a cached aspect instance -- it is about to become stale.
-
-    if (ChangeType::Drop == m_changeType)
-        {
-        DeleteThis(modified);
-        }
-    else
-        {
-        DgnDbR db = modified.GetDgnDb();
-        BeSQLite::EC::ECInstanceKey existing = _QueryExistingInstanceKey(modified);
-        if (existing.IsValid() && (existing.GetECClassId() != GetThisECClassId(db).GetValue()))
-            DeleteThis(modified);
-            
-        if (!existing.IsValid())
-            InsertThis(modified);
-        else
-            _UpdateProperties(modified);
-        }
-
-    m_changeType = ChangeType::None;
-
-    return DropMe::No;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
@@ -1140,7 +1279,14 @@ DgnElement::Item const* DgnElement::Item::GetItem(DgnElementCR el)
     {
     Item const* item = Find(el);
     if (nullptr == item)
+        {
         item = Load(el);
+        }
+    else
+        {
+        if (item->m_changeType == ChangeType::Delete)
+            item = nullptr;
+        }
     return item;
     }
 
@@ -1159,12 +1305,12 @@ DgnElement::Item* DgnElement::Item::GetItemP(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::Item::DropItem(DgnElementCR el)
+void DgnElement::Item::DeleteItem(DgnElementCR el)
     {
     DgnElement::Item* item = GetItemP(el);
     if (nullptr == item)
         return;
-    item->m_changeType = ChangeType::Drop;
+    item->m_changeType = ChangeType::Delete;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1172,6 +1318,9 @@ void DgnElement::Item::DropItem(DgnElementCR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::Item* DgnElement::Item::Load(DgnElementCR el)
     {
+    if (!el.GetElementId().IsValid())
+        return nullptr;
+
     DgnClassId classid = QueryExistingItemClass(el);
     if (!classid.IsValid())
         return nullptr;
@@ -1203,20 +1352,3 @@ DgnDbStatus DgnElement::Item::CallGenerateElementGeometry(DgnElementR el)
     return _GenerateElementGeometry(*gel);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-ElementAspectHandler* ElementAspectHandler::FindHandler(DgnDbR db, DgnClassId handlerId) 
-    {
-    // quick check for a handler already known
-    DgnDomain::Handler* handler = db.Domains().LookupHandler(handlerId);
-    if (nullptr != handler)
-        return dynamic_cast<ElementAspectHandler*>(handler);
-
-    // not there, check via base classes
-    handler = db.Domains().FindHandler(handlerId, db.Domains().GetClassId(GetHandler()));
-    return handler ? dynamic_cast<ElementAspectHandler*>(handler) : nullptr;
-    }
-
-DgnElement::AppData::Key const& DgnElement::Item::_GetAppDataKey() {return s_key;}
-DgnElement::AppData::Key const& DgnElement::Aspect::_GetAppDataKey() {return s_key;}

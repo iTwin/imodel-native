@@ -15,8 +15,10 @@
 #define TMTEST_TEST_ELEMENT_CLASS_NAME                   "TestElement"
 #define TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME    "TestElementDrivesElement"
 #define TMTEST_TEST_ELEMENT_TestElementProperty          "TestElementProperty"
-#define TMTEST_TEST_ITEM_CLASS_NAME                       "TestItem"
+#define TMTEST_TEST_ITEM_CLASS_NAME                      "TestItem"
 #define TMTEST_TEST_ITEM_TestItemProperty                "TestItemProperty"
+#define TMTEST_TEST_ASPECT_CLASS_NAME                    "TestAspect"
+#define TMTEST_TEST_ASPECT_TestAspectProperty            "TestAspectProperty"
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -95,7 +97,7 @@ typedef TestItem* TestItemP;
 struct TestItemHandler : DgnPlatform::ElementAspectHandler
 {
     DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ITEM_CLASS_NAME, TestItemHandler, DgnPlatform::ElementAspectHandler, )
-    RefCountedPtr<DgnElement::AspectBase> _CreateInstance() override {return new TestItem("");}
+    RefCountedPtr<DgnElement::Aspect> _CreateInstance() override {return new TestItem("");}
 };
 
 HANDLER_DEFINE_MEMBERS(TestItemHandler)
@@ -103,14 +105,59 @@ HANDLER_DEFINE_MEMBERS(TestItemHandler)
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      06/15
 //=======================================================================================
-struct TransactionManagerTestDomain : DgnDomain
-    {
-    DOMAIN_DECLARE_MEMBERS(TransactionManagerTestDomain, )
+struct TestAspect : DgnPlatform::DgnElement::Aspect1_1
+{
+    DEFINE_T_SUPER(DgnPlatform::DgnElement::Aspect1_1)
+private:
+    friend struct TestAspectHandler;
+
+    Utf8String m_testAspectProperty;
+
+    explicit TestAspect(Utf8CP prop) : m_testAspectProperty(prop) {;}
+
+    Utf8String _GetECSchemaName() override {return TMTEST_SCHEMA_NAME;}
+    Utf8String _GetECClassName() override {return TMTEST_TEST_ASPECT_CLASS_NAME;}
+    DgnDbStatus _LoadProperties(DgnElementCR el) override;
+    DgnDbStatus _UpdateProperties(DgnElementCR el) override;
+
 public:
-    TransactionManagerTestDomain();
+    static RefCountedPtr<TestAspect> Create(Utf8CP prop) {return new TestAspect(prop);}
+
+    static ECN::ECClassCP GetECClass(DgnDbR db) {return db.Schemas().GetECClass(TMTEST_SCHEMA_NAME, TMTEST_TEST_ASPECT_CLASS_NAME);}
+
+    Utf8StringCR GetTestAspectProperty() const {return m_testAspectProperty;}
+    void SetTestAspectProperty(Utf8CP s) {m_testAspectProperty = s;}
+};
+
+typedef RefCountedPtr<TestAspect> TestAspectPtr;
+typedef RefCountedCPtr<TestAspect> TestAspectCPtr;
+typedef TestAspect& TestAspectR;
+typedef TestAspect const& TestAspectCR;
+typedef TestAspect const* TestAspectCP;
+typedef TestAspect* TestAspectP;
+
+//=======================================================================================
+// @bsiclass                                                     Sam.Wilson      06/15
+//=======================================================================================
+struct TestAspectHandler : DgnPlatform::ElementAspectHandler
+{
+    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ASPECT_CLASS_NAME, TestAspectHandler, DgnPlatform::ElementAspectHandler, )
+    RefCountedPtr<DgnElement::Aspect> _CreateInstance() override {return new TestAspect("");}
+};
+
+HANDLER_DEFINE_MEMBERS(TestAspectHandler)
+
+//=======================================================================================
+// @bsiclass                                                     Sam.Wilson      06/15
+//=======================================================================================
+struct ElementItemTestDomain : DgnDomain
+    {
+    DOMAIN_DECLARE_MEMBERS(ElementItemTestDomain, )
+public:
+    ElementItemTestDomain();
     };
 
-DOMAIN_DEFINE_MEMBERS(TransactionManagerTestDomain)
+DOMAIN_DEFINE_MEMBERS(ElementItemTestDomain)
 
 /*=================================================================================**//**
 * @bsiclass                                                     Sam.Wilson      06/15
@@ -135,10 +182,11 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TransactionManagerTestDomain::TransactionManagerTestDomain() : DgnDomain(TMTEST_SCHEMA_NAME, "DgnProject Test Schema", 1)
+ElementItemTestDomain::ElementItemTestDomain() : DgnDomain(TMTEST_SCHEMA_NAME, "DgnProject Test Schema", 1)
     {
     RegisterHandler(TestElementHandler::GetHandler());
     RegisterHandler(TestItemHandler::GetHandler());
+    RegisterHandler(TestAspectHandler::GetHandler());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -147,7 +195,7 @@ TransactionManagerTestDomain::TransactionManagerTestDomain() : DgnDomain(TMTEST_
 ElementItemTests::ElementItemTests()
     {
     // Must register my domain whenever I initialize a host
-    DgnDomains::RegisterDomain(TransactionManagerTestDomain::GetDomain()); 
+    DgnDomains::RegisterDomain(ElementItemTestDomain::GetDomain()); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -173,12 +221,13 @@ void ElementItemTests::SetupProject(WCharCP projFile, WCharCP testFile, Db::Open
     BeFileName schemaFile(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
     schemaFile.AppendToPath(L"ECSchemas/" TMTEST_SCHEMA_NAMEW L".01.00.ecschema.xml");
 
-    BentleyStatus status = TransactionManagerTestDomain::GetDomain().ImportSchema(*m_db, schemaFile);
+    BentleyStatus status = ElementItemTestDomain::GetDomain().ImportSchema(*m_db, schemaFile);
     ASSERT_TRUE(BentleyStatus::SUCCESS == status);
 
     auto schema = m_db->Schemas().GetECSchema(TMTEST_SCHEMA_NAME, true);
     ASSERT_NE( nullptr , schema );
     ASSERT_TRUE( TestElement::QueryClassId(*m_db).IsValid() );
+    ASSERT_NE( nullptr , TestAspect::GetECClass(*m_db) );
 
     m_defaultModelId = m_db->Models().QueryFirstModelId();
     DgnModelP defaultModel = m_db->Models().GetModel(m_defaultModelId);
@@ -253,9 +302,36 @@ DgnDbStatus TestItem::_UpdateProperties(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TestAspect::_LoadProperties(DgnElementCR el)
+    {
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT " TMTEST_TEST_ASPECT_TestAspectProperty " FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
+    stmt->BindId(1, el.GetElementId());
+    
+    if (BeSQLite::EC::ECSqlStepStatus::HasRow != stmt->Step())
+        return DgnDbStatus::ElementReadError;
+
+    m_testAspectProperty = stmt->GetValueText(0);
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TestAspect::_UpdateProperties(DgnElementCR el)
+    {
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("UPDATE %s SET " TMTEST_TEST_ASPECT_TestAspectProperty "=? WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
+    stmt->BindText(1, m_testAspectProperty.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+    stmt->BindId(2, el.GetElementId());
+    
+    return (BeSQLite::EC::ECSqlStepStatus::Done != stmt->Step())? DgnDbStatus::ElementWriteError: DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementItemTests, ItemCRUD)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests_StreetMapModel.idgndb", Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"ItemCRUD.idgndb", Db::OPEN_ReadWrite);
 
     TestElementCPtr el;
     if (true)
@@ -295,13 +371,14 @@ TEST_F(ElementItemTests, ItemCRUD)
         //  Update the item
         TestElementPtr tempEl = el->MakeCopy<TestElement>();
         TestItemP item = DgnElement::Item::GetP<TestItem>(*tempEl);
-        item->SetTestItemProperty("2");
+        item->SetTestItemProperty("Circle");
         TestItemCP originalItem = DgnElement::Item::Get<TestItem>(*el);
         ASSERT_STREQ( "Line" , originalItem->GetTestItemProperty().c_str() ) << "persistent item should remain unchanged until I call Update on the host element";
         ASSERT_TRUE( m_db->Elements().Update(*tempEl).IsValid() );
         }
 
     ASSERT_TRUE( el.IsValid() );
+    
     if (true)
         {
         //  Verify that persistent item was changed
@@ -320,5 +397,84 @@ TEST_F(ElementItemTests, ItemCRUD)
             }
         ASSERT_EQ( 1 , count );
         }
+
+    ASSERT_TRUE( el.IsValid() );
+
+    if (true)
+        {
+        //  Delete the item
+        TestElementPtr tempEl = el->MakeCopy<TestElement>();
+        DgnElement::Item::DeleteItem(*tempEl);
+        ASSERT_EQ( nullptr , DgnElement::Item::Get<TestItem>(*tempEl) ) << "Item should not be returned when scheduled for drop";
+        ASSERT_TRUE( m_db->Elements().Update(*tempEl).IsValid() );
+        }
+
+    ASSERT_TRUE( el.IsValid() );
+    ASSERT_EQ( nullptr , DgnElement::Item::Get<TestItem>(*el) ) << "Item should now be gone";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementItemTests, Aspect_1_1_CRUD)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"Aspect1_1CRUD.idgndb", Db::OPEN_ReadWrite);
+    ECN::ECClassCR aclass = *TestAspect::GetECClass(*m_db);
+    TestElementCPtr el;
+    if (true)
+        {
+        //  Insert an element ...
+        TestElementPtr tempEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement");
+        ASSERT_EQ( nullptr , DgnElement::Aspect1_1::GetAspect(*tempEl, aclass) ) << "element should not yet have an aspect";
+        //  ... with an aspect
+        DgnElement::Aspect1_1::SetAspect(*tempEl, *TestAspect::Create("Line"));  // Initial geometry should be a line
+        ASSERT_NE( nullptr , DgnElement::Aspect1_1::GetAspect(*tempEl, aclass) ) << "element should have a scheduled aspect";
+        el = m_db->Elements().Insert(*tempEl);
+        }
+
+    ASSERT_TRUE( el.IsValid() );
+
+    if (true)
+        {
+        //  Verify that aspect was saved in the Db
+        TestAspectCP aspect = DgnElement::Aspect1_1::Get<TestAspect>(*el, aclass);
+        ASSERT_NE( nullptr , aspect ) << "element should have a peristent aspect";
+        ASSERT_STREQ( "Line" , aspect->GetTestAspectProperty().c_str() );
+        }
+
+    if (true)
+        {
+        //  Update the aspect
+        TestElementPtr tempEl = el->MakeCopy<TestElement>();
+        TestAspectP aspect = DgnElement::Aspect1_1::GetP<TestAspect>(*tempEl, aclass);
+        aspect->SetTestAspectProperty("Circle");
+        TestAspectCP originalAspect1_1 = DgnElement::Aspect1_1::Get<TestAspect>(*el, aclass);
+        ASSERT_STREQ( "Line" , originalAspect1_1->GetTestAspectProperty().c_str() ) << "persistent aspect should remain unchanged until I call Update on the host element";
+        ASSERT_TRUE( m_db->Elements().Update(*tempEl).IsValid() );
+        }
+
+    ASSERT_TRUE( el.IsValid() );
+    
+    if (true)
+        {
+        //  Verify that persistent aspect was changed
+        TestAspectCP aspect = DgnElement::Aspect1_1::Get<TestAspect>(*el, aclass);
+        ASSERT_NE( nullptr , aspect ) << "element should have a peristent aspect";
+        ASSERT_STREQ( "Circle" , aspect->GetTestAspectProperty().c_str() ) << "I should see the changed value of the aspect now";
+        }
+
+    ASSERT_TRUE( el.IsValid() );
+
+    if (true)
+        {
+        //  Delete the aspect
+        TestElementPtr tempEl = el->MakeCopy<TestElement>();
+        DgnElement::Aspect1_1::DeleteAspect(*tempEl, aclass);
+        ASSERT_EQ( nullptr , DgnElement::Aspect1_1::Get<TestAspect>(*tempEl, aclass) ) << "Aspect1_1 should not be returned when scheduled for drop";
+        ASSERT_TRUE( m_db->Elements().Update(*tempEl).IsValid() );
+        }
+
+    ASSERT_TRUE( el.IsValid() );
+    ASSERT_EQ( nullptr , DgnElement::Aspect1_1::Get<TestAspect>(*el, aclass) ) << "Aspect1_1 should now be gone";
     }
 

@@ -118,36 +118,30 @@ public:
         virtual DropMe _OnDeleted(DgnElementCR el) {return DropMe::Yes;}
     };
 
-    //! Abstract base class that Buffers changes to an ElementAspect
-    struct EXPORT_VTABLE_ATTRIBUTE AspectBase : AppData
+    //! Abstract base class that Buffers changes to a dgn.ElementAspect
+    struct EXPORT_VTABLE_ATTRIBUTE Aspect : AppData
     {
     private:
         DGNPLATFORM_EXPORT DropMe _OnInserted(DgnElementCR el) override final;
         DGNPLATFORM_EXPORT DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original) override final;
 
     protected:
-        enum class ChangeType{None, Write, Drop};
+        enum class ChangeType{None, Write, Delete};
 
         ChangeType m_changeType;
 
-        DgnDbStatus DeleteThis(DgnElementCR el);
         DgnDbStatus InsertThis(DgnElementCR el);
-        DgnClassId  GetThisECClassId(DgnDbR);
+        DGNPLATFORM_EXPORT DgnClassId GetThisECClassId(DgnDbR);
+        ECN::ECClassCP GetThisECClass(DgnDbR);
         Utf8String  GetFullEcSqlClassName() {return _GetECSchemaName().append(".").append(_GetECClassName());}
 
-        DGNPLATFORM_EXPORT AspectBase();
-
-        //! The subclass must implement this method to report the ID of this aspect instance.
-        //! @param el   The host element
-        virtual BeSQLite::EC::ECInstanceId _GetECInstanceId(DgnElementCR el) = 0;
+        DGNPLATFORM_EXPORT Aspect();
 
         //! The subclass must implement this method to return the full class name (in ECSql schema.class format) of the instance.
         virtual Utf8String _GetECSchemaName() = 0;
 
         //! The subclass must implement this method to return the full class name (in ECSql schema.class format) of the instance.
         virtual Utf8String _GetECClassName() = 0;
-
-        virtual Key const& _GetAppDataKey() = 0;
 
         //! The subclass must implement this method to report an existing instance on the host element that this instance will replace.
         virtual BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) = 0;
@@ -157,30 +151,93 @@ public:
         //! @note The caller will call _UpdateProperties immediately after calling this method.
         virtual DgnDbStatus _InsertInstance(DgnElementCR el) = 0;
 
+        //! The subclass must override this method in order to delete an existing instance in the Db, plus any ECRelationship that associates it with the host element.
+        //! @param el   The host element
+        virtual DgnDbStatus _DeleteInstance(DgnElementCR el) = 0;
+
         //! The subclass must implement this method to update the instance properties.
         virtual DgnDbStatus _UpdateProperties(DgnElementCR el) = 0;
 
         //! The subclass must implement this method to load properties from the Db.
         //! @param el   The host element
-        //! @param instanceId   The Id of this aspect
         virtual DgnDbStatus _LoadProperties(DgnElementCR el) = 0;
+    
+    public:
+        //! Prepare to delete the existing Aspect for the specified element
+        //! @param el   The host element
+        //! @note The aspect will not actually be deleted in the Db until you call DgnElements::Update on \a el
+        DGNPLATFORM_EXPORT void Delete() {m_changeType = ChangeType::Delete;}
     };
 
-    //! Buffers changes to an aspect other than the item
-    struct EXPORT_VTABLE_ATTRIBUTE Aspect : AspectBase
+    //! Base class for buffer changes to dgn.ElementAspects other than the dgn.ElementItem
+    struct EXPORT_VTABLE_ATTRIBUTE NonItemAspect : Aspect
     {
-        static Key s_key;
-        
         BeSQLite::EC::ECInstanceId m_instanceId;
 
-        DGNPLATFORM_EXPORT Key const& _GetAppDataKey() override final;
-        BeSQLite::EC::ECInstanceId _GetECInstanceId(DgnElementCR el) override final {return m_instanceId;}
-        DgnDbStatus _InsertInstance(DgnElementCR el) override final;
-        BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) override {return BeSQLite::EC::ECInstanceKey();} // assume that all writes are updates or inserts
+        DGNPLATFORM_EXPORT DgnDbStatus _DeleteInstance(DgnElementCR el) override final;
+        DGNPLATFORM_EXPORT DgnDbStatus _InsertInstance(DgnElementCR el) override final;
+
+        static BeSQLite::EC::ECInstanceId QueryExistingInstanceId(DgnElementCR, DgnClassId);
     };
 
-    //! Buffers changes to an ElementItem
-    struct EXPORT_VTABLE_ATTRIBUTE Item : AspectBase
+    //! Base class for (non-Item) dgn.ElementAspects that are 1:1 with the host Element
+    struct EXPORT_VTABLE_ATTRIBUTE Aspect1_1 : NonItemAspect
+    {
+    private:
+        static Key& GetKey(ECN::ECClassCR cls) {return *(Key*)&cls;}
+        Key& GetKey(DgnDbR db) {return GetKey(*GetThisECClass(db));}
+        static Aspect1_1* Find(DgnElementCR, ECN::ECClassCR);
+        static Aspect1_1* Load(DgnElementCR, ECN::ECClassCR);
+        DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) override final;
+        
+    public:
+        //! Prepare to insert or update an Aspect for the specified element
+        //! @param el   The host element
+        //! @param aspect The new aspect to be adopted by the host.
+        //! @note \a el will add a reference to \a aspect and will hold onto it.
+        //! @note The aspect will not actually be inserted into the Db until you call DgnElements::Insert or DgnElements::Update on \a el
+        DGNPLATFORM_EXPORT static void SetAspect(DgnElementCR el, Aspect1_1& aspect);
+
+        //! Get read-write access to the Aspect for the specified element
+        //! @param el   The host element
+        //! @return The currently cached Aspect object, or nullptr if the element has no such aspect or if DeleteAspect was called.
+        //! @note call this method \em only if you plan to \em modify the aspect
+        //! @see Get, GetAspect for read-only access
+        //! @note The aspect will not actually be updated in the Db until you call DgnElements::Update on \a el
+        DGNPLATFORM_EXPORT static Aspect1_1* GetAspectP(DgnElementCR el, ECN::ECClassCR);
+
+        template<typename T> static T* GetP(DgnElementCR el, ECN::ECClassCR cls) {return dynamic_cast<T*>(GetAspectP(el,cls));}
+
+        //! Get read-only access to the Aspect for the specified element
+        //! @param el   The host element
+        //! @return The currently cached Aspect object, or nullptr if the element has no such aspect or if DeleteAspect was called.
+        //! @see GetP, GetAspectP for read-write access
+        DGNPLATFORM_EXPORT static Aspect1_1 const* GetAspect(DgnElementCR el, ECN::ECClassCR);
+
+        template<typename T> static T const* Get(DgnElementCR el, ECN::ECClassCR cls) {return dynamic_cast<T const*>(GetAspect(el,cls));}
+
+        //! Prepare to delete the existing Aspect for the specified element
+        //! @param el   The host element
+        //! @note The aspect will not actually be deleted in the Db until you call DgnElements::Update on \a el
+        DGNPLATFORM_EXPORT static void DeleteAspect(DgnElementCR el, ECN::ECClassCR);
+        };
+
+    //! Base class for (non-Item) dgn.ElementAspects that are 1:n with the host Element
+    struct EXPORT_VTABLE_ATTRIBUTE Aspect1_n : NonItemAspect
+    {
+    private:
+        BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) override {return BeSQLite::EC::ECInstanceKey();} // assume that all writes are updates or inserts
+    public:
+        //! Prepare to insert an Aspect for the specified element
+        //! @param el   The host element
+        //! @param aspect The new aspect to be adopted by the host.
+        //! @note \a el will add a reference to \a aspect and will hold onto it.
+        //! @note The aspect will not actually be inserted into the Db until you call DgnElements::Insert or DgnElements::Update on \a el
+        DGNPLATFORM_EXPORT static void AddAspect(DgnElementCR el, Aspect1_1& aspect);
+    };
+
+    //! Buffers changes to a dgn.ElementItem
+    struct EXPORT_VTABLE_ATTRIBUTE Item : Aspect
     {
     private:
         static Key s_key;
@@ -188,8 +245,7 @@ public:
         static Item* Find(DgnElementCR);
         static Item* Load(DgnElementCR);
 
-        DGNPLATFORM_EXPORT Key const& _GetAppDataKey() override final;
-        BeSQLite::EC::ECInstanceId _GetECInstanceId(DgnElementCR el) override final {return el.GetElementId();}
+        DGNPLATFORM_EXPORT DgnDbStatus _DeleteInstance(DgnElementCR el) override final;
         DGNPLATFORM_EXPORT DgnDbStatus _InsertInstance(DgnElementCR el) override final;
         DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) override final;
         DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(DgnElementR el) override final {return CallGenerateElementGeometry(el);}
@@ -203,10 +259,7 @@ public:
         virtual DgnDbStatus _GenerateElementGeometry(GeometricElementR el) = 0;
 
     public:
-        //! Query the class name of the element item in the Db.
-        DGNPLATFORM_EXPORT Utf8String QueryFullEcSqlClassName(DgnElementCR el);
-
-        //! Set up to insert or update an Item for the specified element
+        //! Prepare to insert or update an Item for the specified element
         //! @param el   The host element
         //! @param item The new item to be adopted by the host.
         //! @note \a el will add a reference to \a item and will hold onto it.
@@ -215,7 +268,9 @@ public:
 
         //! Get read-write access to the Item for the specified element
         //! @param el   The host element
-        //! @note call this method if you plan to modify the item
+        //! @return The currently cached Item object, or nullptr if the element has no item or if DeleteItem was called.
+        //! @note call this method \em only if you plan to \em modify the item
+        //! @see Get, GetItem for read-only access
         //! @note The item will not actually be updated in the Db until you call DgnElements::Update on \a el
         DGNPLATFORM_EXPORT static Item* GetItemP(DgnElementCR el);
 
@@ -223,15 +278,16 @@ public:
 
         //! Get read-only access to the Item for the specified element
         //! @param el   The host element
-        //! @note call this method if you do not plan to modify the item
+        //! @return The currently cached Item object, or nullptr if the element has no item or if DeleteItem was called.
+        //! @see GetP, GetItemP for read-write access
         DGNPLATFORM_EXPORT static Item const* GetItem(DgnElementCR el);
 
         template<typename T> static T const* Get(DgnElementCR el) {return dynamic_cast<T const*>(GetItem(el));}
 
-        //! Set up to delete the existing Item for the specified element
+        //! Prepare to delete the existing Item for the specified element
         //! @param el   The host element
         //! @note The item will not actually be deleted in the Db until you call DgnElements::Update on \a el
-        DGNPLATFORM_EXPORT static void DropItem(DgnElementCR el);
+        DGNPLATFORM_EXPORT static void DeleteItem(DgnElementCR el);
 
         DGNPLATFORM_EXPORT static DgnClassId QueryExistingItemClass(DgnElementCR);
     };

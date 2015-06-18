@@ -16,6 +16,11 @@
         <ECProperty propertyName="TestItemProperty" typeName="string" />
     </ECClass>
 
+    <ECClass typeName="TestAspect" isDomainClass="True">
+        <BaseClass>dgn:ElementAspect</BaseClass>
+        <ECProperty propertyName="TestAspectProperty" typeName="string" />
+    </ECClass>
+
     <ECRelationshipClass typeName="TestElementDrivesElement" isDomainClass="True" strength="referencing" strengthDirection="forward" >
         <ECCustomAttributes>
           <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
