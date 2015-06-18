@@ -126,9 +126,9 @@ RelationshipClassMap::ConstraintMap const& RelationshipClassMap::GetConstraintMa
 // @bsimethod                                                    Krischan.Eberle  06/2015
 //---------------------------------------------------------------------------------------
 //static
-ECN::ECDbRelationshipConstraintMap const& RelationshipClassMap::GetConstraintMapInfo(RelationshipMapInfo const& info, ECN::ECRelationshipEnd end)
+ECN::ECDbRelationshipEndColumns const& RelationshipClassMap::GetEndColumnsMapping(RelationshipMapInfo const& info, ECN::ECRelationshipEnd end)
     {
-    return end == ECRelationshipEnd_Source ? info.GetSourceInfo() : info.GetTargetInfo();
+    return end == ECRelationshipEnd_Source ? info.GetSourceColumnsMapping() : info.GetTargetColumnsMapping();
     }
 
 //---------------------------------------------------------------------------------------
@@ -263,8 +263,8 @@ RelationshipClassEndTableMap::RelationshipClassEndTableMap (ECRelationshipClassC
 //+---------------+---------------+---------------+---------------+---------------+------
 ECDbSqlColumn* RelationshipClassEndTableMap::ConfigureForeignECClassIdKey(RelationshipMapInfo const& mapInfo, ECRelationshipConstraintCR otherEndConstraint, IClassMap const& otheEndClassMap, size_t otherEndTableCount)
     {
-    ECDbRelationshipConstraintMap const& constraintMap = GetConstraintMapInfo(mapInfo);
-    Utf8String classIdColName(constraintMap.GetECClassIdColumn());
+    ECDbRelationshipEndColumns const& constraintColumnsMapping = GetEndColumnsMapping(mapInfo);
+    Utf8String classIdColName(constraintColumnsMapping.GetECClassIdColumn());
     if (classIdColName.empty() &&
         !GetOtherEndECClassIdColumnName(classIdColName, GetTable(), true))
         return nullptr;
@@ -355,8 +355,7 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (ClassMapInfo const& cl
         return stat;
 
     //! Add referential integrity if user requested it.
-    ECDbRelationshipConstraintMap const& thisEndConstraintInfo = GetConstraintMapInfo (relationshipClassMapInfo);
-    if (thisEndConstraintInfo.EnforceReferentialIntegrity () && relationshipClass.GetStrength () != StrengthType::STRENGTHTYPE_Holding)
+    if (relationshipClassMapInfo.IsCreateForeignKeyConstraint () && relationshipClass.GetStrength() != StrengthType::STRENGTHTYPE_Holding)
         {
         auto const& otherEndConstraint = thisEnd != ECRelationshipEnd_Source ? sourceConstraint : targetConstraint;
         auto const& otherEndConstraintMap = thisEnd != ECRelationshipEnd_Source ? m_sourceConstraintMap : m_targetConstraintMap;
@@ -384,8 +383,8 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (ClassMapInfo const& cl
         auto foreignKey = foreignTable.CreateForeignKeyConstraint (primaryTable);
         foreignKey->Add (foreignKeyColumn->GetName ().c_str (), primaryKeyColumn->GetName ().c_str ());
         
-        foreignKey->SetOnDeleteAction (ECDbSqlForeignKeyConstraint::ToActionType (thisEndConstraintInfo.GetOnDeleteAction()));
-        foreignKey->SetOnUpdateAction(ECDbSqlForeignKeyConstraint::ToActionType(thisEndConstraintInfo.GetOnUpdateAction()));
+        foreignKey->SetOnDeleteAction(relationshipClassMapInfo.GetOnDeleteAction());
+        foreignKey->SetOnUpdateAction(relationshipClassMapInfo.GetOnUpdateAction());
         }
     
     return stat;
@@ -418,9 +417,7 @@ bool RelationshipClassEndTableMap::IsKeyPropertyMappable(const ECRelationshipCon
         auto &ecClass = constaintClass->GetClass();
         auto ecProperty = ecClass.GetPropertyP(key.c_str());
         if (ecProperty != nullptr && (ecProperty->GetTypeName().Equals(L"long") || ecProperty->GetTypeName().Equals(L"int")))
-            {
             return true;
-            }
         }
     return false;
     }
@@ -533,8 +530,8 @@ MapStatus RelationshipClassEndTableMap::CreateConstraintColumns (ECDbSqlColumn*&
     else
         {
         //** Other End ECInstanceId column
-        ECDbRelationshipConstraintMap const& constraintMap = GetConstraintMapInfo(mapInfo);
-        Utf8String otherEndECInstanceIdColumnName(constraintMap.GetECInstanceIdColumn());
+        ECDbRelationshipEndColumns const& constraintColumnMapping = GetEndColumnsMapping(mapInfo);
+        Utf8String otherEndECInstanceIdColumnName(constraintColumnMapping.GetECInstanceIdColumn());
         if (otherEndECInstanceIdColumnName.empty())
             if (!GetOtherEndKeyColumnName(otherEndECInstanceIdColumnName, GetTable(), true))
                 return MapStatus::Error;
@@ -661,7 +658,7 @@ void RelationshipClassEndTableMap::AddIndices (ClassMapInfo const& mapInfo)
     BeAssert(dynamic_cast<RelationshipMapInfo const*> (&mapInfo) != nullptr);
     RelationshipMapInfo const& info = static_cast<RelationshipMapInfo const&> (mapInfo);
 
-    if (!GetConstraintMapInfo(info).CreateDefaultIndex())
+    if (!GetEndColumnsMapping(info).CreateDefaultIndex())
             return;
    
     bool enforceUniqueness = true; //We are enabling it
@@ -831,10 +828,10 @@ ECN::ECRelationshipEnd RelationshipClassEndTableMap::GetOtherEnd () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       06/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECDbRelationshipConstraintMap const& RelationshipClassEndTableMap::GetConstraintMapInfo(RelationshipMapInfo const& info) const
+ECDbRelationshipEndColumns const& RelationshipClassEndTableMap::GetEndColumnsMapping(RelationshipMapInfo const& info) const
     {
     BeAssert(GetThisEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? info.GetMapStrategy().GetStrategy() == Strategy::RelationshipSourceTable : info.GetMapStrategy().GetStrategy() == Strategy::RelationshipTargetTable);
-    return RelationshipClassMap::GetConstraintMapInfo(info, GetThisEnd());
+    return RelationshipClassMap::GetEndColumnsMapping(info, GetThisEnd());
     }
 
 
@@ -892,8 +889,8 @@ ECDbSqlColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey(Relat
     auto thisEndClassMap = GetECDbMap ().GetClassMapCP (*thisEndClass, true);
     auto thisEndTableCount = GetECDbMap ().GetTablesFromRelationshipEnd (nullptr, thisEndConstraint);
 
-    ECDbRelationshipConstraintMap const& constraintMap = GetConstraintMapInfo(mapInfo, relationshipEnd);
-    Utf8String columnName (constraintMap.GetECClassIdColumn ());
+    ECDbRelationshipEndColumns const& constraintColumnsMapping = GetEndColumnsMapping(mapInfo, relationshipEnd);
+    Utf8String columnName(constraintColumnsMapping.GetECClassIdColumn());
     if (columnName.empty())
         {
         if (!GetConstraintECClassIdColumnName (columnName, relationshipEnd, GetTable ()))
@@ -947,7 +944,7 @@ ECClassId defaultTargetECClassId
 )
     {
     //**** SourceECInstanceId prop map 
-    Utf8String columnName (mapInfo.GetSourceInfo().GetECInstanceIdColumn ());
+    Utf8String columnName (mapInfo.GetSourceColumnsMapping().GetECInstanceIdColumn ());
     if (columnName.empty ())
         {
         if (!GetConstraintECInstanceIdColumnName (columnName, ECRelationshipEnd_Source, GetTable()))
@@ -972,7 +969,7 @@ ECClassId defaultTargetECClassId
 
 
     //**** TargetECInstanceId prop map 
-    columnName = mapInfo.GetTargetInfo().GetECInstanceIdColumn();
+    columnName = mapInfo.GetTargetColumnsMapping().GetECInstanceIdColumn();
     if (columnName.empty ())
         {
         if (!GetConstraintECInstanceIdColumnName (columnName, ECRelationshipEnd_Target, GetTable()))
@@ -1024,8 +1021,8 @@ void RelationshipClassLinkTableMap::AddIndices (ClassMapInfo const& mapInfo)
     // SystemComponent-s that include GroupingComponent-s and PartComponent-s, where the GroupingComponent-s
     // themselves include the SystemComponent-s again. 
 
-    bool createOnSource = relationshipClassMapInfo.GetSourceInfo ().CreateDefaultIndex ();
-    bool createOnTarget = relationshipClassMapInfo.GetTargetInfo ().CreateDefaultIndex ();
+    bool createOnSource = relationshipClassMapInfo.GetSourceColumnsMapping ().CreateDefaultIndex ();
+    bool createOnTarget = relationshipClassMapInfo.GetTargetColumnsMapping ().CreateDefaultIndex ();
 
     // Add indices on the source and target based on cardinality
     switch (cardinality)
