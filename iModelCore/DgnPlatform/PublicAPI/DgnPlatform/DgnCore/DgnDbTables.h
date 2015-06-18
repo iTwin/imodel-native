@@ -651,14 +651,16 @@ private:
     friend struct DgnModel;
     typedef bmap<DgnModelId,DgnModelPtr> T_DgnModelMap;
 
-    T_DgnModelMap            m_models;
-    QvCache*                 m_qvCache;
+    T_DgnModelMap   m_models;
+    QvCache*        m_qvCache;
     bmap<DgnModelId,bpair<uint64_t,DgnModelType>> m_modelDependencyIndexAndType;
 
     void ClearLoaded();
-    DgnModelP CreateDgnModel(DgnModelId modelId);
+    DgnModelP LoadDgnModel(DgnModelId modelId);
     bool FreeQvCache();
     void Empty() {ClearLoaded(); FreeQvCache();}
+    void AddLoadedModel(DgnModelR);
+    void DropLoadedModel(DgnModelR);
 
     DgnModels(DgnDbR db) : DgnDbTable(db) {m_qvCache= nullptr;}
     ~DgnModels() {} // don't call empty on destructor, Elements() has already been deleted.
@@ -757,9 +759,6 @@ public:
         const_iterator end() const {return Entry(nullptr, false);}
     };
 
-private:
-    BeSQLite::DbResult InsertModel(Model& row);
-
 public:
     DGNPLATFORM_EXPORT QvCache* GetQvCache(bool createIfNecessary=true);
     void SetQvCache(QvCache* qvCache) {m_qvCache = qvCache;}
@@ -783,32 +782,23 @@ public:
     //! Get the currently loaded DgnModels for this DgnDb
     T_DgnModelMap const& GetLoadedModels() const {return m_models;}
 
-    //! Delete a model.
-    //! @note All elements from this model are deleted as well.
-    DGNPLATFORM_EXPORT DgnDbStatus DeleteModel(DgnModelId id);
-
     DGNPLATFORM_EXPORT BentleyStatus QueryModelById(Model* out, DgnModelId id) const;
     DGNPLATFORM_EXPORT BentleyStatus GetModelName(Utf8StringR, DgnModelId id) const;
 
     //! Find the ModelId of the model with the specified name name.
     //! @return The model's ModelId. Check dgnModelId.IsValid() to see if the DgnModelId was found.
     DGNPLATFORM_EXPORT DgnModelId QueryModelId(Utf8CP name) const;
+
     //! Query for the dependency index and type of the specified model
-    //! @param[out] didx    The model's DependencyIndex property value
-    //! @param[out] mtype   The model's type
-    //! @param[in] mid      The model's ID
+    //! @param[out] dependencyIndex  The model's DependencyIndex property value
+    //! @param[out] modelType   The model's type
+    //! @param[in] modelId      The model's ID
     //! @return non-zero if the model does not exist
-    DGNPLATFORM_EXPORT BentleyStatus QueryModelDependencyIndexAndType(uint64_t& didx, DgnModelType& mtype, DgnModelId mid);
+    DGNPLATFORM_EXPORT BentleyStatus QueryModelDependencyIndexAndType(uint64_t& dependencyIndex, DgnModelType& modelType, DgnModelId modelId);
 
     //! Make an iterator over the models in this DgnDb.
     Iterator MakeIterator(Utf8CP where=nullptr, ModelIterate itType=ModelIterate::All) const {return Iterator(m_dgndb, where, itType);}
     //@}
-
-    //! Insert a new model.
-    //! @return DgnDbStatus::Success if the new model was successfully create or error otherwise.
-    DGNPLATFORM_EXPORT DgnDbStatus Insert(DgnModelR model, Utf8CP description=nullptr, bool inGuiList=true);
-
-    DGNPLATFORM_EXPORT DgnModelP CreateNewModelFromSeed(DgnDbStatus* result, Utf8CP name, DgnModelId seedModelId);
 
     //! Generate a model name that is not currently in use in this file
     //! @param[in]  baseName base model name to start with (optional)
@@ -844,12 +834,13 @@ struct DgnElements : DgnDbTable
     friend struct TxnManager;
     friend struct ProgressiveViewFilter;
 
-    //! The totals for loaded DgnElements in this DgnDb. These values reflect the current state of the loaded elements.
+    //! The totals for persistent DgnElements in this DgnDb. These values reflect the current state of the loaded elements.
     struct Totals
     {
-        uint32_t m_entries;        //! total number of elements (referenced and unreferenced) in the tree
-        uint32_t m_unreferenced;   //! total number of unreferenced elements in the tree
-        int64_t  m_allocedBytes;   //! total number of bytes of data held by elements in the tree
+        uint32_t m_extant;         //! total number of DgnElements extant (persistent and non-persistent)
+        uint32_t m_entries;        //! total number of persistent elements 
+        uint32_t m_unreferenced;   //! total number of unreferenced persistent elements 
+        int64_t  m_allocedBytes;   //! total number of bytes of data held by persistent elements 
     };
 
     //! Statistics for element activity in this DgnDb. these values can be reset at any point to gauge "element flux"
@@ -885,7 +876,6 @@ private:
     void AddToPool(DgnElementCR) const;
     void DropFromPool(DgnElementCR) const;
     void SendOnLoadedEvent(DgnElementR elRef) const;
-    void OnChangesetApply(TxnSummary const&);
     void OnChangesetApplied(TxnSummary const&);
     void FinishUpdate(DgnElementCR replacement, DgnElementCR original);
     DgnElementCPtr LoadElement(DgnElement::CreateParams const& params, bool makePersistent) const;

@@ -20,6 +20,7 @@ static DgnStyleId ensureAnnotationTextStyle1(DgnDbR db)
         return existingStyle->GetId();
     
     AnnotationTextStyle style(db);
+    style.SetColor(ElementColor(ColorDef(0x00, 0xff, 0x00)));
     style.SetFontId(db.Fonts().AcquireId(DgnFontManager::GetAnyLastResortFont()));
     style.SetHeight(1000.0);
     style.SetName(STYLE_NAME);
@@ -41,7 +42,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
 
     BeFileName dbPath;
     BeTest::GetHost().GetOutputRoot(dbPath);
-    dbPath.AppendToPath(L"TextAnnotationElementTest-BasicCrud.dgndb");
+    dbPath.AppendToPath(L"TextAnnotationElementTest-BasicCrud.idgndb"); // use .idgndb so that sample navigator easily opens it, even though .dgndb would be more appropriate
 
     DgnCategoryId physicalCategory1Id;
     DgnModelId physicalModel1Id;
@@ -71,7 +72,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
         ASSERT_TRUE(physicalCategory1Id.IsValid());
 
         DgnModelPtr physicalModel1 = new PhysicalModel(DgnModel::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel)), "Physical Model 1"));
-        ASSERT_TRUE(DgnDbStatus::Success == db->Models().Insert(*physicalModel1));
+        ASSERT_TRUE(DgnDbStatus::Success == physicalModel1->Insert());
 
         physicalModel1Id = physicalModel1->GetModelId();
         ASSERT_TRUE(physicalModel1Id.IsValid());
@@ -87,6 +88,29 @@ TEST(TextAnnotationElementTest, BasicCrud)
         
         annotationElement1Id = insertedAnnotationElement1->GetElementId();
         ASSERT_TRUE(annotationElement1Id.IsValid());
+
+        // This is only here to aid in debugging so you can open the file in a viewer and see the element you just created.
+        //.............................................................................................
+        DgnViews::View view;
+        view.SetDgnViewType(DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalView)), DgnViewType::Physical);
+        view.SetDgnViewSource(DgnViewSource::Generated);
+        view.SetName("TextAnnotationElementTest-BasicCrud");
+        view.SetBaseModelId(physicalModel1Id);
+
+        EXPECT_TRUE(BE_SQLITE_OK == db->Views().Insert(view));
+        EXPECT_TRUE(view.GetId().IsValid());
+
+        ViewController::MarginPercent viewMargin(0.1, 0.1, 0.1, 0.1);
+        
+        PhysicalViewController viewController(*db, view.GetId());
+        viewController.SetStandardViewRotation(StandardView::Top);
+        viewController.LookAtVolume(insertedAnnotationElement1->GetPlacement().GetElementBox()/*, nullptr, &viewMargin*/);
+        viewController.GetViewFlagsR().SetRenderMode(DgnRenderMode::Wireframe);
+        viewController.ChangeCategoryDisplay(physicalCategory1Id, true);
+        viewController.ChangeModelDisplay(physicalModel1Id, true);
+
+        EXPECT_TRUE(BE_SQLITE_OK == viewController.Save());
+        db->SaveSettings();
         }
 
     // Read the element back out, modify, and rewrite.

@@ -9,8 +9,6 @@
 #include FT_FREETYPE_H
 #include FT_OUTLINE_H
 
-#define FONT_LOG (*LoggingManager::GetLogger(L"DgnFont"))
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     04/2015
 //---------------------------------------------------------------------------------------
@@ -22,10 +20,7 @@ FT_Library DgnPlatformLib::Host::FontAdmin::_GetFreeTypeLibrary()
 
         FT_Error loadStatus = FT_Init_FreeType(&m_ftLibrary);
         if ((nullptr == m_ftLibrary) || (FT_Err_Ok != loadStatus))
-            {
-            FONT_LOG.errorv("Failed to load the freetype2 library (error code %i). TrueType fonts may be unusable.", (int)loadStatus);
-            BeAssert(false);
-            }
+            { BeAssert(false); }
         }
 
     return m_ftLibrary;
@@ -525,6 +520,23 @@ bool DgnTrueTypeGlyph::_IsBlank() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2015
 //---------------------------------------------------------------------------------------
+static FT_Face determineFace(DgnFontStyle& style, bool isBold, bool isItalic, IDgnTrueTypeFontData& data)
+    {
+    style = DgnFontStyle::Regular;
+    if (isBold && isItalic) style = DgnFontStyle::BoldItalic;
+    else if (isBold) style = DgnFontStyle::Bold;
+    else if (isItalic) style = DgnFontStyle::Italic;
+
+    FT_Face face = data._GetFaceP(style);
+    if (nullptr == face)
+        face = data._GetFaceP(DgnFontStyle::Regular);
+
+    return face;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     05/2015
+//---------------------------------------------------------------------------------------
 DgnGlyphCP DgnTrueTypeFont::FindGlyphCP(FT_Face face, FT_UInt id, DgnFontStyle style) const
     {
     T_GlyphCacheMap::iterator foundCache = m_glyphCache.find(style);
@@ -546,6 +558,21 @@ DgnGlyphCP DgnTrueTypeFont::FindGlyphCP(FT_Face face, FT_UInt id, DgnFontStyle s
     DgnGlyphP glyph = new DgnTrueTypeGlyph(face, id);
     glyphCache->Insert(id, glyph);
     return glyph;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     06/2015
+//---------------------------------------------------------------------------------------
+DgnGlyphCP DgnTrueTypeFont::_FindGlyphCP(DgnGlyph::T_Id glyphId, DgnFontStyle fontStyle) const
+    {
+    if (!IsResolved())
+        return nullptr;
+    
+    bool isBold = ((DgnFontStyle::Bold == fontStyle) || (DgnFontStyle::BoldItalic == fontStyle));
+    bool isItalic = ((DgnFontStyle::Italic == fontStyle) || (DgnFontStyle::BoldItalic == fontStyle));
+    FT_Face effectiveFace = determineFace(fontStyle, isBold, isItalic, (IDgnTrueTypeFontData&)*m_data);
+
+    return FindGlyphCP(effectiveFace, glyphId, fontStyle);
     }
 
 //---------------------------------------------------------------------------------------
@@ -606,23 +633,6 @@ BentleyStatus DgnTrueTypeFont::ComputeAdvanceWidths(T_DoubleVectorR advanceWidth
         }
 
     return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Jeff.Marker     05/2015
-//---------------------------------------------------------------------------------------
-static FT_Face determineFace(DgnFontStyle& style, bool isBold, bool isItalic, IDgnTrueTypeFontData& data)
-    {
-    style = DgnFontStyle::Regular;
-    if (isBold && isItalic) style = DgnFontStyle::BoldItalic;
-    else if (isBold) style = DgnFontStyle::Bold;
-    else if (isItalic) style = DgnFontStyle::Italic;
-
-    FT_Face face = data._GetFaceP(style);
-    if (nullptr == face)
-        face = data._GetFaceP(DgnFontStyle::Regular);
-    
-    return face;
     }
 
 //---------------------------------------------------------------------------------------

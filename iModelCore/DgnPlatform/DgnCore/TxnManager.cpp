@@ -131,7 +131,7 @@ TxnManager::TxnManager(DgnDbR project) : m_dgndb(project), m_stmts(20)
     if (m_dgndb.IsReadonly())
         return;
 
-    m_dgndb.AddChangeTracker(*this);
+    m_dgndb.SetChangeTracker(this);
     m_dgndb.CreateTable(TEMP_TABLE(TXN_TABLE_Elements), "ElementId INTEGER NOT NULL PRIMARY KEY,ModelId INTEGER NOT NULL,ChangeType INT,LastMod TIMESTAMP");
     m_dgndb.CreateTable(TEMP_TABLE(TXN_TABLE_Depend), "ECInstanceId INTEGER NOT NULL PRIMARY KEY,ModelId INTEGER NOT NULL,ChangeType INT");
     m_dgndb.ExecuteSql("CREATE INDEX " TEMP_TABLE(TXN_TABLE_Elements) "_Midx ON " TXN_TABLE_Elements "(ModelId)");
@@ -321,7 +321,7 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
             indirectChanges.FromChangeTrack(*this);
             Restart();
 
-            summary.AddChangeSet(indirectChanges); // so admins will see entire changeset
+            summary.AddChangeSet(indirectChanges); // so summary will hold entire changeset
             changeset.ConcatenateWith(indirectChanges);
             }
         }
@@ -494,8 +494,6 @@ DbResult TxnManager::ApplyChangeSet(ChangeSet& changeset, TxnDirection isUndo)
     TxnSummary summary(m_dgndb, isUndo);
     summary.AddChangeSet(changeset);
 
-    m_dgndb.Elements().OnChangesetApply(summary);
-
     // notify monitors that changeset is about to be applied
     T_HOST.GetTxnAdmin()._OnTxnReverse(summary);
 
@@ -609,7 +607,7 @@ void TxnManager::ReverseTxnRange(TxnRange& txnRange, Utf8StringP undoStr, bool m
         {
         ChangeEntry entry;
         ReadEntry(first, entry);
-        Utf8String fmtString = DgnCoreL10N::GetString(DgnCoreL10N::UNDOMSG_FMT_UNDONE());
+        Utf8String fmtString = DgnCoreL10N::GetString(DgnCoreL10N::Undone());
         undoStr->assign(entry.m_description + fmtString);
         }
 
@@ -759,7 +757,7 @@ void TxnManager::ReinstateTxn(TxnRange& revTxn, Utf8StringP redoStr)
         {
         ChangeEntry entry;
         ReadEntry(first, entry);
-        Utf8String fmtString = DgnCoreL10N::GetString(DgnCoreL10N::UNDOMSG_FMT_REDONE());
+        Utf8String fmtString = DgnCoreL10N::GetString(DgnCoreL10N::Redone());
         redoStr->assign(entry.m_description + fmtString);
         }
 

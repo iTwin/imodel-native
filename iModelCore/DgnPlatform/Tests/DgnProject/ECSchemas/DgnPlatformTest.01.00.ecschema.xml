@@ -3,6 +3,7 @@
     
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.10" prefix="bsca" />
     <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
+    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
     <ECSchemaReference name="dgn" version="02.00" prefix="dgn" />
 
     <ECClass typeName="TestElement" isDomainClass="True">
@@ -16,23 +17,23 @@
     </ECClass>
 
     <ECRelationshipClass typeName="TestElementDrivesElement" isDomainClass="True" strength="referencing" strengthDirection="forward" >
+        <ECCustomAttributes>
+          <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
+                <Source>
+                    <ECInstanceIdColumn>RootElementId</ECInstanceIdColumn>
+                    <ECClassIdColumn>RootElementClassId</ECClassIdColumn>
+                </Source>
+                <Target>
+                    <ECInstanceIdColumn>DependentElementId</ECInstanceIdColumn>
+                    <ECClassIdColumn>DependentElementClassId</ECClassIdColumn>
+                </Target>
+            </LinkTableRelationshipMap>
+        </ECCustomAttributes>
         <BaseClass>dgn:ElementDrivesElement</BaseClass>
         <Source cardinality="(0,1)" roleLabel="Element with datum plane" polymorphic="True">
-            <ECCustomAttributes>
-                <ECDbRelationshipConstraintHint xmlns="Bentley_Standard_CustomAttributes.01.11">
-                    <ECIdColumn>RootElementId</ECIdColumn>
-                    <ECClassIdColumn>RootElementClassId</ECClassIdColumn>
-                </ECDbRelationshipConstraintHint>
-            </ECCustomAttributes>
             <Class class="dgn:Element" />
         </Source>
         <Target cardinality="(0,1)" roleLabel="Element to move" polymorphic="True">
-            <ECCustomAttributes>
-                <ECDbRelationshipConstraintHint xmlns="Bentley_Standard_CustomAttributes.01.11">
-                    <ECIdColumn>DependentElementId</ECIdColumn>
-                    <ECClassIdColumn>DependentElementClassId</ECClassIdColumn>
-                </ECDbRelationshipConstraintHint>
-            </ECCustomAttributes>
             <Class class="dgn:Element" />
         </Target>
         <ECProperty propertyName="Property1" typeName="string" />

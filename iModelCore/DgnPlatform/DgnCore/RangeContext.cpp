@@ -869,10 +869,9 @@ void _DrawSymbol (IDisplaySymbol* symbol, TransformCP trans, ClipPlaneSetP clip,
 void InitFitContext ()
     {
     InvalidateScanRange ();
-    m_frustumTransClipDepth = 0;
 
-    m_frustumToNpc  = *m_viewport->GetWorldToNpcMap();
-    m_frustumToView = *m_viewport->GetWorldToViewMap();
+    m_worldToNpc  = *m_viewport->GetWorldToNpcMap();
+    m_worldToView = *m_viewport->GetWorldToViewMap();
     m_output.SetViewFlags (*m_viewport->GetViewFlags());
 
     if (m_params.m_rMatrix || m_viewport)
@@ -1135,6 +1134,34 @@ StatusInt DgnViewport::DetermineVisibleDepthNpc (double& lowNpc, double& highNpc
 
     lowNpc = range.low.z;
     highNpc = range.high.z;
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      09/06
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       DgnViewport::ComputeVisibleDepthRange (double& minDepth, double& maxDepth, bool ignoreViewExtent)
+    {
+    FitViewParams params;
+    
+    params.m_useScanRange = !ignoreViewExtent;
+    params.m_fitMinDepth = params.m_fitMaxDepth = true;
+
+    DepthFitContext context (params);
+
+    context.SetViewport (this);
+    context.AllocateScanCriteria ();
+    context.InitDepthFitContext ();
+    context.VisitAllViewElements (true, NULL);
+
+    DRange3d range;
+
+    if (SUCCESS != context.GetElemRange()->GetRange (range))
+        return ERROR;
+
+    minDepth = range.low.z;
+    maxDepth = range.high.z;
 
     return SUCCESS;
     }

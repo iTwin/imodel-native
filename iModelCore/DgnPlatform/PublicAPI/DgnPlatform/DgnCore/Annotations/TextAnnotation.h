@@ -29,7 +29,7 @@ typedef AnnotationLeaderCollection const& AnnotationLeaderCollectionCR;
 //! TextAnnotation objects themselves do not have "styles"; they can instead be created from "seeds" (TextAnnotationSeed). Unlike a style, a seed is only used when creating the TextAnnotation. TextAnnotation objects do not automatically react to changes in their seed (unlike how a style system normally operates), but it is a convenient way to create multiple TextAnnotation objects with the same look and feel. The individual pieces of a TextAnnotation (the text, frame, and leaders) all have styles, which do behave like a classical style system.
 // @bsiclass                                                    Jeff.Marker     07/2014
 //=======================================================================================
-struct TextAnnotation : public RefCountedBase
+struct TextAnnotation : RefCountedBase
 {
 private:
     DEFINE_T_SUPER(RefCountedBase)

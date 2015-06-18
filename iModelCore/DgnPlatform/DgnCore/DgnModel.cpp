@@ -10,38 +10,6 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnModels::InsertModel(Model& row)
-    {
-    DbResult status = m_dgndb.GetNextRepositoryBasedId(row.m_id, DGN_TABLE(DGN_CLASSNAME_Model), "Id");
-    BeAssert(status == BE_SQLITE_OK);
-
-    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) "(Id,Name,Descr,Type,ECClassId,Space,Visibility) VALUES(?,?,?,?,?,?,?)");
-    stmt.BindId(1, row.GetId());
-    stmt.BindText(2, row.GetNameCP(), Statement::MakeCopy::No);
-    stmt.BindText(3, row.GetDescription(), Statement::MakeCopy::No);
-    stmt.BindInt(4,(int)row.GetModelType());
-    stmt.BindInt64(5, row.GetClassId().GetValue());
-    stmt.BindInt(6,(int) row.GetCoordinateSpace());
-    stmt.BindInt(7, row.InGuiList());
-
-    status = stmt.Step();
-    BeAssert(BE_SQLITE_DONE==status);
-    return (BE_SQLITE_DONE==status) ? BE_SQLITE_OK : status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModels::DeleteModel(DgnModelId modelId)
-    {
-    Statement stmt(m_dgndb, "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
-    stmt.BindId(1, modelId);
-    return BE_SQLITE_DONE == stmt.Step() ? DgnDbStatus::Success : DgnDbStatus::InvalidModel;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/10
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelId DgnModels::QueryModelId(Utf8CP name) const
     {
     CachedStatementPtr stmt;
@@ -91,12 +59,33 @@ BentleyStatus DgnModels::GetModelName(Utf8StringR name, DgnModelId id) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModels::AddLoadedModel(DgnModelR model)
+    {
+    model.m_persistent = true;
+    m_models.Insert(model.GetModelId(), &model);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModels::DropLoadedModel(DgnModelR model)
+    {
+    model.m_persistent = false;
+    m_models.erase(model.GetModelId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModels::ClearLoaded()
     {
     for (auto iter : m_models)
+        {
         iter.second->Empty();
+        iter.second->m_persistent = false;
+        }
 
     m_dgndb.Elements().Destroy(); // Has to be called before models are released.
     m_models.clear();
@@ -174,7 +163,7 @@ DgnClassId   DgnModels::Iterator::Entry::GetClassId() const {Verify(); return Dg
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::ReleaseAllElements()
     {
-    m_wasFilled  = false;   // this must be before we release all elementrefs
+    m_filled  = false;   // this must be before we release all elementrefs
     m_elements.clear();
     }
 
@@ -184,80 +173,73 @@ void DgnModel::ReleaseAllElements()
 DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_modelId(params.m_id), m_classId(params.m_classId), m_name(params.m_name), m_properties(params.m_props)
     {
     m_rangeIndex = nullptr;
-    m_wasFilled = false;
-    m_readonly  = false;
+    m_persistent = false;
+    m_filled     = false;
+    m_readonly   = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnModel::AddAppData(DgnModelAppData::Key const& key, DgnModelAppData* obj)
+void DgnModel::AddAppData(AppData::Key const& key, AppData* obj)
     {
-    return  m_appData.AddAppData(key, obj, *this);
+    auto entry = m_appData.Insert(&key, obj);
+    if (entry.second)
+        return;
+
+    // we already had appdata for this key. Clean up old and save new.
+    entry.first->second = obj;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnModel::DropAppData(DgnModelAppData::Key const& key)
+StatusInt DgnModel::DropAppData(AppData::Key const& key)
     {
-    return  m_appData.DropAppData(key, *this);
+    return 0==m_appData.erase(&key) ? ERROR : SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelAppData* DgnModel::FindAppData(DgnModelAppData::Key const& key) const
+DgnModel::AppData* DgnModel::FindAppData(AppData::Key const& key) const
     {
-    return  m_appData.FindAppData(key);
+    auto entry = m_appData.find(&key);
+    return entry==m_appData.end() ? nullptr : entry->second.get();
     }
-
-struct EmptyCaller
-    {
-    DgnModelR m_model;
-    EmptyCaller(DgnModelR model) : m_model(model) {}
-    bool CallHandler(DgnModelAppData& handler) const {return handler._OnEmpty(m_model);}
-    };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/07
+* @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnModel::NotifyOnEmpty()
+template<class T> void DgnModel::CallAppData(T const& caller) const
     {
-    if (!IsFilled())
-        return false;
+    for (auto entry=m_appData.begin(); entry!=m_appData.end(); )
+        {
+        if (DgnModel::AppData::DropMe::Yes == caller(*entry->second, *this))
+            entry = m_appData.erase(entry);
+        else
+            ++entry;
+        }
+    }    
 
-    m_appData.CallAllDroppable(EmptyCaller(*this), *this);
-    return  true;
-    }
-
-struct EmptiedCaller
-    {
-    DgnModelR m_model;
-    EmptiedCaller(DgnModelR model) : m_model(model) {}
-    bool CallHandler(DgnModelAppData& handler) const {return handler._OnEmptied(m_model);}
-    };
+struct EmptiedCaller {DgnModel::AppData::DropMe operator()(DgnModel::AppData& handler, DgnModelCR model) const {return handler._OnEmptied(model);}};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::Empty()
     {
-    bool wasFilled = m_wasFilled;
-
-    ReleaseAllElements();
     ClearRangeIndex();
 
-    if (wasFilled)
-        m_appData.CallAllDroppable(EmptiedCaller(*this), *this);
-    }
+    if (!m_filled)
+        return;
 
-struct CleanupCaller
-    {
-    DgnModelR m_model;
-    CleanupCaller(DgnModelR model) : m_model(model) {}
-    void CallHandler(DgnModelAppData& handler) const {handler._OnCleanup(m_model);}
-    };
+    for (auto appdata : m_appData)
+        appdata.second->_OnEmpty(*this);
+
+    ReleaseAllElements();
+    CallAppData(EmptiedCaller());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * Destructor for DgnModel. Free all memory allocated to this DgnModel.
@@ -265,9 +247,7 @@ struct CleanupCaller
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModel::~DgnModel()
     {
-    m_appData.CallAll(CleanupCaller(*this));
-    m_appData.m_list.clear();  // (some handlers may have deleted themselves. Don't allow Empty to call handlers.)
-
+    m_appData.clear();
     Empty();
     }
 
@@ -363,24 +343,6 @@ void DgnModel::AllocateRangeIndex() const
         }
     }
 
-struct FilledCaller
-    {
-    DgnModelR m_model;
-    FilledCaller(DgnModelR model) : m_model(model) {}
-    void CallHandler(DgnModelAppData& handler) const {handler._OnFilled(m_model);}
-    };
-
-/*---------------------------------------------------------------------------------**//**
-* Called after the process of filling a model is complete. Provides an opportunity for application to
-* do things that have to happen after a model is completely filled.
-* @bsimethod                                                    KeithBentley    02/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::_OnModelFillComplete()
-    {
-    SetReadOnly(m_dgndb.IsReadonly());
-    m_appData.CallAll(FilledCaller(*this));
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/07
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -424,7 +386,7 @@ void DgnModel::UpdateRangeIndex(DgnElementCR modified, DgnElementCR original)
         return;
 
     GeometricElementCP origGeom = original._ToGeometricElement();
-    if (nullptr != origGeom)
+    if (nullptr == origGeom)
         return;
 
     GeometricElementCP newGeom = (GeometricElementCP) &modified;
@@ -446,7 +408,7 @@ void DgnModel::UpdateRangeIndex(DgnElementCR modified, DgnElementCR original)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::RegisterElement(DgnElementCR element)
     {
-    if (m_wasFilled)
+    if (m_filled)
         m_elements.Add(element);
 
     AddToRangeIndex(element);
@@ -490,7 +452,7 @@ DgnDbStatus DgnModel::_OnDeleteElement(DgnElementCR element)
 void DgnModel::_OnDeletedElement(DgnElementCR element)
     {
     RemoveFromRangeIndex(element);
-    if (m_wasFilled)
+    if (m_filled)
         m_elements.erase(element.GetElementId());
     }
 
@@ -557,37 +519,129 @@ bool DgnModels::FreeQvCache()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   07/08
+* @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModels::Insert(DgnModelR model, Utf8CP description, bool inGuiList)
+DgnDbStatus DgnModel::_OnDelete()
     {
-    if (model.m_modelId.IsValid())
-        return DgnDbStatus::IdExists;
+    _FillModel();
 
-    if (&model.m_dgndb != &m_dgndb)
-        return DgnDbStatus::WrongDgnDb;
+    for (auto appdata : m_appData)
+        appdata.second->_OnDelete(*this);
 
-    DgnModels::Model row(model.m_name.c_str(), model._GetModelType(), model._GetCoordinateSpace(), model.GetClassId());
-    row.SetDescription(description);
-    row.SetInGuiList(inGuiList);
-    row.GetNameR().Trim();
-    row.GetDescriptionR().Trim();
-
-    if (!IsValidName(row.GetName()))
+    // before we can delete a model, we must delete all of its elements. If that fails, we cannot continue
+    for (auto el : m_elements)
         {
-        BeAssert(false);
-        return  DgnDbStatus::InvalidModelName;
+        DgnDbStatus stat = el.second->Delete();
+        if (DgnDbStatus::Success != stat)
+            return stat;
         }
 
-    if (QueryModelId(row.GetNameCP()).IsValid()) // can't allow two models with the same name
+    return DgnDbStatus::Success;
+    }
+
+struct DeletedCaller {DgnModel::AppData::DropMe operator()(DgnModel::AppData& handler, DgnModelCR model) const {return handler._OnDeleted(model);}};
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel::_OnDeleted()
+    {
+    CallAppData(DeletedCaller());
+    GetDgnDb().Models().DropLoadedModel(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnModel::_OnInsert()
+    {
+    if (m_modelId.IsValid())
+        return DgnDbStatus::IdExists;
+
+    if (&m_dgndb != &m_dgndb)
+        return DgnDbStatus::WrongDgnDb;
+
+    if (!DgnModels::IsValidName(m_name))
+        {
+        BeAssert(false);
+        return DgnDbStatus::InvalidModelName;
+        }
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel::_OnInserted() 
+    {
+    GetDgnDb().Models().AddLoadedModel(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel::_OnLoaded() 
+    {
+    GetDgnDb().Models().AddLoadedModel(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/10
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnModel::Delete()
+    {
+    if (!m_persistent)
+        return DgnDbStatus::WrongModel;
+
+    DgnDbStatus stat = _OnDelete();
+    if (DgnDbStatus::Success != stat)
+        return stat;
+
+    Statement stmt(m_dgndb, "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
+    stmt.BindId(1, m_modelId);
+    return BE_SQLITE_DONE == stmt.Step() ? DgnDbStatus::Success : DgnDbStatus::ModelTableWriteError;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/08
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnModel::Insert(Utf8CP description, bool inGuiList)
+    {
+    DgnDbStatus stat = _OnInsert();
+    if (DgnDbStatus::Success != stat)
+        return stat;
+
+    DgnModels& models = GetDgnDb().Models();
+
+    m_name.Trim();
+    if (models.QueryModelId(m_name.c_str()).IsValid()) // can't allow two models with the same name
         return DgnDbStatus::DuplicateModelName;
 
-    if (BE_SQLITE_OK != InsertModel(row))
-        return DgnDbStatus::ModelTableWriteError;
+    DbResult rc = m_dgndb.GetNextRepositoryBasedId(m_modelId, DGN_TABLE(DGN_CLASSNAME_Model), "Id");
+    BeAssert(rc == BE_SQLITE_OK);
 
-    model.m_modelId = row.GetId(); // retrieve new modelId
-    m_models[model.m_modelId] = &model;  // this holds the reference count
-    return (BE_SQLITE_OK == model.SaveProperties()) ? DgnDbStatus::Success : DgnDbStatus::BadRequest;
+    Statement stmt(m_dgndb, "INSERT INTO " DGN_TABLE(DGN_CLASSNAME_Model) "(Id,Name,Descr,Type,ECClassId,Space,Visibility) VALUES(?,?,?,?,?,?,?)");
+    stmt.BindId(1, m_modelId);
+    stmt.BindText(2, m_name.c_str(), Statement::MakeCopy::No);
+    stmt.BindText(3, description, Statement::MakeCopy::No);
+    stmt.BindInt(4, (int)_GetModelType());
+    stmt.BindId(5, GetClassId());
+    stmt.BindInt(6,(int) _GetCoordinateSpace());
+    stmt.BindInt(7, inGuiList);
+
+    rc = stmt.Step();
+    if (BE_SQLITE_DONE != rc)
+        {
+        BeAssert(false);
+        m_modelId = DgnModelId();
+        return DgnDbStatus::ModelTableWriteError;
+        }
+
+    rc = SaveProperties();
+    BeAssert(rc==BE_SQLITE_OK);
+
+    _OnInserted();
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -603,7 +657,7 @@ void DgnModel::_InitFrom(DgnModelCR other)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelPtr DgnModel::Duplicate(Utf8CP newName) const
+DgnModelPtr DgnModel::Clone(Utf8CP newName) const
     {
     DgnModelPtr newModel = GetModelHandler().Create(DgnModel::CreateParams(m_dgndb, m_classId, newName));
     newModel->_InitFrom(*this);
@@ -619,36 +673,9 @@ ModelHandlerR DgnModel::GetModelHandler() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelP DgnModels::CreateNewModelFromSeed(DgnDbStatus* result, Utf8CP name, DgnModelId seedModelId)
-    {
-    DgnDbStatus t, &status(result ? *result : t);
-    if (!seedModelId.IsValid())
-        {
-        status = DgnDbStatus::BadSeedModel;
-        return nullptr;
-        }
-
-    DgnModelP seedModel = GetModel(seedModelId);
-    if (nullptr == seedModel)
-        {
-        status = DgnDbStatus::BadSeedModel;
-        return nullptr;
-        }
-
-    DgnModelPtr newModel = seedModel->Duplicate(name);
-    status = Insert(*newModel);
-    if (DgnDbStatus::Success != status)
-        return nullptr;
-
-    return newModel.get();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelP DgnModels::CreateDgnModel(DgnModelId modelId)
+DgnModelP DgnModels::LoadDgnModel(DgnModelId modelId)
     {
     DgnModels::Model model;
     if (SUCCESS != QueryModelById(&model, modelId))
@@ -665,8 +692,8 @@ DgnModelP DgnModels::CreateDgnModel(DgnModelId modelId)
         return nullptr;
 
     dgnModel->ReadProperties();
+    dgnModel->_OnLoaded();
 
-    m_models[modelId] = dgnModel; // this holds the reference count
     return dgnModel.get();
     }
 
@@ -688,7 +715,7 @@ DgnModelP DgnModels::GetModel(DgnModelId modelId)
         return  NULL;
 
     DgnModelP dgnModel = FindModel(modelId);
-    return (NULL != dgnModel) ? dgnModel : CreateDgnModel(modelId);
+    return (NULL != dgnModel) ? dgnModel : LoadDgnModel(modelId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -766,13 +793,14 @@ double DgnModel::GetSubPerMaster() const
     return m_properties.GetSubUnit().ConvertDistanceFrom(1.0, m_properties.GetMasterUnit());
     }
 
+struct FilledCaller {DgnModel::AppData::DropMe operator()(DgnModel::AppData& handler, DgnModelCR model) const {return handler._OnFilled(model);}};
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnModel::_FillModel()
+void DgnModel::_FillModel()
     {
     if (IsFilled())
-        return DgnDbStatus::Success;
+        return;
 
     enum Column : int {Id=0,ClassId=1,CategoryId=2,Label=3,Code=4,ParentId=5};
     Statement stmt(m_dgndb, "SELECT Id,ECClassId,CategoryId,Label,Code,ParentId FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
@@ -798,9 +826,8 @@ DgnDbStatus DgnModel::_FillModel()
             stmt.GetValueId<DgnElementId>(Column::ParentId)), true);
         }
 
-    _OnModelFillComplete();
-
-    return  DgnDbStatus::Success;
+    SetReadOnly(m_dgndb.IsReadonly());
+    CallAppData(FilledCaller());
     }
 
 /*--------------------------------------------------------------------------------**//**

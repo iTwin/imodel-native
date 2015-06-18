@@ -92,24 +92,30 @@ public:
         //! A unique identifier for this type of AppData. Use a static instance of this class to identify your AppData.
         struct Key : NonCopyableClass {};
 
+        virtual DgnDbStatus _OnInsert(DgnElementR el) {return DgnDbStatus::Success;}
+        virtual DgnDbStatus _OnUpdate(DgnElementR el, DgnElementCR original){return DgnDbStatus::Success;}
+        virtual DgnDbStatus _OnDelete(DgnElementCR el) {return DgnDbStatus::Success;}
+
+        enum class DropMe {No=0, Yes=1};
+
         //! Called after the element was Inserted.
         //! @param[in]  el the new persistent DgnElement that was Inserted
         //! @return true to drop this appData, false to leave it attached to the DgnElement.
         //! @note el will not be the writable element onto which this AppData was attached. It will be the new persistent copy of that element.
         //! If you wish for your AppData to reside on the new element, call el.AddAppData(key,this) inside this method.
-        virtual bool _OnInserted(DgnElementCR el){return false;}
+        virtual DropMe _OnInserted(DgnElementCR el){return DropMe::No;}
 
         //! Called after the element was Updated.
         //! @param[in] modified the modified DgnElement
         //! @param[in] original the original DgnElement
         //! @return true to drop this appData, false to leave it attached to the DgnElement.
         //! @note This method is called for @b all AppData on both the original and the modified DgnElements.
-        virtual bool _OnUpdated(DgnElementCR modified, DgnElementCR original) {return false;}
+        virtual DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original) {return DropMe::No;}
 
         //! Called after the element was Deleted.
         //! @param[in]  el the DgnElement that was deleted
         //! @return true to drop this appData, false to leave it attached to the DgnElement.
-        virtual bool _OnDeleted(DgnElementCR el) {return false;}
+        virtual DropMe _OnDeleted(DgnElementCR el) {return DropMe::Yes;}
     };
 
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
@@ -119,7 +125,6 @@ private:
     template<class T> void CallAppData(T const& caller) const;
 
 protected:
-
     struct Flags
         {
         uint32_t m_persistent:1;
@@ -128,8 +133,6 @@ protected:
         uint32_t m_inSelectionSet:1;
         uint32_t m_hilited:3;
         uint32_t m_undisplayed:1;
-        uint32_t m_mark1:1;                        // used by applications
-        uint32_t m_mark2:1;                        // used by applications
         Flags() {memset(this, 0, sizeof(*this));}
         };
 
@@ -314,10 +317,6 @@ public:
 
     bool Is3d() const {return nullptr != _ToElement3d();} //!< Determine whether this element is 3d or not
     bool IsSameType(DgnElementCR other) {return m_classId == other.m_classId;}//!< Determine whether this element is the same type (has the same DgnClassId) as another element.
-    void SetMark1(bool yesNo) const {if (m_flags.m_mark1==yesNo) return; m_flags.m_mark1 = yesNo;} //!< @private
-    void SetMark2(bool yesNo) const {if (m_flags.m_mark2==yesNo) return; m_flags.m_mark2 = yesNo;} //!< @private
-    bool IsMarked1() const {return true == m_flags.m_mark1;} //!< @private
-    bool IsMarked2() const {return true == m_flags.m_mark2;} //!< @private
 
     Hilited IsHilited() const {return (Hilited) m_flags.m_hilited;} //!< Get the current Hilited state of this element
     void SetHilited(Hilited newState) const {m_flags.m_hilited = (uint8_t) newState;} //!< Change the current Hilited state of this element
@@ -474,6 +473,7 @@ public:
     //! @note This is a static method that only creates instances of the DgnElement class. To create instances of subclasses,
     //! use a static method on the subclass.
     static DgnElementPtr Create(CreateParams const& params) {return new DgnElement(params);}
+
 };
 
 //=======================================================================================
@@ -696,8 +696,6 @@ struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : DgnElement3d
 protected:
     friend struct PhysicalElementHandler;
 
-    DGNPLATFORM_EXPORT void _OnInserted(DgnElementP) const override;
-    DGNPLATFORM_EXPORT void _OnUpdated(DgnElementCR original) const override;
     PhysicalElementCP _ToPhysicalElement() const override {return this;}
     explicit PhysicalElement(CreateParams const& params) : T_Super(params) {}
 
@@ -766,6 +764,10 @@ protected:
 public:
     //! Create a DrawingElement from CreateParams.
     static DrawingElementPtr Create(CreateParams const& params) {return new DrawingElement(params);}
+
+    //! Query the DgnClassId for the dgn.DrawingElement class in the specified DgnDb.
+    //! @note This is a static method that always returns the DgnClassId of the dgn.DrawingElement class - it does @b not return the class of a specific instance.
+    DGNPLATFORM_EXPORT static DgnClassId QueryClassId(DgnDbR db);
 };
 
 //=======================================================================================
