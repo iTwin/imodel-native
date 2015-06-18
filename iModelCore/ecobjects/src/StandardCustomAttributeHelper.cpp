@@ -699,16 +699,16 @@ ECObjectsStatus ECDbPropertyMap::TryGetCollation(Utf8StringR collation) const
 
 
 //*****************************************************************
-//ECDbRelationshipConstraintMapHelper
+//ECDbRelationshipEndColumnsHelper
 //*****************************************************************
-struct ECDbRelationshipConstraintMapHelper
+struct ECDbRelationshipEndColumnsHelper
     {
 private:
-    ECDbRelationshipConstraintMapHelper();
-    ~ECDbRelationshipConstraintMapHelper();
+    ECDbRelationshipEndColumnsHelper();
+    ~ECDbRelationshipEndColumnsHelper();
 
 public:
-    static ECObjectsStatus TryRead(ECDbRelationshipConstraintMap& constraintMap, IECInstanceCR ca, WCharCP propName);
+    static ECObjectsStatus TryRead(ECDbRelationshipEndColumns& endColumns, IECInstanceCR ca, WCharCP propName);
     };
 
 //*****************************************************************
@@ -725,23 +725,23 @@ ECDbLinkTableRelationshipMap::ECDbLinkTableRelationshipMap(ECRelationshipClassCR
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECDbLinkTableRelationshipMap::TryGetSource(ECDbRelationshipConstraintMap& sourceConstraint) const
+ECObjectsStatus ECDbLinkTableRelationshipMap::TryGetSourceColumns(ECDbRelationshipEndColumns& sourceColumns) const
     {
     if (m_ca == nullptr)
         return ECOBJECTS_STATUS_Error;
 
-    return ECDbRelationshipConstraintMapHelper::TryRead(sourceConstraint, *m_ca, L"Source");
+    return ECDbRelationshipEndColumnsHelper::TryRead(sourceColumns, *m_ca, L"SourceColumns");
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECDbLinkTableRelationshipMap::TryGetTarget(ECDbRelationshipConstraintMap& targetConstraint) const
+ECObjectsStatus ECDbLinkTableRelationshipMap::TryGetTargetColumns(ECDbRelationshipEndColumns& targetColumns) const
     {
     if (m_ca == nullptr)
         return ECOBJECTS_STATUS_Error;
 
-    return ECDbRelationshipConstraintMapHelper::TryRead(targetConstraint, *m_ca, L"Target");
+    return ECDbRelationshipEndColumnsHelper::TryRead(targetColumns, *m_ca, L"TargetColumns");
     }
 
 //---------------------------------------------------------------------------------------
@@ -769,13 +769,13 @@ ECDbForeignKeyRelationshipMap::ECDbForeignKeyRelationshipMap(ECRelationshipClass
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECDbForeignKeyRelationshipMap::TryGetForeignKeyEnd(ECRelationshipEnd& foreignKeyEnd) const
+ECObjectsStatus ECDbForeignKeyRelationshipMap::TryGetEnd(ECRelationshipEnd& foreignKeyEnd) const
     {
     if (m_ca == nullptr)
         return ECOBJECTS_STATUS_Error;
 
     Utf8String foreignKeyEndStr;
-    ECObjectsStatus stat = CustomAttributeReader::TryGetTrimmedValue(foreignKeyEndStr, *m_ca, L"ForeignKeyEnd");
+    ECObjectsStatus stat = CustomAttributeReader::TryGetTrimmedValue(foreignKeyEndStr, *m_ca, L"End");
     if (ECOBJECTS_STATUS_Success != stat)
         return stat;
 
@@ -795,24 +795,57 @@ ECObjectsStatus ECDbForeignKeyRelationshipMap::TryGetForeignKeyEnd(ECRelationshi
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECDbForeignKeyRelationshipMap::TryGetForeignKey(ECDbRelationshipConstraintMap& foreignKeyConstraint) const
+ECObjectsStatus ECDbForeignKeyRelationshipMap::TryGetColumns(ECDbRelationshipEndColumns& foreignKeyColumns) const
     {
     if (m_ca == nullptr)
         return ECOBJECTS_STATUS_Error;
 
-    return ECDbRelationshipConstraintMapHelper::TryRead(foreignKeyConstraint, *m_ca, L"ForeignKey");
+    return ECDbRelationshipEndColumnsHelper::TryRead(foreignKeyColumns, *m_ca, L"Columns");
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   06 / 2015
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus ECDbForeignKeyRelationshipMap::TryGetCreateConstraint(bool& createConstraintFlag) const
+    {
+    if (m_ca == nullptr)
+        return ECOBJECTS_STATUS_Error;
+
+    return CustomAttributeReader::TryGetBooleanValue(createConstraintFlag, *m_ca, L"CreateConstraint");
     }
 
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   06 / 2015
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus ECDbForeignKeyRelationshipMap::TryGetOnDeleteAction(Utf8StringR onDeleteAction) const
+    {
+    if (m_ca == nullptr)
+        return ECOBJECTS_STATUS_Error;
+
+    return CustomAttributeReader::TryGetTrimmedValue(onDeleteAction, *m_ca, L"OnDeleteAction");
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   06 / 2015
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus ECDbForeignKeyRelationshipMap::TryGetOnUpdateAction(Utf8StringR onUpdateAction) const
+    {
+    if (m_ca == nullptr)
+        return ECOBJECTS_STATUS_Error;
+
+    return CustomAttributeReader::TryGetTrimmedValue(onUpdateAction, *m_ca, L"OnUpdateAction");
+    }
+
 //*****************************************************************
-//ECDbRelationshipConstraintMapHelper
+//ECDbRelationshipEndColumnsHelper
 //*****************************************************************
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECObjectsStatus ECDbRelationshipConstraintMapHelper::TryRead(ECDbRelationshipConstraintMap& constraintMap, IECInstanceCR ca, WCharCP propName)
+ECObjectsStatus ECDbRelationshipEndColumnsHelper::TryRead(ECDbRelationshipEndColumns& endColumns, IECInstanceCR ca, WCharCP propName)
     {
     if (WString::IsNullOrEmpty(propName))
         return ECOBJECTS_STATUS_Error;
@@ -838,28 +871,7 @@ ECObjectsStatus ECDbRelationshipConstraintMapHelper::TryRead(ECDbRelationshipCon
     if (ECOBJECTS_STATUS_Success != stat)
         return stat;
 
-    accessString = propName;
-    accessString.append(L".EnforceReferentialIntegrity");
-    bool enforceReferentialIntegrity = false;
-    stat = CustomAttributeReader::TryGetBooleanValue(enforceReferentialIntegrity, ca, accessString.c_str());
-    if (ECOBJECTS_STATUS_Success != stat)
-        return stat;
-
-    accessString = propName;
-    accessString.append(L".OnDeleteAction");
-    Utf8String onDeleteAction;
-    stat = CustomAttributeReader::TryGetTrimmedValue(onDeleteAction, ca, accessString.c_str());
-    if (ECOBJECTS_STATUS_Success != stat)
-        return stat;
-
-    accessString = propName;
-    accessString.append(L".OnUpdateAction");
-    Utf8String onUpdateAction;
-    stat = CustomAttributeReader::TryGetTrimmedValue(onUpdateAction, ca, accessString.c_str());
-    if (ECOBJECTS_STATUS_Success != stat)
-        return stat;
-
-    constraintMap = ECDbRelationshipConstraintMap(ecInstanceIdColumnName.c_str(), ecClassIdColumnName.c_str(), createDefaultIndex, enforceReferentialIntegrity, onDeleteAction.c_str(), onUpdateAction.c_str());
+    endColumns = ECDbRelationshipEndColumns(ecInstanceIdColumnName.c_str(), ecClassIdColumnName.c_str(), createDefaultIndex);
     return ECOBJECTS_STATUS_Success;
     }
 
