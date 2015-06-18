@@ -141,6 +141,7 @@ private:
 public:
     ~PropertyMapRelationshipConstraintClassId () {}
 
+    ECN::ECClassId GetDefaultConstraintECClassId () const { return m_defaultConstraintClassId; }
     static PropertyMapPtr Create (ECN::ECRelationshipEnd constraintEnd, ECDbSchemaManagerCR schemaManager, ECDbSqlColumn* column, ECN::ECClassId defaultSourceECClassId, IClassMap const& classMap, Utf8CP viewColumnAlias = nullptr, ECDbSqlTable* table = nullptr);
     };
 

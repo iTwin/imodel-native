@@ -13,6 +13,38 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 
 struct ECSqlPrepareContext;
+
+//=======================================================================================
+// @bsiclass                                               Affan.Khan           06/2015
+//+===============+===============+===============+===============+===============+======
+struct SqlGenerator
+    {
+    private:
+        static void CollectDerivedEndTableRelationships (std::set<RelationshipClassEndTableMapCP>& childMaps, RelationshipClassMapCR const& classMap);
+        static Utf8String BuildSchemaQualifiedClassName (ECN::ECClassCR ecClass);
+        static Utf8String BuildViewClassName (ECN::ECClassCR ecClass);
+        static BentleyStatus BuildDerivedFilterClause (Utf8StringR filter, ECDb& db, ECN::ECClassId baseClassId);
+        static Utf8CP GetECClassIdPrimaryTableAlias (ECN::ECRelationshipEnd endPoint) { return endPoint == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? "SourceECClassPrimaryTable" : "TargetECClassPrimaryTable"; }
+        static BentleyStatus BuildECInstanceIdConstraintExpression (NativeSqlBuilder::List& fragments, RelationshipClassMapCR classMap, ECN::ECRelationshipEnd endPoint, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
+        static BentleyStatus BuildECClassIdConstraintExpression (NativeSqlBuilder::List& fragments, RelationshipClassMapCR classMap, ECN::ECRelationshipEnd endPoint, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
+        static BentleyStatus BuildRelationshipJoinIfAny (NativeSqlBuilder& sqlBuilder, RelationshipClassMapCR classMap, ECN::ECRelationshipEnd endPoint, bool topLevel);
+        static BentleyStatus BuildEndTableRelationshipView (NativeSqlBuilder::List& viewSql, ECDbMapCR map, RelationshipClassMapCR const& classMap);
+
+        static BentleyStatus BuildPropertyExpression (NativeSqlBuilder& viewSql, PropertyMapCR propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
+        static BentleyStatus BuildColumnExpression (NativeSqlBuilder::List& viewSql, Utf8CP tablePrefix, Utf8CP columnName, Utf8CP accessString, bool addECPropertyPathAlias, bool nullValue, bool escapeColumName = true);
+        static BentleyStatus BuildPointPropertyExpression (NativeSqlBuilder& viewSql, PropertyMapPoint const& propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
+        static BentleyStatus BuildPrimitivePropertyExpression (NativeSqlBuilder& viewSql, PropertyMapToColumnCR propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
+        static BentleyStatus BuildStructPropertyExpression (NativeSqlBuilder& viewSql, PropertyMapToInLineStructCR propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
+        static BentleyStatus BuildSystemSelectionClause (NativeSqlBuilder::List& fragments, ClassMapCR const& classMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
+        static BentleyStatus BuildSelectionClause (NativeSqlBuilder& viewSql, ECDbMapCR map, ClassMapCR const& baseClassMap, ClassMapCR const& classMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
+        static BentleyStatus BuildClassView (NativeSqlBuilder& viewSql, ECDbMapCR map, ClassMapCR const& classMap);
+        static BentleyStatus BuildView (NativeSqlBuilder& viewSql, ECDbMapCR map, IClassMap const& classMap);
+        static BentleyStatus BuildDeleteTriggerForStructArrays (NativeSqlBuilder::List& tiggers, ECDbMapCR map, ClassMapCR const& classMap);
+    public:
+        static BentleyStatus CreateView (ECDbMapR map, IClassMap const& classMap, bool dropViewIfExist);
+
+        static BentleyStatus BuildDeleteTriggers (NativeSqlBuilder::List& tiggers, ECDbMapCR map, ClassMapCR const& classMap);
+    };
 /*=================================================================================**//**
 * @bsiclass                                                     Affan.Khan       07/2013
 +===============+===============+===============+===============+===============+======*/

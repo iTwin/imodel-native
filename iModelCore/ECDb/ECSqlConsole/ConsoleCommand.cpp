@@ -842,7 +842,8 @@ void PopulateCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> cons
         };
 
     RandomECInstanceGenerator rig(classList);
-    auto status = rig.Generate();
+    auto status = rig.Generate (true);
+
     if (status != BentleyStatus::SUCCESS)
         {
         Console::WriteErrorLine("Failed to generate random instances.");

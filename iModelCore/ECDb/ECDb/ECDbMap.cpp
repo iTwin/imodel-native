@@ -165,6 +165,35 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext const& schemaImportContext, b
         return MapStatus::Error;
         }
 
+    for (auto& key : m_classMapDictionary)
+        {
+        if (key.second->GetMapStrategy ().IsMapped ())
+            {
+            if (key.second->GetClass ().GetIsCustomAttributeClass () )
+                continue; 
+
+            SqlGenerator::CreateView (*this, *key.second, true);
+            }
+        }
+
+    for (auto& key : m_classMapDictionary)
+        {
+        if (key.second->GetMapStrategy ().IsMapped ())
+            {
+            if (key.second->GetClass ().GetIsCustomAttributeClass () || key.second->GetClass ().GetRelationshipClassCP () != nullptr)
+                continue;
+
+            NativeSqlBuilder::List triggers;
+            SqlGenerator::BuildDeleteTriggers (triggers, *this, *key.second);
+            for (auto& trigger : triggers)
+                {
+                GetECDbR ().ExecuteSql (trigger.ToString ());
+                }
+            }
+        }
+
+    
+
     EndMapping ();
     return MapStatus::Success;
     }

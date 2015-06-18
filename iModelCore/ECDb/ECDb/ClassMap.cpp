@@ -1498,37 +1498,38 @@ std::unique_ptr<StorageDescription> StorageDescription::Create (IClassMap const&
     {
     Utf8CP const findClassesMappedToPartitionSql =
         "WITH RECURSIVE "
-        "DerivedClassList(RootECClassId, CurrentECClassId, DerivedECClassId) "
-        "AS ("
-        "SELECT Id, Id, Id FROM ec_Class "
-        "UNION "
-        "SELECT RootECClassId,  BC.BaseECClassId, BC.ECClassId "
-        "FROM DerivedClassList DCL "
-        "LEFT OUTER JOIN ec_BaseClass BC ON BC.BaseECClassId = DCL.DerivedECClassId"
-        "),"
-        "TableMapInfo "
-        "AS ("
-        "SELECT DISTINCT ec_Class.Id ECClassId, ec_Table.Name TableName, ec_Table.Id TableId "
-        "FROM ec_PropertyMap "
-        "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId "
-        "JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
-        "JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
-        "JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ECClassId "
-        "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId"
-        ") "
+        "   DerivedClassList(RootECClassId, CurrentECClassId, DerivedECClassId) "
+        "   AS ("
+        "       VALUES (?1, ?1, ?1) "
+        "   UNION "
+        "       SELECT RootECClassId,  BC.BaseECClassId, BC.ECClassId "
+        "           FROM DerivedClassList DCL "
+        "       LEFT OUTER JOIN ec_BaseClass BC ON BC.BaseECClassId = DCL.DerivedECClassId"
+        "   ),"
+        "   TableMapInfo "
+        "   AS ("
+        "   SELECT DISTINCT ec_Class.Id ECClassId, ec_Table.Name TableName, ec_Table.Id TableId "
+        "   FROM ec_PropertyMap "
+        "       JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND ec_Column.UserData != 2"
+        "       JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
+        "       JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
+        "       JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ECClassId "
+        "       JOIN ec_Table ON ec_Table.Id = ec_Column.TableId  AND ec_Table.IsVirtual = 0"
+        "   WHERE ec_ClassMap.MapStrategy NOT IN( 0x2000, 0x4000)"
+        "   ) "
         "SELECT DCL.DerivedECClassId, TMI.TableId, TMI.TableName FROM DerivedClassList DCL "
-        "INNER JOIN TableMapInfo TMI ON TMI.ECClassId = DCL.DerivedECClassId "
-        "WHERE DCL.CurrentECClassId IS NOT NULL AND DCL.RootECClassId = ?";
+        "   INNER JOIN TableMapInfo TMI ON TMI.ECClassId = DCL.DerivedECClassId "
+        "   WHERE DCL.CurrentECClassId IS NOT NULL AND DCL.RootECClassId = ?1";
 
     Utf8CP const findAllClassesMappedToTableSql =
         "SELECT DISTINCT ec_Class.Id "
         "FROM ec_PropertyMap "
-        "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId "
-        "JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
-        "JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
-        "JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ECClassId "
-        "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-        "WHERE ec_Table.Name = ? ORDER BY ec_Class.Id";
+        "   JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND ec_Column.UserData != 2"
+        "   JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
+        "   JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
+        "   JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ECClassId "
+        "   JOIN ec_Table ON ec_Table.Id = ec_Column.TableId  AND ec_Table.IsVirtual = 0  "
+        "WHERE ec_ClassMap.MapStrategy NOT IN(0x2000, 0x4000) AND ec_Table.Name = ? ORDER BY ec_Class.Id";
 
     auto& ecdb = classMap.GetECDbMap().GetECDbR();
     ECClassId classId = classMap.GetClass().GetId();
@@ -1715,7 +1716,7 @@ bool HorizontalPartition::NeedsClassIdFilter() const
     //If class ids are not inversed, we always have a non-empty partition class id list. So filtering is needed.
     //if class ids are inversed, filtering is needed if the inversed list is not empty. If it is empty, it means
     //don't filter at all -> consider all class ids
-    return !m_hasInversedPartitionClassIds || !m_inversedPartitionClassIds.empty();
+    return !m_inversedPartitionClassIds.empty();
     }
 
 //------------------------------------------------------------------------------------------

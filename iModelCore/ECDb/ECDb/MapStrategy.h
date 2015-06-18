@@ -22,7 +22,7 @@ enum class Strategy : uint32_t //0xffffffff
     TablePerClass = 0x8,     // Map class to its own table.
     SharedTableForThisClass = 0x10,  //<TableName> must be provided
     MapToExistingTable = 0x20, //<TableName> must be provided
-    TableForThisClass = 40, //This is not inhertied to children. 
+    TableForThisClass = 0x40, //This is not inhertied to children. 
     //Options that can also be specified along  some map strategies
     ReuseColumns = 0x100,             //Applied to : TablePerClass, TablePerHierarchy, SharedTableForThisClass
     ExclusivelyStoredInThisTable = 0x200, //Applied to : TablePerClass, TablePerHierarchy, SharedTableForThisClass, MapToExistingTable, TablePerClass

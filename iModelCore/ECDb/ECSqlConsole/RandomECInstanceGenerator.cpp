@@ -1,119 +1,122 @@
-#include "RandomECInstanceGenerator.h"
 #include <Bentley/BeTimeUtilities.h>
+#include "RandomECInstanceGenerator.h"
 
 
+USING_NAMESPACE_EC
+USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY
-USING_NAMESPACE_BENTLEY_EC
+
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-void IPropertyValueGenerator::Reset()
+void IPropertyValueGenerator::Reset ()
     {
-    _Reset();
+    _Reset ();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus IPropertyValueGenerator::NextPrimitiveValue(ECValueR value, PrimitiveType valueType)
+BentleyStatus IPropertyValueGenerator::NextPrimitiveValue (ECValueR value, PrimitiveType valueType)
     {
     BentleyStatus r = BentleyStatus::ERROR;
-    switch(valueType)
+    switch (valueType)
         {
         case PrimitiveType::PRIMITIVETYPE_Binary:
-            r = _NextBinary(value); break;
+            r = _NextBinary (value); break;
         case PrimitiveType::PRIMITIVETYPE_Boolean:
-            r = _NextBoolean(value); break;
+            r = _NextBoolean (value); break;
         case PrimitiveType::PRIMITIVETYPE_DateTime:
-            r = _NextDateTime(value); break;
+            r = _NextDateTime (value); break;
         case PrimitiveType::PRIMITIVETYPE_Double:
-            r = _NextDouble(value); break;
+            r = _NextDouble (value); break;
         case PrimitiveType::PRIMITIVETYPE_IGeometry:
-            r = _NextIGeometry(value); break;
+            r = _NextIGeometry (value); break;
         case PrimitiveType::PRIMITIVETYPE_Integer:
-            r = _NextInteger(value); break;
+            r = _NextInteger (value); break;
         case PrimitiveType::PRIMITIVETYPE_Long:
-            r = _NextLong(value); break;
+            r = _NextLong (value); break;
         case PrimitiveType::PRIMITIVETYPE_Point2D:
-            r = _NextPoint2d(value); break;
+            r = _NextPoint2d (value); break;
         case PrimitiveType::PRIMITIVETYPE_Point3D:
-            r = _NextPoint3d(value); break;
+            r = _NextPoint3d (value); break;
         case PrimitiveType::PRIMITIVETYPE_String:
-            r = _NextString(value); break;
+            r = _NextString (value); break;
         }
-                
+
     if (r != BentleyStatus::SUCCESS)
         return r;
 
-    PrimitiveType setType = value.GetPrimitiveType();
-    POSTCONDITION(setType ==  valueType, BentleyStatus::ERROR);
+    PrimitiveType setType = value.GetPrimitiveType ();
+    BeAssert (setType == valueType);
     return BentleyStatus::SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus DefaultPropertyValueGenerator::_NextInteger  (ECValueR value)
+BentleyStatus DefaultPropertyValueGenerator::_NextInteger (ECValueR value)
     {
     m_currentInt32 += m_incrementInt32;
-    return value.SetInteger(m_currentInt32);
+    return value.SetInteger (m_currentInt32);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus DefaultPropertyValueGenerator::_NextDouble   (ECValueR value)
+BentleyStatus DefaultPropertyValueGenerator::_NextDouble (ECValueR value)
     {
-    m_currentDouble += m_incrementDouble ;
-    return value.SetDouble(m_currentDouble);
+    m_currentDouble += m_incrementDouble;
+    return value.SetDouble (m_currentDouble);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus DefaultPropertyValueGenerator::_NextLong     (ECValueR value)
+BentleyStatus DefaultPropertyValueGenerator::_NextLong (ECValueR value)
     {
     m_currentLong += m_incrementLong;
-    return value.SetLong(m_currentInt32);
+    return value.SetLong (m_currentInt32);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus DefaultPropertyValueGenerator::_NextString   (ECValueR value)
+BentleyStatus DefaultPropertyValueGenerator::_NextString (ECValueR value)
     {
     WString strValue;
     m_currentInt32 += m_incrementInt32;
-    strValue.Sprintf(L"%ls-%05d",m_stringPrefix.c_str(),m_currentInt32);
-    return value.SetString(strValue.c_str(), true);
+    strValue.Sprintf (L"%ls-%05d", m_stringPrefix.c_str (), m_currentInt32);
+    return value.SetString (strValue.c_str (), true);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus DefaultPropertyValueGenerator::_NextPoint2d  (ECValueR value)
+BentleyStatus DefaultPropertyValueGenerator::_NextPoint2d (ECValueR value)
     {
-    m_currentPoint2d.Add(m_incrementPoint2d) ;
-    return value.SetPoint2D(m_currentPoint2d);
+    m_currentPoint2d.Add (m_incrementPoint2d);
+    return value.SetPoint2D (m_currentPoint2d);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus DefaultPropertyValueGenerator::_NextPoint3d  (ECValueR value)
+BentleyStatus DefaultPropertyValueGenerator::_NextPoint3d (ECValueR value)
     {
-    m_currentPoint3d.Add(m_incrementPoint3d) ;
-    return value.SetPoint3D(m_currentPoint3d);
+    m_currentPoint3d.Add (m_incrementPoint3d);
+    return value.SetPoint3D (m_currentPoint3d);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus DefaultPropertyValueGenerator::_NextBoolean  (ECValueR value)
+BentleyStatus DefaultPropertyValueGenerator::_NextBoolean (ECValueR value)
     {
     m_currentBoolean = !m_currentBoolean;
-    return value.SetBoolean(m_currentBoolean);
+    return value.SetBoolean (m_currentBoolean);
     }
 
 //---------------------------------------------------------------------------------------
@@ -123,31 +126,31 @@ BentleyStatus DefaultPropertyValueGenerator::_NextDateTime (ECValueR value)
     {
     m_currentDateTimeJulian += m_incrementDateTimeJulian;
     DateTime dateTime;
-    DateTime::FromJulianDay(dateTime, m_currentDateTimeJulian,m_seedDateTime.GetInfo());
-    return value.SetDateTime(dateTime);
+    DateTime::FromJulianDay (dateTime, m_currentDateTimeJulian, m_seedDateTime.GetInfo ());
+    return value.SetDateTime (dateTime);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus DefaultPropertyValueGenerator::_NextBinary   (ECValueR value)
+BentleyStatus DefaultPropertyValueGenerator::_NextBinary (ECValueR value)
     {
     Utf8String strValue, finalValue;
     m_currentInt32 += m_incrementInt32;
-                    
-    while(finalValue.size() < m_binaryLength)
+
+    while (finalValue.size () < m_binaryLength)
         {
-        strValue.Sprintf("B%04d",m_currentInt32);
+        strValue.Sprintf ("B%04d", m_currentInt32);
         finalValue += strValue;
         }
-    auto bytes = (Byte*)finalValue.c_str();
-    return value.SetBinary(bytes, m_binaryLength, true);                 
+    auto bytes = (Byte*)finalValue.c_str ();
+    return value.SetBinary (bytes, m_binaryLength, true);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus DefaultPropertyValueGenerator::_NextIGeometry(ECValueR value)
+BentleyStatus DefaultPropertyValueGenerator::_NextIGeometry (ECValueR value)
     {
     return BentleyStatus::ERROR;
     }
@@ -155,43 +158,43 @@ BentleyStatus DefaultPropertyValueGenerator::_NextIGeometry(ECValueR value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-void DefaultPropertyValueGenerator::Init()
+void DefaultPropertyValueGenerator::Init ()
     {
-    SetSeedBoolean(false);
-    DateTime seed = DateTime(DateTime::Kind::Unspecified, 2000, 01, 01, 0, 0);
-    if (GetProperty() && (
-        (GetProperty()->GetIsPrimitive() && GetProperty()->GetAsPrimitiveProperty()->GetType() ==PRIMITIVETYPE_DateTime) || 
-        (GetProperty()->GetIsArray() && GetProperty()->GetAsArrayProperty()->GetKind() == ARRAYKIND_Primitive && GetProperty()->GetAsArrayProperty()->GetPrimitiveElementType() == PRIMITIVETYPE_DateTime)))
+    SetSeedBoolean (false);
+    DateTime seed = DateTime (DateTime::Kind::Unspecified, 2000, 01, 01, 0, 0);
+    if (GetProperty () && (
+        (GetProperty ()->GetIsPrimitive () && GetProperty ()->GetAsPrimitiveProperty ()->GetType () == PRIMITIVETYPE_DateTime) ||
+        (GetProperty ()->GetIsArray () && GetProperty ()->GetAsArrayProperty ()->GetKind () == ARRAYKIND_Primitive && GetProperty ()->GetAsArrayProperty ()->GetPrimitiveElementType () == PRIMITIVETYPE_DateTime)))
         {
         DateTimeInfo info;
-        if (StandardCustomAttributeHelper::GetDateTimeInfo(info, *GetProperty()) == BentleyStatus::SUCCESS)        
-            seed = DateTime (info.GetInfo(true).GetKind(), seed.GetYear(), seed.GetMonth(), seed.GetDay(), seed.GetHour(),  seed.GetMinute());
+        if (StandardCustomAttributeHelper::GetDateTimeInfo (info, *GetProperty ()) == BentleyStatus::SUCCESS)
+            seed = DateTime (info.GetInfo (true).GetKind (), seed.GetYear (), seed.GetMonth (), seed.GetDay (), seed.GetHour (), seed.GetMinute ());
         }
 
-    SetSeedDateTime(seed, 432/*hectoseconds = 12hrs*/ );
-    SetSeedDouble(10000,0.5);
-    SetSeedInt32(10000,1);
-    SetSeedLong(10000,1);
-    SetSeedPoint2D(DPoint2d::From(1,1),DPoint2d::From(0.2,0.4));
-    SetSeedPoint3D(DPoint3d::From(1,1,1),DPoint3d::From(0.2, 0.4, 0.8));
-    SetStringPrefix(L"StRiNg");
-    SetBinaryLength(18);              
+    SetSeedDateTime (seed, 432/*hectoseconds = 12hrs*/);
+    SetSeedDouble (10000, 0.5);
+    SetSeedInt32 (10000, 1);
+    SetSeedLong (10000, 1);
+    SetSeedPoint2D (DPoint2d::From (1, 1), DPoint2d::From (0.2, 0.4));
+    SetSeedPoint3D (DPoint3d::From (1, 1, 1), DPoint3d::From (0.2, 0.4, 0.8));
+    SetStringPrefix (L"StRiNg");
+    SetBinaryLength (18);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-DefaultPropertyValueGenerator::DefaultPropertyValueGenerator(ECN::ECPropertyCP templateProperty)
-    :m_property(templateProperty)
+DefaultPropertyValueGenerator::DefaultPropertyValueGenerator (ECN::ECPropertyCP templateProperty)
+:m_property (templateProperty)
     {
-    Init();
-    Reset();
+    Init ();
+    Reset ();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-void DefaultPropertyValueGenerator::SetSeedInt32(int32_t seed, int32_t increment)
+void DefaultPropertyValueGenerator::SetSeedInt32 (int32_t seed, int32_t increment)
     {
     m_seedInt32 = seed;
     m_incrementInt32 = increment;
@@ -200,7 +203,7 @@ void DefaultPropertyValueGenerator::SetSeedInt32(int32_t seed, int32_t increment
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-void DefaultPropertyValueGenerator::SetSeedLong(int64_t seed, int64_t increment)
+void DefaultPropertyValueGenerator::SetSeedLong (int64_t seed, int64_t increment)
     {
     m_seedLong = seed;
     m_incrementLong = increment;
@@ -209,7 +212,7 @@ void DefaultPropertyValueGenerator::SetSeedLong(int64_t seed, int64_t increment)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-void DefaultPropertyValueGenerator::SetSeedDouble(double seed, double increment)
+void DefaultPropertyValueGenerator::SetSeedDouble (double seed, double increment)
     {
     m_seedDouble = seed;
     m_incrementDouble = increment;
@@ -218,7 +221,7 @@ void DefaultPropertyValueGenerator::SetSeedDouble(double seed, double increment)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-void DefaultPropertyValueGenerator::SetSeedPoint2D(DPoint2dCR seed, DPoint2d increment)
+void DefaultPropertyValueGenerator::SetSeedPoint2D (DPoint2dCR seed, DPoint2d increment)
     {
     m_seedPoint2d = seed;
     m_incrementPoint2d = increment;
@@ -227,7 +230,7 @@ void DefaultPropertyValueGenerator::SetSeedPoint2D(DPoint2dCR seed, DPoint2d inc
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-void DefaultPropertyValueGenerator::SetSeedPoint3D(DPoint3dCR seed, DPoint3d increment)
+void DefaultPropertyValueGenerator::SetSeedPoint3D (DPoint3dCR seed, DPoint3d increment)
     {
     m_seedPoint3d = seed;
     m_incrementPoint3d = increment;
@@ -236,7 +239,7 @@ void DefaultPropertyValueGenerator::SetSeedPoint3D(DPoint3dCR seed, DPoint3d inc
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-void DefaultPropertyValueGenerator::SetBinaryLength(size_t length)
+void DefaultPropertyValueGenerator::SetBinaryLength (size_t length)
     {
     m_binaryLength = length;
     }
@@ -244,7 +247,7 @@ void DefaultPropertyValueGenerator::SetBinaryLength(size_t length)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-void DefaultPropertyValueGenerator::SetStringPrefix(WStringCR prefix)
+void DefaultPropertyValueGenerator::SetStringPrefix (WStringCR prefix)
     {
     m_stringPrefix = prefix;
     }
@@ -252,7 +255,7 @@ void DefaultPropertyValueGenerator::SetStringPrefix(WStringCR prefix)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-void DefaultPropertyValueGenerator::SetSeedDateTime(DateTime seed, uint64_t julianHectoSecondsIncrement)
+void DefaultPropertyValueGenerator::SetSeedDateTime (DateTime seed, uint64_t julianHectoSecondsIncrement)
     {
     m_seedDateTime = seed;
     m_incrementDateTimeJulian = julianHectoSecondsIncrement;
@@ -261,7 +264,7 @@ void DefaultPropertyValueGenerator::SetSeedDateTime(DateTime seed, uint64_t juli
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-void DefaultPropertyValueGenerator::SetSeedBoolean(bool seed)
+void DefaultPropertyValueGenerator::SetSeedBoolean (bool seed)
     {
     m_seedBoolean = seed;
     }
@@ -269,7 +272,7 @@ void DefaultPropertyValueGenerator::SetSeedBoolean(bool seed)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-void DefaultPropertyValueGenerator::_Reset()
+void DefaultPropertyValueGenerator::_Reset ()
     {
     m_currentInt32 = m_seedInt32;
     m_currentLong = m_seedLong;
@@ -277,110 +280,111 @@ void DefaultPropertyValueGenerator::_Reset()
     m_currentPoint2d = m_seedPoint2d;
     m_currentPoint3d = m_seedPoint3d;
     m_currentBoolean = m_seedBoolean;
-    m_seedDateTime.ToJulianDay(m_currentDateTimeJulian);
+    m_seedDateTime.ToJulianDay (m_currentDateTimeJulian);
     }
 
-RandomPropertyValueGenerator::RandomPropertyValueGenerator()
+RandomPropertyValueGenerator::RandomPropertyValueGenerator ()
     {
-    srand ((uint32_t)BeTimeUtilities::QueryMillisecondsCounter ());
+    //srand (1);
     m_binaryLength = 18;
     }
 
-BentleyStatus RandomPropertyValueGenerator::_NextBinary(ECN::ECValueR value)
+BentleyStatus RandomPropertyValueGenerator::_NextBinary (ECN::ECValueR value)
     {
     int randomNumber = rand ();
     Utf8String strValue, finalValue;
 
-    while(finalValue.size() < m_binaryLength)
+    while (finalValue.size () < m_binaryLength)
         {
-        strValue.Sprintf("B%04d",randomNumber);
+        strValue.Sprintf ("B%04d", randomNumber);
         finalValue += strValue;
         }
-    auto bytes = (Byte*)finalValue.c_str();
-    return value.SetBinary(bytes, m_binaryLength, true);                 
+    auto bytes = (Byte*)finalValue.c_str ();
+    return value.SetBinary (bytes, m_binaryLength, true);
     }
 
-BentleyStatus RandomPropertyValueGenerator::_NextBoolean(ECN::ECValueR value)
+BentleyStatus RandomPropertyValueGenerator::_NextBoolean (ECN::ECValueR value)
     {
     int randomNumber = rand ();
-    return value.SetBoolean(randomNumber % 2 != 0); 
+    return value.SetBoolean (randomNumber % 2 != 0);
     }
 
-BentleyStatus RandomPropertyValueGenerator::_NextDateTime(ECN::ECValueR value)
+BentleyStatus RandomPropertyValueGenerator::_NextDateTime (ECN::ECValueR value)
     {
     DateTime utcTime = DateTime::GetCurrentTimeUtc ();
-    return value.SetDateTime(utcTime); 
+    return value.SetDateTime (utcTime);
     }
 
-BentleyStatus RandomPropertyValueGenerator::_NextDouble(ECN::ECValueR value)
+BentleyStatus RandomPropertyValueGenerator::_NextDouble (ECN::ECValueR value)
     {
-    return value.SetDouble((double) rand () / RAND_MAX);
+    return value.SetDouble ((double)rand () / RAND_MAX);
     }
 
-BentleyStatus RandomPropertyValueGenerator::_NextIGeometry(ECN::ECValueR value)
+BentleyStatus RandomPropertyValueGenerator::_NextIGeometry (ECN::ECValueR value)
     {
-    return BentleyStatus::ERROR;
+    IGeometryPtr line = IGeometry::Create (ICurvePrimitive::CreateLine (DSegment3d::From (0.0, 0.0, 0.0, 1.0, 1.0, 1.0)));
+    return value.SetIGeometry (*line);
     }
 
-BentleyStatus RandomPropertyValueGenerator::_NextInteger(ECN::ECValueR value)
+BentleyStatus RandomPropertyValueGenerator::_NextInteger (ECN::ECValueR value)
     {
-    return value.SetInteger(rand() % 1001); 
+    return value.SetInteger (rand () % 1001);
     }
 
-BentleyStatus RandomPropertyValueGenerator::_NextLong(ECN::ECValueR value)
+BentleyStatus RandomPropertyValueGenerator::_NextLong (ECN::ECValueR value)
     {
     const int32_t intMax = std::numeric_limits<int32_t>::max ();
-    const int64_t longValue = static_cast<int64_t> (intMax) + rand();
-    return value.SetLong(longValue); 
+    const int64_t longValue = static_cast<int64_t> (intMax)+rand ();
+    return value.SetLong (longValue);
     }
 
-BentleyStatus RandomPropertyValueGenerator::_NextPoint2d(ECN::ECValueR value)
+BentleyStatus RandomPropertyValueGenerator::_NextPoint2d (ECN::ECValueR value)
     {
-    double randomNumber = (double) rand () / RAND_MAX;
+    double randomNumber = (double)rand () / RAND_MAX;
     DPoint2d point2d;
-    point2d.x=randomNumber * 1.0;
-    point2d.y=randomNumber * 1.8;
-    return value.SetPoint2D(point2d);
+    point2d.x = randomNumber * 1.0;
+    point2d.y = randomNumber * 1.8;
+    return value.SetPoint2D (point2d);
     }
 
-BentleyStatus RandomPropertyValueGenerator::_NextPoint3d(ECN::ECValueR value)
+BentleyStatus RandomPropertyValueGenerator::_NextPoint3d (ECN::ECValueR value)
     {
-    double randomNumber = (double) rand () / RAND_MAX;
+    double randomNumber = (double)rand () / RAND_MAX;
     DPoint3d point3d;
-    point3d.x=randomNumber * 1.0;
-    point3d.y=randomNumber * 1.8;
-    point3d.z=randomNumber * 2.9;
-    return value.SetPoint3D(point3d);
+    point3d.x = randomNumber * 1.0;
+    point3d.y = randomNumber * 1.8;
+    point3d.z = randomNumber * 2.9;
+    return value.SetPoint3D (point3d);
     }
 
-BentleyStatus RandomPropertyValueGenerator::_NextString(ECN::ECValueR value)
+BentleyStatus RandomPropertyValueGenerator::_NextString (ECN::ECValueR value)
     {
     int randomNumber = rand () % 1001;
 
     WString text;
     text.Sprintf (L"Sample-%d", randomNumber);
-    return value.SetString(text.c_str (), true); 
+    return value.SetString (text.c_str (), true);
     }
 
-void RandomPropertyValueGenerator::_Reset()
+void RandomPropertyValueGenerator::_Reset ()
     {
     srand ((uint32_t)BeTimeUtilities::QueryMillisecondsCounter ());
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-void RandomECInstanceGenerator::Param::AddSchema(ECSchemaCR ecSchema, bool recursively)
+void RandomECInstanceGenerator::Param::AddSchema (ECSchemaCR ecSchema, bool recursively)
     {
     if (recursively)
         {
-        for (auto& refSchema : ecSchema.GetReferencedSchemas())
+        for (auto& refSchema : ecSchema.GetReferencedSchemas ())
             {
             AddSchema (*refSchema.second, recursively);
             }
         }
-    for (auto ecClass : ecSchema.GetClasses())
+    for (auto ecClass : ecSchema.GetClasses ())
         {
-        GetClassList().push_back(ecClass);
+        GetClassList ().push_back (ecClass);
         }
     }
 
@@ -389,43 +393,43 @@ void RandomECInstanceGenerator::Param::AddSchema(ECSchemaCR ecSchema, bool recur
 //---------------------------------------------------------------------------------------
 void RandomECInstanceGenerator::ClassValueGenerator::Init (ECClassCR ecClass, PropertyValueGeneratorFactory* factory)
     {
-    BeAssert(factory != nullptr);
-    m_generators.clear();
-    auto enabler = ecClass.GetDefaultStandaloneEnabler();
+    BeAssert (factory != nullptr);
+    m_generators.clear ();
+    auto enabler = ecClass.GetDefaultStandaloneEnabler ();
     bvector<uint32_t> indices;
-    enabler->GetPropertyIndices(indices, 0);
-    for (auto property : ecClass.GetProperties(true))
+    enabler->GetPropertyIndices (indices, 0);
+    for (auto property : ecClass.GetProperties (true))
         {
-        if (property->IsCalculated())
+        if (property->IsCalculated ())
             continue;
 
-        if (property->GetIsPrimitive() || (property->GetIsArray() && property->GetAsArrayProperty()->GetKind()==ARRAYKIND_Primitive))
-            m_generators[property] = factory->CreateInstance(property);        
+        if (property->GetIsPrimitive () || (property->GetIsArray () && property->GetAsArrayProperty ()->GetKind () == ARRAYKIND_Primitive))
+            m_generators[property] = factory->CreateInstance (property);
         }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-IPropertyValueGenerator* RandomECInstanceGenerator::ClassValueGenerator::GetGenerator(ECPropertyCP property)
+IPropertyValueGenerator* RandomECInstanceGenerator::ClassValueGenerator::GetGenerator (ECPropertyCP property)
     {
-    if (m_generators.find(property) == m_generators.end())
+    if (m_generators.find (property) == m_generators.end ())
         return nullptr;
 
-    return m_generators [property].get();
+    return m_generators[property].get ();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-std::shared_ptr<RandomECInstanceGenerator::ClassValueGenerator> RandomECInstanceGenerator::GetClassValueGenerator(ECClassCR ecClass)
+std::shared_ptr<RandomECInstanceGenerator::ClassValueGenerator> RandomECInstanceGenerator::GetClassValueGenerator (ECClassCR ecClass)
     {
-    auto itor = m_generators.find(&ecClass);
-    if (itor != m_generators.end())
+    auto itor = m_generators.find (&ecClass);
+    if (itor != m_generators.end ())
         return itor->second;
 
-    std::shared_ptr<ClassValueGenerator> newGen = std::make_shared<ClassValueGenerator>();
-    newGen->Init(ecClass, GetParameters().GetValueGeneratorFactory());
+    std::shared_ptr<ClassValueGenerator> newGen = std::make_shared<ClassValueGenerator> ();
+    newGen->Init (ecClass, GetParameters ().GetValueGeneratorFactory ());
     /*if (ecClass.GetIsStruct())*/
     m_generators[&ecClass] = newGen;
 
@@ -435,43 +439,43 @@ std::shared_ptr<RandomECInstanceGenerator::ClassValueGenerator> RandomECInstance
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-void RandomECInstanceGenerator::InitRandom(unsigned int seed)       
+void RandomECInstanceGenerator::InitRandom (unsigned int seed)
     {
-    srand(seed);
+    srand (seed);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-float RandomECInstanceGenerator::GetNextRandom()
+float RandomECInstanceGenerator::GetNextRandom ()
     {
-    return (float)rand()/RAND_MAX;
+    return (float)rand () / RAND_MAX;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-size_t RandomECInstanceGenerator::GetNextRandom(size_t start, size_t end)
+size_t RandomECInstanceGenerator::GetNextRandom (size_t start, size_t end)
     {
-        return (size_t)(start + (GetNextRandom()* (end - start)));
+    return (size_t)(start + (GetNextRandom ()* (end - start)));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-int RandomECInstanceGenerator::GetNextRandom(RandomECInstanceGenerator::Param::RangeValue& range)
-    {       
-    return (int)(range.GetMin() + (GetNextRandom()* range.Delta()));
+int RandomECInstanceGenerator::GetNextRandom (RandomECInstanceGenerator::Param::RangeValue& range)
+    {
+    return (int)(range.GetMin () + (GetNextRandom ()* range.Delta ()));
     }
-    
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-IECInstancePtr RandomECInstanceGenerator::CreateInstance(ECClassCR ecClass)
+IECInstancePtr RandomECInstanceGenerator::CreateInstance (ECClassCR ecClass)
     {
-    auto ecInstance = ecClass.GetDefaultStandaloneEnabler()->CreateInstance();
-    if (ecInstance.IsValid())
-        SetInstanceData(*ecInstance);
+    auto ecInstance = ecClass.GetDefaultStandaloneEnabler ()->CreateInstance ();
+    if (ecInstance.IsValid ())
+        SetInstanceData (*ecInstance);
 
     return ecInstance;
     }
@@ -479,27 +483,27 @@ IECInstancePtr RandomECInstanceGenerator::CreateInstance(ECClassCR ecClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-void RandomECInstanceGenerator::GetConstraintClasses(std::set<ECClassCP>& constraintClasses, ECRelationshipConstraintCR constraint)
+void RandomECInstanceGenerator::GetConstraintClasses (std::set<ECClassCP>& constraintClasses, ECRelationshipConstraintCR constraint)
     {
-    for(auto constraintClass: constraint.GetClasses())
+    for (auto constraintClass : constraint.GetClasses ())
         {
-        if (constraintClasses.find(constraintClass) != constraintClasses.end())
+        if (constraintClasses.find (constraintClass) != constraintClasses.end ())
             continue;
-        if (constraintClass->GetName().Equals(L"AnyClass"))
+        if (constraintClass->GetName ().Equals (L"AnyClass"))
             {
-            for(auto key : m_instances)
+            for (auto key : m_instances)
                 {
-                if (constraintClasses.find(constraintClass) != constraintClasses.end())
+                if (constraintClasses.find (constraintClass) != constraintClasses.end ())
                     continue;
-                constraintClasses.insert(key.first);                
+                constraintClasses.insert (key.first);
                 }
             return;
             }
         else
             {
             constraintClasses.insert (constraintClass);
-            if (constraint.GetIsPolymorphic())
-                GetFlatListOfDerivedClasses(constraintClasses, *constraintClass);
+            if (constraint.GetIsPolymorphic ())
+                GetFlatListOfDerivedClasses (constraintClasses, *constraintClass);
             }
         }
     }
@@ -507,27 +511,27 @@ void RandomECInstanceGenerator::GetConstraintClasses(std::set<ECClassCP>& constr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-void RandomECInstanceGenerator::GetFlatListOfDerivedClasses(std::set<ECClassCP>& derivedClasses, ECClassCR baseClass)
+void RandomECInstanceGenerator::GetFlatListOfDerivedClasses (std::set<ECClassCP>& derivedClasses, ECClassCR baseClass)
     {
-    for(auto derivedClass : baseClass.GetDerivedClasses())
+    for (auto derivedClass : baseClass.GetDerivedClasses ())
         {
-        if (derivedClasses.find(derivedClass) != derivedClasses.end())
+        if (derivedClasses.find (derivedClass) != derivedClasses.end ())
             continue;
 
-        derivedClasses.insert(derivedClass);
-            
-        if (!derivedClasses.empty())
-            GetFlatListOfDerivedClasses(derivedClasses, *derivedClass);
+        derivedClasses.insert (derivedClass);
+
+        if (!derivedClasses.empty ())
+            GetFlatListOfDerivedClasses (derivedClasses, *derivedClass);
         }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-IECInstancePtr RandomECInstanceGenerator::GetRandomInstance( std::vector<IECInstancePtr>& inputList, bool returnAndRemoveFromList)
+IECInstancePtr RandomECInstanceGenerator::GetRandomInstance (std::vector<IECInstancePtr>& inputList, bool returnAndRemoveFromList)
     {
-    auto nPos = GetNextRandom (0, inputList.size());
-    auto selectedInstanceItor = (inputList.begin() + nPos);
+    auto nPos = GetNextRandom (0, inputList.size ());
+    auto selectedInstanceItor = (inputList.begin () + nPos);
     auto selectedInstance = *selectedInstanceItor;
     if (returnAndRemoveFromList)
         inputList.erase (selectedInstanceItor);
@@ -538,23 +542,23 @@ IECInstancePtr RandomECInstanceGenerator::GetRandomInstance( std::vector<IECInst
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus RandomECInstanceGenerator::GenerateInstances(ECClassCR ecClass) 
+BentleyStatus RandomECInstanceGenerator::GenerateInstances (ECClassCR ecClass)
     {
-    PRECONDITION(ecClass.GetRelationshipClassCP() == nullptr, BentleyStatus::ERROR);
+    BeAssert (ecClass.GetRelationshipClassCP () == nullptr);
     int noOfInstance = 0;
-    if (ecClass.GetIsStruct())
-        noOfInstance = GetNextRandom(GetParameters().GetNumberOfStructInstancesToGeneratePerClass());
+    if (ecClass.GetIsStruct ())
+        noOfInstance = GetNextRandom (GetParameters ().GetNumberOfStructInstancesToGeneratePerClass ());
     else
-        noOfInstance = GetNextRandom(GetParameters().GetNumberOfRegularInstancesToGeneratePerClass());
+        noOfInstance = GetNextRandom (GetParameters ().GetNumberOfRegularInstancesToGeneratePerClass ());
 
-//    noOfInstance = 100;
-    for (int i = 0; i < noOfInstance ; i++) 
+    //    noOfInstance = 100;
+    for (int i = 0; i < noOfInstance; i++)
         {
-        auto newECInstance = ecClass.GetDefaultStandaloneEnabler()->CreateInstance();
-        PRECONDITION(newECInstance.IsValid(), BentleyStatus::ERROR);
-        auto r = SetInstanceData(*newECInstance);
-        PRECONDITION(r == BentleyStatus::SUCCESS, r);
-        m_instances[&ecClass].push_back(newECInstance);
+        auto newECInstance = ecClass.GetDefaultStandaloneEnabler ()->CreateInstance ();
+        BeAssert (newECInstance.IsValid ());
+        auto r = SetInstanceData (*newECInstance);
+        BeAssert (r == BentleyStatus::SUCCESS);
+        m_instances[&ecClass].push_back (newECInstance);
         }
 
     return BentleyStatus::SUCCESS;
@@ -563,11 +567,11 @@ BentleyStatus RandomECInstanceGenerator::GenerateInstances(ECClassCR ecClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-bool HasAnyClass(std::set<ECClassCP>& classes)
+bool HasAnyClass (std::set<ECClassCP>& classes)
     {
     for (auto& ecclass : classes)
         {
-        if (ecclass->GetName() == L"AnyClass")
+        if (ecclass->GetName () == L"AnyClass")
             return true;
         }
     return false;
@@ -575,49 +579,49 @@ bool HasAnyClass(std::set<ECClassCP>& classes)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus RandomECInstanceGenerator::GenerateRelationshipInstances(ECRelationshipClassCR ecRelationshipClass)
+BentleyStatus RandomECInstanceGenerator::GenerateRelationshipInstances (ECRelationshipClassCR ecRelationshipClass)
     {
-    auto& sourceConstraint = ecRelationshipClass.GetSource();
-    auto& targetConstraint = ecRelationshipClass.GetTarget();
+    auto& sourceConstraint = ecRelationshipClass.GetSource ();
+    auto& targetConstraint = ecRelationshipClass.GetTarget ();
 
     std::set<ECClassCP> sourceClasses, targetClasses;
     GetConstraintClasses (sourceClasses, sourceConstraint);
     GetConstraintClasses (targetClasses, targetConstraint);
 
-    if(sourceClasses.empty() || targetClasses.empty())
+    if (sourceClasses.empty () || targetClasses.empty ())
         return BentleyStatus::SUCCESS; //not a valid relationship class
-        
+
     std::vector<IECInstancePtr> sourceInstances;
-    if (HasAnyClass(sourceClasses))
+    if (HasAnyClass (sourceClasses))
         {
-        for(auto& inst : m_instances)
-            sourceInstances.insert(sourceInstances.end(), inst.second.begin(), inst.second.end());
+        for (auto& inst : m_instances)
+            sourceInstances.insert (sourceInstances.end (), inst.second.begin (), inst.second.end ());
         }
     else
-        for(auto sourceClass : sourceClasses)
-            {
-            auto& si = m_instances[sourceClass];
-            sourceInstances.insert (sourceInstances.end(), si.begin(), si.end());
-            }
+    for (auto sourceClass : sourceClasses)
+        {
+        auto& si = m_instances[sourceClass];
+        sourceInstances.insert (sourceInstances.end (), si.begin (), si.end ());
+        }
 
     std::vector<IECInstancePtr> targetInstances;
-    if (HasAnyClass(targetClasses))
+    if (HasAnyClass (targetClasses))
         {
-        for(auto& inst : m_instances)
-            targetInstances.insert(targetInstances.end(), inst.second.begin(), inst.second.end());
+        for (auto& inst : m_instances)
+            targetInstances.insert (targetInstances.end (), inst.second.begin (), inst.second.end ());
         }
     else
-        for (auto targetClass: targetClasses)
-            {
-            auto& ti = m_instances[targetClass];
-            targetInstances.insert (targetInstances.end(), ti.begin(), ti.end());
-            }
+    for (auto targetClass : targetClasses)
+        {
+        auto& ti = m_instances[targetClass];
+        targetInstances.insert (targetInstances.end (), ti.begin (), ti.end ());
+        }
 
-    if(sourceInstances.empty() || targetInstances.empty())
+    if (sourceInstances.empty () || targetInstances.empty ())
         return BentleyStatus::ERROR;
- 
-    auto sUL = sourceConstraint.GetCardinality().GetUpperLimit();
-    auto tUL = targetConstraint.GetCardinality().GetUpperLimit();
+
+    auto sUL = sourceConstraint.GetCardinality ().GetUpperLimit ();
+    auto tUL = targetConstraint.GetCardinality ().GetUpperLimit ();
 
     enum class Cardinality
         {
@@ -627,129 +631,168 @@ BentleyStatus RandomECInstanceGenerator::GenerateRelationshipInstances(ECRelatio
         Sm_T1
         } cardinality;
 
-    if (sUL > 1  && tUL > 1)
+    if (sUL > 1 && tUL > 1)
         cardinality = Cardinality::Sm_Tm;
-    else if (sUL > 1  && tUL <= 1)
+    else if (sUL > 1 && tUL <= 1)
         cardinality = Cardinality::Sm_T1;
-    else if (sUL <= 1  && tUL > 1)
+    else if (sUL <= 1 && tUL > 1)
         cardinality = Cardinality::S1_Tm;
-    else if (sUL <= 1  && tUL <= 1)
+    else if (sUL <= 1 && tUL <= 1)
         cardinality = Cardinality::S1_T1;
     else
-        { BeAssert (false); return ERROR; }
+        {
+        BeAssert (false); return ERROR;
+        }
 
-    auto noOfInstancesToGenerate = GetNextRandom(GetParameters().GetNumberOfRelationshipInstancesToGeneratePerClass());
+    auto noOfInstancesToGenerate = GetNextRandom (GetParameters ().GetNumberOfRelationshipInstancesToGeneratePerClass ());
     IECInstancePtr sourceInstance, targetInstance;
     bool hasData = true;
-//    noOfInstancesToGenerate = 100;
-    for( int nPos = 0; nPos < noOfInstancesToGenerate && hasData; nPos++)
+    //noOfInstancesToGenerate = 100;
+    for (int nPos = 0; nPos < noOfInstancesToGenerate && hasData; nPos++)
         {
-        switch(cardinality)
+        switch (cardinality)
             {
             case Cardinality::S1_T1:
-                if (hasData = (!sourceInstances.empty() && !targetInstances.empty()))
+                if (hasData = (!sourceInstances.empty () && !targetInstances.empty ()))
                     {
-                    sourceInstance = GetRandomInstance(sourceInstances, true);
-                    targetInstance = GetRandomInstance(targetInstances, true);
+                    sourceInstance = GetRandomInstance (sourceInstances, true);
+                    targetInstance = GetRandomInstance (targetInstances, true);
                     }
                 break;
             case Cardinality::S1_Tm:
-                if (hasData = (!sourceInstances.empty()))
+                if (hasData = (!targetInstances.empty ()))
                     {
-                    sourceInstance = GetRandomInstance(sourceInstances, true);
-                    targetInstance = GetRandomInstance(targetInstances, false);
+                    sourceInstance = GetRandomInstance (sourceInstances, false);
+                    targetInstance = GetRandomInstance (targetInstances, true);
                     }
-                break;                
+                break;
             case Cardinality::Sm_T1:
-                if (hasData = (!targetInstances.empty()))
+                if (hasData = (!sourceInstances.empty ()))
                     {
-                    sourceInstance = GetRandomInstance(sourceInstances, false);
-                    targetInstance = GetRandomInstance(targetInstances, true);
+                    sourceInstance = GetRandomInstance (sourceInstances, true);
+                    targetInstance = GetRandomInstance (targetInstances, false);
                     }
-                break;                
+                break;
             case Cardinality::Sm_Tm:
-                sourceInstance = GetRandomInstance(sourceInstances, false);
-                targetInstance = GetRandomInstance(targetInstances, false);
-                break;                
+                sourceInstance = GetRandomInstance (sourceInstances, false);
+                targetInstance = GetRandomInstance (targetInstances, false);
+                break;
             };
 
         if (!hasData)
             break;
-       
-        auto enabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (ecRelationshipClass);
-        auto ecRelationshipInstance = enabler->CreateRelationshipInstance ();
-        if (ecRelationshipInstance.IsValid())
-            SetInstanceData (*ecRelationshipInstance);
+        //Before we add this, we need to check that source and target are unique for the cardinality
+        bool addInstance = true;
+        WString newSrcClassName = sourceInstance->GetClass ().GetName ();
+        WString newSrcId = sourceInstance->GetInstanceId ();
+        WString newTarClassName = targetInstance->GetClass ().GetName ();
+        WString newTarId = targetInstance->GetInstanceId ();
+        for (auto& existingEntry : m_relationshipInstances)
+            {
+            //auto ecClass = existingEntry.first;
+            auto const& instanceList = existingEntry.second;
+            FOR_EACH (IECInstancePtr existingInstance, instanceList)
+                {
+                IECRelationshipInstancePtr relInstance = dynamic_cast<IECRelationshipInstance*>(existingInstance.get ());
+                if (cardinality == Cardinality::S1_T1 || cardinality == Cardinality::S1_Tm) // target should be unique
+                    {
+                    WString exstTarClassName = relInstance->GetTarget ()->GetClass ().GetName ();
+                    WString existingTarInstId = relInstance->GetTarget ()->GetInstanceId ();
+                    if (exstTarClassName.Equals (newTarClassName) && existingTarInstId.Equals (newTarId))
+                        {
+                        addInstance = false;
+                        nPos--;
+                        }
+                    }
+                if (cardinality == Cardinality::S1_T1 || cardinality == Cardinality::Sm_T1) // source should be unique
+                    {
+                    WString exstSrcClassName = relInstance->GetSource ()->GetClass ().GetName ();
+                    WString existingSrcInstId = relInstance->GetSource ()->GetInstanceId ();
+                    if (exstSrcClassName.Equals (newSrcClassName) && existingSrcInstId.Equals (newSrcId))
+                        {
+                        addInstance = false;
+                        nPos--;
+                        }
+                    }
+                }
+            }
+        if (addInstance)
+            {
+            auto enabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (ecRelationshipClass);
+            auto ecRelationshipInstance = enabler->CreateRelationshipInstance ();
+            if (ecRelationshipInstance.IsValid ())
+                SetInstanceData (*ecRelationshipInstance);
 
-        ecRelationshipInstance->SetSource(sourceInstance.get());
-        ecRelationshipInstance->SetTarget(targetInstance.get());
-        m_relationshipInstances[&ecRelationshipClass].push_back(ecRelationshipInstance);
+            ecRelationshipInstance->SetSource (sourceInstance.get ());
+            ecRelationshipInstance->SetTarget (targetInstance.get ());
+            m_relationshipInstances[&ecRelationshipClass].push_back (ecRelationshipInstance);
+            }
         }
-       
+
     return BentleyStatus::SUCCESS;
     }
 
-    //---------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
 BentleyStatus RandomECInstanceGenerator::SetPrimitiveValue (ECValueR value, PrimitiveType primitiveType, IPropertyValueGenerator* gen)
     {
-    PRECONDITION(gen != nullptr, BentleyStatus::ERROR);
-    return gen->NextPrimitiveValue(value, primitiveType);
+    BeAssert (gen != nullptr);
+    return gen->NextPrimitiveValue (value, primitiveType);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-ECObjectsStatus RandomECInstanceGenerator::CopyStruct(IECInstanceR target, IECInstanceCR structValue, WCharCP propertyName)
+ECObjectsStatus RandomECInstanceGenerator::CopyStruct (IECInstanceR target, IECInstanceCR structValue, WCharCP propertyName)
     {
-    return CopyStruct(target, *ECValuesCollection::Create(structValue), propertyName);
+    return CopyStruct (target, *ECValuesCollection::Create (structValue), propertyName);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-ECObjectsStatus RandomECInstanceGenerator::CopyStruct(IECInstanceR source, ECValuesCollectionCR collection, WCharCP baseAccessPath)
-    { 
+ECObjectsStatus RandomECInstanceGenerator::CopyStruct (IECInstanceR source, ECValuesCollectionCR collection, WCharCP baseAccessPath)
+    {
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
 
-    for(auto& propertyValue : collection)
+    for (auto& propertyValue : collection)
         {
         WString targetVAS;
         if (baseAccessPath)
             {
-            targetVAS.append(baseAccessPath);
-            targetVAS.append(L".");
+            targetVAS.append (baseAccessPath);
+            targetVAS.append (L".");
             }
 
-        targetVAS.append(propertyValue.GetValueAccessor().GetManagedAccessString());
+        targetVAS.append (propertyValue.GetValueAccessor ().GetManagedAccessString ());
         ECValueAccessor accessor;
-        status = ECValueAccessor::PopulateValueAccessor(accessor, source, targetVAS.c_str());
+        status = ECValueAccessor::PopulateValueAccessor (accessor, source, targetVAS.c_str ());
         if (status == ECOBJECTS_STATUS_ArrayIndexDoesNotExist)
             {
-            status = source.AddArrayElements(accessor.GetAccessString(), 1);
+            status = source.AddArrayElements (accessor.GetAccessString (), 1);
             }
         else if (status != ECOBJECTS_STATUS_Success)
             {
             return status;
             }
 
-        if (propertyValue.HasChildValues())
+        if (propertyValue.HasChildValues ())
             {
-            status = CopyStruct (source, *propertyValue.GetChildValues(), baseAccessPath);
+            status = CopyStruct (source, *propertyValue.GetChildValues (), baseAccessPath);
             if (status != ECOBJECTS_STATUS_Success && status != ECOBJECTS_STATUS_PropertyValueMatchesNoChange)
                 {
-                BeAssert(false && "CopyStruct(): Fail to copy child values");
+                BeAssert (false && "CopyStruct(): Fail to copy child values");
                 return status;
                 }
             continue;
             }
 
         //set primitive value
-        status = source.SetValueUsingAccessor(accessor, propertyValue.GetValue());
+        status = source.SetValueUsingAccessor (accessor, propertyValue.GetValue ());
         if (status != ECOBJECTS_STATUS_Success && status != ECOBJECTS_STATUS_PropertyValueMatchesNoChange)
             {
-            BeAssert(false && "CopyStruct(): Fail to set primitive value");
+            BeAssert (false && "CopyStruct(): Fail to set primitive value");
             return status;
             }
         }
@@ -763,14 +806,14 @@ ECObjectsStatus RandomECInstanceGenerator::CopyStruct(IECInstanceR source, ECVal
 BentleyStatus RandomECInstanceGenerator::SetStructValue (IECInstanceR generatedECInstance, ECClassCR structType, ECPropertyCP ecProperty)
     {
 
-    auto structInstance = structType.GetDefaultStandaloneEnabler()->CreateInstance();
-    PRECONDITION(structInstance.IsValid(), BentleyStatus::ERROR);
+    auto structInstance = structType.GetDefaultStandaloneEnabler ()->CreateInstance ();
+    BeAssert (structInstance.IsValid ());
 
     auto r = SetInstanceData (*structInstance);
-    PRECONDITION(r == BentleyStatus::SUCCESS, r);
-    
-    auto status = CopyStruct(generatedECInstance, *structInstance, ecProperty->GetName().c_str());
-    if ( status != ECOBJECTS_STATUS_Success && status != ECOBJECTS_STATUS_PropertyValueMatchesNoChange)
+    BeAssert (r == BentleyStatus::SUCCESS);
+
+    auto status = CopyStruct (generatedECInstance, *structInstance, ecProperty->GetName ().c_str ());
+    if (status != ECOBJECTS_STATUS_Success && status != ECOBJECTS_STATUS_PropertyValueMatchesNoChange)
         return BentleyStatus::ERROR;
 
     return BentleyStatus::SUCCESS;
@@ -779,75 +822,71 @@ BentleyStatus RandomECInstanceGenerator::SetStructValue (IECInstanceR generatedE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus RandomECInstanceGenerator::SetInstanceData(IECInstanceR generatedECInstance)
+BentleyStatus RandomECInstanceGenerator::SetInstanceData (IECInstanceR generatedECInstance)
     {
     ECValue value;
-    auto gen = GetClassValueGenerator(generatedECInstance.GetClass());
-    for (auto ecProperty: generatedECInstance.GetClass().GetProperties(true))
+    auto gen = GetClassValueGenerator (generatedECInstance.GetClass ());
+    for (auto ecProperty : generatedECInstance.GetClass ().GetProperties (true))
         {
-        bool leaveValueNull = (GetNextRandom() <  GetParameters().GetProbabilityOfNullValuesPerClass());
-        
-        if (ecProperty->IsCalculated()) continue;
-        if (ecProperty->GetIsStruct())
-            {
-            if (leaveValueNull)
-                continue;
+        bool leaveValueNull = (GetNextRandom () <  GetParameters ().GetProbabilityOfNullValuesPerClass ());
+        if (leaveValueNull)
+            continue;
 
-            auto r = SetStructValue (generatedECInstance, ecProperty->GetAsStructProperty()->GetType(), ecProperty);
-            PRECONDITION(r == BentleyStatus::SUCCESS, r);
+        if (ecProperty->IsCalculated ()) continue;
+        if (ecProperty->GetIsStruct ())
+            {
+            auto r = SetStructValue (generatedECInstance, ecProperty->GetAsStructProperty ()->GetType (), ecProperty);
+            BeAssert (r == BentleyStatus::SUCCESS);
             }
-        else if (ecProperty->GetIsPrimitive())
+        else if (ecProperty->GetIsPrimitive ())
             {
-            if (leaveValueNull)
-                continue;
-
-            SetPrimitiveValue (value, ecProperty->GetAsPrimitiveProperty()->GetType(), gen->GetGenerator(ecProperty));
-            generatedECInstance.SetValue (ecProperty->GetName().c_str(), value);
+            SetPrimitiveValue (value, ecProperty->GetAsPrimitiveProperty ()->GetType (), gen->GetGenerator (ecProperty));
+            generatedECInstance.SetValue (ecProperty->GetName ().c_str (), value);
             }
-        else if (ecProperty->GetIsArray())
+        else if (ecProperty->GetIsArray ())
             {
-            auto arrayProperty  = ecProperty->GetAsArrayProperty();
-            if(arrayProperty->GetKind() == ARRAYKIND_Primitive && arrayProperty->GetPrimitiveElementType() == PRIMITIVETYPE_IGeometry)
+            auto arrayProperty = ecProperty->GetAsArrayProperty ();
+            if (arrayProperty->GetKind () == ARRAYKIND_Primitive && arrayProperty->GetPrimitiveElementType () == PRIMITIVETYPE_IGeometry)
                 continue;
 
-            auto maxArrayEntries = (uint32_t)GetNextRandom(GetParameters().GetNumberOfArrayElementsToGenerate());
+            auto maxArrayEntries = (uint32_t)GetNextRandom (GetParameters ().GetNumberOfArrayElementsToGenerate ());
 
-            if( (arrayProperty->GetMaxOccurs() - arrayProperty->GetMinOccurs()) < maxArrayEntries)
+            if ((arrayProperty->GetMaxOccurs () - arrayProperty->GetMinOccurs ()) < maxArrayEntries)
                 continue;
 
-            generatedECInstance.AddArrayElements (ecProperty->GetName().c_str (), maxArrayEntries);
-            if (arrayProperty->GetKind() == ARRAYKIND_Struct)
+            generatedECInstance.AddArrayElements (ecProperty->GetName ().c_str (), maxArrayEntries);
+            if (arrayProperty->GetKind () == ARRAYKIND_Struct)
                 {
 
-                for ( uint32_t i=0 ; i < maxArrayEntries; i++ )
+                for (uint32_t i = 0; i < maxArrayEntries; i++)
                     {
-                    auto structInstance = arrayProperty->GetStructElementType()->GetDefaultStandaloneEnabler()->CreateInstance();
-                    PRECONDITION(structInstance.IsValid(), BentleyStatus::ERROR);
+                    auto structInstance = arrayProperty->GetStructElementType ()->GetDefaultStandaloneEnabler ()->CreateInstance ();
+                    BeAssert (structInstance.IsValid ());
 
                     auto r = SetInstanceData (*structInstance);
-                    PRECONDITION(r == BentleyStatus::SUCCESS, r)
-                        value.SetStruct(structInstance.get());
+                    BeAssert (r == BentleyStatus::SUCCESS);
+                    value.SetStruct (structInstance.get ());
 
-                    auto status = generatedECInstance.SetValue (ecProperty->GetName().c_str (), value, i);
+                    auto status = generatedECInstance.SetValue (ecProperty->GetName ().c_str (), value, i);
                     if (status != ECOBJECTS_STATUS_Success)
                         {
-                        BeAssert(false);
+                        BeAssert (false);
                         return BentleyStatus::ERROR;
                         }
                     }
                 }
-            else if (arrayProperty->GetKind() == ARRAYKIND_Primitive )
+            else if (arrayProperty->GetKind () == ARRAYKIND_Primitive)
                 {
-                for ( uint32_t i=0 ; i < maxArrayEntries; i++ )
+                for (uint32_t i = 0; i < maxArrayEntries; i++)
                     {
-                    SetPrimitiveValue (value, arrayProperty->GetPrimitiveElementType(), gen->GetGenerator(ecProperty));
-                    auto status = generatedECInstance.SetValue (ecProperty->GetName().c_str (), value, i);
+                    SetPrimitiveValue (value, arrayProperty->GetPrimitiveElementType (), gen->GetGenerator (ecProperty));
+                    auto status = generatedECInstance.SetValue (ecProperty->GetName ().c_str (), value, i);
                     if (status != ECOBJECTS_STATUS_Success)
                         {
-                        BeAssert(false);
+                        BeAssert (false);
                         return BentleyStatus::ERROR;
                         }
-                    
+
                     }
                 }
             }
@@ -858,7 +897,7 @@ BentleyStatus RandomECInstanceGenerator::SetInstanceData(IECInstanceR generatedE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-RandomECInstanceGenerator::Param& RandomECInstanceGenerator::GetParameters()
+RandomECInstanceGenerator::Param& RandomECInstanceGenerator::GetParameters ()
     {
     return m_param;
     }
@@ -866,50 +905,93 @@ RandomECInstanceGenerator::Param& RandomECInstanceGenerator::GetParameters()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus RandomECInstanceGenerator::Generate()
+BentleyStatus RandomECInstanceGenerator::Generate (bool includeRelationships)
     {
     std::vector<ECClassCP> structs;
     std::vector<ECClassCP> classes;
     std::vector<ECRelationshipClassCP> relationships;
 
-    this->m_instances.clear();
-    this->m_relationshipInstances.clear();
-    this->m_generators.clear();
+    this->m_instances.clear ();
+    this->m_relationshipInstances.clear ();
+    this->m_generators.clear ();
 
-    for(auto ecClass : GetParameters().GetClassList())
+    for (auto ecClass : GetParameters ().GetClassList ())
         {
-        if (ecClass->GetIsCustomAttributeClass())
+        if (ecClass->GetIsCustomAttributeClass ())
             continue;
 
-        if (GetParameters().GenerateInstancesForEmptyClasses())
-            if (ecClass->GetDefaultStandaloneEnabler()->GetClassLayout().GetPropertyCount() == 0)
-                continue;
+        if (GetParameters ().GenerateInstancesForEmptyClasses ())
+        if (ecClass->GetDefaultStandaloneEnabler ()->GetClassLayout ().GetPropertyCount () == 0)
+            continue;
 
-        if (!ecClass->GetIsDomainClass())
-            if (!GetParameters().GenerateInstancesForNoneDomainClasses())
-                continue;
+        if (!ecClass->GetIsDomainClass ())
+        if (!GetParameters ().GenerateInstancesForNoneDomainClasses ())
+            continue;
 
-        if (ecClass->GetIsStruct())
-            structs.push_back(ecClass);
-        else if (auto relationshipClass = ecClass->GetRelationshipClassCP())
-            relationships.push_back(relationshipClass);
+        if (ecClass->GetIsStruct ())
+            structs.push_back (ecClass);
+        else if (auto relationshipClass = ecClass->GetRelationshipClassCP ())
+            relationships.push_back (relationshipClass);
         else
-            classes.push_back(ecClass);
+            classes.push_back (ecClass);
         }
 
-    for(auto ecStruct : structs)
+    for (auto ecStruct : structs)
         {
-        POSTCONDITION(GenerateInstances(*ecStruct) == BentleyStatus::SUCCESS, BentleyStatus::ERROR);
+        BeAssert (GenerateInstances (*ecStruct) == BentleyStatus::SUCCESS);
         }
 
-    for(auto ecClass : classes)
+    for (auto ecClass : classes)
         {
-        POSTCONDITION(GenerateInstances(*ecClass) == BentleyStatus::SUCCESS, BentleyStatus::ERROR);
+        BeAssert (GenerateInstances (*ecClass) == BentleyStatus::SUCCESS);
         }
 
-    for(auto ecRelationshipClass : relationships)
+    if (includeRelationships)
         {
-        POSTCONDITION(GenerateRelationshipInstances(*ecRelationshipClass) == BentleyStatus::SUCCESS, BentleyStatus::ERROR);
+        for (auto ecRelationshipClass : relationships)
+            {
+            BeAssert (GenerateRelationshipInstances (*ecRelationshipClass) == BentleyStatus::SUCCESS);
+            }
+        }
+    return BentleyStatus::SUCCESS;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Majd Uddin     10/2014
+//---------------------------------------------------------------------------------------
+BentleyStatus RandomECInstanceGenerator::GenerateRelationships ()
+    {
+    std::vector<ECClassCP> structs;
+    std::vector<ECClassCP> classes;
+    std::vector<ECRelationshipClassCP> relationships;
+
+    //this->m_instances.clear(); // We want other instances to check for cardinality
+    this->m_relationshipInstances.clear ();
+    this->m_generators.clear ();
+
+    for (auto ecClass : GetParameters ().GetClassList ())
+        {
+        if (ecClass->GetIsCustomAttributeClass ())
+            continue;
+
+        if (GetParameters ().GenerateInstancesForEmptyClasses ())
+        if (ecClass->GetDefaultStandaloneEnabler ()->GetClassLayout ().GetPropertyCount () == 0)
+            continue;
+
+        if (!ecClass->GetIsDomainClass ())
+        if (!GetParameters ().GenerateInstancesForNoneDomainClasses ())
+            continue;
+
+        if (ecClass->GetIsStruct ())
+            structs.push_back (ecClass);
+        else if (auto relationshipClass = ecClass->GetRelationshipClassCP ())
+            relationships.push_back (relationshipClass);
+        else
+            classes.push_back (ecClass);
+        }
+
+    for (auto ecRelationshipClass : relationships)
+        {
+        BeAssert (GenerateRelationshipInstances (*ecRelationshipClass) == BentleyStatus::SUCCESS);
         }
 
     return BentleyStatus::SUCCESS;
