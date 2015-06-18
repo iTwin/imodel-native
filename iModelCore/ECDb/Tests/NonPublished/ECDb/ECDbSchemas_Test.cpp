@@ -436,7 +436,10 @@ Utf8String CopyOldProfileTestFileEx (Utf8CP fileName)
     return Utf8String (targetPath.GetNameUtf8 ());
     }
 
-TEST (SQLite, SqliteIssue)
+//---------------------------------------------------------------------------------------
+// @bsimethods                                     Affan.Khan                  05/14
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST(ECDbSchemas, SqliteIssue)
     {
     // Save a test project
     ECDbTestProject saveTestProject;
@@ -453,6 +456,7 @@ TEST (SQLite, SqliteIssue)
     stmt.Prepare (db, sql);
     stmt.Step ();
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethods                                     Affan.Khan                  05/14
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1311,7 +1315,7 @@ ECSchemaCachePtr CreateImportSchemaAgainstExistingTablesTestSchema ()
 void AssertImportedSchema (DbR ecdb, Utf8CP expectedSchemaName, Utf8CP expectedClassName, Utf8CP expectedPropertyName)
     {
     CachedStatementPtr findClassStmt = nullptr;
-    ecdb.GetCachedStatement (findClassStmt, "SELECT NULL FROM ec_Class c, ec_Schema s WHERE c.ECSchemaId = s.Id AND s.Name = ? AND c.Name = ? LIMIT 1");
+    ecdb.GetCachedStatement (findClassStmt, "SELECT NULL FROM ec_Class c, ec_Schema s WHERE c.SchemaId = s.Id AND s.Name = ? AND c.Name = ? LIMIT 1");
     findClassStmt->BindText (1, expectedSchemaName, Statement::MakeCopy::No);
     findClassStmt->BindText (2, expectedClassName, Statement::MakeCopy::No);
     EXPECT_EQ (BE_SQLITE_ROW, findClassStmt->Step ()) << "ECClass " << expectedClassName << " of ECSchema " << expectedSchemaName << " is expected to be found in ec_Class table.";
@@ -1319,7 +1323,7 @@ void AssertImportedSchema (DbR ecdb, Utf8CP expectedSchemaName, Utf8CP expectedC
     if (expectedPropertyName != nullptr)
         {
         CachedStatementPtr findPropertyStmt = nullptr;
-        ecdb.GetCachedStatement (findPropertyStmt, "SELECT NULL FROM ec_Property p, ec_Class c, ec_Schema s WHERE p.ECClassId = c.Id AND c.ECSchemaId = s.Id AND s.Name = ? AND c.Name = ? AND p.Name = ? LIMIT 1");
+        ecdb.GetCachedStatement (findPropertyStmt, "SELECT NULL FROM ec_Property p, ec_Class c, ec_Schema s WHERE p.ClassId = c.Id AND c.SchemaId = s.Id AND s.Name = ? AND c.Name = ? AND p.Name = ? LIMIT 1");
         findPropertyStmt->BindText (1, expectedSchemaName, Statement::MakeCopy::No);
         findPropertyStmt->BindText (2, expectedClassName, Statement::MakeCopy::No);
         findPropertyStmt->BindText (3, expectedPropertyName, Statement::MakeCopy::No);
@@ -1787,7 +1791,7 @@ TEST(ECDbSchemas, CheckCustomAttributesXmlFormatTest)
 
     //now retrieve the persisted CA XML from ECDb directly
     Statement stmt;
-    DbResult stat = stmt.Prepare (db, "SELECT Instance from ec_CustomAttribute ca, ec_Class c where ca.ECClassId = c.Id AND c.Name = 'MyCA'");
+    DbResult stat = stmt.Prepare (db, "SELECT Instance from ec_CustomAttribute ca, ec_Class c where ca.ClassId = c.Id AND c.Name = 'MyCA'");
     ASSERT_EQ (BE_SQLITE_OK, stat) << L"Preparing the SQL statement to fetch the persisted CA XML string failed.";
 
     int rowCount = 0;
@@ -1836,7 +1840,7 @@ TEST(ECDbSchemas, HandlingMismatchesBetweenCAInstanceAndCAClassTest)
 
         //now remove one of the CA properties only in the CA class definition again
         Statement stmt;
-        DbResult stat = stmt.Prepare (db, "delete from ec_Property WHERE Name = 'dateprop' and ECClassId = (select Id from ec_Class where Name = 'MyCA')");
+        DbResult stat = stmt.Prepare (db, "delete from ec_Property WHERE Name = 'dateprop' and ClassId = (select Id from ec_Class where Name = 'MyCA')");
         ASSERT_EQ (BE_SQLITE_OK, stat) << L"Preparing the SQL statement to delete row from ec_Property failed.";
         stat = stmt.Step ();
         ASSERT_EQ (BE_SQLITE_DONE, stat) << L"Executing SQL statement to delete row from ec_Property failed";
