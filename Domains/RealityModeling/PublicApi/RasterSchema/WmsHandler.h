@@ -56,7 +56,7 @@ struct WmsMap
     };
 
 //=======================================================================================
-// @bsiclass                                                    Eric.Paquet     04/2015
+// @bsiclass                                                     Mathieu.Marchand  6/2015
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE WmsModel : RasterModel
 {
@@ -89,7 +89,7 @@ public:
 //=======================================================================================
 // Model handler for raster
 // Instances of WmsModel must be able to assume that their handler is a WmsModelHandler.
-// @bsiclass                                                    Eric.Paquet     04/2015
+// @bsiclass                                                     Mathieu.Marchand  6/2015
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE WmsModelHandler : RasterModelHandler
 {

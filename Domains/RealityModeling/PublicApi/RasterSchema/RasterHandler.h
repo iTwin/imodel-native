@@ -38,7 +38,6 @@ protected:
 
     RasterQuadTreeP GetTree();
 
-    //&&MM todo AsWmsModel() AsRasterFileModel()
 public:
     //! Create a new RasterModel object, in preparation for loading it from the DgnDb.
     RasterModel(CreateParams const& params);

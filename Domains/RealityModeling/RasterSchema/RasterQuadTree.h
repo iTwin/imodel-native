@@ -126,6 +126,10 @@ public:
 
     void Draw (ViewContextR context);
 
+    //! Some format look best when increased quality is used. ex. WMS. Or we just want to display faster. Full quality is 1.0.
+    void SetVisibleQualityFactor(double factor) {m_visibleQualityFactor=factor;}
+    double GetVisibleQualityFactor() const {return m_visibleQualityFactor;}
+
 private:
     
     RasterQuadTree(RasterSourceR source, DgnDbR dgnDb);
@@ -133,6 +137,7 @@ private:
     DgnDbR m_dgnDb;                 
     RasterSourcePtr m_pSource; 
     RasterTilePtr m_pRoot;          // The lowest/coarser resolution. 
+    double m_visibleQualityFactor;
 };
 
 

@@ -30,8 +30,12 @@ struct RasterProgressiveDisplay : IProgressiveDisplay, NonCopyableClass
 protected:
     RasterQuadTreeR m_raster;
 
-    bvector<RasterTilePtr>  m_pMissingTiles;
-    bvector<RasterTilePtr>  m_pVisiblesTiles;
+    bvector<RasterTilePtr>      m_visiblesTiles;    // all the tiles to display. 
+    std::list<RasterTilePtr>    m_missingTiles;     // Tiles that need to be requested.
+    std::list<RasterTilePtr>    m_pendingTiles;     // Tiles that were requested and we are waiting for them to arrive.     
+
+    uint64_t m_nextRetryTime;                             //!< When to re-try m_pendingTiles. unix millis UTC
+    uint64_t m_waitTime;                                  //!< How long to wait before re-trying m_pendingTiles. millis 
 
     struct SortByResolution
         {
@@ -185,8 +189,8 @@ bool RasterTile::Draw(ViewContextR context)
             pt.z = extents.low.z - 1;
         }
 
-    static bool s_DrawTileShape = m_pDisplayTile.IsNull();    //&&MM for testing.
-    if(s_DrawTileShape)
+    static bool s_DrawTileShape = true;    //&&MM for testing.
+    if(m_pDisplayTile.IsNull() && s_DrawTileShape)
         {
         ElemMatSymb elemMatSymb;
         auto colorIdx = ColorDef(222, 0, 0, 128);
@@ -225,7 +229,7 @@ bool RasterTile::Draw(ViewContextR context)
     if(!m_pDisplayTile.IsValid())
         return false;
 
-    static bool s_invert = true;
+    static bool s_invert = true;    //&&MM I don't understand why I need to that. investigate.
     if (s_invert)
         {
         std::swap (uvPts[0], uvPts[2]);
@@ -304,8 +308,7 @@ void RasterTile::QueryVisible(bvector<RasterTilePtr>& visibles, ViewContextR con
     double factor;
     if (IsVisible(context, factor))
         {
-        static double s_qualityFactor = /*1.25*/1.0001; //&&MM make that an option to adjust speed vs quality? 1.0 is better for wms
-        if (!IsLeaf() && factor > s_qualityFactor)
+        if (!IsLeaf() && factor > m_tree.GetVisibleQualityFactor())
             {
             AllocateChildren(); 
 
@@ -421,6 +424,8 @@ RasterQuadTree::RasterQuadTree(RasterSourceR source, DgnDbR dgnDb)
     {    
     // Create the lowest LOD but do not load its data yet.
     m_pRoot = RasterTile::CreateRoot(*this);
+
+    m_visibleQualityFactor = 1.25; 
     }
 
 //----------------------------------------------------------------------------------------
@@ -574,13 +579,13 @@ void RasterProgressiveDisplay::Draw (ViewContextR context)
     if (!ShouldDrawInConvext (context) || NULL == context.GetViewport())
         return;
 
-    m_raster.QueryVisible(m_pVisiblesTiles, context);
+    m_raster.QueryVisible(m_visiblesTiles, context);
 
     // Draw background tiles if any, that gives feedback when zooming in.
     // Background tiles need to be draw from coarser resolution to finer resolution to make sure coarser tiles are not hiding finer tiles.
 //&&MM not now. we have a Z fighting issue between coarser and real tiles. 
 //     SortedTiles backgroundTiles;
-//     FindBackgroudTiles(backgroundTiles, m_pVisiblesTiles, 4/*maxResDelta*/);
+//     FindBackgroudTiles(backgroundTiles, m_visiblesTiles, 4/*maxResDelta*/);
 //     for(RasterTilePtr& pTile : backgroundTiles)
 //         {
 //         BeAssert(pTile->IsLoaded());
@@ -588,7 +593,7 @@ void RasterProgressiveDisplay::Draw (ViewContextR context)
 //         }
 
     // Draw what we have.
-    for(RasterTilePtr& pTile : m_pVisiblesTiles)
+    for(RasterTilePtr& pTile : m_visiblesTiles)
         {
         if(pTile->IsLoaded())
             {
@@ -600,12 +605,16 @@ void RasterProgressiveDisplay::Draw (ViewContextR context)
             // Draw finer resolution.
             //DrawLoadedChildren(*pTile, context, 2/*resolutionDelta*/);
 
-            m_pMissingTiles.push_back(pTile);
+            m_missingTiles.push_back(pTile);
             }
         }
 
-    if(!m_pMissingTiles.empty())
+    if(!m_missingTiles.empty())
+        {
         context.GetViewport()->ScheduleProgressiveDisplay (*this);
+        m_waitTime = 50;
+        m_nextRetryTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis() + m_waitTime;
+        }
     }
 
 //----------------------------------------------------------------------------------------
@@ -613,10 +622,36 @@ void RasterProgressiveDisplay::Draw (ViewContextR context)
 //----------------------------------------------------------------------------------------
 IProgressiveDisplay::Completion RasterProgressiveDisplay::_Process(ViewContextR context)
     {
+    if (BeTimeUtilities::GetCurrentTimeAsUnixMillis() < m_nextRetryTime)
+        {
+       // LOG.tracev("Wait %lld until next retry", m_nextRetryTime - BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+        return Completion::Aborted;
+        }
+
+    while(!m_missingTiles.empty())
+        {
+        auto pTile = m_missingTiles.back();
+        m_missingTiles.pop_back();
+
+        DisplayTileP pDisplayTile = pTile->GetDisplayTileP(true);  // Read from cache or request it. Won't be requested twice by the reality data cache.
+        if(NULL != pDisplayTile)
+            {
+            pTile->Draw(context);
+            }
+        else
+            {
+            pTile->Draw(context);   //&&MM debug purpose. it will draw the border if data is missing.
+            // Tile was not available and was requested. We'll check for it at a later time.
+            m_pendingTiles.push_back(pTile);
+            }
+
+        if (context.CheckStop())
+            return Completion::Aborted;
+        }
+
     IProgressiveDisplay::Completion completion = Completion::Finished;
 
-    //&&MM see notes in ::Draw.
-    for (auto pTile = m_pMissingTiles.begin(); pTile != m_pMissingTiles.end();  /* incremented or erased in loop*/ )
+    for (auto pTile = m_pendingTiles.begin(); pTile != m_pendingTiles.end();  /* incremented or erased in loop*/ )
         {
         if (context.CheckStop())
             {
@@ -624,16 +659,23 @@ IProgressiveDisplay::Completion RasterProgressiveDisplay::_Process(ViewContextR 
             break;
             }
 
-        (*pTile)->GetDisplayTileP(true);  // Read from cache or request it. Won't be requested twice by the reality data cache.
-        if((*pTile)->Draw(context))
+        DisplayTileP pDisplayTile = (*pTile)->GetDisplayTileP(false);  // Read from cache. do not request again.
+        if(NULL != pDisplayTile)
             {
-            pTile = m_pMissingTiles.erase(pTile);
+            (*pTile)->Draw(context);
+            pTile = m_pendingTiles.erase(pTile);
             }
         else
             {
-            ++pTile;
+            ++pTile;    // Will retry later
             completion = Completion::Aborted;   // at least one did not finish
             }        
+        }
+
+    if (completion != Completion::Finished)
+        {
+        m_waitTime = MIN(1000, (uint64_t)(m_waitTime * 1.1));
+        m_nextRetryTime = BeTimeUtilities::GetCurrentTimeAsUnixMillis() + m_waitTime;  
         }
 
     return completion;    

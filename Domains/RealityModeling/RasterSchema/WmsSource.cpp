@@ -11,6 +11,9 @@
 
 #define TABLE_NAME_WmsTileData "WmsTileData"
 
+#define  CONTENT_TYPE_PNG       "image/png"
+#define  CONTENT_TYPE_JPEG      "image/jpeg"
+
 USING_NAMESPACE_BENTLEY_SQLITE
 
 //=======================================================================================
@@ -42,6 +45,8 @@ private:
 
 private:
     WmsTileData(){}
+
+    bool IsSupportedContent(Utf8StringCR contentType) const;
         
 protected:
     virtual Utf8CP _GetId() const override {return m_url.c_str();}
@@ -67,8 +72,6 @@ public:
 //----------------------------------------------------------------------------------------
 bool WmsTileData::_IsExpired() const 
     {
-    //&&MM maybe we could the expiration date to handle errors. e.g. set a short expiration date for errors, timeout.
-    //     that way the caller would receive the WmsTileData and we would retry at a later time.
     return DateTime::CompareResult::EarlierThan == DateTime::Compare(GetExpirationDate(), DateTime::GetCurrentTime());
     }
 
@@ -142,6 +145,19 @@ BeSQLiteRealityDataStorage::DatabasePrepareAndCleanupHandlerPtr WmsTileData::_Ge
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
+bool WmsTileData::IsSupportedContent(Utf8StringCR contentType) const
+    {
+    // Only jpeg and png for now.
+    // "application/vnd.ogc.se_xml" would be a Wms exception. In the future, we should report that to the user.
+    if(contentType.EqualsI (CONTENT_TYPE_PNG) || contentType.EqualsI (CONTENT_TYPE_JPEG))
+        return true;
+    
+    return false;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  6/2015
+//----------------------------------------------------------------------------------------
 BentleyStatus WmsTileData::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> const& header, bvector<Byte> const& body, HttpRealityDataSource::RequestOptions const& requestOptions) 
     {
     BeAssert(nullptr != dynamic_cast<RequestOptions const*>(&requestOptions));
@@ -154,8 +170,9 @@ BentleyStatus WmsTileData::_InitFrom(Utf8CP url, bmap<Utf8String, Utf8String> co
     if (contentTypeIter == header.end())
         return ERROR;
 
-    //&&MM filter out Content-Type that should be reported as error. ex. xml exception content. How to return result to caller? we need to have a tileData.
-    // maybe we could return error in the persist method.
+    // Reject and don't cache what we can't consumed.
+    if(!IsSupportedContent(contentTypeIter->second))
+        return BSIERROR;
 
     m_contentType = contentTypeIter->second.c_str();
     m_data = body;
@@ -323,7 +340,6 @@ WmsSource::WmsSource(WmsMap const& mapInfo)
 //----------------------------------------------------------------------------------------
 DisplayTilePtr WmsSource::_QueryTile(TileId const& id, bool request)
     {
-    //&&MM source should return raster data so caller can do what they want with it.
     Utf8String tileUrl = BuildTileUrl(id);
 
     //      We are using tiledRaster but it should be extended to support more pixeltype and compression or have a new type?
@@ -331,10 +347,12 @@ DisplayTilePtr WmsSource::_QueryTile(TileId const& id, bool request)
     RefCountedPtr<WmsTileData::RequestOptions> pOptions = WmsTileData::RequestOptions::Create(true, request);
         
     //&&MM for WMS it looks like I will need another kind of tiledRaster to handle exception response from the server.
-    //for example, a badly formated request generate an XML response. This is badly interpreted as a valid response(HttpRealityDataSourceRequest::_Handle) and 
-    // stored into the dataCache.  contentType equals "application/vnd.ogc.se_xml" (required by wms spec).
-    // Poss sol:  reject in TiledRaster::_InitFrom
-    //&&MM as the database get bigger(I guess 500MB) the first call is very very slow. sorting by string is probably not a good idea either
+    //     for example, a badly formated request generate an XML response. This is badly interpreted as a valid response(HttpRealityDataSourceRequest::_Handle) and 
+    //     stored into the dataCache.  contentType equals "application/vnd.ogc.se_xml" (required by wms spec).
+    //     Poss sol:  reject in TiledRaster::_InitFrom >>> did that for now.
+    // *** maybe we could use the expiration date to handle errors. e.g. set a short expiration date for errors, timeout.
+    //     that way the caller would receive the WmsTileData and we would retry at a later time.
+    // *** as the database get bigger(I guess 500MB) the first call is very very slow. sorting by string is probably not a good idea either
     //     Maybe one table per server?  and use TileId or hash the url ?
     //     BeSQLiteRealityDataStorage::wt_Prepare call to "VACCUUM" is the reason why we have such a big slowdown.
     RefCountedPtr<WmsTileData> pWmsTileData = T_HOST.GetRealityDataAdmin().GetCache().Get<WmsTileData>(tileUrl.c_str(), *pOptions);
@@ -344,17 +362,17 @@ DisplayTilePtr WmsSource::_QueryTile(TileId const& id, bool request)
 
     auto const& data = pWmsTileData->GetData();
     ImageUtilities::RgbImageInfo actualImageInfo;// = pWmsTileData->GetImageInfo();
-    Utf8String contentType = pWmsTileData->GetContentType();
+    Utf8StringCR contentType = pWmsTileData->GetContentType();
     
     BentleyStatus status;
 
     m_decompressBuffer.clear(); // reuse the same buffer, in order to minimize mallocs
 
-    if (contentType.Equals ("image/png"))
+    if (contentType.EqualsI (CONTENT_TYPE_PNG))
         {
         status = ImageUtilities::ReadImageFromPngBuffer (m_decompressBuffer, actualImageInfo, data.data(), data.size());
         }
-    else if (contentType.Equals ("image/jpeg"))
+    else if (contentType.EqualsI (CONTENT_TYPE_JPEG))
         {
         //&&MM I don't understand this concept of expected image info. The fileRead should output that info.
         ImageUtilities::RgbImageInfo expectedImageInfo;
@@ -391,7 +409,6 @@ Utf8String WmsSource::BuildTileUrl(TileId const& tileId)
     DPoint3d tileCorners[4];
     ComputeTileCorners(tileCorners, tileId);
 
-    // &&MM need to limit our request for border tiles to the data window range?  
     GeoPoint2d tileOrigin;
     tileOrigin.latitude = tileCorners[0].y;
     tileOrigin.longitude = tileCorners[0].x;

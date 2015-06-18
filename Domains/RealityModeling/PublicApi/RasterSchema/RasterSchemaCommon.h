@@ -19,11 +19,9 @@
 #define RASTERSCHEMA_REF_COUNTED_PTR(_sname_) \
     BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE struct _sname_; DEFINE_REF_COUNTED_PTR(_sname_) END_BENTLEY_RASTERSCHEMA_NAMESPACE
 
-//&&MM add missing 'DgnPlatform::' in MODELHANDLER_DECLARE_MEMBERS(DgnModel.h)? 
 #define RASTERMODELHANDLER_DECLARE_MEMBERS(__ECClassName__,__classname__,_handlerclass__,_handlersuperclass__,__exporter__) \
         private: virtual DgnPlatform::DgnModel* _CreateInstance(DgnPlatform::DgnModel::CreateParams const& params) override {return new __classname__(__classname__::CreateParams(params));}\
         DOMAINHANDLER_DECLARE_MEMBERS(__ECClassName__,_handlerclass__,_handlersuperclass__,__exporter__)
-
 
 //-----------------------------------------------------------------------------------------
 // ECClass name

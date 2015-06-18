@@ -17,18 +17,15 @@ DOMAIN_DEFINE_MEMBERS(RasterDomain)
 //-----------------------------------------------------------------------------------------
 RasterDomain::RasterDomain() : DgnDomain(BENTLEY_RASTER_SCHEMA_NAME, "Bentley Raster Domain", 1) 
     {
-    RegisterHandler(RasterModelHandler::GetHandler()); //&&MM do we need to register this abstract handler? baseModelHandler would be enough?
+    RegisterHandler(RasterModelHandler::GetHandler()); 
     RegisterHandler(WmsModelHandler::GetHandler());
     RegisterHandler(RasterFileModelHandler::GetHandler());
-
+//&&ep1
     //Initialize ImagePP host
     ImagePP::ImageppLib::Initialize(*new MyImageppLibHost());
-/* &&ep - need this ?
-    if (!SessionManager::InitBaseGCS())
-        return false;
 
-    return true;
-*/
+    // Make sure GCS is initialized. It is required before we start using BaseGCS object.
+    T_HOST.GetGeoCoordinationAdmin()._GetServices();
     }
  
 //-----------------------------------------------------------------------------------------

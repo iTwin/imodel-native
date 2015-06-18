@@ -87,9 +87,7 @@ DgnModelId RasterFileModelHandler::CreateRasterFileModel(DgnDbR db, BeFileName f
 RasterFileModel::RasterFileModel(CreateParams const& params) 
 :T_Super (params)
     {
-    //&&ep need this here ? or maybe in Register domain instead.
-    // Make sure GCS is initialized
-    T_HOST.GetGeoCoordinationAdmin()._GetServices();
+
     }
 
 //----------------------------------------------------------------------------------------
@@ -99,9 +97,7 @@ RasterFileModel::RasterFileModel(CreateParams const& params, RasterFilePropertie
 :T_Super (params),
  m_fileProperties(properties)
     {
-    // &&ep need this here ? or maybe in Register domain instead.
-    // Make sure GCS is initialized
-    T_HOST.GetGeoCoordinationAdmin()._GetServices();
+
     }
 
 //----------------------------------------------------------------------------------------
