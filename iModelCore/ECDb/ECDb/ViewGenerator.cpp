@@ -882,11 +882,11 @@ BentleyStatus ViewGenerator::AppendConstraintClassIdPropMap (NativeSqlBuilder& v
         switch (systemView)
             {
                 case SystemViewType::Class: //ECClass and ECStructs (all primary instances)
-                    classSql = "SELECT c.Id FROM ec_Class c JOIN ec_ClassMap m ON c.ID = m.ECClassId WHERE (m.MapStrategy  <> 3 AND m.MapStrategy  <> 8) AND c.IsRelationship <> 1"; break;
+                    classSql = "SELECT c.Id FROM ec_Class c JOIN ec_ClassMap m ON c.ID = m.ClassId WHERE (m.MapStrategy  <> 3 AND m.MapStrategy  <> 8) AND c.IsRelationship <> 1"; break;
                 case SystemViewType::RelationshipClass: //RelationshipOnly
-                    classSql = "SELECT C.Id FROM ec_Class c JOIN ec_ClassMap m ON c.ID = m.ECClassId WHERE (m.MapStrategy  <> 3 AND m.MapStrategy  <> 8) AND c.IsRelationship = 1"; break;
+                    classSql = "SELECT C.Id FROM ec_Class c JOIN ec_ClassMap m ON c.ID = m.ClassId WHERE (m.MapStrategy  <> 3 AND m.MapStrategy  <> 8) AND c.IsRelationship = 1"; break;
                 case SystemViewType::StructArray: //Structs only (all struct array instances)
-                    classSql = "SELECT C.Id FROM ec_Class c JOIN ec_ClassMap m ON c.ID = m.ECClassId WHERE (m.MapStrategy  <> 3 AND m.MapStrategy  <> 8) AND c.IsStruct = 1"; break;
+                    classSql = "SELECT C.Id FROM ec_Class c JOIN ec_ClassMap m ON c.ID = m.ClassId WHERE (m.MapStrategy  <> 3 AND m.MapStrategy  <> 8) AND c.IsStruct = 1"; break;
             }
 
         BeAssert (classSql != nullptr);
@@ -949,46 +949,15 @@ BentleyStatus ViewGenerator::AppendConstraintClassIdPropMap (NativeSqlBuilder& v
         tableMap[&pair.second->GetTable ()].push_back (pair.second);
         }
 
-    if (!classesToInclude.empty ())
+    for (auto& pair : tableMap)
         {
-        Statement stmt;
-        auto status= stmt.Prepare (map.GetECDbR (), "SELECT COUNT(*) FROM ec_ClassMap GROUP BY MapToDbTable WHERE MapToDbTable = ?");
-        if (status != BE_SQLITE_OK)
-            {
-            BeAssert (false && "Failed to prepare statement");
-            return BentleyStatus::ERROR;
-            }
-
-        for (auto& pair : tableMap)
-            {
-            stmt.BindText (1, pair.first->GetName (), Statement::MakeCopy::No);
-            if (stmt.Step () != BE_SQLITE_ROW)
-                {
-                BeAssert (false);
-                return BentleyStatus::ERROR;
-                }
-
-            if (pair.second.size() == (size_t)stmt.GetValueInt (0))
-                tableToIncludeEntirly.insert (pair.first);
-
-            tableMapDb[pair.first] = (size_t)stmt.GetValueInt (0);
-
-            stmt.Reset ();
-            stmt.ClearBindings ();
-            }
+        tableToIncludeEntirly.insert (pair.first);
         }
-    else
-        {
-        for (auto& pair : tableMap)
-            {
-            tableToIncludeEntirly.insert (pair.first);
-            }
 
-        for (auto& pair : tableMap)
-            {
-            tableToIncludeEntirly.insert (pair.first);
-            tableMapDb[pair.first] = pair.second.size ();
-            }
+    for (auto& pair : tableMap)
+        {
+        tableToIncludeEntirly.insert (pair.first);
+        tableMapDb[pair.first] = pair.second.size ();
         }
 
     if (tableMap.empty ())
@@ -1068,7 +1037,7 @@ void ViewGenerator::CreateSystemClassView (NativeSqlBuilder &viewSql, std::map<E
         bool includeEntireTable = tableToIncludeEntirly.find (tableP) != tableToIncludeEntirly.end ();
         IClassMap const* classMap = classMaps[0];
         ECDbSqlColumn const* ecInstanceIdColumn = classMap->GetPropertyMap (L"ECInstanceId")->GetFirstColumn ();
-        ECDbSqlColumn const* ecClassIdColumn = tableP->FindColumnCP ("ECclassId");
+        ECDbSqlColumn const* ecClassIdColumn = tableP->FindColumnCP ("ECClassId");
 
         if (tableP->GetPersistenceType() == PersistenceType::Virtual)
             continue;

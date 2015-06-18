@@ -36,7 +36,7 @@ private:
         static DbResult CreateTableECRelationshipConstraintClass (Db& db);
         static DbResult CreateTableECRelationshipConstraintClassProperty (Db& db);
         static DbResult CreateTableCustomAttribute (Db& db);
-        static DbResult CreateTableReferences (Db& db);
+        static DbResult CreateTableSchemaReferences (Db& db);
         static DbResult CreateTableECPropertyMap (Db& db);
         static DbResult CreateTablePropertyPath (Db& db);
         static DbResult CreateTableTable (Db& db);

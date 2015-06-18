@@ -347,7 +347,7 @@ Db& db
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    stat = CreateTableReferences(db);
+    stat = CreateTableSchemaReferences(db);
     if (stat != BE_SQLITE_OK)
         return stat;
 
@@ -429,7 +429,7 @@ Db& db
         "CREATE TABLE ec_Class "
         "("
         "Id INTEGER PRIMARY KEY, "
-        "ECSchemaId INTEGER NOT NULL REFERENCES ec_Schema(Id) ON DELETE CASCADE, "
+        "SchemaId INTEGER NOT NULL REFERENCES ec_Schema(Id) ON DELETE CASCADE, "
         "Name TEXT NOT NULL, "
         "DisplayLabel TEXT, "
         "Description TEXT, "
@@ -460,7 +460,7 @@ Db& db
         "CREATE Table ec_ClassMap"
         "("
         "Id INTEGER PRIMARY KEY,"
-        "ECClassId INTEGER NOT NULL REFERENCES ec_Class (Id) ON DELETE CASCADE,"
+        "ClassId INTEGER NOT NULL REFERENCES ec_Class (Id) ON DELETE CASCADE,"
         "ParentId INTEGER REFERENCES ec_ClassMap (Id) ON DELETE CASCADE,"
         "MapStrategy INTEGER NOT NULL"
         ");");
@@ -468,7 +468,7 @@ Db& db
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return db.ExecuteSql("CREATE UNIQUE INDEX uix_ec_ClassMap_ECClassId_ParentId ON ec_ClassMap (ECClassId, ParentId) WHERE ParentId IS NOT NULL;");
+    return db.ExecuteSql("CREATE UNIQUE INDEX uix_ec_ClassMap_ClassId_ParentId ON ec_ClassMap (ClassId, ParentId) WHERE ParentId IS NOT NULL;");
     }
 
 //-----------------------------------------------------------------------------------------
@@ -483,17 +483,17 @@ Db& db
     auto stat = db.ExecuteSql(
         "CREATE TABLE ec_BaseClass "
         "("
-        "ECClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE, "
-        "BaseECClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE, "
-        "ECIndex INTEGER NOT NULL, /*Location of baseclass in BaseClasses array*/ "
-        "PRIMARY KEY (ECClassId, BaseECClassId)"
+        "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE, "
+        "BaseClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE, "
+        "Ordinal INTEGER NOT NULL, /*Location of baseclass in BaseClasses array*/ "
+        "PRIMARY KEY (ClassId, BaseClassId)"
         ");");
 
     if (stat != BE_SQLITE_OK)
         return stat;
 
     //index needed for fast look-ups of derived classes for a given ECClass
-    return db.ExecuteSql("CREATE INDEX ix_ec_BaseClass_BaseECClassId ON ec_BaseClass (BaseECClassId);");
+    return db.ExecuteSql("CREATE INDEX ix_ec_BaseClass_BaseClassId ON ec_BaseClass (BaseClassId);");
     }
 
 //-----------------------------------------------------------------------------------------
@@ -509,7 +509,7 @@ Db& db
         "CREATE Table ec_PropertyPath"
         "("
         "Id INTEGER PRIMARY KEY,"
-        "RootECPropertyId INTEGER NOT NULL REFERENCES ec_Property (Id) ON DELETE CASCADE,"
+        "RootPropertyId INTEGER NOT NULL REFERENCES ec_Property (Id) ON DELETE CASCADE,"
         "AccessString TEXT NOT NULL"
         ");");
 
@@ -517,7 +517,7 @@ Db& db
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return db.ExecuteSql("CREATE UNIQUE INDEX uix_ec_PropertyPath_RootPropertyId_AccessString ON ec_PropertyPath (RootECPropertyId, AccessString);");
+    return db.ExecuteSql("CREATE UNIQUE INDEX uix_ec_PropertyPath_RootPropertyId_AccessString ON ec_PropertyPath (RootPropertyId, AccessString);");
     }
 
 //-----------------------------------------------------------------------------------------
@@ -533,15 +533,14 @@ Db& db
         "CREATE TABLE ec_Property "
         "("
         "Id INTEGER PRIMARY KEY,"
-        "ECClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE, "
+        "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE, "
         "Name TEXT NOT NULL, "
         "DisplayLabel TEXT, "
         "Description TEXT, "
-        "ECIndex INTEGER, "
+        "Ordinal INTEGER, "
         "IsArray BOOL NOT NULL CHECK (IsArray IN (0, 1)), "
-        "TypeCustom TEXT, "
-        "TypeECPrimitive SMALLINT, "
-        "TypeECStruct INTEGER REFERENCES ec_Class(Id) ON DELETE CASCADE, "
+        "PrimitiveType SMALLINT, "
+        "StructType INTEGER REFERENCES ec_Class(Id) ON DELETE CASCADE, "
         "IsReadOnly BOOL NOT NULL CHECK (IsReadOnly IN (0, 1)), "
         "MinOccurs INTEGER,"
         "MaxOccurs INTEGER"
@@ -554,7 +553,7 @@ Db& db
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    return db.ExecuteSql("CREATE INDEX ix_ec_Property_ECClassId ON ec_Property (ECClassId);");
+    return db.ExecuteSql("CREATE INDEX ix_ec_Property_ClassId ON ec_Property (ClassId);");
     }
 
 //-----------------------------------------------------------------------------------------
@@ -589,13 +588,13 @@ Db& db
     return db.ExecuteSql(
         "CREATE TABLE ec_RelationshipConstraint "
         "("
-        "ECClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE, "
-        "ECRelationshipEnd BOOL NOT NULL CHECK (ECRelationshipEnd IN (0, 1)), "
+        "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE, "
+        "RelationshipEnd BOOL NOT NULL CHECK (RelationshipEnd IN (0, 1)), "
         "CardinalityLowerLimit INTEGER, "
         "CardinalityUpperLimit INTEGER, "
         "RoleLabel TEXT, " 
         "IsPolymorphic BOOL NOT NULL CHECK (IsPolymorphic IN (0, 1)), "
-        "PRIMARY KEY (ECClassId, ECRelationshipEnd)"
+        "PRIMARY KEY (ClassId, RelationshipEnd)"
         ");");
     }
 
@@ -611,12 +610,12 @@ Db& db
     return db.ExecuteSql(
         "CREATE TABLE ec_RelationshipConstraintClass "
         "("
-        "ECClassId INTEGER NOT NULL, "
-        "ECRelationshipEnd BOOL NOT NULL, "
-        "RelationECClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE, "
-        "PRIMARY KEY (ECClassId, ECRelationshipEnd, RelationECClassId), "
-        "FOREIGN KEY (ECClassId, ECRelationshipEnd) "
-        "REFERENCES ec_RelationshipConstraint(ECClassId, ECRelationshipEnd) ON DELETE CASCADE"
+        "ClassId INTEGER NOT NULL, "
+        "RelationshipEnd BOOL NOT NULL, "
+        "RelationClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE, "
+        "PRIMARY KEY (ClassId, RelationshipEnd, RelationClassId), "
+        "FOREIGN KEY (ClassId, RelationshipEnd) "
+        "REFERENCES ec_RelationshipConstraint(ClassId, RelationshipEnd) ON DELETE CASCADE"
         ");");
     }
 
@@ -632,13 +631,13 @@ Db& db
     return db.ExecuteSql(
         "CREATE TABLE ec_RelationshipConstraintClassProperty "
         "("
-        "ECClassId INTEGER NOT NULL, "
-        "ECRelationshipEnd BOOL NOT NULL, "
-        "RelationECClassId INTEGER NOT NULL, "
-        "RelationECPropertyId INTEGER NOT NULL, "
-        "PRIMARY KEY (ECClassId, ECRelationshipEnd, RelationECClassId, RelationECPropertyId), "
-        "FOREIGN KEY (ECClassId, ECRelationshipEnd, RelationECClassId) REFERENCES ec_RelationshipConstraintClass (ECClassId, ECRelationshipEnd, RelationECClassId) ON DELETE CASCADE, "
-        "FOREIGN KEY (RelationECPropertyId) REFERENCES ec_Property (Id) ON DELETE CASCADE"
+        "ClassId INTEGER NOT NULL, "
+        "RelationshipEnd BOOL NOT NULL, "
+        "RelationClassId INTEGER NOT NULL, "
+        "RelationPropertyId INTEGER NOT NULL, "
+        "PRIMARY KEY (ClassId, RelationshipEnd, RelationClassId, RelationPropertyId), "
+        "FOREIGN KEY (ClassId, RelationshipEnd, RelationClassId) REFERENCES ec_RelationshipConstraintClass (ClassId, RelationshipEnd, RelationClassId) ON DELETE CASCADE, "
+        "FOREIGN KEY (RelationPropertyId) REFERENCES ec_Property (Id) ON DELETE CASCADE"
         ");");
     }
 
@@ -655,10 +654,10 @@ Db& db
         "CREATE TABLE ec_CustomAttribute ("
         "ContainerId INTEGER NOT NULL, "
         "ContainerType INTEGER NOT NULL, "
-        "[Index] INTEGER NOT NULL, "
-        "ECClassId INTEGER NOT NULL REFERENCES ec_Class(Id), "
+        "Ordinal INTEGER NOT NULL, "
+        "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id), "
         "Instance TEXT, "
-        "PRIMARY KEY (ContainerId, ContainerType, ECClassId)"
+        "PRIMARY KEY (ContainerId, ContainerType, ClassId)"
         ");");
     }
 
@@ -666,15 +665,15 @@ Db& db
 // @bsimethod                                                    Affan.Khan        05/2012
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-DbResult ECDbProfileManager::ProfileCreator::CreateTableReferences 
+DbResult ECDbProfileManager::ProfileCreator::CreateTableSchemaReferences 
 (
 Db& db
 )
     {
     return db.ExecuteSql(
         "CREATE TABLE ec_SchemaReference ("
-        "ECSchemaId INTEGER REFERENCES ec_Schema(Id) ON DELETE CASCADE, "
-        "ReferenceECSchemaId INTEGER REFERENCES ec_Schema(Id) ON DELETE CASCADE"
+        "SchemaId INTEGER REFERENCES ec_Schema(Id) ON DELETE CASCADE, "
+        "ReferencedSchemaId INTEGER REFERENCES ec_Schema(Id) ON DELETE CASCADE"
         ");");
     }
 
@@ -715,12 +714,12 @@ Db& db
         "Type INTEGER NOT NULL,"
         "IsVirtual BOOLEAN NOT NULL,"
         "Ordinal INTEGER NOT NULL,"
-        "Constraint_NotNull BOOLEAN,"
-        "Constraint_Unique BOOLEAN,"
-        "Constraint_Check TEXT,"
-        "Constraint_Default TEXT,"
-        "Constraint_Collation INTEGER,"
-        "PrimaryKey_Ordinal INTEGER,"
+        "NotNullConstraint BOOLEAN,"
+        "UniqueConstraint BOOLEAN,"
+        "CheckConstraint TEXT,"
+        "DefaultConstraint TEXT,"
+        "CollationConstraint INTEGER,"
+        "OrdinalInPrimaryKey INTEGER,"
         "UserData INTEGER"
         ");");
 
@@ -788,7 +787,7 @@ Db& db
         "("
         "Id INTEGER PRIMARY KEY,"
         "TableId INTEGER NOT NULL REFERENCES ec_Table (Id) ON DELETE CASCADE,"
-        "ReferenceTableId INTEGER NOT NULL REFERENCES ec_Table (Id) ON DELETE CASCADE,"
+        "ReferencedTableId INTEGER NOT NULL REFERENCES ec_Table (Id) ON DELETE CASCADE,"
         "Name TEXT COLLATE NOCASE,"
         "OnDelete INTEGER,"
         "OnUpdate INTEGER"
@@ -806,7 +805,7 @@ DbResult ECDbProfileManager::ProfileCreator::CreateTableForeignKeyColumn(Db& db)
         "("
         "ForeignKeyId INTEGER NOT NULL REFERENCES ec_ForeignKey (Id) ON DELETE CASCADE,"
         "ColumnId INTEGER NOT NULL  REFERENCES ec_Column (Id) ON DELETE CASCADE,"
-        "ReferenceColumnId INTEGER NOT NULL  REFERENCES ec_Column (Id) ON DELETE CASCADE,"
+        "ReferencedColumnId INTEGER NOT NULL  REFERENCES ec_Column (Id) ON DELETE CASCADE,"
         "Ordinal INTEGER NOT NULL"
         ");");
     }

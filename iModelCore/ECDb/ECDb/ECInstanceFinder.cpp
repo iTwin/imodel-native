@@ -191,11 +191,11 @@ void ECInstanceFinder::Finalize()
 void ECInstanceFinder::FindEndClasses (bset<ECClassId>& endClassIds, ECClassId relationshipClassId, ECRelationshipEnd relationshipEnd, ECDbCR ecDb)
     {
     Utf8CP sql = 
-        "SELECT EndConstraintClass.RelationECClassId "
+        "SELECT EndConstraintClass.RelationClassId "
         "FROM ec_RelationshipConstraintClass EndConstraintClass "
         "JOIN ec_RelationshipConstraint EndConstraint "
-        "ON (EndConstraint.ECClassId == EndConstraintClass.ECClassId AND EndConstraint.ECRelationshipEnd == EndConstraintClass.ECRelationshipEnd) "
-        "WHERE EndConstraintClass.ECClassId=?1 AND EndConstraintClass.ECRelationshipEnd=?2 ";
+        "ON (EndConstraint.ClassId == EndConstraintClass.ClassId AND EndConstraint.RelationshipEnd == EndConstraintClass.RelationshipEnd) "
+        "WHERE EndConstraintClass.ClassId=?1 AND EndConstraintClass.RelationshipEnd=?2 ";
 
     BeSQLite::CachedStatementPtr stmt;
     ecDb.GetCachedStatement(stmt, sql);
@@ -228,17 +228,17 @@ DbResult ECInstanceFinder::FindRelationshipsOnEnd (QueryableRelationshipVector& 
         " WITH RECURSIVE"
         "    BaseClassesOfEndClass(ClassId) AS  ("
         "    VALUES (@endClassId)"
-        "    UNION SELECT BaseECClassId FROM ec_BaseClass, BaseClassesOfEndClass WHERE ec_BaseClass.ECClassId=BaseClassesOfEndClass.ClassId"
+        "    UNION SELECT BaseClassId FROM ec_BaseClass, BaseClassesOfEndClass WHERE ec_BaseClass.ClassId=BaseClassesOfEndClass.ClassId"
         "    )"
-        " SELECT DISTINCT ECRelationshipClass.Id AS RelationshipId, ThisEndConstraintClass.ECRelationshipEnd As ThisEndIsTarget"
+        " SELECT DISTINCT ECRelationshipClass.Id AS RelationshipId, ThisEndConstraintClass.RelationshipEnd As ThisEndIsTarget"
         " FROM ec_RelationshipConstraintClass ThisEndConstraintClass"
-        " JOIN ec_Class ECRelationshipClass ON ThisEndConstraintClass.ECClassId == ECRelationshipClass.Id"
-        " JOIN ec_RelationshipConstraint ThisEndConstraint ON (ThisEndConstraint.ECClassId == ECRelationshipClass.Id AND ThisEndConstraint.ECRelationshipEnd == ThisEndConstraintClass.ECRelationshipEnd)"
+        " JOIN ec_Class ECRelationshipClass ON ThisEndConstraintClass.ClassId == ECRelationshipClass.Id"
+        " JOIN ec_RelationshipConstraint ThisEndConstraint ON (ThisEndConstraint.ClassId == ECRelationshipClass.Id AND ThisEndConstraint.RelationshipEnd == ThisEndConstraintClass.RelationshipEnd)"
         " JOIN BaseClassesOfEndClass"
         " WHERE ("
-        "   ThisEndConstraintClass.RelationECClassId == @endClassId"
-        "   OR ThisEndConstraintClass.RelationECClassId = @anyClassId"
-        "   OR (ThisEndConstraint.IsPolymorphic == 1 AND ThisEndConstraintClass.RelationECClassId = BaseClassesOfEndClass.ClassId)"
+        "   ThisEndConstraintClass.RelationClassId == @endClassId"
+        "   OR ThisEndConstraintClass.RelationClassId = @anyClassId"
+        "   OR (ThisEndConstraint.IsPolymorphic == 1 AND ThisEndConstraintClass.RelationClassId = BaseClassesOfEndClass.ClassId)"
         " )";
 
     CachedStatementPtr stmt;

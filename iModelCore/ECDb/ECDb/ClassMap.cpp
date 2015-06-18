@@ -1506,27 +1506,27 @@ std::unique_ptr<StorageDescription> StorageDescription::Create (IClassMap const&
     {
     Utf8CP const findClassesMappedToPartitionSql =
         "WITH RECURSIVE "
-        "DerivedClassList(RootECClassId, CurrentECClassId, DerivedECClassId) "
+        "DerivedClassList(RootClassId, CurrentClassId, DerivedClassId) "
         "AS ("
         "SELECT Id, Id, Id FROM ec_Class "
         "UNION "
-        "SELECT RootECClassId,  BC.BaseECClassId, BC.ECClassId "
+        "SELECT RootClassId,  BC.BaseClassId, BC.ClassId "
         "FROM DerivedClassList DCL "
-        "LEFT OUTER JOIN ec_BaseClass BC ON BC.BaseECClassId = DCL.DerivedECClassId"
+        "LEFT OUTER JOIN ec_BaseClass BC ON BC.BaseClassId = DCL.DerivedClassId"
         "),"
         "TableMapInfo "
         "AS ("
-        "SELECT DISTINCT ec_Class.Id ECClassId, ec_Table.Name TableName, ec_Table.Id TableId "
+        "SELECT DISTINCT ec_Class.Id ClassId, ec_Table.Name TableName, ec_Table.Id TableId "
         "FROM ec_PropertyMap "
         "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId "
         "JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
         "JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
-        "JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ECClassId "
+        "JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
         "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId"
         ") "
-        "SELECT DCL.DerivedECClassId, TMI.TableId, TMI.TableName FROM DerivedClassList DCL "
-        "INNER JOIN TableMapInfo TMI ON TMI.ECClassId = DCL.DerivedECClassId "
-        "WHERE DCL.CurrentECClassId IS NOT NULL AND DCL.RootECClassId = ?";
+        "SELECT DCL.DerivedClassId, TMI.TableId, TMI.TableName FROM DerivedClassList DCL "
+        "INNER JOIN TableMapInfo TMI ON TMI.ClassId = DCL.DerivedClassId "
+        "WHERE DCL.CurrentClassId IS NOT NULL AND DCL.RootClassId = ?";
 
     Utf8CP const findAllClassesMappedToTableSql =
         "SELECT DISTINCT ec_Class.Id "
@@ -1534,7 +1534,7 @@ std::unique_ptr<StorageDescription> StorageDescription::Create (IClassMap const&
         "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId "
         "JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
         "JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
-        "JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ECClassId "
+        "JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
         "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
         "WHERE ec_Table.Name = ? ORDER BY ec_Class.Id";
 

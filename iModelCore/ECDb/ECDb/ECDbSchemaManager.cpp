@@ -273,13 +273,6 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
             return stat;
         }
 
-    //auto propertyPathUpdateStatus = ECDbSchemaPersistence::UpdatePropertyPath (m_ecdb);
-    //if (propertyPathUpdateStatus != BE_SQLITE_OK)
-    //    {
-    //    LOG.errorv ("Failed to update property path information");
-    //    return BentleyStatus::ERROR;
-    //    }
-
     if (!diffs.empty ())
         ClearCache ();
     timer.Stop ();
@@ -358,6 +351,10 @@ BentleyStatus ECDbSchemaManager::UpdateECSchema (SchemaImportContext const& cont
     if (diff->IsEmpty ())
         return SUCCESS; //nothing to update
 
+    LOG.errorv("The ECSchema '%s' cannot be updated. Updating ECSchemas is not yet supported in this version of ECDb.",
+               schemaName.c_str());
+    return ERROR;
+    /* Until schema update is working again...
     DbResult r = m_ecImporter->Update (*diff, *m_ecReader, m_map);
     if (BE_SQLITE_OK != r)
         {
@@ -366,6 +363,7 @@ BentleyStatus ECDbSchemaManager::UpdateECSchema (SchemaImportContext const& cont
         }
 
     return SUCCESS;
+    */
     }
 
 /*---------------------------------------------------------------------------------------
@@ -480,7 +478,7 @@ ECClassCP ECDbSchemaManager::GetECClass (Utf8CP schemaNameOrPrefix, Utf8CP class
 bool ECDbSchemaManager::IsRelationshipConstraintKeyProperty(ECN::ECPropertyId id)const
     {
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    auto stat = m_ecdb.GetCachedStatement(stmt, "select RelationECPropertyId from ec_RelationshipConstraintClassProperty where RelationECPropertyId = ?");
+    auto stat = m_ecdb.GetCachedStatement(stmt, "select RelationPropertyId from ec_RelationshipConstraintClassProperty where RelationPropertyId = ?");
     if (BE_SQLITE_OK != stat)
         return false;
     stmt->BindInt64(1, id);
