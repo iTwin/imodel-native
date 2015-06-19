@@ -69,7 +69,7 @@ namespace dgn_ElementHandler
     //=======================================================================================
     struct EXPORT_VTABLE_ATTRIBUTE Element : DgnDomain::Handler
     {
-        friend struct DgnElement;
+        friend struct DgnPlatform::DgnElement;
         DOMAINHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_Element, Element, DgnDomain::Handler, DGNPLATFORM_EXPORT)
 
     private: 
