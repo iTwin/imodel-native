@@ -69,13 +69,11 @@ namespace dgn_ElementHandler
     //=======================================================================================
     struct EXPORT_VTABLE_ATTRIBUTE Element : DgnDomain::Handler
     {
-        friend struct DgnElement;
+        friend struct DgnPlatform::DgnElement;
         DOMAINHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_Element, Element, DgnDomain::Handler, DGNPLATFORM_EXPORT)
 
-    private: 
-        virtual DgnElement* _CreateInstance(DgnElement::CreateParams const& params) {return new DgnElement(params);}
-
     protected:
+        virtual DgnElement* _CreateInstance(DgnElement::CreateParams const& params) {return new DgnElement(params);}
         virtual ElementHandlerP _ToElementHandler() {return this;}
 
     public:

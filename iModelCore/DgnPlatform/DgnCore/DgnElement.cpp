@@ -205,7 +205,7 @@ template<class T> void DgnElement::CallAppData(T const& caller) const
         else
             ++entry;
         }
-    }    
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
@@ -230,7 +230,7 @@ struct OnInsertedCaller
     {
     DgnElementCR m_newEl;
     OnInsertedCaller(DgnElementCR newEl) : m_newEl(newEl){}
-    DgnElement::AppData::DropMe operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnInserted(m_newEl);}   
+    DgnElement::AppData::DropMe operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnInserted(m_newEl);}
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -267,7 +267,7 @@ struct OnUpdatedCaller
     {
     DgnElementCR m_updated, m_original;
     OnUpdatedCaller(DgnElementCR updated, DgnElementCR original) : m_updated(updated), m_original(original){}
-    DgnElement::AppData::DropMe operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnUpdated(m_updated, m_original);}   
+    DgnElement::AppData::DropMe operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnUpdated(m_updated, m_original);}
     };
 
 /*---------------------------------------------------------------------------------**//**

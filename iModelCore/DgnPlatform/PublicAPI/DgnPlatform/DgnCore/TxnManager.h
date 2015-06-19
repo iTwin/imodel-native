@@ -25,12 +25,19 @@ DGNPLATFORM_TYPEDEFS(TxnMonitor)
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-
 /*=================================================================================**//**
  @addtogroup TxnMgr
- <h1>Transaction Manager</h1>
+<h1>Transaction Manager</h1>
  The TxnManager API manages Txns. A Txn is a named, committed, undoable unit of work, stored in the DgnDb as a changeset.
-
+ Txns may be "reversed" via an application Undo command, or "reinstated" via a corresponding Redo command.
+<p>
+<h2>Sessions<h2>
+ Every time the TxnManager is initialized, it creates a GUID for itself called a SessionId. 
+ Whenever an application calls DgnDb::SaveChanges(), a Txn is created. Txns are saved in Briefcases in the DGN_TABLE_Txns 
+ table, along with the current SessionId. Only Txns from the current SessionId are (usually) undoable. After the completion of a 
+ session, all of the Txns for that SessionId may be merged together to form a "session Txn". Further, all of the session Txns 
+ since a Briefcase was last committed to a server may be merged together to form a Briefcase Txn. Briefcase Txns are sent between
+ users and changed-merged.
  @bsiclass
 +===============+===============+===============+===============+===============+======*/
 enum class TxnDirection {Backwards=0, Forward=1};
@@ -55,6 +62,7 @@ public:
 };
 
 //=======================================================================================
+//! A rowid in the DGN_TABLE_Txns table.
 // @bsiclass                                                    Keith.Bentley   06/15
 //=======================================================================================
 struct TxnRowId
@@ -141,6 +149,14 @@ public:
 
 
 //=======================================================================================
+//! An instance of a TxnTable is created for a single SQLite table via a DgnDomain::TableHandler.
+//! A TxnTable's sole role is to synchronize in-memory objects with persistent changes to the database through Txns.
+//! That is, the TxnTable "monitors" changes to the rows in a SQLite database table for the purpose of ensuring
+//! that in-memory copies of the data reflect the current state on disk. The TxnTable itself has no 
+//! role in making or reversing changes to its table. Instead, the TxnManager orchestrates Txn commits, undo, redo
+//! and change merging operations and informs the TxnTable of what happened.
+//! <p>
+//!
 // @bsiclass                                                    Keith.Bentley   06/15
 //=======================================================================================
 struct TxnTable : RefCountedBase
@@ -157,7 +173,7 @@ struct TxnTable : RefCountedBase
 typedef RefCountedPtr<TxnTable> TxnTablePtr;
 
 //=======================================================================================
-// TxnTables in the base "Dgn" domain.
+//! TxnTables in the base "Dgn" domain.
 // @bsiclass                                                    Keith.Bentley   06/15
 //=======================================================================================
 namespace dgn_TxnTable
