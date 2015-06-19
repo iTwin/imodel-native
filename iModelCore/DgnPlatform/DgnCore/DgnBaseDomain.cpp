@@ -47,6 +47,7 @@ HANDLER_DEFINE_MEMBERS(PhysicalText)
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 HANDLER_DEFINE_MEMBERS(ViewHandler)
+HANDLER_DEFINE_MEMBERS(ElementAspectHandler)
 
 HANDLER_EXTENSION_DEFINE_MEMBERS(IEditManipulatorExtension)
 HANDLER_EXTENSION_DEFINE_MEMBERS(ViewHandlerOverride)
@@ -61,6 +62,7 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     // Note: Handlers must be registered in class heiarchy order (base classes before subclasses)
     RegisterHandler(ViewHandler::GetHandler());
     RegisterHandler(DgnElementDependencyHandler::GetHandler());
+    RegisterHandler(ElementAspectHandler::GetHandler());
 
     RegisterHandler(dgn_ModelHandler::Model::GetHandler());
     RegisterHandler(dgn_ModelHandler::Physical::GetHandler());

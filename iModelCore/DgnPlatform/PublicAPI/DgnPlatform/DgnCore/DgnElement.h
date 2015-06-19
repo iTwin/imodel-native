@@ -123,11 +123,13 @@ public:
         virtual DropMe _OnDeleted(DgnElementCR el) {return DropMe::Yes;}
     };
 
-    //! Abstract base class that buffers changes to a dgn.ElementAspect
-    //! A dgn.Element can have various dgn.ElementApects instances associated with it.
-    //! The #Item subclass represents dgn.ElementItem. An ElementItem is a special kind of ElementAspect. 
-    //! The #UniqueAspect subclass represents a non-Item ElementAspect subclass in the case where the host Element can have only 1 instance of the subclass.
-    //! The #MultiAspect subclass represents a non-Item ElementAspect subclass in the case where the host Element can have multiple instances of the subclass.
+    //! Buffers changes to a dgn.ElementAspect in memory and writes out the changes when the host DgnElement is inserted or updated.
+    //! A domain that defines an subclass of dgn.ElementItem or ElementAspect in the schema should normally also define a subclass of Aspect to manage changes to the instances.
+    //! A domain will normally subclass one of the following more specific subclasses:
+    //!     * Item - a domain that defines a subclass of dgn.ElementItem should define a subclass of Item.
+    //!     * UniqueAspect - a domain that defines a subclass of dgn.ElementAspect that must be 1:1 with the host element should define a subclass of UniqueAspect.
+    //!     * MultiAspect - a domain that defines a subclass of dgn.ElementAspect that can associate multiple instances of the class with the host element should define a subclass of MultiAspect.
+    //! The domain must also define and register a subclass of ElementAspectHandler to load instances of its aspects.
     struct EXPORT_VTABLE_ATTRIBUTE Aspect : AppData
     {
     private:
@@ -177,7 +179,7 @@ public:
         DGNPLATFORM_EXPORT void Delete() {m_changeType = ChangeType::Delete;}
     };
 
-    //! Base class for buffer changes to dgn.ElementAspects other than the dgn.ElementItem
+    //! Base class dgn.ElementAspects other than the dgn.ElementItem
     struct EXPORT_VTABLE_ATTRIBUTE NonItemAspect : Aspect
     {
     protected:
@@ -191,8 +193,15 @@ public:
         BeSQLite::EC::ECInstanceId GetInstanceId() const {return m_instanceId;}
     };
 
-    //! Represents a non-Item ElementAspect subclass in the case where the host Element can have only 1 instance of the subclass.
-    //! @See Item, MultiAspect
+    //! Represents a non-Item ElementAspect subclass for the case where the host Element can have only 1 instance of the subclass.
+    //! A subclass of UniqueAspect must override the following methods:
+    //!     * _GetECSchemaName
+    //!     * _GetECClassName
+    //!     * _UpdateProperties
+    //!     * _LoadProperties
+    //! @see Item
+    //! @see MultiAspect
+    //! @note A domain that defines a subclass of UniqueAspect must also define a subclass of ElementAspectHandler to load it.
     struct EXPORT_VTABLE_ATTRIBUTE UniqueAspect : NonItemAspect
     {
     private:
@@ -240,8 +249,14 @@ public:
 
     //! Represents a non-Item ElementAspect subclass in the case where the host Element can have multiple instances of the subclass.
     //! Use ECSql to query existing instances and their properties. Use GetAspectP or GetP to buffer changes to a particular instance.
-    //! @See Item, UniqueAspect
+    //! <p>A subclass of MultiAspect must override the following methods:
+    //!     * _GetECSchemaName
+    //!     * _GetECClassName
+    //!     * _UpdateProperties
+    //!     * _LoadProperties
+    //! @see Item, UniqueAspect
     //! (Note: This is not stored directly as AppData, but is held by an AppData that aggregates instances for this class.)
+    //! @note A domain that defines a subclass of MultiAspect must also define a subclass of ElementAspectHandler to load it.
     struct EXPORT_VTABLE_ATTRIBUTE MultiAspect : NonItemAspect
     {
     private:
@@ -252,7 +267,7 @@ public:
         //! @param ecclass The class of ElementAspect to load
         //! @param ecinstanceid The ID of the ElementAspect to load
         //! @note Call this method only if you intend to modify the aspect. Use ECSql to query existing instances of the subclass.
-        DGNPLATFORM_EXPORT static MultiAspect* GetAspectP(DgnElementR, ECN::ECClassCR ecclass, BeSQLite::EC::ECInstanceId);
+        DGNPLATFORM_EXPORT static MultiAspect* GetAspectP(DgnElementR el, ECN::ECClassCR ecclass, BeSQLite::EC::ECInstanceId ecinstanceid);
 
         template<typename T> static T* GetP(DgnElementR el, ECN::ECClassCR cls, BeSQLite::EC::ECInstanceId id) {return dynamic_cast<T*>(GetAspectP(el,cls,id));}
 
@@ -267,10 +282,19 @@ public:
     //! Buffers changes to a dgn.ElementItem.
     //! dgn.ElementItem is a special kind of dgn.ElementAspect. A dgn.Element can have 0 or 1 dgn.ElementItems, and the dgn.ElementItem always has the ID as the host dgn.Element.
     //! Note that the item's actual class can vary, as long as it is a subclass of dgn.ElementItem.
+    //! <p>
     //! A dgn.ElementItem is normally used to capture the definition of the host element's geometry. 
     //! The ElementItem is also expected to supply the algorithm for generating the host element's geometry from its definition.
     //! The platform enables the Item to keep the element's geometry up to date by calling the DgnElement::Item::_GenerateElementGeometry method when the element is inserted and whenever it is updated.
-    //! @See UniqueAspect, MultiAspect
+    //! <p>
+    //! A subclass of Item must override the following methods:
+    //!     * _GetECSchemaName
+    //!     * _GetECClassName
+    //!     * _UpdateProperties
+    //!     * _LoadProperties
+    //!     * _GenerateElementGeometry
+    //! @see UniqueAspect, MultiAspect
+    //! @note A domain that defines a subclass of Item must also define a subclass of ElementAspectHandler to load it.
     struct EXPORT_VTABLE_ATTRIBUTE Item : Aspect
     {
     private:
@@ -288,7 +312,8 @@ public:
         DgnDbStatus CallGenerateElementGeometry(DgnElementR);
 
     protected:
-        //! The subclass must implement this method to generate geometry and store it on \a el
+        //! The subclass must implement this method to generate geometry and store it on \a el.
+        //! The platform invokes _GenerateElementGeometry just \em before an element is inserted and/or updated.
         //! @param el   The element to be updated.
         virtual DgnDbStatus _GenerateElementGeometry(GeometricElementR el) = 0;
 

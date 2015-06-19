@@ -53,9 +53,9 @@ typedef TestElement const& TestElementCR;
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      06/15
 //=======================================================================================
-struct TestElementHandler : DgnPlatform::ElementHandler
+struct TestElementHandler : DgnPlatform::dgn_ElementHandler::Element
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT_CLASS_NAME, TestElement, TestElementHandler, DgnPlatform::ElementHandler, )
+    ELEMENTHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT_CLASS_NAME, TestElement, TestElementHandler, DgnPlatform::dgn_ElementHandler::Element, )
 };
 
 HANDLER_DEFINE_MEMBERS(TestElementHandler)

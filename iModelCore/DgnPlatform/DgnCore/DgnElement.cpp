@@ -1000,6 +1000,7 @@ DgnElement::Aspect::Aspect()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::NonItemAspect::_DeleteInstance(DgnElementCR el)
     {
+    // I am assuming that the ElementOwnsAspects ECRelationship is either just a foreign key column on the aspect or that ECSql somehow deletes the relationship instance automatically.
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
     stmt->BindId(1, m_instanceId);
     BeSQLite::EC::ECSqlStepStatus status = stmt->Step();
