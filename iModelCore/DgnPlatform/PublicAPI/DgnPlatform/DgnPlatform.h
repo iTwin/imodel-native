@@ -143,7 +143,6 @@ DGNPLATFORM_TYPEDEFS (ElementAlignedBox2d)
 DGNPLATFORM_TYPEDEFS (ElementAlignedBox3d)
 DGNPLATFORM_TYPEDEFS (ElementGeometry)
 DGNPLATFORM_TYPEDEFS (ElementGeometryBuilder)
-DGNPLATFORM_TYPEDEFS (ElementHandler);
 DGNPLATFORM_TYPEDEFS (ElementLocateManager)
 DGNPLATFORM_TYPEDEFS (FenceManager)
 DGNPLATFORM_TYPEDEFS (FenceParams)
@@ -197,7 +196,6 @@ DGNPLATFORM_TYPEDEFS (LsSymbolReference)
 DGNPLATFORM_TYPEDEFS (LsSystemMap)
 DGNPLATFORM_TYPEDEFS (Material)
 DGNPLATFORM_TYPEDEFS (MaterialAssignment)
-DGNPLATFORM_TYPEDEFS (ModelHandler)
 DGNPLATFORM_TYPEDEFS (NotificationManager)
 DGNPLATFORM_TYPEDEFS (OvrMatSymb)
 DGNPLATFORM_TYPEDEFS (ParagraphProperties)
@@ -307,6 +305,13 @@ BEREPOSITORYBASED_ID_CLASS(DgnMaterialId)      //!< An Id that is assigned to a 
 BEREPOSITORYBASED_ID_CLASS(DgnSessionId)       //!< An Id that is assigned to a session. See DgnDb#Sessions.
 
 BESERVER_ISSUED_ID_CLASS(DgnFontId);
+
+namespace dgn_ElementHandler{struct Element;};
+namespace dgn_ModelHandler  {struct Model;};
+typedef struct dgn_ElementHandler::Element* ElementHandlerP;
+typedef struct dgn_ElementHandler::Element& ElementHandlerR;
+typedef struct dgn_ModelHandler::Model* ModelHandlerP;
+typedef struct dgn_ModelHandler::Model& ModelHandlerR;
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/14

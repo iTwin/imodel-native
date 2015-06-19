@@ -321,7 +321,7 @@ void DgnPlatformLib::Host::InitializeDgnCore()
     AdoptHost(*this);
     BeAssert(NULL != DgnPlatformLib::QueryHost());
 
-    DgnDomains::RegisterDomain(DgnSchemaDomain::GetDomain()); 
+    DgnDomains::RegisterDomain(DgnBaseDomain::GetDomain()); 
 
     _SupplyProductName(m_productName);
 

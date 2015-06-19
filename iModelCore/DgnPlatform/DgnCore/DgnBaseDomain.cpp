@@ -1,0 +1,88 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: DgnCore/DgnBaseDomain.cpp $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#include <DgnPlatformInternal.h>
+#include <DgnPlatform/DgnCore/DgnMarkupProject.h>
+#include <DgnPlatform/DgnCore/Annotations/TextAnnotationElement.h>
+
+BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+
+namespace dgn_TableHandler
+{
+TABLEHANDLER_DEFINE_MEMBERS(Element)
+TABLEHANDLER_DEFINE_MEMBERS(Model)
+TABLEHANDLER_DEFINE_MEMBERS(ModelDep)
+TABLEHANDLER_DEFINE_MEMBERS(ElementDep)
+};
+
+namespace dgn_ModelHandler
+{
+HANDLER_DEFINE_MEMBERS(Model)
+HANDLER_DEFINE_MEMBERS(Physical)
+HANDLER_DEFINE_MEMBERS(PhysicalRedline)
+HANDLER_DEFINE_MEMBERS(Sheet)
+HANDLER_DEFINE_MEMBERS(Redline)
+HANDLER_DEFINE_MEMBERS(Graphics2d)
+HANDLER_DEFINE_MEMBERS(PlanarPhysical)
+HANDLER_DEFINE_MEMBERS(SectionDrawing)
+HANDLER_DEFINE_MEMBERS(StreetMap)
+HANDLER_DEFINE_MEMBERS(WebMercator)
+HANDLER_DEFINE_MEMBERS(PointCloud)
+HANDLER_DEFINE_MEMBERS(Raster)
+};
+
+namespace dgn_ElementHandler
+{
+HANDLER_DEFINE_MEMBERS(Element)
+HANDLER_DEFINE_MEMBERS(Group)
+HANDLER_DEFINE_MEMBERS(Physical)
+HANDLER_DEFINE_MEMBERS(Drawing)
+HANDLER_DEFINE_MEMBERS(PhysicalText)
+};
+
+END_BENTLEY_DGNPLATFORM_NAMESPACE
+
+HANDLER_DEFINE_MEMBERS(ViewHandler)
+
+HANDLER_EXTENSION_DEFINE_MEMBERS(IEditManipulatorExtension)
+HANDLER_EXTENSION_DEFINE_MEMBERS(ViewHandlerOverride)
+
+DOMAIN_DEFINE_MEMBERS(DgnBaseDomain)
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain",1) 
+    {
+    // Note: Handlers must be registered in class heiarchy order (base classes before subclasses)
+    RegisterHandler(ViewHandler::GetHandler());
+    RegisterHandler(DgnElementDependencyHandler::GetHandler());
+
+    RegisterHandler(dgn_ModelHandler::Model::GetHandler());
+    RegisterHandler(dgn_ModelHandler::Physical::GetHandler());
+    RegisterHandler(dgn_ModelHandler::Sheet::GetHandler());
+    RegisterHandler(dgn_ModelHandler::Graphics2d::GetHandler());
+    RegisterHandler(dgn_ModelHandler::PlanarPhysical::GetHandler());
+    RegisterHandler(dgn_ModelHandler::SectionDrawing::GetHandler());
+    RegisterHandler(dgn_ModelHandler::Redline::GetHandler());
+    RegisterHandler(dgn_ModelHandler::PhysicalRedline::GetHandler());
+    RegisterHandler(dgn_ModelHandler::WebMercator::GetHandler());
+    RegisterHandler(dgn_ModelHandler::StreetMap::GetHandler());
+    RegisterHandler(dgn_ModelHandler::PointCloud::GetHandler());
+    RegisterHandler(dgn_ModelHandler::Raster::GetHandler());
+
+    RegisterHandler(dgn_ElementHandler::Element::GetHandler());
+    RegisterHandler(dgn_ElementHandler::Physical::GetHandler());
+    RegisterHandler(dgn_ElementHandler::Drawing::GetHandler());
+    RegisterHandler(dgn_ElementHandler::Group::GetHandler());
+    RegisterHandler(dgn_ElementHandler::PhysicalText::GetHandler());
+
+    RegisterTableHandler(dgn_TableHandler::Element::GetHandler());
+    RegisterTableHandler(dgn_TableHandler::Model::GetHandler());
+    RegisterTableHandler(dgn_TableHandler::ModelDep::GetHandler());
+    RegisterTableHandler(dgn_TableHandler::ElementDep::GetHandler());
+    }

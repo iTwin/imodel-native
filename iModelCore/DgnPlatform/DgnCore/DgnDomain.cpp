@@ -13,21 +13,8 @@
 void DgnDomains::RegisterDomain(DgnDomain& domain)
     {
     T_HOST.RegisteredDomains().push_back(&domain);
-
-    for (auto* tblHandler : domain.m_tableHandlers)
-        T_HOST.TableHandlers().Insert(tblHandler->GetTableName(), tblHandler);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDomain::TableHandler* DgnDomains::FindTableHandler(Utf8CP tableName)
-    {
-    auto& tableHandlers = T_HOST.TableHandlers();
-
-    auto it=tableHandlers.find(tableName);
-    return it != tableHandlers.end() ? it->second : NULL;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/11
@@ -90,6 +77,9 @@ DbResult DgnDomain::LoadHandlers(DgnDbR dgndb) const
     // any that are left are new and need to be added to the database
     for (auto iter : myHandlers)
         dgndb.Domains().InsertHandler(*iter.second);
+
+    for (auto* tblHandler : m_tableHandlers)
+        dgndb.Txns().AddTxnTable(tblHandler);
 
     return BE_SQLITE_OK;
     }
@@ -393,7 +383,7 @@ DgnDomain::Handler::ExtensionEntry* DgnDomain::Handler::ExtensionEntry::Find(Ext
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnDomain::Handler::AddExtension(ElementHandler::Extension::Token& id, ElementHandler::Extension& extension)
+BentleyStatus DgnDomain::Handler::AddExtension(dgn_ElementHandler::Element::Extension::Token& id, dgn_ElementHandler::Element::Extension& extension)
     {
     ExtensionEntry* prev = ExtensionEntry::Find(m_extensions, id);
     if (NULL != prev)
@@ -406,7 +396,7 @@ BentleyStatus DgnDomain::Handler::AddExtension(ElementHandler::Extension::Token&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnDomain::Handler::DropExtension(ElementHandler::Extension::Token& id)
+BentleyStatus DgnDomain::Handler::DropExtension(dgn_ElementHandler::Element::Extension::Token& id)
     {
     for (ExtensionEntry* prev=0, *entry=m_extensions; NULL != entry; prev=entry, entry=entry->m_next)
         {
@@ -428,7 +418,7 @@ BentleyStatus DgnDomain::Handler::DropExtension(ElementHandler::Extension::Token
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementHandler::Extension* DgnDomain::Handler::FindExtension(Extension::Token& id)
+dgn_ElementHandler::Element::Extension* DgnDomain::Handler::FindExtension(Extension::Token& id)
     {
     ExtensionEntry* found = ExtensionEntry::Find(m_extensions, id);
     if (NULL != found)
@@ -467,4 +457,33 @@ DgnDomain::Handler& DgnDomain::Handler::z_GetHandlerInstance()
         instance = z_CreateInstance();
 
     return *instance;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementHandlerP dgn_ElementHandler::Element::FindHandler(DgnDb const& db, DgnClassId handlerId)
+    {
+    // quick check for a handler already known
+    DgnDomain::Handler* handler = db.Domains().LookupHandler(handlerId);
+    if (nullptr != handler)
+        return handler->_ToElementHandler();
+
+#define REMOVE_WHEN_MULTIPLE_INHERITANCE_RESOLVED
+#if defined (REMOVE_WHEN_MULTIPLE_INHERITANCE_RESOLVED)
+    // In EC, we can sometimes multiply inherit from more than one Element base class. That creates ambiguity looking for a handler.
+    // Try Physical first, then Drawing, then Element. Hardwiring these few classes is nonsense, of course. There needs to be a way to
+    // define which superclass supplies the handler. When that is resolved, remove these lines. - KAB
+    handler = db.Domains().FindHandler(handlerId, db.Domains().GetClassId(dgn_ElementHandler::Physical::GetHandler()));
+    if (handler)
+        return handler->_ToElementHandler();
+
+    handler = db.Domains().FindHandler(handlerId, db.Domains().GetClassId(dgn_ElementHandler::Drawing::GetHandler()));
+    if (handler)
+        return handler->_ToElementHandler();
+#endif
+
+    // not there, check via base classes
+    handler = db.Domains().FindHandler(handlerId, db.Domains().GetClassId(dgn_ElementHandler::Element::GetHandler()));
+    return handler ? handler->_ToElementHandler() : (BeAssert(false), nullptr);
     }

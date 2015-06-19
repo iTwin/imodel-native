@@ -32,13 +32,12 @@ struct TestElementHandler;
 //! A test Element
 // @bsiclass                                                     Sam.Wilson      04/15
 //=======================================================================================
-struct TestElement : Dgn::PhysicalElement
+struct TestElement : PhysicalElement
 {
-    DEFINE_T_SUPER(Dgn::PhysicalElement)
+    DEFINE_T_SUPER(PhysicalElement)
 
 private:
     friend struct TestElementHandler;
-
     TestElement(CreateParams const& params) : T_Super(params) {}
 };
 
@@ -46,9 +45,9 @@ private:
 //! A test ElementHandler for a class in DgnPlatformTest schema
 // @bsiclass                                                     Sam.Wilson      01/15
 //=======================================================================================
-struct TestElementHandler : Dgn::ElementHandler
+struct TestElementHandler : dgn_ElementHandler::Element
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS("TestElement", TestElement, TestElementHandler, Dgn::ElementHandler, )
+    ELEMENTHANDLER_DECLARE_MEMBERS("TestElement", TestElement, TestElementHandler, dgn_ElementHandler::Element, )
 
 public:
     ECN::ECClassCP GetTestElementECClass(DgnDbR db);
@@ -61,23 +60,19 @@ public:
 //! Domain that knows DgnPlatformTest schema
 // @bsiclass                                                     Majd.Uddin      06/15
 //=======================================================================================
-struct DgnPlatformTestDomain : public DgnDomain
+struct DgnPlatformTestDomain : DgnDomain
 {
     DOMAIN_DECLARE_MEMBERS(DgnPlatformTestDomain, )
 public:
     DgnPlatformTestDomain();
 };
 
-
-
 //=======================================================================================
 //! A base test fixture to be used for using DgnPlatformTest schema and domain
 // @bsiclass                                                     Majd.Uddin      06/15
 //=======================================================================================
-struct DgnDbTestFixture : public ::testing::Test
+struct DgnDbTestFixture : ::testing::Test
 {
-
-public:
     ScopedDgnHost               m_host;
     DgnDbPtr                    m_db;
     DgnModelId                  m_defaultModelId;
@@ -101,7 +96,5 @@ public:
     bool UpdateElementItem(DgnElementId id, WCharCP propValue);
     bool DeleteElementItem(DgnElementId id);
     bool SelectElementItem(DgnElementId id);
-
-
 };
 

@@ -696,10 +696,6 @@ void IntersectDetail::_SetHilited (DgnElement::Hilited newState) const
     {
     T_Super::_SetHilited (newState);
 
-    // when we're turning on the hilite flag, we need to set the second path to "dashed hilite"
-    if (DgnElement::Hilited::Normal == newState)
-        newState = DgnElement::Hilited::Dashed;
-
     m_secondHit->SetHilited (newState);
     }
 

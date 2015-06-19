@@ -24,7 +24,6 @@ struct ChangeBlobHeader
     ChangeBlobHeader(uint32_t size) {m_signature = DB_Signature06; m_size=size;}
     ChangeBlobHeader(SnappyReader& in) {uint32_t actuallyRead; in._Read((Byte*) this, sizeof(*this), actuallyRead);}
 };
-
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -97,7 +96,7 @@ void TxnManager::TruncateChanges(TxnId id)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* read the entry at the given rowid
+* Read the entry information at the given rowid (does not read the changest itself)
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult TxnManager::ReadEntry(TxnRowId rowid, ChangeEntry& entry)
@@ -132,10 +131,45 @@ TxnManager::TxnManager(DgnDbR project) : m_dgndb(project), m_stmts(20)
         return;
 
     m_dgndb.SetChangeTracker(this);
-    m_dgndb.CreateTable(TEMP_TABLE(TXN_TABLE_Elements), "ElementId INTEGER NOT NULL PRIMARY KEY,ModelId INTEGER NOT NULL,ChangeType INT,LastMod TIMESTAMP");
-    m_dgndb.CreateTable(TEMP_TABLE(TXN_TABLE_Depend), "ECInstanceId INTEGER NOT NULL PRIMARY KEY,ModelId INTEGER NOT NULL,ChangeType INT");
-    m_dgndb.ExecuteSql("CREATE INDEX " TEMP_TABLE(TXN_TABLE_Elements) "_Midx ON " TXN_TABLE_Elements "(ModelId)");
-    m_dgndb.ExecuteSql("CREATE INDEX " TEMP_TABLE(TXN_TABLE_Depend) "_Midx ON " TXN_TABLE_Depend "(ModelId)");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnManager::AddTxnTable(DgnDomain::TableHandler* tableHandler)
+    {
+    if (m_dgndb.IsReadonly())
+        return;
+
+    // we can get called multiple times with the same tablehandler. Ignore all but the first one.
+    TxnTablePtr table= tableHandler->_Create(m_dgndb);
+    if (m_tablesByName.Insert(table->_GetTableName(), table).second)
+        m_tables.push_back(table.get()); // order matters for the calling sequence, so we have to store it both sorted by name and insertion order
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TxnTable* TxnManager::FindTxnTable(Utf8CP tableName)
+    {
+    auto it = m_tablesByName.find(tableName);
+    return it != m_tablesByName.end() ? it->second.get() : NULL;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+dgn_TxnTable::Element& TxnSummary::Elements() const
+    {
+    return *(dgn_TxnTable::Element*) m_dgndb.Txns().FindTxnTable(dgn_TxnTable::Element::MyTableName());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+dgn_TxnTable::ElementDep& TxnSummary::ElementDependencies() const
+    {
+    return *(dgn_TxnTable::ElementDep*) m_dgndb.Txns().FindTxnTable(dgn_TxnTable::ElementDep::MyTableName());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -242,23 +276,13 @@ BentleyStatus TxnManager::PropagateChanges(TxnSummaryR summary)
     if (!m_propagateChanges)
         return BSISUCCESS;
 
-    if (summary.HasModelDependencyChanges())
-        {
-        // If there were changes to model dependencies, then we have to recompute model dependency order, 
-        // updating the "DependencyIndex" column of the Model table.
-        // This must be done before invoking the ElementDependencyChangeMonitor below. This must be part of *indirect* 
-        // changes, so that they will be re-played during change-merging.
-        SetIndirectChanges(true);
-        summary.UpdateModelDependencyIndex();
-        SetIndirectChanges(false);
-
-        if (summary.HasFatalErrors())
-            return BSIERROR;
-        }
-
     SetIndirectChanges(true);
-    DgnElementDependencyGraph graph(m_dgndb, summary);
-    graph.InvokeAffectedDependencyHandlers(summary);
+    for (auto table :  m_tables)
+        {
+        table->_PropagateChanges(summary);
+        if (summary.HasFatalErrors())
+            break;
+        }
     SetIndirectChanges(false);
 
     return summary.HasFatalErrors() ? BSIERROR : BSISUCCESS;
@@ -344,10 +368,14 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TxnSummary::TxnSummary(DgnDbR db, TxnDirection direction) : m_dgndb(db), m_modelDepsChanged(false), m_elementDepsChanged(false), m_direction(direction)
+TxnSummary::TxnSummary(DgnDbR db, TxnDirection direction) : m_dgndb(db), m_direction(direction)
     {
     BeAssert(!db.IsReadonly());
     BeAssert(!s_aSummaryExists); // only one summary at a time may exist because they use temporary tables
+
+    for (auto table:  db.Txns().m_tables)
+        table->_OnTxnSummaryStart(*this);
+
     s_aSummaryExists=true;
     }
 
@@ -359,8 +387,8 @@ TxnSummary::~TxnSummary()
     BeAssert(s_aSummaryExists);
     s_aSummaryExists=false;
 
-    m_dgndb.ExecuteSql("DELETE FROM " TEMP_TABLE(TXN_TABLE_Elements));
-    m_dgndb.ExecuteSql("DELETE FROM " TEMP_TABLE(TXN_TABLE_Depend));
+    for (auto table :  m_dgndb.Txns().m_tables)
+        table->_OnTxnSummaryEnd(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -389,69 +417,27 @@ bool TxnSummary::HasFatalErrors() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TxnSummary::AddAffectedElement(DgnElementId const& eid, DgnModelId mid, double lastMod, ChangeType changeType)
-    {
-    if (!mid.IsValid())
-        mid = m_dgndb.Elements().QueryModelId(eid);
-
-    enum Column : int  {ElementId=1,ModelId=2,ChangeType=3,LastMod=4};
-    if (!m_elementStmt.IsValid())
-        m_dgndb.GetCachedStatement(m_elementStmt, "INSERT INTO " TEMP_TABLE(TXN_TABLE_Elements) "(ElementId,ModelId,ChangeType,LastMod) VALUES(?,?,?,?)");
-
-    m_elementStmt->Reset();
-    m_elementStmt->ClearBindings();
-    m_elementStmt->BindId(Column::ElementId, eid);
-    m_elementStmt->BindId(Column::ModelId, mid);
-    m_elementStmt->BindInt(Column::ChangeType, (int) changeType);
-    m_elementStmt->BindDouble(Column::LastMod, lastMod);
-    m_elementStmt->Step();
-
-    m_modelsInTxn.insert(mid);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TxnSummary::AddAffectedDependency(EC::ECInstanceId const& relid, ChangeType changeType)
-    {
-    CachedECSqlStatementPtr stmt  = GetDgnDb().GetPreparedECSqlStatement(
-        "SELECT element.ModelId FROM " DGN_SCHEMA(DGN_CLASSNAME_Element) " AS element, " DGN_SCHEMA(DGN_RELNAME_ElementDrivesElement) " AS DEP"
-        " WHERE (DEP.ECInstanceId=?) AND (element.ECInstanceId=DEP.SourceECInstanceId)");
-    stmt->BindId(1, relid);
-    auto stat = stmt->Step();
-    BeAssert(stat == ECSqlStepStatus::HasRow);
-    DgnModelId mid = stmt->GetValueId<DgnModelId>(0);
-
-    if (!m_dependencyStmt.IsValid())
-        m_dgndb.GetCachedStatement(m_dependencyStmt, "INSERT INTO " TEMP_TABLE(TXN_TABLE_Depend) " (ECInstanceId,ModelId,ChangeType) VALUES(?,?,?)");
-
-    m_dependencyStmt->Reset();
-    m_dependencyStmt->ClearBindings();
-    m_dependencyStmt->BindId(1, relid);
-    m_dependencyStmt->BindId(2, mid);
-    m_dependencyStmt->BindInt(3, (int) changeType);
-    m_dependencyStmt->Step();
-
-    m_modelsInTxn.insert(mid);
-    }
-
-/*---------------------------------------------------------------------------------**//**
+* Add all of the changes in a changeset to the TxnSummary. TxnTables store information about the changes in their own state
+* if they need to hold on to them so they can react after the changeset is applied.
 * @bsimethod                                    Keith.Bentley                   07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnSummary::AddChangeSet(ChangeSet& changeset)
     {
     BeAssert(!m_dgndb.IsReadonly());
     Utf8String currTable;
-    DgnDomain::TableHandler* tblHandler = 0;
+    TxnTable* txnTable = 0;
+    TxnManager& txns = m_dgndb.Txns();
 
-    Changes changes(changeset);
-    for (auto change : changes)
+    Changes changes(changeset); // this is a "changeset iterator"
+
+    // Walk through each changed row in the changeset. They are ordered by table, so we know that all changes to one table will be seen
+    // before we see any changes to another table.
+    for (auto change : changes) 
         {
         Utf8CP tableName;
         int nCols,indirect;
         DbOpcode opcode;
+
         DbResult rc = change.GetOperation(&tableName, &nCols, &opcode, &indirect);
         BeAssert(rc==BE_SQLITE_OK);
         UNUSED_VARIABLE(rc);
@@ -459,46 +445,43 @@ void TxnSummary::AddChangeSet(ChangeSet& changeset)
         if (0 != strcmp(currTable.c_str(), tableName)) // changes within a changeset are grouped by table
             {
             currTable = tableName;
-            tblHandler = DgnDomains::FindTableHandler(tableName);
+            txnTable = txns.FindTxnTable(tableName);
             }
 
-        if (NULL == tblHandler)
-            continue;
+        if (nullptr == txnTable)
+            continue; // this table does not have a TxnTable for it, skip it
 
         switch (opcode)
             {
             case DbOpcode::Delete:
-                tblHandler->_OnDelete(*this, change);
+                txnTable->_OnDelete(*this, change);
                 break;
             case DbOpcode::Insert:
-                tblHandler->_OnAdd(*this, change);
+                txnTable->_OnAdd(*this, change);
                 break;
             case DbOpcode::Update:
-                tblHandler->_OnUpdate(*this, change);
+                txnTable->_OnUpdate(*this, change);
                 break;
             default:
                 BeAssert(false);
             }
         }
-
-    m_elementStmt = nullptr;
-    m_dependencyStmt = nullptr;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
+* Apply a changeset to the database. Notify all TxnTables about what's in the Changeset, both before
+* and after it is applied.
 * @bsimethod                                    Keith.Bentley                   07/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult TxnManager::ApplyChangeSet(ChangeSet& changeset, TxnDirection isUndo)
+DbResult TxnManager::ApplyChangeSet(ChangeSet& changeset, TxnDirection direction)
     {
-    TxnSummary summary(m_dgndb, isUndo);
-    summary.AddChangeSet(changeset);
+    TxnSummary summary(m_dgndb, direction); // this sends notifications to the TxnTables that a changeset is about to be applied
+    summary.AddChangeSet(changeset); // each TxnTable is notified about changes to their table here.
 
-    // notify monitors that changeset is about to be applied
-    T_HOST.GetTxnAdmin()._OnTxnReverse(summary);
+    T_HOST.GetTxnAdmin()._OnTxnReverse(summary);   // notify monitors that changeset is about to be applied
 
     bool wasTracking = EnableTracking(false);
-    DbResult rc = changeset.ApplyChanges(m_dgndb);
+    DbResult rc = changeset.ApplyChanges(m_dgndb); // this actually updates the database with the changes
     EnableTracking(wasTracking);
 
     if (rc != BE_SQLITE_OK)
@@ -507,13 +490,19 @@ DbResult TxnManager::ApplyChangeSet(ChangeSet& changeset, TxnDirection isUndo)
         return rc;
         }
 
-    // At this point, all of the changes to all tables have been applied.
-    m_dgndb.Elements().OnChangesetApplied(summary);
+    // At this point, all of the changes to all tables have been applied. Notify TxnTables that it is completed.
+    for (auto table : m_tables)
+        table->_OnChangesetApplied(summary);
+
     T_HOST.GetTxnAdmin()._OnTxnReversed(summary);
+
+    // destructor for TxnSummary notifies TxnTables that the changeset is complete.
     return BE_SQLITE_OK;
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Changesets are stored as compressed blobs in the DGN_TABLE_Txns table. Read one by rowid. 
+* If the TxnDirection is backwards, invert the changeset.
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::ReadChangeSet(UndoChangeSet& changeset, TxnRowId rowId, TxnDirection direction)
@@ -698,22 +687,6 @@ StatusInt TxnManager::ReverseTxns(int numActions)
     return ReverseActions(range, numActions>1, true);
     }
 
-#if defined (NEEDS_WORK_TXN_MANAGER)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   02/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::ReverseToMark(Utf8StringR name)
-    {
-    if (!PrepareForUndo())
-        return;
-
-    TxnId markId(m_db.FindMark(name, GetCurrTxnId()));
-
-    TxnRange range(markId, GetCurrTxnId());
-    ReverseActions(range, true, true);
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * reverse (undo) all previous transactions
 * @bsimethod                                                    Keith.Bentley   02/04
@@ -841,23 +814,156 @@ void TxnManager::DeleteReversedTxns()
     }
 
 
-#if defined (NEEDS_WORK_TXN_MANAGER)
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   07/11
+* @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TxnManager::SaveUndoMark(Utf8CP name)
+void dgn_TxnTable::Element::_OnTxnSummaryStart(TxnSummary&)
     {
-    ClearReversedTxns();
+    if (m_stmt.IsPrepared())
+        return;
 
-    m_db.SaveMark(TxnId(m_currentTxnID-1), name);
-    return  SUCCESS;
+    m_dgndb.CreateTable(TEMP_TABLE(TXN_TABLE_Elements), "ElementId INTEGER NOT NULL PRIMARY KEY,ModelId INTEGER NOT NULL,ChangeType INT,LastMod TIMESTAMP");
+    m_dgndb.ExecuteSql("CREATE INDEX " TEMP_TABLE(TXN_TABLE_Elements) "_Midx ON " TXN_TABLE_Elements "(ModelId)");
+    m_stmt.Prepare(m_dgndb, "INSERT INTO " TEMP_TABLE(TXN_TABLE_Elements) "(ElementId,ModelId,ChangeType,LastMod) VALUES(?,?,?,?)");
     }
-#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::Element::_OnTxnSummaryEnd(TxnSummary&) 
+    {
+    m_dgndb.ExecuteSql("DELETE FROM " TEMP_TABLE(TXN_TABLE_Elements));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::Model::_OnTxnSummaryStart(TxnSummary& summary)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::Model::_OnTxnSummaryEnd(TxnSummary& summary)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::ElementDep::_OnTxnSummaryStart(TxnSummary&)    
+    {
+    if (m_stmt.IsPrepared())
+        return;
+
+    m_dgndb.CreateTable(TEMP_TABLE(TXN_TABLE_Depend), "ECInstanceId INTEGER NOT NULL PRIMARY KEY,ModelId INTEGER NOT NULL,ChangeType INT");
+    m_dgndb.ExecuteSql("CREATE INDEX " TEMP_TABLE(TXN_TABLE_Depend) "_Midx ON " TXN_TABLE_Depend "(ModelId)");
+    m_stmt.Prepare(m_dgndb, "INSERT INTO " TEMP_TABLE(TXN_TABLE_Depend) " (ECInstanceId,ModelId,ChangeType) VALUES(?,?,?)");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::ElementDep::_OnTxnSummaryEnd(TxnSummary& summary) 
+    {
+    m_dgndb.ExecuteSql("DELETE FROM " TEMP_TABLE(TXN_TABLE_Depend));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::ElementDep::UpdateSummary(TxnSummary& summary, Changes::Change change, TxnSummary::ChangeType changeType) 
+    {
+    Changes::Change::Stage stage = (TxnSummary::ChangeType::Insert == changeType) ? Changes::Change::Stage::New : Changes::Change::Stage::Old;
+    ECInstanceId instanceId(change.GetValue(0, stage).GetValueInt64()); // primary key is column 0
+    AddDependency(instanceId, changeType);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::ModelDep::_OnAdd(TxnSummary& summary, Changes::Change const& change) 
+    {
+    SetChanges(); 
+    CheckDirection(summary, change.GetNewValue(0).GetValueId<EC::ECInstanceId>());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::ModelDep::_OnUpdate(TxnSummary& summary, Changes::Change const& change) 
+    {
+    SetChanges(); 
+    CheckDirection(summary, change.GetOldValue(0).GetValueId<EC::ECInstanceId>());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::Element::AddElement(DgnElementId elementId, DgnModelId modelId, double lastMod, TxnSummary::ChangeType changeType) 
+    {
+    enum Column : int {ElementId=1,ModelId=2,ChangeType=3,LastMod=4};
+
+    BeAssert(modelId.IsValid());
+    BeAssert(elementId.IsValid());
+
+    m_stmt.BindId(Column::ElementId, elementId);
+    m_stmt.BindId(Column::ModelId, modelId);
+    m_stmt.BindInt(Column::ChangeType, (int) changeType);
+    m_stmt.BindDouble(Column::LastMod, lastMod);
+
+    auto rc = m_stmt.Step();
+    BeAssert(rc==BE_SQLITE_DONE);
+    UNUSED_VARIABLE(rc);
+
+    m_stmt.Reset();
+    m_stmt.ClearBindings();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    02/2015
+//---------------------------------------------------------------------------------------
+void dgn_TxnTable::Element::AddChange(TxnSummary& summary, Changes::Change const& change, TxnSummary::ChangeType changeType) 
+    {
+    Changes::Change::Stage stage;
+    switch (changeType)
+        {
+        case TxnSummary::ChangeType::Insert:
+            stage = Changes::Change::Stage::New; 
+            break;
+
+        case TxnSummary::ChangeType::Update:
+        case TxnSummary::ChangeType::Delete:    
+            stage = Changes::Change::Stage::Old; 
+            break;
+        default: 
+            BeAssert(false);
+            return;
+        }
+
+    DgnElementId elementId = DgnElementId(change.GetValue(0, stage).GetValueInt64());
+    DgnModelId modelId;
+
+    if (TxnSummary::ChangeType::Update == changeType)
+        {
+        // for updates, the element table must be queried for ModelId since the change set will only contain changed columns
+        modelId = summary.GetDgnDb().Elements().QueryModelId(elementId);
+        }
+    else
+        modelId = DgnModelId(change.GetValue(2, stage).GetValueInt64());   // assumes DgnModelId is column 2
+
+    if (changeType == TxnSummary::ChangeType::Update)
+        stage = Changes::Change::Stage::New; 
+    double lastMod = change.GetValue(7, stage).GetValueDouble();           // assumes LastMod is column 7
+
+    AddElement(elementId, modelId, lastMod, changeType);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-TxnSummary::ElementIterator::Entry TxnSummary::ElementIterator::begin() const   
+dgn_TxnTable::Element::Iterator::Entry dgn_TxnTable::Element::Iterator::begin() const   
     {
     if (!m_stmt.IsValid())
         m_db->GetCachedStatement(m_stmt, "SELECT ElementId,ModelId,ChangeType,LastMod FROM " TEMP_TABLE(TXN_TABLE_Elements));
@@ -867,10 +973,60 @@ TxnSummary::ElementIterator::Entry TxnSummary::ElementIterator::begin() const
     return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
     }
 
-DgnElementId TxnSummary::ElementIterator::Entry::GetElementId() const {return m_sql->GetValueId<DgnElementId>(0);}
-DgnModelId TxnSummary::ElementIterator::Entry::GetModelId() const {return m_sql->GetValueId<DgnModelId>(1);}
-TxnSummary::ChangeType TxnSummary::ElementIterator::Entry::GetChangeType() const {return (TxnSummary::ChangeType) m_sql->GetValueInt(2);}
-double TxnSummary::ElementIterator::Entry::GetLastMod() const {return m_sql->GetValueDouble(3);}
+DgnElementId dgn_TxnTable::Element::Iterator::Entry::GetElementId() const {return m_sql->GetValueId<DgnElementId>(0);}
+DgnModelId dgn_TxnTable::Element::Iterator::Entry::GetModelId() const {return m_sql->GetValueId<DgnModelId>(1);}
+TxnSummary::ChangeType dgn_TxnTable::Element::Iterator::Entry::GetChangeType() const {return (TxnSummary::ChangeType) m_sql->GetValueInt(2);}
+double dgn_TxnTable::Element::Iterator::Entry::GetLastMod() const {return m_sql->GetValueDouble(3);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::ElementDep::AddDependency(EC::ECInstanceId const& relid, TxnSummary::ChangeType changeType)
+    {
+    CachedECSqlStatementPtr stmt  = m_dgndb.GetPreparedECSqlStatement(
+        "SELECT element.ModelId FROM " DGN_SCHEMA(DGN_CLASSNAME_Element) " AS element, " DGN_SCHEMA(DGN_RELNAME_ElementDrivesElement) " AS DEP"
+        " WHERE (DEP.ECInstanceId=?) AND (element.ECInstanceId=DEP.SourceECInstanceId)");
+    stmt->BindId(1, relid);
+    auto stat = stmt->Step();
+    BeAssert(stat == ECSqlStepStatus::HasRow);
+    DgnModelId mid = stmt->GetValueId<DgnModelId>(0);
+
+    m_stmt.BindId(1, relid);
+    m_stmt.BindId(2, mid);
+    m_stmt.BindInt(3, (int) changeType);
+    auto rc = m_stmt.Step();
+    BeAssert(rc==BE_SQLITE_DONE);
+    UNUSED_VARIABLE(rc);
+
+    m_stmt.Reset();
+    m_stmt.ClearBindings();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                  03/2015
+//---------------------------------------------------------------------------------------
+void dgn_TxnTable::ModelDep::CheckDirection(TxnSummary& summary, ECInstanceId relid) 
+    {
+    Statement stmt(summary.GetDgnDb(), "SELECT RootModelId,DependentModelId FROM " DGN_TABLE(DGN_RELNAME_ModelDrivesModel) " WHERE(ECInstanceId=?)");
+    stmt.BindId(1, relid);
+    if (stmt.Step() != BE_SQLITE_ROW)
+        {
+        BeAssert(false); // model was just added or modified -- it has to exist!
+        return;
+        }
+    DgnModelId rootModel = stmt.GetValueId<DgnModelId>(0);
+    DgnModelId depModel = stmt.GetValueId<DgnModelId>(1);
+
+    DgnModels::Model root, dep;
+    summary.GetDgnDb().Models().QueryModelById(&root, rootModel);
+    summary.GetDgnDb().Models().QueryModelById(&dep, depModel);
+
+    if (root.GetModelType() > dep.GetModelType())
+        {
+        //  A Physical model cannot depend on a Drawing model
+        summary.ReportError(*new DgnElementDependencyGraph::DirectionValidationError(""));
+        }
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/08

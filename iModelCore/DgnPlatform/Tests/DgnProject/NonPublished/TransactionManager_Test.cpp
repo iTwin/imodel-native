@@ -9,6 +9,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <ECDb/ECSqlBuilder.h>
 #include <DgnPlatform/DgnCore/WebMercator.h>
+#include <DgnPlatform/DgnCore/DgnElementDependency.h>
 
 #define TMTEST_SCHEMA_NAME                               "DgnPlatformTest"
 #define TMTEST_SCHEMA_NAMEW                             L"DgnPlatformTest"
@@ -29,7 +30,7 @@ static bool s_abcShouldFail;
 //! A test IDgnElementDependencyHandler
 // @bsiclass                                                     Sam.Wilson      01/15
 //=======================================================================================
-struct ABCHandler : Dgn::DgnElementDrivesElementDependencyHandler
+struct ABCHandler : Dgn::DgnElementDependencyHandler
     {
     DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME, ABCHandler, Dgn::DgnDomain::Handler, )
 
@@ -102,9 +103,9 @@ typedef TestElement const& TestElementCR;
 //! A test ElementHandler
 // @bsiclass                                                     Sam.Wilson      01/15
 //=======================================================================================
-struct TestElementHandler : Dgn::ElementHandler
+struct TestElementHandler : dgn_ElementHandler::Element
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS("TestElement", TestElement, TestElementHandler, Dgn::ElementHandler, )
+    ELEMENTHANDLER_DECLARE_MEMBERS("TestElement", TestElement, TestElementHandler, dgn_ElementHandler::Element, )
 };
 
 HANDLER_DEFINE_MEMBERS(TestElementHandler)
@@ -392,7 +393,7 @@ void ElementDependencyGraph::SetUpForRelationshipTests(WCharCP testname)
 
     auto abcHandlerInternalId = m_db->Domains().GetClassId(ABCHandler::GetHandler());
 
-    auto dh = DgnElementDrivesElementDependencyHandler::GetHandler().FindHandler(*m_db, abcHandlerInternalId);
+    auto dh = DgnElementDependencyHandler::GetHandler().FindHandler(*m_db, abcHandlerInternalId);
     auto ah = &ABCHandler::GetHandler();
     ASSERT_EQ((void*)dh,(void*)ah );
 
@@ -597,7 +598,7 @@ TEST_F(TransactionManagerTests, StreetMapModel)
     {
     SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests_StreetMapModel.idgndb", Db::OPEN_ReadWrite);
 
-    auto newModelId = StreetMapModelHandler::CreateStreetMapModel(*m_db, StreetMapModelHandler::MapService::MapQuest, StreetMapModelHandler::MapType::SatelliteImage, true);
+    auto newModelId = dgn_ModelHandler::StreetMap::CreateStreetMapModel(*m_db, dgn_ModelHandler::StreetMap::MapService::MapQuest, dgn_ModelHandler::StreetMap::MapType::SatelliteImage, true);
     ASSERT_TRUE( newModelId.IsValid() );
 
     DgnModelP model = m_db->Models().GetModel(newModelId);
@@ -1771,7 +1772,7 @@ TEST_F(ElementDependencyGraph, PersistentHandlerTest)
 
     //  Make sure that the handler is still registered
     auto abcHandlerInternalId = m_db->Domains().GetClassId(ABCHandler::GetHandler());
-    ASSERT_EQ( DgnElementDrivesElementDependencyHandler::GetHandler().FindHandler(*m_db, abcHandlerInternalId) , &ABCHandler::GetHandler() );
+    ASSERT_EQ( DgnElementDependencyHandler::GetHandler().FindHandler(*m_db, abcHandlerInternalId) , &ABCHandler::GetHandler() );
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1822,15 +1823,15 @@ struct TestEdgeProcessor : DgnElementDependencyGraph::IEdgeProcessor
 
     void Clear() {m_hadError=false; m_relIds.clear();}
 
-    virtual void _ProcessEdge(DgnElementDependencyGraph::Edge const& edge, DgnElementDrivesElementDependencyHandler* handler) override;
-    virtual void _ProcessEdgeForValidation(DgnElementDependencyGraph::Edge const& edge, DgnElementDrivesElementDependencyHandler* handler) override;
+    virtual void _ProcessEdge(DgnElementDependencyGraph::Edge const& edge, DgnElementDependencyHandler* handler) override;
+    virtual void _ProcessEdgeForValidation(DgnElementDependencyGraph::Edge const& edge, DgnElementDependencyHandler* handler) override;
     virtual void _OnValidationError(TxnSummary::ValidationError const& error, DgnElementDependencyGraph::Edge const* edge) override;
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TestEdgeProcessor::_ProcessEdge(DgnElementDependencyGraph::Edge const& edge, DgnElementDrivesElementDependencyHandler* handler)
+void TestEdgeProcessor::_ProcessEdge(DgnElementDependencyGraph::Edge const& edge, DgnElementDependencyHandler* handler)
     {
     m_relIds.push_back(edge.GetECRelationshipId());
     }
@@ -1838,7 +1839,7 @@ void TestEdgeProcessor::_ProcessEdge(DgnElementDependencyGraph::Edge const& edge
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TestEdgeProcessor::_ProcessEdgeForValidation(DgnElementDependencyGraph::Edge const& edge, DgnElementDrivesElementDependencyHandler* handler)
+void TestEdgeProcessor::_ProcessEdgeForValidation(DgnElementDependencyGraph::Edge const& edge, DgnElementDependencyHandler* handler)
     {
     }
 
@@ -1876,7 +1877,7 @@ TEST_F(ElementDependencyGraph, WhatIfTest1)
         {
         TestEdgeProcessor proc;
         TxnSummary summary(*m_db, TxnDirection::Forward);
-        DgnElementDependencyGraph graph(*m_db, summary);
+        DgnElementDependencyGraph graph(summary);
         ASSERT_EQ( BSISUCCESS , graph.WhatIfChanged(proc, changedEntities, changedDepRels) );
 
         ASSERT_EQ( proc.m_hadError , false );
@@ -1895,7 +1896,7 @@ TEST_F(ElementDependencyGraph, WhatIfTest1)
         {
         TestEdgeProcessor proc;
         TxnSummary summary(*m_db, TxnDirection::Forward);
-        DgnElementDependencyGraph graph(*m_db, summary);
+        DgnElementDependencyGraph graph(summary);
         ASSERT_EQ( BSISUCCESS , graph.WhatIfChanged(proc, changedEntities, changedDepRels) );
 
         ASSERT_EQ( proc.m_hadError , false );
@@ -1929,7 +1930,7 @@ TEST_F(ElementDependencyGraph, TestPriority)
         {
         TestEdgeProcessor proc;
         TxnSummary summary(*m_db, TxnDirection::Forward);
-        DgnElementDependencyGraph graph(*m_db, summary);
+        DgnElementDependencyGraph graph(summary);
         ASSERT_EQ( BSISUCCESS , graph.WhatIfChanged(proc, changedEntities, changedDepRels) );
 
         ASSERT_EQ( ABCHandler::GetHandler().m_relIds.size(), 0 ) << L"Real dependency handler should not have been called";
@@ -1944,7 +1945,7 @@ TEST_F(ElementDependencyGraph, TestPriority)
     // Change the priority of e12_e2 to be greater. Now, it should be called first.
         {
         TxnSummary summary(*m_db, TxnDirection::Forward);
-        DgnElementDependencyGraph graph(*m_db, summary);
+        DgnElementDependencyGraph graph(summary);
         DgnElementDependencyGraph::Edge edge_e12_e2 = graph.QueryEdgeByRelationshipId(e12_e2.GetECInstanceId());
         ASSERT_TRUE( edge_e12_e2.GetECRelationshipId().IsValid() );
         ASSERT_TRUE( edge_e12_e2.GetECRelationshipId() == e12_e2.GetECInstanceId() );
@@ -1956,7 +1957,7 @@ TEST_F(ElementDependencyGraph, TestPriority)
         {
         TestEdgeProcessor proc;
         TxnSummary summary(*m_db, TxnDirection::Forward);
-        DgnElementDependencyGraph graph(*m_db, summary);
+        DgnElementDependencyGraph graph(summary);
         ASSERT_EQ( BSISUCCESS , graph.WhatIfChanged(proc, changedEntities, changedDepRels) );
 
         ASSERT_EQ( ABCHandler::GetHandler().m_relIds.size(), 0 ) << L"Real dependency handler should not have been called";

@@ -87,17 +87,17 @@ typedef RefCountedCPtr<ObstacleElement>  ObstacleElementCPtr;
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      01/15
 //=======================================================================================
-struct RobotElementHandler : ElementHandler
+struct RobotElementHandler : dgn_ElementHandler::Element
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS ("Robot", RobotElement, RobotElementHandler, ElementHandler, )
+    ELEMENTHANDLER_DECLARE_MEMBERS ("Robot", RobotElement, RobotElementHandler, dgn_ElementHandler::Element, )
 };
 
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      01/15
 //=======================================================================================
-struct ObstacleElementHandler : ElementHandler
+struct ObstacleElementHandler : dgn_ElementHandler::Element
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS ("Obstacle", ObstacleElement, ObstacleElementHandler, ElementHandler, )
+    ELEMENTHANDLER_DECLARE_MEMBERS ("Obstacle", ObstacleElement, ObstacleElementHandler, dgn_ElementHandler::Element, )
 };
 
 //=======================================================================================

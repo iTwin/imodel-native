@@ -2723,6 +2723,11 @@ bool GeometricElement::_DrawHit (HitDetailCR hit, ViewContextR context) const
             }
 
         *context.GetCurrentDisplayParams() = collection.GetElemDisplayParams();
+
+        // NOTE: We don't want to flash using a vector linestyle...but a glowly raster style might be interesting...
+        if (SubSelectionMode::Segment == hit.GetSubSelectionMode())
+            context.GetCurrentDisplayParams()->SetWeight(context.GetCurrentDisplayParams()->GetWeight()+2);
+
         context.CookDisplayParams();
         context.ResetContextOverrides();
 
