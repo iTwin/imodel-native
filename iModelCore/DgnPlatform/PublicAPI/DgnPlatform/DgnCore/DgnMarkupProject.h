@@ -151,7 +151,7 @@ struct DgnViewAssociationData : DgnProjectAssociationData
 //! See DgnMarkupProject::CreateRedlineModel, DgnMarkupProject::OpenRedlineModel, and DgnMarkupProject::FindClosestRedlineModel.
 //! @bsiclass                                                    Sam.Wilson      05/13
 //=======================================================================================
-struct RedlineModel : SheetModel
+struct EXPORT_VTABLE_ATTRIBUTE RedlineModel : SheetModel
     {
     DEFINE_T_SUPER(SheetModel)
 
