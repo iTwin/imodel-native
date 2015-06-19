@@ -482,8 +482,6 @@ private:
     BentleyStatus QueryPropertyAsJson(JsonValueR json, DgnMarkupProjectProperty::ProjectProperty const& propSpec, uint64_t id=0) const;
     void SavePropertyFromJson(DgnMarkupProjectProperty::ProjectProperty const& propSpec, JsonValueCR json, uint64_t id=0);
 
-    //void CreateModelECProperties (DgnModelId modelId, Utf8CP modelName); *** TBD
-
 public:
     BentleyStatus CheckIsOpen();
 
@@ -542,7 +540,7 @@ public:
     //! @return A list of what's changed in the project since this markup project was created.
     //! @see DgnMarkupProjectGroup_Association
     DGNPLATFORM_EXPORT DgnProjectAssociationData::CheckResults CheckAssociation(DgnDbR subjectProject);
-//** @} */
+/** @} */
 
 /** @name Redline Models */
 /** @{ */
@@ -576,7 +574,7 @@ public:
     //! @param modelId  Identifies the redline model to empty
     //! @see OpenRedlineModel
     DGNPLATFORM_EXPORT BentleyStatus EmptyRedlineModel(DgnModelId modelId);
-//** @} */
+/** @} */
 
 /** @name PhysicalRedline Models */
 /** @{ */
@@ -604,22 +602,23 @@ public:
     //! @param modelId  Identifies the physical redline model to empty
     //! @see OpenPhysicalRedlineModel
     DGNPLATFORM_EXPORT BentleyStatus EmptyPhysicalRedlineModel(DgnModelId modelId);
-//** @} */
+/** @} */
 
 };
 
 namespace dgn_ModelHandler
 {
+    //! The ModelHandler for RedlineModel.
     struct Redline : Sheet
     {
         MODELHANDLER_DECLARE_MEMBERS("RedlineModel", RedlineModel, Redline, Sheet,)
     };
 
+    //! The ModelHandler for PhysicalRedlineModel.
     struct PhysicalRedline : Physical
     {
         MODELHANDLER_DECLARE_MEMBERS("PhysicalRedlineModel", PhysicalRedlineModel, PhysicalRedline, Physical,)
     };
-
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
