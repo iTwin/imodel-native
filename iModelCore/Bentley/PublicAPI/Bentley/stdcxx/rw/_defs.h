@@ -593,7 +593,7 @@
 #  define BC__RWSTD_NAMESPACE(name)    namespace name
 #  define BC__USING(name)              using name
 
-#  define BC__RW    BentleyApi
+#  define BC__RW    bc__rw06
 
 #else   // if defined (_RWSTD_NO_NAMESPACE)
 #  define BC__RWSTD_NAMESPACE(ignore)    extern "C++"
