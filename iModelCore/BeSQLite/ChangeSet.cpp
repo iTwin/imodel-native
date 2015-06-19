@@ -533,14 +533,14 @@ Utf8String ChangeSet::InterpretConflictCause(ChangeSet::ConflictCause cause)
     {
     switch (cause)
         {
-        case ChangeSet::ConflictCause::Data: return ("data");
-        case ChangeSet::ConflictCause::NotFound: return ("not found");
-        case ChangeSet::ConflictCause::Conflict: return ("conflict");
-        case ChangeSet::ConflictCause::Constraint: return ("constraint");
-        case ChangeSet::ConflictCause::ForeignKey: return ("foreign key");
+        case ChangeSet::ConflictCause::Data: return "data";
+        case ChangeSet::ConflictCause::NotFound: return "not found";
+        case ChangeSet::ConflictCause::Conflict: return "conflict";
+        case ChangeSet::ConflictCause::Constraint: return "constraint";
+        case ChangeSet::ConflictCause::ForeignKey: return "foreign key";
         }
     BeAssert(false);
-    return ("?");
+    return "?";
     }
 
 /*---------------------------------------------------------------------------------**//**
