@@ -21,6 +21,8 @@ BENTLEY_API_TYPEDEFS(HeapZone);
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+struct MultiAspectMux;
+
 typedef RefCountedPtr<ElementGeometry> ElementGeometryPtr;
 
 template <class _QvKey> struct QvElemSet;
@@ -128,7 +130,7 @@ public:
     private:
         DGNPLATFORM_EXPORT DropMe _OnInserted(DgnElementCR el) override final;
         DGNPLATFORM_EXPORT DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original) override final;
-
+        friend struct MultiAspectMux;
     protected:
         enum class ChangeType{None, Write, Delete};
 
@@ -236,11 +238,11 @@ public:
     //! Represents a non-Item ElementAspect subclass in the case where the host Element can have multiple instances of the subclass.
     //! Use ECSql to query existing instances and their properties. Use GetAspectP or GetP to buffer changes to a particular instance.
     //! @See Item, UniqueAspect
+    //! (Note: This is not stored directly as AppData, but is held by an AppData that aggregates instances for this class.)
     struct EXPORT_VTABLE_ATTRIBUTE MultiAspect : NonItemAspect
     {
     private:
         DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) override final;
-        Key& GetKey() {return *(Key*)this;}
     public:
         //! Load the specified instance
         //! @param el   The host element

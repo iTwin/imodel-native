@@ -1348,23 +1348,87 @@ DgnDbStatus DgnElement::Item::CallGenerateElementGeometry(DgnElementR el)
     return _GenerateElementGeometry(*gel);
     }
 
+BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+struct MultiAspectMux : DgnElement::AppData
+{
+    ECN::ECClassCR m_ecclass;
+    bvector<RefCountedPtr<DgnElement::MultiAspect>> m_instances;
+
+    static Key& GetKey(ECN::ECClassCR cls) {return *(Key*)&cls;}
+    Key& GetKey(DgnDbR db) {return GetKey(m_ecclass);}
+
+    static MultiAspectMux* Find(DgnElementCR, ECN::ECClassCR);
+    static MultiAspectMux& Get(DgnElementCR, ECN::ECClassCR);
+
+    MultiAspectMux(ECN::ECClassCR cls) : m_ecclass(cls) {;}
+    DropMe _OnInserted(DgnElementCR el) override;
+    DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original) override;
+};
+
+END_BENTLEY_DGNPLATFORM_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+MultiAspectMux* MultiAspectMux::Find(DgnElementCR el, ECN::ECClassCR cls)
+    {
+    return dynamic_cast<MultiAspectMux*>(el.FindAppData(GetKey(cls)));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+MultiAspectMux& MultiAspectMux::Get(DgnElementCR el, ECN::ECClassCR cls)
+    {
+    MultiAspectMux* mux = Find(el,cls);
+    if (nullptr == mux)
+        el.AddAppData(GetKey(cls), mux = new MultiAspectMux(cls));
+    return *mux;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::AppData::DropMe MultiAspectMux::_OnInserted(DgnElementCR el)
+    {
+    for (auto aspect : m_instances)
+        aspect->_OnInserted(el);
+
+    return DropMe::Yes; // all scheduled changes have been processed, so remove them.
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::AppData::DropMe MultiAspectMux::_OnUpdated(DgnElementCR modified, DgnElementCR original)
+    {
+    for (auto aspect : m_instances)
+        aspect->_OnUpdated(modified, original);
+
+    return DropMe::Yes; // all scheduled changes have been processed, so remove them.
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::MultiAspect* DgnElement::MultiAspect::GetAspectP(DgnElementR el, ECN::ECClassCR cls, BeSQLite::EC::ECInstanceId id)
     {
-    for (auto const& appDataEntry : el.m_appData)
+    //  First, see if we alrady have this particular MultiAspect cached
+    MultiAspectMux* mux = MultiAspectMux::Find(el,cls);
+    if (nullptr != mux)
         {
-        DgnElement::MultiAspect* aspect = dynamic_cast<DgnElement::MultiAspect*>(appDataEntry.second.get());
-        if ((nullptr != aspect) && (aspect->GetInstanceId() == id) && (aspect->GetThisECClass(el.GetDgnDb()) == &cls))
+        for (RefCountedPtr<MultiAspect> aspect : mux->m_instances)
             {
+            if (aspect->GetInstanceId() != id)
+                continue;
             if (aspect->m_changeType == ChangeType::Delete)
                 return nullptr;
             aspect->m_changeType = ChangeType::Write; // caller intends to modify the aspect
-            return aspect;
+            return aspect.get();
             }
         }
 
+    //  First time we've been asked for this particular aspect. Cache it.
     ElementAspectHandler* handler = ElementAspectHandler::FindHandler(el.GetDgnDb(), DgnClassId(cls.GetId()));
     if (nullptr == handler)
         return nullptr;
@@ -1372,10 +1436,11 @@ DgnElement::MultiAspect* DgnElement::MultiAspect::GetAspectP(DgnElementR el, ECN
     RefCountedPtr<MultiAspect> aspect = dynamic_cast<MultiAspect*>(handler->_CreateInstance().get());
     if (!aspect.IsValid())
         return nullptr;
+
     aspect->m_instanceId = id;
     aspect->_LoadProperties(el);
 
-    el.AddAppData(aspect->GetKey(), aspect.get());   // takes ownership of aspect
+    MultiAspectMux::Get(el,cls).m_instances.push_back(aspect);
 
     aspect->m_changeType = ChangeType::Write; // caller intends to modify the aspect
 
@@ -1387,7 +1452,13 @@ DgnElement::MultiAspect* DgnElement::MultiAspect::GetAspectP(DgnElementR el, ECN
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::MultiAspect::AddAspect(DgnElementR el, MultiAspect& aspect)
     {
-    el.AddAppData(aspect.GetKey(), &aspect);
+    ECN::ECClassCP cls = aspect.GetThisECClass(el.GetDgnDb());
+    if (nullptr == cls)
+        {
+        BeAssert(false && "aspect must know its class");
+        return;
+        }
+    MultiAspectMux::Get(el,*cls).m_instances.push_back(&aspect);
     aspect.m_changeType = ChangeType::Write;
     }
 
