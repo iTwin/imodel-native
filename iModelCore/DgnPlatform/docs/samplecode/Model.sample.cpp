@@ -19,7 +19,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 //---------------------------------------------------------------------------------------
 PhysicalModelP createAndInsertPhysicalModel(DgnDbR db, Utf8CP name)
     {
-    ModelHandler& handler = PhysicalModelHandler::GetHandler();
+    ModelHandlerR handler = dgn_ModelHandler::Physical::GetHandler();
     DgnClassId modelClassId = db.Domains().GetClassId(handler);
     DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, modelClassId, name));
 
