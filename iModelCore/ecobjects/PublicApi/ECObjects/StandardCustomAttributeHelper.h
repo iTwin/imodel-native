@@ -358,49 +358,36 @@ public:
 
 
 //=======================================================================================    
-//! ECDbPropertyMap is a convenience wrapper around the PropertyMap custom attribute that simplifies
-//! reading the values of that custom attribute
+//! ECDbRelationshipColumns represents the content of the RelationshipEndColumns ECStruct
+//! in the ECDbMap ECSchema
 //! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================    
-struct ECDbRelationshipConstraintMap
+struct ECDbRelationshipEndColumns
     {
-friend struct ECDbRelationshipConstraintMapHelper;
+    friend struct ECDbRelationshipEndColumnsHelper;
 
 private:
     Utf8String m_ecInstanceIdColumn;
     Utf8String m_ecClassIdColumn;
     bool m_createDefaultIndex;
-    bool m_enforceReferentialIntegrity;
-    Utf8String m_onDeleteAction;
-    Utf8String m_onUpdateAction;
 
-    ECDbRelationshipConstraintMap(Utf8CP ecInstanceIdColumn, Utf8CP ecClassIdColumn, bool createDefaultIndex, bool enforceReferentialIntegrity, Utf8CP onDeleteAction, Utf8CP onUpdateAction)
-        : m_ecInstanceIdColumn(ecInstanceIdColumn), m_ecClassIdColumn(ecClassIdColumn), m_createDefaultIndex(createDefaultIndex), m_enforceReferentialIntegrity(enforceReferentialIntegrity), m_onDeleteAction(onDeleteAction), m_onUpdateAction(onUpdateAction)
-        {}
+    ECDbRelationshipEndColumns(Utf8CP ecInstanceIdColumn, Utf8CP ecClassIdColumn, bool createDefaultIndex)
+        : m_ecInstanceIdColumn(ecInstanceIdColumn), m_ecClassIdColumn(ecClassIdColumn), m_createDefaultIndex(createDefaultIndex) {}
 
 public:
-    ECDbRelationshipConstraintMap() : m_createDefaultIndex(true), m_enforceReferentialIntegrity(false) {}
+    ECDbRelationshipEndColumns() : m_createDefaultIndex(true) {}
 
-    //! Gets the name of the constraint's ECInstanceId column.
+    //! Gets the name of the end's ECInstanceId column.
     //! @return Constraint's ECInstanceId column or nullptr if not specified in the custom attribute
     Utf8CP GetECInstanceIdColumn() const { return m_ecInstanceIdColumn.c_str(); }
-    //! Gets the name of the constraint's ECClassId column.
+    //! Gets the name of the end's ECClassId column.
     //! @return Constraint's ECClassId column or nullptr if not specified in the custom attribute
     Utf8CP GetECClassIdColumn() const { return m_ecClassIdColumn.c_str(); }
-    //! Gets a value indicating whether a default index on the constraint's instance id and class id columns
+    //! Gets a value indicating whether a default index on the end's instance id and class id columns
     //! should be created or not
     //! @return true, if the default index should be created. false otherwise
     bool CreateDefaultIndex() const { return m_createDefaultIndex; }
-    //! Gets a value indicating whether referential integrity should be enforced or not.
-    //! @return true, if referential integrity should be enforced. false otherwise
-    bool EnforceReferentialIntegrity() const { return m_enforceReferentialIntegrity; }
-    //! Gets the OnDelete action if ECDbRelationshipConstraintMap::EnforceReferentialIntegrity is true.
-    //! @return OnDelete action or nullptr if not specified in the custom attribute
-    Utf8CP GetOnDeleteAction() const { return m_onDeleteAction.c_str(); }
-    //! Gets the OnUpdate action if ECDbRelationshipConstraintMap::EnforceReferentialIntegrity is true.
-    //! @return OnUpdate action or nullptr if not specified in the custom attribute
-    Utf8CP GetOnUpdateAction() const { return m_onUpdateAction.c_str(); }
     };
 
 //=======================================================================================    
@@ -422,16 +409,16 @@ private:
 public:
     ECDbLinkTableRelationshipMap() : m_relClass(nullptr), m_ca(nullptr) {}
 
-    //! Tries to get the value of the Source property from the LinkTableRelationshipMap.
-    //! @param[out] sourceConstraint Mapping information for the source constraint of the relationship. 
-    //! It is set to default values, if the Source property wasn't set in the LinkTableRelationshipMap.
-    //! @return ECOBJECTSTATUS_Success if Source was set or unset in the LinkTableRelationshipMap, error codes otherwise
-    ECOBJECTS_EXPORT ECObjectsStatus TryGetSource(ECDbRelationshipConstraintMap& sourceConstraint) const;
-    //! Tries to get the value of the Target property from the LinkTableRelationshipMap.
-    //! @param[out] targetConstraint Mapping information for the target constraint of the relationship. 
-    //! It is set to default values, if the Target property wasn't set in the LinkTableRelationshipMap.
-    //! @return ECOBJECTSTATUS_Success if Target was set or unset in the LinkTableRelationshipMap, error codes otherwise
-    ECOBJECTS_EXPORT ECObjectsStatus TryGetTarget(ECDbRelationshipConstraintMap& targetConstraint) const;
+    //! Tries to get the value of the SourceColumns property from the LinkTableRelationshipMap.
+    //! @param[out] sourceColumns Mapping information for the source end of the relationship. 
+    //! It is set to default values, if the SourceColumns property wasn't set in the LinkTableRelationshipMap.
+    //! @return ECOBJECTSTATUS_Success if SourceColumns was set or unset in the LinkTableRelationshipMap, error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetSourceColumns(ECDbRelationshipEndColumns& sourceColumns) const;
+    //! Tries to get the value of the TargetColumns property from the LinkTableRelationshipMap.
+    //! @param[out] targetColumns Mapping information for the target end of the relationship. 
+    //! It is set to default values, if the TargetColumns property wasn't set in the LinkTableRelationshipMap.
+    //! @return ECOBJECTSTATUS_Success if TargetColumns was set or unset in the LinkTableRelationshipMap, error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetTargetColumns(ECDbRelationshipEndColumns& targetColumns) const;
     //! Tries to get the value of the AllowDuplicateRelationships property from the LinkTableRelationshipMap.
     //! @param[out] allowDuplicateRelationships AllowDuplicateRelationships flag. It remains unchanged, if the AllowDuplicateRelationships property wasn't set in the LinkTableRelationshipMap.
     //! @return ECOBJECTSTATUS_Success if AllowDuplicateRelationships was set or unset in the LinkTableRelationshipMap, Error codes otherwise
@@ -457,16 +444,34 @@ private:
 public:
     ECDbForeignKeyRelationshipMap() : m_relClass(nullptr), m_ca(nullptr) {}
 
-    //! Tries to get the value of the ForeignKeyEnd property from the ForeignKeyRelationshipMap.
+    //! Tries to get the value of the End property from the ForeignKeyRelationshipMap.
     //! @param[out] foreignKeyEnd End of the relationship which carries the foreign key. @p foreignKeyEnd remains unchanged, 
-    //! if the ForeignKeyEnd property wasn't set in the ForeignKeyRelationshipMap.
-    //! @return ECOBJECTSTATUS_Success if ForeignKeyEnd was set or unset in the ForeignKeyRelationshipMap, Error codes otherwise
-    ECOBJECTS_EXPORT ECObjectsStatus TryGetForeignKeyEnd(ECRelationshipEnd& foreignKeyEnd) const;
-    //! Tries to get the value of the ForeignKey property from the ForeignKeyRelationshipMap.
-    //! @param[out] foreignKeyConstraint Mapping information for the foreign key constraint of the relationship. 
-    //! It remains unchanged, if the ForeignKey property wasn't set in the ForeignKeyRelationshipMap.
-    //! @return ECOBJECTSTATUS_Success if ForeignKey was set or unset in the ForeignKeyRelationshipMap, error codes otherwise
-    ECOBJECTS_EXPORT ECObjectsStatus TryGetForeignKey(ECDbRelationshipConstraintMap& foreignKeyConstraint) const;
+    //! if the End property wasn't set in the ForeignKeyRelationshipMap.
+    //! @return ECOBJECTSTATUS_Success if End was set or unset in the ForeignKeyRelationshipMap, Error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetEnd(ECRelationshipEnd& foreignKeyEnd) const;
+    //! Tries to get the value of the Columns property from the ForeignKeyRelationshipMap.
+    //! @param[out] foreignKeyColumns Mapping information for the foreign key columns of the relationship. 
+    //! It remains unchanged, if the Columns property wasn't set in the ForeignKeyRelationshipMap.
+    //! @return ECOBJECTSTATUS_Success if Columns was set or unset in the ForeignKeyRelationshipMap, error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetColumns(ECDbRelationshipEndColumns& foreignKeyColumns) const;
+    //! Tries to get the value of the CreateConstraint property from the ForeignKeyRelationshipMap.
+    //! @param[out] createConstraintFlag true, if a foreign key constraint should be created (and referential integrity be enforced)
+    //!             false if no foreign key constraint should be created (and referential integrity should not be enforced).
+    //!             @p createConstraintFlag remains unchanged, if the CreateConstraint property wasn't set in the ForeignKeyRelationshipMap.
+    //! @return ECOBJECTSTATUS_Success if CreateConstraint was set or unset in the ForeignKeyRelationshipMap, Error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetCreateConstraint(bool& createConstraintFlag) const;
+    //! Tries to get the value of the OnDeleteAction property from the ForeignKeyRelationshipMap.
+    //! @remarks The property is only applicable if CreateConstraint was set to true.
+    //! @param[out] onDeleteAction OnDelete action.  @p onDeleteAction remains unchanged, if the OnDeleteAction property 
+    //! wasn't set in the ForeignKeyRelationshipMap.
+    //! @return ECOBJECTSTATUS_Success if OnDeleteAction was set or unset in the ForeignKeyRelationshipMap, Error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetOnDeleteAction(Utf8StringR onDeleteAction) const;
+    //! Tries to get the value of the OnUpdateAction property from the ForeignKeyRelationshipMap.
+    //! @remarks The property is only applicable if CreateConstraint was set to true.
+    //! @param[out] onUpdateAction Onpdate action. @p onDeleteAction remains unchanged, if the OnUpdateAction property 
+    //! wasn't set in the ForeignKeyRelationshipMap.
+    //! @return ECOBJECTSTATUS_Success if OnUpdateAction was set or unset in the ForeignKeyRelationshipMap, Error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetOnUpdateAction(Utf8StringR onUpdateAction) const;
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
