@@ -46,7 +46,7 @@ struct DgnElementMap : bmap<DgnElementId, DgnElementCPtr>
     };
 
 /** @addtogroup DgnModelGroup DgnModels
-@ref PAGE_ModelOverview 
+@ref PAGE_ModelOverview
 */
 
 //=======================================================================================
@@ -111,7 +111,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
             void ToJson(Json::Value& outValue) const;
         };
 
-        FormatterFlags m_formatterFlags;               //!< format flags 
+        FormatterFlags m_formatterFlags;               //!< format flags
         UnitDefinition m_masterUnit;                   //!< Master Unit information
         UnitDefinition m_subUnit;                      //!< Sub Unit information
         double         m_roundoffUnit;                 //!< unit lock roundoff val in uors
@@ -300,7 +300,7 @@ public:
     //! Empty the contents of this DgnModel. This will release any references to DgnElements held by this DgnModel.
     DGNPLATFORM_EXPORT void Empty();
 
-    //! Load all elements of this DgnModel. 
+    //! Load all elements of this DgnModel.
     //! After this call, all of the DgnElements of this model are loaded and are held in memory by this DgnModel.
     //! @note if this DgnModel is already filled, this method does nothing and returns DgnDbStatus::Success.
     void FillModel() {_FillModel();}
@@ -476,7 +476,7 @@ public:
 };
 
 //=======================================================================================
-//! A GraphicsModel2d is a DgnModel2d that does not have any relationship to phsyical space.
+//! A GraphicsModel2d is a DgnModel2d that does not have any relationship to physical space.
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Sam.Wilson  05/15
 //=======================================================================================
@@ -496,8 +496,8 @@ public:
 //=======================================================================================
 //! A PlanarPhysicalModel is an infinite planar model that subdivides physical space into two halves. The plane of a
 //! PhysicalPlanar model may be mapped into physical space in non-linear way, but every finite point in physical space is
-//! either "in front" or "in back" of the plane. 
-//! @note a PlanarPhysicalModel @b is @b a DgnModel2d, and all of its elements are 2-dimensional. 
+//! either "in front" or "in back" of the plane.
+//! @note a PlanarPhysicalModel @b is @b a DgnModel2d, and all of its elements are 2-dimensional.
 //! Also note that any (2d) point on a PlanarPhysicalModel corresponds to a single point in physical space.
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   10/11
@@ -539,7 +539,7 @@ struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingModel : PlanarPhysicalModel
 public:
     SectionDrawingModel(CreateParams const& params) : T_Super(params) {}
     };
-                                                    
+
 //=======================================================================================
 //! A sheet model is a GraphicsModel2d that has the following characteristics:
 //!     - Has fixed extents (is not infinite), specified in meters.

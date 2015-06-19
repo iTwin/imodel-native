@@ -36,9 +36,9 @@ CachedStatementPtr TxnManager::GetTxnStatement(Utf8CP sql) const
     m_stmts.GetPreparedStatement(ptr, *m_dgndb.GetDbFile(), sql);
     return ptr;
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
-* Save a changeset for the current txn into the TXN_Change table in the DgnDb. This compresses the changeset.
+* Save a changeset for the current Txn into the TXN_Change table in the DgnDb. This compresses the changeset.
 * @bsimethod                                    Keith.Bentley                   07/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult TxnManager::SaveCurrentChange(ChangeSet& changeset, Utf8CP operation)
@@ -96,7 +96,7 @@ void TxnManager::TruncateChanges(TxnId id)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Read the entry information at the given rowid (does not read the changest itself)
+* Read the entry information at the given rowid (does not read the changeset itself)
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult TxnManager::ReadEntry(TxnRowId rowid, ChangeEntry& entry)
@@ -173,7 +173,7 @@ dgn_TxnTable::ElementDep& TxnSummary::ElementDependencies() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Get the rowid of the first entry for a supplied TxnId 
+* Get the rowid of the first entry for a supplied TxnId
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TxnRowId TxnManager::FirstRow(TxnId id)
@@ -189,7 +189,7 @@ TxnRowId TxnManager::FirstRow(TxnId id)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Get the rowid of the last entry for a supplied TxnId 
+* Get the rowid of the last entry for a supplied TxnId
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TxnRowId TxnManager::LastRow(TxnId id)
@@ -291,7 +291,7 @@ BentleyStatus TxnManager::PropagateChanges(TxnSummaryR summary)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TxnManager::TrackChangesForTable TxnManager::_FilterTable(Utf8CP tableName) 
+TxnManager::TrackChangesForTable TxnManager::_FilterTable(Utf8CP tableName)
     {
     // Skip the range tree tables - they hold redundant data that will be automatically updated when the changeset is applied.
     // They all start with the string defined by DGNELEMENT_VTABLE_3dRTree
@@ -304,7 +304,7 @@ TxnManager::TrackChangesForTable TxnManager::_FilterTable(Utf8CP tableName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operation) 
+ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operation)
     {
     if (!isCommit || !HasChanges())
         return OnCommitStatus::Continue;
@@ -313,7 +313,7 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
 
     TxnId startPos = GetCurrTxnId(); // in case we have to roll back
 
-    // Create changeset from modified tables. We'll use this changeset to drive indirect changes, 
+    // Create changeset from modified tables. We'll use this changeset to drive indirect changes,
     // and we'll also save this changeset toward the end of the function.
     UndoChangeSet changeset;
     auto rc = changeset.FromChangeTrack(*this);
@@ -353,7 +353,7 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
     if (BSISUCCESS != status)
         {
         LOG.errorv("Cancelling txn due to fatal validation error.");
-        CancelChanges(changeset); 
+        CancelChanges(changeset);
         }
     else
         {
@@ -432,7 +432,7 @@ void TxnSummary::AddChangeSet(ChangeSet& changeset)
 
     // Walk through each changed row in the changeset. They are ordered by table, so we know that all changes to one table will be seen
     // before we see any changes to another table.
-    for (auto change : changes) 
+    for (auto change : changes)
         {
         Utf8CP tableName;
         int nCols,indirect;
@@ -501,7 +501,7 @@ DbResult TxnManager::ApplyChangeSet(ChangeSet& changeset, TxnDirection direction
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Changesets are stored as compressed blobs in the DGN_TABLE_Txns table. Read one by rowid. 
+* Changesets are stored as compressed blobs in the DGN_TABLE_Txns table. Read one by rowid.
 * If the TxnDirection is backwards, invert the changeset.
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -559,7 +559,7 @@ void TxnManager::ApplyChanges(TxnRowId rowId, TxnDirection direction)
 void TxnManager::CancelChanges(TxnRowId txnId)
     {
 #if defined (NEEDS_WORK_TXN_MANAGER)
-    Utf8String txnDescr; 
+    Utf8String txnDescr;
     uint64_t txnSource;
     m_db.ReadEntry(txnId, txnSource, txnDescr);
 
@@ -581,7 +581,7 @@ void TxnManager::CancelChanges(TxnRowId txnId)
 void TxnManager::ReverseTxnRange(TxnRange& txnRange, Utf8StringP undoStr, bool multiStep)
     {
     SetUndoInProgress(true);
-    
+
     TxnRowId last  = LastRow(TxnId(txnRange.GetLast()-1));
     TxnRowId first = FirstRow(txnRange.GetFirst());
 
@@ -799,7 +799,7 @@ Utf8String TxnManager::GetRedoString()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Cancel any undone (rolled-back) transactions. 
+* Cancel any undone (rolled-back) transactions.
 * @bsimethod                                                    Keith.Bentley   03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::DeleteReversedTxns()
@@ -830,7 +830,7 @@ void dgn_TxnTable::Element::_OnTxnSummaryStart(TxnSummary&)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::Element::_OnTxnSummaryEnd(TxnSummary&) 
+void dgn_TxnTable::Element::_OnTxnSummaryEnd(TxnSummary&)
     {
     m_dgndb.ExecuteSql("DELETE FROM " TEMP_TABLE(TXN_TABLE_Elements));
     }
@@ -852,7 +852,7 @@ void dgn_TxnTable::Model::_OnTxnSummaryEnd(TxnSummary& summary)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::ElementDep::_OnTxnSummaryStart(TxnSummary&)    
+void dgn_TxnTable::ElementDep::_OnTxnSummaryStart(TxnSummary&)
     {
     if (m_stmt.IsPrepared())
         return;
@@ -865,7 +865,7 @@ void dgn_TxnTable::ElementDep::_OnTxnSummaryStart(TxnSummary&)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::ElementDep::_OnTxnSummaryEnd(TxnSummary& summary) 
+void dgn_TxnTable::ElementDep::_OnTxnSummaryEnd(TxnSummary& summary)
     {
     m_dgndb.ExecuteSql("DELETE FROM " TEMP_TABLE(TXN_TABLE_Depend));
     }
@@ -873,7 +873,7 @@ void dgn_TxnTable::ElementDep::_OnTxnSummaryEnd(TxnSummary& summary)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::ElementDep::UpdateSummary(TxnSummary& summary, Changes::Change change, TxnSummary::ChangeType changeType) 
+void dgn_TxnTable::ElementDep::UpdateSummary(TxnSummary& summary, Changes::Change change, TxnSummary::ChangeType changeType)
     {
     Changes::Change::Stage stage = (TxnSummary::ChangeType::Insert == changeType) ? Changes::Change::Stage::New : Changes::Change::Stage::Old;
     ECInstanceId instanceId(change.GetValue(0, stage).GetValueInt64()); // primary key is column 0
@@ -883,25 +883,25 @@ void dgn_TxnTable::ElementDep::UpdateSummary(TxnSummary& summary, Changes::Chang
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::ModelDep::_OnAdd(TxnSummary& summary, Changes::Change const& change) 
+void dgn_TxnTable::ModelDep::_OnAdd(TxnSummary& summary, Changes::Change const& change)
     {
-    SetChanges(); 
+    SetChanges();
     CheckDirection(summary, change.GetNewValue(0).GetValueId<EC::ECInstanceId>());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::ModelDep::_OnUpdate(TxnSummary& summary, Changes::Change const& change) 
+void dgn_TxnTable::ModelDep::_OnUpdate(TxnSummary& summary, Changes::Change const& change)
     {
-    SetChanges(); 
+    SetChanges();
     CheckDirection(summary, change.GetOldValue(0).GetValueId<EC::ECInstanceId>());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::Element::AddElement(DgnElementId elementId, DgnModelId modelId, double lastMod, TxnSummary::ChangeType changeType) 
+void dgn_TxnTable::Element::AddElement(DgnElementId elementId, DgnModelId modelId, double lastMod, TxnSummary::ChangeType changeType)
     {
     enum Column : int {ElementId=1,ModelId=2,ChangeType=3,LastMod=4};
 
@@ -924,20 +924,20 @@ void dgn_TxnTable::Element::AddElement(DgnElementId elementId, DgnModelId modelI
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2015
 //---------------------------------------------------------------------------------------
-void dgn_TxnTable::Element::AddChange(TxnSummary& summary, Changes::Change const& change, TxnSummary::ChangeType changeType) 
+void dgn_TxnTable::Element::AddChange(TxnSummary& summary, Changes::Change const& change, TxnSummary::ChangeType changeType)
     {
     Changes::Change::Stage stage;
     switch (changeType)
         {
         case TxnSummary::ChangeType::Insert:
-            stage = Changes::Change::Stage::New; 
+            stage = Changes::Change::Stage::New;
             break;
 
         case TxnSummary::ChangeType::Update:
-        case TxnSummary::ChangeType::Delete:    
-            stage = Changes::Change::Stage::Old; 
+        case TxnSummary::ChangeType::Delete:
+            stage = Changes::Change::Stage::Old;
             break;
-        default: 
+        default:
             BeAssert(false);
             return;
         }
@@ -954,7 +954,7 @@ void dgn_TxnTable::Element::AddChange(TxnSummary& summary, Changes::Change const
         modelId = DgnModelId(change.GetValue(2, stage).GetValueInt64());   // assumes DgnModelId is column 2
 
     if (changeType == TxnSummary::ChangeType::Update)
-        stage = Changes::Change::Stage::New; 
+        stage = Changes::Change::Stage::New;
     double lastMod = change.GetValue(7, stage).GetValueDouble();           // assumes LastMod is column 7
 
     AddElement(elementId, modelId, lastMod, changeType);
@@ -963,7 +963,7 @@ void dgn_TxnTable::Element::AddChange(TxnSummary& summary, Changes::Change const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-dgn_TxnTable::Element::Iterator::Entry dgn_TxnTable::Element::Iterator::begin() const   
+dgn_TxnTable::Element::Iterator::Entry dgn_TxnTable::Element::Iterator::begin() const
     {
     if (!m_stmt.IsValid())
         m_db->GetCachedStatement(m_stmt, "SELECT ElementId,ModelId,ChangeType,LastMod FROM " TEMP_TABLE(TXN_TABLE_Elements));
@@ -1005,7 +1005,7 @@ void dgn_TxnTable::ElementDep::AddDependency(EC::ECInstanceId const& relid, TxnS
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  03/2015
 //---------------------------------------------------------------------------------------
-void dgn_TxnTable::ModelDep::CheckDirection(TxnSummary& summary, ECInstanceId relid) 
+void dgn_TxnTable::ModelDep::CheckDirection(TxnSummary& summary, ECInstanceId relid)
     {
     Statement stmt(summary.GetDgnDb(), "SELECT RootModelId,DependentModelId FROM " DGN_TABLE(DGN_RELNAME_ModelDrivesModel) " WHERE(ECInstanceId=?)");
     stmt.BindId(1, relid);
