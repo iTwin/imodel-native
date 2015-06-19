@@ -879,7 +879,7 @@ bool            IAuxCoordSys::Locate (DPoint3dR hitPt, DgnViewportR vp, DPoint3d
 
     bool        hitFound = output->LocateQvElem (qvElem, *((DPoint2dCP) &testPtView), 1.0, hitPt, NULL, NULL, NULL);
 
-    output->DeleteCacheElement (qvElem);
+    T_HOST.GetGraphicsAdmin()._DeleteQvElem(qvElem);
 
     return hitFound;
     }
@@ -1108,7 +1108,7 @@ bool                drawName
 
     ICachedDrawP    cached = viewport->GetICachedDraw ();
 
-    cached->BeginCacheElement (viewport->GetIViewOutput()->GetTempElementCache (), true);
+    cached->BeginCacheElement (T_HOST.GetGraphicsAdmin()._GetTempElementCache(), true);
 
     cached->PushTransform (transform);
 
@@ -1211,7 +1211,7 @@ void            IAuxCoordSys::_DisplayInView (DgnViewportP viewport, ACSDisplayO
     IViewOutputP    output = viewport->GetIViewOutput ();
 
     output->DrawQvElem (qvElem, 0);
-    output->DeleteCacheElement (qvElem);
+    T_HOST.GetGraphicsAdmin()._DeleteQvElem(qvElem);
     }
 
 /*---------------------------------------------------------------------------------**//**

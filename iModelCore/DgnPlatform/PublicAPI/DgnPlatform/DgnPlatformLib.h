@@ -467,9 +467,6 @@ public:
             //! An InteractiveHost may choose to allow applications to display non-persistent geometry during an update.
             virtual void _CallViewTransients(ViewContextR, bool isPreupdate) {}
 
-            //! @return true to display a background fill behind text fields.
-            virtual bool _WantShowDefaultFieldBackground() {return true;}
-
             //! @return Value to use for display control setting of mesh edges marked as invisible and for bspline curve/surface control polygons.
             virtual ControlPolyDisplay _GetControlPolyDisplay() {return CONTROLPOLY_DISPLAY_ByElement;}
 

@@ -646,6 +646,16 @@ static void PrintVector (char *name, DVec3d vector)
 #endif
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isWireframeDisplay (ViewContextR context)
+    {
+    ViewFlagsCP flags = context.GetViewFlags();
+
+    return (nullptr != flags && DgnRenderMode::Wireframe == flags->GetRenderMode());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt PickOutput::_ProcessCurveVector (CurveVectorCR curves, bool isFilled)
@@ -653,7 +663,7 @@ StatusInt PickOutput::_ProcessCurveVector (CurveVectorCR curves, bool isFilled)
     if (!TestCurveVector (curves, HitPriority::Edge) && m_doLocateInteriors)
         {
         // NOTE: Since edge hits are preferred only test interiors when we don't get an edge hit...
-        if (curves.IsAnyRegionType () && (isFilled || 0 != (m_context->GetDisplayInfo (true) & DISPLAY_INFO_Surface)))
+        if (curves.IsAnyRegionType () && (isFilled || !isWireframeDisplay(*m_context)))
             TestCurveVectorInterior (curves, HitPriority::Interior);
         }
 
@@ -665,7 +675,7 @@ StatusInt PickOutput::_ProcessCurveVector (CurveVectorCR curves, bool isFilled)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt PickOutput::_ProcessSolidPrimitive (ISolidPrimitiveCR primitive)
     {
-    if (0 == (m_context->GetDisplayInfo (true) & DISPLAY_INFO_Surface))
+    if (isWireframeDisplay(*m_context))
         {
         m_doLocateSilhouettes = (SolidPrimitiveType_DgnCone != primitive.GetSolidPrimitiveType () && primitive.HasCurvedFaceOrEdge ()); // Need QvElem locate for silhouettes in wireframe...
 
@@ -708,7 +718,7 @@ StatusInt PickOutput::_ProcessSolidPrimitive (ISolidPrimitiveCR primitive)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt PickOutput::_ProcessSurface (MSBsplineSurfaceCR surface)
     {
-    if (0 == (m_context->GetDisplayInfo (true) & DISPLAY_INFO_Surface))
+    if (isWireframeDisplay(*m_context))
         {
         m_doLocateSilhouettes = true; // Need QvElem locate for silhouettes in wireframe...
 
@@ -751,7 +761,7 @@ StatusInt PickOutput::_ProcessSurface (MSBsplineSurfaceCR surface)
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt PickOutput::_ProcessFacetSet (PolyfaceQueryCR meshData, bool filled)
     {
-    if (0 != (m_context->GetDisplayInfo (true) & DISPLAY_INFO_Surface))
+    if (!isWireframeDisplay(*m_context))
         {
         DRay3d              boresite = _GetBoresite ();
         PolyfaceVisitorPtr  visitor = PolyfaceVisitor::Attach (meshData);
@@ -1008,16 +1018,6 @@ void            PickContext::_SetupOutputs ()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  05/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t        PickContext::_GetDisplayInfo (bool isRenderable)
-    {
-    uint32_t info = T_Super::_GetDisplayInfo (isRenderable);
-
-    return (info | DISPLAY_INFO_Edge); // Always include edge for pick...
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/05
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            PickContext::_DrawAreaPattern (ClipStencil& boundary)
@@ -1035,11 +1035,11 @@ ILineStyleCP    PickContext::_GetCurrLineStyle (LineStyleSymbP* symb)
     if (m_output.GetInSymbolDraw ())
         return NULL;
 
-    LineStyleSymbP tSymb;
+    LineStyleSymbP  tSymb;
     ILineStyleCP    style = T_Super::_GetCurrLineStyle (&tSymb);
 
-    if (NULL == style)
-        return NULL;
+    if (nullptr == style)
+        return nullptr;
 
     if (symb)
         *symb = tSymb;
@@ -1052,7 +1052,7 @@ ILineStyleCP    PickContext::_GetCurrLineStyle (LineStyleSymbP* symb)
         return style;
         }
 
-    return NULL;
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -81,9 +81,8 @@ public:
     {
         None         = 0, //!< the element is displayed normally (not hilited)
         Normal       = 1, //!< the element is displayed using the normal hilite appearance
-        Bold         = 2, //!< the element is displayed with a bold appearance
-        Dashed       = 3, //!< the element is displayed with a dashed appearance
-        Background   = 4, //!< the element is displayed with the background color
+        Dashed       = 2,
+        Background   = 3, //!< the element is displayed with the background color
     };
 
     //! Application data attached to a DgnElement. Create a subclass of this to store non-persistent information on a DgnElement.

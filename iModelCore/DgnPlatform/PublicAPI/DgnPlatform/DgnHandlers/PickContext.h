@@ -133,7 +133,6 @@ private:
     virtual void            _DrawStyledBSplineCurve2d (MSBsplineCurveCR, double zDepth) override;
     virtual QvElemP         _DrawCached (DgnPlatform::IStrokeForCache&) override;
     virtual IPickGeomP      _GetIPickGeom () override {return &m_output;}
-    virtual uint32_t        _GetDisplayInfo (bool isRenderable) override;
 
     void                    InitNpcSubRect (DPoint3dCR pickPointWorld, double pickAperture, DgnViewportR viewport);
     void                    InitSearch (DPoint3dCR pickPointWorld, double pickApertureScreen, HitListP);
