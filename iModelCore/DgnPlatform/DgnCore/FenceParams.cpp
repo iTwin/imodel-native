@@ -360,6 +360,16 @@ StatusInt ProcessCurve (MSBsplineCurveCP curveP, bool filled)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isWireframeDisplay (ViewContextR context)
+    {
+    ViewFlagsCP flags = context.GetViewFlags();
+
+    return (nullptr != flags && DgnRenderMode::Wireframe == flags->GetRenderMode());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual StatusInt _ProcessCurvePrimitive (ICurvePrimitiveCR primitive, bool closed, bool filled) override
@@ -424,9 +434,7 @@ virtual StatusInt _ProcessCurveVector (CurveVectorCR curves, bool isFilled) over
     if (!curves.IsAnyRegionType ())
         return ERROR;
 
-    uint32_t info = m_context->GetDisplayInfo (true);
-
-    if (0 == (info & DISPLAY_INFO_Surface) && (0 == (info & DISPLAY_INFO_Fill) || !isFilled))
+    if (isWireframeDisplay(*m_context) && !isFilled)
         return ERROR;
 
     DRange3d    localRange;
@@ -472,7 +480,7 @@ virtual StatusInt _ProcessSolidPrimitive (ISolidPrimitiveCR primitive) override
     if (m_fp->HasOverlaps ())
         return ERROR; // Already detected overlap, can skip interior check...
 
-    if (0 == (m_context->GetDisplayInfo (true) & DISPLAY_INFO_Surface))
+    if (isWireframeDisplay(*m_context))
         return ERROR;
 
     bvector<DRay3d> boresiteVector;
@@ -506,7 +514,7 @@ virtual StatusInt _ProcessSurface (MSBsplineSurfaceCR surface) override
     if (m_fp->HasOverlaps ())
         return ERROR; // Already detected overlap, can skip interior check...
 
-    if (0 == (m_context->GetDisplayInfo (true) & DISPLAY_INFO_Surface))
+    if (isWireframeDisplay(*m_context))
         return ERROR;
 
     double          uorRes = bspsurf_getResolution (&surface);
@@ -545,9 +553,7 @@ virtual StatusInt _ProcessFacetSet (PolyfaceQueryCR meshData, bool isFilled) ove
         return SUCCESS; // Already detected overlap, can skip interior check...
         }
 
-    uint32_t info = m_context->GetDisplayInfo (true);
-
-    if (0 == (info & DISPLAY_INFO_Surface) && (0 == (info & DISPLAY_INFO_Fill) || !isFilled))
+    if (isWireframeDisplay(*m_context) && !isFilled)
         {
         ClipAndProcessFacetSetAsCurves (meshData);
 
@@ -702,16 +708,6 @@ virtual void    _SetupOutputs () override
     SetIViewDraw (m_output);
 
     m_output.SetViewContext (this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  05/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual uint32_t _GetDisplayInfo (bool isRenderable) override
-    {
-    uint32_t    info = T_Super::_GetDisplayInfo (isRenderable);
-
-    return (info | DISPLAY_INFO_Edge); // Always include edge for fence...
     }
 
 /*---------------------------------------------------------------------------------**//**

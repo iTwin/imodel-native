@@ -192,8 +192,6 @@ public:
     DGNPLATFORM_EXPORT void SetDrawBuffer (DgnDrawBuffer drawBuffer, BSIRect const* subRect);
     DGNPLATFORM_EXPORT DgnDrawBuffer GetDrawBuffer () const;
     DGNPLATFORM_EXPORT void SetEraseMode (bool newMode);
-    DGNPLATFORM_EXPORT static QvCache* GetTempElementCache ();
-    DGNPLATFORM_EXPORT static void DeleteCacheElement (QvElem*);
     DGNPLATFORM_EXPORT StatusInt SynchDrawingFromBackingStore ();
     DGNPLATFORM_EXPORT void SynchDrawingFromBackingStoreAsynch ();
     DGNPLATFORM_EXPORT StatusInt SynchScreenFromDrawing ();
@@ -243,9 +241,9 @@ public:
     //! @bsimethod
     DGNPLATFORM_EXPORT void PopTransClip ();
 
-    DGNPLATFORM_EXPORT bool      EnableZTesting (bool yesNo);
-    DGNPLATFORM_EXPORT bool      EnableZWriting (bool yesNo);
-    DGNPLATFORM_EXPORT bool      CheckNeedsHeal (BSIRectP rect);
+    DGNPLATFORM_EXPORT bool EnableZTesting (bool yesNo);
+    DGNPLATFORM_EXPORT bool EnableZWriting (bool yesNo);
+    DGNPLATFORM_EXPORT bool CheckNeedsHeal (BSIRectP rect);
 
 }; // IViewOutput
 
