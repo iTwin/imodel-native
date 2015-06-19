@@ -15,7 +15,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 struct RasterBaseModelHandler;
 
 //=======================================================================================
-// Obtain and display raster data.
+//! Obtain and display raster data.
 // @bsiclass                                                    Eric.Paquet     04/2015
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RasterBaseModel : PhysicalModel
@@ -35,14 +35,16 @@ public:
     DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const override;
 };
 
-//=======================================================================================
-// Model handler for rasters.
-// Instances of RasterBaseModel must be able to assume that their handler is a RasterBaseModelHandler.
-// @bsiclass                                                    Eric.Paquet     04/2015
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RasterBaseModelHandler : ModelHandler
+namespace dgn_ModelHandler
 {
-    MODELHANDLER_DECLARE_MEMBERS ("RasterBaseModel", RasterBaseModel, RasterBaseModelHandler, ModelHandler, DGNPLATFORM_EXPORT)
+    //=======================================================================================
+    //! The ModelHandler for RasterBaseModel.
+    // @bsiclass                                                    Eric.Paquet     04/2015
+    //=======================================================================================
+    struct EXPORT_VTABLE_ATTRIBUTE Raster : Model
+    {
+        MODELHANDLER_DECLARE_MEMBERS ("RasterBaseModel", RasterBaseModel, Raster, Model, DGNPLATFORM_EXPORT)
+    };
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

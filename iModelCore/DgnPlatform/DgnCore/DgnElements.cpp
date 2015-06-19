@@ -1018,9 +1018,11 @@ DgnElements::DgnElements(DgnDbR dgndb) : DgnDbTable(dgndb), m_heapZone(0, false)
 * don't need to worry about them - they'll be reloaded with the correct data if/when they're needed.
 * @bsimethod                                    Keith.Bentley                   07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElements::OnChangesetApplied(TxnSummary const& summary)
+void dgn_TxnTable::Element::_OnChangesetApplied(TxnSummary& summary)
     {
-    for (auto const& iter : summary.MakeElementIterator())
+    DgnElements& elements = summary.GetDgnDb().Elements();
+
+    for (auto const& iter : MakeIterator())
         {
         switch (iter.GetChangeType())
             {
@@ -1030,7 +1032,7 @@ void DgnElements::OnChangesetApplied(TxnSummary const& summary)
             case TxnSummary::ChangeType::Delete:
                 {
                 // see if we have this element in memory, if so call its _OnDelete method.
-                DgnElementP el = (DgnElementP) FindElement(iter.GetElementId());
+                DgnElementP el = (DgnElementP) elements.FindElement(iter.GetElementId());
                 if (el)
                     el->_OnDeleted();
                 }
@@ -1038,12 +1040,12 @@ void DgnElements::OnChangesetApplied(TxnSummary const& summary)
 
             case TxnSummary::ChangeType::Update:
                 {
-                DgnElementP el = (DgnElementP) FindElement(iter.GetElementId());
+                DgnElementP el = (DgnElementP) elements.FindElement(iter.GetElementId());
                 if (el)
                     {
-                    DgnElementCPtr postModified = LoadElement(el->GetElementId(), false);
+                    DgnElementCPtr postModified = elements.LoadElement(el->GetElementId(), false);
                     BeAssert(postModified.IsValid());
-                    FinishUpdate(*postModified.get(), *el);
+                    elements.FinishUpdate(*postModified.get(), *el);
                     }
                 }
                 break;
@@ -1056,7 +1058,7 @@ void DgnElements::OnChangesetApplied(TxnSummary const& summary)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, bool makePersistent) const
     {
-    ElementHandlerP elHandler = ElementHandler::FindHandler(m_dgndb, params.m_classId);
+    ElementHandlerP elHandler = dgn_ElementHandler::Element::FindHandler(m_dgndb, params.m_classId);
     if (nullptr == elHandler)
         {
         BeAssert(false);

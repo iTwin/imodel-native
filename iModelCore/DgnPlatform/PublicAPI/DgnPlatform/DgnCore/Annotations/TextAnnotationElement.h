@@ -38,7 +38,6 @@ private:
     void UpdateGeometryRepresentation();
 
 protected:
-    explicit PhysicalTextAnnotationElement(CreateParams const& params) : T_Super(params) {}
     PhysicalTextAnnotationElement(CreateParams const& params, TextAnnotationCR seedAnnotation) : T_Super(params) { SetAnnotation(seedAnnotation); }
     DGNPLATFORM_EXPORT virtual DgnDbStatus _InsertInDb() override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateInDb() override;
@@ -46,6 +45,7 @@ protected:
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
 
 public:
+    explicit PhysicalTextAnnotationElement(CreateParams const& params) : T_Super(params) {}
     static PhysicalTextAnnotationElementPtr Create(CreateParams const& params) { return new PhysicalTextAnnotationElement(params); }
     static PhysicalTextAnnotationElementPtr Create(CreateParams const& params, TextAnnotationCR seedAnnotation) { return new PhysicalTextAnnotationElement(params, seedAnnotation); }
 
@@ -60,12 +60,16 @@ public:
     DgnDbStatus Delete() { return GetDgnDb().Elements().Delete(*this); }
 };
 
+namespace dgn_ElementHandler
+{
 //=======================================================================================
+//! The ElementHandler for PhysicalTextAnnotationElement
 // @bsiclass                                                    Jeff.Marker     06/2015
 //=======================================================================================
-struct PhysicalTextAnnotationElementHandler : ElementHandler
+struct PhysicalText : Element
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalTextAnnotationElement, PhysicalTextAnnotationElement, PhysicalTextAnnotationElementHandler, ElementHandler, DGNPLATFORM_EXPORT);
+    ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalTextAnnotationElement, PhysicalTextAnnotationElement, PhysicalText, Element, DGNPLATFORM_EXPORT);
+};
 };
 
 //! @endGroup

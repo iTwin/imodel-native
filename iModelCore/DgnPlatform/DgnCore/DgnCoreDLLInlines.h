@@ -229,7 +229,6 @@ DG_INLINE uint32_t ViewContext::GetRasterPlane() const {return m_rasterPlane;}
 DG_INLINE StatusInt ViewContext::Attach(DgnViewportP vp, DrawPurpose purpose) {return _Attach(vp,purpose);}
 DG_INLINE void ViewContext::Detach() {_Detach();}
 DG_INLINE bool ViewContext::CheckStop() {return _CheckStop();}
-DG_INLINE uint32_t ViewContext::GetDisplayInfo(bool isRenderable) {return _GetDisplayInfo(isRenderable);}
 DG_INLINE void ViewContext::PopTransformClip() {_PopTransformClip();}
 DG_INLINE void ViewContext::PushTransform(TransformCR trans) {_PushTransform(trans);}
 DG_INLINE void ViewContext::PushClip(ClipVectorCR clip) {_PushClip(clip);}
@@ -249,16 +248,12 @@ DG_INLINE void ViewContext::VisitDgnModel(DgnModelP modelRef) {_VisitDgnModel(mo
 DG_INLINE void ViewContext::SetScanReturn() {_SetScanReturn();}
 DG_INLINE QvElem* ViewContext::DrawCached(IStrokeForCache& stroker) {return _DrawCached(stroker);}
 DG_INLINE void ViewContext::VisitTransientGraphics(bool isPreUpdate) {_VisitTransientGraphics(isPreUpdate);}
-DG_INLINE bool ViewContext::CheckFillOutline() {return _CheckFillOutline();}
-DG_INLINE ILineStyleCP ViewContext::GetCurrLineStyle(LineStyleSymbP* symb) {return _GetCurrLineStyle(symb);}
 DG_INLINE void ViewContext::CookDisplayParams(ElemDisplayParamsR elParams, ElemMatSymbR elMatSymb) {_CookDisplayParams(elParams, elMatSymb);}
 DG_INLINE void ViewContext::CookDisplayParamsOverrides(ElemDisplayParamsR elParams, OvrMatSymbR ovrMatSymb) {_CookDisplayParamsOverrides(elParams, ovrMatSymb);}
 DG_INLINE StatusInt ViewContext::InitContextForView() {return _InitContextForView();}
 DG_INLINE bool ViewContext::VisitAllModelElements(bool includeTransients) { return _VisitAllModelElements(includeTransients); }
 DG_INLINE void ViewContext::ClearZ() { _ClearZ(); }
-DG_INLINE bool ViewContext::WantShowDefaultFieldBackground() {return _WantShowDefaultFieldBackground();}
 DG_INLINE void ViewContext::DeleteSymbol(IDisplaySymbol* symbol) {_DeleteSymbol(symbol);}
-DG_INLINE bool ViewContext::_WantShowDefaultFieldBackground() {return T_HOST.GetGraphicsAdmin()._WantShowDefaultFieldBackground();}
 DG_INLINE bool ViewContext::_WantSaveQvElem(DrawExpense expense) {return T_HOST.GetGraphicsAdmin()._WantSaveQvElem(static_cast<int>(expense));}
 DG_INLINE BentleyStatus ViewContext::GetCurrLocalToWorldTrans(TransformR trans) const { return m_transformClipStack.GetTransform(trans); }
 DG_INLINE BentleyStatus ViewContext::GetCurrWorldToLocalTrans(TransformR trans) const { return m_transformClipStack.GetInverseTransform(trans); }
@@ -383,8 +378,6 @@ DG_INLINE bool IViewOutput::LocateQvElem(QvElem* qvElem, DPoint2dCR borePt, doub
 DG_INLINE void IViewOutput::AbortOutstandingOperations(){_AbortOutstandingOperations();}
 DG_INLINE void IViewOutput::SetIdleCallback(bool(*callback)(CallbackArgP), CallbackArgP userData){_SetIdleCallback(callback, userData);}
 DG_INLINE QvView* IViewOutput::GetQvView() const{return _GetQvView();}
-DG_INLINE QvCache* IViewOutput::GetTempElementCache() {return T_HOST.GetGraphicsAdmin()._GetTempElementCache();}
-DG_INLINE void IViewOutput::DeleteCacheElement(QvElem* qvElem) {return T_HOST.GetGraphicsAdmin()._DeleteQvElem(qvElem);}
 DG_INLINE void IViewOutput::PushTransClip(TransformCP trans, ClipPlaneSetCP clip) {_PushTransClip(trans, clip);}
 DG_INLINE void IViewOutput::PopTransClip() {_PopTransClip();}
 DG_INLINE BentleyStatus IViewOutput::FillImageCaptureBuffer(bvector<unsigned char>& buffer, CapturedImageInfo& info, DRange2dCR screenBufferRange, Point2dCR outputImageSize, bool topDown) {return _FillImageCaptureBuffer(buffer, info, screenBufferRange, outputImageSize, topDown);}

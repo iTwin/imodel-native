@@ -55,58 +55,74 @@ public:
         DOMAINHANDLER_DECLARE_MEMBERS(__ECClassName__,__handlerclass__,__handlersuperclass__,__exporter__) 
 
 //=======================================================================================
-//! An ElementHandler creates instances of (a subclass of) DgnElement.
+//! @namespace BentleyApi::Dgn::dgn_ElementHandler DgnElement Handlers in the base "Dgn" domain. 
+//! @note Only handlers from the base "Dgn" domain belong in this namespace.
+// @bsiclass                                                    Keith.Bentley   06/15
+//=======================================================================================
+namespace dgn_ElementHandler
+{
+    //=======================================================================================
+    //! The ElementHandler for DgnElement.
+    //! An ElementHandler creates instances of (a subclass of) DgnElement.
+    //! @see DgnElement
+    //! @ingroup DgnElementGroup
+    //=======================================================================================
+    struct EXPORT_VTABLE_ATTRIBUTE Element : DgnDomain::Handler
+    {
+        friend struct Dgn::DgnElement;
+        DOMAINHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_Element, Element, DgnDomain::Handler, DGNPLATFORM_EXPORT)
+
+    protected:
+        virtual DgnElement* _CreateInstance(DgnElement::CreateParams const& params) {return new DgnElement(params);}
+        virtual ElementHandlerP _ToElementHandler() {return this;}
+
+    public:
+
+        //! Create a new instance of a DgnElement from a CreateParams. 
+        //! @note The actual type of the returned DgnElement will depend on the DgnClassId in @a params.
+        DgnElementPtr Create(DgnElement::CreateParams const& params) {return (DgnElementP) _CreateInstance(params);}
+
+        //! Find the ElementHandler for a DgnClassId within a supplied DgnDb.
+        DGNPLATFORM_EXPORT static ElementHandlerP FindHandler(DgnDb const& dgndb, DgnClassId classId);
+    };
+
+    //! The ElementHandler for PhysicalElement
+    struct EXPORT_VTABLE_ATTRIBUTE Physical : Element
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalElement, PhysicalElement, Physical, Element, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for DrawingElement
+    struct EXPORT_VTABLE_ATTRIBUTE Drawing : Element
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, DrawingElement, Drawing, Element, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ElementHandler for ElementGroup
+    struct EXPORT_VTABLE_ATTRIBUTE Group : Element
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_ElementGroup, ElementGroup, Group, Element, DGNPLATFORM_EXPORT)
+    };
+
+};
+
+
+//=======================================================================================
+//! An ElementAspectHandler creates instances of (a subclass of) DgnElement::Aspect.
 //! @see DgnElement
 //! @ingroup DgnElementGroup
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ElementHandler : DgnDomain::Handler
+struct EXPORT_VTABLE_ATTRIBUTE ElementAspectHandler : DgnDomain::Handler
 {
     friend struct DgnElement;
-    DOMAINHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_Element, ElementHandler, DgnDomain::Handler, DGNPLATFORM_EXPORT)
+    DOMAINHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_ElementAspect, ElementAspectHandler, DgnDomain::Handler, DGNPLATFORM_EXPORT)
 
-private: 
-    virtual DgnElement* _CreateInstance(DgnElement::CreateParams const& params) {return new DgnElement(params);}
-
-protected:
-    virtual ElementHandlerP _ToElementHandler() {return this;}
-
-public:
-    //! Create a new instance of a DgnElement from a CreateParams. 
-    //! @note The actual type of the returned DgnElement will depend on the DgnClassId in @a params.
-    DgnElementPtr Create(DgnElement::CreateParams const& params) {return (DgnElementP) _CreateInstance(params);}
+    //! The subclass must override this method in order to create an instance using its default constructor.
+    //! (The caller will populate and/or persist the returned instance by invoking virtual methods on it.)
+    virtual RefCountedPtr<DgnElement::Aspect> _CreateInstance() {return nullptr;}
 
     //! Find the ElementHandler for a DgnClassId within a supplied DgnDb.
-    DGNPLATFORM_EXPORT static ElementHandlerP FindHandler(DgnDb const& dgndb, DgnClassId classId);
-};
-
-//=======================================================================================
-//! A PhysicalElementHandler creates instances of PhysicalElement.
-//! @see PhysicalElement
-//! @ingroup DgnElementGroup
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE PhysicalElementHandler : ElementHandler
-{
-    ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalElement, PhysicalElement, PhysicalElementHandler, ElementHandler, DGNPLATFORM_EXPORT)
-};
-
-//=======================================================================================
-//! A DrawingElementHandler creates instances of DrawingElement.
-//! @see DrawingElement
-//! @ingroup DgnElementGroup
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DrawingElementHandler : ElementHandler
-{
-    ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, DrawingElement, DrawingElementHandler, ElementHandler, DGNPLATFORM_EXPORT)
-};
-
-//=======================================================================================
-//! An ElementGroupHandler creates instances of ElementGroup.
-//! @see ElementGroup
-//! @ingroup DgnElementGroup
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ElementGroupHandler : ElementHandler
-{
-    ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_ElementGroup, ElementGroup, ElementGroupHandler, ElementHandler, DGNPLATFORM_EXPORT)
+    DGNPLATFORM_EXPORT static ElementAspectHandler* FindHandler(DgnDbR dgndb, DgnClassId classId);
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

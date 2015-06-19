@@ -53,9 +53,7 @@
 #define HANDLER_EXTENSION_DEFINE_MEMBERS(__classname__) \
     DgnDomain::Handler::Extension::Token& __classname__::z_Get##__classname__##Token(){static DgnDomain::Handler::Extension::Token* s_token=0; if (0==s_token) s_token = NewToken(); return *s_token;}
 
-// This macro declares the required members for an DgnDomain::TableHandler. 
-#define TABLEHANDLER_DECLARE_MEMBERS(__tableName__,__classname__,__exporter__) \
-    public:  __classname__() : DgnDomain::TableHandler(__tableName__) {} \
+#define TABLEHANDLER_DECLARE_MEMBERS(__classname__,__exporter__) \
     public:  __exporter__ static __classname__& GetHandler();
 
 // This macro must be included somewhere within a source file that implements a DgnDomain::TableHandler
@@ -250,20 +248,15 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
     //! A handler for a specfic SQLite table. Needed for processing ChangeSets.
     // @bsiclass                                                    Keith.Bentley   07/11
     //=======================================================================================
-    struct TableHandler
+    struct TableHandler : NonCopyableClass
     {
     private:
-        Utf8String   m_tableName;
         DgnDomainCP  m_domain;
-    public:
-        TableHandler(Utf8CP tableName) : m_domain(nullptr), m_tableName(tableName) {}
-        void SetDomain(DgnDomain& domain) {m_domain = &domain;}
 
-        Utf8CP GetTableName() const {return m_tableName.c_str();}
-        DgnDomainCR GetDomain() const {return *m_domain;}
-        virtual void _OnAdd(TxnSummary&, BeSQLite::Changes::Change const&) const = 0;
-        virtual void _OnDelete(TxnSummary&, BeSQLite::Changes::Change const&) const = 0;
-        virtual void _OnUpdate(TxnSummary&, BeSQLite::Changes::Change const&) const = 0;
+    public:
+        TableHandler() : m_domain(nullptr) {}
+        void SetDomain(DgnDomain& domain) {m_domain = &domain;}
+        virtual struct TxnTable* _Create(DgnDb&) const = 0;
     };
 
 protected:
@@ -334,7 +327,6 @@ struct DgnDomains : DgnDbTable
 private:
     friend struct DgnDb;
     friend struct DgnDomain;
-    friend struct TxnSummary;
 
     DomainList    m_domains;
     Handlers      m_handlers;
@@ -349,7 +341,6 @@ private:
     BeSQLite::DbResult SyncWithSchemas();
 
     explicit DgnDomains(DgnDbR db) : DgnDbTable(db) {}
-    static DgnDomain::TableHandler* FindTableHandler(Utf8CP tableName);
 
 public:
     //! Look up a handler for a given DgnClassId. Does not check base classes.
@@ -384,15 +375,15 @@ public:
 //! @see DgnDbSqlFunctions for a list of built-in functions that you can call in SQL statements.
 // @bsiclass                                                    Keith.Bentley   02/11
 //=======================================================================================
-struct DgnSchemaDomain : DgnDomain
+struct DgnBaseDomain : DgnDomain
 {
-    DOMAIN_DECLARE_MEMBERS(DgnSchemaDomain,DGNPLATFORM_EXPORT)
+    DOMAIN_DECLARE_MEMBERS(DgnBaseDomain,DGNPLATFORM_EXPORT)
 
     void _OnDgnDbOpened(DgnDbR db) const override;
-    void RegisterDefaultDependencyHandlers(); 
 
 public:
-    DgnSchemaDomain();
+    DgnBaseDomain();
 };
+
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

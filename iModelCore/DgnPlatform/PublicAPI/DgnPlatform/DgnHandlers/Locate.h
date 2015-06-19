@@ -191,8 +191,8 @@ protected:
     LocateOptions   m_options;
 
     DGNVIEW_EXPORT virtual void _Clear ();
-    DGNVIEW_EXPORT virtual HitDetailCP _DoLocate (LocateFailureValue* reasonCode, Utf8StringP cantAcceptExplanation, bool newSearch, DPoint3dCR, DgnViewportP, ComponentMode mode, bool filterHits);
-    DGNVIEW_EXPORT virtual bool _FilterHit (HitDetailCP, LocateFailureValue*, Utf8StringP cantAcceptExplanation, ComponentMode mode, LocateAction);
+    DGNVIEW_EXPORT virtual HitDetailCP _DoLocate (LocateFailureValue* reasonCode, Utf8StringP cantAcceptExplanation, bool newSearch, DPoint3dCR, DgnViewportP, SubSelectionMode mode, bool filterHits);
+    DGNVIEW_EXPORT virtual bool _FilterHit (HitDetailCP, LocateFailureValue*, Utf8StringP cantAcceptExplanation, SubSelectionMode mode, LocateAction);
     DGNVIEW_EXPORT virtual void _InitToolLocate ();
     DGNVIEW_EXPORT virtual void _InitLocateOptions (); // Called from _InitToolLocate to establish defaults.
     DGNVIEW_EXPORT virtual double _GetAperture(); // in graphite, we need the help of the tool admin to set the aperture
@@ -230,7 +230,7 @@ public:
     DGNVIEW_EXPORT void HiliteAndSave (HitDetailCP, bool doHilite, bool checkHilited);
     DGNVIEW_EXPORT void ClearFrom (DgnModelP);
     DGNVIEW_EXPORT void DropFromHilited (DgnModelP modelRef);
-    DGNVIEW_EXPORT bool FilterHit (HitDetailCP, LocateFailureValue*, Utf8StringP cantAcceptExplanation, ComponentMode mode, LocateAction);
+    DGNVIEW_EXPORT bool FilterHit (HitDetailCP, LocateFailureValue*, Utf8StringP cantAcceptExplanation, SubSelectionMode mode, LocateAction);
     DGNVIEW_EXPORT double GetAperture();
     DGNVIEW_EXPORT void GetLocateError (Utf8StringR reasonString, int reason);
     DGNVIEW_EXPORT void InitToolLocate ();
@@ -240,7 +240,7 @@ public:
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
-    DGNVIEW_EXPORT HitDetailCP DoLocate (LocateFailureValue* reasonCode, Utf8StringP cantAcceptExplanation, bool newSearch, DPoint3dCR, DgnViewportP, ComponentMode mode, bool filterHits=true);
+    DGNVIEW_EXPORT HitDetailCP DoLocate (LocateFailureValue* reasonCode, Utf8StringP cantAcceptExplanation, bool newSearch, DPoint3dCR, DgnViewportP, SubSelectionMode mode=SubSelectionMode::None, bool filterHits=true);
     DGNVIEW_EXPORT static ElementLocateManager& GetManager();
 
 }; // ElementLocateManager

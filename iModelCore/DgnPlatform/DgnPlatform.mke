@@ -29,9 +29,9 @@ DgnPlatformInternalDir = $(DgnCoreDir)../PrivateApi/DgnPlatformInternal/
 
 dimensionDir    = $(DgnHandlersDir)Dimension/
 
-contextDepends  =   $(DgnCoreAPISrc)ViewContext.h           \
-                    $(DgnCoreAPISrc)IViewOutput.h           \
-                    $(DgnCoreAPISrc)IViewDraw.h             \
+contextDepends  =   $(DgnCoreAPISrc)ViewContext.h \
+                    $(DgnCoreAPISrc)IViewOutput.h \
+                    $(DgnCoreAPISrc)IViewDraw.h   \
                     $(DgnCoreAPISrc)DgnViewport.h
 
 VewControllerDepends = $(DgnCoreAPISrc)ViewController.h $(DgnCoreAPISrc)ViewContext.h
@@ -46,7 +46,6 @@ WebMercatorDepends = $(DgnCoreAPISrc)WebMercator.h $(DgnCoreAPISrc)DgnDbTables.h
 PointCloudBaseModelDepends = $(DgnCoreAPISrc)PointCloudBaseModel.h $(DgnCoreAPISrc)DgnDbTables.h
 RasterBaseModelDepends     = $(DgnCoreAPISrc)RasterBaseModel.h $(DgnCoreAPISrc)DgnDbTables.h
 
-txnManagerDepends = $(DgnCoreAPISrc)TxnManager.h
 toolsHeaders   = $(DgnPlatformToolsPublicApiSrc)KeyTree.h
 LsLocalDepends = $(DgnCoreAPISrc)LsLocal.h $(DgnCoreAPISrc)LineStyle.h $(contextDepends)
 
@@ -112,11 +111,11 @@ $(coreObjs)DgnModel$(oext)        : $(DgnCoreDir)DgnModel.cpp ${MultiCompileDepe
 
 $(coreObjs)UnitDefinition$(oext): $(DgnCoreDir)UnitDefinition.cpp ${MultiCompileDepends} $(DgnFileIOPubH)
 
-$(coreObjs)TxnManager$(oext): $(DgnCoreDir)TxnManager.cpp $(txnManagerDepends) ${MultiCompileDepends}
+$(coreObjs)TxnManager$(oext): $(DgnCoreDir)TxnManager.cpp $(DgnCoreAPISrc)TxnManager.h ${MultiCompileDepends}
 
-$(coreObjs)EntityDependencyGraph$(oext): $(DgnCoreDir)EntityDependencyGraph.cpp $(txnManagerDepends) ${MultiCompileDepends}
+$(coreObjs)ElementDependencyGraph$(oext): $(DgnCoreDir)ElementDependencyGraph.cpp $(DgnCoreAPISrc)TxnManager.h ${MultiCompileDepends}
 
-$(coreObjs)LsName$(oext): $(lineStyleDir)LsName.cpp $(LsLocalDepends) $(txnManagerDepends) ${MultiCompileDepends}
+$(coreObjs)LsName$(oext): $(lineStyleDir)LsName.cpp $(LsLocalDepends) ${MultiCompileDepends}
 
 $(coreObjs)LsLocation$(oext): $(lineStyleDir)LsLocation.cpp $(LsLocalDepends) ${MultiCompileDepends}
 
@@ -124,11 +123,11 @@ $(coreObjs)LsSymbology$(oext): $(lineStyleDir)LsSymbology.cpp $(LsLocalDepends) 
 
 $(coreObjs)LsCache$(oext): $(lineStyleDir)LsCache.cpp $(LsLocalDepends) ${MultiCompileDepends}
 
-$(coreObjs)DgnLineStyles$(oext):   $(lineStyleDir)DgnLineStyles.cpp $(LsLocalDepends)  ${MultiCompileDepends}
+$(coreObjs)DgnLineStyles$(oext):   $(lineStyleDir)DgnLineStyles.cpp $(LsLocalDepends) $(txnManagerDepends) ${MultiCompileDepends}
 
 $(coreObjs)LineStyleApi$(oext):   $(lineStyleDir)LineStyleApi.cpp $(LsLocalDepends)  ${MultiCompileDepends}
 
-$(coreObjs)LsDb$(oext):   $(lineStyleDir)LsDb.cpp $(LsLocalDepends)  $(txnManagerDepends) ${MultiCompileDepends}
+$(coreObjs)LsDb$(oext):   $(lineStyleDir)LsDb.cpp $(LsLocalDepends) $(txnManagerDepends)  ${MultiCompileDepends}
 
 $(coreObjs)StrokeSymbol$(oext):    $(lineStyleDir)StrokeSymbol.cpp $(LsLocalDepends) $(HandlerDepends) ${MultiCompileDepends}
 
@@ -272,7 +271,7 @@ $(coreObjs)DgnViewDb$(oext): $(DgnCoreDir)DgnViewDb.cpp $(DgnCoreAPISrc)DgnDbTab
 
 $(coreObjs)DgnLink$(oext): $(DgnCoreDir)DgnLink.cpp $(DgnCoreAPISrc)DgnDbTables.h $(DgnCoreAPISrc)DgnLink.h ${MultiCompileDepends}
 
-$(coreObjs)DgnSchemaDomain$(oext): $(DgnCoreDir)DgnSchemaDomain.cpp ${MultiCompileDepends}
+$(coreObjs)DgnBaseDomain$(oext): $(DgnCoreDir)DgnBaseDomain.cpp ${MultiCompileDepends}
 
 $(coreObjs)DgnHandlers$(oext): $(DgnHandlersDir)DgnHandlers.cpp $(DgnPlatformPublicAPISrc)DgnPlatform/DgnPlatformLib.h ${MultiCompileDepends}
 

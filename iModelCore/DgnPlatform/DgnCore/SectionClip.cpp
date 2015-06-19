@@ -428,23 +428,23 @@ static bool             AreClipPointsEqual (void const* data1, int numBytes1, vo
 
 } // anonymous namespace
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    SunandSandurkar  08/07
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SectionClipObject::SetDrawSymbology (ViewContextR context, ColorDef color, uint32_t weight, int32_t style)
     {
-    DgnViewportP      viewport    = context.GetViewport ();
-    if (!viewport)
+    DgnViewportP vp = context.GetViewport();
+
+    if (nullptr == vp)
         return; // ex. RangeContext
 
-    ElemMatSymbP    currElemSymb = context.GetElemMatSymb ();
-    ColorDef    adjustedColor = viewport->AdjustColorForContrast(color, viewport->GetBackgroundColor ());
+    ElemMatSymbR elemMatSymb = *context.GetElemMatSymb();
 
-    currElemSymb->SetLineColor (adjustedColor);
-    context.SetIndexedLineWidth (*currElemSymb, weight);
-    context.SetIndexedLinePattern (*currElemSymb, style);
-    context.GetIDrawGeom().ActivateMatSymb (currElemSymb);
+    elemMatSymb.SetLineColor(vp->AdjustColorForContrast(color, vp->GetBackgroundColor()));
+    elemMatSymb.SetWidth(vp->GetIndexedLineWidth(weight));
+    elemMatSymb.SetIndexedRasterPattern(style, vp->GetIndexedLinePattern(style));
+
+    context.GetIDrawGeom().ActivateMatSymb(&elemMatSymb);
     }
 
 /*---------------------------------------------------------------------------------**//**

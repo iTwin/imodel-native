@@ -46,7 +46,7 @@ struct DgnElementMap : bmap<DgnElementId, DgnElementCPtr>
     };
 
 /** @addtogroup DgnModelGroup DgnModels
-@ref PAGE_ModelOverview 
+@ref PAGE_ModelOverview
 */
 
 //=======================================================================================
@@ -111,7 +111,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
             void ToJson(Json::Value& outValue) const;
         };
 
-        FormatterFlags m_formatterFlags;               //!< format flags 
+        FormatterFlags m_formatterFlags;               //!< format flags
         UnitDefinition m_masterUnit;                   //!< Master Unit information
         UnitDefinition m_subUnit;                      //!< Sub Unit information
         double         m_roundoffUnit;                 //!< unit lock roundoff val in uors
@@ -284,7 +284,7 @@ protected:
     virtual void _AddGraphicsToScene(ViewContextR) {}
 
 public:
-    DGNPLATFORM_EXPORT ModelHandler& GetModelHandler() const;
+    DGNPLATFORM_EXPORT ModelHandlerR GetModelHandler() const;
 
     DGNPLATFORM_EXPORT DgnRangeTree* GetRangeIndexP(bool create) const;
     void ReadProperties();
@@ -300,7 +300,7 @@ public:
     //! Empty the contents of this DgnModel. This will release any references to DgnElements held by this DgnModel.
     DGNPLATFORM_EXPORT void Empty();
 
-    //! Load all elements of this DgnModel. 
+    //! Load all elements of this DgnModel.
     //! After this call, all of the DgnElements of this model are loaded and are held in memory by this DgnModel.
     //! @note if this DgnModel is already filled, this method does nothing and returns DgnDbStatus::Success.
     void FillModel() {_FillModel();}
@@ -476,7 +476,7 @@ public:
 };
 
 //=======================================================================================
-//! A GraphicsModel2d is a DgnModel2d that does not have any relationship to phsyical space.
+//! A GraphicsModel2d is a DgnModel2d that does not have any relationship to physical space.
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Sam.Wilson  05/15
 //=======================================================================================
@@ -496,8 +496,8 @@ public:
 //=======================================================================================
 //! A PlanarPhysicalModel is an infinite planar model that subdivides physical space into two halves. The plane of a
 //! PhysicalPlanar model may be mapped into physical space in non-linear way, but every finite point in physical space is
-//! either "in front" or "in back" of the plane. 
-//! @note a PlanarPhysicalModel @b is @b a DgnModel2d, and all of its elements are 2-dimensional. 
+//! either "in front" or "in back" of the plane.
+//! @note a PlanarPhysicalModel @b is @b a DgnModel2d, and all of its elements are 2-dimensional.
 //! Also note that any (2d) point on a PlanarPhysicalModel corresponds to a single point in physical space.
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   10/11
@@ -511,7 +511,7 @@ protected:
     DgnModelType _GetModelType() const override {return DgnModelType::Drawing;}
     PlanarPhysicalModelCP _ToPlanarPhysicalModel() const override {return this;}
 public:
-    PlanarPhysicalModel(CreateParams const& params) : T_Super(params) {}
+    explicit PlanarPhysicalModel(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================
@@ -551,8 +551,6 @@ struct EXPORT_VTABLE_ATTRIBUTE SheetModel : GraphicsModel2d
     {
     DEFINE_T_SUPER(GraphicsModel2d)
 
-    friend struct SheetModelHandler;
-
     struct CreateParams : GraphicsModel2d::CreateParams
     {
         DEFINE_T_SUPER(GraphicsModel2d::CreateParams);
@@ -581,10 +579,10 @@ protected:
     DGNPLATFORM_EXPORT virtual void _ToPropertiesJson(Json::Value&) const override;
     DGNPLATFORM_EXPORT virtual void _FromPropertiesJson(Json::Value const&) override;
 
-    //! construct a new SheetModel
-    DGNPLATFORM_EXPORT SheetModel(CreateParams const& params);
-
 public:
+    //! construct a new SheetModel
+    explicit DGNPLATFORM_EXPORT SheetModel(CreateParams const& params);
+
     //! Construct a SheetModel
     //! @param[in] params The CreateParams for the new SheetModel
     DGNPLATFORM_EXPORT static SheetModelPtr Create(CreateParams const& params) {return new SheetModel(params);}
@@ -598,75 +596,60 @@ public:
         DOMAINHANDLER_DECLARE_MEMBERS(__ECClassName__,_handlerclass__,_handlersuperclass__,__exporter__)
 
 //=======================================================================================
-//! @ingroup DgnModelGroup
-// @bsiclass                                                    Keith.Bentley   03/15
+//! @namespace BentleyApi::Dgn::dgn_ModelHandler DgnModel Handlers in the base "Dgn" domain. 
+//! @note Only handlers from the base "Dgn" domain belong in this namespace.
+// @bsiclass                                                    Keith.Bentley   06/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ModelHandler : DgnDomain::Handler
+namespace dgn_ModelHandler
 {
-    DOMAINHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_Model, ModelHandler, DgnDomain::Handler, DGNPLATFORM_EXPORT)
+    //! The ModelHandler for DgnModel
+    struct EXPORT_VTABLE_ATTRIBUTE Model : DgnDomain::Handler
+    {
+        DOMAINHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_Model, Model, DgnDomain::Handler, DGNPLATFORM_EXPORT)
 
-protected:
-    ModelHandlerP _ToModelHandler() override {return this;}
-    virtual DgnModelP _CreateInstance(DgnModel::CreateParams const& params) {return nullptr;}
+    protected:
+        ModelHandlerP _ToModelHandler() override {return this;}
+        virtual DgnModelP _CreateInstance(DgnModel::CreateParams const& params) {return nullptr;}
 
-public:
-    //! Find an ModelHandler for a subclass of dgn.Model. This is just a shortcut for FindHandler with the base class
-    //! of "dgn.Model".
-    DGNPLATFORM_EXPORT static ModelHandlerP FindHandler(DgnDb const&, DgnClassId handlerId);
+    public:
+        //! Find an ModelHandler for a subclass of dgn.Model. This is just a shortcut for FindHandler with the base class
+        //! of "dgn.Model".
+        DGNPLATFORM_EXPORT static ModelHandlerP FindHandler(DgnDb const&, DgnClassId handlerId);
 
-    //! Create an instance of a (subclass of) DgnModel from CreateParams.
-    //! @param[in] params the parameters for the model
-    DgnModelPtr Create(DgnModel::CreateParams const& params) {return _CreateInstance(params);}
-};
+        //! Create an instance of a (subclass of) DgnModel from CreateParams.
+        //! @param[in] params the parameters for the model
+        DgnModelPtr Create(DgnModel::CreateParams const& params) {return _CreateInstance(params);}
+    };
 
-//=======================================================================================
-//! @ingroup DgnModelGroup
-//! @private
-// @bsiclass                                                    Keith.Bentley   03/15
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE PhysicalModelHandler : ModelHandler
-{
-    MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_PhysicalModel, PhysicalModel, PhysicalModelHandler, ModelHandler, DGNPLATFORM_EXPORT)
-};
+    //! The ModelHandler for PhysicalModel
+    struct EXPORT_VTABLE_ATTRIBUTE Physical : Model
+    {
+        MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_PhysicalModel, PhysicalModel, Physical, Model, DGNPLATFORM_EXPORT)
+    };
 
-//=======================================================================================
-//! @ingroup DgnModelGroup
-//! @private
-// @bsiclass                                                    Sam.Wilson      05/15
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GraphicsModel2dHandler : ModelHandler
-{
-    MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_GraphicsModel2d, GraphicsModel2d, GraphicsModel2dHandler, ModelHandler, DGNPLATFORM_EXPORT)
-};
+    //! The ModelHandler for GraphicsModel2d
+    struct EXPORT_VTABLE_ATTRIBUTE Graphics2d : Model
+    {
+        MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_GraphicsModel2d, GraphicsModel2d, Graphics2d, Model, DGNPLATFORM_EXPORT)
+    };
 
-//=======================================================================================
-//! @ingroup DgnModelGroup
-//! @private
-// @bsiclass                                                    Sam.Wilson      05/15
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE PlanarPhysicalModelHandler : ModelHandler
-{
-    MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_PlanarPhysicalModel, PlanarPhysicalModel, PlanarPhysicalModelHandler, ModelHandler, DGNPLATFORM_EXPORT)
-};
+    //! The ModelHandler for PlanarPhysicalModel
+    struct EXPORT_VTABLE_ATTRIBUTE PlanarPhysical : Model
+    {
+        MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_PlanarPhysicalModel, PlanarPhysicalModel, PlanarPhysical, Model, DGNPLATFORM_EXPORT)
+    };
 
-//=======================================================================================
-//! @ingroup DgnModelGroup
-//! @private
-// @bsiclass                                                    Sam.Wilson      05/15
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SectionDrawingModelHandler : PlanarPhysicalModelHandler
-{
-    MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_SectionDrawingModel, SectionDrawingModel, SectionDrawingModelHandler, PlanarPhysicalModelHandler, DGNPLATFORM_EXPORT)
-};
+    //! The ModelHandler for SectionDrawingModel
+    struct EXPORT_VTABLE_ATTRIBUTE SectionDrawing : PlanarPhysical
+    {
+        MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_SectionDrawingModel, SectionDrawingModel, SectionDrawing, PlanarPhysical, DGNPLATFORM_EXPORT)
+    };
 
-//=======================================================================================
-//! @ingroup DgnModelGroup
-//! @private
-// @bsiclass                                                    Sam.Wilson      05/15
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SheetModelHandler : ModelHandler
-{
-    MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SheetModel, SheetModel, SheetModelHandler, ModelHandler, DGNPLATFORM_EXPORT)
+    //! The ModelHandler for SheetModel
+    struct EXPORT_VTABLE_ATTRIBUTE Sheet : Model
+    {
+        MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SheetModel, SheetModel, Sheet, Model, DGNPLATFORM_EXPORT)
+    };
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

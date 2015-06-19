@@ -56,17 +56,19 @@ struct PerformanceTestingFrameWork
 {
 private:
     Db m_Db;
-    ECSqlStatement stmt;
-    DbResult dbOpenStat;
-    BeFileName dir;
+    int m_startNum;
+    int m_endNum;
+    int m_increment;
 
 public:
-    PerformanceTestingFrameWork()
-    {
-    }
+    PerformanceTestingFrameWork() { setCounters(); }
     void openDb();
     bool writeTodb(StopWatch &timerCount, Utf8String testName, Utf8String testDescription, int opCount = -1);
     bool writeTodb(double timeInSeconds, Utf8String testName, Utf8String testDescription, int opCount = -1);
+    void setCounters();
+    int getStartNum() { return m_startNum; }
+    int getEndNum() { return m_endNum; }
+    int getIncrement() { return m_increment; }
 };
 
 END_DGNDB_UNIT_TESTS_NAMESPACE

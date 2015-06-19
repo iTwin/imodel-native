@@ -1,12 +1,11 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DgnCore/EntityDependencyGraph.cpp $
+|     $Source: DgnCore/ElementDependencyGraph.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnCore/DgnEntity.h>
 
 #define ECSQL_SOURCEECINSTANCEID    "SourceECInstanceId"
 #define ECSQL_ECINSTANCEID          "ECInstanceId"
@@ -21,7 +20,7 @@ DPILOG_DEFINE(ElementDependencyGraph)
 static int s_debugGraph = 0;
 static bool s_debugGraph_showElementIds;
 
-HANDLER_DEFINE_MEMBERS(DgnElementDrivesElementDependencyHandler)
+HANDLER_DEFINE_MEMBERS(DgnElementDependencyHandler)
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -115,18 +114,10 @@ struct DgnElementDependencyGraph::EdgeQueue : DgnElementDependencyGraph::TableAp
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                  01/15
-//---------------------------------------------------------------------------------------
-void DgnSchemaDomain::RegisterDefaultDependencyHandlers()
-    {
-    RegisterHandler(DgnElementDrivesElementDependencyHandler::GetHandler());
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElementDrivesElementDependencyHandler::_OnRootChanged(DgnDbR db, EC::ECInstanceId, DgnElementId, DgnElementId, TxnSummaryR summary)
+void DgnElementDependencyHandler::_OnRootChanged(DgnDbR db, EC::ECInstanceId, DgnElementId, DgnElementId, TxnSummaryR summary)
     {
     summary.ReportError(*new DgnElementDependencyGraph::MissingHandlerError(""));
     }
@@ -136,7 +127,7 @@ void DgnElementDrivesElementDependencyHandler::_OnRootChanged(DgnDbR db, EC::ECI
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String DgnElementDependencyGraph::FmtHandler(DgnClassId hid)
     {
-    DgnDomain::Handler* handler = DgnElementDrivesElementDependencyHandler::GetHandler().FindHandler(m_db, hid);
+    DgnDomain::Handler* handler = DgnElementDependencyHandler::GetHandler().FindHandler(m_db, hid);
     return handler ? handler->GetClassName() : "??UnknownDependencyHandler??";
     }
 
@@ -413,10 +404,22 @@ BentleyStatus DgnElementDependencyGraph::CheckDirection(Edge const& edge)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnSummary::UpdateModelDependencyIndex()
+void dgn_TxnTable::ModelDep::_PropagateChanges(TxnSummary& summary)
     {
-    DgnElementDependencyGraph graph(GetDgnDb(), *this);
+    if (!HasChanges())
+        return;
+
+    DgnElementDependencyGraph graph(summary);
     graph.UpdateModelDependencyIndex();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::ElementDep::_PropagateChanges(TxnSummary& summary)
+    {
+    DgnElementDependencyGraph graph(summary);
+    graph.InvokeAffectedDependencyHandlers(summary);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -466,7 +469,7 @@ static Utf8String fmtIndent(size_t indentLevel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElementDependencyGraph::InvokeHandler(Edge const& edge, size_t indentLevel)
     {
-    auto handler = DgnElementDrivesElementDependencyHandler::GetHandler().FindHandler(m_db, edge.GetHandlerId());
+    auto handler = DgnElementDependencyHandler::GetHandler().FindHandler(m_db, edge.GetHandlerId());
     if (nullptr == handler)
         {
         BeAssert(false);
@@ -503,7 +506,7 @@ void DgnElementDependencyGraph::InvokeHandler(Edge const& edge, size_t indentLev
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElementDependencyGraph::InvokeHandlerForValidation(Edge const& edge)
     {
-    auto handler = DgnElementDrivesElementDependencyHandler::GetHandler().FindHandler(m_db, edge.GetHandlerId());
+    auto handler = DgnElementDependencyHandler::GetHandler().FindHandler(m_db, edge.GetHandlerId());
     if (nullptr == handler)
         {
         BeAssert(false);
@@ -555,7 +558,7 @@ DbResult DgnElementDependencyGraph::UpdateEdgeStatusInDb(Edge const& edge, EdgeS
 DbResult DgnElementDependencyGraph::SetFailedEdgeStatusInDb(Edge const& edge, bool failed) 
     {
     if (failed)
-        m_summary.AddFailedTarget(edge.m_eout);
+        m_summary.ElementDependencies().AddFailedTarget(edge.m_eout);
 
     EdgeStatusAccessor saccs(edge.m_status);
     saccs.m_failed = failed;        // set or clear the failed bit
@@ -1017,8 +1020,10 @@ void DgnElementDependencyGraph::InvokeAffectedDependencyHandlers(TxnSummaryCR su
         WriteDot(BeFileName(L"D:\\tmp\\ChangePropagationRelationships.dot"), bvector<bvector<uint64_t>>());
 
     // Step through the affected models in dependency order
-    CachedStatementPtr modelsInOrder=m_db.GetCachedStatement("SELECT Id From " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE InVirtualSet(?,Id) ORDER BY Type,DependencyIndex");
-    modelsInOrder->BindVirtualSet(1, summary.GetModelSet());
+    CachedStatementPtr modelsInOrder=m_db.GetCachedStatement("SELECT Id From " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE "
+        "Id IN (SELECT ModelId FROM " TEMP_TABLE(TXN_TABLE_Elements) ") OR "
+        "Id IN (SELECT ModelId FROM " TEMP_TABLE(TXN_TABLE_Depend) ")" 
+        " ORDER BY Type,DependencyIndex");
 
     while (modelsInOrder->Step() == BE_SQLITE_ROW)
         {
@@ -1036,13 +1041,20 @@ void DgnElementDependencyGraph::InvokeAffectedDependencyHandlers(TxnSummaryCR su
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnElementDependencyGraph::WhatIfChanged(IEdgeProcessor& proc, bvector<DgnElementId> const& directlyChangedEntities, bvector<EC::ECInstanceId> const& directlyChangedDepRels)
+BentleyStatus DgnElementDependencyGraph::WhatIfChanged(IEdgeProcessor& proc, bvector<DgnElementId> const& directlyChangedElements, bvector<EC::ECInstanceId> const& directlyChangedDepRels)
     {
-    for (DgnElementId const& element : directlyChangedEntities)
-        m_summary.AddAffectedElement(element, DgnModelId(), 0.0, TxnSummary::ChangeType::Update);
+    auto& txnElements = m_summary.Elements();
+    auto& elements = m_db.Elements();
+    for (DgnElementId elementId : directlyChangedElements)
+        {
+        auto el = elements.GetElement(elementId);
+        if (el.IsValid())
+            txnElements.AddElement(elementId, el->GetDgnModel().GetModelId(), 0.0, TxnSummary::ChangeType::Update);
+        }
 
-    for (EC::ECInstanceId const& deprel : directlyChangedDepRels)
-        m_summary.AddAffectedDependency(deprel, TxnSummary::ChangeType::Update);
+    auto& dependencies = m_summary.ElementDependencies();
+    for (EC::ECInstanceId deprel : directlyChangedDepRels)
+        dependencies.AddDependency(deprel, TxnSummary::ChangeType::Update);
 
     m_processor = &proc;
     InvokeAffectedDependencyHandlers(m_summary);
@@ -1063,7 +1075,7 @@ void DgnElementDependencyGraph::Init()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementDependencyGraph::DgnElementDependencyGraph(DgnDbR db, TxnSummaryR summary) : m_db(db), m_summary(summary)
+DgnElementDependencyGraph::DgnElementDependencyGraph(TxnSummaryR summary) : m_db(summary.GetDgnDb()), m_summary(summary)
     {
     Init();
     }
@@ -1112,14 +1124,14 @@ DgnElementDependencyGraph::~DgnElementDependencyGraph()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementDrivesElementDependencyHandler* DgnElementDrivesElementDependencyHandler::FindHandler(DgnDbR db, DgnClassId handlerId) 
+DgnElementDependencyHandler* DgnElementDependencyHandler::FindHandler(DgnDbR db, DgnClassId handlerId) 
     {
     // quick check for a handler already known
     DgnDomain::Handler* handler = db.Domains().LookupHandler(handlerId);
     if (nullptr != handler)
-        return dynamic_cast<DgnElementDrivesElementDependencyHandler*>(handler);
+        return dynamic_cast<DgnElementDependencyHandler*>(handler);
 
     // not there, check via base classes
     handler = db.Domains().FindHandler(handlerId, db.Domains().GetClassId(GetHandler()));
-    return handler ? dynamic_cast<DgnElementDrivesElementDependencyHandler*>(handler) : nullptr;
+    return handler ? dynamic_cast<DgnElementDependencyHandler*>(handler) : nullptr;
     }

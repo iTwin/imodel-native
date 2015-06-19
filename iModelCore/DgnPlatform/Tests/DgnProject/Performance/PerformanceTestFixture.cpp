@@ -186,17 +186,41 @@ void PerformanceTestFixture::LogResultsToFile(bmap<Utf8String, double> results)
     }
 
 /*---------------------------------------------------------------------------------**//**
+*@bsimethod                                            Majd.Uddin          05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void PerformanceTestingFrameWork::setCounters()
+{
+    openDb();
+    Statement selectStatement;
+    Utf8CP selectQuery = "Select * from Counters"; //nullptr;
+    //selectQuery = "Select * from Counters";
+
+    DbResult selectPreparetResult = selectStatement.Prepare(m_Db, selectQuery);
+    EXPECT_EQ(selectPreparetResult, DbResult::BE_SQLITE_OK);
+
+    if (selectStatement.Step() == DbResult::BE_SQLITE_ROW) // the table should have only one row
+    {
+        m_startNum = selectStatement.GetValueInt(0);
+        m_endNum = selectStatement.GetValueInt(1);
+        m_increment = selectStatement.GetValueInt(2);
+    }
+    else
+        ASSERT_TRUE(false) << "Setting Counters failed for Performance Test";
+}
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                            Adeel.Shoukat          07/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PerformanceTestingFrameWork::openDb()
 {
     // This is hard coded name of the ECDb that stores performance results
     WString dbName(L"PerformanceTest.ecdb");
+
     if (m_Db.IsDbOpen())
-    {
-        stmt.Finalize();
         m_Db.CloseDb();
-    }
+
+    DbResult dbOpenStat;
+    BeFileName dir;
     BeFileName outputDir;
     BeTest::GetHost().GetOutputRoot(outputDir);
     BeSQLiteLib::Initialize(outputDir);
