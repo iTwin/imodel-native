@@ -73,7 +73,9 @@ TEST_F(DgnModelTests, GetName)
         " than expectedNew Long model name Longer than expectedNew Long model name Longer than expectedNew Long model");
     DgnDbStatus status;
     DgnModels& modelTable =  m_dgndb->Models();
-    modelTable.CreateNewModelFromSeed(&status, newName.c_str(), m_modelP->GetModelId());
+    DgnModelP seedModel = modelTable.GetModel(m_modelP->GetModelId());
+    DgnModelPtr newModel = seedModel->Clone(newName.c_str());
+    status = newModel->Insert();
     EXPECT_TRUE(status == DgnDbStatus::Success)<<"Failed to create model";
     DgnModelId id = modelTable.QueryModelId(newName.c_str());
     ASSERT_TRUE(id.IsValid());
@@ -193,23 +195,23 @@ TEST_F(DgnModelTests, SheetModelCRUD)
                                 s_sheet1Name, sheetSize);
         SheetModelPtr sheet1 = SheetModel::Create(params);
         ASSERT_TRUE( sheet1.IsValid() );
-        ASSERT_EQ( DgnDbStatus::Success, db->Models().Insert(*sheet1, "a sheet model (in mm)") );
+        ASSERT_EQ( DgnDbStatus::Success, sheet1->Insert("a sheet model (in mm)") );
         ASSERT_TRUE( sheet1->GetModelId().IsValid() );
 
         ASSERT_EQ( 1 , countSheets(*db) );
 
         //  Test some insert errors
-        ASSERT_NE( DgnDbStatus::Success, db->Models().Insert(*sheet1, "") ) << "Should be illegal to add sheet that is already persistent";
+        ASSERT_NE( DgnDbStatus::Success, sheet1->Insert("") ) << "Should be illegal to add sheet that is already persistent";
 
         SheetModelPtr sheetSameName = SheetModel::Create(params);
-        ASSERT_NE( DgnDbStatus::Success, db->Models().Insert(*sheetSameName, "") ) << "Should be illegal to add a second sheet with the same name";
+        ASSERT_NE( DgnDbStatus::Success, sheetSameName->Insert("") ) << "Should be illegal to add a second sheet with the same name";
 
         //  Create a second sheet
         SheetModel::CreateParams params2(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_SheetModel)),
                                 s_sheet2Name, sheetSize);
         SheetModelPtr sheet2 = SheetModel::Create(params2);
         ASSERT_TRUE( sheet1.IsValid() );
-        ASSERT_EQ( DgnDbStatus::Success, db->Models().Insert(*sheet2, "a second sheet model") );
+        ASSERT_EQ( DgnDbStatus::Success, sheet2->Insert("a second sheet model") );
         ASSERT_TRUE( sheet2->GetModelId().IsValid() );
         ASSERT_NE( sheet2->GetModelId() , sheet1->GetModelId() );
 
@@ -252,7 +254,9 @@ TEST_F(DgnModelTests, SheetModelCRUD)
 
         // Delete Sheet2
         ASSERT_EQ( 2 , countSheets(*db) );
-        ASSERT_EQ( DgnDbStatus::Success, db->Models().DeleteModel(db->Models().QueryModelId(s_sheet2Name)) );
+        auto sheet2Id = db->Models().QueryModelId(s_sheet2Name);
+        auto sheet2Model = db->Models().GetModel(sheet2Id);
+        ASSERT_EQ( DgnDbStatus::Success, sheet2Model->Delete());
         ASSERT_EQ( 1 , countSheets(*db) );
         }        
 

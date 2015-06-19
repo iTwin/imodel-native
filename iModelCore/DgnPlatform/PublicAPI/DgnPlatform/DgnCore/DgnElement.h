@@ -115,7 +115,7 @@ public:
         //! Called after the element was Deleted.
         //! @param[in]  el the DgnElement that was deleted
         //! @return true to drop this appData, false to leave it attached to the DgnElement.
-        virtual DropMe _OnDeleted(DgnElementCR el) {return DropMe::No;}
+        virtual DropMe _OnDeleted(DgnElementCR el) {return DropMe::Yes;}
     };
 
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
@@ -133,8 +133,6 @@ protected:
         uint32_t m_inSelectionSet:1;
         uint32_t m_hilited:3;
         uint32_t m_undisplayed:1;
-        uint32_t m_mark1:1;                        // used by applications
-        uint32_t m_mark2:1;                        // used by applications
         Flags() {memset(this, 0, sizeof(*this));}
         };
 
@@ -319,10 +317,6 @@ public:
 
     bool Is3d() const {return nullptr != _ToElement3d();} //!< Determine whether this element is 3d or not
     bool IsSameType(DgnElementCR other) {return m_classId == other.m_classId;}//!< Determine whether this element is the same type (has the same DgnClassId) as another element.
-    void SetMark1(bool yesNo) const {if (m_flags.m_mark1==yesNo) return; m_flags.m_mark1 = yesNo;} //!< @private
-    void SetMark2(bool yesNo) const {if (m_flags.m_mark2==yesNo) return; m_flags.m_mark2 = yesNo;} //!< @private
-    bool IsMarked1() const {return true == m_flags.m_mark1;} //!< @private
-    bool IsMarked2() const {return true == m_flags.m_mark2;} //!< @private
 
     Hilited IsHilited() const {return (Hilited) m_flags.m_hilited;} //!< Get the current Hilited state of this element
     void SetHilited(Hilited newState) const {m_flags.m_hilited = (uint8_t) newState;} //!< Change the current Hilited state of this element
@@ -770,6 +764,10 @@ protected:
 public:
     //! Create a DrawingElement from CreateParams.
     static DrawingElementPtr Create(CreateParams const& params) {return new DrawingElement(params);}
+
+    //! Query the DgnClassId for the dgn.DrawingElement class in the specified DgnDb.
+    //! @note This is a static method that always returns the DgnClassId of the dgn.DrawingElement class - it does @b not return the class of a specific instance.
+    DGNPLATFORM_EXPORT static DgnClassId QueryClassId(DgnDbR db);
 };
 
 //=======================================================================================
@@ -807,6 +805,15 @@ protected:
     explicit ElementGroup(CreateParams const& params) : T_Super(params) {}
 
 public:
+    //! Create a new instance of a DgnElement using the specified CreateParams.
+    //! @note This is a static method that only creates instances of the ElementGroup class. To create instances of subclasses,
+    //! use a static method on the subclass.
+    static ElementGroupPtr Create(CreateParams const& params) { return new ElementGroup(params); }
+
+    //! Query the DgnClassId for the dgn.ElementGroup class in the specified DgnDb.
+    //! @note This is a static method that always returns the DgnClassId of the dgn.ElementGroup class - it does @b not return the class of a specific instance.
+    DGNPLATFORM_EXPORT static DgnClassId QueryClassId(DgnDbR db);
+
     //! Insert a member into this ElementGroup. This creates an ElementGroupHasMembers ECRelationship between this ElementGroup and the specified DgnElement
     //! @param[in] member The element to become a member of this ElementGroup.
     //! @note The ElementGroup and the specified DgnElement must have already been inserted (have valid DgnElementIds)

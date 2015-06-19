@@ -122,9 +122,9 @@ private:
     Selector m_selector;
     Results* m_currQueryResults;
     virtual DgnModelType _GetModelType() const override {return DgnModelType::Query;}
-    void ResetResults(){ ReleaseAllElements(); ClearRangeIndex(); m_wasFilled=true;}
+    void ResetResults(){ ReleaseAllElements(); ClearRangeIndex(); m_filled=true;}
     DGNPLATFORM_EXPORT explicit QueryModel (DgnDbR);
-    virtual DgnDbStatus _FillModel() override {return DgnDbStatus::Success;} // QueryModels are never filled.
+    virtual void _FillModel() override {} // QueryModels are never filled.
 
 public:
     Selector& GetSelector() {return m_selector;}

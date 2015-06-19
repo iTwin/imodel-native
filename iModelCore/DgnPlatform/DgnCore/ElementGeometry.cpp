@@ -2660,13 +2660,33 @@ bool GeometricElement::_DrawHit (HitDetailCR hit, ViewContextR context) const
     if (DrawPurpose::Flash != context.GetDrawPurpose())
         return false;
 
-    if (ComponentMode::None == hit.GetComponentMode())
+    if (GeomStreamEntryId::Type::Invalid == hit.GetGeomDetail().GetGeomStreamEntryId().GetType())
         return false;
 
-    ICurvePrimitiveCP primitive = hit.GetGeomDetail().GetCurvePrimitive();
+    switch (hit.GetSubSelectionMode())
+        {
+        case SubSelectionMode::Part:
+            {
+            if (hit.GetGeomDetail().GetGeomStreamEntryId().GetGeomPartId().IsValid())
+                break;
 
-    if (nullptr == primitive)
-        return false;
+            return false;
+            }
+
+        case SubSelectionMode::Primitive:
+            break;
+
+        case SubSelectionMode::Segment:
+            {
+            if (nullptr != hit.GetGeomDetail().GetCurvePrimitive())
+                break;
+
+            return false;
+            }
+
+        default:
+            return false;
+        }
 
     GeometricElementCPtr element = hit.GetElement();
 
@@ -2682,44 +2702,70 @@ bool GeometricElement::_DrawHit (HitDetailCR hit, ViewContextR context) const
 
     for (ElementGeometryPtr geom : collection)
         {
-        if (hit.GetGeomDetail().GetGeomStreamEntryId() != collection.GetGeomStreamEntryId())
-            continue;
+        switch (hit.GetSubSelectionMode())
+            {
+            case SubSelectionMode::Part:
+                {
+                if (hit.GetGeomDetail().GetGeomStreamEntryId().GetGeomPartId() == collection.GetGeomStreamEntryId().GetGeomPartId())
+                    break;
+
+                continue;
+                }
+
+            case SubSelectionMode::Primitive:
+            case SubSelectionMode::Segment:
+                {
+                if (hit.GetGeomDetail().GetGeomStreamEntryId() == collection.GetGeomStreamEntryId())
+                    break;
+
+                continue;
+                }
+            }
 
         *context.GetCurrentDisplayParams() = collection.GetElemDisplayParams();
         context.CookDisplayParams();
         context.ResetContextOverrides();
+
+        if (SubSelectionMode::Segment != hit.GetSubSelectionMode())
+            {
+            context.PushTransform(collection.GetGeometryToWorld());
+            geom->Draw(context);
+            context.PopTransformClip();
+
+            continue; // Keep going, want to draw all matching geometry... 
+            }
+
+        DSegment3d      segment;
+        CurveVectorPtr  curve;
+        bool            doSegmentFlash = (hit.GetHitType() < HitDetailType::Snap);
+
+        if (!doSegmentFlash)
+            {
+            switch (static_cast<SnapDetailCR>(hit).GetSnapMode())
+                {
+                case SnapMode::Center:
+                case SnapMode::Origin:
+                case SnapMode::Bisector:
+                    break; // Snap point for these is computed using entire linestring, not just the hit segment...
+
+                default:
+                    doSegmentFlash = true;
+                    break;
+                }
+            }
+
+        // Flash only the selected segment of linestrings/shapes based on snap mode...
+        if (doSegmentFlash && hit.GetGeomDetail().GetSegment(segment))
+            curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateLine(segment));
+        else
+            curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, hit.GetGeomDetail().GetCurvePrimitive()->Clone());
+
+        if (element->Is3d())
+            context.GetIDrawGeom().DrawCurveVector(*curve, false);
+        else
+            context.GetIDrawGeom().DrawCurveVector2d(*curve, false, context.GetCurrentDisplayParams()->GetNetDisplayPriority());
         break;
         }
-
-    DSegment3d      segment;
-    CurveVectorPtr  curve;
-    bool            doSegmentFlash = (hit.GetHitType() < HitDetailType::Snap);
-
-    if (!doSegmentFlash)
-        {
-        switch (static_cast<SnapDetailCR>(hit).GetSnapMode())
-            {
-            case SnapMode::Center:
-            case SnapMode::Origin:
-            case SnapMode::Bisector:
-                break; // Snap point for these is computed using entire linestring, not just the hit segment...
-
-            default:
-                doSegmentFlash = true;
-                break;
-            }
-        }
-
-    // Flash only the selected segment of linestrings/shapes based on snap mode...
-    if (doSegmentFlash && hit.GetGeomDetail().GetSegment(segment))
-        curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateLine(segment));
-    else
-        curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, primitive->Clone());
-
-    if (element->Is3d())
-        context.GetIDrawGeom().DrawCurveVector(*curve, false);
-    else
-        context.GetIDrawGeom().DrawCurveVector2d(*curve, false, context.GetCurrentDisplayParams()->GetNetDisplayPriority());
 
     context.SetCurrentElement(nullptr);
 
@@ -3140,7 +3186,7 @@ bool ElementGeometryBuilder::Append (DgnGeomPartId geomPartId, TransformCR geomT
     if (!geomPart.IsValid())
         return false;
 
-    DRange3d localRange;
+    DRange3d localRange = DRange3d::NullRange();
     ElementGeometryCollection collection(m_dgnDb, geomPart->GetGeomStream());
 
     collection.SetBRepOutput(ElementGeometryCollection::BRepOutput::Mesh); // Can just use the mesh and avoid creating the ISolidKernelEntity...

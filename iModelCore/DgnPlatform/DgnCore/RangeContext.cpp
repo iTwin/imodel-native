@@ -1139,6 +1139,34 @@ StatusInt DgnViewport::DetermineVisibleDepthNpc (double& lowNpc, double& highNpc
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      09/06
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       DgnViewport::ComputeVisibleDepthRange (double& minDepth, double& maxDepth, bool ignoreViewExtent)
+    {
+    FitViewParams params;
+    
+    params.m_useScanRange = !ignoreViewExtent;
+    params.m_fitMinDepth = params.m_fitMaxDepth = true;
+
+    DepthFitContext context (params);
+
+    context.SetViewport (this);
+    context.AllocateScanCriteria ();
+    context.InitDepthFitContext ();
+    context.VisitAllViewElements (true, NULL);
+
+    DRange3d range;
+
+    if (SUCCESS != context.GetElemRange()->GetRange (range))
+        return ERROR;
+
+    minDepth = range.low.z;
+    maxDepth = range.high.z;
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       IViewTransients::ComputeRange (DRange3dR range, DgnViewportP vp)

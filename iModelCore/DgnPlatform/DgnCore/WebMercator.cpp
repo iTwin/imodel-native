@@ -1457,7 +1457,7 @@ DgnModelId StreetMapModelHandler::CreateStreetMapModel(DgnDbR db, MapService map
     props.m_range = db.Units().GetProjectExtents(); // The "range" of a map could be the whole world. We'll fall back on the project's full extents.
 
     model->SetMercator(props);
-    db.Models().Insert(*model);
+    model->Insert();
     return model->GetModelId();
     }
 

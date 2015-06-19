@@ -496,8 +496,6 @@ public:
     void SetEdgeMaskState (EdgeMaskState state) {m_edgeMaskState = state;}
     EdgeMaskState GetEdgeMaskState () const {return m_edgeMaskState;}
 
-    DGNPLATFORM_EXPORT void SetNpcSubRange(DRange3dCP pSubRange);
-
     DGNPLATFORM_EXPORT uint32_t GetLocalTransformKey () const;
     DGNPLATFORM_EXPORT TransformClipStackR GetTransformClipStack () { return m_transformClipStack; }
     DGNPLATFORM_EXPORT bool& GetDrawingClipElements () { return m_drawingClipElements; }
