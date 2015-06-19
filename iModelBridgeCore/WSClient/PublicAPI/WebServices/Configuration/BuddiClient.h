@@ -20,13 +20,26 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
+typedef std::shared_ptr<struct IBuddiClient> IBuddiClientPtr;
 typedef AsyncResult<bvector<struct BuddiRegion>, BuddiError> BuddiRegionsResult;
 typedef AsyncResult<Utf8String, BuddiError> BuddiUrlResult;
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                 Julija.Semenenko    06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct BuddiClient
+struct IBuddiClient
+    {
+    virtual ~IBuddiClient()
+        {}
+
+    virtual AsyncTaskPtr<BuddiRegionsResult> GetRegions() = 0;
+    virtual AsyncTaskPtr<BuddiUrlResult> GetUrl(Utf8StringCR urlName, uint32_t regionId = 0) = 0;
+    };
+
+/*--------------------------------------------------------------------------------------+
+* @bsiclass                                                 Julija.Semenenko    06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+struct BuddiClient : public IBuddiClient
     {
     private:
         HttpClient m_client;
@@ -40,12 +53,12 @@ struct BuddiClient
         WSCLIENT_EXPORT BuddiClient(IHttpHandlerPtr customHandler = nullptr, Utf8String url = "http://buddi.bentley.com/discovery.asmx");
 
         //! Sends http request and returns regions
-        WSCLIENT_EXPORT AsyncTaskPtr<BuddiRegionsResult> GetRegions();
+        WSCLIENT_EXPORT AsyncTaskPtr<BuddiRegionsResult> GetRegions() override;
 
         //! Sends http request and gets URL registered in BUDDI (http://buddi.bentley.com)
         //@param[in] urlName    URL name, registered in the BUDDI
         //@param[in] regionId   BUDDI region ID. 0 to use default URLs
-        WSCLIENT_EXPORT AsyncTaskPtr<BuddiUrlResult> GetUrl(Utf8StringCR urlName, uint32_t regionId = 0);
+        WSCLIENT_EXPORT AsyncTaskPtr<BuddiUrlResult> GetUrl(Utf8StringCR urlName, uint32_t regionId = 0) override;
     };
 
 /*--------------------------------------------------------------------------------------+
@@ -59,7 +72,7 @@ struct BuddiRegion
 
     public:
         BuddiRegion(Utf8String name, uint32_t id) : m_name(name), m_id(id) {}
-        
+
         Utf8StringCR GetName()
             {
             return m_name;

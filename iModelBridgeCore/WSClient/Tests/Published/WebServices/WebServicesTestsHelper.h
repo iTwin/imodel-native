@@ -12,6 +12,8 @@
 #include <WebServices/Client/WSError.h>
 #include <WebServices/Client/WSRepositoryClient.h>
 #include <WebServices/Client/ObjectId.h>
+#include "Connect/StubLocalState.h"
+#include "Configuration/StubBuddiClient.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS

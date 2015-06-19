@@ -20,8 +20,6 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 static IHttpHandlerPtr s_customHttpHandler;
 static bool s_usageTrackingInitialized = false;
 
-#define USAGE_TRACK_URL "https://licenseXM.bentley.com/bss/ws/mobile"
-
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    George.Rodier   02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -221,10 +219,5 @@ Utf8String UsageTracking::VerifyClientMobile (Utf8StringCR userGuid, Utf8StringC
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String UsageTracking::GetUsageTrackingUrl ()
     {
-    Utf8String usageTrackingUrl (USAGE_TRACK_URL);
-    if (UrlProvider::IsInitialized ())
-        {
-        usageTrackingUrl = UrlProvider::GetUsageTrackingUrl ();
-        }
-    return usageTrackingUrl;
+    return UrlProvider::GetUsageTrackingUrl();
     }
