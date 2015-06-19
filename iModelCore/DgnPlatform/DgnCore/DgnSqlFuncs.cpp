@@ -791,7 +791,7 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnSchemaDomain::_OnDgnDbOpened(DgnDbR db) const
+void DgnBaseDomain::_OnDgnDbOpened(DgnDbR db) const
     {
     static DbFunction* s_funcs[] = 
                           {

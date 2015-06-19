@@ -738,59 +738,7 @@ void StrokeElementForCache::_SaveQvElem (QvElemP qvElem, double pixelSize, doubl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TransientCachedGraphics::~TransientCachedGraphics() {if (nullptr != m_qvElem) IViewOutput::DeleteCacheElement(m_qvElem);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t ViewContext::GetIndexedLineWidth (int index)
-    {
-    DgnViewportP   viewport = GetViewport();
-
-    return (viewport ? viewport->GetIndexedLineWidth (index) : DgnViewport::GetDefaultIndexedLineWidth (index));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t ViewContext::GetIndexedLinePattern (int index)
-    {
-    DgnViewportP   viewport = GetViewport();
-
-    return (viewport ? viewport->GetIndexedLinePattern (index) : DgnViewport::GetDefaultIndexedLinePattern (index));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Andrew.Edge     03/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::SetIndexedLineWidth (ElemMatSymbR elemMatSymb, int index)
-    {
-    elemMatSymb.SetWidth (GetIndexedLineWidth (index));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Andrew.Edge     03/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::SetIndexedLinePattern (ElemMatSymbR elemMatSymb, int index)
-    {
-    elemMatSymb.SetIndexedRasterPattern (index, GetIndexedLinePattern (index));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Andrew.Edge     03/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::SetIndexedLineWidth (OvrMatSymbR ovrMatSymb, int index)
-    {
-    ovrMatSymb.SetWidth (GetIndexedLineWidth (index));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Andrew.Edge     03/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::SetIndexedLinePattern (OvrMatSymbR ovrMatSymb, int index)
-    {
-    ovrMatSymb.SetIndexedRasterPattern (index, GetIndexedLinePattern (index));
-    }
+TransientCachedGraphics::~TransientCachedGraphics() {if (nullptr != m_qvElem) T_HOST.GetGraphicsAdmin()._DeleteQvElem(m_qvElem);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/04
@@ -803,38 +751,6 @@ ILineStyleCP ViewContext::_GetCurrLineStyle (LineStyleSymbP* symb)
         *symb = &tSymb;
 
     return tSymb.GetILineStyle();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   03/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-ColorDef ViewContext::GetCurrLineColor()
-    {
-    ColorDef lineColor = ((m_ovrMatSymb.GetFlags() & MATSYMB_OVERRIDE_Color) ? m_ovrMatSymb.GetLineColor() : m_elemMatSymb.GetLineColor());
-    ColorDef makeTrans = ((m_ovrMatSymb.GetFlags() & MATSYMB_OVERRIDE_ColorTransparency) ? m_ovrMatSymb.GetLineColor() : m_elemMatSymb.GetLineColor());
-
-    lineColor.SetAlpha(makeTrans.GetAlpha());
-    return lineColor;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   03/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-ColorDef ViewContext::GetCurrFillColor()
-    {
-    ColorDef fillColor = ((m_ovrMatSymb.GetFlags() & MATSYMB_OVERRIDE_FillColor) ? m_ovrMatSymb.GetFillColor() : m_elemMatSymb.GetFillColor());
-    ColorDef makeTrans = ((m_ovrMatSymb.GetFlags() & MATSYMB_OVERRIDE_FillColorTransparency) ? m_ovrMatSymb.GetFillColor() : m_elemMatSymb.GetFillColor());
-
-    fillColor.SetAlpha(makeTrans.GetAlpha());
-    return fillColor;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   03/04
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t ViewContext::GetCurrWidth()
-    {
-    return (m_ovrMatSymb.GetFlags() & MATSYMB_OVERRIDE_RastWidth) ? m_ovrMatSymb.GetWidth() : m_elemMatSymb.GetWidth();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -940,6 +856,7 @@ void ViewContext::_OutputElement (GeometricElementCR element)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_AddViewOverrides (OvrMatSymbR ovrMatSymb)
     {
+    // NOTE: ElemDisplayParams/ElemMatSymb ARE NOT setup at this point!
     ViewFlagsCP viewFlags = GetViewFlags();
 
     if (NULL == viewFlags)
@@ -948,8 +865,8 @@ void ViewContext::_AddViewOverrides (OvrMatSymbR ovrMatSymb)
     if (!viewFlags->weights)
         ovrMatSymb.SetWidth(1);
 
-    if (!viewFlags->styles/* && !IS_LINECODE (m_currDisplayParams.GetLineStyle())*/)
-        ovrMatSymb.SetRasterPattern (GetIndexedLinePattern(0));
+    if (!viewFlags->styles)
+        ovrMatSymb.SetRasterPattern(DgnViewport::GetDefaultIndexedLinePattern(0));
 
     if (!viewFlags->transparency)
         {
@@ -1400,7 +1317,7 @@ QvElem* ViewContext::CreateCacheElem (IStrokeForCache& stroker, QvCache* qvCache
         return nullptr;
 
     if (nullptr == qvCache)
-        qvCache = GetViewport()->GetIViewOutput()->GetTempElementCache();
+        qvCache = T_HOST.GetGraphicsAdmin()._GetTempElementCache();
 
     BeAssert (qvCache);
     cachedDraw->BeginCacheElement (qvCache, m_is3dView, m_is3dView ? 0.0 : stroker._GetDisplayPriority(*this));
@@ -1507,97 +1424,6 @@ QvElem* ViewContext::_DrawCached (IStrokeForCache& stroker)
     T_HOST.GetGraphicsAdmin()._DeleteQvElem (qvElem);
 
     return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewContext::CheckThicknessVector()
-    {
-#if defined (WIP_REMOVE)
-    // Not attached to a view, thickness required...
-    if (NULL == GetViewport())
-        return true;
-
-    // Thickness visible due to perspective...
-    if (IsCameraOn())
-        return true;
-
-    bool        isCapped;
-    DVec3dCP    thicknessDir = m_currDisplayParams.GetThickness (isCapped);
-
-    if (NULL == thicknessDir)
-        return false;
-
-    DPoint3d    npcPt[2], worldPt[2];
-    DVec3d      zVector, testVec = *thicknessDir;
-
-    npcPt[0] = s_frustPts[FRUST_Org];
-    npcPt[1] = s_frustPts[FRUST_Z];
-
-    NpcToWorld (worldPt, npcPt, 2);
-    zVector.NormalizedDifference (worldPt[0], worldPt[1]);
-
-    Transform   transform;
-
-    if (SUCCESS == GetCurrLocalToWorldTrans (transform))
-        transform.MultiplyMatrixOnly (testVec, testVec);
-
-    return (LegacyMath::Vec::AreParallel (&zVector, &testVec) ? false : true);
-#else
-    return false;
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t ViewContext::_GetDisplayInfo (bool isRenderable)
-    {
-    uint32_t    info = DISPLAY_INFO_None;
-    ViewFlagsCP flags = GetViewFlags();
-    bool        isFilled, isOutlined = false, isSurface = false;
-
-    switch (m_currDisplayParams.GetFillDisplay())
-        {
-        case FillDisplay::Always:
-        case FillDisplay::Blanking:
-            isFilled = true;
-            break;
-
-        case FillDisplay::ByView:
-            isFilled = (!flags || flags->fill);
-            break;
-
-        default:
-            isFilled = false;
-            break;
-        }
-
-    if (!flags || DgnRenderMode::Wireframe == flags->GetRenderMode())
-        isOutlined = (isFilled ? _CheckFillOutline() : true);
-
-    if (flags && (DgnRenderMode::Wireframe != flags->GetRenderMode()))
-        {
-        if (isRenderable)
-            isSurface = true;
-        else
-            isOutlined = true;
-        }
-
-    if (isOutlined)
-        info |= DISPLAY_INFO_Edge;
-
-    if (isSurface)
-        info |= DISPLAY_INFO_Surface;
-
-    if (isFilled)
-        info |= DISPLAY_INFO_Fill;
-
-    if (isRenderable && WantAreaPatterns())
-        info |= DISPLAY_INFO_Pattern;
-
-    return info;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2108,9 +1934,11 @@ void ElemMatSymb::FromResolvedElemDisplayParams (ElemDisplayParamsCR elParams, V
     // mapped to cosmetic line styles.  PlotContext is different from DrawContext in that it
     // uses QV extended symbologies for cosmetic line styles rather than pattern codes. TR 225586.
     m_elementStyle = m_lStyleSymb.FromResolvedElemDisplayParams (elParams, context, startTangent, endTangent);
-    m_rasterPat    = context.GetIndexedLinePattern (m_elementStyle);
-    m_rasterWidth  = context.GetIndexedLineWidth (remapAcadLineWeight (elParams.GetWeight()));
 
+    DgnViewportP vp = context.GetViewport();
+
+    m_rasterPat = (nullptr != vp ? vp->GetIndexedLinePattern(m_elementStyle) : DgnViewport::GetDefaultIndexedLinePattern(m_elementStyle));
+    m_rasterWidth = (nullptr != vp ? vp->GetIndexedLineWidth(remapAcadLineWeight(elParams.GetWeight())) : DgnViewport::GetDefaultIndexedLineWidth(remapAcadLineWeight(elParams.GetWeight())));
     m_lineColor = m_fillColor = elParams.GetLineColor(); // NOTE: In case no fill is defined it should be set the same as line color...
 
     double netElemTransparency = elParams.GetNetTransparency();
@@ -2513,84 +2341,44 @@ void ElemDisplayParams::Resolve (ViewContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::_DrawSymbol (IDisplaySymbol* symbol, TransformCP trans, ClipPlaneSetP clip, bool ignoreColor, bool ignoreWeight)
     {
-    QvCache*    symbolCache = T_HOST.GetGraphicsAdmin()._GetSymbolCache();
+#if defined (DGNPLATFORM_WIP_SYMBOL_SYMBOLOGY)
+    // We need to revisit "ignoreColor" and "ignoreWeight" and remove these args. The DgnGeomPart for the symbol doesn't 
+    // store any symbology, so there should never be a reason to "ignore" anything, the correct symbology, either from the
+    // symbol definition or element, should be setup prior to calling this method.
+#endif
+    QvCache* symbolCache = T_HOST.GetGraphicsAdmin()._GetSymbolCache();
 
     if (!symbolCache || CheckICachedDraw())
         {
         // if we're creating a cache elem already, we need to stroke the symbol into that elem by value
-        IDrawGeomR      output = GetIDrawGeom();
-        ElemMatSymb     saveElemMatSymb;
+        IDrawGeomR output = GetIDrawGeom();
 
-        saveElemMatSymb = m_elemMatSymb; // Save current mat symb in case symbol changes...
-#if defined (NEEDS_WORK_DGNITEM)
-        m_ignores.Set (m_currDisplayParams, true, ignoreColor, ignoreWeight); // NOTE: Symbol category is always inherited from base element...
-#endif
-
-        output._PushTransClip (trans, clip);
-        symbol->_Draw (*this);
+        output._PushTransClip(trans, clip);
+        symbol->_Draw(*this);
         output._PopTransClip();
-
-        // Restore/Activate original mat symb if changed...
-        if (!(m_elemMatSymb == saveElemMatSymb))
-            {
-            output.ActivateMatSymb (&saveElemMatSymb);
-            m_elemMatSymb = saveElemMatSymb;
-            }
-
-#if defined (NEEDS_WORK_DGNITEM)
-        m_ignores.Clear();
-#endif
 
         return;
         }
 
-    QvElem* qvElem = T_HOST.GetGraphicsAdmin()._LookupQvElemForSymbol (symbol);
+    QvElem* qvElem = T_HOST.GetGraphicsAdmin()._LookupQvElemForSymbol(symbol);
 
-    if (NULL == qvElem)
+    if (nullptr == qvElem)
         {
         SymbolContext symbolContext(*this);
-        qvElem = symbolContext.DrawSymbolForCache (symbol, *symbolCache);
 
-        if (NULL == qvElem)
+        qvElem = symbolContext.DrawSymbolForCache(symbol, *symbolCache);
+
+        if (nullptr == qvElem)
             return;
 
-        T_HOST.GetGraphicsAdmin()._SaveQvElemForSymbol (symbol, qvElem); // save the qvelem in case we encounter this symbol again
+        T_HOST.GetGraphicsAdmin()._SaveQvElemForSymbol(symbol, qvElem); // save the qvelem in case we encounter this symbol again
         }
 
     // draw the symbol.
-    IViewDrawR  output = GetIViewDraw();
+    IViewDrawR output = GetIViewDraw();
 
-    output._PushTransClip (trans, clip);
-
-    OvrMatSymb  ovrMatSymb = m_ovrMatSymb;
-    uint32_t    flags      = ovrMatSymb.GetFlags();
-
-    if (ignoreColor && !IsMonochromeDisplayStyleActive()) // Monochrome style trumps ignoreColor...
-        {
-        ColorDef  color = GetCurrLineColor(); // Want current effective color w/overrides!
-
-        if (0 == (flags & MATSYMB_OVERRIDE_ColorTransparency))
-            ovrMatSymb.SetLineTransparency (color.GetAlpha());
-
-        if (0 == (flags & MATSYMB_OVERRIDE_FillColorTransparency))
-            ovrMatSymb.SetFillTransparency (color.GetAlpha());
-        }
-
-    if (ignoreWeight && (0 == (flags & MATSYMB_OVERRIDE_RastWidth)))
-        ovrMatSymb.SetWidth (m_elemMatSymb.GetWidth());
-    else if (!ignoreWeight && (0 != (flags & MATSYMB_OVERRIDE_RastWidth)))
-        ovrMatSymb.SetFlags (ovrMatSymb.GetFlags() & ~MATSYMB_OVERRIDE_RastWidth);
-
-    if (MATSYMB_OVERRIDE_None != ovrMatSymb.GetFlags())
-        output.ActivateOverrideMatSymb (&ovrMatSymb);
-
-    // Display priority for symbols in 2d is incorporated into the transform.
-    GetIViewDraw().DrawQvElem (qvElem);
-
-    // Clear or restore previous overrides...
-    if (MATSYMB_OVERRIDE_None != ovrMatSymb.GetFlags())
-        output.ActivateOverrideMatSymb (&m_ovrMatSymb);
-
+    output._PushTransClip(trans, clip);
+    output.DrawQvElem(qvElem); // Display priority for symbols in 2d is incorporated into the transform.
     output._PopTransClip();
     }
 

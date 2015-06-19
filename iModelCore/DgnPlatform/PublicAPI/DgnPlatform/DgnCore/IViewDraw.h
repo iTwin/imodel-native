@@ -1014,7 +1014,7 @@ mutable QvElemP m_qvElem;
 public:
 
 explicit TransientCachedGraphics (DgnDbR dgnDb) : m_dgnDb (dgnDb) {m_qvElem = nullptr;}
-DGNPLATFORM_EXPORT virtual ~TransientCachedGraphics ();
+DGNPLATFORM_EXPORT virtual ~TransientCachedGraphics();
 
 virtual DgnDbR _GetDgnDb () const override {return m_dgnDb;}
 virtual int32_t _GetQvIndex () const override {return 0;} // Not used by Get/Save...

@@ -21,6 +21,9 @@ BENTLEY_API_TYPEDEFS(HeapZone);
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+namespace dgn_ElementHandler {struct Element; struct Physical;};
+namespace dgn_TxnTable {struct Element;};
+
 struct MultiAspectMux;
 
 typedef RefCountedPtr<ElementGeometry> ElementGeometryPtr;
@@ -56,7 +59,8 @@ public:
     friend struct DgnModel;
     friend struct ElemIdTree;
     friend struct EditElementHandle;
-    friend struct ElementHandler;
+    friend struct dgn_ElementHandler::Element;
+    friend struct dgn_TxnTable::Element;
 
     //! Parameters for creating new DgnElements
     struct CreateParams
@@ -83,9 +87,8 @@ public:
     {
         None         = 0, //!< the element is displayed normally (not hilited)
         Normal       = 1, //!< the element is displayed using the normal hilite appearance
-        Bold         = 2, //!< the element is displayed with a bold appearance
-        Dashed       = 3, //!< the element is displayed with a dashed appearance
-        Background   = 4, //!< the element is displayed with the background color
+        Dashed       = 2,
+        Background   = 3, //!< the element is displayed with the background color
     };
 
     //! Application data attached to a DgnElement. Create a subclass of this to store non-persistent information on a DgnElement.
@@ -899,12 +902,11 @@ struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : DgnElement3d
 {
     DEFINE_T_SUPER(DgnElement3d);
 protected:
-    friend struct PhysicalElementHandler;
-
     PhysicalElementCP _ToPhysicalElement() const override {return this;}
-    explicit PhysicalElement(CreateParams const& params) : T_Super(params) {}
 
 public:
+    explicit PhysicalElement(CreateParams const& params) : T_Super(params) {}
+
     //! Create an instance of a PhysicalElement from a CreateParams.
     //! @note This is a static method that creates an instance of the PhysicalElement class. To create subclasses, use static methods on the appropriate class.
     static PhysicalElementPtr Create(CreateParams const& params) {return new PhysicalElement(params);}
@@ -962,11 +964,10 @@ struct EXPORT_VTABLE_ATTRIBUTE DrawingElement : DgnElement2d
 {
     DEFINE_T_SUPER(DgnElement2d);
 protected:
-    friend struct DrawingElementHandler;
     DrawingElementCP _ToDrawingElement() const override {return this;}
-    explicit DrawingElement(CreateParams const& params) : T_Super(params) {}
 
 public:
+    explicit DrawingElement(CreateParams const& params) : T_Super(params) {}
     //! Create a DrawingElement from CreateParams.
     static DrawingElementPtr Create(CreateParams const& params) {return new DrawingElement(params);}
 
@@ -985,7 +986,6 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE ElementGroup : DgnElement
 {
     DEFINE_T_SUPER(DgnElement);
-    friend struct ElementGroupHandler;
 
 protected:
     ElementGroupCP _ToElementGroup() const override {return this;}
@@ -1007,9 +1007,18 @@ protected:
     //! Called when members of the group are queried
     DGNPLATFORM_EXPORT virtual DgnElementIdSet _QueryMembers() const;
 
+public:
     explicit ElementGroup(CreateParams const& params) : T_Super(params) {}
 
-public:
+    //! Create a new instance of a DgnElement using the specified CreateParams.
+    //! @note This is a static method that only creates instances of the ElementGroup class. To create instances of subclasses,
+    //! use a static method on the subclass.
+    static ElementGroupPtr Create(CreateParams const& params) { return new ElementGroup(params); }
+
+    //! Query the DgnClassId for the dgn.ElementGroup class in the specified DgnDb.
+    //! @note This is a static method that always returns the DgnClassId of the dgn.ElementGroup class - it does @b not return the class of a specific instance.
+    DGNPLATFORM_EXPORT static DgnClassId QueryClassId(DgnDbR db);
+
     //! Insert a member into this ElementGroup. This creates an ElementGroupHasMembers ECRelationship between this ElementGroup and the specified DgnElement
     //! @param[in] member The element to become a member of this ElementGroup.
     //! @note The ElementGroup and the specified DgnElement must have already been inserted (have valid DgnElementIds)

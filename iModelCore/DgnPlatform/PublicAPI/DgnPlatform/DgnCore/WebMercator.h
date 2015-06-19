@@ -314,70 +314,74 @@ public:
     void SetMercator(Mercator const&);
 };
 
-
-//=======================================================================================
-//! Base class for model handlers that create models derived from WebMercatorModel.
-//! Instances of WebMercatorModel must be able to assume that their handler is-a WebMercatorModelHandler.
-//! Specifically, then will need to call the _CreateUrl method.
-// @bsiclass                                                    Sam.Wilson      10/2014
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE WebMercatorModelHandler : ModelHandler
+namespace dgn_ModelHandler
 {
-    MODELHANDLER_DECLARE_MEMBERS ("WebMercatorModel", WebMercatorModel, WebMercatorModelHandler, ModelHandler, DGNPLATFORM_EXPORT)
+    //=======================================================================================
+    //! Base class for model handlers that create models derived from WebMercatorModel.
+    //! Instances of WebMercatorModel must be able to assume that their handler is-a WebMercatorModelHandler.
+    //! Specifically, then will need to call the _CreateUrl method.
+    // @bsiclass                                                    Sam.Wilson      10/2014
+    //=======================================================================================
+    struct EXPORT_VTABLE_ATTRIBUTE WebMercator : Model
+    {
+        MODELHANDLER_DECLARE_MEMBERS ("WebMercatorModel", WebMercatorModel, WebMercator, Model, DGNPLATFORM_EXPORT)
 
-public:
-    //! Create the URL to request the specified tile from a map service.
-    //! @param[in] mapService       Identifies the source of the tiled map data. This is a token that is supplied by the 
-    //!                             subclass of WebMercatorModelHandler and stored on a WebMercatorModel instande in the DgnDb, 
-    //!                             in order to associate it with a map server. The WebMercatorModelHandler subclass looks at this string
-    //!                             when constructing URLs at runtime for requesting tiles for the model.
-    //! @param[in] mapType          Identifies the type of map data to request and display.
-    //! @param[in] tileid           The location of the tile, according to the WebMercator tiling system
-    DGNPLATFORM_EXPORT virtual BentleyStatus _CreateUrl (Utf8StringR url, ImageUtilities::RgbImageInfo& imageInfo, WebMercatorModel::Mercator const&, WebMercatorTilingSystem::TileId const& tileid) {return BSIERROR;}
+    public:
+        //! Create the URL to request the specified tile from a map service.
+        //! @param[in] mapService       Identifies the source of the tiled map data. This is a token that is supplied by the
+        //!                             subclass of WebMercatorModelHandler and stored on a WebMercatorModel instande in the DgnDb,
+        //!                             in order to associate it with a map server. The WebMercatorModelHandler subclass looks at this string
+        //!                             when constructing URLs at runtime for requesting tiles for the model.
+        //! @param[in] mapType          Identifies the type of map data to request and display.
+        //! @param[in] tileid           The location of the tile, according to the WebMercator tiling system
+        DGNPLATFORM_EXPORT virtual BentleyStatus _CreateUrl (Utf8StringR url, ImageUtilities::RgbImageInfo& imageInfo, WebMercatorModel::Mercator const&, WebMercatorTilingSystem::TileId const& tileid) {return BSIERROR;}
+    };
 };
-
 struct EXPORT_VTABLE_ATTRIBUTE StreetMapModel : WebMercatorModel
 {
     DEFINE_T_SUPER(WebMercatorModel)
     StreetMapModel(CreateParams const& params) : T_Super(params) {}
 };
 
-//=======================================================================================
-// A handler for models that communicate with one of the well known street map services
-// to obtain and display street maps and satellite imagery based on the WebMercator tiling system.
-// @bsiclass                                                    Sam.Wilson      10/2014
-//=======================================================================================
-struct StreetMapModelHandler : WebMercatorModelHandler
+namespace dgn_ModelHandler
 {
-    MODELHANDLER_DECLARE_MEMBERS ("StreetMapModel", StreetMapModel, StreetMapModelHandler, WebMercatorModelHandler, DGNPLATFORM_EXPORT)
+    //=======================================================================================
+    // A handler for models that communicate with one of the well known street map services
+    // to obtain and display street maps and satellite imagery based on the WebMercator tiling system.
+    // @bsiclass                                                    Sam.Wilson      10/2014
+    //=======================================================================================
+    struct StreetMap : WebMercator
+    {
+        MODELHANDLER_DECLARE_MEMBERS ("StreetMapModel", StreetMapModel, StreetMap, WebMercator, DGNPLATFORM_EXPORT)
 
-    //! Identifies a well known street map tile service
-    enum class MapService 
-        {
-        MapQuest,               //!< MapQuest
-        };
+        //! Identifies a well known street map tile service
+        enum class MapService
+            {
+            MapQuest,               //!< MapQuest
+            };
 
-    //! The kind of map to display
-    enum class MapType
-        {
-        Map,                    //!< Show a map
-        SatelliteImage,         //!< Show a satellite image (if available)
-        };
+        //! The kind of map to display
+        enum class MapType
+            {
+            Map,                    //!< Show a map
+            SatelliteImage,         //!< Show a satellite image (if available)
+            };
 
-protected:
-    DGNPLATFORM_EXPORT virtual BentleyStatus _CreateUrl (Utf8StringR url, ImageUtilities::RgbImageInfo& imageInfo, WebMercatorModel::Mercator const&, WebMercatorTilingSystem::TileId const&) override;
+    protected:
+        DGNPLATFORM_EXPORT virtual BentleyStatus _CreateUrl (Utf8StringR url, ImageUtilities::RgbImageInfo& imageInfo, WebMercatorModel::Mercator const&, WebMercatorTilingSystem::TileId const&) override;
 
-    DGNPLATFORM_EXPORT Utf8String CreateMapquestUrl (WebMercatorTilingSystem::TileId const&, WebMercatorModel::Mercator const&);
+        DGNPLATFORM_EXPORT Utf8String CreateMapquestUrl (WebMercatorTilingSystem::TileId const&, WebMercatorModel::Mercator const&);
 
-public:
-    //! Create a new street map model in the DgnDb.
-    //! @praam[in] db           The DgnDb
-    //! @param[in] mapService   Identifies the map service that will supply the maps or imagery
-    //! @param[in] mapType      Identifies the kind of map data to display
-    //! @param[in] finerResolution If true, the external data model will download and display more and smaller tiles, if necessary, in order to get the best resolution.
-    //!                              If false, fewer and larger tiles are obtained and displayed. That saves time but may sometimes result in slightly fuzzy resolution.
-    //! @return the ID of the new external data model.
-    DGNPLATFORM_EXPORT static DgnModelId CreateStreetMapModel(DgnDbR db, MapService mapService, MapType mapType, bool finerResolution);
+    public:
+        //! Create a new street map model in the DgnDb.
+        //! @praam[in] db           The DgnDb
+        //! @param[in] mapService   Identifies the map service that will supply the maps or imagery
+        //! @param[in] mapType      Identifies the kind of map data to display
+        //! @param[in] finerResolution If true, the external data model will download and display more and smaller tiles, if necessary, in order to get the best resolution.
+        //!                              If false, fewer and larger tiles are obtained and displayed. That saves time but may sometimes result in slightly fuzzy resolution.
+        //! @return the ID of the new external data model.
+        DGNPLATFORM_EXPORT static DgnModelId CreateStreetMapModel(DgnDbR db, MapService mapService, MapType mapType, bool finerResolution);
+    };
 };
 
 //=======================================================================================

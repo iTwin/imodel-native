@@ -29,14 +29,14 @@
     <ECRelationshipClass typeName="TestElementDrivesElement" isDomainClass="True" strength="referencing" strengthDirection="forward" >
         <ECCustomAttributes>
           <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
-                <Source>
+                <SourceColumns>
                     <ECInstanceIdColumn>RootElementId</ECInstanceIdColumn>
                     <ECClassIdColumn>RootElementClassId</ECClassIdColumn>
-                </Source>
-                <Target>
+                </SourceColumns>
+                <TargetColumns>
                     <ECInstanceIdColumn>DependentElementId</ECInstanceIdColumn>
                     <ECClassIdColumn>DependentElementClassId</ECClassIdColumn>
-                </Target>
+                </TargetColumns>
             </LinkTableRelationshipMap>
         </ECCustomAttributes>
         <BaseClass>dgn:ElementDrivesElement</BaseClass>

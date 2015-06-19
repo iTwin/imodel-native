@@ -390,7 +390,7 @@ static CurveVectorPtr Process (IStrokeForCache& stroker)
 * @bsimethod                                                    Brien.Bastings  11/07
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewContext::ClipStencil::ClipStencil (IStrokeForCache& stroker) : m_stroker (stroker) {m_tmpQvElem = nullptr;}
-ViewContext::ClipStencil::~ClipStencil () {if (m_tmpQvElem) IViewOutput::DeleteCacheElement(m_tmpQvElem);}
+ViewContext::ClipStencil::~ClipStencil () {if (m_tmpQvElem) T_HOST.GetGraphicsAdmin()._DeleteQvElem(m_tmpQvElem);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/07

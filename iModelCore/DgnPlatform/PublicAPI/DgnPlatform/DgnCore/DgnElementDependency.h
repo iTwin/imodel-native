@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/DgnPlatform/DgnCore/DgnEntity.h $
+|     $Source: PublicAPI/DgnPlatform/DgnCore/DgnElementDependency.h $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -18,9 +18,9 @@ struct DgnElementDependencyGraph;
 //=======================================================================================
 //! Base class for dependency handlers for the dgn.ElementDrivesElement ECRelationship class. See DgnElementDependencyGraph.
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DgnElementDrivesElementDependencyHandler : DgnDomain::Handler
+struct EXPORT_VTABLE_ATTRIBUTE DgnElementDependencyHandler : DgnDomain::Handler
 {
-    DOMAINHANDLER_DECLARE_MEMBERS(DGN_RELNAME_ElementDrivesElement, DgnElementDrivesElementDependencyHandler, DgnDomain::Handler, DGNPLATFORM_EXPORT)
+    DOMAINHANDLER_DECLARE_MEMBERS(DGN_RELNAME_ElementDrivesElement, DgnElementDependencyHandler, DgnDomain::Handler, DGNPLATFORM_EXPORT)
 
 protected:
     friend struct DgnElementDependencyGraph;
@@ -47,22 +47,22 @@ protected:
     virtual void _ValidateOutput(DgnDbR db, BeSQLite::EC::ECInstanceId relationshipId, DgnElementId source, DgnElementId target, TxnSummaryR summary) {}
 
 public:
-    //! Looks up a registered DgnElementDrivesElementDependencyHandler by its ECRelationship class ID.
+    //! Looks up a registered DgnElementDependencyHandler by its ECRelationship class ID.
     //! @param[in] db               The DgnDb in which the handler and ECRelationship reside. 
     //! @param[out] classId         The ID of the particular ElementDrivesElement ECRelationshipClass
     //! @return The dependency handler that is registered for this ID or NULL if none is registered.
-    DGNPLATFORM_EXPORT static DgnElementDrivesElementDependencyHandler* FindHandler(DgnDbR db, DgnClassId classId);
+    DGNPLATFORM_EXPORT static DgnElementDependencyHandler* FindHandler(DgnDbR db, DgnClassId classId);
 };
 
 //=======================================================================================
-//! Element dependency graph calls DgnElementDrivesElementDependencyHandler in the correct order when a transaction is "validated".
+//! Element dependency graph calls DgnElementDependencyHandler in the correct order when a transaction is "validated".
 //! Called by Txns::CheckTxnBoundary.
 //! 
 //! <h3>Only ElementDrivesElement ECRelationships can have Dependency Handlers</h3>
 //! Only an ECRelationship derived from dgn.ElementDrivesElement can have a dependency handler.
 //! A domain can associate its own dependency handler with a kind of ElementDrivesElement relationship by 
 //! 1) defining a subclass of dgn.ElementDrivesElement in its ECSchema, 
-//! 2) defining a C++ subclass of DgnElementDrivesElementDependencyHandler that is associated with that ECSchema subclass, and 
+//! 2) defining a C++ subclass of DgnElementDependencyHandler that is associated with that ECSchema subclass, and 
 //! 3) registering the C++ Handler subclass.
 //!
 //! <h3>Dependency Graph</h3>
@@ -200,10 +200,10 @@ struct DgnElementDependencyGraph
     struct IEdgeProcessor
         {
         //! Invoked on an edge in the graph
-        virtual void _ProcessEdge(Edge const& edge, DgnElementDrivesElementDependencyHandler* handler) = 0;
+        virtual void _ProcessEdge(Edge const& edge, DgnElementDependencyHandler* handler) = 0;
 
         //! Invoked on an edge in the graph for a validation callback
-        virtual void _ProcessEdgeForValidation(Edge const& edge, DgnElementDrivesElementDependencyHandler* handler) = 0;
+        virtual void _ProcessEdgeForValidation(Edge const& edge, DgnElementDependencyHandler* handler) = 0;
 
         //! Invoked when a validation error such as a cycle is detected.
         virtual void _OnValidationError(TxnSummary::ValidationError const& error, Edge const* edge) = 0;
@@ -212,11 +212,11 @@ struct DgnElementDependencyGraph
 private:
     enum class EdgeColor {White, Gray, Black};  // NB: White must be the default (0) value
 
-    DgnDbR                         m_db;
-    TxnSummaryR                    m_summary;
-    ElementDrivesElement*          m_elementDrivesElement;
-    EdgeQueue*                     m_edgeQueue;
-    IEdgeProcessor*                m_processor;
+    DgnDbR                  m_db;
+    TxnSummaryR             m_summary;
+    ElementDrivesElement*   m_elementDrivesElement;
+    EdgeQueue*              m_edgeQueue;
+    IEdgeProcessor*         m_processor;
 
     void Init();
 
@@ -251,7 +251,7 @@ private:
     BentleyStatus CheckDirection(Edge const&);
 
 public:
-    DGNPLATFORM_EXPORT DgnElementDependencyGraph(DgnDbR, TxnSummaryR);
+    DGNPLATFORM_EXPORT DgnElementDependencyGraph(TxnSummaryR);
     DGNPLATFORM_EXPORT ~DgnElementDependencyGraph();
 
     DgnDbR GetDgnDb() const {return m_db;}

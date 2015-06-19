@@ -10,8 +10,6 @@
 #include <DgnPlatform/DgnCore/Annotations/TextAnnotationElement.h>
 #include <DgnPlatformInternal/DgnCore/Annotations/TextAnnotationPersistence.h>
 
-HANDLER_DEFINE_MEMBERS(PhysicalTextAnnotationElementHandler);
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2015
 //---------------------------------------------------------------------------------------

@@ -723,7 +723,7 @@ void DgnElement2d::_CopyFrom(DgnElementCR other)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElementHandlerR DgnElement::GetElementHandler() const
     {
-    return *ElementHandler::FindHandler(GetDgnDb(), m_classId);
+    return *dgn_ElementHandler::Element::FindHandler(GetDgnDb(), m_classId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -954,6 +954,15 @@ DgnElementId ElementGroup::QueryFromMember(DgnDbR db, DgnClassId groupClassId, D
 
     return (BE_SQLITE_ROW != statement->Step()) ? DgnElementId() : statement->GetValueId<DgnElementId>(0);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                 Ramanujam.Raman                    06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnClassId ElementGroup::QueryClassId(DgnDbR db)
+    {
+    return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ElementGroup));
+    }
+
 
 
 //    _/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
