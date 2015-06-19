@@ -139,9 +139,10 @@ TEST (RealityDataWorkerThread, IsIdle)
     ASSERT_EQ (1, TestWork::s_nCalls);                      // work item executed
     
     // Work is done, thread is created and idling
-    BeThreadUtilities::BeSleep (sleepTime);
-    ASSERT_TRUE (thread->IsIdle (&idleTime));
-    ASSERT_GE (idleTime, sleepTime);
+    while (!thread->IsIdle (&idleTime))
+        ;
+
+    ASSERT_TRUE (idleTime >= 0);
     thread->Terminate ();
     }
 
