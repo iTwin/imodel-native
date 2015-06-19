@@ -108,6 +108,9 @@
     <ClInclude Include="Published\WebServices\Client\ClientInfoTests.h" />
     <ClInclude Include="Published\WebServices\Connect\StubSecureStore.h" />
     <ClInclude Include="Published\WebServices\Configuration\BuddiClientTests.h" />
+    <ClInclude Include="Published\WebServices\Configuration\UrlProviderTests.h" />
+    <ClInclude Include="Published\WebServices\Configuration\MockBuddiClient.h" />
+    <ClInclude Include="Published\WebServices\Configuration\StubBuddiClient.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BackDoor\BackDoor.cpp">
@@ -246,6 +249,7 @@
     <ClCompile Include="Published\WebServices\WebServicesTestsHelper.cpp" />
     <ClCompile Include="Published\WebServices\Client\ClientInfoTests.cpp" />
     <ClCompile Include="Published\WebServices\Configuration\BuddiClientTests.cpp" />
+    <ClCompile Include="Published\WebServices\Configuration\UrlProviderTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="dependencies.mki" />

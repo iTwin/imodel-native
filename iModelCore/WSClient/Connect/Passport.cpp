@@ -17,7 +17,6 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 static IHttpHandlerPtr s_customHttpHandler;
 static bool s_passportInitialized = false;
 
-#define PASSPORT_URL "https://qa-ims.bentley.com/services/bentleyconnectservice/rest/json/HasUserPassport"
 #define HEADER_USERNAME "BentleyConnectAppServiceUser@bentley.com"
 #define HEADER_API_KEY "A6u6I09FP70YQWHlbrfS0Ct2fTyIMt6JNnMtbjHSx6smCgSinlRFCXqM6wcuYuj"
 
@@ -77,10 +76,5 @@ StatusInt Passport::HasUserPassport (Utf8StringCR userGuid)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Passport::GetPassportUrl ()
     {
-    Utf8String passportUrl (PASSPORT_URL);
-    if (UrlProvider::IsInitialized ())
-        {
-        passportUrl = UrlProvider::GetPassportUrl();
-        }
-    return passportUrl;
+    return UrlProvider::GetPassportUrl();
     }

@@ -27,20 +27,6 @@ static Utf8String s_stsUrl;
 /////////////////////////////////////////////////////////////
 // Authentication related stuff
 
-#define QA_URLS
-#ifdef QA_URLS
-#define LEARN_STS_AUTH_URI "https://ims-testing.bentley.com/rest/ActiveSTSService/json/IssueEx"
-// The below DEFAULT_WSG_URL might need to be localized, since both production and QA urls contain "-eus".
-//#define DEFAULT_WSG_URL "https://qa-connectgateway-eus.cloudapp.net"
-#define DEFAULT_WSG_URL "https://dev-wsg20-eus.cloudapp.net"
-#define DEFAULT_EULA_URL "https://dev-agreement-eus.cloudapp.net/rest"
-#else // QA_URLS
-#define LEARN_STS_AUTH_URI "https://ims.bentley.com/rest/ActiveSTSService/json/IssueEx"
-// The below DEFAULT_WSG_URL might need to be localized, since both production and QA urls contain "-eus".
-#define DEFAULT_WSG_URL "https://qa-connectgateway-eus.cloudapp.net"
-#define DEFAULT_EULA_URL "https://agreement-eus.cloudapp.net/rest"
-#endif // !QA_URLS
-
 #ifdef DEBUG
 #define CONNECT_TOKEN_LIFETIME 30
 #else // DEBUG
@@ -79,12 +65,7 @@ Utf8StringCR Connect::GetWsgUrl ()
     {
     if (s_wsgUrl.empty ())
         {
-        s_wsgUrl = DEFAULT_WSG_URL;
-
-        if (UrlProvider::IsInitialized ())
-            {
-            s_wsgUrl = UrlProvider::GetConnectWsgUrl ();
-            }
+        s_wsgUrl = UrlProvider::GetConnectWsgUrl ();
         }
     return s_wsgUrl;
     }
@@ -104,12 +85,7 @@ Utf8StringCR Connect::GetEulaUrl ()
     {
     if (s_eulaUrl.empty ())
         {
-        s_eulaUrl = DEFAULT_EULA_URL;
-
-        if (UrlProvider::IsInitialized ())
-            {
-            s_eulaUrl = UrlProvider::GetConnectEulaUrl ();
-            }
+        s_eulaUrl = UrlProvider::GetConnectEulaUrl ();
         }
     return s_eulaUrl;
     }
@@ -121,11 +97,7 @@ Utf8StringCR Connect::GetStsUrl ()
     {
     if (s_stsUrl.empty ())
         {
-        s_stsUrl = LEARN_STS_AUTH_URI;
-        if (UrlProvider::IsInitialized ())
-            {
-            s_stsUrl = UrlProvider::GetConnectLearnStsAuthUri ();
-            }
+        s_stsUrl = UrlProvider::GetConnectLearnStsAuthUri ();
         }
     return s_stsUrl;
     }
@@ -241,17 +213,18 @@ StatusInt Connect::Login (CredentialsCR creds, SamlTokenR tokenOut, Utf8CP appli
         {
         appliesToUrlString = GetWsgUrl ();
         }
-    if (stsUrl == nullptr)
-        {
-        stsUrl = LEARN_STS_AUTH_URI;
 
-        if (UrlProvider::IsInitialized ())
-            {
-            // like "https://ims-testing.bentley.com/rest/ActiveSTSService/json/IssueEx"
-            stsUrl = (UrlProvider::GetConnectLearnStsAuthUri ()).c_str ();
-            }
+    Utf8String stsUrlString;
+    if (stsUrl != nullptr)
+        {
+        stsUrlString = stsUrl;
         }
-    return GetStsToken (creds, tokenOut, appliesToUrlString.c_str (), stsUrl);
+    else
+        {
+        stsUrlString = UrlProvider::GetConnectLearnStsAuthUri().c_str();
+        }
+
+    return GetStsToken (creds, tokenOut, appliesToUrlString.c_str (), stsUrlString.c_str());
     }
 
 /*--------------------------------------------------------------------------------------+

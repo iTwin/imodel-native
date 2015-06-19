@@ -9,12 +9,16 @@
 #include <WebServices/Connect/Passport.h>
 #include <Bentley/Base64Utilities.h>
 
+#include <WebServices/Configuration/UrlProvider.h>
+
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
 void PassportTests::SetUp ()
     {
     Passport::Initialize (GetHandlerPtr ());
+    m_client = std::make_shared<StubBuddiClient>();
+    UrlProvider::Initialize(UrlProvider::Environment::Dev, &m_localState, m_client);
     }
 
 void PassportTests::TearDown ()
