@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include "..\NonPublished\DgnHandlersTests.h"
+#include "../NonPublished/DgnHandlersTests.h"
 #include <Bentley/BeTest.h>
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <ECDb/ECDbApi.h>
@@ -26,16 +26,15 @@ USING_DGNDB_UNIT_TESTS_NAMESPACE
 #define TMTEST_TEST_ITEM_TestItemProperty               L"TestItemProperty"
 #define TMTEST_TEST_ITEM_TestItemPropertyA               "TestItemProperty"
 
-
 struct TestElementHandler;
 
 //=======================================================================================
 //! A test Element
 // @bsiclass                                                     Sam.Wilson      04/15
 //=======================================================================================
-struct TestElement : DgnPlatform::PhysicalElement
+struct TestElement : Dgn::PhysicalElement
 {
-    DEFINE_T_SUPER(DgnPlatform::PhysicalElement)
+    DEFINE_T_SUPER(Dgn::PhysicalElement)
 
 private:
     friend struct TestElementHandler;
@@ -47,18 +46,16 @@ private:
 //! A test ElementHandler for a class in DgnPlatformTest schema
 // @bsiclass                                                     Sam.Wilson      01/15
 //=======================================================================================
-struct TestElementHandler : DgnPlatform::ElementHandler
+struct TestElementHandler : Dgn::ElementHandler
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS("TestElement", TestElement, TestElementHandler, DgnPlatform::ElementHandler, )
+    ELEMENTHANDLER_DECLARE_MEMBERS("TestElement", TestElement, TestElementHandler, Dgn::ElementHandler, )
 
 public:
     ECN::ECClassCP GetTestElementECClass(DgnDbR db);
     DgnElementKey InsertElement(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode);
     DgnElementKey InsertElement(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode, ElemDisplayParamsCR ep);
     DgnDbStatus DeleteElement(DgnDbR db, DgnElementId eid);
-
 };
-
 
 //=======================================================================================
 //! Domain that knows DgnPlatformTest schema

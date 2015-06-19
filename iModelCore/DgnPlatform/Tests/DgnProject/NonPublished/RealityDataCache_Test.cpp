@@ -128,7 +128,6 @@ TEST (RealityDataWorkerThread, DoWork)
 TEST (RealityDataWorkerThread, IsIdle)
     {
     uint64_t idleTime;
-    uint32_t sleepTime = 50;
     BeConditionVariable cv;
     auto   thread      = RealityDataWorkerThread::Create ();
     thread->Start ();
