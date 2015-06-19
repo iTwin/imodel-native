@@ -72,7 +72,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
         ASSERT_TRUE(physicalCategory1Id.IsValid());
 
         DgnModelPtr physicalModel1 = new PhysicalModel(DgnModel::CreateParams(*db, DgnClassId(db->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalModel)), "Physical Model 1"));
-        ASSERT_TRUE(DgnDbStatus::Success == db->Models().Insert(*physicalModel1));
+        ASSERT_TRUE(DgnDbStatus::Success == physicalModel1->Insert());
 
         physicalModel1Id = physicalModel1->GetModelId();
         ASSERT_TRUE(physicalModel1Id.IsValid());

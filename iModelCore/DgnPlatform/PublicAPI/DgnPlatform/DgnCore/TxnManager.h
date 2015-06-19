@@ -249,10 +249,10 @@ struct TxnManager : BeSQLite::ChangeTracker
 
     struct UndoChangeSet : BeSQLite::ChangeSet
     {
-        virtual BeSQLite::ChangeSet::ConflictResolution _OnConflict(ConflictCause cause, BeSQLite::Changes::Change iter) override
+        virtual ConflictResolution _OnConflict(ConflictCause cause, BeSQLite::Changes::Change iter) override
             {
             BeAssert(false);
-            return  ConflictResolution::Skip;
+            return ConflictResolution::Skip;
             }
     };
 
@@ -367,8 +367,7 @@ public:
     //! @see   ReverseToPos CancelToPos
     TxnId GetCurrTxnId() {return m_curr.m_txnId;}
 
-    //! Reverse and then cancel all element changes back to a previously saved TxnPos. This method is
-    //! the same as calling ReverseToPos followed (on successful return) by ClearReversedTxns, and is provided as a convenience.
+    //! Reverse and then cancel (make non-reinstatable) all element changes back to a previous TxnPos. 
     //! @param[in] pos a TxnPos obtained from a previous call to GetCurrTxnPos.
     //! @return SUCCESS if the transactions were reversed and cleared, ERROR if TxnPos is invalid.
     DGNPLATFORM_EXPORT StatusInt CancelToPos(TxnId pos);
