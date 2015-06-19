@@ -6,32 +6,38 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-
-#include    "DgnDb.h"
-
 //__PUBLISH_SECTION_START__
+
+#include "DgnDb.h"
+
 /** @cond BENTLEY_SDK_Internal */
 
 DGNPLATFORM_TYPEDEFS(TxnMonitor)
 
 //  temp table names used by TxnSummary and ElementGraphTxnMonitor
-#define TXN_TABLE_PREFIX   "txn_"
+#define TXN_TABLE_PREFIX "txn_"
 
-#define TEMP_TABLE(name)    "temp." name
-#define TXN_TABLE(name)      TXN_TABLE_PREFIX name
+#define TEMP_TABLE(name) "temp." name
+#define TXN_TABLE(name)  TXN_TABLE_PREFIX name
 
-#define TXN_TABLE_Elements   TXN_TABLE("Elements")
-#define TXN_TABLE_Depend     TXN_TABLE("Depend")
+#define TXN_TABLE_Elements TXN_TABLE("Elements")
+#define TXN_TABLE_Depend   TXN_TABLE("Depend")
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-struct DgnElementDependencyGraph;
-
 /*=================================================================================**//**
  @addtogroup TxnMgr
- <h1>Transaction Manager</h1>
+<h1>Transaction Manager</h1>
  The TxnManager API manages Txns. A Txn is a named, committed, undoable unit of work, stored in the DgnDb as a changeset.
-
+ Txns may be "reversed" via an application Undo command, or "reinstated" via a corresponding Redo command.
+<p>
+<h2>Sessions<h2>
+ Every time the TxnManager is initialized, it creates a GUID for itself called a SessionId. 
+ Whenever an application calls DgnDb::SaveChanges(), a Txn is created. Txns are saved in Briefcases in the DGN_TABLE_Txns 
+ table, along with the current SessionId. Only Txns from the current SessionId are (usually) undoable. After the completion of a 
+ session, all of the Txns for that SessionId may be merged together to form a "session Txn". Further, all of the session Txns 
+ since a Briefcase was last committed to a server may be merged together to form a Briefcase Txn. Briefcase Txns are sent between
+ users and changed-merged.
  @bsiclass
 +===============+===============+===============+===============+===============+======*/
 enum class TxnDirection {Backwards=0, Forward=1};
@@ -56,6 +62,7 @@ public:
 };
 
 //=======================================================================================
+//! A rowid in the DGN_TABLE_Txns table.
 // @bsiclass                                                    Keith.Bentley   06/15
 //=======================================================================================
 struct TxnRowId
@@ -72,6 +79,21 @@ public:
     operator int64_t() const {return m_value;}
 };
 
+
+//=======================================================================================
+//! Interface to be implemented to monitor changes to elements.
+//! @ingroup TxnMgr
+// @bsiclass                                                      Keith.Bentley   10/07
+//=======================================================================================
+struct TxnMonitor
+{
+    virtual void _OnTxnCommit(TxnSummaryCR) = 0;
+    virtual void _OnTxnReverse(TxnSummaryCR) = 0;
+    virtual void _OnTxnReversed(TxnSummaryCR) = 0;
+    virtual void _OnUndoRedoFinished(DgnDbR, TxnDirection isUndo) {}
+};
+
+namespace dgn_TxnTable {struct Element; struct ElementDep;}
 //=======================================================================================
 //! A summary of all of the Element-based changes that occurred during a Txn. TxnMonitors are supplied with a
 //! TxnSummary so they can determine what Elements were affected by a Txn.
@@ -97,67 +119,22 @@ struct TxnSummary
 
 private:
     DgnDbR m_dgndb;
-    BeSQLite::CachedStatementPtr m_elementStmt;
-    BeSQLite::CachedStatementPtr m_dependencyStmt;
     TxnDirection m_direction;
-    bool m_modelDepsChanged;
-    bool m_elementDepsChanged;
     bvector<ValidationError> m_validationErrors; //!< Validation errors detected on the last boundary check
-    DgnModelIdSet m_modelsInTxn;
-    DgnElementIdSet m_failedTargets;
 
 public:
     enum class ChangeType : int {Insert, Update, Delete};
 
-    struct ElementIterator : BeSQLite::DbTableIterator
-    {
-    public:
-        ElementIterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR)db) {}
-        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
-        {
-        private:
-            friend struct ElementIterator;
-            Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
-
-        public:
-            DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
-            DGNPLATFORM_EXPORT DgnElementId GetElementId() const;
-            DGNPLATFORM_EXPORT ChangeType GetChangeType() const;
-            DGNPLATFORM_EXPORT double GetLastMod() const;
-            Entry const& operator*() const {return *this;}
-        };
-
-        typedef Entry const_iterator;
-        typedef Entry iterator;
-        DGNPLATFORM_EXPORT const_iterator begin() const;
-        const_iterator end() const {return Entry(nullptr, false);}
-    };
-
     DGNPLATFORM_EXPORT explicit TxnSummary(DgnDbR db, TxnDirection);
     DGNPLATFORM_EXPORT ~TxnSummary();
+
+    DGNPLATFORM_EXPORT dgn_TxnTable::Element&    Elements() const;
+    DGNPLATFORM_EXPORT dgn_TxnTable::ElementDep& ElementDependencies() const;
+
     void AddChangeSet(BeSQLite::ChangeSet&);
-
-    //! Table handler should call this function to record the fact that the specified Element was changed in the current txn.
-    DGNPLATFORM_EXPORT void AddAffectedElement(DgnElementId const&, DgnModelId, double lastMod, ChangeType);
-
-    //! Table handler should call this function to record the fact that the specified relationship with a dependency was changed in the current txn.
-    DGNPLATFORM_EXPORT void AddAffectedDependency(BeSQLite::EC::ECInstanceId const&, ChangeType);
-
-    void AddFailedTarget(DgnElementId eid) {m_failedTargets.insert(eid);}
-    void SetModelDependencyChanges() {m_modelDepsChanged=true;}
-    void SetElementDependencyChanges() {m_elementDepsChanged=true;}
-    void UpdateModelDependencyIndex();
-    DgnModelIdSet const& GetModelSet() const {return m_modelsInTxn;}
-    DgnElementIdSet const& GetFailedTargets() const {return m_failedTargets;}
 
     //! Get the DgnDb for this TxnSummary
     DgnDbR GetDgnDb() const {return m_dgndb;}
-
-    //! Query if there are any changes to ModelDrivesModel ECRelationships
-    bool HasModelDependencyChanges() const {return m_modelDepsChanged;}
-
-    //! Query if there are any changes to ElementDrivesElement ECRelationships
-    bool HasElementDependencyChanges() const {return m_elementDepsChanged;}
 
     //! TxnMonitors may call this to report a validation error. If the severity of the validation error is set to ValidationErrorSeverity::Fatal, 
     //! then the transaction will be cancelled.
@@ -168,21 +145,138 @@ public:
 
     //! Query if any Fatal validation errors were reported during the last boundary check.
     DGNPLATFORM_EXPORT bool HasFatalErrors() const;
-
-    ElementIterator MakeElementIterator() const {return ElementIterator(m_dgndb);}
 };
 
+
 //=======================================================================================
-//! Interface to be implemented to monitor changes to elements.
-//! @ingroup TxnMgr
-// @bsiclass                                                      Keith.Bentley   10/07
+//! An instance of a TxnTable is created for a single SQLite table via a DgnDomain::TableHandler.
+//! A TxnTable's sole role is to synchronize in-memory objects with persistent changes to the database through Txns.
+//! That is, the TxnTable "monitors" changes to the rows in a SQLite database table for the purpose of ensuring
+//! that in-memory copies of the data reflect the current state on disk. The TxnTable itself has no 
+//! role in making or reversing changes to its table. Instead, the TxnManager orchestrates Txn commits, undo, redo
+//! and change merging operations and informs the TxnTable of what happened.
+//! <p>
+//!
+// @bsiclass                                                    Keith.Bentley   06/15
 //=======================================================================================
-struct TxnMonitor
+struct TxnTable : RefCountedBase
+    {
+    virtual Utf8CP _GetTableName() const = 0;
+    virtual void _OnTxnSummaryStart(TxnSummary&) = 0;
+    virtual void _OnTxnSummaryEnd(TxnSummary&) = 0;
+    virtual void _PropagateChanges(TxnSummary&) = 0;
+    virtual void _OnChangesetApplied(TxnSummary&) = 0;
+    virtual void _OnAdd(TxnSummary&, BeSQLite::Changes::Change const&) = 0;
+    virtual void _OnDelete(TxnSummary&, BeSQLite::Changes::Change const&) = 0;
+    virtual void _OnUpdate(TxnSummary&, BeSQLite::Changes::Change const&) = 0;
+    };
+typedef RefCountedPtr<TxnTable> TxnTablePtr;
+
+//=======================================================================================
+//! TxnTables in the base "Dgn" domain.
+// @bsiclass                                                    Keith.Bentley   06/15
+//=======================================================================================
+namespace dgn_TxnTable
 {
-    virtual void _OnTxnCommit(TxnSummaryCR) = 0;
-    virtual void _OnTxnReverse(TxnSummaryCR) = 0;
-    virtual void _OnTxnReversed(TxnSummaryCR) = 0;
-    virtual void _OnUndoRedoFinished(DgnDbR, TxnDirection isUndo) {}
+    struct Element : TxnTable
+    {
+        BeSQLite::Statement m_stmt;
+        DgnDb& m_dgndb;
+        static Utf8CP MyTableName() {return DGN_TABLE(DGN_CLASSNAME_Element);}
+        Utf8CP _GetTableName() const {return MyTableName();}
+
+        Element(DgnDb& dgndb) : m_dgndb(dgndb) {}
+        virtual void _OnTxnSummaryStart(TxnSummary&) override;
+        virtual void _OnTxnSummaryEnd(TxnSummary& summary) override;
+        virtual void _PropagateChanges(TxnSummary&) override {}
+        virtual void _OnChangesetApplied(TxnSummary&) override;
+        virtual void _OnAdd(TxnSummary& summary, BeSQLite::Changes::Change const& change) override {AddChange(summary, change, TxnSummary::ChangeType::Insert);}
+        virtual void _OnDelete(TxnSummary& summary, BeSQLite::Changes::Change const& change) override {AddChange(summary, change, TxnSummary::ChangeType::Delete);}
+        virtual void _OnUpdate(TxnSummary& summary, BeSQLite::Changes::Change const& change) override {AddChange(summary, change, TxnSummary::ChangeType::Update);}
+        void AddChange(TxnSummary& summary, BeSQLite::Changes::Change const& change, TxnSummary::ChangeType changeType);
+        void AddElement(DgnElementId, DgnModelId, double lastMod, TxnSummary::ChangeType changeType);
+
+        struct Iterator : BeSQLite::DbTableIterator
+        {
+        public:
+            Iterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR)db) {}
+            struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
+            {
+            private:
+                friend struct Iterator;
+                Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
+
+            public:
+                DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
+                DGNPLATFORM_EXPORT DgnElementId GetElementId() const;
+                DGNPLATFORM_EXPORT TxnSummary::ChangeType GetChangeType() const;
+                DGNPLATFORM_EXPORT double GetLastMod() const;
+                Entry const& operator*() const {return *this;}
+            };
+
+            typedef Entry const_iterator;
+            typedef Entry iterator;
+            DGNPLATFORM_EXPORT const_iterator begin() const;
+            const_iterator end() const {return Entry(nullptr, false);}
+        };
+
+    Iterator MakeIterator() const {return Iterator(m_dgndb);}
+    };
+
+    struct Model : TxnTable
+    {
+        bool m_initialized;
+        static Utf8CP MyTableName() {return DGN_TABLE(DGN_CLASSNAME_Model);}
+        Utf8CP _GetTableName() const {return MyTableName();}
+        Model(DgnDb& dgndb) {m_initialized=false;}
+        virtual void _OnTxnSummaryStart(TxnSummary&) override;
+        virtual void _OnTxnSummaryEnd(TxnSummary& summary) override;
+        virtual void _PropagateChanges(TxnSummary&) override {}
+        virtual void _OnChangesetApplied(TxnSummary&) override {}
+        virtual void _OnAdd(TxnSummary& summary, BeSQLite::Changes::Change const& change) override {}
+        virtual void _OnDelete(TxnSummary& summary, BeSQLite::Changes::Change const& change) override {}
+        virtual void _OnUpdate(TxnSummary& summary, BeSQLite::Changes::Change const& change) override {}
+    };
+
+    struct ElementDep : TxnTable
+    {
+        BeSQLite::Statement m_stmt;
+        DgnDbR m_dgndb;
+        DgnElementIdSet m_failedTargets;
+        static Utf8CP MyTableName() {return DGN_TABLE(DGN_RELNAME_ElementDrivesElement);}
+        Utf8CP _GetTableName() const {return MyTableName();}
+
+        ElementDep(DgnDb& dgndb) : m_dgndb(dgndb) {}
+        virtual void _OnTxnSummaryStart(TxnSummary&) override;
+        virtual void _OnTxnSummaryEnd(TxnSummary& summary) override;
+        virtual void _PropagateChanges(TxnSummary&) override;
+        virtual void _OnChangesetApplied(TxnSummary&) override {}
+        virtual void _OnAdd(TxnSummary& summary, BeSQLite::Changes::Change const& change) override    {UpdateSummary(summary,change,TxnSummary::ChangeType::Insert);}
+        virtual void _OnUpdate(TxnSummary& summary, BeSQLite::Changes::Change const& change) override {UpdateSummary(summary,change,TxnSummary::ChangeType::Update);}
+        virtual void _OnDelete(TxnSummary& summary, BeSQLite::Changes::Change const& change) override {UpdateSummary(summary,change,TxnSummary::ChangeType::Delete);}
+        void UpdateSummary(TxnSummary& summary, BeSQLite::Changes::Change change, TxnSummary::ChangeType changeType);
+        void AddDependency(BeSQLite::EC::ECInstanceId const&, TxnSummary::ChangeType);
+        void AddFailedTarget(DgnElementId id) {m_failedTargets.insert(id);}
+        DgnElementIdSet const& GetFailedTargets() const {return m_failedTargets;}
+    };
+
+    struct ModelDep : TxnTable
+    {
+        bool m_changes;
+        static Utf8CP MyTableName() {return DGN_TABLE(DGN_RELNAME_ModelDrivesModel);}
+        Utf8CP _GetTableName() const {return MyTableName();}
+        ModelDep (DgnDb& dgndb) : m_changes(false) {}
+        virtual void _OnTxnSummaryStart(TxnSummary&) override {m_changes=false;}
+        virtual void _OnTxnSummaryEnd(TxnSummary&) override {}
+        virtual void _PropagateChanges(TxnSummary& summary) override;
+        virtual void _OnChangesetApplied(TxnSummary&) override {}
+        virtual void _OnAdd(TxnSummary& summary, BeSQLite::Changes::Change const& change) override;
+        virtual void _OnUpdate(TxnSummary& summary, BeSQLite::Changes::Change const& change) override;
+        virtual void _OnDelete(TxnSummary& summary, BeSQLite::Changes::Change const& change) override {SetChanges();}
+        void CheckDirection(TxnSummary&, BeSQLite::EC::ECInstanceId);
+        void SetChanges() {m_changes=true;}
+        bool HasChanges() const {return m_changes;}
+    };
 };
 
 //=======================================================================================
@@ -238,6 +332,8 @@ struct RevTxn
 //=======================================================================================
 struct TxnManager : BeSQLite::ChangeTracker
 {
+    friend struct TxnSummary;
+
     struct ChangeEntry
     {
         BeGuid          m_sessionId;
@@ -256,8 +352,14 @@ struct TxnManager : BeSQLite::ChangeTracker
             }
     };
 
+    struct CompareTableNames {bool operator()(Utf8CP a, Utf8CP b) const {return strcmp(a, b) < 0;}};
+    typedef bmap<Utf8CP,TxnTablePtr,CompareTableNames> T_TxnTablesByName;
+    typedef bvector<TxnTable*> T_TxnTables;
+
 protected:
     DgnDbR          m_dgndb;
+    T_TxnTablesByName m_tablesByName;
+    T_TxnTables     m_tables;
     ChangeEntry     m_curr;
     bvector<TxnId>  m_multiTxnOp;
     bvector<RevTxn> m_reversedTxn;
@@ -292,11 +394,11 @@ protected:
     StatusInt ReverseActions(TxnRange& txnRange, bool multiStep, bool showMsg);
     BentleyStatus PropagateChanges(TxnSummaryR summary);
     void DeleteReversedTxns();
+    TxnTable* FindTxnTable(Utf8CP tableName);
 
 public:
-
+    void AddTxnTable(DgnDomain::TableHandler*);
     void SetPropagateChanges(bool val) {m_propagateChanges = val;}
-    DGNPLATFORM_EXPORT BentleyStatus SaveUndoMark(Utf8CP name);
     DGNPLATFORM_EXPORT Utf8String GetUndoString();
     DGNPLATFORM_EXPORT Utf8String GetRedoString();
 
@@ -383,6 +485,34 @@ public:
 
     //! Get the DgnDb of this Txns
     DgnDbR GetDgnDb() {return m_dgndb;}
+};
+
+//=======================================================================================
+// Table Handlers in the base "Dgn" domain. Don't put handlers from other domains here.
+// @bsiclass                                                    Keith.Bentley   06/15
+//=======================================================================================
+namespace dgn_TableHandler
+{
+    struct Element : DgnDomain::TableHandler
+    {
+        TABLEHANDLER_DECLARE_MEMBERS(Element, DGNPLATFORM_EXPORT)
+        virtual TxnTable* _Create(DgnDb& db) const override {return new dgn_TxnTable::Element(db);}
+    };
+    struct Model : DgnDomain::TableHandler
+    {
+        TABLEHANDLER_DECLARE_MEMBERS(Model, DGNPLATFORM_EXPORT)
+        virtual TxnTable* _Create(DgnDb& db) const override {return new dgn_TxnTable::Model(db);}
+    };
+    struct ElementDep : DgnDomain::TableHandler
+    {
+        TABLEHANDLER_DECLARE_MEMBERS(ElementDep, DGNPLATFORM_EXPORT)
+        virtual TxnTable* _Create(DgnDb& db) const override {return new dgn_TxnTable::ElementDep(db);}
+    };
+    struct ModelDep : DgnDomain::TableHandler
+    {
+        TABLEHANDLER_DECLARE_MEMBERS(ModelDep, DGNPLATFORM_EXPORT)
+        virtual TxnTable* _Create(DgnDb& db) const override {return new dgn_TxnTable::ModelDep(db);}
+    };
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

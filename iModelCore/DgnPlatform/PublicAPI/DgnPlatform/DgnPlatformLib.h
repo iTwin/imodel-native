@@ -907,8 +907,6 @@ public:
             virtual bool    _AllowDgnCoordinateReadout() const {return true;}
             };
 
-        struct CompareTableNames {bool operator()(Utf8CP a, Utf8CP b) const {return strcmp(a, b) < 0;}};
-        typedef bmap<Utf8CP,DgnDomain::TableHandler*,CompareTableNames> T_TableHandlers;
         typedef bvector<DgnDomain*> T_RegisteredDomains;
 
     protected:
@@ -930,14 +928,12 @@ public:
         FormatterAdmin*         m_formatterAdmin;
         RealityDataAdmin*       m_realityDataAdmin;
         Utf8String              m_productName;
-        T_TableHandlers         m_tableHandlers;
         T_RegisteredDomains     m_registeredDomains;
         
         // Get the version of the DgnPlatform api. Do not override this method.
         virtual int _GetVersion() const {return 1;}
 
     public:
-        T_TableHandlers& TableHandlers() {return m_tableHandlers;}
         T_RegisteredDomains& RegisteredDomains() {return m_registeredDomains;}
         
         DGNPLATFORM_EXPORT virtual void _OnAssert(WCharCP _Message, WCharCP _File, unsigned _Line);
