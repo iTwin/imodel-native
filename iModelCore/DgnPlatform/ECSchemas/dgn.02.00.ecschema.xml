@@ -175,11 +175,11 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECRelationshipClass typeName="CategoryOwnsSubCategories" isDomainClass="True" strength="embedding" strengthDirection="forward">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <ForeignKey>
+                <Columns>
                     <ECInstanceIdColumn>CategoryId</ECInstanceIdColumn>
-                    <EnforceReferentialIntegrity>True</EnforceReferentialIntegrity>
-                    <OnDeleteAction>Cascade</OnDeleteAction>
-                </ForeignKey>
+                </Columns>
+                <CreateConstraint>True</CreateConstraint>
+                <OnDeleteAction>Cascade</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(1,1)" polymorphic="False">
@@ -276,14 +276,14 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             </ClassMap>
             <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
                 <AllowDuplicateRelationships>True</AllowDuplicateRelationships>
-                <Source>
+                <SourceColumns>
                     <ECInstanceIdColumn>RootElementId</ECInstanceIdColumn>
                     <ECClassIdColumn>RootElementClassId</ECClassIdColumn>
-               </Source>
-                <Target>
+                </SourceColumns>
+                <TargetColumns>
                     <ECInstanceIdColumn>DependentElementId</ECInstanceIdColumn>
                     <ECClassIdColumn>DependentElementClassId</ECClassIdColumn>
-               </Target>
+                </TargetColumns>
             </LinkTableRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(0,N)" polymorphic="True">
@@ -308,14 +308,14 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
             <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
-                <Source>
+                <SourceColumns>
                     <ECInstanceIdColumn>GroupId</ECInstanceIdColumn>
                     <ECClassIdColumn>GroupClassId</ECClassIdColumn>
-               </Source>
-                <Target>
+               </SourceColumns>
+                <TargetColumns>
                     <ECInstanceIdColumn>MemberId</ECInstanceIdColumn>
                     <ECClassIdColumn>MemberClassId</ECClassIdColumn>
-               </Target>
+               </TargetColumns>
             </LinkTableRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(0,N)" polymorphic="True">
@@ -333,14 +333,14 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
            <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
-                <Source>
+                <SourceColumns>
                     <ECInstanceIdColumn>RootModelId</ECInstanceIdColumn>
                     <ECClassIdColumn>RootModelClassId</ECClassIdColumn>
-               </Source>
-                <Target>
+               </SourceColumns>
+                <TargetColumns>
                     <ECInstanceIdColumn>DependentModelId</ECInstanceIdColumn>
                     <ECClassIdColumn>DependentModelClassId</ECClassIdColumn>
-               </Target>
+               </TargetColumns>
             </LinkTableRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(0,N)" polymorphic="True">
@@ -486,12 +486,12 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
             <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
-                <Source>
+                <SourceColumns>
                     <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
-               </Source>
-                <Target>
+               </SourceColumns>
+                <TargetColumns>
                     <ECInstanceIdColumn>GeomPartId</ECInstanceIdColumn>
-               </Target>
+               </TargetColumns>
             </LinkTableRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(0,N)" polymorphic="False">
@@ -548,14 +548,14 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECRelationshipClass typeName="ElementOwnsAspects" isDomainClass="True" strength="embedding" strengthDirection="forward">
         <ECCustomAttributes>
            <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
-                <Source>
+                <SourceColumns>
                     <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
-                   <ECClassIdColumn>ElementClassId</ECClassIdColumn>
-                </Source>
-                <Target>
+                    <ECClassIdColumn>ElementClassId</ECClassIdColumn>
+                </SourceColumns>
+                <TargetColumns>
                     <ECInstanceIdColumn>AspectId</ECInstanceIdColumn>
                     <ECClassIdColumn>AspectClassId</ECClassIdColumn>
-                </Target>
+                </TargetColumns>
             </LinkTableRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(1,1)" polymorphic="True">
@@ -569,11 +569,11 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECRelationshipClass typeName="ElementOwnsGeom" isDomainClass="True" strength="embedding" strengthDirection="forward">
         <ECCustomAttributes>
            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <ForeignKey>
+                <Columns>
                     <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
-                    <EnforceReferentialIntegrity>True</EnforceReferentialIntegrity>
-                    <OnDeleteAction>Cascade</OnDeleteAction>
-                </ForeignKey>
+                </Columns>
+                <CreateConstraint>True</CreateConstraint>
+                <OnDeleteAction>Cascade</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
     
@@ -589,9 +589,9 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECRelationshipClass typeName="ElementOwnsItem" isDomainClass="True" strength="embedding" strengthDirection="forward">
         <ECCustomAttributes>
            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <ForeignKey>
+                <Columns>
                     <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
-                </ForeignKey>
+                </Columns>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
     
@@ -607,9 +607,9 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECRelationshipClass typeName="ElementOwnsChildElements" isDomainClass="True" strength="embedding" strengthDirection="forward">
         <ECCustomAttributes>
            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <ForeignKey>
+                <Columns>
                     <ECInstanceIdColumn>ParentId</ECInstanceIdColumn>
-                </ForeignKey>
+                </Columns>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(1,1)" roleLabel="is on 1 element" polymorphic="True">
@@ -623,11 +623,11 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECRelationshipClass typeName="ModelContainsElements" description="Associates elements with a model" isDomainClass="True" strength="embedding">
         <ECCustomAttributes>
            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <ForeignKey>
+                <Columns>
                     <ECInstanceIdColumn>ModelId</ECInstanceIdColumn>
-                    <EnforceReferentialIntegrity>True</EnforceReferentialIntegrity>
-                    <OnDeleteAction>NoAction</OnDeleteAction>
-                </ForeignKey>
+                </Columns>
+                <CreateConstraint>True</CreateConstraint>
+                <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
 
@@ -672,14 +672,14 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
             <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
-                <Source>
+                <SourceColumns>
                     <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
                     <ECClassIdColumn>ElementClassId</ECClassIdColumn>
-                </Source>
-                <Target>
+                </SourceColumns>
+                <TargetColumns>
                     <ECInstanceIdColumn>LinkId</ECInstanceIdColumn>
                     <ECClassIdColumn>LinkClassId</ECClassIdColumn>
-                </Target>
+                </TargetColumns>
             </LinkTableRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(1,N)" roleLabel="has 0 to N links" polymorphic="True">
@@ -727,14 +727,14 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECRelationshipClass typeName="ElementUsesStyles">
         <ECCustomAttributes>
            <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
-                <Source>
+                <SourceColumns>
                     <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
                     <ECClassIdColumn>ElementClassId</ECClassIdColumn>
-                </Source>
-                <Target>
+                </SourceColumns>
+                <TargetColumns>
                     <ECInstanceIdColumn>StyleId</ECInstanceIdColumn>
                     <ECClassIdColumn>StyleClassId</ECClassIdColumn>
-                </Target>
+                </TargetColumns>
             </LinkTableRelationshipMap>
         </ECCustomAttributes>
     
@@ -749,10 +749,10 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECRelationshipClass typeName="ElementIsInCategory" isDomainClass="True" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <ForeignKeyEnd>Source</ForeignKeyEnd>
-                <ForeignKey>
+                <End>Source</End>
+                <Columns>
                     <ECInstanceIdColumn>CategoryId</ECInstanceIdColumn>
-                </ForeignKey>
+                </Columns>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
     
