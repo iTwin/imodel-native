@@ -1491,3 +1491,14 @@ DgnDbStatus DgnElement::Item::CallGenerateElementGeometry(DgnElementR el)
 
     return _GenerateElementGeometry(*gel);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::Item::GenerateElementGeometry(GeometricElementR el)
+    {
+    Item* item = GetItemP(el);
+    if (nullptr == item)
+        return DgnDbStatus::NotFound;
+    return item->_GenerateElementGeometry(el);
+    }

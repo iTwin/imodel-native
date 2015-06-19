@@ -347,6 +347,10 @@ public:
         //! @param el   The host element
         //! @return the DgnClassId of the existing item or an invalid ID if the element has no item
         DGNPLATFORM_EXPORT static DgnClassId QueryExistingItemClass(DgnElementCR el);
+
+        //! Invoke the _GenerateElementGeometry method on the item
+        //! @param el   The host element
+        DGNPLATFORM_EXPORT static DgnDbStatus GenerateElementGeometry(GeometricElementR el);
     };
 
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
