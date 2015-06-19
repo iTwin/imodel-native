@@ -12,7 +12,7 @@
 
 
 namespace BentleyG06 {
-namespace DgnPlatform {
+namespace Dgn {
 namespace FB {
 
 struct DgnRscFont;

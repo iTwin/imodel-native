@@ -15,7 +15,7 @@ Classes for working with %DgnElements in memory.
 
 */
 
-BENTLEY_API_TYPEDEFS(HeapZone);
+BENTLEY_NAMESPACE_TYPEDEFS(HeapZone);
 
 #include <Bentley/BeAssert.h>
 

@@ -8,11 +8,11 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-/** @namespace BentleyApi::DgnPlatform Types defined by the %DgnPlatform. */
+/** @namespace BentleyApi::Dgn Types defined by the %DgnPlatform. 
+    @ref PAGE_DgnPlatform
+*/
 
-/** @cond BENTLEY_SDK_Internal */
-
-#include <BentleyApi/BentleyApi.h>
+#include <Bentley/Bentley.h>
 #include <Bentley/RefCounted.h>
 #include <Bentley/BeFileName.h>
 #include "ExportMacros.h"
@@ -26,57 +26,39 @@
 #include <BeSQLite/ChangeSet.h>
 #include <ECDb/ECDbApi.h>
 
-#define USING_NAMESPACE_BENTLEY_DGNPLATFORM using namespace BentleyApi::DgnPlatform;
+#define USING_NAMESPACE_BENTLEY_DGNPLATFORM using namespace BentleyApi::Dgn;
 
 #define USING_NAMESPACE_EC                  using namespace BentleyApi::ECN;
 #define USING_NAMESPACE_BENTLEY_EC          using namespace BentleyApi::ECN;
 
 #define GLOBAL_TYPEDEF1(_sName_,_name_,structunion) \
     structunion _sName_; \
-    namespace BENTLEY_API_NAMESPACE_NAME {\
+    namespace BENTLEY_NAMESPACE_NAME {\
     typedef structunion _sName_*          _name_##P, &_name_##R;  \
     typedef structunion _sName_ const*    _name_##CP; \
     typedef structunion _sName_ const&    _name_##CR;}
 
 #define GLOBAL_TYPEDEF(_sName_,_name_) GLOBAL_TYPEDEF1 (_sName_,_name_,struct)
 
-#define DGNPLATFORM_TYPEDEFS_EX(_name_,_structunion_) \
-    BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE _structunion_ _name_; END_BENTLEY_DGNPLATFORM_NAMESPACE \
-    ADD_BENTLEY_API_TYPEDEFS1(DgnPlatform,_name_,_name_,_structunion_)
-
-#define DGNPLATFORM_TYPEDEFS(_name_) DGNPLATFORM_TYPEDEFS_EX(_name_,struct)
-
-#define DGNPLATFORM_TYPEDEF(_sname_,_tname_) \
-    BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE struct _sname_; END_BENTLEY_DGNPLATFORM_NAMESPACE \
-    BEGIN_BENTLEY_API_NAMESPACE typedef struct DgnPlatform::_sname_* _tname_; END_BENTLEY_API_NAMESPACE
+#define DGNPLATFORM_TYPEDEFS(_name_) \
+    BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 #define DGNPLATFORM_REF_COUNTED_PTR(_sname_) \
     BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE struct _sname_; DEFINE_REF_COUNTED_PTR(_sname_) END_BENTLEY_DGNPLATFORM_NAMESPACE
 
-#define DGNPLATFORM_CLASS_TYPEDEFS(_name_) \
-    BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE class _name_; END_BENTLEY_DGNPLATFORM_NAMESPACE \
-    ADD_BENTLEY_API_TYPEDEFS1(DgnPlatform,_name_,_name_,class)
-
 #define GEOCOORD_TYPEDEFS(_name_) \
-    BEGIN_BENTLEY_API_NAMESPACE namespace GeoCoordinates { struct _name_; } END_BENTLEY_API_NAMESPACE \
-    ADD_BENTLEY_API_TYPEDEFS(GeoCoordinates, _name_)
+    BEGIN_BENTLEY_NAMESPACE namespace GeoCoordinates { DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) } END_BENTLEY_NAMESPACE
 
-/** @endcond */
-
-
-/** @cond BENTLEY_SDK_Internal */
 GLOBAL_TYPEDEF (QvElem,QvElem)
 GLOBAL_TYPEDEF (QvCache,QvCache)
 GLOBAL_TYPEDEF (QvView,QvView)
 GLOBAL_TYPEDEF (QvMRImage,QvMRImage)
 
+BENTLEY_NAMESPACE_TYPEDEFS (BitMask)
+BENTLEY_NAMESPACE_TYPEDEFS (DataExternalizer)
+BENTLEY_NAMESPACE_TYPEDEFS (GPArray)
+BENTLEY_NAMESPACE_TYPEDEFS (GraphicsPointArray)
 BENTLEY_NAMESPACE_TYPEDEFS (IRefCounted)
-
-BENTLEY_API_TYPEDEFS (BitMask)
-BENTLEY_API_TYPEDEFS (DataExternalizer)
-BENTLEY_API_TYPEDEFS (GPArray)
-BENTLEY_API_TYPEDEFS (GraphicsPointArray)
-/** @endcond */
 
 DGNPLATFORM_TYPEDEFS (ColorDef)
 DGNPLATFORM_TYPEDEFS (BoundingBox2d)
@@ -288,7 +270,7 @@ DGNPLATFORM_REF_COUNTED_PTR (ViewController)
 // ///////////////////////////////////////////////////////////////////////////////////////////////////
 // DO NOT USE: these MAX*LENGTH values are not portable or correct!
 // ///////////////////////////////////////////////////////////////////////////////////////////////////
-BEGIN_BENTLEY_API_NAMESPACE
+BEGIN_BENTLEY_NAMESPACE
 
 enum
 {
@@ -304,7 +286,7 @@ enum
     MAXEXTENSIONLENGTH    = DGNPLATFORM_RESOURCE_MAXEXTENSIONLENGTH,
 };
 
-END_BENTLEY_API_NAMESPACE
+END_BENTLEY_NAMESPACE
 
 //__PUBLISH_SECTION_START__
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE

@@ -8,7 +8,7 @@
 #ifndef __DGNCOREINTERNAL_H__
 #define __DGNCOREINTERNAL_H__
 
-#include <BentleyApi/BentleyApi.h>
+#include <Bentley/Bentley.h>
 #include <Bentley/BentleyPortable.h>
 #include <Bentley/BeThread.h>
 #include <Bentley/BeNumerical.h>

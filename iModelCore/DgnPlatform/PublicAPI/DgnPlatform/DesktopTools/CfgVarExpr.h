@@ -2,18 +2,18 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DesktopTools/CfgVarExpr.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma     once
 /*__BENTLEY_INTERNAL_ONLY__*/
 
-#include <BentleyApi/BentleyApi.h>
+#include <Bentley/Bentley.h>
 #include <Bentley/WString.h>
 #include <Bentley/RefCounted.h>
 #include <vector>
 
-BEGIN_BENTLEY_API_NAMESPACE
+BEGIN_BENTLEY_NAMESPACE
 
 /*=================================================================================**//**
 * Represents a configuration variable expression. A configuration variable
@@ -152,4 +152,4 @@ public:
     Statements const& GetStatements () const   { return m_statements; }
     };
 
-END_BENTLEY_API_NAMESPACE
+END_BENTLEY_NAMESPACE

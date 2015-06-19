@@ -19,7 +19,7 @@ namespace BackDoor
 +---------------+---------------+---------------+---------------+---------------+------*/
 namespace DirectionParser 
 {
-    void SetTrueNorthValue (DgnPlatform::DirectionParser& parser, double const& trueNorth)
+    void SetTrueNorthValue (Dgn::DirectionParser& parser, double const& trueNorth)
         {
         parser.SetTrueNorthValue (trueNorth);
         }
@@ -41,7 +41,7 @@ namespace DirectionParser
         /*-------------------------------------------------------------------------**//**
         * @bsimethod                                            KevinNyman      11/09
         +-------+---------------+---------------+---------------+---------------+------*/
-        DgnPlatform::DgnModelId GetModelId (DgnModelR model)
+        Dgn::DgnModelId GetModelId (DgnModelR model)
             {
             return model.GetModelId();
             }
@@ -58,7 +58,7 @@ namespace DirectionParser
         +-------+---------------+---------------+---------------+---------------+------*/
         DgnViewportP Create (ViewControllerR viewInfo)
             {
-            return new DgnPlatform::NonVisibleViewport(viewInfo);
+            return new Dgn::NonVisibleViewport(viewInfo);
             }
 
         /*-------------------------------------------------------------------------**//**

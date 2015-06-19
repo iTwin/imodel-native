@@ -37,7 +37,7 @@ protected:
     static WCharCP const TEST_COMPLEX_SCHEMA_NAME;
     static const int TESTCLASS_INSTANCE_COUNT;
 
-    DgnPlatform::ScopedDgnHost       m_host;
+    Dgn::ScopedDgnHost m_host;
 
 protected:
     PerformanceTestFixture() {};

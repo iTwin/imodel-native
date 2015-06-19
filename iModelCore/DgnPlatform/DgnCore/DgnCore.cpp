@@ -290,7 +290,7 @@ void DgnPlatformLib::ForgetHost()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* *Private* method called by DgnPlatform::Host::Initialize.
+* *Private* method called by Dgn::Host::Initialize.
 * @bsimethod                                    Keith.Bentley                   09/08
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnPlatformLib::Host::InitializeDgnCore()
