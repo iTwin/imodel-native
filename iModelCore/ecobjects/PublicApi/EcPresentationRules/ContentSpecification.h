@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/ContentSpecification.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -54,6 +54,9 @@ public:
 
     //! Priority of the specification, defines the order in which specifications are evaluated and executed.
     ECOBJECTS_EXPORT int                                  GetPriority (void) const;
+
+    //! Sets the priority of the specification.
+    ECOBJECTS_EXPORT void                                 SetPriority (int value);
 
     //! Related properties of acceptable ECInstances, that will be shown next to ECInstance proerties (the same row for example).
     ECOBJECTS_EXPORT RelatedPropertiesSpecificationList&   GetRelatedProperties (void);
