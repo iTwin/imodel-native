@@ -168,7 +168,7 @@ struct ECDbMapCATests : public ::testing::Test
             ASSERT_TRUE (fkMapClass != nullptr);
             auto caInst = fkMapClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
             ASSERT_TRUE (caInst != nullptr);
-            const WCharCP enforceReferentialIntegrityProperty = L"ForeignKey.EnforceReferentialIntegrity";
+            const WCharCP enforceReferentialIntegrityProperty = L"CreateConstraint";
             ASSERT_TRUE (caInst->SetValue (enforceReferentialIntegrityProperty, ECValue (true)) == ECOBJECTS_STATUS_Success);
             ASSERT_TRUE(oneFooHasOneGoo->SetCustomAttribute(*caInst) == ECOBJECTS_STATUS_Success);
             }

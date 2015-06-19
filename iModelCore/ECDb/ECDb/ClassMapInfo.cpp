@@ -585,26 +585,47 @@ BentleyStatus RelationshipMapInfo::_InitializeFromSchema()
     if (hasForeignKeyRelMap)
         {
         ECRelationshipEnd foreignKeyEnd = ECRelationshipEnd_Target;
-        if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetForeignKeyEnd(foreignKeyEnd))
+        if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetEnd(foreignKeyEnd))
             return ERROR;
 
-        ECDbRelationshipConstraintMap* foreignKeyMap = nullptr;
+        ECDbRelationshipEndColumns* foreignKeyColumnsMapping = nullptr;
         if (foreignKeyEnd == ECRelationshipEnd_Target)
             {
-            foreignKeyMap = &m_targetMapInfo;
-            m_sourceMapInfoIsNull = true;
-            m_targetMapInfoIsNull = false;
+            foreignKeyColumnsMapping = &m_targetColumnsMapping;
+            m_sourceColumnsMappingIsNull = true;
+            m_targetColumnsMappingIsNull = false;
             m_customMapType = RelationshipMapInfo::CustomMapType::ForeignKeyOnTarget;
             }
         else
             {
-            foreignKeyMap = &m_sourceMapInfo;
-            m_sourceMapInfoIsNull = false;
-            m_targetMapInfoIsNull = true;
+            foreignKeyColumnsMapping = &m_sourceColumnsMapping;
+            m_sourceColumnsMappingIsNull = false;
+            m_targetColumnsMappingIsNull = true;
             m_customMapType = RelationshipMapInfo::CustomMapType::ForeignKeyOnSource;
             }
 
-        return (ECOBJECTS_STATUS_Success == foreignKeyRelMap.TryGetForeignKey(*foreignKeyMap)) ? SUCCESS : ERROR;
+        if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetColumns(*foreignKeyColumnsMapping))
+            return ERROR;
+
+        bool createConstraint = false;
+        if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetCreateConstraint(createConstraint))
+            return ERROR;
+
+        if (createConstraint)
+            {
+            Utf8String onDeleteActionStr;
+            if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetOnDeleteAction(onDeleteActionStr))
+                return ERROR;
+
+            Utf8String onUpdateActionStr;
+            if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetOnUpdateAction(onUpdateActionStr))
+                return ERROR;
+
+            m_onDeleteAction = ECDbSqlForeignKeyConstraint::ToActionType(onDeleteActionStr.c_str());
+            m_onUpdateAction = ECDbSqlForeignKeyConstraint::ToActionType(onUpdateActionStr.c_str());
+            }
+
+        return SUCCESS;
         }
     
     if (hasLinkTableRelMap)
@@ -612,14 +633,14 @@ BentleyStatus RelationshipMapInfo::_InitializeFromSchema()
         if (ECOBJECTS_STATUS_Success != linkTableRelationMap.TryGetAllowDuplicateRelationships(m_allowDuplicateRelationships))
             return ERROR;
 
-        if (ECOBJECTS_STATUS_Success != linkTableRelationMap.TryGetSource(m_sourceMapInfo))
+        if (ECOBJECTS_STATUS_Success != linkTableRelationMap.TryGetSourceColumns(m_sourceColumnsMapping))
             return ERROR;
 
-        if (ECOBJECTS_STATUS_Success != linkTableRelationMap.TryGetTarget(m_targetMapInfo))
+        if (ECOBJECTS_STATUS_Success != linkTableRelationMap.TryGetTargetColumns(m_targetColumnsMapping))
             return ERROR;
 
-        m_sourceMapInfoIsNull = false;
-        m_targetMapInfoIsNull = false;
+        m_sourceColumnsMappingIsNull = false;
+        m_targetColumnsMappingIsNull = false;
         m_customMapType = RelationshipMapInfo::CustomMapType::LinkTable;
         }
 

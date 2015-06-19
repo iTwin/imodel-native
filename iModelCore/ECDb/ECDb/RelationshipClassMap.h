@@ -69,7 +69,7 @@ protected:
 
     void DetermineConstraintClassIdColumnHandling (bool& addConstraintClassIdColumnNeeded, ECN::ECClassId& defaultConstraintClassId, ECN::ECRelationshipConstraintCR constraint) const;
     static bool ConstraintIncludesAnyClass (ECN::ECConstraintClassesList const& constraintClasses);
-    static ECN::ECDbRelationshipConstraintMap const& GetConstraintMapInfo(RelationshipMapInfo const&, ECN::ECRelationshipEnd);
+    static ECN::ECDbRelationshipEndColumns const& GetEndColumnsMapping(RelationshipMapInfo const&, ECN::ECRelationshipEnd);
 
 public:
     virtual ~RelationshipClassMap () {}
@@ -102,7 +102,7 @@ private:
     void AddIndices (ClassMapInfo const& mapInfo);
     void AddIndexToRelationshipEnd (bool isUniqueIndex);
 
-    ECN::ECDbRelationshipConstraintMap const& GetConstraintMapInfo(RelationshipMapInfo const&) const;
+    ECN::ECDbRelationshipEndColumns const& GetEndColumnsMapping(RelationshipMapInfo const&) const;
 
     bool GetOtherEndKeyColumnName (Utf8StringR columnName, ECDbSqlTable const& table, bool mappingInProgress) const;
     bool GetOtherEndECClassIdColumnName (Utf8StringR columnName, ECDbSqlTable const& table, bool mappingInProgress) const;
