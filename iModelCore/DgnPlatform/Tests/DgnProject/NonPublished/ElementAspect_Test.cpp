@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/DgnProject/NonPublished/ElementItem_Tests.cpp $
+|  $Source: Tests/DgnProject/NonPublished/ElementAspect_Test.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
