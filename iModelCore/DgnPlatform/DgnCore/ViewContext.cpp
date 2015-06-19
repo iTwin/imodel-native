@@ -1757,7 +1757,6 @@ void ViewContext::ContextMark::Pop()
 
     if (m_pushedRange)
         {
-        m_context->GetIDrawGeom().PopBoundingRange();
         m_context->SetCurrParentRangeResult (m_parentRangeResult);
         m_pushedRange = false;
         }

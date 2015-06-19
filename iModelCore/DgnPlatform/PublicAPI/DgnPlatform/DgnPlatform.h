@@ -847,43 +847,6 @@ enum class ClipVolumePass
 };
 
 /*=================================================================================**//**
-* Enums for tool agenda+handler cooperation
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-enum class AgendaEvent
-{
-    ModifyEntries           = 1,
-    PreModify               = 2,
-    PostModify              = 3,
-    AddClipboardFormats     = 4,
-};
-
-enum class AgendaModify
-{
-    Original                = 0,
-    Copy                    = 1,
-    ClipOriginal            = 2,
-    ClipCopy                = 3,
-};
-
-enum class AgendaOperation
-{
-    NotSpecified   = 0,
-    Translate      = 1,
-    Scale          = 2,
-    Rotate         = 3,
-    Mirror         = 4,
-    Array          = 5,
-    Stretch        = 6,
-    Delete         = 7,
-    Clipboard      = 8,
-    DragDrop       = 9,
-    ChangeAttrib   = 10,
-    FileFence      = 11,
-    Drop           = 12,
-};
-
-/*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 enum class DrawPurpose
