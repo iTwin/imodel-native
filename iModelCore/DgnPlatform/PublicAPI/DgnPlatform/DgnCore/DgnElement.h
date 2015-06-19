@@ -118,7 +118,11 @@ public:
         virtual DropMe _OnDeleted(DgnElementCR el) {return DropMe::Yes;}
     };
 
-    //! Abstract base class that Buffers changes to a dgn.ElementAspect
+    //! Abstract base class that buffers changes to a dgn.ElementAspect
+    //! A dgn.Element can have various dgn.ElementApects instances associated with it.
+    //! The #Item subclass represents dgn.ElementItem. An ElementItem is a special kind of ElementAspect. 
+    //! The #UniqueAspect subclass represents a non-Item ElementAspect subclass in the case where the host Element can have only 1 instance of the subclass.
+    //! The #MultiAspect subclass represents a non-Item ElementAspect subclass in the case where the host Element can have multiple instances of the subclass.
     struct EXPORT_VTABLE_ATTRIBUTE Aspect : AppData
     {
     private:
@@ -163,32 +167,36 @@ public:
         virtual DgnDbStatus _LoadProperties(DgnElementCR el) = 0;
     
     public:
-        //! Prepare to delete the existing Aspect for the specified element
-        //! @param el   The host element
-        //! @note The aspect will not actually be deleted in the Db until you call DgnElements::Update on \a el
+        //! Prepare to delete this aspect.
+        //! @note The aspect will not actually be deleted in the Db until you call DgnElements::Update on the aspect's host element.
         DGNPLATFORM_EXPORT void Delete() {m_changeType = ChangeType::Delete;}
     };
 
     //! Base class for buffer changes to dgn.ElementAspects other than the dgn.ElementItem
     struct EXPORT_VTABLE_ATTRIBUTE NonItemAspect : Aspect
     {
+    protected:
         BeSQLite::EC::ECInstanceId m_instanceId;
 
         DGNPLATFORM_EXPORT DgnDbStatus _DeleteInstance(DgnElementCR el) override final;
         DGNPLATFORM_EXPORT DgnDbStatus _InsertInstance(DgnElementCR el) override final;
 
-        static BeSQLite::EC::ECInstanceId QueryExistingInstanceId(DgnElementCR, DgnClassId);
+    public:
+        //! Get the ID of this aspect
+        BeSQLite::EC::ECInstanceId GetInstanceId() const {return m_instanceId;}
     };
 
-    //! Base class for (non-Item) dgn.ElementAspects that are 1:1 with the host Element
-    struct EXPORT_VTABLE_ATTRIBUTE Aspect1_1 : NonItemAspect
+    //! Represents a non-Item ElementAspect subclass in the case where the host Element can have only 1 instance of the subclass.
+    //! @See Item, MultiAspect
+    struct EXPORT_VTABLE_ATTRIBUTE UniqueAspect : NonItemAspect
     {
     private:
         static Key& GetKey(ECN::ECClassCR cls) {return *(Key*)&cls;}
         Key& GetKey(DgnDbR db) {return GetKey(*GetThisECClass(db));}
-        static Aspect1_1* Find(DgnElementCR, ECN::ECClassCR);
-        static Aspect1_1* Load(DgnElementCR, ECN::ECClassCR);
+        static UniqueAspect* Find(DgnElementCR, ECN::ECClassCR);
+        static UniqueAspect* Load(DgnElementCR, ECN::ECClassCR);
         DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) override final;
+        static void SetAspect0(DgnElementCR el, UniqueAspect& aspect);
         
     public:
         //! Prepare to insert or update an Aspect for the specified element
@@ -196,47 +204,68 @@ public:
         //! @param aspect The new aspect to be adopted by the host.
         //! @note \a el will add a reference to \a aspect and will hold onto it.
         //! @note The aspect will not actually be inserted into the Db until you call DgnElements::Insert or DgnElements::Update on \a el
-        DGNPLATFORM_EXPORT static void SetAspect(DgnElementCR el, Aspect1_1& aspect);
+        DGNPLATFORM_EXPORT static void SetAspect(DgnElementR el, UniqueAspect& aspect);
 
         //! Get read-write access to the Aspect for the specified element
         //! @param el   The host element
+        //! @param ecclass The class of ElementAspect to load
         //! @return The currently cached Aspect object, or nullptr if the element has no such aspect or if DeleteAspect was called.
         //! @note call this method \em only if you plan to \em modify the aspect
         //! @see Get, GetAspect for read-only access
         //! @note The aspect will not actually be updated in the Db until you call DgnElements::Update on \a el
-        DGNPLATFORM_EXPORT static Aspect1_1* GetAspectP(DgnElementCR el, ECN::ECClassCR);
+        DGNPLATFORM_EXPORT static UniqueAspect* GetAspectP(DgnElementR el, ECN::ECClassCR ecclass);
 
-        template<typename T> static T* GetP(DgnElementCR el, ECN::ECClassCR cls) {return dynamic_cast<T*>(GetAspectP(el,cls));}
+        template<typename T> static T* GetP(DgnElementR el, ECN::ECClassCR cls) {return dynamic_cast<T*>(GetAspectP(el,cls));}
 
         //! Get read-only access to the Aspect for the specified element
         //! @param el   The host element
+        //! @param ecclass The class of ElementAspect to load
         //! @return The currently cached Aspect object, or nullptr if the element has no such aspect or if DeleteAspect was called.
         //! @see GetP, GetAspectP for read-write access
-        DGNPLATFORM_EXPORT static Aspect1_1 const* GetAspect(DgnElementCR el, ECN::ECClassCR);
+        DGNPLATFORM_EXPORT static UniqueAspect const* GetAspect(DgnElementCR el, ECN::ECClassCR ecclass);
 
         template<typename T> static T const* Get(DgnElementCR el, ECN::ECClassCR cls) {return dynamic_cast<T const*>(GetAspect(el,cls));}
 
-        //! Prepare to delete the existing Aspect for the specified element
+        //! Query for an existing instance of the specified aspect class that is associated with the specified element.
         //! @param el   The host element
-        //! @note The aspect will not actually be deleted in the Db until you call DgnElements::Update on \a el
-        DGNPLATFORM_EXPORT static void DeleteAspect(DgnElementCR el, ECN::ECClassCR);
+        //! @param ecclass The class of ElementAspect to look for
+        //! @return the ID of the existing instance or an invalid ID if the host element has no instance of this aspect class
+        static BeSQLite::EC::ECInstanceId QueryExistingInstanceId(DgnElementCR el, DgnClassId ecclass);
         };
 
-    //! Base class for (non-Item) dgn.ElementAspects that are 1:n with the host Element
-    struct EXPORT_VTABLE_ATTRIBUTE Aspect1_n : NonItemAspect
+    //! Represents a non-Item ElementAspect subclass in the case where the host Element can have multiple instances of the subclass.
+    //! Use ECSql to query existing instances and their properties. Use GetAspectP or GetP to buffer changes to a particular instance.
+    //! @See Item, UniqueAspect
+    struct EXPORT_VTABLE_ATTRIBUTE MultiAspect : NonItemAspect
     {
     private:
-        BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) override {return BeSQLite::EC::ECInstanceKey();} // assume that all writes are updates or inserts
+        DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) override final;
+        Key& GetKey() {return *(Key*)this;}
     public:
-        //! Prepare to insert an Aspect for the specified element
+        //! Load the specified instance
+        //! @param el   The host element
+        //! @param ecclass The class of ElementAspect to load
+        //! @param ecinstanceid The ID of the ElementAspect to load
+        //! @note Call this method only if you intend to modify the aspect. Use ECSql to query existing instances of the subclass.
+        DGNPLATFORM_EXPORT static MultiAspect* GetAspectP(DgnElementR, ECN::ECClassCR ecclass, BeSQLite::EC::ECInstanceId);
+
+        template<typename T> static T* GetP(DgnElementR el, ECN::ECClassCR cls, BeSQLite::EC::ECInstanceId id) {return dynamic_cast<T*>(GetAspectP(el,cls,id));}
+
+        //! Prepare to insert an aspect for the specified element
         //! @param el   The host element
         //! @param aspect The new aspect to be adopted by the host.
         //! @note \a el will add a reference to \a aspect and will hold onto it.
         //! @note The aspect will not actually be inserted into the Db until you call DgnElements::Insert or DgnElements::Update on \a el
-        DGNPLATFORM_EXPORT static void AddAspect(DgnElementCR el, Aspect1_1& aspect);
+        DGNPLATFORM_EXPORT static void AddAspect(DgnElementR el, MultiAspect& aspect);
     };
 
-    //! Buffers changes to a dgn.ElementItem
+    //! Buffers changes to a dgn.ElementItem.
+    //! dgn.ElementItem is a special kind of dgn.ElementAspect. A dgn.Element can have 0 or 1 dgn.ElementItems, and the dgn.ElementItem always has the ID as the host dgn.Element.
+    //! Note that the item's actual class can vary, as long as it is a subclass of dgn.ElementItem.
+    //! A dgn.ElementItem is normally used to capture the definition of the host element's geometry. 
+    //! The ElementItem is also expected to supply the algorithm for generating the host element's geometry from its definition.
+    //! The platform enables the Item to keep the element's geometry up to date by calling the DgnElement::Item::_GenerateElementGeometry method when the element is inserted and whenever it is updated.
+    //! @See UniqueAspect, MultiAspect
     struct EXPORT_VTABLE_ATTRIBUTE Item : Aspect
     {
     private:
@@ -250,7 +279,7 @@ public:
         DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) override final;
         DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(DgnElementR el) override final {return CallGenerateElementGeometry(el);}
         DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementR el, DgnElementCR original) override final {return CallGenerateElementGeometry(el);}
-
+        static void SetItem0(DgnElementCR el, Item& item);
         DgnDbStatus CallGenerateElementGeometry(DgnElementR);
 
     protected:
@@ -264,7 +293,7 @@ public:
         //! @param item The new item to be adopted by the host.
         //! @note \a el will add a reference to \a item and will hold onto it.
         //! @note The item will not actually be inserted into the Db until you call DgnElements::Insert or DgnElements::Update on \a el
-        DGNPLATFORM_EXPORT static void SetItem(DgnElementCR el, Item& item);
+        DGNPLATFORM_EXPORT static void SetItem(DgnElementR el, Item& item);
 
         //! Get read-write access to the Item for the specified element
         //! @param el   The host element
@@ -272,9 +301,9 @@ public:
         //! @note call this method \em only if you plan to \em modify the item
         //! @see Get, GetItem for read-only access
         //! @note The item will not actually be updated in the Db until you call DgnElements::Update on \a el
-        DGNPLATFORM_EXPORT static Item* GetItemP(DgnElementCR el);
+        DGNPLATFORM_EXPORT static Item* GetItemP(DgnElementR el);
 
-        template<typename T> static T* GetP(DgnElementCR el) {return dynamic_cast<T*>(GetItemP(el));}
+        template<typename T> static T* GetP(DgnElementR el) {return dynamic_cast<T*>(GetItemP(el));}
 
         //! Get read-only access to the Item for the specified element
         //! @param el   The host element
@@ -284,12 +313,10 @@ public:
 
         template<typename T> static T const* Get(DgnElementCR el) {return dynamic_cast<T const*>(GetItem(el));}
 
-        //! Prepare to delete the existing Item for the specified element
+        //! Query the ECClass of item currently stored in the Db for the specified element
         //! @param el   The host element
-        //! @note The item will not actually be deleted in the Db until you call DgnElements::Update on \a el
-        DGNPLATFORM_EXPORT static void DeleteItem(DgnElementCR el);
-
-        DGNPLATFORM_EXPORT static DgnClassId QueryExistingItemClass(DgnElementCR);
+        //! @return the DgnClassId of the existing item or an invalid ID if the element has no item
+        DGNPLATFORM_EXPORT static DgnClassId QueryExistingItemClass(DgnElementCR el);
     };
 
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
@@ -321,6 +348,8 @@ protected:
     double          m_lastModTime;
     mutable Flags   m_flags;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
+
+    friend struct MultiAspect;
 
     void SetPersistent(bool val) const {m_flags.m_persistent = val;} //!< @private
 

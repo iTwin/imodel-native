@@ -16,9 +16,14 @@
         <ECProperty propertyName="TestItemProperty" typeName="string" />
     </ECClass>
 
-    <ECClass typeName="TestAspect" isDomainClass="True">
+    <ECClass typeName="TestUniqueAspect" isDomainClass="True">
         <BaseClass>dgn:ElementAspect</BaseClass>
-        <ECProperty propertyName="TestAspectProperty" typeName="string" />
+        <ECProperty propertyName="TestUniqueAspectProperty" typeName="string" />
+    </ECClass>
+
+    <ECClass typeName="TestMultiAspect" isDomainClass="True">
+        <BaseClass>dgn:ElementAspect</BaseClass>
+        <ECProperty propertyName="TestMultiAspectProperty" typeName="string" />
     </ECClass>
 
     <ECRelationshipClass typeName="TestElementDrivesElement" isDomainClass="True" strength="referencing" strengthDirection="forward" >
