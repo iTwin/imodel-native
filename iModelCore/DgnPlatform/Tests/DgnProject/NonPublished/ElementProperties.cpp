@@ -9,7 +9,7 @@
 #include "DgnHandlersTests.h"
 #include <Bentley/BeTimeUtilities.h>
 #include <ECDb/ECSqlBuilder.h>
-#include "..\TestFixture\DgnDbTestFixtures.h"
+#include "../TestFixture/DgnDbTestFixtures.h"
 
 //=======================================================================================
 //! Test Fixtrue for tests
