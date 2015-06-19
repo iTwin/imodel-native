@@ -21,6 +21,9 @@ BENTLEY_API_TYPEDEFS(HeapZone);
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+namespace dgn_ElementHandler {struct Element; struct Physical;};
+namespace dgn_TxnTable {struct Element;};
+
 typedef RefCountedPtr<ElementGeometry> ElementGeometryPtr;
 
 template <class _QvKey> struct QvElemSet;
@@ -54,7 +57,8 @@ public:
     friend struct DgnModel;
     friend struct ElemIdTree;
     friend struct EditElementHandle;
-    friend struct ElementHandler;
+    friend struct dgn_ElementHandler::Element;
+    friend struct dgn_TxnTable::Element;
 
     //! Parameters for creating new DgnElements
     struct CreateParams
@@ -694,12 +698,11 @@ struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : DgnElement3d
 {
     DEFINE_T_SUPER(DgnElement3d);
 protected:
-    friend struct PhysicalElementHandler;
-
     PhysicalElementCP _ToPhysicalElement() const override {return this;}
-    explicit PhysicalElement(CreateParams const& params) : T_Super(params) {}
 
 public:
+    explicit PhysicalElement(CreateParams const& params) : T_Super(params) {}
+
     //! Create an instance of a PhysicalElement from a CreateParams.
     //! @note This is a static method that creates an instance of the PhysicalElement class. To create subclasses, use static methods on the appropriate class.
     static PhysicalElementPtr Create(CreateParams const& params) {return new PhysicalElement(params);}
@@ -757,11 +760,10 @@ struct EXPORT_VTABLE_ATTRIBUTE DrawingElement : DgnElement2d
 {
     DEFINE_T_SUPER(DgnElement2d);
 protected:
-    friend struct DrawingElementHandler;
     DrawingElementCP _ToDrawingElement() const override {return this;}
-    explicit DrawingElement(CreateParams const& params) : T_Super(params) {}
 
 public:
+    explicit DrawingElement(CreateParams const& params) : T_Super(params) {}
     //! Create a DrawingElement from CreateParams.
     static DrawingElementPtr Create(CreateParams const& params) {return new DrawingElement(params);}
 
@@ -780,7 +782,6 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE ElementGroup : DgnElement
 {
     DEFINE_T_SUPER(DgnElement);
-    friend struct ElementGroupHandler;
 
 protected:
     ElementGroupCP _ToElementGroup() const override {return this;}
@@ -802,9 +803,9 @@ protected:
     //! Called when members of the group are queried
     DGNPLATFORM_EXPORT virtual DgnElementIdSet _QueryMembers() const;
 
+public:
     explicit ElementGroup(CreateParams const& params) : T_Super(params) {}
 
-public:
     //! Insert a member into this ElementGroup. This creates an ElementGroupHasMembers ECRelationship between this ElementGroup and the specified DgnElement
     //! @param[in] member The element to become a member of this ElementGroup.
     //! @note The ElementGroup and the specified DgnElement must have already been inserted (have valid DgnElementIds)

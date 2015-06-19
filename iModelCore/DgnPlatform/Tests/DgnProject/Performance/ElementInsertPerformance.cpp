@@ -38,7 +38,7 @@ static bool s_ptShouldFail;
 //! A test IDgnElementDependencyHandler
 // @bsiclass                                                     Sam.Wilson      01/15
 //=======================================================================================
-struct PTHandler : DgnPlatform::DgnElementDrivesElementDependencyHandler
+struct PTHandler : DgnPlatform::DgnElementDependencyHandler
 {
     DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME, PTHandler, DgnPlatform::DgnDomain::Handler, )
 
@@ -103,9 +103,9 @@ static CurveVectorPtr computeShape()
 //! A test ElementHandler
 // @bsiclass                                                     Sam.Wilson      01/15
 //=======================================================================================
-struct PTestElementHandler : DgnPlatform::ElementHandler
+struct PTestElementHandler : dgn_ElementHandler::Element
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS("TestElement", PTestElement, PTestElementHandler, DgnPlatform::ElementHandler, )
+    ELEMENTHANDLER_DECLARE_MEMBERS("TestElement", PTestElement, PTestElementHandler, dgn_ElementHandler::Element, )
 
 
     ECN::ECClassCP GetTestElementECClass(DgnDbR db)

@@ -721,7 +721,7 @@ void DgnElement2d::_CopyFrom(DgnElementCR other)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElementHandlerR DgnElement::GetElementHandler() const
     {
-    return *ElementHandler::FindHandler(GetDgnDb(), m_classId);
+    return *dgn_ElementHandler::Element::FindHandler(GetDgnDb(), m_classId);
     }
 
 /*---------------------------------------------------------------------------------**//**

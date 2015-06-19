@@ -74,18 +74,18 @@ enum DgnMarkupProjectSchemaValues
 //! Information about a DgnDb that can be used to save and check on markup-project association. See DgnMarkupProject::GetAssociation
 struct DgnProjectAssociationData
     {
-    private:
-    Utf8String          m_relativeFileName; //! The relative path from the DgnDb to the DgnMarkupProject
-    BeGuid              m_guid;             //! The GUID of the DgnDb.
-    uint64_t              m_lastModifiedTime; //! The last-modification time of the DgnDb
+private:
+    Utf8String  m_relativeFileName; //! The relative path from the DgnDb to the DgnMarkupProject
+    BeGuid      m_guid;             //! The GUID of the DgnDb.
+    uint64_t    m_lastModifiedTime; //! The last-modification time of the DgnDb
 
-    public:
+public:
     DGNPLATFORM_EXPORT DgnProjectAssociationData();             //!< Construct an empty object. See DgnMarkupProject::GetAssociation
     DGNPLATFORM_EXPORT Utf8String GetRelativeFileName() const;  //!< Get the relative path of the DgnDb that is associated with the DgnMarkupProject
     DGNPLATFORM_EXPORT BeGuid GetGuid() const;                  //!< Get the GUID of the DgnDb that is associated with the DgnMarkupProject
     DGNPLATFORM_EXPORT uint64_t GetLastModifiedTime() const;      //!< Get the last modified time of the DgnDb as of the time that it was associated with the DgnMarkupProject
 //__PUBLISH_SECTION_END__
-    void FromDgnProject (DgnDbCR, DgnMarkupProject const&);
+    void FromDgnProject(DgnDbCR, DgnMarkupProject const&);
     void ToPropertiesJson(JsonValueR) const;
     BentleyStatus FromPropertiesJson(JsonValueCR);
 //__PUBLISH_SECTION_START__
@@ -117,14 +117,14 @@ struct DgnViewAssociationData : DgnProjectAssociationData
     //! Re-create from serialized JSON string.
     //! @param[in] serializedData   Serialized JSON string.
     //! @return non-zero error status if the serialized data is invalid.
-    DGNPLATFORM_EXPORT BentleyStatus FromSerializedJson (Utf8CP serializedData);
+    DGNPLATFORM_EXPORT BentleyStatus FromSerializedJson(Utf8CP serializedData);
 
 //__PUBLISH_SECTION_END__
     BentleyStatus FromPropertiesJson(JsonValueCR);
-    void FromDgnProject (DgnDbCR, ViewControllerCR, DgnMarkupProject const&); // hide superclass version of this function
+    void FromDgnProject(DgnDbCR, ViewControllerCR, DgnMarkupProject const&); // hide superclass version of this function
     void ToPropertiesJson(JsonValueR) const;
     //! Get the origin of the view in the DgnDb that is associated with the RedlineModel
-    void GetViewOrigin (DPoint3dR origin, DgnDbCR);
+    void GetViewOrigin(DPoint3dR origin, DgnDbCR);
 //__PUBLISH_SECTION_START__
 
     //! Reasons why markups may no longer correspond to the contents of the subject DgnDb
@@ -132,9 +132,8 @@ struct DgnViewAssociationData : DgnProjectAssociationData
         {
         bool ViewNotFound; //!< The view in the subject DgnDb cannot be found. This redline is probably no longer applicable.
 
-        CheckResults (DgnProjectAssociationData::CheckResults const& projResults) {memcpy (this, &projResults, sizeof(projResults)); ViewNotFound = false;}
+        CheckResults(DgnProjectAssociationData::CheckResults const& projResults) {memcpy(this, &projResults, sizeof(projResults)); ViewNotFound = false;}
         };
-
     };
 
 //=======================================================================================
@@ -190,16 +189,16 @@ protected:
     void _ToPropertiesJson(Json::Value&) const override;
     void _FromPropertiesJson(Json::Value const&) override;
 
-    void DefineImageTexturesForRow (ImageDef const& imageDef, uint8_t const* rowStart, DPoint3dCR rowOrigin, Point2dCR tileDims, uint32_t nTilesAcross);
+    void DefineImageTexturesForRow(ImageDef const& imageDef, uint8_t const* rowStart, DPoint3dCR rowOrigin, Point2dCR tileDims, uint32_t nTilesAcross);
 
-    RedlineModel(CreateParams const& params): T_Super(params) {m_tilesX = 0;}
+    static RedlineModelPtr Create(DgnMarkupProjectR markupProject, Utf8CP name, DgnModelId templateModel);
 
-    static RedlineModelPtr Create (DgnMarkupProjectR markupProject, Utf8CP name, DgnModelId templateModel);
 public:
-    BentleyStatus DrawImage (ViewContextR, DPoint3dCR, DVec3dCR, bool drawBorder);
-    BentleyStatus LoadImageData (ImageDef& def, bvector<uint8_t>& imageData);
-    DGNPLATFORM_EXPORT static BentleyStatus LoadImageData (ImageDef& def, bvector<uint8_t>& imageData, DgnDbCR, DgnModelId);
-    void DefineImageTextures (ImageDef const& imageDef, bvector<uint8_t> const& imageData);
+    explicit RedlineModel(CreateParams const& params): T_Super(params) {m_tilesX = 0;}
+    BentleyStatus DrawImage(ViewContextR, DPoint3dCR, DVec3dCR, bool drawBorder);
+    BentleyStatus LoadImageData(ImageDef& def, bvector<uint8_t>& imageData);
+    DGNPLATFORM_EXPORT static BentleyStatus LoadImageData(ImageDef& def, bvector<uint8_t>& imageData, DgnDbCR, DgnModelId);
+    void DefineImageTextures(ImageDef const& imageDef, bvector<uint8_t> const& imageData);
 
     void LoadImageDataAndDefineTexture();
 
@@ -211,10 +210,10 @@ public:
 
 #ifdef WIP_REDLINE_ECINSTANCE
     //! Get the ECClass of the ECInstance that holds the properties of this model.
-    DGNPLATFORM_EXPORT ECN::ECClassCP GetECClass () const;
+    DGNPLATFORM_EXPORT ECN::ECClassCP GetECClass() const;
 
     //! Get the ID if the ECInstance that holds the properties of this model.
-    DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceId GetECInstanceId () const;
+    DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceId GetECInstanceId() const;
 #endif
 
     //! Get the DgnMarkupProject that contains this redline model
@@ -226,7 +225,7 @@ public:
     //! @param fitToX           If true, the image is stretched to fit the width of the sheet, and the image height is computed from it so as to preserve its original aspect ratio. 
     //!                         If false, the image is stretched to fit the height of the sheet, and the image width is computed.
     //! @param compressImageProperty If true, the image data is compressed before being stored in the database. 
-    DGNPLATFORM_EXPORT void StoreImageData (bvector<uint8_t> const& imageData, ImageUtilities::RgbImageInfo const& imageInfo, bool fitToX, bool compressImageProperty=true);
+    DGNPLATFORM_EXPORT void StoreImageData(bvector<uint8_t> const& imageData, ImageUtilities::RgbImageInfo const& imageInfo, bool fitToX, bool compressImageProperty=true);
 
     //! Save an image as the backdrop for this redline model.
     //! @param jpegData         The image data in JPEG format.
@@ -242,18 +241,18 @@ public:
     //! @param dgnProject   The DgnDb that is being redlined
     //! @param projectView  The view in the DgnDb that is being redlined
     //! @see GetAssociation
-    DGNPLATFORM_EXPORT void SetAssociation (DgnDbR dgnProject, ViewControllerCR projectView);
+    DGNPLATFORM_EXPORT void SetAssociation(DgnDbR dgnProject, ViewControllerCR projectView);
 
     //! Check that this markup project was associated with the specified DgnDb as of the last call to SetAssociation.
     //! @param assocData    The association data passed to SetAssociation
     //! @see SetAssociation
-    DGNPLATFORM_EXPORT void GetAssociation (DgnViewAssociationData& assocData) const;
+    DGNPLATFORM_EXPORT void GetAssociation(DgnViewAssociationData& assocData) const;
 
     //! Check that this redline model is still valid for the target view.
     //! @param subjectProject   The project that was redlined.
     //! @return A list of what's changed in the project since this markup project was created.
     //! @see DgnMarkupProjectGroup_Association
-    DGNPLATFORM_EXPORT DgnViewAssociationData::CheckResults CheckAssociation (DgnDbR subjectProject);
+    DGNPLATFORM_EXPORT DgnViewAssociationData::CheckResults CheckAssociation(DgnDbR subjectProject);
 /** @} */
     };
 
@@ -274,29 +273,29 @@ private:
     bool m_drawBorder;
 
 protected:
-    virtual void _DrawView (ViewContextR) override;
-    virtual void _SetOrigin (DPoint3dCR viewOrg) override;
-    virtual void _SetDelta (DVec3dCR viewDelta) override;
-    virtual void _SetRotation (RotMatrixCR viewRot) override;
+    virtual void _DrawView(ViewContextR) override;
+    virtual void _SetOrigin(DPoint3dCR viewOrg) override;
+    virtual void _SetDelta(DVec3dCR viewDelta) override;
+    virtual void _SetRotation(RotMatrixCR viewRot) override;
 
 public:
     DGNPLATFORM_EXPORT static ViewController* Create(DgnDbR project, DgnViewId id);
-    DGNPLATFORM_EXPORT RedlineViewController (RedlineModel&, DgnViewId id = DgnViewId());
+    DGNPLATFORM_EXPORT RedlineViewController(RedlineModel&, DgnViewId id = DgnViewId());
     DGNPLATFORM_EXPORT ~RedlineViewController();
     
     //! Create a new redline view in the database
     //! @return The newly created view controller
     //! @param[in] rdlModel the redline model to display
-    DGNPLATFORM_EXPORT static RedlineViewControllerPtr InsertView (RedlineModelR rdlModel, DgnViewId templateView, BSIRectCR projectViewRect, BSIRectCR imageViewRect);
-    DGNPLATFORM_EXPORT void OnClose (RedlineModel& targetModel);
-    DGNPLATFORM_EXPORT void OnOpen (RedlineModel& targetModel);
+    DGNPLATFORM_EXPORT static RedlineViewControllerPtr InsertView(RedlineModelR rdlModel, DgnViewId templateView, BSIRectCR projectViewRect, BSIRectCR imageViewRect);
+    DGNPLATFORM_EXPORT void OnClose(RedlineModel& targetModel);
+    DGNPLATFORM_EXPORT void OnOpen(RedlineModel& targetModel);
 
     //! Query if sheet border should be displayed
     DGNPLATFORM_EXPORT bool GetDrawBorder() const;
 
     //! Specify if sheet border should be display
     //! @param b    if true, display the border
-    DGNPLATFORM_EXPORT void SetDrawBorder (bool b);
+    DGNPLATFORM_EXPORT void SetDrawBorder(bool b);
 #endif // DOCUMENTATION_GENERATOR
 };
 
@@ -335,33 +334,33 @@ protected:
     bool                    m_targetModelIsInSubjectView;
 
     virtual void _SaveToSettings(JsonValueR) const override;
-    virtual void _RestoreFromSettings (JsonValueCR) override;
-    virtual void _DrawView (ViewContextR) override;
-    virtual DPoint3d _GetOrigin () const override;
-    virtual DVec3d _GetDelta () const override;
+    virtual void _RestoreFromSettings(JsonValueCR) override;
+    virtual void _DrawView(ViewContextR) override;
+    virtual DPoint3d _GetOrigin() const override;
+    virtual DVec3d _GetDelta() const override;
     virtual RotMatrix _GetRotation() const override;
-    virtual void _SetOrigin (DPoint3dCR org) override;
-    virtual void _SetDelta (DVec3dCR delta) override;
-    virtual void _SetRotation (RotMatrixCR rot) override;
+    virtual void _SetOrigin(DPoint3dCR org) override;
+    virtual void _SetDelta(DVec3dCR delta) override;
+    virtual void _SetRotation(RotMatrixCR rot) override;
     virtual DgnModelP _GetTargetModel() const override;
     virtual DgnDbR _GetDgnDb() const override;
-    virtual void _AdjustAspectRatio (double , bool expandView) override;
-    virtual DPoint3d _GetTargetPoint () const override;
-    virtual bool _Allow3dManipulations () const override;
+    virtual void _AdjustAspectRatio(double , bool expandView) override;
+    virtual DPoint3d _GetTargetPoint() const override;
+    virtual bool _Allow3dManipulations() const override;
     virtual AxisAlignedBox3d _GetProjectExtents() const override;
-    virtual IAuxCoordSysP _GetAuxCoordinateSystem () const override;
-    virtual ColorDef _GetBackgroundColor () const override;
+    virtual IAuxCoordSysP _GetAuxCoordinateSystem() const override;
+    virtual ColorDef _GetBackgroundColor() const override;
     virtual ClipVectorPtr _GetClipVector() const override {return NULL;}
-    virtual bool _IsSnapAdjustmentRequired (DgnViewportR vp, bool snapLockEnabled) const override {return true;} // Always project snap to ACS plane...
-    virtual bool _IsContextRotationRequired (DgnViewportR vp, bool contextLockEnabled) const override {return true;} // Always orient AccuDraw to ACS plane...
-    virtual void _OnViewOpened (DgnViewportR vp) override;
+    virtual bool _IsSnapAdjustmentRequired(DgnViewportR vp, bool snapLockEnabled) const override {return true;} // Always project snap to ACS plane...
+    virtual bool _IsContextRotationRequired(DgnViewportR vp, bool contextLockEnabled) const override {return true;} // Always orient AccuDraw to ACS plane...
+    virtual void _OnViewOpened(DgnViewportR vp) override;
 
     //  Override and forward the methods that trigger a query.
-    virtual void _OnHealUpdate (DgnViewportR viewport, ViewContextR context, bool fullHeal) override;
-    virtual void _OnFullUpdate (DgnViewportR viewport, ViewContextR context, FullUpdateInfo& info) override;
-    virtual void _OnDynamicUpdate (DgnViewportR viewport, ViewContextR context, DynamicUpdateInfo& info) override;
+    virtual void _OnHealUpdate(DgnViewportR viewport, ViewContextR context, bool fullHeal) override;
+    virtual void _OnFullUpdate(DgnViewportR viewport, ViewContextR context, FullUpdateInfo& info) override;
+    virtual void _OnDynamicUpdate(DgnViewportR viewport, ViewContextR context, DynamicUpdateInfo& info) override;
     virtual void _OnCategoryChange(bool singleEnabled) override;
-    virtual void _ChangeModelDisplay (DgnModelId modelId, bool onOff) override;
+    virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff) override;
 
     virtual bool _DrawOverlayDecorations(IndexedViewportR viewport) override;
     virtual bool _DrawZBufferedDecorations(IndexedViewportR viewport) override;
@@ -373,15 +372,15 @@ protected:
 
 #ifdef WIP_PhysicalRedlineViewController
     // QueryViewController
-    virtual bool _IsInSet (int nVal, BeSQLite::DbValue const*) const override;
-    virtual void _DrawView (ViewContextR context) override;
-    virtual uint32_t _GetMaxElementsToLoad () override;
+    virtual bool _IsInSet(int nVal, BeSQLite::DbValue const*) const override;
+    virtual void _DrawView(ViewContextR context) override;
+    virtual uint32_t _GetMaxElementsToLoad() override;
     virtual BeSQLite::DbResult _Load() override;
-    virtual Utf8String _GetRTreeMatchSql (DgnViewportR viewport) override;
-    virtual bool _OnComputeFitRange (DRange3dR range, DgnViewportR viewport, FitViewParamsR params) override;
+    virtual Utf8String _GetRTreeMatchSql(DgnViewportR viewport) override;
+    virtual bool _OnComputeFitRange(DRange3dR range, DgnViewportR viewport, FitViewParamsR params) override;
     virtual int32_t _GetMaxElementFactor() override;
-    virtual double _GetMinimumSizePixels (DrawPurpose updateType) override;
-    virtual uint64_t _GetMaxElementMemory () override;
+    virtual double _GetMinimumSizePixels(DrawPurpose updateType) override;
+    virtual uint64_t _GetMaxElementMemory() override;
 #endif
     // END QueryViewController
 
@@ -389,15 +388,15 @@ protected:
 #endif // DOCUMENTATION_GENERATOR
 
 public:
-    DGNPLATFORM_EXPORT PhysicalRedlineViewController (PhysicalRedlineModel& model, PhysicalViewController& subjectView, DgnViewId physicalRedlineViewId = DgnViewId());
+    DGNPLATFORM_EXPORT PhysicalRedlineViewController(PhysicalRedlineModel& model, PhysicalViewController& subjectView, DgnViewId physicalRedlineViewId = DgnViewId());
 
-    DGNPLATFORM_EXPORT ~PhysicalRedlineViewController ();
+    DGNPLATFORM_EXPORT ~PhysicalRedlineViewController();
 
     //! Create a new redline view in the database
     //! @return The newly created view controller
     //! @param[in] model the physical redline model to display
     //! @param[in] subjectView the subject view to display underneath the physical redline model
-    DGNPLATFORM_EXPORT static PhysicalRedlineViewControllerPtr InsertView (PhysicalRedlineModel& model, PhysicalViewController& subjectView);
+    DGNPLATFORM_EXPORT static PhysicalRedlineViewControllerPtr InsertView(PhysicalRedlineModel& model, PhysicalViewController& subjectView);
 };
 
 //=======================================================================================
@@ -421,18 +420,10 @@ protected:
     virtual DgnModelType _GetModelType() const override {return DgnModelType::Physical;}
     virtual bool _Is3d() const override {return true;}
 
-    static PhysicalRedlineModelPtr Create (DgnMarkupProjectR markupProject, Utf8CP name, PhysicalModelCR subjectViewTargetModel);
-
-    PhysicalRedlineModel(CreateParams const& params) : T_Super(params) {}
+    static PhysicalRedlineModelPtr Create(DgnMarkupProjectR markupProject, Utf8CP name, PhysicalModelCR subjectViewTargetModel);
 
 public:
-#ifdef WIP_REDLINE_ECINSTANCE
-    //! Get the ECClass of the ECInstance that holds the properties of this model.
-    DGNPLATFORM_EXPORT ECN::ECClassCP GetECClass () const;
-
-    //! Get the ID if the ECInstance that holds the properties of this model.
-    DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceId GetECInstanceId () const;
-#endif
+    explicit PhysicalRedlineModel(CreateParams const& params) : T_Super(params) {}
 
     DgnViewId GetFirstView();
 
@@ -456,18 +447,18 @@ public:
     //! @param[in] dgnProject   The DgnDb which is the target of this markup.
     //! @param[in] guid         The BeProjectGuid to store in the newly created DgnDb. If invalid (the default), a new BeProjectGuid is created.
     //! The new BeProjectGuid can be obtained via GetGuid.
-    CreateDgnMarkupProjectParams (DgnDbR dgnProject, BeDbGuid guid=BeDbGuid()) : CreateDgnDbParams(guid), m_dgnProject(dgnProject), m_overwriteExisting(false) {;}
+    CreateDgnMarkupProjectParams(DgnDbR dgnProject, BeDbGuid guid=BeDbGuid()) : CreateDgnDbParams(guid), m_dgnProject(dgnProject), m_overwriteExisting(false) {;}
 
     //! Get the subject DgnDb
     DgnDbR GetSubjectDgnProject() const {return m_dgnProject;}
 
     //! Specify whether to overwrite an existing file or not. The default is to fail if a file by the supplied name already exists.
-    void SetOverwriteExisting (bool val) {m_overwriteExisting = val;}
-    bool GetOverwriteExisting () const {return m_overwriteExisting;}
+    void SetOverwriteExisting(bool val) {m_overwriteExisting = val;}
+    bool GetOverwriteExisting() const {return m_overwriteExisting;}
 
     //! Specify if this markup project is to contain physical redline models. @see @ref DgnMarkupProjectGroup_PhysicalRedlines
-    void SetPhysicalRedlining (bool val) {m_physicalRedlining = val;}
-    bool GetPhysicalRedlining () const {return m_physicalRedlining;}
+    void SetPhysicalRedlining(bool val) {m_physicalRedlining = val;}
+    bool GetPhysicalRedlining() const {return m_physicalRedlining;}
 };
 
 //=======================================================================================
@@ -483,13 +474,13 @@ private:
     DEFINE_T_SUPER(DgnDb)
 
 private:
-    DgnMarkupProject () {}
+    DgnMarkupProject() {}
     virtual ~DgnMarkupProject() {}
-    BeSQLite::DbResult ConvertToMarkupProject (BeFileNameCR fileName, CreateDgnDbParams const& params);
+    BeSQLite::DbResult ConvertToMarkupProject(BeFileNameCR fileName, CreateDgnDbParams const& params);
 
-    BentleyStatus ImportMarkupEcschema ();
-    BentleyStatus QueryPropertyAsJson (JsonValueR json, DgnMarkupProjectProperty::ProjectProperty const& propSpec, uint64_t id=0) const;
-    void SavePropertyFromJson (DgnMarkupProjectProperty::ProjectProperty const& propSpec, JsonValueCR json, uint64_t id=0);
+    BentleyStatus ImportMarkupEcschema();
+    BentleyStatus QueryPropertyAsJson(JsonValueR json, DgnMarkupProjectProperty::ProjectProperty const& propSpec, uint64_t id=0) const;
+    void SavePropertyFromJson(DgnMarkupProjectProperty::ProjectProperty const& propSpec, JsonValueCR json, uint64_t id=0);
 
     //void CreateModelECProperties (DgnModelId modelId, Utf8CP modelName); *** TBD
 
@@ -499,22 +490,22 @@ public:
     DgnViewId GetFirstViewOf(DgnModelId);
 
 #ifdef WIP_REDLINE_ECINSTANCE
-    ECN::IECInstancePtr CreateRedlineInstance ();
-    BeSQLite::EC::ECInstanceId GetECInstanceId (DgnModelCR) const;
+    ECN::IECInstancePtr CreateRedlineInstance();
+    BeSQLite::EC::ECInstanceId GetECInstanceId(DgnModelCR) const;
 #endif
 
-    BentleyStatus QueryPropertyAsJson (JsonValueR json, RedlineModelProperty::ProjectProperty const&, uint64_t id=0) const;
-    void SavePropertyFromJson (RedlineModelProperty::ProjectProperty const& propSpec, JsonValueCR json, uint64_t id=0) const;
+    BentleyStatus QueryPropertyAsJson(JsonValueR json, RedlineModelProperty::ProjectProperty const&, uint64_t id=0) const;
+    void SavePropertyFromJson(RedlineModelProperty::ProjectProperty const& propSpec, JsonValueCR json, uint64_t id=0) const;
 
-    BentleyStatus QueryPropertyAsJson (JsonValueR json, DgnModelCR, RedlineModelProperty::ProjectProperty const& propSpec, uint64_t id=0) const;
-    void SavePropertyFromJson (DgnModelCR, RedlineModelProperty::ProjectProperty const& propSpec, JsonValueCR json, uint64_t id=0);
+    BentleyStatus QueryPropertyAsJson(JsonValueR json, DgnModelCR, RedlineModelProperty::ProjectProperty const& propSpec, uint64_t id=0) const;
+    void SavePropertyFromJson(DgnModelCR, RedlineModelProperty::ProjectProperty const& propSpec, JsonValueCR json, uint64_t id=0);
 
-    DgnProjectAssociationData::CheckResults CheckAssociation (DgnDbR subjectProject, DgnProjectAssociationData const&);
+    DgnProjectAssociationData::CheckResults CheckAssociation(DgnDbR subjectProject, DgnProjectAssociationData const&);
 public:
     //! Compute the default filename for a DgnMarkupProject, based on the associated DgnDb
     //! @param[out] markupProjectName   The computed name of the DgnMarkupProject
     //! @param[in]  dgnProjectName      The name of the DgnDb
-    DGNPLATFORM_EXPORT static void ComputeDgnProjectFileName (BeFileNameR markupProjectName, BeFileNameCR dgnProjectName);
+    DGNPLATFORM_EXPORT static void ComputeDgnProjectFileName(BeFileNameR markupProjectName, BeFileNameCR dgnProjectName);
 
     //! Open and existing DgnMarkupProject file.
     //! @param[out] status BE_SQLITE_OK if the DgnMarkupProject file was successfully opened or a non-zero error code if the project could not be opened or is not a markup project. May be NULL. 
@@ -522,14 +513,14 @@ public:
     //! @param[in] openParams Parameters for opening the database file
     //! will never access any element data, you can skip that step. However, generally it is preferable to load the DgnFile when opening the project.
     //! @return a reference counted pointer to the opened DgnMarkupProject. Its IsValid() method will be false if the open failed for any reason.
-    DGNPLATFORM_EXPORT static DgnMarkupProjectPtr OpenDgnDb (BeSQLite::DbResult* status, BeFileNameCR filename, OpenParams const& openParams);
+    DGNPLATFORM_EXPORT static DgnMarkupProjectPtr OpenDgnDb(BeSQLite::DbResult* status, BeFileNameCR filename, OpenParams const& openParams);
 
     //! Create and open a new DgnMarkupProject file.
     //! @param[out] status \a BE_SQLITE_OK if the DgnMarkupProject file was successfully created or a non-zero error code if the project could not be created. May be NULL. 
     //! @param[in] filename The name of the file for the new DgnMarkupProject. The directory must be writable.
     //! @param[in] params Parameters that control aspects of the newly created DgnMarkupProject
     //! @return a reference counted pointer to the newly created DgnMarkupProject. Its IsValid() method will be false if the open failed for any reason.
-    DGNPLATFORM_EXPORT static DgnMarkupProjectPtr CreateDgnDb (BeSQLite::DbResult* status, BeFileNameCR filename, CreateDgnMarkupProjectParams const& params);
+    DGNPLATFORM_EXPORT static DgnMarkupProjectPtr CreateDgnDb(BeSQLite::DbResult* status, BeFileNameCR filename, CreateDgnMarkupProjectParams const& params);
 
     //! Query if this project has been initialized for physical redlining.
     //! @see CreateDgnMarkupProjectParams::SetPhysicalRedlining
@@ -539,18 +530,18 @@ public:
 /** @{ */
     //! Create or update an association between this markup project and the specified DgnDb.
     //! @see GetAssociation
-    DGNPLATFORM_EXPORT void SetAssociation (DgnDbR dgnProject);
+    DGNPLATFORM_EXPORT void SetAssociation(DgnDbR dgnProject);
 
     //! Check that this markup project is associated with the specified DgnDb
     //! @param assocData    The association data passed to SetAssociation
     //! @see SetAssociation
-    DGNPLATFORM_EXPORT void GetAssociation (DgnProjectAssociationData& assocData) const;
+    DGNPLATFORM_EXPORT void GetAssociation(DgnProjectAssociationData& assocData) const;
 
     //! Check that this markup project is still valid for the subject project
     //! @param subjectProject   The project that is being redlined.
     //! @return A list of what's changed in the project since this markup project was created.
     //! @see DgnMarkupProjectGroup_Association
-    DGNPLATFORM_EXPORT DgnProjectAssociationData::CheckResults CheckAssociation (DgnDbR subjectProject);
+    DGNPLATFORM_EXPORT DgnProjectAssociationData::CheckResults CheckAssociation(DgnDbR subjectProject);
 //** @} */
 
 /** @name Redline Models */
@@ -561,30 +552,30 @@ public:
     //! @see OpenRedlineModel, RedlineModel::StoreImageData
     //! @note: This function also creates an ECInstance associated with the new redline model. The instance is from the DgnMarkupSchema:Redline class.
     //! After calling this function, the caller should then finish the job of defining the properties of the DgnMarkupSchema:Redline instance.
-    DGNPLATFORM_EXPORT RedlineModelP CreateRedlineModel (Utf8CP name, DgnModelId templateModel);
+    DGNPLATFORM_EXPORT RedlineModelP CreateRedlineModel(Utf8CP name, DgnModelId templateModel);
 
     //! Create a view of the redline model that is as similar as possible to the specified DgnDb view.
     //! @param redlineModel     The redline model returned by CreateRedlineModel
     //! @param redlineTemplateView Optional. Identifies a view in this DgnMarkupProject to be used a template for the redline model view.
     //! @param projectViewRect  The shape of the view that is being redlined. This is used only to get the aspect ratio, so that the redline view can be shaped and aligned to match the original DgnDb as closely as possible.
     //! @param imageViewRect    The area within the view where the background image should be displayed.
-    DGNPLATFORM_EXPORT DgnViewId CreateRedlineModelView (RedlineModelR redlineModel, DgnViewId redlineTemplateView, BSIRectCR projectViewRect, BSIRectCR imageViewRect);
+    DGNPLATFORM_EXPORT DgnViewId CreateRedlineModelView(RedlineModelR redlineModel, DgnViewId redlineTemplateView, BSIRectCR projectViewRect, BSIRectCR imageViewRect);
 
     //! Find the redline model that is associated with the specified DgnDb view and whose origin is closest to specified point.
     //! @param[in]  viewController            The view to match
     //! @return If successful, the ID of the redline model that was based on the specified view and is closest to its origin, plus the distance of the 
     //! redlined view from the view's origin. If there is no redline view based on the specified view, then an invalid ID is returned.
-    DGNPLATFORM_EXPORT bpair<DgnModelId,double> FindClosestRedlineModel (ViewControllerCR viewController);
+    DGNPLATFORM_EXPORT bpair<DgnModelId,double> FindClosestRedlineModel(ViewControllerCR viewController);
 
     //! Open an existing redline model.
     //! @param modelId  Identifies the redline model to open
     //! @see CreateRedlineModel
-    DGNPLATFORM_EXPORT RedlineModelP OpenRedlineModel (DgnModelId modelId);
+    DGNPLATFORM_EXPORT RedlineModelP OpenRedlineModel(DgnModelId modelId);
 
     //! Empty an existing redline model. This function may be called after viewing a redline model. It releases memory held by the redline model.
     //! @param modelId  Identifies the redline model to empty
     //! @see OpenRedlineModel
-    DGNPLATFORM_EXPORT BentleyStatus EmptyRedlineModel (DgnModelId modelId);
+    DGNPLATFORM_EXPORT BentleyStatus EmptyRedlineModel(DgnModelId modelId);
 //** @} */
 
 /** @name PhysicalRedline Models */
@@ -594,26 +585,40 @@ public:
     //! @param subjectViewTargetModel   The target model of the view of the subject DgnDb. The PhysicalRedlineModel's units are set to match the units of subjectViewTargetModel.
     //! @return a pointer to the new model
     //! @see OpenPhysicalRedlineModel, @ref DgnMarkupProjectGroup_PhysicalRedlines
-    DGNPLATFORM_EXPORT PhysicalRedlineModelP CreatePhysicalRedlineModel (Utf8CP name, PhysicalModelCR subjectViewTargetModel);
+    DGNPLATFORM_EXPORT PhysicalRedlineModelP CreatePhysicalRedlineModel(Utf8CP name, PhysicalModelCR subjectViewTargetModel);
 
 #if defined (NEEDS_WORK_VIEW_HANDLER_REFACTOR)
     //! Create a view of the physical redline model
     //! @param redlineModel     The physical redline model returned by CreatePhysicalRedlineModel
     //! @param dgnView          The view of the subject DgnDb
     //! @return the ID of the new redline view
-    DGNPLATFORM_EXPORT DgnViewId CreatePhysicalRedlineModelView (PhysicalRedlineModelR redlineModel, PhysicalViewControllerR dgnView);
+    DGNPLATFORM_EXPORT DgnViewId CreatePhysicalRedlineModelView(PhysicalRedlineModelR redlineModel, PhysicalViewControllerR dgnView);
 #endif
 
     //! Open an existing physical redline model.
     //! @param modelId  Identifies the physical redline model to open
     //! @see CreatePhysicalRedlineModel
-    DGNPLATFORM_EXPORT PhysicalRedlineModelP OpenPhysicalRedlineModel (DgnModelId modelId);
+    DGNPLATFORM_EXPORT PhysicalRedlineModelP OpenPhysicalRedlineModel(DgnModelId modelId);
 
     //! Empty an existing physical redline model. This function may be called after viewing a model. It releases memory held by the model.
     //! @param modelId  Identifies the physical redline model to empty
     //! @see OpenPhysicalRedlineModel
-    DGNPLATFORM_EXPORT BentleyStatus EmptyPhysicalRedlineModel (DgnModelId modelId);
+    DGNPLATFORM_EXPORT BentleyStatus EmptyPhysicalRedlineModel(DgnModelId modelId);
 //** @} */
+
+};
+
+namespace dgn_ModelHandler
+{
+    struct Redline : Sheet
+    {
+        MODELHANDLER_DECLARE_MEMBERS("RedlineModel", RedlineModel, Redline, Sheet,)
+    };
+
+    struct PhysicalRedline : Physical
+    {
+        MODELHANDLER_DECLARE_MEMBERS("PhysicalRedlineModel", PhysicalRedlineModel, PhysicalRedline, Physical,)
+    };
 
 };
 

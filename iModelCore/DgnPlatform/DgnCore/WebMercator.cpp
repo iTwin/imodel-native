@@ -920,8 +920,8 @@ static bool shouldDraw (ViewContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus WebMercatorDisplay::CreateUrl (Utf8StringR url, ImageUtilities::RgbImageInfo& imageInfo, WebMercatorTilingSystem::TileId const& tileid)
     {
-    ModelHandlerP modelHandler = ModelHandler::FindHandler(m_model.GetDgnDb(), m_model.GetClassId());
-    WebMercatorModelHandler* webMercatorModelHandler = dynamic_cast<WebMercatorModelHandler*>(modelHandler);
+    ModelHandlerP modelHandler = dgn_ModelHandler::Model::FindHandler(m_model.GetDgnDb(), m_model.GetClassId());
+    dgn_ModelHandler::WebMercator* webMercatorModelHandler = dynamic_cast<dgn_ModelHandler::WebMercator*>(modelHandler);
     if (nullptr == webMercatorModelHandler)
         {
         BeAssert(false);
@@ -1358,7 +1358,7 @@ Utf8String StreetMapModelHandler::CreateGoogleMapsUrl (WebMercatorTilingSystem::
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String StreetMapModelHandler::CreateMapquestUrl (WebMercatorTilingSystem::TileId const& tileid, WebMercatorModel::Mercator const& props)
+Utf8String dgn_ModelHandler::StreetMap::CreateMapquestUrl (WebMercatorTilingSystem::TileId const& tileid, WebMercatorModel::Mercator const& props)
     {
     Utf8String url = "http://otile1.mqcdn.com/tiles/1.0.0/";
     if (!props.m_mapType.empty() && props.m_mapType[0] == '0')
@@ -1378,7 +1378,7 @@ Utf8String StreetMapModelHandler::CreateMapquestUrl (WebMercatorTilingSystem::Ti
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus StreetMapModelHandler::_CreateUrl (Utf8StringR url, ImageUtilities::RgbImageInfo& expectedImageInfo, WebMercatorModel::Mercator const& props, WebMercatorTilingSystem::TileId const& tileid)
+BentleyStatus dgn_ModelHandler::StreetMap::_CreateUrl (Utf8StringR url, ImageUtilities::RgbImageInfo& expectedImageInfo, WebMercatorModel::Mercator const& props, WebMercatorTilingSystem::TileId const& tileid)
     {
     // The usual image format info
     expectedImageInfo.height = expectedImageInfo.width = 256;
@@ -1419,15 +1419,15 @@ BentleyStatus StreetMapModelHandler::_CreateUrl (Utf8StringR url, ImageUtilities
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String getStreetMapServerDescription(StreetMapModelHandler::MapService mapService, StreetMapModelHandler::MapType mapType)
+static Utf8String getStreetMapServerDescription(dgn_ModelHandler::StreetMap::MapService mapService, dgn_ModelHandler::StreetMap::MapType mapType)
     {
     Utf8String descr;
     switch (mapService)
         {
-        case StreetMapModelHandler::MapService::MapQuest:
+        case dgn_ModelHandler::StreetMap::MapService::MapQuest:
             {
             descr = ("MapQuest");   // *** WIP translate
-            if (StreetMapModelHandler::MapType::Map == mapType)
+            if (dgn_ModelHandler::StreetMap::MapType::Map == mapType)
                 descr.append(" Map");   // *** WIP translate
             else
                 descr.append(" Satellite Images"); // *** WIP translate
@@ -1441,7 +1441,7 @@ DGNPLATFORM_REF_COUNTED_PTR(WebMercatorModel)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelId StreetMapModelHandler::CreateStreetMapModel(DgnDbR db, MapService mapService, MapType mapType, bool finerResolution)
+DgnModelId dgn_ModelHandler::StreetMap::CreateStreetMapModel(DgnDbR db, MapService mapService, MapType mapType, bool finerResolution)
     {
     //Utf8PrintfString modelName("com.bentley.dgn.StreetMap_%d_%d", mapService, mapType); // *** WIP_STREET_MAP how to make sure name is unique?
     Utf8String modelName = getStreetMapServerDescription(mapService,mapType).c_str();

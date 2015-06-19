@@ -32,7 +32,7 @@ void DgnSqlTestDomain::RegisterDomainAndImportSchema(DgnDbR db, BeFileNameCR sch
     BeFileName schemaFile = schemasDir;
     schemaFile.AppendToPath(L"ECSchemas/" DGN_SQL_TEST_SCHEMA_NAMEW L".01.00.ecschema.xml");
 
-    BentleyStatus status = DgnSchemaDomain::GetDomain().ImportSchema(db, schemaFile);
+    BentleyStatus status = DgnBaseDomain::GetDomain().ImportSchema(db, schemaFile);
     ASSERT_TRUE(BentleyStatus::SUCCESS == status);
     }
 
@@ -121,4 +121,3 @@ void TestPhysicalElement::Translate(DVec3dCR offset)
     rplacement.GetOriginR().Add(offset);
     SetPlacement(rplacement);
     }
-

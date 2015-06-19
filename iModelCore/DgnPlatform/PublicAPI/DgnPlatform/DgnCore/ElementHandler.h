@@ -54,59 +54,55 @@ public:
         private: virtual DgnElementP _CreateInstance(DgnPlatform::DgnElement::CreateParams const& params) override {return new __classname__(__classname__::CreateParams(params));}\
         DOMAINHANDLER_DECLARE_MEMBERS(__ECClassName__,__handlerclass__,__handlersuperclass__,__exporter__) 
 
+
+
 //=======================================================================================
-//! An ElementHandler creates instances of (a subclass of) DgnElement.
-//! @see DgnElement
-//! @ingroup DgnElementGroup
+// Element Handlers in the base "Dgn" domain. Don't put handlers from other domains here.
+// @bsiclass                                                    Keith.Bentley   06/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ElementHandler : DgnDomain::Handler
+namespace dgn_ElementHandler
 {
-    friend struct DgnElement;
-    DOMAINHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_Element, ElementHandler, DgnDomain::Handler, DGNPLATFORM_EXPORT)
+    //=======================================================================================
+    //! An ElementHandler creates instances of (a subclass of) DgnElement.
+    //! @see DgnElement
+    //! @ingroup DgnElementGroup
+    //=======================================================================================
+    struct EXPORT_VTABLE_ATTRIBUTE Element : DgnDomain::Handler
+    {
+        friend struct DgnElement;
+        DOMAINHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_Element, Element, DgnDomain::Handler, DGNPLATFORM_EXPORT)
 
-private: 
-    virtual DgnElement* _CreateInstance(DgnElement::CreateParams const& params) {return new DgnElement(params);}
+    private: 
+        virtual DgnElement* _CreateInstance(DgnElement::CreateParams const& params) {return new DgnElement(params);}
 
-protected:
-    virtual ElementHandlerP _ToElementHandler() {return this;}
+    protected:
+        virtual ElementHandlerP _ToElementHandler() {return this;}
 
-public:
-    //! Create a new instance of a DgnElement from a CreateParams. 
-    //! @note The actual type of the returned DgnElement will depend on the DgnClassId in @a params.
-    DgnElementPtr Create(DgnElement::CreateParams const& params) {return (DgnElementP) _CreateInstance(params);}
+    public:
 
-    //! Find the ElementHandler for a DgnClassId within a supplied DgnDb.
-    DGNPLATFORM_EXPORT static ElementHandlerP FindHandler(DgnDb const& dgndb, DgnClassId classId);
-};
+        //! Create a new instance of a DgnElement from a CreateParams. 
+        //! @note The actual type of the returned DgnElement will depend on the DgnClassId in @a params.
+        DgnElementPtr Create(DgnElement::CreateParams const& params) {return (DgnElementP) _CreateInstance(params);}
 
-//=======================================================================================
-//! A PhysicalElementHandler creates instances of PhysicalElement.
-//! @see PhysicalElement
-//! @ingroup DgnElementGroup
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE PhysicalElementHandler : ElementHandler
-{
-    ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalElement, PhysicalElement, PhysicalElementHandler, ElementHandler, DGNPLATFORM_EXPORT)
-};
+        //! Find the ElementHandler for a DgnClassId within a supplied DgnDb.
+        DGNPLATFORM_EXPORT static ElementHandlerP FindHandler(DgnDb const& dgndb, DgnClassId classId);
+    };
 
-//=======================================================================================
-//! A DrawingElementHandler creates instances of DrawingElement.
-//! @see DrawingElement
-//! @ingroup DgnElementGroup
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DrawingElementHandler : ElementHandler
-{
-    ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, DrawingElement, DrawingElementHandler, ElementHandler, DGNPLATFORM_EXPORT)
-};
+    struct EXPORT_VTABLE_ATTRIBUTE Physical : Element
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalElement, PhysicalElement, Physical, Element, DGNPLATFORM_EXPORT)
+    };
 
-//=======================================================================================
-//! An ElementGroupHandler creates instances of ElementGroup.
-//! @see ElementGroup
-//! @ingroup DgnElementGroup
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ElementGroupHandler : ElementHandler
-{
-    ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_ElementGroup, ElementGroup, ElementGroupHandler, ElementHandler, DGNPLATFORM_EXPORT)
+    struct EXPORT_VTABLE_ATTRIBUTE Drawing : Element
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, DrawingElement, Drawing, Element, DGNPLATFORM_EXPORT)
+    };
+
+    struct EXPORT_VTABLE_ATTRIBUTE Group : Element
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_ElementGroup, ElementGroup, Group, Element, DGNPLATFORM_EXPORT)
+    };
+
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

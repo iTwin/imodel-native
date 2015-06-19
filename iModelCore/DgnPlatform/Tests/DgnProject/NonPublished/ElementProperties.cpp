@@ -52,9 +52,9 @@ static CurveVectorPtr computeShape()
 //! A test ElementHandler
 // @bsiclass                                                     Sam.Wilson      01/15
 //=======================================================================================
-struct TestElementHandler : DgnPlatform::ElementHandler
+struct TestElementHandler : dgn_ElementHandler::Element
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS ("TestElement", TestElement, TestElementHandler, DgnPlatform::ElementHandler, )
+    ELEMENTHANDLER_DECLARE_MEMBERS ("TestElement", TestElement, TestElementHandler, dgn_ElementHandler::Element, )
 
     ECN::ECClassCP GetTestElementECClass(DgnDbR db)
         {
