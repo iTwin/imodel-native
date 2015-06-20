@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/stdcxx/rw/bpair.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -68,7 +68,7 @@
 // *** BENTLEY_CHANGE
 NAMESPACE_BENTLEY_BSTDCXX_BEGIN
 
-//! A template that has many of the capabilities of std::pair
+//! A template that has many of the capabilities of @c std::pair
 // 20.2.2
 template <class _TypeT, class _TypeU>
 struct bpair
