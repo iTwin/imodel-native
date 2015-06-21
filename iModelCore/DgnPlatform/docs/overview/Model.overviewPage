@@ -9,7 +9,11 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-/** @page PAGE_ModelOverview Model
+/** @page PAGE_ModelOverview Model Overview
+
+A DgnModel is a container that owns and organizes elements to represent a <i>model</i> of something.
+A DgnModel can contain elements for a particular drawing, elements from a specific volume, or elements from a unique discipline.
+Basically, %DgnModels are used to partition the virtual world.
 
 @tableofcontents
 
