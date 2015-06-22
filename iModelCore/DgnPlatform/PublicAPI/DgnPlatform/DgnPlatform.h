@@ -323,7 +323,7 @@ private:
 public:
     IdSet(){static_assert(sizeof(IdType)==sizeof(BeRepositoryBasedId),"IdSets may only contain BeRepositoryBasedId");}
 
-    typedef bset<IdType> T_SetType;
+    typedef BentleyApi::bset<IdType> T_SetType;
     typedef typename T_SetType::const_iterator const_iterator;
     typedef typename T_SetType::iterator iterator;
 
