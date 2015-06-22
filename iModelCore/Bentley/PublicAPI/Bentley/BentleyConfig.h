@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BentleyConfig.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -50,7 +50,7 @@
     #else
         #define BENTLEYCONFIG_GRAPHICS_SUPPORT_QV_THREAD
         #define BENTLEYCONFIG_SUPPORT_PRELOADING_DISK_CACHE
-
+        #define BENTLEYCONFIG_PARASOLIDS
     #endif
 
 #elif defined (__linux)
