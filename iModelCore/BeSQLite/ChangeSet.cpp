@@ -158,6 +158,26 @@ DbResult ChangeSet::FromData(int size, void const* data, bool invert)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult ChangeSet::Invert()
+    {
+    if (!IsValid())
+        {
+        BeAssert(false);
+        return  BE_SQLITE_ERROR;
+        }
+
+    int size   = m_size;
+    void* data = m_changeset;
+    m_size = 0;
+    m_changeset = nullptr;
+    DbResult rc = (DbResult) sqlite3changeset_invert(size, data, &m_size, &m_changeset);
+    sqlite3_free(data);
+    return rc;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ChangeSet::Free()

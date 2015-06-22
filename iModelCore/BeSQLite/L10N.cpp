@@ -139,7 +139,10 @@ Utf8String L10NLookup::GetString(L10N::NameSpace scope, L10N::StringId name, boo
     if (!hasString && (NULL == outHasString))
         {
         NativeLogging::LoggingManager::GetLogger(L"BeSQLite.L10N")->errorv("Attempt to lookup localized string %s %s failed.", scope, name);
+
+#if defined (MOBILEDGN_TESTS_FAIL)
         BeAssert(false && "Attempt to lookup localized string failed.");
+#endif
         }
 
     return message;

@@ -503,31 +503,32 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit, Utf8CP operation)
 
     m_inCommit = true;
 
-    // we can't commit or rollback if changetrack has any changes.
-    if (m_tracker.IsValid())
+    ChangeTracker::OnCommitStatus trackerStat = (m_tracker.IsValid() && m_tracker->HasChanges()) ? 
+            m_tracker->_OnCommit(isCommit, operation) : ChangeTracker::OnCommitStatus::Continue;
+
+    if (trackerStat == ChangeTracker::OnCommitStatus::Abort)
         {
-        // Give trackers a chance to save the changes.
-        if (m_tracker->HasChanges() && ChangeTracker::OnCommitStatus::Abort == m_tracker->_OnCommit(isCommit, operation))
-            {
-            BeAssert(false);
-            return  BE_SQLITE_ERROR_ChangeTrackError;
-            }
+        BeAssert(false);
+        return  BE_SQLITE_ERROR_ChangeTrackError;
         }
 
     // attempt the commit/release or rollback
-    DbResult rc;
-    if (0 == txn.GetDepth())
+    DbResult rc = BE_SQLITE_OK;
+    if (trackerStat == ChangeTracker::OnCommitStatus::Continue)
         {
-        rc = (DbResult) sqlite3_exec(m_sqlDb, (isCommit ? "COMMIT" : "ROLLBACK"), nullptr, nullptr, nullptr);
-        }
-    else
-        {
-        Utf8String sql;
-        if (!isCommit)   // to cancel a nested transaction, we need to roll it back and then release it.
-            sql.append(SqlPrintfString("ROLLBACK TO \"%s\";", txn.GetName()));
+        if (0 == txn.GetDepth())
+            {
+            rc = (DbResult) sqlite3_exec(m_sqlDb, isCommit ? "COMMIT" : "ROLLBACK", nullptr, nullptr, nullptr);
+            }
+        else
+            {
+            Utf8String sql;
+            if (!isCommit)   // to cancel a nested transaction, we need to roll it back and then release it.
+                sql.append(SqlPrintfString("ROLLBACK TO \"%s\";", txn.GetName()));
 
-        sql.append(SqlPrintfString("RELEASE \"%s\"", txn.GetName()));
-        rc = (DbResult) sqlite3_exec(m_sqlDb, sql.c_str(), nullptr, nullptr, nullptr);
+            sql.append(SqlPrintfString("RELEASE \"%s\"", txn.GetName()));
+            rc = (DbResult) sqlite3_exec(m_sqlDb, sql.c_str(), nullptr, nullptr, nullptr);
+            }
         }
 
     m_inCommit = false;
@@ -543,6 +544,7 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit, Utf8CP operation)
         (*it)->_OnDeactivate(isCommit);
 
     m_txns.erase(thisPos, m_txns.end());
+
     return BE_SQLITE_OK;
     }
 

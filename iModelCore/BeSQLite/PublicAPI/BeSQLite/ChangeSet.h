@@ -34,7 +34,7 @@ protected:
 
     friend struct Db;
     friend struct DbFile;
-    enum class OnCommitStatus {Continue=0, Abort=1};
+    enum class OnCommitStatus {Continue=0, Abort, Completed};
     enum class TrackChangesForTable : bool {No=0, Yes=1};
 
     BE_SQLITE_EXPORT DbResult CreateSession();
@@ -213,6 +213,8 @@ public:
     //! Free the data held by this ChangeSet.
     //! @note Normally the destructor will call Free. After this call the ChangeSet is invalid.
     BE_SQLITE_EXPORT void Free();
+
+    BE_SQLITE_EXPORT DbResult Invert();
 
     //! Re-create this ChangeSet from data from a previously saved ChangeSet.
     BE_SQLITE_EXPORT DbResult FromData(int size, void const* data, bool invert);
