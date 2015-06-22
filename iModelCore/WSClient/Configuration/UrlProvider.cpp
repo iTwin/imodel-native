@@ -14,7 +14,7 @@ static UrlProvider::Environment s_env;
 bool UrlProvider::s_isInitialized = false;
 
 const Utf8String UrlProvider::s_punchListWsgUrl[3] = {
-    "https://qa-wsg20-eus.cloudapp.net",
+    "https://dev-wsg20-eus.cloudapp.net",
     "https://qa-wsg20-eus.cloudapp.net",
     "https://connect-wsg20.bentley.com"
     };
