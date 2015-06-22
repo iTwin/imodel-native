@@ -12,7 +12,7 @@
 #include <DgnPlatform/DgnCore/ImageUtilities.h>
 #include <DgnPlatform/DgnCore/QueryView.h>
 
-/** @addtogroup DgnMarkupProjectGroup Markup Projects
+/** @addtogroup DgnMarkupProjectGroup Markups and Redlines
 * A markup is a set of annotations that apply to a DgnDb or to views of that project. Markups include redlines, markups, and punch lists.
 *
 * @section DgnMarkupProjectGroup_Association Associating a DgnMarkupProject with a DgnDb
@@ -31,7 +31,6 @@
 * Redline graphics are stored in models within a DgnMarkupProject. There are two types of models that hold redlines, RedlineModel and PhysicalRedlineModel.
 * A redline model must be created or opened in order to store redlines.
 *
-* 
 * @section DgnMarkupProjectGroup_PhysicalRedlines Physical vs. non-physical redlines.
 * Suppose you want to draw redlines  on top of a map. The extent of the map is so great that no single view will show it very well. 
 * You want to be able to zoom in and out and pan around and draw your redlines at any location in the map. Therefore, you want the redline 
@@ -40,7 +39,6 @@
 * ViewController is derived from PhysicalViewController. In the normal (non-physical) redline case, the redline view shows you a 
 * static image of a view of the DgnDb or some other static image. The redline model in that case is a (2-D) SheetModel, and the 
 * associated redline view is a SheetViewController.
-*
 */
 
 #ifdef WIP_REDLINE_ECINSTANCE
@@ -433,6 +431,7 @@ public:
 
 //=======================================================================================
 //! Supplies the parameters necessary to create new DgnMarkupProjects.
+//! @ingroup DgnMarkupProjectGroup
 // @bsiclass
 //=======================================================================================
 struct CreateDgnMarkupProjectParams : CreateDgnDbParams

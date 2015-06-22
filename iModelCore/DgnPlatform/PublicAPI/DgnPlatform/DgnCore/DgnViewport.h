@@ -15,7 +15,6 @@
 #include "ViewController.h"
 #include <BeSQLite/RTreeMatch.h>
 
-
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 /**  @addtogroup DgnViewGroup
