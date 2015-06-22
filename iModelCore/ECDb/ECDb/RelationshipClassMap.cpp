@@ -1048,6 +1048,9 @@ void RelationshipClassLinkTableMap::AddIndices (ClassMapInfo const& mapInfo)
         default:
             break;
         }
+
+    if (!relationshipClassMapInfo.AllowDuplicateRelationships())
+        AddIndicesToRelationshipEnds(RelationshipClassLinkTableMap::RelationshipIndexSpec::SourceAndTarget, true);
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -1077,7 +1080,11 @@ ECDbSqlIndex* RelationshipClassLinkTableMap::CreateIndex (RelationshipIndexSpec 
         case RelationshipIndexSpec::Target:
             name.append ("Target");
             break;
+        case RelationshipIndexSpec::SourceAndTarget:
+            name.append("SourceTarget");  
+            break;
         default:
+            BeAssert(false);
             break;
         }
     
@@ -1134,15 +1141,19 @@ void RelationshipClassLinkTableMap::AddIndicesToRelationshipEnds (RelationshipIn
     switch(spec)
         {
         case RelationshipIndexSpec::Source:
-            {
             AddColumnsToIndex (*index, sourceECInstanceIdColumn, sourceECClassIdColumn, nullptr, nullptr);
             break;
-            }
         case RelationshipIndexSpec::Target:
-            {
             AddColumnsToIndex (*index, targetECInstanceIdColumn, targetECClassIdColumn, nullptr, nullptr);
             break;
-            }
+
+        case RelationshipIndexSpec::SourceAndTarget:
+            AddColumnsToIndex(*index, sourceECInstanceIdColumn, sourceECClassIdColumn, targetECInstanceIdColumn, targetECClassIdColumn);
+            break;
+
+        default:
+            BeAssert(false);
+            break;
         }
 
     if (!index->IsValid())
