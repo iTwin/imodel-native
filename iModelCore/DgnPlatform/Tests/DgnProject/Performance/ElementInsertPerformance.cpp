@@ -11,7 +11,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <ECDb/ECDbApi.h>
 #include "PerformanceTestFixture.h"
-#include "..\TestFixture\DgnDbTestFixtures.h"
+#include "../TestFixture/DgnDbTestFixtures.h"
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SQLITE

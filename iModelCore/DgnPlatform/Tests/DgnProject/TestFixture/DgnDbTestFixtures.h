@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include "..\NonPublished\DgnHandlersTests.h"
+#include "../NonPublished/DgnHandlersTests.h"
 #include <Bentley/BeTest.h>
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <ECDb/ECDbApi.h>
