@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/Sprites.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -15,7 +15,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 typedef RefCountedPtr<struct RgbaSprite> RgbaSpritePtr;
 //=======================================================================================
-//! @bsiclass                                                     KeithBentley    10/02
+// @bsiclass                                                     KeithBentley    10/02
 //=======================================================================================
 struct RgbaSprite : public RefCounted<ISprite>
 {
@@ -38,7 +38,7 @@ public:
 };
 
 //=======================================================================================
-//! @bsiclass                                                     KeithBentley    10/02
+// @bsiclass                                                     KeithBentley    10/02
 //=======================================================================================
 struct NamedSprite : public RgbaSprite
 {
@@ -58,7 +58,7 @@ public:
 };
 
 //=======================================================================================
-//! @bsiclass                                                     KeithBentley    10/02
+// @bsiclass                                                     KeithBentley    10/02
 //=======================================================================================
 struct StaticSprite
 {

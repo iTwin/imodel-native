@@ -146,7 +146,6 @@ DGNPLATFORM_EXPORT void                SetAll ();
 
 //! Sets a bit of this BitMask to false.
 //! @param[in]      bitIndex        The bit to set to false.
-//! @bsimethod
 DGNPLATFORM_EXPORT StatusInt           Clear (uint32_t bitIndex);
 
 //! Sets all bits of this BitMask to false.

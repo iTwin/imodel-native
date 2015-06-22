@@ -581,7 +581,6 @@ struct DgnElementPtrVec : bvector<DgnElementPtr>
 
 //=======================================================================================
 //! A list of DgnElementCPtr's.
-// @bsiclass
 //=======================================================================================
 struct DgnElementCPtrVec : bvector<DgnElementCPtr>
 {
@@ -596,9 +595,8 @@ struct DgnElementCPtrVec : bvector<DgnElementCPtr>
         }
 };
 
-/** @cond BENTLEY_SDK_Internal */
-
 //! Types used to interface with native DgnDisplayKernel
+//! @private
 struct DgnDisplayCoreTypes
 {
     //! Platform-specific view window
@@ -615,11 +613,7 @@ struct DgnDisplayCoreTypes
     typedef Bitmap* BitmapP;
 };
 
-/** @endcond */
-
-//=======================================================================================
 //! @private
-//=======================================================================================
 enum class ConfigurationVariableLevel
 {
     Predefined    = -2,        //!< predefined by the host
@@ -631,10 +625,7 @@ enum class ConfigurationVariableLevel
     User          = 4,         //!< user defined
 };
 
-/** @cond BENTLEY_SDK_Internal */
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//! @private
 enum DgnPlatformConstants
 {
     MIN_LINECODE                    = 0,
@@ -643,22 +634,17 @@ enum DgnPlatformConstants
     MAXIMUM_WINDOW_DEPTH            = 32767,
 };
 
+//! @private
 enum DgnPlatformInvalidSymbology
 {
     INVALID_STYLE = 0x7fffff00,
 };
 
-//=======================================================================================
-// @bsiclass                                                    Jeff.Marker     03/2015
-//=======================================================================================
+//! @private
 enum struct DgnFontType { TrueType = 1, Rsc = 2, Shx = 3, };
 
-//=======================================================================================
-// @bsiclass                                                    Jeff.Marker     03/2015
-//=======================================================================================
+//! @private
 enum struct DgnFontStyle { Regular, Bold, Italic, BoldItalic, };
-
-/** @endcond */
 
 //! Enumeration of possible coordinate system types
 enum class DgnCoordSystem
@@ -784,10 +770,7 @@ enum DitherModes
     DITHERMODE_ErrorDiffusion       = 1,
 };
 
-/*=================================================================================**//**
-* Influences how handler should apply annotation scale.
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//! Influences how handler should apply annotation scale.
 enum class AnnotationScaleAction
 {
     Update  = 0,
@@ -795,10 +778,7 @@ enum class AnnotationScaleAction
     Remove  = 2,
 };
 
-/*=================================================================================**//**
-* Influences how handler should apply fence stretch.
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//! Influences how handler should apply fence stretch.
 enum class FenceStretchFlags
 {
     /*! no special options */
@@ -809,10 +789,7 @@ enum class FenceStretchFlags
 
 ENUM_IS_FLAGS (FenceStretchFlags)
 
-/*=================================================================================**//**
-* Influences how handler should apply fence clip.
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//! Influences how handler should apply fence clip.
 enum class FenceClipFlags
 {
     /*! no special options */
@@ -834,10 +811,6 @@ enum class ClipVolumePass
     Maximum
 };
 
-/*=================================================================================**//**
-* Enums for tool agenda+handler cooperation
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
 enum class AgendaEvent
 {
     ModifyEntries           = 1,
@@ -871,9 +844,6 @@ enum class AgendaOperation
     Drop           = 12,
 };
 
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
 enum class DrawPurpose
 {
     NotSpecified               = 0,
@@ -896,7 +866,7 @@ enum class DrawPurpose
     GenerateThumbnail          = 27,
     ForceRedraw                = 29,
     FenceAccept                = 30,
-    RegionFlood                = 31, //! Collect graphics to find closed regions/flood...
+    RegionFlood                = 31, //!< Collect graphics to find closed regions/flood...
     FitView                    = 32,
     ExportVisibleEdges         = 36,
     InterferenceDetection      = 37,
@@ -906,10 +876,7 @@ enum class DrawPurpose
     ProxyHashExtraction        = 42,
 };
 
-/*=================================================================================**//**
-* Used to communicate the result of handling an event from a GPS.
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//! Used to communicate the result of handling an event from a GPS.
 enum class GeoLocationEventStatus
 {
     EventHandled                    = 0,    //!< LocationEvent was handled and modified the view
@@ -918,10 +885,7 @@ enum class GeoLocationEventStatus
     PointOutsideGeoCoordinateSystem = 3,    //!< LocationEvent was ignored and did not modify the view because the LocationEvent's point is outside the bounds where the geographic coordinate system is accurate
 };
 
-/*=================================================================================**//**
-* Used to specify desired accuracy.
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//! Used to specify desired accuracy.
 enum class GeoLocationServicesAccuracy
 {
     BestForNavigation       = 1,
@@ -929,10 +893,7 @@ enum class GeoLocationServicesAccuracy
     Coarse                  = 3
 };
 
-/*=================================================================================**//**
-* Used to describe status of a location provider.
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//! Used to describe status of a location provider.
 enum class GeoLocationProviderStatus
 {
     NotDetermined           = 0,
@@ -965,7 +926,6 @@ struct HsvColorDef
 
 //=======================================================================================
 //! RGBA values for a color
-//! @bsiclass
 //=======================================================================================
 struct ColorDef
 {

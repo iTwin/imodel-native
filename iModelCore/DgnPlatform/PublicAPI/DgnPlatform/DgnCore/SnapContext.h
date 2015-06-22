@@ -18,7 +18,6 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //=======================================================================================
 //! Interface to be used when snapping.
-//! @bsiclass
 //=======================================================================================
 struct SnapContext : ViewContext
 {
@@ -50,43 +49,33 @@ DGNPLATFORM_EXPORT static KeypointType GetSnapKeypointType (SnapMode);
 //! Get the snap path created by calling element's draw method, and
 //! representing "nearest" snap.
 //! @return SnapDetailP won't return NULL.
-//! @bsimethod
 DGNPLATFORM_EXPORT SnapDetailP GetSnapDetail ();
 
 //! Get the snap mode that the handler is being asked to adjust the snap path for.
 //! @return SnapMode to use for this snap.
-//! @bsimethod
-
 DGNPLATFORM_EXPORT SnapMode GetSnapMode ();
 
 //! Get the current snap divisor setting, this is used for SnapMode::NearestKeypoint.
 //! @return current snap divisor.
-//! @bsimethod
 DGNPLATFORM_EXPORT int GetSnapDivisor ();
 
 //! Get the default sprite used for the supplied SnapMode.
 //! @param[in]    mode                  Snap mode to get sprite for.
 //! @return ISpriteP default sprite.
-//! @bsimethod
 DGNPLATFORM_EXPORT static ISpriteP GetSnapSprite (SnapMode mode);
 
-//! @bsimethod
 DGNPLATFORM_EXPORT void GetSegmentKeypoint (DPoint3dR hitPoint, double& keyParam, int divisor, DSegment3dCR segment);
 
-//! @bsimethod
 DGNPLATFORM_EXPORT bool GetParameterKeypoint (DPoint3dR hitPoint, double& keyParam, int divisor);
 
 //! Define the current snap information for text using default processing.
-//! @bsimethod
 DGNPLATFORM_EXPORT SnapStatus DoTextSnap ();
 
 //! Define the current snap information for this hit using default processing.
-//! @bsimethod
 DGNPLATFORM_EXPORT SnapStatus DoDefaultDisplayableSnap ();
 
 //! Define the current snap information for the path curve primitive using default processing.
 //! @param[in]    mode                  Snap mode to use.
-//! @bsimethod
 DGNPLATFORM_EXPORT SnapStatus DoSnapUsingCurve (SnapMode mode);
 
 //! Define the current snap information for this hit.
@@ -97,7 +86,6 @@ DGNPLATFORM_EXPORT SnapStatus DoSnapUsingCurve (SnapMode mode);
 //! @param[in]    isAdjusted            true if snap is not suitable for creating assoc points (pass false if customKeypointData is supplied or snap not overriden).
 //! @param[in]    nBytes                Size in bytes of customKeypointData, or 0 if none.
 //! @param[in]    customKeypointData    Pointer to customKeypointData to save for this snap or NULL.
-//! @bsimethod
 DGNPLATFORM_EXPORT void SetSnapInfo (SnapMode mode, ISpriteP sprite, DPoint3dCR snapPoint, bool forceHot, bool isAdjusted, int nBytes = 0, Byte* customKeypointData = nullptr);
 
 }; // SnapContext

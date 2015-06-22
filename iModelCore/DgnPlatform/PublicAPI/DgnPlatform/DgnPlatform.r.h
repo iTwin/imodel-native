@@ -13,8 +13,8 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-/** @cond BENTLEY_SDK_Internal */
 //! Identifies the type or purpose of a model
+//! @private
 enum class DgnModelType : uint16_t
     {
     Physical        = 0,   //!< a physical model.
@@ -24,8 +24,6 @@ enum class DgnModelType : uint16_t
     Query           = 5,   //!< a query model
     Illegal         = 999, //!< @private
     };
-
-/** @endcond */
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/14
@@ -282,7 +280,6 @@ enum class StandardUnit
 //!    - Second:     A minute has 60 seconds.
 //!    - Centesimal: A full circle has 400 gradians.
 //!    - Radian:     A full circle has 2*pi radians.
-//! @bsiclass
 //=======================================================================================
 enum class AngleMode
     {
@@ -296,7 +293,6 @@ enum class AngleMode
 
 //=======================================================================================
 //! Used by AngleFormatter to specify the maximum number of decimals for angle formatting.
-//! @bsiclass
 //=======================================================================================
 enum class AnglePrecision
     {
@@ -324,7 +320,6 @@ enum class DgnUnitFormat
 //!                        specified base direction at a specified orientation.
 //!     - In Bearing mode, a direction is formatted as an angle measure from either
 //!                        North or South and oriented to either East or West.
-//! @bsiclass
 //=======================================================================================
 enum class DirectionMode : uint16_t
     {
@@ -343,82 +338,82 @@ enum DateTimeFormatPart
     //! Atomic elements
     //==================================
     //! Day of week
-    DATETIME_PART_DayOfWeek,                //! EX: "Tuesday"
-    DATETIME_PART_DoW,                      //! EX: "Tue"
+    DATETIME_PART_DayOfWeek,                //!< EX: "Tuesday"
+    DATETIME_PART_DoW,                      //!< EX: "Tue"
 
     //! Day of month
-    DATETIME_PART_D,                        //! EX: "5"
-    DATETIME_PART_DD,                       //! EX: "05"
+    DATETIME_PART_D,                        //!< EX: "5"
+    DATETIME_PART_DD,                       //!< EX: "05"
 
     //! Month
-    DATETIME_PART_Month,                    //! EX: "August"
-    DATETIME_PART_Mon,                      //! EX: "Aug"
-    DATETIME_PART_M,                        //! EX: "8"
-    DATETIME_PART_MM,                       //! EX: "08"
+    DATETIME_PART_Month,                    //!< EX: "August"
+    DATETIME_PART_Mon,                      //!< EX: "Aug"
+    DATETIME_PART_M,                        //!< EX: "8"
+    DATETIME_PART_MM,                       //!< EX: "08"
 
     //! Day of year
-    DATETIME_PART_d,                        //! EX: "22" (twenty-second day of year, January 22)
-    DATETIME_PART_ddd,                      //! EX: "022"
+    DATETIME_PART_d,                        //!< EX: "22" (twenty-second day of year, January 22)
+    DATETIME_PART_ddd,                      //!< EX: "022"
 
     //! Year
-    DATETIME_PART_YYYY,                     //! EX: "2012", "1999"
-    DATETIME_PART_YY,                       //! EX: "12", "99", "08"
+    DATETIME_PART_YYYY,                     //!< EX: "2012", "1999"
+    DATETIME_PART_YY,                       //!< EX: "12", "99", "08"
 
     //! Hour
-    DATETIME_PART_h,                        //! Using 12-hour clock. EX: "8"
-    DATETIME_PART_hh,                       //! Using 12-hour clock. EX: "08"
-    DATETIME_PART_H,                        //! Using 24-hour clock. EX: "0", "23"
-    DATETIME_PART_HH,                       //! Using 24-hour clock. EX: "00", "23"
+    DATETIME_PART_h,                        //!< Using 12-hour clock. EX: "8"
+    DATETIME_PART_hh,                       //!< Using 12-hour clock. EX: "08"
+    DATETIME_PART_H,                        //!< Using 24-hour clock. EX: "0", "23"
+    DATETIME_PART_HH,                       //!< Using 24-hour clock. EX: "00", "23"
 
     //! Minute
-    DATETIME_PART_m,                        //! EX: "8"
-    DATETIME_PART_mm,                       //! EX: "08"
+    DATETIME_PART_m,                        //!< EX: "8"
+    DATETIME_PART_mm,                       //!< EX: "08"
 
     //! Second
-    DATETIME_PART_s,                        //! EX: "8"
-    DATETIME_PART_ss,                       //! EX: "08"
+    DATETIME_PART_s,                        //!< EX: "8"
+    DATETIME_PART_ss,                       //!< EX: "08"
 
     //! Fractional seconds, precision specified in formatter. Always includes leading zeros
-    DATETIME_PART_FractionalSeconds,        //! EX: "00123" (precision 5)
+    DATETIME_PART_FractionalSeconds,        //!< EX: "00123" (precision 5)
 
     //! Separators
-    DATETIME_PART_Comma,                    //! EX: The comma in "Tuesday, July 4"
-    DATETIME_PART_DateSeparator,            //! EX: The slashes in "4/5/2012"
-    DATETIME_PART_TimeSeparator,            //! EX: The colons in "4:05 PM"
-    DATETIME_PART_DecimalSeparator,         //! EX: The period in "1.234"
-    DATETIME_PART_Space,                    //! A space character
+    DATETIME_PART_Comma,                    //!< EX: The comma in "Tuesday, July 4"
+    DATETIME_PART_DateSeparator,            //!< EX: The slashes in "4/5/2012"
+    DATETIME_PART_TimeSeparator,            //!< EX: The colons in "4:05 PM"
+    DATETIME_PART_DecimalSeparator,         //!< EX: The period in "1.234"
+    DATETIME_PART_Space,                    //!< A space character
 
     //! Misc
-    DATETIME_PART_AMPM,                     //! EX: "AM", "PM"
-    DATETIME_PART_AP,                       //! EX: "A", "P"
+    DATETIME_PART_AMPM,                     //!< EX: "AM", "PM"
+    DATETIME_PART_AP,                       //!< EX: "A", "P"
 
 //__PUBLISH_SECTION_END__
-    DATETIME_PART_Y,                        // 0-99, min width 1
-    DATETIME_PART_YYY,                      // min width 3
-    DATETIME_PART_YYYYY,                    // min width 5
+    DATETIME_PART_Y,                        //!< 0-99, min width 1
+    DATETIME_PART_YYY,                      //!< min width 3
+    DATETIME_PART_YYYYY,                    //!< min width 5
 //__PUBLISH_SECTION_START__
 
     //! UTC offset
-    DATETIME_PART_U,                        //! EX: "-7", "+11"
-    DATETIME_PART_UU,                       //! EX: "-07", "+11"
-    DATETIME_PART_U_UU,                     //! EX: "-7:00", "+11:00"
-    DATETIME_PART_UU_UU,                    //! EX: "-07:00", "+11:00"
+    DATETIME_PART_U,                        //!< EX: "-7", "+11"
+    DATETIME_PART_UU,                       //!< EX: "-07", "+11"
+    DATETIME_PART_U_UU,                     //!< EX: "-7:00", "+11:00"
+    DATETIME_PART_UU_UU,                    //!< EX: "-07:00", "+11:00"
 
-    DATETIME_PART_UTC,                      //! "UTC"
+    DATETIME_PART_UTC,                      //!< "UTC"
 
     //==================================
     //! Composite parts
     //==================================
-    DATETIME_PART_h_mm_AMPM = 100,          //! EX: "1:45 PM"
-    DATETIME_PART_h_mm_ss_AMPM,             //! EX: "1:45:30 PM"
+    DATETIME_PART_h_mm_AMPM = 100,          //!< EX: "1:45 PM"
+    DATETIME_PART_h_mm_ss_AMPM,             //!< EX: "1:45:30 PM"
 
-    DATETIME_PART_M_D_YYYY,                 //! EX: "4/5/2012"
-    DATETIME_PART_MM_DD_YYYY,               //! EX: "04/05/2012"
-    DATETIME_PART_Day_D_Month_YYYY,         //! EX: "Saturday, 5 April, 2012"
-    DATETIME_PART_Day_Month_D_YYYY,         //! EX: "Saturday, April 5, 2012"
+    DATETIME_PART_M_D_YYYY,                 //!< EX: "4/5/2012"
+    DATETIME_PART_MM_DD_YYYY,               //!< EX: "04/05/2012"
+    DATETIME_PART_Day_D_Month_YYYY,         //!< EX: "Saturday, 5 April, 2012"
+    DATETIME_PART_Day_Month_D_YYYY,         //!< EX: "Saturday, April 5, 2012"
 
-    DATETIME_PART_Full,                     //! EX: "Monday, June 15, 2009 1:45 PM"
-    DATETIME_PART_General,                  //! EX: "6/15/2009 1:45:30 PM"
+    DATETIME_PART_Full,                     //!< EX: "Monday, June 15, 2009 1:45 PM"
+    DATETIME_PART_General,                  //!< EX: "6/15/2009 1:45:30 PM"
 
 //__PUBLISH_SECTION_END__
     DATETIME_PART_END,

@@ -24,7 +24,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 BEGIN_DGNDB_UNIT_TESTS_NAMESPACE
 
 //=======================================================================================    
-//! @bsiclass                                                 Krischan.Eberle      09/2012
+// @bsiclass                                                 Krischan.Eberle      09/2012
 //=======================================================================================    
 struct PerformanceTestFixture : public testing::Test
     {
@@ -50,7 +50,7 @@ protected:
     };
 
 //=======================================================================================
-//! @bsiclass                                                Majd.Uddin     05/2015
+// @bsiclass                                                Majd.Uddin     05/2015
 //=======================================================================================
 struct PerformanceTestingFrameWork
 {

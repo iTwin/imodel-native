@@ -146,7 +146,7 @@ struct DgnViewAssociationData : DgnProjectAssociationData
 //! A RedlineModel does not have to be associated with a view of a DgnDb. The stored image can be acquired from some external source.
 //! 
 //! See DgnMarkupProject::CreateRedlineModel, DgnMarkupProject::OpenRedlineModel, and DgnMarkupProject::FindClosestRedlineModel.
-//! @bsiclass                                                    Sam.Wilson      05/13
+// @bsiclass                                                    Sam.Wilson      05/13
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RedlineModel : SheetModel
     {
@@ -404,7 +404,7 @@ public:
 //! A PhysicalRedlineModel has the same units and coordinate system as the target model of the view of the subject project.
 //! Note that the DgnMarkupProject that holds a PhysicalRedlineModel must have the same StorageUnits as the subject project. See CreateDgnMarkupProjectParams.
 //! @see @ref DgnMarkupProjectGroup_PhysicalRedlines
-//! @bsiclass                                                    Sam.Wilson      05/13
+// @bsiclass                                                    Sam.Wilson      05/13
 //=======================================================================================
 struct PhysicalRedlineModel : PhysicalModel
     {
