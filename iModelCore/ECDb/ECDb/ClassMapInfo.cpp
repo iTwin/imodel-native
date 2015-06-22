@@ -588,7 +588,7 @@ BentleyStatus RelationshipMapInfo::_InitializeFromSchema()
         if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetEnd(foreignKeyEnd))
             return ERROR;
 
-        ECDbRelationshipEndColumns* foreignKeyColumnsMapping = nullptr;
+        RelationshipEndColumns* foreignKeyColumnsMapping = nullptr;
         if (foreignKeyEnd == ECRelationshipEnd_Target)
             {
             foreignKeyColumnsMapping = &m_targetColumnsMapping;
@@ -604,8 +604,15 @@ BentleyStatus RelationshipMapInfo::_InitializeFromSchema()
             m_customMapType = RelationshipMapInfo::CustomMapType::ForeignKeyOnSource;
             }
 
-        if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetColumns(*foreignKeyColumnsMapping))
+        Utf8String foreignKeyColName;
+        Utf8String foreignKeyClassIdColName;
+        if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetForeignKeyColumn(foreignKeyColName))
             return ERROR;
+
+        if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetForeignKeyClassIdColumn(foreignKeyClassIdColName))
+            return ERROR;
+
+        *foreignKeyColumnsMapping = RelationshipEndColumns(foreignKeyColName.c_str(), foreignKeyClassIdColName.c_str());
 
         bool createConstraint = false;
         if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetCreateConstraint(createConstraint))
@@ -633,14 +640,26 @@ BentleyStatus RelationshipMapInfo::_InitializeFromSchema()
         if (ECOBJECTS_STATUS_Success != linkTableRelationMap.TryGetAllowDuplicateRelationships(m_allowDuplicateRelationships))
             return ERROR;
 
-        if (ECOBJECTS_STATUS_Success != linkTableRelationMap.TryGetSourceColumns(m_sourceColumnsMapping))
+        Utf8String sourceIdColName;
+        if (ECOBJECTS_STATUS_Success != linkTableRelationMap.TryGetSourceECInstanceIdColumn(sourceIdColName))
             return ERROR;
 
-        if (ECOBJECTS_STATUS_Success != linkTableRelationMap.TryGetTargetColumns(m_targetColumnsMapping))
+        Utf8String sourceClassIdColName;
+        if (ECOBJECTS_STATUS_Success != linkTableRelationMap.TryGetSourceECClassIdColumn(sourceClassIdColName))
+            return ERROR;
+
+        Utf8String targetIdColName;
+        if (ECOBJECTS_STATUS_Success != linkTableRelationMap.TryGetTargetECInstanceIdColumn(targetIdColName))
+            return ERROR;
+
+        Utf8String targetClassIdColName;
+        if (ECOBJECTS_STATUS_Success != linkTableRelationMap.TryGetTargetECClassIdColumn(targetClassIdColName))
             return ERROR;
 
         m_sourceColumnsMappingIsNull = false;
+        m_sourceColumnsMapping = RelationshipEndColumns(sourceIdColName.c_str(), sourceClassIdColName.c_str());
         m_targetColumnsMappingIsNull = false;
+        m_targetColumnsMapping = RelationshipEndColumns(targetIdColName.c_str(), targetClassIdColName.c_str());
         m_customMapType = RelationshipMapInfo::CustomMapType::LinkTable;
         }
 

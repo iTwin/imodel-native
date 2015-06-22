@@ -126,7 +126,7 @@ RelationshipClassMap::ConstraintMap const& RelationshipClassMap::GetConstraintMa
 // @bsimethod                                                    Krischan.Eberle  06/2015
 //---------------------------------------------------------------------------------------
 //static
-ECN::ECDbRelationshipEndColumns const& RelationshipClassMap::GetEndColumnsMapping(RelationshipMapInfo const& info, ECN::ECRelationshipEnd end)
+RelationshipEndColumns const& RelationshipClassMap::GetEndColumnsMapping(RelationshipMapInfo const& info, ECN::ECRelationshipEnd end)
     {
     return end == ECRelationshipEnd_Source ? info.GetSourceColumnsMapping() : info.GetTargetColumnsMapping();
     }
@@ -263,8 +263,8 @@ RelationshipClassEndTableMap::RelationshipClassEndTableMap (ECRelationshipClassC
 //+---------------+---------------+---------------+---------------+---------------+------
 ECDbSqlColumn* RelationshipClassEndTableMap::ConfigureForeignECClassIdKey(RelationshipMapInfo const& mapInfo, ECRelationshipConstraintCR otherEndConstraint, IClassMap const& otheEndClassMap, size_t otherEndTableCount)
     {
-    ECDbRelationshipEndColumns const& constraintColumnsMapping = GetEndColumnsMapping(mapInfo);
-    Utf8String classIdColName(constraintColumnsMapping.GetECClassIdColumn());
+    RelationshipEndColumns const& constraintColumnsMapping = GetEndColumnsMapping(mapInfo);
+    Utf8String classIdColName(constraintColumnsMapping.GetECClassIdColumnName());
     if (classIdColName.empty() &&
         !GetOtherEndECClassIdColumnName(classIdColName, GetTable(), true))
         return nullptr;
@@ -530,8 +530,8 @@ MapStatus RelationshipClassEndTableMap::CreateConstraintColumns (ECDbSqlColumn*&
     else
         {
         //** Other End ECInstanceId column
-        ECDbRelationshipEndColumns const& constraintColumnMapping = GetEndColumnsMapping(mapInfo);
-        Utf8String otherEndECInstanceIdColumnName(constraintColumnMapping.GetECInstanceIdColumn());
+        RelationshipEndColumns const& constraintColumnMapping = GetEndColumnsMapping(mapInfo);
+        Utf8String otherEndECInstanceIdColumnName(constraintColumnMapping.GetECInstanceIdColumnName());
         if (otherEndECInstanceIdColumnName.empty())
             if (!GetOtherEndKeyColumnName(otherEndECInstanceIdColumnName, GetTable(), true))
                 return MapStatus::Error;
@@ -657,9 +657,6 @@ void RelationshipClassEndTableMap::AddIndices (ClassMapInfo const& mapInfo)
     {
     BeAssert(dynamic_cast<RelationshipMapInfo const*> (&mapInfo) != nullptr);
     RelationshipMapInfo const& info = static_cast<RelationshipMapInfo const&> (mapInfo);
-
-    if (!GetEndColumnsMapping(info).CreateDefaultIndex())
-            return;
    
     bool enforceUniqueness = true; //We are enabling it
     // TODO: We need to enforce uniqueness of constraints, but cannot at the moment since we get these 
@@ -828,7 +825,7 @@ ECN::ECRelationshipEnd RelationshipClassEndTableMap::GetOtherEnd () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       06/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECDbRelationshipEndColumns const& RelationshipClassEndTableMap::GetEndColumnsMapping(RelationshipMapInfo const& info) const
+RelationshipEndColumns const& RelationshipClassEndTableMap::GetEndColumnsMapping(RelationshipMapInfo const& info) const
     {
     BeAssert(GetThisEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? info.GetMapStrategy().GetStrategy() == Strategy::RelationshipSourceTable : info.GetMapStrategy().GetStrategy() == Strategy::RelationshipTargetTable);
     return RelationshipClassMap::GetEndColumnsMapping(info, GetThisEnd());
@@ -889,8 +886,8 @@ ECDbSqlColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey(Relat
     auto thisEndClassMap = GetECDbMap ().GetClassMapCP (*thisEndClass, true);
     auto thisEndTableCount = GetECDbMap ().GetTablesFromRelationshipEnd (nullptr, thisEndConstraint);
 
-    ECDbRelationshipEndColumns const& constraintColumnsMapping = GetEndColumnsMapping(mapInfo, relationshipEnd);
-    Utf8String columnName(constraintColumnsMapping.GetECClassIdColumn());
+    RelationshipEndColumns const& constraintColumnsMapping = GetEndColumnsMapping(mapInfo, relationshipEnd);
+    Utf8String columnName(constraintColumnsMapping.GetECClassIdColumnName());
     if (columnName.empty())
         {
         if (!GetConstraintECClassIdColumnName (columnName, relationshipEnd, GetTable ()))
@@ -944,7 +941,7 @@ ECClassId defaultTargetECClassId
 )
     {
     //**** SourceECInstanceId prop map 
-    Utf8String columnName (mapInfo.GetSourceColumnsMapping().GetECInstanceIdColumn ());
+    Utf8String columnName (mapInfo.GetSourceColumnsMapping().GetECInstanceIdColumnName ());
     if (columnName.empty ())
         {
         if (!GetConstraintECInstanceIdColumnName (columnName, ECRelationshipEnd_Source, GetTable()))
@@ -969,7 +966,7 @@ ECClassId defaultTargetECClassId
 
 
     //**** TargetECInstanceId prop map 
-    columnName = mapInfo.GetTargetColumnsMapping().GetECInstanceIdColumn();
+    columnName = mapInfo.GetTargetColumnsMapping().GetECInstanceIdColumnName();
     if (columnName.empty ())
         {
         if (!GetConstraintECInstanceIdColumnName (columnName, ECRelationshipEnd_Target, GetTable()))
@@ -1021,57 +1018,31 @@ void RelationshipClassLinkTableMap::AddIndices (ClassMapInfo const& mapInfo)
     // SystemComponent-s that include GroupingComponent-s and PartComponent-s, where the GroupingComponent-s
     // themselves include the SystemComponent-s again. 
 
-    bool createOnSource = relationshipClassMapInfo.GetSourceColumnsMapping ().CreateDefaultIndex ();
-    bool createOnTarget = relationshipClassMapInfo.GetTargetColumnsMapping ().CreateDefaultIndex ();
-
     // Add indices on the source and target based on cardinality
     switch (cardinality)
         {
             case RelationshipMapInfo::Cardinality::OneToOne:
             {
-            if (createOnSource)
-                AddIndicesToRelationshipEnds(RelationshipIndexSpec::Source, true /*createUniqueIndex*/);
-
-            if (createOnTarget)
-                AddIndicesToRelationshipEnds(RelationshipIndexSpec::Target, true /*createUniqueIndex*/);
+            AddIndicesToRelationshipEnds(RelationshipIndexSpec::Source, true /*createUniqueIndex*/);
+            AddIndicesToRelationshipEnds(RelationshipIndexSpec::Target, true /*createUniqueIndex*/);
             break;
             }
             case RelationshipMapInfo::Cardinality::OneToMany:
             {
-            if (createOnSource)
-                AddIndicesToRelationshipEnds(RelationshipIndexSpec::Source, false);
-
-            if (createOnTarget)
-                AddIndicesToRelationshipEnds(RelationshipIndexSpec::Target, enforceUniqueness);
+            AddIndicesToRelationshipEnds(RelationshipIndexSpec::Source, false);
+            AddIndicesToRelationshipEnds(RelationshipIndexSpec::Target, enforceUniqueness);
             break;
             }
             case RelationshipMapInfo::Cardinality::ManyToOne:
             {
-            if (createOnSource)
-                AddIndicesToRelationshipEnds(RelationshipIndexSpec::Source, enforceUniqueness);
-
-            if (createOnTarget)
-                AddIndicesToRelationshipEnds(RelationshipIndexSpec::Target, false);
+            AddIndicesToRelationshipEnds(RelationshipIndexSpec::Source, enforceUniqueness);
+            AddIndicesToRelationshipEnds(RelationshipIndexSpec::Target, false);
             break;
             }
             case RelationshipMapInfo::Cardinality::ManyToMany:
             {
-            if (createOnSource)
-                AddIndicesToRelationshipEnds(RelationshipIndexSpec::Source, false);
-
-            if (createOnTarget)
-                AddIndicesToRelationshipEnds(RelationshipIndexSpec::Target, false);
-
-            /*
-            * Make the entire relationship instance unique unless the user wants otherwise
-            * Note: We make the relationship unique by default to support the usual case.
-            * An example of an unlikely case where the user would want duplicate relationships is a
-            * a "queue of tasks". The same task can figure in a queue more than once!
-            */
-            auto addUniqueIndex = true;
-            if (relationshipClassMapInfo.AllowDuplicateRelationships ())
-                addUniqueIndex = false;
-
+            AddIndicesToRelationshipEnds(RelationshipIndexSpec::Source, false);
+            AddIndicesToRelationshipEnds(RelationshipIndexSpec::Target, false);
             break;
             }
         default:

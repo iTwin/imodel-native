@@ -99,6 +99,22 @@ public:
 
 
 //======================================================================================
+// @bsiclass                                                     Krischan.Eberle     06/2015
+//+===============+===============+===============+===============+===============+======
+struct RelationshipEndColumns
+    {
+private:
+    Utf8String m_ecInstanceIdColumnName;
+    Utf8String m_ecClassIdColumnName;
+
+public:
+    RelationshipEndColumns() {}
+    RelationshipEndColumns(Utf8CP ecInstanceIdColumnName, Utf8CP ecClassIdColumnName) : m_ecInstanceIdColumnName(ecInstanceIdColumnName), m_ecClassIdColumnName(ecClassIdColumnName) {}
+    Utf8CP GetECInstanceIdColumnName() const { return m_ecInstanceIdColumnName.c_str(); }
+    Utf8CP GetECClassIdColumnName() const { return m_ecClassIdColumnName.c_str(); }
+    };
+
+//======================================================================================
 //!This class grabs information from ForeignKeyRelationshipMap or LinkTableRelationshipMap ECCustomAttribute and evaluates
 //! it along with other standard metadata on the ECRelationshipClass
 // @bsiclass                                                     Krischan.Eberle     06/2015
@@ -125,9 +141,9 @@ public:
 private:
     Cardinality m_cardinality;
     bool m_sourceColumnsMappingIsNull;
-    ECN::ECDbRelationshipEndColumns m_sourceColumnsMapping;
+    RelationshipEndColumns m_sourceColumnsMapping;
     bool m_targetColumnsMappingIsNull;
-    ECN::ECDbRelationshipEndColumns m_targetColumnsMapping;
+    RelationshipEndColumns m_targetColumnsMapping;
     bool m_allowDuplicateRelationships;
     ECDbSqlForeignKeyConstraint::ActionType m_onDeleteAction;
     ECDbSqlForeignKeyConstraint::ActionType m_onUpdateAction;
@@ -156,8 +172,8 @@ public:
     virtual MapStatus _Initialize() override;
 
     Cardinality GetCardinality() const { return m_cardinality; }
-    ECN::ECDbRelationshipEndColumns const& GetSourceColumnsMapping() const { BeAssert(m_customMapType != CustomMapType::ForeignKeyOnTarget && GetMapStrategy().GetStrategy() != Strategy::RelationshipTargetTable); return m_sourceColumnsMapping; }
-    ECN::ECDbRelationshipEndColumns const& GetTargetColumnsMapping() const { BeAssert(m_customMapType != CustomMapType::ForeignKeyOnSource && GetMapStrategy().GetStrategy() != Strategy::RelationshipSourceTable); return m_targetColumnsMapping; }
+    RelationshipEndColumns const& GetSourceColumnsMapping() const { BeAssert(m_customMapType != CustomMapType::ForeignKeyOnTarget && GetMapStrategy().GetStrategy() != Strategy::RelationshipTargetTable); return m_sourceColumnsMapping; }
+    RelationshipEndColumns const& GetTargetColumnsMapping() const { BeAssert(m_customMapType != CustomMapType::ForeignKeyOnSource && GetMapStrategy().GetStrategy() != Strategy::RelationshipSourceTable); return m_targetColumnsMapping; }
     bool AllowDuplicateRelationships() const { BeAssert((m_customMapType == CustomMapType::LinkTable || m_customMapType == CustomMapType::None) && GetMapStrategy().IsLinkTableStrategy()); return m_allowDuplicateRelationships; }
     bool IsCreateForeignKeyConstraint() const { BeAssert(m_customMapType != CustomMapType::LinkTable && GetMapStrategy().IsEndTableMapping()); return m_onDeleteAction != ECDbSqlForeignKeyConstraint::ActionType::NotSpecified || m_onUpdateAction != ECDbSqlForeignKeyConstraint::ActionType::NotSpecified; }
     ECDbSqlForeignKeyConstraint::ActionType GetOnDeleteAction() const { BeAssert(IsCreateForeignKeyConstraint()); return m_onDeleteAction; }

@@ -539,9 +539,7 @@ TEST(ECDbMap, RelationshipConstraintHintOnSubclasses)
         "  <ECRelationshipClass typeName='MyElementHasYourElements' isDomainClass='True' strength='embedding'>"
         "    <ECCustomAttributes>"
         "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
-        "            <Columns>"
-        "                <ECInstanceIdColumn>ParentId</ECInstanceIdColumn>"
-        "            </Columns>"
+        "            <ForeignKeyColumn>ParentId</ForeignKeyColumn>"
         "        </ForeignKeyRelationshipMap>"
         "    </ECCustomAttributes>"
         "   <BaseClass>dgn:ElementOwnsChildElements</BaseClass>"
@@ -1301,10 +1299,8 @@ TEST (ECDbSchemaManager, ImportSchemaWithSubclassesToBaseClassInExistingSchema)
         Utf8CP customAttributeXml =
             "<ECCustomAttributes>"
             "  <ForeignKeyRelationshipMap xmlns = \"ECDbMap.01.00\">"
-            "     <Columns>"
-            "        <ECInstanceIdColumn>SourceECInstanceId</ECInstanceIdColumn>"
-            "        <ECClassIdColumn>SourceECClassId</ECClassIdColumn>"
-            "      </Columns>"
+            "    <ForeignKeyColumn>SourceECInstanceId</ForeignKeyColumn>"
+            "    <ForeignKeyClassIdColumn>SourceECClassId</ForeignKeyClassIdColumn>"
             "  </ForeignKeyRelationshipMap>"
             "</ECCustomAttributes>";
 

@@ -2850,7 +2850,7 @@ TEST(ECDbSchemas, IntegrityCheck)
     std::map<Utf8String, Utf8String> expected;
     expected["ic_TargetBase"] = "CREATE TABLE [ic_TargetBase] ([ECInstanceId] INTEGER NOT NULL, [ECClassId] INTEGER, [I] INTEGER, [S] TEXT, [SourceECInstanceId] INTEGER, PRIMARY KEY ([ECInstanceId]), FOREIGN KEY ([SourceECInstanceId]) REFERENCES [ic_SourceBase] ([ECInstanceId]) ON DELETE CASCADE ON UPDATE NO ACTION)";
 
-    stmt.Prepare(db, "select name, sql from sqlite_master Where tbl_name = 'ic_TargetBase'");
+    stmt.Prepare(db, "select name, sql from sqlite_master Where type='table' AND tbl_name = 'ic_TargetBase'");
     int nRows = 0;
     while (stmt.Step() == BE_SQLITE_ROW)
         {
