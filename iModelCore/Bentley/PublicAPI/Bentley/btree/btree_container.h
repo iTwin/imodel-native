@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/btree/btree_container.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -97,10 +97,10 @@ class btree_container {
   const_iterator upper_bound(const key_type &key) const {
     return tree_.upper_bound(key);
   }
-  bpair<iterator,iterator> equal_range(const key_type &key) {
+  Bstdcxx::bpair<iterator,iterator> equal_range(const key_type &key) {
     return tree_.equal_range(key);
   }
-  bpair<const_iterator,const_iterator> equal_range(const key_type &key) const {
+  Bstdcxx::bpair<const_iterator,const_iterator> equal_range(const key_type &key) const {
     return tree_.equal_range(key);
   }
 
@@ -212,7 +212,7 @@ class btree_unique_container : public btree_container<Tree> {
   }
 
   // Insertion routines.
-  bpair<iterator,bool> insert(const value_type &x) {
+  Bstdcxx::bpair<iterator,bool> insert(const value_type &x) {
     return this->tree_.insert_unique(x);
   }
   iterator insert(iterator position, const value_type &x) {
@@ -261,7 +261,7 @@ class bmap_container : public btree_unique_container<Tree> {
         : key(k) {
     }
     value_type operator*() const {
-      return make_bpair(key, data_type());
+      return Bstdcxx::make_bpair(key, data_type());
     }
     const key_type &key;
   };

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/stdcxx/rw/bc___rb_tree.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -97,7 +97,7 @@
 #endif   // _RWSTD_RW_ITERATOR_H_INCLUDED
 
 
-BC__RWSTD_NAMESPACE (BC__RW) { 
+NAMESPACE_BENTLEY_BC__RW_BEGIN  //  BENTLEY_CHANGE
 
 
 template <class _Alloc, class _Val, class _Key, class _KeyOf>
@@ -877,7 +877,7 @@ equal_range (const _Key& __k)
 #undef _RWSTD_RB_TREE_ITER
 
 
-}   // namespace BC__RW
+NAMESPACE_BENTLEY_BC__RW_END  // BENTLEY_CHANGE
 
 #ifdef _RWSTD_NO_IMPLICIT_INCLUSION
 #  include <Bentley/stdcxx/rw/bc___rb_tree_cc.h>

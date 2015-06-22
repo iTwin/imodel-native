@@ -62,6 +62,9 @@
 #define BENTLEY_BSTDCXX BentleyApi::Bstdcxx
 #define NAMESPACE_BENTLEY_BSTDCXX_BEGIN BEGIN_BENTLEY_NAMESPACE namespace Bstdcxx {
 #define NAMESPACE_BENTLEY_BSTDCXX_END   } END_BENTLEY_NAMESPACE
+#define BENTLEY_BC__RW BentleyApi::bc__rw
+#define NAMESPACE_BENTLEY_BC__RW_BEGIN BEGIN_BENTLEY_NAMESPACE namespace bc__rw {
+#define NAMESPACE_BENTLEY_BC__RW_END   } END_BENTLEY_NAMESPACE
 
 // provide definitions for C++ versions of standard C headers
 // if a header is not available its name is #defined to the name of
@@ -593,7 +596,7 @@
 #  define BC__RWSTD_NAMESPACE(name)    namespace name
 #  define BC__USING(name)              using name
 
-#  define BC__RW    bc__rw06
+#  define BC__RW    BentleyApi::bc__rw  //  Bentley change from bc__rw
 
 #else   // if defined (_RWSTD_NO_NAMESPACE)
 #  define BC__RWSTD_NAMESPACE(ignore)    extern "C++"
@@ -1205,6 +1208,7 @@
 // as compilation errors
 
 #ifdef BENTLEY_CHANGE_REMOVED
+#error This should never be compiled in a Bentley build.
 BC__RWSTD_NAMESPACE (BC__RW) { 
 
 // file may be #included from within an extern "C" block
@@ -1233,15 +1237,15 @@ BC__RW_ASSERT_FAIL (const char*, const char*, int, const char*)
 
 }   // extern "C++"
 
-}   // namespace BC__RW
+NAMESPACE_BENTLEY_BC__RW_END  // BENTLEY_CHANGE
 #else
 
-BC__RWSTD_NAMESPACE (BC__RW) { 
+NAMESPACE_BENTLEY_BC__RW_BEGIN  //  BENTLEY_CHANGE
 
 // called for failed assertions
 #define BC__RW_ASSERT_FAIL (const char* expr, const char* file, int lno, const char* func) {BeAssertFunctions::PerformBeAssert(_CRT_WIDE(#expr), _CRT_WIDE(#file), lno);}
 
-}   // namespace BC__RW
+NAMESPACE_BENTLEY_BC__RW_END  // BENTLEY_CHANGE
 
 #endif//def BENTLEY_CHANGE_REMOVED
 

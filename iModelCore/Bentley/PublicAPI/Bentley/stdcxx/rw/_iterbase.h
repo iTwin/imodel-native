@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/stdcxx/rw/_iterbase.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -277,7 +277,7 @@ inline void bc___distance (const _RandomAccessIterator &__first,
 NAMESPACE_BENTLEY_BSTDCXX_END
 
 
-BC__RWSTD_NAMESPACE (BC__RW) { 
+NAMESPACE_BENTLEY_BC__RW_BEGIN  //  BENTLEY_CHANGE
 
 // __rw_distance: Same purpose as 3-parameter distance function, but
 // with return value.
@@ -294,12 +294,12 @@ __rw_distance (const _ForwardIterator &__first,
 }
 
 
-}   // namespace BC__RW
+NAMESPACE_BENTLEY_BC__RW_END  // BENTLEY_CHANGE
 
 
 #ifndef _RWSTD_NO_DEBUG_ITER
 
-BC__RWSTD_NAMESPACE (BC__RW) { 
+NAMESPACE_BENTLEY_BC__RW_BEGIN  //  BENTLEY_CHANGE
 
 // __rw_debug_iter - iterator adapter with debugging support
 // _Iterator is either iterator or const_iterator; if the latter,
@@ -484,7 +484,7 @@ public:
 };
 
 
-}   // namespace BC__RW
+NAMESPACE_BENTLEY_BC__RW_END  // BENTLEY_CHANGE
 
 
 // *** BENTLEY_CHANGE
@@ -585,7 +585,7 @@ operator> (const BC__RW::__rw_debug_iter<_Cont, _Iter1, _MutIter> &__x,
 NAMESPACE_BENTLEY_BSTDCXX_END
 
 
-BC__RWSTD_NAMESPACE (BC__RW) { 
+NAMESPACE_BENTLEY_BC__RW_BEGIN  //  BENTLEY_CHANGE
 
 
 #define _RWSTD_DEBUG_ITER(cont, it, mutit) __rw_debug_iter< cont, it, mutit >
@@ -650,7 +650,7 @@ __rw_dereferenceable (const _TypeT *__ptr)
     return 0 != __ptr;
 }
 
-}   // namespace BC__RW
+NAMESPACE_BENTLEY_BC__RW_END  // BENTLEY_CHANGE
 
 #undef _RWSTD_DEBUG_ITER
 

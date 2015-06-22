@@ -67,7 +67,7 @@
 
 #if !defined (DOCUMENTATION_GENERATOR)
 
-BC__RWSTD_NAMESPACE (BC__RW) { 
+NAMESPACE_BENTLEY_BC__RW_BEGIN  //  BENTLEY_CHANGE
 // This is used in the implementation of bstdmap and bmultimap.
 template <class _TypeT, class _TypeU>
 struct __select1st : public std::unary_function<_TypeT, _TypeU>
@@ -77,7 +77,7 @@ struct __select1st : public std::unary_function<_TypeT, _TypeU>
     }
 };
 
-}   // namespace BC__RW
+NAMESPACE_BENTLEY_BC__RW_END  // BENTLEY_CHANGE
 
 #endif // DOCUMENTATION_GENERATOR
 

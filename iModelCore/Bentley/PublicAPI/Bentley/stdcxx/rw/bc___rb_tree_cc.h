@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/stdcxx/rw/bc___rb_tree_cc.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -63,7 +63,7 @@
     #pragma clang diagnostic ignored "-Warray-bounds"
  #endif
 
-BC__RWSTD_NAMESPACE (BC__RW) { 
+NAMESPACE_BENTLEY_BC__RW_BEGIN  //  BENTLEY_CHANGE
 
 template <class _Key, class _Val, class _KeyOf, class _Comp, class _Alloc>
 bc___rb_tree<_Key, _Val, _KeyOf, _Comp, _Alloc>::
@@ -1008,7 +1008,7 @@ _C_level (const_iterator __it) const
 }
 
 
-}   // namespace BC__RW
+NAMESPACE_BENTLEY_BC__RW_END  // BENTLEY_CHANGE
 
 // BENTLEY_CHANGE
 #if defined (__clang__)

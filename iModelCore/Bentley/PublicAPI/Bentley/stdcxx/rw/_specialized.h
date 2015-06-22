@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/stdcxx/rw/_specialized.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -73,7 +73,7 @@
 #endif//def BENTLEY_CHANGE_REMOVED
 
 
-BC__RWSTD_NAMESPACE (BC__RW) { 
+NAMESPACE_BENTLEY_BC__RW_BEGIN  //  BENTLEY_CHANGE
 
 
 #ifndef _RWSTD_NO_NONDEDUCED_CONTEXT
@@ -167,11 +167,11 @@ inline void __rw_destroy (_TypeT**, _TypeT**)
 #endif   // _RWSTD_NO_PTR_VALUE_TEMPLATE_OVERLOAD
 
 
-}   // namespace BC__RW
+NAMESPACE_BENTLEY_BC__RW_END  // BENTLEY_CHANGE
 
 // BENTLEY_CHANGE
 //BC__RWSTD_NAMESPACE (std) { 
-BC__RWSTD_NAMESPACE (BC__RW) { 
+NAMESPACE_BENTLEY_BC__RW_BEGIN  //  BENTLEY_CHANGE
 
 template <class _TypeT>
 class allocator;
@@ -345,7 +345,7 @@ uninitialized_fill_n (_ForwardIter __first, _Size __n,
 
 #endif   // _RWSTD_ALLOCATOR
 
-}   // namespace BC__RW *** BENTLEY_CHANGE
+NAMESPACE_BENTLEY_BC__RW_END  // BENTLEY_CHANGE
 
 
 #endif   // _RWSTD_RW_SPECIALIZED_H_INCLUDED

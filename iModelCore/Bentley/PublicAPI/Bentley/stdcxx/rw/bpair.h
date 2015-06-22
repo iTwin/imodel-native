@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/stdcxx/rw/bpair.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -121,7 +121,7 @@ struct bpair
 // 20.2.2, p5
 template <class _TypeT, class _TypeU>
 inline bool
-operator== (const bpair<_TypeT, _TypeU>& __x, const bpair<_TypeT, _TypeU>& __y)
+operator== (const Bstdcxx::bpair<_TypeT, _TypeU>& __x, const Bstdcxx::bpair<_TypeT, _TypeU>& __y)
 { 
     return __x.first == __y.first && __x.second == __y.second; 
 }
@@ -129,7 +129,7 @@ operator== (const bpair<_TypeT, _TypeU>& __x, const bpair<_TypeT, _TypeU>& __y)
 
 template <class _TypeT, class _TypeU>
 inline bool
-operator!= (const bpair<_TypeT, _TypeU>& __x, const bpair<_TypeT, _TypeU>& __y)
+operator!= (const Bstdcxx::bpair<_TypeT, _TypeU>& __x, const Bstdcxx::bpair<_TypeT, _TypeU>& __y)
 { 
     return !(__x == __y);
 }
@@ -138,7 +138,7 @@ operator!= (const bpair<_TypeT, _TypeU>& __x, const bpair<_TypeT, _TypeU>& __y)
 // 20.2.2, p6
 template <class _TypeT, class _TypeU>
 inline bool
-operator< (const bpair<_TypeT, _TypeU>& __x, const bpair<_TypeT, _TypeU>& __y)
+operator< (const Bstdcxx::bpair<_TypeT, _TypeU>& __x, const Bstdcxx::bpair<_TypeT, _TypeU>& __y)
 {
     std::less<_TypeT> __lessT;
 
@@ -151,7 +151,7 @@ operator< (const bpair<_TypeT, _TypeU>& __x, const bpair<_TypeT, _TypeU>& __y)
 
 template <class _TypeT, class _TypeU>
 inline bool
-operator> (const bpair<_TypeT, _TypeU>& __x, const bpair<_TypeT, _TypeU>& __y)
+operator> (const Bstdcxx::bpair<_TypeT, _TypeU>& __x, const Bstdcxx::bpair<_TypeT, _TypeU>& __y)
 { 
     return __y < __x;
 }
@@ -159,7 +159,7 @@ operator> (const bpair<_TypeT, _TypeU>& __x, const bpair<_TypeT, _TypeU>& __y)
 
 template <class _TypeT, class _TypeU>
 inline bool
-operator>= (const bpair<_TypeT, _TypeU>& __x, const bpair<_TypeT, _TypeU>& __y)
+operator>= (const Bstdcxx::bpair<_TypeT, _TypeU>& __x, const Bstdcxx::bpair<_TypeT, _TypeU>& __y)
 { 
     return !(__x < __y);
 }
@@ -167,7 +167,7 @@ operator>= (const bpair<_TypeT, _TypeU>& __x, const bpair<_TypeT, _TypeU>& __y)
 
 template <class _TypeT, class _TypeU>
 inline bool
-operator<= (const bpair<_TypeT, _TypeU>& __x, const bpair<_TypeT, _TypeU>& __y)
+operator<= (const Bstdcxx::bpair<_TypeT, _TypeU>& __x, const Bstdcxx::bpair<_TypeT, _TypeU>& __y)
 { 
     return !(__y < __x);
 }
@@ -175,10 +175,10 @@ operator<= (const bpair<_TypeT, _TypeU>& __x, const bpair<_TypeT, _TypeU>& __y)
 
 // 20.2.2, p7, signature follows lwg issue 181
 template <class _TypeT, class _TypeU>
-inline bpair<_TypeT, _TypeU>
+inline Bstdcxx::bpair<_TypeT, _TypeU>
 make_bpair (_TypeT __x, _TypeU __y)
 {
-    return bpair<_TypeT, _TypeU>(__x, __y);
+    return Bstdcxx::bpair<_TypeT, _TypeU>(__x, __y);
 }
 
 // *** BENTLEY_CHANGE

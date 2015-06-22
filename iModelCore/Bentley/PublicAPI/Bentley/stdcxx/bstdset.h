@@ -66,7 +66,7 @@
 #include <Bentley/stdcxx/rw/_defs.h>
 #include <functional>
 
-BC__RWSTD_NAMESPACE (BC__RW) { 
+NAMESPACE_BENTLEY_BC__RW_BEGIN  //  BENTLEY_CHANGE
 template <class _TypeT, class _TypeU>
 struct __ident: std::unary_function<_TypeT, _TypeU>
 {
@@ -75,7 +75,7 @@ struct __ident: std::unary_function<_TypeT, _TypeU>
     }
 };
 
-}   // namespace BC__RW
+NAMESPACE_BENTLEY_BC__RW_END  // BENTLEY_CHANGE
 
 #endif // DOCUMENTATION_GENERATOR
 
