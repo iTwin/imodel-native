@@ -256,7 +256,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
     public:
         TableHandler() : m_domain(nullptr) {}
         void SetDomain(DgnDomain& domain) {m_domain = &domain;}
-        virtual struct TxnTable* _Create(DgnDb&) const = 0;
+        virtual struct TxnTable* _Create(TxnManager&) const = 0;
     };
 
 protected:

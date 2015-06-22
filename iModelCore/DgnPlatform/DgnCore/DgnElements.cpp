@@ -1011,6 +1011,7 @@ DgnElements::DgnElements(DgnDbR dgndb) : DgnDbTable(dgndb), m_heapZone(0, false)
     m_tree = new ElemIdTree(dgndb);
     }
 
+#if defined (NEEDS_WORK_TXN_MANAGER)
 /*---------------------------------------------------------------------------------**//**
 * A changeset was just applied to the database. That means that the element data in memory potentially does not match
 * what is now in the database. We need to find any elements in memory that were affected by the changeset and fix them.
@@ -1018,18 +1019,18 @@ DgnElements::DgnElements(DgnDbR dgndb) : DgnDbTable(dgndb), m_heapZone(0, false)
 * don't need to worry about them - they'll be reloaded with the correct data if/when they're needed.
 * @bsimethod                                    Keith.Bentley                   07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::Element::_OnChangesetApplied(TxnSummary& summary)
+void dgn_TxnTable::Element::_OnCommitted()
     {
-    DgnElements& elements = summary.GetDgnDb().Elements();
+    DgnElements& elements = m_txnMgr.GetDgnDb().Elements();
 
     for (auto const& iter : MakeIterator())
         {
         switch (iter.GetChangeType())
             {
-            case TxnSummary::ChangeType::Insert: // for inserts, we don't need to do anything
+            case ChangeType::Insert: // for inserts, we don't need to do anything
                 break;
 
-            case TxnSummary::ChangeType::Delete:
+            case ChangeType::Delete:
                 {
                 // see if we have this element in memory, if so call its _OnDelete method.
                 DgnElementP el = (DgnElementP) elements.FindElement(iter.GetElementId());
@@ -1038,7 +1039,7 @@ void dgn_TxnTable::Element::_OnChangesetApplied(TxnSummary& summary)
                 }
                 break;
 
-            case TxnSummary::ChangeType::Update:
+            case ChangeType::Update:
                 {
                 DgnElementP el = (DgnElementP) elements.FindElement(iter.GetElementId());
                 if (el)
@@ -1050,6 +1051,36 @@ void dgn_TxnTable::Element::_OnChangesetApplied(TxnSummary& summary)
                 }
                 break;
             }
+        }
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::Element::_OnReversedAdd(BeSQLite::Changes::Change const& change)
+    {
+    DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::Old).GetValueInt64());
+
+    // see if we have this element in memory, if so call its _OnDelete method.
+    DgnElementP el = (DgnElementP) m_txnMgr.GetDgnDb().Elements().FindElement(elementId);
+    if (el)
+        el->_OnDeleted();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::Element::_OnReversedUpdate(BeSQLite::Changes::Change const& change) 
+    {
+    auto& elements = m_txnMgr.GetDgnDb().Elements();
+    DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::Old).GetValueInt64());
+    DgnElementP el = (DgnElementP) elements.FindElement(elementId);
+    if (el)
+        {
+        DgnElementCPtr postModified = elements.LoadElement(el->GetElementId(), false);
+        BeAssert(postModified.IsValid());
+        elements.FinishUpdate(*postModified.get(), *el);
         }
     }
 

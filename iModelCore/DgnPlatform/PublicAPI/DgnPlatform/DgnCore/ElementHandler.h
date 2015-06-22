@@ -54,8 +54,6 @@ public:
         private: virtual DgnElementP _CreateInstance(DgnPlatform::DgnElement::CreateParams const& params) override {return new __classname__(__classname__::CreateParams(params));}\
         DOMAINHANDLER_DECLARE_MEMBERS(__ECClassName__,__handlerclass__,__handlersuperclass__,__exporter__) 
 
-
-
 //=======================================================================================
 // Element Handlers in the base "Dgn" domain. Don't put handlers from other domains here.
 // @bsiclass                                                    Keith.Bentley   06/15
@@ -77,7 +75,6 @@ namespace dgn_ElementHandler
         virtual ElementHandlerP _ToElementHandler() {return this;}
 
     public:
-
         //! Create a new instance of a DgnElement from a CreateParams. 
         //! @note The actual type of the returned DgnElement will depend on the DgnClassId in @a params.
         DgnElementPtr Create(DgnElement::CreateParams const& params) {return (DgnElementP) _CreateInstance(params);}

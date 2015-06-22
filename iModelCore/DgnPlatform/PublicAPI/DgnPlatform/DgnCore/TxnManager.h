@@ -40,7 +40,8 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
  users and changed-merged.
  @bsiclass
 +===============+===============+===============+===============+===============+======*/
-enum class TxnDirection {Backwards=0, Forward=1};
+
+enum class TxnAction {None=0, Commit, Abandon, Reverse, Reinstate, Merge};
 
 //=======================================================================================
 //! A 32 bit value to identify the group of entries that form a single transaction.
@@ -87,66 +88,12 @@ public:
 //=======================================================================================
 struct TxnMonitor
 {
-    virtual void _OnTxnCommit(TxnSummaryCR) = 0;
-    virtual void _OnTxnReverse(TxnSummaryCR) = 0;
-    virtual void _OnTxnReversed(TxnSummaryCR) = 0;
-    virtual void _OnUndoRedoFinished(DgnDbR, TxnDirection isUndo) {}
+    virtual void _OnCommit(TxnManager&) {}
+    virtual void _OnReversedChanges(TxnManager&) {}
+    virtual void _OnUndoRedo(TxnManager&, TxnAction) {}
 };
 
 namespace dgn_TxnTable {struct Element; struct ElementDep;}
-//=======================================================================================
-//! A summary of all of the Element-based changes that occurred during a Txn. TxnMonitors are supplied with a
-//! TxnSummary so they can determine what Elements were affected by a Txn.
-// @bsiclass                                                    Keith.Bentley   07/13
-//=======================================================================================
-struct TxnSummary
-{
-    //! Indicates an error when propagating changes for a Txn.
-    struct ValidationError
-    {
-        enum class Severity
-        {
-            Fatal,   //!< Validation could not be completed, and the transaction should be rolled back.
-            Warning, //!< Validation was completed. Consistency checks may have failed. The results should be reviewed.
-        };
-
-        Utf8String  m_description;
-        Severity    m_severity;
-        ValidationError(Severity sev, Utf8CP desc) : m_severity(sev), m_description(desc) {}
-        Severity GetSeverity() const {return m_severity;} //!< Return the severity of the error
-        Utf8CP GetDescription() const {return m_description.c_str();}//!< A human-readable, localized description of the error
-    };
-
-private:
-    DgnDbR m_dgndb;
-    TxnDirection m_direction;
-    bvector<ValidationError> m_validationErrors; //!< Validation errors detected on the last boundary check
-
-public:
-    enum class ChangeType : int {Insert, Update, Delete};
-
-    DGNPLATFORM_EXPORT explicit TxnSummary(DgnDbR db, TxnDirection);
-    DGNPLATFORM_EXPORT ~TxnSummary();
-
-    DGNPLATFORM_EXPORT dgn_TxnTable::Element&    Elements() const;
-    DGNPLATFORM_EXPORT dgn_TxnTable::ElementDep& ElementDependencies() const;
-
-    void AddChangeSet(BeSQLite::ChangeSet&);
-
-    //! Get the DgnDb for this TxnSummary
-    DgnDbR GetDgnDb() const {return m_dgndb;}
-
-    //! TxnMonitors may call this to report a validation error. If the severity of the validation error is set to ValidationErrorSeverity::Fatal, 
-    //! then the transaction will be cancelled.
-    DGNPLATFORM_EXPORT void ReportError(ValidationError&);
-
-    //! Query the validation errors that were reported during the last boundary check.
-    bvector<ValidationError> const& GetErrors() const {return m_validationErrors;}
-
-    //! Query if any Fatal validation errors were reported during the last boundary check.
-    DGNPLATFORM_EXPORT bool HasFatalErrors() const;
-};
-
 
 //=======================================================================================
 //! An instance of a TxnTable is created for a single SQLite table via a DgnDomain::TableHandler.
@@ -161,123 +108,24 @@ public:
 //=======================================================================================
 struct TxnTable : RefCountedBase
     {
+    enum class ChangeType : int {Insert, Update, Delete};
+    TxnManager& m_txnMgr;
+    TxnTable(TxnManager& mgr) : m_txnMgr(mgr) {}
+
     virtual Utf8CP _GetTableName() const = 0;
-    virtual void _OnTxnSummaryStart(TxnSummary&) = 0;
-    virtual void _OnTxnSummaryEnd(TxnSummary&) = 0;
-    virtual void _PropagateChanges(TxnSummary&) = 0;
-    virtual void _OnChangesetApplied(TxnSummary&) = 0;
-    virtual void _OnAdd(TxnSummary&, BeSQLite::Changes::Change const&) = 0;
-    virtual void _OnDelete(TxnSummary&, BeSQLite::Changes::Change const&) = 0;
-    virtual void _OnUpdate(TxnSummary&, BeSQLite::Changes::Change const&) = 0;
+
+    virtual void _OnCommit() {}
+    virtual void _OnConfirmAdd(BeSQLite::Changes::Change const&) {}
+    virtual void _OnConfirmDelete(BeSQLite::Changes::Change const&) {}
+    virtual void _OnConfirmUpdate(BeSQLite::Changes::Change const&) {}
+    virtual void _PropagateChanges() {}
+    virtual void _OnCommitted() {}
+
+    virtual void _OnReversedAdd(BeSQLite::Changes::Change const&) {}
+    virtual void _OnReversedDelete(BeSQLite::Changes::Change const&) {}
+    virtual void _OnReversedUpdate(BeSQLite::Changes::Change const&) {}
     };
 typedef RefCountedPtr<TxnTable> TxnTablePtr;
-
-//=======================================================================================
-//! TxnTables in the base "Dgn" domain.
-// @bsiclass                                                    Keith.Bentley   06/15
-//=======================================================================================
-namespace dgn_TxnTable
-{
-    struct Element : TxnTable
-    {
-        BeSQLite::Statement m_stmt;
-        DgnDb& m_dgndb;
-        static Utf8CP MyTableName() {return DGN_TABLE(DGN_CLASSNAME_Element);}
-        Utf8CP _GetTableName() const {return MyTableName();}
-
-        Element(DgnDb& dgndb) : m_dgndb(dgndb) {}
-        virtual void _OnTxnSummaryStart(TxnSummary&) override;
-        virtual void _OnTxnSummaryEnd(TxnSummary& summary) override;
-        virtual void _PropagateChanges(TxnSummary&) override {}
-        virtual void _OnChangesetApplied(TxnSummary&) override;
-        virtual void _OnAdd(TxnSummary& summary, BeSQLite::Changes::Change const& change) override {AddChange(summary, change, TxnSummary::ChangeType::Insert);}
-        virtual void _OnDelete(TxnSummary& summary, BeSQLite::Changes::Change const& change) override {AddChange(summary, change, TxnSummary::ChangeType::Delete);}
-        virtual void _OnUpdate(TxnSummary& summary, BeSQLite::Changes::Change const& change) override {AddChange(summary, change, TxnSummary::ChangeType::Update);}
-        void AddChange(TxnSummary& summary, BeSQLite::Changes::Change const& change, TxnSummary::ChangeType changeType);
-        void AddElement(DgnElementId, DgnModelId, double lastMod, TxnSummary::ChangeType changeType);
-
-        struct Iterator : BeSQLite::DbTableIterator
-        {
-        public:
-            Iterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR)db) {}
-            struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
-            {
-            private:
-                friend struct Iterator;
-                Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
-
-            public:
-                DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
-                DGNPLATFORM_EXPORT DgnElementId GetElementId() const;
-                DGNPLATFORM_EXPORT TxnSummary::ChangeType GetChangeType() const;
-                DGNPLATFORM_EXPORT double GetLastMod() const;
-                Entry const& operator*() const {return *this;}
-            };
-
-            typedef Entry const_iterator;
-            typedef Entry iterator;
-            DGNPLATFORM_EXPORT const_iterator begin() const;
-            const_iterator end() const {return Entry(nullptr, false);}
-        };
-
-    Iterator MakeIterator() const {return Iterator(m_dgndb);}
-    };
-
-    struct Model : TxnTable
-    {
-        bool m_initialized;
-        static Utf8CP MyTableName() {return DGN_TABLE(DGN_CLASSNAME_Model);}
-        Utf8CP _GetTableName() const {return MyTableName();}
-        Model(DgnDb& dgndb) {m_initialized=false;}
-        virtual void _OnTxnSummaryStart(TxnSummary&) override;
-        virtual void _OnTxnSummaryEnd(TxnSummary& summary) override;
-        virtual void _PropagateChanges(TxnSummary&) override {}
-        virtual void _OnChangesetApplied(TxnSummary&) override {}
-        virtual void _OnAdd(TxnSummary& summary, BeSQLite::Changes::Change const& change) override {}
-        virtual void _OnDelete(TxnSummary& summary, BeSQLite::Changes::Change const& change) override {}
-        virtual void _OnUpdate(TxnSummary& summary, BeSQLite::Changes::Change const& change) override {}
-    };
-
-    struct ElementDep : TxnTable
-    {
-        BeSQLite::Statement m_stmt;
-        DgnDbR m_dgndb;
-        DgnElementIdSet m_failedTargets;
-        static Utf8CP MyTableName() {return DGN_TABLE(DGN_RELNAME_ElementDrivesElement);}
-        Utf8CP _GetTableName() const {return MyTableName();}
-
-        ElementDep(DgnDb& dgndb) : m_dgndb(dgndb) {}
-        virtual void _OnTxnSummaryStart(TxnSummary&) override;
-        virtual void _OnTxnSummaryEnd(TxnSummary& summary) override;
-        virtual void _PropagateChanges(TxnSummary&) override;
-        virtual void _OnChangesetApplied(TxnSummary&) override {}
-        virtual void _OnAdd(TxnSummary& summary, BeSQLite::Changes::Change const& change) override    {UpdateSummary(summary,change,TxnSummary::ChangeType::Insert);}
-        virtual void _OnUpdate(TxnSummary& summary, BeSQLite::Changes::Change const& change) override {UpdateSummary(summary,change,TxnSummary::ChangeType::Update);}
-        virtual void _OnDelete(TxnSummary& summary, BeSQLite::Changes::Change const& change) override {UpdateSummary(summary,change,TxnSummary::ChangeType::Delete);}
-        void UpdateSummary(TxnSummary& summary, BeSQLite::Changes::Change change, TxnSummary::ChangeType changeType);
-        void AddDependency(BeSQLite::EC::ECInstanceId const&, TxnSummary::ChangeType);
-        void AddFailedTarget(DgnElementId id) {m_failedTargets.insert(id);}
-        DgnElementIdSet const& GetFailedTargets() const {return m_failedTargets;}
-    };
-
-    struct ModelDep : TxnTable
-    {
-        bool m_changes;
-        static Utf8CP MyTableName() {return DGN_TABLE(DGN_RELNAME_ModelDrivesModel);}
-        Utf8CP _GetTableName() const {return MyTableName();}
-        ModelDep (DgnDb& dgndb) : m_changes(false) {}
-        virtual void _OnTxnSummaryStart(TxnSummary&) override {m_changes=false;}
-        virtual void _OnTxnSummaryEnd(TxnSummary&) override {}
-        virtual void _PropagateChanges(TxnSummary& summary) override;
-        virtual void _OnChangesetApplied(TxnSummary&) override {}
-        virtual void _OnAdd(TxnSummary& summary, BeSQLite::Changes::Change const& change) override;
-        virtual void _OnUpdate(TxnSummary& summary, BeSQLite::Changes::Change const& change) override;
-        virtual void _OnDelete(TxnSummary& summary, BeSQLite::Changes::Change const& change) override {SetChanges();}
-        void CheckDirection(TxnSummary&, BeSQLite::EC::ECInstanceId);
-        void SetChanges() {m_changes=true;}
-        bool HasChanges() const {return m_changes;}
-    };
-};
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   02/11
@@ -332,7 +180,7 @@ struct RevTxn
 //=======================================================================================
 struct TxnManager : BeSQLite::ChangeTracker
 {
-    friend struct TxnSummary;
+    friend struct TxnManager;
 
     struct ChangeEntry
     {
@@ -355,12 +203,29 @@ struct TxnManager : BeSQLite::ChangeTracker
     struct CompareTableNames {bool operator()(Utf8CP a, Utf8CP b) const {return strcmp(a, b) < 0;}};
     typedef bmap<Utf8CP,TxnTablePtr,CompareTableNames> T_TxnTablesByName;
     typedef bvector<TxnTable*> T_TxnTables;
+    //! Indicates an error when propagating changes for a Txn.
+    struct ValidationError
+    {
+        enum class Severity
+        {
+            Fatal,   //!< Validation could not be completed, and the transaction should be rolled back.
+            Warning, //!< Validation was completed. Consistency checks may have failed. The results should be reviewed.
+        };
+
+        Utf8String  m_description;
+        Severity    m_severity;
+        ValidationError(Severity sev, Utf8CP desc) : m_severity(sev), m_description(desc) {}
+        Severity GetSeverity() const {return m_severity;} //!< Return the severity of the error
+        Utf8CP GetDescription() const {return m_description.c_str();}//!< A human-readable, localized description of the error
+    };
+
 
 protected:
     DgnDbR          m_dgndb;
     T_TxnTablesByName m_tablesByName;
     T_TxnTables     m_tables;
     ChangeEntry     m_curr;
+    TxnAction       m_action;
     bvector<TxnId>  m_multiTxnOp;
     bvector<RevTxn> m_reversedTxn;
     bool            m_undoInProgress;
@@ -369,8 +234,10 @@ protected:
     BeSQLite::StatementCache    m_stmts;
     BeSQLite::SnappyFromBlob    m_snappyFrom;
     BeSQLite::SnappyToBlob      m_snappyTo;
+    bvector<ValidationError> m_validationErrors; //!< Validation errors detected
 
-    BeSQLite::CachedStatementPtr GetTxnStatement(Utf8CP sql) const;
+private:
+    void AddChangeSet(BeSQLite::ChangeSet&);
     OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override;
     void _OnSettingsSave() override {m_curr.m_settingsChange=true;}
     void _OnSettingsSaved() override {m_curr.m_settingsChange=false;}
@@ -378,7 +245,7 @@ protected:
 
     BeSQLite::DbResult SaveCurrentChange(BeSQLite::ChangeSet& changeset, Utf8CP operation);
     BeSQLite::DbResult ReadEntry(TxnRowId rowid, ChangeEntry& entry);
-    void ReadChangeSet(UndoChangeSet&, TxnRowId rowid, TxnDirection direction);
+    void ReadChangeSet(UndoChangeSet&, TxnRowId rowid, TxnAction);
     TxnRowId FirstRow(TxnId id);
     TxnRowId LastRow(TxnId id);
 
@@ -386,29 +253,45 @@ protected:
     void SetUndoInProgress(bool);
     void ReverseTxnRange(TxnRange& txnRange, Utf8StringP, bool);
     void ReinstateTxn(TxnRange&, Utf8StringP redoStr);
-    void ApplyChanges(TxnRowId, TxnDirection);
-    void CancelChanges(BeSQLite::ChangeSet&);
-    void CancelChanges(TxnRowId );
+    void BeginChangeSet(BeSQLite::ChangeSet& changeset, TxnAction);
+    void ApplyChanges(TxnRowId, TxnAction);
+    void OnChangesetApplied(BeSQLite::ChangeSet& changeset, TxnAction);
+    OnCommitStatus CancelChanges(BeSQLite::ChangeSet& changeset);
     StatusInt ReinstateActions(RevTxn& revTxn);
     bool PrepareForUndo();
     StatusInt ReverseActions(TxnRange& txnRange, bool multiStep, bool showMsg);
-    BentleyStatus PropagateChanges(TxnSummaryR summary);
+    BentleyStatus PropagateChanges();
     void DeleteReversedTxns();
-    TxnTable* FindTxnTable(Utf8CP tableName);
+    TxnTable* FindTxnTable(Utf8CP tableName) const;
 
 public:
     void AddTxnTable(DgnDomain::TableHandler*);
+    BeSQLite::CachedStatementPtr GetTxnStatement(Utf8CP sql) const;
     void SetPropagateChanges(bool val) {m_propagateChanges = val;}
+    TxnAction GetCurrentAction() const {return m_action;}
+
+    DGNPLATFORM_EXPORT TxnManager(DgnDbR);
+
+    //! Query if any Fatal validation errors were reported during the last boundary check.
+    DGNPLATFORM_EXPORT bool HasFatalErrors() const;
+    //! Query the validation errors that were reported during the TxnAction
+    bvector<ValidationError> const& GetErrors() const {return m_validationErrors;}
+
+    DGNPLATFORM_EXPORT dgn_TxnTable::Element&    Elements() const;
+    DGNPLATFORM_EXPORT dgn_TxnTable::ElementDep& ElementDependencies() const;
+
     DGNPLATFORM_EXPORT Utf8String GetUndoString();
     DGNPLATFORM_EXPORT Utf8String GetRedoString();
 
-    DGNPLATFORM_EXPORT TxnManager(DgnDbR);
+    //! TxnMonitors may call this to report a validation error. If the severity of the validation error is set to ValidationErrorSeverity::Fatal, 
+    //! then the transaction will be cancelled.
+    DGNPLATFORM_EXPORT void ReportError(ValidationError&);
 
     //! Apply a changeset and then clean up the screen, reload elements, refresh other cached data, and notify txn listeners.
     //! @param changeset the changeset to apply
     //! @param isUndo    the undo/redo flag to pass to monitors
     //! @return the result of calling changeset.ApplyChanges
-    DGNPLATFORM_EXPORT BeSQLite::DbResult ApplyChangeSet(BeSQLite::ChangeSet& changeset, TxnDirection isUndo);
+    DGNPLATFORM_EXPORT BeSQLite::DbResult ApplyChangeSet(BeSQLite::ChangeSet& changeset, TxnAction isUndo);
 
     //! @name Multi-transaction Operations
     //@{
@@ -416,7 +299,7 @@ public:
     //! be considered separate actions for undo, to be "grouped" into a single undoable operation. This means that when the user issues the "undo"
     //! command, the entire group of changes is undone as a single action. Multi Txn operations can be nested, and until the outermost operation is closed,
     //! all changes constitute a single transaction.
-    //! @remarks This method should \e always be paired with a call to EndMultiTxnOperation.
+    //! @remarks This method should \e always be paired with a call to EndMultiTxnAction.
     DGNPLATFORM_EXPORT void BeginMultiTxnOperation();
 
     //! End a multi-transaction operation
@@ -488,6 +371,108 @@ public:
 };
 
 //=======================================================================================
+//! TxnTables in the base "Dgn" domain.
+// @bsiclass                                                    Keith.Bentley   06/15
+//=======================================================================================
+namespace dgn_TxnTable
+{
+    struct Element : TxnTable
+    {
+        BeSQLite::Statement m_stmt;
+        bool m_changes;
+        static Utf8CP MyTableName() {return DGN_TABLE(DGN_CLASSNAME_Element);}
+        Utf8CP _GetTableName() const {return MyTableName();}
+
+        Element(TxnManager& mgr) : TxnTable(mgr) {}
+
+        virtual void _OnCommit() override;
+        virtual void _OnConfirmAdd(BeSQLite::Changes::Change const& change) override    {AddChange(change, TxnTable::ChangeType::Insert);}
+        virtual void _OnConfirmDelete(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Delete);}
+        virtual void _OnConfirmUpdate(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Update);}
+        virtual void _OnCommitted() override;
+
+        virtual void _OnReversedAdd(BeSQLite::Changes::Change const&) override;
+        virtual void _OnReversedUpdate(BeSQLite::Changes::Change const&) override;
+
+        void AddChange(BeSQLite::Changes::Change const& change, ChangeType changeType);
+        void AddElement(DgnElementId, DgnModelId, double lastMod, ChangeType changeType);
+
+        struct Iterator : BeSQLite::DbTableIterator
+        {
+        public:
+            Iterator(DgnDbCR db) : DbTableIterator((BeSQLite::DbCR)db) {}
+            struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
+            {
+            private:
+                friend struct Iterator;
+                Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
+
+            public:
+                DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
+                DGNPLATFORM_EXPORT DgnElementId GetElementId() const;
+                DGNPLATFORM_EXPORT ChangeType GetChangeType() const;
+                DGNPLATFORM_EXPORT double GetLastMod() const;
+                Entry const& operator*() const {return *this;}
+            };
+
+            typedef Entry const_iterator;
+            typedef Entry iterator;
+            DGNPLATFORM_EXPORT const_iterator begin() const;
+            const_iterator end() const {return Entry(nullptr, false);}
+        };
+
+    Iterator MakeIterator() const {return Iterator(m_txnMgr.GetDgnDb());}
+    };
+
+    struct Model : TxnTable
+    {
+        Model(TxnManager& mgr) : TxnTable(mgr) {}
+        static Utf8CP MyTableName() {return DGN_TABLE(DGN_CLASSNAME_Model);}
+        Utf8CP _GetTableName() const {return MyTableName();}
+
+        virtual void _OnReversedAdd(BeSQLite::Changes::Change const&) override;
+    };
+
+    struct ElementDep : TxnTable
+    {
+        BeSQLite::Statement m_stmt;
+        DgnElementIdSet m_failedTargets;
+        bool m_changes;
+        static Utf8CP MyTableName() {return DGN_TABLE(DGN_RELNAME_ElementDrivesElement);}
+        Utf8CP _GetTableName() const {return MyTableName();}
+
+        ElementDep(TxnManager& mgr) : TxnTable(mgr), m_changes(false) {}
+        virtual void _OnCommit() override;
+        virtual void _OnConfirmAdd(BeSQLite::Changes::Change const& change) override    {UpdateSummary(change, TxnTable::ChangeType::Insert);}
+        virtual void _OnConfirmDelete(BeSQLite::Changes::Change const& change) override {UpdateSummary(change, TxnTable::ChangeType::Update);}
+        virtual void _OnConfirmUpdate(BeSQLite::Changes::Change const& change) override {UpdateSummary(change, TxnTable::ChangeType::Delete);}
+        virtual void _PropagateChanges() override;
+        virtual void _OnCommitted() override;
+
+        void UpdateSummary(BeSQLite::Changes::Change change, ChangeType changeType);
+        void AddDependency(BeSQLite::EC::ECInstanceId const&, ChangeType);
+        void AddFailedTarget(DgnElementId id) {m_failedTargets.insert(id);}
+        DgnElementIdSet const& GetFailedTargets() const {return m_failedTargets;}
+    };
+
+    struct ModelDep : TxnTable
+    {
+        bool m_changes;
+        static Utf8CP MyTableName() {return DGN_TABLE(DGN_RELNAME_ModelDrivesModel);}
+        Utf8CP _GetTableName() const {return MyTableName();}
+        ModelDep(TxnManager& mgr) : TxnTable(mgr), m_changes(false) {}
+
+        virtual void _OnConfirmAdd(BeSQLite::Changes::Change const&) override;
+        virtual void _OnConfirmUpdate(BeSQLite::Changes::Change const&) override;
+        virtual void _PropagateChanges() override;
+        void CheckDirection(BeSQLite::EC::ECInstanceId);
+        void SetChanges() {m_changes=true;}
+        bool HasChanges() const {return m_changes;}
+    };
+};
+
+
+//=======================================================================================
 // Table Handlers in the base "Dgn" domain. Don't put handlers from other domains here.
 // @bsiclass                                                    Keith.Bentley   06/15
 //=======================================================================================
@@ -496,22 +481,22 @@ namespace dgn_TableHandler
     struct Element : DgnDomain::TableHandler
     {
         TABLEHANDLER_DECLARE_MEMBERS(Element, DGNPLATFORM_EXPORT)
-        virtual TxnTable* _Create(DgnDb& db) const override {return new dgn_TxnTable::Element(db);}
+        virtual TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::Element(mgr);}
     };
     struct Model : DgnDomain::TableHandler
     {
         TABLEHANDLER_DECLARE_MEMBERS(Model, DGNPLATFORM_EXPORT)
-        virtual TxnTable* _Create(DgnDb& db) const override {return new dgn_TxnTable::Model(db);}
+        virtual TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::Model(mgr);}
     };
     struct ElementDep : DgnDomain::TableHandler
     {
         TABLEHANDLER_DECLARE_MEMBERS(ElementDep, DGNPLATFORM_EXPORT)
-        virtual TxnTable* _Create(DgnDb& db) const override {return new dgn_TxnTable::ElementDep(db);}
+        virtual TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::ElementDep(mgr);}
     };
     struct ModelDep : DgnDomain::TableHandler
     {
         TABLEHANDLER_DECLARE_MEMBERS(ModelDep, DGNPLATFORM_EXPORT)
-        virtual TxnTable* _Create(DgnDb& db) const override {return new dgn_TxnTable::ModelDep(db);}
+        virtual TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::ModelDep(mgr);}
     };
 };
 
