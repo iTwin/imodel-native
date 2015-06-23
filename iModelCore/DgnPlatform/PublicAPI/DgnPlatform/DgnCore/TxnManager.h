@@ -213,8 +213,6 @@ struct RevTxn
 //=======================================================================================
 struct TxnManager : BeSQLite::ChangeTracker
 {
-    friend struct TxnManager;
-
     struct ChangeEntry
     {
         BeGuid          m_sessionId;
