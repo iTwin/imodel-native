@@ -695,8 +695,20 @@ public:
     //! Gets whether this ECProperty's value is read only
     ECOBJECTS_EXPORT bool               GetIsReadOnly() const;
     //! Sets the base property that this ECProperty inherits from
+    //! @remarks In the case of multiple inheritance where more than one base class has a
+    //! property with the same name the first base class found will provide the base property.
+    //! It is considered bad design to have the same property in multiple base classes.  In
+    //! future this may become an error, but due to the current implementation details
+    //! it is not an error and the base property is deterministic because the order of the
+    //! base classes is preserved
     ECOBJECTS_EXPORT ECObjectsStatus    SetBaseProperty(ECPropertyCP value);
     //! Gets the base property, if any, that this ECProperty inherits from
+    //! @remarks In the case of multiple inheritance where more than one base class has a
+    //! property with the same name the first base class found will provide the base property.
+    //! It is considered bad design to have the same property in multiple base classes.  In
+    //! future this may become an error, but due to the current implementation details
+    //! it is not an error and the base property is deterministic because the order of the
+    //! base classes is preserved
     ECOBJECTS_EXPORT ECPropertyCP       GetBaseProperty() const;
 
     //! Sets whether this ECProperty's value is read only
@@ -1108,6 +1120,19 @@ public:
     //! @param[in] baseClass The class to derive from
     ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ECClassCR baseClass);
 
+    //! Adds a base class at either the beginning or end of the base class list
+    //! @remarks This method is intended for the rare case where you need to control at which position
+    //! the base class is inserted in the list of base classes. This is relevant when you care about
+    //! the traversal order of a base class graph. By specification, base classes are traversed in a depth-first
+    //! fashion.
+    //! You cannot insert a base class if it creates a cycle. For example, if A is a base class
+    //! of B, and B is a base class of C, you cannot make C a base class of A. Attempting to do
+    //! so will return an error.
+    //! @param[in] baseClass The class to derive from
+    //! @param[in] insertAtBeginning true, if @p baseClass is inserted at the beginning of the list. 
+    //! false if @p baseClass is added to the end of the list
+    ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ECClassCR baseClass, bool insertAtBeginning);
+    
     //! Returns whether there are any base classes for this class
     ECOBJECTS_EXPORT bool            HasBaseClasses() const;
 
