@@ -75,6 +75,9 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //! Map of ID to DgnFont object. See method FontNumberMap.
 typedef bmap<uint32_t, DgnFontCP> T_FontNumberMap;
 
+namespace dgn_ElementHandler {struct Physical;};
+namespace dgn_TxnTable {struct Element;};
+
 //=======================================================================================
 //! A base class for api's that access a table in a DgnDb
 //=======================================================================================
@@ -833,6 +836,7 @@ struct DgnElements : DgnDbTable
     friend struct ElementHandler;
     friend struct TxnManager;
     friend struct ProgressiveViewFilter;
+    friend struct dgn_TxnTable::Element;
 
     //! The totals for persistent DgnElements in this DgnDb. These values reflect the current state of the loaded elements.
     struct Totals

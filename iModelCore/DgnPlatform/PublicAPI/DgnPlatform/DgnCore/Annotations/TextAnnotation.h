@@ -51,7 +51,7 @@ public:
     DGNPLATFORM_EXPORT static TextAnnotationPtr Create(DgnDbR, DgnStyleId);
     TextAnnotationPtr Clone() const { return new TextAnnotation(*this); }
 
-    DgnDbR GetDbR() const { return *m_dgndb; }
+    DgnDbR GetDbR() const { return *m_dgndb; }                      
     AnnotationTextBlockCP GetTextCP() const { return m_text.get(); }
     AnnotationTextBlockP GetTextP() { return m_text.get(); }
     void SetText(AnnotationTextBlockCP value) { m_text = const_cast<AnnotationTextBlockP>(value); }

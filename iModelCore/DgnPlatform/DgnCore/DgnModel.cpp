@@ -669,7 +669,7 @@ DgnModelPtr DgnModel::Clone(Utf8CP newName) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ModelHandlerR DgnModel::GetModelHandler() const
     {
-    return *ModelHandler::FindHandler(m_dgndb, m_classId);
+    return *dgn_ModelHandler::Model::FindHandler(m_dgndb, m_classId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -682,7 +682,7 @@ DgnModelP DgnModels::LoadDgnModel(DgnModelId modelId)
         return nullptr;
 
     // make sure the class derives from Model (has a handler)
-    ModelHandlerP handler = ModelHandler::FindHandler(m_dgndb, model.GetClassId());
+    ModelHandlerP handler = dgn_ModelHandler::Model::FindHandler(m_dgndb, model.GetClassId());
     if (nullptr == handler)
         return nullptr;
 
@@ -852,7 +852,7 @@ BentleyStatus DgnModel::Properties::SetWorkingUnits(UnitDefinitionCR newMasterUn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ModelHandlerP ModelHandler::FindHandler(DgnDb const& db, DgnClassId handlerId)
+ModelHandlerP dgn_ModelHandler::Model::FindHandler(DgnDb const& db, DgnClassId handlerId)
     {
     // quick check for a handler already known
     DgnDomain::Handler* handler = db.Domains().LookupHandler(handlerId);

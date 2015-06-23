@@ -21,6 +21,11 @@ BENTLEY_API_TYPEDEFS(HeapZone);
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+namespace dgn_ElementHandler {struct Element; struct Physical;};
+namespace dgn_TxnTable {struct Element;};
+
+struct MultiAspectMux;
+
 typedef RefCountedPtr<ElementGeometry> ElementGeometryPtr;
 
 template <class _QvKey> struct QvElemSet;
@@ -54,7 +59,8 @@ public:
     friend struct DgnModel;
     friend struct ElemIdTree;
     friend struct EditElementHandle;
-    friend struct ElementHandler;
+    friend struct dgn_ElementHandler::Element;
+    friend struct dgn_TxnTable::Element;
 
     //! Parameters for creating new DgnElements
     struct CreateParams
@@ -81,13 +87,12 @@ public:
     {
         None         = 0, //!< the element is displayed normally (not hilited)
         Normal       = 1, //!< the element is displayed using the normal hilite appearance
-        Bold         = 2, //!< the element is displayed with a bold appearance
-        Dashed       = 3, //!< the element is displayed with a dashed appearance
-        Background   = 4, //!< the element is displayed with the background color
+        Dashed       = 2,
+        Background   = 3, //!< the element is displayed with the background color
     };
 
     //! Application data attached to a DgnElement. Create a subclass of this to store non-persistent information on a DgnElement.
-    struct AppData : RefCountedBase
+    struct EXPORT_VTABLE_ATTRIBUTE AppData : RefCountedBase
     {
         //! A unique identifier for this type of AppData. Use a static instance of this class to identify your AppData.
         struct Key : NonCopyableClass {};
@@ -116,6 +121,236 @@ public:
         //! @param[in]  el the DgnElement that was deleted
         //! @return true to drop this appData, false to leave it attached to the DgnElement.
         virtual DropMe _OnDeleted(DgnElementCR el) {return DropMe::Yes;}
+    };
+
+    //! Buffers changes to a dgn.ElementAspect in memory and writes out the changes when the host DgnElement is inserted or updated.
+    //! A domain that defines an subclass of dgn.ElementItem or ElementAspect in the schema should normally also define a subclass of Aspect to manage changes to the instances.
+    //! A domain will normally subclass one of the following more specific subclasses:
+    //!     * Item - a domain that defines a subclass of dgn.ElementItem should define a subclass of Item.
+    //!     * UniqueAspect - a domain that defines a subclass of dgn.ElementAspect that must be 1:1 with the host element should define a subclass of UniqueAspect.
+    //!     * MultiAspect - a domain that defines a subclass of dgn.ElementAspect that can associate multiple instances of the class with the host element should define a subclass of MultiAspect.
+    //! The domain must also define and register a subclass of ElementAspectHandler to load instances of its aspects.
+    struct EXPORT_VTABLE_ATTRIBUTE Aspect : AppData
+    {
+    private:
+        DGNPLATFORM_EXPORT DropMe _OnInserted(DgnElementCR el) override final;
+        DGNPLATFORM_EXPORT DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original) override final;
+        friend struct MultiAspectMux;
+    protected:
+        enum class ChangeType{None, Write, Delete};
+
+        ChangeType m_changeType;
+
+        DgnDbStatus InsertThis(DgnElementCR el);
+        DGNPLATFORM_EXPORT DgnClassId GetThisECClassId(DgnDbR);
+        ECN::ECClassCP GetThisECClass(DgnDbR);
+        Utf8String  GetFullEcSqlClassName() {return _GetECSchemaName().append(".").append(_GetECClassName());}
+
+        DGNPLATFORM_EXPORT Aspect();
+
+        //! The subclass must implement this method to return the full class name (in ECSql schema.class format) of the instance.
+        virtual Utf8String _GetECSchemaName() = 0;
+
+        //! The subclass must implement this method to return the full class name (in ECSql schema.class format) of the instance.
+        virtual Utf8String _GetECClassName() = 0;
+
+        //! The subclass must implement this method to report an existing instance on the host element that this instance will replace.
+        virtual BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) = 0;
+
+        //! The subclass must override this method in order to insert an empty instance into the Db and associates it with the host element.
+        //! @param el   The host element
+        //! @note The caller will call _UpdateProperties immediately after calling this method.
+        virtual DgnDbStatus _InsertInstance(DgnElementCR el) = 0;
+
+        //! The subclass must override this method in order to delete an existing instance in the Db, plus any ECRelationship that associates it with the host element.
+        //! @param el   The host element
+        virtual DgnDbStatus _DeleteInstance(DgnElementCR el) = 0;
+
+        //! The subclass must implement this method to update the instance properties.
+        virtual DgnDbStatus _UpdateProperties(DgnElementCR el) = 0;
+
+        //! The subclass must implement this method to load properties from the Db.
+        //! @param el   The host element
+        virtual DgnDbStatus _LoadProperties(DgnElementCR el) = 0;
+    
+    public:
+        //! Prepare to delete this aspect.
+        //! @note The aspect will not actually be deleted in the Db until you call DgnElements::Update on the aspect's host element.
+        DGNPLATFORM_EXPORT void Delete() {m_changeType = ChangeType::Delete;}
+    };
+
+    //! Base class dgn.ElementAspects other than the dgn.ElementItem
+    struct EXPORT_VTABLE_ATTRIBUTE NonItemAspect : Aspect
+    {
+    protected:
+        BeSQLite::EC::ECInstanceId m_instanceId;
+
+        DGNPLATFORM_EXPORT DgnDbStatus _DeleteInstance(DgnElementCR el) override final;
+        DGNPLATFORM_EXPORT DgnDbStatus _InsertInstance(DgnElementCR el) override final;
+
+    public:
+        //! Get the ID of this aspect
+        BeSQLite::EC::ECInstanceId GetInstanceId() const {return m_instanceId;}
+    };
+
+    //! Represents a non-Item ElementAspect subclass for the case where the host Element can have only 1 instance of the subclass.
+    //! A subclass of UniqueAspect must override the following methods:
+    //!     * _GetECSchemaName
+    //!     * _GetECClassName
+    //!     * _UpdateProperties
+    //!     * _LoadProperties
+    //! @see Item
+    //! @see MultiAspect
+    //! @note A domain that defines a subclass of UniqueAspect must also define a subclass of ElementAspectHandler to load it.
+    struct EXPORT_VTABLE_ATTRIBUTE UniqueAspect : NonItemAspect
+    {
+    private:
+        static Key& GetKey(ECN::ECClassCR cls) {return *(Key*)&cls;}
+        Key& GetKey(DgnDbR db) {return GetKey(*GetThisECClass(db));}
+        static UniqueAspect* Find(DgnElementCR, ECN::ECClassCR);
+        static UniqueAspect* Load(DgnElementCR, ECN::ECClassCR);
+        DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) override final;
+        static void SetAspect0(DgnElementCR el, UniqueAspect& aspect);
+        
+    public:
+        //! Prepare to insert or update an Aspect for the specified element
+        //! @param el   The host element
+        //! @param aspect The new aspect to be adopted by the host.
+        //! @note \a el will add a reference to \a aspect and will hold onto it.
+        //! @note The aspect will not actually be inserted into the Db until you call DgnElements::Insert or DgnElements::Update on \a el
+        DGNPLATFORM_EXPORT static void SetAspect(DgnElementR el, UniqueAspect& aspect);
+
+        //! Get read-write access to the Aspect for the specified element
+        //! @param el   The host element
+        //! @param ecclass The class of ElementAspect to load
+        //! @return The currently cached Aspect object, or nullptr if the element has no such aspect or if DeleteAspect was called.
+        //! @note call this method \em only if you plan to \em modify the aspect
+        //! @see Get, GetAspect for read-only access
+        //! @note The aspect will not actually be updated in the Db until you call DgnElements::Update on \a el
+        DGNPLATFORM_EXPORT static UniqueAspect* GetAspectP(DgnElementR el, ECN::ECClassCR ecclass);
+
+        template<typename T> static T* GetP(DgnElementR el, ECN::ECClassCR cls) {return dynamic_cast<T*>(GetAspectP(el,cls));}
+
+        //! Get read-only access to the Aspect for the specified element
+        //! @param el   The host element
+        //! @param ecclass The class of ElementAspect to load
+        //! @return The currently cached Aspect object, or nullptr if the element has no such aspect or if DeleteAspect was called.
+        //! @see GetP, GetAspectP for read-write access
+        DGNPLATFORM_EXPORT static UniqueAspect const* GetAspect(DgnElementCR el, ECN::ECClassCR ecclass);
+
+        template<typename T> static T const* Get(DgnElementCR el, ECN::ECClassCR cls) {return dynamic_cast<T const*>(GetAspect(el,cls));}
+
+        //! Query for an existing instance of the specified aspect class that is associated with the specified element.
+        //! @param el   The host element
+        //! @param ecclass The class of ElementAspect to look for
+        //! @return the ID of the existing instance or an invalid ID if the host element has no instance of this aspect class
+        static BeSQLite::EC::ECInstanceId QueryExistingInstanceId(DgnElementCR el, DgnClassId ecclass);
+        };
+
+    //! Represents a non-Item ElementAspect subclass in the case where the host Element can have multiple instances of the subclass.
+    //! Use ECSql to query existing instances and their properties. Use GetAspectP or GetP to buffer changes to a particular instance.
+    //! <p>A subclass of MultiAspect must override the following methods:
+    //!     * _GetECSchemaName
+    //!     * _GetECClassName
+    //!     * _UpdateProperties
+    //!     * _LoadProperties
+    //! @see Item, UniqueAspect
+    //! (Note: This is not stored directly as AppData, but is held by an AppData that aggregates instances for this class.)
+    //! @note A domain that defines a subclass of MultiAspect must also define a subclass of ElementAspectHandler to load it.
+    struct EXPORT_VTABLE_ATTRIBUTE MultiAspect : NonItemAspect
+    {
+    private:
+        DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) override final;
+    public:
+        //! Load the specified instance
+        //! @param el   The host element
+        //! @param ecclass The class of ElementAspect to load
+        //! @param ecinstanceid The ID of the ElementAspect to load
+        //! @note Call this method only if you intend to modify the aspect. Use ECSql to query existing instances of the subclass.
+        DGNPLATFORM_EXPORT static MultiAspect* GetAspectP(DgnElementR el, ECN::ECClassCR ecclass, BeSQLite::EC::ECInstanceId ecinstanceid);
+
+        template<typename T> static T* GetP(DgnElementR el, ECN::ECClassCR cls, BeSQLite::EC::ECInstanceId id) {return dynamic_cast<T*>(GetAspectP(el,cls,id));}
+
+        //! Prepare to insert an aspect for the specified element
+        //! @param el   The host element
+        //! @param aspect The new aspect to be adopted by the host.
+        //! @note \a el will add a reference to \a aspect and will hold onto it.
+        //! @note The aspect will not actually be inserted into the Db until you call DgnElements::Insert or DgnElements::Update on \a el
+        DGNPLATFORM_EXPORT static void AddAspect(DgnElementR el, MultiAspect& aspect);
+    };
+
+    //! Buffers changes to a dgn.ElementItem.
+    //! dgn.ElementItem is a special kind of dgn.ElementAspect. A dgn.Element can have 0 or 1 dgn.ElementItems, and the dgn.ElementItem always has the ID as the host dgn.Element.
+    //! Note that the item's actual class can vary, as long as it is a subclass of dgn.ElementItem.
+    //! <p>
+    //! A dgn.ElementItem is normally used to capture the definition of the host element's geometry. 
+    //! The ElementItem is also expected to supply the algorithm for generating the host element's geometry from its definition.
+    //! The platform enables the Item to keep the element's geometry up to date by calling the DgnElement::Item::_GenerateElementGeometry method when the element is inserted and whenever it is updated.
+    //! <p>
+    //! A subclass of Item must override the following methods:
+    //!     * _GetECSchemaName
+    //!     * _GetECClassName
+    //!     * _UpdateProperties
+    //!     * _LoadProperties
+    //!     * _GenerateElementGeometry
+    //! @see UniqueAspect, MultiAspect
+    //! @note A domain that defines a subclass of Item must also define a subclass of ElementAspectHandler to load it.
+    struct EXPORT_VTABLE_ATTRIBUTE Item : Aspect
+    {
+    private:
+        static Key s_key;
+
+        static Item* Find(DgnElementCR);
+        static Item* Load(DgnElementCR);
+
+        DGNPLATFORM_EXPORT DgnDbStatus _DeleteInstance(DgnElementCR el) override final;
+        DGNPLATFORM_EXPORT DgnDbStatus _InsertInstance(DgnElementCR el) override final;
+        DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) override final;
+        DGNPLATFORM_EXPORT DgnDbStatus _OnInsert(DgnElementR el) override final {return CallGenerateElementGeometry(el);}
+        DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementR el, DgnElementCR original) override final {return CallGenerateElementGeometry(el);}
+        static void SetItem0(DgnElementCR el, Item& item);
+        DgnDbStatus CallGenerateElementGeometry(DgnElementR);
+
+    protected:
+        //! The subclass must implement this method to generate geometry and store it on \a el.
+        //! The platform invokes _GenerateElementGeometry just \em before an element is inserted and/or updated.
+        //! @param el   The element to be updated.
+        virtual DgnDbStatus _GenerateElementGeometry(GeometricElementR el) = 0;
+
+    public:
+        //! Prepare to insert or update an Item for the specified element
+        //! @param el   The host element
+        //! @param item The new item to be adopted by the host.
+        //! @note \a el will add a reference to \a item and will hold onto it.
+        //! @note The item will not actually be inserted into the Db until you call DgnElements::Insert or DgnElements::Update on \a el
+        DGNPLATFORM_EXPORT static void SetItem(DgnElementR el, Item& item);
+
+        //! Get read-write access to the Item for the specified element
+        //! @param el   The host element
+        //! @return The currently cached Item object, or nullptr if the element has no item or if DeleteItem was called.
+        //! @note call this method \em only if you plan to \em modify the item
+        //! @see Get, GetItem for read-only access
+        //! @note The item will not actually be updated in the Db until you call DgnElements::Update on \a el
+        DGNPLATFORM_EXPORT static Item* GetItemP(DgnElementR el);
+
+        template<typename T> static T* GetP(DgnElementR el) {return dynamic_cast<T*>(GetItemP(el));}
+
+        //! Get read-only access to the Item for the specified element
+        //! @param el   The host element
+        //! @return The currently cached Item object, or nullptr if the element has no item or if DeleteItem was called.
+        //! @see GetP, GetItemP for read-write access
+        DGNPLATFORM_EXPORT static Item const* GetItem(DgnElementCR el);
+
+        template<typename T> static T const* Get(DgnElementCR el) {return dynamic_cast<T const*>(GetItem(el));}
+
+        //! Query the ECClass of item currently stored in the Db for the specified element
+        //! @param el   The host element
+        //! @return the DgnClassId of the existing item or an invalid ID if the element has no item
+        DGNPLATFORM_EXPORT static DgnClassId QueryExistingItemClass(DgnElementCR el);
+
+        //! Invoke the _GenerateElementGeometry method on the item
+        //! @param el   The host element
+        DGNPLATFORM_EXPORT static DgnDbStatus GenerateElementGeometry(GeometricElementR el);
     };
 
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
@@ -147,6 +382,8 @@ protected:
     double          m_lastModTime;
     mutable Flags   m_flags;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
+
+    friend struct MultiAspect;
 
     void SetPersistent(bool val) const {m_flags.m_persistent = val;} //!< @private
 
@@ -694,12 +931,11 @@ struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : DgnElement3d
 {
     DEFINE_T_SUPER(DgnElement3d);
 protected:
-    friend struct PhysicalElementHandler;
-
     PhysicalElementCP _ToPhysicalElement() const override {return this;}
-    explicit PhysicalElement(CreateParams const& params) : T_Super(params) {}
 
 public:
+    explicit PhysicalElement(CreateParams const& params) : T_Super(params) {}
+
     //! Create an instance of a PhysicalElement from a CreateParams.
     //! @note This is a static method that creates an instance of the PhysicalElement class. To create subclasses, use static methods on the appropriate class.
     static PhysicalElementPtr Create(CreateParams const& params) {return new PhysicalElement(params);}
@@ -757,11 +993,10 @@ struct EXPORT_VTABLE_ATTRIBUTE DrawingElement : DgnElement2d
 {
     DEFINE_T_SUPER(DgnElement2d);
 protected:
-    friend struct DrawingElementHandler;
     DrawingElementCP _ToDrawingElement() const override {return this;}
-    explicit DrawingElement(CreateParams const& params) : T_Super(params) {}
 
 public:
+    explicit DrawingElement(CreateParams const& params) : T_Super(params) {}
     //! Create a DrawingElement from CreateParams.
     static DrawingElementPtr Create(CreateParams const& params) {return new DrawingElement(params);}
 
@@ -780,7 +1015,6 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE ElementGroup : DgnElement
 {
     DEFINE_T_SUPER(DgnElement);
-    friend struct ElementGroupHandler;
 
 protected:
     ElementGroupCP _ToElementGroup() const override {return this;}
@@ -802,9 +1036,18 @@ protected:
     //! Called when members of the group are queried
     DGNPLATFORM_EXPORT virtual DgnElementIdSet _QueryMembers() const;
 
+public:
     explicit ElementGroup(CreateParams const& params) : T_Super(params) {}
 
-public:
+    //! Create a new instance of a DgnElement using the specified CreateParams.
+    //! @note This is a static method that only creates instances of the ElementGroup class. To create instances of subclasses,
+    //! use a static method on the subclass.
+    static ElementGroupPtr Create(CreateParams const& params) { return new ElementGroup(params); }
+
+    //! Query the DgnClassId for the dgn.ElementGroup class in the specified DgnDb.
+    //! @note This is a static method that always returns the DgnClassId of the dgn.ElementGroup class - it does @b not return the class of a specific instance.
+    DGNPLATFORM_EXPORT static DgnClassId QueryClassId(DgnDbR db);
+
     //! Insert a member into this ElementGroup. This creates an ElementGroupHasMembers ECRelationship between this ElementGroup and the specified DgnElement
     //! @param[in] member The element to become a member of this ElementGroup.
     //! @note The ElementGroup and the specified DgnElement must have already been inserted (have valid DgnElementIds)

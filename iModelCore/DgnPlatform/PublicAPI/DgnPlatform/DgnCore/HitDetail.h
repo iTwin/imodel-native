@@ -18,10 +18,12 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 /*=================================================================================**//**
 * @bsiclass                                                     KeithBentley    04/01
 +===============+===============+===============+===============+===============+======*/
-enum class ComponentMode
+enum class SubSelectionMode
     {
-    None        = 0, //! Select entire element.
-    Innermost   = 1, //! Select single segment of linestrings, etc.
+    None        = 0, //! Select entire element - No sub-selection
+    Part        = 1, //! Select single DgnGeomPart
+    Primitive   = 2, //! Select single geometric primitive
+    Segment     = 3, //! Select single curve primitive/line string segment
     };
 
 //=======================================================================================
@@ -165,12 +167,12 @@ protected:
     ViewFlags           m_viewFlags;            // view flags in effect when hit was generated.
     GeomDetail          m_geomDetail;           // element specific hit details.
     IElemTopologyPtr    m_elemTopo;             // details about the topology of the element.
-    ComponentMode       m_componentMode;        // segment hilite/flash mode.
+    SubSelectionMode    m_subSelectionMode;     // segment hilite/flash mode.
 
     virtual HitDetailType _GetHitType () const {return HitDetailType::Hit;}
     virtual void _GetInfoString (Utf8StringR descr, Utf8CP delimiter) const;
-    virtual ComponentMode _GetComponentMode () const {return m_componentMode; }
-    virtual void _SetComponentMode (ComponentMode mode) {m_componentMode = mode; }
+    virtual SubSelectionMode _GetSubSelectionMode () const {return m_subSelectionMode;}
+    virtual void _SetSubSelectionMode (SubSelectionMode mode) {m_subSelectionMode = mode;}
     virtual DPoint3dCR _GetHitPoint () const {return m_geomDetail.GetClosestPoint();}
     virtual void _SetHitPoint (DPoint3dCR pt) {m_geomDetail.SetClosestPoint (pt);}
     virtual void _SetTestPoint (DPoint3dCR pt) {m_testPoint = pt;}
@@ -188,7 +190,7 @@ public:
     void SetHitPoint (DPoint3dCR pt) {_SetHitPoint(pt);}
     void SetTestPoint (DPoint3dCR pt) {_SetTestPoint(pt);}
     void SetHilited (DgnElement::Hilited state) const {_SetHilited(state);}
-    void SetComponentMode (ComponentMode mode) {_SetComponentMode(mode);}
+    void SetSubSelectionMode (SubSelectionMode mode) {_SetSubSelectionMode(mode);}
 
     DGNPLATFORM_EXPORT void DrawInVp (DgnViewportP, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const;
     
@@ -212,7 +214,7 @@ public:
 
     DPoint3dCR GetHitPoint() const {return _GetHitPoint();}
     HitDetailType GetHitType() const {return _GetHitType();}
-    ComponentMode GetComponentMode() const {return _GetComponentMode(); }
+    SubSelectionMode GetSubSelectionMode() const {return _GetSubSelectionMode(); }
     bool IsSameHit (HitDetailCP otherHit) const {return _IsSameHit(otherHit);}
 
     DGNPLATFORM_EXPORT GeomDetailCR    GetGeomDetail() const;

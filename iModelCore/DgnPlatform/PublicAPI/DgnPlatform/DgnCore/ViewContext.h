@@ -34,16 +34,6 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
-enum GeomRepresentations
-{
-    DISPLAY_INFO_None       = 0,        //!< Don't draw anything (not renderable, i.e. has no surface, and option to render wires is off)
-    DISPLAY_INFO_Edge       = (1<<0),   //!< Output wireframe geometry, i.e. outline curves and surface/solid edges/isoparametrics suitable for snapping.
-    DISPLAY_INFO_Fill       = (1<<1),   //!< Output closed curves and regions as filled.
-    DISPLAY_INFO_Surface    = (1<<2),   //!< Output surface/solid representation. 
-    DISPLAY_INFO_Thickness  = (1<<3),   //!< Output open/closed curves as extruded surfaces/solids.
-    DISPLAY_INFO_Pattern    = (1<<4),   //!< Output closed curves and regions as hatched/patterned.
-};
-
 enum FilterLODFlags
 {
     FILTER_LOD_Off          = 0,        //!< don't do Level-of-detail filtering at all
@@ -390,12 +380,10 @@ protected:
     DGNPLATFORM_EXPORT void PopOneTransformClip ();
     void InvalidateScanRange ();
     DGNPLATFORM_EXPORT void InitDisplayPriorityRange ();
-    DGNPLATFORM_EXPORT bool CheckThicknessVector ();
     DGNPLATFORM_EXPORT virtual StatusInt _Attach (DgnViewportP, DrawPurpose purpose);
     DGNPLATFORM_EXPORT virtual void _Detach ();
     DGNPLATFORM_EXPORT virtual void _SetupOutputs () = 0;
     DGNPLATFORM_EXPORT virtual void _OutputElement (GeometricElementCR);
-    DGNPLATFORM_EXPORT virtual uint32_t _GetDisplayInfo (bool isRenderable);
     DGNPLATFORM_EXPORT virtual bool _WantAreaPatterns ();
     DGNPLATFORM_EXPORT virtual void _DrawAreaPattern (ClipStencil& boundary);
     DGNPLATFORM_EXPORT virtual void _DrawSymbol (IDisplaySymbol*, TransformCP, ClipPlaneSetP, bool ignoreColor, bool ignoreWeight);
@@ -409,7 +397,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _DrawStyledBSplineCurve2d (MSBsplineCurveCR, double zDepth);
     DGNPLATFORM_EXPORT virtual void _DrawTextString (TextStringCR);
     DGNPLATFORM_EXPORT virtual QvElem* _DrawCached (IStrokeForCache&);
-    virtual bool _CheckFillOutline () {return true;}
     DGNPLATFORM_EXPORT virtual StatusInt _InitContextForView ();
     DGNPLATFORM_EXPORT virtual StatusInt _VisitElement (GeometricElementCR);
     DGNPLATFORM_EXPORT virtual void _InitScanRangeAndPolyhedron ();
@@ -424,7 +411,6 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnModelP _GetViewTarget();
     virtual IPickGeomP _GetIPickGeom () {return NULL;}
     DGNPLATFORM_EXPORT virtual void _VisitTransientGraphics (bool isPreUpdate);
-    DGNPLATFORM_EXPORT virtual bool _WantShowDefaultFieldBackground ();
     DGNPLATFORM_EXPORT virtual void _AllocateScanCriteria ();
     DGNPLATFORM_EXPORT virtual void _SetupScanCriteria ();
     virtual bool _WantUndisplayed () {return false;}
@@ -507,9 +493,6 @@ public:
     DGNPLATFORM_EXPORT void SetArcTolerance (double tol);
     DGNPLATFORM_EXPORT void SetLinestyleTangents (DPoint3dCP start, DPoint3dCP end);
 
-    //! @return   Mask of GeomRepresentations.
-    DGNPLATFORM_EXPORT uint32_t GetDisplayInfo (bool isRenderable);
-
     DGNPLATFORM_EXPORT QvElem* CreateCacheElem (IStrokeForCache&, QvCache* qvCache = nullptr, double pixelSize = 0.0, ICachedDrawP cachedDrawP = nullptr);
     DGNPLATFORM_EXPORT QvElem* GetCachedGeometry (IStrokeForCache& stroker, bool& deleteQvElem);
 
@@ -531,7 +514,6 @@ public:
     DGNPLATFORM_EXPORT uint32_t        GetRasterPlane () const;
     DGNPLATFORM_EXPORT void            InitScanRangeAndPolyhedron ();
     DGNPLATFORM_EXPORT void            AllocateScanCriteria ();
-    DGNPLATFORM_EXPORT bool            CheckFillOutline ();
     DGNPLATFORM_EXPORT void            VisitDgnModel (DgnModelP modelRef);
     DGNPLATFORM_EXPORT void            SetScanReturn ();
     DGNPLATFORM_EXPORT RasterDisplayParams const& GetRasterDisplayParams() const { return m_rasterDisplayParams; }
@@ -749,13 +731,13 @@ DGNPLATFORM_EXPORT ClipPlaneSetCP GetRangePlanes () const;
 
 //! Get the current LineStyleSymb.
 //! @return the current LineStyleSymb.
-DGNPLATFORM_EXPORT ILineStyleCP GetCurrLineStyle (LineStyleSymbP* symb);
+//DGNPLATFORM_EXPORT ILineStyleCP GetCurrLineStyle (LineStyleSymbP* symb);
 
 //! Set the linestyle in the current linestyle MatSymb. This method is mainly used to temporarily clear the current
 //! linestyle, for pieces of geometry that are to be drawn solid. To do that, call GetCurrLineStyle and save the
 //! current value. Then call this method passing NULL and when you're done, call this method again to restore the saved linestyle.
 //! @param[in]      lstyle      The new current linestyle. If NULL, no (solid) linestyle is used.
-DGNPLATFORM_EXPORT void SetCurrLineStyle (ILineStyleCP lstyle);
+//DGNPLATFORM_EXPORT void SetCurrLineStyle (ILineStyleCP lstyle);
 
 DGNPLATFORM_EXPORT bool& GetUseCachedGraphics();
 DGNPLATFORM_EXPORT bool GetDisplayPriorityRange (int32_t& low, int32_t& high) const;
@@ -770,9 +752,9 @@ DGNPLATFORM_EXPORT void CookDisplayParamsOverrides (ElemDisplayParamsR, OvrMatSy
 
 //__PUBLISH_SECTION_START__
 
-DGNPLATFORM_EXPORT ColorDef GetCurrLineColor ();
-DGNPLATFORM_EXPORT ColorDef GetCurrFillColor ();
-DGNPLATFORM_EXPORT uint32_t GetCurrWidth ();
+//DGNPLATFORM_EXPORT ColorDef GetCurrLineColor ();
+//DGNPLATFORM_EXPORT ColorDef GetCurrFillColor ();
+//DGNPLATFORM_EXPORT uint32_t GetCurrWidth ();
 
 //! Calculate the net display priority value. The net display priority is based on the geometry (element) and sub-category priority.
 //! @return the net display priority. For 3D views, display priority is always 0.
@@ -802,54 +784,6 @@ DGNPLATFORM_EXPORT void CookDisplayParamsOverrides ();
 //! @note Calls ActivateOverrideMatSymb on the output.
 DGNPLATFORM_EXPORT void ResetContextOverrides ();
 
-//! Do a line width lookup in the current lineweight to width table.
-//! @param[in]      index       Line weight between 0 and 31.
-//! @return    line width in pixels
-DGNPLATFORM_EXPORT uint32_t GetIndexedLineWidth (int index);
-
-//! Get the 32 bit on-off "line pattern" for a line code value for this context.
-//! Output devices can change the on-off patterns based on resolution, etc.
-//! @param[in]          index       a the range of 0 to 7.
-//! @return             the line pattern value.
-//! @bsimethod
-DGNPLATFORM_EXPORT uint32_t GetIndexedLinePattern (int index);
-
-//! Set the line width in the given material from the given color index.
-//! Since the context may need to apply special symbology rules, callers should use this
-//! method instead of modifying ElemMatSymb directly.
-//! @param[in]      elemMatSymb ElemMatSymb in which to change the line width.
-//! @param[in]      index       Line weight between 0 and 31.
-DGNPLATFORM_EXPORT void SetIndexedLineWidth (ElemMatSymbR elemMatSymb, int index);
-
-//! Set the line pattern in the given material from the given color index.
-//! Since the context may need to apply special symbology rules, callers should use this
-//! method instead of modifying ElemMatSymb directly.
-//! @param[in]      elemMatSymb ElemMatSymb in which to change the line pattern.
-//! @param[in]      index       Line style index between 0 and 7.
-DGNPLATFORM_EXPORT void SetIndexedLinePattern (ElemMatSymbR elemMatSymb, int index);
-
-//! Set the line width in the given override material from the given color index.
-//! Since the context may need to apply special symbology rules, callers should use this
-//! method instead of modifying ElemMatSymb directly.
-//! @param[in]  ovrMatSymb      OvrMatSymb in which to change the line width.
-//! @param[in]  index Line      weight between 0 and 31.
-DGNPLATFORM_EXPORT void SetIndexedLineWidth (OvrMatSymbR ovrMatSymb, int index);
-
-//! Set the line pattern in the given override material from the given color index.
-//! Since the context may need to apply special symbology rules, callers should use this
-//! method instead of modifying ElemMatSymb directly.
-//! @param[in]  ovrMatSymb      OvrMatSymb in which to change the line pattern.
-//! @param[in]  index Line      style index between 0 and 7.
-DGNPLATFORM_EXPORT void SetIndexedLinePattern (OvrMatSymbR ovrMatSymb, int index);
-
-//! Set the locate priority for displayed geometry. 
-//! @param[in]   priority       Hit Priority
-DGNPLATFORM_EXPORT void SetLocatePriority (int priority);
-
-//! Set geometry displayed to this view to be non-snappable 
-//! @param[in]   unsnappable          The non-snappable status.
-DGNPLATFORM_EXPORT void SetNonSnappable (bool unsnappable);
-
 //__PUBLISH_SECTION_END__
 
 //! Gets the current level of detail.
@@ -865,9 +799,7 @@ DGNPLATFORM_EXPORT void SetCurrentLevelOfDetail(double levelOfDetail);
 DGNPLATFORM_EXPORT bool IsMonochromeDisplayStyleActive ();
 DGNPLATFORM_EXPORT bool ElementIsUndisplayed (GeometricElementCR);
 
-bool WantShowDefaultFieldBackground ();
-
-DGNPLATFORM_EXPORT void    CacheQvGeometryTexture (uint32_t rendMatID);
+DGNPLATFORM_EXPORT void CacheQvGeometryTexture (uint32_t rendMatID);
 
 //__PUBLISH_SECTION_START__
 //@}
@@ -1053,7 +985,6 @@ protected:
 
     virtual int     _GetViewNumber() const override { return -1; }
     virtual void    _AllocateScanCriteria() override {}
-    virtual bool    _CheckFillOutline () override { return m_seedContext.CheckFillOutline (); }
 
 public:
     DGNPLATFORM_EXPORT SymbolContext (ViewContextR seedContext);

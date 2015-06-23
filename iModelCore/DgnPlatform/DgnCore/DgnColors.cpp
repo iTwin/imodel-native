@@ -371,7 +371,7 @@ BentleyStatus DgnColors::QueryColorByName(ColorDef& color, Utf8StringCR name, Ut
     {
     Statement stmt(m_dgndb, "SELECT Value FROM " DGN_TABLE(DGN_CLASSNAME_Color) " WHERE Name=? AND Book=?");
     stmt.BindText(1, name, Statement::MakeCopy::No);
-    stmt.BindText(1, name, Statement::MakeCopy::No);
+    stmt.BindText(2, book, Statement::MakeCopy::No);
     if (BE_SQLITE_ROW != stmt.Step())
         return  ERROR;
 
