@@ -25,6 +25,7 @@
 //#include <endian.h>
 //#endif
 
+USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
 
 /// same as reset()

@@ -8,6 +8,7 @@
 #include <BeSQLite/ChangeSet.h>
 #include <BeSQLite/SQLiteAPI.h>
 
+USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
 
 /*---------------------------------------------------------------------------------**//**
