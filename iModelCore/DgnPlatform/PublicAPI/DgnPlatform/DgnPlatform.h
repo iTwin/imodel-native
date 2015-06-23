@@ -915,6 +915,7 @@ typedef T_DoubleVector const&  T_DoubleVectorCR;
 #define   IMAXUI8     UINT64_MAX
 
 //=======================================================================================
+//! @ingroup DgnColorGroup
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
 struct HsvColorDef
@@ -926,6 +927,7 @@ struct HsvColorDef
 
 //=======================================================================================
 //! RGBA values for a color
+//! @ingroup DgnColorGroup
 //=======================================================================================
 struct ColorDef
 {
@@ -974,7 +976,11 @@ public:
 };
 
 //=======================================================================================
-//! Colors in elements should typically be either by-category or a specific RGBA. This wraps a bool and a ColorDef to encourage and enforce this pattern, where a color is either by-category or a ColorDef, not both at the same time. This means that the ColorDef is not available when by-category, but is always available otherwise. This structure will not clear the its color when toggling by-category on, so it can be recovered later. Your specific scenario may or may not want to persist this way, but this structure allows it.
+//! Colors in elements should typically be either by-category or a specific RGBA. 
+//! This wraps a bool and a ColorDef to encourage and enforce this pattern, where a color is either by-category or a ColorDef, not both at the same time. 
+//! This means that the ColorDef is not available when by-category, but is always available otherwise. This structure will not clear the its color when toggling by-category on, so it can be recovered later. 
+//! Your specific scenario may or may not want to persist this way, but this structure allows it.
+//! @ingroup DgnColorGroup
 // @bsiclass                                                    Jeff.Marker     06/2015
 //=======================================================================================
 struct ElementColor
