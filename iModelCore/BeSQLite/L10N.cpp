@@ -10,6 +10,7 @@
 
 #define RUNONCE_CHECK(var)      {if (var) return; var=true;}
 
+USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
 
 DEFINE_KEY_METHOD (L10NLookup::SQLangDb)

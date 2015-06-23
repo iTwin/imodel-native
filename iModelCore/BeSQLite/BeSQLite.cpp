@@ -24,6 +24,8 @@
 #include "BeSQLiteProfileManager.h"
 #include <prg.h>
 
+USING_NAMESPACE_BENTLEY
+
 #include "seven/Types.h"
 #include "seven/Lzma2Enc.h"
 #include "seven/Lzma2Dec.h"
