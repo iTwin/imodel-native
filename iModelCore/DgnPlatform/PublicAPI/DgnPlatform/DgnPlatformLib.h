@@ -526,6 +526,9 @@ public:
             virtual int _GetVersion() const {return 1;} // Do not override!
             virtual void _OnHostTermination(bool isProcessShutdown) override {delete this;}
 
+            //! Report if Parasolids is loaded.
+            virtual bool _IsParasolidLoaded() {return false;}
+
             //! Get the number of radial isoparametric lines to produce for analytic faces.
             //! @return Desired number of radial isoparametrics lines.
             //! @note: Used by _OutputBodyAsWireframe to produce hatch lines for non-planar faces.

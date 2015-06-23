@@ -258,6 +258,10 @@ protected:
     //! @remarks It is very rare that an applications needs to call this or to override it.
     DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR);
 
+    //! Invokes the _VisitElement on \a context for <em>each element</em> that is in the view.
+    //! For normal views, this does the same thing as _DrawView.
+    DGNPLATFORM_EXPORT virtual void _VisitElements(ViewContextR& context);
+
     //! Draw a single element through a ViewContext.
     //! An application can override _DrawElement to change the symbology of elements.
     //! @remarks For elements that only occupy a few pixels on the screen, DgnPlatform calls \ref _DrawElementFiltered instead of _DrawElement.
@@ -347,6 +351,7 @@ public:
 
     DGNPLATFORM_EXPORT StatusInt VisitHit (HitDetailCR, ViewContextR) const;
     DGNPLATFORM_EXPORT void DrawView(ViewContextR);
+    DGNPLATFORM_EXPORT void VisitElements(ViewContextR);
     DGNPLATFORM_EXPORT void ChangeModelDisplay(DgnModelId, bool onOff);
     DGNPLATFORM_EXPORT StatusInt GetRangeForFit(DRange3dR range);
     DGNPLATFORM_EXPORT void OnViewOpened(DgnViewportR);

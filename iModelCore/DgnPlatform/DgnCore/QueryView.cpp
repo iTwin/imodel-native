@@ -625,6 +625,17 @@ void QueryViewController::_DrawView(ViewContextR context)
         }
     }
 
+void QueryViewController::_VisitElements(ViewContextR context)
+    {
+    DgnDbR project = m_queryModel.GetDgnDb();
+    CachedStatementPtr rangeStmt;
+    project.GetCachedStatement(rangeStmt, _GetRTreeMatchSql(*context.GetViewport()).c_str());
+    BindModelAndCategory(*rangeStmt);
+    ProgressiveViewFilter pvFilter (*context.GetViewport(), project, m_queryModel, m_neverDrawn.empty() ? NULL : &m_neverDrawn, GetMaxElementMemory(), rangeStmt.get());
+    while (pvFilter._Process(context) != IProgressiveDisplay::Completion::Finished)
+        ;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    02/2013
 //---------------------------------------------------------------------------------------

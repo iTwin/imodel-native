@@ -1871,3 +1871,8 @@ void ViewController::_DrawView(ViewContextR context)
     for (auto modelId : m_viewedModels)
         context.VisitDgnModel(m_dgndb.Models().GetModel(modelId));
     }
+
+void ViewController::_VisitElements(ViewContextR context)
+    {
+    _DrawView(context);
+    }
