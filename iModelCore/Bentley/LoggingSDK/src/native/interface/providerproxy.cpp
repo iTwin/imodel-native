@@ -8,10 +8,11 @@
 
 #include "bsilogprivate.h"
 
+USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_LOGGING
 USING_NAMESPACE_BENTLEY_LOGGING_PROVIDER
 
-LogProviderProxy&          Bentley::NativeLogging::GetLogProvider ()
+LogProviderProxy& BentleyApi::NativeLogging::GetLogProvider ()
     {
     static LogProviderProxy* s_proxy;
     if (NULL == s_proxy)

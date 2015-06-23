@@ -2,13 +2,15 @@
 |
 |     $Source: Bentley/nonport/ValueFormat.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../BentleyInternal.h"
 #include <Bentley/ValueFormat.h>
 #include <Bentley/BeAssert.h>
 #include <Bentley/BeStringUtilities.h>
+
+USING_NAMESPACE_BENTLEY
 
 #define  THOUSANDSSEPARATOR ','
 #define  DECIMALSEPARATOR   '.'

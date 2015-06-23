@@ -2,15 +2,16 @@
 |
 |     $Source: LoggingSDK/src/native/interface/loggingmanager.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include "bsilogprivate.h"
 
+USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_LOGGING
 
-LoggerCache& Bentley::NativeLogging::GetLoggerCache()
+LoggerCache& BentleyApi::NativeLogging::GetLoggerCache()
     {
     static LoggerCache* s_cache;
     if (NULL == s_cache)

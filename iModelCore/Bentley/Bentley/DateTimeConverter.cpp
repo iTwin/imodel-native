@@ -12,7 +12,7 @@
 #include <Logging/bentleylogging.h>
 #include <limits.h>
 
-#define LOG (*Bentley::NativeLogging::LoggingManager::GetLogger (L"DateTime"))
+#define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (L"DateTime"))
 
 BEGIN_BENTLEY_NAMESPACE
 //---------------------------------------------------------------------------------------

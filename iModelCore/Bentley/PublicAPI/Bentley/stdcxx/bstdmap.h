@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/stdcxx/bstdmap.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -67,7 +67,7 @@
 
 #if !defined (DOCUMENTATION_GENERATOR)
 
-BC__RWSTD_NAMESPACE (BC__RW) { 
+NAMESPACE_BENTLEY_BC__RW_BEGIN  //  BENTLEY_CHANGE
 // This is used in the implementation of bstdmap and bmultimap.
 template <class _TypeT, class _TypeU>
 struct __select1st : public std::unary_function<_TypeT, _TypeU>
@@ -77,7 +77,7 @@ struct __select1st : public std::unary_function<_TypeT, _TypeU>
     }
 };
 
-}   // namespace BC__RW
+NAMESPACE_BENTLEY_BC__RW_END  // BENTLEY_CHANGE
 
 #endif // DOCUMENTATION_GENERATOR
 
@@ -86,7 +86,7 @@ NAMESPACE_BENTLEY_BSTDCXX_BEGIN
 
 //=======================================================================================
 /**
-A %Bentley supplied implementation @c std::map. This class is used in the %Bentley APIs to 
+A %Bentley supplied implementation of @c std::map. This class is used in the %Bentley APIs to 
 avoid dependencies on compiler-supplied implementations of @c std::map that sometimes vary
 with compiler settings or compiler versions. The @c bstdmap class does not
 suffer from these problems. This makes @c bstdmap suitable for use in %Bentley 
@@ -104,7 +104,7 @@ To understand the @c bstdmap class, consult the documentation for @c std::map.
 //=======================================================================================
 template <class _Key, class _TypeT,
           class _Compare = std::less<_Key>,
-          class _Allocator = Bentley::BentleyAllocator<bpair<const _Key, _TypeT> > >
+          class _Allocator = BentleyApi::BentleyAllocator<bpair<const _Key, _TypeT> > >
 class bstdmap
 {
 public:
@@ -315,7 +315,7 @@ public:
 //! A template that has many of the capabilities of std::multimap
 template <class _Key, class _TypeT,
           class _Compare = std::less<_Key>,
-          class _Allocator = Bentley::BentleyAllocator<bpair<const _Key, _TypeT> > >
+          class _Allocator = BentleyApi::BentleyAllocator<bpair<const _Key, _TypeT> > >
 class bstdmultimap
 {
 public:

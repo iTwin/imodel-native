@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/CatchNonPortable.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -105,8 +105,8 @@
     int PathStripToRootW            (__this_function_is_not_portable__use_BeFileName_instead&, ...); //!< Use BeFileName::ParseName
 
     struct __this_function_is_not_portable__see_BeFileName_h;
-    int GetModuleFileNameW          (__this_function_is_not_portable__see_BeFileName_h&, ...); //!< Use Bentley::BeGetModuleFileName -- work in progress
-    int _wgetcwd                    (__this_function_is_not_portable__see_BeFileName_h&, ...); //!< Use Bentley::BeGetCwd
+    int GetModuleFileNameW          (__this_function_is_not_portable__see_BeFileName_h&, ...); //!< Cannot be used in portable code.
+    int _wgetcwd                    (__this_function_is_not_portable__see_BeFileName_h&, ...); //!< Cannot be used in portable code.
 
     struct __this_function_is_not_portable__use_BeFileListIterator_instead;
     int FindFirstFileW              (__this_function_is_not_portable__use_BeFileListIterator_instead&, ...); //!< Use BeFileListIterator

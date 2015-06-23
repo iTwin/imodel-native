@@ -13,8 +13,6 @@
 // Copyright (C) 1999, 2000, 2001, 2002, 2003, 2009
 // Free Software Foundation, Inc.
 
-using namespace Bentley;
-
 template<typename T>
 struct A {T m_value; };
 
@@ -986,7 +984,7 @@ static int swap_calls;
 namespace std
 {
   template<> 
-    void swap(Bentley::bvector<T>&, Bentley::bvector<T>&) 
+    void swap(BentleyApi::bvector<T>&, BentleyApi::bvector<T>&) 
     { ++swap_calls; }
 }
 

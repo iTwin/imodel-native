@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeAssert.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -49,16 +49,16 @@ END_BENTLEY_NAMESPACE
 
 #else
 //! Assert that \a _Expression is true
-#define BeAssert(_Expression) (void)( (!!(_Expression)) || (BeAssertFunctions::PerformBeAssert(_CRT_WIDE(#_Expression), _CRT_WIDE(__FILE__), __LINE__), 0) )
+#define BeAssert(_Expression) (void)( (!!(_Expression)) || (BentleyApi::BeAssertFunctions::PerformBeAssert(_CRT_WIDE(#_Expression), _CRT_WIDE(__FILE__), __LINE__), 0) )
 //! Assert that \a _Expression is true, when the test relates to input data.
-#define BeDataAssert(_Expression) (void)( (!!(_Expression)) || (BeAssertFunctions::PerformBeDataAssert(_CRT_WIDE(#_Expression), _CRT_WIDE(__FILE__), __LINE__), 0) )
+#define BeDataAssert(_Expression) (void)( (!!(_Expression)) || (BentleyApi::BeAssertFunctions::PerformBeDataAssert(_CRT_WIDE(#_Expression), _CRT_WIDE(__FILE__), __LINE__), 0) )
 //! Assert that \a _Expression is true
 #define BeAssertOnce(_Expression)               \
         do {                                    \
             static int st_bAssertedOnce = 0;    \
             if (!st_bAssertedOnce)   \
                 {                               \
-                (!!(_Expression)) || (BeAssertFunctions::PerformBeAssert(_CRT_WIDE(#_Expression), _CRT_WIDE(__FILE__), __LINE__), 0);         \
+                (!!(_Expression)) || (BentleyApi::BeAssertFunctions::PerformBeAssert(_CRT_WIDE(#_Expression), _CRT_WIDE(__FILE__), __LINE__), 0);         \
                 st_bAssertedOnce = 1;           \
                 }                               \
             } while (0)
@@ -68,7 +68,7 @@ END_BENTLEY_NAMESPACE
             static int st_bAssertedOnce = 0;    \
             if (!st_bAssertedOnce)              \
                 {                               \
-                (!!(_Expression)) || (BeAssertFunctions::PerformBeDataAssert(_CRT_WIDE(#_Expression), _CRT_WIDE(__FILE__), __LINE__), 0);     \
+                (!!(_Expression)) || (BentleyApi::BeAssertFunctions::PerformBeDataAssert(_CRT_WIDE(#_Expression), _CRT_WIDE(__FILE__), __LINE__), 0);     \
                 st_bAssertedOnce = 1;           \
                 }                               \
             } while (0)

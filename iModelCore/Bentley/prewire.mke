@@ -2,7 +2,7 @@
 #
 #     $Source: prewire.mke $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 PolicyFile = $(InternalSystemPolicy)
@@ -17,6 +17,9 @@ $(BuildContext)PublicAPI/BentleyManagedUtil : $(_MakeFilePath)PublicAPI/BentleyM
 
 $(BuildContext)PublicAPI/Logging : $(_MakeFilePath)PublicAPI/Logging
     $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicMki/BentleyApi.mki : $(_MakeFilePath)PublicMki/BentleyApi.mki
+    $(LinkFirstDepToFirstTarget)
 
 $(BuildContext)Delivery/bentley-notice.txt : $(_MakeFilePath)bentley-notice.txt
     $(LinkFirstDepToFirstTarget)

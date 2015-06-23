@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/stdcxx/rw/_strref.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -108,7 +108,7 @@ class basic_string;
 NAMESPACE_BENTLEY_BSTDCXX_END
 
 
-BC__RWSTD_NAMESPACE (BC__RW) { 
+NAMESPACE_BENTLEY_BC__RW_BEGIN  //  BENTLEY_CHANGE
 
 
 #if    defined (_RWSTD_REENTRANT)        \
@@ -290,7 +290,7 @@ struct __null_ref
 
 #endif   // _RWSTD_NO_COLLAPSE_TEMPLATE_STATICS
 
-}   // namespace BC__RW
+NAMESPACE_BENTLEY_BC__RW_END  // BENTLEY_CHANGE
 
 #endif   // _RWSTD_RW_STRREF_H_INCLUDED
 

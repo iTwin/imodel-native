@@ -9,6 +9,8 @@
 #include "DateTimeConverter.h"
 #include <Bentley/BeTimeUtilities.h>
 
+USING_NAMESPACE_BENTLEY
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  02/2013
 //+---------------+---------------+---------------+---------------+---------------+------

@@ -313,8 +313,8 @@ struct bmap_params
   static const Key& key(const value_type &x) { return x.first; }
   static const Key& key(const mutable_value_type &x) { return x.first; }
   static void swap(mutable_value_type *a, mutable_value_type *b) {
-    btree_swap_helper(a->first, b->first);
-    btree_swap_helper(a->second, b->second);
+    BentleyApi::btree_swap_helper(a->first, b->first);
+    BentleyApi::btree_swap_helper(a->second, b->second);
   }
 };
 
@@ -338,7 +338,7 @@ struct btree_set_params
 
   static const Key& key(const value_type &x) { return x; }
   static void swap(mutable_value_type *a, mutable_value_type *b) {
-    btree_swap_helper<mutable_value_type>(*a, *b);
+    BentleyApi::btree_swap_helper<mutable_value_type>(*a, *b);
   }
 };
 
@@ -984,10 +984,10 @@ class btree : public Params::key_compare {
   // the returned pair is equal to lower_bound(key). The second member pair of
   // the pair is equal to upper_bound(key).
   bpair<iterator,iterator> equal_range(const key_type &key) {
-    return make_bpair(lower_bound(key), upper_bound(key));
+    return Bstdcxx::make_bpair(lower_bound(key), upper_bound(key));
   }
   bpair<const_iterator,const_iterator> equal_range(const key_type &key) const {
-    return make_bpair(lower_bound(key), upper_bound(key));
+    return Bstdcxx::make_bpair(lower_bound(key), upper_bound(key));
   }
 
   // Inserts a value into the btree only if it does not already exist. The
@@ -1640,7 +1640,7 @@ void btree_node<P>::swap(btree_node *x) {
   if (!leaf()) {
     // Swap the child pointers.
     for (int i = 0; i <= n; ++i) {
-      btree_swap_helper(*mutable_child(i), *x->mutable_child(i));
+      BentleyApi::btree_swap_helper(*mutable_child(i), *x->mutable_child(i));
     }
     for (int i = 0; i <= count(); ++i) {
       x->child(i)->fields_.parent = x;
@@ -1651,7 +1651,7 @@ void btree_node<P>::swap(btree_node *x) {
   }
 
   // Swap the counts.
-  btree_swap_helper(fields_.count, x->fields_.count);
+  BentleyApi::btree_swap_helper(fields_.count, x->fields_.count);
 }
 
 ////
@@ -1745,16 +1745,16 @@ btree<P>::insert_unique(const key_type &key, ValuePointer value) {
   iterator &iter = res.first;
   if (res.second == kExactMatch) {
     // The key already exists in the tree, do nothing.
-    return make_bpair(internal_last(iter), false);
+    return Bstdcxx::make_bpair(internal_last(iter), false);
   } else if (!res.second) {
     iterator last = internal_last(iter);
     if (last.node && !compare_keys(key, last.key())) {
       // The key already exists in the tree, do nothing.
-      return make_bpair(last, false);
+      return Bstdcxx::make_bpair(last, false);
     }
   }
 
-  return make_bpair(internal_insert(iter, *value), true);
+  return Bstdcxx::make_bpair(internal_insert(iter, *value), true);
 }
 
 template <typename P>
@@ -2238,7 +2238,7 @@ inline bpair<IterType, int> btree<P>::internal_locate_plain_compare(
     }
     iter.node = iter.node->child(iter.position);
   }
-  return make_bpair(iter, 0);
+  return Bstdcxx::make_bpair(iter, 0);
 }
 
 template <typename P> template <typename IterType>
@@ -2248,14 +2248,14 @@ inline bpair<IterType, int> btree<P>::internal_locate_compare_to(
     int res = iter.node->lower_bound(key, key_comp());
     iter.position = res & kMatchMask;
     if (res & kExactMatch) {
-      return make_bpair(iter, static_cast<int>(kExactMatch));
+      return Bstdcxx::make_bpair(iter, static_cast<int>(kExactMatch));
     }
     if (iter.node->leaf()) {
       break;
     }
     iter.node = iter.node->child(iter.position);
   }
-  return make_bpair(iter, -kExactMatch);
+  return Bstdcxx::make_bpair(iter, -kExactMatch);
 }
 
 template <typename P> template <typename IterType>

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/stdcxx/rw/_select.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -53,7 +53,7 @@
 #endif   // _RWSTD_RW_DEFS_H_INCLUDED
 
 
-BC__RWSTD_NAMESPACE (BC__RW) {
+NAMESPACE_BENTLEY_BC__RW_BEGIN  //  BENTLEY_CHANGE
 
 struct __rw_false_t { enum { _C_val }; };
 struct __rw_true_t { enum { _C_val = 1 }; };
@@ -163,7 +163,7 @@ struct __rw_same_type
 #endif   // _RWSTD_NO_CLASS_PARTIAL_SPEC
 
 
-}   // namespace BC__RW
+NAMESPACE_BENTLEY_BC__RW_END  // BENTLEY_CHANGE
 
 
 #  if defined (__IBMCPP__) && __IBMCPP__ <= 500

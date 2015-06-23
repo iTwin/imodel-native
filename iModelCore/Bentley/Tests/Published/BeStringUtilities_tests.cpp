@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/BeStringUtilities_tests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -10,8 +10,6 @@
 #include <Bentley/BeStringUtilities.h>
 #include <Bentley/ScopedArray.h>
 #include <map>
-
-using namespace Bentley;
 
 #define VERIFY(X) ASSERT_TRUE(X)
 
@@ -40,8 +38,6 @@ TEST (BeStringUtilitiesTests, BeStringUtilUtf16WChar)
 
    int status= BeStringUtilities::CompareUtf16WChar(string3,string2);
    EXPECT_EQ(0,status);
-  
- 
 }
 
 //---------------------------------------------------------------------------------------

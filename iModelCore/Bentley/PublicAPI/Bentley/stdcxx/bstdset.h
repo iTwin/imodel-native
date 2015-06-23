@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/stdcxx/bstdset.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -66,7 +66,7 @@
 #include <Bentley/stdcxx/rw/_defs.h>
 #include <functional>
 
-BC__RWSTD_NAMESPACE (BC__RW) { 
+NAMESPACE_BENTLEY_BC__RW_BEGIN  //  BENTLEY_CHANGE
 template <class _TypeT, class _TypeU>
 struct __ident: std::unary_function<_TypeT, _TypeU>
 {
@@ -75,7 +75,7 @@ struct __ident: std::unary_function<_TypeT, _TypeU>
     }
 };
 
-}   // namespace BC__RW
+NAMESPACE_BENTLEY_BC__RW_END  // BENTLEY_CHANGE
 
 #endif // DOCUMENTATION_GENERATOR
 
@@ -84,7 +84,7 @@ NAMESPACE_BENTLEY_BSTDCXX_BEGIN
 
 //=======================================================================================
 /**
-A %Bentley supplied implementation @c std::set. This class is used in the %Bentley APIs to 
+A %Bentley supplied implementation of @c std::set. This class is used in the %Bentley APIs to 
 avoid dependencies on compiler-supplied implementations of @c std::map that sometimes vary
 with compiler settings or compiler versions. The @c bstdset class does not
 suffer from these problems. This makes @c bstdset suitable for use in %Bentley 
@@ -102,7 +102,7 @@ To understand the @c bstdset class, consult the documentation for @c std::set.
 //=======================================================================================
 template <class _Key,
           class _Compare = std::less<_Key>,
-          class _Allocator = ::Bentley::BentleyAllocator<_Key> >
+          class _Allocator = ::BentleyApi::BentleyAllocator<_Key> >
 class bstdset
 {
 public:
@@ -308,10 +308,10 @@ public:
 };
 
 
-//! A template that has many of the capabilities of std::multiset
+//! A template that has many of the capabilities of @c std::multiset
 template <class _Key, 
           class _Compare = std::less<_Key>,
-          class _Allocator = ::Bentley::BentleyAllocator<_Key> >
+          class _Allocator = ::BentleyApi::BentleyAllocator<_Key> >
 class bstdmultiset
 {
 public:

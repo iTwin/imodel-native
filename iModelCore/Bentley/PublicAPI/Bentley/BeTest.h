@@ -68,8 +68,8 @@
             Test() {;}
             virtual ~Test() {;}
             BENTLEYDLL_EXPORT void Run();
-            virtual CharCP  GetTestCaseNameA () const = 0;
-            virtual CharCP  GetTestNameA () const = 0;
+            virtual BentleyApi::CharCP  GetTestCaseNameA () const = 0;
+            virtual BentleyApi::CharCP  GetTestNameA () const = 0;
             };
         }
 
@@ -82,8 +82,8 @@
     #define DEFINE_BETEST_INTERNAL(superTestName, testCaseName, testName)\
         struct BETEST_TEST_CLASS_NAME(testCaseName,testName) : superTestName                                                                   \
         {                                                                                                                               \
-            CharCP  GetTestCaseNameA () const { return #testCaseName; }                                                                 \
-            CharCP  GetTestNameA ()     const { return #testName; }                                                                     \
+            BentleyApi::CharCP  GetTestCaseNameA () const { return #testCaseName; }                                                                 \
+            BentleyApi::CharCP  GetTestNameA ()     const { return #testName; }                                                                     \
             virtual void TestBody () override;                                                                                          \
         };                                                                                                                              \
     extern "C" EXPORT_ATTRIBUTE int BETEST_TEST_RUNNER_FUNC(testCaseName,testName) () { size_t e = BeTest::GetErrorCount(); if (BeTest::ShouldRunTest (#testCaseName "." #testName)) { BETEST_TEST_CLASS_NAME(testCaseName,testName) t; t.Run(); } return BeTest::GetErrorCount() > e; } \

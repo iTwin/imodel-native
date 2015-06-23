@@ -2,13 +2,14 @@
 |
 |     $Source: LoggingSDK/src/native/interface/bsilog.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bsilogprivate.h"
 #include <algorithm>
 
 USING_NAMESPACE_BENTLEY_LOGGING
+USING_NAMESPACE_BENTLEY
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    TonyCleveland   06/04

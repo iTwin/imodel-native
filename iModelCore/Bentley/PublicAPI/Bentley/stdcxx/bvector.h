@@ -75,13 +75,13 @@
 NAMESPACE_BENTLEY_BSTDCXX_BEGIN
 
 _EXPORT
-template <class _TypeT, class _Allocator = ::Bentley::BentleyAllocator<_TypeT> >
+template <class _TypeT, class _Allocator = ::BentleyApi::BentleyAllocator<_TypeT> >
 class bvector;
 
 
 //=======================================================================================
 /**
-A Bentley supplied implementation @c std::vector. This class is used in the Bentley APIs to 
+A Bentley supplied implementation of @c std::vector. This class is used in the Bentley APIs to 
 avoid dependencies on compiler-supplied implementations of @c std::vector that sometimes vary
 with compiler settings or compiler versions. The @c bvector class does not
 suffer from these problems. This makes @c bvector suitable for use in Bentley 

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/stdcxx/basic_string.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -55,7 +55,7 @@
 #include <Bentley/stdcxx/rw/_defs.h>
 
 // *** BENTLEY_CHANGE
-/** \namespace Bentley::Bstdcxx 
+/** @namespace BentleyApi::Bstdcxx 
 
 string and container templates.
 
@@ -1503,7 +1503,7 @@ NAMESPACE_BENTLEY_BSTDCXX_END
 #endif   // _RWSTD_RW_STRINGIO_H_INCLUDED
 #endif
 
-BC__RWSTD_NAMESPACE (BC__RW) { 
+NAMESPACE_BENTLEY_BC__RW_BEGIN  //  BENTLEY_CHANGE
 
 #ifndef _RWSTD_NO_FUNC_PARTIAL_SPEC
 
@@ -1582,7 +1582,7 @@ __rw_new_capacity (_RWSTD_STRING_SIZE_TYPE (BENTLEY_BSTDCXX::wstring) __size,
 // clean up
 #undef _RWSTD_STRING_SIZE_TYPE
 
-}   // namespace BC__RW
+NAMESPACE_BENTLEY_BC__RW_END  // BENTLEY_CHANGE
 
 #endif  // DOCUMENTATION_GENERATOR
 

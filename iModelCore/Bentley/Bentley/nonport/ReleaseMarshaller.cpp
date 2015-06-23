@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/ReleaseMarshaller.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)
@@ -10,6 +10,8 @@
 
 #include <Bentley/Bentley.h>
 #include <Bentley/ReleaseMarshaller.h>
+
+USING_NAMESPACE_BENTLEY
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    05/2010
@@ -90,7 +92,7 @@ void            ReleaseMarshaller::ReleaseQueueContents(ReleaseMarshallerQueue_T
     {
     for (ReleaseMarshallerQueueIterator_T iterator = queue.begin(); iterator != queue.end(); iterator++)
         {
-        Bentley::IRefCounted* counted = *iterator;
+        BentleyApi::IRefCounted* counted = *iterator;
         if (NULL != counted)
             counted->Release();
         }
