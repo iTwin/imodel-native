@@ -25,6 +25,26 @@ struct ChangeBlobHeader
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TxnManager::UndoChangeSet::ConflictResolution TxnManager::UndoChangeSet::_OnConflict(ConflictCause cause, BeSQLite::Changes::Change change) 
+    {
+    Utf8CP tableName;
+    int nCols,indirect;
+    DbOpcode opcode;
+    change.GetOperation(&tableName, &nCols, &opcode, &indirect);
+
+    if (cause == ConflictCause::NotFound)
+        {
+        if (opcode == DbOpcode::Delete)    // this is caused by propagate delete on a foreign key. It is not a problem.
+            return ConflictResolution::Skip;
+        }
+
+    BeAssert(false);
+    return ConflictResolution::Skip;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * we keep a statement cache just for TxnManager statements
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -82,7 +102,7 @@ DbResult TxnManager::SaveCurrentChange(ChangeSet& changeset, Utf8CP operation)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* truncate all changes in the TXN_Change table at TxnId (note: entries for TxnId are removed).
+* truncate all changes in the TXN_Change table starting at TxnId and higher (note: entries for TxnId are removed).
 * @bsimethod                                    Keith.Bentley                   07/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::TruncateChanges(TxnId id)
@@ -118,7 +138,6 @@ DbResult TxnManager::ReadEntry(TxnRowId rowid, ChangeEntry& entry)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TxnManager::TxnManager(DgnDbR project) : m_dgndb(project), m_stmts(20)
     {
-    m_undoInProgress    = false;
     m_inDynamics        = false;
     m_propagateChanges  = true;
     m_action = TxnAction::None;
@@ -133,6 +152,7 @@ TxnManager::TxnManager(DgnDbR project) : m_dgndb(project), m_stmts(20)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* add a new TxnTable to this TxnManager. TxnTables are responsible for reacting to changes to a given SQLite table, by name.
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::AddTxnTable(DgnDomain::TableHandler* tableHandler)
@@ -147,6 +167,7 @@ void TxnManager::AddTxnTable(DgnDomain::TableHandler* tableHandler)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Find a TxnTable by name
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TxnTable* TxnManager::FindTxnTable(Utf8CP tableName) const
@@ -156,6 +177,7 @@ TxnTable* TxnManager::FindTxnTable(Utf8CP tableName) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Get the TxnTable that handles changes to the dgn_Element table
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 dgn_TxnTable::Element& TxnManager::Elements() const
@@ -164,6 +186,7 @@ dgn_TxnTable::Element& TxnManager::Elements() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Get the TxnTable that handles changes to the dgn_ElementDrivesElement table
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 dgn_TxnTable::ElementDep& TxnManager::ElementDependencies() const
@@ -238,14 +261,10 @@ TxnId TxnManager::GetMultiTxnOperationStart()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::SetUndoInProgress(bool yesNo)
     {
-    BeAssert(m_undoInProgress != yesNo);
-
     // we're about to reverse or reinstate a committed transaction. Before that can happen, we need to cancel
     // any pending uncommitted changes.
     if (HasChanges())
         m_dgndb.AbandonChanges();
-
-    m_undoInProgress = yesNo;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -269,6 +288,8 @@ BentleyStatus TxnManager::PropagateChanges()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* When journalling changes, SQLite calls this method to determine whether changes to a specific table are eligible or not.
+* @note tables with no primary key are skipped automatically.
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TxnManager::TrackChangesForTable TxnManager::_FilterTable(Utf8CP tableName)
@@ -281,8 +302,10 @@ TxnManager::TrackChangesForTable TxnManager::_FilterTable(Utf8CP tableName)
     return TrackChangesForTable::Yes;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
+* The supplied changeset represents all of the pending uncommited changes in the current transaction.
+* Use the SQLite "ROLLBACK" statement to reverse all of those changes in the database, and then call the OnChangesetApplied method 
+* on the inverted changeset to allow TxnTables to react to the fact that the changes were abandoned.
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChangeTracker::OnCommitStatus TxnManager::CancelChanges(ChangeSet& changeset)
@@ -298,6 +321,9 @@ ChangeTracker::OnCommitStatus TxnManager::CancelChanges(ChangeSet& changeset)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* The supplied changeset was just applied to the database by the supplied action. That means the the database now potentially reflects a different
+* state than the in-memory objects for the affected tables. Use the changeset to send _OnReversedxxx events to the TxnTables for each changed row, 
+* so they can update in-memory state as necessary.
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::OnChangesetApplied(ChangeSet& changeset, TxnAction action)
@@ -349,6 +375,39 @@ void TxnManager::OnChangesetApplied(ChangeSet& changeset, TxnAction action)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* A changeset is about to be committed (or, in the case of "what if" testing, look like it is committed). Let each
+* TxnTable prepare its state 
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnManager::OnBeginValidate()
+    {
+    m_action = TxnAction::Commit;
+    for (auto table : m_tables)
+        table->_OnValidate();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* A changeset was just be committed. Let each TxnTable clean up its state. Also clear the validation
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnManager::OnEndValidate()
+    {
+    for (auto table : m_tables)
+        table->_OnValidated();
+
+    m_validationErrors.clear();
+    m_action = TxnAction::None;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Called from Db::SaveChanges or Db::AbandonChanges when the TxnManager change tracker has changes. 
+* This method creates a changeset from the change tracker. 
+* If this is a "cancel", it rolls back the current Txn, and calls _OnReversedxxx methods on all affected TxnTables.
+* If this is a commit, it calls the _OnValidatexxx methods for the TxnTables, and then calls "_PropagateChanges" 
+* It saves the resultant changeset (the combination of direct changes plus indirect changes) as a Txn in the database.
+* The Txn may be undone in this session via the "ReverseTxn" method.
+* When this method returns, the entire transaction is committed in BeSQLite. In this manner, it is impossible to make
+* changes to the database that aren't also saved in the dgn_Txn table.
 * @bsimethod                                    Keith.Bentley                   01/05
 +---------------+---------------+---------------+---------------+---------------+------*/
 ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operation)
@@ -363,47 +422,39 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
     UNUSED_VARIABLE(rc);
     BeAssert(BE_SQLITE_OK == rc);
     BeAssert(0 != changeset.GetSize());
-    Restart(); 
+    Restart();  // clear the change tracker, since we have captured all the changes in the changeset
 
     if (!isCommit)
         return CancelChanges(changeset);
 
-    m_action = TxnAction::Commit;
-    for (auto table : m_tables)
-        table->_OnCommit();
-
+    OnBeginValidate();
     AddChangeSet(changeset);
 
-    BentleyStatus status = PropagateChanges();   // Propagate indirect changes
+    BentleyStatus status = PropagateChanges();   // Propagate to generate indirect changes
 
-    if (HasChanges())
+    if (HasChanges()) // did we have any indirect changes?
         {
         UndoChangeSet indirectChanges;
         indirectChanges.FromChangeTrack(*this);
         Restart();
-
-        AddChangeSet(indirectChanges); // tell TxnTables about indirect changes
-        changeset.ConcatenateWith(indirectChanges);
+        changeset.ConcatenateWith(indirectChanges); // combine direct and indirect changes into a single changeset
         }
 
     if (BSISUCCESS != status)
         {
         LOG.errorv("Cancelling txn due to fatal validation error.");
-        return OnCommitStatus::Abort;
+        OnEndValidate();
+        return CancelChanges(changeset); // roll back entire txn
         }
 
-    // At this point, all of the changes to all tables have been applied.
+    // At this point, all of the changes to all tables have been applied. Tell TxnMonitors
     T_HOST.GetTxnAdmin()._OnCommit(*this);
 
-    SaveCurrentChange(changeset, operation);
+    SaveCurrentChange(changeset, operation); // save changeset into DgnDb itself, along with the description of the operation we're performing
     if (m_multiTxnOp.empty())
         m_curr.m_txnId.Next(); // only increment the TxnId if we're not doing a multi-step operation
 
-    for (auto table : m_tables)
-        table->_OnCommitted();
-
-    m_validationErrors.clear();
-    m_action = TxnAction::None;
+    OnEndValidate();
     return OnCommitStatus::Continue;
     }
 
@@ -470,13 +521,13 @@ void TxnManager::AddChangeSet(ChangeSet& changeset)
         switch (opcode)
             {
             case DbOpcode::Delete:
-                txnTable->_OnConfirmDelete(change);
+                txnTable->_OnValidateDelete(change);
                 break;
             case DbOpcode::Insert:
-                txnTable->_OnConfirmAdd(change);
+                txnTable->_OnValidateAdd(change);
                 break;
             case DbOpcode::Update:
-                txnTable->_OnConfirmUpdate(change);
+                txnTable->_OnValidateUpdate(change);
                 break;
             default:
                 BeAssert(false);
@@ -537,6 +588,8 @@ void TxnManager::ReadChangeSet(UndoChangeSet& changeset, TxnRowId rowId, TxnActi
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Read a changeset from the dgn_Txn table, potentially inverting it (depending on whether we'performing undo or redo),
+* and then apply the changeset to the DgnDb.
 * @bsimethod                                    Keith.Bentley                   07/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::ApplyChanges(TxnRowId rowId, TxnAction action)
@@ -548,7 +601,7 @@ void TxnManager::ApplyChanges(TxnRowId rowId, TxnAction action)
     if (BE_SQLITE_OK != rc)
         return;
 
-    // Mark this row as deleted/undeleted depending on the way we just applied the changes.
+    // Mark this row as deleted/undeleted depending on which way we just applied the changes.
     CachedStatementPtr stmt = GetTxnStatement("UPDATE " DGN_TABLE_Txns " SET Deleted=? WHERE rowid=?");
     stmt->BindInt(1, action==TxnAction::Reverse);
     stmt->BindInt64(2, rowId);
@@ -591,14 +644,14 @@ void TxnManager::ReverseTxnRange(TxnRange& txnRange, Utf8StringP undoStr, bool m
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt TxnManager::ReverseToPos(TxnId pos)
+DgnDbStatus TxnManager::ReverseToPos(TxnId pos)
     {
     if (!PrepareForUndo())
-        return ERROR;
+        return DgnDbStatus::NothingToUndo;
 
     TxnId last = GetCurrTxnId();
     if (pos > last)
-        return ERROR;
+        return DgnDbStatus::NothingToUndo;
 
     TxnRange range(pos, last);
     return ReverseActions(range, true, false);
@@ -607,13 +660,13 @@ StatusInt TxnManager::ReverseToPos(TxnId pos)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt TxnManager::CancelToPos(TxnId pos)
+DgnDbStatus TxnManager::CancelToPos(TxnId pos)
     {
     if (!PrepareForUndo())
-        return ERROR;
+        return DgnDbStatus::NothingToUndo;
 
-    StatusInt status = ReverseToPos(pos);
-    if (SUCCESS == status)
+    DgnDbStatus status = ReverseToPos(pos);
+    if (DgnDbStatus::Success == status)
         DeleteReversedTxns();
 
     return  status;
@@ -622,7 +675,7 @@ StatusInt TxnManager::CancelToPos(TxnId pos)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt TxnManager::ReverseActions(TxnRange& txnRange, bool multiStep, bool showMsg)
+DgnDbStatus TxnManager::ReverseActions(TxnRange& txnRange, bool multiStep, bool showMsg)
     {
     Utf8String undoStr;
     ReverseTxnRange(txnRange, &undoStr, multiStep);     // do the actual undo now.
@@ -635,7 +688,7 @@ StatusInt TxnManager::ReverseActions(TxnRange& txnRange, bool multiStep, bool sh
     if (showMsg)
         NotificationManager::OutputMessage(NotifyMessageDetails(OutputMessagePriority::Info, undoStr.c_str()));
 
-    return SUCCESS;
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -646,7 +699,7 @@ bool TxnManager::PrepareForUndo()
     if (IsUndoPossible())
         {
         T_HOST.GetTxnAdmin()._OnPrepareForUndoRedo();
-        return  true;
+        return true;
         }
 
     T_HOST.GetTxnAdmin()._OnNothingToUndo();
@@ -656,10 +709,10 @@ bool TxnManager::PrepareForUndo()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   02/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt TxnManager::ReverseTxns(int numActions)
+DgnDbStatus TxnManager::ReverseTxns(int numActions)
     {
     if (!PrepareForUndo())
-        return ERROR;
+        return DgnDbStatus::NothingToRedo;
 
     TxnId last = GetCurrTxnId();
     TxnId first(last - numActions);
@@ -722,7 +775,7 @@ void TxnManager::ReinstateTxn(TxnRange& revTxn, Utf8StringP redoStr)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt TxnManager::ReinstateActions(RevTxn& revTxn)
+DgnDbStatus TxnManager::ReinstateActions(RevTxn& revTxn)
     {
     Utf8String redoStr;
     ReinstateTxn(revTxn.m_range, &redoStr);     // do the actual redo now.
@@ -730,18 +783,18 @@ StatusInt TxnManager::ReinstateActions(RevTxn& revTxn)
     T_HOST.GetTxnAdmin()._OnUndoRedo(*this, TxnAction::Reinstate);
 
     NotificationManager::OutputMessage(NotifyMessageDetails(OutputMessagePriority::Info, redoStr.c_str()));
-    return SUCCESS;
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt TxnManager::ReinstateTxn()
+DgnDbStatus TxnManager::ReinstateTxn()
     {
     if (!IsRedoPossible())
         {
         T_HOST.GetTxnAdmin()._OnNothingToRedo();
-        return ERROR;
+        return DgnDbStatus::NothingToRedo;
         }
 
     T_HOST.GetTxnAdmin()._OnPrepareForUndoRedo();
@@ -797,21 +850,21 @@ void TxnManager::DeleteReversedTxns()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::Element::_OnCommit()
+void dgn_TxnTable::Element::_OnValidate()
     {
     m_changes = false;
     if (m_stmt.IsPrepared())
         return;
 
-    m_txnMgr.GetDgnDb().CreateTable(TEMP_TABLE(TXN_TABLE_Elements), "ElementId INTEGER NOT NULL PRIMARY KEY,ModelId INTEGER NOT NULL,ChangeType INT,LastMod TIMESTAMP");
+    m_txnMgr.GetDgnDb().CreateTable(TEMP_TABLE(TXN_TABLE_Elements), "ElementId INTEGER NOT NULL PRIMARY KEY,ModelId INTEGER NOT NULL,ChangeType INT");
     m_txnMgr.GetDgnDb().ExecuteSql("CREATE INDEX " TEMP_TABLE(TXN_TABLE_Elements) "_Midx ON " TXN_TABLE_Elements "(ModelId)");
-    m_stmt.Prepare(m_txnMgr.GetDgnDb(), "INSERT INTO " TEMP_TABLE(TXN_TABLE_Elements) "(ElementId,ModelId,ChangeType,LastMod) VALUES(?,?,?,?)");
+    m_stmt.Prepare(m_txnMgr.GetDgnDb(), "INSERT INTO " TEMP_TABLE(TXN_TABLE_Elements) "(ElementId,ModelId,ChangeType) VALUES(?,?,?)");
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::Element::_OnCommitted()
+void dgn_TxnTable::Element::_OnValidated()
     {
     // for cancel, the temp table is automatically rolled back, so we don't (can't actually, because there's no Txn active) need to empty it.
     if (m_changes)
@@ -823,12 +876,17 @@ void dgn_TxnTable::Element::_OnCommitted()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_TxnTable::Model::_OnReversedAdd(BeSQLite::Changes::Change const& change) 
     {
+    DgnModelId modelId = change.GetOldValue(0).GetValueId<DgnModelId>();
+    DgnModelP model = m_txnMgr.GetDgnDb().Models().FindModel(modelId);
+
+    if (model)
+        m_txnMgr.GetDgnDb().Models().DropLoadedModel(*model);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::ElementDep::_OnCommit()
+void dgn_TxnTable::ElementDep::_OnValidate()
     {
     m_changes = false;
     if (m_stmt.IsPrepared())
@@ -842,7 +900,7 @@ void dgn_TxnTable::ElementDep::_OnCommit()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::ElementDep::_OnCommitted()
+void dgn_TxnTable::ElementDep::_OnValidated()
     {
     // for cancel, the temp table is automatically rolled back, so we don't (can't actually, because there's no Txn active) need to empty it.
     if (m_changes && TxnAction::Abandon != m_txnMgr.GetCurrentAction())
@@ -863,7 +921,7 @@ void dgn_TxnTable::ElementDep::UpdateSummary(Changes::Change change, ChangeType 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::ModelDep::_OnConfirmAdd(Changes::Change const& change)
+void dgn_TxnTable::ModelDep::_OnValidateAdd(Changes::Change const& change)
     {
     SetChanges();
     CheckDirection(change.GetNewValue(0).GetValueId<EC::ECInstanceId>());
@@ -872,7 +930,7 @@ void dgn_TxnTable::ModelDep::_OnConfirmAdd(Changes::Change const& change)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::ModelDep::_OnConfirmUpdate(Changes::Change const& change)
+void dgn_TxnTable::ModelDep::_OnValidateUpdate(Changes::Change const& change)
     {
     SetChanges();
     CheckDirection(change.GetOldValue(0).GetValueId<EC::ECInstanceId>());
@@ -881,7 +939,7 @@ void dgn_TxnTable::ModelDep::_OnConfirmUpdate(Changes::Change const& change)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::Element::AddElement(DgnElementId elementId, DgnModelId modelId, double lastMod, ChangeType changeType)
+void dgn_TxnTable::Element::AddElement(DgnElementId elementId, DgnModelId modelId, ChangeType changeType)
     {
     enum Column : int {ElementId=1,ModelId=2,ChangeType=3,LastMod=4};
 
@@ -892,7 +950,6 @@ void dgn_TxnTable::Element::AddElement(DgnElementId elementId, DgnModelId modelI
     m_stmt.BindId(Column::ElementId, elementId);
     m_stmt.BindId(Column::ModelId, modelId);
     m_stmt.BindInt(Column::ChangeType, (int) changeType);
-    m_stmt.BindDouble(Column::LastMod, lastMod);
 
     auto rc = m_stmt.Step();
     BeAssert(rc==BE_SQLITE_DONE);
@@ -936,9 +993,8 @@ void dgn_TxnTable::Element::AddChange(Changes::Change const& change, ChangeType 
 
     if (changeType == ChangeType::Update)
         stage = Changes::Change::Stage::New;
-    double lastMod = change.GetValue(7, stage).GetValueDouble();           // assumes LastMod is column 7
 
-    AddElement(elementId, modelId, lastMod, changeType);
+    AddElement(elementId, modelId, changeType);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -947,7 +1003,7 @@ void dgn_TxnTable::Element::AddChange(Changes::Change const& change, ChangeType 
 dgn_TxnTable::Element::Iterator::Entry dgn_TxnTable::Element::Iterator::begin() const
     {
     if (!m_stmt.IsValid())
-        m_db->GetCachedStatement(m_stmt, "SELECT ElementId,ModelId,ChangeType,LastMod FROM " TEMP_TABLE(TXN_TABLE_Elements));
+        m_db->GetCachedStatement(m_stmt, "SELECT ElementId,ModelId,ChangeType FROM " TEMP_TABLE(TXN_TABLE_Elements));
     else
         m_stmt->Reset();
 
@@ -957,7 +1013,6 @@ dgn_TxnTable::Element::Iterator::Entry dgn_TxnTable::Element::Iterator::begin() 
 DgnElementId dgn_TxnTable::Element::Iterator::Entry::GetElementId() const {return m_sql->GetValueId<DgnElementId>(0);}
 DgnModelId dgn_TxnTable::Element::Iterator::Entry::GetModelId() const {return m_sql->GetValueId<DgnModelId>(1);}
 TxnTable::ChangeType dgn_TxnTable::Element::Iterator::Entry::GetChangeType() const {return (TxnTable::ChangeType) m_sql->GetValueInt(2);}
-double dgn_TxnTable::Element::Iterator::Entry::GetLastMod() const {return m_sql->GetValueDouble(3);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15

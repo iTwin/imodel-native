@@ -76,7 +76,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 typedef bmap<uint32_t, DgnFontCP> T_FontNumberMap;
 
 namespace dgn_ElementHandler {struct Physical;};
-namespace dgn_TxnTable {struct Element;};
+namespace dgn_TxnTable {struct Element; struct Model;};
 
 //=======================================================================================
 //! A base class for api's that access a table in a DgnDb
@@ -652,6 +652,7 @@ struct DgnModels : DgnDbTable
 private:
     friend struct DgnDb;
     friend struct DgnModel;
+    friend struct dgn_TxnTable::Model;
     typedef bmap<DgnModelId,DgnModelPtr> T_DgnModelMap;
 
     T_DgnModelMap   m_models;

@@ -495,18 +495,6 @@ DgnElementCP DgnModel::FindElementById(DgnElementId id)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   05/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::ClearAllQvElems()
-    {
-#if defined(NEEDS_WORK_DGNITEM)
-    DgnModel::DgnElementIterator iter(this);
-    for (ElementRefP elRef = iter.GetFirstElementRef(); NULL != elRef && !iter.HitEOF(); elRef = iter.GetNextElementRef(true))
-        elRef->ForceElemChanged(true, ELEMREF_CHANGE_REASON_ClearQVData);
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   05/04
-+---------------+---------------+---------------+---------------+---------------+------*/
 bool DgnModels::FreeQvCache()
     {
     if (nullptr == m_qvCache)
@@ -523,19 +511,30 @@ bool DgnModels::FreeQvCache()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_OnDelete()
     {
-    _FillModel();
-
     for (auto appdata : m_appData)
         appdata.second->_OnDelete(*this);
 
-    // before we can delete a model, we must delete all of its elements. If that fails, we cannot continue
-    for (auto el : m_elements)
+    // before we can delete a model, we must delete all of its elements. If that fails, we cannot continue.
+    Statement stmt(m_dgndb, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
+    stmt.BindId(1, m_modelId);
+
+    auto& elements = m_dgndb.Elements();
+    while (BE_SQLITE_ROW == stmt.Step())
         {
-        DgnDbStatus stat = el.second->Delete();
+        DgnElementCPtr el = elements.GetElement(stmt.GetValueId<DgnElementId>(0));
+        if (!el.IsValid())
+            {
+            BeAssert(false);
+            return DgnDbStatus::BadElement;
+            }
+
+        // Note: this may look dangerous (deleting an element in the model we're iterating), but is is actually safe in SQLite.
+        DgnDbStatus stat = el->Delete();
         if (DgnDbStatus::Success != stat)
             return stat;
         }
 
+    m_dgndb.Models().DropLoadedModel(*this);
     return DgnDbStatus::Success;
     }
 
@@ -814,8 +813,12 @@ void DgnModel::_FillModel()
     while (BE_SQLITE_ROW == stmt.Step())
         {
         DgnElementId id(stmt.GetValueId<DgnElementId>(Column::Id));
-        if (nullptr != elements.FindElement(id))  // already loaded?
+        DgnElementCP el = elements.FindElement(id);
+        if (nullptr != el)  // already loaded?
+            {
+            RegisterElement(*el);
             continue;
+            }
 
         elements.LoadElement(DgnElement::CreateParams(*this,
             stmt.GetValueId<DgnClassId>(Column::ClassId), 

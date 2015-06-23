@@ -627,7 +627,6 @@ DbResult DgnElementDependencyGraph::EdgeQueue::SelectEdge(DgnElementDependencyGr
     edge.m_priority = stmt.GetValueInt64(5);
 
     BeAssert(edge.IsValid());
-
     return BE_SQLITE_ROW;
     }
 
@@ -1043,13 +1042,15 @@ void DgnElementDependencyGraph::InvokeAffectedDependencyHandlers()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DgnElementDependencyGraph::WhatIfChanged(IEdgeProcessor& proc, bvector<DgnElementId> const& directlyChangedElements, bvector<EC::ECInstanceId> const& directlyChangedDepRels)
     {
+    m_txnMgr.OnBeginValidate();
+
     auto& txnElements = m_txnMgr.Elements();
     auto& elements = GetDgnDb().Elements();
     for (DgnElementId elementId : directlyChangedElements)
         {
         auto el = elements.GetElement(elementId);
         if (el.IsValid())
-            txnElements.AddElement(elementId, el->GetDgnModel().GetModelId(), 0.0, TxnTable::ChangeType::Update);
+            txnElements.AddElement(elementId, el->GetDgnModel().GetModelId(), TxnTable::ChangeType::Update);
         }
 
     auto& dependencies = m_txnMgr.ElementDependencies();
@@ -1060,6 +1061,7 @@ BentleyStatus DgnElementDependencyGraph::WhatIfChanged(IEdgeProcessor& proc, bve
     InvokeAffectedDependencyHandlers();
     m_processor = nullptr;
 
+    m_txnMgr.OnEndValidate();
     return BSISUCCESS;
     }
 

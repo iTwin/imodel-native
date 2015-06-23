@@ -13,7 +13,7 @@
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    09/2012
 //--------------+------------------------------------------------------------------------
-void QueryModel::ClearQueryResults ()
+void QueryModel::ClearQueryResults()
     {
     delete m_currQueryResults;
     m_currQueryResults = NULL;
@@ -47,7 +47,7 @@ void QueryModel::SaveQueryResults()
     {
     if (m_selector.GetState() != Selector::State::Completed)
         {
-        BeAssert (false);    // this should only be called if we know there is a query available.
+        BeAssert(false);    // this should only be called if we know there is a query available.
         return;
         }
 
@@ -96,11 +96,11 @@ bool QueryModel::Selector::IsActive() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    05/2012
 //--------------+------------------------------------------------------------------------
-void QueryModel::Selector::RequestAbort (bool waitUntilFinished) 
+void QueryModel::Selector::RequestAbort(bool waitUntilFinished) 
     {
     if (true) // hold critical section while we test/set state
         {
-        BeMutexHolder synchIt (m_conditionVariable.GetMutex());
+        BeMutexHolder synchIt(m_conditionVariable.GetMutex());
         if (!IsActive())
             return;
 
@@ -112,7 +112,7 @@ void QueryModel::Selector::RequestAbort (bool waitUntilFinished)
         {
         //  BeConditionVariable::Infinite should be fine but I feel safer with 1000/16 and there is not 
         //  much overhead to using it since the abort should nearly always finish before it expires.
-        WaitUntilFinished (NULL, 1, false);
+        WaitUntilFinished(NULL, 1, false);
         }
     }
 
@@ -123,14 +123,14 @@ struct WaitUntilNotActivePredicate : IConditionVariablePredicate
     {
     QueryModel::Selector const& m_selector;
 
-    WaitUntilNotActivePredicate (QueryModel::Selector const& selector) : m_selector(selector){}
-    virtual bool _TestCondition (BeConditionVariable &cv) override {return !m_selector.IsActive();}
+    WaitUntilNotActivePredicate(QueryModel::Selector const& selector) : m_selector(selector){}
+    virtual bool _TestCondition(BeConditionVariable &cv) override {return !m_selector.IsActive();}
     };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    05/2012
 //--------------+------------------------------------------------------------------------
-QueryModel::Selector::State QueryModel::Selector::WaitUntilFinished (ICheckStop* checkStop, uint32_t interval, bool stopQueryOnAbort) 
+QueryModel::Selector::State QueryModel::Selector::WaitUntilFinished(ICheckStop* checkStop, uint32_t interval, bool stopQueryOnAbort) 
     {
     WaitUntilNotActivePredicate predicate(*this);
 
@@ -151,7 +151,7 @@ QueryModel::Selector::State QueryModel::Selector::WaitUntilFinished (ICheckStop*
             break;
             }
 
-        m_conditionVariable.WaitOnCondition (&predicate, interval);
+        m_conditionVariable.WaitOnCondition(&predicate, interval);
         }
 
     return m_state;
@@ -200,15 +200,15 @@ void QueryModel::Selector::StartProcessing(DgnViewportCR viewport, QueryViewCont
     m_secondaryHitLimit = secondaryHitLimit;
     m_secondaryVolume = secondaryRange;
 
-    BeMutexHolder synchIt (m_conditionVariable.GetMutex());
-    SetState (State::ProcessingRequested);
+    BeMutexHolder synchIt(m_conditionVariable.GetMutex());
+    SetState(State::ProcessingRequested);
     m_conditionVariable.notify_all();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool QueryModel::Selector::_CheckStop () 
+bool QueryModel::Selector::_CheckStop() 
     {
     if (WasAborted())
         return true;
@@ -228,17 +228,17 @@ bool QueryModel::Selector::_CheckStop ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    06/2013
 //---------------------------------------------------------------------------------------
-void QueryModel::Selector::qt_NotifyCompletion ()
+void QueryModel::Selector::qt_NotifyCompletion()
     {
-    BeMutexHolder synchIt (m_conditionVariable.GetMutex());
+    BeMutexHolder synchIt(m_conditionVariable.GetMutex());
 
     //  Set state to one of the completed states
     if (WasAborted())
-        SetState (State::Aborted);
+        SetState(State::Aborted);
     else if (m_dbStatus != BE_SQLITE_ROW)
-        SetState (State::HandlerError);
+        SetState(State::HandlerError);
     else
-        SetState (State::Completed);
+        SetState(State::Completed);
 
     m_conditionVariable.notify_all();
     }
@@ -254,7 +254,7 @@ void QueryModel::Selector::qt_SearchIdSet(DgnElementIdSet& idSet, DgnDbRTree3dVi
         {
         if (_CheckStop())
             {
-            SetState (State::Aborted);
+            SetState(State::Aborted);
             break;
             }
 
@@ -285,7 +285,7 @@ void QueryModel::Selector::qt_SearchIdSet(DgnElementIdSet& idSet, DgnDbRTree3dVi
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    06/2013
 //---------------------------------------------------------------------------------------
-void QueryModel::Selector::qt_SearchRangeTree (DgnDbRTree3dViewFilter& filter)
+void QueryModel::Selector::qt_SearchRangeTree(DgnDbRTree3dViewFilter& filter)
     {
 #if defined (TRACE_QUERY_LOGIC)
     uint64_t start = BeTimeUtilities::QueryMillisecondsCounter();
@@ -294,7 +294,7 @@ void QueryModel::Selector::qt_SearchRangeTree (DgnDbRTree3dViewFilter& filter)
 
     do
         {
-        ClearAborted ();
+        ClearAborted();
 
         if (HighPriorityOperationSequencer::IsHighPriorityOperationActive())
             {
@@ -326,11 +326,11 @@ void QueryModel::Selector::qt_SearchRangeTree (DgnDbRTree3dViewFilter& filter)
 
 #if defined (TRACE_QUERY_LOGIC)
     if (restarts > 0)
-        printf ("qt_Process: got %d restarts\n", restarts);
+        printf("qt_Process: got %d restarts\n", restarts);
 #endif
 
 #if defined (DEBUGGING_LOAD_COUNTS)
-    BeDebugLog (Utf8PrintfString("qt_ProcessRequest finished: m_passedToTestRange = %d, m_acceptedByTestRange = %d, m_rejectedByOcclusionCalc = %d, m_passedToRangeAccept = %d",
+    BeDebugLog(Utf8PrintfString("qt_ProcessRequest finished: m_passedToTestRange = %d, m_acceptedByTestRange = %d, m_rejectedByOcclusionCalc = %d, m_passedToRangeAccept = %d",
                                  filter.m_passedToTestRange, filter.m_acceptedByTestRange, filter.m_rejectedByOcclusionCalc, filter.m_passedToRangeAccept));
 #endif
     }
@@ -345,7 +345,7 @@ void QueryModel::Selector::qt_ProcessRequest()
     //  a range tree operation and is therefore exempt from checks for high priority required.
     RangeTreeOperationBlock rangeTreeOperationBlock(m_dgndb);
 
-    DgnDbRTree3dViewFilter filter (*m_viewport, this, m_dgndb, m_maxElements, m_minimumPixels, m_noQuery ? NULL : m_alwaysDraw, m_neverDraw);
+    DgnDbRTree3dViewFilter filter(*m_viewport, this, m_dgndb, m_maxElements, m_minimumPixels, m_noQuery ? NULL : m_alwaysDraw, m_neverDraw);
     if (m_clipVector.IsValid())
         filter.SetClipVector(*m_clipVector);
 
@@ -361,7 +361,7 @@ void QueryModel::Selector::qt_ProcessRequest()
         {
         qt_SearchRangeTree(filter);
 #if defined (DEBUG_CALLS)
-        printf ("ncalls=%d, nscores=%d\n", filter.m_nCalls, filter.m_nScores);
+        printf("ncalls=%d, nscores=%d\n", filter.m_nCalls, filter.m_nScores);
 #endif
         m_results->m_reachedMaxElements = filter.m_occlusionScoreMap.size()==m_maxElements;
         m_results->m_eliminatedByLOD = filter.m_eliminatedByLOD;
@@ -378,13 +378,13 @@ void QueryModel::Selector::qt_ProcessRequest()
 
     if (WasAborted() || m_dbStatus != BE_SQLITE_ROW)
         {
-        BeMutexHolder synchIt (m_conditionVariable.GetMutex());
+        BeMutexHolder synchIt(m_conditionVariable.GetMutex());
 
         //  Set state to one of the completed states
-        if (WasAborted ())
-            SetState (State::Aborted);
+        if (WasAborted())
+            SetState(State::Aborted);
         else if (m_dbStatus != BE_SQLITE_ROW)
-            SetState (State::HandlerError);
+            SetState(State::HandlerError);
 
         m_conditionVariable.notify_all();
         return;
@@ -400,7 +400,7 @@ void QueryModel::Selector::qt_ProcessRequest()
         {
         if (_CheckStop())
             {
-            SetState (State::Aborted);
+            SetState(State::Aborted);
             break;
             }
 
@@ -419,7 +419,7 @@ void QueryModel::Selector::qt_ProcessRequest()
         {
         if (_CheckStop())
             {
-            SetState (State::Aborted);
+            SetState(State::Aborted);
             break;
             }
 
@@ -437,7 +437,7 @@ void QueryModel::Selector::qt_ProcessRequest()
 #if defined (TRACE_QUERY_LOGIC)
     uint32_t elapsed2 = (uint32_t)(BeTimeUtilities::QueryMillisecondsCounter() - start);
 
-    printf ("qt_ProcessRequest: hitLimit = %d, query time = %d, total time = %d\n", m_hitLimit, elapsed1, elapsed2);
+    printf("qt_ProcessRequest: hitLimit = %d, query time = %d, total time = %d\n", m_hitLimit, elapsed1, elapsed2);
 #endif
     UpdateLogging::RecordDoneLoad();
 
@@ -451,8 +451,8 @@ struct WaitUntilRequestedPredicate : IConditionVariablePredicate
     {
     QueryModel::Selector const& m_selector;
 
-    WaitUntilRequestedPredicate (QueryModel::Selector const& selector) : m_selector(selector){}
-    virtual bool _TestCondition (BeConditionVariable &cv) override 
+    WaitUntilRequestedPredicate(QueryModel::Selector const& selector) : m_selector(selector){}
+    virtual bool _TestCondition(BeConditionVariable &cv) override 
         {
         switch (m_selector.GetState())
             {
@@ -474,22 +474,22 @@ void QueryModel::Selector::qt_WaitForWork()
 
     while (State::TerminateRequested != m_state)
         {
-        m_conditionVariable.WaitOnCondition (&predicate, BeConditionVariable::Infinite);
+        m_conditionVariable.WaitOnCondition(&predicate, BeConditionVariable::Infinite);
         Selector::State lastState;
             {
-            BeMutexHolder synchIt (m_conditionVariable.GetMutex());
+            BeMutexHolder synchIt(m_conditionVariable.GetMutex());
             lastState = m_state;
             if (State::ProcessingRequested == m_state)
                 {
-                SetState (State::Processing);
+                SetState(State::Processing);
                 }
             }
         if (State::ProcessingRequested == lastState || State::AbortRequested == lastState)
-            qt_ProcessRequest ();
+            qt_ProcessRequest();
         }
 
     // Block until it is waiting. Otherwise the Wake will be lost.
-    BeMutexHolder synchIt (m_conditionVariable.GetMutex());
+    BeMutexHolder synchIt(m_conditionVariable.GetMutex());
     m_state = QueryModel::Selector::State::Terminated;
     m_conditionVariable.notify_all();
     }
@@ -497,17 +497,17 @@ void QueryModel::Selector::qt_WaitForWork()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    05/2012
 //--------------+------------------------------------------------------------------------
-THREAD_MAIN_DECL queryModelThreadMain (void* arg)
+THREAD_MAIN_DECL queryModelThreadMain(void* arg)
     {
-    BeThreadUtilities::SetCurrentThreadName("BentleyQueryModel"); // for debugging only
-    ((QueryModel::Selector*) arg)->qt_WaitForWork ();
+    BeThreadUtilities::SetCurrentThreadName("QueryModel"); // for debugging only
+    ((QueryModel::Selector*) arg)->qt_WaitForWork();
     return 0;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    05/2012
 //--------------+------------------------------------------------------------------------
-QueryModel::Selector::Selector (QueryModel& model) : m_dgndb(model.GetDgnDb()), m_conditionVariable()
+QueryModel::Selector::Selector(QueryModel& model) : m_dgndb(model.GetDgnDb()), m_conditionVariable()
     {
     m_viewport = 0;
     m_dbStatus = BE_SQLITE_ERROR;
@@ -520,7 +520,7 @@ QueryModel::Selector::Selector (QueryModel& model) : m_dgndb(model.GetDgnDb()), 
     m_state = State::Inactive;
 
     // for every QueryModel, we create a QueryView thread to do the query and loading of elements
-    BeThreadUtilities::StartNewThread (50*1024, queryModelThreadMain, this); 
+    BeThreadUtilities::StartNewThread(50*1024, queryModelThreadMain, this); 
     }
 
 //=======================================================================================
@@ -530,8 +530,8 @@ struct WaitUntilTerminatedPredicate : IConditionVariablePredicate
     {
     QueryModel::Selector const& m_selector;
 
-    WaitUntilTerminatedPredicate (QueryModel::Selector const& selector) : m_selector(selector){}
-    virtual bool _TestCondition (BeConditionVariable &cv) override 
+    WaitUntilTerminatedPredicate(QueryModel::Selector const& selector) : m_selector(selector){}
+    virtual bool _TestCondition(BeConditionVariable &cv) override 
         {
         return m_selector.GetState() == QueryModel::Selector::State::Terminated;
         }
@@ -540,17 +540,17 @@ struct WaitUntilTerminatedPredicate : IConditionVariablePredicate
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-QueryModel::Selector::~Selector () 
+QueryModel::Selector::~Selector() 
     {
     WaitUntilTerminatedPredicate    predicate(*this);
-    BeMutexHolder synchIt (m_conditionVariable.GetMutex());
+    BeMutexHolder synchIt(m_conditionVariable.GetMutex());
 
     m_state = State::TerminateRequested;
-    while(m_state == State::TerminateRequested)
+    while (m_state == State::TerminateRequested)
         {
         m_conditionVariable.notify_all();
         //  If should be possible to specify Infinite here but we have seen one deadlock.
-        m_conditionVariable.ProtectedWaitOnCondition (synchIt, &predicate, 100);
+        m_conditionVariable.ProtectedWaitOnCondition(synchIt, &predicate, 100);
         }
     }
 

@@ -1967,7 +1967,7 @@ TEST_F(ElementDependencyGraph, TestPriority)
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, ElementAssembly)
-{
+    {
     SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", Db::OPEN_ReadWrite);
 
     DgnClassId testClass(TestElement::GetTestElementECClass(*m_db)->GetId());
@@ -2007,13 +2007,87 @@ TEST_F(TransactionManagerTests, ElementAssembly)
 
     ASSERT_TRUE(!el1->IsPersistent());  // neither should now be persistent
     ASSERT_TRUE(!el2->IsPersistent());
-}
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static void testModelUndoRedo(DgnDbR db)
+    {
+    Utf8String name = db.Models().GetUniqueModelName("testphysical");
+
+    ModelHandlerR handler = dgn_ModelHandler::Physical::GetHandler();
+    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, db.Domains().GetClassId(handler), name.c_str()));
+    auto modelStatus = model->Insert();
+    ASSERT_TRUE(DgnDbStatus::Success == modelStatus);
+
+    auto category = db.Categories().MakeIterator().begin().GetCategoryId();
+
+    TestElementPtr templateEl = TestElement::Create(db, model->GetModelId(), category, "");
+    DgnElementCPtr el1 = templateEl->Insert();
+    ASSERT_TRUE(el1->IsPersistent());
+
+    templateEl->InvalidateElementId();
+    DgnElementCPtr el2 = templateEl->Insert();
+    ASSERT_TRUE(el2->IsPersistent());
+
+    templateEl->InvalidateElementId();
+    DgnElementCPtr el3 = templateEl->Insert();
+    ASSERT_TRUE(el3->IsPersistent());
+
+    db.SaveChanges("added model");
+
+    auto& txns = db.Txns(); 
+    auto stat = txns.ReverseSingleTxn();
+    ASSERT_TRUE(DgnDbStatus::Success == stat);
+    ASSERT_TRUE(!el1->IsPersistent());
+    ASSERT_TRUE(!el2->IsPersistent());
+    ASSERT_TRUE(!el3->IsPersistent());
+    ASSERT_TRUE(!model->IsPersistent());
+
+    stat = txns.ReinstateTxn();  // redo the changes
+    ASSERT_TRUE(DgnDbStatus::Success == stat);
+
+    el1 = db.Elements().GetElement(el1->GetElementId());
+    el2 = db.Elements().GetElement(el2->GetElementId());
+    el3 = db.Elements().GetElement(el3->GetElementId());
+    model = db.Models().GetModel(model->GetModelId());
+    ASSERT_TRUE(el1->IsPersistent());
+    ASSERT_TRUE(el2->IsPersistent());
+    ASSERT_TRUE(el3->IsPersistent());
+    ASSERT_TRUE(model->IsPersistent());
+
+    stat = model->Delete();
+    ASSERT_TRUE(DgnDbStatus::Success == stat);
+    ASSERT_TRUE(!el1->IsPersistent());
+    ASSERT_TRUE(!el2->IsPersistent());
+    ASSERT_TRUE(!el3->IsPersistent());
+    ASSERT_TRUE(!model->IsPersistent());
+    db.SaveChanges("deleted model");
+
+    stat = txns.ReverseSingleTxn();
+    el1 = db.Elements().GetElement(el1->GetElementId());
+    el2 = db.Elements().GetElement(el2->GetElementId());
+    el3 = db.Elements().GetElement(el3->GetElementId());
+    model = db.Models().GetModel(model->GetModelId());
+    ASSERT_TRUE(el1->IsPersistent());
+    ASSERT_TRUE(el2->IsPersistent());
+    ASSERT_TRUE(el3->IsPersistent());
+    ASSERT_TRUE(model->IsPersistent());
+
+    stat = txns.ReinstateTxn();  // redo the changes
+    ASSERT_TRUE(DgnDbStatus::Success == stat);
+    ASSERT_TRUE(!el1->IsPersistent());
+    ASSERT_TRUE(!el2->IsPersistent());
+    ASSERT_TRUE(!el3->IsPersistent());
+    ASSERT_TRUE(!model->IsPersistent());
+    }            
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, UndoRedo)
-{
+    {
     SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", Db::OPEN_ReadWrite);
     auto& txns = m_db->Txns(); 
     txns.EnableTracking(true);
@@ -2030,8 +2104,8 @@ TEST_F(TransactionManagerTests, UndoRedo)
     ASSERT_TRUE(!txns.IsRedoPossible());
 
     ASSERT_TRUE(el1->IsPersistent());
-    StatusInt stat = txns.ReverseSingleTxn();
-    ASSERT_EQ(stat, SUCCESS);
+    auto stat = txns.ReverseSingleTxn();
+    ASSERT_TRUE(DgnDbStatus::Success == stat);
     ASSERT_TRUE(!txns.IsUndoPossible());     // we can now redo but not undo
     ASSERT_TRUE(txns.IsRedoPossible());
 
@@ -2039,7 +2113,7 @@ TEST_F(TransactionManagerTests, UndoRedo)
     ASSERT_TRUE(!afterUndo.IsValid()); // it should not be in database.
     ASSERT_TRUE(!el1->IsPersistent());
     stat = txns.ReinstateTxn();  // redo the add, put the added element back
-    ASSERT_EQ(stat, SUCCESS);
+    ASSERT_TRUE(DgnDbStatus::Success == stat);
 
     ASSERT_TRUE(txns.IsUndoPossible());
     ASSERT_TRUE(!txns.IsRedoPossible());
@@ -2064,10 +2138,10 @@ TEST_F(TransactionManagerTests, UndoRedo)
     stat = txns.ReverseSingleTxn();
     AxisAlignedBox3d extents3 = m_db->Units().ComputeProjectExtents();
     ASSERT_TRUE (extents1.IsEqual(extents3));    // after undo, range should be back to where it was before we did the update
-    ASSERT_EQ(stat, SUCCESS);
+    ASSERT_TRUE(DgnDbStatus::Success == stat);
 
     stat = txns.ReinstateTxn();  // redo the update
-    ASSERT_EQ(stat, SUCCESS);
+    ASSERT_TRUE(DgnDbStatus::Success == stat);
     AxisAlignedBox3d extents4 = m_db->Units().ComputeProjectExtents();
     ASSERT_TRUE (extents4.IsEqual(extents2));    // now it should be back to the same as after we did the original update
 
@@ -2090,4 +2164,6 @@ TEST_F(TransactionManagerTests, UndoRedo)
     DgnElementCPtr afterAbandon = m_db->Elements().GetElement(el1->GetElementId());
     ASSERT_TRUE(afterAbandon.IsValid());
     ASSERT_TRUE(afterAbandon->IsPersistent());
+
+    testModelUndoRedo(*m_db);
     }

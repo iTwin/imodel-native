@@ -8,7 +8,7 @@
 #pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
 
-#define INVALID_QvElem      ((QvElem*) 0x0001)
+#define INVALID_QvElem ((QvElem*) 0x0001)
 
 BENTLEY_API_TYPEDEFS(HeapZone)
 
@@ -17,53 +17,54 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 //! @bsiclass
 //=======================================================================================
-template <class _QvKey> struct QvElemSet : DgnElement::AppData
+template <class QV_KEY> struct QvElemSet : DgnElement::AppData
 {
 protected:
     struct  Entry
         {
-        _QvKey      m_key;
+        QV_KEY      m_key;
         QvElem*     m_qvElem;
         Entry*      m_next;
 
-        void SetValue (QvElem* qvElem) {if (m_qvElem) m_key.DeleteQvElem (m_qvElem); m_qvElem = qvElem;}
-        void Clear (){m_qvElem = NULL;}
+        void SetValue(QvElem* qvElem) {if (m_qvElem) m_key.DeleteQvElem(m_qvElem); m_qvElem = qvElem;}
+        void Clear(){m_qvElem = nullptr;}
 
-        Entry (_QvKey const& key, QvElem* qvElem, Entry* next) : m_key (key), m_qvElem (qvElem), m_next (next) {}
+        Entry(QV_KEY const& key, QvElem* qvElem, Entry* next) : m_key(key), m_qvElem(qvElem), m_next(next) {}
         };
-
 
     HeapZone&   m_zone;
     Entry*      m_entry;
 
-    ~QvElemSet() {FreeAll (false);}
+    ~QvElemSet() {FreeAll(false);}
+
+    DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original) override {return DropMe::Yes;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-void FreeAll (bool qvCacheDeleted)
+void FreeAll(bool qvCacheDeleted)
     {
     for (Entry* thisEntry=m_entry, *next; thisEntry; thisEntry=next)
         {
         next = thisEntry->m_next;
 
         if (!qvCacheDeleted)
-            thisEntry->SetValue(NULL);
+            thisEntry->SetValue(nullptr);
 
-        thisEntry->~Entry ();
-        m_zone.Free (thisEntry, sizeof (Entry));
+        thisEntry->~Entry();
+        m_zone.Free(thisEntry, sizeof (Entry));
         }
     }
 
 public:
-    QvElemSet (HeapZone& zone) : m_zone(zone) {m_entry = NULL;}
+    QvElemSet(HeapZone& zone) : m_zone(zone) {m_entry = nullptr;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            Add (_QvKey const& key, QvElem* qvElem)
+void Add(QV_KEY const& key, QvElem* qvElem)
     {
-    Entry* prevEntry = NULL;
+    Entry* prevEntry = nullptr;
     Entry* nextEntry = m_entry;
 
     for (; nextEntry; prevEntry=nextEntry, nextEntry=nextEntry->m_next)
@@ -71,15 +72,15 @@ void            Add (_QvKey const& key, QvElem* qvElem)
         if (nextEntry->m_key.LessThan(key)) // sort them by key
             continue;
 
-        if (!nextEntry->m_key.Equal (key))
+        if (!nextEntry->m_key.Equal(key))
             break;
 
-        nextEntry->SetValue (qvElem);      // already exists, just change it
+        nextEntry->SetValue(qvElem);      // already exists, just change it
         return ;
         }
 
-    Entry* newEntry = (Entry*) m_zone.Alloc (sizeof (Entry));
-    new (newEntry) Entry (key, qvElem, nextEntry);
+    Entry* newEntry = (Entry*) m_zone.Alloc(sizeof (Entry));
+    new (newEntry) Entry(key, qvElem, nextEntry);
 
     if (prevEntry)
         prevEntry->m_next = newEntry;
@@ -90,9 +91,9 @@ void            Add (_QvKey const& key, QvElem* qvElem)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       Drop (_QvKey const& key)
+StatusInt Drop(QV_KEY const& key)
     {
-    for (Entry* prev=NULL, *thisEntry=m_entry; thisEntry; prev=thisEntry, thisEntry=thisEntry->m_next)
+    for (Entry* prev=nullptr, *thisEntry=m_entry; thisEntry; prev=thisEntry, thisEntry=thisEntry->m_next)
         {
         if (thisEntry->m_key.LessThan(key)) // entries are sorted by key
             continue;
@@ -105,8 +106,8 @@ StatusInt       Drop (_QvKey const& key)
         else
             m_entry = thisEntry->m_next;
 
-        thisEntry->SetValue (NULL);
-        m_zone.Free (thisEntry, sizeof(Entry));
+        thisEntry->SetValue(nullptr);
+        m_zone.Free(thisEntry, sizeof(Entry));
         return  SUCCESS;
         }
 
@@ -116,24 +117,24 @@ StatusInt       Drop (_QvKey const& key)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                     12/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       DropRange (_QvKey const& lowRange, _QvKey const& highRange)
+StatusInt DropRange(QV_KEY const& lowRange, QV_KEY const& highRange)
     {
     Entry* previous, *thisEntry;
-    for (previous = NULL, thisEntry = m_entry; NULL != thisEntry && thisEntry->m_key.LessThan (lowRange);
+    for (previous = nullptr, thisEntry = m_entry; nullptr != thisEntry && thisEntry->m_key.LessThan(lowRange);
                 previous = thisEntry, thisEntry = thisEntry->m_next)
         ;
 
-    if (NULL == thisEntry)
+    if (nullptr == thisEntry)
         return ERROR;
 
-    for (Entry* next = thisEntry->m_next; NULL != thisEntry && (thisEntry->m_key.LessThan (highRange) || thisEntry->m_key.Equal (highRange)); thisEntry = next)
+    for (Entry* next = thisEntry->m_next; nullptr != thisEntry && (thisEntry->m_key.LessThan(highRange) || thisEntry->m_key.Equal(highRange)); thisEntry = next)
         {
-        thisEntry->SetValue (NULL);
-        thisEntry->~Entry ();
-        m_zone.Free (thisEntry, sizeof (Entry));
+        thisEntry->SetValue(nullptr);
+        thisEntry->~Entry();
+        m_zone.Free(thisEntry, sizeof (Entry));
         }
 
-    if (NULL != previous)
+    if (nullptr != previous)
         previous->m_next = thisEntry;
     else
         m_entry = thisEntry;
@@ -144,16 +145,17 @@ StatusInt       DropRange (_QvKey const& lowRange, _QvKey const& highRange)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-QvElem*         Find (_QvKey const& key)
+QvElem* Find(QV_KEY const& key)
     {
     for (Entry* thisEntry = m_entry; thisEntry; thisEntry = thisEntry->m_next)
         {
         if (thisEntry->m_key.LessThan(key)) // entries are sorted by key
             continue;
 
-        return thisEntry->m_key.Equal(key) ? thisEntry->m_qvElem : NULL;
+        return thisEntry->m_key.Equal(key) ? thisEntry->m_qvElem : nullptr;
         }
-    return  NULL;
+
+    return  nullptr;
     }
 };
 
