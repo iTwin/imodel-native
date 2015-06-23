@@ -343,7 +343,7 @@
 
     This sample shows how to use the @ref BentleyApi::BeSQLite::EC::JsonECSqlSelectAdapter "JsonECSqlSelectAdapter" 
     over an @ref BentleyApi::BeSQLite::EC::ECSqlStatement "ECSqlStatement" that implicitly aggregates
-    the raw data of an ECSqlStatement into a @ref Json::Value "JSON" object.
+    the raw data of an ECSqlStatement into a @ref BentleyApi::Json::Value "JSON" object.
 
     $SAMPLECODE_BEGIN[Overview_ECDb_JsonECSqlSelectAdapter,Example]
     __PUBLISH_INSERT_FILE__ Overview_ECDb_JsonECSqlSelectAdapter.sampleCode
@@ -366,7 +366,7 @@
     $SAMPLECODE_END
 
     This sample shows how to use the @ref BentleyApi::BeSQLite::EC::JsonInserter "JsonInserter" to insert instances in the form of 
-    @ref Json::Value "JSON" objects into the @ref ECDbFile "ECDb file". It internally
+    @ref BentleyApi::Json::Value "JSON" objects into the @ref ECDbFile "ECDb file". It internally
     creates the @ref BentleyApi::BeSQLite::EC::ECSqlStatement "ECSqlStatement", binds the corresponding values to it, and
     finally executes it.
     The @ref BentleyApi::BeSQLite::EC::JsonUpdater "JsonUpdater" and
