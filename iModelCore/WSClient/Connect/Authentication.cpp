@@ -48,7 +48,7 @@ void WebServices::Authenticate (JsonValueCR messageDataObj)
         data[AuthenticationData::USERNAME] = username;
         setupData["Data"] = data;
 
-        MobileDgnUi::SendMessageToWorkThread(CONNECT_REQUEST_SETUP, std::move (setupData));
+        MobileDgnUi::SendMessageToWorkThreadInternal(CONNECT_REQUEST_SETUP, std::move (setupData));
 
         if (isSignOut)
             {
@@ -90,5 +90,5 @@ void WebServices::Authenticate (JsonValueCR messageDataObj)
     data[AuthenticationData::TOKEN] = token.AsString();
     setupData["Data"] = data;
 
-    MobileDgnUi::SendMessageToWorkThread(CONNECT_REQUEST_SETUP, std::move(setupData));
+    MobileDgnUi::SendMessageToWorkThreadInternal(CONNECT_REQUEST_SETUP, std::move(setupData));
     }
