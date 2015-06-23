@@ -625,8 +625,15 @@ void QueryViewController::_DrawView(ViewContextR context)
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson      06/2015
+//---------------------------------------------------------------------------------------
 void QueryViewController::_VisitElements(ViewContextR context)
     {
+    // Visit the elements that were actually loaded
+    context.VisitDgnModel(&m_queryModel);
+
+    // And step through the rest of the elements that were not loaded (but would be displayed by progressive display).
     DgnDbR project = m_queryModel.GetDgnDb();
     CachedStatementPtr rangeStmt;
     project.GetCachedStatement(rangeStmt, _GetRTreeMatchSql(*context.GetViewport()).c_str());
