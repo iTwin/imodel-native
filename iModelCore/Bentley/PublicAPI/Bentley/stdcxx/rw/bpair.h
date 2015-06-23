@@ -68,7 +68,7 @@
 // *** BENTLEY_CHANGE
 NAMESPACE_BENTLEY_BSTDCXX_BEGIN
 
-//! A template that has many of the capabilities of std::pair
+//! A template that has many of the capabilities of @c std::pair
 // 20.2.2
 template <class _TypeT, class _TypeU>
 struct bpair

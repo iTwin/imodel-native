@@ -84,7 +84,7 @@ NAMESPACE_BENTLEY_BSTDCXX_BEGIN
 
 //=======================================================================================
 /**
-A %Bentley supplied implementation @c std::set. This class is used in the %Bentley APIs to 
+A %Bentley supplied implementation of @c std::set. This class is used in the %Bentley APIs to 
 avoid dependencies on compiler-supplied implementations of @c std::map that sometimes vary
 with compiler settings or compiler versions. The @c bstdset class does not
 suffer from these problems. This makes @c bstdset suitable for use in %Bentley 
@@ -308,7 +308,7 @@ public:
 };
 
 
-//! A template that has many of the capabilities of std::multiset
+//! A template that has many of the capabilities of @c std::multiset
 template <class _Key, 
           class _Compare = std::less<_Key>,
           class _Allocator = ::BentleyApi::BentleyAllocator<_Key> >

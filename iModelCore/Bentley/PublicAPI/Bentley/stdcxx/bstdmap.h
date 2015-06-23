@@ -86,7 +86,7 @@ NAMESPACE_BENTLEY_BSTDCXX_BEGIN
 
 //=======================================================================================
 /**
-A %Bentley supplied implementation @c std::map. This class is used in the %Bentley APIs to 
+A %Bentley supplied implementation of @c std::map. This class is used in the %Bentley APIs to 
 avoid dependencies on compiler-supplied implementations of @c std::map that sometimes vary
 with compiler settings or compiler versions. The @c bstdmap class does not
 suffer from these problems. This makes @c bstdmap suitable for use in %Bentley 
