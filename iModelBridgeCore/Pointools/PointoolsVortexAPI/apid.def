@@ -354,3 +354,5 @@ EXPORTS
 	ptEnableClippingPlane
 	ptDisableClippingPlane
 	ptSetClippingPlaneParameters
+
+	_ptDiagnostic

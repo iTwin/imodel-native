@@ -615,6 +615,8 @@ typedef PTres	(__stdcall * PTENABLECLIPPINGPLANE)( PTuint plane );
 typedef PTres	(__stdcall * PTDISABLECLIPPINGPLANE)( PTuint plane );
 typedef PTres	(__stdcall * PTSETCLIPPINGPLANEPARAMETERS)( PTuint plane, PTdouble a, PTdouble b, PTdouble c, PTdouble d );
 
+typedef PTres	(__stdcall * _PTDIAGNOSTIC)( PTvoid *data );
+
 
 /* Interface Function Pointers Section ----------------------------------------------------------------------------------------------------*/ 
 /* initialisation */ 

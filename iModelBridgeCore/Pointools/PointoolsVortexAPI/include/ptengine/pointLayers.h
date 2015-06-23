@@ -25,8 +25,8 @@ public:
 	inline const uint &visibleBitMask() const { return _visibleLayersBitMask; }
 	inline const uint &currentBitMask() const { return _currentLayerBitMask; }
 
-	void setVisibleBitMask( const uint &mask ) { _visibleLayersBitMask = mask; }
-	void setCurrentBitMask( const uint &mask ) { _currentLayerBitMask = mask; }
+	void setVisibleBitMask( const uint &mask ) { if (_visibleLayersBitMask != mask) { _visibleLayersBitMask = mask;} }
+	void setCurrentBitMask( const uint &mask ) { if (_currentLayerBitMask != mask) { _currentLayerBitMask = mask; } }
 
 	bool initialize();
 
@@ -58,11 +58,19 @@ public:
 
 	void	setLayerColorAlpha( uint layerMask, float a )
 	{
-		_colors[layerMask % 256].a = a;
+		if (_colors[layerMask % 256].a != a)
+		{
+			_colors[layerMask % 256].a = a;
+			_state++;
+		}
 	}
 	void	setLayerColor( uint layerMask, ptgl::Color &col )
 	{
-		_colors[layerMask % 256] = col;
+		if ( _colors[layerMask % 256] != col )
+		{
+			_colors[layerMask % 256] = col;
+			_state++;
+		}
 	}	
 	const ptgl::Color &getLayerColor( uint layerMask ) const
 	{
@@ -70,11 +78,24 @@ public:
 	}
 	void	resetLayerColors( void );
 
+	// flag used to issue shader texture up to date
+	uint	stateID() const			
+	{ 
+		return _state; 
+	}
+
+	// return a hash that encapsulates the state
+	uint	stateHash( void ) const
+	{
+		return (_state * 256 + _visibleLayersBitMask);
+	}
 private:
 	uint		_visibleLayersBitMask;
 	uint		_currentLayerBitMask;
 
 	ptgl::Color	_colors[256];
 	pt::String	_names[32];
+
+	uint		_state;
 };
 }

@@ -5,6 +5,7 @@
 #include <ptapi/PointoolsVortexAPI.h>
 #include <ptapi/PointoolsVortexAPI_ResultCodes.h>
 
+#include <diagnostics/diagnosticCmds.h>
 #include <ptengine/PointsScene.h>
 #include <ptengine/PointsPager.h>
 #include <ptengine/RenderEngine.h>
@@ -99,4 +100,19 @@ PTres	PTAPI ptGetTuningParameterfv( PTenum param, PTfloat *values )
 	pnt.get(values);
 
 	return setLastErrorCode( PTV_SUCCESS );;
+}
+//-----------------------------------------------------------------------------
+PTres	PTAPI _ptDiagnostic( PTvoid *data )
+{
+	DiagnosticData *d=reinterpret_cast<DiagnosticData*>(data);
+
+	if (d)
+	{
+		switch(d->in_cmd)
+		{
+			
+		
+		}
+	}
+	else return PTV_INVALID_PARAMETER;
 }

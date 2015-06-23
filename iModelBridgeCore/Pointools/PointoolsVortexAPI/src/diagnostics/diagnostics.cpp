@@ -2,8 +2,8 @@
 #include <diagnostics/diagnostics.h>
 
 #define BOOST_DATE_TIME_NO_LIB
-//#include <boost/interprocess/managed_shared_memory.hpp>
-//#include <boost/interprocess/ipc/message_queue.hpp>
+#include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/interprocess/ipc/message_queue.hpp>
 
 using namespace ptdg;
 using namespace boost::interprocess;
@@ -31,18 +31,15 @@ Diagnostics *Diagnostics::instance()
 //-----------------------------------------------------------------------------
 Diagnostics::~Diagnostics()
 {
-/*
 	if (m_ptmq) 
 	{
 		message_queue::remove("ptvortex");	
 		delete m_ptmq;
 	}
-*/
 }
 //-----------------------------------------------------------------------------
 void Diagnostics::addMetric(ptdg::MetricTypeID id, ubyte *data, int size)
 {
-/*
 	if (!m_ptmq) return;
 
 	int idi = (int)id;
@@ -53,15 +50,14 @@ void Diagnostics::addMetric(ptdg::MetricTypeID id, ubyte *data, int size)
 
 	// Send data
 	m_ptmq->try_send( block, size+sizeof(int), 0 ); 
-*/
 }
 //-----------------------------------------------------------------------------
-bool Diagnostics::initialise()
+bool Diagnostics::initialise() 
 {
-/*
 	if (m_ptmq) return true;
 
-	char hasDiag[16];
+	char hasDiag[16]; 
+	hasDiag[0] = 0;
 
 	int success = ::GetEnvironmentVariableA("PTVORTEX_DIAGNOSTICS", hasDiag, 16);
 
@@ -90,7 +86,6 @@ bool Diagnostics::initialise()
 			return false;
 	}   
 	}
-*/
 	return true;
 }
 //-----------------------------------------------------------------------------

@@ -368,7 +368,7 @@ PTENABLECLIPPINGPLANE ptEnableClippingPlane = 0;
 PTDISABLECLIPPINGPLANE ptDisableClippingPlane = 0;
 PTSETCLIPPINGPLANEPARAMETERS ptSetClippingPlaneParameters = 0;
 
-
+_PTDIAGNOSTIC _ptDiagnostic = 0;
 
 #endif
 
@@ -739,6 +739,8 @@ bool LoadPointoolsDLL(const TCHAR*filepath)
 		ptSetClippingPlaneParameters = (PTSETCLIPPINGPLANEPARAMETERS) GetAPIFunc( "ptSetClippingPlaneParameters" );
 
 		ptRelease = (PTRELEASE) GetAPIFunc("ptRelease");
+
+		_ptDiagnostic = (_PTDIAGNOSTIC) GetAPIFunc("_ptDiagnostic");
 		return !_failed;
 	}
 	else

@@ -583,4 +583,5 @@ PTres		PTAPI ptSetClippingPlaneParameters( PTuint id, PTdouble a, PTdouble b, PT
 
 /* unit tests */ 
 PTbool	PTAPI _ptUnitTests( PTenum test );
+PTres	PTAPI _ptDiagnostic( PTvoid *data );
 #endif

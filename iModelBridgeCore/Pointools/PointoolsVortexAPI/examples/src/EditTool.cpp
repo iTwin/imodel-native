@@ -283,7 +283,8 @@ void EditTool::command( int cmdId )
 			break;
 
 		case CmdDeselLayer1			: 
-			ptDeselectPointsInLayer(0); 
+			ptUnhideAll();
+			//ptDeselectPointsInLayer(0); 
 			viewRedraw();
 			break;
 
@@ -319,6 +320,42 @@ void EditTool::command( int cmdId )
 
 		case CmdDeselLayer8			: 
 			ptDeselectPointsInLayer(7); 
+			viewRedraw();
+			break;
+			
+		case CmdLayerCol1:			
+			chooseColor(0);
+			viewRedraw();
+			break;
+
+		case CmdLayerCol2:			
+			chooseColor(1);
+			viewRedraw();
+			break;
+
+		case CmdLayerCol3:		 
+			chooseColor(2);
+			viewRedraw();
+			break;
+
+		case CmdLayerCol4:			
+			chooseColor(3);
+			viewRedraw();
+			break;
+
+		case CmdLayerCol5:			
+			chooseColor(4);
+			viewRedraw();
+			break;
+
+		case CmdLayerCol6:			
+			chooseColor(5);
+			viewRedraw();
+			break;
+
+
+		case CmdLayerCol7:			
+			chooseColor(6);
 			viewRedraw();
 			break;
 
@@ -413,6 +450,21 @@ void EditTool::command( int cmdId )
 		case CmdLoadScopeLayersFile:
 			loadLayerChannelsScope();
 			break;
+	}
+}
+//-----------------------------------------------------------------------------
+void	EditTool::chooseColor( int layer )
+//-----------------------------------------------------------------------------
+{
+	COLORREF col, res;
+	PTfloat *curr = ptGetLayerColor( layer );
+
+	col = RGB(curr[0]*255,curr[1]*255,curr[2]*255);
+
+	if (VortexExampleApp::instance()->getUI().getColor( col, res ))
+	{
+		PTfloat new_col[] = { (float)GetRValue(res) / 255, (float)GetGValue(res) / 255, (float)GetBValue(res) / 255 };
+		ptSetLayerColor( layer, new_col, 1.0f );
 	}
 }
 //-----------------------------------------------------------------------------
@@ -1189,6 +1241,23 @@ void EditTool::buildUserInterface(GLUI_Node *parent)
 			m_lyrSel[lyr]->set_w(8);
 		}
 
+		/*color */ 
+		new GLUI_Column( selectLayers, false );
+		for (int lyr=0;lyr<PT_EDIT_MAX_LAYERS;lyr++)
+		{
+			const PTfloat *col = ptGetLayerColor( lyr );
+			
+			m_lyrSel[lyr] = new GLUI_Button( selectLayers, " ", CmdLayerCol1+lyr, &Tool::dispatchCmd );
+			if (col)
+			{			
+				static RGBc button_cols[PT_EDIT_MAX_LAYERS];
+				button_cols[lyr] = RGBc(col[0]*255, col[1]*255, col[2]*255);
+
+				m_lyrSel[lyr]->set_back_col( &button_cols[lyr] );
+			}
+			m_lyrSel[lyr]->set_w(8);
+		}
+
 		/* Copy / Move to layer */ 
 		GLUI_Panel *selectCopy = new GLUI_Panel( rolloutSelect, " ", GLUI_PANEL_NONE);
 		GLUI_Button *btn = new GLUI_Button( selectCopy, "Copy", CmdCopyPoints, &Tool::dispatchCmd );
@@ -1286,7 +1355,6 @@ void EditTool::buildUserInterface(GLUI_Node *parent)
 		btn = new GLUI_Button( persistenceTests, "from Ch File", CmdLoadLayersFile, &Tool::dispatchCmd );
 		btn->set_w(90);
 		btn->set_back_col( &layerButtonCol );
-
 
 		btn = new GLUI_Button( persistenceTests, "to Stack File", CmdSaveEditStack, &Tool::dispatchCmd );
 		btn->set_back_col( &layerButtonCol );	

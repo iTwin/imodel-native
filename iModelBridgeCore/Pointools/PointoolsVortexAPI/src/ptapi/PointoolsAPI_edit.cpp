@@ -628,7 +628,8 @@ PTfloat *PTAPI ptGetLayerColor( PTuint layer )
 {
 	if ( layer < thePointLayersState().numLayers() )
 	{
-		static ptgl::Color c = thePointLayersState().getLayerColor( layer );
+		static ptgl::Color c;
+		c = thePointLayersState().getLayerColor( 1 << layer );
 		return (PTfloat*)&c.r;
 	}
 	return 0;
@@ -638,7 +639,7 @@ PTfloat  PTAPI ptGetLayerColorBlend( PTuint layer )
 {
 	if ( layer < thePointLayersState().numLayers() )
 	{
-		static ptgl::Color c = thePointLayersState().getLayerColor( layer );
+		static ptgl::Color c = thePointLayersState().getLayerColor( 1 << layer );
 		return c.a;
 	}
 	return 0;

@@ -425,6 +425,11 @@ bool	PTAPI ptLayersFromPointChannel( PThandle userChannel, PThandle sceneHandle 
 
 		result = true;
 	}
+	// save the user channel to a file for testing
+	/* <-- TEST BEGIN
+	UserChannel *channels[] = { channel };
+	UserChannelManager::instance()->saveChannelsToFile(pt::String("C:\\temp\\ptvortex_diag.layers"),1, channels, 0);
+	TEST END --> */
 
 	unpauseEngine();
 

@@ -73,7 +73,7 @@ void	RenderLayersEffectGL::startShaderFrame( const RenderContext *context, Shade
 	float layer_col_gl [] = { 1.0,1.0,1.0,0 };
 	
 	shaderGL->setUniform4fv( UNIFORM_LAYER_COL, 1, layer_col_gl );
-	shaderGL->setUniform1f( UNIFORM_LAYER_ALPHA, 0 );
+	//shaderGL->setUniform1f( UNIFORM_LAYER_ALPHA, 0 );
 }
 //-----------------------------------------------------------------------------
 void	RenderLayersEffectGL::endShaderFrame( const RenderContext *context, ShaderObj *shader )
@@ -105,12 +105,29 @@ uint RenderLayersEffectGL::requiredBuffers() const
 //-----------------------------------------------------------------------------
 GLuint	RenderLayersEffectGL::generateLayerTexture( const RenderContext *context, bool forceUpdate )
 {
-	pointsengine::ContextID contextId = context->contextID();
-	ubyte visLayers = thePointLayersState().pointVisLayerMask();
+	static uint last_state_id = 0;
 
-	TextureMap::iterator it = m_layerTextures.find( contextId );
-	GLuint texID = it == m_layerTextures.end() ? 0 : it->second.first;
-	ubyte texLayers = it == m_layerTextures.end() ? 0 : it->second.second;
+	pointsengine::ContextID contextId = context->contextID();
+	ubyte					visLayers = thePointLayersState().pointVisLayerMask();
+	uint					state_hash = thePointLayersState().stateHash();
+
+	TextureMap::iterator	it = m_layerTextures.find( contextId );
+	GLuint					texID = it == m_layerTextures.end() ? 0 : it->second.first;
+	ubyte					texLayers = it == m_layerTextures.end() ? 0 : it->second.second;
+
+
+	// if the layer setup state has changed this invalidates all layer textures ie. for all contexts
+	if (last_state_id != thePointLayersState().stateHash())
+	{
+		last_state_id = thePointLayersState().stateHash();
+		texLayers = 0;
+
+		// change all the tex layer set-ups to force regeneration of texture
+		for ( it=m_layerTextures.begin(); it!=m_layerTextures.end();it++)
+		{
+			it->second.second = 0;
+		}
+	}
 
 	// check if texture is already available and up to date
 	if (texID && !forceUpdate && visLayers == texLayers) 
@@ -175,7 +192,7 @@ GLuint	RenderLayersEffectGL::generateLayerTexture( const RenderContext *context,
 	if (it == m_layerTextures.end())
 	{
 		m_layerTextures.insert( 
-			TextureMap::value_type( context->contextID(), std::pair<GLuint, uint>(texID, visLayers ) ));
+			TextureMap::value_type( context->contextID(), std::pair<GLuint, uint>(texID, state_hash) ));
 	}
 	else 
 	{

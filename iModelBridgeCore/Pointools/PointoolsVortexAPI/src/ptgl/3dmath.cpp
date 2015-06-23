@@ -140,8 +140,11 @@ This function doesn't modifies the gl_vector upon which has been called, it retu
 gl_vector gl_vector::normalized() const
 {
 	real len=length();
-	assert(fabs(len)>=epsilon);
-	return gl_vector(this->vec[0]/len,this->vec[1]/len,this->vec[2]/len);
+	if (fabs(len)>=epsilon)
+	{ 
+		return gl_vector(this->vec[0]/len,this->vec[1]/len,this->vec[2]/len);
+	}
+	else return *this;
 }
 
 void gl_vector::EpsilonCorrect(const gl_vector& v)

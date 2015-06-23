@@ -38,6 +38,8 @@ bool PointLayersState::initialize()
 	}*/
 	resetLayerColors();
 
+	_state = 0;
+
 	return true;
 }
 void PointLayersState::resetLayerColors()
@@ -46,6 +48,7 @@ void PointLayersState::resetLayerColors()
 	{		
 		_colors[i].set(1.0,1.0,1.0, 0);
 	}
+	_state++;
 }
 void PointLayersState::setLayerName( int lyr, const pt::String &name )
 {

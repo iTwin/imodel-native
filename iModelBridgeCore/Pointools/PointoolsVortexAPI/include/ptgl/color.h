@@ -5,6 +5,8 @@
 
 namespace ptgl
 {
+#define COL_EPSILON 0.002
+
 class Color
 {
 public:
@@ -14,6 +16,14 @@ public:
 		set(_r,_g,_b,_a);
 	}
 	Color(unsigned int rgb) { fromUINT(rgb); }
+
+	bool operator == ( const Color &c ) const
+	{
+		return (   fabs(r - c.r) < COL_EPSILON
+				&& fabs(g - c.g) < COL_EPSILON
+				&& fabs(b - c.b) < COL_EPSILON ) ? true : false;
+	}
+	bool operator != ( const Color &c ) const	{ return !(c == (*this)); }
 
 	void set(float _r, float _g, float _b, float _a=1.0f)
 	{
