@@ -69,7 +69,6 @@ RASTERSCHEMA_REF_COUNTED_PTR(Bitmap)
 #include "RasterSource.h"
 #include "RasterQuadTree.h"
 #include "ImagePPAdmin.h"
-#include "RasterFileProgressiveDisplay.h"
 #include "RasterFile.h"
 
 USING_NAMESPACE_BENTLEY

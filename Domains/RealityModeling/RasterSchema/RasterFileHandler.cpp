@@ -74,7 +74,6 @@ DgnModelId RasterFileModelHandler::CreateRasterFileModel(DgnDbR db, BeFileName f
     Point2d sizePixels;
     rasterFilePtr->GetSize(&sizePixels);
 
-     
     RasterFileModelPtr model = new RasterFileModel(DgnModel::CreateParams(db, classId, modelName), props);
 
     model->Insert();

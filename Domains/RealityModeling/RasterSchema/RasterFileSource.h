@@ -21,6 +21,7 @@ private:
     RasterFileProperties    m_properties;
     bvector<Byte>           m_tileBuffer;
     RasterFilePtr           m_rasterFilePtr;
+    Point2d                 m_tileSize;
 
 private:
             RasterFileSource(RasterFileProperties const& properties);

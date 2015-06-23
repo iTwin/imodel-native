@@ -21,7 +21,7 @@ RasterSourcePtr RasterFileSource::Create(RasterFileProperties const& properties)
     }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  4/2015
+// @bsimethod                                                       Eric.Paquet     6/2015
 //----------------------------------------------------------------------------------------
 RasterFileSource::RasterFileSource(RasterFileProperties const& properties)
  :m_properties(properties) 
@@ -36,44 +36,36 @@ RasterFileSource::RasterFileSource(RasterFileProperties const& properties)
         return;
         }
 
+    DPoint3d corners[4];
+    m_rasterFilePtr->GetCorners(corners);
+
     Point2d sizePixels;
     m_rasterFilePtr->GetSize(&sizePixels);
 
-//&&ep tmp - use raster GCS to place it
-    m_properties.m_boundingBox.low.x = 0; 
-    m_properties.m_boundingBox.high.x = sizePixels.x / 10.0;  
-    m_properties.m_boundingBox.low.y = 0; 
-    m_properties.m_boundingBox.high.y = sizePixels.y / 10.0; 
+    // Tile size. We always use 256.
+    m_tileSize.x = 256;
+    m_tileSize.y = 256;
 
-
-//&&ep - add SLO transform to corners (don't apply it in QueryTile (in HRABitmap::Create))
-    // WMS BBOX are in CRS units. i.e. cartesian.       // &&ep is this true ?
-    DPoint3d corners[4];
-    corners[0].x = corners[2].x = m_properties.m_boundingBox.low.x; 
-    corners[1].x = corners[3].x = m_properties.m_boundingBox.high.x;  
-    corners[0].y = corners[1].y = m_properties.m_boundingBox.low.y; 
-    corners[2].y = corners[3].y = m_properties.m_boundingBox.high.y; 
-    corners[0].z = corners[1].z = corners[2].z = corners[3].z = 0;
-
-    //&&EP raster width and height must come from the raster file.
-    //     and resolution definition should come from the raster resolution descriptor.
+    // Raster width and height come from the raster file.
+    // And resolution definition should come from the raster resolution descriptor.
     bvector<Resolution> resolution;
-    RasterSource::GenerateResolution(resolution, sizePixels.x, sizePixels.y, 256, 256);
+    RasterSource::GenerateResolution(resolution, sizePixels.x, sizePixels.y, m_tileSize.x, m_tileSize.y);
+
+    GeoCoordinates::BaseGCSPtr baseGcsPtr = m_rasterFilePtr->GetBaseGcs();
+//&&ep    - validate baseGcsPtr
 
 /* &&ep - need this ? if no gcs ?
     GeoCoordinates::BaseGCSPtr pGcs = CreateBaseGcsFromWmsGcs(properties.m_csLabel);
     BeAssert(pGcs.IsValid()); //Is it an error if we do not have a GCS? We will assume coincident.
 
     Initialize(corners, resolution, pGcs.get());
-*/
     Initialize(corners, resolution, nullptr);
-
+*/
+    Initialize(corners, resolution, baseGcsPtr.get());
     }
 
-
-
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  4/2015
+// @bsimethod                                                       Eric.Paquet     6/2015
 //----------------------------------------------------------------------------------------
 DisplayTilePtr RasterFileSource::_QueryTile(TileId const& id, bool request)
     {
@@ -81,9 +73,13 @@ DisplayTilePtr RasterFileSource::_QueryTile(TileId const& id, bool request)
         // RasterFile could not be initialized
         return nullptr;
 
-//&&ep - use my tile size definition ; remove tmp flip (investigate)   
     double scale = 1 << id.resolution;
-    HGF2DStretch stretch(HGF2DDisplacement(id.tileX * 256.0 * scale, id.tileY * 256.0 * scale), scale, scale);
+
+    // All this "gymnastic" is necessary because the upper left tile of the TileId is (0,0); while the raster's (0,0) position is at down left.
+    HGF2DStretch stretch(HGF2DDisplacement(id.tileX * m_tileSize.x * scale, 
+                                           (m_rasterFilePtr->GetHeight() - ((id.tileY + 1) * m_tileSize.y - (m_tileSize.y -  GetTileSizeY(id))) * scale)), 
+                         scale, 
+                         scale);
 
 //&&ep    - review: use pixel type preferred by QV
     HFCPtr<HRABitmap> pDisplayBitmap;
@@ -93,19 +89,17 @@ DisplayTilePtr RasterFileSource::_QueryTile(TileId const& id, bool request)
 
     HRACopyFromOptions opts;
     opts.SetResamplingMode(HGSResampling::BILINEAR);
-    pDisplayBitmap->CopyFrom(*m_rasterFilePtr->GetStoredRaster(), opts);
+    pDisplayBitmap->CopyFrom(*m_rasterFilePtr->GetStoredRasterP(), opts);
     Byte* pbSrcRow = pDisplayBitmap->GetPacket()->GetBufferAddress();
-
-//&&ep tmp
-    DisplayTile::PixelType pixelType = DisplayTile::PixelType::Rgba;
 
 //&&ep - see (CountPixelRawDataBit * nbPixels sur la largeur(width) +7)/8 (length of a line) * hauteur to set packet size; result of this
     // USE : ComputeBytesPerWidth - NO: but assert that buffer size is ok
 //&&ep     - verify packet size is ok each time
 
 //&&ep - keep packet as a member; do setPacket above
-    m_tileBuffer.resize(256*256*4);
+    m_tileBuffer.resize(m_tileSize.x * m_tileSize.y *4);
 
+    DisplayTile::PixelType pixelType = DisplayTile::PixelType::Rgba;
     DisplayTilePtr pDisplayTile = DisplayTile::Create(effectiveTileSizeX, effectiveTileSizeY, pixelType, pbSrcRow, 0/*notPadded*/);
     return pDisplayTile;
     }

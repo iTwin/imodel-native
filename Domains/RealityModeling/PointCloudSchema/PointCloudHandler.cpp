@@ -80,7 +80,7 @@ void PointCloudModel::_AddGraphicsToScene (ViewContextR context)
     {
     if (GetPointCloudScenePtr() != nullptr)
         {
-        RefCountedPtr<PointCloudProgressiveDisplay> display = new PointCloudProgressiveDisplay(*this, *context.GetViewport());
+        RefCountedPtr<PointCloudProgressiveDisplay> display = new PointCloudProgressiveDisplay(*this);
         display->DrawView(context);
         }
     }
@@ -147,7 +147,6 @@ void PointCloudModel::JsonUtils::DPoint3dFromJson (DPoint3dR point, Json::Value 
 //----------------------------------------------------------------------------------------
 void PointCloudModel::Properties::ToJson(Json::Value& v) const
     {
-    //&&ep - inherit this from PointCloudBaseModel if we keep it
     JsonUtils::DPoint3dToJson(v["RangeLow"], m_range.low);
     JsonUtils::DPoint3dToJson(v["RangeHigh"], m_range.high);
 
@@ -159,7 +158,6 @@ void PointCloudModel::Properties::ToJson(Json::Value& v) const
 //----------------------------------------------------------------------------------------
 void PointCloudModel::Properties::FromJson(Json::Value const& v)
     {
-    //&&ep - inherit this from PointCloudBaseModel if we keep it
     JsonUtils::DPoint3dFromJson(m_range.low, v["RangeLow"]);
     JsonUtils::DPoint3dFromJson(m_range.high, v["RangeHigh"]);
 
