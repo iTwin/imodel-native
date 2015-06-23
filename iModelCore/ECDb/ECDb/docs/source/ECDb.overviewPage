@@ -359,44 +359,36 @@
     - <b>End</b>: (optional) Possible values: Target (default) or Source. If specified it indicates which end of the
     ECRelationship will carry the foreign key constraint. Usually this is the target end as the usual metaphor for a foreign key relationship
     is a parent child relationship where parent is source and child is target.
-    - <b>Columns</b>: (optional) Defines the foreign key columns (See @ref CustomRelationshipEndColumnsDescription for details)
-    If not specified, default values are assumed by %ECDb.
-    - <b>CreateConstraint</b>: If true, a foreign key constraint is created (i.e. referential integrity is enforced). If false (default), no 
+    - <b>ForeignKeyColumn</b>: (optional) Defines the foreign key column. This should only be set if no Key property is defined on the
+    respective constraint class, because in that case the mapping of the Key property is considered. If this property is not set and
+    no Key property was specified, %ECDb generates a column with a default name.
+    - <b>ForeignKeyClassIdColumn</b>: (optional) Defines the foreign key's ECClassId column. If this property is not set, %ECDb generates a column with a default name.
+    In many cases a class id column is not needed at all. %ECDb will ignore this property in that case.
+    - <b>CreateConstraint</b>: If true, a foreign key constraint is created (i.e. referential integrity is enforced). If false (default), no
     foreign key constraint is created (i.e. no referential integrity is enforced).
     - <b>OnDeleteAction</b>: Possible values: NoAction (default) or Cascade (deletes child rows when parent row is deleted). @b CreateConstraint must be set to true.
     - <b>OnUpdateAction</b>: Possible values: NoAction (default) or Cascade (updates child foreign key when parent primary key is updated). @b CreateConstraint must be set to true.
 
     Description of the @b LinkTableRelationshipMap properties:
-    - <b>SourceColumns</b>: (optional) Defines how the source end of the relationship is mapped to the link table (See @ref CustomRelationshipEndColumnsDescription for details).
-    If not specified, default values are assumed by %ECDb.
-    - <b>TargetColumns</b>: (optional) Defines how the target end of the relationship is mapped to the link table (See @ref CustomRelationshipEndColumnsDescription for details)
-    If not specified, default values are assumed by %ECDb.
+    - <b>SourceECInstanceIdColumn</b>: (optional) Defines the column to which the ECInstanceId of the source constraint is mapped to.
+    If not set, %ECDb generates a column with a default name.
+    - <b>SourceECClassIdColumn</b>: (optional) Defines the source constraint's ECClassId column. If this property is not set, %ECDb generates a column with a default name.
+    In many cases a class id column is not needed at all. %ECDb will ignore this property in that case.
+    - <b>TargetECInstanceIdColumn</b>: (optional) Defines the column to which the ECInstanceId of the target constraint is mapped to.
+    If not set, %ECDb generates a column with a default name.
+    - <b>TargetECClassIdColumn</b>: (optional) Defines the target constraint's ECClassId column. If this property is not set, %ECDb generates a column with a default name.
+    In many cases a class id column is not needed at all. %ECDb will ignore this property in that case.
     - <b>AllowDuplicateRelationship</b>: (optional) If false (default), no duplicate entries for a given relationship instance
     can be inserted. If true, duplcate relationship instances can be inserted. Cardinality must not be violated though. E.g. 
     there cannot be duplicate relationships with a cardinality of 1:1.
-
-    @subsection CustomRelationshipEndColumnsDescription RelationshipEndColumns Description
-
-    Description of the RelationshipEndColumns ECStruct used by the ForeignKeyRelationshipMap and in the
-    LinkTableRelationshipMap custom attributes:
-    - <b>ECInstanceIdColumn</b>: Optional. Name of the column to which the SourceECInstanceId/TargetECInstanceId property is mapped to.
-    If not specified, %ECDb will auto-generate a name.
-    - <b>ECInstanceIdColumn</b>: Optional. Name of the column to which the SourceECClassId/TargetECClassId property is mapped to.
-    If not specified, %ECDb will auto-generate a name. It is also possible that ECDb will omit the class id column if it finds out that it is not needed.
-    In this case the property will ignored.
-    - <b>CreateDefaultIndex</b>: If true (default), %ECDb will create a database index on the key columns ( for this constraint. If false, no index is created.
 
     ####Examples
         
         <ECRelationshipClass typeName="HardwareUsedByEmployee" isDomainClass="True" strength="referencing">
             <ECCustomAttributes>
                 <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
-                    <SourceColumns>
-                        <ECInstanceIdColumn>EmployeeId</ECIdColumn>
-                    </SourceColumns>
-                    <TargetColumns>
-                        <ECInstanceIdColumn>HardwareId</ECIdColumn>
-                    </TargetColumns>
+                    <SourceECInstanceIdColumn>EmployeeId</SourceECInstanceIdColumn>
+                    <TargetECInstanceIdColumn>HardwareId</TargetECInstanceIdColumn>
                 </LinkTableRelationshipMap>
             </ECCustomAttributes>
             <BaseClass>AssetRelationshipsBase</BaseClass>
@@ -413,9 +405,7 @@
         <ECRelationshipClass typeName="FolderHasFiles" isDomainClass="True" strength="embedding" >
             <ECCustomAttributes>
                 <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                    <Columns>
-                        <ECInstanceIdColumn>FolderId</ECIdColumn>
-                    </Columns>
+                    <ForeignKeyColumn>FolderId</ForeignKeyColumn>
                     <CreateConstraint>True</CreateConstraint>
                     <OnDeleteAction>Cascade</OnDeleteAction>
                     <OnUpdateAction>Cascade</OnUpdateAction>
