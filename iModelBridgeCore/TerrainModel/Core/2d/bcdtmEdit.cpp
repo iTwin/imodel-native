@@ -2,7 +2,7 @@
 |
 |     $Source: src/unmanaged/DTM/civilDTMext/bcdtmExtEdit.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "stdafx.h"
@@ -3134,7 +3134,7 @@ int bcdtmExtEdit_resolveIslandsVoidsHolesDtmObject(BC_DTM_OBJ *dtmP,BC_DTM_OBJ *
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Triangulating DTM") ;
  DTM_MSG_LEVEL = 0 ;
- if( bcdtmExtObject_triangulateDtmObject(dtmP)) goto errexit ;
+ // TODO: DH if( bcdtmExtObject_triangulateDtmObject(dtmP)) goto errexit ;
  DTM_MSG_LEVEL = dtmMsgLevel ;
 /*
 ** Remove None Feature Hull Lines
@@ -4011,7 +4011,7 @@ int bcdtmExtEdit_deleteInternalVoidPointsAndLinesAndRetriangulateVoidDtmObject(B
  DTM_MSG_LEVEL = 0 ;
  bcdtmObject_setTriangulationParametersDtmObject(voidDtmP,dtmP->mppTol*10.0,dtmP->mppTol*10.0,1,0.0) ;
  DTM_NORMALISE_OPTION = false ;
- if( bcdtmExtObject_triangulateDtmObject(voidDtmP)) goto errexit ;
+ // TODO: DH if( bcdtmExtObject_triangulateDtmObject(voidDtmP)) goto errexit ;
  DTM_MSG_LEVEL = dtmMsgLevel ;
  DTM_NORMALISE_OPTION = true ;
  if( dbg ) bcdtmWrite_message(0,0,0,"After  Triangulation ** voidDtmP->numPoints = %8ld",voidDtmP->numPoints ) ;
