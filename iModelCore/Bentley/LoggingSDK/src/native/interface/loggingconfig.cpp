@@ -8,6 +8,7 @@
 #include "bsilogprivate.h"
 #include <Bentley/BeFileName.h>
 
+USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_LOGGING
 
 MaxMessageSize BentleyApi::NativeLogging::g_maxMessageSize;

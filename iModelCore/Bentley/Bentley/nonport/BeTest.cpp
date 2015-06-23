@@ -30,6 +30,8 @@
 #include <Bentley/BeNumerical.h>
 #include <Logging/bentleylogging.h>
 
+USING_NAMESPACE_BENTLEY
+
 static BeMutex s_bentleyCS;
 static intptr_t                                 s_mainThreadId;                     // MT: set only during initialization
 static BeAssertFunctions::T_BeAssertHandler*    s_assertHandler;                    // MT: s_bentleyCS

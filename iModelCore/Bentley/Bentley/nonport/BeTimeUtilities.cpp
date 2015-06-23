@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/BeTimeUtilities.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
@@ -37,6 +37,8 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/WString.h>
 #include <Bentley/BeDebugLog.h>
+
+USING_NAMESPACE_BENTLEY
 
 // Unix <-> Windows time conversions:
 // * Windows "file time" is 100-nanosecond (1.0e-7) intervals since January 1, 1601 UTC. Stored in a FILETIME struct, which is equivalent to UInt64.

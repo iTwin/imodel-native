@@ -8,6 +8,7 @@
 
 #include "bsilogprivate.h"
 
+USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_LOGGING
 
 LoggerCache& BentleyApi::NativeLogging::GetLoggerCache()

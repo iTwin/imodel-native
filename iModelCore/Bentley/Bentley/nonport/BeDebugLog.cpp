@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/BeDebugLog.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeDebugLog.h>
@@ -16,6 +16,8 @@
 #endif
 
 #include <Logging/bentleylogging.h>
+
+USING_NAMESPACE_BENTLEY
 
 /*---------------------------------------------------------------------------------**//**
 * Should not be called directly! Instead use the BeDebugLog macro in Bentley/BeDebugLog.h                                                                                       

@@ -21,6 +21,8 @@
 #include    <type_traits>
 #include    "strfunc.h"
 
+USING_NAMESPACE_BENTLEY
+
 #ifndef BENTLEY_CPP_MISSING_WCHAR_SUPPORT
     #error strfunc should be used only when the CRT lacks wchar_t support
 #endif

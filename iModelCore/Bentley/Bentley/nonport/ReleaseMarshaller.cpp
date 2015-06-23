@@ -11,6 +11,8 @@
 #include <Bentley/Bentley.h>
 #include <Bentley/ReleaseMarshaller.h>
 
+USING_NAMESPACE_BENTLEY
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    05/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
