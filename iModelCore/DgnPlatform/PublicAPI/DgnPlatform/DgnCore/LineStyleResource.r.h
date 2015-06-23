@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/LineStyleResource.r.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -81,33 +81,6 @@ Multiline modifiers
    and it must not be overridden. */
 #define STYLEMOD_SEGMODE        0x40000000  /* force single segment  */
 #define STYLEMOD_NOSEGMODE      0x80000000  /* disable single segment  */
-
-/*__PUBLISH_SECTION_END__*/
-
-#define         LINESTYLE_PROPCATEGORY_Catagories               -200
-#define         LINESTYLE_PROPCATEGORY_LineCode                 -201
-#define         LINESTYLE_PROPCATEGORY_Stroke                   -202
-#define         LINESTYLE_PROPCATEGORY_Compound                 -203
-#define         LINESTYLE_PROPCATEGORY_CompoundComponent        -204
-#define         LINESTYLE_PROPCATEGORY_LinePoint                -205
-#define         LINESTYLE_PROPCATEGORY_PointSymbols             -206
-#define         LINESTYLE_PROPCATEGORY_PointSymbolCells         -207
-
-#define         STRINGID_LSPropVal_PhaseMode                    -300
-#define         STRINGID_LSPropVal_WidthMode                    -301
-#define         STRINGID_LSPropVal_DashCaps                     -302
-#define         STRINGID_LSPropVal_StrokeType                   -303
-#define         STRINGID_LSPropVal_CornerType                   -304
-#define         STRINGID_LSPropVal_LengthType                   -305
-#define         STRINGID_LSPropVal_Justification                -306
-#define         STRINGID_LSPropVal_Location                     -307
-#define         STRINGID_LSPropVal_Rotation                     -308
-#define         STRINGID_LSPropVal_SymbSource                   -309
-#define         STRINGID_LSPropVal_Partial                      -310
-
-#define         LS_DISPLAYTREE_ADDLOCS                          0x01
-
-/*__PUBLISH_SECTION_START__*/
 
 /*======================================================================+
 |                                                                       |

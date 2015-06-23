@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "DgnHandlersTests.h"
+#include <DgnPlatform/DgnPlatformLib.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <ECDb/ECSqlBuilder.h>
 #include "../TestFixture/DgnDbTestFixtures.h"

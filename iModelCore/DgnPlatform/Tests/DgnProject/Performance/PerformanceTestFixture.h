@@ -24,7 +24,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 BEGIN_DGNDB_UNIT_TESTS_NAMESPACE
 
 //=======================================================================================    
-//! @bsiclass                                                 Krischan.Eberle      09/2012
+// @bsiclass                                                 Krischan.Eberle      09/2012
 //=======================================================================================    
 struct PerformanceTestFixture : public testing::Test
     {
@@ -37,7 +37,7 @@ protected:
     static WCharCP const TEST_COMPLEX_SCHEMA_NAME;
     static const int TESTCLASS_INSTANCE_COUNT;
 
-    DgnPlatform::ScopedDgnHost       m_host;
+    Dgn::ScopedDgnHost m_host;
 
 protected:
     PerformanceTestFixture() {};
@@ -50,7 +50,7 @@ protected:
     };
 
 //=======================================================================================
-//! @bsiclass                                                Majd.Uddin     05/2015
+// @bsiclass                                                Majd.Uddin     05/2015
 //=======================================================================================
 struct PerformanceTestingFrameWork
 {

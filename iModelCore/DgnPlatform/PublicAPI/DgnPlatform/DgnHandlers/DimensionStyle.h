@@ -493,7 +493,7 @@ struct DimStyleIterator : std::iterator<std::forward_iterator_tag, DimensionStyl
 {
 private:
     friend struct DimStyleCollection;
-    DgnPlatform::ChildElemIter  m_elemIter;
+    Dgn::ChildElemIter  m_elemIter;
     mutable DimensionStylePtr   m_current;
     
     DimStyleIterator (DgnDbP file);
@@ -677,12 +677,12 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 * Function declarations
 *
 +===============+===============+===============+===============+===============+======*/
-BEGIN_BENTLEY_API_NAMESPACE
+BEGIN_BENTLEY_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-DGNPLATFORM_EXPORT  DgnPlatform::PropToOverrideMap* dgnDimStyle_getPropToOverridesMap
+DGNPLATFORM_EXPORT  Dgn::PropToOverrideMap* dgnDimStyle_getPropToOverridesMap
 (
 int                         *pNumMaps   // <=
 );
@@ -720,7 +720,7 @@ DGNPLATFORM_EXPORT StatusInt    mdlDimStyle_unapplyAnnotationScaleToScaledTextSi
 DgnDimStyleP            dgnDimStyleP
 );
 
-END_BENTLEY_API_NAMESPACE
+END_BENTLEY_NAMESPACE
 
 /*===========================================================================
   Relationship between bUsingAnnotationScale, UseAnnotationScale Lock and

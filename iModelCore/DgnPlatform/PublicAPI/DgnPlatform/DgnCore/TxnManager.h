@@ -10,8 +10,6 @@
 
 #include "DgnDb.h"
 
-/** @cond BENTLEY_SDK_Internal */
-
 DGNPLATFORM_TYPEDEFS(TxnMonitor)
 
 #define TXN_TABLE_PREFIX "txn_"
@@ -29,7 +27,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
  The TxnManager API manages Txns. A Txn is a named, committed, undoable unit of work, stored in the DgnDb as a changeset.
  Txns may be "reversed" via an application Undo command, or "reinstated" via a corresponding Redo command.
 <p>
-<h2>Sessions<h2>
+<h2>Sessions</h2>
  Every time the TxnManager is initialized, it creates a GUID for itself called a SessionId.
  Whenever an application calls DgnDb::SaveChanges(), a Txn is created. Txns are saved in Briefcases in the DGN_TABLE_Txns
  table, along with the current SessionId. Only Txns from the current SessionId are (usually) undoable. After the completion of a
@@ -43,6 +41,7 @@ enum class TxnAction {None=0, Commit, Abandon, Reverse, Reinstate, Merge};
 
 //=======================================================================================
 //! A 32 bit value to identify the group of entries that form a single transaction.
+//! @ingroup TxnMgr
 // @bsiclass                                                      Keith.Bentley   02/04
 //=======================================================================================
 struct TxnId
@@ -77,7 +76,6 @@ public:
     int64_t GetValue() const {return m_value;}
     operator int64_t() const {return m_value;}
 };
-
 
 //=======================================================================================
 //! Interface to be implemented to monitor changes to elements.
@@ -399,7 +397,8 @@ public:
 };
 
 //=======================================================================================
-//! TxnTables for the base "Dgn" domain. Do not add TxnTables for other domains here.
+//! @namespace BentleyApi::Dgn::dgn_TxnTable TxnTables in the base "Dgn" domain. 
+//! @note Only handlers from the base "Dgn" domain belong in this namespace.
 // @bsiclass                                                    Keith.Bentley   06/15
 //=======================================================================================
 namespace dgn_TxnTable
@@ -502,26 +501,35 @@ namespace dgn_TxnTable
 
 
 //=======================================================================================
-// Table Handlers in the base "Dgn" domain. Don't put handlers from other domains here.
+//! @ingroup TxnMgr
+//! @namespace BentleyApi::Dgn::dgn_TableHandler TableHandlers in the base "Dgn" domain. 
+//! @note Only handlers from the base "Dgn" domain belong in this namespace.
 // @bsiclass                                                    Keith.Bentley   06/15
 //=======================================================================================
 namespace dgn_TableHandler
 {
+    //! TableHandler for DgnElement
     struct Element : DgnDomain::TableHandler
     {
         TABLEHANDLER_DECLARE_MEMBERS(Element, DGNPLATFORM_EXPORT)
         virtual TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::Element(mgr);}
     };
+
+    //! TableHandler for DgnModel
     struct Model : DgnDomain::TableHandler
     {
         TABLEHANDLER_DECLARE_MEMBERS(Model, DGNPLATFORM_EXPORT)
         virtual TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::Model(mgr);}
     };
+
+    //! TableHandler for DgnElement dependencies
     struct ElementDep : DgnDomain::TableHandler
     {
         TABLEHANDLER_DECLARE_MEMBERS(ElementDep, DGNPLATFORM_EXPORT)
         virtual TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::ElementDep(mgr);}
     };
+
+    //! TableHandler for DgnModel dependencies
     struct ModelDep : DgnDomain::TableHandler
     {
         TABLEHANDLER_DECLARE_MEMBERS(ModelDep, DGNPLATFORM_EXPORT)
@@ -530,5 +538,3 @@ namespace dgn_TableHandler
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
-
-/** @endcond */

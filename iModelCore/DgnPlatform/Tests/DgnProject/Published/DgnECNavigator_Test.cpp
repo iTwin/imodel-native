@@ -39,7 +39,7 @@ BEGIN_DGNDB_UNIT_TESTS_NAMESPACE
 struct DgnECNavigatorTest : public testing::Test
 {
 private:
-    DgnPlatform::ScopedDgnHost m_host;
+    Dgn::ScopedDgnHost m_host;
     
 protected:
     DgnECNavigatorTest() {};

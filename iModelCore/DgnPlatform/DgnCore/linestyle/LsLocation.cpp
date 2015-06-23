@@ -2,11 +2,10 @@
 |
 |     $Source: DgnCore/linestyle/LsLocation.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
-#include    <DgnPlatform/DgnCore/LsLocal.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Chuck.Kirschman   01/03
@@ -18,22 +17,21 @@ LsLocation::~LsLocation ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Chuck.Kirschman   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            LsLocation::SetLocation (DgnDbR project, uint32_t componentType, uint32_t componentId)
+void            LsLocation::SetLocation (DgnDbR project, LsComponentType componentType, LsComponentId componentId)
     {
     Init ();
-    m_dgndb   = &project;
-    m_rscType   = static_cast <LsResourceType>(remapElmTypeToRscType ((LsElementType)componentType));
-    m_rscID = componentId;
-    m_fileType  = LsLocationType::DgnDb;
+    m_dgndb = &project;
+    m_componentType = componentType;
+    m_componentId = componentId;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Chuck.Kirschman   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LsLocation::SetFrom (LsLocation const* base, uint32_t rscType)
+void LsLocation::SetFrom (LsLocation const* base, LsComponentType componentType)
     {
     SetFrom (base);
-    m_rscType   = static_cast <LsResourceType> (rscType);
+    m_componentType   = componentType;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -41,11 +39,9 @@ void LsLocation::SetFrom (LsLocation const* base, uint32_t rscType)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            LsLocation::SetFrom (LsLocation const* base)
     {
-    m_rscType   = base->m_rscType;
-    m_rscID     = base->m_rscID;
+    m_componentType   = base->m_componentType;
+    m_componentId     = base->m_componentId;
     m_dgndb   = base->m_dgndb;
-    m_fileType  = base->m_fileType;
-    m_idDefined = base->m_idDefined;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -53,59 +49,35 @@ void            LsLocation::SetFrom (LsLocation const* base)
 +---------------+---------------+---------------+---------------+---------------+------*/
 intptr_t        LsLocation::GetFileKey () const
     {
-    switch (m_fileType)
-        {
-        case    LsLocationType::DgnDb:
-            return (intptr_t)m_dgndb;
-        }
-
-    return (intptr_t)LsLocationType::Unknown;
+    return (intptr_t)m_dgndb;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Chuck.Kirschman   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint64_t LsLocation::GetIdentKey () const
+LsComponentId LsLocation::GetComponentId () const
     {
-    switch (m_fileType)
-        {
-        case    LsLocationType::DgnDb:
-            return m_rscID;
-        }
-
-    return 0;
+    return m_componentId;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Chuck.Kirschman   09/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-LsElementType      LsLocation::GetElementType () const
+LsComponentType      LsLocation::GetComponentType () const
     {
-    return (LsElementType)remapRscTypeToElmType ((uint32_t)m_rscType);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Returns appropriate name map for this location
-* @bsimethod                                                    Chuck.Kirschman   01/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct          LsMap *LsLocation::GetMapPtr () const
-    {
-    if (LsLocationType::DgnDb == m_fileType)
-        return LsMap::GetMapPtr (*m_dgndb);
-
-    return LsSystemMap::GetSystemMapPtr ();
+    return m_componentType;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Chuck.Kirschman     02/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus       LsLocation::GetLineCodeLocation (LsRscReader* reader)
+BentleyStatus       LsLocation::GetLineCodeLocation (LsComponentReader* reader)
     {
     SetFrom (reader->GetSource());
 
-    LinePointRsc*        lpRsc = (LinePointRsc*) reader->GetRsc();
-    m_rscType = static_cast <LsResourceType> (remapElmTypeToRscType((LsElementType)lpRsc->lcType));
-    m_rscID = lpRsc->lcID;
+    LinePointRsc*   lpRsc = (LinePointRsc*) reader->GetRsc();
+    m_componentType = (LsComponentType)lpRsc->lcType;
+    m_componentId = (LsComponentId)lpRsc->lcID;
 
     return SUCCESS;
     }
@@ -115,7 +87,7 @@ BentleyStatus       LsLocation::GetLineCodeLocation (LsRscReader* reader)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus       LsLocation::GetPointSymbolLocation
 (
-LsRscReader*    reader,
+LsComponentReader*    reader,
 int             symbolNumber
 )
     {
@@ -123,8 +95,8 @@ int             symbolNumber
 
     LinePointRsc*           lpRsc = (LinePointRsc*) reader->GetRsc();
 
-    m_rscType = static_cast <LsResourceType> (lpRsc->symbol[symbolNumber].symType);
-    m_rscID = lpRsc->symbol[symbolNumber].symID;
+    m_componentType = (LsComponentType)lpRsc->symbol[symbolNumber].symType;
+    m_componentId = LsComponentId(lpRsc->symbol[symbolNumber].symID);
 
     return SUCCESS;
     }
@@ -134,16 +106,34 @@ int             symbolNumber
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus       LsLocation::GetCompoundComponentLocation
 (
-LsRscReader*    reader,
+LsComponentReader*    reader,
 int             componentNumber
 )
     {
     SetFrom (reader->GetSource());
 
-    m_rscType = static_cast <LsResourceType> (reader->GetRsc()->component[componentNumber].type);
-    m_rscID   = reader->GetRsc()->component[componentNumber].id;
+    m_componentType = (LsComponentType)reader->GetRsc()->component[componentNumber].type;
+    m_componentId   = LsComponentId(reader->GetRsc()->component[componentNumber].id);
 
     return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    06/2015
+//---------------------------------------------------------------------------------------
+bool LsComponent::IsValidComponentType(LsComponentType value)
+    {
+    switch(value)
+        {
+        case LsComponentType::Compound:
+        case LsComponentType::Internal:
+        case LsComponentType::LineCode:
+        case LsComponentType::LinePoint:
+        case LsComponentType::PointSymbol:
+            return true;
+        }
+    
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -151,28 +141,5 @@ int             componentNumber
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            LsLocation::IsValid () const
     {
-    if (LsLocationType::Unknown == m_fileType)
-        return false;
-
-    return true;
+    return LsComponent::IsValidComponentType(m_componentType);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    JimBartlett     08/93
-+---------------+---------------+---------------+---------------+---------------+------*/
-int32_t LsLocation::GetSeedID
-(
-) const
-    {
-    LsElementType type = (LsElementType)m_rscType;
-    switch (type)
-        {
-        case LsElementType::LineCode:
-        case LsElementType::LinePoint:
-        case LsElementType::Compound:
-            return  (long) (GetIdentKey() & 0xFFFFFFFF);
-        }
-
-    return -1L;
-    }
-

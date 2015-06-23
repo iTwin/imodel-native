@@ -10,7 +10,7 @@
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley      02/07
 +===============+===============+===============+===============+===============+======*/
-struct DgnPlatform::TransformClip
+struct Dgn::TransformClip
 {
 Transform                       m_transform;                // The "top of stack" transform - product of all transforms in stack.
 Transform                       m_inverse;                  // Inverse of m_transform.

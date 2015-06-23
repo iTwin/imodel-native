@@ -11,7 +11,7 @@
 
 #include <Geom/GeomApi.h>
 
-BEGIN_BENTLEY_API_NAMESPACE
+BEGIN_BENTLEY_NAMESPACE
 
 //__PUBLISH_SECTION_END__
 typedef struct GPArrayParam*             GPArrayParamP;
@@ -151,7 +151,7 @@ public:
     DGNPLATFORM_EXPORT void Add (double x, double y, double z, double w, double a, int mask, int userData);
     DGNPLATFORM_EXPORT BentleyStatus ToBCurve (MSBsplineCurveP curve) const;
 
-    DGNPLATFORM_EXPORT void Draw (IDrawGeomR drawGeom, bool closed, bool filled) const;
+    DGNPLATFORM_EXPORT void Draw (Dgn::IDrawGeomR drawGeom, bool closed, bool filled) const;
 
     DGNPLATFORM_EXPORT bool GetDPoint3dArray (DPoint3dP point, int* nGot, int i0, int nreq) const;
     DGNPLATFORM_EXPORT BentleyStatus GetEllipse (int* index, DEllipse3dP elllipse, bool flatten) const;
@@ -403,4 +403,4 @@ public:
 
 //__PUBLISH_SECTION_START__
 
-END_BENTLEY_API_NAMESPACE
+END_BENTLEY_NAMESPACE

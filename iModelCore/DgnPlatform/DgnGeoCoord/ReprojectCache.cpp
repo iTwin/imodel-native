@@ -18,7 +18,7 @@
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_USTN
 
-using namespace Bentley::GeoCoordinates;
+using namespace BentleyApi::GeoCoordinates;
 
 
 #define MAX_POSTSTROKE_DEPTH    16

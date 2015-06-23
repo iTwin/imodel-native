@@ -316,7 +316,6 @@ DGNPLATFORM_EXPORT StatusInt SetOrigin (DPoint3dCR pOrigin);
 DGNPLATFORM_EXPORT StatusInt SetRotation (RotMatrixCR pRot);
 
 //! Get the point (in UORs) corresponding to the input string.
-//! @bsimethod
 DGNPLATFORM_EXPORT StatusInt PointFromString (DPoint3dR outPoint, WStringR errorMsg, WCharCP inString, bool relative, DPoint3dCP lastPoint, DgnModelR modelRef);
 
 //! Get the string that represents the input point.
@@ -331,11 +330,9 @@ DGNPLATFORM_EXPORT StatusInt CompleteSetupFromViewController (PhysicalViewContro
 DGNPLATFORM_EXPORT void DisplayInView (DgnViewportP vp, ACSDisplayOptions options, bool drawName) const;
 
 //! Boresite to ACS triad in the given view. The borePt and hitPt are in active coords...
-//! @bsimethod
 DGNPLATFORM_EXPORT bool Locate (DPoint3dR hitPt, DgnViewportR vp, DPoint3dCR borePt, double radius);
 
 //! Get the ACS extender id.
-//! @bsimethod
 DGNPLATFORM_EXPORT uint32_t GetExtenderId () const;
 
 //! Get the buffer size, in bytes, required to serialize the ACS.

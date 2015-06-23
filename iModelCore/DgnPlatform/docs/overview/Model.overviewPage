@@ -9,9 +9,49 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-/** @page PAGE_ModelOverview Model
+/** @page PAGE_ModelOverview Model Overview
+
+A DgnModel is a container that owns and organizes elements to represent a <i>model</i> of something.
+A DgnModel can contain elements for a particular drawing, elements from a specific volume, or elements from a unique discipline.
+Basically, %DgnModels are used to partition the virtual world.
 
 @tableofcontents
+
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_ModelClasses DgnModel Classes
+
+It is expected that domain developers will subclass from the appropriate DgnModel class.
+Application developers will use the domain classes or base classes.
+Some of the most common model classes are described below:
+
+@htmlonly
+
+<p>
+<table border="1">
+    <tr>
+        <td><a href="structBentleyApi_1_1Dgn_1_1DgnModel.html">DgnModel</a></td>
+        <td>The base class for all models.</td>
+    </tr>
+    <tr>
+        <td><a href="structBentleyApi_1_1Dgn_1_1PhysicalModel.html">PhysicalModel</a></td>
+        <td>The base class for models that contain 3D PhysicalElements.</td>
+    </tr>
+</table>
+<p>
+
+@endhtmlonly
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_ModelIncludes Required include files
+
+__PUBLISH_INSERT_FILE__ Model_Includes.sampleCode
+
+<hr>
+<!-- ---------------------------------------------------------------------------------- -->
+@section SECTION_CreateAndInsertModel Create and insert a DgnModel
+
+__PUBLISH_INSERT_FILE__ Model_CreateAndInsert.sampleCode
 
 <hr>
 <!-- ---------------------------------------------------------------------------------- -->

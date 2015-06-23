@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
+#include <DgnPlatform/DgnPlatformLib.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <ECDb/ECSqlBuilder.h>
 #include <DgnPlatform/DgnCore/WebMercator.h>
@@ -30,9 +31,9 @@ static bool s_abcShouldFail;
 //! A test IDgnElementDependencyHandler
 // @bsiclass                                                     Sam.Wilson      01/15
 //=======================================================================================
-struct ABCHandler : DgnPlatform::DgnElementDependencyHandler
+struct ABCHandler : Dgn::DgnElementDependencyHandler
     {
-    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME, ABCHandler, DgnPlatform::DgnDomain::Handler, )
+    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME, ABCHandler, Dgn::DgnDomain::Handler, )
 
     bvector<EC::ECInstanceId> m_relIds;
     void _OnRootChanged(DgnDbR db, ECInstanceId relationshipId, DgnElementId source, DgnElementId target) override;
@@ -56,9 +57,9 @@ struct TestElementHandler;
 //! A test Element. Has an item.
 // @bsiclass                                                     Sam.Wilson      04/15
 //=======================================================================================
-struct TestElement : DgnPlatform::PhysicalElement
+struct TestElement : Dgn::PhysicalElement
 {
-    DEFINE_T_SUPER(DgnPlatform::PhysicalElement)
+    DEFINE_T_SUPER(Dgn::PhysicalElement)
 
     friend struct TestElementHandler;
 

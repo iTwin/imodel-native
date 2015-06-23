@@ -110,6 +110,7 @@ public:
 
 //=======================================================================================
 //! Each Category has an entry in the Category table.
+//! @see DgnDb::Categories
 //! @ingroup DgnCategoryGroup
 //=======================================================================================
 struct DgnCategories : DgnDbTable
@@ -139,6 +140,7 @@ struct DgnCategories : DgnDbTable
     struct SubCategory
     {
         //! The parameters that can determine how graphics on a SubCategory appear when drawn.
+        //! @ingroup DgnCategoryGroup
         struct Appearance
         {
         private:
@@ -513,6 +515,7 @@ enum class DgnViewSource
 
 //=======================================================================================
 //! Each View has an entry in the View table.
+//! @see DgnDb::Views
 //! @ingroup DgnViewGroup
 //=======================================================================================
 struct DgnViews : DgnDbTable
@@ -646,6 +649,8 @@ enum class ModelIterate
 
 //=======================================================================================
 //! Each DgnModel has an entry in the DgnModels table
+//! @see DgnDb::Models
+//! @ingroup DgnModelGroup
 //=======================================================================================
 struct DgnModels : DgnDbTable
 {
@@ -826,6 +831,7 @@ public:
 //! When the reference count of an element goes to zero, it is not immediately freed. Instead, it is held by this class
 //! and may be "reclaimed" later if/when it is needed again. The memory held by DgnElements is not actually freed until
 //! their reference count goes to 0 and the cache is subsequently purged.
+//! @see DgnDb::Elements
 //! @ingroup DgnElementGroup
 //=======================================================================================
 struct DgnElements : DgnDbTable
@@ -987,6 +993,8 @@ public:
 
 //=======================================================================================
 //! Each GeomPart has a row in the DgnGeomParts table
+//! @see DgnDb::GeomParts
+//! @ingroup ElementGeometryGroup
 //=======================================================================================
 struct DgnGeomParts : DgnDbTable
 {
@@ -1033,6 +1041,8 @@ public:
 //! be named and from a "color book". The entries in the table are identified by DgnTrueColorId's.
 //! Once a True Color is defined, it may not be changed or deleted. Note that there may be multiple enties in the table with the same RGB value.
 //! However, if a book name is supplied, there may not be two entries with the same name.
+//! @see DgnDb::Colors
+//! @ingroup DgnColorGroup
 //=======================================================================================
 struct DgnColors : DgnDbTable
 {
@@ -1101,6 +1111,7 @@ public:
 };
 
 //=======================================================================================
+//! @see DgnDb::Fonts
 // @bsiclass                                                    Jeff.Marker     03/2015
 //=======================================================================================
 struct DgnFonts : NonCopyableClass
@@ -1249,9 +1260,8 @@ public:
     DGNPLATFORM_EXPORT DgnFontId AcquireId(DgnFontCR);
 };
 
-/** @cond BENTLEY_SDK_Internal */
 //=======================================================================================
-// @bsiclass
+//! @private
 //=======================================================================================
 struct DgnMaterials : DgnDbTable
 {
@@ -1312,9 +1322,9 @@ public:
     DGNPLATFORM_EXPORT BeSQLite::DbResult UpdateMaterial(Row const& row);
     DGNPLATFORM_EXPORT Row QueryMaterialById(DgnMaterialId id) const;
 };
-/** @endcond */
 
 //=======================================================================================
+//! @see DgnDb::Units
 // @bsiclass                                                    Keith.Bentley   09/13
 //=======================================================================================
 struct DgnUnits : NonCopyableClass
@@ -1373,6 +1383,7 @@ public:
 };
 
 //=======================================================================================
+//! @see DgnDb::Styles
 // @bsiclass
 //=======================================================================================
 struct DgnStyles : DgnDbTable
@@ -1408,6 +1419,7 @@ public:
 
 //=======================================================================================
 // Links are shared resources, referenced by elements. As such, it doesn't make sense to expose an explicit API to create and delete them. Either the detach API will clean it up if it's the last use, or this will be part of a larger GC scheme for shared resources.
+//! @see DgnDb::Links
 // @bsiclass
 //=======================================================================================
 struct DgnLinks : public DgnDbTable

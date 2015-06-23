@@ -7,40 +7,6 @@
 +----------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 
-#define     MS_MLINESTYLE_TABLE_LEVEL                           6
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   11/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool LineStyleUtil::ElementHasLineStyle (GeometricElementCR element)
-    {
-    ElementGeometryCollection collection(element);
-
-    for (ElementGeometryPtr geom : collection)
-        {
-        ElemDisplayParamsCR params = collection.GetElemDisplayParams();
-
-        if (nullptr != params.GetLineStyle())
-            return true;
-        }
-
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    JimBartlett                     6/93
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            LineStyleUtil::InitializeParams
-(
-LineStyleParams*     params
-)
-    {
-    // This function gets called a lot for updates. The below was determined via profiling to be the fastest way to
-    // initialize this structure.
-    memset (params, 0, sizeof(LineStyleParams));
-    params->rMatrix.form3d[0][0] = params->rMatrix.form3d[1][1] = params->rMatrix.form3d[2][2] = 
-    params->scale = params->gapScale = params->dashScale = params->normal.z = 1.0;
-    }
 
 //////////////////Methods that were originally in lsproc.c
 /*---------------------------------------------------------------------------------**//**
@@ -520,18 +486,16 @@ StatusInt       LsComponent::_StrokeBSplineCurve (ViewContextP context, LineStyl
     return status;
     }
 
-//  Potential inlines
-uint64_t            LsComponent::GetId ()const {return m_location.GetIdentKey ();}
-LsElementType       LsComponent::GetElementType () const {return m_location.GetElementType ();}
-WString             LsComponent::GetDescription () const {return m_descr;}
-LsLocationType      LsComponent::GetLocationType () const {return m_location.GetSourceType();}
+LsComponentId       LsComponent::GetId ()const {return m_location.GetComponentId ();}
+LsComponentType     LsComponent::GetComponentType () const {return m_location.GetComponentType ();}
+Utf8String          LsComponent::GetDescription () const {return m_descr;}
 DgnDbP              LsComponent::GetDgnDbP() const {return m_location.GetDgnDb();}
 
-bool                LsStroke::IsDash ()           TESTSTROKEMODE (STROKE_Dash)
-bool                LsStroke::IsDashFirst ()      TESTSTROKEMODE (STROKE_DashFirst)
-bool                LsStroke::IsDashLast ()       TESTSTROKEMODE (STROKE_DashLast)
-bool                LsStroke::IsStretchable ()    TESTSTROKEMODE (STROKE_Stretchable)
-bool                LsStroke::IsRigid ()          TESTSTROKEMODE (STROKE_Rigid)
+bool                LsStroke::IsDash ()             TESTSTROKEMODE (STROKE_Dash)
+bool                LsStroke::IsDashFirst ()        TESTSTROKEMODE (STROKE_DashFirst)
+bool                LsStroke::IsDashLast ()         TESTSTROKEMODE (STROKE_DashLast)
+bool                LsStroke::IsStretchable ()      TESTSTROKEMODE (STROKE_Stretchable)
+bool                LsStroke::IsRigid ()            TESTSTROKEMODE (STROKE_Rigid)
 void                LsStroke::SetIsDash             SETSTROKEMODE (STROKE_Dash)
 void                LsStroke::SetIsDashFirst        SETSTROKEMODE (STROKE_DashFirst)
 void                LsStroke::SetIsDashLast         SETSTROKEMODE (STROKE_DashLast)
@@ -669,7 +633,7 @@ void            LsSymbolReference::SetUseWeight(bool value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-Utf8CP LsMapEntry::GetStyleName () const 
+Utf8CP LsCacheStyleEntry::GetStyleName () const 
     {
     return m_name;
     }
@@ -680,24 +644,20 @@ void                LsSymbolReference::SetAngle(double value)       {m_angle = v
 void                LsSymbolReference::SetStrokeNumber(int value)   {m_strokeNo = value;}
 void                LsSymbolReference::SetSymbolComponent(LsSymbolComponentR symbolComponent) { m_symbol = &symbolComponent; }
 
-int64_t             LsMapEntry::GetStyleNumber ()           const { return m_id; }
-LsDefinitionP       LsMapEntry::GetLineStyleP ()            const { return m_nameRec; }
-LsDefinitionCP      LsMapEntry::GetLineStyleCP ()           const { return m_nameRec; }
+LsDefinitionP       LsCacheStyleEntry::GetLineStyleP ()            const { return m_nameRec; }
+LsDefinitionCP      LsCacheStyleEntry::GetLineStyleCP ()           const { return m_nameRec; }
 
-int64_t             LsDefinition::GetStyleNumber()        const {return m_styleNumber; }
-DgnStyleId          LsDefinition::GetStyleId()            const {return DgnStyleId (m_styleNumber); }
+DgnStyleId          LsDefinition::GetStyleId()            const {return DgnStyleId (m_styleId); }
 double              LsDefinition::GetUnitsDefinition()    const {return m_unitDef;}
 LsUnit              LsDefinition::GetUnitsType()          const {return (LsUnit)(m_attributes & LSATTR_UNITMASK);}
 double              LsDefinition::_GetMaxWidth()           const {return m_maxWidth;}
-double              LsDefinition::GetUorsPerMeter()       const {return m_uorsPerMeter;}
 int                 LsDefinition::GetHardwareStyle ()     const {return (m_hardwareLineCode > 0 ? m_hardwareLineCode : 0);}
-LsLocationType      LsDefinition::GetLocationType ()      const {return m_location.GetSourceType (); }
 
 bool                LsDefinition::IsContinuous ()         const {return 0 != (m_attributes & LSATTR_CONTINUOUS);}
 bool                LsDefinition::IsSnappable ()          const {return _IsSnappable (); }
 bool                LsDefinition::IsNoWidth ()            const {return 0 != (m_attributes & LSATTR_NOWIDTH);}
 bool                LsDefinition::IsPhysical ()           const {return 0 != (m_attributes & LSATTR_PHYSICAL);}
-bool                LsDefinition::IsInternal ()           const {return m_location.GetRscType() == LsResourceType::Internal;}
+bool                LsDefinition::IsInternal ()           const {return m_location.GetComponentType() == LsComponentType::Internal;}
 bool                LsDefinition::IsUnitsUOR()            const {return (LSATTR_UNITUOR == GetUnits());}
 bool                LsDefinition::IsUnitsMaster()         const {return (LSATTR_UNITMASTER == GetUnits());}
 bool                LsDefinition::IsUnitsDevice()         const {return (LSATTR_UNITDEV == GetUnits());}

@@ -58,7 +58,8 @@ typedef RefCountedPtr<StoredExpressionKeyword> StoredExpressionKeywordPtr;
 
 //=======================================================================================
 //! Helper class to load a Stored Expression (used by NamedExpression system) from an XAttribute
-//! @bsiclass                                                   Bill.Steinbock  10/2009
+// @bsiclass                                                   Bill.Steinbock  10/2009
+//=======================================================================================
 struct StoredExpressionHelper
 {
 public:
@@ -129,7 +130,8 @@ public:
 //=======================================================================================
 //! Stored expression are file-based named expressions. These expressions are loaded
 //! and evaulated by the Expression Evaluator.
-//! @bsiclass                                                   Bill.Steinbock  10/2009
+// @bsiclass                                                   Bill.Steinbock  10/2009
+//=======================================================================================
 struct  StoredExpression : RefCountedBase
 {
 friend struct StoredExpressionHelper;
@@ -194,7 +196,8 @@ public:
 //! stored expressions for presentation in the user interface. Multiple keywords can
 //! be associated with a single
 //! expression.
-//! @bsiclass                                                   Bill.Steinbock  10/2009
+// @bsiclass                                                   Bill.Steinbock  10/2009
+//=======================================================================================
 struct  StoredExpressionKeyword : RefCountedBase
 {
 friend struct StoredExpressionHelper;
