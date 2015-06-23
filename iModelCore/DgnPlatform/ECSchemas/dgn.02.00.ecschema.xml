@@ -175,9 +175,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECRelationshipClass typeName="CategoryOwnsSubCategories" isDomainClass="True" strength="embedding" strengthDirection="forward">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <Columns>
-                    <ECInstanceIdColumn>CategoryId</ECInstanceIdColumn>
-                </Columns>
                 <CreateConstraint>True</CreateConstraint>
                 <OnDeleteAction>Cascade</OnDeleteAction>
             </ForeignKeyRelationshipMap>
@@ -579,23 +576,21 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ElementOwnsChildElements" isDomainClass="True" strength="embedding" strengthDirection="forward">
-        <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <ForeignKeyColumn>ParentId</ForeignKeyColumn>
-            </ForeignKeyRelationshipMap>
-        </ECCustomAttributes>
         <Source cardinality="(1,1)" roleLabel="is on 1 element" polymorphic="True">
             <Class class="Element" />
         </Source>
         <Target cardinality="(0,N)" roleLabel="is on N elements" polymorphic="True">
-            <Class class="Element" />
+            <Class class="Element" >
+                <Key>
+                    <Property name="ParentId"/>
+                </Key>
+            </Class>
         </Target>
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ModelContainsElements" description="Associates elements with a model" isDomainClass="True" strength="embedding">
         <ECCustomAttributes>
            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <ForeignKeyColumn>ModelId</ForeignKeyColumn>
                 <CreateConstraint>True</CreateConstraint>
                 <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyRelationshipMap>
@@ -709,13 +704,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ElementIsInCategory" isDomainClass="True" strength="referencing" strengthDirection="forward">
-        <ECCustomAttributes>
-           <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <End>Source</End>
-                <ForeignKeyColumn>CategoryId</ForeignKeyColumn>
-            </ForeignKeyRelationshipMap>
-        </ECCustomAttributes>
-    
         <Source cardinality="(0,N)"  roleLabel="has N elements" polymorphic="True">
             <Class class="Element">
                 <Key>
