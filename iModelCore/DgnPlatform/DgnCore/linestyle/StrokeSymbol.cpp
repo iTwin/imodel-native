@@ -339,7 +339,7 @@ LsSymbolComponent* LsSymbolComponent::LoadPointSym (LsComponentReader* reader)
         return  NULL;
 
     LsSymbolComponent* symbComp = new LsSymbolComponent (reader->GetSource());
-    symbComp->SetDescription (Utf8String(symRsc->header.descr, false).c_str());
+    symbComp->SetDescription (Utf8String(symRsc->header.descr).c_str());
 
     // add to cache
 #if defined(NOTNOW)

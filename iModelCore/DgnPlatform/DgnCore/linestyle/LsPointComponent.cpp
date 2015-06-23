@@ -556,7 +556,7 @@ LsComponentReader*    reader
         return  NULL;
 
     LsPointComponent* pointComp = new LsPointComponent (reader->GetSource());
-    pointComp->SetDescription (Utf8String(lpRsc->descr, false).c_str());
+    pointComp->SetDescription (Utf8String(lpRsc->descr).c_str());
 
 #if defined(NOTNOW)
     //  Maybe this is necessary to avoid recursing

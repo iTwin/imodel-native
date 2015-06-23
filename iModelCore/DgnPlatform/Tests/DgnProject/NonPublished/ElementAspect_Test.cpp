@@ -8,6 +8,7 @@
 #include "DgnHandlersTests.h"
 #include <Bentley/BeTimeUtilities.h>
 #include <ECDb/ECSqlBuilder.h>
+#include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnCore/WebMercator.h>
 
 #define TMTEST_SCHEMA_NAME                               "DgnPlatformTest"

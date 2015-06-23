@@ -467,7 +467,7 @@ LsComponentReader*    reader
         return  NULL;
 
     LsCompoundComponent*  compound = new LsCompoundComponent (reader->GetSource());
-    compound->SetDescription (Utf8String(lsRsc->descr, false).c_str());
+    compound->SetDescription (Utf8String(lsRsc->descr).c_str());
 
     LsLocation  tmpLocation;
 
