@@ -589,8 +589,10 @@ BentleyStatus RelationshipMapInfo::_InitializeFromSchema()
             return ERROR;
 
         RelationshipEndColumns* foreignKeyColumnsMapping = nullptr;
+        ECRelationshipConstraintCP foreignKeyConstraint = nullptr;
         if (foreignKeyEnd == ECRelationshipEnd_Target)
             {
+            foreignKeyConstraint = &relClass->GetTarget();
             foreignKeyColumnsMapping = &m_targetColumnsMapping;
             m_sourceColumnsMappingIsNull = true;
             m_targetColumnsMappingIsNull = false;
@@ -598,6 +600,7 @@ BentleyStatus RelationshipMapInfo::_InitializeFromSchema()
             }
         else
             {
+            foreignKeyConstraint = &relClass->GetSource();
             foreignKeyColumnsMapping = &m_sourceColumnsMapping;
             m_sourceColumnsMappingIsNull = false;
             m_targetColumnsMappingIsNull = true;
@@ -608,6 +611,19 @@ BentleyStatus RelationshipMapInfo::_InitializeFromSchema()
         Utf8String foreignKeyClassIdColName;
         if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetForeignKeyColumn(foreignKeyColName))
             return ERROR;
+
+        if (!foreignKeyColName.empty())
+            {
+            for (ECRelationshipConstraintClassCP constraintClass : foreignKeyConstraint->GetConstraintClasses())
+                {
+                if (!constraintClass->GetKeys().empty())
+                    {
+                    LOG.errorv(L"ForeignKeyRelationshipMap custom attribute on ECRelationshipClass '%ls' must not have a value for ForeignKeyProperty as there are Key properties defined in the ECRelationshipConstraint on the foreign key end.",
+                               GetECClass().GetFullName());
+                    return ERROR;
+                    }
+                }
+            }
 
         if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetForeignKeyClassIdColumn(foreignKeyClassIdColName))
             return ERROR;
