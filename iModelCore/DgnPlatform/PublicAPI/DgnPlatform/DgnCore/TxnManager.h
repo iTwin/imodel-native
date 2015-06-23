@@ -38,10 +38,14 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
  users and changed-merged.
  @bsiclass
 +===============+===============+===============+===============+===============+======*/
+
+//! Identifies the transaction direction
+//! @ingroup TxnMgr
 enum class TxnDirection {Backwards=0, Forward=1};
 
 //=======================================================================================
 //! A 32 bit value to identify the group of entries that form a single transaction.
+//! @ingroup TxnMgr
 // @bsiclass                                                      Keith.Bentley   02/04
 //=======================================================================================
 struct TxnId
@@ -77,7 +81,6 @@ public:
     operator int64_t() const {return m_value;}
 };
 
-
 //=======================================================================================
 //! Interface to be implemented to monitor changes to elements.
 //! @ingroup TxnMgr
@@ -95,6 +98,7 @@ namespace dgn_TxnTable {struct Element; struct ElementDep;}
 //=======================================================================================
 //! A summary of all of the Element-based changes that occurred during a Txn. TxnMonitors are supplied with a
 //! TxnSummary so they can determine what Elements were affected by a Txn.
+//! @ingroup TxnMgr
 // @bsiclass                                                    Keith.Bentley   07/13
 //=======================================================================================
 struct TxnSummary
@@ -144,7 +148,6 @@ public:
     //! Query if any Fatal validation errors were reported during the last boundary check.
     DGNPLATFORM_EXPORT bool HasFatalErrors() const;
 };
-
 
 //=======================================================================================
 //! An instance of a TxnTable is created for a single SQLite table via a DgnDomain::TableHandler.
@@ -327,6 +330,7 @@ struct RevTxn
 //!    - Reversing (undo) and Reinstating (redo) Txns
 //!    - change propagation.
 //!    - combining multi-step Txns into a single reversible "operation"
+//! @ingroup TxnMgr
 // @bsiclass
 //=======================================================================================
 struct TxnManager : BeSQLite::ChangeTracker
@@ -443,7 +447,7 @@ public:
     //!       be reinstated together when/if ReinstateTxn is called (e.g., the user issues the "REDO" command.)
     //! @remarks  Reversed Transactions can be reinstated by calling ReinstateTxn. To completely remove all vestiges of (including the memory
     //!           used by) a transaction, call ClearReversedTxns.
-    //! @see ReinstateTxn ClearReversedTxns
+    //! @see ReinstateTxn, ClearReversedTxns
     DGNPLATFORM_EXPORT StatusInt ReverseTxns(int numActions);
 
     //! Reverse (undo) the most recent transaction.
@@ -460,12 +464,12 @@ public:
     //! Reverse all element changes back to a previously saved TxnPos.
     //! @param[in] pos a TxnPos obtained from a previous call to GetCurrTxnPos.
     //! @return SUCCESS if the transactions were reversed, ERROR if TxnPos is invalid.
-    //! @see  GetCurrTxnPos CancelToPos
+    //! @see  GetCurrTxnPos, CancelToPos
     DGNPLATFORM_EXPORT StatusInt ReverseToPos(TxnId pos);
 
     //! Get the Id of the most recently commited transaction.
     //! @return the current TxnPos. This value can be saved and later used to reverse changes that happen after this time.
-    //! @see   ReverseToPos CancelToPos
+    //! @see ReverseToPos, CancelToPos
     TxnId GetCurrTxnId() {return m_curr.m_txnId;}
 
     //! Reverse and then cancel (make non-reinstatable) all element changes back to a previous TxnPos. 

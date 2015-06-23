@@ -347,6 +347,10 @@ public:
         //! @param el   The host element
         //! @return the DgnClassId of the existing item or an invalid ID if the element has no item
         DGNPLATFORM_EXPORT static DgnClassId QueryExistingItemClass(DgnElementCR el);
+
+        //! Invoke the _GenerateElementGeometry method on the item
+        //! @param el   The host element
+        DGNPLATFORM_EXPORT static DgnDbStatus GenerateElementGeometry(GeometricElementR el);
     };
 
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
@@ -577,7 +581,7 @@ public:
     //! @return a DgnElementPtr that holds the editable copy of this element.
     //! @note This method may only be used on a DgnElement this is the readonly persistent element returned by DgnElements::GetElement, and then
     //! only one editing copy of this element at a time may exist. If another copy is extant, this method will return an invalid DgnElementPtr.
-    //! @see MakeCopy IsPersistent
+    //! @see MakeCopy, IsPersistent
     DGNPLATFORM_EXPORT DgnElementPtr CopyForEdit() const;
 
     //! Make a writable copy of this DgnElement so that the copy may be edited.
@@ -711,6 +715,7 @@ public:
 
 //=======================================================================================
 //! A stream of geometry, stored on a DgnElement, created by an ElementGeometryBuilder.
+//! @ingroup ElementGeometryGroup
 // @bsiclass                                                    Keith.Bentley   12/14
 //=======================================================================================
 struct GeomStream

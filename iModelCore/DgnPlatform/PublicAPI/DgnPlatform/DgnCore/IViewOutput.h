@@ -233,12 +233,10 @@ public:
     //! @param[in]          trans           Transform to push. May be NULL.
     //! @param[in]          clipPlaneSet    Clip planes to push. May be NULL.
     //! @see #PopTransClip
-    //! @bsimethod
     DGNPLATFORM_EXPORT void PushTransClip (TransformCP trans, ClipPlaneSetCP clipPlaneSet = NULL);
 
     //! Pop the most recently pushed transform and clipping.
     //! @see #PushTransClip
-    //! @bsimethod
     DGNPLATFORM_EXPORT void PopTransClip ();
 
     DGNPLATFORM_EXPORT bool EnableZTesting (bool yesNo);

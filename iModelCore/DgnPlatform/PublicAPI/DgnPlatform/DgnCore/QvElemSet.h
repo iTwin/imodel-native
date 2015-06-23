@@ -15,7 +15,7 @@ BENTLEY_NAMESPACE_TYPEDEFS(HeapZone)
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //=======================================================================================
-//! @bsiclass
+// @bsiclass
 //=======================================================================================
 template <class _QvKey> struct QvElemSet : DgnElement::AppData
 {
