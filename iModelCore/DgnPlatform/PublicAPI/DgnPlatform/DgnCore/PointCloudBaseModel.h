@@ -22,20 +22,8 @@ struct EXPORT_VTABLE_ATTRIBUTE PointCloudBaseModel : PhysicalModel
 {
     DEFINE_T_SUPER(PhysicalModel)
 
-public:
-    struct Properties
-        {
-        AxisAlignedBox3d    m_range;
-        Utf8String          m_URL;               //! URL of point cloud file
-
-        void ToJson(Json::Value&) const;
-        void FromJson(Json::Value const&);
-        };
-
 protected:
     friend struct PointCloudBaseModelHandler;
-
-    Properties m_properties;
 
 public:
     //! Create a new PointCloudBaseModel object, in preparation for loading it from the DgnDb.
