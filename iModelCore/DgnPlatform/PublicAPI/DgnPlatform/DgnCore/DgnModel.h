@@ -315,7 +315,7 @@ public:
     //! @return the number of elements in this DgnModel.
     //! @note The DgnModel must be filled before calling this method.
     //! @see FillSections
-    uint32_t CountElements() const {return (uint32_t) m_elements.size();}
+    uint32_t CountLoadedElements() const {return (uint32_t) m_elements.size();}
 
     //! Find a DgnElementP in this DgnModel by DgnElementId.
     //! @return DgnElementP of element with \a id, or NULL.

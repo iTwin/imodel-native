@@ -45,7 +45,7 @@ TxnManager::UndoChangeSet::ConflictResolution TxnManager::UndoChangeSet::_OnConf
     }
 
 /*---------------------------------------------------------------------------------**//**
-* we keep a statement cache just for TxnManager statements
+* We keep a statement cache just for TxnManager statements
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachedStatementPtr TxnManager::GetTxnStatement(Utf8CP sql) const
@@ -56,7 +56,7 @@ CachedStatementPtr TxnManager::GetTxnStatement(Utf8CP sql) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Save a changeset for the current Txn into the TXN_Change table in the DgnDb. This compresses the changeset.
+* Save a changeset for the current Txn into the DGN_TABLE_Txns table in the DgnDb. This compresses the changeset.
 * @bsimethod                                    Keith.Bentley                   07/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult TxnManager::SaveCurrentChange(ChangeSet& changeset, Utf8CP operation)
@@ -257,12 +257,12 @@ TxnId TxnManager::GetMultiTxnOperationStart()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* We're about to reverse or reinstate a committed transaction. Before that can happen, we need to cancel
+* any pending uncommitted changes.
 * @bsimethod                                    Keith.Bentley                   07/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::SetUndoInProgress(bool yesNo)
     {
-    // we're about to reverse or reinstate a committed transaction. Before that can happen, we need to cancel
-    // any pending uncommitted changes.
     if (HasChanges())
         m_dgndb.AbandonChanges();
     }
@@ -387,7 +387,7 @@ void TxnManager::OnBeginValidate()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* A changeset was just be committed. Let each TxnTable clean up its state. Also clear the validation
+* A changeset was just be committed. Let each TxnTable clean up its state. Also clear the validation errors.
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::OnEndValidate()

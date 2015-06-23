@@ -77,7 +77,7 @@ public:
 TEST_F(DgnModelTests, GetGraphicElements)
     {
     LoadModel("Splines");
-    uint32_t graphicElementCount = m_modelP->CountElements();
+    uint32_t graphicElementCount = m_modelP->CountLoadedElements();
     ASSERT_NE(graphicElementCount, 0);
     ASSERT_TRUE(graphicElementCount > 0)<<"Please provide model with graphics elements, otherwise this test case makes no sense";
     int count = 0;
@@ -104,7 +104,7 @@ TEST_F(DgnModelTests, GetName)
     DgnModelP seedModel = modelTable.GetModel(m_modelP->GetModelId());
     DgnModelPtr newModel = seedModel->Clone(newName.c_str());
     status = newModel->Insert();
-    EXPECT_TRUE(status == DgnDbStatus::Success)<<"Failed to create model";
+    EXPECT_TRUE(status == DgnDbStatus::Success);
     DgnModelId id = modelTable.QueryModelId(newName.c_str());
     ASSERT_TRUE(id.IsValid());
     m_modelP =  modelTable.GetModel (id);
@@ -118,10 +118,11 @@ TEST_F(DgnModelTests, GetName)
 TEST_F(DgnModelTests, EmptyList)
     {
     LoadModel("Splines");
+    ASSERT_TRUE(0 != m_modelP->CountLoadedElements());
     m_modelP->Empty();
-    ASSERT_EQ(0, m_modelP->CountElements())<<"Failed to empty element list in model";
+    ASSERT_TRUE(0 == m_modelP->CountLoadedElements());
     LoadModel("Splines");
-    ASSERT_EQ(0, m_modelP->CountElements())<<"Failed to empty element list in model";
+    ASSERT_TRUE(0 != m_modelP->CountLoadedElements());
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Julija Suboc     07/13
@@ -322,7 +323,7 @@ TEST_F(DgnModelTests, WorkWithDgnModelTable)
     TestModelProperties models[3], testModel;
     models[0].SetTestModelProperties(L"Default", L"Master Model", false, DgnModelType::Drawing);
     models[1].SetTestModelProperties(L"Model2d", L"", false, DgnModelType::Drawing);
-    models[2].SetTestModelProperties(L"Missing", L"", true, DgnModelType::Physical);
+    models[2].SetTestModelProperties(L"Physical", L"", true, DgnModelType::Physical);
 
     //Iterate through the model and verify it's contents. TODO: Add more checks
     int i = 0;

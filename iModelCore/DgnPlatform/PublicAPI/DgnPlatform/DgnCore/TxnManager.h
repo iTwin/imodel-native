@@ -319,11 +319,11 @@ public:
     DGNPLATFORM_EXPORT dgn_TxnTable::Element&    Elements() const;
     DGNPLATFORM_EXPORT dgn_TxnTable::ElementDep& ElementDependencies() const;
 
-    //! Get a description of the operation that would be reversed by calling #ReinstateTxn.
+    //! Get a description of the operation that would be reversed by calling ReverseTxns.
     //! This is useful for showing the name in a pulldown menu, for example
     DGNPLATFORM_EXPORT Utf8String GetUndoString();
 
-    //! Get a description of the operation that would be reversed by calling #ReinstateTxn.
+    //! Get a description of the operation that would be reversed by calling ReinstateTxn.
     //! This is useful for showing the name in a pulldown menu, for example
     DGNPLATFORM_EXPORT Utf8String GetRedoString();
 

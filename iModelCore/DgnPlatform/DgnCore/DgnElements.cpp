@@ -1019,7 +1019,7 @@ void dgn_TxnTable::Element::_OnReversedDelete(BeSQLite::Changes::Change const& c
     DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::New).GetValueInt64());
 
     // We need to load this element, since filled models need to register it 
-    DgnElementCPtr el =m_txnMgr.GetDgnDb().Elements().FindElement(elementId);
+    DgnElementCPtr el = m_txnMgr.GetDgnDb().Elements().GetElement(elementId);
     BeAssert (el.IsValid());
     el->_OnInserted(nullptr);
     }
