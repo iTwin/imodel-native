@@ -36,7 +36,7 @@ private:
     TestLStylePhase             m_testingLStyle;
 
     IViewOutputP                m_viewOutput;
-    DgnPlatform::GeomDetail     m_currGeomDetail;
+    GeomDetail                  m_currGeomDetail;
     HitListP                    m_hitList;
     HitPriority                 m_hitPriorityOverride;
 
@@ -121,7 +121,7 @@ private:
     virtual bool            _CheckStop() override;
     virtual StatusInt       _VisitDgnModel (DgnModelP inDgnModel) override;
     virtual void            _OutputElement (GeometricElementCR) override;
-    virtual void            _DrawAreaPattern (DgnPlatform::ViewContext::ClipStencil& boundary) override;
+    virtual void            _DrawAreaPattern (ViewContext::ClipStencil& boundary) override;
     virtual void            _DrawSymbol (IDisplaySymbolP, TransformCP, ClipPlaneSetP, bool ignoreColor, bool ignoreWeight) override;
     virtual void            _DeleteSymbol (IDisplaySymbolP) override {}
     virtual ILineStyleCP    _GetCurrLineStyle (LineStyleSymbP*) override;
@@ -131,7 +131,7 @@ private:
     virtual void            _DrawStyledArc3d (DEllipse3dCR ellipse, bool isEllipse, DPoint3dCP range) override;
     virtual void            _DrawStyledBSplineCurve3d (MSBsplineCurveCR) override;
     virtual void            _DrawStyledBSplineCurve2d (MSBsplineCurveCR, double zDepth) override;
-    virtual QvElemP         _DrawCached (DgnPlatform::IStrokeForCache&) override;
+    virtual QvElemP         _DrawCached (IStrokeForCache&) override;
     virtual IPickGeomP      _GetIPickGeom () override {return &m_output;}
 
     void                    InitNpcSubRect (DPoint3dCR pickPointWorld, double pickAperture, DgnViewportR viewport);

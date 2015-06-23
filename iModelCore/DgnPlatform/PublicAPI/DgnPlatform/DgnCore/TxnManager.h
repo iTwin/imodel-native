@@ -10,8 +10,6 @@
 
 #include "DgnDb.h"
 
-/** @cond BENTLEY_SDK_Internal */
-
 DGNPLATFORM_TYPEDEFS(TxnMonitor)
 
 //  temp table names used by TxnSummary and ElementGraphTxnMonitor
@@ -31,7 +29,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
  The TxnManager API manages Txns. A Txn is a named, committed, undoable unit of work, stored in the DgnDb as a changeset.
  Txns may be "reversed" via an application Undo command, or "reinstated" via a corresponding Redo command.
 <p>
-<h2>Sessions<h2>
+<h2>Sessions</h2>
  Every time the TxnManager is initialized, it creates a GUID for itself called a SessionId. 
  Whenever an application calls DgnDb::SaveChanges(), a Txn is created. Txns are saved in Briefcases in the DGN_TABLE_Txns 
  table, along with the current SessionId. Only Txns from the current SessionId are (usually) undoable. After the completion of a 
@@ -40,10 +38,14 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
  users and changed-merged.
  @bsiclass
 +===============+===============+===============+===============+===============+======*/
+
+//! Identifies the transaction direction
+//! @ingroup TxnMgr
 enum class TxnDirection {Backwards=0, Forward=1};
 
 //=======================================================================================
 //! A 32 bit value to identify the group of entries that form a single transaction.
+//! @ingroup TxnMgr
 // @bsiclass                                                      Keith.Bentley   02/04
 //=======================================================================================
 struct TxnId
@@ -79,7 +81,6 @@ public:
     operator int64_t() const {return m_value;}
 };
 
-
 //=======================================================================================
 //! Interface to be implemented to monitor changes to elements.
 //! @ingroup TxnMgr
@@ -97,6 +98,7 @@ namespace dgn_TxnTable {struct Element; struct ElementDep;}
 //=======================================================================================
 //! A summary of all of the Element-based changes that occurred during a Txn. TxnMonitors are supplied with a
 //! TxnSummary so they can determine what Elements were affected by a Txn.
+//! @ingroup TxnMgr
 // @bsiclass                                                    Keith.Bentley   07/13
 //=======================================================================================
 struct TxnSummary
@@ -147,7 +149,6 @@ public:
     DGNPLATFORM_EXPORT bool HasFatalErrors() const;
 };
 
-
 //=======================================================================================
 //! An instance of a TxnTable is created for a single SQLite table via a DgnDomain::TableHandler.
 //! A TxnTable's sole role is to synchronize in-memory objects with persistent changes to the database through Txns.
@@ -173,7 +174,8 @@ struct TxnTable : RefCountedBase
 typedef RefCountedPtr<TxnTable> TxnTablePtr;
 
 //=======================================================================================
-//! TxnTables in the base "Dgn" domain.
+//! @namespace BentleyApi::Dgn::dgn_TxnTable TxnTables in the base "Dgn" domain. 
+//! @note Only handlers from the base "Dgn" domain belong in this namespace.
 // @bsiclass                                                    Keith.Bentley   06/15
 //=======================================================================================
 namespace dgn_TxnTable
@@ -328,6 +330,7 @@ struct RevTxn
 //!    - Reversing (undo) and Reinstating (redo) Txns
 //!    - change propagation.
 //!    - combining multi-step Txns into a single reversible "operation"
+//! @ingroup TxnMgr
 // @bsiclass
 //=======================================================================================
 struct TxnManager : BeSQLite::ChangeTracker
@@ -444,7 +447,7 @@ public:
     //!       be reinstated together when/if ReinstateTxn is called (e.g., the user issues the "REDO" command.)
     //! @remarks  Reversed Transactions can be reinstated by calling ReinstateTxn. To completely remove all vestiges of (including the memory
     //!           used by) a transaction, call ClearReversedTxns.
-    //! @see ReinstateTxn ClearReversedTxns
+    //! @see ReinstateTxn, ClearReversedTxns
     DGNPLATFORM_EXPORT StatusInt ReverseTxns(int numActions);
 
     //! Reverse (undo) the most recent transaction.
@@ -461,12 +464,12 @@ public:
     //! Reverse all element changes back to a previously saved TxnPos.
     //! @param[in] pos a TxnPos obtained from a previous call to GetCurrTxnPos.
     //! @return SUCCESS if the transactions were reversed, ERROR if TxnPos is invalid.
-    //! @see  GetCurrTxnPos CancelToPos
+    //! @see  GetCurrTxnPos, CancelToPos
     DGNPLATFORM_EXPORT StatusInt ReverseToPos(TxnId pos);
 
     //! Get the Id of the most recently commited transaction.
     //! @return the current TxnPos. This value can be saved and later used to reverse changes that happen after this time.
-    //! @see   ReverseToPos CancelToPos
+    //! @see ReverseToPos, CancelToPos
     TxnId GetCurrTxnId() {return m_curr.m_txnId;}
 
     //! Reverse and then cancel (make non-reinstatable) all element changes back to a previous TxnPos. 
@@ -488,26 +491,34 @@ public:
 };
 
 //=======================================================================================
-// Table Handlers in the base "Dgn" domain. Don't put handlers from other domains here.
+//! @namespace BentleyApi::Dgn::dgn_TableHandler TableHandlers in the base "Dgn" domain. 
+//! @note Only handlers from the base "Dgn" domain belong in this namespace.
 // @bsiclass                                                    Keith.Bentley   06/15
 //=======================================================================================
 namespace dgn_TableHandler
 {
+    //! TableHandler for DgnElement
     struct Element : DgnDomain::TableHandler
     {
         TABLEHANDLER_DECLARE_MEMBERS(Element, DGNPLATFORM_EXPORT)
         virtual TxnTable* _Create(DgnDb& db) const override {return new dgn_TxnTable::Element(db);}
     };
+
+    //! TableHandler for DgnModel
     struct Model : DgnDomain::TableHandler
     {
         TABLEHANDLER_DECLARE_MEMBERS(Model, DGNPLATFORM_EXPORT)
         virtual TxnTable* _Create(DgnDb& db) const override {return new dgn_TxnTable::Model(db);}
     };
+
+    //! TableHandler for DgnElement dependencies
     struct ElementDep : DgnDomain::TableHandler
     {
         TABLEHANDLER_DECLARE_MEMBERS(ElementDep, DGNPLATFORM_EXPORT)
         virtual TxnTable* _Create(DgnDb& db) const override {return new dgn_TxnTable::ElementDep(db);}
     };
+
+    //! TableHandler for DgnModel dependencies
     struct ModelDep : DgnDomain::TableHandler
     {
         TABLEHANDLER_DECLARE_MEMBERS(ModelDep, DGNPLATFORM_EXPORT)
@@ -516,5 +527,3 @@ namespace dgn_TableHandler
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
-
-/** @endcond */

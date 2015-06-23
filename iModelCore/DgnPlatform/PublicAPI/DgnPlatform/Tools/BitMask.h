@@ -12,7 +12,7 @@
 
 #include <stdio.h>
 
-BEGIN_BENTLEY_API_NAMESPACE
+BEGIN_BENTLEY_NAMESPACE
 
 enum class BitMaskOperation
     {
@@ -146,7 +146,6 @@ DGNPLATFORM_EXPORT void                SetAll ();
 
 //! Sets a bit of this BitMask to false.
 //! @param[in]      bitIndex        The bit to set to false.
-//! @bsimethod
 DGNPLATFORM_EXPORT StatusInt           Clear (uint32_t bitIndex);
 
 //! Sets all bits of this BitMask to false.
@@ -377,4 +376,4 @@ const Byte*     pByteArray
 
 //__PUBLISH_SECTION_START__
 
-END_BENTLEY_API_NAMESPACE
+END_BENTLEY_NAMESPACE

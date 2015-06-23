@@ -8,12 +8,12 @@
 #include <DgnPlatformInternal.h>
 
 //*** WIP_FOREIGN_FORMAT
-BENTLEY_API_TYPEDEFS (BeTextFile)
+BENTLEY_NAMESPACE_TYPEDEFS (BeTextFile)
 
 /*---------------------------------------------------------------------------------**//**
 * Standard Unit table
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DgnPlatform::StandardUnitTableEntry
+struct Dgn::StandardUnitTableEntry
 {
 UnitBase        m_base;
 UnitSystem      m_system;
@@ -619,7 +619,7 @@ typedef std::vector <UserUnitTableEntry>    UnitEntryVector;
 /*----------------------------------------------------------------------+
 | Structure used for entries in the table of available units.           |
 +----------------------------------------------------------------------*/
-struct DgnPlatform::UserUnitTableEntry
+struct Dgn::UserUnitTableEntry
     {
     int             m_number;
     UnitDefinition  m_unitDef;

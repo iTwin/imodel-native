@@ -15,7 +15,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 struct PointCloudBaseModelHandler;
 
 //=======================================================================================
-// Obtain and display point cloud data from POD files. 
+//! Obtain and display point cloud data from POD files. 
 // @bsiclass                                                    Eric.Paquet     04/2015
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PointCloudBaseModel : PhysicalModel
@@ -38,15 +38,13 @@ public:
 namespace dgn_ModelHandler
 {
     //=======================================================================================
-    // Model handler for point clouds.
-    // Instances of PointCloudBaseModel must be able to assume that their handler is a PointCloudBaseModelHandler.
+    //! The ModelHandler for PointCloudBaseModel.
     // @bsiclass                                                    Eric.Paquet     04/2015
     //=======================================================================================
     struct EXPORT_VTABLE_ATTRIBUTE PointCloud : Model
     {
         MODELHANDLER_DECLARE_MEMBERS ("PointCloudBaseModel", PointCloudBaseModel, PointCloud, Model, DGNPLATFORM_EXPORT)
     };
-
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

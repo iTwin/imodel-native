@@ -10,6 +10,7 @@
 #include "../NonPublished/DgnHandlersTests.h"
 #include <Bentley/BeTest.h>
 #include <DgnPlatform/DgnPlatformApi.h>
+#include <DgnPlatform/DgnPlatformLib.h>
 #include <ECDb/ECDbApi.h>
 #include <DgnPlatform/DgnHandlers/ScopedDgnHost.h>
 

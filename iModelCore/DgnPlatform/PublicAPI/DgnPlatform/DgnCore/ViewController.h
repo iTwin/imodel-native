@@ -733,9 +733,8 @@ public:
     //! @param[in] viewId the id of the view in the project.
     DGNPLATFORM_EXPORT CameraViewController(DgnDbR dgndb, DgnViewId viewId);
 
-    //! @name Camera
-    //! @{
-
+/** @name Camera */
+/** @{ */
     //! Determine whether the camera is on for this view
     bool IsCameraOn() const {return m_isCameraOn;}
 
@@ -860,14 +859,13 @@ public:
     //! @note This method is generally for internal use only. Moving the eyePoint arbitrarily can result in skewed or illegal perspectives.
     //! The most common method for user-level camera positioning is #LookAt.
     void SetEyePoint(DPoint3dCR pt) {GetCameraR().SetEyePoint(pt);}
+/** @} */
 
-    //! @}
-
-    //! @name ClipVector
-    //! @{
+/** @name ClipVector */
+/** @{ */
     DGNPLATFORM_EXPORT void SetClipVector(ClipVectorR);
     DGNPLATFORM_EXPORT void ClearClipVector();
-    //! @}
+/** @} */
 };
 
 //=======================================================================================
@@ -1105,10 +1103,8 @@ struct SheetViewController : ViewController2d
 {
     DEFINE_T_SUPER(ViewController2d);
 
-#if !defined (DOCUMENTATION_GENERATOR)
 protected:
     virtual SheetViewControllerCP _ToSheetView() const override {return this;}
-#endif
 
 public:
     //! Construct a new SheetViewController.

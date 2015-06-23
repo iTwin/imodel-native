@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnCore/LsLocal.h>
 
 static Utf8CP DGNPROPERTYBLOB_CompId                = "compId";
 static Utf8CP DGNPROPERTYBLOB_CompType              = "compType";
@@ -32,53 +31,19 @@ void V10ComponentBase::SetDescription (Utf8CP source)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    11/2013
-//---------------------------------------------------------------------------------------
-static uint32_t  convertComponentTypeToRscType(bool useRscTypes, uint32_t componentType)
-    {
-    if (!useRscTypes)
-        return componentType;
-
-    uint32_t rscType = componentType;
-
-    switch  (componentType)
-        {
-        case (uint32_t)LsElementType::PointSymbol:
-            rscType = (uint32_t)LsResourceType::PointSymbol;
-            break;
-        case (uint32_t)LsElementType::Compound:
-            rscType = (uint32_t)LsResourceType::Compound;
-            break;
-        case (uint32_t)LsElementType::LineCode:
-            rscType = (uint32_t)LsResourceType::LineCode;
-            break;
-        case (uint32_t)LsElementType::LinePoint:
-            rscType = (uint32_t)LsResourceType::LinePoint;
-            break;
-        case (uint32_t)LsElementType::Internal:
-            rscType = (uint32_t)LsResourceType::Internal;
-            break;
-        default:
-            break;
-        }
-
-    return rscType;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-BentleyStatus LsStrokePatternComponent::CreateRscFromDgnDb(LineCodeRsc** rscOut, DgnDbR project, uint32_t componentId, bool useRscComponentTypes)
+BentleyStatus LsStrokePatternComponent::CreateRscFromDgnDb(LineCodeRsc** rscOut, DgnDbR project, LsComponentId componentId, bool useRscComponentTypes)
     {
     *rscOut = NULL;
     uint32_t propertySize;
 
-    if (BE_SQLITE_ROW != project.QueryPropertySize(propertySize, LineStyleProperty::LineCode(), componentId, 0))
+    if (BE_SQLITE_ROW != project.QueryPropertySize(propertySize, LineStyleProperty::LineCode(), componentId.GetValue(), 0))
         return BSIERROR;
 
     V10LineCode* lineCodeData = (V10LineCode*)_alloca (propertySize);
 
-    project.QueryProperty(lineCodeData, propertySize, LineStyleProperty::LineCode(), componentId, 0);
+    project.QueryProperty(lineCodeData, propertySize, LineStyleProperty::LineCode(), componentId.GetValue(), 0);
     BeAssert (propertySize == V10LineCode::GetBufferSize(lineCodeData->m_nStrokes));
 
     size_t  rscSize = LC_RSCSIZE(lineCodeData->m_nStrokes);
@@ -108,19 +73,27 @@ BentleyStatus LsStrokePatternComponent::CreateRscFromDgnDb(LineCodeRsc** rscOut,
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    11/2013
+//---------------------------------------------------------------------------------------
+static uint32_t  convertComponentTypeToRscType(bool useRscTypes, uint32_t componentType)
+    {
+    return componentType;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-BentleyStatus LsPointComponent::CreateRscFromDgnDb(LinePointRsc** rscOut, DgnDbR project, uint32_t componentId, bool useRscComponentTypes)
+BentleyStatus LsPointComponent::CreateRscFromDgnDb(LinePointRsc** rscOut, DgnDbR project, LsComponentId componentId, bool useRscComponentTypes)
     {
     *rscOut = NULL;
     uint32_t propertySize;
 
-    if (BE_SQLITE_ROW != project.QueryPropertySize(propertySize, LineStyleProperty::LinePoint(), componentId, 0))
+    if (BE_SQLITE_ROW != project.QueryPropertySize(propertySize, LineStyleProperty::LinePoint(), componentId.GetValue(), 0))
         return BSIERROR;
 
     V10LinePoint* linePointData = (V10LinePoint*)_alloca (propertySize);
 
-    project.QueryProperty(linePointData, propertySize, LineStyleProperty::LinePoint(), componentId, 0);
+    project.QueryProperty(linePointData, propertySize, LineStyleProperty::LinePoint(), componentId.GetValue(), 0);
     BeAssert (propertySize == V10LinePoint::GetBufferSize(linePointData->m_nSymbols));
 
     size_t  rscSize = LP_RSCSIZE(linePointData->m_nSymbols);
@@ -154,17 +127,17 @@ BentleyStatus LsPointComponent::CreateRscFromDgnDb(LinePointRsc** rscOut, DgnDbR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-BentleyStatus LsCompoundComponent::CreateRscFromDgnDb(LineStyleRsc** rscOut, DgnDbR project, uint32_t componentId, bool useRscComponentTypes)
+BentleyStatus LsCompoundComponent::CreateRscFromDgnDb(LineStyleRsc** rscOut, DgnDbR project, LsComponentId componentId, bool useRscComponentTypes)
     {
     *rscOut = NULL;
     uint32_t propertySize;
 
-    if (BE_SQLITE_ROW != project.QueryPropertySize(propertySize, LineStyleProperty::Compound(), componentId, 0))
+    if (BE_SQLITE_ROW != project.QueryPropertySize(propertySize, LineStyleProperty::Compound(), componentId.GetValue(), 0))
         return BSIERROR;
 
     V10Compound* compoundData = (V10Compound*)_alloca (propertySize);
 
-    project.QueryProperty(compoundData, propertySize, LineStyleProperty::Compound(), componentId, 0);
+    project.QueryProperty(compoundData, propertySize, LineStyleProperty::Compound(), componentId.GetValue(), 0);
 
     uint32_t numberComponents = compoundData->m_nComponents;
     size_t  rscSize = LS_RSCSIZE(numberComponents);
@@ -191,8 +164,11 @@ BentleyStatus LsCompoundComponent::CreateRscFromDgnDb(LineStyleRsc** rscOut, Dgn
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-BentleyStatus LsSymbolComponent::CreateRscFromDgnDb(PointSymRsc** rscOut, DgnDbR project, uint32_t componentId, bool useRscComponentTypes)
+BentleyStatus LsSymbolComponent::CreateRscFromDgnDb(PointSymRsc** rscOut, DgnDbR project, LsComponentId componentId, bool useRscComponentTypes)
     {
+
+    BeAssert(false && "Implement CreateRscFromDgnDb");
+#if defined(NOTNOW)
     *rscOut = NULL;
     uint32_t propertySize;
 
@@ -230,13 +206,16 @@ BentleyStatus LsSymbolComponent::CreateRscFromDgnDb(PointSymRsc** rscOut, DgnDbR
     psr->SetSymbolType (symbolType);
 
     *rscOut = psr;
+    return BSIERROR;
+#else
     return BSISUCCESS;
+#endif
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-LineStyleStatus LsPointComponent::AddToProject (uint32_t& newId, DgnDbR project, LinePointRsc const& lpr)
+LineStyleStatus LsPointComponent::AddToProject (LsComponentId& newId, DgnDbR project, LinePointRsc const& lpr)
     {
     uint32_t bufferSize = V10LinePoint::GetBufferSize(lpr.nSym);
     V10LinePoint*v10LinePoint = (V10LinePoint*)_alloca(bufferSize);
@@ -270,7 +249,7 @@ LineStyleStatus LsPointComponent::AddToProject (uint32_t& newId, DgnDbR project,
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-LineStyleStatus LsStrokePatternComponent::AddToProject (uint32_t& newId, DgnDbR project, LineCodeRsc const& lcr)
+LineStyleStatus LsStrokePatternComponent::AddToProject (LsComponentId& newId, DgnDbR project, LineCodeRsc const& lcr)
     {
     uint32_t bufferSize = V10LineCode::GetBufferSize(lcr.nStrokes);
     V10LineCode*v10LineCode = (V10LineCode*)_alloca(bufferSize);
@@ -305,7 +284,7 @@ LineStyleStatus LsStrokePatternComponent::AddToProject (uint32_t& newId, DgnDbR 
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
 LineStyleUpgradeProcessor::LineStyleUpgradeProcessor (DgnDbR project, DgnElementDescrCP components) :
-                            m_v8Components(components), m_dgnProject (project)
+                            m_v8Components(components), m_dgnDb (project)
     {
     }
 
@@ -339,9 +318,9 @@ LineStyleStatus LineStyleUpgradeProcessor::UpgradeLineStyleV8toV10 (LStyleNameEn
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-LineStyleStatus LineStyleUpgradeProcessor::UpgradeLsComponent (uint32_t& v10Id, uint64_t componentId, LsElementType type)
+LineStyleStatus LineStyleUpgradeProcessor::UpgradeLsComponent (uint32_t& v10Id, uint64_t componentId, LsComponentType type)
     {
-    if (LsElementType::Internal == type)
+    if (LsComponentType::Internal == type)
         {
         v10Id = (uint32_t)componentId;
         return LINESTYLE_STATUS_Success;
@@ -360,21 +339,21 @@ LineStyleStatus LineStyleUpgradeProcessor::UpgradeLsComponent (uint32_t& v10Id, 
 
     LineStyleStatus retval = LINESTYLE_STATUS_Success;
     LStyleDefEntryElm const& el= (LStyleDefEntryElm const&)v8component->Element();
-    switch ((LsElementType)el.type)
+    switch ((LsComponentType)el.type)
         {
-        case LsElementType::LineCode:
+        case LsComponentType::LineCode:
             retval = UpgradeLineCode (v10Id, el);
             break;
 
-        case LsElementType::Compound:
+        case LsComponentType::Compound:
             retval = UpgradeCompoundType (v10Id, el);
             break;
 
-        case LsElementType::LinePoint:
+        case LsComponentType::LinePoint:
             retval = UpgradeLinePoint (v10Id, el);
             break;
 
-        case LsElementType::PointSymbol:
+        case LsComponentType::PointSymbol:
             retval = UpgradePointSymbol (v10Id, el);
             break;
         }
@@ -397,19 +376,19 @@ RefCountedPtr<LineStyleUpgradeProcessor> LineStyleUpgradeProcessor::Create (DgnD
 //--------------+------------------------------------------------------------------------
 void LsDefinition::InitializeJsonObject (Json::Value& jsonObj)
     {
-    InitializeJsonObject (jsonObj, m_location.GetRscID(), static_cast <uint16_t> (m_location.GetElementType()),
+    InitializeJsonObject (jsonObj, m_location.GetComponentId(), m_location.GetComponentType(),
                           m_attributes, (uint32_t) m_unitDef); // WIP: m_unitDef double --> UInt32 conversion
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-void LsDefinition::InitializeJsonObject (Json::Value& jsonObj, uint32_t componentId, uint16_t componentType, uint32_t flags, double unitDefinition)
+void LsDefinition::InitializeJsonObject (Json::Value& jsonObj, LsComponentId componentId, LsComponentType componentType, uint32_t flags, double unitDefinition)
     {
     jsonObj.clear();
 
-    jsonObj[DGNPROPERTYBLOB_CompId] = componentId;
-    jsonObj[DGNPROPERTYBLOB_CompType] = (uint32_t)remapRscTypeToElmType(componentType);
+    jsonObj[DGNPROPERTYBLOB_CompId] = componentId.GetValue();
+    jsonObj[DGNPROPERTYBLOB_CompType] = static_cast <uint16_t> (componentType);  //  defined(NOTNOW) (uint32_t)remapRscTypeToElmType(componentType);
     jsonObj[DGNPROPERTYBLOB_Flags] = flags;
     jsonObj[DGNPROPERTYBLOB_UnitDef] = unitDefinition;
     }
@@ -433,38 +412,45 @@ uint32_t LsDefinition::GetAttributes (Json::Value& lsDefinition)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-uint32_t LsDefinition::GetComponentType (Json::Value& lsDefinition)
+LsComponentType LsDefinition::GetComponentType (Json::Value& lsDefinition)
     {
-    return lsDefinition[DGNPROPERTYBLOB_CompType].asUInt();
+    LsComponentType retval = (LsComponentType)lsDefinition[DGNPROPERTYBLOB_CompType].asUInt();
+    if (!LsComponent::IsValidComponentType(retval))
+        {
+        BeAssert(LsComponent::IsValidComponentType(retval));
+        retval = LsComponentType::Unknown;
+        }
+
+    return retval;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-uint32_t LsDefinition::GetComponentId (Json::Value& lsDefinition)
+LsComponentId LsDefinition::GetComponentId (Json::Value& lsDefinition)
     {
-    return lsDefinition[DGNPROPERTYBLOB_CompId].asUInt();
+    return LsComponentId(lsDefinition[DGNPROPERTYBLOB_CompId].asUInt());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2013
 //---------------------------------------------------------------------------------------
-void LsComponent::QueryComponentIds(bset<LsComponentId>& ids, DgnDbCR project, LsResourceType lsType)
+void LsComponent::QueryComponentIds(bset<LsComponentTypeAndId>& ids, DgnDbCR project, LsComponentType lsType)
     {
     //  No default constructor so we have to initialize it.
     LineStyleProperty::ComponentProperty spec = LineStyleProperty::Compound();
 
     switch(lsType)
         {
-        case LsResourceType::Compound:
+        case LsComponentType::Compound:
             break;
-        case LsResourceType::LineCode:
+        case LsComponentType::LineCode:
             spec = LineStyleProperty::LineCode();
             break;
-        case LsResourceType::LinePoint:
+        case LsComponentType::LinePoint:
             spec = LineStyleProperty::LinePoint();
             break;
-        case LsResourceType::PointSymbol:
+        case LsComponentType::PointSymbol:
             spec = LineStyleProperty::PointSym();
             break;
 
@@ -480,7 +466,7 @@ void LsComponent::QueryComponentIds(bset<LsComponentId>& ids, DgnDbCR project, L
     stmt.BindText(2, spec.GetName(), Statement::MakeCopy::No);
     while (stmt.Step() == BE_SQLITE_ROW)
         {
-        LsComponentId     componentId;
+        LsComponentTypeAndId     componentId;
         componentId.m_id = stmt.GetValueInt(0);
         componentId.m_type = (uint32_t)lsType;
         ids.insert(componentId);
@@ -490,7 +476,7 @@ void LsComponent::QueryComponentIds(bset<LsComponentId>& ids, DgnDbCR project, L
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus LsStrokePatternComponent::GetRscFromDgnDb(LineCodeRscPtr& ptr, DgnDbR project, uint32_t componentId)
+BentleyStatus LsStrokePatternComponent::GetRscFromDgnDb(LineCodeRscPtr& ptr, DgnDbR project, LsComponentId componentId)
     {
     return CreateRscFromDgnDb(&ptr.m_data, project, componentId, true);
     }
@@ -498,7 +484,7 @@ BentleyStatus LsStrokePatternComponent::GetRscFromDgnDb(LineCodeRscPtr& ptr, Dgn
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus LsCompoundComponent::GetRscFromDgnDb(LineStyleRscPtr& ptr, DgnDbR project, uint32_t componentId)
+BentleyStatus LsCompoundComponent::GetRscFromDgnDb(LineStyleRscPtr& ptr, DgnDbR project, LsComponentId componentId)
     {
     return CreateRscFromDgnDb(&ptr.m_data, project, componentId, true);
     }
@@ -506,7 +492,7 @@ BentleyStatus LsCompoundComponent::GetRscFromDgnDb(LineStyleRscPtr& ptr, DgnDbR 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus LsSymbolComponent::GetRscFromDgnDb(PointSymRscPtr& ptr, DgnDbR project, uint32_t componentId)
+BentleyStatus LsSymbolComponent::GetRscFromDgnDb(PointSymRscPtr& ptr, DgnDbR project, LsComponentId componentId)
     {
     return CreateRscFromDgnDb(&ptr.m_data, project, componentId, true);
     }
@@ -514,7 +500,7 @@ BentleyStatus LsSymbolComponent::GetRscFromDgnDb(PointSymRscPtr& ptr, DgnDbR pro
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2013
 //---------------------------------------------------------------------------------------
-BentleyStatus LsPointComponent::GetRscFromDgnDb(LinePointRscPtr& ptr, DgnDbR project, uint32_t componentId)
+BentleyStatus LsPointComponent::GetRscFromDgnDb(LinePointRscPtr& ptr, DgnDbR project, LsComponentId componentId)
     {
     return CreateRscFromDgnDb(&ptr.m_data, project, componentId, true);
     }

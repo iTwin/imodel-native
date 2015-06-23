@@ -8,7 +8,7 @@
 #pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
 
-BEGIN_BENTLEY_API_NAMESPACE
+BEGIN_BENTLEY_NAMESPACE
 DGNPLATFORM_EXPORT bool     dependency_setPlaceholderFieldParentDependencies (EditElementHandleR eh);
 DGNPLATFORM_EXPORT DgnModelP dependency_getNonDgnModelIfNecessary (DgnElementP oldRootRef, DgnModelP oldRootModel);
-END_BENTLEY_API_NAMESPACE
+END_BENTLEY_NAMESPACE

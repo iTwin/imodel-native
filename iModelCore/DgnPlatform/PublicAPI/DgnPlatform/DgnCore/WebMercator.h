@@ -8,6 +8,7 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 
+#include <DgnPlatform/DgnCore/RealityDataCache.h>
 #include <DgnPlatform/DgnCore/DgnViewport.h>
 #include <DgnPlatform/DgnCore/DgnDbTables.h>
 

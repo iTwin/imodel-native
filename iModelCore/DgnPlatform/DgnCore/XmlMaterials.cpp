@@ -2,7 +2,7 @@
 |
 |   $Source: DgnCore/XmlMaterials.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -208,7 +208,7 @@ static WCharCP INTERNALMATERIALTAGS_LayerPrefix              = L"layer";
 //=======================================================================================
 struct XmlMaterialReader
 {
-    friend struct DgnPlatform::MaterialManager;
+    friend struct Dgn::MaterialManager;
 
 private:
     /*=================================================================================**//**

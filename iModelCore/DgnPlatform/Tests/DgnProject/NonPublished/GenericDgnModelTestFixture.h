@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/GenericDgnModelTestFixture.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
@@ -18,9 +18,9 @@ BEGIN_DGNDB_UNIT_TESTS_NAMESPACE
 struct GenericDgnModelTestFixture : public testing::Test
 {
 protected:
-bool                             m_is3d;
-DgnPlatform::ScopedDgnHost       m_host;
-DgnDbTestDgnManager              m_testDgnManager;
+bool                     m_is3d;
+Dgn::ScopedDgnHost       m_host;
+DgnDbTestDgnManager      m_testDgnManager;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson     02/2012

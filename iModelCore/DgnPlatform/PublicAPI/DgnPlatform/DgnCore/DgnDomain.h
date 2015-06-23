@@ -96,7 +96,7 @@ The DgnDomain for the base "dgn" schema is is called DgnSchemaDomain. It is alwa
 //! remain for an entire session, and apply to all DgnDb's that are opened
 //! or created during that session. If a DgnDomain is registered, its name is recorded in every DgnDb accessed during the session
 //! and becomes required to access that DgnDb in the future.
-//! @see DgnDomainGroup
+//! @ingroup DgnDomainGroup
 // @bsiclass                                                    Keith.Bentley   02/11
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
@@ -317,6 +317,9 @@ public:
 //=======================================================================================
 //! The set of DgnDomains used by this DgnDb. This class also caches the DgnDomain::Handler to DgnDb-specific
 //! DgnClassId lookups.
+//! @see DgnDb::Domains
+//! @see DgnDomain
+//! @ingroup DgnDomainGroup
 // @bsiclass                                                    Keith.Bentley   02/11
 //=======================================================================================
 struct DgnDomains : DgnDbTable
@@ -373,6 +376,7 @@ public:
 //=======================================================================================
 //! The DgnDomain for the base "dgn" schema.
 //! @see DgnDbSqlFunctions for a list of built-in functions that you can call in SQL statements.
+//! @ingroup DgnDomainGroup
 // @bsiclass                                                    Keith.Bentley   02/11
 //=======================================================================================
 struct DgnBaseDomain : DgnDomain
@@ -384,6 +388,5 @@ struct DgnBaseDomain : DgnDomain
 public:
     DgnBaseDomain();
 };
-
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

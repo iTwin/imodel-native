@@ -136,7 +136,7 @@ virtual bool        RequiresReprojection (DgnGCSP sourceGCS, DgnGCSP targetGCS)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     03/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool        GetUnitDefinition (DgnGCSP sourceGCS, UnitDefinitionR unitDef, DgnPlatform::StandardUnit&  standardUnitNumber) override
+virtual bool        GetUnitDefinition (DgnGCSP sourceGCS, UnitDefinitionR unitDef, Dgn::StandardUnit&  standardUnitNumber) override
     {
     return (SUCCESS == sourceGCS->GetUnitDefinition(unitDef,standardUnitNumber));
     }

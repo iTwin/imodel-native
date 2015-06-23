@@ -51,25 +51,25 @@ public:
 // @param[in] __handlersuperclass__ This ElementHandler's C++ superclass' classname
 // @param[in] __exporter__ Macro name that exports this class in its implementing DLL (may be blank)
 #define ELEMENTHANDLER_DECLARE_MEMBERS(__ECClassName__,__classname__,__handlerclass__,__handlersuperclass__,__exporter__) \
-        private: virtual DgnElementP _CreateInstance(DgnPlatform::DgnElement::CreateParams const& params) override {return new __classname__(__classname__::CreateParams(params));}\
+        private: virtual Dgn::DgnElementP _CreateInstance(Dgn::DgnElement::CreateParams const& params) override {return new __classname__(__classname__::CreateParams(params));}\
         DOMAINHANDLER_DECLARE_MEMBERS(__ECClassName__,__handlerclass__,__handlersuperclass__,__exporter__) 
 
-
-
 //=======================================================================================
-// Element Handlers in the base "Dgn" domain. Don't put handlers from other domains here.
+//! @namespace BentleyApi::Dgn::dgn_ElementHandler DgnElement Handlers in the base "Dgn" domain. 
+//! @note Only handlers from the base "Dgn" domain belong in this namespace.
 // @bsiclass                                                    Keith.Bentley   06/15
 //=======================================================================================
 namespace dgn_ElementHandler
 {
     //=======================================================================================
+    //! The ElementHandler for DgnElement.
     //! An ElementHandler creates instances of (a subclass of) DgnElement.
     //! @see DgnElement
     //! @ingroup DgnElementGroup
     //=======================================================================================
     struct EXPORT_VTABLE_ATTRIBUTE Element : DgnDomain::Handler
     {
-        friend struct DgnPlatform::DgnElement;
+        friend struct Dgn::DgnElement;
         DOMAINHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_Element, Element, DgnDomain::Handler, DGNPLATFORM_EXPORT)
 
     protected:
@@ -86,16 +86,19 @@ namespace dgn_ElementHandler
         DGNPLATFORM_EXPORT static ElementHandlerP FindHandler(DgnDb const& dgndb, DgnClassId classId);
     };
 
+    //! The ElementHandler for PhysicalElement
     struct EXPORT_VTABLE_ATTRIBUTE Physical : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalElement, PhysicalElement, Physical, Element, DGNPLATFORM_EXPORT)
     };
 
+    //! The ElementHandler for DrawingElement
     struct EXPORT_VTABLE_ATTRIBUTE Drawing : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, DrawingElement, Drawing, Element, DGNPLATFORM_EXPORT)
     };
 
+    //! The ElementHandler for ElementGroup
     struct EXPORT_VTABLE_ATTRIBUTE Group : Element
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_ElementGroup, ElementGroup, Group, Element, DGNPLATFORM_EXPORT)

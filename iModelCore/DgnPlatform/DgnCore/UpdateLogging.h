@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/UpdateLogging.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -40,7 +40,7 @@ struct UpdateLogging
     static void RecordDoneLoad();
     static void RecordDetach();
     static void RecordAllowShowProgress();
-    static void RecordDoneUpdate(uint32_t numDrawn, DgnPlatform::DrawPurpose drawPurpose);
+    static void RecordDoneUpdate(uint32_t numDrawn, Dgn::DrawPurpose drawPurpose);
 #else
     static void RecordStartCycle() {}
     static void RecordStartQuery() {}
@@ -48,7 +48,7 @@ struct UpdateLogging
     static void RecordDoneLoad() {}
     static void RecordDetach() {}
     static void RecordAllowShowProgress() {}
-    static void RecordDoneUpdate(uint32_t numDrawn, DgnPlatform::DrawPurpose drawPurpose) {}
+    static void RecordDoneUpdate(uint32_t numDrawn, Dgn::DrawPurpose drawPurpose) {}
 #endif
     };
 

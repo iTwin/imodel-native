@@ -161,13 +161,11 @@ struct          ElementGraphicsOutput
 //! Visit the supplied element and send it's Draw output to the supplied processor.
 //! @param[in] processor The object to send the Draw output to.
 //! @param[in] elem The element to output the graphics of.
-//! @bsimethod
 DGNPLATFORM_EXPORT static void Process (IElementGraphicsProcessorR processor, GeometricElementCR elem);
 
 //! Call _OutputGraphics on the supplied processor and send whatever it draws to it's process methods.
 //! @param[in] processor The object to send the Draw output to.
 //! @param[in] dgnDb The DgnDb to set for the ViewContext.
-//! @bsimethod
 DGNPLATFORM_EXPORT static void Process (IElementGraphicsProcessorR processor, DgnDbR dgnDb);
 
 }; // ElementGraphicsOutput

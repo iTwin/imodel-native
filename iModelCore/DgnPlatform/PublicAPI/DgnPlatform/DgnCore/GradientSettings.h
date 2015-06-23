@@ -12,7 +12,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //=======================================================================================
 //! Holds all the values to be persisted for gradient fill.
-//! @bsiclass                                                     RayBentley      10/02
+// @bsiclass                                                     RayBentley      10/02
 struct          GradientSettings : public GradientSymb
 {
 private:

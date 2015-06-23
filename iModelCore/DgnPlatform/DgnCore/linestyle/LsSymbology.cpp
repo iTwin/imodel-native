@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
-#include    <DgnPlatform/DgnCore/LsLocal.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
@@ -383,31 +382,23 @@ DPoint3dCP          startTangent,
 DPoint3dCP          endTangent
 )
     {
-#if defined (WIP_LINESTYLES)
-    // 0 - 7 use hardware linestyles.
-    if (IS_LINECODE (styleNo))
-        return styleNo;
+#if defined(NOTNOW) // temporarily disable so my WIP doesn't affect anyopne
+    //  NOTNOW -- unclear what will happen to the magic values.  For now, avoid any collision with them.
+    if (IS_LINECODE (styleInfo->GetStyleId().GetValueUnchecked()))
+        return 0; //  styleNo;
 
-    DgnDbR     dgnProject = context.GetDgnDb ();
-    LsDefinitionP   nameRec = NULL; // only look in the system table for positive ids
-
-    if ((styleNo < 0) || (NULL == (nameRec = LsSystemMap::GetSystemMapP (true)->Find (styleNo))))
-        {
-        LsMap*      lsMap;
-
-        if (NULL == (lsMap = LsMap::GetMapPtr (dgnProject, true)))
-            return 0; // This fails during a DWG cache load and when validating range often the elemhandle comes through with a NULL modelref.
-
-        nameRec = lsMap->Find (styleNo);
-        }
+    LsCacheP lsCache = LsCache::GetDgnDbCache(context.GetDgnDb ());
+    LsDefinitionP   nameRec = lsCache->GetLineStyleP(styleInfo->GetStyleId());
 
     if (NULL == nameRec)
         return 0;
 
+    LineStyleParamsCP lStyleParams = styleInfo->GetStyleParams ();
+    LsComponentCP    topComponent = nameRec->GetComponentCP (nullptr);
+    
     // Make this call before IsContinuous() to force the components to load.  Loading the components
     // will make some linestyles into "continuous" because early DWG styles did not set this bit correctly,
     // so there are a lot of unlabeled continuous styles out there.
-    LsComponentCP    lStyle = nameRec->GetComponentCP (nullptr);
 
     // If the line style is continuous and has no width, leave now.
     if (nameRec->IsContinuous () && (!lStyleParams || (0 == (lStyleParams->modifiers & (STYLEMOD_SWIDTH | STYLEMOD_EWIDTH | STYLEMOD_TRUE_WIDTH)))))
@@ -425,7 +416,7 @@ DPoint3dCP          endTangent
         return  (int) nameRec->GetHardwareStyle();
 
     // If the line style definition can be loaded correctly we set it up as the current line style.
-    if (NULL == lStyle)
+    if (NULL == topComponent)
         return  0;
 
     bool        xElemPhaseSet = m_options.xElemPhaseSet;
@@ -496,7 +487,7 @@ DPoint3dCP          endTangent
     else if (nameRec->IsUnitsUOR ())
         {
         // Get True Scale factor
-        unitDef *= nameRec->GetTrueScale (nullptr);
+        //  unitDef *= nameRec->GetTrueScale (nullptr);
 
         // Historically distance shifts are stored in master units.  This used to match the line styles.  Now
         // with imported styles, we need to convert the shift to UORs.
@@ -530,6 +521,8 @@ DPoint3dCP          endTangent
 
     if (nameRec->IsSCScaleIndependent()) // linestyles that are independent of sharedcell's scale.
         {
+        BeAssert(nameRec->IsSCScaleIndependent());
+#if defined(NEEDSWORK_LINESTYLES)
         Transform       localToFrustum;
 
         // get the scale from the current localToFrustum to the current modelRef's scale, and back that out of the linestyle scale.
@@ -540,6 +533,7 @@ DPoint3dCP          endTangent
 
             scale /= xCol.Magnitude ();
             }
+#endif
         }
 
     SetScale (scale);
@@ -701,7 +695,7 @@ bool            LsInternalComponent::IsHardwareStyle ()  const { return 0 != m_h
 uint32_t        LsInternalComponent::GetHardwareStyle () const { return m_hardwareLineCode; }
 
 //  The cast is okay here because for internal components the IdentKey is simply a built-in line code.
-uint32_t        LsInternalComponent::GetLineCode () const { return (uint32_t)GetLocation ()->GetIdentKey (); }
+uint32_t        LsInternalComponent::GetLineCode () const { return GetLocation()->GetComponentId().GetValue(); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/13

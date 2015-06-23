@@ -10,12 +10,12 @@
 
 #define INVALID_QvElem      ((QvElem*) 0x0001)
 
-BENTLEY_API_TYPEDEFS(HeapZone)
+BENTLEY_NAMESPACE_TYPEDEFS(HeapZone)
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //=======================================================================================
-//! @bsiclass
+// @bsiclass
 //=======================================================================================
 template <class _QvKey> struct QvElemSet : DgnElement::AppData
 {

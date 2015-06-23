@@ -15,7 +15,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 struct RasterBaseModelHandler;
 
 //=======================================================================================
-// Obtain and display raster data.
+//! Obtain and display raster data.
 // @bsiclass                                                    Eric.Paquet     04/2015
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RasterBaseModel : PhysicalModel
@@ -38,8 +38,7 @@ public:
 namespace dgn_ModelHandler
 {
     //=======================================================================================
-    // Model handler for rasters.
-    // Instances of RasterBaseModel must be able to assume that their handler is a RasterBaseModelHandler.
+    //! The ModelHandler for RasterBaseModel.
     // @bsiclass                                                    Eric.Paquet     04/2015
     //=======================================================================================
     struct EXPORT_VTABLE_ATTRIBUTE Raster : Model

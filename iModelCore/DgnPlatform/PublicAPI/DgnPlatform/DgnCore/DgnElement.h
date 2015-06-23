@@ -15,7 +15,7 @@ Classes for working with %DgnElements in memory.
 
 */
 
-BENTLEY_API_TYPEDEFS(HeapZone);
+BENTLEY_NAMESPACE_TYPEDEFS(HeapZone);
 
 #include <Bentley/BeAssert.h>
 
@@ -581,7 +581,7 @@ public:
     //! @return a DgnElementPtr that holds the editable copy of this element.
     //! @note This method may only be used on a DgnElement this is the readonly persistent element returned by DgnElements::GetElement, and then
     //! only one editing copy of this element at a time may exist. If another copy is extant, this method will return an invalid DgnElementPtr.
-    //! @see MakeCopy IsPersistent
+    //! @see MakeCopy, IsPersistent
     DGNPLATFORM_EXPORT DgnElementPtr CopyForEdit() const;
 
     //! Make a writable copy of this DgnElement so that the copy may be edited.
@@ -715,6 +715,7 @@ public:
 
 //=======================================================================================
 //! A stream of geometry, stored on a DgnElement, created by an ElementGeometryBuilder.
+//! @ingroup ElementGeometryGroup
 // @bsiclass                                                    Keith.Bentley   12/14
 //=======================================================================================
 struct GeomStream

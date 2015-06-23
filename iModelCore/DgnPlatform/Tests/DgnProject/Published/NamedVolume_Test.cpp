@@ -10,7 +10,7 @@
 #include <DgnPlatform/DgnHandlers/DgnHandlersAPI.h>
 #include <DgnPlatform/DgnCore/DgnMarkupProject.h>
 
-#define LOG (*Bentley::NativeLogging::LoggingManager::GetLogger (L"Dgn"))
+#define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (L"Dgn"))
 
 #if defined (_MSC_VER)
 #pragma warning (disable:4702)
