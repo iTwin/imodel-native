@@ -73,16 +73,14 @@ TEST_F(DgnViewsTest, WorkWithViewTable)
     //Get views
     DgnViews& viewTable = project->Views ();
     DgnViews::Iterator iter = viewTable.MakeIterator();
-    ASSERT_EQ (6, iter.QueryCount()) <<"The expected view count is ... where as it is: " << iter.QueryCount();
+    ASSERT_EQ (4, iter.QueryCount()) <<"The expected view count is 6 where as it is: " << iter.QueryCount();
 
     //Iterate through each view and make sure they have correct information
-    TestViewProperties fileViews[6], testView;
-    fileViews[0].SetTestViewProperties (L"View 1, Default", DgnViewType::Drawing);
-    fileViews[1].SetTestViewProperties (L"View 2, Default", DgnViewType::Drawing);
-    fileViews[2].SetTestViewProperties (L"View 1, Model2d", DgnViewType::Drawing);
-    fileViews[3].SetTestViewProperties (L"View 2, Model2d", DgnViewType::Drawing);
-    fileViews[4].SetTestViewProperties (L"View 1, Default [master.i.dgn]", DgnViewType::Drawing);
-    fileViews[5].SetTestViewProperties (L"View 2, Default [master.i.dgn]", DgnViewType::Drawing);
+    TestViewProperties fileViews[4], testView;
+    fileViews[0].SetTestViewProperties (L"Default - View 1", DgnViewType::Drawing);
+    fileViews[1].SetTestViewProperties (L"Default - View 2", DgnViewType::Drawing);
+    fileViews[2].SetTestViewProperties (L"Model2d Views - View 1", DgnViewType::Drawing);
+    fileViews[3].SetTestViewProperties (L"Model2d Views - View 2", DgnViewType::Drawing);
 
     int i = 0;
     for (auto const& entry : iter)
@@ -246,7 +244,7 @@ TEST_F(DgnViewsTest, InsertDeletedView)
     EXPECT_TRUE (exisitingView.IsValid ()) << "View not found";
     // Verify properties
     TestViewProperties originalView, testView;
-    originalView.SetTestViewProperties (L"View 2, Model2d", DgnViewType::Drawing);
+    originalView.SetTestViewProperties (L"Model2d Views - View 2", DgnViewType::Drawing);
     WString entryNameW (exisitingView.GetName (), true);
     testView.SetTestViewProperties (entryNameW.c_str (), exisitingView.GetDgnViewType ());
     testView.IsEqual (originalView);
