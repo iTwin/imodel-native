@@ -77,9 +77,9 @@ public:
 // Instances of PointCloudModel must be able to assume that their handler is a PointCloudModelHandler.
 // @bsiclass                                                    Eric.Paquet     04/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE PointCloudModelHandler : DgnPlatform::PointCloudBaseModelHandler
+struct EXPORT_VTABLE_ATTRIBUTE PointCloudModelHandler : DgnPlatform::dgn_ModelHandler::PointCloud
 {
-    MODELHANDLER_DECLARE_MEMBERS ("PointCloudModel", PointCloudModel, PointCloudModelHandler, PointCloudBaseModelHandler, POINTCLOUDSCHEMA_EXPORT)
+    MODELHANDLER_DECLARE_MEMBERS ("PointCloudModel", PointCloudModel, PointCloudModelHandler, DgnPlatform::dgn_ModelHandler::PointCloud, POINTCLOUDSCHEMA_EXPORT)
 
 public:
     POINTCLOUDSCHEMA_EXPORT static DgnPlatform::DgnModelId CreatePointCloudModel(DgnDbR db, BeFileName fileName);

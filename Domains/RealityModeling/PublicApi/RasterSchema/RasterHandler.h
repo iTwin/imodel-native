@@ -49,9 +49,9 @@ public:
 // Instances of RasterModel must be able to assume that their handler is a RasterModelHandler.
 // @bsiclass                                                    Eric.Paquet     04/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RasterModelHandler : DgnPlatform::RasterBaseModelHandler
+struct EXPORT_VTABLE_ATTRIBUTE RasterModelHandler : DgnPlatform::dgn_ModelHandler::Raster
 {
-    RASTERMODELHANDLER_DECLARE_MEMBERS (RASTER_CLASSNAME_RasterModel, RasterModel, RasterModelHandler, DgnPlatform::RasterBaseModelHandler, RASTERSCHEMA_EXPORT)
+    RASTERMODELHANDLER_DECLARE_MEMBERS (RASTER_CLASSNAME_RasterModel, RasterModel, RasterModelHandler, DgnPlatform::dgn_ModelHandler::Raster, RASTERSCHEMA_EXPORT)
 };
 
 END_BENTLEY_RASTERSCHEMA_NAMESPACE
