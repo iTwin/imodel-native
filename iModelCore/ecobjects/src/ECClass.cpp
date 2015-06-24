@@ -2607,42 +2607,36 @@ ECRelationshipConstraintClass::ECRelationshipConstraintClass(ECClassCR ecClass) 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Muhammad.Zaighum                 11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipConstraintClass::ECRelationshipConstraintClass(ECRelationshipConstraintClass const && rhs) :
-m_ecClass(rhs.m_ecClass), m_keys(std::move(rhs.m_keys))
+ECRelationshipConstraintClass::ECRelationshipConstraintClass(ECRelationshipConstraintClass&& rhs) 
+    : m_ecClass(std::move(rhs.m_ecClass)), m_keys(std::move(rhs.m_keys))
     { }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-const ECRelationshipConstraintClass & ECRelationshipConstraintClass::operator = (ECRelationshipConstraintClass const && rhs)
+ECRelationshipConstraintClass& ECRelationshipConstraintClass::operator=(ECRelationshipConstraintClass&& rhs)
     {
-    m_ecClass = rhs.m_ecClass;
-    m_keys = std::move(rhs.m_keys);
+    if (this != &rhs)
+        {
+        m_ecClass = std::move(rhs.m_ecClass);
+        m_keys = std::move(rhs.m_keys);
+        }
+
     return *this;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCR ECRelationshipConstraintClass::GetClass() const
+void ECRelationshipConstraintClass::AddKey(WCharCP keyPropertyName)
     {
-    return *m_ecClass;
-    }
+    if (WString::IsNullOrEmpty(keyPropertyName))
+        {
+        BeAssert(false && "keyPropertyName arg must not be nullptr or empty string.");
+        return;
+        }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Muhammad.Zaighum                   11/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-const std::vector<WString>& ECRelationshipConstraintClass::GetKeys() const
-    {
-    return m_keys;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Muhammad.Zaighum                   11/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECRelationshipConstraintClass::AddKey(WCharCP key)
-    {
-    m_keys.push_back(key);
+    m_keys.push_back(keyPropertyName);
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
