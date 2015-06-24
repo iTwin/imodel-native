@@ -426,8 +426,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
         std::vector<size_t> nonVirtualPartitionIndices = classMap.GetStorageDescription().GetNonVirtualHorizontalPartitionIndices();
         if (!exp->IsPolymorphic() || nonVirtualPartitionIndices.empty())
             {
-            HorizontalPartition const& horizPartition = classMap.GetStorageDescription().GetRootHorizontalPartition();
-            table = &horizPartition.GetTable();
+            table = &classMap.GetTable ();;
             }
         else
             {

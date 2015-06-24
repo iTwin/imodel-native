@@ -150,12 +150,12 @@ struct RandomECInstanceGenerator
                 Param ()
                     {
                     m_probabilityOfNullValuesPerClass = 0.2f;
-                    m_rRegularInstancesPerClass = RangeValue (3, 3);
-                    m_rRelationshipInstancesPerClass = RangeValue (6, 6);
-                    m_rStructInstancesPerClass = RangeValue (3, 3);
-                    m_rArrayElements = RangeValue (3, 3);
+                    m_rRegularInstancesPerClass = RangeValue (1000, 1000);
+                    m_rRelationshipInstancesPerClass = RangeValue (1000, 1000);
+                    m_rStructInstancesPerClass = RangeValue (1, 1);
+                    m_rArrayElements = RangeValue (1, 2);
                     m_bGenerateInstanceOfEmptyClasses = true;
-                    m_bGenerateInstanceForNoneDomainClasses = true;
+                    m_bGenerateInstanceForNoneDomainClasses = false;
                     m_valueGeneratorFactory = std::unique_ptr<PropertyValueGeneratorFactory> (new PropertyValueGeneratorFactory ());
                     }
 
@@ -203,7 +203,7 @@ struct RandomECInstanceGenerator
         //relationship
         void GetConstraintClasses (std::set<ECN::ECClassCP>& constraintClasses, ECN::ECRelationshipConstraintCR constraint);
         void GetFlatListOfDerivedClasses (std::set<ECN::ECClassCP>& derivedClasses, ECN::ECClassCR baseClass);
-        ECN::IECInstancePtr GetRandomInstance (std::vector<ECN::IECInstancePtr>& inputList, bool returnAndRemoveFromList);
+        ECN::IECInstanceP GetRandomInstance (std::vector<ECN::IECInstanceP>& inputList, bool returnAndRemoveFromList);
         BentleyStatus GenerateRelationshipInstances (ECN::ECRelationshipClassCR ecRelationshipClass);
 
         //Date generations

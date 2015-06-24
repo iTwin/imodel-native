@@ -528,11 +528,11 @@ void RandomECInstanceGenerator::GetFlatListOfDerivedClasses (std::set<ECClassCP>
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-IECInstancePtr RandomECInstanceGenerator::GetRandomInstance (std::vector<IECInstancePtr>& inputList, bool returnAndRemoveFromList)
+IECInstanceP RandomECInstanceGenerator::GetRandomInstance (std::vector<IECInstanceP>& inputList, bool returnAndRemoveFromList)
     {
-    auto nPos = GetNextRandom (0, inputList.size ());
+    auto nPos = GetNextRandom (0, inputList.size () - 1);
     auto selectedInstanceItor = (inputList.begin () + nPos);
-    auto selectedInstance = *selectedInstanceItor;
+    IECInstanceP selectedInstance = *selectedInstanceItor;
     if (returnAndRemoveFromList)
         inputList.erase (selectedInstanceItor);
 
@@ -591,30 +591,34 @@ BentleyStatus RandomECInstanceGenerator::GenerateRelationshipInstances (ECRelati
     if (sourceClasses.empty () || targetClasses.empty ())
         return BentleyStatus::SUCCESS; //not a valid relationship class
 
-    std::vector<IECInstancePtr> sourceInstances;
+    std::vector<IECInstanceP> sourceInstances;
     if (HasAnyClass (sourceClasses))
         {
         for (auto& inst : m_instances)
-            sourceInstances.insert (sourceInstances.end (), inst.second.begin (), inst.second.end ());
+             for (auto& i : inst.second)
+                sourceInstances.push_back (i.get());
         }
     else
     for (auto sourceClass : sourceClasses)
         {
         auto& si = m_instances[sourceClass];
-        sourceInstances.insert (sourceInstances.end (), si.begin (), si.end ());
+        for (auto& i : si)
+            sourceInstances.push_back (i.get ());
         }
 
-    std::vector<IECInstancePtr> targetInstances;
+    std::vector<IECInstanceP> targetInstances;
     if (HasAnyClass (targetClasses))
         {
         for (auto& inst : m_instances)
-            targetInstances.insert (targetInstances.end (), inst.second.begin (), inst.second.end ());
+          for (auto& i : inst.second)
+            targetInstances.push_back (i.get ());
         }
     else
     for (auto targetClass : targetClasses)
         {
         auto& ti = m_instances[targetClass];
-        targetInstances.insert (targetInstances.end (), ti.begin (), ti.end ());
+        for (auto& i : ti)
+            targetInstances.push_back (i.get ());;
         }
 
     if (sourceInstances.empty () || targetInstances.empty ())
@@ -645,7 +649,7 @@ BentleyStatus RandomECInstanceGenerator::GenerateRelationshipInstances (ECRelati
         }
 
     auto noOfInstancesToGenerate = GetNextRandom (GetParameters ().GetNumberOfRelationshipInstancesToGeneratePerClass ());
-    IECInstancePtr sourceInstance, targetInstance;
+    IECInstanceP sourceInstance = nullptr, targetInstance = nullptr;
     bool hasData = true;
     //noOfInstancesToGenerate = 100;
     for (int nPos = 0; nPos < noOfInstancesToGenerate && hasData; nPos++)
@@ -682,49 +686,51 @@ BentleyStatus RandomECInstanceGenerator::GenerateRelationshipInstances (ECRelati
         if (!hasData)
             break;
         //Before we add this, we need to check that source and target are unique for the cardinality
-        bool addInstance = true;
+/*        bool addInstance = true;
         WString newSrcClassName = sourceInstance->GetClass ().GetName ();
         WString newSrcId = sourceInstance->GetInstanceId ();
         WString newTarClassName = targetInstance->GetClass ().GetName ();
-        WString newTarId = targetInstance->GetInstanceId ();
-        for (auto& existingEntry : m_relationshipInstances)
-            {
-            //auto ecClass = existingEntry.first;
-            auto const& instanceList = existingEntry.second;
-            FOR_EACH (IECInstancePtr existingInstance, instanceList)
-                {
-                IECRelationshipInstancePtr relInstance = dynamic_cast<IECRelationshipInstance*>(existingInstance.get ());
-                if (cardinality == Cardinality::S1_T1 || cardinality == Cardinality::S1_Tm) // target should be unique
-                    {
-                    WString exstTarClassName = relInstance->GetTarget ()->GetClass ().GetName ();
-                    WString existingTarInstId = relInstance->GetTarget ()->GetInstanceId ();
-                    if (exstTarClassName.Equals (newTarClassName) && existingTarInstId.Equals (newTarId))
-                        {
-                        addInstance = false;
-                        nPos--;
-                        }
-                    }
-                if (cardinality == Cardinality::S1_T1 || cardinality == Cardinality::Sm_T1) // source should be unique
-                    {
-                    WString exstSrcClassName = relInstance->GetSource ()->GetClass ().GetName ();
-                    WString existingSrcInstId = relInstance->GetSource ()->GetInstanceId ();
-                    if (exstSrcClassName.Equals (newSrcClassName) && existingSrcInstId.Equals (newSrcId))
-                        {
-                        addInstance = false;
-                        nPos--;
-                        }
-                    }
-                }
-            }
-        if (addInstance)
-            {
+        WString newTarId = targetInstance->GetInstanceId ()*/;
+        //for (auto& existingEntry : m_relationshipInstances)
+        //    {
+        //    //auto ecClass = existingEntry.first;
+        //    auto const& instanceList = existingEntry.second;
+        //    FOR_EACH (IECInstancePtr existingInstance, instanceList)
+        //        {
+        //        IECRelationshipInstancePtr relInstance = dynamic_cast<IECRelationshipInstance*>(existingInstance.get ());
+        //        if (cardinality == Cardinality::S1_T1 || cardinality == Cardinality::S1_Tm) // target should be unique
+        //            {
+        //            WString exstTarClassName = relInstance->GetTarget ()->GetClass ().GetName ();
+        //            WString existingTarInstId = relInstance->GetTarget ()->GetInstanceId ();
+        //            if (exstTarClassName.Equals (newTarClassName) && existingTarInstId.Equals (newTarId))
+        //                {
+        //                addInstance = false;
+        //                nPos--;
+        //                }
+        //            }
+        //        if (cardinality == Cardinality::S1_T1 || cardinality == Cardinality::Sm_T1) // source should be unique
+        //            {
+        //            WString exstSrcClassName = relInstance->GetSource ()->GetClass ().GetName ();
+        //            WString existingSrcInstId = relInstance->GetSource ()->GetInstanceId ();
+        //            if (exstSrcClassName.Equals (newSrcClassName) && existingSrcInstId.Equals (newSrcId))
+        //                {
+        //                addInstance = false;
+        //                nPos--;
+        //                }
+        //            }
+        //        }
+        //    }
+        //if (addInstance)
+        //    {
+        if (sourceInstance && targetInstance)
+            {            
             auto enabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (ecRelationshipClass);
             auto ecRelationshipInstance = enabler->CreateRelationshipInstance ();
             if (ecRelationshipInstance.IsValid ())
                 SetInstanceData (*ecRelationshipInstance);
 
-            ecRelationshipInstance->SetSource (sourceInstance.get ());
-            ecRelationshipInstance->SetTarget (targetInstance.get ());
+            ecRelationshipInstance->SetSource (sourceInstance);
+            ecRelationshipInstance->SetTarget (targetInstance);
             m_relationshipInstances[&ecRelationshipClass].push_back (ecRelationshipInstance);
             }
         }

@@ -19,7 +19,19 @@ struct ECSqlPrepareContext;
 //+===============+===============+===============+===============+===============+======
 struct SqlGenerator
     {
+    enum class RelationshipFilter
+        {
+        Source = 1,
+        Target = 2,
+        Both = Source | Target
+        };
     private:
+        static BentleyStatus BuildHoldingConstraint (NativeSqlBuilder& stmt, ECDbMapCR map, RelationshipClassMapCR const& classMap);
+        static BentleyStatus BuildEmbeddingConstraint (NativeSqlBuilder& stmt, ECDbMapCR map, RelationshipClassMapCR const& classMap);
+
+        static BentleyStatus BuildHoldingView (NativeSqlBuilder& sql, ECDbMapCR map);
+        static BentleyStatus BuildDeleteTriggersForRelationships (NativeSqlBuilder::List& triggers, ECDbMapCR map, ClassMapCR const& classMap);
+        static BentleyStatus FindRelationshipReferences (std::map<RelationshipClassMapCP, RelationshipFilter>& relationships, ECDbMapCR map, ClassMapCR classMap);
         static void CollectDerivedEndTableRelationships (std::set<RelationshipClassEndTableMapCP>& childMaps, RelationshipClassMapCR const& classMap);
         static Utf8String BuildSchemaQualifiedClassName (ECN::ECClassCR ecClass);
         static Utf8String BuildViewClassName (ECN::ECClassCR ecClass);
@@ -29,6 +41,10 @@ struct SqlGenerator
         static BentleyStatus BuildECClassIdConstraintExpression (NativeSqlBuilder::List& fragments, RelationshipClassMapCR classMap, ECN::ECRelationshipEnd endPoint, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
         static BentleyStatus BuildRelationshipJoinIfAny (NativeSqlBuilder& sqlBuilder, RelationshipClassMapCR classMap, ECN::ECRelationshipEnd endPoint, bool topLevel);
         static BentleyStatus BuildEndTableRelationshipView (NativeSqlBuilder::List& viewSql, ECDbMapCR map, RelationshipClassMapCR const& classMap);
+
+        static BentleyStatus BuildDeleteTriggersForDerivedClasses (NativeSqlBuilder::List& tiggers, ECDbMapCR map, ClassMapCR const& classMap);
+        static BentleyStatus BuildDeleteTriggerForMe (NativeSqlBuilder::List& tiggers, ECDbMapCR map, ClassMapCR const& classMap);
+        static BentleyStatus BuildDeleteTriggerForEndTableMe (NativeSqlBuilder::List& tiggers, ECDbMapCR map, ClassMapCR const& classMap);
 
         static BentleyStatus BuildPropertyExpression (NativeSqlBuilder& viewSql, PropertyMapCR propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
         static BentleyStatus BuildColumnExpression (NativeSqlBuilder::List& viewSql, Utf8CP tablePrefix, Utf8CP columnName, Utf8CP accessString, bool addECPropertyPathAlias, bool nullValue, bool escapeColumName = true);
@@ -40,10 +56,11 @@ struct SqlGenerator
         static BentleyStatus BuildClassView (NativeSqlBuilder& viewSql, ECDbMapCR map, ClassMapCR const& classMap);
         static BentleyStatus BuildView (NativeSqlBuilder& viewSql, ECDbMapCR map, IClassMap const& classMap);
         static BentleyStatus BuildDeleteTriggerForStructArrays (NativeSqlBuilder::List& tiggers, ECDbMapCR map, ClassMapCR const& classMap);
-    public:
         static BentleyStatus CreateView (ECDbMapR map, IClassMap const& classMap, bool dropViewIfExist);
-
         static BentleyStatus BuildDeleteTriggers (NativeSqlBuilder::List& tiggers, ECDbMapCR map, ClassMapCR const& classMap);
+        static BentleyStatus DropViewIfExists (ECDbR map, Utf8CP viewName);
+    public:
+        static BentleyStatus BuildViewInfrastructure (std::set<ClassMap const*>& classMaps, ECDbMapR map);
     };
 /*=================================================================================**//**
 * @bsiclass                                                     Affan.Khan       07/2013

@@ -164,35 +164,24 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext const& schemaImportContext, b
         EndMapping ();
         return MapStatus::Error;
         }
-
+    
+    std::set<ClassMap const*> classMaps;
     for (auto& key : m_classMapDictionary)
         {
         if (key.second->GetMapStrategy ().IsMapped ())
             {
-            if (key.second->GetClass ().GetIsCustomAttributeClass () )
-                continue; 
-
-            SqlGenerator::CreateView (*this, *key.second, true);
-            }
-        }
-
-    for (auto& key : m_classMapDictionary)
-        {
-        if (key.second->GetMapStrategy ().IsMapped ())
-            {
-            if (key.second->GetClass ().GetIsCustomAttributeClass () || key.second->GetClass ().GetRelationshipClassCP () != nullptr)
+            if (key.second->GetClass ().GetIsCustomAttributeClass ())
                 continue;
 
-            NativeSqlBuilder::List triggers;
-            SqlGenerator::BuildDeleteTriggers (triggers, *this, *key.second);
-            for (auto& trigger : triggers)
-                {
-                GetECDbR ().ExecuteSql (trigger.ToString ());
-                }
+            classMaps.insert (key.second.get ());
             }
         }
 
-    
+    if (SqlGenerator::BuildViewInfrastructure (classMaps, *this) != BentleyStatus::SUCCESS)
+        {
+        BeAssert ( false && "failed to create view infrastructure");
+        return MapStatus::Error;
+        }
 
     EndMapping ();
     return MapStatus::Success;
