@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ecprovider.h $
 |
-|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,7 +12,8 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-//! @ingroup ECObjectsGroup
+//! @addtogroup ECObjectsGroup
+//! @beginGroup 
 //! @bsiclass
 struct IECProvider
     {
@@ -34,5 +35,5 @@ struct IECProvider
 
         virtual ~IECProvider() { }
     };
-
+/** @endGroup */
 END_BENTLEY_ECOBJECT_NAMESPACE

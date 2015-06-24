@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/StandaloneECInstance.h $
 |
-|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
@@ -15,6 +15,9 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 #define STANDALONEENABLER_EnablerID         0xEC5E
 #define DEFAULT_NUMBITSPERPROPERTY  2
+
+// @addtogroup ECObjectsGroup
+// @beginGroup
 
 enum PropertyFlagIndex : uint8_t
     {
@@ -59,7 +62,6 @@ struct PerPropertyFlagsHolder
 * The memory is laid out according to the ClassLayout. The ClassLayout must be provided by classes that 
 * subclass this class.
 * @see IECInstance
-* @ingroup ECObjectsGroup
 * @bsiclass 
 +===============+===============+===============+===============+===============+======*/
 struct MemoryECInstanceBase : ECDBuffer
@@ -190,7 +192,6 @@ public:
 //! to a specified persistence store and which holds the values in memory that it allocates,
 //! laid out according to the ClassLayout.
 //! @see IECInstance
-//! @ingroup ECObjectsGroup
 //! @bsiclass
 //+===============+===============+===============+===============+===============+======
 struct StandaloneECInstance : IECInstance
@@ -256,7 +257,6 @@ public:
 //=======================================================================================
 //! ECEnabler for standalone ECInstances (IECInstances not tied to a specific persistent store)
 //! @see StandaloneECInstance
-//! @ingroup ECObjectsGroup
 //=======================================================================================
 struct StandaloneECEnabler : public ECEnabler
    {
@@ -303,6 +303,8 @@ public:
     //! @return the ClassLayout associated with this enabler
     ECOBJECTS_EXPORT ClassLayoutR                   GetClassLayout();
     };
+
+/** @endGroup */	
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 //__PUBLISH_SECTION_END__

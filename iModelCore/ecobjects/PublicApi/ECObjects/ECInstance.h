@@ -38,6 +38,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //! An ECSchema is just a collection of ECClasses.
 //!
 //! There are also ECRelationshipClasses that are ECClasses that also define "RelationshipConstraints" indicating what ECClasses they relate. ECRelationshipInstances represent the relationships between the ECinstances (defined/constrainted by their ECRelationshipClass) ECRelationships work more like database foreign key constraint that C++ pointers or .NET object references.
+//! @beginGroup
 //! @see Bentley::EC
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -47,7 +48,6 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //////////////////////////////////////////////////////////////////////////////////
 typedef bmap<WString, ICustomECStructSerializerP> NameSerializerMap;
 
-//! @ingroup ECObjectsGroup
 //! Interface for a custom ECStruct Serializer.  Implement this class if you need to allow a struct property
 //! to generate a custom XML representation of itself.
 //! @bsiclass
@@ -75,7 +75,6 @@ struct ICustomECStructSerializer
     virtual void            LoadStructureFromString (StructECPropertyP structProperty, IECInstanceR ecInstance, WCharCP baseAccessString, WCharCP valueString) = 0;
     };
 
-//! @ingroup ECObjectsGroup
 //! Used to manage multiple custom struct serializers
 //! @bsiclass
 struct CustomStructSerializerManager
@@ -121,7 +120,6 @@ typedef RefCountedPtr<IECInstance> IECInstancePtr;
 //! or use the "Lightweight" system in Bentley.ECObjects.Lightweight.
 //! Native IECInstances could be called "enabled" as opposed to "lightweight".
 //! @endcond BENTLEY_SDK_Desktop
-//! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================    
 struct IECInstance : RefCountedBase
@@ -616,7 +614,6 @@ public:
 //! ECN::IECRelationshipInstance is an instance of an ECRelationshipClass and represents
 //! the relationship between two \ref ECN::IECInstance "IECInstances"
 //! @see IECInstance, ECRelationshipClass
-//! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================    
 struct IECRelationshipInstance : virtual IECInstance
@@ -799,6 +796,7 @@ typedef ECInstanceList                  *ECInstanceListP, &ECInstanceListR;
 typedef ECInstanceList const            *ECInstanceListCP;
 typedef ECInstanceList const            &ECInstanceListCR;
 
+/** @endGroup */
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 /*__PUBLISH_SECTION_END__*/

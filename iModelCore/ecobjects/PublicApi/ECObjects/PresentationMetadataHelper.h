@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/PresentationMetadataHelper.h $
 |
-|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,6 +12,9 @@
 #include <ECObjects/StandaloneECInstance.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+
+//! @addtogroup ECObjectsGroup
+//! @beginGroup
 
 /*---------------------------------------------------------------------------------**//**
 * Standard sorting priorities for properties.
@@ -44,7 +47,6 @@ enum class CategorySortPriority : int32_t
 //! to control how they are presented in the UI.
 //! Modifying a schema with this object will add a reference from that schema to the
 //! standard EditorCustomAttributes schema which defines the custom attribute classes.
-//! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================
 struct PresentationMetadataHelper
@@ -148,5 +150,6 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetStoresUnitsAsUORs (ECSchemaR schema) const;
     };
 
+/** @endGroup */
 END_BENTLEY_ECOBJECT_NAMESPACE
 

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/StandaloneECRelationshipInstance.h $
 |
-|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_SECTION_START__
@@ -21,7 +21,8 @@ typedef RefCountedPtr<StandaloneECRelationshipEnabler>  StandaloneECRelationship
 #pragma warning(disable:4250)
 
 //=======================================================================================
-//! @ingroup ECObjectsGroup
+//! @addtogroup ECObjectsGroup
+//! @beginGroup
 //! Used to set the orderIds of a relationship upon persistence
 //! two IECInstances 
 //=======================================================================================
@@ -76,7 +77,6 @@ struct OrderIdEntries
     };
 
 //=======================================================================================
-//! @ingroup ECObjectsGroup
 //! StandaloneECRelationshipInstance is used to represent a relationship between
 //! two IECInstances 
 //=======================================================================================
@@ -163,7 +163,6 @@ public:
     };
 
 //=======================================================================================
-//! @ingroup ECObjectsGroup
 //! ECEnabler for Standalone ECRelationshipInstances (IECInstances not tied to a specific persistent store)
 //=======================================================================================
 struct StandaloneECRelationshipEnabler : public IECRelationshipEnabler, public StandaloneECEnabler
@@ -198,7 +197,7 @@ public:
     //! Returns this enabler as a base ECEnabler
     ECOBJECTS_EXPORT ECEnablerCR                                GetECEnabler() const;
     };
-
+/** @endGroup */
 #pragma warning(default:4250)
 
 END_BENTLEY_ECOBJECT_NAMESPACE

@@ -17,7 +17,8 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 typedef RefCountedPtr<ECSchemaReadContext>      ECSchemaReadContextPtr;
 //=======================================================================================
 //! Context object used for schema creation and deserialization.
-//! @ingroup ECObjectsGroup
+//! @addtogroup ECObjectsGroup
+//! @beginGroup
 //=======================================================================================
 struct ECSchemaReadContext : RefCountedBase
 {
@@ -152,7 +153,6 @@ public:
 typedef RefCountedPtr<ECInstanceReadContext>      ECInstanceReadContextPtr;
 //=======================================================================================
 //! Context object used for instance creation and deserialization.
-//! @ingroup ECObjectsGroup
 //=======================================================================================
 struct ECInstanceReadContext : RefCountedBase
 {
@@ -212,5 +212,5 @@ public:
     //! - For use when the caller does not know the schema of the instance he is deserializing.
     ECOBJECTS_EXPORT static ECInstanceReadContextPtr CreateContext (ECSchemaReadContextR, ECSchemaCR fallBackSchema, ECSchemaPtr* foundSchema);
 };
-
+/** @endGroup */
 END_BENTLEY_ECOBJECT_NAMESPACE

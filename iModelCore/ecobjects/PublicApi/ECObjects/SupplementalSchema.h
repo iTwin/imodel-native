@@ -19,7 +19,8 @@ typedef RefCountedPtr<SupplementalSchemaMetaData> SupplementalSchemaMetaDataPtr;
 typedef bmap<WString, WString> SchemaNamePurposeMap;
 
 //=======================================================================================
-//! @ingroup ECObjectsGroup
+//! @addtogroup ECObjectsGroup
+//! @beginGroup
 //! Used to store the information from the SupplementalSchemaMetaData custom attribute.
 //! An example of the custom attribute:
 //! \code
@@ -182,7 +183,6 @@ public:
 };
 
 //=======================================================================================
-//! @ingroup ECObjectsGroup
 //! The SupplementedSchemaBuilder merges ECCustomAttributes from multiple schemas into one combined Schema
 //! @remarks
 //!
@@ -369,7 +369,6 @@ public:
     }; // SupplementalSchemaBuilder
 
 //=======================================================================================
-//! @ingroup ECObjectsGroup
 //! Container for information about supplemental schemas
 //! @remarks SupplementalSchemaInfo contains the following information:
 //! @li Primary schema fullname
@@ -429,6 +428,7 @@ public:
     //__PUBLISH_SECTION_START__
 
     };
+/** @endGroup */	
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 //__PUBLISH_SECTION_END__

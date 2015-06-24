@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECEnabler.h $
 |
-|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -36,7 +36,8 @@ typedef RefCountedPtr<StandaloneECRelationshipInstance> StandaloneECRelationship
 //!
 //! Operations involving property indices are significantly more efficient than those involving
 //! access strings and should be preferred where possible.
-//! @ingroup ECObjectsGroup
+//! @addtogroup ECObjectsGroup
+//! @beginGroup
 //=======================================================================================    
 struct ECEnabler : RefCountedBase
 /*__PUBLISH_SECTION_END__*/
@@ -224,7 +225,6 @@ public:
 
 //=======================================================================================    
 //! Base class for all relationship enablers
-//! @ingroup ECObjectsGroup
 //=======================================================================================    
  struct IECRelationshipEnabler
  {
@@ -330,5 +330,5 @@ public:
     };
 
  /*__PUBLISH_SECTION_START__*/
-
+/** @endGroup */
 END_BENTLEY_ECOBJECT_NAMESPACE

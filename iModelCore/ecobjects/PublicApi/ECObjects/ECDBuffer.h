@@ -43,7 +43,8 @@ enum ArrayModifierFlags ENUM_UNDERLYING_TYPE (uint32_t)
     };
 
 /*=================================================================================**//**
-* @ingroup ECObjectsGroup
+* @addtogroup ECObjectsGroup
+* @beginGroup
 * @bsistruct
 +===============+===============+===============+===============+===============+======*/      
 struct PropertyLayout
@@ -120,7 +121,6 @@ bool operator()(ClassLayoutCP s1, ClassLayoutCP s2) const;
 * @bsistruct
 * Responsible for managing the layout of the portion of an ECD buffer storing property
 * values.
-* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/      
 struct ClassLayout : RefCountedBase
     {
@@ -304,7 +304,6 @@ typedef RefCountedPtr<ClassLayout>  ClassLayoutPtr;
 typedef bvector<ClassLayoutPtr>     ClassLayoutVector;
 
 /*=================================================================================**//**
-* @ingroup ECObjectsGroup
 * @bsistruct
 +===============+===============+===============+===============+===============+======*/      
 struct SchemaLayout
@@ -501,7 +500,6 @@ typedef ECDHeader_v0 ECDHeader;
 //=======================================================================================
 //! Base class for ECN::IECInstance implementations that get/set values from a block of memory,
 //! e.g. StandaloneECInstance and ECXInstance
-//! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================
 struct ECDBuffer
@@ -800,5 +798,5 @@ public:
     };
 
 /*__PUBLISH_SECTION_START__*/
-
+/** @endGroup */
 END_BENTLEY_ECOBJECT_NAMESPACE

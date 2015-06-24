@@ -118,6 +118,9 @@ struct IStream;
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
+//! @addtogroup ECObjectsGroup
+//! @beginGroup
+
 typedef struct IStream* IStreamP;
 
 //! Error code categories
@@ -372,7 +375,6 @@ enum PrimitiveType ENUM_UNDERLYING_TYPE(unsigned short)
     PRIMITIVETYPE_IGeometry                 = 0xa01,
     };
 
-//! @ingroup ECObjectsGroup
 //! Enumerates the possible return values for evaluating an expression or its value
 enum ExpressionStatus
     {
@@ -401,7 +403,8 @@ enum ExpressionStatus
     ExprStatus_IndexOutOfRange          = 18, //!< Returned when array index is used which is outside the bounds of the array.
     ExprStatus_IncompatibleUnits        = 19, //!< Returned when units are combined in an unsupported manner within the expression, for example adding angles and lengths.
     };
-
+	
+/** @endGroup */
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 USING_NAMESPACE_BENTLEY

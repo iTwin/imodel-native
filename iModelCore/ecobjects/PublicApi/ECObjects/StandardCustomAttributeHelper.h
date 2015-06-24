@@ -22,7 +22,8 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //! contain metadata about the actual date time value (see DateTime::Info). 
 //! In order to preserve the metadata when persisting a DateTime, clients can decorate the respective
 //! ECProperty with the \b %DateTimeInfo custom attribute from the standard ECSchema \b Bentley_Standard_CustomAttributes.
-//! @ingroup ECObjectsGroup
+//! @addtogroup ECObjectsGroup
+//! @beginGroup
 //! @bsiclass
 //=======================================================================================    
 struct DateTimeInfo
@@ -107,7 +108,6 @@ public:
 
 //=======================================================================================    
 //! StandardCustomAttributeHelper provides APIs to access items of the Bentley standard schemas
-//! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================    
 struct StandardCustomAttributeHelper : NonCopyableClass
@@ -167,7 +167,8 @@ public:
     //! @return An instance of the given custom attribute
     ECOBJECTS_EXPORT static IECInstancePtr CreateCustomAttributeInstance(WCharCP attributeName);
     };
-
+	
+/** @endGroup */
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 //__PUBLISH_SECTION_END__
