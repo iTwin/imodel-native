@@ -57,7 +57,7 @@
 		
     <SubPart PartName="Base" PartFile="Bentley" Repository="Bentley" />
 		
-    <SubPart PartName="LicenseSDKVancouver91" PartFile="${SrcBsiCommon}CvsPartFiles\bsibin" Repository="bsibin-licensesdk" />	
+    <SubPart PartName="LicenseSDK8.11" PartFile="${SrcBsiCommon}CvsPartFiles\bsibin" Repository="bsibin-licensesdk" />	
   
     <SubPart PartName="PointoolsCommon" PartFile="${srcroot}Pointools\PointoolsCommon\PointoolsCommon" Repository="PointoolsCommon"/>
 
