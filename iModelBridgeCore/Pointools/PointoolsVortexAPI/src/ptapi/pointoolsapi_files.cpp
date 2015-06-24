@@ -488,19 +488,69 @@ PTbool ptInitializeEnvVariables(void)
 // Check the key passed to ptInitialize to see if SELECT licensing should be
 // used. For now the only company that does not use SELECT licensing is Siemens.
 //-------------------------------------------------------------------------------
+
+const unsigned int COMPANY_NON_SELECT_LICENSES_NUM = 2;
+const unsigned int COMPANY_NON_SELECT_LICENSES_MAX_NAME_LENGTH = 64;
+
+char companyNonSELECTLicensesScrambled[COMPANY_NON_SELECT_LICENSES_NUM][COMPANY_NON_SELECT_LICENSES_MAX_NAME_LENGTH] =
+{
+	{'P'+100, 'o'+100+(1*7), 'i'+100+(2*7), 'n'+100+(3*7), 't'+100+(4*7), 'o'+100+(5*7), 'o'+100+(6*7), 'l'+100+(7*7), 's'+100+(8*7), ' '+100+(9*7), 'L'+100+(10*7), 't'+100+(11*7), 'd'+100+(12*7), 0x0+100+(13*7)},
+	{'S'+100, 'i'+100+(1*7), 'e'+100+(2*7), 'm'+100+(3*7), 'e'+100+(4*7), 'n'+100+(5*7), 's'+100+(6*7), 0x0+100+(7*7)}
+};
+
+
+void unScrambleString(std::string &str, std::string &out)
+{
+	char			c;
+	unsigned int	t = 0;
+
+	while((c = str[t] - 100 - (t * 7)) != 0x0 && t < COMPANY_NON_SELECT_LICENSES_MAX_NAME_LENGTH)
+	{
+		out += c;
+		t++;
+	}
+}
+
+
 bool useSELECTLicense(std::string& company, std::string& module, std::string& type, const char* ex, std::string& expires)
 {
+	unsigned int c;
+
+	for(c = 0; c < COMPANY_NON_SELECT_LICENSES_NUM; c++)
+	{
+		std::string ptCompanyPlain;
+
+		std::string ptCompany(companyNonSELECTLicensesScrambled[c]);
+		unScrambleString(ptCompany, ptCompanyPlain);
+
+		if(ptCompanyPlain == company)
+			return false;
+	}
+
+	return true;
+
+/*
 	// Hide "Siemens" so it's not visible in plain text in the DLL
 	PTubyte start[] = { 183, 198, 187, 188, 173, 175, 173, 51 };
 	int a = 100;
 	char name[64] = {0};
 	for (int i = 0; i < 8; i++)
-		name[i] = start[i]-100+(i*7);	
+		name[i] = start[i]-100+(i*7);
 
 	if (strcmp(company.c_str(), name) == 0)
 		return false; // no SELECT license needed
 
-	// return true; // SELECT license needed
+	std::string ptCompanyPlain;
+	std::string ptCompany(pointoolsName);
+	unScrambleString(ptCompany, ptCompanyPlain);
+
+	if(company == ptCompanyPlain)
+	{
+		return false;
+	}
+
+	return true; // SELECT license needed
+*/
 }
 
 //-------------------------------------------------------------------------------
@@ -528,116 +578,129 @@ PTbool PTAPI ptInitialize(const PTubyte* licenseData)
 	ptInitializeEnvVariables();
 
 
+	std::string company;
+	std::string module;
+	std::string type;
+	const char *ex;
+	std::string expires("000000");
 
 	if (!_initialized)
 	{
-		char plaintxt[255];
-		char cyphertxt[255];
+		if(licenseData)
 		{
-		CTEA tea;
-		tea.Initialize(teakey, 16);
-		for (int i=0; i<128; i++) cyphertxt[i] = licenseData[i] - 128;
-		memset(plaintxt, 0, sizeof(plaintxt));
-		tea.Decrypt( cyphertxt, plaintxt, 128);
-		}
-		/* company + "#" + module + "#" + type + "#" + expires; */ 
-		std::string company = strtok( plaintxt, "#");
-		std::string module = strtok( 0, "#");
-		std::string type = strtok( 0, "#");
-		const char*ex = strtok( 0, "#");
-		std::string expires("000000");
-		if (ex)
-		{
-			expires = ex;
-			const char* secs = strtok(0, "#");
-			if (secs) 
+			char plaintxt[255];
+			char cyphertxt[255];
+
 			{
-				int s = atoi(secs);
-				if (s > DEFAULT_DEMO_TIMEOUT) 
-					g_timeOut = s;
+				CTEA tea;
+				tea.Initialize(teakey, 16);
+				for (int i=0; i<128; i++) cyphertxt[i] = licenseData[i] - 128;
+				memset(plaintxt, 0, sizeof(plaintxt));
+				tea.Decrypt( cyphertxt, plaintxt, 128);
 			}
-		}
+			/* company + "#" + module + "#" + type + "#" + expires; */ 
+			company = strtok( plaintxt, "#");
+			module = strtok( 0, "#");
+			type = strtok( 0, "#");
+			ex = strtok( 0, "#");
+
+			if (ex)
+			{
+				expires = ex;
+				const char* secs = strtok(0, "#");
+				if (secs) 
+				{
+					int s = atoi(secs);
+					if (s > DEFAULT_DEMO_TIMEOUT) 
+						g_timeOut = s;
+				}
+			}
 		
-		//std::cout << "company = " << company << std::endl;
-		//std::cout << "module = " << module << std::endl;
-		//std::cout << "type = " << type << std::endl;
-		//std::cout << "expires = " << expires << std::endl;
-		bool hasExpiry = true;
+			//std::cout << "company = " << company << std::endl;
+			//std::cout << "module = " << module << std::endl;
+			//std::cout << "type = " << type << std::endl;
+			//std::cout << "expires = " << expires << std::endl;
+			bool hasExpiry = true;
 
-		if (strcmp(expires.c_str(), "000000"))
-		{
-			char year[] = { expires[0], expires[1] };
-			char month[] = { expires[2], expires[3] };
-			expire_day = atoi(&expires[4]); 
-			expire_month =  atoi(month);
-			expire_year = 2000 +  atoi(year);
-		}
-		else hasExpiry = false;
-
-		// hard coded *special expiry* for no expiry
-		if (expire_year == 2090 && expire_month == 1 && expire_day == 1)
-		{
-			hasExpiry = false;
-		}
-
-		SYSTEMTIME t;
-		ZeroMemory(&t, sizeof(t));
-		t.wDay = expire_day; 
-		t.wMonth =  expire_month;
-		t.wYear = expire_year;
-
-		FILETIME f;
-		SystemTimeToFileTime( &t, &f );
-		expire_cmp.LowPart = f.dwLowDateTime;
-		expire_cmp.HighPart = f.dwHighDateTime;
-
-		/* check module name if NOT set to 'any' */ 
-		if (strcmp(module.c_str(), txt_any))
-		{
-			char mod[64];
-			::GetModuleFileNameA(NULL, mod, 64);
-			::PathStripPathA(mod);
-
-			if (strnicmp(mod, module.c_str(), 64))
+			if (strcmp(expires.c_str(), "000000"))
 			{
-				_tcscpy(g_lastError, txt_licModuleFailure);			
+				char year[] = { expires[0], expires[1] };
+				char month[] = { expires[2], expires[3] };
+				expire_day = atoi(&expires[4]); 
+				expire_month =  atoi(month);
+				expire_year = 2000 +  atoi(year);
+			}
+			else hasExpiry = false;
+
+			// hard coded *special expiry* for no expiry
+			if (expire_year == 2090 && expire_month == 1 && expire_day == 1)
+			{
+				hasExpiry = false;
+			}
+
+			SYSTEMTIME t;
+			ZeroMemory(&t, sizeof(t));
+			t.wDay = expire_day; 
+			t.wMonth =  expire_month;
+			t.wYear = expire_year;
+
+			FILETIME f;
+			SystemTimeToFileTime( &t, &f );
+			expire_cmp.LowPart = f.dwLowDateTime;
+			expire_cmp.HighPart = f.dwHighDateTime;
+
+			/* check module name if NOT set to 'any' */ 
+			if (strcmp(module.c_str(), txt_any))
+			{
+				char mod[64];
+				::GetModuleFileNameA(NULL, mod, 64);
+				::PathStripPathA(mod);
+
+				if (strnicmp(mod, module.c_str(), 64))
+				{
+					_tcscpy(g_lastError, txt_licModuleFailure);			
+					_failed = true;
+					setLastErrorCode( PTV_LICENSE_MODULE_ERROR );
+				}
+			}
+			if (hasExpiry && (HAS_EXPIRED && !_failed)) 
+			{
+				_tcscpy(g_lastError, txt_expired); 
 				_failed = true;
-				setLastErrorCode( PTV_LICENSE_MODULE_ERROR );
+				setLastErrorCode( PTV_LICENSE_EXPIRY );
 			}
-		}
-		if (hasExpiry && (HAS_EXPIRED && !_failed)) 
-		{
-			_tcscpy(g_lastError, txt_expired); 
-			_failed = true;
-			setLastErrorCode( PTV_LICENSE_EXPIRY );
-		}
 
-// Pip Option
-		//if ( hasExpiry && checkSetback() && t.wYear != 2100 && t.wYear != 2050 && !_failed) 
-		//{
-		//	_tcscpy(g_lastError, txt_setback); 
-		//	_failed = true;
-		//}
+	// Pip Option
+			//if ( hasExpiry && checkSetback() && t.wYear != 2100 && t.wYear != 2050 && !_failed) 
+			//{
+			//	_tcscpy(g_lastError, txt_setback); 
+			//	_failed = true;
+			//}
 
-		if (!_failed && strcmp(type.c_str(), txt_restricted)) /* only demo datasets can be used */ 
-		{
-			pod::g_demoCode = _nonDemoCode;		
-		}
-		if (strcmp(type.c_str(), txt_demo)==0)
-		{
-			if (g_timeOut < 0) 
+			if (!_failed && strcmp(type.c_str(), txt_restricted)) /* only demo datasets can be used */ 
 			{
-				g_timeOut = DEFAULT_DEMO_TIMEOUT; /* default if 5 mins */ 
+				pod::g_demoCode = _nonDemoCode;		
 			}
-			_failed = !checkPreSessionTimeOut();
+
+			if (strcmp(type.c_str(), txt_demo)==0)
+			{
+				if (g_timeOut < 0) 
+				{
+					g_timeOut = DEFAULT_DEMO_TIMEOUT; /* default if 5 mins */ 
+				}
+				_failed = !checkPreSessionTimeOut();
+			}
+			else g_timeOut = -1;
 		}
-		else g_timeOut = -1;
 
 		// Check for special users that do not require a SELECT license and allow these to skip the SELECT license check in startLicenseBentley().
 		// Note that any ditribution of Vortex that uses SELECT licensing now requires the bentley licensing DLLs to be distributed with it
 		// or startLicenseBentley() will fail when unable to load Bentley.liblib.DLL. 
-		if (useSELECTLicense(company, module, type, ex, expires))
+		if (licenseData == NULL || useSELECTLicense(company, module, type, ex, expires))
 		{					
+															// Don't support demo mode files with SELECT licensing
+			pod::g_demoCode = _nonDemoCode;		
+
 			const PointoolsBentleyLicense::ProductVersion productVersion(getShortVersionString());			
 			if(startLicenseBentley(productVersion) == false) 
 			{
