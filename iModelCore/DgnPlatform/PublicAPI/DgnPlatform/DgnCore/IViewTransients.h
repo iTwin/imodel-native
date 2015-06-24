@@ -30,7 +30,6 @@ protected:
 //! @param context      The viewcontext in which to draw. 
 //! @param isPreUpdate  WIP_DOC
 //! @see ViewContext::GetIDrawGeom
-//! @bsimethod
 virtual void _DrawTransients (ViewContextR context, bool isPreUpdate) = 0;
 
 public:
@@ -39,7 +38,6 @@ public:
 //! in order to specify the rotation and what transients are displayed and/or visible.
 //! @param[out]         range       The computed range.
 //! @param[in]          vp          The view in which transients are displayed.
-//! @bsimethod
 DGNPLATFORM_EXPORT StatusInt ComputeRange (DRange3d& range, DgnViewportP vp);
 };
 

@@ -9,7 +9,7 @@
 #---------------------------------------------------------------
 # Environment
 #---------------------------------------------------------------
-baseDir           = $(_MakeFilePath)
+baseDir = $(_MakeFilePath)
 
 %include mdl.mki
 
@@ -64,6 +64,9 @@ $(extractionInputDir)DgnSqlTest.cpp : $(baseDir)../Tests/DgnProject/NonPublished
     ~time
 
 $(extractionInputDir)Category.sample.cpp : $(_MakeFilePath)samplecode/Category.sample.cpp
+    $(LinkFirstDepToFirstTarget)
+
+$(extractionInputDir)Model.sample.cpp : $(_MakeFilePath)samplecode/Model.sample.cpp
     $(LinkFirstDepToFirstTarget)
 
 $(extractionInputDir)View.sample.cpp : $(_MakeFilePath)samplecode/View.sample.cpp

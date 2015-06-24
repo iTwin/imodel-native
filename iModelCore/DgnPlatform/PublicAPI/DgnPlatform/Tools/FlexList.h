@@ -11,7 +11,7 @@
 #include <Bentley/HeapZone.h>
 #include <Bentley/bvector.h>
 
-BEGIN_BENTLEY_API_NAMESPACE
+BEGIN_BENTLEY_NAMESPACE
 
 /*=================================================================================**//**
 * FlexList - A FlexList is a memory efficient way of storing a variable length list of pointers, when it is known
@@ -552,4 +552,4 @@ void     Empty (HeapZone* zone)
     }
 };
 
-END_BENTLEY_API_NAMESPACE
+END_BENTLEY_NAMESPACE

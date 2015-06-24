@@ -12,7 +12,7 @@
 #include <DgnPlatform/DgnCore/ImageUtilities.h>
 #include <DgnPlatform/DgnCore/QueryView.h>
 
-/** @addtogroup DgnMarkupProjectGroup Markup Projects
+/** @addtogroup DgnMarkupProjectGroup Markups and Redlines
 * A markup is a set of annotations that apply to a DgnDb or to views of that project. Markups include redlines, markups, and punch lists.
 *
 * @section DgnMarkupProjectGroup_Association Associating a DgnMarkupProject with a DgnDb
@@ -31,7 +31,6 @@
 * Redline graphics are stored in models within a DgnMarkupProject. There are two types of models that hold redlines, RedlineModel and PhysicalRedlineModel.
 * A redline model must be created or opened in order to store redlines.
 *
-* 
 * @section DgnMarkupProjectGroup_PhysicalRedlines Physical vs. non-physical redlines.
 * Suppose you want to draw redlines  on top of a map. The extent of the map is so great that no single view will show it very well. 
 * You want to be able to zoom in and out and pan around and draw your redlines at any location in the map. Therefore, you want the redline 
@@ -40,7 +39,6 @@
 * ViewController is derived from PhysicalViewController. In the normal (non-physical) redline case, the redline view shows you a 
 * static image of a view of the DgnDb or some other static image. The redline model in that case is a (2-D) SheetModel, and the 
 * associated redline view is a SheetViewController.
-*
 */
 
 #ifdef WIP_REDLINE_ECINSTANCE
@@ -148,7 +146,7 @@ struct DgnViewAssociationData : DgnProjectAssociationData
 //! A RedlineModel does not have to be associated with a view of a DgnDb. The stored image can be acquired from some external source.
 //! 
 //! See DgnMarkupProject::CreateRedlineModel, DgnMarkupProject::OpenRedlineModel, and DgnMarkupProject::FindClosestRedlineModel.
-//! @bsiclass                                                    Sam.Wilson      05/13
+// @bsiclass                                                    Sam.Wilson      05/13
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RedlineModel : SheetModel
     {
@@ -406,7 +404,7 @@ public:
 //! A PhysicalRedlineModel has the same units and coordinate system as the target model of the view of the subject project.
 //! Note that the DgnMarkupProject that holds a PhysicalRedlineModel must have the same StorageUnits as the subject project. See CreateDgnMarkupProjectParams.
 //! @see @ref DgnMarkupProjectGroup_PhysicalRedlines
-//! @bsiclass                                                    Sam.Wilson      05/13
+// @bsiclass                                                    Sam.Wilson      05/13
 //=======================================================================================
 struct PhysicalRedlineModel : PhysicalModel
     {
@@ -433,12 +431,13 @@ public:
 
 //=======================================================================================
 //! Supplies the parameters necessary to create new DgnMarkupProjects.
+//! @ingroup DgnMarkupProjectGroup
 // @bsiclass
 //=======================================================================================
 struct CreateDgnMarkupProjectParams : CreateDgnDbParams
 {
 private:
-    DgnDbR     m_dgnProject;
+    DgnDbR          m_dgnDb;
     bool            m_overwriteExisting;
     bool            m_physicalRedlining;
 
@@ -447,10 +446,10 @@ public:
     //! @param[in] dgnProject   The DgnDb which is the target of this markup.
     //! @param[in] guid         The BeProjectGuid to store in the newly created DgnDb. If invalid (the default), a new BeProjectGuid is created.
     //! The new BeProjectGuid can be obtained via GetGuid.
-    CreateDgnMarkupProjectParams(DgnDbR dgnProject, BeDbGuid guid=BeDbGuid()) : CreateDgnDbParams(guid), m_dgnProject(dgnProject), m_overwriteExisting(false) {;}
+    CreateDgnMarkupProjectParams(DgnDbR dgnProject, BeDbGuid guid=BeDbGuid()) : CreateDgnDbParams(guid), m_dgnDb(dgnProject), m_overwriteExisting(false) {;}
 
     //! Get the subject DgnDb
-    DgnDbR GetSubjectDgnProject() const {return m_dgnProject;}
+    DgnDbR GetSubjectDgnProject() const {return m_dgnDb;}
 
     //! Specify whether to overwrite an existing file or not. The default is to fail if a file by the supplied name already exists.
     void SetOverwriteExisting(bool val) {m_overwriteExisting = val;}
@@ -481,8 +480,6 @@ private:
     BentleyStatus ImportMarkupEcschema();
     BentleyStatus QueryPropertyAsJson(JsonValueR json, DgnMarkupProjectProperty::ProjectProperty const& propSpec, uint64_t id=0) const;
     void SavePropertyFromJson(DgnMarkupProjectProperty::ProjectProperty const& propSpec, JsonValueCR json, uint64_t id=0);
-
-    //void CreateModelECProperties (DgnModelId modelId, Utf8CP modelName); *** TBD
 
 public:
     BentleyStatus CheckIsOpen();
@@ -542,7 +539,7 @@ public:
     //! @return A list of what's changed in the project since this markup project was created.
     //! @see DgnMarkupProjectGroup_Association
     DGNPLATFORM_EXPORT DgnProjectAssociationData::CheckResults CheckAssociation(DgnDbR subjectProject);
-//** @} */
+/** @} */
 
 /** @name Redline Models */
 /** @{ */
@@ -576,7 +573,7 @@ public:
     //! @param modelId  Identifies the redline model to empty
     //! @see OpenRedlineModel
     DGNPLATFORM_EXPORT BentleyStatus EmptyRedlineModel(DgnModelId modelId);
-//** @} */
+/** @} */
 
 /** @name PhysicalRedline Models */
 /** @{ */
@@ -604,22 +601,23 @@ public:
     //! @param modelId  Identifies the physical redline model to empty
     //! @see OpenPhysicalRedlineModel
     DGNPLATFORM_EXPORT BentleyStatus EmptyPhysicalRedlineModel(DgnModelId modelId);
-//** @} */
+/** @} */
 
 };
 
 namespace dgn_ModelHandler
 {
+    //! The ModelHandler for RedlineModel.
     struct Redline : Sheet
     {
         MODELHANDLER_DECLARE_MEMBERS("RedlineModel", RedlineModel, Redline, Sheet,)
     };
 
+    //! The ModelHandler for PhysicalRedlineModel.
     struct PhysicalRedline : Physical
     {
         MODELHANDLER_DECLARE_MEMBERS("PhysicalRedlineModel", PhysicalRedlineModel, PhysicalRedline, Physical,)
     };
-
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

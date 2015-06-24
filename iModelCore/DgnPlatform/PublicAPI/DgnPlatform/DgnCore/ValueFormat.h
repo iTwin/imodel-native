@@ -44,11 +44,9 @@ typedef RefCountedPtr<DateTimeFormatter>    DateTimeFormatterPtr;
 //!   - Trailing Zero Control:
 //!       - Supress trailing zeros ex. 30.5^ vs 30.500^
 //!
-//! @Note The output strings are unicode.  This means that the unicode degree
+//! @note The output strings are unicode.  This means that the unicode degree
 //! character (0xb0) is used.  In this documentation, the unicode degree symbol is
 //! represented by the caret symbol: ^.
-//!
-//! @bsiclass
 //=======================================================================================
 struct AngleFormatter : RefCountedBase
 {
@@ -173,10 +171,10 @@ public:
 //!       - From a specified base direction.
 //!       - Using a specied orientation.
 //!
-//! @Note The input value is always assumed to be in degrees measured counter-clockwise
+//! @note The input value is always assumed to be in degrees measured counter-clockwise
 //!       from the positive x-axis.
 //!
-//! @Note Azimuths can be formatted using a base direction and an orientation.  Common
+//! @note Azimuths can be formatted using a base direction and an orientation.  Common
 //!     azimuth settings include:
 //!       - Counter-clockwise from the positive x-axis.
 //!           - East:  Input 0.0, Output 0.0^
@@ -188,14 +186,12 @@ public:
 //!           - East:  Input 0.0, Output -90.0^
 //!           - North: Input 90.0, Output 180.0^
 //!
-//! @Note The TrueNorth adjustment option applies in both Bearing and Azimuth modes.
+//! @note The TrueNorth adjustment option applies in both Bearing and Azimuth modes.
 //!       See #SetAddTrueNorth and #SetTrueNorthValue.
 //!
-//! @Note The numerical portion of the direction string is formatted using the rules
+//! @note The numerical portion of the direction string is formatted using the rules
 //!     for angle formatting.  The settings for angle formatting are specified
 //!     using methods from the base class AngleFormatter.
-//!
-//! @bsiclass
 //=======================================================================================
 struct DirectionFormatter : RefCountedBase
 {
@@ -238,12 +234,12 @@ public:
     DGNPLATFORM_EXPORT double GetBaseDirection() const;
 
     //! Get the orientation for azimuth directions.
-    //! @Note: Only used when DirectionMode is DirectionMode::Azimuth.
-    //! @Return true if directions are measure clockwise.
+    //! @note: Only used when DirectionMode is DirectionMode::Azimuth.
+    //! @return true if directions are measure clockwise.
     DGNPLATFORM_EXPORT bool GetClockwise() const;
 
     //! Test if bearing directions will use additional spaces.  Ex. "N 60 E" vs. "N60E".
-    //! @Note: Only used when DirectionMode is DirectionMode::Bearing.
+    //! @note: Only used when DirectionMode is DirectionMode::Bearing.
     DGNPLATFORM_EXPORT bool GetBearingSpaces() const;
 
     //! Set the angle formatter used by this formatter for the numeric portion of the direction.
@@ -263,18 +259,18 @@ public:
 
     //! Set the base direction for this formatter.  The base direction is defined as
     //! the direction that is formatted as 0.0.
-    //! @Note: Only used when DirectionMode is DirectionMode::Azimuth.
-    //! @Return The base direction is specified as an angle in degrees measured
+    //! @note: Only used when DirectionMode is DirectionMode::Azimuth.
+    //! @return The base direction is specified as an angle in degrees measured
     //! counter-clockwise from the positive x-axis.  For example, the positive x-axis
     //! is 0.0 and the positive y-axis is 90.0.
     DGNPLATFORM_EXPORT void SetBaseDirection(double newVal);
 
     //! Set the orientation for azimuth directions.
-    //! @Note: Only used when DirectionMode is DirectionMode::Azimuth.
+    //! @note: Only used when DirectionMode is DirectionMode::Azimuth.
     DGNPLATFORM_EXPORT void SetClockwise(bool newVal);
 
     //! Enable or disable additional spaces for bearing directions.  Ex. "N 60 E" vs. "N60E".
-    //! @Note: Only used when DirectionMode is DirectionMode::Bearing.
+    //! @note: Only used when DirectionMode is DirectionMode::Bearing.
     DGNPLATFORM_EXPORT void SetBearingSpaces(bool newVal);
 
     //! Construct a formatter with default settings.
@@ -314,7 +310,7 @@ public:
 //!       - Comma ex. 10,5
 //!   - Many more
 //!
-//! @Note  The input value is assumed to be supplied in Units of Resolution (uors).  Before
+//! @note  The input value is assumed to be supplied in Units of Resolution (uors).  Before
 //! being formatted, the uor value will be scaled by the supplied UorPerStorageUnit value and
 //! then converted from Storage units to the desired output units using the provided
 //! UnitDefinitions.  An optional additional scale factor can also be supplied.
@@ -424,7 +420,7 @@ public:
 //=======================================================================================
 //! Used to construct a string from a DPoint3d value.
 //!
-//! @Note The individual coordinates of the point string are formatted using the rules
+//! @note The individual coordinates of the point string are formatted using the rules
 //!     for distance formatting.  The settings for distance formatting are specified
 //!     by calling 'set' methods on the internal DistanceFormatter,
 //!     ex. pointFormatter->GetDistanceFormatter().SetTrailingZeros();
@@ -552,7 +548,7 @@ public:
 //=======================================================================================
 //! Used to construct a string from a numerical area value.
 //!
-//! @Note  The input value is assumed to be supplied in squared millimeters
+//! @note  The input value is assumed to be supplied in squared millimeters
 //!
 // @bsiclass
 //=======================================================================================
@@ -593,7 +589,7 @@ public:
 //=======================================================================================
 //! Used to construct a string from a numerical area value.
 //!
-//! @Note  The input value is assumed to be supplied in squared Units of Resolution (uors).
+//! @note  The input value is assumed to be supplied in squared Units of Resolution (uors).
 //! Before being formatted, the uor value will be scaled by the supplied UorPerStorage
 //! value and then converted from millimeters to the desired output unit using the provided
 //! UnitDefinitions.  An optional additional scale factor can also be supplied.

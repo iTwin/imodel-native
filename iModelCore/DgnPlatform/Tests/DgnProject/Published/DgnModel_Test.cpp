@@ -43,13 +43,41 @@ struct DgnModelTests : public testing::Test
         void InsertElement(DgnDbR, DgnModelId, bool is3d, bool expectSuccess);
     };
 
+//=======================================================================================
+// @bsiclass                                                    Majd.Uddin   04/12
+//=======================================================================================
+struct TestModelProperties
+{
+public:
+    DgnModelId      tmId;
+    WString         tmName;
+    WString         tmDescription;
+    bool            tmIs3d;
+    DgnModelType    tmModelType;
+
+    void SetTestModelProperties(WString Name, WString Desc, bool is3D, DgnModelType modType)
+    {
+        tmName = Name;
+        tmDescription = Desc;
+        tmIs3d = is3D;
+        tmModelType = modType;
+    };
+    void IsEqual(TestModelProperties Model)
+    {
+        EXPECT_STREQ(tmName.c_str(), Model.tmName.c_str()) << "Names don't match";
+        EXPECT_STREQ(tmDescription.c_str(), Model.tmDescription.c_str()) << "Descriptions don't match";
+        EXPECT_TRUE(tmIs3d == Model.tmIs3d) << "3dness doesn't match";
+        EXPECT_TRUE(tmModelType == Model.tmModelType) << "Model Types don't match";
+    };
+};
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Julija Suboc     08/13
 //---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, GetGraphicElements)
     {
     LoadModel("Splines");
-    uint32_t graphicElementCount = m_modelP->CountElements();
+    uint32_t graphicElementCount = m_modelP->CountLoadedElements();
     ASSERT_NE(graphicElementCount, 0);
     ASSERT_TRUE(graphicElementCount > 0)<<"Please provide model with graphics elements, otherwise this test case makes no sense";
     int count = 0;
@@ -76,7 +104,7 @@ TEST_F(DgnModelTests, GetName)
     DgnModelP seedModel = modelTable.GetModel(m_modelP->GetModelId());
     DgnModelPtr newModel = seedModel->Clone(newName.c_str());
     status = newModel->Insert();
-    EXPECT_TRUE(status == DgnDbStatus::Success)<<"Failed to create model";
+    EXPECT_TRUE(status == DgnDbStatus::Success);
     DgnModelId id = modelTable.QueryModelId(newName.c_str());
     ASSERT_TRUE(id.IsValid());
     m_modelP =  modelTable.GetModel (id);
@@ -90,10 +118,11 @@ TEST_F(DgnModelTests, GetName)
 TEST_F(DgnModelTests, EmptyList)
     {
     LoadModel("Splines");
+    ASSERT_TRUE(0 != m_modelP->CountLoadedElements());
     m_modelP->Empty();
-    ASSERT_EQ(0, m_modelP->CountElements())<<"Failed to empty element list in model";
+    ASSERT_TRUE(0 == m_modelP->CountLoadedElements());
     LoadModel("Splines");
-    ASSERT_EQ(0, m_modelP->CountElements())<<"Failed to empty element list in model";
+    ASSERT_TRUE(0 != m_modelP->CountLoadedElements());
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Julija Suboc     07/13
@@ -274,3 +303,38 @@ TEST_F(DgnModelTests, SheetModelCRUD)
         InsertElement(*db, mid, true, false);
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* Getting the list of Dgn Models in a project and see if they work
+* @bsimethod                                    Majd.Uddin                   04/12
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DgnModelTests, WorkWithDgnModelTable)
+{
+    DgnDbTestDgnManager tdm(L"ElementsSymbologyByLevel.idgndb", __FILE__, Db::OPEN_Readonly);
+    DgnDbP project = tdm.GetDgnProjectP();
+    ASSERT_TRUE(project != NULL);
+
+    //Iterating through the models
+    DgnModels& modelTable = project->Models();
+    DgnModels::Iterator iter = modelTable.MakeIterator();
+    ASSERT_EQ(3, iter.QueryCount());
+
+    //Set up testmodel properties as we know what the models in this file contain
+    TestModelProperties models[3], testModel;
+    models[0].SetTestModelProperties(L"Default", L"Master Model", false, DgnModelType::Drawing);
+    models[1].SetTestModelProperties(L"Model2d", L"", false, DgnModelType::Drawing);
+    models[2].SetTestModelProperties(L"Physical", L"", true, DgnModelType::Physical);
+
+    //Iterate through the model and verify it's contents. TODO: Add more checks
+    int i = 0;
+    for (DgnModels::Iterator::Entry const& entry : iter)
+    {
+        ASSERT_TRUE(entry.GetModelId().IsValid()) << "Model Id is not Valid";
+        WString entryNameW(entry.GetName(), true);               // string conversion
+        WString entryDescriptionW(entry.GetDescription(), true); // string conversion
+        testModel.SetTestModelProperties(entryNameW.c_str(), entryDescriptionW.c_str(), entry.Is3d(), entry.GetModelType());
+        testModel.IsEqual(models[i]);
+        i++;
+    }
+}
+

@@ -378,21 +378,21 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 DGNPLATFORM_TYPEDEFS(AdimProcess)
 
-BEGIN_BENTLEY_API_NAMESPACE
+BEGIN_BENTLEY_NAMESPACE
 
-void    shiftElementData (DgnPlatform::DimensionElm *dim, char *pStart, int nMove);
+void    shiftElementData (Dgn::DimensionElm *dim, char *pStart, int nMove);
 
 int adim_extractTextCluster
 (
 WString*                        strings,                /* <= Dimension strings         */
-DgnPlatform::DimStringConfig*   stringConfig,           /* <= Text configuration        */
+Dgn::DimStringConfig*   stringConfig,           /* <= Text configuration        */
 ElementHandleCR                 dimElement,             /* => Dimension element buffer   */
 int                             pointNo,                /* => Point number of text       */
 DgnFontCR                       effectiveFont           /* => Font used for encoding varichar */
 );
 
-int     adim_extensionsGetNoteTerminator (DgnPlatform::DimStyleExtensions const& extensions);
-void    adim_extensionsSetNoteTerminator (DgnPlatform::DimStyleExtensions& extensions, int value);
+int     adim_extensionsGetNoteTerminator (Dgn::DimStyleExtensions const& extensions);
+void    adim_extensionsSetNoteTerminator (Dgn::DimStyleExtensions& extensions, int value);
 
 int     adim_generateSingleDimension (AdimProcessP , bool, DPoint3dP , DVec3dP );
 int     adim_generateTextSymbols (AdimProcessP , double, DPoint2dP, DPoint3dP , DVec3dP );
@@ -423,12 +423,12 @@ DVec3dP direction
 (
 TextBlockR      textBlock,
 WCharCP       pString,
-DgnPlatform::TextParamWide*  pTextParamWide,
+Dgn::TextParamWide*  pTextParamWide,
 DPoint2dCP      pTileSize,
 AdimProcessP     pAdimProcess
 );
 
-void    adim_uorToDimString (WString&, DgnPlatform::DimUnitBlock*, WCharCP, WCharCP, double, bool, uint16_t, uint16_t, int, double *, bool, AdimProcessP, unsigned short primaryAccuracy);
+void    adim_uorToDimString (WString&, Dgn::DimUnitBlock*, WCharCP, WCharCP, double, bool, uint16_t, uint16_t, int, double *, bool, AdimProcessP, unsigned short primaryAccuracy);
 void    adim_getTileSize (DPoint2dP, DPoint2dP, ElementHandleCR dimElement);
 
 void adim_getLengthStrings
@@ -442,17 +442,17 @@ int     adim_convertUnits
 (
 double          *pDistanceUorOut,
 double          uorsIn,
-DgnPlatform::DimUnitBlock    *pDimUnitsIn,
+Dgn::DimUnitBlock    *pDimUnitsIn,
 DgnModelP    pDgnModel
 );
 
 void adim_getEffectiveSymbology
 (
-DgnPlatform::Symbology              *pSymbologyOut,
+Dgn::Symbology              *pSymbologyOut,
 ElementHandleCR            dimElement,
-DgnPlatform::DimMaterialIndex        materialIndex,
+Dgn::DimMaterialIndex        materialIndex,
 uint32_t                partName,
-DgnPlatform::DimOverrides           *pOverrides
+Dgn::DimOverrides           *pOverrides
 );
 
 void    adim_harvestTextBoxForDerivedData
@@ -479,15 +479,15 @@ int  adim_generateTerminator (AdimProcessP , DPoint3dP , DVec3dP , int);
 |   adimutil.c - function prototypes                                  |
 |                                                                            |
 +---------------------------------------------------------------------------*/
-int     adim_generateLine (AdimProcessP , DPoint3dP , DPoint3dP , DgnPlatform::DimMaterialIndex);
-int     adim_generateLineString (AdimProcessP , DPoint3dP , int, int, DgnPlatform::DimMaterialIndex);
-int     adim_generateText (AdimProcessP , WCharCP, DPoint3dP , DVec3dP , DgnPlatform::TextElementJustification, DPoint2dP);
-int     adim_generateSymbol (AdimProcessP , int, uint16_t, DPoint3dP , RotMatrixP , DPoint2dP, DgnPlatform::TextElementJustification, DgnPlatform::DimMaterialIndex);
-int     adim_generateArc (AdimProcessCP , DPoint3dCP, double, double, RotMatrixCP, double, double, DgnPlatform::DimMaterialIndex material = DgnPlatform::DIM_MATERIAL_DimLine);
-int     adim_generateArcByPoints (AdimProcessP , DPoint3dP , DgnPlatform::DimMaterialIndex material);
-int     adim_generateCircle (AdimProcessP , DPoint3dP , double, RotMatrixP , bool, DgnPlatform::DimMaterialIndex);
-int     adim_generateCell (AdimProcessP , uint64_t , DPoint3dP , RotMatrixP , double, double, DgnPlatform::DimMaterialIndex);
-int     adim_generateCellScale (AdimProcessP , uint64_t, DPoint3dP , RotMatrixP , double, DgnPlatform::DimMaterialIndex);
+int     adim_generateLine (AdimProcessP , DPoint3dP , DPoint3dP , Dgn::DimMaterialIndex);
+int     adim_generateLineString (AdimProcessP , DPoint3dP , int, int, Dgn::DimMaterialIndex);
+int     adim_generateText (AdimProcessP , WCharCP, DPoint3dP , DVec3dP , Dgn::TextElementJustification, DPoint2dP);
+int     adim_generateSymbol (AdimProcessP , int, uint16_t, DPoint3dP , RotMatrixP , DPoint2dP, Dgn::TextElementJustification, Dgn::DimMaterialIndex);
+int     adim_generateArc (AdimProcessCP , DPoint3dCP, double, double, RotMatrixCP, double, double, Dgn::DimMaterialIndex material = Dgn::DIM_MATERIAL_DimLine);
+int     adim_generateArcByPoints (AdimProcessP , DPoint3dP , Dgn::DimMaterialIndex material);
+int     adim_generateCircle (AdimProcessP , DPoint3dP , double, RotMatrixP , bool, Dgn::DimMaterialIndex);
+int     adim_generateCell (AdimProcessP , uint64_t , DPoint3dP , RotMatrixP , double, double, Dgn::DimMaterialIndex);
+int     adim_generateCellScale (AdimProcessP , uint64_t, DPoint3dP , RotMatrixP , double, Dgn::DimMaterialIndex);
 int     adim_findSharedCellDef (double*, double*, DgnElementPtr*, uint64_t, DgnModelP);
 
 void    adim_updateTextBox
@@ -567,7 +567,7 @@ AdimProcessCP  const pAdimProcess
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    sunand.sandurkar 08/02
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnPlatform::TextElementJustification adim_getDimTextJustificationHorizontal
+Dgn::TextElementJustification adim_getDimTextJustificationHorizontal
 (
 AdimProcessCP  const pAdimProcess
 );
@@ -605,7 +605,7 @@ DPoint3dP currpoint
 
 void adim_dropDimension
 (
-DgnPlatform::DimensionElm *dim,
+Dgn::DimensionElm *dim,
 uint32_t     filePos,
 int          freeze
 );
@@ -616,12 +616,12 @@ int          freeze
 |   adim1.c - function prototypes                                     |
 |                                                                            |
 +---------------------------------------------------------------------------*/
-int  adim_strokeSizeDimension (DgnPlatform::DimensionElm const*, AdimProcessP , bool);
-int  adim_strokeOrdinateDimension (DgnPlatform::DimensionElm const*, AdimProcessP , bool);
+int  adim_strokeSizeDimension (Dgn::DimensionElm const*, AdimProcessP , bool);
+int  adim_strokeOrdinateDimension (Dgn::DimensionElm const*, AdimProcessP , bool);
 
 
 int     adim_generateDimension (double*, AdimProcessP , DPoint3dP , DPoint3dP ,
-            DPoint3dP , double, DgnPlatform::DimText const*, int, int);
+            DPoint3dP , double, Dgn::DimText const*, int, int);
 
 int     adim_generateLinearDimension (AdimProcessP , DPoint3dP , DVec3dP , const double offsetY);
 
@@ -811,7 +811,7 @@ int         cellFlag
 +---------------+---------------+---------------+---------------+---------------+------*/
 Public WString* adim_getSimpleStringPtrByType
 (
-DgnPlatform::DimStrings  *pwDimStrings,
+Dgn::DimStrings  *pwDimStrings,
 int             iPartType,
 int             iSubType
 );
@@ -823,7 +823,7 @@ double  adim_getTrimDistance
 (
 AdimProcessP ap,
 int             termIndex,
-DgnPlatform::DimTermBlock const *pTermBlock,
+Dgn::DimTermBlock const *pTermBlock,
 bool            sameSide
 );
 
@@ -832,7 +832,7 @@ StatusInt    adim_generateDimLine
 AdimProcessP ap,
 DPoint3dP pLeftPt,
 DPoint3dP pRightPt,
-DgnPlatform::DimMaterialIndex    material,
+Dgn::DimMaterialIndex    material,
 int                 leftTermIn,
 int                 rightTermIn,
 int                 trimCode,
@@ -876,7 +876,7 @@ uint32_t        oldShxBigFont
 StatusInt     adim_setTextStyle
 (
 EditElementHandleR  dimElm,             /* => */
-const DgnPlatform::LegacyTextStyle  *pTextStyle,        /* => */
+const Dgn::LegacyTextStyle  *pTextStyle,        /* => */
 bool                sizeChangeAllowed   /* => */
 );
 
@@ -885,25 +885,25 @@ bool                sizeChangeAllowed   /* => */
 ---------------------------------------------------------------------------------------*/
 StatusInt    mdlDim_overridesGet
 (
-DgnPlatform::DimOverrides    **ppOverridesOut,
+Dgn::DimOverrides    **ppOverridesOut,
 ElementHandleCR    elementIn
 );
 
 void     mdlDim_overridesPointInserted
 (
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 int             pointNo
 );
 
 StatusInt    mdlDim_overridesSet
 (
 EditElementHandleR elementIn,
-DgnPlatform::DimOverrides    *pOverridesIn
+Dgn::DimOverrides    *pOverridesIn
 );
 
 void     mdlDim_overridesFreeAll
 (
-DgnPlatform::DimOverrides    **ppOverridesIn
+Dgn::DimOverrides    **ppOverridesIn
 );
 
 /*---------------------------------------------------------------------------------------
@@ -920,35 +920,35 @@ DgnPlatform::DimOverrides    **ppOverridesIn
 bool     mdlDim_extensionsGetPrimaryTolAccuracy
 (
 uint16_t        *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 uint16_t        defaultValueIn
 );
 
 bool     mdlDim_extensionsGetSecondaryTolAccuracy
 (
 uint16_t        *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 uint16_t        defaultValueIn
 );
 
 void     mdlDim_extensionsGetOrdinateUseDatumValueFlag
 (
 bool            *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 bool            defaultValueIn
 );
 
 void     mdlDim_extensionsGetOrdinateReverseDecrementFlag
 (
 bool            *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 bool            defaultValueIn
 );
 
 void     mdlDim_extensionsGetOrdinateFreeLocationFlag
 (
 bool            *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 bool            defaultValueIn
 );
 
@@ -961,297 +961,297 @@ bool                *pFlagValue
 void     mdlDim_extensionsGetLabelLineSuppressAngleFlag
 (
 bool            *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 bool            defaultValueIn
 );
 
 void     mdlDim_extensionsGetLabelLineSuppressLengthFlag
 (
 bool            *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 bool            defaultValueIn
 );
 
 void     mdlDim_extensionsGetLabelLineInvertLabelsFlag
 (
 bool            *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 bool            defaultValueIn
 );
 
 void     mdlDim_extensionsGetLabelLineAdjacentLabelsFlag
 (
 bool            *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 bool            defaultValueIn
 );
 
 void     mdlDim_extensionsGetMultiJustVerticalFlag
 (
 int             *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 int             defaultValueIn
 );
 
 void     mdlDim_extensionsGetNoReduceFractionFlag
 (
 bool            *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 bool            defaultValueIn
 );
 
 void     mdlDim_extensionsGetNoReduceAltFractionFlag
 (
 bool            *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 bool            defaultValueIn
 );
 
 void     mdlDim_extensionsGetNoReduceTolFractionFlag
 (
 bool            *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 bool            defaultValueIn
 );
 
 void     mdlDim_extensionsGetNoReduceSecFractionFlag
 (
 bool            *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 bool            defaultValueIn
 );
 
 void     mdlDim_extensionsGetNoReduceAltSecFractionFlag
 (
 bool            *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 bool            defaultValueIn
 );
 
 void     mdlDim_extensionsGetNoReduceTolSecFractionFlag
 (
 bool            *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 bool            defaultValueIn
 );
 
 void     mdlDim_extensionsGetNoteLeaderType
 (
 int             *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 bool            defaultValueIn
 );
 
 void     mdlDim_extensionsGetNoteTerminator
 (
 int             *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 int             defaultValueIn
 );
 
 void     mdlDim_extensionsGetNoteTerminatorType
 (
 int             *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 int             defaultValueIn
 );
 
 void     mdlDim_extensionsGetNoteTextRotation
 (
 int             *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 int             defaultValueIn
 );
 
 void     mdlDim_extensionsGetNoteHorAttachment
 (
 int             *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 int             defaultValueIn
 );
 
 void     mdlDim_extensionsGetNoteVerLeftAttachment
 (
 int             *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 int             defaultValueIn
 );
 
 void     mdlDim_extensionsGetNoteVerRightAttachment
 (
 int             *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 int             defaultValueIn
 );
 
 void     mdlDim_extensionsGetNotUseModelAnnotationScaleFlag
 (
 bool            *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 bool            defaultValueIn
 );
 
 bool     mdlDim_extensionsGetAnnotationScale
 (
 double          *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 double          defaultValueIn
 );
 
 bool     mdlDim_extensionsGetRoundOff
 (
 double          *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 double          defaultValueIn
 );
 
 bool     mdlDim_extensionsGetSecondaryRoundOff
 (
 double          *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 double          defaultValueIn
 );
 
 bool     mdlDim_extensionsGetOrdinateDatumValue
 (
 double          *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 double          defaultValueIn
 );
 
 bool     mdlDim_extensionsGetNoteElbowLength
 (
 double          *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 double          defaultValueIn
 );
 
 bool     mdlDim_extensionsGetStackedFractionScale
 (
 double          *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 double          defaultValueIn
 );
 
 bool     mdlDim_extensionsGetInlineTextLift
 (
 double          *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 double          defaultValueIn
 );
 
 bool     mdlDim_extensionsGetNoteLeftMargin
 (
 double          *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 double          defaultValueIn
 );
 
 bool     mdlDim_extensionsGetNoteLowerMargin
 (
 double          *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 double          defaultValueIn
 );
 
 bool     mdlDim_extensionsGetNoteTermChar
 (
 uint16_t        *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 uint16_t        defaultValueIn
 );
 
 bool     mdlDim_extensionsGetNoteTermFont
 (
 uint32_t        *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 uint32_t        defaultValueIn
 );
 
 bool     mdlDim_extensionsGetBncElbowLength
 (
 double          *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 double          defaultValueIn
 );
 
 bool     mdlDim_isMinLeaderIgnored
 (
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 bool            defaultValueIn
 );
 
 bool     mdlDim_extensionsGetFitOption
 (
 uint16_t        *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 uint16_t        defaultValueIn
 );
 
 bool     mdlDim_extensionsGetSuppressUnfitTerminatorsFlag
 (
 bool            *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 bool             defaultValueIn
 );
 
 bool     mdlDim_extensionsGetPushTextRight
 (
 bool            *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 bool             defaultValueIn
 );
 
 bool     mdlDim_extensionsGetTightFitTextAbove
 (
 bool            *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 bool             defaultValueIn
 );
 
 bool     mdlDim_extensionsGetAutoBallNChain
 (
 bool            *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 bool             defaultValueIn
 );
 
 bool     mdlDim_extensionsGetFitInclinedTextBox
 (
 bool            *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 bool             defaultValueIn
 );
 
 bool     mdlDim_extensionsGetExtendDimLineUnderText
 (
 bool            *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 bool             defaultValueIn
 );
 
 DGNPLATFORM_EXPORT bool     adim_updateExtensionsFromDirectionFormat
 (
-DgnPlatform::DimStyleExtensions&    elmExtensions,
+Dgn::DimStyleExtensions&    elmExtensions,
 DirectionFormatterCR                dirFormat
 );
 
 bool     mdlDim_extensionsGetDirectionMode
 (
-DgnPlatform::DirectionMode  *pProperty,
-DgnPlatform::DimOverrides            *pOverridesIn
+Dgn::DirectionMode  *pProperty,
+Dgn::DimOverrides            *pOverridesIn
 );
 
 bool     mdlDim_extensionsGetDirectionBaseDir
 (
 double          *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn
+Dgn::DimOverrides    *pOverridesIn
 );
 
 bool     mdlDim_extensionsGetDirectionClockwise
 (
 bool            *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn
+Dgn::DimOverrides    *pOverridesIn
 );
 
 /*---------------------------------------------------------------------------------**//**
@@ -1265,21 +1265,21 @@ DgnPlatform::DimOverrides    *pOverridesIn
 bool     mdlDim_overridesGetOverallRefScale
 (
 double          *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 double          defaultValueIn
 );
 
 bool     mdlDim_overridesGetOverallAngleQuadrant
 (
 uint16_t        *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 uint16_t        defaultValueIn
 );
 
 bool     mdlDim_overridesGetOverallSlantAngle
 (
 double          *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 double          defaultValueIn
 );
 
@@ -1296,7 +1296,7 @@ double          defaultValueIn
 bool     mdlDim_overridesGetPointWitnessExtend
 (
 double          *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 int             pointNo,
 double          defaultValueIn
 );
@@ -1304,7 +1304,7 @@ double          defaultValueIn
 bool     mdlDim_overridesGetPointWitnessOffset
 (
 double          *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 int             pointNo,
 double          defaultValueIn
 );
@@ -1312,7 +1312,7 @@ double          defaultValueIn
 bool     mdlDim_overridesGetPointWitnessColor
 (
 uint32_t        *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 int             pointNo,
 uint32_t        defaultValueIn
 );
@@ -1320,7 +1320,7 @@ uint32_t        defaultValueIn
 bool     mdlDim_overridesGetPointWitnessWeight
 (
 uint32_t        *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 int             pointNo,
 uint32_t        defaultValueIn
 );
@@ -1328,7 +1328,7 @@ uint32_t        defaultValueIn
 bool     mdlDim_overridesGetPointWitnessStyle
 (
 long            *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 int             pointNo,
 long            defaultValueIn
 );
@@ -1346,7 +1346,7 @@ long            defaultValueIn
 bool     mdlDim_overridesGetSegmentTextRotation
 (
 double          *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 int             segmentNo,
 double          defaultValueIn
 );
@@ -1354,7 +1354,7 @@ double          defaultValueIn
 bool     mdlDim_overridesGetSegmentTextJustification
 (
 uint16_t        *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 int             segmentNo,
 uint16_t        defaultValueIn
 );
@@ -1372,7 +1372,7 @@ uint16_t        defaultValueIn
 bool     mdlDim_overridesGetSegmentCurveStartTangent
 (
 DPoint3dP pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 int             segmentNo,
 DPoint3dP defaultValueIn
 );
@@ -1380,7 +1380,7 @@ DPoint3dP defaultValueIn
 bool     mdlDim_overridesGetSegmentCurveEndTangent
 (
 DPoint3dP pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 int             segmentNo,
 DPoint3dP defaultValueIn
 );
@@ -1398,7 +1398,7 @@ DPoint3dP defaultValueIn
 bool     mdlDim_overridesGetSegmentFlagUnderlineText
 (
 bool            *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 int             segmentNo,
 bool            defaultValueIn
 );
@@ -1406,7 +1406,7 @@ bool            defaultValueIn
 bool     mdlDim_overridesGetSegmentFlagSuppressLeftDimLine
 (
 bool            *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 int             segmentNo,
 bool            defaultValueIn
 );
@@ -1414,7 +1414,7 @@ bool            defaultValueIn
 bool     mdlDim_overridesGetSegmentFlagSuppressRightDimLine
 (
 bool            *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 int             segmentNo,
 bool            defaultValueIn
 );
@@ -1422,7 +1422,7 @@ bool            defaultValueIn
 bool     mdlDim_overridesGetSegmentFlagPrimaryIsReference
 (
 bool            *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 int             segmentNo,
 bool            defaultValueIn
 );
@@ -1430,7 +1430,7 @@ bool            defaultValueIn
 bool     mdlDim_overridesGetSegmentFlagSecondaryIsReference
 (
 bool            *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 int             segmentNo,
 int             defaultValueIn
 );
@@ -1446,14 +1446,14 @@ int             defaultValueIn
 bool     mdlDim_overridesGetOrdinateStartValueX
 (
 double          *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 double          defaultValueIn
 );
 
 bool     mdlDim_overridesGetOrdinateStartValueY
 (
 double          *pProperty,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimOverrides    *pOverridesIn,
 double          defaultValueIn
 );
 
@@ -1467,8 +1467,8 @@ double          defaultValueIn
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt        mdlDim_overridesGetDimMLText
 (
-DgnPlatform::DimMLText       **ppText,
-DgnPlatform::DimOverrides    *pOverridesIn,
+Dgn::DimMLText       **ppText,
+Dgn::DimOverrides    *pOverridesIn,
 int             segmentNo
 );
 
@@ -1483,7 +1483,7 @@ int             segmentNo
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt     mdlDim_overridesClearSegmentPropertyBit
 (
-DgnPlatform::DimOverrides*   pOverridesIn,
+Dgn::DimOverrides*   pOverridesIn,
 const int       segmentNo,
 const uint32_t  propertyField
 );
@@ -1498,8 +1498,8 @@ const uint32_t  propertyField
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool                 mdlDim_overridesGetTextLocation
 (
-DgnPlatform::DimStyleProp_Text_Location  *pValueOut,
-DgnPlatform::DimOverrides                *pOverridesIn,
+Dgn::DimStyleProp_Text_Location  *pValueOut,
+Dgn::DimOverrides                *pOverridesIn,
 bool                        embedOveride
 );
 
@@ -1518,7 +1518,7 @@ ADIM_TEXTSIZE_Nominal   = 1,
 StatusInt        dimTextBlock_populateWithValues
 (
 AdimProcessP            pAdimProcess,
-DgnPlatform::DimMLText* pText,
+Dgn::DimMLText* pText,
 WString*                strings
 );
 
@@ -1538,7 +1538,7 @@ AdimTextSizeOption  sizeOption
 DgnElementDescrPtr dimTextBlock_getTextDescr
 (
 AdimProcessP pAdimProcess,
-DgnPlatform::DimMLText       *pText,
+Dgn::DimMLText       *pText,
 DPoint3dP pTxtOrigin,
 DVec3dP pDirection
 );
@@ -1549,7 +1549,7 @@ DVec3dP pDirection
 bool     dimTextBlock_getRequiresTextBlock
 (
 AdimProcessP pAdimProcess,
-DgnPlatform::DimMLText       **ppTextOut
+Dgn::DimMLText       **ppTextOut
 );
 
 /*---------------------------------------------------------------------------------**//**
@@ -1559,7 +1559,7 @@ void     adim_getTextSize
 (
 DPoint2dP                   pTextSize,
 AdimProcessP                pAdimProcess,
-DgnPlatform::DimStringData* pDstr,
+Dgn::DimStringData* pDstr,
 AdimTextSizeOption          sizeOption
 );
 
@@ -1578,7 +1578,7 @@ StatusInt        dimTextBlock_appendMarkedUpString
 (
 TextBlockR      textBlock,
 WCharCP       pwString,
-DgnPlatform::TextParamWide*  pTextParamWide,
+Dgn::TextParamWide*  pTextParamWide,
 DPoint2dCP      pTextSize,
 AdimProcessP     pAdimProcess
 );
@@ -1614,7 +1614,7 @@ void const* mdlDim_getEditOptionBlockFromElement (ElementGraphicsCR , ElementHan
 void     adim_setDimTextWitnessLineFromTemplate
 (
 ElementHandleCR        dimElement,
-DgnPlatform::DimText *           dimText,
+Dgn::DimText *           dimText,
 int                 iPoint,
 bool                noWitness   /* => true: no witness, false: use template */
 );
@@ -1631,32 +1631,32 @@ DgnModelP        srcDgnModel,
 DgnModelP        dstDgnModel
 );
 
-DgnPlatform::StackedFractionType adim_textFracTypeFromDim (int dimFracType);
+Dgn::StackedFractionType adim_textFracTypeFromDim (int dimFracType);
 
-int adim_dimFracTypeFromText (DgnPlatform::StackedFractionType textFracType);
+int adim_dimFracTypeFromText (Dgn::StackedFractionType textFracType);
 
 
 void            adim_getMLNoteVerLeftAttachment
 (
-const DgnPlatform::DimStyleExtensions            *pExtensions,
+const Dgn::DimStyleExtensions            *pExtensions,
 uint16_t                            *pValue
 );
 
 void            adim_setMLNoteVerLeftAttachment
 (
-DgnPlatform::DimStyleExtensions                  *pExtensions,
+Dgn::DimStyleExtensions                  *pExtensions,
 uint16_t                            eValue
 );
 
 void            adim_getMLNoteVerRightAttachment
 (
-const DgnPlatform::DimStyleExtensions            *pExtensions,
+const Dgn::DimStyleExtensions            *pExtensions,
 uint16_t                            *pValue
 );
 
 void            adim_setMLNoteVerRightAttachment
 (
-DgnPlatform::DimStyleExtensions                  *pExtensions,
+Dgn::DimStyleExtensions                  *pExtensions,
 uint16_t                            eValue
 );
 
@@ -1703,20 +1703,20 @@ AdimProcessCP pAdimProcess
 
 StatusInt                       mdlDim_getBallNChainMode
 (
-DgnPlatform::DimStyleProp_BallAndChain_Mode  *pBncMode,
+Dgn::DimStyleProp_BallAndChain_Mode  *pBncMode,
 ElementHandleCR
 );
 
 StatusInt                mdlDim_getFitOption
 (
-DgnPlatform::DimStyleProp_FitOptions         *pFitOption,
+Dgn::DimStyleProp_FitOptions         *pFitOption,
 ElementHandleCR                    dimElement
 );
 
 StatusInt                mdlDim_setFitOption
 (
 EditElementHandleR                 dimElement,
-DgnPlatform::DimStyleProp_FitOptions         fitOption
+Dgn::DimStyleProp_FitOptions         fitOption
 );
 
 bool                     mdlDim_isFrozenInSharedCell
@@ -1744,13 +1744,13 @@ bool    adim_useWitnessLineOffset (AdimProcessCP  ep);
 
 void    adim_getFloatingAngularFormat
 (
-DgnPlatform::AngleFormatVals*   pFormat,       /* <=> */
+Dgn::AngleFormatVals*   pFormat,       /* <=> */
 int*    pAccuracy      /* <=> */
 );
 
 StatusInt adim_createUnitBlock
 (
-DgnPlatform::DimUnitBlock*       pUnitBlock,       /* <= */
+Dgn::DimUnitBlock*       pUnitBlock,       /* <= */
 bool                        isPrimary,        /* => */
 double const*               pUorPerStorage,   /* => */
 UnitDefinitionCP    masterUnit,       /* => */
@@ -1762,7 +1762,7 @@ StatusInt adim_extractUnitBlock
 double*             pUorPerStorage,   /* <= */
 UnitDefinitionP     masterUnit,       /* <= */
 UnitDefinitionP     subUnit,          /* <= */
-DgnPlatform::DimUnitBlock*       pUnitBlock        /* => */
+Dgn::DimUnitBlock*       pUnitBlock        /* => */
 );
 
 /*------------------------------------------------------------------------*//**
@@ -1779,7 +1779,7 @@ element.
 
 int     adim_strokeDimension (AdimProcessR ep);
 
-END_BENTLEY_API_NAMESPACE
+END_BENTLEY_NAMESPACE
 
 DGNPLATFORM_TYPEDEFS (IDimElementHelper)
 

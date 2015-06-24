@@ -192,8 +192,7 @@ public:
     DGNPLATFORM_EXPORT DgnFonts& Fonts() const;                     //!< Information about fonts for this DgnDb
     DGNPLATFORM_EXPORT DgnLinks& Links() const;                     //!< Information about DgnLinks for this DgnDb
     DGNPLATFORM_EXPORT DgnDomains& Domains() const;                 //!< The DgnDomains associated with this DgnDb.
-    DGNPLATFORM_EXPORT TxnManagerR Txns();
-
+    DGNPLATFORM_EXPORT TxnManagerR Txns();                          //!< Information about Txns for this DgnDb.
 
 //__PUBLISH_SECTION_END__
     DGNPLATFORM_EXPORT DgnMaterials& Materials() const;       //!< Information about materials for this DgnDb

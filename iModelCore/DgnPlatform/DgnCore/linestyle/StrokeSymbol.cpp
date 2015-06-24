@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
-#include    <DgnPlatform/DgnCore/LsLocal.h>
 
 #define LCPOINT_ANYVERTEX   (LCPOINT_LINEORG | LCPOINT_LINEEND | LCPOINT_LINEVERT)
 
@@ -26,55 +25,54 @@ LsSymbolReference::RotationMode LsSymbolReference::GetRotationMode () const
     return  ROTATE_Relative;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* calculate the "maximum offset from the origin" for this element descriptor chain.
-* @bsimethod                                                    Keith.Bentley   03/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-static double getDescrMaxOffset (DgnElementPtrVec const& elems, DgnModelP model, double angle)
-    {
 #if defined (NEEDSWORK_DGNITEM)
-    // This is wrong...needs to be based on the curve vector, not the element!
-    double      maxWidth = 0, test;
+    /*---------------------------------------------------------------------------------**//**
+    * calculate the "maximum offset from the origin" for this element descriptor chain.
+    * @bsimethod                                                    Keith.Bentley   03/03
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    static double getDescrMaxOffset (DgnElementPtrVec const& elems, DgnModelP model, double angle)
+        {
+        // This is wrong...needs to be based on the curve vector, not the element!
+        double      maxWidth = 0, test;
 
-    Transform transform;
+        Transform transform;
     transform.InitFromPrincipleAxisRotations (RotMatrix::FromIdentity (), 0.0, 0.0, angle);
 
-    for (auto descr: elems)
-        {
-
-        EditElementHandle  tmpElHandle (descr.get(), false);
-        ElementHandlerR    handler = tmpElHandle.GetElementHandler();
-
-        DRange3d    range;
-
-        if (SUCCESS == handler.CalcElementRange (tmpElHandle, range, &transform))
+        for (auto descr: elems)
             {
-            // only consider the y component of the range for offset
-            if ((test = fabs (range.low.y)) > maxWidth)
-                maxWidth = test;
 
-            if ((test = fabs (range.high.y)) > maxWidth)
-                maxWidth = test;
+            EditElementHandle  tmpElHandle (descr.get(), false);
+            ElementHandlerR    handler = tmpElHandle.GetElementHandler();
 
-            if ((test = fabs (range.low.z)) > maxWidth)
-                maxWidth = test;
+            DRange3d    range;
 
-            if ((test = fabs (range.high.z)) > maxWidth)
-                maxWidth = test;
+            if (SUCCESS == handler.CalcElementRange (tmpElHandle, range, &transform))
+                {
+                // only consider the y component of the range for offset
+                if ((test = fabs (range.low.y)) > maxWidth)
+                    maxWidth = test;
+
+                if ((test = fabs (range.high.y)) > maxWidth)
+                    maxWidth = test;
+
+                if ((test = fabs (range.low.z)) > maxWidth)
+                    maxWidth = test;
+
+                if ((test = fabs (range.high.z)) > maxWidth)
+                    maxWidth = test;
+                }
             }
-        }
 
-    return maxWidth;
-#else
-    return 0.0;
+        return maxWidth;
+        }
 #endif
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
 double LsSymbolReference::_GetMaxWidth (DgnModelP dgnModel) const
     {
+#if defined(NOTNOW)
     if (NULL == GetElements())
         return  0.0;
 
@@ -82,6 +80,8 @@ double LsSymbolReference::_GetMaxWidth (DgnModelP dgnModel) const
     double offset   = m_offset.Magnitude ();
 
     return  (offset + maxWidth) * 2.0;
+#endif
+    return 0.0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -331,7 +331,7 @@ void            LsSymbolComponent::_ClearPostProcess ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JimBartlett     08/92
 +---------------+---------------+---------------+---------------+---------------+------*/
-LsSymbolComponent* LsSymbolComponent::LoadPointSym (LsRscReader* reader)
+LsSymbolComponent* LsSymbolComponent::LoadPointSym (LsComponentReader* reader)
     {
     PointSymRsc*    symRsc = (PointSymRsc*) reader->GetRsc();
 
@@ -339,15 +339,17 @@ LsSymbolComponent* LsSymbolComponent::LoadPointSym (LsRscReader* reader)
         return  NULL;
 
     LsSymbolComponent* symbComp = new LsSymbolComponent (reader->GetSource());
-    symbComp->SetDescription (WString(symRsc->header.descr, false).c_str());
+    symbComp->SetDescription (Utf8String(symRsc->header.descr).c_str());
 
     // add to cache
+#if defined(NOTNOW)
     LineStyleCacheManager::CacheAdd (symbComp);
+#endif
 
 #if defined (NEEDS_WORK_DGNITEM)
     if (symRsc->GetSymbolType() == PointSymRsc::ST_Elements)
         {
-        LineStyleUtil::CreateSymbolDscr (symbComp->GetElementsR(), symRsc->symBuf, symRsc->nBytes, (symRsc->symFlags & LSSYM_3D) ? true : false, reader->GetRscType(), reader->GetDgnDb().Models().GetDictionaryModel());
+        LineStyleUtil::CreateSymbolDscr (symbComp->GetElementsR(), symRsc->symBuf, symRsc->nBytes, (symRsc->symFlags & LSSYM_3D) ? true : false, reader->GetComponentType(), reader->GetDgnDb().Models().GetDictionaryModel());
         }
     else
 #endif
@@ -398,18 +400,6 @@ void LsSymbolComponent::FreeGraphics (bool freeDescr, bool freeXGraphics)
 void LsSymbolComponent::AddGraphics (DgnElementPtr& element)
     {
     m_elements.push_back(element);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    10/2012
-//--------------+------------------------------------------------------------------------
-BentleyStatus LsSymbolComponent::AddSymbolGraphicsAsProperty (uint32_t& componentId, DgnDbR project, Byte const*data, size_t size, PointSymRsc::SymbolType symbolType)
-    {
-    PropertySpec spec = PointSymRsc::ST_Elements == symbolType ? LineStyleProperty::SymbolElements () : LineStyleProperty::SymbolXGraphics();
-    GetNextComponentId (componentId, project, spec);
-    project.SaveProperty (spec, data, (uint32_t)size, componentId, 0);
-
-    return BSISUCCESS;
     }
 
 double              LsSymbolComponent::GetStoredUnitScale () const { return m_storedScale; }

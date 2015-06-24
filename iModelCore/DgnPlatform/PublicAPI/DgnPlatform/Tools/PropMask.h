@@ -2,14 +2,14 @@
 |
 |     $Source: PublicAPI/DgnPlatform/Tools/PropMask.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include    <DgnPlatform/DgnPlatform.h>
 #include    <DgnPlatform/Tools/BitMask.h>
 
-BEGIN_BENTLEY_API_NAMESPACE
+BEGIN_BENTLEY_NAMESPACE
 
 /*__BENTLEY_INTERNAL_ONLY__*/
 
@@ -48,4 +48,4 @@ public:
 
 };  // IPropMask
 
-END_BENTLEY_API_NAMESPACE
+END_BENTLEY_NAMESPACE

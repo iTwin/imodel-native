@@ -199,9 +199,9 @@ protected:
     DgnElementMap   m_elements;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
     mutable DgnRangeTreeP m_rangeIndex;
-    mutable bool    m_persistent;   // true of this DgnModel is in the DgnModels "loaded models" list.
+    mutable bool    m_persistent;   // true if this DgnModel is in the DgnModels "loaded models" list.
     bool            m_filled;       // true if the FillModel was called on this DgnModel.
-    bool            m_readonly;     // true if this model is from a read-only file.
+    bool            m_readonly;     // true if this model is from a read-only DgnDb.
 
     explicit DGNPLATFORM_EXPORT DgnModel(CreateParams const&);
     DGNPLATFORM_EXPORT virtual ~DgnModel();
@@ -291,7 +291,6 @@ public:
     DGNPLATFORM_EXPORT BeSQLite::DbResult SaveProperties();
     void AddGraphicsToScene(ViewContextR context) {_AddGraphicsToScene(context);}
 
-    void ClearAllQvElems(); //!< @private
 
     DGNPLATFORM_EXPORT double GetMillimetersPerMaster() const;
     DGNPLATFORM_EXPORT double GetSubPerMaster() const;
@@ -316,7 +315,7 @@ public:
     //! @return the number of elements in this DgnModel.
     //! @note The DgnModel must be filled before calling this method.
     //! @see FillSections
-    uint32_t CountElements() const {return (uint32_t) m_elements.size();}
+    uint32_t CountLoadedElements() const {return (uint32_t) m_elements.size();}
 
     //! Find a DgnElementP in this DgnModel by DgnElementId.
     //! @return DgnElementP of element with \a id, or NULL.
@@ -595,13 +594,14 @@ public:
         private: virtual DgnModel* _CreateInstance(DgnModel::CreateParams const& params) override {return new __classname__(__classname__::CreateParams(params));}\
         DOMAINHANDLER_DECLARE_MEMBERS(__ECClassName__,_handlerclass__,_handlersuperclass__,__exporter__)
 
-
 //=======================================================================================
-// Model Handlers in the base "Dgn" domain. Don't put handlers from other domains here.
+//! @namespace BentleyApi::Dgn::dgn_ModelHandler DgnModel Handlers in the base "Dgn" domain. 
+//! @note Only handlers from the base "Dgn" domain belong in this namespace.
 // @bsiclass                                                    Keith.Bentley   06/15
 //=======================================================================================
 namespace dgn_ModelHandler
 {
+    //! The ModelHandler for DgnModel
     struct EXPORT_VTABLE_ATTRIBUTE Model : DgnDomain::Handler
     {
         DOMAINHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_Model, Model, DgnDomain::Handler, DGNPLATFORM_EXPORT)
@@ -620,31 +620,35 @@ namespace dgn_ModelHandler
         DgnModelPtr Create(DgnModel::CreateParams const& params) {return _CreateInstance(params);}
     };
 
+    //! The ModelHandler for PhysicalModel
     struct EXPORT_VTABLE_ATTRIBUTE Physical : Model
     {
         MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_PhysicalModel, PhysicalModel, Physical, Model, DGNPLATFORM_EXPORT)
     };
 
+    //! The ModelHandler for GraphicsModel2d
     struct EXPORT_VTABLE_ATTRIBUTE Graphics2d : Model
     {
         MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_GraphicsModel2d, GraphicsModel2d, Graphics2d, Model, DGNPLATFORM_EXPORT)
     };
 
+    //! The ModelHandler for PlanarPhysicalModel
     struct EXPORT_VTABLE_ATTRIBUTE PlanarPhysical : Model
     {
         MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_PlanarPhysicalModel, PlanarPhysicalModel, PlanarPhysical, Model, DGNPLATFORM_EXPORT)
     };
 
+    //! The ModelHandler for SectionDrawingModel
     struct EXPORT_VTABLE_ATTRIBUTE SectionDrawing : PlanarPhysical
     {
         MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_SectionDrawingModel, SectionDrawingModel, SectionDrawing, PlanarPhysical, DGNPLATFORM_EXPORT)
     };
 
+    //! The ModelHandler for SheetModel
     struct EXPORT_VTABLE_ATTRIBUTE Sheet : Model
     {
         MODELHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_SheetModel, SheetModel, Sheet, Model, DGNPLATFORM_EXPORT)
     };
 };
-
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

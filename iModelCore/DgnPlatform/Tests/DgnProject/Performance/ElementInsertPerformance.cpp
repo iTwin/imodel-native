@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include <DgnPlatform/DgnPlatformApi.h>
+#include <DgnPlatform/DgnPlatformLib.h>
 #include <Bentley/BeTest.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <ECDb/ECDbApi.h>

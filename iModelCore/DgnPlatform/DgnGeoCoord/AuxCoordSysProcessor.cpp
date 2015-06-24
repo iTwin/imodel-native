@@ -120,7 +120,7 @@ virtual ACSType         _GetType () const override
 virtual WString         _GetTypeName () const override
     {
     WChar buffer[1024];
-    return WString (BaseGeoCoordResource::GetLocalizedStringW (buffer, Bentley::GeoCoordinates::DGNGEOCOORD_Msg_GeoCoordACSType, _countof (buffer)));
+    return WString (BaseGeoCoordResource::GetLocalizedStringW (buffer, BentleyApi::GeoCoordinates::DGNGEOCOORD_Msg_GeoCoordACSType, _countof (buffer)));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -505,7 +505,7 @@ GeoAuxCoordSys const * source
 * This is the class that implements the Geocoordinate User Input/Output interface.
 * @bsiclass                                                     Barry.Bentley   01/07
 +===============+===============+===============+===============+===============+======*/
-class   GeoCoordinateAuxSystemExtender : public DgnPlatform::IAuxCoordSystemExtender
+class   GeoCoordinateAuxSystemExtender : public Dgn::IAuxCoordSystemExtender
 {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   01/07
@@ -1047,7 +1047,7 @@ static DPoint2d     hawaiiRange[] =
 * This class implements an Auxiliary Coordinate System Extender for Military Grid Reference Systems.
 * @bsiclass                                                     Barry.Bentley   06/10
 +===============+===============+===============+===============+===============+======*/
-class   MilitaryGridAuxCoordSysExtender : public Bentley::DgnPlatform::IAuxCoordSystemExtender
+class   MilitaryGridAuxCoordSysExtender : public BentleyApi::Dgn::IAuxCoordSystemExtender
 {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   06/10
@@ -1242,6 +1242,6 @@ END_UNNAMED_NAMESPACE
 void            DgnGeoCoordinationAdmin::AddAuxCoordSystemProcessor (IACSManagerR mgr) const
     {
     // this is called only once because of the 'Admin' contract.
-    mgr.AddExtender (new Bentley::GeoCoordinates::GeoCoordinateAuxSystemExtender());
-    mgr.AddExtender (new Bentley::GeoCoordinates::MilitaryGridAuxCoordSysExtender());
+    mgr.AddExtender (new BentleyApi::GeoCoordinates::GeoCoordinateAuxSystemExtender());
+    mgr.AddExtender (new BentleyApi::GeoCoordinates::MilitaryGridAuxCoordSysExtender());
     }

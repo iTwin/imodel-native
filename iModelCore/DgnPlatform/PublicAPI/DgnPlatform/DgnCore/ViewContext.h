@@ -31,9 +31,6 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 /** @beginGroup */
 
-//=======================================================================================
-//! @bsiclass
-//=======================================================================================
 enum FilterLODFlags
 {
     FILTER_LOD_Off          = 0,        //!< don't do Level-of-detail filtering at all
@@ -127,7 +124,6 @@ struct  ILineStyle
 //! A DisplaySymbol is a set of graphics that is cached once and can then be redrawn 
 //! many times at different locations/sizes/clipping/symbology.
 //! @note DisplaySymbol are drawn via IDrawGeom::DrawSymbol.
-//! @bsiclass
 //=======================================================================================
 struct     IDisplaySymbol
 {
@@ -137,7 +133,7 @@ struct     IDisplaySymbol
 };
 
 //=======================================================================================
-//! @bsiclass
+// @bsiclass
 //=======================================================================================
 struct IRangeNodeCheck
 {
@@ -192,7 +188,7 @@ public:
 };
 
 //=======================================================================================
-//! @bsiclass                                                     KeithBentley    04/01
+// @bsiclass                                                     KeithBentley    04/01
 //=======================================================================================
 struct ViewContext : NonCopyableClass, ICheckStop, IRangeNodeCheck
 {
@@ -209,7 +205,7 @@ public:
     };
 
     //=======================================================================================
-    //! @bsiclass                                                     Stephane.Poulin    11/11
+    // @bsiclass                                                     Stephane.Poulin    11/11
     //=======================================================================================
     struct RasterDisplayParams
         {
@@ -264,7 +260,7 @@ public:
         };
 
     //=======================================================================================
-    //! @bsiclass                                                     KeithBentley    04/01
+    // @bsiclass                                                     KeithBentley    04/01
     //=======================================================================================
     struct  ContextMark
         {
@@ -292,7 +288,7 @@ public:
     friend struct ContextMark;
 
     //=======================================================================================
-    //! @bsiclass                                                     Brien.Bastings  11/07
+    // @bsiclass                                                     Brien.Bastings  11/07
     //=======================================================================================
     struct  ClipStencil
         {
@@ -318,8 +314,8 @@ public:
         AlignmentMode_Billboard              = 3,
         };
 
-   //=======================================================================================
-    //! @bsiclass                                                     Ray.Bentley     10/12
+    //=======================================================================================
+    // @bsiclass                                                     Ray.Bentley     10/12
     //=======================================================================================
     struct IStrokeAligned 
         {
@@ -941,7 +937,7 @@ DGNPLATFORM_EXPORT bool CheckStop ();
 //__PUBLISH_SECTION_END__
 //=======================================================================================
 //! Encapsulates all possible factors that could affect the display of an annotation element.
-//! @bsiclass                                                     Sam.Wilson      03/2008
+// @bsiclass                                                     Sam.Wilson      03/2008
 //=======================================================================================
 struct          AnnotationDisplayParameters
 {

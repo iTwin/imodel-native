@@ -1012,44 +1012,44 @@ DgnElements::DgnElements(DgnDbR dgndb) : DgnDbTable(dgndb), m_heapZone(0, false)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* A changeset was just applied to the database. That means that the element data in memory potentially does not match
-* what is now in the database. We need to find any elements in memory that were affected by the changeset and fix them.
-* Note that it is entirely possible that some elements in the changeset are not currently in memory. That's fine, we
-* don't need to worry about them - they'll be reloaded with the correct data if/when they're needed.
-* @bsimethod                                    Keith.Bentley                   07/13
+* @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::Element::_OnChangesetApplied(TxnSummary& summary)
+void dgn_TxnTable::Element::_OnReversedDelete(BeSQLite::Changes::Change const& change)
     {
-    DgnElements& elements = summary.GetDgnDb().Elements();
+    DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::New).GetValueInt64());
 
-    for (auto const& iter : MakeIterator())
+    // We need to load this element, since filled models need to register it 
+    DgnElementCPtr el = m_txnMgr.GetDgnDb().Elements().GetElement(elementId);
+    BeAssert (el.IsValid());
+    el->_OnInserted(nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::Element::_OnReversedAdd(BeSQLite::Changes::Change const& change)
+    {
+    DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::Old).GetValueInt64());
+
+    // see if we have this element in memory, if so call its _OnDelete method.
+    DgnElementP el = (DgnElementP) m_txnMgr.GetDgnDb().Elements().FindElement(elementId);
+    if (el)
+        el->_OnDeleted();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::Element::_OnReversedUpdate(BeSQLite::Changes::Change const& change) 
+    {
+    auto& elements = m_txnMgr.GetDgnDb().Elements();
+    DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::Old).GetValueInt64());
+    DgnElementP el = (DgnElementP) elements.FindElement(elementId);
+    if (el)
         {
-        switch (iter.GetChangeType())
-            {
-            case TxnSummary::ChangeType::Insert: // for inserts, we don't need to do anything
-                break;
-
-            case TxnSummary::ChangeType::Delete:
-                {
-                // see if we have this element in memory, if so call its _OnDelete method.
-                DgnElementP el = (DgnElementP) elements.FindElement(iter.GetElementId());
-                if (el)
-                    el->_OnDeleted();
-                }
-                break;
-
-            case TxnSummary::ChangeType::Update:
-                {
-                DgnElementP el = (DgnElementP) elements.FindElement(iter.GetElementId());
-                if (el)
-                    {
-                    DgnElementCPtr postModified = elements.LoadElement(el->GetElementId(), false);
-                    BeAssert(postModified.IsValid());
-                    elements.FinishUpdate(*postModified.get(), *el);
-                    }
-                }
-                break;
-            }
+        DgnElementCPtr postModified = elements.LoadElement(el->GetElementId(), false);
+        BeAssert(postModified.IsValid());
+        elements.FinishUpdate(*postModified.get(), *el);
         }
     }
 

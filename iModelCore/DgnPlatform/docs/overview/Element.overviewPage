@@ -58,23 +58,23 @@ Some of the most common element classes are described below:
 <p>
 <table border="1">
     <tr>
-        <td><a href="structBentleyApi_1_1DgnPlatform_1_1DgnElement.html">DgnElement</a></td>
+        <td><a href="structBentleyApi_1_1Dgn_1_1DgnElement.html">DgnElement</a></td>
         <td>The base class for all elements.</td>
     </tr>
     <tr>
-        <td><a href="structBentleyApi_1_1DgnPlatform_1_1GeometricElement.html">GeometricElement</a></td>
+        <td><a href="structBentleyApi_1_1Dgn_1_1GeometricElement.html">GeometricElement</a></td>
         <td>The base class for all elements that potentially have geometry.</td>
     </tr>
     <tr>
-        <td><a href="structBentleyApi_1_1DgnPlatform_1_1PhysicalElement.html">PhysicalElement</a></td>
+        <td><a href="structBentleyApi_1_1Dgn_1_1PhysicalElement.html">PhysicalElement</a></td>
         <td>The base class for all 3D physical elements (modeled real-world objects contained in a PhysicalModel).</td>
     </tr>
     <tr>
-        <td><a href="structBentleyApi_1_1DgnPlatform_1_1DrawingElement.html">DrawingElement</a></td>
+        <td><a href="structBentleyApi_1_1Dgn_1_1DrawingElement.html">DrawingElement</a></td>
         <td>The base class for all 2D drawing elements.</td>
     </tr>
     <tr>
-        <td><a href="structBentleyApi_1_1DgnPlatform_1_1ElementGroup.html">ElementGroup</a></td>
+        <td><a href="structBentleyApi_1_1Dgn_1_1ElementGroup.html">ElementGroup</a></td>
         <td>The base class for logical groups that reference, but do not own, their member elements.</td>
     </tr>
 </table>

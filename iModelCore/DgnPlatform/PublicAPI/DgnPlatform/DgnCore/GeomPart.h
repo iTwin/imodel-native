@@ -14,7 +14,10 @@
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //=======================================================================================
-//! Geometry parts represent shared geometry.
+//! A DgnGeomPart stores geometry that can be shared between multiple elements.
+//! Use the ElementGeometryBuilder to create the shared geometry.
+//! @see DgnGeomParts
+//! @ingroup ElementGeometryGroup
 // @bsiclass                                                BentleySystems
 //=======================================================================================
 struct DgnGeomPart : RefCountedBase
@@ -34,6 +37,8 @@ private:
     void SetCode(Utf8CP code) {m_code.AssignOrClear(code);}
     
 public:
+    //! Create a DgnGeomPart
+    //! @see DgnGeomParts::InsertGeomPart
     DGNPLATFORM_EXPORT static DgnGeomPartPtr Create(Utf8CP code=NULL);
 
     //! Get the persistent Id of this DgnGeomPart.

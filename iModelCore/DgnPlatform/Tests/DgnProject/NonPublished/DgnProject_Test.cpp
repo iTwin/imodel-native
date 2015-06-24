@@ -13,34 +13,6 @@
 USING_NAMESPACE_BENTLEY_SQLITE 
 
 //=======================================================================================
-// @bsiclass                                                    Majd.Uddin   04/12
-//=======================================================================================
-struct TestModelProperties
-    {
-    public:
-        DgnModelId      tmId;
-        WString         tmName;
-        WString         tmDescription;
-        bool            tmIs3d;
-        DgnModelType    tmModelType;
-
-        void SetTestModelProperties (WString Name, WString Desc, bool is3D, DgnModelType modType)
-            {
-            tmName = Name;
-            tmDescription = Desc;
-            tmIs3d = is3D;
-            tmModelType = modType;
-            };
-        void IsEqual (TestModelProperties Model)
-            {
-            EXPECT_STREQ (tmName.c_str(), Model.tmName.c_str()) << "Names don't match";
-            EXPECT_STREQ (tmDescription.c_str(), Model.tmDescription.c_str()) << "Descriptions don't match";
-            EXPECT_TRUE (tmIs3d == Model.tmIs3d) << "3dness doesn't match";
-            EXPECT_TRUE (tmModelType == Model.tmModelType) << "Model Types don't match";
-            };
-    };
-
-//=======================================================================================
 // @bsiclass                                                    Keith.Bentley   05/11
 //=======================================================================================
 struct StepTimer
@@ -178,41 +150,6 @@ TEST(DgnDb, ProjectSchemaVersions)
     ASSERT_EQ (DGNDB_CURRENT_VERSION_Sub2, schemaVer.GetSub2()) << "The Schema Sub2 Version is: " << schemaVer.GetSub2();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* Getting the list of Dgn Models in a project and see if they work
-* @bsimethod                                    Majd.Uddin                   04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST(DgnDb, WorkWithDgnModelTable)
-    {
-    ScopedDgnHost autoDgnHost;
-
-    DgnDbTestDgnManager tdm (L"ElementsSymbologyByLevel.idgndb", __FILE__, Db::OPEN_Readonly);
-    DgnDbP project = tdm.GetDgnProjectP();
-    //*** Issue while using demo.dgn on Merging models. using another file instead that has 2 models.
-    ASSERT_TRUE( project != NULL);
-
-    //Iterating through the models
-    DgnModels& modelTable = project->Models();
-    DgnModels::Iterator iter = modelTable.MakeIterator();
-    ASSERT_EQ (1, iter.QueryCount());
-
-    //Set up testmodel properties as we know what the models in this file contain
-    TestModelProperties models[4], testModel;
-    models[0].SetTestModelProperties (L"Default", L"Master Model", true, DgnModelType::Physical);
-
-    //Iterate through the model and verify it's contents. TODO: Add more checks
-    int i = 0;
-    for (DgnModels::Iterator::Entry const& entry : iter)
-        {
-        ASSERT_TRUE (entry.GetModelId().IsValid()) << "Model Id is not Valid";
-        WString entryNameW (entry.GetName(), true);               // string conversion
-        WString entryDescriptionW (entry.GetDescription(), true); // string conversion
-        testModel.SetTestModelProperties (entryNameW.c_str(), entryDescriptionW.c_str(), entry.Is3d(), entry.GetModelType());
-        testModel.IsEqual (models[i]);
-        i++;
-        }
-    }
-
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   06/14
 //=======================================================================================
@@ -225,29 +162,6 @@ struct CategoryTestData
     };
 
 static DgnSubCategoryId facetId1, facetId2;
-
-/*---------------------------------------------------------------------------------**//**
-* Load a Model directly
-* @bsimethod                                    Majd.Uddin                   04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST(DgnDb, LoadModelThroughProject)
-    {
-    ScopedDgnHost autoDgnHost;
-    DgnDbTestDgnManager tdm (L"ElementsSymbologyByLevel.idgndb", __FILE__, Db::OPEN_Readonly, TestDgnManager::DGNINITIALIZEMODE_None);
-    DgnDbP project = tdm.GetDgnProjectP();
-    ASSERT_TRUE( project != NULL);
-
-    //Load a Model directly. First get the ModelId
-    DgnModels& modelTable = project->Models();
-    DgnModelId modelId = modelTable.QueryModelId("Default");
-    ASSERT_TRUE (modelId.IsValid());
-
-    DgnModelP model = project->Models().GetModel (modelId);
-    ASSERT_TRUE (NULL != model);
-
-    //Just one more check to see that we got the right model
-    EXPECT_STREQ ("Default", model->GetModelName());
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * Creating a project with Duplicate name
@@ -508,7 +422,7 @@ struct DgnProjectPackageTest : public testing::Test
                 {
                 DgnModelP model = project->Models().GetModel(entry.GetModelId());
                 model->FillModel();
-                properties.elmCount += model->CountElements();
+                properties.elmCount += model->CountLoadedElements();
                 properties.modelCount++;
                 }
             properties.viewCount = project->Views().MakeIterator().QueryCount();

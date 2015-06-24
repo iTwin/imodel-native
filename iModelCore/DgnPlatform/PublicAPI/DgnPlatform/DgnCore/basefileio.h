@@ -11,10 +11,10 @@
 #include <Geom/msgeomstructs.hpp>
 #include <DgnPlatform/DgnCore/DgnFileIO.h>
 
-BEGIN_BENTLEY_API_NAMESPACE
+BEGIN_BENTLEY_NAMESPACE
 
 //=======================================================================================
-//! @bsiclass                                                     Ray.Bentley   10/05
+// @bsiclass                                                     Ray.Bentley   10/05
 //=======================================================================================
 struct BaseFileType : DgnFileType
 {
@@ -29,7 +29,7 @@ struct BaseFileType : DgnFileType
 };
 
 //=======================================================================================
-//! @bsiclass                                                     RayBentley  01/05
+// @bsiclass                                                     RayBentley  01/05
 //=======================================================================================
 class BaseFileIO : public DgnFileIO
 {
@@ -75,7 +75,7 @@ protected:
 };
 
 //=======================================================================================
-//! @bsiclass                                                     RayBentley  01/05
+// @bsiclass                                                     RayBentley  01/05
 //=======================================================================================
 class BaseModelReader : public DgnModelReader
 {
@@ -102,4 +102,4 @@ protected:
     DRange3d                    m_range;
 };
 
-END_BENTLEY_API_NAMESPACE
+END_BENTLEY_NAMESPACE
