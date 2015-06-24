@@ -825,7 +825,6 @@ enum OvrMatSymbFlags //! flags to indicate the parts of a MatSymb that are to be
     MATSYMB_OVERRIDE_TrueWidth              = (1<<6),   //!< override true width
     MATSYMB_OVERRIDE_ExtSymb                = (1<<7),   //!< override extended symbology
     MATSYMB_OVERRIDE_RenderMaterial         = (1<<8),   //!< override render material
-    MATSYMB_OVERRIDE_PatternParams          = (1<<9),   //!< override (area) pattern params.
     // The proxy flags are informational but do not effect the display.
     MATSYMB_OVERRIDE_IsProxy                = (1<<16),   //!< is proxy              
     MATSYMB_OVERRIDE_IsProxyHidden          = (1<<17),   //!< is proxy edge
@@ -875,7 +874,7 @@ public:
     void SetRasterPattern (uint32_t rasterPat) {m_matSymb.SetRasterPattern (rasterPat); m_flags |= MATSYMB_OVERRIDE_Style; m_matSymb.GetLineStyleSymbR().SetLineStyle(NULL);}
     void SetIndexedRasterPattern (int32_t index, uint32_t rasterPat) {m_matSymb.SetIndexedRasterPattern (index, rasterPat); m_flags |= MATSYMB_OVERRIDE_Style; m_matSymb.GetLineStyleSymbR().SetLineStyle (NULL);}
     void SetMaterial (MaterialCP material, ViewContextP seedContext=NULL) {m_matSymb.SetMaterial (material, seedContext); m_flags |= MATSYMB_OVERRIDE_RenderMaterial;}
-    void SetPatternParams (PatternParamsP patternParams) {m_matSymb.SetPatternParams(patternParams); m_flags |= MATSYMB_OVERRIDE_PatternParams;}
+    void SetPatternParams (PatternParamsP patternParams) {m_matSymb.SetPatternParams(patternParams);}
     void SetProxy (bool edge, bool hidden) {m_flags |= (MATSYMB_OVERRIDE_IsProxy | (edge ? MATSYMB_OVERRIDE_IsProxyEdge : 0) | (hidden ? MATSYMB_OVERRIDE_IsProxyHidden: 0)); }
     bool GetProxy (bool& edge, bool& hidden) {edge = 0 != (m_flags & MATSYMB_OVERRIDE_IsProxyEdge); hidden = 0 != (m_flags & MATSYMB_OVERRIDE_IsProxyHidden); return 0 != (m_flags & MATSYMB_OVERRIDE_IsProxy); }
     void SetUnderlay () { m_flags |= MATSYMB_OVERRIDE_IsProxyUnderlay; }

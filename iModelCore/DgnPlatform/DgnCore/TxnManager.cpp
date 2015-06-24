@@ -414,7 +414,8 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
     {
     DeleteReversedTxns(); // these Txns are no longer reachable.
 
-// unused    TxnId startPos = GetCurrTxnId(); // in case we have to roll back
+    TxnId startPos = GetCurrTxnId(); // in case we have to roll back
+    UNUSED_VARIABLE(startPos);
 
     // Create changeset from modified tables. We'll use this changeset to drive indirect changes.
     UndoChangeSet changeset;
