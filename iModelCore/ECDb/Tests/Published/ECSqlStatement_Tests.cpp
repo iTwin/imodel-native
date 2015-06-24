@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlTestFixture.h"
+#include <cmath>
 
 USING_NAMESPACE_BENTLEY_EC
 
