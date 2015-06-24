@@ -1300,27 +1300,25 @@ public:
 //=======================================================================================
 struct ECRelationshipConstraintClass : NonCopyableClass
     {
-    //__PUBLISH_SECTION_END__
-    private:
-        std::vector<WString> m_keys;
-        ECClassCP m_ecClass;
-    //__PUBLISH_SECTION_START__
+private:
+    bvector<WString> m_keys;
+    ECClassCP m_ecClass;
 
-    public:
-        //! Constructor of ECRelationshipConstraintClass require ECClass name.
-        //! @param ecClass is name of Constraint class.
-        ECRelationshipConstraintClass(ECClassCR ecClass);
+public:
+#ifndef DOCUMENTATION_GENERATOR 
+    explicit ECRelationshipConstraintClass(ECClassCR ecClass);
+#endif
 
-        //! Move constructor of ECRelationshipConstraintClass.
-        ECRelationshipConstraintClass(ECRelationshipConstraintClass const && rhs);
-        //! Move assignment operator of ECRelationshipConstraintClass.
-        const ECRelationshipConstraintClass & operator = (ECRelationshipConstraintClass const && rhs);
-        //! Returns reference of current Constraint ECClass
-        ECOBJECTS_EXPORT ECClassCR GetClass() const;
-        //! Returns vector of Contraint ECClass keys
-        ECOBJECTS_EXPORT const std::vector<WString>& GetKeys() const;
-        //! Adds constraint key if it is already not in list.
-        ECOBJECTS_EXPORT void AddKey(WCharCP key);
+    ECRelationshipConstraintClass(ECRelationshipConstraintClass&& rhs);
+    ECRelationshipConstraintClass& operator= (ECRelationshipConstraintClass&& rhs);
+    
+    //! Gets the constraint's ECClass
+    ECClassCR GetClass() const { return *m_ecClass; }
+    //! Gets the constraint's key property names
+    bvector<WString> const& GetKeys() const { return m_keys; }
+    //! Adds name of key property.
+    //! @param[in] keyPropertyName Name of key property to add
+    ECOBJECTS_EXPORT void AddKey(WCharCP keyPropertyName);
     };
 //=======================================================================================
 //! This class holds the list of source or target Constraint on ECRelationships
