@@ -167,6 +167,9 @@ public:
     ECTypeDescriptor (ValueKind valueKind, short valueKindQualifier) : m_typeKind (valueKind), m_primitiveType ((PrimitiveType)valueKindQualifier) { };
 /*__PUBLISH_SECTION_START__*/
 
+    bool operator==(ECTypeDescriptor const& rhs) const { return m_typeKind == rhs.m_typeKind && m_primitiveType == rhs.m_primitiveType; }
+    bool operator!=(ECTypeDescriptor const& rhs) const { return !(*this == rhs); }
+
     //! Returns the ValueKind of the ECProperty
     inline ValueKind            GetTypeKind() const         { return m_typeKind; }
     //! Returns the ArrayKind of the ECProperty, if the ECProperty is an array property
