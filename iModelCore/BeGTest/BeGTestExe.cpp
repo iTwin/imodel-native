@@ -30,17 +30,19 @@ static BentleyStatus getFileNameFromEnv (BeFileName& fn, CharCP envname)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson
 +---------------+---------------+---------------+---------------+---------------+------*/
-static WCharCP getPlatform (BeFileName const& progPath)
+static WCharCP getPlatform (BeFileName const& progPathIn)
     {
-    if (progPath.find (L"Winx86") != WString::npos)
+    BeFileName progPath(progPathIn);
+    progPath.ToLower();
+    if (progPath.find (L"winx86") != WString::npos)
         return L"Winx86";
-    if (progPath.find (L"Winx64") != WString::npos)
+    if (progPath.find (L"winx64") != WString::npos)
         return L"Winx64";
-    if (progPath.find (L"LinuxX86") != WString::npos)
+    if (progPath.find (L"linuxx86") != WString::npos)
         return L"LinuxX86";
-    if (progPath.find (L"LinuxX64") != WString::npos)
+    if (progPath.find (L"linuxx64") != WString::npos)
         return L"LinuxX64";
-    if (progPath.find (L"MacOSX64") != WString::npos)
+    if (progPath.find (L"macosx64") != WString::npos)
         return L"MacOSX64";
 
     printf ("%s\n", Utf8String(progPath).c_str());    
