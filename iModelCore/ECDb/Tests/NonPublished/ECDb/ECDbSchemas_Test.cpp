@@ -2909,7 +2909,7 @@ TEST(ECDbSchemas, CheckClassHasCurrentTimeStamp)
     ASSERT_EQ(ECSqlStatus::Success, stat);
 
     ASSERT_EQ(ECSqlStatus::Success, stat);
-    Bentley::DateTime dateTime1;
+    BentleyApi::DateTime dateTime1;
     ASSERT_TRUE(statement.Step() == ECSqlStepStatus::HasRow);
         {
         ASSERT_FALSE(statement.IsValueNull(0));
@@ -2923,7 +2923,7 @@ TEST(ECDbSchemas, CheckClassHasCurrentTimeStamp)
     ecsql = "SELECT DateTimeProperty FROM ";
     ecsql.append(ECSqlBuilder::ToECSqlSnippet(*ecClass));
 
-    Bentley::DateTime dateTime2;
+    BentleyApi::DateTime dateTime2;
     ECSqlStatement statement2;
     stat = statement2.Prepare(db, ecsql.c_str());
     BeThreadUtilities::BeSleep(100); // make sure the time is different by more than the resolution of the timestamp

@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/ECDB/Published/ECSqlCrudAsserter.h $
+|     $Source: Tests/Published/ECSqlCrudAsserter.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -32,7 +32,7 @@ protected:
     #define DISABLE_BEASSERTS DisableBeAsserts disableBeAsserts;
 
 private:
-    static Bentley::NativeLogging::ILogger* s_logger;
+    static BentleyApi::NativeLogging::ILogger* s_logger;
 
     ECDbTestProject& m_testProject;
 
@@ -40,7 +40,7 @@ private:
     virtual Utf8CP _GetTargetOperationName () const = 0;
 
     void LogECSqlSupport (ECSqlTestItem const& testItem, Utf8CP statementErrorMessage) const;
-    static Bentley::NativeLogging::ILogger& GetLogger ();
+    static BentleyApi::NativeLogging::ILogger& GetLogger ();
 
 protected:
 

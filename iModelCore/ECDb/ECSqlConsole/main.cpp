@@ -26,7 +26,7 @@ void ECSqlConsoleBeAssertHandler (wchar_t const* message, wchar_t const* file, u
     errorMessage.Sprintf (L"ASSERTION FAILURE: %ls (%ls:%d)\n", message, file, line);
     Utf8String errorMessageUtf8 (errorMessage.c_str ());
 
-    Bentley::NativeLogging::LoggingManager::GetLogger (L"BeAssert")->errorv (errorMessage.c_str ());
+    BentleyApi::NativeLogging::LoggingManager::GetLogger (L"BeAssert")->errorv (errorMessage.c_str ());
     Console::WriteErrorLine (errorMessageUtf8.c_str ());
     }
 
