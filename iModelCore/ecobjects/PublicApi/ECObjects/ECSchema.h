@@ -1309,7 +1309,7 @@ public:
     //! Gets the constraint's ECClass
     ECClassCR GetClass() const { return *m_ecClass; }
     //! Gets the constraint's key property names
-    const bvector<WString>& GetKeys() const { return m_keys; }
+    bvector<WString> const& GetKeys() const { return m_keys; }
     //! Adds name of key property.
     //! @param[in] keyPropertyName Name of key property to add
     ECOBJECTS_EXPORT void AddKey(WCharCP keyPropertyName);
