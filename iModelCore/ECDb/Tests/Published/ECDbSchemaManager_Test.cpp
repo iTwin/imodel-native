@@ -839,6 +839,72 @@ TEST(ECDbMap, ForeignKeyMapWithKeyProperty)
     ECDb ecdb;
     CreateECDbAndImportSchema(ecdb, ecdbName, testSchemaXml, false, "ForeignKeyColumn should not be specified if Key property is defined.");
     }
+
+    {
+    Utf8CP testSchemaXml =
+        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
+        "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
+        "  <ECClass typeName='Parent' >"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECClass>"
+        "  <ECClass typeName='Child' >"
+        "    <ECProperty propertyName='ParentId' typeName='long' />"
+        "    <ECProperty propertyName='ChildName' typeName='string' />"
+        "  </ECClass>"
+        "  <ECClass typeName='Child2' >"
+        "    <ECProperty propertyName='ParentId' typeName='long' />"
+        "    <ECProperty propertyName='ChildName' typeName='string' />"
+        "  </ECClass>"
+        "  <ECRelationshipClass typeName='ParentHasChildren' isDomainClass='True' strength='referencing'>"
+        "    <Source cardinality='(1,1)' polymorphic='True'>"
+        "      <Class class = 'Parent' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class = 'Child' >"
+        "           <Key>"
+        "              <Property name='ParentId'/>"
+        "           </Key>"
+        "      </Class>"
+        "      <Class class = 'Child2' />"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>";
+
+    ECDb ecdb;
+    CreateECDbAndImportSchema(ecdb, ecdbName, testSchemaXml, false, "Only one constraint class supported by ECDb if key properties are defined.");
+    }
+
+    {
+    Utf8CP testSchemaXml =
+        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
+        "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
+        "  <ECClass typeName='Parent' >"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECClass>"
+        "  <ECClass typeName='Child' >"
+        "    <ECProperty propertyName='ParentId' typeName='long' />"
+        "    <ECProperty propertyName='ChildName' typeName='string' />"
+        "  </ECClass>"
+        "  <ECRelationshipClass typeName='ParentHasChildren' isDomainClass='True' strength='referencing'>"
+        "    <Source cardinality='(1,1)' polymorphic='True'>"
+        "      <Class class = 'Parent' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class = 'Child' >"
+        "           <Key>"
+        "              <Property name='ParentId'/>"
+        "              <Property name='ChildName'/>"
+        "           </Key>"
+        "      </Class>"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>";
+
+    ECDb ecdb;
+    CreateECDbAndImportSchema(ecdb, ecdbName, testSchemaXml, false, "Only one key property is supported by ECDb.");
+        }
     }
 
 //---------------------------------------------------------------------------------------

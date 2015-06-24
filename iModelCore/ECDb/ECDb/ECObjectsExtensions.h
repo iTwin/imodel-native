@@ -23,10 +23,12 @@ private:
     uint32_t m_minOccurs;
     uint32_t m_maxOccurs;
 
+    bool DateTimeInfoMatches(DateTime::Kind const* rhsKind, DateTime::Component const* rhsComponent) const;
     void CreateTypeDescriptor(bool isArray, ECN::PrimitiveType const* primitiveType);
     void DetermineTypeInfo(ECN::ECPropertyCR ecProperty);
 
 public:
+    ECTypeInfo() : m_structType(nullptr), m_minOccurs(0), m_maxOccurs(0) {}
     explicit ECTypeInfo(ECN::PrimitiveType primitiveType, ECN::DateTimeInfo const* dateTimeInfo = nullptr);
     ECTypeInfo(ECN::PrimitiveType primitiveType, uint32_t minOccurs, uint32_t maxOccurs, ECN::DateTimeInfo const* dateTimeInfo = nullptr);
     explicit ECTypeInfo(ECN::ECClassCR structType);
@@ -58,9 +60,28 @@ public:
     bool IsGeometry() const { return IsPrimitive() && GetPrimitiveType() == ECN::PRIMITIVETYPE_IGeometry; }
     ECN::DateTimeInfo const& GetDateTimeInfo() const { return m_dateTimeInfo; }
 
+    //! Checks whether @p rhs matches the DateTimeInfo of this object.
+    //! @remarks This is how matching is defined:
+    //!         * if one of the sides is a date-only (DateTime::Component::Date). In this
+    //!            case the time component of the date-only is interpreted as midnight and it uses the same date time kind.
+    //!         * if kind / component of one side is null, the kind / component matches.
+    //!         * if kind / component is not null on both sides, they match if they are equal
+    //!         @e Examples:
+    //!         * Dt(Kind::Utc) op Dt(KindIsNull) -> matches
+    //!         * Dt(Kind::Utc) op Dt(Kind::Unspecified) -> no match
+    //!         * Dt(Kind::Unspecified) op Dt(KindIsNull) -> matches
+    //!         * Dt(Component::Date) op Dt(any kind) -> matches
+    //!
+    //! @param[in] rhs DateTimeInfo object to check against this object
+    //! @return true if DateTimeInfo matches. false otherwise
+    bool DateTimeInfoMatches(ECN::DateTimeInfo const& rhs) const;
+    bool DateTimeInfoMatches(DateTime::Info const* rhs) const;
+
     ECN::ECClassCR GetStructType() const { BeAssert(IsStruct()); return *m_structType; }
 
     ECN::ArrayKind GetArrayKind() const { BeAssert(IsArray()); return m_typeDescriptor.GetArrayKind(); }
+    bool IsStructArray() const { return GetArrayKind() == ECN::ARRAYKIND_Struct; }
+    bool IsPrimitiveArray() const { return GetArrayKind() == ECN::ARRAYKIND_Primitive; }
     uint32_t GetArrayMinOccurs() const { BeAssert(IsArray()); return m_minOccurs; }
     uint32_t GetArrayMaxOccurs() const { BeAssert(IsArray()); return m_maxOccurs; }
     };

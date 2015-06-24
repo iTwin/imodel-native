@@ -815,7 +815,7 @@ void LogKeyPropertyRetrievalError(WCharCP errorDetails, ECRelationshipClassCR re
     {
     const NativeLogging::SEVERITY sev = NativeLogging::LOG_ERROR;
     if (LOG.isSeverityEnabled(sev))
-        LOG.messagev(sev, L"Key properties on %ls constraint in ECRelationshipClass '%ls' ignored: %ls",
+        LOG.messagev(sev, L"Invalid Key property on %ls constraint in ECRelationshipClass '%ls': %ls",
                constraintEnd == ECRelationshipEnd_Source ? L"source" : L"target", relClass.GetFullName(), errorDetails);
     }
 
