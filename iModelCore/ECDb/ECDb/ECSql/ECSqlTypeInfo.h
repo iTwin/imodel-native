@@ -38,7 +38,7 @@ private:
 
     void DetermineTypeInfo (ECN::ECPropertyCR ecProperty);
 
-    void Populate (bool isArray, ECN::PrimitiveType const* primitiveType, ECN::ECClassCP structType, uint32_t minOccurs, uint32_t maxOccurs, DateTimeInfo const* dateTimeInfo);
+    void Populate (bool isArray, ECN::PrimitiveType const* primitiveType, ECN::ECClassCP structType, uint32_t minOccurs, uint32_t maxOccurs, ECN::DateTimeInfo const* dateTimeInfo);
 
     bool DateTimeInfoMatches (DateTime::Kind const* rhsKind, DateTime::Component const* rhsComponent) const;
 

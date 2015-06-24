@@ -37,6 +37,7 @@
     <ClCompile Include="ECInstanceSerializer.cpp" />
     <ClCompile Include="ECDbProfileManager.cpp" />
     <ClCompile Include="ECDbProfileUpgrader.cpp" />
+    <ClCompile Include="ECObjectsExtensions.cpp" />
     <ClCompile Include="ECSchemaComparers.cpp" />
     <ClCompile Include="ECDbSchemaWriter.cpp" />
     <ClCompile Include="ECDbSchemaReader.cpp" />
@@ -128,9 +129,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\PublicAPI\ECDb\ECDb.h" />
-    <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECDbSchemaManager.h" />
-    <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECDbTypes.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECInstanceAdapter.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECInstanceId.h" />
@@ -143,7 +142,7 @@
     <ClInclude Include="..\PublicAPI\ECDb\IECSqlValue.h" />
     <ClInclude Include="..\PublicAPI\ECDb\IECSqlBinder.h" />
     <ClInclude Include="..\PublicAPI\ECDb\JsonAdapter.h" />
-    <ClInclude Include="..\PublicAPI\ECDb\BeRepositoryBasedIdSequence.h" />
+    <ClInclude Include="BeRepositoryBasedIdSequence.h" />
     <ClInclude Include="ClassMap.h" />
     <ClInclude Include="ClassMapFactory.h" />
     <ClInclude Include="ClassMapInfo.h" />
