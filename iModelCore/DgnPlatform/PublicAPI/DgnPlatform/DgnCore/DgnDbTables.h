@@ -606,6 +606,11 @@ public:
     //! Change the contents of an existing view in the database.
     DGNPLATFORM_EXPORT BeSQLite::DbResult Update(View const&);
 
+    //! Generate a view name that is not currently in use in this file
+    //! @param[in]  baseName base view name to start with (optional)
+    //! @return unique name that was generated
+    DGNPLATFORM_EXPORT Utf8String GetUniqueViewName(Utf8CP baseName);
+
     //! Get the DgnViewId for a view, by name
     DGNPLATFORM_EXPORT DgnViewId QueryViewId(Utf8CP viewName) const;
 

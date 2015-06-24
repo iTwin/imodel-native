@@ -91,6 +91,38 @@ DgnViews::View DgnViews::QueryView(DgnViewId id) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/13
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String DgnViews::GetUniqueViewName(Utf8CP baseName)
+    {
+    Utf8String tmpStr(baseName);
+
+    if (!tmpStr.empty() && !m_dgndb.Views().QueryViewId(tmpStr.c_str()).IsValid())
+        return tmpStr;
+
+    bool addDash = !tmpStr.empty();
+    int index = 0;
+    size_t lastDash = tmpStr.find_last_of('-');
+    if (lastDash != Utf8String::npos)
+        {
+        if (BE_STRING_UTILITIES_UTF8_SSCANF(&tmpStr[lastDash], "-%d", &index) == 1)
+            addDash = false;
+        else
+            index = 0;
+        }
+
+    Utf8String uniqueViewName;
+    do  {
+        uniqueViewName.assign(tmpStr);
+        if (addDash)
+            uniqueViewName.append("-");
+        uniqueViewName.append(Utf8PrintfString("%d", ++index));
+        } while (m_dgndb.Views().QueryViewId(uniqueViewName.c_str()).IsValid());
+
+    return uniqueViewName;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnViewId DgnViews::QueryViewId(Utf8CP viewName) const
