@@ -2221,7 +2221,8 @@ TEST_F (TransactionManagerTests, ModelDeleteReverse)
     ASSERT_TRUE (model1 != nullptr);
     EXPECT_TRUE (m_db->Models ().QueryModelId ("model1").IsValid ());
 
-    model1->Delete ();
+    DgnDbStatus modelStatus = model1->Delete ();
+    EXPECT_EQ (DgnDbStatus::Success, modelStatus);
     EXPECT_FALSE (m_db->Models ().QueryModelId ("model1").IsValid ());
     m_db->SaveChanges ("changeSet2");
 

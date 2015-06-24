@@ -496,6 +496,7 @@ DG_INLINE void LineStyleParams::SetScale(double inScale) { modifiers |= STYLEMOD
 
 DG_INLINE StatusInt     ViewController::VisitHit(HitDetailCR hit, ViewContextR context) const{return _VisitHit(hit, context);}
 DG_INLINE void ViewController::DrawView(ViewContextR context) {return _DrawView(context);}
+DG_INLINE void ViewController::VisitElements(ViewContextR context) {return _VisitElements(context);}
 
 DG_INLINE SnapDetailP     SnapContext::GetSnapDetail() {return m_snapPath;}
 DG_INLINE SnapMode      SnapContext::GetSnapMode() {return m_snapMode;}
