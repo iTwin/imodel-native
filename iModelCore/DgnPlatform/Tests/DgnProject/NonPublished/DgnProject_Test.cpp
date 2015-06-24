@@ -422,7 +422,7 @@ struct DgnProjectPackageTest : public testing::Test
                 {
                 DgnModelP model = project->Models().GetModel(entry.GetModelId());
                 model->FillModel();
-                properties.elmCount += model->CountElements();
+                properties.elmCount += model->CountLoadedElements();
                 properties.modelCount++;
                 }
             properties.viewCount = project->Views().MakeIterator().QueryCount();

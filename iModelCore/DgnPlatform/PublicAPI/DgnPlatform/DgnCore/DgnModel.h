@@ -199,9 +199,9 @@ protected:
     DgnElementMap   m_elements;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
     mutable DgnRangeTreeP m_rangeIndex;
-    mutable bool    m_persistent;   // true of this DgnModel is in the DgnModels "loaded models" list.
+    mutable bool    m_persistent;   // true if this DgnModel is in the DgnModels "loaded models" list.
     bool            m_filled;       // true if the FillModel was called on this DgnModel.
-    bool            m_readonly;     // true if this model is from a read-only file.
+    bool            m_readonly;     // true if this model is from a read-only DgnDb.
 
     explicit DGNPLATFORM_EXPORT DgnModel(CreateParams const&);
     DGNPLATFORM_EXPORT virtual ~DgnModel();
@@ -291,7 +291,6 @@ public:
     DGNPLATFORM_EXPORT BeSQLite::DbResult SaveProperties();
     void AddGraphicsToScene(ViewContextR context) {_AddGraphicsToScene(context);}
 
-    void ClearAllQvElems(); //!< @private
 
     DGNPLATFORM_EXPORT double GetMillimetersPerMaster() const;
     DGNPLATFORM_EXPORT double GetSubPerMaster() const;
@@ -316,7 +315,7 @@ public:
     //! @return the number of elements in this DgnModel.
     //! @note The DgnModel must be filled before calling this method.
     //! @see FillSections
-    uint32_t CountElements() const {return (uint32_t) m_elements.size();}
+    uint32_t CountLoadedElements() const {return (uint32_t) m_elements.size();}
 
     //! Find a DgnElementP in this DgnModel by DgnElementId.
     //! @return DgnElementP of element with \a id, or NULL.

@@ -77,7 +77,6 @@ namespace dgn_ElementHandler
         virtual ElementHandlerP _ToElementHandler() {return this;}
 
     public:
-
         //! Create a new instance of a DgnElement from a CreateParams. 
         //! @note The actual type of the returned DgnElement will depend on the DgnClassId in @a params.
         DgnElementPtr Create(DgnElement::CreateParams const& params) {return (DgnElementP) _CreateInstance(params);}

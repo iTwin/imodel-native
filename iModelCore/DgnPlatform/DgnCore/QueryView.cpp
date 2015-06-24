@@ -659,7 +659,7 @@ uint64_t QueryViewController::GetMaxElementMemory()
 uint64_t QueryViewController::GetMaxElementMemory()
     {
     uint64_t oneMeg = 1024 * 1024;
-#if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
+#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
     uint64_t baseValue = 2000;
 #else
     uint64_t baseValue = BeSystemInfo::GetAmountOfPhysicalMemory() > (600 * oneMeg) ? 50 : 30;

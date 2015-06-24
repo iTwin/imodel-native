@@ -31,9 +31,8 @@ protected:
     //! @param[in] relationshipId       The ECRelationship instance ID
     //! @param[in] source               The ECRelationship's Source DgnElement
     //! @param[in] target               The ECRelationship's Target DgnElement
-    //! @param[in] summary              Summary of all DgnElements that were *directly* changed
     //! Call Txns::ReportValidationError to reject an invalid change. The reported error can be classified as fatal or just a warning.
-    DGNPLATFORM_EXPORT virtual void _OnRootChanged(DgnDbR db, BeSQLite::EC::ECInstanceId relationshipId, DgnElementId source, DgnElementId target, TxnSummaryR summary);
+    DGNPLATFORM_EXPORT virtual void _OnRootChanged(DgnDbR db, BeSQLite::EC::ECInstanceId relationshipId, DgnElementId source, DgnElementId target);
 
     //! Called by DgnElementDependencyGraph after all _OnRootChanged have been invoked, in the case where the output of this dependency is also the output of other dependencies.
     //! The dependency handler should check that its requirements is still enforced. 
@@ -43,8 +42,7 @@ protected:
     //! @param[in] relationshipId       The ECRelationship instance ID
     //! @param[in] source               The ECRelationship's Source DgnElement
     //! @param[in] target               The ECRelationship's Target DgnElement
-    //! @param[in] summary              Summary of all DgnElements that were *directly* changed, plus all dependencies that failed.
-    virtual void _ValidateOutput(DgnDbR db, BeSQLite::EC::ECInstanceId relationshipId, DgnElementId source, DgnElementId target, TxnSummaryR summary) {}
+    virtual void _ValidateOutput(DgnDbR db, BeSQLite::EC::ECInstanceId relationshipId, DgnElementId source, DgnElementId target) {}
 
 public:
     //! Looks up a registered DgnElementDependencyHandler by its ECRelationship class ID.
@@ -104,33 +102,33 @@ struct DgnElementDependencyGraph
     //! This means that the constraints imposed on Elements by the current set of ECRelationships and their dependency handlers cannot be satisfied. Some
     //! ECRelationships must be removed. 
     //! This error is always fatal. The application should cancel the current transaction.
-    struct CyclesDetectedError : TxnSummary::ValidationError
+    struct CyclesDetectedError : TxnManager::ValidationError
         {
-        CyclesDetectedError(Utf8CP path) : TxnSummary::ValidationError(Severity::Fatal, path) {}
+        CyclesDetectedError(Utf8CP path) : TxnManager::ValidationError(Severity::Fatal, path) {}
         };
 
     //! An Element dependency was triggered, but the handler for it was not registered.
     //! It is not possible to know if this is a fatal error or not, since the purpose of the handler is not known.
     //! This error should be reported to the user for follow up.
-    struct MissingHandlerError : TxnSummary::ValidationError
+    struct MissingHandlerError : TxnManager::ValidationError
         {
-        MissingHandlerError(Utf8CP handlerId) : TxnSummary::ValidationError(Severity::Warning, handlerId) {}
+        MissingHandlerError(Utf8CP handlerId) : TxnManager::ValidationError(Severity::Warning, handlerId) {}
         };
     
     //! The requirements of an Element dependency were violated by the actions taken by another dependency handler.
     //! It is not possible to know if this is a fatal error or not, since the purpose of the handler is not known.
     //! This error should be reported to the user for follow up.
-    struct DependencyValidationError : TxnSummary::ValidationError
+    struct DependencyValidationError : TxnManager::ValidationError
         {
-        DependencyValidationError(Utf8CP details) : TxnSummary::ValidationError(Severity::Warning, details) {}
+        DependencyValidationError(Utf8CP details) : TxnManager::ValidationError(Severity::Warning, details) {}
         };
     
     //! A dependency attempted to propagate changes from a dependent model to a root model. 
     //! This is illegal, and this dependency must be removed.
     //! This error is always fatal. The application should cancel the current transaction.
-    struct DirectionValidationError : TxnSummary::ValidationError
+    struct DirectionValidationError : TxnManager::ValidationError
         {
-        DirectionValidationError(Utf8CP details) : TxnSummary::ValidationError(Severity::Fatal, details) {}
+        DirectionValidationError(Utf8CP details) : TxnManager::ValidationError(Severity::Fatal, details) {}
         };
 
     //! Indicates if changes have been propagated through an ECRelationship successfully or not.
@@ -206,14 +204,13 @@ struct DgnElementDependencyGraph
         virtual void _ProcessEdgeForValidation(Edge const& edge, DgnElementDependencyHandler* handler) = 0;
 
         //! Invoked when a validation error such as a cycle is detected.
-        virtual void _OnValidationError(TxnSummary::ValidationError const& error, Edge const* edge) = 0;
+        virtual void _OnValidationError(TxnManager::ValidationError const& error, Edge const* edge) = 0;
         };
 
 private:
     enum class EdgeColor {White, Gray, Black};  // NB: White must be the default (0) value
 
-    DgnDbR                  m_db;
-    TxnSummaryR             m_summary;
+    TxnManager&             m_txnMgr;
     ElementDrivesElement*   m_elementDrivesElement;
     EdgeQueue*              m_edgeQueue;
     IEdgeProcessor*         m_processor;
@@ -235,7 +232,7 @@ private:
     // working with handlers
     void InvokeHandler(Edge const& rh, size_t indentLevel);
     void InvokeHandlerForValidation(Edge const& rh);
-    void ReportValidationError (TxnSummary::ValidationError&, Edge const*);
+    void ReportValidationError (TxnManager::ValidationError&, Edge const*);
 
     void DiscoverEdges(DgnModelId mid);
 
@@ -251,14 +248,14 @@ private:
     BentleyStatus CheckDirection(Edge const&);
 
 public:
-    DGNPLATFORM_EXPORT DgnElementDependencyGraph(TxnSummaryR);
+    DGNPLATFORM_EXPORT DgnElementDependencyGraph(TxnManager&);
     DGNPLATFORM_EXPORT ~DgnElementDependencyGraph();
 
-    DgnDbR GetDgnDb() const {return m_db;}
+    DgnDbR GetDgnDb() const {return m_txnMgr.GetDgnDb();}
 
 //__PUBLISH_SECTION_END__
     //! Txns calls this when closing a txn
-    void InvokeAffectedDependencyHandlers(TxnSummaryCR summary);
+    void InvokeAffectedDependencyHandlers();
 
     //! Txns calls this when validating a txn
     void UpdateModelDependencyIndex();

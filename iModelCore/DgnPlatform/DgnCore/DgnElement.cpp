@@ -963,8 +963,6 @@ DgnClassId ElementGroup::QueryClassId(DgnDbR db)
     return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ElementGroup));
     }
 
-
-
 //    _/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
 //   _/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
 //  _/  *** WIP_ITEM - maybe move the functions below into DgnElementAspect.cpp?  _/_/
@@ -1223,7 +1221,6 @@ BeSQLite::EC::ECInstanceKey DgnElement::UniqueAspect::_QueryExistingInstanceKey(
     DgnClassId classId = GetThisECClassId(el.GetDgnDb());
     return BeSQLite::EC::ECInstanceKey(classId.GetValue(), QueryExistingInstanceId(el, classId)); // We must check to see if there is another instance of this class in the Db.
     }
-
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 struct MultiAspectMux : DgnElement::AppData
