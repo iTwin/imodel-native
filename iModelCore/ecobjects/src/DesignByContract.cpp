@@ -2,7 +2,7 @@
 |
 |     $Source: src/DesignByContract.cpp $
 |
-|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -26,7 +26,7 @@ AssertDisabler::AssertDisabler ()
     AssertDisabler::s_globalIgnoreCount++;
 
     if (1 == s_globalIgnoreCount)
-        Bentley::BeTest::SetFailOnAssert (false);
+        BentleyApi::BeTest::SetFailOnAssert (false);
 
 #if !defined (BENTLEY_WINRT) 
     // WIP: calling putenv is nonportable and generally a bad idea
@@ -43,7 +43,7 @@ AssertDisabler::~AssertDisabler ()
     AssertDisabler::s_globalIgnoreCount--;
 
     if (0 == AssertDisabler::s_globalIgnoreCount)
-        Bentley::BeTest::SetFailOnAssert (true);
+        BentleyApi::BeTest::SetFailOnAssert (true);
 
 #if !defined (BENTLEY_WINRT)
     // WIP: calling putenv is nonportable and generally a bad idea
