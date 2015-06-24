@@ -840,7 +840,7 @@ TEST(ECDbMap, ForeignKeyMapWithKeyProperty)
     CreateECDbAndImportSchema(ecdb, ecdbName, testSchemaXml, false, "ForeignKeyColumn should not be specified if Key property is defined.");
     }
 
-    {
+/*    {
     Utf8CP testSchemaXml =
         "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
@@ -874,7 +874,7 @@ TEST(ECDbMap, ForeignKeyMapWithKeyProperty)
     ECDb ecdb;
     CreateECDbAndImportSchema(ecdb, ecdbName, testSchemaXml, false, "Only one constraint class supported by ECDb if key properties are defined.");
     }
-
+    */
     {
     Utf8CP testSchemaXml =
         "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
