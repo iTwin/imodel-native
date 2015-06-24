@@ -2168,3 +2168,185 @@ TEST_F(TransactionManagerTests, UndoRedo)
 
     testModelUndoRedo(*m_db);
     }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Maha Nasir                      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+
+TEST_F (TransactionManagerTests, ModelInsertReverse)
+    {
+    SetupProject (L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+    auto& txns = m_db->Txns ();
+    txns.EnableTracking (true);
+
+    auto seedModelId = m_defaultModelId;
+    DgnModelP seedModel = m_db->Models ().GetModel (seedModelId);
+    DgnModelPtr model1 = seedModel->Clone ("model1");
+    model1->Insert ();
+    m_db->SaveChanges ("changeSet1");
+
+    ASSERT_TRUE (model1 != nullptr);
+    EXPECT_TRUE (m_db->Models ().QueryModelId ("model1").IsValid ());
+
+    //Reverse insertion.Model 1 should'nt be in the Db now.
+    auto stat = txns.ReverseTxns (1);
+    EXPECT_EQ (DgnDbStatus::Success, stat);
+    EXPECT_FALSE (m_db->Models ().QueryModelId ("model1").IsValid ());
+
+    //Reinstate Transaction.Model should be back.
+    stat = txns.ReinstateTxn ();
+    EXPECT_EQ (DgnDbStatus::Success, stat);
+    m_db->SaveChanges ("changeSet2");
+
+    EXPECT_TRUE (m_db->Models ().QueryModelId ("model1").IsValid ());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Maha Nasir                      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+
+TEST_F (TransactionManagerTests, ModelDeleteReverse)
+    {
+    SetupProject (L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+    auto& txns = m_db->Txns ();
+    txns.EnableTracking (true);
+
+    auto seedModelId = m_defaultModelId;
+    DgnModelP seedModel = m_db->Models ().GetModel (seedModelId);
+    DgnModelPtr model1 = seedModel->Clone ("model1");
+    model1->Insert ();
+    m_db->SaveChanges ("changeSet1");
+
+    ASSERT_TRUE (model1 != nullptr);
+    EXPECT_TRUE (m_db->Models ().QueryModelId ("model1").IsValid ());
+
+    DgnDbStatus modelStatus = model1->Delete ();
+    EXPECT_EQ (DgnDbStatus::Success, modelStatus);
+    EXPECT_FALSE (m_db->Models ().QueryModelId ("model1").IsValid ());
+    m_db->SaveChanges ("changeSet2");
+
+    //Reverse deletion.Model 1 should be in the Db now.
+    auto stat = txns.ReverseTxns (1);
+    EXPECT_EQ (DgnDbStatus::Success, stat);
+    EXPECT_TRUE (m_db->Models ().QueryModelId ("model1").IsValid ());
+
+    //Reinstate Transaction.Model should'nt be there anymore.
+    stat = txns.ReinstateTxn ();
+    EXPECT_EQ (DgnDbStatus::Success, stat);
+    m_db->SaveChanges ("changeSet3");
+
+    EXPECT_FALSE (m_db->Models ().QueryModelId ("model1").IsValid ());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Maha Nasir                      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+
+TEST_F (TransactionManagerTests, ElementInsertReverse)
+    {
+    SetupProject (L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+    auto& txns = m_db->Txns ();
+    txns.EnableTracking (true);
+
+    auto seedModelId = m_defaultModelId;
+    DgnModelP seedModel = m_db->Models ().GetModel (seedModelId);
+    DgnModelPtr model1 = seedModel->Clone ("model1");
+    model1->Insert ();
+    m_db->SaveChanges ("changeSet1");
+
+    ASSERT_TRUE (model1 != nullptr);
+    DgnModelId M1id = m_db->Models ().QueryModelId ("model1");
+    EXPECT_TRUE (M1id.IsValid ());
+
+    auto keyE1 = InsertElement ("E1", M1id);
+    auto keyE2 = InsertElement ("E2", M1id);
+    m_db->SaveChanges ("changeSet2");
+
+    DgnElementId E1id = keyE1->GetElementId ();
+    DgnElementId E2id = keyE2->GetElementId ();
+    EXPECT_TRUE (E1id.IsValid ());
+    EXPECT_TRUE (E2id.IsValid ());
+
+    //Reverse Transaction.Elements should'nt be in th model now.
+    auto stat = txns.ReverseTxns (1);
+    EXPECT_EQ (DgnDbStatus::Success, stat);
+
+    EXPECT_EQ (nullptr, m_db->Elements ().FindElement (E1id));
+    EXPECT_EQ (nullptr, m_db->Elements ().FindElement (E2id));
+
+    EXPECT_FALSE (m_db->Elements ().QueryElementKey (E1id).IsValid ());
+    EXPECT_FALSE (m_db->Elements ().QueryElementKey (E2id).IsValid ());
+
+    //Reinstate transcation.The elements should be back in the model.
+    stat = txns.ReinstateTxn ();
+    EXPECT_EQ (DgnDbStatus::Success, stat);
+    m_db->SaveChanges ("changeSet3");
+
+    DgnElementCPtr E1 = m_db->Elements ().GetElement (E1id);
+    EXPECT_TRUE (E1 != nullptr);
+    EXPECT_NE (nullptr, m_db->Elements ().FindElement (E1id));
+
+    DgnElementCPtr E2 = m_db->Elements ().GetElement (E2id);
+    EXPECT_TRUE (E2 != nullptr);
+    EXPECT_NE (nullptr, m_db->Elements ().FindElement (E2id));
+
+    //Both the elements and the model should'nt be in the database.
+    txns.ReverseAll (true);
+    EXPECT_FALSE (m_db->Models ().QueryModelId ("model1").IsValid ());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Maha Nasir                      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+
+TEST_F (TransactionManagerTests, ElementDeleteReverse)
+    {
+    SetupProject (L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+    auto& txns = m_db->Txns ();
+    txns.EnableTracking (true);
+
+    //Creates a model.
+    auto seedModelId = m_defaultModelId;
+    DgnModelP seedModel = m_db->Models ().GetModel (seedModelId);
+    DgnModelPtr model1 = seedModel->Clone ("model1");
+    model1->Insert ();
+    m_db->SaveChanges ("changeSet1");
+
+    ASSERT_TRUE (model1 != nullptr);
+    DgnModelId M1id = m_db->Models ().QueryModelId ("model1");
+    EXPECT_TRUE (M1id.IsValid ());
+
+    auto keyE1 = InsertElement ("E1", M1id);
+    m_db->SaveChanges ("changeSet2");
+
+    DgnElementId E1id = keyE1->GetElementId ();
+    EXPECT_TRUE (E1id.IsValid ());
+    DgnElementCP pE1 = m_db->Elements ().FindElement (E1id);
+    EXPECT_NE (nullptr, pE1);
+    EXPECT_TRUE (txns.IsUndoPossible ());
+
+    //Deletes the Element.
+    EXPECT_EQ (DgnDbStatus::Success, m_db->Elements ().Delete (*pE1));
+    m_db->SaveChanges ("changeSet3");
+
+    EXPECT_FALSE (m_db->Elements ().QueryElementKey (E1id).IsValid ());
+    EXPECT_TRUE (m_db->Elements ().GetElement (E1id) == nullptr);
+
+    //Reverse Transaction.Element should be back in th model now.
+    auto stat = txns.ReverseTxns (1);
+    EXPECT_EQ (DgnDbStatus::Success, stat);
+    EXPECT_TRUE (m_db->Elements ().GetElement (E1id) != nullptr);
+    EXPECT_NE (nullptr, m_db->Elements ().FindElement (E1id));
+
+    //Reinstate transcation.The elements should'nt be in the model.
+    stat = txns.ReinstateTxn ();
+    EXPECT_EQ (DgnDbStatus::Success, stat);
+    m_db->SaveChanges ("changeSet4");
+
+    EXPECT_FALSE (m_db->Elements ().QueryElementKey (E1id).IsValid ());
+
+    //Both the elements and the model should'nt be in the database.
+    txns.ReverseAll (true);
+    EXPECT_FALSE (m_db->Models ().QueryModelId ("model1").IsValid ());
+    }

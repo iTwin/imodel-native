@@ -626,6 +626,24 @@ void QueryViewController::_DrawView(ViewContextR context)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson      06/2015
+//---------------------------------------------------------------------------------------
+void QueryViewController::_VisitElements(ViewContextR context)
+    {
+    // Visit the elements that were actually loaded
+    context.VisitDgnModel(&m_queryModel);
+
+    // And step through the rest of the elements that were not loaded (but would be displayed by progressive display).
+    DgnDbR project = m_queryModel.GetDgnDb();
+    CachedStatementPtr rangeStmt;
+    project.GetCachedStatement(rangeStmt, _GetRTreeMatchSql(*context.GetViewport()).c_str());
+    BindModelAndCategory(*rangeStmt);
+    ProgressiveViewFilter pvFilter (*context.GetViewport(), project, m_queryModel, m_neverDrawn.empty() ? NULL : &m_neverDrawn, GetMaxElementMemory(), rangeStmt.get());
+    while (pvFilter._Process(context) != IProgressiveDisplay::Completion::Finished)
+        ;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    02/2013
 //---------------------------------------------------------------------------------------
 #if defined (_X64_)
