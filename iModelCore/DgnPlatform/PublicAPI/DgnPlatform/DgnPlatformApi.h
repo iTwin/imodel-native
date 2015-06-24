@@ -143,8 +143,8 @@
 This file describes the public API for writing applications using the DgnPlatform libraries.
 
 @section Namespaces
-All of the DgnPlatform APIs are contained within the Bentley namespace. There are nested namespaces within the
-Bentley namespace that hold various parts of the API. Most DgnPlatform APIs are in the BentleyApi::DgnPlatform namespace.
+All of the DgnPlatform APIs are contained within the BentleyApi namespace. There are nested namespaces within the
+BentleyApi namespace that hold various parts of the API. Most DgnPlatform APIs are in the BentleyApi::Dgn namespace.
 
 @section headerFiles Header Files
 By far the most convenient and efficient way of accessing the classes in the DgnPlatform API is to use:

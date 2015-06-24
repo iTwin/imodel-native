@@ -79,6 +79,8 @@ enum class DgnDbStatus : int
     NotOpen,
     NotOpenForWrite,
     NotSameUnitBase,
+    NothingToRedo,
+    NothingToUndo,
     ParentBlockedChange,
     ReadError,
     ReadOnly,

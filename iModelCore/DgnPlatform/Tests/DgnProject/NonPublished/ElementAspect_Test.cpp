@@ -8,6 +8,7 @@
 #include "DgnHandlersTests.h"
 #include <Bentley/BeTimeUtilities.h>
 #include <ECDb/ECSqlBuilder.h>
+#include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnCore/WebMercator.h>
 
 #define TMTEST_SCHEMA_NAME                               "DgnPlatformTest"
@@ -33,9 +34,9 @@ struct TestItemHandler;
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      06/15
 //=======================================================================================
-struct TestElement : DgnPlatform::PhysicalElement
+struct TestElement : Dgn::PhysicalElement
 {
-    DEFINE_T_SUPER(DgnPlatform::PhysicalElement)
+    DEFINE_T_SUPER(Dgn::PhysicalElement)
 
     friend struct TestElementHandler;
 public:
@@ -53,9 +54,9 @@ typedef TestElement const& TestElementCR;
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      06/15
 //=======================================================================================
-struct TestElementHandler : DgnPlatform::dgn_ElementHandler::Element
+struct TestElementHandler : Dgn::dgn_ElementHandler::Element
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT_CLASS_NAME, TestElement, TestElementHandler, DgnPlatform::dgn_ElementHandler::Element, )
+    ELEMENTHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT_CLASS_NAME, TestElement, TestElementHandler, Dgn::dgn_ElementHandler::Element, )
 };
 
 HANDLER_DEFINE_MEMBERS(TestElementHandler)
@@ -63,9 +64,9 @@ HANDLER_DEFINE_MEMBERS(TestElementHandler)
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      06/15
 //=======================================================================================
-struct TestItem : DgnPlatform::DgnElement::Item
+struct TestItem : Dgn::DgnElement::Item
 {
-    DEFINE_T_SUPER(DgnPlatform::DgnElement::Item)
+    DEFINE_T_SUPER(Dgn::DgnElement::Item)
 private:
     friend struct TestItemHandler;
 
@@ -96,9 +97,9 @@ typedef TestItem* TestItemP;
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      06/15
 //=======================================================================================
-struct TestItemHandler : DgnPlatform::ElementAspectHandler
+struct TestItemHandler : Dgn::ElementAspectHandler
 {
-    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ITEM_CLASS_NAME, TestItemHandler, DgnPlatform::ElementAspectHandler, )
+    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ITEM_CLASS_NAME, TestItemHandler, Dgn::ElementAspectHandler, )
     RefCountedPtr<DgnElement::Aspect> _CreateInstance() override {return new TestItem("");}
 };
 
@@ -107,9 +108,9 @@ HANDLER_DEFINE_MEMBERS(TestItemHandler)
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      06/15
 //=======================================================================================
-struct TestUniqueAspect : DgnPlatform::DgnElement::UniqueAspect
+struct TestUniqueAspect : Dgn::DgnElement::UniqueAspect
 {
-    DEFINE_T_SUPER(DgnPlatform::DgnElement::UniqueAspect)
+    DEFINE_T_SUPER(Dgn::DgnElement::UniqueAspect)
 private:
     friend struct TestUniqueAspectHandler;
 
@@ -141,9 +142,9 @@ typedef TestUniqueAspect* TestUniqueAspectP;
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      06/15
 //=======================================================================================
-struct TestUniqueAspectHandler : DgnPlatform::ElementAspectHandler
+struct TestUniqueAspectHandler : Dgn::ElementAspectHandler
 {
-    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_UNIQUE_ASPECT_CLASS_NAME, TestUniqueAspectHandler, DgnPlatform::ElementAspectHandler, )
+    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_UNIQUE_ASPECT_CLASS_NAME, TestUniqueAspectHandler, Dgn::ElementAspectHandler, )
     RefCountedPtr<DgnElement::Aspect> _CreateInstance() override {return new TestUniqueAspect("");}
 };
 
@@ -152,9 +153,9 @@ HANDLER_DEFINE_MEMBERS(TestUniqueAspectHandler)
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      06/15
 //=======================================================================================
-struct TestMultiAspect : DgnPlatform::DgnElement::MultiAspect
+struct TestMultiAspect : Dgn::DgnElement::MultiAspect
 {
-    DEFINE_T_SUPER(DgnPlatform::DgnElement::MultiAspect)
+    DEFINE_T_SUPER(Dgn::DgnElement::MultiAspect)
 private:
     friend struct TestMultiAspectHandler;
 
@@ -186,9 +187,9 @@ typedef TestMultiAspect* TestMultiAspectP;
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      06/15
 //=======================================================================================
-struct TestMultiAspectHandler : DgnPlatform::ElementAspectHandler
+struct TestMultiAspectHandler : Dgn::ElementAspectHandler
 {
-    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_MULTI_ASPECT_CLASS_NAME, TestMultiAspectHandler, DgnPlatform::ElementAspectHandler, )
+    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_MULTI_ASPECT_CLASS_NAME, TestMultiAspectHandler, Dgn::ElementAspectHandler, )
     RefCountedPtr<DgnElement::Aspect> _CreateInstance() override {return new TestMultiAspect("");}
 };
 

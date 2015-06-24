@@ -1049,7 +1049,7 @@ DgnViewId DgnViewAssociationData::GetViewId() const {return m_viewId;}
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      06/13
 //--------------+------------------------------------------------------------------------
-bpair<DgnPlatform::DgnModelId,double> DgnMarkupProject::FindClosestRedlineModel (ViewControllerCR viewController)
+bpair<Dgn::DgnModelId,double> DgnMarkupProject::FindClosestRedlineModel (ViewControllerCR viewController)
     {
     DPoint3d viewOriginToMatch = viewController.GetOrigin();
 

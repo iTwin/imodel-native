@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DisplayFilter.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -12,7 +12,7 @@
 /*=================================================================================**//**
 * @bsiclass                                                     RayBentley      07/2012
 +===============+===============+===============+===============+===============+======*/
-struct BentleyApi::DgnPlatform::DisplayFilterState
+struct BentleyApi::Dgn::DisplayFilterState
 {
 private:
     DisplayFilterHandlerId      m_handlerId;

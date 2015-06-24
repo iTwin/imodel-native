@@ -2,10 +2,10 @@
 |
 |     $Source: Tools/ToolSubs/macro/CfgVarExpr.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <BentleyApi/BentleyApi.h>
+#include <Bentley/Bentley.h>
 #include <DgnPlatform/ExportMacros.h>
 #include    <DgnPlatform/DesktopTools/CfgVarExpr.h>
 #include    <boost/spirit/include/classic_core.hpp>
@@ -19,13 +19,12 @@
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
-BEGIN_BENTLEY_API_NAMESPACE
+BEGIN_BENTLEY_NAMESPACE
 
 using namespace std;
 using namespace boost::spirit::classic;
 
 struct CfgVarExpressionParser;
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    YogeshSajanikar    01/09
@@ -37,7 +36,6 @@ bool CfgVarExpression::Node::Evaluate (CfgVarExpression::Result &result) const
 
     return true;
     }
-
 
 /*=================================================================================**//**
 * @bsiclass
@@ -414,5 +412,4 @@ void CfgVarExpression::Push (CfgVarExpression::NodePtr node)
     m_statements.Push (node);
     }
 
-END_BENTLEY_API_NAMESPACE
-
+END_BENTLEY_NAMESPACE

@@ -30,7 +30,6 @@
 #include "IViewOutput.h"
 #include "IViewTransients.h"
 #include "LineStyle.h"
-#include "LineStyleManager.h"
 #include "DgnElementDependency.h"
 #include "DgnDb.h"
 #include "NotificationManager.h"

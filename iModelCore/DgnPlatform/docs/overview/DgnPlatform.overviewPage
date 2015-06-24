@@ -29,7 +29,31 @@ The DgnDb technology stack starts with the DgnDb file format which is based on S
 geometric queries in addition to the standard SQL relational database queries.  %Bentley has also added a way to store complex geometry
 and graphics within the DgnDb file.  The DgnDb file format provides the foundation for persisting infrastructure data.
 <p>
-With DgnDb, real-world objects are modeled using elements and element aspects.  An element represents that identity and function of the real-world object.
+There are three primary layers to a DgnDb application:
+
+@li The platform layer
+@li The domain layer
+@li The app layer
+
+The DgnDb run-time comprises the platform layer and includes all of the services built into the DgnPlatform library.
+<p>
+A domain is an ECSchema (data model) and a C++ data-access library that is typically focused on an infrastructure discipline and/or lifecycle phases.  
+Domain examples include:
+
+@li Building Design
+@li Civil Conceptual Design
+@li Plant Operations
+@li Construction
+@li Planning
+
+Domains ship with the platform but are separate in a software architecture sense.  The goal of a domain is to capture the data model and file I/O services
+required for a specific discipline or lifecycle phase.  Domains are meant to be used across applications and to raise the level of information sharing.
+Domains are written in C++ and do not include user interface or tools.
+
+@ref DgnDomainGroup
+
+<p>
+Within a domain, real-world objects are modeled using elements and element aspects.  An element represents that identity and function of the real-world object.
 Subclasses of DgnElement are created for each type of real-world object that is being modeled.  Elements focus on specification.  For example, a piece
 of equipment that performs a specific function.
 <p>
@@ -41,6 +65,12 @@ Elements are the center of the DgnDb universe and are described in more detail h
 
 @li @subpage PAGE_ElementOverview
 
+<p>
+The final layer for a DgnDb application is the app layer.  The app decides which domains to include and provides the user interface and tools and everything that the user sees.
+This layer is typically written in TypeScript/JavaScript.
+
+<hr>
+
 The DgnPlatform library also adds other key concepts required by infrastructure applications.  These concepts include:
 
 @li @subpage PAGE_ModelOverview
@@ -50,4 +80,3 @@ The DgnPlatform library also adds other key concepts required by infrastructure 
 */
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
-

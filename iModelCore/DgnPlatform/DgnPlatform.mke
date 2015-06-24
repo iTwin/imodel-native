@@ -123,13 +123,11 @@ $(coreObjs)LsSymbology$(oext): $(lineStyleDir)LsSymbology.cpp $(LsLocalDepends) 
 
 $(coreObjs)LsCache$(oext): $(lineStyleDir)LsCache.cpp $(LsLocalDepends) ${MultiCompileDepends}
 
-$(coreObjs)LineStyleManager$(oext):   $(lineStyleDir)LineStyleManager.cpp $(LsLocalDepends)  ${MultiCompileDepends}
+$(coreObjs)DgnLineStyles$(oext):   $(lineStyleDir)DgnLineStyles.cpp $(LsLocalDepends) $(txnManagerDepends) ${MultiCompileDepends}
 
 $(coreObjs)LineStyleApi$(oext):   $(lineStyleDir)LineStyleApi.cpp $(LsLocalDepends)  ${MultiCompileDepends}
 
-$(coreObjs)LsDb$(oext):   $(lineStyleDir)LsDb.cpp $(LsLocalDepends)  ${MultiCompileDepends}
-
-$(coreObjs)LsElem$(oext):   $(lineStyleDir)LsElem.cpp $(LsLocalDepends) ${MultiCompileDepends}
+$(coreObjs)LsDb$(oext):   $(lineStyleDir)LsDb.cpp $(LsLocalDepends) $(txnManagerDepends)  ${MultiCompileDepends}
 
 $(coreObjs)StrokeSymbol$(oext):    $(lineStyleDir)StrokeSymbol.cpp $(LsLocalDepends) $(HandlerDepends) ${MultiCompileDepends}
 

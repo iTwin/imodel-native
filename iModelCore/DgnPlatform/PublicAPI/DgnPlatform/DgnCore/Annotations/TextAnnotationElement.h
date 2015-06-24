@@ -63,6 +63,7 @@ public:
 namespace dgn_ElementHandler
 {
 //=======================================================================================
+//! The ElementHandler for PhysicalTextAnnotationElement
 // @bsiclass                                                    Jeff.Marker     06/2015
 //=======================================================================================
 struct PhysicalText : Element
