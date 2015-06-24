@@ -108,13 +108,22 @@ private:
     bool GetOtherEndECClassIdColumnName (Utf8StringR columnName, ECDbSqlTable const& table, bool mappingInProgress) const;
     virtual MapStatus _InitializePart1 (ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override;
     virtual MapStatus _InitializePart2 (ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap) override;
-    bool IsKeyPropertyMappable(const ECN::ECRelationshipConstraintClassList & constraintclasses);
-    MapStatus CreateConstraintColumns(ECDbSqlColumn*& otherEndECInstanceIdColumn, RelationshipMapInfo const&, ECN::ECRelationshipEnd thisEnd, const ECN::ECRelationshipConstraintClassList&);
+
+    //! Tries to retrieve the column to which the key property on the specified constraint is mapped to.
+    //! @param[out] keyPropertyColumn found column or nullptr if no key property was defined on the constraint.
+    //! @param[in] constraint Constraint
+    //! @return SUCCESS if key property was found or no key property exists on the constraint. ERROR if constraint has more
+    //! than one class or more than one key properties.
+    BentleyStatus TryGetKeyPropertyColumn(ECDbSqlColumn const*& keyPropertyColumn, ECN::ECRelationshipConstraintCR, ECN::ECRelationshipClassCR, ECN::ECRelationshipEnd constraintEnd) const;
+
+    MapStatus CreateConstraintColumns(ECDbSqlColumn*& otherEndECInstanceIdColumn, RelationshipMapInfo const&, ECN::ECRelationshipEnd constraintEnd, ECN::ECRelationshipConstraintCR);
     MapStatus CreateConstraintPropMaps (ECN::ECRelationshipEnd thisEnd, ECN::ECClassId defaultThisEndClassId, ECDbSqlColumn* const& otherEndECInstanceIdColumn, ECDbSqlColumn* const& otherEndECClassIdColumn, ECN::ECClassId defaultOtherEndClassId);
     ECDbSqlColumn* ConfigureForeignECClassIdKey(RelationshipMapInfo const&, ECN::ECRelationshipConstraintCR otherEndConstraint, IClassMap const& otheEndClassMap, size_t otherEndTableCount);
     ECN::ECRelationshipEnd GetOtherEnd () const;
 
     virtual BentleyStatus _Load (std::set<ClassMap const*>& loadGraph, ECDbClassMapInfo const& mapInfo, IClassMap const* parentClassMap) override;
+
+
 public:
     ~RelationshipClassEndTableMap () {}
 

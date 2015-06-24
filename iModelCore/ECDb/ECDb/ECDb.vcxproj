@@ -164,6 +164,7 @@
     <ClInclude Include="ECInstanceSerializer.h" />
     <ClInclude Include="ECDbProfileManager.h" />
     <ClInclude Include="ECDbProfileUpgrader.h" />
+    <ClInclude Include="ECObjectsExtensions.h" />
     <ClInclude Include="ECSchemaComparers.h" />
     <ClInclude Include="ECSchemaValidator.h" />
     <ClInclude Include="ECSql\ClassRefExp.h" />

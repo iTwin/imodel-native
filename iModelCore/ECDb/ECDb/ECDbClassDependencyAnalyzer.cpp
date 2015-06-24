@@ -46,8 +46,8 @@ BeSQLite::DbResult ECDbClassDependencyAnalyzer::ComputeClassDependency (std::vec
     auto ecSchemaId = static_cast<ECSchemaId>(stmt->GetValueInt(0));
     auto isRelationship = (stmt->GetValueInt(1) != 0);
 
-    r = ComputeCustomAttributeDependency(dependencies, ecSchemaId, ECContainerType::ECONTAINERTYPE_Schema, ecClassId);
-    r = ComputeCustomAttributeDependency(dependencies, ecClassId, ECContainerType::ECONTAINERTYPE_Class, ecClassId);
+    r = ComputeCustomAttributeDependency(dependencies, ecSchemaId, ECContainerType::Schema, ecClassId);
+    r = ComputeCustomAttributeDependency(dependencies, ecClassId, ECContainerType::Class, ecClassId);
     r = ComputeBaseClassDependency(dependencies, ecClassId);
     r = ComputePropertyTypeDependency(dependencies, ecClassId);
     if (isRelationship)
@@ -95,11 +95,11 @@ BeSQLite::DbResult ECDbClassDependencyAnalyzer::ComputeRelationshipsDependency (
     m_db.GetCachedStatement (stmt, "SELECT DISTINCT RelationClassId FROM ec_RelationshipConstraintClass WHERE ClassId = ?");
     stmt->BindInt64 (1, ecClassId);
 
-    r = ComputeCustomAttributeDependency (dependencies, ecClassId, ECContainerType::ECONTAINERTYPE_RelationshipConstraintSource, ecClassId);
+    r = ComputeCustomAttributeDependency (dependencies, ecClassId, ECContainerType::RelationshipConstraintSource, ecClassId);
     if (r != BE_SQLITE_DONE)
         return r;
 
-    r = ComputeCustomAttributeDependency (dependencies, ecClassId, ECContainerType::ECONTAINERTYPE_RelationshipConstraintTarget, ecClassId);
+    r = ComputeCustomAttributeDependency (dependencies, ecClassId, ECContainerType::RelationshipConstraintTarget, ecClassId);
     if (r != BE_SQLITE_DONE)
         return r;
 
@@ -148,7 +148,7 @@ BeSQLite::DbResult ECDbClassDependencyAnalyzer::ComputePropertyTypeDependency (s
 
     for(auto property : properties)
         {
-        r = ComputeCustomAttributeDependency (dependencies, property, ECContainerType::ECONTAINERTYPE_Property, ecClassId);
+        r = ComputeCustomAttributeDependency (dependencies, property, ECContainerType::Property, ecClassId);
         if (r != BE_SQLITE_DONE)
             return r;
         }
@@ -170,7 +170,7 @@ BeSQLite::DbResult ECDbClassDependencyAnalyzer::ComputeCustomAttributeDependency
     BeSQLite::CachedStatementPtr stmt;
     m_db.GetCachedStatement (stmt, "SELECT ClassId FROM ec_CustomAttribute WHERE ContainerId = ? AND ContainerType = ?");
     stmt->BindInt64 (1, containerId);
-    stmt->BindInt (2, containerType);
+    stmt->BindInt (2, (int) containerType);
     return ProcessDependencyStatement (dependencies, stmt.get(), classId);
     }
 

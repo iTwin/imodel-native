@@ -197,7 +197,7 @@ BeSQLite::DbResult ECDbSchemaReader::ReadECSchema (DbECSchemaEntryP& outECSchema
 
     for (DbECSchemaEntryP newlyLoadedSchema: newlyLoadedSchemas)
         {
-        r = LoadCAFromDb (*(newlyLoadedSchema->m_resolvedECSchema), newlyLoadedSchema->m_ecSchemaId, ECONTAINERTYPE_Schema);
+        r = LoadCAFromDb (*(newlyLoadedSchema->m_resolvedECSchema), newlyLoadedSchema->m_ecSchemaId, ECContainerType::Schema);
         if (r != BE_SQLITE_DONE)
             return r;
         }
@@ -417,7 +417,7 @@ BeSQLite::DbResult ECDbSchemaReader::LoadECClassFromDb(ECClassP& ecClassOut, ECC
     if (r != BE_SQLITE_DONE)
         return r;
 
-    r = LoadCAFromDb(*ecClassOut, ecClassId, ECONTAINERTYPE_Class);
+    r = LoadCAFromDb(*ecClassOut, ecClassId, ECContainerType::Class);
     if (r != BE_SQLITE_DONE)
         return r;
 
@@ -524,7 +524,7 @@ BeSQLite::DbResult ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, E
             ecProperty->SetDisplayLabel (WString(info.m_displayLabel.c_str(), true));
         //! TODO: What is SetTypeName()????
 
-        r = LoadCAFromDb (*ecProperty, info.m_ecPropertyId, ECONTAINERTYPE_Property);
+        r = LoadCAFromDb (*ecProperty, info.m_ecPropertyId, ECContainerType::Property);
         if (r != BE_SQLITE_DONE)
             return r;
         }
@@ -654,7 +654,7 @@ BeSQLite::DbResult ECDbSchemaReader::LoadECRelationConstraintFromDb (ECRelations
         return r;
 
     ECContainerType containerType = 
-        relationshipEnd == ECRelationshipEnd_Target ? ECONTAINERTYPE_RelationshipConstraintTarget : ECONTAINERTYPE_RelationshipConstraintSource;
+        relationshipEnd == ECRelationshipEnd_Target ? ECContainerType::RelationshipConstraintTarget : ECContainerType::RelationshipConstraintSource;
 
     r = LoadCAFromDb (constraint, ecClassId, containerType);
     if (r != BE_SQLITE_DONE)

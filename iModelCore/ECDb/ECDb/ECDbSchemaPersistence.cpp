@@ -1014,7 +1014,7 @@ DbResult ECDbSchemaPersistence::InsertCustomAttributeInfo (BeSQLite::Db& db, DbC
         return stat;
 
     if (info.ColsInsert & DbCustomAttributeInfo::COL_ContainerId) stmt->BindInt64 (1, info.m_containerId);
-    if (info.ColsInsert & DbCustomAttributeInfo::COL_ContainerType) stmt->BindInt (2, info.m_containerType);
+    if (info.ColsInsert & DbCustomAttributeInfo::COL_ContainerType) stmt->BindInt (2, (int) info.m_containerType);
     if (info.ColsInsert & DbCustomAttributeInfo::COL_ClassId) stmt->BindInt64 (3, info.m_ecClassId);
     if (info.ColsInsert & DbCustomAttributeInfo::COL_Ordinal) stmt->BindInt (4, info.m_index);
     if (info.ColsInsert & DbCustomAttributeInfo::COL_Instance)
@@ -1068,7 +1068,7 @@ DbResult ECDbSchemaPersistence::FindCustomAttributeInfo (BeSQLite::CachedStateme
 
     int nCol = 1;
     if (~info.ColsNull & info.ColsWhere & DbCustomAttributeInfo::COL_ContainerId)            stmt->BindInt64 (nCol++, info.m_containerId);
-    if (~info.ColsNull & info.ColsWhere & DbCustomAttributeInfo::COL_ContainerType)          stmt->BindInt (nCol++, info.m_containerType);
+    if (~info.ColsNull & info.ColsWhere & DbCustomAttributeInfo::COL_ContainerType)          stmt->BindInt (nCol++, (int) info.m_containerType);
     if (~info.ColsNull & info.ColsWhere & DbCustomAttributeInfo::COL_ClassId)              stmt->BindInt64 (nCol++, info.m_ecClassId);
     if (~info.ColsNull & info.ColsWhere & DbCustomAttributeInfo::COL_Ordinal)                  stmt->BindInt (nCol++, info.m_index);
     return stat;
@@ -1117,7 +1117,7 @@ DbResult ECDbSchemaPersistence::UpdateCustomAttributeInfo (BeSQLite::Db& db, DbC
         POSTCONDITION (stat == BE_SQLITE_OK, stat);
         }
     if (~info.ColsNull & info.ColsWhere & DbCustomAttributeInfo::COL_ContainerId) stmt->BindInt64 (nCol++, info.m_containerId);
-    if (~info.ColsNull & info.ColsWhere & DbCustomAttributeInfo::COL_ContainerType) stmt->BindInt (nCol++, info.m_containerType);
+    if (~info.ColsNull & info.ColsWhere & DbCustomAttributeInfo::COL_ContainerType) stmt->BindInt (nCol++, (int) info.m_containerType);
     if (~info.ColsNull & info.ColsWhere & DbCustomAttributeInfo::COL_ClassId) stmt->BindInt64 (nCol++, info.m_ecClassId);
     if (~info.ColsNull & info.ColsWhere & DbCustomAttributeInfo::COL_Ordinal) stmt->BindInt (nCol++, info.m_index);
 
@@ -1450,7 +1450,7 @@ bool ECDbSchemaPersistence::IsCustomAttributeDefined (BeSQLite::Db& db, ECClassI
         return false;
 
     stmt->BindInt64 (1, containerId);
-    stmt->BindInt (2, containerType);
+    stmt->BindInt (2, (int) containerType);
     stmt->BindInt64 (3, classId);
 
     if (stmt->Step () == BE_SQLITE_ROW)

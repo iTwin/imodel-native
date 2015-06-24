@@ -452,6 +452,8 @@
     </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
+    <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
+    <ClInclude Include="ECObjectsExtensions.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">

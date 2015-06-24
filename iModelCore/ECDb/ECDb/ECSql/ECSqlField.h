@@ -67,7 +67,6 @@ private:
     Utf8String m_sourcePropertyPath;
     int m_sourceColumnIndex;
     int m_targetParameterIndex;
-    PrimitiveType m_type;
     StatementType m_sourceStmtType;
 public:
     ECSqlPrimitiveBinder();
@@ -75,12 +74,10 @@ public:
     void SetSourceStatementType(StatementType type);
     void SetSourceColumnIndex(int columnIndex);
     void SetTargetParamterIndex(int parameterIndex);
-    void SetDataType(PrimitiveType type);
     bool IsResolved() const;
     Utf8StringCR GetSourcePropertyPath() const;
     int GetSourceColumnIndex() const;
     int GetTargetParameterIndex() const;
-    PrimitiveType GetBindingType () const;
     StatementType GetSourceStatementType () const;
     ECSqlStatus Execute(ECSqlStatementBase& sourceStmt, ECSqlStatementBase& targetStmt, IECSqlBinder::MakeCopy makeCopy);
     };

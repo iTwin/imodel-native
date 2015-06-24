@@ -26,7 +26,8 @@ ColumnInfo ColumnInfo::Create(ECN::ECPropertyCR ecProperty, WCharCP propertyAcce
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 ColumnInfo::ColumnInfo () 
-: m_isValid(false), m_nullable (true), m_unique (false), m_columnType (PRIMITIVETYPE_Unknown), m_collation (ECDbSqlColumn::Constraint::Collation::Default)
+: m_isValid(false), m_nullable (true), m_unique (false), m_columnType(PRIMITIVETYPE_Binary), //default column type
+m_collation (ECDbSqlColumn::Constraint::Collation::Default)
     {}
 
 /*---------------------------------------------------------------------------------------

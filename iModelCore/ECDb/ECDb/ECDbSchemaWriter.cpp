@@ -383,7 +383,7 @@ BeSQLite::DbResult ECDbSchemaWriter::ImportECSchema (ECN::ECSchemaCR ecSchema)
             }
         }
 
-    return ImportCustomAttributes(ecSchema, ecSchemaId, ECONTAINERTYPE_Schema);
+    return ImportCustomAttributes(ecSchema, ecSchemaId, ECContainerType::Schema);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -535,7 +535,7 @@ BeSQLite::DbResult ECDbSchemaWriter::ImportECClass (ECN::ECClassCR ecClass)
         if (r != BE_SQLITE_DONE)
             return r;
         }
-    return ImportCustomAttributes(ecClass, ecClassId, ECONTAINERTYPE_Class);
+    return ImportCustomAttributes(ecClass, ecClassId, ECContainerType::Class);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -594,7 +594,7 @@ BeSQLite::DbResult ECDbSchemaWriter::ImportECRelationshipConstraint (ECClassId e
                 return r;
             }
         }
-    ECContainerType containerType = endpoint == ECRelationshipEnd_Source ? ECONTAINERTYPE_RelationshipConstraintSource: ECONTAINERTYPE_RelationshipConstraintTarget;
+    ECContainerType containerType = endpoint == ECRelationshipEnd_Source ? ECContainerType::RelationshipConstraintSource : ECContainerType::RelationshipConstraintTarget;
     return ImportCustomAttributes (relationshipConstraint, ecClassId, containerType);
     }
 
@@ -633,7 +633,7 @@ BeSQLite::DbResult ECDbSchemaWriter::ImportECProperty (ECN::ECPropertyCR ecPrope
     if (r != BE_SQLITE_DONE)
         return r;
 
-    return ImportCustomAttributes(ecProperty, ecPropertyId, ECONTAINERTYPE_Property);
+    return ImportCustomAttributes(ecProperty, ecPropertyId, ECContainerType::Property);
     }
 
 /*---------------------------------------------------------------------------------------

@@ -335,8 +335,9 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (ClassMapInfo const& cl
         BeAssert (false && "Failed to create foreign ECClassId column for relationship");
         return MapStatus::Error;
         }
+
     ECDbSqlColumn* otherEndECInstanceIdColumn = nullptr;
-    auto stat = CreateConstraintColumns(otherEndECInstanceIdColumn, relationshipClassMapInfo, thisEnd, thisEndConstraint.GetConstraintClasses());
+    auto stat = CreateConstraintColumns(otherEndECInstanceIdColumn, relationshipClassMapInfo, thisEnd, thisEndConstraint);
     if (stat != MapStatus::Success)
         return stat;
 
@@ -403,24 +404,7 @@ MapStatus RelationshipClassEndTableMap::_InitializePart2 (ClassMapInfo const& cl
 
     return MapStatus::Success;
     }
-//---------------------------------------------------------------------------------------
-// @bsimethod                      muhammad.zaighum                               1/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-bool RelationshipClassEndTableMap::IsKeyPropertyMappable(const ECRelationshipConstraintClassList & constraintclasses)
-    {
-    if (constraintclasses.size() == 1 && constraintclasses[0]->GetKeys().size() == 1)
-        {
-        auto constaintClass = constraintclasses[0];
-        BeAssert(constaintClass && "Constraint Class is NULL");
-        auto key = constaintClass->GetKeys()[0];
-        BeAssert(key.size() && "Key property is NULL");
-        auto &ecClass = constaintClass->GetClass();
-        auto ecProperty = ecClass.GetPropertyP(key.c_str());
-        if (ecProperty != nullptr && (ecProperty->GetTypeName().Equals(L"long") || ecProperty->GetTypeName().Equals(L"int")))
-            return true;
-        }
-    return false;
-    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Affan.Khan           01/2015
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -510,23 +494,14 @@ BentleyStatus RelationshipClassEndTableMap::_Load (std::set<ClassMap const*>& lo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       11/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-MapStatus RelationshipClassEndTableMap::CreateConstraintColumns (ECDbSqlColumn*& otherEndECInstanceIdColumn,
-    RelationshipMapInfo const& mapInfo, ECRelationshipEnd thisEnd, const ECRelationshipConstraintClassList & constraintclasses)
+MapStatus RelationshipClassEndTableMap::CreateConstraintColumns(ECDbSqlColumn*& otherEndECInstanceIdColumn, RelationshipMapInfo const& mapInfo, ECRelationshipEnd constraintEnd, ECN::ECRelationshipConstraintCR constraint)
     {
-    if (IsKeyPropertyMappable(constraintclasses))
-        {
-        auto constaintClass = constraintclasses[0];
-        BeAssert(constaintClass && "Constraint Class is nullptr");
-        auto classMap = GetECDbMap().GetClassMap(constaintClass->GetClass());
-        auto key = constaintClass->GetKeys()[0];
-        BeAssert(key.size() && "Key property is nullptr");
-        auto propertyMap = classMap->GetPropertyMap(key.c_str());
-        std::vector<ECDbSqlColumn const*> columns;
-        propertyMap->GetColumns(columns);
-        BeAssert(columns.size() == 1 && "more than 1 column is mapped to property");
-        otherEndECInstanceIdColumn = const_cast<ECDbSqlColumn*>(columns[0]);
-        BeAssert(otherEndECInstanceIdColumn != nullptr);
-        }
+    ECDbSqlColumn const* keyPropertyCol = nullptr;
+    if (SUCCESS != TryGetKeyPropertyColumn(keyPropertyCol, constraint, *mapInfo.GetECClass().GetRelationshipClassCP(), constraintEnd))
+        return MapStatus::Error;
+
+    if (keyPropertyCol != nullptr)
+        otherEndECInstanceIdColumn = const_cast<ECDbSqlColumn*>(keyPropertyCol);
     else
         {
         //** Other End ECInstanceId column
@@ -757,7 +732,9 @@ bool RelationshipClassEndTableMap::GetRelationshipColumnName (Utf8StringR column
         }
     return true;
     }
-    
+
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -831,6 +808,91 @@ RelationshipEndColumns const& RelationshipClassEndTableMap::GetEndColumnsMapping
     return RelationshipClassMap::GetEndColumnsMapping(info, GetThisEnd());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                      Krischan.Eberle                          06/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+void LogKeyPropertyRetrievalError(WCharCP errorDetails, ECRelationshipClassCR relClass, ECRelationshipEnd constraintEnd)
+    {
+    const NativeLogging::SEVERITY sev = NativeLogging::LOG_ERROR;
+    if (LOG.isSeverityEnabled(sev))
+        LOG.messagev(sev, L"Key properties on %ls constraint in ECRelationshipClass '%ls' ignored: %ls",
+               constraintEnd == ECRelationshipEnd_Source ? L"source" : L"target", relClass.GetFullName(), errorDetails);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                      Krischan.Eberle                          06/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(ECDbSqlColumn const*& keyPropertyColumn, ECRelationshipConstraintCR constraint, ECRelationshipClassCR relClass, ECRelationshipEnd constraintEnd) const
+    {
+    keyPropertyColumn = nullptr;
+    ECClassCP keyPropertyContainer = nullptr;
+    ECRelationshipConstraintClassList const& constraintClasses = constraint.GetConstraintClasses();
+    if (constraintClasses.size() == 0)
+        return SUCCESS;
+
+    WStringCP foundPropName = nullptr;
+    bool isMappable = constraintClasses.size() == 1;
+    for (ECRelationshipConstraintClassCP constraintClass : constraintClasses)
+        {
+        bvector<WString> const& keys = constraintClass->GetKeys();
+        const size_t keyCount = keys.size();
+        if (keyCount >= 1)
+            {
+            foundPropName = &keys[0];
+            keyPropertyContainer = &constraintClass->GetClass();
+            if (keyCount > 1 || foundPropName->empty())
+                isMappable = false;
+
+            break;
+            }
+        }
+
+    if (foundPropName == nullptr)
+        return SUCCESS;
+
+    if (!isMappable)
+        {
+        LogKeyPropertyRetrievalError(L"ECDb only supports Key properties if the constraint consists of a single ECClass and only a single Key property is defined for that ECClass.",
+                                     relClass, constraintEnd);
+        return ERROR;
+        }
+
+    IClassMap const* classMap = GetECDbMap().GetClassMap(*keyPropertyContainer);
+    if (classMap == nullptr || !classMap->GetMapStrategy().IsMapped())
+        {
+        BeAssert(false && "Class on relationship end is not mapped. This should have been caught before.");
+        return ERROR;
+        }
+
+    PropertyMap const* keyPropertyMap = classMap->GetPropertyMap(foundPropName->c_str());
+    if (keyPropertyMap == nullptr || keyPropertyMap->IsUnmapped() || keyPropertyMap->IsVirtual())
+        {
+        WString error;
+        error.Sprintf(L"Key property '%ls' does not exist or ist not mapped.", foundPropName->c_str());
+        LogKeyPropertyRetrievalError(error.c_str(), relClass, constraintEnd);
+        return ERROR;
+        }
+
+    ECSqlTypeInfo typeInfo(keyPropertyMap->GetProperty());
+    if (!typeInfo.IsExactNumeric() && !typeInfo.IsString())
+        {
+        WString error;
+        error.Sprintf(L"Unsupported data type of Key property '%ls'. ECDb only supports integral or string Key properties.", foundPropName->c_str());
+        LogKeyPropertyRetrievalError(error.c_str(), relClass, constraintEnd);
+        return ERROR;
+        }
+
+    std::vector<ECDbSqlColumn const*> columns;
+    keyPropertyMap->GetColumns(columns);
+    if (columns.size() != 1)
+        {
+        BeAssert(false && "Key property map is expected to map to a single column.");
+        return ERROR;
+        }
+
+    keyPropertyColumn = columns[0];
+    return SUCCESS;
+    }
 
 //************************** RelationshipClassLinkTableMap *****************************************
 /*---------------------------------------------------------------------------------**//**

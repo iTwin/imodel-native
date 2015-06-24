@@ -397,9 +397,9 @@ public:
     Utf8CP GetCaInstanceXml () const;
     void Clear()
         {
-        m_containerId=0;
-        m_containerType = ECONTAINERTYPE_Schema;
-        m_ecClassId=0;
+        m_containerId=0LL;
+        m_containerType = ECContainerType::Schema;
+        m_ecClassId=0LL;
         m_caInstanceXml.clear();
         }
     };

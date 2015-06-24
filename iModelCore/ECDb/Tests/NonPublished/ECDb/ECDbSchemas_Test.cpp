@@ -1174,7 +1174,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     //========================[sc_Bar]===========================================================
     WCharCP tblBar = L"sc_Bar"; //this table has be renamed from tblBar=>FOO_FIGHTERS
     EXPECT_TRUE (TableExist  (db, tblBar));
-    EXPECT_EQ   (5, GetColumnCount(db, tblBar));
+    EXPECT_EQ   (4, GetColumnCount(db, tblBar));
     EXPECT_TRUE (ColumnExist (db, tblBar, L"ECInstanceId"));
     //This a TablePerHieracrchy
     EXPECT_FALSE(ColumnExist (db, tblBar, L"ECClassId"));
@@ -1183,7 +1183,6 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     //Relations
     EXPECT_TRUE (ColumnExist (db, tblBar, L"ForeignECInstanceId_Foo_has_Bars"));
     EXPECT_TRUE (ColumnExist (db, tblBar, L"ForeignECInstanceId_Foo_has_Bars_hint"));
-    EXPECT_TRUE (ColumnExist (db, tblBar, L"ForeignECInstanceId_Foo_has_Bars_implicit"));
     
     //========================[sc_Foo]===========================================================
     WCharCP tblFoo = L"FOO_FIGHTERS"; //this table has be renamed from tblFoo=>FOO_FIGHTERS
@@ -2108,7 +2107,7 @@ TEST(ECDbSchemas, ECDbSchemaManagerAPITest)
     ECClassKeys inSchemaClassKeys;
     EXPECT_EQ (SUCCESS, schemaManager.GetECClassKeys (inSchemaClassKeys, "StartupCompany"));
     LOG.infov(L"No of classes in StartupCompany is %d", (int)inSchemaClassKeys.size());
-    EXPECT_EQ (57, inSchemaClassKeys.size());
+    EXPECT_EQ (56, inSchemaClassKeys.size());
 
     StopWatch randomClassSW ("Loading Random Class", false);
     int maxClassesToLoad = 100;
