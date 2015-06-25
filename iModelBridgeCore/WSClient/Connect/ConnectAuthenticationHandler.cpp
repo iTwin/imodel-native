@@ -36,7 +36,6 @@ m_thread (WorkerThread::Create ("ConnectAuthenticationHandler"))
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConnectAuthenticationHandler::~ConnectAuthenticationHandler ()
     {
-    m_thread->Stop ();
     }
 
 /*--------------------------------------------------------------------------------------+

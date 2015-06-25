@@ -57,8 +57,8 @@ void ConnectSpaces::Initialize (ClientInfoPtr clientInfo)
     BeAssert (nullptr != clientInfo);
 
     s_clientInfo = clientInfo;
-    s_threadPool   = std::make_shared<WorkerThreadPool> (1, "ConnectSpaces::web");
-    s_dlThreadPool = std::make_shared<WorkerThreadPool> (2, "ConnectSpaces::downloads");
+    s_threadPool   = WorkerThreadPool::Create (1, "ConnectSpaces::web");
+    s_dlThreadPool = WorkerThreadPool::Create (2, "ConnectSpaces::downloads");
 
     if (sm_actionMap.empty())
         {
@@ -123,13 +123,12 @@ void ConnectSpaces::Uninitialize()
     {
     if (s_threadPool != nullptr)
         {
-        s_threadPool->WaitUntilEmpty();
+        s_threadPool->OnEmpty ()->Wait ();
         s_threadPool = nullptr;        
         }
 
     if (s_dlThreadPool)
         {
-        s_dlThreadPool->Stop();
         s_dlThreadPool = nullptr;
         }
     }
