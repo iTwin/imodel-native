@@ -471,7 +471,7 @@ DPoint3dP GPArray::GetPoint (DPoint3dR point, int index) const
 bool MatchedPoles (DPoint4dCR poleA, DPoint4dCR poleB, double xyzTol, double &d)
     {
     static double s_weightTol = 1.0e-8;
-    d = bsiDPoint4d_realDistance (&poleA, &poleB);
+    d = poleA.RealDistance (poleB);
     if (fabs (poleA.w - poleB.w) > s_weightTol)
         return false;
     return  d <= xyzTol ? true : false;
@@ -1125,7 +1125,7 @@ GraphicsPoint *pRailC
     double dd, ddMax = 0.0;
     for (int i = 0; i < mNumProfile; i++)
         {
-        bsiDPoint4d_realDistanceSquared (&pRailB[i].point, &dd, &pRailC[i].point);
+        pRailB[i].point.RealDistanceSquared (&dd, *(&pRailC[i].point));
         if (dd > ddMax)
             ddMax = dd;
         }
@@ -1144,7 +1144,7 @@ GraphicsPoint *pRailD
     double dd, ddMin = DBL_MAX;
     for (int i = 0; i < mNumProfile; i++)
         {
-        bsiDPoint4d_realDistanceSquared (&pRailA[i].point, &dd, &pRailD[i].point);
+        pRailA[i].point.RealDistanceSquared (&dd, *(&pRailD[i].point));
         if (dd < ddMin)
             ddMin = dd;
         }
@@ -1491,14 +1491,14 @@ GPArraySegmentLengths::GPArraySegmentLengths (GPArrayCR gpa)
                 DPoint3d basePoint, currPoint;
 
                 /* look for the first real point: */
-                while (iRead <= i1 && !bsiDPoint4d_normalize (&pGP[iRead].point, &basePoint))
+                while (iRead <= i1 && !pGP[iRead].point.GetProjectedXYZ (basePoint))
                     iRead++;
 
                 while (++iRead <= i1)
                     {
-                    if (bsiDPoint4d_normalize (&pGP[iRead].point, &currPoint))
+                    if (pGP[iRead].point.GetProjectedXYZ (currPoint))
                         {
-                        length += bsiDPoint3d_distance (&basePoint, &currPoint);
+                        length += basePoint.Distance (currPoint);
                         insert (T_SegmentLengthPair (iRead, length));
 
                         basePoint = currPoint;

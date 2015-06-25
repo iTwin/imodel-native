@@ -162,7 +162,7 @@ static bool fixDirection(DPoint2dP pts, size_t nPts, RscGlyphElementType ptType)
             return false;
         }
 
-    double area = bsiDPoint2d_getPolygonArea(pts, (int)nPts);
+    double area = PolygonOps::Area (pts, (int)nPts);
     if (area == 0.0)
         return true;
 

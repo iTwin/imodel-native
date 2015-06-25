@@ -287,7 +287,7 @@ void LsSymbolComponent::_PostProcessLoad (DgnModelP modelRef)
         }
     else
         {
-        double muDef = 1.0/modelRef->GetMillimetersPerMaster();
+        double muDef = 1.0/modelRef->GetProperties().GetMillimetersPerMaster();
 
         SetMuDef (muDef);
         }

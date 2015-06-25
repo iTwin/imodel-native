@@ -77,13 +77,13 @@ public:
 TEST_F(DgnModelTests, GetGraphicElements)
     {
     LoadModel("Splines");
-    uint32_t graphicElementCount = m_modelP->CountLoadedElements();
+    uint32_t graphicElementCount = (uint32_t) m_modelP->GetElements().size();
     ASSERT_NE(graphicElementCount, 0);
     ASSERT_TRUE(graphicElementCount > 0)<<"Please provide model with graphics elements, otherwise this test case makes no sense";
     int count = 0;
     for (auto const& elm : *m_modelP)
         {
-        EXPECT_TRUE(&elm.second->GetDgnModel() == m_modelP);
+        EXPECT_TRUE(elm.second->GetModel() == m_modelP);
         ++count;
         }
     EXPECT_EQ(graphicElementCount, count);
@@ -118,11 +118,12 @@ TEST_F(DgnModelTests, GetName)
 TEST_F(DgnModelTests, EmptyList)
     {
     LoadModel("Splines");
-    ASSERT_TRUE(0 != m_modelP->CountLoadedElements());
-    m_modelP->Empty();
-    ASSERT_TRUE(0 == m_modelP->CountLoadedElements());
-    LoadModel("Splines");
-    ASSERT_TRUE(0 != m_modelP->CountLoadedElements());
+    ASSERT_TRUE(0 != m_modelP->GetElements().size());
+    m_modelP->EmptyModel();
+    ASSERT_TRUE(0 == m_modelP->GetElements().size());
+
+    m_modelP->FillModel();
+    ASSERT_TRUE(0 != m_modelP->GetElements().size());
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Julija Suboc     07/13
@@ -177,15 +178,13 @@ static int countSheets(DgnDbR db)
 //---------------------------------------------------------------------------------------
 void DgnModelTests::InsertElement(DgnDbR db,   DgnModelId mid, bool is3d, bool expectSuccess)
     {
-    DgnModelP model = db.Models().GetModel(mid);
-
     DgnCategoryId cat = db.Categories().QueryHighestId();
 
     GeometricElementPtr gelem;
     if (is3d)
-        gelem = PhysicalElement::Create(PhysicalElement::CreateParams(*model, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "PhysicalElement")), cat, Placement3d()));
+        gelem = PhysicalElement::Create(PhysicalElement::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "PhysicalElement")), cat, Placement3d()));
     else
-        gelem = DrawingElement::Create(DrawingElement::CreateParams(*model, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "DrawingElement")), cat, Placement2d()));
+        gelem = DrawingElement::Create(DrawingElement::CreateParams(db, mid, DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, "DrawingElement")), cat, Placement2d()));
 
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*gelem);
     builder->Append(*ICurvePrimitive::CreateLine(DSegment3d::From(DPoint3d::FromZero(), DPoint3d::From(1,0,0))));

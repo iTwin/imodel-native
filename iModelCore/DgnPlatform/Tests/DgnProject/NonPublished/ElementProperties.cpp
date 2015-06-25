@@ -209,7 +209,6 @@ TEST_F (ElementDisplayProperties, SetDisplayParams)
     ElemDisplayParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
     ep.SetWeight(21);
-    ep.SetMaterial(NULL);
     ep.SetDisplayPriority(2);
 
     auto keyE1 = InsertElement("E2", ep, m3id);
@@ -225,11 +224,6 @@ TEST_F (ElementDisplayProperties, SetDisplayParams)
         EXPECT_EQ (21, params.GetWeight());
         bool weight = params.IsWeightFromSubCategoryAppearance();
         EXPECT_FALSE (weight);
-
-#if defined (NEEDS_WORK_MATERIAL)
-        EXPECT_EQ (NULL, params.GetMaterial());
-#endif
-
         EXPECT_EQ (2, params.GetDisplayPriority());
         }
     }

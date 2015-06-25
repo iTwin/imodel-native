@@ -57,7 +57,7 @@ StatusInt       LsPointComponent::_DoStroke (ViewContextP context, DPoint3dCP in
             dir1.NormalizedDifference (org[1], *org);
             dir2.NormalizedDifference (*org, *(org-1));
 
-            bsiDPoint3d_interpolate (&dir, &dir1, 0.5, &dir2);
+            dir.Interpolate (dir1, 0.5, dir2);
             dir.Normalize ();
 
             if (SUCCESS != sym->Output (context, modifiers, org, &dir))

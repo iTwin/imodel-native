@@ -15,7 +15,6 @@ void DgnDomains::RegisterDomain(DgnDomain& domain)
     T_HOST.RegisteredDomains().push_back(&domain);
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -66,7 +65,7 @@ DbResult DgnDomain::LoadHandlers(DgnDbR dgndb) const
         auto thisHandler = myHandlers.find(handlerName);
         if (thisHandler == myHandlers.end())
             {
-            LOG.errorv("Error Missing Handler [%s]", handlerName.c_str());
+            LOG.errorv("Missing Handler [%s]", handlerName.c_str());
             continue;
             }
 

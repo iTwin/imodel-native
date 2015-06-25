@@ -52,25 +52,25 @@ static void bulgeFactorToDEllipse3d(DEllipse3dP pEllipse, DPoint2dCP pStart, DPo
     double tangentHalfAngle = tan(sweep * 0.5);
 
     // U = chord bvector
-    bsiDPoint2d_subtractDPoint2dDPoint2d(&u, pEnd, pStart);
-    bsiDPoint2d_scale(&u, &u, 0.5);
+    u.DifferenceOf (*pEnd, *pStart);
+    u.Scale (u, 0.5);
 
     // V = perpendicular to chord bvector, same length.
     v.x = -u.y;
     v.y = u.x;
 
     // Center = p0 + U + -V/tangentHalfAngle
-    bsiDPoint2d_add2ScaledDPoint2d(&center, pStart, &u, 1.0, &v, 1.0 / tangentHalfAngle);
+    center.SumOf(*pStart, u, 1.0, v, 1.0 / tangentHalfAngle);
 
     // Radius
-    bsiDPoint2d_subtractDPoint2dDPoint2d(&r, pStart, &center);
-    radius = bsiDPoint2d_magnitude(&r);
+    r.DifferenceOf (*pStart, center);
+    radius = r.Magnitude ();
 
     // Start angle
     x.x = 1.0;
     x.y = 0.0;
 
-    theta0 = bsiDPoint2d_angleBetweenVectors(&x, &r);
+    theta0 = x.AngleTo (r);
 
     // Setup for ellipse
     bsiDEllipse3d_init(pEllipse, center.x, center.y, 0.0, radius, 0.0, 0.0, 0.0, radius, 0.0, theta0, sweep);

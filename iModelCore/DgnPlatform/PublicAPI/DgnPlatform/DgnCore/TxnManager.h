@@ -457,6 +457,7 @@ namespace dgn_TxnTable
         Utf8CP _GetTableName() const {return MyTableName();}
 
         virtual void _OnReversedAdd(BeSQLite::Changes::Change const&) override;
+        virtual void _OnReversedUpdate(BeSQLite::Changes::Change const&) override;
     };
 
     struct ElementDep : TxnTable

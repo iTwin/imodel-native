@@ -60,9 +60,11 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
     friend struct DgnElement;
     friend struct DgnElements;
     friend struct QueryModel;
+    friend struct dgn_TxnTable::Model;
 
     //========================================================================================
-    //! Application data attached to a DgnModel. Create a subclass of this to store non-persistent information on a DgnModel.
+    //! Application data attached to a DgnModel. Create a subclass of this to store non-persistent information on a DgnModel and
+    //! to react to significant events on a DgnModel.
     //! @see DgnModel::AddAppData
     //=======================================================================================
     struct AppData : RefCountedBase
@@ -82,8 +84,13 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         //! Override this method to be notified after host DgnModel has been emptied.
         virtual DropMe _OnEmptied(DgnModelCR) {return DropMe::No;}
 
+        //! Called when the DgnModel is about to be updated
+        virtual DgnDbStatus _OnUpdate(DgnModelCR) {return DgnDbStatus::Success;}
+
+        virtual DropMe _OnUpdated(DgnModelCR) {return DropMe::No;}
+
         //! Override this method to be notified before the DgnModel is deleted.
-        virtual void _OnDelete(DgnModelCR) {}
+        virtual void _OnDelete(DgnModelR) {}
 
         virtual DropMe _OnDeleted(DgnModelCR) {return DropMe::Yes;}
     };
@@ -114,7 +121,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         FormatterFlags m_formatterFlags;               //!< format flags
         UnitDefinition m_masterUnit;                   //!< Master Unit information
         UnitDefinition m_subUnit;                      //!< Sub Unit information
-        double         m_roundoffUnit;                 //!< unit lock roundoff val in uors
+        double         m_roundoffUnit;                 //!< unit lock roundoff val
         double         m_roundoffRatio;                //!< Unit roundoff ratio y to x (if 0 use Grid Ratio)
         double         m_formatterBaseDir;             //!< Base Direction used for Direction To/From String
 
@@ -138,8 +145,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         void FromJson(Json::Value const& inValue);
         void ToJson(Json::Value& outValue) const;
 
-        //! Set working-units and sub-units. Units must be valid and comparable.
-        DGNPLATFORM_EXPORT BentleyStatus SetWorkingUnits(UnitDefinitionCR newMasterUnit, UnitDefinitionCR newSubUnit);
+        //! Set master units and sub-units. Units must be valid and comparable.
+        DGNPLATFORM_EXPORT BentleyStatus SetUnits(UnitDefinitionCR newMasterUnit, UnitDefinitionCR newSubUnit);
         void SetLinearUnitMode(DgnUnitFormat value) { m_formatterFlags.m_linearUnitMode = (uint32_t)value; }
         void SetLinearPrecision(PrecisionFormat value) {
                 m_formatterFlags.m_linearPrecType  = static_cast<uint32_t>(DoubleFormatter::GetTypeFromPrecision(value));
@@ -160,8 +167,24 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         double GetRoundoffUnit() const {return m_roundoffUnit;}
         double GetRoundoffRatio() const {return m_roundoffRatio;}
         FormatterFlags GetFormatterFlags() const    {return m_formatterFlags;}
-        UnitDefinitionCR GetMasterUnit() const {return m_masterUnit;}
-        UnitDefinitionCR GetSubUnit() const {return m_subUnit;}
+
+        //! Get the master units for this DgnModel.
+        //! Master units are the major display units for coordinates in a DgnModel (e.g. "Meters", or "Feet").
+        //! @see SetUnits, GetSubUnits
+        UnitDefinitionCR GetMasterUnits() const {return m_masterUnit;}
+
+        //! Get the sub-units for this DgnModel.
+        //! Sub units are the minor readout units for coordinates in a DgnModel (e.g. "Centimeters, or "Inches").
+        //! @see SetUnits, GetMasterUnits
+        UnitDefinitionCR GetSubUnits() const {return m_subUnit;}
+
+        //! Get the number of millimeters per master unit.
+        //! @see GetMasterUnits
+        DGNPLATFORM_EXPORT double GetMillimetersPerMaster() const;
+
+        //! Get the number of sub units per master unit.
+        //! @see GetSubUnits
+        DGNPLATFORM_EXPORT double GetSubPerMaster() const;
     };
 
     //=======================================================================================
@@ -175,6 +198,12 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         DgnClassId  m_classId;
         Utf8String  m_name;
         Properties  m_props;
+        //! Parameters to create a new instance of a DgnModel.
+        //! @param[in] dgndb The DgnDb for the newly created DgnModel
+        //! @param[in] classId The DgnClassId for the new DgnModel.
+        //! @param[in] name The name for the DgnModel
+        //! @param[in] props The properties for the new DgnModel.
+        //! @param[in] id Internal only, must be DgnModelId() to create a new DgnModel.
         CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, Properties props=Properties(), DgnModelId id=DgnModelId()) :
             m_dgndb(dgndb), m_id(id), m_classId(classId), m_name(name), m_props(props) {}
     };
@@ -207,15 +236,18 @@ protected:
     DGNPLATFORM_EXPORT virtual ~DgnModel();
 
     DGNPLATFORM_EXPORT virtual void _InitFrom(DgnModelCR other);            //!< @private
-    virtual DgnModelType _GetModelType() const = 0;
-    virtual DgnModels::Model::CoordinateSpace _GetCoordinateSpace() const = 0;
-    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const;
-    virtual bool _Is3d() const = 0;
-    DGNPLATFORM_EXPORT virtual void _ToPropertiesJson(Json::Value&) const;
-    DGNPLATFORM_EXPORT virtual void _FromPropertiesJson(Json::Value const&);
-    DGNPLATFORM_EXPORT virtual DPoint3d _GetGlobalOrigin() const;
+    virtual DgnModelType _GetModelType() const = 0; //!< @private
+    virtual DgnModels::Model::CoordinateSpace _GetCoordinateSpace() const = 0; //!< @private
+    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const;//!< @private
+    virtual bool _Is3d() const = 0;//!< @private
+    DGNPLATFORM_EXPORT virtual void _ToPropertiesJson(Json::Value&) const;//!< @private
+    DGNPLATFORM_EXPORT virtual void _FromPropertiesJson(Json::Value const&);//!< @private
 
-    /** @name Events for the DgnElements of a DgnModel */
+    //! Get the Global Origin for this DgnMode.
+    //! The global origin is on offset that is added to all coordinate values stored in this model.
+    DGNPLATFORM_EXPORT virtual DPoint3d _GetGlobalOrigin() const;//!< @private
+
+    /** @name Events associated with the DgnElements of a DgnModel */
     /** @{ */
     //! Called when a DgnElement in this DgnModel is about to be inserted.
     //! @note If you override this method, you @em must call the T_Super implementation, forwarding its status.
@@ -234,6 +266,7 @@ protected:
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
     DGNPLATFORM_EXPORT virtual void _OnLoadedElement(DgnElementCR el);
 
+    //! Called after a DgnElement in this DgnModel has been inserted into the DgnDb
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
     DGNPLATFORM_EXPORT virtual void _OnInsertedElement(DgnElementCR el);
@@ -243,6 +276,7 @@ protected:
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
     DGNPLATFORM_EXPORT virtual void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original);
 
+    //! Called after a DgnElement in this DgnModel has been deleted.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
     DGNPLATFORM_EXPORT virtual void _OnDeletedElement(DgnElementCR element);
@@ -250,12 +284,17 @@ protected:
 
     /** @name Events for a DgnModel */
     /** @{ */
+    //! Load all of the DgnElements of this DgnModel into memory.
     DGNPLATFORM_EXPORT virtual void _FillModel();
+
+    //! Called after this DgnModel was loaded from the DgnDb.
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert();
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate();
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete();
     DGNPLATFORM_EXPORT virtual void _OnLoaded();
     DGNPLATFORM_EXPORT virtual void _OnInserted();
+    DGNPLATFORM_EXPORT virtual void _OnUpdated();
     DGNPLATFORM_EXPORT virtual void _OnDeleted();
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert();
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete();
     /** @} */
 
     /** @name Dynamic cast shortcuts for a DgnModel */
@@ -282,49 +321,44 @@ protected:
     //! a) make arrangements to obtain the data in the background and b) schedule itself for callbacks during progressive display in order to display the data when it becomes available.
     //! See DgnViewport::ScheduleProgressiveDisplay for how to register for progressive display.
     virtual void _AddGraphicsToScene(ViewContextR) {}
+    void ReadProperties();
 
 public:
+    void AddGraphicsToScene(ViewContextR context) {_AddGraphicsToScene(context);}
     DGNPLATFORM_EXPORT ModelHandlerR GetModelHandler() const;
 
-    DGNPLATFORM_EXPORT DgnRangeTree* GetRangeIndexP(bool create) const;
-    void ReadProperties();
-    DGNPLATFORM_EXPORT BeSQLite::DbResult SaveProperties();
-    void AddGraphicsToScene(ViewContextR context) {_AddGraphicsToScene(context);}
+    DGNPLATFORM_EXPORT DgnRangeTree* GetRangeIndexP(bool create) const; //!< @private
 
+    //! Get the Global Origin for this DgnModel.
+    //! The global origin is an offset that is added to all coordinate values of this DgnModel when reporting them to the user.
+    //! @note all PhysicalModels have the same coordinate system and the same global origin.
+    DPoint3d GetGlobalOrigin() const {return _GetGlobalOrigin();}
 
-    DGNPLATFORM_EXPORT double GetMillimetersPerMaster() const;
-    DGNPLATFORM_EXPORT double GetSubPerMaster() const;
-    DGNPLATFORM_EXPORT DPoint3d GetGlobalOrigin() const;
-
-    //! Empty the contents of this DgnModel. This will release any references to DgnElements held by this DgnModel.
-    DGNPLATFORM_EXPORT void Empty();
+    //! Empty the contents of this DgnModel. This will release any references to DgnElements held by this DgnModel, potentially freeing them.
+    DGNPLATFORM_EXPORT void EmptyModel();
 
     //! Load all elements of this DgnModel.
     //! After this call, all of the DgnElements of this model are loaded and are held in memory by this DgnModel.
     //! @note if this DgnModel is already filled, this method does nothing and returns DgnDbStatus::Success.
     void FillModel() {_FillModel();}
 
-    //! Determine whether this DgnModel has been "filled" from disk or not.
+    //! Determine whether this DgnModel's elements have been "filled" from the DgnDb or not.
     //! @return true if the DgnModel is filled.
     bool IsFilled() const {return m_filled;}
 
     //! Determine whether this DgnModel is a persistent model.
+    //! A model is "persistent" if it was loaded via DgnModels::GetModel, or after it is inserted into the DgnDb via Insert.
+    //! A newly created model, or a model after calling Delete, is not persistent.
     bool IsPersistent() const {return m_persistent;}
-
-    //! Get the number of elements in this DgnModel.
-    //! @return the number of elements in this DgnModel.
-    //! @note The DgnModel must be filled before calling this method.
-    //! @see FillSections
-    uint32_t CountLoadedElements() const {return (uint32_t) m_elements.size();}
 
     //! Find a DgnElementP in this DgnModel by DgnElementId.
     //! @return DgnElementP of element with \a id, or NULL.
     DGNPLATFORM_EXPORT DgnElementCP FindElementById(DgnElementId id);
 
-    //! Determine whether this is a 3D DgnModel
+    //! Determine whether this is a 3d DgnModel
     bool Is3d() const {return _Is3d();}
 
-    //! Get the range of all visible elements in the DgnModel.
+    //! Get the AxisAlignedBox3d of the contents of this DgnModel.
     AxisAlignedBox3d QueryModelRange() const {return _QueryModelRange();}
 
     //! Get the Properties for this DgnModel.
@@ -345,21 +379,23 @@ public:
     //! Get the DgnModelId of this DgnModel
     DgnModelId GetModelId() const {return m_modelId;}
 
-    DgnModel2dCP ToDgnModel2d() const {return _ToDgnModel2d();}
-    DgnModel3dCP ToDgnModel3d() const {return _ToDgnModel3d();}
-    PhysicalModelCP ToPhysicalModel() const {return _ToPhysicalModel();}
-    PlanarPhysicalModelCP ToPlanarPhysicalModel() const {return _ToPlanarPhysicalModel();}
-    SheetModelCP ToSheetModel() const {return _ToSheetModel();}
-    DgnModel2dP ToDgnModel2dP() {return const_cast<DgnModel2dP>(_ToDgnModel2d());}
-    DgnModel3dP ToDgnModel3dP() {return const_cast<DgnModel3dP>(_ToDgnModel3d());}
-    PhysicalModelP ToPhysicalModelP() {return const_cast<PhysicalModelP>(_ToPhysicalModel());}
-    PlanarPhysicalModelP ToPlanarPhysicalModelP() {return const_cast<PlanarPhysicalModelP>(_ToPlanarPhysicalModel());}
-    SheetModelP ToSheetModelP() {return const_cast<SheetModelP>(_ToSheetModel());}
+    //! @name Dynamic casting to DgnModel subclasses
+    //! @{
+    DgnModel2dCP ToDgnModel2d() const {return _ToDgnModel2d();} //!< more efficient substitute for dynamic_cast<DgnModel2dCP>(model)
+    DgnModel3dCP ToDgnModel3d() const {return _ToDgnModel3d();} //!< more efficient substitute for dynamic_cast<DgnModel3dCP>(model)
+    PhysicalModelCP ToPhysicalModel() const {return _ToPhysicalModel();} //!< more efficient substitute for dynamic_cast<PhysicalModelCP>(model)
+    PlanarPhysicalModelCP ToPlanarPhysicalModel() const {return _ToPlanarPhysicalModel();} //!< more efficient substitute for dynamic_cast<PlanarPhysicalModelCP>(model)
+    SheetModelCP ToSheetModel() const {return _ToSheetModel();} //!< more efficient substitute for dynamic_cast<SheetModelCP>(model)
+    DgnModel2dP ToDgnModel2dP() {return const_cast<DgnModel2dP>(_ToDgnModel2d());} //!< more efficient substitute for dynamic_cast<DgnModel2dP>(model)
+    DgnModel3dP ToDgnModel3dP() {return const_cast<DgnModel3dP>(_ToDgnModel3d());} //!< more efficient substitute for dynamic_cast<DgnModel3dP>(model)
+    PhysicalModelP ToPhysicalModelP() {return const_cast<PhysicalModelP>(_ToPhysicalModel());} //!< more efficient substitute for dynamic_cast<PhysicalModelP>(model)
+    PlanarPhysicalModelP ToPlanarPhysicalModelP() {return const_cast<PlanarPhysicalModelP>(_ToPlanarPhysicalModel());} //!< more efficient substitute for dynamic_cast<PlanarPhysicalModelP>(model)
+    SheetModelP ToSheetModelP() {return const_cast<SheetModelP>(_ToSheetModel());}//!< more efficient substitute for dynamic_cast<SheetModelP>(model)
+    //! @}
 
     //! Determine whether this is a readonly DgnModel or not.
     bool IsReadOnly() const {return m_readonly;}
-
-    void SetReadOnly(bool val) {m_readonly = val;}
+    void SetReadOnly(bool val) {m_readonly = val;} //!< @private
 
     //! Get the DgnDb that contains this model.
     //! @return the DgnDb that contains this model.
@@ -369,9 +405,14 @@ public:
     //! @return DgnDbStatus::Success if this model was successfully inserted, error otherwise.
     DGNPLATFORM_EXPORT DgnDbStatus Insert(Utf8CP description=nullptr, bool inGuiList=true);
 
-    //! Delete this model.
+    //! Delete this model from the DgnDb
     //! @note All elements from this model are deleted as well.
+    //! @return DgnDbStatus::Success if this model was successfully deleted, error otherwise.
     DGNPLATFORM_EXPORT DgnDbStatus Delete();
+
+    //! Save the properties of this model into the DgnDb
+    //! @return DgnDbStatus::Success if the properties of this model were successfully updated, error otherwise.
+    DGNPLATFORM_EXPORT DgnDbStatus Update();
 
     /** @name DgnModel AppData */
     /** @{ */
@@ -380,7 +421,7 @@ public:
     //! any of the AppData "_On" methods. If an entry with \a key already exists, it will be dropped and replaced with \a appData.
     DGNPLATFORM_EXPORT void AddAppData(AppData::Key const& key, AppData* appData);
 
-    //! Remove AppData from thsis DgnModel
+    //! Remove AppData from this DgnModel
     //! @return SUCCESS if appData with key is found and was dropped.
     //! @remarks Calls the app data object's _OnCleanup method.
     DGNPLATFORM_EXPORT StatusInt DropAppData(AppData::Key const& key);
@@ -392,10 +433,20 @@ public:
 
     DGNPLATFORM_EXPORT DgnModelPtr Clone(Utf8CP newName) const;
 
-    typedef DgnElementMap::const_iterator const_iterator;
+
+    //! get the collection of elements for this DgnModel that were loaded by a previous call to FillModel.
     DgnElementMap const& GetElements() const {return m_elements;}
+
+    //! determine whether this DgnModel has any elements loaded. This will always be true if FillModel was never called,
+    //! or after EmptyModel is called.
     bool IsEmpty() const {return (begin() != end());}
+
+    typedef DgnElementMap::const_iterator const_iterator;
+
+    //! a const iterator to the start of the loaded elements for this DgnModel.
     const_iterator begin() const {return m_elements.begin();}
+
+    //! a const iterator to the end of the loaded elements for this DgnModel.
     const_iterator end() const {return m_elements.end();}
 };
 
@@ -595,7 +646,7 @@ public:
         DOMAINHANDLER_DECLARE_MEMBERS(__ECClassName__,_handlerclass__,_handlersuperclass__,__exporter__)
 
 //=======================================================================================
-//! @namespace BentleyApi::Dgn::dgn_ModelHandler DgnModel Handlers in the base "Dgn" domain. 
+//! @namespace BentleyApi::Dgn::dgn_ModelHandler DgnModel Handlers in the base "Dgn" domain.
 //! @note Only handlers from the base "Dgn" domain belong in this namespace.
 // @bsiclass                                                    Keith.Bentley   06/15
 //=======================================================================================

@@ -38,6 +38,14 @@ void DgnElement::Release() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelP DgnElement::GetModel() const
+    {
+    return m_dgndb.Models().GetModel(m_modelId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::AppData* DgnElement::FindAppData(AppData::Key const& key) const
@@ -223,7 +231,7 @@ DgnDbStatus DgnElement::_OnInsert()
             return stat;
         }
 
-    return m_dgnModel._OnInsertElement(*this);
+    return GetModel()->_OnInsertElement(*this);
     }
 
 struct OnInsertedCaller
@@ -241,7 +249,7 @@ void DgnElement::_OnInserted(DgnElementP copiedFrom) const
     if (copiedFrom)
         copiedFrom->CallAppData(OnInsertedCaller(*this));
 
-    m_dgnModel._OnInsertedElement(*this);
+    GetModel()->_OnInsertedElement(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -260,7 +268,7 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
             return stat;
         }
 
-    return m_dgnModel._OnUpdateElement(*this, original);
+    return GetModel()->_OnUpdateElement(*this, original);
     }
 
 struct OnUpdatedCaller
@@ -279,7 +287,7 @@ void DgnElement::_OnUpdated(DgnElementCR original) const
     original.CallAppData(OnUpdatedCaller(*this, original));
     CallAppData(OnUpdatedCaller(*this, original));
 
-    m_dgnModel._OnUpdatedElement(*this, original);
+    GetModel()->_OnUpdatedElement(*this, original);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -294,7 +302,7 @@ DgnDbStatus DgnElement::_OnDelete() const
             return stat;
         }
 
-    return m_dgnModel._OnDeleteElement(*this);
+    return GetModel()->_OnDeleteElement(*this);
     }
 
 struct OnDeletedCaller  {DgnElement::AppData::DropMe operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnDeleted(el);}};
@@ -305,7 +313,9 @@ void DgnElement::_OnDeleted() const
     {
     CallAppData(OnDeletedCaller());
     GetDgnDb().Elements().DropFromPool(*this);
-    m_dgnModel._OnDeletedElement(*this);
+    DgnModelP model = GetModel();
+    if (model)
+        model->_OnDeletedElement(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -318,7 +328,7 @@ DgnDbStatus DgnElement::_InsertInDb()
 
     stmt->BindId(Column::ElementId, m_elementId);
     stmt->BindId(Column::ECClassId, m_classId);
-    stmt->BindId(Column::ModelId, m_dgnModel.GetModelId());
+    stmt->BindId(Column::ModelId, m_modelId);
     stmt->BindId(Column::CategoryId, m_categoryId);
     stmt->BindText(Column::Label, GetLabel(), Statement::MakeCopy::No);
     stmt->BindText(Column::Code, GetCode(), Statement::MakeCopy::No);
@@ -596,7 +606,7 @@ PhysicalElementPtr PhysicalElement::Create(PhysicalModelR model, DgnCategoryId c
         return nullptr;
         }
 
-    return new PhysicalElement(CreateParams(model, PhysicalElement::QueryClassId(model.GetDgnDb()), categoryId));
+    return new PhysicalElement(CreateParams(model.GetDgnDb(), model.GetModelId(), PhysicalElement::QueryClassId(model.GetDgnDb()), categoryId));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -669,7 +679,7 @@ void DgnElement::_CopyFrom(DgnElementCR other)
     if (&other == this)
         return;
 
-    if (&m_dgnModel != &other.m_dgnModel)
+    if (&m_dgndb != &other.m_dgndb)
         {
         BeAssert(false);
         return;
@@ -731,7 +741,7 @@ ElementHandlerR DgnElement::GetElementHandler() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementPtr DgnElement::CopyForEdit() const
     {
-    DgnElementPtr newEl = GetElementHandler()._CreateInstance(DgnElement::CreateParams(m_dgnModel, m_classId, m_categoryId, GetLabel(), GetCode(), m_elementId, m_parentId));
+    DgnElementPtr newEl = GetElementHandler()._CreateInstance(DgnElement::CreateParams(GetDgnDb(), m_modelId, m_classId, m_categoryId, GetLabel(), GetCode(), m_elementId, m_parentId));
     newEl->_CopyFrom(*this);
     return newEl;
     }
@@ -996,18 +1006,6 @@ DgnElement::Aspect::Aspect()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::NonItemAspect::_DeleteInstance(DgnElementCR el)
-    {
-    // I am assuming that the ElementOwnsAspects ECRelationship is either just a foreign key column on the aspect or that ECSql somehow deletes the relationship instance automatically.
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
-    stmt->BindId(1, m_instanceId);
-    BeSQLite::EC::ECSqlStepStatus status = stmt->Step();
-    return (BeSQLite::EC::ECSqlStepStatus::Done == status)? DgnDbStatus::Success: DgnDbStatus::WriteError;
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::Aspect::InsertThis(DgnElementCR el)
     {
     DgnDbStatus status = _InsertInstance(el);
@@ -1019,7 +1017,7 @@ DgnDbStatus DgnElement::Aspect::InsertThis(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnClassId  DgnElement::Aspect::GetThisECClassId(DgnDbR db)
+DgnClassId  DgnElement::Aspect::GetECClassId(DgnDbR db) const
     {
     return DgnClassId(db.Schemas().GetECClassId(_GetECSchemaName().c_str(), _GetECClassName().c_str()));
     }
@@ -1027,7 +1025,7 @@ DgnClassId  DgnElement::Aspect::GetThisECClassId(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECN::ECClassCP  DgnElement::Aspect::GetThisECClass(DgnDbR db)
+ECN::ECClassCP  DgnElement::Aspect::GetECClass(DgnDbR db) const
     {
     return db.Schemas().GetECClass(_GetECSchemaName().c_str(), _GetECClassName().c_str());
     }
@@ -1061,7 +1059,7 @@ DgnElement::AppData::DropMe DgnElement::Aspect::_OnUpdated(DgnElementCR modified
         {
         DgnDbR db = modified.GetDgnDb();
         BeSQLite::EC::ECInstanceKey existing = _QueryExistingInstanceKey(modified);
-        if (existing.IsValid() && (existing.GetECClassId() != GetThisECClassId(db).GetValue()))
+        if (existing.IsValid() && (existing.GetECClassId() != GetECClassId(db).GetValue()))
             _DeleteInstance(modified);
             
         if (!existing.IsValid())
@@ -1075,152 +1073,6 @@ DgnElement::AppData::DropMe DgnElement::Aspect::_OnUpdated(DgnElementCR modified
     return DropMe::Yes; // this scheduled change has been processed, so remove it.
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                  Sam.Wilson                    03/2015
-//---------------------------------------------------------------------------------------
-static DgnDbStatus insertElementOwnsAspectRelationship(DgnElementCR sourceElement, BeSQLite::EC::ECInstanceKey aspectKey)
-    {
-    if (!aspectKey.IsValid())
-        return DgnDbStatus::WriteError;
-
-    CachedECSqlStatementPtr statementPtr = sourceElement.GetDgnDb().GetPreparedECSqlStatement(
-        "INSERT INTO " DGN_SCHEMA(DGN_RELNAME_ElementOwnsAspects) " (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES (?,?,?,?)");
-
-    if (!statementPtr.IsValid())
-        return DgnDbStatus::WriteError;
-
-    statementPtr->BindId(1, sourceElement.GetElementClassId());
-    statementPtr->BindId(2, sourceElement.GetElementId());
-    statementPtr->BindInt64(3, aspectKey.GetECClassId());
-    statementPtr->BindId(4, aspectKey.GetECInstanceId());
-
-    return ECSqlStepStatus::Done != statementPtr->Step() ? DgnDbStatus::WriteError: DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::NonItemAspect::_InsertInstance(DgnElementCR el)
-    {
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s VALUES (NULL)", GetFullEcSqlClassName().c_str()));
-    BeSQLite::EC::ECInstanceKey key;
-    if (BeSQLite::EC::ECSqlStepStatus::Done != stmt->Step(key))
-        return DgnDbStatus::ElementWriteError;
-    m_instanceId = key.GetECInstanceId();
-    return insertElementOwnsAspectRelationship(el, key);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                  Sam.Wilson                    03/2015
-//---------------------------------------------------------------------------------------
-BeSQLite::EC::ECInstanceId DgnElement::UniqueAspect::QueryExistingInstanceId(DgnElementCR el, DgnClassId classId)
-    {
-    BeSQLite::EC::CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " DGN_SCHEMA(DGN_RELNAME_ElementOwnsAspects) 
-                                                                                            " WHERE(SourceECInstanceId=?) AND (TargetECClassId=?)");
-    stmt->BindId(1, el.GetElementId());
-    stmt->BindId(2, classId);
-    if (stmt->Step() != BeSQLite::EC::ECSqlStepStatus::HasRow)
-        return BeSQLite::EC::ECInstanceId();
-    return stmt->GetValueId<EC::ECInstanceId>(0);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::UniqueAspect* DgnElement::UniqueAspect::Find(DgnElementCR el, ECN::ECClassCR cls)
-    {
-    AppData* appData = el.FindAppData(GetKey(cls));
-    if (nullptr == appData)
-        return nullptr;
-    UniqueAspect* aspect = dynamic_cast<UniqueAspect*>(appData);
-    BeAssert(nullptr != aspect && "The same ECClass cannot have both Unique and MultiAspects");
-    return aspect;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::UniqueAspect::SetAspect(DgnElementR el, UniqueAspect& newAspect)
-    {
-    SetAspect0(el, newAspect);
-    newAspect.m_changeType = ChangeType::Write;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::UniqueAspect const* DgnElement::UniqueAspect::GetAspect(DgnElementCR el, ECN::ECClassCR cls)
-    {
-    UniqueAspect const* aspect = Find(el,cls);
-    if (nullptr == aspect)
-        {
-        aspect = Load(el,cls);
-        }
-    else
-        {
-        if (aspect->m_changeType == ChangeType::Delete)
-            aspect = nullptr;
-        }
-
-    return aspect;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::UniqueAspect* DgnElement::UniqueAspect::GetAspectP(DgnElementR el, ECN::ECClassCR cls)
-    {
-    UniqueAspect* aspect = const_cast<UniqueAspect*>(GetAspect(el,cls));
-    if (nullptr == aspect)
-        return aspect;
-    aspect->m_changeType = ChangeType::Write;
-    return aspect;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::UniqueAspect::SetAspect0(DgnElementCR el, UniqueAspect& newItem)
-    {
-    el.DropAppData(newItem.GetKey(el.GetDgnDb()));  // remove any existing cached Item
-    el.AddAppData(newItem.GetKey(el.GetDgnDb()), &newItem);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::UniqueAspect* DgnElement::UniqueAspect::Load(DgnElementCR el, ECN::ECClassCR cls)
-    {
-    if (!el.GetElementId().IsValid())
-        return nullptr;
-
-    ElementAspectHandler* handler = ElementAspectHandler::FindHandler(el.GetDgnDb(), DgnClassId(cls.GetId()));
-    if (nullptr == handler)
-        return nullptr;
-
-    RefCountedPtr<DgnElement::UniqueAspect> aspect = dynamic_cast<DgnElement::UniqueAspect*>(handler->_CreateInstance().get());
-    if (!aspect.IsValid())
-        return nullptr;
-
-    aspect->m_instanceId = QueryExistingInstanceId(el, DgnClassId(cls.GetId()));
-    if (!aspect->m_instanceId.IsValid())
-        return nullptr;
-
-    aspect->_LoadProperties(el);
-
-    SetAspect0(el, *aspect);
-    aspect->m_changeType = ChangeType::None; // aspect starts out clean
-    return aspect.get();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                  Sam.Wilson                    03/2015
-//---------------------------------------------------------------------------------------
-BeSQLite::EC::ECInstanceKey DgnElement::UniqueAspect::_QueryExistingInstanceKey(DgnElementCR el)
-    {
-    DgnClassId classId = GetThisECClassId(el.GetDgnDb());
-    return BeSQLite::EC::ECInstanceKey(classId.GetValue(), QueryExistingInstanceId(el, classId)); // We must check to see if there is another instance of this class in the Db.
-    }
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 struct MultiAspectMux : DgnElement::AppData
@@ -1287,6 +1139,53 @@ DgnElement::AppData::DropMe MultiAspectMux::_OnUpdated(DgnElementCR modified, Dg
     return DropMe::Yes; // all scheduled changes have been processed, so remove them.
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Sam.Wilson                    03/2015
+//---------------------------------------------------------------------------------------
+static DgnDbStatus insertElementOwnsAspectRelationship(DgnElementCR sourceElement, BeSQLite::EC::ECInstanceKey aspectKey)
+    {
+    if (!aspectKey.IsValid())
+        return DgnDbStatus::WriteError;
+
+    CachedECSqlStatementPtr statementPtr = sourceElement.GetDgnDb().GetPreparedECSqlStatement(
+        "INSERT INTO " DGN_SCHEMA(DGN_RELNAME_ElementOwnsAspects) " (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES (?,?,?,?)");
+
+    if (!statementPtr.IsValid())
+        return DgnDbStatus::WriteError;
+
+    statementPtr->BindId(1, sourceElement.GetElementClassId());
+    statementPtr->BindId(2, sourceElement.GetElementId());
+    statementPtr->BindInt64(3, aspectKey.GetECClassId());
+    statementPtr->BindId(4, aspectKey.GetECInstanceId());
+
+    return ECSqlStepStatus::Done != statementPtr->Step() ? DgnDbStatus::WriteError: DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::MultiAspect::_DeleteInstance(DgnElementCR el)
+    {
+    // I am assuming that the ElementOwnsAspects ECRelationship is either just a foreign key column on the aspect or that ECSql somehow deletes the relationship instance automatically.
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
+    stmt->BindId(1, m_instanceId);
+    BeSQLite::EC::ECSqlStepStatus status = stmt->Step();
+    return (BeSQLite::EC::ECSqlStepStatus::Done == status)? DgnDbStatus::Success: DgnDbStatus::WriteError;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::MultiAspect::_InsertInstance(DgnElementCR el)
+    {
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s VALUES (NULL)", GetFullEcSqlClassName().c_str()));
+    BeSQLite::EC::ECInstanceKey key;
+    if (BeSQLite::EC::ECSqlStepStatus::Done != stmt->Step(key))
+        return DgnDbStatus::ElementWriteError;
+    m_instanceId = key.GetECInstanceId();
+    return insertElementOwnsAspectRelationship(el, key);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1298,7 +1197,7 @@ DgnElement::MultiAspect* DgnElement::MultiAspect::GetAspectP(DgnElementR el, ECN
         {
         for (RefCountedPtr<MultiAspect> aspect : mux->m_instances)
             {
-            if (aspect->GetInstanceId() != id)
+            if (aspect->GetAspectInstanceId() != id)
                 continue;
             if (aspect->m_changeType == ChangeType::Delete)
                 return nullptr;
@@ -1317,7 +1216,9 @@ DgnElement::MultiAspect* DgnElement::MultiAspect::GetAspectP(DgnElementR el, ECN
         return nullptr;
 
     aspect->m_instanceId = id;
-    aspect->_LoadProperties(el);
+
+    if (DgnDbStatus::Success != aspect->_LoadProperties(el))
+        return nullptr;
 
     MultiAspectMux::Get(el,cls).m_instances.push_back(aspect);
 
@@ -1331,7 +1232,7 @@ DgnElement::MultiAspect* DgnElement::MultiAspect::GetAspectP(DgnElementR el, ECN
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::MultiAspect::AddAspect(DgnElementR el, MultiAspect& aspect)
     {
-    ECN::ECClassCP cls = aspect.GetThisECClass(el.GetDgnDb());
+    ECN::ECClassCP cls = aspect.GetECClass(el.GetDgnDb());
     if (nullptr == cls)
         {
         BeAssert(false && "aspect must know its class");
@@ -1347,16 +1248,151 @@ void DgnElement::MultiAspect::AddAspect(DgnElementR el, MultiAspect& aspect)
 BeSQLite::EC::ECInstanceKey DgnElement::MultiAspect::_QueryExistingInstanceKey(DgnElementCR el)
     {
     // My m_instanceId field is valid if and only if I was just inserted or was loaded from an existing instance.
-    return BeSQLite::EC::ECInstanceKey(GetThisECClassId(el.GetDgnDb()).GetValue(), m_instanceId);
+    return BeSQLite::EC::ECInstanceKey(GetECClassId(el.GetDgnDb()).GetValue(), m_instanceId);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::UniqueAspect* DgnElement::UniqueAspect::Find(DgnElementCR el, ECN::ECClassCR cls)
+    {
+    AppData* appData = el.FindAppData(GetKey(cls));
+    if (nullptr == appData)
+        return nullptr;
+    UniqueAspect* aspect = dynamic_cast<UniqueAspect*>(appData);
+    BeAssert(nullptr != aspect && "The same ECClass cannot have both Unique and MultiAspects");
+    return aspect;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::UniqueAspect::SetAspect(DgnElementR el, UniqueAspect& newAspect)
+    {
+    if (nullptr != dynamic_cast<Item*>(&newAspect))
+        {
+        BeAssert(false && "You must use the DgnElement::Item class to work with Items");
+        return;
+        }
+
+    SetAspect0(el, newAspect);
+    newAspect.m_changeType = ChangeType::Write;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::UniqueAspect const* DgnElement::UniqueAspect::GetAspect(DgnElementCR el, ECN::ECClassCR cls)
+    {
+    UniqueAspect const* aspect = Find(el,cls);
+    if (nullptr == aspect)
+        {
+        aspect = Load(el,DgnClassId(cls.GetId()));
+        }
+    else
+        {
+        if (aspect->m_changeType == ChangeType::Delete)
+            aspect = nullptr;
+        }
+
+    return aspect;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::UniqueAspect* DgnElement::UniqueAspect::GetAspectP(DgnElementR el, ECN::ECClassCR cls)
+    {
+    UniqueAspect* aspect = const_cast<UniqueAspect*>(GetAspect(el,cls));
+    if (nullptr == aspect)
+        return aspect;
+    aspect->m_changeType = ChangeType::Write;
+    return aspect;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::UniqueAspect::SetAspect0(DgnElementCR el, UniqueAspect& newItem)
+    {
+    Key& key = newItem.GetKey(el.GetDgnDb());
+    el.DropAppData(key);  // remove any existing cached Item
+    el.AddAppData(key, &newItem);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+RefCountedPtr<DgnElement::UniqueAspect> DgnElement::UniqueAspect::Load0(DgnElementCR el, DgnClassId classid)
+    {
+    if (!el.GetElementId().IsValid() || !classid.IsValid())
+        return nullptr;
+
+    ElementAspectHandler* handler = ElementAspectHandler::FindHandler(el.GetDgnDb(), classid);
+    if (nullptr == handler)
+        return nullptr;
+
+    RefCountedPtr<DgnElement::UniqueAspect> aspect = dynamic_cast<DgnElement::UniqueAspect*>(handler->_CreateInstance().get());
+    if (!aspect.IsValid())
+        return nullptr;
+
+    if (DgnDbStatus::Success != aspect->_LoadProperties(el))
+        return nullptr;
+
+    return aspect;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::UniqueAspect* DgnElement::UniqueAspect::Load(DgnElementCR el, DgnClassId classid)
+    {
+    RefCountedPtr<DgnElement::UniqueAspect> aspect = Load0(el, classid);
+    if (!aspect.IsValid())
+        return nullptr;
+
+    if (nullptr != dynamic_cast<Item*>(aspect.get()))
+        {
+        BeAssert(false && "You must use the DgnElement::Item class to load Items");
+        return nullptr;
+        }
+
+    SetAspect0(el, *aspect);
+    aspect->m_changeType = ChangeType::None; // aspect starts out clean
+    return aspect.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::UniqueAspect::_InsertInstance(DgnElementCR el)
+    {
+    BeSQLite::EC::CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s (ECInstanceId) VALUES(?)", GetFullEcSqlClassName().c_str()));
+    stmt->BindId(1, GetAspectInstanceId(el));
+    BeSQLite::EC::ECSqlStepStatus status = stmt->Step();
+    return (BeSQLite::EC::ECSqlStepStatus::Done == status)? DgnDbStatus::Success: DgnDbStatus::WriteError;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::UniqueAspect::_DeleteInstance(DgnElementCR el)
+    {
+    // I am assuming that the ElementOwnsAspects ECRelationship is either just a foreign key column on the aspect or that ECSql somehow deletes the relationship instance automatically.
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
+    stmt->BindId(1, GetAspectInstanceId(el));
+    BeSQLite::EC::ECSqlStepStatus status = stmt->Step();
+    return (BeSQLite::EC::ECSqlStepStatus::Done == status)? DgnDbStatus::Success: DgnDbStatus::WriteError;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::Item::_DeleteInstance(DgnElementCR el)
     {
+    // *** WIP_ECSQL - if we had Polymorphic delete, then we could use the base class implementation.
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement("DELETE FROM ONLY " DGN_SCHEMA(DGN_CLASSNAME_ElementItem) " WHERE(ECInstanceId=?)");
-    stmt->BindId(1, el.GetElementId());
+    stmt->BindId(1, GetAspectInstanceId(el));
     BeSQLite::EC::ECSqlStepStatus status = stmt->Step();
     return (BeSQLite::EC::ECSqlStepStatus::Done == status)? DgnDbStatus::Success: DgnDbStatus::WriteError;
     }
@@ -1364,9 +1400,30 @@ DgnDbStatus DgnElement::Item::_DeleteInstance(DgnElementCR el)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Sam.Wilson                    03/2015
 //---------------------------------------------------------------------------------------
+BeSQLite::EC::ECInstanceKey DgnElement::UniqueAspect::_QueryExistingInstanceKey(DgnElementCR el)
+    {
+    // We know what the class and the ID of an instance *would be* if it exists. See if such an instance actually exists.
+    DgnClassId classId = GetECClassId(el.GetDgnDb());
+
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECInstanceId FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
+    stmt->BindId(1, el.GetElementId());
+    if (BeSQLite::EC::ECSqlStepStatus::HasRow != stmt->Step())
+        return BeSQLite::EC::ECInstanceKey();
+
+    // And we know the ID. See if such an instance actually exists.
+    return BeSQLite::EC::ECInstanceKey(classId.GetValue(), GetAspectInstanceId(el));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Sam.Wilson                    03/2015
+//---------------------------------------------------------------------------------------
 BeSQLite::EC::ECInstanceKey DgnElement::Item::_QueryExistingInstanceKey(DgnElementCR el)
     {
-    return BeSQLite::EC::ECInstanceKey(QueryExistingItemClass(el).GetValue(), el.GetElementId()); // We must check to see if there is any existing item (regardless of its class).
+    // We know the ID, and we know that the instance will be in the dgn.ElementItem table if it exists. See if it's there.
+    DgnClassId classId = QueryExistingItemClass(el);
+    if (!classId.IsValid())
+        return BeSQLite::EC::ECInstanceKey();
+    return BeSQLite::EC::ECInstanceKey(classId.GetValue(), el.GetElementId());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1374,6 +1431,7 @@ BeSQLite::EC::ECInstanceKey DgnElement::Item::_QueryExistingInstanceKey(DgnEleme
 //---------------------------------------------------------------------------------------
 DgnClassId DgnElement::Item::QueryExistingItemClass(DgnElementCR el)
     {
+    // We know the ID, and we know that the instance will be in the dgn.ElementItem table if it exists. See if it's there.
     CachedStatementPtr getItemClass;
     el.GetDgnDb().GetCachedStatement(getItemClass, "SELECT ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_ElementItem) " WHERE(ElementId=?)");
     getItemClass->BindId(1, el.GetElementId());
@@ -1385,21 +1443,9 @@ DgnClassId DgnElement::Item::QueryExistingItemClass(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::Item::_InsertInstance(DgnElementCR el)
-    {
-    BeSQLite::EC::CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s (ECInstanceId) VALUES(?)", GetFullEcSqlClassName().c_str()));
-    stmt->BindId(1, el.GetElementId());
-    BeSQLite::EC::ECSqlStepStatus status = stmt->Step();
-    return (BeSQLite::EC::ECSqlStepStatus::Done == status)? DgnDbStatus::Success: DgnDbStatus::WriteError;
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::Item* DgnElement::Item::Find(DgnElementCR el)
     {
-    return (DgnElement::Item*)el.FindAppData(s_key);
+    return (DgnElement::Item*)el.FindAppData(GetKey());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1407,8 +1453,8 @@ DgnElement::Item* DgnElement::Item::Find(DgnElementCR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::Item::SetItem0(DgnElementCR el, Item& newItem)
     {
-    el.DropAppData(s_key);  // remove any existing cached Item
-    el.AddAppData(s_key, &newItem);
+    el.DropAppData(GetKey());  // remove any existing cached Item
+    el.AddAppData(GetKey(), &newItem);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1455,26 +1501,19 @@ DgnElement::Item* DgnElement::Item::GetItemP(DgnElementR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::Item* DgnElement::Item::Load(DgnElementCR el)
     {
-    if (!el.GetElementId().IsValid())
+    RefCountedPtr<DgnElement::UniqueAspect> aspect = Load0(el, QueryExistingItemClass(el));
+    if (!aspect.IsValid())
         return nullptr;
 
-    DgnClassId classid = QueryExistingItemClass(el);
-    if (!classid.IsValid())
+    DgnElement::Item* item = dynamic_cast<DgnElement::Item*>(aspect.get());
+    if (nullptr == item)
+        {
+        BeAssert(false && "You may use the DgnElement::Item class to load Items only");
         return nullptr;
-
-    ElementAspectHandler* handler = ElementAspectHandler::FindHandler(el.GetDgnDb(), classid);
-    if (nullptr == handler)
-        return nullptr;
-
-    RefCountedPtr<DgnElement::Item> item = dynamic_cast<DgnElement::Item*>(handler->_CreateInstance().get());
-    if (!item.IsValid())
-        return nullptr;
-
-    item->_LoadProperties(el);
+        }
 
     SetItem0(el, *item);
-    item->m_changeType = ChangeType::None; // Make sure the item starts out clean
-    return item.get();
+    return item;
     }
 
 /*---------------------------------------------------------------------------------**//**

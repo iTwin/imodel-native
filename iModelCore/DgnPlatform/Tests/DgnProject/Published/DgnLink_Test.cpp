@@ -42,7 +42,7 @@ TEST_F(DgnLinkTest, RoundTripUrlLink)
     DgnClassId elementClassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element));
     ASSERT_TRUE(elementClassId.IsValid());
 
-    DgnElementPtr elementPtr = DgnElement::Create(DgnElement::CreateParams(*modelP, elementClassId, categoryId));
+    DgnElementPtr elementPtr = DgnElement::Create(DgnElement::CreateParams(db, modelId, elementClassId, categoryId));
     ASSERT_TRUE(elementPtr.IsValid());
     DgnElementCPtr result = db.Elements().Insert(*elementPtr);
     ASSERT_TRUE(result.IsValid());
@@ -91,7 +91,7 @@ TEST_F(DgnLinkTest, Iterator)
     DgnClassId elementClassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element));
     ASSERT_TRUE(elementClassId.IsValid());
 
-    DgnElementPtr elementPtr = DgnElement::Create(DgnElement::CreateParams(*modelP, elementClassId, categoryId));
+    DgnElementPtr elementPtr = DgnElement::Create(DgnElement::CreateParams(db, modelId, elementClassId, categoryId));
     ASSERT_TRUE(elementPtr.IsValid());
     DgnElementCPtr result = db.Elements().Insert(*elementPtr);
     ASSERT_TRUE(result->GetElementKey().IsValid());
@@ -172,12 +172,12 @@ TEST_F(DgnLinkTest, OtherIterators)
     DgnClassId elementClassId = DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Element));
     ASSERT_TRUE(elementClassId.IsValid());
 
-    DgnElementPtr element1 = DgnElement::Create(DgnElement::CreateParams(*modelP, elementClassId, categoryId));
+    DgnElementPtr element1 = DgnElement::Create(DgnElement::CreateParams(db, modelId, elementClassId, categoryId));
     ASSERT_TRUE(element1.IsValid());
     DgnElementCPtr result1 = db.Elements().Insert(*element1);
     ASSERT_TRUE(result1.IsValid());
 
-    DgnElementPtr element2 = DgnElement::Create(DgnElement::CreateParams(*modelP, elementClassId, categoryId));
+    DgnElementPtr element2 = DgnElement::Create(DgnElement::CreateParams(db, modelId, elementClassId, categoryId));
     ASSERT_TRUE(element2.IsValid());
     DgnElementCPtr result2 = db.Elements().Insert(*element2);
     ASSERT_TRUE(result2.IsValid());
