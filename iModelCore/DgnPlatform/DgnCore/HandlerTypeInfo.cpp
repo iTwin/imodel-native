@@ -31,16 +31,16 @@ enum
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Trefz   01/04
  +---------------+---------------+---------------+---------------+---------------+------*/
-static bool     isBlankString (Utf8CP testStr)
+static bool     isBlankString(Utf8CP testStr)
     {
-    if (!testStr || strlen (testStr) < 1)
+    if (!testStr || strlen(testStr) < 1)
         return true;
 
     Utf8CP p = testStr;
 
     while (*p)
         {
-        if (!isspace (*p))
+        if (!isspace(*p))
             return true;
         p++;
         }
@@ -51,11 +51,11 @@ static bool     isBlankString (Utf8CP testStr)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-static BentleyStatus getCategoryDisplayName (Utf8StringR displayNameStr, DgnCategories::Category const& category, Utf8CP displayFormat)
+static BentleyStatus getCategoryDisplayName(Utf8StringR displayNameStr, DgnCategories::Category const& category, Utf8CP displayFormat)
     {
-    BeAssert (category.IsValid ());
+    BeAssert(category.IsValid());
 
-    for (size_t formatIndex = 0; formatIndex < strlen (displayFormat); formatIndex++)
+    for (size_t formatIndex = 0; formatIndex < strlen(displayFormat); formatIndex++)
         {
         Utf8Char formatChar = displayFormat[formatIndex];
 
@@ -69,10 +69,10 @@ static BentleyStatus getCategoryDisplayName (Utf8StringR displayNameStr, DgnCate
 
             case LEVEL_DESCRIPTION_DISPLAY_FORMAT:
                 {
-                if (isBlankString (category.GetDescription ()))
+                if (isBlankString(category.GetDescription()))
                     displayNameStr.append("");//DgnCoreL10N::GetString(DgnCoreL10N::IDS_CategoryDescriptionNone).c_str());
                 else
-                    displayNameStr.append (category.GetDescription ()); // string conversion
+                    displayNameStr.append(category.GetDescription()); // string conversion
                 break;
                 }
 
@@ -80,21 +80,21 @@ static BentleyStatus getCategoryDisplayName (Utf8StringR displayNameStr, DgnCate
                 {
                 Utf8Char     tmpStr[64];
 
-                BeStringUtilities::Snprintf (tmpStr, "%lld", category.GetCategoryId().GetValue());
-                displayNameStr.append (tmpStr);
+                BeStringUtilities::Snprintf(tmpStr, "%lld", category.GetCategoryId().GetValue());
+                displayNameStr.append(tmpStr);
                 break;
                 }
 
             default:
                 {
                 // NOTE: Assumed that non-code characters are delimiters...
-                displayNameStr.append (formatChar, 1);
+                displayNameStr.append(formatChar, 1);
                 break;
                 }
             }
         }
 
-    if (displayNameStr.empty ())
+    if (displayNameStr.empty())
         displayNameStr.assign(category.GetLabel()? category.GetLabel(): ""); // string conversion
 
     return SUCCESS;
@@ -103,33 +103,33 @@ static BentleyStatus getCategoryDisplayName (Utf8StringR displayNameStr, DgnCate
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void getCategoryString (Utf8StringR categoryStr, DgnElementCR element)
+static void getCategoryString(Utf8StringR categoryStr, DgnElementCR element)
     {
     DgnCategories::Category const& category = element.GetDgnDb().Categories().Query(element.GetCategoryId());
 
-    if (!category.IsValid ())
+    if (!category.IsValid())
         return;
 
     Utf8String displayFormat;
 
 #ifdef WIP_CFGVAR // MS_LEVEL_DISPLAY_FORMAT
-    if (SUCCESS != ConfigurationManager::GetVariable (displayFormat, L"MS_LEVEL_DISPLAY_FORMAT") || displayFormat.size () == 0)
+    if (SUCCESS != ConfigurationManager::GetVariable(displayFormat, L"MS_LEVEL_DISPLAY_FORMAT") || displayFormat.size() == 0)
 #endif
         displayFormat = LEVEL_NAME_DISPLAY_FORMAT_STRING;
 
     Utf8String     displayName;
 
-    if (SUCCESS != getCategoryDisplayName (displayName, category, displayFormat.c_str ()))
+    if (SUCCESS != getCategoryDisplayName(displayName, category, displayFormat.c_str()))
         return;
 
     categoryStr.assign("");//DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Category).c_str());
-    categoryStr.append (displayName);
+    categoryStr.append(displayName);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  03/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnPlatformLib::Host::GraphicsAdmin::_GetInfoString (HitDetailCP hit, Utf8StringR pathDescr, Utf8CP delimiter) const
+void DgnPlatformLib::Host::GraphicsAdmin::_GetInfoString(HitDetailCP hit, Utf8StringR pathDescr, Utf8CP delimiter) const
     {
     if (nullptr == hit)
         return;
@@ -143,13 +143,13 @@ void DgnPlatformLib::Host::GraphicsAdmin::_GetInfoString (HitDetailCP hit, Utf8S
 
     Utf8String categoryStr, modelStr;
 
-    modelStr.assign(DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Model()).c_str()).append (element->GetModel()->GetModelName());
+    modelStr.assign(DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Model()).c_str()).append(element->GetModel()->GetModelName());
     getCategoryString(categoryStr, *element);
 
     pathDescr.append(delimiter).append(modelStr.c_str());
     pathDescr.append(delimiter).append(categoryStr.c_str());
 
 #if defined (NEEDSWORK_ELEMENT_HANDLER)
-    dHandler->GetPathDescription (eh, pathDescr, path, categoryStr.c_str(), modelStr.c_str(), delimiter);
+    dHandler->GetPathDescription(eh, pathDescr, path, categoryStr.c_str(), modelStr.c_str(), delimiter);
 #endif
     }
