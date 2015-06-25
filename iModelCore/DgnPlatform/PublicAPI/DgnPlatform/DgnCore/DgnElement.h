@@ -179,13 +179,6 @@ public:
         //! @note The aspect will not actually be deleted in the Db until you call DgnElements::Update on the aspect's host element.
         DGNPLATFORM_EXPORT void Delete() {m_changeType = ChangeType::Delete;}
 
-        //! Query for an existing instance of a unique aspect of the specified class. This method only returns the identity of the instance.
-        //! See the subclass-specific Get methods for how to get an in-memory instance.
-        //! @param el   The host element
-        //! @param ecclass The class of ElementAspect to look for
-        //! @return the identity of an instance or an invalid key if the instance does not exist.
-        BeSQLite::EC::ECInstanceKey QueryExistingInstanceKey(DgnElementCR el) {return _QueryExistingInstanceKey(el);}
-
         //! Get the ID of the ECClass for this aspect
         DGNPLATFORM_EXPORT DgnClassId GetECClassId(DgnDbR) const;
 
