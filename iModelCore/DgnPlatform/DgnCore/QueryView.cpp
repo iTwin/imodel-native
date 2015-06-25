@@ -481,7 +481,7 @@ void QueryViewController::BindModelAndCategory(StatementR stmt) const
 void QueryViewController::_RestoreFromSettings(JsonValueCR val) 
     {
     T_Super::_RestoreFromSettings(val);
-    m_queryModel.Empty();
+    m_queryModel.EmptyModel();
     }
 
 //  #define DUMP_DYNAMIC_UPDATE_STATS 1

@@ -321,9 +321,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             </ClassMap>
             <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
                 <SourceECInstanceIdColumn>RootModelId</SourceECInstanceIdColumn>
-                <SourceECClassIdColumn>RootModelClassId</SourceECClassIdColumn>
                 <TargetECInstanceIdColumn>DependentModelId</TargetECInstanceIdColumn>
-                <TargetECClassIdColumn>DependentModelClassId</TargetECClassIdColumn>
             </LinkTableRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(0,N)" polymorphic="True">
@@ -442,7 +440,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
                 <MapStrategyOptions>ReuseColumns</MapStrategyOptions>
-                <!-- The ECInstanceId for ElementGeom is the same as the Id of the owning Element -->
+                <!-- The ECInstanceId for ElementItem is the same as the Id of the owning Element -->
                 <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
             </ClassMap>
         </ECCustomAttributes>
@@ -528,7 +526,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECCustomAttributes>
            <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
                 <SourceECInstanceIdColumn>ElementId</SourceECInstanceIdColumn>
-                <SourceECClassIdColumn>ElementClassId</SourceECClassIdColumn>
                 <TargetECInstanceIdColumn>AspectId</TargetECInstanceIdColumn>
                 <TargetECClassIdColumn>AspectClassId</TargetECClassIdColumn>
             </LinkTableRelationshipMap>
@@ -544,7 +541,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECRelationshipClass typeName="ElementOwnsGeom" isDomainClass="True" strength="embedding" strengthDirection="forward">
         <ECCustomAttributes>
            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <ForeignKeyColumn>ElementId</ForeignKeyColumn>
                 <CreateConstraint>True</CreateConstraint>
                 <OnDeleteAction>Cascade</OnDeleteAction>
             </ForeignKeyRelationshipMap>
@@ -555,23 +551,25 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <Class class="GeometricElement" />
         </Source>
         <Target cardinality="(0,1)" polymorphic="False">
-            <Class class="ElementGeom" />
+            <Class class="ElementGeom">
+                <Key>
+                    <Property name="ECInstanceId"/>
+                </Key>
+            </Class>
         </Target>
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ElementOwnsItem" isDomainClass="True" strength="embedding" strengthDirection="forward">
-        <ECCustomAttributes>
-           <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <ForeignKeyColumn>ElementId</ForeignKeyColumn>
-            </ForeignKeyRelationshipMap>
-        </ECCustomAttributes>
-    
         <BaseClass>ElementOwnsAspects</BaseClass>
         <Source cardinality="(1,1)" polymorphic="True">
             <Class class="Element" />
         </Source>
         <Target cardinality="(0,1)" polymorphic="False">
-            <Class class="ElementItem" />
+            <Class class="ElementItem">
+                <Key>
+                    <Property name="ECInstanceId"/>
+                </Key>
+            </Class>
         </Target>
     </ECRelationshipClass>
 
@@ -638,9 +636,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             </ClassMap>
             <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
                 <SourceECInstanceIdColumn>ElementId</SourceECInstanceIdColumn>
-                <SourceECClassIdColumn>ElementClassId</SourceECClassIdColumn>
                 <TargetECInstanceIdColumn>LinkId</TargetECInstanceIdColumn>
-                <TargetECClassIdColumn>LinkClassId</TargetECClassIdColumn>
             </LinkTableRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(1,N)" roleLabel="has 0 to N links" polymorphic="True">
@@ -689,9 +685,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECCustomAttributes>
            <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
                 <SourceECInstanceIdColumn>ElementId</SourceECInstanceIdColumn>
-                <SourceECClassIdColumn>ElementClassId</SourceECClassIdColumn>
                 <TargetECInstanceIdColumn>StyleId</TargetECInstanceIdColumn>
-                <TargetECClassIdColumn>StyleClassId</TargetECClassIdColumn>
             </LinkTableRelationshipMap>
         </ECCustomAttributes>
     
