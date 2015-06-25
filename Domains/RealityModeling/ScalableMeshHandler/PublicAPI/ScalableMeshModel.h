@@ -58,9 +58,9 @@ struct ScalableMeshModel : DgnPlatform::PhysicalModel
 
 typedef RefCountedPtr<ScalableMeshModel> ScalableMeshModelPtr;
 
-struct ScalableMeshHandler : DgnPlatform::ModelHandler
+struct ScalableMeshHandler : dgn_ModelHandler::Model
     {
-    MODELHANDLER_DECLARE_MEMBERS("ScalableMesh", ScalableMeshModel, ScalableMeshHandler, DgnPlatform::ModelHandler, SCALABLEMESH_HANDLERS_EXPORT)
+    MODELHANDLER_DECLARE_MEMBERS("ScalableMesh", ScalableMeshModel, ScalableMeshHandler, dgn_ModelHandler::Model, SCALABLEMESH_HANDLERS_EXPORT)
 
     //public:
     //    SCALABLEMESH_HANDLERS_EXPORT virtual DgnModelP _CreateInstance(DgnPlatform::DgnModel::CreateParams const& params) override;

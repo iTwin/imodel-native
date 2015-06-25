@@ -19,9 +19,12 @@ struct RasterFile : public RefCountedBase
 private:
             HFCPtr<HRFRasterFile>       m_HRFRasterFilePtr;
             HFCPtr<HRAStoredRaster>     m_storedRasterPtr;
+            HFCPtr<HGF2DWorldCluster>   m_worldClusterPtr;
 
                                         RasterFile(WCharCP inFilename);
             int                         ComputeBufferSize(size_t& bufferSize, const Point2d& imageSize, int imageFormat) const;
+            HGF2DWorldCluster*          GetWorldClusterP();
+
 public:
     static  RasterFilePtr               Create(WCharCP inFilename);
             HFCPtr<HRFRasterFile>       OpenRasterFile(WCharCP inFilename);
@@ -30,9 +33,11 @@ public:
             uint32_t                    GetHeight() const;
             void                        GetSize(Point2d* sizeP) const;
             void                        GetBitmap(HFCPtr<HRABitmapBase> pBitmap);
-            HFCPtr<HRAStoredRaster>     GetStoredRaster();
+            HRAStoredRaster*            GetStoredRasterP();
             HFCPtr<HGF2DCoordSys>       GetPhysicalCoordSys();
             HFCPtr<HGF2DTransfoModel>   GetSLOTransfoModel() const;
+            void                        GetCorners(DPoint3dP corners);
+            GeoCoordinates::BaseGCSPtr  GetBaseGcs();
 };
 
 END_BENTLEY_RASTERSCHEMA_NAMESPACE

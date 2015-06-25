@@ -37,7 +37,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RasterFileModel : RasterModel
     DEFINE_T_SUPER(RasterModel)
 
 private:
-    RasterFileProperties    m_fileProperties;     //&&ep need a way to avoid duplication of information between RasterModel/RasterFileModel/RasterFileSource.
+    RasterFileProperties    m_fileProperties;
 
 protected:
     friend struct RasterFileModelHandler;

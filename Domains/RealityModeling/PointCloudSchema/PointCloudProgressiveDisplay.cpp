@@ -17,8 +17,7 @@ USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     5/2015
 //----------------------------------------------------------------------------------------
-//&&ep - eliminate vp from parameters
-PointCloudProgressiveDisplay::PointCloudProgressiveDisplay (PointCloudModel& model, DgnViewportR vp) 
+PointCloudProgressiveDisplay::PointCloudProgressiveDisplay (PointCloudModel& model) 
     :
     m_model(model),
     m_waitTime(0),

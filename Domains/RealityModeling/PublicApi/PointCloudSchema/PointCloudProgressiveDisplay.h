@@ -39,7 +39,7 @@ protected:
 
     void DrawView (ViewContextR);
 
-    PointCloudProgressiveDisplay (PointCloudModel& model, DgnViewportR vp);
+    PointCloudProgressiveDisplay (PointCloudModel& model);
     ~PointCloudProgressiveDisplay();
     };
 
