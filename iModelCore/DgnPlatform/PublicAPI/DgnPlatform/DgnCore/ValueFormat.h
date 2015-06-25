@@ -353,10 +353,10 @@ public:
     DGNPLATFORM_EXPORT DgnUnitFormat GetUnitFormat() const;
 
     //! Get the Master UnitDefinition used by this formatter.
-    DGNPLATFORM_EXPORT UnitDefinitionCR GetMasterUnit() const;
+    DGNPLATFORM_EXPORT UnitDefinitionCR GetMasterUnits() const;
 
     //! Get the Sub UnitDefinition used by this formatter.
-    DGNPLATFORM_EXPORT UnitDefinitionCR GetSubUnit() const;
+    DGNPLATFORM_EXPORT UnitDefinitionCR GetSubUnits() const;
 
     //! Get the system scale factor applied by this formatter.
     DGNPLATFORM_EXPORT double GetScaleFactor() const;
@@ -380,7 +380,7 @@ public:
     DGNPLATFORM_EXPORT void SetUnitFormat(DgnUnitFormat newVal);
 
     //! Set the formatter's working units.
-    DGNPLATFORM_EXPORT StatusInt SetWorkingUnits(UnitDefinitionCR newMasterUnit, UnitDefinitionCP newSubUnit);
+    DGNPLATFORM_EXPORT StatusInt SetUnits(UnitDefinitionCR newMasterUnit, UnitDefinitionCP newSubUnit);
 
     //! Set the formatter's scale factor.
     DGNPLATFORM_EXPORT void SetScaleFactor(double newVal);
@@ -521,7 +521,7 @@ protected:
 
 //! Get the Master UnitDefinition used by this formatter.
 public: 
-    DGNPLATFORM_EXPORT UnitDefinitionCR GetMasterUnit() const;
+    DGNPLATFORM_EXPORT UnitDefinitionCR GetMasterUnits() const;
 
     //! Get the system scale factor applied by this formatter.
     DGNPLATFORM_EXPORT double GetScaleFactor() const;

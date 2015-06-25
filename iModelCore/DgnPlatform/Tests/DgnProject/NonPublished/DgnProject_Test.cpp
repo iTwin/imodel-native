@@ -126,8 +126,8 @@ TEST (DgnDb, CheckStandardProperties)
 
     //  Use ModelInfo as an alt. way to get at some of the same property data
     DgnModel::Properties const& minfo = defaultModel->GetProperties();
-    ASSERT_TRUE( minfo.GetMasterUnit().GetBase() == UnitBase::Meter );
-    ASSERT_TRUE( minfo.GetSubUnit().GetBase() == UnitBase::Meter );
+    ASSERT_TRUE( minfo.GetMasterUnits().GetBase() == UnitBase::Meter );
+    ASSERT_TRUE( minfo.GetSubUnits().GetBase() == UnitBase::Meter );
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -422,7 +422,7 @@ struct DgnProjectPackageTest : public testing::Test
                 {
                 DgnModelP model = project->Models().GetModel(entry.GetModelId());
                 model->FillModel();
-                properties.elmCount += model->CountLoadedElements();
+                properties.elmCount += (int) model->GetElements().size();
                 properties.modelCount++;
                 }
             properties.viewCount = project->Views().MakeIterator().QueryCount();

@@ -103,9 +103,9 @@ void PhysicalTextAnnotationElement::UpdateGeometryRepresentation()
     if (!m_annotation.IsValid())
         return;
     
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(m_dgnModel, m_categoryId, m_placement.GetOrigin(), m_placement.GetAngles());
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*GetModel(), m_categoryId, m_placement.GetOrigin(), m_placement.GetAngles());
     TextAnnotationGraphicsProcessor annotationGraphics(*m_annotation, m_categoryId, *builder);
-    ElementGraphicsOutput::Process(annotationGraphics, m_dgnModel.GetDgnDb());
+    ElementGraphicsOutput::Process(annotationGraphics, GetDgnDb());
 
     builder->SetGeomStreamAndPlacement(*this);
     }

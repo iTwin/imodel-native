@@ -22,7 +22,7 @@ BENTLEY_NAMESPACE_TYPEDEFS(HeapZone);
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 namespace dgn_ElementHandler {struct Element; struct Physical;};
-namespace dgn_TxnTable {struct Element;};
+namespace dgn_TxnTable {struct Element; struct Model;};
 
 struct MultiAspectMux;
 
@@ -65,7 +65,8 @@ public:
     //! Parameters for creating new DgnElements
     struct CreateParams
     {
-        DgnModelR       m_model;
+        DgnDbR          m_dgndb;
+        DgnModelId      m_modelId;
         DgnClassId      m_classId;
         DgnCategoryId   m_categoryId;
         Utf8CP          m_code;
@@ -73,9 +74,9 @@ public:
         DgnElementId    m_id;
         DgnElementId    m_parentId;
         double          m_lastModTime;
-        CreateParams(DgnModelR model, DgnClassId classId, DgnCategoryId category, Utf8CP label=nullptr, Utf8CP code=nullptr, DgnElementId id=DgnElementId(), 
+        CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Utf8CP label=nullptr, Utf8CP code=nullptr, DgnElementId id=DgnElementId(),
                      DgnElementId parent=DgnElementId(), double lastModTime=0.0) :
-                    m_model(model), m_classId(classId), m_categoryId(category), m_label(label), m_code(code), m_id(id), m_parentId(parent), m_lastModTime(lastModTime) {}
+                    m_dgndb(db), m_modelId(modelId), m_classId(classId), m_categoryId(category), m_label(label), m_code(code), m_id(id), m_parentId(parent), m_lastModTime(lastModTime) {}
 
         void SetLabel(Utf8CP label) {m_label = label;}  //!< Set the label for DgnElements created with this CreateParams
         void SetCode(Utf8CP code) {m_code = code;}      //!< Set the code for DgnElements created with this CreateParams
@@ -172,7 +173,7 @@ public:
         //! The subclass must implement this method to load properties from the Db.
         //! @param el   The host element
         virtual DgnDbStatus _LoadProperties(DgnElementCR el) = 0;
-    
+
     public:
         //! Prepare to delete this aspect.
         //! @note The aspect will not actually be deleted in the Db until you call DgnElements::Update on the aspect's host element.
@@ -211,7 +212,7 @@ public:
         static UniqueAspect* Load(DgnElementCR, ECN::ECClassCR);
         DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) override final;
         static void SetAspect0(DgnElementCR el, UniqueAspect& aspect);
-        
+
     public:
         //! Prepare to insert or update an Aspect for the specified element
         //! @param el   The host element
@@ -283,7 +284,7 @@ public:
     //! dgn.ElementItem is a special kind of dgn.ElementAspect. A dgn.Element can have 0 or 1 dgn.ElementItems, and the dgn.ElementItem always has the ID as the host dgn.Element.
     //! Note that the item's actual class can vary, as long as it is a subclass of dgn.ElementItem.
     //! <p>
-    //! A dgn.ElementItem is normally used to capture the definition of the host element's geometry. 
+    //! A dgn.ElementItem is normally used to capture the definition of the host element's geometry.
     //! The ElementItem is also expected to supply the algorithm for generating the host element's geometry from its definition.
     //! The platform enables the Item to keep the element's geometry up to date by calling the DgnElement::Item::_GenerateElementGeometry method when the element is inserted and whenever it is updated.
     //! <p>
@@ -372,9 +373,10 @@ protected:
         };
 
     mutable BeAtomic<uint32_t> m_refCount;
+    DgnDbR          m_dgndb;
     DgnElementId    m_elementId;
     DgnElementId    m_parentId;
-    DgnModelR       m_dgnModel;
+    DgnModelId      m_modelId;
     DgnClassId      m_classId;
     DgnCategoryId   m_categoryId;
     Utf8String      m_code;
@@ -538,19 +540,21 @@ public:
     DGNPLATFORM_EXPORT void Release() const; //!< @private
     uint32_t GetRefCount() const {return m_refCount.load();} //!< Get the current reference count for this DgnElement.
 
+    //! @name Dynamic casting to DgnElement subclasses
+    //! @{
     GeometricElementCP ToGeometricElement() const {return _ToGeometricElement();} //!< more efficient substitute for dynamic_cast<GeometricElementCP>(el)
     DgnElement3dCP ToElement3d() const {return _ToElement3d();}                   //!< more efficient substitute for dynamic_cast<DgnElement3dCP>(el)
     DgnElement2dCP ToElement2d() const {return _ToElement2d();}                   //!< more efficient substitute for dynamic_cast<DgnElement2dCP>(el)
     PhysicalElementCP ToPhysicalElement() const {return _ToPhysicalElement();}    //!< more efficient substitute for dynamic_cast<PhysicalElementCP>(el)
     DrawingElementCP ToDrawingElement() const {return _ToDrawingElement();}       //!< more efficient substitute for dynamic_cast<DrawingElementCP>(el)
     ElementGroupCP ToElementGroup() const {return _ToElementGroup();}             //!< more efficient substitute for dynamic_cast<ElementGroupCP>(el)
-
     GeometricElementP ToGeometricElementP() {return const_cast<GeometricElementP>(_ToGeometricElement());} //!< more efficient substitute for dynamic_cast<GeometricElementP>(el)
     DgnElement3dP ToElement3dP() {return const_cast<DgnElement3dP>(_ToElement3d());}                       //!< more efficient substitute for dynamic_cast<DgnElement3dP>(el)
     DgnElement2dP ToElement2dP() {return const_cast<DgnElement2dP>(_ToElement2d());}                       //!< more efficient substitute for dynamic_cast<DgnElement2dP>(el)
     PhysicalElementP ToPhysicalElementP() {return const_cast<PhysicalElementP>(_ToPhysicalElement());}     //!< more efficient substitute for dynamic_cast<PhysicalElementP>(el)
     DrawingElementP ToDrawingElementP() {return const_cast<DrawingElementP>(_ToDrawingElement());}         //!< more efficient substitute for dynamic_cast<DrawingElementP>(el)
     ElementGroupP ToElementGroupP() {return const_cast<ElementGroupP>(_ToElementGroup());}                 //!< more efficient substitute for dynamic_cast<ElementGroupP>(el)
+    //! @}
 
     bool Is3d() const {return nullptr != _ToElement3d();} //!< Determine whether this element is 3d or not
     bool IsSameType(DgnElementCR other) {return m_classId == other.m_classId;}//!< Determine whether this element is the same type (has the same DgnClassId) as another element.
@@ -603,8 +607,8 @@ public:
     //! Get the ElementHandler for this DgnElement.
     DGNPLATFORM_EXPORT ElementHandlerR GetElementHandler() const;
 
-/** @name AppData Management */
-/** @{ */
+    //! @name AppData Management
+    //! @{
     //! Get the HeapZone for the DgnDb of this element.
     //! @private
     DGNPLATFORM_EXPORT HeapZoneR GetHeapZone() const;
@@ -624,14 +628,17 @@ public:
     //! @param[in] key The key for the AppData of interest.
     //! @return the AppData for key \a key, or nullptr.
     DGNPLATFORM_EXPORT AppData* FindAppData(AppData::Key const& key) const;
-/** @} */
+    //! @}
+
+
+    DgnModelId GetModelId() const {return m_modelId;}
 
     //! Get the DgnModel of this DgnElement.
-    DgnModelR GetDgnModel() const {return m_dgnModel;}
+    DGNPLATFORM_EXPORT DgnModelP GetModel() const;
 
     //! Get the DgnDb of this element.
     //! @note This is merely a shortcut for GetDgnModel().GetDgnDb().
-    DGNPLATFORM_EXPORT DgnDbR GetDgnDb() const;
+    DgnDbR GetDgnDb() const {return m_dgndb;}
 
     //! Get the DgnElementId of this DgnElement
     DgnElementId GetElementId() const {return m_elementId;}
@@ -710,7 +717,6 @@ public:
     //! @note This is a static method that only creates instances of the DgnElement class. To create instances of subclasses,
     //! use a static method on the subclass.
     static DgnElementPtr Create(CreateParams const& params) {return new DgnElement(params);}
-
 };
 
 //=======================================================================================
@@ -902,8 +908,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement3d : GeometricElement
     DEFINE_T_SUPER(DgnElement::CreateParams);
 
     Placement3dCR m_placement;
-    CreateParams(DgnModelR model, DgnClassId classId, DgnCategoryId category, Placement3dCR placement=Placement3d(), Utf8CP label=nullptr, Utf8CP code=nullptr, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
-        T_Super(model, classId, category, label, code, id, parent), m_placement(placement) {}
+    CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement3dCR placement=Placement3d(), Utf8CP label=nullptr, Utf8CP code=nullptr, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
+        T_Super(db, modelId, classId, category, label, code, id, parent), m_placement(placement) {}
 
     explicit CreateParams(DgnElement::CreateParams const& params, Placement3dCR placement=Placement3d()) : T_Super(params), m_placement(placement){}
     };
@@ -964,8 +970,8 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnElement2d : GeometricElement
     DEFINE_T_SUPER(DgnElement::CreateParams);
 
     Placement2dCR m_placement;
-    CreateParams(DgnModelR model, DgnClassId classId, DgnCategoryId category, Placement2dCR placement=Placement2d(), Utf8CP label=nullptr, Utf8CP code=nullptr, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
-        T_Super(model, classId, category, label, code, id, parent), m_placement(placement) {}
+    CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Placement2dCR placement=Placement2d(), Utf8CP label=nullptr, Utf8CP code=nullptr, DgnElementId id=DgnElementId(), DgnElementId parent=DgnElementId()) :
+        T_Super(db, modelId, classId, category, label, code, id, parent), m_placement(placement) {}
 
     explicit CreateParams(DgnElement::CreateParams const& params, Placement2dCR placement=Placement2d()) : T_Super(params), m_placement(placement){}
     };

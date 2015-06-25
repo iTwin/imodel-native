@@ -444,7 +444,7 @@ DgnModelR HitDetail::GetDgnModel() const
     {
     GeometricElementCPtr element = GetElement();
 
-    return (element.IsValid() ? element->GetDgnModel() : *m_viewport.GetViewController().GetTargetModel());
+    return (element.IsValid() ? *element->GetModel() : *m_viewport.GetViewController().GetTargetModel());
     }
 
 /*---------------------------------------------------------------------------------**//**

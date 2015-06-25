@@ -50,7 +50,7 @@ ICurvePrimitivePtr TestPhysicalElement::CreateBox (DPoint3dCR low, DPoint3dCR hi
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestPhysicalElement::TestPhysicalElement(PhysicalModelR model, DgnCategoryId categoryId, DgnClassId ecClassId, DPoint3dCR origin, double yaw, ICurvePrimitiveR curve, Utf8CP elementCode)
-    : PhysicalElement(CreateParams(model, ecClassId, categoryId))
+    : PhysicalElement(CreateParams(model.GetDgnDb(), model.GetModelId(), ecClassId, categoryId))
     {
     SetCode(elementCode);
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*this, origin, YawPitchRollAngles(Angle::FromDegrees(yaw), Angle::FromDegrees(0), Angle::FromDegrees(0)));

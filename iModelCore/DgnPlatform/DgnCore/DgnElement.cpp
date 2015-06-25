@@ -38,6 +38,14 @@ void DgnElement::Release() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelP DgnElement::GetModel() const
+    {
+    return m_dgndb.Models().GetModel(m_modelId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::AppData* DgnElement::FindAppData(AppData::Key const& key) const
@@ -223,7 +231,7 @@ DgnDbStatus DgnElement::_OnInsert()
             return stat;
         }
 
-    return m_dgnModel._OnInsertElement(*this);
+    return GetModel()->_OnInsertElement(*this);
     }
 
 struct OnInsertedCaller
@@ -241,7 +249,7 @@ void DgnElement::_OnInserted(DgnElementP copiedFrom) const
     if (copiedFrom)
         copiedFrom->CallAppData(OnInsertedCaller(*this));
 
-    m_dgnModel._OnInsertedElement(*this);
+    GetModel()->_OnInsertedElement(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -260,7 +268,7 @@ DgnDbStatus DgnElement::_OnUpdate(DgnElementCR original)
             return stat;
         }
 
-    return m_dgnModel._OnUpdateElement(*this, original);
+    return GetModel()->_OnUpdateElement(*this, original);
     }
 
 struct OnUpdatedCaller
@@ -279,7 +287,7 @@ void DgnElement::_OnUpdated(DgnElementCR original) const
     original.CallAppData(OnUpdatedCaller(*this, original));
     CallAppData(OnUpdatedCaller(*this, original));
 
-    m_dgnModel._OnUpdatedElement(*this, original);
+    GetModel()->_OnUpdatedElement(*this, original);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -294,7 +302,7 @@ DgnDbStatus DgnElement::_OnDelete() const
             return stat;
         }
 
-    return m_dgnModel._OnDeleteElement(*this);
+    return GetModel()->_OnDeleteElement(*this);
     }
 
 struct OnDeletedCaller  {DgnElement::AppData::DropMe operator()(DgnElement::AppData& app, DgnElementCR el) const {return app._OnDeleted(el);}};
@@ -305,7 +313,9 @@ void DgnElement::_OnDeleted() const
     {
     CallAppData(OnDeletedCaller());
     GetDgnDb().Elements().DropFromPool(*this);
-    m_dgnModel._OnDeletedElement(*this);
+    DgnModelP model = GetModel();
+    if (model)
+        model->_OnDeletedElement(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -318,7 +328,7 @@ DgnDbStatus DgnElement::_InsertInDb()
 
     stmt->BindId(Column::ElementId, m_elementId);
     stmt->BindId(Column::ECClassId, m_classId);
-    stmt->BindId(Column::ModelId, m_dgnModel.GetModelId());
+    stmt->BindId(Column::ModelId, m_modelId);
     stmt->BindId(Column::CategoryId, m_categoryId);
     stmt->BindText(Column::Label, GetLabel(), Statement::MakeCopy::No);
     stmt->BindText(Column::Code, GetCode(), Statement::MakeCopy::No);
@@ -596,7 +606,7 @@ PhysicalElementPtr PhysicalElement::Create(PhysicalModelR model, DgnCategoryId c
         return nullptr;
         }
 
-    return new PhysicalElement(CreateParams(model, PhysicalElement::QueryClassId(model.GetDgnDb()), categoryId));
+    return new PhysicalElement(CreateParams(model.GetDgnDb(), model.GetModelId(), PhysicalElement::QueryClassId(model.GetDgnDb()), categoryId));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -669,7 +679,7 @@ void DgnElement::_CopyFrom(DgnElementCR other)
     if (&other == this)
         return;
 
-    if (&m_dgnModel != &other.m_dgnModel)
+    if (&m_dgndb != &other.m_dgndb)
         {
         BeAssert(false);
         return;
@@ -731,7 +741,7 @@ ElementHandlerR DgnElement::GetElementHandler() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementPtr DgnElement::CopyForEdit() const
     {
-    DgnElementPtr newEl = GetElementHandler()._CreateInstance(DgnElement::CreateParams(m_dgnModel, m_classId, m_categoryId, GetLabel(), GetCode(), m_elementId, m_parentId));
+    DgnElementPtr newEl = GetElementHandler()._CreateInstance(DgnElement::CreateParams(GetDgnDb(), m_modelId, m_classId, m_categoryId, GetLabel(), GetCode(), m_elementId, m_parentId));
     newEl->_CopyFrom(*this);
     return newEl;
     }

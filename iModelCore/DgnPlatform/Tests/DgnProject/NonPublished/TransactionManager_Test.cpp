@@ -448,9 +448,7 @@ static CurveVectorPtr computeShape(double len)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
     {
-    DgnModelP model = db.Models().GetModel(mid);
-
-    TestElementPtr testElement = new TestElement(CreateParams(*model, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId));
+    TestElementPtr testElement = new TestElement(CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId));
 
     static const double PLANE_LEN = 100;
     //  Add some hard-wired geometry
@@ -1972,9 +1970,8 @@ TEST_F(TransactionManagerTests, ElementAssembly)
     SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", Db::OPEN_ReadWrite);
 
     DgnClassId testClass(TestElement::GetTestElementECClass(*m_db)->GetId());
-    DgnModelP model = m_db->Models().GetModel(m_defaultModelId);
 
-    TestElement::CreateParams params(*model, testClass, m_defaultCategoryId);
+    TestElement::CreateParams params(*m_db, m_defaultModelId, testClass, m_defaultCategoryId);
     TestElementPtr e1 = new TestElement(params);
 
     DgnElementCPtr el1 = e1->Insert();
@@ -2076,12 +2073,35 @@ static void testModelUndoRedo(DgnDbR db)
     ASSERT_TRUE(el3->IsPersistent());
     ASSERT_TRUE(model->IsPersistent());
 
-    stat = txns.ReinstateTxn();  // redo the changes
+    stat = txns.ReinstateTxn();  // redo the delete
     ASSERT_TRUE(DgnDbStatus::Success == stat);
     ASSERT_TRUE(!el1->IsPersistent());
     ASSERT_TRUE(!el2->IsPersistent());
     ASSERT_TRUE(!el3->IsPersistent());
     ASSERT_TRUE(!model->IsPersistent());
+
+    stat = txns.ReverseSingleTxn(); // undo delete
+    ASSERT_TRUE(DgnDbStatus::Success == stat);
+    model = db.Models().GetModel(model->GetModelId());
+    ASSERT_TRUE(model->IsPersistent());
+
+    auto& props = model->GetPropertiesR();
+    props.SetRoundoffUnit(100.0, 200.0);
+    ASSERT_TRUE(100.0 == props.GetRoundoffUnit());
+    ASSERT_TRUE(200.0 == props.GetRoundoffRatio());
+
+    model->Update();
+    db.SaveChanges("updated model");
+    stat = txns.ReverseSingleTxn(); // undo update
+    ASSERT_TRUE(&props == &model->GetPropertiesR());
+    ASSERT_TRUE(DgnDbStatus::Success == stat);
+    ASSERT_TRUE(100.0 != props.GetRoundoffUnit());
+    ASSERT_TRUE(200.0 != props.GetRoundoffRatio());
+
+    stat = txns.ReinstateTxn();  // redo the update
+    ASSERT_TRUE(DgnDbStatus::Success == stat);
+    ASSERT_TRUE(100.0 == props.GetRoundoffUnit());
+    ASSERT_TRUE(200.0 == props.GetRoundoffRatio());
     }            
 
 /*---------------------------------------------------------------------------------**//**

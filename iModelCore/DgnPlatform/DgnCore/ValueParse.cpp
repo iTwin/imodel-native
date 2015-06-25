@@ -858,8 +858,8 @@ void            DistanceParser::InitModelSettings (DgnModelCR model)
     {
     DgnModel::Properties const& modelInfo = model.GetProperties();
 
-    UnitDefinitionCR  subUnit       = modelInfo.GetSubUnit();
-    UnitDefinitionCR  masterUnit    = modelInfo.GetMasterUnit();
+    UnitDefinitionCR  subUnit       = modelInfo.GetSubUnits();
+    UnitDefinitionCR  masterUnit    = modelInfo.GetMasterUnits();
     
     double  uorPerMast = masterUnit.ToMillimeters();
     double  uorPerSub  = subUnit.ToMillimeters();
@@ -1180,7 +1180,7 @@ void            AreaOrVolumeParser::InitModelSettings (DgnModelCR model)
     {
     DgnModel::Properties const& modelInfo = model.GetProperties();
 
-    UnitDefinition  masterUnit = modelInfo.GetMasterUnit();
+    UnitDefinition  masterUnit = modelInfo.GetMasterUnits();
     double          uorPerMast = masterUnit.ToMillimeters();
     
     SetMasterUnitScale (uorPerMast);

@@ -454,7 +454,7 @@ BentleyStatus SatelliteChangeSets::ApplyChangeSets(uint32_t& nChangesApplied, Db
             csfile.ExtractChangeSetBySequenceNumber (changeSet, info.m_sequenceNumber);
 
             if (s_traceUpdate)
-                changeSet.Dump(db, (ChangeSetType::Patch==info.m_type), 0);
+                changeSet.Dump("", db, (ChangeSetType::Patch==info.m_type), 0);
 
             DbResult applyResult = changeSet.ApplyChanges(db);
             if (applyResult != BE_SQLITE_OK)
@@ -490,7 +490,7 @@ BentleyStatus SatelliteChangeSets::ApplyChangeSets(uint32_t& nChangesApplied, Db
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
+-+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SatelliteChangeSets::ApplyChangeSets (uint32_t& nChangesApplied, Db& project, T_ChangesFileDictionary const& csfilesIn)
     {
     bvector<BeFileName> files;
@@ -522,7 +522,7 @@ BentleyStatus SatelliteChangeSets::Dump(BeFileNameCR csfileName, Db& db, int det
 
         printf ("\n\n--Changeset SequenceNumber=%" PRIu64 " type=%d desc=[%s] time=%s size=%d---\n", info.m_sequenceNumber, (int)info.m_type, info.m_description.c_str(), Utf8String(info.m_time.ToString()).c_str(), (int)changeSet.GetSize());
 
-        changeSet.Dump(db, (ChangeSetType::Patch==info.m_type), detailLevel);
+        changeSet.Dump("", db, (ChangeSetType::Patch==info.m_type), detailLevel);
         }
 
     return BSISUCCESS;

@@ -105,7 +105,7 @@ static BentleyStatus getCategoryDisplayName (Utf8StringR displayNameStr, DgnCate
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void getCategoryString (Utf8StringR categoryStr, DgnElementCR element)
     {
-    DgnCategories::Category const& category = DGN_TABLE_LEVEL_FOR_MODEL(&element.GetDgnModel()).Query(element.GetCategoryId());
+    DgnCategories::Category const& category = element.GetDgnDb().Categories().Query(element.GetCategoryId());
 
     if (!category.IsValid ())
         return;
@@ -143,7 +143,7 @@ void DgnPlatformLib::Host::GraphicsAdmin::_GetInfoString (HitDetailCP hit, Utf8S
 
     Utf8String categoryStr, modelStr;
 
-    modelStr.assign(DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Model()).c_str()).append (element->GetDgnModel().GetModelName());
+    modelStr.assign(DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Model()).c_str()).append (element->GetModel()->GetModelName());
     getCategoryString(categoryStr, *element);
 
     pathDescr.append(delimiter).append(modelStr.c_str());

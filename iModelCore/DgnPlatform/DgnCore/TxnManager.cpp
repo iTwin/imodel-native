@@ -886,6 +886,21 @@ void dgn_TxnTable::Model::_OnReversedAdd(BeSQLite::Changes::Change const& change
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::Model::_OnReversedUpdate(BeSQLite::Changes::Change const& change) 
+    {
+    DgnModelId modelId = change.GetOldValue(0).GetValueId<DgnModelId>();
+    DgnModelP model = m_txnMgr.GetDgnDb().Models().FindModel(modelId);
+
+    if (model)
+        {
+        model->ReadProperties();
+        model->_OnUpdated();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_TxnTable::ElementDep::_OnValidate()
     {
     m_changes = false;
