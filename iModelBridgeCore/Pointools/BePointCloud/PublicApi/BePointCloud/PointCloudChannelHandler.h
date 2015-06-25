@@ -7,15 +7,13 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <map>
-
 //__BENTLEY_INTERNAL_ONLY__
+
+BEGIN_BENTLEY_BEPOINTCLOUD_NAMESPACE
 
 typedef bvector<PointCloudChannelHandlerP>  PointCloudChannelHandlers;
 typedef bvector<PointCloudChannelP>         PointCloudChannelVector;
 typedef PointCloudChannelVector const&      PointCloudChannelVectorCR;
-
-BEGIN_BENTLEY_BEPOINTCLOUD_NAMESPACE
 
 #define PointCloudChannels_Is_Point_Visible(bValue)     ( (bValue &  0x07) != 0)  //if one of the first 3 bits On
 #define PointCloudChannels_Is_Point_Hidden(bValue)      (!PointCloudChannels_Is_Point_Visible (bValue))
@@ -303,8 +301,8 @@ struct PointCloudChannelManager
     private:
         IPointCloudChannelPtrMap LoadChannels (const uint32_t* channelHandles, int32_t numChannels);
 
-        typedef std::map<WString, DgnElementP> MapWStringElementRef;
-        typedef std::map<WString, DgnPlatform::PersistentElementPath> MapWStringPep;
+        typedef bmap<WString, DgnElementP> MapWStringElementRef;
+        typedef bmap<WString, DgnPlatform::PersistentElementPath> MapWStringPep;
 
         IPointCloudChannelPtrMap  m_channels;
         MapWStringElementRef     m_embeddedChannels;

@@ -3,7 +3,7 @@
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
     <Part Name="BePointCloud" OnlyPlatforms="x86,x64" BMakeFile="BePointCloud.mke" >
-        <SubPart PartName="BentleyApi"      PartFile="BentleyApi"   Repository="BentleyApi"/>
+        <SubPart PartName="BentleyDll"      PartFile="Bentley"   Repository="Bentley"/>
         <SubPart PartName="BePointCloudSubParts"/>
         <SubPart PartName="PointoolsVortexAPI_VS2012" PartFile="PointoolsVortexAPI_VS2012" Repository="PointoolsVortexAPI" />
         <Bindings>

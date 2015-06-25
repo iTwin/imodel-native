@@ -8,7 +8,7 @@
 #ifndef __BEPOINTCLOUDINTERNAL_H__
 #define __BEPOINTCLOUDINTERNAL_H__
 
-#include <BentleyApi/BentleyApi.h>
+#include <Bentley/Bentley.h>
 #include <Bentley/BeThread.h>
 #include <list>
 #include <Bentley/RefCounted.h>

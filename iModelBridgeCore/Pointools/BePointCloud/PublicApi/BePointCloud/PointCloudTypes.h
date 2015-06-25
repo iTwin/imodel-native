@@ -21,7 +21,6 @@
 BEPOINTCLOUD_TYPEDEFS(IPointCloudChannel);
 BEPOINTCLOUD_TYPEDEFS(IPointCloudDataQuery);
 BEPOINTCLOUD_TYPEDEFS(IPointCloudQueryBuffers);
-BEPOINTCLOUD_TYPEDEFS(IPointCloudViewSettings);
 BEPOINTCLOUD_TYPEDEFS(IPointCloudChannelHandlerFilter);
 BEPOINTCLOUD_TYPEDEFS(PointCloudScene);
 BEPOINTCLOUD_TYPEDEFS(IPointCloudSymbologyChannel);
@@ -44,8 +43,6 @@ struct  IPointCloudQueryBuffers;
 struct  IPointCloudFileQuery;
 struct  IPointCloudImporter;
 struct  PointCloudSelectPoints;
-struct  IPointCloudViewSettings;
-struct  IPointCloudClassificationViewSettings;
 struct  PointCloudNeighborhoodChannelSettings;
 struct  PointCloudEditSelectPoints; 
 struct  IPointCloudFileEdit;
@@ -53,8 +50,6 @@ struct  IChannelsFileBuffer;
 struct  ChannelHandlerCaller;
 struct  IPointCloudSymbologyChannel;
 struct  FilterChannelEditor;
-struct  PointCloudViewSettings;
-struct  PointCloudClassificationViewSettings;
 struct  PointCloudColorDef;
 
 typedef RefCountedPtr<ChannelHandlerOnQueryCaller>              ChannelHandlerOnQueryCallerPtr;
@@ -68,8 +63,6 @@ typedef RefCountedPtr<IPointCloudQueryBuffers>                  IPointCloudQuery
 typedef RefCountedPtr<IPointCloudFileQuery>                     IPointCloudFileQueryPtr;
 typedef RefCountedPtr<IPointCloudImporter>                      IPointCloudImporterPtr;
 typedef RefCountedPtr<PointCloudSelectPoints>                   PointCloudSelectPointsPtr;
-typedef RefCountedPtr<IPointCloudViewSettings>                  IPointCloudViewSettingsPtr;
-typedef RefCountedPtr<IPointCloudClassificationViewSettings>    IPointCloudClassificationViewSettingsPtr;
 typedef RefCountedPtr<PointCloudNeighborhoodChannelSettings>    PointCloudNeighborhoodChannelSettingsPtr;
 typedef RefCountedPtr<PointCloudEditSelectPoints>               PointCloudEditSelectPointsPtr;
 typedef RefCountedPtr<IPointCloudFileEdit>                      IPointCloudFileEditPtr;
@@ -77,8 +70,6 @@ typedef RefCountedPtr<IChannelsFileBuffer>                      IChannelsFileBuf
 typedef RefCountedPtr<ChannelHandlerCaller>                     ChannelHandlerCallerPtr;
 typedef RefCountedPtr<IPointCloudSymbologyChannel>              IPointCloudSymbologyChannelPtr;
 typedef RefCountedPtr<FilterChannelEditor>                      FilterChannelEditorPtr;
-typedef RefCountedPtr<PointCloudViewSettings>                   PointCloudViewSettingsPtr;
-typedef RefCountedPtr<PointCloudClassificationViewSettings>     PointCloudClassificationViewSettingsPtr;
 typedef RefCountedPtr<PointCloudColorDef>                       PointCloudColorDefPtr;
 
 /*=================================================================================**//**
