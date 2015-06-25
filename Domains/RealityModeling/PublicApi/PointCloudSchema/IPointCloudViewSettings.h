@@ -337,8 +337,8 @@ struct IPointCloudClassificationViewSettings : public IRefCounted
     protected:
         virtual bool                                _GetState (unsigned char idx) const = 0;
         virtual void                                _SetState (unsigned char idx, bool state) = 0;
-        virtual PointCloudColorDefCR                _GetColor (unsigned char idx) const = 0;
-        virtual void                                _SetColor(unsigned char idx, PointCloudColorDefR color) = 0;
+        virtual BePointCloud::PointCloudColorDefCR  _GetColor (unsigned char idx) const = 0;
+        virtual void                                _SetColor(unsigned char idx, BePointCloud::PointCloudColorDefR color) = 0;
         virtual unsigned char                       _GetLastIndex () const = 0;
         virtual bool                                _GetBlendColor() const = 0;
         virtual void                                _SetBlendColor(bool use) = 0;
@@ -362,7 +362,7 @@ struct IPointCloudClassificationViewSettings : public IRefCounted
         * @return   Reference counted pointer to an IPointCloudClassificationViewSettings instance.
         * @bsimethod
         +---------------+---------------+---------------+---------------+---------------+------*/
-        POINTCLOUDSCHEMA_EXPORT static IPointCloudClassificationViewSettingsPtr GetPointCloudClassificationViewSettings(ViewContextCR context);
+        POINTCLOUDSCHEMA_EXPORT static IPointCloudClassificationViewSettingsPtr GetPointCloudClassificationViewSettings(Dgn::ViewContextCR context);
 
         /*---------------------------------------------------------------------------------**//**
         * Creates an instance of IPointCloudClassificationViewSettings to change the presentation 
@@ -415,7 +415,7 @@ struct IPointCloudClassificationViewSettings : public IRefCounted
         * @return color of the classification       
         * @bsimethod
         +---------------+---------------+---------------+---------------+---------------+------*/
-        POINTCLOUDSCHEMA_EXPORT PointCloudColorDefCR GetColor (unsigned char idx) const;
+        POINTCLOUDSCHEMA_EXPORT BePointCloud::PointCloudColorDefCR GetColor (unsigned char idx) const;
         /*---------------------------------------------------------------------------------**//**
         * Sets the color for the specified classification
         * @param idx IN id number of the classification       
@@ -424,7 +424,7 @@ struct IPointCloudClassificationViewSettings : public IRefCounted
         *    Commit
         * @bsimethod
         +---------------+---------------+---------------+---------------+---------------+------*/
-        POINTCLOUDSCHEMA_EXPORT void SetColor(unsigned char idx, PointCloudColorDefR color);
+        POINTCLOUDSCHEMA_EXPORT void SetColor(unsigned char idx, BePointCloud::PointCloudColorDefR color);
 
         //These function have been added into SS4
         /*---------------------------------------------------------------------------------**//**

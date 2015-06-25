@@ -54,7 +54,7 @@ protected:
     virtual void            _ToPropertiesJson(Json::Value&) const override;
     virtual void            _FromPropertiesJson(Json::Value const&) override;
     virtual BentleyStatus   _LoadQuadTree() override;
-    virtual DgnPlatform::AxisAlignedBox3d _QueryModelRange() const override;
+    virtual Dgn::AxisAlignedBox3d _QueryModelRange() const override;
 
 public:
 
@@ -70,7 +70,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RasterFileModelHandler : RasterModelHandler
     RASTERMODELHANDLER_DECLARE_MEMBERS (RASTER_CLASSNAME_RasterFileModel, RasterFileModel, RasterFileModelHandler, RasterModelHandler, RASTERSCHEMA_EXPORT)
 
 public:
-    RASTERSCHEMA_EXPORT static DgnPlatform::DgnModelId CreateRasterFileModel(DgnDbR db, BeFileName fileName);
+    RASTERSCHEMA_EXPORT static Dgn::DgnModelId CreateRasterFileModel(Dgn::DgnDbR db, BeFileName fileName);
 };
 
 END_BENTLEY_RASTERSCHEMA_NAMESPACE

@@ -17,12 +17,12 @@ BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
 //! The DgnDomain for the raster schema.
 // @bsiclass                                                    Eric.Paquet     05/15
 //=======================================================================================
-struct RasterDomain : DgnPlatform::DgnDomain
+struct RasterDomain : Dgn::DgnDomain
 {
     DOMAIN_DECLARE_MEMBERS(RasterDomain, RASTERSCHEMA_EXPORT)
 
 protected:
-    virtual void _OnSchemaImported(DgnDbR) const override;
+    virtual void _OnSchemaImported(Dgn::DgnDbR) const override;
 
 public:
     RasterDomain();

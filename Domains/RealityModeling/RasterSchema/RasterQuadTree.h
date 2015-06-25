@@ -53,7 +53,7 @@ public:
     DPoint3dCR GetCorners() const; 
 
     //! Draw this tile in the view. Tile might not be loaded. Return true if successful.
-    bool Draw(ViewContextR context);    
+    bool Draw(Dgn::ViewContextR context);    
 
     TileId const& GetId() const {return m_tileId;}
 
@@ -64,7 +64,7 @@ public:
     RasterTileP GetChildP(size_t index) {return m_pChilds[index].get();}
 
     //! Build the list of visibles tiles in this context. Nodes will be created as we walk the tree but pixels won't.
-    void QueryVisible(bvector<RasterTilePtr>& visibles, ViewContextR context);
+    void QueryVisible(bvector<RasterTilePtr>& visibles, Dgn::ViewContextR context);
 
     //! Return true if the tiles pixels are loaded.
     bool IsLoaded() const {return m_pDisplayTile.IsValid();}
@@ -74,7 +74,7 @@ private:
 
     bool IsLeaf() const {return 0 == m_tileId.resolution;}
 
-    bool IsVisible (ViewContextR viewContext, double& factor) const;
+    bool IsVisible (Dgn::ViewContextR viewContext, double& factor) const;
 
     bool IsBorderTile() const{return GetResolution().GetTileCountX() == m_tileId.tileX +1 || GetResolution().GetTileCountY() == m_tileId.tileY + 1;}
 
@@ -113,18 +113,18 @@ private:
 struct RasterQuadTree : public RefCountedBase
 {
 public:
-    static RasterQuadTreePtr Create(RasterSourceR source, DgnDbR dgnDb);
+    static RasterQuadTreePtr Create(RasterSourceR source, Dgn::DgnDbR dgnDb);
 
     RasterTileR GetRoot() {return *m_pRoot;}
 
     RasterSourceR GetSource() {return *m_pSource;}
 
     //! Build the list of visibles tiles in this context. Nodes will be created as we walk the tree but pixels won't.
-    void QueryVisible(bvector<RasterTilePtr>& visibles, ViewContextR context);
+    void QueryVisible(bvector<RasterTilePtr>& visibles, Dgn::ViewContextR context);
 
-    DgnDbR GetDgnDb() {return m_dgnDb;}
+    Dgn::DgnDbR GetDgnDb() {return m_dgnDb;}
 
-    void Draw (ViewContextR context);
+    void Draw (Dgn::ViewContextR context);
 
     //! Some format look best when increased quality is used. ex. WMS. Or we just want to display faster. Full quality is 1.0.
     void SetVisibleQualityFactor(double factor) {m_visibleQualityFactor=factor;}
@@ -132,9 +132,9 @@ public:
 
 private:
     
-    RasterQuadTree(RasterSourceR source, DgnDbR dgnDb);
+    RasterQuadTree(RasterSourceR source, Dgn::DgnDbR dgnDb);
 
-    DgnDbR m_dgnDb;                 
+    Dgn::DgnDbR m_dgnDb;                 
     RasterSourcePtr m_pSource; 
     RasterTilePtr m_pRoot;          // The lowest/coarser resolution. 
     double m_visibleQualityFactor;
