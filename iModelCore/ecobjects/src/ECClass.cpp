@@ -1780,13 +1780,13 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
     READ_OPTIONAL_XML_ATTRIBUTE (constraintNode, ROLELABEL_ATTRIBUTE, this, RoleLabel);
     READ_OPTIONAL_XML_ATTRIBUTE (constraintNode, CARDINALITY_ATTRIBUTE, this, Cardinality);
     
-    for (BeXmlNodeP childNode = constraintNode.GetFirstChild (); NULL != childNode; childNode = childNode->GetNextSibling ())
+    for (BeXmlNodeP constraintClassNode = constraintNode.GetFirstChild(); nullptr != constraintClassNode; constraintClassNode = constraintClassNode->GetNextSibling())
         {
-        if (0 != strcmp (childNode->GetName (), EC_CONSTRAINTCLASS_ELEMENT))
+        if (0 != strcmp(constraintClassNode->GetName(), EC_CONSTRAINTCLASS_ELEMENT))
             continue;
         
         WString     constraintClassName;
-        if (BEXML_Success != childNode->GetAttributeStringValue (constraintClassName, CONSTRAINTCLASSNAME_ATTRIBUTE))
+        if (BEXML_Success != constraintClassNode->GetAttributeStringValue(constraintClassName, CONSTRAINTCLASSNAME_ATTRIBUTE))
             return SCHEMA_READ_STATUS_InvalidECSchemaXml;
         
         // Parse the potentially qualified class name into a namespace prefix and short class name
@@ -1818,13 +1818,12 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
         m_constraintClasses.Add(ecRelationshipconstaintClass, *constraintClass);
         if (ecRelationshipconstaintClass != nullptr)
             {
-            for (BeXmlNodeP childNodekey = childNode->GetFirstChild(); NULL != childNodekey; childNodekey = childNode->GetNextSibling())
+            for (BeXmlNodeP keyNode = constraintClassNode->GetFirstChild(); nullptr != keyNode; keyNode = keyNode->GetNextSibling())
                 {
-                for (BeXmlNodeP childNodekeyProperty = childNodekey->GetFirstChild(); NULL != childNodekeyProperty; childNodekeyProperty = childNodekeyProperty->GetNextSibling())
+                for (BeXmlNodeP propertyNode = keyNode->GetFirstChild(); nullptr != propertyNode; propertyNode = propertyNode->GetNextSibling())
                     {
-
-                    WString     propertyName;
-                    if (BEXML_Success != childNodekeyProperty->GetAttributeStringValue(propertyName, KEYPROPERTYNAME_ATTRIBUTE))
+                    WString propertyName;
+                    if (BEXML_Success != propertyNode->GetAttributeStringValue(propertyName, KEYPROPERTYNAME_ATTRIBUTE))
                         return SCHEMA_READ_STATUS_InvalidECSchemaXml;
                     ecRelationshipconstaintClass->AddKey(propertyName.c_str());
                     }
@@ -1834,7 +1833,6 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
 
     // Add Custom Attributes
     ReadCustomAttributes (constraintNode, schemaContext, m_relClass->GetSchema());
-
     return status;
     }
     
