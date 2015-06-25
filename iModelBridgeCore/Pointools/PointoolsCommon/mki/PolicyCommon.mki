@@ -1,0 +1,45 @@
+#----------------------------------------------------------------------------------------
+#  $Source: mki/PolicyCommon.mki $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#----------------------------------------------------------------------------------------
+
+%include $(SrcBsiCommon)sharedmki/InternalSystemPolicy.mki
+
+#----------------------------------------------------------------------------------------
+# This sets up the -I options for parts that were already built, the headers are in VenderAPI, PublicAPI etc. 
+# For HelloWorld, you technically are not including anything headers other than ones provided by the compiler.
+# It is done here for good practice.
+#----------------------------------------------------------------------------------------
+%include $(SharedMki)DefinePublicApiIncludes.mki
+%include $(SharedMki)CommonCompileLinkPolicy.mki
+%include $(SrcRoot)BentleyApi/PublicMki/BentleyApi.mki 
+
+#----------------------------------------------------------------------------------------
+# Set Visual Studio Build Tools version based on current settings
+#----------------------------------------------------------------------------------------
+
+%include PointoolsBuildUsing.mki
+
+#----------------------------------------------------------------------------------------
+# Including DefaultToolSet.mki is a noop if a toolset is already selected but, if not, it provides a default.
+# This basically provides where to find the correct compiler etc.
+#----------------------------------------------------------------------------------------
+
+%include DefaultToolSet.mki
+
+#----------------------------------------------------------------------------------------
+# Set common environment variables for the build
+#----------------------------------------------------------------------------------------
+
+PointoolsLibs = $(SrcRoot)Pointools/PointoolsLibs/
+PointoolsLibsVendorAPI = $(OutBuildContexts)PointoolsLibs/VendorAPI/
+PointoolsLibsDelivery = $(OutBuildContexts)PointoolsLibs/Delivery/
+PointoolsIO=$(SrcRoot)Pointools/PointoolsIO/
+PointoolsVortexAPI=$(SrcRoot)Pointools/PointoolsVortexAPI/
+PointoolsVortexAPIInclude = $(PointoolsVortexAPI)include/
+PointoolsVortexAPISrc = $(PointoolsVortexAPI)src/
+
+# RB TODO: Is this necessary?
+#always:
+#    ~putenv PointoolsVortexBase=$(SrcRoot)/../

@@ -1,0 +1,41 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: PointoolsLibs/PointoolsLibsIO/Formats/Topcon/Format_TopconCodec.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+
+PolicyFile=$(SrcRoot)Pointools/PointoolsCommon/mki/AssertPolicy.mki
+%include mdl.mki
+
+DeliveryDir=$(OutBuildContexts)PointoolsLibs/Delivery/
+
+VendorAPIDir = $(OutBuildContexts)PointoolsLibs/VendorAPI/TopconCodec
+
+always:
+    @CreateSymLinks.py   -d"$(VendorAPIDir)=$(PointoolsLibs)topcon\TopconCodec"
+
+
+#---------------------------------------------------------------------------------------------------------
+# Libs required
+#---------------------------------------------------------------------------------------------------------
+
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x86"
+always:
+    @CreateSymLinks.py   -f"$(DeliveryDir)TopconCodec.lib"=${PointoolsLibs}\topcon\TopconCodec\x86\Release\TopconCodec.lib"
+
+always:
+    @CreateSymLinks.py   -f"$(DeliveryDir)TopconCodec.dll"=${PointoolsLibs}\topcon\TopconCodec\x86\Release\TopconCodec.dll"
+
+%endif
+
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
+always:
+    @CreateSymLinks.py   -f"$(DeliveryDir)TopconCodec.lib"=${PointoolsLibs}\topcon\TopconCodec\x64\Release\TopconCodec.lib"
+
+always:
+    @CreateSymLinks.py   -f"$(DeliveryDir)TopconCodec.dll"=${PointoolsLibs}\topcon\TopconCodec\x64\Release\TopconCodec.dll"
+
+%endif
+

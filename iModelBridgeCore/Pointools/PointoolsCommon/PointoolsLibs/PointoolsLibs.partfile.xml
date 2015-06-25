@@ -2,7 +2,7 @@
 
 <!-- 
 ********************************************************************************************************
-* Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved.
+* Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 *
 * Main PointoolsLibs Build (VS2005 and VS2012)
 *
@@ -15,9 +15,8 @@
 
   <Part Name="PointoolsLibs">
 
-    <SubPart PartName="PointoolsLibs_VS2005" PartFile="${srcroot}Pointools\PointoolsCommon\PointoolsLibs\PointoolsLibs_VS2005"/>
-    
-    <SubPart PartName="PointoolsLibs_VS2012" PartFile="${srcroot}Pointools\PointoolsCommon\PointoolsLibs\PointoolsLibs_VS2012"/>
+    <SubPart PartName="PointoolsLibs_VS2005"/>
+    <SubPart PartName="PointoolsLibs_VS2012"/>
 
     <Bindings>
       <VendorAPI Domain="Dummy"/>
@@ -28,5 +27,491 @@
 
   </Part>
 
+<!--
+  ********************************************************************************************************
+  * PointoolsLibs VS2012 Parts
+  ********************************************************************************************************
+-->
+  <Part Name="PointoolsLibs_VS2012" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+    <SubPart PartName="PointoolsLibsVortex_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="PointoolsLibsIO_VS2012" Repository="PointoolsLibs"/>
+  </Part>
+
+<!--
+  ********************************************************************************************************
+  * Pointools Common VS2012 Parts
+  ********************************************************************************************************
+-->
+
+  <Part Name="PointoolsLibsCommon_VS2012" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+    <SubPart PartName="Boost_1_4_3_VS2012" Repository="PointoolsLibs"/>  
+    <SubPart PartName="Boost_1_5_7_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="GL_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="GLEW_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="TTL_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="WildMagic4_VS2012" Repository="PointoolsLibs"/>
+  </Part>
+
+  
+  <Part Name="BoostHeaders_1_4_3" BMakeFile="PointoolsLibsCommon/Boost_1_4_3/BoostHeaders_1_4_3.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+  </Part>
+
+                                                                                                  <!-- This boost headers places includes in subfolder Boost_1_4_3 to avoid clashes with other versions -->
+  <Part Name="Boost_1_4_3_VS2012" BMakeFile="PointoolsLibsCommon/Boost_1_4_3/Boost_1_4_3.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+                                                                                                  <!-- Specify this PartFile to force Repository Checkout (otherwise it doesn't happen!)-->
+    <SubPart PartName="BoostHeaders_1_4_3" Repository="Bsibin-Boostheaders"/>    
+  </Part>
+  
+  <Part Name="BoostHeaders_1_5_7_VS2012" BMakeFile="PointoolsLibsCommon/Boost_1_5_7/BoostHeaders_1_5_7.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+  </Part>
+
+                                                                                                  <!-- This boost headers places includes in subfolder Boost_1_4_3 to avoid clashes with other versions -->
+  <Part Name="Boost_1_5_7_VS2012" BMakeFile="PointoolsLibsCommon/Boost_1_5_7/Boost_1_5_7.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+                                                                                                  <!-- Specify this PartFile to force Repository Checkout (otherwise it doesn't happen!)-->
+    <SubPart PartName="BoostHeaders_1_5_7_VS2012" Repository="BoostHeaders_1.57"/>    
+  </Part>
+
+  <Part Name="GL_VS2012" BMakeFile="PointoolsLibsCommon/GL/GL.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+  </Part>
+
+  <Part Name="GLEW_VS2012" BMakeFile="PointoolsLibsCommon/GLEW/GLEW.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+  </Part>
+
+  <Part Name="TTL_VS2012" BMakeFile="PointoolsLibsCommon/TTL/TTL.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+  </Part>
+
+  <Part Name="WildMagic4_VS2012" BMakeFile="PointoolsLibsCommon/WildMagic4/WildMagic4.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+  </Part>
+
+  
+  <!--
+  ********************************************************************************************************
+  * Pointools Libs VS2012 Parts
+  ********************************************************************************************************
+-->
+
+  <Part Name="PointoolsLibsVortex_VS2012">
+    <SubPart PartName="PointoolsLibsCommon_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="GLUI_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="FastDelegate_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="Loki_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="SCZ_Compress_VS2012" Repository="PointoolsLibs"/>
+  </Part>
+
+  <Part Name="FreeGlut_VS2012" BMakeFile="PointoolsLibsVortex/FreeGlut/FreeGlut.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+    <Bindings>
+      <Assemblies ProductDirectoryName="PointoolsAssemblies">
+        Delivery\Freeglut.dll
+      </Assemblies>
+    </Bindings>
+  </Part>
+
+  <Part Name="GLUI_VS2012" BMakeFile="PointoolsLibsVortex/GLUI/GLUI.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+  </Part>
+
+  <Part Name="FastDelegate_VS2012" BMakeFile="PointoolsLibsVortex/FastDelegate/FastDelegate.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+  </Part>
+
+  <Part Name="Loki_VS2012" BMakeFile="PointoolsLibsVortex/Loki/Loki.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+  </Part>
+
+  <Part Name="SCZ_Compress_VS2012" BMakeFile="PointoolsLibsVortex/SCZ_Compress/SCZ_Compress.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+  </Part>
+
+  <!--
+  ********************************************************************************************************
+  * PointoolsIO Parts
+  ********************************************************************************************************
+-->
+
+  <!--  
+  <Part Name="PointoolsLibsIO_VS2012" BMakeFile="PointoolsLibsIO_VS2012.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+-->
+
+  <Part Name="PointoolsLibsIO_VS2012" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+    <SubPart PartName="PointoolsLibsCommon_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="Xerces_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="GNOME_LIBXML2_2_9_1_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="GNU_IConv_1_1_4_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="GDAL_1_11_1_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="LibTIFF_3_9_4_VS2012" Repository="PointoolsLibs"/>   
+    <SubPart PartName="LibGeoTIFF_1_3_0_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="Loki_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="Format_Leica_PTZ_6_0_0_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="Format_LibLAS_1_8_0_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="Format_LASZip_2_1_0_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="Format_TopconCodec_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="Format_LibE57_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="Format_ZF_8_5_0_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="Format_Riegl_RivLib_1_3_2_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="Format_Riegl_RiscanLib_3_5_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="Format_Faro_5_2_0_VS2012" Repository="PointoolsLibs"/>
+  </Part>
+
+  
+  <Part Name="Xerces_VS2012" OnlyPlatforms="x86,x64" BMakeFile="PointoolsLibsIO/Apache/Xerces/Xerces.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+  </Part>
+    
+  <Part Name="GDAL_1_11_1_VS2012" OnlyPlatforms="x64" BMakeFile="PointoolsLibsIO/GDAL/GDAL_1_11_1.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+  </Part>
+
+  <Part Name="GNOME_LIBXML2_2_9_1_VS2012" OnlyPlatforms="x64" BMakeFile="PointoolsLibsIO/GNOME/LIBXML2/GNOME_LIBXML2_2_9_1.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+    <Bindings>
+      <Assemblies ProductDirectoryName="PointoolsAssemblies">
+        Delivery\libxml2.dll
+      </Assemblies>
+    </Bindings>
+  </Part>
+
+
+  <Part Name="GNU_IConv_1_1_4_VS2012" OnlyPlatforms="x64" BMakeFile="PointoolsLibsIO/GNU/IConv/GNU_IConv_1_1_4.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+    <Bindings>
+      <Assemblies ProductDirectoryName="PointoolsAssemblies">
+        Delivery\libiconv.dll
+      </Assemblies>
+    </Bindings>
+  </Part>
+
+  <Part Name="LibTIFF_3_9_4_VS2012" OnlyPlatforms="x64" BMakeFile="PointoolsLibsIO/LibTIFF/LibTIFF_3_9_4.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+  </Part>
+
+  <Part Name="LibGeoTIFF_1_3_0_VS2012" OnlyPlatforms="x64" BMakeFile="PointoolsLibsIO/OsGeo/LibGeoTIFF/LibGeoTIFF_1_3_0.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+  </Part>
+
+  <Part Name="Format_Faro_5_2_0_VS2012" OnlyPlatforms="x64" BMakeFile="PointoolsLibsIO/Formats/Faro/Format_Faro_5_2_0.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+    <Bindings>
+      <Assemblies ProductDirectoryName="PointoolsAssemblies" ExtractReg="include">
+        Delivery\IQOpen.dll
+      </Assemblies>
+
+      <Assemblies ProductDirectoryName="PointoolsAssemblies" ExtractReg="include">
+        Delivery\FARO.LS.SDK.dll
+      </Assemblies>
+
+      <Assemblies ProductDirectoryName="PointoolsAssemblies" >
+        Delivery\IQBase.dll
+        Delivery\geotifflib.dll
+        Delivery\hasp_act_windows_x64.dll
+        Delivery\hasp_windows_x64_79264.dll
+        Delivery\IQLib.dll
+        Delivery\jsoncpp.dll
+        Delivery\LSBase.dll
+        Delivery\MSPCoordinateConversionService.dll
+        Delivery\opencv_calib3d242.dll
+        Delivery\opencv_core242.dll
+        Delivery\opencv_features2d242.dll
+        Delivery\opencv_flann242.dll
+        Delivery\opencv_imgproc242.dll
+        Delivery\xerces-c_3_1.dll
+      </Assemblies>
+      <Files SubPartDirectory="PointoolsLibs_Faro_5_2_0">
+        Delivery\_tbb.dll
+      </Files>
+
+      <Files BindToWixBuild="true">
+          ComRegistry\IQOpen.dll.wxi
+          ComRegistry\FARO.LS.SDK.dll.wxi
+      </Files>
+    </Bindings>
+  </Part>
+
+  <Part Name="Format_LASZip_2_1_0_VS2012" OnlyPlatforms="x64" BMakeFile="PointoolsLibsIO/Formats/LASZip/Format_LASZip_2_1_0.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+    <Bindings>
+      <Assemblies ProductDirectoryName="PointoolsAssemblies">
+        Delivery\laszip.dll
+      </Assemblies>
+    </Bindings>
+  </Part>
+
+  <Part Name="Format_Leica_PTZ_6_0_0_VS2012" OnlyPlatforms="x64" BMakeFile="PointoolsLibsIO\Formats\Leica\Format_Leica_PTZ_6_0_0.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+    <Bindings>
+      <Assemblies ProductDirectoryName="PointoolsAssemblies">
+        Delivery\ptzreader80x64.dll
+      </Assemblies>
+    </Bindings>
+  </Part>
+
+  <Part Name="Format_LibE57_VS2012" OnlyPlatforms="x64" BMakeFile="PointoolsLibsIO/Formats/LibE57/Format_LibE57.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+  </Part>
+
+  <Part Name="Format_LibLAS_1_8_0_VS2012" OnlyPlatforms="x64" BMakeFile="PointoolsLibsIO\Formats\LibLAS\Format_LibLAS_1_8_0.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">                                                                                                  <!-- Specify this PartFile to force Repository Checkout (otherwise it doesn't happen!)-->
+    <SubPart PartName="BoostHeaders_1_5_7_VS2012" Repository="Bsibin-Boostheaders"/>
+  </Part>
+
+  <Part Name="Format_Riegl_RivLib_1_3_2_VS2012" OnlyPlatforms="x64" BMakeFile="PointoolsLibsIO\Formats\Riegl\Format_Riegl_RivLib_1_3_2.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+    <Bindings>
+      <Assemblies ProductDirectoryName="PointoolsAssemblies">
+        Delivery\scanifc-mt.dll
+      </Assemblies>
+    </Bindings>
+  </Part>
+
+  <Part Name="Format_Riegl_RiscanLib_3_5_VS2012" OnlyPlatforms="x86" BMakeFile="PointoolsLibsIO/Formats/Riegl/Format_Riegl_RiscanLib_3_5.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+    <Bindings>
+      <Assemblies ProductDirectoryName="PointoolsAssemblies">
+        Delivery\scannermod.dll
+      </Assemblies>
+    </Bindings>
+  </Part>
+
+  <Part Name="Format_TopconCodec_VS2012" OnlyPlatforms="x64" BMakeFile="PointoolsLibsIO/Formats/Topcon/Format_TopconCodec.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+    <Bindings>
+      <Assemblies ProductDirectoryName="PointoolsAssemblies">
+        Delivery\TopconCodec.dll       
+      </Assemblies>
+    </Bindings>
+  </Part>
+
+  <Part Name="Format_ZF_8_5_0_VS2012" OnlyPlatforms="x64" BMakeFile="PointoolsLibsIO\Formats\ZF\Format_ZF_8_5_0.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+    <Bindings>
+      <Assemblies ProductDirectoryName="PointoolsAssemblies">
+        Delivery\zfs.dll
+      </Assemblies>
+    </Bindings>
+  </Part>
+
+<!--
+  ********************************************************************************************************
+  * PointoolsLibs VS2005 Parts
+  ********************************************************************************************************
+-->
+  <Part Name="PointoolsLibs_VS2005" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+    <SubPart PartName="PointoolsLibsVortex_2_VS2005" Repository="PointoolsLibs"/>
+    <SubPart PartName="PointoolsLibsIO_2_VS2005" Repository="PointoolsLibs"/>
+  </Part>
+
+<!--
+  ********************************************************************************************************
+  * Pointools Common VS2005 Parts
+  ********************************************************************************************************
+-->
+
+  <Part Name="PointoolsLibsCommon_2_VS2005" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+
+    <SubPart PartName="Boost_1_4_3_VS2005" Repository="PointoolsLibs"/>
+    <SubPart PartName="GL_VS2005" Repository="PointoolsLibs"/>
+    <SubPart PartName="GLEW_VS2005" Repository="PointoolsLibs"/>
+    <SubPart PartName="TTL_VS2005" Repository="PointoolsLibs"/>
+    <SubPart PartName="WildMagic4_VS2005" Repository="PointoolsLibs"/>
+
+  </Part>
+
+  <Part Name="BoostHeaders_1_4_3_VS2005" BMakeFile="PointoolsLibsCommon/VS2005/Boost_1_4_3/BoostHeaders_1_4_3.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+  </Part>
+
+                                                                                                  <!-- This boost headers places includes in subfolder Boost_1_4_3 to avoid clashes with other versions -->
+  <Part Name="Boost_1_4_3_VS2005" BMakeFile="PointoolsLibsCommon/VS2005/Boost_1_4_3/Boost_1_4_3.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+                                                                                                  <!-- Specify this PartFile to force Repository Checkout (otherwise it doesn't happen!)-->
+    <SubPart PartName="BoostHeaders_1_4_3_VS2005" PartFile="${SrcRoot}Pointools/PointoolsCommon/PointoolsLibs/PointoolsLibs_VS2005" Repository="Bsibin-Boostheaders"/>
+    
+  </Part>
+
+  <Part Name="GL_VS2005" BMakeFile="PointoolsLibsCommon/VS2005/GL/GL.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+  </Part>
+ 
+  <Part Name="GLEW_VS2005" BMakeFile="PointoolsLibsCommon/VS2005/GLEW/GLEW.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+  </Part>
+  
+  <Part Name="TTL_VS2005" BMakeFile="PointoolsLibsCommon/VS2005/TTL/TTL.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+  </Part>
+  
+  <Part Name="WildMagic4_VS2005" BMakeFile="PointoolsLibsCommon/VS2005/WildMagic4/WildMagic4.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+  </Part>
+  
+<!--
+  ********************************************************************************************************
+  * PointoolsVortexAPI DLL VS2005 Parts
+  ********************************************************************************************************
+-->
+
+  <Part Name="PointoolsLibsVortex_2_VS2005" BMakeFile="PointoolsLibsVortex_VS2005.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+
+    <SubPart PartName="PointoolsLibsCommon_2_VS2005" Repository="PointoolsLibs"/>
+
+    <!-- SubPart PartName="FreeGlut_VS2005" Repository="PointoolsLibs"/ -->
+    <SubPart PartName="GLUI_VS2005" Repository="PointoolsLibs"/>
+    <SubPart PartName="FastDelegate_VS2005" Repository="PointoolsLibs"/>
+    <SubPart PartName="Loki_VS2005" Repository="PointoolsLibs"/>
+    <SubPart PartName="SCZ_Compress_VS2005" Repository="PointoolsLibs"/>
+    
+  </Part>
+  
+  <Part Name="FreeGlut_VS2005" BMakeFile="PointoolsLibsVortex/FreeGlut/FreeGlut.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+  </Part>
+
+  <Part Name="GLUI_VS2005" BMakeFile="PointoolsLibsVortex/GLUI/GLUI.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+  </Part>
+
+  <Part Name="FastDelegate_VS2005" BMakeFile="PointoolsLibsVortex/FastDelegate/FastDelegate.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+  </Part>
+
+  <Part Name="Loki_VS2005" BMakeFile="PointoolsLibsVortex/Loki/Loki.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+  </Part>
+
+  <Part Name="SCZ_Compress_VS2005" BMakeFile="PointoolsLibsVortex/SCZ_Compress/SCZ_Compress.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+  </Part>
+
+<!--
+  ********************************************************************************************************
+  * PointoolsIO VS2005 Parts
+  ********************************************************************************************************
+-->
+  <Part Name="PointoolsLibsIO_2_VS2005" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+
+    <SubPart PartName="PointoolsLibsCommon_2_VS2005" Repository="PointoolsLibs"/>
+
+    <!--<SubPart PartName="GNOME_LIBXML2_2_9_1_VS2005" Repository="PointoolsLibs"/>-->
+    <!--<SubPart PartName="GNU_IConv_1_1_4_VS2005" Repository="PointoolsLibs"/>-->
+
+    <SubPart PartName="Xerces_VS2005" Repository="PointoolsLibs"/>
+    <SubPart PartName="GDAL_1_7_2_VS2005" Repository="PointoolsLibs"/>
+    <SubPart PartName="GNOME_XML_VS2005" Repository="PointoolsLibs"/>
+    <SubPart PartName="LibTIFF_3_9_4_VS2005" Repository="PointoolsLibs"/>
+    <SubPart PartName="LibGeoTIFF_1_3_0_VS2005" Repository="PointoolsLibs"/>
+
+    <SubPart PartName="Format_Leica_PTZ_6_0_0_VS2005" Repository="PointoolsLibs"/>
+    <SubPart PartName="Format_LibLAS_1_6_0_VS2005" Repository="PointoolsLibs"/>
+    <!-- <SubPart PartName="Format_LibLAS_1_7_0_VS2005" Repository="PointoolsLibs"/> -->
+    <SubPart PartName="Format_LibLAS_1_8_0_VS2005" Repository="PointoolsLibs"/>
+    <SubPart PartName="Format_LASZip_2_1_0_VS2005" Repository="PointoolsLibs"/>
+    <SubPart PartName="Format_TopconCodec_VS2005" Repository="PointoolsLibs"/>
+    <SubPart PartName="Format_LibE57_VS2005" Repository="PointoolsLibs"/>
+    <SubPart PartName="Format_ZF_8_5_0_VS2005" Repository="PointoolsLibs="/>
+    <SubPart PartName="Format_Riegl_RivLib_1_3_2_VS2005" Repository="PointoolsLibs"/>
+    <SubPart PartName="Format_Riegl_RiscanLib_3_5_VS2005" Repository="PointoolsLibs"/>
+    <SubPart PartName="Format_Faro_5_2_0_VS2005" Repository="PointoolsLibs"/>
+
+  </Part>
+  
+  <Part Name="PointoolsLibsIO_2_32_PODWriter_VS2005" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+
+    <SubPart PartName="PointoolsLibsCommon_2_VS2005" Repository="PointoolsLibs"/>
+
+  </Part>
+  
+  
+  <Part Name="PointoolsLibsIO_2_32_Ext_VS2005" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+
+    <SubPart PartName="PointoolsLibsCommon_2_VS2005" Repository="PointoolsLibs"/>
+    <SubPart PartName="GNOME_XML_VS2005" Repository="PointoolsLibs"/>
+    <!-- <SubPart PartName="Xerces_VS2005" Repository="PointoolsLibs"/> -->
+    <SubPart PartName="Format_Riegl_RivLib_1_3_2_VS2005" Repository="PointoolsLibs"/>
+    <SubPart PartName="Format_Riegl_RiscanLib_3_5_VS2005" Repository="PointoolsLibs"/>
+
+  </Part>
+  
+
+  <Part Name="Xerces_VS2005" OnlyPlatforms="x86,x64" BMakeFile="PointoolsLibsIO/Apache/Xerces/Xerces.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+  </Part>
+
+  <Part Name="GDAL_1_7_2_VS2005" OnlyPlatforms="x86" BMakeFile="PointoolsLibsIO/GDAL/GDAL_1_7_2.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+  </Part>
+
+  <Part Name="GNOME_XML_VS2005" OnlyPlatforms="x86" BMakeFile="PointoolsLibsIO/GNOME/XML/GNOME_XML.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+    <Bindings>
+      <Assemblies ProductDirectoryName="PointoolsAssemblies" >
+        Delivery\libxml2.dll
+      </Assemblies>
+
+    </Bindings>
+  </Part>
+  
+  <Part Name="GNU_IConv_1_1_4_VS2005" OnlyPlatforms="x86,x64" BMakeFile="PointoolsLibsIO/GNU/GNU_IConv_1_1_4.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+    <Bindings>
+      <Assemblies ProductDirectoryName="PointoolsAssemblies">
+        Delivery\libiconv.dll
+      </Assemblies>
+    </Bindings>
+  </Part>
+
+  <Part Name="LibTIFF_3_9_4_VS2005" OnlyPlatforms="x86" BMakeFile="PointoolsLibsIO/LibTIFF/LibTIFF_3_9_4.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+  </Part>
+
+  <Part Name="LibGeoTIFF_1_3_0_VS2005" OnlyPlatforms="x86,x64" BMakeFile="PointoolsLibsIO/OsGeo/LibGeoTIFF/LibGeoTIFF_1_3_0.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+  </Part>
+
+  <Part Name="Format_Faro_5_2_0_VS2005" OnlyPlatforms="x86,x64" BMakeFile="PointoolsLibsIO/Formats/Faro/Format_Faro_5_2_0.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+    <Bindings>
+      <Assemblies ProductDirectoryName="PointoolsAssemblies">
+        Delivery\FARO.LS.SDK.dll
+        Delivery\geotifflib.dll
+        Delivery\hasp_act_windows.dll
+        Delivery\hasp_windows_79264.dll
+        Delivery\IQBase.dll
+        Delivery\IQLib.dll
+        Delivery\IQOpen.dll
+        Delivery\jsoncpp.dll
+        Delivery\LSBase.dll
+        Delivery\MSPCoordinateConversionService.dll
+        Delivery\opencv_calib3d242.dll
+        Delivery\opencv_core242.dll
+        Delivery\opencv_features2d242.dll
+        Delivery\opencv_flann242.dll
+        Delivery\opencv_imgproc242.dll
+        Delivery\xerces-c_3_1.dll
+        Delivery\_tbb.dll
+      </Assemblies>
+    </Bindings>
+  </Part>  
+
+  <Part Name="Format_LASZip_2_1_0_VS2005" OnlyPlatforms="x86" BMakeFile="PointoolsLibsIO/Formats/LASZip/Format_LASZip_2_1_0.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+    <Bindings>
+      <Assemblies ProductDirectoryName="PointoolsAssemblies">
+        Delivery\laszip.dll
+      </Assemblies>
+    </Bindings>
+  </Part>
+
+  <Part Name="Format_Leica_PTZ_6_0_0_VS2005" OnlyPlatforms="x86,x64" BMakeFile="PointoolsLibsIO\Formats\Leica\Format_Leica_PTZ_6_0_0.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+    <Bindings>
+      <Assemblies ProductDirectoryName="PointoolsAssemblies">
+        Delivery\ptzreader80.dll
+      </Assemblies>
+    </Bindings>
+  </Part>
+
+  <Part Name="Format_LibE57_VS2005" OnlyPlatforms="x86,x64" BMakeFile="PointoolsLibsIO/Formats/LibE57/Format_LibE57.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+  </Part>
+
+  <Part Name="Format_LibLAS_1_6_0_VS2005" OnlyPlatforms="x64" BMakeFile="PointoolsLibsIO\Formats\LibLAS\Format_LibLAS_1_6_0.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+  </Part>
+
+  <Part Name="Format_LibLAS_1_7_0_VS2005" OnlyPlatforms="x86" BMakeFile="PointoolsLibsIO\Formats\LibLAS\Format_LibLAS_1_7_0.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+  </Part>
+
+  <Part Name="Format_LibLAS_1_8_0_VS2005" OnlyPlatforms="x86" BMakeFile="PointoolsLibsIO\Formats\LibLAS\Format_LibLAS_1_8_0.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+  </Part>
+
+  <Part Name="Format_Riegl_RivLib_1_3_2_VS2005" OnlyPlatforms="x86" BMakeFile="PointoolsLibsIO\Formats\Riegl\Format_Riegl_RivLib_1_3_2.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+    <Bindings>
+      <Assemblies ProductDirectoryName="PointoolsAssemblies">
+        Delivery\scanifc-mt.dll
+      </Assemblies>
+    </Bindings>
+  </Part>
+
+  <Part Name="Format_Riegl_RiscanLib_3_5_VS2005" OnlyPlatforms="x86,x64" BMakeFile="PointoolsLibsIO/Formats/Riegl/Format_Riegl_RiscanLib_3_5.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+    <Bindings>
+      <Assemblies ProductDirectoryName="PointoolsAssemblies" ExtractReg="true">
+        Delivery\scannermod.dll
+      </Assemblies>
+    </Bindings>
+  </Part>
+
+  <Part Name="Format_TopconCodec_VS2005" OnlyPlatforms="x86,x64" BMakeFile="PointoolsLibsIO/Formats/Topcon/Format_TopconCodec.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+    <Bindings>
+      <Assemblies ProductDirectoryName="PointoolsAssemblies">
+        Delivery\TopconCodec.dll
+      </Assemblies>
+    </Bindings>
+  </Part>
+
+  <Part Name="Format_ZF_8_5_0_VS2005" OnlyPlatforms="x86" BMakeFile="PointoolsLibsIO\Formats\ZF\Format_ZF_8_5_0.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2005=1">
+    <Bindings>
+      <Assemblies ProductDirectoryName="PointoolsAssemblies">
+          Delivery\zfs.dll
+      </Assemblies>
+    </Bindings>
+  </Part>
   
 </BuildContext>

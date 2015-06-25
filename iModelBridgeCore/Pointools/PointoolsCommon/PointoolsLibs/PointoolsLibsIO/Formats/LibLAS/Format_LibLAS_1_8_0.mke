@@ -1,0 +1,47 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: PointoolsLibs/PointoolsLibsIO/Formats/LibLAS/Format_LibLAS_1_8_0.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+
+PolicyFile=$(SrcRoot)Pointools/PointoolsCommon/mki/AssertPolicy.mki
+%include mdl.mki
+
+DeliveryDir=$(OutBuildContexts)PointoolsLibs/Delivery/
+
+VendorAPIDir = $(OutBuildContexts)PointoolsLibs/VendorAPI/LibLas
+
+always:
+    @CreateSymLinks.py   -d"$(VendorAPIDir)=$(PointoolsLibs)liblas\libLas-1.8.0\include\liblas"
+
+#---------------------------------------------------------------------------------------------------------
+# Libs required
+#---------------------------------------------------------------------------------------------------------
+
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x86" && defined(POINTOOLS_BUILD_USING_VS2005)
+always:
+    @CreateSymLinks.py   -f"$(DeliveryDir)Liblas_1.8.0_vc8_x86.lib"=${PointoolsLibs}\liblas\libLas-1.8.0\lib\Liblas_1.8.0_vc8_x86.lib
+    @CreateSymLinks.py   -f"$(DeliveryDir)LibLas_1.8.0_vc8_x86_d.lib"=${PointoolsLibs}\liblas\libLas-1.8.0\lib\LibLas_1.8.0_vc8_x86_d.lib
+
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "x64" && defined(POINTOOLS_BUILD_USING_VS2005)
+
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
+
+always:
+    @CreateSymLinks.py   -f"$(DeliveryDir)liblas_1.8.0_vc11_x64.lib"=${PointoolsLibs}\liblas\libLas-1.8.0\lib\liblas_1.8.0_vc11_x64.lib
+#   @CreateSymLinks.py   -f"$(DeliveryDir)liblas_1.8.0_vc11_x64_d.lib"=${PointoolsLibs}\liblas\libLas-1.8.0\lib\liblas_1.8.0_vc11_x64_d.lib
+
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "x86"
+always:
+    @CreateSymLinks.py   -f"$(DeliveryDir)Liblas_1.8.0_vc8_x86.lib"=${PointoolsLibs}\liblas\libLas-1.8.0\lib\Liblas_1.8.0_vc8_x86.lib
+    @CreateSymLinks.py   -f"$(DeliveryDir)LibLas_1.8.0_vc8_x86_d.lib"=${PointoolsLibs}\liblas\libLas-1.8.0\lib\LibLas_1.8.0_vc8_x86_d.lib
+
+%else
+
+%error Target architecture unknown!
+
+%endif
+
+

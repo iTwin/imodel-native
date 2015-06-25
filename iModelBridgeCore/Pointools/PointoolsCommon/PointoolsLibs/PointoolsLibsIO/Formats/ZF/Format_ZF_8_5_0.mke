@@ -1,0 +1,56 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: PointoolsLibs/PointoolsLibsIO/Formats/ZF/Format_ZF_8_5_0.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+
+PolicyFile=$(SrcRoot)Pointools/PointoolsCommon/mki/AssertPolicy.mki
+%include mdl.mki
+
+DeliveryDir=$(OutBuildContexts)PointoolsLibs/Delivery/
+
+VendorAPIDir = $(OutBuildContexts)PointoolsLibs/VendorAPI/ZF
+
+
+
+#---------------------------------------------------------------------------------------------------------
+# Libs required
+#---------------------------------------------------------------------------------------------------------
+
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x86" && defined(POINTOOLS_BUILD_USING_VS2005)
+always:
+    @CreateSymLinks.py   -d"$(VendorAPIDir)=$(PointoolsLibs)\ZF\8.5.0\win32_VS2012"
+
+always:
+    @CreateSymLinks.py   -f"$(DeliveryDir)zfs.lib"=${PointoolsLibs}\zf\8.5.0\win32_VS2012\LIB\vs2012_win32\release\zfs.lib"
+#   @CreateSymLinks.py   -f"$(DeliveryDir)zfs_d.lib"=${PointoolsLibs}\zf\8.5.0\win32_VS2012\LIB\vs2012_win32\debug\zfs_d.lib"
+
+always:
+    @CreateSymLinks.py   -f"$(DeliveryDir)zfs.dll"=${PointoolsLibs}\zf\8.5.0\win32_VS2012\exe\vs2012_win32\release\zfs.dll"
+#   @CreateSymLinks.py   -f"$(DeliveryDir)zfs_d.dll"=${PointoolsLibs}\zf\8.5.0\win32_VS2012\exe\vs2012_win32\debug\zfs_d.dll"
+
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "x64" && defined(POINTOOLS_BUILD_USING_VS2005)
+
+
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
+
+always:
+    @CreateSymLinks.py   -d"$(VendorAPIDir)=$(PointoolsLibs)\ZF\8.5.0\win64_VS2012"
+
+always:
+    @CreateSymLinks.py   -f"$(DeliveryDir)zfs.lib"=${PointoolsLibs}\zf\8.5.0\win64_VS2012\LIB\vs2012_win64\release\zfs.lib"
+#   @CreateSymLinks.py   -f"$(DeliveryDir)zfs_d.lib"=${PointoolsLibs}\zf\8.5.0\win64_VS2012\LIB\vs2012_win64\debug\zfs_d.lib"
+
+always:
+    @CreateSymLinks.py   -f"$(DeliveryDir)zfs.dll"=${PointoolsLibs}\zf\8.5.0\win64_VS2012\exe\vs2012_win64\release\zfs.dll"
+#   @CreateSymLinks.py   -f"$(DeliveryDir)zfs_d.dll"=${PointoolsLibs}\zf\8.5.0\win64_VS2012\exe\vs2012_win64\debug\zfs_d.dll"
+
+%else
+
+%error Target architecture unknown!
+
+%endif
+
+

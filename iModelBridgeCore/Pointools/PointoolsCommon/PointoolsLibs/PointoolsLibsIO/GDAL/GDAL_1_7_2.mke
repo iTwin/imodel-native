@@ -1,0 +1,44 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: PointoolsLibs/PointoolsLibsIO/GDAL/GDAL_1_7_2.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+
+PolicyFile=$(SrcRoot)Pointools/PointoolsCommon/mki/AssertPolicy.mki
+%include mdl.mki
+
+DeliveryDir=$(OutBuildContexts)PointoolsLibs/Delivery/
+
+VendorAPIDir = $(OutBuildContexts)PointoolsLibs/VendorAPI/GDAL
+
+always:
+    @CreateSymLinks.py   -d"$(VendorAPIDir)\frmts=$(PointoolsLibs)gdal\gdal-1.7.2\frmts
+    @CreateSymLinks.py   -d"$(VendorAPIDir)\gcore=$(PointoolsLibs)gdal\gdal-1.7.2\gcore
+    @CreateSymLinks.py   -d"$(VendorAPIDir)\ogr=$(PointoolsLibs)gdal\gdal-1.7.2\ogr
+    @CreateSymLinks.py   -d"$(VendorAPIDir)\port=$(PointoolsLibs)gdal\gdal-1.7.2\port
+
+
+#---------------------------------------------------------------------------------------------------------
+# Libs required
+#---------------------------------------------------------------------------------------------------------
+
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x86" && defined(POINTOOLS_BUILD_USING_VS2005)
+always:
+    @CreateSymLinks.py   -f"$(DeliveryDir)gdal_1_7_2.lib=${PointoolsLibs}\gdal\gdal-1.7.2\lib\vc8\x86\gdal.lib"
+
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "x64" && defined(POINTOOLS_BUILD_USING_VS2005)
+
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
+
+always:
+     @CreateSymLinks.py   -f"$(DeliveryDir)gdal_1_7_2.lib=${PointoolsLibs}\gdal\gdal-1.7.2\lib\vc11\x64\gdal.lib"
+#    @CreateSymLinks.py   -f"$(DeliveryDir)gdal_1_7_2_d.lib=${PointoolsLibs}\gdal\gdal-1.7.2\lib\vc11\x64\gdal_d.lib"
+
+%else
+
+%error Target architecture unknown!
+
+%endif
+

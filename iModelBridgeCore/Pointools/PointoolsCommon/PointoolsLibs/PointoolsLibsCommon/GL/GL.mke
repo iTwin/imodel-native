@@ -1,0 +1,24 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: PointoolsLibs/PointoolsLibsCommon/GL/GL.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+
+PolicyFile=$(SrcRoot)Pointools/PointoolsCommon/mki/AssertPolicy.mki
+%include mdl.mki
+
+DeliveryDir=$(OutBuildContexts)PointoolsLibs/Delivery/
+
+VendorAPIDir = $(OutBuildContexts)PointoolsLibs/VendorAPI/GL
+
+always:
+    @CreateSymLinks.py -f"$(VendorAPIDir)\glext.h=${PointoolsLibs}\GL\Include\glext.h"
+    
+%if !defined(POINTOOLS_BUILD_USING_VS2005)
+always:
+    @CreateSymLinks.py -f"$(VendorAPIDir)\wglext.h=${PointoolsLibs}\GL\Include\wglext.h"
+%endif
+
+

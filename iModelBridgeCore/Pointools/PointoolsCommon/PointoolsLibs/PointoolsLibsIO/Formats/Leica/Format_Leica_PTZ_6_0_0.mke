@@ -1,0 +1,35 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: PointoolsLibs/PointoolsLibsIO/Formats/Leica/Format_Leica_PTZ_6_0_0.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+
+PolicyFile=$(SrcRoot)Pointools/PointoolsCommon/mki/AssertPolicy.mki
+%include mdl.mki
+
+DeliveryDir=$(OutBuildContexts)PointoolsLibs/Delivery/
+
+VendorAPIDir = $(OutBuildContexts)PointoolsLibs/VendorAPI/Leica
+
+always:
+    @CreateSymLinks.py   -d"$(VendorAPIDir)=$(PointoolsLibs)leica\ptz\6.0.0\include"
+
+
+#---------------------------------------------------------------------------------------------------------
+# Libs required
+#---------------------------------------------------------------------------------------------------------
+
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x86"
+always:
+    @CreateSymLinks.py   -f"$(DeliveryDir)ptzreader80.lib"=${PointoolsLibs}\leica\ptz\6.0.0\lib\ptzreader80.lib"
+    @CreateSymLinks.py   -f"$(DeliveryDir)ptzreader80.dll"=${PointoolsLibs}\leica\ptz\6.0.0\bin\ptzreader80.dll"
+%endif
+
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
+always:
+    @CreateSymLinks.py   -f"$(DeliveryDir)ptzreader80x64.lib"=${PointoolsLibs}\leica\ptz\6.0.0\lib\ptzreader80x64.lib"
+    @CreateSymLinks.py   -f"$(DeliveryDir)ptzreader80x64.dll"=${PointoolsLibs}\leica\ptz\6.0.0\bin\ptzreader80x64.dll"
+%endif
+

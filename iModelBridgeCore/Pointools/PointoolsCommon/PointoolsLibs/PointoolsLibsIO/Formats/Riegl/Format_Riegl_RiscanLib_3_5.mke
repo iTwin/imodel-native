@@ -1,0 +1,38 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: PointoolsLibs/PointoolsLibsIO/Formats/Riegl/Format_Riegl_RiscanLib_3_5.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+
+PolicyFile=$(SrcRoot)Pointools/PointoolsCommon/mki/AssertPolicy.mki
+%include mdl.mki
+
+DeliveryDir=$(OutBuildContexts)PointoolsLibs/Delivery/
+
+VendorAPIDir = $(OutBuildContexts)PointoolsLibs/VendorAPI/RieglRiscanLib/
+
+always:
+    @CreateSymLinks.py   -d"$(VendorAPIDir)=$(PointoolsLibs)\riegl\riscanlib-3.5\RiScanLib"
+
+#---------------------------------------------------------------------------------------------------------
+# Libs required
+#---------------------------------------------------------------------------------------------------------
+
+
+									# Note: RiScanLib DLLs are imported by the source code directly
+
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x86"
+
+always:
+    @CreateSymLinks.py   -f"$(DeliveryDir)scannermod.dll=$(PointoolsLibs)\Riegl\riscanlib-3.5\RiSCANLIB\scannermod.dll"
+
+%endif
+
+
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
+
+%endif
+
+

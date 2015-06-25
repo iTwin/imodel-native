@@ -1,21 +1,18 @@
 #*--------------------------------------------------------------------------------------+
 #
-#     $Source: PointoolsCommon.mke $
+#     $Source: PointoolsLibs/PointoolsLibsCommon/Boost_1_5_7/BoostHeaders_1_5_7.mke $
 #
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 
-not used!
-
 PolicyFile=$(SrcRoot)Pointools/PointoolsCommon/mki/AssertPolicy.mki
 %include mdl.mki
 
+DeliveryDir=$(OutBuildContexts)PointoolsLibs/Delivery/
 
-%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x86"
+VendorApiDir = $(OutBuildContexts)PointoolsLibs/VendorAPI/Boost_1_5_7/boost
 
-%endif
+always:
+    @CreateSymLinks.py   -d"$(VendorApiDir)=${SrcRoot}/libsrc/boost_1.57.0_headers/boost"
 
-%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
-
-%endif

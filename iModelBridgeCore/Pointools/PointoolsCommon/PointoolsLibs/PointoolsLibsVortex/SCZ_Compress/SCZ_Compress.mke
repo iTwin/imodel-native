@@ -1,21 +1,15 @@
 #*--------------------------------------------------------------------------------------+
 #
-#     $Source: PointoolsCommon.mke $
+#     $Source: PointoolsLibs/PointoolsLibsVortex/SCZ_Compress/SCZ_Compress.mke $
 #
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 
-not used!
-
 PolicyFile=$(SrcRoot)Pointools/PointoolsCommon/mki/AssertPolicy.mki
 %include mdl.mki
 
+VendorAPIDir = $(OutBuildContexts)PointoolsLibs/VendorAPI/SCZ_Compress
 
-%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x86"
-
-%endif
-
-%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
-
-%endif
+always:
+    @CreateSymLinks.py   -d"$(VendorAPIDir)=${PointoolsLibs}/SCZ_Compress/SCZ_Compress"

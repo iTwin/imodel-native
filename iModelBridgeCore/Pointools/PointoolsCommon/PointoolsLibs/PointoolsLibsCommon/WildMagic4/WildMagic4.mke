@@ -1,0 +1,44 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: PointoolsLibs/PointoolsLibsCommon/WildMagic4/WildMagic4.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+
+
+PolicyFile=$(SrcRoot)Pointools/PointoolsCommon/mki/AssertPolicy.mki
+%include mdl.mki
+
+DeliveryDir=$(OutBuildContexts)PointoolsLibs/Delivery/
+
+VendorAPIDir = $(OutBuildContexts)PointoolsLibs/VendorAPI/WildMagic4/
+
+always:
+    @CreateSymLinks.py   -d"$(VendorAPIDir)=${PointoolsLibs}\geometrictools\WildMagic4\SDK\Include"
+
+
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x86" && defined(POINTOOLS_BUILD_USING_VS2005)
+#   CreateSymLinks.py   -f"$(DeliveryDir)Wm4Foundation80d.lib"=${PointoolsLibs}\geometrictools\WildMagic4\SDK\LibraryGL\Debug\Wm4Foundation80d.lib"
+always:
+    CreateSymLinks.py   -f"$(DeliveryDir)Wm4Foundation80.lib"=${PointoolsLibs}\geometrictools\WildMagic4\SDK\LibraryGL\Release\Wm4Foundation80.lib"
+
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "x64" && defined(POINTOOLS_BUILD_USING_VS2005)
+#   CreateSymLinks.py   -f"$(DeliveryDir)Wm4Foundation80-x64d.lib"=${PointoolsLibs}\geometrictools\WildMagic4\SDK\LibraryGL\Debug\Wm4Foundation80-x64d.lib"
+always:
+    CreateSymLinks.py   -f"$(DeliveryDir)Wm4Foundation80-x64.lib"=${PointoolsLibs}\geometrictools\WildMagic4\SDK\LibraryGL\Release\Wm4Foundation80-x64.lib"
+
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "x86"
+#   CreateSymLinks.py   -f"$(DeliveryDir)Wm4Foundation110d.lib"=${PointoolsLibs}\geometrictools\WildMagic4\SDK\Library\Debug\Wm4Foundation110d.lib"
+always:
+    CreateSymLinks.py   -f"$(DeliveryDir)libfoundation_vc11.pdb"=${PointoolsLibs}\geometrictools\WildMagic4\LibFoundation\Win32\Release\libfoundation_vc11.pdb"
+    CreateSymLinks.py   -f"$(DeliveryDir)Wm4Foundation110.lib"=${PointoolsLibs}\geometrictools\WildMagic4\SDK\Library\Release\Wm4Foundation110.lib"
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
+#   CreateSymLinks.py   -f"$(DeliveryDir)Wm4Foundation110-x64d.lib"=${PointoolsLibs}\geometrictools\WildMagic4\SDK\Library\Debug\Wm4Foundation110-x64d.lib"
+always:
+    CreateSymLinks.py   -f"$(DeliveryDir)libfoundation_vc11.pdb"=${PointoolsLibs}\geometrictools\WildMagic4\LibFoundation\x64\Release\libfoundation_vc11.pdb"
+    CreateSymLinks.py   -f"$(DeliveryDir)Wm4Foundation110-x64.lib"=${PointoolsLibs}\geometrictools\WildMagic4\SDK\Library\Release\Wm4Foundation110-x64.lib"
+
+%else
+%error Target architecture unknown!
+%endif

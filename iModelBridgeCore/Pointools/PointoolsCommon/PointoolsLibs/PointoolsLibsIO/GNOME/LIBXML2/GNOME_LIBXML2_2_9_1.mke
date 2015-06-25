@@ -1,0 +1,43 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: PointoolsLibs/PointoolsLibsIO/GNOME/LIBXML2/GNOME_LIBXML2_2_9_1.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+
+PolicyFile=$(SrcRoot)Pointools/PointoolsCommon/mki/AssertPolicy.mki
+%include mdl.mki
+
+DeliveryDir=$(OutBuildContexts)PointoolsLibs/Delivery/
+
+VendorAPIDir = $(OutBuildContexts)PointoolsLibs/VendorAPI/LIBXML_2_9_1/libxml
+
+always:
+    @CreateSymLinks.py   -d"$(VendorAPIDir)=$(PointoolsLibs)\gnome\libxml2\2.9.1\vc11\x64\include\libxml"
+
+
+#---------------------------------------------------------------------------------------------------------
+# Libs required
+#---------------------------------------------------------------------------------------------------------
+
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x86"
+#always:
+#    @CreateSymLinks.py   -f"$(DeliveryDir)libxml2.lib=${PointoolsLibs}\gnome\libxml2\2.9.1\vc11\x64\lib\libxml2.lib"
+#
+#always:
+#    @CreateSymLinks.py   -f"$(DeliveryDir)libxml2.dll=${PointoolsLibs}\gnome\libxml2\2.9.1\vc11\x64\bin\libxml2.dll"
+
+%endif
+
+
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
+
+always:
+    @CreateSymLinks.py   -f"$(DeliveryDir)libxml2.lib=${PointoolsLibs}\gnome\libxml2\2.9.1\vc11\x64\lib\libxml2.lib"
+
+always:
+    @CreateSymLinks.py   -f"$(DeliveryDir)libxml2.dll=${PointoolsLibs}\gnome\libxml2\2.9.1\vc11\x64\bin\libxml2.dll"
+
+%endif
+

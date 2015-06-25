@@ -1,0 +1,48 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: PointoolsLibs/PointoolsLibsIO/Formats/LASZip/Format_LASZip_2_1_0.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+
+PolicyFile=$(SrcRoot)Pointools/PointoolsCommon/mki/AssertPolicy.mki
+%include mdl.mki
+
+DeliveryDir=$(OutBuildContexts)PointoolsLibs/Delivery/
+
+VendorAPIDir = $(OutBuildContexts)PointoolsLibs/VendorAPI/LasZIP
+
+always:
+    @CreateSymLinks.py   -d"$(VendorAPIDir)=$(PointoolsLibs)\laszip\laszip-2.1.0\include\laszip"
+
+
+#---------------------------------------------------------------------------------------------------------
+# Libs required
+#---------------------------------------------------------------------------------------------------------
+
+%if $(TARGET_PROCESSOR_ARCHITECTURE) == "x86" && defined(POINTOOLS_BUILD_USING_VS2005)
+always:
+    @CreateSymLinks.py   -f"$(DeliveryDir)laszip_2.1.0_vc8_x86.lib"=${PointoolsLibs}\laszip\laszip-2.1.0\lib\laszip_2.1.0_vc8_x86.lib
+    @CreateSymLinks.py   -f"$(DeliveryDir)laszip_2.1.0_vc8_x86d.lib"=${PointoolsLibs}\laszip\laszip-2.1.0\lib\laszip_2.1.0_vc8_x86d.lib
+    @CreateSymLinks.py   -f"$(DeliveryDir)laszip.dll"=${PointoolsLibs}\laszip\laszip-2.1.0\bin\vc8\x86\release\laszip.dll
+
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "x64" && defined(POINTOOLS_BUILD_USING_VS2005)
+
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "x86"
+
+%elif $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
+
+always:
+    @CreateSymLinks.py   -f"$(DeliveryDir)laszip_2.1.0_vc11_x86_64.lib"=${PointoolsLibs}\laszip\laszip-2.1.0\lib\laszip_2.1.0_vc11_x86_64.lib
+    @CreateSymLinks.py   -f"$(DeliveryDir)laszip_2.1.0_vc11_x86_64d.lib"=${PointoolsLibs}\laszip\laszip-2.1.0\lib\laszip_2.1.0_vc11_x86_64d.lib
+
+always:
+    @CreateSymLinks.py   -f"$(DeliveryDir)laszip.dll"=${PointoolsLibs}\laszip\laszip-2.1.0\bin\vc11\x64\laszip.dll
+
+%else
+%error Target architecture unknown!
+
+%endif
+
+

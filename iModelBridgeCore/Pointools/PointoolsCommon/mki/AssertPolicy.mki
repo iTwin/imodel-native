@@ -1,0 +1,20 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: mki/AssertPolicy.mki $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------
+#   These are required to be set before including mdl.mki.
+#----------------------------------------------------------------------------
+
+PointoolsCommonSrcDir=$(SrcRoot)Pointools/PointoolsCommon/
+PointoolsVortexAPISrcDir=$(SrcRoot)Pointools/PointoolsVortexAPI/
+
+SystemPolicyMki=$(SrcBsiCommon)sharedmki/InternalSystemPolicy.mki
+FoundationPolicyMki=$(PointoolsCommonSrcDir)mki/PolicyCommon.mki
+#DerivativePolicyMki=$(PointoolsCommonSrcDir)mki/PolicyCommon.mki
+
+
