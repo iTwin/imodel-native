@@ -536,6 +536,8 @@ PTbool PTAPI ptMoveSelToCurrentLayer( PTbool deselect )
 PTvoid  PTAPI ptSelectPointsInLayer( PTuint layer )
 {
 	PointEditManager::instance()->selectPointsInLayer( layer );
+
+	PointEditManager::instance()->regenEditQuick();
 }
 //-----------------------------------------------------------------------------
 PTvoid  PTAPI ptDeselectPointsInLayer( PTuint layer )
