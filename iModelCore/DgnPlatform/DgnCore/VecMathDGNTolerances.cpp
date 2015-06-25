@@ -81,17 +81,17 @@ void LegacyMath::RMatrix::FromNormalVector (RotMatrixP rotMatrixP, DPoint3dCP no
 
     world.x = world.y = world.z = 0.0;
     zNormal = *(DVec3dP)normalP;
-    bsiDPoint3d_normalizeInPlace ( &zNormal);
+    zNormal.Normalize ();
 
     if ((fabs (zNormal.x) < 0.01) && (fabs (zNormal.y) < 0.01))
         world.y = 1.0;
     else
         world.z = 1.0;
 
-    bsiDVec3d_crossProduct (&xNormal, &world, &zNormal);
-    bsiDPoint3d_normalizeInPlace (&xNormal);
-    bsiDVec3d_crossProduct (&yNormal, &zNormal, &xNormal);
-    bsiDPoint3d_normalizeInPlace (&yNormal);
+    xNormal.CrossProduct (world, zNormal);
+    xNormal.Normalize ();
+    yNormal.CrossProduct (zNormal, xNormal);
+    yNormal.Normalize ();
     rotMatrixP->InitFromRowVectors (xNormal, yNormal, zNormal);
     }
 
@@ -138,9 +138,9 @@ bool                threeD
         /* Transformation alters position of extremal axes in angular space. */
         arcRM.GetColumn(xVec,  0);
         arcRM.GetColumn(yVec,  1);
-        xMagnitude = bsiDPoint3d_normalizeInPlace (&xVec);
-        yMagnitude = bsiDPoint3d_normalizeInPlace (&yVec);
-        dotProduct = bsiDVec3d_dotProduct (&xVec, &yVec);
+        xMagnitude = xVec.Normalize ();
+        yMagnitude = yVec.Normalize ();
+        dotProduct = xVec.DotProduct (yVec);
 
         if (xMagnitude < mgds_fc_epsilon || yMagnitude < mgds_fc_epsilon || fabs (dotProduct) < 1.0E-8)
             t0 = 0.0;
@@ -160,8 +160,8 @@ bool                threeD
         arcRM.Multiply(xVec);
         arcRM.Multiply(yVec);
 
-        *major = bsiDVec3d_magnitude (&xVec);
-        *minor = bsiDVec3d_magnitude (&yVec);
+        *major = xVec.Magnitude ();
+        *minor = yVec.Magnitude ();
 
         if (threeD)
             {
@@ -184,12 +184,12 @@ bool                threeD
                 }
             else
                 {
-                bsiDPoint3d_normalizeInPlace (&xVec);
-                bsiDVec3d_crossProduct (&zVec, &xVec, &yVec);
+                xVec.Normalize ();
+                zVec.CrossProduct (xVec, yVec);
 
-                bsiDPoint3d_normalizeInPlace (&zVec);
-                bsiDVec3d_crossProduct (&yVec, &zVec, &xVec);
-                bsiDPoint3d_normalizeInPlace (&yVec);
+                zVec.Normalize ();
+                yVec.CrossProduct (zVec, xVec);
+                yVec.Normalize ();
                 atran->InitFromColumnVectors(xVec, yVec, zVec);
                 }
             }
@@ -259,13 +259,13 @@ double              slantRadians
     result.form3d[0][1] = xShear * yScale;
 
     if (pRotMatrix)
-        bsiTransform_multiplyRotMatrixTransform (&result, pRotMatrix, &result);
+        result.InitProduct (*pRotMatrix, result);
 
     if (pOrigin)
-        bsiTransform_setTranslation (&result, pOrigin);
+        result.SetTranslation (*pOrigin);
 
     if (pInTrans)
-        bsiTransform_multiplyTransformTransform (&result, pInTrans, &result);
+        result.InitProduct (*pInTrans, result);
 
     if (pOutTrans)
         *pOutTrans = result;
@@ -338,17 +338,17 @@ int LegacyMath::RMatrix::FromYVector (RotMatrixP rotMatrixP, DPoint3dCP yNormalP
     world.x = world.y = world.z = 0.0;
     yNormal = *(DVec3dP)yNormalP;
 
-    bsiDPoint3d_normalizeInPlace (&yNormal);
+    yNormal.Normalize ();
 
     if ((fabs (yNormal.x) < 0.01) && (fabs (yNormal.y) < 0.01))
         world.y = 1.0;
     else
         world.z = 1.0;
 
-    bsiDVec3d_crossProduct (&xNormal, &yNormal, &world);
-    bsiDPoint3d_normalizeInPlace (&xNormal);
-    bsiDVec3d_crossProduct (&zNormal, &xNormal, &yNormal);
-    bsiDPoint3d_normalizeInPlace (&zNormal);
+    xNormal.CrossProduct (yNormal, world);
+    xNormal.Normalize ();
+    zNormal.CrossProduct (xNormal, yNormal);
+    zNormal.Normalize ();
     rotMatrixP->InitFromRowVectors (xNormal, yNormal, zNormal);
 
     return SUCCESS;
@@ -364,17 +364,17 @@ int LegacyMath::RMatrix::FromXVector (RotMatrixP rotMatrixP, DPoint3dCP xNormalP
     world.x = world.y = world.z = 0.0;
     xNormal = *(DVec3dP)xNormalP;
 
-    bsiDPoint3d_normalizeInPlace (&xNormal);
+    xNormal.Normalize ();
 
     if ((fabs (xNormal.x) < 0.01) && (fabs (xNormal.y) < 0.01))
         world.y = 1.0;
     else
         world.z = 1.0;
 
-    bsiDVec3d_crossProduct (&yNormal, &world, &xNormal);
-    bsiDPoint3d_normalizeInPlace (&yNormal);
-    bsiDVec3d_crossProduct (&zNormal, &xNormal, &yNormal);
-    bsiDPoint3d_normalizeInPlace (&zNormal);
+    yNormal.CrossProduct (world, xNormal);
+    yNormal.Normalize ();
+    zNormal.CrossProduct (xNormal, yNormal);
+    zNormal.Normalize ();
     rotMatrixP->InitFromRowVectors (xNormal, yNormal, zNormal);
 
     return SUCCESS;
@@ -449,11 +449,11 @@ TransformCP in                     /* => rotation/scaling matrix */
     DVec3d    xRow, yRow, zRow, mag;
 
     in->GetMatrixRow (xRow, 0);
-    mag.x = bsiDVec3d_magnitude (&xRow);
+    mag.x = xRow.Magnitude ();
     in->GetMatrixRow (yRow, 1);
-    mag.y = bsiDVec3d_magnitude (&yRow);
+    mag.y = yRow.Magnitude ();
     in->GetMatrixRow (zRow, 2);
-    mag.z = bsiDVec3d_magnitude (&zRow);
+    mag.z = zRow.Magnitude ();
 
     if (scaleVector)
         *scaleVector = mag;
@@ -461,11 +461,11 @@ TransformCP in                     /* => rotation/scaling matrix */
     if (normalizedTMatrix)
         {
         if (mag.x > 0.0)
-            bsiDVec3d_scale (&xRow, &xRow, 1.0/mag.x);
+            xRow.Scale (xRow, 1.0/mag.x);
         if (mag.y > 0.0)
-            bsiDVec3d_scale (&yRow, &yRow, 1.0/mag.y);
+            yRow.Scale (yRow, 1.0/mag.y);
         if (mag.z > 0.0)
-            bsiDVec3d_scale (&zRow, &zRow, 1.0/mag.z);
+            zRow.Scale (zRow, 1.0/mag.z);
 
         memset (normalizedTMatrix, 0, sizeof (Transform));
         LegacyMath::TMatrix::SetMatrixRow (normalizedTMatrix, &xRow, 0);
@@ -556,9 +556,9 @@ DPoint3dCP  pVec2        /* => bvector 2 */
     {
     DPoint3d unit1 = *pVec1;
     DPoint3d unit2 = *pVec2;
-    bsiDPoint3d_normalizeInPlace (&unit1);
-    bsiDPoint3d_normalizeInPlace (&unit2);
-    return fabs (bsiDPoint3d_dotProduct (&unit1, &unit2)) >= s_parallelCosineTrigger;
+    unit1.Normalize ();
+    unit2.Normalize ();
+    return fabs (unit1.DotProduct (unit2)) >= s_parallelCosineTrigger;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -572,9 +572,9 @@ DPoint3dCP  pVec2
     {
     DPoint3d unit1 = *pVec1;
     DPoint3d unit2 = *pVec2;
-    bsiDPoint3d_normalizeInPlace (&unit1);
-    bsiDPoint3d_normalizeInPlace (&unit2);
-    return fabs (bsiDPoint3d_dotProduct (&unit1, &unit2)) <= s_perpendicularCosineTrigger;
+    unit1.Normalize ();
+    unit2.Normalize ();
+    return fabs (unit1.DotProduct (unit2)) <= s_perpendicularCosineTrigger;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -597,14 +597,14 @@ DPoint3dCP  normalP            /* => normal to plane */
     *pointOutP = *pointInP;
     normal = *normalP;
 
-    bsiDPoint3d_normalizeInPlace (&normal); 
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&delta, pointInP, planePointP);
-    scale = bsiDPoint3d_dotProduct (&delta, normalP);
+    normal.Normalize (); 
+    delta.DifferenceOf (*pointInP, *planePointP);
+    scale = delta.DotProduct (*normalP);
 
     if  (fabs (scale) > 0.0)
         {
-        bsiDPoint3d_scale (&normal, normalP, -scale);
-        bsiDPoint3d_addDPoint3dDPoint3d (pointOutP, pointInP, &normal);
+        normal.Scale (*normalP, -scale);
+        pointOutP->SumOf (*pointInP, normal);
         }
     }
 
@@ -632,9 +632,9 @@ DPoint3dP    n2
     // with no nonzero component of the normal.
     // (And the fc_zero tolerance is also a dubious thing to use.)
     double  d1, d2, dx, dy, dz;
-    bsiDPoint3d_crossProduct ((DPoint3dP)intNorm, (DPoint3dCP )n1, (DPoint3dCP )n2);
-    d1 = bsiDPoint3d_dotProduct ((DPoint3dCP )n1, (DPoint3dCP )p1);
-    d2 = bsiDPoint3d_dotProduct ((DPoint3dCP )n2, (DPoint3dCP )p2);
+    ((DPoint3dP)intNorm)->CrossProduct (*((DPoint3dCP)n1), *((DPoint3dCP)n2));
+    d1 = ((DPoint3dCP)n1)->DotProduct (*((DPoint3dCP)p1));
+    d2 = ((DPoint3dCP)n2)->DotProduct (*((DPoint3dCP)p2));
 
     dx = n1->x*d2 - n2->x*d1;
     dy = n1->y*d2 - n2->y*d1;
@@ -663,7 +663,7 @@ DPoint3dP    n2
         return -1;
         }
 
-    bsiDPoint3d_normalizeInPlace ((DPoint3dP)intNorm);
+    ((DPoint3dP)intNorm)->Normalize ();
     return SUCCESS;
     }
 
@@ -681,14 +681,14 @@ DPoint3dCP  pEndVector
     DVec3d crossProduct, unitCrossProduct;
     double cosine, sine, radians;
 
-    bsiDPoint3d_normalize (&unitStartVector, pStartVector);
+    unitStartVector.Normalize (*(DVec3d*)pStartVector);
 
-    bsiDPoint3d_normalize (&unitEndVector, pEndVector);
+    unitEndVector.Normalize (*(DVec3d*)pEndVector);
 
 
     if (LegacyMath::Vec::AreParallel (&unitStartVector, &unitEndVector))
         {
-        if (bsiDPoint3d_dotProduct (&unitStartVector, &unitEndVector) < 0.0)
+        if (unitStartVector.DotProduct (unitEndVector) < 0.0)
             {
             RotMatrix matrix0;
             /* The vectors are antiparallel.  Pick out a normal bvector. */
@@ -709,10 +709,10 @@ DPoint3dCP  pEndVector
         {
         /* Usual case -- non parallel, nonzero vectors.
            Rotation is "about" the axis formed by their cross product. */
-        bsiDPoint3d_crossProduct (&crossProduct, &unitStartVector, &unitEndVector);
+        crossProduct.CrossProduct (unitStartVector, unitEndVector);
         unitCrossProduct = crossProduct;
-        sine = bsiDPoint3d_normalizeInPlace (&unitCrossProduct);
-        cosine = bsiDPoint3d_dotProduct (&unitStartVector, &unitEndVector);
+        sine = unitCrossProduct.Normalize ();
+        cosine = unitStartVector.DotProduct (unitEndVector);
 
         radians = Angle::Atan2 (sine, cosine);
         }
@@ -749,24 +749,24 @@ StatusInt LegacyMath::Vec::LinePlaneIntersect (DPoint3dP intersectPt, DPoint3dCP
     DPoint3d    diff, rtmp;
 
     if (lineNormal)
-        dotp = bsiDPoint3d_dotProduct (lineNormal, planeNormal);
+        dotp = lineNormal->DotProduct (*planeNormal);
     else
         perpendicular = true;
 
     if (perpendicular || LegacyMath::DEqual (dotp, 0.0))
         {
-        bsiDPoint3d_subtractDPoint3dDPoint3d (&diff, planePt, linePt);
-        t = bsiDPoint3d_dotProduct (&diff, planeNormal);
-        bsiDPoint3d_scale (&rtmp, planeNormal, t);
+        diff.DifferenceOf (*planePt, *linePt);
+        t = diff.DotProduct (*planeNormal);
+        rtmp.Scale (*planeNormal, t);
         }
     else
         {
-        t = (bsiDPoint3d_dotProduct(planeNormal, (DPoint3dCP )planePt) -
-             bsiDPoint3d_dotProduct(planeNormal, (DPoint3dCP )linePt))/dotp;
-        bsiDPoint3d_scale (&rtmp, lineNormal, t);
+        t = (planeNormal->DotProduct (*((DPoint3dCP)planePt)) -
+             planeNormal->DotProduct (*((DPoint3dCP)linePt)))/dotp;
+        rtmp.Scale (*lineNormal, t);
         }
 
-    bsiDPoint3d_addDPoint3dDPoint3d ((DPoint3dP)intersectPt, &rtmp, (DPoint3dCP )linePt);
+    ((DPoint3dP)intersectPt)->SumOf (rtmp, *((DPoint3dCP)linePt));
 
     return SUCCESS;
     }
@@ -787,16 +787,16 @@ DPoint3d   const *planeNormalP
     double parameter = 0.0;
     StatusInt status = SUCCESS;
 
-    double aa = bsiDPoint3d_dotProduct (lineDirectionP, planeNormalP);
-    double bb = bsiDPoint3d_dotDifference (planePointP, lineStartP, (DVec3dCP) planeNormalP);
+    double aa = lineDirectionP->DotProduct (*planeNormalP);
+    double bb = planePointP->DotDifference(*lineStartP, *((DVec3dCP) planeNormalP));
 
-    if (    bsiDPoint3d_arePerpendicular (lineDirectionP, planeNormalP)
+    if (    lineDirectionP->IsPerpendicularTo(*planeNormalP)
         || !DoubleOps::SafeDivide (parameter, bb, aa, 0.0))
         status = ERROR;
     if (parameterP)
         *parameterP = parameter;
     if (intersectionP)
-        bsiDPoint3d_addScaledDPoint3d (intersectionP, lineStartP, lineDirectionP, parameter);
+        intersectionP->SumOf (*lineStartP, *lineDirectionP, parameter);
 
     return status;
     }
@@ -839,9 +839,9 @@ DPoint3d    *rayNormalP                 /* => ray normal */
         if (NULL == rayOriginP)
             delta = corners[i];
         else
-            bsiDPoint3d_subtractDPoint3dDPoint3d (&delta, &corners[i], rayOriginP);
+            delta.DifferenceOf (corners[i], *rayOriginP);
             
-        projection = bsiDPoint3d_dotProduct (&delta, (DPoint3dCP )rayNormalP);
+        projection = delta.DotProduct (*((DPoint3dCP)rayNormalP));
         if (i)
             {
             if (projection < *minProjectionP) *minProjectionP = projection;
@@ -898,23 +898,23 @@ DPoint3dCP    anchor
     //          A = R*anchor + B - u * anchor
 
     // Check for right-handed, orthogonal
-    bsiTransform_getMatrix (oldTransform, &matrixR);
-    bsiTransform_getTranslation (oldTransform, &oldTranslation);
+    oldTransform->GetMatrix (matrixR);
+    oldTransform->GetTranslation (oldTranslation);
     determinant = matrixR.Determinant ();
     if (determinant < 0.0)
         return ERROR;
 
     bsiRotMatrix_factorRotateScaleRotate (&matrixR, &rotMatrix1, NULL, &rotMatrix2);
-    bsiRotMatrix_multiplyRotMatrixRotMatrix (&matrixU, &rotMatrix1, &rotMatrix2);
+    matrixU.InitProduct (rotMatrix1, rotMatrix2);
     matrixU.Multiply (U_anchor, *anchor);
     matrixR.Multiply (R_anchor, *anchor);
-    //bsiRotMatrix_multiplyDPoint3dArray (&matrixU, &U_anchor, anchor, 1);
-    //bsiRotMatrix_multiplyDPoint3dArray (&matrixR, &R_anchor, anchor, 1);
-    bsiDPoint3d_add3ScaledDPoint3d (&newTranslation,  NULL,
-                        &R_anchor, 1.0,
-                        &oldTranslation, 1.0,
-                        &U_anchor, -1.0);
-    bsiTransform_initFromMatrixAndTranslation (newTransform, &matrixU, &newTranslation);
+    //matrixU.Multiply (&U_anchor, anchor, 1);
+    //matrixR.Multiply (&R_anchor, anchor, 1);
+    newTranslation.SumOf (
+                        R_anchor, 1.0,
+                        oldTranslation, 1.0,
+                        U_anchor, -1.0);
+    newTransform->InitFrom (matrixU, newTranslation);
 
     return SUCCESS;
     }
@@ -948,11 +948,11 @@ RotMatrixCP in                     /* => rotation/scaling matrix */
     in = derefRotMatrixPointer (&matrix, in);
 
     in->GetColumn (xCol, 0);
-    mag.x = bsiDVec3d_magnitude (&xCol);
+    mag.x = xCol.Magnitude ();
     in->GetColumn (yCol, 1);
-    mag.y = bsiDVec3d_magnitude (&yCol);
+    mag.y = yCol.Magnitude ();
     in->GetColumn (zCol, 2);
-    mag.z = bsiDVec3d_magnitude (&zCol);
+    mag.z = zCol.Magnitude ();
 
     if (scaleVector)
         *scaleVector = mag;
@@ -960,11 +960,11 @@ RotMatrixCP in                     /* => rotation/scaling matrix */
     if (normalizedRMatrix)
         {
         if (mag.x > DBL_EPSILON)
-            bsiDVec3d_scale (&xCol, &xCol, 1.0/mag.x);
+            xCol.Scale (xCol, 1.0/mag.x);
         if (mag.y > DBL_EPSILON)
-            bsiDVec3d_scale (&yCol, &yCol, 1.0/mag.y);
+            yCol.Scale (yCol, 1.0/mag.y);
         if (mag.z > DBL_EPSILON)
-            bsiDVec3d_scale (&zCol, &zCol, 1.0/mag.z);
+            zCol.Scale (zCol, 1.0/mag.z);
 
         normalizedRMatrix->InitFromColumnVectors (xCol, yCol, zCol);
         }
@@ -988,10 +988,10 @@ double      tolerance           /* => tolerance for components of perpendicular 
         return (true);
 
     normal1.NormalizedDifference (pt[1], pt[0]);
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&delta2, &pt[2], &pt[0]);
+    delta2.DifferenceOf (pt[2], pt[0]);
 
-    bsiDPoint3d_scale (&parallel, &normal1, bsiDPoint3d_dotProduct (&delta2, &normal1));
-    bsiDPoint3d_subtractDPoint3dDPoint3d (&perpendicular, &delta2, &parallel);
+    parallel.Scale (normal1, delta2.DotProduct (normal1));
+    perpendicular.DifferenceOf (delta2, parallel);
 
     colinear = fabs (perpendicular.x) <= tolerance &&
                fabs (perpendicular.y) <= tolerance &&

@@ -82,7 +82,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
         TextAnnotation annotation(*db);
         annotation.SetText(AnnotationTextBlock::Create(*db, annotationTextStyle1Id, ANNOTATION_TEXT_1).get());
 
-        PhysicalTextAnnotationElementPtr annotationElement1 = PhysicalTextAnnotationElement::Create(PhysicalTextAnnotationElement::CreateParams(*physicalModel1, PhysicalTextAnnotationElement::QueryClassId(*db), physicalCategory1Id), annotation);
+        PhysicalTextAnnotationElementPtr annotationElement1 = PhysicalTextAnnotationElement::Create(PhysicalTextAnnotationElement::CreateParams(*db, physicalModel1Id, PhysicalTextAnnotationElement::QueryClassId(*db), physicalCategory1Id), annotation);
         PhysicalTextAnnotationElementCPtr insertedAnnotationElement1 = annotationElement1->Insert();
         ASSERT_TRUE(insertedAnnotationElement1.IsValid());
         

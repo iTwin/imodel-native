@@ -850,7 +850,7 @@ void    doFormatDistanceTest (DistanceFormatTestData const& testData)
 
     DistanceFormatterPtr  formatter = DistanceFormatter::Create();
 
-    formatter->SetWorkingUnits(testData.m_base.m_masterUnits, &testData.m_base.m_subUnits);
+    formatter->SetUnits(testData.m_base.m_masterUnits, &testData.m_base.m_subUnits);
     formatter->SetUnitFormat (testData.m_base.m_unitFormat);
     formatter->SetPrecision (testData.m_base.m_precision);
     formatter->SetUnitLabelFlag (testData.m_base.m_unitFlag);
@@ -1117,7 +1117,7 @@ void    doFormatPointTest (PointFormatTestData const& testData)
 
     PointFormatterPtr  formatter = PointFormatter::Create();
 
-    formatter->GetDistanceFormatter().SetWorkingUnits(testData.m_base.m_masterUnits, &testData.m_base.m_subUnits);
+    formatter->GetDistanceFormatter().SetUnits(testData.m_base.m_masterUnits, &testData.m_base.m_subUnits);
     formatter->GetDistanceFormatter().SetUnitFormat (testData.m_base.m_unitFormat);
     formatter->GetDistanceFormatter().SetPrecision (testData.m_base.m_precision);
     formatter->GetDistanceFormatter().SetUnitLabelFlag (testData.m_base.m_unitFlag);

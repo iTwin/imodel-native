@@ -1050,7 +1050,7 @@ BentleyStatus DgnElementDependencyGraph::WhatIfChanged(IEdgeProcessor& proc, bve
         {
         auto el = elements.GetElement(elementId);
         if (el.IsValid())
-            txnElements.AddElement(elementId, el->GetDgnModel().GetModelId(), TxnTable::ChangeType::Update);
+            txnElements.AddElement(elementId, el->GetModelId(), TxnTable::ChangeType::Update);
         }
 
     auto& dependencies = m_txnMgr.ElementDependencies();

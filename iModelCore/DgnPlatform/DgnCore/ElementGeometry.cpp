@@ -3675,7 +3675,7 @@ ElementGeometryBuilderPtr ElementGeometryBuilder::CreateWorld (DgnModelR model, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElementGeometryBuilderPtr ElementGeometryBuilder::Create (DgnElement3dCR element, DPoint3dCR origin, YawPitchRollAngles const& angles)
     {
-    return ElementGeometryBuilder::Create(element.GetDgnModel(), element.GetCategoryId(), origin, angles);
+    return ElementGeometryBuilder::Create(*element.GetModel(), element.GetCategoryId(), origin, angles);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3683,7 +3683,7 @@ ElementGeometryBuilderPtr ElementGeometryBuilder::Create (DgnElement3dCR element
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElementGeometryBuilderPtr ElementGeometryBuilder::Create (DgnElement2dCR element, DPoint2dCR origin, AngleInDegrees const& angle)
     {
-    return ElementGeometryBuilder::Create(element.GetDgnModel(), element.GetCategoryId(), origin, angle);
+    return ElementGeometryBuilder::Create(*element.GetModel(), element.GetCategoryId(), origin, angle);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3691,5 +3691,5 @@ ElementGeometryBuilderPtr ElementGeometryBuilder::Create (DgnElement2dCR element
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElementGeometryBuilderPtr ElementGeometryBuilder::CreateWorld (GeometricElementCR element)
     {
-    return ElementGeometryBuilder::CreateWorld(element.GetDgnModel(), element.GetCategoryId());
+    return ElementGeometryBuilder::CreateWorld(*element.GetModel(), element.GetCategoryId());
     }

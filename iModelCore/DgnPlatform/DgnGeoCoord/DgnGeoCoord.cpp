@@ -3970,8 +3970,8 @@ LocalTransformerP   localTransformer
     // this stuff is hopefully never used, just ancient stupidity.
     WChar masterUnitLabel[MAX_StandardUnit::NAME_LENGTH];
     WChar subUnitLabel[MAX_StandardUnit::NAME_LENGTH];
-    dgnModel_getMasterUnitLabel (cache, masterUnitLabel);
-    dgnModel_getSubUnitLabel (cache, subUnitLabel);
+    dgnModel_GetMasterUnitsLabel (cache, masterUnitLabel);
+    dgnModel_GetSubUnitsLabel (cache, subUnitLabel);
     type66.deprec_mastname[0] = (char) masterUnitLabel[0];
     type66.deprec_mastname[1] = (char) masterUnitLabel[1];
     type66.deprec_subname[0]  = (char) subUnitLabel[0];

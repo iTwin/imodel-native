@@ -12,7 +12,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AngleFormatter::Init ()
+void AngleFormatter::Init()
     {
     m_angleMode         = AngleMode::Degrees;
     m_precision         = AnglePrecision::Use4Places;
@@ -44,25 +44,25 @@ void AngleFormatter::InitModelSettings(DgnModelCR model)
     {
     DgnModel::Properties const& props= model.GetProperties();
 
-    SetAngleMode (props.GetAngularMode ());
-    SetAnglePrecision (props.GetAngularPrecision ());
+    SetAngleMode(props.GetAngularMode());
+    SetAnglePrecision(props.GetAngularPrecision());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-AngleFormatterPtr    AngleFormatter::Create ()          { return new AngleFormatter(); }
-/* ctor */           AngleFormatter::AngleFormatter ()  { Init(); }
-AngleFormatterPtr    AngleFormatter::Clone() const      { return new AngleFormatter (*this); }
+AngleFormatterPtr    AngleFormatter::Create()          { return new AngleFormatter(); }
+/* ctor */           AngleFormatter::AngleFormatter()  { Init(); }
+AngleFormatterPtr    AngleFormatter::Clone() const      { return new AngleFormatter(*this); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-AngleFormatterPtr AngleFormatter::Create (DgnModelCR model)
+AngleFormatterPtr AngleFormatter::Create(DgnModelCR model)
     {
     AngleFormatterPtr   formatter = Create();
 
-    formatter->InitModelSettings (model);
+    formatter->InitModelSettings(model);
 
     return formatter;
     }
@@ -70,7 +70,7 @@ AngleFormatterPtr AngleFormatter::Create (DgnModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint16_t AngleFormatter::GetLegacyFormat () const
+uint16_t AngleFormatter::GetLegacyFormat() const
     {
     AngleFormatVals angleFormat;
     StatusInt       status = SUCCESS;
@@ -108,7 +108,7 @@ uint16_t AngleFormatter::GetLegacyFormat () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt AngleFormatter::SetAngleModeFromLegacy (AngleFormatVals legacyValue)
+StatusInt AngleFormatter::SetAngleModeFromLegacy(AngleFormatVals legacyValue)
     {
     StatusInt   status = SUCCESS;
 
@@ -143,7 +143,7 @@ StatusInt AngleFormatter::SetAngleModeFromLegacy (AngleFormatVals legacyValue)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint16_t AngleFormatter::GetLegacyPrecision () const
+uint16_t AngleFormatter::GetLegacyPrecision() const
     {
     /* Used to call old format asyncs */
 
@@ -153,7 +153,7 @@ uint16_t AngleFormatter::GetLegacyPrecision () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt AngleFormatter::SetAnglePrecisionFromLegacy (int legacyValue)
+StatusInt AngleFormatter::SetAnglePrecisionFromLegacy(int legacyValue)
     {
     if (0 <= legacyValue && 8 >= legacyValue)
         {
@@ -161,7 +161,7 @@ StatusInt AngleFormatter::SetAnglePrecisionFromLegacy (int legacyValue)
         return SUCCESS;
         }
 
-    BeDataAssert (0);
+    BeDataAssert(0);
     m_precision = AnglePrecision::Use4Places;
     return ERROR;
     }
@@ -169,7 +169,7 @@ StatusInt AngleFormatter::SetAnglePrecisionFromLegacy (int legacyValue)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool AngleFormatter::UseTwoDigitMinWidth () const
+bool AngleFormatter::UseTwoDigitMinWidth() const
     {
     if (m_angleMode == AngleMode::DegMinSec ||
         m_angleMode == AngleMode::DegMin)
@@ -183,34 +183,34 @@ bool AngleFormatter::UseTwoDigitMinWidth () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AngleFormatter::ConcatUnitLabel (WStringR inString, AngleFormatter::AngleUnit unit) const
+void AngleFormatter::ConcatUnitLabel(WStringR inString, AngleFormatter::AngleUnit unit) const
     {
     switch (unit)
         {
         case ANGLE_UNIT_Degrees:
             {
             WChar degStr[] = { 0x00b0 /*degree*/, 0 };
-            inString.append (degStr);
+            inString.append(degStr);
             break;
             }
         case ANGLE_UNIT_Minutes:
             {
-            inString.append (L"'");
+            inString.append(L"'");
             break;
             }
         case ANGLE_UNIT_Seconds:
             {
-            inString.append (L"\"");
+            inString.append(L"\"");
             break;
             }
         case ANGLE_UNIT_Grads:
             {
-            inString.append (L"g");
+            inString.append(L"g");
             break;
             }
         case ANGLE_UNIT_Radians:
             {
-            inString.append (L"r");
+            inString.append(L"r");
             break;
             }
         }
@@ -219,36 +219,36 @@ void AngleFormatter::ConcatUnitLabel (WStringR inString, AngleFormatter::AngleUn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AngleFormatter::PrependLeadingZeroIfNeeded (WStringR inString, double value) const
+void AngleFormatter::PrependLeadingZeroIfNeeded(WStringR inString, double value) const
     {
     if ( ! UseTwoDigitMinWidth() || value >= 10.0 || ! m_leadingZero)
         return;
 
-    inString.append (L"0");
+    inString.append(L"0");
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AngleFormatter::ConcatIntegerString (WStringR inString, int value, AngleFormatter::AngleUnit unit) const
+void AngleFormatter::ConcatIntegerString(WStringR inString, int value, AngleFormatter::AngleUnit unit) const
     {
-    PrependLeadingZeroIfNeeded (inString, value);
+    PrependLeadingZeroIfNeeded(inString, value);
 
     WString tmpString;
-    tmpString.Sprintf (L"%d", value);
-    inString.append (tmpString);
+    tmpString.Sprintf(L"%d", value);
+    inString.append(tmpString);
 
-    ConcatUnitLabel (inString, unit);
+    ConcatUnitLabel(inString, unit);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AngleFormatter::ConcatPrecisionString (WStringR inString, double value, AngleFormatter::AngleUnit unit, double delta) const
+void AngleFormatter::ConcatPrecisionString(WStringR inString, double value, AngleFormatter::AngleUnit unit, double delta) const
     {
     if (AnglePrecision::Whole == m_precision)
         {
-        ConcatIntegerString (inString, (int)value, unit);
+        ConcatIntegerString(inString, (int)value, unit);
         return;
         }
 
@@ -261,32 +261,32 @@ void AngleFormatter::ConcatPrecisionString (WStringR inString, double value, Ang
     if (value < 0.0)
         value = 0.0;
 
-    PrependLeadingZeroIfNeeded (inString, value);
+    PrependLeadingZeroIfNeeded(inString, value);
 
     WString   tmpString, fmtString;
 
-    fmtString.Sprintf (L"%%.%dlf", m_precision);
-    tmpString.Sprintf (fmtString.c_str(), value);
+    fmtString.Sprintf(L"%%.%dlf", m_precision);
+    tmpString.Sprintf(fmtString.c_str(), value);
 
     if (!m_trailingZeros)
-        DoubleFormatterBase::StripTrailingZeros (tmpString);
+        DoubleFormatterBase::StripTrailingZeros(tmpString);
 
     if (! m_leadingZero && L'0' == tmpString[0])
         {
         if (1 < tmpString.size() && ! UseTwoDigitMinWidth())
-            tmpString.erase (0, 1);
+            tmpString.erase(0, 1);
         }
 
-    DoubleFormatterBase::ReplaceDecimalSeparator (tmpString, m_decimalSeparator);
+    DoubleFormatterBase::ReplaceDecimalSeparator(tmpString, m_decimalSeparator);
 
-    inString.append (tmpString);
-    ConcatUnitLabel (inString, unit);
+    inString.append(tmpString);
+    ConcatUnitLabel(inString, unit);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString         AngleFormatter::ToString (double angle) const
+WString         AngleFormatter::ToString(double angle) const
     {
     double          rmin, seconds, delta;
     int             degrees, minutes;
@@ -294,7 +294,7 @@ WString         AngleFormatter::ToString (double angle) const
 
     if (m_allowNegative && 0.0 > angle)
         {
-        angle = fabs (angle);
+        angle = fabs(angle);
 
         angleString.assign(L"-");
         }
@@ -330,8 +330,8 @@ WString         AngleFormatter::ToString (double angle) const
                 degrees ++;
                 }
 
-            ConcatIntegerString (angleString, degrees, ANGLE_UNIT_Degrees);
-            ConcatPrecisionString (angleString, rmin, ANGLE_UNIT_Minutes, delta);
+            ConcatIntegerString(angleString, degrees, ANGLE_UNIT_Degrees);
+            ConcatPrecisionString(angleString, rmin, ANGLE_UNIT_Minutes, delta);
 
             break;
             }
@@ -353,10 +353,10 @@ WString         AngleFormatter::ToString (double angle) const
                     }
                 }
 
-            ConcatIntegerString (angleString, degrees, ANGLE_UNIT_Degrees);
-            ConcatIntegerString (angleString, minutes, ANGLE_UNIT_Minutes);
+            ConcatIntegerString(angleString, degrees, ANGLE_UNIT_Degrees);
+            ConcatIntegerString(angleString, minutes, ANGLE_UNIT_Minutes);
 
-            ConcatPrecisionString (angleString, seconds, ANGLE_UNIT_Seconds, delta);
+            ConcatPrecisionString(angleString, seconds, ANGLE_UNIT_Seconds, delta);
 
             break;
             }
@@ -380,7 +380,7 @@ WString         AngleFormatter::ToString (double angle) const
                     angleUnit = ANGLE_UNIT_Degrees;
                 }
 
-            ConcatPrecisionString (angleString, angle + delta, angleUnit, delta);
+            ConcatPrecisionString(angleString, angle + delta, angleUnit, delta);
 
             break;
             }
@@ -392,19 +392,19 @@ WString         AngleFormatter::ToString (double angle) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString     AngleFormatter::ToStringFromRadians (double radians) const
+WString     AngleFormatter::ToStringFromRadians(double radians) const
     {
-    double degrees = Angle::RadiansToDegrees (radians);
-    return ToString (degrees);
+    double degrees = Angle::RadiansToDegrees(radians);
+    return ToString(degrees);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DirectionFormatter::Init ()
+void DirectionFormatter::Init()
     {
-    m_angleFormatter = AngleFormatter::Create ();
-    m_angleFormatter->SetAllowNegative (false);
+    m_angleFormatter = AngleFormatter::Create();
+    m_angleFormatter->SetAllowNegative(false);
 
     m_mode              = DirectionMode::Azimuth;
     m_addTrueNorth      = false;
@@ -433,34 +433,34 @@ void DirectionFormatter::Init ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DirectionFormatter::InitModelSettings (DgnModelCR model)
+void DirectionFormatter::InitModelSettings(DgnModelCR model)
     {
-    m_angleFormatter->InitModelSettings (model);
+    m_angleFormatter->InitModelSettings(model);
 
     DgnModel::Properties const& modelInfo = model.GetProperties();
 
-    SetDirectionMode (modelInfo.GetDirectionMode ());
-    SetClockwise (modelInfo.GetDirectionClockwise ());
-    SetBaseDirection (modelInfo.GetDirectionBaseDir ());
+    SetDirectionMode(modelInfo.GetDirectionMode());
+    SetClockwise(modelInfo.GetDirectionClockwise());
+    SetBaseDirection(modelInfo.GetDirectionBaseDir());
     SetTrueNorthValue(model.GetDgnDb().Units().GetAzimuth());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DirectionFormatterPtr   DirectionFormatter::Create ()               { return new DirectionFormatter(); }
-/* ctor */              DirectionFormatter::DirectionFormatter ()   { Init(); }
-void                    DirectionFormatter::SetAngleFormatter (AngleFormatterCR f)    { m_angleFormatter = f.Clone(); }
-DirectionFormatterPtr   DirectionFormatter::Clone() const           { return new DirectionFormatter (*this); }
+DirectionFormatterPtr   DirectionFormatter::Create()               { return new DirectionFormatter(); }
+/* ctor */              DirectionFormatter::DirectionFormatter()   { Init(); }
+void                    DirectionFormatter::SetAngleFormatter(AngleFormatterCR f)    { m_angleFormatter = f.Clone(); }
+DirectionFormatterPtr   DirectionFormatter::Clone() const           { return new DirectionFormatter(*this); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DirectionFormatterPtr DirectionFormatter::Create (DgnModelCR model)
+DirectionFormatterPtr DirectionFormatter::Create(DgnModelCR model)
     {
     DirectionFormatterPtr   formatter = Create();
 
-    formatter->InitModelSettings (model);
+    formatter->InitModelSettings(model);
 
     return formatter;
     }
@@ -468,7 +468,7 @@ DirectionFormatterPtr DirectionFormatter::Create (DgnModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       DirectionFormatter::SetDirectionModeFromLegacy (int legacyValue)
+StatusInt       DirectionFormatter::SetDirectionModeFromLegacy(int legacyValue)
     {
     StatusInt   status = SUCCESS;
 
@@ -508,7 +508,7 @@ StatusInt       DirectionFormatter::SetDirectionModeFromLegacy (int legacyValue)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-int DirectionFormatter::GetLegacyAngleMode () const
+int DirectionFormatter::GetLegacyAngleMode() const
     {
     switch (m_mode)
         {
@@ -534,7 +534,7 @@ int DirectionFormatter::GetLegacyAngleMode () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString DirectionFormatter::ToString (double value) const
+WString DirectionFormatter::ToString(double value) const
     {
     WString directionString;
 
@@ -559,7 +559,7 @@ WString DirectionFormatter::ToString (double value) const
                 while (value >    180.0) value -= 360.0;
                 }
 
-            directionString = m_angleFormatter->ToString (value);
+            directionString = m_angleFormatter->ToString(value);
 
             break;
             }
@@ -606,17 +606,17 @@ WString DirectionFormatter::ToString (double value) const
                 suffixChar = L"E";
                 }
 
-            directionString.append (prefixChar);
+            directionString.append(prefixChar);
 
             if (m_bearingSpaces)
-                directionString.append (L" ");
+                directionString.append(L" ");
 
-            directionString.append (m_angleFormatter->ToString (value));
+            directionString.append(m_angleFormatter->ToString(value));
 
             if (m_bearingSpaces)
-                directionString.append (L" ");
+                directionString.append(L" ");
 
-            directionString.append (suffixChar);
+            directionString.append(suffixChar);
 
             break;
             }
@@ -628,22 +628,22 @@ WString DirectionFormatter::ToString (double value) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString DirectionFormatter::ToStringFromRadians (double radians) const
+WString DirectionFormatter::ToStringFromRadians(double radians) const
     {
-    double degrees = Angle::RadiansToDegrees (radians);
-    return ToString (degrees);
+    double degrees = Angle::RadiansToDegrees(radians);
+    return ToString(degrees);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-int DirectionFormatter::DirFormatToLegacyAngleMode (DirFormat const& dirFormat)
+int DirectionFormatter::DirFormatToLegacyAngleMode(DirFormat const& dirFormat)
     {
     DirectionFormatter formatter;
 
-    formatter.SetDirectionMode ((DirectionMode) dirFormat.mode);
-    formatter.SetClockwise (TO_BOOL (dirFormat.flags.clockwise));
-    formatter.SetBaseDirection (dirFormat.baseDir);
+    formatter.SetDirectionMode((DirectionMode) dirFormat.mode);
+    formatter.SetClockwise(TO_BOOL (dirFormat.flags.clockwise));
+    formatter.SetBaseDirection(dirFormat.baseDir);
 
     int tentsubmode = formatter.GetLegacyAngleMode();
 
@@ -656,13 +656,13 @@ int DirectionFormatter::DirFormatToLegacyAngleMode (DirFormat const& dirFormat)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DirectionFormatter::DirFormatFromLegacyAngleMode (DirFormat& dirFormat, int tentsubmode)
+void DirectionFormatter::DirFormatFromLegacyAngleMode(DirFormat& dirFormat, int tentsubmode)
     {
     DirectionFormatter  formatter;
 
-    formatter.SetDirectionModeFromLegacy (tentsubmode);
+    formatter.SetDirectionModeFromLegacy(tentsubmode);
 
-    memset (&dirFormat, 0, sizeof(DirFormat));
+    memset(&dirFormat, 0, sizeof(DirFormat));
 
     dirFormat.mode             = static_cast<uint16_t>(formatter.GetDirectionMode());
     dirFormat.baseDir          = formatter.GetBaseDirection();
@@ -672,10 +672,10 @@ void DirectionFormatter::DirFormatFromLegacyAngleMode (DirFormat& dirFormat, int
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          11/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DistanceFormatter::ToDwgUnitFormat (DwgUnitFormat& dwgUnitFormatOut, DgnUnitFormat dgnUnitFormat, PrecisionFormat dgnPrecision, UnitDefinitionCR masterUnit, UnitDefinitionCR subUnit)
+BentleyStatus   DistanceFormatter::ToDwgUnitFormat(DwgUnitFormat& dwgUnitFormatOut, DgnUnitFormat dgnUnitFormat, PrecisionFormat dgnPrecision, UnitDefinitionCR masterUnit, UnitDefinitionCR subUnit)
     {
     int             lunits = -1;
-    PrecisionType   precisionType = DoubleFormatter::GetTypeFromPrecision (dgnPrecision);
+    PrecisionType   precisionType = DoubleFormatter::GetTypeFromPrecision(dgnPrecision);
 
     /* map DGN unit format values to DWG */
     if (PrecisionType::Scientific == precisionType)
@@ -711,7 +711,7 @@ BentleyStatus   DistanceFormatter::ToDwgUnitFormat (DwgUnitFormat& dwgUnitFormat
 +---------------+---------------+---------------+---------------+---------------+------*/
 DistanceFormatter::DistanceFormatter(DistanceFormatterCR source)
     {
-    T_Super::InitFrom (source);
+    T_Super::InitFrom(source);
 
     m_unitFlag                      = source.m_unitFlag;
     m_suppressZeroMasterUnits       = source.m_suppressZeroMasterUnits;
@@ -728,9 +728,9 @@ DistanceFormatter::DistanceFormatter(DistanceFormatterCR source)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoeZbuchalski   12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DistanceFormatter::Init ()
+void DistanceFormatter::Init()
     {
-    T_Super::Init ();
+    T_Super::Init();
 
     m_unitFlag                      = false;
     m_suppressZeroMasterUnits       = false;
@@ -741,30 +741,30 @@ void DistanceFormatter::Init ()
     m_useDWGFormattingLogic         = false;
     m_dwgUnitFormat                 = DwgUnitFormat::Decimal;
 
-    m_masterUnit.Init  (UnitBase::Meter, UnitSystem::Metric, 1.0, 1.0, NULL);
-    m_subUnit.Init     (UnitBase::Meter, UnitSystem::Metric, 1.0, 1.0, NULL);
+    m_masterUnit.Init(UnitBase::Meter, UnitSystem::Metric, 1.0, 1.0, NULL);
+    m_subUnit.Init(UnitBase::Meter, UnitSystem::Metric, 1.0, 1.0, NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DistanceFormatter::InitModelSettings (DgnModelCR model)
+void DistanceFormatter::InitModelSettings(DgnModelCR model)
     {
     DgnModel::Properties const& modelInfo = model.GetProperties();
 
-    SetUnitFormat (modelInfo.GetLinearUnitMode());
-    SetPrecision (modelInfo.GetLinearPrecision());
+    SetUnitFormat(modelInfo.GetLinearUnitMode());
+    SetPrecision(modelInfo.GetLinearPrecision());
 
-    SetIsDgnCoordReadOutCapable (T_HOST.GetFormatterAdmin()._AllowDgnCoordinateReadout());
+    SetIsDgnCoordReadOutCapable(T_HOST.GetFormatterAdmin()._AllowDgnCoordinateReadout());
 
-    m_masterUnit    = modelInfo.GetMasterUnit();
-    m_subUnit       = modelInfo.GetSubUnit();
+    m_masterUnit    = modelInfo.GetMasterUnits();
+    m_subUnit       = modelInfo.GetSubUnits();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    KyleDeeds                  08/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DistanceFormatter::SetWorkingUnits (UnitDefinitionCR newMasterUnit, UnitDefinitionCP newSubUnit)
+StatusInt DistanceFormatter::SetUnits(UnitDefinitionCR newMasterUnit, UnitDefinitionCP newSubUnit)
     {
     if (! newMasterUnit.IsValid())
         return ERROR;
@@ -780,10 +780,10 @@ StatusInt DistanceFormatter::SetWorkingUnits (UnitDefinitionCR newMasterUnit, Un
             return ERROR;
 
         /* if subUnits passed in, validate that they are smaller than master */
-        if ( ! newMasterUnit.AreComparable (*newSubUnit))
+        if ( ! newMasterUnit.AreComparable(*newSubUnit))
             return ERROR;
 
-        int comparison = newMasterUnit.CompareByScale (*newSubUnit);
+        int comparison = newMasterUnit.CompareByScale(*newSubUnit);
 
         if (0 < comparison)
             return ERROR;
@@ -798,7 +798,7 @@ StatusInt DistanceFormatter::SetWorkingUnits (UnitDefinitionCR newMasterUnit, Un
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoeZbuchalski   12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void  DistanceFormatter::SetScaleFactor (double scaleFactor)
+void  DistanceFormatter::SetScaleFactor(double scaleFactor)
     {
     if (scaleFactor != 0.0)
         m_scaleFactor = scaleFactor;
@@ -807,18 +807,18 @@ void  DistanceFormatter::SetScaleFactor (double scaleFactor)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DistanceFormatterPtr    DistanceFormatter::Create ()            { return new DistanceFormatter(); }
-DistanceFormatterPtr    DistanceFormatter::Clone() const        { return new DistanceFormatter (*this); }
-/* ctor */              DistanceFormatter::DistanceFormatter () { Init(); }
+DistanceFormatterPtr    DistanceFormatter::Create()            { return new DistanceFormatter(); }
+DistanceFormatterPtr    DistanceFormatter::Clone() const        { return new DistanceFormatter(*this); }
+/* ctor */              DistanceFormatter::DistanceFormatter() { Init(); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  JoeZbuchalski    02/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-DistanceFormatterPtr    DistanceFormatter::Create (DgnModelCR model)
+DistanceFormatterPtr    DistanceFormatter::Create(DgnModelCR model)
     {
     DistanceFormatterPtr   formatter = Create();
 
-    formatter->InitModelSettings (model);
+    formatter->InitModelSettings(model);
 
     return formatter;
     }
@@ -826,22 +826,22 @@ DistanceFormatterPtr    DistanceFormatter::Create (DgnModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DistanceFormatterPtr    DistanceFormatter::Create (DgnViewportR viewport)
+DistanceFormatterPtr    DistanceFormatter::Create(DgnViewportR viewport)
     {
-    DgnModelP    targetModel = viewport.GetViewController ().GetTargetModel();
+    DgnModelP    targetModel = viewport.GetViewController().GetTargetModel();
 
-    DistanceFormatterPtr formatter = DistanceFormatter::Create (*targetModel);
+    DistanceFormatterPtr formatter = DistanceFormatter::Create(*targetModel);
 
 #ifdef WIP_V10_MODEL_ACS
     IAuxCoordSysP   acs = NULL;
 
     if (targetModel->GetProperties().GetIsAcsLocked())
-        acs = IACSManager::GetManager().GetActive (viewport);
+        acs = IACSManager::GetManager().GetActive(viewport);
 
     if (NULL == acs)
         return formatter;
 
-    formatter->SetScaleFactor (1 / acs->GetScale ());
+    formatter->SetScaleFactor(1 / acs->GetScale());
 #endif
 
     return formatter;
@@ -877,10 +877,10 @@ static void metersToMasterSub(int64_t& mu, int64_t& su, double& masterUnits, dou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    John.Gooding    05/2005
 +---------------+---------------+---------------+---------------+---------------+------*/
-static double getMinimumResolutionForUnitInfo (DgnUnitFormat unitFormat, Byte precisionByte, PrecisionType precisionType, UnitDefinitionCR masterUnits, UnitDefinitionCR subUnits)
+static double getMinimumResolutionForUnitInfo(DgnUnitFormat unitFormat, Byte precisionByte, PrecisionType precisionType, UnitDefinitionCR masterUnits, UnitDefinitionCR subUnits)
     {
     //  Now multiply by UORs per unit.  units may be NULL for MU SU PU
-    double  minimumResolution = DoubleFormatterBase::MinimumResolutionForType (precisionByte, precisionType);
+    double  minimumResolution = DoubleFormatterBase::MinimumResolutionForType(precisionByte, precisionType);
 
     switch (unitFormat)
         {
@@ -905,9 +905,9 @@ static double getMinimumResolutionForUnitInfo (DgnUnitFormat unitFormat, Byte pr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Josh.Schifter   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-double  DistanceFormatter::GetMinimumResolution () const
+double  DistanceFormatter::GetMinimumResolution() const
     {
-    return getMinimumResolutionForUnitInfo (m_unitFormat, m_precisionByte, m_precisionType, m_masterUnit, m_subUnit);
+    return getMinimumResolutionForUnitInfo(m_unitFormat, m_precisionByte, m_precisionType, m_masterUnit, m_subUnit);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -921,7 +921,7 @@ double DistanceFormatter::GetSubPerMaster() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Josh.Schifter   01/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static PrecisionType precisionTypeForDWGUnitFormat (DwgUnitFormat format)
+static PrecisionType precisionTypeForDWGUnitFormat(DwgUnitFormat format)
     {
     switch (format)
         {
@@ -935,16 +935,16 @@ static PrecisionType precisionTypeForDWGUnitFormat (DwgUnitFormat format)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Josh.Schifter   01/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DistanceFormatter::SetDWGUnitFormat (DwgUnitFormat newVal)
+void DistanceFormatter::SetDWGUnitFormat(DwgUnitFormat newVal)
     {
     m_dwgUnitFormat = newVal;
-    m_precisionType = precisionTypeForDWGUnitFormat (newVal);
+    m_precisionType = precisionTypeForDWGUnitFormat(newVal);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoeZbuchalski   12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString DistanceFormatter::ToString (double meters) const
+WString DistanceFormatter::ToString(double meters) const
     {
     WString         outString;
     WString         masterUnitString, subUnitString, posUnitString;
@@ -980,7 +980,7 @@ WString DistanceFormatter::ToString (double meters) const
         {
         case DgnUnitFormat::MUSU:          /* Master-Sub Units */
             {
-            masterUnitString.Sprintf (L"%lld", iMasterUnits);
+            masterUnitString.Sprintf(L"%lld", iMasterUnits);
             if (m_suppressZeroMasterUnits)
                 {
                 if (iMasterUnits == 0 && subUnits != 0)
@@ -991,9 +991,9 @@ WString DistanceFormatter::ToString (double meters) const
                 }
 
             if (m_insertThousandsSeparator)
-                InsertThousandsSeparator (masterUnitString, m_thousandsSeparator);
+                InsertThousandsSeparator(masterUnitString, m_thousandsSeparator);
 
-            double limit = pow (10.0, -m_precisionByte);
+            double limit = pow(10.0, -m_precisionByte);
             if (m_suppressZeroSubUnits && limit > subUnits)
                 {
                 subUnitString.clear();
@@ -1001,23 +1001,23 @@ WString DistanceFormatter::ToString (double meters) const
                 }
             else
                 {
-                GetPrecisionString (subUnitString, subUnits, m_precisionType, m_precisionByte, m_leadingZero, m_trailingZeros);
-                ReplaceDecimalSeparator (subUnitString, m_decimalSeparator);
+                GetPrecisionString(subUnitString, subUnits, m_precisionType, m_precisionByte, m_leadingZero, m_trailingZeros);
+                ReplaceDecimalSeparator(subUnitString, m_decimalSeparator);
                 }
 
             if (unitFlag || !m_isDgnCoordReadOutCapable)
-                outString.Sprintf (L"%ls%ls%lc%ls%ls", masterUnitString.c_str(), masterUnitsLabel.c_str(), connector, subUnitString.c_str(), subUnitsLabel.c_str());
+                outString.Sprintf(L"%ls%ls%lc%ls%ls", masterUnitString.c_str(), masterUnitsLabel.c_str(), connector, subUnitString.c_str(), subUnitsLabel.c_str());
             else
-                outString.Sprintf (L"%ls:%ls", masterUnitString.c_str(), subUnitString.c_str());
+                outString.Sprintf(L"%ls:%ls", masterUnitString.c_str(), subUnitString.c_str());
 
             break;
             }
         case DgnUnitFormat::MU:            /* Master Unit */
             {
             // Can't call ToStringBasic because UorsToMasterSubPositional already added in minRes*ROUNDOFF
-            outString = T_Super::ToStringFromElevatedValue (masterUnits);
+            outString = T_Super::ToStringFromElevatedValue(masterUnits);
             if (unitFlag)
-                outString.append (masterUnitsLabel);
+                outString.append(masterUnitsLabel);
 
             break;
             }
@@ -1026,16 +1026,16 @@ WString DistanceFormatter::ToString (double meters) const
             double  totalSuUnits = subUnits + subPerMaster * iMasterUnits;
 
             // Can't call ToStringBasic because UorsToMasterSubPositional already added in minRes*ROUNDOFF
-            outString = T_Super::ToStringFromElevatedValue (totalSuUnits);
+            outString = T_Super::ToStringFromElevatedValue(totalSuUnits);
             if (unitFlag)
-                outString.append (subUnitsLabel);
+                outString.append(subUnitsLabel);
 
             break;
             }
         }
 
     if (isNegative)
-        outString.insert (0, L"-");
+        outString.insert(0, L"-");
 
     return outString;
     }
@@ -1069,17 +1069,17 @@ struct LegacyDecFracAccuracy
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-PointFormatterPtr   PointFormatter::Create ()           { return new PointFormatter(); }
-PointFormatterPtr   PointFormatter::Create (DistanceFormatterCR distanceFormatter) { return new PointFormatter (distanceFormatter); }
-/* ctor */          PointFormatter::PointFormatter ()   { Init(); }
-void                PointFormatter::SetAuxCoordSys (IAuxCoordSysCR acs)    { m_acs = acs.Clone(); }
-void                PointFormatter::SetDistanceFormatter (DistanceFormatterCR f)    { m_distanceFormatter = f.Clone(); }
-PointFormatterPtr   PointFormatter::Clone() const       { return new PointFormatter (*this); }
+PointFormatterPtr   PointFormatter::Create()           { return new PointFormatter(); }
+PointFormatterPtr   PointFormatter::Create(DistanceFormatterCR distanceFormatter) { return new PointFormatter(distanceFormatter); }
+/* ctor */          PointFormatter::PointFormatter()   { Init(); }
+void                PointFormatter::SetAuxCoordSys(IAuxCoordSysCR acs)    { m_acs = acs.Clone(); }
+void                PointFormatter::SetDistanceFormatter(DistanceFormatterCR f)    { m_distanceFormatter = f.Clone(); }
+PointFormatterPtr   PointFormatter::Clone() const       { return new PointFormatter(*this); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            PointFormatter::Init ()
+void            PointFormatter::Init()
     {
     m_is3d = true;
     }
@@ -1110,10 +1110,10 @@ void            PointFormatter::Init ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DistanceFormatterR  PointFormatter::GetDistanceFormatter ()
+DistanceFormatterR  PointFormatter::GetDistanceFormatter()
     {
     if ( ! m_distanceFormatter.IsValid())
-        m_distanceFormatter = DistanceFormatter::Create ();
+        m_distanceFormatter = DistanceFormatter::Create();
 
     return *m_distanceFormatter;
     }
@@ -1121,7 +1121,7 @@ DistanceFormatterR  PointFormatter::GetDistanceFormatter ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-IAuxCoordSysR   PointFormatter::GetAuxCoordSys ()
+IAuxCoordSysR   PointFormatter::GetAuxCoordSys()
     {
     if ( ! m_acs.IsValid())
         m_acs = IACSManager::GetManager().CreateACS ();
@@ -1132,15 +1132,15 @@ IAuxCoordSysR   PointFormatter::GetAuxCoordSys ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            PointFormatter::InitModelSettings (DgnModelCR model, bool addGlobalOrigin)
+void            PointFormatter::InitModelSettings(DgnModelCR model, bool addGlobalOrigin)
     {
-    m_distanceFormatter = DistanceFormatter::Create (model);
+    m_distanceFormatter = DistanceFormatter::Create(model);
 
     if (addGlobalOrigin)
         {
         // Create a un-rotated, un-scaled, rectangular ACS at the model's global origin.
         m_acs = IACSManager::GetManager().CreateACS ();
-        m_acs->SetOrigin (model.GetGlobalOrigin());
+        m_acs->SetOrigin(model.GetGlobalOrigin());
         }
 
     m_is3d = model.Is3d();
@@ -1149,11 +1149,11 @@ void            PointFormatter::InitModelSettings (DgnModelCR model, bool addGlo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-PointFormatterPtr   PointFormatter::Create (DgnModelCR model, bool addGlobalOrigin)
+PointFormatterPtr   PointFormatter::Create(DgnModelCR model, bool addGlobalOrigin)
     {
     PointFormatterPtr   formatter = Create();
 
-    formatter->InitModelSettings (model, addGlobalOrigin);
+    formatter->InitModelSettings(model, addGlobalOrigin);
 
     return formatter;
     }
@@ -1161,9 +1161,9 @@ PointFormatterPtr   PointFormatter::Create (DgnModelCR model, bool addGlobalOrig
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-PointFormatterPtr   PointFormatter::Create (DgnViewportR viewport)
+PointFormatterPtr   PointFormatter::Create(DgnViewportR viewport)
     {
-    DgnModelP       targetModel = viewport.GetViewController ().GetTargetModel();
+    DgnModelP       targetModel = viewport.GetViewController().GetTargetModel();
 #ifdef WIP_V10_MODEL_ACS
     bool            useViewACS  = targetModel->GetProperties().GetIsAcsLocked();
 #else
@@ -1171,11 +1171,11 @@ PointFormatterPtr   PointFormatter::Create (DgnViewportR viewport)
 #endif
 
     PointFormatterPtr   formatter = Create();
-    formatter->InitModelSettings (*targetModel, !useViewACS);
+    formatter->InitModelSettings(*targetModel, !useViewACS);
 
 #ifdef WIP_V10_MODEL_ACS
     if (useViewACS)
-        formatter->SetAuxCoordSys (*IACSManager::GetManager().GetActive (viewport));
+        formatter->SetAuxCoordSys(*IACSManager::GetManager().GetActive(viewport));
 #endif
 
     return formatter;
@@ -1186,42 +1186,42 @@ PointFormatterPtr   PointFormatter::Create (DgnViewportR viewport)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void transformByACS (DPoint3d point, IAuxCoordSysCR acs)
     {
-    double      scale = acs.GetScale ();
+    double      scale = acs.GetScale();
     DPoint3d    origin;
     RotMatrix   rotation;
 
-    acs.GetOrigin (origin);
-    acs.GetRotation (rotation);
+    acs.GetOrigin(origin);
+    acs.GetRotation(rotation);
 
-    point.Subtract (origin);
-    rotation.Multiply (point);
+    point.Subtract(origin);
+    rotation.Multiply(point);
 
     if (0 < scale)
-        point.Scale (1/scale);
+        point.Scale(1/scale);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString         PointFormatter::ToString (DPoint3dCR point) const
+WString         PointFormatter::ToString(DPoint3dCR point) const
     {
     // Ensure that these are initialized
     (const_cast <PointFormatterP> (this))->GetAuxCoordSys();
-    (const_cast <PointFormatterP> (this))->GetDistanceFormatter ();
+    (const_cast <PointFormatterP> (this))->GetDistanceFormatter();
 
     DPoint3d offpnt = point;
     transformByACS (offpnt, *m_acs);
 
     WString outputString;
 
-    outputString.append (m_distanceFormatter->ToString (offpnt.x));
-    outputString.append (L", ");
-    outputString.append (m_distanceFormatter->ToString (offpnt.y));
+    outputString.append(m_distanceFormatter->ToString(offpnt.x));
+    outputString.append(L", ");
+    outputString.append(m_distanceFormatter->ToString(offpnt.y));
 
     if (m_is3d)
         {
-        outputString.append (L", ");
-        outputString.append (m_distanceFormatter->ToString (offpnt.z));
+        outputString.append(L", ");
+        outputString.append(m_distanceFormatter->ToString(offpnt.z));
         }
 
     return outputString;
@@ -1230,14 +1230,14 @@ WString         PointFormatter::ToString (DPoint3dCR point) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-AreaOrVolumeFormatterBase::AreaOrVolumeFormatterBase () { Init(); }
+AreaOrVolumeFormatterBase::AreaOrVolumeFormatterBase() { Init(); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AreaOrVolumeFormatterBase::InitFrom (AreaOrVolumeFormatterBase const& source)
+void AreaOrVolumeFormatterBase::InitFrom(AreaOrVolumeFormatterBase const& source)
     {
-    T_Super::InitFrom (source);
+    T_Super::InitFrom(source);
 
     m_showUnitLabel                 = source.m_showUnitLabel;
     m_masterUnit                    = source.m_masterUnit;
@@ -1249,34 +1249,34 @@ void AreaOrVolumeFormatterBase::InitFrom (AreaOrVolumeFormatterBase const& sourc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AreaOrVolumeFormatterBase::Init ()
+void AreaOrVolumeFormatterBase::Init()
     {
-    T_Super::Init ();
+    T_Super::Init();
 
     m_showUnitLabel                 = false;
     m_scaleFactor                   = 1.0;
     m_useDWGFormattingLogic         = false;
     m_labelDecoratorAsSuffix        = true;
 
-    m_masterUnit.Init  (UnitBase::Meter, UnitSystem::Metric, 1.0, 1.0, NULL);
+    m_masterUnit.Init(UnitBase::Meter, UnitSystem::Metric, 1.0, 1.0, NULL);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AreaOrVolumeFormatterBase::InitModelSettings (DgnModelCR model)
+void AreaOrVolumeFormatterBase::InitModelSettings(DgnModelCR model)
     {
     DgnModel::Properties const& modelInfo = model.GetProperties();
 
-    SetPrecision (modelInfo.GetLinearPrecision());
+    SetPrecision(modelInfo.GetLinearPrecision());
 
-    m_masterUnit    = modelInfo.GetMasterUnit();
+    m_masterUnit    = modelInfo.GetMasterUnits();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt AreaOrVolumeFormatterBase::SetMasterUnit (UnitDefinitionCR newMasterUnit)
+StatusInt AreaOrVolumeFormatterBase::SetMasterUnit(UnitDefinitionCR newMasterUnit)
     {
     if (! newMasterUnit.IsValid())
         return ERROR;
@@ -1289,7 +1289,7 @@ StatusInt AreaOrVolumeFormatterBase::SetMasterUnit (UnitDefinitionCR newMasterUn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AreaOrVolumeFormatterBase::SetScaleFactor (double scaleFactor)
+void AreaOrVolumeFormatterBase::SetScaleFactor(double scaleFactor)
     {
     if (scaleFactor != 0.0)
         m_scaleFactor = scaleFactor;
@@ -1298,30 +1298,30 @@ void AreaOrVolumeFormatterBase::SetScaleFactor (double scaleFactor)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Josh.Schifter   01/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AreaOrVolumeFormatterBase::SetDWGUnitFormat (DwgUnitFormat newVal)
+void AreaOrVolumeFormatterBase::SetDWGUnitFormat(DwgUnitFormat newVal)
     {
     m_dwgUnitFormat = newVal;
-    m_precisionType = precisionTypeForDWGUnitFormat (newVal);
+    m_precisionType = precisionTypeForDWGUnitFormat(newVal);
     m_insertThousandsSeparator = true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-/* ctor */          AreaFormatter::AreaFormatter () { Init(); }
-/*ctor*/            AreaFormatter::AreaFormatter(AreaFormatterCR source) { T_Super::InitFrom (source); }
-void                AreaFormatter::Init ()  { T_Super::Init (); }
-AreaFormatterPtr    AreaFormatter::Create ()            { return new AreaFormatter(); }
-AreaFormatterPtr    AreaFormatter::Clone() const        { return new AreaFormatter (*this); }
+/* ctor */          AreaFormatter::AreaFormatter() { Init(); }
+/*ctor*/            AreaFormatter::AreaFormatter(AreaFormatterCR source) { T_Super::InitFrom(source); }
+void                AreaFormatter::Init()  { T_Super::Init(); }
+AreaFormatterPtr    AreaFormatter::Create()            { return new AreaFormatter(); }
+AreaFormatterPtr    AreaFormatter::Clone() const        { return new AreaFormatter(*this); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-AreaFormatterPtr    AreaFormatter::Create (DgnModelCR model)
+AreaFormatterPtr    AreaFormatter::Create(DgnModelCR model)
     {
     AreaFormatterPtr   formatter = Create();
 
-    formatter->InitModelSettings (model);
+    formatter->InitModelSettings(model);
 
     return formatter;
     }
@@ -1329,21 +1329,21 @@ AreaFormatterPtr    AreaFormatter::Create (DgnModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-AreaFormatterPtr    AreaFormatter::Create (DgnViewportR viewport)
+AreaFormatterPtr    AreaFormatter::Create(DgnViewportR viewport)
     {
-    DgnModelP    targetModel = viewport.GetViewController ().GetTargetModel();
+    DgnModelP    targetModel = viewport.GetViewController().GetTargetModel();
 
-    AreaFormatterPtr formatter = AreaFormatter::Create (*targetModel);
+    AreaFormatterPtr formatter = AreaFormatter::Create(*targetModel);
 
 #ifdef WIP_V10_MODEL_ACS
     IAuxCoordSysP   acs = NULL;
     if (targetModel->GetProperties().GetIsAcsLocked())
-        acs = IACSManager::GetManager().GetActive (viewport);
+        acs = IACSManager::GetManager().GetActive(viewport);
 
     if (NULL == acs)
         return formatter;
 
-    formatter->SetScaleFactor (1 / acs->GetScale ());
+    formatter->SetScaleFactor(1 / acs->GetScale());
 #endif
 
     return formatter;
@@ -1352,32 +1352,32 @@ AreaFormatterPtr    AreaFormatter::Create (DgnViewportR viewport)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static  void    appendUnitLabel (WStringR str, WCharCP label, L10N::StringId decoratorId, bool asSuffix)
+static  void    appendUnitLabel(WStringR str, WCharCP label, L10N::StringId decoratorId, bool asSuffix)
     {
     if ('\0' == *label)
         return;
 
     WString decorator = DgnCoreL10N::GetStringW(decoratorId);
 
-    if (iswupper (*label))
+    if (iswupper(*label))
         decorator.ToUpper();
 
     if (asSuffix)
         {
-        str.append (label);
-        str.append (decorator);
+        str.append(label);
+        str.append(decorator);
         }
     else
         {
-        str.append (decorator);
-        str.append (label);
+        str.append(decorator);
+        str.append(label);
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString AreaFormatter::ToString (double meters) const
+WString AreaFormatter::ToString(double meters) const
     {
     meters /= m_scaleFactor * m_scaleFactor;
 
@@ -1387,7 +1387,7 @@ WString AreaFormatter::ToString (double meters) const
     WString outString = T_Super::ToStringBasic(area);
 
     if (m_showUnitLabel)
-        appendUnitLabel (outString, m_masterUnit.GetLabelCP(), m_labelDecoratorAsSuffix ? DgnCoreL10N::UNIT_LABEL_SUFFIX_Area() : DgnCoreL10N::UNIT_LABEL_PREFIX_Area(), m_labelDecoratorAsSuffix);
+        appendUnitLabel(outString, m_masterUnit.GetLabelCP(), m_labelDecoratorAsSuffix ? DgnCoreL10N::UNIT_LABEL_SUFFIX_Area() : DgnCoreL10N::UNIT_LABEL_PREFIX_Area(), m_labelDecoratorAsSuffix);
 
     return outString;
     }
@@ -1395,20 +1395,20 @@ WString AreaFormatter::ToString (double meters) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-/* ctor */          VolumeFormatter::VolumeFormatter () { Init(); }
-/*ctor*/            VolumeFormatter::VolumeFormatter(VolumeFormatterCR source) { T_Super::InitFrom (source); }
-void                VolumeFormatter::Init ()  { T_Super::Init (); }
-VolumeFormatterPtr  VolumeFormatter::Create ()            { return new VolumeFormatter(); }
-VolumeFormatterPtr  VolumeFormatter::Clone() const        { return new VolumeFormatter (*this); }
+/* ctor */          VolumeFormatter::VolumeFormatter() { Init(); }
+/*ctor*/            VolumeFormatter::VolumeFormatter(VolumeFormatterCR source) { T_Super::InitFrom(source); }
+void                VolumeFormatter::Init()  { T_Super::Init(); }
+VolumeFormatterPtr  VolumeFormatter::Create()            { return new VolumeFormatter(); }
+VolumeFormatterPtr  VolumeFormatter::Clone() const        { return new VolumeFormatter(*this); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-VolumeFormatterPtr VolumeFormatter::Create (DgnModelCR model)
+VolumeFormatterPtr VolumeFormatter::Create(DgnModelCR model)
     {
     VolumeFormatterPtr   formatter = Create();
 
-    formatter->InitModelSettings (model);
+    formatter->InitModelSettings(model);
 
     return formatter;
     }
@@ -1416,21 +1416,21 @@ VolumeFormatterPtr VolumeFormatter::Create (DgnModelCR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-VolumeFormatterPtr VolumeFormatter::Create (DgnViewportR viewport)
+VolumeFormatterPtr VolumeFormatter::Create(DgnViewportR viewport)
     {
-    DgnModelP    targetModel = viewport.GetViewController ().GetTargetModel();
+    DgnModelP    targetModel = viewport.GetViewController().GetTargetModel();
 
-    VolumeFormatterPtr formatter = VolumeFormatter::Create (*targetModel);
+    VolumeFormatterPtr formatter = VolumeFormatter::Create(*targetModel);
 
 #ifdef WIP_V10_MODEL_ACS
     IAuxCoordSysP   acs = NULL;
     if (targetModel->GetProperties().GetIsAcsLocked())
-        acs = IACSManager::GetManager().GetActive (viewport);
+        acs = IACSManager::GetManager().GetActive(viewport);
 
     if (NULL == acs)
         return formatter;
 
-    formatter->SetScaleFactor (1 / acs->GetScale ());
+    formatter->SetScaleFactor(1 / acs->GetScale());
 #endif
 
     return formatter;
@@ -1439,7 +1439,7 @@ VolumeFormatterPtr VolumeFormatter::Create (DgnViewportR viewport)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString VolumeFormatter::ToString (double meters) const
+WString VolumeFormatter::ToString(double meters) const
     {
     meters /= m_scaleFactor * m_scaleFactor * m_scaleFactor;
 
@@ -1449,7 +1449,7 @@ WString VolumeFormatter::ToString (double meters) const
     WString outString = T_Super::ToStringBasic(cube);
 
     if (m_showUnitLabel)
-        appendUnitLabel (outString, m_masterUnit.GetLabelCP(), m_labelDecoratorAsSuffix ? DgnCoreL10N::UNIT_LABEL_SUFFIX_Volume() : DgnCoreL10N::UNIT_LABEL_PREFIX_Volume(), m_labelDecoratorAsSuffix);
+        appendUnitLabel(outString, m_masterUnit.GetLabelCP(), m_labelDecoratorAsSuffix ? DgnCoreL10N::UNIT_LABEL_SUFFIX_Volume() : DgnCoreL10N::UNIT_LABEL_PREFIX_Volume(), m_labelDecoratorAsSuffix);
 
     return outString;
     }
@@ -1479,7 +1479,7 @@ void DateTimeFormatter::Reset()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DateTimeFormatter::DateTimeFormatter (DateTimeFormatterCR other)
+DateTimeFormatter::DateTimeFormatter(DateTimeFormatterCR other)
     {
     m_partList              = other.m_partList;
     m_fractionalPrecision   = other.m_fractionalPrecision;
@@ -1503,7 +1503,7 @@ DateTimeFormatterPtr DateTimeFormatter::Create()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DateTimeFormatterPtr DateTimeFormatter::Clone() const
     {
-    return new DateTimeFormatter (*this);
+    return new DateTimeFormatter(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1520,12 +1520,12 @@ bool    DateTimeFormatter::GetConvertToLocalTime() const                { return
 * @bsimethod                                                    Paul.Connelly   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DateTimeFormatter::ClearFormatParts()                          { m_partList.clear(); }
-void DateTimeFormatter::SetDecimalSeparator (WChar sep)             { m_decimalSeparator = sep; }
-void DateTimeFormatter::SetTimeSeparator (WChar sep)                { m_timeSeparator = sep; }
-void DateTimeFormatter::SetDateSeparator (WChar sep)                { m_dateSeparator = sep; }
-void DateTimeFormatter::SetFractionalSecondPrecision (uint8_t prec)   { m_fractionalPrecision = prec; }
-void DateTimeFormatter::SetTrailingZeros (bool show)                { m_fractionalTrailingZeros = show; }
-void DateTimeFormatter::SetConvertToLocalTime (bool convert)        { m_convertToLocalTime = convert; }
+void DateTimeFormatter::SetDecimalSeparator(WChar sep)             { m_decimalSeparator = sep; }
+void DateTimeFormatter::SetTimeSeparator(WChar sep)                { m_timeSeparator = sep; }
+void DateTimeFormatter::SetDateSeparator(WChar sep)                { m_dateSeparator = sep; }
+void DateTimeFormatter::SetFractionalSecondPrecision(uint8_t prec)   { m_fractionalPrecision = prec; }
+void DateTimeFormatter::SetTrailingZeros(bool show)                { m_fractionalTrailingZeros = show; }
+void DateTimeFormatter::SetConvertToLocalTime(bool convert)        { m_convertToLocalTime = convert; }
 
 static DateTimeFormatPart s_dateTimeComposites[DATETIME_PART_COMPOSITE_END-DATETIME_PART_COMPOSITE_BASE][17] =
     {
@@ -1544,33 +1544,33 @@ static DateTimeFormatPart s_dateTimeComposites[DATETIME_PART_COMPOSITE_END-DATET
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void appendFormatPart (bvector<DateTimeFormatPart>& partList, DateTimeFormatPart part)
+static void appendFormatPart(bvector<DateTimeFormatPart>& partList, DateTimeFormatPart part)
     {
     if (DATETIME_PART_COMPOSITE_BASE <= part)
         {
-        BeAssert (DATETIME_PART_COMPOSITE_END > part);
+        BeAssert(DATETIME_PART_COMPOSITE_END > part);
         DateTimeFormatPart* subParts = s_dateTimeComposites[part - DATETIME_PART_COMPOSITE_BASE];
         while (DATETIME_PART_END != *subParts)
-            partList.push_back (*subParts++);
+            partList.push_back(*subParts++);
         }
     else
-        partList.push_back (part);
+        partList.push_back(part);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DateTimeFormatter::AppendFormatPart (DateTimeFormatPart part)
+void DateTimeFormatter::AppendFormatPart(DateTimeFormatPart part)
     {
-    appendFormatPart (m_partList, part);
+    appendFormatPart(m_partList, part);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static WString getDayName (int d, bool useShort)
+static WString getDayName(int d, bool useShort)
     {
-    BeAssert (7 > d);
+    BeAssert(7 > d);
     DgnCoreL10N::StringId longNames[]={
         DgnCoreL10N::DATETIME_DAY_0(),
         DgnCoreL10N::DATETIME_DAY_1(),
@@ -1597,9 +1597,9 @@ static WString getDayName (int d, bool useShort)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static WString getMonthName (int m, bool useShort)
+static WString getMonthName(int m, bool useShort)
     {
-    BeAssert (12 > m);
+    BeAssert(12 > m);
 
     DgnCoreL10N::StringId longNames[]={
         DgnCoreL10N::DATETIME_MONTH_0(),
@@ -1638,7 +1638,7 @@ static WString getMonthName (int m, bool useShort)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static WString getAmPmName (bool pm, bool useShort)
+static WString getAmPmName(bool pm, bool useShort)
     {
     DgnCoreL10N::StringId longNames[]={
         DgnCoreL10N::DATETIME_AM(),
@@ -1701,7 +1701,7 @@ static void formatUtc(WStringR str, DateTimeCR local, DateTimeFormatterCR format
 * Android.
 * @bsimethod                                                    Paul.Connelly   05/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString DateTimeFormatter::ToString (DateTimeCR dtIn) const
+WString DateTimeFormatter::ToString(DateTimeCR dtIn) const
     {
     DateTime dt = dtIn;
     if (m_convertToLocalTime)
@@ -1711,7 +1711,7 @@ WString DateTimeFormatter::ToString (DateTimeCR dtIn) const
     bvector<DateTimeFormatPart> localPartList;
     bvector<DateTimeFormatPart> const& partList = m_partList.empty() ? localPartList : m_partList;
     if (m_partList.empty())
-        appendFormatPart (localPartList, DATETIME_PART_General);
+        appendFormatPart(localPartList, DATETIME_PART_General);
 
     WString     result;
     WString     tmp;
@@ -1736,8 +1736,8 @@ WString DateTimeFormatter::ToString (DateTimeCR dtIn) const
             int hour = dt.GetHour();
             if (0 == hour)      hour = 12;
             else if (12 < hour) hour -= 12;
-            tmp.Sprintf ((DATETIME_PART_h == part ? L"%d" : L"%02d"), hour);
-            result.append (tmp);
+            tmp.Sprintf((DATETIME_PART_h == part ? L"%d" : L"%02d"), hour);
+            result.append(tmp);
             }
             break;
         case DATETIME_PART_H:                   tmp.Sprintf(L"%d", dt.GetHour()); result.append(tmp); break;
@@ -1746,14 +1746,14 @@ WString DateTimeFormatter::ToString (DateTimeCR dtIn) const
         case DATETIME_PART_mm:                  tmp.Sprintf(L"%02d", dt.GetMinute()); result.append(tmp); break;
         case DATETIME_PART_s:                   tmp.Sprintf(L"%d", dt.GetSecond()); result.append(tmp); break;
         case DATETIME_PART_ss:                  tmp.Sprintf(L"%02d", dt.GetSecond()); result.append(tmp); break;
-        case DATETIME_PART_Comma:               result.append (1, ','); break;
-        case DATETIME_PART_DateSeparator:       result.append (1, m_dateSeparator); break;
-        case DATETIME_PART_TimeSeparator:       result.append (1, m_timeSeparator); break;
-        case DATETIME_PART_DecimalSeparator:    result.append (1, m_decimalSeparator); break;
-        case DATETIME_PART_Space:               result.append (1, ' '); break;
+        case DATETIME_PART_Comma:               result.append(1, ','); break;
+        case DATETIME_PART_DateSeparator:       result.append(1, m_dateSeparator); break;
+        case DATETIME_PART_TimeSeparator:       result.append(1, m_timeSeparator); break;
+        case DATETIME_PART_DecimalSeparator:    result.append(1, m_decimalSeparator); break;
+        case DATETIME_PART_Space:               result.append(1, ' '); break;
         case DATETIME_PART_AMPM:                result.append(getAmPmName(12 <= dt.GetHour(), false)); break;
         case DATETIME_PART_AP:                  result.append(getAmPmName(12 <= dt.GetHour(), true)); break;
-        case DATETIME_PART_UTC:                 result.AppendUtf8 (DgnCoreL10N::GetString(DgnCoreL10N::DATETIME_UTC()).c_str()); break;
+        case DATETIME_PART_UTC:                 result.AppendUtf8(DgnCoreL10N::GetString(DgnCoreL10N::DATETIME_UTC()).c_str()); break;
         case DATETIME_PART_Y:                   tmp.Sprintf(L"%d", dt.GetYear() % 100); result.append(tmp); break;
         case DATETIME_PART_YY:                  tmp.Sprintf(L"%02d", dt.GetYear() % 100); result.append(tmp); break;
         case DATETIME_PART_YYY:                 tmp.Sprintf(L"%03d", dt.GetYear()); result.append(tmp); break;
@@ -1767,24 +1767,24 @@ WString DateTimeFormatter::ToString (DateTimeCR dtIn) const
             switch (m_fractionalPrecision)
                 {
             case 0:     break;
-            case 1:     tmp.Sprintf (L"%d", (int32_t)(dms / 100.0 + 0.5)); break;
-            case 2:     tmp.Sprintf (L"%02d", (int32_t)(dms / 10.0 + 0.5)); break;
-            default:    tmp.Sprintf (L"%03d", ms); break;
+            case 1:     tmp.Sprintf(L"%d", (int32_t)(dms / 100.0 + 0.5)); break;
+            case 2:     tmp.Sprintf(L"%02d", (int32_t)(dms / 10.0 + 0.5)); break;
+            default:    tmp.Sprintf(L"%03d", ms); break;
                 }
             
             if (!m_fractionalTrailingZeros)
                 {
                 while (0 < tmp.size() && '0' == tmp[tmp.size()-1])
-                    tmp.erase (tmp.size()-1);
+                    tmp.erase(tmp.size()-1);
                 }
             else
                 {
                 size_t nZeros = m_fractionalPrecision - tmp.size();
                 if (0 < nZeros)
-                    tmp.append (nZeros, '0');
+                    tmp.append(nZeros, '0');
                 }
 
-            result.append (tmp);
+            result.append(tmp);
             }
             break;
         case DATETIME_PART_U:
@@ -1794,7 +1794,7 @@ WString DateTimeFormatter::ToString (DateTimeCR dtIn) const
             formatUtc(result, dt, *this, part);
             break;
         default:
-            BeAssert (false); break;
+            BeAssert(false); break;
             }
         }
 

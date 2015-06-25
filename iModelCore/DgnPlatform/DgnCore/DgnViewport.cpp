@@ -203,7 +203,7 @@ void DgnViewport::ViewToWorld(DPoint3dP rootPts, DPoint4dCP screenPts, int nPts)
     for (int i=0; i<nPts; i++)
         {
         bsiDMatrix4d_multiplyMatrixPoint(&m_rootToView.M1, &tPt, screenPts+i);
-        bsiDPoint4d_normalize(&tPt, rootPts+i);
+        tPt.GetProjectedXYZ (rootPts[i]);
         }
     }
 
@@ -217,7 +217,7 @@ void DgnViewport::ViewToScreen(DPoint3dP screenPts, DPoint3dCP viewPts, int nPts
     Point2d screenOrg = GetScreenOrigin();
     DPoint3d org;
     org.Init (screenOrg.x, screenOrg.y, 0.0);
-    bsiDPoint3d_addDPoint3dArray(screenPts, &org, nPts);
+    DPoint3d::AddToArray (screenPts, nPts, org);
     }
 
 /*---------------------------------------------------------------------------------**//**

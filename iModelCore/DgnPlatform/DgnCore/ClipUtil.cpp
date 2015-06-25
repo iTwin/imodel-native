@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ClipUtil.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -82,11 +82,9 @@ DPoint3dCR      point2,
 double          expandPlaneDistance
 )
     {
-    DVec3d      normal;
+    DVec3d      normal = DVec3d::FromCrossProductToPoints (point2, point1, point0);
 
-    bsiDPoint3d_crossProduct3DPoint3d (&normal, &point2, &point1, &point0);
-
-    if (0.0 != bsiDPoint3d_normalizeInPlace (&normal))
+    if (0.0 != normal.Normalize ())
         pPlanes[(*nPlanes)++] = ClipPlane (normal, normal.DotProduct (point0) - expandPlaneDistance);
     }
 
