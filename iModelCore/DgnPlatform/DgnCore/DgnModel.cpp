@@ -83,7 +83,7 @@ void DgnModels::ClearLoaded()
     {
     for (auto iter : m_models)
         {
-        iter.second->Empty();
+        iter.second->EmptyModel();
         iter.second->m_persistent = false;
         }
 
@@ -227,7 +227,7 @@ struct EmptiedCaller {DgnModel::AppData::DropMe operator()(DgnModel::AppData& ha
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::Empty()
+void DgnModel::EmptyModel()
     {
     ClearRangeIndex();
 
@@ -248,7 +248,7 @@ void DgnModel::Empty()
 DgnModel::~DgnModel()
     {
     m_appData.clear();
-    Empty();
+    EmptyModel();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -313,11 +313,39 @@ void DgnModel::ReadProperties()
     _FromPropertiesJson(propsJson);
     }
 
+struct UpdatedCaller {DgnModel::AppData::DropMe operator()(DgnModel::AppData& handler, DgnModelCR model) const {return handler._OnUpdated(model);}};
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel::_OnUpdated()
+    {
+    CallAppData(UpdatedCaller());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnModel::_OnUpdate()
+    {
+    for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)
+        {
+        DgnDbStatus stat = entry->second->_OnUpdate(*this);
+        if (DgnDbStatus::Success != stat)
+            return stat;
+        }
+
+    return DgnDbStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult DgnModel::SaveProperties()
+DgnDbStatus DgnModel::Update()
     {
+    DgnDbStatus stat = _OnUpdate();
+    if (stat != DgnDbStatus::Success)
+        return stat;
+
     Json::Value propJson(Json::objectValue);
     _ToPropertiesJson(propJson);
     Utf8String val = Json::FastWriter::ToString(propJson);
@@ -327,7 +355,11 @@ BeSQLite::DbResult DgnModel::SaveProperties()
     stmt.BindId(2, m_modelId);
 
     auto rc=stmt.Step();
-    return rc== BE_SQLITE_DONE ? BE_SQLITE_OK : rc;
+    if (rc!= BE_SQLITE_DONE)
+        return DgnDbStatus::ModelTableWriteError;
+
+    _OnUpdated();
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -568,6 +600,8 @@ DgnDbStatus DgnModel::_OnInsert()
     return DgnDbStatus::Success;
     }
 
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -636,8 +670,8 @@ DgnDbStatus DgnModel::Insert(Utf8CP description, bool inGuiList)
         return DgnDbStatus::ModelTableWriteError;
         }
 
-    rc = SaveProperties();
-    BeAssert(rc==BE_SQLITE_OK);
+    stat = Update();
+    BeAssert(stat==DgnDbStatus::Success);
 
     _OnInserted();
     return DgnDbStatus::Success;
@@ -779,17 +813,17 @@ DPoint3d DgnModel::_GetGlobalOrigin() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    ChuckKirschman  04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-double DgnModel::GetMillimetersPerMaster() const
+double DgnModel::Properties::GetMillimetersPerMaster() const
     {
-    return m_properties.GetMasterUnit().IsLinear() ? m_properties.GetMasterUnit().ToMillimeters() : 1000.;
+    return GetMasterUnits().IsLinear() ? GetMasterUnits().ToMillimeters() : 1000.;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-double DgnModel::GetSubPerMaster() const
+double DgnModel::Properties::GetSubPerMaster() const
     {
-    return m_properties.GetSubUnit().ConvertDistanceFrom(1.0, m_properties.GetMasterUnit());
+    return GetSubUnits().ConvertDistanceFrom(1.0, GetMasterUnits());
     }
 
 struct FilledCaller {DgnModel::AppData::DropMe operator()(DgnModel::AppData& handler, DgnModelCR model) const {return handler._OnFilled(model);}};
@@ -820,7 +854,7 @@ void DgnModel::_FillModel()
             continue;
             }
 
-        elements.LoadElement(DgnElement::CreateParams(*this,
+        elements.LoadElement(DgnElement::CreateParams(m_dgndb, m_modelId,
             stmt.GetValueId<DgnClassId>(Column::ClassId), 
             stmt.GetValueId<DgnCategoryId>(Column::CategoryId), 
             stmt.GetValueText(Column::Label), 
@@ -836,7 +870,7 @@ void DgnModel::_FillModel()
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman      01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnModel::Properties::SetWorkingUnits(UnitDefinitionCR newMasterUnit, UnitDefinitionCR newSubUnit)
+BentleyStatus DgnModel::Properties::SetUnits(UnitDefinitionCR newMasterUnit, UnitDefinitionCR newSubUnit)
     {
     if (!newMasterUnit.IsValid() || !newSubUnit.IsValid() || !newMasterUnit.AreComparable(newSubUnit))
         return ERROR;

@@ -314,8 +314,7 @@ DgnDbStatus TestItem::_GenerateElementGeometry(GeometricElementR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
     {
-    DgnModelP model = db.Models().GetModel(mid);
-    TestElementPtr testElement = new TestElement(CreateParams(*model, QueryClassId(db), categoryId));
+    TestElementPtr testElement = new TestElement(CreateParams(db, mid, QueryClassId(db), categoryId));
     return testElement;
     }
 

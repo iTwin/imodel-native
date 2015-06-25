@@ -40,7 +40,7 @@ StatusInt PerformanceDgnECTests::CreateArbitraryElement (DgnElementPtr& out, Dgn
     if (!categoryId.IsValid())
         return ERROR;
 
-    DgnElementPtr element = elementHandler->Create(DgnElement::CreateParams(model, elementClassId, categoryId));
+    DgnElementPtr element = elementHandler->Create(DgnElement::CreateParams(model.GetDgnDb(), model.GetModelId(), elementClassId, categoryId));
 
     if (!element.IsValid())
         return ERROR;

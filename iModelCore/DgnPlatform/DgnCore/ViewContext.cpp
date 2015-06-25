@@ -475,7 +475,7 @@ void ViewContext::WorldToView (Point2dP viewPts, DPoint3dCP worldPts, int nPts) 
         {
         WorldToView (&t4dPt, worldPts+i, 1);
 
-        bsiDPoint4d_normalize (&t4dPt, &tPt);
+        t4dPt.GetProjectedXYZ (tPt);
 
         (viewPts+i)->x = (long) tPt.x;
         (viewPts+i)->y = (long) tPt.y;
@@ -566,7 +566,7 @@ void ViewContext::GetViewIndependentTransform (TransformP trans, DPoint3dCP orig
         }
 
     // get transform about origin
-    bsiTransform_initFromMatrixAndFixedPoint (trans, &rMatrix, originLocal);
+    trans->InitFromMatrixAndFixedPoint (rMatrix, *originLocal);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -789,8 +789,7 @@ bool ViewContext::_ScanRangeFromPolyhedron()
                 skewRange.InitFrom (polyhedron.GetPts(), 4);
 
                 // get unit bvector from front plane to back plane
-                DPoint3d    skewVec;
-                bsiDPoint3d_computeNormal (&skewVec, polyhedron.GetPts()+4, polyhedron.GetPts());
+                DVec3d      skewVec = DVec3d::FromStartEndNormalize (polyhedron.GetCorner (0), polyhedron.GetCorner(4));
 
                 // check to see if it's worthwhile using skew scan (skew bvector not along one of the three major axes */
                 int alongAxes = (fabs (skewVec.x) < 1e-8);

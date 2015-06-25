@@ -65,7 +65,6 @@ DG_INLINE DgnFonts& DgnDb::Fonts() const { return const_cast<DgnFonts&>(m_fonts)
 DG_INLINE DgnLinks& DgnDb::Links() const {return const_cast<DgnLinks&>(m_links);}
 DG_INLINE DgnUnits&   DgnDb::Units() const {return const_cast<DgnUnits&>(m_units);}
 DG_INLINE DgnDomains& DgnDb::Domains() const {return const_cast<DgnDomains&>(m_domains);}
-DG_INLINE DPoint3d DgnModel::GetGlobalOrigin() const {return _GetGlobalOrigin();}
 
 DG_INLINE bool DgnViewport::Is3dView() const {return m_is3dView;}
 DG_INLINE bool DgnViewport::IsActive() const {return NULL != m_output;}
@@ -545,8 +544,8 @@ DG_INLINE void DirectionFormatter::SetClockwise(bool newVal) { m_clockwise = new
 DG_INLINE void DirectionFormatter::SetBearingSpaces(bool newVal) { m_bearingSpaces = newVal; }
 
 DG_INLINE DgnUnitFormat DistanceFormatter::GetUnitFormat() const { return m_unitFormat; }
-DG_INLINE UnitDefinitionCR DistanceFormatter::GetMasterUnit() const { return m_masterUnit; }
-DG_INLINE UnitDefinitionCR DistanceFormatter::GetSubUnit() const { return m_subUnit; }
+DG_INLINE UnitDefinitionCR DistanceFormatter::GetMasterUnits() const { return m_masterUnit; }
+DG_INLINE UnitDefinitionCR DistanceFormatter::GetSubUnits() const { return m_subUnit; }
 DG_INLINE double DistanceFormatter::GetScaleFactor() const { return m_scaleFactor; }
 DG_INLINE bool DistanceFormatter::GetUnitLabelFlag() const { return m_unitFlag; }
 DG_INLINE bool DistanceFormatter::GetSuppressZeroMasterUnits() const { return m_suppressZeroMasterUnits; }
@@ -565,7 +564,7 @@ DG_INLINE DwgUnitFormat DistanceFormatter::GetDWGUnitFormat() const { return m_d
 DG_INLINE bool PointFormatter::GetIs3d() const { return m_is3d; }
 DG_INLINE void PointFormatter::SetIs3d(bool newVal) { m_is3d = newVal; }
 
-DG_INLINE UnitDefinitionCR AreaOrVolumeFormatterBase::GetMasterUnit() const { return m_masterUnit; }
+DG_INLINE UnitDefinitionCR AreaOrVolumeFormatterBase::GetMasterUnits() const { return m_masterUnit; }
 DG_INLINE double AreaOrVolumeFormatterBase::GetScaleFactor() const { return m_scaleFactor; }
 DG_INLINE bool AreaOrVolumeFormatterBase::GetShowUnitLabel() const { return m_showUnitLabel; }
 DG_INLINE bool AreaOrVolumeFormatterBase::GetLabelDecoratorAsSuffix() const { return m_labelDecoratorAsSuffix; }
@@ -591,13 +590,13 @@ DG_INLINE void DirectionParser::SetBaseDirection(double newVal) { m_baseDirectio
 DG_INLINE double DirectionParser::GetBaseDirection() { return m_baseDirection; }
 
 DG_INLINE void DistanceParser::SetMasterUnitLabel(WCharCP label) { m_masterUnitLabel = label; }
-DG_INLINE WCharCP DistanceParser::GetMasterUnitLabel() { return m_masterUnitLabel.c_str(); }
+DG_INLINE WCharCP DistanceParser::GetMasterUnitsLabel() { return m_masterUnitLabel.c_str(); }
 DG_INLINE void DistanceParser::SetSubUnitLabel(WCharCP label) { m_subUnitLabel = label; }
-DG_INLINE WCharCP DistanceParser::GetSubUnitLabel() { return m_subUnitLabel.c_str(); }
+DG_INLINE WCharCP DistanceParser::GetSubUnitsLabel() { return m_subUnitLabel.c_str(); }
 DG_INLINE void DistanceParser::SetMasterUnitScale(double scale) { m_masterUnitScale = scale; }
-DG_INLINE double DistanceParser::GetMasterUnitScale() { return m_masterUnitScale; }
+DG_INLINE double DistanceParser::GetMasterUnitsScale() { return m_masterUnitScale; }
 DG_INLINE void DistanceParser::SetSubUnitScale(double scale) { m_subUnitScale = scale; }
-DG_INLINE double DistanceParser::GetSubUnitScale() { return m_subUnitScale; }
+DG_INLINE double DistanceParser::GetSubUnitsScale() { return m_subUnitScale; }
 DG_INLINE void DistanceParser::SetScale(double scale) { m_scale = scale; }
 DG_INLINE double DistanceParser::GetScale() { return m_scale; }
 
@@ -606,8 +605,6 @@ DG_INLINE void PointParser::SetIs3d(bool is3d) { m_is3d = is3d; }
 DG_INLINE bool PointParser::GetIs3d() const { return m_is3d; }
 
 DG_INLINE void AreaOrVolumeParser::SetMasterUnitScale(double scale) { m_masterUnitScale = scale; }
-DG_INLINE double AreaOrVolumeParser::GetMasterUnitScale() { return m_masterUnitScale; }
+DG_INLINE double AreaOrVolumeParser::GetMasterUnitsScale() { return m_masterUnitScale; }
 DG_INLINE void AreaOrVolumeParser::SetScale(double scale) { m_scale = scale; }
 DG_INLINE double AreaOrVolumeParser::GetScale() { return m_scale; }
-
-DG_INLINE DgnDbR DgnElement::GetDgnDb() const {return m_dgnModel.GetDgnDb();}
