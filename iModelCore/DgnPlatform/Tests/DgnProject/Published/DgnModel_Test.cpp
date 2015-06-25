@@ -317,13 +317,12 @@ TEST_F(DgnModelTests, WorkWithDgnModelTable)
     //Iterating through the models
     DgnModels& modelTable = project->Models();
     DgnModels::Iterator iter = modelTable.MakeIterator();
-    ASSERT_EQ(3, iter.QueryCount());
+    ASSERT_EQ(2, iter.QueryCount());
 
     //Set up testmodel properties as we know what the models in this file contain
     TestModelProperties models[3], testModel;
     models[0].SetTestModelProperties(L"Default", L"Master Model", false, DgnModelType::Drawing);
     models[1].SetTestModelProperties(L"Model2d", L"", false, DgnModelType::Drawing);
-    models[2].SetTestModelProperties(L"Physical", L"", true, DgnModelType::Physical);
 
     //Iterate through the model and verify it's contents. TODO: Add more checks
     int i = 0;
