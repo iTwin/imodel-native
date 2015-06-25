@@ -538,7 +538,7 @@ void Changes::Change::Dump(Db const& db, bool isPatchSet, bset<Utf8String>& tabl
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ChangeSet::Dump(Utf8CP label, Db const& db, bool isPatchSet, int detailLevel) const
     {
-    printf(label);
+    printf("%s", label);
     bset<Utf8String> tablesSeen;
 
     Changes changes(*const_cast<ChangeSet*>(this));
