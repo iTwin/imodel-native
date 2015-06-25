@@ -2722,13 +2722,17 @@ bool GeometricElement::_DrawHit (HitDetailCR hit, ViewContextR context) const
                 }
             }
 
-        *context.GetCurrentDisplayParams() = collection.GetElemDisplayParams();
+        ElemDisplayParamsR elParams = *context.GetCurrentDisplayParams();
+        ElemMatSymbR elMatSymb = *context.GetElemMatSymb();
+
+        elParams = collection.GetElemDisplayParams();
+        context.CookDisplayParams(elParams, elMatSymb); // Don't activate elMatSymb...
 
         // NOTE: We don't want to flash using a vector linestyle...but a glowly raster style might be interesting...
         if (SubSelectionMode::Segment == hit.GetSubSelectionMode())
-            context.GetCurrentDisplayParams()->SetWeight(context.GetCurrentDisplayParams()->GetWeight()+2);
+            elMatSymb.SetWidth(elMatSymb.GetWidth()+2);
 
-        context.CookDisplayParams();
+        context.GetIDrawGeom().ActivateMatSymb(&elMatSymb);
         context.ResetContextOverrides();
 
         if (SubSelectionMode::Segment != hit.GetSubSelectionMode())
