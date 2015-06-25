@@ -118,7 +118,7 @@ void PersistRelationship (IECRelationshipInstanceR relInstance, ECDbR ecdb)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ValidatePersistingRelationship
 (
-BeSQLiteDbR db, 
+DbR db, 
 Utf8CP tableName, 
 ECInstanceId whereECInstanceId, 
 Utf8CP expectedIdColumnName, 
@@ -569,17 +569,12 @@ TEST(ECDbRelationships, TestRelationshipKeys)
     for (auto constraintClass : areaTown->GetSource().GetConstraintClasses())
         {
         auto keys = constraintClass->GetKeys();
-        ASSERT_EQ(3, keys.size());
-        ASSERT_TRUE(std::find(keys.begin(), keys.end(), L"province_id") != keys.end());
-        ASSERT_TRUE(std::find(keys.begin(), keys.end(), L"name") != keys.end());
-        ASSERT_TRUE(std::find(keys.begin(), keys.end(), L"area_id") != keys.end());
+        ASSERT_EQ(0, keys.size());
         }
     for (auto constraintClass : areaTown->GetTarget().GetConstraintClasses())
         {
         auto keys = constraintClass->GetKeys();
-        ASSERT_EQ(3, keys.size());
-        ASSERT_TRUE(std::find(keys.begin(), keys.end(), L"town_id") != keys.end());
-        ASSERT_TRUE(std::find(keys.begin(), keys.end(), L"name") != keys.end());
+        ASSERT_EQ(1, keys.size());
         ASSERT_TRUE(std::find(keys.begin(), keys.end(), L"area_id") != keys.end());
         }
     ECRelationshipClassCP countryContinent = ecSchema->GetClassCP(L"country_continent")->GetRelationshipClassCP();

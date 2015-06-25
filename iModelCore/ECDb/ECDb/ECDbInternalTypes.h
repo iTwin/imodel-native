@@ -12,14 +12,12 @@
 #include <Bentley/BeAssert.h>
 #include "ECDbLogger.h"
 
-ECDB_TYPEDEFS(RelationshipClassMapInfo);
 ECDB_TYPEDEFS_PTR (ClassMap);
 ECDB_TYPEDEFS_PTR (PropertyMap);
 ECDB_TYPEDEFS(PropertyMapToColumn);
 ECDB_TYPEDEFS_PTR(PropertyMapToInLineStruct);
 ECDB_TYPEDEFS_PTR(PropertyMapToTable);
 ECDB_TYPEDEFS_PTR(PropertyMapArrayOfPrimitives);
-ECDB_TYPEDEFS_PTR(ClassMapInfo);
 ECDB_TYPEDEFS_PTR(MappedTable);
 ECDB_TYPEDEFS_PTR(RelationshipClassMap);
 ECDB_TYPEDEFS_PTR(RelationshipClassEndTableMap);
@@ -156,69 +154,20 @@ enum class MapStatus
     Error                           = 666
     };
 
-enum SqlUpdateActions
+enum class ECContainerType
     {
-    SQLUPDATE_None,
-    SQLUPDATE_Rollback,
-    SQLUPDATE_Abort,
-    SQLUPDATE_Replace,
-    SQLUPDATE_Fail,
-    SQLUPDATE_Ignore,
+    Schema = 1,
+    Class = 2,
+    Property = 3,
+    RelationshipConstraintSource = 4,
+    RelationshipConstraintTarget = 5
     };
-
-enum SqlInsertActions
-    {
-    SQLINSERT_None,
-    SQLINSERT_Rollback,
-    SQLINSERT_Abort,
-    SQLINSERT_Replace,
-    SQLINSERT_Fail,
-    SQLINSERT_Ignore,
-    };
-
-enum ECContainerType
-    {
-    ECONTAINERTYPE_Schema = 1,
-    ECONTAINERTYPE_Class = 2,
-    ECONTAINERTYPE_Property = 3,
-    ECONTAINERTYPE_RelationshipConstraintSource = 4,
-    ECONTAINERTYPE_RelationshipConstraintTarget = 5,
-    };
-
-// In SQLite, there is something "special" about a primary key declared as "INTEGER", so we want to use "INTEGER" for primary keys
-// In reality it will be a 64 bit integer
-// However, we do not wish to use "INTEGER" SQLite type for "Long" ECProperties, because it ends up mapping to Int32 via Micrsoft ADO.NET Provider for ODBC
-// Even if we end up changing this, it seems reasonable to distinguish "key" values from data values.
-#define PRIMITIVETYPE_DbKey   PrimitiveType(0xCEE) /* A "Fake" PrimitiveType to distinguish columns used as keys */
-#define PRIMITIVETYPE_Unknown PrimitiveType(0x000) /* A "Fake" PrimitiveType  */
-
-// BSCA = Bentley_Standard_CustomAttributes (ECSchema)
-//    C = ECClass
-//    P = ECProperty
-//    V = ECPropertyValue
-
-#define BSCAP_AllowDuplicateRelationships L"AllowDuplicateRelationships"
-#define BSCAV_InParentTable             L"InParentTable"
-
-#define BSCAP_SourceECInstanceIdColumn  L"SourceECIdColumn"
-#define BSCAP_TargetECInstanceIdColumn  L"TargetECIdColumn"
-#define BSCAP_SourceECClassIdColumn     L"SourceECClassIdColumn"
-#define BSCAP_TargetECClassIdColumn     L"TargetECClassIdColumn"
-
-#define BSCAC_ECDbRelationshipClassHint L"ECDbRelationshipClassHint"
-#define BSCAP_PreferredDirection        L"PreferredDirection"
-#define BSCAV_SourceToTarget            L"SourceToTarget"
-#define BSCAV_Bidirectional             L"Bidirectional"
-#define BSCAV_TargetToSource            L"TargetToSource"
-#define BSCAP_ExcludeFromColumnsReuse L"ExcludeFromColumnsReuse"
 
 #define ECDB_COL_ECInstanceId           "ECInstanceId"
 #define ECDB_COL_ECClassId              "ECClassId"
 #define ECDB_COL_ECPropertyPathId       "ECPropertyPathId"
 #define ECDB_COL_ParentECInstanceId     "ParentECInstanceId"
 #define ECDB_COL_ECArrayIndex           "ECArrayIndex"
-
-#define UTF8_Stricmp(S1,S2)  BeStringUtilities::Stricmp(S1, S2) 
 
 //=======================================================================================
 // For case-sensitive UTF-8 string comparisons in STL collections.
@@ -261,32 +210,6 @@ struct CompareIWChar
     {
     bool operator()(WCharCP s1, WCharCP s2) const { return (BeStringUtilities::Wcsicmp(s1, s2) < 0);}
     };
-
-//=======================================================================================
-// @bsienum                                                
-// @remarks See @ref ECDbSchemaPersistence to find how these enum values map to actual 
-// persisted values in the Db. 
-//+===============+===============+===============+===============+===============+======
-//enum class MapStrategy
-//    {
-//    // This first group of strategies no ramifications for subclasses
-//    NoHint = 0,         // Use default rules, which may include inheriting strategy of parent
-//    DoNotMap,           // Skip this one, but child ECClasses may still be mapped
-//    TableForThisClass,  // Put this class in a table, but do not pass the strategy along to child ECClasses 
-//    // Only DoNotMap and TableForThisClass are valid default strategies
-//
-//    // These strategies are directly inherited, except for TablePerHierarchy, which causes its children to use InParentTable
-//    // They are listed in order of priority (when it comes to conflicts with/among base ECClasses)
-//    TablePerHierarchy,  // This class and all child ECClasses stored in one table
-//    InParentTable,      // Assigned by system for subclasses of ECClasses using TablePerHierarchy
-//    TablePerClass,      // Put each class in its own table (including child ECClasses
-//    DoNotMapHierarchy,  // Also don't map children (unless they are reached by a different inheritance pathway) 
-//    SharedTableForThisClass, // TableName must be provided. 
-//    // These strategies are applicable only to relationships
-//    RelationshipSourceTable,     // Store the relationship in the table in which the source class(es) are stored 
-//    RelationshipTargetTable,     // Store the relationship in the table in which the target class(es) are stored 
-//    };
-
 
 #define ECDbDataColumn  0x0U
 #define ECDbSystemColumnECInstanceId  0x1U

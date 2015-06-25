@@ -20,32 +20,27 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ColumnInfo
 {
 private:
-    Utf8String        m_columnName;
+    bool m_isValid;
+    Utf8String m_columnName;
     ECN::PrimitiveType m_columnType;
-    bool              m_nullable;
-    bool              m_unique;
+    bool m_nullable;
+    bool m_unique;
     ECDbSqlColumn::Constraint::Collation m_collation;
-    bool              m_virtual;
-    int               m_priority;
-    void InitializeFromMapCustomAttribute(ECN::ECPropertyCR ecProperty);
+
+    ColumnInfo();
+    BentleyStatus Initialize(ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString);
 
 public:
-    ColumnInfo (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString);
-    virtual ~ColumnInfo() {}
-    int               GetPriority () const  { return m_priority; }
-    void              SetPriority (int priority) { m_priority = priority; }
-     //! @return ecProperty's name if no explicit info was provided for column name. Never returns nullptr.
-    Utf8CP            GetName() const;
-    ECN::PrimitiveType GetColumnType() const;
-    bool              IsVirtual() const { return m_virtual;}
-    void              MakeVirtual() { m_virtual = true;};
-    bool              GetNullable() const;
-    void              SetNullable(bool nullable){m_nullable = nullable;}
-    void              SetUnique(bool unique){m_unique = unique;}
-    void              SetColumnType (ECN::PrimitiveType columnType) { m_columnType = columnType; }
-    bool              GetUnique() const;
-    ECDbSqlColumn::Constraint::Collation GetCollation ()const { return m_collation; }
-    void SetColumnName (Utf8CP columnName);
+    static ColumnInfo Create(ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString);
+    bool IsValid() const { return m_isValid; }
+
+    void SetColumnType(ECN::PrimitiveType columnType) { BeAssert(IsValid()); m_columnType = columnType; }
+
+    Utf8CP GetName() const { BeAssert(IsValid()); return m_columnName.c_str(); }
+    ECN::PrimitiveType GetColumnType() const { BeAssert(IsValid()); return m_columnType; }
+    bool IsNullable() const { BeAssert(IsValid()); return m_nullable; };
+    bool IsUnique() const { BeAssert(IsValid()); return m_unique; };
+    ECDbSqlColumn::Constraint::Collation GetCollation() const { BeAssert(IsValid()); return m_collation; }
     };
 
 ///*=================================================================================**//**

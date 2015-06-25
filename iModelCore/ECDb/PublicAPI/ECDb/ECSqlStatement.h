@@ -622,7 +622,6 @@ public:
 
 typedef RefCountedPtr<CachedECSqlStatement> CachedECSqlStatementPtr;
 
-
 //=======================================================================================
 //! A cache of shared ECSqlStatements that can be reused without re-preparing. 
 //! It can be very expensive to prepare an ECSQL statement,
@@ -637,7 +636,7 @@ typedef RefCountedPtr<CachedECSqlStatement> CachedECSqlStatementPtr;
 //! As clients can only indirectly control the lifetime of statements in the cache, diagnostics can help
 //! applications analyze how often statements get popped out of the cache and later readded again. To enable 
 //! ECSqlStatement cache diagnostics:
-//! - turn on the log4cxx based @ref Bentley::NativeLogging "Bentley logging"
+//! - turn on the log4cxx based @ref BentleyApi::NativeLogging "Bentley logging"
 //! - in the <b>log4cxx configuration</b> define a @b logger or a <b>logging category</b> with the
 //!   name <b>Diagnostics.ECSqlStatement.Cache</b> and assign it the log severity @c @b TRACE.
 //! With that enabled, %ECDb logs when a new statement was added to the cache and an existing one was removed from it.
@@ -687,7 +686,6 @@ public:
     //! Logs the ECSQL strings of the currently cached ECSqlStatements.
     ECDB_EXPORT void Log () const;
     };
-
 
 //__PUBLISH_SECTION_END__
 

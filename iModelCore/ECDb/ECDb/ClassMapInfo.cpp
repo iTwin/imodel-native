@@ -19,16 +19,10 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ClassMapInfoPtr ClassMapInfoFactory::CreateFromHint (MapStatus& mapStatus, SchemaImportContext const& schemaImportContext, ECN::ECClassCR ecClass, ECDbMapCR ecDbMap)
+std::shared_ptr<ClassMapInfo> ClassMapInfoFactory::Create(MapStatus& mapStatus, SchemaImportContext const& schemaImportContext, ECN::ECClassCR ecClass, ECDbMapCR ecDbMap)
     {
-    mapStatus = MapStatus::Error;
-    auto info = CreateInstance (ecClass, ecDbMap, nullptr, nullptr, ECDbMapStrategy::GetDefaultMapStrategy());
-    BeAssert (info != nullptr);
+    auto info = Create(mapStatus, ecClass, ecDbMap);
     if (info == nullptr)
-        return nullptr;
-
-    mapStatus = info->EvaluateMapStrategy ();
-    if (mapStatus != MapStatus::Success)
         return nullptr;
 
     if (info->GetMapStrategy ().IsMapped())
@@ -78,13 +72,19 @@ ClassMapInfoPtr ClassMapInfoFactory::CreateFromHint (MapStatus& mapStatus, Schem
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ClassMapInfoPtr ClassMapInfoFactory::CreateInstance (ECClassCR ecClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, ECDbMapStrategy mapStrategy)
+std::shared_ptr<ClassMapInfo> ClassMapInfoFactory::Create(MapStatus& stat, ECClassCR ecClass, ECDbMapCR ecDbMap)
     {
+    std::shared_ptr<ClassMapInfo> info = nullptr;
     ECRelationshipClassCP ecRelationshipClass = ecClass.GetRelationshipClassCP ();
     if (ecRelationshipClass != nullptr)
-        return RelationshipClassMapInfo::Create (*ecRelationshipClass, ecDbMap, tableName, primaryKeyColumnName, mapStrategy);
+        info = std::make_shared<RelationshipMapInfo>(*ecRelationshipClass, ecDbMap);
     else
-        return ClassMapInfo::Create (ecClass, ecDbMap, tableName, primaryKeyColumnName, mapStrategy);
+        info = std::make_shared<ClassMapInfo>(ecClass, ecDbMap);
+
+    if (info == nullptr || (stat = info->_Initialize()) != MapStatus::Success)
+        return nullptr;
+
+    return info;
     }
 
 
@@ -92,57 +92,48 @@ ClassMapInfoPtr ClassMapInfoFactory::CreateInstance (ECClassCR ecClass, ECDbMapC
 //**********************************************************************************************
 // ClassMapInfo
 //**********************************************************************************************
-
 //---------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                02/2014
+//@bsimethod                                 Affan.Khan                            07/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-ClassMapInfoPtr ClassMapInfo::Create (ECN::ECClassCR ecClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, ECDbMapStrategy mapStrategy)
-    {
-    return new ClassMapInfo (ecClass, ecDbMap, tableName, primaryKeyColumnName, mapStrategy);
-    }
+ClassMapInfo::ClassMapInfo (ECClassCR ecClass, ECDbMapCR ecDbMap)
+    : m_ecdbMap(ecDbMap), m_ecClass(ecClass), m_isMapToVirtualTable(IClassMap::IsAbstractECClass(ecClass)), m_classHasCurrentTimeStampProperty(nullptr), m_parentClassMap(nullptr), m_strategy(ECDbMapStrategy::GetDefaultMapStrategy())
+    {}
 
 //---------------------------------------------------------------------------------
 //@bsimethod                                 Affan.Khan                            07/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-ClassMapInfo::ClassMapInfo (ECClassCR ecClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, ECDbMapStrategy mapStrategy)
-: m_ecDbMap (ecDbMap), m_ecClass (ecClass), m_ecInstanceIdColumnName (primaryKeyColumnName), m_tableName (tableName), m_isMapToVirtualTable (IClassMap::IsAbstractECClass (ecClass)), m_ClassHasCurrentTimeStampProperty (NULL), m_parentClassMap (nullptr), m_strategy (mapStrategy)
+MapStatus ClassMapInfo::_Initialize()
     {
-  //  if (Utf8String::IsNullOrEmpty (tableName))
-        _InitializeFromSchema ();
+    //  if (Utf8String::IsNullOrEmpty (tableName))
+    if (SUCCESS != _InitializeFromSchema())
+        return MapStatus::Error;
 
     //Default values for table name and primary key column name
-    if (m_tableName.empty ())
+    if (m_tableName.empty())
         {
         // ClassMappingRule: if hint does not supply a table name, use {ECSchema prefix}_{ECClass name}
-        m_tableName = ResolveTablePrefix (ecClass);
-        if (!IClassMap::IsMapToSecondaryTableStrategy (ecClass))  // ClassMappingRule: assumes that structs are always used in arrays
-            m_tableName.append ("_");
+        m_tableName = ResolveTablePrefix(m_ecClass);
+        if (!IClassMap::IsMapToSecondaryTableStrategy(m_ecClass))  // ClassMappingRule: assumes that structs are always used in arrays
+            m_tableName.append("_");
         else
-            m_tableName.append ("_ArrayOf");
+            m_tableName.append("_ArrayOf");
 
-        m_tableName.append (Utf8String (ecClass.GetName ()));
+        m_tableName.append(Utf8String(m_ecClass.GetName()));
         }
 
-    if (m_ecInstanceIdColumnName.empty ())
+    if (m_ecInstanceIdColumnName.empty())
         {
         // ClassMappingRule: if hint does not supply an ECInstanceId (primary key) column name, use ECDB_COL_ECInstanceId
-        m_ecInstanceIdColumnName =  ECDB_COL_ECInstanceId;
+        m_ecInstanceIdColumnName = ECDB_COL_ECInstanceId;
         }
 
+    return _EvaluateMapStrategy();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Ramanujam.Raman                07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-MapStatus ClassMapInfo::EvaluateMapStrategy ()
-    {
-    return _EvaluateMapStrategy ();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                 Ramanujam.Raman                07/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-MapStatus ClassMapInfo::_EvaluateMapStrategy ()
+MapStatus ClassMapInfo::_EvaluateMapStrategy()
     {
     if (GetMapStrategy().IsNoHint())
         GetMapStrategyR().SetToDefaultMapStrategy();
@@ -247,99 +238,116 @@ MapStatus ClassMapInfo::EvaluateInheritedMapStrategy ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Affan.Khan                07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClassMapInfo::_InitializeFromSchema ()
+BentleyStatus ClassMapInfo::_InitializeFromSchema ()
     {
-    InitializeFromClassMapCA ();
-    InitializeFromClassHasCurrentTimeStampProperty();
+    if (SUCCESS != InitializeFromClassMapCA() || SUCCESS != InitializeFromClassHasCurrentTimeStampProperty())
+        return ERROR;
+
     // Add indices for important identifiers
-    ProcessStandardKeys (m_ecClass, L"BusinessKeySpecification");
-    ProcessStandardKeys (m_ecClass, L"GlobalIdSpecification");
-    ProcessStandardKeys (m_ecClass, L"SyncIDSpecification");
+    if (SUCCESS != ProcessStandardKeys(m_ecClass, L"BusinessKeySpecification") ||
+        SUCCESS != ProcessStandardKeys(m_ecClass, L"GlobalIdSpecification") ||
+        SUCCESS != ProcessStandardKeys(m_ecClass, L"SyncIDSpecification"))
+        return ERROR;
     
     //TODO: VerifyThatTableNameIsNotReservedName, e.g. dgn element table, etc.
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 muhammad.zaighum                01/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-void ClassMapInfo::InitializeFromClassHasCurrentTimeStampProperty()
+BentleyStatus ClassMapInfo::InitializeFromClassHasCurrentTimeStampProperty()
     {
-    auto classHint = CustomAttributeReader::Read(m_ecClass, L"ClassHasCurrentTimeStampProperty");
+    IECInstancePtr classHint = m_ecClass.GetCustomAttributeLocal(L"ClassHasCurrentTimeStampProperty");
 
     if (classHint == nullptr)
-        return;
+        return SUCCESS;
    
     WString propertyName;
     ECValue v;
     if (classHint->GetValue(v, L"PropertyName") == ECOBJECTS_STATUS_Success && !v.IsNull())
         {
         propertyName = v.GetString();
-        ECPropertyP dateTimeProperty = m_ecClass.GetPropertyP(propertyName);
-        if (NULL == dateTimeProperty)
+        ECPropertyCP dateTimeProperty = m_ecClass.GetPropertyP(propertyName);
+        if (nullptr == dateTimeProperty)
             {
             BeAssert(false && "ClassHasCurrentTimeStamp Property Not Found in ECClass");
-            return;
+            return ERROR;
             }
         if (dateTimeProperty->GetTypeName().Equals(L"dateTime"))
             {
-            m_ClassHasCurrentTimeStampProperty = dateTimeProperty;
+            m_classHasCurrentTimeStampProperty = dateTimeProperty;
             }
         else
             {
             BeAssert(false && "Property is not of type dateTime");
+            return ERROR;
             }
         }
+
+    return SUCCESS;
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-void ClassMapInfo::InitializeFromClassMapCA ()
+BentleyStatus ClassMapInfo::InitializeFromClassMapCA()
     {
-    ECDbMapStrategy mapStrategy(Strategy::DoNotMap);
     ECDbClassMap customClassMap;
-    if (ECDbMapCustomAttributeHelper::TryGetClassMap(customClassMap, m_ecClass))
+    if (!ECDbMapCustomAttributeHelper::TryGetClassMap(customClassMap, m_ecClass))
+        return SUCCESS;
+
+    Utf8String mapStrategyStr, mapStrategyOptionsStr;
+    ECObjectsStatus ecstat = customClassMap.TryGetMapStrategy(mapStrategyStr, mapStrategyOptionsStr);
+    if (ECOBJECTS_STATUS_Success != ecstat)
+        return ERROR;
+
+    if (!mapStrategyStr.empty() || !mapStrategyOptionsStr.empty())
         {
-        Utf8String mapStrategyStr, mapStrategyOptionsStr;
-        if (customClassMap.TryGetMapStrategy(mapStrategyStr, mapStrategyOptionsStr) &&
-            mapStrategy.Parse(mapStrategy, mapStrategyStr.c_str(), mapStrategyOptionsStr.c_str()) == SUCCESS)
+        ECDbMapStrategy mapStrategy(Strategy::DoNotMap);
+        if (mapStrategy.Parse(mapStrategy, mapStrategyStr.c_str(), mapStrategyOptionsStr.c_str()) != SUCCESS)
+            return ERROR;
+
+        GetMapStrategyR() = mapStrategy;
+        if (GetMapStrategyR().IsTablePerHierarchy() || GetMapStrategyR().IsSharedTableForThisClass())
             {
-            GetMapStrategyR() = mapStrategy;
-            if (GetMapStrategyR().IsTablePerHierarchy() || GetMapStrategyR().IsSharedTableForThisClass())
-                {
-                if (m_isMapToVirtualTable)
-                    m_isMapToVirtualTable = false;
-                }
-            }
-
-        Utf8String tableName;
-        if (customClassMap.TryGetTableName(tableName))
-            m_tableName = tableName;
-
-        Utf8String ecInstanceIdColumnName;
-        if (customClassMap.TryGetECInstanceIdColumn(ecInstanceIdColumnName))
-            m_ecInstanceIdColumnName = ecInstanceIdColumnName;
-
-        bvector<ECDbClassMap::DbIndex> indices;
-        if (customClassMap.TryGetIndexes(indices))
-            {
-            for (ECDbClassMap::DbIndex const& index : indices)
-                {
-                ClassIndexInfoPtr indexInfo = ClassIndexInfo::Create(index);
-                if (indexInfo != nullptr)
-                    m_dbIndexes.push_back(indexInfo);
-                }
+            if (m_isMapToVirtualTable)
+                m_isMapToVirtualTable = false;
             }
         }
+
+    ecstat = customClassMap.TryGetTableName(m_tableName);
+    if (ECOBJECTS_STATUS_Success != ecstat)
+        return ERROR;
+
+    ecstat = customClassMap.TryGetECInstanceIdColumn(m_ecInstanceIdColumnName);
+    if (ECOBJECTS_STATUS_Success != ecstat)
+        return ERROR;
+
+    bvector<ECDbClassMap::DbIndex> indices;
+    ecstat = customClassMap.TryGetIndexes(indices);
+    if (ECOBJECTS_STATUS_Success != ecstat)
+        return ERROR;
+
+    for (ECDbClassMap::DbIndex const& index : indices)
+        {
+        ClassIndexInfoPtr indexInfo = ClassIndexInfo::Create(index);
+        if (indexInfo == nullptr)
+            return ERROR;
+
+        m_dbIndexes.push_back(indexInfo);
+        }
+
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Affan.Khan                07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClassMapInfo::ProcessStandardKeys (ECClassCR ecClass, WCharCP customAttributeName)
+BentleyStatus ClassMapInfo::ProcessStandardKeys (ECClassCR ecClass, WCharCP customAttributeName)
     {
     StandardKeySpecification::Type keyType = StandardKeySpecification::GetTypeFromString(customAttributeName);
     if (keyType == StandardKeySpecification::Type::None)
-        return;
+        return SUCCESS;
 
     IECInstancePtr ca = ecClass.GetCustomAttribute (customAttributeName);
     if (ca.IsValid())
@@ -358,12 +366,18 @@ void ClassMapInfo::ProcessStandardKeys (ECClassCR ecClass, WCharCP customAttribu
             {
             //Create unique not null index on provided property
             ECPropertyP key;
-            if ( nullptr == (key = ecClass.GetPropertyP(v.GetString())))
+            if (nullptr == (key = ecClass.GetPropertyP(v.GetString())))
+                {
                 LOG.errorv(L"Rejecting user specified %ls on class %ls because property specified in it '%ls' doesn't exist in class", customAttributeName, ecClass.GetFullName(), v.GetString());
+                return ERROR;
+                }
             else
                 {
                 if (key->GetAsPrimitiveProperty() == nullptr)
+                    {
                     LOG.errorv(L"Rejecting user specified %ls on class %ls because specified property is not primitive.", customAttributeName, ecClass.GetFullName());
+                    return ERROR;
+                    }
                 else
                     {
                     PrimitiveType ectype = key->GetAsPrimitiveProperty()->GetType();
@@ -382,11 +396,16 @@ void ClassMapInfo::ProcessStandardKeys (ECClassCR ecClass, WCharCP customAttribu
                         m_standardKeys.push_back(spec);
                         }
                     else
+                        {
                         LOG.errorv(L"Rejecting user specified %ls on class %ls because specified property type not supported. Supported types are Binary, Boolean, DateTime, Double, Integer, Long and String.", customAttributeName, ecClass.GetFullName());
+                        return ERROR;
+                        }
                     }
                 }
             } 
         }
+
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -428,7 +447,7 @@ ECClassCR          ecClass
     {
     for (ECClassP baseClass : ecClass.GetBaseClasses())
         {
-        auto baseClassMap = m_ecDbMap.GetClassMap (*baseClass);
+        auto baseClassMap = m_ecdbMap.GetClassMap (*baseClass);
         if (baseClassMap == nullptr)
             return false;
 
@@ -484,7 +503,7 @@ Utf8String ClassMapInfo::ResolveTablePrefix (ECClassCR ecClass)
     if (ECDbMapCustomAttributeHelper::TryGetSchemaMap (customSchemaMap, schema))
         {
         Utf8String tablePrefix;
-        if (customSchemaMap.TryGetTablePrefix(tablePrefix))
+        if (customSchemaMap.TryGetTablePrefix(tablePrefix) == ECOBJECTS_STATUS_Success && !tablePrefix.empty ())
             return tablePrefix;
         }
 
@@ -526,106 +545,184 @@ MapStatus ClassMapInfo::ReportError_OneClassMappedByTableInHierarchyFromTwoDiffe
 //****************************************************************************************************
 //RelationshipClassMapInfo
 //****************************************************************************************************
-//---------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                02/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-ClassMapInfoPtr RelationshipClassMapInfo::Create (ECRelationshipClassCR relationshipClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, ECDbMapStrategy mapStrategy)
-    {
-    return new RelationshipClassMapInfo (relationshipClass, ecDbMap, tableName, primaryKeyColumnName, mapStrategy);
-    }
 
 /*---------------------------------------------------------------------------------**//**
-*@bsimethod                                 Casey.Mullen                            11/2012
+* @bsimethod                                 Ramanujam.Raman                07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-RelationshipClassMapInfo::RelationshipClassMapInfo (ECRelationshipClassCR relationshipClass, ECDbMapCR ecDbMap, Utf8CP tableName, Utf8CP primaryKeyColumnName, ECDbMapStrategy mapStrategy)
-     : ClassMapInfo (relationshipClass, ecDbMap, tableName, primaryKeyColumnName, mapStrategy),
-        m_userPreferredDirection (PreferredDirection::Unspecified), 
-        m_allowDuplicateRelationships(TriState::Default)
+MapStatus RelationshipMapInfo::_Initialize()
     {
+    MapStatus stat = ClassMapInfo::_Initialize();
+    if (stat != MapStatus::Success)
+        return stat;
 
-    _InitializeFromSchema (); //Necessary even when loading from db as part of the info is held in the hint CA stored in the db
-    DetermineCardinality ();
+    DetermineCardinality();
+    return MapStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Ramanujam.Raman                07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelationshipClassMapInfo::_InitializeFromSchema ()
+BentleyStatus RelationshipMapInfo::_InitializeFromSchema()
     {  
-    ClassMapInfo::_InitializeFromSchema();
+    if (SUCCESS != ClassMapInfo::_InitializeFromSchema())
+        return ERROR;
+
     auto relClass = GetECClass ().GetRelationshipClassCP ();
     BeAssert (relClass != nullptr);
-    auto relClassHint = RelationshipClassHintReader::ReadHint (*relClass);
-    if (relClassHint.IsValid())
+
+    ECDbForeignKeyRelationshipMap foreignKeyRelMap;
+    const bool hasForeignKeyRelMap = ECDbMapCustomAttributeHelper::TryGetForeignKeyRelationshipMap(foreignKeyRelMap, *relClass);
+    ECDbLinkTableRelationshipMap linkTableRelationMap;
+    const bool hasLinkTableRelMap = ECDbMapCustomAttributeHelper::TryGetLinkTableRelationshipMap(linkTableRelationMap, *relClass);
+
+    if (hasForeignKeyRelMap && hasLinkTableRelMap)
         {
-
-        PreferredDirection preferredDirection = PreferredDirection::Unspecified;
-        if (RelationshipClassHintReader::TryReadPreferredDirection (preferredDirection, *relClassHint))
-            m_userPreferredDirection = preferredDirection;
-
-        TriState allowDuplicateRelationships = TriState::Default;
-        if (RelationshipClassHintReader::TryReadAllowDuplicateRelationships (allowDuplicateRelationships, *relClassHint))
-            m_allowDuplicateRelationships = allowDuplicateRelationships;
-
-        if (!GetMapStrategy().IsSharedTableForThisClass())
-            {
-            RelationshipClassHintReader::TryReadSourceECInstanceIdColumnName (m_sourceECInstanceIdColumn, *relClassHint);
-            RelationshipClassHintReader::TryReadSourceECClassIdColumnName (m_sourceECClassIdColumn, *relClassHint);
-            RelationshipClassHintReader::TryReadTargetECInstanceIdColumnName (m_targetECInstanceIdColumn, *relClassHint);
-            RelationshipClassHintReader::TryReadTargetECClassIdColumnName (m_targetECClassIdColumn, *relClassHint);
-            }
+        LOG.errorv(L"ECRelationshipClass '%ls' can only have either the ForeignKeyRelationshipMap or the LinkTableRelationshipMap custom attribute but not both.",
+                   GetECClass().GetFullName());
+        return ERROR;
         }
 
-    RelationshipConstraintInfo::ReadFromConstraint (m_sourceInfo, relClass->GetSource ());
-    RelationshipConstraintInfo::ReadFromConstraint (m_targetInfo, relClass->GetTarget ());
+    if (hasForeignKeyRelMap)
+        {
+        ECRelationshipEnd foreignKeyEnd = ECRelationshipEnd_Target;
+        if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetEnd(foreignKeyEnd))
+            return ERROR;
 
-    //! The goal is that source/target ECInstanceId/ECClassId column should be provided in ECDbRelationshipConstraintHint and not ECDbRelationshipHint
-    if (!m_sourceInfo.GetECClassIdColumn ().empty ())
-        m_sourceECClassIdColumn = m_sourceInfo.GetECClassIdColumn ();
+        RelationshipEndColumns* foreignKeyColumnsMapping = nullptr;
+        ECRelationshipConstraintCP foreignKeyConstraint = nullptr;
+        if (foreignKeyEnd == ECRelationshipEnd_Target)
+            {
+            foreignKeyConstraint = &relClass->GetTarget();
+            foreignKeyColumnsMapping = &m_targetColumnsMapping;
+            m_sourceColumnsMappingIsNull = true;
+            m_targetColumnsMappingIsNull = false;
+            m_customMapType = RelationshipMapInfo::CustomMapType::ForeignKeyOnTarget;
+            }
+        else
+            {
+            foreignKeyConstraint = &relClass->GetSource();
+            foreignKeyColumnsMapping = &m_sourceColumnsMapping;
+            m_sourceColumnsMappingIsNull = false;
+            m_targetColumnsMappingIsNull = true;
+            m_customMapType = RelationshipMapInfo::CustomMapType::ForeignKeyOnSource;
+            }
 
-    if (!m_sourceInfo.GetECInstanceIdColumn ().empty ())
-        m_sourceECInstanceIdColumn = m_sourceInfo.GetECInstanceIdColumn ();
+        Utf8String foreignKeyColName;
+        Utf8String foreignKeyClassIdColName;
+        if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetForeignKeyColumn(foreignKeyColName))
+            return ERROR;
 
-    if (!m_targetInfo.GetECClassIdColumn ().empty ())
-        m_targetECClassIdColumn = m_targetInfo.GetECClassIdColumn ();
+        if (!foreignKeyColName.empty())
+            {
+            for (ECRelationshipConstraintClassCP constraintClass : foreignKeyConstraint->GetConstraintClasses())
+                {
+                if (!constraintClass->GetKeys().empty())
+                    {
+                    LOG.errorv(L"ForeignKeyRelationshipMap custom attribute on ECRelationshipClass '%ls' must not have a value for ForeignKeyProperty as there are Key properties defined in the ECRelationshipConstraint on the foreign key end.",
+                               GetECClass().GetFullName());
+                    return ERROR;
+                    }
+                }
+            }
 
-    if (!m_targetInfo.GetECInstanceIdColumn ().empty ())
-        m_targetECInstanceIdColumn = m_targetInfo.GetECInstanceIdColumn ();
+        if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetForeignKeyClassIdColumn(foreignKeyClassIdColName))
+            return ERROR;
+
+        *foreignKeyColumnsMapping = RelationshipEndColumns(foreignKeyColName.c_str(), foreignKeyClassIdColName.c_str());
+
+        bool createConstraint = false;
+        if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetCreateConstraint(createConstraint))
+            return ERROR;
+
+        if (createConstraint)
+            {
+            Utf8String onDeleteActionStr;
+            if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetOnDeleteAction(onDeleteActionStr))
+                return ERROR;
+
+            Utf8String onUpdateActionStr;
+            if (ECOBJECTS_STATUS_Success != foreignKeyRelMap.TryGetOnUpdateAction(onUpdateActionStr))
+                return ERROR;
+
+            m_onDeleteAction = ECDbSqlForeignKeyConstraint::ToActionType(onDeleteActionStr.c_str());
+            m_onUpdateAction = ECDbSqlForeignKeyConstraint::ToActionType(onUpdateActionStr.c_str());
+            }
+
+        return SUCCESS;
+        }
+    
+    if (hasLinkTableRelMap)
+        {
+        if (ECOBJECTS_STATUS_Success != linkTableRelationMap.TryGetAllowDuplicateRelationships(m_allowDuplicateRelationships))
+            return ERROR;
+
+        Utf8String sourceIdColName;
+        if (ECOBJECTS_STATUS_Success != linkTableRelationMap.TryGetSourceECInstanceIdColumn(sourceIdColName))
+            return ERROR;
+
+        Utf8String sourceClassIdColName;
+        if (ECOBJECTS_STATUS_Success != linkTableRelationMap.TryGetSourceECClassIdColumn(sourceClassIdColName))
+            return ERROR;
+
+        Utf8String targetIdColName;
+        if (ECOBJECTS_STATUS_Success != linkTableRelationMap.TryGetTargetECInstanceIdColumn(targetIdColName))
+            return ERROR;
+
+        Utf8String targetClassIdColName;
+        if (ECOBJECTS_STATUS_Success != linkTableRelationMap.TryGetTargetECClassIdColumn(targetClassIdColName))
+            return ERROR;
+
+        m_sourceColumnsMappingIsNull = false;
+        m_sourceColumnsMapping = RelationshipEndColumns(sourceIdColName.c_str(), sourceClassIdColName.c_str());
+        m_targetColumnsMappingIsNull = false;
+        m_targetColumnsMapping = RelationshipEndColumns(targetIdColName.c_str(), targetClassIdColName.c_str());
+        m_customMapType = RelationshipMapInfo::CustomMapType::LinkTable;
+        }
+
+    return SUCCESS;
     }
     
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Ramanujam.Raman                07 / 2012
 //+---------------+---------------+---------------+---------------+---------------+------
-MapStatus RelationshipClassMapInfo::_EvaluateMapStrategy ()
+MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
     {
-    auto stat = ClassMapInfo::_EvaluateMapStrategy ();
+    bool alreadyEvaluated = false;
+    MapStatus stat = DetermineImpliedMapStrategy(alreadyEvaluated);
     if (stat != MapStatus::Success)
         return stat;
 
-    BeAssert (!GetMapStrategy().IsNoHint());
-
-    if (GetMapStrategy().IsUnmapped())
-        return MapStatus::Success;
-  
-    return DetermineRelationshipMapStrategy ();
+    return EvaluateCustomMapping(alreadyEvaluated);
     }
 
 //---------------------------------------------------------------------------------
-// @bsimethod                                 Ramanujam.Raman                06/2012
+// @bsimethod                                 Ramanujam.Raman                07 / 2012
 //+---------------+---------------+---------------+---------------+---------------+------
-MapStatus RelationshipClassMapInfo::DetermineRelationshipMapStrategy ()
+MapStatus RelationshipMapInfo::DetermineImpliedMapStrategy(bool& mapStrategyAlreadyEvaluated)
     {
-    auto isValid = ValidateRelatedClasses ();
+    //early return means evaluation was successful. Other cases set the value explicitly
+    mapStrategyAlreadyEvaluated = true;
+
+    auto stat = ClassMapInfo::_EvaluateMapStrategy();
+    if (stat != MapStatus::Success)
+        return stat;
+
+    BeAssert(!GetMapStrategy().IsNoHint());
+
+    if (GetMapStrategy().IsUnmapped())
+        return MapStatus::Success;
+
+    DetermineCardinality();
+
+    const bool isValid = VerifyRelatedClasses();
     if (!isValid)
         {
         GetMapStrategyR().SetDoNotMap();
         return MapStatus::Success;
         }
-    
+
     if (GetMapStrategy().IsTablePerHierarchy())
-        {
         return MapStatus::Success;
-        }
 
     if (auto parentClassMap = GetParentClassMap())
         {
@@ -636,23 +733,117 @@ MapStatus RelationshipClassMapInfo::DetermineRelationshipMapStrategy ()
             return MapStatus::Success;
             }
         }
-    
+
     if (GetMapStrategy().IsSharedTableForThisClass())
         return MapStatus::Success;
 
     //Note: At this point, MapStrategy can only be one of -
     //MapStrategy::RelationshipSourceTable, MapStrategy::RelationshipTargetTable
-    ECRelationshipClassCP relationshipClass = GetECClass ().GetRelationshipClassCP ();
-    ECRelationshipConstraintR source = relationshipClass->GetSource ();
-    ECRelationshipConstraintR target = relationshipClass->GetTarget ();
+    ECRelationshipClassCP relationshipClass = GetECClass().GetRelationshipClassCP();
+    ECRelationshipConstraintR source = relationshipClass->GetSource();
+    ECRelationshipConstraintR target = relationshipClass->GetTarget();
 
-    DetermineCardinality (); 
-    if (GetCardinality () == CardinalityType::ManyToMany || relationshipClass->GetPropertyCount () > 0)
+    if (m_cardinality == Cardinality::ManyToMany ||
+        relationshipClass->GetPropertyCount() > 0 ||
+        // Follow override other. Since if relation map to Source/Target table it cannot have duplicate values there for
+        // we forces it to use a link table for this relationship so duplicate relationships can be allowed.
+        m_allowDuplicateRelationships)
+        {
         GetMapStrategyR().SetTableForThisClass();
-    else if (GetCardinality () == CardinalityType::OneToMany || GetCardinality () == CardinalityType::ManyToOne)
-        GetMapStrategyR ().Assign (Get1MRelationshipMapStrategy (source, target, *relationshipClass));
+        }
+    else if (m_cardinality == Cardinality::OneToMany || m_cardinality == Cardinality::ManyToOne)
+        {
+        Strategy strategy;
+        if (TryDetermine1MRelationshipMapStrategy(strategy, source, target, *relationshipClass))
+            GetMapStrategyR().Assign(strategy);
+        else
+            mapStrategyAlreadyEvaluated = false;
+        }
     else
-        GetMapStrategyR ().Assign (Get11RelationshipMapStrategy (source, target, *relationshipClass));
+        {
+        BeAssert(m_cardinality == Cardinality::OneToOne);
+        Strategy strategy;
+        if (TryDetermine11RelationshipMapStrategy(strategy, source, target, *relationshipClass))
+            GetMapStrategyR().Assign(strategy);
+        else
+            mapStrategyAlreadyEvaluated = false;
+        }
+
+    return MapStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle               06/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+MapStatus RelationshipMapInfo::EvaluateCustomMapping(bool mapStrategyAlreadyEvaluated)
+    {
+    if (!mapStrategyAlreadyEvaluated)
+        {
+        if (m_cardinality != Cardinality::OneToOne)
+            {
+            BeAssert(m_cardinality == Cardinality::OneToOne && "This is only the case for cardinality 1:1");
+            return MapStatus::Error;
+            }
+
+        ECDbMapStrategy& mapStrategy = GetMapStrategyR();
+        switch (m_customMapType)
+            {
+                case CustomMapType::ForeignKeyOnSource:
+                    mapStrategy.Assign(Strategy::RelationshipSourceTable);
+                    break;
+
+                case CustomMapType::ForeignKeyOnTarget:
+                    mapStrategy.Assign(Strategy::RelationshipTargetTable);
+                    break;
+
+                case CustomMapType::LinkTable:
+                    mapStrategy.Assign(Strategy::TableForThisClass);
+                    break;
+
+                default:
+                case CustomMapType::None:
+                    mapStrategy.Assign(Strategy::RelationshipTargetTable);
+                    break;
+            }
+
+        return MapStatus::Success;
+        }
+
+    if (m_customMapType == CustomMapType::None)
+        return MapStatus::Success;
+
+    //now verify that implied MapStrategy matches the custom mapping
+    if (GetMapStrategy() == Strategy::RelationshipSourceTable)
+        {
+        if (m_customMapType != CustomMapType::ForeignKeyOnSource)
+            {
+            LOG.errorv(L"The ECRelationshipClass '%ls' implies a foreign key relationship with the foreign key on the source side. The class however has a mismatching RelationshipMap custom attribute.",
+                       GetECClass().GetFullName());
+            return MapStatus::Error;
+            }
+
+        return MapStatus::Success;
+        }
+
+    if (GetMapStrategy() == Strategy::RelationshipTargetTable)
+        {
+        if (m_customMapType != CustomMapType::ForeignKeyOnTarget)
+            {
+            LOG.errorv(L"The ECRelationshipClass '%ls' implies a foreign key relationship with the foreign key on the target side. The class however has a mismatching RelationshipMap custom attribute.",
+                       GetECClass().GetFullName());
+            return MapStatus::Error;
+            }
+
+        return MapStatus::Success;
+        }
+
+    //any other map strategy requires a link table, so both 
+    if (m_customMapType != CustomMapType::LinkTable)
+        {
+        LOG.errorv(L"The ECRelationshipClass '%ls' implies a link table relationship. The class however has a ForeignKeyRelationshipMap custom attribute.",
+                   GetECClass().GetFullName());
+        return MapStatus::Error;
+        }
 
     return MapStatus::Success;
     }
@@ -660,33 +851,37 @@ MapStatus RelationshipClassMapInfo::DetermineRelationshipMapStrategy ()
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                06/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-void RelationshipClassMapInfo::DetermineCardinality ()
+void RelationshipMapInfo::DetermineCardinality ()
     {
     ECRelationshipClassCP relationshipClass = GetECClass ().GetRelationshipClassCP ();
     ECRelationshipConstraintR source = relationshipClass->GetSource ();
     ECRelationshipConstraintR target = relationshipClass->GetTarget ();
 
-    m_relationshipCardinality = CalculateRelationshipCardinality (source, target);
+    bool sourceIsM = source.GetCardinality().GetUpperLimit() > 1;
+    bool targetIsM = target.GetCardinality().GetUpperLimit() > 1;
+    if (sourceIsM && targetIsM)
+        m_cardinality = Cardinality::ManyToMany;
+    else if (!sourceIsM && targetIsM)
+        m_cardinality = Cardinality::OneToMany;
+    else if (sourceIsM && !targetIsM)
+        m_cardinality = Cardinality::ManyToOne;
+    else
+        m_cardinality = Cardinality::OneToOne;
     }
 
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Ramanujam.Raman                08 / 2013
 //+---------------+---------------+---------------+---------------+---------------+------
-bool RelationshipClassMapInfo::ValidateRelatedClasses () const
+bool RelationshipMapInfo::VerifyRelatedClasses() const
     {
-    ECRelationshipClassCP relationshipClass = GetECClass ().GetRelationshipClassCP ();
-    ECRelationshipConstraintR source = relationshipClass->GetSource ();
-    ECRelationshipConstraintR target = relationshipClass->GetTarget ();
+    BeAssert(GetECClass().GetRelationshipClassCP() != nullptr);
+    ECRelationshipClassCR relationshipClass = *GetECClass().GetRelationshipClassCP();
+    ECRelationshipConstraintR source = relationshipClass.GetSource ();
+    ECRelationshipConstraintR target = relationshipClass.GetTarget ();
 
     // ClassMappingRule: a relationship with either or both ends having no ECClass is an abstract relationship, and will not be mapped
-    auto sourceEndClasses = m_ecDbMap.GetClassesFromRelationshipEnd (source);
-    auto targetEndClasses = m_ecDbMap.GetClassesFromRelationshipEnd (target);
-    if (sourceEndClasses.size () == 0 || targetEndClasses.size () == 0)
-        {
-        LogClassNotMapped (NativeLogging::LOG_INFO, GetECClass (), 
-            "ECClass is an abstract ECRelationship class, i.e. one of the constraints is empty.");
-        return false;
-        }
+    auto sourceEndClasses = m_ecdbMap.GetClassesFromRelationshipEnd(source);
+    auto targetEndClasses = m_ecdbMap.GetClassesFromRelationshipEnd(target);
 
     // ClassMappingRule: cannot map relationships that relate other relationships
     if (ContainsRelationshipClass (sourceEndClasses) || ContainsRelationshipClass (targetEndClasses))
@@ -697,11 +892,11 @@ bool RelationshipClassMapInfo::ValidateRelatedClasses () const
         }
 
     // ClassMappingRule: If the ends of the relationship are not mapped, don't map the relationship
-    size_t nSourceTables = m_ecDbMap.GetTablesFromRelationshipEnd (nullptr, source);
-    size_t nTargetTables = m_ecDbMap.GetTablesFromRelationshipEnd (nullptr, target);
+    size_t nSourceTables = m_ecdbMap.GetTablesFromRelationshipEnd(nullptr, source);
+    size_t nTargetTables = m_ecdbMap.GetTablesFromRelationshipEnd(nullptr, target);
     if (0 == nSourceTables || 0 == nTargetTables)
         {
-        LogClassNotMapped (NativeLogging::LOG_WARNING, GetECClass (),
+        LogClassNotMapped(NativeLogging::LOG_WARNING, relationshipClass,
             "Source or target constraint classes are not mapped.");
 
         return false;
@@ -713,7 +908,8 @@ bool RelationshipClassMapInfo::ValidateRelatedClasses () const
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Ramanujam.Raman                08 / 2013
 //+---------------+---------------+---------------+---------------+---------------+------
-bool RelationshipClassMapInfo::ContainsRelationshipClass (std::vector<ECClassCP> const& endClasses)
+//static
+bool RelationshipMapInfo::ContainsRelationshipClass(std::vector<ECClassCP> const& endClasses)
     {
     for (ECClassCP endClass : endClasses)
         {
@@ -724,176 +920,72 @@ bool RelationshipClassMapInfo::ContainsRelationshipClass (std::vector<ECClassCP>
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Casey.Mullen      11/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-//static
-RelationshipClassMapInfo::CardinalityType RelationshipClassMapInfo::CalculateRelationshipCardinality (ECRelationshipConstraintCR source, ECRelationshipConstraintCR target)
-    {
-    bool sourceIsM = source.GetCardinality().GetUpperLimit() > 1;
-    bool targetIsM = target.GetCardinality().GetUpperLimit() > 1;
-
-    CardinalityType relationshipCardinality;
-    if (sourceIsM && targetIsM)
-        relationshipCardinality = CardinalityType::ManyToMany; 
-    else if (!sourceIsM && targetIsM)
-        relationshipCardinality = CardinalityType::OneToMany;
-    else if (sourceIsM && !targetIsM)
-        relationshipCardinality = CardinalityType::ManyToOne;
-    else
-        relationshipCardinality = CardinalityType::OneToOne;
-   
-    return relationshipCardinality;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Ramanujam.Raman                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-Strategy RelationshipClassMapInfo::Get11RelationshipMapStrategy
+bool RelationshipMapInfo::TryDetermine11RelationshipMapStrategy
 (
+Strategy& strategy,
 ECRelationshipConstraintR source,
 ECRelationshipConstraintR target,
 ECRelationshipClassCR relationshipClass
 ) const
     {
-    // Follow override other. Since if relation map to Source/Target table it cannot have duplicate values there for
-    // we forces it to use a link table for this relationship so duplicate relationships can be allowed.
-    if (GetAllowDuplicateRelationships () == TriState::True)
-        return Strategy::TableForThisClass;
-
     /* Note: At this point of the algorithm, map strategy can only be MapStrategy::RelationshipSourceTable,
      * or MapStrategy::RelationshipTargetTable */
 
     // Check if we need a link table to persist the relationship
-    size_t nSourceTables = m_ecDbMap.GetTablesFromRelationshipEnd (nullptr, source);
-    size_t nTargetTables = m_ecDbMap.GetTablesFromRelationshipEnd (nullptr, target);
+    size_t nSourceTables = m_ecdbMap.GetTablesFromRelationshipEnd (nullptr, source);
+    size_t nTargetTables = m_ecdbMap.GetTablesFromRelationshipEnd (nullptr, target);
 
     BeAssert (0 != nSourceTables && "Condition should have been caught earlier, and strategy set to DoNotMap");
     BeAssert (0 != nTargetTables && "Condition should have been caught earlier, and strategy set to DoNotMap");
 
-    if ((nSourceTables > 1 && GetMapStrategy ().IsRelationshipSourceTable ()) ||
-        (nTargetTables > 1 && GetMapStrategy ().IsRelationshipTargetTable ()))
-        {
-        // We don't persist at an end that has more than one table
-        LOG.warningv (L"Cannot map ECRelationshipClass %ls to end table as more than one end table exists on either end. Mapping to link table instead.",
-            relationshipClass.GetFullName ());
-        return Strategy::TableForThisClass;
-        }
-
     // Don't persist at an end that has more than one table
     if (!(nSourceTables == 1 && nTargetTables == 1))
         {
-        return Strategy::TableForThisClass;
+        // We don't persist at an end that has more than one table
+        LOG.infov(L"ECRelationshipClass %ls is mapped to link table as more than one end tables exists on either end.",
+                     relationshipClass.GetFullName());
+        strategy = Strategy::TableForThisClass;
+        return true;
         }
 
-    /* Can persist in either end - use some heuristics */
-
-    // Allow user his choice if he made one
-    if (GetMapStrategy ().IsEndTableMapping ())
-        return GetMapStrategy ().GetStrategy ();
-
-    // PreferredDirection hint, indicates optimal traversal efficiency when querying rows from other end for a given row on this end.
-    // Querying target instances for a given source instance needs to be fast -> persist relation in target table (like a foreign key)
-    if (m_userPreferredDirection == PreferredDirection::SourceToTarget)
-        return Strategy::RelationshipTargetTable;
-    else if (m_userPreferredDirection == PreferredDirection::TargetToSource)
-        return Strategy::RelationshipSourceTable;
-
-    // Pick the End at the start of the strength direction (same logic as for preferred direction)
-    if (relationshipClass.GetStrengthDirection () == ECRelatedInstanceDirection::Forward)
-        return Strategy::RelationshipTargetTable;
-    else
-        return Strategy::RelationshipSourceTable;
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Ramanujam.Raman                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-Strategy RelationshipClassMapInfo::Get1MRelationshipMapStrategy
+bool RelationshipMapInfo::TryDetermine1MRelationshipMapStrategy
 (
+Strategy& strategy,
 ECRelationshipConstraintR source, 
 ECRelationshipConstraintR target, 
 ECRelationshipClassCR relationshipClass
 ) const
     {
-    // Follow override other. Since if relation map to Source/Target table it cannot have duplicate values there for
-    // we forces it to use a link table for this relationship so duplicate relationships can be allowed.
-    if (GetAllowDuplicateRelationships() == TriState::True)
-        return Strategy::TableForThisClass;
-
     // Pick the M(any) end or the middle depending on the number of tables
     size_t nManyEndTables;
-    if (m_relationshipCardinality == CardinalityType::ManyToOne)
+    if (m_cardinality == Cardinality::ManyToOne)
         {
-        nManyEndTables = m_ecDbMap.GetTablesFromRelationshipEnd (nullptr, source);
+        nManyEndTables = m_ecdbMap.GetTablesFromRelationshipEnd(nullptr, source);
         if (nManyEndTables > 1)
-            return Strategy::TableForThisClass;
+            strategy = Strategy::TableForThisClass;
         else
-            return Strategy::RelationshipSourceTable;
+            strategy = Strategy::RelationshipSourceTable;
         }
     else
         {
-        nManyEndTables = m_ecDbMap.GetTablesFromRelationshipEnd (nullptr, target);
+        nManyEndTables = m_ecdbMap.GetTablesFromRelationshipEnd (nullptr, target);
         BeAssert (target.GetCardinality().GetUpperLimit() > 1);
         if (nManyEndTables > 1)
-            return Strategy::TableForThisClass;
+            strategy = Strategy::TableForThisClass;
         else
-            return Strategy::RelationshipTargetTable;
+            strategy = Strategy::RelationshipTargetTable;
         }
-    }
 
-
-
-//static
-void RelationshipConstraintInfo::ReadFromConstraint (RelationshipConstraintInfo& info, ECRelationshipConstraintCR constraint)
-    {
-    info.m_ecClassIdColumn.clear ();
-    info.m_ecInstanceIdColumn.clear ();
-    info.m_enforceIntegrityCheck = false;
-    info.m_onDeleteAction = ECDbSqlForeignKeyConstraint::ActionType::NotSpecified;
-    info.m_onUpdateAction = ECDbSqlForeignKeyConstraint::ActionType::NotSpecified;
-    info.m_matchType = ECDbSqlForeignKeyConstraint::MatchType::NotSpecified;
-    info.m_generateDefaultIndex = true;
-    info.m_isEmpty = false;
-
-    auto hint = constraint.GetCustomAttribute (L"ECDbRelationshipConstraintHint");
-    if (hint.IsNull ())
-        return;
-
-    WString xml;
-    hint->WriteToXmlString (xml, false, false);
-    const WCharCP kECClassIdColumn = L"ECClassIdColumn";
-    const WCharCP kECIdColumn = L"ECIdColumn";
-    const WCharCP kGenerateDefaultIndex = L"GenerateDefaultIndex";
-    const WCharCP kEnforceReferentialIntegrityCheck = L"ForeignKeyConstraint.EnforceReferentialIntegrityCheck";
-    const WCharCP kOnDeleteAction = L"ForeignKeyConstraint.OnDeleteAction";
-    const WCharCP kOnUpdateAction = L"ForeignKeyConstraint.OnUpdateAction";
-    const WCharCP kMatchType = L"ForeignKeyConstraint.MatchType";
-
-
-    ECValue v;
-    if (hint->GetValue (v, kECClassIdColumn) == ECObjectsStatus::ECOBJECTS_STATUS_Success && !v.IsNull ())
-        info.m_ecClassIdColumn = v.GetUtf8CP ();
-
-    if (hint->GetValue (v, kECIdColumn) == ECObjectsStatus::ECOBJECTS_STATUS_Success && !v.IsNull ())
-        info.m_ecInstanceIdColumn = v.GetUtf8CP ();
-
-    if (hint->GetValue (v, kGenerateDefaultIndex) == ECObjectsStatus::ECOBJECTS_STATUS_Success && !v.IsNull ())
-        info.m_generateDefaultIndex = v.GetBoolean();
-
-    if (hint->GetValue (v, kEnforceReferentialIntegrityCheck) == ECObjectsStatus::ECOBJECTS_STATUS_Success && !v.IsNull ())
-        info.m_enforceIntegrityCheck = v.GetBoolean ();
-
-    if (info.DoEnforceIntegrityCheck ())
-        {
-        if (hint->GetValue (v, kOnDeleteAction) == ECObjectsStatus::ECOBJECTS_STATUS_Success && !v.IsNull ())
-            info.m_onDeleteAction = ECDbSqlForeignKeyConstraint::ParseActionType (v.GetString ());
-
-        if (hint->GetValue (v, kOnUpdateAction) == ECObjectsStatus::ECOBJECTS_STATUS_Success && !v.IsNull ())
-            info.m_onUpdateAction = ECDbSqlForeignKeyConstraint::ParseActionType (v.GetString ());
-
-        if (hint->GetValue (v, kMatchType) == ECObjectsStatus::ECOBJECTS_STATUS_Success && !v.IsNull ())
-            info.m_matchType = ECDbSqlForeignKeyConstraint::ParseMatchType (v.GetString ());
-        }
+    return true;
     }
    
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

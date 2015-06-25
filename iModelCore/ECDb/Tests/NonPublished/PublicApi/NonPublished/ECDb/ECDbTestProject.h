@@ -137,7 +137,7 @@ public:
     static void     WriteECSchemaToDisk (ECN::ECSchemaCR ecSchema, WCharCP filenameNoVerExt = nullptr);
     static bool     CompareECInstances (ECN::IECInstanceCR a, ECN::IECInstanceCR b);
     static void     DumpECSchemaUsageStatistics (ECN::ECSchemaCR schema, BeSQLite::EC::ECDbR ecdb, bool dumpEmptyClasses);
-    static int64_t  ReadCellValueAsInt64 (BeSQLiteDbR db, Utf8CP tableName, Utf8CP columnName, Utf8CP whereClause);
+    static int64_t  ReadCellValueAsInt64 (BeSQLite::DbR db, Utf8CP tableName, Utf8CP columnName, Utf8CP whereClause);
     static bool     CompareJsonWithECInstance (const Json::Value& json, ECN::IECInstanceCR referenceInstance);
     static void     DebugDumpJson (const Json::Value& jsonValue);
     static bool     IsECValueNull (ECN::ECValueCR value);

@@ -330,13 +330,18 @@ MapStatus ECDbMap::MapClass (SchemaImportContext const& schemaImportContext, ECC
     MapStatus status = classMap == nullptr ? MapStatus::Success : MapStatus::AlreadyMapped;
     if (status != MapStatus::AlreadyMapped)
         {
-        auto newClassMap = ClassMapFactory::Create (status, schemaImportContext, ecClass, *this);
+        ClassMapPtr newClassMap = ClassMapFactory::Create (status, schemaImportContext, ecClass, *this);
 
         //error (and no reevaluation)
         if ((status == MapStatus::BaseClassesNotMapped || status == MapStatus::Error) && !revaluateMapStrategy)
             return status;
 
-        BeAssert (newClassMap.IsValid () && "ClassMap just cannot be invalid at this point. Some logical flaw has crept in.");
+        if (newClassMap == nullptr)
+            {
+            BeAssert(false && "ClassMapPtr is not expected to be nullptr at this point.");
+            return MapStatus::Error; // this can happen if the ECDbMap custom attributes had invalid values
+            }
+
         status = AddClassMap (newClassMap);
         if (status == MapStatus::Error)
             return status;
@@ -595,7 +600,6 @@ MappedTableP ECDbMap::GetMappedTable (ClassMapCR classMap, bool createMappedTabl
     #pragma warning (disable:4063)
 #endif // defined (_MSC_VER)
 
-// TODO: Topaz merge - Check use of PRIMITIVETYPE_DbKey with Casey
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -614,7 +618,6 @@ WCharCP ECDbMap::GetPrimitiveTypeName (ECN::PrimitiveType primitiveType)
         case PRIMITIVETYPE_Boolean : return L"Boolean";
         case PRIMITIVETYPE_Point2D : return L"Point2D";
         case PRIMITIVETYPE_Point3D : return L"Point3D";
-        case PRIMITIVETYPE_DbKey   : return L"<db key (int64_t)>";
         default:                     return L"<unknown>";
         }
     }

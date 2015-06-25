@@ -1582,7 +1582,7 @@ void ECDbTestUtility::DumpECSchemaUsageStatistics (ECSchemaCR schema, ECDbR ecdb
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-int64_t ECDbTestUtility::ReadCellValueAsInt64 (BeSQLiteDbR db, Utf8CP tableName, Utf8CP columnName, Utf8CP whereClause)
+int64_t ECDbTestUtility::ReadCellValueAsInt64 (DbR db, Utf8CP tableName, Utf8CP columnName, Utf8CP whereClause)
     {
     Utf8String str;
     str.Sprintf ("SELECT %s FROM %s %s", columnName, tableName, whereClause);

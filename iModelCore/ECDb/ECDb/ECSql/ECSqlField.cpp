@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlField.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -138,9 +138,8 @@ ECSqlStatusContext& ECSqlField::GetStatusContextR () const
 // @bsimethod                                                Affan.Khan      09/2013
 //---------------------------------------------------------------------------------------
 ECSqlPrimitiveBinder::ECSqlPrimitiveBinder()
-    : m_sourceColumnIndex(-1), m_targetParameterIndex(-1), m_type(PRIMITIVETYPE_Unknown),m_sourceStmtType(StatementType::Unknown)
-    {
-    }
+    : m_sourceColumnIndex(-1), m_targetParameterIndex(-1), m_sourceStmtType(StatementType::Unknown)
+    {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      09/2013
@@ -177,17 +176,9 @@ void ECSqlPrimitiveBinder::SetTargetParamterIndex(int parameterIndex)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      09/2013
 //---------------------------------------------------------------------------------------
-void ECSqlPrimitiveBinder::SetDataType(PrimitiveType type)
-    {
-    m_type = type;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan      09/2013
-//---------------------------------------------------------------------------------------
 bool ECSqlPrimitiveBinder::IsResolved() const
     {
-    return m_sourceColumnIndex > -1 && m_targetParameterIndex > -1 && m_type != PRIMITIVETYPE_Unknown && m_sourceStmtType != StatementType::Unknown;
+    return m_sourceColumnIndex > -1 && m_targetParameterIndex > -1 && m_sourceStmtType != StatementType::Unknown;
     }
 
 //---------------------------------------------------------------------------------------
@@ -208,11 +199,6 @@ int ECSqlPrimitiveBinder::GetTargetParameterIndex() const {return m_targetParame
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      09/2013
 //---------------------------------------------------------------------------------------
-PrimitiveType ECSqlPrimitiveBinder::GetBindingType () const {return m_type;}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan      09/2013
-//---------------------------------------------------------------------------------------
 ECSqlPrimitiveBinder::StatementType ECSqlPrimitiveBinder::GetSourceStatementType () const {return m_sourceStmtType;}
 
 //---------------------------------------------------------------------------------------
@@ -220,57 +206,21 @@ ECSqlPrimitiveBinder::StatementType ECSqlPrimitiveBinder::GetSourceStatementType
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlPrimitiveBinder::Execute(ECSqlStatementBase& sourceStmt, ECSqlStatementBase& targetStmt, IECSqlBinder::MakeCopy makeCopy)
     {
-    if(!IsResolved())
+    if (!IsResolved())
         return ECSqlStatus::ProgrammerError;
 
-    BeAssert (sourceStmt.GetPreparedStatementP () != nullptr);
+    BeAssert(sourceStmt.GetPreparedStatementP() != nullptr);
 
     IECSqlValue const* ecsqlValue = nullptr;
     if (m_sourceStmtType == StatementType::ECSql)
-        ecsqlValue = &sourceStmt.GetValue (m_sourceColumnIndex);
+        ecsqlValue = &sourceStmt.GetValue(m_sourceColumnIndex);
 
-    auto& sourceSqliteStatement = sourceStmt.GetPreparedStatementP ()->GetSqliteStatementR ();
+    Statement& sourceSqliteStatement = sourceStmt.GetPreparedStatementP()->GetSqliteStatementR();
 
-    IECSqlBinder& targetBinder = targetStmt.GetBinder (m_targetParameterIndex);
-    switch(m_type)
-        {
-        case PrimitiveType::PRIMITIVETYPE_Integer:
-            {
-            auto value =  (m_sourceStmtType == StatementType::ECSql) ? 
-                ecsqlValue->GetInt () : sourceSqliteStatement.GetValueInt (m_sourceColumnIndex);
-
-            return targetBinder.BindInt (value);
-            }
-        case PrimitiveType::PRIMITIVETYPE_Long:
-            {
-            auto value = (m_sourceStmtType == StatementType::ECSql) ?
-                ecsqlValue->GetInt64 () : sourceSqliteStatement.GetValueInt64 (m_sourceColumnIndex);
-            return targetBinder.BindInt64 (value);
-            }
-        case PrimitiveType::PRIMITIVETYPE_Double:
-            {
-            auto value = (m_sourceStmtType == StatementType::ECSql) ?
-                ecsqlValue->GetDouble () : sourceSqliteStatement.GetValueDouble (m_sourceColumnIndex);
-            return targetBinder.BindDouble (value);
-            }
-        case PrimitiveType::PRIMITIVETYPE_String:
-            {
-            auto value = (m_sourceStmtType == StatementType::ECSql) ?
-                ecsqlValue->GetText () : sourceSqliteStatement.GetValueText (m_sourceColumnIndex);
-            return targetBinder.BindText (value, makeCopy, -1);
-            }
-
-        case PrimitiveType::PRIMITIVETYPE_DateTime:
-        case PrimitiveType::PRIMITIVETYPE_Boolean:
-        case PrimitiveType::PRIMITIVETYPE_Point2D:
-        case PrimitiveType::PRIMITIVETYPE_Point3D:
-        case PrimitiveType::PRIMITIVETYPE_IGeometry:
-            {
-            return ECSqlStatus::ProgrammerError;                    
-            }
-        }
-
-    return ECSqlStatus::ProgrammerError;                              
+    IECSqlBinder& targetBinder = targetStmt.GetBinder(m_targetParameterIndex);
+    int64_t value = (m_sourceStmtType == StatementType::ECSql) ?
+        ecsqlValue->GetInt64() : sourceSqliteStatement.GetValueInt64(m_sourceColumnIndex);
+    return targetBinder.BindInt64(value);
     }
 
 

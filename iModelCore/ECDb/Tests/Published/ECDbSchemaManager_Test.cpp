@@ -508,15 +508,16 @@ TEST (ECDbSchemaManager, ImportSchemaWithUnsupportedECRelationships)
         }
     }
 
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  04/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST(ECDbMap, RelationshipConstraintHintOnSubclasses)
+TEST(ECDbMap, RelationshipMapCAOnSubclasses)
     {
     ECDbTestProject::Initialize();
 
     ECDb ecdb;
-    auto stat = ECDbTestUtility::CreateECDb(ecdb, nullptr, L"RelationshipConstraintHintOnSubclasses.ecdb");
+    auto stat = ECDbTestUtility::CreateECDb(ecdb, nullptr, L"RelationshipMapCAOnSubclasses.ecdb");
     ASSERT_TRUE(stat == BE_SQLITE_OK);
 
     //Importing the DGN ECSchema requires the dgn_RTree3d table to pre-exist (Which a DgnDb file ensures). So
@@ -526,6 +527,7 @@ TEST(ECDbMap, RelationshipConstraintHintOnSubclasses)
     Utf8CP testSchemaXml =
         "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
+        "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
         "  <ECSchemaReference name = 'dgn' version = '02.00' prefix = 'dgn' />"
         "  <ECClass typeName='MyElement' >"
         "    <BaseClass>dgn:Element</BaseClass>"
@@ -536,21 +538,16 @@ TEST(ECDbMap, RelationshipConstraintHintOnSubclasses)
         "    <ECProperty propertyName='YourName' typeName='string' />"
         "  </ECClass>"
         "  <ECRelationshipClass typeName='MyElementHasYourElements' isDomainClass='True' strength='embedding'>"
+        "    <ECCustomAttributes>"
+        "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
+        "            <ForeignKeyColumn>ParentId</ForeignKeyColumn>"
+        "        </ForeignKeyRelationshipMap>"
+        "    </ECCustomAttributes>"
         "   <BaseClass>dgn:ElementOwnsChildElements</BaseClass>"
         "    <Source cardinality='(1,1)' polymorphic='True'>"
-        "       <ECCustomAttributes>"
-        "           <ECDbRelationshipConstraintHint xmlns='Bentley_Standard_CustomAttributes.01.12'>"
-        "               <ECIdColumn>ParentId</ECIdColumn>"
-        "           </ECDbRelationshipConstraintHint>"
-        "        </ECCustomAttributes>"
         "      <Class class = 'MyElement' />"
         "    </Source>"
         "    <Target cardinality='(0,N)' polymorphic='True'>"
-        "       <ECCustomAttributes>"
-        "           <ECDbRelationshipConstraintHint xmlns='Bentley_Standard_CustomAttributes.01.12'>"
-        "               <ECIdColumn>Id</ECIdColumn>"
-        "           </ECDbRelationshipConstraintHint>"
-        "        </ECCustomAttributes>"
         "      <Class class = 'YourElement' />"
         "    </Target>"
         "  </ECRelationshipClass>"
@@ -570,12 +567,796 @@ TEST(ECDbMap, RelationshipConstraintHintOnSubclasses)
 
     bvector<Utf8String> columns;
     ASSERT_TRUE (ecdb.GetColumns(columns, "dgn_element"));
-    ASSERT_EQ(10, columns.size()) << "dgn_element table should not contain an extra foreign key columns as the relationship constraint hint specifies to use the ParentId column";
+    ASSERT_EQ(11, columns.size()) << "dgn_element table should not contain an extra foreign key column as the relationship map specifies to use the ParentId column";
     
     auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
     auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
-    ASSERT_TRUE(it == columns.end()) << "dgn_element table should not contain an extra foreign key columns as the relationship constraint hint specifies to use the ParentId column";
+    ASSERT_TRUE(it == columns.end()) << "dgn_element table should not contain an extra foreign key column as the relationship map specifies to use the ParentId column";
     }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  06/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void CreateECDbAndImportSchema(ECDbR ecdb, WCharCP ecdbName, Utf8CP ecschemaXml, bool schemaImportExpectedToSucceed, Utf8CP assertMessage = "")
+    {
+    const DbResult stat = ECDbTestUtility::CreateECDb(ecdb, nullptr, ecdbName);
+    ASSERT_TRUE(stat == BE_SQLITE_OK);
+
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ECDbTestUtility::ReadECSchemaFromString(schemaContext, ecschemaXml);
+    if (schemaImportExpectedToSucceed)
+        ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(schemaContext->GetCache())) << assertMessage;
+    else
+        ASSERT_EQ(ERROR, ecdb.Schemas().ImportECSchemas(schemaContext->GetCache())) << assertMessage;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  06/15
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus TryGetHasForeignKey(bool& hasForeignKey, ECDbCR ecdb, Utf8CP tableName, Utf8CP foreignKeyColumnName = nullptr)
+    {
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT sql FROM sqlite_master WHERE name=?"))
+        return ERROR;
+
+    stmt.BindText(1, tableName, Statement::MakeCopy::No);
+    if (BE_SQLITE_ROW != stmt.Step())
+        return ERROR;
+
+    Utf8String ddl(stmt.GetValueText(0));
+
+    //onlw one row expected
+    if (BE_SQLITE_ROW == stmt.Step())
+        return ERROR;
+
+    Utf8String fkSearchString;
+    if (Utf8String::IsNullOrEmpty(foreignKeyColumnName))
+        fkSearchString = "FOREIGN KEY (";
+    else
+        fkSearchString.Sprintf("FOREIGN KEY ([%s", foreignKeyColumnName);
+
+    hasForeignKey = (ddl.find(fkSearchString) != ddl.npos);
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  06/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST(ECDbMap, ForeignKeyMapWithKeyProperty)
+    {
+    ECDbTestProject::Initialize();
+    WCharCP ecdbName = L"ForeignKeyMapWithKeyProp.ecdb";
+    Utf8CP childTableName = "ts_Child";
+
+        {
+        Utf8CP testSchemaXml =
+            "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+            "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
+            "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
+            "  <ECClass typeName='Parent' >"
+            "    <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECClass>"
+            "  <ECClass typeName='Child' >"
+            "    <ECProperty propertyName='ParentId' typeName='long' />"
+            "    <ECProperty propertyName='ChildName' typeName='string' />"
+            "  </ECClass>"
+            "  <ECRelationshipClass typeName='ParentHasChildren' isDomainClass='True' strength='referencing'>"
+            "    <Source cardinality='(1,1)' polymorphic='True'>"
+            "      <Class class = 'Parent' />"
+            "    </Source>"
+            "    <Target cardinality='(0,N)' polymorphic='True'>"
+            "      <Class class = 'Child' >"
+            "           <Key>"
+            "              <Property name='ParentId'/>"
+            "           </Key>"
+            "      </Class>"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "</ECSchema>";
+
+        ECDb ecdb;
+        CreateECDbAndImportSchema(ecdb, ecdbName, testSchemaXml, true);
+
+        ASSERT_TRUE(ecdb.ColumnExists(childTableName, "ParentId"));
+        bvector<Utf8String> columns;
+        ASSERT_TRUE(ecdb.GetColumns(columns, childTableName));
+        ASSERT_EQ(3, columns.size()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
+
+        auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
+        auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
+        ASSERT_TRUE(it == columns.end()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
+
+        bool actualForeignKey = false;
+        ASSERT_EQ(SUCCESS, TryGetHasForeignKey(actualForeignKey, ecdb, childTableName));
+        ASSERT_EQ(false, actualForeignKey);
+        }
+
+        {
+        Utf8CP testSchemaXml =
+            "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+            "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
+            "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
+            "  <ECClass typeName='Parent' >"
+            "    <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECClass>"
+            "  <ECClass typeName='Child' >"
+            "    <ECProperty propertyName='ParentId' typeName='long'>"
+            "       <ECCustomAttributes>"
+            "          <PropertyMap xmlns='ECDbMap.01.00'>"
+            "            <ColumnName>parent_id</ColumnName>"
+            "          </PropertyMap>"
+            "       </ECCustomAttributes>"
+            "   </ECProperty>"
+            "    <ECProperty propertyName='ChildName' typeName='string' />"
+            "  </ECClass>"
+            "  <ECRelationshipClass typeName='ParentHasChildren' isDomainClass='True' strength='referencing'>"
+            "    <Source cardinality='(1,1)' polymorphic='True'>"
+            "      <Class class = 'Parent' />"
+            "    </Source>"
+            "    <Target cardinality='(0,N)' polymorphic='True'>"
+            "      <Class class = 'Child' >"
+            "           <Key>"
+            "              <Property name='ParentId'/>"
+            "           </Key>"
+            "      </Class>"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "</ECSchema>";
+
+        ECDb ecdb;
+        CreateECDbAndImportSchema(ecdb, ecdbName, testSchemaXml, true);
+
+        ASSERT_TRUE(ecdb.ColumnExists(childTableName, "parent_id"));
+        ASSERT_FALSE(ecdb.ColumnExists(childTableName, "ParentId"));
+        bvector<Utf8String> columns;
+        ASSERT_TRUE(ecdb.GetColumns(columns, childTableName));
+        ASSERT_EQ(3, columns.size()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
+
+        auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
+        auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
+        ASSERT_TRUE(it == columns.end()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
+
+        bool actualForeignKey = false;
+        ASSERT_EQ(SUCCESS, TryGetHasForeignKey(actualForeignKey, ecdb, childTableName));
+        ASSERT_EQ(false, actualForeignKey);
+        }
+
+    {
+    Utf8CP testSchemaXml =
+        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
+        "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
+        "  <ECClass typeName='Parent' >"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECClass>"
+        "  <ECClass typeName='Child' >"
+        "    <ECProperty propertyName='ParentId' typeName='long' />"
+        "    <ECProperty propertyName='ChildName' typeName='string' />"
+        "  </ECClass>"
+        "  <ECRelationshipClass typeName='ParentHasChildren' isDomainClass='True' strength='referencing'>"
+        "    <ECCustomAttributes>"
+        "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
+        "            <CreateConstraint>True</CreateConstraint>"
+        "        </ForeignKeyRelationshipMap>"
+        "    </ECCustomAttributes>"
+        "    <Source cardinality='(1,1)' polymorphic='True'>"
+        "      <Class class = 'Parent' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class = 'Child' >"
+        "           <Key>"
+        "              <Property name='ParentId'/>"
+        "           </Key>"
+        "      </Class>"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>";
+
+    ECDb ecdb;
+    CreateECDbAndImportSchema(ecdb, ecdbName, testSchemaXml, true);
+
+    ASSERT_TRUE(ecdb.ColumnExists(childTableName, "ParentId"));
+    bvector<Utf8String> columns;
+    ASSERT_TRUE(ecdb.GetColumns(columns, childTableName));
+    ASSERT_EQ(3, columns.size()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
+
+    auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
+    auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
+    ASSERT_TRUE(it == columns.end()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
+    
+    bool actualForeignKey = false;
+    ASSERT_EQ(SUCCESS, TryGetHasForeignKey(actualForeignKey, ecdb, childTableName, "ParentId"));
+    ASSERT_EQ(true, actualForeignKey);
+    }
+
+    {
+    Utf8CP testSchemaXml =
+        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
+        "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
+        "  <ECClass typeName='Parent' >"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECClass>"
+        "  <ECClass typeName='Child' >"
+        "    <ECProperty propertyName='ParentId' typeName='long' />"
+        "    <ECProperty propertyName='ChildName' typeName='string' />"
+        "  </ECClass>"
+        "  <ECRelationshipClass typeName='ParentHasChildren' isDomainClass='True' strength='referencing'>"
+        "    <ECCustomAttributes>"
+        "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
+        "            <ForeignKeyColumn>ParentId</ForeignKeyColumn>"
+        "        </ForeignKeyRelationshipMap>"
+        "    </ECCustomAttributes>"
+        "    <Source cardinality='(1,1)' polymorphic='True'>"
+        "      <Class class = 'Parent' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class = 'Child' >"
+        "           <Key>"
+        "              <Property name='ParentId'/>"
+        "           </Key>"
+        "      </Class>"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>";
+
+    ECDb ecdb;
+    CreateECDbAndImportSchema(ecdb, ecdbName, testSchemaXml, false , "ForeignKeyColumn should not be specified if Key property is defined.");
+    }
+
+    {
+    Utf8CP testSchemaXml =
+        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
+        "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
+        "  <ECClass typeName='Parent' >"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECClass>"
+        "  <ECClass typeName='Child' >"
+        "    <ECProperty propertyName='ParentId' typeName='long' />"
+        "    <ECProperty propertyName='ChildName' typeName='string' />"
+        "  </ECClass>"
+        "  <ECRelationshipClass typeName='ParentHasChildren' isDomainClass='True' strength='referencing'>"
+        "    <ECCustomAttributes>"
+        "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
+        "            <ForeignKeyColumn>MyOwnParentId</ForeignKeyColumn>"
+        "        </ForeignKeyRelationshipMap>"
+        "    </ECCustomAttributes>"
+        "    <Source cardinality='(1,1)' polymorphic='True'>"
+        "      <Class class = 'Parent' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class = 'Child' >"
+        "           <Key>"
+        "              <Property name='ParentId'/>"
+        "           </Key>"
+        "      </Class>"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>";
+
+    ECDb ecdb;
+    CreateECDbAndImportSchema(ecdb, ecdbName, testSchemaXml, false, "ForeignKeyColumn should not be specified if Key property is defined.");
+    }
+
+/*    {
+    Utf8CP testSchemaXml =
+        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
+        "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
+        "  <ECClass typeName='Parent' >"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECClass>"
+        "  <ECClass typeName='Child' >"
+        "    <ECProperty propertyName='ParentId' typeName='long' />"
+        "    <ECProperty propertyName='ChildName' typeName='string' />"
+        "  </ECClass>"
+        "  <ECClass typeName='Child2' >"
+        "    <ECProperty propertyName='ParentId' typeName='long' />"
+        "    <ECProperty propertyName='ChildName' typeName='string' />"
+        "  </ECClass>"
+        "  <ECRelationshipClass typeName='ParentHasChildren' isDomainClass='True' strength='referencing'>"
+        "    <Source cardinality='(1,1)' polymorphic='True'>"
+        "      <Class class = 'Parent' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class = 'Child' >"
+        "           <Key>"
+        "              <Property name='ParentId'/>"
+        "           </Key>"
+        "      </Class>"
+        "      <Class class = 'Child2' />"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>";
+
+    ECDb ecdb;
+    CreateECDbAndImportSchema(ecdb, ecdbName, testSchemaXml, false, "Only one constraint class supported by ECDb if key properties are defined.");
+    }
+    */
+    {
+    Utf8CP testSchemaXml =
+        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
+        "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
+        "  <ECClass typeName='Parent' >"
+        "    <ECProperty propertyName='Name' typeName='string' />"
+        "  </ECClass>"
+        "  <ECClass typeName='Child' >"
+        "    <ECProperty propertyName='ParentId' typeName='long' />"
+        "    <ECProperty propertyName='ChildName' typeName='string' />"
+        "  </ECClass>"
+        "  <ECRelationshipClass typeName='ParentHasChildren' isDomainClass='True' strength='referencing'>"
+        "    <Source cardinality='(1,1)' polymorphic='True'>"
+        "      <Class class = 'Parent' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class = 'Child' >"
+        "           <Key>"
+        "              <Property name='ParentId'/>"
+        "              <Property name='ChildName'/>"
+        "           </Key>"
+        "      </Class>"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>";
+
+    ECDb ecdb;
+    CreateECDbAndImportSchema(ecdb, ecdbName, testSchemaXml, false, "Only one key property is supported by ECDb.");
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  06/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST(ECDbMap, ForeignKeyMapWithECInstanceIdKeyProperty)
+    {
+    ECDbTestProject::Initialize();
+    WCharCP ecdbName = L"ForeignKeyMapWithECInstanceIdKeyProp.ecdb";
+    Utf8CP childTableName = "ts_Child";
+
+        {
+        Utf8CP testSchemaXml =
+            "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+            "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
+            "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
+            "  <ECClass typeName='Parent' >"
+            "    <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECClass>"
+            "  <ECClass typeName='Child' >"
+            "    <ECProperty propertyName='ChildName' typeName='string' />"
+            "  </ECClass>"
+            "  <ECRelationshipClass typeName='ParentHasChildren' isDomainClass='True' strength='referencing'>"
+            "    <Source cardinality='(1,1)' polymorphic='True'>"
+            "      <Class class = 'Parent' />"
+            "    </Source>"
+            "    <Target cardinality='(0,1)' polymorphic='True'>"
+            "      <Class class = 'Child' >"
+            "           <Key>"
+            "              <Property name='ECInstanceId'/>"
+            "           </Key>"
+            "      </Class>"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "</ECSchema>";
+
+        ECDb ecdb;
+        CreateECDbAndImportSchema(ecdb, ecdbName, testSchemaXml, true);
+
+        ASSERT_TRUE(ecdb.ColumnExists(childTableName, "ECInstanceId"));
+        bvector<Utf8String> columns;
+        ASSERT_TRUE(ecdb.GetColumns(columns, childTableName));
+        ASSERT_EQ(2, columns.size()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies that the ECInstanceId is the foreign key";
+
+        auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
+        auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
+        ASSERT_TRUE(it == columns.end()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
+
+        bool actualForeignKey = false;
+        ASSERT_EQ(SUCCESS, TryGetHasForeignKey(actualForeignKey, ecdb, childTableName));
+        ASSERT_EQ(false, actualForeignKey);
+        }
+
+        {
+        Utf8CP testSchemaXml =
+            "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+            "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
+            "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
+            "  <ECClass typeName='Parent' >"
+            "    <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECClass>"
+            "  <ECClass typeName='Child' >"
+            "    <ECCustomAttributes>"
+            "        <ClassMap xmlns='ECDbMap.01.00'>"
+            "            <ECInstanceIdColumn>Id</ECInstanceIdColumn>"
+            "        </ClassMap>"
+            "    </ECCustomAttributes>"
+            "    <ECProperty propertyName='ChildName' typeName='string' />"
+            "  </ECClass>"
+            "  <ECRelationshipClass typeName='ParentHasChildren' isDomainClass='True' strength='referencing'>"
+            "    <Source cardinality='(1,1)' polymorphic='True'>"
+            "      <Class class = 'Parent' />"
+            "    </Source>"
+            "    <Target cardinality='(0,1)' polymorphic='True'>"
+            "      <Class class = 'Child' >"
+            "           <Key>"
+            "              <Property name='ECInstanceId'/>"
+            "           </Key>"
+            "      </Class>"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "</ECSchema>";
+
+        ECDb ecdb;
+        CreateECDbAndImportSchema(ecdb, ecdbName, testSchemaXml, true);
+
+        ASSERT_TRUE(ecdb.ColumnExists(childTableName, "Id"));
+        ASSERT_FALSE(ecdb.ColumnExists(childTableName, "ECInstanceId"));
+
+        bvector<Utf8String> columns;
+        ASSERT_TRUE(ecdb.GetColumns(columns, childTableName));
+        ASSERT_EQ(2, columns.size()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies that the ECInstanceId is the foreign key";
+
+        auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
+        auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
+        ASSERT_TRUE(it == columns.end()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
+
+        bool actualForeignKey = false;
+        ASSERT_EQ(SUCCESS, TryGetHasForeignKey(actualForeignKey, ecdb, childTableName));
+        ASSERT_EQ(false, actualForeignKey);
+        }
+
+        {
+        Utf8CP testSchemaXml =
+            "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+            "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
+            "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
+            "  <ECClass typeName='Parent' >"
+            "    <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECClass>"
+            "  <ECClass typeName='Child' >"
+            "    <ECCustomAttributes>"
+            "        <ClassMap xmlns='ECDbMap.01.00'>"
+            "            <ECInstanceIdColumn>Id</ECInstanceIdColumn>"
+            "        </ClassMap>"
+            "    </ECCustomAttributes>"
+            "    <ECProperty propertyName='ChildName' typeName='string' />"
+            "  </ECClass>"
+            "  <ECRelationshipClass typeName='ParentHasChildren' isDomainClass='True' strength='referencing'>"
+            "    <ECCustomAttributes>"
+            "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
+            "            <CreateConstraint>True</CreateConstraint>"
+            "        </ForeignKeyRelationshipMap>"
+            "    </ECCustomAttributes>"
+            "    <Source cardinality='(1,1)' polymorphic='True'>"
+            "      <Class class = 'Parent' />"
+            "    </Source>"
+            "    <Target cardinality='(0,1)' polymorphic='True'>"
+            "      <Class class = 'Child' >"
+            "           <Key>"
+            "              <Property name='ECInstanceId'/>"
+            "           </Key>"
+            "      </Class>"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "</ECSchema>";
+
+        ECDb ecdb;
+        CreateECDbAndImportSchema(ecdb, ecdbName, testSchemaXml, true);
+
+        ASSERT_TRUE(ecdb.ColumnExists(childTableName, "Id"));
+        ASSERT_FALSE(ecdb.ColumnExists(childTableName, "ECInstanceId"));
+
+        bvector<Utf8String> columns;
+        ASSERT_TRUE(ecdb.GetColumns(columns, childTableName));
+        ASSERT_EQ(2, columns.size()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies that the ECInstanceId is the foreign key";
+
+        auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
+        auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
+        ASSERT_TRUE(it == columns.end()) << childTableName << " table should not contain an extra foreign key column as the relationship specifies a Key property";
+
+        bool actualForeignKey = false;
+        ASSERT_EQ(SUCCESS, TryGetHasForeignKey(actualForeignKey, ecdb, childTableName, "Id"));
+        ASSERT_EQ(true, actualForeignKey);
+        }
+
+        {
+        Utf8CP testSchemaXml =
+            "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+            "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
+            "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
+            "  <ECClass typeName='Parent' >"
+            "    <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECClass>"
+            "  <ECClass typeName='Child' >"
+            "    <ECProperty propertyName='ChildName' typeName='string' />"
+            "  </ECClass>"
+            "  <ECRelationshipClass typeName='ParentHasChildren' isDomainClass='True' strength='referencing'>"
+            "    <ECCustomAttributes>"
+            "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
+            "            <ForeignKeyColumn>ECInstanceId</ForeignKeyColumn>"
+            "        </ForeignKeyRelationshipMap>"
+            "    </ECCustomAttributes>"
+            "    <Source cardinality='(1,1)' polymorphic='True'>"
+            "      <Class class = 'Parent' />"
+            "    </Source>"
+            "    <Target cardinality='(0,1)' polymorphic='True'>"
+            "      <Class class = 'Child' >"
+            "           <Key>"
+            "              <Property name='ECInstanceId'/>"
+            "           </Key>"
+            "      </Class>"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "</ECSchema>";
+
+        ECDb ecdb;
+        CreateECDbAndImportSchema(ecdb, ecdbName, testSchemaXml, false);
+        }
+
+        {
+        Utf8CP testSchemaXml =
+            "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+            "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
+            "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
+            "  <ECClass typeName='Parent' >"
+            "    <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECClass>"
+            "  <ECClass typeName='Child' >"
+            "    <ECProperty propertyName='ChildName' typeName='string' />"
+            "  </ECClass>"
+            "  <ECRelationshipClass typeName='ParentHasChildren' isDomainClass='True' strength='referencing'>"
+            "    <ECCustomAttributes>"
+            "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
+            "            <ForeignKeyColumn>blabla</ForeignKeyColumn>"
+            "        </ForeignKeyRelationshipMap>"
+            "    </ECCustomAttributes>"
+            "    <Source cardinality='(1,1)' polymorphic='True'>"
+            "      <Class class = 'Parent' />"
+            "    </Source>"
+            "    <Target cardinality='(0,1)' polymorphic='True'>"
+            "      <Class class = 'Child' >"
+            "           <Key>"
+            "              <Property name='ECInstanceId'/>"
+            "           </Key>"
+            "      </Class>"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "</ECSchema>";
+
+        ECDb ecdb;
+        CreateECDbAndImportSchema(ecdb, ecdbName, testSchemaXml, false);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  06/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST(ECDbMap, ForeignKeyMapWithoutKeyProperty)
+    {
+    ECDbTestProject::Initialize();
+
+    WCharCP ecdbName = L"ForeignKeyMapWithoutKeyProp.ecdb";
+    Utf8CP childTableName = "ts_Child";
+
+        {
+        Utf8CP testSchemaXml =
+            "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+            "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
+            "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
+            "  <ECClass typeName='Parent' >"
+            "    <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECClass>"
+            "  <ECClass typeName='Child' >"
+            "    <ECProperty propertyName='ParentId' typeName='long' />"
+            "    <ECProperty propertyName='ChildName' typeName='string' />"
+            "  </ECClass>"
+            "  <ECRelationshipClass typeName='ParentHasChildren' isDomainClass='True' strength='referencing'>"
+            "    <ECCustomAttributes>"
+            "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
+            "            <ForeignKeyColumn>ParentId</ForeignKeyColumn>"
+            "        </ForeignKeyRelationshipMap>"
+            "    </ECCustomAttributes>"
+            "    <Source cardinality='(1,1)' polymorphic='True'>"
+            "      <Class class = 'Parent' />"
+            "    </Source>"
+            "    <Target cardinality='(0,N)' polymorphic='True'>"
+            "      <Class class = 'Child' />"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "</ECSchema>";
+
+        ECDb ecdb;
+        CreateECDbAndImportSchema(ecdb, ecdbName, testSchemaXml, true);
+
+        ASSERT_TRUE(ecdb.ColumnExists(childTableName, "ParentId"));
+        bvector<Utf8String> columns;
+        ASSERT_TRUE(ecdb.GetColumns(columns, childTableName));
+        ASSERT_EQ(3, columns.size()) << childTableName << " table should not contain an extra foreign key column as the relationship map specifies an existing column name";
+
+        auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
+        auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
+        ASSERT_TRUE(it == columns.end()) << childTableName << " table should not contain an extra foreign key column as the relationship map specifies an existing column name";
+
+        bool actualForeignKey = false;
+        ASSERT_EQ(SUCCESS, TryGetHasForeignKey(actualForeignKey, ecdb, childTableName));
+        ASSERT_EQ(false, actualForeignKey);
+        }
+
+        {
+        Utf8CP testSchemaXml =
+            "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+            "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
+            "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
+            "  <ECClass typeName='Parent' >"
+            "    <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECClass>"
+            "  <ECClass typeName='Child' >"
+            "    <ECProperty propertyName='ParentId' typeName='long' />"
+            "    <ECProperty propertyName='ChildName' typeName='string' />"
+            "  </ECClass>"
+            "  <ECRelationshipClass typeName='ParentHasChildren' isDomainClass='True' strength='referencing'>"
+            "    <ECCustomAttributes>"
+            "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
+            "            <ForeignKeyColumn>MyOwnParentId</ForeignKeyColumn>"
+            "        </ForeignKeyRelationshipMap>"
+            "    </ECCustomAttributes>"
+            "    <Source cardinality='(1,1)' polymorphic='True'>"
+            "      <Class class = 'Parent' />"
+            "    </Source>"
+            "    <Target cardinality='(0,N)' polymorphic='True'>"
+            "      <Class class = 'Child' />"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "</ECSchema>";
+
+        ECDb ecdb;
+        CreateECDbAndImportSchema(ecdb, ecdbName, testSchemaXml, true);
+
+        ASSERT_TRUE(ecdb.ColumnExists(childTableName, "ParentId"));
+        ASSERT_TRUE(ecdb.ColumnExists(childTableName, "MyOwnParentId"));
+        bvector<Utf8String> columns;
+        ASSERT_TRUE(ecdb.GetColumns(columns, childTableName));
+        ASSERT_EQ(4, columns.size()) << childTableName << " table should contain an extra foreign key column as the relationship map specifies a value for ForeignKeyColumn";
+
+        auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
+        auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
+        ASSERT_TRUE(it == columns.end()) << childTableName << " table should contain an extra foreign key column as the relationship map specifies a value for ForeignKeyColumn";
+
+        bool actualForeignKey = false;
+        ASSERT_EQ(SUCCESS, TryGetHasForeignKey(actualForeignKey, ecdb, childTableName));
+        ASSERT_EQ(false, actualForeignKey);
+        }
+
+        {
+        Utf8CP testSchemaXml =
+            "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+            "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
+            "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
+            "  <ECClass typeName='Parent' >"
+            "    <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECClass>"
+            "  <ECClass typeName='Child' >"
+            "    <ECProperty propertyName='ParentId' typeName='long' />"
+            "    <ECProperty propertyName='ChildName' typeName='string' />"
+            "  </ECClass>"
+            "  <ECRelationshipClass typeName='ParentHasChildren' isDomainClass='True' strength='referencing'>"
+            "    <Source cardinality='(1,1)' polymorphic='True'>"
+            "      <Class class = 'Parent' />"
+            "    </Source>"
+            "    <Target cardinality='(0,N)' polymorphic='True'>"
+            "      <Class class = 'Child' />"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "</ECSchema>";
+
+        ECDb ecdb;
+        CreateECDbAndImportSchema(ecdb, ecdbName, testSchemaXml, true);
+
+        ASSERT_TRUE(ecdb.ColumnExists(childTableName, "ParentId"));
+        bvector<Utf8String> columns;
+        ASSERT_TRUE(ecdb.GetColumns(columns, childTableName));
+        ASSERT_EQ(4, columns.size()) << childTableName << " table should contain a default-name extra foreign key column as there is no relationship map CA";
+
+        auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
+        auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
+        ASSERT_TRUE(it != columns.end()) << "ts_child table should contain a default-name extra foreign key column as there is no relationship map CA";
+
+        bool actualForeignKey = false;
+        ASSERT_EQ(SUCCESS, TryGetHasForeignKey(actualForeignKey, ecdb, childTableName));
+        ASSERT_EQ(false, actualForeignKey);
+        }
+
+        {
+        Utf8CP testSchemaXml =
+            "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+            "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
+            "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
+            "  <ECClass typeName='Parent' >"
+            "    <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECClass>"
+            "  <ECClass typeName='Child' >"
+            "    <ECProperty propertyName='ParentId' typeName='long' />"
+            "    <ECProperty propertyName='ChildName' typeName='string' />"
+            "  </ECClass>"
+            "  <ECRelationshipClass typeName='ParentHasChildren' isDomainClass='True' strength='referencing'>"
+            "    <ECCustomAttributes>"
+            "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
+            "        </ForeignKeyRelationshipMap>"
+            "    </ECCustomAttributes>"
+            "    <Source cardinality='(1,1)' polymorphic='True'>"
+            "      <Class class = 'Parent' />"
+            "    </Source>"
+            "    <Target cardinality='(0,N)' polymorphic='True'>"
+            "      <Class class = 'Child' />"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "</ECSchema>";
+
+        ECDb ecdb;
+        CreateECDbAndImportSchema(ecdb, ecdbName, testSchemaXml, true);
+
+        ASSERT_TRUE(ecdb.ColumnExists(childTableName, "ParentId"));
+        bvector<Utf8String> columns;
+        ASSERT_TRUE(ecdb.GetColumns(columns, childTableName));
+        ASSERT_EQ(4, columns.size()) << childTableName << " table should contain a default-name extra foreign key column as there is the relationship map CA doesn't specify a value for ForeignKeyColumn";
+
+        auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
+        auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
+        ASSERT_TRUE(it != columns.end()) << childTableName << " table should contain a default-name extra foreign key column as there is the relationship map CA doesn't specify a value for ForeignKeyColumn";
+
+        bool actualForeignKey = false;
+        ASSERT_EQ(SUCCESS, TryGetHasForeignKey(actualForeignKey, ecdb, childTableName));
+        ASSERT_EQ(false, actualForeignKey);
+        }
+
+        {
+        Utf8CP testSchemaXml =
+            "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+            "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
+            "  <ECSchemaReference name = 'ECDbMap' version = '01.00' prefix = 'ecdbmap' />"
+            "  <ECClass typeName='Parent' >"
+            "    <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECClass>"
+            "  <ECClass typeName='Child' >"
+            "    <ECProperty propertyName='ParentId' typeName='long' />"
+            "    <ECProperty propertyName='ChildName' typeName='string' />"
+            "  </ECClass>"
+            "  <ECRelationshipClass typeName='ParentHasChildren' isDomainClass='True' strength='referencing'>"
+            "    <ECCustomAttributes>"
+            "        <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
+            "           <CreateConstraint>True</CreateConstraint>"  
+            "        </ForeignKeyRelationshipMap>"
+            "    </ECCustomAttributes>"
+            "    <Source cardinality='(1,1)' polymorphic='True'>"
+            "      <Class class = 'Parent' />"
+            "    </Source>"
+            "    <Target cardinality='(0,N)' polymorphic='True'>"
+            "      <Class class = 'Child' />"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "</ECSchema>";
+
+        ECDb ecdb;
+        CreateECDbAndImportSchema(ecdb, ecdbName, testSchemaXml, true);
+
+        ASSERT_TRUE(ecdb.ColumnExists(childTableName, "ParentId"));
+        bvector<Utf8String> columns;
+        ASSERT_TRUE(ecdb.GetColumns(columns, childTableName));
+        ASSERT_EQ(4, columns.size()) << childTableName << " table should contain a default-name extra foreign key column as there is the relationship map CA doesn't specify a value for ForeignKeyColumn";
+
+        auto containsDefaultNamedRelationalKeyColumn = [] (Utf8StringCR str) { return BeStringUtilities::Strnicmp(str.c_str(), "ForeignEC", 9) == 0; };
+        auto it = std::find_if(columns.begin(), columns.end(), containsDefaultNamedRelationalKeyColumn);
+        ASSERT_TRUE(it != columns.end()) << childTableName << " table should contain a default-name extra foreign key column as there is the relationship map CA doesn't specify a value for ForeignKeyColumn";
+
+        bool actualForeignKey = false;
+        ASSERT_EQ(SUCCESS, TryGetHasForeignKey(actualForeignKey, ecdb, childTableName, "ForeignEC"));
+        ASSERT_EQ(true, actualForeignKey);
+        }
+
+    }
+
 
 //---------------------------------------------------------------------------------------
 //                                               Muhammad Hassan                  10/14
@@ -660,10 +1441,10 @@ TEST(ECDbSchemaManager, UpdateExistingSchema)
     ASSERT_TRUE(schemaPtr != NULL);
     schemaCache->AddSchema(*schemaPtr);
 
-    Bentley::BeTest::SetFailOnAssert(false);
+    BeTest::SetFailOnAssert(false);
     Savepoint s(ecdbr, "test");
     ASSERT_EQ(ERROR, ecdbr.Schemas().ImportECSchemas(*schemaCache, ECDbSchemaManager::ImportOptions(false, true))) << "couldn't update the existing schema";
-    Bentley::BeTest::SetFailOnAssert(true);
+    BeTest::SetFailOnAssert(true);
     s.Cancel();
 
     ECSchemaCP schemap = ecdbr. Schemas ().GetECSchema ("TestSchema", true);
@@ -1235,7 +2016,7 @@ TEST (ECDbSchemaManager, ImportSchemaWithSubclassesToBaseClassInExistingSchema)
     {
     Utf8CP baseSchemaXmlTemplate =
         "<ECSchema schemaName=\"BaseSchema\" nameSpacePrefix=\"b\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-        "  <ECSchemaReference name = \"Bentley_Standard_CustomAttributes\" version = \"01.10\" prefix = \"bsca\" />"
+        "  <ECSchemaReference name = \"ECDbMap\" version = \"01.00\" prefix = \"ecdbmap\" />"
         "  <ECClass typeName=\"A\" >"
         "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
         "  </ECClass>"
@@ -1243,8 +2024,8 @@ TEST (ECDbSchemaManager, ImportSchemaWithSubclassesToBaseClassInExistingSchema)
         "    <ECProperty propertyName=\"Id\" typeName=\"long\" />"
         "  </ECClass>"
         "  <ECRelationshipClass typeName = \"Rel\" isDomainClass = \"True\" strength = \"holding\" strengthDirection = \"forward\">"
-        "    <Source cardinality = \"(0, 1)\" polymorphic = \"True\">"
         "      %s"
+        "    <Source cardinality = \"(0, 1)\" polymorphic = \"True\">"
         "      <Class class = \"A\" />"
         "    </Source>"
         "    <Target cardinality = \"(0, N)\" polymorphic = \"True\">"
@@ -1302,10 +2083,10 @@ TEST (ECDbSchemaManager, ImportSchemaWithSubclassesToBaseClassInExistingSchema)
         Utf8String ecdbPath;
         Utf8CP customAttributeXml =
             "<ECCustomAttributes>"
-            "  <ECDbRelationshipConstraintHint xmlns = \"Bentley_Standard_CustomAttributes.01.10\">"
-            "     <ECIdColumn>SourceECInstanceId</ECIdColumn>"
-            "     <ECClassIdColumn>SourceECClassId</ECClassIdColumn>"
-            "  </ECDbRelationshipConstraintHint>"
+            "  <ForeignKeyRelationshipMap xmlns = \"ECDbMap.01.00\">"
+            "    <ForeignKeyColumn>SourceECInstanceId</ForeignKeyColumn>"
+            "    <ForeignKeyClassIdColumn>SourceECClassId</ForeignKeyClassIdColumn>"
+            "  </ForeignKeyRelationshipMap>"
             "</ECCustomAttributes>";
 
         Utf8String baseSchemaXml;

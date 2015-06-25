@@ -107,7 +107,7 @@ public:
     static  BeSQLite::DbResult Step                                     (DbECSchemaReferenceInfoR info, BeSQLite::Statement& stmt);
 
     //Helper
-    static                bool ContainsECSchemaReference                (BeSQLite::Db& db, ECSchemaId ecPrimarySchemaId, ECSchemaId ecReferenceSchemaId);
+    static                bool ContainsECSchemaReference                (BeSQLite::Db& db, ECSchemaId ecPrimarySchemaId, ECSchemaId ecReferencedSchemaId);
     static                bool ContainsECClass                          (BeSQLite::Db& db, ECClassCR ecClass);
     static                bool ContainsECSchemaWithId                   (BeSQLite::Db& db, ECSchemaId ecSchemaId);
     static          ECSchemaId GetECSchemaId                            (BeSQLite::Db& db, Utf8CP schemaName);
@@ -221,7 +221,7 @@ public:
         COL_IsCustomAttribute         = 0x000020,
         COL_RelationStrength          = 0x000800,
         COL_DisplayLabel              = 0x004000,
-        COL_ECSchemaId                = 0x008000,
+        COL_SchemaId                  = 0x008000,
         COL_IsRelationship            = 0x010000,
         COL_RelationStrengthDirection = 0x020000,
         COL_ALL                       = 0xffffffff
@@ -247,10 +247,10 @@ struct DbBaseClassInfo : DbInfoBase
 public:
     enum Columns
         {
-        COL_ECClassId     = 0x1,
-        COL_BaseECClassId = 0x2,
-        COL_ECIndex       = 0x4,
-        COL_ALL           = 0xffffffff
+        COL_ClassId     = 0x1,
+        COL_BaseClassId = 0x2,
+        COL_Ordinal     = 0x4,
+        COL_ALL         = 0xffffffff
         };
     ECClassId m_ecClassId;
     ECClassId m_baseECClassId;
@@ -265,21 +265,20 @@ struct DbECPropertyInfo : DbInfoBase
 public:
     enum Columns
         {
-        COL_Id                   = 0x0001,
-        COL_ECClassId            = 0x0002,
-        COL_Name                 = 0x0004,
-        COL_DisplayLabel         = 0x0008,
-        COL_Description          = 0x0010,
-        COL_IsArray              = 0x0020,
-        COL_TypeCustom           = 0x0040,
-        COL_TypeECPrimitive      = 0x0080,
-        COL_TypeECStruct         = 0x0100,
-        COL_ECIndex              = 0x0200,
-        COL_IsReadOnly           = 0x1000,
-        COL_MaxOccurs            = 0x2000,
-        COL_MinOccurs            = 0x4000,
+        COL_Id = 0x0001,
+        COL_ClassId = 0x0002,
+        COL_Name = 0x0004,
+        COL_DisplayLabel = 0x0008,
+        COL_Description = 0x0010,
+        COL_IsArray = 0x0020,
+        COL_PrimitiveType = 0x0040,
+        COL_StructType = 0x0080,
+        COL_Ordinal = 0x0100,
+        COL_IsReadOnly = 0x0200,
+        COL_MinOccurs = 0x1000,
+        COL_MaxOccurs = 0x2000,
 
-        COL_ALL                  = 0xffffffff
+        COL_ALL = 0xffffffff
         };
 
     ECClassId     m_ecClassId;
@@ -288,12 +287,11 @@ public:
     Utf8String    m_displayLabel;
     Utf8String    m_description; 
     bool          m_isArray;
-    PrimitiveType m_typeECPrimitive;
-    Utf8String    m_typeCustom;
-    ECClassId     m_typeECStruct;
-    uint32_t       m_minOccurs;
-    uint32_t       m_maxOccurs;
-    int32_t       m_ecIndex;
+    PrimitiveType m_primitiveType;
+    ECClassId     m_structType;
+    uint32_t      m_minOccurs;
+    uint32_t      m_maxOccurs;
+    int32_t       m_ordinal;
 
     bool          m_isReadOnly;
     };
@@ -306,8 +304,8 @@ struct DbECRelationshipConstraintInfo : DbInfoBase
 public:
     enum Columns
         {
-        COL_ECClassId             = 0x01,
-        COL_ECRelationshipEnd     = 0x02,
+        COL_ClassId             = 0x01,
+        COL_RelationshipEnd     = 0x02,
         COL_CardinalityLowerLimit = 0x04,
         COL_CardinalityUpperLimit = 0x08,
         COL_RoleLabel             = 0x10,
@@ -331,9 +329,9 @@ struct DbECRelationshipConstraintClassInfo : DbInfoBase
 public:
     enum Columns
         {
-        COL_ECClassId               = 0x01,
-        COL_ECRelationshipEnd       = 0x02,
-        COL_RelationECClassId       = 0x04,
+        COL_ClassId               = 0x01,
+        COL_RelationshipEnd       = 0x02,
+        COL_RelationClassId       = 0x04,
         COL_ALL                     = 0xffffffff        
         };
     
@@ -350,10 +348,10 @@ struct DbECRelationshipConstraintClassPropertyInfo : DbInfoBase
 public:
     enum Columns
         {
-        COL_ECClassId            = 0x01,
-        COL_ECRelationshipEnd    = 0x02,
-        COL_RelationECClassId    = 0x04,
-        COL_RelationECPropertyId = 0x08,
+        COL_ClassId            = 0x01,
+        COL_RelationshipEnd    = 0x02,
+        COL_RelationClassId    = 0x04,
+        COL_RelationPropertyId = 0x08,
         COL_ALL                  = 0xffffffff
         };
     
@@ -373,8 +371,8 @@ public:
         {
         COL_ContainerId            = 0x01,
         COL_ContainerType          = 0x02,
-        COL_ECClassId              = 0x04,
-        COL_Index                  = 0x08,
+        COL_ClassId              = 0x04,
+        COL_Ordinal                  = 0x08,
         COL_Instance               = 0x10,
         COL_ALL                    = 0xffffffff
         }; 
@@ -399,9 +397,9 @@ public:
     Utf8CP GetCaInstanceXml () const;
     void Clear()
         {
-        m_containerId=0;
-        m_containerType = ECONTAINERTYPE_Schema;
-        m_ecClassId=0;
+        m_containerId=0LL;
+        m_containerType = ECContainerType::Schema;
+        m_ecClassId=0LL;
         m_caInstanceXml.clear();
         }
     };
@@ -414,13 +412,13 @@ struct DbECSchemaReferenceInfo : DbInfoBase
 public:
     enum Columns
         {
-        COL_ECSchemaId          = 0x01,
-        COL_ReferenceECSchemaId = 0x02,
-        COL_ALL                 = 0xffffffff
+        COL_SchemaId          = 0x01,
+        COL_ReferencedSchemaId = 0x02,
+        COL_ALL               = 0xffffffff
         };
     
     ECSchemaId m_ecSchemaId;
-    ECSchemaId m_referenceECSchemaId;
+    ECSchemaId m_referencedECSchemaId;
     };
 
 

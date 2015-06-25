@@ -79,9 +79,6 @@
       <Filter>Pch</Filter>
     </ClInclude>
     <ClInclude Include="ECDbInternalTypes.h" />
-    <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h">
-      <Filter>PublicApi</Filter>
-    </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECDbTypes.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
@@ -446,14 +443,13 @@
       <Filter>ECDbMap\Map</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
-    <ClInclude Include="..\PublicAPI\ECDb\BeRepositoryBasedIdSequence.h" />
     <ClInclude Include="ECSql\SystemColumnPreparer.h">
       <Filter>ECSql\ECSqlPrepare</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
-    <ClInclude Include="MapHintReader.h">
-      <Filter>ECDbMap</Filter>
-    </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
+    <ClInclude Include="ECObjectsExtensions.h" />
+    <ClInclude Include="BeRepositoryBasedIdSequence.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
@@ -823,9 +819,7 @@
     <ClCompile Include="ECSql\SystemColumnPreparer.cpp">
       <Filter>ECSql\ECSqlPrepare</Filter>
     </ClCompile>
-    <ClCompile Include="MapHintReader.cpp">
-      <Filter>ECDbMap</Filter>
-    </ClCompile>
+    <ClCompile Include="ECObjectsExtensions.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="ECSchemas\ECDb_FileInfo.01.00.ecschema.xml">

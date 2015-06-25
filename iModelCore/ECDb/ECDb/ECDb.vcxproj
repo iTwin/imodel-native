@@ -37,6 +37,7 @@
     <ClCompile Include="ECInstanceSerializer.cpp" />
     <ClCompile Include="ECDbProfileManager.cpp" />
     <ClCompile Include="ECDbProfileUpgrader.cpp" />
+    <ClCompile Include="ECObjectsExtensions.cpp" />
     <ClCompile Include="ECSchemaComparers.cpp" />
     <ClCompile Include="ECDbSchemaWriter.cpp" />
     <ClCompile Include="ECDbSchemaReader.cpp" />
@@ -120,7 +121,6 @@
     <ClCompile Include="ECSql\ValueExp.cpp" />
     <ClCompile Include="ECSql\WhereExp.cpp" />
     <ClCompile Include="MapGenerator.cpp" />
-    <ClCompile Include="MapHintReader.cpp" />
     <ClCompile Include="PropertyMap.cpp" />
     <ClCompile Include="RelationshipClassMap.cpp" />
     <ClCompile Include="SchemaImportContext.cpp" />
@@ -129,9 +129,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\PublicAPI\ECDb\ECDb.h" />
-    <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECDbSchemaManager.h" />
-    <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECDbTypes.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECInstanceAdapter.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECInstanceId.h" />
@@ -144,7 +142,7 @@
     <ClInclude Include="..\PublicAPI\ECDb\IECSqlValue.h" />
     <ClInclude Include="..\PublicAPI\ECDb\IECSqlBinder.h" />
     <ClInclude Include="..\PublicAPI\ECDb\JsonAdapter.h" />
-    <ClInclude Include="..\PublicAPI\ECDb\BeRepositoryBasedIdSequence.h" />
+    <ClInclude Include="BeRepositoryBasedIdSequence.h" />
     <ClInclude Include="ClassMap.h" />
     <ClInclude Include="ClassMapFactory.h" />
     <ClInclude Include="ClassMapInfo.h" />
@@ -165,6 +163,7 @@
     <ClInclude Include="ECInstanceSerializer.h" />
     <ClInclude Include="ECDbProfileManager.h" />
     <ClInclude Include="ECDbProfileUpgrader.h" />
+    <ClInclude Include="ECObjectsExtensions.h" />
     <ClInclude Include="ECSchemaComparers.h" />
     <ClInclude Include="ECSchemaValidator.h" />
     <ClInclude Include="ECSql\ClassRefExp.h" />
@@ -235,7 +234,6 @@
     <ClInclude Include="ECSql\ValueExp.h" />
     <ClInclude Include="ECSql\WhereExp.h" />
     <ClInclude Include="MapGenerator.h" />
-    <ClInclude Include="MapHintReader.h" />
     <ClInclude Include="MapStrategy.h" />
     <ClInclude Include="PropertyMap.h" />
     <ClInclude Include="RelationshipClassMap.h" />

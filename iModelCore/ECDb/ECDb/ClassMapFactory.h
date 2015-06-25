@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ClassMapFactory.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -23,11 +23,11 @@ private:
     ClassMapFactory ();
     ~ClassMapFactory ();
 
-    static ClassMapPtr CreateInstance (MapStatus& mapStatus, ClassMapInfoCR mapInfo, bool setIsDirty);
+    static ClassMapPtr CreateInstance(MapStatus&, ClassMapInfo const&, bool setIsDirty);
 
 public:
-    static ClassMapPtr Load (MapStatus& mapStatus, ECN::ECClassCR ecClass, ECDbMapCR ecdbMap);
-    static ClassMapPtr Create (MapStatus& mapStatus, SchemaImportContext const& schemaImportContext, ECN::ECClassCR ecClass, ECDbMapCR ecdbMap);
+    static ClassMapPtr Load (MapStatus&, ECN::ECClassCR, ECDbMapCR);
+    static ClassMapPtr Create (MapStatus&, SchemaImportContext const&, ECN::ECClassCR, ECDbMapCR );
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

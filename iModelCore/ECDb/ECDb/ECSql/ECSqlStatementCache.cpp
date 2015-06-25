@@ -53,12 +53,12 @@ public:
 
 private:
     static const NativeLogging::SEVERITY LOG_SEVERITY = NativeLogging::LOG_TRACE;
-    static Bentley::NativeLogging::ILogger* s_logger;
+    static BentleyApi::NativeLogging::ILogger* s_logger;
 
     ECSqlStatementCacheDiagnostics ();
     ~ECSqlStatementCacheDiagnostics ();
 
-    static Bentley::NativeLogging::ILogger& GetLogger ();
+    static BentleyApi::NativeLogging::ILogger& GetLogger ();
 
 public:
     static void Log (Utf8CP cacheName, size_t maxCacheSize, EventType, Utf8CP ecsql);
@@ -68,7 +68,7 @@ public:
 // @bsimethod                                 Krischan.Eberle                    02/2015
 //---------------------------------------------------------------------------------------
 //static member initialization
-Bentley::NativeLogging::ILogger* ECSqlStatementCacheDiagnostics::s_logger = nullptr;
+BentleyApi::NativeLogging::ILogger* ECSqlStatementCacheDiagnostics::s_logger = nullptr;
 
 
 //---------------------------------------------------------------------------------------
@@ -115,7 +115,7 @@ void ECSqlStatementCacheDiagnostics::Log (Utf8CP cacheName, size_t maxCacheSize,
 // @bsimethod                                 Krischan.Eberle                    02/2015
 //---------------------------------------------------------------------------------------
 //static
-Bentley::NativeLogging::ILogger& ECSqlStatementCacheDiagnostics::GetLogger ()
+BentleyApi::NativeLogging::ILogger& ECSqlStatementCacheDiagnostics::GetLogger ()
     {
     if (s_logger == nullptr)
         s_logger = NativeLogging::LoggingManager::GetLogger (L"Diagnostics.ECSqlStatement.Cache");

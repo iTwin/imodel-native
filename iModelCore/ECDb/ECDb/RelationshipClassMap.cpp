@@ -123,6 +123,15 @@ RelationshipClassMap::ConstraintMap const& RelationshipClassMap::GetConstraintMa
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  06/2015
+//---------------------------------------------------------------------------------------
+//static
+RelationshipEndColumns const& RelationshipClassMap::GetEndColumnsMapping(RelationshipMapInfo const& info, ECN::ECRelationshipEnd end)
+    {
+    return end == ECRelationshipEnd_Source ? info.GetSourceColumnsMapping() : info.GetTargetColumnsMapping();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    11/2013
 //---------------------------------------------------------------------------------------
 PropertyMapCP RelationshipClassMap::GetConstraintECInstanceIdPropMap (ECRelationshipEnd constraintEnd) const
@@ -252,21 +261,19 @@ RelationshipClassEndTableMap::RelationshipClassEndTableMap (ECRelationshipClassC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Affan.Khan       02/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECDbSqlColumn* RelationshipClassEndTableMap::ConfigureForeignECClassIdKey (RelationshipClassMapInfoCR mapInfo, ECRelationshipConstraintCR otherEndConstraint, IClassMap const& otheEndClassMap, size_t otherEndTableCount)
+ECDbSqlColumn* RelationshipClassEndTableMap::ConfigureForeignECClassIdKey(RelationshipMapInfo const& mapInfo, ECRelationshipConstraintCR otherEndConstraint, IClassMap const& otheEndClassMap, size_t otherEndTableCount)
     {
-    ECDbSqlColumn* otherEndECClassIdColumn = nullptr;
-    Utf8String columnName;
-
-    columnName = GetThisEnd() == ECRelationshipEnd_Source ?
-        mapInfo.GetTargetECClassIdColumn () : mapInfo.GetSourceECClassIdColumn ();
-
-    if (columnName.empty () && !GetOtherEndECClassIdColumnName (columnName, GetTable (), true))
+    RelationshipEndColumns const& constraintColumnsMapping = GetEndColumnsMapping(mapInfo);
+    Utf8String classIdColName(constraintColumnsMapping.GetECClassIdColumnName());
+    if (classIdColName.empty() &&
+        !GetOtherEndECClassIdColumnName(classIdColName, GetTable(), true))
         return nullptr;
 
-    if (ConstraintIncludesAnyClass (otherEndConstraint.GetClasses ()) || otherEndTableCount > 1)
+    ECDbSqlColumn* otherEndECClassIdColumn = nullptr;
+    if (ConstraintIncludesAnyClass(otherEndConstraint.GetClasses()) || otherEndTableCount > 1)
         {
         //! We will create ECClassId column in this case
-        otherEndECClassIdColumn = CreateConstraintColumn (columnName.c_str (), true);
+        otherEndECClassIdColumn = CreateConstraintColumn(classIdColName.c_str(), true);
         BeAssert (otherEndECClassIdColumn != nullptr);
         }
     else
@@ -274,7 +281,7 @@ ECDbSqlColumn* RelationshipClassEndTableMap::ConfigureForeignECClassIdKey (Relat
         //! We will use JOIN to otherTable to get the ECClassId (if any)
         otherEndECClassIdColumn = const_cast<ECDbSqlColumn*>(otheEndClassMap.GetTable ().GetFilteredColumnFirst (ECDbSystemColumnECClassId));
         if (otherEndECClassIdColumn == nullptr)
-            otherEndECClassIdColumn = CreateConstraintColumn (columnName.c_str (), false);
+            otherEndECClassIdColumn = CreateConstraintColumn(classIdColName.c_str(), false);
         }
 
     return otherEndECClassIdColumn;
@@ -283,13 +290,13 @@ ECDbSqlColumn* RelationshipClassEndTableMap::ConfigureForeignECClassIdKey (Relat
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-MapStatus RelationshipClassEndTableMap::_InitializePart1 (ClassMapInfoCR classMapInfo, IClassMap const* parentClassMap)
+MapStatus RelationshipClassEndTableMap::_InitializePart1 (ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap)
     {
     //Don't call base class method as end table map requires its own handling
     BeAssert (GetMapStrategy ().IsEndTableMapping());
     m_dbView = CreateClassDbView ();
 
-    auto const& relationshipClassMapInfo = dynamic_cast<RelationshipClassMapInfoCR> (classMapInfo);
+    RelationshipMapInfo const& relationshipClassMapInfo = dynamic_cast<RelationshipMapInfo const&> (classMapInfo);
     BeAssert (m_ecClass.GetRelationshipClassCP () != nullptr && classMapInfo.GetMapStrategy ().IsEndTableMapping());
 
     ECRelationshipClassCR relationshipClass = GetRelationshipClass ();
@@ -328,8 +335,9 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (ClassMapInfoCR classMa
         BeAssert (false && "Failed to create foreign ECClassId column for relationship");
         return MapStatus::Error;
         }
+
     ECDbSqlColumn* otherEndECInstanceIdColumn = nullptr;
-    auto stat = CreateConstraintColumns(otherEndECInstanceIdColumn, relationshipClassMapInfo, thisEnd, thisEndConstraint.GetConstraintClasses());
+    auto stat = CreateConstraintColumns(otherEndECInstanceIdColumn, relationshipClassMapInfo, thisEnd, thisEndConstraint);
     if (stat != MapStatus::Success)
         return stat;
 
@@ -348,11 +356,8 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (ClassMapInfoCR classMa
         return stat;
 
     //! Add referential integrity if user requested it.
-    auto const& thisEndConstraintInfo = thisEnd == ECRelationshipEnd_Source ? relationshipClassMapInfo.GetSourceInfo() : relationshipClassMapInfo.GetTargetInfo ();
-    if (thisEndConstraintInfo.DoEnforceIntegrityCheck () && relationshipClass.GetStrength () != StrengthType::STRENGTHTYPE_Holding && !thisEndConstraintInfo.IsEmpty())
+    if (relationshipClassMapInfo.IsCreateForeignKeyConstraint () && relationshipClass.GetStrength() != StrengthType::STRENGTHTYPE_Holding)
         {
-        //auto const& thisEndConstraint = thisEnd == ECRelationshipEnd_Source ? sourceConstraint : targetConstraint;
-       // auto const& thisEndConstraintMap = thisEnd == ECRelationshipEnd_Source ? m_sourceConstraintMap : m_targetConstraintMap;
         auto const& otherEndConstraint = thisEnd != ECRelationshipEnd_Source ? sourceConstraint : targetConstraint;
         auto const& otherEndConstraintMap = thisEnd != ECRelationshipEnd_Source ? m_sourceConstraintMap : m_targetConstraintMap;
 
@@ -378,9 +383,9 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (ClassMapInfoCR classMa
         //Create foreign key constraint
         auto foreignKey = foreignTable.CreateForeignKeyConstraint (primaryTable);
         foreignKey->Add (foreignKeyColumn->GetName ().c_str (), primaryKeyColumn->GetName ().c_str ());
-        foreignKey->SetOnDeleteAction (thisEndConstraintInfo.GetOnDeleteAction());
-        foreignKey->SetOnUpdateAction (thisEndConstraintInfo.GetOnUpdateAction());
-        foreignKey->SetMatchType(thisEndConstraintInfo.GetMatchType ());     
+        
+        foreignKey->SetOnDeleteAction(relationshipClassMapInfo.GetOnDeleteAction());
+        foreignKey->SetOnUpdateAction(relationshipClassMapInfo.GetOnUpdateAction());
         }
     
     return stat;
@@ -389,7 +394,7 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (ClassMapInfoCR classMa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-MapStatus RelationshipClassEndTableMap::_InitializePart2 (ClassMapInfoCR classMapInfo, IClassMap const* parentClassMap)
+MapStatus RelationshipClassEndTableMap::_InitializePart2 (ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap)
     {
     //add non-system property maps
     AddPropertyMaps (parentClassMap, nullptr,&classMapInfo);
@@ -399,26 +404,7 @@ MapStatus RelationshipClassEndTableMap::_InitializePart2 (ClassMapInfoCR classMa
 
     return MapStatus::Success;
     }
-//---------------------------------------------------------------------------------------
-// @bsimethod                      muhammad.zaighum                               1/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-bool RelationshipClassEndTableMap::IsKeyPropertyMappable(const ECRelationshipConstraintClassList & constraintclasses)
-    {
-    if (constraintclasses.size() == 1 && constraintclasses[0]->GetKeys().size() == 1)
-        {
-        auto constaintClass = constraintclasses[0];
-        BeAssert(constaintClass && "Constraint Class is NULL");
-        auto key = constaintClass->GetKeys()[0];
-        BeAssert(key.size() && "Key property is NULL");
-        auto &ecClass = constaintClass->GetClass();
-        auto ecProperty = ecClass.GetPropertyP(key.c_str());
-        if (ecProperty != nullptr && (ecProperty->GetTypeName().Equals(L"long") || ecProperty->GetTypeName().Equals(L"int")))
-            {
-            return true;
-            }
-        }
-    return false;
-    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Affan.Khan           01/2015
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -508,36 +494,24 @@ BentleyStatus RelationshipClassEndTableMap::_Load (std::set<ClassMap const*>& lo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       11/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-MapStatus RelationshipClassEndTableMap::CreateConstraintColumns (ECDbSqlColumn*& otherEndECInstanceIdColumn,
-    RelationshipClassMapInfoCR mapInfo, ECRelationshipEnd thisEnd, const ECRelationshipConstraintClassList & constraintclasses)
+MapStatus RelationshipClassEndTableMap::CreateConstraintColumns(ECDbSqlColumn*& otherEndECInstanceIdColumn, RelationshipMapInfo const& mapInfo, ECRelationshipEnd constraintEnd, ECN::ECRelationshipConstraintCR constraint)
     {
-    Utf8String columnName;
-    if (IsKeyPropertyMappable(constraintclasses))
-        {
-        auto constaintClass = constraintclasses[0];
-        BeAssert(constaintClass && "Constraint Class is NULL");
-        auto classMap = GetECDbMap().GetClassMap(constaintClass->GetClass());
-        auto key = constaintClass->GetKeys()[0];
-        BeAssert(key.size() && "Key property is NULL");
-        auto propertyMap = classMap->GetPropertyMap(key.c_str());
-        std::vector<ECDbSqlColumn const*> columns;
-        propertyMap->GetColumns(columns);
-        BeAssert(columns.size() == 1 && "more than 1 column is mapped to property");
-        otherEndECInstanceIdColumn = const_cast<ECDbSqlColumn*>(columns[0]);
-        BeAssert(otherEndECInstanceIdColumn != nullptr);
-       // return MapStatus::Success;
-        }
+    ECDbSqlColumn const* keyPropertyCol = nullptr;
+    if (SUCCESS != TryGetKeyPropertyColumn(keyPropertyCol, constraint, *mapInfo.GetECClass().GetRelationshipClassCP(), constraintEnd))
+        return MapStatus::Error;
+
+    if (keyPropertyCol != nullptr)
+        otherEndECInstanceIdColumn = const_cast<ECDbSqlColumn*>(keyPropertyCol);
     else
         {
         //** Other End ECInstanceId column
-        columnName = thisEnd == ECRelationshipEnd_Source ?
-            mapInfo.GetTargetECInstanceIdColumn() : mapInfo.GetSourceECInstanceIdColumn();
-
-        if (columnName.empty())
-            if (!GetOtherEndKeyColumnName(columnName, GetTable(), true))
+        RelationshipEndColumns const& constraintColumnMapping = GetEndColumnsMapping(mapInfo);
+        Utf8String otherEndECInstanceIdColumnName(constraintColumnMapping.GetECInstanceIdColumnName());
+        if (otherEndECInstanceIdColumnName.empty())
+            if (!GetOtherEndKeyColumnName(otherEndECInstanceIdColumnName, GetTable(), true))
                 return MapStatus::Error;
 
-        otherEndECInstanceIdColumn = CreateConstraintColumn(columnName.c_str(), true);
+        otherEndECInstanceIdColumn = CreateConstraintColumn(otherEndECInstanceIdColumnName.c_str(), true);
         BeAssert(otherEndECInstanceIdColumn != nullptr);
         }
 
@@ -654,34 +628,26 @@ ECClassId defaultOtherEndClassId
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan         9/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelationshipClassEndTableMap::AddIndices (ClassMapInfoCR mapInfo)
+void RelationshipClassEndTableMap::AddIndices (ClassMapInfo const& mapInfo)
     {
-    BeAssert (dynamic_cast<RelationshipClassMapInfoCP> (&mapInfo) != nullptr);
-    RelationshipClassMapInfoCR info = static_cast<RelationshipClassMapInfoCR> (mapInfo);
-
-    if (info.GetMapStrategy ().IsRelationshipSourceTable ())
-        if (!info.GetSourceInfo ().GenerateDefaultIndex ())
-            return;
-
-    if (info.GetMapStrategy ().IsRelationshipTargetTable ())
-        if (!info.GetTargetInfo ().GenerateDefaultIndex ())
-            return;
+    BeAssert(dynamic_cast<RelationshipMapInfo const*> (&mapInfo) != nullptr);
+    RelationshipMapInfo const& info = static_cast<RelationshipMapInfo const&> (mapInfo);
    
     bool enforceUniqueness = true; //We are enabling it
     // TODO: We need to enforce uniqueness of constraints, but cannot at the moment since we get these 
     // i-models that don't honor these constraints. See comments @ RelationshipClassLinkTableMap::AddIndices()
-    RelationshipClassMapInfo::CardinalityType cardinality = static_cast<RelationshipClassMapInfoCR> (mapInfo).GetCardinality ();
+    RelationshipMapInfo::Cardinality cardinality = info.GetCardinality();
     
     switch(cardinality)
         {
-            case RelationshipClassMapInfo::CardinalityType::OneToOne:
+            case RelationshipMapInfo::Cardinality::OneToOne:
                 AddIndexToRelationshipEnd (enforceUniqueness);
                 break;
-            case RelationshipClassMapInfo::CardinalityType::OneToMany:
-            case RelationshipClassMapInfo::CardinalityType::ManyToOne:
+            case RelationshipMapInfo::Cardinality::OneToMany:
+            case RelationshipMapInfo::Cardinality::ManyToOne:
                 AddIndexToRelationshipEnd (false);
                 break;
-            case RelationshipClassMapInfo::CardinalityType::ManyToMany:
+            case RelationshipMapInfo::Cardinality::ManyToMany:
                 //not supported in EndTableMap
                 break;
         }
@@ -766,7 +732,9 @@ bool RelationshipClassEndTableMap::GetRelationshipColumnName (Utf8StringR column
         }
     return true;
     }
-    
+
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -831,6 +799,100 @@ ECN::ECRelationshipEnd RelationshipClassEndTableMap::GetOtherEnd () const
     return GetThisEnd () == ECRelationshipEnd_Source ? ECRelationshipEnd_Target : ECRelationshipEnd_Source;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Krischan.Eberle       06/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+RelationshipEndColumns const& RelationshipClassEndTableMap::GetEndColumnsMapping(RelationshipMapInfo const& info) const
+    {
+    BeAssert(GetThisEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? info.GetMapStrategy().GetStrategy() == Strategy::RelationshipSourceTable : info.GetMapStrategy().GetStrategy() == Strategy::RelationshipTargetTable);
+    return RelationshipClassMap::GetEndColumnsMapping(info, GetThisEnd());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                      Krischan.Eberle                          06/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+void LogKeyPropertyRetrievalError(WCharCP errorDetails, ECRelationshipClassCR relClass, ECRelationshipEnd constraintEnd)
+    {
+    const NativeLogging::SEVERITY sev = NativeLogging::LOG_ERROR;
+    if (LOG.isSeverityEnabled(sev))
+        LOG.messagev(sev, L"Invalid Key property on %ls constraint in ECRelationshipClass '%ls': %ls",
+               constraintEnd == ECRelationshipEnd_Source ? L"source" : L"target", relClass.GetFullName(), errorDetails);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                      Krischan.Eberle                          06/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(ECDbSqlColumn const*& keyPropertyColumn, ECRelationshipConstraintCR constraint, ECRelationshipClassCR relClass, ECRelationshipEnd constraintEnd) const
+    {
+    keyPropertyColumn = nullptr;
+    ECClassCP keyPropertyContainer = nullptr;
+    ECRelationshipConstraintClassList const& constraintClasses = constraint.GetConstraintClasses();
+    if (constraintClasses.size() == 0)
+        return SUCCESS;
+
+    WStringCP foundPropName = nullptr;
+    bool isMappable = constraintClasses.size() == 1;
+    for (ECRelationshipConstraintClassCP constraintClass : constraintClasses)
+        {
+        bvector<WString> const& keys = constraintClass->GetKeys();
+        const size_t keyCount = keys.size();
+        if (keyCount >= 1)
+            {
+            foundPropName = &keys[0];
+            keyPropertyContainer = &constraintClass->GetClass();
+            if (keyCount > 1 || foundPropName->empty())
+                isMappable = false;
+
+            break;
+            }
+        }
+
+    if (foundPropName == nullptr)
+        return SUCCESS;
+
+    if (!isMappable)
+        {
+        LogKeyPropertyRetrievalError(L"ECDb only supports Key properties if the constraint consists of a single ECClass and only a single Key property is defined for that ECClass.",
+                                     relClass, constraintEnd);
+        return ERROR;
+        }
+
+    IClassMap const* classMap = GetECDbMap().GetClassMap(*keyPropertyContainer);
+    if (classMap == nullptr || !classMap->GetMapStrategy().IsMapped())
+        {
+        BeAssert(false && "Class on relationship end is not mapped. This should have been caught before.");
+        return ERROR;
+        }
+
+    PropertyMap const* keyPropertyMap = classMap->GetPropertyMap(foundPropName->c_str());
+    if (keyPropertyMap == nullptr || keyPropertyMap->IsUnmapped() || keyPropertyMap->IsVirtual())
+        {
+        WString error;
+        error.Sprintf(L"Key property '%ls' does not exist or ist not mapped.", foundPropName->c_str());
+        LogKeyPropertyRetrievalError(error.c_str(), relClass, constraintEnd);
+        return ERROR;
+        }
+
+    ECSqlTypeInfo typeInfo(keyPropertyMap->GetProperty());
+    if (!typeInfo.IsExactNumeric() && !typeInfo.IsString())
+        {
+        WString error;
+        error.Sprintf(L"Unsupported data type of Key property '%ls'. ECDb only supports integral or string Key properties.", foundPropName->c_str());
+        LogKeyPropertyRetrievalError(error.c_str(), relClass, constraintEnd);
+        return ERROR;
+        }
+
+    std::vector<ECDbSqlColumn const*> columns;
+    keyPropertyMap->GetColumns(columns);
+    if (columns.size() != 1)
+        {
+        BeAssert(false && "Key property map is expected to map to a single column.");
+        return ERROR;
+        }
+
+    keyPropertyColumn = columns[0];
+    return SUCCESS;
+    }
 
 //************************** RelationshipClassLinkTableMap *****************************************
 /*---------------------------------------------------------------------------------**//**
@@ -843,7 +905,7 @@ RelationshipClassLinkTableMap::RelationshipClassLinkTableMap (ECRelationshipClas
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Ramanujam.Raman                   06 / 12
 //---------------------------------------------------------------------------------------
-MapStatus RelationshipClassLinkTableMap::_InitializePart1 (ClassMapInfoCR classMapInfo, IClassMap const* parentClassMap)
+MapStatus RelationshipClassLinkTableMap::_InitializePart1 (ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap)
     {
     BeAssert (GetMapStrategy ().IsLinkTableStrategy() &&
         "RelationshipClassLinkTableMap is not meant to be used with other map strategies.");
@@ -855,8 +917,8 @@ MapStatus RelationshipClassLinkTableMap::_InitializePart1 (ClassMapInfoCR classM
     //**** Class View for SELECT statement
     m_dbView = CreateClassDbView ();
 
-    BeAssert (dynamic_cast<RelationshipClassMapInfoCP> (&classMapInfo) != nullptr);
-    auto const& relationClassMapInfo = static_cast<RelationshipClassMapInfoCR> (classMapInfo);
+    BeAssert (dynamic_cast<RelationshipMapInfo const*> (&classMapInfo) != nullptr);
+    RelationshipMapInfo const& relationClassMapInfo = static_cast<RelationshipMapInfo const&> (classMapInfo);
 
     ECRelationshipClassCR relationshipClass = GetRelationshipClass ();
     auto const& sourceConstraint = relationshipClass.GetSource ();
@@ -876,21 +938,19 @@ MapStatus RelationshipClassLinkTableMap::_InitializePart1 (ClassMapInfoCR classM
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Affan.Khan                         04 / 15
 //---------------------------------------------------------------------------------------
-ECDbSqlColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey (RelationshipClassMapInfoCR mapInfo, ECRelationshipEnd relationshipEnd)
+ECDbSqlColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey(RelationshipMapInfo const& mapInfo, ECRelationshipEnd relationshipEnd)
     {
     ECDbSqlColumn* endECClassIdColumn = nullptr;
-    Utf8String columnName;
     auto relationship = mapInfo.GetECClass ().GetRelationshipClassCP ();
     BeAssert (relationship != nullptr);
     auto const& thisEndConstraint = relationshipEnd == ECRelationshipEnd_Source ? relationship->GetSource () : relationship->GetTarget ();
-    columnName = relationshipEnd == ECRelationshipEnd_Target?
-        mapInfo.GetTargetECClassIdColumn () : mapInfo.GetSourceECClassIdColumn ();
-
     auto thisEndClass = thisEndConstraint.GetClasses ()[0];
     auto thisEndClassMap = GetECDbMap ().GetClassMapCP (*thisEndClass, true);
     auto thisEndTableCount = GetECDbMap ().GetTablesFromRelationshipEnd (nullptr, thisEndConstraint);
 
-    if (columnName.empty ())
+    RelationshipEndColumns const& constraintColumnsMapping = GetEndColumnsMapping(mapInfo, relationshipEnd);
+    Utf8String columnName(constraintColumnsMapping.GetECClassIdColumnName());
+    if (columnName.empty())
         {
         if (!GetConstraintECClassIdColumnName (columnName, relationshipEnd, GetTable ()))
             return nullptr;
@@ -915,14 +975,14 @@ ECDbSqlColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey (Rela
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Ramanujam.Raman                   06 / 12
 //---------------------------------------------------------------------------------------
-MapStatus RelationshipClassLinkTableMap::_InitializePart2 (ClassMapInfoCR classMapInfo, IClassMap const* parentClassMap)
+MapStatus RelationshipClassLinkTableMap::_InitializePart2 (ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap)
     {
     auto stat = RelationshipClassMap::_InitializePart2 (classMapInfo, parentClassMap);
     if (stat != MapStatus::Success)
         return stat;
 
-    BeAssert (dynamic_cast<RelationshipClassMapInfoCP> (&classMapInfo) != nullptr);
-    auto const& relationClassMapInfo = static_cast<RelationshipClassMapInfoCR> (classMapInfo);
+    BeAssert(dynamic_cast<RelationshipMapInfo const*> (&classMapInfo) != nullptr);
+    RelationshipMapInfo const& relationClassMapInfo = static_cast<RelationshipMapInfo const&> (classMapInfo);
 
     //**** Add relationship indices
     AddIndices (relationClassMapInfo);
@@ -935,7 +995,7 @@ MapStatus RelationshipClassLinkTableMap::_InitializePart2 (ClassMapInfoCR classM
 //+---------------+---------------+---------------+---------------+---------------+------
 MapStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps 
 (
-RelationshipClassMapInfoCR mapInfo,
+RelationshipMapInfo const& mapInfo,
 bool addSourceECClassIdColumnToTable,
 ECClassId defaultSourceECClassId, 
 bool addTargetECClassIdColumnToTable, 
@@ -943,7 +1003,7 @@ ECClassId defaultTargetECClassId
 )
     {
     //**** SourceECInstanceId prop map 
-    Utf8String columnName = mapInfo.GetSourceECInstanceIdColumn();
+    Utf8String columnName (mapInfo.GetSourceColumnsMapping().GetECInstanceIdColumnName ());
     if (columnName.empty ())
         {
         if (!GetConstraintECInstanceIdColumnName (columnName, ECRelationshipEnd_Source, GetTable()))
@@ -968,7 +1028,7 @@ ECClassId defaultTargetECClassId
 
 
     //**** TargetECInstanceId prop map 
-    columnName = mapInfo.GetTargetECInstanceIdColumn();
+    columnName = mapInfo.GetTargetColumnsMapping().GetECInstanceIdColumnName();
     if (columnName.empty ())
         {
         if (!GetConstraintECInstanceIdColumnName (columnName, ECRelationshipEnd_Target, GetTable()))
@@ -1004,15 +1064,15 @@ ECClassId defaultTargetECClassId
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                            09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelationshipClassLinkTableMap::AddIndices (ClassMapInfoCR mapInfo)
+void RelationshipClassLinkTableMap::AddIndices (ClassMapInfo const& mapInfo)
     {
     if (GetTable ().GetOwnerType () == OwnerType::ExistingTable)
         return;
 
-    BeAssert (dynamic_cast<RelationshipClassMapInfoCP> (&mapInfo) != nullptr);
-    auto const& relationshipClassMapInfo = static_cast<RelationshipClassMapInfoCR> (mapInfo);
+    BeAssert(dynamic_cast<RelationshipMapInfo const*> (&mapInfo) != nullptr);
+    RelationshipMapInfo const& relationshipClassMapInfo = static_cast<RelationshipMapInfo const&> (mapInfo);
 
-    RelationshipClassMapInfo::CardinalityType cardinality = relationshipClassMapInfo.GetCardinality ();
+    RelationshipMapInfo::Cardinality cardinality = relationshipClassMapInfo.GetCardinality();
     bool enforceUniqueness = false;
     // TODO: We need to enforce uniqueness of constraints, but cannot at the moment since we get these 
     // i-models that don't honor these constraints. For example, ConstructSim has a ComponentHasComponent
@@ -1020,74 +1080,39 @@ void RelationshipClassLinkTableMap::AddIndices (ClassMapInfoCR mapInfo)
     // SystemComponent-s that include GroupingComponent-s and PartComponent-s, where the GroupingComponent-s
     // themselves include the SystemComponent-s again. 
 
-    bool createOnSource = relationshipClassMapInfo.GetSourceInfo ().GenerateDefaultIndex ();
-    bool createOnTarget = relationshipClassMapInfo.GetTargetInfo ().GenerateDefaultIndex ();
-
     // Add indices on the source and target based on cardinality
     switch (cardinality)
         {
-        case RelationshipClassMapInfo::CardinalityType::OneToOne:
+            case RelationshipMapInfo::Cardinality::OneToOne:
             {
-            if (createOnSource)
-                AddIndicesToRelationshipEnds(RelationshipIndexSpec::Source, true /*createUniqueIndex*/);
-
-            if (createOnTarget)
-                AddIndicesToRelationshipEnds(RelationshipIndexSpec::Target, true /*createUniqueIndex*/);
+            AddIndicesToRelationshipEnds(RelationshipIndexSpec::Source, true /*createUniqueIndex*/);
+            AddIndicesToRelationshipEnds(RelationshipIndexSpec::Target, true /*createUniqueIndex*/);
             break;
             }
-        case RelationshipClassMapInfo::CardinalityType::OneToMany:
+            case RelationshipMapInfo::Cardinality::OneToMany:
             {
-            if (createOnSource)
-                AddIndicesToRelationshipEnds(RelationshipIndexSpec::Source, false);
-
-            if (createOnTarget)
-                AddIndicesToRelationshipEnds(RelationshipIndexSpec::Target, enforceUniqueness);
+            AddIndicesToRelationshipEnds(RelationshipIndexSpec::Source, false);
+            AddIndicesToRelationshipEnds(RelationshipIndexSpec::Target, enforceUniqueness);
             break;
             }
-        case RelationshipClassMapInfo::CardinalityType::ManyToOne:
+            case RelationshipMapInfo::Cardinality::ManyToOne:
             {
-            if (createOnSource)
-                AddIndicesToRelationshipEnds(RelationshipIndexSpec::Source, enforceUniqueness);
-
-            if (createOnTarget)
-                AddIndicesToRelationshipEnds(RelationshipIndexSpec::Target, false);
+            AddIndicesToRelationshipEnds(RelationshipIndexSpec::Source, enforceUniqueness);
+            AddIndicesToRelationshipEnds(RelationshipIndexSpec::Target, false);
             break;
             }
-        case RelationshipClassMapInfo::CardinalityType::ManyToMany:
+            case RelationshipMapInfo::Cardinality::ManyToMany:
             {
-            if (createOnSource)
-                AddIndicesToRelationshipEnds(RelationshipIndexSpec::Source, false);
-
-            if (createOnTarget)
-                AddIndicesToRelationshipEnds(RelationshipIndexSpec::Target, false);
-
-            /*
-            * Make the entire relationship instance unique unless the user wants otherwise
-            * Note: We make the relationship unique by default to support the usual case.
-            * An example of an unlikely case where the user would want duplicate relationships is a
-            * a "queue of tasks". The same task can figure in a queue more than once!
-            */
-            auto addUniqueIndex = true;
-            if (relationshipClassMapInfo.GetAllowDuplicateRelationships () == RelationshipClassMapInfo::TriState::True)
-                addUniqueIndex = false;
-
-            RelationshipClassMapInfo::PreferredDirection preferredDirection = relationshipClassMapInfo.GetUserPreferredDirection ();
-            if (preferredDirection == RelationshipClassMapInfo::PreferredDirection::TargetToSource)
-                {
-                if (createOnSource)
-                    AddIndicesToRelationshipEnds(RelationshipIndexSpec::TargetAndSource, addUniqueIndex); // unique index starting with target
-                }
-            else
-                {
-                if (createOnTarget)
-                    AddIndicesToRelationshipEnds(RelationshipIndexSpec::SourceAndTarget, addUniqueIndex); // unique index starting with target
-                }
-
+            AddIndicesToRelationshipEnds(RelationshipIndexSpec::Source, false);
+            AddIndicesToRelationshipEnds(RelationshipIndexSpec::Target, false);
             break;
             }
         default:
             break;
         }
+
+    if (!relationshipClassMapInfo.AllowDuplicateRelationships())
+        AddIndicesToRelationshipEnds(RelationshipClassLinkTableMap::RelationshipIndexSpec::SourceAndTarget, true);
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -1118,12 +1143,10 @@ ECDbSqlIndex* RelationshipClassLinkTableMap::CreateIndex (RelationshipIndexSpec 
             name.append ("Target");
             break;
         case RelationshipIndexSpec::SourceAndTarget:
-            name.append ("Source_Target");
-            break;
-        case RelationshipIndexSpec::TargetAndSource:
-            name.append ("Target_Source");
+            name.append("SourceTarget");  
             break;
         default:
+            BeAssert(false);
             break;
         }
     
@@ -1180,25 +1203,19 @@ void RelationshipClassLinkTableMap::AddIndicesToRelationshipEnds (RelationshipIn
     switch(spec)
         {
         case RelationshipIndexSpec::Source:
-            {
             AddColumnsToIndex (*index, sourceECInstanceIdColumn, sourceECClassIdColumn, nullptr, nullptr);
             break;
-            }
         case RelationshipIndexSpec::Target:
-            {
             AddColumnsToIndex (*index, targetECInstanceIdColumn, targetECClassIdColumn, nullptr, nullptr);
             break;
-            }
+
         case RelationshipIndexSpec::SourceAndTarget:
-            {
-            AddColumnsToIndex (*index, sourceECInstanceIdColumn, sourceECClassIdColumn, targetECInstanceIdColumn, targetECClassIdColumn);
+            AddColumnsToIndex(*index, sourceECInstanceIdColumn, sourceECClassIdColumn, targetECInstanceIdColumn, targetECClassIdColumn);
             break;
-            }
-        case RelationshipIndexSpec::TargetAndSource:
-            {
-            AddColumnsToIndex (*index, targetECInstanceIdColumn, targetECClassIdColumn, sourceECInstanceIdColumn, sourceECClassIdColumn);
+
+        default:
+            BeAssert(false);
             break;
-            }
         }
 
     if (!index->IsValid())

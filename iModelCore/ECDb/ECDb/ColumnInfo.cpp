@@ -13,103 +13,73 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ColumnInfo::ColumnInfo (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString) 
-: m_nullable (true), m_unique (false), m_columnType (PRIMITIVETYPE_Unknown), m_collation (ECDbSqlColumn::Constraint::Collation::Default), m_virtual (false), m_priority (0)
+ColumnInfo ColumnInfo::Create(ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString)
     {
-    // Assumes that if it is mapped to a column and is not primitive, it is mapped as a blob. Needswork if we add a JSON mapping hint
-    PrimitiveECPropertyCP primitiveProperty = ecProperty.GetAsPrimitiveProperty();
-    if (primitiveProperty)
-        m_columnType = primitiveProperty->GetType ();
-    else
-        m_columnType = PRIMITIVETYPE_Binary; //In this case, it is the type of the column, not of the property
+    ColumnInfo info;
+    if (SUCCESS != info.Initialize(ecProperty, propertyAccessString))
+        return ColumnInfo();
 
-    InitializeFromMapCustomAttribute(ecProperty);
-
-    // PropertyMappingRule: if custom attribute PropertyMap does not supply a column name for an ECProperty, 
-    // we use the ECProperty's propertyAccessString (and replace . by _)
-    if (Utf8String::IsNullOrEmpty (m_columnName.c_str ()))
-        {
-        m_columnName = Utf8String (propertyAccessString);
-        m_columnName.ReplaceAll (".", "_");
-        BeAssert (m_columnName.find (".") == Utf8String::npos);
-        }
+    return std::move(info);
     }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    casey.mullen      11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+ColumnInfo::ColumnInfo () 
+: m_isValid(false), m_nullable (true), m_unique (false), m_columnType(PRIMITIVETYPE_Binary), //default column type
+m_collation (ECDbSqlColumn::Constraint::Collation::Default)
+    {}
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ColumnInfo::InitializeFromMapCustomAttribute(ECPropertyCR ecProperty)
+BentleyStatus ColumnInfo::Initialize(ECPropertyCR ecProperty, WCharCP propertyAccessString)
     {
+    // Assumes that if it is mapped to a column and is not primitive, it is mapped as a blob. Needswork if we add a JSON mapping hint
+    PrimitiveECPropertyCP primitiveProperty = ecProperty.GetAsPrimitiveProperty();
+    if (primitiveProperty)
+        m_columnType = primitiveProperty->GetType();
+    else
+        m_columnType = PRIMITIVETYPE_Binary; //In this case, it is the type of the column, not of the property
+
+
     ECDbPropertyMap customPropMap;
-    if (!ECDbMapCustomAttributeHelper::TryGetPropertyMap(customPropMap, ecProperty))
-        return;
-
-    Utf8String columnName;
-    if (customPropMap.TryGetColumnName(columnName))
-        m_columnName = columnName;
-
-    bool isNullable = false;
-    if (customPropMap.TryGetIsNullable(isNullable))
-        m_nullable = isNullable;
-
-    bool isUnique = false;
-    if (customPropMap.TryGetIsUnique(isUnique))
-        m_unique = isUnique;
-
-    Utf8String collationStr;
-    if (customPropMap.TryGetCollation(collationStr))
+    if (ECDbMapCustomAttributeHelper::TryGetPropertyMap(customPropMap, ecProperty))
         {
+        if (ECOBJECTS_STATUS_Success != customPropMap.TryGetColumnName(m_columnName))
+            return ERROR;
+
+        if (ECOBJECTS_STATUS_Success != customPropMap.TryGetIsNullable(m_nullable))
+            return ERROR;
+
+        if (ECOBJECTS_STATUS_Success != customPropMap.TryGetIsUnique(m_unique))
+            return ERROR;
+
+        Utf8String collationStr;
+        if (ECOBJECTS_STATUS_Success != customPropMap.TryGetCollation(collationStr))
+            return ERROR;
+
         if (!ECDbSqlColumn::Constraint::TryParseCollationString(m_collation, collationStr.c_str()))
             {
             LOG.errorv("Custom attribute PropertyMap on ECProperty %s:%s has an invalid value for the property 'Collation': %s",
                        Utf8String(ecProperty.GetClass().GetFullName()).c_str(), Utf8String(ecProperty.GetName()).c_str(),
                        collationStr.c_str());
+            return ERROR;
             }
         }
 
+    // PropertyMappingRule: if custom attribute PropertyMap does not supply a column name for an ECProperty, 
+    // we use the ECProperty's propertyAccessString (and replace . by _)
+    if (Utf8String::IsNullOrEmpty(m_columnName.c_str()))
+        {
+        m_columnName = Utf8String(propertyAccessString);
+        m_columnName.ReplaceAll(".", "_");
+        BeAssert(m_columnName.find(".") == Utf8String::npos);
+        }
+
     //WIP_ECDB: needswork: handle DoNotMap
+    m_isValid = true;
+    return SUCCESS;
     }
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP ColumnInfo::GetName() const
-    {
-    return m_columnName.c_str();
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ColumnInfo::GetNullable() const
-    {
-    return m_nullable;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ColumnInfo::GetUnique() const
-    {
-    return m_unique;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-PrimitiveType ColumnInfo::GetColumnType() const
-    {
-    return m_columnType;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    casey.mullen      12/2012
-//---------------------------------------------------------------------------------------
-void ColumnInfo::SetColumnName (Utf8CP columnName)
-    {
-    m_columnName = columnName;
-    }
-
-
-//
 END_BENTLEY_SQLITE_EC_NAMESPACE

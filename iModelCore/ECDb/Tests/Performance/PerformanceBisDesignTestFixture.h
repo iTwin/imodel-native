@@ -54,8 +54,8 @@ private:
     mutable uint64_t m_ecInstanceIdSequence;
     bmap<ECN::ECPropertyCP, int> m_parameterMapping;
 
-    virtual void _RunInsertTest(BeSQLiteDbR db, Context const& context) const = 0;
-    virtual void _RunSelectTest(BeSQLiteDbR db, Context const& context) const = 0;
+    virtual void _RunInsertTest(BeSQLite::DbR db, Context const& context) const = 0;
+    virtual void _RunSelectTest(BeSQLite::DbR db, Context const& context) const = 0;
     virtual void _GenerateSqlTestItems (Context const& context, ECN::ECSchemaCR testSchema) = 0;
     virtual void _GenerateDdlSql (Utf8StringR createTablesSql, Utf8StringR createIndicesSql, ECN::ECSchemaCR testSchema) const = 0;
 
@@ -69,9 +69,9 @@ private:
     static ECN::ECClassP AddTestClassStub (ECN::ECSchemaR schema, ECN::ECClassCR baseClass, WCharCP name, ECN::ECClassId ecClassId);
     static BentleyStatus AddTestClassProperty (ECN::ECClassR testClass, int propertyNumber, ECN::PrimitiveType const* type);
 
-    static void CreateTestDb (BeSQLiteDbR db, Utf8CP fileName);
-    void Setup (BeSQLiteDbR db, Context& context, ECN::ECSchemaCR testSchema);
-    static void OpenTestDb (BeSQLiteDbR db, Utf8CP fileName, bool readonly = true);
+    static void CreateTestDb (BeSQLite::DbR db, Utf8CP fileName);
+    void Setup (BeSQLite::DbR db, Context& context, ECN::ECSchemaCR testSchema);
+    static void OpenTestDb (BeSQLite::DbR db, Utf8CP fileName, bool readonly = true);
 
 protected:
     PerformanceBisDesignTestFixture ()
@@ -118,8 +118,8 @@ private:
     typedef bmap<ECN::ECClassCP, SqlTestItem> SqlTestItems;
     SqlTestItems m_sqlTestItems;
 
-    virtual void _RunInsertTest(BeSQLiteDbR db, Context const& context) const override;
-    virtual void _RunSelectTest(BeSQLiteDbR db, Context const& context) const override;
+    virtual void _RunInsertTest(BeSQLite::DbR db, Context const& context) const override;
+    virtual void _RunSelectTest(BeSQLite::DbR db, Context const& context) const override;
     virtual void _GenerateSqlTestItems (Context const& context, ECN::ECSchemaCR testSchema) override;
     virtual void _GenerateDdlSql (Utf8StringR createTablesSql, Utf8StringR createIndicesSql, ECN::ECSchemaCR testSchema) const override;
 
@@ -155,10 +155,10 @@ private:
     std::pair<int, int> m_systemColumnsSelectClauseRangeInGenericSelect;
     bmap<ECN::ECClassCP, SqlTestItem> m_sqlTestItems;
 
-    virtual void _RunInsertTest(BeSQLiteDbR db, Context const& context ) const override;
-    virtual void _RunSelectTest(BeSQLiteDbR db, Context const& context ) const override;
-    void RunNonGenericSelectTest (BeSQLiteDbR db, Context const& context) const;
-    void RunGenericSelectTest (BeSQLiteDbR db, Context const& context) const;
+    virtual void _RunInsertTest(BeSQLite::DbR db, Context const& context ) const override;
+    virtual void _RunSelectTest(BeSQLite::DbR db, Context const& context ) const override;
+    void RunNonGenericSelectTest (BeSQLite::DbR db, Context const& context) const;
+    void RunGenericSelectTest (BeSQLite::DbR db, Context const& context) const;
 
     virtual void _GenerateSqlTestItems (Context const& context, ECN::ECSchemaCR testSchema) override;
     virtual void _GenerateDdlSql (Utf8StringR createTablesSql, Utf8StringR createIndicesSql, ECN::ECSchemaCR testSchema) const override;
@@ -189,8 +189,8 @@ private:
     Utf8String m_masterInsertSql;
     bmap<ECN::ECClassCP, SqlTestItem> m_sqlTestItems;
 
-    virtual void _RunInsertTest(BeSQLiteDbR db, Context const& context ) const override;
-    virtual void _RunSelectTest(BeSQLiteDbR db, Context const& context ) const override;
+    virtual void _RunInsertTest(BeSQLite::DbR db, Context const& context ) const override;
+    virtual void _RunSelectTest(BeSQLite::DbR db, Context const& context ) const override;
     virtual void _GenerateSqlTestItems (Context const& context, ECN::ECSchemaCR testSchema) override;
     virtual void _GenerateDdlSql (Utf8StringR createTablesSql, Utf8StringR createIndicesSql, ECN::ECSchemaCR testSchema) const override;
 

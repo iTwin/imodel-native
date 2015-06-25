@@ -103,7 +103,7 @@ BeSQLite::DbResult ECDbSchemaWriter::CreateECClassEntry (ECClassCR ecClass, ECCl
 
     info.ColsInsert =
         DbECClassInfo::COL_Id                |
-        DbECClassInfo::COL_ECSchemaId        |
+        DbECClassInfo::COL_SchemaId        |
         DbECClassInfo::COL_Name              |
         DbECClassInfo::COL_Description       |
         DbECClassInfo::COL_IsCustomAttribute |
@@ -150,9 +150,9 @@ BeSQLite::DbResult ECDbSchemaWriter::CreateBaseClassEntry (ECClassId ecClassId, 
     DbBaseClassInfo info;
 
     info.ColsInsert =
-        DbBaseClassInfo::COL_ECClassId     |
-        DbBaseClassInfo::COL_BaseECClassId |
-        DbBaseClassInfo::COL_ECIndex;
+        DbBaseClassInfo::COL_ClassId     |
+        DbBaseClassInfo::COL_BaseClassId |
+        DbBaseClassInfo::COL_Ordinal;
 
     info.m_ecClassId      = ecClassId;
     info.m_baseECClassId  = baseClass.GetId();
@@ -170,17 +170,17 @@ BeSQLite::DbResult ECDbSchemaWriter::CreateECPropertyEntry (ECPropertyCR ecPrope
     DbECPropertyInfo info;
     info.ColsInsert =
         DbECPropertyInfo::COL_Id           |
-        DbECPropertyInfo::COL_ECClassId    |
+        DbECPropertyInfo::COL_ClassId    |
         DbECPropertyInfo::COL_IsArray      |
         DbECPropertyInfo::COL_Description  |
-        DbECPropertyInfo::COL_ECIndex      |
+        DbECPropertyInfo::COL_Ordinal      |
         DbECPropertyInfo::COL_IsReadOnly   |
         DbECPropertyInfo::COL_Name;
 
     info.m_ecClassId    = ecClassId;
     info.m_ecPropertyId = ecPropertyId;
     info.m_isArray      = ecProperty.GetIsArray();
-    info.m_ecIndex      = index;
+    info.m_ordinal      = index;
     info.m_isReadOnly   = ecProperty.GetIsReadOnly();
     BeStringUtilities::WCharToUtf8 (info.m_name, ecProperty.GetName().c_str());
     BeStringUtilities::WCharToUtf8 (info.m_description, ecProperty.GetDescription().c_str());
@@ -191,13 +191,13 @@ BeSQLite::DbResult ECDbSchemaWriter::CreateECPropertyEntry (ECPropertyCR ecPrope
         }
     if (ecProperty.GetIsPrimitive())
         {
-        info.ColsInsert |= DbECPropertyInfo::COL_TypeECPrimitive;
-        info.m_typeECPrimitive = ecProperty.GetAsPrimitiveProperty()->GetType();            
+        info.ColsInsert |= DbECPropertyInfo::COL_PrimitiveType;
+        info.m_primitiveType = ecProperty.GetAsPrimitiveProperty()->GetType();            
         }
     else if( ecProperty.GetIsStruct())
         {
-        info.ColsInsert |= DbECPropertyInfo::COL_TypeECStruct;
-        info.m_typeECStruct = ecProperty.GetAsStructProperty()->GetType().GetId();
+        info.ColsInsert |= DbECPropertyInfo::COL_StructType;
+        info.m_structType = ecProperty.GetAsStructProperty()->GetType().GetId();
         }
     else if( ecProperty.GetIsArray())
         {
@@ -207,13 +207,13 @@ BeSQLite::DbResult ECDbSchemaWriter::CreateECPropertyEntry (ECPropertyCR ecPrope
 
         if (arrayProperty->GetKind() == ARRAYKIND_Primitive)
             {
-            info.ColsInsert |= DbECPropertyInfo::COL_TypeECPrimitive;
-            info.m_typeECPrimitive = arrayProperty->GetPrimitiveElementType();            
+            info.ColsInsert |= DbECPropertyInfo::COL_PrimitiveType;
+            info.m_primitiveType = arrayProperty->GetPrimitiveElementType();            
             }
         else // ARRAYKIND_Struct
             {
-            info.ColsInsert |= DbECPropertyInfo::COL_TypeECStruct;
-            info.m_typeECStruct = arrayProperty->GetStructElementType()->GetId();
+            info.ColsInsert |= DbECPropertyInfo::COL_StructType;
+            info.m_structType = arrayProperty->GetStructElementType()->GetId();
             }
 
         info.m_minOccurs = arrayProperty->GetMinOccurs ();
@@ -233,10 +233,10 @@ BeSQLite::DbResult ECDbSchemaWriter::CreateECRelationConstraintEntry (ECClassId 
     DbECRelationshipConstraintInfo info;
 
     info.ColsInsert =
-        DbECRelationshipConstraintInfo::COL_ECClassId             |
+        DbECRelationshipConstraintInfo::COL_ClassId             |
         DbECRelationshipConstraintInfo::COL_CardinalityLowerLimit |
         DbECRelationshipConstraintInfo::COL_CardinalityUpperLimit |
-        DbECRelationshipConstraintInfo::COL_ECRelationshipEnd     |
+        DbECRelationshipConstraintInfo::COL_RelationshipEnd     |
         DbECRelationshipConstraintInfo::COL_IsPolymorphic;
 
     info.m_ecClassId             = ecClassId;
@@ -264,8 +264,8 @@ BeSQLite::DbResult ECDbSchemaWriter::InsertCAEntry (IECInstanceP customAttribute
     insertInfo.ColsInsert =
         DbCustomAttributeInfo::COL_ContainerId |
         DbCustomAttributeInfo::COL_ContainerType |
-        DbCustomAttributeInfo::COL_ECClassId |
-        DbCustomAttributeInfo::COL_Index;
+        DbCustomAttributeInfo::COL_ClassId |
+        DbCustomAttributeInfo::COL_Ordinal;
 
 
     insertInfo.m_containerId = containerId;
@@ -290,19 +290,14 @@ BeSQLite::DbResult ECDbSchemaWriter::CreateECRelationshipConstraintClassEntry (E
     {
     DbECRelationshipConstraintClassInfo info;
     info.ColsInsert =
-        DbECRelationshipConstraintClassInfo::COL_ECClassId           |
-        DbECRelationshipConstraintClassInfo::COL_RelationECClassId   |
-        DbECRelationshipConstraintClassInfo::COL_ECRelationshipEnd;
+        DbECRelationshipConstraintClassInfo::COL_ClassId           |
+        DbECRelationshipConstraintClassInfo::COL_RelationClassId   |
+        DbECRelationshipConstraintClassInfo::COL_RelationshipEnd;
     info.m_ecClassId            = ecClassId;
     info.m_relationECClassId    = constraintClassId;
     info.m_ecRelationshipEnd    = endpoint;
     return ECDbSchemaPersistence::InsertECRelationConstraintClassInfo (m_ecdb, info);
     }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECDbSchemaWriter::ECDbSchemaWriter (ECDbR ecdb) : m_ecdb(ecdb){}
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
@@ -388,18 +383,18 @@ BeSQLite::DbResult ECDbSchemaWriter::ImportECSchema (ECN::ECSchemaCR ecSchema)
             }
         }
 
-    return ImportCustomAttributes(ecSchema, ecSchemaId, ECONTAINERTYPE_Schema);
+    return ImportCustomAttributes(ecSchema, ecSchemaId, ECContainerType::Schema);
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult ECDbSchemaWriter::CreateECSchemaReferenceEntry(ECSchemaId ecSchemaId, ECSchemaId ecReferenceSchemaId)
+BeSQLite::DbResult ECDbSchemaWriter::CreateECSchemaReferenceEntry(ECSchemaId ecSchemaId, ECSchemaId ecReferencedSchemaId)
     {
     DbECSchemaReferenceInfo  info;
-    info.ColsInsert          = DbECSchemaReferenceInfo::COL_ECSchemaId | DbECSchemaReferenceInfo::COL_ReferenceECSchemaId ;
+    info.ColsInsert          = DbECSchemaReferenceInfo::COL_SchemaId | DbECSchemaReferenceInfo::COL_ReferencedSchemaId ;
     info.m_ecSchemaId          = ecSchemaId;
-    info.m_referenceECSchemaId = ecReferenceSchemaId;
+    info.m_referencedECSchemaId = ecReferencedSchemaId;
 
     return ECDbSchemaPersistence::InsertECSchemaReferenceInfo(m_ecdb, info);
     }
@@ -468,867 +463,14 @@ BeSQLite::DbResult ECDbSchemaWriter::EnsureECSchemaExists (ECClassCR ecClass)
     }
 
 /*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult ECDbSchemaWriter::UpdateCustomAttribute (IECInstanceCR ecInstance, IECCustomAttributeContainerCR container, ECContainerId sourceContainerId, ECContainerType containerType)
-    {
-    if (!ecInstance.GetClass().HasId())
-        ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema (m_ecdb, ecInstance.GetClass()); //Callers will assume it has a valid Id
-
-    if (ECDbSchemaPersistence::IsCustomAttributeDefined(m_ecdb, ecInstance.GetClass().GetId(), sourceContainerId, containerType))
-        {
-        DbCustomAttributeInfo info;
-        info.ColsUpdate = DbCustomAttributeInfo::COL_Instance;
-        info.SerializeCaInstance(const_cast<IECInstanceR>(ecInstance));
-        info.ColsWhere = DbCustomAttributeInfo::COL_ContainerId | DbCustomAttributeInfo::COL_ContainerType | DbCustomAttributeInfo::COL_ECClassId;
-        info.m_containerId = sourceContainerId;
-        info.m_containerType = containerType;
-        info.m_ecClassId = ecInstance.GetClass().GetId();
-        return ECDbSchemaPersistence::UpdateCustomAttributeInfo(m_ecdb, info);
-        }
-    
-    auto r = ImportCustomAttributes(container, sourceContainerId, containerType, ecInstance.GetClass().GetName().c_str());
-    if (r != BE_SQLITE_DONE)
-        {
-        LOG.error(L"Failed while importing customAttribute");
-        return r;
-        }
-    return r;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDbSchemaWriter::DiffExist (IECDiffNodeCR diff, WCharCP name)
-    {
-    auto child = diff.GetChildByAccessString (name);
-    if (child != nullptr)
-        {
-        return child->GetDiffType () != DIFFTYPE_Empty && child->GetDiffType () != DIFFTYPE_Left;
-        }
-
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult ECDbSchemaWriter::UpdateCustomAttributes 
-    (
-    IECCustomAttributeContainerCR sourceContainer, 
-    IECDiffNodeCR customAttributesDN,
-    ECContainerId sourceContainerId, 
-    ECContainerType containerType
-    )
-    {
-    DbResult r = BE_SQLITE_DONE;
-    for (auto customAttributeDN :customAttributesDN.GetChildren())
-        {
-        //The name of customAttribute is FullName() for the class which contain schema name as well;
-        auto  n = customAttributeDN->GetName().find(L":");
-        auto caSchemaName = customAttributeDN->GetName().substr(0, n);
-        auto caClassName = customAttributeDN->GetName().substr(n + 1);
-        //auto caSchemName = customAttributeDN->GetName().substr(0, n - 1);
-
-        auto  type = customAttributeDN->GetDiffType(true); 
-        switch(type)
-            {
-            case DIFFTYPE_Conflict: //Property is conflicting 
-            case DIFFTYPE_Right:    //Property added in new schema
-            case DIFFTYPE_Left:
-            case DIFFTYPE_Empty:    //Not used
-                {
-                auto ca = sourceContainer.GetCustomAttributeLocal (caClassName.c_str ());
-                if (caClassName.Equals (L"ClassMap") ||
-                    caClassName.Equals (L"PropertyMap") ||
-                    caClassName.Equals (L"ECDbRelationshipClassHint") ||
-                    caClassName.Equals (L"SchemaMap"))
-                    {
-                    if (DiffExist (*customAttributeDN, L"MapStrategy")
-                        || DiffExist (*customAttributeDN, L"Indexes")
-                        || DiffExist (*customAttributeDN, L"PreferredDirection")
-                        || DiffExist (*customAttributeDN, L"AllowDuplicateRelationships")
-                        || DiffExist (*customAttributeDN, L"IsNullable")
-                        || DiffExist (*customAttributeDN, L"IsUnique")
-                        || DiffExist (*customAttributeDN, L"TablePrefix"))
-                        {
-                        LOG.warningv (L"Updating ECDb mapping hints failed. One of the property changed is not allowed to update. Skipping '%ls'", caClassName.c_str ());
-                        continue;
-                        }
-                    }
-
-                if (ca.IsNull())
-                    {
-                    auto caClassId = ECDbSchemaPersistence::GetECClassIdBySchemaName(m_ecdb, Utf8String(caSchemaName.c_str()).c_str(), Utf8String(caClassName.c_str()).c_str());
-                    if (caClassId != 0)
-                        {
-                        r = ECDbSchemaPersistence::DeleteCustomAttribute(sourceContainerId, containerType, caClassId, m_ecdb);
-                        if (r != BE_SQLITE_DONE)
-                            {
-                            LOG.errorv(L"Failed to delete existing custom attribute with class name '%ls' deleted", caClassName.c_str());
-                            return r;
-                            }
-                        return BE_SQLITE_DONE;
-                        }
-                    else 
-                        {
-                        BeDataAssert(caClassId != 0 && "Failed to delete existing custom attribute");
-                        LOG.errorv(L"Failed to delete existing custom attribute with class name '%ls' deleted", caClassName.c_str());
-                        return r;
-                        }
-                    }
-                else
-                    {
-                    //We do not support replacing mapping hints
-                    r = UpdateCustomAttribute (*ca, sourceContainer, sourceContainerId, containerType);
-                    if (r != BE_SQLITE_DONE)
-                        {
-                        LOG.errorv(L"Failed while updating customAttribute %ls", caClassName.c_str());
-                        return r;
-                        }
-
-                    if (caClassName.Equals (L"ClassMap") && containerType == ECContainerType::ECONTAINERTYPE_Class)
-                        {                  
-                        if (auto tableName = customAttributeDN->GetChildByAccessString (L"TableName"))
-                            {
-                            Statement stmt;
-                            stmt.Prepare (m_ecdb, "UPDATE ec_ClassMap SET MapToDbTable =?  WHERE ECClassId = ?");
-                            if (!tableName->GetValueRight ().IsNull ())
-                                stmt.BindText (1, tableName->GetValueRight ().GetUtf8CP (), Statement::MakeCopy::Yes);
-
-                            stmt.BindInt64 (2, sourceContainerId);
-                            if ((r = stmt.Step ()) != BE_SQLITE_DONE)
-                                {
-                                LOG.error (L"Failed while updating TableName");
-                                return r;
-                                }
-                            }
-
-                        if (auto ecInstanceIdColumn = customAttributeDN->GetChildByAccessString (L"ECInstanceIdColumn"))
-                            {
-                            Statement stmt;
-                            stmt.Prepare (m_ecdb, "UPDATE ec_ClassMap SET PrimaryKeyColumnName =?  WHERE ECClassId = ?");
-                            if (!ecInstanceIdColumn->GetValueRight ().IsNull ())
-                                stmt.BindText (1, ecInstanceIdColumn->GetValueRight ().GetUtf8CP (), Statement::MakeCopy::Yes);
-                            
-                            stmt.BindInt64 (2, sourceContainerId);
-                            if ((r = stmt.Step ()) != BE_SQLITE_DONE)
-                                {
-                                LOG.error (L"Failed while updating PrimaryKeyColumnName");
-                                return r;
-                                }
-                            }                            
-                        }
-                    }
-
-                break;
-                }
-            case DIFFTYPE_Equal:    //Not used
-                break;
-            }
-        }
-    return r;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult ECDbSchemaWriter::UpdateECProperty (ECN::ECPropertyCR ecProperty, ECN::IECDiffNodeCR propertyDN, ECClassId ecClassId)
-    {
-    DbResult r = BE_SQLITE_DONE;
-
-    if (!ecProperty.HasId())
-        ECDbSchemaManager::GetPropertyIdForECPropertyFromDuplicateECSchema (m_ecdb, ecProperty); //Callers will assume it has a valid Id
-
-    if (!ecProperty.HasId())
-        {
-        int count = (int)ecProperty.GetClass().GetPropertyCount(false);
-        r = ImportECProperty (ecProperty, ecClassId, count);
-        if (r != BE_SQLITE_DONE)
-            {
-            LOG.errorv(L"Failed while updating property %ls.%ls", ecProperty.GetClass().GetFullName(), ecProperty.GetName().c_str());
-            return r;
-            }
-        return r;
-        }
-
-    if (propertyDN.GetChildById(DiffNodeId::IsOverriden))
-        {
-        if (ecProperty.GetBaseProperty() != nullptr)
-            {
-            LOG.errorv(L"Property '%ls.%ls' cannot be un-overridden", ecProperty.GetClass().GetFullName(), ecProperty.GetName().c_str());
-            return BE_SQLITE_ERROR;
-            }
-        }
-
-    if (propertyDN.GetChildById(DiffNodeId::IsArray))
-        {
-        LOG.errorv(L"Updating 'IsArray' attribute of ECProperty '%ls.%ls' is not supported", ecProperty.GetClass().GetFullName(), ecProperty.GetName().c_str());
-        return BE_SQLITE_ERROR;
-        }
-    if (propertyDN.GetChildById(DiffNodeId::TypeName))
-        {
-        LOG.errorv(L"Updating 'TypeName' attribute of ECProperty '%ls.%ls' is not supported", ecProperty.GetClass().GetFullName(), ecProperty.GetName().c_str());
-        return BE_SQLITE_ERROR;
-        }
-    if (propertyDN.GetChildById(DiffNodeId::IsPrimitive))
-        {
-        LOG.errorv(L"Updating 'IsPrimitive' attribute of ECProperty '%ls.%ls' is not supported", ecProperty.GetClass().GetFullName(), ecProperty.GetName().c_str());
-        return BE_SQLITE_ERROR;
-        }
-    if (propertyDN.GetChildById(DiffNodeId::IsReadOnly))
-        {
-        LOG.errorv(L"Updating 'IsReadOnly' attribute of ECProperty '%ls.%ls' is not supported", ecProperty.GetClass().GetFullName(), ecProperty.GetName().c_str());
-        return BE_SQLITE_ERROR;
-        }
-
-    //Following are changes that we do support in a property
-    DbECPropertyInfo info;
-    info.ColsWhere = DbECPropertyInfo::COL_Id;
-    info.m_ecPropertyId = ecProperty.GetId();
- 
-    if (auto n = propertyDN.GetChildById(DiffNodeId::DisplayLabel))
-        {
-        info.ColsUpdate |= DbECPropertyInfo::COL_DisplayLabel;
-        if (n->GetValueRight().IsNull())
-            info.ColsNull |= DbECPropertyInfo::COL_DisplayLabel;
-        else
-            info.m_displayLabel = Utf8String(n->GetValueRight().GetString());
-        }
-    if (auto n = propertyDN.GetChildById(DiffNodeId::Description))
-        {
-        info.ColsUpdate |= DbECPropertyInfo::COL_Description;
-        if (n->GetValueRight().IsNull())
-            info.ColsNull |= DbECPropertyInfo::COL_Description;
-        else
-            info.m_description = Utf8String(n->GetValueRight().GetString());
-        }
-    if (info.ColsUpdate != 0)
-        {
-        if ((r = ECDbSchemaPersistence::UpdateECPropertyInfo(m_ecdb, info))!= BE_SQLITE_DONE)
-            {
-            LOG.errorv(L"Failed to update ECProperty '%ls.%ls' attributes", ecProperty.GetClass().GetFullName(), ecProperty.GetName().c_str());
-            return r;
-            }
-        }
-    // Update/Add CustomAttributes (if any)
-    if (auto customAttributesDN = propertyDN.GetChildById (DiffNodeId::CustomAttributes))
-        if ((r = UpdateCustomAttributes(ecProperty, *customAttributesDN, ecProperty.GetId(), ECONTAINERTYPE_Property)) != BE_SQLITE_DONE)
-            return r;
-
-    return r;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        09/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult ECDbSchemaWriter::UpdateECProperties(ECN::ECClassCR ecClass, ECN::IECDiffNodeCR propertiesDN)
-    {
-    DbResult r = BE_SQLITE_DONE;
-    for (auto propertyDN :propertiesDN.GetChildren())
-        {
-        auto& name = propertyDN->GetName();
-        auto  type = propertyDN->GetDiffType(true);
-        switch(type)
-            {
-            case DIFFTYPE_Conflict: //Property is conflicting 
-            case DIFFTYPE_Right:    //Property added in new schema
-            case DIFFTYPE_Left:
-            case DIFFTYPE_Empty:    //Not used
-                {
-                auto propertyP = ecClass.GetPropertyP(name.c_str(), false);
-                if (propertyP == nullptr)
-                    {
-                    //Delete overriden property.
-                    auto schemaName = Utf8String(ecClass.GetSchema().GetName().c_str());
-                    auto className = Utf8String(ecClass.GetName().c_str());       
-                    auto propertyName = Utf8String (name.c_str());
-                    auto propertyId = ECDbSchemaPersistence::GetECPropertyId (m_ecdb, schemaName.c_str(), className.c_str(), propertyName.c_str());
-                    BeAssert(propertyId != 0);
-                      
-                    r = ECDbSchemaPersistence::DeleteECProperty(propertyId, m_ecdb);
-                    if (r != DbResult::BE_SQLITE_DONE)
-                        {
-                        LOG.errorv(L"Failed un-override property %ls.%ls", ecClass.GetFullName(), name.c_str());
-                        return r;
-                        }  
-                    LOG.infov("ECSchemaUpgrade: Deleted property %ls.%ls", ecClass.GetFullName(), name.c_str());
-                   }
-                else
-                    {
-                    r = UpdateECProperty (*propertyP, *propertyDN, ecClass.GetId());
-                    if (r != BE_SQLITE_DONE)
-                        {
-                        LOG.errorv(L"Failed while updating property %ls.%ls", ecClass.GetFullName(), name.c_str());
-                        return r;
-                        }
-                    }
-                break;
-                }
-            case DIFFTYPE_Equal:    //Not used
-                break;
-            }
-        }
-    return r;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        09/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult ECDbSchemaWriter::UpdateECClass (ECN::ECClassCR ecClass, ECN::IECDiffNodeCR classDN)
-    {
-    DbResult r = BE_SQLITE_ERROR;
-    if (!ecClass.HasId())
-        ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema (m_ecdb, ecClass); //Callers will assume it has a valid Id
-
-    if(!ecClass.HasId())
-        {
-        r = ImportECClass (ecClass);
-        if (r != BE_SQLITE_DONE)
-            {
-            LOG.errorv(L"Failed while importing %ls", ecClass.GetFullName());
-            BeDataAssert(false);
-            return r;
-            }
-        return r;
-        }
-
-    m_updateContext->MarkAsUpdated(&classDN);
-
-    // PRECONDITIONS Following changes in schema is not supported at this time   
-    if (auto isDomain = classDN.GetChildById(DiffNodeId::IsDomainClass))
-        {
-        //If existing class is custom attribute and its domain property is set to true in upgrade schema
-        //we accept it. This will cause a table to be created for custom attribute class.
-        if (!(isDomain->GetValueRight ().GetBoolean () && ecClass.GetIsCustomAttributeClass ()))
-            {
-            LOG.errorv (L"Updating 'IsDomain' property of ECClass %ls is not supported", ecClass.GetFullName ());
-            return BE_SQLITE_ERROR;
-            }
-        }
-
-    if (classDN.GetChildById (DiffNodeId::IsCustomAttributeClass))
-        {
-        LOG.errorv (L"Updating 'IsStruct' property of ECClass %ls is not supported", ecClass.GetFullName ());
-        return BE_SQLITE_ERROR;
-        }
-
-    if (classDN.GetChildById(DiffNodeId::IsStruct))
-        {
-        LOG.errorv(L"Updating 'IsStruct' property of ECClass %ls is not supported", ecClass.GetFullName());
-        return BE_SQLITE_ERROR;
-        }
-
-
-    if (classDN.GetChildById(DiffNodeId::IsRelationshipClass))
-        {
-        LOG.errorv(L"Updating 'IsRelationshipClass' property of ECClass %ls is not supported", ecClass.GetFullName());
-        return BE_SQLITE_ERROR;
-        }
-
-    if (classDN.GetChildById(DiffNodeId::BaseClasses))
-        {
-        LOG.errorv(L"Updating 'BaseClasses' of ECClass %ls is not supported", ecClass.GetFullName());
-        return BE_SQLITE_ERROR;
-        }
-
-    if (auto n = classDN.GetChildById(DiffNodeId::RelationshipInfo))
-        {
-        auto relationshipClass = ecClass.GetRelationshipClassCP();
-        BeAssert (relationshipClass != nullptr);
-        if (relationshipClass)
-            {
-            r = UpdateECRelationshipClass(*ecClass.GetRelationshipClassCP(), *n);
-            if (r != BE_SQLITE_DONE)
-                return r;
-            }
-        else
-            {
-            LOG.error(L"Updating 'ECRelationshipClass' has limited support");
-            return BE_SQLITE_ERROR;
-            }
-        }
-
-    //Following are changes that we do support in a class
-    DbECClassInfo info;
-    info.ColsWhere = DbECClassInfo::COL_Id;
-    info.m_ecClassId = ecClass.GetId();
-    if (auto n = classDN.GetChildById(DiffNodeId::DisplayLabel))
-        {
-        info.ColsUpdate |= DbECClassInfo::COL_DisplayLabel;
-        if (n->GetValueRight().IsNull())
-            info.ColsNull |= DbECClassInfo::COL_DisplayLabel;
-        else
-            info.m_displayLabel = Utf8String(n->GetValueRight().GetString());
-        }
-
-    if (auto n = classDN.GetChildById(DiffNodeId::Description))
-        {
-        info.ColsUpdate |= DbECClassInfo::COL_Description;
-        if (n->GetValueRight().IsNull())
-            info.ColsNull |= DbECClassInfo::COL_Description;
-        else
-            info.m_description = Utf8String(n->GetValueRight().GetString());
-        }
-
-    if (auto n = classDN.GetChildById (DiffNodeId::IsDomainClass))
-        {
-        info.ColsUpdate |= DbECClassInfo::COL_IsDomainClass;
-        if (n->GetValueRight ().IsNull ())
-            info.ColsNull |= DbECClassInfo::COL_IsDomainClass;
-        else
-            info.m_isDomainClass = n->GetValueRight ().GetBoolean ();
-        }
-
-    if (info.ColsUpdate != 0)
-        {
-        if ((r = ECDbSchemaPersistence::UpdateECClassInfo(m_ecdb, info))!= BE_SQLITE_DONE)
-            {
-            LOG.errorv(L"Failed to update ECClass %ls class attributes", ecClass.GetFullName());
-            return BE_SQLITE_ERROR;
-            }
-        }
-
-    // Update/Add ECProperties (if any)
-    if (auto propertiesDN = classDN.GetChildById (DiffNodeId::Properties))
-        if ((r = UpdateECProperties(ecClass, *propertiesDN)) != BE_SQLITE_DONE)
-            return r;
-
-    // Update/Add CustomAttributes (if any)
-    if (auto customAttributesDN = classDN.GetChildById (DiffNodeId::CustomAttributes))
-        if ((r = UpdateCustomAttributes(ecClass, *customAttributesDN, ecClass.GetId(), ECONTAINERTYPE_Class)) != BE_SQLITE_DONE)
-            return r;
-    return r;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        11/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECClassId ECDbSchemaWriter::ResolveClassIdFromUpdateContext(WCharCP schemaName, WCharCP className)
-    {
-    PRECONDITION(m_updateContext.get() != nullptr && "This funtion must be classed from ECDbSchemaWriter::Update()", 0);
-    auto& modifiedSchema = m_updateContext->GetDiff().GetRightSchema();
-    if (modifiedSchema.GetName() == schemaName)
-        {
-        auto classDiff = m_updateContext->GetClassDiff(className);
-        if (classDiff && !m_updateContext->IsUpdated(classDiff))
-            {
-            auto classP = modifiedSchema.GetClassCP(className);
-            PRECONDITION (classP != nullptr && "Expected to find class", 0);
-            auto r = UpdateECClass(*classP, *classDiff);
-            if (r != BE_SQLITE_DONE)
-                {
-                LOG.errorv(L"Failed to update ECClass %ls.%ls class attributes", schemaName, className);
-                return 0;
-                }
-            m_updateContext->MarkAsUpdated(classDiff);
-            }
-        }
-    auto classId = ECDbSchemaPersistence::GetECClassIdBySchemaName(m_ecdb, Utf8String(schemaName).c_str(), Utf8String(className).c_str());
-    BeAssert (classId != 0);
-    return classId;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        11/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult ECDbSchemaWriter::UpdateECRelationshipConstraint (ECN::ECRelationshipClassCR updateRelationshipClass, ECRelationshipEnd relationshipEnd,  ECN::IECDiffNodeCR relationshipConstraint)
-    {
-    DbResult r;
-    ECN::ECRelationshipConstraintCR constraint = 
-        relationshipEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? updateRelationshipClass.GetSource() : updateRelationshipClass.GetTarget();
-  
-    auto constraintDiff =  relationshipConstraint.GetChildById (relationshipEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? DiffNodeId::Source : DiffNodeId::Target);
-    if (constraintDiff == nullptr)
-        return BE_SQLITE_DONE;
-
-
-    if (constraintDiff->GetChildById(DiffNodeId::IsPolymorphic))
-        {
-        LOG.error(L"Updating 'ECRelationshipConstraint' IsPolymorphic attribute is not supported");
-        return BE_SQLITE_ERROR;
-        }
-
-    if (constraintDiff->GetChildById(DiffNodeId::Cardinality))
-        {
-        LOG.error(L"Updating 'ECRelationshipConstraint' Cardinality is not supported");
-        return BE_SQLITE_ERROR;
-        }
-
-    if (auto classesDiff = constraintDiff->GetChildById(DiffNodeId::Classes))
-        {
-        for (auto classDiff : classesDiff->GetChildren())
-            {
-            if (classDiff->GetDiffType(true) == DiffType::DIFFTYPE_Left)
-                {
-                LOG.errorv(L"Relationship constraint class '%ls' cannot be deleted  from relationship '%ls'. Operation not supported.", 
-                    updateRelationshipClass.GetName().c_str(), classDiff->GetValueLeft().GetString());
-
-                return BE_SQLITE_ERROR;
-                }
-
-            //add relationship constraint.
-            WString constraintClassSchemaName, constraintClassName;
-            ECDiffValueHelper::TryParseClassKey(constraintClassSchemaName, constraintClassName, classDiff->GetValueRight().GetString());
-            auto constraintClassId = ResolveClassIdFromUpdateContext(constraintClassSchemaName.c_str(), constraintClassName.c_str());
-            if (constraintClassId == 0)
-                {
-                BeDataAssert(constraintClassId != 0 && "Failed to add class to relationship constraint");
-                LOG.errorv(L"Failed to add class to relationship constraint '%ls'", classDiff->GetValueRight().GetString());
-                return BE_SQLITE_ERROR;
-                }
-
-            auto r = CreateECRelationshipConstraintClassEntry (updateRelationshipClass.GetId(), constraintClassId, relationshipEnd);
-            if (r != BE_SQLITE_DONE)
-                return r;
-            }
-        }
-
-    DbECRelationshipConstraintInfo info;  
-    info.m_ecClassId = updateRelationshipClass.GetId();
-    info.m_ecRelationshipEnd = relationshipEnd;
-    info.ColsWhere = DbECRelationshipConstraintInfo::COL_ECClassId | DbECRelationshipConstraintInfo::COL_ECRelationshipEnd;
-
-    if (auto n = constraintDiff->GetChildById(DiffNodeId::RoleLabel))
-        {
-        info.ColsUpdate |= DbECRelationshipConstraintInfo::COL_RoleLabel;
-        if (n->GetValueRight().IsNull())
-            info.ColsNull |= DbECRelationshipConstraintInfo::COL_RoleLabel;
-        else
-            BeStringUtilities::WCharToUtf8 (info.m_roleLabel, n->GetValueRight().GetString());
-        }
-
-    if (info.ColsUpdate != 0)
-        {
-        DbResult r = ECDbSchemaPersistence::UpdateECRelationConstraintInfo(m_ecdb, info);
-        if (r != BE_SQLITE_DONE)
-            {
-            LOG.errorv(L"Failed to update ECRelationshipConstraint %ls class attributes", updateRelationshipClass.GetFullName());
-            return BE_SQLITE_ERROR;
-            }
-        }
-
-    ECContainerType containerType = relationshipEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? ECONTAINERTYPE_RelationshipConstraintSource : ECONTAINERTYPE_RelationshipConstraintTarget;
-    if (auto customAttributesDN = relationshipConstraint.GetChildById (DiffNodeId::CustomAttributes))
-        if ((r = UpdateCustomAttributes(constraint, *customAttributesDN, updateRelationshipClass.GetId(), containerType)) != BE_SQLITE_DONE)
-            return r;
-
-    return BE_SQLITE_DONE;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        11/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult ECDbSchemaWriter::UpdateECRelationshipClass (ECN::ECRelationshipClassCR updateRelationshipClass, ECN::IECDiffNodeCR relationshipInfo)
-    {
-    if (relationshipInfo.GetChildById(DiffNodeId::Source))
-        {
-        auto r = UpdateECRelationshipConstraint(updateRelationshipClass, ECRelationshipEnd_Source, relationshipInfo);
-        if (r != BE_SQLITE_DONE)
-            return r;
-        }
-
-    if (relationshipInfo.GetChildById(DiffNodeId::Target))
-        {
-        auto r = UpdateECRelationshipConstraint(updateRelationshipClass, ECRelationshipEnd_Target, relationshipInfo);
-        if (r != BE_SQLITE_DONE)
-            return r;
-        }
-
-    DbECClassInfo info;
-    info.ColsWhere = DbECClassInfo::COL_Id;
-    info.m_ecClassId = updateRelationshipClass.GetId();
-    if (auto n = relationshipInfo.GetChildById(DiffNodeId::Strength))
-        {
-        info.ColsUpdate |= DbECClassInfo::COL_RelationStrength;
-        if (n->GetValueRight().IsNull())
-            info.ColsNull |= DbECClassInfo::COL_RelationStrength;
-        else
-            {
-            StrengthType strengthType;
-            if (!ECDiffValueHelper::TryParseRelationshipStrengthType(strengthType, n->GetValueRight().GetString()))
-                {
-                LOG.errorv(L"Failed to parse value of strength type %ls",  n->GetValueRight().GetString());
-                return BE_SQLITE_ERROR;
-                }
-            info.ColsUpdate |= DbECClassInfo::COL_RelationStrength;
-            info.m_relationStrength = strengthType; 
-            }
-        }
-
-    if (auto n = relationshipInfo.GetChildById(DiffNodeId::StrengthDirection))
-        {
-        info.ColsUpdate |= DbECClassInfo::COL_RelationStrengthDirection;
-        if (n->GetValueRight().IsNull())
-            info.ColsNull |= DbECClassInfo::COL_RelationStrengthDirection;
-        else
-            {
-            ECRelatedInstanceDirection strengthDirection;
-            if (!ECDiffValueHelper::TryParseRelatedStrengthDirection(strengthDirection, n->GetValueRight().GetString()))
-                {
-                LOG.errorv(L"Failed to parse value of strength direction %ls",  n->GetValueRight().GetString());
-                return BE_SQLITE_ERROR;
-                }
-            info.ColsUpdate |= DbECClassInfo::COL_RelationStrengthDirection;
-            info.m_relationStrengthDirection = strengthDirection; 
-            }
-        }
-
-    if (info.ColsUpdate != 0)
-        {
-        DbResult r = ECDbSchemaPersistence::UpdateECClassInfo(m_ecdb, info);
-        if (r != BE_SQLITE_DONE)
-            {
-            LOG.errorv(L"Failed to update ECClass %ls class attributes", updateRelationshipClass.GetFullName());
-            return BE_SQLITE_ERROR;
-            }
-        }
-
-    return BE_SQLITE_DONE;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        09/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult ECDbSchemaWriter::UpdateECClasses (ECN::ECSchemaCR updatedSchema, ECN::IECDiffNodeCR classesDN)
-    {
-    DbResult r = BE_SQLITE_DONE;
-    for(auto classDN :classesDN.GetChildren())
-        {
-        if (m_updateContext->IsUpdated(classDN))
-            continue;
-
-        auto& name = classDN->GetName();
-        auto  type = classDN->GetDiffType (true);
-        ///////////////////////////////////////////////////////////////////////////////////////////////
-        //Defect 120714:Cannot upgrade Graphite02 files. We do not support class deletetion for now
-        if (name == L"NamedGroup" || name == L"NamedGroupHasElements" || name == L"NamedGroupHasGroups")
-            continue;
-        ///////////////////////////////////////////////////////////////////////////////////////////////
-        switch(type)
-            {
-            case DIFFTYPE_Conflict: //Class has conflicting 
-            case DIFFTYPE_Right:    //Class added in new schema
-            case DIFFTYPE_Left:
-            case DIFFTYPE_Empty:    //Not used
-                {
-                auto classP = updatedSchema.GetClassCP(name.c_str());
-                if (classP == nullptr)
-                    {
-
-                    LOG.errorv(L"Existing class '%ls' deleted in new schema", name.c_str());
-                    BeDataAssert(false);
-                    return BE_SQLITE_ERROR;
-                    }
-                r = UpdateECClass (*classP, *classDN);
-                if (r != BE_SQLITE_DONE)
-                    {
-                    LOG.errorv(L"Failed while updating %ls", classP->GetFullName());
-                    BeDataAssert(false);
-                    return r;
-                    }
-                break;
-                }
-            case DIFFTYPE_Equal:    //Not used
-                break;
-            }
-        }
-    return r;
-}
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        09/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult ECDbSchemaWriter::UpdateReferences(ECN::ECSchemaCR updatedECSchema, IECDiffNodeCR referencesDN)
-    {
-    DbResult r = BE_SQLITE_DONE;
-    for(auto referenceDN :referencesDN.GetChildren())
-        {
-        auto& refNamespacePrefix = referenceDN->GetName();
-        auto refSchemaFullNameNew = referenceDN->GetValueRight();
-        auto refSchemaFullNameOld = referenceDN->GetValueLeft();
-
-        auto  type = referenceDN->GetDiffType(true);
-        switch(type)
-            {
-            case DIFFTYPE_Conflict: //Class has conflicting 
-            case DIFFTYPE_Right:
-            case DIFFTYPE_Left:
-                {     
-                if (!refSchemaFullNameOld.IsNull())
-                    {
-                    SchemaKey newKey,oldKey;
-                    SchemaKey::ParseSchemaFullName(newKey,refSchemaFullNameNew.GetString());
-                    SchemaKey::ParseSchemaFullName(oldKey,refSchemaFullNameOld.GetString());
-
-                    if (newKey < oldKey)
-                        {
-                        return r;
-                        }
-                    }
-                //Let reference schemas name updates
-                auto refSchema = updatedECSchema.GetSchemaByNamespacePrefixP(refNamespacePrefix);
-                if (refSchema == nullptr)
-                    {
-                    LOG.errorv(L"Failed to find reference schema %ls with namespacePrefix %ls", 
-                        refSchemaFullNameOld.GetString(), refNamespacePrefix.c_str());
-                    BeDataAssert(false);
-                    return BE_SQLITE_ERROR;
-                    }
-
-                if (!refSchema->HasId())
-                    {
-                    ECSchemaId referenceId = ECDbSchemaPersistence::GetECSchemaId(m_ecdb, *refSchema);
-                    if (referenceId == 0)
-                        {
-                        r = ImportECSchema(*refSchema);
-                        if (r != BE_SQLITE_DONE)
-                            {
-                            LOG.errorv(L"Failed while importing ECSchema Reference %ls", refSchema->GetFullSchemaName().c_str());
-                            BeDataAssert(false);
-                            return r;
-                            }
-                        }
-                    else
-                        const_cast<ECSchemaP>( refSchema)->SetId(referenceId);
-                    }
-
-                if (!ECDbSchemaPersistence::ContainsECSchemaReference (m_ecdb, updatedECSchema.GetId(), refSchema->GetId()))
-                    {
-                    r = CreateECSchemaReferenceEntry (updatedECSchema.GetId(), refSchema->GetId());
-                    POSTCONDITION (r == BE_SQLITE_DONE, r);
-                    }
-                break;
-                }
-
-            case DIFFTYPE_Equal:    //Not used
-            case DIFFTYPE_Empty:    //Not used
-                break;
-            }
-        }
-    return r;
-    }
-
-/*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::DbResult ECDbSchemaWriter::Update (ECDiffR diff, ECDbSchemaReaderR schemaReader, ECDbMapR ecdbMap)
     {
-    BeMutexHolder aGuard (m_aCriticalSection);
-
-    auto& existingSchema = diff.GetLeftSchema();
-    auto& updatedSchema = diff.GetRightSchema();
-    auto diffTree = diff.GetRootNode();
-
-    if (!updatedSchema.HasId())
-        ECDbSchemaManager::GetSchemaIdForECSchemaFromDuplicateECSchema(m_ecdb, updatedSchema);
-
-    if (diff.GetStatus() != DIFFSTATUS_Success)
-        {
-        LOG.error (L"Provided ECDiff has invalid state");
-        return BE_SQLITE_ERROR;
-        }
-
-    if (diff.IsEmpty())
-        return BE_SQLITE_DONE; //Success
-    
-    if (diffTree->GetChildById(DiffNodeId::Name))
-        {
-        LOG.errorv (L"Updating 'Name' of ECSchema %ls to %ls is not supported", existingSchema.GetFullSchemaName().c_str(), updatedSchema.GetFullSchemaName().c_str());
-        return BE_SQLITE_ERROR;
-        }
-    if (diffTree->GetChildById(DiffNodeId::VersionMajor))
-        {
-        LOG.error (L"Updating 'Major Version Number' of ECSchema is not supported");
-        return BE_SQLITE_ERROR;
-        }
-    if (diffTree->GetChildById(DiffNodeId::NamespacePrefix))
-        {
-        LOG.errorv (L"Updating 'NamespacePrefix' of ECSchema is not supported");
-        return BE_SQLITE_ERROR;
-        }
-
-    StopWatch timer ("", true);
-    ECSchemaId ecSchemaId = ECDbSchemaPersistence::GetECSchemaId(m_ecdb, updatedSchema);
-    if (0 == ecSchemaId)
-        {
-        LOG.warningv (L"Did not update ECSchema %ls (it does not exists in the ECDb).", updatedSchema.GetFullSchemaName().c_str());
-        return BE_SQLITE_ERROR;
-        }
-
-    DbResult r = BE_SQLITE_ERROR;
-
-    if (auto n = diffTree->GetChildById (DiffNodeId::References))
-        r = UpdateReferences(updatedSchema, *n);
-
-    //Following are changes that we do support in a class
-    DbECSchemaInfo info;
-    info.ColsWhere = DbECSchemaInfo::COL_Id;
-    info.m_ecSchemaId = updatedSchema.GetId();
-    if (auto n = diffTree->GetChildById(DiffNodeId::DisplayLabel))
-        {
-        info.ColsUpdate |= DbECSchemaInfo::COL_DisplayLabel;
-        if (n->GetValueRight().IsNull())
-            info.ColsNull |= DbECSchemaInfo::COL_DisplayLabel;
-        else
-            info.m_displayLabel = Utf8String(n->GetValueRight().GetString());
-        }
-    if (auto n = diffTree->GetChildById(DiffNodeId::Description))
-        {
-        info.ColsUpdate |= DbECSchemaInfo::COL_Description;
-        if (n->GetValueRight().IsNull())
-            info.ColsNull |= DbECSchemaInfo::COL_Description;
-        else
-            info.m_description = Utf8String(n->GetValueRight().GetString());
-        }
-    if (auto n = diffTree->GetChildById(DiffNodeId::VersionMinor))
-        {
-        info.ColsUpdate |= DbECSchemaInfo::COL_VersionMinor;
-        if (n->GetValueRight().IsNull())
-            {
-            LOG.error (L"MinorVersion cannot be null");
-            return BE_SQLITE_ERROR;
-            }
-         info.m_versionMinor = n->GetValueRight().GetInteger();
-        }
-
-    if (info.ColsUpdate != 0)
-        {
-        if ((r = ECDbSchemaPersistence::UpdateECSchemaInfo(m_ecdb, info))!= BE_SQLITE_DONE)
-            {
-            LOG.errorv (L"Failed to update ECSchema %ls attributes", existingSchema.GetFullSchemaName().c_str());
-            return BE_SQLITE_ERROR;
-            }
-        }
-
-    //Clean up following context before leaving this funtion
-    m_updateContext =  std::unique_ptr<SchemaUpdateContext>(new SchemaUpdateContext(diff,schemaReader, ecdbMap));
-
-    if (auto n = diffTree->GetChildById (DiffNodeId::Classes))
-        r = UpdateECClasses(updatedSchema, *n);
-
-    if (BE_SQLITE_ERROR != r)
-        {
-
-        if (auto n = diffTree->GetChildById(DiffNodeId::CustomAttributes))
-            {
-            r = UpdateCustomAttributes(updatedSchema, *n, ecSchemaId, ECONTAINERTYPE_Schema);
-            }
-        }
-    if (r != BE_SQLITE_DONE)
-        {
-        Utf8CP msg = m_ecdb.GetLastError();
-        LOG.errorv ("ECSchema update failed for %s (Error: %s)", Utf8String (existingSchema.GetFullSchemaName().c_str()).c_str (), msg);
-        BeAssert(false);
-        m_updateContext = nullptr;
-        return r;
-        }
-
-    timer.Stop();
-    LOG.debugv ("Updated ECSchema %s in %s in %.2f seconds", Utf8String (existingSchema.GetFullSchemaName().c_str()).c_str (), m_ecdb.GetDbFileName(), timer.GetElapsedSeconds());
-    m_updateContext = nullptr;
-    return BE_SQLITE_OK;
+    LOG.errorv("Schema update not supported yet in this version of ECDb.");
+    return BE_SQLITE_ERROR;
     }
+
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1393,7 +535,7 @@ BeSQLite::DbResult ECDbSchemaWriter::ImportECClass (ECN::ECClassCR ecClass)
         if (r != BE_SQLITE_DONE)
             return r;
         }
-    return ImportCustomAttributes(ecClass, ecClassId, ECONTAINERTYPE_Class);
+    return ImportCustomAttributes(ecClass, ecClassId, ECContainerType::Class);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -1434,9 +576,9 @@ BeSQLite::DbResult ECDbSchemaWriter::ImportECRelationshipConstraint (ECClassId e
             {
             DbECRelationshipConstraintClassPropertyInfo propertyInfo;
             propertyInfo.ColsInsert =
-                DbECRelationshipConstraintClassInfo::COL_ECClassId |
-                DbECRelationshipConstraintClassInfo::COL_RelationECClassId |
-                DbECRelationshipConstraintClassInfo::COL_ECRelationshipEnd;
+                DbECRelationshipConstraintClassInfo::COL_ClassId |
+                DbECRelationshipConstraintClassInfo::COL_RelationClassId |
+                DbECRelationshipConstraintClassInfo::COL_RelationshipEnd;
             propertyInfo.m_ecClassId = ecClassId;
             propertyInfo.m_relationECClassId = ecClass->GetClass().GetId();
             propertyInfo.m_ecRelationshipEnd = endpoint;
@@ -1452,7 +594,7 @@ BeSQLite::DbResult ECDbSchemaWriter::ImportECRelationshipConstraint (ECClassId e
                 return r;
             }
         }
-    ECContainerType containerType = endpoint == ECRelationshipEnd_Source ? ECONTAINERTYPE_RelationshipConstraintSource: ECONTAINERTYPE_RelationshipConstraintTarget;
+    ECContainerType containerType = endpoint == ECRelationshipEnd_Source ? ECContainerType::RelationshipConstraintSource : ECContainerType::RelationshipConstraintTarget;
     return ImportCustomAttributes (relationshipConstraint, ecClassId, containerType);
     }
 
@@ -1491,7 +633,7 @@ BeSQLite::DbResult ECDbSchemaWriter::ImportECProperty (ECN::ECPropertyCR ecPrope
     if (r != BE_SQLITE_DONE)
         return r;
 
-    return ImportCustomAttributes(ecProperty, ecPropertyId, ECONTAINERTYPE_Property);
+    return ImportCustomAttributes(ecProperty, ecPropertyId, ECContainerType::Property);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -1517,63 +659,4 @@ ECDbSchemaWriterPtr ECDbSchemaWriter::Create (ECDbR ecdb)
     return new ECDbSchemaWriter(ecdb);
     }
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        11/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-SchemaUpdateContext::SchemaUpdateContext(ECDiffR diff, ECDbSchemaReaderR schemaReader, ECDbMapR ecdbMap) 
-    : m_diff(diff), m_schemaReader(schemaReader), m_ecdbMap(ecdbMap)
-    {
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        11/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECDiffR SchemaUpdateContext::GetDiff() const {return m_diff;}
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        11/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-IECDiffNodeCP SchemaUpdateContext::GetClassDiff(WCharCP className) const
-    {
-    if (auto classesNode = GetDiff().GetRootNode()->GetChildById(DiffNodeId::Classes))        
-        {
-        return classesNode->GetChildByAccessString(className);
-        }
-
-    return nullptr;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        11/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECN::ECClassCP SchemaUpdateContext::FindExistingClass(ECClassId existingClassId)
-    {
-    return m_schemaReader.GetECClass(existingClassId);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        11/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-IClassMap const* SchemaUpdateContext::FindExistingClassMap(ECClassId existingClassId)
-    {
-    auto existingClass = FindExistingClass(existingClassId);
-    BeAssert(existingClass != nullptr);
-    return m_ecdbMap.GetClassMap(*existingClass);
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        11/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SchemaUpdateContext::IsUpdated(IECDiffNodeCP classDiffNode)
-    {
-    return m_classUpdated.find(classDiffNode) != m_classUpdated.end();
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        11/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SchemaUpdateContext::MarkAsUpdated(IECDiffNodeCP classDiffNode)
-    {
-    m_classUpdated.insert(classDiffNode);
-    }
 END_BENTLEY_SQLITE_EC_NAMESPACE

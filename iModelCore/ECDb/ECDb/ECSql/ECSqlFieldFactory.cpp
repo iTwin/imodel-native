@@ -274,7 +274,6 @@ PropertyMapCR propertyMap
 
     //3. Set binding information to bind ECInstanceId from parent statement to nested statement.
     //   Everytime parent do Step() the nested statement is rerun with new value of parent ECInstanceId.
-    structArrayField->GetBinder().SetDataType (PRIMITIVETYPE_Long);
     structArrayField->GetBinder().SetSourcePropertyPath (ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME);
 
     // The SourcePropertyIndex would be set by Prepare later when it complete parsing parent SELECT-list. It would either map it to 

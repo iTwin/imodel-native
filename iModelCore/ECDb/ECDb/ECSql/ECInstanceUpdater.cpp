@@ -67,24 +67,6 @@ public:
         {}
     };
 
-//======================================================================================
-// @bsiclass                                                 Krischan.Eberle      06/2014
-//+===============+===============+===============+===============+===============+======
-struct RelationshipUpdaterImpl : ECInstanceUpdater::Impl
-    {
-private:
-    ECInstanceDeleter m_relationshipDeleter;
-    ECInstanceInserter m_relationshipInserter;
-
-    BentleyStatus _Update (IECInstanceCR instance) const override;
-    virtual bool _IsValid () const override;
-
-public:
-    RelationshipUpdaterImpl (ECDbCR ecdb, ECClassCR ecClass);
-    ~RelationshipUpdaterImpl ()
-        {}
-    };
-
 
 //************************************** Implementation part **************************
 
@@ -100,10 +82,7 @@ ECDbCR ecdb,
 ECN::ECClassCR ecClass
 )
     {
-    if (ecClass.GetRelationshipClassCP () != nullptr)
-        m_impl = new RelationshipUpdaterImpl (ecdb, ecClass);
-    else
-        m_impl = new ClassUpdaterImpl (ecdb, ecClass);
+    m_impl = new ClassUpdaterImpl (ecdb, ecClass);
     }
 
 //---------------------------------------------------------------------------------------
@@ -115,10 +94,7 @@ ECDbCR ecdb,
 ECN::IECInstanceCR instance
 )
     {
-    if (instance.GetClass().GetRelationshipClassCP () != nullptr)
-        m_impl = new RelationshipUpdaterImpl (ecdb, instance.GetClass());
-    else
-        m_impl = new ClassUpdaterImpl (ecdb, instance);
+    m_impl = new ClassUpdaterImpl (ecdb, instance);
     }
 
 //---------------------------------------------------------------------------------------
@@ -131,10 +107,7 @@ ECN::ECClassCR ecClass,
 bvector<uint32_t>& propertiesToBind
 )
     {
-    if (ecClass.GetRelationshipClassCP () != nullptr)
-        m_impl = new RelationshipUpdaterImpl (ecdb, ecClass);
-    else
-        m_impl = new ClassUpdaterImpl (ecdb, ecClass, propertiesToBind);
+    m_impl = new ClassUpdaterImpl (ecdb, ecClass, propertiesToBind);
     }
 
 //---------------------------------------------------------------------------------------
@@ -398,6 +371,47 @@ void ClassUpdaterImpl::Initialize(bvector<ECPropertyCP>& propertiesToBind)
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ClassUpdaterImpl::_Update (IECInstanceCR instance) const
     {
+    // ECSql does not support modifying the endpoints of a relationship instance.  First need to verify that.
+    IECRelationshipInstanceCP relationshipInstance = dynamic_cast<IECRelationshipInstanceCP> (&instance);
+    if (nullptr != relationshipInstance)
+        {
+        ECInstanceId newSourceInstanceId;
+        if (!(ECInstanceIdHelper::FromString (newSourceInstanceId, relationshipInstance->GetSource()->GetInstanceId().c_str())))
+            return ERROR;
+        ECInstanceId newTargetInstanceId;
+        if (!(ECInstanceIdHelper::FromString (newTargetInstanceId, relationshipInstance->GetTarget()->GetInstanceId().c_str())))
+            return ERROR;
+
+        ECClassId newSourceClassId =  relationshipInstance->GetSource()->GetClass().GetId();
+        ECClassId newTargetClassId =  relationshipInstance->GetTarget()->GetClass().GetId();
+
+        Utf8String ecSql("SELECT SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ");
+        ecSql.append(ECSqlBuilder::ToECSqlSnippet (GetECClass())).append (" WHERE ECInstanceId = ?");
+        ECSqlStatement statement;
+        ECSqlStatus status = statement.Prepare (m_ecdb, ecSql.c_str ());
+        if (ECSqlStatus::Success != status)
+            return ERROR;
+
+        ECInstanceId instanceId;
+        if (!ECInstanceIdHelper::FromString (instanceId, instance.GetInstanceId ().c_str ()))
+            return ERROR;
+
+        statement.BindId(1, instanceId);
+        ECSqlStepStatus result;
+        while ((result = statement.Step()) == ECSqlStepStatus::HasRow)
+            {
+            ECInstanceId oldSourceInstanceId = statement.GetValueId<ECInstanceId>(0);
+            ECClassId oldSourceClassId = statement.GetValueId<ECClassId>(1);
+            ECInstanceId oldTargetInstanceId = statement.GetValueId<ECInstanceId>(2);
+            ECClassId oldTargetClassId = statement.GetValueId<ECClassId>(3);
+
+            if (oldSourceInstanceId.GetValue() != newSourceInstanceId.GetValue() && oldSourceClassId != newSourceClassId &&
+                oldTargetInstanceId.GetValue() != newTargetInstanceId.GetValue() && oldTargetClassId != newTargetClassId)
+                return ERROR;
+            }
+
+        }
+
     //"Pins" the internal memory buffer used by the ECDBuffer such that :
     //a) all calculated property values will be evaluated exactly once, when scope is constructed; and
     //b) addresses of all property values will not change for lifetime of scope.
@@ -446,39 +460,6 @@ BentleyStatus ClassUpdaterImpl::_Update (IECInstanceCR instance) const
 
     return (stepStatus == ECSqlStepStatus::Done && m_statement.GetDefaultEventHandler ()->GetInstancesAffectedCount () > 0) ? SUCCESS : ERROR;
     }
-
-//*************************************************************************************
-// RelationshipUpdaterImpl
-//*************************************************************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   07/14
-//+---------------+---------------+---------------+---------------+---------------+------
-RelationshipUpdaterImpl::RelationshipUpdaterImpl (ECDbCR ecdb, ECClassCR ecClass)
-: Impl (ecClass), m_relationshipDeleter (ecdb, ecClass), m_relationshipInserter (ecdb, ecClass)
-    {
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   07/14
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus RelationshipUpdaterImpl::_Update (IECInstanceCR instance) const
-    {
-    auto stat = m_relationshipDeleter.Delete (instance);
-    if (SUCCESS != stat)
-        return ERROR;
-
-    ECInstanceKey instanceKey;
-    return m_relationshipInserter.Insert (instanceKey, instance);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   07/14
-//+---------------+---------------+---------------+---------------+---------------+------
-bool RelationshipUpdaterImpl::_IsValid () const
-    {
-    return m_relationshipDeleter.IsValid () && m_relationshipInserter.IsValid ();
-    }
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

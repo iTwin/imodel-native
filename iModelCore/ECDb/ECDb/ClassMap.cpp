@@ -231,7 +231,16 @@ bool IClassMap::IsAbstractECClass () const
 //static
 bool IClassMap::IsAbstractECClass (ECClassCR ecclass)
     {
-    return !ecclass.GetIsDomainClass () && !ecclass.GetIsStruct () && !ecclass.GetIsCustomAttributeClass ();
+    if (!ecclass.GetIsDomainClass() && !ecclass.GetIsStruct() && !ecclass.GetIsCustomAttributeClass())
+        return true;
+
+    //for relationship classes there is another criterion for abstractness: if one of the constraints doesn't have
+    //any classes, then it is abstract. So check for that here now
+    ECRelationshipClassCP relClass = ecclass.GetRelationshipClassCP();
+    if (relClass == nullptr)
+        return false;
+        
+    return relClass->GetSource().GetClasses().empty() || relClass->GetTarget().GetClasses().empty();
     }
 
 
@@ -315,7 +324,7 @@ m_parentMapClassId (0LL), m_dbView (nullptr), m_isDirty (setIsDirty), m_columnFa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MapStatus ClassMap::Initialize (ClassMapInfoCR mapInfo)
+MapStatus ClassMap::Initialize (ClassMapInfo const& mapInfo)
     {
     const auto mapStrategy = GetMapStrategy ();
     IClassMap const* effectiveParentClassMap = mapStrategy.IsInParentTable() ? mapInfo.GetParentClassMap () : nullptr;
@@ -334,7 +343,7 @@ MapStatus ClassMap::Initialize (ClassMapInfoCR mapInfo)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MapStatus ClassMap::_InitializePart1 (ClassMapInfoCR mapInfo, IClassMap const* parentClassMap)
+MapStatus ClassMap::_InitializePart1 (ClassMapInfo const& mapInfo, IClassMap const* parentClassMap)
     {
     m_dbView = std::unique_ptr<ClassDbView> (new ClassDbView (*this));
 
@@ -379,7 +388,7 @@ MapStatus ClassMap::_InitializePart1 (ClassMapInfoCR mapInfo, IClassMap const* p
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MapStatus ClassMap::_InitializePart2 (ClassMapInfoCR mapInfo, IClassMap const* parentClassMap)
+MapStatus ClassMap::_InitializePart2 (ClassMapInfo const& mapInfo, IClassMap const* parentClassMap)
     {
     auto stat = AddPropertyMaps (parentClassMap, nullptr,&mapInfo);
     if (stat != MapStatus::Success)
@@ -425,7 +434,7 @@ MapStatus ClassMap::_OnInitialized ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MapStatus ClassMap::AddPropertyMaps (IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo,ClassMapInfoCP classMapInfo)
+MapStatus ClassMap::AddPropertyMaps (IClassMap const* parentClassMap, ECDbClassMapInfo const* loadInfo,ClassMapInfo const* classMapInfo)
     {
     std::vector<ECPropertyP> propertiesToMap;
     PropertyMapPtr propMap = nullptr;
@@ -450,15 +459,14 @@ MapStatus ClassMap::AddPropertyMaps (IClassMap const* parentClassMap, ECDbClassM
         {
         WCharCP propertyAccessString = property->GetName ().c_str ();
         propMap = PropertyMap::CreateAndEvaluateMapping (*property, m_ecDbMap, m_ecClass, propertyAccessString, &GetTable(), nullptr);
-        BeAssert (propMap != nullptr);
         if (propMap == nullptr)
-            continue;
+            return MapStatus::Error;
+
         if (GetPropertyMap (propertyAccessString) != nullptr)
             {
             BeAssert (GetPropertyMap (propertyAccessString) == nullptr && " it should not be there");
             return MapStatus::Error;
             }
-
 
         if (loadInfo == nullptr)
             {
@@ -482,7 +490,7 @@ MapStatus ClassMap::AddPropertyMaps (IClassMap const* parentClassMap, ECDbClassM
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      12/2013
 //---------------------------------------------------------------------------------------
-MapStatus ClassMap::ProcessIndices (ClassMapInfoCR mapInfo)
+MapStatus ClassMap::ProcessIndices (ClassMapInfo const& mapInfo)
     {
     //! we delay the index create tell mapping finishes
     SetUserProvidedIndex (mapInfo.GetIndexInfo ());
@@ -493,7 +501,7 @@ MapStatus ClassMap::ProcessIndices (ClassMapInfoCR mapInfo)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Affan.Khan                           09/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ClassMap::ProcessStandardKeySpecifications (ClassMapInfoCR mapInfo)
+void ClassMap::ProcessStandardKeySpecifications (ClassMapInfo const& mapInfo)
     {
     std::set<PropertyMapCP> doneList;
     std::set<WString> specList;
@@ -757,7 +765,7 @@ void ClassMap::CreateIndices ()
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    casey.mullen      11 / 2011
 //------------------------------------------------------------------------------------------
-ECDbSqlColumn* ClassMap::FindOrCreateColumnForProperty (ClassMapCR classMap,ClassMapInfoCP classMapInfo, PropertyMapR propertyMap, Utf8CP requestedColumnName, PrimitiveType columnType, bool nullable, bool unique, ECDbSqlColumn::Constraint::Collation collation, Utf8CP accessStringPrefix)
+ECDbSqlColumn* ClassMap::FindOrCreateColumnForProperty (ClassMapCR classMap,ClassMapInfo const* classMapInfo, PropertyMapR propertyMap, Utf8CP requestedColumnName, PrimitiveType columnType, bool nullable, bool unique, ECDbSqlColumn::Constraint::Collation collation, Utf8CP accessStringPrefix)
     {
     ColumnFactory::Specification::Strategy strategy = ColumnFactory::Specification::Strategy::CreateOrReuse;
     ColumnFactory::Specification::GenerateColumnNameOptions generateColumnNameOpts = ColumnFactory::Specification::GenerateColumnNameOptions::NameBasedOnClassIdAndCaseSaveAccessString;
@@ -1498,28 +1506,28 @@ std::unique_ptr<StorageDescription> StorageDescription::Create (IClassMap const&
     {
     Utf8CP const findClassesMappedToPartitionSql =
         "WITH RECURSIVE "
-        "   DerivedClassList(RootECClassId, CurrentECClassId, DerivedECClassId) "
+        "   DerivedClassList(RootClassId, CurrentClassId, DerivedClassId) "
         "   AS ("
         "       VALUES (?1, ?1, ?1) "
         "   UNION "
-        "       SELECT RootECClassId,  BC.BaseECClassId, BC.ECClassId "
+        "       SELECT RootClassId,  BC.BaseClassId, BC.ClassId "
         "           FROM DerivedClassList DCL "
-        "       LEFT OUTER JOIN ec_BaseClass BC ON BC.BaseECClassId = DCL.DerivedECClassId"
+        "       LEFT OUTER JOIN ec_BaseClass BC ON BC.BaseClassId = DCL.DerivedClassId"
         "   ),"
         "   TableMapInfo "
         "   AS ("
-        "   SELECT DISTINCT ec_Class.Id ECClassId, ec_Table.Name TableName, ec_Table.Id TableId "
+        "   SELECT DISTINCT ec_Class.Id ClassId, ec_Table.Name TableName, ec_Table.Id TableId "
         "   FROM ec_PropertyMap "
         "       JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND ec_Column.UserData != 2"
         "       JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
         "       JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
-        "       JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ECClassId "
+        "       JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
         "       JOIN ec_Table ON ec_Table.Id = ec_Column.TableId  AND ec_Table.IsVirtual = 0"
         "   WHERE ec_ClassMap.MapStrategy NOT IN( 0x2000, 0x4000)"
         "   ) "
-        "SELECT DCL.DerivedECClassId, TMI.TableId, TMI.TableName FROM DerivedClassList DCL "
-        "   INNER JOIN TableMapInfo TMI ON TMI.ECClassId = DCL.DerivedECClassId "
-        "   WHERE DCL.CurrentECClassId IS NOT NULL AND DCL.RootECClassId = ?1";
+        "SELECT DCL.DerivedClassId, TMI.TableId, TMI.TableName FROM DerivedClassList DCL "
+        "   INNER JOIN TableMapInfo TMI ON TMI.ClassId = DCL.DerivedClassId "
+        "   WHERE DCL.CurrentClassId IS NOT NULL AND DCL.RootClassId = ?1";
 
     Utf8CP const findAllClassesMappedToTableSql =
         "SELECT DISTINCT ec_Class.Id "
@@ -1527,7 +1535,7 @@ std::unique_ptr<StorageDescription> StorageDescription::Create (IClassMap const&
         "   JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND ec_Column.UserData != 2"
         "   JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
         "   JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
-        "   JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ECClassId "
+        "   JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
         "   JOIN ec_Table ON ec_Table.Id = ec_Column.TableId  AND ec_Table.IsVirtual = 0  "
         "WHERE ec_ClassMap.MapStrategy NOT IN(0x2000, 0x4000) AND ec_Table.Name = ? ORDER BY ec_Class.Id";
 

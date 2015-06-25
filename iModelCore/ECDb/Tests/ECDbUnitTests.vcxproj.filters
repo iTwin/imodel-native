@@ -178,9 +178,6 @@
     <ClCompile Include="Published\ECSqlStatement_FunctionTests.cpp">
       <Filter>Published\ECSql</Filter>
     </ClCompile>
-    <ClCompile Include="NonPublished\ECDb\ECDbHints_Tests.cpp">
-      <Filter>NonPublished\ECDb</Filter>
-    </ClCompile>
     <ClCompile Include="Performance\PerformanceSchemaImportTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
@@ -192,6 +189,9 @@
     </ClCompile>
     <ClCompile Include="Published\ECSqlRangeTree_Tests.cpp">
       <Filter>Published\ECSql</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ECDb\ECDbMapCA_Tests.cpp">
+      <Filter>NonPublished\ECDb</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -70,7 +70,7 @@ void PerformanceBisDesignTestFixture::RunTest (Utf8CP dbFileName, Context& conte
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  05/14
 //+---------------+---------------+---------------+---------------+---------------+------
-void PerformanceBisDesignTestFixture::Setup (BeSQLiteDbR db, Context& context, ECSchemaCR testSchema)
+void PerformanceBisDesignTestFixture::Setup (DbR db, Context& context, ECSchemaCR testSchema)
     {
     Utf8String createTablesSql;
     Utf8String createIndicesSql;
@@ -488,7 +488,7 @@ BentleyStatus PerformanceBisDesignTestFixture::AddTestClassProperty (ECClassR te
 // @bsimethod                                     Krischan.Eberle                  05/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //static 
-void PerformanceBisDesignTestFixture::CreateTestDb (BeSQLiteDbR db, Utf8CP fileName)
+void PerformanceBisDesignTestFixture::CreateTestDb (DbR db, Utf8CP fileName)
     {
     BeFileName dbPath (ECDbTestProject::BuildECDbPath (fileName));
     if (dbPath.DoesPathExist ())
@@ -501,7 +501,7 @@ void PerformanceBisDesignTestFixture::CreateTestDb (BeSQLiteDbR db, Utf8CP fileN
 // @bsimethod                                     Krischan.Eberle                  05/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //static 
-void PerformanceBisDesignTestFixture::OpenTestDb (BeSQLiteDbR db, Utf8CP fileName, bool readonly)
+void PerformanceBisDesignTestFixture::OpenTestDb (DbR db, Utf8CP fileName, bool readonly)
     {
     BeFileName dbPath (ECDbTestProject::BuildECDbPath (fileName));
     ASSERT_EQ (BE_SQLITE_OK, db.OpenBeSQLiteDb (dbPath, Db::OpenParams (readonly ? Db::OPEN_Readonly : Db::OPEN_ReadWrite)));
@@ -532,7 +532,7 @@ Utf8String PerformanceBisDesignTestFixture::ToString () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  05/14
 //+---------------+---------------+---------------+---------------+---------------+------
-void Performance_BisDesign_TablePerClassScenario_TestFixture::_RunInsertTest (BeSQLiteDbR db, PerformanceBisDesignTestFixture::Context const& context) const
+void Performance_BisDesign_TablePerClassScenario_TestFixture::_RunInsertTest (DbR db, PerformanceBisDesignTestFixture::Context const& context) const
     {
     const int instancesPerClassCount = context.GetInstancesPerClassCount ();
 
@@ -589,7 +589,7 @@ void Performance_BisDesign_TablePerClassScenario_TestFixture::_RunInsertTest (Be
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  05/14
 //+---------------+---------------+---------------+---------------+---------------+------
-void Performance_BisDesign_TablePerClassScenario_TestFixture::_RunSelectTest (BeSQLiteDbR db, Context const& context) const
+void Performance_BisDesign_TablePerClassScenario_TestFixture::_RunSelectTest (DbR db, Context const& context) const
     {
     const int instancesPerClassCount = context.GetInstancesPerClassCount ();
     StopWatch timer (true);
@@ -728,7 +728,7 @@ bool Performance_BisDesign_TablePerClassScenario_TestFixture::IsClassIdProperty 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  05/14
 //+---------------+---------------+---------------+---------------+---------------+------
-void Performance_BisDesign_MasterTableScenario_TestFixture::_RunInsertTest (BeSQLiteDbR db, Context const& context) const
+void Performance_BisDesign_MasterTableScenario_TestFixture::_RunInsertTest (DbR db, Context const& context) const
     {
     const int instancesPerClassCount = context.GetInstancesPerClassCount ();
 
@@ -777,7 +777,7 @@ void Performance_BisDesign_MasterTableScenario_TestFixture::_RunInsertTest (BeSQ
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  05/14
 //+---------------+---------------+---------------+---------------+---------------+------
-void Performance_BisDesign_MasterTableScenario_TestFixture::_RunSelectTest (BeSQLiteDbR db, Context const& context) const
+void Performance_BisDesign_MasterTableScenario_TestFixture::_RunSelectTest (DbR db, Context const& context) const
     {
     RunNonGenericSelectTest (db, context);
     RunGenericSelectTest (db, context);
@@ -787,7 +787,7 @@ void Performance_BisDesign_MasterTableScenario_TestFixture::_RunSelectTest (BeSQ
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  05/14
 //+---------------+---------------+---------------+---------------+---------------+------
-void Performance_BisDesign_MasterTableScenario_TestFixture::RunNonGenericSelectTest (BeSQLiteDbR db, Context const& context) const
+void Performance_BisDesign_MasterTableScenario_TestFixture::RunNonGenericSelectTest (DbR db, Context const& context) const
     {
     const int instancesPerClassCount = context.GetInstancesPerClassCount ();
     StopWatch timer (true);
@@ -820,7 +820,7 @@ void Performance_BisDesign_MasterTableScenario_TestFixture::RunNonGenericSelectT
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  05/14
 //+---------------+---------------+---------------+---------------+---------------+------
-void Performance_BisDesign_MasterTableScenario_TestFixture::RunGenericSelectTest (BeSQLiteDbR db, Context const& context) const
+void Performance_BisDesign_MasterTableScenario_TestFixture::RunGenericSelectTest (DbR db, Context const& context) const
     {
     const int instancesPerClassCount = context.GetInstancesPerClassCount ();
     StopWatch timer (true);
@@ -1000,7 +1000,7 @@ void Performance_BisDesign_MasterTableScenario_TestFixture::_GenerateDdlSql (Utf
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  05/14
 //+---------------+---------------+---------------+---------------+---------------+------
-void Performance_BisDesign_MasterTableAndDomainTablesScenario_TestFixture::_RunInsertTest (BeSQLiteDbR db, Context const& context) const
+void Performance_BisDesign_MasterTableAndDomainTablesScenario_TestFixture::_RunInsertTest (DbR db, Context const& context) const
     {
     const int instancesPerClassCount = context.GetInstancesPerClassCount ();
 
@@ -1073,7 +1073,7 @@ void Performance_BisDesign_MasterTableAndDomainTablesScenario_TestFixture::_RunI
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  05/14
 //+---------------+---------------+---------------+---------------+---------------+------
-void Performance_BisDesign_MasterTableAndDomainTablesScenario_TestFixture::_RunSelectTest (BeSQLiteDbR db, Context const& context) const
+void Performance_BisDesign_MasterTableAndDomainTablesScenario_TestFixture::_RunSelectTest (DbR db, Context const& context) const
     {
     const int instancesPerClassCount = context.GetInstancesPerClassCount ();
     StopWatch timer (true);
