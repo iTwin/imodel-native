@@ -1016,7 +1016,7 @@ void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, bool saveBRepOn
                 FB::FaceSymbology  fbSymb(!faceParams.IsLineColorFromSubCategoryAppearance(), !faceParams.IsMaterialFromSubCategoryAppearance(),
                                           faceParams.IsLineColorFromSubCategoryAppearance() ? 0 : faceParams.GetLineColor().GetValue(),
                                           faceParams.GetSubCategoryId().GetValueUnchecked(),
-                                          faceParams.IsMaterialFromSubCategoryAppearance() ? 0 : 0, // NEEDSWORK_MATERIAL...
+                                          faceParams.IsMaterialFromSubCategoryAppearance() ? 0 : faceParams.GetMaterial().GetValueUnchecked(),
                                           faceParams.GetTransparency(), uv);
 
                 fbSymbVec.push_back(fbSymb);
@@ -1491,7 +1491,7 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, ISolidKernelEntityPtr& e
             faceParams.SetLineColor(ColorDef(fbSymb->color()));
 
         if (fbSymb->useMaterial())
-            faceParams.SetMaterial(nullptr); // NEEDWORK_MATERIAL: Also uv...
+            faceParams.SetMaterial(DgnMaterialId(fbSymb->materialId()));
 
         faceParams.SetTransparency(fbSymb->transparency());
 

@@ -1862,12 +1862,12 @@ void ElemMatSymb::Init()
     m_isFilled          = false;
     m_isBlankingRegion  = false;
     m_extSymbID         = 0;
-    m_material          = NULL;
     m_rasterWidth       = 1;
     m_rasterPat         = 0;
-    m_patternParams     = NULL;
-    m_gradient          = NULL;
+    m_patternParams     = nullptr;
+    m_gradient          = nullptr;
 
+    m_material.Invalidate();
     m_lStyleSymb.Clear();
     }
 
@@ -1967,7 +1967,7 @@ void ElemMatSymb::FromResolvedElemDisplayParams (ElemDisplayParamsCR elParams, V
         m_isBlankingRegion = (FillDisplay::Blanking == elParams.GetFillDisplay());
         }
 
-    SetMaterial (elParams.GetMaterial(), &context); // Call method so that geometry map is created as needed...
+    m_material = elParams.GetMaterial();
 
     if (0.0 != netElemTransparency)
         {
@@ -2051,11 +2051,12 @@ bool ElemMatSymb::operator==(ElemMatSymbCR rhs) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElemMatSymb::SetMaterial (MaterialCP material, ViewContextP seedContext)
+void ElemMatSymb::SetMaterial (DgnMaterialId material)
     {
-#ifdef WIP_VANCOUVER_MERGE // material
     m_material = material;
 
+#ifdef DGNPLATFORM_WIP_MATERIAL
+    // Shouldn't need "seedContext" to create geometry map...from DgnGeomPart/GeomStream...not element...
     if (NULL != material &&
         NULL != seedContext &&
         material->NeedsQvGeometryTexture())
@@ -2259,16 +2260,6 @@ bool ElemDisplayParams::operator==(ElemDisplayParamsCR rhs) const
     if (!(m_plotInfo == rhs.m_plotInfo))
         return false;
 
-#if defined (WIP_MATERIAL)
-    if (m_materialDetail.IsValid() && rhs.m_materialDetail.IsValid())
-        {
-        if (!(m_materialDetail->Equals (*rhs.m_materialDetail)))
-            return false;
-        }
-    else if (m_materialDetail.IsNull() != rhs.m_materialDetail.IsNull())
-        return false;
-#endif
-
     return true;
     }
 
@@ -2303,10 +2294,8 @@ void ElemDisplayParams::Resolve (ViewContextR context)
     if (!m_appearanceOverrides.m_style)
         m_styleInfo = LineStyleInfo::Create (appearance.GetStyle(), nullptr).get(); // WIP_LINESTYLE - Need LineStyleParams...
 
-#ifdef WIP_MATERIAL
     if (!m_appearanceOverrides.m_material)
-        m_material = MaterialManager::GetManagerR().SomethingSomething(appearance.GetMaterial());
-#endif
+        m_material = appearance.GetMaterial();
 
     // SubCategory transparency is combined with element transparency to compute net transparency. 
     if (0.0 != appearance.GetTransparency())
@@ -2324,13 +2313,6 @@ void ElemDisplayParams::Resolve (ViewContextR context)
 
     // SubCategory display priority is combined with element priority to compute net display priority. 
     m_netPriority = context.ResolveNetDisplayPriority(m_elmPriority, subCategoryId, &appearance);
-
-#ifdef WIP_MATERIAL
-    // If no material defined yet, look for assignment.
-    if (context.GetWantMaterials() && NULL == m_material)
-        SetMaterial (MaterialManager::GetManagerR().FindMaterialBySymbology (NULL, m_category, m_symbology.color, *model, false, false, &context));
-#endif
-
     m_resolved = true;
     }
 

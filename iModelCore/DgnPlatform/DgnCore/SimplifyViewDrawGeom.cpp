@@ -1622,6 +1622,7 @@ bool SimplifyViewDrawGeom::ArePointsTotallyOutsideClip (DPoint3dCP points, int n
     return false;
     }
 
+#ifdef NEEDS_WORK_GEOMETRY_MAPS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1636,7 +1637,6 @@ MaterialCP SimplifyViewDrawGeom::GetCurrentMaterial () const
     return m_currentMatSymb.GetMaterial ();
     }
 
-#ifdef NEEDS_WORK_GEOMETRY_MAPS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/

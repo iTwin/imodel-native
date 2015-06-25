@@ -31,7 +31,7 @@ DgnCategoryId       m_categoryId;
 DgnSubCategoryId    m_subCategoryId;
 ColorDef            m_color;
 double              m_transparency;
-MaterialCP          m_material;
+DgnMaterialId       m_material;
 DPoint2d            m_uv;
 
 public:
