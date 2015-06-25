@@ -61,6 +61,8 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
 //=======================================================================================
+//! @deprecated
+//! @private
 // @bsiclass                                                     Travis.Cobbs   05/2013
 //=======================================================================================
 struct ConnectSpaces
