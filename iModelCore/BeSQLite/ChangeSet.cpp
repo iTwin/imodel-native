@@ -483,7 +483,7 @@ void Changes::Change::Dump(Db const& db, bool isPatchSet, bset<Utf8String>& tabl
     int nCols,indirect;
     DbOpcode opcode;
     DbResult rc = GetOperation(&tableName, &nCols, &opcode, &indirect);
-    BeAssert (rc==BE_SQLITE_OK);
+    BeAssert(rc==BE_SQLITE_OK);
     UNUSED_VARIABLE(rc);
 
     if (tablesSeen.find(tableName) == tablesSeen.end())
@@ -536,8 +536,9 @@ void Changes::Change::Dump(Db const& db, bool isPatchSet, bset<Utf8String>& tabl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ChangeSet::Dump(Db const& db, bool isPatchSet, int detailLevel) const
+void ChangeSet::Dump(Utf8CP label, Db const& db, bool isPatchSet, int detailLevel) const
     {
+    printf(label);
     bset<Utf8String> tablesSeen;
 
     Changes changes(*const_cast<ChangeSet*>(this));

@@ -242,7 +242,7 @@ public:
     bool IsValid() {return 0 != m_changeset;}
 
     //! Dump to stdout for debugging purposes.
-    BE_SQLITE_EXPORT void Dump(Db const&, bool isPatchSet=false, int detailLevel=0) const;
+    BE_SQLITE_EXPORT void Dump(Utf8CP label, Db const&, bool isPatchSet=false, int detailLevel=0) const;
 
     //! Get a description of a conflict cause for debugging purposes.
     BE_SQLITE_EXPORT static Utf8String InterpretConflictCause(ChangeSet::ConflictCause);
