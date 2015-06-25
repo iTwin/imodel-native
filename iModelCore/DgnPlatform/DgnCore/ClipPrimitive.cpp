@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ClipPrimitive.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -191,10 +191,10 @@ bool                invisible
     DVec3d          vec0;
     DPoint3d        point0;
 
-    bsiDVec3d_setXYZ ((DVec3dP)&point0, x0 + pParams->m_localOrigin.x, y0 + pParams->m_localOrigin.y, 0.0);
-    bsiDVec3d_setXYZ (&vec0, x1 - x0, y1 - y0, 0.0);
-    bsiDVec3d_normalize (&unit0, &vec0);
-    bsiDVec3d_setXYZ (&unit1, unit0.y, -unit0.x, 0.0);
+    ((DVec3dP)&point0)->Init ( x0 + pParams->m_localOrigin.x, y0 + pParams->m_localOrigin.y, 0.0);
+    vec0.Init ( x1 - x0, y1 - y0, 0.0);
+    unit0.Normalize (vec0);
+    unit1.Init ( unit0.y, -unit0.x, 0.0);
 
     ConvexClipPlaneSet      convexSet;
 
@@ -241,7 +241,8 @@ static void    addPlaneSet (DPoint3dP pPoints, int* pFlags, int nPoints, void* p
     {
     int                     i;
     double                  area = bsiGeom_getXYPolygonArea (pPoints, nPoints);
-    DPoint3d                point0, point1, point0Local, point1Local, zVector = {0.0, 0.0, 1.0};
+    DPoint3d                point0, point1, point0Local, point1Local;
+    DVec3d                  zVector = DVec3d::From (0.0, 0.0, 1.0);
     DVec3d                  normal, tangent;
     AddPlaneSetParams       *pParams = static_cast<AddPlaneSetParams *>(pUserArg);
     DPoint3d                closurePoint;
@@ -252,19 +253,19 @@ static void    addPlaneSet (DPoint3dP pPoints, int* pFlags, int nPoints, void* p
     for (i = 0;  i < nPoints; i++, point0 = point1, point0Local = point1Local)
         {
         point1Local = pPoints[i % nPoints];
-        bsiDPoint3d_addDPoint3dDPoint3d (&point1, &point1Local, &pParams->m_localOrigin);
+        point1.SumOf (point1Local, pParams->m_localOrigin);
         if (i == 0)
             closurePoint = point1;
 
-        if (i && !bsiDPoint3d_pointEqualTolerance (&point1, &point0, TINY_VALUE))
+        if (i && !point1.IsEqual (point0, TINY_VALUE))
             {
             bool bIsLimitPlane = isLimitEdge (pParams->m_limitValue, point0Local, point1Local);
             bool isInterior    =  (0 == (pFlags[i-1] & POLYFILL_EXTERIOR_EDGE)) || bIsLimitPlane;
 
             if (NULL == pParams->m_focalLength)
                 {
-                bsiDPoint3d_subtractDPoint3dDPoint3d (&tangent, &point1, &point0);
-                bsiDPoint3d_normalizedCrossProduct (&normal, &zVector, &tangent);
+                tangent.DifferenceOf (point1, point0);
+                normal.NormalizedCrossProduct (zVector, tangent);
 
                 if (reverse)
                     normal.Negate();
@@ -445,7 +446,7 @@ double*         cameraFocalLength
         {
         // The limit value just has to be outside the range of the polygon.
         params.m_limitValue = largestCoordinate * 2.0;
-        bsiDPoint3d_initDisconnect (&point3d[numVerts]);
+        point3d[numVerts].InitDisconnect ();
         numVerts++;
         // Points at extrema.
         point3d[numVerts + 0].x = point3d[numVerts + 3].x = point3d[numVerts + 4].x = - params.m_limitValue;
