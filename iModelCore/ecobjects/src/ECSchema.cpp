@@ -1875,9 +1875,6 @@ SchemaWriteStatus ECSchema::WriteXml (BeXmlDomR xmlDom) const
     if (NULL == schemaNode->GetNamespace())
         schemaNode->SetNamespace (NULL, ECXML_URI_2_0);
 
-    WString namespaceSpec (ECXML_URI_2_0, true);
-    schemaNode->AddAttributeStringValue ("xmlns:" EC_NAMESPACE_PREFIX, namespaceSpec.c_str());
-
     WriteSchemaReferences (*schemaNode);
 
     ECSchemaWriteContext context;

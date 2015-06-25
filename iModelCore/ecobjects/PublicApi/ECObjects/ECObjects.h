@@ -8,7 +8,7 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-#include <BentleyApi/BentleyApi.h>
+#include <Bentley/Bentley.h>
 #include <Bentley/BeAssert.h>
 
 #ifdef __ECOBJECTS_BUILD__
@@ -17,18 +17,12 @@
     #define ECOBJECTS_EXPORT IMPORT_ATTRIBUTE
 #endif
 
-#define BEGIN_BENTLEY_ECOBJECT_NAMESPACE    BEGIN_BENTLEY_API_NAMESPACE namespace ECN {
-#define END_BENTLEY_ECOBJECT_NAMESPACE      } END_BENTLEY_API_NAMESPACE
+#define BEGIN_BENTLEY_ECOBJECT_NAMESPACE    BEGIN_BENTLEY_NAMESPACE namespace ECN {
+#define END_BENTLEY_ECOBJECT_NAMESPACE      } END_BENTLEY_NAMESPACE
 #define USING_NAMESPACE_EC                  using namespace BentleyApi::ECN;
 
 #define EC_TYPEDEFS(_name_)  \
-        BEGIN_BENTLEY_ECOBJECT_NAMESPACE      \
-            struct _name_;      \
-            typedef _name_ *         _name_##P;  \
-            typedef _name_ &         _name_##R;  \
-            typedef _name_ const*    _name_##CP; \
-            typedef _name_ const&    _name_##CR; \
-        END_BENTLEY_ECOBJECT_NAMESPACE
+    BEGIN_BENTLEY_ECOBJECT_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_ECOBJECT_NAMESPACE
 
 EC_TYPEDEFS(ECValue);
 EC_TYPEDEFS(ECValueAccessor);
@@ -392,6 +386,54 @@ enum ExpressionStatus
     ExprStatus_IncompatibleUnits        = 19, //!< Returned when units are combined in an unsupported manner within the expression, for example adding angles and lengths.
     };
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+//! Used to define how the relationship OrderId is handled.
+//! @ingroup ECObjectsGroup
+enum OrderIdStorageMode : uint8_t
+    {
+    ORDERIDSTORAGEMODE_None = 0,
+    ORDERIDSTORAGEMODE_ProvidedByPersistence = 1,
+    ORDERIDSTORAGEMODE_ProvidedByClient = 2,
+    };
 
-USING_NAMESPACE_BENTLEY
+//! Used to define which end of the relationship, source or target
+//! @ingroup ECObjectsGroup
+enum ECRelationshipEnd
+    {
+    ECRelationshipEnd_Source = 0, //!< End is the source
+    ECRelationshipEnd_Target  //!< End is the target
+    };
+
+//! Used to describe the direction of a related instance within the context
+//! of an IECRelationshipInstance
+//! @ingroup ECObjectsGroup
+enum class ECRelatedInstanceDirection
+    {
+    //! Related instance is the target in the relationship instance
+    Forward = 1,
+    //! Related instance is the source in the relationship instance
+    Backward = 2
+    };
+
+//! The various strengths supported on a relationship class.
+//! @ingroup ECObjectsGroup
+enum StrengthType
+    {
+    //!  'Referencing' relationships imply no ownership and no cascading deletes when the
+    //! object on either end of the relationship is deleted.  For example, a document
+    //! object may have a reference to the User that last modified it.
+    //! This is like "Association" in UML.
+    STRENGTHTYPE_Referencing,
+    //! 'Holding' relationships imply shared ownership.  A given object can be "held" by
+    //! many different objects, and the object will not get deleted unless all of the
+    //! objects holding it are first deleted (or the relationships severed.)
+    //! This is like "Aggregation" in UML.
+    STRENGTHTYPE_Holding,
+    //! 'Embedding' relationships imply exclusive ownership and cascading deletes.  An
+    //! object that is the target of an 'embedding' relationship may also be the target
+    //! of other 'referencing' relationships, but cannot be the target of any 'holding'
+    //! relationships.  For examples, a Folder 'embeds' the Documents that it contains.
+    //! This is like "Composition" in UML.
+    STRENGTHTYPE_Embedding
+    };
+
+END_BENTLEY_ECOBJECT_NAMESPACE

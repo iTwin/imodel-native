@@ -15,7 +15,6 @@
     <Part Name="ECObjectsNative" BentleyBuildMakeFile="src/ecobjects.mke" ApiNumber="G">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BentleyDll"      PartFile="Bentley"      Repository="Bentley" />
-        <SubPart PartName="BentleyApi"      PartFile="BentleyApi"   Repository="BentleyApi" />
         <SubPart PartName="Logging" /> 
         <SubPart PartName="GeomDlls"        PartFile="geomlibs"     Repository="GeomLibs" />
         <SubPart PartName="GeomlibsSerialization" PartFile="geomlibs" Repository="GeomLibs" />

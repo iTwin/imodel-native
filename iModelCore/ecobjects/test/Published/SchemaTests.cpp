@@ -1554,6 +1554,43 @@ TEST_F(ClassTest, AddBaseClassWithProperties)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ClassTest, BaseClassOrder)
+    {
+    ECSchemaPtr schema = nullptr;
+    ECClassP class1 = nullptr;
+    ECClassP baseClass1 = nullptr;
+    ECClassP baseClass2 = nullptr;
+    ECClassP baseClass3 = nullptr;
+
+    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5);
+    schema->CreateClass(class1, L"TestClass");
+    schema->CreateClass(baseClass1, L"BaseClass");
+    schema->CreateClass(baseClass2, L"BaseClass2");
+    schema->CreateClass(baseClass3, L"BaseClass3");
+
+    PrimitiveECPropertyP prop = nullptr;
+    class1->CreatePrimitiveProperty(prop, L"StringProperty", PRIMITIVETYPE_String);
+    baseClass1->CreatePrimitiveProperty(prop, L"StringProperty", PRIMITIVETYPE_String);
+    baseClass2->CreatePrimitiveProperty(prop, L"SstringProperty", PRIMITIVETYPE_String);
+    baseClass3->CreatePrimitiveProperty(prop, L"StringProperty", PRIMITIVETYPE_String);
+    
+    ASSERT_EQ(ECOBJECTS_STATUS_Success, class1->AddBaseClass(*baseClass1));
+    ASSERT_EQ(ECOBJECTS_STATUS_Success, class1->AddBaseClass(*baseClass2));
+    
+    ASSERT_EQ(2, class1->GetBaseClasses().size());
+    ASSERT_TRUE (baseClass1 == class1->GetBaseClasses()[0]);
+    ASSERT_TRUE (baseClass2 == class1->GetBaseClasses()[1]);
+    
+    ASSERT_EQ(ECOBJECTS_STATUS_Success, class1->AddBaseClass(*baseClass3, true));
+    ASSERT_EQ(3, class1->GetBaseClasses().size());
+    ASSERT_TRUE (baseClass3 == class1->GetBaseClasses()[0]);
+    ASSERT_TRUE (baseClass1 == class1->GetBaseClasses()[1]);
+    ASSERT_TRUE (baseClass2 == class1->GetBaseClasses()[2]);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ClassTest, IsTests)
     {
     ECSchemaPtr schema;

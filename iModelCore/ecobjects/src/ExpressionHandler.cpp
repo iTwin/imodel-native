@@ -674,7 +674,7 @@ ExpressionToken Lexer::ScanToken ()
     {
     m_outputIndex = m_inputIndex = 0;
 
-    m_inputString       = Bentley::WString(inputString);
+    m_inputString       = WString(inputString);
     m_inputCP           = m_inputString.c_str();
     m_maxOutputIndex    = _countof(m_tokenBuilder) - 1;
     m_maxInputIndex     = wcslen(m_inputCP) + 1;   //  It includes the EOS

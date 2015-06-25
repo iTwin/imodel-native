@@ -167,6 +167,9 @@ public:
     ECTypeDescriptor (ValueKind valueKind, short valueKindQualifier) : m_typeKind (valueKind), m_primitiveType ((PrimitiveType)valueKindQualifier) { };
 /*__PUBLISH_SECTION_START__*/
 
+    bool operator==(ECTypeDescriptor const& rhs) const { return m_typeKind == rhs.m_typeKind && m_primitiveType == rhs.m_primitiveType; }
+    bool operator!=(ECTypeDescriptor const& rhs) const { return !(*this == rhs); }
+
     //! Returns the ValueKind of the ECProperty
     inline ValueKind            GetTypeKind() const         { return m_typeKind; }
     //! Returns the ArrayKind of the ECProperty, if the ECProperty is an array property
@@ -695,8 +698,20 @@ public:
     //! Gets whether this ECProperty's value is read only
     ECOBJECTS_EXPORT bool               GetIsReadOnly() const;
     //! Sets the base property that this ECProperty inherits from
+    //! @remarks In the case of multiple inheritance where more than one base class has a
+    //! property with the same name the first base class found will provide the base property.
+    //! It is considered bad design to have the same property in multiple base classes.  In
+    //! future this may become an error, but due to the current implementation details
+    //! it is not an error and the base property is deterministic because the order of the
+    //! base classes is preserved
     ECOBJECTS_EXPORT ECObjectsStatus    SetBaseProperty(ECPropertyCP value);
     //! Gets the base property, if any, that this ECProperty inherits from
+    //! @remarks In the case of multiple inheritance where more than one base class has a
+    //! property with the same name the first base class found will provide the base property.
+    //! It is considered bad design to have the same property in multiple base classes.  In
+    //! future this may become an error, but due to the current implementation details
+    //! it is not an error and the base property is deterministic because the order of the
+    //! base classes is preserved
     ECOBJECTS_EXPORT ECPropertyCP       GetBaseProperty() const;
 
     //! Sets whether this ECProperty's value is read only
@@ -1108,6 +1123,19 @@ public:
     //! @param[in] baseClass The class to derive from
     ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ECClassCR baseClass);
 
+    //! Adds a base class at either the beginning or end of the base class list
+    //! @remarks This method is intended for the rare case where you need to control at which position
+    //! the base class is inserted in the list of base classes. This is relevant when you care about
+    //! the traversal order of a base class graph. By specification, base classes are traversed in a depth-first
+    //! fashion.
+    //! You cannot insert a base class if it creates a cycle. For example, if A is a base class
+    //! of B, and B is a base class of C, you cannot make C a base class of A. Attempting to do
+    //! so will return an error.
+    //! @param[in] baseClass The class to derive from
+    //! @param[in] insertAtBeginning true, if @p baseClass is inserted at the beginning of the list. 
+    //! false if @p baseClass is added to the end of the list
+    ECOBJECTS_EXPORT ECObjectsStatus AddBaseClass(ECClassCR baseClass, bool insertAtBeginning);
+    
     //! Returns whether there are any base classes for this class
     ECOBJECTS_EXPORT bool            HasBaseClasses() const;
 
@@ -1205,55 +1233,6 @@ public:
 
 }; // ECClass
 
-//! Used to define how the relationship OrderId is handled.
-//! @ingroup ECObjectsGroup
-enum OrderIdStorageMode: uint8_t
-    {
-    ORDERIDSTORAGEMODE_None                     = 0,
-    ORDERIDSTORAGEMODE_ProvidedByPersistence    = 1,         
-    ORDERIDSTORAGEMODE_ProvidedByClient         = 2,
-    };
-
-//! Used to define which end of the relationship, source or target
-//! @ingroup ECObjectsGroup
-enum ECRelationshipEnd 
-    { 
-    ECRelationshipEnd_Source = 0, //!< End is the source
-    ECRelationshipEnd_Target  //!< End is the target
-    };
-
-//! Used to describe the direction of a related instance within the context
-//! of an IECRelationshipInstance
-//! @ingroup ECObjectsGroup
-enum class ECRelatedInstanceDirection
-    {
-    //! Related instance is the target in the relationship instance
-    Forward = 1,
-    //! Related instance is the source in the relationship instance
-    Backward = 2
-    };
-
-//! The various strengths supported on a relationship class.
-//! @ingroup ECObjectsGroup
-enum StrengthType
-    {
-    //!  'Referencing' relationships imply no ownership and no cascading deletes when the
-    //! object on either end of the relationship is deleted.  For example, a document
-    //! object may have a reference to the User that last modified it.
-    //! This is like "Association" in UML.
-    STRENGTHTYPE_Referencing,
-    //! 'Holding' relationships imply shared ownership.  A given object can be "held" by
-    //! many different objects, and the object will not get deleted unless all of the
-    //! objects holding it are first deleted (or the relationships severed.)
-    //! This is like "Aggregation" in UML.
-    STRENGTHTYPE_Holding,
-    //! 'Embedding' relationships imply exclusive ownership and cascading deletes.  An
-    //! object that is the target of an 'embedding' relationship may also be the target
-    //! of other 'referencing' relationships, but cannot be the target of any 'holding'
-    //! relationships.  For examples, a Folder 'embeds' the Documents that it contains.
-    //! This is like "Composition" in UML.
-    STRENGTHTYPE_Embedding
-    } ;
 
 //=======================================================================================
 //! This class describes the cardinality of a relationship. It is based on the
@@ -1311,34 +1290,34 @@ public:
     ECOBJECTS_EXPORT static RelationshipCardinalityCR OneMany();
 };
 //=======================================================================================
-//! This class describes the relationship source or target cardinality. It also holds relationships key properties
+//! This class holds a class in an ECRelationship constraint plus its key properties
+//! if the constraint class has any.
 //! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================
 struct ECRelationshipConstraintClass : NonCopyableClass
     {
-    //__PUBLISH_SECTION_END__
-    private:
-        std::vector<WString> m_keys;
-        ECClassCP m_ecClass;
-    //__PUBLISH_SECTION_START__
+private:
+    bvector<WString> m_keys;
+    ECClassCP m_ecClass;
 
-    public:
-        //! Constructor of ECRelationshipConstraintClass require ECClass name.
-        //! @param ecClass is name of Constraint class.
-        ECRelationshipConstraintClass(ECClassCR ecClass);
+public:
+#ifndef DOCUMENTATION_GENERATOR 
+    explicit ECRelationshipConstraintClass(ECClassCR ecClass);
+#endif
 
-        //! Move constructor of ECRelationshipConstraintClass.
-        ECRelationshipConstraintClass(ECRelationshipConstraintClass const && rhs);
-        //! Move assignment operator of ECRelationshipConstraintClass.
-        const ECRelationshipConstraintClass & operator = (ECRelationshipConstraintClass const && rhs);
-        //! Returns reference of current Constraint ECClass
-        ECOBJECTS_EXPORT ECClassCR GetClass() const;
-        //! Returns vector of Contraint ECClass keys
-        ECOBJECTS_EXPORT const std::vector<WString>& GetKeys() const;
-        //! Adds constraint key if it is already not in list.
-        ECOBJECTS_EXPORT void AddKey(WCharCP key);
+    ECRelationshipConstraintClass(ECRelationshipConstraintClass&& rhs);
+    ECRelationshipConstraintClass& operator= (ECRelationshipConstraintClass&& rhs);
+    
+    //! Gets the constraint's ECClass
+    ECClassCR GetClass() const { return *m_ecClass; }
+    //! Gets the constraint's key property names
+    bvector<WString> const& GetKeys() const { return m_keys; }
+    //! Adds name of key property.
+    //! @param[in] keyPropertyName Name of key property to add
+    ECOBJECTS_EXPORT void AddKey(WCharCP keyPropertyName);
     };
+
 //=======================================================================================
 //! This class holds the list of source or target Constraint on ECRelationships
 //! @bsiclass

@@ -173,6 +173,8 @@ public:
 struct ECDbSchemaMap;
 struct ECDbClassMap;
 struct ECDbPropertyMap;
+struct ECDbLinkTableRelationshipMap;
+struct ECDbForeignKeyRelationshipMap;
 
 //=======================================================================================    
 //! ECDbMapCustomAttributeHelper is a convenience API for the custom attributes defined
@@ -204,6 +206,19 @@ public:
     //! @param[in] ecProperty ECProperty to retrieve the custom attribute from.
     //! @return true if @p ecProperty has the custom attribute. false, if @p ecProperty doesn't have the custom attribute
     ECOBJECTS_EXPORT static bool TryGetPropertyMap(ECDbPropertyMap& propertyMap, ECPropertyCR ecProperty);
+
+    //! Tries to retrieve the LinkTableRelationshipMap custom attribute from the specified ECRelationshipClass.
+    //! @param[out] linkTableRelationshipMap Retrieved link table relationship map
+    //! @param[in] ecRelationship ECRelationshipClass to retrieve the custom attribute from.
+    //! @return true if @p ecRelationship has the custom attribute. false, if @p ecRelationship doesn't have the custom attribute
+    ECOBJECTS_EXPORT static bool TryGetLinkTableRelationshipMap(ECDbLinkTableRelationshipMap& linkTableRelationshipMap, ECRelationshipClassCR ecRelationship);
+
+    //! Tries to retrieve the ForeignKeyRelationshipMap custom attribute from the specified ECRelationshipClass.
+    //! @param[out] foreignKeyTableRelationshipMap Retrieved foreign key relationship map
+    //! @param[in] ecRelationship ECRelationshipClass to retrieve the custom attribute from.
+    //! @return true if @p ecRelationship has the custom attribute. false, if @p ecRelationship doesn't have the custom attribute
+    ECOBJECTS_EXPORT static bool TryGetForeignKeyRelationshipMap(ECDbForeignKeyRelationshipMap& foreignKeyTableRelationshipMap, ECRelationshipClassCR ecRelationship);
+
     };
 
 //=======================================================================================    
@@ -225,9 +240,10 @@ private:
 public:
     ECDbSchemaMap() : m_schema(nullptr), m_ca(nullptr) {}
     //! Tries to get the value of the TablePrefix property in the SchemaMap.
-    //! @param[out] tablePrefix Table prefix.
-    //! @return true if TablePrefix was set in the SchemaMap. false otherwise
-    ECOBJECTS_EXPORT bool TryGetTablePrefix(Utf8StringR tablePrefix) const;
+    //! @param[out] tablePrefix Table prefix. It remains unchanged, if the TablePrefix property wasn't set in the SchemaMap.
+    //! @return ECOBJECTSTATUS_Success if TablePrefix was set or unset in the SchemaMap. Error codes if TablePrefix didn't have a valid value,
+    //! e.g. didn't comply to the naming conventions for table names.
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetTablePrefix(Utf8StringR tablePrefix) const;
     };
 
 //=======================================================================================    
@@ -285,23 +301,22 @@ public:
     ECDbClassMap() : m_class(nullptr), m_ca(nullptr) {}
 
     //! Tries to get the values of the MapStrategy and MapStrategyOptions properties from the ClassMap.
-    //! @param[out] mapStrategy MapStrategy
-    //! @param[out] mapStrategyOptions MapStrategy options
-    //! @return true if at least MapStrategy or the MapStrategyOptions were set in the ClassMap. false if
-    //! neither MapStrategy nor MapStrategyOptions were set.
-    ECOBJECTS_EXPORT bool TryGetMapStrategy(Utf8StringR mapStrategy, Utf8StringR mapStrategyOptions) const;
+    //! @param[out] mapStrategy MapStrategy. It remains unchanged, if the MapStrategy property wasn't set in the ClassMap.
+    //! @param[out] mapStrategyOptions MapStrategy options. It remains unchanged, if the MapStrategyOptions property wasn't set in the ClassMap.
+    //! @return ECOBJECTSTATUS_Success if MapStrategy and MapStrategyOptions were set or unset in the ClassMap. Error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetMapStrategy(Utf8StringR mapStrategy, Utf8StringR mapStrategyOptions) const;
     //! Tries to get the value of the TableName property in the ClassMap.
-    //! @param[out] tableName Table name
-    //! @return true if TableName was set in the ClassMap, false otherwise
-    ECOBJECTS_EXPORT bool TryGetTableName(Utf8String& tableName) const;
+    //! @param[out] tableName Table name. It remains unchanged, if the TableName property wasn't set in the ClassMap.
+    //! @return ECOBJECTSTATUS_Success if TableName was set or unset in the ClassMap, Error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetTableName(Utf8String& tableName) const;
     //! Tries to get the value of the ECInstanceIdColumn property from the ClassMap.
-    //! @param[out] ecInstanceIdColumnName Name of the ECInstanceId column
-    //! @return true if ECInstanceIdColumn was set in the ClassMap, false otherwise
-    ECOBJECTS_EXPORT bool TryGetECInstanceIdColumn(Utf8String& ecInstanceIdColumnName) const;
+    //! @param[out] ecInstanceIdColumnName Name of the ECInstanceId column. It remains unchanged, if the ECInstanceIdColumn property wasn't set in the ClassMap.
+    //! @return ECOBJECTSTATUS_Success if ECInstanceIdColumn was set or unset in the ClassMap, Error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetECInstanceIdColumn(Utf8String& ecInstanceIdColumnName) const;
     //! Tries to get the value of the Indexes property from the ClassMap.
-    //! @param[out] indexes List of DbIndexes as defined in the ClassMap
-    //! @return true if any indexes were set in the ClassMap, false otherwise
-    ECOBJECTS_EXPORT bool TryGetIndexes(bvector<DbIndex>& indexes) const;
+    //! @param[out] indexes List of DbIndexes as defined in the ClassMap. Is empty, if no indexes were defined in the ClassMap.
+    //! @return SUCCESS if Indexes property is set or unset in ClassMap. Error codes if Indexes property has invalid values
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetIndexes(bvector<DbIndex>& indexes) const;
     };
 
 //=======================================================================================    
@@ -324,21 +339,130 @@ public:
     ECDbPropertyMap() : m_property(nullptr), m_ca(nullptr) {}
 
     //! Tries to get the value of the ColumnName property from the PropertyMap.
-    //! @param[out] columnName Column name
-    //! @return true if ColumnName was set in the PropertyMap, false otherwise
-    ECOBJECTS_EXPORT bool TryGetColumnName(Utf8StringR columnName) const;
+    //! @param[out] columnName Column name. It remains unchanged, if the ColumnName property wasn't set in the PropertyMap.
+    //! @return ECOBJECTSTATUS_Success if ColumnName was set or unset in the PropertyMap, Error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetColumnName(Utf8StringR columnName) const;
     //! Tries to get the value of the IsNullable property from the PropertyMap.
-    //! @param[out] isNullable IsNullable flag
-    //! @return true if IsNullable was set in the PropertyMap, false otherwise
-    ECOBJECTS_EXPORT bool TryGetIsNullable(bool& isNullable) const;
+    //! @param[out] isNullable IsNullable flag. It remains unchanged, if the IsNullable property wasn't set in the PropertyMap.
+    //! @return ECOBJECTSTATUS_Success if IsNullable was set or unset in the PropertyMap, Error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetIsNullable(bool& isNullable) const;
     //! Tries to get the value of the IsUnique property from the PropertyMap.
-    //! @param[out] isUnique IsUnique flag
-    //! @return true if IsUnique was set in the PropertyMap, false otherwise
-    ECOBJECTS_EXPORT bool TryGetIsUnique(bool& isUnique) const;
+    //! @param[out] isUnique IsUnique flag. It remains unchanged, if the IsUnique property wasn't set in the PropertyMap.
+    //! @return ECOBJECTSTATUS_Success if IsUnique was set or unset in the PropertyMap, Error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetIsUnique(bool& isUnique) const;
     //! Tries to get the value of the Collation property from the PropertyMap.
-    //! @param[out] collation Collation
-    //! @return true if Collation was set in the PropertyMap, false otherwise
-    ECOBJECTS_EXPORT bool TryGetCollation(Utf8StringR collation) const;
+    //! @param[out] collation Collation. It remains unchanged, if the Collation property wasn't set in the PropertyMap.
+    //! @return ECOBJECTSTATUS_Success if Collation was set or unset in the PropertyMap, Error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetCollation(Utf8StringR collation) const;
+    };
+
+
+//=======================================================================================    
+//! ECDbLinkTableRelationshipMap is a convenience wrapper around the LinkTableRelationshipMap 
+//! custom attribute that simplifies reading the values of that custom attribute
+//! @ingroup ECObjectsGroup
+//! @bsiclass
+//=======================================================================================    
+struct ECDbLinkTableRelationshipMap
+    {
+    friend struct ECDbMapCustomAttributeHelper;
+
+private:
+    ECRelationshipClassCP m_relClass;
+    IECInstanceCP m_ca;
+
+    ECDbLinkTableRelationshipMap(ECRelationshipClassCR, IECInstanceCP ca);
+
+public:
+    ECDbLinkTableRelationshipMap() : m_relClass(nullptr), m_ca(nullptr) {}
+
+    //! Tries to get the value of the SourceECInstanceId property from the LinkTableRelationshipMap.
+    //! @param[out] sourceECInstanceIdColumnName Name of column to which SourceECInstanceId is mapped to. 
+    //! It remains unchanged, if the SourceECInstanceId property wasn't set in the LinkTableRelationshipMap.
+    //! @return ECOBJECTSTATUS_Success if SourceECInstanceId was set or unset in the LinkTableRelationshipMap, error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetSourceECInstanceIdColumn(Utf8StringR sourceECInstanceIdColumnName) const;
+
+    //! Tries to get the value of the SourceECClassId property from the LinkTableRelationshipMap.
+    //! @param[out] sourceECClassIdColumnName Name of column to which SourceECClassId is mapped to. 
+    //! It remains unchanged, if the SourceECClassId property wasn't set in the LinkTableRelationshipMap.
+    //! @return ECOBJECTSTATUS_Success if SourceECClassId was set or unset in the LinkTableRelationshipMap, error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetSourceECClassIdColumn(Utf8StringR sourceECClassIdColumnName) const;
+
+    //! Tries to get the value of the TargetECInstanceId property from the LinkTableRelationshipMap.
+    //! @param[out] targetECInstanceIdColumnName Name of column to which TargetECInstanceId is mapped to. 
+    //! It remains unchanged, if the TargetECInstanceId property wasn't set in the LinkTableRelationshipMap.
+    //! @return ECOBJECTSTATUS_Success if TargetECInstanceId was set or unset in the LinkTableRelationshipMap, error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetTargetECInstanceIdColumn(Utf8StringR targetECInstanceIdColumnName) const;
+
+    //! Tries to get the value of the TargetECClassId property from the LinkTableRelationshipMap.
+    //! @param[out] targetECClassIdColumnName Name of column to which TargetECClassId is mapped to. 
+    //! It remains unchanged, if the TargetECClassId property wasn't set in the LinkTableRelationshipMap.
+    //! @return ECOBJECTSTATUS_Success if TargetECClassId was set or unset in the LinkTableRelationshipMap, error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetTargetECClassIdColumn(Utf8StringR targetECClassIdColumnName) const;
+
+    //! Tries to get the value of the AllowDuplicateRelationships property from the LinkTableRelationshipMap.
+    //! @param[out] allowDuplicateRelationships AllowDuplicateRelationships flag. It remains unchanged, if the AllowDuplicateRelationships property wasn't set in the LinkTableRelationshipMap.
+    //! @return ECOBJECTSTATUS_Success if AllowDuplicateRelationships was set or unset in the LinkTableRelationshipMap, Error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetAllowDuplicateRelationships(bool& allowDuplicateRelationships) const;
+    };
+
+//=======================================================================================    
+//! ECDbForeignKeyRelationshipMap is a convenience wrapper around the ForeignKeyRelationshipMap 
+//! custom attribute that simplifies reading the values of that custom attribute
+//! @ingroup ECObjectsGroup
+//! @bsiclass
+//=======================================================================================    
+struct ECDbForeignKeyRelationshipMap
+    {
+    friend struct ECDbMapCustomAttributeHelper;
+
+private:
+    ECRelationshipClassCP m_relClass;
+    IECInstanceCP m_ca;
+
+    ECDbForeignKeyRelationshipMap(ECRelationshipClassCR, IECInstanceCP ca);
+
+public:
+    ECDbForeignKeyRelationshipMap() : m_relClass(nullptr), m_ca(nullptr) {}
+
+    //! Tries to get the value of the End property from the ForeignKeyRelationshipMap.
+    //! @param[out] foreignKeyEnd End of the relationship which carries the foreign key. @p foreignKeyEnd remains unchanged, 
+    //! if the End property wasn't set in the ForeignKeyRelationshipMap.
+    //! @return ECOBJECTSTATUS_Success if End was set or unset in the ForeignKeyRelationshipMap, Error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetEnd(ECRelationshipEnd& foreignKeyEnd) const;
+
+    //! Tries to get the value of the ForeignKeyColumn property from the ForeignKeyRelationshipMap.
+    //! @param[out] foreignKeyColumnName Name of column to which ForeignKeyColumn is mapped to. 
+    //! It remains unchanged, if the ForeignKeyColumn property wasn't set in the ForeignKeyRelationshipMap.
+    //! @return ECOBJECTSTATUS_Success if ForeignKeyColumn was set or unset in the ForeignKeyRelationshipMap, error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetForeignKeyColumn(Utf8StringR foreignKeyColumnName) const;
+
+    //! Tries to get the value of the ForeignKeyClassId property from the ForeignKeyRelationshipMap.
+    //! @param[out] foreignKeyClassIdColumnName Name of column to which ForeignKeyClassId is mapped to. 
+    //! It remains unchanged, if the ForeignKeyClassId property wasn't set in the ForeignKeyRelationshipMap.
+    //! @return ECOBJECTSTATUS_Success if ForeignKeyClassId was set or unset in the ForeignKeyRelationshipMap, error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetForeignKeyClassIdColumn(Utf8StringR foreignKeyClassIdColumnName) const;
+
+    //! Tries to get the value of the CreateConstraint property from the ForeignKeyRelationshipMap.
+    //! @param[out] createConstraintFlag true, if a foreign key constraint should be created (and referential integrity be enforced)
+    //!             false if no foreign key constraint should be created (and referential integrity should not be enforced).
+    //!             @p createConstraintFlag remains unchanged, if the CreateConstraint property wasn't set in the ForeignKeyRelationshipMap.
+    //! @return ECOBJECTSTATUS_Success if CreateConstraint was set or unset in the ForeignKeyRelationshipMap, Error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetCreateConstraint(bool& createConstraintFlag) const;
+
+    //! Tries to get the value of the OnDeleteAction property from the ForeignKeyRelationshipMap.
+    //! @remarks The property is only applicable if CreateConstraint was set to true.
+    //! @param[out] onDeleteAction OnDelete action.  @p onDeleteAction remains unchanged, if the OnDeleteAction property 
+    //! wasn't set in the ForeignKeyRelationshipMap.
+    //! @return ECOBJECTSTATUS_Success if OnDeleteAction was set or unset in the ForeignKeyRelationshipMap, Error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetOnDeleteAction(Utf8StringR onDeleteAction) const;
+
+    //! Tries to get the value of the OnUpdateAction property from the ForeignKeyRelationshipMap.
+    //! @remarks The property is only applicable if CreateConstraint was set to true.
+    //! @param[out] onUpdateAction Onpdate action. @p onDeleteAction remains unchanged, if the OnUpdateAction property 
+    //! wasn't set in the ForeignKeyRelationshipMap.
+    //! @return ECOBJECTSTATUS_Success if OnUpdateAction was set or unset in the ForeignKeyRelationshipMap, Error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetOnUpdateAction(Utf8StringR onUpdateAction) const;
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

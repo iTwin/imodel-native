@@ -939,6 +939,15 @@ bool ECClass::CheckBaseClassCycles (ECClassCP thisClass, const void * arg)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::AddBaseClass (ECClassCR baseClass)
     {
+    return AddBaseClass(baseClass, false);
+    }
+
+
+//-------------------------------------------------------------------------------------
+//* @bsimethod                                              
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus ECClass::AddBaseClass(ECClassCR baseClass, bool insertAtBeginning)
+    {
     if (&(baseClass.GetSchema()) != &(this->GetSchema()))
         {
         if (!ECSchema::IsSchemaReferenced(this->GetSchema(), baseClass.GetSchema()))
@@ -947,13 +956,13 @@ ECObjectsStatus ECClass::AddBaseClass (ECClassCR baseClass)
 
     if (this == &baseClass || ClassesAreEqualByName(this, &baseClass) || baseClass.TraverseBaseClasses(&CheckBaseClassCycles, true, this))
         return ECOBJECTS_STATUS_BaseClassUnacceptable;
-        
+
     ECBaseClassesList::const_iterator baseClassIterator;
     for (baseClassIterator = m_baseClasses.begin(); baseClassIterator != m_baseClasses.end(); baseClassIterator++)
         {
-        if (*baseClassIterator == (ECClassP)&baseClass)
+        if (*baseClassIterator == (ECClassP) &baseClass)
             {
-            LOG.warningv (L"Cannot add class '%ls' as a base class to '%ls' because it already exists as a base class", baseClass.GetName().c_str(), GetName().c_str());
+            LOG.warningv(L"Cannot add class '%ls' as a base class to '%ls' because it already exists as a base class", baseClass.GetName().c_str(), GetName().c_str());
             return ECOBJECTS_STATUS_NamedItemAlreadyExists;
             }
         }
@@ -963,33 +972,35 @@ ECObjectsStatus ECClass::AddBaseClass (ECClassCR baseClass)
     if (ECOBJECTS_STATUS_Success != status)
         return status;
 
-    for (ECPropertyP prop: baseClassProperties)
+    for (ECPropertyP prop : baseClassProperties)
         {
         ECPropertyP thisProperty;
         if (NULL != (thisProperty = this->GetPropertyP(prop->GetName())))
             {
             if (ECOBJECTS_STATUS_Success != (status = ECClass::CanPropertyBeOverridden(*prop, *thisProperty)))
                 {
-                LOG.errorv (L"Attempt to override a %ls property of class %ls with a different type property in derived class %ls", thisProperty->GetName().c_str(), baseClass.GetName().c_str(), GetName().c_str());
+                LOG.errorv(L"Attempt to override a %ls property of class %ls with a different type property in derived class %ls", thisProperty->GetName().c_str(), baseClass.GetName().c_str(), GetName().c_str());
                 return status;
-                }        
+                }
             }
         }
 
     // NEEDSWORK - what if the base class being set is just a stub and does not contain 
     // any properties.  How do we handle property overrides?
-    m_baseClasses.push_back((ECClassP)&baseClass);
+    if (!insertAtBeginning)
+        m_baseClasses.push_back((ECClassP) &baseClass);
+    else
+        m_baseClasses.insert(m_baseClasses.begin(), (ECClassP) &baseClass);
 
     InvalidateDefaultStandaloneEnabler();
 
     for (ECPropertyP baseProperty : baseClass.GetProperties())
-        OnBaseClassPropertyAdded (*baseProperty);
+        OnBaseClassPropertyAdded(*baseProperty);
 
-    baseClass.AddDerivedClass (*this);
+    baseClass.AddDerivedClass(*this);
 
     return ECOBJECTS_STATUS_Success;
     }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2596,42 +2607,36 @@ ECRelationshipConstraintClass::ECRelationshipConstraintClass(ECClassCR ecClass) 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Muhammad.Zaighum                 11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipConstraintClass::ECRelationshipConstraintClass(ECRelationshipConstraintClass const && rhs) :
-m_ecClass(rhs.m_ecClass), m_keys(std::move(rhs.m_keys))
+ECRelationshipConstraintClass::ECRelationshipConstraintClass(ECRelationshipConstraintClass&& rhs) 
+    : m_ecClass(std::move(rhs.m_ecClass)), m_keys(std::move(rhs.m_keys))
     { }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-const ECRelationshipConstraintClass & ECRelationshipConstraintClass::operator = (ECRelationshipConstraintClass const && rhs)
+ECRelationshipConstraintClass& ECRelationshipConstraintClass::operator=(ECRelationshipConstraintClass&& rhs)
     {
-    m_ecClass = rhs.m_ecClass;
-    m_keys = std::move(rhs.m_keys);
+    if (this != &rhs)
+        {
+        m_ecClass = std::move(rhs.m_ecClass);
+        m_keys = std::move(rhs.m_keys);
+        }
+
     return *this;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCR ECRelationshipConstraintClass::GetClass() const
+void ECRelationshipConstraintClass::AddKey(WCharCP keyPropertyName)
     {
-    return *m_ecClass;
-    }
+    if (WString::IsNullOrEmpty(keyPropertyName))
+        {
+        BeAssert(false && "keyPropertyName arg must not be nullptr or empty string.");
+        return;
+        }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Muhammad.Zaighum                   11/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-const std::vector<WString>& ECRelationshipConstraintClass::GetKeys() const
-    {
-    return m_keys;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Muhammad.Zaighum                   11/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECRelationshipConstraintClass::AddKey(WCharCP key)
-    {
-    m_keys.push_back(key);
+    m_keys.push_back(keyPropertyName);
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
