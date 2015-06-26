@@ -11,7 +11,7 @@
     
     <Part Name="RealityPlatform" BentleyBuildMakeFile="RealityPlatform\RealityPlatform.mke">
       <SubPart PartName="PublicAPI" />
-      <SubPart PartName="ImagePPDLL"                 PartFile="ImagePP"                   Repository="ImagePP" />
+      <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
       <SubPart PartName="PointoolsVortexAPI_VS2012"  PartFile="PointoolsVortexAPI_VS2012" Repository="PointoolsVortexAPI" />
       <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
       <Bindings>

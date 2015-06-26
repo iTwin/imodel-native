@@ -56,18 +56,12 @@ EXE_DEST = $(OutputRootDir)Product/RealityModFramework/
 EXE_NAME = $(appName)
 EXE_OBJS = $(o)StdAfx$(oext) $(MultiCompileObjectList)
 
-#LINKER_LIBRARIES_DELAYLOADED  =  $(ntPlatformLib)Vfw32.lib
-
-#$(ContextSubpartsLibs)IppGraLibs.lib \
-#                   $(ContextSubpartsLibs)IppUtlLibs.lib \
-#                   $(ContextSubpartsLibs)IppImaging.lib \
-
 LINKER_LIBRARIES = $(ContextSubpartsLibs)Bentley.lib \
                    $(ContextSubpartsLibs)BentleyAllocator.lib  \
                    $(ContextSubpartsLibs)BentleyGeom.lib \
                    $(ContextSubpartsLibs)BeCurl.lib \
 				   $(ContextDeliveryDir)RealityPlatform.lib \
-				   Gdi32.lib \
+				   Gdi32.lib
 
 
 # remove console options; let the system determine the entry point

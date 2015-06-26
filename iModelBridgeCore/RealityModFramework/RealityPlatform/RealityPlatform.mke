@@ -83,8 +83,7 @@ DLM_NO_SIGN	    = 1
 
 LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BentleyAllocator$(libext) \
-					   $(ContextSubpartsLibs)IppGraLibs$(libext) \
-					   $(ContextSubpartsLibs)IppUtlLibs$(libext) \
+					   $(ContextSubpartsLibs)ImagePP$(libext) \
                        $(ContextSubpartsLibs)BentleyGeom$(libext) \
                        $(ContextSubpartsLibs)BaseGeoCoord$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext) \
