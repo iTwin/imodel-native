@@ -16,7 +16,7 @@ BEGIN_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
 //========================================================================================
 // @bsiclass                                                        Eric.Paquet     5/2015
 //========================================================================================
-struct PointCloudProgressiveDisplay : DgnPlatform::IProgressiveDisplay, NonCopyableClass
+struct PointCloudProgressiveDisplay : Dgn::IProgressiveDisplay, NonCopyableClass
     {
     DEFINE_BENTLEY_REF_COUNTED_MEMBERS
 

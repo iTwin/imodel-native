@@ -17,7 +17,7 @@ struct PointCloudDrawBuffer;
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                                    StephanePoulin  02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct PointCloudDrawBuffer : public BentleyApi::DgnPlatform::IPointCloudDrawParams
+struct PointCloudDrawBuffer : public Dgn::IPointCloudDrawParams
     {
     private:
         virtual uint32_t                                _GetCapacity() = 0;                     // Number of points
@@ -72,8 +72,8 @@ struct PointCloudDrawParams : public PointCloudDrawBuffer
         virtual bool                IsThreadBound () override               { return false; }
         virtual bool                GetRange (DPoint3d*range) override      { return false; }
         virtual bool                GetOrigin (DPoint3d*origin) override    { return false; }
-        virtual BentleyApi::DgnPlatform::ColorDef const*     
-                                    GetRgbColors () override                { return (m_ignoreColor || m_colors.IsNull()) ? NULL : reinterpret_cast<BentleyApi::DgnPlatform::ColorDef const*>(m_colors->GetChannelBuffer()); } 
+        virtual Dgn::ColorDef const*     
+                                    GetRgbColors () override                { return (m_ignoreColor || m_colors.IsNull()) ? NULL : reinterpret_cast<Dgn::ColorDef const*>(m_colors->GetChannelBuffer()); } 
 
         virtual uint32_t            GetNumPoints () override                { return m_points.IsValid() ? (uint32_t)m_points->GetSize() : 0; }
         virtual DPoint3dCP          GetDPoints () override                  { return m_points->GetChannelBuffer(); }

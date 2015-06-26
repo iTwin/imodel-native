@@ -49,7 +49,7 @@ struct LasClassificationInfo
         * classificationColor is a pointer to an array of 32 ColorDef
         * @bsimethod                                                    StephanePoulin  12/2009
         +---------------+---------------+---------------+---------------+---------------+------*/
-        LasClassificationInfo(uint32_t visibleState, PointCloudColorDefP classificationColor)
+        LasClassificationInfo(uint32_t visibleState, BePointCloud::PointCloudColorDefP classificationColor)
             {
             m_visibleState = visibleState;
             m_blendColor = false;
@@ -124,7 +124,7 @@ struct LasClassificationInfo
         /*---------------------------------------------------------------------------------**//**
         * @bsimethod                                                    StephanePoulin  12/2009
         +---------------+---------------+---------------+---------------+---------------+------*/
-        PointCloudColorDefCP GetClassificationColors() const 
+        BePointCloud::PointCloudColorDefCP GetClassificationColors() const 
             {
             return m_classificationColor; 
             }
@@ -132,7 +132,7 @@ struct LasClassificationInfo
         /*---------------------------------------------------------------------------------**//**
         * @bsimethod                                                    StephanePoulin  12/2009
         +---------------+---------------+---------------+---------------+---------------+------*/
-        void SetClassificationColors(PointCloudColorDefCP classificationColors) 
+        void SetClassificationColors(BePointCloud::PointCloudColorDefCP classificationColors) 
             {
             memcpy(m_classificationColor, classificationColors, CLASSIFCATION_COUNT * sizeof(BePointCloud::PointCloudColorDef));
             }
@@ -148,19 +148,16 @@ struct LasClassificationInfo
         /*---------------------------------------------------------------------------------**//**
         * @bsimethod                                                    StephanePoulin  12/2009
         +---------------+---------------+---------------+---------------+---------------+------*/
-        PointCloudColorDefCR GetClassificationColor(unsigned char idx) const 
+        BePointCloud::PointCloudColorDefCR GetClassificationColor(unsigned char idx) const 
             {
             return m_classificationColor[idx]; 
-
             }
 
         /*---------------------------------------------------------------------------------**//**
         * @bsimethod                                                    StephanePoulin  12/2009
         +---------------+---------------+---------------+---------------+---------------+------*/
         void SetClassificationColor(unsigned char idx, BePointCloud::PointCloudColorDef& color)
-
             {
-
             m_classificationColor[idx] = color; 
             }
 
@@ -330,7 +327,7 @@ struct PointCloudClassificationViewSettings : public RefCounted<IPointCloudClass
     {
     public:
         static PointCloudClassificationViewSettingsPtr Create(int viewIndex) { return new PointCloudClassificationViewSettings(viewIndex); }
-        static PointCloudClassificationViewSettingsPtr Create(ViewContextCR context) { return new PointCloudClassificationViewSettings(context); }
+        static PointCloudClassificationViewSettingsPtr Create(Dgn::ViewContextCR context) { return new PointCloudClassificationViewSettings(context); }
 
         // from IPointCloudClassificationViewSettings
         bool                        _GetState(unsigned char idx) const override;
@@ -360,7 +357,7 @@ struct PointCloudClassificationViewSettings : public RefCounted<IPointCloudClass
 
     private:
         PointCloudClassificationViewSettings (int viewIndex);
-        PointCloudClassificationViewSettings (ViewContextCR context);
+        PointCloudClassificationViewSettings (Dgn::ViewContextCR context);
         ~PointCloudClassificationViewSettings ();
 
         PointCloudClassificationViewSettings(); // disabled
@@ -482,7 +479,7 @@ struct PointCloudViewSettings : public RefCounted<IPointCloudViewSettings>
         bool                        m_hasAdvancedInfo;
 
     public:
-        PointCloudViewSettings (ViewContextCR viewContextCP);
+        PointCloudViewSettings (Dgn::ViewContextCR viewContextCP);
         ~PointCloudViewSettings() { };
 
 
@@ -564,8 +561,8 @@ struct PointCloudViewSettings : public RefCounted<IPointCloudViewSettings>
         virtual int     _GetDisplayStyleIdx        () const { return m_data.GetDisplayStyleIdx(); }
 
         // static methods
-        POINTCLOUDSCHEMA_EXPORT static IPointCloudViewSettingsPtr GetPointCloudViewSettings(ViewContextCR viewContext);
-        static IPointCloudViewSettingsPtr Create(ViewContextCR viewContext);
+        POINTCLOUDSCHEMA_EXPORT static IPointCloudViewSettingsPtr GetPointCloudViewSettings(Dgn::ViewContextCR viewContext);
+        static IPointCloudViewSettingsPtr Create(Dgn::ViewContextCR viewContext);
     };
 
 END_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE

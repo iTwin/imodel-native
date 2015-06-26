@@ -9,7 +9,7 @@
 
 //__PUBLISH_SECTION_START__
 
-#include <BentleyApi/BentleyApi.h>
+#include <Bentley/Bentley.h>
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <RasterSchema/ExportMacros.h>
 #include <RasterSchema/RasterSchemaTypes.h>

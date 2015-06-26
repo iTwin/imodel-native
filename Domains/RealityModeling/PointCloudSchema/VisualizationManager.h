@@ -23,11 +23,11 @@ struct VisualizationManager
         static      VisualizationManager* s_instance;
 
         void        SetViewportInfo(ViewContextR context, Transform const& sceneToUor, DRange3d const& range);
-        void        OverrideViewSettings(RefCountedPtr<IPointCloudViewSettings> settingsPtr, ViewContextR context, PointCloudSceneCR pointCloudScene);
+        void        OverrideViewSettings(RefCountedPtr<IPointCloudViewSettings> settingsPtr, Dgn::ViewContextR context, BePointCloud::PointCloudSceneCR pointCloudScene);
         void        UpdateVortexShaders(RefCountedPtr<IPointCloudViewSettings> const& settingsPtr, DgnViewportR viewport);
 
-        bool        IsDrawPurposeValidForFastUpdate(DgnPlatform::DrawPurpose drawPurpose);
-        bool        IsDrawPurposeValidForCompleteUpdate(DgnPlatform::DrawPurpose drawPurpose);
+        bool        IsDrawPurposeValidForFastUpdate(Dgn::DrawPurpose drawPurpose);
+        bool        IsDrawPurposeValidForCompleteUpdate(Dgn::DrawPurpose drawPurpose);
         void        SetEnabledState(PTenum option, int32_t value);
         void        GetNpcViewRange(DRange3d& npcRange, ViewContextR context);
         void        GetNpcViewBox(DPoint3d npcPoints[8], ViewContextR context);
@@ -43,7 +43,7 @@ struct VisualizationManager
         VisualizationManager();
         ~VisualizationManager();
 
-        DgnPlatform::IProgressiveDisplay::Completion DrawToContext(ViewContextR context, PointCloudSceneCR pointCloudScene, DRange3dCR pointCloudRange);
+        Dgn::IProgressiveDisplay::Completion DrawToContext(Dgn::ViewContextR context, BePointCloud::PointCloudSceneCR pointCloudScene, DRange3dCR pointCloudRange);
 
         static  VisualizationManager& GetInstance();
     };

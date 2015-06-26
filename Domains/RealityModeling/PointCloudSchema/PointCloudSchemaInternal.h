@@ -42,4 +42,6 @@
 #include "PointCloudViewport.h"
 #include "PointCloudRenderer.h"
 
+USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
+
 #endif // __POINTCLOUDSCHEMAINTERNAL_H__

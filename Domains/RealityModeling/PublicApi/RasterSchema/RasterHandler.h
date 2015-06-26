@@ -18,7 +18,7 @@ struct RasterModelHandler;
 //=======================================================================================
 // @bsiclass                                                    Eric.Paquet     04/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RasterModel : DgnPlatform::RasterBaseModel
+struct EXPORT_VTABLE_ATTRIBUTE RasterModel : Dgn::RasterBaseModel
 {
     DEFINE_T_SUPER(RasterBaseModel)
     
@@ -30,7 +30,7 @@ protected:
     //! Destruct a RasterModel object.
     ~RasterModel();
         
-    virtual void _AddGraphicsToScene(ViewContextR) override;
+    virtual void _AddGraphicsToScene(Dgn::ViewContextR) override;
     virtual void _ToPropertiesJson(Json::Value&) const override;
     virtual void _FromPropertiesJson(Json::Value const&) override;
 
@@ -38,7 +38,6 @@ protected:
 
     RasterQuadTreeP GetTree();
 
-    //&&MM todo AsWmsModel() AsRasterFileModel()
 public:
     //! Create a new RasterModel object, in preparation for loading it from the DgnDb.
     RasterModel(CreateParams const& params);
@@ -49,9 +48,9 @@ public:
 // Instances of RasterModel must be able to assume that their handler is a RasterModelHandler.
 // @bsiclass                                                    Eric.Paquet     04/2015
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RasterModelHandler : DgnPlatform::dgn_ModelHandler::Raster
+struct EXPORT_VTABLE_ATTRIBUTE RasterModelHandler : Dgn::dgn_ModelHandler::Raster
 {
-    RASTERMODELHANDLER_DECLARE_MEMBERS (RASTER_CLASSNAME_RasterModel, RasterModel, RasterModelHandler, DgnPlatform::dgn_ModelHandler::Raster, RASTERSCHEMA_EXPORT)
+    RASTERMODELHANDLER_DECLARE_MEMBERS (RASTER_CLASSNAME_RasterModel, RasterModel, RasterModelHandler, Dgn::dgn_ModelHandler::Raster, RASTERSCHEMA_EXPORT)
 };
 
 END_BENTLEY_RASTERSCHEMA_NAMESPACE

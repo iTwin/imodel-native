@@ -17,14 +17,14 @@ BEGIN_BENTLEY_POINTCLOUDSCHEMA_NAMESPACE
 //! The DgnDomain for the point cloud schema.
 // @bsiclass                                                    Eric.Paquet     05/15
 //=======================================================================================
-struct PointCloudDomain : DgnPlatform::DgnDomain
+struct PointCloudDomain : Dgn::DgnDomain
 {
     DOMAIN_DECLARE_MEMBERS(PointCloudDomain, POINTCLOUDSCHEMA_EXPORT)
 
     static  void        InitializeApi();
 
 protected:
-    virtual void _OnSchemaImported(DgnDbR) const override;
+    virtual void _OnSchemaImported(Dgn::DgnDbR) const override;
 
 public:
     PointCloudDomain();

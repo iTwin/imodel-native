@@ -180,7 +180,7 @@ void WmsMap::FromJson(Json::Value const& v)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
-DgnPlatform::DgnModelId WmsModelHandler::CreateWmsModel(DgnDbR db, Utf8CP modelName, WmsMap const& mapInfo)
+DgnModelId WmsModelHandler::CreateWmsModel(DgnDbR db, Utf8CP modelName, WmsMap const& mapInfo)
     {
     DgnClassId classId(db.Schemas().GetECClassId(BENTLEY_RASTER_SCHEMA_NAME, RASTER_CLASSNAME_WmsModel));
     BeAssert(classId.IsValid());
@@ -200,8 +200,6 @@ DgnPlatform::DgnModelId WmsModelHandler::CreateWmsModel(DgnDbR db, Utf8CP modelN
 WmsModel::WmsModel(CreateParams const& params) 
 :T_Super (params)
     {
-    // Make sure GCS is initialized. required to init csmap data.
-    T_HOST.GetGeoCoordinationAdmin()._GetServices();
     }
 
 //----------------------------------------------------------------------------------------
@@ -211,8 +209,6 @@ WmsModel::WmsModel(CreateParams const& params, WmsMap const& wmsMap)
 :T_Super (params),
  m_map(wmsMap)
     {
-    //&&MM init that someplace else? Make sure GCS is initialized. required to init csmap data.
-    T_HOST.GetGeoCoordinationAdmin()._GetServices();
     }
 
 //----------------------------------------------------------------------------------------
@@ -232,9 +228,6 @@ BentleyStatus WmsModel::_LoadQuadTree()
     RasterSourcePtr pSource = WmsSource::Create(m_map);
     if(pSource.IsValid())
         m_rasterTreeP = RasterQuadTree::Create(*pSource, GetDgnDb());
-
-    //&&MM what about range or other stuff from the base?
-    //webmercator : props.m_range = db.Units().GetProjectExtents(); // The "range" of a map could be the whole world. We'll fall back on the project's full extents.
 
     return m_rasterTreeP.IsValid() ? BSISUCCESS : BSIERROR;
     }
@@ -260,7 +253,7 @@ void WmsModel::_FromPropertiesJson(Json::Value const& v)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
-DgnPlatform::AxisAlignedBox3d WmsModel::_QueryModelRange() const
+AxisAlignedBox3d WmsModel::_QueryModelRange() const
     {
     return AxisAlignedBox3d(m_map.m_boundingBox);
     }
