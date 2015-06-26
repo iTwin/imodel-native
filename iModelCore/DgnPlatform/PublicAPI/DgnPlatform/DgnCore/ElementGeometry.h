@@ -19,6 +19,7 @@ typedef RefCountedPtr<ElementGeometry> ElementGeometryPtr;
 //=======================================================================================
 //! Class for multiple RefCounted geometry types: ICurvePrimitive, CurveVector, 
 //! ISolidPrimitive, MSBsplineSurface, PolyfaceHeader, ISolidKernelEntity.
+//! @ingroup ElementGeometryGroup
 //=======================================================================================
 struct ElementGeometry : RefCountedBase
 {
