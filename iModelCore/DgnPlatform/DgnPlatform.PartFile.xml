@@ -72,10 +72,6 @@
         <SubPart PartName="PublishedApi"/>
     </Part>
 
-    <Part Name="ImagePPComponents" ExcludePlatforms="Android*,Linux*,iOS*">
-        <SubPart PartName="ImagePP" PartFile="ImagePP" Repository="ImagePP"  />
-    </Part>
-
     <Part Name="DimStyleSchemaPrewire" BentleyBuildMakeFile="DgnHandlers/Dimension/DimStyleSchemaGenerator/DimStyleSchemaGenerator.mke" >
         <Bindings>
             <Files ProductDirectoryName="ECSchemas" ProductSubDirectory="ECSchemas/Dgn" SubPartDirectory="ECSchemas/Dgn">
