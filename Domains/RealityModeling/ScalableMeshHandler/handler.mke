@@ -64,8 +64,7 @@ LINKER_LIBRARIES_DELAYLOADED  = \
 	$(ContextSubpartsLibs)BaseGeoCoord.lib 
 
 LINKER_LIBRARIES            = \
-    $(ContextSubpartsLibs)$(libprefix)IppGraLibs$(libext) \
-    $(ContextSubpartsLibs)$(libprefix)IppUtlLibs$(libext) \
+    $(ContextSubpartsLibs)$(libprefix)ImagePP$(libext) \
     $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext) \
     $(ContextSubpartsLibs)$(libprefix)TerrainModelCore$(libext) \
     $(ContextSubpartsLibs)$(libprefix)TerrainModelFormats$(libext)
