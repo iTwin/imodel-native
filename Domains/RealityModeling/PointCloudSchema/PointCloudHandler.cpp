@@ -22,22 +22,33 @@ DgnModelId PointCloudModelHandler::CreatePointCloudModel(DgnDbR db, BeFileName f
     DgnClassId classId(db.Schemas().GetECClassId(BENTLEY_POINTCLOUD_SCHEMA_NAME, "PointCloudModel"));
     BeAssert(classId.IsValid());
 
+    // Set PointCloud Properties
+    PointCloudModel::Properties props;
+    WString fileNameWithPath;
+    BeFileName::BuildName (fileNameWithPath, fileName.GetDevice().c_str(), fileName.GetDirectoryWithoutDevice().c_str(), fileName.GetFileNameWithoutExtension().c_str(), fileName.GetExtension().c_str());
+    BeStringUtilities::WCharToUtf8 (props.m_URL, fileNameWithPath.c_str());
+
+    // Try to open point cloud file
+    PointCloudScenePtr pointCloudScenePtr = PointCloudScene::Create(fileName.c_str());
+    if (pointCloudScenePtr == nullptr)
+        {
+        // Can't create model; probably that file name is invalid. Return an invalid model id.
+        return DgnModelId();
+        }
+
+    pointCloudScenePtr->GetRange (props.m_range, false);
+
+    // Just keep model name (no path or extension) and convert it to Utf8CP
     WString dev;
     WString dir;
     WString name;
     WString ext;
     fileName.ParseName(&dev, &dir, &name, &ext);
-
-    // Just keep model name (no path or extension) and convert it to Utf8CP
     Utf8String utf8Name;
     BeStringUtilities::WCharToUtf8 (utf8Name, name.c_str());
     Utf8CP modelName = utf8Name.c_str();
 
-    PointCloudModelPtr model = new PointCloudModel(DgnModel::CreateParams(db, classId, modelName));
-    if (model->SetProperties(fileName) != SUCCESS)
-        // Can't create model; probably that file name is invalid. Return an invalid model id.
-        return DgnModelId();
-
+    PointCloudModelPtr model = new PointCloudModel(DgnModel::CreateParams(db, classId, modelName), props);
     model->Insert();
     return model->GetModelId();
     }
@@ -46,6 +57,16 @@ DgnModelId PointCloudModelHandler::CreatePointCloudModel(DgnDbR db, BeFileName f
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
 PointCloudModel::PointCloudModel(CreateParams const& params) : T_Super (params)
+    {
+    m_pointCloudScenePtr = nullptr;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                       Eric.Paquet     4/2015
+//----------------------------------------------------------------------------------------
+PointCloudModel::PointCloudModel(CreateParams const& params, PointCloudModel::Properties const& properties) 
+:T_Super (params),
+ m_properties(properties)
     {
     m_pointCloudScenePtr = nullptr;
     }
@@ -104,22 +125,6 @@ DRange3d PointCloudModel::GetSceneRange()
 AxisAlignedBox3d PointCloudModel::_QueryModelRange() const
     {
     return AxisAlignedBox3d(m_properties.m_range);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     4/2015
-//----------------------------------------------------------------------------------------
-BentleyStatus PointCloudModel::SetProperties (BeFileName fileName)
-    {
-    WString fileNameWithPath;
-    BeFileName::BuildName (fileNameWithPath, fileName.GetDevice().c_str(), fileName.GetDirectoryWithoutDevice().c_str(), fileName.GetFileNameWithoutExtension().c_str(), fileName.GetExtension().c_str());
-    BeStringUtilities::WCharToUtf8 (m_properties.m_URL, fileNameWithPath.c_str());
-
-    if (GetPointCloudScenePtr() == nullptr)
-        return ERROR;
-
-    m_properties.m_range = GetSceneRange();
-    return SUCCESS;
     }
 
 //----------------------------------------------------------------------------------------

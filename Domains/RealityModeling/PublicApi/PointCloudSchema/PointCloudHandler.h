@@ -60,6 +60,7 @@ protected:
 public:
     //! Create a new PointCloudModel object, in preparation for loading it from the DgnDb.
     PointCloudModel(CreateParams const& params);
+    PointCloudModel(CreateParams const& params, PointCloudModel::Properties const& properties) ;
 
     POINTCLOUDSCHEMA_EXPORT virtual void _AddGraphicsToScene(ViewContextR) override;
     POINTCLOUDSCHEMA_EXPORT virtual void _ToPropertiesJson(Json::Value&) const override;
@@ -67,9 +68,6 @@ public:
     POINTCLOUDSCHEMA_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const override;
     POINTCLOUDSCHEMA_EXPORT BePointCloud::PointCloudScenePtr GetPointCloudScenePtr ();
     POINTCLOUDSCHEMA_EXPORT DRange3dR GetRangeR() {return m_properties.m_range;}
-
-    //! Call this after creating a new model, in order to set up subclass-specific properties.
-    BentleyStatus SetProperties (BeFileName fileName);
 };
 
 //=======================================================================================
