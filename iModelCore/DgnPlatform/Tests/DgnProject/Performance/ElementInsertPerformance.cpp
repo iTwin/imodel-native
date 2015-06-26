@@ -209,68 +209,7 @@ Utf8CP const textVal = "bla bla";
 const int64_t int64Val = 20000000LL;
 const double doubleVal = -3.141516;
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                  06/15
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach)
-    {
-    SetupProject(L"3dMetricGeneral.idgndb", L"ElementInsertPerformanceInsertUpdateApproach.idgndb", BeSQLite::Db::OPEN_ReadWrite);
-    ASSERT_EQ(SUCCESS, ImportTestSchema(*m_db));      
 
-    DgnModelId modelId = InsertDgnModel(*m_db);
-    ASSERT_TRUE(modelId.IsValid());
-
-    StopWatch timer(true);
-    //Preparation
-    CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ModelId, CategoryId, Code) VALUES (?,?,?)");
-    ASSERT_TRUE(insertStmt != nullptr);
-
-    std::vector<CachedECSqlStatementPtr> updateStmts;
-    CachedECSqlStatementPtr updateStmt = m_db->GetPreparedECSqlStatement("UPDATE ONLY ts.Element1 SET Prop1_1 = ?, Prop1_2 = ?, Prop1_3 = ? WHERE ECInstanceId=?");
-    ASSERT_TRUE(updateStmt != nullptr);
-    updateStmts.push_back(updateStmt);
-
-    updateStmt = m_db->GetPreparedECSqlStatement("UPDATE ONLY ts.Element2 SET Prop2_1 = ?, Prop2_2 = ?, Prop2_3 = ? WHERE ECInstanceId=?");
-    ASSERT_TRUE(updateStmt != nullptr);
-    updateStmts.push_back(updateStmt);
-
-    updateStmt = m_db->GetPreparedECSqlStatement("UPDATE ONLY ts.Element3 SET Prop3_1 = ?, Prop3_2 = ?, Prop3_3 = ? WHERE ECInstanceId=?");
-    ASSERT_TRUE(updateStmt != nullptr);
-    updateStmts.push_back(updateStmt);
-
-    updateStmt = m_db->GetPreparedECSqlStatement("UPDATE ONLY ts.Element4 SET Prop4_1 = ?, Prop4_2 = ?, Prop4_3 = ? WHERE ECInstanceId=?");
-    ASSERT_TRUE(updateStmt != nullptr);
-    updateStmts.push_back(updateStmt);
-
-    //Execution
-    Utf8String code;
-    for (int i = 0; i < instanceCount; i++)
-        {
-        insertStmt->BindId(1, modelId);
-        insertStmt->BindId(2, catId);
-        code.Sprintf("Id-%d", i);
-        insertStmt->BindText(3, code.c_str(), IECSqlBinder::MakeCopy::No);
-
-        ECInstanceKey newKey;
-        ASSERT_EQ(ECSqlStepStatus::Done, insertStmt->Step(newKey));
-        insertStmt->Reset();
-        insertStmt->ClearBindings();
-
-        for (CachedECSqlStatementPtr& updateStmt : updateStmts)
-            {
-            updateStmt->BindText(1, textVal, IECSqlBinder::MakeCopy::No);
-            updateStmt->BindInt64(2, int64Val);
-            updateStmt->BindDouble(3, doubleVal);
-            updateStmt->BindId(4, newKey.GetECInstanceId());
-            ASSERT_EQ(ECSqlStepStatus::Done, updateStmt->Step());
-            updateStmt->Reset();
-            updateStmt->ClearBindings();
-            }
-        }
-
-    timer.Stop();
-    LogTiming(instanceCount, timer, "Insert & Update sub props");
-    }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/15
@@ -329,6 +268,68 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach)
     LogTiming(instanceCount, timer, "Single Insert (numeric parameters)");
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  06/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"ElementInsertPerformanceInsertUpdateApproach.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+    ASSERT_EQ(SUCCESS, ImportTestSchema(*m_db));
+
+    DgnModelId modelId = InsertDgnModel(*m_db);
+    ASSERT_TRUE(modelId.IsValid());
+
+    StopWatch timer(true);
+    //Preparation
+    CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement("INSERT INTO ts.Element4 (ModelId, CategoryId, Code) VALUES (?,?,?)");
+    ASSERT_TRUE(insertStmt != nullptr);
+
+    std::vector<CachedECSqlStatementPtr> updateStmts;
+    CachedECSqlStatementPtr updateStmt = m_db->GetPreparedECSqlStatement("UPDATE ONLY ts.Element1 SET Prop1_1 = ?, Prop1_2 = ?, Prop1_3 = ? WHERE ECInstanceId=?");
+    ASSERT_TRUE(updateStmt != nullptr);
+    updateStmts.push_back(updateStmt);
+
+    updateStmt = m_db->GetPreparedECSqlStatement("UPDATE ONLY ts.Element2 SET Prop2_1 = ?, Prop2_2 = ?, Prop2_3 = ? WHERE ECInstanceId=?");
+    ASSERT_TRUE(updateStmt != nullptr);
+    updateStmts.push_back(updateStmt);
+
+    updateStmt = m_db->GetPreparedECSqlStatement("UPDATE ONLY ts.Element3 SET Prop3_1 = ?, Prop3_2 = ?, Prop3_3 = ? WHERE ECInstanceId=?");
+    ASSERT_TRUE(updateStmt != nullptr);
+    updateStmts.push_back(updateStmt);
+
+    updateStmt = m_db->GetPreparedECSqlStatement("UPDATE ONLY ts.Element4 SET Prop4_1 = ?, Prop4_2 = ?, Prop4_3 = ? WHERE ECInstanceId=?");
+    ASSERT_TRUE(updateStmt != nullptr);
+    updateStmts.push_back(updateStmt);
+
+    //Execution
+    Utf8String code;
+    for (int i = 0; i < instanceCount; i++)
+        {
+        insertStmt->BindId(1, modelId);
+        insertStmt->BindId(2, catId);
+        code.Sprintf("Id-%d", i);
+        insertStmt->BindText(3, code.c_str(), IECSqlBinder::MakeCopy::No);
+
+        ECInstanceKey newKey;
+        ASSERT_EQ(ECSqlStepStatus::Done, insertStmt->Step(newKey));
+        insertStmt->Reset();
+        insertStmt->ClearBindings();
+
+        for (CachedECSqlStatementPtr& updateStmt : updateStmts)
+            {
+            updateStmt->BindText(1, textVal, IECSqlBinder::MakeCopy::No);
+            updateStmt->BindInt64(2, int64Val);
+            updateStmt->BindDouble(3, doubleVal);
+            updateStmt->BindId(4, newKey.GetECInstanceId());
+            ASSERT_EQ(ECSqlStepStatus::Done, updateStmt->Step());
+            updateStmt->Reset();
+            updateStmt->ClearBindings();
+            }
+        }
+
+    timer.Stop();
+    LogTiming(instanceCount, timer, "Insert & Update sub props");
+    }
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/15
 //+---------------+---------------+---------------+---------------+---------------+------
