@@ -136,7 +136,15 @@ IGeometryPtr IECSqlValue::GetGeometry () const
     bvector<Byte> byteVec;
     byteVec.reserve (blobSizeU);
     byteVec.assign (blob, blob + blobSizeU);
-    return BentleyGeometryFlatBuffer::BytesToGeometry (byteVec);
+    if (!BentleyGeometryFlatBuffer::IsFlatBufferFormat(byteVec))
+        {
+        LOG.errorv("Geometry blob is not of type Bentley Geometry FlatBuffer.");
+        return nullptr;
+        }
+
+    IGeometryPtr geom = BentleyGeometryFlatBuffer::BytesToGeometry (byteVec);
+    BeAssert(geom != nullptr);
+    return geom;
     }
 
 //--------------------------------------------------------------------------------------
