@@ -8,9 +8,10 @@
 //__BENTLEY_INTERNAL_ONLY__
 #pragma once
 //__PUBLISH_SECTION_START__
-#include <BentleyApi/BentleyApi.h>
+#include <Bentley/Bentley.h>
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/DgnPlatformApi.h>
+#include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnCore/DgnDb.h>
 #include <ScalableMesh/IMrDTM.h>
 #include <ScalableMesh/IMrDTMQuery.h>
@@ -22,9 +23,9 @@
 #define SCALABLEMESH_HANDLERS_EXPORT IMPORT_ATTRIBUTE
 #endif
 
-#define BEGIN_BENTLEY_SCALABLE_MESH_MODEL_NAMESPACE        BEGIN_BENTLEY_API_NAMESPACE namespace ScalableMesh { namespace Model {
-#define END_BENTLEY_SCALABLE_MESH_MODEL_NAMESPACE          }} END_BENTLEY_API_NAMESPACE
-#define BENTLEY_SCALABLE_MESH_MODEL_NAMESPACE              BENTLEY_API_NAMESPACE_NAME::ScalableMesh::Model
+#define BEGIN_BENTLEY_SCALABLE_MESH_MODEL_NAMESPACE        BEGIN_BENTLEY_NAMESPACE namespace ScalableMesh { namespace Model {
+#define END_BENTLEY_SCALABLE_MESH_MODEL_NAMESPACE          }} END_BENTLEY_NAMESPACE
+#define BENTLEY_SCALABLE_MESH_MODEL_NAMESPACE              BENTLEY_NAMESPACE_NAME::ScalableMesh::Model
 #define USING_NAMESPACE_BENTLEY_SCALABLE_MESH_MODEL        using namespace BENTLEY_SCALABLE_MESH_MODEL_NAMESPACE;
 
 USING_NAMESPACE_BENTLEY_MRDTM
@@ -32,9 +33,9 @@ USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 BEGIN_BENTLEY_SCALABLE_MESH_MODEL_NAMESPACE
-struct ScalableMeshModel : DgnPlatform::PhysicalModel
+struct ScalableMeshModel : PhysicalModel
     {
-    DEFINE_T_SUPER(DgnPlatform::PhysicalModel)
+    DEFINE_T_SUPER(PhysicalModel)
 
         friend class ScalableMeshProgressiveDisplay;
     private:
@@ -43,9 +44,9 @@ struct ScalableMeshModel : DgnPlatform::PhysicalModel
         ScalableMeshProgressiveDisplay* m_display;
 
     protected:
-        DgnPlatform::DgnModelType _GetModelType() const override { return DgnPlatform::DgnModelType::Physical; }
-        SCALABLEMESH_HANDLERS_EXPORT virtual DgnPlatform::AxisAlignedBox3d _QueryModelRange() const override;
-        virtual DgnPlatform::DgnModels::Model::CoordinateSpace _GetCoordinateSpace() const override { return DgnPlatform::DgnModels::Model::CoordinateSpace::World; }
+        DgnModelType _GetModelType() const override { return DgnModelType::Physical; }
+        SCALABLEMESH_HANDLERS_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const override;
+        virtual DgnModels::Model::CoordinateSpace _GetCoordinateSpace() const override { return DgnModels::Model::CoordinateSpace::World; }
         SCALABLEMESH_HANDLERS_EXPORT virtual void _AddGraphicsToScene(ViewContextR) override;
 
     public:

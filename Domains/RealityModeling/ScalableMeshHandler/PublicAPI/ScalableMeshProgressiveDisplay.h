@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
 #pragma once
-#include <BentleyApi/BentleyApi.h>
+#include <Bentley/Bentley.h>
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnCore/DgnDb.h>
@@ -15,9 +15,9 @@
 #include <ScalableMesh/IMrDTMQuery.h>
 #include <DgnPlatform/DgnCore/DgnViewport.h>
 
-#define BEGIN_BENTLEY_SCALABLE_MESH_MODEL_NAMESPACE        BEGIN_BENTLEY_API_NAMESPACE namespace ScalableMesh { namespace Model {
-#define END_BENTLEY_SCALABLE_MESH_MODEL_NAMESPACE          }} END_BENTLEY_API_NAMESPACE
-#define BENTLEY_SCALABLE_MESH_MODEL_NAMESPACE              BENTLEY_API_NAMESPACE_NAME::ScalableMesh::Model
+#define BEGIN_BENTLEY_SCALABLE_MESH_MODEL_NAMESPACE        BEGIN_BENTLEY_NAMESPACE namespace ScalableMesh { namespace Model {
+#define END_BENTLEY_SCALABLE_MESH_MODEL_NAMESPACE          }} END_BENTLEY_NAMESPACE
+#define BENTLEY_SCALABLE_MESH_MODEL_NAMESPACE              BENTLEY_NAMESPACE_NAME::ScalableMesh::Model
 #define USING_NAMESPACE_BENTLEY_SCALABLE_MESH_MODEL        using namespace BENTLEY_SCALABLE_MESH_MODEL_NAMESPACE;
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
