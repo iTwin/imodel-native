@@ -23,7 +23,7 @@ std::ofstream &pt::FileTrace::file()
 
 		char trace_path[260];
 		char full_path[260];
-		int success = ::GetEnvironmentVariableA("PT4RHINO_TRACE_PATH", trace_path, 260);
+		int success = ::GetEnvironmentVariableA("VORTEX_TRACE_PATH", trace_path, 260);
 		
 		if (success)
 		{

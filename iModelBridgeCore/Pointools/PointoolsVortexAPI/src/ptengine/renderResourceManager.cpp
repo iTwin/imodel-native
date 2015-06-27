@@ -123,7 +123,6 @@ ColourGradientManager	*RenderResourceManager::gradientManager()
 {
 	return &m_gradients;
 }
-
 /*****************************************************************************/
 /**
 * @brief

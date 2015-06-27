@@ -2,6 +2,11 @@
 #define POINTOOLS_API_BUILD_DLL
 #include <gl/glew.h>
 
+#ifdef _DEBUG
+#define FILE_TRACE	1
+#endif
+#include <pt/trace.h>
+
 #include <ptapi/PointoolsVortexAPI.h>
 #include <ptapi/PointoolsVortexAPI_ResultCodes.h>
 #include <ptapi/PointoolsAPI_handle.h>
@@ -124,6 +129,8 @@ PTvoid	PTAPI ptGetSelectionDrawColor( PTubyte *col3 )
 //-----------------------------------------------------------------------------
 PTvoid	PTAPI ptSelectPointsByRect( PTint x_edge, PTint y_edge, PTint width, PTint height )
 {
+	PTTRACE_FUNC
+	
 	_ptMakeVPContextCurrent();
 
 	if (g_currentViewParams)
@@ -138,6 +145,8 @@ PTvoid	PTAPI ptSelectPointsByRect( PTint x_edge, PTint y_edge, PTint width, PTin
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptSelectPointsByFence( PTint num_vertices, const PTint *vertices )
 {
+	PTTRACE_FUNC
+	
 	PointEditManager::instance()->setUnits( g_unitScale );
 
 	if (!vertices || num_vertices < 3)
@@ -166,6 +175,8 @@ PTres	PTAPI ptSelectPointsByFence( PTint num_vertices, const PTint *vertices )
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptSelectPointsByBox( const PTdouble *lower, const PTdouble *upper )
 {
+	PTTRACE_FUNC
+	
 	if (!lower || !upper)
 		return setLastErrorCode( PTV_VOID_POINTER );
 
@@ -242,6 +253,8 @@ PTres	PTAPI ptSelectPointsBySphere( const PTdouble *centre, PTdouble radius )
 //-----------------------------------------------------------------------------
 PTvoid PTAPI ptSetSelectionScope( PThandle sceneOrCloudHandle )
 {
+	PTTRACE_FUNC
+
 	if (!sceneOrCloudHandle)
 	{
 		PointEditManager::instance()->clearEditingScope();
@@ -281,51 +294,71 @@ PTvoid PTAPI ptIsolateSelected()
 //-----------------------------------------------------------------------------
 PTvoid PTAPI ptInvertSelection()
 {
+	PTTRACE_FUNC
+
 	PointEditManager::instance()->invertSelection();
 }
 //-----------------------------------------------------------------------------
 PTvoid	PTAPI ptHideSelected()
 {
+	PTTRACE_FUNC
+
 	PointEditManager::instance()->hideSelPoints();
 }
 //-----------------------------------------------------------------------------
 PTvoid	PTAPI ptUnhideAll()
 {
+	PTTRACE_FUNC
+
 	PointEditManager::instance()->clearAll();
 }
 //-----------------------------------------------------------------------------
 PTvoid	PTAPI ptUnselectAll()
 {
+	PTTRACE_FUNC
+
 	PointEditManager::instance()->deselectAll();
 }
 //-----------------------------------------------------------------------------
 PTvoid	PTAPI ptResetSelection()
 {
+	PTTRACE_FUNC
+
 	PointEditManager::instance()->resetSelection();
 }
 //-----------------------------------------------------------------------------
 PTvoid	PTAPI ptSelectAll()
 {
+	PTTRACE_FUNC
+
 	PointEditManager::instance()->selectAll();
 }
 //-----------------------------------------------------------------------------
 PTvoid	PTAPI ptRefreshEdit()
 {
+	PTTRACE_FUNC
+
 	PointEditManager::instance()->regenEditQuick();
 }
 //-----------------------------------------------------------------------------
 PTvoid	PTAPI ptClearEdit()
 {
+	PTTRACE_FUNC
+
 	PointEditManager::instance()->clearEdit();
 }
 //-----------------------------------------------------------------------------
 PTvoid	PTAPI ptStoreEdit( const PTstr name )
 {
+	PTTRACE_FUNC
+
 	PointEditManager::instance()->storeEdit( pt::String(name) );
 }
 //-----------------------------------------------------------------------------
 PTbool	PTAPI ptRestoreEdit( const PTstr name )
 {
+	PTTRACE_FUNC
+
 	return PointEditManager::instance()->restoreEdit( pt::String(name) );
 }
 //-----------------------------------------------------------------------------
@@ -457,6 +490,8 @@ PTint PTAPI ptGetEditDataSize( PTint index )
 //-----------------------------------------------------------------------------
 PTvoid PTAPI ptCreateEditFromData( const PTubyte *data )
 {
+	PTTRACE_FUNC
+	
 	ptds::DataSourcePtr memBlock = ptds::DataSourceMemBlock::createNew(data);
 
 	Branch *edit = new Branch( "root" );
@@ -471,6 +506,8 @@ PTvoid PTAPI ptCreateEditFromData( const PTubyte *data )
 //-----------------------------------------------------------------------------
 PTbool PTAPI ptSetCurrentLayer( PTuint layer )
 {
+	PTTRACE_FUNC
+	
 	return PointEditManager::instance()->setCurrentLayer( layer );
 }
 //-----------------------------------------------------------------------------
@@ -506,16 +543,22 @@ PTbool PTAPI ptDoesLayerHavePoints( PTuint layer )
 //-----------------------------------------------------------------------------
 PTvoid PTAPI ptClearPointsFromLayer( PTuint layer )
 {
+	PTTRACE_FUNC
+	
 	setLastErrorCode( PTV_NOT_IMPLEMENTED_IN_VERSION );
 }
 //-----------------------------------------------------------------------------
 PTvoid PTAPI ptResetLayers()
 {
+	PTTRACE_FUNC
+	
 	setLastErrorCode( PTV_NOT_IMPLEMENTED_IN_VERSION );
 }
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptResetSceneEditing( PThandle scene )
 {
+	PTTRACE_FUNC
+	
 	ptSetSelectionScope( scene );
 	ptUnhideAll();
 	ptSetSelectionScope( 0 );
@@ -525,28 +568,36 @@ PTres	PTAPI ptResetSceneEditing( PThandle scene )
 //-----------------------------------------------------------------------------
 PTbool PTAPI ptCopySelToCurrentLayer( PTbool deselect )
 {
+	PTTRACE_FUNC
+	
 	return PointEditManager::instance()->copySelToLayer( deselect );
 }
 //-----------------------------------------------------------------------------
 PTbool PTAPI ptMoveSelToCurrentLayer( PTbool deselect )
 {
+	PTTRACE_FUNC
+	
 	return PointEditManager::instance()->moveSelToLayer( deselect );
 }
 //-----------------------------------------------------------------------------
 PTvoid  PTAPI ptSelectPointsInLayer( PTuint layer )
 {
-	PointEditManager::instance()->selectPointsInLayer( layer );
+	PTTRACE_FUNC
 
-	PointEditManager::instance()->regenEditQuick();
+	PointEditManager::instance()->selectPointsInLayer( layer );
 }
 //-----------------------------------------------------------------------------
 PTvoid  PTAPI ptDeselectPointsInLayer( PTuint layer )
 { 
+	PTTRACE_FUNC
+	
 	PointEditManager::instance()->deselectPointsInLayer( layer );
 }
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptSelectCloud( PThandle cloud )
 {
+	PTTRACE_FUNC
+	
 	pcloud::PointCloud *c = cloudFromHandle( cloud );
 
 	// this will not select on hidden layers
@@ -564,6 +615,8 @@ PTres	PTAPI ptSelectCloud( PThandle cloud )
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptDeselectCloud( PThandle cloud )
 {
+	PTTRACE_FUNC
+	
 	pcloud::PointCloud *c = cloudFromHandle( cloud );
 
 	if (c)
@@ -579,6 +632,8 @@ PTres	PTAPI ptDeselectCloud( PThandle cloud )
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptSelectScene( PThandle scene )
 {
+	PTTRACE_FUNC
+	
 	pcloud::Scene *c = sceneFromHandle( scene );
 
 	if (c)
@@ -594,6 +649,8 @@ PTres	PTAPI ptSelectScene( PThandle scene )
 //-----------------------------------------------------------------------------
 PTres	PTAPI ptDeselectScene( PThandle scene )
 {
+	PTTRACE_FUNC
+	
 	pcloud::Scene *c = sceneFromHandle( scene );
 
 	if (c)

@@ -2,6 +2,13 @@
 #define POINTOOLS_API_BUILD_DLL
 #include <gl/glew.h>
 
+#ifdef _DEBUG
+#define FILE_TRACE	1
+#endif
+
+#include <pt/trace.h>
+
+
 #include <ptapi/PointoolsVortexAPI.h>
 #include <ptapi/PointoolsVortexAPI_ResultCodes.h>
 #include <ptapi/PointoolsAPI_handle.h>
@@ -218,6 +225,8 @@ PTres		PTAPI ptReadChannelsFile( const PTstr filename, PTint &numChannels, PThan
 //-----------------------------------------------------------------------------
 PTres PTAPI ptReadChannelsFileFromBuffer(void *buffer, PTuint64 bufferSize, PTint &numChannels, PThandle **channelHandles)
 {
+	PTTRACE_FUNC
+
 	static PThandle s_channelHandles[256];
 
 	if(buffer == NULL || bufferSize == 0)
@@ -364,6 +373,8 @@ PTres PTAPI ptSetChannelOOCFolder( const PTstr foldername )
 //-----------------------------------------------------------------------------
 PTvoid	PTAPI ptDeleteAllChannels()
 {
+	PTTRACE_FUNC
+
 	UserChannelManager::instance()->eraseAllChannels();
 
 	g_channels.clear();
@@ -374,6 +385,8 @@ PTvoid	PTAPI ptDeleteAllChannels()
 //-----------------------------------------------------------------------------
 PThandle	PTAPI ptCreatePointChannelFromLayers( PTstr name, PThandle sceneHandle )
 {
+	PTTRACE_FUNC
+
 	pauseEngine();
 
 	pcloud::Scene * scene = sceneFromHandle(sceneHandle);

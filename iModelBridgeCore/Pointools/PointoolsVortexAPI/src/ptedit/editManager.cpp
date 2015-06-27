@@ -5,6 +5,10 @@
 //-----------------------------------------------------------------------------------------------
 #pragma warning (disable : 4786 )
 
+#ifdef _DEBUG
+#define FILE_TRACE 1
+#endif
+
 #include <WildMagic4/Wm4matrix3.h>
 #include <WildMagic4/Wm4ApprPlaneFit3.h>
 
@@ -29,6 +33,7 @@
 #include <stack>
 #include <map>
 #include <string>
+
 
 using namespace pt;
 using namespace ptl;
@@ -313,6 +318,8 @@ void PointEditManager::selectMode()
 /*****************************************************************************/
 void PointEditManager::deselectMode()	
 { 
+	PTTRACE_FUNC
+
 	g_state.selmode = DeselectPoint; 
 }
 
@@ -491,6 +498,8 @@ bool PointEditManager::isLayerLocked( int layer ) const
 /*****************************************************************************/
 bool PointEditManager::showLayer( int layer, bool show )
 {
+	PTTRACE_FUNC
+
 	ubyte layerMask = (1 << layer);
 
 	if ( layerMask == g_currentLayer )
@@ -513,6 +522,8 @@ bool PointEditManager::showLayer( int layer, bool show )
 /*****************************************************************************/
 bool PointEditManager::setCurrentLayer( int layer, bool maskValue )
 {
+	PTTRACE_FUNC
+
 	ubyte blyr = maskValue ? layer : (1 << layer);
 
 	if (g_lockedLayers & blyr) return false;
@@ -563,6 +574,8 @@ int PointEditManager::getCurrentLayer() const
 /*****************************************************************************/
 bool PointEditManager::moveSelToLayer( bool deselect )
 {
+	PTTRACE_FUNC
+
 	if (g_activeLayers & HIDDEN_LAYER_MASK)
 	{
 		/* move to hidden layer */ 
@@ -585,6 +598,8 @@ bool PointEditManager::moveSelToLayer( bool deselect )
 /*****************************************************************************/
 bool PointEditManager::copySelToLayer( bool deselect )
 {
+	PTTRACE_FUNC
+
 	if (g_activeLayers & HIDDEN_LAYER_MASK) return false;
 
 	m_currentEdit.addOperation( "CopyToLayer" );
@@ -595,6 +610,8 @@ bool PointEditManager::copySelToLayer( bool deselect )
 //
 bool	PointEditManager::selectPointsInLayer( int layer )
 {
+	PTTRACE_FUNC
+
 	s_filters->selectLayer.targetLayer(layer);
 	m_currentEdit.addOperation( &s_filters->selectLayer );
 
@@ -603,6 +620,8 @@ bool	PointEditManager::selectPointsInLayer( int layer )
 //
 bool	PointEditManager::deselectPointsInLayer( int layer )
 {
+	PTTRACE_FUNC
+
 	s_filters->deselectLayer.targetLayer(layer);
 	m_currentEdit.addOperation( &s_filters->deselectLayer );
 
@@ -614,6 +633,8 @@ bool	PointEditManager::deselectPointsInLayer( int layer )
 //
 bool	PointEditManager::selectPointcloud( pcloud::PointCloud *cloud )
 {
+	PTTRACE_FUNC
+
 	s_filters->cloudselect.setCloud( cloud );
 	m_currentEdit.addOperation( &s_filters->cloudselect );
 
@@ -720,6 +741,8 @@ class SetEditPointToLODVisitor : public pcloud::Node::Visitor
 };
 void PointEditManager::regenEditQuick_run()
 {
+	PTTRACE_FUNC
+
 	g_editApplyMode = EditNormal;
 
 	// scope should not effect this, will be restored by PreserveState
@@ -757,6 +780,8 @@ void PointEditManager::regenEditQuick_run()
 /*****************************************************************************/
 void PointEditManager::regenEditQuick()
 {
+	PTTRACE_FUNC
+
 	{
 		PreserveState save;
 
@@ -780,6 +805,8 @@ void PointEditManager::regenEditQuick()
 /*****************************************************************************/
 void PointEditManager::regenEditComplete() // NOT TESTED
 {
+	PTTRACE_FUNC
+
 	PreserveState save;
 
 	pointsengine::pauseEngine();
@@ -816,6 +843,8 @@ void PointEditManager::regenEditComplete() // NOT TESTED
 //-----------------------------------------------------------------------------
 void PointEditManager::regenOOCComplete()
 {
+	PTTRACE_FUNC
+
 	PreserveState save;
 
 	pointsengine::pauseEngine();
@@ -861,6 +890,8 @@ void PointEditManager::regenOOCComplete()
 /*****************************************************************************/
 void PointEditManager::clearEdit()
 {
+	PTTRACE_FUNC
+
 	{
 		PreserveState save;
 		uint saveApplyMode = g_editApplyMode;
@@ -913,6 +944,8 @@ void PointEditManager::paintSelCube()
 /*****************************************************************************/
 void PointEditManager::selectAll()
 {
+	PTTRACE_FUNC
+
 	m_currentEdit.addOperation( "SelectAll" );
 }
 /*****************************************************************************/
@@ -923,6 +956,8 @@ void PointEditManager::selectAll()
 /*****************************************************************************/
 void PointEditManager::deselectAll()
 {
+	PTTRACE_FUNC
+
 	m_currentEdit.addOperation( "DeselectAll" );
 }
 /*****************************************************************************/
@@ -933,6 +968,8 @@ void PointEditManager::deselectAll()
 /*****************************************************************************/
 void PointEditManager::resetSelection()
 {
+	PTTRACE_FUNC
+
 	m_currentEdit.addOperation( "ResetSelection" );
 }
 /*****************************************************************************/
@@ -943,6 +980,8 @@ void PointEditManager::resetSelection()
 /*****************************************************************************/
 void PointEditManager::clearAll()
 {
+	PTTRACE_FUNC
+
 	/* old implementation (bugged) left for testing
 	ClearFilterVisitor c;
 	TraverseScene::withVisitor( &c );
@@ -958,6 +997,8 @@ void PointEditManager::clearAll()
 /*****************************************************************************/
 void PointEditManager::showAll()
 {
+	PTTRACE_FUNC
+
 	m_currentEdit.addOperation( "ShowAll" );
 }
 
@@ -969,6 +1010,8 @@ void PointEditManager::showAll()
 /*****************************************************************************/
 void PointEditManager::invertSelection()
 {	
+	PTTRACE_FUNC
+
 	m_currentEdit.addOperation( "InvertSel" );
 }
 /*****************************************************************************/
@@ -979,6 +1022,8 @@ void PointEditManager::invertSelection()
 /*****************************************************************************/
 __int64 PointEditManager::countVisiblePoints()
 {
+	PTTRACE_FUNC
+
 	CountVisibleVisitor v;
 	TraverseScene::withVisitor( &v, true );
 
@@ -993,6 +1038,8 @@ __int64 PointEditManager::countVisiblePoints()
 /*****************************************************************************/
 void PointEditManager::invertVisibility()
 {	
+	PTTRACE_FUNC
+
 	m_currentEdit.addOperation( "InvertVis" );
 }
 
@@ -1004,6 +1051,8 @@ void PointEditManager::invertVisibility()
 /*****************************************************************************/
 void PointEditManager::isolateSelPoints()
 {
+	PTTRACE_FUNC
+
 	m_currentEdit.addOperation( "IsolateSelected" );
 }
 /*****************************************************************************/
@@ -1014,6 +1063,8 @@ void PointEditManager::isolateSelPoints()
 /*****************************************************************************/
 void PointEditManager::hideSelPoints()
 {
+	PTTRACE_FUNC
+
 	m_currentEdit.addOperation( "HideSelected" );
 }
 
@@ -1092,6 +1143,8 @@ void PointEditManager::paintSelectAtPoint( const pt::vector3d &pnt, bool limit_r
 /*****************************************************************************/
 void PointEditManager::rectangleSelect( int l, int r, int b, int t)
 {
+	PTTRACE_FUNC
+
 	Recti rect(l, t, r, b);
 	rect.makeValid();
 
@@ -1109,6 +1162,8 @@ void PointEditManager::rectangleSelect( int l, int r, int b, int t)
 /*****************************************************************************/
 void PointEditManager::boxSelect( const pt::vector3d &lower, const pt::vector3d &upper )
 {
+	PTTRACE_FUNC
+
 	m_boxSelect.set(lower, upper);
 
 	m_currentEdit.addOperation(&m_boxSelect);
@@ -1126,6 +1181,8 @@ void PointEditManager::boxSelect( const pt::vector3d &lower, const pt::vector3d 
 /*****************************************************************************/
 void PointEditManager::orientedBoxSelect( const pt::vector3d &lower, const pt::vector3d &upper, const pt::vector3d &pos, const pt::vector3d &uAxis, const pt::vector3d &vAxis)
 {
+	PTTRACE_FUNC
+
 	m_orientedBoxSelect.set(lower, upper);
 	m_orientedBoxSelect.setTransform(pos, uAxis, vAxis);
 
@@ -1148,6 +1205,8 @@ void PointEditManager::orientedBoxSelect( const pt::vector3d &lower, const pt::v
 /*****************************************************************************/
 void PointEditManager::planeSelect( const pt::vector3d &origin, const pt::vector3d &normal, double thickness )
 {
+	PTTRACE_FUNC
+
 	vector3d od( origin );
 	vector3d nd( normal );
 
@@ -1168,6 +1227,8 @@ void PointEditManager::planeSelect( const pt::vector3d &origin, const pt::vector
 /*****************************************************************************/
 void PointEditManager::fenceSelect( const pt::Fence<int> &fence )
 {
+	PTTRACE_FUNC
+
 	m_fenceSelect.buildFromScreenFence(fence, m_view, m_units);
 	m_currentEdit.addOperation(&m_fenceSelect);
 }
@@ -1179,6 +1240,8 @@ void PointEditManager::fenceSelect( const pt::Fence<int> &fence )
 /*****************************************************************************/
 void PointEditManager::layersFromUserChannel( pointsengine::UserChannel* userChannel )
 {
+	PTTRACE_FUNC
+
 	if (userChannel)
 	{
 		m_layersFromUserChannel.setUserChannel(userChannel);

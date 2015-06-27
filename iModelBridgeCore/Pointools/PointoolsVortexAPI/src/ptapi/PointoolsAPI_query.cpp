@@ -3446,7 +3446,7 @@ PTfloat PTAPI ptFindNearestPoint( PThandle scene, const PTdouble *pnt, PTdouble 
 		const pcloud::Scene *sc = thePointsScene().sceneBySceneOrCloudKey(scene);
 		if (sc)
 		{
-			PTdouble dist = sc->findNearestPoint(pnt, vnearest, pt::ProjectSpace );
+			PTdouble dist = sc->findNearestPoint(npnt, vnearest, pt::ProjectSpace );
 			vnearest.get(nearest);
 			nearest[0] *= g_unitScale;
 			nearest[1] *= g_unitScale;
@@ -3465,7 +3465,7 @@ PTfloat PTAPI ptFindNearestPoint( PThandle scene, const PTdouble *pnt, PTdouble 
 		for (int i=0; i<thePointsScene().size();i++)
 		{
 			pcloud::Scene *sc = thePointsScene()[i];
-			PTdouble dist = sc->findNearestPoint( pnt, vnearest, pt::ProjectSpace );
+			PTdouble dist = sc->findNearestPoint( npnt, vnearest, pt::ProjectSpace );
 			if (dist >= 0 && fabs(ndist) > dist)
 			{
 				vnearest.get(nearest);
