@@ -45,7 +45,7 @@ static void importDgnSchema(DgnDbR project, bool updateExisting)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::CreateProjectTables()
+DbResult DgnDb::CreateDgnDbTables()
     {
     CreateTable(DGN_TABLE_Domain,    "Name CHAR UNIQUE NOT NULL PRIMARY KEY,"
                                      "Descr CHAR,"

@@ -17,6 +17,7 @@ TABLEHANDLER_DEFINE_MEMBERS(Element)
 TABLEHANDLER_DEFINE_MEMBERS(Model)
 TABLEHANDLER_DEFINE_MEMBERS(ModelDep)
 TABLEHANDLER_DEFINE_MEMBERS(ElementDep)
+TABLEHANDLER_DEFINE_MEMBERS(BeProperties)
 };
 
 namespace dgn_ModelHandler
@@ -87,4 +88,5 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterTableHandler(dgn_TableHandler::Model::GetHandler());
     RegisterTableHandler(dgn_TableHandler::ModelDep::GetHandler());
     RegisterTableHandler(dgn_TableHandler::ElementDep::GetHandler());
+    RegisterTableHandler(dgn_TableHandler::BeProperties::GetHandler());
     }

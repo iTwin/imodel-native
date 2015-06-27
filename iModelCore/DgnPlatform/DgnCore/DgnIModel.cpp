@@ -75,7 +75,7 @@ DgnDbStatus DgnIModel::ExtractUsingDefaults(DbResult& dbResult, BeFileNameCR dgn
 
     Utf8CP dbName = NULL;
     Db  db;
-    Db::OpenParams openParams(Db::OPEN_Readonly);
+    Db::OpenParams openParams(Db::OpenMode::Readonly);
 
     Utf8String   utf8Name;
     //  Make dbName match the name + extension of the package, but with the trailing z removed.
@@ -149,7 +149,7 @@ DgnDbStatus DgnIModel::Extract(BeSQLite::DbResult& dbResult, Utf8CP outputDirect
         return DgnDbStatus::FileNotFound;
 
     BeSQLite::Db        db;
-    Db::OpenParams      openParams(Db::OPEN_Readonly);
+    Db::OpenParams      openParams(Db::OpenMode::Readonly);
 
     Utf8String   utf8Name;
     if (NULL == dbName)
@@ -264,7 +264,7 @@ DbResult DgnIModel::Create(BeFileNameCR packageFile, BeFileNameCR dgndbFile, Cre
         }
 
     DbResult result;
-    DgnDbPtr  sourceProject = DgnDb::OpenDgnDb(&result, dgndbFile, DgnDb::OpenParams(Db::OPEN_Readonly));
+    DgnDbPtr  sourceProject = DgnDb::OpenDgnDb(&result, dgndbFile, DgnDb::OpenParams(Db::OpenMode::Readonly));
     if (!sourceProject.IsValid())
         return result;
 
@@ -278,7 +278,7 @@ DbResult DgnIModel::Create(BeFileNameCR packageFile, BeFileNameCR dgndbFile, Cre
     BeFileName::BuildName(embeddedName, NULL, NULL, base.c_str(), ext.c_str());
     Utf8String  embeddedUtf8(embeddedName.c_str());
 
-    createParams.SetStartDefaultTxn(DefaultTxn_Exclusive);
+    createParams.SetStartDefaultTxn(DefaultTxn::Exclusive);
 
     if (createParams.m_overwriteExisting && BeFileName::DoesPathExist(packageFile))
         {

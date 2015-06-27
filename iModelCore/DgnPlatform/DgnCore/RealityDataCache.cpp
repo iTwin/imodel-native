@@ -246,7 +246,7 @@ bool BeSQLiteRealityDataStorage::wt_Prepare(DatabasePrepareAndCleanupHandler con
     BeSQLite::DbResult result;
     if (!m_initialized)
         {
-        if (BeSQLite::BE_SQLITE_OK != (result = m_database.OpenBeSQLiteDb(m_filename, Db::OpenParams(Db::OpenMode::OPEN_ReadWrite))))
+        if (BeSQLite::BE_SQLITE_OK != (result = m_database.OpenBeSQLiteDb(m_filename, Db::OpenParams(Db::OpenMode::ReadWrite))))
             {
             RDCLOG(LOG_INFO, "%s: %s", Utf8String(m_filename).c_str(), BeSQLite::Db::InterpretDbResult(result));
             if (m_filename.DoesPathExist())

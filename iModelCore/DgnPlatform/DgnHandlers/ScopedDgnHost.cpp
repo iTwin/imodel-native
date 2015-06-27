@@ -205,7 +205,7 @@ TestDataManager::TestDataManager (WCharCP fullFileName, Db::OpenMode dbOpenMode,
     for (auto const& entry : m_dgndb->Models().MakeIterator())
         {
         DgnModelP dgnModel = getAndFill(*m_dgndb, entry.GetModelId(), fill);
-        dgnModel->SetReadOnly (Db::OPEN_Readonly == dbOpenMode);
+        dgnModel->SetReadOnly (Db::OpenMode::Readonly == dbOpenMode);
         if (m_model == NULL)
             m_model = dgnModel;
         }

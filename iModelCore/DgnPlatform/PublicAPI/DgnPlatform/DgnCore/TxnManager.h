@@ -29,7 +29,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 <p>
 <h2>Sessions</h2>
  Every time the TxnManager is initialized, it creates a GUID for itself called a SessionId.
- Whenever an application calls DgnDb::SaveChanges(), a Txn is created. Txns are saved in Briefcases in the DGN_TABLE_Txns
+ Whenever an application calls DgnDb::SaveChanges(), a new Txn is created. Txns are saved in Briefcases in the DGN_TABLE_Txns
  table, along with the current SessionId. Only Txns from the current SessionId are (usually) undoable. After the completion of a
  session, all of the Txns for that SessionId may be merged together to form a "session Txn". Further, all of the session Txns
  since a Briefcase was last committed to a server may be merged together to form a Briefcase Txn. Briefcase Txns are sent between
@@ -37,10 +37,11 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
  @bsiclass
 +===============+===============+===============+===============+===============+======*/
 
+//! Actions that cause events to be sent to TxnTables.
 enum class TxnAction {None=0, Commit, Abandon, Reverse, Reinstate, Merge};
 
 //=======================================================================================
-//! A 32 bit value to identify the group of entries that form a single transaction.
+//! A 32 bit value to identify the group of changes that form a single Txn.
 //! @ingroup TxnMgr
 // @bsiclass                                                      Keith.Bentley   02/04
 //=======================================================================================
@@ -78,7 +79,7 @@ public:
 };
 
 //=======================================================================================
-//! Interface to be implemented to monitor changes to elements.
+//! Interface to be implemented to monitor changes to a DgnDb.
 //! @ingroup TxnMgr
 // @bsiclass                                                      Keith.Bentley   10/07
 //=======================================================================================
@@ -140,7 +141,7 @@ struct TxnTable : RefCountedBase
     virtual void _OnValidated() {}
     //@}
 
-    //! @name Reversing previously committed changesets via undo/red.
+    //! @name Reversing previously committed changesets via undo/redo.
     //@{
     //! Called when an add of a row in this TxnTable was reversed via undo or redo.
     //! @param[in] change The data for a previously added row that is now deleted. All data will be in the "old values" of change.
@@ -148,7 +149,7 @@ struct TxnTable : RefCountedBase
     virtual void _OnReversedAdd(BeSQLite::Changes::Change const& change) {}
 
     //! Called when a delete of a row in this TxnTable was reversed via undo or redo.
-    //! @param[in] change The data for a previously deleted row that is now back in place. All data will be in the "new values" of change.
+    //! @param[in] change The data for a previously deleted row that is now back. All data will be in the "new values" of change.
     virtual void _OnReversedDelete(BeSQLite::Changes::Change const& change) {}
 
     //! Called when a delete of a row in this TxnTable was reversed via undo or redo.
@@ -161,22 +162,7 @@ struct TxnTable : RefCountedBase
 typedef RefCountedPtr<TxnTable> TxnTablePtr;
 
 //=======================================================================================
-// @bsiclass                                                    Keith.Bentley   02/11
-//=======================================================================================
-struct ITxnOptions
-    {
-    bool m_clearReversedTxns;
-    bool m_writesIllegal;
-
-    ITxnOptions()
-        {
-        m_clearReversedTxns = true;
-        m_writesIllegal = false;
-        }
-    };
-
-//=======================================================================================
-//! The first and last entry number that forms a single operation.
+//! The first and last TxnId that forms a single operation.
 // @bsiclass                                                      Keith.Bentley   02/04
 //=======================================================================================
 class TxnRange
@@ -192,15 +178,15 @@ public:
 };
 
 //=======================================================================================
-//! To reinstate a reversed operation, we need to know the first and last entry number.
+//! To reinstate a reversed operation, we need to know the first and last TxnId.
 //! @private
 // @bsiclass                                                      Keith.Bentley   02/04
 //=======================================================================================
 struct RevTxn
 {
     TxnRange    m_range;
-    bool        m_multiStep;
-    RevTxn(TxnRange& range, bool multiStep) : m_range(range) {m_multiStep = multiStep;}
+    bool        m_multiTxn;
+    RevTxn(TxnRange& range, bool multiTxn) : m_range(range) {m_multiTxn = multiTxn;}
 };
 
 //=======================================================================================
@@ -314,33 +300,36 @@ public:
     DGNPLATFORM_EXPORT void ReportError(ValidationError&);
     //@}
 
-    DGNPLATFORM_EXPORT dgn_TxnTable::Element&    Elements() const;
+    //! Get the dgn_TxnTable::Element TxnTable for this TxnManager
+    DGNPLATFORM_EXPORT dgn_TxnTable::Element& Elements() const;
+
+    //! Get the dgn_TxnTable::ElementDep TxnTable for this TxnManager
     DGNPLATFORM_EXPORT dgn_TxnTable::ElementDep& ElementDependencies() const;
 
     //! Get a description of the operation that would be reversed by calling ReverseTxns.
-    //! This is useful for showing the name in a pulldown menu, for example
+    //! This is useful for showing the operation that would be undone, for example in a pull-down menu.
     DGNPLATFORM_EXPORT Utf8String GetUndoString();
 
-    //! Get a description of the operation that would be reversed by calling ReinstateTxn.
-    //! This is useful for showing the name in a pulldown menu, for example
+    //! Get a description of the operation that would be reinstated by calling ReinstateTxn.
+    //! This is useful for showing the operation that would be redone, in a pull-down menu for example.
     DGNPLATFORM_EXPORT Utf8String GetRedoString();
 
-    //! @name Multi-transaction Operations
+    //! @name Multi-Txn Operations
     //@{
-    //! Begin a new multi-transaction operation. This can be used to cause a series of transactions, that would normally
-    //! be considered separate actions for undo, to be grouped into a single undoable operation. This means that when the user issues the "undo"
-    //! command, the entire group of changes are undone together. Multi Txn operations can be nested, and until the outermost operation is closed,
+    //! Begin a new multi-Txn operation. This can be used to cause a series of Txns, that would normally
+    //! be considered separate actions for undo, to be grouped into a single undoable operation. This means that when ReverseTxns(1) is called,
+    //! the entire group of changes are undone together. Multi-Txn operations can be nested, and until the outermost operation is closed,
     //! all changes constitute a single operation.
     //! @remarks This method must \e always be paired with a call to EndMultiTxnAction.
     DGNPLATFORM_EXPORT void BeginMultiTxnOperation();
 
-    //! End a multi-transaction operation
+    //! End a multi-Txn operation
     DGNPLATFORM_EXPORT void EndMultiTxnOperation();
 
-    //! Return the depth of the multi-transaction stack. Generally for diagnostic use only.
+    //! Return the depth of the multi-Txn stack. Generally for diagnostic use only.
     size_t GetMultiTxnOperationDepth() {return m_multiTxnOp.size();}
 
-    //! @return The TxnId of the the innermost multi-Transaction operation. If no multi-Transaction operation is active, the TxnId will be zero.
+    //! @return The TxnId of the the innermost multi-Txn operation. If no multi-Txn operation is active, the TxnId will be zero.
     DGNPLATFORM_EXPORT TxnId GetMultiTxnOperationStart();
     //@}
 
@@ -348,17 +337,18 @@ public:
     //@{
     TxnAction GetCurrentAction() const {return m_action;}
 
-    //! Query if there are currently any reversible (undoable) changes in the Transaction Manager
-    //! @return true if there are currently any reversible (undoable) changes in the Transaction Manager.
+    //! Query if there are currently any reversible (undoable) changes
+    //! @return true if there are currently any reversible (undoable) changes
     bool IsUndoPossible() {return 0 < GetCurrTxnId();}
 
-    //! Query if there are currently any reinstateable (redoable) changes in the Transaction Manager
-    //! @return True if there are currently any reinstateable (redoable) changes in the Transaction Manager.
+    //! Query if there are currently any reinstateable (redoable) changes
+    //! @return True if there are currently any reinstateable (redoable) changes
     bool IsRedoPossible() {return !m_reversedTxn.empty();}
 
     //! Reverse (undo) the most recent operation(s).
     //! @param[in] numActions the number of operations to reverse. If numActions is greater than 1, the entire set of operations will
     //! be reinstated together when/if ReinstateTxn is called.
+    //! @note If there are any outstanding uncommitted changes, they are reversed.
      DGNPLATFORM_EXPORT DgnDbStatus ReverseTxns(int numActions);
 
     //! Reverse the most recent operation.
@@ -387,6 +377,7 @@ public:
     //! Reinstate the most recently reversed transaction. Since at any time multiple transactions can be reversed, it
     //! may take multiple calls to this method to reinstate all reversed operations.
     //! @return DgnDbStatus::Success if a reversed transaction was reinstated, error status otherwise.
+    //! @note If there are any outstanding uncommitted changes, they are reversed before the Txn is reinstated.
     DGNPLATFORM_EXPORT DgnDbStatus ReinstateTxn();
     //@}
 
@@ -395,7 +386,7 @@ public:
 };
 
 //=======================================================================================
-//! @namespace BentleyApi::Dgn::dgn_TxnTable TxnTables in the base "Dgn" domain. 
+//! @namespace BentleyApi::Dgn::dgn_TxnTable TxnTables in the base "Dgn" domain.
 //! @note Only handlers from the base "Dgn" domain belong in this namespace.
 // @bsiclass                                                    Keith.Bentley   06/15
 //=======================================================================================
@@ -496,12 +487,23 @@ namespace dgn_TxnTable
         void SetChanges() {m_changes=true;}
         bool HasChanges() const {return m_changes;}
     };
+
+    struct BeProperties : TxnTable
+    {
+        static Utf8CP MyTableName() {return BEDB_TABLE_Property;}
+        Utf8CP _GetTableName() const {return MyTableName();}
+        BeProperties(TxnManager& mgr) : TxnTable(mgr) {}
+
+        virtual void _OnReversedAdd(BeSQLite::Changes::Change const&) override;
+        virtual void _OnReversedDelete(BeSQLite::Changes::Change const&) override;
+        virtual void _OnReversedUpdate(BeSQLite::Changes::Change const&) override;
+    };
 };
 
 
 //=======================================================================================
 //! @ingroup TxnMgr
-//! @namespace BentleyApi::Dgn::dgn_TableHandler TableHandlers in the base "Dgn" domain. 
+//! @namespace BentleyApi::Dgn::dgn_TableHandler TableHandlers in the base "Dgn" domain.
 //! @note Only handlers from the base "Dgn" domain belong in this namespace.
 // @bsiclass                                                    Keith.Bentley   06/15
 //=======================================================================================
@@ -534,6 +536,15 @@ namespace dgn_TableHandler
         TABLEHANDLER_DECLARE_MEMBERS(ModelDep, DGNPLATFORM_EXPORT)
         virtual TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::ModelDep(mgr);}
     };
+
+    //! TableHandler for BeProperties 
+    struct BeProperties : DgnDomain::TableHandler
+    {
+        TABLEHANDLER_DECLARE_MEMBERS(BeProperties, DGNPLATFORM_EXPORT)
+        virtual TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::BeProperties(mgr);}
+    };
+
+
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

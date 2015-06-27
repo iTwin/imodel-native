@@ -52,8 +52,8 @@ TEST(NamedVolume, CrudTest)
     {
     ScopedDgnHost host;
 
-    DgnDbTestDgnManager tdmSeed (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::OPEN_Readonly);
-    DgnDbTestDgnManager tdm (L"79_Main.i.idgndb", __FILE__, Db::OpenMode::OPEN_Readonly);
+    DgnDbTestDgnManager tdmSeed (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::Readonly);
+    DgnDbTestDgnManager tdm (L"79_Main.i.idgndb", __FILE__, Db::OpenMode::Readonly);
     DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE (project != nullptr);
 

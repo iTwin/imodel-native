@@ -388,7 +388,7 @@ CachedECSqlStatementPtr ElementDependencyGraph::GetSelectElementDrivesElementByI
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElementDependencyGraph::SetUpForRelationshipTests(WCharCP testname)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", GetTestFileName(testname).c_str(), Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", GetTestFileName(testname).c_str(), Db::OpenMode::ReadWrite);
 
     auto abcHandlerInternalId = m_db->Domains().GetClassId(ABCHandler::GetHandler());
 
@@ -593,7 +593,7 @@ void TestElement::_CopyFrom(DgnElementCR rhs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, StreetMapModel)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests_StreetMapModel.idgndb", Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests_StreetMapModel.idgndb", Db::OpenMode::ReadWrite);
 
     auto newModelId = dgn_ModelHandler::StreetMap::CreateStreetMapModel(*m_db, dgn_ModelHandler::StreetMap::MapService::MapQuest, dgn_ModelHandler::StreetMap::MapType::SatelliteImage, true);
     ASSERT_TRUE( newModelId.IsValid() );
@@ -611,7 +611,7 @@ TEST_F(TransactionManagerTests, StreetMapModel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, CRUD)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests_CRUD.idgndb", Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests_CRUD.idgndb", Db::OpenMode::ReadWrite);
 
     m_db->SaveChanges();
     m_db->Txns().EnableTracking(true);
@@ -674,7 +674,7 @@ TEST_F(TransactionManagerTests, CRUD)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, ElementInstance)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", Db::OpenMode::ReadWrite);
 
     auto key1 = InsertElement("E1");
     ASSERT_TRUE( key1->GetElementId().IsValid() );
@@ -712,7 +712,7 @@ TEST_F(TransactionManagerTests, ElementItem)
     Utf8CP initialTestPropValue = "Test";
     Utf8CP changedTestPropValue = "Test - changed";
 
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", Db::OpenMode::ReadWrite);
 
     ECN::ECClassCP testItemClass = m_db->Schemas().GetECClass(TMTEST_SCHEMA_NAME, TMTEST_TEST_ITEM_CLASS_NAME);
     ASSERT_NE( nullptr , testItemClass );
@@ -1763,7 +1763,7 @@ TEST_F(ElementDependencyGraph, PersistentHandlerTest)
 
     // Make sure that we can reopen the file. Opening the file entails checking that all registered handlers are supplied.
     DbResult result;
-    m_db = DgnDb::OpenDgnDb(&result, theFile, DgnDb::OpenParams(Db::OPEN_Readonly));
+    m_db = DgnDb::OpenDgnDb(&result, theFile, DgnDb::OpenParams(Db::OpenMode::Readonly));
     ASSERT_TRUE( m_db.IsValid() );
     ASSERT_EQ( result, BE_SQLITE_OK );
 
@@ -1884,7 +1884,7 @@ TEST_F(ElementDependencyGraph, WhatIfTest1)
     BeFileName theFile = m_db->GetFileName();
     CloseDb();
     DbResult result;
-    m_db = DgnDb::OpenDgnDb(&result, theFile, DgnDb::OpenParams(Db::OPEN_ReadWrite));
+    m_db = DgnDb::OpenDgnDb(&result, theFile, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     ASSERT_TRUE( m_db.IsValid() );
     ASSERT_EQ( result, BE_SQLITE_OK );
 
@@ -1967,7 +1967,7 @@ TEST_F(ElementDependencyGraph, TestPriority)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, ElementAssembly)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", Db::OpenMode::ReadWrite);
 
     DgnClassId testClass(TestElement::GetTestElementECClass(*m_db)->GetId());
 
@@ -2111,7 +2111,7 @@ static void testModelUndoRedo(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, UndoRedo)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", Db::OpenMode::ReadWrite);
     auto& txns = m_db->Txns(); 
     txns.EnableTracking(true);
 
@@ -2188,6 +2188,15 @@ TEST_F(TransactionManagerTests, UndoRedo)
     ASSERT_TRUE(afterAbandon.IsValid());
     ASSERT_TRUE(afterAbandon->IsPersistent());
 
+    templateEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "");
+    el2 = templateEl->Insert();
+    ASSERT_TRUE(el2->IsPersistent());
+    stat = txns.ReverseSingleTxn(); // reversing a txn with pending uncommitted changes should abandon them.
+    ASSERT_TRUE(DgnDbStatus::Success == stat);
+    ASSERT_TRUE(!el2->IsPersistent());
+    ASSERT_TRUE(nullptr == m_db->Elements().FindElement(el2->GetElementId()));
+    ASSERT_TRUE(!m_db->Elements().GetElement(el2->GetElementId()).IsValid());
+
     testModelUndoRedo(*m_db);
     }
 
@@ -2196,7 +2205,7 @@ TEST_F(TransactionManagerTests, UndoRedo)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, ModelInsertReverse)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
     auto& txns = m_db->Txns();
     txns.EnableTracking(true);
 
@@ -2227,7 +2236,7 @@ TEST_F(TransactionManagerTests, ModelInsertReverse)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, ModelDeleteReverse)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
     auto& txns = m_db->Txns();
     txns.EnableTracking(true);
 
@@ -2263,7 +2272,7 @@ TEST_F(TransactionManagerTests, ModelDeleteReverse)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, ElementInsertReverse)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
     auto& txns = m_db->Txns();
     txns.EnableTracking(true);
 
@@ -2319,7 +2328,7 @@ TEST_F(TransactionManagerTests, ElementInsertReverse)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (TransactionManagerTests, ElementDeleteReverse)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
     auto& txns = m_db->Txns();
     txns.EnableTracking(true);
 

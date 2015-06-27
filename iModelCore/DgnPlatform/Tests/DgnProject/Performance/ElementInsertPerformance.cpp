@@ -43,7 +43,7 @@ TEST_F(PerformanceElementItem, CRUD)
 
     StopWatch elementTimer("Insert Element", false);
 
-    SetupProject(L"3dMetricGeneral.idgndb", L"ElementInsertPerformanceTests.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"ElementInsertPerformanceTests.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     int counter;
     double elementTime, elementItemTime, selectTime, updateTime, deleteTime, deleteElementTime;

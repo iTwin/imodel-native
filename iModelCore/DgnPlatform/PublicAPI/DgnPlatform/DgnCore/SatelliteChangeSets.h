@@ -52,7 +52,7 @@ struct SatelliteChangeSets : NonCopyableClass
     {
         struct Spec : BeSQLite::PropertySpec
         {
-            Spec(Utf8CP name) : PropertySpec(name, "Changes", PropertySpec::TXN_MODE_Normal, PropertySpec::COMPRESS_PROPERTY_No) {}
+            Spec(Utf8CP name) : PropertySpec(name, "Changes", PropertySpec::Mode::Normal, PropertySpec::Compress::No) {}
         };
 
         static Spec SchemaVersion()        {return Spec("SchemaVersion");}
