@@ -118,7 +118,7 @@ TEST (Performance_BisDesign, InsertPerformanceAndNumberOfIndicesTest)
         }
 
     Db db;
-    ASSERT_EQ (BE_SQLITE_OK, db.OpenBeSQLiteDb (dbPath, Db::OpenParams (Db::OPEN_ReadWrite)));
+    ASSERT_EQ (BE_SQLITE_OK, db.OpenBeSQLiteDb (dbPath, Db::OpenParams (Db::OpenMode::ReadWrite)));
 
     LOG.infov ("INSERT performance as function of index count per table - %d tables, %d columns, %d rows",
         tableCount, columnCount, rowCount);

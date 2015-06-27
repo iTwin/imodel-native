@@ -50,7 +50,7 @@ Db::OpenMode openMode,
 ECSchemaCP* schema = nullptr
 )
     {
-    DbResult stat = testDb.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(openMode, DefaultTxn_Yes));
+    DbResult stat = testDb.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(openMode));
     ASSERT_EQ (BE_SQLITE_OK, stat) << L"Opening test db failed";
 
     if (schema != nullptr)
@@ -158,7 +158,7 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceFirstIdTest)
     {
     ECDb ecdb;
     ECSchemaCP schema = nullptr;
-    CreateAndReopenTestDb (ecdb, "StartupCompany.ecdb", L"StartupCompany.02.00", 0, Db::OPEN_ReadWrite, &schema);
+    CreateAndReopenTestDb (ecdb, "StartupCompany.ecdb", L"StartupCompany.02.00", 0, Db::OpenMode::ReadWrite, &schema);
 
     const BeRepositoryBasedId expectedFirstId (ecdb.GetRepositoryId (), 1);
 
@@ -185,7 +185,7 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceExcessTest)
         
         //only open as Db without EC profile, so that ECInstanceId Sequence does not overwrite our manual value on closing the db
         Db db;
-        DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes));
+        DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OpenMode::ReadWrite));
         EXPECT_EQ (BE_SQLITE_OK, stat) << L"Opening test db failed.";
 
         ASSERT_EQ (BE_SQLITE_OK, db.GetRLVCache().Register(sequenceIndex, ECINSTANCEIDSEQUENCE_BELOCAL_KEY));
@@ -201,7 +201,7 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceExcessTest)
 
     ECDb ecdb;
     ECSchemaCP schema = nullptr;
-    OpenTestDb (ecdb, dbPath, schemaFullName, Db::OPEN_ReadWrite, &schema);
+    OpenTestDb (ecdb, dbPath, schemaFullName, Db::OpenMode::ReadWrite, &schema);
 
     ECClassCP testClass = schema->GetClassCP (L"AAA");
     ASSERT_TRUE (testClass != nullptr) << L"Test class not found";
@@ -243,7 +243,7 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceTestWithMaximumRepoId)
         //create the test db and set the sequence to short before total excess
         {
         ECDb db;
-        CreateAndReopenTestDb (db, "StartupCompany.ecdb", schemaFullName, 0, Db::OPEN_ReadWrite, expectedRepoId);
+        CreateAndReopenTestDb (db, "StartupCompany.ecdb", schemaFullName, 0, Db::OpenMode::ReadWrite, expectedRepoId);
         dbPath = Utf8String (db.GetDbFileName ());
 
         ASSERT_TRUE (db.GetRLVCache().TryGetIndex(sequenceIndex, ECINSTANCEIDSEQUENCE_BELOCAL_KEY));
@@ -254,7 +254,7 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceTestWithMaximumRepoId)
 
     ECDb db;
     ECSchemaCP schema = nullptr;
-    OpenTestDb (db, dbPath, schemaFullName, Db::OPEN_ReadWrite, &schema);
+    OpenTestDb (db, dbPath, schemaFullName, Db::OpenMode::ReadWrite, &schema);
 
     ECClassCP testClass = schema->GetClassCP (L"AAA");
     EXPECT_TRUE (testClass != nullptr) << L"Test class not found";
@@ -280,7 +280,7 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceTestWithMaximumRepoId)
 TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceExistsAcrossSessionTest)
     {
     ECDb ecdb;
-    CreateAndReopenTestDb (ecdb, "StartupCompany.ecdb", L"StartupCompany.02.00", 10, Db::OPEN_ReadWrite);
+    CreateAndReopenTestDb (ecdb, "StartupCompany.ecdb", L"StartupCompany.02.00", 10, Db::OpenMode::ReadWrite);
     size_t sequenceIndex = 0;
     ASSERT_TRUE (ecdb.GetRLVCache().TryGetIndex (sequenceIndex, ECINSTANCEIDSEQUENCE_BELOCAL_KEY));
 
@@ -302,7 +302,7 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceIncrementationTest)
     {
     ECDb ecdb;
     ECSchemaCP schema = nullptr;
-    CreateAndReopenTestDb (ecdb, "StartupCompany.ecdb", L"StartupCompany.02.00", 10, Db::OPEN_ReadWrite, &schema);
+    CreateAndReopenTestDb (ecdb, "StartupCompany.ecdb", L"StartupCompany.02.00", 10, Db::OpenMode::ReadWrite, &schema);
 
     ECInstanceKey id1;
     IECInstancePtr instance1 = InsertInstance (id1, ecdb, *(schema->GetClassCP (L"AAA")));
@@ -332,7 +332,7 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceIncrementationWithOneToManyR
     {
     ECDb ecdb;
     ECSchemaCP schema = nullptr;
-    CreateAndReopenTestDb (ecdb, "StartupCompany.ecdb", L"StartupCompany.02.00", 10, Db::OPEN_ReadWrite, &schema);
+    CreateAndReopenTestDb (ecdb, "StartupCompany.ecdb", L"StartupCompany.02.00", 10, Db::OpenMode::ReadWrite, &schema);
 
     //insert parent instance
     ECInstanceKey parentId;
@@ -374,7 +374,7 @@ TEST(ECInstanceIdSequenceTests, ECInstanceIdSequenceIncrementationWithManyToMany
     {
     ECDb ecdb;
     ECSchemaCP schema = nullptr;
-    CreateAndReopenTestDb (ecdb, "StartupCompany.ecdb", L"StartupCompany.02.00", 10, Db::OPEN_ReadWrite, &schema);
+    CreateAndReopenTestDb (ecdb, "StartupCompany.ecdb", L"StartupCompany.02.00", 10, Db::OpenMode::ReadWrite, &schema);
     
     //*** insert instances to relate ***
     //insert source instance #1
@@ -430,7 +430,7 @@ TEST(ECInstanceIdSequenceTests, ChangeRepositoryIdTest)
     {
     ECDb ecdb;
     ECSchemaCP schema = nullptr;
-    CreateAndReopenTestDb (ecdb, "StartupCompany.ecdb", L"StartupCompany.02.00", 10, Db::OPEN_ReadWrite, &schema);
+    CreateAndReopenTestDb (ecdb, "StartupCompany.ecdb", L"StartupCompany.02.00", 10, Db::OpenMode::ReadWrite, &schema);
 
     size_t sequenceIndex = 0;
     ASSERT_TRUE (ecdb.GetRLVCache().TryGetIndex(sequenceIndex, ECINSTANCEIDSEQUENCE_BELOCAL_KEY));

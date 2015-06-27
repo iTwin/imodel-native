@@ -22,7 +22,7 @@ TEST(ECDbInstances, ReadECInstances)
 
     // Reopen the test project
     ECDb db;
-    DbResult stat = db.OpenBeSQLiteDb (saveTestProject.GetECDb().GetDbFileName(), ECDb::OpenParams(ECDb::OPEN_Readonly));
+    DbResult stat = db.OpenBeSQLiteDb (saveTestProject.GetECDb().GetDbFileName(), ECDb::OpenParams(ECDb::OpenMode::Readonly));
     ASSERT_EQ (BE_SQLITE_OK, stat);
 
     // Read the imported instances and check them
@@ -92,7 +92,7 @@ TEST(ECDbInstances, ReadPolymorphic)
 
     // Reopen the test project
     ECDb db;
-    DbResult stat = db.OpenBeSQLiteDb (saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OPEN_Readonly));
+    DbResult stat = db.OpenBeSQLiteDb (saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OpenMode::Readonly));
     ASSERT_EQ (BE_SQLITE_OK, stat);
 
     /*

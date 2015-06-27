@@ -29,7 +29,7 @@ TEST (ECDbSchemaManager, IncrementalLoading)
     //GetECSchema with ensureAllClassesLoaded = false
     {
     ECDb ecdb;
-    auto stat = ecdb.OpenBeSQLiteDb (testFilePath, ECDb::OpenParams (ECDb::OPEN_Readonly, DefaultTxn_Yes));
+    auto stat = ecdb.OpenBeSQLiteDb (testFilePath, ECDb::OpenParams (ECDb::OpenMode::Readonly));
     ASSERT_EQ (BE_SQLITE_OK, stat);
 
     auto const& schemaManager = ecdb. Schemas ();
@@ -43,7 +43,7 @@ TEST (ECDbSchemaManager, IncrementalLoading)
     //GetECSchema with ensureAllClassesLoaded = true
     {
     ECDb ecdb;
-    auto stat = ecdb.OpenBeSQLiteDb (testFilePath, ECDb::OpenParams (ECDb::OPEN_Readonly, DefaultTxn_Yes));
+    auto stat = ecdb.OpenBeSQLiteDb (testFilePath, ECDb::OpenParams (ECDb::OpenMode::Readonly));
     ASSERT_EQ (BE_SQLITE_OK, stat);
 
     auto const& schemaManager = ecdb. Schemas ();
@@ -57,7 +57,7 @@ TEST (ECDbSchemaManager, IncrementalLoading)
     //GetECClass from a different schema first and then GetECSchema with ensureAllClassesLoaded = true
     {
     ECDb ecdb;
-    auto stat = ecdb.OpenBeSQLiteDb (testFilePath, ECDb::OpenParams (ECDb::OPEN_Readonly, DefaultTxn_Yes));
+    auto stat = ecdb.OpenBeSQLiteDb (testFilePath, ECDb::OpenParams (ECDb::OpenMode::Readonly));
     ASSERT_EQ (BE_SQLITE_OK, stat);
 
     auto const& schemaManager = ecdb. Schemas ();
@@ -78,7 +78,7 @@ TEST (ECDbSchemaManager, IncrementalLoading)
     //GetECClass from same schema first and then GetECSchema with ensureAllClassesLoaded = true
     {
     ECDb ecdb;
-    auto stat = ecdb.OpenBeSQLiteDb (testFilePath, ECDb::OpenParams (ECDb::OPEN_Readonly, DefaultTxn_Yes));
+    auto stat = ecdb.OpenBeSQLiteDb (testFilePath, ECDb::OpenParams (ECDb::OpenMode::Readonly));
     ASSERT_EQ (BE_SQLITE_OK, stat);
 
     auto const& schemaManager = ecdb. Schemas ();
@@ -107,7 +107,7 @@ TEST (ECDbSchemaManager, GetDerivedECClasses)
     SetupTestECDb (testFilePath);
 
     ECDb testFile;
-    ASSERT_EQ (BE_SQLITE_OK, testFile.OpenBeSQLiteDb (testFilePath, ECDb::OpenParams (Db::OPEN_Readonly))) << "Could not open test file " << testFilePath.GetNameUtf8 ().c_str ();
+    ASSERT_EQ (BE_SQLITE_OK, testFile.OpenBeSQLiteDb (testFilePath, ECDb::OpenParams (Db::OpenMode::Readonly))) << "Could not open test file " << testFilePath.GetNameUtf8 ().c_str ();
 
     auto const& schemaManager = testFile. Schemas ();
 
@@ -133,7 +133,7 @@ TEST (ECDbSchemaManager, GetDerivedECClassesWithoutIncrementalLoading)
     SetupTestECDb (testFilePath);
 
     ECDb testFile;
-    ASSERT_EQ (BE_SQLITE_OK, testFile.OpenBeSQLiteDb (testFilePath, ECDb::OpenParams (Db::OPEN_Readonly))) << "Could not open test file " << testFilePath.GetNameUtf8 ().c_str ();
+    ASSERT_EQ (BE_SQLITE_OK, testFile.OpenBeSQLiteDb (testFilePath, ECDb::OpenParams (Db::OpenMode::Readonly))) << "Could not open test file " << testFilePath.GetNameUtf8 ().c_str ();
 
     auto const& schemaManager = testFile. Schemas ();
     ECSchemaCP testSchema = schemaManager.GetECSchema (TEST_SCHEMA_NAME, true);
@@ -2174,7 +2174,7 @@ TEST (ECDbSchemaManager, ImportSchemaWithSubclassesToBaseClassInExistingSchema)
         ASSERT_EQ (BSISUCCESS, importSchema (ecdbPath, baseSchemaXml.c_str (), secondSchemaXml));
 
         ECDb ecdb;
-        ASSERT_EQ (BE_SQLITE_OK, ecdb.OpenBeSQLiteDb (ecdbPath.c_str (), ECDb::OpenParams (Db::OPEN_Readonly, DefaultTxn_Yes)));
+        ASSERT_EQ (BE_SQLITE_OK, ecdb.OpenBeSQLiteDb (ecdbPath.c_str (), ECDb::OpenParams (Db::OpenMode::Readonly)));
 
         ECSqlStatement stmt;
         ASSERT_EQ ((int) ECSqlStatus::InvalidECSql, (int) stmt.Prepare (ecdb, "SELECT SourceECClassId, TargetECClassId FROM b.Rel"));
@@ -2196,7 +2196,7 @@ TEST (ECDbSchemaManager, ImportSchemaWithSubclassesToBaseClassInExistingSchema)
         ASSERT_EQ (BSISUCCESS, importSchema (ecdbPath, baseSchemaXml.c_str (), secondSchemaXml));
 
         ECDb ecdb;
-        ASSERT_EQ (BE_SQLITE_OK, ecdb.OpenBeSQLiteDb (ecdbPath.c_str (), ECDb::OpenParams (Db::OPEN_Readonly, DefaultTxn_Yes)));
+        ASSERT_EQ (BE_SQLITE_OK, ecdb.OpenBeSQLiteDb (ecdbPath.c_str (), ECDb::OpenParams (Db::OpenMode::Readonly)));
 
         ASSERT_TRUE (ecdb.ColumnExists ("b_B", "SourceECClassId"));
 

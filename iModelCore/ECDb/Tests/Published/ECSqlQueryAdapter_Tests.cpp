@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/Published/ECSqlQueryAdapter_Tests.cpp $
+|  $Source: Tests/Published/ECSqlQueryAdapter_Tests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -47,7 +47,7 @@ void openTestDb (WString dbName)
     dir.AppendToPath (dbName.c_str());
     if(dir.DoesPathExist())
         {
-        dbOpenStat = m_TestResultDb.OpenBeSQLiteDb (dir.GetNameUtf8().c_str(), Db::OpenParams(Db::OPEN_Readonly, DefaultTxn_Yes));
+        dbOpenStat = m_TestResultDb.OpenBeSQLiteDb (dir.GetNameUtf8().c_str(), Db::OpenParams(Db::OpenMode::Readonly));
         ASSERT_EQ (BE_SQLITE_OK, dbOpenStat);
         }
     }
@@ -64,7 +64,7 @@ void OpenInputDb (Utf8CP dbName)
         BeTest::GetHost().GetDocumentsRoot(dir);
         dir.AppendToPath(L"DgnDb\\");
         dir.AppendUtf8(dbName);
-        dbOpenStat = m_QueryDb.OpenBeSQLiteDb (dir.GetNameUtf8().c_str(), Db::OpenParams(Db::OPEN_Readonly, DefaultTxn_Yes));
+        dbOpenStat = m_QueryDb.OpenBeSQLiteDb (dir.GetNameUtf8().c_str(), Db::OpenParams(Db::OpenMode::Readonly));
         ASSERT_EQ (BE_SQLITE_OK, dbOpenStat)<<"Db Name: "<<dbName;
     }
 

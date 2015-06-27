@@ -53,7 +53,7 @@ BentleyStatus OpenCloseECDbConnection ()
 
     // Open ECDb file
     ECDb ecdb;
-    DbResult r = ecdb.OpenBeSQLiteDb ("C:\\data\\foo.ecdb", ECDb::OpenParams (ECDb::OPEN_Readonly, DefaultTxn_Yes));
+    DbResult r = ecdb.OpenBeSQLiteDb ("C:\\data\\foo.ecdb", ECDb::OpenParams (ECDb::OpenMode::Readonly, DefaultTxn::Yes));
     if (BE_SQLITE_OK != r)
         {
         // do error handling here...

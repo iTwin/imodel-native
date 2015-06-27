@@ -17,7 +17,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 TEST_F(ECSqlTestFixture, ECSqlStatement_DefaultEventHandler)
     {
     // Create and populate a sample project
-    auto& ecdb = SetUp("ecsqlstatementtests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes), false);
+    auto& ecdb = SetUp("ecsqlstatementtests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OpenMode::ReadWrite), false);
 
         {
         ECSqlStatement stmt;
@@ -186,7 +186,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_RegisterUnregisterEventHandler)
     {
     const auto perClassRowCount = 2;
     // Create and populate a sample project
-    auto& ecdb = SetUp ("ecsqlstatementtests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OPEN_ReadWrite, DefaultTxn_Yes), perClassRowCount);
+    auto& ecdb = SetUp ("ecsqlstatementtests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OpenMode::ReadWrite), perClassRowCount);
 
     ECSqlStatement statement;
     TestEventHandler eventHandler;
@@ -225,7 +225,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_EventHandlingAcrossFinalize)
     {
     const auto perClassRowCount = 2;
     // Create and populate a sample project
-    auto& ecdb = SetUp ("ecsqlstatementtests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OPEN_ReadWrite, DefaultTxn_Yes), perClassRowCount);
+    auto& ecdb = SetUp ("ecsqlstatementtests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OpenMode::ReadWrite), perClassRowCount);
 
     ECSqlStatement statement;
     TestEventHandler eventHandler;
@@ -298,7 +298,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_DeleteEvent)
     {
     const auto perClassRowCount = 2;
     // Create and populate a sample project
-    auto& ecdb = SetUp ("ecsqlstatementtests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OPEN_ReadWrite, DefaultTxn_Yes), perClassRowCount);
+    auto& ecdb = SetUp ("ecsqlstatementtests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OpenMode::ReadWrite), perClassRowCount);
     auto ecsql = "DELETE FROM  ONLY ecsql.PSA WHERE I = ?";
 
     ECSqlStatement statement;
@@ -346,7 +346,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_InsertEvent)
     {
     const auto perClassRowCount = 2;
     // Create and populate a sample project
-    auto& ecdb = SetUp ("ecsqlstatementtests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OPEN_ReadWrite, DefaultTxn_Yes), perClassRowCount);
+    auto& ecdb = SetUp ("ecsqlstatementtests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OpenMode::ReadWrite), perClassRowCount);
     auto ecsql = "INSERT INTO ecsql.P (I, S) VALUES (9999, 'Event handler test')";
 
     ECSqlStatement statement;
@@ -376,7 +376,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_UpdateEvent)
     {
     const auto perClassRowCount = 2;
     // Create and populate a sample project
-    auto& ecdb = SetUp ("ecsqlstatementtests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OPEN_ReadWrite, DefaultTxn_Yes), perClassRowCount);
+    auto& ecdb = SetUp ("ecsqlstatementtests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OpenMode::ReadWrite), perClassRowCount);
     auto ecsql = "UPDATE ONLY ecsql.P SET S = 'hello' WHERE I = ?";
 
     ECSqlStatement statement;
