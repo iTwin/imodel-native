@@ -92,7 +92,7 @@ identify the property. The id for a Property is also a two-part majorId/subId pa
 
 A PropertySpec has a flag that indicates that it is a "Setting." When Settings are changed, their value remains in
 effect only for the duration of the session, unless an explicit call to #Db::SaveSettings is made. If the database is
-closed without a call to Db::SaveSettings, the changes are lost.
+closed without a call to Db::SaveSettings, the changes are not saved.
 
 @section OVRBeSQLiteProperties 5. Repository Local Values
 
@@ -122,7 +122,6 @@ character set. However, applications can extend BeSQLite by implementing the #Be
 #define BE_SQLITE_EXPORT IMPORT_ATTRIBUTE
 //__PUBLISH_SECTION_END__
 #endif
-
 
 //  Copied from sqlite3-1.c
 #define SQLITE_PENDING_BYTE     (0x40000000)
@@ -154,8 +153,8 @@ character set. However, applications can extend BeSQLite by implementing the #Be
 #include <Bentley/BeThread.h>
 #include <Bentley/BeVersion.h>
 #include "BeAppData.h"
-//__PUBLISH_SECTION_END__
 
+//__PUBLISH_SECTION_END__
 #include <Bentley/BeAssert.h>
 #include <zlib/zlib.h>
 //__PUBLISH_SECTION_START__
@@ -163,8 +162,7 @@ character set. However, applications can extend BeSQLite by implementing the #Be
 // this is used to quiet compiler warnings for variables only used in asserts
 #define UNUSED_VARIABLE(x) (void)(x)
 
-#define BESQLITE_TYPEDEFS(_name_) \
-    BEGIN_BENTLEY_SQLITE_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_SQLITE_NAMESPACE
+#define BESQLITE_TYPEDEFS(_name_) BEGIN_BENTLEY_SQLITE_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_SQLITE_NAMESPACE
 
 BENTLEY_NAMESPACE_TYPEDEFS (BeGuid);
 BESQLITE_TYPEDEFS (Db);
@@ -244,13 +242,15 @@ struct BeGuid
 //=======================================================================================
 struct BeRepositoryId
 {
-    int32_t m_id;
+    enum class SpecialValue : uint32_t {Master=0, Illegal=(uint32_t)0xffffffff};
+    uint32_t m_id;
     BeRepositoryId GetNextRepositoryId() const {return BeRepositoryId(m_id+1);}
-    BeRepositoryId() {Invalidate();}            //!< Construct an invalid BeRepositoryId.
+    BeRepositoryId() {Invalidate();}             //!< Construct an invalid BeRepositoryId.
     explicit BeRepositoryId(int32_t u) {m_id=u;} //!< Construct a BeRepositoryId from a 32 bit value.
-    void Invalidate() {m_id = -1;}              //!< Set this BeRepositoryId to the invalid id value (-1).
-    bool IsValid() const {return m_id >= 0 ;}   //!< Test to see whether this RepositoryId is valid. Negative Ids are not valid.
-    int32_t GetValue() const {BeAssert(IsValid()); return m_id;}      //!< Get the repository id as an Int32
+    void Invalidate() {m_id = (uint32_t) SpecialValue::Illegal;}  //!< Set this BeRepositoryId to the invalid id value (-1).
+    bool IsValid() const {return (uint32_t) SpecialValue::Illegal != m_id;}  //!< Test to see whether this RepositoryId is valid. Negative Ids are not valid.
+    bool IsMasterId() const {return (uint32_t) SpecialValue::Master==m_id;}  //!< Determine whether this is the id of the master repository (special id==0).
+    uint32_t GetValue() const {BeAssert(IsValid()); return m_id;} //!< Get the repository id as an Int32
 };
 
 //=======================================================================================
@@ -293,6 +293,7 @@ template <typename Derived> struct BeInt64Id
     //! Get the 64 bit value of this BeInt64Id
     int64_t GetValue() const {BeAssert(IsValid()); return m_id;}
 
+    //! Increment this BeInt64Id
     void UseNext() {++m_id; BeAssert(IsValid());}
 
     //! Get the 64 bit value of this BeGuid. Does not check for valid value in debug builds.
@@ -463,7 +464,7 @@ struct ICompressProgressTracker;
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/11
 //=======================================================================================
-enum
+enum DbConstants
 {
     DbUserVersion           = 10,  //!< the "user" version of SQLite databases created by this version of the BeSQLite library
     NoCompressionLevel      = 0,   //!< do not compress data
@@ -1417,7 +1418,7 @@ protected:
     NamedParams m_params;
 
     explicit DbTableIterator(DbCR db) : m_db((DbP)&db) {}
-                BE_SQLITE_EXPORT Utf8String MakeSqlString(Utf8CP sql, bool hasWhere=false) const;
+    BE_SQLITE_EXPORT Utf8String MakeSqlString(Utf8CP sql, bool hasWhere=false) const;
 
 public:
     struct Entry
@@ -1544,7 +1545,7 @@ public:
     //!     - BE_SQLITE_NOTADB if the input file is not an SQLite database file.
     //!     - BE_SQLITE_CORRUPT_VTAB if the input file appears to be an SQLite database file but fails some consistency check.
     //!     - BE_SQLITE_CONSTRAINT_BASE if the database already contains an entry of the same name.
-    //!     - BE_SQLITE_BUSY if the file to be embedded has a pending write or is open in DefaultTxn_Immediate or DefaultTxn_Exclusive transaction mode.  This conflict can be caused by
+    //!     - BE_SQLITE_BUSY if the file to be embedded has a pending write or is open in DefaultTxn::Immediate or DefaultTxn::Exclusive transaction mode.  This conflict can be caused by
     //!       any process on the system.
     //!     - BE_SQLITE_IOERR if ImportDbFile failed to read the proper number of bytes from the file.
     //!     - BE_SQLITE_IOERR_WRITE if a write failed.
@@ -1658,24 +1659,24 @@ public:
 };
 
 //! SQLite Transaction modes corresponding to https://www.sqlite.org/lang_transaction.html
-enum class BeSQLiteTxnMode {None=0, Deferred=1, Immediate=2, Exclusive=3,};
+enum class BeSQLiteTxnMode : int {None=0, Deferred=1, Immediate=2, Exclusive=3,};
 
 //! Determines whether and how the default transaction should be started when a Db is created or opened.
-enum StartDefaultTransaction
+enum class DefaultTxn : int
     {
     //! Do not start a default transaction. This is generally not a good idea except for very specialized cases. All access to a database requires a transaction.
     //! So, unless you start a "default" transaction, you must wrap all SQL statements with a \ref Savepoint.
-    DefaultTxn_No = (int) BeSQLiteTxnMode::None,
+    No = (int) BeSQLiteTxnMode::None,
     //! Create a default "normal" transaction. SQLite will acquire locks as they are needed.
-    DefaultTxn_Yes = (int) BeSQLiteTxnMode::Deferred,
+    Yes = (int) BeSQLiteTxnMode::Deferred,
     //! Create a default transaction using SQLite "immediate" mode. This acquires the "reserved" locks on the database (see http://www.sqlite.org/lang_transaction.html)
     //! when the file is opened and then attempts to reacquire them every time the default transaction is committed.
-    DefaultTxn_Immediate = (int) BeSQLiteTxnMode::Immediate,
+    Immediate = (int) BeSQLiteTxnMode::Immediate,
     //! Create a default transaction using SQLite "exclusive" mode. This acquires all locks on the database (see http://www.sqlite.org/lang_transaction.html)
     //! when the file is opened. The locks are never released until the database is closed. Only exclusive access guarantees that no other process will be able to
     //! gain access (and thereby block access from this connection) to the file when the default transaction is committed. Use of DefaultTxn_Exclusive requires
     //! that the database be opened for read+write access and the open will fail if you attempt to use it on a readonly connection.
-    DefaultTxn_Exclusive = (int) BeSQLiteTxnMode::Exclusive
+    Exclusive = (int) BeSQLiteTxnMode::Exclusive
     };
 
 //=======================================================================================
@@ -1747,7 +1748,7 @@ public:
 
     //! Commit this Savepoint, if active. Executes the SQLite "RELEASE" command. If this is the outermost transaction, this will save changes
     //! to the disk.
-    //! @param[in] operation The name of the operation being committed. If change trackers are active, they may save this string along with the 
+    //! @param[in] operation The name of the operation being committed. If change trackers are active, they may save this string along with the
     //! changeset to identify it.
     //! @note After Commit, the Savepoint is not active. If you mean to save your changes but leave this Savepoint open, call Save.
     //! @note If a Savepoint is active when it is destroyed, it is automatically committed.
@@ -1788,19 +1789,19 @@ struct PropertySpec
     {
 public:
     //! Determine whether a property's data may be compressed.
-    enum WantCompress
+    enum class Compress
     {
         //! never compress this property
-        COMPRESS_PROPERTY_No=0,
+        No=0,
 
         //! the property value may be compressed before it is saved. The property won't necessarily be compressed unless its size is large enough
         //! (usually 100 bytes) and the actual compression results in a net savings.
-        COMPRESS_PROPERTY_Yes=1
+        Yes=1
     };
-    enum ProperyTxnMode {TXN_MODE_Normal=0, TXN_MODE_Setting=1, TXN_MODE_Cached=2,};
+    enum class Mode {Normal=0, Setting=1, Cached=2,};
 private:
-    ProperyTxnMode m_txnMode;
-    WantCompress m_compress;
+    Mode m_mode;
+    Compress m_compress;
     bool   m_saveIfNull;
     Utf8CP m_name;
     Utf8CP m_namespace;
@@ -1809,27 +1810,23 @@ public:
     //! Construct an instance of a PropertySpec with values for name and namespace
     //! @param[in] name The Name part of this Property specification
     //! @param[in] nameSpace The Namespace part of this Property specification.
-    //! @param[in] txnMode the transaction mode for this property.
-    //! @param[in] compress If COMPRESS_PROPERTY_Yes, the property value may be compressed before it is saved. The property won't necessarily be compressed unless
+    //! @param[in] mode the transaction mode for this property.
+    //! @param[in] compress If Compress::Yes, the property value may be compressed before it is saved. The property won't necessarily be compressed unless
     //!            its size is large enough (usually 100 bytes) and the actual compression results in a net savings.
     //! @param[in] saveIfNull If true, this property will be saved even if its value is NULL. Otherwise it is deleted if its value is NULL.
     //! @note name and namespace should always point to static strings.
-    PropertySpec(Utf8CP name, Utf8CP nameSpace, ProperyTxnMode txnMode=TXN_MODE_Normal, WantCompress compress=COMPRESS_PROPERTY_Yes, bool saveIfNull=false) : m_name(name), m_namespace(nameSpace), m_compress(compress), m_txnMode(txnMode), m_saveIfNull(saveIfNull){}
+    PropertySpec(Utf8CP name, Utf8CP nameSpace, Mode mode=Mode::Normal, Compress compress=Compress::Yes, bool saveIfNull=false) : m_name(name), m_namespace(nameSpace), m_compress(compress), m_mode(mode), m_saveIfNull(saveIfNull){}
 
     //! Copy a PropertySpec, changing only the setting flag
-    PropertySpec(PropertySpec const& other, ProperyTxnMode txnMode) {*this = other; m_txnMode=txnMode;}
+    PropertySpec(PropertySpec const& other, Mode mode) {*this = other; m_mode=mode;}
 
     Utf8CP GetName() const {return m_name;}
     Utf8CP GetNamespace() const {return m_namespace;}
 
-    //! Determine whether this PropertySpec refers to a setting or not.
-    bool IsSetting() const {return TXN_MODE_Setting == m_txnMode;}
-    //! Determine whether this PropertySpec is cached or not.
-    bool IsCached()  const {return TXN_MODE_Cached == m_txnMode;}
-    //! Determine whether this PropertySpec saves NULL values or not.
-    bool SaveIfNull() const {return m_saveIfNull;}
-    //! Determine whether this PropertySpec requests to compress or not.
-    bool IsCompress() const {return COMPRESS_PROPERTY_Yes==m_compress;}
+    bool IsSetting() const {return Mode::Setting == m_mode;}    //!< Determine whether this PropertySpec refers to a setting or not.
+    bool IsCached()  const {return Mode::Cached == m_mode;}     //!< Determine whether this PropertySpec is cached or not.
+    bool SaveIfNull() const {return m_saveIfNull;}              //!< Determine whether this PropertySpec saves NULL values or not.
+    bool IsCompress() const {return Compress::Yes==m_compress;} //!< Determine whether this PropertySpec requests to compress or not.
     };
 
 typedef PropertySpec const& PropertySpecCR;
@@ -1841,7 +1838,7 @@ struct PackageProperty
 {
     struct Spec : PropertySpec
         {
-        Spec(Utf8CP name) : PropertySpec(name, PROPERTY_APPNAME_Package, PropertySpec::TXN_MODE_Normal) {}
+        Spec(Utf8CP name) : PropertySpec(name, PROPERTY_APPNAME_Package, Mode::Normal) {}
         };
 
     static Spec SchemaVersion()   {return Spec("SchemaVersion");}
@@ -1859,7 +1856,7 @@ struct ImodelProperty
 {
     struct Spec : PropertySpec
         {
-        Spec(Utf8CP name) : PropertySpec(name, PROPERTY_APPNAME_Imodel, TXN_MODE_Normal) {}
+        Spec(Utf8CP name) : PropertySpec(name, PROPERTY_APPNAME_Imodel, Mode::Normal) {}
         };
 
     static Spec PublisherProgram()  {return Spec("PublisherProgram");}
@@ -2085,8 +2082,7 @@ public:
         };
 
     //! Whether to open an BeSQLite::Db readonly or readwrite.
-    enum OpenMode {OPEN_Readonly = 1<<0, OPEN_ReadWrite = 1<<1, OPEN_Create = OPEN_ReadWrite|(1<<2), OPEN_SharedCache = 1<<17, };
-
+    enum class OpenMode {Readonly = 1<<0, ReadWrite = 1<<1, Create = ReadWrite|(1<<2), SharedCache = 1<<17, };
 
     //=======================================================================================
     //! Parameters for controlling aspects of the opening of a Db.
@@ -2095,7 +2091,7 @@ public:
     struct EXPORT_VTABLE_ATTRIBUTE OpenParams
     {
         mutable OpenMode m_openMode;
-        StartDefaultTransaction m_startDefaultTxn;
+        DefaultTxn     m_startDefaultTxn;
         mutable bool  m_skipSchemaCheck;
         bool          m_rawSQLite;
         BusyRetry*    m_busyRetry;
@@ -2107,7 +2103,7 @@ public:
         //! @param[in] retry Supply a BusyRetry handler for the database connection. The BeSQLite::Db will hold a ref-counted-ptr to the retry object.
         //!                  The default is to not attempt retries Note, many BeSQLite applications (e.g. DgnDb) rely on a single non-shared connection
         //!                  to the database and do not permit sharing.
-        BE_SQLITE_EXPORT explicit OpenParams(OpenMode openMode, StartDefaultTransaction startDefaultTxn=DefaultTxn_Yes, BusyRetry* retry=nullptr);
+        BE_SQLITE_EXPORT explicit OpenParams(OpenMode openMode, DefaultTxn startDefaultTxn=DefaultTxn::Yes, BusyRetry* retry=nullptr);
 
         //! Use the BeSQLite::Db api on a "raw" SQLite file. This allows use of the BeSQLite api on SQLite databases it did not create.
         //! When BeSQLite::Db creates a database, it adds the BEDB_TABLE_Property and BEDB_TABLE_Local tables
@@ -2122,7 +2118,7 @@ public:
         bool IsRawSQLite() const {return m_rawSQLite;}
 
         //! Determine whether the open mode is readonly or not
-        bool IsReadonly() const {return m_openMode==OPEN_Readonly;}
+        bool IsReadonly() const {return m_openMode==OpenMode::Readonly;}
 
         //! set the open mode
         void SetOpenMode(OpenMode openMode) {m_openMode = openMode;}
@@ -2130,7 +2126,7 @@ public:
         //! Determine whether the default transaction should be started on the Db. If DefaultTxn_Yes, the default transaction
         //! will be started on the Db after it is opened. This applies only to the connection returned by
         //! Db::CreateNewDb or Db::OpenBeSQLiteDb; it is not a persistent property of the Db.
-        void SetStartDefaultTxn(StartDefaultTransaction val) {m_startDefaultTxn = val;}
+        void SetStartDefaultTxn(DefaultTxn val) {m_startDefaultTxn = val;}
     };
 
     //=======================================================================================
@@ -2154,7 +2150,7 @@ public:
         //!                  The default is to not attempt retries Note, many BeSQLite applications (e.g. DgnDb) rely on a single non-shared connection
         //!                  to the database and do not permit sharing.
         explicit CreateParams(PageSize pagesize=PageSize::PAGESIZE_4K, Encoding encoding=Encoding::Utf8, bool failIfDbExists=true,
-                      StartDefaultTransaction defaultTxn=DefaultTxn_Yes, BusyRetry* retry=nullptr) : OpenParams(OPEN_Create, defaultTxn, retry)
+                      DefaultTxn defaultTxn=DefaultTxn::Yes, BusyRetry* retry=nullptr) : OpenParams(OpenMode::Create, defaultTxn, retry)
               {m_encoding=encoding; m_pagesize=pagesize; m_compressedDb=CompressDb_None; m_failIfDbExists=failIfDbExists; m_applicationId=APPLICATION_ID_BeSQLiteDb;}
 
         //! Set the page size for the newly created database.
@@ -2181,14 +2177,12 @@ public:
         typedef AppDataList<DbAppData, DbAppData::Key, DbR> T_AppDataList;
         DbR            m_db;
         T_AppDataList  m_entries;
-        DbAppDataList(Db&);
+        DbAppDataList(Db& db) : m_db(db) {}
 
     public:
 
         //@{
-        //! Add an application data object onto this Db. After this call, the \c appData object will be notified for the events in the
-        //! DbAppData interface. This is a useful technique for applications to store data that is specific to this Db, as it
-        //! can be retrieved quickly through a pointer to this Db and its life cycle can be made to match the Db.
+        //! Add DbAppData to this Db. After this call, \c appData will be notified for the events relevant to this Db.
         //! @param[in] key A unique key to differentiate \c appData from all of the other DbAppData objects stored on this Db.
         //! By convention, uniqueness is enforced by using the address of a (any) static object. Since all applications
         //! share the same address space, every key will be unique. Note that this means that the value of your key will be different for
@@ -2208,8 +2202,6 @@ public:
         //! @return A pointer to the DbAppData object with \c key. NULL if not found.
         BE_SQLITE_EXPORT DbAppData* Find(DbAppData::Key const& key) const;
     };
-
-private:
 
 protected:
     DbFile* m_dbFile;
@@ -2234,7 +2226,8 @@ protected:
     //! @note implementers should always forward this call to their superclass (e.g. T_Super::_OnDbChangedByOtherConnection();)
     BE_SQLITE_EXPORT virtual void _OnDbChangedByOtherConnection();
 
-    virtual DbResult _OnRepositoryIdChanged(BeRepositoryId newRepositoryId) {return BE_SQLITE_OK;}    //!< override to perform additional processing when repository id is changed
+    //!< override to perform additional processing when repository id is changed
+    virtual DbResult _OnRepositoryIdChanged(BeRepositoryId newRepositoryId) {return BE_SQLITE_OK;}
 
     //! Gets called when a Db is opened and checks whether the file can be opened, i.e
     //! whether the file version matches what the opening API expects
@@ -2270,21 +2263,14 @@ protected:
     friend struct Savepoint;
     friend struct RTreeAcceptFunction::Tester;
     friend struct BeSQLiteProfileManager;
+
+private:
     DbResult QueryDbIds();
     DbResult SaveBeDbGuid();
     DbResult SaveRepositoryId();
-
-private:
     void DoCloseDb();
     DbResult DoOpenDb(Utf8CP dbName, OpenParams const& params);
-
-    //! Empties a table.
-    //! @param[in] tableName Name of the table to empty.
-    //! @return BE_SQLITE_OK if successful, respective error code otherwise.
     DbResult TruncateTable(Utf8CP tableName);
-
-    //! Deletes all repository local values.
-    //! @return BE_SQLITE_OK if successful, respective error code otherwise.
     DbResult DeleteRepositoryLocalValues();
 
 public:
@@ -2591,7 +2577,7 @@ public:
     BE_SQLITE_EXPORT Utf8CP GetLastError(DbResult* lastResult = NULL) const;
 
     //! Commit the outermost transaction, writing changes to the file. Then, restart the transaction.
-    //! @param[in] changesetName The name of the operation that generated these changes. If transaction tracking is enabled, 
+    //! @param[in] changesetName The name of the operation that generated these changes. If transaction tracking is enabled,
     //! this will be saved with the changeset and reported as the operation that is "undone/redone" if this changeset is reversed or reinstated.
     //! @note, this will commit any nested transactions.
     BE_SQLITE_EXPORT DbResult SaveChanges(Utf8CP changesetName=nullptr);
@@ -2613,7 +2599,7 @@ public:
     //! @param [in,out] value the next available value of the BeRepositoryBasedId
     //! @param [in] tableName the name of the table holding the BeRepositoryBasedId
     //! @param [in] columnName the name of the column holding the BeRepositoryBasedId
-    //! @param [in] whereParam optional addtional where criteria. Supply both the additional where clause (do not include the WHERE keyword) and any
+    //! @param [in] whereParam optional additional where criteria. Supply both the additional where clause (do not include the WHERE keyword) and any
     //! parameters to bind.
     BE_SQLITE_EXPORT DbResult GetNextRepositoryBasedId(BeRepositoryBasedId& value, Utf8CP tableName, Utf8CP columnName, NamedParams* whereParam=NULL);
 
@@ -2623,7 +2609,8 @@ public:
     //! Get the DbEmbeddedFileTable for this Db.
     BE_SQLITE_EXPORT DbEmbeddedFileTable& EmbeddedFiles();
 
-    BE_SQLITE_EXPORT DbAppDataList& AppData() const;           //!< The DbAppData attached to this Db.
+    //! Get the list of DbAppData attached to this Db.
+    BE_SQLITE_EXPORT DbAppDataList& AppData() const {return const_cast<DbAppDataList&>(m_appData);}
 
     //! Dump statement results to stdout (for debugging purposes, only, e.g. to examine data in a temp table)
     BE_SQLITE_EXPORT void DumpSqlResults(Utf8CP sql);
@@ -2644,12 +2631,18 @@ public:
     BE_SQLITE_EXPORT int AddRTreeMatchFunction(RTreeMatchFunction& func) const;
 
     BE_SQLITE_EXPORT void ChangeDbGuid(BeDbGuid);
+
+    //! Change the BeRepositoryId of this Db.
     BE_SQLITE_EXPORT DbResult ChangeRepositoryId(BeRepositoryId);
 
-//__PUBLISH_SECTION_END__
-    BE_SQLITE_EXPORT void SetChangeTracker(ChangeTracker*);
-    Savepoint* GetDefaultTransaction() const {return (m_dbFile != nullptr) ? &m_dbFile->m_defaultTxn : nullptr;}
+    //! Set or replace the ChangeTracker for this Db.
+    //! @param[in] tracker The new ChangeTracker for this Db.
+    //! @note If this Db already has a ChangeTracker active, the new one replaces it.
+    BE_SQLITE_EXPORT void SetChangeTracker(ChangeTracker* tracker);
 
+//__PUBLISH_SECTION_END__
+    BE_SQLITE_EXPORT bool IsSettingProperty(PropertySpecCR spec);
+    Savepoint* GetDefaultTransaction() const {return (m_dbFile != nullptr) ? &m_dbFile->m_defaultTxn : nullptr;}
     //! Checks a file's profile compatibility to be opened with the current version of the profile's API.
     //!
     //! @see Db::OpenBeSQLiteDb for the compatibility contract for Bentley SQLite profiles.
@@ -2684,16 +2677,17 @@ public:
     BE_SQLITE_EXPORT bool IsExpired() const;
 
     //! Query the ExpirationDate property of this database.
-    //! @param[out] xdate   The expiration date, if any.
-    //! @return BE_SQLITE_ROW if the ExpirationDate property was successfully found, BE_SQLITE_NOTFOUND if this database does not have an expiration data, or BE_SQLITE_ERROR if the expiration date could not be read.
+    //! @param[out] expirationDate The expiration date, if any.
+    //! @return BE_SQLITE_ROW if the ExpirationDate property was successfully found, BE_SQLITE_NOTFOUND if this database does not have
+    //! an expiration data, or BE_SQLITE_ERROR if the expiration date could not be read.
     //! @see SaveExpirationDate, IsExpired
-    BE_SQLITE_EXPORT DbResult QueryExpirationDate(DateTime& xdate) const;
+    BE_SQLITE_EXPORT DbResult QueryExpirationDate(DateTime& expirationDate) const;
 
     //! Saves the specified date as the ExpirationDate property of the database.
-    //! @param[in] xdate   The expiration date. <em>Must be UTC.</em>
+    //! @param[in] expirationDate The expiration date. <em>Must be UTC.</em>
     //! @return BE_SQLITE_OK if property was successfully saved, or a non-zero error status if the expiration date is invalid, is not UTC, or could not be saved to the database.
     //! @see QueryExpirationDate, IsExpired
-    BE_SQLITE_EXPORT DbResult SaveExpirationDate(DateTime const& xdate);
+    BE_SQLITE_EXPORT DbResult SaveExpirationDate(DateTime const& expirationDate);
 };
 
 //=======================================================================================
@@ -3059,7 +3053,7 @@ struct LzmaDecoder
 //=======================================================================================
 struct PropSpec : PropertySpec
     {
-    PropSpec(Utf8CP name, PropertySpec::WantCompress compress = PropertySpec::COMPRESS_PROPERTY_Yes) : PropertySpec(name, BEDB_PROPSPEC_NAMESPACE, TXN_MODE_Normal, compress) {}
+    PropSpec(Utf8CP name, PropertySpec::Compress compress = PropertySpec::Compress::Yes) : PropertySpec(name, BEDB_PROPSPEC_NAMESPACE, Mode::Normal, compress) {}
     };
 
 //=======================================================================================
@@ -3073,7 +3067,7 @@ struct Properties
     static PropSpec DbGuid()            {return PropSpec("DbGuid");}
     static PropSpec SchemaVersion()     {return PropSpec("SchemaVersion");}
     static PropSpec ProjectGuid()       {return PropSpec("ProjectGuid");}
-    static PropSpec EmbeddedFileBlob()  {return PropSpec(BEDB_PROPSPEC_EMBEDBLOB_NAME, PropertySpec::COMPRESS_PROPERTY_No);}
+    static PropSpec EmbeddedFileBlob()  {return PropSpec(BEDB_PROPSPEC_EMBEDBLOB_NAME, PropertySpec::Compress::No);}
     static PropSpec CreationDate()      {return PropSpec("CreationDate");}
     static PropSpec ExpirationDate()    {return PropSpec("ExpirationDate");}
     //! Build version of BeSqlite (e.g. 00.00.00.00) used to create this database; useful for forensic diagnostics.

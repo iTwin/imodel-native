@@ -89,7 +89,7 @@ DbResult ChangeTracker::DifferenceToDb(Utf8StringP errMsgOut, BeFileNameCR baseF
     if (true)
         {
         Db baseDb;
-        DbResult result = baseDb.OpenBeSQLiteDb(baseFile, Db::OpenParams(Db::OPEN_Readonly));
+        DbResult result = baseDb.OpenBeSQLiteDb(baseFile, Db::OpenParams(Db::OpenMode::Readonly));
         if (BE_SQLITE_OK != result)
             {
             if (errMsgOut != nullptr)
@@ -538,7 +538,9 @@ void Changes::Change::Dump(Db const& db, bool isPatchSet, bset<Utf8String>& tabl
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ChangeSet::Dump(Utf8CP label, Db const& db, bool isPatchSet, int detailLevel) const
     {
-    printf("%s", label);
+    if (label)
+        printf("%s", label);
+
     bset<Utf8String> tablesSeen;
 
     Changes changes(*const_cast<ChangeSet*>(this));

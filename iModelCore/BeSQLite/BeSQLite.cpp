@@ -455,14 +455,14 @@ DbResult DbFile::StartSavepoint(Savepoint& txn, BeSQLiteTxnMode txnMode)
 
     DbResult rc = (DbResult) sqlite3_exec(m_sqlDb,
                (0 == m_txns.size()) ? getStartTxnSql(txnMode) : SqlPrintfString("SAVEPOINT \"%s\"", txn.GetName()).GetUtf8CP(), nullptr, nullptr, nullptr);
-    
+
     if (BE_SQLITE_OK != rc)
         {
         txn.m_depth = -1;
         return rc;
         }
 
-    // If we're starting a new (non-default) transaction, make sure the file wasn't changed by another process. Note that this is only possible 
+    // If we're starting a new (non-default) transaction, make sure the file wasn't changed by another process. Note that this is only possible
     // with DefaultTxn_No, since with a default transaction BeSQLite::Db holds the lock on the file. The default txn has m_db=nullptr;
     if (txn.m_db && 0 == m_txns.size())
         {
@@ -505,7 +505,7 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit, Utf8CP operation)
 
     m_inCommit = true;
 
-    ChangeTracker::OnCommitStatus trackerStat = (m_tracker.IsValid() && m_tracker->HasChanges()) ? 
+    ChangeTracker::OnCommitStatus trackerStat = (m_tracker.IsValid() && m_tracker->HasChanges()) ?
             m_tracker->_OnCommit(isCommit, operation) : ChangeTracker::OnCommitStatus::Continue;
 
     if (trackerStat == ChangeTracker::OnCommitStatus::Abort)
@@ -707,7 +707,7 @@ void DbFile::SaveCachedProperties(bool isCommit)
         CachedPropertyValue& val = it->second;
         if (val.m_dirty)
             {
-            PropertySpec spec(key.m_name.c_str(), key.m_namespace.c_str(), PropertySpec::TXN_MODE_Normal, val.m_compressed ? PropertySpec::COMPRESS_PROPERTY_Yes : PropertySpec::COMPRESS_PROPERTY_No);
+            PropertySpec spec(key.m_name.c_str(), key.m_namespace.c_str(), PropertySpec::Mode::Normal, val.m_compressed ? PropertySpec::Compress::Yes : PropertySpec::Compress::No);
             SaveProperty(spec, val.m_strVal.length()>0 ? val.m_strVal.c_str() : nullptr, val.m_value.size()>0 ? val.m_value.data() : nullptr, (uint32_t) val.m_value.size(),
                           key.m_id, key.m_subId);
             val.m_dirty=false;
@@ -718,7 +718,7 @@ void DbFile::SaveCachedProperties(bool isCommit)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DbFile::SaveCachedRlvs(bool isCommit) 
+void DbFile::SaveCachedRlvs(bool isCommit)
     {
     if (!isCommit)
         {
@@ -861,7 +861,7 @@ DbResult DbFile::QueryPropertySize(uint32_t& size, PropertySpecCR spec, uint64_t
     if (rc != BE_SQLITE_ROW)
         {
         size = 0;
-        return useSettingsTable ? QueryPropertySize(size, PropertySpec(spec, PropertySpec::TXN_MODE_Normal), id) : BE_SQLITE_ERROR;
+        return useSettingsTable ? QueryPropertySize(size, PropertySpec(spec, PropertySpec::Mode::Normal), id) : BE_SQLITE_ERROR;
         }
 
     size = stmt.GetValueInt(0);
@@ -960,7 +960,7 @@ DbResult DbFile::QueryProperty(void* value, uint32_t size, PropertySpecCR spec, 
         }
 
     if (rc != BE_SQLITE_ROW)
-        return useSettingsTable ? QueryProperty(value, size, PropertySpec(spec, PropertySpec::TXN_MODE_Normal), id) : BE_SQLITE_ERROR;
+        return useSettingsTable ? QueryProperty(value, size, PropertySpec(spec, PropertySpec::Mode::Normal), id) : BE_SQLITE_ERROR;
 
     uint32_t compressedBytes = stmt->GetValueInt(0);
     uint32_t blobsize = stmt->GetColumnBytes(1);
@@ -1012,7 +1012,7 @@ DbResult DbFile::QueryProperty(Utf8StringR value, PropertySpecCR spec, uint64_t 
     if (rc != BE_SQLITE_ROW)
         {
         value.clear();
-        return  useSettingsTable ? QueryProperty(value, PropertySpec(spec, PropertySpec::TXN_MODE_Normal), id) : BE_SQLITE_ERROR;
+        return  useSettingsTable ? QueryProperty(value, PropertySpec(spec, PropertySpec::Mode::Normal), id) : BE_SQLITE_ERROR;
         }
 
     value.AssignOrClear(stmt->GetValueText(0));
@@ -1042,7 +1042,7 @@ bool DbFile::HasProperty(PropertySpecCR spec, uint64_t id, uint64_t subId) const
     if (rc == BE_SQLITE_ROW)
         return  true;
 
-    return  useSettingsTable ? HasProperty(PropertySpec(spec, PropertySpec::TXN_MODE_Normal), id) : false;
+    return  useSettingsTable ? HasProperty(PropertySpec(spec, PropertySpec::Mode::Normal), id) : false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1066,7 +1066,7 @@ DbResult DbFile::DeleteProperty(PropertySpecCR spec, uint64_t id, uint64_t subId
         }
 
     // if it's a setting, delete it from both tables.
-    return useSettingsTable ? DeleteProperty(PropertySpec(spec, PropertySpec::TXN_MODE_Normal), id, subId) : rc;
+    return useSettingsTable ? DeleteProperty(PropertySpec(spec, PropertySpec::Mode::Normal), id, subId) : rc;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1092,7 +1092,7 @@ DbResult DbFile::DeleteProperties(PropertySpecCR spec, uint64_t* id)
         }
 
     // if it's a setting, delete it from both tables.
-    return useSettingsTable ? DeleteProperties(PropertySpec(spec, PropertySpec::TXN_MODE_Normal), id) : rc;
+    return useSettingsTable ? DeleteProperties(PropertySpec(spec, PropertySpec::Mode::Normal), id) : rc;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1160,7 +1160,7 @@ DbResult Db::SaveBeDbGuid()
 DbResult Db::SaveRepositoryId()
     {
     if (!m_dbFile->m_repositoryId.IsValid())
-        m_dbFile->m_repositoryId = BeRepositoryId(0);
+        m_dbFile->m_repositoryId = BeRepositoryId((uint32_t) BeRepositoryId::SpecialValue::Master);
 
     return m_dbFile->m_rlvCache.SaveValue(m_dbFile->m_repositoryIdRlvIndex, m_dbFile->m_repositoryId.GetValue());
     }
@@ -1182,13 +1182,7 @@ DbResult Db::ChangeRepositoryId(BeRepositoryId id)
     if (IsReadonly())
         return BE_SQLITE_READONLY;
 
-    m_dbFile->m_repositoryId = id;
-
-    //instead of updating the repo id in the be_local table, simply empty it
-    //and insert the new repo id via the next call. Whether the one or the other option
-    //is faster, would need to be tested, but changing a repo id is a singular operation.
-    //So it shouldn't matter.
-
+    // changing the BeRepositoryId invalidates all RepositoryLocalValues. Delete them.
     DbResult stat = DeleteRepositoryLocalValues();
     if (stat != BE_SQLITE_OK)
         {
@@ -1196,6 +1190,7 @@ DbResult Db::ChangeRepositoryId(BeRepositoryId id)
         return stat;
         }
 
+    m_dbFile->m_repositoryId = id;
     stat = SaveRepositoryId();
     if (stat != BE_SQLITE_OK)
         {
@@ -1210,14 +1205,7 @@ DbResult Db::ChangeRepositoryId(BeRepositoryId id)
         return stat;
         }
 
-    stat = SaveChanges();
-    if (stat != BE_SQLITE_OK)
-        return stat;
-
-    m_dbFile->m_repositoryId = id;
-
-    LOG.infov("Changed repository id to %d for '%s'.", id.GetValue(), GetDbFileName());
-    return BE_SQLITE_OK;
+    return SaveChanges();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1308,7 +1296,7 @@ BeGuid Db::QueryProjectGuid() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-Db::OpenParams::OpenParams(OpenMode openMode, StartDefaultTransaction defaultTxn, BusyRetry* retry)
+Db::OpenParams::OpenParams(OpenMode openMode, DefaultTxn defaultTxn, BusyRetry* retry)
     : m_openMode(openMode), m_startDefaultTxn(defaultTxn), m_skipSchemaCheck(false), m_rawSQLite(false), m_busyRetry(retry)
     {
     }
@@ -1333,7 +1321,7 @@ DbResult Db::CreateNewDb(Utf8CP dbName, BeDbGuid dbGuid, CreateParams const& par
         return BE_SQLITE_CANTOPEN;
 #endif
 
-    OpenMode openMode = OPEN_Create;
+    OpenMode openMode = OpenMode::Create;
     if (dbName && (0 != strcmp(dbName, BEDB_MemoryDb)))
         {
         WString dbNameW(dbName, BentleyCharEncoding::Utf8); // string conversion
@@ -1342,7 +1330,7 @@ DbResult Db::CreateNewDb(Utf8CP dbName, BeDbGuid dbGuid, CreateParams const& par
             if (params.m_failIfDbExists)
                 return BE_SQLITE_ERROR_FileExists;
 
-            openMode = OPEN_ReadWrite;
+            openMode = OpenMode::ReadWrite;
             }
         }
 
@@ -1358,7 +1346,7 @@ DbResult Db::CreateNewDb(Utf8CP dbName, BeDbGuid dbGuid, CreateParams const& par
         }
 
     SqlDbP sqlDb;
-    DbResult rc = (DbResult) sqlite3_open_v2(dbName, &sqlDb, openMode, vfs);
+    DbResult rc = (DbResult) sqlite3_open_v2(dbName, &sqlDb, (int) openMode, vfs);
     if (BE_SQLITE_OK != rc)
         return  rc;
 
@@ -1370,7 +1358,7 @@ DbResult Db::CreateNewDb(Utf8CP dbName, BeDbGuid dbGuid, CreateParams const& par
 
     ExecuteSql(SqlPrintfString("PRAGMA page_size=%d;PRAGMA encoding=\"%s\";PRAGMA user_version=%d;PRAGMA application_id=%lld;PRAGMA locking_mode=\"%s\"", params.m_pagesize,
                               params.m_encoding==Encoding::Utf8 ? "UTF-8" : "UTF-16le", BeSQLite::DbUserVersion, params.m_applicationId,
-                              params.m_startDefaultTxn==DefaultTxn_Exclusive ? "EXCLUSIVE" : "NORMAL"));
+                              params.m_startDefaultTxn==DefaultTxn::Exclusive ? "EXCLUSIVE" : "NORMAL"));
 
     if (!params.m_rawSQLite)
         {
@@ -1408,7 +1396,7 @@ DbResult Db::CreateNewDb(Utf8CP dbName, BeDbGuid dbGuid, CreateParams const& par
     if (BE_SQLITE_OK != rc)
         return  rc;
 
-    if (DefaultTxn_No == params.m_startDefaultTxn)
+    if (DefaultTxn::No == params.m_startDefaultTxn)
         m_dbFile->m_defaultTxn.Commit(nullptr);
 
     LOG.infov("Created file '%s'.", GetDbFileName());
@@ -1444,7 +1432,7 @@ DbResult Db::AttachDb(Utf8CP filename, Utf8CP alias)
 DbResult Db::DetachDb(Utf8CP alias)
     {
     Savepoint* txn = GetSavepoint(0);
-    bool wasActive = (nullptr != txn) && (BE_SQLITE_OK == txn->Commit(nullptr)); 
+    bool wasActive = (nullptr != txn) && (BE_SQLITE_OK == txn->Commit(nullptr));
 
     DbResult rc = (DbResult) sqlite3_exec(GetSqlDb(), SqlPrintfString("DETACH %s", alias), nullptr, nullptr, nullptr);
     if (rc != BE_SQLITE_OK)
@@ -1477,7 +1465,7 @@ DbResult RepositoryLocalValueCache::Register(size_t& index, Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RepositoryLocalValueCache::TryGetIndex(size_t& index, Utf8CP name) 
+bool RepositoryLocalValueCache::TryGetIndex(size_t& index, Utf8CP name)
     {
     const size_t size = m_cache.size();
     for (size_t i = 0; i < size; i++)
@@ -1516,7 +1504,7 @@ DbResult RepositoryLocalValueCache::SaveValue(size_t rlvIndex, int64_t value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult RepositoryLocalValueCache::QueryValue(int64_t& value, size_t rlvIndex) 
+DbResult RepositoryLocalValueCache::QueryValue(int64_t& value, size_t rlvIndex)
     {
     if (rlvIndex >= m_cache.size())
         return BE_SQLITE_NOTFOUND;
@@ -1532,7 +1520,7 @@ DbResult RepositoryLocalValueCache::QueryValue(int64_t& value, size_t rlvIndex)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult RepositoryLocalValueCache::IncrementValue(int64_t& newValue, size_t rlvIndex) 
+DbResult RepositoryLocalValueCache::IncrementValue(int64_t& newValue, size_t rlvIndex)
     {
     CachedRLV* cachedRlv = nullptr;
     if (!TryQuery(cachedRlv, rlvIndex))
@@ -1545,7 +1533,7 @@ DbResult RepositoryLocalValueCache::IncrementValue(int64_t& newValue, size_t rlv
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   07/14
 //+---------------+---------------+---------------+---------------+---------------+------
-bool RepositoryLocalValueCache::TryQuery(CachedRLV*& value, size_t rlvIndex) 
+bool RepositoryLocalValueCache::TryQuery(CachedRLV*& value, size_t rlvIndex)
     {
     if (rlvIndex >= m_cache.size())
         return false;
@@ -1784,8 +1772,6 @@ void Db::CloseDb()
     DoCloseDb();
     }
 
-Db::DbAppDataList::DbAppDataList(Db& db ) : m_db(db) {}
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/07
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1810,8 +1796,6 @@ DbAppData* Db::DbAppDataList::Find(DbAppData::Key const& key) const
     return m_entries.FindAppData(key);
     }
 
-Db::DbAppDataList& Db::AppData() const {return const_cast<DbAppDataList&>(m_appData);}
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1825,7 +1809,7 @@ Utf8CP Db::GetDbFileName() const
     return  (m_dbFile && m_dbFile->m_sqlDb) ? sqlite3_db_filename(m_dbFile->m_sqlDb, "main") : nullptr;
     }
 
-//  See http://www.sqlite.org/fileformat.html for format of header. 
+//  See http://www.sqlite.org/fileformat.html for format of header.
 #define DBFILE_PAGESIZE_OFFSET  16
 #define DBFILE_PAGECOUNT_OFFSET 28
 
@@ -1876,8 +1860,8 @@ static DbResult isValidDbFile(Utf8CP filename, Utf8CP& vfs)
         return result;
 
     //  Extract big endian values
-    uint32_t pageSize = (header[DBFILE_PAGESIZE_OFFSET+0] << 8) + header[DBFILE_PAGESIZE_OFFSET+1];  
-    uint64_t pageCount = (header[DBFILE_PAGECOUNT_OFFSET+0] << 24) + (header[DBFILE_PAGECOUNT_OFFSET+1] << 16) + (header[DBFILE_PAGECOUNT_OFFSET+2] << 8) + header[DBFILE_PAGECOUNT_OFFSET+3]; 
+    uint32_t pageSize = (header[DBFILE_PAGESIZE_OFFSET+0] << 8) + header[DBFILE_PAGESIZE_OFFSET+1];
+    uint64_t pageCount = (header[DBFILE_PAGECOUNT_OFFSET+0] << 24) + (header[DBFILE_PAGECOUNT_OFFSET+1] << 16) + (header[DBFILE_PAGECOUNT_OFFSET+2] << 8) + header[DBFILE_PAGECOUNT_OFFSET+3];
     uint64_t requiredMin = pageSize*pageCount;
     uint64_t filesize;
     BeFileName::GetFileSize(filesize, filenameW.c_str());
@@ -1904,12 +1888,12 @@ DbResult Db::DoOpenDb(Utf8CP dbName, OpenParams const& params)
         return  rc;
 
     SqlDbP sqlDb;
-    rc = (DbResult) sqlite3_open_v2(dbName, &sqlDb, params.m_openMode, vfs);
+    rc = (DbResult) sqlite3_open_v2(dbName, &sqlDb, (int) params.m_openMode, vfs);
     if (BE_SQLITE_OK != rc)
         return  rc;
 
     m_dbFile = new DbFile(sqlDb, params.m_busyRetry, (BeSQLiteTxnMode) params.m_startDefaultTxn);
-    m_dbFile->m_flags.m_readonly = (params.m_openMode & OPEN_Readonly)==OPEN_Readonly;
+    m_dbFile->m_flags.m_readonly = ((int) params.m_openMode & (int) OpenMode::Readonly)==(int)OpenMode::Readonly;
     sqlite3_extended_result_codes(sqlDb, 1); // turn on extended error codes
 
     if (m_dbFile->m_defaultTxn.GetTxnMode() == BeSQLiteTxnMode::Exclusive)
@@ -1933,7 +1917,7 @@ DbResult Db::DoOpenDb(Utf8CP dbName, OpenParams const& params)
         rc = _OnDbOpened();
         }
 
-    if (!params.m_startDefaultTxn)
+    if (params.m_startDefaultTxn == DefaultTxn::No)
         m_dbFile->m_defaultTxn.Commit(nullptr);
 
     return  rc;
@@ -1951,7 +1935,7 @@ bool Db::OpenParams::_ReopenForSchemaUpgrade(Db& db) const
     Utf8String filename(db.GetDbFileName());
     db.CloseDb();
 
-    m_openMode = OPEN_ReadWrite;
+    m_openMode = OpenMode::ReadWrite;
     m_skipSchemaCheck = true;
 
     return db.OpenBeSQLiteDb(filename.c_str(), *this) == BE_SQLITE_OK;
@@ -2198,10 +2182,10 @@ static int  rTreeMatch(RTreeMatchFunction::QueryInfo* info){return ((RTreeMatchF
 int DbFile::AddFunction(DbFunction& function) const
     {
     bool isAgg = function._IsAggregate();
-    return sqlite3_create_function_v2(m_sqlDb, function.GetName(), function.GetNumArgs(), SQLITE_UTF8 | SQLITE_DETERMINISTIC, &function, 
+    return sqlite3_create_function_v2(m_sqlDb, function.GetName(), function.GetNumArgs(), SQLITE_UTF8 | SQLITE_DETERMINISTIC, &function,
             isAgg ? nullptr        : scalarFunc,
-            isAgg ? aggregateStep  : nullptr, 
-            isAgg ? aggregateFinal : nullptr, 
+            isAgg ? aggregateStep  : nullptr,
+            isAgg ? aggregateFinal : nullptr,
             nullptr);
     }
 
@@ -3354,7 +3338,7 @@ static bool isFileLockedBySQLite(BeFile& testfile)
             LOG.errorv("SQLite has this file locked.");
             return true;
             }
-        } 
+        }
 
     testfile.SetPointer(0, BeFileSeekOrigin::Begin);
     return false;
@@ -3937,7 +3921,7 @@ DbResult DbEmbeddedFileTable::CreateTable() const
     if (m_db.TableExists(BEDB_TABLE_EmbeddedFile))
         return BE_SQLITE_OK;
 
-    DbResult rc = m_db.CreateTable(BEDB_TABLE_EmbeddedFile, 
+    DbResult rc = m_db.CreateTable(BEDB_TABLE_EmbeddedFile,
             "Id INTEGER PRIMARY KEY,Name CHAR NOT NULL COLLATE NOCASE UNIQUE,Descr CHAR,Type CHAR,Size INT,Chunk INT,LastModified TIMESTAMP");
 
     if (BE_SQLITE_OK != rc)
@@ -4468,11 +4452,11 @@ static int besqlite_db_init(sqlite3* db, char** pzErrMsg, struct sqlite3_api_rou
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void logCallback(void *pArg, int iErrCode, Utf8CP zMsg) 
+static void logCallback(void *pArg, int iErrCode, Utf8CP zMsg)
     {
-    NativeLogging::SEVERITY severity = (iErrCode == SQLITE_NOTICE)? NativeLogging::LOG_TRACE: 
+    NativeLogging::SEVERITY severity = (iErrCode == SQLITE_NOTICE)? NativeLogging::LOG_TRACE:
                                         (iErrCode == SQLITE_WARNING)? NativeLogging::LOG_WARNING:
-                                                                      NativeLogging::LOG_ERROR;  
+                                                                      NativeLogging::LOG_ERROR;
     LOG.messagev(severity, "SQLITE_ERROR %x [%s]", iErrCode, zMsg);
     }
 

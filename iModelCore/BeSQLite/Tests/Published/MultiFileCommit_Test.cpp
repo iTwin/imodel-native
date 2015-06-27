@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/MultiFileCommit_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "BeSQLitePublishedTests.h"
@@ -31,7 +31,7 @@ static void openDB (WCharCP dbName, Db& db, Db::OpenMode openMode)
     BeTest::GetHost().GetOutputRoot (dbFileName);
     dbFileName.AppendToPath (dbName);
 
-    Db::OpenParams params (openMode, DefaultTxn_Yes);
+    Db::OpenParams params (openMode);
     DbResult result = db.OpenBeSQLiteDb (dbFileName.GetNameUtf8().c_str(), params);
     ASSERT_EQ (BE_SQLITE_OK, result) << "Db Creation failed";
     }
@@ -121,7 +121,7 @@ TEST(MultiFileCommit, Test2)
     //  Open db1 
     if (true)
         {
-        openDB (L"db1.db", db1, Db::OPEN_ReadWrite);
+        openDB (L"db1.db", db1, Db::OpenMode::ReadWrite);
     
         //      Attach db2 to it
         ASSERT_EQ (BE_SQLITE_OK, db1.AttachDb (db2FileName.c_str(), "DB2") );
@@ -139,7 +139,7 @@ TEST(MultiFileCommit, Test2)
     //  Open db1 again
     if (true)
         {
-        openDB (L"db1.db", db1, Db::OPEN_Readonly);
+        openDB (L"db1.db", db1, Db::OpenMode::Readonly);
 
         //      Attach db2 to it
         ASSERT_EQ (BE_SQLITE_OK, db1.AttachDb (db2FileName.c_str(), "DB2") );
