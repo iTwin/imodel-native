@@ -216,7 +216,7 @@ const double doubleVal = -3.141516;
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"ElementInsertPerformanceSingleInsertNumberedParams.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"ElementInsertPerformanceSingleInsertNumberedParams.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
     ASSERT_EQ(SUCCESS, ImportTestSchema(*m_db));
 
     DgnModelId modelId = InsertDgnModel(*m_db);
@@ -273,7 +273,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproach)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"ElementInsertPerformanceInsertUpdateApproach.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"ElementInsertPerformanceInsertUpdateApproach.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
     ASSERT_EQ(SUCCESS, ImportTestSchema(*m_db));
 
     DgnModelId modelId = InsertDgnModel(*m_db);
@@ -335,7 +335,7 @@ TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithInsertUpdateApproach)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceElementTestFixture, ElementInsertInDbWithSingleInsertApproachNamedParameters)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"ElementInsertPerformanceSingleInsertNamedParams.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"ElementInsertPerformanceSingleInsertNamedParams.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
     ASSERT_EQ(SUCCESS, ImportTestSchema(*m_db));
 
     DgnModelId modelId = InsertDgnModel(*m_db);
