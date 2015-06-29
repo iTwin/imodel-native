@@ -444,8 +444,11 @@ DbResult DbFile::StartSavepoint(Savepoint& txn, BeSQLiteTxnMode txnMode)
         }
 
     // we need to save the cached properties/rlvs in case nested txn is cancelled
-    SaveCachedProperties(true);
-    SaveCachedRlvs(true);
+    if (m_txns.size() > 0)
+        {
+        SaveCachedProperties(true);
+        SaveCachedRlvs(true);
+        }
 
     void* old = sqlite3_commit_hook(m_sqlDb, savepointCommitHook, this);
     BeAssert(old == nullptr || old == this);
