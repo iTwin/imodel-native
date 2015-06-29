@@ -81,11 +81,11 @@ struct ECDbMapCATests : public ::testing::Test
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                   Affan.Khan                         02/15
     +---------------+---------------+---------------+---------------+---------------+------*/
-    uint32_t GetMapStrategy (ECDbR ecdb, ECClassId ecClassId)
+    uint32_t GetMapStrategy (ECDbR ecdb, ECClassId ClassId)
         {
         Statement stmt;
-        stmt.Prepare (ecdb, "SELECT MapStrategy FROM ec_ClassMap WHERE ECClassId = ?");
-        stmt.BindInt64 (1, ecClassId);
+        stmt.Prepare (ecdb, "SELECT MapStrategy FROM ec_ClassMap WHERE ClassId = ?");
+        stmt.BindInt64 (1, ClassId);
         if (stmt.Step () == BE_SQLITE_ROW)
             return stmt.GetValueInt (0);
 
@@ -171,6 +171,7 @@ struct ECDbMapCATests : public ::testing::Test
             const WCharCP enforceReferentialIntegrityProperty = L"CreateConstraint";
             ASSERT_TRUE (caInst->SetValue (enforceReferentialIntegrityProperty, ECValue (true)) == ECOBJECTS_STATUS_Success);
             ASSERT_TRUE(oneFooHasOneGoo->SetCustomAttribute(*caInst) == ECOBJECTS_STATUS_Success);
+            ASSERT_TRUE (oneFooHasManyGoo->SetCustomAttribute (*caInst) == ECOBJECTS_STATUS_Success);
             }
 
         if (schemaImportExpectedToSucceed)
@@ -219,14 +220,14 @@ struct ECDbMapCATests : public ::testing::Test
             {
             for (auto g = 0; g < maxGooInstances; g++)
                 {
-                //1:1 is not effected AllowDuplicateRelationships
+                //1:1 is not effected with AllowDuplicateRelationships
                 if (f == g)
                     oneFooHasOneGooResult.push_back (ECSqlStepStatus::Done);
                 else
                     oneFooHasOneGooResult.push_back (ECSqlStepStatus::Error);
 
-                //1:N is effected AllowDuplicateRelationships
-                if (f == 0 || allowDuplicateRelationships)
+                //1:N is effected with AllowDuplicateRelationships
+                if (f == 0)
                     oneFooHasManyGooResult.push_back (ECSqlStepStatus::Done);
                 else
                     oneFooHasManyGooResult.push_back (ECSqlStepStatus::Error);
@@ -241,29 +242,15 @@ struct ECDbMapCATests : public ::testing::Test
         size_t count_OneFooHasOneGoo = 0;
         VerifyRelationshipInsertionIntegrity (ecdb, "ts.OneFooHasOneGoo", fooKeys, gooKeys, oneFooHasOneGooResult, count_OneFooHasOneGoo);
         VerifyRelationshipInsertionIntegrity (ecdb, "ts.OneFooHasOneGoo", fooKeys, gooKeys, reinsertResultError, count_OneFooHasOneGoo);
-        if (allowDuplicateRelationships)
-            {
-            ASSERT_EQ (GetMapStrategy (ecdb, oneFooHasManyGoo->GetId ()), MapStrategy_TableForThisClass);
-            }
-        else
-            {
-            ASSERT_EQ (GetMapStrategy (ecdb, oneFooHasManyGoo->GetId ()), MapStrategy_RelationshipTargetTable);
-            }
+
+        ASSERT_EQ (GetMapStrategy (ecdb, oneFooHasOneGoo->GetId ()), MapStrategy_RelationshipTargetTable);
         ASSERT_EQ (count_OneFooHasOneGoo, GetRelationshipInstanceCount (ecdb, "ts.OneFooHasOneGoo"));
 
         //1:N--------------------------------
         size_t count_OneFooHasManyGoo = 0;
         VerifyRelationshipInsertionIntegrity (ecdb, "ts.OneFooHasManyGoo", fooKeys, gooKeys, oneFooHasManyGooResult, count_OneFooHasManyGoo);
-        if (allowDuplicateRelationships)
-            {
-            VerifyRelationshipInsertionIntegrity (ecdb, "ts.OneFooHasManyGoo", fooKeys, gooKeys, reinsertResultDone, count_OneFooHasManyGoo);
-            ASSERT_EQ (GetMapStrategy (ecdb, oneFooHasManyGoo->GetId ()), MapStrategy_TableForThisClass);
-            }
-        else
-            {
-            VerifyRelationshipInsertionIntegrity (ecdb, "ts.OneFooHasManyGoo", fooKeys, gooKeys, reinsertResultError, count_OneFooHasManyGoo);
-            ASSERT_EQ (GetMapStrategy (ecdb, oneFooHasManyGoo->GetId ()), MapStrategy_RelationshipTargetTable);
-            }
+
+        ASSERT_EQ (GetMapStrategy (ecdb, oneFooHasManyGoo->GetId ()), MapStrategy_RelationshipTargetTable);
         ASSERT_EQ (count_OneFooHasManyGoo, GetRelationshipInstanceCount (ecdb, "ts.OneFooHasManyGoo"));
 
         //N:N--------------------------------
@@ -312,7 +299,23 @@ TEST_F (ECDbMapCATests, ForeignKeyConstraint_EnforceReferentialIntegrityCheck_Al
     {
     ECDbTestProject test;
     ECDbR ecdb = test.Create ("ForeignKeyConstraint_EnforceReferentialIntegrityCheck_AllowDuplicateRelation.ecdb");
-    ExecuteRelationshipInsertionIntegrityTest (ecdb, true, true, false);
+    ExecuteRelationshipInsertionIntegrityTest (ecdb, true, true, true);
+    //when AllowDuplicate is turned on, OneFooHasManyGoo will also be mapped as endtable therefore there will be only one row in the ForeignKey table
+    ASSERT_FALSE (ecdb.TableExists ("ts_OneFooHasOneGoo"));
+    ASSERT_FALSE (ecdb.TableExists ("ts_OneFooHasManyGoo"));
+
+    BeSQLite::Statement sqlStatment;
+    auto stat = sqlStatment.Prepare (ecdb, "SELECT ec_Column.[Name] FROM ec_Column JOIN ec_ForeignKey ON ec_ForeignKey.[TableId] = ec_Column.[TableId] JOIN ec_ForeignKeyColumn ON ec_ForeignKeyColumn.[ColumnId] = ec_Column.[Id] WHERE ec_ForeignKey.[Id] = 1");
+    ASSERT_EQ (stat, DbResult::BE_SQLITE_OK);
+    size_t rowCount = 0;
+    while (sqlStatment.Step () != DbResult::BE_SQLITE_DONE)
+        {
+        rowCount++;
+        }
+    ASSERT_EQ (2, rowCount);
+
+    sqlStatment.Finalize ();
+    ecdb.CloseDb ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -340,8 +343,8 @@ TEST_F (ECDbMapCATests, RelationshipTest_AllowDuplicateRelationships)
     ExecuteRelationshipInsertionIntegrityTest (ecdb, true, false, true);
     ASSERT_TRUE (ecdb.TableExists ("ts_Foo"));
     ASSERT_TRUE (ecdb.TableExists ("ts_Goo"));
-    ASSERT_TRUE (ecdb.TableExists ("ts_OneFooHasOneGoo"));
-    ASSERT_TRUE (ecdb.TableExists ("ts_OneFooHasManyGoo"));
+    ASSERT_FALSE (ecdb.TableExists ("ts_OneFooHasOneGoo"));
+    ASSERT_FALSE (ecdb.TableExists ("ts_OneFooHasManyGoo"));
     ASSERT_TRUE (ecdb.TableExists ("ts_ManyFooHasManyGoo"));
     }
 
@@ -934,7 +937,7 @@ TEST_F (ECDbMapCATests, TablePerHierarchy_TablePerClass)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Muhammad Hassan                  05/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST (ECDbMapCATests, TestStructClassInTablePerHierarchy)
+TEST_F (ECDbMapCATests, TestStructClassInTablePerHierarchy)
     {
     Utf8CP schemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"

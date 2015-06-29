@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/Published/ECInstanceAdaptersTestFixture.cpp $
+|  $Source: Tests/Published/ECInstanceAdaptersTestFixture.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -48,7 +48,7 @@ std::unique_ptr<ECDbTestProject> ECInstanceAdaptersTestFixture::CreateTestProjec
 
         //re-open the file so that we can determine the open mode
         auto testProject = std::unique_ptr<ECDbTestProject> (new ECDbTestProject ());
-        testProject->Open (filePath.c_str (), Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes));
+        testProject->Open (filePath.c_str (), Db::OpenParams(Db::OpenMode::ReadWrite));
         return move (testProject);
     }
 

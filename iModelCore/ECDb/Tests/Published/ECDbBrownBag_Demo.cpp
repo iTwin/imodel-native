@@ -77,7 +77,7 @@ TEST (ECDbBrownBagDemo, SchemaManager)
 
     //** Opening ECDb file
     ECDb ecdb;
-    DbResult stat = ecdb.OpenBeSQLiteDb ("C:\\temp\\brownbag\\StartupCompany_empty.ecdb", ECDb::OpenParams (ECDb::OPEN_Readonly));
+    DbResult stat = ecdb.OpenBeSQLiteDb ("C:\\temp\\brownbag\\StartupCompany_empty.ecdb", ECDb::OpenParams (ECDb::OpenMode::Readonly));
     if (stat == BE_SQLITE_OK)
         wprintf (L"ECDb file opened.");
     else
@@ -118,7 +118,7 @@ TEST (ECDbBrownBagDemo, ECSqlSelect)
 
     //** Opening ECDb file
     ECDb ecdb;
-    if (BE_SQLITE_OK == ecdb.OpenBeSQLiteDb ("C:\\temp\\brownbag\\StartupCompany.ecdb", ECDb::OpenParams (ECDb::OPEN_Readonly)))
+    if (BE_SQLITE_OK == ecdb.OpenBeSQLiteDb ("C:\\temp\\brownbag\\StartupCompany.ecdb", ECDb::OpenParams (ECDb::OpenMode::Readonly)))
         printf ("ECDb file '%s' opened.\r\n", ecdb.GetDbFileName ());
     else
         {
@@ -187,7 +187,7 @@ TEST (ECDbBrownBagDemo, ECSqlSelectWithBinding)
 
     //** Opening ECDb file
     ECDb ecdb;
-    if (BE_SQLITE_OK != ecdb.OpenBeSQLiteDb ("C:\\temp\\brownbag\\StartupCompany.ecdb", ECDb::OpenParams (ECDb::OPEN_Readonly)))
+    if (BE_SQLITE_OK != ecdb.OpenBeSQLiteDb ("C:\\temp\\brownbag\\StartupCompany.ecdb", ECDb::OpenParams (ECDb::OpenMode::Readonly)))
         {
         printf ("Opening ECDb failed.\r\n");
         return;
@@ -242,7 +242,7 @@ TEST (ECDbBrownBagDemo, PopulateSampleECDb)
 
     //** Opening ECDb file
     ECDb ecdb;
-    if (BE_SQLITE_OK != ecdb.OpenBeSQLiteDb ("C:\\temp\\brownbag\\StartupCompany.ecdb", ECDb::OpenParams (ECDb::OPEN_ReadWrite)))
+    if (BE_SQLITE_OK != ecdb.OpenBeSQLiteDb ("C:\\temp\\brownbag\\StartupCompany.ecdb", ECDb::OpenParams (ECDb::OpenMode::ReadWrite)))
         {
         wprintf (L"Opening ECDb failed.");
         return;

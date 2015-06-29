@@ -118,7 +118,7 @@ void RunUpgradeTest (Db::OpenParams const& openParams);
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbProfile, UpgradeReadonlyFileTest)
     {
-    Db::OpenParams openParams (Db::OPEN_Readonly);
+    Db::OpenParams openParams (Db::OpenMode::Readonly);
     RunUpgradeTest (openParams);
     }
 
@@ -127,7 +127,7 @@ TEST(ECDbProfile, UpgradeReadonlyFileTest)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbProfile, UpgradeReadwriteFileTest)
     {
-    Db::OpenParams openParams (Db::OPEN_ReadWrite);
+    Db::OpenParams openParams (Db::OpenMode::ReadWrite);
     RunUpgradeTest (openParams);
     }
 
@@ -183,7 +183,7 @@ TEST(ECDbProfile, OpenNonECDbFileTest)
     BeTest::SetFailOnAssert (false);
         {
         ECDb ecdb;
-        DbResult stat = ecdb.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes));
+        DbResult stat = ecdb.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OpenMode::ReadWrite));
         EXPECT_EQ (BE_SQLITE_ERROR_InvalidProfileVersion, stat) << L"Opening SQLite file without ECDb profile from ECDb instance failed.";
         }
     BeTest::SetFailOnAssert (true);
@@ -191,7 +191,7 @@ TEST(ECDbProfile, OpenNonECDbFileTest)
     //check that the file is still no ECDb file
         {
         Db noecDb;
-        ASSERT_EQ (BE_SQLITE_OK, noecDb.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams (Db::OPEN_Readonly)));
+        ASSERT_EQ (BE_SQLITE_OK, noecDb.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams (Db::OpenMode::Readonly)));
         ASSERT_FALSE  (noecDb.HasProperty (PROFILEVERSION_PROPSPEC)) << L"Non-ECDb file after an attempt to open it with ECDb API is not expected to have become an ECDb file.";
         ASSERT_FALSE  (noecDb.TableExists (PROFILE_TABLE)) << L"Non-ECDb file after an attempt to open it with ECDb API is not expected to have become an ECDb file.";
         }
@@ -234,7 +234,7 @@ void AssertIsProfile1_0_File (Utf8CP ecdbPath)
 void AssertIsProfile1_0_File (Db& ecdb, Utf8CP ecdbPath)
     {
     //Using class Db ensures that the ECDb profile upgrade does not take place
-    ASSERT_EQ (BE_SQLITE_OK, ecdb.OpenBeSQLiteDb (ecdbPath, Db::OpenParams (Db::OPEN_Readonly)));
+    ASSERT_EQ (BE_SQLITE_OK, ecdb.OpenBeSQLiteDb (ecdbPath, Db::OpenParams (Db::OpenMode::Readonly)));
     ASSERT_FALSE  (ecdb.HasProperty (PROFILEVERSION_PROPSPEC)) << "ECDb file '" << ecdbPath << "' is expected to have profile 1.0. So it not expected to have a profile version entry in be_prop.";
     ASSERT_TRUE (ecdb.TableExists (PROFILE_TABLE)) << "ECDb file '" << ecdbPath << "' is expected to have profile 1.0. So it expected to contain a table from the ECDb profile.";;
     }
@@ -249,7 +249,7 @@ TEST (ECDbProfile, VerifyNoAutoUpgradeForLegacyFilesWithoutCGColumns)
 
     Utf8String legacyECDbPath = CopyTestFile ("legacyfilewithoutcommongeometrycolumns.ecdb");
     ECDb legacyECDb;
-    ASSERT_EQ (BE_SQLITE_ERROR_ProfileTooOld, legacyECDb.OpenBeSQLiteDb (legacyECDbPath.c_str (), ECDb::OpenParams (ECDb::OPEN_Readonly))) << "Opening legacy ECDb file '" << legacyECDbPath.c_str () << "' succeeded unexpectedly.";
+    ASSERT_EQ (BE_SQLITE_ERROR_ProfileTooOld, legacyECDb.OpenBeSQLiteDb (legacyECDbPath.c_str (), ECDb::OpenParams (ECDb::OpenMode::Readonly))) << "Opening legacy ECDb file '" << legacyECDbPath.c_str () << "' succeeded unexpectedly.";
     }
 
 //---------------------------------------------------------------------------------------

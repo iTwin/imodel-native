@@ -32,7 +32,7 @@ protected:
     void CreateEmptyDb (BeSQLite::EC::ECDbR db, BeFileNameCR dbPath);
     void SetTestDbPath (BeFileNameCR dbPath);
 
-    void OpenTestDb (BeSQLite::EC::ECDbR testDb, BeSQLite::Db::OpenMode openMode = BeSQLite::Db::OPEN_Readonly, BeSQLite::StartDefaultTransaction defaultTransactionMode = BeSQLite::DefaultTxn_Yes) const;
+    void OpenTestDb (BeSQLite::EC::ECDbR testDb, BeSQLite::Db::OpenMode openMode = BeSQLite::Db::OpenMode::Readonly, BeSQLite::DefaultTxn defaultTransactionMode = BeSQLite::DefaultTxn::Yes) const;
 
     static void ImportSchema (BeSQLite::EC::ECDbR testDb, ECN::ECSchemaPtr schema, ECN::ECSchemaReadContextPtr ecSchemaReadContext);
     static void InsertTestData (BeSQLite::EC::ECDbR db, ECN::ECClassCP ecClass, int instanceCount);

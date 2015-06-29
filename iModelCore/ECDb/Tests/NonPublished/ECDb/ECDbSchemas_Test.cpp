@@ -359,7 +359,7 @@ TEST(ECDbSchemas, UpdateExistingECSchemaWithNewProperties)
 
     Utf8String ecdbFileName = Utf8String(db.GetDbFileName ());
     db.CloseDb();
-    db.OpenBeSQLiteDb(ecdbFileName.c_str(), Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes));
+    db.OpenBeSQLiteDb(ecdbFileName.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite));
 
     ECSchemaPtr schema11;
     ECSchema::CreateSchema(schema11, L"TestSchema", 1, 1);
@@ -397,7 +397,7 @@ TEST(ECDbSchemas, UpdateExistingECSchemaWithNewProperties)
     importSchemaStatus = db. Schemas ().ImportECSchemas (*schemaCache13, ECDbSchemaManager::ImportOptions (true, true));
     ASSERT_EQ(SUCCESS, importSchemaStatus);
     db.CloseDb();
-    db.OpenBeSQLiteDb(ecdbFileName.c_str(), Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes));
+    db.OpenBeSQLiteDb(ecdbFileName.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite));
 
     ECSchemaCP updatedECSchema = db. Schemas ().GetECSchema ("TestSchema");
     ASSERT_TRUE (updatedECSchema != nullptr);
@@ -447,7 +447,7 @@ TEST(ECDbSchemas, SqliteIssue)
 
     // Reopen the test project
     ECDb db;
-    DbResult stat = db.OpenBeSQLiteDb (saveTestProject.GetECDb ().GetDbFileName (), Db::OpenParams (Db::OPEN_Readonly, DefaultTxn_Yes));
+    DbResult stat = db.OpenBeSQLiteDb (saveTestProject.GetECDb ().GetDbFileName (), Db::OpenParams (Db::OpenMode::Readonly));
     EXPECT_EQ (BE_SQLITE_OK, stat);
 
     auto sql = "SELECT [Element].[ElementId] FROM (SELECT NULL ECClassId, NULL ECInstanceId, NULL [ElementId] LIMIT 0) Element ";
@@ -466,7 +466,7 @@ TEST (ECDbSchemas, UpdatingSchemaShouldNotDeleteExistingRelationshipsOrIndexes)
     Utf8String ecdbPath = CopyOldProfileTestFileEx ("ecschema_upgrade.ecdb");
 
     ECDbTestProject testProject;
-    testProject.Open (ecdbPath.c_str(), Db::OpenParams (Db::OPEN_ReadWrite));
+    testProject.Open (ecdbPath.c_str(), Db::OpenParams (Db::OpenMode::ReadWrite));
 
     ECDbR ecDb = testProject.GetECDb ();
 
@@ -523,7 +523,7 @@ TEST(ECDbSchemas, LoadECSchemas)
 
     // Reopen the test project
     ECDb db;
-    DbResult stat = db.OpenBeSQLiteDb (saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OPEN_Readonly, DefaultTxn_Yes));
+    DbResult stat = db.OpenBeSQLiteDb (saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OpenMode::Readonly));
     EXPECT_EQ (BE_SQLITE_OK, stat);
    
     bset<WString> expectedSchemas;
@@ -1340,7 +1340,7 @@ TEST(ECDbSchemas, CreateCloseOpenImport)
     Utf8String filename = ecdb.GetDbFileName();
     ecdb.CloseDb();
     ECDb db;
-    DbResult stat = db.OpenBeSQLiteDb (filename.c_str(), Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes));
+    DbResult stat = db.OpenBeSQLiteDb (filename.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite));
     EXPECT_EQ (BE_SQLITE_OK, stat);
 
     ECSchemaPtr ecSchema = nullptr;
@@ -1738,7 +1738,7 @@ TEST(ECDbSchemas, ReadCustomAttributesTest)
 
     //reopen test ECDb file (to make sure that the stored schema is read correctly)
     ECDb db;
-    DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OPEN_Readonly, DefaultTxn_Yes));
+    DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OpenMode::Readonly));
     ASSERT_EQ (BE_SQLITE_OK, stat) << L"Could not open test ECDb file";
 
     ECSchemaCP readSchema = db. Schemas ().GetECSchema (Utf8String (testSchema->GetName().c_str ()).c_str ());
@@ -1850,7 +1850,7 @@ TEST(ECDbSchemas, HandlingMismatchesBetweenCAInstanceAndCAClassTest)
 
     //now reopen the out-synched ECDb file (to make sure that the schema stuff is read into memory from scratch
     ECDb db;
-    DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OPEN_Readonly, DefaultTxn_Yes));
+    DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OpenMode::Readonly));
     ASSERT_EQ (BE_SQLITE_OK, stat) << L"Could not open test ECDb file";
 
     ECSchemaCP readSchema = db. Schemas ().GetECSchema (Utf8String (testSchema->GetName ().c_str ()).c_str ());
@@ -1940,7 +1940,7 @@ TEST(ECDbSchemas, ImportSupplementalSchemas)
     db.SaveChanges ();
     db.CloseDb ();
 
-    db.OpenBeSQLiteDb (projectFile.GetNameUtf8 ().c_str (), Db::OpenParams (Db::OPEN_Readonly, DefaultTxn_Yes));
+    db.OpenBeSQLiteDb (projectFile.GetNameUtf8 ().c_str (), Db::OpenParams (Db::OpenMode::Readonly));
     ECSchemaCP startupCompanySchema = db. Schemas ().GetECSchema ("StartupCompany");
     ASSERT_TRUE (startupCompanySchema != nullptr);
     ECClassCP aaa2 = startupCompanySchema->GetClassCP (L"AAA");
@@ -2067,7 +2067,7 @@ TEST(ECDbSchemas, ECDbSchemaManagerAPITest)
     
     // Reopen the test project
     ECDb db;
-    DbResult stat = db.OpenBeSQLiteDb (saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OPEN_Readonly, DefaultTxn_Yes));
+    DbResult stat = db.OpenBeSQLiteDb (saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OpenMode::Readonly));
     EXPECT_EQ (BE_SQLITE_OK, stat);
 
     ECSchemaKeys schemasInDb;
@@ -2707,7 +2707,7 @@ TEST(ECDbSchemas, Verify_TFS_14829_A)
     //auto fileName =saveTestProject.GetECDb().GetDbFileName();
     //db.CloseDb();
 
-    //DbResult stat = db.OpenBeSQLiteDb (fileName, Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes));
+    //DbResult stat = db.OpenBeSQLiteDb (fileName, Db::OpenParams(Db::OpenMode::ReadWrite));
     //EXPECT_EQ (BE_SQLITE_OK, stat);
 
     bool bUpdate = true;

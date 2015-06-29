@@ -107,7 +107,7 @@ TEST(ECSqlRangeTreeTests, SimpleQuery)
     ASSERT_EQ(SUCCESS, CreateRangeTreeTestProject(ecdbPath));
 
     ECDb ecdb;
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(ECDb::OpenMode::OPEN_Readonly)));
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(ECDb::OpenMode::Readonly)));
 
     //sample data taken from https ://www.sqlite.org/rtree.html
     Utf8CP ecsql = "SELECT d.Name FROM rt.DemoData d, rt.DemoRTree rt "
@@ -177,7 +177,7 @@ TEST(ECSqlRangeTreeTests, MatchQuery)
     ASSERT_EQ(SUCCESS, CreateRangeTreeTestProject(ecdbPath));
 
     ECDb ecdb;
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(ECDb::OpenMode::OPEN_Readonly)));
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(ECDb::OpenMode::Readonly)));
 
     BBox2DMatchFunction bbox2dFunc;
     ASSERT_EQ(0, ecdb.AddRTreeMatchFunction(bbox2dFunc));
@@ -209,7 +209,7 @@ TEST(ECSqlRangeTreeTests, MatchQueryWithParameters)
     ASSERT_EQ(SUCCESS, CreateRangeTreeTestProject(ecdbPath));
 
     ECDb ecdb;
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(ECDb::OpenMode::OPEN_Readonly)));
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(ECDb::OpenMode::Readonly)));
 
     BBox2DMatchFunction bbox2dFunc;
     ASSERT_EQ(0, ecdb.AddRTreeMatchFunction(bbox2dFunc));

@@ -294,7 +294,7 @@ void InstanceCRUDTests::setUpECDbForClass ()
     BeFileName dbnamee (newdb);
 
     m_classList.clear ();
-    ASSERT_EQ (BE_SQLITE_OK, m_db.OpenBeSQLiteDb (dbnamee, ECDb::OpenParams (Db::OPEN_ReadWrite))) << "Could not open test file " << newdb.c_str ();
+    ASSERT_EQ (BE_SQLITE_OK, m_db.OpenBeSQLiteDb (dbnamee, ECDb::OpenParams (Db::OpenMode::ReadWrite))) << "Could not open test file " << newdb.c_str ();
     }
 bool InstanceCRUDTests::setUpECdbSingleClass ()
     {

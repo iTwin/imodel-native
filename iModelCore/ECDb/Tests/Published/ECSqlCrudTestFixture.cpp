@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/ECDB/Published/ECSqlCrudTestFixture.cpp $
+|     $Source: Tests/Published/ECSqlCrudTestFixture.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -178,7 +178,7 @@ unique_ptr<ECDbTestProject> ECSqlSelectTestFixture::s_perSessionTestProject = nu
 //virtual
 void ECSqlSelectTestFixture::SetUp ()
     {
-    SetUp ("ecsqlselecttests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OPEN_ReadWrite, DefaultTxn_Yes), PerClassRowCount);
+    SetUp ("ecsqlselecttests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OpenMode::ReadWrite), PerClassRowCount);
     }
 
 //---------------------------------------------------------------------------------------
@@ -232,7 +232,7 @@ ECDbTestProject& ECSqlSelectTestFixture::_GetTestProject() const
 //virtual
 void ECSqlNonSelectTestFixture::SetUp ()
     {
-    SetUp ("ecsqlnonselecttests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (ECDb::OPEN_ReadWrite, DefaultTxn_Yes), PerClassRowCount);
+    SetUp ("ecsqlnonselecttests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (ECDb::OpenMode::ReadWrite), PerClassRowCount);
     }
 
 //---------------------------------------------------------------------------------------

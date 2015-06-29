@@ -465,7 +465,7 @@ TEST(ECDbInstances, ImportSchemaThenInsertInstances)
     Utf8String filename = dgndb.GetDbFileName();
     dgndb.CloseDb();
     ECDb db;
-    DbResult stat = db.OpenBeSQLiteDb (filename.c_str(), Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes));
+    DbResult stat = db.OpenBeSQLiteDb (filename.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite));
     EXPECT_EQ (BE_SQLITE_OK, stat);
 
     ECSchemaPtr ecSchema = nullptr;
@@ -527,7 +527,7 @@ TEST(ECDbInstances, CreateAndImportSchemaThenInsertInstance)
     Utf8String filename = dgndb.GetDbFileName();
     dgndb.CloseDb();
     ECDb db;
-    DbResult stat = db.OpenBeSQLiteDb (filename.c_str(), Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes));
+    DbResult stat = db.OpenBeSQLiteDb (filename.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite));
     EXPECT_EQ (BE_SQLITE_OK, stat);
 
     ECSchemaPtr schema;
@@ -872,7 +872,7 @@ TEST(ECDbInstances, FindECInstances)
 
     // Reopen the test project
     ECDb db;
-    DbResult stat = db.OpenBeSQLiteDb (saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OPEN_Readonly, DefaultTxn_Yes));
+    DbResult stat = db.OpenBeSQLiteDb (saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OpenMode::Readonly));
     ASSERT_EQ (BE_SQLITE_OK, stat);
 
     IECInstancePtr   resultInstance;
@@ -1011,7 +1011,7 @@ TEST(ECDbInstances, SelectClause)
 
     // Reopen the test project
     ECDb db;
-    DbResult stat = db.OpenBeSQLiteDb (saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OPEN_Readonly, DefaultTxn_Yes));
+    DbResult stat = db.OpenBeSQLiteDb (saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OpenMode::Readonly));
     ASSERT_EQ (BE_SQLITE_OK, stat);
 
     ECClassCP employee = db.Schemas().GetECClass("StartupCompany", "Employee");
@@ -1161,7 +1161,7 @@ TEST(ECDbInstances, AdapterCheckClassBeforeOperation)
 
     // Reopen the test project
     ECDb db;
-    DbResult stat = db.OpenBeSQLiteDb(saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes));
+    DbResult stat = db.OpenBeSQLiteDb(saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OpenMode::ReadWrite));
     ASSERT_EQ(BE_SQLITE_OK, stat);
 
     //Get two classes and create instance of second
@@ -1227,7 +1227,7 @@ TEST(ECDbInstances, DomainCustomAttributeStructCombinations)
 
     // Reopen the test project
     ECDb db;
-    DbResult stat = db.OpenBeSQLiteDb(saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes));
+    DbResult stat = db.OpenBeSQLiteDb(saveTestProject.GetECDb().GetDbFileName(), Db::OpenParams(Db::OpenMode::ReadWrite));
     ASSERT_EQ(BE_SQLITE_OK, stat);
     
     //Trying all combinations where IsDomain is True. IsDomain False are Abstract classes and are not instantiated.

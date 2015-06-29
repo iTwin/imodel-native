@@ -149,7 +149,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_RegisterUnregisterCustomSqlFunction)
     {
     const auto perClassRowCount = 3;
     // Create and populate a sample project
-    auto& ecdb = SetUp("ecsqlfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OPEN_Readonly, DefaultTxn_Yes), perClassRowCount);
+    auto& ecdb = SetUp("ecsqlfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OpenMode::Readonly), perClassRowCount);
 
     PowSqlFunction func;
     ASSERT_EQ(0, ecdb.AddFunction(func));
@@ -168,7 +168,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_CallUnregisteredSqlFunction)
     {
     const auto perClassRowCount = 3;
     // Create and populate a sample project
-    auto& ecdb = SetUp("ecsqlfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OPEN_Readonly, DefaultTxn_Yes), perClassRowCount);
+    auto& ecdb = SetUp("ecsqlfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OpenMode::Readonly), perClassRowCount);
 
     Utf8CP ecsql = "SELECT I,POW(I,2) FROM ecsql.P";
 
@@ -189,7 +189,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_NumericSqlFunction)
     {
     const int perClassRowCount = 3;
     // Create and populate a sample project
-    auto& ecdb = SetUp("ecsqlfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes), perClassRowCount);
+    auto& ecdb = SetUp("ecsqlfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OpenMode::ReadWrite), perClassRowCount);
 
     //insert one more test row which has a NULL column
         {
@@ -276,7 +276,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_StringSqlFunction)
     {
     const int perClassRowCount = 3;
     // Create and populate a sample project
-    auto& ecdb = SetUp("ecsqlfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes), perClassRowCount);
+    auto& ecdb = SetUp("ecsqlfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OpenMode::ReadWrite), perClassRowCount);
 
     ToBoolStrSqlFunction func;
     ASSERT_EQ(0, ecdb.AddFunction(func));
@@ -300,7 +300,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_BlobSqlFunction)
     {
     const int perClassRowCount = 3;
     // Create and populate a sample project
-    auto& ecdb = SetUp("ecsqlfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes), perClassRowCount);
+    auto& ecdb = SetUp("ecsqlfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OpenMode::ReadWrite), perClassRowCount);
 
     //insert one more test row which has a NULL column
         {
@@ -362,7 +362,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_BlobSqlFunction)
      SumOfSquares func;
      ECSqlStatement stmt;
      const int perClassRowCount = 3;
-     auto& ecdb = SetUp ("ecsqlfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OPEN_ReadWrite, DefaultTxn_Yes), perClassRowCount);
+     auto& ecdb = SetUp ("ecsqlfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OpenMode::ReadWrite), perClassRowCount);
 
      ASSERT_EQ ((int)ECSqlStatus::InvalidECSql, (int)stmt.Prepare (ecdb, "SELECT SOS(D) FROM ecsql.P")) << "ECSql Preparetion expected to fail with unregistered ECSql function";
      stmt.Finalize ();
@@ -442,7 +442,7 @@ struct DateFromStringFunction : ScalarFunction, ScalarFunction::IScalar
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlTestFixture, ECSqlStatement_DateECSqlFunction)
     {
-    auto& ecdb = SetUp("dateecsqlfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes), 0);
+    auto& ecdb = SetUp("dateecsqlfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OpenMode::ReadWrite), 0);
 
     DateTime dt(2015, 3, 24);
     Utf8String dtStr = dt.ToUtf8String();
@@ -542,7 +542,7 @@ struct GeometryTypeECSqlFunction : ECSqlScalarFunction, ScalarFunction::IScalar
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlTestFixture, ECSqlStatement_GeometryECSqlFunction)
     {
-    auto& ecdb = SetUp("geometryecsqlfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes), 0);
+    auto& ecdb = SetUp("geometryecsqlfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OpenMode::ReadWrite), 0);
 
     IGeometryPtr line = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)));
     Utf8CP expectedGeomTypeStr = GeometryTypeECSqlFunction::GeometryTypeToString(line->GetGeometryType());

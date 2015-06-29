@@ -504,7 +504,7 @@ void PerformanceBisDesignTestFixture::CreateTestDb (DbR db, Utf8CP fileName)
 void PerformanceBisDesignTestFixture::OpenTestDb (DbR db, Utf8CP fileName, bool readonly)
     {
     BeFileName dbPath (ECDbTestProject::BuildECDbPath (fileName));
-    ASSERT_EQ (BE_SQLITE_OK, db.OpenBeSQLiteDb (dbPath, Db::OpenParams (readonly ? Db::OPEN_Readonly : Db::OPEN_ReadWrite)));
+    ASSERT_EQ (BE_SQLITE_OK, db.OpenBeSQLiteDb (dbPath, Db::OpenParams (readonly ? Db::OpenMode::Readonly : Db::OpenMode::ReadWrite)));
     }
 
 

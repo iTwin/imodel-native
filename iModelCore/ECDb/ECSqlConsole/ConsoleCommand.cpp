@@ -222,13 +222,13 @@ void OpenCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& a
 
     auto const& firstArg = args[1];
     //default mode: read-only
-    auto openMode = ECDb::OPEN_Readonly;
+    auto openMode = ECDb::OpenMode::Readonly;
     size_t filePathIndex = 1;
     bool isReadWrite = false;
     if ((isReadWrite = firstArg.EqualsI (READWRITE_SWITCH)) || firstArg.EqualsI (READONLY_SWITCH))
         {
         if (isReadWrite)
-            openMode = ECDb::OPEN_ReadWrite;
+            openMode = ECDb::OpenMode::ReadWrite;
 
         filePathIndex = 2;
         }
@@ -243,7 +243,7 @@ void OpenCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& a
         return;
         }
 
-    auto stat = session.GetECDbR ().OpenBeSQLiteDb(ecdbFile, ECDb::OpenParams(openMode, DefaultTxn_Yes));
+    auto stat = session.GetECDbR ().OpenBeSQLiteDb(ecdbFile, ECDb::OpenParams(openMode));
     if (stat != BE_SQLITE_OK)
         {
         session.GetECDbR().CloseDb();//seems that open errors do not automatically close the handle again
@@ -251,7 +251,7 @@ void OpenCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& a
         return;
         }
 
-    Utf8CP openModeStr = openMode == ECDb::OPEN_Readonly? "read-only" : "read-write";
+    Utf8CP openModeStr = openMode == ECDb::OpenMode::Readonly? "read-only" : "read-write";
     Console::WriteLine("Opened ECDb file '%s' in %s mode.", ecdbPath, openModeStr);
     }
 
