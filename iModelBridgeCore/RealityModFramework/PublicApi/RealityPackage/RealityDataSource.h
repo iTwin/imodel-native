@@ -64,6 +64,11 @@ public:
 
     REALITYPACKAGE_EXPORT static WmsDataSourcePtr Create(WCharCP uri);
 
+    //! Get/Set The source data.
+    //&&JFC: Document the fact that we expect a xml fragment here and write tests for these methods.
+    REALITYPACKAGE_EXPORT WStringCR GetMapInfo() const;
+    REALITYPACKAGE_EXPORT void      SetMapInfo(WCharCP mapInfo);
+
 protected:
     WmsDataSource(){}
     WmsDataSource(WCharCP uri);
@@ -75,7 +80,7 @@ protected:
     virtual Utf8CP _GetElementName() const;
 
 private:
-    // &&MM to do Wms specific?
+    WString m_mapInfo;
 };
 
 END_BENTLEY_REALITYPACKAGE_NAMESPACE

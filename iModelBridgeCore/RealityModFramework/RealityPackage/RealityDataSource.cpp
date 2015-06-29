@@ -89,6 +89,12 @@ RealityPackageStatus RealityDataSource::_Write(BeXmlNodeR dataSourceNode) const
 //                              WmsDataSource
 //=======================================================================================
 //----------------------------------------------------------------------------------------
+// @bsimethod                                                  
+//----------------------------------------------------------------------------------------
+WStringCR WmsDataSource::GetMapInfo() const { return m_mapInfo; }
+void WmsDataSource::SetMapInfo(WCharCP mapInfo) { m_mapInfo = mapInfo; }
+
+//----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
 WmsDataSource::WmsDataSource(WCharCP uri)
@@ -127,7 +133,11 @@ RealityPackageStatus WmsDataSource::_Read(BeXmlNodeR dataSourceNode)
     if(RealityPackageStatus::Success != status)
         return status;
 
-    //&&MM read WMS specific here
+    // Create MapInfo xml fragment from xml node.
+    BeXmlStatus xmlStatus = BEXML_Success;
+    xmlStatus = dataSourceNode.GetXmlString(m_mapInfo);
+    if (BEXML_Success != xmlStatus)
+        return RealityPackageStatus::XmlReadError;
 
     return status;
     }
@@ -142,6 +152,18 @@ RealityPackageStatus WmsDataSource::_Write(BeXmlNodeR dataSourceNode) const
     if(RealityPackageStatus::Success != status)
         return status;
 
-    //&&MM write WMS specific here
+    //&&JFC TODO Doc why we can accept an empty string here (eventually uri will be the GetCapabilities request instead of the server url).
+    if (m_mapInfo.empty())
+        return RealityPackageStatus::Success;
+
+    // Create Xml Dom from string.
+    BeXmlStatus xmlStatus = BEXML_Success;
+    BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, m_mapInfo.c_str());
+    if (BEXML_Success != xmlStatus)
+        return RealityPackageStatus::XmlReadError;
+
+    // Add root node.
+    dataSourceNode.ImportNode(pXmlDom->GetRootElement());
+
     return status;
     }

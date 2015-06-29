@@ -66,6 +66,8 @@ $(o)RealityPlatformUtil$(oext) : $(baseDir)RealityPlatformUtil.cpp $(baseDir)Rea
 
 $(o)WMSCapabilities$(oext) : $(baseDir)WMSCapabilities.cpp $(PublicApiDir)WMSCapabilities.h $(baseDir)WMSTag.h ${MultiCompileDepends}
 
+$(o)WMSSource$(oext) : $(baseDir)WMSSource.cpp $(PublicApiDir)WMSSource.h ${MultiCompileDepends}
+
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
 # After the below include of MultiCppCompileGo.mki $(MultiCompileObjectList) will represent the
