@@ -580,7 +580,7 @@ TEST(ECDbInstances, JsonValueStructure)
     bool status = CreateStartupCompanyProject (projectPath.GetName(), ecSchemaPath.GetName());
     ASSERT_TRUE (status) << "Could not create test project";
 
-    DgnDbPtr project = DgnDb::OpenDgnDb (NULL, projectPath, DgnDb::OpenParams(Db::OPEN_Readonly));
+    DgnDbPtr project = DgnDb::OpenDgnDb (NULL, projectPath, DgnDb::OpenParams(Db::OpenMode::Readonly));
     ASSERT_TRUE (project.IsValid()) << "Cound not open test project";
     
     Json::Value actualJson;

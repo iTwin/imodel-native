@@ -100,11 +100,26 @@ table BasicSymbology
     weight:uint;
     transparency:double; // contributes to net transparency, not an override.
     displayPriority:int; // contributes to net display priority, not an override. (2d only)
-    useColor:ubyte;
-    useWeight:ubyte;
+    useColor:ubyte;  // color overrides sub-category appearance
+    useWeight:ubyte; // weight overrides sub-category appearance
     geomClass:GeometryClass;
 
     } // BasicSymbology
+
+//=======================================================================================
+// @bsiclass                                                    
+//=======================================================================================
+table Material
+    {
+    useMaterial:ubyte; // material overrides sub-category appearance
+    materialId:long;
+    origin:DPoint3d;
+    size:DPoint3d;
+    yaw:double;
+    pitch:double;
+    roll:double;
+
+    } // Material
 
 //=======================================================================================
 // @bsiclass                                                    

@@ -27,7 +27,7 @@ BEGIN_DGNDB_UNIT_TESTS_NAMESPACE
 
 struct DgnDbTestDgnManager : TestDgnManager
 {
-    DgnDbTestDgnManager (WCharCP dgnfilename, CharCP callerSourceFile="", BeSQLite::Db::OpenMode mode=BeSQLite::Db::OPEN_ReadWrite, DgnInitializeMode imode=DGNINITIALIZEMODE_FillModel, bool forceMakeCopy=false);
+    DgnDbTestDgnManager (WCharCP dgnfilename, CharCP callerSourceFile="", BeSQLite::Db::OpenMode mode=BeSQLite::Db::OpenMode::ReadWrite, DgnInitializeMode imode=DGNINITIALIZEMODE_FillModel, bool forceMakeCopy=false);
     static BeFileName GetUtDatPath (CharCP callerSourceFile);
     static StatusInt FindTestData (BeFileName& fullFileName, WCharCP fileName, CharCP callerSourceFile);
     static StatusInt GetTestDataOut (BeFileName& outFullFileName, WCharCP fileName, WCharCP outName, CharCP callerSourceFile);

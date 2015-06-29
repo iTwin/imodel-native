@@ -43,7 +43,6 @@ DgnViewport::DgnViewport()
     {
     m_viewNumber        = -1;
     m_minLOD            = DEFAULT_MINUMUM_LOD;
-
     m_viewNumber        = -1;
     m_isCameraOn        = false;
     m_needsRefresh      = false;
@@ -162,7 +161,7 @@ void DgnViewport::ViewToNpc(DPoint3dP npcVec, DPoint3dCP screenVec, int nPts) co
 
     Transform    scrToNpcTran;
     bsiTransform_initFromRange(NULL, &scrToNpcTran, &llb, &urf);
-    scrToNpcTran.Multiply (npcVec, screenVec, nPts);
+    scrToNpcTran.Multiply(npcVec, screenVec, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -175,7 +174,7 @@ void DgnViewport::NpcToView(DPoint3dP screenVec, DPoint3dCP npcVec, int nPts) co
 
     Transform    npcToScrTran;
     bsiTransform_initFromRange(&npcToScrTran, NULL, &llb, &urf);
-    npcToScrTran.Multiply (screenVec, npcVec, nPts);
+    npcToScrTran.Multiply(screenVec, npcVec, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -203,7 +202,7 @@ void DgnViewport::ViewToWorld(DPoint3dP rootPts, DPoint4dCP screenPts, int nPts)
     for (int i=0; i<nPts; i++)
         {
         bsiDMatrix4d_multiplyMatrixPoint(&m_rootToView.M1, &tPt, screenPts+i);
-        bsiDPoint4d_normalize(&tPt, rootPts+i);
+        tPt.GetProjectedXYZ (rootPts[i]);
         }
     }
 
@@ -216,8 +215,8 @@ void DgnViewport::ViewToScreen(DPoint3dP screenPts, DPoint3dCP viewPts, int nPts
 
     Point2d screenOrg = GetScreenOrigin();
     DPoint3d org;
-    org.Init (screenOrg.x, screenOrg.y, 0.0);
-    bsiDPoint3d_addDPoint3dArray(screenPts, &org, nPts);
+    org.Init(screenOrg.x, screenOrg.y, 0.0);
+    DPoint3d::AddToArray(screenPts, nPts, org);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -229,7 +228,7 @@ void DgnViewport::ScreenToView(DPoint3dP viewPts, DPoint3dCP screenPts, int nPts
     Point2d screenOrg = GetScreenOrigin();
 
     DPoint3d org;
-    org.Init (screenOrg.x, screenOrg.y, 0.0);
+    org.Init(screenOrg.x, screenOrg.y, 0.0);
 
     bsiDPoint3d_subtractDPoint3dArray(viewPts, &org, nPts);
     }
@@ -384,9 +383,9 @@ StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double* compressi
         {
         frustFraction = 1.0;
         origin = inOrigin;
-        xExtent.Scale (xVector, delta.x);
-        yExtent.Scale (yVector, delta.y);
-        zExtent.Scale (zVector, delta.z);
+        xExtent.Scale(xVector, delta.x);
+        yExtent.Scale(yVector, delta.y);
+        zExtent.Scale(zVector, delta.z);
         }
 
     // calculate the root-to-npc mapping (using expanded frustum)
@@ -433,7 +432,7 @@ void DgnViewport::CalcNpcToView(DMap4dR npcToView)
     {
     DPoint3d    viewLow, viewHigh;
     _GetViewCorners(viewLow, viewHigh);
-    npcToView.InitFromRanges (s_NpcCorners[NPC_000], s_NpcCorners[NPC_111], viewLow, viewHigh);
+    npcToView.InitFromRanges(s_NpcCorners[NPC_000], s_NpcCorners[NPC_111], viewLow, viewHigh);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -637,12 +636,12 @@ ViewportStatus DgnViewport::_SetupFromViewController()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::FixFrustumOrder(Frustum& frustum)
     {
-    DPoint3dP polyhedron=frustum.GetPtsP();
+    DPoint3dP polyhedron = frustum.GetPtsP();
 
     DVec3d u, v, w;
-    u.DifferenceOf (polyhedron[NPC_001], polyhedron[NPC_000]);
-    v.DifferenceOf (polyhedron[NPC_010], polyhedron[NPC_000]);
-    w.DifferenceOf (polyhedron[NPC_100], polyhedron[NPC_000]);
+    u.DifferenceOf(polyhedron[NPC_001], polyhedron[NPC_000]);
+    v.DifferenceOf(polyhedron[NPC_010], polyhedron[NPC_000]);
+    w.DifferenceOf(polyhedron[NPC_100], polyhedron[NPC_000]);
 
     if (u.TripleProduct(v, w) <= 0)
         return;
@@ -845,12 +844,12 @@ ViewportStatus DgnViewport::Scroll(Point2dCP screenDist) // => distance to scrol
         }
 
     DPoint3d pts[2];
-    pts[0].Zero ();
+    pts[0].Zero();
     pts[1] = offset;
 
     ViewToWorld(pts, pts, 2);
     DVec3d dist;
-    dist.DifferenceOf (pts[1], *pts);
+    dist.DifferenceOf(pts[1], *pts);
 
     if (!m_is3dView)
         dist.z = 0.0;
@@ -957,7 +956,7 @@ ViewportStatus DgnViewport::Zoom(DPoint3dCP newCenterRoot, double factor)
 
     newOrg.x = center.x - delta.x/2.0;
     newOrg.y = center.y - delta.y/2.0;
-    rotation.MultiplyTranspose (newOrg);
+    rotation.MultiplyTranspose(newOrg);
     viewController->SetOrigin(newOrg);
 
     _AdjustFencePts(rotation, oldOrg, newOrg);
@@ -1246,7 +1245,7 @@ double DgnViewport::GetPixelSizeAtPoint(DPoint3dCP rootPtP, DgnCoordSystem coord
             break;
         }
 
-    return rootPts[0].Distance (rootPts[1]);
+    return rootPts[0].Distance(rootPts[1]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1428,7 +1427,7 @@ void DgnViewport::GetGridRoundingDistance(DPoint2dR roundingDistance)
         }
 
     roundingDistance.y = roundingDistance.x * gridRatio;
-    roundingDistance.Scale (roundingDistance, GetGridScaleFactor());
+    roundingDistance.Scale(roundingDistance, GetGridScaleFactor());
 #endif
     }
 
@@ -1449,13 +1448,13 @@ static void roundGrid(double& num, double units)
 void DgnViewport::GridFix(DPoint3dR pointRoot, RotMatrixCR rMatrixRoot, DPoint3dCR originRoot, DPoint2dCR roundingDistanceRoot, bool isoGrid)
     {
     DVec3d planeNormal;
-    rMatrixRoot.GetRow (planeNormal, 2);
+    rMatrixRoot.GetRow(planeNormal, 2);
 
     DVec3d eyeVec;
     if (m_isCameraOn)
         eyeVec.NormalizedDifference(pointRoot, m_camera.GetEyePoint());
     else
-        m_rotMatrix.GetRow (eyeVec, 2);
+        m_rotMatrix.GetRow(eyeVec, 2);
 
     LegacyMath::Vec::LinePlaneIntersect(&pointRoot, &pointRoot, &eyeVec, &originRoot, &planeNormal, false);
 
@@ -1486,7 +1485,7 @@ void DgnViewport::GridFix(DPoint3dR pointRoot, RotMatrixCR rMatrixRoot, DPoint3d
     pointRootView.y += originRootView.y;
 
     // go back to root coordinate system
-    rMatrixRoot.MultiplyTranspose (pointRoot,pointRootView);
+    rMatrixRoot.MultiplyTranspose(pointRoot,pointRootView);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1555,36 +1554,6 @@ void FitViewParams::SetupFitMode(FitModes modes)
             break;
         }
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   04/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-ViewportApplyOptions::ViewportApplyOptions(bool initFromActive)
-    {
-    m_resizeMode        = ViewportResizeMode::KeepCurrent;
-    m_applyVolume       = false;
-    m_applyAttributes   = false;
-    m_applyLevels       = false;
-    m_applyRefLevels    = false;
-    m_applyClipVolume   = false;
-    m_applyModel        = false;
-    m_createSavedViewDisplayableForClipping = false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   04/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewportApplyOptions::SetApplyAll(bool state)
-    {
-    m_applyVolume       = true;
-    m_applyAttributes   = true;
-    m_applyLevels       = true;
-    m_applyRefLevels    = true;
-    m_applyClipVolume   = true;
-    m_applyModel        = true;
-    m_createSavedViewDisplayableForClipping = true;
-    }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14

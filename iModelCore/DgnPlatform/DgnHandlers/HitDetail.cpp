@@ -615,7 +615,7 @@ DPoint3dCR SnapDetail::_GetHitPoint () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SnapDetail::PointWasAdjusted () const
     {
-    return (!bsiDPoint3d_pointEqualTolerance (&m_snapPoint, &m_adjustedPt, 1.0e-10));
+    return (!m_snapPoint.IsEqual (m_adjustedPt, 1.0e-10));
     }
 
 /*---------------------------------------------------------------------------------**//**

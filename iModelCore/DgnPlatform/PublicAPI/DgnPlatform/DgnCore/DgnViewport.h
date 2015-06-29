@@ -254,42 +254,6 @@ enum class ViewportResizeMode
 
 
 /*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct ViewportApplyOptions
-{
-private:
-    ViewportResizeMode  m_resizeMode;
-    bool m_applyVolume;
-    bool m_applyAttributes;
-    bool m_applyLevels;
-    bool m_applyRefLevels;
-    bool m_applyClipVolume;
-    bool m_applyModel;
-    bool m_createSavedViewDisplayableForClipping;
-
-public:
-    DGNPLATFORM_EXPORT ViewportApplyOptions(bool initFromActive);
-    ViewportResizeMode GetViewportResizeMode() const {return m_resizeMode;}
-    bool GetApplyVolume() const {return m_applyVolume;}
-    bool GetApplyAttributes() const {return m_applyAttributes;}
-    bool GetApplyLevels() const {return m_applyLevels;}
-    bool GetApplyRefLevels() const {return m_applyRefLevels;}
-    bool GetApplyClipVolume() const {return m_applyClipVolume;}
-    bool GetApplyModel() const {return m_applyModel;}
-    bool GetCreateSavedViewDisplayableForClipping() const {return m_createSavedViewDisplayableForClipping;}
-    void SetViewportResizeMode(ViewportResizeMode mode) {m_resizeMode = mode;}
-    void SetApplyVolume(bool state) {m_applyVolume = state;}
-    void SetApplyAttributes(bool state) {m_applyAttributes = state;}
-    void SetApplyLevels(bool state) {m_applyLevels = state;}
-    void SetApplyRefLevels(bool state) {m_applyRefLevels = state;}
-    void SetApplyClipVolume(bool state) {m_applyClipVolume = state;}
-    void SetApplyModel(bool state) {m_applyModel = state;}
-    void SetCreateSavedViewDisplayableForClipping(bool state) {m_createSavedViewDisplayableForClipping = state;}
-    DGNPLATFORM_EXPORT void SetApplyAll(bool state);
-};
-
-/*=================================================================================**//**
 * @bsiclass                                                     Keith.Bentley   02/04
 +===============+===============+===============+===============+===============+======*/
 struct StopEvents
