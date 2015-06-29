@@ -195,12 +195,13 @@ MapStatus ClassMapInfo::EvaluateInheritedMapStrategy ()
     if (tphMaps.size() == 1)
         {
         m_parentClassMap = tphMaps[0];
-        auto enableColumnReuse = m_parentClassMap->GetMapStrategy().IsReuseColumns();
-        auto excludeFromColumnsReuse = GetMapStrategyR().IsDisableReuseColumnsForThisClass();
-        GetMapStrategyR().SetInParentTable(enableColumnReuse);
-        if (excludeFromColumnsReuse && enableColumnReuse)
+        auto enableSharedColumns = m_parentClassMap->GetMapStrategy().IsSharedColumns();
+        auto excludeFromSharedColumns = GetMapStrategyR().IsDisableSharedColumnsForThisClass();
+        GetMapStrategyR().SetInParentTable(enableSharedColumns);
+        if (excludeFromSharedColumns && enableSharedColumns)
             {
-            GetMapStrategyR().AddOption(Strategy::DisableReuseColumnsForThisClass);
+            if (SUCCESS != GetMapStrategyR().AddOption(Strategy::DisableSharedColumnsForThisClass))
+                return MapStatus::Error;
             }
 
         if (GetECClass ().GetIsStruct () && !m_parentClassMap->GetClass().GetIsStruct())
