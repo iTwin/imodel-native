@@ -2296,6 +2296,52 @@ TEST_F (SchemaDeserializationTest, ExpectErrorWhenBaseClassNotFound)
     EXPECT_NE (SCHEMA_READ_STATUS_Success, status);    
     EXPECT_TRUE (schema.IsNull());
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle   06/15
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaDeserializationTest, TestMultipleConstraintClasses)
+    {
+    Utf8CP schemaXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                       "<ECSchema xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" schemaName=\"ReferencedSchema\" nameSpacePrefix=\"ref\" version=\"01.00\" description=\"Description\" displayLabel=\"Display Label\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+                       "  <ECClass typeName = \"Class\" isDomainClass = \"True\">"
+                       "      <ECProperty propertyName = \"Property\" typeName = \"string\" />"
+                       "  </ECClass>"
+                       "  <ECClass typeName = \"Class1\" isDomainClass = \"True\">"
+                       "      <ECProperty propertyName = \"Property1\" typeName = \"string\" />"
+                       "      <ECProperty propertyName = \"Property2\" typeName = \"string\" />"
+                       "  </ECClass>"
+                       "  <ECClass typeName = \"Class2\" isDomainClass = \"True\">"
+                       "      <ECProperty propertyName = \"Property3\" typeName = \"string\" />"
+                       "      <ECProperty propertyName = \"Property4\" typeName = \"string\" />"
+                       "  </ECClass>"
+                       "  <ECRelationshipClass typeName = \"ClassHasClass1Or2\" isDomainClass = \"True\" strength = \"referencing\" strengthDirection = \"forward\">"
+                       "      <Source cardinality = \"(0, 1)\" polymorphic = \"True\">"
+                       "          <Class class = \"Class\" />"
+                       "      </Source>"
+                       "      <Target cardinality = \"(0, 1)\" polymorphic = \"True\">"
+                       "          <Class class = \"Class1\" />"
+                       "          <Class class = \"Class2\" />"
+                       "      </Target>"
+                       "  </ECRelationshipClass>"
+                       "</ECSchema>";
+
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr ecSchema = nullptr;
+    ASSERT_EQ(SCHEMA_READ_STATUS_Success, ECSchema::ReadFromXmlString(ecSchema, schemaXml, *schemaContext));
+    ECRelationshipClassCP relClass = ecSchema->GetClassCP(L"ClassHasClass1Or2")->GetRelationshipClassCP();
+    ASSERT_TRUE(relClass != nullptr);
+    ASSERT_EQ(1, relClass->GetSource().GetConstraintClasses().size());
+    ASSERT_STREQ(L"Class", relClass->GetSource().GetClasses()[0]->GetName().c_str());
+
+    ASSERT_EQ(2, relClass->GetTarget().GetConstraintClasses().size());
+    ASSERT_STREQ(L"Class1", relClass->GetTarget().GetClasses()[0]->GetName().c_str());
+    ASSERT_STREQ(L"Class2", relClass->GetTarget().GetClasses()[1]->GetName().c_str());
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                                    Paul.Connelly   11/12
+//---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaDeserializationTest, TestRelationshipKeys)
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
@@ -2328,9 +2374,8 @@ TEST_F(SchemaDeserializationTest, TestRelationshipKeys)
         L"      </Target>"
         L"  </ECRelationshipClass>"
         L"</ECSchema>");
-    ECSchema::ReadFromXmlString(ecSchema, schemaString.c_str() , *schemaContext);
-    Utf8String schema = NULL;
-    ecSchema->WriteToXmlString(schema);
+
+    ASSERT_EQ(SCHEMA_READ_STATUS_Success, ECSchema::ReadFromXmlString(ecSchema, schemaString.c_str(), *schemaContext));
     ECRelationshipClassP relClass= ecSchema->GetClassP(L"RelationshipClass")->GetRelationshipClassP();
     for (auto constrainClass : relClass->GetSource().GetConstraintClasses())
         {
@@ -2345,5 +2390,60 @@ TEST_F(SchemaDeserializationTest, TestRelationshipKeys)
         ASSERT_TRUE(((WString)keys[0]).Equals(L"Property1"));
         ASSERT_TRUE(((WString)keys[1]).Equals(L"Property2"));
         }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle   06/15
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaDeserializationTest, TestMultipleConstraintClassesWithKeyProperties)
+    {
+    Utf8CP schemaXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<ECSchema xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" schemaName=\"ReferencedSchema\" nameSpacePrefix=\"ref\" version=\"01.00\" description=\"Description\" displayLabel=\"Display Label\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "  <ECClass typeName = \"Class\" isDomainClass = \"True\">"
+        "      <ECProperty propertyName = \"Property\" typeName = \"string\" />"
+        "  </ECClass>"
+        "  <ECClass typeName = \"Class1\" isDomainClass = \"True\">"
+        "      <ECProperty propertyName = \"Property1\" typeName = \"string\" />"
+        "      <ECProperty propertyName = \"Property2\" typeName = \"string\" />"
+        "  </ECClass>"
+        "  <ECClass typeName = \"Class2\" isDomainClass = \"True\">"
+        "      <ECProperty propertyName = \"Property3\" typeName = \"string\" />"
+        "      <ECProperty propertyName = \"Property4\" typeName = \"string\" />"
+        "  </ECClass>"
+        "  <ECRelationshipClass typeName = \"ClassHasClass1Or2\" isDomainClass = \"True\" strength = \"referencing\" strengthDirection = \"forward\">"
+        "      <Source cardinality = \"(0, 1)\" polymorphic = \"True\">"
+        "          <Class class = \"Class\" />"
+        "      </Source>"
+        "      <Target cardinality = \"(0, 1)\" polymorphic = \"True\">"
+        "          <Class class = \"Class1\">"
+        "              <Key>"
+        "                  <Property name = \"Property1\" />"
+        "                  <Property name = \"Property2\" />"
+        "              </Key>"
+        "          </Class>"
+        "          <Class class = \"Class2\" />"
+        "      </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>";
+
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr ecSchema = nullptr;
+    ASSERT_EQ (SCHEMA_READ_STATUS_Success, ECSchema::ReadFromXmlString(ecSchema, schemaXml, *schemaContext));
+    ECRelationshipClassCP relClass = ecSchema->GetClassCP(L"ClassHasClass1Or2")->GetRelationshipClassCP();
+    ASSERT_TRUE(relClass != nullptr);
+    ASSERT_EQ(1, relClass->GetSource().GetConstraintClasses().size());
+    ASSERT_STREQ(L"Class", relClass->GetSource().GetClasses()[0]->GetName().c_str());
+
+    ASSERT_EQ(2, relClass->GetTarget().GetConstraintClasses().size());
+    ECRelationshipConstraintClassCP constraintClass1 = relClass->GetTarget().GetConstraintClasses()[0];
+    ASSERT_STREQ(L"Class1", constraintClass1->GetClass().GetName().c_str());
+
+    ASSERT_EQ(2, constraintClass1->GetKeys().size());
+    ASSERT_STREQ(L"Property1", constraintClass1->GetKeys()[0].c_str());
+    ASSERT_STREQ(L"Property2", constraintClass1->GetKeys()[1].c_str());
+
+    ECRelationshipConstraintClassCP constraintClass2 = relClass->GetTarget().GetConstraintClasses()[1];
+    ASSERT_STREQ(L"Class2", constraintClass2->GetClass().GetName().c_str());
+    ASSERT_EQ(0, constraintClass2->GetKeys().size());
     }
 END_BENTLEY_ECN_TEST_NAMESPACE
