@@ -204,7 +204,7 @@ TEST (BeSQLiteDb, ProfileTest)
         {
         Utf8String testFilePath = CopyTestFile (L"besqliteprofile3_1_0_0_noembedfiletable.db");
         Db db;
-        auto stat = db.OpenBeSQLiteDb (testFilePath.c_str (), Db::OpenParams (Db::OPEN_Readonly, DefaultTxn_Yes));
+        auto stat = db.OpenBeSQLiteDb (testFilePath.c_str (), Db::OpenParams (Db::OpenMode::Readonly));
         ASSERT_EQ (BE_SQLITE_OK, stat) << "Opening test file " << testFilePath.c_str () << " failed.";
         AssertProfile (db, false, false, "Test scenario: Open old BeSQLite file without embedded file table.");
         }
@@ -212,7 +212,7 @@ TEST (BeSQLiteDb, ProfileTest)
         {
         Utf8String testFilePath = CopyTestFile (L"besqliteprofile3_1_0_0_noembedfiletable.db");
         Db db;
-        auto stat = db.OpenBeSQLiteDb (testFilePath.c_str (), Db::OpenParams (Db::OPEN_ReadWrite, DefaultTxn_Yes));
+        auto stat = db.OpenBeSQLiteDb (testFilePath.c_str (), Db::OpenParams (Db::OpenMode::ReadWrite));
 
         ASSERT_EQ (BE_SQLITE_OK, stat) << "Opening test file " << testFilePath.c_str () << " failed.";
         stat = db.UpgradeBeSQLiteProfile ();
@@ -224,7 +224,7 @@ TEST (BeSQLiteDb, ProfileTest)
         {
         Utf8String testFilePath = CopyTestFile (L"besqliteprofile3_1_0_0_noembedfiletable.db");
         Db db;
-        auto stat = db.OpenBeSQLiteDb (testFilePath.c_str (), Db::OpenParams (Db::OPEN_ReadWrite, DefaultTxn_Yes));
+        auto stat = db.OpenBeSQLiteDb (testFilePath.c_str (), Db::OpenParams (Db::OpenMode::ReadWrite));
         ASSERT_EQ (BE_SQLITE_OK, stat) << "Opening test file " << testFilePath.c_str () << " failed.";
 
         BeFileName testFile;
@@ -240,7 +240,7 @@ TEST (BeSQLiteDb, ProfileTest)
         {
         Utf8String testFilePath = CopyTestFile (L"besqliteprofile3_1_0_0_withembedfiletable.db");
         Db db;
-        auto stat = db.OpenBeSQLiteDb (testFilePath.c_str (), Db::OpenParams (Db::OPEN_Readonly, DefaultTxn_Yes));
+        auto stat = db.OpenBeSQLiteDb (testFilePath.c_str (), Db::OpenParams (Db::OpenMode::Readonly));
         ASSERT_EQ (BE_SQLITE_OK, stat) << "Opening test file " << testFilePath.c_str () << " failed.";
         AssertProfile (db, true, false, "Test scenario: Old BeSQLite file with embedded file table.");
         }
@@ -248,7 +248,7 @@ TEST (BeSQLiteDb, ProfileTest)
         {
         Utf8String testFilePath = CopyTestFile (L"besqliteprofile3_1_0_0_withembedfiletable.db");
         Db db;
-        auto stat = db.OpenBeSQLiteDb (testFilePath.c_str (), Db::OpenParams (Db::OPEN_ReadWrite, DefaultTxn_Yes));
+        auto stat = db.OpenBeSQLiteDb (testFilePath.c_str (), Db::OpenParams (Db::OpenMode::ReadWrite));
         ASSERT_EQ (BE_SQLITE_OK, stat) << "Opening test file " << testFilePath.c_str () << " failed.";
         stat = db.UpgradeBeSQLiteProfile ();
         ASSERT_EQ (BE_SQLITE_OK, stat) << "Upgrading test file " << testFilePath.c_str () << " failed.";
@@ -259,7 +259,7 @@ TEST (BeSQLiteDb, ProfileTest)
         {
         Utf8String testFilePath = CopyTestFile (L"besqliteprofile3_1_0_0_withembedfiletable.db");
         Db db;
-        auto stat = db.OpenBeSQLiteDb (testFilePath.c_str (), Db::OpenParams (Db::OPEN_Readonly, DefaultTxn_Yes));
+        auto stat = db.OpenBeSQLiteDb (testFilePath.c_str (), Db::OpenParams (Db::OpenMode::Readonly));
         ASSERT_EQ (BE_SQLITE_OK, stat) << "Opening test file " << testFilePath.c_str () << " failed.";
         stat = db.UpgradeBeSQLiteProfile ();
         ASSERT_EQ (BE_SQLITE_ERROR_ProfileUpgradeFailed, stat) << "Upgrading test file " << testFilePath.c_str () << " is expected to fail if file is opened readonly.";
@@ -268,7 +268,7 @@ TEST (BeSQLiteDb, ProfileTest)
         {
         Utf8String testFilePath = CopyTestFile (L"besqliteprofile3_1_0_0_withembedfiletable.db");
         Db db;
-        auto stat = db.OpenBeSQLiteDb (testFilePath.c_str (), Db::OpenParams (Db::OPEN_ReadWrite, DefaultTxn_Yes));
+        auto stat = db.OpenBeSQLiteDb (testFilePath.c_str (), Db::OpenParams (Db::OpenMode::ReadWrite));
         ASSERT_EQ (BE_SQLITE_OK, stat) << "Opening test file " << testFilePath.c_str () << " failed.";
 
         BeFileName testFile;
@@ -300,7 +300,7 @@ TEST (BeSQLiteDb, ChangeRepositoryIdInReadonlyMode)
         }
 
     Db db;
-    DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams (Db::OPEN_Readonly, DefaultTxn_Yes));
+    DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams (Db::OpenMode::Readonly));
     ASSERT_EQ (BE_SQLITE_OK, stat) << L"Reopening test DgnDb '" << dbPath.c_str () << L"' failed.";
 
     BeTest::SetFailOnAssert (false);
@@ -345,7 +345,7 @@ TEST (BeSQLiteDb, ChangeRepositoryId)
 
         {
         Db db;
-        DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams (Db::OPEN_ReadWrite, DefaultTxn_Yes));
+        DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams (Db::OpenMode::ReadWrite));
         ASSERT_EQ (BE_SQLITE_OK, stat) << L"Reopening test DgnDb '" << dbPath.c_str () << L"' failed.";
 
         //now change repository id. This should truncate be_local and reinsert the new repo id
@@ -357,7 +357,7 @@ TEST (BeSQLiteDb, ChangeRepositoryId)
 
     //now reopen from scratch
     Db db;
-    DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams (Db::OPEN_Readonly, DefaultTxn_Yes));
+    DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams (Db::OpenMode::Readonly));
     ASSERT_EQ (BE_SQLITE_OK, stat) << L"Reopening test DgnDb '" << dbPath.c_str () << L"' failed.";
 
     Utf8CP const repoIdKey = "be_repositoryId";
@@ -430,11 +430,11 @@ void RunDeleteCascadingTest (int primaryRowCount, int secondaryRowCountPerPrimar
     ASSERT_FALSE (dbWithoutTriggerPath.empty ()) << "Populating test db failed";
 
     Db dbWithTrigger;
-    auto stat = dbWithTrigger.OpenBeSQLiteDb (dbWithTriggerPath.c_str (), Db::OpenParams (Db::OPEN_ReadWrite));
+    auto stat = dbWithTrigger.OpenBeSQLiteDb (dbWithTriggerPath.c_str (), Db::OpenParams (Db::OpenMode::ReadWrite));
     ASSERT_EQ (BE_SQLITE_OK, stat);
 
     Db dbWithoutTrigger;
-    stat = dbWithoutTrigger.OpenBeSQLiteDb (dbWithoutTriggerPath.c_str (), Db::OpenParams (Db::OPEN_ReadWrite));
+    stat = dbWithoutTrigger.OpenBeSQLiteDb (dbWithoutTriggerPath.c_str (), Db::OpenParams (Db::OpenMode::ReadWrite));
     ASSERT_EQ (BE_SQLITE_OK, stat);
 
     std::vector<Utf8String> primarySqlList;

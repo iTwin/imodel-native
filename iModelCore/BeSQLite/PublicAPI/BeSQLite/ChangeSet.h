@@ -75,7 +75,6 @@ public:
     //! Clear the contents of this ChangeTracker and re-start it.
     void Restart() {EndTracking(); EnableTracking(true);}
     bool IsTracking() const {return m_isTracking;}
-
 };
 
 //=======================================================================================

@@ -202,7 +202,7 @@ TEST(PerformanceSqlStatementTests, PrepareStatement)
     CreateTestDgnDb (dbPath, testTableNames, L"SqlStatementPerformance.idgndb", tableCount, rowCount, true, true);      
 
     Db db;
-    DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes));
+    DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OpenMode::ReadWrite));
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Opening test dgndb failed.";
 
     const int repetitionsPerTable = 1000;
@@ -256,7 +256,7 @@ TEST(PerformanceSqlStatementTests, PrepareStatementWithBlobColumns)
     CreateTestDgnDb (dbPath, testTableNames, L"SqlStatementPerformance.idgndb", tableCount, rowCount, true, true, true);      
 
     Db db;
-    DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes));
+    DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OpenMode::ReadWrite));
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Opening test dgndb failed.";
 
     const int repetitionsPerTable = 1000;
@@ -403,7 +403,7 @@ bool createIndex
     ASSERT_EQ ((size_t) tableCount, testTableNames.size ()) << "Count of test tables created doesn't match the expected value.";
 
     Db db;
-    DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OPEN_Readonly, DefaultTxn_Yes));
+    DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OpenMode::Readonly));
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Opening test dgndb failed.";
 
     bvector<Utf8String> selectCountSqls;
@@ -742,7 +742,7 @@ bool checkForExistingTables
     ASSERT_EQ ((size_t) tableCount, testTableNames.size ()) << "Count of test tables created doesn't match the expected value.";
 
     Db db;
-    DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OPEN_Readonly, DefaultTxn_Yes));
+    DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OpenMode::Readonly));
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Opening test dgndb failed.";
 
     bvector<Utf8String> selectCountSqls;
@@ -837,7 +837,7 @@ bool createIndices
         }
 
     Db db;
-    DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes));
+    DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OpenMode::ReadWrite));
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Opening test dgndb failed.";
 
     StopWatch timer ("", true);
@@ -887,7 +887,7 @@ bool createIndices
         }
 
     Db db;
-    DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes));
+    DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OpenMode::ReadWrite));
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Opening test dgndb failed.";
 
     StopWatch timer ("", true);
@@ -1012,7 +1012,7 @@ TEST(PerformanceSqlStatementTests, ExecuteCreateEmptyViewWithSingleCall)
         }
 
     Db db;
-    DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes));
+    DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OpenMode::ReadWrite));
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Opening test dgndb failed.";
 
     StopWatch timer ("", true);
@@ -1049,7 +1049,7 @@ TEST(PerformanceSqlStatementTests, ExecuteCreateEmptyViewWithMultipleCalls)
         }
 
     Db db;
-    DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes));
+    DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OpenMode::ReadWrite));
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Opening test dgndb failed.";
 
     StopWatch timer ("", true);

@@ -99,7 +99,7 @@ TEST_F(BeSQLiteDbTests, OpenDb)
     //now close and re-open it
     m_db.CloseDb();
     EXPECT_FALSE (m_db.IsDbOpen());
-    m_result = m_db.OpenBeSQLiteDb(getDbFilePath(L"one.db"), Db::OpenParams(Db::OPEN_Readonly, DefaultTxn_Yes));
+    m_result = m_db.OpenBeSQLiteDb(getDbFilePath(L"one.db"), Db::OpenParams(Db::OpenMode::Readonly, DefaultTxn::Yes));
     EXPECT_EQ (BE_SQLITE_OK, m_result);
     EXPECT_TRUE (m_db.IsDbOpen());
     }
@@ -126,12 +126,12 @@ TEST_F(BeSQLiteDbTests, TwoConnections)
     m_db.CloseDb();
 
     TestOtherConnectionDb db1, db2;
-    DbResult result = db1.OpenBeSQLiteDb(getDbFilePath(L"one.db"), Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_No));
+    DbResult result = db1.OpenBeSQLiteDb(getDbFilePath(L"one.db"), Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::No));
 
     EXPECT_EQ (BE_SQLITE_OK, result);
     EXPECT_TRUE (db1.IsDbOpen());
     
-    result = db2.OpenBeSQLiteDb(getDbFilePath(L"one.db"), Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_No));
+    result = db2.OpenBeSQLiteDb(getDbFilePath(L"one.db"), Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::No));
     EXPECT_EQ (BE_SQLITE_OK, result);
     EXPECT_TRUE (db2.IsDbOpen());
 
@@ -194,8 +194,8 @@ TEST_F(BeSQLiteDbTests, Concurrency_UsingSavepoints)
     retry1.AddRef ();
     retry2.AddRef ();
 
-    Db::OpenParams openParams1 (Db::OPEN_ReadWrite, DefaultTxn_No, &retry1);
-    Db::OpenParams openParams2 (Db::OPEN_ReadWrite, DefaultTxn_No, &retry2);
+    Db::OpenParams openParams1 (Db::OpenMode::ReadWrite, DefaultTxn::No, &retry1);
+    Db::OpenParams openParams2 (Db::OpenMode::ReadWrite, DefaultTxn::No, &retry2);
 
     Db db1, db2;
     DbResult result = db1.OpenBeSQLiteDb (dbname, openParams1);
@@ -417,16 +417,16 @@ TEST_F(BeSQLiteDbTests, CachedProperties)
     SetupDb (L"Props3.db");
 
     Byte values[] = {1,2,3,4,5,6};
-    PropertySpec spec1 ("TestSpec", "CachedProp", PropertySpec::TXN_MODE_Cached);
+    PropertySpec spec1 ("TestSpec", "CachedProp", PropertySpec::Mode::Cached);
     m_result = m_db.SaveProperty (spec1, values, sizeof(values), 400, 10); 
     EXPECT_TRUE (m_db.HasProperty (spec1, 400, 10));
 
-    PropertySpec spec2 ("TestSpec", "CachedProp2", PropertySpec::TXN_MODE_Cached);
+    PropertySpec spec2 ("TestSpec", "CachedProp2", PropertySpec::Mode::Cached);
     m_result = m_db.SaveProperty (spec2, values, sizeof(values));
     EXPECT_TRUE (m_db.HasProperty (spec2));
 
     Utf8CP spec3Val="Spec 3 value";
-    PropertySpec spec3 ("Spec3", "CachedProp", PropertySpec::TXN_MODE_Cached);
+    PropertySpec spec3 ("Spec3", "CachedProp", PropertySpec::Mode::Cached);
     m_result = m_db.SavePropertyString (spec3, spec3Val);
     EXPECT_TRUE (m_db.HasProperty (spec3));
 
@@ -606,7 +606,7 @@ Utf8CP repositoryLocalKey
         }
 
     //reopen test db
-    DbResult stat = testDb.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes));
+    DbResult stat = testDb.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes));
     ASSERT_EQ (BE_SQLITE_OK, stat) << L"Reopening test DgnDb '" << dbPath.c_str () << L"' failed.";
     }
 
@@ -859,7 +859,7 @@ TEST(PerformanceBeSQLiteDbTests, InsertOrReplaceBlobVsIntegerWithSavepointPerIte
 
     //reopen test db
     Db dgndb;
-    DbResult stat = dgndb.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes));
+    DbResult stat = dgndb.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OpenMode::ReadWrite, DefaultTxn::Yes));
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Reopening test DgnDb '" << dbPath.c_str () << "' failed.";
 
     const int iterationCount = 10000;
@@ -934,7 +934,7 @@ TEST(BeSQLiteDbOpenTest, Expired)
 
     Utf8String expiredFileName (expiredFileNameW);
 
-    BeSQLite::Db::OpenParams parms (BeSQLite::Db::OPEN_Readonly);
+    BeSQLite::Db::OpenParams parms (BeSQLite::Db::OpenMode::Readonly);
 
     BeSQLite::Db db;
     ASSERT_TRUE( db.OpenBeSQLiteDb (expiredFileName.c_str(), parms) == BE_SQLITE_OK );
@@ -972,7 +972,7 @@ TEST(BeSQLiteDbOpenTest, Expired2)
         expiredFileName.assign (db.GetDbFileName ());
         }    
 
-    BeSQLite::Db::OpenParams parms (BeSQLite::Db::OPEN_Readonly);
+    BeSQLite::Db::OpenParams parms (BeSQLite::Db::OpenMode::Readonly);
 
     BeSQLite::Db db;
     ASSERT_TRUE( db.OpenBeSQLiteDb (expiredFileName.c_str(), parms) == BE_SQLITE_OK );

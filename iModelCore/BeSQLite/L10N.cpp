@@ -49,7 +49,7 @@ DbResult L10NLookup::SQLangDb::Open()
     if (!HasName())
         return  BE_SQLITE_ERROR;
 
-    Db::OpenParams params(Db::OPEN_Readonly);
+    Db::OpenParams params(Db::OpenMode::Readonly);
     params.SetRawSQLite();
 
     return OpenBeSQLiteDb(m_fileName.c_str(), params);

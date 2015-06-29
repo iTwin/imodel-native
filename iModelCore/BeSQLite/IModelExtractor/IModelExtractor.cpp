@@ -434,7 +434,7 @@ static BentleyStatus extractFromPackage (WCharCP input, WCharCP output, bool ove
     // open the package
     BeSQLite::Db   db;
     DbResult       result;
-    Db::OpenParams openParams (Db::OPEN_Readonly);
+    Db::OpenParams openParams (Db::OpenMode::Readonly);
     EXTRACTOR_V ("Opening package database...");
     if (BE_SQLITE_OK != (result = db.OpenBeSQLiteDb (Utf8String (input).c_str (), openParams)))
         {
