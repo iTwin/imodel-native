@@ -95,7 +95,7 @@ uint32_t ViewSettingsData::GetPlaneRampIndex() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                               Daniel.McKenzie      12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-PointCloudClassificationViewSettings::PointCloudClassificationViewSettings(ViewContextCR context)
+PointCloudClassificationViewSettings::PointCloudClassificationViewSettings(Dgn::ViewContextCR context)
     {
 /* POINTCLOUD_WIP_GR06 - PointCloudClassificationViewSettings
     DynamicViewSettingsCP viewSettings = context.GetDynamicViewSettings(modelRefP);

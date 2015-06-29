@@ -9,7 +9,7 @@
 
 //__PUBLISH_SECTION_START__
 
-#include <BentleyApi/BentleyApi.h>
+#include <Bentley/Bentley.h>
 #include <ECDb/ECDbTypes.h>
 #include <ECDb/ECDbApi.h>
 #include <ECObjects/ECSchema.h>

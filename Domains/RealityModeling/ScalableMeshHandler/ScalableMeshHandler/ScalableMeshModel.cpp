@@ -23,7 +23,7 @@ StatusInt ScalableMeshModel::Load()
     }
 
 
-DgnPlatform::AxisAlignedBox3d ScalableMeshModel::_QueryModelRange() const
+AxisAlignedBox3d ScalableMeshModel::_QueryModelRange() const
     {
     DRange3d range;
     m_scMeshPtr->GetRange(range);

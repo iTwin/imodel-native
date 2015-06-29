@@ -52,7 +52,6 @@ rasterDisplayDepends =  $(rasterSchemaSrc)RasterSource.h \
                         $(rasterSchemaSrc)WmsSource.h
                         
 rasterFileDepends    =  $(rasterSchemaSrc)RasterFile.h \
-                        $(rasterSchemaSrc)RasterFileProgressiveDisplay.h \
                         $(rasterSchemaSrc)RasterFileSource.h \
                         $(rasterSchemaSrc)ImagePPAdmin.h
 
@@ -97,8 +96,6 @@ $(o)WmsSource$(oext)        : $(rasterSchemaSrc)WmsSource.cpp       $(rasterSche
 $(o)RasterFile$(oext)                   : $(rasterSchemaSrc)RasterFile.cpp                          $(rasterSchemaDepends) $(rasterFileDepends) ${MultiCompileDepends}
 
 $(o)ImagePPAdmin$(oext)                 : $(rasterSchemaSrc)ImagePPAdmin.cpp                        $(rasterSchemaDepends) $(rasterFileDepends) ${MultiCompileDepends}
-
-$(o)RasterFileProgressiveDisplay$(oext) : $(rasterSchemaSrc)RasterFileProgressiveDisplay.cpp        $(rasterSchemaDepends) $(rasterFileDepends) ${MultiCompileDepends}
 
 $(o)RasterFileSource$(oext)             : $(rasterSchemaSrc)RasterFileSource.cpp                    $(rasterSchemaDepends) $(rasterFileDepends) ${MultiCompileDepends}
 

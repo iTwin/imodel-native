@@ -7,10 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include <RasterSchemaInternal.h>
 
-//&&ep - does this go here ?
-HFCPtr<HGF2DWorldCluster> gWorldClusterP(new HGFHMRStdWorldCluster());  //&&ep include it in method get; not here
-static HPMPool  s_pool(0/*illimited*/); // Memory pool shared by all rasters. (in KB) //&&ep include it in method get; not here
-
 USING_NAMESPACE_BENTLEY_RASTERSCHEMA
 
 //----------------------------------------------------------------------------------------
@@ -19,6 +15,8 @@ USING_NAMESPACE_BENTLEY_RASTERSCHEMA
 RasterFile::RasterFile(WCharCP inFilename)
     {
     m_storedRasterPtr = nullptr;
+    m_worldClusterPtr = nullptr;
+
     m_HRFRasterFilePtr = OpenRasterFile(inFilename);
     }
 
@@ -60,36 +58,42 @@ void RasterFile::GetBitmap(HFCPtr<HRABitmapBase> pBitmap)
         opts.SetAlphaBlend(true);       
         }
         
-    pBitmap->CopyFrom(*GetStoredRaster(), opts);
+    pBitmap->CopyFrom(*GetStoredRasterP(), opts);
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     6/2015
 //----------------------------------------------------------------------------------------
-HFCPtr<HRAStoredRaster> RasterFile::GetStoredRaster() //&&ep return R ou P
+HPMPool*  GetMemoryPool()
     {
+    static HPMPool  s_pool(0/*illimited*/); // Memory pool shared by all rasters. (in KB)
+    return &s_pool;
+    }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                       Eric.Paquet     6/2015
+//----------------------------------------------------------------------------------------
+HRAStoredRaster* RasterFile::GetStoredRasterP()
+    {
     // Load on first request.
     if(NULL != m_storedRasterPtr)
-        return m_storedRasterPtr;
+        return m_storedRasterPtr.GetPtr();
 
     // load raster file in memory in a single chunk
     if (!HRFRasterFileBlockAdapter::CanAdapt(m_HRFRasterFilePtr, HRFBlockType::IMAGE, HRF_EQUAL_TO_RESOLUTION_WIDTH, HRF_EQUAL_TO_RESOLUTION_HEIGHT) &&
         m_HRFRasterFilePtr->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockType() != HRFBlockType::IMAGE) //Make sure we don't try to adapt something we don't have to adapt
-        //&&ep handle error correctly
         return nullptr;
 
     HFCPtr<HRFRasterFile> pAdaptedRasterFile(new HRFRasterFileBlockAdapter(m_HRFRasterFilePtr, HRFBlockType::IMAGE, HRF_EQUAL_TO_RESOLUTION_WIDTH, HRF_EQUAL_TO_RESOLUTION_HEIGHT));
-
-    HFCPtr<HGF2DCoordSys> pLogical = gWorldClusterP->GetCoordSysReference(pAdaptedRasterFile->GetWorldIdentificator());
-    HFCPtr<HRSObjectStore> pStore = new HRSObjectStore (&s_pool, pAdaptedRasterFile, 0/*page*/, pLogical);
+    HFCPtr<HGF2DCoordSys> pLogical = GetWorldClusterP()->GetCoordSysReference(pAdaptedRasterFile->GetWorldIdentificator());
+    HFCPtr<HRSObjectStore> pStore = new HRSObjectStore (GetMemoryPool(), pAdaptedRasterFile, 0/*page*/, pLogical);
 
     // Specify we do not want to use the file's clip shapes if any. Maybe we'll need to support the native clips some day...
     pStore->SetUseClipShape(false);
 
     m_storedRasterPtr = pStore->LoadRaster();
 
-    return m_storedRasterPtr;
+    return m_storedRasterPtr.GetPtr();
     }
 
 //----------------------------------------------------------------------------------------
@@ -122,6 +126,94 @@ uint32_t    RasterFile::GetHeight() const
         return (uint32_t)m_HRFRasterFilePtr->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetWidth();
 
     return (uint32_t)m_HRFRasterFilePtr->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetHeight();
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                       Eric.Paquet     6/2015
+//----------------------------------------------------------------------------------------
+void RasterFile::GetCorners(DPoint3dP corners) 
+    {
+    uint32_t width = GetWidth();
+    uint32_t height = GetHeight();
+
+    // Get physical extent
+    DPoint3d physCorners[4];
+
+    physCorners[0].x = 0;
+    physCorners[0].y = 0;
+    physCorners[0].z = 0;
+    physCorners[1].x = width;
+    physCorners[1].y = 0;
+    physCorners[1].z = 0;
+    physCorners[2].x = 0;
+    physCorners[2].y = height;
+    physCorners[2].z = 0;
+    physCorners[3].x = width;
+    physCorners[3].y = height;
+    physCorners[3].z = 0;
+
+    // Give default values (z must be initialized, it is untouched by the transform)
+    for (int i = 0; i < 4; i++)
+        {
+        corners[i].x = physCorners[i].x;
+        corners[i].y = physCorners[i].y;
+        corners[i].z = physCorners[i].z;
+        }
+
+    HFCPtr<HGF2DTransfoModel> transfoModel = GetStoredRasterP()->GetTransfoModel();
+
+    for (int i = 0; i < 4; i++)
+        {
+        transfoModel->ConvertDirect(physCorners[i].x, physCorners[i].y, &corners[i].x, &corners[i].y);
+        }
+
+
+/* &&ep d
+    HGF2DExtent physicalExtent;
+    physicalExtent = HGF2DExtent(0, 0, GetWidth(), GetHeight(), GetStoredRasterP()->GetPhysicalCoordSys());
+    HVEShape Shape(physicalExtent);
+    
+    phys = GetPhysicalExtent
+    HVEShape shape(physicalExtent);
+
+    0 0 width height
+    getTransfoModel + apply on all corners
+
+    shape.ChangeCoordSys(GetStoredRasterP()->GetCoordSys())
+
+//    Shape.ChangeCoordSys(GetPhysicalCoordSys());
+
+//    DPoint3d c[4];
+
+*/
+
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                       Eric.Paquet     6/2015
+//----------------------------------------------------------------------------------------
+GeoCoordinates::BaseGCSPtr RasterFile::GetBaseGcs() 
+    {
+//&&ep_todo
+//    HFCPtr<HRFGeoTiffKeysUtility> pGeotiffKeys(NULL);
+
+    IRasterBaseGcsCP pSrcFileGeocoding = m_HRFRasterFilePtr->GetPageDescriptor(0)->GetGeocodingCP();
+//    virtual GeoCoordinates::BaseGCS* _GetBaseGCS() const=0;
+
+    if (pSrcFileGeocoding == nullptr)
+        return nullptr;
+
+    GeoCoordinates::BaseGCS* baseGcsP = pSrcFileGeocoding->GetBaseGCS();
+    if (baseGcsP == nullptr)
+        return nullptr;
+
+    GeoCoordinates::BaseGCSPtr pGcs = GeoCoordinates::BaseGCS::CreateGCS(*baseGcsP);
+    return pGcs;
+/*
+    HFCPtr<HMDMetaDataContainer> pGeotiffKeys(NULL);
+
+    pGeotiffKeys = m_HRFRasterFilePtr->GetPageDescriptor(0)->GetMetaDataContainer(HMDMetaDataContainer::HMD_GEOCODING_INFO);
+*/
     }
 
 //----------------------------------------------------------------------------------------
@@ -209,7 +301,7 @@ HFCPtr<HGF2DTransfoModel> RasterFile::GetSLOTransfoModel() const
 //----------------------------------------------------------------------------------------
 HFCPtr<HGF2DCoordSys> RasterFile::GetPhysicalCoordSys() 
     {
-/* &&ep - needswork (for bmp, monochrome)
+/* RASTERFILE_WIP_GR06 - needswork (for bmp, monochrome)
     // Create a transformation model from the raster file SLOx to SLO4
     HFCPtr<HGF2DTransfoModel> pSloTransfo = GetSLOTransfoModel();
 
@@ -218,14 +310,14 @@ HFCPtr<HGF2DCoordSys> RasterFile::GetPhysicalCoordSys()
 
     return new HGF2DCoordSys(*pSloTransfo, GetStoredRaster()->GetPhysicalCoordSys());
 */
-    return GetStoredRaster()->GetPhysicalCoordSys();
+    return GetStoredRasterP()->GetPhysicalCoordSys();
 
     }
 
 
-/*---------------------------------------------------------------------------------**//**
-* @bsiclass                                     Marc.Bedard                     11/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                       Eric.Paquet     6/2015
+//----------------------------------------------------------------------------------------
 struct FactoryScanOnOpenGuard
     {
     private:
@@ -248,9 +340,9 @@ struct FactoryScanOnOpenGuard
             }
     };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     11/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                       Eric.Paquet     6/2015
+//----------------------------------------------------------------------------------------
 HFCPtr<HRFRasterFile> RasterFile::OpenRasterFile(WCharCP inFilename)
     {
     HFCPtr<HRFRasterFile> rasterFile;
@@ -287,7 +379,7 @@ HFCPtr<HRFRasterFile> RasterFile::OpenRasterFile(WCharCP inFilename)
         //         if (RasterFile->IsCompatibleWith(HRFInternetImagingFile::CLASS_ID))
         //             ((HFCPtr<HRFInternetImagingFile>&)RasterFile)->DownloadAttributes();
 
-        // Adapt Scan Line Orientation (1 bit images) //&&ep - investigate what to do with SLO. SLO is for binaries
+        // Adapt Scan Line Orientation (1 bit images)
         bool CreateSLOAdapter = false;
 
         if ((rasterFile->IsCompatibleWith(HRFFileId_Intergraph)) ||
@@ -324,3 +416,14 @@ HFCPtr<HRFRasterFile> RasterFile::OpenRasterFile(WCharCP inFilename)
     return rasterFile;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                       Eric.Paquet     6/2015
+//----------------------------------------------------------------------------------------
+HGF2DWorldCluster*   RasterFile::GetWorldClusterP()
+    {
+    if (m_worldClusterPtr == nullptr)
+        {
+        m_worldClusterPtr = new HGFHMRStdWorldCluster();
+        }
+    return m_worldClusterPtr.GetPtr();
+    }
