@@ -613,8 +613,7 @@ TEST_F (ECDbMapCATests, TestInvalidMapStrategyValue)
     {
     Utf8CP schemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
         "    <ECClass typeName='ClassA' isDomainClass='True'>"
         "        <ECCustomAttributes>"
@@ -652,7 +651,6 @@ TEST_F(ECDbMapCATests, TestInvalidCombinationsOfMapStrategyAndOptions)
     Utf8CP schemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
         "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
         "    <ECClass typeName='ClassA' isDomainClass='True'>"
         "        <ECCustomAttributes>"

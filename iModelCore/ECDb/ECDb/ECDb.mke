@@ -43,7 +43,6 @@ ECDbAllHeaders = \
                 $(baseDir)ECDbInternalTypes.h \
                 $(baseDir)ECDbLogger.h \
 				$(baseDir)MapStrategy.h \
-                $(baseDir)ECObjectsExtensions.h \
                 $(baseDir)ECSchemaComparers.h \
                 $(baseDir)ECDbImpl.h \
                 $(baseDir)BeRepositoryBasedIdSequence.h \
@@ -171,8 +170,6 @@ $(o)BeRepositoryBasedIdSequence$(oext):						$(baseDir)BeRepositoryBasedIdSequen
 $(o)ECDbMap$(oext):											$(baseDir)ECDbMap.cpp                       $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSchemaComparers$(oext):								$(baseDir)ECSchemaComparers.cpp             $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)ECObjectsExtensions$(oext):								$(baseDir)ECObjectsExtensions.cpp           $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)MapStrategy$(oext):									    $(baseDir)MapStrategy.cpp                  $(ECDbAllHeaders) ${MultiCompileDepends}
 

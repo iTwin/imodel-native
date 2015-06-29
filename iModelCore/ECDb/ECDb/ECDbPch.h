@@ -15,7 +15,6 @@
 #include "ECDbInternalTypes.h"
 #include "ECDbLogger.h"
 #include "ECSchemaComparers.h"
-#include "ECObjectsExtensions.h"
 #include "ECDbImpl.h"
 #include "ColumnInfo.h"
 #include "PropertyMap.h"

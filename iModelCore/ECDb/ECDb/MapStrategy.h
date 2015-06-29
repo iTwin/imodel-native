@@ -60,6 +60,8 @@ enum class MapStrategy : uint32_t //0xffffffff
 #define STRATEGY_OPTION_DISABLE_SHARED_COLUMS_FOR_THIS_CLASS    "DisableSharedColumnsForThisClass"
 #define STRATEGY_OPTION_READONLY                                "Readonly"
 #define STRATEGY_OPTION_EXCLUSIVELY_STORED_IN_THIS_TABLE        "ExclusivelyStoredInThisTable"
+#define STRATEGY_RELATIONSHIP_SOURCE_TABLE                      "RelationshipSourceTable"
+#define STRATEGY_RELATIONSHIP_TARGET_TABLE                      "RelationshipTargetTable"
 #define STRATEGY_DELIMITER                                      "|"
 #define DELIMITER                                               " " STRATEGY_DELIMITER " "
 
