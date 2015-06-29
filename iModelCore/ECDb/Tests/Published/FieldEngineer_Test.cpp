@@ -800,7 +800,7 @@ void RunDeleteReferentialIntegrityTest (bool withRelationsToCachedInfo)
 
         {
         ECDb ecdb;
-        ASSERT_EQ (BE_SQLITE_OK, ecdb.OpenBeSQLiteDb (testDbPath, ECDb::OpenParams (Db::OPEN_ReadWrite)));
+        ASSERT_EQ (BE_SQLITE_OK, ecdb.OpenBeSQLiteDb (testDbPath, ECDb::OpenParams (Db::OpenMode::ReadWrite)));
 
         ECClassCP testClass = ecdb. Schemas ().GetECClass (testSchemaName, testClassName);
 
@@ -830,7 +830,7 @@ void RunDeleteReferentialIntegrityTest (bool withRelationsToCachedInfo)
 
     //reopen to minimize any caching from the creation and population of the test ecdb
     ECDb ecdb;
-    ASSERT_EQ (BE_SQLITE_OK, ecdb.OpenBeSQLiteDb (testDbPath, ECDb::OpenParams (Db::OPEN_ReadWrite)));
+    ASSERT_EQ (BE_SQLITE_OK, ecdb.OpenBeSQLiteDb (testDbPath, ECDb::OpenParams (Db::OpenMode::ReadWrite)));
 
     ECClassCP testClass = ecdb. Schemas ().GetECClass (testSchemaName, testClassName);
 
@@ -869,7 +869,7 @@ void RunDeleteReferentialIntegrityTestUsingECSql (bool withRelationsToCachedInfo
 
         {
         ECDb ecdb;
-        ASSERT_EQ (BE_SQLITE_OK, ecdb.OpenBeSQLiteDb (testDbPath, ECDb::OpenParams (Db::OPEN_ReadWrite)));
+        ASSERT_EQ (BE_SQLITE_OK, ecdb.OpenBeSQLiteDb (testDbPath, ECDb::OpenParams (Db::OpenMode::ReadWrite)));
 
         ECClassCP testClass = ecdb. Schemas ().GetECClass (testSchemaName, testClassName);
 
@@ -899,7 +899,7 @@ void RunDeleteReferentialIntegrityTestUsingECSql (bool withRelationsToCachedInfo
 
     //reopen to minimize any caching from the creation and population of the test ecdb
     ECDb ecdb;
-    ASSERT_EQ (BE_SQLITE_OK, ecdb.OpenBeSQLiteDb (testDbPath, ECDb::OpenParams (Db::OPEN_ReadWrite)));
+    ASSERT_EQ (BE_SQLITE_OK, ecdb.OpenBeSQLiteDb (testDbPath, ECDb::OpenParams (Db::OpenMode::ReadWrite)));
 
     //printf ("Attach to profiler\n");
     //getchar ();

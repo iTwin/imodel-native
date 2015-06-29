@@ -84,7 +84,7 @@ public:
     BeSQLite::EC::ECDbR    Create (Utf8CP ecdbFileName);
     BeSQLite::EC::ECDbR    Create (Utf8CP ecdbFileName, WCharCP testSchemaXmlFileName, int numberOfArbitraryECInstancesToImport);
     BeSQLite::EC::ECDbR    Create (Utf8CP ecdbFileName, WCharCP testSchemaXmlFileName, bool importArbitraryECInstances);
-    DbResult               Open (Utf8CP ecdbFilePath, BeSQLite::EC::ECDb::OpenParams openParams = BeSQLite::EC::ECDb::OpenParams (BeSQLite::EC::ECDb::OPEN_Readonly, DefaultTxn_Yes));
+    DbResult               Open (Utf8CP ecdbFilePath, BeSQLite::EC::ECDb::OpenParams openParams = BeSQLite::EC::ECDb::OpenParams (BeSQLite::EC::ECDb::OpenMode::Readonly));
     ECDbTestSchemaManager const& GetTestSchemaManager () const;
     BeSQLite::EC::ECDbR    GetECDb ();
     BeSQLite::EC::ECDbCR   GetECDbCR () const;

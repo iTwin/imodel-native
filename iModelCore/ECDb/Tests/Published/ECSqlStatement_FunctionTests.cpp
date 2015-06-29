@@ -27,7 +27,7 @@ struct ExpectedResult
 TEST_F(ECSqlTestFixture, ECSqlStatement_BuiltinFunctions)
     {
     // Create and populate a sample project
-    auto& ecdb = SetUp("ecsqlbuiltinfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OPEN_Readonly, DefaultTxn_Yes), 5);
+    auto& ecdb = SetUp("ecsqlbuiltinfunctiontest.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OpenMode::Readonly), 5);
 
     std::vector<std::pair<Utf8CP, ExpectedResult>> testDataset {
             {"SELECT ABS(I) FROM ecsql.P LIMIT 1", ExpectedResult (ECN::PRIMITIVETYPE_Double)},

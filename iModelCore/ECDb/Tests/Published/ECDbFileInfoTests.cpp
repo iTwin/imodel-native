@@ -111,7 +111,7 @@ TEST(ECDbFileInfo, ECFEmbeddedFileBackedInstanceSupport)
     }
 
     ECDb ecdb;
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath, ECDb::OpenParams(Db::OPEN_ReadWrite)));
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
 
     //test file
     Utf8CP testFileName = "StartupCompany.json";
@@ -209,7 +209,7 @@ TEST(ECDbFileInfo, ReplaceExistingEmbeddedFile)
     }
 
     ECDb ecdb;
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath, ECDb::OpenParams(Db::OPEN_ReadWrite)));
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
 
     //test file
     //  Using a much larger file so I could check that the embedded blobs were removed from the BE_Prop table.
@@ -266,7 +266,7 @@ TEST(ECDbFileInfo, ReadAddNewEntrySaveEmbeddedFile)
         ecdbPath = BeFileName(ecdb.GetDbFileName());
     }
     ECDb ecdb;
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath, ECDb::OpenParams(Db::OPEN_ReadWrite)));
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
 
     //test file
     //  Used a fairly large file for this to verify that it correctly handles files that are larger than one blob.
@@ -340,7 +340,7 @@ TEST(ECDbFileInfo, ImportExportEmptyFile)
         ecdbPath = BeFileName(ecdb.GetDbFileName());
     }
     ECDb ecdb;
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath, ECDb::OpenParams(Db::OPEN_ReadWrite)));
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
 
     //test file
     Utf8CP testFileName = "EmptyFile.txt";

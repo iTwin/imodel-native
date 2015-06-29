@@ -319,10 +319,10 @@ bmap<Utf8String, double> results
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                            Adeel.Shoukat          07/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PerformanceTestFixture::OpenTestDb(ECDbR testDb, Db::OpenMode openMode, StartDefaultTransaction defaultTransactionMode) const
+void PerformanceTestFixture::OpenTestDb(ECDbR testDb, Db::OpenMode openMode, DefaultTxn defaultTransactionMode) const
 {
     DbResult stat = testDb.OpenBeSQLiteDb(m_testDbPath.GetNameUtf8().c_str(), Db::OpenParams(openMode, defaultTransactionMode));
-    ASSERT_EQ(BE_SQLITE_OK, stat) << L"Opening DgnDb file with mode '" << openMode << L"' failed.";
+    ASSERT_EQ(BE_SQLITE_OK, stat);// << L"Opening DgnDb file with mode '" << openMode << L"' failed.";
 }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                            Adeel.Shoukat          07/2014
@@ -355,12 +355,12 @@ void PerformanceTestingFrameWork::openDb()
             {
                 ASSERT_FALSE(true) << "Cannot Copy " << dbName.c_str();
             }
-            dbOpenStat = m_Db.OpenBeSQLiteDb(temporaryDir.GetNameUtf8().c_str(), Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes));
+            dbOpenStat = m_Db.OpenBeSQLiteDb(temporaryDir.GetNameUtf8().c_str(), Db::OpenParams(Db::OpenMode::ReadWrite));
             ASSERT_EQ(BE_SQLITE_OK, dbOpenStat);
         }
         else
         {
-            dbOpenStat = m_Db.OpenBeSQLiteDb(temporaryDir.GetNameUtf8().c_str(), Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes));
+            dbOpenStat = m_Db.OpenBeSQLiteDb(temporaryDir.GetNameUtf8().c_str(), Db::OpenParams(Db::OpenMode::ReadWrite));
             ASSERT_EQ(BE_SQLITE_OK, dbOpenStat);
         }
     }

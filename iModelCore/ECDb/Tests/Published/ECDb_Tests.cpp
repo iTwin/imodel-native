@@ -26,7 +26,7 @@ TEST (ECDbTests, CloseECDbWithFinalizedStatements)
         //Test with finalized BeSQLite statement
         {
         ECDb ecdb;
-        ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(ECDb::OPEN_Readonly)));
+        ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(ECDb::OpenMode::Readonly)));
 
         BeSQLite::Statement stmt;
         ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT * FROM ec_Schema"));
@@ -38,7 +38,7 @@ TEST (ECDbTests, CloseECDbWithFinalizedStatements)
         //Test with finalized ECSqlStatement
         {
         ECDb ecdb;
-        ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(ECDb::OPEN_Readonly)));
+        ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(ecdbPath.c_str(), ECDb::OpenParams(ECDb::OpenMode::Readonly)));
 
         ECSqlStatement stmt;
         ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(ecdb, "SELECT FirstName FROM stco.Employee"));
@@ -83,9 +83,9 @@ TEST (ECDbTests, TwoConnections)
         }
 
     TestOtherConnectionECDb ecdb1, ecdb2;
-    DbResult result = ecdb1.OpenBeSQLiteDb (testECDbPath, ECDb::OpenParams (ECDb::OPEN_ReadWrite, DefaultTxn_No));
+    DbResult result = ecdb1.OpenBeSQLiteDb (testECDbPath, ECDb::OpenParams (ECDb::OpenMode::ReadWrite, DefaultTxn::No));
     ASSERT_EQ (BE_SQLITE_OK, result);
-    result = ecdb2.OpenBeSQLiteDb (testECDbPath, ECDb::OpenParams (ECDb::OPEN_ReadWrite, DefaultTxn_No));
+    result = ecdb2.OpenBeSQLiteDb (testECDbPath, ECDb::OpenParams (ECDb::OpenMode::ReadWrite, DefaultTxn::No));
     ASSERT_EQ (BE_SQLITE_OK, result);
 
         { // make a change to the database from the first connection
@@ -172,12 +172,12 @@ TEST (ECDbTests, TwoConnectionsWithBusyRetryHandler)
         }
 
     ECDb ecdb1;
-    DbResult result = ecdb1.OpenBeSQLiteDb (testECDbPath, ECDb::OpenParams (ECDb::OPEN_ReadWrite, DefaultTxn_No));
+    DbResult result = ecdb1.OpenBeSQLiteDb (testECDbPath, ECDb::OpenParams (ECDb::OpenMode::ReadWrite, DefaultTxn::No));
     ASSERT_EQ (BE_SQLITE_OK, result);
     TestBusyRetry retry (3);
     retry.AddRef ();
     ECDb ecdb2;
-    result = ecdb2.OpenBeSQLiteDb (testECDbPath, ECDb::OpenParams (ECDb::OPEN_ReadWrite, DefaultTxn_No, &retry));
+    result = ecdb2.OpenBeSQLiteDb (testECDbPath, ECDb::OpenParams (ECDb::OpenMode::ReadWrite, DefaultTxn::No, &retry));
     ASSERT_EQ (BE_SQLITE_OK, result);
 
         {

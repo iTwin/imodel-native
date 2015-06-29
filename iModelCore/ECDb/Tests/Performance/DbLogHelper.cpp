@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/Performance/DbLogHelper.cpp $
+|  $Source: Tests/Performance/DbLogHelper.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DbLogHelper.h"
@@ -34,7 +34,7 @@ void DbLogHelper::Initialize(BeFileNameR dbName)
     {
     if (dbName.DoesPathExist())
         {
-        auto dbOpenStat = m_db.OpenBeSQLiteDb(dbName.GetNameUtf8().c_str(), Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes));
+        auto dbOpenStat = m_db.OpenBeSQLiteDb(dbName.GetNameUtf8().c_str(), Db::OpenParams(Db::OpenMode::ReadWrite));
         ASSERT_EQ(BE_SQLITE_OK, dbOpenStat);
         }
     else

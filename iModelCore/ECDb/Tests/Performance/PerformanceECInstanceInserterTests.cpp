@@ -395,7 +395,7 @@ void RunPerformanceComparison (bool& hasRun, double& insertTimingSecs, Utf8CP te
     hasRun = false;
 
     ECDb ecdb;
-    ASSERT_EQ (BE_SQLITE_OK, ecdb.OpenBeSQLiteDb (testFilePath, ECDb::OpenParams (Db::OPEN_ReadWrite)));
+    ASSERT_EQ (BE_SQLITE_OK, ecdb.OpenBeSQLiteDb (testFilePath, ECDb::OpenParams (Db::OpenMode::ReadWrite)));
 
     std::vector<ECClassCP> testClasses;
     if (!Utf8String::IsNullOrEmpty (testClassName))
