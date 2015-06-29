@@ -509,32 +509,6 @@ BentleyStatus SatelliteChangeSets::Dump(BeFileNameCR csfileName, Db& db, int det
         return BSIERROR;
 
     BeSQLite::Statement stmt;
-    stmt.Prepare(csfile, "SELECT " CHANGSETINFO_COLS " FROM " CHANGES_TABLE_DIRECT_ChangeSet);
-
-    ChangeSetInfo info;
-    while (info.Step (stmt) == BE_SQLITE_ROW)
-        {
-        SyncInfoProjectUpdaterChangeSet changeSet(db, (PatchSet==info.m_type));
-        extractChangeSetBySequenceNumberDirect (changeSet, csfile, info.m_sequenceNumber);
-
-        printf ("--No=%llu type=%d desc=[%s] time=%ls---\n", info.m_sequenceNumber, info.m_type, info.m_description.c_str(), info.m_time.ToString().c_str());
-
-        changeSet.Dump(db);
-        }
-
-    return BSISUCCESS;
-    } 
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SatelliteChangeSets::Dump(BeFileNameCR csfileName, Db& db, int detailLevel)
-    {
-    Db csfile;
-    if (BE_SQLITE_OK != csfile.OpenBeSQLiteDb(csfileName, Db::OpenParams(Db::OpenMode::OPEN_Readonly)))
-        return BSIERROR;
-
-    BeSQLite::Statement stmt;
     stmt.Prepare(csfile, "SELECT " CHANGSETINFO_COLS " FROM " CHANGESET_Table);
 
     while (true)
@@ -552,7 +526,7 @@ BentleyStatus SatelliteChangeSets::Dump(BeFileNameCR csfileName, Db& db, int det
         }
 
     return BSISUCCESS;
-    } 
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Sam.Wilson                      07/14

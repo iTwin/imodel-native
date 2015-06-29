@@ -201,12 +201,6 @@ public:
     //! @param[in] detailLevel      How much detail to include in the dump
     DGNPLATFORM_EXPORT static BentleyStatus Dump(BeFileNameCR csfile, BeSQLite::Db& db, int detailLevel);
 
-    //! Dump the contents of the specified changes file.
-    //! @param[in] csfile           The changes file to dump
-    //! @param[in] db               The DgnDb to which the changes file applies
-    //! @param[in] detailLevel      How much detail to include in the dump
-    DGNPLATFORM_EXPORT static BentleyStatus Dump(BeFileNameCR csfile, BeSQLite::Db& db, int detailLevel);
-
     //! Apply the applicable changesets contained in \a csfiles to \a DgnDb. To be applicable, a changes file must have been generated from 
     //! the DgnDb (or a copy of it), and its starting sequence number must be after the DgnDb's latest changeset property.
     //! Note that a changes file can contain multiple changesets.
