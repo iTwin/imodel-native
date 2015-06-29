@@ -804,7 +804,7 @@ ECN::ECRelationshipEnd RelationshipClassEndTableMap::GetOtherEnd () const
 //+---------------+---------------+---------------+---------------+---------------+------
 RelationshipEndColumns const& RelationshipClassEndTableMap::GetEndColumnsMapping(RelationshipMapInfo const& info) const
     {
-    BeAssert(GetThisEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? info.GetMapStrategy().GetStrategy() == Strategy::RelationshipSourceTable : info.GetMapStrategy().GetStrategy() == Strategy::RelationshipTargetTable);
+    BeAssert(GetThisEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? info.GetMapStrategy().GetStrategy() == MapStrategy::RelationshipSourceTable : info.GetMapStrategy().GetStrategy() == MapStrategy::RelationshipTargetTable);
     return RelationshipClassMap::GetEndColumnsMapping(info, GetThisEnd());
     }
 

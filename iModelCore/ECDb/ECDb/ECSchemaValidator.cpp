@@ -193,7 +193,7 @@ Utf8String MapStrategyRule::Error::_ToString() const
 //---------------------------------------------------------------------------------------
 bool MapStrategyRule::_ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass)
     {
-    ECDbMapStrategy mapStrategy(Strategy::DoNotMap);
+    ECDbMapStrategy mapStrategy(MapStrategy::DoNotMap);
     ECDbClassMap customClassMap;
     if (ECDbMapCustomAttributeHelper::TryGetClassMap(customClassMap, ecClass))
         {

@@ -223,23 +223,22 @@
     Description of the ClassMap properties:
 
     - <b>MapStrategy</b> (optional): Specifies how the ECClass is mapped to table(s). Default value is 'TableForThisClass'.
-        - <CODE>DoNotMap</CODE>: The class is not mapped to any database table. This does not affect subclasses of this ECClass.
-        - <CODE>DoNotMapHierarchy</CODE>: The whole hierarchy of classes is not mapped.
-        - <CODE>TableForThisClass</CODE>: This class are mapped to its own table. This does not affect subclasses of this ECClass.
-        - <CODE>TablePerClass</CODE>: This class and all its subclasses are mapped to its own table.
-        - <CODE>TablePerHierarchy</CODE>: This class and all its subclasses are mapped to a @em single table.
-        - <CODE>MapToExistingTable</CODE>: This class is mapped to an existing table. The existing table must be specified in the @b TableName ECProperty.
-        The table must have primary key column of type INTEGER. This does not affect subclasses of this ECClass.
-        - <CODE>SharedTableForThisClass</CODE>: Allows multiple classes which are not inherited from each other to reuse the same table.
+        - @c DoNotMap : The class is not mapped to any database table. This does not affect subclasses of this ECClass.
+        - @c DoNotMapHierarchy : The whole hierarchy of classes is not mapped.
+        - @c TableForThisClass : This class are mapped to its own table. This does not affect subclasses of this ECClass.
+        - @c TablePerClass : This class and all its subclasses are mapped to its own table.
+        - @c TablePerHierarchy : This class and all its subclasses are mapped to a @em single table.
+        - @c MapToExistingTable : This class is mapped to an existing table. The existing table must be specified in the @b TableName ECProperty.
+        The table must have a primary key column of type INTEGER. This does not affect subclasses of this ECClass.
+        - @c SharedTableForThisClass : Allows multiple classes which are not inherited from each other to reuse the same table.
         The table is created by ECDb and its name @b must be specified via the ECProperty @b TableName. This does not affect subclasses of this ECClass.
-        - The above values can be combined with these options (use the "|" operator).
-            - <CODE>WithReuseColumns</CODE>: This option tells ECDb that different ECProperties (from different ECClasses) are mapped to the same column.
+    - <b>MapStrategyOptions</b> (optional): The above values can be combined with these options:
+            - @c SharedColumns : This option tells ECDb that different ECProperties (from different ECClasses) are mapped to the same column.
             This can reduce the number of columns (and cells with NULL values) in the table significantly.
             This can be applied to @b TablePerHierarchy or @b SharedTableForThisClass.
-            - <CODE>WithReadonly</CODE>: This will mark the table as readonly. Can only be used with @b MapToExistingTable.
-            - <CODE>WithExclusivelyStoredInThisTable</CODE> (not to combine with another MapStrategy): Apply this on a class where a base class specified WithReuseColumns.
-            It will exclude this ECClass' ECProperties from the colum reuse and therefore create separate columns for its
-            ECProperties.
+            - @c DisableSharedColumnsForThisClass (not to combine with another MapStrategy): This option disables the column sharing for the class, if
+            column sharing was enabled on a base class.
+            - @c Readonly : This will mark the table as readonly. Can only be used with @b MapToExistingTable.
     - <b>TableName</b> (optional, required for MapStrategies @em MapToExistingTable and @em SharedTableForThisClass):
     Specify a table name for this class (instead of letting ECDb choose a name)
     - <b>Indexes</b> (optional) : List of indexes to be created for properties of this class.

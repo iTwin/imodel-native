@@ -136,7 +136,7 @@ MapStatus ClassMapInfo::_Initialize()
 MapStatus ClassMapInfo::_EvaluateMapStrategy()
     {
     if (GetMapStrategy().IsNoHint())
-        GetMapStrategyR().SetToDefaultMapStrategy();
+        GetMapStrategyR().Assign(MapStrategy::Default);
 
     if (GetMapStrategy ().IsDoNotMapHierarchy () || GetMapStrategy ().IsDoNotMap())
         return MapStatus::Success;
@@ -200,7 +200,7 @@ MapStatus ClassMapInfo::EvaluateInheritedMapStrategy ()
         GetMapStrategyR().SetInParentTable(enableSharedColumns);
         if (excludeFromSharedColumns && enableSharedColumns)
             {
-            if (SUCCESS != GetMapStrategyR().AddOption(Strategy::DisableSharedColumnsForThisClass))
+            if (SUCCESS != GetMapStrategyR().AddOption(MapStrategy::DisableSharedColumnsForThisClass))
                 return MapStatus::Error;
             }
 
@@ -209,7 +209,7 @@ MapStatus ClassMapInfo::EvaluateInheritedMapStrategy ()
             WString msg;
             msg.append (L"Struct classes cannot be included in 'TablePerHierarchy' that has a none-struct class as its root. Struct Class [").append (GetECClass ().GetFullName ()).append (L"] will be mapped to its own table.");
             LOG.warning (msg.c_str ());
-            m_strategy = Strategy::TableForThisClass;
+            m_strategy.Assign (MapStrategy::TableForThisClass);
             m_parentClassMap = nullptr;
             }
         else if (!GetECClass ().GetIsStruct () && m_parentClassMap->GetClass ().GetIsStruct ())
@@ -217,7 +217,7 @@ MapStatus ClassMapInfo::EvaluateInheritedMapStrategy ()
             WString msg;
             msg.append (L"Regular classes cannot be included in 'TablePerHierarchy' that has a struct class as its root. Class [").append (GetECClass ().GetFullName ()).append (L"] will be mapped to its own table.");
             LOG.warning (msg.c_str ());
-            m_strategy = Strategy::TableForThisClass;
+            m_strategy.Assign(MapStrategy::TableForThisClass);
             m_parentClassMap = nullptr;
             }
         }
@@ -304,9 +304,13 @@ BentleyStatus ClassMapInfo::InitializeFromClassMapCA()
 
     if (!mapStrategyStr.empty() || !mapStrategyOptionsStr.empty())
         {
-        ECDbMapStrategy mapStrategy(Strategy::DoNotMap);
+        ECDbMapStrategy mapStrategy(MapStrategy::DoNotMap);
         if (mapStrategy.Parse(mapStrategy, mapStrategyStr.c_str(), mapStrategyOptionsStr.c_str()) != SUCCESS)
+            {
+            LOG.errorv(L"Invalid MapStrategy and/or MapStrategyOptions specified in ClassMap custom attribute on ECClass %ls.",
+                       m_ecClass.GetFullName());
             return ERROR;
+            }
 
         GetMapStrategyR() = mapStrategy;
         if (GetMapStrategyR().IsTablePerHierarchy() || GetMapStrategyR().IsSharedTableForThisClass())
@@ -454,8 +458,8 @@ ECClassCR          ecClass
 
         switch (baseClassMap->GetMapStrategy().GetStrategy(true))
             {
-            case Strategy::TablePerHierarchy:
-            case Strategy::InParentTable:
+            case MapStrategy::TablePerHierarchy:
+            case MapStrategy::InParentTable:
                 {
 
                 auto add = true;
@@ -472,11 +476,11 @@ ECClassCR          ecClass
                     tphMaps.push_back (baseClassMap);
                 break;
                 }
-            case Strategy::TablePerClass:
+            case MapStrategy::TablePerClass:
                 tpcMaps.push_back (baseClassMap);
                 break;
 
-            case Strategy::DoNotMapHierarchy:
+            case MapStrategy::DoNotMapHierarchy:
                 nmhMaps.push_back (baseClassMap);
                 break;
 
@@ -750,22 +754,29 @@ MapStatus RelationshipMapInfo::DetermineImpliedMapStrategy(bool& mapStrategyAlre
         // we forces it to use a link table for this relationship so duplicate relationships can be allowed.
         m_allowDuplicateRelationships)
         {
-        GetMapStrategyR().SetTableForThisClass();
+        if (SUCCESS != GetMapStrategyR().Assign(MapStrategy::TableForThisClass))
+            return MapStatus::Error;
         }
     else if (m_cardinality == Cardinality::OneToMany || m_cardinality == Cardinality::ManyToOne)
         {
-        Strategy strategy;
+        MapStrategy strategy;
         if (TryDetermine1MRelationshipMapStrategy(strategy, source, target, *relationshipClass))
-            GetMapStrategyR().Assign(strategy);
+            {
+            if (SUCCESS != GetMapStrategyR().Assign(strategy))
+                return MapStatus::Error;
+            }
         else
             mapStrategyAlreadyEvaluated = false;
         }
     else
         {
         BeAssert(m_cardinality == Cardinality::OneToOne);
-        Strategy strategy;
+        MapStrategy strategy;
         if (TryDetermine11RelationshipMapStrategy(strategy, source, target, *relationshipClass))
-            GetMapStrategyR().Assign(strategy);
+            {
+            if (SUCCESS != GetMapStrategyR().Assign(strategy))
+                return MapStatus::Error;
+            }
         else
             mapStrategyAlreadyEvaluated = false;
         }
@@ -790,20 +801,20 @@ MapStatus RelationshipMapInfo::EvaluateCustomMapping(bool mapStrategyAlreadyEval
         switch (m_customMapType)
             {
                 case CustomMapType::ForeignKeyOnSource:
-                    mapStrategy.Assign(Strategy::RelationshipSourceTable);
+                    mapStrategy.Assign(MapStrategy::RelationshipSourceTable);
                     break;
 
                 case CustomMapType::ForeignKeyOnTarget:
-                    mapStrategy.Assign(Strategy::RelationshipTargetTable);
+                    mapStrategy.Assign(MapStrategy::RelationshipTargetTable);
                     break;
 
                 case CustomMapType::LinkTable:
-                    mapStrategy.Assign(Strategy::TableForThisClass);
+                    mapStrategy.Assign(MapStrategy::TableForThisClass);
                     break;
 
                 default:
                 case CustomMapType::None:
-                    mapStrategy.Assign(Strategy::RelationshipTargetTable);
+                    mapStrategy.Assign(MapStrategy::RelationshipTargetTable);
                     break;
             }
 
@@ -814,7 +825,7 @@ MapStatus RelationshipMapInfo::EvaluateCustomMapping(bool mapStrategyAlreadyEval
         return MapStatus::Success;
 
     //now verify that implied MapStrategy matches the custom mapping
-    if (GetMapStrategy() == Strategy::RelationshipSourceTable)
+    if (GetMapStrategy().IsRelationshipSourceTable ())
         {
         if (m_customMapType != CustomMapType::ForeignKeyOnSource)
             {
@@ -826,7 +837,7 @@ MapStatus RelationshipMapInfo::EvaluateCustomMapping(bool mapStrategyAlreadyEval
         return MapStatus::Success;
         }
 
-    if (GetMapStrategy() == Strategy::RelationshipTargetTable)
+    if (GetMapStrategy().IsRelationshipTargetTable ())
         {
         if (m_customMapType != CustomMapType::ForeignKeyOnTarget)
             {
@@ -925,7 +936,7 @@ bool RelationshipMapInfo::ContainsRelationshipClass(std::vector<ECClassCP> const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool RelationshipMapInfo::TryDetermine11RelationshipMapStrategy
 (
-Strategy& strategy,
+MapStrategy& strategy,
 ECRelationshipConstraintR source,
 ECRelationshipConstraintR target,
 ECRelationshipClassCR relationshipClass
@@ -947,7 +958,7 @@ ECRelationshipClassCR relationshipClass
         // We don't persist at an end that has more than one table
         LOG.infov(L"ECRelationshipClass %ls is mapped to link table as more than one end tables exists on either end.",
                      relationshipClass.GetFullName());
-        strategy = Strategy::TableForThisClass;
+        strategy = MapStrategy::TableForThisClass;
         return true;
         }
 
@@ -959,7 +970,7 @@ ECRelationshipClassCR relationshipClass
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool RelationshipMapInfo::TryDetermine1MRelationshipMapStrategy
 (
-Strategy& strategy,
+MapStrategy& strategy,
 ECRelationshipConstraintR source, 
 ECRelationshipConstraintR target, 
 ECRelationshipClassCR relationshipClass
@@ -971,18 +982,18 @@ ECRelationshipClassCR relationshipClass
         {
         nManyEndTables = m_ecdbMap.GetTablesFromRelationshipEnd(nullptr, source);
         if (nManyEndTables > 1)
-            strategy = Strategy::TableForThisClass;
+            strategy = MapStrategy::TableForThisClass;
         else
-            strategy = Strategy::RelationshipSourceTable;
+            strategy = MapStrategy::RelationshipSourceTable;
         }
     else
         {
         nManyEndTables = m_ecdbMap.GetTablesFromRelationshipEnd (nullptr, target);
         BeAssert (target.GetCardinality().GetUpperLimit() > 1);
         if (nManyEndTables > 1)
-            strategy = Strategy::TableForThisClass;
+            strategy = MapStrategy::TableForThisClass;
         else
-            strategy = Strategy::RelationshipTargetTable;
+            strategy = MapStrategy::RelationshipTargetTable;
         }
 
     return true;

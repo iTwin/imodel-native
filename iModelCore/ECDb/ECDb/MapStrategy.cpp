@@ -12,7 +12,35 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                02/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbMapStrategy::Assign(Strategy strategy)
+ECDbMapStrategy& ECDbMapStrategy::operator=(ECDbMapStrategy const& rhs)
+    {
+    if (this != &rhs)
+        {
+        m_strategy = rhs.m_strategy;
+        m_strategyStr = rhs.m_strategyStr;
+        }
+
+    return *this;
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                02/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+ECDbMapStrategy& ECDbMapStrategy::operator=(ECDbMapStrategy&& rhs)
+    {
+    if (this != &rhs)
+        {
+        m_strategy = std::move(rhs.m_strategy);
+        m_strategyStr = std::move(rhs.m_strategyStr);
+        }
+
+    return *this;
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                02/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDbMapStrategy::Assign(MapStrategy strategy)
     {
     if (!IsValid(strategy))
         return BentleyStatus::ERROR;
@@ -24,17 +52,7 @@ BentleyStatus ECDbMapStrategy::Assign(Strategy strategy)
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                02/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECDbMapStrategy::MoveTo(ECDbMapStrategy& strategy)
-    {
-    strategy.Assign(GetStrategy());
-    Reset();
-    }
-
-
-//---------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                02/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbMapStrategy::AddOption(Strategy Option)
+BentleyStatus ECDbMapStrategy::AddOption(MapStrategy Option)
     {
     if (!IsValid(Option | m_strategy))
         return BentleyStatus::ERROR;
@@ -46,43 +64,52 @@ BentleyStatus ECDbMapStrategy::AddOption(Strategy Option)
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                02/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECDbMapStrategy::IsValid(Strategy strategy)
+bool ECDbMapStrategy::IsValid(MapStrategy strategy)
     {
-    auto isValid = ConvertToString(strategy) != nullptr;
-    if (isValid == false)
-        {
-            BeAssert(false && "Invalid Strategy specified. See documentation for correct permutation of strategy flags.");
-        }
     m_strategyStr = ConvertToString(strategy);
-    return isValid;
+    return !m_strategyStr.empty();
     }
 
 
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                02/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbMapStrategy::Parse(Strategy& out, Utf8CP mapStrategyHint)
+bool ECDbMapStrategy::IsLinkTableStrategy() const
     {
-    static std::map<Utf8CP, Strategy, CompareIUtf8> s_type
+    MapStrategy mapStrategy = GetStrategy(true);
+    // RelationshipClassMappingRule: not sure why all of these are mapping to link tables
+    return (mapStrategy == MapStrategy::TableForThisClass ||
+            mapStrategy == MapStrategy::TablePerHierarchy ||
+            mapStrategy == MapStrategy::InParentTable ||
+            mapStrategy == MapStrategy::TablePerClass ||
+            mapStrategy == MapStrategy::SharedTableForThisClass);
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                02/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDbMapStrategy::Parse(MapStrategy& out, Utf8CP mapStrategyHint)
+    {
+    static std::map<Utf8CP, MapStrategy, CompareIUtf8> s_type
         {
-                {STRATEGY_DO_NOT_MAP, Strategy::DoNotMap},
-                {STRATEGY_DO_NOT_MAP_HIERARCHY, Strategy::DoNotMapHierarchy},
-                {STRATEGY_TABLE_PER_HIERARCHY, Strategy::TablePerHierarchy},
-                {STRATEGY_TABLE_PER_CLASS, Strategy::TablePerClass},
-                {STRATEGY_TABLE_FOR_THIS_CLASS, Strategy::TableForThisClass},
-                {STRATEGY_SHARED_TABLE_FOR_THIS_CLASS, Strategy::SharedTableForThisClass},
-                {STRATEGY_MAP_TO_EXISTING_TABLE, Strategy::MapToExistingTable},
-                {STRATEGY_OPTION_SHARED_COLUMNS, Strategy::SharedColumns},
-                {STRATEGY_OPTION_EXCLUSIVELY_STORED_IN_THIS_TABLE, Strategy::ExclusivelyStoredInThisTable},
-                {STRATEGY_OPTION_READONLY, Strategy::Readonly},
-                {STRATEGY_OPTION_DISABLE_SHARED_COLUMS_FOR_THIS_CLASS, Strategy::DisableSharedColumnsForThisClass}
+                {STRATEGY_DO_NOT_MAP, MapStrategy::DoNotMap},
+                {STRATEGY_DO_NOT_MAP_HIERARCHY, MapStrategy::DoNotMapHierarchy},
+                {STRATEGY_TABLE_PER_HIERARCHY, MapStrategy::TablePerHierarchy},
+                {STRATEGY_TABLE_PER_CLASS, MapStrategy::TablePerClass},
+                {STRATEGY_TABLE_FOR_THIS_CLASS, MapStrategy::TableForThisClass},
+                {STRATEGY_SHARED_TABLE_FOR_THIS_CLASS, MapStrategy::SharedTableForThisClass},
+                {STRATEGY_MAP_TO_EXISTING_TABLE, MapStrategy::MapToExistingTable},
+                {STRATEGY_OPTION_SHARED_COLUMNS, MapStrategy::SharedColumns},
+                {STRATEGY_OPTION_EXCLUSIVELY_STORED_IN_THIS_TABLE, MapStrategy::ExclusivelyStoredInThisTable},
+                {STRATEGY_OPTION_READONLY, MapStrategy::Readonly},
+                {STRATEGY_OPTION_DISABLE_SHARED_COLUMS_FOR_THIS_CLASS, MapStrategy::DisableSharedColumnsForThisClass}
 
         };
 
 
     Utf8String hint = mapStrategyHint;
     hint.Trim();
-    out = Strategy::NoHint;
+    out = MapStrategy::NoHint;
     size_t s = 0;
     auto n = hint.find(STRATEGY_DELIMITER, s);
     if (n == Utf8String::npos)
@@ -132,7 +159,7 @@ BentleyStatus ECDbMapStrategy::Parse(Strategy& out, Utf8CP mapStrategyHint)
         return BentleyStatus::SUCCESS;
         }
 
-    out = Strategy::NoHint;
+    out = MapStrategy::NoHint;
     return BentleyStatus::ERROR;
     }
 
@@ -156,7 +183,7 @@ BentleyStatus ECDbMapStrategy::Parse(ECDbMapStrategy& out, Utf8CP mapStrategyHin
         mapStrategy.append(" | ");
         mapStrategy.append(mapStrategyHintOption);
         }
-    Strategy strategy;
+    MapStrategy strategy;
     if (Parse(strategy, mapStrategy.c_str()) != BentleyStatus::SUCCESS)
         return BentleyStatus::ERROR;
 
@@ -167,58 +194,54 @@ BentleyStatus ECDbMapStrategy::Parse(ECDbMapStrategy& out, Utf8CP mapStrategyHin
 // @bsimethod                                 Affan.Khan                02/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-Utf8CP ECDbMapStrategy::ConvertToString(Strategy strategy)
+Utf8CP ECDbMapStrategy::ConvertToString(MapStrategy strategy)
     {
-    static std::map<Strategy, Utf8CP> s_validStratgies
+    static std::map<MapStrategy, Utf8CP> s_validStratgies
         {
-                {Strategy::DoNotMap,
+                {MapStrategy::DoNotMap,
                 STRATEGY_DO_NOT_MAP},
-                {Strategy::DoNotMapHierarchy,
+                {MapStrategy::DoNotMapHierarchy,
                 STRATEGY_DO_NOT_MAP_HIERARCHY},
-                {Strategy::NoHint,
+                {MapStrategy::NoHint,
                 STRATEGY_NO_HINT},
-                {Strategy::RelationshipSourceTable,
-                STRATEGY_RELATIONSHIP_SOURCE_TABLE},
-                {Strategy::RelationshipTargetTable,
-                STRATEGY_RELATIONSHIP_TARGET_TABLE},
-                {Strategy::TableForThisClass,
+                {MapStrategy::TableForThisClass,
                 STRATEGY_TABLE_FOR_THIS_CLASS},
-                {Strategy::TablePerClass,
+                {MapStrategy::TablePerClass,
                 STRATEGY_TABLE_PER_CLASS},
-                {Strategy::TablePerClass | Strategy::ExclusivelyStoredInThisTable,
+                {MapStrategy::TablePerClass | MapStrategy::ExclusivelyStoredInThisTable,
                 STRATEGY_TABLE_PER_CLASS DELIMITER STRATEGY_OPTION_EXCLUSIVELY_STORED_IN_THIS_TABLE},
-                {Strategy::TablePerHierarchy,
+                {MapStrategy::TablePerHierarchy,
                 STRATEGY_TABLE_PER_HIERARCHY},
-                {Strategy::TablePerHierarchy | Strategy::ExclusivelyStoredInThisTable,
+                {MapStrategy::TablePerHierarchy | MapStrategy::ExclusivelyStoredInThisTable,
                 STRATEGY_TABLE_PER_HIERARCHY DELIMITER STRATEGY_OPTION_EXCLUSIVELY_STORED_IN_THIS_TABLE},
-                {Strategy::TablePerHierarchy | Strategy::SharedColumns,
+                {MapStrategy::TablePerHierarchy | MapStrategy::SharedColumns,
                 STRATEGY_TABLE_PER_HIERARCHY DELIMITER STRATEGY_OPTION_SHARED_COLUMNS},
-                {Strategy::TablePerHierarchy | Strategy::ExclusivelyStoredInThisTable | Strategy::SharedColumns,
+                {MapStrategy::TablePerHierarchy | MapStrategy::ExclusivelyStoredInThisTable | MapStrategy::SharedColumns,
                 STRATEGY_TABLE_PER_HIERARCHY DELIMITER STRATEGY_OPTION_EXCLUSIVELY_STORED_IN_THIS_TABLE DELIMITER STRATEGY_OPTION_SHARED_COLUMNS},
-                {Strategy::MapToExistingTable,
+                {MapStrategy::MapToExistingTable,
                 STRATEGY_MAP_TO_EXISTING_TABLE},
-                {Strategy::MapToExistingTable | Strategy::Readonly,
+                {MapStrategy::MapToExistingTable | MapStrategy::Readonly,
                 STRATEGY_MAP_TO_EXISTING_TABLE DELIMITER STRATEGY_OPTION_READONLY},
-                {Strategy::InParentTable,
+                {MapStrategy::InParentTable,
                 STRATEGY_IN_PARENT_TABLE},
-                {Strategy::InParentTable | Strategy::ExclusivelyStoredInThisTable,
+                {MapStrategy::InParentTable | MapStrategy::ExclusivelyStoredInThisTable,
                 STRATEGY_IN_PARENT_TABLE DELIMITER STRATEGY_OPTION_EXCLUSIVELY_STORED_IN_THIS_TABLE},
-                {Strategy::InParentTable | Strategy::SharedColumns,
+                {MapStrategy::InParentTable | MapStrategy::SharedColumns,
                 STRATEGY_IN_PARENT_TABLE DELIMITER STRATEGY_OPTION_SHARED_COLUMNS},
-                {Strategy::InParentTable | Strategy::SharedColumns | Strategy::DisableSharedColumnsForThisClass,
+                {MapStrategy::InParentTable | MapStrategy::SharedColumns | MapStrategy::DisableSharedColumnsForThisClass,
                 STRATEGY_IN_PARENT_TABLE DELIMITER STRATEGY_OPTION_SHARED_COLUMNS DELIMITER STRATEGY_OPTION_DISABLE_SHARED_COLUMS_FOR_THIS_CLASS},
 
-                {Strategy::InParentTable | Strategy::ExclusivelyStoredInThisTable | Strategy::SharedColumns,
+                {MapStrategy::InParentTable | MapStrategy::ExclusivelyStoredInThisTable | MapStrategy::SharedColumns,
                 STRATEGY_IN_PARENT_TABLE DELIMITER STRATEGY_OPTION_EXCLUSIVELY_STORED_IN_THIS_TABLE DELIMITER STRATEGY_OPTION_SHARED_COLUMNS},
-                {Strategy::SharedTableForThisClass,
+                {MapStrategy::SharedTableForThisClass,
                 STRATEGY_SHARED_TABLE_FOR_THIS_CLASS},
-                {Strategy::SharedTableForThisClass | Strategy::ExclusivelyStoredInThisTable,
+                {MapStrategy::SharedTableForThisClass | MapStrategy::ExclusivelyStoredInThisTable,
                 STRATEGY_SHARED_TABLE_FOR_THIS_CLASS DELIMITER STRATEGY_OPTION_EXCLUSIVELY_STORED_IN_THIS_TABLE},
-                {Strategy::SharedTableForThisClass | Strategy::SharedColumns,
+                {MapStrategy::SharedTableForThisClass | MapStrategy::SharedColumns,
                 STRATEGY_SHARED_TABLE_FOR_THIS_CLASS DELIMITER STRATEGY_OPTION_SHARED_COLUMNS},
-                {Strategy::SharedTableForThisClass | Strategy::ExclusivelyStoredInThisTable | Strategy::SharedColumns,
+                {MapStrategy::SharedTableForThisClass | MapStrategy::ExclusivelyStoredInThisTable | MapStrategy::SharedColumns,
                 STRATEGY_SHARED_TABLE_FOR_THIS_CLASS DELIMITER STRATEGY_OPTION_EXCLUSIVELY_STORED_IN_THIS_TABLE DELIMITER STRATEGY_OPTION_SHARED_COLUMNS},
-                {Strategy::DisableSharedColumnsForThisClass,
+                {MapStrategy::DisableSharedColumnsForThisClass,
                 STRATEGY_OPTION_DISABLE_SHARED_COLUMS_FOR_THIS_CLASS},
 
         };
