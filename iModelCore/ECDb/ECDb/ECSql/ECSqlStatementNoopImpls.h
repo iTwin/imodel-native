@@ -232,6 +232,11 @@ private:
         return DPoint3d::From (0.0, 0.0, 0.0);
         }
 
+    virtual IGeometryPtr _GetGeometry() const override
+        {
+        return nullptr;
+        }
+
     virtual void const* _GetGeometryBlob (int* blobSize) const override
         {
         if (blobSize != nullptr)

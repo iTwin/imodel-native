@@ -29,8 +29,9 @@ public:
     virtual double _GetDouble () const = 0;
     virtual int _GetInt () const = 0;
     virtual int64_t _GetInt64 () const = 0;
-    virtual void const* _GetGeometryBlob (int* blobSize) const = 0;
-    virtual DPoint2d _GetPoint2D () const = 0;
+    virtual IGeometryPtr _GetGeometry() const = 0;
+    virtual void const* _GetGeometryBlob(int* blobSize) const = 0;
+    virtual DPoint2d _GetPoint2D() const = 0;
     virtual DPoint3d _GetPoint3D () const = 0;
     virtual Utf8CP _GetText () const = 0;
     };

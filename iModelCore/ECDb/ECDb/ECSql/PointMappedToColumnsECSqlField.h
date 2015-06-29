@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/PointMappedToColumnsECSqlField.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -37,7 +37,8 @@ private:
     virtual Utf8CP _GetText () const override;
     virtual DPoint2d _GetPoint2D () const override;
     virtual DPoint3d _GetPoint3D () const override;
-    virtual void const* _GetGeometryBlob (int* blobSize) const override;
+    virtual IGeometryPtr _GetGeometry() const override;
+    virtual void const* _GetGeometryBlob(int* blobSize) const override;
 
     bool IsPoint3D () const;
 

@@ -2333,7 +2333,7 @@ void AssertGeometry (IGeometryCR expected, IGeometryCR actual, Utf8P assertMessa
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  01/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECSqlTestFixture, ECSqlStatement_IGeometry)
+TEST_F (ECSqlTestFixture, ECSqlStatement_Geometry)
     {
     // Create and populate a sample project
     auto& ecdb = SetUp ("ecsqlstatementtests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OPEN_ReadWrite, DefaultTxn_Yes), 0);
@@ -2502,6 +2502,38 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_IGeometry)
             }
         }
     ASSERT_EQ (2, rowCount);
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  06/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlTestFixture, ECSqlStatement_GetGeometryWithInvalidBlobFormat)
+    {
+    // Create sample project without populating rows
+    auto& ecdb = SetUp("ecsqlstatementtests.ecdb", L"ECSqlTest.01.00.ecschema.xml", ECDb::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes), 0);
+
+    // insert invalid geom blob
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "INSERT INTO ecsqltest_ArrayOfPASpatial (ECInstanceId, Geometry) VALUES (1,?)"));
+    double dummyValue = 3.141516;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.BindBlob(1, &dummyValue, (int) sizeof(dummyValue), Statement::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    stmt.Finalize();
+
+    ECSqlStatement ecsqlStmt;
+    ASSERT_EQ(ECSqlStatus::Success, ecsqlStmt.Prepare(ecdb, "SELECT Geometry FROM ecsql.PASpatial"));
+    int rowCount = 0;
+    while (ecsqlStmt.Step() == ECSqlStepStatus::HasRow)
+        {
+        rowCount++;
+        ASSERT_FALSE(ecsqlStmt.IsValueNull(0)) << "Geometry column is not expected to be null.";
+
+        ASSERT_TRUE(ecsqlStmt.GetValueGeometry(0) == nullptr) << "Invalid geom blob format expected so that nullptr is returned.";
+        ASSERT_EQ(ECSqlStatus::UserError, ecsqlStmt.GetLastStatus());
+        }
+
+    ASSERT_EQ(1, rowCount);
     }
 
 //---------------------------------------------------------------------------------------

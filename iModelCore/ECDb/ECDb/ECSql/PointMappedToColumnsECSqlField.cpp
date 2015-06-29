@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/PointMappedToColumnsECSqlField.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -169,10 +169,20 @@ Utf8CP PointMappedToColumnsECSqlField::_GetText () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
+IGeometryPtr PointMappedToColumnsECSqlField::_GetGeometry() const
+    {
+    SetError(ECSqlStatus::UserError, "GetGeometry cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
+    BeAssert(false && "GetGeometry cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
+    return NoopECSqlValue::GetSingleton().GetGeometry();
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    11/2014
+//+---------------+---------------+---------------+---------------+---------------+--------
 void const* PointMappedToColumnsECSqlField::_GetGeometryBlob (int* blobSize) const
     {
-    SetError (ECSqlStatus::UserError, "GetGeometry cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
-    BeAssert (false && "GetGeometry cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
+    SetError (ECSqlStatus::UserError, "GetGeometryBlob cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
+    BeAssert (false && "GetGeometryBlob cannot be called for Point2D or Point3D column. Call GetPoint2D / GetPoint3D instead.");
     return NoopECSqlValue::GetSingleton ().GetGeometryBlob (blobSize);
     }
 

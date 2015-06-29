@@ -198,10 +198,8 @@ ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindGeometry
     if (ECSqlStatus::Success != status)
         return status;
 
-    //primitive arrays are stored as ECInstances of the internal ECClass type ArrayOfBinary. Therefore use SetBinary
-    //instead of SetIGeometry.
     ECValue v;
-    v.SetBinary (static_cast<Byte const*>(value), blobSize, makeCopy == IECSqlBinder::MakeCopy::Yes);
+    v.SetIGeometry(static_cast<Byte const*>(value), blobSize, makeCopy == IECSqlBinder::MakeCopy::Yes);
     return SetValue (v);
     }
 
