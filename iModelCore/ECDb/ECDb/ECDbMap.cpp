@@ -177,7 +177,8 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext const& schemaImportContext, b
             }
         }
 
-    if (SqlGenerator::BuildViewInfrastructure (classMaps, *this) != BentleyStatus::SUCCESS)
+    SqlGenerator viewGen (*this);
+    if (viewGen.BuildViewInfrastructure (classMaps) != BentleyStatus::SUCCESS)
         {
         BeAssert ( false && "failed to create view infrastructure");
         return MapStatus::Error;
@@ -187,6 +188,41 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext const& schemaImportContext, b
     return MapStatus::Success;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    affan.khan         06/2015
+//---------------------------------------------------------------------------------------
+ClassMapCP ECDbMap::GetClassMap (ECN::ECClassId ecClassId)
+    {
+    auto ecClass = GetECDbR ().Schemas ().GetECClass (ecClassId);
+    if (ecClass == nullptr)
+        {
+        BeDataAssert (false && "Failed to find classmap with given ecclassid");
+        return nullptr;
+        }
+
+    return static_cast<ClassMapCP>(GetClassMap (*ecClass));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    affan.khan         06/2015
+//---------------------------------------------------------------------------------------
+RelationshipClassMapCP ECDbMap::GetRelationshipClassMap (ECN::ECClassId ecRelationshipClassId)
+    {
+    auto ecClass = GetECDbR ().Schemas ().GetECClass (ecRelationshipClassId);
+    if (ecClass == nullptr)
+        {
+        BeDataAssert (false && "Failed to find classmap with given ecclassid");
+        return nullptr;
+        }
+
+    if (ecClass->GetRelationshipClassCP() == nullptr)
+        {
+        BeDataAssert (false && "Failed to find relationship classmap with given ecclassid");
+        return nullptr;
+        }
+
+    return static_cast<RelationshipClassMapCP>(GetClassMap (*ecClass));;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    affan.khan         09/2012
 //---------------------------------------------------------------------------------------

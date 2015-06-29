@@ -107,7 +107,8 @@ public:
     void                        ClearCache();
     bool IsExclusivelyStored (ECN::ECClassId ecClassId) const;
 
-
+    ClassMapCP GetClassMap (ECN::ECClassId ecClassId);
+    RelationshipClassMapCP GetRelationshipClassMap (ECN::ECClassId ecRelationshipClassId);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

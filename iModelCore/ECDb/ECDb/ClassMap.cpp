@@ -133,7 +133,16 @@ StorageDescription const& IClassMap::GetStorageDescription() const
 
     return *m_storageDescription;
     }
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       05 / 2015
+//------------------------------------------------------------------------------------------
+StorageDescription const& IClassMap::GetStorageDescription (std::map <ECDbSqlTable const*, std::vector<ECN::ECClassId>> const& tables, std::map<ECDbSqlTable const*, std::vector<ECN::ECClassId>> const& derivedClassPerTable) const
+    {
+    if (m_storageDescription == nullptr)
+        m_storageDescription = StorageDescription::Create (GetClass ().GetId (), tables, derivedClassPerTable);
 
+    return *m_storageDescription;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2014
 //---------------------------------------------------------------------------------------
@@ -1512,7 +1521,7 @@ std::unique_ptr<StorageDescription> StorageDescription::Create (IClassMap const&
         "   UNION "
         "       SELECT RootClassId,  BC.BaseClassId, BC.ClassId "
         "           FROM DerivedClassList DCL "
-        "       LEFT OUTER JOIN ec_BaseClass BC ON BC.BaseClassId = DCL.DerivedClassId"
+        "       INNER JOIN ec_BaseClass BC ON BC.BaseClassId = DCL.DerivedClassId"
         "   ),"
         "   TableMapInfo "
         "   AS ("
@@ -1607,7 +1616,31 @@ std::unique_ptr<StorageDescription> StorageDescription::Create (IClassMap const&
 
     return std::move(storageDescription);
     }
+    
+std::unique_ptr<StorageDescription> StorageDescription::Create (ECN::ECClassId thisClassId, std::map <ECDbSqlTable const*, std::vector<ECN::ECClassId>> const& tables, std::map < ECDbSqlTable const*, std::vector<ECN::ECClassId>> const& derivedClassPerTable)
+    {
+    auto storageDescription = std::unique_ptr<StorageDescription> (new StorageDescription (thisClassId));
+    for (auto& kp : derivedClassPerTable)
+        {
+        auto table = kp.first;
+       
+        auto& deriveClassList = kp.second;
+        if (deriveClassList.empty ())
+            continue;
 
+        auto id = storageDescription->AddHorizontalPartition (*table, deriveClassList.front () == thisClassId);
+        auto hp = storageDescription->GetHorizontalPartitionP (id);
+        for (auto ecClassId : deriveClassList)
+            {
+            hp->AddClassId (ecClassId);
+            }
+
+        auto itor = tables.find (table);
+        hp->GenerateClassIdFilter (itor->second);
+        }
+   
+    return std::move (storageDescription);
+    }
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    05 / 2015
 //------------------------------------------------------------------------------------------
@@ -1699,7 +1732,7 @@ void HorizontalPartition::GenerateClassIdFilter(std::vector<ECN::ECClassId> cons
     {
     BeAssert(!m_partitionClassIds.empty());
     m_hasInversedPartitionClassIds = m_partitionClassIds.size() > tableClassIds.size() / 2;
-    if (!m_hasInversedPartitionClassIds || m_partitionClassIds.size() == tableClassIds.size())
+    if (m_partitionClassIds.size() == tableClassIds.size())
         return;
     
     //tableClassIds list is already sorted

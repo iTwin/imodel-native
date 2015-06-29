@@ -95,6 +95,8 @@ public:
     ECN::ECClassId GetClassId () const { return m_classId; }
 
     static std::unique_ptr<StorageDescription> Create (IClassMap const& forClassMap);
+    static std::unique_ptr<StorageDescription> Create (ECN::ECClassId thisClassId, std::map <ECDbSqlTable const*, std::vector<ECN::ECClassId>> const& tables, std::map<ECDbSqlTable const*, std::vector<ECN::ECClassId>> const& derivedClassPerTable);
+
     };
 
 //=======================================================================================
@@ -171,7 +173,7 @@ public:
     Type GetClassMapType () const;
 
     StorageDescription const& GetStorageDescription() const;
-
+    StorageDescription const& GetStorageDescription (std::map <ECDbSqlTable const*, std::vector<ECN::ECClassId>> const& tables, std::map<ECDbSqlTable const*, std::vector<ECN::ECClassId>> const& derivedClassPerTable) const;
     bool IsMappedToSecondaryTable () const;
     bool IsRelationshipClassMap () const;
     bool IsAbstractECClass () const;
