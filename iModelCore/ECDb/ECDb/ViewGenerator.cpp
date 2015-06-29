@@ -709,7 +709,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
                 return BentleyStatus::ERROR;
 
             t.Stop ();
-            printf ("SqlGenerator::CreateView (%s) took %.4f seconds\r\n", Utf8String(classMap->GetClass().GetFullName()).c_str(),  t.GetElapsedSeconds ());
+           // printf ("SqlGenerator::CreateView (%s) took %.4f seconds\r\n", Utf8String(classMap->GetClass().GetFullName()).c_str(),  t.GetElapsedSeconds ());
             triggerBuildtimer.Stop ();
             }
 
@@ -737,7 +737,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
         printf ("SqlGenerator::CreateView ()                             took %.4f seconds\r\n", viewCreatetimer.GetElapsedSeconds ());
         printf ("SqlGenerator::BuildDeleteTriggers (trigger)             took %.4f seconds\r\n", triggerBuildtimer.GetElapsedSeconds ());
         printf ("SqlGenerator::ExecuteSql (trigger) [%lld]               took %.4f seconds\r\n", ddls.size(),createTimer.GetElapsedSeconds ());
-        getchar ();
+        //getchar ();
         return BentleyStatus::SUCCESS;
         }
     //---------------------------------------------------------------------------------------
@@ -1265,23 +1265,23 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
             }
 
         //add anyClass
-        //for (auto& pair0 : m_classRelations)
-        //    {
-        //    auto& rels = pair0.second;
-        //    for (auto& pair1 : anyClassRelationships)
-        //        {
-        //        ECClassId id = pair1.first;
-        //        auto itor1 = rels.find (id);
-        //        if (itor1 == rels.end ())
-        //            {
-        //            rels[id] = pair1.second;
-        //            }
-        //        else
-        //            {
-        //            rels[id] = static_cast<RelationshipFilter>((int)(itor1->second) & (int)(pair1.second));
-        //            }
-        //        }
-        //    }
+        for (auto& pair0 : m_classRelations)
+            {
+            auto& rels = pair0.second;
+            for (auto& pair1 : anyClassRelationships)
+                {
+                ECClassId id = pair1.first;
+                auto itor1 = rels.find (id);
+                if (itor1 == rels.end ())
+                    {
+                    rels[id] = pair1.second;
+                    }
+                else
+                    {
+                    rels[id] = static_cast<RelationshipFilter>((int)(itor1->second) & (int)(pair1.second));
+                    }
+                }
+            }
 
         return BentleyStatus::SUCCESS;
         }
