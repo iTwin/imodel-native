@@ -380,7 +380,6 @@ FaceAttachment::FaceAttachment ()
     m_useColor = m_useMaterial = false;
     m_color = ColorDef::Black();
     m_transparency = 0.0;
-    m_material = nullptr;
     m_uv.Init(0.0, 0.0);
     }
 
@@ -396,8 +395,8 @@ FaceAttachment::FaceAttachment (ElemDisplayParamsCR sourceParams)
     m_useColor = !sourceParams.IsLineColorFromSubCategoryAppearance();
     m_color = m_useColor ? sourceParams.GetLineColor() : ColorDef::Black();
 
-    m_useMaterial = !sourceParams.IsMaterialFromSubCategoryAppearance();
-    m_material = m_useMaterial ? sourceParams.GetMaterial() : nullptr;
+    if (m_useMaterial = !sourceParams.IsMaterialFromSubCategoryAppearance())
+        m_material = sourceParams.GetMaterial();
 
     m_uv.Init(0.0, 0.0);
     }

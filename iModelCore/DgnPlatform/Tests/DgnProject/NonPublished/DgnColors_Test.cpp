@@ -15,30 +15,6 @@
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
-//=======================================================================================
-// @bsiclass                                     Algirdas.Mikoliunas            02/2013
-//=======================================================================================
-struct TestModelColor
-    {
-    public:
-        ColorDef     m_colorDef;
-        Utf8String      m_bookName;
-        Utf8String      m_colorName;
-
-        TestModelColor(ColorDef colorDef, Utf8String bookName, Utf8String colorName)
-            {
-            m_colorDef = colorDef;
-            m_bookName = bookName;
-            m_colorName = colorName;
-            };
-        void IsEqual (TestModelColor testColor)
-            {
-            EXPECT_EQ (testColor.m_colorDef.GetValue(), (int)m_colorDef.GetValue()) << "color values don't match";
-            EXPECT_STREQ (testColor.m_bookName.c_str(), m_bookName.c_str()) << "Book names don't match";
-            EXPECT_STREQ (testColor.m_colorName.c_str(), m_colorName.c_str()) << "Color names don't match";
-            };
-    };
-
 /*---------------------------------------------------------------------------------**//**
 * Test fixture for testing DgnColors
 * @bsimethod                                    Algirdas.Mikoliunas            03/2013
@@ -70,13 +46,24 @@ void DgnColorsTest::SetupProject (WCharCP projFile, Db::OpenMode mode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnColorsTest, InsertTrueColor)
     {
-    SetupProject(L"ElementsSymbologyByLevel.idgndb", Db::OPEN_ReadWrite);
+    SetupProject(L"ElementsSymbologyByLevel.idgndb", Db::OpenMode::ReadWrite);
     DgnColors& colorTable = project->Colors();
 
     ColorDef colorDef (255, 254, 253);
     DgnTrueColorId colorId = colorTable.Insert(colorDef, "TestName1", "TestBook1");
 
+    DgnColors::Iterator iter = colorTable.MakeIterator();
+    ASSERT_EQ(1, iter.QueryCount());
+
     EXPECT_TRUE(colorId.IsValid());
     EXPECT_EQ(colorId.GetValue(), colorTable.FindMatchingColor(colorDef).GetValue());
+
+    ColorDef toFind;
+    EXPECT_EQ(SUCCESS, colorTable.QueryColor(toFind, nullptr, nullptr, colorId));
+    EXPECT_TRUE(toFind == colorDef);
+
+    ColorDef toFind1;
+    EXPECT_EQ(SUCCESS, colorTable.QueryColorByName(toFind1, "TestName1", "TestBook1"));
+    EXPECT_TRUE(toFind1 == colorDef);
     }
 

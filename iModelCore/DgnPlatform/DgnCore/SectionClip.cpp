@@ -16,8 +16,8 @@ namespace {
 +===============+===============+===============+===============+===============+======*/
 struct          SectionClipObject : IViewClipObject
 {
-friend struct DgnPlatform::SectionClipObjectFactory;
-friend struct DgnPlatform::SectionClipObjectLegacyData;
+friend struct Dgn::SectionClipObjectFactory;
+friend struct Dgn::SectionClipObjectLegacyData;
 
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS 
 
@@ -608,7 +608,7 @@ StatusInt       SectionClipObject::_ApplyTransform (TransformCR transform)
     if (SUCCESS != this->GetPoints (points, 0, this->GetNumPoints ()))
         return ERROR;
 
-    bsiTransform_multiplyDPoint3dArrayInPlace (&transform, &points[0], (int) this->GetNumPoints ());
+    transform.Multiply (&points[0], (int) this->GetNumPoints ());
     this->SetPoints (this->GetNumPoints (), &points[0]);
 
     // Transform distances
@@ -631,7 +631,7 @@ StatusInt       SectionClipObject::_ApplyTransform (TransformCR transform)
     this->SetSize (CLIPVOLUME_SIZE_BackDepth, fabs (backDepth) * (backDepthNeg ? -1.0 : 1.0));
 
     // Transform rotMatrix
-    bsiRotMatrix_multiplyTransformRotMatrix (&rMatrix, &transform, &rMatrix);
+    rMatrix.InitProduct (transform, rMatrix);
     rMatrix.SquareAndNormalizeColumns(rMatrix, 0, 1);
     this->SetRotationMatrix (rMatrix);
 

@@ -53,8 +53,7 @@ ECN::ECClassCP TestElementHandler::GetTestElementECClass(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementKey TestElementHandler::InsertElement(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
 {
-    DgnModelP model = db.Models().GetModel(mid);
-    DgnElementPtr testElement = TestElementHandler::Create(TestElement::CreateParams(*model, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), elementCode));
+    DgnElementPtr testElement = TestElementHandler::Create(TestElement::CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), elementCode));
     GeometricElementP geomElem = const_cast<GeometricElementP>(testElement->ToGeometricElement());
 
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*geomElem);
@@ -73,8 +72,7 @@ DgnElementKey TestElementHandler::InsertElement(DgnDbR db, DgnModelId mid, DgnCa
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementKey TestElementHandler::InsertElement(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode, ElemDisplayParamsCR ep)
 {
-    DgnModelP model = db.Models().GetModel(mid);
-    DgnElementPtr testElement = TestElementHandler::Create(TestElement::CreateParams(*model, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), elementCode));
+    DgnElementPtr testElement = TestElementHandler::Create(TestElement::CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), elementCode));
     GeometricElementP geomElem = const_cast<GeometricElementP>(testElement->ToGeometricElement());
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*geomElem);
     

@@ -147,7 +147,7 @@ DgnDbPtr DgnDb::OpenDgnDb(DbResult* outResult, BeFileNameCR fileName, OpenParams
 
     dgnDb = new DgnDb(); // release old and create a new DgnDb
     OpenParams readonlyParams(openParams);
-    readonlyParams.SetOpenMode(Db::OPEN_Readonly);
+    readonlyParams.SetOpenMode(Db::OpenMode::Readonly);
     status = dgnDb->DoOpenDgnDb(dbFileName, readonlyParams);
     return (status != BE_SQLITE_OK) ? nullptr : dgnDb;
     }
@@ -191,7 +191,7 @@ DbResult DgnDb::CreateNewDgnDb(BeFileNameCR inFileName, CreateDgnDbParams const&
 
     m_fileName = projectFile.GetNameUtf8();
 
-    rc = CreateProjectTables();
+    rc = CreateDgnDbTables();
     if (BE_SQLITE_OK != rc)
         return rc;
 

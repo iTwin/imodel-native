@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/ImageUtilities.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -15,7 +15,6 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //=======================================================================================
 //! Utilities to read and write common image formats.
-//! @bsiclass                                                     
 //=======================================================================================
 struct ImageUtilities
 {
@@ -28,8 +27,8 @@ struct ImageUtilities
         bool    isTopDown;      //!< If true, the image data is in top-down row order; else bottom-up order. Always true for an image read from PNG.
         };
 
-    /** @name PNG Support for the PNG format */
-    /** @{ */
+/** @name PNG Support for the PNG format */
+/** @{ */
     //! Extract an RGB[A] image from a stream of bytes in the PNG format.
     //! @param[out] imageData   Image data read from PNG .
     //! @param[out] info        The image dimensions, etc.
@@ -67,11 +66,10 @@ struct ImageUtilities
     //! they are set to 0xff.
     //! @remarks The PNG data is written in compressed format with 8-bit color.
     DGNPLATFORM_EXPORT static BentleyStatus WriteImageToPngFile (BeFile& pngFile, bvector<uint8_t>& imageData, RgbImageInfo const& info);
+/** @} */
 
-    /** @} */
-
-    /** @name JPEG Support for the JPEG format */
-
+/** @name JPEG Support for the JPEG format */
+/** @{ */
     //! Read an image in RGB format from a JPEG file
     //! @param[out] rgbBuffer   Image data read from JPEG file.
     //! @param[out] info        The image dimensions, etc.
@@ -89,8 +87,7 @@ struct ImageUtilities
     //! @return non-zero if the image could not be written.
     //! @note the data in \a rgbBuffer must be in RGB format, have no alpha, and be in bottom-up row order. No other format is currently supported.
     DGNPLATFORM_EXPORT static BentleyStatus WriteImageToJpgBuffer (bvector<Byte>& jpegData, bvector<Byte> const& rgbBuffer, RgbImageInfo const& info, int quality);
-
-    /** @} */
+/** @} */
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

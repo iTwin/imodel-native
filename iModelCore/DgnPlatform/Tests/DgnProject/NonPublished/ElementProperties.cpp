@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "DgnHandlersTests.h"
+#include <DgnPlatform/DgnPlatformLib.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <ECDb/ECSqlBuilder.h>
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -26,7 +27,7 @@ struct ElementDisplayProperties : public DgnDbTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ElementDisplayProperties, SetGradient)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"ElementDisplayProperties.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"ElementDisplayProperties.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     auto seedModelId3 = m_defaultModelId;
 
@@ -85,7 +86,7 @@ TEST_F (ElementDisplayProperties, SetGradient)
 //Will uncomment this test once SetPatternParams method is hooked up with elemDisplayParams.
 //TEST_F (ElementDisplayProperties, SetDisplayPattern)
 //    {
-//    SetupProject (L"3dMetricGeneral.idgndb", L"ElementDisplayProperties.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+//    SetupProject (L"3dMetricGeneral.idgndb", L"ElementDisplayProperties.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 //
 //    auto seedModelId3 = m_defaultModelId;
 //    DgnModelP model3 = m_db->Models ().CreateNewModelFromSeed (NULL, "model3", seedModelId3);
@@ -126,7 +127,7 @@ TEST_F (ElementDisplayProperties, SetGradient)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ElementDisplayProperties, SetTransparency)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"ElementDisplayProperties.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"ElementDisplayProperties.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     auto seedModelId3 = m_defaultModelId;
     DgnModelP seedModel = m_db->Models().GetModel(seedModelId3);
@@ -160,7 +161,7 @@ TEST_F (ElementDisplayProperties, SetTransparency)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ElementDisplayProperties, SetCategory)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"ElementDisplayProperties.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"ElementDisplayProperties.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     auto seedModelId3 = m_defaultModelId;
     DgnModelP seedModel = m_db->Models().GetModel(seedModelId3);
@@ -196,7 +197,7 @@ TEST_F (ElementDisplayProperties, SetCategory)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ElementDisplayProperties, SetDisplayParams)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"ElementDisplayProperties.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"ElementDisplayProperties.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     auto seedModelId3 = m_defaultModelId;
     DgnModelP seedModel = m_db->Models().GetModel(seedModelId3);
@@ -208,7 +209,6 @@ TEST_F (ElementDisplayProperties, SetDisplayParams)
     ElemDisplayParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
     ep.SetWeight(21);
-    ep.SetMaterial(NULL);
     ep.SetDisplayPriority(2);
 
     auto keyE1 = InsertElement("E2", ep, m3id);
@@ -224,11 +224,6 @@ TEST_F (ElementDisplayProperties, SetDisplayParams)
         EXPECT_EQ (21, params.GetWeight());
         bool weight = params.IsWeightFromSubCategoryAppearance();
         EXPECT_FALSE (weight);
-
-#if defined (NEEDS_WORK_MATERIAL)
-        EXPECT_EQ (NULL, params.GetMaterial());
-#endif
-
         EXPECT_EQ (2, params.GetDisplayPriority());
         }
     }
@@ -239,7 +234,7 @@ TEST_F (ElementDisplayProperties, SetDisplayParams)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ElementDisplayProperties, FillProperties)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"ElementDisplayProperties.idgndb", BeSQLite::Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"ElementDisplayProperties.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     auto seedModelId3 = m_defaultModelId;
     DgnModelP seedModel = m_db->Models().GetModel(seedModelId3);

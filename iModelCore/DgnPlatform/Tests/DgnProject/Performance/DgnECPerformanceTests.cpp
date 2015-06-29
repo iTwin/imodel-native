@@ -40,7 +40,7 @@ StatusInt PerformanceDgnECTests::CreateArbitraryElement (DgnElementPtr& out, Dgn
     if (!categoryId.IsValid())
         return ERROR;
 
-    DgnElementPtr element = elementHandler->Create(DgnElement::CreateParams(model, elementClassId, categoryId));
+    DgnElementPtr element = elementHandler->Create(DgnElement::CreateParams(model.GetDgnDb(), model.GetModelId(), elementClassId, categoryId));
 
     if (!element.IsValid())
         return ERROR;
@@ -276,7 +276,7 @@ DgnDbTestDgnManager tdm
 
 TEST_F(PerformanceDgnECTests, InsertingAndQueryingInstances)
     {
-    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OPEN_ReadWrite);
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
 
     ECSchemaPtr schema;
     PerformanceTestFixture::ImportTestSchema (schema, tdm, 25, 25);
@@ -286,7 +286,7 @@ TEST_F(PerformanceDgnECTests, InsertingAndQueryingInstances)
 
 TEST_F(PerformanceDgnECTests, InsertingAndQueryingInstancesWithComplexSchema)
     {
-    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OPEN_ReadWrite);
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
 
     ECSchemaPtr schema;
     PerformanceTestFixture::ImportComplexTestSchema (schema, tdm);

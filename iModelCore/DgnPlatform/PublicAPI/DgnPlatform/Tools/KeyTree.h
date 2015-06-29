@@ -14,7 +14,7 @@
 #include    <limits.h>
 #include    <Bentley/BeStringUtilities.h>
 
-BEGIN_BENTLEY_API_NAMESPACE
+BEGIN_BENTLEY_NAMESPACE
 
 enum
     {
@@ -1460,4 +1460,4 @@ public:
         }
 };
 
-END_BENTLEY_API_NAMESPACE
+END_BENTLEY_NAMESPACE

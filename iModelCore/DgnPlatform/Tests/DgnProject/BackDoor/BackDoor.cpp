@@ -19,7 +19,7 @@ namespace BackDoor
 +---------------+---------------+---------------+---------------+---------------+------*/
 namespace DirectionParser 
 {
-    void SetTrueNorthValue (DgnPlatform::DirectionParser& parser, double const& trueNorth)
+    void SetTrueNorthValue (Dgn::DirectionParser& parser, double const& trueNorth)
         {
         parser.SetTrueNorthValue (trueNorth);
         }
@@ -41,7 +41,7 @@ namespace DirectionParser
         /*-------------------------------------------------------------------------**//**
         * @bsimethod                                            KevinNyman      11/09
         +-------+---------------+---------------+---------------+---------------+------*/
-        DgnPlatform::DgnModelId GetModelId (DgnModelR model)
+        Dgn::DgnModelId GetModelId (DgnModelR model)
             {
             return model.GetModelId();
             }
@@ -58,7 +58,7 @@ namespace DirectionParser
         +-------+---------------+---------------+---------------+---------------+------*/
         DgnViewportP Create (ViewControllerR viewInfo)
             {
-            return new DgnPlatform::NonVisibleViewport(viewInfo);
+            return new Dgn::NonVisibleViewport(viewInfo);
             }
 
         /*-------------------------------------------------------------------------**//**
@@ -170,7 +170,7 @@ BeFileName DgnDbTestDgnManager::GetWritableTestData (WCharCP fileName, CharCP ca
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbTestDgnManager::DgnDbTestDgnManager (WCharCP dgnfilename, CharCP callerSourceFile, BeSQLite::Db::OpenMode omode, DgnInitializeMode imode, bool forceMakeCopy) 
-    : TestDgnManager ((BeSQLite::Db::OPEN_Readonly==omode)? GetReadOnlyTestData(dgnfilename,callerSourceFile, forceMakeCopy): GetWritableTestData(dgnfilename,callerSourceFile), omode, imode) 
+    : TestDgnManager ((BeSQLite::Db::OpenMode::Readonly==omode)? GetReadOnlyTestData(dgnfilename,callerSourceFile, forceMakeCopy): GetWritableTestData(dgnfilename,callerSourceFile), omode, imode) 
     {;}
 
 END_DGNDB_UNIT_TESTS_NAMESPACE

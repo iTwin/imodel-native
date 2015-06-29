@@ -171,7 +171,6 @@ protected:
     mutable bmap<DgnSubCategoryId,DgnCategories::SubCategory::Appearance> m_subCategories;
     bmap<DgnSubCategoryId,DgnCategories::SubCategory::Override> m_subCategoryOverrides;
 
-#if !defined (DOCUMENTATION_GENERATOR)
 public:
 
 protected:
@@ -218,7 +217,6 @@ protected:
     //!< Restore settings from the supplied Json object. These values were persisted in the database and in the undo stack
     //!< Note that if you override _RestoreFromSettings, you must call T_Super::_RestoreFromSettings!
     DGNPLATFORM_EXPORT virtual void _RestoreFromSettings(JsonValueCR);
-#endif
 
     //! Decorators are not stored in the backing store and must therefore be drawn every frame. Overlay decorators are drawn with the z-buffer
     //! disabled and therefore always appear on top of elements in the view. Note that graphics drawn from this method are always drawn in a
@@ -257,6 +255,10 @@ protected:
     //! Draws the contents of the view.
     //! @remarks It is very rare that an applications needs to call this or to override it.
     DGNPLATFORM_EXPORT virtual void _DrawView(ViewContextR);
+
+    //! Invokes the _VisitElement on \a context for <em>each element</em> that is in the view.
+    //! For normal views, this does the same thing as _DrawView.
+    DGNPLATFORM_EXPORT virtual void _VisitElements(ViewContextR& context);
 
     //! Draw a single element through a ViewContext.
     //! An application can override _DrawElement to change the symbology of elements.
@@ -347,6 +349,7 @@ public:
 
     DGNPLATFORM_EXPORT StatusInt VisitHit (HitDetailCR, ViewContextR) const;
     DGNPLATFORM_EXPORT void DrawView(ViewContextR);
+    DGNPLATFORM_EXPORT void VisitElements(ViewContextR);
     DGNPLATFORM_EXPORT void ChangeModelDisplay(DgnModelId, bool onOff);
     DGNPLATFORM_EXPORT StatusInt GetRangeForFit(DRange3dR range);
     DGNPLATFORM_EXPORT void OnViewOpened(DgnViewportR);
@@ -728,9 +731,8 @@ public:
     //! @param[in] viewId the id of the view in the project.
     DGNPLATFORM_EXPORT CameraViewController(DgnDbR dgndb, DgnViewId viewId);
 
-    //! @name Camera
-    //! @{
-
+/** @name Camera */
+/** @{ */
     //! Determine whether the camera is on for this view
     bool IsCameraOn() const {return m_isCameraOn;}
 
@@ -855,14 +857,13 @@ public:
     //! @note This method is generally for internal use only. Moving the eyePoint arbitrarily can result in skewed or illegal perspectives.
     //! The most common method for user-level camera positioning is #LookAt.
     void SetEyePoint(DPoint3dCR pt) {GetCameraR().SetEyePoint(pt);}
+/** @} */
 
-    //! @}
-
-    //! @name ClipVector
-    //! @{
+/** @name ClipVector */
+/** @{ */
     DGNPLATFORM_EXPORT void SetClipVector(ClipVectorR);
     DGNPLATFORM_EXPORT void ClearClipVector();
-    //! @}
+/** @} */
 };
 
 //=======================================================================================
@@ -981,17 +982,6 @@ public:
     //! Convenience method to get the drawing that is displayed in this view.
     SectionDrawingModel* GetSectionDrawing() const {return dynamic_cast<SectionDrawingModel*>(GetTargetModel());}
 
-    //! Convenience method to get the flattening matrix from the drawing
-#if defined (NEEDS_WORK_ELEMENTS_API)
-    DGNPLATFORM_EXPORT Transform GetFlatteningMatrix(double zdelta = 0.0) const;
-
-    //! Convenience method to get the flattening matrix from the drawing, but only if the viewport is 2-D
-    DGNPLATFORM_EXPORT Transform GetFlatteningMatrixIf2D(ViewContextR, double zdelta = 0.0) const;
-
-    //! Convenience method to ask the drawing for the transform needed to display it in the context of a physical view.
-    DGNPLATFORM_EXPORT Transform GetTransformToWorld() const;
-#endif
-
     //! Convenience method to query the source section `view
     DGNPLATFORM_EXPORT SectioningViewControllerPtr GetSectioningViewController() const;
 
@@ -1100,10 +1090,8 @@ struct SheetViewController : ViewController2d
 {
     DEFINE_T_SUPER(ViewController2d);
 
-#if !defined (DOCUMENTATION_GENERATOR)
 protected:
     virtual SheetViewControllerCP _ToSheetView() const override {return this;}
-#endif
 
 public:
     //! Construct a new SheetViewController.

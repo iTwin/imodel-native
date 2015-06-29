@@ -31,7 +31,7 @@ DgnCategoryId       m_categoryId;
 DgnSubCategoryId    m_subCategoryId;
 ColorDef            m_color;
 double              m_transparency;
-MaterialCP          m_material;
+DgnMaterialId       m_material;
 DPoint2d            m_uv;
 
 public:
@@ -81,7 +81,7 @@ typedef RefCountedPtr<ISolidKernelEntity> ISolidKernelEntityPtr; //!< Reference 
 //! as BRep elements. A wire body or planar sheet body can be efficiently represented as
 //! a CurveVector.
 //=======================================================================================
-struct ISolidKernelEntity : Bentley::IRefCounted
+struct ISolidKernelEntity : BentleyApi::IRefCounted
 {
 public:
 
@@ -164,7 +164,7 @@ typedef RefCountedPtr<ISubEntity> ISubEntityPtr; //!< Reference counted type to 
 //! remains valid for as long as the ISolidKernelEntity exists. Modifications to the
 //! ISolidKernelEntity may also invalidate a sub-entity, ex. edge is blended away.
 //=======================================================================================
-struct ISubEntity : Bentley::IRefCounted
+struct ISubEntity : BentleyApi::IRefCounted
 {
 public:
 
@@ -198,7 +198,7 @@ SubEntityType GetSubEntityType() const {return _GetSubEntityType();}
 //! @private
 //! Wrapper class around facets that at least act like Parasold fin tables.
 //=======================================================================================
-struct IFacetTopologyTable : Bentley::IRefCounted
+struct IFacetTopologyTable : BentleyApi::IRefCounted
 {
 public:
 

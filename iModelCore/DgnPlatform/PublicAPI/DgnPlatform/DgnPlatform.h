@@ -8,11 +8,11 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-/** @namespace BentleyApi::DgnPlatform Types defined by the %DgnPlatform. */
+/** @namespace BentleyApi::Dgn Types defined by the %DgnPlatform. 
+    @ref PAGE_DgnPlatform
+*/
 
-/** @cond BENTLEY_SDK_Internal */
-
-#include <BentleyApi/BentleyApi.h>
+#include <Bentley/Bentley.h>
 #include <Bentley/RefCounted.h>
 #include <Bentley/BeFileName.h>
 #include "ExportMacros.h"
@@ -26,57 +26,39 @@
 #include <BeSQLite/ChangeSet.h>
 #include <ECDb/ECDbApi.h>
 
-#define USING_NAMESPACE_BENTLEY_DGNPLATFORM using namespace BentleyApi::DgnPlatform;
+#define USING_NAMESPACE_BENTLEY_DGNPLATFORM using namespace BentleyApi::Dgn;
 
 #define USING_NAMESPACE_EC                  using namespace BentleyApi::ECN;
 #define USING_NAMESPACE_BENTLEY_EC          using namespace BentleyApi::ECN;
 
 #define GLOBAL_TYPEDEF1(_sName_,_name_,structunion) \
     structunion _sName_; \
-    namespace BENTLEY_API_NAMESPACE_NAME {\
+    namespace BENTLEY_NAMESPACE_NAME {\
     typedef structunion _sName_*          _name_##P, &_name_##R;  \
     typedef structunion _sName_ const*    _name_##CP; \
     typedef structunion _sName_ const&    _name_##CR;}
 
 #define GLOBAL_TYPEDEF(_sName_,_name_) GLOBAL_TYPEDEF1 (_sName_,_name_,struct)
 
-#define DGNPLATFORM_TYPEDEFS_EX(_name_,_structunion_) \
-    BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE _structunion_ _name_; END_BENTLEY_DGNPLATFORM_NAMESPACE \
-    ADD_BENTLEY_API_TYPEDEFS1(DgnPlatform,_name_,_name_,_structunion_)
-
-#define DGNPLATFORM_TYPEDEFS(_name_) DGNPLATFORM_TYPEDEFS_EX(_name_,struct)
-
-#define DGNPLATFORM_TYPEDEF(_sname_,_tname_) \
-    BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE struct _sname_; END_BENTLEY_DGNPLATFORM_NAMESPACE \
-    BEGIN_BENTLEY_API_NAMESPACE typedef struct DgnPlatform::_sname_* _tname_; END_BENTLEY_API_NAMESPACE
+#define DGNPLATFORM_TYPEDEFS(_name_) \
+    BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 #define DGNPLATFORM_REF_COUNTED_PTR(_sname_) \
     BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE struct _sname_; DEFINE_REF_COUNTED_PTR(_sname_) END_BENTLEY_DGNPLATFORM_NAMESPACE
 
-#define DGNPLATFORM_CLASS_TYPEDEFS(_name_) \
-    BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE class _name_; END_BENTLEY_DGNPLATFORM_NAMESPACE \
-    ADD_BENTLEY_API_TYPEDEFS1(DgnPlatform,_name_,_name_,class)
-
 #define GEOCOORD_TYPEDEFS(_name_) \
-    BEGIN_BENTLEY_API_NAMESPACE namespace GeoCoordinates { struct _name_; } END_BENTLEY_API_NAMESPACE \
-    ADD_BENTLEY_API_TYPEDEFS(GeoCoordinates, _name_)
+    BEGIN_BENTLEY_NAMESPACE namespace GeoCoordinates { DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) } END_BENTLEY_NAMESPACE
 
-/** @endcond */
-
-
-/** @cond BENTLEY_SDK_Internal */
 GLOBAL_TYPEDEF (QvElem,QvElem)
 GLOBAL_TYPEDEF (QvCache,QvCache)
 GLOBAL_TYPEDEF (QvView,QvView)
 GLOBAL_TYPEDEF (QvMRImage,QvMRImage)
 
+BENTLEY_NAMESPACE_TYPEDEFS (BitMask)
+BENTLEY_NAMESPACE_TYPEDEFS (DataExternalizer)
+BENTLEY_NAMESPACE_TYPEDEFS (GPArray)
+BENTLEY_NAMESPACE_TYPEDEFS (GraphicsPointArray)
 BENTLEY_NAMESPACE_TYPEDEFS (IRefCounted)
-
-BENTLEY_API_TYPEDEFS (BitMask)
-BENTLEY_API_TYPEDEFS (DataExternalizer)
-BENTLEY_API_TYPEDEFS (GPArray)
-BENTLEY_API_TYPEDEFS (GraphicsPointArray)
-/** @endcond */
 
 DGNPLATFORM_TYPEDEFS (ColorDef)
 DGNPLATFORM_TYPEDEFS (BoundingBox2d)
@@ -196,22 +178,7 @@ DGNPLATFORM_TYPEDEFS (IViewTransients)
 DGNPLATFORM_TYPEDEFS (IndexedViewSet)
 DGNPLATFORM_TYPEDEFS (IndexedViewport)
 DGNPLATFORM_TYPEDEFS (LineStyleInfo)
-DGNPLATFORM_TYPEDEFS (LineStyleManager)
 DGNPLATFORM_TYPEDEFS (LineStyleParams)
-DGNPLATFORM_TYPEDEFS (LsComponent)
-DGNPLATFORM_TYPEDEFS (LsCompoundComponent)
-DGNPLATFORM_TYPEDEFS (LsDefinition)
-DGNPLATFORM_TYPEDEFS (LsDgnProjectMap)
-DGNPLATFORM_TYPEDEFS (LsInternalComponent)
-DGNPLATFORM_TYPEDEFS (LsMap)
-DGNPLATFORM_TYPEDEFS (LsMapEntry)
-DGNPLATFORM_TYPEDEFS (LsMapIterator)
-DGNPLATFORM_TYPEDEFS (LsPointComponent)
-DGNPLATFORM_TYPEDEFS (LsStroke)
-DGNPLATFORM_TYPEDEFS (LsStrokePatternComponent)
-DGNPLATFORM_TYPEDEFS (LsSymbolComponent)
-DGNPLATFORM_TYPEDEFS (LsSymbolReference)
-DGNPLATFORM_TYPEDEFS (LsSystemMap)
 DGNPLATFORM_TYPEDEFS (Material)
 DGNPLATFORM_TYPEDEFS (MaterialAssignment)
 DGNPLATFORM_TYPEDEFS (NotificationManager)
@@ -245,7 +212,6 @@ DGNPLATFORM_TYPEDEFS (TextString)
 DGNPLATFORM_TYPEDEFS (TextStringStyle)
 DGNPLATFORM_TYPEDEFS (TransformClipStack)
 DGNPLATFORM_TYPEDEFS (TransformInfo)
-DGNPLATFORM_TYPEDEFS (TxnSummary)
 DGNPLATFORM_TYPEDEFS (UpdateContext)
 DGNPLATFORM_TYPEDEFS (ViewHandler)
 DGNPLATFORM_TYPEDEFS (ViewManager)
@@ -288,7 +254,7 @@ DGNPLATFORM_REF_COUNTED_PTR (ViewController)
 // ///////////////////////////////////////////////////////////////////////////////////////////////////
 // DO NOT USE: these MAX*LENGTH values are not portable or correct!
 // ///////////////////////////////////////////////////////////////////////////////////////////////////
-BEGIN_BENTLEY_API_NAMESPACE
+BEGIN_BENTLEY_NAMESPACE
 
 enum
 {
@@ -304,7 +270,7 @@ enum
     MAXEXTENSIONLENGTH    = DGNPLATFORM_RESOURCE_MAXEXTENSIONLENGTH,
 };
 
-END_BENTLEY_API_NAMESPACE
+END_BENTLEY_NAMESPACE
 
 //__PUBLISH_SECTION_START__
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -356,7 +322,7 @@ private:
 public:
     IdSet(){static_assert(sizeof(IdType)==sizeof(BeRepositoryBasedId),"IdSets may only contain BeRepositoryBasedId");}
 
-    typedef bset<IdType> T_SetType;
+    typedef BentleyApi::bset<IdType> T_SetType;
     typedef typename T_SetType::const_iterator const_iterator;
     typedef typename T_SetType::iterator iterator;
 
@@ -599,7 +565,6 @@ struct DgnElementPtrVec : bvector<DgnElementPtr>
 
 //=======================================================================================
 //! A list of DgnElementCPtr's.
-// @bsiclass
 //=======================================================================================
 struct DgnElementCPtrVec : bvector<DgnElementCPtr>
 {
@@ -614,9 +579,8 @@ struct DgnElementCPtrVec : bvector<DgnElementCPtr>
         }
 };
 
-/** @cond BENTLEY_SDK_Internal */
-
 //! Types used to interface with native DgnDisplayKernel
+//! @private
 struct DgnDisplayCoreTypes
 {
     //! Platform-specific view window
@@ -633,11 +597,7 @@ struct DgnDisplayCoreTypes
     typedef Bitmap* BitmapP;
 };
 
-/** @endcond */
-
-//=======================================================================================
 //! @private
-//=======================================================================================
 enum class ConfigurationVariableLevel
 {
     Predefined    = -2,        //!< predefined by the host
@@ -649,10 +609,7 @@ enum class ConfigurationVariableLevel
     User          = 4,         //!< user defined
 };
 
-/** @cond BENTLEY_SDK_Internal */
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//! @private
 enum DgnPlatformConstants
 {
     MIN_LINECODE                    = 0,
@@ -661,22 +618,17 @@ enum DgnPlatformConstants
     MAXIMUM_WINDOW_DEPTH            = 32767,
 };
 
+//! @private
 enum DgnPlatformInvalidSymbology
 {
     INVALID_STYLE = 0x7fffff00,
 };
 
-//=======================================================================================
-// @bsiclass                                                    Jeff.Marker     03/2015
-//=======================================================================================
+//! @private
 enum struct DgnFontType { TrueType = 1, Rsc = 2, Shx = 3, };
 
-//=======================================================================================
-// @bsiclass                                                    Jeff.Marker     03/2015
-//=======================================================================================
+//! @private
 enum struct DgnFontStyle { Regular, Bold, Italic, BoldItalic, };
-
-/** @endcond */
 
 //! Enumeration of possible coordinate system types
 enum class DgnCoordSystem
@@ -802,10 +754,7 @@ enum DitherModes
     DITHERMODE_ErrorDiffusion       = 1,
 };
 
-/*=================================================================================**//**
-* Influences how handler should apply annotation scale.
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//! Influences how handler should apply annotation scale.
 enum class AnnotationScaleAction
 {
     Update  = 0,
@@ -813,10 +762,7 @@ enum class AnnotationScaleAction
     Remove  = 2,
 };
 
-/*=================================================================================**//**
-* Influences how handler should apply fence stretch.
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//! Influences how handler should apply fence stretch.
 enum class FenceStretchFlags
 {
     /*! no special options */
@@ -827,10 +773,7 @@ enum class FenceStretchFlags
 
 ENUM_IS_FLAGS (FenceStretchFlags)
 
-/*=================================================================================**//**
-* Influences how handler should apply fence clip.
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//! Influences how handler should apply fence clip.
 enum class FenceClipFlags
 {
     /*! no special options */
@@ -852,46 +795,6 @@ enum class ClipVolumePass
     Maximum
 };
 
-/*=================================================================================**//**
-* Enums for tool agenda+handler cooperation
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-enum class AgendaEvent
-{
-    ModifyEntries           = 1,
-    PreModify               = 2,
-    PostModify              = 3,
-    AddClipboardFormats     = 4,
-};
-
-enum class AgendaModify
-{
-    Original                = 0,
-    Copy                    = 1,
-    ClipOriginal            = 2,
-    ClipCopy                = 3,
-};
-
-enum class AgendaOperation
-{
-    NotSpecified   = 0,
-    Translate      = 1,
-    Scale          = 2,
-    Rotate         = 3,
-    Mirror         = 4,
-    Array          = 5,
-    Stretch        = 6,
-    Delete         = 7,
-    Clipboard      = 8,
-    DragDrop       = 9,
-    ChangeAttrib   = 10,
-    FileFence      = 11,
-    Drop           = 12,
-};
-
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
 enum class DrawPurpose
 {
     NotSpecified               = 0,
@@ -914,7 +817,7 @@ enum class DrawPurpose
     GenerateThumbnail          = 27,
     ForceRedraw                = 29,
     FenceAccept                = 30,
-    RegionFlood                = 31, //! Collect graphics to find closed regions/flood...
+    RegionFlood                = 31, //!< Collect graphics to find closed regions/flood...
     FitView                    = 32,
     ExportVisibleEdges         = 36,
     InterferenceDetection      = 37,
@@ -924,10 +827,7 @@ enum class DrawPurpose
     ProxyHashExtraction        = 42,
 };
 
-/*=================================================================================**//**
-* Used to communicate the result of handling an event from a GPS.
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//! Used to communicate the result of handling an event from a GPS.
 enum class GeoLocationEventStatus
 {
     EventHandled                    = 0,    //!< LocationEvent was handled and modified the view
@@ -936,10 +836,7 @@ enum class GeoLocationEventStatus
     PointOutsideGeoCoordinateSystem = 3,    //!< LocationEvent was ignored and did not modify the view because the LocationEvent's point is outside the bounds where the geographic coordinate system is accurate
 };
 
-/*=================================================================================**//**
-* Used to specify desired accuracy.
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//! Used to specify desired accuracy.
 enum class GeoLocationServicesAccuracy
 {
     BestForNavigation       = 1,
@@ -947,10 +844,7 @@ enum class GeoLocationServicesAccuracy
     Coarse                  = 3
 };
 
-/*=================================================================================**//**
-* Used to describe status of a location provider.
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//! Used to describe status of a location provider.
 enum class GeoLocationProviderStatus
 {
     NotDetermined           = 0,
@@ -972,6 +866,7 @@ typedef T_DoubleVector const&  T_DoubleVectorCR;
 #define   IMAXUI8     UINT64_MAX
 
 //=======================================================================================
+//! @ingroup DgnColorGroup
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
 struct HsvColorDef
@@ -983,7 +878,7 @@ struct HsvColorDef
 
 //=======================================================================================
 //! RGBA values for a color
-//! @bsiclass
+//! @ingroup DgnColorGroup
 //=======================================================================================
 struct ColorDef
 {
@@ -1032,7 +927,11 @@ public:
 };
 
 //=======================================================================================
-//! Colors in elements should typically be either by-category or a specific RGBA. This wraps a bool and a ColorDef to encourage and enforce this pattern, where a color is either by-category or a ColorDef, not both at the same time. This means that the ColorDef is not available when by-category, but is always available otherwise. This structure will not clear the its color when toggling by-category on, so it can be recovered later. Your specific scenario may or may not want to persist this way, but this structure allows it.
+//! Colors in elements should typically be either by-category or a specific RGBA. 
+//! This wraps a bool and a ColorDef to encourage and enforce this pattern, where a color is either by-category or a ColorDef, not both at the same time. 
+//! This means that the ColorDef is not available when by-category, but is always available otherwise. This structure will not clear the its color when toggling by-category on, so it can be recovered later. 
+//! Your specific scenario may or may not want to persist this way, but this structure allows it.
+//! @ingroup DgnColorGroup
 // @bsiclass                                                    Jeff.Marker     06/2015
 //=======================================================================================
 struct ElementColor

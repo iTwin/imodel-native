@@ -10,7 +10,7 @@
 #include <DgnPlatform/DgnHandlers/DgnHandlersAPI.h>
 #include <DgnPlatform/DgnCore/DgnMarkupProject.h>
 
-#define LOG (*Bentley::NativeLogging::LoggingManager::GetLogger (L"Dgn"))
+#define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (L"Dgn"))
 
 #if defined (_MSC_VER)
 #pragma warning (disable:4702)
@@ -52,8 +52,8 @@ TEST(NamedVolume, CrudTest)
     {
     ScopedDgnHost host;
 
-    DgnDbTestDgnManager tdmSeed (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::OPEN_Readonly);
-    DgnDbTestDgnManager tdm (L"79_Main.i.idgndb", __FILE__, Db::OpenMode::OPEN_Readonly);
+    DgnDbTestDgnManager tdmSeed (L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::Readonly);
+    DgnDbTestDgnManager tdm (L"79_Main.i.idgndb", __FILE__, Db::OpenMode::Readonly);
     DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE (project != nullptr);
 

@@ -475,7 +475,7 @@ void ViewContext::WorldToView (Point2dP viewPts, DPoint3dCP worldPts, int nPts) 
         {
         WorldToView (&t4dPt, worldPts+i, 1);
 
-        bsiDPoint4d_normalize (&t4dPt, &tPt);
+        t4dPt.GetProjectedXYZ (tPt);
 
         (viewPts+i)->x = (long) tPt.x;
         (viewPts+i)->y = (long) tPt.y;
@@ -566,7 +566,7 @@ void ViewContext::GetViewIndependentTransform (TransformP trans, DPoint3dCP orig
         }
 
     // get transform about origin
-    bsiTransform_initFromMatrixAndFixedPoint (trans, &rMatrix, originLocal);
+    trans->InitFromMatrixAndFixedPoint (rMatrix, *originLocal);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -789,8 +789,7 @@ bool ViewContext::_ScanRangeFromPolyhedron()
                 skewRange.InitFrom (polyhedron.GetPts(), 4);
 
                 // get unit bvector from front plane to back plane
-                DPoint3d    skewVec;
-                bsiDPoint3d_computeNormal (&skewVec, polyhedron.GetPts()+4, polyhedron.GetPts());
+                DVec3d      skewVec = DVec3d::FromStartEndNormalize (polyhedron.GetCorner (0), polyhedron.GetCorner(4));
 
                 // check to see if it's worthwhile using skew scan (skew bvector not along one of the three major axes */
                 int alongAxes = (fabs (skewVec.x) < 1e-8);
@@ -1757,7 +1756,6 @@ void ViewContext::ContextMark::Pop()
 
     if (m_pushedRange)
         {
-        m_context->GetIDrawGeom().PopBoundingRange();
         m_context->SetCurrParentRangeResult (m_parentRangeResult);
         m_pushedRange = false;
         }
@@ -1863,12 +1861,12 @@ void ElemMatSymb::Init()
     m_isFilled          = false;
     m_isBlankingRegion  = false;
     m_extSymbID         = 0;
-    m_material          = NULL;
     m_rasterWidth       = 1;
     m_rasterPat         = 0;
-    m_patternParams     = NULL;
-    m_gradient          = NULL;
+    m_patternParams     = nullptr;
+    m_gradient          = nullptr;
 
+    m_material.Invalidate();
     m_lStyleSymb.Clear();
     }
 
@@ -1968,7 +1966,7 @@ void ElemMatSymb::FromResolvedElemDisplayParams (ElemDisplayParamsCR elParams, V
         m_isBlankingRegion = (FillDisplay::Blanking == elParams.GetFillDisplay());
         }
 
-    SetMaterial (elParams.GetMaterial(), &context); // Call method so that geometry map is created as needed...
+    m_material = elParams.GetMaterial();
 
     if (0.0 != netElemTransparency)
         {
@@ -2052,11 +2050,12 @@ bool ElemMatSymb::operator==(ElemMatSymbCR rhs) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElemMatSymb::SetMaterial (MaterialCP material, ViewContextP seedContext)
+void ElemMatSymb::SetMaterial (DgnMaterialId material)
     {
-#ifdef WIP_VANCOUVER_MERGE // material
     m_material = material;
 
+#ifdef DGNPLATFORM_WIP_MATERIAL
+    // Shouldn't need "seedContext" to create geometry map...from DgnGeomPart/GeomStream...not element...
     if (NULL != material &&
         NULL != seedContext &&
         material->NeedsQvGeometryTexture())
@@ -2260,16 +2259,6 @@ bool ElemDisplayParams::operator==(ElemDisplayParamsCR rhs) const
     if (!(m_plotInfo == rhs.m_plotInfo))
         return false;
 
-#if defined (WIP_MATERIAL)
-    if (m_materialDetail.IsValid() && rhs.m_materialDetail.IsValid())
-        {
-        if (!(m_materialDetail->Equals (*rhs.m_materialDetail)))
-            return false;
-        }
-    else if (m_materialDetail.IsNull() != rhs.m_materialDetail.IsNull())
-        return false;
-#endif
-
     return true;
     }
 
@@ -2304,10 +2293,8 @@ void ElemDisplayParams::Resolve (ViewContextR context)
     if (!m_appearanceOverrides.m_style)
         m_styleInfo = LineStyleInfo::Create (appearance.GetStyle(), nullptr).get(); // WIP_LINESTYLE - Need LineStyleParams...
 
-#ifdef WIP_MATERIAL
     if (!m_appearanceOverrides.m_material)
-        m_material = MaterialManager::GetManagerR().SomethingSomething(appearance.GetMaterial());
-#endif
+        m_material = appearance.GetMaterial();
 
     // SubCategory transparency is combined with element transparency to compute net transparency. 
     if (0.0 != appearance.GetTransparency())
@@ -2325,13 +2312,6 @@ void ElemDisplayParams::Resolve (ViewContextR context)
 
     // SubCategory display priority is combined with element priority to compute net display priority. 
     m_netPriority = context.ResolveNetDisplayPriority(m_elmPriority, subCategoryId, &appearance);
-
-#ifdef WIP_MATERIAL
-    // If no material defined yet, look for assignment.
-    if (context.GetWantMaterials() && NULL == m_material)
-        SetMaterial (MaterialManager::GetManagerR().FindMaterialBySymbology (NULL, m_category, m_symbology.color, *model, false, false, &context));
-#endif
-
     m_resolved = true;
     }
 

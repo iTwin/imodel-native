@@ -174,10 +174,9 @@ public:
             virtual void _OnPrepareForUndoRedo(){}
             virtual void _OnNothingToRedo(){}
 
-            DGNPLATFORM_EXPORT virtual void _OnTxnCommit(TxnSummaryCR);
-            DGNPLATFORM_EXPORT virtual void _OnTxnReverse(TxnSummaryCR);
-            DGNPLATFORM_EXPORT virtual void _OnTxnReversed(TxnSummaryCR);
-            DGNPLATFORM_EXPORT virtual void _OnUndoRedoFinished(DgnDbR, TxnDirection);
+            DGNPLATFORM_EXPORT virtual void _OnCommit(TxnManager&);
+            DGNPLATFORM_EXPORT virtual void _OnReversedChanges(TxnManager&);
+            DGNPLATFORM_EXPORT virtual void _OnUndoRedo(TxnManager&, TxnAction);
 
             //! @name Transaction Monitors
             //@{
@@ -525,6 +524,9 @@ public:
 
             virtual int _GetVersion() const {return 1;} // Do not override!
             virtual void _OnHostTermination(bool isProcessShutdown) override {delete this;}
+
+            //! Report if Parasolids is loaded.
+            virtual bool _IsParasolidLoaded() {return false;}
 
             //! Get the number of radial isoparametric lines to produce for analytic faces.
             //! @return Desired number of radial isoparametrics lines.
@@ -924,7 +926,7 @@ public:
         GeoCoordinationAdmin*   m_geoCoordAdmin;
         TxnAdmin*               m_txnAdmin;
         IACSManagerP            m_acsManager;
-        LineStyleManagerP       m_lineStyleManager;
+        //  LineStyleManagerP       m_lineStyleManager;
         FormatterAdmin*         m_formatterAdmin;
         RealityDataAdmin*       m_realityDataAdmin;
         Utf8String              m_productName;
@@ -999,7 +1001,7 @@ public:
             m_geoCoordAdmin = 0;
             m_txnAdmin = 0;
             m_acsManager = 0;
-            m_lineStyleManager = 0;
+            //  m_lineStyleManager = 0;
             m_formatterAdmin = 0;
             m_realityDataAdmin = 0;
             };
@@ -1021,7 +1023,7 @@ public:
         GeoCoordinationAdmin&   GetGeoCoordinationAdmin()  {return *m_geoCoordAdmin;}
         TxnAdmin&               GetTxnAdmin()              {return *m_txnAdmin;}
         IACSManagerR            GetAcsManager()            {return *m_acsManager;}
-        LineStyleManagerR       GetLineStyleManager()      {return *m_lineStyleManager;}
+        //  LineStyleManagerR       GetLineStyleManager()      {return *m_lineStyleManager;}
         FormatterAdmin&         GetFormatterAdmin()        {return *m_formatterAdmin;}
         RealityDataAdmin&       GetRealityDataAdmin()      {return *m_realityDataAdmin;}
         Utf8CP                  GetProductName()           {return m_productName.c_str();}

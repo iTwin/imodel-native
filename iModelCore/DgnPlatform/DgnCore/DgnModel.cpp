@@ -83,7 +83,7 @@ void DgnModels::ClearLoaded()
     {
     for (auto iter : m_models)
         {
-        iter.second->Empty();
+        iter.second->EmptyModel();
         iter.second->m_persistent = false;
         }
 
@@ -227,7 +227,7 @@ struct EmptiedCaller {DgnModel::AppData::DropMe operator()(DgnModel::AppData& ha
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::Empty()
+void DgnModel::EmptyModel()
     {
     ClearRangeIndex();
 
@@ -248,7 +248,7 @@ void DgnModel::Empty()
 DgnModel::~DgnModel()
     {
     m_appData.clear();
-    Empty();
+    EmptyModel();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -313,11 +313,39 @@ void DgnModel::ReadProperties()
     _FromPropertiesJson(propsJson);
     }
 
+struct UpdatedCaller {DgnModel::AppData::DropMe operator()(DgnModel::AppData& handler, DgnModelCR model) const {return handler._OnUpdated(model);}};
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel::_OnUpdated()
+    {
+    CallAppData(UpdatedCaller());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnModel::_OnUpdate()
+    {
+    for (auto entry=m_appData.begin(); entry!=m_appData.end(); ++entry)
+        {
+        DgnDbStatus stat = entry->second->_OnUpdate(*this);
+        if (DgnDbStatus::Success != stat)
+            return stat;
+        }
+
+    return DgnDbStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult DgnModel::SaveProperties()
+DgnDbStatus DgnModel::Update()
     {
+    DgnDbStatus stat = _OnUpdate();
+    if (stat != DgnDbStatus::Success)
+        return stat;
+
     Json::Value propJson(Json::objectValue);
     _ToPropertiesJson(propJson);
     Utf8String val = Json::FastWriter::ToString(propJson);
@@ -327,7 +355,11 @@ BeSQLite::DbResult DgnModel::SaveProperties()
     stmt.BindId(2, m_modelId);
 
     auto rc=stmt.Step();
-    return rc== BE_SQLITE_DONE ? BE_SQLITE_OK : rc;
+    if (rc!= BE_SQLITE_DONE)
+        return DgnDbStatus::ModelTableWriteError;
+
+    _OnUpdated();
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -495,18 +527,6 @@ DgnElementCP DgnModel::FindElementById(DgnElementId id)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   05/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnModel::ClearAllQvElems()
-    {
-#if defined(NEEDS_WORK_DGNITEM)
-    DgnModel::DgnElementIterator iter(this);
-    for (ElementRefP elRef = iter.GetFirstElementRef(); NULL != elRef && !iter.HitEOF(); elRef = iter.GetNextElementRef(true))
-        elRef->ForceElemChanged(true, ELEMREF_CHANGE_REASON_ClearQVData);
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   05/04
-+---------------+---------------+---------------+---------------+---------------+------*/
 bool DgnModels::FreeQvCache()
     {
     if (nullptr == m_qvCache)
@@ -523,19 +543,30 @@ bool DgnModels::FreeQvCache()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_OnDelete()
     {
-    _FillModel();
-
     for (auto appdata : m_appData)
         appdata.second->_OnDelete(*this);
 
-    // before we can delete a model, we must delete all of its elements. If that fails, we cannot continue
-    for (auto el : m_elements)
+    // before we can delete a model, we must delete all of its elements. If that fails, we cannot continue.
+    Statement stmt(m_dgndb, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
+    stmt.BindId(1, m_modelId);
+
+    auto& elements = m_dgndb.Elements();
+    while (BE_SQLITE_ROW == stmt.Step())
         {
-        DgnDbStatus stat = el.second->Delete();
+        DgnElementCPtr el = elements.GetElement(stmt.GetValueId<DgnElementId>(0));
+        if (!el.IsValid())
+            {
+            BeAssert(false);
+            return DgnDbStatus::BadElement;
+            }
+
+        // Note: this may look dangerous (deleting an element in the model we're iterating), but is is actually safe in SQLite.
+        DgnDbStatus stat = el->Delete();
         if (DgnDbStatus::Success != stat)
             return stat;
         }
 
+    m_dgndb.Models().DropLoadedModel(*this);
     return DgnDbStatus::Success;
     }
 
@@ -568,6 +599,8 @@ DgnDbStatus DgnModel::_OnInsert()
 
     return DgnDbStatus::Success;
     }
+
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
@@ -637,8 +670,8 @@ DgnDbStatus DgnModel::Insert(Utf8CP description, bool inGuiList)
         return DgnDbStatus::ModelTableWriteError;
         }
 
-    rc = SaveProperties();
-    BeAssert(rc==BE_SQLITE_OK);
+    stat = Update();
+    BeAssert(stat==DgnDbStatus::Success);
 
     _OnInserted();
     return DgnDbStatus::Success;
@@ -780,17 +813,17 @@ DPoint3d DgnModel::_GetGlobalOrigin() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    ChuckKirschman  04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-double DgnModel::GetMillimetersPerMaster() const
+double DgnModel::Properties::GetMillimetersPerMaster() const
     {
-    return m_properties.GetMasterUnit().IsLinear() ? m_properties.GetMasterUnit().ToMillimeters() : 1000.;
+    return GetMasterUnits().IsLinear() ? GetMasterUnits().ToMillimeters() : 1000.;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-double DgnModel::GetSubPerMaster() const
+double DgnModel::Properties::GetSubPerMaster() const
     {
-    return m_properties.GetSubUnit().ConvertDistanceFrom(1.0, m_properties.GetMasterUnit());
+    return GetSubUnits().ConvertDistanceFrom(1.0, GetMasterUnits());
     }
 
 struct FilledCaller {DgnModel::AppData::DropMe operator()(DgnModel::AppData& handler, DgnModelCR model) const {return handler._OnFilled(model);}};
@@ -814,10 +847,14 @@ void DgnModel::_FillModel()
     while (BE_SQLITE_ROW == stmt.Step())
         {
         DgnElementId id(stmt.GetValueId<DgnElementId>(Column::Id));
-        if (nullptr != elements.FindElement(id))  // already loaded?
+        DgnElementCP el = elements.FindElement(id);
+        if (nullptr != el)  // already loaded?
+            {
+            RegisterElement(*el);
             continue;
+            }
 
-        elements.LoadElement(DgnElement::CreateParams(*this,
+        elements.LoadElement(DgnElement::CreateParams(m_dgndb, m_modelId,
             stmt.GetValueId<DgnClassId>(Column::ClassId), 
             stmt.GetValueId<DgnCategoryId>(Column::CategoryId), 
             stmt.GetValueText(Column::Label), 
@@ -833,7 +870,7 @@ void DgnModel::_FillModel()
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KevinNyman      01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnModel::Properties::SetWorkingUnits(UnitDefinitionCR newMasterUnit, UnitDefinitionCR newSubUnit)
+BentleyStatus DgnModel::Properties::SetUnits(UnitDefinitionCR newMasterUnit, UnitDefinitionCR newSubUnit)
     {
     if (!newMasterUnit.IsValid() || !newSubUnit.IsValid() || !newMasterUnit.AreComparable(newSubUnit))
         return ERROR;

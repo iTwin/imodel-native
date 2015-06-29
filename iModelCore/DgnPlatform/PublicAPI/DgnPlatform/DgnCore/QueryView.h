@@ -115,6 +115,9 @@ protected:
     //! @remarks It not normally necessary for apps to override this function.
     DGNPLATFORM_EXPORT virtual void _DrawView (ViewContextR context) override;
 
+    //! Allow the supplied ViewContext to visit every element in the view, not just the best elements in the query model.
+    DGNPLATFORM_EXPORT void _VisitElements(ViewContextR) override;
+
     //! Return the default maximum number of elements to load. This is then scaled by the value returned from _GetMaxElementFactor.
     virtual uint32_t _GetMaxElementsToLoad () {return 5000;}
 

@@ -11,7 +11,7 @@
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  12/07
 +===============+===============+===============+===============+===============+======*/
-struct DgnPlatform::SimplifyDrawUnClippedProcessor
+struct Dgn::SimplifyDrawUnClippedProcessor
     {
     virtual StatusInt _ProcessUnClipped () { return ERROR; }
 
@@ -1622,6 +1622,7 @@ bool SimplifyViewDrawGeom::ArePointsTotallyOutsideClip (DPoint3dCP points, int n
     return false;
     }
 
+#ifdef NEEDS_WORK_GEOMETRY_MAPS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1636,7 +1637,6 @@ MaterialCP SimplifyViewDrawGeom::GetCurrentMaterial () const
     return m_currentMatSymb.GetMaterial ();
     }
 
-#ifdef NEEDS_WORK_GEOMETRY_MAPS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1689,7 +1689,7 @@ static double calculateFacetParamArea (ElementProjectionInfo& projectionInfo, Tr
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (facets); visitor->AdvanceToNextFace(); )
         {
         material.ComputeUVParams (facetParams, currTrans, projectionInfo, *visitor, layer);
-        area += fabs (bsiDPoint2d_getPolygonArea (&facetParams[0], visitor->NumEdgesThisFace()));
+        area += fabs (PolygonOps::Area (&facetParams[0], visitor->NumEdgesThisFace()));
         }
 
     return area;
@@ -2021,7 +2021,7 @@ StatusInt SimplifyViewDrawGeom::ProcessFacetTextureOutlines (IPolyfaceConstructi
     DRange2d            tileRange;
 
     computePolygonNormal (normal, points, nPoints);
-    if (bsiDPoint2d_getPolygonArea (params, (int) nPoints) < s_facetTileAreaMinimum ||
+    if (PolygonOps::Area (params, (int) nPoints) < s_facetTileAreaMinimum ||
         SUCCESS != calculateParamToWorld (paramToWorld, params, points, nPoints))
         return ERROR;
 

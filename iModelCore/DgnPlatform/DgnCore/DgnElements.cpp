@@ -1,8 +1,4 @@
-/*--------------------------------------------------------------------------------------+
-|
-|     $Source: DgnCore/DgnElements.cpp $
-|
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+/*--------------------------------------------------------------------------------------+ | | $Source: DgnCore/DgnElements.cpp $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -981,7 +977,7 @@ CachedStatementPtr DgnElements::GetStatement(Utf8CP sql) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), m_dgnModel(params.m_model), m_classId(params.m_classId),
+DgnElement::DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), m_dgndb(params.m_dgndb), m_modelId(params.m_modelId), m_classId(params.m_classId),
              m_categoryId(params.m_categoryId), m_label(params.m_label), m_code(params.m_code), m_parentId(params.m_parentId), m_lastModTime(params.m_lastModTime) 
     {
     ++GetDgnDb().Elements().m_tree->m_totals.m_extant;
@@ -1012,44 +1008,44 @@ DgnElements::DgnElements(DgnDbR dgndb) : DgnDbTable(dgndb), m_heapZone(0, false)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* A changeset was just applied to the database. That means that the element data in memory potentially does not match
-* what is now in the database. We need to find any elements in memory that were affected by the changeset and fix them.
-* Note that it is entirely possible that some elements in the changeset are not currently in memory. That's fine, we
-* don't need to worry about them - they'll be reloaded with the correct data if/when they're needed.
-* @bsimethod                                    Keith.Bentley                   07/13
+* @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::Element::_OnChangesetApplied(TxnSummary& summary)
+void dgn_TxnTable::Element::_OnReversedDelete(BeSQLite::Changes::Change const& change)
     {
-    DgnElements& elements = summary.GetDgnDb().Elements();
+    DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::New).GetValueInt64());
 
-    for (auto const& iter : MakeIterator())
+    // We need to load this element, since filled models need to register it 
+    DgnElementCPtr el = m_txnMgr.GetDgnDb().Elements().GetElement(elementId);
+    BeAssert(el.IsValid());
+    el->_OnInserted(nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::Element::_OnReversedAdd(BeSQLite::Changes::Change const& change)
+    {
+    DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::Old).GetValueInt64());
+
+    // see if we have this element in memory, if so call its _OnDelete method.
+    DgnElementPtr el = (DgnElementP) m_txnMgr.GetDgnDb().Elements().FindElement(elementId);
+    if (el.IsValid()) 
+        el->_OnDeleted(); // Note: this MUST be a DgnElementPtr, since we can't call _OnDeleted with an element with a zero ref count
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::Element::_OnReversedUpdate(BeSQLite::Changes::Change const& change) 
+    {
+    auto& elements = m_txnMgr.GetDgnDb().Elements();
+    DgnElementId elementId = DgnElementId(change.GetValue(0, Changes::Change::Stage::Old).GetValueInt64());
+    DgnElementP el = (DgnElementP) elements.FindElement(elementId);
+    if (el)
         {
-        switch (iter.GetChangeType())
-            {
-            case TxnSummary::ChangeType::Insert: // for inserts, we don't need to do anything
-                break;
-
-            case TxnSummary::ChangeType::Delete:
-                {
-                // see if we have this element in memory, if so call its _OnDelete method.
-                DgnElementP el = (DgnElementP) elements.FindElement(iter.GetElementId());
-                if (el)
-                    el->_OnDeleted();
-                }
-                break;
-
-            case TxnSummary::ChangeType::Update:
-                {
-                DgnElementP el = (DgnElementP) elements.FindElement(iter.GetElementId());
-                if (el)
-                    {
-                    DgnElementCPtr postModified = elements.LoadElement(el->GetElementId(), false);
-                    BeAssert(postModified.IsValid());
-                    elements.FinishUpdate(*postModified.get(), *el);
-                    }
-                }
-                break;
-            }
+        DgnElementCPtr postModified = elements.LoadElement(el->GetElementId(), false);
+        BeAssert(postModified.IsValid());
+        elements.FinishUpdate(*postModified.get(), *el);
         }
     }
 
@@ -1077,7 +1073,7 @@ DgnElementCPtr DgnElements::LoadElement(DgnElement::CreateParams const& params, 
 
     if (makePersistent)
         {
-        params.m_model._OnLoadedElement(*el);
+        el->GetModel()->_OnLoadedElement(*el);
         AddToPool(*el);
         }
 
@@ -1097,14 +1093,7 @@ DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId, bool makePersist
     if (BE_SQLITE_ROW != result)
         return nullptr;
 
-    DgnModelP dgnModel = m_dgndb.Models().GetModel(stmt->GetValueId<DgnModelId>(Column::ModelId));
-    if (nullptr == dgnModel)
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    return LoadElement(DgnElement::CreateParams(*dgnModel, 
+    return LoadElement(DgnElement::CreateParams(m_dgndb, stmt->GetValueId<DgnModelId>(Column::ModelId), 
                     stmt->GetValueId<DgnClassId>(Column::ClassId), 
                     stmt->GetValueId<DgnCategoryId>(Column::CategoryId), 
                     stmt->GetValueText(Column::Label), 
@@ -1251,10 +1240,15 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnDbStatus* outS
         return nullptr;
         }
 
-    DgnModelR model = element.GetDgnModel();
-    if (&model.GetDgnDb() != &m_dgndb)
+    if (&element.GetDgnDb() != &m_dgndb)
         {
         stat = DgnDbStatus::WrongDgnDb;
+        return nullptr;
+        }
+
+    if (nullptr == element.GetModel())
+        {
+        stat = DgnDbStatus::BadModel;
         return nullptr;
         }
 
@@ -1299,8 +1293,7 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnDbStatus* 
         }
 
     DgnElementR element = const_cast<DgnElementR>(*orig.get());
-    DgnModelR model = element.GetDgnModel();
-    if (&model != &replacement.GetDgnModel())
+    if (&element.GetDgnDb() != &replacement.GetDgnDb())
         {
         stat = DgnDbStatus::WrongDgnDb;
         return nullptr;
@@ -1359,8 +1352,7 @@ DgnDbStatus DgnElements::PerformDelete(DgnElementCR element)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElements::Delete(DgnElementCR element)
     {
-    DgnModelR model = element.GetDgnModel();
-    if (&model.GetDgnDb() != &m_dgndb || !element.IsPersistent())
+    if (&element.GetDgnDb() != &m_dgndb || !element.IsPersistent())
         return DgnDbStatus::WrongElement;
 
     DgnDbStatus stat = element._OnDelete();

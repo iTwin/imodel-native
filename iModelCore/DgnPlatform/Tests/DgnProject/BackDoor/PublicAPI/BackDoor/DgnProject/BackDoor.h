@@ -21,13 +21,13 @@
 
 #define BEGIN_DGNDB_UNIT_TESTS_NAMESPACE BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE namespace DgnDbUnitTests {
 #define END_DGNDB_UNIT_TESTS_NAMESPACE   } END_BENTLEY_DGNPLATFORM_NAMESPACE
-#define USING_DGNDB_UNIT_TESTS_NAMESPACE using namespace BentleyApi::DgnPlatform::DgnDbUnitTests;
+#define USING_DGNDB_UNIT_TESTS_NAMESPACE using namespace BentleyApi::Dgn::DgnDbUnitTests;
 
 BEGIN_DGNDB_UNIT_TESTS_NAMESPACE
 
 struct DgnDbTestDgnManager : TestDgnManager
 {
-    DgnDbTestDgnManager (WCharCP dgnfilename, CharCP callerSourceFile="", BeSQLite::Db::OpenMode mode=BeSQLite::Db::OPEN_ReadWrite, DgnInitializeMode imode=DGNINITIALIZEMODE_FillModel, bool forceMakeCopy=false);
+    DgnDbTestDgnManager (WCharCP dgnfilename, CharCP callerSourceFile="", BeSQLite::Db::OpenMode mode=BeSQLite::Db::OpenMode::ReadWrite, DgnInitializeMode imode=DGNINITIALIZEMODE_FillModel, bool forceMakeCopy=false);
     static BeFileName GetUtDatPath (CharCP callerSourceFile);
     static StatusInt FindTestData (BeFileName& fullFileName, WCharCP fileName, CharCP callerSourceFile);
     static StatusInt GetTestDataOut (BeFileName& outFullFileName, WCharCP fileName, WCharCP outName, CharCP callerSourceFile);
@@ -61,7 +61,7 @@ namespace BackDoor
 +---------------+---------------+---------------+---------------+---------------+------*/
     namespace DirectionParser 
     {
-        void SetTrueNorth (DgnPlatform::DirectionParser& parser, double const& trueNorth);
+        void SetTrueNorth (Dgn::DirectionParser& parser, double const& trueNorth);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -77,17 +77,17 @@ namespace BackDoor
         /*-------------------------------------------------------------------------**//**
         * @bsimethod                                            KevinNyman      08/10
         +-------+---------------+---------------+---------------+---------------+------*/
-        void SetReadOnly (DgnPlatform::DgnModel& model, bool isReadOnly);
+        void SetReadOnly (Dgn::DgnModel& model, bool isReadOnly);
 
         /*-------------------------------------------------------------------------**//**
         * @bsimethod                                            KevinNyman      11/09
         +-------+---------------+---------------+---------------+---------------+------*/
-        DgnElementP FindByElementId (DgnModelR model, DgnPlatform::DgnElementId id);
+        DgnElementP FindByElementId (DgnModelR model, Dgn::DgnElementId id);
 
         /*-------------------------------------------------------------------------**//**
         * @bsimethod                                            KevinNyman      11/09
         +-------+---------------+---------------+---------------+---------------+------*/
-        DgnPlatform::DgnModelId GetModelId (DgnModelR model);
+        Dgn::DgnModelId GetModelId (DgnModelR model);
 
     };
 

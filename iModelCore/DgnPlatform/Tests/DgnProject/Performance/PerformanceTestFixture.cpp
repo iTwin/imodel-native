@@ -240,12 +240,12 @@ void PerformanceTestingFrameWork::openDb()
             {
                 ASSERT_FALSE(true) << "Cannot Copy " << dbName.c_str();
             }
-            dbOpenStat = m_Db.OpenBeSQLiteDb(temporaryDir.GetNameUtf8().c_str(), Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes));
+            dbOpenStat = m_Db.OpenBeSQLiteDb(temporaryDir.GetNameUtf8().c_str(), Db::OpenParams(Db::OpenMode::ReadWrite));
             ASSERT_EQ(BE_SQLITE_OK, dbOpenStat);
         }
         else
         {
-            dbOpenStat = m_Db.OpenBeSQLiteDb(temporaryDir.GetNameUtf8().c_str(), Db::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Yes));
+            dbOpenStat = m_Db.OpenBeSQLiteDb(temporaryDir.GetNameUtf8().c_str(), Db::OpenParams(Db::OpenMode::ReadWrite));
             ASSERT_EQ(BE_SQLITE_OK, dbOpenStat);
         }
     }

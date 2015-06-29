@@ -33,7 +33,7 @@ struct TestDataManager
     DgnDbPtr m_dgndb;
     DgnModelP     m_model;
 
-    DGNPLATFORM_EXPORT TestDataManager (WCharCP fullFileName, BeSQLite::Db::OpenMode mode=BeSQLite::Db::OPEN_ReadWrite, bool fill=true);
+    DGNPLATFORM_EXPORT TestDataManager (WCharCP fullFileName, BeSQLite::Db::OpenMode mode=BeSQLite::Db::OpenMode::ReadWrite, bool fill=true);
     DGNPLATFORM_EXPORT ~TestDataManager ();
     DGNPLATFORM_EXPORT DgnModelP GetDgnModelP() const;
                        DgnModelP GetAndFillDgnModelP() { return GetDgnModelP(); }
@@ -46,7 +46,7 @@ struct TestDgnManager : TestDataManager
 {
 enum DgnInitializeMode {DGNINITIALIZEMODE_None, DGNINITIALIZEMODE_FillModel}; // DGNINITIALIZEMODE_FillModel will load the default root model.
 
-TestDgnManager (WCharCP fullFileName, BeSQLite::Db::OpenMode mode=BeSQLite::Db::OPEN_ReadWrite, DgnInitializeMode imode=DGNINITIALIZEMODE_FillModel) : TestDataManager(fullFileName,mode,(DGNINITIALIZEMODE_FillModel==imode)) {;}
+TestDgnManager (WCharCP fullFileName, BeSQLite::Db::OpenMode mode=BeSQLite::Db::OpenMode::ReadWrite, DgnInitializeMode imode=DGNINITIALIZEMODE_FillModel) : TestDataManager(fullFileName,mode,(DGNINITIALIZEMODE_FillModel==imode)) {;}
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

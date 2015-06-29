@@ -65,7 +65,6 @@ DG_INLINE DgnFonts& DgnDb::Fonts() const { return const_cast<DgnFonts&>(m_fonts)
 DG_INLINE DgnLinks& DgnDb::Links() const {return const_cast<DgnLinks&>(m_links);}
 DG_INLINE DgnUnits&   DgnDb::Units() const {return const_cast<DgnUnits&>(m_units);}
 DG_INLINE DgnDomains& DgnDb::Domains() const {return const_cast<DgnDomains&>(m_domains);}
-DG_INLINE DPoint3d DgnModel::GetGlobalOrigin() const {return _GetGlobalOrigin();}
 
 DG_INLINE bool DgnViewport::Is3dView() const {return m_is3dView;}
 DG_INLINE bool DgnViewport::IsActive() const {return NULL != m_output;}
@@ -449,7 +448,7 @@ DG_INLINE PatternParamsCP ElemDisplayParams::GetPatternParams() const {return m_
 DG_INLINE LineStyleInfoCP ElemDisplayParams::GetLineStyle() const {BeAssert(m_appearanceOverrides.m_style || m_resolved); return m_styleInfo.get();}
 DG_INLINE uint32_t ElemDisplayParams::GetWeight() const {BeAssert(m_appearanceOverrides.m_weight || m_resolved); return m_weight;}
 DG_INLINE DgnGeometryClass ElemDisplayParams::GetGeometryClass() const {return m_geometryClass;}
-DG_INLINE MaterialCP ElemDisplayParams::GetMaterial() const {BeAssert(m_appearanceOverrides.m_material || m_resolved); return m_material;}
+DG_INLINE DgnMaterialId ElemDisplayParams::GetMaterial() const {BeAssert(m_appearanceOverrides.m_material || m_resolved); return m_material;}
 DG_INLINE double ElemDisplayParams::GetTransparency() const {return m_elmTransparency;}
 DG_INLINE double ElemDisplayParams::GetFillTransparency() const {return m_fillTransparency;}
 DG_INLINE int32_t ElemDisplayParams::GetDisplayPriority() const {return m_elmPriority;}
@@ -461,11 +460,11 @@ DG_INLINE void ElemDisplayParams::SetLineColor(ColorDef color) {m_appearanceOver
 DG_INLINE void ElemDisplayParams::SetFillColor(ColorDef color) {m_appearanceOverrides.m_fill = true; m_fillColor = color;}
 DG_INLINE void ElemDisplayParams::SetFillDisplay(FillDisplay display) {m_fillDisplay = display;}
 DG_INLINE void ElemDisplayParams::SetGradient(GradientSymbP gradient) {m_gradient = gradient;}
-DG_INLINE void              ElemDisplayParams::SetPatternParams (PatternParamsP pattern) {m_pattern = pattern;}
+DG_INLINE void ElemDisplayParams::SetPatternParams (PatternParamsP pattern) {m_pattern = pattern;}
 DG_INLINE void ElemDisplayParams::SetLineStyle(LineStyleInfoP styleInfo) {m_appearanceOverrides.m_style = true; m_styleInfo = styleInfo;}
 DG_INLINE void ElemDisplayParams::SetWeight(uint32_t weight) {m_appearanceOverrides.m_weight = true; m_weight = weight;}
 DG_INLINE void ElemDisplayParams::SetGeometryClass(DgnGeometryClass geomClass) {m_geometryClass = geomClass;}
-DG_INLINE void ElemDisplayParams::SetMaterial(MaterialCP material) {m_appearanceOverrides.m_material = true; m_material = material;}
+DG_INLINE void ElemDisplayParams::SetMaterial(DgnMaterialId material) {m_appearanceOverrides.m_material = true; m_material = material;}
 DG_INLINE void ElemDisplayParams::SetTransparency(double transparency) {m_elmTransparency = m_netElmTransparency = m_fillTransparency = m_netFillTransparency = transparency;}
 DG_INLINE void ElemDisplayParams::SetFillTransparency(double transparency) {m_fillTransparency = m_netFillTransparency = transparency;}
 DG_INLINE void ElemDisplayParams::SetDisplayPriority(int32_t priority) {m_elmPriority = m_netPriority = priority;}
@@ -479,6 +478,7 @@ DG_INLINE void ElemDisplayParams::SetCategoryId(DgnCategoryId categoryId) {m_cat
 DG_INLINE void ElemDisplayParams::SetSubCategoryId(DgnSubCategoryId subCategoryId) {m_subCategoryId = subCategoryId; memset(&m_appearanceOverrides, 0, sizeof(m_appearanceOverrides)); m_resolved = false;}
 DG_INLINE DgnCategoryId ElemDisplayParams::GetCategoryId() const {return m_categoryId;}
 DG_INLINE DgnSubCategoryId ElemDisplayParams::GetSubCategoryId() const {return m_subCategoryId;}
+
 DG_INLINE bool PlotInfo::IsScreeningSet() const {return m_hasScreening;}
 DG_INLINE double PlotInfo::GetScreening() const {return m_screening;}
 DG_INLINE void PlotInfo::SetScreening(double screen, bool set) {if (set) m_screening = screen; m_hasScreening = set;};
@@ -496,6 +496,7 @@ DG_INLINE void LineStyleParams::SetScale(double inScale) { modifiers |= STYLEMOD
 
 DG_INLINE StatusInt     ViewController::VisitHit(HitDetailCR hit, ViewContextR context) const{return _VisitHit(hit, context);}
 DG_INLINE void ViewController::DrawView(ViewContextR context) {return _DrawView(context);}
+DG_INLINE void ViewController::VisitElements(ViewContextR context) {return _VisitElements(context);}
 
 DG_INLINE SnapDetailP     SnapContext::GetSnapDetail() {return m_snapPath;}
 DG_INLINE SnapMode      SnapContext::GetSnapMode() {return m_snapMode;}
@@ -544,8 +545,8 @@ DG_INLINE void DirectionFormatter::SetClockwise(bool newVal) { m_clockwise = new
 DG_INLINE void DirectionFormatter::SetBearingSpaces(bool newVal) { m_bearingSpaces = newVal; }
 
 DG_INLINE DgnUnitFormat DistanceFormatter::GetUnitFormat() const { return m_unitFormat; }
-DG_INLINE UnitDefinitionCR DistanceFormatter::GetMasterUnit() const { return m_masterUnit; }
-DG_INLINE UnitDefinitionCR DistanceFormatter::GetSubUnit() const { return m_subUnit; }
+DG_INLINE UnitDefinitionCR DistanceFormatter::GetMasterUnits() const { return m_masterUnit; }
+DG_INLINE UnitDefinitionCR DistanceFormatter::GetSubUnits() const { return m_subUnit; }
 DG_INLINE double DistanceFormatter::GetScaleFactor() const { return m_scaleFactor; }
 DG_INLINE bool DistanceFormatter::GetUnitLabelFlag() const { return m_unitFlag; }
 DG_INLINE bool DistanceFormatter::GetSuppressZeroMasterUnits() const { return m_suppressZeroMasterUnits; }
@@ -564,7 +565,7 @@ DG_INLINE DwgUnitFormat DistanceFormatter::GetDWGUnitFormat() const { return m_d
 DG_INLINE bool PointFormatter::GetIs3d() const { return m_is3d; }
 DG_INLINE void PointFormatter::SetIs3d(bool newVal) { m_is3d = newVal; }
 
-DG_INLINE UnitDefinitionCR AreaOrVolumeFormatterBase::GetMasterUnit() const { return m_masterUnit; }
+DG_INLINE UnitDefinitionCR AreaOrVolumeFormatterBase::GetMasterUnits() const { return m_masterUnit; }
 DG_INLINE double AreaOrVolumeFormatterBase::GetScaleFactor() const { return m_scaleFactor; }
 DG_INLINE bool AreaOrVolumeFormatterBase::GetShowUnitLabel() const { return m_showUnitLabel; }
 DG_INLINE bool AreaOrVolumeFormatterBase::GetLabelDecoratorAsSuffix() const { return m_labelDecoratorAsSuffix; }
@@ -590,13 +591,13 @@ DG_INLINE void DirectionParser::SetBaseDirection(double newVal) { m_baseDirectio
 DG_INLINE double DirectionParser::GetBaseDirection() { return m_baseDirection; }
 
 DG_INLINE void DistanceParser::SetMasterUnitLabel(WCharCP label) { m_masterUnitLabel = label; }
-DG_INLINE WCharCP DistanceParser::GetMasterUnitLabel() { return m_masterUnitLabel.c_str(); }
+DG_INLINE WCharCP DistanceParser::GetMasterUnitsLabel() { return m_masterUnitLabel.c_str(); }
 DG_INLINE void DistanceParser::SetSubUnitLabel(WCharCP label) { m_subUnitLabel = label; }
-DG_INLINE WCharCP DistanceParser::GetSubUnitLabel() { return m_subUnitLabel.c_str(); }
+DG_INLINE WCharCP DistanceParser::GetSubUnitsLabel() { return m_subUnitLabel.c_str(); }
 DG_INLINE void DistanceParser::SetMasterUnitScale(double scale) { m_masterUnitScale = scale; }
-DG_INLINE double DistanceParser::GetMasterUnitScale() { return m_masterUnitScale; }
+DG_INLINE double DistanceParser::GetMasterUnitsScale() { return m_masterUnitScale; }
 DG_INLINE void DistanceParser::SetSubUnitScale(double scale) { m_subUnitScale = scale; }
-DG_INLINE double DistanceParser::GetSubUnitScale() { return m_subUnitScale; }
+DG_INLINE double DistanceParser::GetSubUnitsScale() { return m_subUnitScale; }
 DG_INLINE void DistanceParser::SetScale(double scale) { m_scale = scale; }
 DG_INLINE double DistanceParser::GetScale() { return m_scale; }
 
@@ -605,8 +606,6 @@ DG_INLINE void PointParser::SetIs3d(bool is3d) { m_is3d = is3d; }
 DG_INLINE bool PointParser::GetIs3d() const { return m_is3d; }
 
 DG_INLINE void AreaOrVolumeParser::SetMasterUnitScale(double scale) { m_masterUnitScale = scale; }
-DG_INLINE double AreaOrVolumeParser::GetMasterUnitScale() { return m_masterUnitScale; }
+DG_INLINE double AreaOrVolumeParser::GetMasterUnitsScale() { return m_masterUnitScale; }
 DG_INLINE void AreaOrVolumeParser::SetScale(double scale) { m_scale = scale; }
 DG_INLINE double AreaOrVolumeParser::GetScale() { return m_scale; }
-
-DG_INLINE DgnDbR DgnElement::GetDgnDb() const {return m_dgnModel.GetDgnDb();}

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnCore/CacheDataBlock.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -32,7 +32,7 @@ typedef struct DgnV8AttrReader*     DgnV8AttrReaderP;
 struct DgnElemDataRef;
 
 //=======================================================================================
-//! @bsiclass                                                     Bern.McCarty      06/04
+// @bsiclass                                                     Bern.McCarty      06/04
 //=======================================================================================
 class CacheDataBlock
 {
@@ -73,12 +73,11 @@ public:
 
     //! allocate memory for an element.
     //! @return ERROR if there's not enough memory to fit element in this block.
-    //! @bsimethod                                                    Keith.Bentley   02/04
     StatusInt AllocElemMemory (DgnElemDataRef& elem, uint32_t sizeBytes);
  };
 
 //=======================================================================================
-//! @bsiclass                                                     Keith.Bentley   02/04
+// @bsiclass                                                     Keith.Bentley   02/04
 //=======================================================================================
 struct DgnElemDataRef
 {

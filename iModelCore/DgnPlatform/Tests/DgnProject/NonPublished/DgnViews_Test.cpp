@@ -68,21 +68,19 @@ void DgnViewsTest::SetupProject (WCharCP projFile, Db::OpenMode mode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnViewsTest, WorkWithViewTable)
     {
-    SetupProject(L"ElementsSymbologyByLevel.idgndb", Db::OPEN_ReadWrite);
+    SetupProject(L"ElementsSymbologyByLevel.idgndb", Db::OpenMode::ReadWrite);
 
     //Get views
     DgnViews& viewTable = project->Views ();
     DgnViews::Iterator iter = viewTable.MakeIterator();
-    ASSERT_EQ (6, iter.QueryCount()) <<"The expected view count is ... where as it is: " << iter.QueryCount();
+    ASSERT_EQ (4, iter.QueryCount()) <<"The expected view count is 6 where as it is: " << iter.QueryCount();
 
     //Iterate through each view and make sure they have correct information
-    TestViewProperties fileViews[6], testView;
-    fileViews[0].SetTestViewProperties (L"View 1, Default", DgnViewType::Drawing);
-    fileViews[1].SetTestViewProperties (L"View 2, Default", DgnViewType::Drawing);
-    fileViews[2].SetTestViewProperties (L"View 1, Model2d", DgnViewType::Drawing);
-    fileViews[3].SetTestViewProperties (L"View 2, Model2d", DgnViewType::Drawing);
-    fileViews[4].SetTestViewProperties (L"View 1, Default [master.i.dgn]", DgnViewType::Drawing);
-    fileViews[5].SetTestViewProperties (L"View 2, Default [master.i.dgn]", DgnViewType::Drawing);
+    TestViewProperties fileViews[4], testView;
+    fileViews[0].SetTestViewProperties (L"Default - View 1", DgnViewType::Drawing);
+    fileViews[1].SetTestViewProperties (L"Default - View 2", DgnViewType::Drawing);
+    fileViews[2].SetTestViewProperties (L"Model2d Views - View 1", DgnViewType::Drawing);
+    fileViews[3].SetTestViewProperties (L"Model2d Views - View 2", DgnViewType::Drawing);
 
     int i = 0;
     for (auto const& entry : iter)
@@ -100,7 +98,7 @@ TEST_F(DgnViewsTest, WorkWithViewTable)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnViewsTest, DeleteView)
     {
-    SetupProject(L"ElementsSymbologyByLevel.idgndb", Db::OPEN_ReadWrite);
+    SetupProject(L"ElementsSymbologyByLevel.idgndb", Db::OpenMode::ReadWrite);
 
     //Get views
     DgnViews& viewTable = project->Views ();
@@ -121,7 +119,7 @@ TEST_F(DgnViewsTest, DeleteView)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnViewsTest, SetViewName)
     {
-    SetupProject(L"ElementsSymbologyByLevel.idgndb", Db::OPEN_ReadWrite);
+    SetupProject(L"ElementsSymbologyByLevel.idgndb", Db::OpenMode::ReadWrite);
 
     //Get views
     DgnViews& viewTable = project->Views ();
@@ -146,7 +144,7 @@ TEST_F(DgnViewsTest, SetViewName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnViewsTest, ViewSaveAs)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", Db::OpenMode::ReadWrite);
 
     ViewControllerPtr controller = project->Views().LoadViewController(DgnViewId((int64_t)1));
     EXPECT_EQ(BE_SQLITE_OK, controller->SaveAs("NewView2"));
@@ -165,7 +163,7 @@ TEST_F(DgnViewsTest, ViewSaveAs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnViewsTest, IteratorEntryProperties)
     {
-    SetupProject(L"ElementsSymbologyByLevel.idgndb", Db::OPEN_ReadWrite);
+    SetupProject(L"ElementsSymbologyByLevel.idgndb", Db::OpenMode::ReadWrite);
 
     //Get views
     DgnViews& viewTable = project->Views();
@@ -192,7 +190,7 @@ TEST_F(DgnViewsTest, IteratorEntryProperties)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnViewsTest, InsertView)
     {
-    SetupProject (L"ElementsSymbologyByLevel.idgndb", Db::OPEN_ReadWrite);
+    SetupProject (L"ElementsSymbologyByLevel.idgndb", Db::OpenMode::ReadWrite);
 
     // Get views
     DgnViews& viewTable = project->Views ();
@@ -226,7 +224,7 @@ TEST_F(DgnViewsTest, InsertView)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnViewsTest, InsertDeletedView)
     {
-    SetupProject (L"ElementsSymbologyByLevel.idgndb", Db::OPEN_ReadWrite);
+    SetupProject (L"ElementsSymbologyByLevel.idgndb", Db::OpenMode::ReadWrite);
 
     // Get views
     DgnViews& viewTable = project->Views ();
@@ -246,7 +244,7 @@ TEST_F(DgnViewsTest, InsertDeletedView)
     EXPECT_TRUE (exisitingView.IsValid ()) << "View not found";
     // Verify properties
     TestViewProperties originalView, testView;
-    originalView.SetTestViewProperties (L"View 2, Model2d", DgnViewType::Drawing);
+    originalView.SetTestViewProperties (L"Model2d Views - View 2", DgnViewType::Drawing);
     WString entryNameW (exisitingView.GetName (), true);
     testView.SetTestViewProperties (entryNameW.c_str (), exisitingView.GetDgnViewType ());
     testView.IsEqual (originalView);
@@ -259,7 +257,7 @@ TEST_F(DgnViewsTest, InsertDeletedView)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnViewsTest, InsertExistingView)
     {
-    SetupProject (L"ElementsSymbologyByLevel.idgndb", Db::OPEN_ReadWrite);
+    SetupProject (L"ElementsSymbologyByLevel.idgndb", Db::OpenMode::ReadWrite);
 
     // Get views
     DgnViews& viewTable = project->Views ();

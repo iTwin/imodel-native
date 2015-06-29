@@ -19,6 +19,7 @@ typedef RefCountedPtr<ElementGeometry> ElementGeometryPtr;
 //=======================================================================================
 //! Class for multiple RefCounted geometry types: ICurvePrimitive, CurveVector, 
 //! ISolidPrimitive, MSBsplineSurface, PolyfaceHeader, ISolidKernelEntity.
+//! @ingroup ElementGeometryGroup
 //=======================================================================================
 struct ElementGeometry : RefCountedBase
 {
@@ -116,6 +117,7 @@ enum class OpCode : uint32_t
 
 //=======================================================================================
 //! Internal Header op code
+//! @private
 //=======================================================================================
 struct Header
     {
@@ -129,6 +131,7 @@ struct Header
 
 //=======================================================================================
 //! Internal op code
+//! @private
 //=======================================================================================
 struct Operation
     {
@@ -145,6 +148,7 @@ struct Operation
 
 //=======================================================================================
 //! Internal op code writer
+//! @private
 //=======================================================================================
 struct Writer
     {
@@ -180,6 +184,7 @@ struct Writer
     
 //=======================================================================================
 //! Internal op code reader
+//! @private
 //=======================================================================================
 struct Reader
     {
@@ -208,6 +213,7 @@ struct Reader
 
 //=======================================================================================
 //! Iternal op code iterator
+//! @private
 //=======================================================================================
 struct Iterator : std::iterator<std::forward_iterator_tag, uint8_t const*>
     {
@@ -236,6 +242,7 @@ struct Iterator : std::iterator<std::forward_iterator_tag, uint8_t const*>
 
 //=======================================================================================
 //! Internal op code helper
+//! @private
 //=======================================================================================
 struct Collection
     {
@@ -263,6 +270,7 @@ struct Collection
 
 //=======================================================================================
 //! ElementGeometryCollection provides iterator for a Geometric Element's GeomStream.
+//! @ingroup ElementGeometryGroup
 //=======================================================================================
 struct ElementGeometryCollection
 {
@@ -277,6 +285,7 @@ enum class BRepOutput
 
 //=======================================================================================
 //! Iterator
+//! @ingroup ElementGeometryGroup
 //=======================================================================================
 struct Iterator : std::iterator<std::forward_iterator_tag, uint8_t const*>
     {
@@ -366,6 +375,7 @@ ENUM_IS_FLAGS(ElementGeometryCollection::BRepOutput)
 //! For repeated geometry that can be shared in a single GeomStream or by multiple GeomStreams, a DgnGeomPart should be
 //! created. When appending a DgnGeomPartId you specify the part geometry to element transform in order to position the 
 //! part's geometry relative to the other geometry/parts display by the element.
+//! @ingroup ElementGeometryGroup
 //=======================================================================================
 struct ElementGeometryBuilder : RefCountedBase
 {

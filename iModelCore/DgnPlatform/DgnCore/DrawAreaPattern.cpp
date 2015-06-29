@@ -1247,7 +1247,7 @@ GPArrayP        boundGpa
         RotMatrix   scaleMatrix;
 
         bsiRotMatrix_initFromScaleFactors (&scaleMatrix, 1.0, 1.0, zScale);
-        bsiTransform_multiplyTransformRotMatrix (&scaledTransform, &hatchTransform, &scaleMatrix);
+        scaledTransform.InitProduct (hatchTransform, scaleMatrix);
         }
     else
         {
@@ -1411,9 +1411,9 @@ bool                is3d
 
         // NOTE: Annotation scale isn't handled by CookPatternParams since we ignore scale for draw, need to apply to hatch lines directly...
         hatchTransform.GetOriginAndVectors (origin, xVec, yVec, zVec);
-        bsiDPoint3d_setXYZ (&xVec, cos (lineP->angle), sin (lineP->angle), 0.0);
-        bsiDPoint3d_setXYZ (&zVec, lineP->offset.x * annotationScale, lineP->offset.y * annotationScale, 0.0);
-        bsiDPoint3d_setXYZ (&origin, lineP->through.x * annotationScale, lineP->through.y * annotationScale, 0.0);
+        xVec.Init ( cos (lineP->angle), sin (lineP->angle), 0.0);
+        zVec.Init ( lineP->offset.x * annotationScale, lineP->offset.y * annotationScale, 0.0);
+        origin.Init ( lineP->through.x * annotationScale, lineP->through.y * annotationScale, 0.0);
         hatchTransform.InitFromOriginAndVectors (origin, xVec, yVec, zVec);
 
         Transform    scaledTransform;

@@ -3970,8 +3970,8 @@ LocalTransformerP   localTransformer
     // this stuff is hopefully never used, just ancient stupidity.
     WChar masterUnitLabel[MAX_StandardUnit::NAME_LENGTH];
     WChar subUnitLabel[MAX_StandardUnit::NAME_LENGTH];
-    dgnModel_getMasterUnitLabel (cache, masterUnitLabel);
-    dgnModel_getSubUnitLabel (cache, subUnitLabel);
+    dgnModel_GetMasterUnitsLabel (cache, masterUnitLabel);
+    dgnModel_GetSubUnitsLabel (cache, subUnitLabel);
     type66.deprec_mastname[0] = (char) masterUnitLabel[0];
     type66.deprec_mastname[1] = (char) masterUnitLabel[1];
     type66.deprec_subname[0]  = (char) subUnitLabel[0];
@@ -4350,8 +4350,8 @@ double      paperScale
     else
         {
         // this intentionally ignores the unit base.
-        // Thus for a Lat/Long based coordinate system, if the design file storage units are DgnPlatform::UnitBase::Meter, a meter is treated as a degree.
-        // Similarly, for a projected coordinate system, if the design file storage units are DgnPlatform::UnitBase::Degree, a degree is treated as a meter.
+        // Thus for a Lat/Long based coordinate system, if the design file storage units are Dgn::UnitBase::Meter, a meter is treated as a degree.
+        // Similarly, for a projected coordinate system, if the design file storage units are Dgn::UnitBase::Degree, a degree is treated as a meter.
         m_uorsPerBaseUnit = (uorPerStorage * storageUnitInfo.numerator) / (storageUnitInfo.denominator * m_paperScaleFromType66);
         dgnModel_getGlobalOrigin (project, &m_globalOrigin);
         }
@@ -5154,29 +5154,29 @@ StandardUnit&   standardUnitNumber
         {
         // should never happen.
         assert (false);
-        unitDef.Init (DgnPlatform::UnitBase::Meter, DgnPlatform::UnitSystem::Metric, 1.0, 1.0, L"Meters"); 
+        unitDef.Init (Dgn::UnitBase::Meter, Dgn::UnitSystem::Metric, 1.0, 1.0, L"Meters"); 
         return ERROR;
         }
 
     // convert from CS units to our UnitInfo.
     cs_Unittab_ const* csUnits = CSMap::GetCSUnitInfo (csUnitCode);
 
-    DgnPlatform::UnitBase base = (cs_UTYP_LEN == csUnits->type) ? DgnPlatform::UnitBase::Meter : DgnPlatform::UnitBase::Degree;
+    Dgn::UnitBase base = (cs_UTYP_LEN == csUnits->type) ? Dgn::UnitBase::Meter : Dgn::UnitBase::Degree;
 
     // CS_Map has only a numerator, no denominator.
-    unitDef.Init (base, DgnPlatform::UnitSystem::Undefined, 1.0, csUnits->factor, L""); 
+    unitDef.Init (base, Dgn::UnitSystem::Undefined, 1.0, csUnits->factor, L""); 
 
     standardUnitNumber = unitDef.IsStandardUnit ();
     if ( (StandardUnit::None == standardUnitNumber) || (StandardUnit::Custom == standardUnitNumber) )
         {
-        DgnPlatform::UnitSystem system;
+        Dgn::UnitSystem system;
 
         if (cs_USYS_Metric == csUnits->system)
-            system = DgnPlatform::UnitSystem::Metric;
+            system = Dgn::UnitSystem::Metric;
         else if (cs_USYS_English == csUnits->system)
-            system = DgnPlatform::UnitSystem::English;
+            system = Dgn::UnitSystem::English;
         else
-            system = DgnPlatform::UnitSystem::Undefined;
+            system = Dgn::UnitSystem::Undefined;
 
         WString label (csUnits->name, BentleyCharEncoding::Utf8);
         unitDef.Init (base, system, 1.0, csUnits->factor, label.c_str()); 
@@ -5212,10 +5212,10 @@ UnitDefinitionCR  unitDef
 )
     {
     // match the "base" in MicroStation terms.
-    if ( (cs_UTYP_LEN == csUnitInfo->type) && (DgnPlatform::UnitBase::Meter != unitDef.GetBase()) )
+    if ( (cs_UTYP_LEN == csUnitInfo->type) && (Dgn::UnitBase::Meter != unitDef.GetBase()) )
         return false;
 
-    if ( (cs_UTYP_ANG == csUnitInfo->type) && (DgnPlatform::UnitBase::Degree != unitDef.GetBase()) )
+    if ( (cs_UTYP_ANG == csUnitInfo->type) && (Dgn::UnitBase::Degree != unitDef.GetBase()) )
         return false;
 
     // if it's not LEN or ANG, can't match.

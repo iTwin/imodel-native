@@ -18,7 +18,6 @@
 
 //__PUBLISH_SECTION_END__
 DGNPLATFORM_TYPEDEFS (QvBaseMatSym)
-DGNPLATFORM_TYPEDEFS (Material)
 //__PUBLISH_SECTION_START__
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -277,9 +276,7 @@ typedef RefCountedPtr<struct MaterialUVDetail> MaterialUVDetailPtr;
 
 //=======================================================================================
 //! Materials which use uv mapping modes Directional Drape, Cubic, Spherical and Cylindrical
-//! require additional element based information for their definition. For persistent elements the
-//! information is read from the element. For non persistent elements the origin, matrix, size and
-//! qv materialId members need to be set
+//! require additional element based information for their definition.
 //=======================================================================================
 struct MaterialUVDetail : RefCountedBase
 {
@@ -305,26 +302,24 @@ DGNPLATFORM_EXPORT void Copy (MaterialUVDetailCR rhs);
 //! @param[in] rhs          Object to compare
 DGNPLATFORM_EXPORT bool Equals (MaterialUVDetailCR rhs);
 
-//! Get the origin of the UV mapping. Only required for mapping non persistent elements
+//! Get the origin of the UV mapping.
 DGNPLATFORM_EXPORT DPoint3dCR GetOrigin () const;
-//! Set the origin on the UV mapping. Only required for mapping non persistent elements
+//! Set the origin on the UV mapping.
 DGNPLATFORM_EXPORT void SetOrigin (DPoint3dCR origin);
 
-//! Get the orientation of the UV mapping. Only required for mapping non persistent elements
+//! Get the orientation of the UV mapping.
 DGNPLATFORM_EXPORT RotMatrixCR GetRMatrix () const;
-//! Set the orientation of the UV mapping. Only required for mapping non persistent elements
+//! Set the orientation of the UV mapping.
 DGNPLATFORM_EXPORT void SetRMatrix (RotMatrixCR rMatrix);
 
-//! Get the size of the UV mapping. Only required for mapping non persistent elements
+//! Get the size of the UV mapping.
 DGNPLATFORM_EXPORT DPoint3dCR GetSize () const;
-//! Set the size of the UV mapping. Only required for mapping non persistent elements
+//! Set the size of the UV mapping.
 DGNPLATFORM_EXPORT void SetSize (DPoint3dCR size);
 
-//! Get the QV Material Id for the UV mapping to use. Only required for mapping non persistent elements
+//! Get the QV Material Id for the UV mapping to use.
 DGNPLATFORM_EXPORT QVAliasMaterialIdCP GetQVAliasMaterialId  () const;
-//! Set the QV Material Id for the UV mapping to use. This Id is ref counted and its lifecycle will need to exist past
-//! the draw of the temporary element. Then when the referece count is 0 the destructor of this object will
-//! remove the material definition from QuickVision. Only required for mapping non persistent elements
+//! Set the QV Material Id for the UV mapping to use.
 DGNPLATFORM_EXPORT void SetQVAliasMaterialId (QVAliasMaterialIdP qvId); 
 
 //! Create an instance of this class
@@ -443,7 +438,7 @@ double              m_netElmTransparency;           //!< net transparency for el
 double              m_fillTransparency;             //!< fill transparency, 1.0 == completely transparent.
 double              m_netFillTransparency;          //!< net transparency for fill/category.
 DgnGeometryClass    m_geometryClass;                //!< geometry class
-MaterialCP          m_material;                     //!< render material
+DgnMaterialId       m_material;                     //!< render material
 
 LineStyleInfoPtr    m_styleInfo;                    //!< line style id plus modifiers.
 GradientSymbPtr     m_gradient;                     //!< gradient fill settings.
@@ -470,7 +465,7 @@ DGNPLATFORM_EXPORT void     SetGeometryClass (DgnGeometryClass);
 DGNPLATFORM_EXPORT void     SetTransparency (double transparency); // NOTE: Sets BOTH element and fill transparency...
 DGNPLATFORM_EXPORT void     SetFillTransparency (double transparency);
 DGNPLATFORM_EXPORT void     SetDisplayPriority (int32_t priority); // Set display priority (2d only).
-DGNPLATFORM_EXPORT void     SetMaterial (MaterialCP material);
+DGNPLATFORM_EXPORT void     SetMaterial (DgnMaterialId material);
 DGNPLATFORM_EXPORT void     SetPatternParams (PatternParamsP patternParams);
 
 //! @cond DONTINCLUDEINDOC
@@ -530,7 +525,7 @@ DGNPLATFORM_EXPORT double GetTransparency() const;
 DGNPLATFORM_EXPORT double GetFillTransparency() const;
 
 //! Get render material.
-DGNPLATFORM_EXPORT MaterialCP GetMaterial() const;
+DGNPLATFORM_EXPORT DgnMaterialId GetMaterial() const;
 
 //! Get element display priority (2d only).
 DGNPLATFORM_EXPORT int32_t GetDisplayPriority() const;
@@ -683,7 +678,7 @@ private:
     bool                m_isFilled;
     bool                m_isBlankingRegion;
     uintptr_t           m_extSymbID;
-    MaterialCP          m_material;
+    DgnMaterialId       m_material;
     uint32_t            m_rasterWidth;
     uint32_t            m_rasterPat;
     LineStyleSymb       m_lStyleSymb;
@@ -755,7 +750,7 @@ LineStyleSymbCR GetLineStyleSymb () const {return m_lStyleSymb;}
 GradientSymbCP GetGradientSymb () const {return m_gradient.get();}
 
 //! Get the render material.
-MaterialCP GetMaterial () const {return m_material;}
+DgnMaterialId GetMaterial () const {return m_material;}
 
 //! Get the area pattern params.
 PatternParamsCP GetPatternParams () const {return m_patternParams.get();}
@@ -801,8 +796,8 @@ DGNPLATFORM_EXPORT void SetIndexedRasterPattern (int32_t index, uint32_t rasterP
 //! Get the LineStyleSymb from this ElemMatSymb for setting line style parameters.
 LineStyleSymbR GetLineStyleSymbR () {return m_lStyleSymb;}
 
-//! Set the render material. NOTE: You must supply a seed context to support geometry maps!
-DGNPLATFORM_EXPORT void SetMaterial (MaterialCP, ViewContextP seedContext = NULL);
+//! Set the render material.
+DGNPLATFORM_EXPORT void SetMaterial (DgnMaterialId);
 
 //! Set area patterning parameters.
 void SetPatternParams (PatternParamsP patternParams) {m_patternParams = patternParams;}
@@ -825,7 +820,6 @@ enum OvrMatSymbFlags //! flags to indicate the parts of a MatSymb that are to be
     MATSYMB_OVERRIDE_TrueWidth              = (1<<6),   //!< override true width
     MATSYMB_OVERRIDE_ExtSymb                = (1<<7),   //!< override extended symbology
     MATSYMB_OVERRIDE_RenderMaterial         = (1<<8),   //!< override render material
-    MATSYMB_OVERRIDE_PatternParams          = (1<<9),   //!< override (area) pattern params.
     // The proxy flags are informational but do not effect the display.
     MATSYMB_OVERRIDE_IsProxy                = (1<<16),   //!< is proxy              
     MATSYMB_OVERRIDE_IsProxyHidden          = (1<<17),   //!< is proxy edge
@@ -862,7 +856,7 @@ public:
     uint32_t GetWidth () const {return m_matSymb.GetWidth();}
     uint32_t GetRasterPattern () const {return m_matSymb.GetRasterPattern();}
     int32_t GetRasterPatternIndex () const {return m_matSymb.GetRasterPatternIndex ();}
-    MaterialCP GetMaterial () const {return m_matSymb.GetMaterial();}
+    DgnMaterialId GetMaterial () const {return m_matSymb.GetMaterial();}
     PatternParamsCP GetPatternParams () const {return m_matSymb.GetPatternParams ();}
 
     DGNPLATFORM_EXPORT void Clear ();
@@ -874,8 +868,8 @@ public:
     void SetWidth (uint32_t width) {m_matSymb.SetWidth (width); m_flags |= MATSYMB_OVERRIDE_RastWidth;}
     void SetRasterPattern (uint32_t rasterPat) {m_matSymb.SetRasterPattern (rasterPat); m_flags |= MATSYMB_OVERRIDE_Style; m_matSymb.GetLineStyleSymbR().SetLineStyle(NULL);}
     void SetIndexedRasterPattern (int32_t index, uint32_t rasterPat) {m_matSymb.SetIndexedRasterPattern (index, rasterPat); m_flags |= MATSYMB_OVERRIDE_Style; m_matSymb.GetLineStyleSymbR().SetLineStyle (NULL);}
-    void SetMaterial (MaterialCP material, ViewContextP seedContext=NULL) {m_matSymb.SetMaterial (material, seedContext); m_flags |= MATSYMB_OVERRIDE_RenderMaterial;}
-    void SetPatternParams (PatternParamsP patternParams) {m_matSymb.SetPatternParams(patternParams); m_flags |= MATSYMB_OVERRIDE_PatternParams;}
+    void SetMaterial (DgnMaterialId material) {m_matSymb.SetMaterial (material); m_flags |= MATSYMB_OVERRIDE_RenderMaterial;}
+    void SetPatternParams (PatternParamsP patternParams) {m_matSymb.SetPatternParams(patternParams);}
     void SetProxy (bool edge, bool hidden) {m_flags |= (MATSYMB_OVERRIDE_IsProxy | (edge ? MATSYMB_OVERRIDE_IsProxyEdge : 0) | (hidden ? MATSYMB_OVERRIDE_IsProxyHidden: 0)); }
     bool GetProxy (bool& edge, bool& hidden) {edge = 0 != (m_flags & MATSYMB_OVERRIDE_IsProxyEdge); hidden = 0 != (m_flags & MATSYMB_OVERRIDE_IsProxyHidden); return 0 != (m_flags & MATSYMB_OVERRIDE_IsProxy); }
     void SetUnderlay () { m_flags |= MATSYMB_OVERRIDE_IsProxyUnderlay; }

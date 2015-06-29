@@ -15,8 +15,12 @@
 #include "ViewController.h"
 #include <BeSQLite/RTreeMatch.h>
 
-
-BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+#if defined (DOCUMENTATION_GENERATOR)
+    // WIP: hack to get docs to come out right
+    namespace BentleyApi{ namespace Dgn{
+#else
+    BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
+#endif
 
 /**  @addtogroup DgnViewGroup
 
@@ -248,42 +252,6 @@ enum class ViewportResizeMode
     Size             = 3, //!< The viewport is resized to match the exact size 
     };
 
-
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct ViewportApplyOptions
-{
-private:
-    ViewportResizeMode  m_resizeMode;
-    bool m_applyVolume;
-    bool m_applyAttributes;
-    bool m_applyLevels;
-    bool m_applyRefLevels;
-    bool m_applyClipVolume;
-    bool m_applyModel;
-    bool m_createSavedViewDisplayableForClipping;
-
-public:
-    DGNPLATFORM_EXPORT ViewportApplyOptions(bool initFromActive);
-    ViewportResizeMode GetViewportResizeMode() const {return m_resizeMode;}
-    bool GetApplyVolume() const {return m_applyVolume;}
-    bool GetApplyAttributes() const {return m_applyAttributes;}
-    bool GetApplyLevels() const {return m_applyLevels;}
-    bool GetApplyRefLevels() const {return m_applyRefLevels;}
-    bool GetApplyClipVolume() const {return m_applyClipVolume;}
-    bool GetApplyModel() const {return m_applyModel;}
-    bool GetCreateSavedViewDisplayableForClipping() const {return m_createSavedViewDisplayableForClipping;}
-    void SetViewportResizeMode(ViewportResizeMode mode) {m_resizeMode = mode;}
-    void SetApplyVolume(bool state) {m_applyVolume = state;}
-    void SetApplyAttributes(bool state) {m_applyAttributes = state;}
-    void SetApplyLevels(bool state) {m_applyLevels = state;}
-    void SetApplyRefLevels(bool state) {m_applyRefLevels = state;}
-    void SetApplyClipVolume(bool state) {m_applyClipVolume = state;}
-    void SetApplyModel(bool state) {m_applyModel = state;}
-    void SetCreateSavedViewDisplayableForClipping(bool state) {m_createSavedViewDisplayableForClipping = state;}
-    DGNPLATFORM_EXPORT void SetApplyAll(bool state);
-};
 
 /*=================================================================================**//**
 * @bsiclass                                                     Keith.Bentley   02/04
@@ -602,24 +570,22 @@ public:
 
     //! @return the camera target for this DgnViewport
     DGNPLATFORM_EXPORT DPoint3d GetCameraTarget() const;
-    /** @} */
 
     //! sets the object to be used for drawing tool graphics
     //! @param[in] handler The new tool graphics handler. NULL to clear
     DGNPLATFORM_EXPORT void SetToolGraphicsHandler(ToolGraphicsHandler* handler);
 
-    /** @cond BENTLEY_SDK_Internal */
-    /** Bentley Internal */
-    /** @{ */
     //! Determine the depth, in NPC units, of the elements visible within a view.
     //! @param[out] low the npc value of the furthest back element in the view
     //! @param[out] high the npc value of the element closest to the front of view
     //! @param[in] subRectNpc If non-NULL, only search within a sub rectangle of the view. In NPC coordinates.
     //! @return SUCCESS if there were visible elements within the view, ERROR otherwise.
+    //! @private
     DGNPLATFORM_EXPORT StatusInt DetermineVisibleDepthNpc(double& low, double& high, DRange3dCP subRectNpc=NULL);
 
     //! @return the point to use as the default rotation point at the center of the visible elements in the view.
     //! @note this method calls DetermineVisibleDepthNpc, which can be time consuming.
+    //! @private
     DGNPLATFORM_EXPORT DPoint3d DetermineDefaultRotatePoint();
 
     //! Get the number width in pixels for a line weight value for this DgnViewport. Users select, and elements store a "line weight"
@@ -628,6 +594,7 @@ public:
     //! from the mapping table for this DgnViewport.
     //! @param[in] index the line weight value in the range of 0 to 31.
     //! @return  the number of pixels for lineWeightValue
+    //! @private
     DGNPLATFORM_EXPORT int GetIndexedLineWidth(int index) const;
 
     //! Get the 32 bit on-off "line pattern" for a line code value for this DgnViewport. Users select, and elements store a "line code"
@@ -635,17 +602,18 @@ public:
     //! for a given line code value from the mapping table for this DgnViewport.
     //! @param[in] index a the range of 0 to 7.
     //! @return  the line pattern for lineCodeValue
+    //! @private
     DGNPLATFORM_EXPORT uint32_t GetIndexedLinePattern(int index) const;
 
     //! Compute the range of the element when displayed in this DgnViewport
+    //! @private
     DGNPLATFORM_EXPORT StatusInt ComputeFittedElementRange(DRange3dR range, DgnElementIdSet const& elements, RotMatrixCP rMatrix=nullptr);
 
+    //! @private
     DGNPLATFORM_EXPORT void SetMinimumLOD (double minLOD);
-    /** @} */
-    /** @endcond */
 
-    /** @name Color Controls */
-    /** @{ */
+/** @name Color Controls */
+/** @{ */
     //! Get the RGB color of the background for this DgnViewport.
     //! @return background RGB color
     DGNPLATFORM_EXPORT ColorDef GetBackgroundColor() const;
@@ -687,10 +655,10 @@ public:
     //! @param[in]          lineWidth       Line width in pixels (1 or greater)
     //! @param[in]          lineCodeIndex   Line code index (0-7)
     DGNPLATFORM_EXPORT void SetSymbologyRgb(ColorDef lineColor, ColorDef fillColor, int lineWidth, int lineCodeIndex);
-    /** @} */
+/** @} */
 
-    /** @name Coordinate Query and Conversion */
-    /** @{ */
+/** @name Coordinate Query and Conversion */
+/** @{ */
     //! Get the Rotation Matrix for this DgnViewport. The concept of a DgnViewport's Rotation Matrix is somewhat limiting since it does not
     //! support perspective transformations. This method is provided for compatibility with previous API only.
     //! @see the Coordinate Coordinate Query and Conversion functions and #GetWorldToViewMap
@@ -821,12 +789,12 @@ public:
     //! @param[in] nPts Number of points in both arrays.
     DGNPLATFORM_EXPORT void ViewToWorld(DPoint3dP worldPts, DPoint3dCP viewPts, int nPts) const;
 
-    //! Transforma a point from DgnCoordSystem::View into DgnCoordSystem::World.
+    //! Transform a point from DgnCoordSystem::View into DgnCoordSystem::World.
     DPoint3d ViewToWorld(DPoint3dCR viewPt) {DPoint3d worldPt; ViewToWorld(&worldPt, &viewPt, 1); return worldPt;}
-    /** @} */
+/** @} */
 
-    /** @name DgnViewport Parameters */
-    /** @{ */
+/** @name DgnViewport Parameters */
+/** @{ */
     //! Determine whether this DgnViewport is currently active. Viewports become "active" after they have
     //! been initialized and connected to an output device.
     //! @return true if the DgnViewport is active.
@@ -918,10 +886,10 @@ public:
     void SynchWithViewController(bool saveInUndo) {_SynchWithViewController(saveInUndo);}
 
     DGNPLATFORM_EXPORT void SetNeedsRefresh();
-    /** @} */
+/** @} */
 
-    /** @name Changing DgnViewport Frustum */
-    /** @{ */
+/** @name Changing DgnViewport Frustum */
+/** @{ */
     //! Scroll the DgnViewport by a given number of pixels in the view's X and/or Y direction. This method will move the DgnViewport's frustum
     //! in the indicated direction, but does \em not update the screen (even if the DgnViewport happens to be a visible View.) This method does
     //! change the ViewController associated with the DgnViewport.
@@ -948,7 +916,7 @@ public:
     //! @note To update the view, see ViewManager::UpdateView or ViewManager::UpdateViewDynamic. To save the change to the ViewController
     //!       in the view undo buffer, see SynchWithViewController.
     DGNPLATFORM_EXPORT ViewportStatus SetupFromFrustum(Frustum const& frustPts);
-    /** @} */
+/** @} */
 
     //__PUBLISH_SECTION_END__
     DGNPLATFORM_EXPORT ColorDef GetSolidFillEdgeColor(ColorDef inColor);
@@ -984,27 +952,10 @@ public:
     NonVisibleViewport(ViewControllerR viewController) {m_viewController = &viewController; SetupFromViewController();}
 };
 
-//! @endGroup
+/** @endGroup */
 
-//__PUBLISH_SECTION_END__
-
-/**  @addtogroup RealityDataHandlers Reality Data Handlers
-
-When you build infrastructure, you work with two kinds of data: 
-modelled data and reality data. Modelled data is what you are working on. It is typically vector data, and it is always stored in your dgndb. 
-Reality data is pre-existing information about the world around you. It's normally acquired from servers. It lives outside your dgndb, and 
-it is cached external to the local dgndb. While there's virtually no limit to the amount of reality data available, it is acquired and stored in chunks, 
-typically in a very compact format. For example, instead of having millions of line elements representing a map, you have various tiles of a 
-multi-resolution raster giving you a picture of the visible portions of the map. You probably need only a few tens of megabytes of data to hold that. 
-Even though it’s displayed as raster, it may still be possible to snap to it and get information about it, depending on the reality data handler and other factors.
-
-A reality data handler controls the download, caching, and display of reality data. 
-
-@endif
-*/
-
-//! @endGroup
-
-//__PUBLISH_SECTION_START__
-
-END_BENTLEY_DGNPLATFORM_NAMESPACE
+#if defined (DOCUMENTATION_GENERATOR)
+    }}
+#else
+    END_BENTLEY_DGNPLATFORM_NAMESPACE
+#endif

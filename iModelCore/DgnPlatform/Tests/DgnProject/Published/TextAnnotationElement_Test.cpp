@@ -57,7 +57,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
         CreateDgnDbParams dbCreateParams;
         dbCreateParams.SetProjectName("TextAnnotationElementTest-BasicCrud");
         dbCreateParams.SetProjectDescription("Created by unit test TextAnnotationElementTest.BasicCrud");
-        dbCreateParams.SetStartDefaultTxn(DefaultTxn_Exclusive);
+        dbCreateParams.SetStartDefaultTxn(DefaultTxn::Exclusive);
 
         DbResult createStatus;
         DgnDbPtr db = DgnDb::CreateDgnDb(&createStatus, dbPath, dbCreateParams);
@@ -82,7 +82,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
         TextAnnotation annotation(*db);
         annotation.SetText(AnnotationTextBlock::Create(*db, annotationTextStyle1Id, ANNOTATION_TEXT_1).get());
 
-        PhysicalTextAnnotationElementPtr annotationElement1 = PhysicalTextAnnotationElement::Create(PhysicalTextAnnotationElement::CreateParams(*physicalModel1, PhysicalTextAnnotationElement::QueryClassId(*db), physicalCategory1Id), annotation);
+        PhysicalTextAnnotationElementPtr annotationElement1 = PhysicalTextAnnotationElement::Create(PhysicalTextAnnotationElement::CreateParams(*db, physicalModel1Id, PhysicalTextAnnotationElement::QueryClassId(*db), physicalCategory1Id), annotation);
         PhysicalTextAnnotationElementCPtr insertedAnnotationElement1 = annotationElement1->Insert();
         ASSERT_TRUE(insertedAnnotationElement1.IsValid());
         
@@ -117,7 +117,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
     //.............................................................................................
         {
         DbResult openStatus;
-        DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Exclusive));
+        DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
         ASSERT_TRUE(BE_SQLITE_OK == openStatus);
         ASSERT_TRUE(db.IsValid());
         
@@ -161,7 +161,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
     //.............................................................................................
         {
         DbResult openStatus;
-        DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Exclusive));
+        DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
         ASSERT_TRUE(BE_SQLITE_OK == openStatus);
         ASSERT_TRUE(db.IsValid());
 

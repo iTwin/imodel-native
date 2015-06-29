@@ -17,7 +17,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //! Interface for supplying additional topology information for an element being located.
 //! Can be stored with the hit detail and later used to interpet the hit information.
 //=======================================================================================
-struct IElemTopology : Bentley::IRefCounted
+struct IElemTopology : BentleyApi::IRefCounted
 {
 //! Create a deep copy of this object.
 virtual IElemTopologyP _Clone() const = 0;

@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
+#include <DgnPlatform/DgnPlatformLib.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <ECDb/ECSqlBuilder.h>
 #include <DgnPlatform/DgnCore/WebMercator.h>
@@ -30,12 +31,12 @@ static bool s_abcShouldFail;
 //! A test IDgnElementDependencyHandler
 // @bsiclass                                                     Sam.Wilson      01/15
 //=======================================================================================
-struct ABCHandler : DgnPlatform::DgnElementDependencyHandler
+struct ABCHandler : Dgn::DgnElementDependencyHandler
     {
-    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME, ABCHandler, DgnPlatform::DgnDomain::Handler, )
+    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME, ABCHandler, Dgn::DgnDomain::Handler, )
 
     bvector<EC::ECInstanceId> m_relIds;
-    void _OnRootChanged(DgnDbR db, ECInstanceId relationshipId, DgnElementId source, DgnElementId target, TxnSummaryR) override;
+    void _OnRootChanged(DgnDbR db, ECInstanceId relationshipId, DgnElementId source, DgnElementId target) override;
     void Clear() {m_relIds.clear();}
     };
 
@@ -56,9 +57,9 @@ struct TestElementHandler;
 //! A test Element. Has an item.
 // @bsiclass                                                     Sam.Wilson      04/15
 //=======================================================================================
-struct TestElement : DgnPlatform::PhysicalElement
+struct TestElement : Dgn::PhysicalElement
 {
-    DEFINE_T_SUPER(DgnPlatform::PhysicalElement)
+    DEFINE_T_SUPER(Dgn::PhysicalElement)
 
     friend struct TestElementHandler;
 
@@ -129,16 +130,14 @@ DOMAIN_DEFINE_MEMBERS(TransactionManagerTestDomain)
 struct TxnMonitorVerifier : TxnMonitor
     {
     bool m_OnTxnClosedCalled;
-    bool m_OnTxnReverseCalled;
     bool m_OnTxnReversedCalled;
     bset<ECInstanceId> m_adds, m_deletes, m_mods;
 
     TxnMonitorVerifier();
     ~TxnMonitorVerifier();
     void Clear();
-    void _OnTxnCommit(TxnSummaryCR summary) override;
-    void _OnTxnReverse(TxnSummaryCR) override {m_OnTxnReverseCalled = true;}
-    void _OnTxnReversed(TxnSummaryCR) override {m_OnTxnReversedCalled = true;}
+    void _OnCommit(TxnManager&) override;
+    void _OnReversedChanges(TxnManager&) override {m_OnTxnReversedCalled = true;}
     };
 
 /*=================================================================================**//**
@@ -235,25 +234,25 @@ TxnMonitorVerifier::~TxnMonitorVerifier()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnMonitorVerifier::Clear() 
     {
-    m_OnTxnClosedCalled = m_OnTxnReverseCalled = m_OnTxnReversedCalled = false;
+    m_OnTxnClosedCalled = m_OnTxnReversedCalled = false;
     m_adds.clear(); m_deletes.clear(); m_mods.clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnMonitorVerifier::_OnTxnCommit(TxnSummaryCR summary)
+void TxnMonitorVerifier::_OnCommit(TxnManager& txnMgr)
     {
     m_OnTxnClosedCalled = true;
-    Statement stmt(summary.GetDgnDb(), "SELECT ElementId,ChangeType FROM " TEMP_TABLE(TXN_TABLE_Elements));
-    while (stmt.Step() == BE_SQLITE_ROW)
+    
+    for (auto it : txnMgr.Elements().MakeIterator())
         {
-        auto eid = stmt.GetValueId<DgnElementId>(0);
-        switch (stmt.GetValueInt(1))
+        DgnElementId eid =  it.GetElementId();
+        switch (it.GetChangeType())
             {
-            case (int)TxnSummary::ChangeType::Insert: m_adds.insert(eid); break;
-            case (int)TxnSummary::ChangeType::Delete: m_deletes.insert(eid); break;
-            case (int)TxnSummary::ChangeType::Update: m_mods.insert(eid); break;
+            case TxnTable::ChangeType::Insert: m_adds.insert(eid); break;
+            case TxnTable::ChangeType::Delete: m_deletes.insert(eid); break;
+            case TxnTable::ChangeType::Update: m_mods.insert(eid); break;
             default:
                 FAIL();
             }
@@ -272,10 +271,10 @@ TransactionManagerTestDomain::TransactionManagerTestDomain() : DgnDomain(TMTEST_
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
-void ABCHandler::_OnRootChanged(DgnDbR db, ECInstanceId relationshipId, DgnElementId source, DgnElementId target, TxnSummaryR summary)
+void ABCHandler::_OnRootChanged(DgnDbR db, ECInstanceId relationshipId, DgnElementId source, DgnElementId target)
     {
     if (s_abcShouldFail)
-        summary.ReportError(*new TxnSummary::ValidationError(TxnSummary::ValidationError::Severity::Warning, "ABC failed"));
+        db.Txns().ReportError(*new TxnManager::ValidationError(TxnManager::ValidationError::Severity::Warning, "ABC failed"));
     m_relIds.push_back(relationshipId);
     }
 
@@ -389,7 +388,7 @@ CachedECSqlStatementPtr ElementDependencyGraph::GetSelectElementDrivesElementByI
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElementDependencyGraph::SetUpForRelationshipTests(WCharCP testname)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", GetTestFileName(testname).c_str(), Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", GetTestFileName(testname).c_str(), Db::OpenMode::ReadWrite);
 
     auto abcHandlerInternalId = m_db->Domains().GetClassId(ABCHandler::GetHandler());
 
@@ -449,9 +448,7 @@ static CurveVectorPtr computeShape(double len)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
     {
-    DgnModelP model = db.Models().GetModel(mid);
-
-    TestElementPtr testElement = new TestElement(CreateParams(*model, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId));
+    TestElementPtr testElement = new TestElement(CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId));
 
     static const double PLANE_LEN = 100;
     //  Add some hard-wired geometry
@@ -596,7 +593,7 @@ void TestElement::_CopyFrom(DgnElementCR rhs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, StreetMapModel)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests_StreetMapModel.idgndb", Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests_StreetMapModel.idgndb", Db::OpenMode::ReadWrite);
 
     auto newModelId = dgn_ModelHandler::StreetMap::CreateStreetMapModel(*m_db, dgn_ModelHandler::StreetMap::MapService::MapQuest, dgn_ModelHandler::StreetMap::MapType::SatelliteImage, true);
     ASSERT_TRUE( newModelId.IsValid() );
@@ -614,7 +611,7 @@ TEST_F(TransactionManagerTests, StreetMapModel)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, CRUD)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests_CRUD.idgndb", Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests_CRUD.idgndb", Db::OpenMode::ReadWrite);
 
     m_db->SaveChanges();
     m_db->Txns().EnableTracking(true);
@@ -677,7 +674,7 @@ TEST_F(TransactionManagerTests, CRUD)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, ElementInstance)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", Db::OpenMode::ReadWrite);
 
     auto key1 = InsertElement("E1");
     ASSERT_TRUE( key1->GetElementId().IsValid() );
@@ -715,7 +712,7 @@ TEST_F(TransactionManagerTests, ElementItem)
     Utf8CP initialTestPropValue = "Test";
     Utf8CP changedTestPropValue = "Test - changed";
 
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", Db::OpenMode::ReadWrite);
 
     ECN::ECClassCP testItemClass = m_db->Schemas().GetECClass(TMTEST_SCHEMA_NAME, TMTEST_TEST_ITEM_CLASS_NAME);
     ASSERT_NE( nullptr , testItemClass );
@@ -1645,11 +1642,11 @@ TEST_F(ElementDependencyGraph, ModelDependenciesWithCycleTest)
     //       ---> m3
     //
 
-    auto modelClassId = m_db->Schemas().GetECClass ("dgn", "PhysicalModel")->GetId();
-    auto m1key = ECInstanceKey (modelClassId, ECInstanceId(m1id.GetValue()));
-    auto m2key = ECInstanceKey (modelClassId, ECInstanceId(m2id.GetValue()));
-    auto m3key = ECInstanceKey (modelClassId, ECInstanceId(m3id.GetValue()));
-    auto m4key = ECInstanceKey (modelClassId, ECInstanceId(m4id.GetValue()));
+    auto modelClassId = m_db->Schemas().GetECClass("dgn", "PhysicalModel")->GetId();
+    auto m1key = ECInstanceKey(modelClassId, ECInstanceId(m1id.GetValue()));
+    auto m2key = ECInstanceKey(modelClassId, ECInstanceId(m2id.GetValue()));
+    auto m3key = ECInstanceKey(modelClassId, ECInstanceId(m3id.GetValue()));
+    auto m4key = ECInstanceKey(modelClassId, ECInstanceId(m4id.GetValue()));
 
     ECSqlStatement mrelstmt;
     ECInstanceKey rkey;
@@ -1766,7 +1763,7 @@ TEST_F(ElementDependencyGraph, PersistentHandlerTest)
 
     // Make sure that we can reopen the file. Opening the file entails checking that all registered handlers are supplied.
     DbResult result;
-    m_db = DgnDb::OpenDgnDb(&result, theFile, DgnDb::OpenParams(Db::OPEN_Readonly));
+    m_db = DgnDb::OpenDgnDb(&result, theFile, DgnDb::OpenParams(Db::OpenMode::Readonly));
     ASSERT_TRUE( m_db.IsValid() );
     ASSERT_EQ( result, BE_SQLITE_OK );
 
@@ -1825,7 +1822,7 @@ struct TestEdgeProcessor : DgnElementDependencyGraph::IEdgeProcessor
 
     virtual void _ProcessEdge(DgnElementDependencyGraph::Edge const& edge, DgnElementDependencyHandler* handler) override;
     virtual void _ProcessEdgeForValidation(DgnElementDependencyGraph::Edge const& edge, DgnElementDependencyHandler* handler) override;
-    virtual void _OnValidationError(TxnSummary::ValidationError const& error, DgnElementDependencyGraph::Edge const* edge) override;
+    virtual void _OnValidationError(TxnManager::ValidationError const& error, DgnElementDependencyGraph::Edge const* edge) override;
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1846,7 +1843,7 @@ void TestEdgeProcessor::_ProcessEdgeForValidation(DgnElementDependencyGraph::Edg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TestEdgeProcessor::_OnValidationError(TxnSummary::ValidationError const& error, DgnElementDependencyGraph::Edge const* edge) 
+void TestEdgeProcessor::_OnValidationError(TxnManager::ValidationError const& error, DgnElementDependencyGraph::Edge const* edge) 
     {
     m_hadError = true;
     }
@@ -1876,8 +1873,7 @@ TEST_F(ElementDependencyGraph, WhatIfTest1)
     ABCHandler::GetHandler().Clear();
         {
         TestEdgeProcessor proc;
-        TxnSummary summary(*m_db, TxnDirection::Forward);
-        DgnElementDependencyGraph graph(summary);
+        DgnElementDependencyGraph graph(m_db->Txns());
         ASSERT_EQ( BSISUCCESS , graph.WhatIfChanged(proc, changedEntities, changedDepRels) );
 
         ASSERT_EQ( proc.m_hadError , false );
@@ -1888,15 +1884,14 @@ TEST_F(ElementDependencyGraph, WhatIfTest1)
     BeFileName theFile = m_db->GetFileName();
     CloseDb();
     DbResult result;
-    m_db = DgnDb::OpenDgnDb(&result, theFile, DgnDb::OpenParams(Db::OPEN_ReadWrite));
+    m_db = DgnDb::OpenDgnDb(&result, theFile, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
     ASSERT_TRUE( m_db.IsValid() );
     ASSERT_EQ( result, BE_SQLITE_OK );
 
     ABCHandler::GetHandler().Clear();
         {
         TestEdgeProcessor proc;
-        TxnSummary summary(*m_db, TxnDirection::Forward);
-        DgnElementDependencyGraph graph(summary);
+        DgnElementDependencyGraph graph(m_db->Txns());
         ASSERT_EQ( BSISUCCESS , graph.WhatIfChanged(proc, changedEntities, changedDepRels) );
 
         ASSERT_EQ( proc.m_hadError , false );
@@ -1929,8 +1924,7 @@ TEST_F(ElementDependencyGraph, TestPriority)
     ABCHandler::GetHandler().Clear();
         {
         TestEdgeProcessor proc;
-        TxnSummary summary(*m_db, TxnDirection::Forward);
-        DgnElementDependencyGraph graph(summary);
+        DgnElementDependencyGraph graph(m_db->Txns());
         ASSERT_EQ( BSISUCCESS , graph.WhatIfChanged(proc, changedEntities, changedDepRels) );
 
         ASSERT_EQ( ABCHandler::GetHandler().m_relIds.size(), 0 ) << L"Real dependency handler should not have been called";
@@ -1944,8 +1938,7 @@ TEST_F(ElementDependencyGraph, TestPriority)
 
     // Change the priority of e12_e2 to be greater. Now, it should be called first.
         {
-        TxnSummary summary(*m_db, TxnDirection::Forward);
-        DgnElementDependencyGraph graph(summary);
+        DgnElementDependencyGraph graph(m_db->Txns());
         DgnElementDependencyGraph::Edge edge_e12_e2 = graph.QueryEdgeByRelationshipId(e12_e2.GetECInstanceId());
         ASSERT_TRUE( edge_e12_e2.GetECRelationshipId().IsValid() );
         ASSERT_TRUE( edge_e12_e2.GetECRelationshipId() == e12_e2.GetECInstanceId() );
@@ -1956,8 +1949,7 @@ TEST_F(ElementDependencyGraph, TestPriority)
     ABCHandler::GetHandler().Clear();
         {
         TestEdgeProcessor proc;
-        TxnSummary summary(*m_db, TxnDirection::Forward);
-        DgnElementDependencyGraph graph(summary);
+        DgnElementDependencyGraph graph(m_db->Txns());
         ASSERT_EQ( BSISUCCESS , graph.WhatIfChanged(proc, changedEntities, changedDepRels) );
 
         ASSERT_EQ( ABCHandler::GetHandler().m_relIds.size(), 0 ) << L"Real dependency handler should not have been called";
@@ -1974,13 +1966,12 @@ TEST_F(ElementDependencyGraph, TestPriority)
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, ElementAssembly)
-{
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", Db::OPEN_ReadWrite);
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", Db::OpenMode::ReadWrite);
 
     DgnClassId testClass(TestElement::GetTestElementECClass(*m_db)->GetId());
-    DgnModelP model = m_db->Models().GetModel(m_defaultModelId);
 
-    TestElement::CreateParams params(*model, testClass, m_defaultCategoryId);
+    TestElement::CreateParams params(*m_db, m_defaultModelId, testClass, m_defaultCategoryId);
     TestElementPtr e1 = new TestElement(params);
 
     DgnElementCPtr el1 = e1->Insert();
@@ -2014,14 +2005,113 @@ TEST_F(TransactionManagerTests, ElementAssembly)
 
     ASSERT_TRUE(!el1->IsPersistent());  // neither should now be persistent
     ASSERT_TRUE(!el2->IsPersistent());
-}
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static void testModelUndoRedo(DgnDbR db)
+    {
+    Utf8String name = db.Models().GetUniqueModelName("testphysical");
+
+    ModelHandlerR handler = dgn_ModelHandler::Physical::GetHandler();
+    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, db.Domains().GetClassId(handler), name.c_str()));
+    auto modelStatus = model->Insert();
+    ASSERT_TRUE(DgnDbStatus::Success == modelStatus);
+
+    auto category = db.Categories().MakeIterator().begin().GetCategoryId();
+
+    TestElementPtr templateEl = TestElement::Create(db, model->GetModelId(), category, "");
+    DgnElementCPtr el1 = templateEl->Insert();
+    ASSERT_TRUE(el1->IsPersistent());
+
+    templateEl->InvalidateElementId();
+    templateEl->SetCode(nullptr);
+    DgnElementCPtr el2 = templateEl->Insert();
+    ASSERT_TRUE(el2->IsPersistent());
+
+    templateEl->InvalidateElementId();
+    templateEl->SetCode(nullptr);
+    DgnElementCPtr el3 = templateEl->Insert();
+    ASSERT_TRUE(el3->IsPersistent());
+
+    db.SaveChanges("added model");
+
+    auto& txns = db.Txns(); 
+    auto stat = txns.ReverseSingleTxn();
+    ASSERT_TRUE(DgnDbStatus::Success == stat);
+    ASSERT_TRUE(!el1->IsPersistent());
+    ASSERT_TRUE(!el2->IsPersistent());
+    ASSERT_TRUE(!el3->IsPersistent());
+    ASSERT_TRUE(!model->IsPersistent());
+
+    stat = txns.ReinstateTxn();  // redo the changes
+    ASSERT_TRUE(DgnDbStatus::Success == stat);
+
+    el1 = db.Elements().GetElement(el1->GetElementId());
+    el2 = db.Elements().GetElement(el2->GetElementId());
+    el3 = db.Elements().GetElement(el3->GetElementId());
+    model = db.Models().GetModel(model->GetModelId());
+    ASSERT_TRUE(el1->IsPersistent());
+    ASSERT_TRUE(el2->IsPersistent());
+    ASSERT_TRUE(el3->IsPersistent());
+    ASSERT_TRUE(model->IsPersistent());
+
+    stat = model->Delete();
+    ASSERT_TRUE(DgnDbStatus::Success == stat);
+    ASSERT_TRUE(!el1->IsPersistent());
+    ASSERT_TRUE(!el2->IsPersistent());
+    ASSERT_TRUE(!el3->IsPersistent());
+    ASSERT_TRUE(!model->IsPersistent());
+    db.SaveChanges("deleted model");
+
+    stat = txns.ReverseSingleTxn();
+    el1 = db.Elements().GetElement(el1->GetElementId());
+    el2 = db.Elements().GetElement(el2->GetElementId());
+    el3 = db.Elements().GetElement(el3->GetElementId());
+    model = db.Models().GetModel(model->GetModelId());
+    ASSERT_TRUE(el1->IsPersistent());
+    ASSERT_TRUE(el2->IsPersistent());
+    ASSERT_TRUE(el3->IsPersistent());
+    ASSERT_TRUE(model->IsPersistent());
+
+    stat = txns.ReinstateTxn();  // redo the delete
+    ASSERT_TRUE(DgnDbStatus::Success == stat);
+    ASSERT_TRUE(!el1->IsPersistent());
+    ASSERT_TRUE(!el2->IsPersistent());
+    ASSERT_TRUE(!el3->IsPersistent());
+    ASSERT_TRUE(!model->IsPersistent());
+
+    stat = txns.ReverseSingleTxn(); // undo delete
+    ASSERT_TRUE(DgnDbStatus::Success == stat);
+    model = db.Models().GetModel(model->GetModelId());
+    ASSERT_TRUE(model->IsPersistent());
+
+    auto& props = model->GetPropertiesR();
+    props.SetRoundoffUnit(100.0, 200.0);
+    ASSERT_TRUE(100.0 == props.GetRoundoffUnit());
+    ASSERT_TRUE(200.0 == props.GetRoundoffRatio());
+
+    model->Update();
+    db.SaveChanges("updated model");
+    stat = txns.ReverseSingleTxn(); // undo update
+    ASSERT_TRUE(&props == &model->GetPropertiesR());
+    ASSERT_TRUE(DgnDbStatus::Success == stat);
+    ASSERT_TRUE(100.0 != props.GetRoundoffUnit());
+    ASSERT_TRUE(200.0 != props.GetRoundoffRatio());
+
+    stat = txns.ReinstateTxn();  // redo the update
+    ASSERT_TRUE(DgnDbStatus::Success == stat);
+    ASSERT_TRUE(100.0 == props.GetRoundoffUnit());
+    ASSERT_TRUE(200.0 == props.GetRoundoffRatio());
+    }            
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, UndoRedo)
-{
-    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", Db::OPEN_ReadWrite);
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", Db::OpenMode::ReadWrite);
     auto& txns = m_db->Txns(); 
     txns.EnableTracking(true);
 
@@ -2037,8 +2127,8 @@ TEST_F(TransactionManagerTests, UndoRedo)
     ASSERT_TRUE(!txns.IsRedoPossible());
 
     ASSERT_TRUE(el1->IsPersistent());
-    StatusInt stat = txns.ReverseSingleTxn();
-    ASSERT_EQ(stat, SUCCESS);
+    auto stat = txns.ReverseSingleTxn();
+    ASSERT_TRUE(DgnDbStatus::Success == stat);
     ASSERT_TRUE(!txns.IsUndoPossible());     // we can now redo but not undo
     ASSERT_TRUE(txns.IsRedoPossible());
 
@@ -2046,7 +2136,7 @@ TEST_F(TransactionManagerTests, UndoRedo)
     ASSERT_TRUE(!afterUndo.IsValid()); // it should not be in database.
     ASSERT_TRUE(!el1->IsPersistent());
     stat = txns.ReinstateTxn();  // redo the add, put the added element back
-    ASSERT_EQ(stat, SUCCESS);
+    ASSERT_TRUE(DgnDbStatus::Success == stat);
 
     ASSERT_TRUE(txns.IsUndoPossible());
     ASSERT_TRUE(!txns.IsRedoPossible());
@@ -2056,20 +2146,233 @@ TEST_F(TransactionManagerTests, UndoRedo)
     ASSERT_TRUE(!el1->IsPersistent());
     ASSERT_TRUE(el1.get() != afterRedo.get());
 
-    stat = txns.ReverseSingleTxn();
-    ASSERT_EQ(stat, SUCCESS);
-
+    // make sure that undo/redo of an update also is reflected in the RangeTree
     templateEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "");
     DgnElementCPtr el2 = templateEl->Insert();
     m_db->SaveChanges("create new");
+    AxisAlignedBox3d extents1 = m_db->Units().ComputeProjectExtents();
 
     templateEl->ChangeElement(201.);
     templateEl->Update();
+    AxisAlignedBox3d extents2 = m_db->Units().ComputeProjectExtents();
+    ASSERT_TRUE (!extents1.IsEqual(extents2));
     m_db->SaveChanges("update one");
 
     stat = txns.ReverseSingleTxn();
-    ASSERT_EQ(stat, SUCCESS);
+    AxisAlignedBox3d extents3 = m_db->Units().ComputeProjectExtents();
+    ASSERT_TRUE (extents1.IsEqual(extents3));    // after undo, range should be back to where it was before we did the update
+    ASSERT_TRUE(DgnDbStatus::Success == stat);
 
     stat = txns.ReinstateTxn();  // redo the update
-    ASSERT_EQ(stat, SUCCESS);
+    ASSERT_TRUE(DgnDbStatus::Success == stat);
+    AxisAlignedBox3d extents4 = m_db->Units().ComputeProjectExtents();
+    ASSERT_TRUE (extents4.IsEqual(extents2));    // now it should be back to the same as after we did the original update
+
+    templateEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "");
+    DgnElementCPtr el3 = templateEl->Insert();
+    ASSERT_TRUE(el3->IsPersistent());
+
+    el1 = m_db->Elements().GetElement(el1->GetElementId()); // reload e11
+    ASSERT_TRUE(el1->IsPersistent());
+    el1->Delete();
+    ASSERT_TRUE(!el1->IsPersistent());
+
+    DgnElementCPtr afterDelete= m_db->Elements().GetElement(el1->GetElementId());
+    ASSERT_TRUE(!afterDelete.IsValid());
+
+    m_db->AbandonChanges();
+
+    ASSERT_TRUE(!el3->IsPersistent());
+    ASSERT_TRUE(!el1->IsPersistent());
+    DgnElementCPtr afterAbandon = m_db->Elements().GetElement(el1->GetElementId());
+    ASSERT_TRUE(afterAbandon.IsValid());
+    ASSERT_TRUE(afterAbandon->IsPersistent());
+
+    templateEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "");
+    el2 = templateEl->Insert();
+    ASSERT_TRUE(el2->IsPersistent());
+    stat = txns.ReverseSingleTxn(); // reversing a txn with pending uncommitted changes should abandon them.
+    ASSERT_TRUE(DgnDbStatus::Success == stat);
+    ASSERT_TRUE(!el2->IsPersistent());
+    ASSERT_TRUE(nullptr == m_db->Elements().FindElement(el2->GetElementId()));
+    ASSERT_TRUE(!m_db->Elements().GetElement(el2->GetElementId()).IsValid());
+
+    testModelUndoRedo(*m_db);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Maha Nasir                      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(TransactionManagerTests, ModelInsertReverse)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    auto& txns = m_db->Txns();
+    txns.EnableTracking(true);
+
+    auto seedModelId = m_defaultModelId;
+    DgnModelP seedModel = m_db->Models().GetModel(seedModelId);
+    DgnModelPtr model1 = seedModel->Clone("model1");
+    model1->Insert();
+    m_db->SaveChanges("changeSet1");
+
+    ASSERT_TRUE(model1 != nullptr);
+    EXPECT_TRUE(m_db->Models().QueryModelId("model1").IsValid());
+
+    //Reverse insertion.Model 1 should'nt be in the Db now.
+    auto stat = txns.ReverseTxns(1);
+    EXPECT_EQ(DgnDbStatus::Success, stat);
+    EXPECT_FALSE(m_db->Models().QueryModelId("model1").IsValid());
+
+    //Reinstate Transaction.Model should be back.
+    stat = txns.ReinstateTxn();
+    EXPECT_EQ(DgnDbStatus::Success, stat);
+    m_db->SaveChanges("changeSet2");
+
+    EXPECT_TRUE(m_db->Models().QueryModelId("model1").IsValid());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Maha Nasir                      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(TransactionManagerTests, ModelDeleteReverse)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    auto& txns = m_db->Txns();
+    txns.EnableTracking(true);
+
+    auto seedModelId = m_defaultModelId;
+    DgnModelP seedModel = m_db->Models().GetModel(seedModelId);
+    DgnModelPtr model1 = seedModel->Clone("model1");
+    model1->Insert();
+    m_db->SaveChanges("changeSet1");
+
+    ASSERT_TRUE(model1.IsValid());
+    ASSERT_TRUE(model1->GetModelId() == m_db->Models().QueryModelId("model1"));
+
+    DgnDbStatus modelStatus = model1->Delete();
+    EXPECT_EQ(DgnDbStatus::Success, modelStatus);
+    EXPECT_FALSE(m_db->Models().QueryModelId("model1").IsValid());
+    m_db->SaveChanges("changeSet2");
+
+    //Reverse deletion.Model 1 should be in the Db now.
+    auto stat = txns.ReverseTxns(1);
+    EXPECT_EQ(DgnDbStatus::Success, stat);
+    EXPECT_TRUE(m_db->Models().QueryModelId("model1").IsValid());
+
+    //Reinstate Transaction.Model should'nt be there anymore.
+    stat = txns.ReinstateTxn();
+    EXPECT_EQ(DgnDbStatus::Success, stat);
+    m_db->SaveChanges("changeSet3");
+
+    EXPECT_FALSE(m_db->Models().QueryModelId("model1").IsValid());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Maha Nasir                      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(TransactionManagerTests, ElementInsertReverse)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    auto& txns = m_db->Txns();
+    txns.EnableTracking(true);
+
+    auto seedModelId = m_defaultModelId;
+    DgnModelP seedModel = m_db->Models().GetModel(seedModelId);
+    DgnModelPtr model1 = seedModel->Clone("model1");
+    model1->Insert();
+    m_db->SaveChanges("changeSet1");
+
+    ASSERT_TRUE(model1 != nullptr);
+    DgnModelId m1id = m_db->Models().QueryModelId("model1");
+    EXPECT_TRUE(m1id.IsValid());
+
+    auto keyE1 = InsertElement("E1", m1id);
+    auto keyE2 = InsertElement("E2", m1id);
+    m_db->SaveChanges("changeSet2");
+
+    DgnElementId e1id = keyE1->GetElementId();
+    DgnElementId e2id = keyE2->GetElementId();
+    EXPECT_TRUE(e1id.IsValid());
+    EXPECT_TRUE(e2id.IsValid());
+
+    //Reverse Transaction.Elements shouldn't be in the model now.
+    auto stat = txns.ReverseTxns(1);
+    EXPECT_EQ(DgnDbStatus::Success, stat);
+
+    EXPECT_EQ(nullptr, m_db->Elements().FindElement(e1id));
+    EXPECT_EQ(nullptr, m_db->Elements().FindElement(e2id));
+
+    EXPECT_FALSE(m_db->Elements().QueryElementKey(e1id).IsValid());
+    EXPECT_FALSE(m_db->Elements().QueryElementKey(e2id).IsValid());
+
+    //Reinstate transcation.The elements should be back in the model.
+    stat = txns.ReinstateTxn();
+    EXPECT_EQ (DgnDbStatus::Success, stat);
+    m_db->SaveChanges("changeSet3");
+
+    DgnElementCPtr e1 = m_db->Elements().GetElement(e1id);
+    EXPECT_TRUE(e1 != nullptr);
+    EXPECT_NE(nullptr, m_db->Elements().FindElement(e1id));
+
+    DgnElementCPtr e2 = m_db->Elements().GetElement(e2id);
+    EXPECT_TRUE(e2 != nullptr);
+    EXPECT_NE(nullptr, m_db->Elements().FindElement(e2id));
+
+    //Both the elements and the model shouldn't be in the database.
+    txns.ReverseAll(true);
+    EXPECT_FALSE(m_db->Models().QueryModelId("model1").IsValid());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Maha Nasir                      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (TransactionManagerTests, ElementDeleteReverse)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    auto& txns = m_db->Txns();
+    txns.EnableTracking(true);
+
+    //Creates a model.
+    auto seedModelId = m_defaultModelId;
+    DgnModelP seedModel = m_db->Models().GetModel(seedModelId);
+    DgnModelPtr model1 = seedModel->Clone("model1");
+    model1->Insert();
+    m_db->SaveChanges("changeSet1");
+
+    ASSERT_TRUE(model1 != nullptr);
+    DgnModelId m1id = m_db->Models().QueryModelId("model1");
+    EXPECT_TRUE(m1id.IsValid());
+
+    auto keyE1 = InsertElement("E1", m1id);
+    m_db->SaveChanges("changeSet2");
+
+    DgnElementId e1id = keyE1->GetElementId();
+    EXPECT_TRUE(e1id.IsValid());
+    DgnElementCP pE1 = m_db->Elements().FindElement(e1id);
+    EXPECT_NE (nullptr, pE1);
+    EXPECT_TRUE(txns.IsUndoPossible());
+
+    //Deletes the Element.
+    EXPECT_EQ (DgnDbStatus::Success, m_db->Elements().Delete(*pE1));
+    m_db->SaveChanges("changeSet3");
+
+    EXPECT_FALSE(m_db->Elements().QueryElementKey(e1id).IsValid());
+    EXPECT_TRUE(m_db->Elements().GetElement(e1id) == nullptr);
+
+    //Reverse Transaction. Element should be back in the model now.
+    auto stat = txns.ReverseTxns(1);
+    EXPECT_EQ(DgnDbStatus::Success, stat);
+    EXPECT_TRUE(m_db->Elements().GetElement(e1id) != nullptr);
+    EXPECT_NE(nullptr, m_db->Elements().FindElement(e1id));
+
+    //Reinstate transcation. The elements shouldn't be in the model.
+    stat = txns.ReinstateTxn();
+    EXPECT_EQ(DgnDbStatus::Success, stat);
+    m_db->SaveChanges("changeSet4");
+
+    EXPECT_FALSE(m_db->Elements().QueryElementKey(e1id).IsValid());
+
+    //Both the elements and the model should'nt be in the database.
+    txns.ReverseAll(true);
+    EXPECT_FALSE(m_db->Models().QueryModelId("model1").IsValid());
     }

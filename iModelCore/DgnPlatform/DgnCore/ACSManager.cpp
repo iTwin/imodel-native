@@ -734,16 +734,16 @@ bool            is3D            /* => indicates whether the model to be used wit
         {
         /* The test for isXYRotation should be sufficient, but that function will allow left handed matrices.
            LH Matrices are unlikely, but would cause big problems in 2D */
-        if (!bsiRotMatrix_isXYRotation (&rMatrix, NULL) || 0.0 > bsiRotMatrix_determinant (&rMatrix))
-            bsiRotMatrix_initIdentity (&rMatrix);
+        if (!bsiRotMatrix_isXYRotation (&rMatrix, NULL) || 0.0 > rMatrix.Determinant ())
+            rMatrix.InitIdentity ();
         }
 
-    if (!bsiRotMatrix_isOrthogonal (&rMatrix))
+    if (!rMatrix.IsOrthogonal ())
         {
-        bsiRotMatrix_transpose (&rMatrix, &rMatrix);
+        rMatrix.TransposeOf (rMatrix);
 
-        if (bsiRotMatrix_squareAndNormalizeColumns (&rMatrix, &rMatrix, 0, 2))
-            bsiRotMatrix_transpose (&rMatrix, &rMatrix);
+        if (rMatrix.SquareAndNormalizeColumns (rMatrix, 0, 2))
+            rMatrix.TransposeOf (rMatrix);
         else
             rMatrix.InitIdentity ();
         }

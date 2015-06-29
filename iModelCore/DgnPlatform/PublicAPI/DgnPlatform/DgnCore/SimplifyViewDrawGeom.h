@@ -183,18 +183,16 @@ bool                            GetInTextDraw                   () {return m_inT
 void                            SetInThicknessDraw              (bool isThickness) {m_inThicknessDraw = isThickness;}
 bool                            GetInThicknessDraw              () {return m_inThicknessDraw;}
 
-DGNPLATFORM_EXPORT MaterialCP       GetCurrentMaterial          () const;
-#ifdef NEEDS_WORK_GEOMETRY_MAPS
-DGNPLATFORM_EXPORT MaterialMapCP    GetCurrentGeometryMap       () const;
-#endif
-bool                                GetInMaterialGeometryMap    () const {return m_processingMaterialGeometryMap;}
-
 DGNPLATFORM_EXPORT IPolyfaceConstructionPtr GetPolyfaceBuilder ();
 
 DGNPLATFORM_EXPORT BentleyStatus    GetElementToWorldTransform (TransformR transform);
 DGNPLATFORM_EXPORT BentleyStatus    GetLocalToElementTransform (TransformR transform);
 
+bool                                GetInMaterialGeometryMap    () const {return m_processingMaterialGeometryMap;}
 #ifdef NEEDS_WORK_GEOMETRY_MAPS
+DGNPLATFORM_EXPORT MaterialCP       GetCurrentMaterial          () const;
+DGNPLATFORM_EXPORT MaterialMapCP    GetCurrentGeometryMap       () const;
+
 StatusInt                       ProcessGeometryMap (PolyfaceQueryCR facets);
 StatusInt                       ProcessTextureOutlines (PolyfaceQueryCR facets);
 StatusInt                       ProcessFacetTextureOutlines (IPolyfaceConstructionR, DPoint3dCP points, DPoint2dCP params, bool const* edgeHidden, size_t nPoints, bvector<DPoint3d>&, bvector<int32_t>&);

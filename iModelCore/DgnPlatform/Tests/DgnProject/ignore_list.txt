@@ -3,15 +3,8 @@
 #----------------------------------------------------------------------------------------
 Performance*
 
-DimensionHandler.CreateAngularTypes # Jeff -- We'll need this for markups in Graphite04 -- On non-Windows - Problem setting range of dimension text
-DimensionHandler.CreateLabelLineDimension # Jeff -- We'll need this for markups in Graphite04 -- On non-Windows - Problem setting range of dimension text
-DgnStylesTest.ReadLineStylesDsc
-DgnMaterialsTest.InsertMaterialDuplicateName
-DgnMaterialsTest.UpdateMaterialDuplicateName
-DgnMaterialsTest.GetMaterialProperty
-DgnMaterialsTest.SaveMaterialProperty
-DgnMaterialsTest.SaveCustomMaterialProperty
-DgnMaterialsTest.SaveCustomMaterialSetting
+DimensionHandler.CreateAngularTypes                     # Jeff -- We'll need this for markups in Graphite04 -- On non-Windows - Problem setting range of dimension text
+DimensionHandler.CreateLabelLineDimension               # Jeff -- We'll need this for markups in Graphite04 -- On non-Windows - Problem setting range of dimension text
 TextBlockTest.CombineRunsUnitTest                       # Jeff - We'll need this for markups in Graphite04
 TextBlockTest.CombiningEdfThenCharStream                # Jeff - We'll need this for markups in Graphite04
 TextBlockTest.CombiningManyCharStreamsEdfs              # Jeff - We'll need this for markups in Graphite04
@@ -20,67 +13,25 @@ TextBlockTest.EnforcingAtomicEdfsOnDelete               # Jeff - We'll need this
 TextBlockTest.EnforcingAtomicEdfsOnInsert               # Jeff - We'll need this for markups in Graphite04
 TextBlockTest.RoundTripMultiFormat                      # Jeff - We'll need this for markups in Graphite04
 TextBlockTest.TextBlockEqualsNegativeUnitTest           # Jeff - We'll need this for markups in Graphite04
-XGraphicsTests.SplitLargeMeshes #TFS 19411
-DgnGraphicsTest3d.AddWithSymbology                      # John -- no longer works because XGraphics cooks when dumping XGraphicsContainer
+
+XGraphicsTests.SplitLargeMeshes                         # TFS 19411
 
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
 DgnECPersistence.ConstructSimRelationshipsNonGeneric    # Fails on Android
-
-DgnECNavigator.ElementInfoWithSecondaryInstances # Raman claims this is a mismatch between tip CVS data and unmerged code from 05, but repeated merges haven't fixed... someone needs to spend more time on this.
-
-DgnECNavigatorTest.Ifc_WithLatestDgnDb # Failing after 0501 to 06 merge; EC team notified on 2014-July-03
-
-ECDbInstances.JsonValueStructure # Fails after geomlibs/ecobjects merge from topaz
-
-#TFS160290 to address this
-ECDbInstances.FieldEngineerStructArray
+ECDbInstances.JsonValueStructure                        # Fails after geomlibs/ecobjects merge from topaz
 
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
 #----------------------------------------------------------------------------------------
-DgnColorsTest.GetElementColor
-DgnColorsTest.ImportElement
-DgnDb.LoadModelThroughProject
-DgnDb.WorkWithDgnModelTable
-DgnGraphicsTest2d.AddCurveVector
-DgnGraphicsTest2d.CreateDrawingGraphics
-DgnGraphicsTest2d.SaveAndLoadDrawingGraphics
-DgnGraphicsTest3d.AddMSBsplineCurve
-DgnGraphicsTest3d.AddMSBsplineSurface
-DgnGraphicsTest3d.AddPolyface
-DgnGraphicsTest3d.AddSolidPrimitive_Box
-DgnGraphicsTest3d.AddSolidPrimitive_Cone
-DgnGraphicsTest3d.AddSolidPrimitive_Extrusion
-DgnGraphicsTest3d.AddSolidPrimitive_Rotation
-DgnGraphicsTest3d.AddSolidPrimitive_Ruled
-DgnGraphicsTest3d.AddSolidPrimitive_Sphere
-DgnGraphicsTest3d.AddTextString
-DgnGraphicsTest3d.CreatePhysicalGraphics
-DgnGraphicsTest3d.CreateWithLevel
-DgnGraphicsTest3d.IterateOverGeometry
-DgnGraphicsTest3d.LoadModifyAndSave
-DgnGraphicsTest3d.SaveAndLoadPhysicalGraphics
-DgnMarkupProjectTest.CreateDgnMarkupProject
-DgnStylesTest.InsertLineStyle
-DgnStylesTest.InsertLineStyleWithExistingName
-DgnStylesTest.InsertLineStyleWithId
-DgnStylesTest.ReadLineStyles
-DgnStylesTest.UpdateLineStyleTable
-DgnStylesTest.UpdateLineStyleWithExistingName
-DgnTextStylesTest.DeleteTextStyle
-DgnTextStylesTest.GetTextStyleCount
-DgnTextStylesTest.InsertTextStyle
-DgnTextStylesTest.QueryTextStyle
-DgnTextStylesTest.UpdateTextStyle
-DgnViewsTest.InsertDeletedView
-DgnViewsTest.InsertExistingView
-DgnViewsTest.InsertView
-DgnViewsTest.WorkWithViewTable
-DgpRoundtripExpressionTests.Roundtrip
-ECDbInstances.SelectDgnLinksForDgnElement
-NamedVolume.CrudTest
-NotificationManagerTest.GetPriority
-
-Compatibility_Test.* # Umar something is wrong with the sizeof WString in X86 build
+DgnGraphicsTest2d.*                                     # WIP DgnElement
+DgnGraphicsTest3d.*                                     # WIP DgnElement
+DgnMaterialsTest.*                                      # WIP DgnMaterials
+DgnStylesTest.*                                         # WIP DgnLineStyles
+DgnTextStylesTest.*                                     # WIP DgnTextStyles
+DgnMarkupProjectTest.CreateDgnMarkupProject             # WIP Redline ECInstance
+DgpRoundtripExpressionTests.Roundtrip                   # Fails on some expressions return a decimal point where it is not expected. Further investigation needed.
+NamedVolume.CrudTest                                    # Fails because dgn_NamedVolume table is not there
+Compatibility_Test.*                                    # Umar something is wrong with the sizeof WString in X86 build
+DgnECNavigatorTest.Ifc_WithLatestDgnDb                  # WIP DgnItem

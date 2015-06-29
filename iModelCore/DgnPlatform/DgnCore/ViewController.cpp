@@ -517,13 +517,13 @@ StandardView ViewController::IsStandardViewRotation(RotMatrixCR rMatrix, bool ch
             RotMatrix  isoMatrix;
             bsiRotMatrix_getStandardRotation(&isoMatrix, static_cast<int>(StandardView::Iso));
 
-            if (equalOne(bsiDVec3d_dotProduct((DVec3d*)isoMatrix.form3d[0],(DVec3d*)rMatrix.form3d[0])) &&
-                equalOne(bsiDVec3d_dotProduct((DVec3d*)isoMatrix.form3d[1],(DVec3d*)rMatrix.form3d[1])))
+            if (equalOne(((DVec3d*)isoMatrix.form3d[0])->DotProduct (*((DVec3d*)rMatrix.form3d[0]))) &&
+                equalOne(((DVec3d*)isoMatrix.form3d[1])->DotProduct (*((DVec3d*)rMatrix.form3d[1]))))
                 return StandardView::Iso;
 
             bsiRotMatrix_getStandardRotation(&isoMatrix, static_cast<int>(StandardView::RightIso));
-            if (equalOne(bsiDVec3d_dotProduct((DVec3d*)isoMatrix.form3d[0],(DVec3d*)rMatrix.form3d[0])) &&
-                equalOne(bsiDVec3d_dotProduct((DVec3d*)isoMatrix.form3d[1],(DVec3d*)rMatrix.form3d[1])))
+            if (equalOne(((DVec3d*)isoMatrix.form3d[0])->DotProduct (*((DVec3d*)rMatrix.form3d[0]))) &&
+                equalOne(((DVec3d*)isoMatrix.form3d[1])->DotProduct (*((DVec3d*)rMatrix.form3d[1]))))
                 return StandardView::RightIso;
             }
         }
@@ -1870,4 +1870,9 @@ void ViewController::_DrawView(ViewContextR context)
     {
     for (auto modelId : m_viewedModels)
         context.VisitDgnModel(m_dgndb.Models().GetModel(modelId));
+    }
+
+void ViewController::_VisitElements(ViewContextR context)
+    {
+    _DrawView(context);
     }

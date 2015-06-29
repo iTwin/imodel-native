@@ -61,19 +61,14 @@ enum ClipVolumeCropProp
     CLIPVOLUME_CROP_Top                 = 5,
     };
 
-
-//!A reference counted pointer to a vector of 3D points.
-
 typedef bvector<DPoint3d> DPoint3dVector;
 
-/*=================================================================================**//**
-
-* An IViewClipObject is an interface that can be adopted
-  to access the data which describes a clip volume
-  and perform certain manipulations on the same.
-  @addtogroup IViewClipObject.
-  @bsiclass
-+===============+===============+===============+===============+===============+======*/
+//=======================================================================================
+//! An IViewClipObject is an interface that can be adopted
+//! to access the data which describes a clip volume
+//! and perform certain manipulations on the same.
+//! @addtogroup IViewClipObject
+//=======================================================================================
 struct     IViewClipObject : public RefCountedBase
 {
 //__PUBLISH_SECTION_END__

@@ -481,7 +481,7 @@ void QueryViewController::BindModelAndCategory(StatementR stmt) const
 void QueryViewController::_RestoreFromSettings(JsonValueCR val) 
     {
     T_Super::_RestoreFromSettings(val);
-    m_queryModel.Empty();
+    m_queryModel.EmptyModel();
     }
 
 //  #define DUMP_DYNAMIC_UPDATE_STATS 1
@@ -626,6 +626,24 @@ void QueryViewController::_DrawView(ViewContextR context)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson      06/2015
+//---------------------------------------------------------------------------------------
+void QueryViewController::_VisitElements(ViewContextR context)
+    {
+    // Visit the elements that were actually loaded
+    context.VisitDgnModel(&m_queryModel);
+
+    // And step through the rest of the elements that were not loaded (but would be displayed by progressive display).
+    DgnDbR project = m_queryModel.GetDgnDb();
+    CachedStatementPtr rangeStmt;
+    project.GetCachedStatement(rangeStmt, _GetRTreeMatchSql(*context.GetViewport()).c_str());
+    BindModelAndCategory(*rangeStmt);
+    ProgressiveViewFilter pvFilter (*context.GetViewport(), project, m_queryModel, m_neverDrawn.empty() ? NULL : &m_neverDrawn, GetMaxElementMemory(), rangeStmt.get());
+    while (pvFilter._Process(context) != IProgressiveDisplay::Completion::Finished)
+        ;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    02/2013
 //---------------------------------------------------------------------------------------
 #if defined (_X64_)
@@ -641,7 +659,7 @@ uint64_t QueryViewController::GetMaxElementMemory()
 uint64_t QueryViewController::GetMaxElementMemory()
     {
     uint64_t oneMeg = 1024 * 1024;
-#if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
+#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
     uint64_t baseValue = 2000;
 #else
     uint64_t baseValue = BeSystemInfo::GetAmountOfPhysicalMemory() > (600 * oneMeg) ? 50 : 30;
