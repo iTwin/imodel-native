@@ -526,7 +526,7 @@ BentleyStatus SatelliteChangeSets::Dump(BeFileNameCR csfileName, Db& db, int det
         }
 
     return BSISUCCESS;
-    } 
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Sam.Wilson                      07/14
