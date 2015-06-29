@@ -99,6 +99,9 @@ namespace pcloud
 
 		pt::Guid	objectGuid() const;
 
+		int		editStateID() const					{ return  _editStateID; }
+		void	setEditStateID( int id )			{ _editStateID=id; }
+
 	private:
 
 		Scene( IndexStream *stream, int &error, float uniform_filter_spacing = -1 );
@@ -139,6 +142,7 @@ namespace pcloud
 		bool									_loaded;
 		float									_accuracy;
 		int										_instance;
+		int										_editStateID;
 	};
 }
 #endif

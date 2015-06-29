@@ -42,7 +42,8 @@ public:
 	void	regenEditQuick();
 	void	regenEditQuick_run();
 	void	regenEditComplete();
-	void	regenOOCComplete();
+	void	regenOOCComplete( pcloud::Scene *scene=0 );	
+	void	regenEditUnprocessed();	// run a regen on any scenes that have not been procesed at all
 
 	void	clearEdit();
 
@@ -141,6 +142,8 @@ public:
 	void	_createEditFromDatatree( pt::datatree::Branch * );
 
 private:
+
+	void				updateSceneEditStateID( pcloud::Scene *scene );
 
 	typedef std::map<pt::String, OperationStack*> EditMap;
 

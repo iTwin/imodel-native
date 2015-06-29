@@ -414,6 +414,8 @@ PThandle	PTAPI ptCreatePointChannelFromLayers( PTstr name, PThandle sceneHandle 
 //-----------------------------------------------------------------------------
 bool	PTAPI ptLayersFromPointChannel( PThandle userChannel, PThandle sceneHandle )
 {
+	PTTRACE_FUNC
+
 	bool result = false;
 
 	pauseEngine();

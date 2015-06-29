@@ -56,7 +56,7 @@ namespace pcloud
 		pt::vector3d	_scale;
 		mmatrix4d		_matrix;
 		mmatrix4d		_cmpmatrix;
-		int				_flags;
+		unsigned int	_flags;
 	};
 	class Scene;
 	/* Point cloud is root Node*/ 

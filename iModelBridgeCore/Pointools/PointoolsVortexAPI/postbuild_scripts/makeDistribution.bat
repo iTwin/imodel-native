@@ -101,7 +101,7 @@ cd %thisdir%
 @REM get date in YYMMDD format, WARNING: might be local dependent
 set compile_date=%date:~8,2%%date:~3,2%%date:~0,2%
 
-SET version=2.0.0.213
+SET version=2.0.0.215
 SET topfolder=%PointoolsVortex%\Distrib\PointoolsVortexAPI-%version%
 SET folder=%PointoolsVortex%\Distrib\PointoolsVortexAPI-%version%\VortexAPI
 SET releasenotes=%PointoolsVortex%\ReleaseNotes\PointoolsVortexAPI-ReleaseNotes-%version%.txt

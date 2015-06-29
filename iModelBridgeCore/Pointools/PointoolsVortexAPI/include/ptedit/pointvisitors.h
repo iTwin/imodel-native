@@ -19,24 +19,33 @@ namespace ptedit
 	/* ------------------------------------------------------------------------ */ 
 	struct TraverseScene
 	{
-		static void withVisitor(pcloud::Node::Visitor *v, bool useScope=true)
+		static void withVisitor(pcloud::Node::Visitor *v, pcloud::Scene *scene, bool use_scope=true)
+		{
+			if (scene)
+			{
+				int numClouds = scene->size();
+				for (int cl=0; cl<numClouds; cl++)
+				{
+					if ( use_scope && !g_state.inScope( scene->cloud(cl) )) continue;
+
+					const_cast<pcloud::Node*>(scene->cloud(cl)->root())->traverseTopDown(v);
+				}
+			}
+		}
+
+		static void withVisitor(pcloud::Node::Visitor *v, bool use_scope=true)
 		{
 			int numScenes = pointsengine::thePointsScene().size();
 			for (int sc=0; sc<numScenes; sc++)
 			{
 				pcloud::Scene* scene = pointsengine::thePointsScene()[sc];
 
-				if (useScope && !g_state.inScope(scene)) continue;
-
-				int numClouds = scene->size();
-				for (int cl=0; cl<numClouds; cl++)
-				{
-					if ( useScope && !g_state.inScope( scene->cloud(cl) )) continue;
-
-					const_cast<pcloud::Node*>(scene->cloud(cl)->root())->traverseTopDown(v);
-				}
+				if ( use_scope && !g_state.inScope(scene) ) continue;
+				
+				withVisitor( v, scene, use_scope );
 			}
 		}
+
 		static void withFlag(uint flag, bool value)
 		{
 			int numScenes = pointsengine::thePointsScene().size();

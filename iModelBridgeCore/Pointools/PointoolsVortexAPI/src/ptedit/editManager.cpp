@@ -739,6 +739,24 @@ class SetEditPointToLODVisitor : public pcloud::Node::Visitor
 		inline void point(const pt::vector3d &pnt, uint index, ubyte &f) {}
 		inline void mt_point(int t, const pt::vector3d &pnt, uint index, ubyte &f) {}
 };
+
+void	PointEditManager::updateSceneEditStateID( pcloud::Scene *scene )
+{
+	if (scene)
+	{
+		scene->setEditStateID( m_currentEdit.stateId() );
+	}
+	else
+	{
+		for (int i=0; i<thePointsScene().size();i++)
+		{
+			pcloud::Scene* scene = pointsengine::thePointsScene()[i];
+			scene->setEditStateID( m_currentEdit.stateId() );
+		}	
+	}
+}
+
+
 void PointEditManager::regenEditQuick_run()
 {
 	PTTRACE_FUNC
@@ -837,11 +855,24 @@ void PointEditManager::regenEditComplete() // NOT TESTED
 	setCurrentLayer( g_currentLayer, true );
 
 	pointsengine::unpauseEngine();
+}//
+void	PointEditManager::regenEditUnprocessed()
+{
+	// check the state of every scene and process if needed
+	for (int i=0;i<thePointsScene().size();i++)
+	{
+		pcloud::Scene *scene = thePointsScene()[i];
+
+		if (scene->editStateID() <=0 )
+		{
+			regenOOCComplete( scene );
+		}
+	}
 }
 //-----------------------------------------------------------------------------
 // complete regen from scratch - not optimised
 //-----------------------------------------------------------------------------
-void PointEditManager::regenOOCComplete()
+void PointEditManager::regenOOCComplete( pcloud::Scene *scene )
 {
 	PTTRACE_FUNC
 
@@ -865,12 +896,19 @@ void PointEditManager::regenOOCComplete()
 
 	// this is ok here, has a hack to set to full if EditIncludeOOC
 	SetEditPointToLODVisitor sep;
-	TraverseScene::withVisitor(&sep);
-
+	if (scene)
+		TraverseScene::withVisitor(&sep, scene);
+	else 
+		TraverseScene::withVisitor(&sep, true);
+	
 	g_editApplyMode = EditNormal;
 
 	statev.writeMode();
-	TraverseScene::withVisitor(&statev);
+
+	if (scene)
+		TraverseScene::withVisitor(&statev, scene);
+	else
+		TraverseScene::withVisitor(&statev, true);
 
 	//ClearFilterVisitor v;
 	//TraverseScene::withVisitor(&v);
@@ -878,6 +916,8 @@ void PointEditManager::regenOOCComplete()
 	EditNodeDef::applyByName( "ConsolidateAllLayers" );	
 	
 	setCurrentLayer( g_currentLayer, true );
+
+	updateSceneEditStateID( scene );
 
 	pointsengine::unpauseEngine();
 }
