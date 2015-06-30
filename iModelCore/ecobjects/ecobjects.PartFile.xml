@@ -222,7 +222,7 @@
 
     <ProductDirectoryList ListName="ECObjectsTested">
     </ProductDirectoryList>
-    <Product Name="ECObjectsTested" PrgOutputDir="ECObjects" SaveProduct="true">
+    <Product Name="ECObjectsTested" PrgOutputDir="ECObjects" SaveProduct="true" AddIn="true">
         <SubProduct ProductName="ECObjects" />
         <!-- SubProduct ProductName="ECObjectsStatic" /-->
         <SubProduct ProductName="ECObjectsTests" />
