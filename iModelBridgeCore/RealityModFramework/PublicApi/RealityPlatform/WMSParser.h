@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include <BentleyApi/BentleyApi.h>
+#include <Bentley/Bentley.h>
 #include <Bentley/RefCounted.h>
 
 #if defined (__WMSPARSER_BUILD__)
@@ -15,18 +15,16 @@
 #   define WMSPARSER_EXPORT IMPORT_ATTRIBUTE
 #endif
 
-#define BEGIN_BENTLEY_WMSPARSER_NAMESPACE         BEGIN_BENTLEY_API_NAMESPACE namespace WMSParser {
+#define BEGIN_BENTLEY_WMSPARSER_NAMESPACE         BEGIN_BENTLEY_NAMESPACE namespace WMSParser {
 #define END_BENTLEY_WMSPARSER_NAMESPACE           }}
 #define USING_BENTLEY_NAMESPACE_WMSPARSER         using namespace BentleyApi::WMSParser;
 
 
-#define WMSPARSER_TYPEDEFS(t) \
-    BEGIN_BENTLEY_WMSPARSER_NAMESPACE struct t; END_BENTLEY_WMSPARSER_NAMESPACE \
-    ADD_BENTLEY_NAMESPACE_TYPEDEFS (WMSParser,t);
+#define WMSPARSER_TYPEDEFS(_name_) \
+    BEGIN_BENTLEY_WMSPARSER_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_WMSPARSER_NAMESPACE
 
 #define WMSPARSER_REF_COUNTED_PTR(_sname_) \
-    BEGIN_BENTLEY_WMSPARSER_NAMESPACE struct _sname_; END_BENTLEY_WMSPARSER_NAMESPACE \
-    BEGIN_BENTLEY_API_NAMESPACE typedef RefCountedPtr<WMSParser::_sname_> _sname_##Ptr; END_BENTLEY_API_NAMESPACE
+    BEGIN_BENTLEY_WMSPARSER_NAMESPACE struct _sname_; DEFINE_REF_COUNTED_PTR(_sname_) END_BENTLEY_WMSPARSER_NAMESPACE
 
 // Capabilities
 WMSPARSER_TYPEDEFS(WMSCapabilities)

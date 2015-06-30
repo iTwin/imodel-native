@@ -29,7 +29,6 @@
 
     <Part Name="RealityPackage" BentleyBuildMakeFile="RealityPackage\RealityPackage.mke">
         <SubPart PartName="PublicAPI" />
-        <SubPart PartName="BentleyApi"  PartFile="BentleyApi"   Repository="BentleyApi" />
         <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="BeXmlDll"    PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
         <SubPart PartName="GeomDlls"    PartFile="geomlibs"     Repository="GeomLibs" />        

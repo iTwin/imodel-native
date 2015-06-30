@@ -25,6 +25,8 @@
 #include <Imagepp/all/h/HVE2DRectangle.h>
 #include <Imagepp/all/h/HRFUtility.h>
 
+USING_NAMESPACE_IMAGEPP
+
 #include <GeoCoord/BaseGeoCoord.h>
 #include <GeoCoord/basegeocoordapi.h>
 
