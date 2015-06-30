@@ -532,6 +532,9 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
            
             for (auto& part : disp.GetHorizontalPartitions ())
                 {
+                if (part.GetTable ().GetPersistenceType () == PersistenceType::Virtual)
+                    continue; 
+
                 NativeSqlBuilder sqlBuilder;
                 bool topLevel = (&disp.GetRootHorizontalPartition () == &part);
 
@@ -1120,7 +1123,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
             "       JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
             "       JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
             "       JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId  "
-            "       JOIN ec_Table ON ec_Table.Id = ec_Column.TableId  AND ec_Table.IsVirtual = 0 "
+            "       JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
             "   WHERE ec_ClassMap.MapStrategy NOT IN (0x2000, 0x4000) "
             "  GROUP BY  ec_Class.Id , ec_Table.Name "
             "   )  "
@@ -1161,7 +1164,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
             "         JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
             "         JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
             "         JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId  "
-            "         JOIN ec_Table ON ec_Table.Id = ec_Column.TableId  AND ec_Table.IsVirtual = 0 "
+            "         JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
             "     WHERE ec_ClassMap.MapStrategy NOT IN (0x2000, 0x4000) "
             "    GROUP BY  ec_Table.Id, ec_Class.Id ";
 

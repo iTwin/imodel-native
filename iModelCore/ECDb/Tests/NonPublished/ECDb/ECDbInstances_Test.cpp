@@ -146,72 +146,72 @@ TEST (ECDbInstances, CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST)
     EXPECT_EQ (ECInstanceId (1), statement.GetValueId <ECInstanceId> (0));
     }
 
-TEST (ECDbInstances, ViewTrigger)
-    {
-    ECDbTestProject::Initialize ();
-
-        {
-        printf ("Deleting using ECSql\r\n");
-        ECDb db;
-        db.OpenBeSQLiteDb ("E:/misc/A.ecdb", Db::OpenParams (Db::OpenMode::OPEN_ReadWrite));
-
-        Statement sp1;
-        sp1.Prepare (db, "SELECT ECInstanceId FROM tt_SP1");
-        std::vector<ECInstanceId> sp1ToBeDeleted;
-        while (sp1.Step () == BE_SQLITE_ROW)
-            sp1ToBeDeleted.push_back (sp1.GetValueId <ECInstanceId> (0));
-        sp1.Finalize ();
-
-
-        ECSqlStatement deleteSP1;
-        deleteSP1.Prepare (db, "DELETE FROM ONLY tt.SP1 WHERE ECInstanceId = ?");
-        StopWatch ecsqlW;
-        ecsqlW.Start ();
-        for (auto ecid : sp1ToBeDeleted)
-            {
-            deleteSP1.Reset ();
-            deleteSP1.ClearBindings ();
-            //printf ("deleting = %lld\r\n", ecid.GetValue ());
-            deleteSP1.BindId (1, ecid);
-            deleteSP1.Step ();
-            }
-        ecsqlW.Stop ();
-        deleteSP1.Finalize ();
-
-        printf ("It took ECSQL Total : %.4lf seconds to delete %d instances of tt.SP1\r\n", ecsqlW.GetElapsedSeconds (), sp1ToBeDeleted.size ());
-        db.SaveChanges ();
-        };
-            {
-            ECDb db;
-            db.OpenBeSQLiteDb ("E:/misc/B.ecdb", Db::OpenParams (Db::OpenMode::OPEN_ReadWrite));
-            printf ("Deleting using View\r\n");
-            Statement sp1;
-            sp1.Prepare (db, "SELECT ECInstanceId FROM tt_SP1");
-            std::vector<ECInstanceId> sp1ToBeDeleted;
-            while (sp1.Step () == BE_SQLITE_ROW)
-                sp1ToBeDeleted.push_back (sp1.GetValueId <ECInstanceId> (0));
-            sp1.Finalize ();
-
-            Statement deleteSP1;
-            deleteSP1.Prepare (db, "DELETE FROM VC_tt_SP1 WHERE ECInstanceId = ?");
-            StopWatch ecsqlW;
-            ecsqlW.Start ();
-            for (auto ecid : sp1ToBeDeleted)
-                {
-                deleteSP1.Reset ();
-                deleteSP1.ClearBindings ();
-                //printf ("deleting = %lld\r\n", ecid.GetValue ());
-                deleteSP1.BindId (1, ecid);
-                deleteSP1.Step ();
-                }
-            ecsqlW.Stop ();
-            deleteSP1.Finalize ();
-            
-            printf ("It took SQL on View with Trigger Total : %.4lf seconds to delete %d instances of tt.SP1\r\n", ecsqlW.GetElapsedSeconds (), sp1ToBeDeleted.size ());
-            db.SaveChanges ();
-            };
-
-    }
+//TEST (ECDbInstances, ViewTrigger)
+//    {
+//    ECDbTestProject::Initialize ();
+//
+//        {
+//        printf ("Deleting using ECSql\r\n");
+//        ECDb db;
+//        db.OpenBeSQLiteDb ("E:/misc/A.ecdb", Db::OpenParams (Db::OpenMode::ReadWrite));
+//
+//        Statement sp1;
+//        sp1.Prepare (db, "SELECT ECInstanceId FROM tt_SP1");
+//        std::vector<ECInstanceId> sp1ToBeDeleted;
+//        while (sp1.Step () == BE_SQLITE_ROW)
+//            sp1ToBeDeleted.push_back (sp1.GetValueId <ECInstanceId> (0));
+//        sp1.Finalize ();
+//
+//
+//        ECSqlStatement deleteSP1;
+//        deleteSP1.Prepare (db, "DELETE FROM ONLY tt.SP1 WHERE ECInstanceId = ?");
+//        StopWatch ecsqlW;
+//        ecsqlW.Start ();
+//        for (auto ecid : sp1ToBeDeleted)
+//            {
+//            deleteSP1.Reset ();
+//            deleteSP1.ClearBindings ();
+//            //printf ("deleting = %lld\r\n", ecid.GetValue ());
+//            deleteSP1.BindId (1, ecid);
+//            deleteSP1.Step ();
+//            }
+//        ecsqlW.Stop ();
+//        deleteSP1.Finalize ();
+//
+//        printf ("It took ECSQL Total : %.4lf seconds to delete %d instances of tt.SP1\r\n", ecsqlW.GetElapsedSeconds (), sp1ToBeDeleted.size ());
+//        db.SaveChanges ();
+//        };
+//            {
+//            ECDb db;
+//            db.OpenBeSQLiteDb ("E:/misc/B.ecdb", Db::OpenParams (Db::OpenMode::ReadWrite));
+//            printf ("Deleting using View\r\n");
+//            Statement sp1;
+//            sp1.Prepare (db, "SELECT ECInstanceId FROM tt_SP1");
+//            std::vector<ECInstanceId> sp1ToBeDeleted;
+//            while (sp1.Step () == BE_SQLITE_ROW)
+//                sp1ToBeDeleted.push_back (sp1.GetValueId <ECInstanceId> (0));
+//            sp1.Finalize ();
+//
+//            Statement deleteSP1;
+//            deleteSP1.Prepare (db, "DELETE FROM VC_tt_SP1 WHERE ECInstanceId = ?");
+//            StopWatch ecsqlW;
+//            ecsqlW.Start ();
+//            for (auto ecid : sp1ToBeDeleted)
+//                {
+//                deleteSP1.Reset ();
+//                deleteSP1.ClearBindings ();
+//                //printf ("deleting = %lld\r\n", ecid.GetValue ());
+//                deleteSP1.BindId (1, ecid);
+//                deleteSP1.Step ();
+//                }
+//            ecsqlW.Stop ();
+//            deleteSP1.Finalize ();
+//            
+//            printf ("It took SQL on View with Trigger Total : %.4lf seconds to delete %d instances of tt.SP1\r\n", ecsqlW.GetElapsedSeconds (), sp1ToBeDeleted.size ());
+//            db.SaveChanges ();
+//            };
+//
+//    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                         04/12
 +---------------+---------------+---------------+---------------+---------------+------*/

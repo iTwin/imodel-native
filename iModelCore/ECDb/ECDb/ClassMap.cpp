@@ -126,9 +126,9 @@ bool IClassMap::ContainsPropertyMapToTable () const
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2015
 //------------------------------------------------------------------------------------------
-StorageDescription const& IClassMap::GetStorageDescription() const
+StorageDescription const& IClassMap::GetStorageDescription (bool recalculate) const
     {
-    if (m_storageDescription == nullptr)
+    if (m_storageDescription == nullptr || recalculate)
         m_storageDescription = StorageDescription::Create(*this);
 
     return *m_storageDescription;
@@ -136,9 +136,9 @@ StorageDescription const& IClassMap::GetStorageDescription() const
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2015
 //------------------------------------------------------------------------------------------
-StorageDescription const& IClassMap::GetStorageDescription (std::map <ECDbSqlTable const*, std::vector<ECN::ECClassId>> const& tables, std::map<ECDbSqlTable const*, std::vector<ECN::ECClassId>> const& derivedClassPerTable) const
+StorageDescription const& IClassMap::GetStorageDescription (std::map <ECDbSqlTable const*, std::vector<ECN::ECClassId>> const& tables, std::map<ECDbSqlTable const*, std::vector<ECN::ECClassId>> const& derivedClassPerTable, bool recalculate) const
     {
-    if (m_storageDescription == nullptr)
+    if (m_storageDescription == nullptr || recalculate)
         m_storageDescription = StorageDescription::Create (GetClass ().GetId (), tables, derivedClassPerTable);
 
     return *m_storageDescription;
@@ -1531,7 +1531,7 @@ std::unique_ptr<StorageDescription> StorageDescription::Create (IClassMap const&
         "       JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
         "       JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
         "       JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
-        "       JOIN ec_Table ON ec_Table.Id = ec_Column.TableId  AND ec_Table.IsVirtual = 0"
+        "       JOIN ec_Table ON ec_Table.Id = ec_Column.TableId"
         "   WHERE ec_ClassMap.MapStrategy NOT IN( 0x2000, 0x4000)"
         "   ) "
         "SELECT DCL.DerivedClassId, TMI.TableId, TMI.TableName FROM DerivedClassList DCL "
@@ -1545,7 +1545,7 @@ std::unique_ptr<StorageDescription> StorageDescription::Create (IClassMap const&
         "   JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
         "   JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
         "   JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
-        "   JOIN ec_Table ON ec_Table.Id = ec_Column.TableId  AND ec_Table.IsVirtual = 0  "
+        "   JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
         "WHERE ec_ClassMap.MapStrategy NOT IN(0x2000, 0x4000) AND ec_Table.Name = ? ORDER BY ec_Class.Id";
 
     auto& ecdb = classMap.GetECDbMap().GetECDbR();

@@ -172,8 +172,8 @@ public:
     ClassDbView const& GetDbView () const;
     Type GetClassMapType () const;
 
-    StorageDescription const& GetStorageDescription() const;
-    StorageDescription const& GetStorageDescription (std::map <ECDbSqlTable const*, std::vector<ECN::ECClassId>> const& tables, std::map<ECDbSqlTable const*, std::vector<ECN::ECClassId>> const& derivedClassPerTable) const;
+    StorageDescription const& GetStorageDescription(bool recalculate = false) const;
+    StorageDescription const& GetStorageDescription (std::map <ECDbSqlTable const*, std::vector<ECN::ECClassId>> const& tables, std::map<ECDbSqlTable const*, std::vector<ECN::ECClassId>> const& derivedClassPerTable, bool recalculate = false) const;
     bool IsMappedToSecondaryTable () const;
     bool IsRelationshipClassMap () const;
     bool IsAbstractECClass () const;

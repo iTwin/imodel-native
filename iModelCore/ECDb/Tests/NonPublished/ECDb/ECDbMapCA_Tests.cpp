@@ -68,7 +68,7 @@ struct ECDbMapCATests : public ::testing::Test
         MapStrategy_TablePerClass = 0x8,
         MapStrategy_SharedTableForThisClass = 0x10,
         MapStrategy_MapToExistingTable = 0x20,
-        MapStrategy_TableForThisClass = 40,
+        MapStrategy_TableForThisClass = 0x40,
         MapStrategy_WithReuseColumns = 0x100,
         MapStrategy_WithExclusivelyStoredInThisTable = 0x200,
         MapStrategy_WithReadonly = 0x400,
