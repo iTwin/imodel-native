@@ -25,8 +25,6 @@ DGNPLATFORM_REF_COUNTED_PTR(SheetModel)
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-struct SheetModelHandler;
-
 //=======================================================================================
 //! A map whose key is DgnElementId and whose data is DgnElementCPtr
 // @bsiclass                                                    Keith.Bentley   04/15
@@ -74,30 +72,43 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
 
         enum class DropMe {No=0, Yes=1};
 
-        //! Override this method to be notified after host DgnModel has been filled.
-        virtual DropMe _OnFilled(DgnModelCR) {return DropMe::No;}
+        //! Called after DgnModel has been filled.
+        //! @param[in] model The model to which this AppData is attached
+        //! @return DropMe::Yes to be removed from DgnModel
+        virtual DropMe _OnFilled(DgnModelCR model) {return DropMe::No;}
 
-        //! Override this method to be notified when host DgnModel is about to be emptied.
+        //! Called when a DgnModel is about to be emptied.
+        //! @param[in] model The model to which this AppData is attached
         //! @return true to be dropped from model
-        virtual void _OnEmpty(DgnModelCR) {}
+        virtual void _OnEmpty(DgnModelCR model) {}
 
-        //! Override this method to be notified after host DgnModel has been emptied.
-        virtual DropMe _OnEmptied(DgnModelCR) {return DropMe::No;}
+        //! Called after a DgnModel has been emptied.
+        //! @param[in] model The model to which this AppData is attached
+        //! @return DropMe::Yes to be removed from DgnModel
+        virtual DropMe _OnEmptied(DgnModelCR model) {return DropMe::No;}
 
-        //! Called when the DgnModel is about to be updated
-        virtual DgnDbStatus _OnUpdate(DgnModelCR) {return DgnDbStatus::Success;}
+        //! Called when a DgnModel is about to be updated in the DgnDb.
+        //! @param[in] model The model to which this AppData is attached
+        virtual DgnDbStatus _OnUpdate(DgnModelCR model) {return DgnDbStatus::Success;}
 
-        virtual DropMe _OnUpdated(DgnModelCR) {return DropMe::No;}
+        //! Called after a DgnModel was updated in the DgnDb.
+        //! @param[in] model The model to which this AppData is attached
+        //! @return DropMe::Yes to be removed from DgnModel
+        virtual DropMe _OnUpdated(DgnModelCR model) {return DropMe::No;}
 
-        //! Override this method to be notified before the DgnModel is deleted.
-        virtual void _OnDelete(DgnModelR) {}
+        //! Called before the DgnModel is deleted.
+        //! @param[in] model The model to which this AppData is attached
+        virtual void _OnDelete(DgnModelR model) {}
 
-        virtual DropMe _OnDeleted(DgnModelCR) {return DropMe::Yes;}
+        //! Called after the DgnModel was deleted.
+        //! @param[in] model The model to which this AppData is attached
+        //! @return DropMe::Yes to be removed from DgnModel
+        virtual DropMe _OnDeleted(DgnModelCR model) {return DropMe::Yes;}
     };
 
     //=======================================================================================
     //! The properties for a DgnModel. These are stored as a JSON string in the "Props" column of the DgnModel table.
-    //! These properties are saved by calling DgnModel::SaveProperties
+    //! These properties are saved by calling DgnModel::Update
     //! @ingroup DgnModelGroup
     //=======================================================================================
     struct Properties
@@ -135,7 +146,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
             m_formatterFlags.m_angularPrecision = 0;
             m_formatterFlags.m_directionMode = 0;
             m_formatterFlags.m_directionClockwise = 0;
-            m_roundoffRatio= 0;
+            m_roundoffRatio = 0;
             m_formatterBaseDir = 0;
             m_roundoffUnit = 0;
             m_subUnit.Init(UnitBase::Meter, UnitSystem::Metric, 1.0, 1.0, L"m");
@@ -188,7 +199,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
     };
 
     //=======================================================================================
-    //! Parameters to create new instances of DgnModel.
+    //! Parameters to create a new instances of a DgnModel.
     //! @ingroup DgnModelGroup
     //=======================================================================================
     struct CreateParams
@@ -199,7 +210,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         Utf8String  m_name;
         Properties  m_props;
         //! Parameters to create a new instance of a DgnModel.
-        //! @param[in] dgndb The DgnDb for the newly created DgnModel
+        //! @param[in] dgndb The DgnDb for the new DgnModel
         //! @param[in] classId The DgnClassId for the new DgnModel.
         //! @param[in] name The name for the DgnModel
         //! @param[in] props The properties for the new DgnModel.
@@ -250,33 +261,48 @@ protected:
     /** @name Events associated with the DgnElements of a DgnModel */
     /** @{ */
     //! Called when a DgnElement in this DgnModel is about to be inserted.
+    //! @param[in] element The element about to be inserted into the DgnDb
+    //! @return DgnDbStatus::Success to allow the element to be added. Any other status will block the insert and will be
+    //! returned to the caller attempting to insert the element.
     //! @note If you override this method, you @em must call the T_Super implementation, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsertElement(DgnElementR element);
 
     //! Called when a DgnElement in this DgnModel is about to be updated.
+    //! @param[in] modified The element in its changed state. This state will be saved to the DgnDb
+    //! @param[in] original The element in its pre-changed state.
+    //! @return DgnDbStatus::Success to allow the element to be updated. Any other status will block the update and will be
+    //! returned to the caller attempting to update the element.
     //! @note If you override this method, you @em must call the T_Super implementation, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdateElement(DgnElementCR modified, DgnElementCR original);
 
     //! Called when a DgnElement in this DgnModel is about to be deleted.
+    //! @param[in] element The element about to be deleted from the DgnDb
+    //! @return DgnDbStatus::Success to allow the element to be deleted. Any other status will block the delete and will be
+    //! returned to the caller attempting to delete the element.
     //! @note If you override this method, you @em must call the T_Super implementation, forwarding its status.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDeleteElement(DgnElementCR element);
 
     //! Called after a DgnElement in this DgnModel has been loaded into memory.
+    //! @param[in] element The element that was just loaded.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    DGNPLATFORM_EXPORT virtual void _OnLoadedElement(DgnElementCR el);
+    DGNPLATFORM_EXPORT virtual void _OnLoadedElement(DgnElementCR element);
 
     //! Called after a DgnElement in this DgnModel has been inserted into the DgnDb
+    //! @param[in] element The element that was just inserted.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    DGNPLATFORM_EXPORT virtual void _OnInsertedElement(DgnElementCR el);
+    DGNPLATFORM_EXPORT virtual void _OnInsertedElement(DgnElementCR element);
 
-    //! Called after a DgnElement in this DgnModel has been updated.
+    //! Called after a DgnElement in this DgnModel has been updated in the DgnDb
+    //! @param[in] modified The element in its changed state. This state was saved to the DgnDb
+    //! @param[in] original The element in its pre-changed state.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
     DGNPLATFORM_EXPORT virtual void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original);
 
-    //! Called after a DgnElement in this DgnModel has been deleted.
+    //! Called after a DgnElement in this DgnModel has been deleted from the DgnDb
+    //! @param[in] element The element that was just deleted.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
     DGNPLATFORM_EXPORT virtual void _OnDeletedElement(DgnElementCR element);
@@ -287,12 +313,15 @@ protected:
     //! Load all of the DgnElements of this DgnModel into memory.
     DGNPLATFORM_EXPORT virtual void _FillModel();
 
-    //! Called after this DgnModel was loaded from the DgnDb.
+    //! Called when this DgnModel is about to be inserted into the DgnDb.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnInsert();
+    //! Called when this DgnModel is about to be updated in the DgnDb.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnUpdate();
+    //! Called when this DgnModel is about to be deleted from the DgnDb.
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete();
     DGNPLATFORM_EXPORT virtual void _OnLoaded();
     DGNPLATFORM_EXPORT virtual void _OnInserted();
+    //! Called after this DgnModel was updated in the DgnDb.
     DGNPLATFORM_EXPORT virtual void _OnUpdated();
     DGNPLATFORM_EXPORT virtual void _OnDeleted();
     /** @} */
@@ -328,13 +357,15 @@ public:
     DGNPLATFORM_EXPORT ModelHandlerR GetModelHandler() const;
 
     DGNPLATFORM_EXPORT DgnRangeTree* GetRangeIndexP(bool create) const; //!< @private
+    DGNPLATFORM_EXPORT DgnElementCP FindElementById(DgnElementId id); //!< @private
 
     //! Get the Global Origin for this DgnModel.
     //! The global origin is an offset that is added to all coordinate values of this DgnModel when reporting them to the user.
     //! @note all PhysicalModels have the same coordinate system and the same global origin.
     DPoint3d GetGlobalOrigin() const {return _GetGlobalOrigin();}
 
-    //! Empty the contents of this DgnModel. This will release any references to DgnElements held by this DgnModel, potentially freeing them.
+    //! Empty the contents of this DgnModel. This will release any references to DgnElements held by this DgnModel, decrementing
+    //! their reference count and potentially freeing them.
     DGNPLATFORM_EXPORT void EmptyModel();
 
     //! Load all elements of this DgnModel.
@@ -343,17 +374,14 @@ public:
     void FillModel() {_FillModel();}
 
     //! Determine whether this DgnModel's elements have been "filled" from the DgnDb or not.
-    //! @return true if the DgnModel is filled.
+    //! @return true if the DgnModel was filled.
+    //! @see FillModel
     bool IsFilled() const {return m_filled;}
 
-    //! Determine whether this DgnModel is a persistent model.
+    //! Determine whether this DgnModel is persistent.
     //! A model is "persistent" if it was loaded via DgnModels::GetModel, or after it is inserted into the DgnDb via Insert.
-    //! A newly created model, or a model after calling Delete, is not persistent.
+    //! A newly created model before it is inserted, or a model after calling Delete, is not persistent.
     bool IsPersistent() const {return m_persistent;}
-
-    //! Find a DgnElementP in this DgnModel by DgnElementId.
-    //! @return DgnElementP of element with \a id, or NULL.
-    DGNPLATFORM_EXPORT DgnElementCP FindElementById(DgnElementId id);
 
     //! Determine whether this is a 3d DgnModel
     bool Is3d() const {return _Is3d();}
@@ -361,7 +389,7 @@ public:
     //! Get the AxisAlignedBox3d of the contents of this DgnModel.
     AxisAlignedBox3d QueryModelRange() const {return _QueryModelRange();}
 
-    //! Get the Properties for this DgnModel.
+    //! Get a writable reference to the Properties for this DgnModel.
     Properties& GetPropertiesR() {return m_properties;}
 
     //! Get the Properties for this DgnModel.
@@ -397,8 +425,7 @@ public:
     bool IsReadOnly() const {return m_readonly;}
     void SetReadOnly(bool val) {m_readonly = val;} //!< @private
 
-    //! Get the DgnDb that contains this model.
-    //! @return the DgnDb that contains this model.
+    //! Get the DgnDb of this DgnModel.
     DgnDbR GetDgnDb() const {return m_dgndb;}
 
     //! Insert this model into the DgnDb.
@@ -406,11 +433,12 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus Insert(Utf8CP description=nullptr, bool inGuiList=true);
 
     //! Delete this model from the DgnDb
-    //! @note All elements from this model are deleted as well.
-    //! @return DgnDbStatus::Success if this model was successfully deleted, error otherwise.
+    //! @note All elements from this model are deleted as well. This method will fail on the first element that cannot be successfully deleted.
+    //! @return DgnDbStatus::Success if this model was successfully deleted, error otherwise. Note that if this method returns an error, it is possible
+    //! that some elements may have been deleted. Therefore, you should always call DgnDb::AbandonChanges after a failure to avoid partial deletions.
     DGNPLATFORM_EXPORT DgnDbStatus Delete();
 
-    //! Save the properties of this model into the DgnDb
+    //! Update the properties of this model in the DgnDb
     //! @return DgnDbStatus::Success if the properties of this model were successfully updated, error otherwise.
     DGNPLATFORM_EXPORT DgnDbStatus Update();
 
@@ -423,7 +451,7 @@ public:
 
     //! Remove AppData from this DgnModel
     //! @return SUCCESS if appData with key is found and was dropped.
-    //! @remarks Calls the app data object's _OnCleanup method.
+    //! @remarks Calls the object's _OnCleanup method.
     DGNPLATFORM_EXPORT StatusInt DropAppData(AppData::Key const& key);
 
     //! Search for AppData on this model by AppData::Key.
@@ -431,13 +459,15 @@ public:
     DGNPLATFORM_EXPORT AppData* FindAppData(AppData::Key const& key) const;
     /** @} */
 
+    //! Make a copy of this DgnModel with the same DgnClassId and Properties.
+    //! @param[in] newName The name for the new DgnModel.
+    //! @note This makes a new empty, non-persistent, DgnModel with the same properties as this Model, it does NOT clone the elements of this DgnModel.
     DGNPLATFORM_EXPORT DgnModelPtr Clone(Utf8CP newName) const;
 
-
-    //! get the collection of elements for this DgnModel that were loaded by a previous call to FillModel.
+    //! Get the collection of elements for this DgnModel that were loaded by a previous call to FillModel.
     DgnElementMap const& GetElements() const {return m_elements;}
 
-    //! determine whether this DgnModel has any elements loaded. This will always be true if FillModel was never called,
+    //! Determine whether this DgnModel has any elements loaded. This will always be true if FillModel was never called,
     //! or after EmptyModel is called.
     bool IsEmpty() const {return (begin() != end());}
 
@@ -451,6 +481,7 @@ public:
 };
 
 //=======================================================================================
+//! A DgnModel that holds 3-dimensional DgnElements.
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   03/15
 //=======================================================================================
@@ -467,7 +498,7 @@ public:
 };
 
 //=======================================================================================
-//! A DgnModel2d is a infinite planar model. Coordinates values are X,Y.
+//! A DgnModel2d is a infinite planar model that holds 2-dimensional DgnElements. Coordinates values are X,Y.
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
@@ -493,6 +524,9 @@ public:
     };
 
 //=======================================================================================
+//! A DgnModel3d that occupies physical space in the DgnDb. All PhysicalModels in a DgnDb have the same coordinate
+//! space (DgnModels::Model::CoordinateSpace::World), aka "Physical Space".
+//! DgnElements from PhysicalModels are indexed in the persistent range tree of the DgnDb (the DGN_VTABLE_RTree3d).
 //! @ingroup DgnModelGroup
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
@@ -509,6 +543,8 @@ public:
 };
 
 //=======================================================================================
+//! A DgnModel3d that exists in its own independent coordinate space. This is used to store the definitions of components.
+//! DgnElements of a ComponentModel are not in the persistent range tree.
 //! @ingroup DgnModelGroup
 //! @private
 // @bsiclass                                                    Keith.Bentley   10/11

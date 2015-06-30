@@ -13,21 +13,21 @@ BEGIN_UNNAMED_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   06/15
 //=======================================================================================
-struct ChangeBlobHeader
+struct ChangesBlobHeader
 {
     enum {DB_Signature06 = 0x0600};
     uint32_t m_signature;    // write this so we can detect errors on read
     uint32_t m_size;
 
-    ChangeBlobHeader(uint32_t size) {m_signature = DB_Signature06; m_size=size;}
-    ChangeBlobHeader(SnappyReader& in) {uint32_t actuallyRead; in._Read((Byte*) this, sizeof(*this), actuallyRead);}
+    ChangesBlobHeader(uint32_t size) {m_signature = DB_Signature06; m_size=size;}
+    ChangesBlobHeader(SnappyReader& in) {uint32_t actuallyRead; in._Read((Byte*) this, sizeof(*this), actuallyRead);}
 };
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TxnManager::UndoChangeSet::ConflictResolution TxnManager::UndoChangeSet::_OnConflict(ConflictCause cause, BeSQLite::Changes::Change change) 
+TxnManager::UndoChangeSet::ConflictResolution TxnManager::UndoChangeSet::_OnConflict(ConflictCause cause, BeSQLite::Changes::Change change)
     {
     Utf8CP tableName;
     int nCols,indirect;
@@ -36,8 +36,8 @@ TxnManager::UndoChangeSet::ConflictResolution TxnManager::UndoChangeSet::_OnConf
 
     if (cause == ConflictCause::NotFound)
         {
-        if (opcode == DbOpcode::Delete)    // this is caused by propagate delete on a foreign key. It is not a problem.
-            return ConflictResolution::Skip;
+        if (opcode == DbOpcode::Delete)      // a delete that is already gone. 
+            return ConflictResolution::Skip; // This is caused by propagate delete on a foreign key. It is not a problem.
         }
 
     BeAssert(false);
@@ -77,7 +77,7 @@ DbResult TxnManager::SaveCurrentChange(ChangeSet& changeset, Utf8CP operation)
         }
 
     m_snappyTo.Init();
-    ChangeBlobHeader header(changeset.GetSize());
+    ChangesBlobHeader header(changeset.GetSize());
     m_snappyTo.Write((ByteCP) &header, sizeof(header));
     m_snappyTo.Write((ByteCP) changeset.GetData(), changeset.GetSize());
 
@@ -134,7 +134,7 @@ DbResult TxnManager::ReadEntry(TxnRowId rowid, ChangeEntry& entry)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      06/2007
+* @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TxnManager::TxnManager(DgnDbR project) : m_dgndb(project), m_stmts(20)
     {
@@ -145,10 +145,11 @@ TxnManager::TxnManager(DgnDbR project) : m_dgndb(project), m_stmts(20)
     m_curr.m_settingsChange = false;
     m_curr.m_txnId = TxnId(0);
 
-    if (m_dgndb.IsReadonly())
-        return;
-
     m_dgndb.SetChangeTracker(this);
+
+    // whenever we open a Briefcase for write access, enable tracking
+    if (!m_dgndb.IsReadonly() && m_dgndb.IsBriefcase())
+        EnableTracking(true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -268,7 +269,7 @@ void TxnManager::SetUndoInProgress(bool yesNo)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/2015
+* @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TxnManager::PropagateChanges()
     {
@@ -304,7 +305,7 @@ TxnManager::TrackChangesForTable TxnManager::_FilterTable(Utf8CP tableName)
 
 /*---------------------------------------------------------------------------------**//**
 * The supplied changeset represents all of the pending uncommited changes in the current transaction.
-* Use the SQLite "ROLLBACK" statement to reverse all of those changes in the database, and then call the OnChangesetApplied method 
+* Use the SQLite "ROLLBACK" statement to reverse all of those changes in the database, and then call the OnChangesetApplied method
 * on the inverted changeset to allow TxnTables to react to the fact that the changes were abandoned.
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -322,7 +323,7 @@ ChangeTracker::OnCommitStatus TxnManager::CancelChanges(ChangeSet& changeset)
 
 /*---------------------------------------------------------------------------------**//**
 * The supplied changeset was just applied to the database by the supplied action. That means the the database now potentially reflects a different
-* state than the in-memory objects for the affected tables. Use the changeset to send _OnReversedxxx events to the TxnTables for each changed row, 
+* state than the in-memory objects for the affected tables. Use the changeset to send _OnReversedxxx events to the TxnTables for each changed row,
 * so they can update in-memory state as necessary.
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -376,7 +377,7 @@ void TxnManager::OnChangesetApplied(ChangeSet& changeset, TxnAction action)
 
 /*---------------------------------------------------------------------------------**//**
 * A changeset is about to be committed (or, in the case of "what if" testing, look like it is committed). Let each
-* TxnTable prepare its state 
+* TxnTable prepare its state
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::OnBeginValidate()
@@ -400,10 +401,10 @@ void TxnManager::OnEndValidate()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Called from Db::SaveChanges or Db::AbandonChanges when the TxnManager change tracker has changes. 
-* This method creates a changeset from the change tracker. 
+* Called from Db::SaveChanges or Db::AbandonChanges when the TxnManager change tracker has changes.
+* This method creates a changeset from the change tracker.
 * If this is a "cancel", it rolls back the current Txn, and calls _OnReversedxxx methods on all affected TxnTables.
-* If this is a commit, it calls the _OnValidatexxx methods for the TxnTables, and then calls "_PropagateChanges" 
+* If this is a commit, it calls the _OnValidatexxx methods for the TxnTables, and then calls "_PropagateChanges"
 * It saves the resultant changeset (the combination of direct changes plus indirect changes) as a Txn in the database.
 * The Txn may be undone in this session via the "ReverseTxn" method.
 * When this method returns, the entire transaction is committed in BeSQLite. In this manner, it is impossible to make
@@ -568,8 +569,8 @@ void TxnManager::ReadChangeSet(UndoChangeSet& changeset, TxnRowId rowId, TxnActi
         return;
         }
 
-    ChangeBlobHeader header(m_snappyFrom);
-    if ((ChangeBlobHeader::DB_Signature06 != header.m_signature) || 0 == header.m_size)
+    ChangesBlobHeader header(m_snappyFrom);
+    if ((ChangesBlobHeader::DB_Signature06 != header.m_signature) || 0 == header.m_size)
         {
         BeAssert(false);
         return;
@@ -825,7 +826,7 @@ Utf8String TxnManager::GetRedoString()
         return "";
 
     RevTxn*  revTxn = &m_reversedTxn.back();
-    if (revTxn->m_multiStep)
+    if (revTxn->m_multiTxn)
         return "";
 
     TxnRowId row = FirstRow(revTxn->m_range.GetFirst());
@@ -875,7 +876,7 @@ void dgn_TxnTable::Element::_OnValidated()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::Model::_OnReversedAdd(BeSQLite::Changes::Change const& change) 
+void dgn_TxnTable::Model::_OnReversedAdd(BeSQLite::Changes::Change const& change)
     {
     DgnModelId modelId = change.GetOldValue(0).GetValueId<DgnModelId>();
     DgnModelP model = m_txnMgr.GetDgnDb().Models().FindModel(modelId);
@@ -887,7 +888,7 @@ void dgn_TxnTable::Model::_OnReversedAdd(BeSQLite::Changes::Change const& change
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::Model::_OnReversedUpdate(BeSQLite::Changes::Change const& change) 
+void dgn_TxnTable::Model::_OnReversedUpdate(BeSQLite::Changes::Change const& change)
     {
     DgnModelId modelId = change.GetOldValue(0).GetValueId<DgnModelId>();
     DgnModelP model = m_txnMgr.GetDgnDb().Models().FindModel(modelId);
@@ -902,12 +903,36 @@ void dgn_TxnTable::Model::_OnReversedUpdate(BeSQLite::Changes::Change const& cha
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::BeProperties::_OnReversedAdd(BeSQLite::Changes::Change const& change)
+    {
+    PropertySpec::Mode txnmode = (PropertySpec::Mode) change.GetOldValue(4).GetValueInt();
+    if (txnmode != PropertySpec::Mode::Setting)
+        return;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::BeProperties::_OnReversedUpdate(BeSQLite::Changes::Change const& change)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::BeProperties::_OnReversedDelete(BeSQLite::Changes::Change const& change)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_TxnTable::ElementDep::_OnValidate()
     {
     m_changes = false;
     if (m_stmt.IsPrepared())
         return;
-    
+
     m_txnMgr.GetDgnDb().CreateTable(TEMP_TABLE(TXN_TABLE_Depend), "ECInstanceId INTEGER NOT NULL PRIMARY KEY,ModelId INTEGER NOT NULL,ChangeType INT");
     m_txnMgr.GetDgnDb().ExecuteSql("CREATE INDEX " TEMP_TABLE(TXN_TABLE_Depend) "_Midx ON " TXN_TABLE_Depend "(ModelId)");
     m_stmt.Prepare(m_txnMgr.GetDgnDb(), "INSERT INTO " TEMP_TABLE(TXN_TABLE_Depend) " (ECInstanceId,ModelId,ChangeType) VALUES(?,?,?)");

@@ -68,7 +68,7 @@ void DgnViewsTest::SetupProject (WCharCP projFile, Db::OpenMode mode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnViewsTest, WorkWithViewTable)
     {
-    SetupProject(L"ElementsSymbologyByLevel.idgndb", Db::OPEN_ReadWrite);
+    SetupProject(L"ElementsSymbologyByLevel.idgndb", Db::OpenMode::ReadWrite);
 
     //Get views
     DgnViews& viewTable = project->Views ();
@@ -98,7 +98,7 @@ TEST_F(DgnViewsTest, WorkWithViewTable)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnViewsTest, DeleteView)
     {
-    SetupProject(L"ElementsSymbologyByLevel.idgndb", Db::OPEN_ReadWrite);
+    SetupProject(L"ElementsSymbologyByLevel.idgndb", Db::OpenMode::ReadWrite);
 
     //Get views
     DgnViews& viewTable = project->Views ();
@@ -119,7 +119,7 @@ TEST_F(DgnViewsTest, DeleteView)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnViewsTest, SetViewName)
     {
-    SetupProject(L"ElementsSymbologyByLevel.idgndb", Db::OPEN_ReadWrite);
+    SetupProject(L"ElementsSymbologyByLevel.idgndb", Db::OpenMode::ReadWrite);
 
     //Get views
     DgnViews& viewTable = project->Views ();
@@ -144,7 +144,7 @@ TEST_F(DgnViewsTest, SetViewName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnViewsTest, ViewSaveAs)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", Db::OpenMode::ReadWrite);
 
     ViewControllerPtr controller = project->Views().LoadViewController(DgnViewId((int64_t)1));
     EXPECT_EQ(BE_SQLITE_OK, controller->SaveAs("NewView2"));
@@ -163,7 +163,7 @@ TEST_F(DgnViewsTest, ViewSaveAs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnViewsTest, IteratorEntryProperties)
     {
-    SetupProject(L"ElementsSymbologyByLevel.idgndb", Db::OPEN_ReadWrite);
+    SetupProject(L"ElementsSymbologyByLevel.idgndb", Db::OpenMode::ReadWrite);
 
     //Get views
     DgnViews& viewTable = project->Views();
@@ -190,7 +190,7 @@ TEST_F(DgnViewsTest, IteratorEntryProperties)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnViewsTest, InsertView)
     {
-    SetupProject (L"ElementsSymbologyByLevel.idgndb", Db::OPEN_ReadWrite);
+    SetupProject (L"ElementsSymbologyByLevel.idgndb", Db::OpenMode::ReadWrite);
 
     // Get views
     DgnViews& viewTable = project->Views ();
@@ -224,7 +224,7 @@ TEST_F(DgnViewsTest, InsertView)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnViewsTest, InsertDeletedView)
     {
-    SetupProject (L"ElementsSymbologyByLevel.idgndb", Db::OPEN_ReadWrite);
+    SetupProject (L"ElementsSymbologyByLevel.idgndb", Db::OpenMode::ReadWrite);
 
     // Get views
     DgnViews& viewTable = project->Views ();
@@ -257,7 +257,7 @@ TEST_F(DgnViewsTest, InsertDeletedView)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnViewsTest, InsertExistingView)
     {
-    SetupProject (L"ElementsSymbologyByLevel.idgndb", Db::OPEN_ReadWrite);
+    SetupProject (L"ElementsSymbologyByLevel.idgndb", Db::OpenMode::ReadWrite);
 
     // Get views
     DgnViews& viewTable = project->Views ();

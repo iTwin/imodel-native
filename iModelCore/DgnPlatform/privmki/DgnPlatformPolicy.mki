@@ -2,7 +2,7 @@
 #
 #     $Source: privmki/DgnPlatformPolicy.mki $
 #
-#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %if defined (__DgnPlatformPolicy_mki__)
@@ -102,7 +102,3 @@ V8rmgrsubsLib       = $(libprefix)V8RmgrTools$(libext)
 ToolsubsLib         = $(libprefix)Toolsubs$(libext)
 BentleyGeomLib      = $(libprefix)BentleyGeom$(libext)
 ECNativeObjectsLib  = $(libprefix)ECObjects$(libext)
-IppGraLibsLib       = $(libprefix)IppGraLibs$(libext)
-IppNetLibsLib       = $(libprefix)IppNetLibs$(libext)
-IppUtlLibsLib       = $(libprefix)IppUtlLibs$(libext)
-IppWinLibsLib       = $(libprefix)IppWinLibs$(libext)

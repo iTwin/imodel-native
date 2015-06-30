@@ -395,7 +395,7 @@ DgnDbStatus TestMultiAspect::_UpdateProperties(DgnElementCR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementItemTests, ItemCRUD)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"ItemCRUD.idgndb", Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"ItemCRUD.idgndb", Db::OpenMode::ReadWrite);
 
     TestElementCPtr el;
     if (true)
@@ -494,7 +494,7 @@ TEST_F(ElementItemTests, ItemCRUD)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementItemTests, UniqueAspect_CRUD)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"UniqueAspectCRUD.idgndb", Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"UniqueAspectCRUD.idgndb", Db::OpenMode::ReadWrite);
     ECN::ECClassCR aclass = *TestUniqueAspect::GetECClass(*m_db);
     TestElementCPtr el;
     if (true)
@@ -574,7 +574,7 @@ TEST_F(ElementItemTests, UniqueAspect_CRUD)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementItemTests, MultiAspect_CRUD)
     {
-    SetupProject(L"3dMetricGeneral.idgndb", L"MultiAspectCRUD.idgndb", Db::OPEN_ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"MultiAspectCRUD.idgndb", Db::OpenMode::ReadWrite);
     ECN::ECClassCR aclass = *TestMultiAspect::GetECClass(*m_db);
     TestElementCPtr el;
     EC::ECInstanceId a1id, a2id;

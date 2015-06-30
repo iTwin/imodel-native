@@ -43,7 +43,7 @@ BentleyStatus DgnPlatformLib::Host::FontAdmin::_EnsureLastResortFontDb()
         }
     
     unique_ptr<Db> lastResortDb(new Db());
-    DbResult openResult = lastResortDb->OpenBeSQLiteDb(path, Db::OpenParams(Db::OPEN_Readonly));
+    DbResult openResult = lastResortDb->OpenBeSQLiteDb(path, Db::OpenParams(Db::OpenMode::Readonly));
     if (BE_SQLITE_OK != openResult)
         {
         BeAssert(false);

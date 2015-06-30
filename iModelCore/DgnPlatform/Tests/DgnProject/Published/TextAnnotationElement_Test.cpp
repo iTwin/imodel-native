@@ -57,7 +57,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
         CreateDgnDbParams dbCreateParams;
         dbCreateParams.SetProjectName("TextAnnotationElementTest-BasicCrud");
         dbCreateParams.SetProjectDescription("Created by unit test TextAnnotationElementTest.BasicCrud");
-        dbCreateParams.SetStartDefaultTxn(DefaultTxn_Exclusive);
+        dbCreateParams.SetStartDefaultTxn(DefaultTxn::Exclusive);
 
         DbResult createStatus;
         DgnDbPtr db = DgnDb::CreateDgnDb(&createStatus, dbPath, dbCreateParams);
@@ -117,7 +117,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
     //.............................................................................................
         {
         DbResult openStatus;
-        DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Exclusive));
+        DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
         ASSERT_TRUE(BE_SQLITE_OK == openStatus);
         ASSERT_TRUE(db.IsValid());
         
@@ -161,7 +161,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
     //.............................................................................................
         {
         DbResult openStatus;
-        DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OPEN_ReadWrite, DefaultTxn_Exclusive));
+        DgnDbPtr db = DgnDb::OpenDgnDb(&openStatus, dbPath, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
         ASSERT_TRUE(BE_SQLITE_OK == openStatus);
         ASSERT_TRUE(db.IsValid());
 

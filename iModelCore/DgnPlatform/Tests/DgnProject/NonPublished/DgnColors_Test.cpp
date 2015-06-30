@@ -46,7 +46,7 @@ void DgnColorsTest::SetupProject (WCharCP projFile, Db::OpenMode mode)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnColorsTest, InsertTrueColor)
     {
-    SetupProject(L"ElementsSymbologyByLevel.idgndb", Db::OPEN_ReadWrite);
+    SetupProject(L"ElementsSymbologyByLevel.idgndb", Db::OpenMode::ReadWrite);
     DgnColors& colorTable = project->Colors();
 
     ColorDef colorDef (255, 254, 253);

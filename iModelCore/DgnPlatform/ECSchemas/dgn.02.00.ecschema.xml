@@ -438,7 +438,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>TablePerClass</MapStrategy>
-                <MapStrategyOptions>ReuseColumns</MapStrategyOptions>
                 <!-- The ECInstanceId for ElementItem is the same as the Id of the owning Element -->
                 <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
             </ClassMap>
@@ -452,7 +451,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
-                <MapStrategyOptions>ReuseColumns</MapStrategyOptions>
+                <MapStrategyOptions>SharedColumns</MapStrategyOptions>
                 <!-- The ECInstanceId for ElementItem is the same as the Id of the owning Element -->
                 <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
             </ClassMap>
@@ -465,7 +464,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>TablePerClass</MapStrategy>
-                <MapStrategyOptions>ReuseColumns</MapStrategyOptions>
                 <!-- The ECInstanceId for ElementItem is the same as the Id of the owning Element -->
                 <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
             </ClassMap>

@@ -24,7 +24,7 @@ struct DgnModelTests : public testing::Test
         //---------------------------------------------------------------------------------------
         void SetUp()
             {
-            DgnDbTestDgnManager tdm(L"XGraphicsElements.idgndb", __FILE__, Db::OPEN_ReadWrite);
+            DgnDbTestDgnManager tdm(L"XGraphicsElements.idgndb", __FILE__, Db::OpenMode::ReadWrite);
             m_dgndb = tdm.GetDgnProjectP();
            
             }
@@ -130,7 +130,7 @@ TEST_F(DgnModelTests, EmptyList)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, GetRange)
     {
-    DgnDbTestDgnManager tdm(L"ModelRangeTest.idgndb", __FILE__, Db::OPEN_ReadWrite);
+    DgnDbTestDgnManager tdm(L"ModelRangeTest.idgndb", __FILE__, Db::OpenMode::ReadWrite);
     m_dgndb = tdm.GetDgnProjectP();
     LoadModel("RangeTest");
 
@@ -148,7 +148,7 @@ TEST_F(DgnModelTests, GetRange)
 //---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, GetRangeOfEmptyModel)
     {
-    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OPEN_ReadWrite);
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
     m_dgndb = tdm.GetDgnProjectP();
     LoadModel("Default");
 
@@ -203,7 +203,7 @@ void DgnModelTests::InsertElement(DgnDbR db,   DgnModelId mid, bool is3d, bool e
 //---------------------------------------------------------------------------------------
 TEST_F(DgnModelTests, SheetModelCRUD)
     {
-    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OPEN_ReadWrite);
+    DgnDbTestDgnManager tdm(L"3dMetricGeneral.idgndb", __FILE__, Db::OpenMode::ReadWrite);
 
     static Utf8CP s_sheet1Name = "Sheet1";
     static Utf8CP s_sheet1NameUPPER = "SHEET1";
@@ -268,7 +268,7 @@ TEST_F(DgnModelTests, SheetModelCRUD)
     // Verify that loading works
     if (true)
         {
-        DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, dbFileName, DgnDb::OpenParams(Db::OPEN_ReadWrite));
+        DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, dbFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
         ASSERT_TRUE( db.IsValid() );
 
         DgnModelId mid = db->Models().QueryModelId(s_sheet1Name);
@@ -290,7 +290,7 @@ TEST_F(DgnModelTests, SheetModelCRUD)
 
     if (true)
         {
-        DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, dbFileName, DgnDb::OpenParams(Db::OPEN_ReadWrite));
+        DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, dbFileName, DgnDb::OpenParams(Db::OpenMode::ReadWrite));
         ASSERT_TRUE( db.IsValid() );
 
         ASSERT_EQ( 1 , countSheets(*db) );
@@ -309,7 +309,7 @@ TEST_F(DgnModelTests, SheetModelCRUD)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnModelTests, WorkWithDgnModelTable)
 {
-    DgnDbTestDgnManager tdm(L"ElementsSymbologyByLevel.idgndb", __FILE__, Db::OPEN_Readonly);
+    DgnDbTestDgnManager tdm(L"ElementsSymbologyByLevel.idgndb", __FILE__, Db::OpenMode::Readonly);
     DgnDbP project = tdm.GetDgnProjectP();
     ASSERT_TRUE(project != NULL);
 

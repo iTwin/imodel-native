@@ -17,7 +17,7 @@
 
 Classes for creating and opening a DgnDb.
 
-A DgnDb is a database that holds graphic and non-graphic data. A DgnDb object is used to access the database.
+A DgnDb is a BeSQLite::Db that holds graphic and non-graphic data. A DgnDb object is used to access the database.
 
 @ref PAGE_DgnPlatform
 */
@@ -53,8 +53,8 @@ public:
     BeDbGuid        m_guid;
 
     //! ctor for CreateDgnDbParams.
-    //! @param[in] guid The BeDbGuid to store in the newly created DgnDb. If invalid (the default), a new BeDbGuid is created.
-    //! The new BeProjectGuid can be obtained via GetGuid.
+    //! @param[in] guid The BeDbGuid to store in the newly created DgnDb. If not supplied, a new BeDbGuid is created.
+    //! @note The new BeDbGuid can be obtained via GetGuid.
     CreateDgnDbParams(BeDbGuid guid=BeDbGuid()) : BeSQLite::Db::CreateParams(), m_guid(guid) {if (!m_guid.IsValid()) m_guid.Create(); }
 
     //! Set the value to be stored as the ProjectName property in the new DgnDb created using this CreateDgnDbParams/
@@ -67,7 +67,7 @@ public:
     //! Set the value to be stored as the Client property in the new DgnDb created using this CreateDgnDbParams.
     void SetClient(Utf8CP client) {m_client = client;}
 
-    //! Set the filename of an existing, valid, SQLite db to be used as the "seed database" for the new DgnDb created using this CreateDgnDbParams.
+    //! Set the filename of an existing, valid, SQLite file to be used as the "seed database" for the new DgnDb created using this CreateDgnDbParams.
     //! If a SeedDb is specified, it is merely copied verbatim to the filename supplied to DgnDb::CreateDgnDb. Then, the DgnDb
     //! tables are added to the copy of the seed database.
     //! @note The default is to create a new database from scratch (in other words, no seed database).
@@ -95,7 +95,7 @@ struct DgnVersion : BeSQLite::SchemaVersion
 };
 
 //=======================================================================================
-//! A DgnDb is an in-memory object to access the information in a .dgndb database.
+//! A DgnDb is an in-memory object to access the information in a DgnDb file.
 //! @ingroup DgnDbGroup
 // @bsiclass
 //=======================================================================================
@@ -108,7 +108,7 @@ struct DgnDb : RefCounted<BeSQLite::EC::ECDb>
     //=======================================================================================
     struct EXPORT_VTABLE_ATTRIBUTE OpenParams : BeSQLite::Db::OpenParams
     {
-        explicit OpenParams(OpenMode openMode, BeSQLite::StartDefaultTransaction startDefaultTxn=BeSQLite::DefaultTxn_Yes) : Db::OpenParams(openMode, startDefaultTxn) {}
+        explicit OpenParams(OpenMode openMode, BeSQLite::DefaultTxn startDefaultTxn=BeSQLite::DefaultTxn::Yes) : Db::OpenParams(openMode, startDefaultTxn) {}
         virtual ~OpenParams() {}
 
         BeSQLite::DbResult UpgradeSchema(DgnDbR) const;
@@ -144,7 +144,7 @@ protected:
     DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _OnDbOpened() override;
 
     BeSQLite::DbResult CreateNewDgnDb(BeFileNameCR boundFileName, CreateDgnDbParams const& params);
-    BeSQLite::DbResult CreateProjectTables();
+    BeSQLite::DbResult CreateDgnDbTables();
     BeSQLite::DbResult InitializeDgnDb(CreateDgnDbParams const& params);
     BeSQLite::DbResult SaveDgnDbSchemaVersion(DgnVersion version=DgnVersion(DGNDB_CURRENT_VERSION_Major,DGNDB_CURRENT_VERSION_Minor,DGNDB_CURRENT_VERSION_Sub1,DGNDB_CURRENT_VERSION_Sub2));
     BeSQLite::DbResult DoOpenDgnDb(BeFileNameCR projectNameIn, OpenParams const&);
@@ -181,27 +181,31 @@ public:
     //! to it is released. There is no way to hold a pointer to a "closed project".
     DGNPLATFORM_EXPORT static DgnDbPtr CreateDgnDb(BeSQLite::DbResult* status, BeFileNameCR filename, CreateDgnDbParams const& params);
 
-    DGNPLATFORM_EXPORT DgnModels& Models() const;                   //!< Information about models for this DgnDb
-    DGNPLATFORM_EXPORT DgnElements& Elements() const;               //!< Information about graphic elements for this DgnDb
-    DGNPLATFORM_EXPORT DgnViews& Views() const;                     //!< Information about views for this DgnDb
-    DGNPLATFORM_EXPORT DgnCategories& Categories() const;           //!< Information about categories for this DgnDb
-    DGNPLATFORM_EXPORT DgnUnits& Units() const;                     //!< Information about the units for this DgnDb
-    DGNPLATFORM_EXPORT DgnColors& Colors() const;                   //!< Information about named and indexed colors for this DgnDb
-    DGNPLATFORM_EXPORT DgnStyles& Styles() const;                   //!< Information about styles for this DgnDb
-    DGNPLATFORM_EXPORT DgnGeomParts& GeomParts() const;             //!< Information about the geometry parts for this DgnDb
-    DGNPLATFORM_EXPORT DgnFonts& Fonts() const;                     //!< Information about fonts for this DgnDb
-    DGNPLATFORM_EXPORT DgnLinks& Links() const;                     //!< Information about DgnLinks for this DgnDb
-    DGNPLATFORM_EXPORT DgnDomains& Domains() const;                 //!< The DgnDomains associated with this DgnDb.
-    DGNPLATFORM_EXPORT TxnManagerR Txns();                          //!< Information about Txns for this DgnDb.
-
-//__PUBLISH_SECTION_END__
-    DGNPLATFORM_EXPORT DgnMaterials& Materials() const;       //!< Information about materials for this DgnDb
-//__PUBLISH_SECTION_START__
+    DGNPLATFORM_EXPORT DgnModels& Models() const;             //!< The DgnModels of this DgnDb
+    DGNPLATFORM_EXPORT DgnElements& Elements() const;         //!< The DgnElements of this DgnDb
+    DGNPLATFORM_EXPORT DgnViews& Views() const;               //!< The DgnViews for this DgnDb
+    DGNPLATFORM_EXPORT DgnCategories& Categories() const;     //!< The DgnCategories for this DgnDb
+    DGNPLATFORM_EXPORT DgnUnits& Units() const;               //!< The units for this DgnDb
+    DGNPLATFORM_EXPORT DgnColors& Colors() const;             //!< The named colors for this DgnDb
+    DGNPLATFORM_EXPORT DgnStyles& Styles() const;             //!< The styles for this DgnDb
+    DGNPLATFORM_EXPORT DgnGeomParts& GeomParts() const;       //!< The the geometry parts for this DgnDb
+    DGNPLATFORM_EXPORT DgnFonts& Fonts() const;               //!< The fonts for this DgnDb
+    DGNPLATFORM_EXPORT DgnLinks& Links() const;               //!< The DgnLinks for this DgnDb
+    DGNPLATFORM_EXPORT DgnDomains& Domains() const;           //!< The DgnDomains associated with this DgnDb.
+    DGNPLATFORM_EXPORT TxnManagerR Txns();                    //!< The Txns for this DgnDb.
+    DGNPLATFORM_EXPORT DgnMaterials& Materials() const;       //!< The materials for this DgnDb
 
     //! Gets a cached and prepared ECSqlStatement.
     DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetPreparedECSqlStatement(Utf8CP ecsql) const;
 
+    //! Perform a SQLite VACUUM on this DgnDb. This potentially makes the file smaller and more efficient to access.
     DGNPLATFORM_EXPORT DgnDbStatus CompactFile();
+
+    //! Determine whether this DgnDb is the master copy.
+    bool IsMasterCopy() const {return GetRepositoryId().IsMasterId();}
+
+    //! Determine whether this DgnDb is a briefcase.
+    bool IsBriefcase() const {return !IsMasterCopy();}
 };
 
 inline BeSQLite::DbResult DgnViews::QueryProperty(void* value, uint32_t size, DgnViewId viewId, DgnViewPropertySpecCR spec, uint64_t id)const {return m_dgndb.QueryProperty(value, size, spec, viewId.GetValue(), id);}

@@ -541,7 +541,7 @@ DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileName, CreateD
     if (BeFileNameStatus::Success != fstatus)
         return BE_SQLITE_ERROR;
 
-    OpenParams oparams(OPEN_ReadWrite);
+    OpenParams oparams(OpenMode::ReadWrite);
     DbResult status = DoOpenDgnDb(projectFile, oparams); // open as a DgnDb
 
     if (BE_SQLITE_OK != status)

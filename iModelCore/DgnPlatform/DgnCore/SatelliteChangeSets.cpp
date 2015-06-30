@@ -505,7 +505,7 @@ BentleyStatus SatelliteChangeSets::ApplyChangeSets(uint32_t& nChangesApplied, Db
 BentleyStatus SatelliteChangeSets::Dump(BeFileNameCR csfileName, Db& db, int detailLevel)
     {
     Db csfile;
-    if (BE_SQLITE_OK != csfile.OpenBeSQLiteDb(csfileName, Db::OpenParams(Db::OpenMode::OPEN_Readonly)))
+    if (BE_SQLITE_OK != csfile.OpenBeSQLiteDb(csfileName, Db::OpenParams(Db::OpenMode::Readonly)))
         return BSIERROR;
 
     BeSQLite::Statement stmt;
@@ -526,7 +526,7 @@ BentleyStatus SatelliteChangeSets::Dump(BeFileNameCR csfileName, Db& db, int det
         }
 
     return BSISUCCESS;
-    } 
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Sam.Wilson                      07/14

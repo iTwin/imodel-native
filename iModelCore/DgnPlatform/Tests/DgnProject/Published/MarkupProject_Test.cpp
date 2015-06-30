@@ -40,11 +40,11 @@ TEST(DgnMarkupProjectTest, CreateDgnMarkupProject)
     DgnViewId   seedViewId;
     if (true)
         {
-        DgnDbTestDgnManager tdmSeed (L"empty2d_english.idgndb", __FILE__, Db::OPEN_Readonly);
+        DgnDbTestDgnManager tdmSeed (L"empty2d_english.idgndb", __FILE__, Db::OpenMode::Readonly);
         seedModelId = tdmSeed.GetDgnProjectP()->Models().QueryModelId ("RedlineSeedModel");
         seedViewId  = tdmSeed.GetDgnProjectP()->Views().QueryViewId ("RedlineSeedView");
 
-        DgnDbTestDgnManager tdm (L"2dMetricGeneral.idgndb", __FILE__, Db::OPEN_Readonly);
+        DgnDbTestDgnManager tdm (L"2dMetricGeneral.idgndb", __FILE__, Db::OpenMode::Readonly);
         DgnDbP project = tdm.GetDgnProjectP();
         ASSERT_TRUE( project != NULL );
 
@@ -67,7 +67,7 @@ TEST(DgnMarkupProjectTest, CreateDgnMarkupProject)
 
     DbResult status;
 
-    DgnDb::OpenParams oparms (Db::OPEN_ReadWrite);
+    DgnDb::OpenParams oparms (Db::OpenMode::ReadWrite);
     DgnMarkupProjectPtr mproject = DgnMarkupProject::OpenDgnDb(&status, markupProjectFileName, oparms);
     ASSERT_TRUE( status == BE_SQLITE_OK);
     ASSERT_TRUE( mproject.get() != NULL );
