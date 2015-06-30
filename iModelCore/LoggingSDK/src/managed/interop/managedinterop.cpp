@@ -2,7 +2,7 @@
 |
 |     $Source: src/managed/interop/managedinterop.cpp $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -23,8 +23,8 @@ namespace ManagedApi = ::Bentley::Logging;
 #include "assert.h"
 #include "bentleyloginterop.h"
 
-namespace NativeApi = ::Bentley::NativeLogging;
-namespace NativeProviderApi = ::Bentley::NativeLogging::Provider;
+namespace NativeApi = ::BentleyApi::NativeLogging;
+namespace NativeProviderApi = ::BentleyApi::NativeLogging::Provider;
 
 BEGIN_BENTLEY_LOGGING_NAMESPACE;
 

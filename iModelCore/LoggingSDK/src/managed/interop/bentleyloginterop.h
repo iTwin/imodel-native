@@ -2,7 +2,7 @@
 |
 |     $Source: src/managed/interop/bentleyloginterop.h $
 |
-|  $Copyright: (c) 2012 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*__BENTLEY_INTERNAL_ONLY__*/
@@ -48,10 +48,10 @@ class BSILOG_INTEROP_API ManagedInteropProvider : public ILogProvider
 
         int  __stdcall SetSeverity ( wchar_t const* _namespace, SEVERITY severity );
 
-        bool __stdcall IsSeverityEnabled( ILogProviderContext * pContext, ::Bentley::NativeLogging::SEVERITY sev );
+        bool __stdcall IsSeverityEnabled( ILogProviderContext * pContext, ::BentleyApi::NativeLogging::SEVERITY sev );
 
-        void __stdcall LogMessage( ILogProviderContext * pContext, ::Bentley::NativeLogging::SEVERITY sev, wchar_t const* msg );
-        void __stdcall LogMessage( ILogProviderContext * pContext, ::Bentley::NativeLogging::SEVERITY sev, char const* msg );
+        void __stdcall LogMessage( ILogProviderContext * pContext, ::BentleyApi::NativeLogging::SEVERITY sev, wchar_t const* msg );
+        void __stdcall LogMessage( ILogProviderContext * pContext, ::BentleyApi::NativeLogging::SEVERITY sev, char const* msg );
     };
 
 EXTERN_C BSILOG_INTEROP_API ILogProvider* InstanceLoggingProvider( void );
