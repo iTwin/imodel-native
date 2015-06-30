@@ -1907,11 +1907,16 @@ TEST_F(ElementDependencyGraph, TestPriority)
     {
     SetUpForRelationshipTests(L"TestPriority");
 
-    auto e11 = InsertElement("E11");
-    auto e12 = InsertElement("E12");
-    auto e2 = InsertElement("E2");
-    auto e11_e2 = InsertElementDrivesElementRelationship(e11, e2);
-    auto e12_e2 = InsertElementDrivesElementRelationship(e12, e2);
+    DgnElementCPtr e11 = InsertElement("E11");
+    ASSERT_TRUE(e11 != nullptr);
+    DgnElementCPtr e12 = InsertElement("E12");
+    ASSERT_TRUE(e12 != nullptr);
+    DgnElementCPtr e2 = InsertElement("E2");
+    ASSERT_TRUE(e2 != nullptr);
+    ECInstanceKey e11_e2 = InsertElementDrivesElementRelationship(e11, e2);
+    ASSERT_TRUE(e11_e2.IsValid());
+    ECInstanceKey e12_e2 = InsertElementDrivesElementRelationship(e12, e2);
+    ASSERT_TRUE(e12_e2.IsValid());
 
     m_db->SaveChanges();
 
