@@ -451,7 +451,7 @@ void            LsStrokePatternComponent::ApplyCenterPhase (double elementLength
 
     // Acad seems to add a slop of 2e-10 to determine if the line needs another iteration of the pattern;
     // so if the line is short of a full iteration by that amount it will "round up" and create another
-    // repition of the pattern.
+    // repetition of the pattern.
     static double CENTERED_TOLERANCE = 2e-10;
 
     double expandedElementLength = elementLength + CENTERED_TOLERANCE;
@@ -818,9 +818,12 @@ double          LsStrokePatternComponent::GenerateStrokes (ViewContextP context,
 
     // Iterate through the stroke list consuming the input data and generating strokes.
     // NOTE: pStroke may have been advanced by phase shift above
-    DPoint3dP   clPts     = (DPoint3dP) _alloca (nPoints * sizeof(DPoint3d));
-    double*     clWidths  = (double*) _alloca (nPoints * sizeof (double));
-    double*     clLengths = (double*) _alloca (nPoints * sizeof (double));
+    ScopedArray<DPoint3d, 50> scopedClPoints(nPoints);
+    DPoint3dP   clPts     = scopedClPoints.GetData();
+    ScopedArray<double, 50> scopedClWidths(nPoints);
+    double*     clWidths  = scopedClWidths.GetData();
+    ScopedArray<double, 50> scopedClLengths(nPoints);
+    double*     clLengths = scopedClLengths.GetData();
 
     Centerline  centerLine (clPts, clWidths, clLengths, taperWholeLine);
 
@@ -1746,10 +1749,12 @@ DPoint3dCP     endTangent,
 bool           polyLengthNotDiscernible
 )
     {
-    LineJoint*  joints = (LineJoint*) _alloca (nPts * sizeof(LineJoint));
+    ScopedArray<LineJoint, 50>  scopedJoints(nPts);
+    LineJoint*  joints = scopedJoints.GetData();
     LineJoint::FromVertices (joints, pts, nPts, normal, startTangent, endTangent);
-
-    DPoint3d*   outsidePts = (DPoint3d*) _alloca (((nPts * 2) + 11) * sizeof(DPoint3d));
+    size_t numOutsidePts = (nPts * 2) + 11;
+    ScopedArray<DPoint3d, 50>  scopedOutsidePts(numOutsidePts);
+    DPoint3d*   outsidePts = scopedOutsidePts.GetData();
 
     if (capMode == CAP_Open)
         {

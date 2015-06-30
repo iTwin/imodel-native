@@ -493,8 +493,6 @@ private:
     bool                m_isModified;
     WChar               m_descr[LS_MAX_DESCR];
 
-    DgnElementPtrVec    m_elements;
-
     size_t              m_xGraphicsSize;
     Byte const*         m_xGraphicsData;
     double              m_storedScale;              //
@@ -535,11 +533,7 @@ public:
     virtual StatusInt   _DoStroke           (ViewContextP, DPoint3dCP, int, LineStyleSymbCP) const override;
     BentleyStatus       CreateFromComponent (LsPointSymbolComponentCP lpsComp);
 
-    DgnElementPtrVec& GetElementsR() {return m_elements;}
-    DgnElementPtrVec const& GetElements () const {return m_elements;}
-
-    DGNPLATFORM_EXPORT void AddGraphics (DgnElementPtr&);
-    DGNPLATFORM_EXPORT void FreeGraphics (bool freeDescr, bool freeXGraphics);
+    DGNPLATFORM_EXPORT void FreeGraphics ();
 
     static BentleyStatus CreateRscFromDgnDb(PointSymRsc** rscOut, DgnDbR project, LsComponentId id, bool useRscComponentTypes);
     DGNPLATFORM_EXPORT static BentleyStatus GetRscFromDgnDb(PointSymRscPtr& ptr, DgnDbR project, LsComponentId id);

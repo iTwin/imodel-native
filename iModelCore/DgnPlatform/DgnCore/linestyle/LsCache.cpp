@@ -393,10 +393,12 @@ StatusInt       LsCompoundComponent::_DoStroke (ViewContextP context, DPoint3dCP
     modifiers->GetPlaneAsMatrixRows(matrix);
     matrix.GetRow (normal, 2);
 
-    LineJoint*  joints = (LineJoint*) _alloca (nPoints * sizeof(LineJoint));
+    ScopedArray<LineJoint, 50> scopedJoints(nPoints);
+    LineJoint*  joints = scopedJoints.GetData();
     LineJoint::FromVertices (joints, inPoints, nPoints, &normal, NULL, NULL);
 
-    DPoint3d*   offsetPts = (DPoint3d*) _alloca (nPoints * sizeof (DPoint3d));
+    ScopedArray<DPoint3d, 50> scopedOffsetPts(nPoints);
+    DPoint3d*   offsetPts = scopedOffsetPts.GetData();
     double      scale = modifiers->GetScale();
 
     for (T_ComponentsCollectionConstIter curr = m_components.begin (); curr < m_components.end (); curr++)

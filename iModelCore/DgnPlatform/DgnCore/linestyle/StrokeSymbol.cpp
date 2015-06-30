@@ -245,7 +245,7 @@ LsSymbolComponent::LsSymbolComponent (LsLocation const *pLocation) : LsComponent
 +---------------+---------------+---------------+---------------+---------------+------*/
 LsSymbolComponent::~LsSymbolComponent ()
     {
-    FreeGraphics (true, true);
+    FreeGraphics ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -341,21 +341,7 @@ LsSymbolComponent* LsSymbolComponent::LoadPointSym (LsComponentReader* reader)
     LsSymbolComponent* symbComp = new LsSymbolComponent (reader->GetSource());
     symbComp->SetDescription (Utf8String(symRsc->header.descr).c_str());
 
-    // add to cache
-#if defined(NOTNOW)
-    LineStyleCacheManager::CacheAdd (symbComp);
-#endif
-
-#if defined (NEEDS_WORK_DGNITEM)
-    if (symRsc->GetSymbolType() == PointSymRsc::ST_Elements)
-        {
-        LineStyleUtil::CreateSymbolDscr (symbComp->GetElementsR(), symRsc->symBuf, symRsc->nBytes, (symRsc->symFlags & LSSYM_3D) ? true : false, reader->GetComponentType(), reader->GetDgnDb().Models().GetDictionaryModel());
-        }
-    else
-#endif
-        {
-        symbComp->SetXGraphics (symRsc->symBuf, symRsc->nBytes);
-        }
+    symbComp->SetXGraphics (symRsc->symBuf, symRsc->nBytes);
 
     symbComp->SetFlags (symRsc->symFlags);
 
@@ -382,24 +368,14 @@ LsSymbolComponent* LsSymbolComponent::LoadPointSym (LsComponentReader* reader)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    John.Gooding    09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LsSymbolComponent::FreeGraphics (bool freeDescr, bool freeXGraphics)
+void LsSymbolComponent::FreeGraphics ()
     {
-    if (freeDescr)
-        m_elements.clear();
-        
-    if (freeXGraphics && NULL != m_xGraphicsData)
+    if (m_xGraphicsData)
         {
         m_xGraphicsSize = 0;
         bentleyAllocator_free(const_cast <Byte*> (m_xGraphicsData));
+        m_xGraphicsData = nullptr;
         }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    John.Gooding    09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void LsSymbolComponent::AddGraphics (DgnElementPtr& element)
-    {
-    m_elements.push_back(element);
     }
 
 double              LsSymbolComponent::GetStoredUnitScale () const { return m_storedScale; }
