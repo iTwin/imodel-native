@@ -461,7 +461,7 @@ public:
             virtual QvElem* _CreateQvTile(bool is3d, QvCacheP hCache, QvMRImage* mri, uintptr_t textureId, int layer, int row, int column, int numLines, int bytesPerLine, Point2dCR bufferSize, Byte const* pBuffer) {return NULL;}
 
             //! Define a custom raster format(QV_*_FORMAT) for color index data. Return 0 if error.
-            virtual int _DefineCIFormat(int dataType, int numColors, unsigned long const* pTBGRColors){return 0;}
+            virtual int _DefineCIFormat(int dataType, int numColors, QvUInt32 const* pTBGRColors){return 0;}
 
             //! An InteractiveHost may choose to allow applications to display non-persistent geometry during an update.
             virtual void _CallViewTransients(ViewContextR, bool isPreupdate) {}

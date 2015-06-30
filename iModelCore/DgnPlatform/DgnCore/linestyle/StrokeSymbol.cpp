@@ -25,6 +25,33 @@ LsSymbolReference::RotationMode LsSymbolReference::GetRotationMode () const
     return  ROTATE_Relative;
     }
 
+//---------------------------------------------------------------------------------------
+// calculate the "maximum offset from the origin" for this XGraphics container
+// @bsimethod                                                   John.Gooding    06/2015
+//---------------------------------------------------------------------------------------
+static double getXGraphicsMaxOffset (Byte const*xGraphicsData, int32_t xGraphicsSize, DgnModelR dgnModel, double angle)
+    {
+    Transform transform;
+    transform.initFromPrincipleAxisRotations(NULL, 0.0, 0.0, angle);
+    DRange3d        range;
+
+    XGraphicsContainer::CalculateRange(range, xGraphicsData, xGraphicsSize, dgnModel, transform);
+
+    double      maxWidth = fabs (range.low.y);
+    double      test;
+
+    if ((test = fabs (range.high.y)) > maxWidth)
+        maxWidth = test;
+
+    if ((test = fabs (range.low.z)) > maxWidth)
+        maxWidth = test;
+
+    if ((test = fabs (range.high.z)) > maxWidth)
+        maxWidth = test;
+
+    return maxWidth;
+    }
+
 #if defined (NEEDSWORK_DGNITEM)
     /*---------------------------------------------------------------------------------**//**
     * calculate the "maximum offset from the origin" for this element descriptor chain.
@@ -73,11 +100,21 @@ LsSymbolReference::RotationMode LsSymbolReference::GetRotationMode () const
 double LsSymbolReference::_GetMaxWidth (DgnModelP dgnModel) const
     {
 #if defined(NOTNOW)
-    if (NULL == GetElements())
-        return  0.0;
+    if (NULL == m_symbol.get ())
+        return 0.0;
 
-    double maxWidth = getDescrMaxOffset (*GetElements(), dgnModel, m_angle) / m_symbol->GetMuDef();
-    double offset   = m_offset.Magnitude ();
+    MSElementDescrP   elDscr = GetElementDescr ();
+
+    double maxWidth = 0.0;
+    double offset   = m_offset.magnitude ();
+    if (NULL != elDscr)
+        {
+        maxWidth = getDescrMaxOffset (elDscr, dgnModel, m_angle) / m_symbol->GetMuDef();
+        }
+    else if (0 != m_symbol->GetXGraphicsSize ())
+        {
+        maxWidth = getXGraphicsMaxOffset(m_symbol->GetXGraphicsData (), static_cast<int32_t>(m_symbol->GetXGraphicsSize ()), *dgnModel, m_angle);
+        }
 
     return  (offset + maxWidth) * 2.0;
 #endif
