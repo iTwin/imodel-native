@@ -555,6 +555,13 @@ DPoint3d PrimitiveECSqlParameterValue::_GetPoint3D () const
     return m_value.GetPoint3D ();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      06/2015
+//---------------------------------------------------------------------------------------
+IGeometryPtr PrimitiveECSqlParameterValue::_GetGeometry() const
+    {
+    return m_value.GetIGeometry();
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      11/2014

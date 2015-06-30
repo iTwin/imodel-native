@@ -95,7 +95,6 @@ ECN::ECClassCR ECDbMap::GetClassForPrimitiveArrayPersistence (PrimitiveType prim
     switch(primitiveType)
         {
         case PRIMITIVETYPE_Binary:
-        case PRIMITIVETYPE_IGeometry:
             ecMapClass = ecdbSystemSchema->GetClassCP (L"ArrayOfBinary");
             break;
         case PRIMITIVETYPE_Boolean:                
@@ -121,6 +120,9 @@ ECN::ECClassCR ECDbMap::GetClassForPrimitiveArrayPersistence (PrimitiveType prim
             break;
         case PRIMITIVETYPE_String:                    
             ecMapClass = ecdbSystemSchema->GetClassCP (L"ArrayOfString");
+            break;
+        case PRIMITIVETYPE_IGeometry:
+            ecMapClass = ecdbSystemSchema->GetClassCP(L"ArrayOfGeometry");
             break;
         default:
             BeAssert(0 && "Cannot map primitive type");

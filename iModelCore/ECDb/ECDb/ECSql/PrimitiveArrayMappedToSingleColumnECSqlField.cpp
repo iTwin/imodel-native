@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/PrimitiveArrayMappedToSingleColumnECSqlField.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -359,6 +359,18 @@ DPoint3d PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetPo
         return NoopECSqlValue::GetSingleton ().GetPoint3D();
 
     return m_value.GetPoint3D ();
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      11/2014
+//---------------------------------------------------------------------------------------
+IGeometryPtr PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetGeometry() const
+    {
+    if (!CanRead(PRIMITIVETYPE_IGeometry))
+        return NoopECSqlValue::GetSingleton().GetGeometry();
+
+    return m_value.GetIGeometry();
     }
 
 //---------------------------------------------------------------------------------------

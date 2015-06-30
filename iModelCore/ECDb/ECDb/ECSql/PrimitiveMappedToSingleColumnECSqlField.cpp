@@ -2,10 +2,11 @@
 |
 |     $Source: ECDb/ECSql/PrimitiveMappedToSingleColumnECSqlField.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
+#include <GeomSerialization/GeomSerializationApi.h>
 
 using namespace std;
 
@@ -137,6 +138,34 @@ Utf8CP PrimitiveMappedToSingleColumnECSqlField::_GetText () const
     return GetSqliteStatement ().GetValueText (GetSqliteColumnIndex ());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      11/2014
+//---------------------------------------------------------------------------------------
+IGeometryPtr PrimitiveMappedToSingleColumnECSqlField::_GetGeometry() const
+    {
+    if (!CanGetValue(PRIMITIVETYPE_IGeometry))
+        return NoopECSqlValue::GetSingleton().GetGeometry();
+
+    int blobSize = -1;
+    auto blob = static_cast<Byte const*> (_GetGeometryBlob(&blobSize));
+    if (blob == nullptr)
+        return nullptr;
+
+    BeAssert(blobSize > 0);
+    const size_t blobSizeU = (size_t) blobSize;
+    bvector<Byte> byteVec;
+    byteVec.reserve(blobSizeU);
+    byteVec.assign(blob, blob + blobSizeU);
+    if (!BentleyGeometryFlatBuffer::IsFlatBufferFormat(byteVec))
+        {
+        SetError(ECSqlStatus::UserError, "Cannot retrieve Geometry value. The geometry is not persisted in the Bentley Geometry FlatBuffer format.");
+        return nullptr;
+        }
+
+    IGeometryPtr geom = BentleyGeometryFlatBuffer::BytesToGeometry(byteVec);
+    BeAssert(geom != nullptr);
+    return geom;
+    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2014

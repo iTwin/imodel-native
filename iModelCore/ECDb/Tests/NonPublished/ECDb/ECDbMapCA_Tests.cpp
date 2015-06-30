@@ -69,7 +69,7 @@ struct ECDbMapCATests : public ::testing::Test
         MapStrategy_SharedTableForThisClass = 0x10,
         MapStrategy_MapToExistingTable = 0x20,
         MapStrategy_TableForThisClass = 0x40,
-        MapStrategy_WithReuseColumns = 0x100,
+        MapStrategy_SharedColumns = 0x100,
         MapStrategy_WithExclusivelyStoredInThisTable = 0x200,
         MapStrategy_WithReadonly = 0x400,
         MapStrategy_NoHint = 0x0,
@@ -427,18 +427,18 @@ TEST_F (ECDbMapCATests, AbstractClassWithTablePerHierarchyAndSharedTableForThisC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECDbMapCATests, TablePerHierarchy_WithReuseColumns)
+TEST_F (ECDbMapCATests, TablePerHierarchy_SharedColumns)
     {
     auto const schema =
         L"<?xml version='1.0' encoding='utf-8'?>"
-        L"<ECSchema schemaName='SchemaWithReuseColumn' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        L"<ECSchema schemaName='SchemaWithSharedColumns' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         L"    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
         L"    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
         L"    <ECClass typeName='BaseClass' isDomainClass='True'>"
         L"        <ECCustomAttributes>"
         L"            <ClassMap xmlns='ECDbMap.01.00'>"
         L"                <MapStrategy>TablePerHierarchy</MapStrategy>"
-        L"                <MapStrategyOptions>ReuseColumns</MapStrategyOptions>"
+        L"                <MapStrategyOptions>SharedColumns</MapStrategyOptions>"
         L"            </ClassMap>"
         L"        </ECCustomAttributes>"
         L"        <ECProperty propertyName='P1' typeName='string' />"
@@ -448,7 +448,7 @@ TEST_F (ECDbMapCATests, TablePerHierarchy_WithReuseColumns)
         L"        <ECCustomAttributes>"
         L"            <ClassMap xmlns='ECDbMap.01.00'>"
         L"                <MapStrategy>TablePerHierarchy</MapStrategy>"
-        L"                <MapStrategyOptions>ReuseColumns</MapStrategyOptions>"
+        L"                <MapStrategyOptions>SharedColumns</MapStrategyOptions>"
         L"            </ClassMap>"
         L"        </ECCustomAttributes>"
         L"        <ECProperty propertyName='P2' typeName='double' />"
@@ -516,18 +516,18 @@ TEST_F (ECDbMapCATests, TablePerHierarchy_WithReuseColumns)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECDbMapCATests, TablePerHierarchy_ReuseColumns_DisableReuseColumnsForThisClass)
+TEST_F(ECDbMapCATests, TablePerHierarchy_SharedColumns_DisableSharedColumnsForThisClass)
     {
     Utf8CP schemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='SchemaWithReuseColumn' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "<ECSchema schemaName='SchemaWithSharedColumns' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
         "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
         "    <ECClass typeName='BaseClass' isDomainClass='True'>"
         "        <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.01.00'>"
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-        "                <MapStrategyOptions>ReuseColumns</MapStrategyOptions>"
+        "                <MapStrategyOptions>SharedColumns</MapStrategyOptions>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='P1' typeName='string' />"
@@ -536,7 +536,7 @@ TEST_F (ECDbMapCATests, TablePerHierarchy_ReuseColumns_DisableReuseColumnsForThi
         "        <BaseClass>BaseClass</BaseClass>"
         "        <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.01.00'>"
-        "                <MapStrategy>DisableReuseColumnsForThisClass</MapStrategy>"
+        "                <MapStrategy>DisableSharedColumnsForThisClass</MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='P2' typeName='double' />"
@@ -545,7 +545,7 @@ TEST_F (ECDbMapCATests, TablePerHierarchy_ReuseColumns_DisableReuseColumnsForThi
         "        <BaseClass>BaseClass</BaseClass>"
         "        <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.01.00'>"
-        "                <MapStrategy>DisableReuseColumnsForThisClass</MapStrategy>"
+        "                <MapStrategy>DisableSharedColumnsForThisClass</MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='P3' typeName='int' />"
@@ -613,8 +613,7 @@ TEST_F (ECDbMapCATests, TestInvalidMapStrategyValue)
     {
     Utf8CP schemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='SchemaWithReuseColumn' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
         "    <ECClass typeName='ClassA' isDomainClass='True'>"
         "        <ECCustomAttributes>"
@@ -639,6 +638,41 @@ TEST_F (ECDbMapCATests, TestInvalidMapStrategyValue)
     ASSERT_TRUE(testSchema != nullptr);
     auto importStatus = ecdb.Schemas().ImportECSchemas(readContext->GetCache());
     ASSERT_TRUE (importStatus == BentleyStatus::ERROR) << "Schema import successful instead of returning error";
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     05/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMapCATests, TestInvalidCombinationsOfMapStrategyAndOptions)
+    {
+    //TODO: Please complete this test with all other invalid combinations
+
+    Utf8CP schemaXml =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "    <ECClass typeName='ClassA' isDomainClass='True'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>TablePerClass</MapStrategy>"
+        "                <MapStrategyOptions>SharedColumns</MapStrategyOptions>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Price' typeName='double' />"
+        "    </ECClass>"
+        "</ECSchema>";
+
+    ECDbTestProject::Initialize();
+    ECDb ecdb;
+    ASSERT_EQ(BE_SQLITE_OK, ECDbTestUtility::CreateECDb(ecdb, nullptr, L"SchemaMap.ecdb")) << "ECDb couldn't be created";
+
+    auto readContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr testSchema = nullptr;
+    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, ECSchema::ReadFromXmlString(testSchema, schemaXml, *readContext));
+    ASSERT_TRUE(testSchema != nullptr);
+    auto importStatus = ecdb.Schemas().ImportECSchemas(readContext->GetCache());
+    ASSERT_TRUE(importStatus == BentleyStatus::ERROR) << "Schema import successful instead of returning error";
     }
 
 //---------------------------------------------------------------------------------------

@@ -157,8 +157,8 @@ private:
     void DetermineCardinality();
     bool VerifyRelatedClasses() const;
 
-    bool TryDetermine11RelationshipMapStrategy(Strategy&, ECN::ECRelationshipConstraintR source, ECN::ECRelationshipConstraintR target, ECN::ECRelationshipClassCR relationshipClass) const;
-    bool TryDetermine1MRelationshipMapStrategy(Strategy&, ECN::ECRelationshipConstraintR source, ECN::ECRelationshipConstraintR target, ECN::ECRelationshipClassCR relationshipClass) const;
+    bool TryDetermine11RelationshipMapStrategy(MapStrategy&, ECN::ECRelationshipConstraintR source, ECN::ECRelationshipConstraintR target, ECN::ECRelationshipClassCR relationshipClass) const;
+    bool TryDetermine1MRelationshipMapStrategy(MapStrategy&, ECN::ECRelationshipConstraintR source, ECN::ECRelationshipConstraintR target, ECN::ECRelationshipClassCR relationshipClass) const;
     static bool ContainsRelationshipClass(std::vector<ECN::ECClassCP> const& endClasses);
 
 public:
@@ -172,8 +172,8 @@ public:
     virtual MapStatus _Initialize() override;
 
     Cardinality GetCardinality() const { return m_cardinality; }
-    RelationshipEndColumns const& GetSourceColumnsMapping() const { BeAssert(m_customMapType != CustomMapType::ForeignKeyOnTarget && GetMapStrategy().GetStrategy() != Strategy::RelationshipTargetTable); return m_sourceColumnsMapping; }
-    RelationshipEndColumns const& GetTargetColumnsMapping() const { BeAssert(m_customMapType != CustomMapType::ForeignKeyOnSource && GetMapStrategy().GetStrategy() != Strategy::RelationshipSourceTable); return m_targetColumnsMapping; }
+    RelationshipEndColumns const& GetSourceColumnsMapping() const { BeAssert(m_customMapType != CustomMapType::ForeignKeyOnTarget && GetMapStrategy().GetStrategy() != MapStrategy::RelationshipTargetTable); return m_sourceColumnsMapping; }
+    RelationshipEndColumns const& GetTargetColumnsMapping() const { BeAssert(m_customMapType != CustomMapType::ForeignKeyOnSource && GetMapStrategy().GetStrategy() != MapStrategy::RelationshipSourceTable); return m_targetColumnsMapping; }
     bool AllowDuplicateRelationships() const { BeAssert((m_customMapType == CustomMapType::LinkTable || m_customMapType == CustomMapType::None) && GetMapStrategy().IsLinkTableStrategy()); return m_allowDuplicateRelationships; }
     bool IsCreateForeignKeyConstraint() const { BeAssert(m_customMapType != CustomMapType::LinkTable && GetMapStrategy().IsEndTableMapping()); return m_onDeleteAction != ECDbSqlForeignKeyConstraint::ActionType::NotSpecified || m_onUpdateAction != ECDbSqlForeignKeyConstraint::ActionType::NotSpecified; }
     ECDbSqlForeignKeyConstraint::ActionType GetOnDeleteAction() const { BeAssert(IsCreateForeignKeyConstraint()); return m_onDeleteAction; }
@@ -218,7 +218,7 @@ public:
                 whereConstraint = WhereConstraint::NotNull;
             else
                 {
-                LOG.errorv("Invalid where clause in ECDbClassMap::DbIndex: %s. Only ECDB_NOTNULL supported by ECDb.", dbIndex.GetWhereClause());
+                LOG.errorv("Invalid where clause in ClassMap::DbIndex: %s. Only ECDB_NOTNULL supported by ECDb.", dbIndex.GetWhereClause());
                 return nullptr;
                 }
             }

@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include <ECDb/IECSqlValue.h>
-#include <GeomSerialization/GeomSerializationApi.h>
 #include "IECSqlPrimitiveValue.h"
 #include "ECSqlStatementNoopImpls.h"
 
@@ -124,19 +123,9 @@ DPoint3d IECSqlValue::GetPoint3D () const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 11/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-IGeometryPtr IECSqlValue::GetGeometry () const
+IGeometryPtr IECSqlValue::GetGeometry() const
     {
-    int blobSize = -1;
-    auto blob = static_cast<Byte const*> (GetGeometryBlob (&blobSize));
-    if (blob == nullptr)
-        return nullptr;
-
-    BeAssert (blobSize > 0);
-    const size_t blobSizeU = (size_t) blobSize;
-    bvector<Byte> byteVec;
-    byteVec.reserve (blobSizeU);
-    byteVec.assign (blob, blob + blobSizeU);
-    return BentleyGeometryFlatBuffer::BytesToGeometry (byteVec);
+    return _GetPrimitive()._GetGeometry();
     }
 
 //--------------------------------------------------------------------------------------

@@ -195,11 +195,44 @@ Utf8String ECSqlCommand::PrimitiveToString (IECSqlValue const& value, ECN::Primi
             }
         case ECN::PRIMITIVETYPE_String:
             {
-            out.Sprintf ("%s", value.GetText ());
+            out = value.GetText();
             break;
             }
         case ECN::PRIMITIVETYPE_IGeometry:
+            {
+            IGeometryPtr geom = value.GetGeometry();
+            if (geom == nullptr) // can be null if conversion from blob to IGeometry failed
+                {
+                out = "<invalid geom format>";
+                break;
+                }
+
+            switch (geom->GetGeometryType ())
+                {
+                    case IGeometry::GeometryType::BsplineSurface:
+                        out = "BsplineSurface";
+                        break;
+                    case IGeometry::GeometryType::CurvePrimitive:
+                        out = "CurvePrimitive";
+                        break;
+                    case IGeometry::GeometryType::CurveVector:
+                        out = "CurveVector";
+                        break;
+                    case IGeometry::GeometryType::Polyface:
+                        out = "Polyface";
+                        break;
+                    case IGeometry::GeometryType::SolidPrimitive:
+                        out = "SolidPrimitive";
+                        break;
+                    default:
+                        {
+                        BeAssert(false && "Adjust code to new value in enum IGeometry::GeometryType");
+                        out = "IGeometry";
+                        break;
+                        }
+                }
             break;
+            }
         }
     return out;
     }

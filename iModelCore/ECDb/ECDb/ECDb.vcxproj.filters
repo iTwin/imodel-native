@@ -394,9 +394,6 @@
     <ClInclude Include="..\PublicAPI\ECDb\ECDb.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h">
-      <Filter>PublicApi</Filter>
-    </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECDbSchemaManager.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
@@ -820,6 +817,9 @@
       <Filter>ECSql\ECSqlPrepare</Filter>
     </ClCompile>
     <ClCompile Include="ECObjectsExtensions.cpp" />
+    <ClCompile Include="MapStrategy.cpp">
+      <Filter>ECDbMap\Map</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="ECSchemas\ECDb_FileInfo.01.00.ecschema.xml">
