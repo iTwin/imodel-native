@@ -515,10 +515,10 @@ public:
     uint32_t            GetFlags            () const {return m_symFlags;}
     bool                IsNotScaled         () const {return 0 != (m_symFlags & LSSYM_NOSCALE);}
 
-    virtual void        _PostProcessLoad    (DgnModelP modelRef) override;
-    virtual void        _ClearPostProcess   () override;
-    virtual void        _Draw               (ViewContextR);
-    virtual StatusInt   _GetRange           (DRange3dR range) const;
+    void                _PostProcessLoad    (DgnModelP modelRef) override;
+    void                _ClearPostProcess   () override;
+    void                _Draw               (ViewContextR) override;
+    StatusInt           _GetRange           (DRange3dR range) const override;
 
     void                SetXGraphics        (Byte const *data, size_t dataSize);
     Byte const*         GetXGraphicsData    () const {return m_xGraphicsData;}
@@ -530,7 +530,7 @@ public:
     void                SetFlags            (uint32_t flags) {m_symFlags = flags;}
     //  Should never be called; symbol components should never be drawn this way.  Therefore, a line style
     //  resource must not directly refer to a symbol component.
-    virtual StatusInt   _DoStroke           (ViewContextP, DPoint3dCP, int, LineStyleSymbCP) const override;
+    StatusInt           _DoStroke           (ViewContextP, DPoint3dCP, int, LineStyleSymbCP) const override;
     BentleyStatus       CreateFromComponent (LsPointSymbolComponentCP lpsComp);
 
     DGNPLATFORM_EXPORT void FreeGraphics ();
@@ -1050,7 +1050,7 @@ struct          LsPointComponent : public LsComponent
     bool                    m_postProcessed;
 
 private:
-    virtual bool                    _ProcessSymbol           (ViewContextP, Centerline const*, LineStyleSymbCP, LsStrokeCP, int strokeIndex, int endCondition) const;
+    virtual bool                    _ProcessSymbol           (ViewContextP, Centerline const*, LineStyleSymbCP, LsStrokeCP, int strokeIndex, int endCondition) const override;
 
     LsSymbolReferenceP              GetSymbolReferenceP     (T_SymbolsCollectionConstIter iter) const;
     LsPointComponent    (LsLocationCP pLocation);
