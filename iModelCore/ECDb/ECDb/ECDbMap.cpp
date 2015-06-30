@@ -642,19 +642,18 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables ()
         
         if (GetECDbR().TableExists(table->GetName().c_str()))
             {
-            //*****************************************
-            //Schema Upgrate is not supported - affan
             if (GetSQLManager ().IsTableChanged (*table))
                 {
-                if (table->GetPersistenceManagerR ().Syncronize (GetECDbR ()) != BentleyStatus::SUCCESS)
+                if (table->GetPersistenceManager ().CreateOrUpdate (GetECDbR ()) != BentleyStatus::SUCCESS)
                     return ERROR;
+                nUpdated++;
                 }
-            //*****************************************
-            nSkipped++;
+            else
+                nSkipped++;
             }
         else
             {
-            if (table->GetPersistenceManagerR ().Create (GetECDbR (), /*CreateIndexes = */ true) != BentleyStatus::SUCCESS)
+            if (table->GetPersistenceManager ().Create (GetECDbR ()) != BentleyStatus::SUCCESS)
                 return ERROR;
 
             nCreated++;
