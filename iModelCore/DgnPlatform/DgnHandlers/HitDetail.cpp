@@ -712,12 +712,12 @@ void IntersectDetail::_DrawInVp (DgnViewportP vp, DgnDrawMode drawMode, DrawPurp
 
     SnapDetail tmpSnapDetail (m_secondHit); // So display handlers know this is from a snap...
 
-    // NOTE: When we're flashing, the hilite flags are not necessarily set on the elementRefs. So to get the second path
-    //       drawn with dashed symbology, we need to turn on its "dashed hilite" flag temporarily, and then restore it.
+    // NOTE: When we're flashing, the hilite flags are not necessarily set on the elements. So to get the second path
+    //       drawn hilited, we need to turn on its hilited flag temporarily, and then restore it.
     DgnElement::Hilited currHilite = tmpSnapDetail.IsHilited ();
 
     if (DrawPurpose::Flash == drawPurpose)
-        tmpSnapDetail.SetHilited (DgnElement::Hilited::Dashed);
+        tmpSnapDetail.SetHilited (DgnElement::Hilited::Normal);
 
     tmpSnapDetail.SetSubSelectionMode (GetSubSelectionMode()); // Set correct flash mode...
     tmpSnapDetail.DrawInVp (vp, drawMode, drawPurpose, stopFlag);
