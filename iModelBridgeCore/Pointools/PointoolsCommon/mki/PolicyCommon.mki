@@ -13,7 +13,7 @@
 #----------------------------------------------------------------------------------------
 %include $(SharedMki)DefinePublicApiIncludes.mki
 %include $(SharedMki)CommonCompileLinkPolicy.mki
-%include $(SrcRoot)BentleyApi/PublicMki/BentleyApi.mki 
+%include $(SrcRoot)Bentley/PublicMki/BentleyApi.mki 
 
 #----------------------------------------------------------------------------------------
 # Set Visual Studio Build Tools version based on current settings

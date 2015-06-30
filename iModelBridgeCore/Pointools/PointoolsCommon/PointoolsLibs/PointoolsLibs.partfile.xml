@@ -54,21 +54,21 @@
 
   
   <Part Name="BoostHeaders_1_4_3" BMakeFile="PointoolsLibsCommon/Boost_1_4_3/BoostHeaders_1_4_3.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+    <RequiredRepository>Bsibin-Boostheaders</RequiredRepository>
   </Part>
 
                                                                                                   <!-- This boost headers places includes in subfolder Boost_1_4_3 to avoid clashes with other versions -->
   <Part Name="Boost_1_4_3_VS2012" BMakeFile="PointoolsLibsCommon/Boost_1_4_3/Boost_1_4_3.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
-                                                                                                  <!-- Specify this PartFile to force Repository Checkout (otherwise it doesn't happen!)-->
-    <SubPart PartName="BoostHeaders_1_4_3" Repository="Bsibin-Boostheaders"/>    
+    <SubPart PartName="BoostHeaders_1_4_3"/>
   </Part>
   
   <Part Name="BoostHeaders_1_5_7_VS2012" BMakeFile="PointoolsLibsCommon/Boost_1_5_7/BoostHeaders_1_5_7.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+    <RequiredRepository>BoostHeaders_1.57</RequiredRepository>
   </Part>
 
-                                                                                                  <!-- This boost headers places includes in subfolder Boost_1_4_3 to avoid clashes with other versions -->
+                                                                                                  <!-- This boost headers places includes in subfolder Boost_1_5_7 to avoid clashes with other versions -->
   <Part Name="Boost_1_5_7_VS2012" BMakeFile="PointoolsLibsCommon/Boost_1_5_7/Boost_1_5_7.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
-                                                                                                  <!-- Specify this PartFile to force Repository Checkout (otherwise it doesn't happen!)-->
-    <SubPart PartName="BoostHeaders_1_5_7_VS2012" Repository="BoostHeaders_1.57"/>    
+    <SubPart PartName="BoostHeaders_1_5_7_VS2012"/>    
   </Part>
 
   <Part Name="GL_VS2012" BMakeFile="PointoolsLibsCommon/GL/GL.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
