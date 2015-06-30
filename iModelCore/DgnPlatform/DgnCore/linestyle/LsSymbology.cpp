@@ -57,7 +57,7 @@ void            LineStyleSymb::SetNormalVec
 DPoint3dCP normal
 )
     {
-    // BEIJING_WIP The previous implementation invoked
+    // The previous implementation invoked
     //     InitFromVectorAndRotationAngle (*((DVec3d const *)normal), 0.0);
     //  With angle zero, that always retunred an identity matrix.
     //  (And with nonzero angle, the bvector is a description of the effect, and does not appear in
@@ -382,7 +382,6 @@ DPoint3dCP          startTangent,
 DPoint3dCP          endTangent
 )
     {
-#if defined(NOTNOW) // temporarily disable so my WIP doesn't affect anyopne
     //  NOTNOW -- unclear what will happen to the magic values.  For now, avoid any collision with them.
     if (IS_LINECODE (styleInfo->GetStyleId().GetValueUnchecked()))
         return 0; //  styleNo;
@@ -537,7 +536,6 @@ DPoint3dCP          endTangent
         }
 
     SetScale (scale);
-#endif
 
     return 0;
     }

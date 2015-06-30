@@ -190,7 +190,8 @@ StatusInt       LsComponent::_StrokeLineString2d (ViewContextP context, LineStyl
         return ERROR;
 
     // allocate a local 3d buffer for the points
-    DPoint3dP   pts3d = (DPoint3dP) _alloca (nPts * sizeof (DPoint3d));
+    ScopedArray<DPoint3d>   pointsArray((unsigned)nPts);
+    DPoint3dP   pts3d = pointsArray.GetData();
 
     // copy points, set zDepth
     for (int i=0; i<nPts; i++, pts++)
