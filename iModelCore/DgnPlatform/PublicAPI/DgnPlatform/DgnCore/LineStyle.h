@@ -1114,9 +1114,6 @@ public:
     DGNPLATFORM_EXPORT LsSymbolReferenceCP      GetSymbolForVertexCP    (LsSymbolReference::VertexMask vertexMask) const;
     DGNPLATFORM_EXPORT LsStrokePatternComponentP GetStrokeComponentP    () const;
     DGNPLATFORM_EXPORT LsStrokePatternComponentCP GetStrokeComponentCP  () const;
-    DGNPLATFORM_EXPORT void                     SetStrokeComponent      (LsStrokePatternComponentP newStrokeComponent);
-    DGNPLATFORM_EXPORT StatusInt                DeleteSymbolForStroke   (LsSymbolReferenceCR symRef);
-    DGNPLATFORM_EXPORT LsSymbolReferenceR       AppendSymbolForStroke   (LsSymbolComponentP symbol, double xOffset, double yOffset, double radians, int strokeNo);
     };
 
 //=======================================================================================

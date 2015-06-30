@@ -307,40 +307,6 @@ int               endCondition
     return  false;
     }
 
-#if defined (NOTNOW)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    John.Gooding                    08/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus LsPointSymbolComponent::ToResource (void** outRsc, bool forResourceFile) const
-    {
-    PointSymRsc* pRsc;
-
-#if defined (NOTNOW)
-    if (SUCCESS != ToResourceNoSymbols ((void**)&pRsc))
-        return ERROR;
-#endif
-
-    // Always makes a V8 element
-    DPoint3d        offset = {0.0, 0.0, 0.0};
-    PointSymRsc*    pPointSymRsc;
-    // !! This assumes the first element is a cell header !!
-    StatusInt status = mdlLineStyle_createSymbolResourceEx (&pPointSymRsc, m_elementChain->h.firstElem, &offset, ACTIVEMODEL, asV7Element, forResourceFile);
-
-    /* Copy in the rest of the info from our element */
-    if (SUCCESS == status && NULL != pPointSymRsc)
-        {
-        uint32_t oldType = pPointSymRsc->header.auxType; /* Hang onto type; set up by createSymbolResource for V7 */
-        size_t dataSize = sizeof (*pPointSymRsc) - sizeof (pPointSymRsc->nBytes) - sizeof (pPointSymRsc->symBuf);
-        memcpy (pPointSymRsc, pRsc, dataSize);
-        pPointSymRsc->header.auxType = oldType;
-        }
-    memutil_free (pRsc);
-
-    *outRsc = pPointSymRsc;
-    return SUCCESS;
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    07/2009
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -474,45 +440,6 @@ void            LsPointComponent::SaveToResource (LinePointRsc& resource)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    John.Gooding    10/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       LsPointComponent::DeleteSymbolForStroke (LsSymbolReferenceCR symRef)
-    {
-#if defined (NOTNOW)
-    for (T_SymbolsCollectionConstIter curr = m_symbols.begin (); curr != m_symbols.end (); ++curr)
-        {
-        if (&symRef == curr)
-            {
-            curr->m_symbol = NULL;
-            for (LsSymbolReferenceP next = curr + 1; next < end; ++next, ++curr)
-                *curr = *next
-                
-            m_nSymbols--;
-            return BSISUCCESS;
-            }
-        }
-#endif
-        
-    return BSIERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    John.Gooding    10/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-LsSymbolReferenceR LsPointComponent::AppendSymbolForStroke 
-(
-LsSymbolComponentP symbol, 
-double          xOffset, 
-double          yOffset, 
-double          radians, 
-int             strokeNo
-)
-    {
-    m_symbols.push_back (LsSymbolReference (symbol, this, 0, xOffset, yOffset, radians, strokeNo));
-    return m_symbols.back ();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    John.Gooding    10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
                 LsSymbolReference::LsSymbolReference ()
@@ -617,4 +544,3 @@ LsComponentReader*    reader
 size_t                       LsPointComponent::GetNumberSymbols()         const   {return m_symbols.size ();}
 LsStrokePatternComponentP    LsPointComponent::GetStrokeComponentP ()     const   {return m_strokeComponent.get ();}
 LsStrokePatternComponentCP    LsPointComponent::GetStrokeComponentCP ()   const   {return GetStrokeComponentP ();}
-void                         LsPointComponent::SetStrokeComponent (LsStrokePatternComponentP p)   {m_strokeComponent = p;}
