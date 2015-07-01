@@ -462,7 +462,7 @@ Utf8String Changes::Change::FormatPrimarykeyColumns(bool isInsert, int detailLev
 
         auto pkv = GetValue(i, isInsert ? Stage::New : Stage::Old);
         BeAssert(pkv.IsValid());
-        
+
         if (pkv.IsNull())   // WIP_CHANGES -- why do we get this??
             continue;
 
@@ -587,3 +587,77 @@ DbResult ChangeSet::FromChangeGroup(ChangeGroup& changegroup)
     {
     return (DbResult) sqlite3changegroup_output((sqlite3_changegroup*) changegroup.m_changegroup, &m_size, &m_changeset);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* This method is called whenever an update to a row in the property table is reversed (that is, undo or abandon changes).
+* Normal properties do not need any special treatment. But, "Settings" are not supposed to be affected by undo.
+* However the undo operation *is* supposed to reverse the effect of "SaveSettings". So,
+* if someone changes setting, then calls SaveSettings/SaveChanges, and then calls "undo", the setting should remain in the
+* post-changed state in memory, but that change should *not* saved to disk. If they call SaveSettings again, the change
+* will be saved, again. 
+* To facilitate that, we first note that the persistent be_Props table has been rolled
+* back to the pre-changed state. To get the post-changed value we look at the "old" values in the Change object.
+* We save that state into the temporary settings table so it holds the post-changed values.
+* Things are a bit tricky in that the Change object only holds the columns that are modified. We therefore have
+* to read the current state of the persistent be_Props table to get the unchanged columns.
+* Note: Redo does not need any special treatment because it simply reinstates what we already put back in undo. This
+* method is only called for undo or abandon changes.
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void Changes::Change::OnPropertyUpdateReversed(Db& db) const
+    {
+    Utf8CP space= GetOldValue(0).GetValueText();
+    Utf8CP name = GetOldValue(1).GetValueText();
+    uint64_t id = GetOldValue(2).GetValueInt64();
+    uint64_t subid = GetOldValue(3).GetValueInt();
+
+    // since the "TxnMode" column will never be in the changeset (you're not allowed to change it), we have to query to
+    // determine whether this is setting property or not.
+    if (!db.IsSettingProperty(space, name, id, subid))
+        return;
+
+    // first get the values from the current (reversed) state of the row
+    Statement selectStmt;
+    DbResult rc = selectStmt.Prepare(db, "SELECT RawSize,Data,StrData FROM " BEDB_TABLE_Property " WHERE Namespace=? AND Name=? AND Id=? AND SubId=?");
+    selectStmt.BindText(1, space, Statement::MakeCopy::No);
+    selectStmt.BindText(2, name, Statement::MakeCopy::No);
+    selectStmt.BindInt64(3, id);
+    selectStmt.BindInt64(4, subid);
+    rc = selectStmt.Step();
+
+    // turn the name/namespace into a property spec. Note that we tested above that this is a setting.
+    PropertySpec spec(name, space, PropertySpec::Mode::Setting);
+
+    // get the old values, from the Change object if they were changed. Otherwise, they weren't changed and the current value is correct.
+    DbValue str = GetOldValue(5);
+    Utf8CP strVal = str.IsValid() ? str.GetValueText() : (selectStmt.IsColumnNull(2) ? nullptr : selectStmt.GetValueText(2));
+
+    DbValue raw = GetOldValue(6);
+    int rawSize = raw.IsValid() ? raw.GetValueInt() : selectStmt.GetValueInt(0);
+
+    DbValue data = GetOldValue(7);
+    void const* dataPtr = data.IsValid() ? data.GetValueBlob() : (selectStmt.IsColumnNull(1) ? nullptr : selectStmt.GetValueBlob(1));
+    int dataSize = data.IsValid() ? data.GetValueBytes() : (selectStmt.IsColumnNull(1) ? 0 : selectStmt.GetColumnBytes(1));
+
+    // Save the post-changed version of the setting into the temporary table. Note that we can't just call the SaveProperty
+    // method because it attempts to compress, and the values we have are already (potentially) compressed.
+    CachedStatementPtr stmt;
+    db.GetCachedStatement(stmt, "INSERT OR REPLACE INTO " TEMP_TABLE_UNIQUE(BEDB_TABLE_Property) " (Namespace,Name,Id,SubId,TxnMode,RawSize,Data,StrData) VALUES(?,?,?,?,?,?,?,?)");
+    stmt->BindText(1, space, Statement::MakeCopy::No);
+    stmt->BindText(2, name, Statement::MakeCopy::No);
+    stmt->BindInt64(3, id);
+    stmt->BindInt64(4, subid);
+    stmt->BindInt(5, 1);
+
+    if (0 != rawSize)
+        stmt->BindInt(6, rawSize);
+    if (nullptr != dataPtr)
+        stmt->BindBlob(7, dataPtr, dataSize, Statement::MakeCopy::No);
+    if (nullptr != strVal)
+        stmt->BindText(8, strVal, Statement::MakeCopy::No);
+
+    rc = stmt->Step(); // do the insert/replace
+
+    db.GetDbFile()->OnSettingsDirtied();    // save the fact that we have data in the temporary settings table
+    }
+

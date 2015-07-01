@@ -36,7 +36,6 @@ USING_NAMESPACE_BENTLEY
 
 #define RUNONCE_CHECK(var,stat) {if (var) return stat; var=true;}
 
-#define TEMP_TABLE_Prefix "temp.t_"
 
 using namespace std;
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -117,7 +116,6 @@ struct CachedProperyMap : bmap<CachedPropertyKey, CachedPropertyValue>
         return (end() == it) ? nullptr : &it->second;
         }
     };
-
 
 END_BENTLEY_SQLITE_NAMESPACE
 
@@ -635,7 +633,7 @@ Utf8String Db::ExplainQuery(Utf8CP sql, bool explainPlan)
     return plan;
     }
 
-static Utf8CP getTempPrefix(bool temp) {return temp ? TEMP_TABLE_Prefix : "";}
+static Utf8CP getTempPrefix(bool temp) {return temp ? TEMP_TABLE_UniquePrefix : "";}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/11
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -852,19 +850,16 @@ DbResult DbFile::QueryPropertySize(uint32_t& size, PropertySpecCR spec, uint64_t
     bool useSettingsTable = UseSettingsTable(spec);
     Statement stmt;
     DbResult rc = stmt.Prepare(*this, SqlPrintfString("SELECT RawSize,length(Data) FROM %s" BEDB_TABLE_Property " WHERE Namespace=? AND Name=? AND Id=? AND SubId=?",getTempPrefix(useSettingsTable)));
-    if (BE_SQLITE_OK == rc)
-        {
-        stmt.BindText(1, spec.GetNamespace(), Statement::MakeCopy::No);
-        stmt.BindText(2, spec.GetName(), Statement::MakeCopy::No);
-        stmt.BindInt64(3, id);
-        stmt.BindInt64(4, subId);
-        rc = stmt.Step();
-        }
+    stmt.BindText(1, spec.GetNamespace(), Statement::MakeCopy::No);
+    stmt.BindText(2, spec.GetName(), Statement::MakeCopy::No);
+    stmt.BindInt64(3, id);
+    stmt.BindInt64(4, subId);
+    rc = stmt.Step();
 
     if (rc != BE_SQLITE_ROW)
         {
         size = 0;
-        return useSettingsTable ? QueryPropertySize(size, PropertySpec(spec, PropertySpec::Mode::Normal), id) : BE_SQLITE_ERROR;
+        return useSettingsTable ? QueryPropertySize(size, PropertySpec(spec, PropertySpec::Mode::Normal), id, subId) : BE_SQLITE_ERROR;
         }
 
     size = stmt.GetValueInt(0);
@@ -963,7 +958,10 @@ DbResult DbFile::QueryProperty(void* value, uint32_t size, PropertySpecCR spec, 
         }
 
     if (rc != BE_SQLITE_ROW)
-        return useSettingsTable ? QueryProperty(value, size, PropertySpec(spec, PropertySpec::Mode::Normal), id) : BE_SQLITE_ERROR;
+        {
+        stmt = nullptr; // we have to release this stmt, so it will get reset on recursive call
+        return useSettingsTable ? QueryProperty(value, size, PropertySpec(spec, PropertySpec::Mode::Normal), id, subId) : BE_SQLITE_ERROR;
+        }
 
     uint32_t compressedBytes = stmt->GetValueInt(0);
     uint32_t blobsize = stmt->GetColumnBytes(1);
@@ -1014,8 +1012,9 @@ DbResult DbFile::QueryProperty(Utf8StringR value, PropertySpecCR spec, uint64_t 
 
     if (rc != BE_SQLITE_ROW)
         {
+        stmt = nullptr; // we have to release this stmt, so it will get reset on recursive call
         value.clear();
-        return  useSettingsTable ? QueryProperty(value, PropertySpec(spec, PropertySpec::Mode::Normal), id) : BE_SQLITE_ERROR;
+        return  useSettingsTable ? QueryProperty(value, PropertySpec(spec, PropertySpec::Mode::Normal), id, subId) : BE_SQLITE_ERROR;
         }
 
     value.AssignOrClear(stmt->GetValueText(0));
@@ -1045,7 +1044,26 @@ bool DbFile::HasProperty(PropertySpecCR spec, uint64_t id, uint64_t subId) const
     if (rc == BE_SQLITE_ROW)
         return  true;
 
-    return  useSettingsTable ? HasProperty(PropertySpec(spec, PropertySpec::Mode::Normal), id) : false;
+    return  useSettingsTable ? HasProperty(PropertySpec(spec, PropertySpec::Mode::Normal), id, subId) : false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Db::IsSettingProperty(Utf8CP space, Utf8CP name, uint64_t id, uint64_t subId) const
+    {
+    Statement stmt;
+    DbResult rc = stmt.Prepare(*this, SqlPrintfString("SELECT TxnMode" FROM_PROPERTY_TABLE_SQL, ""));
+    if (BE_SQLITE_OK == rc)
+        {
+        stmt.BindText(1, space, Statement::MakeCopy::No);
+        stmt.BindText(2, name, Statement::MakeCopy::No);
+        stmt.BindInt64(3, id);
+        stmt.BindInt64(4, subId);
+        rc = stmt.Step();
+        }
+
+    return (rc == BE_SQLITE_ROW) ? 1==stmt.GetValueInt(0) : false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1101,42 +1119,27 @@ DbResult DbFile::DeleteProperties(PropertySpecCR spec, uint64_t* id)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DbFile::SaveSettings(Utf8CP changesetName)
+void DbFile::SaveSettings()
     {
     if (!m_settingsDirty)
         return;
 
-    if (m_txns.size() <= 0)
-        return;
-
-    Savepoint* txn = m_txns[0];
-    txn->Save(nullptr); // all persistent changes must be saved before we can save settings (they must be in their own transaction so it can be marked to skip for undo).
-
-    // we don't want changes to settings in the persistent properties table to be undoable.
-    if (m_tracker.IsValid())
-        m_tracker->_OnSettingsSave();
-
     m_settingsDirty = false;
     DbResult rc = (DbResult) sqlite3_exec(m_sqlDb,"INSERT OR REPLACE INTO " BEDB_TABLE_Property " (Namespace,Name,Id,SubId,TxnMode,RawSize,Data,StrData) "
-                  "SELECT Namespace,Name,Id,SubId,TxnMode,RawSize,Data,StrData FROM " TEMP_TABLE_Prefix BEDB_TABLE_Property, nullptr, nullptr, nullptr);
+                  "SELECT Namespace,Name,Id,SubId,TxnMode,RawSize,Data,StrData FROM " TEMP_TABLE_UNIQUE(BEDB_TABLE_Property), nullptr, nullptr, nullptr);
     BeAssert(BE_SQLITE_OK == rc);
 
-    rc = (DbResult) sqlite3_exec(m_sqlDb,"DELETE FROM " TEMP_TABLE_Prefix BEDB_TABLE_Property, nullptr, nullptr, nullptr);
+    rc = (DbResult) sqlite3_exec(m_sqlDb,"DELETE FROM " TEMP_TABLE_UNIQUE(BEDB_TABLE_Property), nullptr, nullptr, nullptr);
     BeAssert(BE_SQLITE_OK == rc);
-
-    txn->Save(changesetName); // save the settings changes.
-
-    if (m_tracker.IsValid())
-        m_tracker->_OnSettingsSaved();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Db::SaveSettings(Utf8CP name)
+void Db::SaveSettings()
     {
     _OnSaveSettings();
-    m_dbFile->SaveSettings(name);
+    m_dbFile->SaveSettings();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2022,12 +2025,6 @@ DbResult Db::AbandonChanges()
     txn->Cancel();
     return txn->Begin();
     }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                    Keith.Bentley                   11/12
-//+---------------+---------------+---------------+---------------+---------------+------
-DbResult Db::_OnDbCreated(CreateParams const& params) {return BE_SQLITE_OK;}
-DbResult Db::_OnDbOpened() {return QueryDbIds();}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/14

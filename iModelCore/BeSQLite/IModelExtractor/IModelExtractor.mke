@@ -2,7 +2,7 @@
 #
 #  $Source: IModelExtractor/IModelExtractor.mke $
 #
-#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 %if !defined (BuildContext)
@@ -26,7 +26,7 @@ always:
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)IModelExtractor$(oext) : $(srcDir)IModelExtractor.cpp $(srcDir)IModelExtractor.h ${MultiCompileDepends}
+$(o)IModelExtractor$(oext) : $(srcDir)IModelExtractor.cpp ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 

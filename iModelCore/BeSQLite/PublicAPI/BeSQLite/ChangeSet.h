@@ -39,8 +39,6 @@ protected:
 
     BE_SQLITE_EXPORT DbResult CreateSession();
     virtual OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) = 0;
-    virtual void _OnSettingsSave() {}
-    virtual void _OnSettingsSaved() {}
     void SetDb(Db* db) {m_db = db;}
     Db* GetDb() {return m_db;}
     Utf8CP GetName() const {return m_name.c_str();}
@@ -150,6 +148,8 @@ public:
 
             //! Format the primary key columns of this change for debugging purposes.
             BE_SQLITE_EXPORT Utf8String FormatPrimarykeyColumns(bool isInsert, int detailLevel) const;
+
+            BE_SQLITE_EXPORT void OnPropertyUpdateReversed(Db&) const; //!< @private
         };
 
     typedef Change const_iterator;
@@ -159,6 +159,7 @@ public:
 
     //! Get the last entry in the ChangeSet.
     Change end() const {return Change(m_iter, false);}
+
 };
 
 //=======================================================================================

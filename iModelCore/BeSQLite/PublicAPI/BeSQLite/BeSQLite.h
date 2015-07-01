@@ -114,7 +114,6 @@ character set. However, applications can extend BeSQLite by implementing the #Be
 */
 
 //__PUBLISH_SECTION_END__
-
 #ifdef __BE_SQLITE_HOST_DLL__
     #define BE_SQLITE_EXPORT EXPORT_ATTRIBUTE
 #else
@@ -130,13 +129,18 @@ character set. However, applications can extend BeSQLite by implementing the #Be
 #define SQLITE_SHARED_SIZE      510
 
 //__PUBLISH_SECTION_START__
+
+#define TEMP_TABLE_Prefix "temp."
+#define TEMP_TABLE(name) TEMP_TABLE_Prefix name
+
+// the "unique temporary table" macros can be used for temporary tables that shadow a real table, but use a unique name.
+#define TEMP_TABLE_UniquePrefix TEMP_TABLE_Prefix "t_" 
+#define TEMP_TABLE_UNIQUE(name) TEMP_TABLE_UniquePrefix name
+
+#define BEDB_TABLE_Local        "be_Local"
 #define BEDB_TABLE_Property     "be_Prop"
 #define BEDB_TABLE_EmbeddedFile "be_EmbedFile"
-#define BEDB_TABLE_Local        "be_Local"
 #define BEDB_MemoryDb           ":memory:"
-
-#define PROPERTY_APPNAME_Package "pkge_Main"
-#define PROPERTY_APPNAME_Imodel  "imodel"
 
 #define BEGIN_BENTLEY_SQLITE_NAMESPACE BEGIN_BENTLEY_NAMESPACE namespace BeSQLite {
 #define END_BENTLEY_SQLITE_NAMESPACE   } END_BENTLEY_NAMESPACE
@@ -459,8 +463,6 @@ typedef struct sqlite3_changeset_iter* SqlChangesetIterP;
 typedef struct Mem* SqlValueP;
 #endif
 
-struct ICompressProgressTracker;
-
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/11
 //=======================================================================================
@@ -490,18 +492,6 @@ enum DbSchemaValues
     BEDB_SUPPORTED_VERSION_Sub2  = 0,
     };
 
-enum IModelSchemaValues
-    {
-    PACKAGE_CURRENT_VERSION_Major = 1,
-    PACKAGE_CURRENT_VERSION_Minor = 1,
-    PACKAGE_CURRENT_VERSION_Sub1  = 0,
-    PACKAGE_CURRENT_VERSION_Sub2  = 0,
-
-    PACKAGE_SUPPORTED_VERSION_Major = PACKAGE_CURRENT_VERSION_Major,  // oldest version of the package schema supported by current api
-    PACKAGE_SUPPORTED_VERSION_Minor = PACKAGE_CURRENT_VERSION_Minor,
-    PACKAGE_SUPPORTED_VERSION_Sub1  = 0,
-    PACKAGE_SUPPORTED_VERSION_Sub2  = 0,
-    };
 
 //=======================================================================================
 //! A 4-digit number that specifies the version of the "schema" of a Db
@@ -723,7 +713,7 @@ public:
     //! This should be called once per session before opening any databases and applies to all future opened databases.
     BE_SQLITE_EXPORT static void SetLanguageSupport(ILanguageSupport*);
 
-    //! Gets the current ILanguageSupport. Can return NULL.
+    //! Gets the current ILanguageSupport. Can return nullptr.
     BE_SQLITE_EXPORT static ILanguageSupport* GetLanguageSupport();
 };
 
@@ -968,7 +958,7 @@ public:
     //! @param[in] columnName The column that holds the blob to be opened.
     //! @param[in] row The rowId holding the blob.
     //! @param[in] writable If true, blob is opened for read/write access, otherwise it is opened readonly.
-    //! @param[in] dbName The name of the database attachment to open. If NULL, use "main".
+    //! @param[in] dbName The name of the database attachment to open. If nullptr, use "main".
     //! @return BE_SQLITE_OK on success, error status otherwise.
     //! @see sqlite3_blob_open
     BE_SQLITE_EXPORT DbResult Open(DbR db, Utf8CP tableName, Utf8CP columnName, uint64_t row, bool writable, Utf8CP dbName=0);
@@ -1006,7 +996,7 @@ public:
     BE_SQLITE_EXPORT int GetNumBytes() const;
 
     //! Determine whether this BlobIO was successfully opened.
-    bool IsValid() const {return NULL != m_blob;}
+    bool IsValid() const {return nullptr != m_blob;}
 };
 
 //=======================================================================================
@@ -1018,7 +1008,7 @@ struct DbValue
     SqlValueP m_val;
     DbValue(SqlValueP val) : m_val(val)  {}
 
-    bool IsValid() const {return NULL != m_val;}                    //!< return true if this value is valid
+    bool IsValid() const {return nullptr != m_val;}                    //!< return true if this value is valid
     bool IsNull()  const {return DbValueType::NullVal == GetValueType();} //!< return true if this value is null
     BE_SQLITE_EXPORT DbValueType GetValueType() const;      //!< see sqlite3_value_type
     BE_SQLITE_EXPORT DbValueType GetNumericType() const;    //!< see sqlite3_value_numeric_type
@@ -1375,7 +1365,7 @@ public:
 
     //! ctor for NamedParams
     //! @param[in] where an optional part of the where clause for a SELECT statement.
-    NamedParams(Utf8CP where=NULL) {SetWhere(where);}
+    NamedParams(Utf8CP where=nullptr) {SetWhere(where);}
 
     //! Change the value of the SQL Where clause for this NamedParam.
     //! @param[in] where the new WHERE clause
@@ -1427,10 +1417,10 @@ public:
         bool  m_isValid;
         StatementP m_sql;
         Entry(StatementP sql, bool isValid) {m_sql=sql; m_isValid=isValid;}
-        void Verify() const {BeAssert(NULL != m_sql->GetSqlStatementP());}
+        void Verify() const {BeAssert(nullptr != m_sql->GetSqlStatementP());}
 
     public:
-        bool IsValid() const {return m_isValid && (NULL!=m_sql->GetSqlStatementP());}
+        bool IsValid() const {return m_isValid && (nullptr!=m_sql->GetSqlStatementP());}
         void Invalidate() {m_isValid=false;}
 
         Entry& operator++() {m_isValid=(BeSQLite::BE_SQLITE_ROW == m_sql->Step()); return *this;}
@@ -1445,6 +1435,19 @@ public:
     //! Get a reference to the NamedParams for this iterator. This is useful for adding additional WHERE clause
     //! filtering to the iterator.
     NamedParams& Params() {return m_params;}
+};
+
+//=======================================================================================
+//! Defines a callback for providing information on the progress of a compress or
+//! decompress operation.
+// @bsiclass                                                    John.Gooding    01/2013
+//=======================================================================================
+struct ICompressProgressTracker
+{
+    //! @param[in] inSize size of the source file
+    //! @param[in] outSize size of the output; -1 if no valid information is available.
+    //! Returning anything other than BSISUCCESS causes the operation to abort.
+    virtual StatusInt _Progress(uint64_t inSize, int64_t outSize) = 0;
 };
 
 //=======================================================================================
@@ -1506,36 +1509,36 @@ public:
 
     //! Query the values for an embedded file, by name.
     //! @param[in] name the (case insensitive) name by which the file was embedded.
-    //! @param[out] totalSize the total size in bytes of the file. May be NULL.
-    //! @param[out] chunkSize the chunk size used to embed this file. May be NULL.
-    //! @param[out] descr the description of this file. May be NULL.
-    //! @param[out] typeStr the type of this file. May be NULL.
-    //! @param[out] lastModified the time the file was last modified. May be NULL.
+    //! @param[out] totalSize the total size in bytes of the file. May be nullptr.
+    //! @param[out] chunkSize the chunk size used to embed this file. May be nullptr.
+    //! @param[out] descr the description of this file. May be nullptr.
+    //! @param[out] typeStr the type of this file. May be nullptr.
+    //! @param[out] lastModified the time the file was last modified. May be nullptr.
     //! @return the id  of the file, if found. If there is no entry of the given name, id will be invalid.
     BE_SQLITE_EXPORT BeRepositoryBasedId QueryFile(Utf8CP name, uint64_t* totalSize = nullptr, uint32_t* chunkSize = nullptr, Utf8StringP descr = nullptr, Utf8StringP typeStr = nullptr, DateTime* lastModified = nullptr);
 
      //! Import a copy of an existing file from the local filesystem into this BeSQLite::Db.  ImportWithoutCompressing just makes a binary copy of the file
      //! without compressing it. Many file formats are already compressed. There is not much benefit to compressing for these formats.
-    //! @param[out] stat Success or error code. May be NULL.
+    //! @param[out] stat Success or error code. May be nullptr.
     //! @param[in] name the (case insensitive) name by which the file will be known, once it is embedded. Must be unique.
     //! @param[in] localFileName the name of a physical file on the local filesystem to be imported. The import will fail if the file doesn't
     //! exist or can't be read.
-    //! @param[in] typeStr a string that identifies the kind of file this entry holds. This can be used for filtering the list of embedded files. Should not be NULL.
-    //! @param[in] description a string that describes this entry. May be NULL.
-    //! @param[in] lastModified the time the file was last modified. May be NULL.
+    //! @param[in] typeStr a string that identifies the kind of file this entry holds. This can be used for filtering the list of embedded files. Should not be nullptr.
+    //! @param[in] description a string that describes this entry. May be nullptr.
+    //! @param[in] lastModified the time the file was last modified. May be nullptr.
     //! @param[in] chunkSize the maximum number of bytes that are saved in a single blob to hold this file. There are many tradeoffs involved in
     //! choosing a good chunkSize, so be careful to test for optimal size. Generally, the default is fine.
     //! @return Id of the embedded file
     BE_SQLITE_EXPORT BeRepositoryBasedId ImportWithoutCompressing(DbResult* stat, Utf8CP name, Utf8CP localFileName, Utf8CP typeStr, Utf8CP description = nullptr, DateTime const* lastModified = nullptr, uint32_t chunkSize = 500 * 1024);
 
     //! Import a copy of an existing SQLite file from the local filesystem into this BeSQLite::Db after validating the file to be imported.
-    //! @param[out] stat Success or error code. May be NULL.
+    //! @param[out] stat Success or error code. May be nullptr.
     //! @param[in] name the (case insensitive) name by which the file will be known, once it is embedded. Must be unique.
     //! @param[in] localFileName the name of a physical file on the local filesystem to be imported. The import will fail if the file doesn't
     //! exist or can't be read.
-    //! @param[in] typeStr a string that identifies the kind of file this entry holds. This can be used for filtering the list of embedded files. Should not be NULL.
-    //! @param[in] description a string that describes this entry. May be NULL.
-    //! @param[in] lastModified the time the file was last modified. May be NULL.
+    //! @param[in] typeStr a string that identifies the kind of file this entry holds. This can be used for filtering the list of embedded files. Should not be nullptr.
+    //! @param[in] description a string that describes this entry. May be nullptr.
+    //! @param[in] lastModified the time the file was last modified. May be nullptr.
     //! @param[in] chunkSize the maximum number of bytes that are saved in a single blob to hold this file. There are many tradeoffs involved in
     //! choosing a good chunkSize, so be careful to test for optimal size. Generally, the default is fine.
     //! @param[in] supportRandomAccess if true, ignore the specified chunkSize and calculate it instead.  Generally, the default should be used.
@@ -1553,13 +1556,13 @@ public:
     BE_SQLITE_EXPORT BeRepositoryBasedId ImportDbFile(DbResult& stat, Utf8CP name, Utf8CP localFileName, Utf8CP typeStr, Utf8CP description = nullptr, DateTime const* lastModified = nullptr, uint32_t chunkSize = 500 * 1024, bool supportRandomAccess = true);
 
     //! Import a copy of an existing file from the local filesystem into this BeSQLite::Db.
-    //! @param[out] stat Success or error code. May be NULL.
+    //! @param[out] stat Success or error code. May be nullptr.
     //! @param[in] name the (case insensitive) name by which the file will be known, once it is embedded. Must be unique.
     //! @param[in] localFileName the name of a physical file on the local filesystem to be imported. The import will fail if the file doesn't
     //! exist or can't be read.
-    //! @param[in] typeStr a string that identifies the kind of file this entry holds. This can be used for filtering the list of embedded files. Should not be NULL.
-    //! @param[in] description a string that describes this entry. May be NULL.
-    //! @param[in] lastModified the time the file was last modified. May be NULL.
+    //! @param[in] typeStr a string that identifies the kind of file this entry holds. This can be used for filtering the list of embedded files. Should not be nullptr.
+    //! @param[in] description a string that describes this entry. May be nullptr.
+    //! @param[in] lastModified the time the file was last modified. May be nullptr.
     //! @param[in] chunkSize the maximum number of bytes that are saved in a single blob to hold this file. There are many tradeoffs involved in
     //! choosing a good chunkSize, so be careful to test for optimal size. Generally, the default is fine.
     //! @param[in] supportRandomAccess if true, ignore the specified chunkSize and calculate it instead.  Generally, the default should be used.
@@ -1571,8 +1574,8 @@ public:
     //! @param[in] name the (case insensitive) name by which the file will be known, once it is embedded. Must be unique.
     //! @param[in] localFileName the name of a physical file on the local file system to be imported. The import will fail if the file doesn't
     //! exist or can't be read.
-    //! @param[in] typeStr a string that identifies the kind of file this entry holds. This can be used for filtering the list of embedded files. Should not be NULL.
-    //! @param[in] description a string that describes this entry. May be NULL.
+    //! @param[in] typeStr a string that identifies the kind of file this entry holds. This can be used for filtering the list of embedded files. Should not be nullptr.
+    //! @param[in] description a string that describes this entry. May be nullptr.
     //! @param[in] chunkSize the maximum number of bytes that are saved in a single blob to hold this file. There are many tradeoffs involved in
     //! choosing a good chunkSize, so be careful to test for optimal size. Generally, the default is fine.
     //! @param[in] supportRandomAccess if true, ignore the specified chunkSize and calculate it instead.  Generally, the default should be used.
@@ -1587,7 +1590,7 @@ public:
     //! Create a new file on the local file system with a copy of the content of an embedded file, by name and verify that the generated file is a valid SQLite database.
     //! @param[in] localFileName the name for the new file. This method will fail if the file already exists or cannot be created.
     //! @param[in] name the name by which the file was embedded.
-    //! @param[in] progress the interface to call to report progress.  May be NULL.
+    //! @param[in] progress the interface to call to report progress.  May be nullptr.
     //! @return BE_SQLITE_OK if the file was successfully exported, and error status otherwise.
     //! @remarks When ExportDbFile returns an error other than BE_SQLITE_ERROR_FileExists it also deletes the file specified in the localFileName parameter.  If
     //! ExportDbFile creates the output file and subsequently detects an error it deletes the file before returning an error status.
@@ -1606,7 +1609,7 @@ public:
     //! Create a new file on the local file system with a copy of the content of an embedded file, by name.
     //! @param[in] localFileName the name for the new file. This method will fail if the file already exists or cannot be created.
     //! @param[in] name the name by which the file was embedded.
-    //! @param[in] progress the interface to call to report progress.  May be NULL.
+    //! @param[in] progress the interface to call to report progress.  May be nullptr.
     //! @return BE_SQLITE_OK if the file was successfully exported, and error status otherwise.
     BE_SQLITE_EXPORT DbResult Export(Utf8CP localFileName, Utf8CP name, ICompressProgressTracker* progress=nullptr);
 
@@ -1621,16 +1624,16 @@ public:
     //! @param[in] localFileName the name of the new file to be embedded. This method will fail if the file does not exist or cannot be read.
     //! @param[in] chunkSize the maximum number of bytes that are saved in a single blob to hold this file. There are many tradeoffs involved in
     //! choosing a good chunkSize, so be careful to test for optimal size. Generally, the default is fine.
-    //! @param[in] lastModified the time the file was last modified. May be NULL.
+    //! @param[in] lastModified the time the file was last modified. May be nullptr.
     //! @return BE_SQLITE_OK if the new file was successfully replaced, and error status otherwise.
     BE_SQLITE_EXPORT DbResult Replace(Utf8CP name, Utf8CP localFileName, uint32_t chunkSize=500*1024, DateTime const* lastModified = nullptr);
 
     //! Add a new entry into this embedded file table. This merely creates an entry and id for the file, it will have no content. This method is used to subsequently
     //! add data from an in-memory buffer via Save.
     //! @param[in] name the (case insensitive) name by which the file will be known, once it is embedded. Must be unique.
-    //! @param[in] typeStr a string that identifies the kind of file this entry holds. This can be used for filtering the list of embedded files. Should not be NULL.
-    //! @param[in] description a string that describes this entry. May be NULL.
-    //! @param[in] lastModified the time the file was last modified. May be NULL.
+    //! @param[in] typeStr a string that identifies the kind of file this entry holds. This can be used for filtering the list of embedded files. Should not be nullptr.
+    //! @param[in] description a string that describes this entry. May be nullptr.
+    //! @param[in] lastModified the time the file was last modified. May be nullptr.
     //! @return BE_SQLITE_OK if the entry was successfully added, and error status otherwise.
     BE_SQLITE_EXPORT DbResult AddEntry(Utf8CP name, Utf8CP typeStr, Utf8CP description = nullptr, DateTime const* lastModified = nullptr);
 
@@ -1715,7 +1718,7 @@ protected:
 public:
     //! Construct a Savepoint against a BeSQLite::Db. Savepoints must have a name and can be nested. Optionally, the savepoint can be started (via Begin)
     //! @param[in] db the database for this Savepoint.
-    //! @param[in] name the name of this Savepoint. Does not have to be unique, but must not be NULL.
+    //! @param[in] name the name of this Savepoint. Does not have to be unique, but must not be nullptr.
     //! @param[in] beginTxn if true Begin() is called in constructor. To see if Begin was successful, check IsActive.
     //! @param[in] txnMode the default transaction mode for this Savepoint
     BE_SQLITE_EXPORT Savepoint(Db& db, Utf8CP name, bool beginTxn=true, BeSQLiteTxnMode txnMode=BeSQLiteTxnMode::Deferred);
@@ -1766,7 +1769,7 @@ public:
 //! Every BeSQLite::Db has a table for storing "Properties".
 //! Properties are essentially "named values" and are used to store "non-SQL" information in the database. Generally, for each type of
 //! Property there are zero, one, or perhaps a small set of instances and they therefore don't warrant having their own table. Property values
-//! have both a blob and a text string. Either or both may be NULL (and typically one or the other is.)
+//! have both a blob and a text string. Either or both may be nullptr (and typically one or the other is.)
 //! For example, the GUID of the database itself is stored in the Properties table.
 //! <p>
 //! This class forms a "specification" to save and retrieve a type of Property. The specification has three parts: a "Name" string, a "Namespace"
@@ -1813,7 +1816,7 @@ public:
     //! @param[in] mode the transaction mode for this property.
     //! @param[in] compress If Compress::Yes, the property value may be compressed before it is saved. The property won't necessarily be compressed unless
     //!            its size is large enough (usually 100 bytes) and the actual compression results in a net savings.
-    //! @param[in] saveIfNull If true, this property will be saved even if its value is NULL. Otherwise it is deleted if its value is NULL.
+    //! @param[in] saveIfNull If true, this property will be saved even if its value is nullptr. Otherwise it is deleted if its value is Null.
     //! @note name and namespace should always point to static strings.
     PropertySpec(Utf8CP name, Utf8CP nameSpace, Mode mode=Mode::Normal, Compress compress=Compress::Yes, bool saveIfNull=false) : m_name(name), m_namespace(nameSpace), m_compress(compress), m_mode(mode), m_saveIfNull(saveIfNull){}
 
@@ -1831,38 +1834,6 @@ public:
 
 typedef PropertySpec const& PropertySpecCR;
 
-//=======================================================================================
-// @bsiclass                                                    John.Gooding    03/13
-//=======================================================================================
-struct PackageProperty
-{
-    struct Spec : PropertySpec
-        {
-        Spec(Utf8CP name) : PropertySpec(name, PROPERTY_APPNAME_Package, Mode::Normal) {}
-        };
-
-    static Spec SchemaVersion()   {return Spec("SchemaVersion");}
-    static Spec Name()            {return Spec("Name");}
-    static Spec Description()     {return Spec("Description");}
-    static Spec Client()          {return Spec("Client");}
-};
-
-//=======================================================================================
-//! Standard properties that an i-model publisher program should add to the .imodel
-//! and .idgndb files that it creates.
-// @bsiclass                                                    Shaun.Sewall    05/13
-//=======================================================================================
-struct ImodelProperty
-{
-    struct Spec : PropertySpec
-        {
-        Spec(Utf8CP name) : PropertySpec(name, PROPERTY_APPNAME_Imodel, Mode::Normal) {}
-        };
-
-    static Spec PublisherProgram()  {return Spec("PublisherProgram");}
-    static Spec PublisherVersion()  {return Spec("PublisherVersion");}
-    static Spec ImodelType()        {return Spec("imodelType");}
-};
 
 //=======================================================================================
 //! Supply a BusyRetry handler to BeSQLite (see https://www.sqlite.org/c3ref/busy_handler.html).
@@ -2020,11 +1991,11 @@ protected:
     void SaveCachedProperties(bool isCommit);
     Utf8CP GetLastError(DbResult* lastResult) const;
     void SaveCachedRlvs(bool isCommit);
-
 public:
     int OnCommit();
     bool CheckImplicitTxn() const {return m_allowImplicitTxns || m_txns.size() > 0;}
     bool UseSettingsTable(PropertySpecCR spec) const;
+    void OnSettingsDirtied() {m_settingsDirty=true;}
     SqlDbP GetSqlDb() const {return m_sqlDb;}
 
 protected:
@@ -2033,7 +2004,7 @@ protected:
     BE_SQLITE_EXPORT DbResult QueryPropertySize(uint32_t& propsize, PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const;
     BE_SQLITE_EXPORT DbResult QueryProperty(void* value, uint32_t propsize, PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const;
     BE_SQLITE_EXPORT DbResult QueryProperty(Utf8StringR value, PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0) const;
-    BE_SQLITE_EXPORT void SaveSettings(Utf8CP changesetName);
+    BE_SQLITE_EXPORT void SaveSettings();
     BE_SQLITE_EXPORT DbResult DeleteProperty(PropertySpecCR spec, uint64_t majorId=0, uint64_t subId=0);
     BE_SQLITE_EXPORT DbResult DeleteProperties(PropertySpecCR spec, uint64_t* majorId);
     BE_SQLITE_EXPORT int AddFunction(DbFunction& function) const;
@@ -2059,7 +2030,7 @@ struct DbAppData
 };
 
 //=======================================================================================
-//! A SQLite database. This class is a wrapper around the SQLite datatype "sqlite3"
+//! A BeSQLite database file. This class is a wrapper around the SQLite datatype "sqlite3"
 //! @note Refer to the SQLite documentation for the details of SQLite.
 //! @nosubgrouping
 // @bsiclass                                                    Keith.Bentley   11/10
@@ -2071,8 +2042,8 @@ public:
     enum class Encoding {Utf8=0, Utf16=1};
     enum class PageSize : int
         {
-        PAGESIZE_512 = 512,
         PAGESIZE_1K  = 1024,
+        PAGESIZE_512 = PAGESIZE_1K / 2,
         PAGESIZE_2K  = PAGESIZE_1K * 2,
         PAGESIZE_4K  = PAGESIZE_1K * 4,
         PAGESIZE_8K  = PAGESIZE_1K * 8,
@@ -2199,7 +2170,7 @@ public:
         BE_SQLITE_EXPORT StatusInt Drop(DbAppData::Key const& key);
 
         //! Search for the DbAppData on this Db with \c key. See discussion of keys in #Add.
-        //! @return A pointer to the DbAppData object with \c key. NULL if not found.
+        //! @return A pointer to the DbAppData object with \c key. nullptr if not found.
         BE_SQLITE_EXPORT DbAppData* Find(DbAppData::Key const& key) const;
     };
 
@@ -2209,28 +2180,39 @@ protected:
     DbEmbeddedFileTable m_embeddedFiles;
     DbAppDataList m_appData;
 
-    //! Gets called at the end of creating a new Db.
+    //! Called after a new Db had been created.
     //! Override to perform additional processing when Db is created
     //! @param[in] params - Create parameter used to create the Db.
-    //! @return Code indicating success or error
-    BE_SQLITE_EXPORT virtual DbResult _OnDbCreated(CreateParams const& params);
-    virtual void _OnSaveSettings() {}                           //!< override to perform additional processing on save settings
-    BE_SQLITE_EXPORT virtual DbResult _OnDbOpened();            //!< override to perform additional processing when Db is opened
+    //! @return BE_SQLITE_OK on success, error status otherwise
+    //! @note implementers should always forward this call to their superclass.
+    virtual DbResult _OnDbCreated(CreateParams const& params) {return BE_SQLITE_OK;}
+
+    //!< override to perform additional processing on save settings
+    //! @note implementers should always forward this call to their superclass.
+    virtual void _OnSaveSettings() {}
+
+    //! override to perform additional processing when Db is opened
+    //! @note implementers should always forward this call to their superclass.
+    virtual DbResult _OnDbOpened() {return QueryDbIds();}
+
+    //! override to perform processing when Db is closed
+    //! @note implementers should always forward this call to their superclass.
     virtual void _OnDbClose() {}
 
     //! Called when a new transaction is started on a connection, and a different connection (either in the same process or from another process)
     //! has changed the database since the last transaction from this connection was committed. This give subclasses an opportunity to clear internal
     //! caches or user interface that may now be invalid.
-    //! @note This method is only relevant for connections opened with DefaultTxn_No, since when a default transaction is active, other
+    //! @note This method is only relevant for connections opened with DefaultTxn::No, since when a default transaction is active, other
     //! processes are blocked from making changes to the database.
-    //! @note implementers should always forward this call to their superclass (e.g. T_Super::_OnDbChangedByOtherConnection();)
+    //! @note implementers should always forward this call to their superclass.
     BE_SQLITE_EXPORT virtual void _OnDbChangedByOtherConnection();
 
     //!< override to perform additional processing when repository id is changed
+    //! @note implementers should always forward this call to their superclass.
     virtual DbResult _OnRepositoryIdChanged(BeRepositoryId newRepositoryId) {return BE_SQLITE_OK;}
 
     //! Gets called when a Db is opened and checks whether the file can be opened, i.e
-    //! whether the file version matches what the opening API expects
+    //! whether the file version matches what the opening API expects.
     //!
     //! Subclasses have to override this method to perform the profile version check when the file is opened.
     //! See Db::OpenBeSQLiteDb for the <b>backwards compatibility rules</b> that subclasses have to implement
@@ -2256,7 +2238,7 @@ protected:
     //! @return Code indicating success or error.
     virtual DbResult _VerifySchemaVersion(OpenParams const& params) {return BE_SQLITE_OK;}
 
-    virtual int _OnAddFunction(DbFunction& func) const { return 0; }
+    virtual int _OnAddFunction(DbFunction& func) const {return 0;}
     virtual void _OnRemoveFunction(DbFunction& func) const {}
 
     friend struct Statement;
@@ -2265,7 +2247,7 @@ protected:
     friend struct BeSQLiteProfileManager;
 
 private:
-    DbResult QueryDbIds();
+    BE_SQLITE_EXPORT DbResult QueryDbIds();
     DbResult SaveBeDbGuid();
     DbResult SaveRepositoryId();
     void DoCloseDb();
@@ -2303,7 +2285,7 @@ public:
 
     //! Get an entry in the Db's Savepoint stack.
     //! @param[in] depth The depth of the Savepoint of interest. Must be 0 <= depth < GetCurrentSavepointDepth()
-    //! @return A pointer to the Savepoint if depth is valid. NULL otherwise.
+    //! @return A pointer to the Savepoint if depth is valid. nullptr otherwise.
     BE_SQLITE_EXPORT Savepoint* GetSavepoint(int32_t depth) const;
 
     //! Get the current number of entries in this Db's Savepoint stack.
@@ -2358,7 +2340,7 @@ public:
     //!
     //! @note A Db can have an expiration date and time. See #IsExpired
     //!
-    //! @param[in] dbName The name of the BeSQLite::Db database file. Must not be NULL.
+    //! @param[in] dbName The name of the BeSQLite::Db database file. Must not be nullptr.
     //! @param[in] openParams the parameters that determine aspects of the opened database file.
     //! @return ::BE_SQLITE_OK if the database was successfully opened, or error code as explained above otherwise.
     BE_SQLITE_EXPORT DbResult OpenBeSQLiteDb(Utf8CP dbName, OpenParams const& openParams);
@@ -2368,7 +2350,7 @@ public:
 
     //! Create a new BeSQLite::Db database file, or upgrade an existing SQLite file to be a BeSQLite::Db.
     //! This will open or create the physical file, and then create the default BeSQLite::Db tables and properties.
-    //! @param[in] dbName The file name for the new database. If dbName is NULL, a temporary database is created that is automatically
+    //! @param[in] dbName The file name for the new database. If dbName is nullptr, a temporary database is created that is automatically
     //!  deleted when it is closed. If dbName is the value defined by BEDB_MemoryDb, an in-memory database is created.
     //!  If dbName is the name of an existing SQLite file, and if params.m_failIfDbExists is false (which is *not* the default),
     //!  it will open that file and add the BeSQLite::Db tables. If the file already contains the BeSQLite::Db tables, this method
@@ -2391,7 +2373,7 @@ public:
     //! therefore returns no status.
     BE_SQLITE_EXPORT void CloseDb();
 
-    //! @return The name of the physical file associated with this Db. NULL if Db is not opened.
+    //! @return The name of the physical file associated with this Db. nullptr if Db is not opened.
     BE_SQLITE_EXPORT Utf8CP GetDbFileName() const;
 
     //! Save a BeProjectGuid for this Db.
@@ -2463,14 +2445,15 @@ public:
 
     //! @name Db Properties
     //! @{
+
     //! Save a property value in this Db.
     //! @param[in] spec The PropertySpec of the property to save.
-    //! @param[in] value A pointer to a buffer that holds the new value of the property to be saved. May be NULL
-    //! @param[in] propsize The number of bytes in value (ignored if value is NULL).
+    //! @param[in] value A pointer to a buffer that holds the new value of the property to be saved. May be nullptr
+    //! @param[in] propsize The number of bytes in value (ignored if value is nullptr).
     //! @param[in] majorId The major id of the property.
     //! @param[in] subId The subId of the property. The combination of majorId/subId forms a 2 dimensional array of properties of a given PropertySpec,
     //! @return BE_SQLITE_OK if the property was successfully saved, error code otherwise.
-    DbResult SaveProperty(PropertySpecCR spec, void const* value, uint32_t propsize, uint64_t majorId=0, uint64_t subId=0) {return m_dbFile->SaveProperty(spec, NULL, value, propsize, majorId, subId);}
+    DbResult SaveProperty(PropertySpecCR spec, void const* value, uint32_t propsize, uint64_t majorId=0, uint64_t subId=0) {return m_dbFile->SaveProperty(spec, nullptr, value, propsize, majorId, subId);}
 
     //! Save a (Utf8) text string as a property value in this Db.
     //! @param[in] spec The PropertySpec of the property to save.
@@ -2478,7 +2461,7 @@ public:
     //! @param[in] majorId The majorId of the property.
     //! @param[in] subId The subId of the property. The combination of majorId/subId forms a 2 dimensional array of properties of a given PropertySpec,
     //! @return BE_SQLITE_OK if the property was successfully saved, error code otherwise.
-    DbResult SavePropertyString(PropertySpecCR spec, Utf8CP value, uint64_t majorId=0, uint64_t subId=0) {return m_dbFile->SaveProperty(spec, value, NULL, 0, majorId, subId);}
+    DbResult SavePropertyString(PropertySpecCR spec, Utf8CP value, uint64_t majorId=0, uint64_t subId=0) {return m_dbFile->SaveProperty(spec, value, nullptr, 0, majorId, subId);}
 
     //! Save a Utf8String as a property value in this Db.
     //! @param[in] spec The PropertySpec of the property to save.
@@ -2533,13 +2516,14 @@ public:
 
     //! Delete one or more properties from the Db.
     //! @param[in] spec The PropertySpec of the property to delete.
-    //! @param[in] majorId A pointer to the majorId of the properties to delete. If NULL, all properties of spec are deleted. If non-NULL, all properties of spec with the supplied majorid are deleted.
+    //! @param[in] majorId A pointer to the majorId of the properties to delete. If nullptr, all properties of spec are deleted. If non-nullptr, all properties of spec with the supplied majorid are deleted.
     //! @return BE_SQLITE_DONE if the property was either deleted or did not exist, error code otherwise.
     DbResult DeleteProperties(PropertySpecCR spec, uint64_t* majorId) {return m_dbFile->DeleteProperties(spec, majorId);}
 
     //! Make any previous changes to settings properties part of the current transaction. They will be written to disk if/when the transaction is committed.
     //! Unless this method is called after changes are made to setting properties, the changes are held in memory only and not saved to disk.
-    BE_SQLITE_EXPORT void SaveSettings(Utf8CP changesetName=nullptr);
+    //! @note This method does *not* commit the current transaction. You must call SaveChanges to write the settings changes to disk.
+    BE_SQLITE_EXPORT void SaveSettings();
     //! @}
 
     //! @name RepositoryLocalValue
@@ -2574,7 +2558,7 @@ public:
     //! @return The last error message for this Db.
     //! @param[out] lastResult The last error code for this Db.
     //! @see sqlite3_errmsg, sqlite3_errcode
-    BE_SQLITE_EXPORT Utf8CP GetLastError(DbResult* lastResult = NULL) const;
+    BE_SQLITE_EXPORT Utf8CP GetLastError(DbResult* lastResult = nullptr) const;
 
     //! Commit the outermost transaction, writing changes to the file. Then, restart the transaction.
     //! @param[in] changesetName The name of the operation that generated these changes. If transaction tracking is enabled,
@@ -2601,7 +2585,7 @@ public:
     //! @param [in] columnName the name of the column holding the BeRepositoryBasedId
     //! @param [in] whereParam optional additional where criteria. Supply both the additional where clause (do not include the WHERE keyword) and any
     //! parameters to bind.
-    BE_SQLITE_EXPORT DbResult GetNextRepositoryBasedId(BeRepositoryBasedId& value, Utf8CP tableName, Utf8CP columnName, NamedParams* whereParam=NULL);
+    BE_SQLITE_EXPORT DbResult GetNextRepositoryBasedId(BeRepositoryBasedId& value, Utf8CP tableName, Utf8CP columnName, NamedParams* whereParam=nullptr);
 
     //! Determine whether this Db was opened readonly.
     BE_SQLITE_EXPORT bool IsReadonly() const;
@@ -2640,8 +2624,8 @@ public:
     //! @note If this Db already has a ChangeTracker active, the new one replaces it.
     BE_SQLITE_EXPORT void SetChangeTracker(ChangeTracker* tracker);
 
-//__PUBLISH_SECTION_END__
-    BE_SQLITE_EXPORT bool IsSettingProperty(PropertySpecCR spec);
+    //__PUBLISH_SECTION_END__
+    BE_SQLITE_EXPORT bool IsSettingProperty(Utf8CP space, Utf8CP name, uint64_t id, uint64_t subId) const;
     Savepoint* GetDefaultTransaction() const {return (m_dbFile != nullptr) ? &m_dbFile->m_defaultTxn : nullptr;}
     //! Checks a file's profile compatibility to be opened with the current version of the profile's API.
     //!
@@ -2670,7 +2654,7 @@ public:
     //! to make sure the profile is up-to-date.
     //! @return BE_SQLITE_OK in case of success, error codes otherwise
     BE_SQLITE_EXPORT DbResult UpgradeBeSQLiteProfile();
-//__PUBLISH_SECTION_START__
+    //__PUBLISH_SECTION_START__
 
     //! Check if the Db is at or beyond its expiration date.
     //! @see QueryExpirationDate, CreateParams::SetExpirationDate
@@ -2903,19 +2887,6 @@ public:
     ZipErrors ReadAndFinish(Byte* data, uint32_t bufSize, uint32_t& bytesActuallyRead) {auto stat=_Read(data, bufSize, bytesActuallyRead); Finish(); return stat;}
 };
 
-//=======================================================================================
-//! Defines a callback for providing information on the progress of a compress or
-//! decompress operation.
-// @bsiclass                                                    John.Gooding    01/2013
-//=======================================================================================
-struct ICompressProgressTracker
-{
-    //! @param[in] inSize size of the source file
-    //! @param[in] outSize size of the output; -1 if no valid information is available.
-    //! Returning anything other than BSISUCCESS causes the operation to abort.
-    virtual StatusInt _Progress(uint64_t inSize, int64_t outSize) = 0;
-};
-
 //__PUBLISH_SECTION_END__
 //=======================================================================================
 // @bsiclass                                                    John.Gooding    01/2013
@@ -3031,7 +3002,7 @@ struct LzmaDecoder
     {
     BE_SQLITE_EXPORT ZipErrors UncompressDgnDb(Utf8CP targetFile, Utf8CP sourceFile, ICompressProgressTracker* progress);
     BE_SQLITE_EXPORT ZipErrors UncompressDgnDb(BeFileNameCR targetFile, BeFileNameCR sourceFile, ICompressProgressTracker* progress);
-    BE_SQLITE_EXPORT ZipErrors Uncompress(ILzmaOutputStream& out, ILzmaInputStream& in, bool isLzma2, ICompressProgressTracker* progress = NULL);
+    BE_SQLITE_EXPORT ZipErrors Uncompress(ILzmaOutputStream& out, ILzmaInputStream& in, bool isLzma2, ICompressProgressTracker* progress = nullptr);
     BE_SQLITE_EXPORT ZipErrors Uncompress(bvector<Byte>&out, void const*inputBuffer, uint32_t inputSize);
     //! Use this method to decompress a blob of an embedded file. It is assumed that the blob does not have its own header and trailer.
     BE_SQLITE_EXPORT ZipErrors UncompressDgnDbBlob(bvector<Byte>&out, uint32_t expectedSize, void const*inputBuffer, uint32_t inputSize, Byte*header, uint32_t headerSize);
@@ -3070,7 +3041,8 @@ struct Properties
     static PropSpec EmbeddedFileBlob()  {return PropSpec(BEDB_PROPSPEC_EMBEDBLOB_NAME, PropertySpec::Compress::No);}
     static PropSpec CreationDate()      {return PropSpec("CreationDate");}
     static PropSpec ExpirationDate()    {return PropSpec("ExpirationDate");}
-    //! Build version of BeSqlite (e.g. 00.00.00.00) used to create this database; useful for forensic diagnostics.
+
+    //! Build version of BeSqlite (e.g. 06.10.00.00) used to create this database; useful for diagnostics.
     static PropSpec BeSQLiteBuild()     {return PropSpec("BeSQLiteBuild");}
     };
 

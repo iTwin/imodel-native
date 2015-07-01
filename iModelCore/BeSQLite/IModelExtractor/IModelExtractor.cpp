@@ -5,10 +5,9 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "IModelExtractor.h"
 #include <Logging/bentleylogging.h>
 #include <Bentley/BeFilename.h>
-#include <BeSQLite/BeSQLite.h>
+#include <BeSQLite/IModelDb.h>
 #include <Windows.h>
 
 #define APPLICATION_NAME    L"imodel"
