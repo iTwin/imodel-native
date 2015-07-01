@@ -9,8 +9,6 @@
 
 #define LCPOINT_ANYVERTEX   (LCPOINT_LINEORG | LCPOINT_LINEEND | LCPOINT_LINEVERT)
 
-typedef PointSymRsc*        PointSymRscP;
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   02/03
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -234,8 +232,6 @@ LsSymbolComponent::LsSymbolComponent (LsLocation const *pLocation) : LsComponent
     m_storedScale = 0.0;
     m_symFlags    = 0;
     m_postProcessed = false;
-    m_xGraphicsSize = 0; 
-    m_xGraphicsData = NULL;
 
     memset (&m_symSize, 0, sizeof(m_symSize));
     }
@@ -245,20 +241,6 @@ LsSymbolComponent::LsSymbolComponent (LsLocation const *pLocation) : LsComponent
 +---------------+---------------+---------------+---------------+---------------+------*/
 LsSymbolComponent::~LsSymbolComponent ()
     {
-    FreeGraphics ();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    John.Gooding                    08/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-void LsSymbolComponent::SetXGraphics (Byte const *data, size_t dataSize)
-    {
-    if (NULL != m_xGraphicsData)
-        bentleyAllocator_free (const_cast <Byte*> (m_xGraphicsData));
-
-    m_xGraphicsSize = dataSize;
-    m_xGraphicsData = (Byte*)bentleyAllocator_malloc(dataSize);
-    memcpy (const_cast <Byte*> (m_xGraphicsData), data, dataSize);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -291,32 +273,6 @@ void LsSymbolComponent::_PostProcessLoad (DgnModelP modelRef)
 
         SetMuDef (muDef);
         }
-
-    if (GetXGraphicsData() != NULL)
-        return;    //  if the component was saved as XGraphics then the data is already loaded and there is no DgnElementDescr
-
-#if defined (NEEDS_WORK_DGNITEM)
-    XGraphicsRecorder   recorder (modelRef);
-
-    recorder.EnableInitialWeightMatSym ();
-    recorder.EnableInitialColorMatSym ();
-    recorder.EnableInitialLineCodeMatSym();
-
-    for (auto& descr : m_elements)
-        {
-        descr->SetDgnModel(*modelRef); // Probably no longer necessary...should have been set when elements were created...
-        ElementHandle handle(descr.get(), false);
-        
-        recorder.GetContext ()->OutputElement (handle);
-        }
-        
-    XGraphicsContainerR    xGraphicsContainer = const_cast <XGraphicsContainerR> (recorder.GetContainer ());
-    
-    size_t                  dataSize = xGraphicsContainer.GetDataSize ();
-    Byte const*             data = xGraphicsContainer.GetData ();
-    
-    SetXGraphics (data, dataSize);
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -333,25 +289,26 @@ void            LsSymbolComponent::_ClearPostProcess ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 LsSymbolComponent* LsSymbolComponent::LoadPointSym (LsComponentReader* reader)
     {
-    PointSymRsc*    symRsc = (PointSymRsc*) reader->GetRsc();
+    V10Symbol*    v10symData = (V10Symbol*) reader->GetRsc();
 
-    if (NULL == symRsc)
+    if (NULL == v10symData)
         return  NULL;
 
     LsSymbolComponent* symbComp = new LsSymbolComponent (reader->GetSource());
-    symbComp->SetDescription (Utf8String(symRsc->header.descr).c_str());
+    symbComp->SetDescription (v10symData->m_descr);
 
-    symbComp->SetXGraphics (symRsc->symBuf, symRsc->nBytes);
+    symbComp->SetGeomPartId(DgnGeomPartId(v10symData->m_geomPartId));
+    //  symbComp->SetXGraphics (v10symData->symBuf, v10symData->nBytes);
 
-    symbComp->SetFlags (symRsc->symFlags);
+    symbComp->SetFlags (v10symData->m_symFlags);
 
-    DPoint3d symSize, symBase = symRsc->header.range.low;
-    symSize.x = symRsc->header.range.high.x - symRsc->header.range.low.x;
-    symSize.y = symRsc->header.range.high.y - symRsc->header.range.low.y;
+    DPoint3d symSize, symBase = v10symData->m_range.low;
+    symSize.x = v10symData->m_range.high.x - v10symData->m_range.low.x;
+    symSize.y = v10symData->m_range.high.y - v10symData->m_range.low.y;
 
-    if (symRsc->symFlags & LSSYM_3D)
+    if (v10symData->m_symFlags & LSSYM_3D)
         {
-        symSize.z = symRsc->header.range.high.z - symRsc->header.range.low.z;
+        symSize.z = v10symData->m_range.high.z - v10symData->m_range.low.z;
         }
     else
         {
@@ -361,21 +318,8 @@ LsSymbolComponent* LsSymbolComponent::LoadPointSym (LsComponentReader* reader)
 
     symbComp->SetSymSize (&symSize);
     symbComp->SetSymBase (&symBase);
-    symbComp->SetStoredUnitScale (symRsc->header.scale);
+    symbComp->SetStoredUnitScale (v10symData->m_scale);
     return symbComp;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    John.Gooding    09/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void LsSymbolComponent::FreeGraphics ()
-    {
-    if (m_xGraphicsData)
-        {
-        m_xGraphicsSize = 0;
-        bentleyAllocator_free(const_cast <Byte*> (m_xGraphicsData));
-        m_xGraphicsData = nullptr;
-        }
     }
 
 double              LsSymbolComponent::GetStoredUnitScale () const { return m_storedScale; }
@@ -387,4 +331,16 @@ bool                LsSymbolComponent::Is3d ()   const { return (m_symFlags & LS
 void                LsSymbolComponent::GetRange (DRange3dR range) const 
     { 
     _GetRange (range);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    07/2015
+//---------------------------------------------------------------------------------------
+DgnGeomPartPtr LsSymbolComponent::GetGeomPart() const
+    {
+    if (m_geomPart.IsValid())
+        return m_geomPart;
+
+    m_geomPart = GetDgnDbP()->GeomParts().LoadGeomPart(m_geomPartId);
+    return m_geomPart;
     }

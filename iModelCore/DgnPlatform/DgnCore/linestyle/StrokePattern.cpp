@@ -178,42 +178,6 @@ CapMode         capMode
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    John.Gooding    10/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            LsStroke::SaveToResource 
-(
-StrokeData&     strokeData
-)
-    {
-    strokeData.dReserved  = 0.0;
-    strokeData.bReserved  = 0;
-    strokeData.lReserved1 = 0;
-    strokeData.lReserved2 = 0;
-    strokeData.lReserved3 = 0;
-
-    strokeData.length       = m_length;
-    strokeData.width        = m_orgWidth;
-    strokeData.endWidth     = m_endWidth;
-    strokeData.widthMode    = m_widthMode;
-    strokeData.capMode      = m_capMode;
-    
-    strokeData.strokeMode   = 0;
-    if (IsDash ())
-        strokeData.strokeMode |= LCSTROKE_DASH;
-
-    if (IsDashFirst () != IsDash())
-        strokeData.strokeMode |= LCSTROKE_SINVERT;
-
-    if (IsDashLast () != IsDash())
-        strokeData.strokeMode |= LCSTROKE_EINVERT;
-
-    if (IsRigid ())
-        strokeData.strokeMode |= LCSTROKE_RAY;
-    if (IsStretchable ())
-        strokeData.strokeMode |= LCSTROKE_SCALE;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JimBartlett     11/98
 +---------------+---------------+---------------+---------------+---------------+------*/
 LsStrokePatternComponent::LsStrokePatternComponent (LsLocation const *pLocation) : LsComponent (pLocation)

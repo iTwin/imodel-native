@@ -75,9 +75,9 @@ BentleyStatus       LsLocation::GetLineCodeLocation (LsComponentReader* reader)
     {
     SetFrom (reader->GetSource());
 
-    LinePointRsc*   lpRsc = (LinePointRsc*) reader->GetRsc();
-    m_componentType = (LsComponentType)lpRsc->lcType;
-    m_componentId = (LsComponentId)lpRsc->lcID;
+    V10LinePoint*   lpData = (V10LinePoint*)reader->GetRsc();
+    m_componentType = (LsComponentType)lpData->m_lcType;
+    m_componentId = (LsComponentId)lpData->m_lcID;
 
     return SUCCESS;
     }
@@ -93,10 +93,10 @@ int             symbolNumber
     {
     SetFrom (reader->GetSource());
 
-    LinePointRsc*           lpRsc = (LinePointRsc*) reader->GetRsc();
+    V10LinePoint*   lpData = (V10LinePoint*)reader->GetRsc();
 
-    m_componentType = (LsComponentType)lpRsc->symbol[symbolNumber].symType;
-    m_componentId = LsComponentId(lpRsc->symbol[symbolNumber].symID);
+    m_componentType = (LsComponentType)lpData->m_symbol[symbolNumber].m_symType;
+    m_componentId = LsComponentId(lpData->m_symbol[symbolNumber].m_symID);
 
     return SUCCESS;
     }
@@ -111,9 +111,9 @@ int             componentNumber
 )
     {
     SetFrom (reader->GetSource());
-
-    m_componentType = (LsComponentType)reader->GetRsc()->component[componentNumber].type;
-    m_componentId   = LsComponentId(reader->GetRsc()->component[componentNumber].id);
+    V10Compound* v10Data = (V10Compound*)reader->GetRsc();
+    m_componentType = (LsComponentType)v10Data->m_component[componentNumber].m_type;
+    m_componentId   = LsComponentId(v10Data->m_component[componentNumber].m_id);
 
     return SUCCESS;
     }
