@@ -1239,7 +1239,7 @@ void ElementGeomIO::Writer::Append (ElemDisplayParamsCR elParams)
         Append (Operation (OpCode::BasicSymbology, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
         }
 
-#if !defined(LINESTYLES_DISABLED)
+#if defined(LINESTYLES_DISABLED)
     if (elParams.GetLineStyle() != nullptr)
         {
         LineStyleInfoCP lsInfo = elParams.GetLineStyle();
