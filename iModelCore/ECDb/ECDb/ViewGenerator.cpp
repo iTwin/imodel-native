@@ -28,15 +28,15 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
             {
             return BuildStructPropertyExpression (viewSql, *o, tablePrefix, addECPropertyPathAlias, nullValue);
             }
-        else if (auto o = dynamic_cast<PropertyMapToTableCP>(&propertyMap))
+        else if (/*auto o = */dynamic_cast<PropertyMapToTableCP>(&propertyMap))
             {
             return BentleyStatus::SUCCESS;
             }
-        else if (auto o = dynamic_cast<UnmappedPropertyMap const*>(&propertyMap))
+        else if (/*auto o = */dynamic_cast<UnmappedPropertyMap const*>(&propertyMap))
             {
             return BentleyStatus::SUCCESS;
             }
-        else if (auto o = dynamic_cast<PropertyMapSystem const*>(&propertyMap))
+        else if (/*auto o = */dynamic_cast<PropertyMapSystem const*>(&propertyMap))
             {
             return BentleyStatus::SUCCESS;
             }
@@ -258,7 +258,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
     //---------------------------------------------------------------------------------------
     // @bsimethod                                 Affan.Khan                         06/2015
     //---------------------------------------------------------------------------------------
-    BentleyStatus SqlGenerator::BuildSystemSelectionClause (NativeSqlBuilder::List& fragments, ClassMapCR const& classMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue)
+    BentleyStatus SqlGenerator::BuildSystemSelectionClause (NativeSqlBuilder::List& fragments, ClassMapCR classMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue)
         {
       
         if (auto column = classMap.GetTable ().GetFilteredColumnFirst (ECDbSystemColumnECInstanceId))
@@ -324,7 +324,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
     //---------------------------------------------------------------------------------------
     // @bsimethod                                 Affan.Khan                         06/2015
     //---------------------------------------------------------------------------------------
-    BentleyStatus SqlGenerator::BuildSelectionClause (NativeSqlBuilder& viewSql, ClassMapCR const& baseClassMap, ClassMapCR const& classMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue)
+    BentleyStatus SqlGenerator::BuildSelectionClause (NativeSqlBuilder& viewSql, ClassMapCR baseClassMap, ClassMapCR classMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue)
         {
         NativeSqlBuilder::List fragments;
 
@@ -435,7 +435,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
      //---------------------------------------------------------------------------------------
      // @bsimethod                                 Affan.Khan                         06/2015
      //---------------------------------------------------------------------------------------
-     void SqlGenerator::CollectDerivedEndTableRelationships (std::set<RelationshipClassEndTableMapCP>& childMaps, RelationshipClassMapCR const& classMap)
+     void SqlGenerator::CollectDerivedEndTableRelationships (std::set<RelationshipClassEndTableMapCP>& childMaps, RelationshipClassMapCR classMap)
          {
          if (classMap.GetMapStrategy ().IsEndTableMapping ())
              childMaps.insert (static_cast<RelationshipClassEndTableMapCP>(&classMap));
@@ -449,7 +449,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
      //---------------------------------------------------------------------------------------
      // @bsimethod                                 Affan.Khan                         06/2015
      //---------------------------------------------------------------------------------------
-     BentleyStatus SqlGenerator::BuildEndTableRelationshipView (NativeSqlBuilder::List& unionList, RelationshipClassMapCR const& classMap)
+     BentleyStatus SqlGenerator::BuildEndTableRelationshipView (NativeSqlBuilder::List& unionList, RelationshipClassMapCR classMap)
          {
          std::set<RelationshipClassEndTableMapCP> childMaps;
          CollectDerivedEndTableRelationships (childMaps, classMap);
@@ -517,7 +517,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
      //---------------------------------------------------------------------------------------
      // @bsimethod                                 Affan.Khan                         06/2015
      //---------------------------------------------------------------------------------------
-    BentleyStatus SqlGenerator::BuildClassView (NativeSqlBuilder& viewSql, ClassMapCR const& classMap)
+    BentleyStatus SqlGenerator::BuildClassView (NativeSqlBuilder& viewSql, ClassMapCR classMap)
         {
         NativeSqlBuilder::List unionList;
 
@@ -739,14 +739,14 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
        
         printf ("SqlGenerator::CreateView ()                             took %.4f seconds\r\n", viewCreatetimer.GetElapsedSeconds ());
         printf ("SqlGenerator::BuildDeleteTriggers (trigger)             took %.4f seconds\r\n", triggerBuildtimer.GetElapsedSeconds ());
-        printf ("SqlGenerator::ExecuteSql (trigger) [%lld]               took %.4f seconds\r\n", ddls.size(),createTimer.GetElapsedSeconds ());
+        printf ("SqlGenerator::ExecuteSql (trigger) [%" PRId64 "]        took %.4f seconds\r\n", (int64_t)ddls.size(), createTimer.GetElapsedSeconds ());
         //getchar ();
         return BentleyStatus::SUCCESS;
         }
     //---------------------------------------------------------------------------------------
     // @bsimethod                                 Affan.Khan                         06/2015
     //----------------------------------------------------------------------------------------
-    BentleyStatus SqlGenerator::BuildDeleteTriggerForStructArrays (NativeSqlBuilder::List& triggers, ClassMapCR const& classMap)
+    BentleyStatus SqlGenerator::BuildDeleteTriggerForStructArrays (NativeSqlBuilder::List& triggers, ClassMapCR classMap)
         {
         NativeSqlBuilder trigger;
         Utf8String triggerName = BuildSchemaQualifiedClassName (classMap.GetClass ());
@@ -905,7 +905,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
     //-----------------------------------------------------------------------------------------
     // @bsimethod                                    Affan.Khan                      06/2015
     //+---------------+---------------+---------------+---------------+---------------+--------
-    BentleyStatus SqlGenerator::BuildDeleteTriggersForDerivedClasses (NativeSqlBuilder::List& triggers, ClassMapCR const& classMap)
+    BentleyStatus SqlGenerator::BuildDeleteTriggersForDerivedClasses (NativeSqlBuilder::List& triggers, ClassMapCR classMap)
         {
         for (auto derivedClassMap : classMap.GetDerivedClassMaps ())
             {
@@ -945,7 +945,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
     //-----------------------------------------------------------------------------------------
     // @bsimethod                                    Affan.Khan                      06/2015
     //+---------------+---------------+---------------+---------------+---------------+--------
-    BentleyStatus SqlGenerator::BuildEmbeddingConstraint (NativeSqlBuilder& trigger, RelationshipClassMapCR const& classMap)
+    BentleyStatus SqlGenerator::BuildEmbeddingConstraint (NativeSqlBuilder& trigger, RelationshipClassMapCR classMap)
         {
         auto strengthType = classMap.GetRelationshipClass ().GetStrength ();
         auto strengthDirection = classMap.GetRelationshipClass ().GetStrengthDirection ();
@@ -980,7 +980,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
     //-----------------------------------------------------------------------------------------
     // @bsimethod                                    Affan.Khan                      06/2015
     //+---------------+---------------+---------------+---------------+---------------+--------
-    BentleyStatus SqlGenerator::BuildHoldingConstraint (NativeSqlBuilder& trigger, RelationshipClassMapCR const& classMap)
+    BentleyStatus SqlGenerator::BuildHoldingConstraint (NativeSqlBuilder& trigger, RelationshipClassMapCR classMap)
         {
         auto strengthType = classMap.GetRelationshipClass ().GetStrength ();
         auto strengthDirection = classMap.GetRelationshipClass ().GetStrengthDirection ();
@@ -1019,7 +1019,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
     //-----------------------------------------------------------------------------------------
     // @bsimethod                                    Affan.Khan                      06/2015
     //+---------------+---------------+---------------+---------------+---------------+--------
-    BentleyStatus SqlGenerator::BuildDeleteTriggerForEndTableMe (NativeSqlBuilder::List& triggers, ClassMapCR const& classMap)
+    BentleyStatus SqlGenerator::BuildDeleteTriggerForEndTableMe (NativeSqlBuilder::List& triggers, ClassMapCR classMap)
         {
         NativeSqlBuilder trigger;
         Utf8String triggerName = BuildSchemaQualifiedClassName (classMap.GetClass ());
@@ -1368,7 +1368,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
     //-----------------------------------------------------------------------------------------
     // @bsimethod                                    Affan.Khan                      12/2013
     //+---------------+---------------+---------------+---------------+---------------+--------
-    BentleyStatus SqlGenerator::BuildDeleteTriggerForMe (NativeSqlBuilder::List& triggers, ClassMapCR const& classMap)
+    BentleyStatus SqlGenerator::BuildDeleteTriggerForMe (NativeSqlBuilder::List& triggers, ClassMapCR classMap)
         {
         if (classMap.GetTable ().GetPersistenceType () == PersistenceType::Persisted)
             {
@@ -1447,7 +1447,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
     //-----------------------------------------------------------------------------------------
     // @bsimethod                                    Affan.Khan                      06/2015
     //+---------------+---------------+---------------+---------------+---------------+--------
-    BentleyStatus SqlGenerator::BuildDeleteTriggersForRelationships (NativeSqlBuilder::List& triggers, ClassMapCR const& classMap)
+    BentleyStatus SqlGenerator::BuildDeleteTriggersForRelationships (NativeSqlBuilder::List& triggers, ClassMapCR classMap)
         {
         if (classMap.GetClass ().GetRelationshipClassCP () != nullptr)
             return BentleyStatus::SUCCESS;
@@ -1491,7 +1491,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
     //-----------------------------------------------------------------------------------------
     // @bsimethod                                    Affan.Khan                      12/2013
     //+---------------+---------------+---------------+---------------+---------------+--------
-    BentleyStatus SqlGenerator::BuildDeleteTriggers (NativeSqlBuilder::List& triggers, ClassMapCR const& classMap)
+    BentleyStatus SqlGenerator::BuildDeleteTriggers (NativeSqlBuilder::List& triggers, ClassMapCR classMap)
         {
 
         if (BuildDeleteTriggerForMe (triggers, classMap) != BentleyStatus::SUCCESS)
