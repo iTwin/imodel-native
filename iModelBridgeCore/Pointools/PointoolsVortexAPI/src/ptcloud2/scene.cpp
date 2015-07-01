@@ -217,3 +217,11 @@ const char* Scene::creationErrorText( int errorCode )
 	}
 	return 0;
 }
+int		Scene::editStateID() const				
+{ 
+	return  _editStateID; 
+}
+void	Scene::setEditStateID( int id )			
+{ 
+	_editStateID=id; 
+}

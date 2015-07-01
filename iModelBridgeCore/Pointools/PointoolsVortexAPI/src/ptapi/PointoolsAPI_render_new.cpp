@@ -163,15 +163,15 @@ PTvoid PTAPI ptDrawSceneGL(PThandle scene, PTbool dynamic)
 {
 	PTTRACE_FUNC
 
-	static bool first = false;
+	static bool first = true;
+
 	// this is a hack because data has not loaded before the first draw
-	
 	if (first)
 	{
 		thePointsPager().completeRequests();
 		first = false;
 	}
-	// will only process scenes that have not been processed at all, ie. loaded when stack is not empty
+	//// will only process scenes that have not been processed at all, ie. loaded when stack is not empty
 	ptedit::PointEditManager::instance()->regenEditUnprocessed();
 
 	bool compatibility = false;

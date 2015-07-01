@@ -131,11 +131,19 @@ struct TransformWriter : public PointsVisitor
 			{
 				memcpy(&m, b->_data, sizeof(m));
 
-				cloud->transform().useMatrix(m);
-				changed = true;	// could optimise
+				if (cloud->transform().matrix() != m)
+				{
+					cloud->transform().useMatrix(m);
+					changed = true;	
+				}
 			}
 			if (changed)
 			{
+				// really want to avoid this
+				// if there is not enough data in a voxel the bounds
+				// will be taken from the node, this bad because the 
+				// extents will be larger and so LOD effected - results
+				// if bad performance
 				cloud->projectBounds().dirtyBounds();
 				cloud->computeBounds();
 

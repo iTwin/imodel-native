@@ -99,8 +99,8 @@ namespace pcloud
 
 		pt::Guid	objectGuid() const;
 
-		int		editStateID() const					{ return  _editStateID; }
-		void	setEditStateID( int id )			{ _editStateID=id; }
+		int		editStateID() const;
+		void	setEditStateID( int id );
 
 	private:
 
