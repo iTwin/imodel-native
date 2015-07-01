@@ -196,17 +196,12 @@ StatusInt LsSymbolReference::Output (ViewContextP context, LineStyleSymbCP modif
 +---------------+---------------+---------------+---------------+---------------+------*/
 void LsSymbolComponent::_Draw (ViewContextR context)
     {
-#if defined (NEEDS_WORK_DGNITEM)
-    DgnModelP   dgnCacheP = NULL;
-    DgnViewportP   vp = context.GetViewport();
+    DgnGeomPartPtr geomPart = GetGeomPart();
+    if (!geomPart.IsValid())
+        return;
 
-    if (NULL != vp)
-        dgnCacheP = vp->GetViewController ().GetTargetModel ();
-
-    XGraphicsContainer::DrawXGraphicsFromMemory (context, GetXGraphicsData (),
-                                                static_cast <int32_t> (GetXGraphicsSize ()), 
-                                                dgnCacheP, XGraphicsContainer::DRAW_OPTION_None);
-#endif
+    ElementGeomIO::Collection collection(geomPart->GetGeomStream().GetData(), geomPart->GetGeomStream().GetSize());
+    collection.Draw(context, context.GetCurrentDisplayParams()->GetCategoryId(), *context.GetViewFlags()); 
     }
 
 /*---------------------------------------------------------------------------------**//**
