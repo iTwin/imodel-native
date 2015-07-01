@@ -13,9 +13,7 @@
 DGNPLATFORM_TYPEDEFS(TxnMonitor)
 
 #define TXN_TABLE_PREFIX "txn_"
-#define TEMP_TABLE(name) "temp." name
 #define TXN_TABLE(name)  TXN_TABLE_PREFIX name
-
 #define TXN_TABLE_Elements TXN_TABLE("Elements")
 #define TXN_TABLE_Depend   TXN_TABLE("Depend")
 
@@ -38,7 +36,15 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 +===============+===============+===============+===============+===============+======*/
 
 //! Actions that cause events to be sent to TxnTables.
-enum class TxnAction {None=0, Commit, Abandon, Reverse, Reinstate, Merge};
+enum class TxnAction
+{
+    None = 0,   //!< not currently processing anything
+    Commit,     //!< processing a Commit. Triggered by a call to DgnDb::SaveChanges
+    Abandon,    //!< abandoning the current Txn. Triggered by a call to DgnDb::AbandonChanges
+    Reverse,    //!< reversing a previously committed ChangeSet. Triggered by a call to TxnManager::ReverseActions
+    Reinstate,  //!< reinstating a previously reversed ChangeSet. Triggered by a call to TxnManager::ReinstateActions
+    Merge       //!< merging a ChangeSet made by a foreign repository.
+};
 
 //=======================================================================================
 //! A 32 bit value to identify the group of changes that form a single Txn.
@@ -190,32 +196,18 @@ struct RevTxn
 };
 
 //=======================================================================================
-//! This class implements the DgnDb::Txns() object.
-//!    - Reversing (undo) and Reinstating (redo) Txns
+//! This class implements the DgnDb::Txns() object. It is a BeSQLite::ChangeTracker.
+//! It handles:
+//!    - validating Txns on Db::SaveChanges
+//!    - notifying TxnTables of changes
 //!    - change propagation.
+//!    - Reversing (undo) and Reinstating (redo) Txns
 //!    - combining multi-step Txns into a single reversible "operation"
 //!    - change merging
 // @bsiclass
 //=======================================================================================
 struct TxnManager : BeSQLite::ChangeTracker
 {
-    struct ChangeEntry
-    {
-        BeGuid          m_sessionId;
-        TxnId           m_txnId;
-        bool            m_settingsChange;
-        Utf8String      m_description;
-        Utf8String      m_mark;
-    };
-
-    struct UndoChangeSet : BeSQLite::ChangeSet
-    {
-        virtual ConflictResolution _OnConflict(ConflictCause cause, BeSQLite::Changes::Change iter) override;
-    };
-
-    struct CompareTableNames {bool operator()(Utf8CP a, Utf8CP b) const {return strcmp(a, b) < 0;}};
-    typedef bmap<Utf8CP,TxnTablePtr,CompareTableNames> T_TxnTablesByName;
-    typedef bvector<TxnTable*> T_TxnTables;
     //! Indicates an error when propagating changes for a Txn.
     struct ValidationError
     {
@@ -232,7 +224,24 @@ struct TxnManager : BeSQLite::ChangeTracker
         Utf8CP GetDescription() const {return m_description.c_str();}//!< A human-readable, localized description of the error
     };
 
-protected:
+private:
+    struct ChangeEntry
+    {
+        BeGuid          m_sessionId;
+        TxnId           m_txnId;
+        Utf8String      m_description;
+        Utf8String      m_mark;
+    };
+
+    struct UndoChangeSet : BeSQLite::ChangeSet
+    {
+        virtual ConflictResolution _OnConflict(ConflictCause cause, BeSQLite::Changes::Change iter) override;
+    };
+
+    struct CompareTableNames {bool operator()(Utf8CP a, Utf8CP b) const {return strcmp(a, b) < 0;}};
+    typedef bmap<Utf8CP,TxnTablePtr,CompareTableNames> T_TxnTablesByName;
+    typedef bvector<TxnTable*> T_TxnTables;
+
     DgnDbR          m_dgndb;
     T_TxnTablesByName m_tablesByName;
     T_TxnTables     m_tables;
@@ -242,26 +251,20 @@ protected:
     bvector<RevTxn> m_reversedTxn;
     bool            m_inDynamics;
     bool            m_propagateChanges;
-    BeSQLite::StatementCache    m_stmts;
-    BeSQLite::SnappyFromBlob    m_snappyFrom;
-    BeSQLite::SnappyToBlob      m_snappyTo;
-    bvector<ValidationError> m_validationErrors; //!< Validation errors detected
+    BeSQLite::StatementCache m_stmts;
+    BeSQLite::SnappyFromBlob m_snappyFrom;
+    BeSQLite::SnappyToBlob   m_snappyTo;
+    bvector<ValidationError> m_validationErrors; 
 
-private:
     void AddChangeSet(BeSQLite::ChangeSet&);
     OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override;
-    void _OnSettingsSave() override {m_curr.m_settingsChange=true;}
-    void _OnSettingsSaved() override {m_curr.m_settingsChange=false;}
     TrackChangesForTable _FilterTable(Utf8CP tableName) override;
-
     BeSQLite::DbResult SaveCurrentChange(BeSQLite::ChangeSet& changeset, Utf8CP operation);
     BeSQLite::DbResult ReadEntry(TxnRowId rowid, ChangeEntry& entry);
     void ReadChangeSet(UndoChangeSet&, TxnRowId rowid, TxnAction);
     TxnRowId FirstRow(TxnId id);
     TxnRowId LastRow(TxnId id);
-
     void TruncateChanges(TxnId id);
-    void SetUndoInProgress(bool);
     void ReverseTxnRange(TxnRange& txnRange, Utf8StringP, bool);
     void ReinstateTxn(TxnRange&, Utf8StringP redoStr);
     void ApplyChanges(TxnRowId, TxnAction);
@@ -294,8 +297,8 @@ public:
     //! @note this method may only be called from within TxnMonitor::_OnCommit methods.
     bvector<ValidationError> const& GetErrors() const {return m_validationErrors;}
 
-    //! DgnElementDependencyGraph methods may call this to report a validation error.
-    //! If the severity of the validation error is set to ValidationErrorSeverity::Fatal, the transaction will be cancel
+    //! TxnTable methods may call this to report a validation error.
+    //! If the severity of the validation error is set to ValidationError::Severity::Fatal, the transaction will cancel
     //! rather than commit.
     DGNPLATFORM_EXPORT void ReportError(ValidationError&);
     //@}
@@ -335,6 +338,8 @@ public:
 
     //! @name Reversing and Reinstating Transactions
     //@{
+    //! Get the current Action being processed by the TxnManager. This can be called from inside TxnTable methods only,
+    //! otherwise it will always return TxnAction::None
     TxnAction GetCurrentAction() const {return m_action;}
 
     //! Query if there are currently any reversible (undoable) changes
@@ -406,7 +411,6 @@ namespace dgn_TxnTable
         virtual void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Delete);}
         virtual void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Update);}
         virtual void _OnValidated() override;
-
         virtual void _OnReversedDelete(BeSQLite::Changes::Change const&) override;
         virtual void _OnReversedAdd(BeSQLite::Changes::Change const&) override;
         virtual void _OnReversedUpdate(BeSQLite::Changes::Change const&) override;
@@ -493,13 +497,9 @@ namespace dgn_TxnTable
         static Utf8CP MyTableName() {return BEDB_TABLE_Property;}
         Utf8CP _GetTableName() const {return MyTableName();}
         BeProperties(TxnManager& mgr) : TxnTable(mgr) {}
-
-        virtual void _OnReversedAdd(BeSQLite::Changes::Change const&) override;
-        virtual void _OnReversedDelete(BeSQLite::Changes::Change const&) override;
         virtual void _OnReversedUpdate(BeSQLite::Changes::Change const&) override;
     };
 };
-
 
 //=======================================================================================
 //! @ingroup TxnMgr
@@ -537,14 +537,12 @@ namespace dgn_TableHandler
         virtual TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::ModelDep(mgr);}
     };
 
-    //! TableHandler for BeProperties 
+    //! TableHandler for BeProperties
     struct BeProperties : DgnDomain::TableHandler
     {
         TABLEHANDLER_DECLARE_MEMBERS(BeProperties, DGNPLATFORM_EXPORT)
         virtual TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::BeProperties(mgr);}
     };
-
-
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
