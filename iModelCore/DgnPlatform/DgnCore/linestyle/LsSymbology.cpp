@@ -382,7 +382,10 @@ DPoint3dCP          startTangent,
 DPoint3dCP          endTangent
 )
     {
-    //  NOTNOW -- unclear what will happen to the magic values.  For now, avoid any collision with them.
+    if (nullptr == styleInfo)
+        return 0;
+
+    //  NOTNOW LINESTYLES_NEEDSWORK -- unclear what will happen to the magic values.  For now, avoid any collision with them.
     if (IS_LINECODE (styleInfo->GetStyleId().GetValueUnchecked()))
         return 0; //  styleNo;
 
