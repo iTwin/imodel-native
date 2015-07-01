@@ -61,20 +61,13 @@ CachedStatementPtr TxnManager::GetTxnStatement(Utf8CP sql) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult TxnManager::SaveCurrentChange(ChangeSet& changeset, Utf8CP operation)
     {
-    enum Column : int   {SessionId=1,TxnId=2,Deleted=3,Operation=4,Settings=5,Mark=6,Change=7};
-    CachedStatementPtr stmt = GetTxnStatement("INSERT INTO " DGN_TABLE_Txns "(SessionId,TxnId,Deleted,Operation,Settings,Mark,Change) VALUES(?,?,?,?,?,?,?)");
+    enum Column : int {SessionId=1,TxnId=2,Deleted=3,Operation=4,Change=5};
+    CachedStatementPtr stmt = GetTxnStatement("INSERT INTO " DGN_TABLE_Txns "(SessionId,TxnId,Deleted,Operation,Change) VALUES(?,?,?,?,?)");
 
     stmt->BindGuid(Column::SessionId, m_curr.m_sessionId);
     stmt->BindInt(Column::TxnId,  m_curr.m_txnId);
     stmt->BindInt(Column::Deleted,  false);
     stmt->BindText(Column::Operation, operation ? operation : m_curr.m_description.c_str(), Statement::MakeCopy::No);
-    stmt->BindInt(Column::Settings,  m_curr.m_settingsChange);
-
-    if (!m_curr.m_mark.empty())
-        {
-        stmt->BindText(Column::Mark, m_curr.m_mark, Statement::MakeCopy::No);
-        m_curr.m_mark.clear();
-        }
 
     m_snappyTo.Init();
     ChangesBlobHeader header(changeset.GetSize());
@@ -119,7 +112,7 @@ void TxnManager::TruncateChanges(TxnId id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult TxnManager::ReadEntry(TxnRowId rowid, ChangeEntry& entry)
     {
-    CachedStatementPtr stmt = GetTxnStatement("SELECT SessionId,TxnId,Operation,Settings,Mark FROM " DGN_TABLE_Txns " WHERE rowid=?");
+    CachedStatementPtr stmt = GetTxnStatement("SELECT SessionId,TxnId,Operation FROM " DGN_TABLE_Txns " WHERE rowid=?");
     stmt->BindInt64(1, rowid);
     auto rc = stmt->Step();
     if (rc != BE_SQLITE_ROW)
@@ -128,8 +121,6 @@ DbResult TxnManager::ReadEntry(TxnRowId rowid, ChangeEntry& entry)
     entry.m_sessionId = stmt->GetValueGuid(0);
     entry.m_txnId = TxnId(stmt->GetValueInt(1));
     entry.m_description = stmt->GetValueText(2);
-    entry.m_settingsChange = stmt->GetValueInt(3) == 1;
-    entry.m_mark = stmt->GetValueText(4);
     return BE_SQLITE_ROW;
     }
 
@@ -142,7 +133,6 @@ TxnManager::TxnManager(DgnDbR project) : m_dgndb(project), m_stmts(20)
     m_propagateChanges  = true;
     m_action = TxnAction::None;
 
-    m_curr.m_settingsChange = false;
     m_curr.m_txnId = TxnId(0);
 
     m_dgndb.SetChangeTracker(this);
@@ -255,17 +245,6 @@ void TxnManager::EndMultiTxnOperation()
 TxnId TxnManager::GetMultiTxnOperationStart()
     {
     return m_multiTxnOp.empty() ? TxnId(0) : m_multiTxnOp.back();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* We're about to reverse or reinstate a committed transaction. Before that can happen, we need to cancel
-* any pending uncommitted changes.
-* @bsimethod                                    Keith.Bentley                   07/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TxnManager::SetUndoInProgress(bool yesNo)
-    {
-    if (HasChanges())
-        m_dgndb.AbandonChanges();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -544,6 +523,8 @@ void TxnManager::AddChangeSet(ChangeSet& changeset)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult TxnManager::ApplyChangeSet(ChangeSet& changeset, TxnAction action)
     {
+    BeAssert(!HasChanges());
+
     bool wasTracking = EnableTracking(false);
     DbResult rc = changeset.ApplyChanges(m_dgndb); // this actually updates the database with the changes
     BeAssert (rc == BE_SQLITE_OK);
@@ -553,6 +534,7 @@ DbResult TxnManager::ApplyChangeSet(ChangeSet& changeset, TxnAction action)
 
     T_HOST.GetTxnAdmin()._OnReversedChanges(*this);
 
+    BeAssert(!HasChanges());
     return rc;
     }
 
@@ -616,7 +598,8 @@ void TxnManager::ApplyChanges(TxnRowId rowId, TxnAction action)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TxnManager::ReverseTxnRange(TxnRange& txnRange, Utf8StringP undoStr, bool multiStep)
     {
-    SetUndoInProgress(true);
+    if (HasChanges())
+        m_dgndb.AbandonChanges();
 
     TxnRowId last  = LastRow(TxnId(txnRange.GetLast()-1));
     TxnRowId first = FirstRow(txnRange.GetFirst());
@@ -624,9 +607,9 @@ void TxnManager::ReverseTxnRange(TxnRange& txnRange, Utf8StringP undoStr, bool m
     for (TxnRowId curr=last; curr.IsValid() && curr >= first; curr.Prev())
         ApplyChanges(curr, TxnAction::Reverse);
 
-    m_dgndb.SaveChanges(); // make sure we save the updated Txn data to disk.
+    BeAssert(!HasChanges());
 
-    SetUndoInProgress(false);
+    m_dgndb.SaveChanges(); // make sure we save the updated Txn data to disk.
 
     if (undoStr)
         {
@@ -750,15 +733,14 @@ void TxnManager::ReinstateTxn(TxnRange& revTxn, Utf8StringP redoStr)
     {
     BeAssert(m_curr.m_txnId == revTxn.GetFirst());
 
-    SetUndoInProgress(true);
+    if (HasChanges())
+        m_dgndb.AbandonChanges();
 
     TxnRowId last  = LastRow(TxnId(revTxn.GetLast()-1));
     TxnRowId first = FirstRow(revTxn.GetFirst());
 
     for (TxnRowId curr=first; curr.IsValid() && curr <= last; curr.Next())
         ApplyChanges(curr, TxnAction::Reinstate);
-
-    SetUndoInProgress(false);
 
     m_dgndb.SaveChanges(); // make sure we save the updated Txn data to disk.
 
@@ -880,9 +862,10 @@ void dgn_TxnTable::Model::_OnReversedAdd(BeSQLite::Changes::Change const& change
     {
     DgnModelId modelId = change.GetOldValue(0).GetValueId<DgnModelId>();
     DgnModelP model = m_txnMgr.GetDgnDb().Models().FindModel(modelId);
+    if (nullptr == model)
+        return;
 
-    if (model)
-        m_txnMgr.GetDgnDb().Models().DropLoadedModel(*model);
+    m_txnMgr.GetDgnDb().Models().DropLoadedModel(*model);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -892,22 +875,11 @@ void dgn_TxnTable::Model::_OnReversedUpdate(BeSQLite::Changes::Change const& cha
     {
     DgnModelId modelId = change.GetOldValue(0).GetValueId<DgnModelId>();
     DgnModelP model = m_txnMgr.GetDgnDb().Models().FindModel(modelId);
-
-    if (model)
-        {
-        model->ReadProperties();
-        model->_OnUpdated();
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::BeProperties::_OnReversedAdd(BeSQLite::Changes::Change const& change)
-    {
-    PropertySpec::Mode txnmode = (PropertySpec::Mode) change.GetOldValue(4).GetValueInt();
-    if (txnmode != PropertySpec::Mode::Setting)
+    if (nullptr == model)
         return;
+
+    model->ReadProperties();
+    model->_OnUpdated();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -915,13 +887,13 @@ void dgn_TxnTable::BeProperties::_OnReversedAdd(BeSQLite::Changes::Change const&
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_TxnTable::BeProperties::_OnReversedUpdate(BeSQLite::Changes::Change const& change)
     {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void dgn_TxnTable::BeProperties::_OnReversedDelete(BeSQLite::Changes::Change const& change)
-    {
+    switch (m_txnMgr.GetCurrentAction())
+        {
+        case TxnAction::Abandon: // only these two actions need to preserve the changed state.
+        case TxnAction::Reverse:
+            change.OnPropertyUpdateReversed(m_txnMgr.GetDgnDb());
+            break;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1031,9 +1003,6 @@ void dgn_TxnTable::Element::AddChange(Changes::Change const& change, ChangeType 
         }
     else
         modelId = DgnModelId(change.GetValue(2, stage).GetValueInt64());   // assumes DgnModelId is column 2
-
-    if (changeType == ChangeType::Update)
-        stage = Changes::Change::Stage::New;
 
     AddElement(elementId, modelId, changeType);
     }

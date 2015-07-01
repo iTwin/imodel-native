@@ -33,6 +33,7 @@
                 <SourceECClassIdColumn>RootElementClassId</SourceECClassIdColumn>
                 <TargetECInstanceIdColumn>DependentElementId</TargetECInstanceIdColumn>
                 <TargetECClassIdColumn>DependentElementClassId</TargetECClassIdColumn>
+              <AllowDuplicateRelationships>True</AllowDuplicateRelationships>
             </LinkTableRelationshipMap>
         </ECCustomAttributes>
         <BaseClass>dgn:ElementDrivesElement</BaseClass>

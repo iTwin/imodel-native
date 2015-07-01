@@ -468,20 +468,6 @@ ElementHandlerP dgn_ElementHandler::Element::FindHandler(DgnDb const& db, DgnCla
     if (nullptr != handler)
         return handler->_ToElementHandler();
 
-#define REMOVE_WHEN_MULTIPLE_INHERITANCE_RESOLVED
-#if defined (REMOVE_WHEN_MULTIPLE_INHERITANCE_RESOLVED)
-    // In EC, we can sometimes multiply inherit from more than one Element base class. That creates ambiguity looking for a handler.
-    // Try Physical first, then Drawing, then Element. Hardwiring these few classes is nonsense, of course. There needs to be a way to
-    // define which superclass supplies the handler. When that is resolved, remove these lines. - KAB
-    handler = db.Domains().FindHandler(handlerId, db.Domains().GetClassId(dgn_ElementHandler::Physical::GetHandler()));
-    if (handler)
-        return handler->_ToElementHandler();
-
-    handler = db.Domains().FindHandler(handlerId, db.Domains().GetClassId(dgn_ElementHandler::Drawing::GetHandler()));
-    if (handler)
-        return handler->_ToElementHandler();
-#endif
-
     // not there, check via base classes
     handler = db.Domains().FindHandler(handlerId, db.Domains().GetClassId(dgn_ElementHandler::Element::GetHandler()));
     return handler ? handler->_ToElementHandler() : (BeAssert(false), nullptr);
