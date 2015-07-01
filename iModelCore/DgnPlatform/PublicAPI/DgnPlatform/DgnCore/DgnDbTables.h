@@ -686,8 +686,7 @@ public:
         enum class CoordinateSpace
         {
             Local   = 0,    // the model has a local coordinate system
-            World   = 1,    // the model is in the world coordinate system (only applicable to physical models).
-            Aux     = 2,    // the model is in the an auxiliary coordinate system (only applicable to physical models).
+            World   = 1,    // the model is in the physical (world) coordinate system. 
         };
 
         friend struct DgnModels;

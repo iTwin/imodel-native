@@ -1,6 +1,9 @@
 /*--------------------------------------------------------------------------------------+
+|
 |     $Source: PublicAPI/DgnPlatform/DgnCore/DgnLink.h $
+|
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
