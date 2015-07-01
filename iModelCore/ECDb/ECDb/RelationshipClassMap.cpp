@@ -632,16 +632,10 @@ void RelationshipClassEndTableMap::AddIndices (ClassMapInfo const& mapInfo)
     {
     BeAssert(dynamic_cast<RelationshipMapInfo const*> (&mapInfo) != nullptr);
     RelationshipMapInfo const& info = static_cast<RelationshipMapInfo const&> (mapInfo);
-   
-    bool enforceUniqueness = true; //We are enabling it
-    // TODO: We need to enforce uniqueness of constraints, but cannot at the moment since we get these 
-    // i-models that don't honor these constraints. See comments @ RelationshipClassLinkTableMap::AddIndices()
-    RelationshipMapInfo::Cardinality cardinality = info.GetCardinality();
-    
-    switch(cardinality)
+    switch (info.GetCardinality())
         {
             case RelationshipMapInfo::Cardinality::OneToOne:
-                AddIndexToRelationshipEnd (enforceUniqueness);
+                AddIndexToRelationshipEnd(true);
                 break;
             case RelationshipMapInfo::Cardinality::OneToMany:
             case RelationshipMapInfo::Cardinality::ManyToOne:
@@ -1073,7 +1067,7 @@ void RelationshipClassLinkTableMap::AddIndices (ClassMapInfo const& mapInfo)
     RelationshipMapInfo const& relationshipClassMapInfo = static_cast<RelationshipMapInfo const&> (mapInfo);
 
     RelationshipMapInfo::Cardinality cardinality = relationshipClassMapInfo.GetCardinality();
-    bool enforceUniqueness = false;
+    const bool enforceUniqueness = !relationshipClassMapInfo.AllowDuplicateRelationships();
     // TODO: We need to enforce uniqueness of constraints, but cannot at the moment since we get these 
     // i-models that don't honor these constraints. For example, ConstructSim has a ComponentHasComponent
     // 1-M relationship, but ends up having many instances on the source instead of one. There are
@@ -1081,37 +1075,31 @@ void RelationshipClassLinkTableMap::AddIndices (ClassMapInfo const& mapInfo)
     // themselves include the SystemComponent-s again. 
 
     // Add indices on the source and target based on cardinality
+    bool sourceIsUnique = enforceUniqueness;
+    bool targetIsUnique = enforceUniqueness;
+
     switch (cardinality)
         {
-            case RelationshipMapInfo::Cardinality::OneToOne:
-            {
-            AddIndicesToRelationshipEnds(RelationshipIndexSpec::Source, true /*createUniqueIndex*/);
-            AddIndicesToRelationshipEnds(RelationshipIndexSpec::Target, true /*createUniqueIndex*/);
-            break;
-            }
+        //the many side can be unique, but the one side must never be unique
             case RelationshipMapInfo::Cardinality::OneToMany:
-            {
-            AddIndicesToRelationshipEnds(RelationshipIndexSpec::Source, false);
-            AddIndicesToRelationshipEnds(RelationshipIndexSpec::Target, enforceUniqueness);
-            break;
-            }
+                sourceIsUnique = false;
+                break;
             case RelationshipMapInfo::Cardinality::ManyToOne:
-            {
-            AddIndicesToRelationshipEnds(RelationshipIndexSpec::Source, enforceUniqueness);
-            AddIndicesToRelationshipEnds(RelationshipIndexSpec::Target, false);
-            break;
-            }
+                targetIsUnique = false;
+                break;
+              
             case RelationshipMapInfo::Cardinality::ManyToMany:
-            {
-            AddIndicesToRelationshipEnds(RelationshipIndexSpec::Source, false);
-            AddIndicesToRelationshipEnds(RelationshipIndexSpec::Target, false);
-            break;
-            }
-        default:
-            break;
+                sourceIsUnique = false;
+                targetIsUnique = false;
+                break;
+            default:
+                break;
         }
 
-    if (!relationshipClassMapInfo.AllowDuplicateRelationships())
+    AddIndicesToRelationshipEnds(RelationshipIndexSpec::Source, sourceIsUnique);
+    AddIndicesToRelationshipEnds(RelationshipIndexSpec::Target, targetIsUnique);
+
+    if (enforceUniqueness)
         AddIndicesToRelationshipEnds(RelationshipClassLinkTableMap::RelationshipIndexSpec::SourceAndTarget, true);
     }
     

@@ -292,16 +292,15 @@ struct ECDbSqlIndex : NonCopyableClass
         private:
             ECDbSqlIndex& m_index;
 
-            void EvaluateClassIdWhereExp(ECDbR ecdb);
-
+            void EvaluateClassIdWhereExp(ECDbR ecdb) const;
         public:
-            PersistenceManager (ECDbSqlIndex& index) :m_index(index) {}
+            explicit PersistenceManager (ECDbSqlIndex& index) :m_index(index) {}
             ~PersistenceManager (){}
 
-            ECDbSqlIndex const& GetIndex () const{ return m_index; }
-            BentleyStatus Create(ECDbR ecdb);
-            BentleyStatus Drop (ECDbR ecdb);
-            bool Exist (ECDbR ecdb) const;
+            ECDbSqlIndex const& GetIndex () const { return m_index; }
+            BentleyStatus Create(ECDbR ecdb) const;
+            BentleyStatus Drop (ECDbR ecdb) const;
+            bool Exists (ECDbR ecdb) const;
         };
     private:
         Utf8String m_whereExpression;
@@ -397,56 +396,6 @@ struct ECDbSqlColumn : NonCopyableClass
             RTrim,  // The same as binary, except that trailing space characters are ignored.
             };
 
-        //struct DefaultConstraint
-        //    {
-        //    enum Type
-        //        {
-        //        ConstantValue,
-        //        SQLExpression,
-        //        Null
-        //        };
-
-        //    private:
-        //        ECValue m_value;
-        //        Type m_type;
-        //    public:
-        //        DefaultConstraint ()
-        //            :m_type (Type::Null)
-        //            {}
-        //        ~DefaultConstraint (){}
-        //        void SetExpression (Utf8CP expression)
-        //            {
-        //            m_type = Type::SQLExpression;
-        //            m_value.Clear ();
-        //            m_value.SetUtf8CP (expression, true);
-        //            }
-        //        Utf8CP GetExpression ()const
-        //            {
-        //            if (m_type == Type::SQLExpression)
-        //                return m_value.GetUtf8CP ();
-
-        //            return nullptr;
-        //            }
-        //        void SetConstantValue (ECValueCR value)
-        //            {
-        //            m_value.Clear ();
-        //            m_value = value;
-        //            m_type = Type::ConstantValue;
-        //            }
-        //        ECValueCR GetConstantValue () const
-        //            {
-        //            if (m_type == Type::ConstantValue)
-        //                return m_value;
-
-        //            return ECValue ();
-        //            }
-        //        Type GetType () const { return m_type; }
-        //        void Clear ()
-        //            {
-        //            m_value.Clear ();
-        //            m_type = Type::Null;
-        //            }
-        //    };
         private:
             bool m_constraintNotNull : 1;
             bool m_constraintIsUnique : 2;
@@ -626,21 +575,19 @@ struct ECDbSqlTable : NonCopyableClass
     friend std::weak_ptr<ECDbSqlColumn> ECDbSqlColumn::GetWeakPtr () const;
     struct PersistenceManager : NonCopyableClass
         {
-        private:
-            ECDbSqlTable& m_table;
-        public:
-            PersistenceManager (ECDbSqlTable& table)
-                :m_table (table)
-                {
-                }
-            ~PersistenceManager (){}
-            ECDbSqlTable const& GetTable () const{ return m_table; }
-            ECDbSqlTable& GetTableR () { return m_table; }
-            BentleyStatus Syncronize (ECDbR ecdb);
-                
-            BentleyStatus Create (ECDbR ecdb, bool createIndexes);
-            BentleyStatus Drop (ECDbR ecdb);
-            bool Exist (ECDbR ecdb) const;
+    private:
+        ECDbSqlTable& m_table;
+
+        BentleyStatus CreateIndicesAndTriggers(ECDbR, bool failIfExists) const;
+
+    public:
+        explicit PersistenceManager (ECDbSqlTable& table) :m_table (table) {}
+        ~PersistenceManager (){}
+
+        BentleyStatus Create(ECDbR ecdb) const;
+        BentleyStatus CreateOrUpdate(ECDbR ecdb) const;
+        BentleyStatus Drop (ECDbR ecdb) const;
+        bool Exist (ECDbR ecdb) const;
         };
 
     private:
@@ -690,7 +637,6 @@ struct ECDbSqlTable : NonCopyableClass
         EditHandle const& GetEditHandle () const { return m_editInfo; }
         ECDbSqlIndex* CreateIndex (Utf8CP indexName);
         const std::vector<ECDbSqlIndex const*> GetIndexes () const;
-        const std::vector<ECDbSqlIndex*> GetIndexesR ();
         ECDbSqlPrimaryKeyConstraint* GetPrimaryKeyConstraint (bool createIfDonotExist = true);
         ECDbSqlForeignKeyConstraint* CreateForeignKeyConstraint (ECDbSqlTable const& targetTable);
         std::vector<ECDbSqlConstraint const*> GetConstraints () const;   
@@ -713,7 +659,6 @@ struct ECDbSqlTable : NonCopyableClass
         void AddColumnEventHandler (std::function<void (ColumnEvent, ECDbSqlColumn&)> columnEventHandler){ m_columnEvents.push_back(columnEventHandler); }
         std::set<ECN::ECClassId> GetReferences () const;
         PersistenceManager const& GetPersistenceManager () const { return m_persistenceManager; }
-        PersistenceManager& GetPersistenceManagerR () { return m_persistenceManager; }
         bool IsValid () const { return m_columns.size () > 0; }
         size_t IndexOf (ECDbSqlColumn const& column) const
             {
@@ -739,7 +684,8 @@ struct ECDbSqlTrigger : NonCopyableClass
         TriggerSubType m_triggerSubType;
         ECDbSqlTrigger(Utf8CP triggerName, ECDbSqlTable& table, Utf8CP condition, Utf8CP body, TriggerType ecsqlType, TriggerSubType triggerSubType) : m_triggerName(triggerName), m_table(table), m_condition(condition), m_body(body), m_triggerType(ecsqlType), m_triggerSubType(triggerSubType)
             {}
-        ECDbSqlTrigger(ECDbSqlTable& table) ;
+        explicit ECDbSqlTrigger(ECDbSqlTable& table) : m_table(table) {}
+
     public:
         Utf8String GetName()const { return m_triggerName; }
         Utf8String GetCondition()const { return m_condition; }
@@ -748,6 +694,8 @@ struct ECDbSqlTrigger : NonCopyableClass
         TriggerType GetType()const{ return m_triggerType; }
         TriggerSubType GetSubType()const{ return m_triggerSubType; }
 
+        BentleyStatus CreateInDb(ECDbR) const;
+        bool ExistsInDb(ECDbR) const;
     };
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         10/2014
@@ -769,7 +717,7 @@ struct DDLGenerator
         static Utf8String GetColumnDDL (ECDbSqlColumn const& column);
     public:
         static Utf8String GetCreateIndexDDL(ECDbSqlIndex const& index, CreateOption createOption);
-        static Utf8String GetCreateTableDDL (ECDbSqlTable const& table, CreateOption createOption);
+        static Utf8String GetCreateTableDDL(ECDbSqlTable const& table, CreateOption createOption);
         static Utf8String GetCreateTriggerDDL(ECDbSqlTrigger const& trigger);
 
         static Utf8String GetDropTableDDL (ECDbSqlTable const& table)

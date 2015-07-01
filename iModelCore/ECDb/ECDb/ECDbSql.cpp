@@ -234,7 +234,7 @@ ECDbSqlColumn* ECDbSqlTable::CreateColumn (Utf8CP name, ECDbSqlColumn::Type type
     {
     return CreateColumn (name, type, m_orderedColumns.size (), userFlag, persistenceType);
     }
-ECDbSqlTrigger::ECDbSqlTrigger(ECDbSqlTable& table) :m_table(table){}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                          muhammad.zaighum                           01/2015
 //---------------------------------------------------------------------------------------
@@ -247,6 +247,7 @@ BentleyStatus ECDbSqlTable::CreateTrigger(Utf8CP triggerName, ECDbSqlTable& tabl
         }
     return ERROR;
     }
+
 std::vector<const ECDbSqlTrigger*> ECDbSqlTable::GetTriggers()const
     {
     std::vector<const ECDbSqlTrigger*> triggers;
@@ -411,257 +412,183 @@ const std::vector<ECDbSqlIndex const*> ECDbSqlTable::GetIndexes () const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        09/2014
-//---------------------------------------------------------------------------------------
-const std::vector<ECDbSqlIndex*> ECDbSqlTable::GetIndexesR ()
-    {
-    std::vector<ECDbSqlIndex*> indexes;
-    for (auto index : m_dbDef.GetIndexesR ())
-        {
-        if (&index->GetTable () == this)
-            indexes.push_back (index);
-        }
-
-    return indexes;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSqlTable::PersistenceManager::Syncronize (ECDbR ecdb)
+BentleyStatus ECDbSqlTable::PersistenceManager::CreateOrUpdate(ECDbR ecdb) const
     {
-    auto name = GetTable ().GetName ().c_str ();
-    auto type = DbMetaDataHelper::GetObjectType (ecdb, name);
+    auto name = m_table.GetName().c_str();
+    auto type = DbMetaDataHelper::GetObjectType(ecdb, name);
     if (type == DbMetaDataHelper::ObjectType::None)
-        {
-        return Create (ecdb, true);
-        }
+        return Create(ecdb);
 
-    if (GetTable ().GetPersistenceType () == PersistenceType::Virtual)
-        return BentleyStatus::ERROR;
+    if (m_table.GetPersistenceType() == PersistenceType::Virtual)
+        return ERROR;
 
     //! Object type is view and exist in db. Action = DROP it and recreate it.
     if (type == DbMetaDataHelper::ObjectType::View)
         {
-
-        auto r = ecdb.ExecuteSql (SqlPrintfString ("DROP VIEW %s", name));
+        Utf8String sql("DROP VIEW ");
+        sql.append(name);
+        auto r = ecdb.ExecuteSql(sql.c_str());
         if (r != BE_SQLITE_OK)
             {
-            LOG.errorv ("Failed to drop view '%s'", name);
-            return BentleyStatus::ERROR;
+            LOG.errorv("Failed to drop view '%s'", name);
+            return ERROR;
             }
 
-        return Create (ecdb, true);
+        return Create(ecdb);
         }
-    //! Object type is view and exist in db. Action = DROP it and recreate it.
-    if (type == DbMetaDataHelper::ObjectType::Table)
+
+    BeAssert(type == DbMetaDataHelper::ObjectType::Table);
+
+    bvector<Utf8String> existingDbColumns;
+    if (!ecdb.GetColumns(existingDbColumns, name))
         {
-        //Add new columns to table.
-        //Strategies
-        //1. Create backup of table and drop the main table. Then recreat it and re-insert data in it.
-        //2. Add new columns and indexes on then table.
-        //Here we are going with 2. Though 1. is far better solution.
-        //ALTER /rename
-        //Process NEW Columns add to db.
+        BeAssert(false && "Failed to get column list for table");
+        return ERROR;
+        }
 
-        bvector<Utf8String> existingDbColumns;
-        if (!ecdb.GetColumns (existingDbColumns, name))
+    //Create a fast hash set of existing db column list
+    std::set<Utf8String> existingColumnSet;
+    for (auto& existingDbColumn : existingDbColumns)
+        {
+        existingColumnSet.insert(existingDbColumn);
+        }
+
+    //Create a fast hash set of in-memory column list;
+    std::vector<ECDbSqlColumn const*>  persistedColumns;
+    m_table.GetFilteredColumnList(persistedColumns, PersistenceType::Persisted);
+
+    std::map<Utf8CP, ECDbSqlColumn const*, CompareIUtf8> modifiedColumnSet;
+
+    for (auto column : persistedColumns)
+        {
+        modifiedColumnSet[column->GetName().c_str()] = column;
+        }
+
+    std::vector<Utf8CP> newColumns;
+    //compute new columns;
+    for (auto const& modifiedColumn : modifiedColumnSet)
+        {
+        if (existingColumnSet.find(modifiedColumn.first) == existingColumnSet.end())
+            newColumns.push_back(modifiedColumn.first);
+        }
+
+    for (auto const& existingDbColumn : existingDbColumns)
+        {
+        if (modifiedColumnSet.find(existingDbColumn.c_str()) == modifiedColumnSet.end())
             {
-            LOG.errorv ("Failed to get column list for table %s", name);
-            BeAssert (false && "Failed to get column list for table");
-            return BentleyStatus::ERROR;
-            }
-
-        //Create a fast hash set of existing db column list
-        std::set<Utf8String> existingColumnSet;
-        for (auto& existingDbColumn : existingDbColumns)
-            {
-            existingColumnSet.insert (existingDbColumn);
-            }
-
-        //Create a fast hash set of in-memory column list;
-        std::vector<ECDbSqlColumn const*>  persistedColumns;
-        GetTable ().GetFilteredColumnList (persistedColumns, PersistenceType::Persisted);
-
-        std::map<Utf8CP, ECDbSqlColumn const*, CompareIUtf8> modifiedColumnSet;
-
-        for (auto column : persistedColumns)
-            {
-            modifiedColumnSet[column->GetName ().c_str ()] = column;
-            }
-
-        std::vector<Utf8CP> newColumns;
-        //compute new columns;
-        for (auto const& modifiedColumn : modifiedColumnSet)
-            {
-            if (existingColumnSet.find (modifiedColumn.first) == existingColumnSet.end ())
-                newColumns.push_back (modifiedColumn.first);
-            }
-
-        std::vector<Utf8String> deleteColumns;
-        //compute deleted columns;
-        for (auto const& existingDbColumn : existingDbColumns)
-            {
-            if (modifiedColumnSet.find (existingDbColumn.c_str ()) == modifiedColumnSet.end ())
-                deleteColumns.push_back (existingDbColumn);
-            }
-
-        //If we do not have any deleted column then we do not need the complicated operation of recreating table
-        if (deleteColumns.empty ())
-            {
-            return DDLGenerator::AddColumns (GetTable (), newColumns, ecdb);
-            }
-        else
-            {
-            //Recreate the table and move rows to it.
-            // get rid of indexes. NONE UNIQUE index are global and need to be remove so new table is create without a error
-            for (auto index : GetTableR ().GetIndexesR ())
-                {
-                auto type = DbMetaDataHelper::GetObjectType (ecdb, index->GetName ().c_str ());
-                if (type == DbMetaDataHelper::ObjectType::Index)
-                    {
-                    if (index->Drop () != BentleyStatus::SUCCESS)
-                        {
-                        LOG.errorv ("Failed to drop index %s on table %s", index->GetName ().c_str (), name);
-                        BeAssert (false && "Failed to drop  index");
-                        }
-                    }
-                }
-
-            Utf8String workingTableName = "temp_ecdb_" + GetTable ().GetName ();
-            if (!ecdb.RenameTable (name, workingTableName.c_str ()))
-                {
-                LOG.errorv ("Failed to rename table %s to %s", name, workingTableName.c_str ());
-                BeAssert (false && "Failed to rename the table");
-                return BentleyStatus::ERROR;
-                }
-
-            auto status = Create (ecdb, true);
-            if (status != SUCCESS)
-                {
-                LOG.errorv ("Failed to create table %s", name);
-                BeAssert (false && "Failed to create table");
-                return BentleyStatus::ERROR;
-                }
-
-            bvector<Utf8String> columnList;
-            if (!ecdb.GetColumns (columnList, name))
-                {
-                LOG.errorv ("Failed to get column list for table %s", name);
-                BeAssert (false && "Failed to get column list for table");
-                return BentleyStatus::ERROR;
-                }
-
-            columnList.erase (
-                std::remove_if (columnList.begin (), columnList.end (),
-                [&] (const Utf8String& v)
-                {
-                for (auto const& col : newColumns)
-                    {
-                    if (v.EqualsI (col))
-                        return true;
-                    };
-                return false;
-                }
-            ), columnList.end ());
-
-            //Remove new columns from the list
-            if (DDLGenerator::CopyRows (ecdb, workingTableName.c_str (), columnList, name, columnList) != BentleyStatus::SUCCESS)
-                {
-                LOG.errorv ("Failed to copy rows from %s to %s", workingTableName.c_str (), name);
-                BeAssert (false && "Failed to copy rows");
-                return BentleyStatus::ERROR;
-                }
-
-            auto statusr = ecdb.DropTable (workingTableName.c_str ());
-            if (statusr != BE_SQLITE_OK)
-                {
-                LOG.errorv ("Failed to drop temprory working table %s", workingTableName.c_str ());
-                BeAssert (false && "Failed to drop temprory working table ");
-                return BentleyStatus::ERROR;
-                }
+            BeAssert(false && "This can only happen during schema upgrade which ECDb doesn't support yet in 06 at all. So code should never end up here.");
+            return ERROR;
             }
         }
 
-    return BentleyStatus::SUCCESS;
+    if (SUCCESS != DDLGenerator::AddColumns(m_table, newColumns, ecdb))
+        return ERROR;
+
+    return CreateIndicesAndTriggers(ecdb, false);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSqlTable::PersistenceManager::Create (ECDbR ecdb, bool createIndexes)
+BentleyStatus ECDbSqlTable::PersistenceManager::Create(ECDbR ecdb) const
     {
-    ECDbSqlTable const& table = GetTable();
-    if (!table.IsValid())
+    if (!m_table.IsValid())
         {
-        BeAssert (false && "Table definition is not valid");
-        return BentleyStatus::ERROR;
+        BeAssert(false && "Table definition is not valid");
+        return ERROR;
         }
 
-    //if (Exist (ecdb))
-    //    {
-    //    BeAssert (false && "Table already exists");
-    //    return BentleyStatus::ERROR;
-    //    }
+    auto sql = DDLGenerator::GetCreateTableDDL(m_table, DDLGenerator::CreateOption::Create);
+    if (ecdb.ExecuteSql(sql.c_str()) != BE_SQLITE_OK)
+        return ERROR;
 
-    auto sql = DDLGenerator::GetCreateTableDDL(table, DDLGenerator::CreateOption::Create);
-    if (ecdb.ExecuteSql (sql.c_str ()) != BE_SQLITE_OK)
-        return BentleyStatus::ERROR;
-
-    if (createIndexes)
+    for (ECDbSqlIndex const* index : m_table.GetIndexes())
         {
-        for (auto index : GetTableR ().GetIndexesR ())
+        if (index->GetPersistenceManager().Create(ecdb) != BentleyStatus::SUCCESS)
             {
-            if (index->GetPersistenceManagerR().Create(ecdb) != BentleyStatus::SUCCESS)
+            BeAssert(false && "Failed to create index");
+            return ERROR;
+            }
+        }
+    for (ECDbSqlTrigger const* trigger : m_table.GetTriggers())
+        {
+        if (SUCCESS != trigger->CreateInDb(ecdb))
+            {
+            BeAssert(false && "Failed to create trigger");
+            return ERROR;
+            }
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle    06/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus ECDbSqlTable::PersistenceManager::CreateIndicesAndTriggers(ECDbR ecdb, bool failIfExists) const
+    {
+    for (ECDbSqlIndex const* index : m_table.GetIndexes())
+        {
+        ECDbSqlIndex::PersistenceManager const& persManager = index->GetPersistenceManager();
+        if (persManager.Exists(ecdb))
+            {
+            if (failIfExists)
                 {
-                BeAssert (false && "Failed to create index");
-                return BentleyStatus::ERROR;
+                LOG.errorv("Index %s already exists on table %s.", index->GetName().c_str(), m_table.GetName().c_str());
+                return ERROR;
                 }
+
+            continue;
             }
-        for (auto trigger : table.GetTriggers())
-            {
-            auto sql = DDLGenerator::GetCreateTriggerDDL(*trigger);
-            if (ecdb.ExecuteSql(sql.c_str()) != BE_SQLITE_OK)
-                return BentleyStatus::ERROR;
-            }
+
+        if (persManager.Create(ecdb) != SUCCESS)
+            return ERROR;
         }
 
-    return BentleyStatus::SUCCESS;
+    for (ECDbSqlTrigger const* trigger : m_table.GetTriggers())
+        {
+        if (trigger->ExistsInDb(ecdb))
+            {
+            if (failIfExists)
+                {
+                LOG.errorv("Trigger %s already exists on table %s.", trigger->GetName().c_str(), m_table.GetName().c_str());
+                return ERROR;
+                }
+
+            continue;
+            }
+
+        if (SUCCESS != trigger->CreateInDb(ecdb))
+            return ERROR;
+        }
+
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSqlTable::PersistenceManager::Drop (ECDbR ecdb)
+BentleyStatus ECDbSqlTable::PersistenceManager::Drop (ECDbR ecdb) const
     {
-    if (!GetTable ().IsValid ())
+    if (!m_table.IsValid())
         {
         BeAssert (false && "Table definition is not valid");
-        return BentleyStatus::ERROR;
+        return ERROR;
         }
 
-    //if (Exist (ecdb))
-    //    {
-    //    BeAssert (false && "Table already exists");
-    //    return BentleyStatus::ERROR;
-    //    }
-
-    for (auto index : GetTableR ().GetIndexesR ())
+    for (ECDbSqlIndex const* index : m_table.GetIndexes())
         {
-        if (index->GetPersistenceManagerR ().Drop (ecdb) != BentleyStatus::SUCCESS)
+        if (index->GetPersistenceManager ().Drop (ecdb) != BentleyStatus::SUCCESS)
             {
             BeAssert (false && "Failed to drop index");
-            return BentleyStatus::ERROR;
+            return ERROR;
             }
         }
 
-    auto sql = DDLGenerator::GetDropTableDDL (GetTable ());
-    if (ecdb.ExecuteSql (sql.c_str ()) != BE_SQLITE_OK)
-        return BentleyStatus::ERROR;
-
-
-
-    return BentleyStatus::SUCCESS;
+    Utf8String sql = DDLGenerator::GetDropTableDDL (m_table);
+    return BE_SQLITE_OK == ecdb.ExecuteSql(sql.c_str()) ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------
@@ -669,7 +596,7 @@ BentleyStatus ECDbSqlTable::PersistenceManager::Drop (ECDbR ecdb)
 //---------------------------------------------------------------------------------------
 bool ECDbSqlTable::PersistenceManager::Exist (ECDbR ecdb) const
     {
-    return ecdb.TableExists (GetTable ().GetName ().c_str ());
+    return ecdb.TableExists (m_table.GetName ().c_str ());
     }
 
 
@@ -1305,7 +1232,7 @@ void ECDbSqlIndex::SetIsUnique (bool isUnique)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSqlIndex::Drop ()
+BentleyStatus ECDbSqlIndex::Drop()
     {
     if (GetTableR ().GetEditHandleR ().AssertNotInEditMode ())
         return BentleyStatus::ERROR;
@@ -1316,7 +1243,7 @@ BentleyStatus ECDbSqlIndex::Drop ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSqlIndex::PersistenceManager::Create(ECDbR ecdb)
+BentleyStatus ECDbSqlIndex::PersistenceManager::Create(ECDbR ecdb) const
     {
     if (!GetIndex().IsValid())
         {
@@ -1331,7 +1258,9 @@ BentleyStatus ECDbSqlIndex::PersistenceManager::Create(ECDbR ecdb)
     auto sql = DDLGenerator::GetCreateIndexDDL(GetIndex(), DDLGenerator::CreateOption::Create);
     if (ecdb.ExecuteSql (sql.c_str ()) != BE_SQLITE_OK)
         {
-        BeAssert (false && "Failed to create index");
+        LOG.errorv("Failed to create index %s on table %s. Error: %s", m_index.GetName().c_str(), m_index.GetTable().GetName().c_str(),
+                   ecdb.GetLastError());
+        BeAssert(false && "Failed to create index");
         return BentleyStatus::ERROR;
         }
 
@@ -1341,15 +1270,9 @@ BentleyStatus ECDbSqlIndex::PersistenceManager::Create(ECDbR ecdb)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSqlIndex::PersistenceManager::Drop (ECDbR ecdb)
+BentleyStatus ECDbSqlIndex::PersistenceManager::Drop (ECDbR ecdb) const
     {
-    //if (!Exist (ecdb))
-    //    {
-    //    BeAssert (false && "Failed to find the index");
-    //    return BentleyStatus::ERROR;
-    //    }
-
-    auto sql = DDLGenerator::GetDropIndexDDL (GetIndex ());
+    Utf8String sql = DDLGenerator::GetDropIndexDDL (GetIndex ());
     if (ecdb.ExecuteSql (sql.c_str ()) != BE_SQLITE_OK)
         {
         BeAssert (false && "Failed to create index");
@@ -1362,7 +1285,7 @@ BentleyStatus ECDbSqlIndex::PersistenceManager::Drop (ECDbR ecdb)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  05/2015
 //---------------------------------------------------------------------------------------
-void ECDbSqlIndex::PersistenceManager::EvaluateClassIdWhereExp(ECDbR ecdb)
+void ECDbSqlIndex::PersistenceManager::EvaluateClassIdWhereExp(ECDbR ecdb) const
     {
     BeAssert(ecdb.GetECDbImplR().GetECDbMap().IsMapping());
     ECDbMap::MapContext const* mapContext = ecdb.GetECDbImplR().GetECDbMap().GetMapContext();
@@ -1388,11 +1311,50 @@ void ECDbSqlIndex::PersistenceManager::EvaluateClassIdWhereExp(ECDbR ecdb)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
-bool ECDbSqlIndex::PersistenceManager::Exist (ECDbR ecdb) const
+bool ECDbSqlIndex::PersistenceManager::Exists (ECDbR ecdb) const
     {
-    Statement stmt;
-    stmt.Prepare (ecdb, SqlPrintfString ("select COUNT(*) from sqlite_master WHERE type = 'index' and name = '%s'", GetIndex ().GetName ().c_str ()));
-    return stmt.GetValueInt (0) == 1;
+    CachedStatementPtr stmt = nullptr;
+    if (BE_SQLITE_OK != ecdb.GetCachedStatement(stmt, "select NULL from sqlite_master WHERE type='index' and name=?"))
+        {
+        BeAssert(false);
+        return false;
+        }
+
+    stmt->BindText(1, m_index.GetName().c_str(), Statement::MakeCopy::No);
+    return BE_SQLITE_ROW == stmt->Step();
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+BentleyStatus ECDbSqlTrigger::CreateInDb (ECDbR ecdb) const
+    {
+    Utf8String sql = DDLGenerator::GetCreateTriggerDDL(*this);
+    if (ecdb.ExecuteSql(sql.c_str()) != BE_SQLITE_OK)
+        {
+        LOG.errorv("Failed to create trigger %s on table %s. Error: %s", m_triggerName.c_str(), m_table.GetName().c_str(),
+                   ecdb.GetLastError());
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+bool ECDbSqlTrigger::ExistsInDb(ECDbR ecdb) const
+    {
+    CachedStatementPtr stmt = nullptr;
+    if (BE_SQLITE_OK != ecdb.GetCachedStatement(stmt, "select NULL from sqlite_master WHERE type='trigger' and name=?"))
+        {
+        BeAssert(false);
+        return false;
+        }
+
+    stmt->BindText(1, GetName().c_str(), Statement::MakeCopy::No);
+    return BE_SQLITE_ROW == stmt->Step();
     }
 
 //****************************************************************************************

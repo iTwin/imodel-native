@@ -656,12 +656,6 @@ TEST (FieldEngineer, CircularReferences)
     ASSERT_TRUE (InsertInstance (ecDb, *managerRelClass, *managerRel));
     managerRel = CreateRelationship (*managerRelClass, *manager2, *manager3);
     ASSERT_TRUE (InsertInstance (ecDb, *managerRelClass, *managerRel));
-    managerRel = CreateRelationship (*managerRelClass, *manager3, *manager2);
-    ASSERT_TRUE (InsertInstance (ecDb, *managerRelClass, *managerRel));
-    managerRel = CreateRelationship (*managerRelClass, *manager1, *manager3);
-    ASSERT_TRUE (InsertInstance (ecDb, *managerRelClass, *managerRel));
-    managerRel = CreateRelationship (*managerRelClass, *manager3, *manager1);
-    ASSERT_TRUE (InsertInstance (ecDb, *managerRelClass, *managerRel));
 
     ECSqlStatement statement;
     ECSqlStatus prepareStatus = statement.Prepare (ecDb, "SELECT ECInstanceId FROM SimpleCompany.Manager WHERE FirstName = 'ImBig'"); 
@@ -680,7 +674,7 @@ TEST (FieldEngineer, CircularReferences)
     instanceFinder.FindInstances (instanceKeyMap, seedInstanceKeyMap, ECInstanceFinder::FindOptions (ECInstanceFinder::RelatedDirection_Referencing, 0));
     ASSERT_EQ (1, (int) instanceKeyMap.size());
     instanceFinder.FindInstances (instanceKeyMap, seedInstanceKeyMap, ECInstanceFinder::FindOptions (ECInstanceFinder::RelatedDirection_Referencing, 1));
-    ASSERT_EQ (3, (int) instanceKeyMap.size());
+    ASSERT_EQ (2, (int) instanceKeyMap.size());
     instanceFinder.FindInstances (instanceKeyMap, seedInstanceKeyMap, ECInstanceFinder::FindOptions (ECInstanceFinder::RelatedDirection_Referencing, UINT8_MAX));
     ASSERT_EQ (3, (int) instanceKeyMap.size());
 
