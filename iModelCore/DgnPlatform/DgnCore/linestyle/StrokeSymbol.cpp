@@ -25,6 +25,7 @@ LsSymbolReference::RotationMode LsSymbolReference::GetRotationMode () const
     return  ROTATE_Relative;
     }
 
+#if defined(NOTNOW)
 //---------------------------------------------------------------------------------------
 // calculate the "maximum offset from the origin" for this XGraphics container
 // @bsimethod                                                   John.Gooding    06/2015
@@ -32,7 +33,7 @@ LsSymbolReference::RotationMode LsSymbolReference::GetRotationMode () const
 static double getXGraphicsMaxOffset (Byte const*xGraphicsData, int32_t xGraphicsSize, DgnModelR dgnModel, double angle)
     {
     Transform transform;
-    transform.initFromPrincipleAxisRotations(NULL, 0.0, 0.0, angle);
+    transform.InitFromPrincipleAxisRotations(Transform::FromIdentity(), 0.0, 0.0, angle);
     DRange3d        range;
 
     XGraphicsContainer::CalculateRange(range, xGraphicsData, xGraphicsSize, dgnModel, transform);
@@ -51,7 +52,8 @@ static double getXGraphicsMaxOffset (Byte const*xGraphicsData, int32_t xGraphics
 
     return maxWidth;
     }
-
+#endif
+    
 #if defined (NEEDSWORK_DGNITEM)
     /*---------------------------------------------------------------------------------**//**
     * calculate the "maximum offset from the origin" for this element descriptor chain.
