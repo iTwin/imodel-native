@@ -369,6 +369,7 @@ void    LineStyleSymb::CheckContinuationData ()
         }
     }
 
+static bool s_allowLineStyles = false;  //  LINESTYLES_DISABLED
 /*---------------------------------------------------------------------------------**//**
 * see whether this element should be drawn with a custom linestyle.
 * @return the hardware linestyle to be used.
@@ -382,12 +383,15 @@ DPoint3dCP          startTangent,
 DPoint3dCP          endTangent
 )
     {
-    if (nullptr == styleInfo)
+    if (nullptr == styleInfo || !s_allowLineStyles)
         return 0;
 
-    //  NOTNOW LINESTYLES_NEEDSWORK -- unclear what will happen to the magic values.  For now, avoid any collision with them.
+#if defined(LINESTYLES_NEEDSWORK) //   -- unclear what will happen to the magic values.  For now, avoid any collision with them.
     if (IS_LINECODE (styleInfo->GetStyleId().GetValueUnchecked()))
-        return 0; //  styleNo;
+#else
+    if (styleInfo->GetStyleId().GetValueUnchecked() == 0)
+#endif
+          return 0; //  styleNo;
 
     LsCacheP lsCache = LsCache::GetDgnDbCache(context.GetDgnDb ());
     LsDefinitionP   nameRec = lsCache->GetLineStyleP(styleInfo->GetStyleId());

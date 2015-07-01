@@ -1239,6 +1239,21 @@ void ElementGeomIO::Writer::Append (ElemDisplayParamsCR elParams)
         Append (Operation (OpCode::BasicSymbology, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
         }
 
+#if !defined(LINESTYLES_DISABLED)
+    if (elParams.GetLineStyle() != nullptr)
+        {
+        LineStyleInfoCP lsInfo = elParams.GetLineStyle();
+        FlatBufferBuilder fbb;
+
+        auto mloc = FB::CreateLineStyle (fbb, lsInfo->GetStyleId().GetValue());
+
+        fbb.Finish (mloc);
+        Append (Operation (OpCode::LineStyle, (uint32_t) fbb.GetSize(), fbb.GetBufferPointer()));
+
+        //  NEEDSWORK_LINESTYLES -- dump the modifiers if lsInfo->GetStyleParams != NULL
+        }
+#endif
+
     if (FillDisplay::Never != elParams.GetFillDisplay())
         {
         FlatBufferBuilder fbb;
@@ -1674,6 +1689,17 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, ElemDisplayParamsR elPar
                     elParams.SetGradient(gradientPtr.get());
                     }
                 }
+            break;
+            }
+
+        case OpCode::LineStyle:
+            {
+            auto ppfb = flatbuffers::GetRoot<FB::LineStyle>(egOp.m_data);
+
+            DgnStyleId styleId(ppfb->lineStyleId());
+            LineStyleInfoPtr    lsInfo = LineStyleInfo::Create(styleId, nullptr);
+            elParams.SetLineStyle(lsInfo.get());
+            changed = true;
             break;
             }
 
