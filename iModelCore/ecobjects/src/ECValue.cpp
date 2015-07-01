@@ -2463,8 +2463,12 @@ static ECClassCP getStructArrayClass (ECClassCR enablerClass, WCharCP propertyNa
     if (!propertyP)
         return NULL;
 
-    auto arrayProp = propertyP->GetAsArrayProperty();
-    return nullptr != arrayProp ? arrayProp->GetStructElementType() : nullptr;
+    if (auto structProperty = propertyP->GetAsStructProperty ())
+        return &structProperty->GetType ();
+    else if (auto arrayProp = propertyP->GetAsArrayProperty ())
+        return arrayProp->GetStructElementType ();
+
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
