@@ -104,6 +104,8 @@ public:
     std::vector<ECN::ECClassCP> GetClassesFromRelationshipEnd (ECN::ECRelationshipConstraintCR relationshipEnd) const;
     size_t                      GetTablesFromRelationshipEnd (bset<ECDbSqlTable*>* tables, ECN::ECRelationshipConstraintCR relationshipEnd) const;
     void                        ClearCache();
+    ClassMapCP GetClassMap (ECN::ECClassId ecClassId);
+    RelationshipClassMapCP GetRelationshipClassMap (ECN::ECClassId ecRelationshipClassId);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

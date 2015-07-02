@@ -126,14 +126,23 @@ bool IClassMap::ContainsPropertyMapToTable () const
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2015
 //------------------------------------------------------------------------------------------
-StorageDescription const& IClassMap::GetStorageDescription() const
+StorageDescription const& IClassMap::GetStorageDescription (bool recalculate) const
     {
-    if (m_storageDescription == nullptr)
+    if (m_storageDescription == nullptr || recalculate)
         m_storageDescription = StorageDescription::Create(*this);
 
     return *m_storageDescription;
     }
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       05 / 2015
+//------------------------------------------------------------------------------------------
+StorageDescription const& IClassMap::GetStorageDescription (std::map <ECDbSqlTable const*, std::vector<ECN::ECClassId>> const& tables, std::map<ECDbSqlTable const*, std::vector<ECN::ECClassId>> const& derivedClassPerTable, bool recalculate) const
+    {
+    if (m_storageDescription == nullptr || recalculate)
+        m_storageDescription = StorageDescription::Create (GetClass ().GetId (), tables, derivedClassPerTable);
 
+    return *m_storageDescription;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2014
 //---------------------------------------------------------------------------------------
@@ -1508,37 +1517,38 @@ std::unique_ptr<StorageDescription> StorageDescription::Create (IClassMap const&
     {
     Utf8CP const findClassesMappedToPartitionSql =
         "WITH RECURSIVE "
-        "DerivedClassList(RootClassId, CurrentClassId, DerivedClassId) "
-        "AS ("
-        "SELECT Id, Id, Id FROM ec_Class "
-        "UNION "
-        "SELECT RootClassId,  BC.BaseClassId, BC.ClassId "
-        "FROM DerivedClassList DCL "
-        "LEFT OUTER JOIN ec_BaseClass BC ON BC.BaseClassId = DCL.DerivedClassId"
-        "),"
-        "TableMapInfo "
-        "AS ("
-        "SELECT DISTINCT ec_Class.Id ClassId, ec_Table.Name TableName, ec_Table.Id TableId "
-        "FROM ec_PropertyMap "
-        "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId "
-        "JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
-        "JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
-        "JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
-        "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId"
-        ") "
+        "   DerivedClassList(RootClassId, CurrentClassId, DerivedClassId) "
+        "   AS ("
+        "       VALUES (?1, ?1, ?1) "
+        "   UNION "
+        "       SELECT RootClassId,  BC.BaseClassId, BC.ClassId "
+        "           FROM DerivedClassList DCL "
+        "       INNER JOIN ec_BaseClass BC ON BC.BaseClassId = DCL.DerivedClassId"
+        "   ),"
+        "   TableMapInfo "
+        "   AS ("
+        "   SELECT DISTINCT ec_Class.Id ClassId, ec_Table.Name TableName, ec_Table.Id TableId "
+        "   FROM ec_PropertyMap "
+        "       JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND ec_Column.UserData != 2"
+        "       JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
+        "       JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
+        "       JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
+        "       JOIN ec_Table ON ec_Table.Id = ec_Column.TableId"
+        "   WHERE ec_ClassMap.MapStrategy NOT IN( 0x2000, 0x4000)"
+        "   ) "
         "SELECT DCL.DerivedClassId, TMI.TableId, TMI.TableName FROM DerivedClassList DCL "
-        "INNER JOIN TableMapInfo TMI ON TMI.ClassId = DCL.DerivedClassId "
-        "WHERE DCL.CurrentClassId IS NOT NULL AND DCL.RootClassId = ?";
+        "   INNER JOIN TableMapInfo TMI ON TMI.ClassId = DCL.DerivedClassId "
+        "   WHERE DCL.CurrentClassId IS NOT NULL AND DCL.RootClassId = ?1";
 
     Utf8CP const findAllClassesMappedToTableSql =
         "SELECT DISTINCT ec_Class.Id "
         "FROM ec_PropertyMap "
-        "JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId "
-        "JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
-        "JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
-        "JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
-        "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-        "WHERE ec_Table.Name = ? ORDER BY ec_Class.Id";
+        "   JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND ec_Column.UserData != 2"
+        "   JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
+        "   JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
+        "   JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId "
+        "   JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
+        "WHERE ec_ClassMap.MapStrategy NOT IN(0x2000, 0x4000) AND ec_Table.Name = ? ORDER BY ec_Class.Id";
 
     auto& ecdb = classMap.GetECDbMap().GetECDbR();
     ECClassId classId = classMap.GetClass().GetId();
@@ -1608,7 +1618,31 @@ std::unique_ptr<StorageDescription> StorageDescription::Create (IClassMap const&
 
     return std::move(storageDescription);
     }
+    
+std::unique_ptr<StorageDescription> StorageDescription::Create (ECN::ECClassId thisClassId, std::map <ECDbSqlTable const*, std::vector<ECN::ECClassId>> const& tables, std::map < ECDbSqlTable const*, std::vector<ECN::ECClassId>> const& derivedClassPerTable)
+    {
+    auto storageDescription = std::unique_ptr<StorageDescription> (new StorageDescription (thisClassId));
+    for (auto& kp : derivedClassPerTable)
+        {
+        auto table = kp.first;
+       
+        auto& deriveClassList = kp.second;
+        if (deriveClassList.empty ())
+            continue;
 
+        auto id = storageDescription->AddHorizontalPartition (*table, deriveClassList.front () == thisClassId);
+        auto hp = storageDescription->GetHorizontalPartitionP (id);
+        for (auto ecClassId : deriveClassList)
+            {
+            hp->AddClassId (ecClassId);
+            }
+
+        auto itor = tables.find (table);
+        hp->GenerateClassIdFilter (itor->second);
+        }
+   
+    return std::move (storageDescription);
+    }
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    05 / 2015
 //------------------------------------------------------------------------------------------
@@ -1700,7 +1734,7 @@ void HorizontalPartition::GenerateClassIdFilter(std::vector<ECN::ECClassId> cons
     {
     BeAssert(!m_partitionClassIds.empty());
     m_hasInversedPartitionClassIds = m_partitionClassIds.size() > tableClassIds.size() / 2;
-    if (!m_hasInversedPartitionClassIds || m_partitionClassIds.size() == tableClassIds.size())
+    if (m_partitionClassIds.size() == tableClassIds.size())
         return;
     
     //tableClassIds list is already sorted
@@ -1725,7 +1759,7 @@ bool HorizontalPartition::NeedsClassIdFilter() const
     //If class ids are not inversed, we always have a non-empty partition class id list. So filtering is needed.
     //if class ids are inversed, filtering is needed if the inversed list is not empty. If it is empty, it means
     //don't filter at all -> consider all class ids
-    return !m_hasInversedPartitionClassIds || !m_inversedPartitionClassIds.empty();
+    return !m_inversedPartitionClassIds.empty();
     }
 
 //------------------------------------------------------------------------------------------

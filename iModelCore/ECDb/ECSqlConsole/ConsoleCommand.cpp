@@ -842,7 +842,8 @@ void PopulateCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> cons
         };
 
     RandomECInstanceGenerator rig(classList);
-    auto status = rig.Generate();
+    auto status = rig.Generate (true);
+
     if (status != BentleyStatus::SUCCESS)
         {
         Console::WriteErrorLine("Failed to generate random instances.");
@@ -860,6 +861,10 @@ void PopulateCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> cons
             Savepoint savepoint(ecdb, "Populate");
             ECInstanceKey instanceKey;
             auto insertStatus = inserter.Insert(instanceKey, *instance);
+            WChar id[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH] = L"";
+            ECInstanceIdHelper::ToString (id, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, instanceKey.GetECInstanceId ());
+            instance->SetInstanceId (id);
+
             if (insertStatus != SUCCESS)
                 {
                 Console::WriteErrorLine("Could not insert ECInstance of ECClass %s into ECDb file.", Utf8String(ecClass->GetFullName()).c_str());

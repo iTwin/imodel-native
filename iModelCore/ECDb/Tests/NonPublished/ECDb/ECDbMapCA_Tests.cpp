@@ -1065,4 +1065,81 @@ TEST_F (ECDbMapCATests, TestStructClassInTablePerHierarchy)
 
     db.CloseDb ();
     }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Muhammad Hassan                  07/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (ECDbMapCATests, RetrieveConstraintClassInstanceBeforeAfterInsertingRelationshipInstance)
+    {
+    ECDbTestProject testproject;
+    ECDbR ecdb = testproject.Create ("RelationshipsWithTablePerHierarchy.ecdb", L"TablePerHierarchy.01.00.ecschema.xml", false);
+
+    ASSERT_TRUE (ecdb.TableExists ("tph_TPHOwnsTPH"));
+    ASSERT_FALSE (ecdb.TableExists ("tph_TPHhasClassA"));
+    ASSERT_FALSE (ecdb.TableExists ("tph_TPHhasClassB"));
+
+    ECSqlStatement insertStatement;
+    ECInstanceKey TPHKey1;
+    ECInstanceKey TPHKey2;
+    ASSERT_EQ (ECSqlStatus::Success, insertStatement.Prepare (ecdb, "INSERT INTO tph.TPH (TPH) VALUES ('tph_string1')"));
+    ASSERT_EQ (ECSqlStepStatus::Done, insertStatement.Step (TPHKey1));
+    ASSERT_TRUE (TPHKey1.IsValid ());
+    insertStatement.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, insertStatement.Prepare (ecdb, "INSERT INTO tph.TPH (TPH) VALUES ('tph_string2')"));
+    ASSERT_EQ (ECSqlStepStatus::Done, insertStatement.Step (TPHKey2));
+    ASSERT_TRUE (TPHKey2.IsValid ());
+    insertStatement.Finalize ();
+
+    ECInstanceKey classAKey1;
+    ECInstanceKey classAKey2;
+    ASSERT_EQ (ECSqlStatus::Success, insertStatement.Prepare (ecdb, "INSERT INTO tph.ClassA (ClassA) VALUES ('ClassA_string1')"));
+    ASSERT_EQ (ECSqlStepStatus::Done, insertStatement.Step (classAKey1));
+    ASSERT_TRUE (classAKey1.IsValid ());
+    insertStatement.Finalize ();
+
+    ASSERT_EQ (ECSqlStatus::Success, insertStatement.Prepare (ecdb, "INSERT INTO tph.ClassA (ClassA) VALUES ('ClassA_string2')"));
+    ASSERT_EQ (ECSqlStepStatus::Done, insertStatement.Step (classAKey2));
+    ASSERT_TRUE (classAKey2.IsValid ());
+    insertStatement.Finalize ();
+
+    //retrieve ECInstance from Db before inserting Relationship Instance, based on ECInstanceId, verify ECInstance is valid
+    ECSqlStatement selectStmt;
+    ASSERT_EQ (ECSqlStatus::Success, selectStmt.Prepare (ecdb, "SELECT * FROM tph.TPH WHERE ECInstanceId = ?"));
+    selectStmt.BindId (1, TPHKey1.GetECInstanceId ());
+    ASSERT_EQ (ECSqlStepStatus::HasRow, selectStmt.Step ());
+    ECInstanceECSqlSelectAdapter TPHadapter (selectStmt);
+    IECInstancePtr readInstance = TPHadapter.GetInstance ();
+    ASSERT_TRUE (readInstance.IsValid ());
+    selectStmt.Finalize ();
+
+    ECSqlStatement relationStmt;
+    ASSERT_EQ (relationStmt.Prepare (ecdb, "INSERT INTO tph.TPHhasClassA (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"), ECSqlStatus::Success);
+    relationStmt.BindId (1, TPHKey1.GetECInstanceId ());
+    relationStmt.BindInt64 (2, TPHKey1.GetECClassId ());
+    relationStmt.BindId (3, classAKey1.GetECInstanceId ());
+    relationStmt.BindInt64 (4, classAKey1.GetECClassId ());
+    ASSERT_EQ (relationStmt.Step (), ECSqlStepStatus::Done);
+    relationStmt.Finalize ();
+
+    //try to insert Duplicate relationship step() should return error
+    ASSERT_EQ (relationStmt.Prepare (ecdb, "INSERT INTO tph.TPHhasClassA (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)"), ECSqlStatus::Success);
+    relationStmt.BindId (1, TPHKey1.GetECInstanceId ());
+    relationStmt.BindInt64 (2, TPHKey1.GetECClassId ());
+    relationStmt.BindId (3, classAKey1.GetECInstanceId ());
+    relationStmt.BindInt64 (4, classAKey1.GetECClassId ());
+    ASSERT_EQ (relationStmt.Step (), ECSqlStepStatus::Error);
+    relationStmt.Finalize ();
+
+    //retrieve ECInstance from Db After Inserting Relationship Instance, based on ECInstanceId, verify ECInstance is valid
+    ASSERT_EQ (ECSqlStatus::Success, selectStmt.Prepare (ecdb, "SELECT * FROM tph.ClassA WHERE ECInstanceId = ?"));
+    selectStmt.BindId (1, classAKey1.GetECInstanceId ());
+    ASSERT_EQ (ECSqlStepStatus::HasRow, selectStmt.Step ());
+    ECInstanceECSqlSelectAdapter ClassAadapter (selectStmt);
+    readInstance = ClassAadapter.GetInstance ();
+    ASSERT_TRUE (readInstance.IsValid ());
+    selectStmt.Finalize ();
+
+    ecdb.CloseDb ();
+    }
 END_ECDBUNITTESTS_NAMESPACE

@@ -106,7 +106,7 @@ public:
     NativeSqlBuilder& AppendDot ();
     NativeSqlBuilder& AppendParenLeft ();
     NativeSqlBuilder& AppendParenRight ();
-
+    NativeSqlBuilder& AppendEOL () { return Append ("\r\n"); }
     bool IsEmpty () const;
     Utf8CP ToString () const;
 
