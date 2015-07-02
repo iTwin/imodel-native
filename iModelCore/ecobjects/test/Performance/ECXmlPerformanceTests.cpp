@@ -97,7 +97,7 @@ ECSchemaReadContextPtr   schemaContext
 
     bmap<Utf8String, double> results;
     Utf8String readingString;
-    readingString.Sprintf("Reading instance from class: %ls:%ls\n", schema->GetFullSchemaName().c_str(), testInstance->GetClass().GetName().c_str());
+    readingString.Sprintf("Reading instance from class: %ls:%ls", schema->GetFullSchemaName().c_str(), testInstance->GetClass().GetName().c_str());
     results[readingString] = readingTimer.GetElapsedSeconds();
 
     Utf8String writingString;
@@ -119,6 +119,7 @@ TEST_F(ECXmlPerformanceTest, ReadingAndWritingSchema)
     TimeSchema(L"OpenPlant_PID.01.02.ecschema.xml", schemaContext);
     TimeSchema(L"OpenPlant_3D.01.02.ecschema.xml", schemaContext);
     TimeSchema(L"Bentley_Plant.06.00.ecschema.xml", schemaContext);
+    TimeSchema(L"CustomAttributeTest.01.00.ecschema.xml", schemaContext);
     };
 
 TEST_F(ECXmlPerformanceTest, ReadingAndWritingInstance)
