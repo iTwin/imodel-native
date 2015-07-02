@@ -640,8 +640,7 @@ TEST_F(ECDbMapCATests, PolymorphicSharedTable_SharedColumns_DisableSharedColumns
     Statement statement;
     ASSERT_EQ (statement.Prepare (db, "SELECT * FROM rc_BaseClass"), DbResult::BE_SQLITE_OK);
     ASSERT_EQ (statement.Step (), DbResult::BE_SQLITE_ROW);
-    size_t columnCount = statement.GetColumnCount ();
-    ASSERT_EQ (columnCount, 6);
+    ASSERT_EQ(5, statement.GetColumnCount());
 
     //verify that the columns generated are same as expected
     Utf8String expectedColumnNames = "ECInstanceIdECClassIdP1P2x01P3";
