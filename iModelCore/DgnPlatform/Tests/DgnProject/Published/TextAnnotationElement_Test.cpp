@@ -55,6 +55,7 @@ TEST(TextAnnotationElementTest, BasicCrud)
     //.............................................................................................
         {
         CreateDgnDbParams dbCreateParams;
+        dbCreateParams.SetOverwriteExisting(true);
         dbCreateParams.SetProjectName("TextAnnotationElementTest-BasicCrud");
         dbCreateParams.SetProjectDescription("Created by unit test TextAnnotationElementTest.BasicCrud");
         dbCreateParams.SetStartDefaultTxn(DefaultTxn::Exclusive);
