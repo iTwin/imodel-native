@@ -355,6 +355,16 @@ public:
         //! Invoke the _GenerateElementGeometry method on the item
         //! @param el   The host element
         DGNPLATFORM_EXPORT static DgnDbStatus GenerateElementGeometry(GeometricElementR el);
+        
+        //! Execute the EGA that is specified for this Item.
+        //! @param el   The element to be updated
+        //! @param origin   The placement origin
+        //! @param angles   The placement angles
+        //! @param egaInstance The ECInstance that specifies the EGA and supplies the required input parameters.
+        //! @return DgnDbStatus::Success if the EGA was executed and the element's geometry was generated;
+        //! DgnDbStatus::NotEnabled if the EGA is not available or cannot be executed; DgnDbStatus::BadArg if properties could not be marshalled from egaInstance; or DgnDbStatus::ElementWriteError if the EGA executed but encountered an error.
+        DGNPLATFORM_EXPORT DgnDbStatus ExecuteEGA(Dgn::DgnElementR el, DPoint3dCR origin, YawPitchRollAnglesCR angles, ECN::IECInstanceCR egaInstance);
+    
     };
 
     DEFINE_BENTLEY_NEW_DELETE_OPERATORS
@@ -1080,6 +1090,25 @@ public:
     //! @return the DgnElementId of the ElementGroup.  Will be invalid if not found.
     //! @see QueryMembers
     DGNPLATFORM_EXPORT static DgnElementId QueryFromMember(DgnDbR db, DgnClassId groupClassId, DgnElementId memberElementId);
+};
+
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
+struct IDgnJavaScriptObjectModel
+{
+    //! Execute an EGA that is expected to be implemented in JavaScript. 
+    //! The element's geometry must be defined relative to the element's local coordinate system.
+    //! That is, points in the geometry must all be relative to (0,0,0), and angles must all be relative to x=(1,0,0), y=(0,1,0), and z=(0,0,1).
+    //! The element's local coordinate system is defined by \a origin and \a angles. These two values together are also known as the elements "placement". 
+    //! @param[out] functionReturnStatus    The function's integer return value. 0 means success.
+    //! @param[in] el           The element to update
+    //! @param[in] jsEgaFunctionName   Identifies the JavaScript EGA function to be executed. Must be of the form namespace.functionname
+    //! @param[in] origin       The element's origin. 
+    //! @param[in] angles       The element's orientation.
+    //! @param[in] parms        The parameters to pass to the EGA function. The parameters are passed as a single JS object.
+    //! @return non-zero if the EGA JavaScript function is not registered in the Db or failed to execute.
+    virtual BentleyStatus _ExecuteJavaScriptEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms) = 0;
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

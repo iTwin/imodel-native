@@ -86,6 +86,21 @@ public:
 
     public:
 
+        //! Provides access to scripting services
+        struct ScriptingAdmin : IHostObject
+            {
+            DEFINE_BENTLEY_NEW_DELETE_OPERATORS
+
+            virtual int _GetVersion() const {return 1;} // Do not override!
+            virtual void _OnHostTermination(bool isProcessShutdown) override {delete this;}
+
+            //! Provide the context needed to evaluate JavaScript expressions
+            virtual BeJsContextP GetBeJsContextP() {return nullptr;}
+
+            //! Provide the context needed to execute a JavaScript function which uses the Dgn Object Model.
+            virtual IDgnJavaScriptObjectModelP GetIDgnJavaScriptObjectModel() {return nullptr;}
+            };
+
         //! Provides Exception handling capabilities
         struct ExceptionHandler : IHostObject
             {
@@ -929,6 +944,7 @@ public:
         //  LineStyleManagerP       m_lineStyleManager;
         FormatterAdmin*         m_formatterAdmin;
         RealityDataAdmin*       m_realityDataAdmin;
+        ScriptingAdmin*         m_scriptingAdmin;
         Utf8String              m_productName;
         T_RegisteredDomains     m_registeredDomains;
         
@@ -980,6 +996,9 @@ public:
         //! Supply the RealityDataAdmin
         DGNPLATFORM_EXPORT virtual RealityDataAdmin& _SupplyRealityDataAdmin();
 
+        //! Supply the ScriptingAdmin
+        DGNPLATFORM_EXPORT virtual ScriptingAdmin& _SupplyScriptingAdmin();
+
         //! Supply the product name to be used to describe the host.
         virtual void _SupplyProductName(Utf8StringR) = 0;
 
@@ -987,23 +1006,24 @@ public:
 
         Host()
             {
-            m_knownLocationsAdmin = 0;
-            m_exceptionHandler = 0;
-            m_progressMeter = 0;
-            m_fontAdmin = 0;
-            m_lineStyleAdmin = 0;
-            m_rasterAttachmentAdmin = 0;
-            m_pointCloudAdmin = 0;
-            m_notificationAdmin = 0;
-            m_graphicsAdmin = 0;
-            m_materialAdmin = 0;
-            m_solidsKernelAdmin = 0;
-            m_geoCoordAdmin = 0;
-            m_txnAdmin = 0;
-            m_acsManager = 0;
-            //  m_lineStyleManager = 0;
-            m_formatterAdmin = 0;
-            m_realityDataAdmin = 0;
+            m_knownLocationsAdmin = nullptr;
+            m_exceptionHandler = nullptr;
+            m_progressMeter = nullptr;
+            m_fontAdmin = nullptr;
+            m_lineStyleAdmin = nullptr;
+            m_rasterAttachmentAdmin = nullptr;
+            m_pointCloudAdmin = nullptr;
+            m_notificationAdmin = nullptr;
+            m_graphicsAdmin = nullptr;
+            m_materialAdmin = nullptr;
+            m_solidsKernelAdmin = nullptr;
+            m_geoCoordAdmin = nullptr;
+            m_txnAdmin = nullptr;
+            m_acsManager = nullptr;
+            //  m_lineStyleManager = nullptr;
+            m_formatterAdmin = nullptr;
+            m_realityDataAdmin = nullptr;
+            m_scriptingAdmin = nullptr;
             };
 
         virtual ~Host() {}
@@ -1026,6 +1046,7 @@ public:
         //  LineStyleManagerR       GetLineStyleManager()      {return *m_lineStyleManager;}
         FormatterAdmin&         GetFormatterAdmin()        {return *m_formatterAdmin;}
         RealityDataAdmin&       GetRealityDataAdmin()      {return *m_realityDataAdmin;}
+        ScriptingAdmin&         GetScriptingAdmin()        {return *m_scriptingAdmin;}
         Utf8CP                  GetProductName()           {return m_productName.c_str();}
 
         void ChangeNotificationAdmin(NotificationAdmin& newAdmin) {m_notificationAdmin = &newAdmin;}
