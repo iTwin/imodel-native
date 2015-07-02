@@ -489,13 +489,13 @@ TEST_F (ECSqlSelectTests, NestedSelectStatementsTests)
     ASSERT_EQ ((Utf8String)stmt.GetValueText (0), (Utf8String)cashedStmt->GetValueText (0));
     stmt.Finalize ();
 
-    //Using GetECClassId in Nexted Select statement
+    //Using GetECClassId in Nested Select statement
     ASSERT_EQ (ECSqlStatus::Success, stmt.Prepare (ecdb, "SELECT ECClassId, COUNT(*) FROM (SELECT GetECClassId() ECClassId, ECInstanceId FROM ECST.Supplier UNION ALL SELECT GetECClassId() ECClassId, ECInstanceId FROM ECST.Customer) GROUP BY ECClassId ORDER BY ECClassId"));
     ASSERT_TRUE (stmt.Step () == ECSqlStepStatus::HasRow);
-    ASSERT_EQ (128, stmt.GetValueInt (0));
+    ASSERT_EQ (129, stmt.GetValueInt (0));
     ASSERT_EQ (3, stmt.GetValueInt (1));
     ASSERT_TRUE (stmt.Step () == ECSqlStepStatus::HasRow);
-    ASSERT_EQ (134, stmt.GetValueInt (0));
+    ASSERT_EQ (135, stmt.GetValueInt (0));
     ASSERT_EQ (3, stmt.GetValueInt (1));
     ASSERT_TRUE (stmt.Step () == ECSqlStepStatus::Done);
     stmt.Finalize ();

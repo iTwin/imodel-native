@@ -136,13 +136,9 @@ MapStatus ClassMapInfo::_Initialize()
 MapStatus ClassMapInfo::_EvaluateMapStrategy()
     {
     ECDbMapStrategy& mapStrategy = GetMapStrategyR();
-    MapStrategy strategy = mapStrategy.GetStrategy();
 
     if (mapStrategy.IsNotMapped())
         return MapStatus::Success;
-
-    if (strategy == MapStrategy::None)
-        mapStrategy.Assign(MapStrategy::Default, false);
 
     ECClassCR ecClass = GetECClass ();
     if (ecClass.GetIsCustomAttributeClass () && !ecClass.GetIsDomainClass () && !ecClass.GetIsStruct ())
@@ -167,23 +163,25 @@ MapStatus ClassMapInfo::_EvaluateMapStrategy()
         return MapStatus::Success;
         }
 
+    MapStatus stat = DoEvaluateMapStrategy();
+    if (stat != MapStatus::Success)
+        return stat;
+
     //! We override m_isMapToVirtualTable if tablePerHierarchy Or shareTableStrategy was used.
     if (m_isMapToVirtualTable)
-        {
-        m_isMapToVirtualTable = strategy != MapStrategy::SharedTable;
-        }
+        m_isMapToVirtualTable = GetMapStrategy ().GetStrategy () != MapStrategy::SharedTable;
 
-    return EvaluateInheritedMapStrategy ();
+    return MapStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Ramanujam.Raman                07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-MapStatus ClassMapInfo::EvaluateInheritedMapStrategy ()
+MapStatus ClassMapInfo::DoEvaluateMapStrategy()
     {
     bvector<IClassMap const*> baseClassMaps;
     bvector<IClassMap const*> tphMaps; // SharedTable-Polymorphic have the highest priority, but there can be only one
-    bvector<IClassMap const*> tpcMaps; // OwnTable have second priority
+    bvector<IClassMap const*> tpcMaps; // OwnTable-Polymorphic have second priority
     bvector<IClassMap const*> nmhMaps; // NotMapped-Polymorphic has priority only over NoHint or NotMapped-NonPolymorphic
 
     bool areBaseClassesMapped = GatherBaseClassMaps (baseClassMaps, tphMaps, tpcMaps, nmhMaps, m_ecClass);
@@ -193,6 +191,13 @@ MapStatus ClassMapInfo::EvaluateInheritedMapStrategy ()
     if (baseClassMaps.empty())
         {
         BeAssert(tphMaps.empty() && tpcMaps.empty() && nmhMaps.empty());
+
+        if (m_strategy.GetStrategy() == MapStrategy::None)
+            {
+            if (SUCCESS != GetMapStrategyR().Assign(MapStrategy::Default, false))
+                return MapStatus::Error;
+            }
+
         return MapStatus::Success;
         }
 
@@ -204,45 +209,47 @@ MapStatus ClassMapInfo::EvaluateInheritedMapStrategy ()
     if (tphMaps.size() == 1)
         {
         m_parentClassMap = tphMaps[0];
+
+        if (GetECClass().GetIsStruct() && !m_parentClassMap->GetClass().GetIsStruct())
+            {
+            WString msg;
+            msg.append(L"Struct classes cannot be included in 'SharedTable' that has a non-struct class as its root. Struct Class [").append(GetECClass().GetFullName()).append(L"] will be mapped to its own table.");
+            LOG.warning(msg.c_str());
+            m_parentClassMap = nullptr;
+            return m_strategy.Assign(MapStrategy::OwnTable, false) == SUCCESS ? MapStatus::Success : MapStatus::Error;
+            }
+
+        if (!GetECClass().GetIsStruct() && m_parentClassMap->GetClass().GetIsStruct())
+            {
+            WString msg;
+            msg.append(L"Regular classes cannot be included in 'SharedTable' that has a struct class as its root. Class [").append(GetECClass().GetFullName()).append(L"] will be mapped to its own table.");
+            LOG.warning(msg.c_str());
+            m_parentClassMap = nullptr;
+            return m_strategy.Assign(MapStrategy::OwnTable, false) == SUCCESS ? MapStatus::Success : MapStatus::Error;
+            }
+
         ECDbMapStrategy const& parentMapStrategy = m_parentClassMap->GetMapStrategy();
         BeAssert(parentMapStrategy.IsPolymorphicSharedTable());
 
         MapStrategyOptions options = MapStrategyOptions::None;
-        if (GetMapStrategy().HasOption(MapStrategyOptions::DisableSharedColumns))
+        if (m_strategy.HasOption(MapStrategyOptions::DisableSharedColumns))
             options = MapStrategyOptions::DisableSharedColumns;
         else if (parentMapStrategy.HasOption(MapStrategyOptions::SharedColumns) || parentMapStrategy.HasOption(MapStrategyOptions::SharedColumnsForSubclasses))
             options = MapStrategyOptions::SharedColumns;
 
-        if (SUCCESS != GetMapStrategyR().Assign(MapStrategy::SharedTable, options, true))
-            return MapStatus::Error;
-
-        if (GetECClass ().GetIsStruct () && !m_parentClassMap->GetClass().GetIsStruct())
-            {
-            WString msg;
-            msg.append (L"Struct classes cannot be included in 'SharedTable' that has a non-struct class as its root. Struct Class [").append (GetECClass ().GetFullName ()).append (L"] will be mapped to its own table.");
-            LOG.warning (msg.c_str ());
-            m_strategy.Assign (MapStrategy::OwnTable, false);
-            m_parentClassMap = nullptr;
-            }
-        else if (!GetECClass ().GetIsStruct () && m_parentClassMap->GetClass ().GetIsStruct ())
-            {
-            WString msg;
-            msg.append (L"Regular classes cannot be included in 'SharedTable' that has a struct class as its root. Class [").append (GetECClass ().GetFullName ()).append (L"] will be mapped to its own table.");
-            LOG.warning (msg.c_str ());
-            m_strategy.Assign(MapStrategy::OwnTable, false);
-            m_parentClassMap = nullptr;
-            }
+        return m_strategy.Assign(MapStrategy::SharedTable, options, true) == SUCCESS ? MapStatus::Success : MapStatus::Error;
         }
 
-    if (GetMapStrategy().IsPolymorphicSharedTable())
+    if (m_strategy.IsPolymorphicSharedTable())
         return MapStatus::Success;
 
     // ClassMappingRule: If one or more parent is using OwnClass-polymorphic, use OwnClass-polymorphic mapping
-    else if (tpcMaps.size () > 0)
-        GetMapStrategyR ().Assign(MapStrategy::OwnTable, true);
+    if (tpcMaps.size () > 0)
+        return m_strategy.Assign(MapStrategy::OwnTable, true) == SUCCESS ? MapStatus::Success : MapStatus::Error;
+
     // ClassMappingRule: If one or more parent is using NotMapped-polymorphic, use NotMapped-polymorphic
-    else if (nmhMaps.size () > 0)
-        GetMapStrategyR ().Assign(MapStrategy::NotMapped, true);
+    if (nmhMaps.size () > 0)
+        return m_strategy.Assign(MapStrategy::NotMapped, true) == SUCCESS ? MapStatus::Success : MapStatus::Error;
 
     return MapStatus::Success;
     }

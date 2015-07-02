@@ -58,7 +58,7 @@ private:
     BentleyStatus InitializeFromClassHasCurrentTimeStampProperty();
 
     bool ValidateBaseClasses () const;
-    MapStatus EvaluateInheritedMapStrategy ();
+    MapStatus DoEvaluateMapStrategy ();
 
     bool GatherBaseClassMaps (bvector<IClassMap const*>& baseClassMaps, bvector<IClassMap const*>& tphMaps, bvector<IClassMap const*>& tpcMaps, bvector<IClassMap const*>& nmhMaps, ECN::ECClassCR ecClass) const;
 

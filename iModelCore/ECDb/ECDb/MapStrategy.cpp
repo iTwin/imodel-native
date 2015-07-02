@@ -47,7 +47,14 @@ BentleyStatus ECDbMapStrategy::Assign(MapStrategy strategy, MapStrategyOptions o
     m_strategy = strategy;
     m_options = (int) options;
     m_isPolymorphic = isPolymorphic;
-    return IsValid() ? SUCCESS:ERROR;
+    
+    if (!IsValid())
+        {
+        LOG.errorv("Invalid MapStrategy: %s", ToString().c_str());
+        return ERROR;
+        }
+    
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------

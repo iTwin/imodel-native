@@ -729,7 +729,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
             {
             if (m_map.GetECDbR ().ExecuteSql (ddl.ToString ()) != BE_SQLITE_OK)
                 {
-                printf ("ERROR: ================================ \r\n%s\r\n", ddl.ToString ());
+                //printf ("ERROR: ================================ \r\n%s\r\n", ddl.ToString ());
                 //return BentleyStatus::ERROR;
                 }
 
@@ -737,9 +737,9 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
         createTimer.Stop ();
 
        
-        printf ("SqlGenerator::CreateView ()                             took %.4f seconds\r\n", viewCreatetimer.GetElapsedSeconds ());
-        printf ("SqlGenerator::BuildDeleteTriggers (trigger)             took %.4f seconds\r\n", triggerBuildtimer.GetElapsedSeconds ());
-        printf ("SqlGenerator::ExecuteSql (trigger) [%" PRId64 "]        took %.4f seconds\r\n", (int64_t)ddls.size(), createTimer.GetElapsedSeconds ());
+        //printf ("SqlGenerator::CreateView ()                             took %.4f seconds\r\n", viewCreatetimer.GetElapsedSeconds ());
+        //printf ("SqlGenerator::BuildDeleteTriggers (trigger)             took %.4f seconds\r\n", triggerBuildtimer.GetElapsedSeconds ());
+        //printf ("SqlGenerator::ExecuteSql (trigger) [%" PRId64 "]        took %.4f seconds\r\n", (int64_t)ddls.size(), createTimer.GetElapsedSeconds ());
         //getchar ();
         return BentleyStatus::SUCCESS;
         }
