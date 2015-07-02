@@ -139,9 +139,14 @@ public:
 
 
         };
- 
+    enum class SqlRenderStrategy
+        {
+        V0,
+        V1
+        };
 private:
     ECDbCR m_ecdb;
+   
     ECSqlStatementBase& m_ecsqlStatement;
     ECSqlPrepareContext const* m_parentCtx;
     ArrayECPropertyCP m_parentArrayProperty;
@@ -152,7 +157,7 @@ private:
     ExpScopeStack m_scopes;
     SelectionOptions m_selectionOptions;    
     //SELECT only
- 
+    SqlRenderStrategy m_sqlRenderStrategy;
     static bool FindLastParameterIndexBeforeWhereClause (int& index, Exp const& statementExp, WhereExp const* whereExp);
 public:
     ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& ecsqlStatement);
@@ -184,7 +189,8 @@ public:
     void SetNativeStatementIsNoop (bool flag) { m_nativeStatementIsNoop = flag; }
     void SetNativeNothingToUpdate(bool flag){ m_nativeNothingToUpdate = flag; }
     
-
+    SqlRenderStrategy GetSqlRenderStrategy () const { return m_sqlRenderStrategy; }
+    void SetSqlRenderStrategy (SqlRenderStrategy strategy){ m_sqlRenderStrategy = strategy; }
 
     ExpScope const& GetCurrentScope () const {return m_scopes.Current();}
     ExpScope& GetCurrentScopeR ()  {return m_scopes.CurrentR();}

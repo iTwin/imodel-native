@@ -94,8 +94,7 @@ public:
     std::vector<size_t> const& GetNonVirtualHorizontalPartitionIndices() const { return m_nonVirtualHorizontalPartitionIndices; }
     ECN::ECClassId GetClassId () const { return m_classId; }
 
-    static std::unique_ptr<StorageDescription> Create (IClassMap const& forClassMap);
-    static std::unique_ptr<StorageDescription> Create (ECN::ECClassId thisClassId, std::map <ECDbSqlTable const*, std::vector<ECN::ECClassId>> const& tables, std::map<ECDbSqlTable const*, std::vector<ECN::ECClassId>> const& derivedClassPerTable);
+    static std::unique_ptr<StorageDescription> Create (IClassMap const& classMap);
 
     };
 
@@ -172,8 +171,7 @@ public:
     ClassDbView const& GetDbView () const;
     Type GetClassMapType () const;
 
-    StorageDescription const& GetStorageDescription(bool recalculate = false) const;
-    StorageDescription const& GetStorageDescription (std::map <ECDbSqlTable const*, std::vector<ECN::ECClassId>> const& tables, std::map<ECDbSqlTable const*, std::vector<ECN::ECClassId>> const& derivedClassPerTable, bool recalculate = false) const;
+    StorageDescription const& GetStorageDescription() const;
     bool IsMappedToSecondaryTable () const;
     bool IsRelationshipClassMap () const;
     bool IsAbstractECClass () const;

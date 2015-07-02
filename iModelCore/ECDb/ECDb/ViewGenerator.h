@@ -19,22 +19,9 @@ struct ECSqlPrepareContext;
 //+===============+===============+===============+===============+===============+======
 struct SqlGenerator
     {
-    enum class RelationshipFilter
-        {
-        None =0,
-        Source = 1,
-        Target = 2,
-        Both = Source | Target
-        };
+
     private:
         ECDbMapR m_map;
-
-         std::map<ECN::ECClassId, std::map<ECN::ECClassId, RelationshipFilter>> m_classRelations;
-         std::map<ECN::ECClassId, std::map<ECDbSqlTable const*, std::vector<ECN::ECClassId>>> m_deriveClasses;
-         std::map <ECDbSqlTable const*, std::vector<ECN::ECClassId>> m_tableClasses;
-         BentleyStatus LoadClassRelationshipMap ();
-         BentleyStatus LoadClassTableClasses ();
-         BentleyStatus LoadDerivedClasses ();
 
     private:
          BentleyStatus BuildHoldingConstraint (NativeSqlBuilder& stmt, RelationshipClassMapCR const& classMap);
@@ -42,10 +29,9 @@ struct SqlGenerator
 
          BentleyStatus BuildHoldingView (NativeSqlBuilder& sql);
          BentleyStatus BuildDeleteTriggersForRelationships (NativeSqlBuilder::List& triggers, ClassMapCR const& classMap);
-         BentleyStatus FindRelationshipReferences (std::map<RelationshipClassMapCP, RelationshipFilter>& relationships, ClassMapCR classMap);
+         BentleyStatus FindRelationshipReferences (bmap<RelationshipClassMapCP, ECDbMap::LightWeightMapCache::RelationshipEnd>& relationships, ClassMapCR classMap);
          void CollectDerivedEndTableRelationships (std::set<RelationshipClassEndTableMapCP>& childMaps, RelationshipClassMapCR const& classMap);
-         Utf8String BuildSchemaQualifiedClassName (ECN::ECClassCR ecClass);
-         Utf8String BuildViewClassName (ECN::ECClassCR ecClass);
+        
          BentleyStatus BuildDerivedFilterClause (Utf8StringR filter, ECDb& db, ECN::ECClassId baseClassId);
          Utf8CP GetECClassIdPrimaryTableAlias (ECN::ECRelationshipEnd endPoint) { return endPoint == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? "SourceECClassPrimaryTable" : "TargetECClassPrimaryTable"; }
          BentleyStatus BuildECInstanceIdConstraintExpression (NativeSqlBuilder::List& fragments, RelationshipClassMapCR classMap, ECN::ECRelationshipEnd endPoint, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
@@ -75,7 +61,10 @@ struct SqlGenerator
             :m_map (map)
             {
             }
+        static Utf8String BuildViewClassName (ECN::ECClassCR ecClass);
          BentleyStatus BuildViewInfrastructure (std::set<ClassMap const*>& classMaps);
+         static Utf8String BuildSchemaQualifiedClassName (ECN::ECClassCR ecClass);
+
     };
 /*=================================================================================**//**
 * @bsiclass                                                     Affan.Khan       07/2013

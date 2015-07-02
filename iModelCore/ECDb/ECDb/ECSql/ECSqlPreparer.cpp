@@ -60,7 +60,7 @@ ECSqlStatus ECSqlPreparer::Prepare (Utf8StringR nativeSql, ECSqlPrepareContext& 
 
         case Exp::Type::Delete:
             {
-            status = ECSqlDeletePreparer::Prepare (context, static_cast<DeleteStatementExp const&> (ecsqlParseTree));
+            status = ECSqlDeletePreparer2::Prepare (context, static_cast<DeleteStatementExp const&> (ecsqlParseTree));
             if (status != ECSqlStatus::Success)
                 return status;
 
@@ -402,15 +402,29 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
 
     if (currentScopeECSqlType == ECSqlType::Select)
         {
-        NativeSqlBuilder classViewSql;
-        if (classMap.GetDbView().Generate(classViewSql, exp->IsPolymorphic(), ctx) != SUCCESS)
+        if (ctx.GetSqlRenderStrategy () == ECSqlPrepareContext::SqlRenderStrategy::V0)
             {
-            BeAssert(false && "Class view generation failed during preparation of class name expression.");
-            return ctx.SetError(ECSqlStatus::ProgrammerError, "Class view generation failed during preparation of class name expression.");
-            }
+            NativeSqlBuilder classViewSql;
+            if (classMap.GetDbView ().Generate (classViewSql, exp->IsPolymorphic (), ctx) != SUCCESS)
+                {
+                BeAssert (false && "Class view generation failed during preparation of class name expression.");
+                return ctx.SetError (ECSqlStatus::ProgrammerError, "Class view generation failed during preparation of class name expression.");
+                }
 
-        classViewSql.AppendSpace().AppendEscaped(exp->GetId().c_str());
-        nativeSqlSnippets.push_back(move(classViewSql));
+            classViewSql.AppendSpace ().AppendEscaped (exp->GetId ().c_str ());
+            nativeSqlSnippets.push_back (move (classViewSql));
+            }
+        else if (ctx.GetSqlRenderStrategy () == ECSqlPrepareContext::SqlRenderStrategy::V1)
+            {
+            NativeSqlBuilder classViewSql;
+            classViewSql.Append (SqlGenerator::BuildViewClassName (classMap.GetClass ()).c_str ());
+            classViewSql.AppendSpace ().AppendEscaped (exp->GetId ().c_str ());
+            nativeSqlSnippets.push_back (move (classViewSql));
+            }
+        else
+            {
+            return ECSqlStatus::ProgrammerError;
+            }
         return ECSqlStatus::Success;
         }
 
@@ -727,13 +741,14 @@ ECSqlStatus ECSqlExpPreparer::PrepareECClassIdFunctionExp (NativeSqlBuilder::Lis
     BeAssert (dynamic_cast<ClassNameExp const*> (classRefExp) != nullptr);
     auto classNameExp = static_cast<ClassNameExp const*> (classRefExp);
 
-    auto const& classMap = classNameExp->GetInfo ().GetMap ();
-    auto classIdColumn = classMap.GetTable ().FindColumnCP ("ECClassId");
-
     NativeSqlBuilder nativeSqlSnippet;
 
     if (exp->HasParentheses())
         nativeSqlSnippet.AppendParenLeft();
+
+    auto const& classMap = classNameExp->GetInfo ().GetMap ();
+    auto classIdColumn = (ctx.GetSqlRenderStrategy () == ECSqlPrepareContext::SqlRenderStrategy::V0) 
+        ? classMap.GetTable ().GetFilteredColumnFirst (ECDbSystemColumnECClassId) : nullptr;
 
     if (classIdColumn != nullptr)
         {
@@ -1211,41 +1226,66 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp (ECSqlPrepareContext& c
     sql.Append(" INNER JOIN ");
 
     //Append relationship view. 
-    //ECSQL_TODO: we need to keep a list of view we add as we donot need to append them again and again. Instead use there alias everyWhere else
+    //ECSQL_TODO: we need to keep a list of view we add as we don't need to append them again and again. Instead use there alias everyWhere else
     //            The PrepareContext scope can manage that and keep a list of already defined classes and there alias/name
 
     //Generate view for relationship
     NativeSqlBuilder relationshipView;
-    if (relationshipClassNameExp->GetInfo().GetMap().GetDbView ().Generate (relationshipView, DEFAULT_POLYMORPHIC_QUERY, ctx) != SUCCESS)
+    bool isV0Rendering = ctx.GetSqlRenderStrategy () == ECSqlPrepareContext::SqlRenderStrategy::V0;
+
+    if (isV0Rendering)
         {
-        BeAssert (false && "Generating class view during preparation of relationship class name expression failed.");
-        return ctx.SetError (ECSqlStatus::ProgrammerError, "Generating class view during preparation of relationship class name expression failed.");
+        if (relationshipClassNameExp->GetInfo ().GetMap ().GetDbView ().Generate (relationshipView, DEFAULT_POLYMORPHIC_QUERY, ctx) != SUCCESS)
+            {
+            BeAssert (false && "Generating class view during preparation of relationship class name expression failed.");
+            return ctx.SetError (ECSqlStatus::ProgrammerError, "Generating class view during preparation of relationship class name expression failed.");
+            }
+        }
+    else //v1 
+        {
+        relationshipView.Append (SqlGenerator::BuildViewClassName (relationshipClassNameExp->GetInfo ().GetMap ().GetClass ()).c_str());
         }
 
     sql.Append(relationshipView);   
-
     sql.AppendSpace ();
-    sql.AppendEscaped (relationshipClassNameExp->GetId().c_str ());          
+    sql.AppendEscaped (relationshipClassNameExp->GetId().c_str ());
 
     sql.Append (" ON ");
-    auto fromECInstanceIdPropMap = fromEP.GetClassNameRef ()->GetInfo ().GetMap ().GetPropertyMap (ecInstanceIdKey);
-    PRECONDITION (fromECInstanceIdPropMap != nullptr, ECSqlStatus::ProgrammerError);
-    auto fromECInstanceIdNativeSqlSnippets = fromECInstanceIdPropMap->ToNativeSql (fromEP.GetClassNameRef ()->GetId ().c_str (), ecsqlType, false);
-    if (fromECInstanceIdNativeSqlSnippets.size () > 1)
-        return ctx.SetError (ECSqlStatus::InvalidECSql, "Multi-value ECInstanceIds not yet supported in ECSQL.");
+    if (isV0Rendering)
+        {
+        auto fromECInstanceIdPropMap = fromEP.GetClassNameRef ()->GetInfo ().GetMap ().GetPropertyMap (ecInstanceIdKey);
+        PRECONDITION (fromECInstanceIdPropMap != nullptr, ECSqlStatus::ProgrammerError);
+        auto fromECInstanceIdNativeSqlSnippets = fromECInstanceIdPropMap->ToNativeSql (fromEP.GetClassNameRef ()->GetId ().c_str (), ecsqlType, false);
+        if (fromECInstanceIdNativeSqlSnippets.size () > 1)
+            return ctx.SetError (ECSqlStatus::InvalidECSql, "Multi-value ECInstanceIds not yet supported in ECSQL.");
 
-    sql.Append (fromECInstanceIdNativeSqlSnippets);
-    
+        sql.Append (fromECInstanceIdNativeSqlSnippets);
+        }
+    else
+        {
+        sql.Append (fromEP.GetClassNameRef ()->GetId ().c_str ());
+        sql.AppendDot ();
+        sql.Append (Utf8String(ecInstanceIdKey).c_str());
+        }
+
     sql.Append (" = ");
 
-    auto fromRelatedIdPropMap = relationshipClassNameExp->GetInfo ().GetMap ().GetPropertyMap (fromRelatedKey);
-    PRECONDITION (fromRelatedIdPropMap != nullptr, ECSqlStatus::ProgrammerError);
-    auto fromRelatedIdNativeSqlSnippets = fromRelatedIdPropMap->ToNativeSql (relationshipClassNameExp->GetId ().c_str (), ecsqlType, false);
-    if (fromRelatedIdNativeSqlSnippets.size () > 1)
-        return ctx.SetError (ECSqlStatus::InvalidECSql, "Multi-value ECInstanceIds not yet supported in ECSQL.");
+    if (isV0Rendering)
+        {
+        auto fromRelatedIdPropMap = relationshipClassNameExp->GetInfo ().GetMap ().GetPropertyMap (fromRelatedKey);
+        PRECONDITION (fromRelatedIdPropMap != nullptr, ECSqlStatus::ProgrammerError);
+        auto fromRelatedIdNativeSqlSnippets = fromRelatedIdPropMap->ToNativeSql (relationshipClassNameExp->GetId ().c_str (), ecsqlType, false);
+        if (fromRelatedIdNativeSqlSnippets.size () > 1)
+            return ctx.SetError (ECSqlStatus::InvalidECSql, "Multi-value ECInstanceIds not yet supported in ECSQL.");
 
-    sql.Append (fromRelatedIdNativeSqlSnippets);
-
+        sql.Append (fromRelatedIdNativeSqlSnippets);
+        }
+    else
+        {
+        sql.Append (relationshipClassNameExp->GetId ().c_str ());
+        sql.AppendDot ();
+        sql.Append (Utf8String (fromRelatedKey).c_str ());
+        }
 
     //RelationView To ToECClass
     sql.Append(" INNER JOIN ");
@@ -1254,21 +1294,39 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp (ECSqlPrepareContext& c
         return r;
 
     sql.Append(" ON ");
-    auto toECInstanceIdPropMap = toEP.GetClassNameRef ()->GetInfo ().GetMap ().GetPropertyMap (ecInstanceIdKey);
-    PRECONDITION (toECInstanceIdPropMap != nullptr, ECSqlStatus::ProgrammerError);
-    auto toECInstanceIdSqlSnippets = toECInstanceIdPropMap->ToNativeSql (toEP.GetClassNameRef ()->GetId ().c_str (), ecsqlType, false);
-    if (toECInstanceIdSqlSnippets.size () > 1)
-        return ctx.SetError (ECSqlStatus::InvalidECSql, "Multi-value ECInstanceIds not yet supported in ECSQL.");
-    sql.Append (toECInstanceIdSqlSnippets);
+    if (isV0Rendering)
+        {
+        auto toECInstanceIdPropMap = toEP.GetClassNameRef ()->GetInfo ().GetMap ().GetPropertyMap (ecInstanceIdKey);
+        PRECONDITION (toECInstanceIdPropMap != nullptr, ECSqlStatus::ProgrammerError);
+        auto toECInstanceIdSqlSnippets = toECInstanceIdPropMap->ToNativeSql (toEP.GetClassNameRef ()->GetId ().c_str (), ecsqlType, false);
+        if (toECInstanceIdSqlSnippets.size () > 1)
+            return ctx.SetError (ECSqlStatus::InvalidECSql, "Multi-value ECInstanceIds not yet supported in ECSQL.");
+        sql.Append (toECInstanceIdSqlSnippets);
+        }
+    else
+        {
+        sql.Append (toEP.GetClassNameRef ()->GetId ().c_str ());
+        sql.AppendDot ();
+        sql.Append (Utf8String (ecInstanceIdKey).c_str ());
+        }
 
     sql.Append(" = ");
-    auto toRelatedIdPropMap = relationshipClassNameExp->GetInfo().GetMap().GetPropertyMap(toRelatedKey);
-    PRECONDITION(toRelatedIdPropMap != nullptr, ECSqlStatus::ProgrammerError);
-    auto toRelatedIdSqlSnippets = toRelatedIdPropMap->ToNativeSql (relationshipClassNameExp->GetId ().c_str (), ecsqlType, false);
-    if (toRelatedIdSqlSnippets.size () > 1)
-        return ctx.SetError (ECSqlStatus::InvalidECSql, "Multi-value ECInstanceIds not yet supported in ECSQL.");
-    sql.Append (toRelatedIdSqlSnippets);
-    
+    if (isV0Rendering)
+        {
+        auto toRelatedIdPropMap = relationshipClassNameExp->GetInfo ().GetMap ().GetPropertyMap (toRelatedKey);
+        PRECONDITION (toRelatedIdPropMap != nullptr, ECSqlStatus::ProgrammerError);
+        auto toRelatedIdSqlSnippets = toRelatedIdPropMap->ToNativeSql (relationshipClassNameExp->GetId ().c_str (), ecsqlType, false);
+        if (toRelatedIdSqlSnippets.size () > 1)
+            return ctx.SetError (ECSqlStatus::InvalidECSql, "Multi-value ECInstanceIds not yet supported in ECSQL.");
+        sql.Append (toRelatedIdSqlSnippets);
+        }
+    else
+        {
+        sql.Append (relationshipClassNameExp->GetId ().c_str ());
+        sql.AppendDot ();
+        sql.Append (Utf8String (toRelatedKey).c_str ());
+        }
+
     return ECSqlStatus::Success;
     }       
 
