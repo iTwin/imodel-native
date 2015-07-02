@@ -54,9 +54,9 @@ int main(array<System::String ^> ^args)
     //WCharCP url = L"http://sampleserver1.arcgisonline.com/ArcGIS/services/Specialty/ESRI_StatesCitiesRivers_USA/MapServer/WMSServer?service=WMS&request=GetCapabilities";
     //WCharCP url = L"http://tilecache.osgeo.org/wms-c/tilecache.py?SERVICE=WMS&REQUEST=GetCapabilities";
     //WCharCP url = L"http://ws.carmen.developpement-durable.gouv.fr/WMS/11/Carte_stations_hydro_region?language=fre&SERVICE=WMS&REQUEST=GetCapabilities";
-    WCharCP url = L"http://spatial.dcenr.gov.ie/wmsconnector/com.esri.wms.Esrimap/INFOMAR?SERVICE=WMS&REQUEST=GetCapabilities";
-    WMSParserStatus status;
-    WMSCapabilitiesPtr capabilities = WMSCapabilities::CreateAndReadFromUrl(status, url);
+    //WCharCP url = L"http://spatial.dcenr.gov.ie/wmsconnector/com.esri.wms.Esrimap/INFOMAR?SERVICE=WMS&REQUEST=GetCapabilities";
+    //WMSParserStatus status;
+    //WMSCapabilitiesPtr capabilities = WMSCapabilities::CreateAndReadFromUrl(status, url);
 
     // WMS GetMap Url
     // http://ogi.state.ok.us/geoserver/wms?VERSION=1.1.1&REQUEST=GetMap&SERVICE=WMS&LAYERS=ogi:okcounties,ogi:okcities&SRS=EPSG:4326&BBOX=-104.5005,32.7501,-94.01,37.20&WIDTH=800&HEIGHT=300&FORMAT=image/png&STYLES=&TRANSPARENT=TRUE

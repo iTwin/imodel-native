@@ -21,27 +21,6 @@ Utf8CP WMSCapabilities::m_namespace = NULL;
 //                              UtilityFunctions
 //=====================================================================================
 //-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         		 3/2015
-//-------------------------------------------------------------------------------------
-//&&JFC: To be removed eventually.
-size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
-    {
-    size_t realsize = size * nmemb;
-    MemoryStruct* mem = (MemoryStruct*) userp;
-
-    mem->memory = realloc(mem->memory, mem->size + realsize + 1);
-    if (mem->memory == NULL)
-        return 0;
-
-    //Byte* bob = ((Byte*)mem->memory);
-    memcpy(&(((Byte*) mem->memory)[mem->size]), contents, realsize);
-    mem->size += realsize;
-    ((Byte*) mem->memory)[mem->size] = 0;
-
-    return realsize;
-    }
-
-//-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 4/2015
 //-------------------------------------------------------------------------------------
 Utf8String BuildNodePath(Utf8CP nodeName)
@@ -106,27 +85,61 @@ void WMSCapabilities::Read(WMSParserStatus& status, Utf8CP nodeName, BeXmlDomR x
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 3/2015
 //-------------------------------------------------------------------------------------
-//&&JFC: To be removed eventually.
-WMSCapabilitiesPtr WMSCapabilities::CreateAndReadFromUrl(WMSParserStatus& status, WCharCP url)
+WMSCapabilitiesPtr WMSCapabilities::CreateAndReadFromString(WMSParserStatus& status, Utf8CP source, WStringP errorMsg)
     {
-    MemoryStruct chunk;
-    chunk.memory = malloc(1);  // Will be grown as needed by the realloc above.
-    chunk.size = 0;    // No data at this point.
-    if (GetFromServer(chunk, url) != SUCCESS)
-        return 0;
+    status = WMSParserStatus::Success;
 
-    return CreateAndReadFromMemory(status, chunk.memory, chunk.size);
+    BeXmlStatus xmlStatus = BEXML_Success;
+    BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, source, 0, errorMsg);
+    if (BEXML_Success != xmlStatus)
+        {
+        status = WMSParserStatus::XmlReadError;
+        return NULL;
+        }
+
+    BeXmlNodeP pRootNode = pXmlDom->GetRootElement();
+    if (NULL == pRootNode)
+        return NULL;
+
+    WString version;
+    if (BEXML_Success != pRootNode->GetAttributeStringValue(version, WMS_ROOT_ATTRIBUTE_Version) || version.empty())
+        {
+        BeDataAssert(!"Missing wms version attribute.");
+        status = WMSParserStatus::UnknownVersion;
+        return NULL;
+        }
+
+    WMSCapabilitiesPtr pCapabilities = WMSCapabilities::Create(status, version);
+    if (WMSParserStatus::Success != status)
+        return NULL;
+
+    //Read namespace attribute.
+    Utf8CP xmlns = pRootNode->GetNamespace();
+    if (NULL != xmlns)
+        {
+        pCapabilities->SetNamespace(xmlns);
+        pXmlDom->RegisterNamespace(WMS_PREFIX, xmlns);
+        }
+
+    //Read nodes.
+    pCapabilities->Read(status, WMS_ELEMENT_Service, *pXmlDom, *pRootNode);
+    pCapabilities->Read(status, WMS_ELEMENT_Capability, *pXmlDom, *pRootNode);
+
+    //if (WMSParserStatus::Success != status)
+    //    return NULL;
+
+    return pCapabilities;
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 3/2015
 //-------------------------------------------------------------------------------------
-WMSCapabilitiesPtr WMSCapabilities::CreateAndReadFromMemory(WMSParserStatus& status, void const* xmlBuffer, size_t xmlBufferSize, WStringP pParseError)
+WMSCapabilitiesPtr WMSCapabilities::CreateAndReadFromMemory(WMSParserStatus& status, void const* xmlBuffer, size_t xmlBufferSize, WStringP errorMsg)
     {
     status = WMSParserStatus::Success;
 
     BeXmlStatus xmlStatus = BEXML_Success;
-    BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromMemory(xmlStatus, xmlBuffer, xmlBufferSize, pParseError);
+    BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromMemory(xmlStatus, xmlBuffer, xmlBufferSize, errorMsg);
     if (BEXML_Success != xmlStatus)
         return NULL;
 
@@ -167,21 +180,12 @@ WMSCapabilitiesPtr WMSCapabilities::CreateAndReadFromMemory(WMSParserStatus& sta
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 3/2015
 //-------------------------------------------------------------------------------------
-WMSCapabilitiesPtr WMSCapabilities::CreateAndReadFromFile(WMSParserStatus& status)
-    {
-    //&&JFC: TODO
-    return 0;
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         		 3/2015
-//-------------------------------------------------------------------------------------
-WMSCapabilitiesPtr WMSCapabilities::CreateFromString(WMSParserStatus& status, Utf8CP pSource, WStringP pParseError /* = NULL */)
+WMSCapabilitiesPtr WMSCapabilities::CreateAndReadFromFile(WMSParserStatus& status, WCharCP fileName, WStringP errorMsg)
     {
     status = WMSParserStatus::Success;
 
     BeXmlStatus xmlStatus = BEXML_Success;
-    BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, pSource, 0, pParseError);
+    BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromFile(xmlStatus, fileName, errorMsg);
     if (BEXML_Success != xmlStatus)
         {
         status = WMSParserStatus::XmlReadError;
@@ -235,53 +239,6 @@ WMSCapabilitiesPtr WMSCapabilities::Create(WMSParserStatus& status, WStringCR ve
 
     status = WMSParserStatus::UnknownVersion;
     return NULL;
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         		 3/2015
-//-------------------------------------------------------------------------------------
-//&&JFC: To be removed eventually.
-StatusInt WMSCapabilities::GetFromServer(MemoryStruct& chunk, WCharCP url)
-    {
-    CURL* curl;
-    CURLcode res;
-
-    curl_global_init(CURL_GLOBAL_ALL);
-
-    // Init the curl session.
-    curl = curl_easy_init();
-    if (!curl)
-        return ERROR;
-
-    // Specify URL to get.
-    curl_easy_setopt(curl, CURLOPT_URL, Utf8String(url));
-
-    // Send all data to this function.
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
-
-    // We pass our struct to the callback function.   
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &chunk);
-
-    // Some servers don't like requests that are made 
-    // without a user-agent field, so we provide one.
-    curl_easy_setopt(curl, CURLOPT_USERAGENT, "libcurl-agent/1.0");
-
-    // Perform the request, res will get the return code.
-    res = curl_easy_perform(curl);
-
-    // Check for errors.
-    if (res != CURLE_OK)
-        fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-    else
-        //printf("%lu bytes retrieved\n", (long) xmlDoc.size);
-
-        // Always cleanup.
-        curl_easy_cleanup(curl);
-
-    // We are done with libcurl, so clean it up.
-    curl_global_cleanup();
-
-    return SUCCESS;
     }
 
 //=====================================================================================
@@ -1024,16 +981,3 @@ WMSStylePtr WMSStyle::Create(WMSParserStatus& status, BeXmlDomR xmlDom, BeXmlNod
 
     return pStyle;
     }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         		 3/2015
-//-------------------------------------------------------------------------------------
-/*
-static size_t HttpBodyParser(void* ptr, size_t size, size_t nmemb, void* userp)
-{
-size_t totalSize = size * nmemb;
-auto buffer = (bvector<Byte>*) userp;
-buffer->insert(buffer->end(), (Byte*) ptr, (Byte*) ptr + totalSize);
-return totalSize;
-}
-*/

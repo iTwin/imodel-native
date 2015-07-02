@@ -14,17 +14,6 @@
 BEGIN_BENTLEY_WMSPARSER_NAMESPACE
 
 //=======================================================================================
-//! &&JFC: To be removed eventually. Only useful when creating directly from a URL.
-//!
-//! @bsiclass                                     Jean-Francois.Cote              03/2015
-//=======================================================================================
-struct MemoryStruct
-    {
-    void*   memory;
-    size_t  size;
-    };
-
-//=======================================================================================
 //! A WMS_Capabilities document is returned in response to a GetCapabilities request 
 //! made on a WMS.
 //!
@@ -33,18 +22,18 @@ struct MemoryStruct
 struct WMSCapabilities : RefCountedBase
     {
     public:
-        //&&JFC: To be removed eventually. It is not the parser job to get data from server.
-        WMSPARSER_EXPORT static WMSCapabilitiesPtr CreateAndReadFromUrl(WMSParserStatus& status, WCharCP url);
-
-        //! Create methods.
-        WMSPARSER_EXPORT static WMSCapabilitiesPtr CreateFromString(WMSParserStatus& status, Utf8CP pSource, WStringP pParseError = NULL);
-        WMSPARSER_EXPORT static WMSCapabilitiesPtr CreateAndReadFromMemory(WMSParserStatus& status, void const* xmlBuffer, size_t xmlBufferSize, WStringP pParseError = NULL);  //&&JFC avoid copy of xmlData
-        WMSPARSER_EXPORT static WMSCapabilitiesPtr CreateAndReadFromFile(WMSParserStatus& status);
+        //! Attempts to parse the UTF-8 XML fragment provided.
+        WMSPARSER_EXPORT static WMSCapabilitiesPtr CreateAndReadFromString(WMSParserStatus& status, Utf8CP source, WStringP errorMsg = NULL);
+        
+        //! Attempts to parse the XML document provided.
+        WMSPARSER_EXPORT static WMSCapabilitiesPtr CreateAndReadFromMemory(WMSParserStatus& status, void const* xmlBuffer, size_t xmlBufferSize, WStringP errorMsg = NULL);  //&&JFC avoid copy of xmlData
+        
+        //! Attempts to open and parse the XML document at the given file path.
+        WMSPARSER_EXPORT static WMSCapabilitiesPtr CreateAndReadFromFile(WMSParserStatus& status, WCharCP fileName, WStringP errorMsg = NULL);
 
         //! Element.
         WStringCR       GetVersion() const { return m_version; }
-        static Utf8CP   GetNamespace() { return m_namespace; }
-        
+        static Utf8CP   GetNamespace() { return m_namespace; }     
 
         //! Complex type.
         WMSServiceCP    GetServiceGroup() const { return m_pService.get(); }
@@ -61,9 +50,6 @@ struct WMSCapabilities : RefCountedBase
         void    Read(WMSParserStatus& status, Utf8CP nodeName, BeXmlDomR xmlDom, BeXmlNodeR parentNode);
 
         static void     SetNamespace(Utf8CP xmlns) { m_namespace = xmlns; }
-
-        //&&JFC: To be removed eventually.
-        static StatusInt GetFromServer(MemoryStruct& chunk, WCharCP url);
 
         //! Element.
         WString             m_version;

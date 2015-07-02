@@ -105,7 +105,9 @@
         <ProductDirectory Name="MrSidAssemblies"            Path="" />
         <ProductDirectory Name="ErdasEcwJpeg2000Assemblies" Path="" />
         <ProductDirectory Name="ECObjectsNativeAssemblies"  Path="" />
-        <ProductDirectory Name="ECSchemas" Path="ECSchemas" />       
+        <ProductDirectory Name="ECSchemas"                  Path="ECSchemas" />
+        <ProductDirectory Name="BeOpenSSLAssemblies"        Path="" />
+        <ProductDirectory Name="BeCurlAssemblies"           Path="" />
 
         <ProductDirectory Name="GeomNativeAssemblies" Path=""/>
         <ProductDirectory Name="PointoolsAssemblies" Path=""/>
