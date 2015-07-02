@@ -36,6 +36,9 @@ struct ClientInfo : public IHttpHeaderProvider
         Utf8String m_fallbackLanguageTag;
         IHttpHeaderProviderPtr m_primaryHeaderProvider;
 
+    private:
+        Utf8String GetUserAgent () const;
+
     public:
         //! Create client info with mandatory fields and initialize other required fields automatically. 
         //! There should be one ClientInfo created per application and shared to code that connects to web services.
@@ -81,6 +84,9 @@ struct ClientInfo : public IHttpHeaderProvider
         //! Override default or change fallback language. See SetLanguage() for more info.
         WSCLIENT_EXPORT void SetFallbackLanguage (Utf8StringCR languageTag);
         WSCLIENT_EXPORT Utf8String GetFallbackLanguage () const;
+
+        //! Get value for accept language header
+        WSCLIENT_EXPORT Utf8String GetAcceptLanguage () const;
 
         WSCLIENT_EXPORT Utf8String GetApplicationName () const;
         WSCLIENT_EXPORT BeVersion GetApplicationVersion () const;
