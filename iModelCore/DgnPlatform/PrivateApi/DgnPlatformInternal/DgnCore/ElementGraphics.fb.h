@@ -27,6 +27,7 @@ struct BRepData;
 struct BeginSubCategory;
 struct GeomPart;
 struct BasicSymbology;
+struct LineStyle;
 struct Material;
 struct AreaFill;
 
@@ -538,6 +539,35 @@ inline flatbuffers::Offset<BasicSymbology> CreateBasicSymbology(flatbuffers::Fla
   builder_.add_geomClass(geomClass);
   builder_.add_useWeight(useWeight);
   builder_.add_useColor(useColor);
+  return builder_.Finish();
+}
+
+struct LineStyle : private flatbuffers::Table {
+  int64_t lineStyleId() const { return GetField<int64_t>(4, 0); }
+  bool Verify(flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<int64_t>(verifier, 4 /* lineStyleId */) &&
+           verifier.EndTable();
+  }
+  bool has_lineStyleId() const { return CheckField(4); }
+};
+
+struct LineStyleBuilder {
+  flatbuffers::FlatBufferBuilder &fbb_;
+  flatbuffers::uoffset_t start_;
+  void add_lineStyleId(int64_t lineStyleId) { fbb_.AddElement<int64_t>(4, lineStyleId, 0); }
+  LineStyleBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
+  LineStyleBuilder &operator=(const LineStyleBuilder &);
+  flatbuffers::Offset<LineStyle> Finish() {
+    auto o = flatbuffers::Offset<LineStyle>(fbb_.EndTable(start_, 1));
+    return o;
+  }
+};
+
+inline flatbuffers::Offset<LineStyle> CreateLineStyle(flatbuffers::FlatBufferBuilder &_fbb,
+   int64_t lineStyleId = 0) {
+  LineStyleBuilder builder_(_fbb);
+  builder_.add_lineStyleId(lineStyleId);
   return builder_.Finish();
 }
 

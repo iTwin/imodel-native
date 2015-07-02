@@ -63,13 +63,13 @@ struct TestElement : Dgn::PhysicalElement
 
     friend struct TestElementHandler;
 
-private:    
+private:
     // Item caching states:
     enum class ItemState
         {
         Unknown,        // don't know yet
         DoesNotExist,   // no item exists in the Db, and nothing is cached in memory
-        Exists,         // item exists in the Db, is cached in memory, and is un-modified 
+        Exists,         // item exists in the Db, is cached in memory, and is un-modified
         Modified,       // item may or may not exist in the Db and is modified in memory
         Deleted         // item exists in the Db and should be deleted
         };
@@ -82,7 +82,7 @@ private:
     virtual void _CopyFrom(DgnElementCR) override;
 
 public:
-    TestElement(CreateParams const& params) : T_Super(params), m_itemState(ItemState::Unknown) {} 
+    TestElement(CreateParams const& params) : T_Super(params), m_itemState(ItemState::Unknown) {}
 
     static ECN::ECClassCP GetTestElementECClass(DgnDbR db) {return db.Schemas().GetECClass(TMTEST_SCHEMA_NAME, TMTEST_TEST_ELEMENT_CLASS_NAME);}
     static RefCountedPtr<TestElement> Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode);
@@ -215,7 +215,7 @@ static bvector<ECInstanceId>::const_iterator findRelId(bvector<ECInstanceId> con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TxnMonitorVerifier::TxnMonitorVerifier() 
+TxnMonitorVerifier::TxnMonitorVerifier()
     {
     DgnPlatformLib::GetHost().GetTxnAdmin().AddTxnMonitor(*this);
     Clear();
@@ -232,7 +232,7 @@ TxnMonitorVerifier::~TxnMonitorVerifier()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TxnMonitorVerifier::Clear() 
+void TxnMonitorVerifier::Clear()
     {
     m_OnTxnClosedCalled = m_OnTxnReversedCalled = false;
     m_adds.clear(); m_deletes.clear(); m_mods.clear();
@@ -244,7 +244,7 @@ void TxnMonitorVerifier::Clear()
 void TxnMonitorVerifier::_OnCommit(TxnManager& txnMgr)
     {
     m_OnTxnClosedCalled = true;
-    
+
     for (auto it : txnMgr.Elements().MakeIterator())
         {
         DgnElementId eid =  it.GetElementId();
@@ -284,7 +284,7 @@ void ABCHandler::_OnRootChanged(DgnDbR db, ECInstanceId relationshipId, DgnEleme
 TransactionManagerTests::TransactionManagerTests()
     {
     // Must register my domain whenever I initialize a host
-    DgnDomains::RegisterDomain(TransactionManagerTestDomain::GetDomain()); 
+    DgnDomains::RegisterDomain(TransactionManagerTestDomain::GetDomain());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -820,9 +820,9 @@ void ElementDependencyGraph::TestRelationships(DgnDb& db, ElementsAndRelationshi
         auto i3_2   = findRelId(rels, g.r3_2);     ASSERT_NE(i3_2  , rels.end());
         auto i31_2  = findRelId(rels, g.r31_2);    ASSERT_NE(i31_2 , rels.end());
         auto i2_1   = findRelId(rels, g.r2_1);     ASSERT_NE(i2_1  , rels.end());
-        
+
         ASSERT_LT(i99_3  , i3_2);
-        ASSERT_LT(i99_31 , i31_2); 
+        ASSERT_LT(i99_31 , i31_2);
         ASSERT_LT(i3_2   , i2_1);
         ASSERT_LT(i31_2  , i2_1);
         }
@@ -845,7 +845,7 @@ void ElementDependencyGraph::TestRelationships(DgnDb& db, ElementsAndRelationshi
         auto i31_2  = findRelId(rels, g.r31_2);    ASSERT_NE(i31_2  , rels.end());
         auto i3_2   = findRelId(rels, g.r3_2);     ASSERT_NE(i3_2  , rels.end());
         auto i2_1   = findRelId(rels, g.r2_1);     ASSERT_NE(i2_1  , rels.end());
-        
+
         ASSERT_LT(i99_31 , i31_2);
         ASSERT_LT(i31_2 , i2_1);
         ASSERT_LT(i3_2 , i2_1);
@@ -871,7 +871,7 @@ void ElementDependencyGraph::TestRelationships(DgnDb& db, ElementsAndRelationshi
         auto i3_2   = findRelId(rels, g.r3_2);         ASSERT_NE(i3_2  , rels.end());
         auto i31_2  = findRelId(rels, g.r31_2);        ASSERT_NE(i31_2  , rels.end());
         auto i2_1   = findRelId(rels, g.r2_1);         ASSERT_NE(i2_1  , rels.end());
-        
+
         ASSERT_LT(i99_3  , i3_2);
         ASSERT_LT(i99_31 , i31_2);
         ASSERT_LT(i3_2  , i2_1);
@@ -880,7 +880,7 @@ void ElementDependencyGraph::TestRelationships(DgnDb& db, ElementsAndRelationshi
     //  ----------------
     //  change e2 =>
     //  r3_2    r2_1
-    //  r31_2    
+    //  r31_2
     //  ----------------
     TwiddleTime(g.e2);
 
@@ -894,7 +894,7 @@ void ElementDependencyGraph::TestRelationships(DgnDb& db, ElementsAndRelationshi
         auto i3_2   = findRelId(rels, g.r3_2);     ASSERT_NE(i3_2  , rels.end());
         auto i31_2  = findRelId(rels, g.r31_2);    ASSERT_NE(i31_2 , rels.end());
         auto i2_1   = findRelId(rels, g.r2_1);     ASSERT_NE(i2_1  , rels.end());
-        
+
         ASSERT_LT(i3_2  , i2_1);
         ASSERT_LT(i31_2 , i2_1);
         }
@@ -986,7 +986,7 @@ TEST_F(Performance_ElementDependencyGraph, PerformanceDeep1)
             {
             previousElement = thisElement;
             thisElement = InsertElement(Utf8PrintfString("E%d",(int)i));
-        
+
             if (!firstElement.IsValid())
                 firstElement = thisElement;
             else
@@ -1079,7 +1079,7 @@ void Performance_ElementDependencyGraph::DoPerformanceShallow(size_t depCount)
                 firstDependentElement = thisElement;
             else
                 lastDependentElement = thisElement;
-        
+
             auto thisRel = InsertElementDrivesElementRelationship(rootElement, thisElement);
 
             if (!firstRel.IsValid())
@@ -1203,7 +1203,7 @@ TEST_F(ElementDependencyGraph, NonDependencyOrderTest)
 
         //  w2_c1 preceeds c1_w1 because of the explicit dependency
         ASSERT_LT( iw2_c1   ,   ic1_w1 );
-        
+
         //  w3_c1 is invoked because it must have another crack at its output. It preceeded c1_w1 because of the explicit dependency.
         ASSERT_LT( iw3_c1   ,   ic1_w1 );
 
@@ -1324,8 +1324,8 @@ TEST_F(ElementDependencyGraph, CycleTest1)
 
         ABCHandler::GetHandler().Clear();
         m_db->SaveChanges();
- 
-// It's still undecided as to whether handlers should be called or not.  
+
+// It's still undecided as to whether handlers should be called or not.
 //        auto const& rels = ABCHandler::GetHandler().m_relIds;
 //        ASSERT_EQ( rels.size() , 0) << L" my dependency handler should not have been called, because of the graph-building error";
 
@@ -1370,7 +1370,7 @@ TEST_F(ElementDependencyGraph, CycleTest2)
 
         ABCHandler::GetHandler().Clear();
         m_db->SaveChanges();
- 
+
         // Verify that the txn was rolled back. If so, my insert of e2_e1 should have been cancelled, and e2_e1 should not exist.
         CachedECSqlStatementPtr getRelDep = GetSelectElementDrivesElementById();
         getRelDep->BindId(1, e4_e2.GetECInstanceId());
@@ -1598,7 +1598,7 @@ TEST_F(ElementDependencyGraph, ModelDependenciesTest)
     ASSERT_LT( i1_2 , i3_4 );
     ASSERT_LT( i1_3 , i3_4 );
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1748,7 +1748,7 @@ TEST_F(ElementDependencyGraph, ModelDependenciesInvalidDirectionTest)
 TEST_F(ElementDependencyGraph, PersistentHandlerTest)
     {
     SetUpForRelationshipTests(L"PersistentHandlerTest");
-    
+
     {
     auto e1 = InsertElement("E1");
     auto e2 = InsertElement("E2");
@@ -1800,7 +1800,7 @@ TEST_F(ElementDependencyGraph, ChangeDepTest)
     stmt.BindId(1, rel.GetECInstanceId());
     ASSERT_EQ( stmt.Step(), ECSqlStepStatus::Done );
 
-    // Commit this change. 
+    // Commit this change.
     ABCHandler::GetHandler().Clear();
     m_db->SaveChanges();
 
@@ -1843,7 +1843,7 @@ void TestEdgeProcessor::_ProcessEdgeForValidation(DgnElementDependencyGraph::Edg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TestEdgeProcessor::_OnValidationError(TxnManager::ValidationError const& error, DgnElementDependencyGraph::Edge const* edge) 
+void TestEdgeProcessor::_OnValidationError(TxnManager::ValidationError const& error, DgnElementDependencyGraph::Edge const* edge)
     {
     m_hadError = true;
     }
@@ -2042,7 +2042,7 @@ static void testModelUndoRedo(DgnDbR db)
 
     db.SaveChanges("added model");
 
-    auto& txns = db.Txns(); 
+    auto& txns = db.Txns();
     auto stat = txns.ReverseSingleTxn();
     ASSERT_TRUE(DgnDbStatus::Success == stat);
     ASSERT_TRUE(!el1->IsPersistent());
@@ -2109,7 +2109,165 @@ static void testModelUndoRedo(DgnDbR db)
     ASSERT_TRUE(DgnDbStatus::Success == stat);
     ASSERT_TRUE(100.0 == props.GetRoundoffUnit());
     ASSERT_TRUE(200.0 == props.GetRoundoffRatio());
-    }            
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Test undo/redo of properties and settings. Normal properties behave normally in response to undo/redo.
+* But "Settings" are not supposed to be affected by undo/redo except that
+* the undo operation *is* supposed to reverse the effect of "SaveSettings". So,
+* if we change setting, then call SaveSettings/SaveChanges, and then call "undo", the setting should remain in the
+* post-changed state in memory but that change should *not* saved to disk. If we call SaveSettings again, the change
+* will be saved, again.
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static void testSettings(DgnDbR db)
+    {
+    auto& txns = db.Txns();
+    PropertySpec setting("setting1", "Test", PropertySpec::Mode::Setting);
+    PropertySpec setting2("setting2", "Test", PropertySpec::Mode::Setting);
+    PropertySpec setting3("setting3", "Test", PropertySpec::Mode::Setting);
+    PropertySpec compressedSetting("commpressedSetting", "Test", PropertySpec::Mode::Setting);
+    PropertySpec fakeSetting("setting1", "Test", PropertySpec::Mode::Normal);
+    PropertySpec nonsetting("nonSetting", "Test", PropertySpec::Mode::Normal);
+
+    // There are really 3 types of properties/settings:
+    // - a string
+    // - an uncompressed binary value
+    // - a compressed binary value.
+    // Each can have updates that change the size of the data. We need to test all permutations with undo/redo
+
+    // first, save a setting that has compressed data
+    int compressed[500];
+    memset(compressed, 0, sizeof(compressed));
+    db.SaveProperty(compressedSetting, compressed, sizeof(compressed));
+
+    // save a string setting.
+    Utf8String orig("setting original val");
+    db.SavePropertyString(setting, orig.c_str(), 2, 6);
+
+    // save a normal property
+    Utf8String nonprop1 = "prop 1";
+    db.SavePropertyString(nonsetting, nonprop1.c_str(), 3, 56);
+
+    // save an uncompressed binary setting, we will change its size
+    int a[5] = {1,2,3,5,100};
+    db.SaveProperty(setting2, a, sizeof(a));
+
+    int sizeSame[12] = {1,2,3,4,5,6,7,8,9,10,11,12}; // save an uncompressed binary setting, we will keep its size
+    db.SaveProperty(setting3, sizeSame, sizeof(sizeSame));
+
+    db.SaveSettings(); // this copies all settings changes into the permanent table.
+
+    auto rc = db.SaveChanges("settings change 1"); // save all this as a Txn
+    ASSERT_TRUE(BE_SQLITE_OK == rc);
+
+    bool exists = db.HasProperty(setting, 2, 6); // make sure we can still see both properties and settings
+    ASSERT_TRUE(exists);
+    exists = db.HasProperty(nonsetting, 3, 56);
+    ASSERT_TRUE(exists);
+
+    auto stat = txns.ReverseSingleTxn(); // undo all the adds
+    ASSERT_TRUE(DgnDbStatus::Success == stat);
+
+    exists = db.HasProperty(setting, 2, 6); // both properties and settings should now be non-existent
+    ASSERT_TRUE(!exists);
+    exists = db.HasProperty(nonsetting, 3, 56);
+    ASSERT_TRUE(!exists);
+
+    Utf8String val;
+    stat = txns.ReinstateTxn(); // redo the Txn
+
+    exists = db.HasProperty(setting, 2, 6); // they should all be back
+    ASSERT_TRUE(exists);
+    exists = db.HasProperty(nonsetting, 3, 56);
+    ASSERT_TRUE(exists);
+
+    // now test updating existing settings
+    Utf8String state2("setting state 2");
+    db.SavePropertyString(setting, state2.c_str(), 2, 6); // change the string setting
+    db.QueryProperty(val, setting, 2, 6); // make sure its OK
+    ASSERT_TRUE(val.Equals(state2));
+
+    int b[10] = {23,2321,43,12,3400,32,3,21,4}; // change the uncompressed binary setting, changing its size
+    db.SaveProperty(setting2, b, sizeof(b));
+
+    Utf8String nonprop2 = "prop in state 2";
+    db.SavePropertyString(nonsetting, nonprop2, 3, 56); // change a normal property
+
+    compressed[22]=34;
+    db.SaveProperty(compressedSetting, compressed, sizeof(compressed)); // change a compressed binary property
+
+    db.SaveSettings(); // settings become part of the Txn
+    db.SaveChanges("settings change 2"); // save Txn
+
+    uint32_t propsize;
+    sizeSame[1] = 333;
+    db.SaveProperty(setting3, sizeSame, sizeof(sizeSame)); // change this again.
+    db.SaveSettings(); // we're going to undo below - this SaveSettings will get abandoned.
+
+    db.QueryPropertySize(propsize, setting3); // make sure the sizes are OK
+    ASSERT_TRUE(propsize == sizeof(sizeSame));
+
+    db.QueryProperty(val, setting, 2, 6);
+    ASSERT_TRUE(val.Equals(state2));
+
+    db.QueryPropertySize(propsize, setting2);
+    ASSERT_TRUE(propsize == sizeof(b));
+
+    int c[10];
+    db.QueryProperty(c, propsize, setting2);
+    ASSERT_TRUE(0 == memcmp(b,c,propsize));
+
+    db.QueryProperty(val, setting, 2, 6);
+    ASSERT_TRUE(val.Equals(state2));
+
+    stat = txns.ReverseSingleTxn(); // now undo the Txn. All settings should remain unchanged.
+    ASSERT_TRUE(DgnDbStatus::Success == stat);
+
+    int compressed2[500]; // this is the same size as original array
+    db.QueryPropertySize(propsize, compressedSetting); // make sure the size of the compressed setting didn't change
+    ASSERT_TRUE(propsize == sizeof(compressed2));
+
+    db.QueryProperty(compressed2, propsize, compressedSetting); // get the compressed data
+    ASSERT_TRUE(0 == memcmp(compressed2,compressed,propsize)); // make sure it has the 2nd value, not all zeros
+
+    db.QueryPropertySize(propsize, setting3);
+    ASSERT_TRUE(propsize == sizeof(sizeSame));
+
+    // verify that the other settings are in their post-changed state
+    int sizeSame2[12];
+    db.QueryProperty(sizeSame2, propsize, setting3);
+    ASSERT_TRUE(0 == memcmp(sizeSame2,sizeSame,propsize));
+
+    db.QueryProperty(val, nonsetting, 3, 56);
+    ASSERT_TRUE(val.Equals(nonprop1));
+
+    db.QueryPropertySize(propsize, setting2);
+    ASSERT_TRUE(propsize == sizeof(b));
+
+    db.QueryProperty(c, propsize, setting2);
+    ASSERT_TRUE(0 == memcmp(b,c,propsize));
+
+    db.QueryProperty(val, setting, 2, 6);
+    ASSERT_TRUE(val.Equals(state2));
+
+    db.QueryProperty(val, fakeSetting, 2, 6); // this is used to peek that the persistent state is post-changed
+    ASSERT_TRUE(val.Equals(orig));
+
+    db.QueryProperty(val, fakeSetting, 2, 6);
+    ASSERT_TRUE(val.Equals(orig));
+
+    stat = txns.ReinstateTxn(); // redo the updates
+    ASSERT_TRUE(DgnDbStatus::Success == stat);
+
+    db.QueryProperty(val, nonsetting, 3, 56);
+    ASSERT_TRUE(val.Equals(nonprop2));
+
+    db.QueryProperty(val, setting, 2, 6);
+    ASSERT_TRUE(val.Equals(state2));
+
+    stat = txns.ReinstateTxn();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
@@ -2117,7 +2275,7 @@ static void testModelUndoRedo(DgnDbR db)
 TEST_F(TransactionManagerTests, UndoRedo)
     {
     SetupProject(L"3dMetricGeneral.idgndb", L"TransactionManagerTests.idgndb", Db::OpenMode::ReadWrite);
-    auto& txns = m_db->Txns(); 
+    auto& txns = m_db->Txns();
     txns.EnableTracking(true);
 
     TestElementPtr templateEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "");
@@ -2203,6 +2361,7 @@ TEST_F(TransactionManagerTests, UndoRedo)
     ASSERT_TRUE(!m_db->Elements().GetElement(el2->GetElementId()).IsValid());
 
     testModelUndoRedo(*m_db);
+    testSettings(*m_db);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -190,7 +190,8 @@ StatusInt       LsComponent::_StrokeLineString2d (ViewContextP context, LineStyl
         return ERROR;
 
     // allocate a local 3d buffer for the points
-    DPoint3dP   pts3d = (DPoint3dP) _alloca (nPts * sizeof (DPoint3d));
+    ScopedArray<DPoint3d, 50>   pointsArray((unsigned)nPts);
+    DPoint3dP   pts3d = pointsArray.GetData();
 
     // copy points, set zDepth
     for (int i=0; i<nPts; i++, pts++)
@@ -374,7 +375,8 @@ StatusInt       LsComponent::_StrokeArc (ViewContextP context, LineStyleSymbP ls
     double sinAngle  = sin (stepAngle);
     double cosAngle  = cos (stepAngle);
 
-    DPoint3dP pts = (DPoint3dP) _alloca (nPts * sizeof (DPoint3d));
+    ScopedArray<DPoint3d, 50> scopedPts(nPts);
+    DPoint3dP pts = scopedPts.GetData();
     genArc3d (pts, xpos, ypos, sinAngle, cosAngle, nPts);
 
     Transform   trans;

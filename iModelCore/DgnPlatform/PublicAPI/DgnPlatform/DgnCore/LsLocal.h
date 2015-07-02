@@ -63,37 +63,5 @@ public:
     void    Output      (ViewContextP, LsStrokeP, DPoint3dCP normal, DPoint3dCP startTangent, DPoint3dCP endTangent);
 };
 
-#if defined(NOTNOW)
-struct AddComponentsToDefElm        // For traversing the avltree and adding to elmdscr.
-{
-    DgnElementP pDefElm;
-    DgnModelP    modelRef;
-    AvlTree*        rscElmMap;
-    LsCache*          fileNameMap;    // Ones already in the file, to avoid duplication.
-    bool            convertToUORS;
-    double          scale;
-};
-#endif
-
-
-#if defined(NOTNOW)
-//=======================================================================================
-// @bsiclass                                                       John.Gooding    06/09
-//=======================================================================================
-class           LineStyleCacheManager
-{
-public:
-static                    LsComponentP  GetLsComponent         (LsLocationCP location, DgnDbR dgnProject);
-static                    void          CacheAdd                (LsComponent* comp);
-static DGNPLATFORM_EXPORT void          CacheFree               ();
-static DGNPLATFORM_EXPORT void          CacheDelete             (LsLocation const* searchLocation,int option);
-static DGNPLATFORM_EXPORT void          CacheDeleteComponent    (LsComponent& compareComponent, int option);
-static DGNPLATFORM_EXPORT void          CacheDelete             (uint32_t fileKey, uint32_t rscType, uint32_t elementID, int option);
-static DGNPLATFORM_EXPORT void          CacheDelete             (DgnDbP dgnFile, long lsType, DgnElementId elementID, int option);
-static DGNPLATFORM_EXPORT BentleyStatus CacheInsert             (DgnDbP dgnFile, long compType, DgnElementId compID, void* pRsc, long option);
-static DGNPLATFORM_EXPORT void          FreeDgnFileMaps         ();
-}; // LineStyleCacheManager
-#endif
-
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

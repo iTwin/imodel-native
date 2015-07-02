@@ -61,8 +61,6 @@ DbResult DgnDb::CreateDgnDbTables()
                            "TxnId INTEGER NOT NULL,"
                            "Deleted BOOL,"
                            "Operation CHAR NOT NULL,"
-                           "Mark CHAR,"
-                           "Settings BOOL,"
                            "Time TIMESTAMP DEFAULT(julianday('now')),"
                            "Change BLOB");
 

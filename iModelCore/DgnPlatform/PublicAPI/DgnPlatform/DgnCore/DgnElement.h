@@ -58,7 +58,6 @@ public:
     friend struct DgnElements;
     friend struct DgnModel;
     friend struct ElemIdTree;
-    friend struct EditElementHandle;
     friend struct dgn_ElementHandler::Element;
     friend struct dgn_TxnTable::Element;
 
@@ -76,7 +75,7 @@ public:
         double          m_lastModTime;
         CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, Utf8CP label=nullptr, Utf8CP code=nullptr, DgnElementId id=DgnElementId(),
                      DgnElementId parent=DgnElementId(), double lastModTime=0.0) :
-                    m_dgndb(db), m_modelId(modelId), m_classId(classId), m_categoryId(category), m_label(label), m_code(code), m_id(id), m_parentId(parent), m_lastModTime(lastModTime) {}
+                     m_dgndb(db), m_modelId(modelId), m_classId(classId), m_categoryId(category), m_label(label), m_code(code), m_id(id), m_parentId(parent), m_lastModTime(lastModTime) {}
 
         void SetLabel(Utf8CP label) {m_label = label;}  //!< Set the label for DgnElements created with this CreateParams
         void SetCode(Utf8CP code) {m_code = code;}      //!< Set the code for DgnElements created with this CreateParams
@@ -138,6 +137,7 @@ public:
         DGNPLATFORM_EXPORT DropMe _OnInserted(DgnElementCR el) override final;
         DGNPLATFORM_EXPORT DropMe _OnUpdated(DgnElementCR modified, DgnElementCR original) override final;
         friend struct MultiAspectMux;
+
     protected:
         enum class ChangeType{None, Write, Delete};
 

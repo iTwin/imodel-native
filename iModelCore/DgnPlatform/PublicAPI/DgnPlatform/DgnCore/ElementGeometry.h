@@ -113,6 +113,7 @@ enum class OpCode : uint32_t
     Pattern             = 20,   //!< Hatch, cross-hatch, and area pattern
     Material            = 21,   //!< Render material
     TextString          = 22,   //!< TextString (single-line/single-format run of characters)
+    LineStyleModifiers  = 23,   //!< Specifies line style overrides to populate a LineStyleParams structure
     };
 
 //=======================================================================================
