@@ -109,6 +109,15 @@ table BasicSymbology
 //=======================================================================================
 // @bsiclass                                                    
 //=======================================================================================
+table LineStyle
+    {
+    lineStyleId:long;
+    //  LineStyleParams are in a separate table. They are provided only when necessary.
+    } // Material
+
+//=======================================================================================
+// @bsiclass                                                    
+//=======================================================================================
 table Material
     {
     useMaterial:ubyte; // material overrides sub-category appearance
