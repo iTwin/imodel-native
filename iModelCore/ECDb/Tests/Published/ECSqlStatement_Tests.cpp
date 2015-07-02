@@ -26,7 +26,7 @@ struct ECSqlSelectTests : public ::testing::Test
             BeFileName dbPath;
             BeTest::GetHost ().GetDocumentsRoot (dbPath);
             dbPath.AppendToPath (L"DgnDb");
-            dbPath.append (L"\\ECSqlStatementTests.ecdb");
+            dbPath.AppendToPath (L"ECSqlStatementTests.ecdb");
 
             ASSERT_EQ (BE_SQLITE_OK, ecdb.OpenBeSQLiteDb (dbPath, ECDb::OpenParams (ECDb::OpenMode::ReadWrite)));
             }
