@@ -39,7 +39,6 @@ private:
     ECDbSQLManager              m_ecdbSqlManager;
     ClassMapDictionary          m_classMapDictionary;
     ClustersByTable             m_clustersByTable;
-    bset<ECN::ECClassId>        m_exclusivelyStoredClasses;
     mutable bvector<ECN::ECClassCP> m_classMapLoadTable;
     mutable int                 m_classMapLoadAccessCounter;
     mutable std::unique_ptr<MapContext> m_mapContext;
@@ -105,9 +104,6 @@ public:
     std::vector<ECN::ECClassCP> GetClassesFromRelationshipEnd (ECN::ECRelationshipConstraintCR relationshipEnd) const;
     size_t                      GetTablesFromRelationshipEnd (bset<ECDbSqlTable*>* tables, ECN::ECRelationshipConstraintCR relationshipEnd) const;
     void                        ClearCache();
-    bool IsExclusivelyStored (ECN::ECClassId ecClassId) const;
-
-
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

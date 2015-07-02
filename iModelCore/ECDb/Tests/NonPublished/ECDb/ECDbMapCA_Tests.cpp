@@ -57,39 +57,58 @@ struct ECDbMapCATests : public ::testing::Test
         return 0;
         }
 
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                                   Affan.Khan                         02/15
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    enum  MapStrategy : uint32_t
+
+    //This is a mirror of the internal MapStrategy used by ECDb and persisted in the DB.
+    //The values can change, so in that case this struct needs to be updated accordingly.
+    struct ResolvedMapStrategy
         {
-        MapStrategy_DoNotMap = 0x1,
-        MapStrategy_DoNotMapHierarchy = 0x2,
-        MapStrategy_TablePerHierarchy = 0x4,
-        MapStrategy_TablePerClass = 0x8,
-        MapStrategy_SharedTableForThisClass = 0x10,
-        MapStrategy_MapToExistingTable = 0x20,
-        MapStrategy_TableForThisClass = 40,
-        MapStrategy_SharedColumns = 0x100,
-        MapStrategy_WithExclusivelyStoredInThisTable = 0x200,
-        MapStrategy_WithReadonly = 0x400,
-        MapStrategy_NoHint = 0x0,
-        MapStrategy_InParentTable = 0x1000,
-        MapStrategy_RelationshipTargetTable = 0x2000,
-        MapStrategy_RelationshipSourceTable = 0x4000,
+        enum class Strategy
+            {
+            None = 0,
+
+            NotMapped,
+            OwnTable,
+            SharedTable,
+            ExistingTable,
+
+            ForeignKeyRelationshipInTargetTable = 100,
+            ForeignKeyRelationshipInSourceTable = 101
+            };
+
+        enum class Options
+            {
+            None = 0,
+            Readonly = 1,
+            SharedColumns = 2,
+            SharedColumnsForSubclasses = 4,
+            DisableSharedColumns = 8
+            };
+
+        Strategy m_strategy;
+        int m_options;
+        bool m_isPolymorphic;
+
+        ResolvedMapStrategy() : m_strategy(Strategy::None), m_options(-1), m_isPolymorphic(false) {}
+        ResolvedMapStrategy(Strategy strategy, int options, bool isPolymorphic) : m_strategy(strategy), m_options(options), m_isPolymorphic(isPolymorphic) {}
         };
 
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                   Affan.Khan                         02/15
     +---------------+---------------+---------------+---------------+---------------+------*/
-    uint32_t GetMapStrategy (ECDbR ecdb, ECClassId ClassId)
+    ResolvedMapStrategy GetMapStrategy(ECDbR ecdb, ECClassId ClassId)
         {
         Statement stmt;
-        stmt.Prepare (ecdb, "SELECT MapStrategy FROM ec_ClassMap WHERE ClassId = ?");
+        stmt.Prepare (ecdb, "SELECT MapStrategy, MapStrategyOptions, IsMapStrategyPolymorphic FROM ec_ClassMap WHERE ClassId = ?");
         stmt.BindInt64 (1, ClassId);
-        if (stmt.Step () == BE_SQLITE_ROW)
-            return stmt.GetValueInt (0);
+        if (stmt.Step() == BE_SQLITE_ROW)
+            {
+            ResolvedMapStrategy::Strategy strat = (ResolvedMapStrategy::Strategy) stmt.GetValueInt(0);
+            int options = stmt.IsColumnNull(1) ? 0 : stmt.GetValueInt(1);
+            bool isPolymorphic = stmt.GetValueInt(2) != 0;
+            return ResolvedMapStrategy(strat, options, isPolymorphic);
+            }
 
-        return 0;
+        return ResolvedMapStrategy();
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -243,14 +262,16 @@ struct ECDbMapCATests : public ::testing::Test
         VerifyRelationshipInsertionIntegrity (ecdb, "ts.OneFooHasOneGoo", fooKeys, gooKeys, oneFooHasOneGooResult, count_OneFooHasOneGoo);
         VerifyRelationshipInsertionIntegrity (ecdb, "ts.OneFooHasOneGoo", fooKeys, gooKeys, reinsertResultError, count_OneFooHasOneGoo);
 
-        ASSERT_EQ (GetMapStrategy (ecdb, oneFooHasOneGoo->GetId ()), MapStrategy_RelationshipTargetTable);
+        ResolvedMapStrategy mapStrategy = GetMapStrategy(ecdb, oneFooHasOneGoo->GetId());
+        ASSERT_EQ(ResolvedMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
         ASSERT_EQ (count_OneFooHasOneGoo, GetRelationshipInstanceCount (ecdb, "ts.OneFooHasOneGoo"));
 
         //1:N--------------------------------
         size_t count_OneFooHasManyGoo = 0;
         VerifyRelationshipInsertionIntegrity (ecdb, "ts.OneFooHasManyGoo", fooKeys, gooKeys, oneFooHasManyGooResult, count_OneFooHasManyGoo);
 
-        ASSERT_EQ (GetMapStrategy (ecdb, oneFooHasManyGoo->GetId ()), MapStrategy_RelationshipTargetTable);
+        mapStrategy = GetMapStrategy(ecdb, oneFooHasManyGoo->GetId());
+        ASSERT_EQ(ResolvedMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
         ASSERT_EQ (count_OneFooHasManyGoo, GetRelationshipInstanceCount (ecdb, "ts.OneFooHasManyGoo"));
 
         //N:N--------------------------------
@@ -261,7 +282,11 @@ struct ECDbMapCATests : public ::testing::Test
         else
             VerifyRelationshipInsertionIntegrity (ecdb, "ts.ManyFooHasManyGoo", fooKeys, gooKeys, reinsertResultError, count_ManyFooHasManyGoo);
 
-        ASSERT_EQ (GetMapStrategy (ecdb, manyFooHasManyGoo->GetId ()), MapStrategy_TableForThisClass);
+        mapStrategy = GetMapStrategy(ecdb, manyFooHasManyGoo->GetId());
+
+        ASSERT_EQ(ResolvedMapStrategy::Strategy::OwnTable, mapStrategy.m_strategy);
+        ASSERT_EQ((int) ResolvedMapStrategy::Options::None, mapStrategy.m_options);
+        ASSERT_FALSE(mapStrategy.m_isPolymorphic);
         ASSERT_EQ (count_ManyFooHasManyGoo, GetRelationshipInstanceCount (ecdb, "ts.ManyFooHasManyGoo"));
         }
     };
@@ -351,7 +376,7 @@ TEST_F (ECDbMapCATests, RelationshipTest_AllowDuplicateRelationships)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECDbMapCATests, AbstractClassWithTablePerHierarchyAndSharedTableForThisClass)
+TEST_F (ECDbMapCATests, AbstractClassWithPolymorphicAndNonPolymorphicSharedTable)
     {
     auto const schema =
         L"<?xml version='1.0' encoding='utf-8'?>"
@@ -361,7 +386,10 @@ TEST_F (ECDbMapCATests, AbstractClassWithTablePerHierarchyAndSharedTableForThisC
         L"    <ECClass typeName='AbstractBaseClass' isDomainClass='False'>"
         L"        <ECCustomAttributes>"
         L"            <ClassMap xmlns='ECDbMap.01.00'>"
-        L"                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        L"                <MapStrategy>"
+        L"                  <Strategy>SharedTable</Strategy>"
+        L"                  <IsPolymorphic>True</IsPolymorphic>"
+        L"                </MapStrategy>"
         L"            </ClassMap>"
         L"        </ECCustomAttributes>"
         L"        <ECProperty propertyName='P1' typeName='string' />"
@@ -377,7 +405,10 @@ TEST_F (ECDbMapCATests, AbstractClassWithTablePerHierarchyAndSharedTableForThisC
         L"    <ECClass typeName='SharedTable' isDomainClass='False'>"
         L"        <ECCustomAttributes>"
         L"            <ClassMap xmlns='ECDbMap.01.00'>"
-        L"                <MapStrategy>SharedTableForThisClass</MapStrategy>"
+        L"                <MapStrategy>"
+        L"                  <Strategy>SharedTable</Strategy>"
+        L"                  <IsPolymorphic>False</IsPolymorphic>"
+        L"                </MapStrategy>"
         L"                <TableName>SharedTable</TableName>"
         L"            </ClassMap>"
         L"        </ECCustomAttributes>"
@@ -386,7 +417,10 @@ TEST_F (ECDbMapCATests, AbstractClassWithTablePerHierarchyAndSharedTableForThisC
         L"    <ECClass typeName='SharedTable1' isDomainClass='True'>"
         L"        <ECCustomAttributes>"
         L"            <ClassMap xmlns='ECDbMap.01.00'>"
-        L"                <MapStrategy>SharedTableForThisClass</MapStrategy>"
+        L"                <MapStrategy>"
+        L"                  <Strategy>SharedTable</Strategy>"
+        L"                  <IsPolymorphic>False</IsPolymorphic>"
+        L"                </MapStrategy>"
         L"                <TableName>SharedTable</TableName>"
         L"            </ClassMap>"
         L"        </ECCustomAttributes>"
@@ -427,7 +461,7 @@ TEST_F (ECDbMapCATests, AbstractClassWithTablePerHierarchyAndSharedTableForThisC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECDbMapCATests, TablePerHierarchy_SharedColumns)
+TEST_F (ECDbMapCATests, PolymorphicSharedTable_SharedColumns)
     {
     auto const schema =
         L"<?xml version='1.0' encoding='utf-8'?>"
@@ -437,8 +471,11 @@ TEST_F (ECDbMapCATests, TablePerHierarchy_SharedColumns)
         L"    <ECClass typeName='BaseClass' isDomainClass='True'>"
         L"        <ECCustomAttributes>"
         L"            <ClassMap xmlns='ECDbMap.01.00'>"
-        L"                <MapStrategy>TablePerHierarchy</MapStrategy>"
-        L"                <MapStrategyOptions>SharedColumns</MapStrategyOptions>"
+        L"                <MapStrategy>"
+        L"                  <Strategy>SharedTable</Strategy>"
+        L"                  <Options>SharedColumnsForSubclasses</Options>"
+        L"                  <IsPolymorphic>True</IsPolymorphic>"
+        L"                </MapStrategy>"
         L"            </ClassMap>"
         L"        </ECCustomAttributes>"
         L"        <ECProperty propertyName='P1' typeName='string' />"
@@ -447,8 +484,11 @@ TEST_F (ECDbMapCATests, TablePerHierarchy_SharedColumns)
         L"        <BaseClass>BaseClass</BaseClass>"
         L"        <ECCustomAttributes>"
         L"            <ClassMap xmlns='ECDbMap.01.00'>"
-        L"                <MapStrategy>TablePerHierarchy</MapStrategy>"
-        L"                <MapStrategyOptions>SharedColumns</MapStrategyOptions>"
+        L"                <MapStrategy>"
+        L"                  <Strategy>SharedTable</Strategy>"
+        L"                  <Options>SharedColumnsForSubclasses</Options>"
+        L"                  <IsPolymorphic>True</IsPolymorphic>"
+        L"                </MapStrategy>"
         L"            </ClassMap>"
         L"        </ECCustomAttributes>"
         L"        <ECProperty propertyName='P2' typeName='double' />"
@@ -468,7 +508,7 @@ TEST_F (ECDbMapCATests, TablePerHierarchy_SharedColumns)
         L"</ECSchema>";
 
     ECDbTestProject saveTestProject;
-    ECDbR db = saveTestProject.Create ("columnReuseTest.ecdb");
+    ECDbR db = saveTestProject.Create ("sharedcolumnstest.ecdb");
     ECSchemaPtr testSchema;
     auto readContext = ECSchemaReadContext::CreateContext ();
     ECSchema::ReadFromXmlString (testSchema, schema, *readContext);
@@ -516,7 +556,7 @@ TEST_F (ECDbMapCATests, TablePerHierarchy_SharedColumns)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     04/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMapCATests, TablePerHierarchy_SharedColumns_DisableSharedColumnsForThisClass)
+TEST_F(ECDbMapCATests, PolymorphicSharedTable_SharedColumns_DisableSharedColumns)
     {
     Utf8CP schemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -526,8 +566,11 @@ TEST_F(ECDbMapCATests, TablePerHierarchy_SharedColumns_DisableSharedColumnsForTh
         "    <ECClass typeName='BaseClass' isDomainClass='True'>"
         "        <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.01.00'>"
-        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-        "                <MapStrategyOptions>SharedColumns</MapStrategyOptions>"
+        "                <MapStrategy>"
+        "                  <Strategy>SharedTable</Strategy>"
+        "                  <Options>SharedColumnsForSubclasses</Options>"
+        "                  <IsPolymorphic>True</IsPolymorphic>"
+        "                </MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='P1' typeName='string' />"
@@ -536,7 +579,9 @@ TEST_F(ECDbMapCATests, TablePerHierarchy_SharedColumns_DisableSharedColumnsForTh
         "        <BaseClass>BaseClass</BaseClass>"
         "        <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.01.00'>"
-        "                <MapStrategy>DisableSharedColumnsForThisClass</MapStrategy>"
+        "                <MapStrategy>"
+        "                  <Options>DisableSharedColumns</Options>"
+        "                </MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='P2' typeName='double' />"
@@ -545,7 +590,9 @@ TEST_F(ECDbMapCATests, TablePerHierarchy_SharedColumns_DisableSharedColumnsForTh
         "        <BaseClass>BaseClass</BaseClass>"
         "        <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.01.00'>"
-        "                <MapStrategy>DisableSharedColumnsForThisClass</MapStrategy>"
+        "                <MapStrategy>"
+        "                  <Options>DisableSharedColumns</Options>"
+        "                </MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='P3' typeName='int' />"
@@ -618,7 +665,7 @@ TEST_F (ECDbMapCATests, TestInvalidMapStrategyValue)
         "    <ECClass typeName='ClassA' isDomainClass='True'>"
         "        <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.01.00'>"
-        "                <MapStrategy>bla</MapStrategy>"
+        "                <MapStrategy><Strategy>bla</Strategy></MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Price' typeName='double' />"
@@ -655,8 +702,10 @@ TEST_F(ECDbMapCATests, TestInvalidCombinationsOfMapStrategyAndOptions)
         "    <ECClass typeName='ClassA' isDomainClass='True'>"
         "        <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.01.00'>"
-        "                <MapStrategy>TablePerClass</MapStrategy>"
-        "                <MapStrategyOptions>SharedColumns</MapStrategyOptions>"
+        "                <MapStrategy>"
+        "                   <Strategy>OwnTable</Strategy>"
+        "                   <Options>SharedColumns</Options>"
+        "                </MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Price' typeName='double' />"
@@ -981,7 +1030,10 @@ TEST_F (ECDbMapCATests, TestStructClassInTablePerHierarchy)
         "    <ECClass typeName='BaseClass' isDomainClass='True'>"
         "        <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.01.00'>"
-        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <IsPolymorphic>True</IsPolymorphic>"
+        "                </MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='PerpertyTPH' typeName='string' />"

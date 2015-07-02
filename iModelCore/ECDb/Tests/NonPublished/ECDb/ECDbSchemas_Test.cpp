@@ -2494,7 +2494,7 @@ TEST_F(ECDbSchemaFixture,SchemaMapCustomAttributeTablePrefix)
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                   Adeel.Shoukat                        04/13
  +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECDbSchemaFixture,ClassMapCustomAttributeTableForClass)
+TEST_F(ECDbSchemaFixture,ClassMapCustomAttributeOwnTableNonPolymorphic)
     {
     ECSchemaReadContextPtr MappingSchemaContext=ECSchemaReadContext::CreateContext();
     ECDbTestUtility::ReadECSchemaFromDisk(MappingSchema,MappingSchemaContext,L"SchemaMapping.01.00.ecschema.xml");
@@ -2503,9 +2503,9 @@ TEST_F(ECDbSchemaFixture,ClassMapCustomAttributeTableForClass)
     EXPECT_TRUE(ecdbMapSchema != nullptr) << "Schema '" << schemaKey.GetFullSchemaName().c_str() << "' not found.";
     ECClassCP testClass = ecdbMapSchema->GetClassCP(L"ClassMap");
     IECInstancePtr ecInctance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    ecInctance->SetValue(L"MapStrategy",ECValue(L"TableForThisClass"));
+    ecInctance->SetValue(L"MapStrategy.Strategy",ECValue(L"OwnTable"));
     MappingSchema->GetClassP(L"B")->SetCustomAttribute(*ecInctance);
-    WCharCP fileName=L"TableForClassMapping.ecdb";
+    WCharCP fileName=L"OwnTableNonPolymorphic.ecdb";
     deleteExistingDgnb(fileName);
     DbResult stat = db.CreateNewDb (projectFile.GetNameUtf8 ().c_str ());
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
@@ -2516,7 +2516,7 @@ TEST_F(ECDbSchemaFixture,ClassMapCustomAttributeTableForClass)
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                   Adeel.Shoukat                        04/13
  +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeTablePerClass)
+TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeOwnTablePolymorphic)
     {
     ECSchemaReadContextPtr MappingSchemaContext=ECSchemaReadContext::CreateContext();
     ECDbTestUtility::ReadECSchemaFromDisk(MappingSchema,MappingSchemaContext,L"SchemaMapping.01.00.ecschema.xml");
@@ -2525,9 +2525,10 @@ TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeTablePerClass)
     EXPECT_TRUE(ecdbMapSchema != nullptr) << "Schema '" << schemaKey.GetFullSchemaName().c_str() << "' not found.";
     ECClassCP testClass = ecdbMapSchema->GetClassCP(L"ClassMap");
     IECInstancePtr ecInctance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    ecInctance->SetValue(L"MapStrategy",ECValue(L"TablePerClass"));
+    ecInctance->SetValue(L"MapStrategy.Strategy",ECValue(L"OwnTable"));
+    ecInctance->SetValue(L"MapStrategy.IsPolymorphic", ECValue(true));
     MappingSchema->GetClassP(L"B")->SetCustomAttribute(*ecInctance);
-    WCharCP fileName=L"TableForClassMapping.ecdb";
+    WCharCP fileName=L"OwnTablePolymorphic.ecdb";
     deleteExistingDgnb(fileName);
     DbResult stat = db.CreateNewDb (projectFile.GetNameUtf8 ().c_str ());
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
@@ -2538,7 +2539,7 @@ TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeTablePerClass)
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                   Adeel.Shoukat                        04/13
  +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeDoNotMap)
+TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeNotMapped)
     {
     ECSchemaReadContextPtr MappingSchemaContext=ECSchemaReadContext::CreateContext();
     ECDbTestUtility::ReadECSchemaFromDisk(MappingSchema,MappingSchemaContext,L"SchemaMapping.01.00.ecschema.xml");
@@ -2547,9 +2548,9 @@ TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeDoNotMap)
     EXPECT_TRUE(ecdbMapSchema != nullptr) << "Schema '" << schemaKey.GetFullSchemaName().c_str() << "' not found.";
     ECClassCP testClass = ecdbMapSchema->GetClassCP(L"ClassMap");
     IECInstancePtr ecInctance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    ecInctance->SetValue(L"MapStrategy",ECValue(L"DoNotMap"));
+    ecInctance->SetValue(L"MapStrategy.Strategy",ECValue(L"NotMapped"));
     MappingSchema->GetClassP(L"B")->SetCustomAttribute(*ecInctance);
-    WCharCP fileName=L"DoNotMapClassMapping.ecdb";
+    WCharCP fileName=L"NotMappedClassMapping.ecdb";
     deleteExistingDgnb(fileName);
     DbResult stat = db.CreateNewDb (projectFile.GetNameUtf8 ().c_str ());
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
@@ -2560,7 +2561,7 @@ TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeDoNotMap)
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                   Adeel.Shoukat                        04/13
  +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECDbSchemaFixture,ClassMapCustomAttributeTablePerHierarchy)
+TEST_F(ECDbSchemaFixture,ClassMapCustomAttributeSharedTablePolymorphic)
     {
     ECDbTestUtility::ReadECSchemaFromDisk(MappingSchema,MappingSchemaContext,L"SchemaMapping.01.00.ecschema.xml");
     SchemaKey schemaKey(L"ECDbMap", 1, 0);
@@ -2568,9 +2569,10 @@ TEST_F(ECDbSchemaFixture,ClassMapCustomAttributeTablePerHierarchy)
     EXPECT_TRUE(ecdbMapSchema != nullptr) << "Schema '" << schemaKey.GetFullSchemaName().c_str() << "' not found.";
     ECClassCP testClass = ecdbMapSchema->GetClassCP(L"ClassMap");
     IECInstancePtr ecInctance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    ecInctance->SetValue(L"MapStrategy",ECValue(L"TablePerHierarchy"));
+    ecInctance->SetValue(L"MapStrategy.Strategy",ECValue(L"SharedTable"));
+    ecInctance->SetValue(L"MapStrategy.IsPolymorphic", ECValue(true));
     MappingSchema->GetClassP(L"B")->SetCustomAttribute(*ecInctance);
-    WCharCP fileName=L"TablePerHierarchyMapClassMapping.ecdb";
+    WCharCP fileName=L"SharedTablePolymorphicClassMapping.ecdb";
     deleteExistingDgnb(fileName);
     DbResult stat = db.CreateNewDb (projectFile.GetNameUtf8 ().c_str ());
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
@@ -2587,7 +2589,7 @@ TEST_F(ECDbSchemaFixture,ClassMapCustomAttributeTablePerHierarchy)
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                   Adeel.Shoukat                        04/13
  +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeDoNotMapHierarchy)
+TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeNotMappedPolymorphic)
     {
     ECSchemaReadContextPtr MappingSchemaContext=ECSchemaReadContext::CreateContext();
     ECDbTestUtility::ReadECSchemaFromDisk(MappingSchema,MappingSchemaContext,L"SchemaMapping.01.00.ecschema.xml");
@@ -2596,9 +2598,10 @@ TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeDoNotMapHierarchy)
     EXPECT_TRUE(ecdbMapSchema != nullptr) << "Schema '" << schemaKey.GetFullSchemaName().c_str() << "' not found.";
     ECClassCP testClass = ecdbMapSchema->GetClassCP(L"ClassMap");
     IECInstancePtr ecInctance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    ecInctance->SetValue(L"MapStrategy",ECValue(L"DoNotMapHierarchy"));
+    ecInctance->SetValue(L"MapStrategy.Strategy",ECValue(L"NotMapped"));
+    ecInctance->SetValue(L"MapStrategy.IsPolymorphic", ECValue(true));
     MappingSchema->GetClassP(L"B")->SetCustomAttribute(*ecInctance);
-    WCharCP fileName=L"DoNotMapHierarchyMapClassMapping.ecdb";
+    WCharCP fileName=L"NotMappedPolymorphicClassMapping.ecdb";
     deleteExistingDgnb(fileName);
     DbResult stat = db.CreateNewDb (projectFile.GetNameUtf8 ().c_str ());
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";

@@ -3131,6 +3131,8 @@ DbResult ECDbMapStorage::InsertClassMap (ECDbClassMapInfo const& o)
 
     stmt->BindInt64(3, o.GetClassId ());
     stmt->BindInt(4, (int) o.GetMapStrategy ().GetStrategy ());
+    stmt->BindInt(5, o.GetMapStrategy().GetOptions());
+    stmt->BindInt(6, o.GetMapStrategy().IsPolymorphic() ? 1 : 0);
 
     return stmt->Step ();
     }
@@ -3232,7 +3234,11 @@ DbResult ECDbMapStorage::ReadClassMaps ()
         ECDbClassMapId id = stmt->GetValueInt64 (0);
         ECDbClassMapId parentId = stmt->IsColumnNull (1) ? 0LL : stmt->GetValueInt64 (1);
         ECN::ECClassId classId = stmt->GetValueInt64 (2);
-        ECDbMapStrategy mapStrategy ((MapStrategy) stmt->GetValueInt (3));
+
+        ECDbMapStrategy mapStrategy((MapStrategy) stmt->GetValueInt(3),
+                                    stmt->GetValueInt(4),
+                                    stmt->GetValueInt(5) == 1);
+
         auto classMap = Set (std::unique_ptr<ECDbClassMapInfo> (new ECDbClassMapInfo (*this, id, classId, mapStrategy, parentId)));
         if (classMap == nullptr)
             {

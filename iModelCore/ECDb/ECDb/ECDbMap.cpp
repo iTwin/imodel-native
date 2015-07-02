@@ -74,14 +74,6 @@ bool ECDbMap::AssertIfMapping () const
     return IsMapping();
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      02/2015
-//---------------+---------------+---------------+---------------+---------------+--------
-bool ECDbMap::IsExclusivelyStored (ECN::ECClassId ecClassId) const
-    {
-    return m_exclusivelyStoredClasses.find (ecClassId) != m_exclusivelyStoredClasses.end ();
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    affan.khan      03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -355,16 +347,6 @@ MapStatus ECDbMap::AddClassMap (ClassMapPtr& classMap)
         BeAssert(false && "Attempted to add a second ClassMap for the same ECClass");
         return MapStatus::Error;
         }
-    if (classMap->GetMapStrategy ().IsExclusiveyStoreInThisTable ())
-        {
-        if (classMap->GetMapStrategy ().IsMapped () && classMap->GetTable ().GetPersistenceType () == PersistenceType::Persisted)
-            m_exclusivelyStoredClasses.insert (classMap->GetClass ().GetId ());
-        else
-            {
-            LOG.warningv (L"Exclusively stored class (ECClass %ls) is either not mapped or is mapped to a virtual table", ecClass.GetFullName ());
-            BeAssert (false && "Exclusively stored class is either not mapped or is mapped to a virtual table");
-            }
-        }
 
     m_classMapDictionary[ecClass.GetId()]= classMap;
     MappedTableP mappedTable = GetMappedTable (*classMap);
@@ -379,7 +361,7 @@ void ECDbMap::RemoveClassMap (IClassMap const& classMap)
     {
     BeMutexHolder lock (m_criticalSection);
     ECClassCR ecClass = classMap.GetClass();
-    if (classMap.GetMapStrategy().IsMapped())
+    if (!classMap.GetMapStrategy().IsNotMapped())
         m_clustersByTable.erase (&classMap.GetTable());
 
     m_classMapDictionary.erase(ecClass.GetId());
@@ -739,11 +721,10 @@ size_t ECDbMap::GetTablesFromRelationshipEnd (bset<ECDbSqlTable*>* tables, ECRel
             return SIZE_MAX;
             }
 
-        auto classMap = GetClassMap (*ecClass, false);
-        if (classMap->GetMapStrategy ().IsDoNotMap() || classMap->GetMapStrategy ().IsDoNotMapHierarchy())
+        IClassMap const* classMap = GetClassMap (*ecClass, false);
+        if (classMap->GetMapStrategy ().IsNotMapped ())
             continue;
 
-        BeAssert (classMap->GetMapStrategy().IsMapped());
         ECDbSqlTable&  table = classMap->GetTable();
         outTables->insert(&table);
         }
@@ -764,7 +745,7 @@ void ECDbMap::GetClassMapsFromRelationshipEnd (bset<IClassMap const*>& endClassM
             }
 
         auto endClassMap = GetClassMap (*endClass, loadIfNotFound);
-        if (endClassMap->GetMapStrategy().IsUnmapped())
+        if (endClassMap->GetMapStrategy().IsNotMapped())
             continue;
 
         endClassMaps.insert (endClassMap);
@@ -779,7 +760,6 @@ void ECDbMap::ClearCache ()
     BeMutexHolder aGurad (m_criticalSection);
     m_classMapDictionary.clear();
     m_clustersByTable.clear();
-    m_exclusivelyStoredClasses.clear ();
     GetSQLManagerR ().Reset ();
     }
 

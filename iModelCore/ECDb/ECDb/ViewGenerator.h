@@ -89,7 +89,6 @@ public:
         RelationshipClass,
         StructArray
         };
-    static BentleyStatus CreateSystemView (NativeSqlBuilder& viewSql, SystemViewType systemView, ECDbMapCR map, std::vector<ECN::ECClassId> const& classesToInclude, bool polymorphic, ECSqlPrepareContext const& prepareContext);
 
     };
 

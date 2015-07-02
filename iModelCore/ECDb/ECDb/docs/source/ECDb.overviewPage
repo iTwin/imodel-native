@@ -223,12 +223,11 @@
     Description of the ClassMap properties:
 
     - <b>MapStrategy</b> (optional): Specifies how the ECClass is mapped to table(s). Default value is 'TableForThisClass'.
-        - @c DoNotMap : The class is not mapped to any database table. This does not affect subclasses of this ECClass.
-        - @c DoNotMapHierarchy : The whole hierarchy of classes is not mapped.
-        - @c TableForThisClass : This class are mapped to its own table. This does not affect subclasses of this ECClass.
-        - @c TablePerClass : This class and all its subclasses are mapped to its own table.
-        - @c TablePerHierarchy : This class and all its subclasses are mapped to a @em single table.
-        - @c MapToExistingTable : This class is mapped to an existing table. The existing table must be specified in the @b TableName ECProperty.
+        - @c NotMapped : The class is not mapped to any database table.
+        - @c OwnTable : This class is mapped to its own table.
+        - @c SharedTable : This class is mapped to @em table shared by other classes as well. If @b IsMapStrategyPolymorphic is false,
+        the @b TableName ECProperty must also be specified. Otherwise it is optional.
+        - @c ExistingTable : This class is mapped to an existing table. The existing table must be specified in the @b TableName ECProperty.
         The table must have a primary key column of type INTEGER. This does not affect subclasses of this ECClass.
         - @c SharedTableForThisClass : Allows multiple classes which are not inherited from each other to reuse the same table.
         The table is created by ECDb and its name @b must be specified via the ECProperty @b TableName. This does not affect subclasses of this ECClass.
@@ -236,9 +235,11 @@
             - @c SharedColumns : This option tells ECDb that different ECProperties (from different ECClasses) are mapped to the same column.
             This can reduce the number of columns (and cells with NULL values) in the table significantly.
             This can be applied to @b TablePerHierarchy or @b SharedTableForThisClass.
-            - @c DisableSharedColumnsForThisClass (not to combine with another MapStrategy): This option disables the column sharing for the class, if
+            - @c DisableSharedColumns (not to combine with another MapStrategy): This option disables the column sharing for the class, if
             column sharing was enabled on a base class.
             - @c Readonly : This will mark the table as readonly. Can only be used with @b MapToExistingTable.
+    - <b>IsMapStrategyPolymorphic</b> (optional): If true, the MapStrategy and options also apply to subclasses of this class. 
+      If false (default), the MapStrategy only applies to this class.
     - <b>TableName</b> (optional, required for MapStrategies @em MapToExistingTable and @em SharedTableForThisClass):
     Specify a table name for this class (instead of letting ECDb choose a name)
     - <b>Indexes</b> (optional) : List of indexes to be created for properties of this class.
@@ -252,23 +253,28 @@
 
     ####Examples
 
-    #### MapStrategy DoNotMap
+    #### MapStrategy NotMapped
 
         <ECClass typeName="AClassThatDoesNotGetMappedToDb" isDomainClass="True">
             <ECCustomAttributes>
                 <ClassMap xmlns="ECDbMap.01.00">
-                    <MapStrategy>DoNotMap</MapStrategy>
+                    <MapStrategy>
+                      <Strategy>NotMapped</Strategy>
+                    </MapStrategy>
                 </ClassMap>
             </ECCustomAttributes>
             <ECProperty propertyName="stringFoo" typeName="string" />
         </ECClass>
 
-    #### MapStrategy  TablePerHierarchy
+    #### MapStrategy  Polymorphic SharedTable (also known as TablePerHierarchy)
 
         <ECClass typeName="Foo" isDomainClass="True">
             <ECCustomAttributes>
                 <ClassMap xmlns="ECDbMap.01.00">
-                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                    <MapStrategy>
+                       <Strategy>SharedTable</Strategy>
+                       <IsPolymorphic>True</IsPolymorphic>
+                    </MapStrategy>
                 </ClassMap>
             </ECCustomAttributes>
         ...

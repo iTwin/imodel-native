@@ -172,10 +172,10 @@ public:
     virtual MapStatus _Initialize() override;
 
     Cardinality GetCardinality() const { return m_cardinality; }
-    RelationshipEndColumns const& GetSourceColumnsMapping() const { BeAssert(m_customMapType != CustomMapType::ForeignKeyOnTarget && GetMapStrategy().GetStrategy() != MapStrategy::RelationshipTargetTable); return m_sourceColumnsMapping; }
-    RelationshipEndColumns const& GetTargetColumnsMapping() const { BeAssert(m_customMapType != CustomMapType::ForeignKeyOnSource && GetMapStrategy().GetStrategy() != MapStrategy::RelationshipSourceTable); return m_targetColumnsMapping; }
-    bool AllowDuplicateRelationships() const { BeAssert((m_customMapType == CustomMapType::LinkTable || m_customMapType == CustomMapType::None) && GetMapStrategy().IsLinkTableStrategy()); return m_allowDuplicateRelationships; }
-    bool IsCreateForeignKeyConstraint() const { BeAssert(m_customMapType != CustomMapType::LinkTable && GetMapStrategy().IsEndTableMapping()); return m_onDeleteAction != ECDbSqlForeignKeyConstraint::ActionType::NotSpecified || m_onUpdateAction != ECDbSqlForeignKeyConstraint::ActionType::NotSpecified; }
+    RelationshipEndColumns const& GetSourceColumnsMapping() const { BeAssert(m_customMapType != CustomMapType::ForeignKeyOnTarget && GetMapStrategy().GetStrategy() != MapStrategy::ForeignKeyRelationshipInTargetTable); return m_sourceColumnsMapping; }
+    RelationshipEndColumns const& GetTargetColumnsMapping() const { BeAssert(m_customMapType != CustomMapType::ForeignKeyOnSource && GetMapStrategy().GetStrategy() != MapStrategy::ForeignKeyRelationshipInSourceTable); return m_targetColumnsMapping; }
+    bool AllowDuplicateRelationships() const { BeAssert((m_customMapType == CustomMapType::LinkTable || m_customMapType == CustomMapType::None) && !GetMapStrategy().IsForeignKeyMapping()); return m_allowDuplicateRelationships; }
+    bool IsCreateForeignKeyConstraint() const { BeAssert(m_customMapType != CustomMapType::LinkTable && GetMapStrategy().IsForeignKeyMapping()); return m_onDeleteAction != ECDbSqlForeignKeyConstraint::ActionType::NotSpecified || m_onUpdateAction != ECDbSqlForeignKeyConstraint::ActionType::NotSpecified; }
     ECDbSqlForeignKeyConstraint::ActionType GetOnDeleteAction() const { BeAssert(IsCreateForeignKeyConstraint()); return m_onDeleteAction; }
     ECDbSqlForeignKeyConstraint::ActionType GetOnUpdateAction() const { BeAssert(IsCreateForeignKeyConstraint()); return m_onUpdateAction; }
     };

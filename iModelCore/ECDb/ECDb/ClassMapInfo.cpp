@@ -25,7 +25,7 @@ std::shared_ptr<ClassMapInfo> ClassMapInfoFactory::Create(MapStatus& mapStatus, 
     if (info == nullptr)
         return nullptr;
 
-    if (info->GetMapStrategy ().IsMapped())
+    if (!info->GetMapStrategy ().IsNotMapped())
         {
         auto validationResult = schemaImportContext.GetSchemaValidationResult (ecClass.GetSchema ());
         if (validationResult != nullptr)
@@ -50,7 +50,7 @@ std::shared_ptr<ClassMapInfo> ClassMapInfoFactory::Create(MapStatus& mapStatus, 
                             //Relationship classes for which the name only differs by case are not supported by ECDb (in contrast to regular ECClasses)
                             if (ecClass.GetRelationshipClassCP () != nullptr && classMap->IsRelationshipClassMap ())
                                 {
-                                info->GetMapStrategyR ().SetDoNotMap ();
+                                info->GetMapStrategyR ().Assign(MapStrategy::NotMapped, false);
                                 schemaImportContext.GetIssueListener ().Report (ECDbSchemaManager::IImportIssueListener::Severity::Warning,
                                                                                 "Did not map ECRelationshipClass '%s': ECRelationshipClasses for which names only differ by case are not supported by ECDb.", Utf8String (ecClass.GetFullName ()).c_str ());
                                 }
@@ -96,7 +96,7 @@ std::shared_ptr<ClassMapInfo> ClassMapInfoFactory::Create(MapStatus& stat, ECCla
 //@bsimethod                                 Affan.Khan                            07/2012
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassMapInfo::ClassMapInfo (ECClassCR ecClass, ECDbMapCR ecDbMap)
-    : m_ecdbMap(ecDbMap), m_ecClass(ecClass), m_isMapToVirtualTable(IClassMap::IsAbstractECClass(ecClass)), m_classHasCurrentTimeStampProperty(nullptr), m_parentClassMap(nullptr), m_strategy(ECDbMapStrategy::GetDefaultMapStrategy())
+    : m_ecdbMap(ecDbMap), m_ecClass(ecClass), m_isMapToVirtualTable(IClassMap::IsAbstractECClass(ecClass)), m_classHasCurrentTimeStampProperty(nullptr), m_parentClassMap(nullptr)
     {}
 
 //---------------------------------------------------------------------------------
@@ -135,24 +135,27 @@ MapStatus ClassMapInfo::_Initialize()
 +---------------+---------------+---------------+---------------+---------------+------*/
 MapStatus ClassMapInfo::_EvaluateMapStrategy()
     {
-    if (GetMapStrategy().IsNoHint())
-        GetMapStrategyR().Assign(MapStrategy::Default);
+    ECDbMapStrategy& mapStrategy = GetMapStrategyR();
+    MapStrategy strategy = mapStrategy.GetStrategy();
 
-    if (GetMapStrategy ().IsDoNotMapHierarchy () || GetMapStrategy ().IsDoNotMap())
+    if (mapStrategy.IsNotMapped())
         return MapStatus::Success;
+
+    if (strategy == MapStrategy::None)
+        mapStrategy.Assign(MapStrategy::Default, false);
 
     ECClassCR ecClass = GetECClass ();
     if (ecClass.GetIsCustomAttributeClass () && !ecClass.GetIsDomainClass () && !ecClass.GetIsStruct ())
         {
         LogClassNotMapped (NativeLogging::LOG_DEBUG, ecClass, "ECClass is a custom attribute which is never mapped to a table in ECDb.");
-        GetMapStrategyR ().SetDoNotMap ();
+        mapStrategy.Assign(MapStrategy::NotMapped, false);
         return MapStatus::Success;
         }
 
     if (IClassMap::IsAnyClass (ecClass) || (ecClass.GetSchema ().IsStandardSchema () && ecClass.GetName ().CompareTo (L"InstanceCount") == 0))
         {
         LogClassNotMapped (NativeLogging::LOG_INFO, ecClass, "ECClass is a standard class not supported by ECDb.");
-        GetMapStrategyR ().SetDoNotMap ();
+        mapStrategy.Assign(MapStrategy::NotMapped, false);
         return MapStatus::Success;
         }
 
@@ -160,14 +163,14 @@ MapStatus ClassMapInfo::_EvaluateMapStrategy()
     bool isValid = ValidateBaseClasses ();
     if (!isValid)
         {
-        GetMapStrategyR ().SetDoNotMap ();
+        mapStrategy.Assign(MapStrategy::NotMapped, false);
         return MapStatus::Success;
         }
 
     //! We override m_isMapToVirtualTable if tablePerHierarchy Or shareTableStrategy was used.
     if (m_isMapToVirtualTable)
         {
-        m_isMapToVirtualTable = !(GetMapStrategy ().IsTablePerHierarchy () || GetMapStrategy ().IsSharedTableForThisClass ());
+        m_isMapToVirtualTable = strategy != MapStrategy::SharedTable;
         }
 
     return EvaluateInheritedMapStrategy ();
@@ -179,58 +182,67 @@ MapStatus ClassMapInfo::_EvaluateMapStrategy()
 MapStatus ClassMapInfo::EvaluateInheritedMapStrategy ()
     {
     bvector<IClassMap const*> baseClassMaps;
-    bvector<IClassMap const*> tphMaps; // TablePerHierarchy or InParentTable have the highest priority, but there can be only one
-    bvector<IClassMap const*> tpcMaps; // TablePerClass have second priority
-    bvector<IClassMap const*> nmhMaps; // DoNotMapHierarchy has priority only over NoHint or DoNotMap
+    bvector<IClassMap const*> tphMaps; // SharedTable-Polymorphic have the highest priority, but there can be only one
+    bvector<IClassMap const*> tpcMaps; // OwnTable have second priority
+    bvector<IClassMap const*> nmhMaps; // NotMapped-Polymorphic has priority only over NoHint or NotMapped-NonPolymorphic
 
     bool areBaseClassesMapped = GatherBaseClassMaps (baseClassMaps, tphMaps, tpcMaps, nmhMaps, m_ecClass);
     if (!areBaseClassesMapped)
         return MapStatus::BaseClassesNotMapped;
 
-    // ClassMappingRule: No more than one ancestor of a class can use TablePerHierarchy strategy. Mapping fails if this is violated
+    if (baseClassMaps.empty())
+        {
+        BeAssert(tphMaps.empty() && tpcMaps.empty() && nmhMaps.empty());
+        return MapStatus::Success;
+        }
+
+    // ClassMappingRule: No more than one ancestor of a class can use SharedTable-Polymorphic strategy. Mapping fails if this is violated
     if (tphMaps.size () > 1)
         return ReportError_OneClassMappedByTableInHierarchyFromTwoDifferentAncestors (m_ecClass, tphMaps);
 
-    // ClassMappingRule: If exactly 1 ancestor ECClass is using TablePerHierarchy, use InParentTable mapping
+    // ClassMappingRule: If exactly 1 ancestor ECClass is using SharedTable-Polymorphic, use this
     if (tphMaps.size() == 1)
         {
         m_parentClassMap = tphMaps[0];
-        auto enableSharedColumns = m_parentClassMap->GetMapStrategy().IsSharedColumns();
-        auto excludeFromSharedColumns = GetMapStrategyR().IsDisableSharedColumnsForThisClass();
-        GetMapStrategyR().SetInParentTable(enableSharedColumns);
-        if (excludeFromSharedColumns && enableSharedColumns)
-            {
-            if (SUCCESS != GetMapStrategyR().AddOption(MapStrategy::DisableSharedColumnsForThisClass))
-                return MapStatus::Error;
-            }
+        ECDbMapStrategy const& parentMapStrategy = m_parentClassMap->GetMapStrategy();
+        BeAssert(parentMapStrategy.IsPolymorphicSharedTable());
+
+        MapStrategyOptions options = MapStrategyOptions::None;
+        if (GetMapStrategy().HasOption(MapStrategyOptions::DisableSharedColumns))
+            options = MapStrategyOptions::DisableSharedColumns;
+        else if (parentMapStrategy.HasOption(MapStrategyOptions::SharedColumns) || parentMapStrategy.HasOption(MapStrategyOptions::SharedColumnsForSubclasses))
+            options = MapStrategyOptions::SharedColumns;
+
+        if (SUCCESS != GetMapStrategyR().Assign(MapStrategy::SharedTable, options, true))
+            return MapStatus::Error;
 
         if (GetECClass ().GetIsStruct () && !m_parentClassMap->GetClass().GetIsStruct())
             {
             WString msg;
-            msg.append (L"Struct classes cannot be included in 'TablePerHierarchy' that has a none-struct class as its root. Struct Class [").append (GetECClass ().GetFullName ()).append (L"] will be mapped to its own table.");
+            msg.append (L"Struct classes cannot be included in 'SharedTable' that has a non-struct class as its root. Struct Class [").append (GetECClass ().GetFullName ()).append (L"] will be mapped to its own table.");
             LOG.warning (msg.c_str ());
-            m_strategy.Assign (MapStrategy::TableForThisClass);
+            m_strategy.Assign (MapStrategy::OwnTable, false);
             m_parentClassMap = nullptr;
             }
         else if (!GetECClass ().GetIsStruct () && m_parentClassMap->GetClass ().GetIsStruct ())
             {
             WString msg;
-            msg.append (L"Regular classes cannot be included in 'TablePerHierarchy' that has a struct class as its root. Class [").append (GetECClass ().GetFullName ()).append (L"] will be mapped to its own table.");
+            msg.append (L"Regular classes cannot be included in 'SharedTable' that has a struct class as its root. Class [").append (GetECClass ().GetFullName ()).append (L"] will be mapped to its own table.");
             LOG.warning (msg.c_str ());
-            m_strategy.Assign(MapStrategy::TableForThisClass);
+            m_strategy.Assign(MapStrategy::OwnTable, false);
             m_parentClassMap = nullptr;
             }
         }
 
-    if (GetMapStrategyR().IsTablePerHierarchy())
+    if (GetMapStrategy().IsPolymorphicSharedTable())
         return MapStatus::Success;
 
-    // ClassMappingRule: If one or more parent is using TablePerClass, use TablePerClass mapping
+    // ClassMappingRule: If one or more parent is using OwnClass-polymorphic, use OwnClass-polymorphic mapping
     else if (tpcMaps.size () > 0)
-        GetMapStrategyR ().SetTablePerClass (false);
-    // ClassMappingRule: If one or more parent is using DoNotMapHierarchy, use DoNotMapHierarchy
+        GetMapStrategyR ().Assign(MapStrategy::OwnTable, true);
+    // ClassMappingRule: If one or more parent is using NotMapped-polymorphic, use NotMapped-polymorphic
     else if (nmhMaps.size () > 0)
-        GetMapStrategyR ().SetDoNotMapHierarchy ();
+        GetMapStrategyR ().Assign(MapStrategy::NotMapped, true);
 
     return MapStatus::Success;
     }
@@ -297,32 +309,32 @@ BentleyStatus ClassMapInfo::InitializeFromClassMapCA()
     if (!ECDbMapCustomAttributeHelper::TryGetClassMap(customClassMap, m_ecClass))
         return SUCCESS;
 
-    Utf8String mapStrategyStr, mapStrategyOptionsStr;
-    ECObjectsStatus ecstat = customClassMap.TryGetMapStrategy(mapStrategyStr, mapStrategyOptionsStr);
+    ECDbClassMap::MapStrategy mapStrategyCA;
+    ECObjectsStatus ecstat = customClassMap.TryGetMapStrategy(mapStrategyCA);
     if (ECOBJECTS_STATUS_Success != ecstat)
         return ERROR;
 
-    if (!mapStrategyStr.empty() || !mapStrategyOptionsStr.empty())
+    if (ECDbMapStrategy::TryParse(m_strategy, mapStrategyCA) != SUCCESS)
         {
-        ECDbMapStrategy mapStrategy(MapStrategy::DoNotMap);
-        if (mapStrategy.Parse(mapStrategy, mapStrategyStr.c_str(), mapStrategyOptionsStr.c_str()) != SUCCESS)
-            {
-            LOG.errorv(L"Invalid MapStrategy and/or MapStrategyOptions specified in ClassMap custom attribute on ECClass %ls.",
-                       m_ecClass.GetFullName());
-            return ERROR;
-            }
-
-        GetMapStrategyR() = mapStrategy;
-        if (GetMapStrategyR().IsTablePerHierarchy() || GetMapStrategyR().IsSharedTableForThisClass())
-            {
-            if (m_isMapToVirtualTable)
-                m_isMapToVirtualTable = false;
-            }
+        LOG.errorv(L"Invalid MapStrategy and/or MapStrategyOptions specified in ClassMap custom attribute on ECClass %ls.",
+                    m_ecClass.GetFullName());
+        return ERROR;
         }
+
+    if (m_strategy.GetStrategy() == MapStrategy::SharedTable)
+        m_isMapToVirtualTable = false;
 
     ecstat = customClassMap.TryGetTableName(m_tableName);
     if (ECOBJECTS_STATUS_Success != ecstat)
         return ERROR;
+
+    if (m_tableName.empty() && (m_strategy.GetStrategy() == MapStrategy::ExistingTable || 
+                                (m_strategy.GetStrategy() == MapStrategy::SharedTable && !m_strategy.IsPolymorphic())))
+        {
+        LOG.errorv(L"TableName must not be empty in ClassMap custom attribute on ECClass %ls if MapStrategy is 'SharedTable' and IsMapStrategyPolymorphic is false or if MapStrategy is 'ExistingTable'.",
+                   m_ecClass.GetFullName());
+        return ERROR;
+        }
 
     ecstat = customClassMap.TryGetECInstanceIdColumn(m_ecInstanceIdColumnName);
     if (ECOBJECTS_STATUS_Success != ecstat)
@@ -452,42 +464,48 @@ ECClassCR          ecClass
     {
     for (ECClassP baseClass : ecClass.GetBaseClasses())
         {
-        auto baseClassMap = m_ecdbMap.GetClassMap (*baseClass);
+        auto baseClassMap = m_ecdbMap.GetClassMap(*baseClass);
         if (baseClassMap == nullptr)
             return false;
 
-        switch (baseClassMap->GetMapStrategy().GetStrategy(true))
+        ECDbMapStrategy const& baseMapStrategy = baseClassMap->GetMapStrategy();
+        if (!baseMapStrategy.IsPolymorphic())
             {
-            case MapStrategy::TablePerHierarchy:
-            case MapStrategy::InParentTable:
-                {
+            // ClassMappingRule: non-polymorphic MapStrategies used in base classes have no effect on child classes
+            return true;
+            }
 
-                auto add = true;
-                for (auto classMap : tphMaps)
+        switch (baseMapStrategy.GetStrategy())
+            {
+                case MapStrategy::SharedTable:
                     {
-                    if (classMap->GetTable ().GetId () == baseClassMap->GetTable ().GetId ())
+
+                    auto add = true;
+                    for (auto classMap : tphMaps)
                         {
-                        add = false;
-                        break;
+                        if (classMap->GetTable().GetId() == baseClassMap->GetTable().GetId())
+                            {
+                            add = false;
+                            break;
+                            }
                         }
+
+                    if (add)
+                        tphMaps.push_back(baseClassMap);
+                    break;
                     }
 
-                if (add)
-                    tphMaps.push_back (baseClassMap);
-                break;
-                }
-            case MapStrategy::TablePerClass:
-                tpcMaps.push_back (baseClassMap);
-                break;
+                case MapStrategy::OwnTable:
+                    tpcMaps.push_back(baseClassMap);
+                    break;
 
-            case MapStrategy::DoNotMapHierarchy:
-                nmhMaps.push_back (baseClassMap);
-                break;
+                case MapStrategy::NotMapped:
+                    nmhMaps.push_back(baseClassMap);
+                    break;
 
-            default:
-                // ClassMappingRule: Certain MapStrategies used in base classes have no effect on child classes: MapStrategy::DoNotMap, 
-                // MapStrategy::NoHint, MapStrategy::TableForThisClass
-                break;
+                default:
+                    BeAssert(false);
+                    break;
             }
 
         baseClassMaps.push_back (baseClassMap);
@@ -712,9 +730,9 @@ MapStatus RelationshipMapInfo::DetermineImpliedMapStrategy(bool& mapStrategyAlre
     if (stat != MapStatus::Success)
         return stat;
 
-    BeAssert(!GetMapStrategy().IsNoHint());
+    BeAssert(GetMapStrategy().GetStrategy() != MapStrategy::None);
 
-    if (GetMapStrategy().IsUnmapped())
+    if (GetMapStrategy().IsNotMapped())
         return MapStatus::Success;
 
     DetermineCardinality();
@@ -722,25 +740,21 @@ MapStatus RelationshipMapInfo::DetermineImpliedMapStrategy(bool& mapStrategyAlre
     const bool isValid = VerifyRelatedClasses();
     if (!isValid)
         {
-        GetMapStrategyR().SetDoNotMap();
+        GetMapStrategyR().Assign(MapStrategy::NotMapped, false);
         return MapStatus::Success;
         }
 
-    if (GetMapStrategy().IsTablePerHierarchy())
+    if (GetMapStrategy().IsPolymorphicSharedTable())
         return MapStatus::Success;
 
     if (auto parentClassMap = GetParentClassMap())
         {
-
-        if (parentClassMap->GetMapStrategy().IsInParentTable() || parentClassMap->GetMapStrategy().IsTablePerHierarchy())
+        if (parentClassMap->GetMapStrategy().IsPolymorphicSharedTable())
             {
-            GetMapStrategyR().SetInParentTable(false);
+            GetMapStrategyR().Assign(MapStrategy::SharedTable, true);
             return MapStatus::Success;
             }
         }
-
-    if (GetMapStrategy().IsSharedTableForThisClass())
-        return MapStatus::Success;
 
     //Note: At this point, MapStrategy can only be one of -
     //MapStrategy::RelationshipSourceTable, MapStrategy::RelationshipTargetTable
@@ -754,7 +768,7 @@ MapStatus RelationshipMapInfo::DetermineImpliedMapStrategy(bool& mapStrategyAlre
         // we forces it to use a link table for this relationship so duplicate relationships can be allowed.
         m_allowDuplicateRelationships)
         {
-        if (SUCCESS != GetMapStrategyR().Assign(MapStrategy::TableForThisClass))
+        if (SUCCESS != GetMapStrategyR().Assign(MapStrategy::OwnTable, false))
             return MapStatus::Error;
         }
     else if (m_cardinality == Cardinality::OneToMany || m_cardinality == Cardinality::ManyToOne)
@@ -762,7 +776,7 @@ MapStatus RelationshipMapInfo::DetermineImpliedMapStrategy(bool& mapStrategyAlre
         MapStrategy strategy;
         if (TryDetermine1MRelationshipMapStrategy(strategy, source, target, *relationshipClass))
             {
-            if (SUCCESS != GetMapStrategyR().Assign(strategy))
+            if (SUCCESS != GetMapStrategyR().Assign(strategy, false))
                 return MapStatus::Error;
             }
         else
@@ -774,7 +788,7 @@ MapStatus RelationshipMapInfo::DetermineImpliedMapStrategy(bool& mapStrategyAlre
         MapStrategy strategy;
         if (TryDetermine11RelationshipMapStrategy(strategy, source, target, *relationshipClass))
             {
-            if (SUCCESS != GetMapStrategyR().Assign(strategy))
+            if (SUCCESS != GetMapStrategyR().Assign(strategy, false))
                 return MapStatus::Error;
             }
         else
@@ -801,20 +815,20 @@ MapStatus RelationshipMapInfo::EvaluateCustomMapping(bool mapStrategyAlreadyEval
         switch (m_customMapType)
             {
                 case CustomMapType::ForeignKeyOnSource:
-                    mapStrategy.Assign(MapStrategy::RelationshipSourceTable);
+                    mapStrategy.Assign(MapStrategy::ForeignKeyRelationshipInSourceTable, false);
                     break;
 
                 case CustomMapType::ForeignKeyOnTarget:
-                    mapStrategy.Assign(MapStrategy::RelationshipTargetTable);
+                    mapStrategy.Assign(MapStrategy::ForeignKeyRelationshipInTargetTable, false);
                     break;
 
                 case CustomMapType::LinkTable:
-                    mapStrategy.Assign(MapStrategy::TableForThisClass);
+                    mapStrategy.Assign(MapStrategy::OwnTable, false);
                     break;
 
                 default:
                 case CustomMapType::None:
-                    mapStrategy.Assign(MapStrategy::RelationshipTargetTable);
+                    mapStrategy.Assign(MapStrategy::ForeignKeyRelationshipInTargetTable, false);
                     break;
             }
 
@@ -825,7 +839,7 @@ MapStatus RelationshipMapInfo::EvaluateCustomMapping(bool mapStrategyAlreadyEval
         return MapStatus::Success;
 
     //now verify that implied MapStrategy matches the custom mapping
-    if (GetMapStrategy().IsRelationshipSourceTable ())
+    if (GetMapStrategy().GetStrategy () == MapStrategy::ForeignKeyRelationshipInSourceTable)
         {
         if (m_customMapType != CustomMapType::ForeignKeyOnSource)
             {
@@ -837,7 +851,7 @@ MapStatus RelationshipMapInfo::EvaluateCustomMapping(bool mapStrategyAlreadyEval
         return MapStatus::Success;
         }
 
-    if (GetMapStrategy().IsRelationshipTargetTable ())
+    if (GetMapStrategy().GetStrategy() == MapStrategy::ForeignKeyRelationshipInTargetTable)
         {
         if (m_customMapType != CustomMapType::ForeignKeyOnTarget)
             {
@@ -958,7 +972,7 @@ ECRelationshipClassCR relationshipClass
         // We don't persist at an end that has more than one table
         LOG.infov(L"ECRelationshipClass %ls is mapped to link table as more than one end tables exists on either end.",
                      relationshipClass.GetFullName());
-        strategy = MapStrategy::TableForThisClass;
+        strategy = MapStrategy::OwnTable;
         return true;
         }
 
@@ -982,18 +996,18 @@ ECRelationshipClassCR relationshipClass
         {
         nManyEndTables = m_ecdbMap.GetTablesFromRelationshipEnd(nullptr, source);
         if (nManyEndTables > 1)
-            strategy = MapStrategy::TableForThisClass;
+            strategy = MapStrategy::OwnTable;
         else
-            strategy = MapStrategy::RelationshipSourceTable;
+            strategy = MapStrategy::ForeignKeyRelationshipInSourceTable;
         }
     else
         {
         nManyEndTables = m_ecdbMap.GetTablesFromRelationshipEnd (nullptr, target);
         BeAssert (target.GetCardinality().GetUpperLimit() > 1);
         if (nManyEndTables > 1)
-            strategy = MapStrategy::TableForThisClass;
+            strategy = MapStrategy::OwnTable;
         else
-            strategy = MapStrategy::RelationshipTargetTable;
+            strategy = MapStrategy::ForeignKeyRelationshipInTargetTable;
         }
 
     return true;

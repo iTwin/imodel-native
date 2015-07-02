@@ -47,17 +47,17 @@ ClassMapPtr ClassMapFactory::Load (MapStatus& mapStatus, ECClassCR ecClass, ECDb
     bool setIsDirty = false;
     auto mapStrategy = classMapInfo.GetMapStrategy();
     ClassMapPtr classMap = nullptr;
-    if (mapStrategy.IsUnmapped())
+    if (mapStrategy.IsNotMapped())
         classMap = UnmappedClassMap::Create (ecClass, ecdbMap, mapStrategy, setIsDirty);
     else
         {
         auto ecRelationshipClass = ecClass.GetRelationshipClassCP();
         if (ecRelationshipClass != nullptr)
             {
-            if (mapStrategy.IsLinkTableStrategy())
-                classMap = RelationshipClassLinkTableMap::Create (*ecRelationshipClass, ecdbMap, mapStrategy, setIsDirty);
+            if (mapStrategy.IsForeignKeyMapping())
+                classMap = RelationshipClassEndTableMap::Create(*ecRelationshipClass, ecdbMap, mapStrategy, setIsDirty);
             else
-                classMap = RelationshipClassEndTableMap::Create (*ecRelationshipClass, ecdbMap, mapStrategy, setIsDirty);
+                classMap = RelationshipClassLinkTableMap::Create(*ecRelationshipClass, ecdbMap, mapStrategy, setIsDirty);
             }
         else if (IClassMap::IsMapToSecondaryTableStrategy (ecClass))
             classMap = SecondaryTableClassMap::Create (ecClass, ecdbMap, mapStrategy, setIsDirty);
@@ -121,20 +121,20 @@ ClassMapPtr ClassMapFactory::CreateInstance (MapStatus& mapStatus, ClassMapInfo 
     auto const& ecClass = mapInfo.GetECClass();
     auto const& ecdbMap = mapInfo.GetECDbMap();
     const auto mapStrategy = mapInfo.GetMapStrategy();
-    BeAssert (mapStrategy.IsNoHint() == false);
+    BeAssert (mapStrategy.GetStrategy() != MapStrategy::None);
 
     ClassMapPtr classMap = nullptr;
-    if (mapStrategy.IsUnmapped())
+    if (mapStrategy.IsNotMapped())
         classMap = UnmappedClassMap::Create (ecClass, ecdbMap, mapStrategy, setIsDirty);
     else
         {
         auto ecRelationshipClass = ecClass.GetRelationshipClassCP();
         if (ecRelationshipClass != nullptr)
             {
-            if (mapStrategy.IsLinkTableStrategy())
-                classMap = RelationshipClassLinkTableMap::Create (*ecRelationshipClass, ecdbMap, mapStrategy, setIsDirty);
+            if (mapStrategy.IsForeignKeyMapping())
+                classMap = RelationshipClassEndTableMap::Create(*ecRelationshipClass, ecdbMap, mapStrategy, setIsDirty);
             else
-                classMap = RelationshipClassEndTableMap::Create (*ecRelationshipClass, ecdbMap, mapStrategy, setIsDirty);
+                classMap = RelationshipClassLinkTableMap::Create(*ecRelationshipClass, ecdbMap, mapStrategy, setIsDirty);
             }
         else if (IClassMap::IsMapToSecondaryTableStrategy (ecClass))
             classMap = SecondaryTableClassMap::Create (ecClass, ecdbMap, mapStrategy, setIsDirty);

@@ -64,7 +64,7 @@ BentleyStatus ClassDbView::Generate (NativeSqlBuilder& viewSql, bool isPolymorph
         return ERROR;
         }
 
-    if (m_classMap->GetMapStrategy ().IsUnmapped ())
+    if (m_classMap->GetMapStrategy ().IsNotMapped ())
         {
         BeAssert (false && "ClassDbView::Generate must not be called on unmapped class");
         return ERROR;
@@ -197,7 +197,9 @@ IClassMap::Type IClassMap::GetClassMapType () const
 //---------------------------------------------------------------------------------------
 ECDbMapStrategy const& IClassMap::GetMapStrategy () const
     {
-    return _GetMapStrategy ();
+    ECDbMapStrategy const& strategy = _GetMapStrategy ();
+    BeAssert(strategy.IsValid() && "MapStrategy should have been resolved by the time it is hold in a class map.");
+    return strategy;
     }
 
 //---------------------------------------------------------------------------------------
@@ -302,10 +304,10 @@ Utf8String IClassMap::ToString () const
             break;
         }
 
-    auto strategyName = GetMapStrategy ().ToString ();
+    Utf8String strategyName = GetMapStrategy ().ToString ();
 
     Utf8String str;
-    str.Sprintf ("ClassMap '%s' - Type: %s - Map strategy: %ls", GetClass ().GetFullName (), typeStr, strategyName);
+    str.Sprintf ("ClassMap '%s' - Type: %s - Map strategy: %ls", GetClass ().GetFullName (), typeStr, strategyName.c_str());
 
     return str;
     }
@@ -317,17 +319,15 @@ Utf8String IClassMap::ToString () const
 ClassMap::ClassMap (ECClassCR ecClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty)
 : IClassMap (), m_ecDbMap (ecDbMap), m_table (nullptr), m_ecClass (ecClass), m_mapStrategy (mapStrategy),
 m_parentMapClassId (0LL), m_dbView (nullptr), m_isDirty (setIsDirty), m_columnFactory (*this), /*clang says not used - m_useSharedColumnStrategy (false),*/ m_id(0LL)
-    {
-    }
-
+    {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
 MapStatus ClassMap::Initialize (ClassMapInfo const& mapInfo)
     {
-    const auto mapStrategy = GetMapStrategy ();
-    IClassMap const* effectiveParentClassMap = mapStrategy.IsInParentTable() ? mapInfo.GetParentClassMap () : nullptr;
+    ECDbMapStrategy const& mapStrategy = GetMapStrategy ();
+    IClassMap const* effectiveParentClassMap = mapStrategy.IsPolymorphicSharedTable() ? mapInfo.GetParentClassMap () : nullptr;
 
     auto stat = _InitializePart1 (mapInfo, effectiveParentClassMap);
     if (stat != MapStatus::Success)
@@ -350,7 +350,7 @@ MapStatus ClassMap::_InitializePart1 (ClassMapInfo const& mapInfo, IClassMap con
     //if parent class map exists, its dbtable is reused.
     if (parentClassMap != nullptr)
         {
-        PRECONDITION (!parentClassMap->GetMapStrategy ().IsUnmapped (), MapStatus::Error);
+        PRECONDITION (!parentClassMap->GetMapStrategy ().IsNotMapped (), MapStatus::Error);
         m_parentMapClassId = parentClassMap->GetClass ().GetId ();
         m_table = &parentClassMap->GetTable ();
         }
@@ -361,7 +361,7 @@ MapStatus ClassMap::_InitializePart1 (ClassMapInfo const& mapInfo, IClassMap con
             mapInfo.IsMapToVirtualTable (),
             mapInfo.GetECInstanceIdColumnName (),
             IClassMap::IsMapToSecondaryTableStrategy (m_ecClass), 
-            mapInfo.GetMapStrategy().IsMapToExistingTable()); // could be existing or to-be-created
+            mapInfo.GetMapStrategy().GetStrategy() == MapStrategy::ExistingTable); // could be existing or to-be-created
 
         if (!EXPECTED_CONDITION (table != nullptr))
             return MapStatus::Error;
@@ -771,8 +771,10 @@ ECDbSqlColumn* ClassMap::FindOrCreateColumnForProperty (ClassMapCR classMap,Clas
     ColumnFactory::Specification::GenerateColumnNameOptions generateColumnNameOpts = ColumnFactory::Specification::GenerateColumnNameOptions::NameBasedOnClassIdAndCaseSaveAccessString;
     ECDbSqlColumn::Type requestedColumnType = ECDbSqlHelper::PrimitiveTypeToColumnType (columnType);
   
-    if (!classMap.GetMapStrategy().IsTablePerHierarchy() && classMap.GetMapStrategy().IsSharedColumns() && !classMapInfo->GetMapStrategy().IsDisableSharedColumnsForThisClass())
+    ECDbMapStrategy const& mapStrategy = classMap.GetMapStrategy();
+    if (mapStrategy.HasOption(MapStrategyOptions::SharedColumns))
         {
+        BeAssert(mapStrategy.GetStrategy() == MapStrategy::SharedTable);
         strategy = ColumnFactory::Specification::Strategy::CreateOrReuseSharedColumn;
         requestedColumnType = ECDbSqlColumn::Type::Any; //If not set it will get set anyway
         generateColumnNameOpts = ColumnFactory::Specification::GenerateColumnNameOptions::NameBasedOnLetterFollowedByIntegerSequence;
@@ -978,18 +980,18 @@ BentleyStatus MappedTable::FinishTableDefinition ()
     if (m_table.GetOwnerType () == OwnerType::ECDb)
         {
         int nOwners = 0;
-        bool tablePerHierarchy = false;
+        bool polymorphicSharedTable = false;
         for (auto classMap : m_classMaps)
             {
-            if (classMap->GetMapStrategy().IsMapped() && classMap->GetClassMapType () != ClassMap::Type::RelationshipEndTable)
+            if (!classMap->GetMapStrategy().IsNotMapped() && classMap->GetClassMapType () != ClassMap::Type::RelationshipEndTable)
                 {
                 nOwners++;
-                if (classMap->GetMapStrategy ().IsTablePerHierarchy())
-                    tablePerHierarchy = true;
+                if (classMap->GetMapStrategy ().IsPolymorphicSharedTable())
+                    polymorphicSharedTable = true;
                 }
             }
 
-        if (tablePerHierarchy || nOwners > 1)
+        if (polymorphicSharedTable || nOwners > 1)
             {
             if (!m_generatedClassIdColumn)
                 {

@@ -12,74 +12,37 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //---------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                02/2015
+// @bsienum                                 Affan.Khan                02/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-enum class MapStrategy : uint32_t //0xffffffff 
+enum class MapStrategy
     {
-    NoHint = 0x0,
+    None = 0,
 
     //Public Strategies that user can specify in custom attribute ClassMap::MapStrategy
     //===========================================================================================
-    DoNotMap = 0x1,
-    DoNotMapHierarchy = 0x2,
-
-    TablePerHierarchy = 0x4, // Map entire hierarchy to a single table.
-    TablePerClass = 0x8,     // Map class to its own table.
-    SharedTableForThisClass = 0x10,  //<TableName> must be provided
-    MapToExistingTable = 0x20, //<TableName> must be provided
-    TableForThisClass = 40, //This is not inhertied to children. 
-    //Options that can also be specified along  some map strategies
-    SharedColumns = 0x100,             //Applied to : TablePerClass, TablePerHierarchy, SharedTableForThisClass
+    NotMapped,
+    OwnTable,
+    SharedTable,
+    ExistingTable,
     
-    DisableSharedColumnsForThisClass = 0x200,
-    ExclusivelyStoredInThisTable = 0x400, //Applied to : TablePerClass, TablePerHierarchy, SharedTableForThisClass, MapToExistingTable, TablePerClass
-    Readonly = 0x800, //Applied to : MapToExistingTable
-    //For Relationship valid values are TablePerHierarchy, TableForThisClass, SharedTableForThisClass, DoNotMap
+    //Private strategies used by ECDb internally
+    Default = OwnTable,
 
-    //Private Strategies used by ECDb Internally
-    //===========================================================================================
-    InParentTable = 0x1000,
-    RelationshipTargetTable = 0x2000,
-    RelationshipSourceTable = 0x4000,
-
-    Default = TableForThisClass,
-
-    Options = SharedColumns | ExclusivelyStoredInThisTable | Readonly | DisableSharedColumnsForThisClass
+    ForeignKeyRelationshipInTargetTable = 100,
+    ForeignKeyRelationshipInSourceTable = 101
     };
 
-#define STRATEGY_DO_NOT_MAP                                     "DoNotMap"
-#define STRATEGY_DO_NOT_MAP_HIERARCHY                           "DoNotMapHierarchy"
-#define STRATEGY_NO_HINT                                        "NoHint"
-#define STRATEGY_TABLE_FOR_THIS_CLASS                           "TableForThisClass"
-#define STRATEGY_TABLE_PER_CLASS                                "TablePerClass"
-#define STRATEGY_TABLE_PER_HIERARCHY                            "TablePerHierarchy"
-#define STRATEGY_MAP_TO_EXISTING_TABLE                          "MapToExistingTable"
-#define STRATEGY_IN_PARENT_TABLE                                "InParentTable"
-#define STRATEGY_SHARED_TABLE_FOR_THIS_CLASS                    "SharedTableForThisClass"
-#define STRATEGY_OPTION_SHARED_COLUMNS                          "SharedColumns"
-#define STRATEGY_OPTION_DISABLE_SHARED_COLUMS_FOR_THIS_CLASS    "DisableSharedColumnsForThisClass"
-#define STRATEGY_OPTION_READONLY                                "Readonly"
-#define STRATEGY_OPTION_EXCLUSIVELY_STORED_IN_THIS_TABLE        "ExclusivelyStoredInThisTable"
-#define STRATEGY_RELATIONSHIP_SOURCE_TABLE                      "RelationshipSourceTable"
-#define STRATEGY_RELATIONSHIP_TARGET_TABLE                      "RelationshipTargetTable"
-#define STRATEGY_DELIMITER                                      "|"
-#define DELIMITER                                               " " STRATEGY_DELIMITER " "
-
 //---------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                02/2015
+// @bsienum                                 Krischan.Eberle                06/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-static inline MapStrategy operator | (MapStrategy a, MapStrategy b)
+enum class MapStrategyOptions
     {
-    return static_cast<MapStrategy>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
-    }
-
-//---------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                02/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-static inline MapStrategy operator & (MapStrategy a, MapStrategy b)
-    {
-    return static_cast<MapStrategy>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
-    }
+    None = 0,
+    Readonly = 1,
+    SharedColumns = 2,
+    SharedColumnsForSubclasses = 4,
+    DisableSharedColumns = 8
+    };
 
 
 //---------------------------------------------------------------------------------
@@ -87,114 +50,48 @@ static inline MapStrategy operator & (MapStrategy a, MapStrategy b)
 //+---------------+---------------+---------------+---------------+---------------+------
 struct ECDbMapStrategy
     {
-    private:
-        MapStrategy m_strategy;
-        Utf8String m_strategyStr;
+private:
+    MapStrategy m_strategy;
+    int m_options;
+    bool m_isPolymorphic;
 
-        bool IsValid (MapStrategy strategy);
-        BentleyStatus Parse (MapStrategy& out, Utf8CP mapStrategyHint);
+    static BentleyStatus TryParse(MapStrategy&, Utf8CP str);
+    static BentleyStatus TryParse(int& options, Utf8CP str);
 
-        static Utf8CP ConvertToString(MapStrategy strategy);
+public:
+    ECDbMapStrategy() : m_strategy(MapStrategy::None), m_options((int) MapStrategyOptions::None), m_isPolymorphic(false) {}
+    ECDbMapStrategy(MapStrategy strategy, int options, bool isPolymorphic) : m_strategy(strategy), m_options(options), m_isPolymorphic(isPolymorphic) {}
+    ~ECDbMapStrategy() {}
 
-    public:
-        explicit ECDbMapStrategy(MapStrategy strategy) { Assign(strategy); }
-        ~ECDbMapStrategy() {}
+    ECDbMapStrategy(ECDbMapStrategy const& rhs) : m_strategy(rhs.m_strategy), m_options(rhs.m_options), m_isPolymorphic(rhs.m_isPolymorphic) {}
+    ECDbMapStrategy(ECDbMapStrategy&& rhs) : m_strategy(std::move(rhs.m_strategy)), m_options(std::move(rhs.m_options)), m_isPolymorphic(std::move(rhs.m_isPolymorphic)) {}
+    ECDbMapStrategy& operator=(ECDbMapStrategy const&);
+    ECDbMapStrategy& operator=(ECDbMapStrategy&&);
 
-        ECDbMapStrategy(ECDbMapStrategy const& rhs) : m_strategy(rhs.m_strategy), m_strategyStr(rhs.m_strategyStr) {}
-        ECDbMapStrategy(ECDbMapStrategy&& rhs) : m_strategy(std::move(rhs.m_strategy)), m_strategyStr(std::move(rhs.m_strategyStr)) {}
-        ECDbMapStrategy& operator=(ECDbMapStrategy const&);
-        ECDbMapStrategy& operator=(ECDbMapStrategy&&);
+    //operators
+    bool operator== (ECDbMapStrategy const& rhs) const { return m_strategy == rhs.m_strategy && m_options == rhs.m_options && m_isPolymorphic == rhs.m_isPolymorphic; }
+    bool operator!= (ECDbMapStrategy const& rhs) const { return !(*this == rhs); }
 
-        //operators
-        bool operator== (ECDbMapStrategy const& rhs) const { return m_strategy == rhs.m_strategy; }
-        bool operator!= (ECDbMapStrategy const& rhs) const { return !(*this == rhs); }
-        //bool operator== (MapStrategy const& mapStrategy) const { return m_strategy == mapStrategy; }
+    BentleyStatus Assign(MapStrategy strategy, MapStrategyOptions options, bool isPolymorphic);
+    BentleyStatus Assign(MapStrategy strategy, bool isPolymorphic) { return Assign(strategy, MapStrategyOptions::None, isPolymorphic); }
 
-        bool operator< (ECDbMapStrategy const& rhs) const { return m_strategy < rhs.m_strategy; }
-        bool operator>(ECDbMapStrategy const& rhs) const { return m_strategy > rhs.m_strategy; }
+    bool IsValid(bool isResolved = true) const;
 
-        //Setters
+    //Getters
+    MapStrategy GetStrategy() const { return m_strategy; }
+    int GetOptions() const { return m_options; }
+    bool HasOptions() const { return m_options != (int) MapStrategyOptions::None; }
+    bool HasOption(MapStrategyOptions option) const { return (m_options & (int) option) == (int) option; }
+    bool IsPolymorphic() const { return m_isPolymorphic; }
 
-        BentleyStatus Assign(MapStrategy strategy);
-        BentleyStatus AddOption(MapStrategy Option);
+    //Helper
+    bool IsNotMapped() const { return m_strategy == MapStrategy::NotMapped; }
+    bool IsPolymorphicSharedTable() const { return m_strategy == MapStrategy::SharedTable && m_isPolymorphic; }
+    bool IsForeignKeyMapping() const { return m_strategy == MapStrategy::ForeignKeyRelationshipInSourceTable || m_strategy == MapStrategy::ForeignKeyRelationshipInTargetTable; }
 
-        void SetDoNotMap () { Assign (MapStrategy::DoNotMap); }
-        void SetDoNotMapHierarchy (){ Assign (MapStrategy::DoNotMapHierarchy); }
-        void SetTablePerHierarchy (bool sharedColumnsOption, bool ExclusivelyStoreInThisTable)
-            {
-            Assign (MapStrategy::TablePerHierarchy);
-            if (sharedColumnsOption)
-                AddOption (MapStrategy::SharedColumns);
+    Utf8String ToString() const;
 
-            if (ExclusivelyStoreInThisTable)
-                AddOption (MapStrategy::ExclusivelyStoredInThisTable);
-            }
-        void SetTablePerClass (bool exclusivelyStoreInThisTable)
-            {
-            Assign (MapStrategy::TablePerClass);
-            if (exclusivelyStoreInThisTable)
-                AddOption (MapStrategy::ExclusivelyStoredInThisTable);
-            }
-        void SetSharedTableForThisClass(bool sharedColumnsOption, bool exclusivelyStoreInThisTable)
-            {
-            Assign (MapStrategy::SharedTableForThisClass);
-            if (sharedColumnsOption)
-                AddOption (MapStrategy::SharedColumns);
-
-            if (exclusivelyStoreInThisTable)
-                AddOption (MapStrategy::ExclusivelyStoredInThisTable);
-            }
-        void SetMapToExistingTable (bool ReadOnly)
-            {
-            Assign (MapStrategy::SharedTableForThisClass);
-            if (ReadOnly)
-                AddOption (MapStrategy::Readonly);
-            }
-        void SetInParentTable(bool sharedColumnsOption)
-            {
-            Assign (MapStrategy::InParentTable);
-            if (sharedColumnsOption)
-                AddOption (MapStrategy::SharedColumns);
-            }
-
-        //Getters
-        MapStrategy GetStrategy (bool outOptions = false) const 
-            { 
-            if (!outOptions)
-                return m_strategy;
-
-            return (MapStrategy) (((uint32_t) m_strategy) & ~((uint32_t) MapStrategy::Options));
-            }
-
-        bool IsSharedColumns () const { return (GetStrategy () & MapStrategy::SharedColumns) == MapStrategy::SharedColumns; }
-        bool IsExclusiveyStoreInThisTable () const { return (GetStrategy () & MapStrategy::ExclusivelyStoredInThisTable) == MapStrategy::ExclusivelyStoredInThisTable; }
-        bool IsReadonly () const { return (GetStrategy () & MapStrategy::Readonly) == MapStrategy::Readonly; }
-        bool IsDoNotMap () const { return GetStrategy (true) == MapStrategy::DoNotMap; }
-        bool IsNoHint () const { return GetStrategy (false) == MapStrategy::NoHint; }
-
-        bool IsTableForThisClass () const { return GetStrategy (true) == MapStrategy::TableForThisClass; }
-
-        bool IsDoNotMapHierarchy () const { return GetStrategy (true) == MapStrategy::DoNotMapHierarchy; }
-        bool IsTablePerHierarchy () const { return GetStrategy (true) == MapStrategy::TablePerHierarchy; }
-        bool IsTablePerClass () const { return GetStrategy (true) == MapStrategy::TablePerClass; }
-        bool IsSharedTableForThisClass () const { return GetStrategy (true) == MapStrategy::SharedTableForThisClass; }
-        bool IsMapToExistingTable () const { return GetStrategy (true) == MapStrategy::MapToExistingTable; }
-        bool IsInParentTable () const { return GetStrategy (true) == MapStrategy::InParentTable; }
-        bool IsRelationshipTargetTable () const { return GetStrategy (true) == MapStrategy::RelationshipTargetTable; }
-        bool IsRelationshipSourceTable () const { return GetStrategy(true) == MapStrategy::RelationshipSourceTable; }
-        //Helper
-        bool IsMapped () const { return !(IsDoNotMap () || IsDoNotMapHierarchy ()); }
-        bool IsUnmapped () const { return IsDoNotMap () || IsDoNotMapHierarchy (); }
-        bool IsEndTableMapping () const{ return IsRelationshipSourceTable () || IsRelationshipTargetTable (); }
-        bool IsDisableSharedColumnsForThisClass()const { return (GetStrategy() & MapStrategy::DisableSharedColumnsForThisClass) == MapStrategy::DisableSharedColumnsForThisClass; }
-        bool IsLinkTableStrategy () const;
-
-        Utf8CP ToString (bool outOptions = false) const { return ConvertToString (GetStrategy(outOptions)); }
-        void Reset () { Assign (MapStrategy::NoHint); }
-        BentleyStatus Parse(ECDbMapStrategy& out, Utf8CP mapStrategyHint, Utf8CP mapStrategyHintOption);     
-
-
-        static ECDbMapStrategy GetDefaultMapStrategy () { return ECDbMapStrategy (MapStrategy::Default); }
+    static BentleyStatus TryParse(ECDbMapStrategy&, ECN::ECDbClassMap::MapStrategy const& mapStrategyCustomAttribute);
     };
 
     END_BENTLEY_SQLITE_EC_NAMESPACE

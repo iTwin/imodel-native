@@ -175,7 +175,7 @@ bool ensureDerivedClassesAreLoaded
             return BentleyStatus::SUCCESS;
         }
         
-    if (classMap->GetMapStrategy ().IsMapped ())
+    if (!classMap->GetMapStrategy ().IsNotMapped ())
         {
         if (classMap->GetTable ().GetColumns ().empty ())
             return BentleyStatus::SUCCESS;
@@ -610,7 +610,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationship (NativeSqlBuilder& viewSq
     BeAssert (relationMap.IsRelationshipClassMap ());
     BentleyStatus status = BentleyStatus::SUCCESS;
 
-    if (relationMap.GetMapStrategy().IsUnmapped ())
+    if (relationMap.GetMapStrategy().IsNotMapped ())
         return BentleyStatus::ERROR;
 
     ViewMemberByTable vmt;
@@ -866,135 +866,6 @@ BentleyStatus ViewGenerator::AppendConstraintClassIdPropMap (NativeSqlBuilder& v
     return SUCCESS;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khna                        03/2014
-//---------------------------------------------------------------------------------------
-//static
-    BentleyStatus ViewGenerator::CreateSystemView (NativeSqlBuilder& viewSql, SystemViewType systemView, ECDbMapCR map, std::vector<ECClassId> const& classesToInclude, bool polymorphic, ECSqlPrepareContext const& prepareContext)
-    {
-    std::map<ECClassId, IClassMap const*> viewClasses;
-
-    ECDbSchemaManagerCR schemaManager = map.GetECDbR ().Schemas ();
-
-    if (classesToInclude.empty ())
-        {
-        Utf8CP classSql = nullptr;
-        switch (systemView)
-            {
-                case SystemViewType::Class: //ECClass and ECStructs (all primary instances)
-                    classSql = "SELECT c.Id FROM ec_Class c JOIN ec_ClassMap m ON c.ID = m.ClassId WHERE (m.MapStrategy  <> 3 AND m.MapStrategy  <> 8) AND c.IsRelationship <> 1"; break;
-                case SystemViewType::RelationshipClass: //RelationshipOnly
-                    classSql = "SELECT C.Id FROM ec_Class c JOIN ec_ClassMap m ON c.ID = m.ClassId WHERE (m.MapStrategy  <> 3 AND m.MapStrategy  <> 8) AND c.IsRelationship = 1"; break;
-                case SystemViewType::StructArray: //Structs only (all struct array instances)
-                    classSql = "SELECT C.Id FROM ec_Class c JOIN ec_ClassMap m ON c.ID = m.ClassId WHERE (m.MapStrategy  <> 3 AND m.MapStrategy  <> 8) AND c.IsStruct = 1"; break;
-            }
-
-        BeAssert (classSql != nullptr);
-        Statement stmt;
-        auto status = stmt.Prepare (map.GetECDbR (), classSql);
-        if (status != BE_SQLITE_OK)
-            {
-            BeAssert (false && "Failed to prepare statement");
-            return BentleyStatus::ERROR;
-            }
-
-        while (stmt.Step () == BE_SQLITE_ROW)
-            {
-            ECClassCP ecClass = schemaManager.GetECClass (stmt.GetValueInt64 (0));
-            if (ecClass == nullptr)
-                {
-                BeAssert (false && "Failed to get ECClass from ECClassId using ECSchemaManager");
-                return BentleyStatus::ERROR;
-                }
-
-            IClassMap const* classMap = map.GetClassMap (*ecClass);
-            if (classMap == nullptr || !ECDbPolicyManager::GetClassPolicy (*classMap, IsValidInECSqlPolicyAssertion::Get ()).IsSupported ())
-                {              
-                continue;
-                }
-
-            viewClasses.insert (std::map<ECClassId, IClassMap const*>::value_type (ecClass->GetId(), classMap));
-            }
-        }
-    else
-        {     
-        for (auto ecClassId : classesToInclude)
-            {       
-            ECClassCP ecClass = schemaManager.GetECClass (ecClassId);
-            if (ecClass == nullptr)
-                {
-                BeAssert (false && "Failed to get ECClass from ECClassId using ECSchemaManager");
-                return BentleyStatus::ERROR;
-                }
-
-            IClassMap const* classMap = map.GetClassMap (*ecClass);
-            if (classMap == nullptr || classMap->GetMapStrategy ().IsUnmapped ())
-                {
-                continue;
-                }
-            
-            if (polymorphic && ecClass->GetRelationshipClassCP () == nullptr)
-                LoadDerivedClassMaps (viewClasses, map, classMap);
-            else
-                viewClasses.insert (std::map<ECClassId, IClassMap const*>::value_type (ecClass->GetId (), classMap));
-            }
-        }
-
-    std::map<ECDbSqlTable const*, std::vector<IClassMap const*>> tableMap;
-    std::map<ECDbSqlTable const*, size_t> tableMapDb;
-    std::set<ECDbSqlTable const*> tableToIncludeEntirly;   
-
-    for (auto& pair : viewClasses)
-        {
-        tableMap[&pair.second->GetTable ()].push_back (pair.second);
-        }
-
-    for (auto& pair : tableMap)
-        {
-        tableToIncludeEntirly.insert (pair.first);
-        }
-
-    for (auto& pair : tableMap)
-        {
-        tableToIncludeEntirly.insert (pair.first);
-        tableMapDb[pair.first] = pair.second.size ();
-        }
-
-    if (tableMap.empty ())
-        return BentleyStatus::SUCCESS;
-
-    if (SystemViewType::Class == systemView)
-        {
-        CreateSystemClassView (viewSql, tableMap, tableToIncludeEntirly, false, prepareContext);
-        }
-
-    if (SystemViewType::StructArray == systemView)
-        {
-        CreateSystemClassView (viewSql, tableMap, tableToIncludeEntirly, true, prepareContext);
-        }
-
-    if (SystemViewType::RelationshipClass == systemView)
-        {
-        for (auto& pair : tableMap)
-            {
-            std::vector<IClassMap const*>& classMaps = pair.second;
-            BeAssert (classMaps.size () == 1);
-
-            RelationshipClassMapCP relationshipMap = dynamic_cast<RelationshipClassMapCP>(classMaps[0]);// = static_cast
-            BeAssert (relationshipMap != nullptr);
-
-            viewSql.Append (" UNION SELECT ");
-            AppendSystemPropMaps (viewSql, map, prepareContext, *relationshipMap);
-            viewSql.Append (" FROM ").AppendEscaped (relationshipMap->GetTable ().GetName ().c_str ());
-
-            if (RelationshipClassEndTableMapCP endTableMap = dynamic_cast<RelationshipClassEndTableMapCP>(relationshipMap))
-                {                
-                viewSql.Append (" WHERE ").Append (endTableMap->GetOtherEndECInstanceIdPropMap ()->ToNativeSql (nullptr, ECSqlType::Select, false)).Append (" IS NOT NULL");
-                }
-            }
-        }
-    return BentleyStatus::SUCCESS;
-    }
 
 //static 
 void ViewGenerator::LoadDerivedClassMaps (std::map<ECClassId, IClassMap const *>& viewClasses, ECDbMapCR map, IClassMap const* classMap)
@@ -1010,7 +881,7 @@ void ViewGenerator::LoadDerivedClassMaps (std::map<ECClassId, IClassMap const *>
             continue;
 
         IClassMap const* classMap = map.GetClassMap (*ecClass);
-        if (classMap == nullptr || classMap->GetMapStrategy ().IsUnmapped ())
+        if (classMap == nullptr || classMap->GetMapStrategy ().IsNotMapped ())
             {
             continue;
             }

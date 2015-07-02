@@ -390,7 +390,7 @@ int findRelatedDirections
             POSTCONDITION (classP != nullptr, ERROR)
             auto classMapP = m_ecDb.GetECDbImplR().GetECDbMap ().GetClassMap (*classP);
             POSTCONDITION (classMapP != nullptr, ERROR)
-            if (classMapP->GetMapStrategy().IsUnmapped ())
+            if (classMapP->GetMapStrategy().IsNotMapped ())
                 {
                 continue;
                 }

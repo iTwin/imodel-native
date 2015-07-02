@@ -193,21 +193,13 @@ Utf8String MapStrategyRule::Error::_ToString() const
 //---------------------------------------------------------------------------------------
 bool MapStrategyRule::_ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass)
     {
-    ECDbMapStrategy mapStrategy(MapStrategy::DoNotMap);
     ECDbClassMap customClassMap;
     if (ECDbMapCustomAttributeHelper::TryGetClassMap(customClassMap, ecClass))
         {
-        Utf8String mapStrategyStr, mapStrategyOptionStr;
-        if (ECOBJECTS_STATUS_Success != customClassMap.TryGetMapStrategy(mapStrategyStr, mapStrategyOptionStr))
-            {
-            m_error->AddClassWithInvalidMapStrategy(ecClass);
-            return false;
-            }
-
-        if (mapStrategyStr.empty() && mapStrategyOptionStr.empty())
-            return true;
-
-        if (SUCCESS != mapStrategy.Parse(mapStrategy, mapStrategyStr.c_str(), mapStrategyOptionStr.c_str()))
+        ECDbClassMap::MapStrategy mapStrategyCA;
+        ECDbMapStrategy strat;
+        if (ECOBJECTS_STATUS_Success != customClassMap.TryGetMapStrategy(mapStrategyCA) ||
+            SUCCESS != ECDbMapStrategy::TryParse(strat, mapStrategyCA))
             {
             m_error->AddClassWithInvalidMapStrategy(ecClass);
             return false;

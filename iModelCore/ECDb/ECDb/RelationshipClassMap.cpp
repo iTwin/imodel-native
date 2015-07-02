@@ -83,9 +83,7 @@ void RelationshipClassMap::DetermineConstraintClassIdColumnHandling (bool& addCo
     // * it has more than one classes including subclasses in case of a polymorphic constraint. 
     //So we first determine whether a constraint class id column is needed
     auto const& constraintClasses = constraint.GetClasses ();
-    //TODO: Need to check other multi-table strategies too?
-    addConstraintClassIdColumnNeeded = GetMapStrategy ().IsSharedTableForThisClass() || 
-                                constraintClasses.size () > 1 || ConstraintIncludesAnyClass (constraintClasses);
+    addConstraintClassIdColumnNeeded = constraintClasses.size () > 1 || ConstraintIncludesAnyClass (constraintClasses);
     //if constraint is polymorphic, and if addConstraintClassIdColumnNeeded is not true yet,
     //we also need to check if the constraint classes have subclasses. If there is at least one, addConstraintClassIdColumnNeeded
     //is set to true;
@@ -293,11 +291,11 @@ ECDbSqlColumn* RelationshipClassEndTableMap::ConfigureForeignECClassIdKey(Relati
 MapStatus RelationshipClassEndTableMap::_InitializePart1 (ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap)
     {
     //Don't call base class method as end table map requires its own handling
-    BeAssert (GetMapStrategy ().IsEndTableMapping());
+    BeAssert (GetMapStrategy ().IsForeignKeyMapping());
     m_dbView = CreateClassDbView ();
 
     RelationshipMapInfo const& relationshipClassMapInfo = dynamic_cast<RelationshipMapInfo const&> (classMapInfo);
-    BeAssert (m_ecClass.GetRelationshipClassCP () != nullptr && classMapInfo.GetMapStrategy ().IsEndTableMapping());
+    BeAssert (m_ecClass.GetRelationshipClassCP () != nullptr && classMapInfo.GetMapStrategy ().IsForeignKeyMapping());
 
     ECRelationshipClassCR relationshipClass = GetRelationshipClass ();
     auto const& sourceConstraint = relationshipClass.GetSource ();
@@ -659,7 +657,7 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd (bool isUniqueIndex
 
     // Setup name of the index
     Utf8String name = "idx_ECRel_";
-    if (GetMapStrategy ().IsRelationshipSourceTable())
+    if (GetMapStrategy ().GetStrategy() == MapStrategy::ForeignKeyRelationshipInSourceTable)
         name.append("Source_");
     else
         name.append("Target_");
@@ -782,7 +780,7 @@ PropertyMapCP RelationshipClassEndTableMap::GetOtherEndECClassIdPropMap () const
 //+---------------+---------------+---------------+---------------+---------------+------
 ECN::ECRelationshipEnd RelationshipClassEndTableMap::GetThisEnd() const
     {
-    return GetMapStrategy ().IsRelationshipSourceTable() ? ECRelationshipEnd_Source : ECRelationshipEnd_Target;
+    return GetMapStrategy ().GetStrategy() == MapStrategy::ForeignKeyRelationshipInSourceTable ? ECRelationshipEnd_Source : ECRelationshipEnd_Target;
     }
 
 //---------------------------------------------------------------------------------------
@@ -798,7 +796,7 @@ ECN::ECRelationshipEnd RelationshipClassEndTableMap::GetOtherEnd () const
 //+---------------+---------------+---------------+---------------+---------------+------
 RelationshipEndColumns const& RelationshipClassEndTableMap::GetEndColumnsMapping(RelationshipMapInfo const& info) const
     {
-    BeAssert(GetThisEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? info.GetMapStrategy().GetStrategy() == MapStrategy::RelationshipSourceTable : info.GetMapStrategy().GetStrategy() == MapStrategy::RelationshipTargetTable);
+    BeAssert(GetThisEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? info.GetMapStrategy().GetStrategy() == MapStrategy::ForeignKeyRelationshipInSourceTable : info.GetMapStrategy().GetStrategy() == MapStrategy::ForeignKeyRelationshipInTargetTable);
     return RelationshipClassMap::GetEndColumnsMapping(info, GetThisEnd());
     }
 
@@ -852,7 +850,7 @@ BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(ECDbSqlColum
         }
 
     IClassMap const* classMap = GetECDbMap().GetClassMap(*keyPropertyContainer);
-    if (classMap == nullptr || !classMap->GetMapStrategy().IsMapped())
+    if (classMap == nullptr || classMap->GetMapStrategy().IsNotMapped())
         {
         BeAssert(false && "Class on relationship end is not mapped. This should have been caught before.");
         return ERROR;
@@ -901,7 +899,7 @@ RelationshipClassLinkTableMap::RelationshipClassLinkTableMap (ECRelationshipClas
 //---------------------------------------------------------------------------------------
 MapStatus RelationshipClassLinkTableMap::_InitializePart1 (ClassMapInfo const& classMapInfo, IClassMap const* parentClassMap)
     {
-    BeAssert (GetMapStrategy ().IsLinkTableStrategy() &&
+    BeAssert (!GetMapStrategy ().IsForeignKeyMapping() &&
         "RelationshipClassLinkTableMap is not meant to be used with other map strategies.");
 
     auto stat = RelationshipClassMap::_InitializePart1 (classMapInfo, parentClassMap);
@@ -1221,10 +1219,7 @@ bool RelationshipClassLinkTableMap::GetConstraintECInstanceIdColumnName (Utf8Str
     if (table.FindColumnCP (columnName.c_str()) == nullptr)
         return true;
 
-    if (GetMapStrategy().IsSharedTableForThisClass())
-        return true;
-		
-    if (GetMapStrategy().IsInParentTable())
+    if (GetMapStrategy().GetStrategy() == MapStrategy::SharedTable)
         return true;
 		
     //Following error occure in Upgrading ECSchema but is not fatal.
@@ -1244,12 +1239,9 @@ bool RelationshipClassLinkTableMap::GetConstraintECClassIdColumnName (Utf8String
     if (table.FindColumnCP (columnName.c_str ()) == nullptr)
         return true;
 
-    if (GetMapStrategy().IsSharedTableForThisClass())
+    if (GetMapStrategy().GetStrategy() == MapStrategy::SharedTable)
         return true;
-		
-    if (GetMapStrategy().IsInParentTable())
-        return true;
-		
+
     //Following error occure in Upgrading ECSchema but is not fatal.
     LOG.errorv (L"Table %s already contains column named %s. ECRelationship %s has failed to map.", 
         table.GetName().c_str(), columnName.c_str (), Utf8String (m_ecClass.GetFullName()).c_str ());

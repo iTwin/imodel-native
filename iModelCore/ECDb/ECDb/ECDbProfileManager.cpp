@@ -462,7 +462,9 @@ Db& db
         "Id INTEGER PRIMARY KEY,"
         "ClassId INTEGER NOT NULL REFERENCES ec_Class (Id) ON DELETE CASCADE,"
         "ParentId INTEGER REFERENCES ec_ClassMap (Id) ON DELETE CASCADE,"
-        "MapStrategy INTEGER NOT NULL"
+        "MapStrategy INTEGER NOT NULL,"
+        "MapStrategyOptions INTEGER,"
+        "IsMapStrategyPolymorphic BOOL NOT NULL CHECK (IsMapStrategyPolymorphic IN (0, 1))"
         ");");
 
     if (stat != BE_SQLITE_OK)

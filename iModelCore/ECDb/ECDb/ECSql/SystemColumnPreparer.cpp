@@ -83,7 +83,7 @@ SystemColumnPreparer const& SystemColumnPreparer::GetFor(IClassMap::Type classMa
 //---------------------------------------------------------------------------------------
 ECSqlStatus RegularClassSystemColumnPreparer::_GetWhereClause(ECSqlPrepareContext& ctx, NativeSqlBuilder& whereClauseBuilder, IClassMap const& classMap, ECSqlType ecsqlType, bool isPolymorphicClassExp, Utf8CP tableAlias) const
     {
-    BeAssert(!classMap.GetMapStrategy().IsUnmapped() && "ClassMap::NativeSqlConverterImpl::GetWhereClause not expected to be called by unmapped class map.");
+    BeAssert(!classMap.GetMapStrategy().IsNotMapped() && "ClassMap::NativeSqlConverterImpl::GetWhereClause not expected to be called by unmapped class map.");
 
     HorizontalPartition const* horizPartition = nullptr;
     std::vector<size_t> nonVirtualPartitionIndices = classMap.GetStorageDescription().GetNonVirtualHorizontalPartitionIndices();

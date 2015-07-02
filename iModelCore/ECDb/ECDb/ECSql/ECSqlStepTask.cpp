@@ -306,7 +306,7 @@ ECSqlStepTaskCreateStatus InsertStructArrayStepTask::Create (unique_ptr<InsertSt
         return ECSqlStepTaskCreateStatus::ArrayElementTypeMapNotFound;
         }
 
-    if (arrayElementTypeMap->GetMapStrategy().IsUnmapped ())
+    if (arrayElementTypeMap->GetMapStrategy().IsNotMapped())
         {
         return ECSqlStepTaskCreateStatus::ArrayElementTypeIsUnmapped;
         }
@@ -395,7 +395,7 @@ ECSqlStepTaskCreateStatus DeleteStructArrayStepTask::Create (unique_ptr<DeleteSt
         return ECSqlStepTaskCreateStatus::ArrayElementTypeMapNotFound;
         }
 
-    if (arrayElementTypeMap->GetMapStrategy().IsUnmapped ())
+    if (arrayElementTypeMap->GetMapStrategy().IsNotMapped ())
         {
         return ECSqlStepTaskCreateStatus::ArrayElementTypeIsUnmapped;
         }
