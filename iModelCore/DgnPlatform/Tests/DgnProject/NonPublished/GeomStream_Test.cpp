@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/DgnProject/NonPublished/MSElementDescr_Test.cpp $
+|  $Source: Tests/DgnProject/NonPublished/GeomStream_Test.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,9 +9,9 @@
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
-/*---------------------------------------------------------------------------------**//**
-* @bsiclass                                                     Evan.Williams  12/09
-+---------------+---------------+---------------+---------------+---------------+------*/
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   06/15
+//=======================================================================================
 class GeomStreamTest : public testing::Test
 {
 protected:
@@ -19,26 +19,18 @@ ScopedDgnHost       m_host;
 DgnDbTestDgnManager m_testDataManager;
 
 public:
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Evan.Williams  12/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-GeomStreamTest() : m_testDataManager (L"2dMetricGeneral.idgndb")
-    {
-    BeAssert( NULL != GetDgnModelP() );
-    }
+    GeomStreamTest() : m_testDataManager (L"2dMetricGeneral.idgndb"){BeAssert( NULL != GetDgnModelP() );}
+    virtual ~GeomStreamTest () {}
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Evan.Williams  12/09
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual ~GeomStreamTest () { }
-
-DgnModelP GetDgnModelP() {return m_testDataManager.GetDgnModelP();}
+    DgnModelP GetDgnModelP() {return m_testDataManager.GetDgnModelP();}
 };
-
     
 static bool hasGeom(GeomStreamCR el) {return (NULL != el.GetData()) && 3 == el.GetSize();}
 static bool sameGeomPtr(GeomStreamCR el1, GeomStreamCR el2) {return hasGeom(el1) && (el1.GetData() == el2.GetData());}
 
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   06/15
+//=======================================================================================
 TEST_F(GeomStreamTest, DgnElement)
     {
     // allocate a ElementGeom and put some data in its graphics

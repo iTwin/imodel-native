@@ -17,7 +17,9 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECClass typeName="ElementRTree" isDomainClass="True" >
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
-                <MapStrategy>MapToExistingTable</MapStrategy>
+                <MapStrategy>
+                    <Strategy>ExistingTable</Strategy>
+                </MapStrategy>
                 <TableName>dgn_RTree3d</TableName>
                 <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
             </ClassMap>
@@ -33,7 +35,10 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECClass typeName="Model" isDomainClass="True" >
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
-                <MapStrategy>TablePerHierarchy</MapStrategy>
+                <MapStrategy>
+                    <Strategy>SharedTable</Strategy>
+                    <IsPolymorphic>True</IsPolymorphic>
+                </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
         </ECCustomAttributes>
@@ -110,7 +115,10 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECClass typeName="Category" isDomainClass="True" >
         <ECCustomAttributes>
              <ClassMap xmlns="ECDbMap.01.00">
-                <MapStrategy>TablePerClass</MapStrategy>
+                <MapStrategy>
+                    <Strategy>OwnTable</Strategy>
+                    <IsPolymorphic>True</IsPolymorphic>
+                </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
         </ECCustomAttributes>
@@ -140,7 +148,10 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECClass typeName="Color" isDomainClass="True" >
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
-                <MapStrategy>TablePerClass</MapStrategy>
+                <MapStrategy>
+                    <Strategy>OwnTable</Strategy>
+                    <IsPolymorphic>True</IsPolymorphic>
+                </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
                 <Indexes>
                     <DbIndex>
@@ -226,7 +237,10 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECClass typeName="View" isDomainClass="True" >
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
-                <MapStrategy>TablePerHierarchy</MapStrategy>
+                <MapStrategy>
+                    <Strategy>SharedTable</Strategy>
+                    <IsPolymorphic>True</IsPolymorphic>
+                </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
             </ClassMap>
         </ECCustomAttributes>
@@ -269,7 +283,10 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             <ClassMap xmlns="ECDbMap.01.00">
                 <!-- We must insist that all instances of all possible subclasses are stored together in a single table. 
                      TxnManager knows about this table, and expects to find all instances this kind of relationship there. -->
-                <MapStrategy>TablePerHierarchy</MapStrategy>
+                <MapStrategy>
+                    <Strategy>SharedTable</Strategy>
+                    <IsPolymorphic>True</IsPolymorphic>
+                </MapStrategy>
             </ClassMap>
             <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
                 <AllowDuplicateRelationships>True</AllowDuplicateRelationships>
@@ -317,7 +334,10 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <!-- Relationship that indicates that a Model drives (controls the lifecyle or structure of) a dependent Model -->
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
-                <MapStrategy>TablePerHierarchy</MapStrategy>
+                <MapStrategy>
+                    <Strategy>SharedTable</Strategy>
+                    <IsPolymorphic>True</IsPolymorphic>
+                </MapStrategy>
             </ClassMap>
             <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
                 <SourceECInstanceIdColumn>RootModelId</SourceECInstanceIdColumn>
@@ -336,7 +356,10 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECClass typeName="Element" isDomainClass="False" isStruct="False" isCustomAttributeClass="False">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
-                <MapStrategy>TablePerHierarchy</MapStrategy>
+                <MapStrategy>
+                    <Strategy>SharedTable</Strategy>
+                    <IsPolymorphic>True</IsPolymorphic>
+                </MapStrategy>
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
                 <!-- WIP: Why does this add "WHERE ECClassId = xxx"?
                 <Indexes>
@@ -437,7 +460,10 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <BaseClass>ElementAspect</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
-                <MapStrategy>TablePerClass</MapStrategy>
+                <MapStrategy>
+                    <Strategy>OwnTable</Strategy>
+                    <IsPolymorphic>True</IsPolymorphic>
+                </MapStrategy>
                 <!-- The ECInstanceId for ElementItem is the same as the Id of the owning Element -->
                 <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
             </ClassMap>
@@ -450,8 +476,11 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <BaseClass>ElementUniqueAspect</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
-                <MapStrategy>TablePerHierarchy</MapStrategy>
-                <MapStrategyOptions>SharedColumns</MapStrategyOptions>
+                <MapStrategy>
+                    <Strategy>SharedTable</Strategy>
+                    <Options>SharedColumnsForSubclasses</Options>
+                    <IsPolymorphic>True</IsPolymorphic>
+                </MapStrategy>
                 <!-- The ECInstanceId for ElementItem is the same as the Id of the owning Element -->
                 <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
             </ClassMap>
@@ -463,7 +492,10 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <BaseClass>ElementAspect</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
-                <MapStrategy>TablePerClass</MapStrategy>
+                <MapStrategy>
+                    <Strategy>OwnTable</Strategy>
+                    <IsPolymorphic>True</IsPolymorphic>
+                </MapStrategy>
                 <!-- The ECInstanceId for ElementItem is the same as the Id of the owning Element -->
                 <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
             </ClassMap>
@@ -473,7 +505,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECClass typeName="ElementGeom" isDomainClass="True" >
         <!-- The aspect that holds the cached/resovled geometry for an Element -->
         <!-- This aspect is not subclassed -->
-        <BaseClass>ElementAspect</BaseClass>
+        <BaseClass>ElementUniqueAspect</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <!-- The ECInstanceId for ElementGeom is the same as the Id of the owning Element -->

@@ -798,6 +798,27 @@ enum class ClipVolumePass
     Maximum
 };
 
+
+//  QvUInt32 is a temporary solution to a difference in D3D QV and OpenGL QV.  Both used unsigned long 
+//  types in a few places where it is important that the type be a 32-bit integer.  Once we encountered
+//  a platform where unsigned long is a 64-bit integer we had to change the OpenGL QV but did not 
+//  want to change D3D QV. Code that uses QvUInt32 will compile correctly for either case.
+#if defined(BENTLEYCONFIG_GRAPHICS_OPENGLES) || defined(BENTLEYCONFIG_GRAPHICS_OPENGL)
+    typedef long QvInt32;
+    typedef unsigned long QvUInt32;
+    typedef short QvInt16;
+    typedef unsigned short QvUInt16;
+#else
+    #if !defined(BENTLEYCONFIG_GRAPHICS_DIRECTX)
+        #error Expect BENTLEYCONFIG_GRAPHICS_DIRECTX when BENTLEYCONFIG_GRAPHICS_OPENGLES is not defined
+    #endif
+
+    typedef long QvInt32;
+    typedef unsigned long QvUInt32;
+    typedef short QvInt16;
+    typedef unsigned short QvUInt16;
+#endif
+
 enum class DrawPurpose
 {
     NotSpecified               = 0,
