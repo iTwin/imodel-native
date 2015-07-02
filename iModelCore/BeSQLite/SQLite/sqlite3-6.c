@@ -11731,7 +11731,6 @@ static int icuLikeCompare(
     /* Read (and consume) the next character from the input pattern. */
     UChar32 uPattern;
     U8_NEXT_UNSAFE(zPattern, iPattern, uPattern);
-    assert(uPattern!=0);
 
     /* There are now 4 possibilities:
     **
@@ -12070,6 +12069,7 @@ static void icuLoadCollation(
   int rc;                   /* Return code from sqlite3_create_collation_x() */
 
   assert(nArg==2);
+  (void)nArg; /* Unused parameter */
   zLocale = (const char *)sqlite3_value_text(apArg[0]);
   zName = (const char *)sqlite3_value_text(apArg[1]);
 
@@ -12393,12 +12393,13 @@ static int icuNext(
 ** The set of routines that implement the simple tokenizer
 */
 static const sqlite3_tokenizer_module icuTokenizerModule = {
-  0,                           /* iVersion */
-  icuCreate,                   /* xCreate  */
-  icuDestroy,                  /* xCreate  */
-  icuOpen,                     /* xOpen    */
-  icuClose,                    /* xClose   */
-  icuNext,                     /* xNext    */
+  0,                           /* iVersion    */
+  icuCreate,                   /* xCreate     */
+  icuDestroy,                  /* xCreate     */
+  icuOpen,                     /* xOpen       */
+  icuClose,                    /* xClose      */
+  icuNext,                     /* xNext       */
+  0,                           /* xLanguageid */
 };
 
 /*
@@ -15958,8 +15959,8 @@ static int otaVfsFileControl(sqlite3_file *pFile, int op, void *pArg){
   int (*xControl)(sqlite3_file*,int,void*) = p->pReal->pMethods->xFileControl;
   int rc;
 
-  assert( p->openFlags & 
-      (SQLITE_OPEN_MAIN_DB|SQLITE_OPEN_TEMP_DB|SQLITE_OPEN_TRANSIENT_DB) 
+  assert( p->openFlags & (SQLITE_OPEN_MAIN_DB|SQLITE_OPEN_TEMP_DB)
+       || p->openFlags & (SQLITE_OPEN_TRANSIENT_DB|SQLITE_OPEN_TEMP_JOURNAL)
   );
   if( op==SQLITE_FCNTL_OTA ){
     sqlite3ota *pOta = (sqlite3ota*)pArg;
