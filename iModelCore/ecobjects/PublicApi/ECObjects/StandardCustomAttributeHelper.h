@@ -258,6 +258,38 @@ friend struct ECDbMapCustomAttributeHelper;
 
 public:
     //=======================================================================================    
+    //! MapStrategy is a convenience wrapper around the MapStrategy struct in the ECDbMap ECSchema
+    //! that simplifies reading the values of that struct
+    //! @ingroup ECObjectsGroup
+    //! @bsiclass
+    //=======================================================================================    
+    struct MapStrategy
+        {
+        friend struct ECDbClassMap;
+
+    private:
+        Utf8String m_strategy;
+        Utf8String m_options;
+        bool m_isPolymorphic;
+
+        MapStrategy(Utf8CP strategy, Utf8CP options, bool isPolymorphic) : m_strategy(strategy), m_options(options), m_isPolymorphic(isPolymorphic) {}
+
+    public:
+        MapStrategy() : m_isPolymorphic(false) {}
+
+        //! Gets the Strategy.
+        //! @return Strategy or nullptr if not set in the custom attribute
+        Utf8CP GetStrategy() const { return m_strategy.c_str(); }
+        //! Gets the strategy options as comma separated list
+        //! @return strategy options or nullptr if not set in the custom attribute
+        Utf8CP GetOptions() const { return m_options.c_str(); }
+        //! Gets a value indicating whether the MapStrategy is applied polymorphically (i.e. to subclasses of the class that
+        //! holds the ClassMap custom attribute) or not
+        bool IsPolymorphic() const { return m_isPolymorphic; }
+        };
+
+
+    //=======================================================================================    
     //! DbIndex is a convenience wrapper around the DbIndex struct in the ECDbMap ECSchema
     //! that simplifies reading the values of that struct
     //! @ingroup ECObjectsGroup
@@ -300,11 +332,10 @@ private:
 public:
     ECDbClassMap() : m_class(nullptr), m_ca(nullptr) {}
 
-    //! Tries to get the values of the MapStrategy and MapStrategyOptions properties from the ClassMap.
+    //! Tries to get the values of the MapStrategy struct property from the ClassMap.
     //! @param[out] mapStrategy MapStrategy. It remains unchanged, if the MapStrategy property wasn't set in the ClassMap.
-    //! @param[out] mapStrategyOptions MapStrategy options. It remains unchanged, if the MapStrategyOptions property wasn't set in the ClassMap.
     //! @return ECOBJECTSTATUS_Success if MapStrategy and MapStrategyOptions were set or unset in the ClassMap. Error codes otherwise
-    ECOBJECTS_EXPORT ECObjectsStatus TryGetMapStrategy(Utf8StringR mapStrategy, Utf8StringR mapStrategyOptions) const;
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetMapStrategy(MapStrategy& mapStrategy) const;
     //! Tries to get the value of the TableName property in the ClassMap.
     //! @param[out] tableName Table name. It remains unchanged, if the TableName property wasn't set in the ClassMap.
     //! @return ECOBJECTSTATUS_Success if TableName was set or unset in the ClassMap, Error codes otherwise

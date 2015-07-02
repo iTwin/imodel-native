@@ -506,16 +506,28 @@ ECDbClassMap::ECDbClassMap(ECClassCR ecClass, IECInstanceCP ca) : m_class(&ecCla
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECDbClassMap::TryGetMapStrategy(Utf8StringR mapStrategy, Utf8StringR mapStrategyOptions) const
+ECObjectsStatus ECDbClassMap::TryGetMapStrategy(MapStrategy& mapStrategy) const
     {
     if (m_ca == nullptr)
         return ECOBJECTS_STATUS_Error;
 
-    ECObjectsStatus stat = CustomAttributeReader::TryGetTrimmedValue(mapStrategy, *m_ca, L"MapStrategy");
+    Utf8String strategy;
+    ECObjectsStatus stat = CustomAttributeReader::TryGetTrimmedValue(strategy, *m_ca, L"MapStrategy.Strategy");
     if (ECOBJECTS_STATUS_Success != stat)
         return stat;
 
-    return CustomAttributeReader::TryGetTrimmedValue(mapStrategyOptions, *m_ca, L"MapStrategyOptions");
+    Utf8String mapStrategyOptions;
+    stat = CustomAttributeReader::TryGetTrimmedValue(mapStrategyOptions, *m_ca, L"MapStrategy.Options");
+    if (ECOBJECTS_STATUS_Success != stat)
+        return stat;
+
+    bool isPolymorphic = false;
+    stat = CustomAttributeReader::TryGetBooleanValue(isPolymorphic, *m_ca, L"MapStrategy.IsPolymorphic");
+    if (ECOBJECTS_STATUS_Success != stat)
+        return stat;
+
+    mapStrategy = MapStrategy(strategy.c_str(), mapStrategyOptions.c_str(), isPolymorphic);
+    return ECOBJECTS_STATUS_Success;
     }
 
 //---------------------------------------------------------------------------------------
