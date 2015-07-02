@@ -437,7 +437,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
      //---------------------------------------------------------------------------------------
      void SqlGenerator::CollectDerivedEndTableRelationships (std::set<RelationshipClassEndTableMapCP>& childMaps, RelationshipClassMapCR classMap)
          {
-         if (classMap.GetMapStrategy ().IsEndTableMapping ())
+         if (classMap.GetMapStrategy ().IsForeignKeyMapping ())
              childMaps.insert (static_cast<RelationshipClassEndTableMapCP>(&classMap));
 
          for (auto derviedMap : classMap.GetDerivedClassMaps ())
@@ -521,7 +521,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
         {
         NativeSqlBuilder::List unionList;
 
-        if (classMap.IsRelationshipClassMap () && classMap.GetMapStrategy ().IsEndTableMapping ())
+        if (classMap.IsRelationshipClassMap() && classMap.GetMapStrategy().IsForeignKeyMapping())
             {
             if (BuildEndTableRelationshipView (unionList, static_cast<RelationshipClassMapCR> (classMap)) != BentleyStatus::SUCCESS)
                 return BentleyStatus::ERROR;
@@ -555,7 +555,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
                     return BentleyStatus::ERROR;
                     }
 
-                if (derivedClassMap->GetMapStrategy ().IsEndTableMapping ())
+                if (derivedClassMap->GetMapStrategy().IsForeignKeyMapping())
                     continue;
 
                 auto classSqlName = BuildSchemaQualifiedClassName (*derivedClass);
@@ -1372,7 +1372,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
         {
         if (classMap.GetTable ().GetPersistenceType () == PersistenceType::Persisted)
             {
-            if (classMap.GetMapStrategy ().IsEndTableMapping ())
+            if (classMap.GetMapStrategy().IsForeignKeyMapping())
                 {
                 return BuildDeleteTriggerForEndTableMe (triggers, classMap);
                 }

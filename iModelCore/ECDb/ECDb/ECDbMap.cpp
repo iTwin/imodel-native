@@ -162,7 +162,7 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext const& schemaImportContext, b
     std::set<ClassMap const*> classMaps;
     for (auto& key : m_classMapDictionary)
         {
-        if (key.second->GetMapStrategy ().IsMapped ())
+        if (!key.second->GetMapStrategy ().IsNotMapped ())
             {
             if (key.second->GetClass ().GetIsCustomAttributeClass ())
                 continue;
