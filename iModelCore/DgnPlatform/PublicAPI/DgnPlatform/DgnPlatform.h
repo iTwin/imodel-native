@@ -800,7 +800,7 @@ enum class ClipVolumePass
 //  types in a few places where it is important that the type be a 32-bit integer.  Once we encountered
 //  a platform where unsigned long is a 64-bit integer we had to change the OpenGL QV but did not 
 //  want to change D3D QV. Code that uses QvUInt32 will compile correctly for either case.
-#if defined(BENTLEYCONFIG_GRAPHICS_OPENGLES)
+#if defined(BENTLEYCONFIG_GRAPHICS_OPENGLES) || defined(BENTLEYCONFIG_GRAPHICS_OPENGL)
     typedef long QvInt32;
     typedef unsigned long QvUInt32;
     typedef short QvInt16;
