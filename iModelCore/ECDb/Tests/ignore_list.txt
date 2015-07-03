@@ -23,7 +23,7 @@ InstanceCRUDTests.InsertUpdateDeleteTest
 
 #TFS Defects 186409,186444, 186457, 186461
 ECDbMapPersistenceTests.MappingStrategyTest
-
+ECDbMapCATests.SeperateTableForRelationshipWithMapStrategyTableForThisClass #Defect 239412
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
 #----------------------------------------------------------------------------------------
