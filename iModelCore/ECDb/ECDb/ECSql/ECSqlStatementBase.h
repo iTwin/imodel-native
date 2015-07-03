@@ -24,7 +24,7 @@ struct ECSqlStatementBase
     {
 private:
     std::unique_ptr<ECSqlPreparedStatement> m_preparedStatement;
-    ECSqlEventManager m_eventManager;
+
     ECSqlStatusContext* m_statusContext;
 
     virtual ECSqlPrepareContext _InitializePrepare(ECDbCR ecdb, Utf8CP ecsql) = 0;
@@ -70,15 +70,8 @@ public:
 
     void Finalize ();
 
-    void RegisterEventHandler (ECSqlEventHandler& handler);
-    ECSqlStatus UnregisterEventHandler (ECSqlEventHandler& handler);
-    void UnregisterAllEventHandlers();
-    void EnableDefaultEventHandler();
-    void DisableDefaultEventHandler();
-    DefaultECSqlEventHandler const* GetDefaultEventHandler() const;
 
-    ECSqlEventManager& GetEventManagerR ();
-    ECSqlEventManager const& GetEventManager () const;
+
 
     // Helpers
     ECSqlPreparedStatement* GetPreparedStatementP () const { return m_preparedStatement.get (); }

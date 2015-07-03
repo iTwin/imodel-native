@@ -76,6 +76,8 @@ struct ECSqlDeletePreparer2
                 {
                 if (!whereClause.IsEmpty ())
                     whereClause.Append (" AND ");
+                else
+                    whereClause.Append (" WHERE ");
 
                 whereClause.Append ("ECClassId = ").Append (classExp->GetInfo ().GetMap ().GetClass ().GetId ());
                 }

@@ -60,7 +60,7 @@ ECSqlStatus ECSqlDeletePreparer::Prepare (ECSqlPrepareContext& ctx, DeleteStatem
         stat = selectorStmt->Prepare (classMap.GetECDbMap ().GetECDbR (), selectorQuery.c_str ());
         if (stat != ECSqlStatus::Success)
             {
-            BeAssert (false && "Fail to prepared statement for ECInstanceIdSelect. Possiable case of struct array containing struct array");
+            BeAssert (false && "Fail to prepared statement for ECInstanceIdSelect. Possible case of struct array containing struct array");
             return stat;
             }
 

@@ -401,55 +401,6 @@ Utf8String ECSqlStatement::GetLastStatusMessage () const
     return m_pimpl->GetLastStatusMessage ();
     }
 
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan      06/2014
-//---------------------------------------------------------------------------------------
-void ECSqlStatement::RegisterEventHandler (ECSqlEventHandler& eventHandler)
-    {
-    m_pimpl->RegisterEventHandler (eventHandler);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan      06/2014
-//---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlStatement::UnregisterEventHandler (ECSqlEventHandler& eventHandler)
-    {
-    return m_pimpl->UnregisterEventHandler (eventHandler);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan      06/2014
-//---------------------------------------------------------------------------------------
-void ECSqlStatement::UnregisterAllEventHandlers ()
-    {
-    m_pimpl->UnregisterAllEventHandlers ();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      02/2015
-//---------------------------------------------------------------------------------------
-void ECSqlStatement::EnableDefaultEventHandler()
-    {
-    m_pimpl->EnableDefaultEventHandler();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      02/2015
-//---------------------------------------------------------------------------------------
-void ECSqlStatement::DisableDefaultEventHandler()
-    {
-    m_pimpl->DisableDefaultEventHandler();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      02/2015
-//---------------------------------------------------------------------------------------
-DefaultECSqlEventHandler const* ECSqlStatement::GetDefaultEventHandler() const
-    {
-    return m_pimpl->GetDefaultEventHandler();
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2014
 //---------------------------------------------------------------------------------------

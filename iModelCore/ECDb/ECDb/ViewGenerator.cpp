@@ -263,7 +263,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
       
         if (auto column = classMap.GetTable ().GetFilteredColumnFirst (ECDbSystemColumnECInstanceId))
             {
-            if (BuildColumnExpression (fragments, tablePrefix, column->GetName ().c_str (), "ECInstanceId", addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
+            if (BuildColumnExpression (fragments, tablePrefix, column->GetName ().c_str (), ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
                 return BentleyStatus::ERROR;
             }
         else
@@ -287,19 +287,20 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
 
         if (auto column = classMap.GetTable ().GetFilteredColumnFirst (ECDbSystemColumnParentECInstanceId))
             {
-            if (BuildColumnExpression (fragments, tablePrefix, column->GetName ().c_str (), "ParentECInstanceId", addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
+            if (BuildColumnExpression (fragments, tablePrefix, column->GetName ().c_str (), ECDbSystemSchemaHelper::PARENTECINSTANCEID_PROPNAME, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
                 return BentleyStatus::ERROR;
             }
 
         if (auto column = classMap.GetTable ().GetFilteredColumnFirst (ECDbSystemColumnECPropertyPathId))
             {
-            if (BuildColumnExpression (fragments, tablePrefix, column->GetName ().c_str (), "ECPropertyPathId", addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
+            if (BuildColumnExpression (fragments, tablePrefix, column->GetName ().c_str (), ECDbSystemSchemaHelper::ECPROPERTYPATHID_PROPNAME, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
                 return BentleyStatus::ERROR;
             }
 
         if (auto column = classMap.GetTable ().GetFilteredColumnFirst (ECDbSystemColumnECArraryIndex))
             {
-            if (BuildColumnExpression (fragments, tablePrefix, column->GetName ().c_str (), "ECArraryIndex", addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
+            
+            if (BuildColumnExpression (fragments, tablePrefix, column->GetName ().c_str (), ECDbSystemSchemaHelper::ECARRAYINDEX_PROPNAME, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
                 return BentleyStatus::ERROR;
             }
 
