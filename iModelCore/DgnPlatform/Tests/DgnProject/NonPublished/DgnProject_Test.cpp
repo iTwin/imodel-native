@@ -10,7 +10,10 @@
 #include <DgnPlatform/DgnCore/DgnIModel.h>
 #include <DgnPlatform/DgnCore/ColorUtil.h>
 
-USING_NAMESPACE_BENTLEY_SQLITE 
+USING_NAMESPACE_BENTLEY_DGNPLATFORM
+USING_NAMESPACE_BENTLEY_EC
+USING_NAMESPACE_BENTLEY_SQLITE
+USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   05/11
@@ -589,4 +592,58 @@ TEST_F(DgnProjectPackageTest, ExtractPackageUsingDefaults)
     PropertiesInTable propertiesV;
     getPropertiesInTable(dgnProjV, propertiesV);
     compareProperties(properties, propertiesV);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad Hassan                         07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ImportSchema (ECSchemaR ecSchema, DgnDbR project)
+    {
+    ECSchemaCachePtr schemaList = ECSchemaCache::Create ();
+    schemaList->AddSchema (ecSchema);
+    BentleyStatus importSchemaStatus = project.Schemas ().ImportECSchemas (*schemaList);
+    if (SUCCESS == importSchemaStatus)
+        return true;
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Muhammad Hassan                         07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (DgnProjectPackageTest, SeperateTableForRelationshipWithMapStrategyTableForThisClass)
+    {
+    WCharCP testFileName = L"2dMetricGeneral.idgndb";
+    BeFileName sourceFile = DgnDbTestDgnManager::GetSeedFilePath (testFileName);
+
+    BeFileName dgndbFileName;
+    BeTest::GetHost ().GetOutputRoot (dgndbFileName);
+    dgndbFileName.AppendToPath (testFileName);
+
+    ASSERT_EQ (BeFileNameStatus::Success, BeFileName::BeCopyFile (sourceFile, dgndbFileName, false));
+
+    DbResult status;
+    DgnDbPtr dgnProj = DgnDb::OpenDgnDb (&status, dgndbFileName, DgnDb::OpenParams (Db::OpenMode::ReadWrite));
+    EXPECT_EQ (DbResult::BE_SQLITE_OK, status) << status;
+    ASSERT_TRUE (dgnProj != NULL);
+
+    BeFileName ecSchemaPath;
+    BeTest::GetHost ().GetDocumentsRoot (ecSchemaPath);
+    ecSchemaPath.AppendToPath (L"DgnDb");
+    ecSchemaPath.AppendToPath (L"ECDb");
+    ecSchemaPath.AppendToPath (L"Schemas");
+    ecSchemaPath.AppendToPath (L"SampleDgnDbEditor.01.00.ecschema.xml");
+
+    ECSchemaCachePtr schemaCache = ECSchemaCache::Create ();
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext ();
+    WString schemaPath = BeFileName::GetDirectoryName (ecSchemaPath);
+    schemaContext->AddSchemaPath (schemaPath.c_str ());
+
+    ECSchemaPtr schema;
+    ECSchema::ReadFromXmlFile (schema, ecSchemaPath, *schemaContext);
+    ASSERT_TRUE (schema.IsValid ());
+
+    ASSERT_EQ (true, ImportSchema (*schema, *dgnProj));
+
+    ASSERT_TRUE (dgnProj->TableExists ("aswe"));
+    ASSERT_TRUE (dgnProj->TableExists ("awhs"));
     }

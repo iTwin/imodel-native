@@ -21,7 +21,7 @@ XGraphicsTests.SplitLargeMeshes                         # TFS 19411
 #----------------------------------------------------------------------------------------
 DgnECPersistence.ConstructSimRelationshipsNonGeneric    # Fails on Android
 ECDbInstances.JsonValueStructure                        # Fails after geomlibs/ecobjects merge from topaz
-
+DgnProjectPackageTest.SeperateTableForRelationshipWithMapStrategyTableForThisClass #Defect 239411
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
 #----------------------------------------------------------------------------------------
