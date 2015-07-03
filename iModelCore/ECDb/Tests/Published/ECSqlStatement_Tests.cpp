@@ -17,303 +17,283 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 struct ECSqlSelectTests : public ::testing::Test
     {
     public:
-        void SetUpTestDb (ECDbR ecdb)
+        void SetUpTestDb(ECDbR ecdb)
             {
             BeFileName temporaryDir;
-            BeTest::GetHost ().GetOutputRoot (temporaryDir);
-            BeSQLiteLib::Initialize (temporaryDir);
+            BeTest::GetHost().GetOutputRoot(temporaryDir);
+            BeSQLiteLib::Initialize(temporaryDir);
 
             BeFileName dbPath;
-            BeTest::GetHost ().GetDocumentsRoot (dbPath);
-            dbPath.AppendToPath (L"DgnDb");
-            dbPath.AppendToPath (L"ECSqlStatementTests.ecdb");
+            BeTest::GetHost().GetDocumentsRoot(dbPath);
+            dbPath.AppendToPath(L"DgnDb");
+            dbPath.AppendToPath(L"ECSqlStatementTests.ecdb");
 
-            ASSERT_EQ (BE_SQLITE_OK, ecdb.OpenBeSQLiteDb (dbPath, ECDb::OpenParams (ECDb::OpenMode::ReadWrite)));
+            ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(dbPath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
             }
 
         /*---------------------------------------------------------------------------------**//**
         * @bsiclass                             Muhammad Hassan                         06/15
         +---------------+---------------+---------------+---------------+---------------+------*/
-        void setProductsValues (StandaloneECInstancePtr instance, int ProductId, WCharCP ProductName, double price, bool ProductAvailable)
+        void setProductsValues(StandaloneECInstancePtr instance, int ProductId, WCharCP ProductName, double price, bool ProductAvailable)
             {
-            instance->SetValue (L"ProductId", ECValue (ProductId));
-            instance->SetValue (L"ProductName", ECValue (ProductName));
-            instance->SetValue (L"Price", ECValue (price));
-            instance->SetValue (L"ProductAvailable", ECValue (ProductAvailable));
+            instance->SetValue(L"ProductId", ECValue(ProductId));
+            instance->SetValue(L"ProductName", ECValue(ProductName));
+            instance->SetValue(L"Price", ECValue(price));
+            instance->SetValue(L"ProductAvailable", ECValue(ProductAvailable));
             }
 
-        void setEmployeeValues (StandaloneECInstancePtr instance, int EmployeeId, WCharCP FirstName, WCharCP LastName, DateTimeCR DOB, WCharCP Notes)
+        void setEmployeeValues(StandaloneECInstancePtr instance, int EmployeeId, WCharCP FirstName, WCharCP LastName, DateTimeCR DOB, WCharCP Notes)
             {
-            instance->SetValue (L"EmployeeId", ECValue (EmployeeId));
-            instance->SetValue (L"FirstName", ECValue (FirstName));
-            instance->SetValue (L"LastName", ECValue (LastName));
-            instance->SetValue (L"DOB", ECValue (DOB));
-            instance->SetValue (L"Notes", ECValue (Notes));
+            instance->SetValue(L"EmployeeId", ECValue(EmployeeId));
+            instance->SetValue(L"FirstName", ECValue(FirstName));
+            instance->SetValue(L"LastName", ECValue(LastName));
+            instance->SetValue(L"DOB", ECValue(DOB));
+            instance->SetValue(L"Notes", ECValue(Notes));
             }
 
-        void setSupplierValues (StandaloneECInstancePtr instance, int SupplierId, WCharCP SupplierName, WCharCP ContactName, WCharCP City, WCharCP Country, WCharCP Address, int64_t PostalCode)
+        void setSupplierValues(StandaloneECInstancePtr instance, int SupplierId, WCharCP SupplierName, WCharCP ContactName, WCharCP City, WCharCP Country, WCharCP Address, int64_t PostalCode)
             {
-            instance->SetValue (L"SupplierId", ECValue (SupplierId));
-            instance->SetValue (L"SupplierName", ECValue (SupplierName));
-            instance->SetValue (L"ContactName", ECValue (ContactName));
-            instance->SetValue (L"City", ECValue (City));
-            instance->SetValue (L"Country", ECValue (Country));
-            instance->SetValue (L"Address", ECValue (Address));
-            instance->SetValue (L"PostalCode", ECValue (PostalCode));
+            instance->SetValue(L"SupplierId", ECValue(SupplierId));
+            instance->SetValue(L"SupplierName", ECValue(SupplierName));
+            instance->SetValue(L"ContactName", ECValue(ContactName));
+            instance->SetValue(L"City", ECValue(City));
+            instance->SetValue(L"Country", ECValue(Country));
+            instance->SetValue(L"Address", ECValue(Address));
+            instance->SetValue(L"PostalCode", ECValue(PostalCode));
             }
 
-        void setShipperValues (StandaloneECInstancePtr instance, int shipperId, WCharCP ShipperName, int64_t Phone)
+        void setShipperValues(StandaloneECInstancePtr instance, int shipperId, WCharCP ShipperName, int64_t Phone)
             {
-            instance->SetValue (L"ShipperId", ECValue (shipperId));
-            instance->SetValue (L"ShipperName", ECValue (ShipperName));
-            instance->SetValue (L"Phone", ECValue (Phone));
+            instance->SetValue(L"ShipperId", ECValue(shipperId));
+            instance->SetValue(L"ShipperName", ECValue(ShipperName));
+            instance->SetValue(L"Phone", ECValue(Phone));
             }
 
-        void setOrderValues (StandaloneECInstancePtr instance, DateTimeCR datetime, int id, bool ProductDelivered)
+        void setOrderValues(StandaloneECInstancePtr instance, DateTimeCR datetime, int id, bool ProductDelivered)
             {
-            instance->SetValue (L"OrderDate", ECValue (datetime));
-            instance->SetValue (L"OrderId", ECValue (id));
-            instance->SetValue (L"ProductDelivered", ECValue (ProductDelivered));
+            instance->SetValue(L"OrderDate", ECValue(datetime));
+            instance->SetValue(L"OrderId", ECValue(id));
+            instance->SetValue(L"ProductDelivered", ECValue(ProductDelivered));
             }
 
         /*---------------------------------------------------------------------------------**//**
         * @bsimethod                             Muhammad Hassan                         06/15
         +---------------+---------------+---------------+---------------+---------------+------*/
-        void setCustomerValues (StandaloneECInstancePtr instance, WCharCP CustomerName, int64_t PostalCode, WCharCP Address, WCharCP ContactName, WCharCP City, WCharCP Country, int CustomerId, StandaloneECInstancePtr OrderInstance1, StandaloneECInstancePtr OrderInstance2, StandaloneECInstancePtr OrderInstance3)
+        void setCustomerValues(StandaloneECInstancePtr instance, WCharCP CustomerName, int64_t PostalCode, WCharCP Address, WCharCP ContactName, WCharCP City, WCharCP Country, int CustomerId, StandaloneECInstancePtr OrderInstance1, StandaloneECInstancePtr OrderInstance2, StandaloneECInstancePtr OrderInstance3)
             {
-            instance->SetValue (L"CustomerId", ECValue (CustomerId));
-            instance->SetValue (L"CustomerName", ECValue (CustomerName));
-            instance->SetValue (L"ContactName", ECValue (ContactName));
-            instance->SetValue (L"City", ECValue (City));
-            instance->SetValue (L"Country", ECValue (Country));
-            instance->SetValue (L"PostalCode", ECValue (PostalCode));
-            instance->SetValue (L"Address", ECValue (Address));
-            instance->AddArrayElements (L"OrderArray", 3);
+            instance->SetValue(L"CustomerId", ECValue(CustomerId));
+            instance->SetValue(L"CustomerName", ECValue(CustomerName));
+            instance->SetValue(L"ContactName", ECValue(ContactName));
+            instance->SetValue(L"City", ECValue(City));
+            instance->SetValue(L"Country", ECValue(Country));
+            instance->SetValue(L"PostalCode", ECValue(PostalCode));
+            instance->SetValue(L"Address", ECValue(Address));
+            instance->AddArrayElements(L"OrderArray", 3);
 
             ECValue structVal1;
-            structVal1.SetStruct (OrderInstance1.get ());
-            instance->SetValue (L"OrderArray", structVal1, 0);
+            structVal1.SetStruct(OrderInstance1.get());
+            instance->SetValue(L"OrderArray", structVal1, 0);
 
             ECValue structVal2;
-            structVal2.SetStruct (OrderInstance2.get ());
-            instance->SetValue (L"OrderArray", structVal2, 1);
+            structVal2.SetStruct(OrderInstance2.get());
+            instance->SetValue(L"OrderArray", structVal2, 1);
 
             ECValue structVal3;
-            structVal3.SetStruct (OrderInstance3.get ());
-            instance->SetValue (L"OrderArray", structVal3, 2);
+            structVal3.SetStruct(OrderInstance3.get());
+            instance->SetValue(L"OrderArray", structVal3, 2);
             }
 
         /*---------------------------------------------------------------------------------**//**
         * @bsimethod                             Muhammad Hassan                         06/15
         +---------------+---------------+---------------+---------------+---------------+------*/
-        void InsertInstancesForECSqlTestSchema (ECDbR ecdb)
+        void InsertInstancesForECSqlTestSchema(ECDbR ecdb)
             {
             //create instances of Employee and insert into Db
-            ECClassCP EmployeeClass = ecdb.Schemas ().GetECClass ("ECSqlStatementTests", "Employee");
-            ASSERT_TRUE (EmployeeClass != nullptr);
-            StandaloneECInstancePtr EmployeeInstance1 = EmployeeClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-            StandaloneECInstancePtr EmployeeInstance2 = EmployeeClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-            StandaloneECInstancePtr EmployeeInstance3 = EmployeeClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-            setEmployeeValues (EmployeeInstance1, 1, L"Nancy", L"Davolio", DateTime::GetCurrentTimeUtc (), L"Education includes a BA in psychology...");
-            setEmployeeValues (EmployeeInstance2, 2, L"Andrew", L"Fuller", DateTime::GetCurrentTimeUtc (), L"Andrew received his BTS commercial and...");
-            setEmployeeValues (EmployeeInstance3, 3, L"Janet", L"Leverling", DateTime::GetCurrentTimeUtc (), L"Janet has a BS degree in chemistry...");
-            ECInstanceInserter EmployeeInserter (ecdb, *EmployeeClass);
-            ASSERT_TRUE (EmployeeInserter.IsValid ());
-                {
-                ASSERT_EQ (SUCCESS, EmployeeInserter.Insert (*EmployeeInstance1, true));
-                ASSERT_EQ (SUCCESS, EmployeeInserter.Insert (*EmployeeInstance2, true));
-                ASSERT_EQ (SUCCESS, EmployeeInserter.Insert (*EmployeeInstance3, true));
-                }
+            ECClassCP EmployeeClass = ecdb.Schemas().GetECClass("ECSqlStatementTests", "Employee");
+            ASSERT_TRUE(EmployeeClass != nullptr);
+            StandaloneECInstancePtr EmployeeInstance1 = EmployeeClass->GetDefaultStandaloneEnabler()->CreateInstance();
+            StandaloneECInstancePtr EmployeeInstance2 = EmployeeClass->GetDefaultStandaloneEnabler()->CreateInstance();
+            StandaloneECInstancePtr EmployeeInstance3 = EmployeeClass->GetDefaultStandaloneEnabler()->CreateInstance();
+            setEmployeeValues(EmployeeInstance1, 1, L"Nancy", L"Davolio", DateTime::GetCurrentTimeUtc(), L"Education includes a BA in psychology...");
+            setEmployeeValues(EmployeeInstance2, 2, L"Andrew", L"Fuller", DateTime::GetCurrentTimeUtc(), L"Andrew received his BTS commercial and...");
+            setEmployeeValues(EmployeeInstance3, 3, L"Janet", L"Leverling", DateTime::GetCurrentTimeUtc(), L"Janet has a BS degree in chemistry...");
+            ECInstanceInserter EmployeeInserter(ecdb, *EmployeeClass);
+            ASSERT_TRUE(EmployeeInserter.IsValid());
+            ASSERT_EQ(SUCCESS, EmployeeInserter.Insert(*EmployeeInstance1, true));
+            ASSERT_EQ(SUCCESS, EmployeeInserter.Insert(*EmployeeInstance2, true));
+            ASSERT_EQ(SUCCESS, EmployeeInserter.Insert(*EmployeeInstance3, true));
 
             //Create and Insert Instances of Products
-            ECClassCP ProductsClass = ecdb.Schemas ().GetECClass ("ECSqlStatementTests", "Products");
-            ASSERT_TRUE (ProductsClass != nullptr);
-            StandaloneECInstancePtr ProductsInstance1 = ProductsClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-            StandaloneECInstancePtr ProductsInstance2 = ProductsClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-            StandaloneECInstancePtr ProductsInstance3 = ProductsClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-            StandaloneECInstancePtr ProductsInstance4 = ProductsClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-            StandaloneECInstancePtr ProductsInstance5 = ProductsClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-            StandaloneECInstancePtr ProductsInstance6 = ProductsClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-            StandaloneECInstancePtr ProductsInstance7 = ProductsClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-            StandaloneECInstancePtr ProductsInstance8 = ProductsClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-            StandaloneECInstancePtr ProductsInstance9 = ProductsClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-            setProductsValues (ProductsInstance1, 1, L"Pencil", 189.05, true);
-            setProductsValues (ProductsInstance2, 2, L"Binder", 999.50, true);
-            setProductsValues (ProductsInstance3, 3, L"Pen", 539.73, false);
-            setProductsValues (ProductsInstance4, 4, L"Binder", 299.40, true);
-            setProductsValues (ProductsInstance5, 5, L"Desk", 150.00, true);
-            setProductsValues (ProductsInstance6, 6, L"Pen Set", 255.84, false);
-            setProductsValues (ProductsInstance7, 7, L"Pen Set", 479.04, false);
-            setProductsValues (ProductsInstance8, 8, L"Pen", 539.73, true);
-            setProductsValues (ProductsInstance9, 9, L"Pen", 539.73, true);
-            ECInstanceInserter ProductInserter (ecdb, *ProductsClass);
-            ASSERT_TRUE (ProductInserter.IsValid ());
-                {
-                ASSERT_EQ (SUCCESS, ProductInserter.Insert (*ProductsInstance1, true));
-                ASSERT_EQ (SUCCESS, ProductInserter.Insert (*ProductsInstance2, true));
-                ASSERT_EQ (SUCCESS, ProductInserter.Insert (*ProductsInstance3, true));
-                ASSERT_EQ (SUCCESS, ProductInserter.Insert (*ProductsInstance4, true));
-                ASSERT_EQ (SUCCESS, ProductInserter.Insert (*ProductsInstance5, true));
-                ASSERT_EQ (SUCCESS, ProductInserter.Insert (*ProductsInstance6, true));
-                ASSERT_EQ (SUCCESS, ProductInserter.Insert (*ProductsInstance7, true));
-                ASSERT_EQ (SUCCESS, ProductInserter.Insert (*ProductsInstance8, true));
-                ASSERT_EQ (SUCCESS, ProductInserter.Insert (*ProductsInstance9, true));
-                }
+            ECClassCP ProductsClass = ecdb.Schemas().GetECClass("ECSqlStatementTests", "Products");
+            ASSERT_TRUE(ProductsClass != nullptr);
+            StandaloneECInstancePtr ProductsInstance1 = ProductsClass->GetDefaultStandaloneEnabler()->CreateInstance();
+            StandaloneECInstancePtr ProductsInstance2 = ProductsClass->GetDefaultStandaloneEnabler()->CreateInstance();
+            StandaloneECInstancePtr ProductsInstance3 = ProductsClass->GetDefaultStandaloneEnabler()->CreateInstance();
+            StandaloneECInstancePtr ProductsInstance4 = ProductsClass->GetDefaultStandaloneEnabler()->CreateInstance();
+            StandaloneECInstancePtr ProductsInstance5 = ProductsClass->GetDefaultStandaloneEnabler()->CreateInstance();
+            StandaloneECInstancePtr ProductsInstance6 = ProductsClass->GetDefaultStandaloneEnabler()->CreateInstance();
+            StandaloneECInstancePtr ProductsInstance7 = ProductsClass->GetDefaultStandaloneEnabler()->CreateInstance();
+            StandaloneECInstancePtr ProductsInstance8 = ProductsClass->GetDefaultStandaloneEnabler()->CreateInstance();
+            StandaloneECInstancePtr ProductsInstance9 = ProductsClass->GetDefaultStandaloneEnabler()->CreateInstance();
+            setProductsValues(ProductsInstance1, 1, L"Pencil", 189.05, true);
+            setProductsValues(ProductsInstance2, 2, L"Binder", 999.50, true);
+            setProductsValues(ProductsInstance3, 3, L"Pen", 539.73, false);
+            setProductsValues(ProductsInstance4, 4, L"Binder", 299.40, true);
+            setProductsValues(ProductsInstance5, 5, L"Desk", 150.00, true);
+            setProductsValues(ProductsInstance6, 6, L"Pen Set", 255.84, false);
+            setProductsValues(ProductsInstance7, 7, L"Pen Set", 479.04, false);
+            setProductsValues(ProductsInstance8, 8, L"Pen", 539.73, true);
+            setProductsValues(ProductsInstance9, 9, L"Pen", 539.73, true);
+            ECInstanceInserter ProductInserter(ecdb, *ProductsClass);
+            ASSERT_TRUE(ProductInserter.IsValid());
+            ASSERT_EQ(SUCCESS, ProductInserter.Insert(*ProductsInstance1, true));
+            ASSERT_EQ(SUCCESS, ProductInserter.Insert(*ProductsInstance2, true));
+            ASSERT_EQ(SUCCESS, ProductInserter.Insert(*ProductsInstance3, true));
+            ASSERT_EQ(SUCCESS, ProductInserter.Insert(*ProductsInstance4, true));
+            ASSERT_EQ(SUCCESS, ProductInserter.Insert(*ProductsInstance5, true));
+            ASSERT_EQ(SUCCESS, ProductInserter.Insert(*ProductsInstance6, true));
+            ASSERT_EQ(SUCCESS, ProductInserter.Insert(*ProductsInstance7, true));
+            ASSERT_EQ(SUCCESS, ProductInserter.Insert(*ProductsInstance8, true));
+            ASSERT_EQ(SUCCESS, ProductInserter.Insert(*ProductsInstance9, true));
 
             //Create and Insert Instances of Shipper
-            ECClassCP ShipperClass = ecdb.Schemas ().GetECClass ("ECSqlStatementTests", "Shipper");
-            ASSERT_TRUE (ShipperClass != nullptr);
-            StandaloneECInstancePtr ShipperInstance1 = ShipperClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-            StandaloneECInstancePtr ShipperInstance2 = ShipperClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-            StandaloneECInstancePtr ShipperInstance3 = ShipperClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-            setShipperValues (ShipperInstance1, 1, L"Rio Grand", 19783482);
-            setShipperValues (ShipperInstance2, 2, L"Rue Perisnon", 26422096);
-            setShipperValues (ShipperInstance3, 3, L"Salguero", 39045213);
-            ECInstanceInserter ShipperInserter (ecdb, *ShipperClass);
-            ASSERT_TRUE (ShipperInserter.IsValid ());
-                {
-                ASSERT_EQ (SUCCESS, ShipperInserter.Insert (*ShipperInstance1, true));
-                ASSERT_EQ (SUCCESS, ShipperInserter.Insert (*ShipperInstance2, true));
-                ASSERT_EQ (SUCCESS, ShipperInserter.Insert (*ShipperInstance3, true));
-                }
+            ECClassCP ShipperClass = ecdb.Schemas().GetECClass("ECSqlStatementTests", "Shipper");
+            ASSERT_TRUE(ShipperClass != nullptr);
+            StandaloneECInstancePtr ShipperInstance1 = ShipperClass->GetDefaultStandaloneEnabler()->CreateInstance();
+            StandaloneECInstancePtr ShipperInstance2 = ShipperClass->GetDefaultStandaloneEnabler()->CreateInstance();
+            StandaloneECInstancePtr ShipperInstance3 = ShipperClass->GetDefaultStandaloneEnabler()->CreateInstance();
+            setShipperValues(ShipperInstance1, 1, L"Rio Grand", 19783482);
+            setShipperValues(ShipperInstance2, 2, L"Rue Perisnon", 26422096);
+            setShipperValues(ShipperInstance3, 3, L"Salguero", 39045213);
+            ECInstanceInserter ShipperInserter(ecdb, *ShipperClass);
+            ASSERT_TRUE(ShipperInserter.IsValid());
+            ASSERT_EQ(SUCCESS, ShipperInserter.Insert(*ShipperInstance1, true));
+            ASSERT_EQ(SUCCESS, ShipperInserter.Insert(*ShipperInstance2, true));
+            ASSERT_EQ(SUCCESS, ShipperInserter.Insert(*ShipperInstance3, true));
 
             //Create and Insert Instances of Supplier
-            ECClassCP SupplierClass = ecdb.Schemas ().GetECClass ("ECSqlStatementTests", "Supplier");
-            ASSERT_TRUE (SupplierClass != nullptr);
-            StandaloneECInstancePtr SupplierInstance1 = SupplierClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-            StandaloneECInstancePtr SupplierInstance2 = SupplierClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-            StandaloneECInstancePtr SupplierInstance3 = SupplierClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-            setSupplierValues (SupplierInstance1, 1, L"John", L"Snow", L"CA", L"USA", L"5089 CALERO AVENUE", 95123);
-            setSupplierValues (SupplierInstance2, 2, L"Trion", L"Lannistor", L"NC", L"USA", L"198 FAYETTEVILLE ROAD", 27514);
-            setSupplierValues (SupplierInstance3, 3, L"Stannis", L"Brathion", L"MD", L"USA", L"1598 PICCARD DRIVE", 20850);
-            ECInstanceInserter SupplierInserter (ecdb, *SupplierClass);
-            ASSERT_TRUE (SupplierInserter.IsValid ());
-                {
-                ASSERT_EQ (SUCCESS, SupplierInserter.Insert (*SupplierInstance1, true));
-                ASSERT_EQ (SUCCESS, SupplierInserter.Insert (*SupplierInstance2, true));
-                ASSERT_EQ (SUCCESS, SupplierInserter.Insert (*SupplierInstance3, true));
-                }
+            ECClassCP SupplierClass = ecdb.Schemas().GetECClass("ECSqlStatementTests", "Supplier");
+            ASSERT_TRUE(SupplierClass != nullptr);
+            StandaloneECInstancePtr SupplierInstance1 = SupplierClass->GetDefaultStandaloneEnabler()->CreateInstance();
+            StandaloneECInstancePtr SupplierInstance2 = SupplierClass->GetDefaultStandaloneEnabler()->CreateInstance();
+            StandaloneECInstancePtr SupplierInstance3 = SupplierClass->GetDefaultStandaloneEnabler()->CreateInstance();
+            setSupplierValues(SupplierInstance1, 1, L"John", L"Snow", L"CA", L"USA", L"5089 CALERO AVENUE", 95123);
+            setSupplierValues(SupplierInstance2, 2, L"Trion", L"Lannistor", L"NC", L"USA", L"198 FAYETTEVILLE ROAD", 27514);
+            setSupplierValues(SupplierInstance3, 3, L"Stannis", L"Brathion", L"MD", L"USA", L"1598 PICCARD DRIVE", 20850);
+            ECInstanceInserter SupplierInserter(ecdb, *SupplierClass);
+            ASSERT_TRUE(SupplierInserter.IsValid());
+            ASSERT_EQ(SUCCESS, SupplierInserter.Insert(*SupplierInstance1, true));
+            ASSERT_EQ(SUCCESS, SupplierInserter.Insert(*SupplierInstance2, true));
+            ASSERT_EQ(SUCCESS, SupplierInserter.Insert(*SupplierInstance3, true));
 
             //Create instances of Order Class and they will be only specific to a Customer no Standalone order.
-            ECClassCP OrderClass = ecdb.Schemas ().GetECClass ("ECSqlStatementTests", "Order");
-            ASSERT_TRUE (OrderClass != nullptr);
+            ECClassCP OrderClass = ecdb.Schemas().GetECClass("ECSqlStatementTests", "Order");
+            ASSERT_TRUE(OrderClass != nullptr);
 
-            StandaloneECInstancePtr OrderInstance1 = OrderClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-            StandaloneECInstancePtr OrderInstance2 = OrderClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-            StandaloneECInstancePtr OrderInstance3 = OrderClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-            StandaloneECInstancePtr OrderInstance4 = OrderClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-            StandaloneECInstancePtr OrderInstance5 = OrderClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-            StandaloneECInstancePtr OrderInstance6 = OrderClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-            StandaloneECInstancePtr OrderInstance7 = OrderClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-            StandaloneECInstancePtr OrderInstance8 = OrderClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-            StandaloneECInstancePtr OrderInstance9 = OrderClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
+            StandaloneECInstancePtr OrderInstance1 = OrderClass->GetDefaultStandaloneEnabler()->CreateInstance();
+            StandaloneECInstancePtr OrderInstance2 = OrderClass->GetDefaultStandaloneEnabler()->CreateInstance();
+            StandaloneECInstancePtr OrderInstance3 = OrderClass->GetDefaultStandaloneEnabler()->CreateInstance();
+            StandaloneECInstancePtr OrderInstance4 = OrderClass->GetDefaultStandaloneEnabler()->CreateInstance();
+            StandaloneECInstancePtr OrderInstance5 = OrderClass->GetDefaultStandaloneEnabler()->CreateInstance();
+            StandaloneECInstancePtr OrderInstance6 = OrderClass->GetDefaultStandaloneEnabler()->CreateInstance();
+            StandaloneECInstancePtr OrderInstance7 = OrderClass->GetDefaultStandaloneEnabler()->CreateInstance();
+            StandaloneECInstancePtr OrderInstance8 = OrderClass->GetDefaultStandaloneEnabler()->CreateInstance();
+            StandaloneECInstancePtr OrderInstance9 = OrderClass->GetDefaultStandaloneEnabler()->CreateInstance();
 
-            setOrderValues (OrderInstance1, DateTime::GetCurrentTimeUtc (), 1, true);
-            setOrderValues (OrderInstance2, DateTime::GetCurrentTimeUtc (), 2, false);
-            setOrderValues (OrderInstance3, DateTime::GetCurrentTimeUtc (), 3, false);
-            setOrderValues (OrderInstance4, DateTime::GetCurrentTimeUtc (), 4, true);
-            setOrderValues (OrderInstance5, DateTime::GetCurrentTimeUtc (), 5, true);
-            setOrderValues (OrderInstance6, DateTime::GetCurrentTimeUtc (), 6, true);
-            setOrderValues (OrderInstance7, DateTime::GetCurrentTimeUtc (), 7, false);
-            setOrderValues (OrderInstance8, DateTime::GetCurrentTimeUtc (), 8, false);
-            setOrderValues (OrderInstance9, DateTime::GetCurrentTimeUtc (), 9, true);
-            //ECInstanceInserter inserter (ecdb, *OrderClass);
-            //ASSERT_TRUE (inserter.IsValid ());
-            //    {
-            //    ASSERT_EQ (SUCCESS, inserter.Insert (*OrderInstance1, true));
-            //    ASSERT_EQ (SUCCESS, inserter.Insert (*OrderInstance2, true));
-            //    ASSERT_EQ (SUCCESS, inserter.Insert (*OrderInstance3, true));
-            //    ASSERT_EQ (SUCCESS, inserter.Insert (*OrderInstance4, true));
-            //    ASSERT_EQ (SUCCESS, inserter.Insert (*OrderInstance5, true));
-            //    ASSERT_EQ (SUCCESS, inserter.Insert (*OrderInstance6, true));
-            //    ASSERT_EQ (SUCCESS, inserter.Insert (*OrderInstance7, true));
-            //    ASSERT_EQ (SUCCESS, inserter.Insert (*OrderInstance8, true));
-            //    ASSERT_EQ (SUCCESS, inserter.Insert (*OrderInstance9, true));
-            //    }
+            setOrderValues(OrderInstance1, DateTime::GetCurrentTimeUtc(), 1, true);
+            setOrderValues(OrderInstance2, DateTime::GetCurrentTimeUtc(), 2, false);
+            setOrderValues(OrderInstance3, DateTime::GetCurrentTimeUtc(), 3, false);
+            setOrderValues(OrderInstance4, DateTime::GetCurrentTimeUtc(), 4, true);
+            setOrderValues(OrderInstance5, DateTime::GetCurrentTimeUtc(), 5, true);
+            setOrderValues(OrderInstance6, DateTime::GetCurrentTimeUtc(), 6, true);
+            setOrderValues(OrderInstance7, DateTime::GetCurrentTimeUtc(), 7, false);
+            setOrderValues(OrderInstance8, DateTime::GetCurrentTimeUtc(), 8, false);
+            setOrderValues(OrderInstance9, DateTime::GetCurrentTimeUtc(), 9, true);
+            ECInstanceInserter inserter(ecdb, *OrderClass);
+            ASSERT_TRUE(inserter.IsValid());
+            ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance1, true));
+            ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance2, true));
+            ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance3, true));
+            ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance4, true));
+            ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance5, true));
+            ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance6, true));
+            ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance7, true));
+            ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance8, true));
+            ASSERT_EQ(SUCCESS, inserter.Insert(*OrderInstance9, true));
 
-            ECClassCP CustomerClass = ecdb.Schemas ().GetECClass ("ECSqlStatementTests", "Customer");
-            ASSERT_TRUE (CustomerClass != nullptr);
+            ECClassCP CustomerClass = ecdb.Schemas().GetECClass("ECSqlStatementTests", "Customer");
+            ASSERT_TRUE(CustomerClass != nullptr);
 
-            StandaloneECInstancePtr CustomerInstance1 = CustomerClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-            StandaloneECInstancePtr CustomerInstance2 = CustomerClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-            StandaloneECInstancePtr CustomerInstance3 = CustomerClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-            setCustomerValues (CustomerInstance1, L"Charles Baron", 78701, L"44 PRINCESS GATE, HYDE PARK", L"Brathion", L"SAN JOSE", L"USA", 1, OrderInstance1, OrderInstance2, OrderInstance3);
-            setCustomerValues (CustomerInstance2, L"Gunther Spielmann", 22090, L"5063 RICHMOND MALL", L"SPIELMANN", L"AUSTIN", L"USA", 2, OrderInstance4, OrderInstance5, OrderInstance6);
-            setCustomerValues (CustomerInstance3, L"A.D.M. Bryceson", 93274, L"3-2-7 ETCHUJMA, KOTO-KU", L"Adm", L"SAN JOSE", L"USA", 3, OrderInstance7, OrderInstance8, OrderInstance9);
+            StandaloneECInstancePtr CustomerInstance1 = CustomerClass->GetDefaultStandaloneEnabler()->CreateInstance();
+            StandaloneECInstancePtr CustomerInstance2 = CustomerClass->GetDefaultStandaloneEnabler()->CreateInstance();
+            StandaloneECInstancePtr CustomerInstance3 = CustomerClass->GetDefaultStandaloneEnabler()->CreateInstance();
+            setCustomerValues(CustomerInstance1, L"Charles Baron", 78701, L"44 PRINCESS GATE, HYDE PARK", L"Brathion", L"SAN JOSE", L"USA", 1, OrderInstance1, OrderInstance2, OrderInstance3);
+            setCustomerValues(CustomerInstance2, L"Gunther Spielmann", 22090, L"5063 RICHMOND MALL", L"SPIELMANN", L"AUSTIN", L"USA", 2, OrderInstance4, OrderInstance5, OrderInstance6);
+            setCustomerValues(CustomerInstance3, L"A.D.M. Bryceson", 93274, L"3-2-7 ETCHUJMA, KOTO-KU", L"Adm", L"SAN JOSE", L"USA", 3, OrderInstance7, OrderInstance8, OrderInstance9);
 
-            ECInstanceInserter CustomerInserter (ecdb, *CustomerClass);
-            ASSERT_TRUE (CustomerInserter.IsValid ());
-                {
-                ECInstanceKey instanceKey;
-                ASSERT_EQ (SUCCESS, CustomerInserter.Insert (instanceKey, *CustomerInstance1));
-                ASSERT_EQ (SUCCESS, CustomerInserter.Insert (instanceKey, *CustomerInstance2));
-                ASSERT_EQ (SUCCESS, CustomerInserter.Insert (instanceKey, *CustomerInstance3));
-                }
+            ECInstanceInserter CustomerInserter(ecdb, *CustomerClass);
+            ASSERT_TRUE(CustomerInserter.IsValid());
+            ASSERT_EQ(SUCCESS, CustomerInserter.Insert(*CustomerInstance1));
+            ASSERT_EQ(SUCCESS, CustomerInserter.Insert(*CustomerInstance2));
+            ASSERT_EQ(SUCCESS, CustomerInserter.Insert(*CustomerInstance3));
 
-            //ECRelationshipClassCP EmployeeCustomer = ecdb.Schemas ().GetECClass ("ECSqlStatementTests", "EmployeeCustomer")->GetRelationshipClassCP ();
-            //ASSERT_TRUE (EmployeeCustomer != nullptr);
+            ECRelationshipClassCP EmployeeCustomer = ecdb.Schemas().GetECClass("ECSqlStatementTests", "EmployeeCustomer")->GetRelationshipClassCP();
+            ASSERT_TRUE(EmployeeCustomer != nullptr);
 
-            //StandaloneECRelationshipInstancePtr EmployeeCustomerInstance = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*EmployeeCustomer)->CreateRelationshipInstance ();
-            //ECInstanceInserter EmployeeCustomerInserter (ecdb, *EmployeeCustomer);
-            //ASSERT_TRUE (EmployeeCustomerInserter.IsValid ());
-            //    {
-            //    EmployeeCustomerInstance->SetSource (EmployeeInstance1.get ());
-            //    EmployeeCustomerInstance->SetTarget (CustomerInstance1.get ());
-            //    EmployeeCustomerInstance->SetInstanceId (L"source->target");
-            //    EXPECT_EQ (SUCCESS, EmployeeCustomerInserter.Insert (*EmployeeCustomerInstance));
-            //    }
+            StandaloneECRelationshipInstancePtr EmployeeCustomerInstance = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*EmployeeCustomer)->CreateRelationshipInstance();
+            ECInstanceInserter EmployeeCustomerInserter(ecdb, *EmployeeCustomer);
+            ASSERT_TRUE(EmployeeCustomerInserter.IsValid());
+            EmployeeCustomerInstance->SetSource(EmployeeInstance1.get());
+            EmployeeCustomerInstance->SetTarget(CustomerInstance1.get());
+            EmployeeCustomerInstance->SetInstanceId(L"source->target");
+            ASSERT_EQ(SUCCESS, EmployeeCustomerInserter.Insert(*EmployeeCustomerInstance));
 
             //Create and Insert Instances of Relationship ProductSupplier
-            ECRelationshipClassCP ProductSupplier = ecdb.Schemas ().GetECClass ("ECSqlStatementTests", "ProductSupplier")->GetRelationshipClassCP ();
-            ASSERT_TRUE (ProductSupplier != nullptr);
-            StandaloneECRelationshipInstancePtr ProductSupplierInstance = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*ProductSupplier)->CreateRelationshipInstance ();
-            ECInstanceInserter ProductSupplierInserter (ecdb, *ProductSupplier);
-            ASSERT_TRUE (ProductSupplierInserter.IsValid ());
-                {
-                ProductSupplierInstance->SetSource (ProductsInstance1.get ());
-                ProductSupplierInstance->SetTarget (SupplierInstance1.get ());
-                ProductSupplierInstance->SetInstanceId (L"source->target");
-                ASSERT_EQ (SUCCESS, ProductSupplierInserter.Insert (*ProductSupplierInstance));
-                }
-                    {
-                    ProductSupplierInstance->SetSource (ProductsInstance2.get ());
-                    ProductSupplierInstance->SetTarget (SupplierInstance2.get ());
-                    ProductSupplierInstance->SetInstanceId (L"source->target");
-                    ASSERT_EQ (SUCCESS, ProductSupplierInserter.Insert (*ProductSupplierInstance));
-                        }
-                        {
-                        ProductSupplierInstance->SetSource (ProductsInstance3.get ());
-                        ProductSupplierInstance->SetTarget (SupplierInstance3.get ());
-                        ProductSupplierInstance->SetInstanceId (L"source->target");
-                        ASSERT_EQ (SUCCESS, ProductSupplierInserter.Insert (*ProductSupplierInstance));
-                    }
+            ECRelationshipClassCP ProductSupplier = ecdb.Schemas().GetECClass("ECSqlStatementTests", "ProductSupplier")->GetRelationshipClassCP();
+            ASSERT_TRUE(ProductSupplier != nullptr);
+            StandaloneECRelationshipInstancePtr ProductSupplierInstance = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*ProductSupplier)->CreateRelationshipInstance();
+            ECInstanceInserter ProductSupplierInserter(ecdb, *ProductSupplier);
+            ASSERT_TRUE(ProductSupplierInserter.IsValid());
+            ProductSupplierInstance->SetSource(ProductsInstance1.get());
+            ProductSupplierInstance->SetTarget(SupplierInstance1.get());
+            ProductSupplierInstance->SetInstanceId(L"source->target");
+            ASSERT_EQ(SUCCESS, ProductSupplierInserter.Insert(*ProductSupplierInstance));
+            ProductSupplierInstance->SetSource(ProductsInstance2.get());
+            ProductSupplierInstance->SetTarget(SupplierInstance2.get());
+            ProductSupplierInstance->SetInstanceId(L"source->target");
+            ASSERT_EQ(SUCCESS, ProductSupplierInserter.Insert(*ProductSupplierInstance));
+            ProductSupplierInstance->SetSource(ProductsInstance3.get());
+            ProductSupplierInstance->SetTarget(SupplierInstance3.get());
+            ProductSupplierInstance->SetInstanceId(L"source->target");
+            ASSERT_EQ(SUCCESS, ProductSupplierInserter.Insert(*ProductSupplierInstance));
             }
 
-        /*---------------------------------------------------------------------------------**//**
-        * @bsiclass                             Muhammad Hassan                         06/15
-        +---------------+---------------+---------------+---------------+---------------+------*/
-        struct PowSqlFunction : ScalarFunction
-            {
-            private:
+            /*---------------------------------------------------------------------------------**//**
+            * @bsiclass                             Muhammad Hassan                         06/15
+            +---------------+---------------+---------------+---------------+---------------+------*/
+            struct PowSqlFunction : ScalarFunction
+                {
+                private:
 
-                virtual void _ComputeScalar (Context& ctx, int nArgs, DbValue* args) override
-                    {
-                    if (args[0].IsNull () || args[1].IsNull ())
+                    virtual void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
                         {
-                        ctx.SetResultError ("Arguments to POW must not be NULL", -1);
-                        return;
+                        if (args[0].IsNull() || args[1].IsNull())
+                            {
+                            ctx.SetResultError("Arguments to POW must not be NULL", -1);
+                            return;
+                            }
+
+                        double base = args[0].GetValueDouble();
+                        double exp = args[1].GetValueDouble();
+
+                        double res = std::pow(base, exp);
+                        ctx.SetResultDouble(res);
                         }
 
-                    double base = args[0].GetValueDouble ();
-                    double exp = args[1].GetValueDouble ();
+                public:
+                    PowSqlFunction() : ScalarFunction("POW", 2, DbValueType::FloatVal) {}
+                };
 
-                    double res = std::pow (base, exp);
-                    ctx.SetResultDouble (res);
-                    }
-
-            public:
-                PowSqlFunction () : ScalarFunction ("POW", 2, DbValueType::FloatVal) {}
-            };
     };
 
 /*---------------------------------------------------------------------------------**//**
