@@ -2,10 +2,10 @@
 |
 |  $Source: Tests/Published/BeFile_Test.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#if defined (BENTLEY_WIN32)
+#if defined (BENTLEY_WIN32) || defined (__unix__)
 
 #include <Bentley/BeFile.h>
 #include <Bentley/Bentley.h>
