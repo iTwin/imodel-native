@@ -94,8 +94,8 @@ public:
             virtual int _GetVersion() const {return 1;} // Do not override!
             virtual void _OnHostTermination(bool isProcessShutdown) override {delete this;}
 
-            //! Provide the context needed to evaluate JavaScript expressions
-            virtual BeJsContextP GetBeJsContextP() {return nullptr;}
+            //! Provide the JavaScript environment needed to evaluate JavaScript expressions on the host's thread. There can only be one BeJsEnvironment per thread.
+            virtual BeJsEnvironmentP GetBeJsEnvironmentP() {return nullptr;}
 
             //! Provide the context needed to execute a JavaScript function which uses the Dgn Object Model.
             virtual IDgnJavaScriptObjectModelP GetIDgnJavaScriptObjectModel() {return nullptr;}
