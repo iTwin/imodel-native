@@ -122,9 +122,16 @@ enum class LsComponentType
 //=======================================================================================
 struct V10ComponentBase
 {
+    enum V10ComponentVersioon
+        {
+        InitialDgnDb = 1,
+        };
+
+    uint32_t      m_version;
     Utf8Char      m_descr[LS_MAX_DESCR];
     void GetDescription (Utf8P target) const;
     DGNPLATFORM_EXPORT void SetDescription (Utf8CP target);
+    DGNPLATFORM_EXPORT void SetVersion ();
 };
 
 //=======================================================================================
@@ -213,11 +220,19 @@ struct V10ComponentInfo
 //=======================================================================================
 struct V10Compound : V10ComponentBase
 {
-    uint32_t        m_auxType;
     uint32_t        m_nComponents;
     V10ComponentInfo   m_component[1];
     static uint32_t GetBufferSize(uint32_t numberComponents) { return ((uint32_t)(intptr_t)&(((V10Compound*)nullptr)->m_component)) + sizeof (V10ComponentInfo) * numberComponents; }
 };
+
+typedef struct
+    {
+    DPoint3d        low;
+    DPoint3d        high;
+    } SymbolRange;
+
+#define LSSYM_3D                0x01    /* 3d symbol                   */
+#define LSSYM_NOSCALE           0x02    /* Acad compat - don't scale symbol at all. */
 
 //=======================================================================================
 //! Describes the binary representation of an LsSymbolComponent component in a DgnDb
@@ -237,36 +252,6 @@ struct V10Symbol : V10ComponentBase
     static uint32_t GetBufferSize() { return sizeof (V10Symbol); }
 };
 #pragma pack(pop)
-
-//=======================================================================================
-// @bsiclass                                                    John.Gooding    10/2013
-//=======================================================================================
-template <typename T> struct RscPtr
-    {
-    T*          m_data;
-    RscPtr() { m_data = nullptr; }
-    ~RscPtr() {}
-    };
-
-struct LineCodeRscPtr : RscPtr<LineCodeRsc>
-    {
-    DGNPLATFORM_EXPORT ~LineCodeRscPtr();
-    };
-
-struct LinePointRscPtr : RscPtr<LinePointRsc>
-    {
-    DGNPLATFORM_EXPORT ~LinePointRscPtr();
-    };
-
-struct LineStyleRscPtr : RscPtr<LineStyleRsc>
-    {
-    DGNPLATFORM_EXPORT ~LineStyleRscPtr();
-    };
-
-struct PointSymRscPtr : RscPtr<PointSymRsc>
-    {
-    DGNPLATFORM_EXPORT ~PointSymRscPtr();
-    };
 
 //=======================================================================================
 // @bsiclass
@@ -348,7 +333,7 @@ protected:
     LsLocationCP        m_source;
     DgnDbR              m_dgndb;
     LsComponentType     m_componentType;
-    LineStyleRsc*       m_rsc;
+    V10ComponentBase*   m_rsc;
 
 public:
     LsComponentReader (LsLocationCP source, DgnDbR project) : m_dgndb(project)
@@ -363,12 +348,8 @@ public:
 
     LsLocationCP    GetSource()     {return m_source;}
     DgnDbR          GetDgnDb ()     {return m_dgndb; }
-    LineStyleRsc*   GetRsc()        {return m_rsc;}
+    V10ComponentBase*GetRsc()        {return m_rsc;}
     LsComponentType GetComponentType()  {return m_componentType;}
-
-    // This is used by the cache insert function for editing
-    // It explicitly does not free any previous resource because the resource is owned by the caller in this case.
-    void           SetRsc(LineStyleRsc *pRsc) {m_rsc = pRsc;}
 
     static LsComponentReader* GetRscReader (LsLocationCP source, DgnDbR dgnProject);
 };
@@ -424,7 +405,7 @@ public:
         m_location.SetFrom (&base->m_location);
         }
 
-    DGNPLATFORM_EXPORT static LineStyleStatus AddComponentAsProperty (LsComponentId& componentId, DgnDbR project, BeSQLite::PropertySpec spec, void const*data, uint32_t dataSize);
+    DGNPLATFORM_EXPORT static LineStyleStatus AddComponentAsProperty (LsComponentId& componentId, DgnDbR project, BeSQLite::PropertySpec spec, V10ComponentBase const*data, uint32_t dataSize);
 
     bool                IsWidthDiscernible (ViewContextP, LineStyleSymbCP, DPoint3dCR) const;
     bool                IsSingleRepDiscernible (ViewContextP, LineStyleSymbCP, DPoint3dCR) const;
@@ -493,10 +474,8 @@ private:
     bool                m_isModified;
     WChar               m_descr[LS_MAX_DESCR];
 
-    DgnElementPtrVec    m_elements;
-
-    size_t              m_xGraphicsSize;
-    Byte const*         m_xGraphicsData;
+    DgnGeomPartId       m_geomPartId;
+    mutable DgnGeomPartPtr m_geomPart;
     double              m_storedScale;              //
     double              m_muDef;                    // Set to m_storedScale if it is non-zero. Otherwise, it is 1/uorPerMaster for the model ref used in the PostProcessLoad step;
     DPoint3d            m_symSize;
@@ -510,21 +489,20 @@ private:
 public:
     static LsSymbolComponent* LoadPointSym  (LsComponentReader* reader);
     static LsSymbolComponentPtr Create (LsLocation& location) { LsSymbolComponentP retval = new LsSymbolComponent (&location); retval->m_isDirty = true; return retval; }
-    DGNPLATFORM_EXPORT static void StreamElements (bvector<Byte>&elementData, DgnElementPtrVec const& );
 
     double              GetMuDef            () const {return m_muDef;}
     DPoint3dCP          GetSymSize          () const {return &m_symSize;}
     uint32_t            GetFlags            () const {return m_symFlags;}
     bool                IsNotScaled         () const {return 0 != (m_symFlags & LSSYM_NOSCALE);}
 
-    virtual void        _PostProcessLoad    (DgnModelP modelRef) override;
-    virtual void        _ClearPostProcess   () override;
-    virtual void        _Draw               (ViewContextR);
-    virtual StatusInt   _GetRange           (DRange3dR range) const;
+    void                _PostProcessLoad    (DgnModelP modelRef) override;
+    void                _ClearPostProcess   () override;
+    void                _Draw               (ViewContextR) override;
+    StatusInt           _GetRange           (DRange3dR range) const override;
 
-    void                SetXGraphics        (Byte const *data, size_t dataSize);
-    Byte const*         GetXGraphicsData    () const {return m_xGraphicsData;}
-    size_t              GetXGraphicsSize    () const {return m_xGraphicsSize;}
+    void                SetGeomPartId       (DgnGeomPartId id) {m_geomPartId = id;}
+    DgnGeomPartId       GetGeomPartId       () const {return m_geomPartId;}
+    DgnGeomPartPtr      GetGeomPart         () const;
     DgnModelP           GetSymbolDgnModel   (ViewContextCP context) const;
     void                SetMuDef            (double mudef) {m_muDef = mudef;}
     void                SetSymSize          (DPoint3dCP sz){m_symSize = *sz;}
@@ -532,22 +510,13 @@ public:
     void                SetFlags            (uint32_t flags) {m_symFlags = flags;}
     //  Should never be called; symbol components should never be drawn this way.  Therefore, a line style
     //  resource must not directly refer to a symbol component.
-    virtual StatusInt   _DoStroke           (ViewContextP, DPoint3dCP, int, LineStyleSymbCP) const override;
+    StatusInt           _DoStroke           (ViewContextP, DPoint3dCP, int, LineStyleSymbCP) const override;
     BentleyStatus       CreateFromComponent (LsPointSymbolComponentCP lpsComp);
 
-    DgnElementPtrVec& GetElementsR() {return m_elements;}
-    DgnElementPtrVec const& GetElements () const {return m_elements;}
-
-    DGNPLATFORM_EXPORT void AddGraphics (DgnElementPtr&);
-    DGNPLATFORM_EXPORT void FreeGraphics (bool freeDescr, bool freeXGraphics);
-
-    static BentleyStatus CreateRscFromDgnDb(PointSymRsc** rscOut, DgnDbR project, LsComponentId id, bool useRscComponentTypes);
-    DGNPLATFORM_EXPORT static BentleyStatus GetRscFromDgnDb(PointSymRscPtr& ptr, DgnDbR project, LsComponentId id);
+    static BentleyStatus CreateRscFromDgnDb(V10Symbol** rscOut, DgnDbR project, LsComponentId id, bool useRscComponentTypes);
 
 //__PUBLISH_SECTION_START__
 public:
-    //  We no longer support line styles with V7 elements.
-
     //!  Retrieves the range that is stored with the LsSymbolComponent.  This range is computed
     //!  when the LsSymbolComponent is created.
     DGNPLATFORM_EXPORT void                     GetRange                (DRange3dR range) const;
@@ -708,9 +677,7 @@ public:
     static LsCompoundComponentPtr Create (LsLocation& location) { LsCompoundComponentP retval = new LsCompoundComponent (&location); retval->m_isDirty = true; return retval; }
     void            CalculateSize                       (DgnModelP modelRef);
 
-    static BentleyStatus CreateRscFromDgnDb(LineStyleRsc** rscOut, DgnDbR project, LsComponentId id, bool useRscComponentTypes);
-    DGNPLATFORM_EXPORT static BentleyStatus GetRscFromDgnDb(LineStyleRscPtr& ptr, DgnDbR project, LsComponentId id);
-    DGNPLATFORM_EXPORT static LineStyleStatus AddToProject (LsComponentId& newId, DgnDbR project, LineStyleRsc const& lsRsc);
+    static BentleyStatus CreateRscFromDgnDb(V10Compound** rscOut, DgnDbR project, LsComponentId id, bool useRscComponentTypes);
 
     virtual void    _PostProcessLoad            (DgnModelP modelRef) override;
     virtual void    _ClearPostProcess           () override;
@@ -726,11 +693,6 @@ public:
     void            Free                        (bool    sub);
     virtual StatusInt _DoStroke                 (ViewContextP, DPoint3dCP, int, LineStyleSymbCP) const override;
     bool            _HasUniformFullWidth         (double *pWidth)   const;
-
-    //  To be added when supporting write
-    DGNPLATFORM_EXPORT void ClearComponents();
-    DGNPLATFORM_EXPORT size_t GetResourceSize();
-    DGNPLATFORM_EXPORT void InitLineStyleResource(LineStyleRsc& lsRsc);
 
 //__PUBLISH_SECTION_START__
 public:
@@ -837,9 +799,6 @@ public:
          STROKE_Stretchable  = 0x20,
     };
 
-
-    DGNPLATFORM_EXPORT void  SaveToResource (StrokeData& strokeData);
-
                 LsStroke (double length, double startWidth, double endWidth, WidthMode widthMode, CapMode capMode);
     explicit    LsStroke (LsStroke const&);
 
@@ -940,17 +899,14 @@ protected:
     void            StrokeLocal             (ViewContextP, ISymbolProcess const*, DPoint3dCP, int, double, LineStyleSymbCP, DPoint3dCP, DPoint3dCP, int segFlag) const;
     explicit LsStrokePatternComponent       (LsLocationCP pLocation);
     void            FixDashWidths           (double& orgWidth, double& endWidth, bool taper, ViewContextCP context, DPoint3dCP pt);
-    void            Init                    (LineCodeRsc const* lcRsc);
+    void            Init                    (V10LineCode const* lcRsc);
 
 public:
 
     static LsStrokePatternComponentP  LoadStrokePatternComponent    (LsComponentReader*reader);
     static LsStrokePatternComponentPtr Create                       (LsLocation& location) { LsStrokePatternComponentP retval = new LsStrokePatternComponent (&location); retval->m_isDirty = true; return retval; };
-    BentleyStatus   CreateFromRsrc          (LineCodeRsc const* pRsc);
-    static BentleyStatus   CreateRscFromDgnDb      (LineCodeRsc** rsc, DgnDbR project, LsComponentId id, bool useRscComponentTypes);
-    BentleyStatus   CreateFromComponent     (LsLineCodeComponentCP lcComp);
-    DGNPLATFORM_EXPORT static BentleyStatus GetRscFromDgnDb(LineCodeRscPtr& ptr, DgnDbR project, LsComponentId id);
-    DGNPLATFORM_EXPORT static LineStyleStatus AddToProject (LsComponentId& newId, DgnDbR project, LineCodeRsc const& lsRsc);
+    BentleyStatus   CreateFromRsrc          (V10LineCode const* pRsc);
+    static BentleyStatus   CreateRscFromDgnDb      (V10LineCode** rsc, DgnDbR project, LsComponentId id, bool useRscComponentTypes);
 
     BentleyStatus   PostCreate              ();
 
@@ -998,11 +954,7 @@ public:
     double          GetLength               (double*) const;
     virtual double  _GetMaxWidth             (DgnModelP modelRef) const override;
     bool            RequiresLength          () const;
-
-
-    DGNPLATFORM_EXPORT size_t GetResourceSize         () { return sizeof(LineCodeRsc) + m_nStrokes * sizeof(LineCodeStroke) - sizeof(LineCodeStroke); }
-    DGNPLATFORM_EXPORT void SaveToResource          (LineCodeRsc& resource);
-
+                                                              
 //__PUBLISH_SECTION_START__
 public:
     enum PhaseMode
@@ -1056,7 +1008,7 @@ struct          LsPointComponent : public LsComponent
     bool                    m_postProcessed;
 
 private:
-    virtual bool                    _ProcessSymbol           (ViewContextP, Centerline const*, LineStyleSymbCP, LsStrokeCP, int strokeIndex, int endCondition) const;
+    virtual bool                    _ProcessSymbol           (ViewContextP, Centerline const*, LineStyleSymbCP, LsStrokeCP, int strokeIndex, int endCondition) const override;
 
     LsSymbolReferenceP              GetSymbolReferenceP     (T_SymbolsCollectionConstIter iter) const;
     LsPointComponent    (LsLocationCP pLocation);
@@ -1078,12 +1030,7 @@ public:
     void                            Free                    (bool    sub);
     bool                            HasStrokeSymbol         () const;
 
-    DGNPLATFORM_EXPORT size_t GetResourceSize         () { return sizeof(LinePointRsc) + m_symbols.size () * sizeof(PointSymInfo) - sizeof(PointSymInfo); }
-    DGNPLATFORM_EXPORT void SaveToResource          (LinePointRsc& resource);
-
-    static BentleyStatus   CreateRscFromDgnDb(LinePointRsc** rscOut, DgnDbR project, LsComponentId id, bool useRscComponentTypes);
-    DGNPLATFORM_EXPORT static BentleyStatus   GetRscFromDgnDb(LinePointRscPtr& ptr, DgnDbR project, LsComponentId id);
-    DGNPLATFORM_EXPORT static LineStyleStatus AddToProject (LsComponentId& newId, DgnDbR project, LinePointRsc const& lpr);
+    static BentleyStatus   CreateRscFromDgnDb(V10LinePoint** rscOut, DgnDbR project, LsComponentId id, bool useRscComponentTypes);
 
 //__PUBLISH_SECTION_START__
 public:
@@ -1114,9 +1061,6 @@ public:
     DGNPLATFORM_EXPORT LsSymbolReferenceCP      GetSymbolForVertexCP    (LsSymbolReference::VertexMask vertexMask) const;
     DGNPLATFORM_EXPORT LsStrokePatternComponentP GetStrokeComponentP    () const;
     DGNPLATFORM_EXPORT LsStrokePatternComponentCP GetStrokeComponentCP  () const;
-    DGNPLATFORM_EXPORT void                     SetStrokeComponent      (LsStrokePatternComponentP newStrokeComponent);
-    DGNPLATFORM_EXPORT StatusInt                DeleteSymbolForStroke   (LsSymbolReferenceCR symRef);
-    DGNPLATFORM_EXPORT LsSymbolReferenceR       AppendSymbolForStroke   (LsSymbolComponentP symbol, double xOffset, double yOffset, double radians, int strokeNo);
     };
 
 //=======================================================================================

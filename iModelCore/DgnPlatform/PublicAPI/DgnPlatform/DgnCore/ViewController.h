@@ -703,7 +703,7 @@ public:
 //! @ingroup DgnViewGroup
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================
-struct CameraViewController : PhysicalViewController
+struct EXPORT_VTABLE_ATTRIBUTE CameraViewController : PhysicalViewController
 {
     DEFINE_T_SUPER(PhysicalViewController);
 

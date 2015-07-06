@@ -82,8 +82,9 @@ void LsComponent::GetNextComponentId (LsComponentId& id, DgnDbR project, BeSQLit
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    11/2012
 //---------------------------------------------------------------------------------------
-LineStyleStatus LsComponent::AddComponentAsProperty (LsComponentId& componentId, DgnDbR project, PropertySpec spec, void const*data, uint32_t dataSize)
+LineStyleStatus LsComponent::AddComponentAsProperty (LsComponentId& componentId, DgnDbR project, PropertySpec spec, V10ComponentBase const*data, uint32_t dataSize)
     {
+    BeAssert(V10ComponentBase::InitialDgnDb == data->m_version);
     GetNextComponentId (componentId, project, spec);
 
     if (project.SaveProperty (spec, data, dataSize, componentId.GetValue(), 0) != BE_SQLITE_OK)
@@ -117,104 +118,51 @@ void            LsComponent::CopyDescription (Utf8CP buffer)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    John.Gooding    10/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            LsStrokePatternComponent::SaveToResource (LineCodeRsc& resource)
-    {
-    memset (&resource, 0, sizeof (resource));
-
-    CopyDescription (resource.descr);
-
-    //  double        orgAngle;
-    //  double        endAngle;
-
-    BeAssert (m_nStrokes <= _countof (m_strokes));
-    
-    resource.orgAngle_unused = 90.0;
-    resource.endAngle_unused = 90.0;
-
-    resource.nStrokes = static_cast <uint32_t> (m_nStrokes > _countof (m_strokes) ? _countof (m_strokes) : m_nStrokes);
-    for (uint32_t i = 0; i < resource.nStrokes; i++)
-        {
-        m_strokes [i].SaveToResource (resource.stroke [i]);
-        }
-        
-    resource.options  = 0;
-    resource.maxIterate = 0;
-    if (HasIterationLimit ())
-        {
-        resource.maxIterate = GetIterationLimit ();
-        resource.options |= LCOPT_ITERATION;
-        }
-
-    if (_IsBySegment ())
-        resource.options |= LCOPT_SEGMENT;
-        
-    switch (GetPhaseMode ())
-        {
-        case PHASEMODE_Fixed:
-            resource.phase = GetDistancePhase ();
-            break;
-        case PHASEMODE_Fraction:
-            resource.phase = GetFractionalPhase ();
-            resource.options |= LCOPT_AUTOPHASE;
-            break;
-        case PHASEMODE_Center:
-            resource.phase = 0;
-            resource.options |= LCOPT_CENTERSTRETCH;
-            break;
-        default:
-            BeAssert ("Unknown phase mode" && false);
-            break;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JimBartlett     08/92
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus       LsStrokePatternComponent::CreateFromRsrc (LineCodeRsc const* pRsc)
+BentleyStatus       LsStrokePatternComponent::CreateFromRsrc (V10LineCode const* pRsc)
     {
-    if (pRsc==NULL || pRsc->nStrokes <= 0)
+    if (pRsc==NULL || pRsc->m_nStrokes <= 0)
         {
         // create a default solid stroke
         InsertStroke (fc_hugeVal, true);
         }
     else
         {
-        m_nStrokes = pRsc->nStrokes;
+        m_nStrokes = pRsc->m_nStrokes;
         if (m_nStrokes > 32)
             m_nStrokes = 32;
 
-        StrokeData const* pData   = pRsc->stroke;
-        StrokeData const* pEnd    = pData + m_nStrokes;
+        V10StrokeData const* pData   = pRsc->m_stroke;
+        V10StrokeData const* pEnd    = pData + m_nStrokes;
 
         LsStroke*   pStroke = m_strokes;
         for (;pData < pEnd; pData++, pStroke++)
             {
-            pStroke->Init (pData->length, pData->width, (pData->widthMode & LCWIDTH_TAPEREND) ? pData->endWidth : pData->width,
-                                (LsStroke::WidthMode)pData->widthMode, (LsStroke::CapMode)pData->capMode);
-            pStroke->SetIsDash (pData->strokeMode & LCSTROKE_DASH);
-            pStroke->SetIsRigid (TO_BOOL (pData->strokeMode & LCSTROKE_RAY));
-            pStroke->SetIsStretchable (TO_BOOL(pData->strokeMode & LCSTROKE_SCALE));
-            pStroke->SetIsDashFirst (pStroke->IsDash() ^ TO_BOOL(pData->strokeMode & LCSTROKE_SINVERT));
-            pStroke->SetIsDashLast  (pStroke->IsDash() ^ TO_BOOL(pData->strokeMode & LCSTROKE_EINVERT));
+            pStroke->Init (pData->m_length, pData->m_width, (pData->m_widthMode & LCWIDTH_TAPEREND) ? pData->m_endWidth : pData->m_width,
+                                (LsStroke::WidthMode)pData->m_widthMode, (LsStroke::CapMode)pData->m_capMode);
+            pStroke->SetIsDash (pData->m_strokeMode & LCSTROKE_DASH);
+            pStroke->SetIsRigid (TO_BOOL (pData->m_strokeMode & LCSTROKE_RAY));
+            pStroke->SetIsStretchable (TO_BOOL(pData->m_strokeMode & LCSTROKE_SCALE));
+            pStroke->SetIsDashFirst (pStroke->IsDash() ^ TO_BOOL(pData->m_strokeMode & LCSTROKE_SINVERT));
+            pStroke->SetIsDashLast  (pStroke->IsDash() ^ TO_BOOL(pData->m_strokeMode & LCSTROKE_EINVERT));
             }
 
-        SetIterationLimit ((pRsc->options & LCOPT_ITERATION) ? pRsc->maxIterate : 0);
-        SetIterationMode ((pRsc->options & LCOPT_ITERATION) ? true : false);
-        SetSegmentMode ((pRsc->options & LCOPT_SEGMENT) ? true : false);
+        SetIterationLimit ((pRsc->m_options & LCOPT_ITERATION) ? pRsc->m_maxIterate : 0);
+        SetIterationMode ((pRsc->m_options & LCOPT_ITERATION) ? true : false);
+        SetSegmentMode ((pRsc->m_options & LCOPT_SEGMENT) ? true : false);
 
         if (!IsRigid())
             {
-            if (0 == (pRsc->options & (LCOPT_AUTOPHASE | LCOPT_CENTERSTRETCH)) && 0.0 != pRsc->phase)
+            if (0 == (pRsc->m_options & (LCOPT_AUTOPHASE | LCOPT_CENTERSTRETCH)) && 0.0 != pRsc->m_phase)
                 {
-                SetDistancePhase (pRsc->phase);
+                SetDistancePhase (pRsc->m_phase);
                 }
-            else if (pRsc->options & LCOPT_AUTOPHASE)
+            else if (pRsc->m_options & LCOPT_AUTOPHASE)
                 {
-                SetFractionalPhase (pRsc->phase);
+                SetFractionalPhase (pRsc->m_phase);
                 }
-            else if (pRsc->options & LCOPT_CENTERSTRETCH)
+            else if (pRsc->m_options & LCOPT_CENTERSTRETCH)
                 {
                 SetCenterPhaseMode();
                 }
@@ -251,11 +199,11 @@ BentleyStatus       LsStrokePatternComponent::PostCreate ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            LsStrokePatternComponent::Init
 (
-LineCodeRsc const* lcRsc
+V10LineCode const* lcRsc
 )
     {
     if (NULL != lcRsc)
-        SetDescription (Utf8String(lcRsc->descr));
+        SetDescription (lcRsc->m_descr);
 
     CreateFromRsrc (lcRsc);
     }
@@ -268,7 +216,7 @@ LsStrokePatternComponentP LsStrokePatternComponent::LoadStrokePatternComponent
 LsComponentReader*    reader
 )
     {
-    LineCodeRsc*        lcRsc = (LineCodeRsc*) reader->GetRsc();
+    V10LineCode*        lcRsc = (V10LineCode*) reader->GetRsc();
     const LsLocation*   source = reader->GetSource();
 
     //  This used to handle LsInternalComponent of line code 0 setting resource type to LsComponentType::LineCode.
@@ -286,41 +234,6 @@ LsCompoundComponent::LsCompoundComponent (LsLocation const *pLocation) :
             LsComponent (pLocation), m_postProcessed (false)
     {
     m_postProcessed = false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    John.Gooding                    09/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-size_t          LsCompoundComponent::GetResourceSize ()
-    {
-    //  This guards against introducing a negative value into unsigned arithmetic
-    if (m_components.size () == 0)
-        return sizeof(LineStyleRsc) - sizeof(ComponentInfo);
-
-    return sizeof(LineStyleRsc) + (m_components.size () - 1) * sizeof(ComponentInfo);
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    John.Gooding                    09/2009
-+---------------+---------------+---------------+---------------+---------------+------*/
-void            LsCompoundComponent::InitLineStyleResource (LineStyleRsc& lsRsc)
-    {
-    memset (&lsRsc, 0, GetResourceSize ());
-    CopyDescription (lsRsc.descr);
-
-    // lsRsc = auxType -- not sure this is needed
-
-    lsRsc.nComp = (int32_t)m_components.size ();
-    
-    ComponentInfo*   componentInfo = lsRsc.component;
-    for (T_ComponentsCollectionIter curr = m_components.begin (); curr < m_components.end (); curr++, componentInfo++)
-        {
-        LsLocationCP        loc = curr->m_subComponent->GetLocation ();
-
-        componentInfo->type = (uint32_t)loc->GetComponentType ();
-        componentInfo->id = loc->GetComponentId ().GetValue();
-        componentInfo->offset = curr->m_offset;
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -393,10 +306,12 @@ StatusInt       LsCompoundComponent::_DoStroke (ViewContextP context, DPoint3dCP
     modifiers->GetPlaneAsMatrixRows(matrix);
     matrix.GetRow (normal, 2);
 
-    LineJoint*  joints = (LineJoint*) _alloca (nPoints * sizeof(LineJoint));
+    ScopedArray<LineJoint, 50> scopedJoints(nPoints);
+    LineJoint*  joints = scopedJoints.GetData();
     LineJoint::FromVertices (joints, inPoints, nPoints, &normal, NULL, NULL);
 
-    DPoint3d*   offsetPts = (DPoint3d*) _alloca (nPoints * sizeof (DPoint3d));
+    ScopedArray<DPoint3d, 50> scopedOffsetPts(nPoints);
+    DPoint3d*   offsetPts = scopedOffsetPts.GetData();
     double      scale = modifiers->GetScale();
 
     for (T_ComponentsCollectionConstIter curr = m_components.begin (); curr < m_components.end (); curr++)
@@ -462,20 +377,20 @@ LsCompoundComponentP  LsCompoundComponent::LoadCompoundComponent
 LsComponentReader*    reader
 )
     {
-    LineStyleRsc*   lsRsc = reader->GetRsc();
+    V10Compound*   lsRsc = (V10Compound*)reader->GetRsc();
     if (NULL == lsRsc)
         return  NULL;
 
     LsCompoundComponent*  compound = new LsCompoundComponent (reader->GetSource());
-    compound->SetDescription (Utf8String(lsRsc->descr).c_str());
+    compound->SetDescription (lsRsc->m_descr);
 
     LsLocation  tmpLocation;
 
-    for (uint32_t i=0; i < lsRsc->nComp; i++)
+    for (uint32_t i=0; i < lsRsc->m_nComponents; i++)
         {
         tmpLocation.GetCompoundComponentLocation (reader, i);
         
-        LsOffsetComponent offsetComp (lsRsc->component[i].offset, LsCache::GetLsComponent (&tmpLocation));
+        LsOffsetComponent offsetComp (lsRsc->m_component[i].m_offset, LsCache::GetLsComponent (&tmpLocation));
         
         if (offsetComp.m_subComponent.get () == compound)
             {
@@ -845,20 +760,20 @@ BentleyStatus       LsComponentReader::_LoadDefinition ()
     switch ((LsComponentType)m_componentType)
         {
         case LsComponentType::LineCode:
-            LsStrokePatternComponent::CreateRscFromDgnDb ((LineCodeRsc**)&m_rsc, m_dgndb, m_source->GetComponentId(), false);
+            LsStrokePatternComponent::CreateRscFromDgnDb ((V10LineCode**)&m_rsc, m_dgndb, m_source->GetComponentId(), false);
             break;
 
         case LsComponentType::Compound:
-            LsCompoundComponent::CreateRscFromDgnDb ((LineStyleRsc**)&m_rsc, m_dgndb, m_source->GetComponentId(), false);
+            LsCompoundComponent::CreateRscFromDgnDb ((V10Compound**)&m_rsc, m_dgndb, m_source->GetComponentId(), false);
             break;
 
         case LsComponentType::LinePoint:
-            LsPointComponent::CreateRscFromDgnDb ((LinePointRsc**)&m_rsc, m_dgndb, m_source->GetComponentId(), false);
+            LsPointComponent::CreateRscFromDgnDb ((V10LinePoint**)&m_rsc, m_dgndb, m_source->GetComponentId(), false);
             break;
 
         case LsComponentType::PointSymbol:
         //  case LS_ELEMENT_POINTSYMBOLV7:
-            LsSymbolComponent::CreateRscFromDgnDb ((PointSymRsc**)&m_rsc, m_dgndb, m_source->GetComponentId(), false);
+            LsSymbolComponent::CreateRscFromDgnDb ((V10Symbol**)&m_rsc, m_dgndb, m_source->GetComponentId(), false);
             break;
 
         case LsComponentType::Internal:
