@@ -35,7 +35,7 @@ public:
             void                        GetBitmap(ImagePP::HFCPtr<ImagePP::HRABitmapBase> pBitmap);
             ImagePP::HRAStoredRaster*            GetStoredRasterP();
             ImagePP::HFCPtr<ImagePP::HGF2DCoordSys>       GetPhysicalCoordSys();
-            ImagePP::HFCPtr<ImagePP::HGF2DTransfoModel>   GetSLOTransfoModel() const;
+            DMatrix4d                   GetPhysicalToLowerLeft() const;
             void                        GetCorners(DPoint3dP corners);
             GeoCoordinates::BaseGCSPtr  GetBaseGcs();
 };

@@ -62,7 +62,7 @@ private:
 //----------------------------------------------------------------------------------------
 struct TileId
     {
-    TileId(uint32_t r, uint32_t tX, uint32_t tY) : resolution(r), tileX(tX), tileY(tY){}
+    TileId(uint32_t r, uint32_t tX, uint32_t tY) : resolution(r), x(tX), y(tY){}
 
     uint32_t resolution;            // current level. 0 being the finest resolution.
     // Tile position:
@@ -71,8 +71,8 @@ struct TileId
     //   -----------
     //  | 0,1 | 1,1 |
     //   -----------
-    uint32_t tileX;  
-    uint32_t tileY;
+    uint32_t x;
+    uint32_t y;
     };
 
 //----------------------------------------------------------------------------------------
@@ -156,10 +156,12 @@ struct RasterSource : RefCountedBase
     uint32_t GetHeight() const {return GetResolution(0).GetHeight();}
 
     //! return tile size. Border tiles are clipped to their effective size in pixels
-    uint32_t GetTileSizeX(TileId const& id) const {return MIN(GetResolution(id.resolution).GetTileSizeX(), GetResolution(id.resolution).GetWidth() - GetResolution(id.resolution).GetTileSizeX()*id.tileX);}
-    uint32_t GetTileSizeY(TileId const& id) const {return MIN(GetResolution(id.resolution).GetTileSizeY(), GetResolution(id.resolution).GetHeight() - GetResolution(id.resolution).GetTileSizeY()*id.tileY);}
+    uint32_t GetTileSizeX(TileId const& id) const {return MIN(GetResolution(id.resolution).GetTileSizeX(), GetResolution(id.resolution).GetWidth() - GetResolution(id.resolution).GetTileSizeX()*id.x);}
+    uint32_t GetTileSizeY(TileId const& id) const {return MIN(GetResolution(id.resolution).GetTileSizeY(), GetResolution(id.resolution).GetHeight() - GetResolution(id.resolution).GetTileSizeY()*id.y);}
     
-    //! Compute tiles corners in Cartesian.
+    //! Compute tiles corners in Cartesian with a lower-left origin. //&&MM review doc of corners.
+    //! [0] [1]
+    //! [2] [3]
     void ComputeTileCorners(DPoint3dP pCorners, TileId const& id) const;
 
     //! Return the raster Gcs. Can be NULL.
@@ -169,7 +171,8 @@ protected:
     static void GenerateResolution(bvector<Resolution>& resolution, uint32_t width, uint32_t height, uint32_t tileSizeX, uint32_t tileSizeY);
 
     //! Must be called by child class after construction. BaseGCSP might be NULL
-    BentleyStatus Initialize(DPoint3dCP corners, bvector<Resolution>const& resolution, GeoCoordinates::BaseGCSP pGcs);
+    BentleyStatus Initialize(bvector<Resolution>const& resolution, DMatrix4d physicalToCartesian, GeoCoordinates::BaseGCSP pGcs);
+    BentleyStatus Initialize(bvector<Resolution>const& resolution, DPoint3dCP corners, GeoCoordinates::BaseGCSP pGcs);
 
     void SetGcsP(GeoCoordinates::BaseGCSP pNewGcs) {m_pGcs = pNewGcs/*Hold a ref*/;} 
 

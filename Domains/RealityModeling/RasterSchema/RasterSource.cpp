@@ -221,33 +221,51 @@ RasterSource::RasterSource()
 //----------------------------------------------------------------------------------------
 RasterSource::~RasterSource(){}
 
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  5/2015
 //----------------------------------------------------------------------------------------
-BentleyStatus RasterSource::Initialize(DPoint3dCP corners, bvector<Resolution>const& resolution, GeoCoordinates::BaseGCSP pGcs)
+BentleyStatus RasterSource::Initialize(bvector<Resolution>const& resolution, DPoint3dCP corners, GeoCoordinates::BaseGCSP pGcs)
     {
-    BentleyStatus status = SUCCESS;
-    m_resolution = resolution;
-    
-    memcpy(m_corners, corners, sizeof(m_corners));
-
     // Build the physical to cartesian matrix.
     DPoint2d srcCorners[4];
     srcCorners[0].x = srcCorners[2].x = 0; 
-    srcCorners[1].x = srcCorners[3].x = m_resolution[0].GetWidth();  
+    srcCorners[1].x = srcCorners[3].x = resolution[0].GetWidth();  
     srcCorners[0].y = srcCorners[1].y = 0; 
-    srcCorners[2].y = srcCorners[3].y = m_resolution[0].GetHeight(); 
+    srcCorners[2].y = srcCorners[3].y = resolution[0].GetHeight(); 
 
     DPoint2d destCorners[4];
     for (size_t i=0; i < 4; ++i)
-        destCorners[i].Init(m_corners[i].x, m_corners[i].y);
-        
-    if(!s_ComputeQuadrilateralToQuadrilateralTransfoModel(m_physicalToCartesian, srcCorners, destCorners))
+        destCorners[i].Init(corners[i].x, corners[i].y);
+
+    DMatrix4d physicalToCartesian;
+    if(!s_ComputeQuadrilateralToQuadrilateralTransfoModel(physicalToCartesian, srcCorners, destCorners))
         {
         BeAssert(!"Cannot compute physicalToCartesian matrix"); // How that happen?
         m_physicalToCartesian.InitIdentity();
-        status = ERROR;
+        return ERROR;
         }    
+
+    return Initialize(resolution, physicalToCartesian, pGcs);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  5/2015
+//----------------------------------------------------------------------------------------
+BentleyStatus RasterSource::Initialize(bvector<Resolution>const& resolution, DMatrix4d physicalToCartesian, GeoCoordinates::BaseGCSP pGcs)
+    {
+    BentleyStatus status = SUCCESS;
+    m_resolution = resolution;
+    m_physicalToCartesian = physicalToCartesian;
+    
+    DPoint3d physicalCorners[4];
+    physicalCorners[0].x = physicalCorners[2].x = 0.0; 
+    physicalCorners[1].x = physicalCorners[3].x = m_resolution[0].GetWidth();  
+    physicalCorners[0].y = physicalCorners[1].y = 0.0; 
+    physicalCorners[2].y = physicalCorners[3].y = m_resolution[0].GetHeight(); 
+    physicalCorners[0].z = physicalCorners[1].z = physicalCorners[2].z = physicalCorners[3].z = 0.0;
+
+    m_physicalToCartesian.MultiplyAndRenormalize(m_corners, physicalCorners, 4);
 
     m_pGcs = pGcs;  // add a ref
 
@@ -279,8 +297,8 @@ void RasterSource::GenerateResolution(bvector<Resolution>& resolution, uint32_t 
 bool RasterSource::IsValidTileId(TileId const& id) const
     {
     if(id.resolution >= GetResolutionCount() || 
-       id.tileX >= GetResolution(id.resolution).GetTileCountX() ||
-       id.tileY >= GetResolution(id.resolution).GetTileCountY())
+       id.x >= GetResolution(id.resolution).GetTileCountX() ||
+       id.y >= GetResolution(id.resolution).GetTileCountY())
         return false;
 
     return true;
@@ -293,8 +311,8 @@ void RasterSource::ComputeTileCorners(DPoint3dP pCorners, TileId const& id) cons
     {
     BeAssert(IsValidTileId(id));
 
-    uint32_t xMinInRes = id.tileX * GetResolution(id.resolution).GetTileSizeX();
-    uint32_t yMinInRes = id.tileY * GetResolution(id.resolution).GetTileSizeY();
+    uint32_t xMinInRes = id.x * GetResolution(id.resolution).GetTileSizeX();
+    uint32_t yMinInRes = id.y * GetResolution(id.resolution).GetTileSizeY();
     uint32_t xMaxInRes = xMinInRes + GetResolution(id.resolution).GetTileSizeX();
     uint32_t yMaxInRes = yMinInRes + GetResolution(id.resolution).GetTileSizeY();
 
@@ -322,11 +340,12 @@ void RasterSource::ComputeTileCorners(DPoint3dP pCorners, TileId const& id) cons
 
     m_physicalToCartesian.MultiplyAndRenormalize(pCorners, physicalCorners, 4);
 
-    for(uint32_t i=0; i < 4; ++i)
-        {
-        BeAssert(IN_RANGE(pCorners[i].x, m_corners[0].x-EPSILON, m_corners[3].x+EPSILON));
-        BeAssert(IN_RANGE(pCorners[i].y, m_corners[0].y-EPSILON, m_corners[3].y+EPSILON));
-        }
+//&&MM not now.
+//     for(uint32_t i=0; i < 4; ++i)
+//         {
+//         BeAssert(IN_RANGE(pCorners[i].x, m_corners[0].x-EPSILON, m_corners[3].x+EPSILON));
+//         BeAssert(IN_RANGE(pCorners[i].y, m_corners[0].y-EPSILON, m_corners[3].y+EPSILON));
+//         }
     }
 
     

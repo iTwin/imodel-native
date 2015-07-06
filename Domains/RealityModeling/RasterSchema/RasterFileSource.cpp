@@ -61,7 +61,16 @@ RasterFileSource::RasterFileSource(RasterFileProperties const& properties)
     Initialize(corners, resolution, pGcs.get());
     Initialize(corners, resolution, nullptr);
 */
-    Initialize(corners, resolution, baseGcsPtr.get());
+    DMatrix4d physicalToLowerLeft = m_rasterFilePtr->GetPhysicalToLowerLeft();
+
+    //&&ep fill the transform from raster file. See RasterSource::GetGeoreference(library/RasterCore/RasterSource.cpp)
+    DMatrix4d rasterTransform;
+    rasterTransform.InitIdentity(); 
+    
+    DMatrix4d physicalToCartesian;
+    physicalToCartesian.InitProduct(rasterTransform, physicalToLowerLeft);
+ 
+    Initialize(resolution, physicalToCartesian, baseGcsPtr.get());
     }
 
 //----------------------------------------------------------------------------------------
@@ -73,13 +82,9 @@ DisplayTilePtr RasterFileSource::_QueryTile(TileId const& id, bool request)
         // RasterFile could not be initialized
         return nullptr;
 
-    double scale = 1 << id.resolution;
-
-    // All this "gymnastic" is necessary because the upper left tile of the TileId is (0,0); while the raster's (0,0) position is at down left.
-    HGF2DStretch stretch(HGF2DDisplacement(id.tileX * m_tileSize.x * scale, 
-                                           (m_rasterFilePtr->GetHeight() - ((id.tileY + 1) * m_tileSize.y - (m_tileSize.y -  GetTileSizeY(id))) * scale)), 
-                         scale, 
-                         scale);
+    // Use integer type to avoid floating-points precision errors durint origin multiplication.
+    uint32_t scale = 1 << id.resolution;
+    HGF2DStretch stretch(HGF2DDisplacement((id.x * m_tileSize.x) * scale, (id.y * m_tileSize.y) * scale), scale, scale);
 
 //&&ep    - review: use pixel type preferred by QV
     HFCPtr<HRABitmap> pDisplayBitmap;
@@ -97,7 +102,7 @@ DisplayTilePtr RasterFileSource::_QueryTile(TileId const& id, bool request)
 //&&ep     - verify packet size is ok each time
 
 //&&ep - keep packet as a member; do setPacket above
-    m_tileBuffer.resize(m_tileSize.x * m_tileSize.y *4);
+    //m_tileBuffer.resize(m_tileSize.x * m_tileSize.y *4);
 
     DisplayTile::PixelType pixelType = DisplayTile::PixelType::Rgba;
     DisplayTilePtr pDisplayTile = DisplayTile::Create(effectiveTileSizeX, effectiveTileSizeY, pixelType, pbSrcRow, 0/*notPadded*/);
