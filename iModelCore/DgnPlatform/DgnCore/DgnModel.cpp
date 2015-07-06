@@ -566,6 +566,7 @@ DgnDbStatus DgnModel::_OnDelete()
             return stat;
         }
 
+    BeAssert(GetRefCount() > 1);
     m_dgndb.Models().DropLoadedModel(*this);
     return DgnDbStatus::Success;
     }
@@ -708,7 +709,7 @@ ModelHandlerR DgnModel::GetModelHandler() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelP DgnModels::LoadDgnModel(DgnModelId modelId)
+DgnModelPtr DgnModels::LoadDgnModel(DgnModelId modelId)
     {
     DgnModels::Model model;
     if (SUCCESS != QueryModelById(&model, modelId))
@@ -727,28 +728,28 @@ DgnModelP DgnModels::LoadDgnModel(DgnModelId modelId)
     dgnModel->ReadProperties();
     dgnModel->_OnLoaded();   // this adds the model to the loaded models list and increments the ref count, so returning by value is safe.
 
-    return dgnModel.get();
+    return dgnModel;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelP DgnModels::FindModel(DgnModelId modelId)
+DgnModelPtr DgnModels::FindModel(DgnModelId modelId)
     {
-    auto const& it=m_models.find(modelId);
-    return  it!=m_models.end() ? it->second.get() : NULL;
+    auto it=m_models.find(modelId);
+    return  it!=m_models.end() ? it->second : NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelP DgnModels::GetModel(DgnModelId modelId)
+DgnModelPtr DgnModels::GetModel(DgnModelId modelId)
     {
     if (!modelId.IsValid())
-        return  NULL;
+        return nullptr;
 
-    DgnModelP dgnModel = FindModel(modelId);
-    return (NULL != dgnModel) ? dgnModel : LoadDgnModel(modelId);
+    DgnModelPtr dgnModel = FindModel(modelId);
+    return dgnModel.IsValid() ? dgnModel : LoadDgnModel(modelId);
     }
 
 /*---------------------------------------------------------------------------------**//**

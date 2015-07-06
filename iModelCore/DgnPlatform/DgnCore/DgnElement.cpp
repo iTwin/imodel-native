@@ -40,7 +40,7 @@ void DgnElement::Release() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelP DgnElement::GetModel() const
+DgnModelPtr DgnElement::GetModel() const
     {
     return m_dgndb.Models().GetModel(m_modelId);
     }
@@ -313,8 +313,8 @@ void DgnElement::_OnDeleted() const
     {
     CallAppData(OnDeletedCaller());
     GetDgnDb().Elements().DropFromPool(*this);
-    DgnModelP model = GetModel();
-    if (model)
+    DgnModelPtr model = GetModel();
+    if (model.IsValid())
         model->_OnDeletedElement(*this);
     }
 

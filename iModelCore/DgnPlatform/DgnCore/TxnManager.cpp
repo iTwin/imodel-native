@@ -861,8 +861,8 @@ void dgn_TxnTable::Element::_OnValidated()
 void dgn_TxnTable::Model::_OnReversedAdd(BeSQLite::Changes::Change const& change)
     {
     DgnModelId modelId = change.GetOldValue(0).GetValueId<DgnModelId>();
-    DgnModelP model = m_txnMgr.GetDgnDb().Models().FindModel(modelId);
-    if (nullptr == model)
+    DgnModelPtr model = m_txnMgr.GetDgnDb().Models().FindModel(modelId);
+    if (!model.IsValid())
         return;
 
     m_txnMgr.GetDgnDb().Models().DropLoadedModel(*model);
@@ -874,8 +874,8 @@ void dgn_TxnTable::Model::_OnReversedAdd(BeSQLite::Changes::Change const& change
 void dgn_TxnTable::Model::_OnReversedUpdate(BeSQLite::Changes::Change const& change)
     {
     DgnModelId modelId = change.GetOldValue(0).GetValueId<DgnModelId>();
-    DgnModelP model = m_txnMgr.GetDgnDb().Models().FindModel(modelId);
-    if (nullptr == model)
+    DgnModelPtr model = m_txnMgr.GetDgnDb().Models().FindModel(modelId);
+    if (!model.IsValid())
         return;
 
     model->ReadProperties();

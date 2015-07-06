@@ -1058,8 +1058,8 @@ bpair<Dgn::DgnModelId,double> DgnMarkupProject::FindClosestRedlineModel(ViewCont
     double closestDistance = DBL_MAX;
     for (auto const& view : Views().MakeIterator())
         {
-        RedlineModelP rdlModel = Models().Get<RedlineModel>(view.GetBaseModelId());
-        if (nullptr != rdlModel)
+        RedlineModelPtr rdlModel = Models().Get<RedlineModel>(view.GetBaseModelId());
+        if (rdlModel.IsValid())
             {
             DgnViewAssociationData assoc;
             rdlModel->GetAssociation(assoc);
@@ -1093,8 +1093,8 @@ RedlineModelPtr RedlineModel::Create(DgnMarkupProjectR markupProject, Utf8CP nam
         return nullptr;
 
     //  Copy model properties and contents from template
-    SheetModelP templateModel = markupProject.Models().Get<SheetModel>(templateModelId);
-    if (nullptr != templateModel)
+    SheetModelPtr templateModel = markupProject.Models().Get<SheetModel>(templateModelId);
+    if (templateModel.IsValid())
         {
         //  Copy model properties and settings
         rdlModel->GetPropertiesR() = templateModel->GetProperties();
@@ -1837,17 +1837,15 @@ RedlineModelP DgnMarkupProject::OpenRedlineModel(DgnModelId mid)
     if (CheckIsOpen() != BSISUCCESS)
         return NULL;
 
-    ;
-
-    RedlineModelP redlineModel = Models().Get<RedlineModel>(mid);
-    if (nullptr == redlineModel)
+    RedlineModelPtr redlineModel = Models().Get<RedlineModel>(mid);
+    if (!redlineModel.IsValid())
         return nullptr;
 
     //! Always fill a redline model. We never work with a subset of redline graphics.
     //! Note: even if redline model was previously loaded, it might have been emptied. So, make sure it's filled.
     redlineModel->FillModel();
 
-    return redlineModel;
+    return redlineModel.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1858,15 +1856,15 @@ PhysicalRedlineModelP DgnMarkupProject::OpenPhysicalRedlineModel(DgnModelId mid)
     if (CheckIsOpen() != BSISUCCESS)
         return NULL;
 
-    PhysicalRedlineModelP redlineModel = Models().Get<PhysicalRedlineModel>(mid);
-    if (redlineModel == nullptr)
+    PhysicalRedlineModelPtr redlineModel = Models().Get<PhysicalRedlineModel>(mid);
+    if (!redlineModel.IsValid())
         return nullptr;
 
     //! Always fill a redline model. We never work with a subset of redline graphics.
     //! Note: even if redline model was previously loaded, it might have been emptied. So, make sure it's filled.
     redlineModel->FillModel();
 
-    return redlineModel;
+    return redlineModel.get();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1877,7 +1875,7 @@ BentleyStatus DgnMarkupProject::EmptyRedlineModel(DgnModelId mid)
     if (CheckIsOpen() != BSISUCCESS)
         return BSIERROR;
 
-    DgnModelP dgnModel = Models().FindModel(mid);
+    DgnModelP dgnModel = Models().FindModel(mid).get();
     if (dgnModel == NULL)
         return BSIERROR;
 
