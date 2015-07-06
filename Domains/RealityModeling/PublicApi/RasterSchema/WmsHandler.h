@@ -25,10 +25,10 @@ struct WmsMap
     //! Return true if mandatory parameters are set. Does not validate with server.
     bool HasValidParameters() const;
 
-    //! Compute and set metaWidth and metaHeight using the number of requested resolution. bbox aspect ration is preserved.
+    //! Compute and set metaWidth and metaHeight using the number of requested resolution. Bounding box aspect ratio is preserved.
     RASTERSCHEMA_EXPORT void SetMetaSizeByResolutionCount(uint32_t count);
 
-    //! Set metaWidth or metaHeight using the largest side of the bounding box to pixelCount and compute the other meta size that preserves bbox aspect ratio.
+    //! Set metaWidth and metaHeight. The largest side of the bounding box is set to pixelCount and the other meta size is computed to preserves bounding box aspect ratio.
     RASTERSCHEMA_EXPORT void SetMetaSizeByLargestBoundingBoxSide(uint32_t pixelCount);
 
     Utf8String m_url;               //! Get map url. Up to but excluding the query char '?'
@@ -45,10 +45,10 @@ struct WmsMap
     Utf8String m_styles;            //! Comma-separated list of one rendering style per requested layer.
     Utf8String m_csType;            //! Usually, 'SRS' for 1.1.1 and below. 'CRS' for 1.3 and above.
     Utf8String m_csLabel;           //! Coordinate system label. ex: "EPSG:4326"
-    Utf8String m_format;            //! Output format of map default is 'image/png'
+    Utf8String m_format;            //! Output format of map. Default is 'image/png'
 
     // Optional GetMap parameters
-    Utf8String m_vendorSpecific;    //! [optional] Unparsed, vendor specific parameters that will be appended to the request. 
+    Utf8String m_vendorSpecific;    //! [optional] Unparsed, server specific parameters that will be appended to the request. 
     bool m_transparent;             //! [optional] Background is transparent?
 
     void ToJson(Json::Value&) const;

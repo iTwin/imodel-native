@@ -318,12 +318,12 @@ WmsSource::WmsSource(WmsMap const& mapInfo)
  :m_mapInfo(mapInfo) 
     {
     // WMS BBOX are in CRS units. i.e. cartesian.       //&&MM todo bbox reorder adjustment needed?
-    DPoint3d corners[4];
-    corners[0].x = corners[2].x = m_mapInfo.m_boundingBox.low.x; 
-    corners[1].x = corners[3].x = m_mapInfo.m_boundingBox.high.x;  
-    corners[0].y = corners[1].y = m_mapInfo.m_boundingBox.low.y; 
-    corners[2].y = corners[3].y = m_mapInfo.m_boundingBox.high.y; 
-    corners[0].z = corners[1].z = corners[2].z = corners[3].z = 0;
+    //DPoint3d corners[4];
+   // corners[0].x = corners[2].x = m_mapInfo.m_boundingBox.low.x; 
+    //corners[1].x = corners[3].x = m_mapInfo.m_boundingBox.high.x;  
+    //corners[0].y = corners[1].y = m_mapInfo.m_boundingBox.high.y; 
+    //corners[2].y = corners[3].y = m_mapInfo.m_boundingBox.low.y; 
+    //corners[0].z = corners[1].z = corners[2].z = corners[3].z = 0;
 
     // for WMS we define a 256x256 multi-resolution image.
     bvector<Resolution> resolution;
@@ -332,7 +332,25 @@ WmsSource::WmsSource(WmsMap const& mapInfo)
     GeoCoordinates::BaseGCSPtr pGcs = CreateBaseGcsFromWmsGcs(m_mapInfo.m_csLabel);
     BeAssert(pGcs.IsValid()); //Is it an error if we do not have a GCS? We will assume coincident.
 
-    Initialize(corners, resolution, pGcs.get());
+    DPoint3d translation = DPoint3d::From(m_mapInfo.m_boundingBox.low); // z == 0
+    DPoint3d scale = DPoint3d::From((m_mapInfo.m_boundingBox.high.x - m_mapInfo.m_boundingBox.low.x) / m_mapInfo.m_metaWidth,  
+                                    (m_mapInfo.m_boundingBox.high.y - m_mapInfo.m_boundingBox.low.y) / m_mapInfo.m_metaHeight, 
+                                    0);
+
+    DMatrix4d mapTransfo = DMatrix4d::FromScaleAndTranslation(scale, translation);
+
+    // Data from server is upper-left(jpeg or png) and cartesians coordinate must have a lower-left origin, add a flip.
+    DMatrix4d physicalToLowerLeft = DMatrix4d::FromRowValues(1.0, 0.0, 0.0, 0.0,
+                                                             0.0, -1.0, 0.0, m_mapInfo.m_metaHeight,
+                                                             0.0, 0.0, 1.0, 0.0,
+                                                             0.0, 0.0, 0.0, 1.0);
+
+     DMatrix4d physicalToCartesian;
+     physicalToCartesian.InitProduct(mapTransfo, physicalToLowerLeft);
+
+
+       
+    Initialize(resolution, physicalToCartesian, pGcs.get());
     }
 
 //----------------------------------------------------------------------------------------
@@ -409,13 +427,16 @@ Utf8String WmsSource::BuildTileUrl(TileId const& tileId)
     DPoint3d tileCorners[4];
     ComputeTileCorners(tileCorners, tileId);
 
+    // tile corners are in this order, with a lower-left origin.
+    // [0] [1]
+    // [2] [3]
     GeoPoint2d tileOrigin;
-    tileOrigin.latitude = tileCorners[0].y;
-    tileOrigin.longitude = tileCorners[0].x;
+    tileOrigin.latitude = tileCorners[2].y;
+    tileOrigin.longitude = tileCorners[2].x;
 
     GeoPoint2d tileCorner;
-    tileCorner.latitude = tileCorners[3].y;
-    tileCorner.longitude = tileCorners[3].x;
+    tileCorner.latitude = tileCorners[1].y;
+    tileCorner.longitude = tileCorners[1].x;
     
     //&&MM order of lat/long is a mess. review for all version and I guess define a way to be user defined. ex lat_long_LAT_LONG or long_lat_LONG_LAT
     // spec 1.1.1 >>> minimum longitude, minimum latitude, maximum longitude, maximum latitude 
