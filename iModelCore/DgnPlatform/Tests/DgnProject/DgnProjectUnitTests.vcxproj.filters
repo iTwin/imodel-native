@@ -151,6 +151,9 @@
     <ClCompile Include="NonPublished\ElementProperties.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
+    <ClCompile Include="NonPublished\ElementGeomPart_Tests.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\DgnHandlersTests.h">
