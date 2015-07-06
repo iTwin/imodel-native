@@ -23,7 +23,7 @@ PhysicalModelPtr createAndInsertPhysicalModel(DgnDbR db, Utf8CP name)
     DgnClassId modelClassId = db.Domains().GetClassId(handler);
     DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, modelClassId, name));
 
-    return (DgnDbStatus::Success == model->Insert()) ? model  : nullptr;
+    return (DgnDbStatus::Success == model->Insert()) ? model->ToPhysicalModelP()  : nullptr;
     }
 
 //__PUBLISH_EXTRACT_END__
