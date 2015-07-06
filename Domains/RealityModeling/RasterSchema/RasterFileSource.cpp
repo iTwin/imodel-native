@@ -15,21 +15,18 @@
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     6/2015
 //----------------------------------------------------------------------------------------
-RasterSourcePtr RasterFileSource::Create(RasterFileProperties const& properties)
+RasterSourcePtr RasterFileSource::Create(Utf8StringCR resolvedName)
     {
-    return new RasterFileSource(properties);
+    return new RasterFileSource(resolvedName);
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     6/2015
 //----------------------------------------------------------------------------------------
-RasterFileSource::RasterFileSource(RasterFileProperties const& properties)
- :m_properties(properties) 
+RasterFileSource::RasterFileSource(Utf8StringCR resolvedName)
     {
     // Open raster file
-    Utf8CP urlUtf8 = properties.m_url.c_str();
-    WString fileName(urlUtf8, BentleyCharEncoding::Utf8);
-    m_rasterFilePtr = RasterFile::Create(fileName.c_str());
+    m_rasterFilePtr = RasterFile::Create(resolvedName);
     if (m_rasterFilePtr == nullptr)
         {
         // Can't create model; probably that file name is invalid. 

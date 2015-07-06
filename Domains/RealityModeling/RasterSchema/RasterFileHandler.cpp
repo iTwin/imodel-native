@@ -19,63 +19,110 @@ HANDLER_DEFINE_MEMBERS(RasterFileModelHandler)
 //----------------------------------------------------------------------------------------
 //-------------------------------  RasterFileProperties  ---------------------------------
 //----------------------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   MattGooding     09/12
+//---------------------------------------------------------------------------------------
+static void DPoint2dFromJson (DPoint2dR point, JsonValueCR inValue)
+    {
+    point.x = inValue[0].asDouble();
+    point.y = inValue[1].asDouble();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   MattGooding     09/12
+//---------------------------------------------------------------------------------------
+static void DPoint2dToJson (JsonValueR outValue, DPoint2dCR point)
+    {
+    outValue[0] = point.x;
+    outValue[1] = point.y;
+    }
+
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  6/2015
+// @bsimethod                                                       Eric.Paquet     6/2015
+//----------------------------------------------------------------------------------------
+RasterFileProperties::RasterFileProperties()
+    {
+    m_fileMonikerPtr = FileMoniker::Create("", "");
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                       Eric.Paquet     6/2015
+//----------------------------------------------------------------------------------------
+static void DRange2dFromJson (DRange2dR range, JsonValueCR inValue)
+    {
+    DPoint2dFromJson (range.low, inValue["low"]);
+    DPoint2dFromJson (range.high, inValue["high"]);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                       Eric.Paquet     6/2015
+//----------------------------------------------------------------------------------------
+static void DRange2dToJson (JsonValueR outValue, DRange2dCR range)
+    {
+    DPoint2dToJson (outValue["low"], range.low);
+    DPoint2dToJson (outValue["high"], range.high);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                       Eric.Paquet     6/2015
 //----------------------------------------------------------------------------------------
 void RasterFileProperties::ToJson(Json::Value& v) const
     {
-    v["url"] = m_url.c_str();
-
-    //&&EP todo DRange2dToJson(v["bbox"], m_boundingBox);
+    m_fileMonikerPtr->ToJson(v["fileMoniker"]);
+    DRange2dToJson(v["bbox"], m_boundingBox);
     }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  6/2015
+// @bsimethod                                                       Eric.Paquet     6/2015
 //----------------------------------------------------------------------------------------
 void RasterFileProperties::FromJson(Json::Value const& v)
     {
-    m_url = v["url"].asString();
-
-    //&&EP todo DRange2dFromJson(m_boundingBox, v["bbox"]);
+    m_fileMonikerPtr->FromJson(v["fileMoniker"]);
+    DRange2dFromJson(m_boundingBox, v["bbox"]);
     }
+
+//----------------------------------------------------------------------------------------
+//------------------------------  RasterFileModelHandler  --------------------------------
+//----------------------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-DgnModelId RasterFileModelHandler::CreateRasterFileModel(DgnDbR db, BeFileName fileName)
+DgnModelId RasterFileModelHandler::CreateRasterFileModel(DgnDbR db, FileMonikerPtr fileMoniker)
     {
     DgnClassId classId(db.Schemas().GetECClassId(BENTLEY_RASTER_SCHEMA_NAME, RASTER_CLASSNAME_RasterFileModel));
     BeAssert(classId.IsValid());
 
-    WString dev;
-    WString dir;
-    WString name;
-    WString ext;
-    fileName.ParseName(&dev, &dir, &name, &ext);
+    // Find resolved file name for the raster
+    BeFileName basePath(db.GetDbFileName());
+    Utf8String basePathUtf8(basePath);
+    Utf8String resolvedName;
+    fileMoniker->ResolveFileName(resolvedName, basePathUtf8);
 
-    // Just keep model name (no path or extension) and convert it to Utf8CP
-    Utf8String utf8Name(name);
-    Utf8CP modelName = utf8Name.c_str();
+    // Create model name (just use the file name without extension)
+    BeFileName fileName(resolvedName);
+    WString modelName ( fileName.GetFileNameWithoutExtension().c_str() );
+    Utf8String utf8Name(modelName);
 
     // Set RasterFileProperties
     RasterFileProperties props;
-    WString fileNameWithPath;
-    BeFileName::BuildName (fileNameWithPath, fileName.GetDevice().c_str(), fileName.GetDirectoryWithoutDevice().c_str(), fileName.GetFileNameWithoutExtension().c_str(), fileName.GetExtension().c_str());
-    BeStringUtilities::WCharToUtf8 (props.m_url, fileNameWithPath.c_str());
+    props.m_fileMonikerPtr = fileMoniker;
 
-    //&&ep - Open raster; set other properties
-    RasterFilePtr rasterFilePtr = RasterFile::Create(fileName.c_str());
+    //&&ep - find real raster range
+    DRange2d range2d = DRange2d::From(1, 0);
+    props.m_boundingBox = range2d;
+
+    // Open raster
+    RasterFilePtr rasterFilePtr = RasterFile::Create(resolvedName);
     if (rasterFilePtr == nullptr)
         {
         // Can't create model; probably that file name is invalid. Return an invalid model id.
         return DgnModelId();
         }
 
-    Point2d sizePixels;
-    rasterFilePtr->GetSize(&sizePixels);
-
-    RasterFileModelPtr model = new RasterFileModel(DgnModel::CreateParams(db, classId, modelName), props);
-
+    // Create model in DgnDb
+    RasterFileModelPtr model = new RasterFileModel(DgnModel::CreateParams(db, classId, utf8Name.c_str()), props);
     model->Insert();
     return model->GetModelId();
     }
@@ -113,7 +160,14 @@ BentleyStatus RasterFileModel::_LoadQuadTree()
     {
     m_rasterTreeP = nullptr;
 
-    RasterSourcePtr pSource = RasterFileSource::Create(m_fileProperties);
+    // Resolve raster name
+    BeFileName basePath(GetDgnDb().GetDbFileName());
+    Utf8String basePathUtf8(basePath);
+    Utf8String resolvedName;
+    m_fileProperties.m_fileMonikerPtr->ResolveFileName(resolvedName, basePathUtf8);
+
+    // Create RasterQuadTree
+    RasterSourcePtr pSource = RasterFileSource::Create(resolvedName);
     if(pSource.IsValid())
         m_rasterTreeP = RasterQuadTree::Create(*pSource, GetDgnDb());
 

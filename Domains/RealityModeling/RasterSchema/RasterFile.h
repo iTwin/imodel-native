@@ -21,13 +21,13 @@ private:
             ImagePP::HFCPtr<ImagePP::HRAStoredRaster>     m_storedRasterPtr;
             ImagePP::HFCPtr<ImagePP::HGF2DWorldCluster>   m_worldClusterPtr;
 
-                                        RasterFile(WCharCP inFilename);
+                                        RasterFile(Utf8StringCR resolvedName);
             int                         ComputeBufferSize(size_t& bufferSize, const Point2d& imageSize, int imageFormat) const;
             ImagePP::HGF2DWorldCluster*          GetWorldClusterP();
 
 public:
-    static  RasterFilePtr               Create(WCharCP inFilename);
-            ImagePP::HFCPtr<ImagePP::HRFRasterFile>       OpenRasterFile(WCharCP inFilename);
+    static  RasterFilePtr               Create(Utf8StringCR resolvedName);
+            ImagePP::HFCPtr<ImagePP::HRFRasterFile>       OpenRasterFile(Utf8StringCR resolvedName);
             ImagePP::HRFRasterFile*              GetHRFRasterFileP() const;
             uint32_t                    GetWidth() const;
             uint32_t                    GetHeight() const;

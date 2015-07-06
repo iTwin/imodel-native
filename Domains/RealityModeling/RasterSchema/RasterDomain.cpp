@@ -20,7 +20,7 @@ RasterDomain::RasterDomain() : DgnDomain(BENTLEY_RASTER_SCHEMA_NAME, "Bentley Ra
     RegisterHandler(RasterModelHandler::GetHandler()); 
     RegisterHandler(WmsModelHandler::GetHandler());
     RegisterHandler(RasterFileModelHandler::GetHandler());
-//&&ep1
+
     //Initialize ImagePP host
     ImagePP::ImageppLib::Initialize(*new MyImageppLibHost());
 

@@ -12,20 +12,20 @@ USING_NAMESPACE_BENTLEY_RASTERSCHEMA
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-RasterFile::RasterFile(WCharCP inFilename)
+RasterFile::RasterFile(Utf8StringCR resolvedName)
     {
     m_storedRasterPtr = nullptr;
     m_worldClusterPtr = nullptr;
 
-    m_HRFRasterFilePtr = OpenRasterFile(inFilename);
+    m_HRFRasterFilePtr = OpenRasterFile(resolvedName);
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-RasterFilePtr RasterFile::Create(WCharCP inFilename)
+RasterFilePtr RasterFile::Create(Utf8StringCR resolvedName)
     {
-    RasterFilePtr rasterFilePtr = new RasterFile(inFilename);
+    RasterFilePtr rasterFilePtr = new RasterFile(resolvedName);
     if (rasterFilePtr->GetHRFRasterFileP() == nullptr)
         {
         // Could not open raster file
@@ -343,13 +343,13 @@ struct FactoryScanOnOpenGuard
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     6/2015
 //----------------------------------------------------------------------------------------
-HFCPtr<HRFRasterFile> RasterFile::OpenRasterFile(WCharCP inFilename)
+HFCPtr<HRFRasterFile> RasterFile::OpenRasterFile(Utf8StringCR resolvedName)
     {
     HFCPtr<HRFRasterFile> rasterFile;
 
     try
         {
-        WString filename(inFilename);
+        BeFileName filename(resolvedName);
 
         if (filename.empty())
             return NULL;

@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <DgnPlatform/DgnCore/RasterBaseModel.h>
+#include <DgnPlatform/DgnCore/FileMoniker.h>
 #include <RasterSchema/RasterHandler.h>
 #include <RasterSchema/RasterSchemaTypes.h>
 
@@ -21,12 +22,12 @@ struct RasterFileModelHandler;
 //=======================================================================================
 struct RasterFileProperties
     {
-    Utf8String m_url;               //! Raster url. 
+    Dgn::FileMonikerPtr         m_fileMonikerPtr;
+    DRange2d                    m_boundingBox;   //! Bounding box corners (minx,miny,maxx,maxy) in 'CoordinateSystem' unit.
 
-    DRange2d m_boundingBox;         //! Bounding box corners (minx,miny,maxx,maxy) in 'CoordinateSystem' unit.
-
-    void ToJson(Json::Value&) const;
-    void FromJson(Json::Value const&);                
+                                RasterFileProperties();
+    void                        ToJson(Json::Value&) const;
+    void                        FromJson(Json::Value const&);                
     };
 
 //=======================================================================================
@@ -70,7 +71,7 @@ struct EXPORT_VTABLE_ATTRIBUTE RasterFileModelHandler : RasterModelHandler
     RASTERMODELHANDLER_DECLARE_MEMBERS (RASTER_CLASSNAME_RasterFileModel, RasterFileModel, RasterFileModelHandler, RasterModelHandler, RASTERSCHEMA_EXPORT)
 
 public:
-    RASTERSCHEMA_EXPORT static Dgn::DgnModelId CreateRasterFileModel(Dgn::DgnDbR db, BeFileName fileName);
+    RASTERSCHEMA_EXPORT static Dgn::DgnModelId CreateRasterFileModel(Dgn::DgnDbR db, Dgn::FileMonikerPtr fileMoniker);
 };
 
 END_BENTLEY_RASTERSCHEMA_NAMESPACE

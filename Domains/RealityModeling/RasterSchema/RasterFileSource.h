@@ -24,7 +24,7 @@ private:
     Point2d                 m_tileSize;
 
 private:
-            RasterFileSource(RasterFileProperties const& properties);
+            RasterFileSource(Utf8StringCR resolvedName);
     virtual ~RasterFileSource(){};
 
 
@@ -32,7 +32,7 @@ protected:
     virtual DisplayTilePtr _QueryTile(TileId const& id, bool request) override;
 
 public:
-    static  RasterSourcePtr Create(RasterFileProperties const& properties);
+    static  RasterSourcePtr Create(Utf8StringCR resolvedName);
     
 };
 
