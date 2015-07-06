@@ -725,7 +725,7 @@ DgnModelP DgnModels::LoadDgnModel(DgnModelId modelId)
         return nullptr;
 
     dgnModel->ReadProperties();
-    dgnModel->_OnLoaded();
+    dgnModel->_OnLoaded();   // this adds the model to the loaded models list and increments the ref count, so returning by value is safe.
 
     return dgnModel.get();
     }

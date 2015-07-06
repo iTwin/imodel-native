@@ -72,9 +72,6 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-//! Map of ID to DgnFont object. See method FontNumberMap.
-typedef bmap<uint32_t, DgnFontCP> T_FontNumberMap;
-
 namespace dgn_ElementHandler {struct Physical;};
 namespace dgn_TxnTable {struct Element; struct Model;};
 

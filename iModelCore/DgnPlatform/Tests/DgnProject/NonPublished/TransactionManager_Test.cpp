@@ -2116,7 +2116,7 @@ static void testModelUndoRedo(DgnDbR db)
 * But "Settings" are not supposed to be affected by undo/redo except that
 * the undo operation *is* supposed to reverse the effect of "SaveSettings". So,
 * if we change setting, then call SaveSettings/SaveChanges, and then call "undo", the setting should remain in the
-* post-changed state in memory but that change should *not* saved to disk. If we call SaveSettings again, the change
+* post-changed state in memory but that change should *not* be saved to disk. If we call SaveSettings again, the change
 * will be saved, again.
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
