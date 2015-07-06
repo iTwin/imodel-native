@@ -302,7 +302,7 @@ template <typename Derived> struct BeInt64Id
 
     //! Get the 64 bit value of this BeGuid. Does not check for valid value in debug builds.
     int64_t GetValueUnchecked() const {return m_id;}
-    };
+};
 
 //=======================================================================================
 //! A 8-byte value that is locally unique within a BeRepository. Since BeRepositoryId's are forced to be unique externally, a BeRepositoryBasedId
@@ -1801,7 +1801,9 @@ public:
         //! (usually 100 bytes) and the actual compression results in a net savings.
         Yes=1
     };
+
     enum class Mode {Normal=0, Setting=1, Cached=2,};
+
 private:
     Mode m_mode;
     Compress m_compress;
