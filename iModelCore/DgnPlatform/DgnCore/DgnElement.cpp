@@ -936,6 +936,29 @@ DgnDbStatus ElementGroup::DeleteMember(DgnElementCR member) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ElementGroup::DeleteAllMembers() const
+    {
+    DgnElementIdSet memberIds = QueryMembers();
+    for (DgnElementId memberId : memberIds)
+        {
+        DgnElementCPtr member = GetDgnDb().Elements().GetElement(memberId);
+        if (!member.IsValid())
+            {
+            BeAssert(false); // indicates an orphaned relationship
+            continue;
+            }
+
+        DgnDbStatus deleteMemberStatus = DeleteMember(*member);
+        if (DgnDbStatus::Success != deleteMemberStatus)
+            return deleteMemberStatus;
+        }
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementIdSet ElementGroup::_QueryMembers() const

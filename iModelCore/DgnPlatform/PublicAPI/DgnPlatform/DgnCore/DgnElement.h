@@ -1068,6 +1068,10 @@ public:
     //! @note This only affects the ElementGroupHasMembers ECRelationship (stored as a database link table).
     DGNPLATFORM_EXPORT DgnDbStatus DeleteMember(DgnElementCR member) const;
 
+    //! Deletes all ElementGroupHasMembers ECRelationships from this ElementGroup
+    //! @note This only affects the ElementGroupHasMembers ECRelationship (stored as a database link table).
+    DGNPLATFORM_EXPORT DgnDbStatus DeleteAllMembers() const;
+
     //! Query for the set of members of this ElementGroup
     //! @see QueryFromMember
     DgnElementIdSet QueryMembers() const { return _QueryMembers(); }
