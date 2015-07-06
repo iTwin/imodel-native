@@ -17,16 +17,13 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   BentleySystems
 //---------------------------------------------------------------------------------------
-PhysicalModelP createAndInsertPhysicalModel(DgnDbR db, Utf8CP name)
+PhysicalModelPtr createAndInsertPhysicalModel(DgnDbR db, Utf8CP name)
     {
     ModelHandlerR handler = dgn_ModelHandler::Physical::GetHandler();
     DgnClassId modelClassId = db.Domains().GetClassId(handler);
     DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, modelClassId, name));
 
-    if (DgnDbStatus::Success != model->Insert())
-        return nullptr;
-
-    return db.Models().Get<PhysicalModel>(model->GetModelId());
+    return (DgnDbStatus::Success == model->Insert()) ? model->ToPhysicalModelP()  : nullptr;
     }
 
 //__PUBLISH_EXTRACT_END__

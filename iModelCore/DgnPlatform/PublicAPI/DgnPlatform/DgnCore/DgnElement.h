@@ -632,11 +632,10 @@ public:
     DGNPLATFORM_EXPORT AppData* FindAppData(AppData::Key const& key) const;
     //! @}
 
-
     DgnModelId GetModelId() const {return m_modelId;}
 
     //! Get the DgnModel of this DgnElement.
-    DGNPLATFORM_EXPORT DgnModelP GetModel() const;
+    DGNPLATFORM_EXPORT DgnModelPtr GetModel() const;
 
     //! Get the DgnDb of this element.
     //! @note This is merely a shortcut for GetDgnModel().GetDgnDb().

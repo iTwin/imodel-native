@@ -287,6 +287,8 @@ $(coreObjs)NamedVolume$(oext) : $(DgnHandlersDir)NamedVolume.cpp $(DgnHandlersAP
 
 $(coreObjs)DgnECSymbolProvider$(oext) : $(DgnHandlersDir)DgnECSymbolProvider.cpp $(DgnHandlersAPISrc)DgnECSymbolProvider.h ${MultiCompileDepends}
 
+$(coreObjs)FileMoniker$(oext): $(DgnCoreDir)FileMoniker.cpp $(DgnCoreAPISrc)FileMoniker.h ${MultiCompileDepends} 
+
 #----------------------------------------------------------------------
 #   DgnGeoCoord
 #----------------------------------------------------------------------

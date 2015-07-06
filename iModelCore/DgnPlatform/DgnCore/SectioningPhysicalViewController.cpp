@@ -10,7 +10,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-SectioningViewController::SectioningViewController (DgnDbR project, DgnViewId viewId) : PhysicalViewController (project, viewId)
+SectioningViewController::SectioningViewController(DgnDbR project, DgnViewId viewId) : PhysicalViewController(project, viewId)
     {
     m_hasAnalyzedCutPlanes = false;
     m_foremostCutPlaneIndex = 0;
@@ -44,7 +44,7 @@ void SectioningViewController::AnalyzeCutPlanes() const
 
     NullContext fakeViewContext;
 
-    ViewContextR context (fakeViewContext);
+    ViewContextR context(fakeViewContext);
 
     DPlane3d cutPlane, closestPlane;
     DVec3d closestPlaneXDir, closestPlaneYDir;
@@ -53,21 +53,21 @@ void SectioningViewController::AnalyzeCutPlanes() const
     bool forwardFacing_unused;
 
     // *** NEEDS WORK: I am assuming that plane 0 is a cut plane (and not a crop plane or a dogleg transition plane).
-    m_clip->GetCuttingPlane (closestPlane, closestPlaneXDir, closestPlaneYDir, clipMask_unused, clipRange_unused, forwardFacing_unused, 0, context);
+    m_clip->GetCuttingPlane(closestPlane, closestPlaneXDir, closestPlaneYDir, clipMask_unused, clipRange_unused, forwardFacing_unused, 0, context);
 
     uint32_t closestPlaneIndex = 0;
     m_cutPlaneCount = 1;
     for (size_t i=1; i < nCutPlanes; ++i)
         {
         DVec3d cutPlaneXDir, cutPlaneYDir;
-        m_clip->GetCuttingPlane (cutPlane, cutPlaneXDir, cutPlaneYDir, clipMask_unused, clipRange_unused, forwardFacing_unused, (int)i, context);
+        m_clip->GetCuttingPlane(cutPlane, cutPlaneXDir, cutPlaneYDir, clipMask_unused, clipRange_unused, forwardFacing_unused, (int)i, context);
 
-        if (cutPlane.normal.IsParallelTo (closestPlane.normal))
+        if (cutPlane.normal.IsParallelTo(closestPlane.normal))
             { 
             ++m_cutPlaneCount;
 
             //   FROM closestPlane   TO cutPlane                as measured along closestPlane's normal. This is away from the eye, so negate it.
-            if (-closestPlane.Evaluate (cutPlane.origin) > 0)   
+            if (-closestPlane.Evaluate(cutPlane.origin) > 0)   
                 {
                 closestPlane = cutPlane;
                 closestPlaneXDir = cutPlaneXDir;
@@ -102,21 +102,21 @@ DPlane3d SectioningViewController::GetForemostCutPlane() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClipVectorPtr SectioningViewController::GetClipVectorInternal (ClipVolumePass pass) const
+ClipVectorPtr SectioningViewController::GetClipVectorInternal(ClipVolumePass pass) const
     {
     if (!m_clip.IsValid())
         return NULL;
 
-    DRange3d range (_GetProjectExtents());
+    DRange3d range(_GetProjectExtents());
 
     ClipVectorPtr insideForward;
-    m_clip->GetClipBoundary (insideForward, range, pass, /*displayCutGeometry*/true);
+    m_clip->GetClipBoundary(insideForward, range, pass, /*displayCutGeometry*/true);
     if (!insideForward.IsValid())
         return insideForward;
 
     Transform   auxTransform;
-    if (m_clip->GetAuxTransform (auxTransform, pass))
-        insideForward->TransformInPlace (auxTransform);
+    if (m_clip->GetAuxTransform(auxTransform, pass))
+        insideForward->TransformInPlace(auxTransform);
 
     return insideForward;
     }
@@ -126,29 +126,29 @@ ClipVectorPtr SectioningViewController::_GetClipVector() const {return ClipVecto
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      03/14
 //---------------------------------------------------------------------------------------
-void SectioningViewController::_SaveToSettings (JsonValueR val) const
+void SectioningViewController::_SaveToSettings(JsonValueR val) const
     {
     T_Super::_SaveToSettings(val);
 
     if (m_clip.IsValid())
-        IViewClipObject::Factory::ToJson (val["dgn_SectioningView_clip"], *m_clip);
+        IViewClipObject::Factory::ToJson(val["dgn_SectioningView_clip"], *m_clip);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      03/14
 //---------------------------------------------------------------------------------------
-void SectioningViewController::_RestoreFromSettings (JsonValueCR val) 
+void SectioningViewController::_RestoreFromSettings(JsonValueCR val) 
     {
     T_Super::_RestoreFromSettings(val);
-    m_clip = IViewClipObject::Factory::FromJson (val["dgn_SectioningView_clip"]);
+    m_clip = IViewClipObject::Factory::FromJson(val["dgn_SectioningView_clip"]);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnModel* fillModel (DgnDbR project, DgnModelId mid)
+static DgnModelPtr fillModel(DgnDbR project, DgnModelId mid)
     {
-    auto model = project.Models().GetModel (mid);
+    DgnModelPtr model = project.Models().GetModel(mid);
     if (model == NULL)
         return NULL;
 
@@ -159,49 +159,49 @@ static DgnModel* fillModel (DgnDbR project, DgnModelId mid)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SectioningViewController::DrawViewInternal (ViewContextR context)
+void SectioningViewController::DrawViewInternal(ViewContextR context)
     {
     for (auto modelId : m_viewedModels)
         {
-        auto model = fillModel (context.GetDgnDb(), modelId);
+        auto model = fillModel(context.GetDgnDb(), modelId);
         if (model != NULL)
-            context.VisitDgnModel (model);
+            context.VisitDgnModel(model.get());
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SectioningViewController::_DrawView (ViewContextR context)
+void SectioningViewController::_DrawView(ViewContextR context)
     {
     //  Draw the stuff inside the clip
-    ClipVectorPtr insideForward = GetClipVectorInternal (m_pass = ClipVolumePass::InsideForward);
+    ClipVectorPtr insideForward = GetClipVectorInternal(m_pass = ClipVolumePass::InsideForward);
     if (!insideForward.IsValid())
         {
-        DrawViewInternal (context);
+        DrawViewInternal(context);
         return;
         }
 
     context.PushClip(*insideForward);
-    DrawViewInternal (context);
+    DrawViewInternal(context);
     context.PopTransformClip();
 
     //  Draw the clip planes themselves
-    m_clip->Draw (context);
+    m_clip->Draw(context);
     
     //  Draw the stuff outside of the clip
-    context.PushClip(*GetClipVectorInternal (m_pass = ClipVolumePass::InsideBackward));
-    SetOverrideMatSymb (context);
-    DrawViewInternal (context);
+    context.PushClip(*GetClipVectorInternal(m_pass = ClipVolumePass::InsideBackward));
+    SetOverrideMatSymb(context);
+    DrawViewInternal(context);
     context.PopTransformClip();
 
-    context.PushClip(*GetClipVectorInternal (m_pass = ClipVolumePass::Outside));
-    SetOverrideMatSymb (context);
-    DrawViewInternal (context);
+    context.PushClip(*GetClipVectorInternal(m_pass = ClipVolumePass::Outside));
+    SetOverrideMatSymb(context);
+    DrawViewInternal(context);
     context.PopTransformClip();
 
     context.GetOverrideMatSymb()->Clear();
-    context.GetIDrawGeom ().ActivateOverrideMatSymb (context.GetOverrideMatSymb());
+    context.GetIDrawGeom().ActivateOverrideMatSymb(context.GetOverrideMatSymb());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -222,7 +222,7 @@ void SectioningViewController::_DrawElement(ViewContextR context, GeometricEleme
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SectioningViewController::SetOverrideMatSymb (ViewContextR context) const
+void SectioningViewController::SetOverrideMatSymb(ViewContextR context) const
     {
     if (m_pass == ClipVolumePass::InsideForward)
         return;
@@ -233,9 +233,9 @@ void SectioningViewController::SetOverrideMatSymb (ViewContextR context) const
 
     OvrMatSymbP overrideMatSymb = context.GetOverrideMatSymb();
     overrideMatSymb->Clear();
-    overrideMatSymb->SetLineColor (color);
-    overrideMatSymb->SetFillColor (color);
-    overrideMatSymb->SetFlags (overrideMatSymb->GetFlags() | MATSYMB_OVERRIDE_FillColorTransparency);
-    overrideMatSymb->SetWidth (0);
-    context.GetIDrawGeom ().ActivateOverrideMatSymb (overrideMatSymb);
+    overrideMatSymb->SetLineColor(color);
+    overrideMatSymb->SetFillColor(color);
+    overrideMatSymb->SetFlags(overrideMatSymb->GetFlags() | MATSYMB_OVERRIDE_FillColorTransparency);
+    overrideMatSymb->SetWidth(0);
+    context.GetIDrawGeom().ActivateOverrideMatSymb(overrideMatSymb);
     }
