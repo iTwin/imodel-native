@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+  <edmx:Designer>
+    <edmx:Diagrams>
+      <edmx:Diagram DiagramId="ea3d4ce0737a4134a371835f7a73f4e7" Name="Diagram1" ZoomLevel="100">
+        <edmx:EntityTypeShape EntityType="Bentley.RealityPlatform.RealityCrawlerDB.Server" Width="2" PointX="0.5" PointY="1.125" IsExpanded="true" FillColor="OliveDrab" />
+        <edmx:EntityTypeShape EntityType="Bentley.RealityPlatform.RealityCrawlerDB.WMSServerExtendedProperties" Width="2.25" PointX="3.25" PointY="1.125" IsExpanded="true" />
+        <edmx:EntityTypeShape EntityType="Bentley.RealityPlatform.RealityCrawlerDB.WMSServerData" Width="2.75" PointX="6.125" PointY="1.125" IsExpanded="true" />
+        <edmx:AssociationConnector Association="Bentley.RealityPlatform.RealityCrawlerDB.ServerWMSServerExtendedProperties" ManuallyRouted="false" />
+        <edmx:AssociationConnector Association="Bentley.RealityPlatform.RealityCrawlerDB.WMSServerExtendedPropertiesWMSData" ManuallyRouted="false" />
+        <edmx:AssociationConnector Association="Bentley.RealityPlatform.RealityCrawlerDB.WMSDataWMSData" ManuallyRouted="false" />
+      </edmx:Diagram>
+    </edmx:Diagrams>
+  </edmx:Designer>
+</edmx:Edmx>
