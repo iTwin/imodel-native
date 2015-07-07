@@ -442,7 +442,7 @@ void test_shared_ptr_in_collections ()
 enum class EnumClassColor;  // forward declare enum class
 extern void somefunction (int a, EnumClassColor b);
 
-enum struct StrongTypeEnumeration 
+enum class StrongTypeEnumeration 
     {
     Val1,
     Val2,
