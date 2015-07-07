@@ -175,7 +175,6 @@ DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_mode
     m_rangeIndex = nullptr;
     m_persistent = false;
     m_filled     = false;
-    m_readonly   = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -459,7 +458,7 @@ void DgnModel::_OnLoadedElement(DgnElementCR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_OnInsertElement(DgnElementR element)
     {
-    return m_readonly ? DgnDbStatus::ReadOnly : DgnDbStatus::Success;
+    return m_dgndb.IsReadonly() ? DgnDbStatus::ReadOnly : DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -475,7 +474,7 @@ void DgnModel::_OnInsertedElement(DgnElementCR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_OnDeleteElement(DgnElementCR element)
     {
-    return m_readonly ? DgnDbStatus::ReadOnly : DgnDbStatus::Success;
+    return m_dgndb.IsReadonly() ? DgnDbStatus::ReadOnly : DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -493,7 +492,7 @@ void DgnModel::_OnDeletedElement(DgnElementCR element)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_OnUpdateElement(DgnElementCR modified, DgnElementCR original)
     {
-    return IsReadOnly() ? DgnDbStatus::ReadOnly : DgnDbStatus::Success;
+    return m_dgndb.IsReadonly() ? DgnDbStatus::ReadOnly : DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -600,8 +599,6 @@ DgnDbStatus DgnModel::_OnInsert()
 
     return DgnDbStatus::Success;
     }
-
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
@@ -864,7 +861,6 @@ void DgnModel::_FillModel()
             stmt.GetValueId<DgnElementId>(Column::ParentId)), true);
         }
 
-    SetReadOnly(m_dgndb.IsReadonly());
     CallAppData(FilledCaller());
     }
 

@@ -452,7 +452,7 @@ void ViewController::OverrideSubCategory(DgnSubCategoryId id, DgnCategories::Sub
         }
 
     // now apply this override to the unmodified SubCategory appearance
-    auto const& it = m_subCategories.find(id);
+    auto it = m_subCategories.find(id);
     if (it != m_subCategories.end())
         ovr.ApplyTo(it->second);
     }

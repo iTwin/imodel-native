@@ -1,7 +1,10 @@
-//-------------------------------------------------------------------------------------- 
-//     $Source: PrivateApi/DgnPlatformInternal/DgnCore/Annotations/TextAnnotationSeedPersistence.h $
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
-//-------------------------------------------------------------------------------------- 
+/*--------------------------------------------------------------------------------------+
+|
+|  $Source: PrivateApi/DgnPlatformInternal/DgnCore/Annotations/TextAnnotationSeedPersistence.h $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 /*__BENTLEY_INTERNAL_ONLY__*/
 #pragma once
 
@@ -16,17 +19,16 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     07/2014
 //=======================================================================================
-struct TextAnnotationSeedPersistence : public NonCopyableClass
+struct TextAnnotationSeedPersistence : NonCopyableClass
 {
     //=======================================================================================
     // @bsiclass                                                    Jeff.Marker     07/2014
     //=======================================================================================
-    enum struct FlatBufEncodeOptions
+    enum class FlatBufEncodeOptions
     {
         ExcludeNonPropertyData = 1 << 0,
         Default = 0
-    
-    }; // FlatBufEncodeOptions
+    };
 
 private:
     TextAnnotationSeedPersistence(){}
@@ -37,8 +39,7 @@ public:
     
     static BentleyStatus DecodeFromFlatBuf(TextAnnotationSeedPropertyBagR, FB::TextAnnotationSeedSetterVector const&);
     static BentleyStatus DecodeFromFlatBuf(TextAnnotationSeedR, ByteCP, size_t numBytes);
-
-}; // TextAnnotationSeedPersistence
+};
 
 //! @endGroup
 
