@@ -116,7 +116,7 @@ struct GTestElementHandler : dgn_ElementHandler::Element
 
     DgnElementKey InsertElement(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
     {
-        DgnModelP model = db.Models().GetModel(mid);
+        DgnModelP model = db.Models().GetModel(mid).get();
         DgnElementPtr testElement = GTestElementHandler::Create(GTestElement::CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(),nullptr, elementCode));
         GeometricElementP geomElem = const_cast<GeometricElementP>(testElement->ToGeometricElement());
 
@@ -136,7 +136,7 @@ struct GTestElementHandler : dgn_ElementHandler::Element
 
     DgnElementKey InsertElementUsingGeomPart(DgnDbR db, Utf8CP gpCode, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
     {
-        DgnModelP model = db.Models().GetModel(mid);
+        DgnModelP model = db.Models().GetModel(mid).get();
         DgnElementPtr testElement = GTestElementHandler::Create(GTestElement::CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(),nullptr, elementCode));
         GeometricElementP geomElem = const_cast<GeometricElementP>(testElement->ToGeometricElement());
 
@@ -250,7 +250,7 @@ void SetupProject(WCharCP projFile, WCharCP testFile, BeSQLite::Db::OpenMode mod
     ASSERT_NE(nullptr, m_db->Schemas().GetECClass(TMTEST_SCHEMA_NAME, TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME));
 
     m_defaultModelId = m_db->Models().QueryFirstModelId();
-    DgnModelP defaultModel = m_db->Models().GetModel(m_defaultModelId);
+    DgnModelP defaultModel = m_db->Models().GetModel(m_defaultModelId).get();
     ASSERT_NE(nullptr, defaultModel);
     GetDefaultModel().FillModel();
 
@@ -309,7 +309,7 @@ TEST_F(ElementGeometryBuilderTests, GeomPartWithoutCode)
 
     EXPECT_EQ(SUCCESS, m_db->GeomParts().InsertGeomPart(*geomPartPtr));
 
-    DgnGeomPartId existingPartId = m_db->GeomParts().QueryGeomPartId(geomPartPtr->GetCode());
+    DgnGeomPartId existingPartId = m_db->GeomParts().QueryGeomPartId("");
     EXPECT_TRUE(existingPartId.IsValid());
 
     auto key1 = GTestElementHandler::GetHandler().InsertElementUsingGeomPart(*m_db, geomPartPtr->GetCode(), m_defaultModelId, m_defaultCategoryId, "Test");
