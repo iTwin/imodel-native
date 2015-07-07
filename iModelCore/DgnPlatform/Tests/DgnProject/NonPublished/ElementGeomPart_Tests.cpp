@@ -116,7 +116,7 @@ struct GTestElementHandler : dgn_ElementHandler::Element
 
     DgnElementKey InsertElement(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
     {
-        DgnModelP model = db.Models().GetModel(mid).get();
+     
         DgnElementPtr testElement = GTestElementHandler::Create(GTestElement::CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(),nullptr, elementCode));
         GeometricElementP geomElem = const_cast<GeometricElementP>(testElement->ToGeometricElement());
 
