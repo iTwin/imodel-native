@@ -43,10 +43,6 @@ DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(TMTEST_SCHEMA_NAME, "
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
 {
-    DgnModelP model = db.Models().GetModel(mid).get();
-    if (model == NULL)
-        return nullptr;
-
     TestElementPtr testElement = new TestElement(CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId));
 
     static const double PLANE_LEN = 100;
@@ -64,10 +60,6 @@ TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId cate
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestElementPtr TestElement::Create(DgnDbR db, ElemDisplayParamsCR ep, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
 {
-    DgnModelP model = db.Models().GetModel(mid).get();
-    if (model == NULL)
-        return nullptr;
-
     TestElementPtr testElement = new TestElement(CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId));
 
     static const double PLANE_LEN = 100;
