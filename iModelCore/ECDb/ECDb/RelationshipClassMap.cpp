@@ -657,7 +657,7 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd (bool isUniqueIndex
 
     // Setup name of the index
     Utf8String name = "idx_ECRel_";
-    if (GetMapStrategy ().GetStrategy() == MapStrategy::ForeignKeyRelationshipInSourceTable)
+    if (GetMapStrategy ().GetStrategy() == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable)
         name.append("Source_");
     else
         name.append("Target_");
@@ -669,14 +669,9 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd (bool isUniqueIndex
     if (existingIndex)
         {
         if (&existingIndex->GetTable () == &GetTable ())
-            {
             return;
-            }
-        else
-            {
-            BeAssert (false && "Index with same name exist on a different table");
-            }
 
+        BeAssert (false && "Index with same name exist on a different table");
         return;
         }
 
@@ -780,7 +775,7 @@ PropertyMapCP RelationshipClassEndTableMap::GetOtherEndECClassIdPropMap () const
 //+---------------+---------------+---------------+---------------+---------------+------
 ECN::ECRelationshipEnd RelationshipClassEndTableMap::GetThisEnd() const
     {
-    return GetMapStrategy ().GetStrategy() == MapStrategy::ForeignKeyRelationshipInSourceTable ? ECRelationshipEnd_Source : ECRelationshipEnd_Target;
+    return GetMapStrategy ().GetStrategy() == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable ? ECRelationshipEnd_Source : ECRelationshipEnd_Target;
     }
 
 //---------------------------------------------------------------------------------------
@@ -796,7 +791,7 @@ ECN::ECRelationshipEnd RelationshipClassEndTableMap::GetOtherEnd () const
 //+---------------+---------------+---------------+---------------+---------------+------
 RelationshipEndColumns const& RelationshipClassEndTableMap::GetEndColumnsMapping(RelationshipMapInfo const& info) const
     {
-    BeAssert(GetThisEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? info.GetMapStrategy().GetStrategy() == MapStrategy::ForeignKeyRelationshipInSourceTable : info.GetMapStrategy().GetStrategy() == MapStrategy::ForeignKeyRelationshipInTargetTable);
+    BeAssert(GetThisEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? info.GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable : info.GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable);
     return RelationshipClassMap::GetEndColumnsMapping(info, GetThisEnd());
     }
 
@@ -860,7 +855,7 @@ BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(ECDbSqlColum
     if (keyPropertyMap == nullptr || keyPropertyMap->IsUnmapped() || keyPropertyMap->IsVirtual())
         {
         WString error;
-        error.Sprintf(L"Key property '%ls' does not exist or ist not mapped.", foundPropName->c_str());
+        error.Sprintf(L"Key property '%ls' does not exist or is not mapped.", foundPropName->c_str());
         LogKeyPropertyRetrievalError(error.c_str(), relClass, constraintEnd);
         return ERROR;
         }
@@ -1219,7 +1214,7 @@ bool RelationshipClassLinkTableMap::GetConstraintECInstanceIdColumnName (Utf8Str
     if (table.FindColumnCP (columnName.c_str()) == nullptr)
         return true;
 
-    if (GetMapStrategy().GetStrategy() == MapStrategy::SharedTable)
+    if (GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::SharedTable)
         return true;
 		
     //Following error occure in Upgrading ECSchema but is not fatal.
@@ -1239,7 +1234,7 @@ bool RelationshipClassLinkTableMap::GetConstraintECClassIdColumnName (Utf8String
     if (table.FindColumnCP (columnName.c_str ()) == nullptr)
         return true;
 
-    if (GetMapStrategy().GetStrategy() == MapStrategy::SharedTable)
+    if (GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::SharedTable)
         return true;
 
     //Following error occure in Upgrading ECSchema but is not fatal.

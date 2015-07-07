@@ -197,9 +197,9 @@ bool MapStrategyRule::_ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecC
     if (ECDbMapCustomAttributeHelper::TryGetClassMap(customClassMap, ecClass))
         {
         ECDbClassMap::MapStrategy mapStrategyCA;
-        ECDbMapStrategy strat;
+        UserECDbMapStrategy strat;
         if (ECOBJECTS_STATUS_Success != customClassMap.TryGetMapStrategy(mapStrategyCA) ||
-            SUCCESS != ECDbMapStrategy::TryParse(strat, mapStrategyCA))
+            SUCCESS != UserECDbMapStrategy::TryParse(strat, mapStrategyCA))
             {
             m_error->AddClassWithInvalidMapStrategy(ecClass);
             return false;

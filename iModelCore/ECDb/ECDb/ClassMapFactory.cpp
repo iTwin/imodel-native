@@ -106,7 +106,7 @@ ClassMapPtr ClassMapFactory::Create (MapStatus& mapStatus, SchemaImportContext c
 
     BeAssert (ecdbMap.GetClassMap (ecClass, false) == nullptr);
 
-    auto classMapInfo = ClassMapInfoFactory::Create (mapStatus, schemaImportContext, ecClass, ecdbMap);
+    std::unique_ptr<ClassMapInfo> classMapInfo = ClassMapInfoFactory::Create (mapStatus, schemaImportContext, ecClass, ecdbMap);
     if (classMapInfo == nullptr)
         return nullptr;
 
@@ -120,8 +120,7 @@ ClassMapPtr ClassMapFactory::CreateInstance (MapStatus& mapStatus, ClassMapInfo 
     {
     auto const& ecClass = mapInfo.GetECClass();
     auto const& ecdbMap = mapInfo.GetECDbMap();
-    const auto mapStrategy = mapInfo.GetMapStrategy();
-    BeAssert (mapStrategy.GetStrategy() != MapStrategy::None);
+    ECDbMapStrategy const& mapStrategy = mapInfo.GetMapStrategy();
 
     ClassMapPtr classMap = nullptr;
     if (mapStrategy.IsNotMapped())

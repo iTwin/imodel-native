@@ -25,10 +25,10 @@ private:
     ClassMapInfoFactory ();
     ~ClassMapInfoFactory ();
 
-    static std::shared_ptr<ClassMapInfo> Create(MapStatus&, ECN::ECClassCR, ECDbMapCR);
+    static std::unique_ptr<ClassMapInfo> Create(MapStatus&, ECN::ECClassCR, ECDbMapCR);
 
 public:
-    static std::shared_ptr<ClassMapInfo> Create(MapStatus&, SchemaImportContext const&, ECN::ECClassCR, ECDbMapCR);
+    static std::unique_ptr<ClassMapInfo> Create(MapStatus&, SchemaImportContext const&, ECN::ECClassCR, ECDbMapCR);
     };
 
 //======================================================================================
@@ -47,20 +47,22 @@ private:
     IClassMap const* m_parentClassMap;
     bool m_isMapToVirtualTable;
     ECN::ECPropertyCP m_classHasCurrentTimeStampProperty;
-    ECDbMapStrategy m_strategy;
 
 protected:
     ECDbMapCR m_ecdbMap;
     ECN::ECClassCR m_ecClass;
+    ECDbMapStrategy m_resolvedStrategy;
 
 private:
     BentleyStatus InitializeFromClassMapCA ();
     BentleyStatus InitializeFromClassHasCurrentTimeStampProperty();
 
     bool ValidateBaseClasses () const;
-    MapStatus DoEvaluateMapStrategy ();
+    MapStatus DoEvaluateMapStrategy(UserECDbMapStrategy const&);
 
     bool GatherBaseClassMaps (bvector<IClassMap const*>& baseClassMaps, bvector<IClassMap const*>& tphMaps, bvector<IClassMap const*>& tpcMaps, bvector<IClassMap const*>& nmhMaps, ECN::ECClassCR ecClass) const;
+
+    static bool IsValidChildStrategy(ECDbMapStrategy const& parentResolvedStrategy, UserECDbMapStrategy const& childStrategy);
 
     BentleyStatus ProcessStandardKeys(ECN::ECClassCR ecClass, WCharCP customAttributeName);
     static Utf8String ResolveTablePrefix (ECN::ECClassCR ecClass);
@@ -78,10 +80,9 @@ public:
     virtual ~ClassMapInfo() {}
 
     ECN::ECPropertyCP GetClassHasCurrentTimeStampProperty() const { return m_classHasCurrentTimeStampProperty; }
-    virtual MapStatus _Initialize();
+    MapStatus Initialize();
 
-    ECDbMapStrategy const& GetMapStrategy () const{ return m_strategy; }
-    ECDbMapStrategy& GetMapStrategyR (){ return m_strategy; }
+    ECDbMapStrategy const& GetMapStrategy () const{ return m_resolvedStrategy; }
 
     ECDbMapCR GetECDbMap() const {return m_ecdbMap;}
     ECN::ECClassCR GetECClass() const {return m_ecClass;}
@@ -89,12 +90,11 @@ public:
     Utf8CP GetTableName() const {return m_tableName.c_str();}
     Utf8CP GetECInstanceIdColumnName() const {return m_ecInstanceIdColumnName.c_str();}
     IClassMap const* GetParentClassMap () const { return m_parentClassMap; }
-    void SetParentClassMap (IClassMap const* parentClassMap) { m_parentClassMap = parentClassMap; }
     bvector<StandardKeySpecificationPtr>const& GetStandardKeys() const {return m_standardKeys;}
 
     //! Virtual tables are not persisted   
     bool IsMapToVirtualTable () const { return m_isMapToVirtualTable; }
-    void RestoreSaveSettings (ECDbMapStrategy mapStrategy, Utf8CP tableName){ m_strategy = mapStrategy; if (tableName != nullptr) m_tableName = tableName; }
+    void RestoreSaveSettings (ECDbMapStrategy mapStrategy, Utf8CP tableName){ m_resolvedStrategy = mapStrategy; if (tableName != nullptr) m_tableName = tableName; }
     };
 
 
@@ -157,8 +157,8 @@ private:
     void DetermineCardinality();
     bool VerifyRelatedClasses() const;
 
-    bool TryDetermine11RelationshipMapStrategy(MapStrategy&, ECN::ECRelationshipConstraintR source, ECN::ECRelationshipConstraintR target, ECN::ECRelationshipClassCR relationshipClass) const;
-    bool TryDetermine1MRelationshipMapStrategy(MapStrategy&, ECN::ECRelationshipConstraintR source, ECN::ECRelationshipConstraintR target, ECN::ECRelationshipClassCR relationshipClass) const;
+    bool TryDetermine11RelationshipMapStrategy(ECDbMapStrategy::Strategy&, ECN::ECRelationshipConstraintR source, ECN::ECRelationshipConstraintR target, ECN::ECRelationshipClassCR relationshipClass) const;
+    bool TryDetermine1MRelationshipMapStrategy(ECDbMapStrategy::Strategy&, ECN::ECRelationshipConstraintR source, ECN::ECRelationshipConstraintR target, ECN::ECRelationshipClassCR relationshipClass) const;
     static bool ContainsRelationshipClass(std::vector<ECN::ECClassCP> const& endClasses);
 
 public:
@@ -169,13 +169,12 @@ public:
         {}
 
     virtual ~RelationshipMapInfo() {}
-    virtual MapStatus _Initialize() override;
 
     Cardinality GetCardinality() const { return m_cardinality; }
-    RelationshipEndColumns const& GetSourceColumnsMapping() const { BeAssert(m_customMapType != CustomMapType::ForeignKeyOnTarget && GetMapStrategy().GetStrategy() != MapStrategy::ForeignKeyRelationshipInTargetTable); return m_sourceColumnsMapping; }
-    RelationshipEndColumns const& GetTargetColumnsMapping() const { BeAssert(m_customMapType != CustomMapType::ForeignKeyOnSource && GetMapStrategy().GetStrategy() != MapStrategy::ForeignKeyRelationshipInSourceTable); return m_targetColumnsMapping; }
-    bool AllowDuplicateRelationships() const { BeAssert((m_customMapType == CustomMapType::LinkTable || m_customMapType == CustomMapType::None) && !GetMapStrategy().IsForeignKeyMapping()); return m_allowDuplicateRelationships; }
-    bool IsCreateForeignKeyConstraint() const { BeAssert(m_customMapType != CustomMapType::LinkTable && GetMapStrategy().IsForeignKeyMapping()); return m_onDeleteAction != ECDbSqlForeignKeyConstraint::ActionType::NotSpecified || m_onUpdateAction != ECDbSqlForeignKeyConstraint::ActionType::NotSpecified; }
+    RelationshipEndColumns const& GetSourceColumnsMapping() const { BeAssert(m_customMapType != CustomMapType::ForeignKeyOnTarget && m_resolvedStrategy.GetStrategy() != ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable); return m_sourceColumnsMapping; }
+    RelationshipEndColumns const& GetTargetColumnsMapping() const { BeAssert(m_customMapType != CustomMapType::ForeignKeyOnSource && m_resolvedStrategy.GetStrategy() != ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable); return m_targetColumnsMapping; }
+    bool AllowDuplicateRelationships() const { BeAssert((m_customMapType == CustomMapType::LinkTable || m_customMapType == CustomMapType::None) && !m_resolvedStrategy.IsForeignKeyMapping()); return m_allowDuplicateRelationships; }
+    bool IsCreateForeignKeyConstraint() const { BeAssert(m_customMapType != CustomMapType::LinkTable && m_resolvedStrategy.IsForeignKeyMapping()); return m_onDeleteAction != ECDbSqlForeignKeyConstraint::ActionType::NotSpecified || m_onUpdateAction != ECDbSqlForeignKeyConstraint::ActionType::NotSpecified; }
     ECDbSqlForeignKeyConstraint::ActionType GetOnDeleteAction() const { BeAssert(IsCreateForeignKeyConstraint()); return m_onDeleteAction; }
     ECDbSqlForeignKeyConstraint::ActionType GetOnUpdateAction() const { BeAssert(IsCreateForeignKeyConstraint()); return m_onUpdateAction; }
     };

@@ -853,6 +853,41 @@ DbResult ECDbMap::Save()
 //************************************************************************************
 // ECDbMap::MapContext
 //************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle   07/2015
+//---------------------------------------------------------------------------------------
+UserECDbMapStrategy const* ECDbMap::MapContext::GetUserStrategy(ECClassCR ecclass, ECDbClassMap const* classMapCA) const
+    {
+    auto it = m_userStrategyCache.find(&ecclass);
+    if (it != m_userStrategyCache.end())
+        return it->second.get();
+
+    bool hasClassMapCA = true;
+    ECDbClassMap classMap;
+    if (classMapCA == nullptr)
+        {
+        hasClassMapCA = ECDbMapCustomAttributeHelper::TryGetClassMap(classMap, ecclass);
+        classMapCA = &classMap;
+        }
+
+    std::unique_ptr<UserECDbMapStrategy> userStrategy = std::unique_ptr<UserECDbMapStrategy>(new UserECDbMapStrategy());
+
+    if (hasClassMapCA)
+        {
+        ECDbClassMap::MapStrategy strategy;
+        if (ECOBJECTS_STATUS_Success != classMapCA->TryGetMapStrategy(strategy))
+            return nullptr; // error
+
+        if (SUCCESS != UserECDbMapStrategy::TryParse(*userStrategy, strategy) || !userStrategy->IsValid())
+            return nullptr; // error
+        }
+
+    UserECDbMapStrategy const* userStrategyCP = userStrategy.get();
+    m_userStrategyCache[&ecclass] = std::move(userStrategy);
+    return userStrategyCP;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   05/2015
 //---------------------------------------------------------------------------------------

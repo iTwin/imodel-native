@@ -636,8 +636,6 @@ TEST_F(ECDbMapCATests, PolymorphicSharedTable_SharedColumns_DisableSharedColumns
     ASSERT_EQ (s5.Prepare (db, "INSERT INTO rc.DerivedB (P1, P2, P5) VALUES('DerivedB', 11.003, 'DerivedB')"), ECSqlStatus::Success);
     ASSERT_EQ (s5.Step (), ECSqlStepStatus::Done);
 
-    //TODO: disable shared column currently applies to subclasses too. This needs to be fixed.
-    /*
     //verify No of Columns in BaseClass
     const int expectedColCount = 5;
     Statement statement;
@@ -652,7 +650,7 @@ TEST_F(ECDbMapCATests, PolymorphicSharedTable_SharedColumns_DisableSharedColumns
         {
         actualColumnNames.append (statement.GetColumnName (i));
         }
-    ASSERT_STREQ (expectedColumnNames.c_str(), actualColumnNames.c_str());*/
+    ASSERT_STREQ (expectedColumnNames.c_str(), actualColumnNames.c_str());
     }
 
 //---------------------------------------------------------------------------------------
