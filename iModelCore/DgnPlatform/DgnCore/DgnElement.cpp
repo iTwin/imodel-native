@@ -40,7 +40,7 @@ void DgnElement::Release() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelP DgnElement::GetModel() const
+DgnModelPtr DgnElement::GetModel() const
     {
     return m_dgndb.Models().GetModel(m_modelId);
     }
@@ -313,8 +313,8 @@ void DgnElement::_OnDeleted() const
     {
     CallAppData(OnDeletedCaller());
     GetDgnDb().Elements().DropFromPool(*this);
-    DgnModelP model = GetModel();
-    if (model)
+    DgnModelPtr model = GetModel();
+    if (model.IsValid())
         model->_OnDeletedElement(*this);
     }
 
@@ -932,6 +932,29 @@ DgnDbStatus ElementGroup::DeleteMember(DgnElementCR member) const
         return DgnDbStatus::BadRequest;
 
     _OnMemberDeleted(member); // notify subclass that member was deleted
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ElementGroup::DeleteAllMembers() const
+    {
+    DgnElementIdSet memberIds = QueryMembers();
+    for (DgnElementId memberId : memberIds)
+        {
+        DgnElementCPtr member = GetDgnDb().Elements().GetElement(memberId);
+        if (!member.IsValid())
+            {
+            BeAssert(false); // indicates an orphaned relationship
+            continue;
+            }
+
+        DgnDbStatus deleteMemberStatus = DeleteMember(*member);
+        if (DgnDbStatus::Success != deleteMemberStatus)
+            return deleteMemberStatus;
+        }
+
     return DgnDbStatus::Success;
     }
 

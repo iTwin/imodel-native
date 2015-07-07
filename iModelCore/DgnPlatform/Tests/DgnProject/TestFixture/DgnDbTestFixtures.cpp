@@ -15,15 +15,14 @@ DOMAIN_DEFINE_MEMBERS(DgnPlatformTestDomain)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
-static CurveVectorPtr computeShape()
+static CurveVectorPtr computeShape(double len)
 {
-    static const double PLANE_LEN = 100;
 
     DPoint3d pts[6];
-    pts[0] = DPoint3d::From(-PLANE_LEN, -PLANE_LEN);
-    pts[1] = DPoint3d::From(+PLANE_LEN, -PLANE_LEN);
-    pts[2] = DPoint3d::From(+PLANE_LEN, +PLANE_LEN);
-    pts[3] = DPoint3d::From(-PLANE_LEN, +PLANE_LEN);
+    pts[0] = DPoint3d::From(-len, -len);
+    pts[1] = DPoint3d::From(+len, -len);
+    pts[2] = DPoint3d::From(+len, +len);
+    pts[3] = DPoint3d::From(-len, +len);
     pts[4] = pts[0];
     pts[5] = pts[0];
     pts[5].z = 1;
@@ -40,58 +39,136 @@ DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(TMTEST_SCHEMA_NAME, "
 }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Majd.Uddin      05/15
+* @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECN::ECClassCP TestElementHandler::GetTestElementECClass(DgnDbR db)
+TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
 {
-    return db.Schemas().GetECClass(TMTEST_SCHEMA_NAME, TMTEST_TEST_ELEMENT_CLASS_NAME);
+    TestElementPtr testElement = new TestElement(CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId));
+
+    static const double PLANE_LEN = 100;
+    //  Add some hard-wired geometry
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*testElement);
+    EXPECT_TRUE(builder->Append(*computeShape(PLANE_LEN)));
+    if (SUCCESS != builder->SetGeomStreamAndPlacement(*testElement))
+        return nullptr;
+
+    return testElement;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Majd.Uddin    06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TestElementPtr TestElement::Create(DgnDbR db, ElemDisplayParamsCR ep, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
+{
+    TestElementPtr testElement = new TestElement(CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId));
+
+    static const double PLANE_LEN = 100;
+    //  Add some hard-wired geometry
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*testElement);
+    EXPECT_TRUE(builder->Append(ep));
+    EXPECT_TRUE(builder->Append(*computeShape(PLANE_LEN)));
+    if (SUCCESS != builder->SetGeomStreamAndPlacement(*testElement))
+        return nullptr;
+
+    return testElement;
+}
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TestElement::_InsertInDb()
+{
+    DgnDbStatus status = T_Super::_InsertInDb();
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    CachedECSqlStatementPtr insertStmt = GetDgnDb().GetPreparedECSqlStatement("INSERT INTO " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME "(ECInstanceId," TMTEST_TEST_ITEM_TestItemProperty ") VALUES(?,?)");
+    insertStmt->BindId(1, GetElementId());
+    insertStmt->BindText(2, m_testItemProperty.c_str(), IECSqlBinder::MakeCopy::No);
+    if (ECSqlStepStatus::Done != insertStmt->Step())
+        return DgnDbStatus::ElementWriteError;
+
+    return DgnDbStatus::Success;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Majd.Uddin      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TestElement::_UpdateInDb()
+{
+    DgnDbStatus status = T_Super::_UpdateInDb();
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    Utf8String stmt("UPDATE " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME);
+    stmt.append(" SET " TMTEST_TEST_ITEM_TestItemProperty "=? WHERE ECInstanceId = ?;");
+
+    CachedECSqlStatementPtr upStmt = GetDgnDb().GetPreparedECSqlStatement(stmt.c_str());
+    if (upStmt.IsNull())
+        return DgnDbStatus::SQLiteError;
+    if (upStmt->BindId(2, GetElementId()) != ECSqlStatus::Success)
+        return DgnDbStatus::SQLiteError;
+    if (upStmt->BindText(1, ECN::ECValue(m_testItemProperty.c_str()).GetUtf8CP(), BeSQLite::EC::IECSqlBinder::MakeCopy::No) != ECSqlStatus::Success)
+        return DgnDbStatus::SQLiteError;
+    if (upStmt->Step() != BeSQLite::EC::ECSqlStepStatus::Done)
+        return DgnDbStatus::ElementWriteError;
+
+    return DgnDbStatus::Success;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Majd.Uddin      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TestElement::_DeleteInDb() const
+{
+    DgnDbStatus status = T_Super::_DeleteInDb();
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    Utf8String stmt("DELETE FROM " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME);
+    stmt.append(" WHERE ECInstanceId = ?;");
+
+    CachedECSqlStatementPtr delStmt = GetDgnDb().GetPreparedECSqlStatement(stmt.c_str());
+    if (delStmt.IsNull())
+        return DgnDbStatus::SQLiteError;
+    if (delStmt->BindId(1, GetElementId()) != ECSqlStatus::Success)
+        return DgnDbStatus::SQLiteError;
+    if (delStmt->Step() != BeSQLite::EC::ECSqlStepStatus::Done)
+        return DgnDbStatus::ElementWriteError;
+
+    return DgnDbStatus::Success;
+
 }
 
 /*---------------------------------------------------------------------------------**//**
 * Inserts TestElement
 * @bsimethod                                     Majd.Uddin                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementKey TestElementHandler::InsertElement(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
+DgnElementCPtr DgnDbTestFixture::InsertElement(Utf8CP elementCode, DgnModelId mid, DgnCategoryId categoryId)
 {
-    DgnElementPtr testElement = TestElementHandler::Create(TestElement::CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), elementCode));
-    GeometricElementP geomElem = const_cast<GeometricElementP>(testElement->ToGeometricElement());
+    if (!mid.IsValid())
+        mid = m_defaultModelId;
 
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*geomElem);
+    if (!categoryId.IsValid())
+        categoryId = m_defaultCategoryId;
 
-    builder->Append(*computeShape());
-
-    if (SUCCESS != builder->SetGeomStreamAndPlacement(*geomElem))
-        return DgnElementKey();
-
-    return db.Elements().Insert(*testElement)->GetElementKey();
+    TestElementPtr el = TestElement::Create(*m_db, mid, categoryId, elementCode);
+    return m_db->Elements().Insert(*el);
 }
 
 /*---------------------------------------------------------------------------------**//**
 * Inserts TestElement with Display Properties
 * @bsimethod                                     Majd.Uddin                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementKey TestElementHandler::InsertElement(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode, ElemDisplayParamsCR ep)
+DgnElementCPtr DgnDbTestFixture::InsertElement(Utf8CP elementCode, ElemDisplayParamsCR ep, DgnModelId mid, DgnCategoryId categoryId)
 {
-    DgnElementPtr testElement = TestElementHandler::Create(TestElement::CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), elementCode));
-    GeometricElementP geomElem = const_cast<GeometricElementP>(testElement->ToGeometricElement());
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*geomElem);
-    
-    EXPECT_TRUE (builder->Append(ep));
-    EXPECT_TRUE (builder->Append(*computeShape()));
-    
-    if (SUCCESS != builder->SetGeomStreamAndPlacement(*geomElem))
-        return DgnElementKey();
-    
-    return db.Elements().Insert(*testElement)->GetElementKey();
-    
-}
+    if (!mid.IsValid())
+        mid = m_defaultModelId;
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                     Majd.Uddin                   06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestElementHandler::DeleteElement(DgnDbR db, DgnElementId eid)
-{
-    return db.Elements().Delete(eid);
+    if (!categoryId.IsValid())
+        categoryId = m_defaultCategoryId;
+
+    TestElementPtr el = TestElement::Create(*m_db, ep, mid, categoryId, elementCode);
+    return m_db->Elements().Insert(*el);
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -117,113 +194,10 @@ void DgnDbTestFixture::SetupProject(WCharCP baseProjFile, WCharCP testProjFile, 
 
     m_defaultModelId = m_db->Models().QueryFirstModelId();
     m_defaultModelP = m_db->Models().GetModel(m_defaultModelId);
-    ASSERT_NE(nullptr, m_defaultModelP);
+    ASSERT_TRUE(m_defaultModelP.IsValid());
     m_defaultModelP->FillModel();
 
     m_defaultCategoryId = m_db->Categories().MakeIterator().begin().GetCategoryId();
-}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson      01/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementKey DgnDbTestFixture::InsertElement(Utf8CP elementCode, DgnModelId mid, DgnCategoryId categoryId)
-{
-    if (!mid.IsValid())
-        mid = m_defaultModelId;
-
-    if (!categoryId.IsValid())
-        categoryId = m_defaultCategoryId;
-
-    return TestElementHandler::GetHandler().InsertElement(*m_db, mid, categoryId, elementCode);
-}
-
-/*---------------------------------------------------------------------------------**//**
-* Insert Element with Display Properties
-* @bsimethod                                    Majd.Uddin      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementKey DgnDbTestFixture::InsertElement(Utf8CP elementCode, ElemDisplayParamsCR ep, DgnModelId mid, DgnCategoryId categoryId)
-{
-    if (!mid.IsValid())
-        mid = m_defaultModelId;
-    
-    if (!categoryId.IsValid())
-        categoryId = m_defaultCategoryId;
-    
-    return TestElementHandler::GetHandler().InsertElement(*m_db, mid, categoryId, elementCode, ep);
-}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Majd.Uddin      05/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnDbTestFixture::InsertElementItem(DgnElementId id, WCharCP propValue)
-{
-    Utf8String stmt("INSERT INTO ");
-    stmt.append(TMTEST_SCHEMA_NAME);
-    stmt.append(".");
-    stmt.append(TMTEST_TEST_ITEM_CLASS_NAME);
-    stmt.append("(ECInstanceId, ");
-    stmt.append(TMTEST_TEST_ITEM_TestItemPropertyA);
-    stmt.append(") Values (?, ?);");
-
-    CachedECSqlStatementPtr insertStmt = m_db->GetPreparedECSqlStatement(stmt.c_str());
-    if (insertStmt.IsNull())
-        return false;
-    if (insertStmt->BindId(1, id) != ECSqlStatus::Success)
-        return false;
-    if (insertStmt->BindText(2, ECN::ECValue(propValue).GetUtf8CP(), BeSQLite::EC::IECSqlBinder::MakeCopy::No) != ECSqlStatus::Success)
-        return false;
-    if (insertStmt->Step() != BeSQLite::EC::ECSqlStepStatus::Done)
-        return false;
-
-    return true;
-}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Majd.Uddin      05/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnDbTestFixture::UpdateElementItem(DgnElementId id, WCharCP propValue)
-{
-    Utf8String stmt("UPDATE ");
-    stmt.append(TMTEST_SCHEMA_NAME);
-    stmt.append(".");
-    stmt.append(TMTEST_TEST_ITEM_CLASS_NAME);
-    stmt.append(" SET ");
-    stmt.append(TMTEST_TEST_ITEM_TestItemPropertyA);
-    stmt.append("=? WHERE ECInstanceId = ?;");
-
-    CachedECSqlStatementPtr upStmt = m_db->GetPreparedECSqlStatement(stmt.c_str());
-    if (upStmt.IsNull())
-        return false;
-    if (upStmt->BindId(2, id) != ECSqlStatus::Success)
-        return false;
-    if (upStmt->BindText(1, ECN::ECValue(propValue).GetUtf8CP(), BeSQLite::EC::IECSqlBinder::MakeCopy::No) != ECSqlStatus::Success)
-        return false;
-    if (upStmt->Step() != BeSQLite::EC::ECSqlStepStatus::Done)
-        return false;
-
-    return true;
-}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Majd.Uddin      05/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnDbTestFixture::DeleteElementItem(DgnElementId id)
-{
-    Utf8String stmt("DELETE FROM ");
-    stmt.append(TMTEST_SCHEMA_NAME);
-    stmt.append(".");
-    stmt.append(TMTEST_TEST_ITEM_CLASS_NAME);
-    stmt.append(" WHERE ECInstanceId = ?;");
-
-    CachedECSqlStatementPtr delStmt = m_db->GetPreparedECSqlStatement(stmt.c_str());
-    if (delStmt.IsNull())
-        return false;
-    if (delStmt->BindId(1, id) != ECSqlStatus::Success)
-        return false;
-    if (delStmt->Step() != BeSQLite::EC::ECSqlStepStatus::Done)
-        return false;
-
-    return true;
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -231,12 +205,7 @@ bool DgnDbTestFixture::DeleteElementItem(DgnElementId id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DgnDbTestFixture::SelectElementItem(DgnElementId id)
 {
-    Utf8String stmt("SELECT ");
-    stmt.append(TMTEST_TEST_ITEM_TestItemPropertyA);
-    stmt.append(" FROM ");
-    stmt.append(TMTEST_SCHEMA_NAME);
-    stmt.append(".");
-    stmt.append(TMTEST_TEST_ITEM_CLASS_NAME);
+    Utf8String stmt("SELECT " TMTEST_TEST_ITEM_TestItemProperty " FROM " TMTEST_SCHEMA_NAME "." TMTEST_TEST_ITEM_CLASS_NAME);
     stmt.append(" WHERE ECInstanceId = ?;");
 
     CachedECSqlStatementPtr selStmt = m_db->GetPreparedECSqlStatement(stmt.c_str());

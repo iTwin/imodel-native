@@ -642,11 +642,10 @@ public:
     DGNPLATFORM_EXPORT AppData* FindAppData(AppData::Key const& key) const;
     //! @}
 
-
     DgnModelId GetModelId() const {return m_modelId;}
 
     //! Get the DgnModel of this DgnElement.
-    DGNPLATFORM_EXPORT DgnModelP GetModel() const;
+    DGNPLATFORM_EXPORT DgnModelPtr GetModel() const;
 
     //! Get the DgnDb of this element.
     //! @note This is merely a shortcut for GetDgnModel().GetDgnDb().
@@ -1077,6 +1076,10 @@ public:
     //! @param[in] member The element to remove from this ElementGroup.
     //! @note This only affects the ElementGroupHasMembers ECRelationship (stored as a database link table).
     DGNPLATFORM_EXPORT DgnDbStatus DeleteMember(DgnElementCR member) const;
+
+    //! Deletes all ElementGroupHasMembers ECRelationships from this ElementGroup
+    //! @note This only affects the ElementGroupHasMembers ECRelationship (stored as a database link table).
+    DGNPLATFORM_EXPORT DgnDbStatus DeleteAllMembers() const;
 
     //! Query for the set of members of this ElementGroup
     //! @see QueryFromMember

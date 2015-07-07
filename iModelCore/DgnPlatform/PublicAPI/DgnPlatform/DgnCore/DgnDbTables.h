@@ -72,9 +72,6 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-//! Map of ID to DgnFont object. See method FontNumberMap.
-typedef bmap<uint32_t, DgnFontCP> T_FontNumberMap;
-
 namespace dgn_ElementHandler {struct Physical;};
 namespace dgn_TxnTable {struct Element; struct Model;};
 
@@ -670,7 +667,7 @@ private:
     bmap<DgnModelId,bpair<uint64_t,DgnModelType>> m_modelDependencyIndexAndType;
 
     void ClearLoaded();
-    DgnModelP LoadDgnModel(DgnModelId modelId);
+    DgnModelPtr LoadDgnModel(DgnModelId modelId);
     bool FreeQvCache();
     void Empty() {ClearLoaded(); FreeQvCache();}
     void AddLoadedModel(DgnModelR);
@@ -782,15 +779,15 @@ public:
     //! Load a DgnModel from this DgnDb. Loading a model does not cause its elements to be filled. Rather, it creates an
     //! instance of the appropriate model type. If the model is already loaded, a pointer to the existing DgnModel is returned.
     //! @param[in] modelId The Id of the model to load.
-    DGNPLATFORM_EXPORT DgnModelP GetModel(DgnModelId modelId);
+    DGNPLATFORM_EXPORT DgnModelPtr GetModel(DgnModelId modelId);
 
-    template<class T> T* Get(DgnModelId id) {return dynamic_cast<T*>(GetModel(id));}
+    template<class T> RefCountedPtr<T> Get(DgnModelId id) {return dynamic_cast<T*>(GetModel(id).get());}
 
     //! Query if the specified model has already been loaded.
     //! @return a pointer to the model if found, or nullptr if the model has not been loaded.
     //! @see GetLoadedModels
     //! @see LoadModelById
-    DGNPLATFORM_EXPORT DgnModelP FindModel(DgnModelId modelId);
+    DGNPLATFORM_EXPORT DgnModelPtr FindModel(DgnModelId modelId);
 
     //! Get the currently loaded DgnModels for this DgnDb
     T_DgnModelMap const& GetLoadedModels() const {return m_models;}

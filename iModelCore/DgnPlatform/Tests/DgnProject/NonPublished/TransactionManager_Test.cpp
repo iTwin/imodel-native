@@ -319,8 +319,8 @@ void TransactionManagerTests::SetupProject(WCharCP projFile, WCharCP testFile, D
     ASSERT_NE( nullptr ,  m_db->Schemas().GetECClass(TMTEST_SCHEMA_NAME, TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME) );
 
     m_defaultModelId = m_db->Models().QueryFirstModelId();
-    DgnModelP defaultModel = m_db->Models().GetModel(m_defaultModelId);
-    ASSERT_NE( nullptr , defaultModel );
+    DgnModelPtr defaultModel = m_db->Models().GetModel(m_defaultModelId);
+    ASSERT_TRUE(defaultModel.IsValid());
     GetDefaultModel().FillModel();
 
     m_defaultCategoryId = m_db->Categories().MakeIterator().begin().GetCategoryId();
@@ -598,10 +598,10 @@ TEST_F(TransactionManagerTests, StreetMapModel)
     auto newModelId = dgn_ModelHandler::StreetMap::CreateStreetMapModel(*m_db, dgn_ModelHandler::StreetMap::MapService::MapQuest, dgn_ModelHandler::StreetMap::MapType::SatelliteImage, true);
     ASSERT_TRUE( newModelId.IsValid() );
 
-    DgnModelP model = m_db->Models().GetModel(newModelId);
-    ASSERT_NE( nullptr , model );
+    DgnModelPtr model = m_db->Models().GetModel(newModelId);
+    ASSERT_TRUE(model.IsValid());
 
-    WebMercatorModel* webmercatormodel = dynamic_cast<WebMercatorModel*>(model);
+    WebMercatorModel* webmercatormodel = dynamic_cast<WebMercatorModel*>(model.get());
     ASSERT_NE( nullptr , webmercatormodel );
     }
 
@@ -1521,7 +1521,7 @@ TEST_F(ElementDependencyGraph, ModelDependenciesTest)
     //  Create models 1-4
     auto seedModelId = m_defaultModelId;
 
-    DgnModelP seedModel = m_db->Models().GetModel(seedModelId);
+    DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId);
     auto m4 = seedModel->Clone("m4");
     auto m3 = seedModel->Clone("m3");
     auto m1 = seedModel->Clone("m1");
@@ -1619,7 +1619,7 @@ TEST_F(ElementDependencyGraph, ModelDependenciesWithCycleTest)
 
     //  Create models 1-4
     auto seedModelId = m_defaultModelId;
-    DgnModelP seedModel = m_db->Models().GetModel(seedModelId);
+    DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId);
     auto m4 = seedModel->Clone("m4");
     auto m3 = seedModel->Clone("m3");
     auto m1 = seedModel->Clone("m1");
@@ -1680,7 +1680,7 @@ TEST_F(ElementDependencyGraph, ModelDependenciesInvalidDirectionTest)
 
     //  Create models 1 and 2
     auto seedModelId = m_defaultModelId;
-    DgnModelP seedModel = m_db->Models().GetModel(seedModelId);
+    DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId);
     auto m1 = seedModel->Clone("m1");
     auto m2 = seedModel->Clone("m2");
     m1->Insert();
@@ -2116,7 +2116,7 @@ static void testModelUndoRedo(DgnDbR db)
 * But "Settings" are not supposed to be affected by undo/redo except that
 * the undo operation *is* supposed to reverse the effect of "SaveSettings". So,
 * if we change setting, then call SaveSettings/SaveChanges, and then call "undo", the setting should remain in the
-* post-changed state in memory but that change should *not* saved to disk. If we call SaveSettings again, the change
+* post-changed state in memory but that change should *not* be saved to disk. If we call SaveSettings again, the change
 * will be saved, again.
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2374,7 +2374,7 @@ TEST_F(TransactionManagerTests, ModelInsertReverse)
     txns.EnableTracking(true);
 
     auto seedModelId = m_defaultModelId;
-    DgnModelP seedModel = m_db->Models().GetModel(seedModelId);
+    DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId);
     DgnModelPtr model1 = seedModel->Clone("model1");
     model1->Insert();
     m_db->SaveChanges("changeSet1");
@@ -2405,7 +2405,7 @@ TEST_F(TransactionManagerTests, ModelDeleteReverse)
     txns.EnableTracking(true);
 
     auto seedModelId = m_defaultModelId;
-    DgnModelP seedModel = m_db->Models().GetModel(seedModelId);
+    DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId);
     DgnModelPtr model1 = seedModel->Clone("model1");
     model1->Insert();
     m_db->SaveChanges("changeSet1");
@@ -2441,7 +2441,7 @@ TEST_F(TransactionManagerTests, ElementInsertReverse)
     txns.EnableTracking(true);
 
     auto seedModelId = m_defaultModelId;
-    DgnModelP seedModel = m_db->Models().GetModel(seedModelId);
+    DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId);
     DgnModelPtr model1 = seedModel->Clone("model1");
     model1->Insert();
     m_db->SaveChanges("changeSet1");
@@ -2498,7 +2498,7 @@ TEST_F (TransactionManagerTests, ElementDeleteReverse)
 
     //Creates a model.
     auto seedModelId = m_defaultModelId;
-    DgnModelP seedModel = m_db->Models().GetModel(seedModelId);
+    DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId);
     DgnModelPtr model1 = seedModel->Clone("model1");
     model1->Insert();
     m_db->SaveChanges("changeSet1");
