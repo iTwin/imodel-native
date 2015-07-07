@@ -91,7 +91,7 @@ BeSQLite::DbResult ECDbSchemaWriter::CreateECSchemaEntry (ECSchemaCR ecSchema, E
         }
 
     //save to db
-    return ECDbSchemaPersistence::InsertECSchemaInfo (m_ecdb, info);
+    return ECDbSchemaPersistence::InsertECSchema (m_ecdb, info);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -139,7 +139,7 @@ BeSQLite::DbResult ECDbSchemaWriter::CreateECClassEntry (ECClassCR ecClass, ECCl
         }
 
     //save to db
-    return ECDbSchemaPersistence::InsertECClassInfo (m_ecdb, info);
+    return ECDbSchemaPersistence::InsertECClass (m_ecdb, info);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -174,7 +174,7 @@ BeSQLite::DbResult ECDbSchemaWriter::CreateECPropertyEntry (ECPropertyCR ecPrope
         DbECPropertyInfo::COL_IsArray      |
         DbECPropertyInfo::COL_Description  |
         DbECPropertyInfo::COL_Ordinal      |
-        DbECPropertyInfo::COL_IsReadOnly   |
+        DbECPropertyInfo::COL_IsReadonly   |
         DbECPropertyInfo::COL_Name;
 
     info.m_ecClassId    = ecClassId;
@@ -222,25 +222,25 @@ BeSQLite::DbResult ECDbSchemaWriter::CreateECPropertyEntry (ECPropertyCR ecPrope
         info.m_maxOccurs = arrayProperty->GetStoredMaxOccurs ();
         }
 
-    return ECDbSchemaPersistence::InsertECPropertyInfo (m_ecdb, info);
+    return ECDbSchemaPersistence::InsertECProperty (m_ecdb, info);
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult ECDbSchemaWriter::CreateECRelationConstraintEntry (ECClassId ecClassId, ECN::ECRelationshipConstraintR relationshipConstraint, ECRelationshipEnd endpoint)
+BeSQLite::DbResult ECDbSchemaWriter::CreateECRelationshipConstraintEntry (ECClassId ecClassId, ECN::ECRelationshipConstraintR relationshipConstraint, ECRelationshipEnd endpoint)
     {
     DbECRelationshipConstraintInfo info;
 
     info.ColsInsert =
-        DbECRelationshipConstraintInfo::COL_ClassId             |
+        DbECRelationshipConstraintInfo::COL_RelationshipClassId   |
+        DbECRelationshipConstraintInfo::COL_RelationshipEnd |
         DbECRelationshipConstraintInfo::COL_CardinalityLowerLimit |
         DbECRelationshipConstraintInfo::COL_CardinalityUpperLimit |
-        DbECRelationshipConstraintInfo::COL_RelationshipEnd     |
         DbECRelationshipConstraintInfo::COL_IsPolymorphic;
 
-    info.m_ecClassId             = ecClassId;
-    info.m_ecRelationshipEnd  = endpoint;
+    info.m_relationshipClassId = ecClassId;
+    info.m_ecRelationshipEnd = endpoint;
     info.m_cardinalityLowerLimit = relationshipConstraint.GetCardinality().GetLowerLimit();
     info.m_cardinalityUpperLimit = relationshipConstraint.GetCardinality().GetUpperLimit();
     info.m_isPolymorphic         = relationshipConstraint.GetIsPolymorphic();
@@ -251,7 +251,7 @@ BeSQLite::DbResult ECDbSchemaWriter::CreateECRelationConstraintEntry (ECClassId 
         info.ColsInsert |= DbECRelationshipConstraintInfo::COL_RoleLabel;
         }
     //save to db
-    return ECDbSchemaPersistence::InsertECRelationConstraintInfo (m_ecdb, info);
+    return ECDbSchemaPersistence::InsertECRelationshipConstraint (m_ecdb, info);
     }
 
 //---------------------------------------------------------------------------------------
@@ -280,7 +280,7 @@ BeSQLite::DbResult ECDbSchemaWriter::InsertCAEntry (IECInstanceP customAttribute
         insertInfo.ColsInsert |=DbCustomAttributeInfo::COL_Instance;
         }
 
-    return ECDbSchemaPersistence::InsertCustomAttributeInfo (m_ecdb, insertInfo);
+    return ECDbSchemaPersistence::InsertCustomAttribute (m_ecdb, insertInfo);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -290,13 +290,13 @@ BeSQLite::DbResult ECDbSchemaWriter::CreateECRelationshipConstraintClassEntry (E
     {
     DbECRelationshipConstraintClassInfo info;
     info.ColsInsert =
-        DbECRelationshipConstraintClassInfo::COL_ClassId           |
-        DbECRelationshipConstraintClassInfo::COL_RelationClassId   |
+        DbECRelationshipConstraintClassInfo::COL_ConstraintClassId           |
+        DbECRelationshipConstraintClassInfo::COL_RelationshipClassId   |
         DbECRelationshipConstraintClassInfo::COL_RelationshipEnd;
-    info.m_ecClassId            = ecClassId;
-    info.m_relationECClassId    = constraintClassId;
+    info.m_constraintClassId            = ecClassId;
+    info.m_relationshipClassId    = constraintClassId;
     info.m_ecRelationshipEnd    = endpoint;
-    return ECDbSchemaPersistence::InsertECRelationConstraintClassInfo (m_ecdb, info);
+    return ECDbSchemaPersistence::InsertECRelationshipConstraintClass (m_ecdb, info);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -396,7 +396,7 @@ BeSQLite::DbResult ECDbSchemaWriter::CreateECSchemaReferenceEntry(ECSchemaId ecS
     info.m_ecSchemaId          = ecSchemaId;
     info.m_referencedECSchemaId = ecReferencedSchemaId;
 
-    return ECDbSchemaPersistence::InsertECSchemaReferenceInfo(m_ecdb, info);
+    return ECDbSchemaPersistence::InsertECSchemaReference(m_ecdb, info);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -555,7 +555,7 @@ BeSQLite::DbResult ECDbSchemaWriter::ImportECRelationshipClass (ECN::ECRelations
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::DbResult ECDbSchemaWriter::ImportECRelationshipConstraint (ECClassId ecClassId, ECN::ECRelationshipConstraintR relationshipConstraint, ECRelationshipEnd endpoint)
     {
-    DbResult r = CreateECRelationConstraintEntry(ecClassId, relationshipConstraint, endpoint);
+    DbResult r = CreateECRelationshipConstraintEntry(ecClassId, relationshipConstraint, endpoint);
     if (r != BE_SQLITE_DONE)
         return r;
 
@@ -572,24 +572,26 @@ BeSQLite::DbResult ECDbSchemaWriter::ImportECRelationshipConstraint (ECClassId e
         }
     for (auto ecClass : relationshipConstraint.GetConstraintClasses())
         {
-        for (auto key : ecClass->GetKeys())
+        for (WStringCR key : ecClass->GetKeys())
             {
-            DbECRelationshipConstraintClassPropertyInfo propertyInfo;
-            propertyInfo.ColsInsert =
-                DbECRelationshipConstraintClassInfo::COL_ClassId |
-                DbECRelationshipConstraintClassInfo::COL_RelationClassId |
-                DbECRelationshipConstraintClassInfo::COL_RelationshipEnd;
-            propertyInfo.m_ecClassId = ecClassId;
-            propertyInfo.m_relationECClassId = ecClass->GetClass().GetId();
-            propertyInfo.m_ecRelationshipEnd = endpoint;
-            auto keyProperty = ecClass->GetClass().GetPropertyP(key.c_str());
-            if (keyProperty == nullptr)
+            if (!key.EqualsI(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME_W) &&
+                ecClass->GetClass().GetPropertyP(key.c_str()) == nullptr)
                 {
-                LOG.warningv(L"%ls ECProperty not found in %ls class", key.c_str(), ecClass->GetClass().GetName().c_str());
-                continue;
+                LOG.errorv(L"ECProperty '%ls' is an invalid key property as it does not exist in ECClass '%ls'.", key.c_str(), ecClass->GetClass().GetFullName());
+                return BE_SQLITE_ERROR;
                 }
-            propertyInfo.m_relationECPropertyId = keyProperty->GetId();
-            r = ECDbSchemaPersistence::InsertECRelationConstraintClassPropertyInfo(m_ecdb, propertyInfo);
+
+            DbECRelationshipConstraintClassKeyPropertyInfo keyPropertyInfo;
+            keyPropertyInfo.ColsInsert =
+                DbECRelationshipConstraintClassKeyPropertyInfo::COL_RelationshipClassId |
+                DbECRelationshipConstraintClassKeyPropertyInfo::COL_ConstraintClassId |
+                DbECRelationshipConstraintClassKeyPropertyInfo::COL_RelationshipEnd;
+            keyPropertyInfo.m_constraintClassId = ecClassId;
+            keyPropertyInfo.m_relationECClassId = ecClass->GetClass().GetId();
+            keyPropertyInfo.m_ecRelationshipEnd = endpoint;
+            keyPropertyInfo.m_keyPropertyName.assign(Utf8String(key));
+
+            r = ECDbSchemaPersistence::InsertECRelationshipConstraintClassKeyProperty(m_ecdb, keyPropertyInfo);
             if (r != BE_SQLITE_DONE)
                 return r;
             }

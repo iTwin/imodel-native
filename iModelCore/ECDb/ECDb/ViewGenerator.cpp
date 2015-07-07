@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
     //---------------------------------------------------------------------------------------
     BentleyStatus SqlGenerator::BuildPropertyExpression (NativeSqlBuilder& viewSql, PropertyMapCR propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue)
         {
-        if (auto o = dynamic_cast<PropertyMapToColumnCP>(&propertyMap))
+        if (auto o = dynamic_cast<PropertyMapToColumn const*>(&propertyMap))
             {
             return BuildPrimitivePropertyExpression (viewSql, *o, tablePrefix, addECPropertyPathAlias, nullValue);
             }
@@ -24,11 +24,11 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
             {
             return BuildPointPropertyExpression (viewSql, *o, tablePrefix, addECPropertyPathAlias, nullValue);
             }
-        else if (auto o = dynamic_cast<PropertyMapToInLineStructCP>(&propertyMap))
+        else if (auto o = dynamic_cast<PropertyMapToInLineStruct const*>(&propertyMap))
             {
             return BuildStructPropertyExpression (viewSql, *o, tablePrefix, addECPropertyPathAlias, nullValue);
             }
-        else if (/*auto o = */dynamic_cast<PropertyMapToTableCP>(&propertyMap))
+        else if (/*auto o = */dynamic_cast<PropertyMapToTable const*>(&propertyMap))
             {
             return BentleyStatus::SUCCESS;
             }
@@ -144,7 +144,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
     //---------------------------------------------------------------------------------------
     // @bsimethod                                 Affan.Khan                         06/2015
     //---------------------------------------------------------------------------------------
-    BentleyStatus SqlGenerator::BuildPrimitivePropertyExpression (NativeSqlBuilder& viewSql, PropertyMapToColumnCR propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue)
+    BentleyStatus SqlGenerator::BuildPrimitivePropertyExpression (NativeSqlBuilder& viewSql, PropertyMapToColumn const& propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue)
         {
         auto accessString = Utf8String (propertyMap.GetPropertyAccessString ());
         NativeSqlBuilder::List fragments;
@@ -846,60 +846,6 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
             relationships[classMap] = pair.second;
             }
 
-        //auto sql =
-        //    "WITH RECURSIVE "
-        //    "  DerivedClassList(RelationshipClassId, RelationshipEnd, IsPolymorphic, CurrentClassId, DerivedClassId) "
-        //    "  AS ( "
-        //    "      SELECT "
-        //    "            RCC.ClassId, "
-        //    "            RCC.RelationshipEnd,"
-        //    "            RC.IsPolymorphic, "
-        //    "            RCC.RelationClassId, "
-        //    "            RCC.RelationClassId "
-        //    "      FROM ec_RelationshipConstraintClass RCC "
-        //    "      INNER JOIN ec_RelationshipConstraint RC "
-        //    "            ON RC.ClassId = RCC.ClassId AND RC.RelationshipEnd = RCC.[RelationshipEnd] "
-        //    "    UNION ALL "
-        //    "        SELECT DCL.RelationshipClassId, DCL.RelationshipEnd, DCL.IsPolymorphic, BC.BaseClassId, BC.ClassId "
-        //    "            FROM DerivedClassList DCL "
-        //    "        INNER JOIN ec_BaseClass BC ON BC.BaseClassId = DCL.DerivedClassId "
-        //    "        WHERE IsPolymorphic = 1 "
-        //    "  ) "
-        //    "  SELECT "
-        //    "         RelationshipClassId, "
-        //    "         RelationshipEnd "
-        //    "  FROM DerivedClassList  WHERE  DerivedClassId = ?1 "
-        //    "  UNION ALL "
-        //    "  SELECT"
-        //    "        RCC.ClassId, "
-        //    "        RCC.RelationshipEnd "
-        //    "  FROM ec_RelationshipConstraintClass RCC "
-        //    "  WHERE RCC.RelationClassId IN (SELECT Id FROM ec_Class WHERE Name = 'AnyClass')";
-
-        //auto stmt = m_map.GetECDbR().GetCachedStatement (sql);
-        //if (stmt.IsValid ())
-        //    {
-        //    stmt->BindInt64 (1, classMap.GetId());
-        //    while (stmt->Step () == BE_SQLITE_ROW)
-        //        {
-        //        auto ecRelationshipClass = m_map.GetECDbR ().Schemas ().GetECClass (stmt->GetValueInt64 (0));
-        //        ECN::ECRelationshipEnd relationshipEnd = static_cast<ECRelationshipEnd>(stmt->GetValueInt (1));
-        //        RelationshipFilter endFilter = relationshipEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? RelationshipFilter::Source : RelationshipFilter::Target;
-
-        //        if (ecRelationshipClass != nullptr && ecRelationshipClass->GetRelationshipClassCP () != nullptr)
-        //            {
-        //            if (auto relationshipClassMap = static_cast<RelationshipClassMapCP>(m_map.GetClassMap (*ecRelationshipClass)))
-        //                {
-        //                auto itor = relationships.find (relationshipClassMap);
-        //                if (itor == relationships.end ())
-        //                    relationships[relationshipClassMap] = endFilter;
-        //                else if (itor->second != endFilter)
-        //                    relationships[relationshipClassMap] = RelationshipFilter::Both;
-        //                }
-        //            }
-        //        }
-        //    }
-
         return BentleyStatus::SUCCESS;
         }
     //-----------------------------------------------------------------------------------------
@@ -1202,11 +1148,11 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
             "            RCC.ClassId, "
             "            RCC.RelationshipEnd, "
             "            RC.IsPolymorphic, "
-            "            RCC.RelationClassId, "
-            "            RCC.RelationClassId "
+            "            RCC.RelationshipClassId, "
+            "            RCC.RelationshipClassId "
             "      FROM ec_RelationshipConstraintClass RCC "
             "      INNER JOIN ec_RelationshipConstraint RC "
-            "            ON RC.ClassId = RCC.ClassId AND RC.RelationshipEnd = RCC.[RelationshipEnd] "
+            "            ON RC.RelationshipClassId = RCC.RelationshipClassId AND RC.RelationshipEnd = RCC.RelationshipEnd "
             "    UNION "
             "        SELECT DCL.RelationshipClassId, DCL.RelationshipEnd, DCL.IsPolymorphic, BC.BaseClassId, BC.ClassId "
             "            FROM DerivedClassList DCL "
@@ -1223,7 +1169,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
             "       RCC.ClassId,"
             "       RCC.RelationshipEnd"
             " FROM ec_RelationshipConstraintClass RCC"
-            " WHERE RCC.RelationClassId IN (SELECT Id FROM ec_Class WHERE Name = 'AnyClass')";
+            " WHERE RCC.ClassId IN (SELECT Id FROM ec_Class WHERE Name = 'AnyClass')";
 
         std::map<ECN::ECClassId, RelationshipFilter> anyClassRelationships;
         auto stmt1 = m_map.GetECDbR ().GetCachedStatement (sql1);

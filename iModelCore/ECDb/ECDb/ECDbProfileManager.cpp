@@ -339,7 +339,7 @@ Db& db
     if (stat != BE_SQLITE_OK)
         return stat;
 
-    stat = CreateTableECRelationshipConstraintClassProperty(db);
+    stat = CreateTableECRelationshipConstraintClassKeyProperty(db);
     if (stat != BE_SQLITE_OK)
         return stat;
 
@@ -462,6 +462,7 @@ Db& db
         "Id INTEGER PRIMARY KEY,"
         "ClassId INTEGER NOT NULL REFERENCES ec_Class (Id) ON DELETE CASCADE,"
         "ParentId INTEGER REFERENCES ec_ClassMap (Id) ON DELETE CASCADE,"
+        //resolved map strategy:
         "MapStrategy INTEGER NOT NULL,"
         "MapStrategyOptions INTEGER,"
         "IsMapStrategyPolymorphic BOOL NOT NULL CHECK (IsMapStrategyPolymorphic IN (0, 1))"
@@ -541,9 +542,9 @@ Db& db
         "Description TEXT, "
         "Ordinal INTEGER, "
         "IsArray BOOL NOT NULL CHECK (IsArray IN (0, 1)), "
-        "PrimitiveType SMALLINT, "
+        "PrimitiveType INTEGER, "
         "StructType INTEGER REFERENCES ec_Class(Id) ON DELETE CASCADE, "
-        "IsReadOnly BOOL NOT NULL CHECK (IsReadOnly IN (0, 1)), "
+        "IsReadonly BOOL NOT NULL CHECK (IsReadonly IN (0, 1)), "
         "MinOccurs INTEGER,"
         "MaxOccurs INTEGER"
         ");");
@@ -590,13 +591,13 @@ Db& db
     return db.ExecuteSql(
         "CREATE TABLE ec_RelationshipConstraint "
         "("
-        "ClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE, "
-        "RelationshipEnd BOOL NOT NULL CHECK (RelationshipEnd IN (0, 1)), "
+        "RelationshipClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE, "
+        "RelationshipEnd INTEGER NOT NULL, "
         "CardinalityLowerLimit INTEGER, "
         "CardinalityUpperLimit INTEGER, "
         "RoleLabel TEXT, " 
         "IsPolymorphic BOOL NOT NULL CHECK (IsPolymorphic IN (0, 1)), "
-        "PRIMARY KEY (ClassId, RelationshipEnd)"
+        "PRIMARY KEY (RelationshipClassId, RelationshipEnd)"
         ");");
     }
 
@@ -612,12 +613,12 @@ Db& db
     return db.ExecuteSql(
         "CREATE TABLE ec_RelationshipConstraintClass "
         "("
+        "RelationshipClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE, "
+        "RelationshipEnd INTEGER NOT NULL, "
         "ClassId INTEGER NOT NULL, "
-        "RelationshipEnd BOOL NOT NULL, "
-        "RelationClassId INTEGER NOT NULL REFERENCES ec_Class(Id) ON DELETE CASCADE, "
-        "PRIMARY KEY (ClassId, RelationshipEnd, RelationClassId), "
+        "PRIMARY KEY (RelationshipClassId, RelationshipEnd, ClassId), "
         "FOREIGN KEY (ClassId, RelationshipEnd) "
-        "REFERENCES ec_RelationshipConstraint(ClassId, RelationshipEnd) ON DELETE CASCADE"
+        "REFERENCES ec_RelationshipConstraint(RelationshipClassId, RelationshipEnd) ON DELETE CASCADE"
         ");");
     }
 
@@ -625,21 +626,20 @@ Db& db
 // @bsimethod                                                    Affan.Khan        05/2012
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-DbResult ECDbProfileManager::ProfileCreator::CreateTableECRelationshipConstraintClassProperty 
+DbResult ECDbProfileManager::ProfileCreator::CreateTableECRelationshipConstraintClassKeyProperty 
 (
 Db& db
 )
     {
     return db.ExecuteSql(
-        "CREATE TABLE ec_RelationshipConstraintClassProperty "
+        "CREATE TABLE ec_RelationshipConstraintClassKeyProperty "
         "("
-        "ClassId INTEGER NOT NULL, "
-        "RelationshipEnd BOOL NOT NULL, "
-        "RelationClassId INTEGER NOT NULL, "
-        "RelationPropertyId INTEGER NOT NULL, "
-        "PRIMARY KEY (ClassId, RelationshipEnd, RelationClassId, RelationPropertyId), "
-        "FOREIGN KEY (ClassId, RelationshipEnd, RelationClassId) REFERENCES ec_RelationshipConstraintClass (ClassId, RelationshipEnd, RelationClassId) ON DELETE CASCADE, "
-        "FOREIGN KEY (RelationPropertyId) REFERENCES ec_Property (Id) ON DELETE CASCADE"
+        "RelationshipClassId INTEGER NOT NULL, "
+        "RelationshipEnd INTEGER NOT NULL, "
+        "ConstraintClassId INTEGER NOT NULL, "
+        "KeyPropertyName TEXT NOT NULL, "
+        "PRIMARY KEY (RelationshipClassId,RelationshipEnd,ConstraintClassId,KeyPropertyName), "
+        "FOREIGN KEY (RelationshipClassId, RelationshipEnd, ConstraintClassId) REFERENCES ec_RelationshipConstraintClass (RelationshipClassId, RelationshipEnd, ClassId) ON DELETE CASCADE"
         ");");
     }
 

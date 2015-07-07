@@ -27,7 +27,7 @@ private:
     BeSQLite::DbResult CreateECClassEntry                       (ECClassCR ecClass, ECClassId ecClassId);
     BeSQLite::DbResult CreateBaseClassEntry                     (ECClassId ecClassId, ECClassCR baseClass, int index);
     BeSQLite::DbResult CreateECPropertyEntry                    (ECPropertyCR ecProperty, ECPropertyId ecPropertyId, ECClassId ecClassId, int32_t index);
-    BeSQLite::DbResult CreateECRelationConstraintEntry          (ECClassId ecClassId, ECN::ECRelationshipConstraintR relationshipConstraint, ECRelationshipEnd endpoint);
+    BeSQLite::DbResult CreateECRelationshipConstraintEntry      (ECClassId ecClassId, ECN::ECRelationshipConstraintR relationshipConstraint, ECRelationshipEnd endpoint);
     BeSQLite::DbResult CreateECRelationshipConstraintClassEntry (ECClassId ecClassId, ECClassId constraintClassId, ECRelationshipEnd endpoint);
     BeSQLite::DbResult InsertCAEntry                            (IECInstanceP customAttribute,ECClassId ecClassId, ECContainerId containerId, ECContainerType containerType, ECContainerId overridenContainerId, int index);
     BeSQLite::DbResult CreateECSchemaReferenceEntry             (ECSchemaId ecSchemaId, ECSchemaId ecReferencedSchemaId);
