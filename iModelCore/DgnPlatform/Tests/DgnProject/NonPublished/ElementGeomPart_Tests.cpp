@@ -157,6 +157,27 @@ struct GTestElementHandler : dgn_ElementHandler::Element
 
         return db.Elements().Insert(*testElement)->GetElementKey();
     }
+
+    DgnElementKey InsertElementUsingGeomPart(DgnDbR db, DgnGeomPartId gpId, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
+    {
+        DgnModelP model = db.Models().GetModel(mid).get();
+        DgnElementPtr testElement = GTestElementHandler::Create(GTestElement::CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement3d(), nullptr, elementCode));
+        GeometricElementP geomElem = const_cast<GeometricElementP>(testElement->ToGeometricElement());
+
+#ifdef WIP_ITEM_HANDLER
+        geomElem->SetItemClassId(ElementItemHandler::GetHandler().GetItemClassId(db));
+#endif
+
+        ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, categoryId, DPoint3d::FromXYZ(0.0, 0.0, 0.0));
+        
+        if (!(builder->Append(gpId, Transform::From(0.0, 0.0, 0.0))))
+            return DgnElementKey();
+
+        if (SUCCESS != builder->SetGeomStreamAndPlacement(*geomElem))
+            return DgnElementKey();
+
+        return db.Elements().Insert(*testElement)->GetElementKey();
+    }
     DgnDbStatus DeleteElement(DgnDbR db, DgnElementId eid)
     {
         return db.Elements().Delete(eid);
@@ -191,7 +212,7 @@ DOMAIN_DEFINE_MEMBERS(ElementInsertPerformanceTestDomain)
 * Test fixture for testing Transaction Manager
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ElementGeometryBuilderTests : public ::testing::Test
+struct ElementGeomPartTests : public ::testing::Test
 {
 public:
     ScopedDgnHost m_host;
@@ -199,13 +220,13 @@ public:
     DgnModelId    m_defaultModelId;
     DgnCategoryId m_defaultCategoryId;
 
-    ElementGeometryBuilderTests()
+    ElementGeomPartTests()
     {
         // Must register my domain whenever I initialize a host
         DgnDomains::RegisterDomain(ElementInsertPerformanceTestDomain::GetDomain());
     }
 
-    ~ElementGeometryBuilderTests()
+    ~ElementGeomPartTests()
     {
         FinalizeStatements();
         //m_db->Txns.Deactivate(); // finalizes TxnManager's prepared statements
@@ -263,9 +284,9 @@ void SetupProject(WCharCP projFile, WCharCP testFile, BeSQLite::Db::OpenMode mod
 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      01/15
+* @bsimethod                                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ElementGeometryBuilderTests, CreateElements)
+TEST_F(ElementGeomPartTests, CreateElements)
 {
     SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
@@ -292,9 +313,9 @@ TEST_F(ElementGeometryBuilderTests, CreateElements)
     EXPECT_TRUE(key3.GetElementId().IsValid());
 }
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      01/15
+* @bsimethod                                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ElementGeometryBuilderTests, GeomPartWithoutCode)
+TEST_F(ElementGeomPartTests, GeomPartWithoutCode)
 {
     SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
@@ -309,22 +330,121 @@ TEST_F(ElementGeometryBuilderTests, GeomPartWithoutCode)
 
     EXPECT_EQ(SUCCESS, m_db->GeomParts().InsertGeomPart(*geomPartPtr));
 
-    DgnGeomPartId existingPartId = m_db->GeomParts().QueryGeomPartId("");
+    DgnGeomPartId existingPartId = geomPartPtr->GetId();
     EXPECT_TRUE(existingPartId.IsValid());
 
-    auto key1 = GTestElementHandler::GetHandler().InsertElementUsingGeomPart(*m_db, geomPartPtr->GetCode(), m_defaultModelId, m_defaultCategoryId, "Test");
+    auto key1 = GTestElementHandler::GetHandler().InsertElementUsingGeomPart(*m_db, existingPartId, m_defaultModelId, m_defaultCategoryId, "Test");
     EXPECT_TRUE(key1.GetElementId().IsValid());
     
-    auto key2 = GTestElementHandler::GetHandler().InsertElementUsingGeomPart(*m_db, geomPartPtr->GetCode(), m_defaultModelId, m_defaultCategoryId, "Test2");
+    auto key2 = GTestElementHandler::GetHandler().InsertElementUsingGeomPart(*m_db, existingPartId, m_defaultModelId, m_defaultCategoryId, "Test2");
     EXPECT_TRUE(key2.GetElementId().IsValid());
 
     auto key3 = GTestElementHandler::GetHandler().InsertElement(*m_db, m_defaultModelId, m_defaultCategoryId, "Test3");
     EXPECT_TRUE(key3.GetElementId().IsValid());
 }
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Umar.Hayat      05/15
+* @bsimethod                                                    Umar.Hayat      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ElementGeometryBuilderTests, CreateElementsAndDeleteGemPart)
+TEST_F(ElementGeomPartTests, ElementGeomUsesParts)
+{
+    SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+
+    //Create a GeomPart
+    ElementGeometryPtr elGPtr = ElementGeometry::Create(*computeShape());
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateGeomPart(*m_db, true);
+    builder->Append(*elGPtr);
+    DgnGeomPartPtr geomPartPtr = DgnGeomPart::Create("TestGeomPart");
+    EXPECT_TRUE(geomPartPtr != NULL);
+    EXPECT_EQ(SUCCESS, builder->SetGeomStream(*geomPartPtr));
+
+    EXPECT_EQ(SUCCESS, m_db->GeomParts().InsertGeomPart(*geomPartPtr));
+
+    DgnGeomPartId existingPartId = m_db->GeomParts().QueryGeomPartId("TestGeomPart");
+    EXPECT_TRUE(existingPartId.IsValid());
+
+    auto key1 = GTestElementHandler::GetHandler().InsertElement(*m_db, m_defaultModelId, m_defaultCategoryId, "Test1");
+    EXPECT_TRUE(key1.GetElementId().IsValid());
+
+    EXPECT_EQ(SUCCESS, m_db->GeomParts().InsertElementGeomUsesParts(key1.GetElementId(), existingPartId) );
+    DgnElementCPtr elem = m_db->Elements().GetElement(key1.GetElementId());
+    
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK ,stmt.Prepare(*m_db, "SELECT * FROM " DGN_TABLE(DGN_RELNAME_ElementGeomUsesParts)));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(1,stmt.GetValueInt(0));
+    ASSERT_EQ(key1.GetElementId().GetValue(), (int64_t)stmt.GetValueInt(1));
+    ASSERT_EQ(existingPartId.GetValue(), (int64_t)stmt.GetValueInt(2));
+    
+}
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Umar.Hayat      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementGeomPartTests, ElementGeomUsesParts_DeleteGeomPart)
+{
+    SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+
+    //Create a GeomPart
+    ElementGeometryPtr elGPtr = ElementGeometry::Create(*computeShape());
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateGeomPart(*m_db, true);
+    builder->Append(*elGPtr);
+    DgnGeomPartPtr geomPartPtr = DgnGeomPart::Create("TestGeomPart");
+    EXPECT_TRUE(geomPartPtr != NULL);
+    EXPECT_EQ(SUCCESS, builder->SetGeomStream(*geomPartPtr));
+
+    EXPECT_EQ(SUCCESS, m_db->GeomParts().InsertGeomPart(*geomPartPtr));
+
+    DgnGeomPartId existingPartId = m_db->GeomParts().QueryGeomPartId("TestGeomPart");
+    EXPECT_TRUE(existingPartId.IsValid());
+
+    auto key1 = GTestElementHandler::GetHandler().InsertElement(*m_db, m_defaultModelId, m_defaultCategoryId, "Test1");
+    EXPECT_TRUE(key1.GetElementId().IsValid());
+
+    EXPECT_EQ(SUCCESS, m_db->GeomParts().InsertElementGeomUsesParts(key1.GetElementId(), existingPartId) );
+    DgnElementCPtr elem = m_db->Elements().GetElement(key1.GetElementId());
+
+    // Delete Geom Part
+    EXPECT_EQ(SUCCESS, m_db->GeomParts().DeleteGeomPart(existingPartId));
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " DGN_TABLE(DGN_RELNAME_ElementGeomUsesParts)));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    
+}
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Umar.Hayat      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementGeomPartTests, ElementGeomUsesParts_DeleteElement)
+{
+    SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+
+    //Create a GeomPart
+    ElementGeometryPtr elGPtr = ElementGeometry::Create(*computeShape());
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateGeomPart(*m_db, true);
+    builder->Append(*elGPtr);
+    DgnGeomPartPtr geomPartPtr = DgnGeomPart::Create("TestGeomPart");
+    EXPECT_TRUE(geomPartPtr != NULL);
+    EXPECT_EQ(SUCCESS, builder->SetGeomStream(*geomPartPtr));
+
+    EXPECT_EQ(SUCCESS, m_db->GeomParts().InsertGeomPart(*geomPartPtr));
+
+    DgnGeomPartId existingPartId = m_db->GeomParts().QueryGeomPartId("TestGeomPart");
+    EXPECT_TRUE(existingPartId.IsValid());
+
+    auto key1 = GTestElementHandler::GetHandler().InsertElement(*m_db, m_defaultModelId, m_defaultCategoryId, "Test1");
+    EXPECT_TRUE(key1.GetElementId().IsValid());
+
+    EXPECT_EQ(SUCCESS, m_db->GeomParts().InsertElementGeomUsesParts(key1.GetElementId(), existingPartId) );
+    DgnElementCPtr elem = m_db->Elements().GetElement(key1.GetElementId());
+
+    // Delete Element
+    ASSERT_EQ(DgnDbStatus::Success, m_db->Elements().Delete(*m_db->Elements().GetElement(key1.GetElementId())));
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(*m_db, "SELECT * FROM " DGN_TABLE(DGN_RELNAME_ElementGeomUsesParts)));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+}
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Umar.Hayat      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementGeomPartTests, CreateElementsAndDeleteGemPart)
 {
     SetupProject(L"3dMetricGeneral.idgndb", L"GeomParts.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
@@ -353,7 +473,7 @@ TEST_F(ElementGeometryBuilderTests, CreateElementsAndDeleteGemPart)
 
     // Delete Geom Part
     EXPECT_EQ(SUCCESS, m_db->GeomParts().DeleteGeomPart(existingPartId));
-    EXPECT_EQ(-1,m_db->GeomParts().QueryGeomPartId(geomPartPtr->GetCode()).GetValue());
+    //EXPECT_EQ(-1,m_db->GeomParts().QueryGeomPartId(geomPartPtr->GetCode()).GetValue());
     EXPECT_TRUE(m_db->Elements().GetElement(key1.GetElementId()).IsValid());
     EXPECT_TRUE(m_db->Elements().GetElement(key2.GetElementId()).IsValid());
     EXPECT_TRUE(m_db->Elements().GetElement(key3.GetElementId()).IsValid());
