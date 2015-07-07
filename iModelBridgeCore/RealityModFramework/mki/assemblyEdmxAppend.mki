@@ -1,0 +1,83 @@
+#--------------------------------------------------------------------------------------
+#
+#
+#   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------------------
+# This file should be used to build a edmx file into a .csdl, .ssdl and .msl files and embed
+# within an assembly.
+#
+# Macros:
+#    ASSEMBLY_EDMX_FILE_TO_BUILD    - The full path to the edmx file you want to build.
+#
+#    o                              - output directory where temporary build files can be 
+#                                     created(only if ASSEMBLY_EDMX_FILE_TO_BUILD is set).
+#
+#    ASSEMBLY_EDM_TO_ADD_FILENAME	- The filename (no path, no extension) of the .csdl, .ssdl and .msl 
+#                                     you want to embed (only if ASSEMBLY_EDMX_FILE_TO_BUILD is not set).
+#
+#    ASSEMBLY_EDM_TO_ADD_DIRECTORY  - The path to the directory containing the .csdl, .ssdl and .msl you want to embed
+#                                     Should include a trailing slash (only if ASSEMBLY_EDMX_FILE_TO_BUILD is not set).
+#
+#--------------------------------------------------------------------------------------
+
+%if defined (BSI) && !defined (__mdlMKI__)
+  %error mdl.mki must be included before mkcsharp.mki
+%endif
+
+# ToDo: we need to write the Python code to extract the 
+#       .csdl, .ssdl and .msl from the edmx.
+%if !defined (EDMGEN)
+    EDMGEN = $(SrcRoot)RealityModFramework/mki/SplitEdmx.py
+%endif
+
+%ifnofile $(o)
+  always:
+    ~mkdir $(o)
+%endif
+
+%ifdef ASSEMBLY_EDMX_FILE_TO_BUILD
+	%ifdef o		
+		EntityFrameworkFilesPath = $(o)edmxResourcesToEmbed/
+		%ifnofile $(EntityFrameworkFilesPath)
+			always:
+			~mkdir $(EntityFrameworkFilesPath)
+		%endif
+		
+		GenerateFiles :
+			python $(EDMGEN) $(ASSEMBLY_EDMX_FILE_TO_BUILD) $(EntityFrameworkFilesPath)			
+			~@task Transform -i:Input="@(ASSEMBLY_EDMX_FILE_TO_BUILD->'%(filename)')" -o:EntityFrameworkFilesName="Output"
+	%else
+	  %error o is a required input to assemblyEdmxAppend.mki when using ASSEMBLY_EDMX_FILE_TO_BUILD.
+	%endif
+%else
+	%ifdef ASSEMBLY_EDM_TO_ADD_FILENAME
+		%ifdef ASSEMBLY_EDM_TO_ADD_DIRECTORY
+			EntityFrameworkFilesName = $(ASSEMBLY_EDM_TO_ADD_FILENAME)
+			EntityFrameworkFilesPath = $(ASSEMBLY_EDM_TO_ADD_DIRECTORY)
+		%else
+			%error ASSEMBLY_EDM_TO_ADD_DIRECTORY is a required input to assemblyEdmxAppend.mki
+		%endif
+	%else
+		%error ASSEMBLY_EDM_TO_ADD_FILENAME is a required input to assemblyEdmxAppend.mki
+	%endif
+%endif
+
+ASSEMBLY_RES_TO_ADD_FILENAME = $(EntityFrameworkFilesName).csdl
+ASSEMBLY_RES_TO_ADD_DIRECTORY = $(EntityFrameworkFilesPath)
+%include assemblyResourceAppend.mki
+
+ASSEMBLY_RES_TO_ADD_FILENAME = $(EntityFrameworkFilesName).msl
+ASSEMBLY_RES_TO_ADD_DIRECTORY = $(EntityFrameworkFilesPath)
+%include assemblyResourceAppend.mki
+
+ASSEMBLY_RES_TO_ADD_FILENAME = $(EntityFrameworkFilesName).ssdl
+ASSEMBLY_RES_TO_ADD_DIRECTORY = $(EntityFrameworkFilesPath)
+%include assemblyResourceAppend.mki
+
+%undef ASSEMBLY_EDMX_FILE_TO_BUILD
+%undef ASSEMBLY_EDM_TO_ADD_FILENAME
+%undef ASSEMBLY_EDM_TO_ADD_DIRECTORY
+
