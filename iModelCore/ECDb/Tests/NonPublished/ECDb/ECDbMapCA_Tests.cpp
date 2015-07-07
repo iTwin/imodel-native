@@ -1143,4 +1143,17 @@ TEST_F (ECDbMapCATests, RetrieveConstraintClassInstanceBeforeAfterInsertingRelat
 
     ecdb.CloseDb ();
     }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Muhammad Hassan                  07/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F (ECDbMapCATests, SeperateTableForRelationshipWithMapStrategyTableForThisClass)
+    {
+    ECDbTestProject testProject;
+    ECDbR ecdbr = testProject.Create ("relationshipTestDb.ecdb", L"SampleDgnDbEditor.01.00.ecschema.xml", true);
+    ECSchemaCP schema = ecdbr.Schemas ().GetECSchema ("SampleDgnDbEditor", true);
+    ASSERT_TRUE (schema != nullptr);
+    ASSERT_TRUE (ecdbr.TableExists ("aswe"));
+    ASSERT_TRUE (ecdbr.TableExists ("awhs"));
+    }
 END_ECDBUNITTESTS_NAMESPACE
