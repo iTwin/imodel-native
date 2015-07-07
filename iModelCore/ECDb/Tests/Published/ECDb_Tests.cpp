@@ -282,6 +282,8 @@ TEST(ECDbTests, checkPrimaryKeyForTablesIsBasedOnECInstanceId)
     ASSERT_TRUE(strcmp(sc_Employee, sqlValue) > 0);
 }
 
+#ifdef G0504_MERGE_ALREADY_IN_ECDbMapCA_Test
+
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Muhammad Hassan                  07/15
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -290,9 +292,10 @@ TEST (ECDbMapCATests, SeperateTableForRelationshipWithMapStrategyTableForThisCla
     ECDbTestProject testProject;
     ECDbR ecdbr = testProject.Create ("relationshipTestDb.ecdb", L"SampleDgnDbEditor.01.00.ecschema.xml", true);
 
-    ECSchemaP schemap = NULL;
-    ASSERT_EQ (SUCCESS, ecdbr.GetEC ().GetSchemaManager ().GetECSchema (schemap, "SampleDgnDbEditor", true));
+    ECSchemaCP schemap = ecdbr.Schemas().GetECSchema("SampleDgnDbEditor", true);
     ASSERT_TRUE (schemap != nullptr);
     }
+
+#endif
     
 END_ECDBUNITTESTS_NAMESPACE
