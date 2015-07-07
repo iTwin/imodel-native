@@ -17,7 +17,7 @@ struct DgnModelTests : public testing::Test
      public:
         ScopedDgnHost m_autoDgnHost;
         DgnDbPtr m_dgndb;    
-        DgnModelP m_modelP;
+        DgnModelPtr m_model;
         //---------------------------------------------------------------------------------------
         // @bsimethod                                                   Julija Suboc     07/13
         // Prepares test data file
@@ -35,9 +35,9 @@ struct DgnModelTests : public testing::Test
             {
             DgnModels& modelTable =  m_dgndb->Models();
             DgnModelId id = modelTable.QueryModelId(name);
-            m_modelP =  modelTable.GetModel(id);
-            if (m_modelP)
-                m_modelP->FillModel();
+            m_model =  modelTable.GetModel(id);
+            if (m_model.IsValid())
+                m_model->FillModel();
             }
 
         void InsertElement(DgnDbR, DgnModelId, bool is3d, bool expectSuccess);
@@ -77,13 +77,13 @@ public:
 TEST_F(DgnModelTests, GetGraphicElements)
     {
     LoadModel("Splines");
-    uint32_t graphicElementCount = (uint32_t) m_modelP->GetElements().size();
+    uint32_t graphicElementCount = (uint32_t) m_model->GetElements().size();
     ASSERT_NE(graphicElementCount, 0);
     ASSERT_TRUE(graphicElementCount > 0)<<"Please provide model with graphics elements, otherwise this test case makes no sense";
     int count = 0;
-    for (auto const& elm : *m_modelP)
+    for (auto const& elm : *m_model)
         {
-        EXPECT_TRUE(elm.second->GetModel() == m_modelP);
+        EXPECT_TRUE(elm.second->GetModel() == m_model);
         ++count;
         }
     EXPECT_EQ(graphicElementCount, count);
@@ -95,20 +95,20 @@ TEST_F(DgnModelTests, GetGraphicElements)
 TEST_F(DgnModelTests, GetName)
     {
     LoadModel("Splines");
-    Utf8String name(m_modelP->GetModelName());
+    Utf8String name(m_model->GetModelName());
     EXPECT_TRUE(name.CompareTo("Splines")==0);
     Utf8String newName("New Long model name Longer than expectedNew Long model name Longer"
         " than expectedNew Long model name Longer than expectedNew Long model name Longer than expectedNew Long model");
     DgnDbStatus status;
     DgnModels& modelTable =  m_dgndb->Models();
-    DgnModelP seedModel = modelTable.GetModel(m_modelP->GetModelId());
+    DgnModelPtr seedModel = modelTable.GetModel(m_model->GetModelId());
     DgnModelPtr newModel = seedModel->Clone(newName.c_str());
     status = newModel->Insert();
     EXPECT_TRUE(status == DgnDbStatus::Success);
     DgnModelId id = modelTable.QueryModelId(newName.c_str());
     ASSERT_TRUE(id.IsValid());
-    m_modelP =  modelTable.GetModel (id);
-    Utf8String nameToVerify(m_modelP->GetModelName());
+    m_model =  modelTable.GetModel (id);
+    Utf8String nameToVerify(m_model->GetModelName());
     EXPECT_TRUE(newName.CompareTo(nameToVerify.c_str())==0);
     }
 
@@ -118,12 +118,12 @@ TEST_F(DgnModelTests, GetName)
 TEST_F(DgnModelTests, EmptyList)
     {
     LoadModel("Splines");
-    ASSERT_TRUE(0 != m_modelP->GetElements().size());
-    m_modelP->EmptyModel();
-    ASSERT_TRUE(0 == m_modelP->GetElements().size());
+    ASSERT_TRUE(0 != m_model->GetElements().size());
+    m_model->EmptyModel();
+    ASSERT_TRUE(0 == m_model->GetElements().size());
 
-    m_modelP->FillModel();
-    ASSERT_TRUE(0 != m_modelP->GetElements().size());
+    m_model->FillModel();
+    ASSERT_TRUE(0 != m_model->GetElements().size());
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Julija Suboc     07/13
@@ -134,7 +134,7 @@ TEST_F(DgnModelTests, GetRange)
     m_dgndb = tdm.GetDgnProjectP();
     LoadModel("RangeTest");
 
-    AxisAlignedBox3d range = m_modelP->QueryModelRange();
+    AxisAlignedBox3d range = m_model->QueryModelRange();
     EXPECT_TRUE(range.IsValid());
     DPoint3d low; low.Init(-1.4011580427821895, 0.11538461538461531, -0.00050000000000000001);
     DPoint3d high; high.Init(-0.59795039550813156, 0.60280769230769227, 0.00050000000000000001);
@@ -152,7 +152,7 @@ TEST_F(DgnModelTests, GetRangeOfEmptyModel)
     m_dgndb = tdm.GetDgnProjectP();
     LoadModel("Default");
 
-    AxisAlignedBox3d thirdRange = m_modelP->QueryModelRange();
+    AxisAlignedBox3d thirdRange = m_model->QueryModelRange();
     EXPECT_FALSE(thirdRange.IsValid());
     }
 
@@ -251,7 +251,7 @@ TEST_F(DgnModelTests, SheetModelCRUD)
         ASSERT_EQ( mid , sheet1->GetModelId() );
         ASSERT_EQ( mid , db->Models().QueryModelId(s_sheet1NameUPPER) ) << "Sheet model names should be case-insensitive";
         //                      ... by id
-        ASSERT_EQ( sheet1.get() , db->Models().Get<SheetModel>(mid) );
+        ASSERT_EQ( sheet1.get() , db->Models().Get<SheetModel>(mid).get() );
         Utf8String mname;
         // Look up a sheet's name by id
         db->Models().GetModelName(mname, mid);
@@ -283,7 +283,7 @@ TEST_F(DgnModelTests, SheetModelCRUD)
         // Delete Sheet2
         ASSERT_EQ( 2 , countSheets(*db) );
         auto sheet2Id = db->Models().QueryModelId(s_sheet2Name);
-        auto sheet2Model = db->Models().GetModel(sheet2Id);
+        DgnModelPtr sheet2Model = db->Models().GetModel(sheet2Id);
         ASSERT_EQ( DgnDbStatus::Success, sheet2Model->Delete());
         ASSERT_EQ( 1 , countSheets(*db) );
         }        

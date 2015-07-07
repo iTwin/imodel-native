@@ -47,75 +47,56 @@ TEST_F(PerformanceElementItem, CRUD)
 
     StopWatch elementTimer("Insert Element", false);
 
-    SetupProject(L"3dMetricGeneral.idgndb", L"ElementItemInsertPerformanceTests.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
+    SetupProject(L"3dMetricGeneral.idgndb", L"ElementInsertPerformanceTests.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     int counter;
-    double elementTime, elementItemTime, selectTime, updateTime, deleteTime, deleteElementTime;
+    double insertTime, selectTime, updateTime, deleteTime;
+    DgnDbStatus status;
+
     for (counter = startCount; counter <= maxCount; counter = counter + increment)
     {
-        elementTime = elementItemTime = selectTime = updateTime = deleteTime = deleteElementTime = 0.0;
+        insertTime = selectTime = updateTime = deleteTime = 0.0;
         for (int i = 1; i <= counter; i++)
         {
             //First insert the Element
             elementTimer.Start();
-            auto key1 = InsertElement(Utf8PrintfString("E%d", i));
-            //m_db->SaveChanges();
+            DgnElementCPtr el = InsertElement(Utf8PrintfString("E%d", i));
+            EXPECT_TRUE(el.IsValid());
             elementTimer.Stop();
-            elementTime = elementTime + elementTimer.GetElapsedSeconds();
-
-            EXPECT_TRUE(key1.GetElementId().IsValid());
-            GeometricElementCPtr el = m_db->Elements().GetElement(key1.GetElementId())->ToGeometricElement();
-            EXPECT_TRUE(el != nullptr);
+            insertTime = insertTime + elementTimer.GetElapsedSeconds();
             EXPECT_EQ(&el->GetElementHandler(), &TestElementHandler::GetHandler());
-
-            // ECSQL to add ElementItem
-            elementTimer.Start();
-            EXPECT_TRUE(InsertElementItem(el->GetElementId(), L"Test"));
-            //m_db->SaveChanges();
-            elementTimer.Stop();
-            elementItemTime = elementItemTime + elementTimer.GetElapsedSeconds();
 
             //Time to select a single ElementItem
             elementTimer.Start();
             EXPECT_TRUE(SelectElementItem(el->GetElementId()));
-            //m_db->SaveChanges();
             elementTimer.Stop();
             selectTime = selectTime + elementTimer.GetElapsedSeconds();
 
             //Now Update data and measure time for Update
+            TestElementPtr mod = m_db->Elements().GetForEdit<TestElement>(el->GetElementId());
+            EXPECT_TRUE(mod.IsValid());
+            mod->SetTestItemProperty("Test - New");
             elementTimer.Start();
-            EXPECT_TRUE(UpdateElementItem(el->GetElementId(), L"Test - New"));
-            //m_db->SaveChanges();
+            mod->Update(&status);
             elementTimer.Stop();
             updateTime = updateTime + elementTimer.GetElapsedSeconds();
 
             //Now delete data and measure time for Delete
             elementTimer.Start();
-            EXPECT_TRUE(DeleteElementItem(el->GetElementId()));
-            //m_db->SaveChanges();
+            DgnDbStatus status2 = el->Delete();
+            EXPECT_EQ(DgnDbStatus::Success, status2);
             elementTimer.Stop();
             deleteTime = deleteTime + elementTimer.GetElapsedSeconds();
 
-            //Now delete the Element
-            elementTimer.Start();
-            EXPECT_EQ(DgnDbStatus::Success, TestElementHandler::GetHandler().DeleteElement(*m_db, el->GetElementId()));
-            //m_db->SaveChanges();
-            elementTimer.Stop();
-            deleteElementTime = deleteElementTime + elementTimer.GetElapsedSeconds();
-
         }
-        //m_db->SaveChanges();
 
         //Write results to Db for analysis
-        m_testObj.writeTodb(elementTime, "ElementCRUDPerformance,InsertElementItem_Element", "", counter);
-        m_testObj.writeTodb(elementItemTime, "ElementCRUDPerformance,InsertElementItem_Item", "", counter);
-        m_testObj.writeTodb(elementTime + elementItemTime, "ElementCRUDPerformance,InsertElementItem_Total", "", counter);
+        m_testObj.writeTodb(insertTime, "ElementCRUDPerformance,InsertElementItem", "", counter);
         m_testObj.writeTodb(selectTime, "ElementCRUDPerformance,SelectSignleElementItem", "", counter);
         m_testObj.writeTodb(updateTime, "ElementCRUDPerformance,UpdateElementItem", "", counter);
         m_testObj.writeTodb(deleteTime, "ElementCRUDPerformance,DeleteElementItem", "", counter);
-        m_testObj.writeTodb(deleteElementTime, "ElementCRUDPerformance,DeleteElement", "", counter);
-        m_testObj.writeTodb(deleteTime + deleteElementTime, "ElementCRUDPerformance,DeleteElementItem_Total", "", counter);
     }
+
 }
 
 //=======================================================================================

@@ -503,8 +503,8 @@ void QueryViewController::_DrawView(ViewContextR context)
         // Allow models to participate in picking
         for (DgnModelId modelId : GetViewedModels())
             {
-            DgnModel* model = GetDgnDb().Models().GetModel(modelId);
-            if (nullptr != model)
+            DgnModelPtr model = GetDgnDb().Models().GetModel(modelId);
+            if (model.IsValid())
                 model->AddGraphicsToScene(context);
             }
 
@@ -600,8 +600,8 @@ void QueryViewController::_DrawView(ViewContextR context)
     // Next, allow external data models to draw or schedule external data.
     for (DgnModelId modelId : GetViewedModels())
         {
-        DgnModel* model = GetDgnDb().Models().GetModel(modelId);
-        if (nullptr != model)
+        DgnModelPtr model = GetDgnDb().Models().GetModel(modelId);
+        if (model.IsValid())
             model->AddGraphicsToScene(context);
         }
 
