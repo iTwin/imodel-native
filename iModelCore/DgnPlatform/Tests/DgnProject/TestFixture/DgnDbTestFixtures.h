@@ -50,7 +50,7 @@ public:
     static RefCountedPtr<TestElement> Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode);
     static RefCountedPtr<TestElement> Create(DgnDbR db, ElemDisplayParamsCR ep, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode);
     static ECN::ECClassCP GetTestElementECClass(DgnDbR db) { return db.Schemas().GetECClass(TMTEST_SCHEMA_NAME, TMTEST_TEST_ELEMENT_CLASS_NAME); }
-    void TestElement::SetTestItemProperty(Utf8CP value) { m_testItemProperty.AssignOrClear(value); }
+    void SetTestItemProperty(Utf8CP value) { m_testItemProperty.AssignOrClear(value); }
 };
 
 //These typedefs have to be defined
