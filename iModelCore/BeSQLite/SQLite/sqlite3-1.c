@@ -303,7 +303,7 @@ extern "C" {
 */
 #define SQLITE_VERSION        "3.8.11"
 #define SQLITE_VERSION_NUMBER 3008011
-#define SQLITE_SOURCE_ID      "2015-06-30 16:29:59 39936b33b0668aad81aa574d4d74c92b0ddd218a"
+#define SQLITE_SOURCE_ID      "2015-07-02 18:47:12 85ca4409bdca7aee801e9fba1c49a87fabbf2064"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
@@ -9684,6 +9684,16 @@ int sqlite3changegroup_output_strm(sqlite3_changegroup*,
 #endif
 
 /*
+** Make sure that the compiler intrinsics we desire are enabled when
+** compiling with an appropriate version of MSVC.
+*/
+#if defined(_MSC_VER) && _MSC_VER>=1300
+#  include <intrin.h>
+#  pragma intrinsic(_byteswap_ushort)
+#  pragma intrinsic(_byteswap_ulong)
+#endif
+
+/*
 ** The SQLITE_THREADSAFE macro must be defined as 0, 1, or 2.
 ** 0 means mutexes are permanently disable and the library is never
 ** threadsafe.  1 means the library is serialized which is the highest
@@ -11655,7 +11665,9 @@ SQLITE_PRIVATE   int sqlite3PagerWalFramesize(Pager *pPager);
 /* Functions used to query pager state and configuration. */
 SQLITE_PRIVATE u8 sqlite3PagerIsreadonly(Pager*);
 SQLITE_PRIVATE u32 sqlite3PagerDataVersion(Pager*);
-SQLITE_PRIVATE int sqlite3PagerRefcount(Pager*);
+#ifdef SQLITE_DEBUG
+SQLITE_PRIVATE   int sqlite3PagerRefcount(Pager*);
+#endif
 SQLITE_PRIVATE int sqlite3PagerMemUsed(Pager*);
 SQLITE_PRIVATE const char *sqlite3PagerFilename(Pager*, int);
 SQLITE_PRIVATE const sqlite3_vfs *sqlite3PagerVfs(Pager*);
@@ -26288,6 +26300,10 @@ SQLITE_PRIVATE u32 sqlite3Get4byte(const u8 *p){
   u32 x;
   memcpy(&x,p,4);
   return __builtin_bswap32(x);
+#elif SQLITE_BYTEORDER==1234 && defined(_MSC_VER) && _MSC_VER>=1300
+  u32 x;
+  memcpy(&x,p,4);
+  return _byteswap_ulong(x);
 #else
   testcase( p[0]&0x80 );
   return ((unsigned)p[0]<<24) | (p[1]<<16) | (p[2]<<8) | p[3];
@@ -26298,6 +26314,9 @@ SQLITE_PRIVATE void sqlite3Put4byte(unsigned char *p, u32 v){
   memcpy(p,&v,4);
 #elif SQLITE_BYTEORDER==1234 && defined(__GNUC__)
   u32 x = __builtin_bswap32(v);
+  memcpy(p,&x,4);
+#elif SQLITE_BYTEORDER==1234 && defined(_MSC_VER) && _MSC_VER>=1300
+  u32 x = _byteswap_ulong(v);
   memcpy(p,&x,4);
 #else
   p[0] = (u8)(v>>24);

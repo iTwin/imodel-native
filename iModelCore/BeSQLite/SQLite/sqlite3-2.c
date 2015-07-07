@@ -22827,12 +22827,14 @@ SQLITE_PRIVATE u8 sqlite3PagerIsreadonly(Pager *pPager){
   return pPager->readOnly;
 }
 
+#ifdef SQLITE_DEBUG
 /*
 ** Return the number of references to the pager.
 */
 SQLITE_PRIVATE int sqlite3PagerRefcount(Pager *pPager){
   return sqlite3PcacheRefCount(pPager->pPCache);
 }
+#endif
 
 /*
 ** Return the approximate number of bytes of memory currently
@@ -27571,6 +27573,7 @@ struct IntegrityCk {
   const char *zPfx; /* Error message prefix */
   int v1, v2;       /* Values for up to two %d fields in zPfx */
   StrAccum errMsg;  /* Accumulate the error message text here */
+  u32 *heap;        /* Min-heap used for analyzing cell coverage */
 };
 
 /*
@@ -27590,6 +27593,8 @@ struct IntegrityCk {
 # define get2byteAligned(x)  (*(u16*)(x))
 #elif SQLITE_BYTEORDER==1234 && GCC_VERSION>=4008000
 # define get2byteAligned(x)  __builtin_bswap16(*(u16*)(x))
+#elif SQLITE_BYTEORDER==1234 && defined(_MSC_VER) && _MSC_VER>=1300
+# define get2byteAligned(x)  _byteswap_ushort(*(u16*)(x))
 #else
 # define get2byteAligned(x)  ((x)[0]<<8 | (x)[1])
 #endif
