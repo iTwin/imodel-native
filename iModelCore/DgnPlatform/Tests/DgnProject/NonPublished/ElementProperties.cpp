@@ -58,9 +58,8 @@ TEST_F (ElementDisplayProperties, SetGradient)
     gradient->SetKeys(2, keyColors, keyValues);
     ep.SetGradient(gradient.get());
 
-    auto keyE1 = InsertElement("E3", ep, m3id);
-    DgnElementId E1id = keyE1.GetElementId();
-    DgnElementCP pE1 = m_db->Elements().FindElement(E1id);
+    DgnElementCPtr pE1 = InsertElement("E3", ep, m3id);
+    EXPECT_TRUE(pE1.IsValid());
 
     GeometricElementP geomElem = const_cast<GeometricElementP>(pE1->ToGeometricElement());
     ElementGeometryCollection collection(*geomElem);
@@ -140,9 +139,8 @@ TEST_F (ElementDisplayProperties, SetTransparency)
     ep.SetCategoryId(m_defaultCategoryId);
     ep.SetTransparency(0.5);
 
-    auto keyE1 = InsertElement("E2", ep, m3id);
-    DgnElementId E1id = keyE1.GetElementId();
-    DgnElementCP pE1 = m_db->Elements().FindElement(E1id);
+    DgnElementCPtr pE1 = InsertElement("E3", ep, m3id);
+    EXPECT_TRUE(pE1.IsValid());
 
     GeometricElementP geomElem = const_cast<GeometricElementP>(pE1->ToGeometricElement());
     ElementGeometryCollection collection(*geomElem);
@@ -173,9 +171,8 @@ TEST_F (ElementDisplayProperties, SetCategory)
     ElemDisplayParams ep;
     ep.SetCategoryId(m_defaultCategoryId);
 
-    auto keyE1 = InsertElement("E2", ep, m3id);
-    DgnElementId E1id = keyE1.GetElementId();
-    DgnElementCP pE1 = m_db->Elements().FindElement(E1id);
+    DgnElementCPtr pE1 = InsertElement("E3", ep, m3id);
+    EXPECT_TRUE(pE1.IsValid());
 
     GeometricElementP geomElem = const_cast<GeometricElementP>(pE1->ToGeometricElement());
     ElementGeometryCollection collection(*geomElem);
@@ -211,9 +208,8 @@ TEST_F (ElementDisplayProperties, SetDisplayParams)
     ep.SetWeight(21);
     ep.SetDisplayPriority(2);
 
-    auto keyE1 = InsertElement("E2", ep, m3id);
-    DgnElementId E1id = keyE1.GetElementId();
-    DgnElementCP pE1 = m_db->Elements().FindElement(E1id);
+    DgnElementCPtr pE1 = InsertElement("E3", ep, m3id);
+    EXPECT_TRUE(pE1.IsValid());
 
     GeometricElementP geomElem = const_cast<GeometricElementP>(pE1->ToGeometricElement());
     ElementGeometryCollection collection(*geomElem);
@@ -249,9 +245,8 @@ TEST_F (ElementDisplayProperties, FillProperties)
     ep.SetFillColor(ColorDef::Red());
     ep.SetFillTransparency(0.8);
 
-    auto keyE1 = InsertElement("E2", ep, m3id);
-    DgnElementId E1id = keyE1.GetElementId();
-    DgnElementCP pE1 = m_db->Elements().FindElement(E1id);
+    DgnElementCPtr pE1 = InsertElement("E3", ep, m3id);
+    EXPECT_TRUE(pE1.IsValid());
 
     GeometricElementP geomElem = const_cast<GeometricElementP>(pE1->ToGeometricElement());
     ElementGeometryCollection collection(*geomElem);
