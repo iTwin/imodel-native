@@ -583,7 +583,7 @@ void ClassMapInfo::LogClassNotMapped (NativeLogging::SEVERITY severity, ECClassC
 MapStatus ClassMapInfo::ReportError_OneClassMappedByTableInHierarchyFromTwoDifferentAncestors (ECClassCR ecClass, bvector<IClassMap const*> tphMaps) const
     {
     WString message;
-    message.Sprintf (L"Two or more base ECClasses (or their base classes) of %ls.%ls are using TablePerHierarchy mapping. We cannot determine which to honor. The base ECClasses are: ",
+    message.Sprintf (L"Two or more base ECClasses (or their base classes) of %ls.%ls are using the MapStrategy 'SharedTable (polymorphic)'. We cannot determine which to honor. The base ECClasses are: ",
         ecClass.GetSchema ().GetName ().c_str (), ecClass.GetName ().c_str ());
     for (auto tphMap : tphMaps)
         {
@@ -972,8 +972,8 @@ ECRelationshipClassCR relationshipClass
     size_t nSourceTables = m_ecdbMap.GetTablesFromRelationshipEnd (nullptr, source);
     size_t nTargetTables = m_ecdbMap.GetTablesFromRelationshipEnd (nullptr, target);
 
-    BeAssert (0 != nSourceTables && "Condition should have been caught earlier, and strategy set to DoNotMap");
-    BeAssert (0 != nTargetTables && "Condition should have been caught earlier, and strategy set to DoNotMap");
+    BeAssert (0 != nSourceTables && "Condition should have been caught earlier, and strategy set to NotMapped");
+    BeAssert (0 != nTargetTables && "Condition should have been caught earlier, and strategy set to NotMapped");
 
     // Don't persist at an end that has more than one table
     if (!(nSourceTables == 1 && nTargetTables == 1))
