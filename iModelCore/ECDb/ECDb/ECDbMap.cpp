@@ -944,7 +944,7 @@ void ECDbMap::LightWeightMapCache::LoadClassTableClasses () const
 //---------------------------------------------------------------------------------------
 void ECDbMap::LightWeightMapCache::LoadAnyClassRelationships () const
     {
-    if (m_loadedFlags.m_relationshipEndsByClassIdIsLoaded)
+    if (m_loadedFlags.m_anyClassRelationshipsIsLoaded)
         return;
 
     Utf8CP sql1 =
@@ -969,7 +969,7 @@ void ECDbMap::LightWeightMapCache::LoadAnyClassRelationships () const
             }
         }
 
-    m_loadedFlags.m_relationshipEndsByClassIdIsLoaded = true;
+    m_loadedFlags.m_anyClassRelationshipsIsLoaded = true;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1063,6 +1063,7 @@ void ECDbMap::LightWeightMapCache::LoadDerivedClasses ()  const
     if (m_loadedFlags.m_tablesByClassIdIsLoaded)
         return;
 
+    auto anyClassId = GetAnyClassId ();
     Utf8CP sql0 =
         "WITH RECURSIVE  "
         "   DerivedClassList(RootClassId, CurrentClassId, DerivedClassId) "
@@ -1091,10 +1092,14 @@ void ECDbMap::LightWeightMapCache::LoadDerivedClasses ()  const
     auto stmt = m_map.GetECDbR ().GetCachedStatement (sql0);
     // auto currentTableId = -1;
     //ECDbSqlTable const* currentTable;
+;
     while (stmt->Step () == BE_SQLITE_ROW)
         {
         auto rootClassId = stmt->GetValueInt64 (0);
         auto derivedClassId = stmt->GetValueInt64 (1);
+        if (anyClassId == rootClassId)
+            continue;
+
         Utf8CP tableName = stmt->GetValueText (2);
         auto table = m_map.GetSQLManager ().GetDbSchema ().FindTable (tableName);
         BeAssert (table != nullptr);
@@ -1108,6 +1113,22 @@ void ECDbMap::LightWeightMapCache::LoadDerivedClasses ()  const
         }
 
     m_loadedFlags.m_tablesByClassIdIsLoaded = true;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      07/2015
+//--------------------------------------------------------------------------------------
+ECN::ECClassId ECDbMap::LightWeightMapCache::GetAnyClassId () const
+    {
+    if (m_anyClass == 0LL)
+        {
+        auto stmt = m_map.GetECDbR ().GetCachedStatement ("SELECT ec_Class.Id FROM ec_Class INNER JOIN ec_Schema ON ec_Schema.Id = ec_Class.SchemaId WHERE ec_Class.Name = 'AnyClass' AND ec_Schema.Name = 'Bentley_Standard_Classes'");
+        if (stmt->Step () == BE_SQLITE_ROW)
+            {
+            m_anyClass = stmt->GetValueInt64 (0);
+            }
+        }
+
+    return m_anyClass;
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
@@ -1152,7 +1173,7 @@ void ECDbMap::LightWeightMapCache::Load (bool forceReload)
     {
     if (forceReload)
         Reset ();
-
+    
     LoadAnyClassRelationships ();
     LoadClassRelationships (true);
     LoadClassTableClasses ();
@@ -1169,6 +1190,7 @@ void ECDbMap::LightWeightMapCache::Reset ()
         m_loadedFlags.m_relationshipEndsByClassIdIsLoaded =
         m_loadedFlags.m_tablesByClassIdIsLoaded = false;
 
+    m_anyClass = 0LL;
     m_relationshipEndsByClassId.clear ();
     m_tablesByClassId.clear ();
     m_classIdsByTable.clear ();

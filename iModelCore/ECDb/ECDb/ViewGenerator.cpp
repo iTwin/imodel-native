@@ -258,9 +258,8 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
     //---------------------------------------------------------------------------------------
     // @bsimethod                                 Affan.Khan                         06/2015
     //---------------------------------------------------------------------------------------
-    BentleyStatus SqlGenerator::BuildSystemSelectionClause (NativeSqlBuilder::List& fragments, ClassMapCR classMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue)
+    BentleyStatus SqlGenerator::BuildSystemSelectionClause (NativeSqlBuilder::List& fragments, ClassMapCR baseClassMap, ClassMapCR classMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue)
         {
-      
         if (auto column = classMap.GetTable ().GetFilteredColumnFirst (ECDbSystemColumnECInstanceId))
             {
             if (BuildColumnExpression (fragments, tablePrefix, column->GetName ().c_str (), ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
@@ -285,25 +284,34 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
                 return BentleyStatus::ERROR;
             }
 
-        if (auto column = classMap.GetTable ().GetFilteredColumnFirst (ECDbSystemColumnParentECInstanceId))
+        if (baseClassMap.GetClass ().GetIsStruct ())
             {
-            if (BuildColumnExpression (fragments, tablePrefix, column->GetName ().c_str (), ECDbSystemSchemaHelper::PARENTECINSTANCEID_PROPNAME, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
+            if (!classMap.GetClass ().GetIsStruct ())
+                {
+                BeAssert (false && "BaseClass is of type struct but not the child class which must also be struct type");
                 return BentleyStatus::ERROR;
-            }
+                }
 
-        if (auto column = classMap.GetTable ().GetFilteredColumnFirst (ECDbSystemColumnECPropertyPathId))
-            {
-            if (BuildColumnExpression (fragments, tablePrefix, column->GetName ().c_str (), ECDbSystemSchemaHelper::ECPROPERTYPATHID_PROPNAME, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
-                return BentleyStatus::ERROR;
-            }
+            if (auto column = classMap.GetTable ().GetFilteredColumnFirst (ECDbSystemColumnParentECInstanceId))
+                {
+                if (BuildColumnExpression (fragments, tablePrefix, column->GetName ().c_str (), ECDbSystemSchemaHelper::PARENTECINSTANCEID_PROPNAME, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
+                    return BentleyStatus::ERROR;
+                }
 
-        if (auto column = classMap.GetTable ().GetFilteredColumnFirst (ECDbSystemColumnECArraryIndex))
-            {
-            
-            if (BuildColumnExpression (fragments, tablePrefix, column->GetName ().c_str (), ECDbSystemSchemaHelper::ECARRAYINDEX_PROPNAME, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
-                return BentleyStatus::ERROR;
-            }
+            if (auto column = classMap.GetTable ().GetFilteredColumnFirst (ECDbSystemColumnECPropertyPathId))
+                {
+                if (BuildColumnExpression (fragments, tablePrefix, column->GetName ().c_str (), ECDbSystemSchemaHelper::ECPROPERTYPATHID_PROPNAME, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
+                    return BentleyStatus::ERROR;
+                }
 
+            if (auto column = classMap.GetTable ().GetFilteredColumnFirst (ECDbSystemColumnECArraryIndex))
+                {
+
+                if (BuildColumnExpression (fragments, tablePrefix, column->GetName ().c_str (), ECDbSystemSchemaHelper::ECARRAYINDEX_PROPNAME, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
+                    return BentleyStatus::ERROR;
+                }
+            }
+        
         if (classMap.GetClassMapType () == IClassMap::Type::RelationshipEndTable || classMap.GetClassMapType () == IClassMap::Type::RelationshipLinkTable)
             {
             auto const& rel = static_cast<RelationshipClassMapCR>(classMap);
@@ -329,7 +337,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
         {
         NativeSqlBuilder::List fragments;
 
-        if (BuildSystemSelectionClause (fragments, classMap, tablePrefix, addECPropertyPathAlias, nullValue) != BentleyStatus::SUCCESS)
+        if (BuildSystemSelectionClause (fragments, baseClassMap, classMap, tablePrefix, true, nullValue) != BentleyStatus::SUCCESS)
             return BentleyStatus::ERROR;
 
         for (auto basePropertyMap : baseClassMap.GetPropertyMaps ())
@@ -842,6 +850,9 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
             if (classMap == nullptr)
                 continue;
 
+            if (classMap->GetMapStrategy ().IsDoNotMap ())
+                continue;
+
             relationships[classMap] = pair.second;
             }
 
@@ -855,6 +866,8 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
         for (auto derivedClassMap : classMap.GetDerivedClassMaps ())
             {
             if (derivedClassMap == nullptr)
+                continue;
+            if (derivedClassMap->GetMapStrategy ().IsDoNotMap ())
                 continue;
 
             NativeSqlBuilder trigger;
@@ -903,6 +916,9 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
             auto& constraints = endToDelete == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetRelationshipClass ().GetSource () : classMap.GetRelationshipClass ().GetTarget ();
             for (auto constraint : constraints.GetConstraintClasses ())
                 {
+                if (m_map.GetLightWeightMapCache ().GetAnyClassId () == constraint->GetClass ().GetId ())
+                    continue;
+
                 auto endToBeDeleted = m_map.GetClassMap (constraint->GetClass ());
                 if (endToBeDeleted == nullptr)
                     {
@@ -951,9 +967,9 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
                 trigger.Append ("\tDELETE FROM ");
                 trigger.AppendEscaped (BuildViewClassName (endToBeDeleted->GetClass ()).c_str ());
                 if (endToDelete == ECRelationshipEnd_Target)
-                    trigger.Append (" WHERE  ECInstanceId = OLD.TargetECInstanceId AND (SELECT COUNT(*) FROM " ECDB_HOLDING_VIEW "  WHERE ECInstanceId = OLD.TargetECInstanceId) = 1;");
+                    trigger.Append (" WHERE  ECInstanceId = OLD.TargetECInstanceId AND (SELECT COUNT(*) FROM " ECDB_HOLDING_VIEW "  WHERE ECInstanceId = OLD.TargetECInstanceId) = 0;");
                 else
-                    trigger.Append (" WHERE  ECInstanceId = OLD.SourceECInstanceId AND (SELECT COUNT(*) FROM " ECDB_HOLDING_VIEW " WHERE ECInstanceId = OLD.TargetECInstanceId) = 1;");
+                    trigger.Append (" WHERE  ECInstanceId = OLD.SourceECInstanceId AND (SELECT COUNT(*) FROM " ECDB_HOLDING_VIEW " WHERE ECInstanceId = OLD.TargetECInstanceId) = 0;");
                 trigger.AppendEOL ();
                 }
             }
@@ -966,11 +982,56 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
     //+---------------+---------------+---------------+---------------+---------------+--------
     BentleyStatus SqlGenerator::BuildDeleteTriggerForEndTableMe (NativeSqlBuilder::List& triggers, ClassMapCR classMap)
         {
-        NativeSqlBuilder trigger;
+
         Utf8String triggerName = BuildSchemaQualifiedClassName (classMap.GetClass ());
         auto& endTableMap = static_cast<RelationshipClassEndTableMapCR>(classMap);
         auto strengthType = endTableMap.GetRelationshipClass ().GetStrength ();
+        NativeSqlBuilder updateStatement;
+        if (!endTableMap.GetOtherEndECInstanceIdPropMap ()->GetFirstColumn ()->GetConstraint ().IsNotNull ())
+            {
+            if (StrengthType::STRENGTHTYPE_Referencing == strengthType)
+                {
+                updateStatement.Append (" -- StrengthType == Referencing ").AppendEOL ();
+                }
+            updateStatement.Append ("\tUPDATE ");
+            updateStatement.AppendEscaped (endTableMap.GetTable ().GetName ().c_str ());
+            updateStatement.Append (" SET ");
+            updateStatement.AppendEscaped (endTableMap.GetOtherEndECInstanceIdPropMap ()->GetFirstColumn ()->GetName ().c_str ());
+            updateStatement.Append (" = NULL");
+            if (endTableMap.GetOtherEndECClassIdPropMap ()->IsMappedToPrimaryTable () && endTableMap.GetOtherEndECClassIdPropMap ()->GetFirstColumn ()->GetPersistenceType () == PersistenceType::Persisted)
+                {
+                updateStatement.AppendComma ().AppendSpace ();
+                updateStatement.AppendEscaped (endTableMap.GetOtherEndECClassIdPropMap ()->GetFirstColumn ()->GetName ().c_str ());
+                updateStatement.Append (" = NULL");
+                }
 
+            updateStatement.Append (" WHERE ");
+            if (auto column = endTableMap.GetTable ().GetFilteredColumnFirst (ECDbSystemColumnECInstanceId))
+                {
+                updateStatement.AppendEscaped (column->GetName ().c_str ());
+                }
+            else
+                {
+                BeAssert (false && "Failed to find ECInstanceId column");
+                return BentleyStatus::ERROR;
+                }
+
+            updateStatement.Append (" = ").Append ("OLD.ECInstanceId;").AppendEOL ();
+            }
+
+        NativeSqlBuilder deleteTarget;
+        if (strengthType == StrengthType::STRENGTHTYPE_Embedding)
+            {
+            if (BuildEmbeddingConstraint (deleteTarget, endTableMap) != BentleyStatus::SUCCESS)
+                return BentleyStatus::ERROR;
+            }
+        else if (strengthType == StrengthType::STRENGTHTYPE_Holding)
+            {
+            if (BuildHoldingConstraint (deleteTarget, endTableMap) != BentleyStatus::SUCCESS)
+                return BentleyStatus::ERROR;
+            }
+
+        NativeSqlBuilder trigger;
         triggerName.append ("_Delete_Me");
         trigger.Append ("CREATE TRIGGER IF NOT EXISTS ");
         trigger.Append (triggerName.c_str ()).AppendEOL ();
@@ -978,58 +1039,16 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
         trigger.Append ("ON ");
         trigger.Append (BuildViewClassName (endTableMap.GetClass ()).c_str ()).AppendEOL ();
         trigger.Append ("FOR EACH ROW").AppendEOL ();
-        trigger.Append ("\tWHEN (OLD.ECClassId = ").Append (endTableMap.GetClass ().GetId ()).Append(")");
-
-        //if (strengthType == StrengthType::STRENGTHTYPE_Holding)
-        //    {
-        //    trigger.Append (" AND ((SELECT COUNT(*) FROM " ECDB_HOLDING_VIEW " WHERE ECInstanceId = OLD.ECInstanceId) = 1)");
-        //    }
-       
+        trigger.Append ("\tWHEN (OLD.ECClassId = ").Append (endTableMap.GetClass ().GetId ()).Append (")");
         trigger.AppendEOL ();
-        trigger.Append ("BEGIN ").AppendEOL ();
-
-        if (StrengthType::STRENGTHTYPE_Referencing == strengthType)
-            {
-            trigger.Append (" -- StrengthType == Referencing ").AppendEOL ();
-            }
-        if (strengthType == StrengthType::STRENGTHTYPE_Embedding)
-            {
-            if (BuildEmbeddingConstraint (trigger, endTableMap) != BentleyStatus::SUCCESS)
-                return BentleyStatus::ERROR;
-            }
-        else if (strengthType == StrengthType::STRENGTHTYPE_Holding)
-            {
-            if (BuildHoldingConstraint (trigger, endTableMap) != BentleyStatus::SUCCESS)
-                return BentleyStatus::ERROR;
-            }
-
-        trigger.Append ("\tUPDATE ");
-        trigger.AppendEscaped (endTableMap.GetTable ().GetName ().c_str ());
-        trigger.Append (" SET ");
-        trigger.AppendEscaped (endTableMap.GetOtherEndECInstanceIdPropMap ()->GetFirstColumn ()->GetName ().c_str ());
-        trigger.Append (" = NULL");
-        if (endTableMap.GetOtherEndECClassIdPropMap ()->IsMappedToPrimaryTable () && endTableMap.GetOtherEndECClassIdPropMap ()->GetFirstColumn ()->GetPersistenceType () == PersistenceType::Persisted)
-            {
-            trigger.AppendComma ().AppendSpace ();
-            trigger.AppendEscaped (endTableMap.GetOtherEndECClassIdPropMap ()->GetFirstColumn ()->GetName ().c_str ());
-            trigger.Append (" = NULL");
-            }
-
-        trigger.Append (" WHERE ");
-        if (auto column = endTableMap.GetTable ().GetFilteredColumnFirst (ECDbSystemColumnECInstanceId))
-            {
-            trigger.AppendEscaped (column->GetName ().c_str ());
-            }
+        trigger.Append ("BEGIN").AppendEOL ();
+        if (updateStatement.IsEmpty () && deleteTarget.IsEmpty ())
+            trigger.Append ("SELECT 1;").AppendEOL ();
         else
             {
-            BeAssert (false && "Failed to find ECInstanceId column");
-            return BentleyStatus::ERROR;
+            trigger.Append (updateStatement);
+            trigger.Append (deleteTarget);
             }
-
-        trigger.Append (" = ").Append ("OLD.ECInstanceId;").AppendEOL ();
-
-
-
         trigger.Append ("END ");
         triggers.push_back (std::move (trigger));
 
@@ -1155,23 +1174,6 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
 
                 trigger.AppendEOL ();
                 trigger.Append ("BEGIN ").AppendEOL ();
-                if (classMap.IsRelationshipClassMap ())
-                    {
-                    auto& linkTableMap = static_cast<RelationshipClassLinkTableMapCR>(classMap);
-                    auto strengthType = linkTableMap.GetRelationshipClass ().GetStrength ();
-
-                    if (strengthType == StrengthType::STRENGTHTYPE_Embedding)
-                        {
-                        if (BuildEmbeddingConstraint (trigger, linkTableMap) != BentleyStatus::SUCCESS)
-                            return BentleyStatus::ERROR;
-                        }
-                    else if (strengthType == StrengthType::STRENGTHTYPE_Holding)
-                        {
-                        if (BuildHoldingConstraint (trigger, linkTableMap) != BentleyStatus::SUCCESS)
-                            return BentleyStatus::ERROR;
-                        }
-                    }
-
                 trigger.Append ("\tDELETE FROM ");
                 trigger.AppendEscaped (classMap.GetTable ().GetName ().c_str ());
                 trigger.Append (" WHERE ");
@@ -1188,6 +1190,23 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
 
                 trigger.Append (" = ").Append ("OLD.ECInstanceId;").AppendEOL ();
 
+
+                if (classMap.IsRelationshipClassMap ())
+                    {
+                    auto& linkTableMap = static_cast<RelationshipClassLinkTableMapCR>(classMap);
+                    auto strengthType = linkTableMap.GetRelationshipClass ().GetStrength ();
+
+                    if (strengthType == StrengthType::STRENGTHTYPE_Embedding)
+                        {
+                        if (BuildEmbeddingConstraint (trigger, linkTableMap) != BentleyStatus::SUCCESS)
+                            return BentleyStatus::ERROR;
+                        }
+                    else if (strengthType == StrengthType::STRENGTHTYPE_Holding)
+                        {
+                        if (BuildHoldingConstraint (trigger, linkTableMap) != BentleyStatus::SUCCESS)
+                            return BentleyStatus::ERROR;
+                        }
+                    }
 
                 trigger.Append ("END ");
                 triggers.push_back (std::move (trigger));
@@ -1249,7 +1268,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
     BentleyStatus SqlGenerator::BuildDeleteTriggers (NativeSqlBuilder::List& triggers, ClassMapCR classMap)
         {
 
-        if (BuildDeleteTriggerForMe (triggers, classMap) != BentleyStatus::SUCCESS)
+        if (BuildDeleteTriggersForRelationships (triggers, classMap) != BentleyStatus::SUCCESS)
             return BentleyStatus::ERROR;
 
         if (BuildDeleteTriggersForDerivedClasses (triggers, classMap) != BentleyStatus::SUCCESS)
@@ -1258,7 +1277,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
         if (BuildDeleteTriggerForStructArrays (triggers, classMap) != BentleyStatus::SUCCESS)
             return BentleyStatus::ERROR;
 
-        if (BuildDeleteTriggersForRelationships (triggers, classMap) != BentleyStatus::SUCCESS)
+        if (BuildDeleteTriggerForMe (triggers, classMap) != BentleyStatus::SUCCESS)
             return BentleyStatus::ERROR;
 
         return BentleyStatus::SUCCESS;

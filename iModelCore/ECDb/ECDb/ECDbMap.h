@@ -54,6 +54,7 @@ public:
             mutable bmap<ECN::ECClassId, TableClasses> m_tablesByClassId;
             mutable ClassRelationshipEnds m_anyClassRelationships;
             mutable TableClasses m_classIdsByTable;
+            mutable ECN::ECClassId m_anyClass;
             mutable struct
                 {
                 bool m_relationshipEndsByClassIdIsLoaded : 1;
@@ -64,6 +65,7 @@ public:
 
             ECDbMapCR m_map;
         private:
+      
             void LoadDerivedClasses () const;
             void LoadClassTableClasses () const;
             void LoadAnyClassRelationships () const;
@@ -78,12 +80,13 @@ public:
             ClassRelationshipEnds const& GetAnyClassRelationships () const;
             ClassIds const& GetClassesMapToTable (ECDbSqlTable const& table) const;
             TableClasses const& GetTablesMapToClass (ECN::ECClassId classId) const;
-
+            ECN::ECClassId GetAnyClassId () const;
             void Load (bool forceReload);
             void Reset ();
         };
 private:
     mutable BeMutex m_criticalSection;
+
     LightWeightMapCache         m_lightWeightMapCache;
     ECDbR                       m_ecdb;
     ECDbSQLManager              m_ecdbSqlManager;

@@ -178,7 +178,7 @@ TEST(ECDbFileInfo, ECFEmbeddedFileBackedInstanceSupport)
     ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Export(exportFilePath.GetNameUtf8().c_str(), testFileName));
 
     stmt.Finalize();
-
+    ecdb.SaveChanges ();
     //DELETE scenario
     //TODO_ROWAFFECTED
     //stmt.EnableDefaultEventHandler();
@@ -189,7 +189,7 @@ TEST(ECDbFileInfo, ECFEmbeddedFileBackedInstanceSupport)
     //TODO_ROWAFFECTED
     //ASSERT_EQ(3, stmt.GetDefaultEventHandler()->GetInstancesAffectedCount()); //1 Foo, 1 EmbeddedFileInfo, 1 InstanceHasFileInfo
     stmt.Finalize();
-
+ 
     ASSERT_EQ((int)ECSqlStatus::Success, (int)stmt.Prepare(ecdb, "SELECT NULL FROM ecdbf.InstanceHasFileInfo LIMIT 1"));
     ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stmt.Step());
     stmt.Finalize();

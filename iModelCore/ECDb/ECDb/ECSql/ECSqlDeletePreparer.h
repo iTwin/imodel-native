@@ -9,7 +9,7 @@
 //__BENTLEY_INTERNAL_ONLY__
 
 #include "ECSqlPreparer.h"
-
+#include "ECDbPolicyManager.h"
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
@@ -61,6 +61,18 @@ struct ECSqlDeletePreparer2
             auto classExp = exp.GetClassNameExp ();
             auto& map = classExp->GetInfo ().GetMap ();
             auto viewName = SqlGenerator::BuildViewClassName (map.GetClass ());
+            auto const& classMap = classExp->GetInfo ().GetMap ();
+            if (ctx.IsPrimaryStatement ())
+                {
+                const auto currentScopeECSqlType = ctx.GetCurrentScope ().GetECSqlType ();
+                auto policy = ECDbPolicyManager::GetClassPolicy (classMap, IsValidInECSqlPolicyAssertion::Get (currentScopeECSqlType, classExp->IsPolymorphic ()));
+                if (!policy.IsSupported ())
+                    return ctx.SetError (ECSqlStatus::InvalidECSql, "Invalid ECClass '%s': %s", classExp->GetId ().c_str (), policy.GetNotSupportedMessage ());
+                }
+
+            if (map.GetTable().GetPersistenceType () == PersistenceType::Virtual)
+                ctx.SetNativeStatementIsNoop (true);
+
             ctx.GetSqlBuilderR ().Append ("DELETE FROM ").Append (viewName.c_str ());
             NativeSqlBuilder whereClause;
 

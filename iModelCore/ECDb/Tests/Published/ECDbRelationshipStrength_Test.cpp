@@ -194,7 +194,7 @@ TEST(ECDbInstances, RelationshipStrength)
     */
     /*numDeleted = */DeleteInstance(*grandParent2, ecDb);
     //ASSERT_EQ(7, numDeleted);
-
+    ecDb.SaveChanges ();
     ASSERT_FALSE(HasInstance(*grandParent2, ecDb));
     ASSERT_FALSE(HasInstance(*grandParent2HasSingleParent, ecDb));
     ASSERT_FALSE(HasInstance(*singleParent, ecDb));

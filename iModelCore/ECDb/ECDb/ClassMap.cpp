@@ -409,7 +409,7 @@ MapStatus ClassMap::_InitializePart2 (ClassMapInfo const& mapInfo, IClassMap con
                 whenCondtion.Sprintf("old.%s=new.%s", column->GetName().c_str(), column->GetName().c_str());
                 Utf8String body;
                 Utf8CP instanceID = GetPropertyMap(L"ECInstanceId")->GetFirstColumn()->GetName().c_str();
-                body.Sprintf("BEGIN UPDATE %s SET %s=julianday('now') WHERE %s=new.%s; END", column->GetTableR().GetName().c_str(), column->GetName().c_str(), instanceID, instanceID);
+                body.Sprintf ("BEGIN UPDATE %s SET %s=julianday('now') WHERE %s=new.%s AND (%s IS NULL OR julianday('now') > %s); END", column->GetTableR ().GetName ().c_str (), column->GetName ().c_str (), instanceID, instanceID, column->GetName ().c_str (), column->GetName ().c_str ());
                 Utf8String triggerName;
                 triggerName.Sprintf("%s_CurrentTimeStamp", column->GetTableR().GetName().c_str());
                 column->GetTableR().CreateTrigger(triggerName.c_str(), column->GetTableR(), whenCondtion.c_str(), body.c_str(), TriggerType::Create, TriggerSubType::After);
