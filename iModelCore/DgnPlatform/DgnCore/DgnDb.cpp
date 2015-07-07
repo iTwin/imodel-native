@@ -357,13 +357,14 @@ void DgnJavaScriptLibrary::ImportJavaScript(BeFileNameCR jsDir, bool updateExist
     bool anyImported = true;
     while (BSISUCCESS == iter.GetNextFileName(acmeTs))
         {
-        uint64_t fsize;
-        if (acmeTs.GetFileSize(fsize) == BeFileNameStatus::Success)
+        uint64_t fileSize;
+        if (acmeTs.GetFileSize(fileSize) == BeFileNameStatus::Success)
             {
-            ScopedArray<char> buf (fsize+1);
+            size_t bufSize = (size_t)fileSize;
+            ScopedArray<char> buf (bufSize+1);
             FILE* fp = fopen(Utf8String(acmeTs).c_str(), "r");
-            size_t nread = fread(buf.GetData(), 1, fsize, fp);
-            BeAssert(nread <= fsize);
+            size_t nread = fread(buf.GetData(), 1, bufSize, fp);
+            BeAssert(nread <= bufSize);
             fclose(fp);
             buf.GetData()[nread] = 0;
             Utf8String name (acmeTs.GetFileNameWithoutExtension());
