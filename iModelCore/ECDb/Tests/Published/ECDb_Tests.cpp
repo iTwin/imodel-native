@@ -282,4 +282,17 @@ TEST(ECDbTests, checkPrimaryKeyForTablesIsBasedOnECInstanceId)
     ASSERT_TRUE(strcmp(sc_Employee, sqlValue) > 0);
 }
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Muhammad Hassan                  07/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST (ECDbMapCATests, SeperateTableForRelationshipWithMapStrategyTableForThisClass)
+    {
+    ECDbTestProject testProject;
+    ECDbR ecdbr = testProject.Create ("relationshipTestDb.ecdb", L"SampleDgnDbEditor.01.00.ecschema.xml", true);
+
+    ECSchemaP schemap = NULL;
+    ASSERT_EQ (SUCCESS, ecdbr.GetEC ().GetSchemaManager ().GetECSchema (schemap, "SampleDgnDbEditor", true));
+    ASSERT_TRUE (schemap != nullptr);
+    }
+    
 END_ECDBUNITTESTS_NAMESPACE
