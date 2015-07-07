@@ -1096,6 +1096,8 @@ public:
 //=======================================================================================
 struct IDgnJavaScriptObjectModel
 {
+    virtual ~IDgnJavaScriptObjectModel() {;}
+
     //! Execute an EGA that is expected to be implemented in JavaScript. 
     //! The element's geometry must be defined relative to the element's local coordinate system.
     //! That is, points in the geometry must all be relative to (0,0,0), and angles must all be relative to x=(1,0,0), y=(0,1,0), and z=(0,0,1).
