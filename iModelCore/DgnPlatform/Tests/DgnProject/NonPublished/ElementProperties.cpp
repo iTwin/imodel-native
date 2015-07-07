@@ -31,7 +31,7 @@ TEST_F (ElementDisplayProperties, SetGradient)
 
     auto seedModelId3 = m_defaultModelId;
 
-    DgnModelP seedModel = m_db->Models().GetModel(seedModelId3);
+    DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId3);
     DgnModelPtr model3 = seedModel->Clone("model3");
     ASSERT_TRUE (model3 != nullptr);
     model3->Insert();
@@ -129,7 +129,7 @@ TEST_F (ElementDisplayProperties, SetTransparency)
     SetupProject(L"3dMetricGeneral.idgndb", L"ElementDisplayProperties.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     auto seedModelId3 = m_defaultModelId;
-    DgnModelP seedModel = m_db->Models().GetModel(seedModelId3);
+    DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId3);
     DgnModelPtr model3 = seedModel->Clone("model3");
     ASSERT_TRUE (model3 != nullptr);
     model3->Insert();
@@ -162,7 +162,7 @@ TEST_F (ElementDisplayProperties, SetCategory)
     SetupProject(L"3dMetricGeneral.idgndb", L"ElementDisplayProperties.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     auto seedModelId3 = m_defaultModelId;
-    DgnModelP seedModel = m_db->Models().GetModel(seedModelId3);
+    DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId3);
     DgnModelPtr model3 = seedModel->Clone("model3");
     ASSERT_TRUE (model3 != nullptr);
     model3->Insert();
@@ -197,7 +197,7 @@ TEST_F (ElementDisplayProperties, SetDisplayParams)
     SetupProject(L"3dMetricGeneral.idgndb", L"ElementDisplayProperties.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     auto seedModelId3 = m_defaultModelId;
-    DgnModelP seedModel = m_db->Models().GetModel(seedModelId3);
+    DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId3);
     DgnModelPtr model3 = seedModel->Clone("model3");
     ASSERT_TRUE (model3 != nullptr);
     model3->Insert();
@@ -233,7 +233,7 @@ TEST_F (ElementDisplayProperties, FillProperties)
     SetupProject(L"3dMetricGeneral.idgndb", L"ElementDisplayProperties.idgndb", BeSQLite::Db::OpenMode::ReadWrite);
 
     auto seedModelId3 = m_defaultModelId;
-    DgnModelP seedModel = m_db->Models().GetModel(seedModelId3);
+    DgnModelPtr seedModel = m_db->Models().GetModel(seedModelId3);
     DgnModelPtr model3 = seedModel->Clone("model3");
     ASSERT_TRUE (model3 != nullptr);
     model3->Insert();

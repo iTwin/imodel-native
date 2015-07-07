@@ -237,7 +237,7 @@ void ViewController::_ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelP ViewController::_GetTargetModel() const {return m_dgndb.Models().GetModel(m_targetModelId);}
+DgnModelP ViewController::_GetTargetModel() const {return m_dgndb.Models().GetModel(m_targetModelId).get();}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
@@ -868,8 +868,8 @@ void ViewController::_FillModels()
     {
     for (DgnModelId modelId : m_viewedModels)
         {
-        DgnModelP model = m_dgndb.Models().GetModel(modelId);
-        if (model)
+        DgnModelPtr model = m_dgndb.Models().GetModel(modelId);
+        if (model.IsValid())
             model->FillModel();
         }
     }
@@ -1869,7 +1869,7 @@ StatusInt ViewController::_VisitHit (HitDetailCR hit, ViewContextR context) cons
 void ViewController::_DrawView(ViewContextR context) 
     {
     for (auto modelId : m_viewedModels)
-        context.VisitDgnModel(m_dgndb.Models().GetModel(modelId));
+        context.VisitDgnModel(m_dgndb.Models().GetModel(modelId).get());
     }
 
 void ViewController::_VisitElements(ViewContextR context)

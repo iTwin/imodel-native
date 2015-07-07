@@ -1246,7 +1246,7 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnDbStatus* outS
         return nullptr;
         }
 
-    if (nullptr == element.GetModel())
+    if (!element.GetModel().IsValid())
         {
         stat = DgnDbStatus::BadModel;
         return nullptr;

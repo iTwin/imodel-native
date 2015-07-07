@@ -125,7 +125,7 @@ TEST (DgnDb, CheckStandardProperties)
     ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty(val, PropertySpec("SchemaVersion",     "dgn_Proj"      )) );
 
     //  Use the model API to access model properties and check their values
-    DgnModelP defaultModel = project->Models().GetModel(project->Models().QueryFirstModelId());
+    DgnModelPtr defaultModel = project->Models().GetModel(project->Models().QueryFirstModelId());
 
     //  Use ModelInfo as an alt. way to get at some of the same property data
     DgnModel::Properties const& minfo = defaultModel->GetProperties();
@@ -424,7 +424,7 @@ struct DgnProjectPackageTest : public testing::Test
             properties.modelCount = 0;
             for (DgnModels::Iterator::Entry const& entry: modelTable.MakeIterator())
                 {
-                DgnModelP model = project->Models().GetModel(entry.GetModelId());
+                DgnModelPtr model = project->Models().GetModel(entry.GetModelId());
                 model->FillModel();
                 properties.elmCount += (int) model->GetElements().size();
                 properties.modelCount++;

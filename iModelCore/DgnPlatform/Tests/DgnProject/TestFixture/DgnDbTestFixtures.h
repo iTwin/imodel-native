@@ -89,7 +89,7 @@ struct DgnDbTestFixture : ::testing::Test
     DgnDbPtr                    m_db;
     DgnModelId                  m_defaultModelId;
     DgnCategoryId               m_defaultCategoryId;
-    DgnModelP                   m_defaultModelP;
+    DgnModelPtr                 m_defaultModelP;
 
     DgnDbTestFixture()
     {

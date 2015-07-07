@@ -280,8 +280,8 @@ void ElementItemTests::SetupProject(WCharCP projFile, WCharCP testFile, Db::Open
     ASSERT_NE( nullptr , TestMultiAspect::GetECClass(*m_db) );
 
     m_defaultModelId = m_db->Models().QueryFirstModelId();
-    DgnModelP defaultModel = m_db->Models().GetModel(m_defaultModelId);
-    ASSERT_NE( nullptr , defaultModel );
+    DgnModelPtr defaultModel = m_db->Models().GetModel(m_defaultModelId);
+    ASSERT_TRUE(defaultModel.IsValid());
     GetDefaultModel().FillModel();
 
     m_defaultCategoryId = m_db->Categories().MakeIterator().begin().GetCategoryId();

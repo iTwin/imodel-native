@@ -29,7 +29,7 @@
  <p>A ViewController provides persistence and behavior to a type of view.
  <p>A DgnViewport has a reference-counted-pointer to a ViewController that controls it.
  <p>A ViewContext holds the state of an operation performed on one or more elements in a DgnViewport.
- <p>A QueryModel is used to query and display graphics from the DgnDb database. 
+ <p>A QueryModel is used to query and display graphics from PhysicalModels. 
 
   <h2>%DgnViewport Coordinates</h2>
   Coordinate information can be exchanged with Viewports using the various coordinate systems defined in DgnCoordSystem.

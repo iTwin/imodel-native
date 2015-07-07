@@ -8,7 +8,7 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-/** @namespace BentleyApi::Dgn Types defined by the %DgnPlatform. 
+/** @namespace BentleyApi::Dgn Types defined by the %DgnPlatform.
     @ref PAGE_DgnPlatform
 */
 
@@ -127,8 +127,6 @@ DGNPLATFORM_TYPEDEFS (DgnDimStyle)
 DGNPLATFORM_TYPEDEFS (DgnDomain)
 DGNPLATFORM_TYPEDEFS (DgnGestureEvent)
 DGNPLATFORM_TYPEDEFS (DgnHost)
-DGNPLATFORM_TYPEDEFS (DgnModelInfo)
-DGNPLATFORM_TYPEDEFS (DgnModelIterator)
 DGNPLATFORM_TYPEDEFS (DgnMouseWheelEvent)
 DGNPLATFORM_TYPEDEFS (DgnProgressMeter)
 DGNPLATFORM_TYPEDEFS (DrawContext)
@@ -221,23 +219,24 @@ DGNPLATFORM_TYPEDEFS (DgnGCS)
 DGNPLATFORM_TYPEDEFS (IGeoCoordinateServices)
 
 DGNPLATFORM_REF_COUNTED_PTR (DgnDb)
-DGNPLATFORM_REF_COUNTED_PTR (DgnGCS)
-DGNPLATFORM_REF_COUNTED_PTR (DgnModel)
+DGNPLATFORM_REF_COUNTED_PTR (DgnDbExpressionContext)
 DGNPLATFORM_REF_COUNTED_PTR (DgnElement)
+DGNPLATFORM_REF_COUNTED_PTR (DgnElementExpressionContext)
 DGNPLATFORM_REF_COUNTED_PTR (DgnFont)
+DGNPLATFORM_REF_COUNTED_PTR (DgnGCS)
 DGNPLATFORM_REF_COUNTED_PTR (DgnGeomPart)
 DGNPLATFORM_REF_COUNTED_PTR (DgnMarkupProject)
+DGNPLATFORM_REF_COUNTED_PTR (DgnModel)
 DGNPLATFORM_REF_COUNTED_PTR (DrawingElement)
 DGNPLATFORM_REF_COUNTED_PTR (ElementGroup)
 DGNPLATFORM_REF_COUNTED_PTR (GeometricElement)
 DGNPLATFORM_REF_COUNTED_PTR (PatternParams)
 DGNPLATFORM_REF_COUNTED_PTR (PhysicalElement)
+DGNPLATFORM_REF_COUNTED_PTR (PhysicalModel)
 DGNPLATFORM_REF_COUNTED_PTR (PhysicalRedlineViewController)
 DGNPLATFORM_REF_COUNTED_PTR (QueryViewController)
 DGNPLATFORM_REF_COUNTED_PTR (RedlineViewController)
 DGNPLATFORM_REF_COUNTED_PTR (SheetViewController)
-DGNPLATFORM_REF_COUNTED_PTR (DgnDbExpressionContext)
-DGNPLATFORM_REF_COUNTED_PTR (DgnElementExpressionContext)
 DGNPLATFORM_REF_COUNTED_PTR (TxnManager)
 
 /** @cond BENTLEY_SDK_Internal */
@@ -796,9 +795,9 @@ enum class ClipVolumePass
 };
 
 
-//  QvUInt32 is a temporary solution to a difference in D3D QV and OpenGL QV.  Both used unsigned long 
+//  QvUInt32 is a temporary solution to a difference in D3D QV and OpenGL QV.  Both used unsigned long
 //  types in a few places where it is important that the type be a 32-bit integer.  Once we encountered
-//  a platform where unsigned long is a 64-bit integer we had to change the OpenGL QV but did not 
+//  a platform where unsigned long is a 64-bit integer we had to change the OpenGL QV but did not
 //  want to change D3D QV. Code that uses QvUInt32 will compile correctly for either case.
 #if defined(BENTLEYCONFIG_GRAPHICS_OPENGLES) || defined(BENTLEYCONFIG_GRAPHICS_OPENGL)
     typedef long QvInt32;
@@ -948,9 +947,9 @@ public:
 };
 
 //=======================================================================================
-//! Colors in elements should typically be either by-category or a specific RGBA. 
-//! This wraps a bool and a ColorDef to encourage and enforce this pattern, where a color is either by-category or a ColorDef, not both at the same time. 
-//! This means that the ColorDef is not available when by-category, but is always available otherwise. This structure will not clear the its color when toggling by-category on, so it can be recovered later. 
+//! Colors in elements should typically be either by-category or a specific RGBA.
+//! This wraps a bool and a ColorDef to encourage and enforce this pattern, where a color is either by-category or a ColorDef, not both at the same time.
+//! This means that the ColorDef is not available when by-category, but is always available otherwise. This structure will not clear the its color when toggling by-category on, so it can be recovered later.
 //! Your specific scenario may or may not want to persist this way, but this structure allows it.
 //! @ingroup DgnColorGroup
 // @bsiclass                                                    Jeff.Marker     06/2015
