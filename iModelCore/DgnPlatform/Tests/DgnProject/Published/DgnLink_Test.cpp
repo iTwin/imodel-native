@@ -1,8 +1,10 @@
-//-------------------------------------------------------------------------------------- 
-//     $Source: Tests/DgnProject/Published/DgnLink_Test.cpp $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
-//-------------------------------------------------------------------------------------- 
-
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: Tests/DgnProject/Published/DgnLink_Test.cpp $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
 
 // Rebuild API:             bb re DgnPlatformDll
@@ -33,8 +35,8 @@ TEST_F(DgnLinkTest, RoundTripUrlLink)
     DgnModelId modelId = db.Models().QueryFirstModelId();
     ASSERT_TRUE(modelId.IsValid());
 
-    DgnModelP modelP = db.Models().GetModel(modelId);
-    ASSERT_TRUE(nullptr != modelP);
+    DgnModelPtr modelP = db.Models().GetModel(modelId);
+    ASSERT_TRUE(modelP.IsValid());
 
     DgnCategoryId categoryId = db.Categories().MakeIterator().begin().GetCategoryId();
     ASSERT_TRUE(categoryId.IsValid());
@@ -82,8 +84,8 @@ TEST_F(DgnLinkTest, Iterator)
     DgnModelId modelId = db.Models().QueryFirstModelId();
     ASSERT_TRUE(modelId.IsValid());
 
-    DgnModelP modelP = db.Models().GetModel(modelId);
-    ASSERT_TRUE(nullptr != modelP);
+    DgnModelPtr modelP = db.Models().GetModel(modelId);
+    ASSERT_TRUE(modelP.IsValid());
 
     DgnCategoryId categoryId = db.Categories().MakeIterator().begin().GetCategoryId();
     ASSERT_TRUE(categoryId.IsValid());
@@ -163,8 +165,8 @@ TEST_F(DgnLinkTest, OtherIterators)
     DgnModelId modelId = db.Models().QueryFirstModelId();
     ASSERT_TRUE(modelId.IsValid());
 
-    DgnModelP modelP = db.Models().GetModel(modelId);
-    ASSERT_TRUE(nullptr != modelP);
+    DgnModelPtr modelP = db.Models().GetModel(modelId);
+    ASSERT_TRUE(modelP.IsValid());
 
     DgnCategoryId categoryId = db.Categories().MakeIterator().begin().GetCategoryId();
     ASSERT_TRUE(categoryId.IsValid());

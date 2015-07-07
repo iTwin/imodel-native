@@ -170,7 +170,7 @@ BeFileName DgnDbTestDgnManager::GetWritableTestData (WCharCP fileName, CharCP ca
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbTestDgnManager::DgnDbTestDgnManager (WCharCP dgnfilename, CharCP callerSourceFile, BeSQLite::Db::OpenMode omode, DgnInitializeMode imode, bool forceMakeCopy) 
-    : TestDgnManager ((BeSQLite::Db::OpenMode::Readonly==omode)? GetReadOnlyTestData(dgnfilename,callerSourceFile, forceMakeCopy): GetWritableTestData(dgnfilename,callerSourceFile), omode, imode) 
-    {;}
+    : TestDgnManager ((BeSQLite::Db::OpenMode::Readonly==omode) ? GetReadOnlyTestData(dgnfilename,callerSourceFile, forceMakeCopy) : GetWritableTestData(dgnfilename,callerSourceFile), omode, imode) 
+    {}
 
 END_DGNDB_UNIT_TESTS_NAMESPACE

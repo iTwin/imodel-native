@@ -1558,7 +1558,7 @@ BentleyStatus   RegionGraphicsContext::GetAssociativeRegion (DgnElementPtr& elem
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   RegionGraphicsContext::UpdateAssociativeRegion (DgnElementPtr& element)
     {
-    m_targetModel = element->GetModel(); // Model to use to create new geometry...
+    m_targetModel = element->GetModel().get(); // Model to use to create new geometry...
 
     CurveVectorPtr  region;
 
