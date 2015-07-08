@@ -8,184 +8,55 @@
 #include "ECDbPch.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
 //---------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                02/2015
+// @bsimethod                                 Krischan.Eberle                07/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECDbMapStrategy& ECDbMapStrategy::operator=(ECDbMapStrategy const& rhs)
-    {
-    if (this != &rhs)
-        {
-        m_strategy = rhs.m_strategy;
-        m_options = rhs.m_options;
-        m_isPolymorphic = rhs.m_isPolymorphic;
-        }
-
-    return *this;
-    }
-
-//---------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                02/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-ECDbMapStrategy& ECDbMapStrategy::operator=(ECDbMapStrategy&& rhs)
-    {
-    if (this != &rhs)
-        {
-        m_strategy = std::move(rhs.m_strategy);
-        m_options = std::move(rhs.m_options);
-        m_isPolymorphic = std::move(rhs.m_isPolymorphic);
-        }
-
-    return *this;
-    }
-
-//---------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                02/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbMapStrategy::Assign(MapStrategy strategy, MapStrategyOptions options, bool isPolymorphic)
+BentleyStatus UserECDbMapStrategy::Assign(Strategy strategy, Option option, bool isPolymorphic)
     {
     m_strategy = strategy;
-    m_options = (int) options;
+    m_option = option;
     m_isPolymorphic = isPolymorphic;
-    
-    if (!IsValid())
-        {
-        LOG.errorv("Invalid MapStrategy: %s", ToString().c_str());
-        return ERROR;
-        }
-    
-    return SUCCESS;
+
+    return IsValid() ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                02/2015
+// @bsimethod                                 Krischan.Eberle                06/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECDbMapStrategy::IsValid(bool isResolved) const
+bool UserECDbMapStrategy::IsValid() const
     {
-    const bool hasOptions = HasOptions();
-
     switch (m_strategy)
         {
-            case MapStrategy::None:
-                {
-                // in resolved state the strategy should never exist anymore
-                if (isResolved)
-                    return false;
+            case Strategy::None:
+                return !m_isPolymorphic && (m_option == Option::None || m_option == Option::DisableSharedColumns);
 
-                return !hasOptions || m_options == (int) MapStrategyOptions::DisableSharedColumns;
-                }
-
-            case MapStrategy::SharedTable:
+            case Strategy::SharedTable:
                 {
-                if (!hasOptions)
+                if (m_option == Option::None)
                     return true;
 
                 if (!m_isPolymorphic)
-                    return m_options == (int) MapStrategyOptions::SharedColumns;
+                    return m_option == Option::SharedColumns;
 
-
-                if (!isResolved)
-                    return (m_options == (int) MapStrategyOptions::SharedColumns) || (m_options == (int) MapStrategyOptions::SharedColumnsForSubclasses);
-                else
-                    return (m_options == (int) MapStrategyOptions::SharedColumns) || 
-                           (m_options == (int) MapStrategyOptions::SharedColumnsForSubclasses) ||
-                           (m_options == (int) MapStrategyOptions::DisableSharedColumns);
+                return m_option == Option::SharedColumns || m_option == Option::SharedColumnsForSubclasses;
                 }
 
-            case MapStrategy::ExistingTable:
-                return !hasOptions || m_options == (int) MapStrategyOptions::Readonly;
+            case Strategy::ExistingTable:
+                return !m_isPolymorphic && (m_option == Option::None || m_option == Option::Readonly);
 
-            case MapStrategy::OwnTable:
-            case MapStrategy::NotMapped:
-                //these strategies must not have any options
-                return !hasOptions;
-
-            //all other strategies are internal ones. So they must not show up until the strategy is resolved.
-            //one resolved they are valid if they don't have options
             default:
-                {
-                if (!isResolved)
-                    {
-                    BeAssert(false && "should never end up here");
-                    return false;
-                    }
-
-                return !hasOptions;
-                }
+                //these strategies must not have any options
+                return m_option == Option::None;
         }
     }
 
 //---------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle              06/2015
+// @bsimethod                                 Krischan.Eberle                07/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8String ECDbMapStrategy::ToString() const
+UserECDbMapStrategy const& UserECDbMapStrategy::AssignRoot(UserECDbMapStrategy const& parent)
     {
-    Utf8String str;
-    switch (m_strategy)
-        {
-            case MapStrategy::OwnTable:
-                str.append("OwnTable");
-                break;
-
-            case MapStrategy::SharedTable:
-                str.append("SharedTable");
-                break;
-
-            case MapStrategy::ExistingTable:
-                str.append("ExistingTable");
-                break;
-
-            default:
-                BeAssert(false);
-                break;
-        }
-
-    if (m_isPolymorphic)
-        str.append(" (polymorphic)");
-
-    if (HasOptions())
-        {
-        str.append(" Options: ");
-        bool isFirst = true;
-        if (HasOption(MapStrategyOptions::SharedColumns))
-            {
-            if (!isFirst)
-                str.append(", ");
-
-            str.append("SharedColumns");
-            isFirst = false;
-            }
-
-        if (HasOption(MapStrategyOptions::SharedColumnsForSubclasses))
-            {
-            if (!isFirst)
-                str.append(", ");
-
-            str.append("SharedColumnsForSubclasses");
-            isFirst = false;
-            }
-
-
-        if (HasOption(MapStrategyOptions::DisableSharedColumns))
-            {
-            if (!isFirst)
-                str.append(", ");
-
-            str.append("DisableSharedColumns");
-            isFirst = false;
-            }
-
-        if (HasOption(MapStrategyOptions::Readonly))
-            {
-            if (!isFirst)
-                str.append(", ");
-
-            str.append("Readonly");
-            isFirst = false;
-            }
-        }
-
-    return std::move(str);
+    m_root = parent.m_root != nullptr ? parent.m_root : &parent;
+    return *m_root;
     }
 
 
@@ -193,36 +64,35 @@ Utf8String ECDbMapStrategy::ToString() const
 // @bsimethod                                 Affan.Khan                02/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus ECDbMapStrategy::TryParse(ECDbMapStrategy& mapStrategy, ECN::ECDbClassMap::MapStrategy const& mapStrategyCustomAttribute)
+BentleyStatus UserECDbMapStrategy::TryParse(UserECDbMapStrategy& mapStrategy, ECN::ECDbClassMap::MapStrategy const& mapStrategyCustomAttribute)
     {
-    MapStrategy strategy = MapStrategy::None;
+    Strategy strategy = Strategy::None;
     if (SUCCESS != TryParse(strategy, mapStrategyCustomAttribute.GetStrategy()))
         return ERROR;
- 
-    int options = (int) MapStrategyOptions::None;
-    if (SUCCESS != TryParse(options, mapStrategyCustomAttribute.GetOptions()))
+
+    Option option = Option::None;
+    if (SUCCESS != TryParse(option, mapStrategyCustomAttribute.GetOptions()))
         return ERROR;
 
-    mapStrategy = ECDbMapStrategy(strategy, options, mapStrategyCustomAttribute.IsPolymorphic());
-    return mapStrategy.IsValid (false)? SUCCESS : ERROR;
+    return mapStrategy.Assign(strategy, option, mapStrategyCustomAttribute.IsPolymorphic());
     }
 
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                06/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus ECDbMapStrategy::TryParse(MapStrategy& mapStrategy, Utf8CP mapStrategyStr)
+BentleyStatus UserECDbMapStrategy::TryParse(Strategy& mapStrategy, Utf8CP mapStrategyStr)
     {
     if (Utf8String::IsNullOrEmpty(mapStrategyStr))
-        mapStrategy = MapStrategy::None;
+        mapStrategy = Strategy::None;
     else if (BeStringUtilities::Stricmp(mapStrategyStr, "NotMapped") == 0)
-        mapStrategy = MapStrategy::NotMapped;
+        mapStrategy = Strategy::NotMapped;
     else if (BeStringUtilities::Stricmp(mapStrategyStr, "OwnTable") == 0)
-        mapStrategy = MapStrategy::OwnTable;
+        mapStrategy = Strategy::OwnTable;
     else if (BeStringUtilities::Stricmp(mapStrategyStr, "SharedTable") == 0)
-        mapStrategy = MapStrategy::SharedTable;
+        mapStrategy = Strategy::SharedTable;
     else if (BeStringUtilities::Stricmp(mapStrategyStr, "ExistingTable") == 0)
-        mapStrategy = MapStrategy::ExistingTable;
+        mapStrategy = Strategy::ExistingTable;
     else
         {
         LOG.errorv("'%s' is not a valid MapStrategy value.", mapStrategyStr);
@@ -236,37 +106,185 @@ BentleyStatus ECDbMapStrategy::TryParse(MapStrategy& mapStrategy, Utf8CP mapStra
 // @bsimethod                                 Krischan.Eberle                06/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-BentleyStatus ECDbMapStrategy::TryParse(int& mapStrategyOptions, Utf8CP mapStrategyOptionsStr)
+BentleyStatus UserECDbMapStrategy::TryParse(Option& mapStrategyOption, Utf8CP mapStrategyOptionsStr)
     {
-    mapStrategyOptions = (int) MapStrategyOptions::None;
+    mapStrategyOption = Option::None;
     if (Utf8String::IsNullOrEmpty(mapStrategyOptionsStr))
         return SUCCESS;
 
     bvector<Utf8String> optionTokens;
     BeStringUtilities::Split(mapStrategyOptionsStr, ",;|", optionTokens);
 
-    for (Utf8StringCR optionToken : optionTokens)
+    if (optionTokens.size() > 1)
         {
-        if (optionToken.empty())
-            continue;
+        LOG.errorv("Multiple MapStrategy options '%s' are not valid in ECDb. In ECDb multiple options are never necessary.",
+                   mapStrategyOptionsStr);
+        return ERROR;
+        }
 
-        if (optionToken.EqualsI("Readonly"))
-            mapStrategyOptions |= (int) MapStrategyOptions::Readonly;
-        else if (optionToken.EqualsI("SharedColumns"))
-            mapStrategyOptions |= (int) MapStrategyOptions::SharedColumns;
-        else if (optionToken.EqualsI("SharedColumnsForSubclasses"))
-            mapStrategyOptions |= (int) MapStrategyOptions::SharedColumnsForSubclasses;
-        else if (optionToken.EqualsI("DisableSharedColumns"))
-            mapStrategyOptions |= (int) MapStrategyOptions::DisableSharedColumns;
-        else
-            {
-            LOG.errorv("'%s' is not a valid MapStrategyOptions value.", optionToken.c_str());
-            return ERROR;
-            }
+    Utf8StringCR optionToken = optionTokens[0];
+    if (optionToken.empty())
+        return SUCCESS;
+
+    if (optionToken.EqualsI("Readonly"))
+        mapStrategyOption = Option::Readonly;
+    else if (optionToken.EqualsI("SharedColumns"))
+        mapStrategyOption = Option::SharedColumns;
+    else if (optionToken.EqualsI("SharedColumnsForSubclasses"))
+        mapStrategyOption = Option::SharedColumnsForSubclasses;
+    else if (optionToken.EqualsI("DisableSharedColumns"))
+        mapStrategyOption = Option::DisableSharedColumns;
+    else
+        {
+        LOG.errorv("'%s' is not a valid MapStrategy option value.", optionToken.c_str());
+        return ERROR;
         }
 
     return SUCCESS;
     }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                02/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDbMapStrategy::Assign(UserECDbMapStrategy const& userStrategy)
+    {
+    m_isPolymorphic = userStrategy.IsPolymorphic();
+
+    switch (userStrategy.GetStrategy())
+        {
+            case UserECDbMapStrategy::Strategy::ExistingTable:
+                m_strategy = Strategy::ExistingTable;
+                break;
+            case UserECDbMapStrategy::Strategy::NotMapped:
+                m_strategy = Strategy::NotMapped;
+                break;
+            case UserECDbMapStrategy::Strategy::None: //default
+            case UserECDbMapStrategy::Strategy::OwnTable:
+                m_strategy = Strategy::OwnTable;
+                break;
+            case UserECDbMapStrategy::Strategy::SharedTable:
+                m_strategy = Strategy::SharedTable;
+                break;
+
+            default:
+                BeAssert(false);
+                break;
+        }
+
+    switch (userStrategy.GetOption())
+        {
+            case UserECDbMapStrategy::Option::None:
+            case UserECDbMapStrategy::Option::SharedColumnsForSubclasses:
+            case UserECDbMapStrategy::Option::DisableSharedColumns:
+                m_option = Option::None;
+                break;
+            case UserECDbMapStrategy::Option::Readonly:
+                m_option = Option::Readonly;
+                break;
+            case UserECDbMapStrategy::Option::SharedColumns:
+                m_option = Option::SharedColumns;
+                break;
+            default:
+                BeAssert(false);
+                return ERROR;
+        }
+
+    if (!IsValid())
+        {
+        LOG.errorv("Invalid MapStrategy: %s", ToString().c_str());
+        return ERROR;
+        }
+
+    m_isResolved = true;
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                02/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDbMapStrategy::Assign(Strategy strategy, Option option, bool isPolymorphic)
+    {
+    m_strategy = strategy;
+    m_option = option;
+    m_isPolymorphic = isPolymorphic;
+    
+    if (!IsValid())
+        {
+        LOG.errorv("Invalid MapStrategy: %s", ToString().c_str());
+        return ERROR;
+        }
+    
+    m_isResolved = true;
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                02/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECDbMapStrategy::IsValid() const
+    {
+    switch (m_strategy)
+        {
+            case Strategy::SharedTable:
+                return m_option == Option::None || m_option == Option::SharedColumns;
+
+            case Strategy::ExistingTable:
+                return m_option == Option::None || m_option == Option::Readonly;
+
+            default:
+                return m_option == Option::None;
+        }
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle              06/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String ECDbMapStrategy::ToString() const
+    {
+    Utf8String str;
+    switch (m_strategy)
+        {
+            case Strategy::OwnTable:
+                str.append("OwnTable");
+                break;
+
+            case Strategy::SharedTable:
+                str.append("SharedTable");
+                break;
+
+            case Strategy::ExistingTable:
+                str.append("ExistingTable");
+                break;
+
+            default:
+                BeAssert(false);
+                break;
+        }
+
+    if (m_isPolymorphic)
+        str.append(" (polymorphic)");
+
+    switch (m_option)
+        {
+            case Option::None:
+                break;
+
+            case Option::Readonly:
+                str.append("Option: Readonly");
+                break;
+
+            case Option::SharedColumns:
+                str.append("Option: SharedColumns");
+                break;
+
+            default:
+                BeAssert(false);
+                break;
+        }
+
+    return std::move(str);
+    }
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

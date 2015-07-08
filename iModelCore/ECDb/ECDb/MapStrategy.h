@@ -11,87 +11,122 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-//---------------------------------------------------------------------------------
-// @bsienum                                 Affan.Khan                02/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-enum class MapStrategy
+//======================================================================================
+// @bsimethod                                 Krischan.Eberle               07/2015
+//+===============+===============+===============+===============+===============+=====
+struct UserECDbMapStrategy
     {
-    None = 0,
+public:
+    //---------------------------------------------------------------------------------
+    // @bsienum                                 Krischan.Eberle                06/2015
+    //+---------------+---------------+---------------+---------------+---------------+------
+    enum class Strategy
+        {
+        None,
+        NotMapped,
+        OwnTable,
+        SharedTable,
+        ExistingTable
+        };
 
-    //Public Strategies that user can specify in custom attribute ClassMap::MapStrategy
-    //===========================================================================================
-    NotMapped,
-    OwnTable,
-    SharedTable,
-    ExistingTable,
-    
-    //Private strategies used by ECDb internally
-    Default = OwnTable,
+    //---------------------------------------------------------------------------------
+    // @bsienum                                 Krischan.Eberle                06/2015
+    //+---------------+---------------+---------------+---------------+---------------+------
+    enum class Option
+        {
+        None = 0,
+        Readonly = 1,
+        SharedColumns = 2,
+        SharedColumnsForSubclasses = 4,
+        DisableSharedColumns = 8
+        };
 
-    ForeignKeyRelationshipInTargetTable = 100,
-    ForeignKeyRelationshipInSourceTable = 101
-    };
-
-//---------------------------------------------------------------------------------
-// @bsienum                                 Krischan.Eberle                06/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-enum class MapStrategyOptions
-    {
-    None = 0,
-    Readonly = 1,
-    SharedColumns = 2,
-    SharedColumnsForSubclasses = 4,
-    DisableSharedColumns = 8
-    };
-
-
-//---------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                02/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-struct ECDbMapStrategy
-    {
 private:
-    MapStrategy m_strategy;
-    int m_options;
+    Strategy m_strategy;
+    Option m_option;
     bool m_isPolymorphic;
+    UserECDbMapStrategy const* m_root;
 
-    static BentleyStatus TryParse(MapStrategy&, Utf8CP str);
-    static BentleyStatus TryParse(int& options, Utf8CP str);
+    BentleyStatus Assign(Strategy strategy, Option option, bool isPolymorphic);
+    static BentleyStatus TryParse(Strategy&, Utf8CP str);
+    static BentleyStatus TryParse(Option& option, Utf8CP str);
 
 public:
-    ECDbMapStrategy() : m_strategy(MapStrategy::None), m_options((int) MapStrategyOptions::None), m_isPolymorphic(false) {}
-    ECDbMapStrategy(MapStrategy strategy, int options, bool isPolymorphic) : m_strategy(strategy), m_options(options), m_isPolymorphic(isPolymorphic) {}
-    ~ECDbMapStrategy() {}
+    UserECDbMapStrategy() : m_strategy(Strategy::None), m_option(Option::None), m_isPolymorphic(false), m_root(nullptr) {}
+    ~UserECDbMapStrategy() {}
 
-    ECDbMapStrategy(ECDbMapStrategy const& rhs) : m_strategy(rhs.m_strategy), m_options(rhs.m_options), m_isPolymorphic(rhs.m_isPolymorphic) {}
-    ECDbMapStrategy(ECDbMapStrategy&& rhs) : m_strategy(std::move(rhs.m_strategy)), m_options(std::move(rhs.m_options)), m_isPolymorphic(std::move(rhs.m_isPolymorphic)) {}
-    ECDbMapStrategy& operator=(ECDbMapStrategy const&);
-    ECDbMapStrategy& operator=(ECDbMapStrategy&&);
+    UserECDbMapStrategy const& AssignRoot(UserECDbMapStrategy const& parent);
 
-    //operators
-    bool operator== (ECDbMapStrategy const& rhs) const { return m_strategy == rhs.m_strategy && m_options == rhs.m_options && m_isPolymorphic == rhs.m_isPolymorphic; }
-    bool operator!= (ECDbMapStrategy const& rhs) const { return !(*this == rhs); }
+    bool IsValid() const;
 
-    BentleyStatus Assign(MapStrategy strategy, MapStrategyOptions options, bool isPolymorphic);
-    BentleyStatus Assign(MapStrategy strategy, bool isPolymorphic) { return Assign(strategy, MapStrategyOptions::None, isPolymorphic); }
-
-    bool IsValid(bool isResolved = true) const;
-
-    //Getters
-    MapStrategy GetStrategy() const { return m_strategy; }
-    int GetOptions() const { return m_options; }
-    bool HasOptions() const { return m_options != (int) MapStrategyOptions::None; }
-    bool HasOption(MapStrategyOptions option) const { return (m_options & (int) option) == (int) option; }
+    Strategy GetStrategy() const { return m_strategy; }
+    Option GetOption() const { return m_option; }
     bool IsPolymorphic() const { return m_isPolymorphic; }
 
+    static BentleyStatus TryParse(UserECDbMapStrategy&, ECN::ECDbClassMap::MapStrategy const& mapStrategyCustomAttribute);
+    };
+
+//======================================================================================
+// @bsimethod                                 Affan.Khan                02/2015
+//+===============+===============+===============+===============+===============+=====
+struct ECDbMapStrategy
+    {
+public:
+    //---------------------------------------------------------------------------------
+    // @bsienum                                 Krischan.Eberle                06/2015
+    //+---------------+---------------+---------------+---------------+---------------+------
+    enum class Strategy
+        {
+        NotMapped,
+        OwnTable,
+        SharedTable,
+        ExistingTable,
+
+        ForeignKeyRelationshipInTargetTable = 100,
+        ForeignKeyRelationshipInSourceTable = 101
+        };
+
+    //---------------------------------------------------------------------------------
+    // @bsienum                                 Krischan.Eberle                06/2015
+    //+---------------+---------------+---------------+---------------+---------------+------
+    enum class Option
+        {
+        None = 0,
+        Readonly = 1,
+        SharedColumns = 2
+        };
+
+private:
+    Strategy m_strategy;
+    Option m_option;
+    bool m_isPolymorphic;
+    bool m_isResolved;
+
+public:
+    ECDbMapStrategy() : m_strategy(Strategy::OwnTable), m_option(Option::None), m_isPolymorphic(false), m_isResolved(false) {}
+
+    //operators
+    bool operator== (ECDbMapStrategy const& rhs) const { return m_strategy == rhs.m_strategy && m_option == rhs.m_option && m_isPolymorphic == rhs.m_isPolymorphic && m_isResolved == rhs.m_isResolved; }
+    bool operator!= (ECDbMapStrategy const& rhs) const { return !(*this == rhs); }
+
+    BentleyStatus Assign(UserECDbMapStrategy const&);
+    BentleyStatus Assign(Strategy strategy, Option option, bool isPolymorphic);
+    BentleyStatus Assign(Strategy strategy, bool isPolymorphic) { return Assign(strategy, Option::None, isPolymorphic); }
+
+    bool IsValid() const;
+
+    //Getters
+    Strategy GetStrategy() const { return m_strategy; }
+    Option GetOption() const { return m_option; }
+    bool IsPolymorphic() const { return m_isPolymorphic; }
+
+    bool IsResolved() const { return m_isResolved; }
     //Helper
-    bool IsNotMapped() const { return m_strategy == MapStrategy::NotMapped; }
-    bool IsPolymorphicSharedTable() const { return m_strategy == MapStrategy::SharedTable && m_isPolymorphic; }
-    bool IsForeignKeyMapping() const { return m_strategy == MapStrategy::ForeignKeyRelationshipInSourceTable || m_strategy == MapStrategy::ForeignKeyRelationshipInTargetTable; }
+    bool IsNotMapped() const { return m_strategy == Strategy::NotMapped; }
+    bool IsPolymorphicSharedTable() const { return m_strategy == Strategy::SharedTable && m_isPolymorphic; }
+    bool IsForeignKeyMapping() const { return m_strategy == Strategy::ForeignKeyRelationshipInSourceTable || m_strategy == Strategy::ForeignKeyRelationshipInTargetTable; }
 
     Utf8String ToString() const;
-
-    static BentleyStatus TryParse(ECDbMapStrategy&, ECN::ECDbClassMap::MapStrategy const& mapStrategyCustomAttribute);
     };
 
     END_BENTLEY_SQLITE_EC_NAMESPACE

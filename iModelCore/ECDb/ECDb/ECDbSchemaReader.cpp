@@ -33,7 +33,7 @@ void ECDbSchemaReader::AddECSchemaToCacheInternal (ECSchemaCR schema)
     {
     BeMutexHolder aGuard (m_criticalSection);
     ECSchemaId ecSchemaId = schema.GetId();
-    DbECSchemaEntryP schemaKey = FindDbECSchemaEntry (ecSchemaId);
+    DbECSchemaEntry* schemaKey = FindDbECSchemaEntry (ecSchemaId);
     if (schemaKey == nullptr)
         {
         // build key lookups
@@ -48,7 +48,7 @@ void ECDbSchemaReader::AddECSchemaToCacheInternal (ECSchemaCR schema)
         //m_ecSchemaByNameLookup[schema.GetName().c_str()] = schemaKey;
         for (ECClassCP ecClass : schemaKey->m_resolvedECSchema->GetClasses())
             {
-            DbECClassEntryP classKey    = new DbECClassEntry();
+            DbECClassEntry* classKey    = new DbECClassEntry();
             if (!ecClass->HasId())
                 const_cast<ECClassP>(ecClass)->SetId (
                     ECDbSchemaPersistence::GetECClassIdBySchemaName(m_db, 
@@ -78,7 +78,7 @@ BeSQLite::DbResult ECDbSchemaReader::ReadECClass(ECClassP& ecClass, ECClassId ec
     BeMutexHolder aGuard (m_criticalSection);
     DbResult r;
 
-    DbECClassEntryP key = nullptr;
+    DbECClassEntry* key = nullptr;
     DbECClassEntryMap::const_iterator  classKeyIterator = m_ecClassKeyByECClassIdLookup.find (ecClassId);
     if (classKeyIterator != m_ecClassKeyByECClassIdLookup.end())
         key = classKeyIterator->second; 
@@ -92,7 +92,7 @@ BeSQLite::DbResult ECDbSchemaReader::ReadECClass(ECClassP& ecClass, ECClassId ec
 
         m_ecClassKeyByECClassIdLookup[key->m_ecClassId] = key;
 
-        DbECSchemaEntryP outECSchemaKey;
+        DbECSchemaEntry* outECSchemaKey;
         r = ReadECSchema (outECSchemaKey, key->m_ecSchemaId, false);
         if (r != BE_SQLITE_ROW)
             return r;
@@ -114,7 +114,7 @@ BeSQLite::DbResult ECDbSchemaReader::ReadECClass(ECClassP& ecClass, ECClassId ec
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbECClassEntryP ECDbSchemaReader::FindDbECClassEntry(ECClassId ecClassId)
+DbECClassEntry* ECDbSchemaReader::FindDbECClassEntry(ECClassId ecClassId)
     {
     DbECClassEntryMap::const_iterator  classKeyIterator = m_ecClassKeyByECClassIdLookup.find (ecClassId);
     if (classKeyIterator != m_ecClassKeyByECClassIdLookup.end())
@@ -125,7 +125,7 @@ DbECClassEntryP ECDbSchemaReader::FindDbECClassEntry(ECClassId ecClassId)
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbECSchemaEntryP ECDbSchemaReader::FindDbECSchemaEntry(ECSchemaId ecSchemaId)
+DbECSchemaEntry* ECDbSchemaReader::FindDbECSchemaEntry(ECSchemaId ecSchemaId)
     {
     DbECSchemaMap::const_iterator  schemaIterator = m_ecSchemaByECSchemaIdLookup.find (ecSchemaId);
     if (schemaIterator != m_ecSchemaByECSchemaIdLookup.end())
@@ -136,9 +136,9 @@ DbECSchemaEntryP ECDbSchemaReader::FindDbECSchemaEntry(ECSchemaId ecSchemaId)
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult ECDbSchemaReader::LoadECSchemaDefinition(DbECSchemaEntryP& outECSchemaKey, bvector<DbECSchemaEntryP>& newlyLoadedSchemas, ECSchemaId ecSchemaId)
+BeSQLite::DbResult ECDbSchemaReader::LoadECSchemaDefinition(DbECSchemaEntry*& outECSchemaKey, bvector<DbECSchemaEntry*>& newlyLoadedSchemas, ECSchemaId ecSchemaId)
     {
-    DbECSchemaEntryP                 key;
+    DbECSchemaEntry* key = nullptr;
     DbECSchemaMap::const_iterator  schemaIterator = m_ecSchemaByECSchemaIdLookup.find (ecSchemaId);
     if (schemaIterator != m_ecSchemaByECSchemaIdLookup.end())
         key =  schemaIterator->second;
@@ -162,11 +162,11 @@ BeSQLite::DbResult ECDbSchemaReader::LoadECSchemaDefinition(DbECSchemaEntryP& ou
         info.m_ecSchemaId = ecSchemaId;
 
         BeSQLite::CachedStatementPtr stmt = nullptr;
-        r = ECDbSchemaPersistence::FindECSchemaReferenceInfo (stmt, m_db, info);
+        r = ECDbSchemaPersistence::FindECSchemaReference (stmt, m_db, info);
         if (r != BE_SQLITE_OK)
             return r;
 
-        DbECSchemaEntryP referenceSchemaKey;
+        DbECSchemaEntry* referenceSchemaKey;
         while ((r = ECDbSchemaPersistence::Step (info, *stmt)) == BE_SQLITE_ROW)
             {
             r = LoadECSchemaDefinition(referenceSchemaKey, newlyLoadedSchemas, info.m_referencedECSchemaId);     
@@ -187,15 +187,15 @@ BeSQLite::DbResult ECDbSchemaReader::LoadECSchemaDefinition(DbECSchemaEntryP& ou
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult ECDbSchemaReader::ReadECSchema (DbECSchemaEntryP& outECSchemaKey, ECSchemaId ctxECSchemaId, bool ensureAllClassesLoaded)
+BeSQLite::DbResult ECDbSchemaReader::ReadECSchema(DbECSchemaEntry*& outECSchemaKey, ECSchemaId ctxECSchemaId, bool ensureAllClassesLoaded)
     {
     BeMutexHolder aGuard (m_criticalSection);
-    bvector<DbECSchemaEntryP> newlyLoadedSchemas;
+    bvector<DbECSchemaEntry*> newlyLoadedSchemas;
     DbResult r = LoadECSchemaDefinition (outECSchemaKey, newlyLoadedSchemas, ctxECSchemaId);
     if (r != BE_SQLITE_ROW)
         return r;
 
-    for (DbECSchemaEntryP newlyLoadedSchema: newlyLoadedSchemas)
+    for (DbECSchemaEntry* newlyLoadedSchema : newlyLoadedSchemas)
         {
         r = LoadCAFromDb (*(newlyLoadedSchema->m_resolvedECSchema), newlyLoadedSchema->m_ecSchemaId, ECContainerType::Schema);
         if (r != BE_SQLITE_DONE)
@@ -204,7 +204,7 @@ BeSQLite::DbResult ECDbSchemaReader::ReadECSchema (DbECSchemaEntryP& outECSchema
 
     if (ensureAllClassesLoaded && !outECSchemaKey->IsFullyLoaded())
         {
-        std::set<DbECSchemaEntryP> fullyLoadedSchemas;
+        std::set<DbECSchemaEntry*> fullyLoadedSchemas;
         r = LoadECSchemaClassesFromDb (outECSchemaKey, fullyLoadedSchemas);
         if (r != BE_SQLITE_DONE)
             {
@@ -220,7 +220,7 @@ BeSQLite::DbResult ECDbSchemaReader::ReadECSchema (DbECSchemaEntryP& outECSchema
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::DbResult ECDbSchemaReader::GetECSchema (ECSchemaP& ecSchemaOut, ECSchemaId ecSchemaId, bool ensureAllClassesLoaded)
     {
-    DbECSchemaEntryP outECSchemaKey;
+    DbECSchemaEntry* outECSchemaKey;
     DbResult r = ReadECSchema (outECSchemaKey, ecSchemaId, ensureAllClassesLoaded);
     if (r != BE_SQLITE_ROW)
         return r;
@@ -261,7 +261,7 @@ DbResult ECDbSchemaReader::FindECSchemaIdInDb (ECSchemaId& ecSchemaId, Utf8CP sc
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult ECDbSchemaReader::LoadECSchemaClassesFromDb (DbECSchemaEntryP ecSchemaKey, std::set<DbECSchemaEntryP>& fullyLoadedSchemas)
+BeSQLite::DbResult ECDbSchemaReader::LoadECSchemaClassesFromDb(DbECSchemaEntry* ecSchemaKey, std::set<DbECSchemaEntry*>& fullyLoadedSchemas)
     {
     BeAssert (ecSchemaKey != nullptr);
     if (!ecSchemaKey)
@@ -274,7 +274,7 @@ BeSQLite::DbResult ECDbSchemaReader::LoadECSchemaClassesFromDb (DbECSchemaEntryP
     //Enure all reference schemas also loaded
     for (auto& refSchemaKey : ecSchemaKey->m_resolvedECSchema->GetReferencedSchemas ())
         {
-        DbECSchemaEntryP key = nullptr;
+        DbECSchemaEntry* key = nullptr;
         ECSchemaId referenceECSchemaId = refSchemaKey.second->GetId ();
         DbECSchemaMap::const_iterator schemaIterator = m_ecSchemaByECSchemaIdLookup.find (referenceECSchemaId);
         if (schemaIterator != m_ecSchemaByECSchemaIdLookup.end ())
@@ -296,7 +296,7 @@ BeSQLite::DbResult ECDbSchemaReader::LoadECSchemaClassesFromDb (DbECSchemaEntryP
     info.ColsSelect = DbECClassInfo::COL_Id;
     info.m_ecSchemaId = ecSchemaKey->m_ecSchemaId;
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    r = ECDbSchemaPersistence::FindECClassInfo (stmt, m_db, info);
+    r = ECDbSchemaPersistence::FindECClass (stmt, m_db, info);
     if (r != BE_SQLITE_OK)
         return r;
       
@@ -334,7 +334,7 @@ BeSQLite::DbResult ECDbSchemaReader::LoadECSchemaFromDb(ECSchemaPtr& ecSchemaOut
     info.m_ecSchemaId = ecSchemaId;        
 
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    DbResult r = ECDbSchemaPersistence::FindECSchemaInfo(stmt, m_db,info);
+    DbResult r = ECDbSchemaPersistence::FindECSchema(stmt, m_db,info);
 
     if (r != BE_SQLITE_OK)
         return r;
@@ -378,7 +378,7 @@ BeSQLite::DbResult ECDbSchemaReader::LoadECClassFromDb(ECClassP& ecClassOut, ECC
     info.m_ecClassId = ecClassId;
 
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    DbResult r = ECDbSchemaPersistence::FindECClassInfo (stmt, m_db, info);
+    DbResult r = ECDbSchemaPersistence::FindECClass (stmt, m_db, info);
     if (r != BE_SQLITE_OK)
         return r;
     r = ECDbSchemaPersistence::Step(info, *stmt);
@@ -423,11 +423,11 @@ BeSQLite::DbResult ECDbSchemaReader::LoadECClassFromDb(ECClassP& ecClassOut, ECC
 
     if (ecRelationshipClass != nullptr)
         {
-        r = LoadECRelationConstraintFromDb (ecRelationshipClass, ecClassId, ECRelationshipEnd_Source);
+        r = LoadECRelationshipConstraintFromDb (ecRelationshipClass, ecClassId, ECRelationshipEnd_Source);
         if (r != BE_SQLITE_ROW)
             return r;
 
-        r = LoadECRelationConstraintFromDb (ecRelationshipClass, ecClassId, ECRelationshipEnd_Target);
+        r = LoadECRelationshipConstraintFromDb(ecRelationshipClass, ecClassId, ECRelationshipEnd_Target);
         if (r != BE_SQLITE_ROW)
             return r;
         }
@@ -449,14 +449,14 @@ BeSQLite::DbResult ECDbSchemaReader::LoadECPropertiesFromDb(ECClassP& ecClass, E
         DbECPropertyInfo::COL_IsArray |
         DbECPropertyInfo::COL_PrimitiveType |
         DbECPropertyInfo::COL_StructType |
-        DbECPropertyInfo::COL_IsReadOnly |
+        DbECPropertyInfo::COL_IsReadonly |
         DbECPropertyInfo::COL_MinOccurs |
         DbECPropertyInfo::COL_MaxOccurs;
 
     BeSQLite::CachedStatementPtr stmt = nullptr;
     info.m_ecClassId = ecClassId;
 
-    DbResult r = ECDbSchemaPersistence::FindECPropertyInfo (stmt, m_db, info);
+    DbResult r = ECDbSchemaPersistence::FindECProperty (stmt, m_db, info);
     if (r != BE_SQLITE_OK)
         return r;
 
@@ -571,7 +571,7 @@ BeSQLite::DbResult ECDbSchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContain
     readerInfo.m_containerType = containerType;
 
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    DbResult r = ECDbSchemaPersistence::FindCustomAttributeInfo(stmt, m_db, readerInfo);
+    DbResult r = ECDbSchemaPersistence::FindCustomAttribute(stmt, m_db, readerInfo);
     if (r != BE_SQLITE_OK)
         return r;
 
@@ -615,11 +615,11 @@ BeSQLite::DbResult ECDbSchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContain
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult ECDbSchemaReader::LoadECRelationConstraintFromDb (ECRelationshipClassP& ecRelationship, ECClassId ecClassId, ECRelationshipEnd relationshipEnd)
+BeSQLite::DbResult ECDbSchemaReader::LoadECRelationshipConstraintFromDb(ECRelationshipClassP& ecRelationship, ECClassId relationshipClassId, ECRelationshipEnd relationshipEnd)
     {
     DbECRelationshipConstraintInfo info;
     info.ColsWhere =
-        DbECRelationshipConstraintInfo::COL_ClassId             |
+        DbECRelationshipConstraintInfo::COL_RelationshipClassId   |
         DbECRelationshipConstraintInfo::COL_RelationshipEnd;
 
     info.ColsSelect =
@@ -630,11 +630,11 @@ BeSQLite::DbResult ECDbSchemaReader::LoadECRelationConstraintFromDb (ECRelations
 
     info.ColsNull = 0;
 
-    info.m_ecClassId = ecClassId;
+    info.m_relationshipClassId = relationshipClassId;
     info.m_ecRelationshipEnd = relationshipEnd;
 
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    DbResult r = ECDbSchemaPersistence::FindECRelationshipConstraintInfo (stmt, m_db, info);
+    DbResult r = ECDbSchemaPersistence::FindECRelationshipConstraint (stmt, m_db, info);
     if (r != BE_SQLITE_OK)
         return r;
 
@@ -649,14 +649,14 @@ BeSQLite::DbResult ECDbSchemaReader::LoadECRelationConstraintFromDb (ECRelations
     if (!(info.ColsNull & DbECRelationshipConstraintInfo::COL_RoleLabel))
         constraint.SetRoleLabel (WString(info.m_roleLabel.c_str(), true));
 
-    r = LoadECRelationConstraintClassesFromDb(constraint, ecClassId, relationshipEnd);
+    r = LoadECRelationshipConstraintClassesFromDb(constraint, relationshipClassId, relationshipEnd);
     if (r != BE_SQLITE_DONE)
         return r;
 
     ECContainerType containerType = 
         relationshipEnd == ECRelationshipEnd_Target ? ECContainerType::RelationshipConstraintTarget : ECContainerType::RelationshipConstraintSource;
 
-    r = LoadCAFromDb (constraint, ecClassId, containerType);
+    r = LoadCAFromDb(constraint, relationshipClassId, containerType);
     if (r != BE_SQLITE_DONE)
         return r;
 
@@ -666,46 +666,50 @@ BeSQLite::DbResult ECDbSchemaReader::LoadECRelationConstraintFromDb (ECRelations
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult ECDbSchemaReader::LoadECRelationConstraintClassesFromDb(ECRelationshipConstraintR ecRelationship, ECClassId ecClassId, ECRelationshipEnd relationshipEnd)
+BeSQLite::DbResult ECDbSchemaReader::LoadECRelationshipConstraintClassesFromDb(ECRelationshipConstraintR constraint, ECClassId relationshipClassId, ECRelationshipEnd relationshipEnd)
     {
     DbECRelationshipConstraintClassInfo info;
     info.ColsWhere =
-        DbECRelationshipConstraintClassInfo::COL_ClassId             |
+        DbECRelationshipConstraintClassInfo::COL_RelationshipClassId |
         DbECRelationshipConstraintClassInfo::COL_RelationshipEnd;
 
-    info.ColsSelect = DbECRelationshipConstraintClassInfo::COL_RelationClassId;
+    info.ColsSelect = DbECRelationshipConstraintClassInfo::COL_ConstraintClassId;
 
     info.ColsNull = 0;
 
-    info.m_ecClassId = ecClassId;
+    info.m_relationshipClassId = relationshipClassId;
     info.m_ecRelationshipEnd = relationshipEnd;
 
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    DbResult r = ECDbSchemaPersistence::FindECRelationConstraintClassInfo (stmt, m_db, info);
+    DbResult r = ECDbSchemaPersistence::FindECRelationshipConstraintClass (stmt, m_db, info);
     if (r != BE_SQLITE_OK)
         return r;
-    ECClassP relationEndClass;
+
     while ((r = ECDbSchemaPersistence::Step(info, *stmt)) == BE_SQLITE_ROW)
         {
-        r = ReadECClass(relationEndClass, info.m_relationECClassId);
+        const ECClassId constraintClassId = info.m_constraintClassId;
+        ECClassP constraintClass = nullptr;
+        r = ReadECClass(constraintClass, constraintClassId);
         if (r != BE_SQLITE_ROW)
             return r;
-        ECRelationshipConstraintClassP ecRelationShipconstraintClass;
-        ecRelationship.AddConstraintClass(ecRelationShipconstraintClass,*relationEndClass);
-        if (ecRelationShipconstraintClass != nullptr)
+
+        ECRelationshipConstraintClassP constraintClassObj = nullptr;
+        constraint.AddConstraintClass(constraintClassObj, *constraintClass);
+        if (constraintClassObj != nullptr)
             {
             CachedStatementPtr statement;
-            Utf8CP sql = "SELECT P.NAME FROM ec_RelationshipConstraintClassProperty I INNER JOIN ec_Property P on P.Id = I.RelationPropertyId WHERE I.ClassId = ? AND I.RelationshipEnd = ? AND I.RelationClassId = ? ";
+            Utf8CP sql = "SELECT KeyPropertyName FROM ec_RelationshipConstraintClassKeyProperty WHERE RelationshipClassId = ? AND ConstraintClassId = ? AND RelationshipEnd = ?";
             m_db.GetCachedStatement(statement, sql);
-            statement->BindInt64(1, ecClassId);
-            statement->BindInt(2, relationshipEnd);
-            statement->BindInt64(3, relationEndClass->GetId());
-            while ((r = statement->Step() )== BE_SQLITE_ROW)
+            statement->BindInt64(1, relationshipClassId);
+            statement->BindInt64(2, constraintClassId);
+            statement->BindInt(3, relationshipEnd);
+            while ((r = statement->Step()) == BE_SQLITE_ROW)
                 {
-                ecRelationShipconstraintClass->AddKey(WString(statement->GetValueText(0),BentleyCharEncoding::Utf8).c_str());
+                constraintClassObj->AddKey(WString(statement->GetValueText(0),BentleyCharEncoding::Utf8).c_str());
                 }
             }
         }
+
     return r;
     }
 

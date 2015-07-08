@@ -44,8 +44,7 @@ public:
         CaseInsensitiveClassNames, //!< Names of ECClasses within one ECSchema must be case insensitive, i.e. must not only differ by case
         CaseInsensitivePropertyNames, //!< Names of ECProperties within one ECClass must be case insensitive, i.e. must not only differ by case
         NoPropertiesOfSameTypeAsClass, //!< Struct or array properties within an ECClass must not be of same type or derived type than the ECClass.
-        StructWithRegularBaseClass, //!< Struct classes can not have regular class as struct class. 
-        InvalidMapStrategy //!< ECClass has ClassMap custom attribute with invalid values for the properties MapStrategy or MapStrategyOptions
+        StructWithRegularBaseClass //!< Struct classes can not have regular class as struct class. 
         };
 
     //=======================================================================================
@@ -113,36 +112,6 @@ public:
 
 
 //**************************** Subclasses *********************************************
-//=======================================================================================
-// @bsiclass                             Muhammad.Zaighum                  04/2015
-//+===============+===============+===============+===============+===============+======
-struct MapStrategyRule : ECSchemaValidationRule
-    {
-public:
-    //=======================================================================================
-    // @bsiclass                  Muhammad.Zaighum                          07/2015
-    //+===============+===============+===============+===============+===============+======
-    struct Error : ECSchemaValidationRule::Error
-        {
-    private:
-        bvector<ECN::ECClassCP> m_classesWithInvalidMapStrategy;
-        virtual Utf8String _ToString() const override;
-    public:
-        Error(Type ruleType) : ECSchemaValidationRule::Error(ruleType) {}
-        ~Error() {}
-
-        void AddClassWithInvalidMapStrategy(ECN::ECClassCR ecClass) { m_classesWithInvalidMapStrategy.push_back(&ecClass); }
-        bool IsError() const { return !m_classesWithInvalidMapStrategy.empty(); }
-        };
-
-private:
-    mutable std::unique_ptr<Error> m_error;
-    virtual bool _ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) override;
-    virtual std::unique_ptr<ECSchemaValidationRule::Error> _GetError() const override;
-public:
-    MapStrategyRule();
-    ~MapStrategyRule() {}
-    };
 
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      06/2014
@@ -272,51 +241,6 @@ public:
     ~NoPropertiesOfSameTypeAsClassRule () {}
     };
 
-//=======================================================================================
-// @bsiclass                                                Affan.Khan           05/2015
-//+===============+===============+===============+===============+===============+======
-struct StructWithRegularBaseClassRule : ECSchemaValidationRule
-    {
-    public:
-        //=======================================================================================
-        // @bsiclass                                                Affan.Khan           05/2015
-        //+===============+===============+===============+===============+===============+======
-        struct Error : ECSchemaValidationRule::Error
-            {
-            public:
-                typedef bmap<ECN::ECClassCP, bvector<ECN::ECClassCP>> InvalidClasses;
 
-            private:
-                InvalidClasses m_invalidClasses;
-                bool m_supportLegacySchemas;
-
-                virtual Utf8String _ToString () const override;
-
-            public:
-                explicit Error (Type ruleType, bool supportLegacySchemas)
-                    : ECSchemaValidationRule::Error (ruleType), m_supportLegacySchemas (supportLegacySchemas)
-                    {}
-
-                ~Error () {}
-
-                bvector<ECN::ECClassCP> const* TryGetInvalidBaseClasses (ECN::ECClassCR ecClass) const;
-
-                InvalidClasses const& GetInvalidClasses () const { return m_invalidClasses; }
-                InvalidClasses& GetInvalidClassesR () { return m_invalidClasses; }
-             
-            };
-
-    private:
-        bool m_supportLegacySchemas;
-        bset<WCharCP, CompareIWChar> m_classNameSet;
-        mutable std::unique_ptr<Error> m_error;
-
-        virtual bool _ValidateSchema (ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) override;
-        virtual std::unique_ptr<ECSchemaValidationRule::Error> _GetError () const override;
-
-    public:
-        explicit StructWithRegularBaseClassRule (bool supportLegacySchemas);
-        ~StructWithRegularBaseClassRule () {}
-    };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

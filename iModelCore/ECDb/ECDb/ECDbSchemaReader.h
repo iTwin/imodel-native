@@ -16,8 +16,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ECDbSchemaReader: public RefCountedBase, public virtual ECDbClassDependencyAnalyzer::ICallback
     {
-typedef bmap<ECClassId, DbECClassEntryP>  DbECClassEntryMap;
-typedef bmap<ECSchemaId, DbECSchemaEntryP> DbECSchemaMap;
+typedef bmap<ECClassId, DbECClassEntry*>  DbECClassEntryMap;
+typedef bmap<ECSchemaId, DbECSchemaEntry*> DbECSchemaMap;
 private:
     ECSchemaCache              m_cache;
     Db&                        m_db;
@@ -26,31 +26,31 @@ private:
     bool                       m_loadOnlyPrimaryCustomAttributes;
     mutable BeMutex m_criticalSection;
 
-    BeSQLite::DbResult         LoadECSchemaClassesFromDb               (DbECSchemaEntryP ecSchemaKey, std::set<DbECSchemaEntryP>& fullyLoadedSchemas);
+    BeSQLite::DbResult         LoadECSchemaClassesFromDb               (DbECSchemaEntry* ecSchemaKey, std::set<DbECSchemaEntry*>& fullyLoadedSchemas);
     BeSQLite::DbResult         LoadECSchemaFromDb                      (ECSchemaPtr& ecSchemaOut, ECSchemaId ecSchemaId);
     BeSQLite::DbResult         LoadECClassFromDb                       (ECClassP& ecClassOut, ECClassId ecClassId, ECSchemaR ecSchemaIn);
     BeSQLite::DbResult         LoadECPropertiesFromDb                  (ECClassP& ecClass, ECClassId ecClassId);
     BeSQLite::DbResult         LoadBaseClassesFromDb                   (ECClassP& ecClass, ECClassId ecClassId);
     BeSQLite::DbResult         LoadCAFromDb                            (ECN::IECCustomAttributeContainerR  caConstainer, ECContainerId containerId, ECContainerType containerType);
-    BeSQLite::DbResult         LoadECRelationConstraintFromDb          (ECRelationshipClassP& ecRelationship, ECClassId ecClassId, ECRelationshipEnd relationshipEnd);
-    BeSQLite::DbResult         LoadECRelationConstraintClassesFromDb   (ECRelationshipConstraintR ecRelationship, ECClassId ecClassId, ECRelationshipEnd relationshipEnd);
+    BeSQLite::DbResult         LoadECRelationshipConstraintFromDb      (ECRelationshipClassP&, ECClassId constraintClassId, ECRelationshipEnd);
+    BeSQLite::DbResult         LoadECRelationshipConstraintClassesFromDb (ECRelationshipConstraintR, ECClassId relationshipClassId, ECRelationshipEnd);
     //Interface api
-    BeSQLite::DbResult         LoadECSchemaDefinition                  (DbECSchemaEntryP& outECSchemaKey, bvector<DbECSchemaEntryP>& newlyLoadedSchemas, ECSchemaId ctxECSchemaId);
+    BeSQLite::DbResult         LoadECSchemaDefinition                  (DbECSchemaEntry*& outECSchemaKey, bvector<DbECSchemaEntry*>& newlyLoadedSchemas, ECSchemaId ctxECSchemaId);
     BeSQLite::DbResult         ReadECClass                             (ECClassP& ecClass, ECClassId ecClassId);
-    BeSQLite::DbResult         ReadECSchema                            (DbECSchemaEntryP& outECSchemaKey, ECSchemaId ctxECSchemaId, bool ensureAllClassesExist);
+    BeSQLite::DbResult         ReadECSchema                            (DbECSchemaEntry*& outECSchemaKey, ECSchemaId ctxECSchemaId, bool ensureAllClassesExist);
 
     BeSQLite::DbResult         ReadECSchema                            (ECSchemaP& ecSchemaOut, Utf8CP schemaName, uint32_t versionMajor, uint32_t versinMinor, bool partial);
                                ECDbSchemaReader                        (Db& db);
-    DbECSchemaEntryP           FindDbECSchemaEntry                     (ECSchemaId ecSchemaId);
-    DbECClassEntryP            FindDbECClassEntry                      (ECClassId ecClassid);
+    DbECSchemaEntry*           FindDbECSchemaEntry                     (ECSchemaId ecSchemaId);
+    DbECClassEntry*            FindDbECClassEntry                      (ECClassId ecClassid);
     void                       AddECSchemaToCacheInternal              (ECSchemaCR schema);
 
 public:
     BeSQLite::DbResult         FindECSchemaIdInDb                      (ECSchemaId& ecSchemaId, Utf8CP schemaName) const;
     BeSQLite::DbResult         GetECSchema                             (ECSchemaP& ecSchema, Utf8CP schemaName, bool loadClasses);
     BeSQLite::DbResult         GetECSchema                             (ECSchemaP& ecSchemaOut, ECSchemaId ecSchemaId, bool loadClasses);
-    ECClassP         GetECClass                              (ECClassId ecClassId);
-    ECClassP         GetECClass (Utf8CP schemaNameOrPrefix, Utf8CP className);
+    ECClassP                   GetECClass                              (ECClassId ecClassId);
+    ECClassP                   GetECClass (Utf8CP schemaNameOrPrefix, Utf8CP className);
 
     BeSQLite::DbResult         GetECClass                              (/*OUT*/ECClassP& ecClass, ECClassId ecClassId);
     BeSQLite::DbResult         GetECClassBySchemaName                  (/*OUT*/ ECClassP& ecClass, Utf8CP schemaName, Utf8CP className);

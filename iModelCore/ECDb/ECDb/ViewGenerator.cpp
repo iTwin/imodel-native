@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
     //---------------------------------------------------------------------------------------
     BentleyStatus SqlGenerator::BuildPropertyExpression (NativeSqlBuilder& viewSql, PropertyMapCR propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue)
         {
-        if (auto o = dynamic_cast<PropertyMapToColumnCP>(&propertyMap))
+        if (auto o = dynamic_cast<PropertyMapToColumn const*>(&propertyMap))
             {
             return BuildPrimitivePropertyExpression (viewSql, *o, tablePrefix, addECPropertyPathAlias, nullValue);
             }
@@ -24,11 +24,11 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
             {
             return BuildPointPropertyExpression (viewSql, *o, tablePrefix, addECPropertyPathAlias, nullValue);
             }
-        else if (auto o = dynamic_cast<PropertyMapToInLineStructCP>(&propertyMap))
+        else if (auto o = dynamic_cast<PropertyMapToInLineStruct const*>(&propertyMap))
             {
             return BuildStructPropertyExpression (viewSql, *o, tablePrefix, addECPropertyPathAlias, nullValue);
             }
-        else if (/*auto o = */dynamic_cast<PropertyMapToTableCP>(&propertyMap))
+        else if (/*auto o = */dynamic_cast<PropertyMapToTable const*>(&propertyMap))
             {
             return BentleyStatus::SUCCESS;
             }
@@ -144,7 +144,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
     //---------------------------------------------------------------------------------------
     // @bsimethod                                 Affan.Khan                         06/2015
     //---------------------------------------------------------------------------------------
-    BentleyStatus SqlGenerator::BuildPrimitivePropertyExpression (NativeSqlBuilder& viewSql, PropertyMapToColumnCR propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue)
+    BentleyStatus SqlGenerator::BuildPrimitivePropertyExpression (NativeSqlBuilder& viewSql, PropertyMapToColumn const& propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue)
         {
         auto accessString = Utf8String (propertyMap.GetPropertyAccessString ());
         NativeSqlBuilder::List fragments;

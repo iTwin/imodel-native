@@ -47,8 +47,8 @@ struct SqlGenerator
          BentleyStatus BuildPropertyExpression (NativeSqlBuilder& viewSql, PropertyMapCR propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
          BentleyStatus BuildColumnExpression (NativeSqlBuilder::List& viewSql, Utf8CP tablePrefix, Utf8CP columnName, Utf8CP accessString, bool addECPropertyPathAlias, bool nullValue, bool escapeColumName = true);
          BentleyStatus BuildPointPropertyExpression (NativeSqlBuilder& viewSql, PropertyMapPoint const& propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
-         BentleyStatus BuildPrimitivePropertyExpression (NativeSqlBuilder& viewSql, PropertyMapToColumnCR propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
-         BentleyStatus BuildStructPropertyExpression (NativeSqlBuilder& viewSql, PropertyMapToInLineStructCR propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
+         BentleyStatus BuildPrimitivePropertyExpression (NativeSqlBuilder& viewSql, PropertyMapToColumn const& propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
+         BentleyStatus BuildStructPropertyExpression(NativeSqlBuilder& viewSql, PropertyMapToInLineStruct const& propertyMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
          BentleyStatus BuildSystemSelectionClause (NativeSqlBuilder::List& fragments, ClassMapCR baseClassMap, ClassMapCR classMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
          BentleyStatus BuildSelectionClause (NativeSqlBuilder& viewSql, ClassMapCR baseClassMap, ClassMapCR classMap, Utf8CP tablePrefix, bool addECPropertyPathAlias, bool nullValue);
          BentleyStatus BuildClassView (NativeSqlBuilder& viewSql, ClassMapCR classMap);
@@ -58,15 +58,13 @@ struct SqlGenerator
          BentleyStatus BuildDeleteTriggers (NativeSqlBuilder::List& tiggers, ClassMapCR classMap);
          BentleyStatus DropViewIfExists (ECDbR map, Utf8CP viewName);
     public:
-        SqlGenerator (ECDbMapR map)
-            :m_map (map)
-            {
-            }
+        SqlGenerator (ECDbMapR map):m_map (map) {}
         static Utf8String BuildViewClassName (ECN::ECClassCR ecClass);
          BentleyStatus BuildViewInfrastructure (std::set<ClassMap const*>& classMaps);
          static Utf8String BuildSchemaQualifiedClassName (ECN::ECClassCR ecClass);
 
     };
+
 /*=================================================================================**//**
 * @bsiclass                                                     Affan.Khan       07/2013
 +===============+===============+===============+===============+===============+======*/

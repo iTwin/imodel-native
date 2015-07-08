@@ -361,7 +361,7 @@ MapStatus ClassMap::_InitializePart1 (ClassMapInfo const& mapInfo, IClassMap con
             mapInfo.IsMapToVirtualTable (),
             mapInfo.GetECInstanceIdColumnName (),
             IClassMap::IsMapToSecondaryTableStrategy (m_ecClass), 
-            mapInfo.GetMapStrategy().GetStrategy() == MapStrategy::ExistingTable); // could be existing or to-be-created
+            mapInfo.GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::ExistingTable); 
 
         if (!EXPECTED_CONDITION (table != nullptr))
             return MapStatus::Error;
@@ -771,10 +771,9 @@ ECDbSqlColumn* ClassMap::FindOrCreateColumnForProperty (ClassMapCR classMap,Clas
     ColumnFactory::Specification::GenerateColumnNameOptions generateColumnNameOpts = ColumnFactory::Specification::GenerateColumnNameOptions::NameBasedOnClassIdAndCaseSaveAccessString;
     ECDbSqlColumn::Type requestedColumnType = ECDbSqlHelper::PrimitiveTypeToColumnType (columnType);
  
-    ECDbMapStrategy const& mapStrategy = classMap.GetMapStrategy();
-    if (mapStrategy.HasOption(MapStrategyOptions::SharedColumns))
+    if (classMap.GetMapStrategy().GetOption() == ECDbMapStrategy::Option::SharedColumns)
         {
-        BeAssert(mapStrategy.GetStrategy() == MapStrategy::SharedTable);
+        BeAssert(classMap.GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::SharedTable);
         strategy = ColumnFactory::Specification::Strategy::CreateOrReuseSharedColumn;
         requestedColumnType = ECDbSqlColumn::Type::Any; //If not set it will get set anyway
         generateColumnNameOpts = ColumnFactory::Specification::GenerateColumnNameOptions::NameBasedOnLetterFollowedByIntegerSequence;

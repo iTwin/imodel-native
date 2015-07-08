@@ -143,7 +143,7 @@ ECDbPolicy ECDbPolicyManager::DoGetClassPolicy (IClassMap const& classMap, IsVal
         {
         Utf8String notSupportedMessage;
         notSupportedMessage.Sprintf ("ECClass '%s' is not supported in ECSQL as it was not mapped to a table."
-                        " The ECClass might have been marked with 'DoNotMap' in the ECSchema or is generally not supported by ECDb."
+                        " The ECClass might have been marked with 'NotMapped' in the ECSchema or is generally not supported by ECDb."
                         " In that case, please see the log for details about why the class was not mapped.", 
                         Utf8String (className).c_str ());
         return ECDbPolicy::CreateNotSupported (notSupportedMessage.c_str ());

@@ -17,18 +17,27 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 +===============+===============+===============+===============+===============+======*/
 struct ECDbMap :NonCopyableClass
 {
-typedef bmap<ECN::ECClassId, ClassMapPtr>       ClassMapDictionary;
-typedef bmap<ECDbSqlTable*, MappedTablePtr>          ClustersByTable;
+typedef bmap<ECN::ECClassId, ClassMapPtr> ClassMapDictionary;
+typedef bmap<ECDbSqlTable*, MappedTablePtr> ClustersByTable;
 
 public:
     struct MapContext : NonCopyableClass
         {
     private:
+        mutable std::map<ECN::ECClassCP, std::unique_ptr<UserECDbMapStrategy>> m_userStrategyCache;
         bmap<ECDbSqlIndex const*, ECN::ECClassId> m_classIdFilteredIndices;
+
+        UserECDbMapStrategy* GetUserStrategyP(ECN::ECClassCR, ECN::ECDbClassMap const*) const;
 
     public:
         MapContext() {}
         ~MapContext() {}
+
+        //! Gets the user map strategy for the specified ECClass.
+        //! @return User map strategy. If the class doesn't have one a default strategy is returned. Only in 
+        //! case of error, nullptr is returned
+        UserECDbMapStrategy const* GetUserStrategy(ECN::ECClassCR, ECN::ECDbClassMap const* = nullptr) const;
+        UserECDbMapStrategy* GetUserStrategyP(ECN::ECClassCR) const;
 
         void AddClassIdFilteredIndex(ECDbSqlIndex const&, ECN::ECClassId);
         bool TryGetClassIdToIndex(ECN::ECClassId&, ECDbSqlIndex const&) const;
@@ -151,7 +160,7 @@ public:
     //! @copydoc ECDbMap::GetClassMap
     ClassMapCP                  GetClassMapCP (ECN::ECClassCR ecClass, bool loadIfNotFound = true) const;
 
-    ECDbSqlTable*                  FindOrCreateTable (Utf8CP tableName, bool isVirtual, Utf8CP primaryKeyColumnName, bool mapToSecondaryTable, bool mapToExisitingTable) ;
+    ECDbSqlTable*               FindOrCreateTable (Utf8CP tableName, bool isVirtual, Utf8CP primaryKeyColumnName, bool mapToSecondaryTable, bool mapToExisitingTable) ;
     MappedTableP                GetMappedTable (ClassMapCR classMap, bool createMappedTableEntryIfNotFound = true);
     //! The values returned by GetPrimitiveTypeName are intended only for logging and debugging purposes
     static WCharCP              GetPrimitiveTypeName (ECN::PrimitiveType primitiveType);

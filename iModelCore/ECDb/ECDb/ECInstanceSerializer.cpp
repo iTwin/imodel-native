@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECInstanceSerializer.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -339,5 +339,108 @@ IECInstancePtr ECInstanceSerializer::Deserialize (DbBuffer& buffer, ECClassCR ec
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECInstanceSerializer::ECInstanceSerializer (): m_ptr (nullptr), m_ecClassResolver (nullptr), m_bufferSize (0) {}
+
+
+//***************************** DbBuffer ************************************************
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+DbBuffer::~DbBuffer()
+    {
+    Reset();
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void DbBuffer::Dettach()
+    {
+    m_ownsBuffer = false;
+    Reset();
+    }
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void DbBuffer::Reset()
+    {
+    if (m_ownsBuffer && m_data != nullptr)
+        free(m_data);
+
+    m_data = nullptr;
+    m_length = 0;
+    m_ownsBuffer = false;
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+DbBuffer::DbBuffer()
+    :m_data(nullptr), m_length(0), m_ownsBuffer(false)
+    {}
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+DbBuffer::DbBuffer(size_t length)
+    {
+    Allocate(length);
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DbBuffer::Allocate(size_t length)
+    {
+    Reset();
+    m_data = (Byte*) malloc(length);
+    if (m_data != nullptr)
+        {
+        m_length = length;
+        m_ownsBuffer = true;
+        return true;
+        }
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool  DbBuffer::SetData(Byte* data, size_t length, bool createCopy)
+    {
+    Reset();
+    if (createCopy == true)
+        {
+        if (Allocate(length) == true)
+            {
+            memcpy(m_data, data, length);
+            return true;
+            }
+        else
+            return false;
+        }
+    m_data = data;
+    m_length = length;
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void DbBuffer::Resize(size_t length)
+    {
+    if (m_data != nullptr)
+        {
+        size_t minLength = length > m_length ? m_length : length;
+        Byte* data = (Byte*) malloc(length);
+        memcpy(data, m_data, minLength);
+        Reset();
+        m_data = data;
+        m_ownsBuffer = true;
+        m_length = length;
+        }
+    else
+        Allocate(length);
+    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

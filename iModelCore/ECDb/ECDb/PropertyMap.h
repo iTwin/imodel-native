@@ -65,6 +65,10 @@ public:
     const_iterator end () const;
     };
 
+struct PropertyMapToColumn;
+struct PropertyMapToTable;
+struct PropertyMapArrayOfPrimitives;
+
 /*---------------------------------------------------------------------------------------
 * Abstract class for property mapping
 * @bsimethod                                                    affan.khan        03/2012
@@ -98,10 +102,9 @@ protected:
     //! Make sure our table has the necessary columns, if any
     virtual MapStatus _FindOrCreateColumnsInTable(ClassMap& classMap,ClassMapInfo const* classMapInfo);
 
-
-    virtual PropertyMapToColumnCP _GetAsPropertyMapToColumn () const { return nullptr; }
-    virtual PropertyMapToTableCP _GetAsPropertyMapToTable () const { return nullptr; }
-    virtual PropertyMapArrayOfPrimitivesCP _GetAsPropertyMapArrayOfPrimitives () const { return nullptr; }
+    virtual PropertyMapToColumn const* _GetAsPropertyMapToColumn () const { return nullptr; }
+    virtual PropertyMapToTable const* _GetAsPropertyMapToTable () const { return nullptr; }
+    virtual PropertyMapArrayOfPrimitives const* _GetAsPropertyMapArrayOfPrimitives () const { return nullptr; }
 
     virtual bool _IsECInstanceIdPropertyMap () const;
     virtual bool _IsSystemPropertyMap () const;
@@ -114,14 +117,10 @@ protected:
 
 public:
     virtual ~PropertyMap () {}
-   ECDbPropertyPathId GetPropertyPathId () const 
-        { 
-        BeAssert (m_propertyPathId != 0);
-        return m_propertyPathId;
-        }
-    PropertyMapToColumnCP GetAsPropertyMapToColumn () const {return _GetAsPropertyMapToColumn ();}
+    ECDbPropertyPathId GetPropertyPathId () const  { BeAssert (m_propertyPathId != 0); return m_propertyPathId; }
+    PropertyMapToColumn const* GetAsPropertyMapToColumn() const { return _GetAsPropertyMapToColumn(); }
     PropertyMapToTableCP GetAsPropertyMapToTable () const {return _GetAsPropertyMapToTable();}
-    PropertyMapArrayOfPrimitivesCP GetAsPropertyMapArrayOfPrimitives () const {return _GetAsPropertyMapArrayOfPrimitives();}
+    PropertyMapArrayOfPrimitives const* GetAsPropertyMapArrayOfPrimitives() const { return _GetAsPropertyMapArrayOfPrimitives(); }
     ECN::ECPropertyCR GetProperty () const;
     PropertyMapCP GetParent () const { return m_parentPropertyMap; }
     PropertyMapCR GetRoot () const 
@@ -273,7 +272,7 @@ protected:
     //! basic constructor
     PropertyMapToColumn (ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, ECDbSqlTable const* primaryTable, ColumnInfoCR columnInfo, PropertyMapCP parentPropertyMap);
     
-    virtual PropertyMapToColumnCP _GetAsPropertyMapToColumn () const override { return this; }
+    virtual PropertyMapToColumn const* _GetAsPropertyMapToColumn () const override { return this; }
 
     //! Make sure our table has the necessary columns, if any
     virtual MapStatus _FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfo const* classMapInfo) override;
@@ -360,7 +359,7 @@ private:
     //! For debugging and logging
     WString _ToString() const override;
 
-    PropertyMapArrayOfPrimitivesCP _GetAsPropertyMapArrayOfPrimitives () const { return this; }
+    PropertyMapArrayOfPrimitives const* _GetAsPropertyMapArrayOfPrimitives () const { return this; }
 };
 
 //=======================================================================================

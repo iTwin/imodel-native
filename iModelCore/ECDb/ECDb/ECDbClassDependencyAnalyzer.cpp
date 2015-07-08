@@ -92,7 +92,7 @@ BeSQLite::DbResult ECDbClassDependencyAnalyzer::ComputeRelationshipsDependency (
     {
     DbResult r;
     BeSQLite::CachedStatementPtr stmt;
-    m_db.GetCachedStatement (stmt, "SELECT DISTINCT RelationClassId FROM ec_RelationshipConstraintClass WHERE ClassId = ?");
+    m_db.GetCachedStatement (stmt, "SELECT DISTINCT RelationshipClassId FROM ec_RelationshipConstraintClass WHERE ClassId = ?");
     stmt->BindInt64 (1, ecClassId);
 
     r = ComputeCustomAttributeDependency (dependencies, ecClassId, ECContainerType::RelationshipConstraintSource, ecClassId);

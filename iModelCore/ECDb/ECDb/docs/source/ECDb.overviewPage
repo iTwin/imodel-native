@@ -184,20 +184,17 @@
     - Type of ECClasses that <b>are not mapped</b>.
         - CustomAttribute ECClasses
         - Non-domain ECClasses
-        - Relationship ECClasses with no source/target constraints
-    - Type of ECClasses that are mapped using the @b TableForThisClass strategy by default.
+    - Type of ECClasses that are mapped using the @b OwnTable strategy by default.
         - Domain ECClasses
         - Struct ECClasses
     - ECRelationshipClasses are either mapped to the table of one of the constraint ends (ForeignKey mapping)
     or to a link table.
         - ECRelationshipClasses with cardinality 1:1 or 0:N
-            - If source or target constraints end-up in a single table on each side then @b EndTable mapping will be used.
+            - If source or target constraints end-up in a single table on each side then @b ForeignKey mapping will be used.
             - If source or target constraints end-up in more then one table on any side then @b LinkTable mapping will be used.
             - If relationship has at least one ECProperty it will be mapped using @b LinkTable mapping
-            - <em>ECDbRelationshipClassHint.PreferredDirection</em> can be use to specify which direction to optimize. This effect default indexes.
         - Relationship with cardinality N:N is always mapped using the @b LinkTable mapping.
         - A default index is created on the key columns in accordance with the cardinality.
-        - No referential integrity constraints are created. (See @ref CustomRelationshipMapDescription for how to overwrite this)
 
     @section CustomSchemaMapDescription Custom mapping or ECSchemas
 
@@ -222,33 +219,34 @@
 
     Description of the ClassMap properties:
 
-    - <b>MapStrategy</b> (optional): Specifies how the ECClass is mapped to table(s). Default value is 'TableForThisClass'.
-        - @c NotMapped : The class is not mapped to any database table.
-        - @c OwnTable : This class is mapped to its own table.
-        - @c SharedTable : This class is mapped to @em table shared by other classes as well. If @b IsMapStrategyPolymorphic is false,
-        the @b TableName ECProperty must also be specified. Otherwise it is optional.
-        - @c ExistingTable : This class is mapped to an existing table. The existing table must be specified in the @b TableName ECProperty.
-        The table must have a primary key column of type INTEGER. This does not affect subclasses of this ECClass.
-        - @c SharedTableForThisClass : Allows multiple classes which are not inherited from each other to reuse the same table.
-        The table is created by ECDb and its name @b must be specified via the ECProperty @b TableName. This does not affect subclasses of this ECClass.
-    - <b>MapStrategyOptions</b> (optional): The above values can be combined with these options:
+    - @b MapStrategy (optional): Specifies how the ECClass is mapped to table(s). Default strategy is 'OwnTable'.
+        - Property @b Strategy (optional):
+            - @c NotMapped : The class is not mapped to any database table.
+            - @c OwnTable : This class is mapped to its own table.
+            - @c SharedTable : This class is mapped to @em table shared by other classes as well. If @b IsPolymorphic is false,
+            the @b TableName ECProperty must also be specified. Otherwise it is optional.
+            - @c ExistingTable : This class is mapped to an existing table. The existing table must be specified in the @b TableName ECProperty.
+            The table must have a primary key column of type INTEGER. This does not affect subclasses of this ECClass.
+        - <b>Options</b> (optional): The above values can be combined with these options:
             - @c SharedColumns : This option tells ECDb that different ECProperties (from different ECClasses) are mapped to the same column.
             This can reduce the number of columns (and cells with NULL values) in the table significantly.
-            This can be applied to @b TablePerHierarchy or @b SharedTableForThisClass.
-            - @c DisableSharedColumns (not to combine with another MapStrategy): This option disables the column sharing for the class, if
-            column sharing was enabled on a base class.
-            - @c Readonly : This will mark the table as readonly. Can only be used with @b MapToExistingTable.
-    - <b>IsMapStrategyPolymorphic</b> (optional): If true, the MapStrategy and options also apply to subclasses of this class. 
-      If false (default), the MapStrategy only applies to this class.
-    - <b>TableName</b> (optional, required for MapStrategies @em MapToExistingTable and @em SharedTableForThisClass):
+            This can only be applied to @b SharedTable.
+            - @c SharedColumnsForSubclasses : Like @em SharedColumns, except that the ECProperties of the class holding the ClassMap
+            custom attribute do not share columns.
+            - @c DisableSharedColumns: This option disables the column sharing for the class, if
+            column sharing was enabled on a base class. The property @em Strategy must not be set.
+            - @c Readonly : This will mark the table as readonly. Can only be used with @b ExistingTable.
+        - @b IsPolymorphic (optional): If true, the MapStrategy and options also apply to subclasses of this class. 
+        If false (default), the MapStrategy only applies to this class.
+    - @b TableName (optional, required for MapStrategies @em ExistingTable and <i>SharedTable (non-polymorphic)</i>):
     Specify a table name for this class (instead of letting ECDb choose a name)
-    - <b>Indexes</b> (optional) : List of indexes to be created for properties of this class.
+    - @b Indexes (optional) : List of indexes to be created for properties of this class.
     It can be use to improve query performance or to add a unique constraint.
-        - <b>Name</b> (optional): Index name. Follow EC identifier naming rules. The name must unique in database.
-        - <b>IsUnique</b> (optional): If true, the index will be a unique index. Default value is @em false.
-        - <b>Properties</b>: List of Names of properties that will be part of index. Only primitive properties can be used. The properties must exist
+        - @b Name (optional): Index name. Follow EC identifier naming rules. The name must unique in database.
+        - @b IsUnique (optional): If true, the index will be a unique index. Default value is @em false.
+        - @b Properties: List of Names of properties that will be part of index. Only primitive properties can be used. The properties must exist
         in the ECClass or in the base classes.
-        - <b>Where</b> (optional): Creates a partial index. Right now only the special value @b ECDB_NOTNULL is supported which
+        - @b Where (optional): Creates a partial index. Right now only the special value @b ECDB_NOTNULL is supported which
         creates a partial index ignoring any NULL values.
 
     ####Examples
@@ -266,7 +264,7 @@
             <ECProperty propertyName="stringFoo" typeName="string" />
         </ECClass>
 
-    #### MapStrategy  Polymorphic SharedTable (also known as TablePerHierarchy)
+    #### MapStrategy  Polymorphic SharedTable
 
         <ECClass typeName="Foo" isDomainClass="True">
             <ECCustomAttributes>

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECInstanceSerializer.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,6 +10,30 @@
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        05/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+struct DbBuffer
+    {
+    private:
+        Byte*   m_data;
+        size_t  m_length;
+        bool    m_ownsBuffer;
+    protected:
+        void     Reset();
+        bool     Allocate(size_t length);
+
+    public:
+        DbBuffer();
+        DbBuffer(size_t length);
+        virtual ~DbBuffer();
+        Byte*    GetData()   const { return m_data; }
+        size_t   GetLength() const { return m_length; }
+        bool     SetData(Byte* data, size_t length, bool createCopy = false);
+        void     Dettach();
+        void     Resize(size_t length);
+    };
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012

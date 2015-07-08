@@ -14,10 +14,8 @@
 
 ECDB_TYPEDEFS_PTR (ClassMap);
 ECDB_TYPEDEFS_PTR (PropertyMap);
-ECDB_TYPEDEFS(PropertyMapToColumn);
 ECDB_TYPEDEFS_PTR(PropertyMapToInLineStruct);
 ECDB_TYPEDEFS_PTR(PropertyMapToTable);
-ECDB_TYPEDEFS_PTR(PropertyMapArrayOfPrimitives);
 ECDB_TYPEDEFS_PTR(MappedTable);
 ECDB_TYPEDEFS_PTR(RelationshipClassMap);
 ECDB_TYPEDEFS_PTR(RelationshipClassEndTableMap);
@@ -25,31 +23,6 @@ ECDB_TYPEDEFS_PTR(RelationshipClassLinkTableMap);
 ECDB_TYPEDEFS_PTR(ClassIndexInfo);
 ECDB_TYPEDEFS_PTR(StandardKeySpecification);
 
-//Schema analysis and map generator
-ECDB_TYPEDEFS_PTR(ECCluster);
-ECDB_TYPEDEFS_PTR(ECNode);
-ECDB_TYPEDEFS_PTR(ECGraph);
-ECDB_TYPEDEFS_PTR(ECClusterList);
-ECDB_TYPEDEFS_PTR(ClusteringAlgorithm);
-ECDB_TYPEDEFS_PTR(IECMapInfoProvider);
-ECDB_TYPEDEFS(ClusteringAlgorithmConfiguration);
-ECDB_TYPEDEFS2(bvector<ECNodeP>,ECNodeList);
-ECDB_TYPEDEFS2(bvector<ECN::ECPropertyCP>, ECPropertyList);
-//ECDbSchemaManager API
-ECDB_TYPEDEFS(DbECSchemaInfo);
-ECDB_TYPEDEFS(DbECClassInfo);
-ECDB_TYPEDEFS(DbBaseClassInfo);
-ECDB_TYPEDEFS(DbECPropertyInfo);
-ECDB_TYPEDEFS(DbECRelationshipConstraintInfo);
-ECDB_TYPEDEFS(DbECRelationshipConstraintClassInfo);
-ECDB_TYPEDEFS(DbECRelationshipConstraintClassPropertyInfo);
-ECDB_TYPEDEFS(DbCustomAttributeInfo);
-ECDB_TYPEDEFS(DbECSchemaReferenceInfo);
-ECDB_TYPEDEFS(DbBuffer);
-ECDB_TYPEDEFS(DbECClassEntry);
-ECDB_TYPEDEFS(DbECSchemaEntry);
-ECDB_TYPEDEFS(ClassClause);
-ECDB_TYPEDEFS(WhereClause);
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
