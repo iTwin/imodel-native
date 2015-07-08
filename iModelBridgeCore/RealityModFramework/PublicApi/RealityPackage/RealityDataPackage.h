@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+//__BENTLEY_INTERNAL_ONLY__
+
 #include <RealityPackage/RealityPackage.h>
 #include <RealityPackage/RealityDataSource.h>
 #include <Bentley/bvector.h>
@@ -19,6 +21,9 @@ BEGIN_BENTLEY_REALITYPACKAGE_NAMESPACE
 struct RealityDataSerializer;
 
 //=======================================================================================
+//! The bounding polygon for the RealityDataPackage represents the region of interest selected
+//! by the user in the RealityModelingNavigator. This can be seen as the clipping shape for
+//! all the data that the package will contain.
 //! @bsiclass
 //=======================================================================================
 struct BoundingPolygon : public RefCountedBase

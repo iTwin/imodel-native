@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+//__BENTLEY_INTERNAL_ONLY__
+
 #include <RealityPackage/RealityPackage.h>
 #include <BeXml/BeXml.h>
 
@@ -65,7 +67,8 @@ public:
     REALITYPACKAGE_EXPORT static WmsDataSourcePtr Create(WCharCP uri);
 
     //! Get/Set The source data.
-    //&&JFC: Document the fact that we expect a xml fragment here and write tests for these methods.
+    //! The string used here should represent a xml fragment containing all the nodes/infos required for WMS processing.
+    //! You can take a look at PublicApi/RealityPlatform/WMSSource.h for more details on the structure of a MapInfo object.
     REALITYPACKAGE_EXPORT WStringCR GetMapInfo() const;
     REALITYPACKAGE_EXPORT void      SetMapInfo(WCharCP mapInfo);
 
