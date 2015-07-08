@@ -875,46 +875,46 @@ ECSqlTestDataset ECSqlSelectTestDataset::ECInstanceIdTests (int rowCountPerClass
     ecsql = "SELECT I FROM ecsql.PSA WHERE ECInstanceId >= 0 OR I > 123";
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
 
-    ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE ECInstanceId IN (I-21, I-22.0)";
+    ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE ECInstanceId IN (I-31, I-32.0)";
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 3, 2);
 
-    ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE ECInstanceId = '108'";
+    ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE ECInstanceId = '98'";
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, IECSqlExpectedResult::Category::Supported, "ECSQL supports implicit conversion from string to number for ECInstanceId.", 3, 1);
 
     ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE ECInstanceId <= '10000'";
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, IECSqlExpectedResult::Category::Supported, "ECSQL supports implicit conversion from string to number for ECInstanceId.", 3, rowCountPerClass);
 
-    ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE ECInstanceId IN ('101', '102')";
+    ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE ECInstanceId IN ('91', '92')";
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, IECSqlExpectedResult::Category::Supported, "ECSQL supports implicit conversion from string to number for ECInstanceId.", 3, 2);
 
-    ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE ECInstanceId BETWEEN '101' AND '104'";
+    ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE ECInstanceId BETWEEN '91' AND '94'";
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, IECSqlExpectedResult::Category::Supported, "ECSQL supports implicit conversion from string to number for ECInstanceId.", 3, 4);
 
-    ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE ECInstanceId IN (101, (select ECInstanceId from ecsql.P where ECInstanceId = 102))";
+    ecsql = "SELECT I, Dt, S FROM ecsql.P WHERE ECInstanceId IN (91, (select ECInstanceId from ecsql.P where ECInstanceId = 92))";
     ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 3, 2);;
 
         {
         ecsql = "SELECT I, Dt FROM ecsql.P WHERE ECInstanceId = :id";
         auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 2, 1);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue ("id", ECValue (101LL)));
+        testItem.AddParameterValue (ECSqlTestItem::ParameterValue ("id", ECValue (91LL)));
         }
 
         {
         ecsql = "SELECT I, Dt FROM ecsql.P WHERE ECInstanceId = :id";
         auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, IECSqlExpectedResult::Category::Supported, "ECSQL supports implicit conversion from string to number for ECInstanceId.", 2, 1);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue ("id", ECValue ("101")));
+        testItem.AddParameterValue (ECSqlTestItem::ParameterValue ("id", ECValue ("91")));
         }
 
         {
         ecsql = "SELECT I, Dt FROM ecsql.P WHERE ECInstanceId = ?";
         auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 2, 1);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (102LL)));
+        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (92LL)));
         }
 
         {
         ecsql = "SELECT I, Dt FROM ecsql.P WHERE ECInstanceId = ?";
         auto& testItem = ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, IECSqlExpectedResult::Category::Supported, "ECSQL supports implicit conversion from string to number for ECInstanceId.", 2, 1);
-        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue ("101")));
+        testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue ("91")));
         }
 
         {
@@ -1066,31 +1066,6 @@ ECSqlTestDataset ECSqlSelectTestDataset::FromTests( int rowCountPerClass )
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
 
     ecsql = "SELECT ECInstanceId FROM ONLY bsm.InstanceCount";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
-
-    ecsql = "SELECT I FROM ecsql.RelSubclassOfNonRel";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
-
-    //Class which has a relationship subclass. The latter is unmapped, so testing here that the base class can still be used
-    ecsql = "SELECT I FROM ONLY ecsql.NonRelBase";
-    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
-
-    ecsql = "SELECT I FROM ecsql.NonRelBase";
-    ECSqlStatementCrudTestDatasetHelper::AddSelect (dataset, ecsql, 1, rowCountPerClass);
-
-    ecsql = "SELECT I FROM ONLY ecsql.RelSubclassOfNonRel";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
-
-    ecsql = "SELECT ECInstanceId FROM ecsql.RelWithExplicitRelConstraint";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
-
-    ecsql = "SELECT ECInstanceId FROM ONLY ecsql.RelWithExplicitRelConstraint";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
-
-    ecsql = "SELECT ECInstanceId FROM ecsql.RelWithImplicitRelConstraint";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
-
-    ecsql = "SELECT ECInstanceId FROM ONLY ecsql.RelWithImplicitRelConstraint";
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
 
     //*******************************************************

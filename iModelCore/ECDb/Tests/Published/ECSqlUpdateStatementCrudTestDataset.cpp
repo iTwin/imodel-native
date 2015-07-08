@@ -915,20 +915,6 @@ ECSqlTestDataset ECSqlUpdateTestDataset::TargetClassTests (int rowCountPerClass)
     ecsql = "UPDATE ONLY bsm.InstanceCount SET ECSchemaName='Foo', ECClassName='Goo', Count=103";
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
 
-    //Class which has a relationship subclass. The latter is unmapped, so testing here that the base class can still be used
-    ecsql = "UPDATE ONLY ecsql.NonRelBase SET I = 123";
-    ECSqlStatementCrudTestDatasetHelper::AddNonSelect (dataset, ecsql, rowCountPerClass, true);
-
-    //Relationship class which has a class as base class which is not supported
-    ecsql = "UPDATE ONLY ecsql.RelSubclassOfNonRel SET I = 123";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
-
-    ecsql = "UPDATE ONLY ecsql.RelWithExplicitRelConstraint SET I = 123";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
-
-    ecsql = "UPDATE ONLY ecsql.RelWithImplicitRelConstraint SET I = 123";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
-
     //*******************************************************
     // Missing schema prefix / not existing ECClasses / not existing ECProperties
     //*******************************************************

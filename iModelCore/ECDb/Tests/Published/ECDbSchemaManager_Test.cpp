@@ -243,56 +243,66 @@ ECSchemaPtr CreateTestSchema ()
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                   Krischan.Eberle                  07/15
+//+---------------+---------------+---------------+---------------+---------------+------
+struct SchemaImportTestItem
+    {
+    Utf8String m_schemaXml;
+    bool m_expectedToSucceed;
+    Utf8String m_assertMessage;
+
+    SchemaImportTestItem(Utf8CP schemaXml, bool expectedToSucceeed, Utf8CP assertMessage) : m_schemaXml(schemaXml), m_expectedToSucceed(expectedToSucceeed), m_assertMessage(assertMessage) {}
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  07/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void AssertSchemaImport(SchemaImportTestItem const& testItem)
+    {
+    ECDb ecdb;
+    auto stat = ECDbTestUtility::CreateECDb(ecdb, nullptr, L"importinvalidecschema.ecdb");
+    ASSERT_TRUE(stat == BE_SQLITE_OK);
+
+    auto schemaCache = ECDbTestUtility::ReadECSchemaFromString(testItem.m_schemaXml.c_str());
+    ASSERT_TRUE(schemaCache != nullptr) << testItem.m_assertMessage.c_str();
+
+    if (!testItem.m_expectedToSucceed)
+        BeTest::SetFailOnAssert(false);
+
+    {
+    ASSERT_EQ(testItem.m_expectedToSucceed, SUCCESS == ecdb.Schemas().ImportECSchemas(*schemaCache)) << testItem.m_assertMessage.c_str();
+    }
+
+    BeTest::SetFailOnAssert(true);
+    };
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  04/14
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (ECDbSchemaManager, ImportSchemaWithSchemaValidationErrors)
     {
     ECDbTestProject::Initialize ();
 
-    auto testFunc = [] (Utf8CP testSchemaXml, bool expectedToSucceed, Utf8CP assertMessage)
-        {
-        ECDb ecdb;
-        auto stat = ECDbTestUtility::CreateECDb (ecdb, nullptr, L"importinvalidecschema.ecdb");
-        ASSERT_TRUE (stat == BE_SQLITE_OK);
-
-        auto schemaCache = ECDbTestUtility::ReadECSchemaFromString (testSchemaXml);
-        ASSERT_TRUE (schemaCache != nullptr) << assertMessage;
-
-        if (!expectedToSucceed)
-            BeTest::SetFailOnAssert (false);
-
-            {
-            ASSERT_EQ (expectedToSucceed, SUCCESS == ecdb. Schemas ().ImportECSchemas (*schemaCache)) << assertMessage;
-            }
-
-        BeTest::SetFailOnAssert (true);
-        };
-
-    //***** Classes only differing by case
-    Utf8CP testSchemaXml =
-        "<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+    std::vector <SchemaImportTestItem> testItems {
+        SchemaImportTestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECClass typeName=\"TestClass\" >"
         "    <ECProperty propertyName=\"TestProperty\" typeName=\"string\" />"
         "  </ECClass>"
         "  <ECClass typeName=\"TESTCLASS\" >"
         "    <ECProperty propertyName=\"Property\" typeName=\"string\" />"
         "  </ECClass>"
-        "</ECSchema>";
-    testFunc (testSchemaXml, false, "Classes with names differing only by case.");
+        "</ECSchema>",
+        false, "Classes with names differing only by case."),
 
-
-    //***** Properties only differing by case
-    testSchemaXml =
-        "<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaImportTestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECClass typeName=\"TestClass\" >"
         "    <ECProperty propertyName=\"TestProperty\" typeName=\"string\" />"
         "    <ECProperty propertyName=\"TESTPROPERTY\" typeName=\"string\" />"
         "  </ECClass>"
-        "</ECSchema>";
-    testFunc (testSchemaXml, false, "Properties only differing by case within a class.");
+        "</ECSchema>",
+        false, "Properties only differing by case within a class."),
 
-    testSchemaXml =
-        "<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaImportTestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECClass typeName=\"TestClass\" >"
         "    <ECProperty propertyName=\"TestProperty\" typeName=\"string\" />"
         "  </ECClass>"
@@ -300,23 +310,20 @@ TEST (ECDbSchemaManager, ImportSchemaWithSchemaValidationErrors)
         "    <BaseClass>TestClass</BaseClass>"
         "    <ECProperty propertyName=\"TESTPROPERTY\" typeName=\"string\" />"
         "  </ECClass>"
-        "</ECSchema>";
-    testFunc (testSchemaXml, false, "Properties only differing by case in a sub and base class.");
+        "</ECSchema>",
+        false, "Properties only differing by case in a sub and base class."),
 
-    testSchemaXml =
-        "<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaImportTestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECClass typeName=\"TestClass\" >"
         "    <ECProperty propertyName=\"TestProperty\" typeName=\"string\" />"
         "  </ECClass>"
         "  <ECClass typeName=\"TestClass2\" >"
-        "    <ECProperty propertyName=\"TestProperty\" typeName=\"string\" />"
+        "    <ECProperty propertyName=\"TESTPROPERTY\" typeName=\"string\" />"
         "  </ECClass>"
-        "</ECSchema>";
-    testFunc (testSchemaXml, true, "Properties differing only by case in two unrelated classes.");
+        "</ECSchema>",
+        true, "Properties differing only by case in two unrelated classes."),
 
-    //***** Classes and properties only differing by case
-    testSchemaXml =
-        "<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaImportTestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECClass typeName=\"TestClass\" >"
         "    <ECProperty propertyName=\"TestProperty\" typeName=\"string\" />"
         "  </ECClass>"
@@ -340,21 +347,17 @@ TEST (ECDbSchemaManager, ImportSchemaWithSchemaValidationErrors)
         "    <ECProperty propertyName=\"Prop2\" typeName=\"string\" />"
         "    <ECProperty propertyName=\"PROP2\" typeName=\"string\" />"
         "  </ECClass>"
-        "</ECSchema>";
-    testFunc (testSchemaXml, false, "Class and properties only differing by case within a class.");
+        "</ECSchema>",
+        false, "Class and properties only differing by case within a class."),
 
-    //***** Property is of same type as class
-    testSchemaXml =
-        "<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaImportTestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECClass typeName=\"TestClass\" isStruct=\"true\" isDomainClass=\"true\">"
         "    <ECStructProperty propertyName=\"Prop1\" typeName=\"TestClass\" />"
         "  </ECClass>"
-        "</ECSchema>";
-    testFunc (testSchemaXml, false, "Property is of same type as class.");
+        "</ECSchema>",
+        false, "Property is of same type as class."),
 
-    //***** Property is of subtype of class
-    testSchemaXml =
-        "<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaImportTestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECClass typeName=\"Base\" isStruct=\"true\" isDomainClass=\"true\" >"
         "    <ECStructProperty propertyName=\"Prop1\" typeName=\"Sub\" isStruct=\"true\" />"
         "  </ECClass>"
@@ -362,21 +365,17 @@ TEST (ECDbSchemaManager, ImportSchemaWithSchemaValidationErrors)
         "     <BaseClass>Base</BaseClass>"
         "    <ECProperty propertyName=\"Prop2\" typeName=\"string\" />"
         "  </ECClass>"
-        "</ECSchema>";
-    testFunc (testSchemaXml, false, "Property is of subtype of class.");
+        "</ECSchema>",
+        false, "Property is of subtype of class."),
 
-    //***** Property is array of class
-    testSchemaXml =
-        "<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaImportTestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECClass typeName=\"TestClass\" isStruct=\"true\" isDomainClass=\"true\">"
         "    <ECArrayProperty propertyName=\"Prop1\" typeName=\"TestClass\" minOccurs=\"0\" maxOccurs=\"unbounded\"/>"
         "  </ECClass>"
-        "</ECSchema>";
-    testFunc (testSchemaXml, false, "Property is array of class.");
+        "</ECSchema>",
+        false, "Property is array of class."),
 
-    //***** Property is array of subclass
-    testSchemaXml =
-        "<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaImportTestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECClass typeName=\"Base\" isStruct=\"true\" isDomainClass=\"true\">"
         "    <ECArrayProperty propertyName=\"Prop1\" typeName=\"Sub\" minOccurs=\"0\" maxOccurs=\"unbounded\"/>"
         "  </ECClass>"
@@ -384,12 +383,10 @@ TEST (ECDbSchemaManager, ImportSchemaWithSchemaValidationErrors)
         "     <BaseClass>Base</BaseClass>"
         "    <ECProperty propertyName=\"Prop2\" typeName=\"string\" />"
         "  </ECClass>"
-        "</ECSchema>";
-    testFunc (testSchemaXml, false, "Property is of array of subclass of class.");
+        "</ECSchema>",
+        false, "Property is of array of subclass of class."),
 
-    //***** Synthesis, casing errors and property is of same type as class errors
-    testSchemaXml =
-        "<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaImportTestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECClass typeName=\"Base\" isStruct=\"true\" isDomainClass=\"true\">"
         "    <ECArrayProperty propertyName=\"Prop1\" typeName=\"Sub\" minOccurs=\"0\" maxOccurs=\"unbounded\"/>"
         "  </ECClass>"
@@ -400,25 +397,11 @@ TEST (ECDbSchemaManager, ImportSchemaWithSchemaValidationErrors)
         "  <ECClass typeName=\"SUB\" >"
         "    <ECProperty propertyName=\"PROP1\" typeName=\"string\" />"
         "  </ECClass>"
-        "</ECSchema>";
-    testFunc (testSchemaXml, false, "Case-sensitive class and prop names and property is of array of subclass of class.");
-    }
+        "</ECSchema>",
+        false, "Case-sensitive class and prop names and property is of array of subclass of class."),
 
 
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                  03/14
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST (ECDbSchemaManager, ImportSchemaWithUnsupportedECRelationships)
-    {
-    ECDbTestProject::Initialize ();
-
-    ECDb ecdb;
-    auto stat = ECDbTestUtility::CreateECDb (ecdb, nullptr, L"importecschemawithunsupportedecrelationship.ecdb");
-    ASSERT_TRUE (stat == BE_SQLITE_OK);
-
-    Utf8CP testSchemaXml =
-        "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        SchemaImportTestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECClass typeName=\"A\" >"
         "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
         "  </ECClass>"
@@ -426,6 +409,25 @@ TEST (ECDbSchemaManager, ImportSchemaWithUnsupportedECRelationships)
         "    <ECProperty propertyName=\"Id\" typeName=\"long\" />"
         "  </ECClass>"
         "  <ECClass typeName=\"Base\" >"
+        "    <ECProperty propertyName=\"Id\" typeName=\"long\" />"
+        "  </ECClass>"
+        "  <ECRelationshipClass typeName = \"Rel\" isDomainClass = \"True\" strength = \"holding\" strengthDirection = \"forward\">"
+        "    <BaseClass>Base</BaseClass>"
+        "    <Source cardinality = \"(0, 1)\" polymorphic = \"True\">"
+        "      <Class class = \"A\" />"
+        "    </Source>"
+        "    <Target cardinality = \"(0, N)\" polymorphic = \"True\">"
+        "      <Class class = \"B\" />"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>",
+        false, "RelationshipClass with non-relationship base class is not expected to be supported."),
+
+        SchemaImportTestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "  <ECClass typeName=\"A\" >"
+        "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
+        "  </ECClass>"
+        "  <ECClass typeName=\"B\" >"
         "    <ECProperty propertyName=\"Id\" typeName=\"long\" />"
         "  </ECClass>"
         "  <ECRelationshipClass typeName = \"RelBase\" isDomainClass = \"True\" strength = \"holding\" strengthDirection = \"forward\">"
@@ -436,8 +438,21 @@ TEST (ECDbSchemaManager, ImportSchemaWithUnsupportedECRelationships)
         "      <Class class = \"B\" />"
         "    </Target>"
         "  </ECRelationshipClass>"
-        "  <ECRelationshipClass typeName = \"RelUnsupported1\" isDomainClass = \"True\" strength = \"holding\" strengthDirection = \"forward\">"
-        "    <BaseClass>Base</BaseClass>"
+        "  <ECClass typeName=\"Cl\" >"
+        "    <BaseClass>RelBase</BaseClass>"
+        "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
+        "  </ECClass>"        
+        "</ECSchema>",
+        false, "Non-relationship class with a relationship base class is not expected to be supported."),
+
+        SchemaImportTestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "  <ECClass typeName=\"A\" >"
+        "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
+        "  </ECClass>"
+        "  <ECClass typeName=\"B\" >"
+        "    <ECProperty propertyName=\"Id\" typeName=\"long\" />"
+        "  </ECClass>"
+        "  <ECRelationshipClass typeName = \"RelBase\" isDomainClass = \"True\" strength = \"holding\" strengthDirection = \"forward\">"
         "    <Source cardinality = \"(0, 1)\" polymorphic = \"True\">"
         "      <Class class = \"A\" />"
         "    </Source>"
@@ -445,67 +460,18 @@ TEST (ECDbSchemaManager, ImportSchemaWithUnsupportedECRelationships)
         "      <Class class = \"B\" />"
         "    </Target>"
         "  </ECRelationshipClass>"
-        "  <ECClass typeName=\"ClassUnsupported\" >"
+        "  <ECClass typeName=\"Cl\" >"
         "    <BaseClass>RelBase</BaseClass>"
         "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
-        "  </ECClass>"
-        "  <ECRelationshipClass typeName = \"RelUnsupported2\" isDomainClass = \"True\" strength = \"holding\" strengthDirection = \"forward\">"
-        "    <Source cardinality = \"(0, 1)\" polymorphic = \"True\">"
-        "      <Class class = \"A\" />"
-        "    </Source>"
-        "    <Target cardinality = \"(0, N)\" polymorphic = \"True\">"
-        "      <Class class = \"RelBase\" />"
-        "    </Target>"
-        "  </ECRelationshipClass>"
-        "  <ECRelationshipClass typeName = \"RelUnsupported3\" isDomainClass = \"True\" strength = \"holding\" strengthDirection = \"forward\">"
-        "    <Source cardinality = \"(0, 1)\" polymorphic = \"True\">"
-        "      <Class class = \"A\" />"
-        "    </Source>"
-        "    <Target cardinality = \"(0, N)\" polymorphic = \"True\">"
-        "      <Class class = \"Base\" />"
-        "    </Target>"
-        "  </ECRelationshipClass>"
-        "  <ECRelationshipClass typeName = \"RelSupported1\" isDomainClass = \"True\" strength = \"holding\" strengthDirection = \"forward\">"
-        "    <Source cardinality = \"(0, 1)\" polymorphic = \"True\">"
-        "      <Class class = \"A\" />"
-        "    </Source>"
-        "    <Target cardinality = \"(0, N)\" polymorphic = \"False\">"
-        "      <Class class = \"Base\" />"
-        "    </Target>"
-        "  </ECRelationshipClass>"
-        "</ECSchema>";
+        "  </ECClass>"        
+        "</ECSchema>",
+        false, "Non-relationship class with a relationship base class is not expected to be supported.")
+        };
 
-    auto schemaCache = ECDbTestUtility::ReadECSchemaFromString (testSchemaXml);
-    ASSERT_TRUE (schemaCache != nullptr);
-
-    BeTest::SetFailOnAssert (false);
-    ASSERT_EQ (SUCCESS, ecdb. Schemas ().ImportECSchemas (*schemaCache));
-    BeTest::SetFailOnAssert (true);
-
-    //For each test class, bool flag indicates whether it is expected to be mapped or not
-    std::vector<std::pair<Utf8String, bool>> mappingCheckItems = {
-        { "A", true },
-        { "B", true },
-        { "Base", true },
-        { "RelBase", true },
-        { "RelUnsupported1", false },
-        { "ClassUnsupported", false },
-        { "RelUnsupported2", false },
-        { "RelUnsupported3", false },
-        { "RelSupported1", true } };
-
-    for (auto const& pair : mappingCheckItems)
-        {
-        //check: prepare ECSQL against test class -> must fail if class was not mapped
-        ECSqlStatement stmt;
-        Utf8String ecsql ("SELECT NULL FROM ts.");
-        ecsql.append (pair.first);
-        bool expectedIsMapped = pair.second;
-
-        BeTest::SetFailOnAssert (false);
-        EXPECT_EQ (expectedIsMapped, stmt.Prepare (ecdb, ecsql.c_str ()) == ECSqlStatus::Success) << "Unexpected map status for class " << pair.first.c_str ();
-        BeTest::SetFailOnAssert (true);
-        }
+        for (SchemaImportTestItem const& testItem : testItems)
+            {
+            AssertSchemaImport(testItem);
+            }
     }
 
 

@@ -110,11 +110,7 @@ MapStatus ClassMapInfo::_EvaluateMapStrategy()
 
     // ClassMappingRule: Classes within the same hierarchy should all be relationships or non-relationships
     if (SUCCESS != ValidateBaseClasses())
-        {
-        m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, false);
-        return MapStatus::Success;
-        //return MapStatus::Error;
-        }
+        return MapStatus::Error;
 
     MapStatus stat = DoEvaluateMapStrategy(*userStrategy);
     if (stat != MapStatus::Success)
