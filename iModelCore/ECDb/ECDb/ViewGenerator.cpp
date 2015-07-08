@@ -682,7 +682,6 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
     //---------------------------------------------------------------------------------------
     BentleyStatus SqlGenerator::CreateView (NativeSqlBuilder::List& views, IClassMap const& classMap, bool dropViewIfExist)
         {
-        printf ("Creating view for %s\r\n", Utf8String (classMap.GetClass ().GetName ().c_str ()).c_str ());
         NativeSqlBuilder builder;
         auto viewName = SqlGenerator::BuildViewClassName (classMap.GetClass ());
         if (dropViewIfExist)
@@ -1225,10 +1224,6 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
     //+---------------+---------------+---------------+---------------+---------------+--------
     BentleyStatus SqlGenerator::BuildDeleteTriggersForRelationships (NativeSqlBuilder::List& triggers, ClassMapCR classMap)
         {
-        if (classMap.GetClass ().GetName () == L"Foo")
-            {
-            printf ("");
-            }
         if (classMap.GetClass ().GetRelationshipClassCP () != nullptr)
             return BentleyStatus::SUCCESS;
 

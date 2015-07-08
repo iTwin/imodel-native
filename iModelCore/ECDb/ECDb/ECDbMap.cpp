@@ -979,10 +979,10 @@ void ECDbMap::LightWeightMapCache::LoadAnyClassRelationships () const
 
     Utf8CP sql1 =
         " SELECT"
-        "       RCC.ClassId,"
+        "       RCC.RelationshipClassId,"
         "       RCC.RelationshipEnd"
         " FROM ec_RelationshipConstraintClass RCC"
-        " WHERE RCC.RelationClassId IN (SELECT Id FROM ec_Class WHERE Name = 'AnyClass')";
+        " WHERE RCC.ClassId IN (SELECT Id FROM ec_Class WHERE Name = 'AnyClass')";
 
     auto stmt1 = m_map.GetECDbR ().GetCachedStatement (sql1);
     while (stmt1->Step () == BE_SQLITE_ROW)
@@ -1018,7 +1018,7 @@ void ECDbMap::LightWeightMapCache::LoadAnyClassReplacements () const
         "       JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
         "       JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId  "
         "       JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-        "WHERE ec_ClassMap.MapStrategy NOT IN (0, 1) AND ec_Class.IsRelationship = 0 AND ec_Table.IsVirtual = 0 "
+		"WHERE ec_ClassMap.MapStrategy <> 0 AND ec_Class.IsRelationship = 0 AND ec_Table.IsVirtual = 0 "
         "GROUP BY  ec_Class.Id ";
 
 
@@ -1044,14 +1044,14 @@ void ECDbMap::LightWeightMapCache::LoadClassRelationships (bool addAnyClassRelat
         "  DerivedClassList(RelationshipClassId, RelationshipEnd, IsPolymorphic, CurrentClassId, DerivedClassId) "
         "  AS ( "
         "      SELECT "
-        "            RCC.ClassId, "
+        "            RCC.RelationshipClassId, "
         "            RCC.RelationshipEnd, "
         "            RC.IsPolymorphic, "
-        "            RCC.RelationClassId, "
-        "            RCC.RelationClassId "
+        "            RCC.ClassId, "
+        "            RCC.ClassId "
         "      FROM ec_RelationshipConstraintClass RCC "
         "      INNER JOIN ec_RelationshipConstraint RC "
-        "            ON RC.ClassId = RCC.ClassId AND RC.RelationshipEnd = RCC.[RelationshipEnd] "
+        "            ON RC.RelationshipClassId = RCC.RelationshipClassId AND RC.RelationshipEnd = RCC.[RelationshipEnd] "
         "    UNION "
         "        SELECT DCL.RelationshipClassId, DCL.RelationshipEnd, DCL.IsPolymorphic, BC.BaseClassId, BC.ClassId "
         "            FROM DerivedClassList DCL "
@@ -1247,7 +1247,7 @@ void ECDbMap::LightWeightMapCache::Load (bool forceReload)
     LoadClassRelationships (true);
     LoadClassTableClasses ();
     LoadDerivedClasses ();
-    LoadAnyClassRelationships ();
+    LoadAnyClassReplacements ();
     }
 
 //---------------------------------------------------------------------------------------
