@@ -154,7 +154,7 @@ TEST(ECDbFileInfo, ECFEmbeddedFileBackedInstanceSupport)
 
     ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stmt.Step());
     stmt.Finalize();
-
+    
     //RETRIEVE scenario
     ASSERT_EQ((int)ECSqlStatus::Success, (int)stmt.Prepare(ecdb, "SELECT fi.Name, fi.LastModified, fi.ECInstanceId FROM ts.Foo f JOIN ecdbf.EmbeddedFileInfo fi USING ecdbf.InstanceHasFileInfo "
         "WHERE f.ECInstanceId = ?"));

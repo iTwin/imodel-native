@@ -48,12 +48,13 @@ public:
         typedef  std::vector < ECN::ECClassId > ClassIds;
         typedef bmap<ECN::ECClassId, RelationshipEnd> ClassRelationshipEnds;
         typedef bmap <ECDbSqlTable const*, ClassIds> TableClasses;
-
+       
         private:
             mutable bmap<ECN::ECClassId, ClassRelationshipEnds> m_relationshipEndsByClassId;
             mutable bmap<ECN::ECClassId, TableClasses> m_tablesByClassId;
             mutable ClassRelationshipEnds m_anyClassRelationships;
             mutable TableClasses m_classIdsByTable;
+            mutable ClassIds m_anyClassReplacements;
             mutable ECN::ECClassId m_anyClass;
             mutable struct
                 {
@@ -61,6 +62,7 @@ public:
                 bool m_tablesByClassIdIsLoaded : 2;
                 bool m_anyClassRelationshipsIsLoaded : 3;
                 bool m_classIdsByTableIsLoaded : 4;
+                bool m_anyClassReplacementsLoaded : 5;
                 } m_loadedFlags;
 
             ECDbMapCR m_map;
@@ -70,7 +72,7 @@ public:
             void LoadClassTableClasses () const;
             void LoadAnyClassRelationships () const;
             void LoadClassRelationships (bool addAnyClassRelationships) const;
-
+            void LoadAnyClassReplacements () const;
 
         public:
             LightWeightMapCache (ECDbMapCR map);
@@ -81,6 +83,7 @@ public:
             ClassIds const& GetClassesMapToTable (ECDbSqlTable const& table) const;
             TableClasses const& GetTablesMapToClass (ECN::ECClassId classId) const;
             ECN::ECClassId GetAnyClassId () const;
+            ClassIds const& GetAnyClassReplacements () const;
             void Load (bool forceReload);
             void Reset ();
         };
