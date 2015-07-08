@@ -2,7 +2,7 @@
 # ---------------------------------------------------------------------------------------------------------------------------
 #  $Source: BuildTools/abmake.py $
 #
-#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #  Author      : Lee Bull <Lee.Bull@bentley.com>
 #
@@ -426,9 +426,9 @@ class AMake:
 
 	def getSectionString(self, config, message):
 		s = ""
-		s = s + "# --------------------------------------------------------------------------------------\n\n"
+		s = s + "# --------------------------------------------------------------------------------------\n"
 		s = s + message + "\n"
-		s = s + "\n# --------------------------------------------------------------------------------------\n"
+		s = s + "# --------------------------------------------------------------------------------------\n"
 		s = s + "\n"
 		return s
 
@@ -514,10 +514,14 @@ class AMake:
 
 		path = filePath
 
+		
 		commonPathStart = os.path.commonprefix([rootPath, filePath])
+		
+		print ">>>>> " + path + ", " + commonPathStart + ", " + rootPath + "\n"
+		
 										# If root path is substring of given file path
-		if commonPathStart == rootPath:
-#		if len(commonPathStart) > 0:
+#		if commonPathStart == rootPath:
+		if len(commonPathStart) > 0:
 			relativePart = path.replace(commonPathStart, "")
 			relativePart = relativePart.lstrip(os.path.sep)
 			path = os.path.join(envVar, relativePart)
@@ -549,12 +553,17 @@ class AMake:
 
 		dependentFile = self.getPathRelativeToEnvVar(config, rootPath, filePath, makeFileVarSourceRoot)
 
-		dependencyStr = targetPath + " : " + self.addQuotes(config, dependentFile)
+		dependencyStr = targetPath + " : " + dependentFile
 
-		for f in fileDictionary[filePath]:
-			fullDependencyPath = self.getFullDependencyPath(config, rootPath, targetPath, filePath, f)
-			dependencyStr = dependencyStr + " " + self.addQuotes(config, fullDependencyPath)
+		if config.outputMinimalDependencies == False:
+			for f in fileDictionary[filePath]:
+				fullDependencyPath = self.getFullDependencyPath(config, rootPath, targetPath, filePath, f)
+				dependencyStr = dependencyStr + " " + fullDependencyPath
+		else:
+			if config.outputMultiCompileDepends == True:
+				dependencyStr = dependencyStr + " " + "${MultiCompileDepends}"
 
+				
 		out.write(dependencyStr + "\n")
 
 
@@ -667,7 +676,12 @@ class AMake:
 																# Process depdency's own immediate dependencies (depth first)
 				self.getFullDependenciesRec(config, fileDictionary, dependency, fullDependencyList, depth + 1)
 
+				
+	def getUnderscoreString(self, s):
+	
+		return s.replace(" ", "_")
 
+		
 	def writeMakefile(self, config, rootPathDictionary):
 
 		out = open(config.output, "w")
@@ -677,15 +691,22 @@ class AMake:
 		t = time.localtime(time.time())
 		timeStr = str(t.tm_mday) + "/" + str(t.tm_mon) + "/" + str(t.tm_year) + " " + str(t.tm_hour) + ":" + str(t.tm_min) + ":" + str(t.tm_sec)
 		
-		headerStr = "# (c) 2013 Bentley Systems (UK) Ltd. Auto Generated Makefile (aMake)\n\n"
+		headerStr = "# (c) 2015 Bentley Systems (UK) Ltd. Auto Generated Makefile (abMake)\n\n"
 		headerStr = headerStr + "# " + config.output + " " + timeStr + "\n"
 		
 		if config.isModeVisualStudio(config):
-				out.write(config.vsConfigPrefix + config.buildName + "=1\n")
-				out.write(config.vsConfigPrefix + config.buildPlatform + "=1\n")
+				if config.platformSpecific == True:
+					out.write(config.vsConfigPrefix + self.getUnderscoreString(config.buildName) + "=1\n")
+					out.write(config.vsConfigPrefix + config.buildPlatform + "=1\n")
 						
 		self.writeSectionHeader(config, out, headerStr)
-		
+
+		if config.outputMKE:
+			self.writeMacros(config, out)
+			
+			if config.outputPrecompiledHeaders == True:
+				self.writePrecompiledHeaders(config, out)
+				
 		
 		if config.outputDefinitions == True:
 			self.writeMakefileDefinitions(config, out)
@@ -711,8 +732,98 @@ class AMake:
 
 		if config.outputIgnoreLibraries == True:
 			self.writeMakefileIgnoreLibraries(config, out)
+			
+		if config.outputMKE == True:
+			self.writeBuild(config, out)
 
 		out.close()
+
+		
+	def writeMacros(self, config, out):
+
+		headerStr = "# Macros"
+		self.writeSectionHeader(config, out, headerStr)
+				
+		out.write("PolicyFile = " + config.defaultMKEPolicy + "\n")
+		out.write("SolutionPolicyMki = $(PolicyFile)\n")
+		out.write("%include mdl.mki\n")
+		out.write("\n\n")
+		
+		out.write("VendorAPIDir    = $(BuildContext)VendorAPI/$(appName)/\n\n")
+
+		out.write("\n\n")
+			
+		if config.outputMultiCompileDepends:
+		
+			out.write("appSrc              = $(_MakeFilePath)\n")
+			out.write("appPublicApi        = $(appSrc)PublicAPI/$(appName)/\n")
+			out.write("MultiCompileDepends = $(_MakeFileSpec)")
+
+			if config.outputPrecompiledHeaders == True:
+				out.write("$(appSrc)/Include/$(appName)Internal.h\n")
+				
+			out.write("\n")
+			
+		out.write("always:\n")
+		out.write("\t!~@mkdir $(o)\n\n")
+
+		
+	def writePrecompiledHeaders(self, config, out):
+	
+		self.writeSectionHeader(config, out, "# Precompiled Headers")
+		
+		out.write("PchCompiland        = $(basedir)/src/$(appName)Internal.cpp\n")
+		out.write("PchOutputDir        = $(o)\n")
+		out.write("PchExtraOptions     = -Zm160\n")
+		out.write("PchExplicitDepends  = $(MultiCompileDepends)\n")
+		out.write("\n\n")
+
+		out.write("%if defined (winNT) && $(BUILD_TOOLSET) == \"GCC\"\n")
+		out.write("\tGCC_NO_PRE_COMPILED_HEADER = 1\n")
+		out.write("%endif")
+		out.write("\n\n")
+
+		out.write("%include $(SharedMki)PreCompileHeader.mki\n")
+		out.write("CCPchOpts = $(UsePrecompiledHeaderOptions)\n")
+		out.write("#CCPchOpts + -showIncludes\n")
+		out.write("CPchOpts  = $(UsePrecompiledHeaderOptions)\n")
+		
+		out.write("\n\n")
+		out.write("#DisableMultiCompile=1\n")
+		
+		out.write("\n\n")
+
+		
+	def writeBuild(self, config, out):
+	
+		self.writeSectionHeader(config, out, "# Build")
+		
+		if config.createStaticLibraries == True:
+			out.write("CREATE_STATIC_LIBRARIES     = 1\n\n")
+		
+		out.write("DLM_NAME                    = $(appName)\n")
+		out.write("DLM_OBJECT_FILES            = $(MultiCompileObjectList)\n")
+		out.write("DLM_OBJECT_DEST             = $(o)\n")
+		
+		if config.outputPrecompiledHeaders == True:
+			out.write("DLM_OBJECT_PCH              = $(o)$(appName)Internal$(oext)\n")
+			
+		out.write("DLM_DEST                    = $(o)\n")
+		out.write("DLM_NOMSBUILTINS            = 1\n")
+		out.write("DLM_EXPORT_DEST             = $(o)\n")
+		out.write("DLM_NOENTRY                 = 1\n")
+		out.write("DLM_NO_DLS                  = 1\n")
+		out.write("DLM_NO_DEF                  = 1\n")
+		out.write("DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/\n")
+		out.write("DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/\n")
+		out.write("DLM_CREATE_LIB_CONTEXT_LINK = 1\n")
+		out.write("\n\n")
+		
+		# out.write("DLM_SPECIAL_LINKOPT     + -def:$(baseDir)api.def\n")
+		# out.write("DLM_SPECIAL_LINKOPT     + -NODEFAULTLIB:LIBCMT\n")
+
+		out.write("%include $(sharedMki)linkLibrary.mki\n\n")
+		
 
 
 	def writeMakefileTargets(self, config, rootPathDictionary, out):
@@ -721,6 +832,9 @@ class AMake:
 		
 		self.targetPaths = []
 
+		if config.outputMultiCompileDepends == True:
+			out.write("%include MultiCppCompileRule.mki\n\n\n")
+				
 		for rootPath in rootPathDictionary:
 
 			fileDictionary = rootPathDictionary[rootPath]
@@ -733,50 +847,70 @@ class AMake:
 					self.writeMakefileTargetDependencies(config, out, rootPath, targetPath, filePath, fileDictionary)
 					out.write("\n")
 
-
+		if config.outputMultiCompileDepends == True:
+			out.write("\n%include MultiCppCompileGo.mki\n\n")
+		
+		if config.outputPrecompiledHeaders == True:
+			out.write("%undef CCPchOpts\n")
+			out.write("%undef CPchOpts\n")
+			
+		out.write("\n\n")
+			
+	def getBuildPlatformOutput(self, config):
+		if config.platformSpecific == True:
+			return config.buildPlatform
+			
+		return ""
 					
 	def writeMakefileIncludePaths(self, config, out):
 	
-		self.writeSectionHeader(config, out, "# Include Paths : " + config.buildName + " " + config.buildPlatform)
+		self.writeSectionHeader(config, out, "# Include Paths : " + config.buildName + " " + self.getBuildPlatformOutput(config))
 		
 		for path in config.additionalIncludePaths:
 			out.write('cIncs +% -I"' + config.additionalIncludePaths[path] + '"\n')
 
-		out.write("\n\n")			
+		out.write("\n\n\n")			
 
 			
 	def writeMakefileLibraryPaths(self, config, out):
 	
-		self.writeSectionHeader(config, out, "# Library Paths : " + config.buildName + " " + config.buildPlatform)
+		self.writeSectionHeader(config, out, "# Library Paths : " + config.buildName + " " + self.getBuildPlatformOutput(config))
 
 		if config.isModeVisualStudio(config):
-			out.write("%if " + config.vsConfigPrefix + config.buildName + "\n")
-			out.write("%if " + config.vsConfigPrefix + config.buildPlatform + "\n")
+			if config.platformSpecific == True:
+				out.write("%if " + config.vsConfigPrefix + self.getUnderscoreString(config.buildName) + "\n")
+				out.write("%if " + config.vsConfigPrefix + config.buildPlatform + "\n")
 		
 		for path in config.additionalLibraryPaths:
 			out.write('CLinkOpts + -LIBPATH:"' + config.additionalLibraryPaths[path] + '"\n')	
 			
 		if config.isModeVisualStudio(config):
-			out.write("%endif\n")
-			out.write("%endif\n")
+			
+			if config.platformSpecific == True:
+				out.write("%endif\n")
+				out.write("%endif\n")
 
 		out.write("\n\n")			
 
 
 	def writeMakefileDefinitions(self, config, out):
 		
-		self.writeSectionHeader(config, out, "# Preprocessor Definitions : " + config.buildName + " " + config.buildPlatform)
+		self.writeSectionHeader(config, out, "# Preprocessor Definitions : " + config.buildName + " " + self.getBuildPlatformOutput(config))
 		
 		if config.isModeVisualStudio(config):
-			out.write("%if " + config.vsConfigPrefix + config.buildName + "\n")
-			out.write("%if " + config.vsConfigPrefix + config.buildPlatform + "\n")
+			
+			if config.platformSpecific == True:
+				out.write("%if " + config.vsConfigPrefix + self.getUnderscoreString(config.buildName) + "\n")
+				out.write("%if " + config.vsConfigPrefix + config.buildPlatform + "\n")
 		
 		for definition in config.definitions:
 			out.write('    CCompOpts + -D"' + definition + '"' + "\n")
 
 		if config.isModeVisualStudio(config):
-			out.write("%endif\n")
-			out.write("%endif\n")
+			
+			if config.platformSpecific == True:
+				out.write("%endif\n")
+				out.write("%endif\n")
 
 		out.write("\n\n")				
 
@@ -801,13 +935,18 @@ class AMake:
 		if config.outputStandardLibraries == False and config.outputAdditionalLibraries == False:
 			return
 	
-		self.writeSectionHeader(config, out, "# Libraries : " + config.buildName + " " + config.buildPlatform)
+		self.writeSectionHeader(config, out, "# Libraries : " + config.buildName + " " + self.getBuildPlatformOutput(config))
 
 		if config.isModeVisualStudio(config):
-			out.write("%if " + config.vsConfigPrefix + config.buildName + "\n")
-			out.write("%if " + config.vsConfigPrefix + config.buildPlatform + "\n")
+			
+			if config.platformSpecific == True:
+				out.write("%if " + config.vsConfigPrefix + self.getUnderscoreString(config.buildName) + "\n")
+				out.write("%if " + config.vsConfigPrefix + config.buildPlatform + "\n")
 
-		out.write("dlmLibs = ")
+		if config.outputDLMFormat == False:
+			out.write("dlmLibs = ")
+		else:
+			out.write("LINKER_LIBRARIES = ")
 
 		if config.outputStandardLibraries == True:
 		
@@ -834,21 +973,25 @@ class AMake:
 		out.write("\n")
 						
 		if config.isModeVisualStudio(config):
-			out.write("%endif\n")
-			out.write("%endif\n")
+			
+			if config.platformSpecific == True:
+				out.write("%endif\n")
+				out.write("%endif\n")
 			
 		out.write("\n\n")
 
 
 	def writeMakefileIgnoreLibraries(self, config, out):
 	
-		self.writeSectionHeader(config, out, "# Libraries : " + config.buildName + " " + config.buildPlatform)
+		self.writeSectionHeader(config, out, "# Ignore Libraries : " + config.buildName + " " + self.getBuildPlatformOutput(config))
 				
 		for library in config.ignoreLibraries:
 			libraryStripped = library.strip()
 			if libraryStripped != '':
 				out.write("CLinkOpts + -nodefaultlib:" + libraryStripped + "\n")
 
+		out.write("\n\n")
+		
 
 	def parseArguments(self, config):
 

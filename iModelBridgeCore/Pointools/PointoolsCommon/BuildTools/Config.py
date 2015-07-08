@@ -6,6 +6,13 @@ import copy
 class Config:
 	configFile					= ""
 	rootPaths 					= []
+	outputMKE					= False
+	outputMultiCompileDepends	= False
+	outputMinimalDependencies	= False
+	outputPrecompiledHeaders	= False
+	outputDLMFormat				= False
+	defaultMKEPolicy			= ""
+		
 	includePathsStd				= dict()
 	includePathsLocal			= dict()
 	includePaths				= dict()
@@ -22,6 +29,8 @@ class Config:
 	ignoreLibraries				= []
 	libraries					= []
 
+	createStaticLibraries		= False
+	platformSpecific			= True
 	
 	buildName					= "Debug"
 	buildPlatform				= "Win32"
