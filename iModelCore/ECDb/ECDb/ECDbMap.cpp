@@ -894,7 +894,7 @@ void ECDbMap::LightWeightMapCache::LoadClassTableClasses () const
         "         JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
         "         JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId  "
         "         JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-        "     WHERE ec_ClassMap.MapStrategy NOT IN (0x2000, 0x4000) "
+        "     WHERE ec_ClassMap.MapStrategy NOT IN (100, 101) "
         "    GROUP BY  ec_Table.Id, ec_Class.Id ";
 
     auto stmt = m_map.GetECDbR ().GetCachedStatement (sql0);
@@ -967,7 +967,7 @@ void ECDbMap::LightWeightMapCache::LoadAnyClassReplacements () const
         "       JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
         "       JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId  "
         "       JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-        "WHERE ec_ClassMap.MapStrategy NOT IN (0, 1, 2) AND ec_Class.IsRelationship = 0 AND ec_Table.IsVirtual = 0 "
+        "WHERE ec_ClassMap.MapStrategy NOT IN (0, 1) AND ec_Class.IsRelationship = 0 AND ec_Table.IsVirtual = 0 "
         "GROUP BY  ec_Class.Id ";
 
 
@@ -1092,7 +1092,7 @@ void ECDbMap::LightWeightMapCache::LoadDerivedClasses ()  const
         "       JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
         "       JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId  "
         "       JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-        "   WHERE ec_ClassMap.MapStrategy NOT IN (0x2000, 0x4000) "
+        "   WHERE ec_ClassMap.MapStrategy NOT IN (100, 101) "
         "  GROUP BY  ec_Class.Id , ec_Table.Name "
         "   )  "
         "SELECT  DCL.RootClassId, DCL.DerivedClassId, TMI.TableName FROM DerivedClassList DCL  "

@@ -844,7 +844,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
             if (classMap == nullptr)
                 continue;
 
-            if (classMap->GetMapStrategy ().IsDoNotMap ())
+            if (classMap->GetMapStrategy ().IsNotMapped())
                 continue;
 
             relationships[classMap] = pair.second;
@@ -861,7 +861,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
             {
             if (derivedClassMap == nullptr)
                 continue;
-            if (derivedClassMap->GetMapStrategy ().IsDoNotMap ())
+            if (derivedClassMap->GetMapStrategy ().IsNotMapped())
                 continue;
 
             NativeSqlBuilder trigger;
