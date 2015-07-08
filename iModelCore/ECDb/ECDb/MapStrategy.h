@@ -52,7 +52,7 @@ private:
     static BentleyStatus TryParse(Option& option, Utf8CP str);
 
 public:
-    UserECDbMapStrategy() : m_strategy(Strategy::None), m_option(Option::None), m_isPolymorphic(false) {}
+    UserECDbMapStrategy() : m_strategy(Strategy::None), m_option(Option::None), m_isPolymorphic(false), m_root(nullptr) {}
     ~UserECDbMapStrategy() {}
 
     UserECDbMapStrategy const& AssignRoot(UserECDbMapStrategy const& parent);
