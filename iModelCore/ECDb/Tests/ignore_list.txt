@@ -45,9 +45,5 @@ ECDbSchemas.Verify_TFS_14829_A
 ECSqlInsertTestFixture.RelationshipWithAdditionalPropsTests
 ECSqlQueryAdapter.VerifyECSqlQueries
 #
-#
-# broken for krischan 6:35 PM 7/8/2015
-ECDbSchemaManager.ImportSchema
-ECDbRelationships.TestRelationshipKeys
 #for affan 6:35 PM 7/8/2015
 ECDbInstances.RelationshipStrengthBackwardHoldingForwardEmbedding
