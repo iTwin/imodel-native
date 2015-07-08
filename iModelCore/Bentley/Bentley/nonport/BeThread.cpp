@@ -41,14 +41,14 @@
 USING_NAMESPACE_BENTLEY
 
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    static DWORD         toKey (void* k)        {return (DWORD)         (intptr_t)k;}
-    static void*         toPtr (DWORD k)        {return (void*)         (intptr_t)k;}
+    static DWORD         toKey(void* k)        {return (DWORD)         (intptr_t)k;}
+    static void*         toPtr(DWORD k)        {return (void*)         (intptr_t)k;}
 #elif defined (__unix__)
     #if defined (BETHREAD_USE_PTHREAD)
-        static pthread_key_t toKey (void* k)        {return (pthread_key_t) (intptr_t)k;}
-        static void*         toPtr (pthread_key_t k){return (void*)         (intptr_t)k;}
+        static pthread_key_t toKey(void* k)        {return (pthread_key_t) (intptr_t)k;}
+        static void*         toPtr(pthread_key_t k){return (void*)         (intptr_t)k;}
     #else
-        static void*         toPtr (void* k)        {return k;}
+        static void*         toPtr(void* k)        {return k;}
     #endif
 #else
 #error unknown runtime
@@ -59,39 +59,39 @@ BeMutex* s_systemCS;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeThreadLocalStorage::BeThreadLocalStorage ()
+BeThreadLocalStorage::BeThreadLocalStorage()
     {
 #if defined (BENTLEY_WIN32)
-    DWORD key = TlsAlloc ();
+    DWORD key = TlsAlloc();
 #elif defined (BENTLEY_WINRT)
     // note: FLS acts the same as TLS if you don't create fibers
-    DWORD key = FlsAlloc (NULL);
+    DWORD key = FlsAlloc(NULL);
 #elif defined (__unix__)
     #if defined (BETHREAD_USE_PTHREAD)
         pthread_key_t key;
-        pthread_key_create (&key, NULL);
+        pthread_key_create(&key, NULL);
     #else
         void* key = NULL;
     #endif
 #else
 #error unknown runtime
 #endif
-    m_key = toPtr (key);
+    m_key = toPtr(key);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeThreadLocalStorage::~BeThreadLocalStorage ()
+BeThreadLocalStorage::~BeThreadLocalStorage()
     {
 #if defined (BENTLEY_WIN32)
-    TlsFree (toKey (m_key));
+    TlsFree(toKey(m_key));
 #elif defined (BENTLEY_WINRT)
     // note: FLS acts the same as TLS if you don't create fibers
-    FlsFree (toKey (m_key));
+    FlsFree(toKey(m_key));
 #elif defined (__unix__)
     #if defined (BETHREAD_USE_PTHREAD)
-        pthread_key_delete (toKey(m_key));
+        pthread_key_delete(toKey(m_key));
     #endif
 #else
 #error unknown runtime
@@ -101,16 +101,16 @@ BeThreadLocalStorage::~BeThreadLocalStorage ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeThreadLocalStorage::SetValueAsPointer (void* v)
+void BeThreadLocalStorage::SetValueAsPointer(void* v)
     {
 #if defined (BENTLEY_WIN32)
-    TlsSetValue (toKey(m_key), v);
+    TlsSetValue(toKey(m_key), v);
 #elif defined (BENTLEY_WINRT)
     // note: FLS acts the same as TLS if you don't create fibers
-    FlsSetValue (toKey (m_key), v);
+    FlsSetValue(toKey(m_key), v);
 #elif defined (__unix__)
     #if defined (BETHREAD_USE_PTHREAD)
-        pthread_setspecific (toKey(m_key), v);
+        pthread_setspecific(toKey(m_key), v);
     #else
         m_value = v;
     #endif
@@ -122,16 +122,16 @@ void BeThreadLocalStorage::SetValueAsPointer (void* v)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void* BeThreadLocalStorage::GetValueAsPointer ()
+void* BeThreadLocalStorage::GetValueAsPointer()
     {
 #if defined (BENTLEY_WIN32)
-    return TlsGetValue (toKey(m_key));
+    return TlsGetValue(toKey(m_key));
 #elif defined (BENTLEY_WINRT)
     // note: FLS acts the same as TLS if you don't create fibers
-    return FlsGetValue (toKey (m_key));
+    return FlsGetValue(toKey(m_key));
 #elif defined (__unix__)
     #if defined (BETHREAD_USE_PTHREAD)
-        return pthread_getspecific (toKey(m_key));
+        return pthread_getspecific(toKey(m_key));
     #else
         return m_value;
     #endif
@@ -173,7 +173,7 @@ bool BeMutexHolder::owns_lock() {return to_uniquelock(this).owns_lock();}
 BeConditionVariable::BeConditionVariable()  {new (this) std::condition_variable_any();}
 BeConditionVariable::~BeConditionVariable() {to_cv(this).~condition_variable_any();}
 void BeConditionVariable::InfiniteWait(BeMutexHolder& holder){to_cv(this).wait(to_uniquelock(&holder));}
-bool BeConditionVariable::RelativeWait(BeMutexHolder& holder, uint32_t timeoutMillis) {return std::cv_status::timeout == to_cv(this).wait_for(to_uniquelock(&holder), std::chrono::milliseconds(timeoutMillis));}
+bool BeConditionVariable::RelativeWait(BeMutexHolder& holder, uint32_t timeoutMillis) {return std::cv_status::timeout == to_cv(this).wait_for (to_uniquelock(&holder), std::chrono::milliseconds(timeoutMillis));}
 void BeConditionVariable::notify_all() {to_cv(this).notify_all();}
 void BeConditionVariable::notify_one() {to_cv(this).notify_one();}
 
@@ -184,7 +184,7 @@ bool BeConditionVariable::ProtectedWaitOnCondition(BeMutexHolder& holder, ICondi
     {
     static_assert (sizeof(m_osCV) >= sizeof(std::condition_variable_any), "BeConditionVariable wrong size");
 
-    bool    conditionSatisfied = NULL == condition ? false : condition->_TestCondition (*this);
+    bool    conditionSatisfied = nullptr == condition ? false : condition->_TestCondition(*this);
     bool    timedOut           = timeoutMillis == 0;
 
     while (!conditionSatisfied && (Infinite == timeoutMillis || !timedOut))
@@ -201,7 +201,7 @@ bool BeConditionVariable::ProtectedWaitOnCondition(BeMutexHolder& holder, ICondi
             timeoutMillis = elapsedTicks > timeoutMillis ? 0 : (timeoutMillis - elapsedTicks);
             }
 
-        conditionSatisfied = NULL == condition ? true : condition->_TestCondition (*this);
+        conditionSatisfied = nullptr == condition ? true : condition->_TestCondition(*this);
         }
 
     return conditionSatisfied;
@@ -223,7 +223,7 @@ intptr_t BeThreadUtilities::GetCurrentThreadId()
         //  the value that pthread_create returns.  On Android that
         //  matches what pthread_self returns and does not match what
         //  gettid returns.
-        return (intptr_t) pthread_self ();
+        return (intptr_t) pthread_self();
     #else
         return (intptr_t)-1;
     #endif
@@ -236,7 +236,7 @@ intptr_t BeThreadUtilities::GetCurrentThreadId()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/2009  
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t BeNumerical::ResetFloatingPointExceptions (uint32_t newFpuMask)
+uint32_t BeNumerical::ResetFloatingPointExceptions(uint32_t newFpuMask)
     {
 #if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
 
@@ -244,9 +244,9 @@ uint32_t BeNumerical::ResetFloatingPointExceptions (uint32_t newFpuMask)
     _fpreset();
 
     if (0 == newFpuMask)
-        newFpuMask = _controlfp (0, 0);
+        newFpuMask = _controlfp(0, 0);
 
-    uint32_t retval =  _controlfp (newFpuMask, MCW_EM);
+    uint32_t retval =  _controlfp(newFpuMask, MCW_EM);
     return retval;
 
 #elif defined (__unix__)
@@ -263,11 +263,11 @@ uint32_t BeNumerical::ResetFloatingPointExceptions (uint32_t newFpuMask)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeThreadUtilities::BeSleep (uint32_t millis)
+void BeThreadUtilities::BeSleep(uint32_t millis)
     {
 #if defined (BENTLEY_WIN32)
 
-    ::Sleep (millis);
+    ::Sleep(millis);
 
 #elif defined (BENTLEY_WINRT)
 
@@ -286,14 +286,14 @@ void BeThreadUtilities::BeSleep (uint32_t millis)
         }
 
     // Emulate sleep by waiting with timeout on an event that is never signalled.
-    WaitForSingleObjectEx (s_sleepEvent, millis, false);
+    WaitForSingleObjectEx(s_sleepEvent, millis, false);
 
 #elif defined (__unix__)
 
     struct timespec sleepSpec;
     sleepSpec.tv_sec = millis/1000;
     sleepSpec.tv_nsec = (millis % 1000) * 1000000;
-    nanosleep (&sleepSpec, NULL);
+    nanosleep(&sleepSpec, nullptr);
 
 #else
 #error unknown runtime
@@ -305,7 +305,7 @@ void BeThreadUtilities::BeSleep (uint32_t millis)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BeSystemMutexHolder::StartupInitializeSystemMutex()
     {
-    if (NULL == s_systemCS)
+    if (nullptr == s_systemCS)
         s_systemCS = new BeMutex();
     }
 
@@ -337,22 +337,22 @@ void BeThreadUtilities::SetCurrentThreadName(Utf8CP newName)
         };
     #pragma pack(pop)
 
-    THREADNAME_INFO threadNameInfo (newName);
-    __try {RaiseException (0x406D1388, 0, sizeof(threadNameInfo) / sizeof (ULONG_PTR), (ULONG_PTR*)&threadNameInfo);}
+    THREADNAME_INFO threadNameInfo(newName);
+    __try {RaiseException(0x406D1388, 0, sizeof(threadNameInfo) / sizeof (ULONG_PTR), (ULONG_PTR*)&threadNameInfo);}
     __except (EXCEPTION_CONTINUE_EXECUTION){}
  #elif defined (__APPLE__)
-    pthread_setname_np (newName);
+    pthread_setname_np(newName);
  #endif
 
 #endif // NDEBUG
     }
 
 #if defined (BENTLEY_WINRT)
-static T_ThreadStartHandler s_threadStartHandler = NULL;
+static T_ThreadStartHandler s_threadStartHandler = nullptr;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeThreadUtilities::SetThreadStartHandler (T_ThreadStartHandler handler)
+void BeThreadUtilities::SetThreadStartHandler(T_ThreadStartHandler handler)
     {
     s_threadStartHandler = handler;
     }
@@ -361,12 +361,12 @@ void BeThreadUtilities::SetThreadStartHandler (T_ThreadStartHandler handler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeThreadUtilities::StartNewThread (int stackSize, T_ThreadStart startAddr, void* arg)
+void BeThreadUtilities::StartNewThread(int stackSize, T_ThreadStart startAddr, void* arg)
     {
 #if defined (__unix__)
     pthread_attr_t  threadAttr;
     pthread_attr_init(&threadAttr);
-    pthread_attr_setstacksize (&threadAttr, stackSize);
+    pthread_attr_setstacksize(&threadAttr, stackSize);
 
     pthread_t threadHandle;
     uintptr_t retval= pthread_create(&threadHandle, &threadAttr, startAddr, arg);
@@ -374,14 +374,14 @@ void BeThreadUtilities::StartNewThread (int stackSize, T_ThreadStart startAddr, 
         pthread_detach(threadHandle);
     pthread_attr_destroy(&threadAttr);
 #elif defined (BENTLEY_WIN32)
-    _beginthreadex(NULL, (unsigned) stackSize, startAddr, arg, 0, NULL);
+    _beginthreadex(nullptr, (unsigned) stackSize, startAddr, arg, 0, nullptr);
 #elif defined (BENTLEY_WINRT)
-    if (NULL == s_threadStartHandler)
+    if (nullptr == s_threadStartHandler)
         {
-        BeAssert (false);
+        BeAssert(false);
         return ;
         }
-    s_threadStartHandler (startAddr, arg);
+    s_threadStartHandler(startAddr, arg);
 #else
     #error unknown platform
 #endif
@@ -390,41 +390,40 @@ void BeThreadUtilities::StartNewThread (int stackSize, T_ThreadStart startAddr, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeThread::BeThread (Utf8CP threadName) 
-    : m_threadId (0), m_threadName (threadName) 
+BeThread::BeThread(Utf8CP threadName) : m_threadId(0), m_threadName(threadName) 
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP BeThread::GetThreadName () const 
+Utf8CP BeThread::GetThreadName() const 
     {
-    return m_threadName.c_str ();
+    return m_threadName.c_str();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeThread::RunThread (void* arg)
+void BeThread::RunThread(void* arg)
     {
     auto& thread = *(BeThread*) arg;
-    thread.m_threadId = BeThreadUtilities::GetCurrentThreadId ();
-    if (!thread.m_threadName.empty ())
-        BeThreadUtilities::SetCurrentThreadName (thread.m_threadName.c_str ());
+    thread.m_threadId = BeThreadUtilities::GetCurrentThreadId();
+    if (!thread.m_threadName.empty())
+        BeThreadUtilities::SetCurrentThreadName(thread.m_threadName.c_str());
 
-    thread._Run ();
+    thread._Run();
 
     thread.m_threadId = 0;
-    thread.m_threadName.clear ();
-    thread.Release ();
+    thread.m_threadName.clear();
+    thread.Release();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeThread::Start ()
+void BeThread::Start()
     {
-    AddRef ();
-    BeThreadUtilities::StartNewThread (1024 * 1024, RunPlatformThread, this);
+    AddRef();
+    BeThreadUtilities::StartNewThread(1024 * 1024, RunPlatformThread, this);
     }
