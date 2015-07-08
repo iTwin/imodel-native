@@ -29,7 +29,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereAbstractClassTests (ECSqlType ecsq
 
         ecsql.Sprintf("%s WHERE I > 0", ecsqlStub.c_str());
         if (ecsqlType == ECSqlType::Delete)
-            ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::NotYetSupported);
+            AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
         else
             {
             //AbstractTablePerHierarchy class has 2 subclasses, so row count per class expected
@@ -38,7 +38,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereAbstractClassTests (ECSqlType ecsq
 
         ecsql.Sprintf("%s WHERE ECInstanceId < 0", ecsqlStub.c_str());
         if (ecsqlType == ECSqlType::Delete)
-            ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql.c_str(), IECSqlExpectedResult::Category::NotYetSupported);
+            AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
         else
             AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0); //where cond always false
         }
