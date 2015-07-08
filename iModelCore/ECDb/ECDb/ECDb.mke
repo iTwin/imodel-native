@@ -124,7 +124,6 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/StructArrayMappedToSecondaryTableECSqlField.h \
                 $(baseDir)ECSql/ECSqlStepTask.h \
                 $(baseDir)ECSql/EmbeddedECSqlStatement.h \
-                $(baseDir)ECSql/ECSqlEventManager.h \
                 $(baseDir)ECSql/ECInstanceAdapterHelper.h \
                 $(baseDir)ECSql/JsonReaderImpl.h \
                 $(baseDir)ECDbSql.h
@@ -344,8 +343,6 @@ $(o)PrimitiveArrayToColumnECSqlBinder$(oext):               $(baseDir)ECSql/Prim
 $(o)StructArrayToSecondaryTableECSqlBinder$(oext):          $(baseDir)ECSql/StructArrayToSecondaryTableECSqlBinder.cpp   $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)SystemPropertyECSqlBinder$(oext):                       $(baseDir)ECSql/SystemPropertyECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)ECSqlEventManager$(oext):	                            $(baseDir)ECSql/ECSqlEventManager.cpp       $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECSqlParseTreeFormatter$(oext):                         $(baseDir)ECSql/ECSqlParseTreeFormatter.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 

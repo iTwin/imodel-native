@@ -242,9 +242,6 @@ ClassUpdaterImpl::ClassUpdaterImpl(ECDbCR ecdb, ECClassCR ecClass, bvector<uint3
 //+---------------+---------------+---------------+---------------+---------------+------
 void ClassUpdaterImpl::Initialize(bvector<uint32_t>& propertiesToBind)
     {
-    //register internal event handler
-    m_statement.EnableDefaultEventHandler ();
-
     if (propertiesToBind.size() < 1)
         {
         LOG.errorv(L"ECClass '%ls' doesn't have any properties. Instances of that class therefore cannot be updated.",
@@ -316,9 +313,6 @@ void ClassUpdaterImpl::Initialize(bvector<uint32_t>& propertiesToBind)
 //+---------------+---------------+---------------+---------------+---------------+------
 void ClassUpdaterImpl::Initialize(bvector<ECPropertyCP>& propertiesToBind)
     {
-    //register internal event handler
-    m_statement.EnableDefaultEventHandler ();
-
     if (propertiesToBind.size() < 1)
         {
         LOG.errorv(L"ECClass '%ls' doesn't have any properties. Instances of that class therefore cannot be updated.",
@@ -458,7 +452,7 @@ BentleyStatus ClassUpdaterImpl::_Update (IECInstanceCR instance) const
     m_statement.Reset();
     m_statement.ClearBindings();
 
-    return (stepStatus == ECSqlStepStatus::Done && m_statement.GetDefaultEventHandler ()->GetInstancesAffectedCount () > 0) ? SUCCESS : ERROR;
+    return (stepStatus == ECSqlStepStatus::Done ) ? SUCCESS : ERROR;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

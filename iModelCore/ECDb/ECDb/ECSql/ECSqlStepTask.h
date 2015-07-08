@@ -13,7 +13,7 @@
 #include "ECSqlParameterValue.h"
 #include <ECDb/ECInstanceId.h>
 #include <ECDb/ECSqlStatement.h>
-#include "ECSqlEventManager.h"
+
 
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -65,13 +65,13 @@ public:
     struct Collection
         {
     private:
-        ECSqlEventManager& m_eventManager;
+;
         std::map<WCharCP, std::unique_ptr<ECSqlStepTask>, CompareWChar> m_stepTasks;
         std::unique_ptr<EmbeddedECSqlStatement> m_selector;
         ECSqlStepStatus Execute (ExecutionCategory category, ECInstanceId const& instanceId);
 
     public:
-        explicit Collection (ECSqlEventManager& eventManager);
+        explicit Collection ();
         virtual ~Collection (){}
         ECSqlStepStatus ExecuteBeforeStepTaskList ();
         ECSqlStepStatus ExecuteAfterStepTaskList (ECInstanceId const& instanceId);
@@ -86,7 +86,7 @@ public:
         void Clear ();
         void ResetSelector ();
 
-        ECSqlEventManager& GetEventManagerR () const { return m_eventManager; }
+
         };
 
 private:
@@ -257,49 +257,19 @@ struct DeleteRelatedInstancesECSqlStepTask : public ECSqlStepTask
     {
 private:
     //! Catches events from nested ECSQL DELETE and propagates them to the top-level statement's event handlers
-    struct EventHandler : ECSqlEventHandler
-        {
-    private:
-        ECSqlEventManager& m_eventManager;
-
-        virtual void _OnEvent (EventType eventType, ECSqlEventArgs const& args) override
-            {
-            if (m_eventManager.HasEventHandlers ())
-                {
-                auto& keyList = m_eventManager.GetEventArgsR ().GetInstanceKeysR ();
-                auto const& argsKeyList = args.GetInstanceKeys ();
-                keyList.insert (keyList.end (), argsKeyList.begin (), argsKeyList.end ());
-                }
-
-            /*if (LOG.isSeverityEnabled (NativeLogging::SEVERITY::LOG_TRACE))
-                {
-                LOG.trace ("Cascade Delete>Nested ECSQL deleted these instances:");
-                for (ECInstanceKey const& key : args.GetInstanceKeys ())
-                    LOG.tracev ("\t%lld:%lld", key.GetECClassId (), key.GetECInstanceId ().GetValue ());
-                }
-                */
-            }
-
-     public:
-        explicit EventHandler (ECSqlEventManager& eventManager)
-            : ECSqlEventHandler (), m_eventManager (eventManager)
-            {}
-
-        ~EventHandler () {}
-        };
+ 
 
     static const int MAX_PARAMETER_COUNT = 30;
 
     ECDbR m_ecdb;
-    ECSqlEventManager& m_eventManager;
     mutable ECInstanceFinder m_orphanInstanceFinder;
     ECClassId m_ecClassId;
-    mutable EventHandler m_eventHandler;
+  
 
     mutable std::map<ECN::ECClassId, std::unique_ptr<ECSqlStatement>> m_statementCache;
 
 
-    DeleteRelatedInstancesECSqlStepTask (ECDbR ecdb, ECSqlEventManager& eventManager, ECSqlStatusContext& statusContext, WCharCP name, ECClassId classId);
+    DeleteRelatedInstancesECSqlStepTask (ECDbR ecdb, ECSqlStatusContext& statusContext, WCharCP name, ECClassId classId);
 
     BentleyStatus FindOrphanedInstances (ECInstanceKeyMultiMap& orphanedRelationshipInstances, ECInstanceKeyMultiMap& orphanedInstances,
                                          ECDbR ecdb, ECClassId seedClassId, ECInstanceId seedInstanceId) const;
@@ -315,7 +285,7 @@ private:
 
 public:
     ~DeleteRelatedInstancesECSqlStepTask (){}
-    static ECSqlStepTaskCreateStatus Create (std::unique_ptr<DeleteRelatedInstancesECSqlStepTask>& deleteStepTask, ECDbR ecdb, ECSqlEventManager& eventManager, ECSqlPrepareContext& preparedContext, IClassMap const& classMap);
+    static ECSqlStepTaskCreateStatus Create (std::unique_ptr<DeleteRelatedInstancesECSqlStepTask>& deleteStepTask, ECDbR ecdb, ECSqlPrepareContext& preparedContext, IClassMap const& classMap);
     };
 
 

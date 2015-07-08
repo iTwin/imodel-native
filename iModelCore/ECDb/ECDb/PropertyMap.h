@@ -392,10 +392,12 @@ private:
 
     //! @see PropertyMap::GetColumnBaseName
     Utf8CP _GetColumnBaseName() const override;
-    
+
     virtual DbResult _Save (ECDbClassMapInfo & classMapInfo) const override;
     virtual DbResult _Load (ECDbClassMapInfo const& classMapInfo) override;
     //! For debugging and logging
     WString _ToString() const override;
+public:
+    bool Is3d () const { return m_is3d; }
 };
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -150,7 +150,7 @@ ECSqlTestDataset ECSqlDeleteTestDataset::PolymorphicTests (int rowCountPerClass)
     ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, rowCountPerClass, true);
 
     ecsql = "DELETE FROM ecsql.Abstract";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+    ECSqlStatementCrudTestDatasetHelper::AddNonSelect (dataset, ecsql, 0, true);
 
     ecsql = "DELETE FROM ONLY ecsql.Abstract";
     ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, 0, true);
@@ -163,20 +163,20 @@ ECSqlTestDataset ECSqlDeleteTestDataset::PolymorphicTests (int rowCountPerClass)
 
     ecsql = "DELETE FROM ecsql.AbstractTablePerHierarchy";
     //ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, rowCountPerClass * 2, true);
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+    ECSqlStatementCrudTestDatasetHelper::AddNonSelect (dataset, ecsql, 0, true);
 
     ecsql = "DELETE FROM ONLY ecsql.AbstractTablePerHierarchy";
     ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, 0, true);
 
     ecsql = "DELETE FROM ecsql.THBase";
     //ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, 6 * rowCountPerClass, true);
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+    ECSqlStatementCrudTestDatasetHelper::AddNonSelect (dataset, ecsql, 0, true);
 
     ecsql = "DELETE FROM ONLY ecsql.THBase";
     ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, rowCountPerClass, true);
 
     ecsql = "DELETE FROM ecsql.TCBase";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing(dataset, ecsql, IECSqlExpectedResult::Category::NotYetSupported);
+    ECSqlStatementCrudTestDatasetHelper::AddNonSelect (dataset, ecsql, 0, true);
 
     ecsql = "DELETE FROM ONLY ecsql.TCBase";
     ECSqlStatementCrudTestDatasetHelper::AddNonSelect(dataset, ecsql, rowCountPerClass, true);

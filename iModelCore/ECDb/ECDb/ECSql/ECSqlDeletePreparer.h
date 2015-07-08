@@ -2,14 +2,14 @@
 |
 |     $Source: ECDb/ECSql/ECSqlDeletePreparer.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 
 #include "ECSqlPreparer.h"
-
+#include "ECDbPolicyManager.h"
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
@@ -44,6 +44,63 @@ private:
 
 public:
     static ECSqlStatus Prepare (ECSqlPrepareContext& ctx, DeleteStatementExp const& exp);
+    };
+struct ECSqlDeletePreparer2
+    {
+    private:
+
+        //static class
+        ECSqlDeletePreparer2 ();
+        ~ECSqlDeletePreparer2 ();
+
+    public:
+        static ECSqlStatus Prepare (ECSqlPrepareContext& ctx, DeleteStatementExp const& exp)
+            {
+            ctx.SetSqlRenderStrategy (ECSqlPrepareContext::SqlRenderStrategy::V1);
+            ctx.PushScope (exp);
+            auto classExp = exp.GetClassNameExp ();
+            auto& map = classExp->GetInfo ().GetMap ();
+            auto viewName = SqlGenerator::BuildViewClassName (map.GetClass ());
+            auto const& classMap = classExp->GetInfo ().GetMap ();
+            if (ctx.IsPrimaryStatement ())
+                {
+                const auto currentScopeECSqlType = ctx.GetCurrentScope ().GetECSqlType ();
+                auto policy = ECDbPolicyManager::GetClassPolicy (classMap, IsValidInECSqlPolicyAssertion::Get (currentScopeECSqlType, classExp->IsPolymorphic ()));
+                if (!policy.IsSupported ())
+                    return ctx.SetError (ECSqlStatus::InvalidECSql, "Invalid ECClass '%s': %s", classExp->GetId ().c_str (), policy.GetNotSupportedMessage ());
+                }
+
+            if (map.GetTable().GetPersistenceType () == PersistenceType::Virtual)
+                ctx.SetNativeStatementIsNoop (true);
+
+            ctx.GetSqlBuilderR ().Append ("DELETE FROM ").Append (viewName.c_str ());
+            NativeSqlBuilder whereClause;
+
+
+            if (auto whereExp = exp.GetOptWhereClauseExp ())
+                {
+                auto status = ECSqlExpPreparer::PrepareWhereExp (whereClause, ctx, whereExp);
+                if (status != ECSqlStatus::Success)
+                    return status;
+                }
+            
+            if (!classExp->IsPolymorphic ())
+                {
+                if (!whereClause.IsEmpty ())
+                    whereClause.Append (" AND ");
+                else
+                    whereClause.Append (" WHERE ");
+
+                whereClause.Append ("ECClassId = ").Append (classExp->GetInfo ().GetMap ().GetClass ().GetId ());
+                }
+
+            if (!whereClause.IsEmpty ())
+                ctx.GetSqlBuilderR ().Append (whereClause);
+
+            ctx.PopScope ();
+            ctx.SetSqlRenderStrategy (ECSqlPrepareContext::SqlRenderStrategy::V0);
+            return ECSqlStatus::Success;
+            }
     };
 
 

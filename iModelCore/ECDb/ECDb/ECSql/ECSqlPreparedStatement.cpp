@@ -19,8 +19,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------
-ECSqlPreparedStatement::ECSqlPreparedStatement (ECSqlType type, ECDbCR ecdb, ECSqlEventManager& eventManager, ECSqlStatusContext& statusContext)
-: m_type (type), m_ecdb (&ecdb), m_eventManager (eventManager), m_isNoopInSqlite (false), m_statusContext (statusContext),m_isNothingToUpdate(false)
+ECSqlPreparedStatement::ECSqlPreparedStatement (ECSqlType type, ECDbCR ecdb, ECSqlStatusContext& statusContext)
+: m_type (type), m_ecdb (&ecdb), m_isNoopInSqlite (false), m_statusContext (statusContext),m_isNothingToUpdate(false)
     {
     }
 
@@ -118,7 +118,7 @@ ECSqlStatus ECSqlPreparedStatement::ClearBindings ()
 //---------------------------------------------------------------------------------------
 void ECSqlPreparedStatement::OnBeforeStep()
     {
-    GetEventManagerR().Reset();
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -331,8 +331,8 @@ DynamicSelectClauseECClass& ECSqlSelectPreparedStatement::GetDynamicSelectClause
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        12/13
 //---------------------------------------------------------------------------------------
-ECSqlInsertPreparedStatement::ECSqlInsertPreparedStatement (ECDbCR ecdb, ECSqlEventManager& eventManager, ECSqlStatusContext& statusContext)
-: ECSqlNonSelectPreparedStatement (ECSqlType::Insert, ecdb, eventManager, statusContext)
+ECSqlInsertPreparedStatement::ECSqlInsertPreparedStatement (ECDbCR ecdb, ECSqlStatusContext& statusContext)
+: ECSqlNonSelectPreparedStatement (ECSqlType::Insert, ecdb, statusContext)
     {}
 
 //---------------------------------------------------------------------------------------
@@ -342,10 +342,10 @@ ECSqlStepStatus ECSqlInsertPreparedStatement::Step (ECInstanceKey& instanceKey)
     {
     OnBeforeStep();
 
-    auto& eventManager = GetEventManagerR ();
+
     if (IsNoopInSqlite ())
         {
-        eventManager.FireEvent (GetEventType ());
+
         return ECSqlStepStatus::Done;
         }         
 
@@ -383,10 +383,8 @@ ECSqlStepStatus ECSqlInsertPreparedStatement::Step (ECInstanceKey& instanceKey)
             return ECSqlStepStatus::Error;
             }
 
-        const auto hasEventHandlers = eventManager.HasEventHandlers();
+
         instanceKey = ECInstanceKey (m_ecInstanceKeyInfo.GetECClassId (), ecinstanceidOfInsert);
-        if (hasEventHandlers)
-            eventManager.GetEventArgsR ().GetInstanceKeysR ().push_back (instanceKey);
 
         if (GetStepTasks ().HasAnyTask ())
             {
@@ -397,9 +395,6 @@ ECSqlStepStatus ECSqlInsertPreparedStatement::Step (ECInstanceKey& instanceKey)
                 return ECSqlStepStatus::Error;
                 }
             }
-
-        if (hasEventHandlers)
-            eventManager.FireEvent (GetEventType ());
 
         return ECSqlStepStatus::Done;
         }
@@ -443,8 +438,8 @@ void ECSqlInsertPreparedStatement::SetECInstanceKeyInfo (ECInstanceKeyInfo const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan             04/14
 //---------------------------------------------------------------------------------------
-ECSqlUpdatePreparedStatement::ECSqlUpdatePreparedStatement (ECDbCR ecdb, ECSqlEventManager& eventManager, ECSqlStatusContext& statusContext)
-: ECSqlNonSelectPreparedStatement (ECSqlType::Update, ecdb, eventManager, statusContext)
+ECSqlUpdatePreparedStatement::ECSqlUpdatePreparedStatement (ECDbCR ecdb, ECSqlStatusContext& statusContext)
+: ECSqlNonSelectPreparedStatement (ECSqlType::Update, ecdb, statusContext)
     {
     }
 
@@ -469,7 +464,6 @@ ECSqlStepStatus ECSqlUpdatePreparedStatement::Step ()
             }
         }
 
-    GetEventManagerR ().FireEvent (GetEventType());
     return status;
     }
 
@@ -491,8 +485,8 @@ ECSqlStatus ECSqlNonSelectPreparedStatement::_Reset ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan             04/14
 //---------------------------------------------------------------------------------------
-ECSqlDeletePreparedStatement::ECSqlDeletePreparedStatement (ECDbCR ecdb, ECSqlEventManager& eventManager, ECSqlStatusContext& statusContext)
-: ECSqlNonSelectPreparedStatement (ECSqlType::Delete, ecdb, eventManager, statusContext)
+ECSqlDeletePreparedStatement::ECSqlDeletePreparedStatement (ECDbCR ecdb, ECSqlStatusContext& statusContext)
+: ECSqlNonSelectPreparedStatement (ECSqlType::Delete, ecdb, statusContext)
     {
     }
 
@@ -512,7 +506,7 @@ ECSqlStepStatus ECSqlDeletePreparedStatement::Step ()
         status = DoStep ();
         }
 
-    GetEventManagerR ().FireEvent (GetEventType());
+
     return status;
     }
 

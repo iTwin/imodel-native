@@ -9,7 +9,33 @@
 #include "ECSqlPropertyNameExpPreparer.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
+void RenderPropertyMap (NativeSqlBuilder::List& snippets, PropertyMapCR propertyMap)
+    {
+    BeAssert (propertyMap.GetAsPropertyMapToTable () == nullptr);
+    auto& children = propertyMap.GetChildren ();
+    if (children.Size() == 0)
+        {
+        Utf8String accessString = Utf8String (propertyMap.GetPropertyAccessString ());
+        if (auto mp = dynamic_cast<PropertyMapPoint const*>(&propertyMap))
+            {
+            snippets.push_back (NativeSqlBuilder{ ("[" + accessString + ".X]").c_str ()});
+            snippets.push_back (NativeSqlBuilder{ ("[" + accessString + ".Y]").c_str () });
+            if (mp->Is3d())
+                snippets.push_back (NativeSqlBuilder{ ("[" + accessString + ".Z]").c_str () });
+            }
+        else
+            {
+            snippets.push_back (NativeSqlBuilder{ ("[" + accessString + "]").c_str ()});
+            }
+        }
+    else
+        {
+        for (auto child : children)
+            {
+            RenderPropertyMap (snippets, *child);
+            }
+        }
+    }
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -39,10 +65,20 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare (NativeSqlBuilder::List& nativ
     //    BeAssert (false && "Case is only handled for ClassRefExpr of type ClassNameExpr ");
     //    return ECSqlStatus::NotYetSupported;
     //    }
+    if (ctx.GetSqlRenderStrategy () == ECSqlPrepareContext::SqlRenderStrategy::V0)
+        {
+        auto propNameNativeSqlSnippets = exp->GetPropertyMap ().ToNativeSql (classIdentifier, currentScopeECSqlType, exp->HasParentheses ());
+        nativeSqlSnippets.insert (nativeSqlSnippets.end (), propNameNativeSqlSnippets.begin (), propNameNativeSqlSnippets.end ());
+        }
+    else if (ctx.GetSqlRenderStrategy () == ECSqlPrepareContext::SqlRenderStrategy::V1)
+        {
+        RenderPropertyMap (nativeSqlSnippets, propMap);
+        }
+    else
+        {
+        return ECSqlStatus::ProgrammerError;
+        }
 
-    auto propNameNativeSqlSnippets = exp->GetPropertyMap().ToNativeSql(classIdentifier, currentScopeECSqlType, exp->HasParentheses());
-    nativeSqlSnippets.insert (nativeSqlSnippets.end (), propNameNativeSqlSnippets.begin (), propNameNativeSqlSnippets.end ());
-   
     return ECSqlStatus::Success;
     }
 
@@ -101,10 +137,25 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef (NativeSqlBuilder
                 {
                 if (!propertyRef->IsPrepared ())
                     {
-                    auto snippets = propertyName->GetPropertyMap ().ToNativeSql (nullptr, ECSqlType::Select, false);
-                    auto r = propertyRef->Prepare (snippets);
-                    if (!r)
+                    if (ctx.GetSqlRenderStrategy () == ECSqlPrepareContext::SqlRenderStrategy::V0)
+                        {
+                        auto snippets = propertyName->GetPropertyMap ().ToNativeSql (nullptr, ECSqlType::Select, false);
+                        auto r = propertyRef->Prepare (snippets);
+                        if (!r)
+                            return ECSqlStatus::ProgrammerError;
+                        }
+                    else if (ctx.GetSqlRenderStrategy () == ECSqlPrepareContext::SqlRenderStrategy::V1)
+                        {
+                        NativeSqlBuilder::List snippets;
+                        RenderPropertyMap (snippets, propertyName->GetPropertyMap ());
+                        auto r = propertyRef->Prepare (snippets);
+                        if (!r)
+                            return ECSqlStatus::ProgrammerError;
+                        }
+                    else
+                        {
                         return ECSqlStatus::ProgrammerError;
+                        }
                     }
                 }
             else
@@ -125,17 +176,19 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef (NativeSqlBuilder
             nativeSqlSnippets = propertyRef->GetOutSnippets ();
             break;
             }
-        case Exp::Type::SubqueryValue:{
-                                          auto alias = derviedPropertyExp.GetColumnAlias ();
-                                          if (alias.empty ())
-                                              alias = derviedPropertyExp.GetNestedAlias ();
+        case Exp::Type::SubqueryValue:
+            {
+            auto alias = derviedPropertyExp.GetColumnAlias ();
+            if (alias.empty ())
+                alias = derviedPropertyExp.GetNestedAlias ();
 
-                                          if (alias.empty ())
-                                              return ECSqlStatus::ProgrammerError;
+            if (alias.empty ())
+                return ECSqlStatus::ProgrammerError;
 
-                                          NativeSqlBuilder sqlSnippet;
-                                          sqlSnippet.Append (alias.c_str ());
-                                          nativeSqlSnippets.push_back (sqlSnippet); }
+            NativeSqlBuilder sqlSnippet;
+            sqlSnippet.Append (alias.c_str ());
+            nativeSqlSnippets.push_back (sqlSnippet);
+            }
             break;
         default:
             {

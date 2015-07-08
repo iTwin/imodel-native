@@ -17,8 +17,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-ECSqlStepTask::Collection::Collection (ECSqlEventManager& eventManager)
-: m_eventManager (eventManager)
+ECSqlStepTask::Collection::Collection ()
+
     {    
     }
 
@@ -40,7 +40,7 @@ ECSqlStepStatus ECSqlStepTask::Collection::ExecuteBeforeStepTaskList ()
     {
     //even if no tasks exist, but if event handlers are registered
     //we need to execute the selector so that event can return the correct instances affected.
-    if ((!HasAnyTask () && !m_eventManager.HasEventHandlers ()) ||  m_selector == nullptr)
+    if ((!HasAnyTask () ) ||  m_selector == nullptr)
         return ECSqlStepStatus::Done;
 
     auto stmt = m_selector->GetPreparedStatementP<ECSqlSelectPreparedStatement> ();
@@ -48,8 +48,6 @@ ECSqlStepStatus ECSqlStepTask::Collection::ExecuteBeforeStepTaskList ()
     while (m_selector->Step () == ECSqlStepStatus::HasRow)
         {
         auto iId = stmt->GetValue (0).GetId<ECInstanceId> ();
-        m_eventManager.GetEventArgsR ().GetInstanceKeysR ().push_back (ECInstanceKey (stmt->GetValue (1).GetInt64 (), iId));
-
         if (Execute (ExecutionCategory::ExecuteBeforeParentStep, iId) == ECSqlStepStatus::Error)
             return ECSqlStepStatus::Error;
         }
@@ -425,8 +423,8 @@ ECSqlStepTaskCreateStatus DeleteStructArrayStepTask::Create (unique_ptr<DeleteSt
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-DeleteRelatedInstancesECSqlStepTask::DeleteRelatedInstancesECSqlStepTask (ECDbR ecdb, ECSqlEventManager& eventManager, ECSqlStatusContext& statusContext, WCharCP name, ECClassId classId)
-    : ECSqlStepTask (ExecutionCategory::ExecuteBeforeParentStep, statusContext, name), m_ecdb (ecdb), m_eventManager (eventManager), m_orphanInstanceFinder (ecdb), m_ecClassId (classId), m_eventHandler (eventManager)
+DeleteRelatedInstancesECSqlStepTask::DeleteRelatedInstancesECSqlStepTask (ECDbR ecdb, ECSqlStatusContext& statusContext, WCharCP name, ECClassId classId)
+    : ECSqlStepTask (ExecutionCategory::ExecuteBeforeParentStep, statusContext, name), m_ecdb (ecdb), m_orphanInstanceFinder (ecdb), m_ecClassId (classId)
     {}
 
 //---------------------------------------------------------------------------------------
@@ -445,9 +443,9 @@ ECSqlStepStatus DeleteRelatedInstancesECSqlStepTask::_Execute (ECInstanceId cons
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-ECSqlStepTaskCreateStatus DeleteRelatedInstancesECSqlStepTask::Create (unique_ptr<DeleteRelatedInstancesECSqlStepTask>& deleteStepTask, ECDbR ecdb, ECSqlEventManager& eventManager, ECSqlPrepareContext& preparedContext, IClassMap const& classMap)
+ECSqlStepTaskCreateStatus DeleteRelatedInstancesECSqlStepTask::Create (unique_ptr<DeleteRelatedInstancesECSqlStepTask>& deleteStepTask, ECDbR ecdb, ECSqlPrepareContext& preparedContext, IClassMap const& classMap)
     {
-    deleteStepTask = unique_ptr<DeleteRelatedInstancesECSqlStepTask> (new DeleteRelatedInstancesECSqlStepTask (ecdb, eventManager, preparedContext.GetECSqlStatementR ().GetStatusContextR (), L"$DeleteRelatedStepTask", classMap.GetClass ().GetId ()));
+    deleteStepTask = unique_ptr<DeleteRelatedInstancesECSqlStepTask> (new DeleteRelatedInstancesECSqlStepTask (ecdb, preparedContext.GetECSqlStatementR ().GetStatusContextR (), L"$DeleteRelatedStepTask", classMap.GetClass ().GetId ()));
     return ECSqlStepTaskCreateStatus::Success;
     }
     
@@ -464,11 +462,7 @@ BentleyStatus DeleteRelatedInstancesECSqlStepTask::DeleteDependentInstances (ECI
     if (status != SUCCESS)
         return status;
 
-    if (m_eventManager.HasEventHandlers ())
-        {
-        auto& ecInstanceKeyList = m_eventManager.GetEventArgsR ().GetInstanceKeysR ();
-        ecInstanceKeyList.reserve (ecInstanceKeyList.size () + orphanedInstances.size () + orphanedRelationshipInstances.size ());
-        }
+
 
     status = DeleteInstances (m_ecdb, orphanedRelationshipInstances);
     if (status != SUCCESS)
@@ -557,9 +551,7 @@ BentleyStatus DeleteRelatedInstancesECSqlStepTask::DeleteInstances (ECDbR ecDb, 
             auto const& otherEndConstraint = relClassMap->GetThisEnd () == ECRelationshipEnd_Source ? relationshipClass->GetTarget () : relationshipClass->GetSource ();
             if (otherEndConstraint.GetCardinality ().GetLowerLimit () == 1)
                 {
-                //add found ids to event arg list, so that notification works fine, but don't delete them
-                auto& eventArgsKeyList = m_eventManager.GetEventArgsR ().GetInstanceKeysR ();
-                eventArgsKeyList.insert (eventArgsKeyList.end (), keyList.begin (), keyList.end ());
+
                 return SUCCESS;
                 }
             }
@@ -682,8 +674,6 @@ ECSqlStatement* DeleteRelatedInstancesECSqlStepTask::GetDeleteStatement (ECN::EC
         ecsql.append (")");
 
         auto statement = std::unique_ptr<ECSqlStatement> (new ECSqlStatement ());
-        statement->RegisterEventHandler (m_eventHandler);
-
         if (statement->Prepare (m_ecdb, ecsql.c_str ()) != ECSqlStatus::Success)
             {
             LOG.errorv (L"ECSQL cascade delete of related %ls instances failed: Preparation of nested ECSQL DELETE failed.", ecClass.GetFullName ());
@@ -817,7 +807,7 @@ ECSqlStepTaskCreateStatus ECSqlStepTaskFactory::CreateDeleteStepTask(ECSqlStepTa
     //2. Delete all relationships
     //ECSQL_TODO ensure that all relevant relationships are loaded
     unique_ptr<DeleteRelatedInstancesECSqlStepTask> task;
-    status = DeleteRelatedInstancesECSqlStepTask::Create (task, ecdb, taskList.GetEventManagerR (), preparedContext, classMap);
+    status = DeleteRelatedInstancesECSqlStepTask::Create (task, ecdb, preparedContext, classMap);
     if (status == ECSqlStepTaskCreateStatus::Success)
         taskList.Add (move (task));
     else
