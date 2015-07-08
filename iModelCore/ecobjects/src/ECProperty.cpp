@@ -292,15 +292,15 @@ SchemaReadStatus ECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadCont
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECProperty::_WriteXml (BeXmlNodeP& propertyNode, BeXmlNodeR parentNode)
+SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter)
     {
-    return _WriteXml (propertyNode, parentNode, EC_PROPERTY_ELEMENT);
+    return _WriteXml (xmlWriter, EC_PROPERTY_ELEMENT);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECProperty::_WriteXml (BeXmlNodeP& propertyNode, BeXmlNodeR parentNode, Utf8CP elementName)
+SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, bmap<Utf8CP, CharCP>* additionalAttributes)
     {
     SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
 
@@ -308,21 +308,28 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlNodeP& propertyNode, BeXmlNodeR pa
     if (m_forSupplementation)
         return status;
 
-    propertyNode = parentNode.AddEmptyElement (elementName);
+    xmlWriter.WriteElementStart(elementName);
 
-    propertyNode->AddAttributeStringValue (PROPERTY_NAME_ATTRIBUTE, this->GetName().c_str());
+    xmlWriter.WriteAttribute(PROPERTY_NAME_ATTRIBUTE, this->GetName().c_str());
 
     if (m_originalTypeName.size() > 0 && !m_originalTypeName.Contains(L"GeometryNET"))
-        propertyNode->AddAttributeStringValue (TYPE_NAME_ATTRIBUTE, m_originalTypeName.c_str());
+        xmlWriter.WriteAttribute(TYPE_NAME_ATTRIBUTE, m_originalTypeName.c_str());
     else
-        propertyNode->AddAttributeStringValue (TYPE_NAME_ATTRIBUTE, this->GetTypeName().c_str());
+        xmlWriter.WriteAttribute(TYPE_NAME_ATTRIBUTE, this->GetTypeName().c_str());
         
-    propertyNode->AddAttributeStringValue (DESCRIPTION_ATTRIBUTE, this->GetInvariantDescription().c_str());
+    xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, this->GetInvariantDescription().c_str());
     if (GetIsDisplayLabelDefined())
-        propertyNode->AddAttributeStringValue (DISPLAY_LABEL_ATTRIBUTE, this->GetInvariantDisplayLabel().c_str());
-    propertyNode->AddAttributeBooleanValue (READONLY_ATTRIBUTE, this->IsReadOnlyFlagSet());
+        xmlWriter.WriteAttribute(DISPLAY_LABEL_ATTRIBUTE, this->GetInvariantDisplayLabel().c_str());
+    xmlWriter.WriteAttribute(READONLY_ATTRIBUTE, this->IsReadOnlyFlagSet());
     
-    WriteCustomAttributes (*propertyNode);
+    if (nullptr != additionalAttributes)
+        {
+        for (bmap<Utf8CP, CharCP>::iterator iter = additionalAttributes->begin(); iter != additionalAttributes->end(); ++iter)
+            xmlWriter.WriteAttribute(iter->first, iter->second);
+        }
+
+    WriteCustomAttributes (xmlWriter);
+    xmlWriter.WriteElementEnd();
 
     return status;    
     }
@@ -353,9 +360,9 @@ SchemaReadStatus PrimitiveECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchem
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus PrimitiveECProperty::_WriteXml (BeXmlNodeP& propertyNode, BeXmlNodeR parentNode)
+SchemaWriteStatus PrimitiveECProperty::_WriteXml (BeXmlWriterR xmlWriter)
     {
-    return T_Super::_WriteXml (propertyNode, parentNode, EC_PROPERTY_ELEMENT);
+    return T_Super::_WriteXml (xmlWriter, EC_PROPERTY_ELEMENT);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -546,9 +553,9 @@ SchemaReadStatus StructECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaRe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus StructECProperty::_WriteXml (BeXmlNodeP& propertyNode, BeXmlNodeR parentNode)
+SchemaWriteStatus StructECProperty::_WriteXml (BeXmlWriterR xmlWriter)
     {
-    return T_Super::_WriteXml (propertyNode, parentNode, EC_STRUCTPROPERTY_ELEMENT);
+    return T_Super::_WriteXml (xmlWriter, EC_STRUCTPROPERTY_ELEMENT);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -691,40 +698,38 @@ SchemaReadStatus ArrayECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaRea
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlNodeP& propertyNode, BeXmlNodeR parentNode)
+SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlWriterR xmlWriter)
     {
-    SchemaWriteStatus status = T_Super::_WriteXml (propertyNode, parentNode, EC_ARRAYPROPERTY_ELEMENT);
-    if (status != SCHEMA_WRITE_STATUS_Success || m_forSupplementation) // If this property was created during supplementation, don't serialize it
-        return status;
-        
-    if (NULL == propertyNode)
-        {
-        BeAssert (false);
-        return SCHEMA_WRITE_STATUS_FailedToCreateXml;
-        }
-        
-    // verify that this really is the current array property element
-    if (0 != strcmp (propertyNode->GetName(), EC_ARRAYPROPERTY_ELEMENT))
-        {
-        BeAssert (false);
-        return SCHEMA_WRITE_STATUS_FailedToCreateXml;
-        }
+    bmap<Utf8CP, CharCP> additionalAttributes;
+    char    valueString[128];
+    BeStringUtilities::Snprintf (valueString, _countof (valueString), "%u", m_minOccurs);
 
-    propertyNode->AddAttributeUInt32Value (MIN_OCCURS_ATTRIBUTE, m_minOccurs);
-
+    additionalAttributes[MIN_OCCURS_ATTRIBUTE] = valueString;
     if (m_maxOccurs != UINT_MAX)
         {
-        propertyNode->AddAttributeUInt32Value (MAX_OCCURS_ATTRIBUTE, m_maxOccurs);
+        BeStringUtilities::Snprintf (valueString, _countof (valueString), "%u", m_maxOccurs);
+        additionalAttributes[MAX_OCCURS_ATTRIBUTE] = valueString;
         }
     else
         {
-        propertyNode->AddAttributeStringValue (MAX_OCCURS_ATTRIBUTE, ECXML_UNBOUNDED);
+        additionalAttributes[MAX_OCCURS_ATTRIBUTE] = "unbounded";
         }
 
     if (m_arrayKind == ARRAYKIND_Struct)
-        {
-        propertyNode->AddAttributeBooleanValue (IS_STRUCT_ATTRIBUTE, true);
-        }
+        additionalAttributes[IS_STRUCT_ATTRIBUTE] = "true";
+
+    SchemaWriteStatus status = T_Super::_WriteXml (xmlWriter, EC_ARRAYPROPERTY_ELEMENT, &additionalAttributes);
+    if (status != SCHEMA_WRITE_STATUS_Success || m_forSupplementation) // If this property was created during supplementation, don't serialize it
+        return status;
+        
+        
+    // verify that this really is the current array property element // CGM 07/15 - Can't do this with an XmlWriter
+    //if (0 != strcmp (propertyNode->GetName(), EC_ARRAYPROPERTY_ELEMENT))
+    //    {
+    //    BeAssert (false);
+    //    return SCHEMA_WRITE_STATUS_FailedToCreateXml;
+    //    }
+
         
     return status;
     }

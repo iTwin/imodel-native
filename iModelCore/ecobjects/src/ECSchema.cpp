@@ -1745,7 +1745,7 @@ static bool ClassNameComparer (ECClassP class1, ECClassP class2)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECSchema::WriteSchemaReferences (BeXmlNodeR parentNode) const
+SchemaWriteStatus ECSchema::WriteSchemaReferences (BeXmlWriterR xmlWriter) const
     {
     SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
     bmap<ECSchemaP, WString>::const_iterator iterator;
@@ -1753,16 +1753,16 @@ SchemaWriteStatus ECSchema::WriteSchemaReferences (BeXmlNodeR parentNode) const
         {
         bpair<ECSchemaP, const WString> mapPair = *(iterator);
         ECSchemaP   refSchema           = mapPair.first;
-        BeXmlNodeP  schemaReferenceNode = parentNode.AddEmptyElement (EC_SCHEMAREFERENCE_ELEMENT);
-
-        schemaReferenceNode->AddAttributeStringValue (SCHEMAREF_NAME_ATTRIBUTE, refSchema->GetName().c_str());
+        xmlWriter.WriteElementStart(EC_SCHEMAREFERENCE_ELEMENT);
+        xmlWriter.WriteAttribute(SCHEMAREF_NAME_ATTRIBUTE, refSchema->GetName().c_str());
 
         wchar_t versionString[8];
         BeStringUtilities::Snwprintf(versionString, 8, L"%02d.%02d", refSchema->GetVersionMajor(), refSchema->GetVersionMinor());
-        schemaReferenceNode->AddAttributeStringValue (SCHEMAREF_VERSION_ATTRIBUTE, versionString);
+        xmlWriter.WriteAttribute (SCHEMAREF_VERSION_ATTRIBUTE, versionString);
 
         const WString prefix = mapPair.second;
-        schemaReferenceNode->AddAttributeStringValue (SCHEMAREF_PREFIX_ATTRIBUTE, prefix.c_str());
+        xmlWriter.WriteAttribute(SCHEMAREF_PREFIX_ATTRIBUTE, prefix.c_str());
+        xmlWriter.WriteElementEnd();
         }
     return status;
     }
@@ -1770,14 +1770,14 @@ SchemaWriteStatus ECSchema::WriteSchemaReferences (BeXmlNodeR parentNode) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECSchema::WriteCustomAttributeDependencies (BeXmlNodeR parentNode, IECCustomAttributeContainerCR container, ECSchemaWriteContext& context) const
+SchemaWriteStatus ECSchema::WriteCustomAttributeDependencies (BeXmlWriterR xmlWriter, IECCustomAttributeContainerCR container, ECSchemaWriteContext& context) const
     {
     SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
 
     for (IECInstancePtr instance: container.GetCustomAttributes(false))
         {
         ECClassCR currentClass = instance->GetClass();
-        status = WriteClass (parentNode, currentClass, context);
+        status = WriteClass (xmlWriter, currentClass, context);
         if (SCHEMA_WRITE_STATUS_Success != status)
             return status;
         }
@@ -1787,7 +1787,7 @@ SchemaWriteStatus ECSchema::WriteCustomAttributeDependencies (BeXmlNodeR parentN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECSchema::WriteClass (BeXmlNodeR parentNode, ECClassCR ecClass, ECSchemaWriteContext& context) const
+SchemaWriteStatus ECSchema::WriteClass (BeXmlWriterR xmlWriter, ECClassCR ecClass, ECSchemaWriteContext& context) const
     {
     SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
     // don't write any classes that aren't in the schema we're writing.
@@ -1805,7 +1805,7 @@ SchemaWriteStatus ECSchema::WriteClass (BeXmlNodeR parentNode, ECClassCR ecClass
     // write the base classes first.
     for (ECClassP baseClass: ecClass.GetBaseClasses())
         {
-        WriteClass(parentNode, *baseClass, context);
+        WriteClass(xmlWriter, *baseClass, context);
         }
 
     // Serialize relationship constraint dependencies
@@ -1813,16 +1813,15 @@ SchemaWriteStatus ECSchema::WriteClass (BeXmlNodeR parentNode, ECClassCR ecClass
     if (NULL != relClass)
         {
         for (auto source : relClass->GetSource().GetConstraintClasses())
-            WriteClass(parentNode, source->GetClass(), context);
+            WriteClass(xmlWriter, source->GetClass(), context);
 
         for (auto target : relClass->GetTarget().GetConstraintClasses())
-            WriteClass(parentNode, target->GetClass(), context);
+            WriteClass(xmlWriter, target->GetClass(), context);
         }
-    WritePropertyDependencies(parentNode, ecClass, context);
-    WriteCustomAttributeDependencies(parentNode, ecClass, context);
+    WritePropertyDependencies(xmlWriter, ecClass, context);
+    WriteCustomAttributeDependencies(xmlWriter, ecClass, context);
 
-    BeXmlNodeP  classNode;
-    ecClass._WriteXml (classNode, parentNode);
+    ecClass._WriteXml (xmlWriter);
 
     return status;
     }
@@ -1830,7 +1829,7 @@ SchemaWriteStatus ECSchema::WriteClass (BeXmlNodeR parentNode, ECClassCR ecClass
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECSchema::WritePropertyDependencies (BeXmlNodeR parentNode, ECClassCR ecClass, ECSchemaWriteContext& context) const
+SchemaWriteStatus ECSchema::WritePropertyDependencies (BeXmlWriterR xmlWriter, ECClassCR ecClass, ECSchemaWriteContext& context) const
     {
     SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
 
@@ -1839,17 +1838,17 @@ SchemaWriteStatus ECSchema::WritePropertyDependencies (BeXmlNodeR parentNode, EC
         if (prop->GetIsStruct())
             {
             StructECPropertyP structProperty = prop->GetAsStructPropertyP();
-            WriteClass(parentNode, structProperty->GetType(), context);
+            WriteClass(xmlWriter, structProperty->GetType(), context);
             }
         else if (prop->GetIsArray())
             {
             ArrayECPropertyP arrayProperty = prop->GetAsArrayPropertyP();
             if (arrayProperty->GetKind() == ARRAYKIND_Struct)
                 {
-                WriteClass(parentNode, *(arrayProperty->GetStructElementType()), context);
+                WriteClass(xmlWriter, *(arrayProperty->GetStructElementType()), context);
                 }
             }
-        WriteCustomAttributeDependencies(parentNode, *prop, context);
+        WriteCustomAttributeDependencies(xmlWriter, *prop, context);
         }
     return status;
     }
@@ -1857,29 +1856,26 @@ SchemaWriteStatus ECSchema::WritePropertyDependencies (BeXmlNodeR parentNode, EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECSchema::WriteXml (BeXmlDomR xmlDom) const
+SchemaWriteStatus ECSchema::WriteXml (BeXmlWriterR xmlWriter) const
     {
-    BeXmlNodeP  schemaNode = xmlDom.AddNewElement (EC_SCHEMA_ELEMENT, NULL, NULL);
+    xmlWriter.WriteDocumentStart(XML_CHAR_ENCODING_UTF8);
+    xmlWriter.WriteElementStart(EC_SCHEMA_ELEMENT, ECXML_URI_2_0);
 
     wchar_t versionString[8];
     BeStringUtilities::Snwprintf (versionString, _countof(versionString), L"%02d.%02d", m_key.m_versionMajor, m_key.m_versionMinor);
 
-    schemaNode->AddAttributeStringValue (SCHEMA_NAME_ATTRIBUTE, this->GetName().c_str());
-    schemaNode->AddAttributeStringValue (SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE, this->GetNamespacePrefix().c_str());
-    schemaNode->AddAttributeStringValue (SCHEMA_VERSION_ATTRIBUTE, versionString);
-    schemaNode->AddAttributeStringValue (DESCRIPTION_ATTRIBUTE, this->GetInvariantDescription().c_str());
+    xmlWriter.WriteAttribute(SCHEMA_NAME_ATTRIBUTE, this->GetName().c_str());
+    xmlWriter.WriteAttribute(SCHEMA_NAMESPACE_PREFIX_ATTRIBUTE, this->GetNamespacePrefix().c_str());
+    xmlWriter.WriteAttribute(SCHEMA_VERSION_ATTRIBUTE, versionString);
+    xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, this->GetInvariantDescription().c_str());
     if (GetIsDisplayLabelDefined())
-        schemaNode->AddAttributeStringValue (DISPLAY_LABEL_ATTRIBUTE, this->GetInvariantDisplayLabel().c_str());
+        xmlWriter.WriteAttribute(DISPLAY_LABEL_ATTRIBUTE, this->GetInvariantDisplayLabel().c_str());
 
-    // make sure the schema node has a namespace, and if it doesn't set its default namespace.
-    if (NULL == schemaNode->GetNamespace())
-        schemaNode->SetNamespace (NULL, ECXML_URI_2_0);
-
-    WriteSchemaReferences (*schemaNode);
+    WriteSchemaReferences (xmlWriter);
 
     ECSchemaWriteContext context;
-    WriteCustomAttributeDependencies (*schemaNode, *this, context);
-    WriteCustomAttributes (*schemaNode);
+    WriteCustomAttributeDependencies (xmlWriter, *this, context);
+    WriteCustomAttributes (xmlWriter);
 
     std::list<ECClassP> sortedClasses;
     // sort the classes by name so the order in which they are written is predictable.
@@ -1898,10 +1894,10 @@ SchemaWriteStatus ECSchema::WriteXml (BeXmlDomR xmlDom) const
 
     for (ECClassP pClass: sortedClasses)
         {
-        WriteClass (*schemaNode, *pClass, context);
+        WriteClass (xmlWriter, *pClass, context);
         }
 
-    ECXml::FormatXml (xmlDom);
+    xmlWriter.WriteElementEnd();
     return SCHEMA_WRITE_STATUS_Success;
     }
 
@@ -2262,13 +2258,13 @@ SchemaWriteStatus ECSchema::WriteToXmlString (WStringR ecSchemaXml) const
     {
     ecSchemaXml.clear();
 
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty();
+    BeXmlWriterPtr xmlWriter = BeXmlWriter::Create();
 
     SchemaWriteStatus status;
-    if (SCHEMA_WRITE_STATUS_Success != (status = WriteXml (*xmlDom.get())))
+    if (SCHEMA_WRITE_STATUS_Success != (status = WriteXml (*xmlWriter.get())))
         return status;
 
-    xmlDom->ToString (ecSchemaXml, BeXmlDom::TO_STRING_OPTION_Default);
+    xmlWriter->ToString (ecSchemaXml);
 
     return SCHEMA_WRITE_STATUS_Success;
     }
@@ -2280,13 +2276,14 @@ SchemaWriteStatus ECSchema::WriteToXmlString (Utf8StringR ecSchemaXml) const
     {
     ecSchemaXml.clear();
 
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty();
+    BeXmlWriterPtr xmlWriter = BeXmlWriter::Create();
+    xmlWriter->SetIndentation(4);
 
     SchemaWriteStatus status;
-    if (SCHEMA_WRITE_STATUS_Success != (status = WriteXml (*xmlDom.get())))
+    if (SCHEMA_WRITE_STATUS_Success != (status = WriteXml (*xmlWriter.get())))
         return status;
 
-    xmlDom->ToString (ecSchemaXml, BeXmlDom::TO_STRING_OPTION_Default);
+    xmlWriter->ToString (ecSchemaXml);
 
     return SCHEMA_WRITE_STATUS_Success;
     }
@@ -2300,14 +2297,16 @@ WCharCP ecSchemaXmlFile,
 bool    utf16
 ) const
     {
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty();
+    BeXmlWriterPtr xmlWriter = BeXmlWriter::CreateFileWriter(ecSchemaXmlFile);
+    xmlWriter->SetIndentation(4);
 
     SchemaWriteStatus status;
-    if (SCHEMA_WRITE_STATUS_Success != (status = WriteXml (*xmlDom.get())))
+    if (SCHEMA_WRITE_STATUS_Success != (status = WriteXml (*xmlWriter.get())))
         return status;
 
-    return (BEXML_Success == xmlDom->ToFile (ecSchemaXmlFile, (BeXmlDom::ToStringOption)(BeXmlDom::TO_STRING_OPTION_Indent | BeXmlDom::TO_STRING_OPTION_Formatted),
-        utf16 ? BeXmlDom::FILE_ENCODING_Utf16 : BeXmlDom::FILE_ENCODING_Utf8)) ? SCHEMA_WRITE_STATUS_Success : SCHEMA_WRITE_STATUS_FailedToWriteFile;
+    return SCHEMA_WRITE_STATUS_Success;
+    //return (BEXML_Success == xmlDom->ToFile (ecSchemaXmlFile, (BeXmlDom::ToStringOption)(BeXmlDom::TO_STRING_OPTION_Indent | BeXmlDom::TO_STRING_OPTION_Formatted),
+    //    utf16 ? BeXmlDom::FILE_ENCODING_Utf16 : BeXmlDom::FILE_ENCODING_Utf8)) ? SCHEMA_WRITE_STATUS_Success : SCHEMA_WRITE_STATUS_FailedToWriteFile;
     }
 
 #if defined (NEEDSWORK_LIBXML)

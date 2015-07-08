@@ -47,86 +47,86 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
     ECValue ecValue;
 
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"BaseClassMember"));
-    EXPECT_EQ (987, ecValue.GetInteger());
+    EXPECT_EQ (987, ecValue.GetInteger()) << "Expect 987 for integer value";
 
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"IntegerMember"));
-    EXPECT_EQ (12, ecValue.GetInteger());
+    EXPECT_EQ (12, ecValue.GetInteger()) << "Expected 12 for integer value";
 
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"CustomFormatInt"));
-    EXPECT_EQ (13, ecValue.GetInteger());
+    EXPECT_EQ (13, ecValue.GetInteger()) << "Expected 13 for integer value";
 
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"BooleanMember"));
-    EXPECT_FALSE (ecValue.GetBoolean());
+    EXPECT_FALSE (ecValue.GetBoolean()) << "Expected false for booleanmember";
 
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"DoubleMember"));
-    EXPECT_EQ (456.789, ecValue.GetDouble());
+    EXPECT_EQ (456.789, ecValue.GetDouble()) << "Expected 456.789 for double member";
 
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"StringMember"));
-    EXPECT_STREQ (ecValue.GetString(), L"Test string");
+    EXPECT_STREQ (ecValue.GetString(), L"Test string") << "Expected 'test string'";
 
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FileNameMember"));
-    EXPECT_STREQ (ecValue.GetString(), L"c:\\usr\\barry\\test.txt");
+    EXPECT_STREQ (ecValue.GetString(), L"c:\\usr\\barry\\test.txt") << "Wrong value for FileNameMember";
 
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"NegativeMember"));
-    EXPECT_EQ (-42, ecValue.GetInteger());
+    EXPECT_EQ (-42, ecValue.GetInteger()) << "Expected -42 for negativemember";
 
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"DateTimeMember"));
-    EXPECT_EQ (633374681466664305, ecValue.GetDateTimeTicks());
+    EXPECT_EQ (633374681466664305, ecValue.GetDateTimeTicks()) << "Wrong value for DateTimeMember";
 
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"StartPoint"));
-    EXPECT_EQ (1.1, ecValue.GetPoint3D().x);
-    EXPECT_EQ (2.2, ecValue.GetPoint3D().y);
-    EXPECT_EQ (3.3, ecValue.GetPoint3D().z);
+    EXPECT_EQ (1.1, ecValue.GetPoint3D().x) << "Incorrect x value for StartPoint";
+    EXPECT_EQ (2.2, ecValue.GetPoint3D().y) << "Incorrect y value for StartPoint";
+    EXPECT_EQ (3.3, ecValue.GetPoint3D().z) << "Incorrect z value for StartPoint";
 
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"EndPoint"));
-    EXPECT_EQ (4.4, ecValue.GetPoint3D().x);
-    EXPECT_EQ (7.7, ecValue.GetPoint3D().y);
-    EXPECT_EQ (6.6, ecValue.GetPoint3D().z);
+    EXPECT_EQ (4.4, ecValue.GetPoint3D().x) << "Incorrect x value for EndPoint";
+    EXPECT_EQ (7.7, ecValue.GetPoint3D().y) << "Incorrect y value for EndPoint";
+    EXPECT_EQ (6.6, ecValue.GetPoint3D().z) << "Incorrect z value for EndPoint";
 
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"SecondEmbeddedStruct.Struct1BoolMember"));
-    EXPECT_FALSE (ecValue.GetBoolean());
+    EXPECT_FALSE (ecValue.GetBoolean()) << "Wrong value for Struct1BoolMember";
 
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"SecondEmbeddedStruct.Struct1IntMember"));
-    EXPECT_EQ (4, ecValue.GetInteger());
+    EXPECT_EQ (4, ecValue.GetInteger()) << "Wrong value for Struct1IntMember";
 
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStruct.Struct3DoubleMember"));
-    EXPECT_EQ (17.443, ecValue.GetDouble());
+    EXPECT_EQ (17.443, ecValue.GetDouble()) << "Wrong value for Struct3DoubleMember";
 
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStruct.Struct3IntMember"));
-    EXPECT_EQ (531992, ecValue.GetInteger());
+    EXPECT_EQ (531992, ecValue.GetInteger()) << "Wrong value for Struct3IntMember";
     
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStruct.Struct3BoolMember"));
-    EXPECT_TRUE (ecValue.GetBoolean());
+    EXPECT_TRUE (ecValue.GetBoolean()) << "Wrong value for Struct3BoolMember";
 
     int         expectedInts[] = {0, 101, 202, 303, 404, 505, 606, 707, 808, 909};
     for (uint32_t index=0; index < _countof (expectedInts); index++)
         {
         EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedArray", index));
-        EXPECT_EQ (expectedInts[index], ecValue.GetInteger());
+        EXPECT_EQ (expectedInts[index], ecValue.GetInteger()) << "Wrong Value for FormattedArray";
         }
 
     int         moreInts[] = {41556, 32757, 56789, 32757, 21482 };
     for (uint32_t index=0; index < _countof (moreInts); index++)
         {
         EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"IntArray", index));
-        EXPECT_EQ (moreInts[index], ecValue.GetInteger());
+        EXPECT_EQ (moreInts[index], ecValue.GetInteger()) << "Wrong value for IntArray";
         }
 
     EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"OneMemberIntArray", 0));
-    EXPECT_EQ (3, ecValue.GetInteger());
+    EXPECT_EQ (3, ecValue.GetInteger()) << "Wrong value for OneMemberIntArray";
 
     DPoint3d    expectedPoints[] = { {4.0, 0.0, 0.0}, {1.0, 1.0, 1.0}, {2.0, 2.0, 2.0}, {3.0, 3.0, 3.0}, {4.0, 4.0, 4.0}, {5.0, 5.0, 5.0} };
     for (uint32_t index=0; index < _countof (expectedPoints); index++)
         {
         EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"PointArray", index));
-        EXPECT_EQ (expectedPoints[index].x, ecValue.GetPoint3D().x);
-        EXPECT_EQ (expectedPoints[index].y, ecValue.GetPoint3D().y);
-        EXPECT_EQ (expectedPoints[index].z, ecValue.GetPoint3D().z);
+        EXPECT_EQ (expectedPoints[index].x, ecValue.GetPoint3D().x) << "Wrong value for PointArray x";
+        EXPECT_EQ (expectedPoints[index].y, ecValue.GetPoint3D().y) << "Wrong value for PointArray y";
+        EXPECT_EQ (expectedPoints[index].z, ecValue.GetPoint3D().z) << "Wrong value for PointArray z";
         }
 
     for (uint32_t index=0; index < 300; index++)
         {
-        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"DateArray", index));
+        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"DateArray", index)) << "Wrong value for DateArray";
         }
 
     for (uint32_t index=0; index < 300; index++)
@@ -134,13 +134,13 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
         EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"StringArray", index));
         WString expectedString;
         expectedString.Sprintf (L"String %d", index%30);
-        EXPECT_STREQ (expectedString.c_str(), ecValue.GetString());
+        EXPECT_STREQ (expectedString.c_str(), ecValue.GetString()) << "Wrong value for StringArray";
         }
 
     for (uint32_t index=0; index < 100; index++)
         {
         EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"SmallIntArray", index));
-        EXPECT_EQ (index, ecValue.GetInteger());
+        EXPECT_EQ (index, ecValue.GetInteger()) << "Wrong value for SmallIntArray";
         }
 
     // test the structArray of Struct2's that contains a nested array of Struct1's. Here's the data we expect:
@@ -193,7 +193,7 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
         else
             {
             EXPECT_EQ (SUCCESS, structArrayInstance->GetValue (ecValue, L"Struct2StringMember"));
-            EXPECT_STREQ (struct2ExpectedValues[index].struct2StringMember, ecValue.GetString());
+            EXPECT_STREQ (struct2ExpectedValues[index].struct2StringMember, ecValue.GetString()) << "Wrong value for Struct2StringMember";
             }
 
         if (struct2ExpectedValues[index].struct2DoubleMemberNull)
@@ -204,7 +204,7 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
         else
             {
             EXPECT_EQ (SUCCESS, structArrayInstance->GetValue (ecValue, L"Struct2DoubleMember"));
-            EXPECT_EQ (struct2ExpectedValues[index].struct2DoubleMember, ecValue.GetDouble());
+            EXPECT_EQ (struct2ExpectedValues[index].struct2DoubleMember, ecValue.GetDouble()) << "Wrong value for Struct2DoubleMember";
             }
 
         // now try to get the array of structs, if expected.
@@ -219,10 +219,10 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
             EXPECT_TRUE (nestedInstance.IsValid());
             
             EXPECT_EQ (SUCCESS, nestedInstance->GetValue (ecValue, L"Struct1BoolMember"));
-            EXPECT_EQ (struct2ExpectedValues[index].nestedArray[nestedIndex].struct1BoolMember, ecValue.GetBoolean());
+            EXPECT_EQ (struct2ExpectedValues[index].nestedArray[nestedIndex].struct1BoolMember, ecValue.GetBoolean()) << "Wrong value for Struct1BoolMember in NestedArray";
 
             EXPECT_EQ (SUCCESS, nestedInstance->GetValue (ecValue, L"Struct1IntMember"));
-            EXPECT_EQ (struct2ExpectedValues[index].nestedArray[nestedIndex].struct1IntMember, ecValue.GetInteger());
+            EXPECT_EQ (struct2ExpectedValues[index].nestedArray[nestedIndex].struct1IntMember, ecValue.GetInteger()) << "Wrong value for Struct1IntMember in NestedArray";
             }
         }
 

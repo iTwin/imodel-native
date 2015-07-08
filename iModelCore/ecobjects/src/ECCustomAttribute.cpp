@@ -570,7 +570,7 @@ InstanceReadStatus IECCustomAttributeContainer::ReadCustomAttributes (BeXmlNodeR
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus IECCustomAttributeContainer::WriteCustomAttributes 
 (
-BeXmlNodeR containerNode
+BeXmlWriterR xmlWriter
 ) const
     {
     if (m_primaryCustomAttributes.size() < 1)
@@ -580,15 +580,16 @@ BeXmlNodeR containerNode
     WString             customAttributeXml;
 
     ECCustomAttributeCollection::const_iterator iter;
+    if (m_primaryCustomAttributes.begin() == m_primaryCustomAttributes.end())
+        return status;
+
     // Add the <ECCustomAttributes> node.
-    BeXmlNodeP          customAttributeNode = containerNode.AddEmptyElement (EC_CUSTOM_ATTRIBUTES_ELEMENT);
+    xmlWriter.WriteElementStart(EC_CUSTOM_ATTRIBUTES_ELEMENT);
     for (iter = m_primaryCustomAttributes.begin(); iter != m_primaryCustomAttributes.end(); iter++)
         {
-        (*iter)->WriteToBeXmlNode (*customAttributeNode);
+        (*iter)->WriteToBeXmlNode (xmlWriter);
         }
-
-    if (NULL == customAttributeNode->GetFirstChild())
-        containerNode.RemoveChildNode (customAttributeNode);
+    xmlWriter.WriteElementEnd();
 
     return status;
     }

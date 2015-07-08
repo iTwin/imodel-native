@@ -3216,17 +3216,17 @@ ECClassCP                       ValidateArrayStructType (WCharCP typeFound, ECCl
 struct  InstanceXmlWriter
 {
 private:
-    BeXmlDomR       m_xmlDom;
-    BeXmlNodeP      m_rootNode;
+    BeXmlWriter*     m_xmlWriter;
 
 
 public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceXmlWriter (BeXmlDomR xmlDom, BeXmlNodeP rootNode) 
-    : m_xmlDom (xmlDom), m_rootNode (rootNode)
+InstanceXmlWriter (BeXmlWriter *writer)
+    : m_xmlWriter (writer)
     {
+    writer->SetIndentation(4);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3241,8 +3241,7 @@ InstanceWriteStatus     WriteInstance (IECInstanceCR ecInstance, bool writeInsta
 
     fullSchemaName.Sprintf (L"%ls.%02d.%02d", ecSchema.GetName().c_str(), ecSchema.GetVersionMajor(), ecSchema.GetVersionMinor());
     Utf8String  utf8ClassName (className.c_str());
-    BeXmlNodeP  instanceNode = m_xmlDom.AddNewElement (utf8ClassName.c_str(), NULL, m_rootNode);
-    instanceNode->AddAttributeStringValue (XMLNS_ATTRIBUTE, fullSchemaName.c_str());
+    m_xmlWriter->WriteElementStart(utf8ClassName.c_str(), Utf8String(fullSchemaName.c_str()).c_str());
 
     auto relationshipInstance = dynamic_cast<IECRelationshipInstanceCP> (&ecInstance);
     // if relationship, need the attributes used in relationships.
@@ -3256,8 +3255,8 @@ InstanceWriteStatus     WriteInstance (IECInstanceCR ecInstance, bool writeInsta
             sourceClassName.Sprintf(L"%ls:%ls", relationshipInstance->GetSource()->GetClass().GetSchema().GetFullSchemaName().c_str(), relationshipInstance->GetSource()->GetClass().GetName().c_str());
         else
             sourceClassName.Sprintf(L"%ls", relationshipInstance->GetSource()->GetClass().GetName().c_str());
-        instanceNode->AddAttributeStringValue(SOURCEINSTANCEID_ATTRIBUTE, relationshipInstance->GetSource()->GetInstanceId().c_str());
-        instanceNode->AddAttributeStringValue(SOURCECLASS_ATTRIBUTE, sourceClassName.c_str());
+        m_xmlWriter->WriteAttribute(SOURCEINSTANCEID_ATTRIBUTE, relationshipInstance->GetSource()->GetInstanceId().c_str());
+        m_xmlWriter->WriteAttribute(SOURCECLASS_ATTRIBUTE, sourceClassName.c_str());
 
         if (!relationshipInstance->GetTarget().IsValid())
             return INSTANCE_WRITE_STATUS_XmlWriteError;
@@ -3267,20 +3266,24 @@ InstanceWriteStatus     WriteInstance (IECInstanceCR ecInstance, bool writeInsta
             targetClassName.Sprintf(L"%ls:%ls", relationshipInstance->GetTarget()->GetClass().GetSchema().GetFullSchemaName().c_str(), relationshipInstance->GetTarget()->GetClass().GetName().c_str());
         else
             targetClassName.Sprintf(L"%ls", relationshipInstance->GetTarget()->GetClass().GetName().c_str());
-        instanceNode->AddAttributeStringValue(TARGETINSTANCEID_ATTRIBUTE, relationshipInstance->GetTarget()->GetInstanceId().c_str());
-        instanceNode->AddAttributeStringValue(TARGETCLASS_ATTRIBUTE, targetClassName.c_str());
+        m_xmlWriter->WriteAttribute(TARGETINSTANCEID_ATTRIBUTE, relationshipInstance->GetTarget()->GetInstanceId().c_str());
+        m_xmlWriter->WriteAttribute(TARGETCLASS_ATTRIBUTE, targetClassName.c_str());
         }
 
     if (writeInstanceId)
-        instanceNode->AddAttributeStringValue (INSTANCEID_ATTRIBUTE, ecInstance.GetInstanceIdForSerialization().c_str());
+        m_xmlWriter->WriteAttribute(INSTANCEID_ATTRIBUTE, ecInstance.GetInstanceIdForSerialization().c_str());
 
-    return WritePropertyValuesOfClassOrStructArrayMember (ecClass, ecInstance, NULL, *instanceNode);
+    InstanceWriteStatus status = WritePropertyValuesOfClassOrStructArrayMember (ecClass, ecInstance, NULL);
+    if (status != INSTANCE_WRITE_STATUS_Success)
+        return status;
+    m_xmlWriter->WriteElementEnd();
+    return INSTANCE_WRITE_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus     WritePropertyValuesOfClassOrStructArrayMember (ECClassCR ecClass, IECInstanceCR ecInstance, WString* baseAccessString, BeXmlNodeR rootNode)
+InstanceWriteStatus     WritePropertyValuesOfClassOrStructArrayMember (ECClassCR ecClass, IECInstanceCR ecInstance, WString* baseAccessString)
     {
     CustomStructSerializerManagerR customStructSerializerMgr = CustomStructSerializerManager::GetManager();
 
@@ -3293,9 +3296,9 @@ InstanceWriteStatus     WritePropertyValuesOfClassOrStructArrayMember (ECClassCR
         InstanceWriteStatus     ixwStatus = INSTANCE_WRITE_STATUS_BadPrimitivePropertyType;
             
         if (NULL != (primitiveProperty = ecProperty->GetAsPrimitivePropertyP()))
-            ixwStatus = WritePrimitivePropertyValue (*primitiveProperty, ecInstance, baseAccessString, rootNode);
+            ixwStatus = WritePrimitivePropertyValue (*primitiveProperty, ecInstance, baseAccessString);
         else if (NULL != (arrayProperty = ecProperty->GetAsArrayPropertyP()))
-            ixwStatus = WriteArrayPropertyValue (*arrayProperty, ecInstance, baseAccessString, rootNode);
+            ixwStatus = WriteArrayPropertyValue (*arrayProperty, ecInstance, baseAccessString);
         else if (NULL != (structProperty = ecProperty->GetAsStructPropertyP()))
             {
             if (ecInstance.SaveOnlyLoadedPropertiesToXml())
@@ -3322,17 +3325,15 @@ InstanceWriteStatus     WritePropertyValuesOfClassOrStructArrayMember (ECClassCR
                 else
                     {
                     // the tag of the element for an embedded struct is the property name.
-                    BeXmlNodeP structNode = rootNode.AddEmptyElement (structProperty->GetName().c_str());
-                    if (NULL != structNode)
-                        {
-                        structNode->SetContent (xmlString.c_str());
-                        ixwStatus = INSTANCE_WRITE_STATUS_Success;
-                        }
+                    m_xmlWriter->WriteElementStart(Utf8String(structProperty->GetName().c_str()).c_str());
+                    m_xmlWriter->WriteText(xmlString.c_str());
+                    ixwStatus = INSTANCE_WRITE_STATUS_Success;
+                    m_xmlWriter->WriteElementEnd();
                     }
                 }
             else
                 {
-                ixwStatus = WriteEmbeddedStructPropertyValue (*structProperty, ecInstance, baseAccessString, rootNode);
+                ixwStatus = WriteEmbeddedStructPropertyValue (*structProperty, ecInstance, baseAccessString);
                 }
             }
 
@@ -3349,7 +3350,7 @@ InstanceWriteStatus     WritePropertyValuesOfClassOrStructArrayMember (ECClassCR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus     WritePrimitivePropertyValue (PrimitiveECPropertyR primitiveProperty, IECInstanceCR ecInstance, WString* baseAccessString, BeXmlNodeR rootNode)
+InstanceWriteStatus     WritePrimitivePropertyValue (PrimitiveECPropertyR primitiveProperty, IECInstanceCR ecInstance, WString* baseAccessString)
     {
     ECObjectsStatus     getStatus;
     ECValue             ecValue;
@@ -3370,16 +3371,20 @@ InstanceWriteStatus     WritePrimitivePropertyValue (PrimitiveECPropertyR primit
     if ( (ECOBJECTS_STATUS_Success != getStatus) || ecValue.IsNull() )
         return INSTANCE_WRITE_STATUS_Success;
 
-    BeXmlNodeP              childNode    = rootNode.AddEmptyElement (propertyName.c_str());
+    m_xmlWriter->WriteElementStart(Utf8String(propertyName.c_str()).c_str());
     PrimitiveType           propertyType = primitiveProperty.GetType();
 
-    return WritePrimitiveValue (ecValue, propertyType, *childNode);
+    InstanceWriteStatus status = WritePrimitiveValue (ecValue, propertyType);
+    if (status != INSTANCE_WRITE_STATUS_Success)
+        return status;
+    m_xmlWriter->WriteElementEnd();
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus     WritePrimitiveValue (ECValueCR ecValue, PrimitiveType propertyType, BeXmlNodeR propertyValueNode)
+InstanceWriteStatus     WritePrimitiveValue (ECValueCR ecValue, PrimitiveType propertyType)
     {
     char     outString[512];
 
@@ -3394,7 +3399,7 @@ InstanceWriteStatus     WritePrimitiveValue (ECValueCR ecValue, PrimitiveType pr
                 {
                 WString    byteString;
                 convertByteArrayToString (byteString, byteData, numBytes);
-                propertyValueNode.SetContentFast (byteString.c_str());
+                m_xmlWriter->WriteRaw(byteString.c_str());
                 }
             return INSTANCE_WRITE_STATUS_Success;
             break;
@@ -3405,7 +3410,7 @@ InstanceWriteStatus     WritePrimitiveValue (ECValueCR ecValue, PrimitiveType pr
             bmap<OrderedIGeometryPtr, BeExtendedData> extendedData;
             Utf8String beCgXml;
             BeXmlCGWriter::Write(beCgXml, *(ecValue.GetIGeometry()), &extendedData);
-            propertyValueNode.SetContentFast (beCgXml.c_str());
+            m_xmlWriter->WriteRaw(beCgXml.c_str());
             //strcpy(outString, beCgXml.c_str());
             return INSTANCE_WRITE_STATUS_Success;
             break;
@@ -3457,8 +3462,7 @@ InstanceWriteStatus     WritePrimitiveValue (ECValueCR ecValue, PrimitiveType pr
 
         case PRIMITIVETYPE_String:
             {
-            // we cant use SetContentFast here because we have no control over the content.
-            propertyValueNode.SetContent (ecValue.GetString());
+            m_xmlWriter->WriteText (ecValue.GetString());
             return INSTANCE_WRITE_STATUS_Success;
             }
 
@@ -3469,7 +3473,7 @@ InstanceWriteStatus     WritePrimitiveValue (ECValueCR ecValue, PrimitiveType pr
             }
         }
 
-    propertyValueNode.SetContentFast (outString);
+    m_xmlWriter->WriteRaw (outString);
     return INSTANCE_WRITE_STATUS_Success;
     }
 
@@ -3480,7 +3484,7 @@ InstanceWriteStatus     WritePrimitiveValue (ECValueCR ecValue, PrimitiveType pr
     #pragma warning(disable:4189) // memberClass unused if NDEBUG set.
 #endif // defined (_MSC_VER)
 
-InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty, IECInstanceCR ecInstance, WString* baseAccessString, BeXmlNodeR propertyValueNode)
+InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty, IECInstanceCR ecInstance, WString* baseAccessString)
     {
     ArrayKind       arrayKind = arrayProperty.GetKind();
 
@@ -3497,7 +3501,8 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
 
     uint32_t nElements = ecValue.GetArrayInfo().GetCount();
 
-    BeXmlNodeP  arrayNode = propertyValueNode.AddEmptyElement (arrayProperty.GetName().c_str());
+    if (BEXML_Success != m_xmlWriter->WriteElementStart(Utf8String(arrayProperty.GetName().c_str()).c_str()))
+        return INSTANCE_WRITE_STATUS_XmlWriteError;
 
     InstanceWriteStatus     ixwStatus;
     if (ARRAYKIND_Primitive == arrayKind)
@@ -3509,14 +3514,16 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
             if (ECOBJECTS_STATUS_Success != ecInstance.GetValue (ecValue, accessString.c_str(), index))
                 break;
 
-            BeXmlNodeP  memberNode = arrayNode->AddEmptyElement (typeString);
+            if (BEXML_Success != m_xmlWriter->WriteElementStart(typeString))
+                return INSTANCE_WRITE_STATUS_XmlWriteError;
 
-            // write the primitve value
-            if (INSTANCE_WRITE_STATUS_Success != (ixwStatus = WritePrimitiveValue (ecValue, memberType, *memberNode)))
+            // write the primitive value
+            if (INSTANCE_WRITE_STATUS_Success != (ixwStatus = WritePrimitiveValue (ecValue, memberType)))
                 {
                 BeAssert (false);
                 return ixwStatus;
                 }
+            m_xmlWriter->WriteElementEnd();
             }
         }
     else if (ARRAYKIND_Struct == arrayKind)
@@ -3540,14 +3547,15 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
             ECClassCR   structClass = structInstance->GetClass();
             BeAssert (structClass.Is (arrayProperty.GetStructElementType()));
 
-            BeXmlNodeP memberNode = arrayNode->AddEmptyElement (structClass.GetName().c_str());
+            m_xmlWriter->WriteElementStart (Utf8String(structClass.GetName().c_str()).c_str());
 
             InstanceWriteStatus iwxStatus;
-            if (INSTANCE_WRITE_STATUS_Success != (iwxStatus = WritePropertyValuesOfClassOrStructArrayMember (structClass, *structInstance.get(), NULL, *memberNode)))
+            if (INSTANCE_WRITE_STATUS_Success != (iwxStatus = WritePropertyValuesOfClassOrStructArrayMember (structClass, *structInstance.get(), NULL)))
                 {
                 BeAssert (false);
                 return iwxStatus;
                 }
+            m_xmlWriter->WriteElementEnd();
             }
         }
     else
@@ -3555,7 +3563,7 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
         // unexpected arrayKind - should never happen.
         BeAssert (false);
         }
-
+    m_xmlWriter->WriteElementEnd();
     return INSTANCE_WRITE_STATUS_Success;
     }
 
@@ -3566,10 +3574,10 @@ InstanceWriteStatus     WriteArrayPropertyValue (ArrayECPropertyR arrayProperty,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus     WriteEmbeddedStructPropertyValue (StructECPropertyR structProperty, IECInstanceCR ecInstance, WString* baseAccessString, BeXmlNodeR propertyValueNode)
+InstanceWriteStatus     WriteEmbeddedStructPropertyValue (StructECPropertyR structProperty, IECInstanceCR ecInstance, WString* baseAccessString)
     {
     // the tag of the element for an embedded struct is the property name.
-    BeXmlNodeP structNode = propertyValueNode.AddEmptyElement (structProperty.GetName().c_str());
+    m_xmlWriter->WriteElementStart(Utf8String(structProperty.GetName().c_str()).c_str());
 
     WString    thisAccessString;
     if (NULL != baseAccessString)
@@ -3579,8 +3587,9 @@ InstanceWriteStatus     WriteEmbeddedStructPropertyValue (StructECPropertyR stru
     thisAccessString.append (L".");
 
     ECClassCR   structClass = structProperty.GetType();
-    WritePropertyValuesOfClassOrStructArrayMember (structClass, ecInstance, &thisAccessString, *structNode);
+    WritePropertyValuesOfClassOrStructArrayMember (structClass, ecInstance, &thisAccessString);
 
+    m_xmlWriter->WriteElementEnd();
     return INSTANCE_WRITE_STATUS_Success;
     }
 
@@ -3684,16 +3693,11 @@ InstanceReadStatus   IECInstance::ReadFromBeXmlNode (IECInstancePtr& ecInstance,
 +---------------+---------------+---------------+---------------+---------------+------*/
 InstanceWriteStatus     IECInstance::WriteToXmlFile (WCharCP fileName, bool writeInstanceId, bool utf16)
     {
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty();        
+    BeXmlWriterPtr xmlWriter = BeXmlWriter::CreateFileWriter(fileName);
+    InstanceXmlWriter   instanceWriter (xmlWriter.get());
 
-    InstanceXmlWriter   instanceWriter (*xmlDom.get(), NULL);
-
-    InstanceWriteStatus status;
-    if (INSTANCE_WRITE_STATUS_Success != (status = instanceWriter.WriteInstance (*this, writeInstanceId)))
-        return status;
-
-    return (BEXML_Success == xmlDom->ToFile (fileName, (BeXmlDom::ToStringOption)(BeXmlDom::TO_STRING_OPTION_Indent | BeXmlDom::TO_STRING_OPTION_Formatted), utf16 ? BeXmlDom::FILE_ENCODING_Utf16 : BeXmlDom::FILE_ENCODING_Utf8)) 
-            ? INSTANCE_WRITE_STATUS_Success : INSTANCE_WRITE_STATUS_FailedToWriteFile;
+    xmlWriter->WriteDocumentStart(XML_CHAR_ENCODING_UTF8);
+    return instanceWriter.WriteInstance (*this, writeInstanceId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3702,17 +3706,16 @@ InstanceWriteStatus     IECInstance::WriteToXmlFile (WCharCP fileName, bool writ
 template<typename T_STR> InstanceWriteStatus writeInstanceToXmlString (T_STR& ecInstanceXml, bool isStandAlone, bool writeInstanceId, IECInstanceR instance)
     {
     ecInstanceXml.clear();
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty();        
-    InstanceXmlWriter   instanceWriter (*xmlDom.get(), NULL);
+    BeXmlWriterPtr xmlWriter = BeXmlWriter::Create();        
+    InstanceXmlWriter   instanceWriter (xmlWriter.get());
+    if (isStandAlone)
+        xmlWriter->WriteDocumentStart(XML_CHAR_ENCODING_UTF8);
+
     InstanceWriteStatus status;
     if (INSTANCE_WRITE_STATUS_Success != (status = instanceWriter.WriteInstance (instance, writeInstanceId)))
         return status;
 
-    uint64_t opts = BeXmlDom::TO_STRING_OPTION_Default;
-    if ( ! isStandAlone)
-        opts |= BeXmlDom::TO_STRING_OPTION_OmitXmlDeclaration;
-
-    xmlDom->ToString (ecInstanceXml, (BeXmlDom::ToStringOption) opts);
+    xmlWriter->ToString (ecInstanceXml);
     return INSTANCE_WRITE_STATUS_Success;
     }
 
@@ -3735,9 +3738,9 @@ InstanceWriteStatus     IECInstance::WriteToXmlString (WString & ecInstanceXml, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus     IECInstance::WriteToBeXmlNode (BeXmlNodeR node)
+InstanceWriteStatus     IECInstance::WriteToBeXmlNode (BeXmlWriterR xmlWriter)
     {
-    InstanceXmlWriter instanceWriter (*node.GetDom(), &node);
+    InstanceXmlWriter instanceWriter (&xmlWriter);
 
     return instanceWriter.WriteInstance (*this, false);
     }
@@ -3745,9 +3748,9 @@ InstanceWriteStatus     IECInstance::WriteToBeXmlNode (BeXmlNodeR node)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstanceWriteStatus IECInstance::WriteToBeXmlDom (BeXmlDomR dom, BeXmlNodeP rootNode, bool writeInstanceId)
+InstanceWriteStatus IECInstance::WriteToBeXmlDom (BeXmlWriterR xmlWriter, bool writeInstanceId)
     {
-    InstanceXmlWriter writer (dom, rootNode);
+    InstanceXmlWriter writer (&xmlWriter);
     return writer.WriteInstance (*this, writeInstanceId);
     }
 

@@ -231,7 +231,7 @@ protected:
     bool                                RemoveConsolidatedCustomAttribute(ECClassCR classDefinition);
 
     InstanceReadStatus                  ReadCustomAttributes (BeXmlNodeR containerNode, ECSchemaReadContextR context, ECSchemaCR fallBackSchema);
-    SchemaWriteStatus                   WriteCustomAttributes(BeXmlNodeR parentNode) const;
+    SchemaWriteStatus                   WriteCustomAttributes(BeXmlWriterR xmlWriter) const;
     //! Only copies primary ones, not consolidated ones. Does not check if the container's ECSchema references the requisite ECSchema(s). @see SupplementedSchemaBuilder::SetMergedCustomAttribute
     ECObjectsStatus                     CopyCustomAttributesTo(IECCustomAttributeContainerR destContainer) const;
 
@@ -612,8 +612,8 @@ protected:
     ECObjectsStatus                     SetName (WStringCR name);
 
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext);
-    virtual SchemaWriteStatus           _WriteXml (BeXmlNodeP& createdPropertyNode, BeXmlNodeR parentNode);
-    SchemaWriteStatus                   _WriteXml (BeXmlNodeP& createdPropertyNode, BeXmlNodeR parentNode, Utf8CP elementName);
+    virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter);
+    SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, bmap<Utf8CP, CharCP>* additionalAttributes=nullptr);
 
     virtual bool                        _IsPrimitive () const { return false; }
     virtual bool                        _IsStruct () const { return false; }
@@ -744,7 +744,7 @@ private:
 
 protected:
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
-    virtual SchemaWriteStatus           _WriteXml (BeXmlNodeP& createdPropertyNode, BeXmlNodeR parentNode) override;
+    virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter) override;
     virtual bool                        _IsPrimitive () const override { return true;}
     virtual WString                     _GetTypeName () const override;
     virtual ECObjectsStatus             _SetTypeName (WStringCR typeName) override;
@@ -778,7 +778,7 @@ private:
 
 protected:
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
-    virtual SchemaWriteStatus           _WriteXml (BeXmlNodeP& createdPropertyNode, BeXmlNodeR parentNode) override;
+    virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter) override;
     virtual bool                        _IsStruct () const override { return true;}
     virtual WString                     _GetTypeName () const override;
     virtual ECObjectsStatus             _SetTypeName (WStringCR typeName) override;
@@ -826,7 +826,7 @@ private:
 
 protected:
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
-    virtual SchemaWriteStatus           _WriteXml(BeXmlNodeP& createdPropertyNode, BeXmlNodeR parentNode) override;
+    virtual SchemaWriteStatus           _WriteXml(BeXmlWriterR xmlWriter) override;
     virtual bool                        _IsArray () const override { return true;}
     virtual WString                     _GetTypeName () const override;
     virtual ECObjectsStatus             _SetTypeName (WStringCR typeName) override;
@@ -1023,8 +1023,8 @@ protected:
     SchemaReadStatus                    _ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaReadContextR context);
     SchemaReadStatus                    _ReadPropertyFromXmlAndAddToClass( ECPropertyP ecProperty, BeXmlNodeP& childNode, ECSchemaReadContextR context, Utf8CP childNodeName );
 
-    virtual SchemaWriteStatus           _WriteXml (BeXmlNodeP& createdClassNode, BeXmlNodeR parentNode) const;
-    SchemaWriteStatus                   _WriteXml (BeXmlNodeP& createdClassNode, BeXmlNodeR parentNode, Utf8CP elementName) const;
+    virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter) const;
+    SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, bmap<Utf8CP, WCharCP>* additionalAttributes, bool doElementEnd) const;
 
     virtual ECRelationshipClassCP       _GetRelationshipClassCP () const { return NULL; }  // used to avoid dynamic_cast
     virtual ECRelationshipClassP        _GetRelationshipClassP ()        { return NULL; }  // used to avoid dynamic_cast
@@ -1410,7 +1410,7 @@ private:
 
     ECObjectsStatus             SetCardinality(uint32_t& lowerLimit, uint32_t& upperLimit);
 
-    SchemaWriteStatus           WriteXml (BeXmlNodeR parentNode, Utf8CP elementName) const;
+    SchemaWriteStatus           WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName) const;
     SchemaReadStatus            ReadXml (BeXmlNodeR constraintNode, ECSchemaReadContextR schemaContext);
 
 
@@ -1525,7 +1525,7 @@ private:
     ECObjectsStatus                     SetStrengthDirection (WCharCP direction);
 
 protected:
-    virtual SchemaWriteStatus           _WriteXml (BeXmlNodeP& createdClassNode, BeXmlNodeR parentNode) const override;
+    virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter) const override;
 
     virtual SchemaReadStatus            _ReadXmlAttributes (BeXmlNodeR classNode) override;
     virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context) override;
@@ -2096,7 +2096,7 @@ private:
     void                                SetIsSupplemented(bool isSupplemented);
     bool                                IsOpenPlantPidCircularReferenceSpecialCase(WString& referencedECSchemaName);
     static SchemaReadStatus             ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, uint32_t checkSum, ECSchemaReadContextR context);
-    SchemaWriteStatus                   WriteXml (BeXmlDomR xmlDoc) const;
+    SchemaWriteStatus                   WriteXml (BeXmlWriterR xmlWriter) const;
 
     ECObjectsStatus                     AddClass (ECClassP& pClass, bool deleteClassIfDuplicate = true);
     ECObjectsStatus                     SetVersionFromString (WCharCP versionString);
@@ -2115,10 +2115,10 @@ private:
         bset<WCharCP> m_alreadyWrittenClasses;
         };
 
-    SchemaWriteStatus                   WriteSchemaReferences (BeXmlNodeR parentNode) const;
-    SchemaWriteStatus                   WriteClass (BeXmlNodeR parentNode, ECClassCR ecClass, ECSchemaWriteContext&) const;
-    SchemaWriteStatus                   WriteCustomAttributeDependencies (BeXmlNodeR parentNode, IECCustomAttributeContainerCR container, ECSchemaWriteContext&) const;
-    SchemaWriteStatus                   WritePropertyDependencies (BeXmlNodeR parentNode, ECClassCR ecClass, ECSchemaWriteContext&) const;
+    SchemaWriteStatus                   WriteSchemaReferences (BeXmlWriterR xmlWriter) const;
+    SchemaWriteStatus                   WriteClass (BeXmlWriterR xmlWriter, ECClassCR ecClass, ECSchemaWriteContext&) const;
+    SchemaWriteStatus                   WriteCustomAttributeDependencies (BeXmlWriterR xmlWriter, IECCustomAttributeContainerCR container, ECSchemaWriteContext&) const;
+    SchemaWriteStatus                   WritePropertyDependencies (BeXmlWriterR xmlWriter, ECClassCR ecClass, ECSchemaWriteContext&) const;
     void                                CollectAllSchemasInGraph (bvector<ECN::ECSchemaCP>& allSchemas,  bool includeRootSchema) const;
 
     bool                                IsSupplementalSchema();

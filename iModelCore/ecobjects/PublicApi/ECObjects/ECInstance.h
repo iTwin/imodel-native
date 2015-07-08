@@ -14,6 +14,7 @@
 
 BENTLEY_NAMESPACE_TYPEDEFS (BeXmlDom)
 BENTLEY_NAMESPACE_TYPEDEFS (BeXmlNode)
+BENTLEY_NAMESPACE_TYPEDEFS (BeXmlWriter)
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -400,7 +401,7 @@ public:
     ECOBJECTS_EXPORT DgnPlatform::DgnECInstance const* AsDgnECInstanceCP() const;
     ECOBJECTS_EXPORT DgnPlatform::DgnECInstance*       AsDgnECInstanceP();
 #endif
-    ECOBJECTS_EXPORT InstanceWriteStatus    WriteToBeXmlDom (BeXmlDomR dom, BeXmlNodeP rootNode, bool writeInstanceId);
+    ECOBJECTS_EXPORT InstanceWriteStatus    WriteToBeXmlDom (BeXmlWriterR xmlWriter, bool writeInstanceId);
 
     // Copy any properties which are common to both IECInstances, skip the rest.
     ECOBJECTS_EXPORT ECObjectsStatus    CopyCommonValues (ECN::IECInstanceCR source);
@@ -581,10 +582,10 @@ public:
     //! @returns SUCCESS if the instance was successfully written, otherwise an error code indicating the failure
     ECOBJECTS_EXPORT InstanceWriteStatus        WriteToXmlString (WString & ecInstanceXml, bool isStandAlone, bool writeInstanceId);
 
-    //! Serializes the instance to a BeXmlNode
-    //! @param[in] xmlNode The node to write to
+    //! Serializes the instance to an existing BeXmlWriter
+    //! @param[in] xmlWriter The writer to write to.  It should be at the current point where to insert the instance
     //! @returns SUCCESS if the instance was successfully written, otherwise an error code indicating the failure
-    ECOBJECTS_EXPORT InstanceWriteStatus        WriteToBeXmlNode (BeXmlNodeR xmlNode);
+    ECOBJECTS_EXPORT InstanceWriteStatus        WriteToBeXmlNode (BeXmlWriterR xmlWriter);
 
     //! Allow each instance type to determine if it want to only serialize "loaded" properties to XML.  If the instance
     //! returns true then the instance insures the ECValue returned for a property will properly set the "IsLoaded" flag in the ECValue.

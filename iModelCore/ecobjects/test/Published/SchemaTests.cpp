@@ -708,6 +708,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripUsingString)
     WString ecSchemaXmlString;
     
     SchemaWriteStatus status2 = schema->WriteToXmlString(ecSchemaXmlString);
+    schema->WriteToXmlFile(L"d:\\temp\\data\\schema.xml");
     EXPECT_EQ(SCHEMA_WRITE_STATUS_Success, status2);
     
     ECSchemaPtr deserializedSchema;

@@ -1315,41 +1315,49 @@ SchemaReadStatus ECClass::_ReadPropertyFromXmlAndAddToClass( ECPropertyP ecPrope
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECClass::_WriteXml (BeXmlNodeP& classNode, BeXmlNodeR parentNode, Utf8CP elementName) const
+SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, bmap<Utf8CP, WCharCP>* additionalAttributes, bool doElementEnd) const
     {
     SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
 
-    classNode = parentNode.AddEmptyElement (elementName);
+    xmlWriter.WriteElementStart(elementName);
     
-    classNode->AddAttributeStringValue (TYPE_NAME_ATTRIBUTE, this->GetName().c_str());
-    classNode->AddAttributeStringValue (DESCRIPTION_ATTRIBUTE, this->GetInvariantDescription().c_str());
+    xmlWriter.WriteAttribute(TYPE_NAME_ATTRIBUTE, this->GetName().c_str());
+    xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, this->GetInvariantDescription().c_str());
     if (GetIsDisplayLabelDefined())
-        classNode->AddAttributeStringValue (DISPLAY_LABEL_ATTRIBUTE, this->GetInvariantDisplayLabel().c_str());
+        xmlWriter.WriteAttribute(DISPLAY_LABEL_ATTRIBUTE, this->GetInvariantDisplayLabel().c_str());
 
-    classNode->AddAttributeBooleanValue (IS_STRUCT_ATTRIBUTE, this->GetIsStruct());
-    classNode->AddAttributeBooleanValue (IS_DOMAINCLASS_ATTRIBUTE, this->GetIsDomainClass());
-    classNode->AddAttributeBooleanValue (IS_CUSTOMATTRIBUTE_ATTRIBUTE, this->GetIsCustomAttributeClass());
+    xmlWriter.WriteAttribute(IS_STRUCT_ATTRIBUTE, this->GetIsStruct());
+    xmlWriter.WriteAttribute(IS_DOMAINCLASS_ATTRIBUTE, this->GetIsDomainClass());
+    xmlWriter.WriteAttribute(IS_CUSTOMATTRIBUTE_ATTRIBUTE, this->GetIsCustomAttributeClass());
+    if (nullptr != additionalAttributes)
+        {
+        for (bmap<Utf8CP, WCharCP>::iterator iter = additionalAttributes->begin(); iter != additionalAttributes->end(); ++iter)
+            xmlWriter.WriteAttribute(iter->first, iter->second);
+        }
     
     for (const ECClassP& baseClass: m_baseClasses)
-        classNode->AddElementStringValue (EC_BASE_CLASS_ELEMENT, (ECClass::GetQualifiedClassName(GetSchema(), *baseClass)).c_str() );
-
-    WriteCustomAttributes (*classNode);
+        {
+        xmlWriter.WriteElementStart(EC_BASE_CLASS_ELEMENT);
+        xmlWriter.WriteText((ECClass::GetQualifiedClassName(GetSchema(), *baseClass)).c_str());
+        xmlWriter.WriteElementEnd();
+        }
+    WriteCustomAttributes (xmlWriter);
             
     for (ECPropertyP prop: GetProperties(false))
         {
-        BeXmlNodeP  propertyNode;
-        prop->_WriteXml (propertyNode, *classNode);
+        prop->_WriteXml (xmlWriter);
         }
-
+    if (doElementEnd)
+        xmlWriter.WriteElementEnd();
     return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECClass::_WriteXml (BeXmlNodeP& childNode, BeXmlNodeR parentNode) const
+SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter) const
     {
-    return _WriteXml (childNode, parentNode, EC_CLASS_ELEMENT);
+    return _WriteXml (xmlWriter, EC_CLASS_ELEMENT, nullptr, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1844,31 +1852,35 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
             return *this;
             }  Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECRelationshipConstraint::WriteXml (BeXmlNodeR parentNode, Utf8CP elementName) const
+SchemaWriteStatus ECRelationshipConstraint::WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName) const
     {
     SchemaWriteStatus status = SCHEMA_WRITE_STATUS_Success;
     
-    BeXmlNodeP constraintNode = parentNode.AddEmptyElement (elementName);
+    xmlWriter.WriteElementStart(elementName);
     
-    constraintNode->AddAttributeStringValue (CARDINALITY_ATTRIBUTE, m_cardinality->ToString().c_str());
+    xmlWriter.WriteAttribute(CARDINALITY_ATTRIBUTE, m_cardinality->ToString().c_str());
     if (IsRoleLabelDefined())
-        constraintNode->AddAttributeStringValue (ROLELABEL_ATTRIBUTE, m_roleLabel.c_str());
+        xmlWriter.WriteAttribute(ROLELABEL_ATTRIBUTE, m_roleLabel.c_str());
 
-    constraintNode->AddAttributeBooleanValue (POLYMORPHIC_ATTRIBUTE, this->GetIsPolymorphic());
+    xmlWriter.WriteAttribute(POLYMORPHIC_ATTRIBUTE, this->GetIsPolymorphic());
         
-    WriteCustomAttributes (*constraintNode);
+    WriteCustomAttributes (xmlWriter);
 
     for (const auto &constraint : m_constraintClasses)
         {
-        BeXmlNodeP  constraintClassNode = constraintNode->AddEmptyElement(EC_CONSTRAINTCLASS_ELEMENT);
-        constraintClassNode->AddAttributeStringValue(CONSTRAINTCLASSNAME_ATTRIBUTE, ECClass::GetQualifiedClassName(m_relClass->GetSchema(), constraint->GetClass()).c_str());
+        xmlWriter.WriteElementStart(EC_CONSTRAINTCLASS_ELEMENT);
+        xmlWriter.WriteAttribute(CONSTRAINTCLASSNAME_ATTRIBUTE, ECClass::GetQualifiedClassName(m_relClass->GetSchema(), constraint->GetClass()).c_str());
         for (auto key : constraint->GetKeys())
             {
-            auto constraintKey = constraintClassNode->AddEmptyElement(EC_CONSTRAINTKEY_ELEMENT);
-            constraintKey->AddEmptyElement(EC_KEYPROPERTY_ELEMENT)->AddAttributeStringValue(KEYPROPERTYNAME_ATTRIBUTE, key.c_str());
+            xmlWriter.WriteElementStart(EC_CONSTRAINTKEY_ELEMENT);
+            xmlWriter.WriteElementStart(EC_KEYPROPERTY_ELEMENT);
+            xmlWriter.WriteAttribute(KEYPROPERTYNAME_ATTRIBUTE, key.c_str());
+            xmlWriter.WriteElementEnd();
+            xmlWriter.WriteElementEnd();
             }
+        xmlWriter.WriteElementEnd();
         }
-    
+    xmlWriter.WriteElementEnd();
     return status;
     }
 
@@ -2281,25 +2293,26 @@ ECObjectsStatus ECRelationshipClass::GetOrderedRelationshipPropertyName (WString
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ECRelationshipClass::_WriteXml (BeXmlNodeP& classNode, BeXmlNodeR parentNode) const
+SchemaWriteStatus ECRelationshipClass::_WriteXml (BeXmlWriterR xmlWriter) const
     {
     SchemaWriteStatus   status;
-    if (SCHEMA_WRITE_STATUS_Success != (status = T_Super::_WriteXml (classNode, parentNode, EC_RELATIONSHIP_CLASS_ELEMENT)))
+    bmap<Utf8CP, WCharCP> additionalAttributes;
+    additionalAttributes[STRENGTH_ATTRIBUTE] = ECXml::StrengthToString(m_strength);
+    additionalAttributes[STRENGTHDIRECTION_ATTRIBUTE] = ECXml::DirectionToString(m_strengthDirection);
+    if (SCHEMA_WRITE_STATUS_Success != (status = T_Super::_WriteXml (xmlWriter, EC_RELATIONSHIP_CLASS_ELEMENT, &additionalAttributes, false)))
         return status;
         
-    // verify that this really is the current relationship class element
-    if (0 != strcmp (classNode->GetName(), EC_RELATIONSHIP_CLASS_ELEMENT))
-        {
-        BeAssert (false);
-        return SCHEMA_WRITE_STATUS_FailedToCreateXml;
-        }
+    // verify that this really is the current relationship class element // CGM 07/15 - Can't do this with an XmlWriter
+    //if (0 != strcmp (classNode->GetName(), EC_RELATIONSHIP_CLASS_ELEMENT))
+    //    {
+    //    BeAssert (false);
+    //    return SCHEMA_WRITE_STATUS_FailedToCreateXml;
+    //    }
         
-    classNode->AddAttributeStringValue (STRENGTH_ATTRIBUTE, ECXml::StrengthToString(m_strength));
-    classNode->AddAttributeStringValue (STRENGTHDIRECTION_ATTRIBUTE, ECXml::DirectionToString(m_strengthDirection));
-    
-    m_source->WriteXml (*classNode, EC_SOURCECONSTRAINT_ELEMENT);
-    m_target->WriteXml (*classNode, EC_TARGETCONSTRAINT_ELEMENT);
-    
+    m_source->WriteXml (xmlWriter, EC_SOURCECONSTRAINT_ELEMENT);
+    m_target->WriteXml (xmlWriter, EC_TARGETCONSTRAINT_ELEMENT);
+    xmlWriter.WriteElementEnd();
+
     return status;
     }
 
