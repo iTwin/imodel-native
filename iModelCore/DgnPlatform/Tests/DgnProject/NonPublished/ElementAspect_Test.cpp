@@ -393,6 +393,35 @@ DgnDbStatus TestMultiAspect::_UpdateProperties(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementItemTests, ElementsOwnsItemTest)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"ElementsOwnsItemTest.idgndb", Db::OpenMode::ReadWrite);
+
+    // Define an element with an item
+    TestElementCPtr el;
+    if (true)
+        {
+        TestElementPtr tempEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement");
+        DgnElement::Item::SetItem(*tempEl, *TestItem::Create("Line"));
+        el = m_db->Elements().Insert(*tempEl);
+        m_db->SaveChanges();
+        }
+
+    //  Delete the element. 
+    DgnElementId eid = el->GetElementId();
+    m_db->Elements().Delete(*el);
+
+    // Item should have been deleted for me.
+    Statement findItem;
+    findItem.Prepare(*m_db, "SELECT ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_ElementItem) " WHERE(ElementId=?)");
+    findItem.BindId(1, eid);
+    bool itemIsGone = (BE_SQLITE_ROW != findItem.Step());
+    //ASSERT_TRUE(itemIsGone);  *** WIP_ITEM - cascading delete
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ElementItemTests, ItemCRUD)
     {
     SetupProject(L"3dMetricGeneral.idgndb", L"ItemCRUD.idgndb", Db::OpenMode::ReadWrite);
