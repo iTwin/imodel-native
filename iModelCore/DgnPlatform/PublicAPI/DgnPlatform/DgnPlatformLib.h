@@ -159,8 +159,8 @@ public:
 
             //! Return a local directory that can be used to store temporary files. This directory can optionally be a subdirectory of #GetLocalTempDirectoryBaseName.
             //! @param[out] tempDir The name of temporary directory. This must be MAX_PATH chars in size.
-            //! @param[in]  subDirName Optional subdirectory relative to default temp directory. If non-NULL, this subdirectory will be created.
-            //! @return NULL if no temporary directory available.
+            //! @param[in]  subDirName Optional subdirectory relative to default temp directory. If non-nullptr, this subdirectory will be created.
+            //! @return nullptr if no temporary directory available.
             DGNPLATFORM_EXPORT BentleyStatus GetLocalTempDirectory(BeFileNameR tempDir, WCharCP subDirName);
 
             //! Return the directory containing the required DgnPlatform assets that must be deployed with any DgnPlatform-based app.
@@ -405,23 +405,23 @@ public:
             {
             //! Display control for edges marked as invisible in Mesh Elements and
             //! for B-spline Curve/Surface control polygons ("splframe" global).
-            enum ControlPolyDisplay
+            enum class ControlPolyDisplay
                 {
-                CONTROLPOLY_DISPLAY_ByElement = 0, //! display according to element property.
-                CONTROLPOLY_DISPLAY_Always    = 1, //! display on for all elements
-                CONTROLPOLY_DISPLAY_Never     = 2, //! display off for all elements
+                ByElement = 0, //! display according to element property.
+                Always    = 1, //! display on for all elements
+                Never     = 2, //! display off for all elements
                 };
 
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
-            virtual int _GetVersion() const {return 1;} // Do not override!
-            virtual void _OnHostTermination(bool isProcessShutdown) override {delete this;}
+            virtual int _GetVersion() const final {return 1;} 
+            virtual void _OnHostTermination(bool isProcessShutdown) override final {delete this;}
 
             //! Return a pointer to a temporary QVCache used to create a temporary QVElem (short-lived).
-            virtual QvCache* _GetTempElementCache() {return NULL;}
+            virtual QvCache* _GetTempElementCache() {return nullptr;}
 
             //! Create and maintain a cache to hold cached representations of drawn geometry for persistent elements (QVElem).
-            virtual QvCache* _CreateQvCache() {return NULL;}
+            virtual QvCache* _CreateQvCache() {return nullptr;}
 
             //! Delete specified qvCache.
             virtual void _DeleteQvCache(QvCacheP qvCache) {}
@@ -433,11 +433,11 @@ public:
             virtual void _DeleteQvElem(QvElem*) {}
 
             //! Return whether a QVElem should be created, host must balance expense against memory use.
-            virtual bool _WantSaveQvElem(/*DrawExpenseEnum*/int expense) {return true;}
+            virtual bool _WantSaveQvElem(int expense) {return true;}
 
             //! Return cache to use for symbols (if host has chosen to have a symbol cache).
             //! @note Symbol cache will be required for an interactive host.
-            virtual QvCache* _GetSymbolCache() {return NULL;}
+            virtual QvCache* _GetSymbolCache() {return nullptr;}
 
             //! Remove all entries in the symbol cache (if host has chosen to have a symbol cache).
             virtual void _EmptySymbolCache() {}
@@ -446,7 +446,7 @@ public:
             virtual void _SaveQvElemForSymbol(IDisplaySymbol* symbol, QvElem* qvElem) {}
 
             //! Return cache entry for symbol (if host has chosen to have a symbol cache).
-            virtual QvElem* _LookupQvElemForSymbol(IDisplaySymbol* symbol) {return NULL;}
+            virtual QvElem* _LookupQvElemForSymbol(IDisplaySymbol* symbol) {return nullptr;}
 
             //! Delete a specific entry from the symbol cache.
             virtual void _DeleteSymbol(IDisplaySymbol* symbol) {}
@@ -467,13 +467,13 @@ public:
             virtual void _DrawTile(IViewDrawR, uintptr_t textureId, DPoint3d const* verts) {}
 
             //! Create a 3D multi-resolution image.
-            virtual QvMRImage* _CreateQvMRImage(DPoint3dCP fourCorners, Point2dCR imageSize, Point2dCR tileSize, bool enableAlpha, int format, int tileFlags, int numLayers) {return NULL;}
+            virtual QvMRImage* _CreateQvMRImage(DPoint3dCP fourCorners, Point2dCR imageSize, Point2dCR tileSize, bool enableAlpha, int format, int tileFlags, int numLayers) {return nullptr;}
 
             //! Delete specified qvMRImage.
             virtual void _DeleteQvMRImage(QvMRImage* qvMRI) {}
 
             //! Add an image tile to a qvMRImage.
-            virtual QvElem* _CreateQvTile(bool is3d, QvCacheP hCache, QvMRImage* mri, uintptr_t textureId, int layer, int row, int column, int numLines, int bytesPerLine, Point2dCR bufferSize, Byte const* pBuffer) {return NULL;}
+            virtual QvElem* _CreateQvTile(bool is3d, QvCacheP hCache, QvMRImage* mri, uintptr_t textureId, int layer, int row, int column, int numLines, int bytesPerLine, Point2dCR bufferSize, Byte const* pBuffer) {return nullptr;}
 
             //! Define a custom raster format(QV_*_FORMAT) for color index data. Return 0 if error.
             virtual int _DefineCIFormat(int dataType, int numColors, QvUInt32 const* pTBGRColors){return 0;}
@@ -482,7 +482,7 @@ public:
             virtual void _CallViewTransients(ViewContextR, bool isPreupdate) {}
 
             //! @return Value to use for display control setting of mesh edges marked as invisible and for bspline curve/surface control polygons.
-            virtual ControlPolyDisplay _GetControlPolyDisplay() {return CONTROLPOLY_DISPLAY_ByElement;}
+            virtual ControlPolyDisplay _GetControlPolyDisplay() {return ControlPolyDisplay::ByElement;}
 
             //! @return The max number of components before a cell will be drawn "fast" when ViewFlags.fast_cell is enabled.
             virtual uint32_t _GetFastCellThreshold() {return 1;}
@@ -705,7 +705,7 @@ public:
             //! @param[in] curveToDgn Optional transform from curve to modelRef UOR coordinates.
             //! @param[in] idMap Optional map of edge tags to curve topology ids.
             //! @return SUCCESS if out holds a valid solid kernel entity.
-            virtual BentleyStatus _CreateBodyFromCurveVector(ISolidKernelEntityPtr& out, CurveVectorCR profile, TransformCP curveToDgn = NULL, struct EdgeToCurveIdMap* idMap = NULL) const {return ERROR;}
+            virtual BentleyStatus _CreateBodyFromCurveVector(ISolidKernelEntityPtr& out, CurveVectorCR profile, TransformCP curveToDgn = nullptr, struct EdgeToCurveIdMap* idMap = nullptr) const {return ERROR;}
 
             //! Create an ISolidKernelEntity from the supplied solid primitve data.
             //! @param[out] out Ref counted pointer to new solid kernel entity.
@@ -846,7 +846,7 @@ public:
             //! @param[in] in The solid kernel entity that sub-entity string originated from.
             //! @param[in] subEntityStr string returned by ISubEntity::ToString.
             //! @return A new ISubEntityPtr.
-            virtual ISubEntityPtr _CreateSubEntityPtr(ISolidKernelEntityCR in, WCharCP subEntityStr) const {return NULL;}
+            virtual ISubEntityPtr _CreateSubEntityPtr(ISolidKernelEntityCR in, WCharCP subEntityStr) const {return nullptr;}
 
             //! Test is the supplied ISolidKernelEntity is the parent of the supplied ISubEntity.
             //! @param[in] subEntity subEntity The solid kernel sub-entity to query.
@@ -910,7 +910,7 @@ public:
             //! Allows the host to provide a path to coordinate system definition files.
             virtual WString _GetDataDirectory() { return L""; }
 
-            virtual IGeoCoordinateServicesP _GetServices() const {return NULL;}
+            virtual IGeoCoordinateServicesP _GetServices() const {return nullptr;}
             };
 
         //! Formatter preferences for units, fields, etc
@@ -941,7 +941,6 @@ public:
         GeoCoordinationAdmin*   m_geoCoordAdmin;
         TxnAdmin*               m_txnAdmin;
         IACSManagerP            m_acsManager;
-        //  LineStyleManagerP       m_lineStyleManager;
         FormatterAdmin*         m_formatterAdmin;
         RealityDataAdmin*       m_realityDataAdmin;
         ScriptingAdmin*         m_scriptingAdmin;
@@ -1082,7 +1081,7 @@ public:
     DGNPLATFORM_EXPORT static void ForgetHost();
 
     //! Query if a Host is associated with the current thread
-    //! @return NULL if not Host is associated with the current thread. Otherwise, a pointer to the Host object.
+    //! @return nullptr if not Host is associated with the current thread. Otherwise, a pointer to the Host object.
     DGNPLATFORM_EXPORT static Host* QueryHost();
 
     //! Get the Host that associated with the current thread
@@ -1090,7 +1089,7 @@ public:
     DGNPLATFORM_EXPORT static Host& GetHost();
 
     //! Used by DgnDbFileIO to initialize logging for Graphite code.
-    //! @param configFileName Optional. The name of the logging configuration file to parse. Pass NULL for logging to the console with default severities.
+    //! @param configFileName Optional. The name of the logging configuration file to parse. Pass nullptr for logging to the console with default severities.
     //! If configFileName is specified, then the log4cxx provider will be used. Note that this provider comes from log4cxx.dll, and both the Graphite and Vancouver
     //! code will use the same log4cxx.dll. 
     DGNPLATFORM_EXPORT static void InitializeBentleyLogging(WCharCP configFileName);
