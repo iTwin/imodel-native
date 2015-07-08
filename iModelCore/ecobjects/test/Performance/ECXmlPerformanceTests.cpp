@@ -24,7 +24,9 @@ ECSchemaReadContextPtr   schemaContext
     ECSchemaPtr schema;
     StopWatch deserializationTimer(L"Deserialization", false);
     deserializationTimer.Start();
+    //printf ("Attach to profiler for reading schema...\r\n"); getchar ();
     SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath(schemaName).c_str(), *schemaContext);
+    //printf ("Detach from profiler...\r\n"); getchar ();
 
     deserializationTimer.Stop();
     EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);  
@@ -33,7 +35,9 @@ ECSchemaReadContextPtr   schemaContext
     WString ecSchemaXml;
 
     serializationTimer.Start();
+    //printf ("Attach to profiler for writing schema...\r\n"); getchar ();
     SchemaWriteStatus status2 = schema->WriteToXmlString(ecSchemaXml);
+    //printf ("Detach from profiler...\r\n"); getchar ();
     serializationTimer.Stop();
     EXPECT_EQ (SCHEMA_WRITE_STATUS_Success, status2);  
 
