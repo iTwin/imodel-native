@@ -460,11 +460,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <BaseClass>ElementAspect</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
-                <MapStrategy>
-                    <Strategy>OwnTable</Strategy>
-                    <IsPolymorphic>True</IsPolymorphic>
-                </MapStrategy>
-                <!-- The ECInstanceId for ElementItem is the same as the Id of the owning Element -->
+                <!-- The ECInstanceId for ElementUniqueAspect is the same as the Id of the owning Element -->
                 <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
             </ClassMap>
         </ECCustomAttributes>
@@ -496,7 +492,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                     <Strategy>OwnTable</Strategy>
                     <IsPolymorphic>True</IsPolymorphic>
                 </MapStrategy>
-                <!-- The ECInstanceId for ElementItem is the same as the Id of the owning Element -->
+                <!-- The ECInstanceId for ElementMultiAspect is the same as the Id of the owning Element -->
                 <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
             </ClassMap>
         </ECCustomAttributes>
@@ -508,6 +504,10 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <BaseClass>ElementUniqueAspect</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <Strategy>OwnTable</Strategy>
+                    <IsPolymorphic>True</IsPolymorphic>
+                </MapStrategy>
                 <!-- The ECInstanceId for ElementGeom is the same as the Id of the owning Element -->
                 <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
             </ClassMap>
@@ -620,7 +620,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <Source cardinality="(1,1)" polymorphic="True">
             <Class class="Element" />
         </Source>
-        <Target cardinality="(0,1)" polymorphic="False">
+        <Target cardinality="(0,1)" polymorphic="True">
             <Class class="ElementItem">
                 <Key>
                     <Property name="ECInstanceId"/>

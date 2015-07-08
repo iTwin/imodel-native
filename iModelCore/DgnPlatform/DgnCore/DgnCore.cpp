@@ -372,6 +372,7 @@ void DgnPlatformLib::Host::TerminateDgnCore(bool onProgramExit)
     BeAssert(NULL == m_txnAdmin);
     BeAssert(NULL == m_acsManager);
     BeAssert(NULL == m_formatterAdmin);
+    BeAssert(NULL == m_scriptingAdmin);
     BeAssert(NULL == m_realityDataAdmin);
     BeAssert(NULL == m_exceptionHandler);
     BeAssert(NULL == m_knownLocationsAdmin);
@@ -421,6 +422,7 @@ DgnPlatformLib::Host::LineStyleAdmin&        DgnPlatformLib::Host::_SupplyLineSt
 DgnPlatformLib::Host::TxnAdmin& DgnPlatformLib::Host::_SupplyTxnAdmin() {return *new TxnAdmin();}
 DgnPlatformLib::Host::FormatterAdmin&        DgnPlatformLib::Host::_SupplyFormatterAdmin()        {return *new FormatterAdmin();}
 DgnPlatformLib::Host::RealityDataAdmin&      DgnPlatformLib::Host::_SupplyRealityDataAdmin()      {return *new RealityDataAdmin();}
+DgnPlatformLib::Host::ScriptingAdmin&        DgnPlatformLib::Host::_SupplyScriptingAdmin()        {return *new ScriptingAdmin();}
 
 
 //---------------------------------------------------------------------------------------
