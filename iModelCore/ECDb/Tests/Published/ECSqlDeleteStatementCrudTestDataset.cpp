@@ -76,20 +76,6 @@ ECSqlTestDataset ECSqlDeleteTestDataset::FromTests (int rowCountPerClass)
     ecsql = "DELETE FROM ONLY bsm.InstanceCount";
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
 
-    //Class which has a relationship subclass. The latter is unmapped, so testing here that the base class can still be used
-    ecsql = "DELETE FROM ONLY ecsql.NonRelBase";
-    ECSqlStatementCrudTestDatasetHelper::AddNonSelect (dataset, ecsql, rowCountPerClass, true);
-
-    //Relationship class which has a class as base class which is not supported
-    ecsql = "DELETE FROM ONLY ecsql.RelSubclassOfNonRel";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
-
-    ecsql = "DELETE FROM ONLY ecsql.RelWithExplicitRelConstraint";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
-
-    ecsql = "DELETE FROM ONLY ecsql.RelWithImplicitRelConstraint";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
-
     //*******************************************************
     // Missing schema prefix / not existing ECClasses / not existing ECProperties
     //*******************************************************

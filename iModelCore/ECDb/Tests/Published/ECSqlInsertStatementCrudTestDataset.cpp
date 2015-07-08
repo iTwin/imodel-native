@@ -348,21 +348,6 @@ ECSqlTestDataset ECSqlInsertTestDataset::IntoTests ()
     ecsql = "INSERT INTO bsm.InstanceCount (ECSchemaName, ECClassName, Count) VALUES ('Foo', 'Goo', 103)";
     ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
 
-    //Class which has a relationship subclass. The latter is unmapped, so testing here that the base class can still be used
-    ecsql = "INSERT INTO ecsql.NonRelBase (I) VALUES (1234)";
-    ECSqlStatementCrudTestDatasetHelper::AddNonSelect (dataset, ecsql, 1);
-
-    //Relationship class which has a class as base class which is not supported
-    ecsql = "INSERT INTO ecsql.RelSubclassOfNonRel (I) VALUES (1234)";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
-
-    ecsql = "INSERT INTO ecsql.RelWithExplicitRelConstraint (SourceECInstanceId, TargetECInstanceId, I) VALUES (1234, 4324, 123)";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
-
-    ecsql = "INSERT INTO ecsql.RelWithImplicitRelConstraint (SourceECInstanceId, TargetECInstanceId, I) VALUES (1234, 4324, 123)";
-    ECSqlStatementCrudTestDatasetHelper::AddPrepareFailing (dataset, ecsql, IECSqlExpectedResult::Category::Invalid);
-
-
     //*******************************************************
     // Missing schema prefix / not existing ECClasses / not existing ECProperties
     //*******************************************************
