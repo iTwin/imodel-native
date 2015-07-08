@@ -1561,3 +1561,51 @@ DgnDbStatus DgnElement::Item::GenerateElementGeometry(GeometricElementR el)
         return DgnDbStatus::NotFound;
     return item->_GenerateElementGeometry(el);
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   BentleySystems
+//---------------------------------------------------------------------------------------
+DgnDbStatus DgnElement::Item::ExecuteEGA(Dgn::DgnElementR el, DPoint3dCR origin, YawPitchRollAnglesCR angles, ECN::IECInstanceCR egaInstance)
+    {
+    ECN::ECClassCR ecclass = egaInstance.GetClass();
+    ECN::IECInstancePtr ca = ecclass.GetCustomAttribute(L"EGASpecifier");
+    if (!ca.IsValid())
+        return DgnDbStatus::NotEnabled;
+
+    ECN::ECValue egaType, egaName, egaInputs;
+    ca->GetValue(egaType, L"Type");
+    ca->GetValue(egaName, L"Name");
+    ca->GetValue(egaInputs, L"Inputs");
+
+    Utf8String tsName(egaName.GetString());
+
+    if (0 != BeStringUtilities::Wcsicmp(L"JavaScript", egaType.GetString()))
+        {
+        // *******************************************************************
+        // *** TBD: Support for other kinds of EGAs (e.g., parametric models)
+        // *******************************************************************
+        BeAssert(false && "TBD - Only JavaScript EGA supported for now.");
+        return DgnDbStatus::NotEnabled;
+        }
+
+    //  ----------------------------------------------------------------------------------
+    //  JavaScript EGA
+    //  ----------------------------------------------------------------------------------
+    Json::Value json(Json::objectValue);
+    if (BSISUCCESS != DgnJavaScriptLibrary::ToJsonFromEC(json, egaInstance, Utf8String(egaInputs.GetString())))
+        return DgnDbStatus::BadArg;
+
+    IDgnJavaScriptObjectModel* js = T_HOST.GetScriptingAdmin().GetIDgnJavaScriptObjectModel();
+    if (nullptr == js)
+        {
+        BeAssert(false && "It is up to the application to initialize the BeJsContext and supply a ScriptingAdmin");
+        return DgnDbStatus::NotEnabled;
+        }
+
+    int retval;
+    BentleyStatus xstatus = js->_ExecuteJavaScriptEga(retval, el, tsName.c_str(), origin, angles, json);
+    if (xstatus != BSISUCCESS)
+        return DgnDbStatus::NotEnabled;
+
+    return (0 == retval)? DgnDbStatus::Success: DgnDbStatus::ElementWriteError;
+    }
