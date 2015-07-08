@@ -27,122 +27,8 @@ enum class ECSqlStepStatus
     };
 
 
-//=======================================================================================
-//! ECSqlEventArgs for the ECSQL events fired when executing an ECSqlStatement
-//! @see ECSqlEventHandler
-//! @see ECSqlStatement::RegisterEventHandler
-//! @ingroup ECDbGroup
-// @bsiclass                                                      Affan.Khan    06/2014
-//+===============+===============+===============+===============+===============+======
-struct ECSqlEventArgs : NonCopyableClass
-    {
-public:
-    typedef bvector<ECInstanceKey> ECInstanceKeyList;
 
-private:
-    ECInstanceKeyList m_instanceKeyList;
 
-//__PUBLISH_CLASS_VIRTUAL__
-
-public:
-//__PUBLISH_SECTION_END__
-    //! Initializes a new ECSqlEventArgs object.
-    ECSqlEventArgs ();
-    //__PUBLISH_SECTION_START__
-
-    ECDB_EXPORT ~ECSqlEventArgs ();
-
-    //! Returns the keys of the ECInstances affected by the event
-    //! @return List of keys of the ECInstances affected 
-    ECDB_EXPORT ECInstanceKeyList const& GetInstanceKeys () const;
-
-    //__PUBLISH_SECTION_END__
-    ECInstanceKeyList& GetInstanceKeysR ();
-    //__PUBLISH_SECTION_START__
-    };
-
-//=======================================================================================
-//! ECSqlEventHandler allows clients to listen to the instances affected by executing
-//! an ECSqlStatement.
-//! This is the abstract base class for client handlers. Clients register the handlers
-//! via ECSqlStatement::RegisterEventHandler.
-//! @ingroup ECDbGroup
-// @bsiclass                                                      Affan.Khan    06/2014
-//+===============+===============+===============+===============+===============+======
-struct EXPORT_VTABLE_ATTRIBUTE ECSqlEventHandler
-    {
-public:
-    //=======================================================================================
-    //! Type of the event fired when executing an ECSqlStatement
-    // @bsiclass                                                          Affan.Khan  07/2014
-    //+===============+===============+===============+===============+===============+======
-    enum class EventType
-        {
-        Insert, //!< When an ECSQL INSERT statement was executed
-        Update, //!< When an ECSQL UPDATE statement was executed
-        Delete //!< When an ECSQL DELETE statement was executed
-        };
-
-private:
-    //! Call back called by ECSqlStatement when an event was fired.
-    //! @param[in] eventType Type of the event fired
-    //! @param[in] args EventArgs that contain changeset of the changes 
-    //! caused or will be caused by last CRUD operation.
-    ECDB_EXPORT virtual void _OnEvent (EventType eventType, ECSqlEventArgs const& args) = 0;
-
-protected:
-    //! Initializes a new ECSqlEventHandler object.
-    ECDB_EXPORT ECSqlEventHandler ();
-
-public:
-    ECDB_EXPORT virtual ~ECSqlEventHandler ();
-
-    //__PUBLISH_SECTION_END__
-    //! Calls the handler (only used by ECDb).
-    //! @param[in] eventType Type of the event fired
-    //! @param[in] args EventArgs that contain changeset of the changes caused or will be caused by last CRUD operation.
-    void OnEvent (EventType eventType, ECSqlEventArgs const& args);
-    //__PUBLISH_SECTION_START__
-    };
-
-//=======================================================================================
-//! DefaultECSqlEventHandler is a default implementation of an ECSqlEventHandler that
-//! is built into the ECSqlStatement.
-//! @see ECSqlStatement::EnableDefaultEventHandler
-//! @ingroup ECDbGroup
-// @bsiclass                                                     Krischan.Eberle  02/2015
-//+===============+===============+===============+===============+===============+======
-struct EXPORT_VTABLE_ATTRIBUTE DefaultECSqlEventHandler : ECSqlEventHandler
-    {
-private:
-    EventType m_eventType;
-    mutable ECSqlEventArgs const* m_args;
-
-    ECDB_EXPORT virtual void _OnEvent(EventType eventType, ECSqlEventArgs const& args) override;
-    
-    //__PUBLISH_SECTION_END__
-public:
-    //! Instantiates a new DefaultECSqlEventHandler
-    DefaultECSqlEventHandler();
-
-    //__PUBLISH_CLASS_VIRTUAL__
-    //__PUBLISH_SECTION_START__
-public:
-    ~DefaultECSqlEventHandler() {}
-
-    //! Gets the ECSQL type of the last event caught by this handler.
-    //! @return ECSQL type of last event
-    EventType GetEventType() const { return m_eventType; }
-
-    //! Gets the event args of the last event caught by this handler.
-    //! @return Event args of last even or nullptr if no even has been caught by this handler yet.
-    ECSqlEventArgs const* GetArgs() const { return m_args; }
-    
-    //! Gets the number of instances affected by the last ECSQL event caught by this handler.
-    //! @remarks Returns a negative number if no ECSQL event has been caught by this handler yet.
-    //! @return number of instances affected
-    ECDB_EXPORT int GetInstancesAffectedCount() const;
-    };
 
 //=======================================================================================
 //! ECSqlStatement is used to perform Create, Read, Update, Delete operations (@b CRUD) 
@@ -536,38 +422,7 @@ public:
     ECDB_EXPORT Utf8String GetLastStatusMessage () const;
     //! @}
 
-    //! @name Event Handling
-    //! @{
 
-    //! Registers an ECSqlEventHandler.
-    //! @remarks ECSqlEventHandler provide a way for clients to listen to changes performed by executing the ECSqlStatement.
-    //! @note ECSqlStatement does not take over ownership of the handler. Callers are responsible for ensuring
-    //! that the handler remains valid as long as it is registered with the ECSqlStatement.
-    //! @param[in] handler EventHandler to register
-    ECDB_EXPORT void RegisterEventHandler (ECSqlEventHandler& handler);
-
-    //! Unregisters a ECSqlEventHandler.
-    //! @param[in] handler Removes the given handler from the statement.
-    //! @return ECSqlStatus::Success if unregistration was successful. Error codes otherwise
-    ECDB_EXPORT ECSqlStatus UnregisterEventHandler (ECSqlEventHandler& handler);
-
-    //! Unregisters all event handlers, including the DefaultECSqlEventHandler if it was enabled.
-    ECDB_EXPORT void UnregisterAllEventHandlers ();
-
-    //! Enables the default ECSqlEventHandler so that it starts listening to ECSqlStatement events.
-    //! @see ECSqlStatement::GetDefaultEventHandler
-    ECDB_EXPORT void EnableDefaultEventHandler();
-    
-    //! Disables the default ECSqlEventHandler.
-    ECDB_EXPORT void DisableDefaultEventHandler();
-
-    //! Gets the default ECSqlEventHandler.
-    //! @remarks Only call this if you enabled it before via ECSqlStatement::EnableDefaultEventHandler. Otherwise
-    //! this method will return nullptr.
-    //! @return default ECSqlEventHandler or nullptr if the default event handler hasn't been enabled.
-    ECDB_EXPORT DefaultECSqlEventHandler const* GetDefaultEventHandler () const;
-
-    //! @}
 
 //__PUBLISH_SECTION_END__
 

@@ -123,7 +123,7 @@ void ECSqlCommand::ExecuteInsert (ECSqlStatement& statement) const
 //---------------------------------------------------------------------------------------
 void ECSqlCommand::ExecuteUpdateOrDelete (ECSqlStatement& statement) const
     {
-    statement.EnableDefaultEventHandler ();
+  
     ECSqlStepStatus stepStat = statement.Step ();
 
     if (stepStat != ECSqlStepStatus::Done)
@@ -132,7 +132,7 @@ void ECSqlCommand::ExecuteUpdateOrDelete (ECSqlStatement& statement) const
         return;
         }
 
-    Console::WriteLine ("%d instances affected.", statement.GetDefaultEventHandler ()->GetInstancesAffectedCount ());
+    
     }
 
 //---------------------------------------------------------------------------------------

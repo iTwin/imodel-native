@@ -317,70 +317,6 @@ ECSqlStatus ECSqlStatementBase::FailIfWrongType (ECSqlType expectedType, Utf8CP 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        07/14
 //---------------------------------------------------------------------------------------
-void ECSqlStatementBase::RegisterEventHandler (ECSqlEventHandler& eventHandler)
-    {
-    GetEventManagerR ().RegisterEventHandler (eventHandler);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle        07/14
-//---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlStatementBase::UnregisterEventHandler (ECSqlEventHandler& eventHandler)
-    {
-    return GetEventManagerR ().UnregisterEventHandler (eventHandler);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle        07/14
-//---------------------------------------------------------------------------------------
-void ECSqlStatementBase::UnregisterAllEventHandlers ()
-    {
-    GetEventManagerR ().UnregisterAllEventHandlers ();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle        02/15
-//---------------------------------------------------------------------------------------
-void ECSqlStatementBase::EnableDefaultEventHandler()
-    {
-    GetEventManagerR().ToggleDefaultEventHandler(true);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle        02/15
-//---------------------------------------------------------------------------------------
-void ECSqlStatementBase::DisableDefaultEventHandler()
-    {
-    GetEventManagerR().ToggleDefaultEventHandler(false);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle        02/15
-//---------------------------------------------------------------------------------------
-DefaultECSqlEventHandler const* ECSqlStatementBase::GetDefaultEventHandler() const
-    {
-    return GetEventManager().GetDefaultEventHandler();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan           06/14
-//---------------------------------------------------------------------------------------
-ECSqlEventManager& ECSqlStatementBase::GetEventManagerR () 
-    {
-    return m_eventManager;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan           06/14
-//---------------------------------------------------------------------------------------
-ECSqlEventManager const& ECSqlStatementBase::GetEventManager () const
-    {
-    return m_eventManager;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle        07/14
-//---------------------------------------------------------------------------------------
 ECSqlStatusContext& ECSqlStatementBase::GetStatusContextR () const
     {
     BeAssert (m_statusContext != nullptr);
@@ -395,19 +331,19 @@ ECSqlPreparedStatement& ECSqlStatementBase::CreatePreparedStatement (ECDbCR ecdb
     switch (parseTree.GetType ())
         {
         case Exp::Type::Select:
-            m_preparedStatement = unique_ptr<ECSqlPreparedStatement> (new ECSqlSelectPreparedStatement (ecdb, GetEventManagerR (), GetStatusContextR ()));
+            m_preparedStatement = unique_ptr<ECSqlPreparedStatement> (new ECSqlSelectPreparedStatement (ecdb, GetStatusContextR ()));
             break;
 
         case Exp::Type::Insert:
-            m_preparedStatement = unique_ptr<ECSqlPreparedStatement> (new ECSqlInsertPreparedStatement (ecdb, GetEventManagerR (), GetStatusContextR ()));
+            m_preparedStatement = unique_ptr<ECSqlPreparedStatement> (new ECSqlInsertPreparedStatement (ecdb, GetStatusContextR ()));
             break;
 
         case Exp::Type::Update:
-            m_preparedStatement = unique_ptr<ECSqlPreparedStatement> (new ECSqlUpdatePreparedStatement (ecdb, GetEventManagerR (), GetStatusContextR ()));
+            m_preparedStatement = unique_ptr<ECSqlPreparedStatement> (new ECSqlUpdatePreparedStatement (ecdb, GetStatusContextR ()));
             break;
 
         case Exp::Type::Delete:
-            m_preparedStatement = unique_ptr<ECSqlPreparedStatement> (new ECSqlDeletePreparedStatement (ecdb, GetEventManagerR (), GetStatusContextR ()));
+            m_preparedStatement = unique_ptr<ECSqlPreparedStatement> (new ECSqlDeletePreparedStatement (ecdb, GetStatusContextR ()));
             break;
 
         default:

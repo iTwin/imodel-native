@@ -154,7 +154,7 @@ TEST(ECDbFileInfo, ECFEmbeddedFileBackedInstanceSupport)
 
     ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stmt.Step());
     stmt.Finalize();
-
+    
     //RETRIEVE scenario
     ASSERT_EQ((int)ECSqlStatus::Success, (int)stmt.Prepare(ecdb, "SELECT fi.Name, fi.LastModified, fi.ECInstanceId FROM ts.Foo f JOIN ecdbf.EmbeddedFileInfo fi USING ecdbf.InstanceHasFileInfo "
         "WHERE f.ECInstanceId = ?"));
@@ -178,16 +178,18 @@ TEST(ECDbFileInfo, ECFEmbeddedFileBackedInstanceSupport)
     ASSERT_EQ(BE_SQLITE_OK, embeddedFileTable.Export(exportFilePath.GetNameUtf8().c_str(), testFileName));
 
     stmt.Finalize();
-
+    ecdb.SaveChanges ();
     //DELETE scenario
-    stmt.EnableDefaultEventHandler();
+    //TODO_ROWAFFECTED
+    //stmt.EnableDefaultEventHandler();
     ASSERT_EQ((int)ECSqlStatus::Success, (int)stmt.Prepare(ecdb, "DELETE FROM ONLY ts.Foo WHERE ECInstanceId = ?"));
     ASSERT_EQ((int)ECSqlStatus::Success, (int)stmt.BindId(1, fooKey.GetECInstanceId()));
     ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stmt.Step());
     //check referential integrity
-    ASSERT_EQ(3, stmt.GetDefaultEventHandler()->GetInstancesAffectedCount()); //1 Foo, 1 EmbeddedFileInfo, 1 InstanceHasFileInfo
+    //TODO_ROWAFFECTED
+    //ASSERT_EQ(3, stmt.GetDefaultEventHandler()->GetInstancesAffectedCount()); //1 Foo, 1 EmbeddedFileInfo, 1 InstanceHasFileInfo
     stmt.Finalize();
-
+ 
     ASSERT_EQ((int)ECSqlStatus::Success, (int)stmt.Prepare(ecdb, "SELECT NULL FROM ecdbf.InstanceHasFileInfo LIMIT 1"));
     ASSERT_EQ((int)ECSqlStepStatus::Done, (int)stmt.Step());
     stmt.Finalize();

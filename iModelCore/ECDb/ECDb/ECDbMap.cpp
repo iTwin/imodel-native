@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 * @bsimethod                                                    Casey.Mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECDbMap::ECDbMap (ECDbR ecdb) 
-: m_ecdb(ecdb), m_classMapLoadAccessCounter(0), m_ecdbSqlManager(ecdb), m_mapContext(nullptr)
+: m_ecdb (ecdb), m_classMapLoadAccessCounter (0), m_ecdbSqlManager (ecdb), m_mapContext (nullptr), m_lightWeightMapCache (*this)
     {}
 
 //----------------------------------------------------------------------------------------
@@ -164,14 +164,14 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext const& schemaImportContext, b
         {
         if (!key.second->GetMapStrategy ().IsNotMapped ())
             {
-            if (key.second->GetClass ().GetIsCustomAttributeClass ())
-                continue;
+
 
             classMaps.insert (key.second.get ());
             }
         }
 
     SqlGenerator viewGen (*this);
+    GetLightWeightMapCacheR ().Load (true);
     if (viewGen.BuildViewInfrastructure (classMaps) != BentleyStatus::SUCCESS)
         {
         BeAssert ( false && "failed to create view infrastructure");
@@ -594,7 +594,7 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (Utf8CP tableName, bool isVirtual, Utf8
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-MappedTableP ECDbMap::GetMappedTable (ClassMapCR classMap, bool createMappedTableEntryIfNotFound)//ECDB_TODO this funtion name should be GetOrAddMappedTable()
+MappedTableP ECDbMap::GetMappedTable (ClassMapCR classMap, bool createMappedTableEntryIfNotFound)//ECDB_TODO this function name should be GetOrAddMappedTable()
     {
     BeMutexHolder lock (m_criticalSection);
 
@@ -875,5 +875,355 @@ bool ECDbMap::MapContext::TryGetClassIdToIndex (ECClassId& classId, ECDbSqlIndex
     return true;
     }
 
+//************************************************************************************
+// LightWeightMapCache
+//************************************************************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      07/2015
+//---------------------------------------------------------------------------------------
+void ECDbMap::LightWeightMapCache::LoadClassTableClasses () const
+    {
+    if (m_loadedFlags.m_classIdsByTableIsLoaded)
+        return;
+
+    Utf8CP sql0 =
+        "SELECT ec_Table.Id, ec_Class.Id ClassId, ec_Table.Name TableName "
+        "     FROM ec_PropertyMap  "
+        "         JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND ec_Column.UserData != 2 "
+        "         JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
+        "         JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
+        "         JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId  "
+        "         JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
+        "     WHERE ec_ClassMap.MapStrategy NOT IN (0x2000, 0x4000) "
+        "    GROUP BY  ec_Table.Id, ec_Class.Id ";
+
+    auto stmt = m_map.GetECDbR ().GetCachedStatement (sql0);
+    ECDbTableId currentTableId = -1;
+    ECDbSqlTable const* currentTable;
+    while (stmt->Step () == BE_SQLITE_ROW)
+        {
+        auto tableId = stmt->GetValueInt64 (0);
+        ECClassId id = stmt->GetValueInt64 (1);
+        if (currentTableId != tableId)
+            {
+            Utf8CP tableName = stmt->GetValueText (2);
+            currentTable = m_map.GetSQLManager ().GetDbSchema ().FindTable (tableName);
+            currentTableId = tableId;
+            BeAssert (currentTable != nullptr);
+            }
+
+        m_classIdsByTable[currentTable].push_back (id);
+        }
+
+    m_loadedFlags.m_classIdsByTableIsLoaded = true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      07/2015
+//---------------------------------------------------------------------------------------
+void ECDbMap::LightWeightMapCache::LoadAnyClassRelationships () const
+    {
+    if (m_loadedFlags.m_anyClassRelationshipsIsLoaded)
+        return;
+
+    Utf8CP sql1 =
+        " SELECT"
+        "       RCC.ClassId,"
+        "       RCC.RelationshipEnd"
+        " FROM ec_RelationshipConstraintClass RCC"
+        " WHERE RCC.RelationClassId IN (SELECT Id FROM ec_Class WHERE Name = 'AnyClass')";
+
+    auto stmt1 = m_map.GetECDbR ().GetCachedStatement (sql1);
+    while (stmt1->Step () == BE_SQLITE_ROW)
+        {
+        ECClassId id = stmt1->GetValueInt64 (0);
+        RelationshipEnd filter = stmt1->GetValueInt (1) == 0 ? RelationshipEnd::Source : RelationshipEnd::Target;
+
+        auto itor = m_anyClassRelationships.find (id);
+        if (itor == m_anyClassRelationships.end ())
+            m_anyClassRelationships.insert (make_bpair (id, filter));
+        else
+            {
+            m_anyClassRelationships[id] = static_cast<RelationshipEnd>((int)(itor->second) & (int)(filter));
+            }
+        }
+
+    m_loadedFlags.m_anyClassRelationshipsIsLoaded = true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      07/2015
+//---------------------------------------------------------------------------------------
+void ECDbMap::LightWeightMapCache::LoadAnyClassReplacements () const
+    {
+    if (m_loadedFlags.m_anyClassReplacementsLoaded)
+        return;
+
+    Utf8CP sql1 =
+        "SELECT ec_Class.Id "
+        "  FROM ec_PropertyMap "
+        "       JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId "
+        "       JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
+        "       JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
+        "       JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId  "
+        "       JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
+        "WHERE ec_ClassMap.MapStrategy NOT IN (0, 1, 2) AND ec_Class.IsRelationship = 0 AND ec_Table.IsVirtual = 0 "
+        "GROUP BY  ec_Class.Id ";
+
+
+    auto stmt1 = m_map.GetECDbR ().GetCachedStatement (sql1);
+    while (stmt1->Step () == BE_SQLITE_ROW)
+        {
+        ECClassId id = stmt1->GetValueInt64 (0);
+        m_anyClassReplacements.push_back (id);
+        }
+
+    m_loadedFlags.m_anyClassReplacementsLoaded = true;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      07/2015
+//---------------------------------------------------------------------------------------
+void ECDbMap::LightWeightMapCache::LoadClassRelationships (bool addAnyClassRelationships) const
+    {
+    if (m_loadedFlags.m_relationshipEndsByClassIdIsLoaded)
+        return;
+
+    Utf8CP sql0 =
+        "WITH RECURSIVE "
+        "  DerivedClassList(RelationshipClassId, RelationshipEnd, IsPolymorphic, CurrentClassId, DerivedClassId) "
+        "  AS ( "
+        "      SELECT "
+        "            RCC.ClassId, "
+        "            RCC.RelationshipEnd, "
+        "            RC.IsPolymorphic, "
+        "            RCC.RelationClassId, "
+        "            RCC.RelationClassId "
+        "      FROM ec_RelationshipConstraintClass RCC "
+        "      INNER JOIN ec_RelationshipConstraint RC "
+        "            ON RC.ClassId = RCC.ClassId AND RC.RelationshipEnd = RCC.[RelationshipEnd] "
+        "    UNION "
+        "        SELECT DCL.RelationshipClassId, DCL.RelationshipEnd, DCL.IsPolymorphic, BC.BaseClassId, BC.ClassId "
+        "            FROM DerivedClassList DCL "
+        "        INNER JOIN ec_BaseClass BC ON BC.BaseClassId = DCL.DerivedClassId "
+        "        WHERE IsPolymorphic = 1 "
+        "  ) "
+        "  SELECT DerivedClassId, "
+        "         RelationshipClassId, "
+        "         RelationshipEnd "
+        "  FROM DerivedClassList ";
+
+
+    auto stmt0 = m_map.GetECDbR ().GetCachedStatement (sql0);
+    while (stmt0->Step () == BE_SQLITE_ROW)
+        {
+        ECClassId id = stmt0->GetValueInt64 (0);
+        ECClassId relationshipId = stmt0->GetValueInt64 (1);
+        RelationshipEnd filter = stmt0->GetValueInt (2) == 0 ? RelationshipEnd::Source : RelationshipEnd::Target;;
+        auto itor = m_relationshipEndsByClassId.find (id);
+        if (itor == m_relationshipEndsByClassId.end ())
+            {
+            m_relationshipEndsByClassId[id][relationshipId] = filter;
+            }
+        else
+            {
+            auto& rels = itor->second;
+            auto itor1 = rels.find (relationshipId);
+            if (itor1 == rels.end ())
+                {
+                rels[relationshipId] = filter;
+                }
+            else
+                {
+                rels[relationshipId] = static_cast<RelationshipEnd>((int)(itor1->second) & (int)(filter));
+                }
+            }
+        }
+
+    if (addAnyClassRelationships)
+        {
+        LoadAnyClassRelationships ();
+        LoadAnyClassReplacements ();
+        for (auto classId : m_anyClassReplacements)
+            {
+            auto& rels = m_relationshipEndsByClassId[classId];
+            for (auto& pair1 : m_anyClassRelationships)
+                {
+                ECClassId id = pair1.first;
+                auto itor1 = rels.find (id);
+                if (itor1 == rels.end ())
+                    {
+                    rels[id] = pair1.second;
+                    }
+                else
+                    {
+                    rels[id] = static_cast<RelationshipEnd>((int)(itor1->second) & (int)(pair1.second));
+                    }
+                }
+            }
+        }
+
+    m_loadedFlags.m_relationshipEndsByClassIdIsLoaded = true;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      07/2015
+//---------------------------------------------------------------------------------------
+void ECDbMap::LightWeightMapCache::LoadDerivedClasses ()  const
+    {
+    if (m_loadedFlags.m_tablesByClassIdIsLoaded)
+        return;
+
+    auto anyClassId = GetAnyClassId ();
+    Utf8CP sql0 =
+        "WITH RECURSIVE  "
+        "   DerivedClassList(RootClassId, CurrentClassId, DerivedClassId) "
+        "   AS ( "
+        "       SELECT Id, Id, Id FROM ec_Class "
+        "   UNION  "
+        "       SELECT RootClassId,  BC.BaseClassId, BC.ClassId "
+        "           FROM DerivedClassList DCL  "
+        "       INNER JOIN ec_BaseClass BC ON BC.BaseClassId = DCL.DerivedClassId "
+        "   ), "
+        "   TableMapInfo "
+        "   AS ( "
+        "   SELECT  ec_Class.Id ClassId, ec_Table.Name TableName "
+        "   FROM ec_PropertyMap  "
+        "       JOIN ec_Column ON ec_Column.Id = ec_PropertyMap.ColumnId AND ec_Column.UserData != 2 "
+        "       JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
+        "       JOIN ec_ClassMap ON ec_ClassMap.Id = ec_PropertyMap.ClassMapId "
+        "       JOIN ec_Class ON ec_Class.Id = ec_ClassMap.ClassId  "
+        "       JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
+        "   WHERE ec_ClassMap.MapStrategy NOT IN (0x2000, 0x4000) "
+        "  GROUP BY  ec_Class.Id , ec_Table.Name "
+        "   )  "
+        "SELECT  DCL.RootClassId, DCL.DerivedClassId, TMI.TableName FROM DerivedClassList DCL  "
+        "   INNER JOIN TableMapInfo TMI ON TMI.ClassId = DCL.DerivedClassId ORDER BY DCL.RootClassId, TMI.TableName,DCL.DerivedClassId";
+
+    auto stmt = m_map.GetECDbR ().GetCachedStatement (sql0);
+    // auto currentTableId = -1;
+    //ECDbSqlTable const* currentTable;
+;
+    while (stmt->Step () == BE_SQLITE_ROW)
+        {
+        auto rootClassId = stmt->GetValueInt64 (0);
+        auto derivedClassId = stmt->GetValueInt64 (1);
+        if (anyClassId == rootClassId)
+            continue;
+
+        Utf8CP tableName = stmt->GetValueText (2);
+        auto table = m_map.GetSQLManager ().GetDbSchema ().FindTable (tableName);
+        BeAssert (table != nullptr);
+        auto& ids = m_tablesByClassId[rootClassId][table];
+        if (derivedClassId == rootClassId)
+            {
+            ids.insert (ids.begin (), derivedClassId);
+            }
+        else
+            ids.push_back (derivedClassId);
+        }
+
+    m_loadedFlags.m_tablesByClassIdIsLoaded = true;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      07/2015
+//--------------------------------------------------------------------------------------
+ECN::ECClassId ECDbMap::LightWeightMapCache::GetAnyClassId () const
+    {
+    if (m_anyClass == 0LL)
+        {
+        auto stmt = m_map.GetECDbR ().GetCachedStatement ("SELECT ec_Class.Id FROM ec_Class INNER JOIN ec_Schema ON ec_Schema.Id = ec_Class.SchemaId WHERE ec_Class.Name = 'AnyClass' AND ec_Schema.Name = 'Bentley_Standard_Classes'");
+        if (stmt->Step () == BE_SQLITE_ROW)
+            {
+            m_anyClass = stmt->GetValueInt64 (0);
+            }
+        }
+
+    return m_anyClass;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      07/2015
+//---------------------------------------------------------------------------------------
+ECDbMap::LightWeightMapCache::ClassRelationshipEnds const& ECDbMap::LightWeightMapCache::GetClassRelationships (ECN::ECClassId classId) const
+    {
+    LoadClassRelationships (true);
+    return m_relationshipEndsByClassId[classId];
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      07/2015
+//---------------------------------------------------------------------------------------
+ECDbMap::LightWeightMapCache::ClassRelationshipEnds const& ECDbMap::LightWeightMapCache::GetAnyClassRelationships () const
+    {
+    LoadAnyClassRelationships ();
+    return m_anyClassRelationships;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      07/2015
+//---------------------------------------------------------------------------------------
+ECDbMap::LightWeightMapCache::ClassIds const& ECDbMap::LightWeightMapCache::GetClassesMapToTable (ECDbSqlTable const& table) const
+    {
+    LoadClassTableClasses ();
+    return m_classIdsByTable[&table];
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      07/2015
+//---------------------------------------------------------------------------------------
+ECDbMap::LightWeightMapCache::ClassIds const& ECDbMap::LightWeightMapCache::GetAnyClassReplacements () const
+    {
+    LoadAnyClassReplacements ();
+    return m_anyClassReplacements;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      07/2015
+//---------------------------------------------------------------------------------------
+ECDbMap::LightWeightMapCache::TableClasses const& ECDbMap::LightWeightMapCache::GetTablesMapToClass (ECN::ECClassId classId) const
+    {
+    LoadDerivedClasses ();
+    return m_tablesByClassId[classId];
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      07/2015
+//---------------------------------------------------------------------------------------
+void ECDbMap::LightWeightMapCache::Load (bool forceReload)
+    {
+    if (forceReload)
+        Reset ();
+    
+    LoadAnyClassRelationships ();
+    LoadClassRelationships (true);
+    LoadClassTableClasses ();
+    LoadDerivedClasses ();
+    LoadAnyClassRelationships ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      07/2015
+//---------------------------------------------------------------------------------------
+void ECDbMap::LightWeightMapCache::Reset ()
+    {
+    m_loadedFlags.m_anyClassRelationshipsIsLoaded = 
+        m_loadedFlags.m_classIdsByTableIsLoaded =
+        m_loadedFlags.m_relationshipEndsByClassIdIsLoaded =
+        m_loadedFlags.m_anyClassReplacementsLoaded = 
+        m_loadedFlags.m_tablesByClassIdIsLoaded = false;
+
+    m_anyClass = 0LL;
+    m_relationshipEndsByClassId.clear ();
+    m_tablesByClassId.clear ();
+    m_classIdsByTable.clear ();
+    m_anyClassRelationships.clear ();
+    m_anyClassReplacements.clear ();
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      07/2015
+//---------------------------------------------------------------------------------------
+ECDbMap::LightWeightMapCache::LightWeightMapCache (ECDbMapCR map)
+: m_map (map)
+    {
+    Reset ();
+    }
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

@@ -2,7 +2,7 @@
 |
 |     $Source: ECSqlConsole/ECSqlConsole.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <windows.h>
@@ -194,7 +194,8 @@ void ECSqlConsole::RunCommand (Utf8CP cmd)
     StopWatch executionTimer (true);
     command->Run (GetSession (), args);
     executionTimer.Stop ();
-    Console::WriteLine ("\r\n[Execution Time: %.4f seconds]", executionTimer.GetElapsedSeconds ());
+    Console::WriteLine ("\r\n[Sqlite rows modified: %d]", GetSession().GetECDb().GetModifiedRowCount());
+    Console::WriteLine ("[Execution Time: %.4f seconds]", executionTimer.GetElapsedSeconds ());
 
     //Add command to history (except history command itself)
     if (dynamic_cast<HistoryCommand const*> (command) == nullptr)

@@ -948,43 +948,6 @@ BentleyStatus ECDb_ECSqlAndCustomSQLiteFunctions()
     return SUCCESS;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   01/15
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb_ECSqlInstancesAffected ()
-    {
-    ECDb ecdb;
-
-    //__PUBLISH_EXTRACT_START__ Overview_ECDb_ECSqlInstancesAffected.sampleCode
-
-    // Prepare statement
-    ECSqlStatement statement;
-    ECSqlStatus stat = statement.Prepare (ecdb, "DELETE FROM ONLY stco.Computer WHERE WarrantyExpiryDate < CURRENT_DATE");
-    if (stat != ECSqlStatus::Success)
-        {
-        // do error handling here...
-        return ERROR;
-        }
-
-    // Enable the default event handler which reports the instances deleted
-    // (Could be done before the call to Prepare, too)
-    statement.EnableDefaultEventHandler ();
-
-    // Execute statement which calls the handler
-    ECSqlStepStatus stepStat = statement.Step ();
-    if (stepStat != ECSqlStepStatus::Done)
-        {
-        // do error handling here...
-        return ERROR;
-        }
-
-    //now do something with the count
-    printf("%d computers which no longer have warranty were deleted from the inventory system.", statement.GetDefaultEventHandler ()->GetInstancesAffectedCount());
-
-    //__PUBLISH_EXTRACT_END__
-    return SUCCESS;
-    }
-
 #ifdef WIP_MERGE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   04/15

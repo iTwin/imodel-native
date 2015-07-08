@@ -123,6 +123,6 @@ int wmain (int argc, WCharP argv[])
         }
 
     //set customized assert handler as default handler causes exception which makes console crash.
-    //BeAssertFunctions::SetBeAssertHandler (ECSqlConsoleBeAssertHandler);
+    BeAssertFunctions::SetBeAssertHandler (ECSqlConsoleBeAssertHandler);
     return ECSqlConsole::Run( argc, argv);
     }

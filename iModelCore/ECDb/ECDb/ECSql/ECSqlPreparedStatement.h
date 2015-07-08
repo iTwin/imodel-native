@@ -18,7 +18,7 @@
 #include "ECSqlStatusContext.h"
 #include "DynamicSelectClauseECClass.h"
 #include "ECSqlStepTask.h"
-#include "ECSqlEventManager.h"
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
@@ -30,7 +30,7 @@ struct ECSqlPreparedStatement : NonCopyableClass
     {
 private:
     ECSqlType m_type;
-    ECSqlEventManager& m_eventManager;
+
     ECDbCP m_ecdb;
     Utf8String m_ecsql;
     mutable BeSQLite::Statement m_sqliteStatement;
@@ -43,7 +43,7 @@ private:
     virtual ECSqlStatus _Reset () = 0;
 
 protected:
-    ECSqlPreparedStatement (ECSqlType statementType, ECDbCR ecdb, ECSqlEventManager& eventManager, ECSqlStatusContext& statusContext);
+    ECSqlPreparedStatement (ECSqlType statementType, ECDbCR ecdb, ECSqlStatusContext& statusContext);
 
     void OnBeforeStep();
 
@@ -63,8 +63,6 @@ public:
     virtual ~ECSqlPreparedStatement () {}
 
 
-    ECSqlEventManager const& GetEventManager () const { return m_eventManager; }
-    ECSqlEventManager& GetEventManagerR () { return m_eventManager; }
 
     ECSqlType GetType () const { return m_type; }
 
@@ -104,8 +102,8 @@ private:
     ECSqlStatus InitFields () const;
 
 public:
-    ECSqlSelectPreparedStatement (ECDbCR ecdb, ECSqlEventManager& eventManager, ECSqlStatusContext& statusContext)
-        : ECSqlPreparedStatement (ECSqlType::Select, ecdb, eventManager, statusContext)
+    ECSqlSelectPreparedStatement (ECDbCR ecdb, ECSqlStatusContext& statusContext)
+        : ECSqlPreparedStatement (ECSqlType::Select, ecdb, statusContext)
         {}
 
     ~ECSqlSelectPreparedStatement () {}
@@ -132,15 +130,15 @@ private:
     ECSqlStepTask::Collection m_stepTasks;
 
 protected:
-    ECSqlNonSelectPreparedStatement (ECSqlType statementType, ECDbCR ecdb, ECSqlEventManager& eventManager, ECSqlStatusContext& statusContext)
-        :ECSqlPreparedStatement (statementType, ecdb, eventManager, statusContext), m_stepTasks (eventManager)
+    ECSqlNonSelectPreparedStatement (ECSqlType statementType, ECDbCR ecdb, ECSqlStatusContext& statusContext)
+        :ECSqlPreparedStatement (statementType, ecdb, statusContext), m_stepTasks ()
         {}
 
-    virtual ECSqlEventHandler::EventType _GetEventType () const = 0;
+
     virtual ECSqlStatus _Reset () override;
 
 public:
-    ECSqlEventHandler::EventType GetEventType () const { return _GetEventType (); }
+
     virtual ~ECSqlNonSelectPreparedStatement () {}
     ECSqlStepTask::Collection& GetStepTasks () { return m_stepTasks; }
     };
@@ -192,10 +190,10 @@ public:
 private:
     ECInstanceKeyInfo m_ecInstanceKeyInfo;
     ECSqlStatus GenerateECInstanceIdAndBindToInsertStatement (ECInstanceId& generatedECInstanceId);
-    virtual ECSqlEventHandler::EventType _GetEventType () const override { return ECSqlEventHandler::EventType::Insert; }
+  
 
 public:
-    ECSqlInsertPreparedStatement (ECDbCR ecdb, ECSqlEventManager& eventManager, ECSqlStatusContext& statusContext);
+    ECSqlInsertPreparedStatement (ECDbCR ecdb, ECSqlStatusContext& statusContext);
 
     ~ECSqlInsertPreparedStatement () {}
 
@@ -215,10 +213,9 @@ public:
 struct ECSqlUpdatePreparedStatement : public ECSqlNonSelectPreparedStatement
     {
 private:
-    virtual ECSqlEventHandler::EventType _GetEventType () const override { return ECSqlEventHandler::EventType::Update; }
 
 public:
-    ECSqlUpdatePreparedStatement (ECDbCR ecdb, ECSqlEventManager& eventManager, ECSqlStatusContext& statusContext);
+    ECSqlUpdatePreparedStatement (ECDbCR ecdb, ECSqlStatusContext& statusContext);
     ~ECSqlUpdatePreparedStatement () {}
 
     ECSqlStepStatus Step ();
@@ -233,10 +230,10 @@ public:
 struct ECSqlDeletePreparedStatement : public ECSqlNonSelectPreparedStatement
     {
 private:
-    virtual ECSqlEventHandler::EventType _GetEventType () const override { return ECSqlEventHandler::EventType::Delete; }
+   
 
 public:
-    ECSqlDeletePreparedStatement (ECDbCR ecdb, ECSqlEventManager& eventManager, ECSqlStatusContext& statusContext);
+    ECSqlDeletePreparedStatement (ECDbCR ecdb, ECSqlStatusContext& statusContext);
     ~ECSqlDeletePreparedStatement () {}
 
     ECSqlStepStatus Step ();
