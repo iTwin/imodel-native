@@ -2397,6 +2397,23 @@ double BeStringUtilities::Wtof (wchar_t const* s)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BeStringUtilities::Memmove (void *dest, size_t numberOfElements, const void *src, size_t count)
+    {
+#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
+    return memmove_s (dest, numberOfElements, src, count) == 0? SUCCESS: ERROR;
+#elif defined (__unix__)
+    if (NULL == dest || NULL == src || numberOfElements < count)
+        return ERROR;
+    memmove (dest, src, count);
+    return SUCCESS;
+#else
+#error unknown runtime
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/2011
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus BeStringUtilities::Wmemmove (wchar_t *dest, size_t numberOfElements, const wchar_t *src, size_t count)
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)

@@ -57,6 +57,19 @@ enum class HexFormatOptions
 //!    specific functions.  They are all buffer-overrun safe.
 //!  There are also methods for parsing arguments that may be quoted, and for extracting
 //!    common username and computername information.
+//!
+//! Here is a general guide to the Bentley portability API:
+//!     * memcpy                    - BeStringUtilities::Memcpy
+//!     * Printf/scanf              - BeStringUtilities, WString/Utf8String
+//!     * Integer-string conversion - BeStringUtilities
+//!     * string-manipulation       - BeStringUtilities.
+//!     * character conversion      - BeStringUtilities.
+//!     * Time functions            - Bentley::DateTime, BeTimeUtilities
+//!     * file IO                   - BeFile, BeFileName, BeFileListIterator, BeDirectoryIterator
+//!     * character file IO           Not available.
+//!     * tmpfile/tmpname           - DgnPlatformLib::QueryHost()->GetIKnownLocationsAdmin
+//!     * get/setenv                - Not portable and must not be used at all. Must provide DgnPlatformLib::Host-based admins for specific needs.
+//!     * malloc                    - Should rarely be used. Instead, use bvector, ScopedArray, and C++ new
 //! @ingroup BeStringGroup
 //=======================================================================================
 struct BeStringUtilities : public NonCopyableClass
@@ -468,6 +481,14 @@ public:
     //! Equivalent to _itow_s
     //! @remarks Note that output argument is first!
     BENTLEYDLL_EXPORT static BentleyStatus Itow (wchar_t* buffer, int value, size_t sizeInCharacters, int radix);
+
+    //! Move a block of memory measured in wchar_t's. The dest and src buffers can overlap.
+    //! @param[in] dest     The output buffer
+    //! @param[in] numberOfElements The number of bytes that \a dest can hold.
+    //! @param[in] src      The input buffer
+    //! @param[in] count    The number of bytes to copy 
+    //! @return non-zero error status if (NULL == dest || NULL == src || numberOfElements < count)
+    BENTLEYDLL_EXPORT static BentleyStatus Memmove (void *dest, size_t numberOfElements, const void *src, size_t count);
 
     //! Move a block of memory measured in wchar_t's. The dest and src buffers can overlap.
     //! @param[in] dest     The output buffer
