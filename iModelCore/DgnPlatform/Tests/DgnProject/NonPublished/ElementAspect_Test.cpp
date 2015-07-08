@@ -417,6 +417,7 @@ TEST_F(ElementItemTests, ElementsOwnsItemTest)
     findItem.BindId(1, eid);
     bool itemIsGone = (BE_SQLITE_ROW != findItem.Step());
     //ASSERT_TRUE(itemIsGone);  *** WIP_ITEM - cascading delete
+    ASSERT_FALSE(itemIsGone); // *** WIP_ITEM - cascading delete
     }
 
 /*---------------------------------------------------------------------------------**//**
