@@ -1,7 +1,10 @@
-//-------------------------------------------------------------------------------------- 
-//     $Source: PublicAPI/DgnPlatform/DgnCore/Annotations/AnnotationFrame.h $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
-//-------------------------------------------------------------------------------------- 
+/*--------------------------------------------------------------------------------------+
+|
+|  $Source: PublicAPI/DgnPlatform/DgnCore/Annotations/AnnotationFrame.h $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #pragma once
 
 //__PUBLISH_SECTION_START__
@@ -21,7 +24,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //! This enumerates all possible ways to apply an AnnotationFrameStyle to an AnnotationFrame.
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
-enum struct SetAnnotationFrameStyleOptions
+enum class SetAnnotationFrameStyleOptions
 {
     PreserveOverrides = 1 << 0,
     

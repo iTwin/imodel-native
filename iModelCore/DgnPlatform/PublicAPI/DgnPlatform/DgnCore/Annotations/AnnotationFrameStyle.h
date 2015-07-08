@@ -1,7 +1,10 @@
-//-------------------------------------------------------------------------------------- 
-//     $Source: PublicAPI/DgnPlatform/DgnCore/Annotations/AnnotationFrameStyle.h $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
-//-------------------------------------------------------------------------------------- 
+/*--------------------------------------------------------------------------------------+
+|
+|  $Source: PublicAPI/DgnPlatform/DgnCore/Annotations/AnnotationFrameStyle.h $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #pragma once
 
 //__PUBLISH_SECTION_START__
@@ -23,7 +26,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //! This enumerates all possible annotation frame types.
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
-enum struct AnnotationFrameType
+enum class AnnotationFrameType
 {
     InvisibleBox = 1,
     Box = 2,
@@ -36,7 +39,7 @@ enum struct AnnotationFrameType
 //! @note Unless dealing with style overrides, you will not typically use this enumeration directly. While AnnotationFrameStyle provides high-level accessors to its properties, overrides are expressed directly via AnnotationFrameStylePropertyBag and AnnotationFrameStyleProperty.
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
-enum struct AnnotationFrameStyleProperty
+enum class AnnotationFrameStyleProperty
 {
     CloudBulgeFactor = 1, //!< (real) @note Factor of effective diameter
     CloudDiameterFactor = 2, //!< (real) @note Factor of text height

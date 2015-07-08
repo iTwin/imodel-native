@@ -239,7 +239,6 @@ protected:
     mutable DgnRangeTreeP m_rangeIndex;
     mutable bool    m_persistent;   // true if this DgnModel is in the DgnModels "loaded models" list.
     bool            m_filled;       // true if the FillModel was called on this DgnModel.
-    bool            m_readonly;     // true if this model is from a read-only DgnDb.
 
     explicit DGNPLATFORM_EXPORT DgnModel(CreateParams const&);
     DGNPLATFORM_EXPORT virtual ~DgnModel();
@@ -426,10 +425,6 @@ public:
     PlanarPhysicalModelP ToPlanarPhysicalModelP() {return const_cast<PlanarPhysicalModelP>(_ToPlanarPhysicalModel());} //!< more efficient substitute for dynamic_cast<PlanarPhysicalModelP>(model)
     SheetModelP ToSheetModelP() {return const_cast<SheetModelP>(_ToSheetModel());}//!< more efficient substitute for dynamic_cast<SheetModelP>(model)
     //! @}
-
-    //! Determine whether this is a readonly DgnModel or not.
-    bool IsReadOnly() const {return m_readonly;}
-    void SetReadOnly(bool val) {m_readonly = val;} //!< @private
 
     //! Get the DgnDb of this DgnModel.
     DgnDbR GetDgnDb() const {return m_dgndb;}
