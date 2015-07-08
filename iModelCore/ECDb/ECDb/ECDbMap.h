@@ -27,6 +27,8 @@ public:
         mutable std::map<ECN::ECClassCP, std::unique_ptr<UserECDbMapStrategy>> m_userStrategyCache;
         bmap<ECDbSqlIndex const*, ECN::ECClassId> m_classIdFilteredIndices;
 
+        UserECDbMapStrategy* GetUserStrategyP(ECN::ECClassCR, ECN::ECDbClassMap const*) const;
+
     public:
         MapContext() {}
         ~MapContext() {}
@@ -35,6 +37,7 @@ public:
         //! @return User map strategy. If the class doesn't have one a default strategy is returned. Only in 
         //! case of error, nullptr is returned
         UserECDbMapStrategy const* GetUserStrategy(ECN::ECClassCR, ECN::ECDbClassMap const* = nullptr) const;
+        UserECDbMapStrategy* GetUserStrategyP(ECN::ECClassCR) const;
 
         void AddClassIdFilteredIndex(ECDbSqlIndex const&, ECN::ECClassId);
         bool TryGetClassIdToIndex(ECN::ECClassId&, ECDbSqlIndex const&) const;

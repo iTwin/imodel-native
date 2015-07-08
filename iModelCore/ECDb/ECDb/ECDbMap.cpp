@@ -859,6 +859,22 @@ DbResult ECDbMap::Save()
 //---------------------------------------------------------------------------------------
 UserECDbMapStrategy const* ECDbMap::MapContext::GetUserStrategy(ECClassCR ecclass, ECDbClassMap const* classMapCA) const
     {
+    return GetUserStrategyP(ecclass, classMapCA);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle   07/2015
+//---------------------------------------------------------------------------------------
+UserECDbMapStrategy* ECDbMap::MapContext::GetUserStrategyP(ECClassCR ecclass) const
+    {
+    return GetUserStrategyP(ecclass, nullptr);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle   07/2015
+//---------------------------------------------------------------------------------------
+UserECDbMapStrategy* ECDbMap::MapContext::GetUserStrategyP(ECClassCR ecclass, ECDbClassMap const* classMapCA) const
+    {
     auto it = m_userStrategyCache.find(&ecclass);
     if (it != m_userStrategyCache.end())
         return it->second.get();
@@ -883,9 +899,9 @@ UserECDbMapStrategy const* ECDbMap::MapContext::GetUserStrategy(ECClassCR ecclas
             return nullptr; // error
         }
 
-    UserECDbMapStrategy const* userStrategyCP = userStrategy.get();
+    UserECDbMapStrategy* userStrategyP = userStrategy.get();
     m_userStrategyCache[&ecclass] = std::move(userStrategy);
-    return userStrategyCP;
+    return userStrategyP;
     }
 
 //---------------------------------------------------------------------------------------

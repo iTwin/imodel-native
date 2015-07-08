@@ -45,6 +45,7 @@ private:
     Strategy m_strategy;
     Option m_option;
     bool m_isPolymorphic;
+    UserECDbMapStrategy const* m_root;
 
     BentleyStatus Assign(Strategy strategy, Option option, bool isPolymorphic);
     static BentleyStatus TryParse(Strategy&, Utf8CP str);
@@ -53,6 +54,8 @@ private:
 public:
     UserECDbMapStrategy() : m_strategy(Strategy::None), m_option(Option::None), m_isPolymorphic(false) {}
     ~UserECDbMapStrategy() {}
+
+    UserECDbMapStrategy const& AssignRoot(UserECDbMapStrategy const& parent);
 
     bool IsValid() const;
 

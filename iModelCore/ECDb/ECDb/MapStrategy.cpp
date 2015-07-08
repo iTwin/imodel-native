@@ -50,6 +50,15 @@ bool UserECDbMapStrategy::IsValid() const
         }
     }
 
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                07/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+UserECDbMapStrategy const& UserECDbMapStrategy::AssignRoot(UserECDbMapStrategy const& parent)
+    {
+    m_root = parent.m_root != nullptr ? parent.m_root : &parent;
+    return *m_root;
+    }
+
 
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                02/2015

@@ -21,71 +21,18 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //static
 std::unique_ptr<ClassMapInfo> ClassMapInfoFactory::Create(MapStatus& mapStatus, SchemaImportContext const& schemaImportContext, ECN::ECClassCR ecClass, ECDbMapCR ecDbMap)
     {
-    std::unique_ptr<ClassMapInfo> info = Create(mapStatus, ecClass, ecDbMap);
-    if (info == nullptr)
-        return nullptr;
-
- /*WIP_SCHEMA_VALIDATION: Try to find out whether we still need that check
-    if (!info->GetMapStrategy ().IsNotMapped())
-        {
-        auto validationResult = schemaImportContext.GetSchemaValidationResult (ecClass.GetSchema ());
-        if (validationResult != nullptr)
-            {
-            for (auto& error : validationResult->GetErrors ())
-                {
-                if (error->GetRuleType () == ECSchemaValidationRule::Type::CaseInsensitiveClassNames)
-                    {
-                    auto casingError = static_cast<CaseInsensitiveClassNamesRule::Error const*> (error.get ());
-                    auto invalidClasses = casingError->TryGetInvalidClasses (ecClass);
-                    if (invalidClasses != nullptr)
-                        {
-                        for (auto invalidClass : *invalidClasses)
-                            {
-                            if (invalidClass == &ecClass) //don't check the class against itself.
-                                continue;
-
-                            auto classMap = ecDbMap.GetClassMap (*invalidClass, false);
-                            if (classMap == nullptr)
-                                continue;
-
-                            //Relationship classes for which the name only differs by case are not supported by ECDb (in contrast to regular ECClasses)
-                            if (ecClass.GetRelationshipClassCP () != nullptr && classMap->IsRelationshipClassMap ())
-                                {
-                                info->GetGetMapStrategyR ().Assign(MapStrategy::NotMapped, false);
-                                schemaImportContext.GetIssueListener ().Report (ECDbSchemaManager::IImportIssueListener::Severity::Warning,
-                                                                                "Did not map ECRelationshipClass '%s': ECRelationshipClasses for which names only differ by case are not supported by ECDb.", Utf8String (ecClass.GetFullName ()).c_str ());
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        else
-            LOG.fatalv (L"Programmer error: No schema validation result found for ECSchema %ls", ecClass.GetSchema ().GetName ().c_str ());
-        }*/
-
-    return info;
-    }
-
-//---------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                02/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-std::unique_ptr<ClassMapInfo> ClassMapInfoFactory::Create(MapStatus& stat, ECClassCR ecClass, ECDbMapCR ecDbMap)
-    {
     std::unique_ptr<ClassMapInfo> info = nullptr;
-    ECRelationshipClassCP ecRelationshipClass = ecClass.GetRelationshipClassCP ();
+    ECRelationshipClassCP ecRelationshipClass = ecClass.GetRelationshipClassCP();
     if (ecRelationshipClass != nullptr)
         info = std::unique_ptr<ClassMapInfo>(new RelationshipMapInfo(*ecRelationshipClass, ecDbMap));
     else
         info = std::unique_ptr<ClassMapInfo>(new ClassMapInfo(ecClass, ecDbMap));
 
-    if (info == nullptr || (stat = info->Initialize()) != MapStatus::Success)
+    if (info == nullptr || (mapStatus = info->Initialize()) != MapStatus::Success)
         return nullptr;
 
     return info;
     }
-
 
 
 //**********************************************************************************************
@@ -148,7 +95,7 @@ MapStatus ClassMapInfo::_EvaluateMapStrategy()
         }
 
     BeAssert(m_ecdbMap.GetMapContext() != nullptr);
-    UserECDbMapStrategy const* userStrategy = m_ecdbMap.GetMapContext()->GetUserStrategy(m_ecClass);
+    UserECDbMapStrategy* userStrategy = m_ecdbMap.GetMapContext()->GetUserStrategyP(m_ecClass);
     if (userStrategy == nullptr)
         {
         BeAssert(false);
@@ -162,12 +109,8 @@ MapStatus ClassMapInfo::_EvaluateMapStrategy()
         }
 
     // ClassMappingRule: Classes within the same hierarchy should all be relationships or non-relationships
-    bool isValid = ValidateBaseClasses ();
-    if (!isValid)
-        {
-        m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, false);
-        return MapStatus::Success;
-        }
+    if (SUCCESS != ValidateBaseClasses ())
+        return MapStatus::Error;
 
     MapStatus stat = DoEvaluateMapStrategy(*userStrategy);
     if (stat != MapStatus::Success)
@@ -185,7 +128,7 @@ MapStatus ClassMapInfo::_EvaluateMapStrategy()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Ramanujam.Raman                07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-MapStatus ClassMapInfo::DoEvaluateMapStrategy(UserECDbMapStrategy const& userStrategy)
+MapStatus ClassMapInfo::DoEvaluateMapStrategy(UserECDbMapStrategy& userStrategy)
     {
     bvector<IClassMap const*> baseClassMaps;
     bvector<IClassMap const*> polymorphicSharedTableClassMaps; // SharedTable-Polymorphic have the highest priority, but there can be only one
@@ -240,29 +183,22 @@ MapStatus ClassMapInfo::DoEvaluateMapStrategy(UserECDbMapStrategy const& userStr
             return MapStatus::Error;
             }
 
-        ECDbMapStrategy const& parentStrategy = parentClassMap->GetMapStrategy();
-        BeAssert(parentStrategy.IsPolymorphicSharedTable());
+        UserECDbMapStrategy const* parentUserStrategy = m_ecdbMap.GetMapContext()->GetUserStrategy(parentClass);
+        if (parentUserStrategy == nullptr)
+            {
+            BeAssert(false);
+            return MapStatus::Error;
+            }
+
+        UserECDbMapStrategy const& rootUserStrategy = userStrategy.AssignRoot(*parentUserStrategy);
+
+        BeAssert(parentClassMap->GetMapStrategy().IsPolymorphicSharedTable());
 
         ECDbMapStrategy::Option option = ECDbMapStrategy::Option::None;
-        if (userStrategy.GetOption() != UserECDbMapStrategy::Option::DisableSharedColumns)
-            {
-            if (parentStrategy.GetOption() == ECDbMapStrategy::Option::SharedColumns)
-                option = ECDbMapStrategy::Option::SharedColumns;
-            else
-                {
-                UserECDbMapStrategy const* parentUserStrategy = m_ecdbMap.GetMapContext()->GetUserStrategy(parentClass);
-                if (parentUserStrategy == nullptr)
-                    {
-                    BeAssert(false);
-                    return MapStatus::Error;
-                    }
-
-                if (parentUserStrategy->GetOption() == UserECDbMapStrategy::Option::SharedColumnsForSubclasses)
-                    option = ECDbMapStrategy::Option::SharedColumns;
-
-                BeAssert(parentUserStrategy->GetOption() != UserECDbMapStrategy::Option::SharedColumns && "Should not happen because then the effect map strategy option should have been SharedColumns already.");
-                }
-            }
+        if (userStrategy.GetOption() != UserECDbMapStrategy::Option::DisableSharedColumns && 
+                (rootUserStrategy.GetOption() == UserECDbMapStrategy::Option::SharedColumns || 
+                 rootUserStrategy.GetOption() == UserECDbMapStrategy::Option::SharedColumnsForSubclasses))
+            option = ECDbMapStrategy::Option::SharedColumns;
 
         return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::SharedTable, option, true) == SUCCESS ? MapStatus::Success : MapStatus::Error;
         }
@@ -287,6 +223,13 @@ MapStatus ClassMapInfo::DoEvaluateMapStrategy(UserECDbMapStrategy const& userStr
 //static
 bool ClassMapInfo::IsValidChildStrategy(ECDbMapStrategy const& parentResolvedStrategy, UserECDbMapStrategy const& childStrategy)
     {
+    if (childStrategy.GetStrategy() == UserECDbMapStrategy::Strategy::None && childStrategy.GetOption() == UserECDbMapStrategy::Option::None &&
+        !childStrategy.IsPolymorphic())
+        return true;
+
+    //if (parentResolvedStrategy.IsPolymorphic() && !childStrategy.IsPolymorphic())
+    //    return false;
+
     return true;
     }
 
@@ -459,7 +402,7 @@ BentleyStatus ClassMapInfo::ProcessStandardKeys (ECClassCR ecClass, WCharCP cust
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   09/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ClassMapInfo::ValidateBaseClasses () const
+BentleyStatus ClassMapInfo::ValidateBaseClasses () const
     {
     // It is not supported that a relationship class has non-relationship base classes. 
     // It is not supported that a non-relationship class has relationship base classes.
@@ -469,15 +412,13 @@ bool ClassMapInfo::ValidateBaseClasses () const
         const bool isBaseRelationship = (nullptr != baseClass->GetRelationshipClassCP ());
         if (isRelationship != isBaseRelationship)
             {
-            Utf8String message;
-            message.Sprintf ("All classes in an inheritance hierarchy must either be non-relationship classes or relationship classes. Mismatching base class : %s",
-                                Utf8String (baseClass->GetFullName ()).c_str ());
-            LogClassNotMapped (NativeLogging::LOG_DEBUG, GetECClass (), message.c_str ());
-            return false;
+            LOG.errorv(L"All classes in an inheritance hierarchy must either be non-relationship classes or relationship classes. Mismatching base class : %ls",
+                       baseClass->GetFullName());
+            return ERROR;
             }
         }
 
-    return true;
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
