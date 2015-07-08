@@ -1362,7 +1362,7 @@ DbResult Db::CreateNewDb(Utf8CP dbName, BeDbGuid dbGuid, CreateParams const& par
     m_dbFile->m_defaultTxn.Begin();
     m_dbFile->m_dbGuid = dbGuid;
 
-    ExecuteSql(SqlPrintfString("PRAGMA page_size=%d;PRAGMA encoding=\"%s\";PRAGMA user_version=%d;PRAGMA application_id=%lld;PRAGMA locking_mode=\"%s\"", params.m_pagesize,
+    ExecuteSql (SqlPrintfString ("PRAGMA page_size=%d;PRAGMA encoding=\"%s\";PRAGMA user_version=%d;PRAGMA application_id=%lld;PRAGMA locking_mode=\"%s\";PRAGMA recursive_triggers=true", params.m_pagesize,
                               params.m_encoding==Encoding::Utf8 ? "UTF-8" : "UTF-16le", BeSQLite::DbUserVersion, params.m_applicationId,
                               params.m_startDefaultTxn==DefaultTxn::Exclusive ? "EXCLUSIVE" : "NORMAL"));
 
