@@ -10,7 +10,7 @@
 #
 #--------------------------------------------------------------------------------------
 
-appName = Crawler
+appName = RealityCrawler
 policyFile = $(_MakeFilePath)../mki/AssertRealityModFrameworkPolicy.mki
 %include mdl.mki
 
@@ -73,28 +73,12 @@ ASSEMBLY_REFERENCE           = $(packages)log4net.2.0.3/lib/net40-full/log4net.d
 always:
 	$(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
 
-ASSEMBLY_REFERENCE           = $(packages)Microsoft.Bcl.Async.1.0.168/lib/net40/Microsoft.Threading.Tasks.dll
-%include csrefapnd.mki
-always:
-	$(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
-
-ASSEMBLY_REFERENCE           = $(packages)Microsoft.Bcl.Async.1.0.168/lib/net40/Microsoft.Threading.Tasks.Extensions.dll
-%include csrefapnd.mki
-always:
-	$(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
-
-ASSEMBLY_REFERENCE           = $(packages)Microsoft.Bcl.Async.1.0.168/lib/net40/Microsoft.Threading.Tasks.Extensions.Desktop.dll
-%include csrefapnd.mki
-always:
-	$(bcopyCmd) $(stdBcopyOpts) $(ASSEMBLY_REFERENCE) $(o)
-
-
 #-----------------------------------------------------------------------
 #   Compile C# Modules
 #-----------------------------------------------------------------------
 
 # Setup other attributes
-    ASSEMBLY_NAME = Crawler
+    ASSEMBLY_NAME = RealityCrawler
     ASSEMBLY_TARGET_DIRECTORY = $(o)
     ASSEMBLY_TITLE = Bentley.RealityPlatform.RealityCrawler
     ASSEMBLY_DESCRIPTION = Bentley Reality Crawler
@@ -105,9 +89,6 @@ always:
     ASSEMBLY_SYMB_DIR = $(o)
 	ASSEMBLY_CONSOLE = 1
 	ASSEMBLY_NO_TRANSKIT = 1
-	#ASSEMBLY_DLL = 1
-    #ASSEMBLY_WARN_AS_ERROR = 1
-    #ASSEMBLY_REGISTERCOM = 1
 
 #-----------------------------------------------------------------------
 # Define default assembly meta-data attributes
@@ -141,8 +122,6 @@ ASSEMBLY_COPYRIGHT      = $(Bentley_Copyright)
 		$(prodSrc)WMSStyle.cs 
 
 ASSEMBLY_EDMX_FILE_TO_BUILD = $(prodSrc)RealityCrawlerDB.edmx
-#ASSEMBLY_EDM_TO_ADD_FILENAME = RealityCrawlerDB
-#ASSEMBLY_EDM_TO_ADD_DIRECTORY = $(prodSrc)obj/Release/edmxResourcesToEmbed/
 %include $(_MakeFilePath)../mki/assemblyEdmxAppend.mki
 
 always : 
