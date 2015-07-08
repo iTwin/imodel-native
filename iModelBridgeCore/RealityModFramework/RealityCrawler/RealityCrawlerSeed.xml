@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<!--
+To add a seed use <Seed><![CDATA[http://YourURL.Here.com]]></Seed>
+To scan external link use IsExternalPageCrawlingEnabled=true (default = false) ex.: <Seed IsExternalPageCrawlingEnabled="true"><![CDATA[http://YourURL.Here.com]]></Seed>
+To add a seed range ex.:http://YourURL.Here.com/1/Right/ to http://YourURL.Here.com/10/Right/ use
+<Seed RangeMin="1" RangeMax="10" Increment="1" RightPart="/Right/"><![CDATA[http://YourURL.Here.com/]]></Seed>
+Where RangeMin is the indice of the first URL.
+Where RangeMax is the indice of the last URL (inclusive).
+Where Increment is the step between each URL generated.
+Where RightPart is the last part of the URL that is concanated to the main URL.
+-->
+<Seeds>
+    <Seed IsExternalPageCrawlingEnabled="true"><![CDATA[http://search.usa.gov/search?affiliate=usgs&utf8=%E2%9C%93&query=WMS&commit=Search]]></Seed>
+    <!--<Seed><![CDATA[http://coastalmap.marine.usgs.gov/mapservices/wms_svc.html]]></Seed>-->
+    <!--<Seed><![CDATA[http://mrdata.usgs.gov/wms.html]]></Seed>-->
+    <!--<Seed><![CDATA[http://gisdata.usgs.gov/service_access_list.php?serviceid=Dataset_7&dataset=HRO]]></Seed>-->
+    <!--<Seed><![CDATA[http://directory.spatineo.com/service/24977/]]></Seed>-->
+    <!--<Seed><![CDATA[http://directory.spatineo.com/service/14505/]]></Seed>-->    
+    <!--<Seed><![CDATA[http://directory.spatineo.com/service/12182/]]></Seed>-->
+    <!--<Seed><![CDATA[http://directory.spatineo.com/service/1128/]]></Seed>-->
+    <!--<Seed><![CDATA[http://www.usgs.gov/]]></Seed>-->
+    <Seed RangeMin="1" RangeMax="27921" Increment="1" RightPart="/"><![CDATA[http://directory.spatineo.com/service/]]></Seed>
+</Seeds>

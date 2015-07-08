@@ -1,0 +1,369 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+  <!-- EF Runtime content -->
+  <edmx:Runtime>
+    <!-- SSDL content -->
+    <edmx:StorageModels>
+    <Schema Namespace="Bentley.RealityPlatform.RealityCrawlerDB.Store" Alias="Self" Provider="System.Data.SqlClient" ProviderManifestToken="2012" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+  <EntityContainer Name="BentleyRealityPlatformRealityCrawlerDBStoreContainer">
+    <EntitySet Name="ServerSet" EntityType="Bentley.RealityPlatform.RealityCrawlerDB.Store.ServerSet" store:Type="Tables" Schema="dbo" />
+    <EntitySet Name="WMSServerExtendedPropertiesSet" EntityType="Bentley.RealityPlatform.RealityCrawlerDB.Store.WMSServerExtendedPropertiesSet" store:Type="Tables" Schema="dbo" />
+    <EntitySet Name="WMSServerDataSet" EntityType="Bentley.RealityPlatform.RealityCrawlerDB.Store.WMSServerDataSet" store:Type="Tables" Schema="dbo" />
+    <AssociationSet Name="ServerWMSServerExtendedProperties" Association="Bentley.RealityPlatform.RealityCrawlerDB.Store.ServerWMSServerExtendedProperties">
+      <End Role="Server" EntitySet="ServerSet" />
+      <End Role="WMSServerExtendedProperties" EntitySet="WMSServerExtendedPropertiesSet" />
+    </AssociationSet>
+    <AssociationSet Name="WMSServerExtendedPropertiesWMSData" Association="Bentley.RealityPlatform.RealityCrawlerDB.Store.WMSServerExtendedPropertiesWMSData">
+      <End Role="WMSServerExtendedProperties" EntitySet="WMSServerExtendedPropertiesSet" />
+      <End Role="WMSData" EntitySet="WMSServerDataSet" />
+    </AssociationSet>
+    <AssociationSet Name="WMSDataWMSData" Association="Bentley.RealityPlatform.RealityCrawlerDB.Store.WMSDataWMSData">
+      <End Role="WMSData" EntitySet="WMSServerDataSet" />
+      <End Role="WMSData1" EntitySet="WMSServerDataSet" />
+    </AssociationSet>
+  </EntityContainer>
+  <EntityType Name="ServerSet">
+    <Key>
+      <PropertyRef Name="ServerId" />
+    </Key>
+    <Property Name="ServerId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+    <Property Name="Name" Type="nvarchar(max)" Nullable="true" />
+    <Property Name="URL" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="Legal" Type="nvarchar(max)" Nullable="true" />
+    <Property Name="Online" Type="bit" Nullable="false" />
+    <Property Name="LastCheck" Type="datetime" Nullable="false" />
+    <Property Name="LastTimeOnline" Type="datetime" Nullable="false" />
+    <Property Name="Latency" Type="float" Nullable="false" />
+    <Property Name="State" Type="int" Nullable="false" />
+    <Property Name="Type" Type="int" Nullable="false" />
+    <Property Name="CoordinateSystem" Type="nvarchar(max)" Nullable="true" />
+    <Property Name="OldServerId" Type="int" Nullable="true" />
+    <Property Name="LockedBy" Type="nvarchar(max)" Nullable="true" />
+    <Property Name="LastLockUpdate" Type="datetime" Nullable="true" />
+  </EntityType>
+  <EntityType Name="WMSServerExtendedPropertiesSet">
+    <Key>
+      <PropertyRef Name="WMSId" />
+    </Key>
+    <Property Name="WMSId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+    <Property Name="Name" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="Title" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="Description" Type="nvarchar(max)" Nullable="true" />
+    <Property Name="LayerNumber" Type="int" Nullable="true" DefaultValue="0" />
+    <Property Name="Version" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="ContactPerson" Type="nvarchar(max)" Nullable="true" />
+    <Property Name="ContactOrganization" Type="nvarchar(max)" Nullable="true" />
+    <Property Name="ContactPosition" Type="nvarchar(max)" Nullable="true" />
+    <Property Name="ContactAddressType" Type="nvarchar(max)" Nullable="true" />
+    <Property Name="ContactAddress" Type="nvarchar(max)" Nullable="true" />
+    <Property Name="ContactCity" Type="nvarchar(max)" Nullable="true" />
+    <Property Name="ContactStateOrProvince" Type="nvarchar(max)" Nullable="true" />
+    <Property Name="ContactPostCode" Type="nvarchar(max)" Nullable="true" />
+    <Property Name="ContactCountry" Type="nvarchar(max)" Nullable="true" />
+    <Property Name="ContactVoiceTelephone" Type="nvarchar(max)" Nullable="true" />
+    <Property Name="ContactFacsimileTelephone" Type="nvarchar(max)" Nullable="true" />
+    <Property Name="ContactElectronicMailAddress" Type="nvarchar(max)" Nullable="true" />
+    <Property Name="Fees" Type="nvarchar(max)" Nullable="true" />
+    <Property Name="AccessConstraints" Type="nvarchar(max)" Nullable="true" />
+    <Property Name="GetCapabilitiesData" Type="nvarchar(max)" Nullable="true" />
+    <Property Name="SupportedFormats" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="GetMapURL" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="GetMapURLQuery" Type="nvarchar(max)" Nullable="true" />
+    <Property Name="Server_ServerId" Type="int" Nullable="false" />
+  </EntityType>
+  <EntityType Name="WMSServerDataSet">
+    <Key>
+      <PropertyRef Name="WMSDataId" />
+    </Key>
+    <Property Name="WMSDataId" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+    <Property Name="Name" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="Title" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="Description" Type="nvarchar(max)" Nullable="true" />
+    <Property Name="BoundingBox" Type="geometry" Nullable="false" SRID="0" />
+    <Property Name="WMSServerExtendedPropertiesWMSId" Type="int" Nullable="false" />
+    <Property Name="WMSDataParentId" Type="int" Nullable="true" />
+    <Property Name="Selected" Type="bit" Nullable="false" DefaultValue="false" />
+    <Property Name="CoordinateSystems" Type="nvarchar(max)" Nullable="true" />
+    <Property Name="Style" Type="nvarchar(max)" Nullable="true" />
+  </EntityType>
+  <Association Name="ServerWMSServerExtendedProperties">
+    <End Role="Server" Type="Bentley.RealityPlatform.RealityCrawlerDB.Store.ServerSet" Multiplicity="1">
+      <OnDelete Action="Cascade" />
+    </End>
+    <End Role="WMSServerExtendedProperties" Type="Bentley.RealityPlatform.RealityCrawlerDB.Store.WMSServerExtendedPropertiesSet" Multiplicity="*" />
+    <ReferentialConstraint>
+      <Principal Role="Server">
+        <PropertyRef Name="ServerId" />
+      </Principal>
+      <Dependent Role="WMSServerExtendedProperties">
+        <PropertyRef Name="Server_ServerId" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+  <Association Name="WMSServerExtendedPropertiesWMSData">
+    <End Role="WMSServerExtendedProperties" Type="Bentley.RealityPlatform.RealityCrawlerDB.Store.WMSServerExtendedPropertiesSet" Multiplicity="1">
+      <OnDelete Action="Cascade" />
+    </End>
+    <End Role="WMSData" Type="Bentley.RealityPlatform.RealityCrawlerDB.Store.WMSServerDataSet" Multiplicity="*" />
+    <ReferentialConstraint>
+      <Principal Role="WMSServerExtendedProperties">
+        <PropertyRef Name="WMSId" />
+      </Principal>
+      <Dependent Role="WMSData">
+        <PropertyRef Name="WMSServerExtendedPropertiesWMSId" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+  <Association Name="WMSDataWMSData">
+    <End Role="WMSData" Type="Bentley.RealityPlatform.RealityCrawlerDB.Store.WMSServerDataSet" Multiplicity="0..1" />
+    <End Role="WMSData1" Type="Bentley.RealityPlatform.RealityCrawlerDB.Store.WMSServerDataSet" Multiplicity="*" />
+    <ReferentialConstraint>
+      <Principal Role="WMSData">
+        <PropertyRef Name="WMSDataId" />
+      </Principal>
+      <Dependent Role="WMSData1">
+        <PropertyRef Name="WMSDataParentId" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+</Schema></edmx:StorageModels>
+    <!-- CSDL content -->
+    <edmx:ConceptualModels>
+      <Schema xmlns="http://schemas.microsoft.com/ado/2009/11/edm" xmlns:cg="http://schemas.microsoft.com/ado/2006/04/codegeneration" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" Namespace="Bentley.RealityPlatform.RealityCrawlerDB" Alias="Self" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" annotation:UseStrongSpatialTypes="false">
+        <EntityContainer Name="RealityCrawlerDBContainer" annotation:LazyLoadingEnabled="true">
+          <EntitySet Name="ServerSet" EntityType="Bentley.RealityPlatform.RealityCrawlerDB.Server" />
+          <EntitySet Name="WMSServerExtendedPropertiesSet" EntityType="Bentley.RealityPlatform.RealityCrawlerDB.WMSServerExtendedProperties" />
+          <EntitySet Name="WMSServerDataSet" EntityType="Bentley.RealityPlatform.RealityCrawlerDB.WMSServerData" />
+          <AssociationSet Name="ServerWMSServerExtendedProperties" Association="Bentley.RealityPlatform.RealityCrawlerDB.ServerWMSServerExtendedProperties">
+            <End Role="Server" EntitySet="ServerSet" />
+            <End Role="WMSServerExtendedProperties" EntitySet="WMSServerExtendedPropertiesSet" />
+          </AssociationSet>
+          <AssociationSet Name="WMSServerExtendedPropertiesWMSData" Association="Bentley.RealityPlatform.RealityCrawlerDB.WMSServerExtendedPropertiesWMSData">
+            <End Role="WMSServerExtendedProperties" EntitySet="WMSServerExtendedPropertiesSet" />
+            <End Role="WMSData" EntitySet="WMSServerDataSet" />
+          </AssociationSet>
+          <AssociationSet Name="WMSDataWMSData" Association="Bentley.RealityPlatform.RealityCrawlerDB.WMSDataWMSData">
+            <End Role="WMSData" EntitySet="WMSServerDataSet" />
+            <End Role="WMSData1" EntitySet="WMSServerDataSet" />
+          </AssociationSet>
+        </EntityContainer>
+        <EntityType Name="Server">
+          <Key>
+            <PropertyRef Name="ServerId" />
+          </Key>
+          <Property Name="ServerId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Name" Type="String" Nullable="true" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="URL" Type="String" Nullable="false" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Legal" Type="String" Nullable="true" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Online" Type="Boolean" Nullable="false" />
+          <Property Name="LastCheck" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="LastTimeOnline" Type="DateTime" Nullable="false" Precision="3" />
+          <Property Name="Latency" Type="Double" Nullable="false" />
+          <NavigationProperty Name="ServerExtendedProperties" Relationship="Bentley.RealityPlatform.RealityCrawlerDB.ServerWMSServerExtendedProperties" FromRole="Server" ToRole="WMSServerExtendedProperties" />
+          <Property Name="State" Type="Bentley.RealityPlatform.RealityCrawlerDB.ServerState" Nullable="false" />
+          <Property Name="Type" Type="Bentley.RealityPlatform.RealityCrawlerDB.ServerType" Nullable="false" />
+          <Property Name="CoordinateSystem" Type="String" Nullable="true" />
+          <Property Name="OldServerId" Type="Int32" Nullable="true" />
+          <Property Name="LockedBy" Type="String" Nullable="true" />
+          <Property Name="LastLockUpdate" Type="DateTime" Nullable="true" />
+        </EntityType>
+        <EntityType Name="WMSServerExtendedProperties">
+          <Key>
+            <PropertyRef Name="WMSId" />
+          </Key>
+          <Property Name="WMSId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Name" Type="String" Nullable="false" />
+          <Property Name="Title" Type="String" Nullable="false" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Description" Type="String" Nullable="true" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="LayerNumber" Type="Int32" Nullable="true" DefaultValue="0" />
+          <Property Name="Version" Type="String" Nullable="false" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="ContactPerson" Type="String" Nullable="true" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="ContactOrganization" Type="String" Nullable="true" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="ContactPosition" Type="String" Nullable="true" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="ContactAddressType" Type="String" Nullable="true" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="ContactAddress" Type="String" Nullable="true" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="ContactCity" Type="String" Nullable="true" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="ContactStateOrProvince" Type="String" Nullable="true" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="ContactPostCode" Type="String" Nullable="true" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="ContactCountry" Type="String" Nullable="true" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="ContactVoiceTelephone" Type="String" Nullable="true" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="ContactFacsimileTelephone" Type="String" Nullable="true" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="ContactElectronicMailAddress" Type="String" Nullable="true" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Fees" Type="String" Nullable="true" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="AccessConstraints" Type="String" Nullable="true" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="GetCapabilitiesData" Type="String" Nullable="true" />
+          <NavigationProperty Name="Server" Relationship="Bentley.RealityPlatform.RealityCrawlerDB.ServerWMSServerExtendedProperties" FromRole="WMSServerExtendedProperties" ToRole="Server" />
+          <NavigationProperty Name="WMSData" Relationship="Bentley.RealityPlatform.RealityCrawlerDB.WMSServerExtendedPropertiesWMSData" FromRole="WMSServerExtendedProperties" ToRole="WMSData" />
+          <Property Name="SupportedFormats" Type="String" Nullable="false" />
+          <Property Name="GetMapURL" Type="String" Nullable="false" />
+          <Property Name="GetMapURLQuery" Type="String" Nullable="true" />
+        </EntityType>
+        <EntityType Name="WMSServerData">
+          <Key>
+            <PropertyRef Name="WMSDataId" />
+          </Key>
+          <Property Name="WMSDataId" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Name" Type="String" Nullable="false" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Title" Type="String" Nullable="false" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="Description" Type="String" Nullable="true" MaxLength="Max" FixedLength="false" Unicode="true" />
+          <Property Name="BoundingBox" Type="Geometry" Nullable="false" />
+          <Property Name="WMSServerExtendedPropertiesWMSId" Type="Int32" Nullable="false" />
+          <NavigationProperty Name="WMSServerExtendedProperties" Relationship="Bentley.RealityPlatform.RealityCrawlerDB.WMSServerExtendedPropertiesWMSData" FromRole="WMSData" ToRole="WMSServerExtendedProperties" />
+          <NavigationProperty Name="WMSDataChild" Relationship="Bentley.RealityPlatform.RealityCrawlerDB.WMSDataWMSData" FromRole="WMSData" ToRole="WMSData1" />
+          <NavigationProperty Name="WMSDataParent" Relationship="Bentley.RealityPlatform.RealityCrawlerDB.WMSDataWMSData" FromRole="WMSData1" ToRole="WMSData" />
+          <Property Name="WMSDataParentId" Nullable="true" Type="Int32" />
+          <Property Name="Selected" Type="Boolean" Nullable="false" DefaultValue="false" />
+          <Property Name="CoordinateSystems" Type="String" Nullable="true" />
+          <Property Name="Style" Type="String" Nullable="true" />
+        </EntityType>
+        <Association Name="ServerWMSServerExtendedProperties">
+          <End Type="Bentley.RealityPlatform.RealityCrawlerDB.Server" Role="Server" Multiplicity="1" >
+            <OnDelete Action="Cascade" />
+          </End>
+          <End Type="Bentley.RealityPlatform.RealityCrawlerDB.WMSServerExtendedProperties" Role="WMSServerExtendedProperties" Multiplicity="0..1" />
+        </Association>
+        <Association Name="WMSServerExtendedPropertiesWMSData">
+          <End Type="Bentley.RealityPlatform.RealityCrawlerDB.WMSServerExtendedProperties" Role="WMSServerExtendedProperties" Multiplicity="1" >
+            <OnDelete Action="Cascade" />
+          </End>
+          <End Type="Bentley.RealityPlatform.RealityCrawlerDB.WMSServerData" Role="WMSData" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="WMSServerExtendedProperties">
+              <PropertyRef Name="WMSId" />
+            </Principal>
+            <Dependent Role="WMSData">
+              <PropertyRef Name="WMSServerExtendedPropertiesWMSId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="WMSDataWMSData">
+          <End Type="Bentley.RealityPlatform.RealityCrawlerDB.WMSServerData" Role="WMSData" Multiplicity="0..1" >
+          </End>
+          <End Type="Bentley.RealityPlatform.RealityCrawlerDB.WMSServerData" Role="WMSData1" Multiplicity="*" >
+          </End>
+          <ReferentialConstraint>
+            <Principal Role="WMSData">
+              <PropertyRef Name="WMSDataId" />
+            </Principal>
+            <Dependent Role="WMSData1">
+              <PropertyRef Name="WMSDataParentId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <EnumType Name="ServerType">
+          <Member Name="WMS" Value="1" />
+          <Member Name="WFS" Value="2" />
+          <Member Name="WMTS" Value="3" />
+          <Member Name="FTP" Value="4" />
+          <Member Name="HTTP" Value="5" />
+          <Member Name="LOCAL" Value="6" />
+        </EnumType>
+        <EnumType Name="ServerState">
+          <Member Name="Reject" Value="-1" />
+          <Member Name="New" Value="0" />
+          <Member Name="Valid" Value="1" />
+          <Member Name="Modify" Value="2" />
+          <Member Name="Old" Value="3" />
+        </EnumType>
+      </Schema>
+    </edmx:ConceptualModels>
+    <!-- C-S mapping content -->
+    <edmx:Mappings>
+    <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
+  <EntityContainerMapping StorageEntityContainer="BentleyRealityPlatformRealityCrawlerDBStoreContainer" CdmEntityContainer="RealityCrawlerDBContainer">
+    <EntitySetMapping Name="ServerSet">
+      <EntityTypeMapping TypeName="IsTypeOf(Bentley.RealityPlatform.RealityCrawlerDB.Server)">
+        <MappingFragment StoreEntitySet="ServerSet">
+          <ScalarProperty Name="ServerId" ColumnName="ServerId" />
+          <ScalarProperty Name="Name" ColumnName="Name" />
+          <ScalarProperty Name="URL" ColumnName="URL" />
+          <ScalarProperty Name="Legal" ColumnName="Legal" />
+          <ScalarProperty Name="Online" ColumnName="Online" />
+          <ScalarProperty Name="LastCheck" ColumnName="LastCheck" />
+          <ScalarProperty Name="LastTimeOnline" ColumnName="LastTimeOnline" />
+          <ScalarProperty Name="Latency" ColumnName="Latency" />
+          <ScalarProperty Name="State" ColumnName="State" />
+          <ScalarProperty Name="Type" ColumnName="Type" />
+          <ScalarProperty Name="CoordinateSystem" ColumnName="CoordinateSystem" />
+          <ScalarProperty Name="OldServerId" ColumnName="OldServerId" />
+          <ScalarProperty Name="LockedBy" ColumnName="LockedBy" />
+          <ScalarProperty Name="LastLockUpdate" ColumnName="LastLockUpdate" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <EntitySetMapping Name="WMSServerExtendedPropertiesSet">
+      <EntityTypeMapping TypeName="IsTypeOf(Bentley.RealityPlatform.RealityCrawlerDB.WMSServerExtendedProperties)">
+        <MappingFragment StoreEntitySet="WMSServerExtendedPropertiesSet">
+          <ScalarProperty Name="WMSId" ColumnName="WMSId" />
+          <ScalarProperty Name="Name" ColumnName="Name" />
+          <ScalarProperty Name="Title" ColumnName="Title" />
+          <ScalarProperty Name="Description" ColumnName="Description" />
+          <ScalarProperty Name="LayerNumber" ColumnName="LayerNumber" />
+          <ScalarProperty Name="Version" ColumnName="Version" />
+          <ScalarProperty Name="ContactPerson" ColumnName="ContactPerson" />
+          <ScalarProperty Name="ContactOrganization" ColumnName="ContactOrganization" />
+          <ScalarProperty Name="ContactPosition" ColumnName="ContactPosition" />
+          <ScalarProperty Name="ContactAddressType" ColumnName="ContactAddressType" />
+          <ScalarProperty Name="ContactAddress" ColumnName="ContactAddress" />
+          <ScalarProperty Name="ContactCity" ColumnName="ContactCity" />
+          <ScalarProperty Name="ContactStateOrProvince" ColumnName="ContactStateOrProvince" />
+          <ScalarProperty Name="ContactPostCode" ColumnName="ContactPostCode" />
+          <ScalarProperty Name="ContactCountry" ColumnName="ContactCountry" />
+          <ScalarProperty Name="ContactVoiceTelephone" ColumnName="ContactVoiceTelephone" />
+          <ScalarProperty Name="ContactFacsimileTelephone" ColumnName="ContactFacsimileTelephone" />
+          <ScalarProperty Name="ContactElectronicMailAddress" ColumnName="ContactElectronicMailAddress" />
+          <ScalarProperty Name="Fees" ColumnName="Fees" />
+          <ScalarProperty Name="AccessConstraints" ColumnName="AccessConstraints" />
+          <ScalarProperty Name="GetCapabilitiesData" ColumnName="GetCapabilitiesData" />
+          <ScalarProperty Name="SupportedFormats" ColumnName="SupportedFormats" />
+          <ScalarProperty Name="GetMapURL" ColumnName="GetMapURL" />
+          <ScalarProperty Name="GetMapURLQuery" ColumnName="GetMapURLQuery" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <EntitySetMapping Name="WMSServerDataSet">
+      <EntityTypeMapping TypeName="IsTypeOf(Bentley.RealityPlatform.RealityCrawlerDB.WMSServerData)">
+        <MappingFragment StoreEntitySet="WMSServerDataSet">
+          <ScalarProperty Name="WMSDataId" ColumnName="WMSDataId" />
+          <ScalarProperty Name="Name" ColumnName="Name" />
+          <ScalarProperty Name="Title" ColumnName="Title" />
+          <ScalarProperty Name="Description" ColumnName="Description" />
+          <ScalarProperty Name="BoundingBox" ColumnName="BoundingBox" />
+          <ScalarProperty Name="WMSServerExtendedPropertiesWMSId" ColumnName="WMSServerExtendedPropertiesWMSId" />
+          <ScalarProperty Name="WMSDataParentId" ColumnName="WMSDataParentId" />
+          <ScalarProperty Name="Selected" ColumnName="Selected" />
+          <ScalarProperty Name="CoordinateSystems" ColumnName="CoordinateSystems" />
+          <ScalarProperty Name="Style" ColumnName="Style" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <AssociationSetMapping Name="ServerWMSServerExtendedProperties" TypeName="Bentley.RealityPlatform.RealityCrawlerDB.ServerWMSServerExtendedProperties" StoreEntitySet="WMSServerExtendedPropertiesSet">
+      <EndProperty Name="Server">
+        <ScalarProperty Name="ServerId" ColumnName="Server_ServerId" />
+      </EndProperty>
+      <EndProperty Name="WMSServerExtendedProperties">
+        <ScalarProperty Name="WMSId" ColumnName="WMSId" />
+      </EndProperty>
+    </AssociationSetMapping>
+  </EntityContainerMapping>
+</Mapping></edmx:Mappings>
+  </edmx:Runtime>
+  <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <edmx:Connection>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="MetadataArtifactProcessing" Value="EmbedInOutputAssembly" />
+      </DesignerInfoPropertySet>
+    </edmx:Connection>
+    <edmx:Options>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="ValidateOnBuild" Value="true" />
+        <DesignerProperty Name="EnablePluralization" Value="False" />
+        <DesignerProperty Name="CodeGenerationStrategy" Value="None" />
+        <DesignerProperty Name="UseLegacyProvider" Value="False" />
+      </DesignerInfoPropertySet>
+    </edmx:Options>
+    <!-- Diagram content (shape and connector positions) -->
+    <edmx:Diagrams></edmx:Diagrams>
+  </edmx:Designer>
+</edmx:Edmx>

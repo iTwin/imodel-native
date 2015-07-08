@@ -1,0 +1,8 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Dictionary>
+  <Keywords><![CDATA[service=wms]]></Keywords>
+  <Keywords><![CDATA[SERVICENAME=wms]]></Keywords>
+  <Keywords><![CDATA[request=GetCapabilities]]></Keywords>
+  <Keywords><![CDATA[request=GetMap]]></Keywords>
+  <Keywords><![CDATA[request=GetFeatureInfo]]></Keywords>
+</Dictionary>
