@@ -446,4 +446,143 @@ Utf8String NoPropertiesOfSameTypeAsClassRule::Error::_ToString () const
     }
 
 
+//**********************************************************************
+// ConsistentClassHierarchyRule
+//**********************************************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    07/2015
+//---------------------------------------------------------------------------------------
+ConsistentClassHierarchyRule::ConsistentClassHierarchyRule()
+    : ECSchemaValidationRule(Type::ConsistentClassHierarchy), m_error(nullptr)
+    {
+    m_error = std::unique_ptr<Error>(new Error(GetType()));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    07/2015
+//---------------------------------------------------------------------------------------
+bool ConsistentClassHierarchyRule::_ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR baseClass)
+    {
+    //only root classes need to be validated as validation is recursive
+    if (baseClass.HasBaseClasses())
+        return true;
+
+    return ValidateClass(baseClass);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    07/2015
+//---------------------------------------------------------------------------------------
+bool ConsistentClassHierarchyRule::ValidateClass(ECN::ECClassCR baseClass) const
+    {
+    const ClassKind baseClassKind = DetermineClassKind(baseClass);
+    bool valid = true;
+    for (ECN::ECClassCP subclass : baseClass.GetDerivedClasses())
+        {
+        ClassKind subclassKind = DetermineClassKind(*subclass);
+        if (baseClassKind != subclassKind)
+            {
+            m_error->AddInconsistency(baseClass, baseClassKind, *subclass, subclassKind);
+            valid = false;
+            }
+
+        valid = valid && ValidateClass(*subclass);
+        }
+
+    return valid;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    07/2015
+//---------------------------------------------------------------------------------------
+std::unique_ptr<ECSchemaValidationRule::Error> ConsistentClassHierarchyRule::_GetError() const
+    {
+    if (!m_error->HasInconsistencies())
+        return nullptr;
+
+    return std::move(m_error);
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    07/2015
+//---------------------------------------------------------------------------------------
+//static
+ConsistentClassHierarchyRule::ClassKind ConsistentClassHierarchyRule::DetermineClassKind(ECN::ECClassCR ecclass)
+    {
+    if (ecclass.GetIsStruct())
+        return ClassKind::Struct;
+
+    if (ecclass.GetRelationshipClassCP() != nullptr)
+        return ClassKind::Relationship;
+
+    return ClassKind::Regular;
+    }
+
+//**********************************************************************
+// ConsistentClassHierarchyRule::Error
+//**********************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    07/2015
+//---------------------------------------------------------------------------------------
+void ConsistentClassHierarchyRule::Error::AddInconsistency(ECN::ECClassCR baseClass, ClassKind baseClassKind, ECN::ECClassCR subclass, ClassKind subclassKind)
+    {
+    m_inconsistencies.push_back({InvalidClass(baseClass, baseClassKind), InvalidClass(subclass, subclassKind)});
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    07/2015
+//---------------------------------------------------------------------------------------
+Utf8String ConsistentClassHierarchyRule::Error::_ToString() const
+    {
+    if (!HasInconsistencies())
+        return "";
+
+    Utf8String str("Found ECClasses with a class hierarchy of inconsistent class types. Conflicting ECClasses: ");
+    bool isFirstItem = true;
+    for (std::pair<InvalidClass,InvalidClass> const& inconsistency : m_inconsistencies)
+        {
+        if (!isFirstItem)
+            str.append(";");
+
+        str.append("Base: ").append(inconsistency.first.ToString()).append(" - Derived: ").append(inconsistency.second.ToString());
+        isFirstItem = false;
+        }
+
+    return std::move(str);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    07/2015
+//---------------------------------------------------------------------------------------
+Utf8String ConsistentClassHierarchyRule::Error::InvalidClass::ToString() const
+    {
+    Utf8CP kindStr = nullptr;
+    switch (m_kind)
+        {
+            case ClassKind::Regular:
+                kindStr = "Domain class";
+                break;
+
+            case ClassKind::Struct:
+                kindStr = "Struct";
+                break;
+
+            case ClassKind::Relationship:
+                kindStr = "Relationship";
+                break;
+
+            default:
+                BeAssert(false);
+                kindStr = "";
+                break;
+        }
+
+    Utf8String str(m_class->GetFullName());
+    str.append(" (").append(kindStr).append(")");
+    return std::move(str);
+    }
+
 END_BENTLEY_SQLITE_EC_NAMESPACE
