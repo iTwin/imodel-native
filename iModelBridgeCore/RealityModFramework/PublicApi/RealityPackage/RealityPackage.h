@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+//__BENTLEY_INTERNAL_ONLY__
+
 #include <Bentley/Bentley.h>
 #include <Bentley/RefCounted.h>
 
