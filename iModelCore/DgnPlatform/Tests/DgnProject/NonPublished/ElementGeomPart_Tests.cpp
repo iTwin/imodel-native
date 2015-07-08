@@ -262,8 +262,8 @@ void SetupProject(WCharCP projFile, WCharCP testFile, BeSQLite::Db::OpenMode mod
     BeFileName schemaFile(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
     schemaFile.AppendToPath(L"ECSchemas/" TMTEST_SCHEMA_NAMEW L".01.00.ecschema.xml");
 
-    BentleyStatus status = ElementInsertPerformanceTestDomain::GetDomain().ImportSchema(*m_db, schemaFile);
-    ASSERT_TRUE(BentleyStatus::SUCCESS == status);
+    auto status = ElementInsertPerformanceTestDomain::GetDomain().ImportSchema(*m_db, schemaFile);
+    ASSERT_TRUE(DgnDbStatus::Success== status);
 
     auto schema = m_db->Schemas().GetECSchema(TMTEST_SCHEMA_NAME, true);
     ASSERT_NE(nullptr, schema);

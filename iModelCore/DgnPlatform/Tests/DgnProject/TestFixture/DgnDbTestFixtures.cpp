@@ -189,8 +189,8 @@ void DgnDbTestFixture::SetupProject(WCharCP baseProjFile, WCharCP testProjFile, 
     schemaFile.AppendToPath(L"ECSchemas/" TMTEST_SCHEMA_NAMEW L".01.00.ecschema.xml");
 
     //BentleyStatus status = m_db->Domains().FindDomain("DgnPlatformTest")->ImportSchema(*m_db, schemaFile);
-    BentleyStatus status = DgnPlatformTestDomain::GetDomain().ImportSchema(*m_db, schemaFile);
-    ASSERT_TRUE(BentleyStatus::SUCCESS == status);
+    auto status = DgnPlatformTestDomain::GetDomain().ImportSchema(*m_db, schemaFile);
+    ASSERT_TRUE(DgnDbStatus::Success == status);
 
     m_defaultModelId = m_db->Models().QueryFirstModelId();
     m_defaultModelP = m_db->Models().GetModel(m_defaultModelId);
