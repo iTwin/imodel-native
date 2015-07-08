@@ -234,7 +234,7 @@
             - @c SharedColumnsForSubclasses : Like @em SharedColumns, except that the ECProperties of the class holding the ClassMap
             custom attribute do not share columns.
             - @c DisableSharedColumns: This option disables the column sharing for the class, if
-            column sharing was enabled on a base class. The property @i Strategy must not be set.
+            column sharing was enabled on a base class. The property @em Strategy must not be set.
             - @c Readonly : This will mark the table as readonly. Can only be used with @b ExistingTable.
         - @b IsPolymorphic (optional): If true, the MapStrategy and options also apply to subclasses of this class. 
         If false (default), the MapStrategy only applies to this class.

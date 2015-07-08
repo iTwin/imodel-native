@@ -191,16 +191,16 @@ void ECInstanceFinder::Finalize()
 void ECInstanceFinder::FindEndClasses (bset<ECClassId>& endClassIds, ECClassId relationshipClassId, ECRelationshipEnd relationshipEnd, ECDbCR ecDb)
     {
     Utf8CP sql = 
-        "SELECT EndConstraintClass.RelationClassId "
+        "SELECT EndConstraintClass.ClassId "
         "FROM ec_RelationshipConstraintClass EndConstraintClass "
         "JOIN ec_RelationshipConstraint EndConstraint "
-        "ON (EndConstraint.ClassId == EndConstraintClass.ClassId AND EndConstraint.RelationshipEnd == EndConstraintClass.RelationshipEnd) "
-        "WHERE EndConstraintClass.ClassId=?1 AND EndConstraintClass.RelationshipEnd=?2 ";
+        "ON EndConstraint.RelationshipClassId = EndConstraintClass.RelationshipClassId AND EndConstraint.RelationshipEnd = EndConstraintClass.RelationshipEnd "
+        "WHERE EndConstraintClass.RelationshipClassId=? AND EndConstraintClass.RelationshipEnd=?";
 
     BeSQLite::CachedStatementPtr stmt;
     ecDb.GetCachedStatement(stmt, sql);
     stmt->BindInt64 (1, relationshipClassId);
-    stmt->BindInt64 (2, (relationshipEnd == ECRelationshipEnd_Source) ? 0 : 1);
+    stmt->BindInt (2, relationshipEnd);
 
     DbResult r = stmt->Step();
     if (r == BE_SQLITE_DONE)
@@ -224,39 +224,41 @@ DbResult ECInstanceFinder::FindRelationshipsOnEnd (QueryableRelationshipVector& 
     {
     queryableRelationships.clear();
 
-    Utf8CP sql = 
+    Utf8CP sql =
         " WITH RECURSIVE"
         "    BaseClassesOfEndClass(ClassId) AS  ("
-        "    VALUES (@endClassId)"
-        "    UNION SELECT BaseClassId FROM ec_BaseClass, BaseClassesOfEndClass WHERE ec_BaseClass.ClassId=BaseClassesOfEndClass.ClassId"
+        "    VALUES (:endClassId)"
+        "    UNION "
+        "    SELECT BaseClassId FROM ec_BaseClass, BaseClassesOfEndClass WHERE ec_BaseClass.ClassId=BaseClassesOfEndClass.ClassId"
         "    )"
         " SELECT DISTINCT ECRelationshipClass.Id AS RelationshipId, ThisEndConstraintClass.RelationshipEnd As ThisEndIsTarget"
         " FROM ec_RelationshipConstraintClass ThisEndConstraintClass"
-        " JOIN ec_Class ECRelationshipClass ON ThisEndConstraintClass.ClassId == ECRelationshipClass.Id"
-        " JOIN ec_RelationshipConstraint ThisEndConstraint ON (ThisEndConstraint.ClassId == ECRelationshipClass.Id AND ThisEndConstraint.RelationshipEnd == ThisEndConstraintClass.RelationshipEnd)"
+        " JOIN ec_Class ECRelationshipClass ON ThisEndConstraintClass.RelationshipClassId = ECRelationshipClass.Id"
+        " JOIN ec_RelationshipConstraint ThisEndConstraint ON (ThisEndConstraint.RelationshipClassId = ECRelationshipClass.Id AND ThisEndConstraint.RelationshipEnd = ThisEndConstraintClass.RelationshipEnd)"
         " JOIN BaseClassesOfEndClass"
-        " WHERE ("
-        "   ThisEndConstraintClass.RelationClassId == @endClassId"
-        "   OR ThisEndConstraintClass.RelationClassId = @anyClassId"
-        "   OR (ThisEndConstraint.IsPolymorphic == 1 AND ThisEndConstraintClass.RelationClassId = BaseClassesOfEndClass.ClassId)"
-        " )";
+        " WHERE ThisEndConstraintClass.ClassId IN (:endClassId, :anyClassId)"
+        "   OR (ThisEndConstraint.IsPolymorphic = 1 AND ThisEndConstraintClass.ClassId = BaseClassesOfEndClass.ClassId)";
 
     CachedStatementPtr stmt;
     DbResult result = ecDb.GetCachedStatement (stmt, sql);
-    POSTCONDITION (result == BE_SQLITE_OK, result);
+    if (BE_SQLITE_OK != result)
+        {
+        BeAssert(false);
+        return result;
+        }
 
     ECDbSchemaManagerCR ecDbSchemaManager = ecDb.Schemas ();
 
-    auto anyClass = ecDbSchemaManager.GetECClass ("Bentley_Standard_Classes", "AnyClass");
+    ECClassCP anyClass = ecDbSchemaManager.GetECClass ("Bentley_Standard_Classes", "AnyClass");
     if (anyClass != nullptr)
         {
-        int anyClassIdx = stmt->GetParameterIndex ("@anyClassId");
+        int anyClassIdx = stmt->GetParameterIndex (":anyClassId");
         stmt->BindInt64 (anyClassIdx, (int64_t) anyClass->GetId());
         }
 
     ECClassCP thisEndClass = ecDbSchemaManager.GetECClass (thisEndClassId);
     BeAssert (thisEndClass != nullptr);
-    int endClassIdx = stmt->GetParameterIndex ("@endClassId");
+    int endClassIdx = stmt->GetParameterIndex (":endClassId");
     stmt->BindInt64 (endClassIdx, (int64_t) thisEndClass->GetId());
 
     while (BE_SQLITE_ROW == (result = stmt->Step()))
@@ -270,7 +272,12 @@ DbResult ECInstanceFinder::FindRelationshipsOnEnd (QueryableRelationshipVector& 
         queryableRelationships.push_back (QueryableRelationship (*ecRelationshipClass, *thisEndClass, thisRelationshipEnd));
         }
 
-    POSTCONDITION (result == BE_SQLITE_DONE, result);
+    if (BE_SQLITE_DONE != result)
+        {
+        BeAssert(false);
+        return result;
+        }
+
     return BE_SQLITE_OK;
     }
 

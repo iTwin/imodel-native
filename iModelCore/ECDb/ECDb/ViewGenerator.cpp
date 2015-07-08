@@ -1145,7 +1145,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
             "  DerivedClassList(RelationshipClassId, RelationshipEnd, IsPolymorphic, CurrentClassId, DerivedClassId) "
             "  AS ( "
             "      SELECT "
-            "            RCC.ClassId, "
+            "            RCC.RelationshipClassId, "
             "            RCC.RelationshipEnd, "
             "            RC.IsPolymorphic, "
             "            RCC.RelationshipClassId, "
@@ -1165,9 +1165,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
             "  FROM DerivedClassList ";
 
         Utf8CP sql1 =
-            " SELECT"
-            "       RCC.ClassId,"
-            "       RCC.RelationshipEnd"
+            " SELECT RCC.RelationshipClassId, RCC.RelationshipEnd"
             " FROM ec_RelationshipConstraintClass RCC"
             " WHERE RCC.ClassId IN (SELECT Id FROM ec_Class WHERE Name = 'AnyClass')";
 

@@ -617,7 +617,7 @@ Db& db
         "RelationshipEnd INTEGER NOT NULL, "
         "ClassId INTEGER NOT NULL, "
         "PRIMARY KEY (RelationshipClassId, RelationshipEnd, ClassId), "
-        "FOREIGN KEY (ClassId, RelationshipEnd) "
+        "FOREIGN KEY (RelationshipClassId, RelationshipEnd) "
         "REFERENCES ec_RelationshipConstraint(RelationshipClassId, RelationshipEnd) ON DELETE CASCADE"
         ");");
     }

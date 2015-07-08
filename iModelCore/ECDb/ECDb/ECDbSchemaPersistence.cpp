@@ -758,13 +758,13 @@ DbResult ECDbSchemaPersistence::Step (DbCustomAttributeInfo& info, BeSQLite::Sta
 DbResult ECDbSchemaPersistence::InsertECRelationshipConstraintClassKeyProperty(BeSQLite::Db& db, DbECRelationshipConstraintClassKeyPropertyInfo const& info)
     {
     BeSQLite::CachedStatementPtr stmt = nullptr;
-    auto stat = db.GetCachedStatement(stmt, "INSERT INTO ec_RelationshipConstraintClassKeyProperty (RelationshipClassId, ConstraintClassId, RelationshipEnd,KeyPropertyName) VALUES (?,?,?,?)");
+    auto stat = db.GetCachedStatement(stmt, "INSERT INTO ec_RelationshipConstraintClassKeyProperty (RelationshipClassId, RelationshipEnd, ConstraintClassId, KeyPropertyName) VALUES (?,?,?,?)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
     stmt->BindInt64(1, info.m_relationECClassId);
-    stmt->BindInt64(2, info.m_constraintClassId);
-    stmt->BindInt(3, info.m_ecRelationshipEnd);
+    stmt->BindInt(2, info.m_ecRelationshipEnd);
+    stmt->BindInt64(3, info.m_constraintClassId);
     stmt->BindText(4, info.m_keyPropertyName.c_str(), Statement::MakeCopy::No);
     return stmt->Step();
     }
