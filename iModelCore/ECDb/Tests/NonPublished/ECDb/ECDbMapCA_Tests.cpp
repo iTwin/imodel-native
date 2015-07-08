@@ -64,8 +64,6 @@ struct ECDbMapCATests : public ::testing::Test
         {
         enum class Strategy
             {
-            None = 0,
-
             NotMapped,
             OwnTable,
             SharedTable,
@@ -79,17 +77,15 @@ struct ECDbMapCATests : public ::testing::Test
             {
             None = 0,
             Readonly = 1,
-            SharedColumns = 2,
-            SharedColumnsForSubclasses = 4,
-            DisableSharedColumns = 8
+            SharedColumns = 2
             };
 
         Strategy m_strategy;
-        int m_options;
+        Options m_options;
         bool m_isPolymorphic;
 
-        ResolvedMapStrategy() : m_strategy(Strategy::None), m_options(-1), m_isPolymorphic(false) {}
-        ResolvedMapStrategy(Strategy strategy, int options, bool isPolymorphic) : m_strategy(strategy), m_options(options), m_isPolymorphic(isPolymorphic) {}
+        ResolvedMapStrategy() : m_strategy(Strategy::NotMapped), m_options(Options::None), m_isPolymorphic(false) {}
+        ResolvedMapStrategy(Strategy strategy, Options options, bool isPolymorphic) : m_strategy(strategy), m_options(options), m_isPolymorphic(isPolymorphic) {}
         };
 
     /*---------------------------------------------------------------------------------**//**
@@ -103,7 +99,7 @@ struct ECDbMapCATests : public ::testing::Test
         if (stmt.Step() == BE_SQLITE_ROW)
             {
             ResolvedMapStrategy::Strategy strat = (ResolvedMapStrategy::Strategy) stmt.GetValueInt(0);
-            int options = stmt.IsColumnNull(1) ? 0 : stmt.GetValueInt(1);
+            ResolvedMapStrategy::Options options = stmt.IsColumnNull(1) ? ResolvedMapStrategy::Options::None : (ResolvedMapStrategy::Options) stmt.GetValueInt(1);
             bool isPolymorphic = stmt.GetValueInt(2) != 0;
             return ResolvedMapStrategy(strat, options, isPolymorphic);
             }
@@ -285,7 +281,7 @@ struct ECDbMapCATests : public ::testing::Test
         mapStrategy = GetMapStrategy(ecdb, manyFooHasManyGoo->GetId());
 
         ASSERT_EQ(ResolvedMapStrategy::Strategy::OwnTable, mapStrategy.m_strategy);
-        ASSERT_EQ((int) ResolvedMapStrategy::Options::None, mapStrategy.m_options);
+        ASSERT_EQ(ResolvedMapStrategy::Options::None, mapStrategy.m_options);
         ASSERT_FALSE(mapStrategy.m_isPolymorphic);
         ASSERT_EQ (count_ManyFooHasManyGoo, GetRelationshipInstanceCount (ecdb, "ts.ManyFooHasManyGoo"));
         }
@@ -304,7 +300,7 @@ TEST_F (ECDbMapCATests, ForeignKeyRelationshipMap_EnforceReferentialIntegrity)
     ASSERT_FALSE (ecdb.TableExists ("ts_OneFooHasManyGoo"));
 
     BeSQLite::Statement sqlStatment;
-    auto stat = sqlStatment.Prepare (ecdb, "SELECT ec_Column.[Name] FROM ec_Column JOIN ec_ForeignKey ON ec_ForeignKey.[TableId] = ec_Column.[TableId] JOIN ec_ForeignKeyColumn ON ec_ForeignKeyColumn.[ColumnId] = ec_Column.[Id] WHERE ec_ForeignKey.[Id] = 1");
+    auto stat = sqlStatment.Prepare (ecdb, "SELECT ec_Column.Name FROM ec_Column JOIN ec_ForeignKey ON ec_ForeignKey.TableId = ec_Column.[TableId] JOIN ec_ForeignKeyColumn ON ec_ForeignKeyColumn.ColumnId = ec_Column.Id WHERE ec_ForeignKey.Id = 1");
     ASSERT_EQ (stat, DbResult::BE_SQLITE_OK);
     size_t rowCount = 0;
     while (sqlStatment.Step () != DbResult::BE_SQLITE_DONE)
@@ -1020,11 +1016,11 @@ TEST_F (ECDbMapCATests, TablePerHierarchy_TablePerClass)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Muhammad Hassan                  05/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECDbMapCATests, TestStructClassInTablePerHierarchy)
+TEST_F(ECDbMapCATests, StructClassInClassHierarchyWithPolymorphicSharedTable)
     {
     Utf8CP schemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TeststructClassInTablePerHierarchy' nameSpacePrefix='tph' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "<ECSchema schemaName='TeststructClassInPolymorphicSharedTable' nameSpacePrefix='tph' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
         "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
         "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
         "    <ECClass typeName='BaseClass' isDomainClass='True'>"
@@ -1036,35 +1032,29 @@ TEST_F (ECDbMapCATests, TestStructClassInTablePerHierarchy)
         "                </MapStrategy>"
         "            </ClassMap>"
         "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='PerpertyTPH' typeName='string' />"
+        "        <ECProperty propertyName='p1' typeName='string' />"
         "    </ECClass>"
         "    <ECClass typeName='CustomAttributeClass' isDomainClass='False' isCustomAttributeClass='True'>"
         "        <BaseClass>BaseClass</BaseClass>"
-        "        <ECProperty propertyName='PropertyCustomAttributeClass' typeName='string' />"
+        "        <ECProperty propertyName='p2' typeName='string' />"
         "    </ECClass>"
         "    <ECClass typeName='isStructClass' isStruct='True' isDomainClass='True'>"
         "        <BaseClass>BaseClass</BaseClass>"
-        "        <ECProperty propertyName='PropertyIsStructClass' typeName='string' />"
+        "        <ECProperty propertyName='p3' typeName='string' />"
         "    </ECClass>"
         "    <ECClass typeName='NonDomainClass' isDomainClass='False'>"
         "        <BaseClass>BaseClass</BaseClass>"
-        "        <ECProperty propertyName='PropertyNonDomainClass' typeName='string' />"
+        "        <ECProperty propertyName='p4' typeName='string' />"
         "    </ECClass>"
         "</ECSchema>";
 
     ECDbTestProject saveTestProject;
-    ECDbR db = saveTestProject.Create ("StructClassInTablePerHierarchyDb.ecdb");
+    ECDbR db = saveTestProject.Create ("StructClassInClassHierarchyWithPolymorphicSharedTable.ecdb");
     auto readContext = ECSchemaReadContext::CreateContext ();
     ECSchemaPtr testSchema = nullptr;
     ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, ECSchema::ReadFromXmlString(testSchema, schemaXml, *readContext));
     ASSERT_TRUE(testSchema != nullptr);
-    auto importStatus = db.Schemas().ImportECSchemas(readContext->GetCache());
-    ASSERT_TRUE (importStatus == BentleyStatus::SUCCESS);
-
-    ASSERT_TRUE (db.TableExists ("tph_BaseClass"));
-    ASSERT_TRUE (db.TableExists ("tph_ArrayOfisStructClass"));
-
-    db.CloseDb ();
+    ASSERT_EQ(ERROR, db.Schemas().ImportECSchemas(readContext->GetCache()));
     }
 
 //---------------------------------------------------------------------------------------
