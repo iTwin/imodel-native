@@ -108,7 +108,7 @@ namespace dgn_TxnTable {struct Element; struct ElementDep;}
 // @bsiclass                                                    Keith.Bentley   06/15
 //=======================================================================================
 struct TxnTable : RefCountedBase
-    {
+{
     enum class ChangeType : int {Insert, Update, Delete};
     TxnManager& m_txnMgr;
     TxnTable(TxnManager& mgr) : m_txnMgr(mgr) {}
@@ -164,7 +164,7 @@ struct TxnTable : RefCountedBase
     //! Columns that are unchanged are in neither values.
     virtual void _OnReversedUpdate(BeSQLite::Changes::Change const& change) {}
     //@}
-    };
+};
 typedef RefCountedPtr<TxnTable> TxnTablePtr;
 
 //=======================================================================================
@@ -227,10 +227,10 @@ struct TxnManager : BeSQLite::ChangeTracker
 private:
     struct ChangeEntry
     {
-        BeGuid          m_sessionId;
-        TxnId           m_txnId;
-        Utf8String      m_description;
-        Utf8String      m_mark;
+        BeGuid      m_sessionId;
+        TxnId       m_txnId;
+        Utf8String  m_description;
+        Utf8String  m_mark;
     };
 
     struct UndoChangeSet : BeSQLite::ChangeSet

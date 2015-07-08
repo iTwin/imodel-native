@@ -23,7 +23,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //! This enumerates all possible annotation leader line types.
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
-enum struct AnnotationLeaderLineType
+enum class AnnotationLeaderLineType
 {
     None = 1,
     Straight = 2,
@@ -34,7 +34,7 @@ enum struct AnnotationLeaderLineType
 //! This enumerates all possible annotation leader terminator types.
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
-enum struct AnnotationLeaderTerminatorType
+enum class AnnotationLeaderTerminatorType
 {
     None = 1,
     OpenArrow = 2,
@@ -46,7 +46,7 @@ enum struct AnnotationLeaderTerminatorType
 //! @note Unless dealing with style overrides, you will not typically use this enumeration directly. While AnnotationLeaderStyle provides high-level accessors to its properties, overrides are expressed directly via AnnotationLeaderStylePropertyBag and AnnotationLeaderStyleProperty.
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
-enum struct AnnotationLeaderStyleProperty
+enum class AnnotationLeaderStyleProperty
 {
     LineColor = 1, //!< (integer) @note int64_t representation of ElementColor
     LineType = 2, //!< (integer) @note Must exist in the AnnotationLeaderLineType enumeration

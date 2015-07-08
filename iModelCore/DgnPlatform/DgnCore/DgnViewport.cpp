@@ -115,6 +115,12 @@ void DgnViewport::SetDisplayFlagPatterns(bool newValue)
     m_rootViewFlags.patterns = newValue;
     }
 
+enum Constant
+    {
+    MINIMUM_WINDOW_DEPTH            = -32767,
+    MAXIMUM_WINDOW_DEPTH            = 32767,
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * Get the DgnCoordSystem::View coordinates of lower-left-back and upper-right-front corners of a viewport.
 * NOTE: the y values are "swapped" (llb.y is greater than urf.y) on the screen and and "unswapped" when we plot.

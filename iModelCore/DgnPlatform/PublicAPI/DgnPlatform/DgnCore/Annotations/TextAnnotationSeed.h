@@ -1,7 +1,10 @@
-//-------------------------------------------------------------------------------------- 
-//     $Source: PublicAPI/DgnPlatform/DgnCore/Annotations/TextAnnotationSeed.h $
-//  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
-//-------------------------------------------------------------------------------------- 
+/*--------------------------------------------------------------------------------------+
+|
+|  $Source: PublicAPI/DgnPlatform/DgnCore/Annotations/TextAnnotationSeed.h $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #pragma once
 
 //__PUBLISH_SECTION_START__
@@ -24,7 +27,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //! @note Unless dealing with style overrides, you will not typically use this enumeration directly. While TextAnnotationSeed provides high-level accessors to its properties, overrides are expressed directly via TextAnnotationSeedPropertyBag and TextAnnotationSeedProperty.
 // @bsiclass                                                    Jeff.Marker     07/2014
 //=======================================================================================
-enum struct TextAnnotationSeedProperty
+enum class TextAnnotationSeedProperty
 {
     FrameStyleId = 1, //<! (integer) @note ID of an AnnotationFrameStyle in the project
     LeaderStyleId = 2, //<! (integer) @note ID of an AnnotationLeaderStyle in the project

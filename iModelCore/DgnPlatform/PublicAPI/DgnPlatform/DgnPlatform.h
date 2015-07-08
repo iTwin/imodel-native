@@ -604,7 +604,7 @@ struct DgnDisplayCoreTypes
 enum class ConfigurationVariableLevel
 {
     Predefined    = -2,        //!< predefined by the host
-    SysEnv        = -1,        //!< defined in the Windows system environment variable table
+    SysEnv        = -1,        //!< defined in the system environment variable table
     System        = 0,         //!< system defined
     Appl          = 1,         //!< application defined
     Site          = 2,         //!< site defined
@@ -617,21 +617,13 @@ enum DgnPlatformConstants
 {
     MIN_LINECODE                    = 0,
     MAX_LINECODE                    = 7,
-    MINIMUM_WINDOW_DEPTH            = -32767,
-    MAXIMUM_WINDOW_DEPTH            = 32767,
 };
 
 //! @private
-enum DgnPlatformInvalidSymbology
-{
-    INVALID_STYLE = 0x7fffff00,
-};
+enum class DgnFontType { TrueType = 1, Rsc = 2, Shx = 3, };
 
 //! @private
-enum struct DgnFontType { TrueType = 1, Rsc = 2, Shx = 3, };
-
-//! @private
-enum struct DgnFontStyle { Regular, Bold, Italic, BoldItalic, };
+enum class DgnFontStyle { Regular, Bold, Italic, BoldItalic, };
 
 //! Enumeration of possible coordinate system types
 enum class DgnCoordSystem
@@ -709,6 +701,7 @@ enum class OutputMessageAlert
     Balloon  = 2,
 };
 
+#if defined (NEEDS_WORK_TXN_MANAGER)
 enum TransformOptionValues
 {
     TRANSFORM_OPTIONS_ModelFromElmdscr          = (1 << 0),
@@ -724,6 +717,7 @@ enum TransformOptionValues
     TRANSFORM_OPTIONS_NoteScaleSize             = (1 << 11),    // Apply scale to note's sizes. Used as an override when TRANSFORM_OPTIONS_DimSizeMatchSource == True.
     TRANSFORM_OPTIONS_DisableRotateCharacters   = (1 << 12)     // If a rotation is specified, only the text's origin will be transformed (i.e. the characters will retain their original visual orientation).
 };
+#endif
 
 enum class GridOrientationType
 {
@@ -804,8 +798,8 @@ enum class ClipVolumePass
 //  a platform where unsigned long is a 64-bit integer we had to change the OpenGL QV but did not
 //  want to change D3D QV. Code that uses QvUInt32 will compile correctly for either case.
 #if defined(BENTLEYCONFIG_GRAPHICS_OPENGLES) || defined(BENTLEYCONFIG_GRAPHICS_OPENGL)
-    typedef long QvInt32;
-    typedef unsigned long QvUInt32;
+    typedef int32_t QvInt32;
+    typedef uint32_t QvUInt32;
     typedef short QvInt16;
     typedef unsigned short QvUInt16;
 #else

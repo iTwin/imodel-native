@@ -1,0 +1,68 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="TestSchema" nameSpacePrefix="testschema" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.10" prefix="bsca" />
+    <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
+    <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
+    <ECSchemaReference name="dgn" version="02.00" prefix="dgn" />
+
+    <ECClass typeName="TestElement" isDomainClass="True">
+        <BaseClass>dgn:Element</BaseClass>
+        <ECProperty propertyName="TestElementProperty" typeName="string" />
+    </ECClass>
+	
+    <ECClass typeName="Element" isDomainClass="True">
+        <BaseClass>dgn:Element</BaseClass>
+        <ECProperty propertyName="TestElementProperty" typeName="string" />
+    </ECClass>
+
+    <ECClass typeName="TestItem" isDomainClass="True">
+        <BaseClass>dgn:ElementItem</BaseClass>
+        <ECProperty propertyName="TestItemProperty" typeName="string" />
+    </ECClass>
+
+    <ECClass typeName="TestUniqueAspect" isDomainClass="True">
+        <BaseClass>dgn:ElementAspect</BaseClass>
+        <ECProperty propertyName="TestUniqueAspectProperty" typeName="string" />
+    </ECClass>
+
+    <ECClass typeName="TestMultiAspect" isDomainClass="True">
+        <BaseClass>dgn:ElementAspect</BaseClass>
+        <ECProperty propertyName="TestMultiAspectProperty" typeName="string" />
+    </ECClass>
+
+    <ECRelationshipClass typeName="TestElementDrivesElement" isDomainClass="True" strength="referencing" strengthDirection="forward" >
+        <ECCustomAttributes>
+          <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
+                <SourceColumns>
+                    <ECInstanceIdColumn>RootElementId</ECInstanceIdColumn>
+                    <ECClassIdColumn>RootElementClassId</ECClassIdColumn>
+                </SourceColumns>
+                <TargetColumns>
+                    <ECInstanceIdColumn>DependentElementId</ECInstanceIdColumn>
+                    <ECClassIdColumn>DependentElementClassId</ECClassIdColumn>
+                </TargetColumns>
+            </LinkTableRelationshipMap>
+        </ECCustomAttributes>
+        <BaseClass>dgn:ElementDrivesElement</BaseClass>
+        <Source cardinality="(0,1)" roleLabel="Element with datum plane" polymorphic="True">
+            <Class class="dgn:Element" />
+        </Source>
+        <Target cardinality="(0,1)" roleLabel="Element to move" polymorphic="True">
+            <Class class="dgn:Element" />
+        </Target>
+        <ECProperty propertyName="Property1" typeName="string" />
+    </ECRelationshipClass>
+
+    <ECClass typeName="Robot" isDomainClass="true">
+        <BaseClass>dgn:PhysicalElement</BaseClass>
+        <ECProperty propertyName="Name" typeName="string" />
+    </ECClass>
+
+    <ECClass typeName="Obstacle" isDomainClass="true">
+        <BaseClass>dgn:PhysicalElement</BaseClass>
+        <ECProperty propertyName="CanMove" typeName="boolean" />
+        <ECProperty propertyName="SomeProperty" typeName="string" />
+    </ECClass>
+
+</ECSchema>

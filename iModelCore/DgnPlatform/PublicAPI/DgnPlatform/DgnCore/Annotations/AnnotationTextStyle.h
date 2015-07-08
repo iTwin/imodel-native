@@ -23,7 +23,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //! This enumerates all possible annotation text stacked fraction types.
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
-enum struct AnnotationStackedFractionType
+enum class AnnotationStackedFractionType
 {
     HorizontalBar = 1,
     DiagonalBar = 2
@@ -34,7 +34,7 @@ enum struct AnnotationStackedFractionType
 //! @note Unless dealing with style overrides, you will not typically use this enumeration directly. While AnnotationTextStyle provides high-level accessors to its properties, overrides are expressed directly via AnnotationTextStylePropertyBag and AnnotationTextStyleProperty.
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
-enum struct AnnotationTextStyleProperty
+enum class AnnotationTextStyleProperty
 {
     Color = 1, //!< (integer, per-run) @note int64_t representation of ElementColor
     FontId = 2, //!< (integer, per-run) @note Must be a valid font ID in the project
