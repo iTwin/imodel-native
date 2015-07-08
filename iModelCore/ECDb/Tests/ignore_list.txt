@@ -13,8 +13,6 @@ ECDbMapPersistenceTests.DGNSchemaTableColumnPropertyMapPersistence
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
-ECDbMapCATests.PolymorphicSharedTable_SharedColumns_DisableSharedColumns
-
 # TFS Defect 140982
 ECDbRelationships.RelationshipProperties 
 ECDbRelationships.JoinTests

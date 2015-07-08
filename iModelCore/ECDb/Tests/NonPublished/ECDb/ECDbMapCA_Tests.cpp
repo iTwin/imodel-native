@@ -633,14 +633,14 @@ TEST_F(ECDbMapCATests, PolymorphicSharedTable_SharedColumns_DisableSharedColumns
     ASSERT_EQ (s5.Step (), ECSqlStepStatus::Done);
 
     //verify No of Columns in BaseClass
-    const int expectedColCount = 5;
+    const int expectedColCount = 6;
     Statement statement;
     ASSERT_EQ (statement.Prepare (db, "SELECT * FROM rc_BaseClass"), DbResult::BE_SQLITE_OK);
     ASSERT_EQ (statement.Step (), DbResult::BE_SQLITE_ROW);
     ASSERT_EQ(expectedColCount, statement.GetColumnCount());
 
     //verify that the columns generated are same as expected
-    Utf8String expectedColumnNames = "ECInstanceIdECClassIdP1P2P3x01x02";
+    Utf8String expectedColumnNames = "ECInstanceIdECClassIdP1P2x01P3";
     Utf8String actualColumnNames;
     for (int i = 0; i < expectedColCount; i++)
         {
