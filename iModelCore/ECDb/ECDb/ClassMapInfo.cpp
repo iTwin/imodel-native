@@ -669,22 +669,6 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
         return MapStatus::Success;
         }
 
-    ECDbMapStrategy::Strategy resolvedStrategy;
-    switch (m_customMapType)
-        {
-            case CustomMapType::LinkTable:
-                resolvedStrategy = ECDbMapStrategy::Strategy::OwnTable;
-                break;
-
-            case CustomMapType::ForeignKeyOnSource:
-                resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable;
-                break;
-
-            default:
-                resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable;
-                break;
-        }
-
     if (m_cardinality == Cardinality::ManyToMany ||
         GetECClass().GetPropertyCount() > 0 ||
         // Follow override other. Since if relation map to Source/Target table it cannot have duplicate values there for
@@ -701,6 +685,7 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
         return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::OwnTable, false) == SUCCESS ? MapStatus::Success : MapStatus::Error;
         }
 
+    ECDbMapStrategy::Strategy resolvedStrategy;
     switch (m_cardinality)
         {
             case Cardinality::OneToOne:
@@ -725,17 +710,28 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
 
                     resolvedStrategy = ECDbMapStrategy::Strategy::OwnTable;
                     }
+                else if (m_customMapType == CustomMapType::ForeignKeyOnSource)
+                    resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable;
+                else
+                    resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable;
 
                 break;
                 }
 
             case Cardinality::OneToMany:
                 {
+                if (m_customMapType == CustomMapType::ForeignKeyOnSource)
+                    {
+                    LOG.errorv(L"ECRelationshipClass %ls implies a foreign key relationship on the target's table. Therefore the 'End' property in the ForeignKeyRelationshipMap custom attribute must not be set to 'Source'.",
+                               GetECClass().GetFullName());
+                    return MapStatus::Error;
+                    }
+
                 if (targetTableCount > 1)
                     {
                     if (userStrategyIsForeignKeyMapping)
                         {
-                        LOG.errorv(L"ECRelationshipClass %ls implies a link table relationship as the target constraint is mapped to more than one end table.. Therefore it must not have a ForeignKeyRelationshipMap custom attribute.",
+                        LOG.errorv(L"ECRelationshipClass %ls implies a link table relationship as the target constraint is mapped to more than one end table. Therefore it must not have a ForeignKeyRelationshipMap custom attribute.",
                                    GetECClass().GetFullName());
                         return MapStatus::Error;
                         }
@@ -743,11 +739,19 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
                     resolvedStrategy = ECDbMapStrategy::Strategy::OwnTable;
                     }
 
+                resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable;
                 break;
                 }
 
             case Cardinality::ManyToOne:
                 {
+                if (m_customMapType == CustomMapType::ForeignKeyOnTarget)
+                    {
+                    LOG.errorv(L"ECRelationshipClass %ls implies a foreign key relationship on the source's table. Therefore the 'End' property in the ForeignKeyRelationshipMap custom attribute must not be set to 'Target'.",
+                               GetECClass().GetFullName());
+                    return MapStatus::Error;
+                    }
+
                 if (sourceTableCount > 1)
                     {
                     if (userStrategyIsForeignKeyMapping)
@@ -760,6 +764,7 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
                     resolvedStrategy = ECDbMapStrategy::Strategy::OwnTable;
                     }
 
+                resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable;
                 break;
                 }
 
