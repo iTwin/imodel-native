@@ -123,7 +123,7 @@ void WSInfo::ParseHeaders (HttpResponseHeadersCR headers, Type& typeOut, BeVersi
             {
             serverVersionOut = BeVersion (server.c_str (), "Bentley-WSG/%d.%d.%d.%d");
             }
-            
+
         if (webApiVersionOut.IsEmpty ())
             {
             webApiVersionOut = BeVersion (server.c_str (), "Bentley-WebAPI/%d.%d");
@@ -185,6 +185,16 @@ void WSInfo::ParseAboutPage (HttpResponseCR response, Type& typeOut, BeVersion& 
         typeOut = Type::BentleyConnect;
         serverVersionOut = BeVersion (1, 0);
         webApiVersionOut = BeVersion (1, 1);
+        return;
+        }
+
+    // TODO: remove WSG pre-release support after TMA resolves their configuration
+    if (body.find (R"(<span id="productNameLabel">Bentley Web Services Gateway 02.00</span>)") != Utf8String::npos &&
+        body.find (R"(<span id="serverVersionLabel">02.00.00.12</span>)") != Utf8String::npos)
+        {
+        typeOut = Type::BentleyWSG;
+        serverVersionOut = BeVersion (2, 0);
+        webApiVersionOut = BeVersion (2, 0);
         return;
         }
     }
