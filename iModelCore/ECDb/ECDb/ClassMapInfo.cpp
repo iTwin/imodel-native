@@ -320,69 +320,64 @@ BentleyStatus ClassMapInfo::InitializeFromClassMapCA()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Affan.Khan                07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ClassMapInfo::ProcessStandardKeys (ECClassCR ecClass, WCharCP customAttributeName)
+BentleyStatus ClassMapInfo::ProcessStandardKeys(ECClassCR ecClass, WCharCP customAttributeName)
     {
     StandardKeySpecification::Type keyType = StandardKeySpecification::GetTypeFromString(customAttributeName);
     if (keyType == StandardKeySpecification::Type::None)
         return SUCCESS;
 
-    IECInstancePtr ca = ecClass.GetCustomAttribute (customAttributeName);
-    if (ca.IsValid())
-        {
-        ECValue v;
-        switch(keyType)
-            {
-                case StandardKeySpecification::Type::BusinessKeySpecification:
-                case StandardKeySpecification::Type::GlobalIdSpecification:
-                ca->GetValue (v, L"PropertyName"); break;
-                case StandardKeySpecification::Type::SyncIDSpecification:
-                ca->GetValue (v, L"Property"); break;
-            }
+    IECInstancePtr ca = ecClass.GetCustomAttribute(customAttributeName);
+    if (ca == nullptr)
+        return SUCCESS;
 
-        if (!v.IsNull())
-            {
-            //Create unique not null index on provided property
-            ECPropertyP key;
-            if (nullptr == (key = ecClass.GetPropertyP(v.GetString())))
-                {
-                LOG.errorv(L"Rejecting user specified %ls on class %ls because property specified in it '%ls' doesn't exist in class", customAttributeName, ecClass.GetFullName(), v.GetString());
+    ECValue v;
+    switch (keyType)
+        {
+            case StandardKeySpecification::Type::BusinessKeySpecification:
+            case StandardKeySpecification::Type::GlobalIdSpecification:
+                ca->GetValue(v, L"PropertyName"); break;
+            case StandardKeySpecification::Type::SyncIDSpecification:
+                ca->GetValue(v, L"Property"); break;
+
+            default:
+                BeAssert(false);
                 return ERROR;
-                }
-            else
-                {
-                if (key->GetAsPrimitiveProperty() == nullptr)
-                    {
-                    LOG.errorv(L"Rejecting user specified %ls on class %ls because specified property is not primitive.", customAttributeName, ecClass.GetFullName());
-                    return ERROR;
-                    }
-                else
-                    {
-                    PrimitiveType ectype = key->GetAsPrimitiveProperty()->GetType();
-                    if (ectype == PRIMITIVETYPE_Binary   || 
-                        ectype == PRIMITIVETYPE_Boolean  || 
-                        ectype == PRIMITIVETYPE_DateTime || 
-                        ectype == PRIMITIVETYPE_Double   || 
-                        ectype == PRIMITIVETYPE_Integer  || 
-                        ectype == PRIMITIVETYPE_Long     || 
-                        ectype == PRIMITIVETYPE_String)
-                        {
-                        Utf8String keyPropertyName;
-                        BeStringUtilities::WCharToUtf8 (keyPropertyName, v.GetString());
-                        StandardKeySpecificationPtr spec = StandardKeySpecification::Create(keyType);
-                        spec->GetKeyProperties().push_back(keyPropertyName);
-                        m_standardKeys.push_back(spec);
-                        }
-                    else
-                        {
-                        LOG.errorv(L"Rejecting user specified %ls on class %ls because specified property type not supported. Supported types are Binary, Boolean, DateTime, Double, Integer, Long and String.", customAttributeName, ecClass.GetFullName());
-                        return ERROR;
-                        }
-                    }
-                }
-            } 
         }
 
-    return SUCCESS;
+    if (v.IsNull())
+        return SUCCESS;
+
+    //Create unique not null index on provided property
+    Utf8CP keyPropName = v.GetUtf8CP();
+    ECPropertyP keyProp = ecClass.GetPropertyP(keyPropName);
+    if (nullptr == keyProp)
+        {
+        LOG.errorv(L"Invalid %ls on class '%ls'. The specified property '%ls' does not exist in the class.",
+                   customAttributeName, ecClass.GetFullName(), WString(keyPropName, BentleyCharEncoding::Utf8).c_str());
+        return ERROR;
+        }
+
+    if (keyProp->GetAsPrimitiveProperty() != nullptr)
+        {
+        const PrimitiveType primType = keyProp->GetAsPrimitiveProperty()->GetType();
+        if (primType == PRIMITIVETYPE_Binary ||
+            primType == PRIMITIVETYPE_Boolean ||
+            primType == PRIMITIVETYPE_DateTime ||
+            primType == PRIMITIVETYPE_Double ||
+            primType == PRIMITIVETYPE_Integer ||
+            primType == PRIMITIVETYPE_Long ||
+            primType == PRIMITIVETYPE_String)
+            {
+            StandardKeySpecificationPtr spec = StandardKeySpecification::Create(keyType);
+            spec->GetKeyProperties().push_back(keyPropName);
+            m_standardKeys.push_back(spec);
+            return SUCCESS;
+            }
+        }
+
+    LOG.errorv(L"Invalid %ls on class '%ls'. The data type of the specified property '%ls' is not supported. Supported types: Binary, Boolean, DateTime, Double, Integer, Long and String.",
+               customAttributeName, ecClass.GetFullName(), WString(keyPropName, BentleyCharEncoding::Utf8).c_str());
+    return ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
