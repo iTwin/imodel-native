@@ -91,9 +91,6 @@ public:
             {
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
-            virtual int _GetVersion() const {return 1;} // Do not override!
-            virtual void _OnHostTermination(bool isProcessShutdown) override {delete this;}
-
             //! Provide the JavaScript environment needed to evaluate JavaScript expressions on the host's thread. There can only be one BeJsEnvironment per thread.
             virtual BeJsEnvironmentP GetBeJsEnvironmentP() {return nullptr;}
 
@@ -122,8 +119,6 @@ public:
 
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
-            virtual int _GetVersion() const {return 1;} // Do not override!
-
             //! Handle the specified exception
             virtual WasHandled _ProcessException(_EXCEPTION_POINTERS*) {return WasHandled::ContinueSearch;};
             virtual WasHandled _FilterException(_EXCEPTION_POINTERS*, bool onlyWantFloatingPoint) {return WasHandled::ContinueSearch;}
@@ -135,7 +130,6 @@ public:
             virtual uint32_t _EnterCoreCriticalSection(CharCP) {return 0;} // WIP_CHAR_OK - Just for diagnostic purposes
             virtual uint32_t _ReleaseCoreCriticalSection(CharCP) {return 0;} // WIP_CHAR_OK - Just for diagnostic purposes
             virtual void _RestoreCoreCriticalSection(CharCP, int) {} // WIP_CHAR_OK - Just for diagnostic purposes
-            virtual void _OnHostTermination(bool isProcessShutdown) {delete this;}
             virtual bool _ConIOEnabled() {return false;}
             virtual WString _ConIOGetLine(wchar_t const* prompt) {return L"";}
             };
@@ -147,7 +141,6 @@ public:
 
         protected:
             virtual ~IKnownLocationsAdmin() {}
-            virtual void _OnHostTermination(bool isProcessShutdown) override {delete this;}
             virtual BeFileNameCR _GetLocalTempDirectoryBaseName() = 0; //!< @see GetLocalTempDirectoryBaseName
             virtual BeFileNameCR _GetDgnPlatformAssetsDirectory() = 0; //!< @see GetDgnPlatformAssetsDirectory
 
@@ -182,7 +175,6 @@ public:
         public:
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
-            virtual void _OnHostTermination(bool isProcessShutdown) override {delete this;}
             virtual bool _OnPromptReverseAll() {return true;}
             virtual void _RestartTool()  {}
             virtual void _OnNothingToUndo() {}
@@ -226,8 +218,6 @@ public:
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS;
             FontAdmin() : m_isInitialized(false), m_lastResortFontDb(nullptr), m_dbFonts(nullptr), m_triedToLoadFTLibrary(false), m_ftLibrary(nullptr) {}
             DGNPLATFORM_EXPORT virtual ~FontAdmin();
-            virtual int _GetVersion() const { return 1; } // Do not override!
-            virtual void _OnHostTermination(bool isProcessShutdown) override { delete this; }
 
             virtual DgnFontCR _GetLastResortTrueTypeFont() { return m_lastResortTTFont.IsValid() ? *m_lastResortTTFont : *(m_lastResortTTFont = _CreateLastResortFont(DgnFontType::TrueType)); }
             DgnFontCR GetLastResortTrueTypeFont() { return _GetLastResortTrueTypeFont(); }
@@ -260,10 +250,6 @@ public:
 
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
-            // Get the version of the LineStyleAdmin api. Do not override this method.
-            virtual int _GetVersion() const {return 1;}
-            virtual void _OnHostTermination(bool isProcessShutdown) override {delete this;}
-
             //! Allows the host to provide a semi-colon-delimited list of search patterns to search for RSC files (which can each have zero or more RSC line styles).
             //! The order of files in the list is important
             //! because line styles encountered in files earlier in the list hide line styles of the same name encountered in files later in the list.
@@ -293,9 +279,6 @@ public:
             {
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
-            virtual int _GetVersion() const {return 1;} // Do not override!
-            virtual void _OnHostTermination(bool isProcessShutdown) override {delete this;}
-
             //! Determine whether DgnPlatform should attempt to determine materials for geometry during display.
             virtual bool _WantDisplayMaterials() {return true;}
             //! Convert a stored material preview from a jpeg data block to an rgb image
@@ -310,9 +293,6 @@ public:
         struct RasterAttachmentAdmin : IHostObject
             {
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-
-            virtual int _GetVersion() const {return 1;} // Do not override!
-            virtual void _OnHostTermination(bool isProcessShutdown) override {delete this;}
 
             //Control if raster are displayed or not
             virtual bool _IsDisplayEnable() const {return true;}
@@ -345,9 +325,6 @@ public:
                 };
 
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-
-            virtual int _GetVersion() const {return 1;} // Do not override!
-            virtual void _OnHostTermination(bool isProcessShutdown) override {delete this;}
 
             //! Get the density used for dynamic display.
             //! @return the dynamic density (a value between 0 and 1).
@@ -395,8 +372,6 @@ public:
             RealityDataCachePtr m_cache;
 
         public:
-            virtual void _OnHostTermination(bool isProgramExit) {delete this;}
-
             DGNPLATFORM_EXPORT RealityDataCache& GetCache();
         };
 
@@ -413,9 +388,6 @@ public:
                 };
 
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-
-            virtual int _GetVersion() const final {return 1;} 
-            virtual void _OnHostTermination(bool isProcessShutdown) override final {delete this;}
 
             //! Return a pointer to a temporary QVCache used to create a temporary QVElem (short-lived).
             virtual QvCache* _GetTempElementCache() {return nullptr;}
@@ -484,9 +456,6 @@ public:
             //! @return Value to use for display control setting of mesh edges marked as invisible and for bspline curve/surface control polygons.
             virtual ControlPolyDisplay _GetControlPolyDisplay() {return ControlPolyDisplay::ByElement;}
 
-            //! @return The max number of components before a cell will be drawn "fast" when ViewFlags.fast_cell is enabled.
-            virtual uint32_t _GetFastCellThreshold() {return 1;}
-
             virtual bool _WantInvertBlackBackground() {return false;}
 
             virtual bool _GetModelBackgroundOverride(ColorDef& rgbColor, DgnModelType modelType) {return false;}
@@ -502,14 +471,14 @@ public:
             virtual BentleyStatus _SendMaterialToQV(MaterialCR material, ColorDef elementColor, DgnViewportP viewport) {return ERROR;}
 
             //! Supported color depths for this library's UI icons.
-            enum IconColorDepth
+            enum class IconColorDepth
                 {
-                ICON_COLOR_DEPTH_32,    //!< 32 BPP icons will be used (transparency)
-                ICON_COLOR_DEPTH_24     //!< 24 BPP icons will be used (no transparency)
+                Bpp32,    //!< 32 BPP icons will be used (transparency)
+                Bpp24     //!< 24 BPP icons will be used (no transparency)
                 };
 
             //! Gets the desired color depth of the UI icons that this library loads. At this time, 32 is preferred, but 24 can be used if required.
-            virtual IconColorDepth _GetIconColorDepth() {return ICON_COLOR_DEPTH_32;}
+            virtual IconColorDepth _GetIconColorDepth() {return IconColorDepth::Bpp32;}
 
             //! Get the longest amount of time allowed between clicks to be interpreted as a double click. Units are milliseconds.
             virtual uint32_t _GetDoubleClickTimeout() {return 500;} // default to 1/2 second
@@ -536,9 +505,6 @@ public:
         struct SolidsKernelAdmin : IHostObject
             {
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-
-            virtual int _GetVersion() const {return 1;} // Do not override!
-            virtual void _OnHostTermination(bool isProcessShutdown) override {delete this;}
 
             //! Report if Parasolids is loaded.
             virtual bool _IsParasolidLoaded() {return false;}
@@ -855,10 +821,10 @@ public:
             virtual bool _IsParentEntity(ISubEntityCR subEntity, ISolidKernelEntityCR entity) const {return false;}
 
             //! Simple yes/no type queries on ISubEntity
-            enum SubEntityQuery
+            enum class SubEntityQuery
                 {
-                SubEntityQuery_IsPlanarFace = 1, //!< Check if face sub-entity has as planar surface.
-                SubEntityQuery_IsSmoothEdge = 2, //!< Check if edge sub-entity is smooth by comparing the face normals along the edge.
+                IsPlanarFace = 1, //!< Check if face sub-entity has as planar surface.
+                IsSmoothEdge = 2, //!< Check if edge sub-entity is smooth by comparing the face normals along the edge.
                 };
 
             //! Query the supplied ISubEntity for information
@@ -879,9 +845,6 @@ public:
         struct NotificationAdmin : IHostObject
             {
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-
-            virtual int _GetVersion() const {return 1;} // Do not override!
-            virtual void _OnHostTermination(bool isProcessShutdown) override {delete this;}
 
             //! Implement this method to display messages from NotificationManager::OutputMessage.
             virtual StatusInt _OutputMessage(NotifyMessageDetails const&) {return SUCCESS;}
@@ -904,9 +867,6 @@ public:
             {
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
-            virtual int _GetVersion() const {return 1;} // Do not override!
-            virtual void _OnHostTermination(bool isProcessShutdown) override {delete this;}
-
             //! Allows the host to provide a path to coordinate system definition files.
             virtual WString _GetDataDirectory() { return L""; }
 
@@ -918,8 +878,6 @@ public:
             {
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
-            virtual int     _GetVersion() const {return 1;}
-            virtual void    _OnHostTermination(bool isProcessShutdown) override {delete this;}
             //! If true, display coordinates in DGN format(eg. 1:0 1/4); if false, display DWG format(eg. 1'-0 1/4").
             virtual bool    _AllowDgnCoordinateReadout() const {return true;}
             };
@@ -947,9 +905,6 @@ public:
         Utf8String              m_productName;
         T_RegisteredDomains     m_registeredDomains;
         
-        // Get the version of the DgnPlatform api. Do not override this method.
-        virtual int _GetVersion() const {return 1;}
-
     public:
         T_RegisteredDomains& RegisteredDomains() {return m_registeredDomains;}
         

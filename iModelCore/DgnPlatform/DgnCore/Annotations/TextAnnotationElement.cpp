@@ -119,12 +119,12 @@ DgnDbStatus PhysicalTextAnnotationElement::UpdatePropertiesInDb()
     if (m_annotation.IsValid())
         {
         if (SUCCESS != TextAnnotationPersistence::EncodeAsFlatBuf(annotationBlob, *m_annotation))
-            return DgnDbStatus::ElementWriteError;
+            return DgnDbStatus::WriteError;
         }
     
     CachedECSqlStatementPtr statement = GetDgnDb().GetPreparedECSqlStatement("UPDATE " DGN_SCHEMA(DGN_CLASSNAME_PhysicalTextAnnotationElement) " SET TextAnnotationBlob=? WHERE ECInstanceId=?");
     if (!statement.IsValid())
-        return DgnDbStatus::ElementWriteError;
+        return DgnDbStatus::WriteError;
 
     if (annotationBlob.empty())
         statement->BindNull(1);
@@ -134,7 +134,7 @@ DgnDbStatus PhysicalTextAnnotationElement::UpdatePropertiesInDb()
     statement->BindId(2, GetElementId());
 
     if (ECSqlStepStatus::Done != statement->Step())
-        return DgnDbStatus::ElementWriteError;
+        return DgnDbStatus::WriteError;
 
     return DgnDbStatus::Success;
     }
@@ -174,13 +174,13 @@ DgnDbStatus PhysicalTextAnnotationElement::_LoadFromDb()
     
     CachedECSqlStatementPtr statement = GetDgnDb().GetPreparedECSqlStatement("SELECT TextAnnotationBlob FROM " DGN_SCHEMA(DGN_CLASSNAME_PhysicalTextAnnotationElement) " WHERE ECInstanceId=?");
     if (!statement.IsValid())
-        return DgnDbStatus::ElementReadError;
+        return DgnDbStatus::ReadError;
 
     statement->BindId(1, GetElementId());
     
     // Should always be able to find this row by-ID, even if data is null...
     if (ECSqlStepStatus::HasRow != statement->Step())
-        return DgnDbStatus::ElementReadError;
+        return DgnDbStatus::ReadError;
 
     // An annotation element with no annotation is pretty meaningless, but not strictly a read error either...
     if (statement->IsValueNull(0))
@@ -199,7 +199,7 @@ DgnDbStatus PhysicalTextAnnotationElement::_LoadFromDb()
         m_annotation = TextAnnotation::Create(GetDgnDb());
     
     if (SUCCESS != TextAnnotationPersistence::DecodeFromFlatBuf(*m_annotation, data, (size_t)dataSize))
-        return DgnDbStatus::ElementReadError;
+        return DgnDbStatus::ReadError;
 
     return DgnDbStatus::Success;
     }

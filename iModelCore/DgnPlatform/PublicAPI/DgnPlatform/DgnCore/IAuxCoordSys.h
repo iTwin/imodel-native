@@ -121,7 +121,6 @@ public:
     IACSManager                             ();
     void SetInhibitCurrentACSDisplay        (bool inhibit) {m_inhibitCurrentACSDisplay = inhibit;}
     bool GetInhibitCurrentACSDisplay        () {return m_inhibitCurrentACSDisplay;}
-    virtual void _OnHostTermination (bool isProcessShutdown) override {delete this;}
 
 DGNPLATFORM_EXPORT void AddExtender (IAuxCoordSystemExtender* extender);
 DGNPLATFORM_EXPORT void RemoveExtender (IAuxCoordSystemExtender* extender);

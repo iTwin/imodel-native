@@ -361,7 +361,7 @@ public:
         //! @param angles   The placement angles
         //! @param egaInstance The ECInstance that specifies the EGA and supplies the required input parameters.
         //! @return DgnDbStatus::Success if the EGA was executed and the element's geometry was generated;
-        //! DgnDbStatus::NotEnabled if the EGA is not available or cannot be executed; DgnDbStatus::BadArg if properties could not be marshalled from egaInstance; or DgnDbStatus::ElementWriteError if the EGA executed but encountered an error.
+        //! DgnDbStatus::NotEnabled if the EGA is not available or cannot be executed; DgnDbStatus::BadArg if properties could not be marshalled from egaInstance; or DgnDbStatus::WriteError if the EGA executed but encountered an error.
         DGNPLATFORM_EXPORT DgnDbStatus ExecuteEGA(Dgn::DgnElementR el, DPoint3dCR origin, YawPitchRollAnglesCR angles, ECN::IECInstanceCR egaInstance);
     
     };

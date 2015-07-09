@@ -701,24 +701,6 @@ enum class OutputMessageAlert
     Balloon  = 2,
 };
 
-#if defined (NEEDS_WORK_TXN_MANAGER)
-enum TransformOptionValues
-{
-    TRANSFORM_OPTIONS_ModelFromElmdscr          = (1 << 0),
-    TRANSFORM_OPTIONS_DimValueMatchSource       = (1 << 1),     // Turn off if dimension value should be scaled
-    TRANSFORM_OPTIONS_DimSizeMatchSource        = (1 << 2),     // Turn off if non-annotation dimension size should be scaled
-    TRANSFORM_OPTIONS_MlineScaleOffsets         = (1 << 3),
-    TRANSFORM_OPTIONS_MlineMirrorOffsets        = (1 << 4),
-    TRANSFORM_OPTIONS_DisableMirrorCharacters   = (1 << 5),
-    TRANSFORM_OPTIONS_AnnotationSizeMatchSource = (1 << 7),     // Turn off if annotations should be scaled
-    TRANSFORM_OPTIONS_RotateDimView             = (1 << 8),     // Turn on if dim view orientation should be changed (so that dim text orientation remains constant)
-    TRANSFORM_OPTIONS_ApplyAnnotationScale      = (1 << 9),     // Turn on if annotation scale (provided by caller) should be applied to annotations
-    TRANSFORM_OPTIONS_FromClone                 = (1 << 10),    // transforming for purposes of cloning between models.
-    TRANSFORM_OPTIONS_NoteScaleSize             = (1 << 11),    // Apply scale to note's sizes. Used as an override when TRANSFORM_OPTIONS_DimSizeMatchSource == True.
-    TRANSFORM_OPTIONS_DisableRotateCharacters   = (1 << 12)     // If a rotation is specified, only the text's origin will be transformed (i.e. the characters will retain their original visual orientation).
-};
-#endif
-
 enum class GridOrientationType
 {
     View    = 0,
