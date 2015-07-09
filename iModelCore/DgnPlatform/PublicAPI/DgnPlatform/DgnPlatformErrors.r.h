@@ -114,7 +114,7 @@ enum class ViewportStatus : int
 // @bsiclass
 //=======================================================================================
 enum LineStyleStatus
-    {
+{
     LINESTYLE_STATUS_Success                    = BSISUCCESS,
     LINESTYLE_STATUS_Error                      = BSIERROR,
     LINESTYLE_STATUS_BadArgument                = LINESTYLE_ERROR_BASE + 0x01,
@@ -129,7 +129,7 @@ enum LineStyleStatus
     LINESTYLE_STATUS_SQLITE_Error               = LINESTYLE_ERROR_BASE + 0x0c,
     LINESTYLE_STATUS_SQLITE_Constraint          = LINESTYLE_ERROR_BASE + 0x0d,
     LINESTYLE_STATUS_ConvertingComponent        = LINESTYLE_ERROR_BASE + 0x0e,
-    };
+};
 
 /** @endcond */
 

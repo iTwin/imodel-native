@@ -1100,7 +1100,7 @@ public:
 //=======================================================================================
 struct IDgnJavaScriptObjectModel
 {
-    virtual ~IDgnJavaScriptObjectModel() {;}
+    virtual ~IDgnJavaScriptObjectModel() {}
 
     //! Execute an Element Generation Algorithm (EGA) that is implemented in JavaScript. The \a jsEgaFunctionName identifies the EGA function. The namespace portion of the name
     //! must identify a JavaScript program that was previously registered in the DgnDb. See BentleyApi::DgnPlatform::DgnJavaScriptLibrary.
