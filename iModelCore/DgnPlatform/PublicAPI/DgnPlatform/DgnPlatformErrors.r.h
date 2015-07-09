@@ -41,38 +41,23 @@ enum class DgnDbStatus : int
     BadElement,
     BadModel,
     BadRequest,
-    BadSeedModel,
     BadSchema,
-    DrawingModelMustBe2d,
-    DuplicateModelID,
-    DuplicateModelName,
+    DuplicateName,
     ElementBlockedChange,
-    ElementNotFound,
-    ElementReadError,
-    ElementWriteError,
     FileAlreadyExists,
     FileNotFound,
     FileNotLoaded,
     ForeignKeyConstraint,
     IdExists,
-    IdNotFound,
-    InvalidClassId,
-    InvalidFileSchema,
-    InvalidHandler,
     InvalidId,
-    InvalidModel,
-    InvalidModelName,
-    InvalidRange,
+    InvalidName,
+    InvalidParent,
     InvalidSchemaVersion,
-    IsInUse,
     IsLocked,
     Mismatch2d3d,
     MissingDomain,
     MissingHandler,
-    ModelAlreadyLoaded,
-    ModelTableWriteError,
-    MuNotLargerThanSu,
-    NoChange,
+    MissingId,
     NoGeometry,
     NotDgnMarkupProject,
     NotEnabled,
@@ -129,7 +114,7 @@ enum class ViewportStatus : int
 // @bsiclass
 //=======================================================================================
 enum LineStyleStatus
-    {
+{
     LINESTYLE_STATUS_Success                    = BSISUCCESS,
     LINESTYLE_STATUS_Error                      = BSIERROR,
     LINESTYLE_STATUS_BadArgument                = LINESTYLE_ERROR_BASE + 0x01,
@@ -144,7 +129,7 @@ enum LineStyleStatus
     LINESTYLE_STATUS_SQLITE_Error               = LINESTYLE_ERROR_BASE + 0x0c,
     LINESTYLE_STATUS_SQLITE_Constraint          = LINESTYLE_ERROR_BASE + 0x0d,
     LINESTYLE_STATUS_ConvertingComponent        = LINESTYLE_ERROR_BASE + 0x0e,
-    };
+};
 
 /** @endcond */
 

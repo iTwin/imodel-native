@@ -301,10 +301,10 @@ DgnDbStatus TestItem::_GenerateElementGeometry(GeometricElementR el)
     else if (m_testItemProperty.EqualsI("Circle"))
         builder->Append(*ICurvePrimitive::CreateArc(DEllipse3d::FromXYMajorMinor(0,0,0, 10,10, 0,0, Angle::PiOver2())));
     else
-        return DgnDbStatus::ElementWriteError;
+        return DgnDbStatus::WriteError;
     
     if (BSISUCCESS != builder->SetGeomStreamAndPlacement(el))
-        return DgnDbStatus::ElementWriteError;
+        return DgnDbStatus::WriteError;
 
     return DgnDbStatus::Success;
     }
@@ -326,7 +326,7 @@ DgnDbStatus TestItem::_LoadProperties(DgnElementCR el)
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT " TMTEST_TEST_ITEM_TestItemProperty " FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
     stmt->BindId(1, el.GetElementId());
     if (BeSQLite::EC::ECSqlStepStatus::HasRow != stmt->Step())
-        return DgnDbStatus::ElementReadError;
+        return DgnDbStatus::ReadError;
     m_testItemProperty = stmt->GetValueText(0);
     return DgnDbStatus::Success;
     }
@@ -339,7 +339,7 @@ DgnDbStatus TestItem::_UpdateProperties(DgnElementCR el)
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("UPDATE %s SET " TMTEST_TEST_ITEM_TestItemProperty "=? WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
     stmt->BindText(1, m_testItemProperty.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     stmt->BindId(2, el.GetElementId());
-    return (BeSQLite::EC::ECSqlStepStatus::Done != stmt->Step())? DgnDbStatus::ElementWriteError: DgnDbStatus::Success;
+    return (BeSQLite::EC::ECSqlStepStatus::Done != stmt->Step())? DgnDbStatus::WriteError: DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -350,7 +350,7 @@ DgnDbStatus TestUniqueAspect::_LoadProperties(DgnElementCR el)
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT " TMTEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty " FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
     stmt->BindId(1, GetAspectInstanceId(el));
     if (BeSQLite::EC::ECSqlStepStatus::HasRow != stmt->Step())
-        return DgnDbStatus::ElementReadError;
+        return DgnDbStatus::ReadError;
     m_testUniqueAspectProperty = stmt->GetValueText(0);
     return DgnDbStatus::Success;
     }
@@ -363,7 +363,7 @@ DgnDbStatus TestUniqueAspect::_UpdateProperties(DgnElementCR el)
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("UPDATE %s SET " TMTEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty "=? WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
     stmt->BindText(1, m_testUniqueAspectProperty.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     stmt->BindId(2, GetAspectInstanceId(el));
-    return (BeSQLite::EC::ECSqlStepStatus::Done != stmt->Step())? DgnDbStatus::ElementWriteError: DgnDbStatus::Success;
+    return (BeSQLite::EC::ECSqlStepStatus::Done != stmt->Step())? DgnDbStatus::WriteError: DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -374,7 +374,7 @@ DgnDbStatus TestMultiAspect::_LoadProperties(DgnElementCR el)
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT " TMTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty " FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
     stmt->BindId(1, GetAspectInstanceId());
     if (BeSQLite::EC::ECSqlStepStatus::HasRow != stmt->Step())
-        return DgnDbStatus::ElementReadError;
+        return DgnDbStatus::ReadError;
     m_testMultiAspectProperty = stmt->GetValueText(0);
     return DgnDbStatus::Success;
     }
@@ -387,7 +387,37 @@ DgnDbStatus TestMultiAspect::_UpdateProperties(DgnElementCR el)
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("UPDATE %s SET " TMTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty "=? WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
     stmt->BindText(1, m_testMultiAspectProperty.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     stmt->BindId(2, GetAspectInstanceId());
-    return (BeSQLite::EC::ECSqlStepStatus::Done != stmt->Step())? DgnDbStatus::ElementWriteError: DgnDbStatus::Success;
+    return (BeSQLite::EC::ECSqlStepStatus::Done != stmt->Step())? DgnDbStatus::WriteError: DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementItemTests, ElementsOwnsItemTest)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"ElementsOwnsItemTest.idgndb", Db::OpenMode::ReadWrite);
+
+    // Define an element with an item
+    TestElementCPtr el;
+    if (true)
+        {
+        TestElementPtr tempEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement");
+        DgnElement::Item::SetItem(*tempEl, *TestItem::Create("Line"));
+        el = m_db->Elements().Insert(*tempEl);
+        m_db->SaveChanges();
+        }
+
+    //  Delete the element. 
+    DgnElementId eid = el->GetElementId();
+    m_db->Elements().Delete(*el);
+
+    // Item should have been deleted for me.
+    Statement findItem;
+    findItem.Prepare(*m_db, "SELECT ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_ElementItem) " WHERE(ElementId=?)");
+    findItem.BindId(1, eid);
+    bool itemIsGone = (BE_SQLITE_ROW != findItem.Step());
+    //ASSERT_TRUE(itemIsGone);  *** WIP_ITEM - cascading delete
+    ASSERT_FALSE(itemIsGone); // *** WIP_ITEM - cascading delete
     }
 
 /*---------------------------------------------------------------------------------**//**

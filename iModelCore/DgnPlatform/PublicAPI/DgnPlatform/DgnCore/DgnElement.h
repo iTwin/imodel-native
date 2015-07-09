@@ -148,10 +148,10 @@ public:
 
         DGNPLATFORM_EXPORT Aspect();
 
-        //! The subclass must implement this method to return the full class name (in ECSql schema.class format) of the instance.
+        //! The subclass must implement this method to return the name of the schema that defines the aspect.
         virtual Utf8String _GetECSchemaName() const = 0;
 
-        //! The subclass must implement this method to return the full class name (in ECSql schema.class format) of the instance.
+        //! The subclass must implement this method to return the name of the class that defines the aspect.
         virtual Utf8String _GetECClassName() const = 0;
 
         //! The subclass must implement this method to report an existing instance on the host element that this instance will replace.
@@ -296,7 +296,9 @@ public:
     //!     * _UpdateProperties
     //!     * _LoadProperties
     //!     * _GenerateElementGeometry
-    //! @note A domain that defines a subclass of Item must also define a subclass of ElementAspectHandler to load it.
+    //! @note It will be common for a single ElementAspectHandler to be registered for a single ECClass and then used for \em multiple ECClasses, all of which are subclasses of the registered ECClass.
+    //! Therefore, the Item subclass should not assume that it knows the ECClass of the item at compile time; it must query the DgnDb or the ECInstance (if it holds one) in order to 
+    //! determine the actual class of the item.
     struct EXPORT_VTABLE_ATTRIBUTE Item : UniqueAspect
     {
         DEFINE_T_SUPER(UniqueAspect)
@@ -319,6 +321,27 @@ public:
         //! The platform invokes _GenerateElementGeometry just \em before an element is inserted and/or updated.
         //! @param el   The element to be updated.
         virtual DgnDbStatus _GenerateElementGeometry(GeometricElementR el) = 0;
+
+        //! Utility method to return the ECSchema name of an ECInstance.
+        //! @param instance The instance currently assigned to this Item, or null if the Item has no in-memory instance.
+        //! @return the ECSchema name from the instance or the empty string if \a instance is nullptr.
+        //! @remarks For *Items* the _GetECSchemaName and _GetECClassName virtual are called *only* during an "on-updated" event. In that one case, the
+        //! caller wants to know if the current in-memory Item is an instance of a different ECClass than the stored instance.
+        //! Therefore the subclass of Item should implement _GetECSchemaName and _GetECClassName to return the class of its its
+        //! in-memory instance data, if it has in-memory instance data. If not, it can assert and/or return empty strings. This base
+        //! class cannot implement _GetECSchemaName and _GetECClassName to do that, since only the subclass knows its in-memory instance.
+        //! If the subclass holds an IECInstancePtr, then it can implement those methods by calling these utility methods.
+        DGNPLATFORM_EXPORT static Utf8String GetECSchemaNameOfInstance(ECN::IECInstanceCP instance);
+
+        //! Utility method to return the ECClass name of an ECInstance.
+        //! @param instance The instance currently assigned to this Item, or null if the Item has no in-memory instance.
+        //! @return the ECClass name from the instance or the empty string if \a instance is nullptr.
+        //! @see GetECSchemaNameOfInstance
+        DGNPLATFORM_EXPORT static Utf8String GetECClassNameOfInstance(ECN::IECInstanceCP instance);
+
+        //! Utility method to load an existing instance of an Item
+        //! A subclass may call this as part of its implementation of _LoadProperties
+        DGNPLATFORM_EXPORT DgnDbStatus LoadPropertiesIntoInstance(ECN::IECInstancePtr& instance, DgnElementCR el);
 
     public:
         //! Prepare to insert or update an Item for the specified element
@@ -361,7 +384,7 @@ public:
         //! @param angles   The placement angles
         //! @param egaInstance The ECInstance that specifies the EGA and supplies the required input parameters.
         //! @return DgnDbStatus::Success if the EGA was executed and the element's geometry was generated;
-        //! DgnDbStatus::NotEnabled if the EGA is not available or cannot be executed; DgnDbStatus::BadArg if properties could not be marshalled from egaInstance; or DgnDbStatus::ElementWriteError if the EGA executed but encountered an error.
+        //! DgnDbStatus::NotEnabled if the EGA is not available or cannot be executed; DgnDbStatus::BadArg if properties could not be marshalled from egaInstance; or DgnDbStatus::WriteError if the EGA executed but encountered an error.
         DGNPLATFORM_EXPORT DgnDbStatus ExecuteEGA(Dgn::DgnElementR el, DPoint3dCR origin, YawPitchRollAnglesCR angles, ECN::IECInstanceCR egaInstance);
     
     };
@@ -1100,7 +1123,7 @@ public:
 //=======================================================================================
 struct IDgnJavaScriptObjectModel
 {
-    virtual ~IDgnJavaScriptObjectModel() {;}
+    virtual ~IDgnJavaScriptObjectModel() {}
 
     //! Execute an Element Generation Algorithm (EGA) that is implemented in JavaScript. The \a jsEgaFunctionName identifies the EGA function. The namespace portion of the name
     //! must identify a JavaScript program that was previously registered in the DgnDb. See BentleyApi::DgnPlatform::DgnJavaScriptLibrary.
