@@ -33,11 +33,14 @@ private:
 
     Utf8String BuildTileUrl(TileId const& tileId);
 
-    GeoCoordinates::BaseGCSPtr CreateBaseGcsFromWmsGcs(Utf8StringCR gcsStr);
+    static GeoCoordinates::BaseGCSPtr CreateBaseGcsFromWmsGcs(Utf8StringCR gcsStr);
+    static bool EvaluateReverseAxis(WmsMap const& mapInfo, GeoCoordinates::BaseGCSP pGcs);
 
     WmsMap m_mapInfo;
 
     bvector<Byte> m_decompressBuffer;
+
+    bool m_reverseAxis; // deduct form WmsMap::m_axisOrder at construction.
 
     //uint32_t    m_metaTileSizeX;    //&&MM todo.
     //uint32_t    m_metaTileSizeY;

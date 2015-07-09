@@ -113,7 +113,10 @@ RasterTile::RasterTile(TileId const& id, RasterTileP parent, RasterQuadTreeR tre
     DPoint3d srcCorners[4];
     source.ComputeTileCorners(srcCorners, id); 
 
-    ReprojectCorners(m_corners, srcCorners, tree);
+    if(REPROJECT_Success != ReprojectCorners(m_corners, srcCorners, tree))
+        {
+        memcpy(m_corners, srcCorners, sizeof(m_corners));   // Assume coincident for now. We should an invalid reprojection or something.
+        }
     }
 
 //----------------------------------------------------------------------------------------
@@ -435,7 +438,8 @@ void RasterQuadTree::QueryVisible(bvector<RasterTilePtr>& visibles, ViewContextR
     {
     visibles.clear();
 
-    m_pRoot->QueryVisible(visibles, context);
+    if(m_pRoot.IsValid()) // Might be null if reprojection error occurs.
+        m_pRoot->QueryVisible(visibles, context);
     }
 
 //----------------------------------------------------------------------------------------
