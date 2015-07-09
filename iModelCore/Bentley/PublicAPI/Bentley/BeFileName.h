@@ -67,7 +67,7 @@ static WChar    const  WCSPATH_SEPARATOR_CHAR    = L';';
 enum class BeFileNameStatus
     {
     Success             = SUCCESS,  //!< The BeFileName operation was successful
-    IllegalName		= 1,        //!< The BeFileName operation failed because an illegal name was used
+    IllegalName         = 1,        //!< The BeFileName operation failed because an illegal name was used
     AlreadyExists       = 2,        //!< The BeFileName operation failed because the specified file already exists
     CantCreate          = 3,        //!< Unable to create the specified file
     FileNotFound        = 4,        //!< The BeFileName operation failed because the file was not found
@@ -82,9 +82,9 @@ enum class BeFileNameStatus
 //! @ingroup BeFileGroup
 enum class BeFileNameAccess
     {
-    Read  = 4,                                                  //!< The ability to read the file.
-    Write = 2,                                                  //!< The ability to write to the file.
-    ReadWrite = BeFileNameAccess::Read|BeFileNameAccess::Write, //!< The ability to read and write the file.
+    Read  = 4,              //!< read the file.
+    Write = 2,              //!< write to the file.
+    ReadWrite = Read | Write, //!< read and write the file.
     };
 
 //=======================================================================================
