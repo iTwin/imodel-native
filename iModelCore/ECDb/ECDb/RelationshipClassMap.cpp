@@ -311,8 +311,7 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (ClassMapInfo const& cl
 
     if (thisEndTableCount != 1)
         {
-        LOG.error ("Persistence End of relationship has more then one tables or has no table at all");
-        BeAssert (thisEndTableCount == 1);
+        BeAssert(thisEndTableCount == 1 && "ForeignKey end of relationship %ls has more than one tables or has no table at all");
         return MapStatus::Error;
         }
 

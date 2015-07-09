@@ -738,8 +738,9 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
 
                     resolvedStrategy = ECDbMapStrategy::Strategy::OwnTable;
                     }
+                else
+                    resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable;
 
-                resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInTargetTable;
                 break;
                 }
 
@@ -763,8 +764,9 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
 
                     resolvedStrategy = ECDbMapStrategy::Strategy::OwnTable;
                     }
+                else
+                    resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable;
 
-                resolvedStrategy = ECDbMapStrategy::Strategy::ForeignKeyRelationshipInSourceTable;
                 break;
                 }
 
