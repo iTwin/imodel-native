@@ -355,7 +355,7 @@ DgnDbStatus DgnModel::Update()
 
     auto rc=stmt.Step();
     if (rc!= BE_SQLITE_DONE)
-        return DgnDbStatus::ModelTableWriteError;
+        return DgnDbStatus::WriteError;
 
     _OnUpdated();
     return DgnDbStatus::Success;
@@ -594,7 +594,7 @@ DgnDbStatus DgnModel::_OnInsert()
     if (!DgnModels::IsValidName(m_name))
         {
         BeAssert(false);
-        return DgnDbStatus::InvalidModelName;
+        return DgnDbStatus::InvalidName;
         }
 
     return DgnDbStatus::Success;
@@ -630,7 +630,7 @@ DgnDbStatus DgnModel::Delete()
 
     Statement stmt(m_dgndb, "DELETE FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
     stmt.BindId(1, m_modelId);
-    return BE_SQLITE_DONE == stmt.Step() ? DgnDbStatus::Success : DgnDbStatus::ModelTableWriteError;
+    return BE_SQLITE_DONE == stmt.Step() ? DgnDbStatus::Success : DgnDbStatus::WriteError;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -646,7 +646,7 @@ DgnDbStatus DgnModel::Insert(Utf8CP description, bool inGuiList)
 
     m_name.Trim();
     if (models.QueryModelId(m_name.c_str()).IsValid()) // can't allow two models with the same name
-        return DgnDbStatus::DuplicateModelName;
+        return DgnDbStatus::DuplicateName;
 
     DbResult rc = m_dgndb.GetNextRepositoryBasedId(m_modelId, DGN_TABLE(DGN_CLASSNAME_Model), "Id");
     BeAssert(rc == BE_SQLITE_OK);
@@ -665,7 +665,7 @@ DgnDbStatus DgnModel::Insert(Utf8CP description, bool inGuiList)
         {
         BeAssert(false);
         m_modelId = DgnModelId();
-        return DgnDbStatus::ModelTableWriteError;
+        return DgnDbStatus::WriteError;
         }
 
     stat = Update();

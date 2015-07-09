@@ -606,6 +606,8 @@ void Win32TrueTypeContext::_OnHostTermination(bool isProgramExit)
         ::DeleteDC(m_dc);
         m_dc = nullptr;
         }
+
+    delete this;
     }
 
 //---------------------------------------------------------------------------------------
