@@ -1462,6 +1462,75 @@ DgnClassId DgnElement::Item::QueryExistingItemClass(DgnElementCR el)
     return DgnClassId(getItemClass->GetValueId<DgnClassId>(0));
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                 01/2014
+//+---------------+---------------+---------------+---------------+---------------+------
+#ifdef NOT_USED
+static Utf8String getFullNameOfClass(ECN::ECClassCR ecClass)
+    {
+    WString fullClassName (L"[");
+    fullClassName.append (ecClass.GetSchema ().GetName ()).append (L"].[").append (ecClass.GetName ().c_str ()).append (L"]");
+    return Utf8String (fullClassName);
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::Item::LoadPropertiesIntoInstance(ECN::IECInstancePtr& instance, DgnElementCR el)
+    {
+    DgnDbR db = el.GetDgnDb();
+
+    BeSQLite::EC::ECInstanceKey key = _QueryExistingInstanceKey(el);
+    ECN::ECClassCP ecclass = db.Schemas().GetECClass(key.GetECClassId());
+    if (nullptr == ecclass)
+        return DgnDbStatus::NotFound;
+
+    EC::ECSqlSelectBuilder b;
+    b.Select("*").From(*ecclass).Where("ECInstanceId=?");
+    EC::CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(b.ToString().c_str());
+    stmt->BindId(1, el.GetElementId());
+    if (ECSqlStepStatus::HasRow != stmt->Step())
+        return DgnDbStatus::ReadError;
+
+    ECInstanceECSqlSelectAdapter reader(*stmt);     // *** NEEDS WORK: Use a cached ECInstanceECSqlSelectAdapter!!!!!
+    instance = reader.GetInstance();
+    if (!instance.IsValid())
+        return DgnDbStatus::ReadError;
+    
+    WChar idStrBuffer[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
+    ECInstanceIdHelper::ToString(idStrBuffer, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, el.GetElementId());
+    instance->SetInstanceId(idStrBuffer);
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String DgnElement::Item::GetECSchemaNameOfInstance(ECN::IECInstanceCP instance)
+    {
+    if (nullptr == instance)
+        {
+        BeAssert(false && "Item has no instance");
+        return "";
+        }
+    return Utf8String(instance->GetClass().GetSchema().GetName());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String DgnElement::Item::GetECClassNameOfInstance(ECN::IECInstanceCP instance)
+    {
+    if (nullptr == instance)
+        {
+        BeAssert(false && "Item has no instance");
+        return "";
+        }
+    return Utf8String(instance->GetClass().GetName());
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
