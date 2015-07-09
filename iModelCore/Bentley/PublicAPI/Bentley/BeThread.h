@@ -147,7 +147,6 @@ private:
 public:
     static const uint32_t Infinite = 0xFFFFFFFF;
 
-
     BENTLEYDLL_EXPORT BeConditionVariable();
     BENTLEYDLL_EXPORT ~BeConditionVariable();
 
