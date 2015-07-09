@@ -691,6 +691,7 @@ TEST_F(ECDbMapCATests, TestInvalidCombinationsOfMapStrategyAndOptions)
     {
     //TODO: Please complete this test with all other invalid combinations
 
+    {
     Utf8CP schemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
@@ -716,8 +717,45 @@ TEST_F(ECDbMapCATests, TestInvalidCombinationsOfMapStrategyAndOptions)
     ECSchemaPtr testSchema = nullptr;
     ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, ECSchema::ReadFromXmlString(testSchema, schemaXml, *readContext));
     ASSERT_TRUE(testSchema != nullptr);
-    auto importStatus = ecdb.Schemas().ImportECSchemas(readContext->GetCache());
-    ASSERT_TRUE(importStatus == BentleyStatus::ERROR) << "Schema import successful instead of returning error";
+    ASSERT_EQ(ERROR, ecdb.Schemas().ImportECSchemas(readContext->GetCache()));
+    }
+
+    {
+    Utf8CP schemaXml =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "    <ECClass typeName='A' isDomainClass='True'>"
+        "        <ECProperty propertyName='AA' typeName='double' />"
+        "    </ECClass>"
+        "    <ECClass typeName='B' isDomainClass='True'>"
+        "        <ECProperty propertyName='BB' typeName='double' />"
+        "    </ECClass>"
+        "    <ECRelationshipClass typeName='Rel' isDomainClass='True' strength='referencing'>"
+        "        <ECCustomAttributes>"
+        "            <ForeignKeyRelationshipMap xmlns='ECDbMap.01.00'>"
+        "            </ForeignKeyRelationshipMap>"
+        "        </ECCustomAttributes>"
+        "       <Source cardinality='(0,N)' polymorphic='True'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target cardinality='(0,N)' polymorphic='True'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "</ECSchema>";
+
+    ECDbTestProject::Initialize();
+    ECDb ecdb;
+    ASSERT_EQ(BE_SQLITE_OK, ECDbTestUtility::CreateECDb(ecdb, nullptr, L"SchemaMap.ecdb")) << "ECDb couldn't be created";
+
+    auto readContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr testSchema = nullptr;
+    ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, ECSchema::ReadFromXmlString(testSchema, schemaXml, *readContext));
+    ASSERT_TRUE(testSchema != nullptr);
+    ASSERT_EQ (ERROR, ecdb.Schemas().ImportECSchemas(readContext->GetCache()));
+    }
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -1137,13 +1175,13 @@ TEST_F (ECDbMapCATests, RetrieveConstraintClassInstanceBeforeAfterInsertingRelat
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Muhammad Hassan                  07/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECDbMapCATests, SeperateTableForRelationshipWithMapStrategyTableForThisClass)
+TEST_F(ECDbMapCATests, EnforceLinkTableFor11Relationship)
     {
     ECDbTestProject testProject;
-    ECDbR ecdbr = testProject.Create ("relationshipTestDb.ecdb", L"SampleDgnDbEditor.01.00.ecschema.xml", true);
+    ECDbR ecdbr = testProject.Create ("relationshipTestDb.ecdb", L"SampleDgnDbEditor.01.00.ecschema.xml", false);
     ECSchemaCP schema = ecdbr.Schemas ().GetECSchema ("SampleDgnDbEditor", true);
     ASSERT_TRUE (schema != nullptr);
-    ASSERT_TRUE (ecdbr.TableExists ("aswe"));
-    ASSERT_TRUE (ecdbr.TableExists ("awhs"));
+    ASSERT_TRUE (ecdbr.TableExists ("sdde_ArchWithHVACStorey"));
+    ASSERT_TRUE (ecdbr.TableExists ("sdde_ArchStoreyWithElements"));
     }
 END_ECDBUNITTESTS_NAMESPACE

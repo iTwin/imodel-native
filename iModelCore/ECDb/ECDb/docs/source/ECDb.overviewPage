@@ -408,17 +408,19 @@
         <ECRelationshipClass typeName="FolderHasFiles" isDomainClass="True" strength="embedding" >
             <ECCustomAttributes>
                 <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                    <ForeignKeyColumn>FolderId</ForeignKeyColumn>
                     <CreateConstraint>True</CreateConstraint>
                     <OnDeleteAction>Cascade</OnDeleteAction>
-                    <OnUpdateAction>Cascade</OnUpdateAction>
                 </ForeignKeyRelationshipMap>
             </ECCustomAttributes>
             <Source cardinality="(1,1)" polymorphic="True">
                 <Class class="Folder" />
             </Source>
             <Target cardinality="(0,N)" polymorphic="True">
-                <Class class="File" />
+                <Class class="File" >
+                   <Key>
+                      <Property name="FolderId" />
+                   </Key>
+                </Class>
             </Target>
         </ECRelationshipClass>
 

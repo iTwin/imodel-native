@@ -664,11 +664,9 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
         return MapStatus::Success;
         }
 
-    if (m_cardinality == Cardinality::ManyToMany ||
-        GetECClass().GetPropertyCount() > 0 ||
-        // Follow override other. Since if relation map to Source/Target table it cannot have duplicate values there for
-        // we forces it to use a link table for this relationship so duplicate relationships can be allowed.
-        m_allowDuplicateRelationships)
+    if (m_customMapType == CustomMapType::LinkTable ||
+        m_cardinality == Cardinality::ManyToMany ||
+        GetECClass().GetPropertyCount() > 0)
         {
         if (userStrategyIsForeignKeyMapping)
             {
@@ -679,6 +677,8 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
 
         return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::OwnTable, false) == SUCCESS ? MapStatus::Success : MapStatus::Error;
         }
+
+    BeAssert(!m_allowDuplicateRelationships && "This can only be true if CustomMapType is LinkTable. That condition was already handled before though.");
 
     ECDbMapStrategy::Strategy resolvedStrategy;
     switch (m_cardinality)

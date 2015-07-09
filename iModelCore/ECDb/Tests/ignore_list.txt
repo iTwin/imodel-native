@@ -22,7 +22,6 @@ FieldEngineer.RelationshipIssue
 InstanceCRUDTests.InsertUpdateDeleteTest
 #TFS Defects 186409,186444, 186457, 186461
 ECDbMapPersistenceTests.MappingStrategyTest
-ECDbMapCATests.SeperateTableForRelationshipWithMapStrategyTableForThisClass #Defect 239412
 
 #Have notified Krischan and Affan; ignoring so we can get PRG builds through.
 ECDbMapCATests.StructClassInClassHierarchyWithPolymorphicSharedTable
