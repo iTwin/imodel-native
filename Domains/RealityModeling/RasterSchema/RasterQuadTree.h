@@ -76,7 +76,7 @@ private:
 
     bool IsVisible (Dgn::ViewContextR viewContext, double& factor) const;
 
-    bool IsBorderTile() const{return GetResolution().GetTileCountX() == m_tileId.tileX +1 || GetResolution().GetTileCountY() == m_tileId.tileY + 1;}
+    bool IsBorderTile() const{return GetResolution().GetTileCountX() == m_tileId.x +1 || GetResolution().GetTileCountY() == m_tileId.y + 1;}
 
     RasterSource::Resolution const& GetResolution() const;
 

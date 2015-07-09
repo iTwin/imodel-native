@@ -44,10 +44,10 @@ protected:
             if(lhs->GetId().resolution != rhs->GetId().resolution)
                 return lhs->GetId().resolution < rhs->GetId().resolution;
 
-            if(lhs->GetId().tileX != rhs->GetId().tileX)
-                return lhs->GetId().tileX < rhs->GetId().tileX;
+            if(lhs->GetId().x != rhs->GetId().x)
+                return lhs->GetId().x < rhs->GetId().x;
 
-            return lhs->GetId().tileY < rhs->GetId().tileY;
+            return lhs->GetId().y < rhs->GetId().y;
             }
         };
     typedef bset<RasterTilePtr, SortByResolution> SortedTiles;
@@ -113,7 +113,10 @@ RasterTile::RasterTile(TileId const& id, RasterTileP parent, RasterQuadTreeR tre
     DPoint3d srcCorners[4];
     source.ComputeTileCorners(srcCorners, id); 
 
-    ReprojectCorners(m_corners, srcCorners, tree);
+    if(REPROJECT_Success != ReprojectCorners(m_corners, srcCorners, tree))
+        {
+        memcpy(m_corners, srcCorners, sizeof(m_corners));   // Assume coincident for now. We should an invalid reprojection or something.
+        }
     }
 
 //----------------------------------------------------------------------------------------
@@ -211,7 +214,7 @@ bool RasterTile::Draw(ViewContextR context)
         double pixelSize = context.GetPixelSizeAtPoint(&centerPt);
 
         Utf8String tileText;
-        tileText.Sprintf("%d:%d,%d", m_tileId.resolution, m_tileId.tileX, m_tileId.tileY);
+        tileText.Sprintf("%d:%d,%d", m_tileId.resolution, m_tileId.x, m_tileId.y);
          
         TextStringPtr textStr = TextString::Create();
         textStr->SetText(tileText.c_str());
@@ -229,7 +232,7 @@ bool RasterTile::Draw(ViewContextR context)
     if(!m_pDisplayTile.IsValid())
         return false;
 
-    static bool s_invert = true;    //&&MM I don't understand why I need to that. investigate.
+    static bool s_invert = false;    //&&MM I don't understand why I need to that. investigate.
     if (s_invert)
         {
         std::swap (uvPts[0], uvPts[2]);
@@ -274,28 +277,28 @@ void RasterTile::AllocateChildren()
     RasterSource::Resolution const& childrenResolution = m_tree.GetSource().GetResolution(m_tileId.resolution-1);
 
     // Upper-Left child, we always have one 
-    TileId childUpperLeft(GetId().resolution-1, GetId().tileX << 1, GetId().tileY << 1);
+    TileId childUpperLeft(GetId().resolution-1, GetId().x << 1, GetId().y << 1);
     m_pChilds[0] = new RasterTile(childUpperLeft, this, m_tree);
     
     // Upper-Right
-    if(childUpperLeft.tileX + 1 < childrenResolution.GetTileCountX())
+    if(childUpperLeft.x + 1 < childrenResolution.GetTileCountX())
         {
-        TileId childUpperRight(childUpperLeft.resolution, childUpperLeft.tileX+1, childUpperLeft.tileY);
+        TileId childUpperRight(childUpperLeft.resolution, childUpperLeft.x+1, childUpperLeft.y);
         m_pChilds[1] = new RasterTile(childUpperRight, this, m_tree);
         }
 
     // Lower-left
-    if(childUpperLeft.tileY + 1 < childrenResolution.GetTileCountY())
+    if(childUpperLeft.y + 1 < childrenResolution.GetTileCountY())
         {
-        TileId childLowerLeft(childUpperLeft.resolution, childUpperLeft.tileX, childUpperLeft.tileY+1);
+        TileId childLowerLeft(childUpperLeft.resolution, childUpperLeft.x, childUpperLeft.y+1);
         m_pChilds[2] = new RasterTile(childLowerLeft, this, m_tree);
         }
 
     // Lower-Right
-    if(childUpperLeft.tileX + 1 < childrenResolution.GetTileCountX() && 
-       childUpperLeft.tileY + 1 < childrenResolution.GetTileCountY())
+    if(childUpperLeft.x + 1 < childrenResolution.GetTileCountX() && 
+       childUpperLeft.y + 1 < childrenResolution.GetTileCountY())
         {
-        TileId childLowerRight(childUpperLeft.resolution, childUpperLeft.tileX+1, childUpperLeft.tileY+1);
+        TileId childLowerRight(childUpperLeft.resolution, childUpperLeft.x+1, childUpperLeft.y+1);
         m_pChilds[3] = new RasterTile(childLowerRight, this, m_tree);
         }
     }
@@ -435,7 +438,8 @@ void RasterQuadTree::QueryVisible(bvector<RasterTilePtr>& visibles, ViewContextR
     {
     visibles.clear();
 
-    m_pRoot->QueryVisible(visibles, context);
+    if(m_pRoot.IsValid()) // Might be null if reprojection error occurs.
+        m_pRoot->QueryVisible(visibles, context);
     }
 
 //----------------------------------------------------------------------------------------

@@ -19,37 +19,45 @@ struct WmsModelHandler;
 //----------------------------------------------------------------------------------------
 struct WmsMap
     {
+    //! Identify axis order for GetMap queries. Might be required for WMS server 1.3.0. 
+    enum class AxisOrder : uint32_t
+        {
+        Default     = 0,   //!< Use default axis order logic. Order is deducted from CS label for 1.3.0 servers. 
+        Normal      = 1,   //!< Use normal axis order.  (minX,minY,maxX,maxY) -> (minX,minY,maxX,maxY)
+        Reverse     = 2,   //!< Use reverse axis order. (minX,minY,maxX,maxY) -> (minY,minX,maxY,maxX)
+        };
+
     WmsMap();
     RASTERSCHEMA_EXPORT WmsMap(Utf8CP url, DRange2dCR bbox, Utf8CP version, Utf8CP layers, Utf8CP csType, Utf8CP csLabel);
 
     //! Return true if mandatory parameters are set. Does not validate with server.
     bool HasValidParameters() const;
 
-    //! Compute and set metaWidth and metaHeight using the number of requested resolution. bbox aspect ration is preserved.
+    //! Compute and set metaWidth and metaHeight using the number of requested resolution. Bounding box aspect ratio is preserved.
     RASTERSCHEMA_EXPORT void SetMetaSizeByResolutionCount(uint32_t count);
 
-    //! Set metaWidth or metaHeight using the largest side of the bounding box to pixelCount and compute the other meta size that preserves bbox aspect ratio.
+    //! Set metaWidth and metaHeight. The largest side of the bounding box is set to pixelCount and the other meta size is computed to preserves bounding box aspect ratio.
     RASTERSCHEMA_EXPORT void SetMetaSizeByLargestBoundingBoxSide(uint32_t pixelCount);
 
     Utf8String m_url;               //! Get map url. Up to but excluding the query char '?'
 
     // Map window
-    DRange2d m_boundingBox;         //! Bounding box corners (minx,miny,maxx,maxy) in 'CoordinateSystem' unit (aka. cartesian or reprojected unit)
+    DRange2d m_boundingBox;         //! Bounding box corners (minx,miny,maxx,maxy) in 'Coordinate System' unit. long, lat for geographic CS and easting, northing for projected CS.
     uint32_t m_metaWidth;           //! Width of the window in pixels. The pixel ratio should be equal to the 'BoundingBox' ratio to avoid any distortion. Sub-Resolutions will be generated from this width.
     uint32_t m_metaHeight;          //! Height of the window in pixels. The pixel ratio should be equal to the 'BoundingBox' ratio to avoid any distortion. Sub-Resolutions will be generated from this Height.
-
 
     // Mandatory GetMap parameters
     Utf8String m_version;           //! Wms server version
     Utf8String m_layers;            //! Comma-separated list of one or more map layers.
     Utf8String m_styles;            //! Comma-separated list of one rendering style per requested layer.
     Utf8String m_csType;            //! Usually, 'SRS' for 1.1.1 and below. 'CRS' for 1.3 and above.
-    Utf8String m_csLabel;           //! Coordinate system label. ex: "EPSG:4326"
-    Utf8String m_format;            //! Output format of map default is 'image/png'
+    Utf8String m_csLabel;           //! Coordinate System label. ex: "EPSG:4326"
+    Utf8String m_format;            //! Output format of map. Default is 'image/png'
 
     // Optional GetMap parameters
-    Utf8String m_vendorSpecific;    //! [optional] Unparsed, vendor specific parameters that will be appended to the request. 
-    bool m_transparent;             //! [optional] Background is transparent?
+    Utf8String m_vendorSpecific;    //! [optional] Unparsed, server specific parameters that will be appended to the request. 
+    bool       m_transparent;       //! [optional] Background is transparent? Default is false. A format that support transparency is required. ex: image/png.
+    AxisOrder  m_axisOrder;         //! [optional] Identify axis order for GetMap queries. Might be required for WMS server 1.3.0.
 
     void ToJson(Json::Value&) const;
     void FromJson(Json::Value const&);                

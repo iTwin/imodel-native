@@ -110,9 +110,6 @@ void RasterFile::GetSize(Point2d* sizeP) const
 //----------------------------------------------------------------------------------------
 uint32_t    RasterFile::GetWidth() const
     {
-    if (m_HRFRasterFilePtr->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetScanlineOrientation().IsScanlineVertical())
-        return (uint32_t)m_HRFRasterFilePtr->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetHeight();
-
     return (uint32_t)m_HRFRasterFilePtr->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetWidth();
     }
 
@@ -122,9 +119,6 @@ uint32_t    RasterFile::GetWidth() const
 //----------------------------------------------------------------------------------------
 uint32_t    RasterFile::GetHeight() const
     {
-    if (m_HRFRasterFilePtr->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetScanlineOrientation().IsScanlineVertical())
-        return (uint32_t)m_HRFRasterFilePtr->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetWidth();
-
     return (uint32_t)m_HRFRasterFilePtr->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetHeight();
     }
 
@@ -217,83 +211,103 @@ GeoCoordinates::BaseGCSPtr RasterFile::GetBaseGcs()
     }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     4/2015
+// @bsimethod                                                   Mathieu.Marchand  7/2015
 //----------------------------------------------------------------------------------------
-HFCPtr<HGF2DTransfoModel> RasterFile::GetSLOTransfoModel() const
+DMatrix4d RasterFile::GetPhysicalToLowerLeft() const
     {
-    uint32_t width = GetWidth();
-    uint32_t height = GetHeight();
+    DMatrix4d physicalToLowerLeft;
+    physicalToLowerLeft.InitIdentity();
 
-    HFCPtr<HGF2DAffine> pModel(new HGF2DAffine());
+    uint32_t width = (uint32_t)m_HRFRasterFilePtr->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetWidth();
+    uint32_t height = (uint32_t)m_HRFRasterFilePtr->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetHeight();
 
+    if (m_HRFRasterFilePtr->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetScanlineOrientation().IsScanlineVertical())
+         std::swap(width, height);
+   
     switch(m_HRFRasterFilePtr->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetScanlineOrientation().m_ScanlineOrientation)
         {
         // SLO 0
         case HRFScanlineOrientation::UPPER_LEFT_VERTICAL:
             {
-            pModel->SetByMatrixParameters(0.0, 0.0, 1.0, 0.0, 1.0, 0.0);
+            physicalToLowerLeft.InitFromRowValues(0.0, 1.0, 0.0, 0.0,
+                                                  -1.0, 0.0, 0.0, height,
+                                                  0.0, 0.0, 1.0, 0.0,
+                                                  0.0, 0.0, 0.0, 1.0);
             }
-        break;
+            break;
 
         // SLO 1
         case HRFScanlineOrientation::UPPER_RIGHT_VERTICAL:
             {
-            pModel->SetByMatrixParameters(width, 0.0, -1.0, 0.0, 1.0, 0.0);        
+            physicalToLowerLeft.InitFromRowValues(0.0, -1.0, 0.0, width,
+                                                  -1.0, 0.0, 0.0, height,
+                                                  0.0, 0.0, 1.0, 0.0,
+                                                  0.0, 0.0, 0.0, 1.0);
             }
         break;
 
         // SLO 2
         case HRFScanlineOrientation::LOWER_LEFT_VERTICAL:
             {
-            pModel->SetByMatrixParameters(0.0, 0.0, 1.0, height, -1.0, 0.0);
+            physicalToLowerLeft.InitFromRowValues(0.0, 1.0, 0.0, 0.0,
+                                                  1.0, 0.0, 0.0, 0.0,
+                                                  0.0, 0.0, 1.0, 0.0,
+                                                  0.0, 0.0, 0.0, 1.0);
             }
         break;
 
-        // SLO 3
+        //SLO 3
         case HRFScanlineOrientation::LOWER_RIGHT_VERTICAL:
             {
-            pModel->SetByMatrixParameters(width, 0.0, -1.0, height, -1.0, 0.0);
+            physicalToLowerLeft.InitFromRowValues(0.0, -1.0, 0.0, width,
+                                                  1.0, 0.0, 0.0, 0.0,
+                                                  0.0, 0.0, 1.0, 0.0,
+                                                  0.0, 0.0, 0.0, 1.0);
             }
         break;
-
+            
         // SLO 4
         case HRFScanlineOrientation::UPPER_LEFT_HORIZONTAL:
             {
-            pModel->SetByMatrixParameters(0.0, 1.0, 0.0, 0.0, 0.0, 1.0);
+            physicalToLowerLeft.InitFromRowValues(1.0, 0.0, 0.0, 0.0,
+                                                  0.0, -1.0, 0.0, height,
+                                                  0.0, 0.0, 1.0, 0.0,
+                                                  0.0, 0.0, 0.0, 1.0);
             }
         break;
-
+            
         // SLO 5
         case HRFScanlineOrientation::UPPER_RIGHT_HORIZONTAL:
             {
-            pModel->SetByMatrixParameters(width, -1.0, 0.0, 0.0, 0.0, 1.0);
+            physicalToLowerLeft.InitFromRowValues(-1.0, 0.0, 0.0, width,
+                                                  0.0, -1.0, 0.0, height,
+                                                  0.0, 0.0, 1.0, 0.0,
+                                                  0.0, 0.0, 0.0, 1.0);
             }
         break;
-
+            
         // SLO 6
         case HRFScanlineOrientation::LOWER_LEFT_HORIZONTAL:
-            {
-            pModel->SetByMatrixParameters(0.0, 1.0, 0.0, height, 0.0, -1.0);
-            }
+            physicalToLowerLeft.InitIdentity();
         break;
-
+            
         // SLO 7
         case HRFScanlineOrientation::LOWER_RIGHT_HORIZONTAL:
             {
-            pModel->SetByMatrixParameters(width, -1.0, 0.0, height, 0.0, -1.0);
+            physicalToLowerLeft.InitFromRowValues(-1.0, 0.0, 0.0, width,
+                                                  0.0, 1.0, 0.0, 0.0,
+                                                  0.0, 0.0, 1.0, 0.0,
+                                                  0.0, 0.0, 0.0, 1.0);
             }
         break;
-
+            
         default:
-            BeAssert(!"HIEUSSLO::Get2DTransfoModel(...) Unknown SLO");
+            BeAssert(!"GetPhysicalToLowerLeft() Unknown SLO");
+            physicalToLowerLeft.InitIdentity();
         break;
         }
 
-    HFCPtr<HGF2DTransfoModel> pSimplifiedModel (pModel->CreateSimplifiedModel());
-    if (pSimplifiedModel)
-        return pSimplifiedModel;
-
-    return pModel.GetPtr();
+    return physicalToLowerLeft;
     }
 
 //----------------------------------------------------------------------------------------
@@ -301,17 +315,7 @@ HFCPtr<HGF2DTransfoModel> RasterFile::GetSLOTransfoModel() const
 //----------------------------------------------------------------------------------------
 HFCPtr<HGF2DCoordSys> RasterFile::GetPhysicalCoordSys() 
     {
-/* RASTERFILE_WIP_GR06 - needswork (for bmp, monochrome)
-    // Create a transformation model from the raster file SLOx to SLO4
-    HFCPtr<HGF2DTransfoModel> pSloTransfo = GetSLOTransfoModel();
-
-    // Reverse the model (SLO4->SLOx) 
-    pSloTransfo->Reverse();
-
-    return new HGF2DCoordSys(*pSloTransfo, GetStoredRaster()->GetPhysicalCoordSys());
-*/
     return GetStoredRasterP()->GetPhysicalCoordSys();
-
     }
 
 
@@ -378,21 +382,6 @@ HFCPtr<HRFRasterFile> RasterFile::OpenRasterFile(Utf8StringCR resolvedName)
         // DISABLED: We do not support HRFInternetImagingFile
         //         if (RasterFile->IsCompatibleWith(HRFInternetImagingFile::CLASS_ID))
         //             ((HFCPtr<HRFInternetImagingFile>&)RasterFile)->DownloadAttributes();
-
-        // Adapt Scan Line Orientation (1 bit images)
-        bool CreateSLOAdapter = false;
-
-        if ((rasterFile->IsCompatibleWith(HRFFileId_Intergraph)) ||
-            (rasterFile->IsCompatibleWith(HRFFileId_Cals)))
-            {
-            if (HRFSLOStripAdapter::NeedSLOAdapterFor(rasterFile))
-                {
-                // Adapt only when the raster file has not a standard scan line orientation
-                // i.e. with an upper left origin, horizontal scan line.
-                //pi_rpRasterFile = HRFSLOStripAdapter::CreateBestAdapterFor(pi_rpRasterFile);
-                CreateSLOAdapter = true;
-                }
-            }
         }
     catch (HFCException&)
         {
