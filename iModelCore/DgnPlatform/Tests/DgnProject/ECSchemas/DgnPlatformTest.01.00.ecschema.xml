@@ -17,12 +17,12 @@
     </ECClass>
 
     <ECClass typeName="TestUniqueAspect" isDomainClass="True">
-        <BaseClass>dgn:ElementAspect</BaseClass>
+        <BaseClass>dgn:ElementUniqueAspect</BaseClass>
         <ECProperty propertyName="TestUniqueAspectProperty" typeName="string" />
     </ECClass>
 
     <ECClass typeName="TestMultiAspect" isDomainClass="True">
-        <BaseClass>dgn:ElementAspect</BaseClass>
+        <BaseClass>dgn:ElementMultiAspect</BaseClass>
         <ECProperty propertyName="TestMultiAspectProperty" typeName="string" />
     </ECClass>
 

@@ -1162,28 +1162,6 @@ DgnElement::AppData::DropMe MultiAspectMux::_OnUpdated(DgnElementCR modified, Dg
     return DropMe::Yes; // all scheduled changes have been processed, so remove them.
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                  Sam.Wilson                    03/2015
-//---------------------------------------------------------------------------------------
-static DgnDbStatus insertElementOwnsAspectRelationship(DgnElementCR sourceElement, BeSQLite::EC::ECInstanceKey aspectKey)
-    {
-    if (!aspectKey.IsValid())
-        return DgnDbStatus::WriteError;
-
-    CachedECSqlStatementPtr statementPtr = sourceElement.GetDgnDb().GetPreparedECSqlStatement(
-        "INSERT INTO " DGN_SCHEMA(DGN_RELNAME_ElementOwnsAspects) " (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES (?,?,?,?)");
-
-    if (!statementPtr.IsValid())
-        return DgnDbStatus::WriteError;
-
-    statementPtr->BindId(1, sourceElement.GetElementClassId());
-    statementPtr->BindId(2, sourceElement.GetElementId());
-    statementPtr->BindInt64(3, aspectKey.GetECClassId());
-    statementPtr->BindId(4, aspectKey.GetECInstanceId());
-
-    return ECSqlStepStatus::Done != statementPtr->Step() ? DgnDbStatus::WriteError: DgnDbStatus::Success;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1201,12 +1179,15 @@ DgnDbStatus DgnElement::MultiAspect::_DeleteInstance(DgnElementCR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::MultiAspect::_InsertInstance(DgnElementCR el)
     {
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s VALUES (NULL)", GetFullEcSqlClassName().c_str()));
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s ([ElementId]) VALUES (?)", GetFullEcSqlClassName().c_str()));
+    stmt->BindId(1, el.GetElementId());
+
     BeSQLite::EC::ECInstanceKey key;
     if (BeSQLite::EC::ECSqlStepStatus::Done != stmt->Step(key))
         return DgnDbStatus::ElementWriteError;
+
     m_instanceId = key.GetECInstanceId();
-    return insertElementOwnsAspectRelationship(el, key);
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1455,7 +1436,7 @@ DgnClassId DgnElement::Item::QueryExistingItemClass(DgnElementCR el)
     {
     // We know the ID, and we know that the instance will be in the dgn.ElementItem table if it exists. See if it's there.
     CachedStatementPtr getItemClass;
-    el.GetDgnDb().GetCachedStatement(getItemClass, "SELECT ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_ElementItem) " WHERE(ElementId=?)");
+    el.GetDgnDb().GetCachedStatement(getItemClass, "SELECT ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_ElementItem) " WHERE ElementId=?");
     getItemClass->BindId(1, el.GetElementId());
     if (BE_SQLITE_ROW != getItemClass->Step())
         return DgnClassId();
