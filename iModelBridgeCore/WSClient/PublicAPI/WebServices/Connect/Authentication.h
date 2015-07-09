@@ -8,6 +8,10 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// !!! LEGACY CODE - CONSIDER REVIEWING !!!
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 #include <WebServices/Client/WebServicesClient.h>
 #include <MobileDgn/MobileDgnApplication.h>
 

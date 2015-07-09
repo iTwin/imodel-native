@@ -8,6 +8,10 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// !!! LEGACY CODE - CONSIDER REVIEWING !!!
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 #include <Bentley/Bentley.h>
 #include <Bentley/WString.h>
 #include <MobileDgn/MobileDgnCommon.h>
