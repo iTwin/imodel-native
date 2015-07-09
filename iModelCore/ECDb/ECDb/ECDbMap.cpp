@@ -754,35 +754,29 @@ std::vector<ECClassCP> ECDbMap::GetClassesFromRelationshipEnd (ECRelationshipCon
     }
     
 /*---------------------------------------------------------------------------------**//**
-* Gets the (count of) tables at the specified end of a relationship class. 
-* @param  tables [out] The tables that are at the specified end of the relationship. Can be nullptr
+* Gets the count of tables at the specified end of a relationship class. 
 * @param  relationshpEnd [in] Constraint at the end of the relationship
 * @return Number of tables at the specified end of the relationship. Returns 
 *         UINT_MAX if the end is AnyClass. 
 * @bsimethod                                 Ramanujam.Raman                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t ECDbMap::GetTablesFromRelationshipEnd (bset<ECDbSqlTable*>* tables, ECRelationshipConstraintCR relationshipEnd) const
+size_t ECDbMap::GetTableCountOnRelationshipEnd(ECRelationshipConstraintCR relationshipEnd) const
     {
-    bset<ECDbSqlTable*> tmpTables;
-    bset<ECDbSqlTable*>* outTables = (tables == nullptr) ? &tmpTables : tables;
-    
-    auto classes = GetClassesFromRelationshipEnd (relationshipEnd);
+    bset<ECDbSqlTable const*> tables;
+    std::vector<ECClassCP> classes = GetClassesFromRelationshipEnd(relationshipEnd);
     for (ECClassCP ecClass : classes)
         {
         if (ClassMap::IsAnyClass (*ecClass))
-            {
-            outTables->clear();
             return SIZE_MAX;
-            }
 
         IClassMap const* classMap = GetClassMap (*ecClass, false);
         if (classMap->GetMapStrategy ().IsNotMapped ())
             continue;
 
-        ECDbSqlTable&  table = classMap->GetTable();
-        outTables->insert(&table);
+        tables.insert(&classMap->GetTable());
         }
-    return outTables->size();
+
+    return tables.size();
     }
 
 //---------------------------------------------------------------------------------------
@@ -790,7 +784,7 @@ size_t ECDbMap::GetTablesFromRelationshipEnd (bset<ECDbSqlTable*>* tables, ECRel
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECDbMap::GetClassMapsFromRelationshipEnd (bset<IClassMap const*>& endClassMaps, ECRelationshipConstraintCR relationshipEnd, bool loadIfNotFound) const
     {
-    auto endClasses = GetClassesFromRelationshipEnd (relationshipEnd);
+    std::vector<ECClassCP> endClasses = GetClassesFromRelationshipEnd(relationshipEnd);
     for (auto endClass : endClasses)
         {
         if (ClassMap::IsAnyClass (*endClass))

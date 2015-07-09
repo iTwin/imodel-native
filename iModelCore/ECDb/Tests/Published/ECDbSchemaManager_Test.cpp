@@ -465,8 +465,72 @@ TEST (ECDbSchemaManager, ImportSchemaWithSchemaValidationErrors)
         "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
         "  </ECClass>"        
         "</ECSchema>",
-        false, "Non-relationship class with a relationship base class is not expected to be supported.")
+        false, "Non-relationship class with a relationship base class is not expected to be supported."),
+
+        SchemaImportTestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "  <ECClass typeName=\"A\" isDomainClass='True'>"
+        "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
+        "  </ECClass>"
+        "  <ECClass typeName=\"B\" isStruct='True' isDomainClass='False'>"
+        "    <BaseClass>A</BaseClass>"
+        "    <ECProperty propertyName=\"Id\" typeName=\"long\" />"
+        "  </ECClass>"
+        "</ECSchema>",
+        false, "A domain base class must not have struct subclasses."),
+
+        SchemaImportTestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "  <ECClass typeName=\"A\" isDomainClass='True'>"
+        "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
+        "  </ECClass>"
+        "  <ECClass typeName=\"B\" isDomainClass='True'>"
+        "    <BaseClass>A</BaseClass>"
+        "    <ECProperty propertyName=\"Id\" typeName=\"long\" />"
+        "  </ECClass>"
+        "  <ECClass typeName=\"C\" isStruct='True' isDomainClass='False'>"
+        "    <BaseClass>B</BaseClass>"
+        "    <ECProperty propertyName=\"Id\" typeName=\"long\" />"
+        "  </ECClass>"
+        "</ECSchema>",
+        false, "A domain base class must not have struct subclasses."),
+
+        SchemaImportTestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "  <ECClass typeName=\"A\" isDomainClass='True'>"
+        "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
+        "  </ECClass>"
+        "  <ECClass typeName=\"B\" isDomainClass='True' isStruct='True'>"
+        "    <BaseClass>A</BaseClass>"
+        "    <ECProperty propertyName=\"Id\" typeName=\"long\" />"
+        "  </ECClass>"
+        "</ECSchema>",
+        false, "A domain base class must not have struct subclasses, even if the subclass is a struct and a domain class at the same time."),
+
+        SchemaImportTestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "  <ECClass typeName=\"A\" isStruct='True' isDomainClass='False'>"
+        "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
+        "  </ECClass>"
+        "  <ECClass typeName=\"B\" isDomainClass='True'>"
+        "    <BaseClass>A</BaseClass>"
+        "    <ECProperty propertyName=\"Id\" typeName=\"long\" />"
+        "  </ECClass>"
+        "</ECSchema>",
+        false, "A struct base class must have only struct subclasses."),
+
+        SchemaImportTestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "  <ECClass typeName=\"A\" isStruct='True' isDomainClass='False'>"
+        "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
+        "  </ECClass>"
+        "  <ECClass typeName=\"B\" isStruct='True' isDomainClass='False'>"
+        "    <BaseClass>A</BaseClass>"
+        "    <ECProperty propertyName=\"Id\" typeName=\"long\" />"
+        "  </ECClass>"
+        "  <ECClass typeName=\"C\" isDomainClass='True'>"
+        "    <BaseClass>B</BaseClass>"
+        "    <ECProperty propertyName=\"Id\" typeName=\"long\" />"
+        "  </ECClass>"
+        "</ECSchema>",
+        false, "A struct base class must have only struct subclasses.")
         };
+
 
         for (SchemaImportTestItem const& testItem : testItems)
             {

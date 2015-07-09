@@ -307,7 +307,7 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (ClassMapInfo const& cl
 
     auto thisEndClass = thisEndConstraint.GetClasses()[0];
     auto thisEndClassMap = GetECDbMap ().GetClassMapCP (*thisEndClass, true);
-    auto thisEndTableCount = GetECDbMap ().GetTablesFromRelationshipEnd (nullptr, thisEndConstraint);
+    size_t thisEndTableCount = GetECDbMap ().GetTableCountOnRelationshipEnd (thisEndConstraint);
 
     if (thisEndTableCount != 1)
         {
@@ -318,7 +318,7 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (ClassMapInfo const& cl
 
     auto otherEndClass = otherEndConstraint.GetClasses ()[0];
     auto otheEndClassMap = GetECDbMap ().GetClassMapCP (*otherEndClass, true);
-    auto otherEndTableCount = GetECDbMap ().GetTablesFromRelationshipEnd (nullptr, otherEndConstraint);
+    size_t otherEndTableCount = GetECDbMap().GetTableCountOnRelationshipEnd(otherEndConstraint);
 
     //*** persistence end table
     SetTable (&thisEndClassMap->GetTable ());
@@ -359,12 +359,11 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (ClassMapInfo const& cl
         auto const& otherEndConstraint = thisEnd != ECRelationshipEnd_Source ? sourceConstraint : targetConstraint;
         auto const& otherEndConstraintMap = thisEnd != ECRelationshipEnd_Source ? m_sourceConstraintMap : m_targetConstraintMap;
 
-        bset<ECDbSqlTable*> otherEndTables;
-        GetECDbMap ().GetTablesFromRelationshipEnd (&otherEndTables, otherEndConstraint);
-
-        BeAssert (otherEndTables.size () == 1 && "In EndTableMap we expect one table on each side");
-        if (otherEndTables.size () != 1)
+        if (GetECDbMap().GetTableCountOnRelationshipEnd(otherEndConstraint) != 1)
+            {
+            BeAssert(false);
             return MapStatus::Error;
+            }
 
         auto foreignKeyColumn = otherEndConstraintMap.GetECInstanceIdPropMap()->GetFirstColumn();
         auto& foreignTable = GetTable ();
@@ -933,7 +932,7 @@ ECDbSqlColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey(Relat
     auto const& thisEndConstraint = relationshipEnd == ECRelationshipEnd_Source ? relationship->GetSource () : relationship->GetTarget ();
     auto thisEndClass = thisEndConstraint.GetClasses ()[0];
     auto thisEndClassMap = GetECDbMap ().GetClassMapCP (*thisEndClass, true);
-    auto thisEndTableCount = GetECDbMap ().GetTablesFromRelationshipEnd (nullptr, thisEndConstraint);
+    size_t thisEndTableCount = GetECDbMap ().GetTableCountOnRelationshipEnd (thisEndConstraint);
 
     RelationshipEndColumns const& constraintColumnsMapping = GetEndColumnsMapping(mapInfo, relationshipEnd);
     Utf8String columnName(constraintColumnsMapping.GetECClassIdColumnName());

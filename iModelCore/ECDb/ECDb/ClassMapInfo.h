@@ -55,7 +55,6 @@ private:
     BentleyStatus InitializeFromClassMapCA ();
     BentleyStatus InitializeFromClassHasCurrentTimeStampProperty();
 
-    BentleyStatus ValidateBaseClasses () const;
     MapStatus DoEvaluateMapStrategy(UserECDbMapStrategy&);
 
     bool GatherBaseClassMaps (bvector<IClassMap const*>& baseClassMaps, bvector<IClassMap const*>& tphMaps, bvector<IClassMap const*>& tpcMaps, bvector<IClassMap const*>& nmhMaps, ECN::ECClassCR ecClass) const;
@@ -149,15 +148,7 @@ private:
 
     virtual BentleyStatus _InitializeFromSchema() override;
     virtual MapStatus _EvaluateMapStrategy();
-    MapStatus DetermineImpliedMapStrategy(bool& mapStrategyAlreadyEvaluated);
-    MapStatus EvaluateCustomMapping(bool mapStrategyAlreadyEvaluated);
-
-    void DetermineCardinality();
-    bool VerifyRelatedClasses() const;
-
-    bool TryDetermine11RelationshipMapStrategy(ECDbMapStrategy::Strategy&, ECN::ECRelationshipConstraintR source, ECN::ECRelationshipConstraintR target, ECN::ECRelationshipClassCR relationshipClass) const;
-    bool TryDetermine1MRelationshipMapStrategy(ECDbMapStrategy::Strategy&, ECN::ECRelationshipConstraintR source, ECN::ECRelationshipConstraintR target, ECN::ECRelationshipClassCR relationshipClass) const;
-    static bool ContainsRelationshipClass(std::vector<ECN::ECClassCP> const& endClasses);
+    void DetermineCardinality(ECN::ECRelationshipConstraintCR source, ECN::ECRelationshipConstraintCR target);
 
 public:
     RelationshipMapInfo(ECN::ECRelationshipClassCR relationshipClass, ECDbMapCR ecdbMap)

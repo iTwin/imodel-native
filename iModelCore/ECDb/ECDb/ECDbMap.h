@@ -167,8 +167,8 @@ public:
 
     //!Loads the class maps if they were not loaded yet
     void                        GetClassMapsFromRelationshipEnd (bset<IClassMap const*>& endClassMaps, ECN::ECRelationshipConstraintCR relationshipEnd, bool loadIfNotFound) const;
-    std::vector<ECN::ECClassCP> GetClassesFromRelationshipEnd (ECN::ECRelationshipConstraintCR relationshipEnd) const;
-    size_t                      GetTablesFromRelationshipEnd (bset<ECDbSqlTable*>* tables, ECN::ECRelationshipConstraintCR relationshipEnd) const;
+    std::vector<ECN::ECClassCP> GetClassesFromRelationshipEnd (ECN::ECRelationshipConstraintCR) const;
+    size_t                      GetTableCountOnRelationshipEnd (ECN::ECRelationshipConstraintCR) const;
     void                        ClearCache();
     ClassMapCP GetClassMap (ECN::ECClassId ecClassId);
     RelationshipClassMapCP GetRelationshipClassMap (ECN::ECClassId ecRelationshipClassId);
