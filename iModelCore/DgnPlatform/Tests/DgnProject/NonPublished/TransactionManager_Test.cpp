@@ -496,7 +496,7 @@ DgnDbStatus TestElement::_InsertInDb()
         insertStmt->BindId(1, GetElementId());
         insertStmt->BindText(2, m_testItemProperty.c_str(), IECSqlBinder::MakeCopy::No);
         if (ECSqlStepStatus::Done != insertStmt->Step())
-            return DgnDbStatus::ElementWriteError;
+            return DgnDbStatus::WriteError;
         }
 
     return DgnDbStatus::Success;
@@ -545,7 +545,7 @@ DgnDbStatus TestElement::_UpdateInDb()
         }
 
     if (ECSqlStepStatus::Done != rc)
-        status = DgnDbStatus::ElementWriteError;
+        status = DgnDbStatus::WriteError;
 
     return status;
     }

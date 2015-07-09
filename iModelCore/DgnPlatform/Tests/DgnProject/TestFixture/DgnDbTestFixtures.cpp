@@ -85,7 +85,7 @@ DgnDbStatus TestElement::_InsertInDb()
     insertStmt->BindId(1, GetElementId());
     insertStmt->BindText(2, m_testItemProperty.c_str(), IECSqlBinder::MakeCopy::No);
     if (ECSqlStepStatus::Done != insertStmt->Step())
-        return DgnDbStatus::ElementWriteError;
+        return DgnDbStatus::WriteError;
 
     return DgnDbStatus::Success;
 }
@@ -110,7 +110,7 @@ DgnDbStatus TestElement::_UpdateInDb()
     if (upStmt->BindText(1, ECN::ECValue(m_testItemProperty.c_str()).GetUtf8CP(), BeSQLite::EC::IECSqlBinder::MakeCopy::No) != ECSqlStatus::Success)
         return DgnDbStatus::SQLiteError;
     if (upStmt->Step() != BeSQLite::EC::ECSqlStepStatus::Done)
-        return DgnDbStatus::ElementWriteError;
+        return DgnDbStatus::WriteError;
 
     return DgnDbStatus::Success;
 }
@@ -133,7 +133,7 @@ DgnDbStatus TestElement::_DeleteInDb() const
     if (delStmt->BindId(1, GetElementId()) != ECSqlStatus::Success)
         return DgnDbStatus::SQLiteError;
     if (delStmt->Step() != BeSQLite::EC::ECSqlStepStatus::Done)
-        return DgnDbStatus::ElementWriteError;
+        return DgnDbStatus::WriteError;
 
     return DgnDbStatus::Success;
 

@@ -91,7 +91,7 @@ DgnDbStatus DgnIModel::ExtractUsingDefaults(DbResult& dbResult, BeFileNameCR dgn
 
     DgnDbStatus schemaStatus = performPackageVersionChecks(dbResult, db);
     if (DgnDbStatus::Success != schemaStatus)
-        return DgnDbStatus::InvalidFileSchema;
+        return DgnDbStatus::BadSchema;
 
     DbEmbeddedFileTable& embeddedFiles = db.EmbeddedFiles();
     Utf8String  fileType;
