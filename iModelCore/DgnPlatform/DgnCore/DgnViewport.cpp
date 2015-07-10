@@ -7,11 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 
-static double const oneKilometer         = 1000.;
-static double const oneMillimeter        = 1/1000.;
-static double const MIN_VIEWDELTA        = oneMillimeter;           // pretty damn small
-static double const MAX_VIEWDELTA        = 20000 * oneKilometer;    // about twice the diameter of the earth
-static double const CAMERA_PLANE_RATIO   = 300.0;
 
 static  uint32_t s_rasterLinePatterns[8] =
     {
@@ -323,7 +318,7 @@ StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double* compressi
         DVec3d eyeToOrigin = DVec3d::FromStartEnd(camera->GetEyePoint(), inOrigin);      // Subtract camera position (still in root)
         viewRot.Multiply(eyeToOrigin);                                                   // Rotate to view coordinates.
 
-        double zDeltaLimit = (-focusDistance / CAMERA_PLANE_RATIO) - eyeToOrigin.z;      // Limit front clip to be in front of camera plane.
+        double zDeltaLimit = (-focusDistance / GetCameraPlaneRatio()) - eyeToOrigin.z;      // Limit front clip to be in front of camera plane.
         double zDelta = (delta.z > zDeltaLimit) ? zDeltaLimit : delta.z;                 // Limited zDelta.
         double zBack  = eyeToOrigin.z;                                                   // Distance from eye to back clip plane.
         double zFront = zBack + zDelta;                                                  // Distance from eye to front clip plane.
@@ -565,8 +560,8 @@ ViewportStatus DgnViewport::_SetupFromViewController()
                     viewCameraPosition.DifferenceOf(m_camera.GetEyePoint(), origin);
                     m_rotMatrix.Multiply(viewCameraPosition);
 
-                    if (delta.z > viewCameraPosition.z-10)
-                        delta.z = viewCameraPosition.z-10;
+                    if (delta.z > viewCameraPosition.z - DgnUnits::OneMillimeter())
+                        delta.z = viewCameraPosition.z - DgnUnits::OneMillimeter();
                     }
                 }
             }
@@ -1244,14 +1239,14 @@ double DgnViewport::GetPixelSizeAtPoint(DPoint3dCP rootPtP, DgnCoordSystem coord
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void limitWindowSize(ViewportStatus& error, double& value, ViewportStatus lowErr, ViewportStatus highErr)
     {
-    if (value < MIN_VIEWDELTA)
+    if (value < DgnViewport::GetMinViewDelta())
         {
-        value  = MIN_VIEWDELTA;
+        value  = DgnViewport::GetMinViewDelta();
         error  = lowErr;
         }
-    else if (value > MAX_VIEWDELTA)
+    else if (value > DgnViewport::GetMaxViewDelta())
         {
-        value  = MAX_VIEWDELTA;
+        value  = DgnViewport::GetMaxViewDelta();
         error  = highErr;
         }
     }

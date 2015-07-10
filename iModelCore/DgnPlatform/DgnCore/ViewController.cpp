@@ -9,8 +9,6 @@
 #include <Geom/eigensys3d.fdf>
 #include <DgnPlatform/DgnCore/DgnMarkupProject.h>
 
-static double const MAX_VDELTA = 1.0e20;
-
 static Utf8CP VIEW_SETTING_Area2d                = "area2d";
 static Utf8CP VIEW_SETTING_BackgroundColor       = "bgColor";
 static Utf8CP VIEW_SETTING_CameraAngle           = "cameraAngle";
@@ -766,8 +764,7 @@ void ViewController::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
     DVec3d    newDelta;
     newDelta.DifferenceOf(volume.high, volume.low);
 
-    static const double oneMillimeter = 1/1000.;
-    double minimumDepth = oneMillimeter;
+    double minimumDepth = DgnUnits::OneMillimeter();
     if (newDelta.z < minimumDepth)
         {
         newOrigin.z -=(minimumDepth - newDelta.z)/2.0;
@@ -1377,7 +1374,7 @@ ViewportStatus CameraViewController::LookAt(DPoint3dCR eyePoint, DPoint3dCR targ
     zVec.DifferenceOf(eyePoint, targetPoint);
 
     double focusDist = zVec.Normalize(); // set focus at target point
-    if (focusDist <= 1.0)                // eye and target are too close together
+    if (focusDist <= DgnUnits::OneMillimeter())      // eye and target are too close together
         return ViewportStatus::InvalidTargetPoint;
 
     DVec3d xVec; // x is the normal to the Up-Z plane
@@ -1394,8 +1391,8 @@ ViewportStatus CameraViewController::LookAt(DPoint3dCR eyePoint, DPoint3dCR targ
     double frontDist = frontDistIn ? *frontDistIn : GetFrontDistance();
     DVec3d delta     = extentsIn   ? DVec3d::From(fabs(extentsIn->x),fabs(extentsIn->y),GetDelta().z) : GetDelta();
 
-    frontDist = std::max(frontDist, 1.0);
-    backDist  = std::max(backDist, focusDist+1.0);
+    frontDist = std::max(frontDist, DgnUnits::OneMillimeter());
+    backDist  = std::max(backDist, focusDist+DgnUnits::OneMillimeter());
 
     BeAssert(backDist > frontDist);
     delta.z =(backDist - frontDist);
@@ -1433,8 +1430,8 @@ ViewportStatus CameraViewController::LookAtUsingLensAngle(DPoint3dCR eyePoint, D
     DVec3d zVec; // z defined by direction from eye to target
     zVec.DifferenceOf(eyePoint, targetPoint);
 
-    double focusDist = zVec.Normalize(); // set focus at target point
-    if (focusDist <= 1.0)                // eye and target are too close together
+    double focusDist = zVec.Normalize();  // set focus at target point
+    if (focusDist <= DgnUnits::OneMillimeter())       // eye and target are too close together
         return ViewportStatus::InvalidTargetPoint;
 
     if (lens < .0001 || lens > msGeomConst_pi)
@@ -1724,23 +1721,23 @@ void PhysicalViewController::_AdjustAspectRatio(double windowAspect, bool expand
     if (expandView ?(viewAspect > windowAspect) :(windowAspect > 1.0))
         {
         double rtmp = m_delta.x / windowAspect;
-        if (rtmp < MAX_VDELTA)
+        if (rtmp < DgnViewport::GetMaxViewDelta())
             m_delta.y = rtmp;
         else
             {
-            m_delta.y = MAX_VDELTA;
-            m_delta.x = MAX_VDELTA * windowAspect;
+            m_delta.y = DgnViewport::GetMaxViewDelta();
+            m_delta.x = DgnViewport::GetMaxViewDelta() * windowAspect;
             }
         }
     else
         {
         double rtmp = m_delta.y * windowAspect;
-        if (rtmp < MAX_VDELTA)
+        if (rtmp < DgnViewport::GetMaxViewDelta())
             m_delta.x = rtmp;
         else
             {
-            m_delta.x = MAX_VDELTA;
-            m_delta.y = MAX_VDELTA / windowAspect;
+            m_delta.x = DgnViewport::GetMaxViewDelta();
+            m_delta.y = DgnViewport::GetMaxViewDelta() / windowAspect;
             }
         }
 
@@ -1788,23 +1785,23 @@ void ViewController2d::_AdjustAspectRatio(double windowAspect, bool expandView)
     if (expandView ?(viewAspect > windowAspect) :(windowAspect > 1.0))
         {
         double rtmp = m_delta.x / windowAspect;
-        if (rtmp < MAX_VDELTA)
+        if (rtmp < DgnViewport::GetMaxViewDelta())
             m_delta.y = rtmp;
         else
             {
-            m_delta.y = MAX_VDELTA;
-            m_delta.x = MAX_VDELTA * windowAspect;
+            m_delta.y = DgnViewport::GetMaxViewDelta();
+            m_delta.x = DgnViewport::GetMaxViewDelta() * windowAspect;
             }
         }
     else
         {
         double rtmp = m_delta.y * windowAspect;
-        if (rtmp < MAX_VDELTA)
+        if (rtmp < DgnViewport::GetMaxViewDelta())
             m_delta.x = rtmp;
         else
             {
-            m_delta.x = MAX_VDELTA;
-            m_delta.y = MAX_VDELTA / windowAspect;
+            m_delta.x = DgnViewport::GetMaxViewDelta();
+            m_delta.y = DgnViewport::GetMaxViewDelta() / windowAspect;
             }
         }
 

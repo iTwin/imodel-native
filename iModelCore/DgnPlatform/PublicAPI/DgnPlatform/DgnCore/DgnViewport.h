@@ -910,6 +910,10 @@ public:
     //__PUBLISH_SECTION_END__
     DGNPLATFORM_EXPORT ColorDef GetSolidFillEdgeColor(ColorDef inColor);
     //__PUBLISH_SECTION_START__
+
+    static double GetMinViewDelta() {return DgnUnits::OneMillimeter();}
+    static double GetMaxViewDelta() {return 20000 * DgnUnits::OneKilometer();}    // about twice the diameter of the earth
+    static double GetCameraPlaneRatio() {return 300.0;}
 };
 
 //=======================================================================================
