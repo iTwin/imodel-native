@@ -416,8 +416,7 @@ TEST_F(ElementItemTests, ElementsOwnsItemTest)
     findItem.Prepare(*m_db, "SELECT ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_ElementItem) " WHERE(ElementId=?)");
     findItem.BindId(1, eid);
     bool itemIsGone = (BE_SQLITE_ROW != findItem.Step());
-    //ASSERT_TRUE(itemIsGone);  *** WIP_ITEM - cascading delete
-    ASSERT_FALSE(itemIsGone); // *** WIP_ITEM - cascading delete
+    ASSERT_TRUE(itemIsGone);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -628,6 +627,7 @@ TEST_F(ElementItemTests, MultiAspect_CRUD)
 
     m_db->SaveChanges();
 
+#if 0 // WIP: trying to eliminate ElementOwnsAspects
     if (true)
         {
         // Verify that aspects were written to the Db and that the ElementOwnsAspects relationships were put into place
@@ -660,6 +660,7 @@ TEST_F(ElementItemTests, MultiAspect_CRUD)
             }
         ASSERT_TRUE( has1 && has2 );
         }
+#endif
 
     if (true)
         {
