@@ -300,7 +300,7 @@ bool WString::EndsWithI (WCharCP value) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Utf8String::IsAscii ()
     {
-    for (Utf8CP p = c_str(); 0 != *p; p++)
+    for (Utf8CP p = c_str(); 0 != *p; ++p)
         {
         if (0 != (*p & 0x80))
             return false;
