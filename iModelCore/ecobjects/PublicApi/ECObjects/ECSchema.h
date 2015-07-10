@@ -432,6 +432,7 @@ protected:
     virtual IECInstancePtr      _CondenseFormatterForSerialization (ECN::IECInstanceCR formatter) const = 0;
     virtual IECInstancePtr      _PopulateDefaultFormatterProperties (ECN::IECInstanceCR formatter) const = 0;
     virtual IECInstancePtr      _CreateDefaultFormatter (bool includeAllValues, bool forDwg) const = 0;
+    virtual bool                _GetPlaceholderValue (ECValueR v, IECTypeAdapterContextCR context) const = 0;
 
     virtual bool                _CanConvertToString (IECTypeAdapterContextCR context) const = 0;
     virtual bool                _CanConvertFromString (IECTypeAdapterContextCR context) const = 0;
@@ -489,6 +490,8 @@ public:
     //! of string rather than numbers.
     ECOBJECTS_EXPORT bool       IsOrdinalType () const;
 
+    //! Returns a default value which can be used as a placeholder for e.g. testing formatting options
+    ECOBJECTS_EXPORT bool       GetPlaceholderValue (ECValueR v, IECTypeAdapterContextCR context) const;
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
