@@ -53,6 +53,12 @@
 #include <Bentley/BeAssert.h>
 #include "strfunc.h"
 
+#include "utf8.h"
+
+#ifndef CP_UTF8
+#define CP_UTF8 (uint32_t)LangCodePage::ISCII_UNICODE_UTF_8
+#endif
+
 #if defined (__APPLE__) || defined (ANDROID)
     static char*    strlwr_ascii_only(char* s);
     static wchar_t* wcslwr_portable(wchar_t* s);
@@ -91,11 +97,6 @@ size_t utf16len(Utf16CP utf16, size_t bufSizeIncludingTerminator=BeStringUtiliti
     return count;
     }
 
-#include "utf8.h"
-
-#ifndef CP_UTF8
-#define CP_UTF8(uint32_t)LangCodePage::ISCII_UNICODE_UTF_8
-#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
