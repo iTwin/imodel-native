@@ -7,9 +7,10 @@
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 
-static double const VIEW_NOCLIP_ZMargin  = .01;
-static double const MIN_VIEWDELTA        = .00001;
-static double const MAX_VIEWDELTA        = 1.0e20;
+static double const oneKilometer         = 1000.;
+static double const oneMillimeter        = 1/1000.;
+static double const MIN_VIEWDELTA        = oneMillimeter;           // pretty damn small
+static double const MAX_VIEWDELTA        = 20000 * oneKilometer;    // about twice the diameter of the earth
 static double const CAMERA_PLANE_RATIO   = 300.0;
 
 static  uint32_t s_rasterLinePatterns[8] =
@@ -70,22 +71,6 @@ void DgnViewport::DestroyViewport()
     m_qvDCAssigned = false;
     m_qvParamsSet  = false;
     m_frustumValid = false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/2008
-+---------------+---------------+---------------+---------------+---------------+------*/
-double DgnViewport::GetViewNoClipZMargin()
-    {
-    return VIEW_NOCLIP_ZMargin;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      12/2008
-+---------------+---------------+---------------+---------------+---------------+------*/
-double DgnViewport::GetMinViewDelta()
-    {
-    return MIN_VIEWDELTA;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1535,31 +1520,6 @@ ColorDef DgnViewport::_GetWindowBgColor() const
     return (m_viewController.IsValid()) ? m_viewController->ResolveBGColor() : ColorDef::Black();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-void FitViewParams::SetupFitMode(FitModes modes)
-    {
-    m_fitRasterRefs      = false;
-    m_rasterElementsOnly = false;
-    m_includeTransients  = true;
-
-    switch (modes)
-        {
-        case FITMODE_All:
-            m_fitRasterRefs = true;
-            break;
-
-        case FITMODE_Active:
-            break;
-
-        case FITMODE_Raster:
-            m_fitRasterRefs = true;
-            m_rasterElementsOnly = true;
-            m_includeTransients = false;
-            break;
-        }
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14

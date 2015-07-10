@@ -62,13 +62,6 @@ struct FitViewParams
     bool            m_fitMaxDepth;
     bool            m_return3dRangeIn2dViews;
 
-    enum FitModes
-        {
-        FITMODE_All        = 0,
-        FITMODE_Active     = 1,
-        FITMODE_Raster     = 3,
-        };
-
     FitViewParams()
         {
         m_rMatrix = NULL;
@@ -76,8 +69,6 @@ struct FitViewParams
         m_fitRasterRefs = m_rasterElementsOnly = m_includeTransients = false;
         m_useScanRange = m_fitMinDepth = m_fitMaxDepth = m_return3dRangeIn2dViews = false;
         }
-
-    DGNPLATFORM_EXPORT void SetupFitMode(FitModes fitModes);
 };
 
 //=======================================================================================
@@ -495,8 +486,6 @@ protected:
     DGNPLATFORM_EXPORT virtual ViewportStatus _Activate(QvPaintOptions const&);
     DGNPLATFORM_EXPORT virtual void _SetFrustumFromRootCorners(DPoint3dCP rootBox, double compressionFraction);
     DGNPLATFORM_EXPORT virtual void _SynchWithViewController(bool saveInUndo);
-    DGNPLATFORM_EXPORT static double GetViewNoClipZMargin();
-    DGNPLATFORM_EXPORT static double GetMinViewDelta();
     virtual DgnDisplayCoreTypes::DeviceContextP _GetDcForView() const = 0;
     virtual uintptr_t _GetBackDropTextureId() {return 0;}
     DGNPLATFORM_EXPORT virtual ColorDef _GetWindowBgColor() const;

@@ -277,7 +277,6 @@ void PhysicalRedlineViewController::_DrawView(ViewContextR context) {return m_su
 uint32_t PhysicalRedlineViewController::_GetMaxElementsToLoad() {return GetMaxElementsToLoad();}
 BeSQLite::DbResult PhysicalRedlineViewController::_Load() {return m_subjectView.Load();}
 Utf8String PhysicalRedlineViewController::_GetRTreeMatchSql(DgnViewportR viewport) {return GetRTreeMatchSql(viewport);}
-bool PhysicalRedlineViewController::_OnComputeFitRange(DRange3dR range, DgnViewportR viewport, FitViewParamsR params) {return OnComputeFitRange(range,viewport,params);}
 int32_t PhysicalRedlineViewController::_GetMaxElementFactor() {return GetMaxElementFactor();}
 double PhysicalRedlineViewController::_GetMinimumSizePixels(DrawPurpose updateType) {return GetMinimumSizePixels(updateType);}
 uint64_t PhysicalRedlineViewController::_GetMaxElementMemory() {return GetMaxElementMemory();}

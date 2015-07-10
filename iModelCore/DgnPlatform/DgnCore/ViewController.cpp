@@ -570,10 +570,10 @@ BentleyStatus ViewController::GetStandardViewByName(RotMatrix* rotP, StandardVie
         {
         if (0 == BeStringUtilities::Wcsicmp(viewName, tName.c_str()))
             {
-            if (NULL != rotP)
+            if (nullptr != rotP)
                 bsiRotMatrix_getStandardRotation(rotP, i);
 
-            if (NULL != standardIdP)
+            if (nullptr != standardIdP)
                 *standardIdP =(StandardView) i;
 
             return SUCCESS;
@@ -766,7 +766,8 @@ void ViewController::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
     DVec3d    newDelta;
     newDelta.DifferenceOf(volume.high, volume.low);
 
-    double minimumDepth = 1000.0 / 1.01;
+    static const double oneMillimeter = 1/1000.;
+    double minimumDepth = oneMillimeter;
     if (newDelta.z < minimumDepth)
         {
         newOrigin.z -=(minimumDepth - newDelta.z)/2.0;
@@ -784,7 +785,7 @@ void ViewController::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
         // That generally causes the view to be too large (objects in it are too small), since we can't tell whether the objects are at
         // the front or back of the view. For this reason, don't attempt to add any "margin" to camera views.
         }
-    else if (NULL != margin)
+    else if (nullptr != margin)
         {
         // compute how much space we'll need for both of X and Y margins in root coordinates
         double wPercent = margin->Left() + margin->Right();
@@ -832,7 +833,7 @@ void ViewController::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
     newOrigin.z -=(newDelta.z - origNewDelta.z) / 2.0;
 
     // if they don't want the clipping planes to change, set them back to where they were
-    if (NULL != physView && !expandClippingPlanes && Allow3dManipulations())
+    if (nullptr != physView && !expandClippingPlanes && Allow3dManipulations())
         {
         viewRot.Multiply(oldOrg);
         newOrigin.z = oldOrg.z;
@@ -951,8 +952,8 @@ SectioningViewControllerPtr SectionDrawingViewController::GetSectioningViewContr
         return m_sectionView;
 
     SectionDrawingModel* drawing = GetSectionDrawing();
-    if (drawing == NULL)
-        return NULL;
+    if (drawing == nullptr)
+        return nullptr;
 
     auto sectionViewId = GetDgnDb().GeneratedDrawings().QuerySourceView(drawing->GetModelId());
     return dynamic_cast<SectioningViewController*>(GetDgnDb().Views().LoadViewController(sectionViewId, DgnViews::FillModels::Yes).get());
@@ -979,7 +980,7 @@ ClipVectorPtr SectionDrawingViewController::GetProjectClipVector() const
 Transform SectionDrawingViewController::GetFlatteningMatrix(double zdelta) const
     {
     auto drawing = GetSectionDrawing();
-    if (drawing == NULL)
+    if (drawing == nullptr)
         return Transform::FromIdentity();
 
     return drawing->GetFlatteningMatrix(zdelta);
@@ -1002,7 +1003,7 @@ Transform SectionDrawingViewController::GetFlatteningMatrixIf2D(ViewContextR con
 Transform SectionDrawingViewController::GetTransformToWorld() const
     {
     auto drawing = GetSectionDrawing();
-    if (drawing == NULL)
+    if (drawing == nullptr)
         return Transform::FromIdentity();
 
     return drawing->GetTransformToWorld();
@@ -1052,10 +1053,10 @@ void SectionDrawingViewController::_DrawView(ViewContextR context)
 void SectionDrawingViewController::_DrawElement(ViewContextR context, GeometricElementCR element)
     {
 #if defined(NEEDS_WORK_VIEW_CONTROLLER)
-    if (context.GetViewport() != NULL)
+    if (context.GetViewport() != nullptr)
         {
         auto hyper = context.GetViewport()->GetViewControllerP()->ToHypermodelingViewController();
-        if (hyper != NULL && !hyper->ShouldDrawAnnotations() && !ProxyDisplayHandlerUtils::IsProxyDisplayHandler(elIter.GetHandler()))
+        if (hyper != nullptr && !hyper->ShouldDrawAnnotations() && !ProxyDisplayHandlerUtils::IsProxyDisplayHandler(elIter.GetHandler()))
             return;
         }
 #endif
@@ -1572,7 +1573,7 @@ void CameraViewController::_RestoreFromSettings(JsonValueCR jsonObj)
         }
     else
         {
-        m_clipVector = NULL;
+        m_clipVector = nullptr;
         }
 #endif
 
@@ -1644,7 +1645,7 @@ IAuxCoordSysP PhysicalViewController::_GetAuxCoordinateSystem() const
 
     IAuxCoordSysP   acs = m_auxCoordSys.get();
 
-     if (NULL != acs && SUCCESS == acs->CompleteSetupFromViewController(this))
+     if (nullptr != acs && SUCCESS == acs->CompleteSetupFromViewController(this))
         return acs;
 #endif
 
