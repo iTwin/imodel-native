@@ -313,7 +313,7 @@ $(o)GeoCoordServices$(oext): $(DgnGeoCoordDir)GeoCoordServices.cpp $(DgnPlatform
 #   DgnScriptContext
 #----------------------------------------------------------------------
 
-%if $(BENTLEYCONFIG_JAVASCRIPT) == 1
+%ifndef BENTLEYCONFIG_NO_JAVASCRIPT
 
 $(o)DgnScriptContext$(oext) : $(dgnScriptContextDir)DgnScriptContext.cpp $(DgnCoreAPISrc)DgnScriptContext.h ${MultiCompileDepends}
 
@@ -494,7 +494,7 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(ToolsubsLib) \
 %endif
 
 # JavaScript Support
-%if $(BENTLEYCONFIG_JAVASCRIPT)==1
+%ifndef BENTLEYCONFIG_NO_JAVASCRIPT
     LINKER_LIBRARIES +    $(ContextSubpartsLibs)$(libprefix)BeJavaScript$(stlibext)
     %if $(TARGET_PLATFORM) == "Windows"
         %ifndef NDEBUG

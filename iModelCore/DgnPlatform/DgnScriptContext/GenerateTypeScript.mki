@@ -5,7 +5,7 @@
 #  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-%if $(BENTLEYCONFIG_JAVASCRIPT)==0
+%ifdef BENTLEYCONFIG_NO_JAVASCRIPT
     %return
 %endif
 
