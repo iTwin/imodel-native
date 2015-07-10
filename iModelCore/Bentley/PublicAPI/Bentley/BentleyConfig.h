@@ -8,7 +8,11 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-// BENTLEYCONFIG_JAVASCRIPT is defined by the various platform-specific ToolContext.mke files
+// BENTLEYCONFIG_NO_JAVASCRIPT is defined by the various platform-specific ToolContext.mke files
+
+#ifndef BENTLEYCONFIG_NO_JAVASCRIPT
+    #define BENTLEYCONFIG_JAVASCRIPT
+#endif
 
 //---------------------------------------------------------------------------------------
 //  operating system configuration
