@@ -107,7 +107,7 @@ TEST_F(UrlProviderTests, GetUrl_ValidateAllGetters)
     UrlProvider::CleanUpUrlCache();
     }
 
-TEST_F(UrlProviderTests, CleanUpCache_UrlsWereCached_RemovesUrlsFromLocalState)
+TEST_F(UrlProviderTests, DISABLED_CleanUpCache_UrlsWereCached_RemovesUrlsFromLocalState)
     {
     auto client = std::make_shared<MockBuddiClient>();
     Utf8String url = "testUrl";
