@@ -416,8 +416,7 @@ TEST_F(ElementItemTests, ElementsOwnsItemTest)
     findItem.Prepare(*m_db, "SELECT ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_ElementItem) " WHERE(ElementId=?)");
     findItem.BindId(1, eid);
     bool itemIsGone = (BE_SQLITE_ROW != findItem.Step());
-    //ASSERT_TRUE(itemIsGone);  *** WIP_ITEM - cascading delete
-    ASSERT_FALSE(itemIsGone); // *** WIP_ITEM - cascading delete
+    ASSERT_TRUE(itemIsGone);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -630,19 +629,21 @@ TEST_F(ElementItemTests, MultiAspect_CRUD)
 
     if (true)
         {
-        // Verify that aspects were written to the Db and that the ElementOwnsAspects relationships were put into place
+        // Verify that aspects were written to the Db and that the foreign key relationships were put into place
         BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement(
-            "SELECT Aspect.ECInstanceId, Aspect.TestMultiAspectProperty FROM DgnPlatformTest.TestMultiAspect Aspect"
-            " JOIN " DGN_SCHEMA(DGN_RELNAME_ElementOwnsAspects) " ON SourceECInstanceId=? AND TargetECClassId=?");
+            "SELECT aspect.ECInstanceId,aspect.TestMultiAspectProperty FROM DgnPlatformTest.TestMultiAspect aspect WHERE aspect.ElementId=?");
         stmt->BindId(1, el->GetElementId());
-        stmt->BindInt64(2, aclass.GetId());
+
         bool has1=false;
         bool has2=false;
-        // Note: select will often return the same aspect multiple times. Write the loop so that we don't care about that.
-        while (stmt->Step() == BeSQLite::EC::ECSqlStepStatus::HasRow)
+        int count=0;
+
+        while (BeSQLite::EC::ECSqlStepStatus::HasRow == stmt->Step())
             {
+            ++count;
             EC::ECInstanceId aspectId = stmt->GetValueId<EC::ECInstanceId>(0);
             Utf8CP propVal = stmt->GetValueText(1);
+
             if (a1id == aspectId)
                 {
                 has1 = true;
@@ -658,7 +659,8 @@ TEST_F(ElementItemTests, MultiAspect_CRUD)
                 FAIL() << "Unknown aspect found";
                 }
             }
-        ASSERT_TRUE( has1 && has2 );
+
+        ASSERT_TRUE( has1 && has2 && (2 == count) );
         }
 
     if (true)

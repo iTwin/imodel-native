@@ -326,7 +326,11 @@ static BentleyStatus registerJavaScript(DgnDbR db, Utf8CP tsProgramName, Utf8CP 
     stmt.BindInt(2, 0);
     stmt.BindInt(3, 0);
     stmt.BindText(4, tsProgramText, Statement::MakeCopy::No);
-    return (BE_SQLITE_DONE == stmt.Step())? BSISUCCESS: BSIERROR;
+    DbResult res = stmt.Step();
+    
+    NativeLogging::LoggingManager::GetLogger("DgnScriptContext")->infov ("Registering %s -> %d", tsProgramName, res);
+    
+    return (BE_SQLITE_DONE == res)? BSISUCCESS: BSIERROR;
     }
 
 //---------------------------------------------------------------------------------------

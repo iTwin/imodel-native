@@ -1,0 +1,69 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: DgnScriptContext/GenerateTypeScript.mki $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%ifdef BENTLEYCONFIG_NO_JAVASCRIPT
+
+    $(BuildContext)Delivery/DgnObjectModel.d.ts : $(_MakeFileSpec)
+        $(LinkFirstDepToFirstTarget)
+
+    %return
+%endif
+
+%ifndef dgnScriptContextDir
+    %error Caller must define dgnScriptContextDir
+%endif
+
+dgnScriptContextGen =% $(dgnPlatformBuildDir_)DgnScriptContextGen/
+
+%if defined(winNT)
+    TypeScriptCompile = $(BuildContext)SubParts/NodeJs/node.exe $(BuildContext)SubParts/TypeScript/tsc.js
+%else
+    TypeScriptCompile = $(BuildContext)SubParts/NodeJs/node $(BuildContext)SubParts/TypeScript/tsc.js
+%endif
+
+always:
+    !~@mkdir $(dgnScriptContextGen)
+
+# ---------------------------------------------------------------------------------------------------------------
+# Generate our Object Model ts declarations by scanning native code source files for special BEJAVASCRIPT_ comments
+# *** When you define new wrapper clases, add the source file to this list
+# ---------------------------------------------------------------------------------------------------------------
+filesToScan = $(dgnScriptContextDir)DgnScriptContext.cpp
+
+$(dgnScriptContextGen)DgnScriptContextNative.ts : $(filesToScan)
+    $(msg)
+    $(dgnScriptContextDir)createNativeClassTypeScriptDeclaration.py --namespace BentleyApi.Dgn \
+                                                              --output $(dgnScriptContextGen)DgnScriptContextNative.ts \
+                                                              --sources "$(dgnScriptContextDir)DgnScriptContext.cpp"
+    ~time
+
+
+tsSourceFiles = $(dgnScriptContextDir)ts/ts/_references.ts $(dgnScriptContextGen)DgnScriptContextNative.ts $(BuildContext)SubParts/BeJavaScriptJs/bejavascript.d.ts
+
+# The rule below *also* outputs $(dgnScriptContextGen)DgnObjectModel.d.ts
+# I didn't list that as an output, because ~time won't update it
+
+$(dgnScriptContextGen)DgnObjectModel.js : $(tsSourceFiles)
+    $(msg)
+    $(TypeScriptCompile) $(tsSourceFiles) --target ES5 \
+                                          --declaration \
+                                          %if !defined(NDEBUG)
+                                          --sourceMap \
+                                          --mapRoot $(dgnScriptContextGen) \
+                                          %endif
+                                          --out $(dgnScriptContextGen)DgnObjectModel.js
+    ~time
+
+$(dgnScriptContextGen)DgnScriptContextBootstrap.cpp : $(dgnScriptContextGen)DgnObjectModel.js
+    $(msg)
+    $(dgnScriptContextDir)mergeJsSourceDeliveryFiles.py --jsSourceFiles "__OBJECTMODELJSSOURCE__=$(dgnScriptContextGen)DgnObjectModel.js" \
+                                          --nativeSourceFile $(dgnScriptContextDir)ts/DgnScriptContextBootstrapper.cpp \
+                                          --outputPath $(dgnScriptContextGen)DgnScriptContextBootstrap.cpp
+    ~time
+
+$(BuildContext)Delivery/DgnObjectModel.d.ts : $(dgnScriptContextGen)DgnObjectModel.d.ts
+    $(LinkFirstDepToFirstTarget)

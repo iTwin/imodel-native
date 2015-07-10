@@ -86,16 +86,27 @@ public:
 
     public:
 
-        //! Provides access to scripting services
+        //! Provides access to scripting services.
+        //! This is a complete implementation of the Admin needed to establish a scripting environment and to set up and use the DgnScriptContexts.
+        //! You may subclass ScriptingAdmin if you want to add more thread-specific contexts to it.
         struct ScriptingAdmin : IHostObject
             {
+            BeJsEnvironmentP m_jsenv;
+            DgnScriptContextP m_dgnContext;
+
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
-            //! Provide the JavaScript environment needed to evaluate JavaScript expressions on the host's thread. There can only be one BeJsEnvironment per thread.
-            virtual BeJsEnvironmentP GetBeJsEnvironmentP() {return nullptr;}
+            DGNPLATFORM_EXPORT ScriptingAdmin();
+            DGNPLATFORM_EXPORT ~ScriptingAdmin();
 
-            //! Provide the context needed to execute a JavaScript function which uses the Dgn Object Model.
-            virtual IDgnJavaScriptObjectModelP GetIDgnJavaScriptObjectModel() {return nullptr;}
+            //! Provide the JavaScript environment needed to evaluate JavaScript expressions on the host's thread. 
+            //! There can only be one BeJsEnvironment per thread ... and this is it!
+            //! All BeJsContexts that run on this thread must use this BeJsEnvironment.
+            DGNPLATFORM_EXPORT BeJsEnvironmentR GetBeJsEnvironment();
+
+            //! Provide the BeJsContext to use when executing JavaScript that needs to use the Dgn JavaScript object model. 
+            //! There can only be one DgnScriptContext per thread ... and this is it!
+            DGNPLATFORM_EXPORT DgnScriptContextR GetDgnScriptContext();
             };
 
         //! Provides Exception handling capabilities

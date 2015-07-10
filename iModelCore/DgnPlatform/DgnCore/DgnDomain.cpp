@@ -13,8 +13,13 @@
 void DgnDomains::RegisterDomain(DgnDomain& domain)
     {
     auto& domains = T_HOST.RegisteredDomains();
-    if (domains.end() == std::find(domains.begin(), domains.end(), &domain))  // don't allow the same domain more than once
-        domains.push_back(&domain);
+    for (DgnDomainCP it : domains)
+        {
+        if (it->m_domainName.EqualsI(domain.m_domainName))
+            return;
+        }
+
+    domains.push_back(&domain);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -24,7 +29,7 @@ DgnDomainCP DgnDomains::FindDomain(Utf8CP name) const
     {
     for (DgnDomainCP domain : m_domains)
         {
-        if (0 == BeStringUtilities::Stricmp(domain->GetDomainName(), name))
+        if (0 == domain->m_domainName.EqualsI(name))
             return  domain;
         }
 
@@ -38,7 +43,7 @@ DgnDomain::Handler* DgnDomain::FindHandler(Utf8CP className) const
     {
     for (Handler* iter : m_handlers)
         {
-        if (iter->GetClassName() == className)
+        if (iter->GetClassName().Equals(className))
             return iter;
         }
 

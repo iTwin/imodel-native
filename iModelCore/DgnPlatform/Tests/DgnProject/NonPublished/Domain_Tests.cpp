@@ -142,8 +142,6 @@ struct DomainTests : public ::testing::Test
         DgnCategoryId m_defaultCategoryId;
         BeFileName schemaFile1;
 
-        DomainTests();
-        ~DomainTests();
         void CloseDb()
             {
             m_db->CloseDb();
@@ -208,7 +206,7 @@ ElementPtr TestElement_DgnPlatformSchema::Create(DgnDbR db, DgnModelId mid, DgnC
 //!DgnPlatform Schema Domain.
 * @bsimethod                                                    Maha Nasir      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Domain_DgnSchema::Domain_DgnSchema() : DgnDomain(TMTEST_SCHEMA_NAME, "Dgn Platform Domain", 1)
+Domain_DgnSchema::Domain_DgnSchema() : DgnDomain(TMTEST_SCHEMA_NAME, "testDomain", 1)
     {
     RegisterHandler(ElementHandler_DgnPlatformSchema::GetHandler());
     }
@@ -227,21 +225,8 @@ Domain_TestSchema:: Domain_TestSchema() : DgnDomain(TMTEST_SCHEMA_NAME1, "Test S
 * @bsimethod                                                    Maha Nasir      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 Domain2_TestSchema::Domain2_TestSchema() : DgnDomain(TMTEST_SCHEMA_NAME1, "Test Schema Domain 2", 2)
-    {}
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Maha.Nasir      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-    DomainTests::DomainTests()
     {
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Maha.Nasir      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DomainTests::~DomainTests()
-    {}
 
 /*---------------------------------------------------------------------------------**//**
 * set up method that opens an existing .dgndb project file after copying it to out

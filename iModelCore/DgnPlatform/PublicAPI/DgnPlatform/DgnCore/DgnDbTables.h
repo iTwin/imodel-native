@@ -59,7 +59,6 @@
 #define DGN_RELNAME_ElementHasLinks             "ElementHasLinks"
 #define DGN_RELNAME_ElementGeomUsesParts        "ElementGeomUsesParts"
 #define DGN_RELNAME_ElementGroupHasMembers      "ElementGroupHasMembers"
-#define DGN_RELNAME_ElementOwnsAspects          "ElementOwnsAspects"
 #define DGN_RELNAME_ElementOwnsItem             "ElementOwnsItem"
 #define DGN_RELNAME_ModelDrivesModel            "ModelDrivesModel"
 
