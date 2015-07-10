@@ -29,6 +29,8 @@ DgnPlatformInternalDir = $(DgnCoreDir)../PrivateApi/DgnPlatformInternal/
 
 dimensionDir    = $(DgnHandlersDir)Dimension/
 
+dgnScriptContextDir = $(_MakeFilePath)DgnScriptContext/
+
 contextDepends  =   $(DgnCoreAPISrc)ViewContext.h \
                     $(DgnCoreAPISrc)IViewOutput.h \
                     $(DgnCoreAPISrc)IViewDraw.h   \
@@ -86,6 +88,12 @@ always:
 
 # Need to change o around because that's what multicompile uses
 o = $(coreObjs)
+
+#----------------------------------------------------------------------
+# Generate the TypeScript portion of the DgnScriptContext.
+# This also generates $(dgnScriptContextGen)DgnScriptContextBootstrap.cpp, which we compile below.
+#----------------------------------------------------------------------
+%include $(dgnScriptContextDir)GenerateTypeScript.mki
 
 #----------------------------------------------------------------------
 #   Make sure that DgnPlatformInternal.pch is up-to-date.
@@ -302,6 +310,22 @@ $(o)GeoCoordServices$(oext): $(DgnGeoCoordDir)GeoCoordServices.cpp $(DgnPlatform
 #$(o)AuxCoordSysProcessor$(oext): $(DgnGeoCoordDir)AuxCoordSysProcessor.cpp $(DgnPlatformAPISrc)DgnGeoCoord.h $(BaseGeoCoordAPISrc)BaseGeoCoord.h ${MultiCompileDepends}
 
 #----------------------------------------------------------------------
+#   DgnScriptContext
+#----------------------------------------------------------------------
+
+%if $(BENTLEYCONFIG_JAVASCRIPT) == 1
+
+$(o)DgnScriptContext$(oext) : $(dgnScriptContextDir)DgnScriptContext.cpp $(DgnCoreAPISrc)DgnScriptContext.h ${MultiCompileDepends}
+
+$(o)DgnScriptContextBootstrap$(oext) : $(dgnScriptContextGen)DgnScriptContextBootstrap.cpp ${MultiCompileDepends}
+
+%else
+
+$(o)DgnScriptContextStubbedOut$(oext) : $(dgnScriptContextDir)DgnScriptContextStubbedOut.cpp $(DgnCoreAPISrc)DgnScriptContext.h ${MultiCompileDepends}
+
+%endif
+
+#----------------------------------------------------------------------
 #   Annotations
 #----------------------------------------------------------------------
 AnnotationsSrc = $(DgnCoreDir)Annotations/
@@ -466,6 +490,23 @@ LINKER_LIBRARIES        =   $(ContextSubpartsLibs)$(ToolsubsLib) \
         
         # Add this to use the VTune API. It is a static library that finds the DLL's if they are on the system.
         # LINKER_LIBRARIES       + "C:\Program Files (x86)\Intel\VTune Amplifier XE\lib64\libittnotify.lib"
+    %endif
+%endif
+
+# JavaScript Support
+%if $(BENTLEYCONFIG_JAVASCRIPT)==1
+    LINKER_LIBRARIES +    $(ContextSubpartsLibs)$(libprefix)BeJavaScript$(stlibext)
+    %if $(TARGET_PLATFORM) == "Windows"
+        %ifndef NDEBUG
+            LINKER_LIBRARIES + jsrt.lib
+        %else
+            LINKER_LIBRARIES + $(ContextSubpartsLibs)libv8.lib
+        %endif
+    %elif $(TARGET_PLATFORM) == "WinRT"
+        LINKER_LIBRARIES + jsrt.lib
+    %elif $(TARGET_PLATFORM) == "Android"
+        LINKER_LIBRARIES + $(ContextLibPrefix)v8_base.arm.a
+        LINKER_LIBRARIES + $(ContextLibPrefix)v8_snapshot.a
     %endif
 %endif
 

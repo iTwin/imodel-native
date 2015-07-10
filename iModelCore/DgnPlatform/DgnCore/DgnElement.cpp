@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnCore/QvElemSet.h>
+#include <DgnPlatform/DgnCore/DgnScriptContext.h>
 
 DgnElement::Item::Key   DgnElement::Item::s_key;
 
@@ -1663,17 +1664,11 @@ DgnDbStatus DgnElement::Item::ExecuteEGA(Dgn::DgnElementR el, DPoint3dCR origin,
     if (BSISUCCESS != DgnJavaScriptLibrary::ToJsonFromEC(json, egaInstance, Utf8String(egaInputs.GetString())))
         return DgnDbStatus::BadArg;
 
-    IDgnJavaScriptObjectModel* js = T_HOST.GetScriptingAdmin().GetIDgnJavaScriptObjectModel();
-    if (nullptr == js)
-        {
-        BeAssert(false && "It is up to the application to initialize the BeJsContext and supply a ScriptingAdmin");
-        return DgnDbStatus::NotEnabled;
-        }
-
+    DgnScriptContextR som = T_HOST.GetScriptingAdmin().GetDgnScriptContext();
     int retval;
-    BentleyStatus xstatus = js->_ExecuteJavaScriptEga(retval, el, tsName.c_str(), origin, angles, json);
-    if (xstatus != BSISUCCESS)
-        return DgnDbStatus::NotEnabled;
+    DgnDbStatus xstatus = som.ExecuteJavaScriptEga(retval, el, tsName.c_str(), origin, angles, json);
+    if (xstatus != DgnDbStatus::Success)
+        return xstatus;
 
     return (0 == retval)? DgnDbStatus::Success: DgnDbStatus::WriteError;
     }

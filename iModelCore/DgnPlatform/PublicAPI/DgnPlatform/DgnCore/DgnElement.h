@@ -382,9 +382,10 @@ public:
         //! @param el   The element to be updated
         //! @param origin   The placement origin
         //! @param angles   The placement angles
-        //! @param egaInstance The ECInstance that specifies the EGA and supplies the required input parameters.
+        //! @param egaInstance The ECInstance that specifies the EGA and supplies any addition input parameters required by the implementation.
         //! @return DgnDbStatus::Success if the EGA was executed and the element's geometry was generated;
         //! DgnDbStatus::NotEnabled if the EGA is not available or cannot be executed; DgnDbStatus::BadArg if properties could not be marshalled from egaInstance; or DgnDbStatus::WriteError if the EGA executed but encountered an error.
+        //! @see BentleyApi::DgnPlatform::DgnScriptContext for an explanation of script-based EGAs.
         DGNPLATFORM_EXPORT DgnDbStatus ExecuteEGA(Dgn::DgnElementR el, DPoint3dCR origin, YawPitchRollAnglesCR angles, ECN::IECInstanceCR egaInstance);
     
     };
@@ -1115,26 +1116,6 @@ public:
     //! @return the DgnElementId of the ElementGroup.  Will be invalid if not found.
     //! @see QueryMembers
     DGNPLATFORM_EXPORT static DgnElementId QueryFromMember(DgnDbR db, DgnClassId groupClassId, DgnElementId memberElementId);
-};
-
-//=======================================================================================
-//! To be implemented by a class that enables JavaScript programs to access the DgnPlatform API.
-// @bsiclass                                                    Sam.Wilson      06/15
-//=======================================================================================
-struct IDgnJavaScriptObjectModel
-{
-    virtual ~IDgnJavaScriptObjectModel() {;}
-
-    //! Execute an Element Generation Algorithm (EGA) that is implemented in JavaScript. The \a jsEgaFunctionName identifies the EGA function. The namespace portion of the name
-    //! must identify a JavaScript program that was previously registered in the DgnDb. See BentleyApi::DgnPlatform::DgnJavaScriptLibrary.
-    //! @param[out] functionReturnStatus    The function's integer return value. 0 means success.
-    //! @param[in] el           The element to update
-    //! @param[in] jsEgaFunctionName   Identifies the JavaScript function to be executed. Must be of the form namespace.functionname
-    //! @param[in] origin       The placement origin
-    //! @param[in] angles       The placement angles
-    //! @param[in] parms        The parameters to pass to the EGA function. The parameters are passed as a single JS object.
-    //! @return non-zero if the EGA is not in JavaScript, if the egaInstance properties are invalid, or if the JavaScript function could not be found or failed to execute.
-    virtual BentleyStatus _ExecuteJavaScriptEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms) = 0;
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
