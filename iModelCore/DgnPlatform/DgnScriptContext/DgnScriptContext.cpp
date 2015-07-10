@@ -437,7 +437,7 @@ DgnDbStatus DgnScriptContextImpl::LoadProgram(Dgn::DgnDbR db, Utf8CP tsFunctionS
     fileUrl.append(tsProgramName);
     fileUrl.append(".js");
 
-    NativeLogging::LoggingManager::GetLogger("DgnScriptContext")->tracev ("Evaluating %s", tsProgramName);
+    NativeLogging::LoggingManager::GetLogger("DgnScriptContext")->tracev ("Evaluating %s", tsProgramName.c_str());
 
     EvaluateScript(tsprog.c_str(), fileUrl.c_str());   // evaluate the whole script, allowing it to define objects and their properties. 
     return DgnDbStatus::Success;
