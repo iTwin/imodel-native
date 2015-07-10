@@ -1,10 +1,10 @@
 /*--------------------------------------------------------------------------------------+
- |
- |     $Source: Configuration/UrlProvider.cpp $
- |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
- |
- +--------------------------------------------------------------------------------------*/
+|
+|     $Source: Configuration/UrlProvider.cpp $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
 #include <WebServices/Configuration/UrlProvider.h>
 
@@ -17,14 +17,19 @@ ILocalState* UrlProvider::s_localState = nullptr;
 
 bool UrlProvider::s_isInitialized = false;
 
-uint32_t UrlProvider::s_regionsId[3] = {0, 0, 0};
+//Check IDs in the buddi.bentley.com
+//Bentley Corporate Network – DEV
+//Bentley Corporate Network – QA
+//Leave 0 for Release
+uint32_t UrlProvider::s_regionsId[3] = {103, 102, 0};
+
 const Utf8CP UrlProvider::s_urlNames[6] = {
-    "PunchListWsg",
-    "ConnectWsg",
-    "ConnectEula",
-    "ConnectLearnStsAuth",
-    "UsageTracking",
-    "Passport"
+    "Mobile.PunchListWsg",
+    "Mobile.ConnectWsg",
+    "Mobile.ConnectEula",
+    "Mobile.ImsStsAuth",       //ConnectLearnStsAuth
+    "Mobile.UsageTracking",
+    "Mobile.Passport"
     };
 
 const Utf8String UrlProvider::s_punchListWsgUrl[3] = {
@@ -86,7 +91,7 @@ void UrlProvider::Initialize(Environment env, ILocalState* customLocalState, IBu
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String UrlProvider::GetPunchlistWsgUrl()
     {
-    return GetUrl("PunchListWsg", s_punchListWsgUrl);
+    return GetUrl("Mobile.PunchListWsg", s_punchListWsgUrl);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -94,7 +99,7 @@ Utf8String UrlProvider::GetPunchlistWsgUrl()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String UrlProvider::GetConnectWsgUrl()
     {
-    return GetUrl("ConnectWsg", s_connectWsgUrl);
+    return GetUrl("Mobile.ConnectWsg", s_connectWsgUrl);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -102,7 +107,7 @@ Utf8String UrlProvider::GetConnectWsgUrl()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String UrlProvider::GetConnectEulaUrl()
     {
-    return GetUrl("ConnectEula", s_connectEulaUrl);
+    return GetUrl("Mobile.ConnectEula", s_connectEulaUrl);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -110,7 +115,7 @@ Utf8String UrlProvider::GetConnectEulaUrl()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String UrlProvider::GetConnectLearnStsAuthUri()
     {
-    return GetUrl("ConnectLearnStsAuth", s_connectLearnStsAuthUri);
+    return GetUrl("Mobile.ImsStsAuth", s_connectLearnStsAuthUri);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -118,7 +123,7 @@ Utf8String UrlProvider::GetConnectLearnStsAuthUri()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String UrlProvider::GetUsageTrackingUrl()
     {
-    return GetUrl("UsageTracking", s_usageTrackingUrl);
+    return GetUrl("Mobile.UsageTracking", s_usageTrackingUrl);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -126,7 +131,7 @@ Utf8String UrlProvider::GetUsageTrackingUrl()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String UrlProvider::GetPassportUrl()
     {
-    return GetUrl("Passport", s_passportUrl);
+    return GetUrl("Mobile.Passport", s_passportUrl);
     }
 
 /*--------------------------------------------------------------------------------------+
