@@ -133,7 +133,7 @@
     <SubPart PartName="XercesLib_VS2012" PartFile="xerces-c-3_1_2" Repository="libsrc-xerces-c-3.1.2" />	
     <SubPart PartName="GNOME_LIBXML2_2_9_1_VS2012" Repository="PointoolsLibs"/>
     <SubPart PartName="GNU_IConv_1_1_4_VS2012" Repository="PointoolsLibs"/>
-    <SubPart PartName="GDAL_1_11_1_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="GdalLib_VS2012" PartFile="gdal" Repository="Libsrc-gdal"/>
     <SubPart PartName="LibTiff_VS2012" PartFile="libtiff" Repository="libsrc-libtiff"/>
     <SubPart PartName="geotiff_VS2012" PartFile="geotiff" Repository="libsrc-geotiff"/>
     <SubPart PartName="Loki_VS2012" Repository="PointoolsLibs"/>
