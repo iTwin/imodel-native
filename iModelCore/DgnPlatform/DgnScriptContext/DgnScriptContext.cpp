@@ -437,6 +437,8 @@ DgnDbStatus DgnScriptContextImpl::LoadProgram(Dgn::DgnDbR db, Utf8CP tsFunctionS
     fileUrl.append(tsProgramName);
     fileUrl.append(".js");
 
+    NativeLogging::LoggingManager::GetLogger("DgnScriptContext")->tracev ("Evaluating %s", tsProgramName);
+
     EvaluateScript(tsprog.c_str(), fileUrl.c_str());   // evaluate the whole script, allowing it to define objects and their properties. 
     return DgnDbStatus::Success;
     }
@@ -538,7 +540,7 @@ BeJsEnvironmentR DgnPlatformLib::Host::ScriptingAdmin::GetBeJsEnvironment()
 DgnScriptContextR DgnPlatformLib::Host::ScriptingAdmin::GetDgnScriptContext()
     {
     if (nullptr == m_dgnContext)
-        m_dgnContext = new DgnScriptContext(*m_jsenv);
+        m_dgnContext = new DgnScriptContext(GetBeJsEnvironment());
     return *m_dgnContext;
     }
 
