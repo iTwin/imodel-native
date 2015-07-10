@@ -339,41 +339,41 @@ public:
 
             //! Get the density used for dynamic display.
             //! @return the dynamic density (a value between 0 and 1).
-            virtual float               _GetDisplayDynamicDensity() const {return 0.10f;}
+            virtual float _GetDisplayDynamicDensity() const {return 0.10f;}
 
             //! Get the density used for point cloud display.
             //! @return the global density (a value between 0 and 1).
-            virtual float               _GetDisplayGlobalDensity() const {return 1.0f;}
+            virtual float _GetDisplayGlobalDensity() const {return 1.0f;}
 
             //! Get the action to be taken with a point cloud exported to an i-model.
             //! @return the publishing action.
-            virtual PublishingAction    _GetPublishingAction() const {return Publish_KeepOriginal;}
+            virtual PublishingAction _GetPublishingAction() const {return Publish_KeepOriginal;}
 
             //! Get the maximum size of a point cloud to be embedded in an i-model.
             //! If the point cloud is bigger than this value (in Mb), it is reduced to this value. This value is used
             //! only when the publishing action is Publish_ReduceSize.
             //! @return the publishing size (in Mb).
-            virtual uint32_t            _GetPublishingEmbedSize() const {return 10;}
+            virtual uint32_t _GetPublishingEmbedSize() const {return 10;}
 
             //! Get the display type to use for point clouds
             //! @return the display query type.
-            virtual DisplayQueryType    _GetDisplayQueryType() const {return DisplayQueryType_Progressive;}
+            virtual DisplayQueryType _GetDisplayQueryType() const {return DisplayQueryType_Progressive;}
 
             //! Copy the spatial reference from a point cloud file to a point cloud element
             //! @param[in]      eRef         The point cloud element.
             virtual BentleyStatus _SyncSpatialReferenceFromFile(DgnElementP eRef) { return ERROR; }
 
             //! returns whether we should automatically synchronize the spatial reference from the POD file
-            virtual bool _GetAutomaticallySyncSpatialReferenceFromFile() const   { return false; }
+            virtual bool _GetAutomaticallySyncSpatialReferenceFromFile() const { return false; }
 
             //! returns whether we should automatically synchronize the spatial reference to the POD file
-            virtual bool _GetAutomaticallySyncSpatialReferenceToFile() const     { return false; }
+            virtual bool _GetAutomaticallySyncSpatialReferenceToFile() const { return false; }
 
             //! returns whether we should automatically synchronize the spatial reference from the POD file even if it is empty
-            virtual bool _GetSyncEmptySpatialReferenceFromFile() const           { return false; }
+            virtual bool _GetSyncEmptySpatialReferenceFromFile() const { return false; }
 
             //! returns whether we should automatically synchronize the spatial reference to the POD file even if it is empty
-            virtual bool _GetSyncEmptySpatialReferenceToFile() const             { return false; }
+            virtual bool _GetSyncEmptySpatialReferenceToFile() const { return false; }
             };
 
         //! Supply IRealityDatahandlers
@@ -388,15 +388,15 @@ public:
 
         //! Supervise various graphics operations.
         struct GraphicsAdmin : IHostObject
-            {
+        {
             //! Display control for edges marked as invisible in Mesh Elements and
             //! for B-spline Curve/Surface control polygons ("splframe" global).
             enum class ControlPolyDisplay
-                {
+            {
                 ByElement = 0, //! display according to element property.
                 Always    = 1, //! display on for all elements
                 Never     = 2, //! display off for all elements
-                };
+            };
 
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
@@ -509,7 +509,7 @@ public:
             //! Can be used to improve display performance in applications that only work in shaded views (or those that will clear all QvElems before switching to wireframe)
             virtual bool _WantWireframeRuleDisplay() {return true;}
 
-            }; // GraphicsAdmin
+        }; // GraphicsAdmin
 
         //! Support for elements that store their data as Parasolid or Acis breps. Also required
         //! to output element graphics as solid kernel entities and facet sets.
