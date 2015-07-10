@@ -1089,10 +1089,7 @@ static StatusInt visitElementFunc(DgnElementCR element, void* inContext, ScanCri
         return SUCCESS;
     
     ViewContextR context = *(ViewContext*)inContext;
-    if (SUCCESS == context.VisitElement(*geomElement))
-        context.ValidateScanRange(); // re-validate because scanner is going to use it for future elements.
-
-    return context.WasAborted() ? ERROR : SUCCESS;
+    return context.VisitElement(*geomElement);
     }
 
 /*---------------------------------------------------------------------------------**//**

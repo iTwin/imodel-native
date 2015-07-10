@@ -493,12 +493,18 @@ void QueryViewController::_DrawView(ViewContextR context)
         {
         context.VisitDgnModel(&m_queryModel);
 
+        if (context.CheckStop())
+            return;
+
         // Allow models to participate in picking
         for (DgnModelId modelId : GetViewedModels())
             {
             DgnModelPtr model = GetDgnDb().Models().GetModel(modelId);
             if (model.IsValid())
                 model->AddGraphicsToScene(context);
+
+            if (context.CheckStop())
+                break;
             }
 
         return;
