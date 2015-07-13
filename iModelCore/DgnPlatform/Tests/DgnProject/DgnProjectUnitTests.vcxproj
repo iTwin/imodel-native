@@ -38,6 +38,7 @@
     <ClCompile Include="NonPublished\ECDbInstances_Test.cpp" />
     <ClCompile Include="NonPublished\ECExpressionTests.cpp" />
     <ClCompile Include="NonPublished\ElementAgenda_Test.cpp" />
+    <ClCompile Include="NonPublished\ElementGeometryBuilder_Tests.cpp" />
     <ClCompile Include="NonPublished\ElementGeomPart_Tests.cpp" />
     <ClCompile Include="NonPublished\ElementProperties.cpp" />
     <ClCompile Include="NonPublished\EntityAndItem_Test.cpp" />
@@ -73,6 +74,8 @@
     <ClCompile Include="Published\UnitManager_Test.cpp" />
     <ClCompile Include="Published\valueformat_test.cpp" />
     <ClCompile Include="Published\ValueParse_Test.cpp" />
+    <ClCompile Include="TestFixture\DgnDbTestFixtures.cpp" />
+    <ClCompile Include="TestFixture\GeomHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\BackDoor.h" />
@@ -89,6 +92,8 @@
     <ClInclude Include="Performance\TestSchemaHelper.h" />
     <ClInclude Include="Published\DgnHandlersTests.h" />
     <ClInclude Include="Published\GenericDgnModelTestFixture.h" />
+    <ClInclude Include="TestFixture\DgnDbTestFixtures.h" />
+    <ClInclude Include="TestFixture\GeomHelper.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{7782F16A-217A-417A-BF3B-B7B8A137BE16}</ProjectGuid>

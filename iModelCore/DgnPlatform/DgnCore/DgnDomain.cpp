@@ -29,7 +29,7 @@ DgnDomainCP DgnDomains::FindDomain(Utf8CP name) const
     {
     for (DgnDomainCP domain : m_domains)
         {
-        if (0 == domain->m_domainName.EqualsI(name))
+        if (domain->m_domainName.EqualsI(name))
             return  domain;
         }
 

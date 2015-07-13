@@ -12,10 +12,13 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 
 #define TMTEST_SCHEMA_NAME                               "DgnPlatformTest"
+#define TMTEST_SCHEMA_DESCR                              "DgnPlatformTest Descr"
 #define TMTEST_SCHEMA_NAMEW                             L"DgnPlatformTest"
 #define TMTEST_SCHEMA_NAME1                               "TestSchema"
+#define TMTEST_SCHEMA_DESCR1                              "TestSchema Descr"
 #define TMTEST_SCHEMA_NAMEW1                             L"TestSchema"
 #define TMTEST_SCHEMA_NAME2                               "Test"
+#define TMTEST_SCHEMA_DESCR2                              "Test2 Descr"
 #define TMTEST_SCHEMA_NAMEW2                             L"Test"
 #define TMTEST_TEST_ELEMENT_CLASS_NAME                   "TestElement"
 #define TMTEST_TEST_ELEMENT_CLASS_NAME1                   "Element"
@@ -206,7 +209,7 @@ ElementPtr TestElement_DgnPlatformSchema::Create(DgnDbR db, DgnModelId mid, DgnC
 //!DgnPlatform Schema Domain.
 * @bsimethod                                                    Maha Nasir      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Domain_DgnSchema::Domain_DgnSchema() : DgnDomain(TMTEST_SCHEMA_NAME, "testDomain", 1)
+Domain_DgnSchema::Domain_DgnSchema() : DgnDomain(TMTEST_SCHEMA_NAME, TMTEST_SCHEMA_DESCR, 1)
     {
     RegisterHandler(ElementHandler_DgnPlatformSchema::GetHandler());
     }
@@ -215,7 +218,7 @@ Domain_DgnSchema::Domain_DgnSchema() : DgnDomain(TMTEST_SCHEMA_NAME, "testDomain
 //!Test Schema Domain 1.
 * @bsimethod                                                    Maha Nasir      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Domain_TestSchema:: Domain_TestSchema() : DgnDomain(TMTEST_SCHEMA_NAME1, "Test Schema Domain", 1)
+Domain_TestSchema:: Domain_TestSchema() : DgnDomain(TMTEST_SCHEMA_NAME1, TMTEST_SCHEMA_DESCR1, 1)
     {
     RegisterHandler(ElementHandler_TestSchema::GetHandler());
     }
@@ -224,7 +227,7 @@ Domain_TestSchema:: Domain_TestSchema() : DgnDomain(TMTEST_SCHEMA_NAME1, "Test S
 //!Test Schema Domain 2.
 * @bsimethod                                                    Maha Nasir      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Domain2_TestSchema::Domain2_TestSchema() : DgnDomain(TMTEST_SCHEMA_NAME1, "Test Schema Domain 2", 2)
+Domain2_TestSchema::Domain2_TestSchema() : DgnDomain(TMTEST_SCHEMA_NAME1, TMTEST_SCHEMA_DESCR2, 2)
     {
     }
 
@@ -288,7 +291,7 @@ TEST_F (DomainTests, CheckDomainProperties)
 
     EXPECT_EQ (TMTEST_SCHEMA_NAME, (Utf8String)dgnp_domain->GetDomainName());
 
-    EXPECT_EQ ("Dgn Platform Domain", (Utf8String)dgnp_domain->GetDomainDescription());
+    EXPECT_EQ (TMTEST_SCHEMA_DESCR, (Utf8String)dgnp_domain->GetDomainDescription());
 
     EXPECT_EQ (1, dgnp_domain->GetVersion());
 
@@ -298,7 +301,7 @@ TEST_F (DomainTests, CheckDomainProperties)
 
     EXPECT_EQ (TMTEST_SCHEMA_NAME1, (Utf8String)test_domain->GetDomainName());
 
-    EXPECT_EQ ("Test Schema Domain", (Utf8String)test_domain->GetDomainDescription());
+    EXPECT_EQ (TMTEST_SCHEMA_DESCR1, (Utf8String)test_domain->GetDomainDescription());
 
     EXPECT_EQ (1, test_domain->GetVersion());
     }
@@ -362,9 +365,9 @@ TEST_F (DomainTests, InsertElement)
 
     DgnDomainCR dp_domain = DgnPlatformSchema_handler->GetDomain();
     Utf8CP DomainName = dp_domain.GetDomainName();
-    EXPECT_EQ ("DgnPlatformTest", (Utf8String)DomainName);
+    EXPECT_EQ (TMTEST_SCHEMA_NAME, (Utf8String)DomainName);
     Utf8CP DomainDesc = dp_domain.GetDomainDescription();
-    EXPECT_EQ ("Dgn Platform Domain", (Utf8String)DomainDesc);
+    EXPECT_EQ (TMTEST_SCHEMA_DESCR, (Utf8String)DomainDesc);
 
     //Inserts Element in Test Domain.
     auto keyE2 = InsertElement_DgnPlatformSchema("Element", M1id);
@@ -383,9 +386,9 @@ TEST_F (DomainTests, InsertElement)
 
     DgnDomainCR test_domain = TestSchema_handler->GetDomain();
     Utf8CP Domain_Name = test_domain.GetDomainName();
-    EXPECT_EQ ("TestSchema", (Utf8String)Domain_Name);
+    EXPECT_EQ (TMTEST_SCHEMA_NAME1, (Utf8String)Domain_Name);
     Utf8CP Domain_Desc = test_domain.GetDomainDescription();
-    EXPECT_EQ ("Test Schema Domain", (Utf8String)Domain_Desc);
+    EXPECT_EQ (TMTEST_SCHEMA_DESCR1, (Utf8String)Domain_Desc);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -453,15 +456,15 @@ TEST_F (DomainTests, MultipleDomainRegister)
     EXPECT_NE (nullptr, test_schema);
 
     //Tests to check that in case of multiple domains in the same schema, the domain registered first will be in the Db only.
-    DgnDomainCP domain = m_db->Domains().FindDomain("TestSchema");
+    DgnDomainCP domain = m_db->Domains().FindDomain(TMTEST_SCHEMA_NAME1);
     EXPECT_TRUE (domain != nullptr);
 
     Utf8String name(domain->GetDomainName());
-    EXPECT_TRUE (name.Equals("TestSchema"));
+    EXPECT_TRUE (name.Equals(TMTEST_SCHEMA_NAME1));
 
     //These tests shows that the domain registered second is not in the DB.
     Utf8String desc(domain->GetDomainDescription());
-    EXPECT_TRUE (!desc.Equals("Test Schema Domain 2"));
+    EXPECT_TRUE (desc.Equals(TMTEST_SCHEMA_DESCR1));
 
     int32_t version=domain->GetVersion();
     EXPECT_NE (2, version);
@@ -502,5 +505,3 @@ TEST_F (DomainTests, MultipleSchemasImport)
     auto test_schema = m_db->Schemas().GetECSchema(TMTEST_SCHEMA_NAME1, true);
     EXPECT_EQ (nullptr, test_schema);
     }
-
-

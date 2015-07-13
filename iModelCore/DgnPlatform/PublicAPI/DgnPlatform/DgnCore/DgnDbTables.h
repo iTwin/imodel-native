@@ -1423,6 +1423,10 @@ public:
 
     //! Set the azimuth of the global coordinate system of this DgnDb.
     void SetAzimuth(double azimuth) {m_azimuth = azimuth;}
+
+    static double const OneMeter() {return 1.;}
+    static double const OneKilometer() {return 1000. * OneMeter();}
+    static double const OneMillimeter() {return OneMeter() / 1000.;}
 };
 
 //=======================================================================================

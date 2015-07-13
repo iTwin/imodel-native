@@ -9,8 +9,6 @@
 #include <Geom/eigensys3d.fdf>
 #include <DgnPlatform/DgnCore/DgnMarkupProject.h>
 
-static double const MAX_VDELTA = 1.0e20;
-
 static Utf8CP VIEW_SETTING_Area2d                = "area2d";
 static Utf8CP VIEW_SETTING_BackgroundColor       = "bgColor";
 static Utf8CP VIEW_SETTING_CameraAngle           = "cameraAngle";
@@ -570,10 +568,10 @@ BentleyStatus ViewController::GetStandardViewByName(RotMatrix* rotP, StandardVie
         {
         if (0 == BeStringUtilities::Wcsicmp(viewName, tName.c_str()))
             {
-            if (NULL != rotP)
+            if (nullptr != rotP)
                 bsiRotMatrix_getStandardRotation(rotP, i);
 
-            if (NULL != standardIdP)
+            if (nullptr != standardIdP)
                 *standardIdP =(StandardView) i;
 
             return SUCCESS;
@@ -766,7 +764,7 @@ void ViewController::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
     DVec3d    newDelta;
     newDelta.DifferenceOf(volume.high, volume.low);
 
-    double minimumDepth = 1000.0 / 1.01;
+    double minimumDepth = DgnUnits::OneMillimeter();
     if (newDelta.z < minimumDepth)
         {
         newOrigin.z -=(minimumDepth - newDelta.z)/2.0;
@@ -784,7 +782,7 @@ void ViewController::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
         // That generally causes the view to be too large (objects in it are too small), since we can't tell whether the objects are at
         // the front or back of the view. For this reason, don't attempt to add any "margin" to camera views.
         }
-    else if (NULL != margin)
+    else if (nullptr != margin)
         {
         // compute how much space we'll need for both of X and Y margins in root coordinates
         double wPercent = margin->Left() + margin->Right();
@@ -832,7 +830,7 @@ void ViewController::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
     newOrigin.z -=(newDelta.z - origNewDelta.z) / 2.0;
 
     // if they don't want the clipping planes to change, set them back to where they were
-    if (NULL != physView && !expandClippingPlanes && Allow3dManipulations())
+    if (nullptr != physView && !expandClippingPlanes && Allow3dManipulations())
         {
         viewRot.Multiply(oldOrg);
         newOrigin.z = oldOrg.z;
@@ -951,8 +949,8 @@ SectioningViewControllerPtr SectionDrawingViewController::GetSectioningViewContr
         return m_sectionView;
 
     SectionDrawingModel* drawing = GetSectionDrawing();
-    if (drawing == NULL)
-        return NULL;
+    if (drawing == nullptr)
+        return nullptr;
 
     auto sectionViewId = GetDgnDb().GeneratedDrawings().QuerySourceView(drawing->GetModelId());
     return dynamic_cast<SectioningViewController*>(GetDgnDb().Views().LoadViewController(sectionViewId, DgnViews::FillModels::Yes).get());
@@ -979,7 +977,7 @@ ClipVectorPtr SectionDrawingViewController::GetProjectClipVector() const
 Transform SectionDrawingViewController::GetFlatteningMatrix(double zdelta) const
     {
     auto drawing = GetSectionDrawing();
-    if (drawing == NULL)
+    if (drawing == nullptr)
         return Transform::FromIdentity();
 
     return drawing->GetFlatteningMatrix(zdelta);
@@ -1002,7 +1000,7 @@ Transform SectionDrawingViewController::GetFlatteningMatrixIf2D(ViewContextR con
 Transform SectionDrawingViewController::GetTransformToWorld() const
     {
     auto drawing = GetSectionDrawing();
-    if (drawing == NULL)
+    if (drawing == nullptr)
         return Transform::FromIdentity();
 
     return drawing->GetTransformToWorld();
@@ -1052,10 +1050,10 @@ void SectionDrawingViewController::_DrawView(ViewContextR context)
 void SectionDrawingViewController::_DrawElement(ViewContextR context, GeometricElementCR element)
     {
 #if defined(NEEDS_WORK_VIEW_CONTROLLER)
-    if (context.GetViewport() != NULL)
+    if (context.GetViewport() != nullptr)
         {
         auto hyper = context.GetViewport()->GetViewControllerP()->ToHypermodelingViewController();
-        if (hyper != NULL && !hyper->ShouldDrawAnnotations() && !ProxyDisplayHandlerUtils::IsProxyDisplayHandler(elIter.GetHandler()))
+        if (hyper != nullptr && !hyper->ShouldDrawAnnotations() && !ProxyDisplayHandlerUtils::IsProxyDisplayHandler(elIter.GetHandler()))
             return;
         }
 #endif
@@ -1125,8 +1123,8 @@ double PhysicalViewController::CalculateMaxDepth(DVec3dCR delta, DVec3dCR zVec)
     // no error is possible and we'll arbitrarily limit to 1.0E8.
     // This change made to resolve TR# 271876.   RayBentley   04/28/2009.
 
-    static double   s_depthRatioLimit       = 1.0E8;          // Limit for depth Ratio.
-    static double   s_maxTransformRowRatio  = 1.0E5;
+    static double s_depthRatioLimit       = 1.0E8;          // Limit for depth Ratio.
+    static double s_maxTransformRowRatio  = 1.0E5;
 
     double minXYComponent = std::min(fabs(zVec.x), fabs(zVec.y));
     double maxDepthRatio =(0.0 == minXYComponent) ? s_depthRatioLimit : std::min((s_maxTransformRowRatio / minXYComponent), s_depthRatioLimit);
@@ -1376,7 +1374,7 @@ ViewportStatus CameraViewController::LookAt(DPoint3dCR eyePoint, DPoint3dCR targ
     zVec.DifferenceOf(eyePoint, targetPoint);
 
     double focusDist = zVec.Normalize(); // set focus at target point
-    if (focusDist <= 1.0)                // eye and target are too close together
+    if (focusDist <= DgnUnits::OneMillimeter())      // eye and target are too close together
         return ViewportStatus::InvalidTargetPoint;
 
     DVec3d xVec; // x is the normal to the Up-Z plane
@@ -1393,8 +1391,8 @@ ViewportStatus CameraViewController::LookAt(DPoint3dCR eyePoint, DPoint3dCR targ
     double frontDist = frontDistIn ? *frontDistIn : GetFrontDistance();
     DVec3d delta     = extentsIn   ? DVec3d::From(fabs(extentsIn->x),fabs(extentsIn->y),GetDelta().z) : GetDelta();
 
-    frontDist = std::max(frontDist, 1.0);
-    backDist  = std::max(backDist, focusDist+1.0);
+    frontDist = std::max(frontDist, DgnUnits::OneMillimeter());
+    backDist  = std::max(backDist, focusDist+DgnUnits::OneMillimeter());
 
     BeAssert(backDist > frontDist);
     delta.z =(backDist - frontDist);
@@ -1432,8 +1430,8 @@ ViewportStatus CameraViewController::LookAtUsingLensAngle(DPoint3dCR eyePoint, D
     DVec3d zVec; // z defined by direction from eye to target
     zVec.DifferenceOf(eyePoint, targetPoint);
 
-    double focusDist = zVec.Normalize(); // set focus at target point
-    if (focusDist <= 1.0)                // eye and target are too close together
+    double focusDist = zVec.Normalize();  // set focus at target point
+    if (focusDist <= DgnUnits::OneMillimeter())       // eye and target are too close together
         return ViewportStatus::InvalidTargetPoint;
 
     if (lens < .0001 || lens > msGeomConst_pi)
@@ -1572,7 +1570,7 @@ void CameraViewController::_RestoreFromSettings(JsonValueCR jsonObj)
         }
     else
         {
-        m_clipVector = NULL;
+        m_clipVector = nullptr;
         }
 #endif
 
@@ -1644,7 +1642,7 @@ IAuxCoordSysP PhysicalViewController::_GetAuxCoordinateSystem() const
 
     IAuxCoordSysP   acs = m_auxCoordSys.get();
 
-     if (NULL != acs && SUCCESS == acs->CompleteSetupFromViewController(this))
+     if (nullptr != acs && SUCCESS == acs->CompleteSetupFromViewController(this))
         return acs;
 #endif
 
@@ -1723,23 +1721,23 @@ void PhysicalViewController::_AdjustAspectRatio(double windowAspect, bool expand
     if (expandView ?(viewAspect > windowAspect) :(windowAspect > 1.0))
         {
         double rtmp = m_delta.x / windowAspect;
-        if (rtmp < MAX_VDELTA)
+        if (rtmp < DgnViewport::GetMaxViewDelta())
             m_delta.y = rtmp;
         else
             {
-            m_delta.y = MAX_VDELTA;
-            m_delta.x = MAX_VDELTA * windowAspect;
+            m_delta.y = DgnViewport::GetMaxViewDelta();
+            m_delta.x = DgnViewport::GetMaxViewDelta() * windowAspect;
             }
         }
     else
         {
         double rtmp = m_delta.y * windowAspect;
-        if (rtmp < MAX_VDELTA)
+        if (rtmp < DgnViewport::GetMaxViewDelta())
             m_delta.x = rtmp;
         else
             {
-            m_delta.x = MAX_VDELTA;
-            m_delta.y = MAX_VDELTA / windowAspect;
+            m_delta.x = DgnViewport::GetMaxViewDelta();
+            m_delta.y = DgnViewport::GetMaxViewDelta() / windowAspect;
             }
         }
 
@@ -1787,23 +1785,23 @@ void ViewController2d::_AdjustAspectRatio(double windowAspect, bool expandView)
     if (expandView ?(viewAspect > windowAspect) :(windowAspect > 1.0))
         {
         double rtmp = m_delta.x / windowAspect;
-        if (rtmp < MAX_VDELTA)
+        if (rtmp < DgnViewport::GetMaxViewDelta())
             m_delta.y = rtmp;
         else
             {
-            m_delta.y = MAX_VDELTA;
-            m_delta.x = MAX_VDELTA * windowAspect;
+            m_delta.y = DgnViewport::GetMaxViewDelta();
+            m_delta.x = DgnViewport::GetMaxViewDelta() * windowAspect;
             }
         }
     else
         {
         double rtmp = m_delta.y * windowAspect;
-        if (rtmp < MAX_VDELTA)
+        if (rtmp < DgnViewport::GetMaxViewDelta())
             m_delta.x = rtmp;
         else
             {
-            m_delta.x = MAX_VDELTA;
-            m_delta.y = MAX_VDELTA / windowAspect;
+            m_delta.x = DgnViewport::GetMaxViewDelta();
+            m_delta.y = DgnViewport::GetMaxViewDelta() / windowAspect;
             }
         }
 
