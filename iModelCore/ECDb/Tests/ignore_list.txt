@@ -16,15 +16,13 @@ ECDbMapPersistenceTests.DGNSchemaTableColumnPropertyMapPersistence
 # TFS Defect 140982
 ECDbRelationships.RelationshipProperties 
 ECDbRelationships.JoinTests
-#this fail due to addition of a new version of schema. Since reference schema is loaded using latest version it load the new once
-FieldEngineer.RelationshipIssue
+
 # TFS Defect 170652 and 170717
 InstanceCRUDTests.InsertUpdateDeleteTest
 #TFS Defects 186409,186444, 186457, 186461
 ECDbMapPersistenceTests.MappingStrategyTest
 
 #Have notified Krischan and Affan; ignoring so we can get PRG builds through.
-ECDbMapCATests.StructClassInClassHierarchyWithPolymorphicSharedTable
 ECDbSchemas.DeigoRelationshipTest2
 ECDbSchemaManager.ECDbImportSchema_WSG2eBPluginSchemas_Succeeds
 
