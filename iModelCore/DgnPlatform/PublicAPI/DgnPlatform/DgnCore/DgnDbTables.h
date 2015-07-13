@@ -1342,7 +1342,7 @@ public:
     //! @param jsProgramText[out]    The content of the JavaScript program
     //! @param jsFileName[in]     The basename of the original .JS program that was imported by ImportJavaScript
     //! @return non-zero error status if the file could not be found
-    DGNPLATFORM_EXPORT static DgnDbStatus DgnJavaScriptLibrary::ReadJavaScript(Utf8StringR jsProgramText, BeFileNameCR jsFileName);
+    DGNPLATFORM_EXPORT static DgnDbStatus ReadJavaScript(Utf8StringR jsProgramText, BeFileNameCR jsFileName);
 
     //! Look up an imported JavaScript program by the specified name. 
     //! @param jsProgramText[out]    The content of the JavaScript program

@@ -35,16 +35,13 @@ public:
     DGNPLATFORM_EXPORT ~DgnScriptContext();
    
     /**
-    Execute an Element Generation Algorithm (EGA) that is implemented in JavaScript. The \a jsEgaFunctionName identifies the EGA function. The namespace portion of the name
-    must identify a JavaScript program that was previously registered in the DgnDb. See BentleyApi::Dgn::DgnJavaScriptLibrary.
-    @param[out] functionReturnStatus    The function's integer return value. 0 means success.
-    @param[in] el           The element to update
-    @param[in] jsEgaFunctionName   Identifies the JavaScript function to be executed. Must be of the form namespace.functionname. 
-    @param[in] origin       The placement origin
-    @param[in] angles       The placement angles
-    @param[in] parms        Any additional parameters to pass to the EGA function. 
-    @return non-zero if the EGA is not in JavaScript, if the egaInstance properties are invalid, or if the JavaScript function could not be found or failed to execute.
-    @remarks <h2>Signature of a JavaScript EGA function.</h2>
+    Execute an Element Generation Algorithm (EGA) that is implemented in JavaScript. 
+    An EGA is identified by a two-part name, of the form namespace.function. 
+    The JavaScript program that defines an EGA must use this identifier to register the function. 
+    The caller of this function must pass in this identifier in the \a jsEgaFunctionName parameter.
+    Ordinarily, an EGA is specified by an ECClass.
+
+    <h2>Signature of a JavaScript EGA function.</h2>
     An EGA function written in TypeScript must have the following signature:
     @verbatim
     function myEgaFunction(element: BentleyApi.Dgn.JsDgnElement, origin: BentleyApi.Dgn.JsDPoint3d, angles: BentleyApi.Dgn.JsYawPitchRollAngles, params: any) : number
@@ -53,17 +50,19 @@ public:
     @verbatim
     function myEgaFunction(element, origin, angles, params)
     @endverbatim
+
     <h2>Registering a JavaScript EGA function.</h2>
     The JavaScript \em program must register an EGA function in its start-up logic like this:
     @verbatim
         BentleyApi.Dgn.RegisterEGA('myNamespace.myEgaPublicName', myEgaFunction);
     @endverbatim
-    The string myNamespace.myEgaPublicName must be the same string that an ECClass uses to identify the EGA.
+    The \a jsEgaFunctionName parameter must match the name used to register a JavaScript EGA.
+
     <h2>Specifying an EGA in an ECClass.</h2>
-    An ECClass specifies the EGA that is to be used by instances by naming it in a custom attribute, like this:
+    An ECClass that is derived from dgn.ElementItem that wants to specify an EGA must identify the JavaScript function in a custom attribute, like this:
     @verbatim
     <ECClass typeName="SomeItem" isDomainClass="True">
-        <BaseClass>some item base class</BaseClass>
+        <BaseClass>dgn.ElementItem</BaseClass>
         ...
         <!-- Here is where I specify what kind of EGA I implement and where to find it. -->
         <ECCustomAttributes xmlns="...">
@@ -80,6 +79,14 @@ public:
     Note that the EGASpecifier identifies the EGA JavaScript function using the same string as the JavaScript program used to register it.
     Also note that the EGASpecifier specifies additional inputs by name. In the example above, they are prop1, prop2, and so forth.
     The EGA JavaScript function expects to find properties by these names on the \a parms object that is passed in as its 4th argument.
+
+    @param[out] functionReturnStatus    The function's integer return value. 0 means success.
+    @param[in] el           The element to update
+    @param[in] jsEgaFunctionName   Identifies the JavaScript function to be executed. Must be of the form namespace.functionname. 
+    @param[in] origin       The placement origin
+    @param[in] angles       The placement angles
+    @param[in] parms        Any additional parameters to pass to the EGA function. 
+    @return non-zero if the EGA is not in JavaScript, if the egaInstance properties are invalid, or if the JavaScript function could not be found or failed to execute.
     **/
     DGNPLATFORM_EXPORT DgnDbStatus ExecuteJavaScriptEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms);
 
