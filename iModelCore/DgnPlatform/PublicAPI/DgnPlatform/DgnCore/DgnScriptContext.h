@@ -54,7 +54,7 @@ public:
     <h2>Registering a JavaScript EGA function.</h2>
     The JavaScript \em program must register an EGA function in its start-up logic like this:
     @verbatim
-        BentleyApi.Dgn.RegisterEGA('myNamespace.myEgaPublicName', myEgaFunction);
+    BentleyApi.Dgn.RegisterEGA('myNamespace.myEgaPublicName', myEgaFunction);
     @endverbatim
     The \a jsEgaFunctionName parameter must match the name used to register a JavaScript EGA.
 
