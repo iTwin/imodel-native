@@ -33,9 +33,6 @@ RasterFileSource::RasterFileSource(Utf8StringCR resolvedName)
         return;
         }
 
-    DPoint3d corners[4];
-    m_rasterFilePtr->GetCorners(corners);
-
     Point2d sizePixels;
     m_rasterFilePtr->GetSize(&sizePixels);
 
@@ -48,26 +45,22 @@ RasterFileSource::RasterFileSource(Utf8StringCR resolvedName)
     bvector<Resolution> resolution;
     RasterSource::GenerateResolution(resolution, sizePixels.x, sizePixels.y, m_tileSize.x, m_tileSize.y);
 
+    // If this raster has georeference, get the geographic transform.
     GeoCoordinates::BaseGCSPtr baseGcsPtr = m_rasterFilePtr->GetBaseGcs();
-//&&ep    - validate baseGcsPtr
+    if (baseGcsPtr != nullptr)
+        {
+        DMatrix4d geoTransform;
+        geoTransform.InitIdentity(); 
+        geoTransform = m_rasterFilePtr->GetGeoTransform();
+        Initialize(resolution, geoTransform, baseGcsPtr.get());
+        }
+    else
+        {
+        // Raster has no georeference. Simply use the transformation to lower left corner.
+        DMatrix4d physicalToLowerLeft = m_rasterFilePtr->GetPhysicalToLowerLeft();
+        Initialize(resolution, physicalToLowerLeft, baseGcsPtr.get());
+        }
 
-/* &&ep - need this ? if no gcs ?
-    GeoCoordinates::BaseGCSPtr pGcs = CreateBaseGcsFromWmsGcs(properties.m_csLabel);
-    BeAssert(pGcs.IsValid()); //Is it an error if we do not have a GCS? We will assume coincident.
-
-    Initialize(corners, resolution, pGcs.get());
-    Initialize(corners, resolution, nullptr);
-*/
-    DMatrix4d physicalToLowerLeft = m_rasterFilePtr->GetPhysicalToLowerLeft();
-
-    //&&ep fill the transform from raster file. See RasterSource::GetGeoreference(library/RasterCore/RasterSource.cpp)
-    DMatrix4d rasterTransform;
-    rasterTransform.InitIdentity(); 
-    
-    DMatrix4d physicalToCartesian;
-    physicalToCartesian.InitProduct(rasterTransform, physicalToLowerLeft);
- 
-    Initialize(resolution, physicalToCartesian, baseGcsPtr.get());
     }
 
 //----------------------------------------------------------------------------------------
