@@ -10,25 +10,8 @@
 
 //Macros to define members of DgnDomain and Handler
 HANDLER_DEFINE_MEMBERS(TestElementHandler)
+HANDLER_DEFINE_MEMBERS(TestElement2dHandler)
 DOMAIN_DEFINE_MEMBERS(DgnPlatformTestDomain)
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   BentleySystems
-//---------------------------------------------------------------------------------------
-static CurveVectorPtr computeShape(double len)
-{
-
-    DPoint3d pts[6];
-    pts[0] = DPoint3d::From(-len, -len);
-    pts[1] = DPoint3d::From(+len, -len);
-    pts[2] = DPoint3d::From(+len, +len);
-    pts[3] = DPoint3d::From(-len, +len);
-    pts[4] = pts[0];
-    pts[5] = pts[0];
-    pts[5].z = 1;
-
-    return CurveVector::CreateLinear(pts, _countof(pts), CurveVector::BOUNDARY_TYPE_Open);
-}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Majd.Uddin      05/15
@@ -36,6 +19,7 @@ static CurveVectorPtr computeShape(double len)
 DgnPlatformTestDomain::DgnPlatformTestDomain() : DgnDomain(TMTEST_SCHEMA_NAME, "Test Schema", 1)
 {
     RegisterHandler(TestElementHandler::GetHandler());
+    RegisterHandler(TestElement2dHandler::GetHandler());
 }
 
 /*---------------------------------------------------------------------------------**//**
@@ -45,10 +29,9 @@ TestElementPtr TestElement::Create(DgnDbR db, DgnModelId mid, DgnCategoryId cate
 {
     TestElementPtr testElement = new TestElement(CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId));
 
-    static const double PLANE_LEN = 100;
     //  Add some hard-wired geometry
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*testElement);
-    EXPECT_TRUE(builder->Append(*computeShape(PLANE_LEN)));
+    EXPECT_TRUE(builder->Append(*GeomHelper::computeShape()));
     if (SUCCESS != builder->SetGeomStreamAndPlacement(*testElement))
         return nullptr;
 
@@ -62,11 +45,10 @@ TestElementPtr TestElement::Create(DgnDbR db, ElemDisplayParamsCR ep, DgnModelId
 {
     TestElementPtr testElement = new TestElement(CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId));
 
-    static const double PLANE_LEN = 100;
     //  Add some hard-wired geometry
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*testElement);
     EXPECT_TRUE(builder->Append(ep));
-    EXPECT_TRUE(builder->Append(*computeShape(PLANE_LEN)));
+    EXPECT_TRUE(builder->Append(*GeomHelper::computeShape()));
     if (SUCCESS != builder->SetGeomStreamAndPlacement(*testElement))
         return nullptr;
 
@@ -217,6 +199,124 @@ bool DgnDbTestFixture::SelectElementItem(DgnElementId id)
         return false;
 
     return true;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TestElement2dPtr TestElement2d::Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
+{
+    TestElement2dPtr testElement = new TestElement2d(TestElement2d::CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement2d(), nullptr, elementCode));
+
+    //  Add some hard-wired geometry
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*testElement);
+    EXPECT_TRUE(builder->Append(*GeomHelper::computeShape2d()));
+    if (SUCCESS != builder->SetGeomStreamAndPlacement(*testElement))
+        return nullptr;
+
+    return testElement;
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Umar.Hayat      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementKey DgnDbTestFixture::InsertElement2d( DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
+{
+    if (!mid.IsValid())
+        mid = m_defaultModelId;
+
+    if (!categoryId.IsValid())
+        categoryId = m_defaultCategoryId;
+
+    DgnElementPtr el = TestElement2d::Create(*m_db, mid, categoryId, elementCode);
+
+    return m_db->Elements().Insert(*el)->GetElementKey();
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Umar.Hayat      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart2d(Utf8CP gpCode, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
+{
+    if (!mid.IsValid())
+        mid = m_defaultModelId;
+
+    if (!categoryId.IsValid())
+        categoryId = m_defaultCategoryId;
+
+    TestElement2dPtr el = TestElement2d::Create(*m_db, mid, categoryId, elementCode);
+
+    DgnModelP model = m_db->Models().GetModel(mid).get();
+    GeometricElementP geomElem = const_cast<GeometricElementP>(el->ToGeometricElement());
+
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, categoryId, DPoint2d::From(0.0, 0.0));
+
+    DgnGeomPartId existingPartId = m_db->GeomParts().QueryGeomPartId(gpCode);
+    EXPECT_TRUE(existingPartId.IsValid());
+
+    if (!(builder->Append(existingPartId, Transform::From(0.0, 0.0, 0.0))))
+        return DgnElementKey();
+
+    if (SUCCESS != builder->SetGeomStreamAndPlacement(*geomElem))
+        return DgnElementKey();
+
+    return m_db->Elements().Insert(*el)->GetElementKey();
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Umar.Hayat      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart(Utf8CP gpCode, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
+{
+    if (!mid.IsValid())
+        mid = m_defaultModelId;
+
+    if (!categoryId.IsValid())
+        categoryId = m_defaultCategoryId;
+
+    DgnElementPtr el = TestElement::Create(*m_db, mid, categoryId, elementCode);
+
+    DgnModelP model = m_db->Models().GetModel(mid).get();
+    GeometricElementP geomElem = const_cast<GeometricElementP>(el->ToGeometricElement());
+
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, categoryId, DPoint3d::From(0.0, 0.0,0.0));
+
+    DgnGeomPartId existingPartId = m_db->GeomParts().QueryGeomPartId(gpCode);
+    EXPECT_TRUE(existingPartId.IsValid());
+
+    if (!(builder->Append(existingPartId, Transform::From(0.0, 0.0, 0.0))))
+        return DgnElementKey();
+
+    if (SUCCESS != builder->SetGeomStreamAndPlacement(*geomElem))
+        return DgnElementKey();
+
+    return m_db->Elements().Insert(*el)->GetElementKey();
+}
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Umar.Hayat      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementKey DgnDbTestFixture::InsertElementUsingGeomPart(DgnGeomPartId gpId, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
+{
+    if (!mid.IsValid())
+        mid = m_defaultModelId;
+
+    if (!categoryId.IsValid())
+        categoryId = m_defaultCategoryId;
+
+    DgnElementPtr el = TestElement::Create(*m_db, mid, categoryId, elementCode);
+
+    DgnModelP model = m_db->Models().GetModel(mid).get();
+    GeometricElementP geomElem = const_cast<GeometricElementP>(el->ToGeometricElement());
+
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, categoryId, DPoint3d::From(0.0, 0.0,0.0));
+
+    if (!(builder->Append(gpId, Transform::From(0.0, 0.0, 0.0))))
+        return DgnElementKey();
+
+    if (SUCCESS != builder->SetGeomStreamAndPlacement(*geomElem))
+        return DgnElementKey();
+
+    return m_db->Elements().Insert(*el)->GetElementKey();
 }
 
 
