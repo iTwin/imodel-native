@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
 
-
 static  uint32_t s_rasterLinePatterns[8] =
     {
     0xffffffff,     // 0
@@ -49,9 +48,9 @@ DgnViewport::DgnViewport()
     m_qvParamsSet       = false;
     m_invertY           = true;
     m_frustumValid      = false;
-    m_toolGraphicsHandler = NULL;
+    m_toolGraphicsHandler = nullptr;
     m_backgroundColor   = ColorDef::Black();
-    m_output            = NULL;
+    m_output            = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -62,7 +61,7 @@ void DgnViewport::DestroyViewport()
     RELEASE_AND_CLEAR (m_output);
 
     m_progressiveDisplay.clear();
-    m_viewController     = NULL;
+    m_viewController = nullptr;
     m_qvDCAssigned = false;
     m_qvParamsSet  = false;
     m_frustumValid = false;
@@ -97,8 +96,8 @@ void DgnViewport::SetDisplayFlagPatterns(bool newValue)
 
 enum Constant
     {
-    MINIMUM_WINDOW_DEPTH            = -32767,
-    MAXIMUM_WINDOW_DEPTH            = 32767,
+    MINIMUM_WINDOW_DEPTH = -32767,
+    MAXIMUM_WINDOW_DEPTH = 32767,
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -146,7 +145,7 @@ void DgnViewport::ViewToNpc(DPoint3dP npcVec, DPoint3dCP screenVec, int nPts) co
     _GetViewCorners(llb, urf);
 
     Transform    scrToNpcTran;
-    bsiTransform_initFromRange(NULL, &scrToNpcTran, &llb, &urf);
+    bsiTransform_initFromRange(nullptr, &scrToNpcTran, &llb, &urf);
     scrToNpcTran.Multiply(npcVec, screenVec, nPts);
     }
 
@@ -159,7 +158,7 @@ void DgnViewport::NpcToView(DPoint3dP screenVec, DPoint3dCP npcVec, int nPts) co
     _GetViewCorners(llb, urf);
 
     Transform    npcToScrTran;
-    bsiTransform_initFromRange(&npcToScrTran, NULL, &llb, &urf);
+    bsiTransform_initFromRange(&npcToScrTran, nullptr, &llb, &urf);
     npcToScrTran.Multiply(screenVec, npcVec, nPts);
     }
 
@@ -224,7 +223,7 @@ void DgnViewport::ScreenToView(DPoint3dP viewPts, DPoint3dCP screenPts, int nPts
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::WorldToView(DPoint4dP screenPts, DPoint3dCP rootPts, int nPts) const
     {
-    bsiDMatrix4d_multiplyWeightedDPoint3dArray(&m_rootToView.M0, screenPts, rootPts, NULL, nPts);
+    bsiDMatrix4d_multiplyWeightedDPoint3dArray(&m_rootToView.M0, screenPts, rootPts, nullptr, nPts);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -298,7 +297,7 @@ void DgnViewport::_AdjustAspectRatio(ViewControllerR viewController, bool expand
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double* compressionFraction, CameraInfo const* camera,
-                                          DPoint3dCR inOrigin, DPoint3dCR delta, RotMatrixCR viewRot)
+                                            DPoint3dCR inOrigin, DPoint3dCR delta, RotMatrixCR viewRot)
     {
     DVec3d    xVector, yVector, zVector;
     viewRot.GetRows(xVector, yVector, zVector);
@@ -333,7 +332,7 @@ StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double* compressi
             // around a third of a meter and avoids the case where a very large back clip distance
             // causes objects near the camera to disappear.     - RBB 03/2007.
 
-            double  maximumBackClip = DgnUnits::OneKilometer();
+            double maximumBackClip = DgnUnits::OneKilometer();
 
             if (-zBack > maximumBackClip)
                 zBack = -maximumBackClip;
@@ -399,7 +398,7 @@ StatusInt DgnViewport::_ConnectToOutput()
     if (m_qvDCAssigned)
         return SUCCESS;
 
-    if (NULL == m_output)
+    if (nullptr == m_output)
         return ERROR;
 
     StatusInt status = m_output->AssignDC (_GetDcForView());
@@ -465,7 +464,7 @@ static void validateCamera(CameraViewControllerR controller)
     camera.ValidateLens();
     if (camera.IsFocusValid())
          {
-         // we used to call controller.CenterEyePoint(NULL) here, but that can cause existing MicroStation
+         // we used to call controller.CenterEyePoint(nullptr) here, but that can cause existing MicroStation
          // 1-point perspective views to jump, so i removed it. - KAB
          return;
          }
@@ -497,7 +496,7 @@ static void validateCamera(CameraViewControllerR controller)
 ViewportStatus DgnViewport::_SetupFromViewController()
     {
     ViewControllerP   viewController = m_viewController.get();
-    if (NULL == viewController)
+    if (nullptr == viewController)
         return ViewportStatus::InvalidViewport;
 
     _AdjustAspectRatio(*viewController, false);
@@ -515,7 +514,7 @@ ViewportStatus DgnViewport::_SetupFromViewController()
     m_zClipAdjusted = false;
 
     PhysicalViewControllerP physicalView = GetPhysicalViewControllerP();
-    if (NULL != physicalView)
+    if (nullptr != physicalView)
         {
         CameraViewControllerP cameraView = GetCameraViewControllerP();
         if (!Allow3dManipulations())
@@ -571,10 +570,10 @@ ViewportStatus DgnViewport::_SetupFromViewController()
         AlignWithRootZ();
 
         SheetViewControllerP sheetView = dynamic_cast<SheetViewControllerP> (viewController);
-        if (NULL != sheetView)
+        if (nullptr != sheetView)
             m_isSheetView = true;
 
-        delta.z  = 200. * DgnUnits::OneMillimeter();
+        delta.z  =  200. * DgnUnits::OneMillimeter();
         origin.z = -100. * DgnUnits::OneMillimeter();
         }
 
@@ -588,7 +587,7 @@ ViewportStatus DgnViewport::_SetupFromViewController()
 
     m_scale.x = (fabs(urf.x - llb.x) / delta.x);
     m_scale.y = (fabs(urf.y - llb.y) / delta.y);
-    m_scale.z =  zRangeView / delta.z;
+    m_scale.z = zRangeView / delta.z;
 
     m_viewDelta = delta;
     m_viewOrg   = origin;
@@ -596,10 +595,10 @@ ViewportStatus DgnViewport::_SetupFromViewController()
     if (SUCCESS != _ConnectToOutput())
         return ViewportStatus::InvalidViewport;
 
-    BeAssert(NULL == m_output || !m_output->IsDrawActive());
+    BeAssert(nullptr == m_output || !m_output->IsDrawActive());
 
     double compressionFraction;
-    if (SUCCESS != RootToNpcFromViewDef(m_rootToNpc, &compressionFraction, IsCameraOn() ? &m_camera : NULL, origin, delta, m_rotMatrix))
+    if (SUCCESS != RootToNpcFromViewDef(m_rootToNpc, &compressionFraction, IsCameraOn() ? &m_camera : nullptr, origin, delta, m_rotMatrix))
         return  ViewportStatus::InvalidViewport;
 
     DPoint3d rootBox[NPC_CORNER_COUNT];
@@ -648,7 +647,7 @@ void DgnViewport::FixFrustumOrder(Frustum& frustum)
 ViewportStatus DgnViewport::SetupFromFrustum(Frustum const& inFrustum)
     {
     ViewControllerP   viewController = m_viewController.get();
-    if (NULL == viewController || !m_frustumValid)
+    if (nullptr == viewController || !m_frustumValid)
         return ViewportStatus::InvalidWindow;
 
     ViewportStatus validSize = viewController->SetupFromFrustum(inFrustum);
@@ -668,7 +667,7 @@ ViewportStatus DgnViewport::SetupFromFrustum(Frustum const& inFrustum)
 ViewportStatus DgnViewport::ChangeArea(DPoint3dCP pts)
     {
     ViewControllerP viewController = m_viewController.get();
-    if (NULL == viewController)
+    if (nullptr == viewController)
         return  ViewportStatus::InvalidViewport;
 
     if (!m_qvDCAssigned)
@@ -750,7 +749,7 @@ Frustum DgnViewport::GetFrustum(DgnCoordSystem sys, bool expandedBox) const
         {
         // to get unexpanded box, we have to go recompute rootToNpc from original viewController.
         DMap4d  ueRootToNpc;
-        RootToNpcFromViewDef(ueRootToNpc, NULL, IsCameraOn() ? &m_camera : NULL, m_viewOrgUnexpanded, m_viewDeltaUnexpanded, m_rotMatrix);
+        RootToNpcFromViewDef(ueRootToNpc, nullptr, IsCameraOn() ? &m_camera : nullptr, m_viewOrgUnexpanded, m_viewDeltaUnexpanded, m_rotMatrix);
 
         // get the root corners of the unexpanded box
         DPoint3d  ueRootBox[NPC_CORNER_COUNT];
@@ -809,7 +808,7 @@ DPoint3d DgnViewport::DetermineDefaultRotatePoint()
 ViewportStatus DgnViewport::Scroll(Point2dCP screenDist) // => distance to scroll in pixels
     {
     ViewControllerP   viewController = m_viewController.get();
-    if (NULL == viewController)
+    if (nullptr == viewController)
         return ViewportStatus::InvalidViewport;
 
     DVec3d offset;
@@ -879,7 +878,7 @@ double DgnViewport::GetFocusPlaneNpc()
 ViewportStatus DgnViewport::Zoom(DPoint3dCP newCenterRoot, double factor)
     {
     ViewControllerP   viewController = m_viewController.get();
-    if (NULL == viewController)
+    if (nullptr == viewController)
         return ViewportStatus::InvalidViewport;
 
     CameraViewControllerP cameraView = GetCameraViewControllerP();
@@ -889,7 +888,7 @@ ViewportStatus DgnViewport::Zoom(DPoint3dCP newCenterRoot, double factor)
         centerNpc.Init(.5, .5, .5);
 
         DPoint3d    newCenterNpc;       // get new center of view in npc coords
-        if (NULL != newCenterRoot)
+        if (nullptr != newCenterRoot)
             WorldToNpc(&newCenterNpc, newCenterRoot, 1);
         else
             newCenterNpc = centerNpc;   // leave it alone.
@@ -926,7 +925,7 @@ ViewportStatus DgnViewport::Zoom(DPoint3dCP newCenterRoot, double factor)
     if (ViewportStatus::Success != validSize)
         return  validSize;
 
-    DPoint3d center = (NULL != newCenterRoot) ? *newCenterRoot : viewController->GetCenter();
+    DPoint3d center = (nullptr != newCenterRoot) ? *newCenterRoot : viewController->GetCenter();
 
     if (!Allow3dManipulations())
         center.z = 0.0;
@@ -954,7 +953,7 @@ ViewportStatus DgnViewport::Zoom(DPoint3dCP newCenterRoot, double factor)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewportStatus DgnViewport::_Activate(QvPaintOptions const& opts)
     {
-    if (NULL == m_output || !m_qvParamsSet)
+    if (nullptr == m_output || !m_qvParamsSet)
         return  ViewportStatus::ViewNotInitialized;
 
     m_output->AccumulateDirtyRegion(opts.WantAccumulateDirty());
@@ -1185,11 +1184,11 @@ ColorDef DgnViewport::GetSolidFillEdgeColor(ColorDef inColor)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   02/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-double DgnViewport::GetPixelSizeAtPoint(DPoint3dCP rootPtP, DgnCoordSystem coordSys) const // can be NULL - if so, use center of view
+double DgnViewport::GetPixelSizeAtPoint(DPoint3dCP rootPtP, DgnCoordSystem coordSys) const // can be nullptr - if so, use center of view
     {
     DPoint3d    rootTestPt;
 
-    if (NULL == rootPtP)
+    if (nullptr == rootPtP)
         {
         DPoint3d    npcCenter;
 
@@ -1361,7 +1360,7 @@ void DgnViewport::SetToolGraphicsHandler(ToolGraphicsHandler* handler)
 //---------------------------------------------------------------------------------------
 void DgnViewport::DrawToolGraphics(ViewContextR context, bool isPreupdate)
     {
-    if (NULL != m_toolGraphicsHandler)
+    if (nullptr != m_toolGraphicsHandler)
         m_toolGraphicsHandler->_DrawToolGraphics(context, isPreupdate);
     }
 
@@ -1377,7 +1376,7 @@ double DgnViewport::GetGridScaleFactor()
     if (TO_BOOL(m_rootModel->GetModelFlag(MODELFLAG_ACS_LOCK)))
         {
         IAuxCoordSysP acs = IACSManager::GetManager().GetActive(*this);
-        if (NULL != acs)
+        if (nullptr != acs)
             scaleFactor *= acs->GetScale();
         }
 #endif

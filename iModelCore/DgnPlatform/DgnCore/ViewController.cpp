@@ -1123,8 +1123,8 @@ double PhysicalViewController::CalculateMaxDepth(DVec3dCR delta, DVec3dCR zVec)
     // no error is possible and we'll arbitrarily limit to 1.0E8.
     // This change made to resolve TR# 271876.   RayBentley   04/28/2009.
 
-    static double   s_depthRatioLimit       = 1.0E8;          // Limit for depth Ratio.
-    static double   s_maxTransformRowRatio  = 1.0E5;
+    static double s_depthRatioLimit       = 1.0E8;          // Limit for depth Ratio.
+    static double s_maxTransformRowRatio  = 1.0E5;
 
     double minXYComponent = std::min(fabs(zVec.x), fabs(zVec.y));
     double maxDepthRatio =(0.0 == minXYComponent) ? s_depthRatioLimit : std::min((s_maxTransformRowRatio / minXYComponent), s_depthRatioLimit);
