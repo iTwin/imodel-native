@@ -95,7 +95,7 @@
     <SubPart PartName="GLUI_VS2012" Repository="PointoolsLibs"/>
     <SubPart PartName="FastDelegate_VS2012" Repository="PointoolsLibs"/>
     <SubPart PartName="Loki_VS2012" Repository="PointoolsLibs"/>
-    <SubPart PartName="SCZ_Compress_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="SCZ_Compress_VS2012" PartFile="scz_compress" Repository="libsrc-scz_compress"/>
   </Part>
 
   <Part Name="FreeGlut_VS2012" BMakeFile="PointoolsLibsVortex/FreeGlut/FreeGlut.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
