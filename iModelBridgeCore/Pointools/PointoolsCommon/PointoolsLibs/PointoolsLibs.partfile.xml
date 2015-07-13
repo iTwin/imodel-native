@@ -133,13 +133,9 @@
     <SubPart PartName="XercesLib_VS2012" PartFile="xerces-c-3_1_2" Repository="libsrc-xerces-c-3.1.2" />	
     <SubPart PartName="GNOME_LIBXML2_2_9_1_VS2012" Repository="PointoolsLibs"/>
     <SubPart PartName="GNU_IConv_1_1_4_VS2012" Repository="PointoolsLibs"/>
-    <SubPart PartName="GdalLib_VS2012" PartFile="gdal" Repository="Libsrc-gdal"/>
-    <SubPart PartName="LibTiff_VS2012" PartFile="libtiff" Repository="libsrc-libtiff"/>
-    <SubPart PartName="geotiff_VS2012" PartFile="geotiff" Repository="libsrc-geotiff"/>
     <SubPart PartName="Loki_VS2012" Repository="PointoolsLibs"/>
     <SubPart PartName="Format_Leica_PTZ_6_0_0_VS2012" Repository="PointoolsLibs"/>
-    <SubPart PartName="Format_LibLAS_1_8_0_VS2012" Repository="PointoolsLibs"/>
-    <SubPart PartName="LASZip_VS2012" PartFile="laszip" Repository="Libsrc-LASZip"/>
+    <SubPart PartName="libLAS_VS2012" PartFile="liblas" Repository="libsrc-libLAS" />
     <SubPart PartName="Format_TopconCodec_VS2012" Repository="PointoolsLibs"/>
     <SubPart PartName="Format_LibE57_VS2012" Repository="PointoolsLibs"/>
     <SubPart PartName="Format_ZF_8_5_0_VS2012" Repository="PointoolsLibs"/>
