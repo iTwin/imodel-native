@@ -407,39 +407,39 @@ DgnScriptContextImpl::~DgnScriptContextImpl()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
-DgnDbStatus DgnScriptContextImpl::LoadProgram(Dgn::DgnDbR db, Utf8CP tsFunctionSpec)
+DgnDbStatus DgnScriptContextImpl::LoadProgram(Dgn::DgnDbR db, Utf8CP jsFunctionSpec)
     {
-    Utf8String tsProgramName;
-    Utf8CP dot = strrchr(tsFunctionSpec, '.');
+    Utf8String jsProgramName;
+    Utf8CP dot = strrchr(jsFunctionSpec, '.');
     if (nullptr == dot)
         {
-        NativeLogging::LoggingManager::GetLogger("DgnScriptContext")->errorv ("[%s] is an illegal JavaScript function spec. Must be of the form program.function", tsFunctionSpec);
+        NativeLogging::LoggingManager::GetLogger("DgnScriptContext")->errorv ("[%s] is an illegal JavaScript function spec. Must be of the form program.function", jsFunctionSpec);
         BeAssert(false && "illegal JavaScript function spec");
         return DgnDbStatus::BadArg;
         }
 
-    tsProgramName.assign(tsFunctionSpec, dot);
+    jsProgramName.assign(jsFunctionSpec, dot);
 
-    if (m_jsScriptsExecuted.find(tsProgramName) != m_jsScriptsExecuted.end())
+    if (m_jsScriptsExecuted.find(jsProgramName) != m_jsScriptsExecuted.end())
         return DgnDbStatus::Success;
 
-    Utf8String tsprog;
-    DgnJavaScriptLibrary jslib(db);
-    if (jslib.QueryJavaScript(tsprog, tsProgramName.c_str()) != BSISUCCESS)
+    Utf8String jsprog;
+    DgnDbStatus status = T_HOST.GetScriptingAdmin()._FetchJavaScript(jsprog, db, jsProgramName.c_str());
+    if (DgnDbStatus::Success != status)
         {
-        NativeLogging::LoggingManager::GetLogger("DgnScriptContext")->infov ("JavaScript program %s is not registered", tsProgramName.c_str());
-        return DgnDbStatus::NotFound;
+        NativeLogging::LoggingManager::GetLogger("DgnScriptContext")->infov ("JavaScript program %s is not registered in the script library", jsProgramName.c_str());
+        return status;
         }
 
-    m_jsScriptsExecuted.insert(tsProgramName);
+    m_jsScriptsExecuted.insert(jsProgramName);
 
-    Utf8String fileUrl("file:///"); // This does not really identify a file. It is something tricky that is needed to get JS to accept the script that we pass in tsprog.
-    fileUrl.append(tsProgramName);
+    Utf8String fileUrl("file:///"); // This does not really identify a file. It is something tricky that is needed to get JS to accept the script that we pass in jsprog.
+    fileUrl.append(jsProgramName);
     fileUrl.append(".js");
 
-    NativeLogging::LoggingManager::GetLogger("DgnScriptContext")->tracev ("Evaluating %s", tsProgramName.c_str());
+    NativeLogging::LoggingManager::GetLogger("DgnScriptContext")->tracev ("Evaluating %s", jsProgramName.c_str());
 
-    EvaluateScript(tsprog.c_str(), fileUrl.c_str());   // evaluate the whole script, allowing it to define objects and their properties. 
+    EvaluateScript(jsprog.c_str(), fileUrl.c_str());   // evaluate the whole script, allowing it to define objecjs and their properties. 
     return DgnDbStatus::Success;
     }
 
@@ -544,6 +544,15 @@ DgnScriptContextR DgnPlatformLib::Host::ScriptingAdmin::GetDgnScriptContext()
     return *m_dgnContext;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   BentleySystems
+//---------------------------------------------------------------------------------------
+DgnDbStatus DgnPlatformLib::Host::ScriptingAdmin::_FetchJavaScript(Utf8StringR jsProgramText, DgnDbR db, Utf8CP jsProgramName)
+    {
+    DgnJavaScriptLibrary jslib(db);
+    return jslib.QueryJavaScript(jsProgramText, jsProgramName);
+    }
+
 #else
 
 //---------------------------------------------------------------------------------------
@@ -587,5 +596,14 @@ DgnScriptContextR DgnPlatformLib::Host::ScriptingAdmin::GetDgnScriptContext()
     BeAssert(false);
     return *m_dgnContext;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   BentleySystems
+//---------------------------------------------------------------------------------------
+DgnDbStatus DgnPlatformLib::Host::ScriptingAdmin::_FetchJavaScript(Utf8StringR jsProgramText, DgnDbR db, Utf8CP jsProgramName)
+    {
+    return DgnDbStatus::NotEnabled;
+    }
+
 
 #endif

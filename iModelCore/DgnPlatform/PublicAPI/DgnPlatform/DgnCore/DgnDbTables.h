@@ -1332,18 +1332,24 @@ struct DgnJavaScriptLibrary : DgnDbTable
 public:
     DgnJavaScriptLibrary(DgnDbR db) : DgnDbTable(db) { }
     
-    //! Import all .js files in the specified directory. This function inserts the contents of each .js file into the DgnDb, using the basename of the file as its key.
+    //! Import all .js files in the specified directory. This function inserjs the contenjs of each .js file into the DgnDb, using the basename of the file as ijs key.
     //! @param jsDir    The directory to scan for .js files
     //! @param updateExisting If true, programs already registered are updated from soruce found in \a jsDir
     //! @see QueryJavaScript
     DGNPLATFORM_EXPORT void ImportJavaScript(BeFileNameCR jsDir, bool updateExisting);
 
+    //! Read the text of the specified .JS file 
+    //! @param jsProgramText[out]    The content of the JavaScript program
+    //! @param jsFileName[in]     The basename of the original .JS program that was imported by ImportJavaScript
+    //! @return non-zero error status if the file could not be found
+    DGNPLATFORM_EXPORT static DgnDbStatus DgnJavaScriptLibrary::ReadJavaScript(Utf8StringR jsProgramText, BeFileNameCR jsFileName);
+
     //! Look up an imported JavaScript program by the specified name. 
-    //! @param tsProgramText[out]    The content of the JavaScript program
-    //! @param tsProgramName[in]     The basename of the original .JS program that was imported by ImportJavaScript
-    //! @return non-zero if the JavaScript program was not registered in the DgnDb.
+    //! @param jsProgramText[out]    The content of the JavaScript program
+    //! @param jsProgramName[in]     The basename of the original .JS program that was imported by ImportJavaScript
+    //! @return non-zero if the JavaScript program could not be registered in the DgnDb.
     //! @see ImportJavaScript
-    DGNPLATFORM_EXPORT BentleyStatus QueryJavaScript(Utf8StringR tsProgramText, Utf8CP tsProgramName);
+    DGNPLATFORM_EXPORT DgnDbStatus QueryJavaScript(Utf8StringR jsProgramText, Utf8CP jsProgramName);
 
     //! Utility function to convert ECProperties to JSON properties
     //! @param json     The JSON object to be populated

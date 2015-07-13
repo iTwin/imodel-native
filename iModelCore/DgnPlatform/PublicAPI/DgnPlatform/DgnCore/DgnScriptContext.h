@@ -16,6 +16,12 @@ struct DgnScriptContextImpl;
 
 //=======================================================================================
 //! Enables JavaScript programs to access the DgnPlatform API.
+//! DgnScriptContext creates a set of JavaScript types and functions that expose native Dgn and BentleyApi types to JavaScript functions. These types and functions are collectively known as the DgnPlatform API for JavaScript.
+//! DgnScriptContext also provides functions to allow native code to invoke JavaScript functions. See DgnScriptContext::ExecuteJavaScriptEga.
+//! @section JavaScriptLibrary The JavaScript Library
+//! JavaScript programs are loaded from the JavaScript library. The \a myNamespace portion of the myNamespace.myEgaPublicName EGA identifier string must identify a program in the library.
+//! <p>The JavaScript library is a virtual storage. An application may use the DgnJavaScriptLibrary class to store a JavaScript program inside a DgnDb. 
+//! Or, an application may override the Dgn::DgnPlatformLib::Host::ScriptingAdmin::_FetchJavaScript method in order to locate and supply the text of JavaScript programs from some other source.
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
 struct DgnScriptContext
@@ -30,29 +36,36 @@ public:
    
     /**
     Execute an Element Generation Algorithm (EGA) that is implemented in JavaScript. The \a jsEgaFunctionName identifies the EGA function. The namespace portion of the name
-    must identify a JavaScript program that was previously registered in the DgnDb. See BentleyApi::DgnPlatform::DgnJavaScriptLibrary.
+    must identify a JavaScript program that was previously registered in the DgnDb. See BentleyApi::Dgn::DgnJavaScriptLibrary.
     @param[out] functionReturnStatus    The function's integer return value. 0 means success.
     @param[in] el           The element to update
-    @param[in] jsEgaFunctionName   Identifies the JavaScript function to be executed. Must be of the form namespace.functionname
+    @param[in] jsEgaFunctionName   Identifies the JavaScript function to be executed. Must be of the form namespace.functionname. 
     @param[in] origin       The placement origin
     @param[in] angles       The placement angles
     @param[in] parms        Any additional parameters to pass to the EGA function. 
     @return non-zero if the EGA is not in JavaScript, if the egaInstance properties are invalid, or if the JavaScript function could not be found or failed to execute.
-    @remarks Signature of a JavaScript EGA function.
+    @remarks <h2>Signature of a JavaScript EGA function.</h2>
     An EGA function written in TypeScript must have the following signature:
-    <p>    function myEgaFunction(element: BentleyApi.Dgn.JsDgnElement, origin: BentleyApi.Dgn.JsDPoint3d, angles: BentleyApi.Dgn.JsYawPitchRollAngles, params: any) : number
-    <p>Or, in JavaScript:
-    <p>    function myEgaFunction(element, origin, angles, params)
-    <p> The JavaScript \em program must register an EGA function in its start-up logic like this:
+    @verbatim
+    function myEgaFunction(element: BentleyApi.Dgn.JsDgnElement, origin: BentleyApi.Dgn.JsDPoint3d, angles: BentleyApi.Dgn.JsYawPitchRollAngles, params: any) : number
+    @endverbatim
+    Or, in JavaScript:
+    @verbatim
+    function myEgaFunction(element, origin, angles, params)
+    @endverbatim
+    <h2>Registering a JavaScript EGA function.</h2>
+    The JavaScript \em program must register an EGA function in its start-up logic like this:
+    @verbatim
         BentleyApi.Dgn.RegisterEGA('myNamespace.myEgaPublicName', myEgaFunction);
-    <p>
-    The string myNamespace.myEgaPublicName is meant to be the way that an ECClass can identify the EGA by name.
-    An EGA is specified by an ECClass by naming it in a custom attribute, like this:
+    @endverbatim
+    The string myNamespace.myEgaPublicName must be the same string that an ECClass uses to identify the EGA.
+    <h2>Specifying an EGA in an ECClass.</h2>
+    An ECClass specifies the EGA that is to be used by instances by naming it in a custom attribute, like this:
     @verbatim
     <ECClass typeName="SomeItem" isDomainClass="True">
         <BaseClass>some item base class</BaseClass>
         ...
-        <!-- Here is where is specify what kind of EGA I implement and where to find it. -->
+        <!-- Here is where I specify what kind of EGA I implement and where to find it. -->
         <ECCustomAttributes xmlns="...">
             <EGASpecifier>
                 <Type>JavaScript</Type>
