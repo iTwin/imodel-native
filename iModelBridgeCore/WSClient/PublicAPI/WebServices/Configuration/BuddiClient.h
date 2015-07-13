@@ -27,7 +27,7 @@ typedef AsyncResult<Utf8String, BuddiError> BuddiUrlResult;
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                 Julija.Semenenko    06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct IBuddiClient
+struct EXPORT_VTABLE_ATTRIBUTE IBuddiClient
     {
     virtual ~IBuddiClient()
         {}
@@ -39,7 +39,7 @@ struct IBuddiClient
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                 Julija.Semenenko    06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct BuddiClient : public IBuddiClient
+struct EXPORT_VTABLE_ATTRIBUTE BuddiClient : public IBuddiClient
     {
     private:
         HttpClient m_client;
