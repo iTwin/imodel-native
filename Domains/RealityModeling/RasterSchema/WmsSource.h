@@ -21,7 +21,7 @@ struct WmsSource : public RasterSource
 public:
     static WmsSourcePtr Create(WmsMap const& mapInfo);
 
-    WmsMap const& GetProperties() {return m_mapInfo;}
+    WmsMap const& GetMapInfo() {return m_mapInfo;}
 
 protected:
     virtual DisplayTilePtr _QueryTile(TileId const& id, bool request) override;

@@ -71,7 +71,7 @@ struct EXPORT_VTABLE_ATTRIBUTE WmsModel : RasterModel
     DEFINE_T_SUPER(RasterModel)
 
 private:
-    WmsMap m_map;     //&&MM need a way to avoid duplication of information between RasterModel/WmsModel/WmsSource.
+    WmsMap m_map;
 
 protected:
     friend struct WmsModelHandler;

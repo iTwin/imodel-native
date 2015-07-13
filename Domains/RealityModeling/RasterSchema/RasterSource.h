@@ -89,7 +89,14 @@ struct DisplayTile : RefCountedBase
         Bgr = 3,        // QV_BGR_FORMAT
         };
 
-    static DisplayTilePtr Create(uint32_t width, uint32_t height, DisplayTile::PixelType pixelType, Byte const* pData, uint32_t pitch);
+    //! Create a new instance of a DisplayTile.
+    //! @param[in] width        The tile width
+    //! @param[in] height       The tile height
+    //! @param[in] pixelType    The pixeltype. Qv preferred type is: PixelType::Bgra
+    //! @param[in] alphaBlend   Blend transparent pixels. It is faster to turn it off if no transparency is present.
+    //! @param[in] pData        The pixel buffer.
+    //! @param[in] pitch        The size of a line in bytes or 0 if no line padding.
+    static DisplayTilePtr Create(uint32_t width, uint32_t height, DisplayTile::PixelType pixelType, bool alphaBlend, Byte const* pData, size_t pitch);
 
     uintptr_t GetTextureId() const {BeAssert(m_haveTexture); return (uintptr_t)this;} // We use our instance pointer value as a unique Id.
 
@@ -176,7 +183,6 @@ protected:
 
     void SetGcsP(GeoCoordinates::BaseGCSP pNewGcs) {m_pGcs = pNewGcs/*Hold a ref*/;} 
 
-    //&&MM source should return raster data so caller can do what they want with it.
     virtual DisplayTilePtr _QueryTile(TileId const& id, bool request) = 0;
 
     //! default empty constructor. Must call Initialize afterward.

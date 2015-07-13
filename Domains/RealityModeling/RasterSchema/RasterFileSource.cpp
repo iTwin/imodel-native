@@ -101,8 +101,10 @@ DisplayTilePtr RasterFileSource::_QueryTile(TileId const& id, bool request)
 //&&ep - keep packet as a member; do setPacket above
     //m_tileBuffer.resize(m_tileSize.x * m_tileSize.y *4);
 
+    bool alphaBlend = m_rasterFilePtr->GetStoredRasterP()->GetPixelType()->GetChannelOrg().GetChannelIndex(HRPChannelType::ALPHA, 0) != HRPChannelType::FREE;
+
     DisplayTile::PixelType pixelType = DisplayTile::PixelType::Rgba;
-    DisplayTilePtr pDisplayTile = DisplayTile::Create(effectiveTileSizeX, effectiveTileSizeY, pixelType, pbSrcRow, 0/*notPadded*/);
+    DisplayTilePtr pDisplayTile = DisplayTile::Create(effectiveTileSizeX, effectiveTileSizeY, pixelType, alphaBlend, pbSrcRow, 0/*notPadded*/);
     return pDisplayTile;
     }
 

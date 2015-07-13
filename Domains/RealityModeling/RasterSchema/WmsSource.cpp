@@ -381,14 +381,6 @@ WmsSource::WmsSource(WmsMap const& mapInfo)
  :m_mapInfo(mapInfo),
   m_reverseAxis(false)
     {
-    // WMS BBOX are in CRS units. i.e. cartesian.       //&&MM todo bbox reorder adjustment needed?
-    //DPoint3d corners[4];
-   // corners[0].x = corners[2].x = m_mapInfo.m_boundingBox.low.x; 
-    //corners[1].x = corners[3].x = m_mapInfo.m_boundingBox.high.x;  
-    //corners[0].y = corners[1].y = m_mapInfo.m_boundingBox.high.y; 
-    //corners[2].y = corners[3].y = m_mapInfo.m_boundingBox.low.y; 
-    //corners[0].z = corners[1].z = corners[2].z = corners[3].z = 0;
-
     // for WMS we define a 256x256 multi-resolution image.
     bvector<Resolution> resolution;
     RasterSource::GenerateResolution(resolution, m_mapInfo.m_metaWidth, m_mapInfo.m_metaHeight, 256, 256);
@@ -443,7 +435,7 @@ DisplayTilePtr WmsSource::_QueryTile(TileId const& id, bool request)
         return NULL;
 
     auto const& data = pWmsTileData->GetData();
-    ImageUtilities::RgbImageInfo actualImageInfo;// = pWmsTileData->GetImageInfo();
+    ImageUtilities::RgbImageInfo actualImageInfo;
     Utf8StringCR contentType = pWmsTileData->GetContentType();
     
     BentleyStatus status;
@@ -478,7 +470,7 @@ DisplayTilePtr WmsSource::_QueryTile(TileId const& id, bool request)
     
     BeAssert (!actualImageInfo.isBGR);    //&&MM todo 
     DisplayTile::PixelType pixelType = actualImageInfo.hasAlpha ? DisplayTile::PixelType::Rgba : DisplayTile::PixelType::Rgb;
-    DisplayTilePtr pDisplayTile = DisplayTile::Create(actualImageInfo.width, actualImageInfo.height, pixelType, m_decompressBuffer.data(), 0/*notPadded*/);
+    DisplayTilePtr pDisplayTile = DisplayTile::Create(actualImageInfo.width, actualImageInfo.height, pixelType, m_mapInfo.m_transparent && actualImageInfo.hasAlpha, m_decompressBuffer.data(), 0/*notPadded*/);
 
     return pDisplayTile;
     }

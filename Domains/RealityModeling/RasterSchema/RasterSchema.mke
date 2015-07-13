@@ -48,10 +48,15 @@ rasterSchemaDepends             = $(BuildContext)PublicAPI/DgnPlatform/DgnCore/D
                                   $(rasterSchemaPublicApiSrc)WmsHandler.h
 
 rasterDisplayDepends =  $(rasterSchemaSrc)RasterSource.h \
-                        $(rasterSchemaSrc)RasterQuadTree.h \
-                        $(rasterSchemaSrc)WmsSource.h
+                        $(rasterSchemaSrc)RasterQuadTree.h
+
+wmsDepends    = $(rasterSchemaDepends) \
+                $(rasterDisplayDepends) \
+                $(rasterSchemaSrc)WmsSource.h
                         
-rasterFileDepends    =  $(rasterSchemaSrc)RasterFile.h \
+rasterFileDepends    =  $(rasterSchemaDepends) \
+                        $(rasterDisplayDepends) \
+                        $(rasterSchemaSrc)RasterFile.h \
                         $(rasterSchemaSrc)RasterFileSource.h \
                         $(rasterSchemaSrc)ImagePPAdmin.h
 
@@ -79,25 +84,27 @@ MultiCompileDepends=$(_MakeFileSpec)
 #--------------------------------------------------------------------------------------
 #   Compile portable source
 #--------------------------------------------------------------------------------------
-$(o)RasterHandler$(oext)    : $(rasterSchemaSrc)RasterHandler.cpp   $(rasterSchemaDepends) ${MultiCompileDepends}
+$(o)RasterHandler$(oext)        : $(rasterSchemaSrc)RasterHandler.cpp       $(rasterSchemaDepends) ${MultiCompileDepends}
 
-$(o)RasterFileHandler$(oext)            : $(rasterSchemaSrc)RasterFileHandler.cpp                   $(rasterSchemaDepends) ${MultiCompileDepends}
+$(o)RasterFileHandler$(oext)    : $(rasterSchemaSrc)RasterFileHandler.cpp   $(rasterSchemaDepends) ${MultiCompileDepends}
 
-$(o)RasterDomain$(oext)                 : $(rasterSchemaSrc)RasterDomain.cpp                        $(rasterSchemaDepends) ${MultiCompileDepends}
+$(o)RasterDomain$(oext)         : $(rasterSchemaSrc)RasterDomain.cpp        $(rasterSchemaDepends) ${MultiCompileDepends}
 
-$(o)RasterQuadTree$(oext)   : $(rasterSchemaSrc)RasterQuadTree.cpp  $(rasterSchemaDepends) $(rasterDisplayDepends) ${MultiCompileDepends}
+$(o)RasterQuadTree$(oext)       : $(rasterSchemaSrc)RasterQuadTree.cpp      $(rasterSchemaDepends) $(rasterDisplayDepends) ${MultiCompileDepends}
 
-$(o)RasterSource$(oext)     : $(rasterSchemaSrc)RasterSource.cpp    $(rasterSchemaDepends) $(rasterDisplayDepends) ${MultiCompileDepends}
+$(o)RasterSource$(oext)         : $(rasterSchemaSrc)RasterSource.cpp        $(rasterSchemaDepends) $(rasterDisplayDepends) ${MultiCompileDepends}
 
-$(o)WmsHandler$(oext)       : $(rasterSchemaSrc)WmsHandler.cpp      $(rasterSchemaDepends) $(rasterDisplayDepends) ${MultiCompileDepends}
+# Wms source support
+$(o)WmsHandler$(oext)           : $(rasterSchemaSrc)WmsHandler.cpp          $(wmsDepends) ${MultiCompileDepends}
 
-$(o)WmsSource$(oext)        : $(rasterSchemaSrc)WmsSource.cpp       $(rasterSchemaDepends) $(rasterDisplayDepends) ${MultiCompileDepends}
+$(o)WmsSource$(oext)            : $(rasterSchemaSrc)WmsSource.cpp           $(wmsDepends) ${MultiCompileDepends}
 
-$(o)RasterFile$(oext)                   : $(rasterSchemaSrc)RasterFile.cpp                          $(rasterSchemaDepends) $(rasterFileDepends) ${MultiCompileDepends}
+# Local raster files support
+$(o)RasterFile$(oext)           : $(rasterSchemaSrc)RasterFile.cpp          $(rasterFileDepends) ${MultiCompileDepends}
 
-$(o)ImagePPAdmin$(oext)                 : $(rasterSchemaSrc)ImagePPAdmin.cpp                        $(rasterSchemaDepends) $(rasterFileDepends) ${MultiCompileDepends}
+$(o)ImagePPAdmin$(oext)         : $(rasterSchemaSrc)ImagePPAdmin.cpp        $(rasterFileDepends) ${MultiCompileDepends}
 
-$(o)RasterFileSource$(oext)             : $(rasterSchemaSrc)RasterFileSource.cpp                    $(rasterSchemaDepends) $(rasterFileDepends) ${MultiCompileDepends}
+$(o)RasterFileSource$(oext)     : $(rasterSchemaSrc)RasterFileSource.cpp    $(rasterFileDepends) ${MultiCompileDepends}
 
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
