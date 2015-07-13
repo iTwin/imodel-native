@@ -298,7 +298,7 @@ void DgnViewport::_AdjustAspectRatio(ViewControllerR viewController, bool expand
 * @bsimethod                                                    KeithBentley    06/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double* compressionFraction, CameraInfo const* camera,
-                                          DPoint3dCR inOrigin, DPoint3dCR delta, RotMatrixCR viewRot, DgnModelP dgnModel)
+                                          DPoint3dCR inOrigin, DPoint3dCR delta, RotMatrixCR viewRot)
     {
     DVec3d    xVector, yVector, zVector;
     viewRot.GetRows(xVector, yVector, zVector);
@@ -313,12 +313,13 @@ StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double* compressi
         // eye coordinates: 000 at eye
         //      z perpendicular to focal plane (positive z is out back of head)
         //      x,y are horizontal, vertical edges of frustum.
-        double focusDistance = camera->GetFocusDistance();
 
         DVec3d eyeToOrigin = DVec3d::FromStartEnd(camera->GetEyePoint(), inOrigin);      // Subtract camera position (still in root)
         viewRot.Multiply(eyeToOrigin);                                                   // Rotate to view coordinates.
 
+        double focusDistance = camera->GetFocusDistance();
         double zDeltaLimit = (-focusDistance / GetCameraPlaneRatio()) - eyeToOrigin.z;      // Limit front clip to be in front of camera plane.
+
         double zDelta = (delta.z > zDeltaLimit) ? zDeltaLimit : delta.z;                 // Limited zDelta.
         double zBack  = eyeToOrigin.z;                                                   // Distance from eye to back clip plane.
         double zFront = zBack + zDelta;                                                  // Distance from eye to front clip plane.
@@ -332,11 +333,10 @@ StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double* compressi
             // around a third of a meter and avoids the case where a very large back clip distance
             // causes objects near the camera to disappear.     - RBB 03/2007.
 
-            double const s_maximumBackClipMeters = 1000.0;
-            double       maximumBackClipUors = s_maximumBackClipMeters * 1000.;
+            double  maximumBackClip = DgnUnits::OneKilometer();
 
-            if (-zBack > maximumBackClipUors)
-                zBack = -maximumBackClipUors;
+            if (-zBack > maximumBackClip)
+                zBack = -maximumBackClip;
 
             zFront = zBack * minimumFrontToBackClipRatio;
 
@@ -526,12 +526,12 @@ ViewportStatus DgnViewport::_SetupFromViewController()
             DRange3d  range = m_viewController->GetProjectExtents();
             if (range.IsEmpty())
                 {
-                range.low.z = -100;
-                range.high.z = 100;
+                range.low.z = -DgnUnits::OneMillimeter();
+                range.high.z = DgnUnits::OneMillimeter();
                 }
 
             double zMax = std::max(fabs(range.low.z), fabs(range.high.z));
-            zMax = std::max(zMax, 100.); // make sure we have at least +-100. Data may be purely planar
+            zMax = std::max(zMax, DgnUnits::OneMillimeter()); // make sure we have at least +-100. Data may be purely planar
             delta.z  = 2.0 * zMax;
             origin.z = -zMax;
             }
@@ -574,8 +574,8 @@ ViewportStatus DgnViewport::_SetupFromViewController()
         if (NULL != sheetView)
             m_isSheetView = true;
 
-        delta.z  = 200.;
-        origin.z = -100.;
+        delta.z  = 200. * DgnUnits::OneMillimeter();
+        origin.z = -100. * DgnUnits::OneMillimeter();
         }
 
     m_viewOrg   = origin;
@@ -599,10 +599,10 @@ ViewportStatus DgnViewport::_SetupFromViewController()
     BeAssert(NULL == m_output || !m_output->IsDrawActive());
 
     double compressionFraction;
-    if (SUCCESS != RootToNpcFromViewDef(m_rootToNpc, &compressionFraction, IsCameraOn() ? &m_camera : NULL, origin, delta, m_rotMatrix, viewController->GetTargetModel()))
+    if (SUCCESS != RootToNpcFromViewDef(m_rootToNpc, &compressionFraction, IsCameraOn() ? &m_camera : NULL, origin, delta, m_rotMatrix))
         return  ViewportStatus::InvalidViewport;
 
-    DPoint3d  rootBox[NPC_CORNER_COUNT];
+    DPoint3d rootBox[NPC_CORNER_COUNT];
     NpcToWorld(rootBox, s_NpcCorners, NPC_CORNER_COUNT);
 
     DMap4d      npcToView;
@@ -750,7 +750,7 @@ Frustum DgnViewport::GetFrustum(DgnCoordSystem sys, bool expandedBox) const
         {
         // to get unexpanded box, we have to go recompute rootToNpc from original viewController.
         DMap4d  ueRootToNpc;
-        RootToNpcFromViewDef(ueRootToNpc, NULL, IsCameraOn() ? &m_camera : NULL, m_viewOrgUnexpanded, m_viewDeltaUnexpanded, m_rotMatrix, m_viewController->GetTargetModel());
+        RootToNpcFromViewDef(ueRootToNpc, NULL, IsCameraOn() ? &m_camera : NULL, m_viewOrgUnexpanded, m_viewDeltaUnexpanded, m_rotMatrix);
 
         // get the root corners of the unexpanded box
         DPoint3d  ueRootBox[NPC_CORNER_COUNT];

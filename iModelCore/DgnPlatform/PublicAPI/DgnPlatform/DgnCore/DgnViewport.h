@@ -491,7 +491,7 @@ protected:
     DGNPLATFORM_EXPORT virtual ColorDef _GetWindowBgColor() const;
     virtual BentleyStatus _RefreshViewport(bool always, bool synchHealingFromBs, bool& stopFlag) = 0;
     virtual void _SetICachedDraw(ICachedDrawP cachedOutput) = 0;
-    virtual double _GetMinimumLOD () const {return m_minLOD;}
+    virtual double _GetMinimumLOD() const {return m_minLOD;}
 
 public:
     DGNPLATFORM_EXPORT DgnViewport();
@@ -526,7 +526,7 @@ public:
     void SynchShadowList();
     void UpdateShadowList(DgnDrawMode, DrawPurpose);
     DGNPLATFORM_EXPORT double GetFocusPlaneNpc();
-    DGNPLATFORM_EXPORT static StatusInt RootToNpcFromViewDef(DMap4d&, double*, CameraInfo const*, DPoint3dCR, DPoint3dCR, RotMatrixCR, DgnModelP targetModel);
+    DGNPLATFORM_EXPORT static StatusInt RootToNpcFromViewDef(DMap4d&, double*, CameraInfo const*, DPoint3dCR, DPoint3dCR, RotMatrixCR);
     DGNPLATFORM_EXPORT static int32_t GetMaxDisplayPriority();
     DGNPLATFORM_EXPORT static int32_t GetDisplayPriorityFrontPlane();
     DGNPLATFORM_EXPORT static ViewportStatus ValidateWindowSize(DPoint3dR delta, bool displayMessage);
