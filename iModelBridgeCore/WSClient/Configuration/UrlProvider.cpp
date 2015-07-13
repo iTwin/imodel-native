@@ -20,7 +20,9 @@ bool UrlProvider::s_isInitialized = false;
 //Check IDs in the buddi.bentley.com
 //Bentley Corporate Network – DEV
 //Bentley Corporate Network – QA
-//Leave 0 for Release
+//Leave 0 for Release - actually all release URLs without regions
+//                      have their own unique IDs, but zero suits
+//                      them all untill URL name is unique
 uint32_t UrlProvider::s_regionsId[3] = {103, 102, 0};
 
 const Utf8CP UrlProvider::s_urlNames[6] = {

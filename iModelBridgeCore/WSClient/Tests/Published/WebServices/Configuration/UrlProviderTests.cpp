@@ -26,7 +26,7 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_NoCachedURL_GetsURLFromBuddiWritesTo
 
     EXPECT_CALL(localState, GetValue(_, _)).WillOnce(Return(""));
     EXPECT_CALL(localState, SaveValue(_, _, _)).Times(1);
-    EXPECT_CALL(*client, GetUrl(_, 0)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success(url))));
+    EXPECT_CALL(*client, GetUrl(_, _)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success(url))));
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, &localState, client);
 
@@ -39,7 +39,7 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_UrlIsCached_GetsUrlFromLocalState)
     Utf8String url = "testUrl";
     StubLocalState localState;
 
-    EXPECT_CALL(*client, GetUrl(_, 0)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success(url))));
+    EXPECT_CALL(*client, GetUrl(_, _)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success(url))));
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, &localState, client);
 
@@ -55,7 +55,7 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_UrlIsCached_GetsURL)
     MockLocalState localState;
 
     EXPECT_CALL(localState, GetValue(_, _)).WillOnce(Return(url));
-    EXPECT_CALL(*client, GetUrl(_, 0)).Times(0);
+    EXPECT_CALL(*client, GetUrl(_, _)).Times(0);
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, &localState, client);
 
@@ -68,7 +68,7 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_NoCachedAndNoBuddiUrl_ReturnsDefault
     Utf8String url = "testUrl";
     StubLocalState localState;
 
-    EXPECT_CALL(*client, GetUrl(_, 0)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success(""))));
+    EXPECT_CALL(*client, GetUrl(_, _)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success(""))));
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, &localState, client);
     EXPECT_TRUE(!UrlProvider::GetPunchlistWsgUrl().empty());
@@ -81,7 +81,7 @@ TEST_F(UrlProviderTests, GetUrl_ValidateAllGetters)
     StubLocalState localState;
 
     bset<Utf8String> urlNames;
-    EXPECT_CALL(*client, GetUrl(_, 0)).Times(6).WillRepeatedly(Invoke([&] (Utf8StringCR urlName, int regionId)
+    EXPECT_CALL(*client, GetUrl(_, _)).Times(6).WillRepeatedly(Invoke([&] (Utf8StringCR urlName, int regionId)
         {
         EXPECT_TRUE(urlNames.find(urlName) == urlNames.end());
         urlNames.insert(urlName);
@@ -113,7 +113,7 @@ TEST_F(UrlProviderTests, DISABLED_CleanUpCache_UrlsWereCached_RemovesUrlsFromLoc
     Utf8String url = "testUrl";
     StubLocalState localState;
 
-    EXPECT_CALL(*client, GetUrl(_, 0))
+    EXPECT_CALL(*client, GetUrl(_, _))
         .Times(6)
         .WillRepeatedly(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success(url))));
 
@@ -128,7 +128,7 @@ TEST_F(UrlProviderTests, DISABLED_CleanUpCache_UrlsWereCached_RemovesUrlsFromLoc
 
     UrlProvider::CleanUpUrlCache();
 
-    EXPECT_CALL(*client, GetUrl(_, 0))
+    EXPECT_CALL(*client, GetUrl(_, _))
         .Times(6)
         .WillRepeatedly(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success(url))));
 
