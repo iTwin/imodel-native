@@ -539,7 +539,7 @@ public:
             //! @return storage unit to solid kernel scale to be used when creating a new ISolidKernelEntity.
             //! @note: Current scale will support single solids up to 1km, should be more than adequate 
             //!        to handle any sensible scenario with a high degree of linear precision.
-            virtual double _GetSolidScale() const {return 1.0;}
+            virtual double _GetSolidScale() const {return DgnUnits::OneMeter();}
 
             //! Produce a facet topology table for the supplied ISolidKernelEntity.
             //! @param[out] out Facet topology information for solid kernel entity.

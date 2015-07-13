@@ -225,6 +225,8 @@ public:
 
 }; // HitDetail
 
+typedef RefCountedPtr<HitDetail> HitDetailPtr;
+typedef RefCountedCPtr<HitDetail> HitDetailCPtr;
 typedef bvector<RefCountedPtr<HitDetail>> HitDetailArray;
 
 //=======================================================================================
