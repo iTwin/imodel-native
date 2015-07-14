@@ -24,7 +24,6 @@ InstanceCRUDTests.InsertUpdateDeleteTest
 ECDbMapPersistenceTests.MappingStrategyTest
 
 #Have notified Krischan and Affan; ignoring so we can get PRG builds through.
-ECDbMapCATests.StructClassInClassHierarchyWithPolymorphicSharedTable
 ECDbSchemas.DeigoRelationshipTest2
 ECDbSchemaManager.ECDbImportSchema_WSG2eBPluginSchemas_Succeeds
 
