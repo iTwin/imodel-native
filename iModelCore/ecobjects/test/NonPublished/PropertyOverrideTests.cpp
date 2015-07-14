@@ -43,7 +43,6 @@ void PropertyOverrideTests::VerifyPropertyInheritance(ECClassCP ab, ECClassCP cd
     EXPECT_TRUE((mn->GetPropertyP(propName)->GetClass()).GetName().Equals(ab->GetName()));
     propName = "b";
     EXPECT_TRUE((mn->GetPropertyP(propName)->GetClass()).GetName().Equals(mn->GetName()));
-    printf("%s\n", (Utf8String)(mn->GetPropertyP(propName)->GetBaseProperty()->GetClass()).GetName());
     EXPECT_TRUE((mn->GetPropertyP(propName)->GetBaseProperty()->GetClass()).GetName().Equals(ab->GetName()));
     propName = "c";
     EXPECT_TRUE((mn->GetPropertyP(propName)->GetClass()).GetName().Equals(cd->GetName()));
@@ -378,7 +377,6 @@ TEST_F(PropertyOverrideTests, VerifyClassTraversalOrderAfterPropertyOverride)
     ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, b2->CreatePrimitiveProperty(primitiveProp, L"A", PrimitiveType::PRIMITIVETYPE_String));
 
     ASSERT_NE(foo->GetPropertyP("A"), root->GetPropertyP("A")) << "Expected Foo and Root to return the Foo Property and Root property Respectively";
-    printf("%s \n", (Utf8String)foo->GetPropertyP("A")->GetBaseProperty()->GetClass().GetName());
     ASSERT_EQ(foo->GetPropertyP("A")->GetBaseProperty(), root->GetPropertyP("A")) << "Expected Foo and Root both to return Root property";
     }
 
@@ -429,7 +427,6 @@ TEST_F(PropertyOverrideTests, VerifyClassTraversalOrderAfterPropertyOverride1)
     ASSERT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, b1->CreatePrimitiveProperty(primitiveProp, L"A", PrimitiveType::PRIMITIVETYPE_String));
 
     ASSERT_NE(foo->GetPropertyP("A"), b2->GetPropertyP("A")) << "Expected Foo and B2 to return the Foo Property and B2 property Respectively";
-    printf("%s \n", (Utf8String)foo->GetPropertyP("A")->GetBaseProperty()->GetClass().GetName());
     ASSERT_EQ(foo->GetPropertyP("A")->GetBaseProperty(), b2->GetPropertyP("A")) << "Expected Foo and B2 both to return B2 property";
     }
 
