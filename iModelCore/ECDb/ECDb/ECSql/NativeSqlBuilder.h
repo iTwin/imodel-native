@@ -107,6 +107,8 @@ public:
     NativeSqlBuilder& AppendParenLeft ();
     NativeSqlBuilder& AppendParenRight ();
     NativeSqlBuilder& AppendEOL () { return Append ("\r\n"); }
+	NativeSqlBuilder& AppendIf(bool appendIf, Utf8CP stringLiteral){ if (appendIf) Append(stringLiteral); return *this; }
+	NativeSqlBuilder& AppendEscapedIf(bool escapeIf, Utf8CP identifier){ if (escapeIf) AppendEscaped(identifier); else Append(identifier); return *this; };
     bool IsEmpty () const;
     Utf8CP ToString () const;
 
