@@ -9,7 +9,7 @@
 #define __RASTERSCHEMAINTERNAL_H__
 
 #include <RasterSchema/RasterSchemaApi.h>
-
+#include <unordered_map>
 
 #include <Bentley/Bentley.h>
 #include <DgnPlatform/DgnCore/DgnDomain.h>

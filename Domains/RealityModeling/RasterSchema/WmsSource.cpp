@@ -304,6 +304,69 @@ BentleyStatus WmsTileData::_Persist(BeSQLite::Db& db) const
     }
 
 //----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  7/2015
+//----------------------------------------------------------------------------------------
+/*static*/ bool WmsSource::EvaluateReverseAxis(WmsMap const& mapInfo, GeoCoordinates::BaseGCSP pGcs)
+    {
+    switch(mapInfo.m_axisOrder)
+        {
+        case WmsMap::AxisOrder::Normal:
+            return false;
+
+        case WmsMap::AxisOrder::Reverse:
+            return true;
+
+        case WmsMap::AxisOrder::Default:
+        default:
+            // Evaluate below...
+            break;
+        }
+    
+    // Only CRS and version 1.3.0 as this non sense reverse axis.
+    if(!(mapInfo.m_version.Equals("1.3.0") && mapInfo.m_csType.EqualsI("CRS")))
+        return false;
+       
+    // Our coordinates and what is required by geocoord is:
+    //  x = longitude(geographic) or easting(projected) 
+    //  y = latitude(geographic) or northing(projected)
+    // WMS 1.1.0 and 1.1.1. Same as geocoord x = longitude and y = latitude
+    // Ordering for 1.3.0 is CRS dependant.
+
+    // Map server has this strategy:
+    //http://mapserver.org/development/rfc/ms-rfc-30.html
+    // "EPSG codes: when advertising (such as BoundingBox for a layer element) or using a CRS element in a request such as GetMap/GetFeatureInfo, 
+    //  elements using epsg code >=4000 and <5000 will be assumed to have a reverse axes."
+    // >> According to AlainRobert, this wrong these days many CS have been created in the 4000-5000 range that do not need to be inverted and more are 
+    // created outside that range that do not need to be inverted. Since geocoord cannot provide this information the best approach for now is 
+    // to invert all geographic(lat/long) CS.
+        
+    if(mapInfo.m_csLabel.EqualsI("CRS:1")  ||     // pixels 
+       mapInfo.m_csLabel.EqualsI("CRS:83") ||     // (long, lat)
+       mapInfo.m_csLabel.EqualsI("CRS:84") ||     // (long, lat) 
+       mapInfo.m_csLabel.EqualsI("CRS:27"))       // (long, lat) WMS spec are not clear about CRS:27, there is comment where x is latitude and y longitude but 
+                                                    // everyplace else it says (long,lat). Found only one server with CRS:27 and it was (long,lat).
+        {
+        return false;
+        }
+
+    if(0 == BeStringUtilities::Strnicmp (mapInfo.m_csLabel.c_str(), "EPSG:", sizeof("EPSG:")-1/*skip '/n'*/))
+        {
+        // All Geographic EPSG are assumed: x = latitude, y = longitude
+        if (NULL != pGcs && GeoCoordinates::BaseGCS::pcvUnity/*isGeographic*/ == pGcs->GetProjectionCode()) 
+            {
+            return true;
+            }
+        else // projected CS are assumed easting, northing.  Maybe some day we will have an axis order service from Gecoord.
+            {
+            return false;
+            }
+        }
+    
+    return false;
+    }
+
+
+//----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
 WmsSourcePtr WmsSource::Create(WmsMap const& mapInfo)
@@ -315,16 +378,15 @@ WmsSourcePtr WmsSource::Create(WmsMap const& mapInfo)
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
 WmsSource::WmsSource(WmsMap const& mapInfo)
- :m_mapInfo(mapInfo) 
+ :m_mapInfo(mapInfo),
+  m_reverseAxis(false)
     {
-    // WMS BBOX are in CRS units. i.e. cartesian.       //&&MM todo bbox reorder adjustment needed?
     //DPoint3d corners[4];
    // corners[0].x = corners[2].x = m_mapInfo.m_boundingBox.low.x; 
     //corners[1].x = corners[3].x = m_mapInfo.m_boundingBox.high.x;  
     //corners[0].y = corners[1].y = m_mapInfo.m_boundingBox.high.y; 
     //corners[2].y = corners[3].y = m_mapInfo.m_boundingBox.low.y; 
     //corners[0].z = corners[1].z = corners[2].z = corners[3].z = 0;
-
     // for WMS we define a 256x256 multi-resolution image.
     bvector<Resolution> resolution;
     RasterSource::GenerateResolution(resolution, m_mapInfo.m_metaWidth, m_mapInfo.m_metaHeight, 256, 256);
@@ -348,8 +410,7 @@ WmsSource::WmsSource(WmsMap const& mapInfo)
      DMatrix4d physicalToCartesian;
      physicalToCartesian.InitProduct(mapTransfo, physicalToLowerLeft);
 
-
-       
+    m_reverseAxis = EvaluateReverseAxis(m_mapInfo, pGcs.get());
     Initialize(resolution, physicalToCartesian, pGcs.get());
     }
 
@@ -379,7 +440,7 @@ DisplayTilePtr WmsSource::_QueryTile(TileId const& id, bool request)
         return NULL;
 
     auto const& data = pWmsTileData->GetData();
-    ImageUtilities::RgbImageInfo actualImageInfo;// = pWmsTileData->GetImageInfo();
+    ImageUtilities::RgbImageInfo actualImageInfo;
     Utf8StringCR contentType = pWmsTileData->GetContentType();
     
     BentleyStatus status;
@@ -414,7 +475,7 @@ DisplayTilePtr WmsSource::_QueryTile(TileId const& id, bool request)
     
     BeAssert (!actualImageInfo.isBGR);    //&&MM todo 
     DisplayTile::PixelType pixelType = actualImageInfo.hasAlpha ? DisplayTile::PixelType::Rgba : DisplayTile::PixelType::Rgb;
-    DisplayTilePtr pDisplayTile = DisplayTile::Create(actualImageInfo.width, actualImageInfo.height, pixelType, m_decompressBuffer.data(), 0/*notPadded*/);
+    DisplayTilePtr pDisplayTile = DisplayTile::Create(actualImageInfo.width, actualImageInfo.height, pixelType, m_mapInfo.m_transparent && actualImageInfo.hasAlpha, m_decompressBuffer.data(), 0/*notPadded*/);
 
     return pDisplayTile;
     }
@@ -424,28 +485,27 @@ DisplayTilePtr WmsSource::_QueryTile(TileId const& id, bool request)
 //----------------------------------------------------------------------------------------
 Utf8String WmsSource::BuildTileUrl(TileId const& tileId)
     {
+    // Get tile corners in this order, with a lower-left origin.
+    // [0] [1]
+    // [2] [3]
     DPoint3d tileCorners[4];
     ComputeTileCorners(tileCorners, tileId);
 
     // tile corners are in this order, with a lower-left origin.
     // [0] [1]
     // [2] [3]
-    GeoPoint2d tileOrigin;
-    tileOrigin.latitude = tileCorners[2].y;
-    tileOrigin.longitude = tileCorners[2].x;
+    tileOrigin.latitude = tileCorners[0].y;
+    tileOrigin.longitude = tileCorners[0].x;
+    double minY = tileCorners[2].y;
+    tileCorner.latitude = tileCorners[3].y;
+    tileCorner.longitude = tileCorners[3].x;
 
-    GeoPoint2d tileCorner;
-    tileCorner.latitude = tileCorners[1].y;
-    tileCorner.longitude = tileCorners[1].x;
+    if(m_reverseAxis)
+        {
+        std::swap(minX, minY);
+        std::swap(maxX, maxY);
+        }
     
-    //&&MM order of lat/long is a mess. review for all version and I guess define a way to be user defined. ex lat_long_LAT_LONG or long_lat_LONG_LAT
-    // spec 1.1.1 >>> minimum longitude, minimum latitude, maximum longitude, maximum latitude 
-    // also not sure if latitude I think it's cartesian
-    double minX = tileOrigin.longitude;
-    double minY = tileOrigin.latitude;
-    double maxX = tileCorner.longitude;
-    double maxY = tileCorner.latitude;
-
     // Mandatory parameters
     Utf8String tileUrl;
     tileUrl.Sprintf("%s?VERSION=%s&REQUEST=GetMap&LAYERS=%s&STYLES=%s&%s=%s&BBOX=%f,%f,%f,%f&WIDTH=%d&HEIGHT=%d&FORMAT=%s", 

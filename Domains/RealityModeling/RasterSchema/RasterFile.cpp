@@ -253,8 +253,8 @@ DMatrix4d RasterFile::GetGeoTransform()
     if (GetPageDescriptor()->HasTransfoModel())
         {
         // Create CS from pTransfoModel (transformation from pixels to the world of the raster) to logical
-        HFCPtr<HGF2DTransfoModel> pTransfoModel(GetPageDescriptor()->GetTransfoModel());
-        HFCPtr<HGF2DCoordSys> pLogicalToPhysRasterWorld(new HGF2DCoordSys(*pTransfoModel, pLogical));
+    HFCPtr<HGF2DTransfoModel> pSimplifiedModel (pModel->CreateSimplifiedModel());
+    if (pSimplifiedModel)
 
         // Normalize to HGF2DWorld_HMRWORLD, which is the expected CS for QuadTree
         HFCPtr<HGF2DCoordSys> pHmrWorld = GetWorldClusterP()->GetCoordSysReference(HGF2DWorld_HMRWORLD);
@@ -264,12 +264,11 @@ DMatrix4d RasterFile::GetGeoTransform()
 
         // Initialize geoTransform with the significant rows/columns of matrix.         
         HFCMatrix<3, 3> matrix = pLogicalToCartesian->GetMatrix();
-        DMatrix4d geoTransform;
+        return pSimplifiedModel;
         geoTransform.InitFromRowValues( matrix[0][0], matrix[0][1], 0.0, matrix[0][2],
                                         matrix[1][0], matrix[1][1], 0.0, matrix[1][2],
                                         0.0,          0.0,          1.0, 0.0,
                                         matrix[2][0], matrix[2][1], 0.0, matrix[2][2]);
-
         return geoTransform;
         }
     else

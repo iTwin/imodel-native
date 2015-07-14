@@ -61,6 +61,8 @@ WmsMap::WmsMap()
     m_boundingBox.Init(); // null range
     m_metaWidth = 0;
     m_metaHeight = 0;
+    m_transparent = false;
+    m_axisOrder = AxisOrder::Default;
     }
 
 //----------------------------------------------------------------------------------------
@@ -78,7 +80,8 @@ WmsMap::WmsMap()
   m_csLabel(csLabel),
   m_format("image/png"),    // The standards says that all servers should support png.
   m_vendorSpecific(""),
-  m_transparent(true)
+  m_transparent(false),
+  m_axisOrder(AxisOrder::Default)
     {
     SetMetaSizeByResolutionCount(10);
     }
@@ -150,6 +153,7 @@ void WmsMap::ToJson(Json::Value& v) const
 
     wmsValue["vendorSpec"] = m_vendorSpecific.c_str();
     wmsValue["transp"] = m_transparent;
+    wmsValue["axisOrder"] = (uint32_t)m_axisOrder;
     }
 
 //----------------------------------------------------------------------------------------
@@ -173,7 +177,8 @@ void WmsMap::FromJson(Json::Value const& v)
     m_format = wmsValue["format"].asString();
 
     m_vendorSpecific = wmsValue["vendorSpec"].asString();
-    m_transparent = wmsValue["transp"].asBool();
+    m_transparent = wmsValue.get("transp", Json::Value(false)).asBool();
+    m_axisOrder = (AxisOrder)wmsValue.get("axisOrder", Json::Value((uint32_t)AxisOrder::Default)).asUInt();
     }
 
 

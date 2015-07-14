@@ -21,7 +21,7 @@ struct WmsSource : public RasterSource
 public:
     static WmsSourcePtr Create(WmsMap const& mapInfo);
 
-    WmsMap const& GetProperties() {return m_mapInfo;}
+    WmsMap const& GetMapInfo() {return m_mapInfo;}
 
 protected:
     virtual DisplayTilePtr _QueryTile(TileId const& id, bool request) override;
@@ -33,11 +33,14 @@ private:
 
     Utf8String BuildTileUrl(TileId const& tileId);
 
-    GeoCoordinates::BaseGCSPtr CreateBaseGcsFromWmsGcs(Utf8StringCR gcsStr);
+    static GeoCoordinates::BaseGCSPtr CreateBaseGcsFromWmsGcs(Utf8StringCR gcsStr);
+    static bool EvaluateReverseAxis(WmsMap const& mapInfo, GeoCoordinates::BaseGCSP pGcs);
 
     WmsMap m_mapInfo;
 
     bvector<Byte> m_decompressBuffer;
+
+    bool m_reverseAxis; // deduct form WmsMap::m_axisOrder at construction.
 
     //uint32_t    m_metaTileSizeX;    //&&MM todo.
     //uint32_t    m_metaTileSizeY;

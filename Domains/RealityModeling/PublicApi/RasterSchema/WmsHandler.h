@@ -19,6 +19,14 @@ struct WmsModelHandler;
 //----------------------------------------------------------------------------------------
 struct WmsMap
     {
+    //! Identify axis order for GetMap queries. Might be required for WMS server 1.3.0. 
+    enum class AxisOrder : uint32_t
+        {
+        Default     = 0,   //!< Use default axis order logic. Order is deducted from CS label for 1.3.0 servers. 
+        Normal      = 1,   //!< Use normal axis order.  (minX,minY,maxX,maxY) -> (minX,minY,maxX,maxY)
+        Reverse     = 2,   //!< Use reverse axis order. (minX,minY,maxX,maxY) -> (minY,minX,maxY,maxX)
+        };
+
     WmsMap();
     RASTERSCHEMA_EXPORT WmsMap(Utf8CP url, DRange2dCR bbox, Utf8CP version, Utf8CP layers, Utf8CP csType, Utf8CP csLabel);
 
@@ -34,22 +42,22 @@ struct WmsMap
     Utf8String m_url;               //! Get map url. Up to but excluding the query char '?'
 
     // Map window
-    DRange2d m_boundingBox;         //! Bounding box corners (minx,miny,maxx,maxy) in 'CoordinateSystem' unit (aka. cartesian or reprojected unit)
+    DRange2d m_boundingBox;         //! Bounding box corners (minx,miny,maxx,maxy) in 'Coordinate System' unit. long, lat for geographic CS and easting, northing for projected CS.
     uint32_t m_metaWidth;           //! Width of the window in pixels. The pixel ratio should be equal to the 'BoundingBox' ratio to avoid any distortion. Sub-Resolutions will be generated from this width.
     uint32_t m_metaHeight;          //! Height of the window in pixels. The pixel ratio should be equal to the 'BoundingBox' ratio to avoid any distortion. Sub-Resolutions will be generated from this Height.
-
 
     // Mandatory GetMap parameters
     Utf8String m_version;           //! Wms server version
     Utf8String m_layers;            //! Comma-separated list of one or more map layers.
     Utf8String m_styles;            //! Comma-separated list of one rendering style per requested layer.
     Utf8String m_csType;            //! Usually, 'SRS' for 1.1.1 and below. 'CRS' for 1.3 and above.
-    Utf8String m_csLabel;           //! Coordinate system label. ex: "EPSG:4326"
+    Utf8String m_csLabel;           //! Coordinate System label. ex: "EPSG:4326"
     Utf8String m_format;            //! Output format of map. Default is 'image/png'
 
     // Optional GetMap parameters
     Utf8String m_vendorSpecific;    //! [optional] Unparsed, server specific parameters that will be appended to the request. 
-    bool m_transparent;             //! [optional] Background is transparent?
+    bool       m_transparent;       //! [optional] Background is transparent? Default is false. A format that support transparency is required. ex: image/png.
+    AxisOrder  m_axisOrder;         //! [optional] Identify axis order for GetMap queries. Might be required for WMS server 1.3.0.
 
     void ToJson(Json::Value&) const;
     void FromJson(Json::Value const&);                
@@ -63,7 +71,7 @@ struct EXPORT_VTABLE_ATTRIBUTE WmsModel : RasterModel
     DEFINE_T_SUPER(RasterModel)
 
 private:
-    WmsMap m_map;     //&&MM need a way to avoid duplication of information between RasterModel/WmsModel/WmsSource.
+    WmsMap m_map;
 
 protected:
     friend struct WmsModelHandler;

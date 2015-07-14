@@ -23,6 +23,99 @@ static ReprojectStatus s_FilterGeocoordWarning(ReprojectStatus status)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
+struct DisplayTileCache
+    {
+    typedef DisplayTilePtr ItemPtr;
+    typedef uintptr_t ItemId;
+    typedef std::list<std::pair<ItemPtr, ItemId>> ItemList;
+
+    typedef std::unordered_map<ItemId, ItemList::iterator>  CachedItems;
+    
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                                   Mathieu.Marchand  7/2015
+    //----------------------------------------------------------------------------------------
+    static DisplayTileCache& Instance()
+        {
+        static DisplayTileCache* s_instance=NULL; 
+        if (NULL==s_instance) 
+            s_instance = new DisplayTileCache; 
+        return *s_instance;
+        }
+
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                                   Mathieu.Marchand  7/2015
+    //----------------------------------------------------------------------------------------
+    void AddItem(ItemId const& id, ItemPtr& item)
+        {
+        BeAssert(!IsCached(id));
+
+        Prune();    // if required unload item.
+
+        m_lru.push_back(std::make_pair(item, id));
+        m_map.insert(CachedItems::value_type(id, --m_lru.end()));
+        }
+
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                                   Mathieu.Marchand  7/2015
+    //----------------------------------------------------------------------------------------
+    ItemPtr GetItem(ItemId const& id)
+        {
+        auto mapItr = m_map.find(id);
+        if(mapItr == m_map.end())
+            return nullptr;
+        
+        m_lru.splice(m_lru.end(),m_lru, mapItr->second);
+
+        return mapItr->second->first;
+        }
+
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                                   Mathieu.Marchand  7/2015
+    //----------------------------------------------------------------------------------------
+    bool IsCached(ItemId const& id)
+        {
+        return m_map.find(id) != m_map.end();
+        }
+
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                                   Mathieu.Marchand  7/2015
+    //----------------------------------------------------------------------------------------
+    void RemoveItem(ItemId const& id)
+        {
+        auto mapItr = m_map.find(id);
+        if(mapItr != m_map.end())
+            {
+            RemoveItem(mapItr->second);
+            }
+        }
+
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                                   Mathieu.Marchand  7/2015
+    //----------------------------------------------------------------------------------------
+    void RemoveItem(ItemList::const_iterator itr)
+        {
+        m_map.erase(itr->second);
+        m_lru.erase(itr);
+        }
+
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                                   Mathieu.Marchand  7/2015
+    //----------------------------------------------------------------------------------------
+    void Prune()
+        {
+        // Qv tile are stored in RGBA with mipmap. So a tile is: width*height*4*1.33 bytes.
+        // For now, we have have tiles of 256x256 so 340K per tile. We limit to 200 tiles ~60 MB for all rasters.
+        if(m_lru.size() > 200) 
+            RemoveItem(m_lru.begin());
+        }
+
+    CachedItems m_map;
+    ItemList m_lru;    
+    };
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  4/2015
+//----------------------------------------------------------------------------------------
 struct RasterProgressiveDisplay : IProgressiveDisplay, NonCopyableClass
 {
     DEFINE_BENTLEY_REF_COUNTED_MEMBERS
@@ -33,7 +126,7 @@ protected:
     bvector<RasterTilePtr>      m_visiblesTiles;    // all the tiles to display. 
     std::list<RasterTilePtr>    m_missingTiles;     // Tiles that need to be requested.
     std::list<RasterTilePtr>    m_pendingTiles;     // Tiles that were requested and we are waiting for them to arrive.     
-
+    
     uint64_t m_nextRetryTime;                             //!< When to re-try m_pendingTiles. unix millis UTC
     uint64_t m_waitTime;                                  //!< How long to wait before re-trying m_pendingTiles. millis 
 
@@ -87,7 +180,7 @@ RasterTilePtr RasterTile::CreateRoot(RasterQuadTreeR tree)
 
     TileId id(tree.GetSource().GetResolutionCount()-1,0,0);
 
-    //&&MM TODO clip to gcs domain. For now, make sure we can compute the corners in UOR.
+    //&&MM REPROJECTION clip to gcs domain. For now, make sure we can compute the corners in UOR.
     DPoint3d srcCorners[4];
     DPoint3d uorCorners[4];
     tree.GetSource().ComputeTileCorners(srcCorners, id); 
@@ -103,8 +196,7 @@ RasterTilePtr RasterTile::CreateRoot(RasterQuadTreeR tree)
 RasterTile::RasterTile(TileId const& id, RasterTileP parent, RasterQuadTreeR tree)
     :m_tileId(id),
     m_tree(tree),
-    m_pParent(parent),
-    m_status(TileStatus::Unloaded)
+    m_pParent(parent)
     {
     BeAssert(m_tree.GetSource().IsValidTileId(id));
 
@@ -113,7 +205,18 @@ RasterTile::RasterTile(TileId const& id, RasterTileP parent, RasterQuadTreeR tre
     DPoint3d srcCorners[4];
     source.ComputeTileCorners(srcCorners, id); 
 
-    ReprojectCorners(m_corners, srcCorners, tree);
+    if(REPROJECT_Success != ReprojectCorners(m_corners, srcCorners, tree))
+        {
+        memcpy(m_corners, srcCorners, sizeof(m_corners));   // Assume coincident for now. We should an invalid reprojection or something.
+        }
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  7/2015
+//----------------------------------------------------------------------------------------
+RasterTile::~RasterTile()
+    {
+    DisplayTileCache::Instance().RemoveItem((uintptr_t)this);
     }
 
 //----------------------------------------------------------------------------------------
@@ -183,14 +286,17 @@ bool RasterTile::Draw(ViewContextR context)
         }
     else
         {
-        BeSQLite::HighPriorityOperationBlock highPriority; //&&MM review.
+        BeSQLite::HighPriorityOperationBlock highPriority;
         auto extents = context.GetViewport()->GetViewController().GetProjectExtents();
         for (auto& pt : uvPts)
             pt.z = extents.low.z - 1;
         }
 
-    static bool s_DrawTileShape = true;    //&&MM for testing.
-    if(m_pDisplayTile.IsNull() && s_DrawTileShape)
+    DisplayTilePtr pDisplayTile = DisplayTileCache::Instance().GetItem((uintptr_t)this);
+
+#ifndef NDEBUG  // debug build only.
+    static bool s_DrawTileShape = false;
+    if(pDisplayTile.IsNull() && s_DrawTileShape)
         {
         ElemMatSymb elemMatSymb;
         auto colorIdx = ColorDef(222, 0, 0, 128);
@@ -225,18 +331,12 @@ bool RasterTile::Draw(ViewContextR context)
         context.GetIDrawGeom().ActivateMatSymb (&elemMatSymb);
         context.GetIViewDraw().DrawTextString (*textStr);
         }
+#endif
 
-    if(!m_pDisplayTile.IsValid())
+    if(!pDisplayTile.IsValid())
         return false;
 
-    static bool s_invert = false;    //&&MM I don't understand why I need to that. investigate.
-    if (s_invert)
-        {
-        std::swap (uvPts[0], uvPts[2]);
-        std::swap (uvPts[1], uvPts[3]);
-        }
-
-    uintptr_t textureId = m_pDisplayTile->GetTextureId();
+    uintptr_t textureId = pDisplayTile->GetTextureId();
     context.GetIViewDraw().DrawMosaic (1,1, &textureId, uvPts); 
     
     return true;
@@ -245,23 +345,32 @@ bool RasterTile::Draw(ViewContextR context)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-DisplayTileP RasterTile::GetDisplayTileP(bool request) 
+DisplayTilePtr RasterTile::GetDisplayTileP(bool request) 
     {
-    if(!m_pDisplayTile.IsValid() && TileStatus::Unloaded == m_status)
+    DisplayTilePtr pDisplayTile = DisplayTileCache::Instance().GetItem((uintptr_t)this);
+    if(!pDisplayTile.IsValid())
         {
         // Load only if locally available. If not a request is made to the cache and NULL is returned.
-        m_pDisplayTile = m_tree.GetSource().QueryTile(m_tileId, request);        
-
-        //&&MM handle change in status. 
+        pDisplayTile = m_tree.GetSource().QueryTile(m_tileId, request);        
+        if(pDisplayTile.IsValid())
+            DisplayTileCache::Instance().AddItem((uintptr_t)this, pDisplayTile);
         }
 
-    return m_pDisplayTile.get();
+    return pDisplayTile;
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  5/2015
 //----------------------------------------------------------------------------------------
 RasterSource::Resolution const& RasterTile::GetResolution() const {return m_tree.GetSource().GetResolution(m_tileId.resolution);}
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  7/2015
+//----------------------------------------------------------------------------------------
+bool RasterTile::IsLoaded() const 
+    {
+    return DisplayTileCache::Instance().IsCached((uintptr_t)this);
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
@@ -320,7 +429,7 @@ void RasterTile::QueryVisible(bvector<RasterTilePtr>& visibles, ViewContextR con
                     pChild->QueryVisible(visibles, context);
                 }
                 
-            //&&MM investigate how to handle reprojection where parent is visible and the 4 children are not.
+            //&&MM REPROJETION investigate how to handle reprojection where parent is visible and the 4 children are not.
             // reason: parent and children do not encompass the same region.                
             if(visiblesIn == visibles.size())
                 {
@@ -435,7 +544,8 @@ void RasterQuadTree::QueryVisible(bvector<RasterTilePtr>& visibles, ViewContextR
     {
     visibles.clear();
 
-    m_pRoot->QueryVisible(visibles, context);
+    if(m_pRoot.IsValid()) // Might be null if reprojection error occurs.
+        m_pRoot->QueryVisible(visibles, context);
     }
 
 //----------------------------------------------------------------------------------------
@@ -633,14 +743,16 @@ IProgressiveDisplay::Completion RasterProgressiveDisplay::_Process(ViewContextR 
         auto pTile = m_missingTiles.back();
         m_missingTiles.pop_back();
 
-        DisplayTileP pDisplayTile = pTile->GetDisplayTileP(true);  // Read from cache or request it. Won't be requested twice by the reality data cache.
-        if(NULL != pDisplayTile)
+        DisplayTilePtr pDisplayTile = pTile->GetDisplayTileP(true);  // Read from cache or request it. Won't be requested twice by the reality data cache.
+        if(pDisplayTile.IsValid())
             {
             pTile->Draw(context);
             }
         else
             {
-            pTile->Draw(context);   //&&MM debug purpose. it will draw the border if data is missing.
+#ifndef NDEBUG
+            pTile->Draw(context);   // debug purpose. it will draw the border if data is missing.
+#endif
             // Tile was not available and was requested. We'll check for it at a later time.
             m_pendingTiles.push_back(pTile);
             }
@@ -659,8 +771,9 @@ IProgressiveDisplay::Completion RasterProgressiveDisplay::_Process(ViewContextR 
             break;
             }
 
-        DisplayTileP pDisplayTile = (*pTile)->GetDisplayTileP(false);  // Read from cache. do not request again.
-        if(NULL != pDisplayTile)
+        //&&MM that generates to many quety to the tile cache.
+        DisplayTilePtr pDisplayTile = (*pTile)->GetDisplayTileP(false);  // Read from cache. do not request again.
+        if(pDisplayTile.IsValid())
             {
             (*pTile)->Draw(context);
             pTile = m_pendingTiles.erase(pTile);
@@ -681,164 +794,3 @@ IProgressiveDisplay::Completion RasterProgressiveDisplay::_Process(ViewContextR 
     return completion;    
     }
 
-//----------------------------------------------------------------------------------------
-//-------------------------------  TEMP TEMP TEMP ----------------------------------------
-//----------------------------------------------------------------------------------------
-
-#if 0 //&&MM WMS Example
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  4/2015
-//----------------------------------------------------------------------------------------
-void WebMercatorModel::_AddGraphicsToScene (ViewContextR context)
-    {
-    static bool s_useMercator = false;
-
-    if(s_useMercator)
-        {
-        RefCountedPtr<WebMercatorDisplay> display = new WebMercatorDisplay(*this, *context.GetViewport());
-        display->DrawView(context);
-        }
-    else
-        {
-        if(s_rasterLOD.IsNull())
-            {
-            // Make sure GCS is initialized
-            T_HOST.GetGeoCoordinationAdmin()._GetServices();
-
-                // how to get a in latlong BBOX: http://boundingbox.klokantech.com/
-            #if 0
-                m_serverUrl = "http://giswebservices.massgis.state.ma.us/geoserver/wms";
-                m_version = "1.1.1";
-                m_layers = "massgis:GISDATA.TOWNS_POLYM,massgis:GISDATA.NAVTEQRDS_ARC,massgis:GISDATA.NAVTEQRDS_ARC_INT";
-                //m_styles = "Black_Lines,GISDATA.NAVTEQRDS_ARC::ForOrtho`s,GISDATA.NAVTEQRDS_ARC_INT::Default";
-                m_styles = "Black_Lines,GISDATA.NAVTEQRDS_ARC::ForOrthos,GISDATA.NAVTEQRDS_ARC_INT::Default";
-                m_gcsType = "SRS";
-                m_gcs = "EPSG:26986"; 
-                m_format = "image/png";
-                m_transparent = "TRUE";
-
-                // WMS BBOX are in CRS units. i.e. cartesian.
-                m_corners[0].x = m_corners[2].x = 898705.3447384972; 
-                m_corners[1].x = m_corners[3].x = 903749.1401484597;  
-                m_corners[0].y = m_corners[1].y = 232325.38526025353; 
-                m_corners[2].y = m_corners[3].y = 238934.49648710093; 
-                m_corners[0].z = m_corners[1].z = m_corners[2].z = m_corners[3].z = 0;
-
-                m_vendorSpecific = "SERVICE=WMS";
-            #elif 0.
-            //http://giswebservices.massgis.state.ma.us/geoserver/wms?request=GetCapabilities&service=WMS
-                m_serverUrl = "http://giswebservices.massgis.state.ma.us/geoserver/wms";
-                m_version = "1.1.1";
-                m_layers = "massgis:GISDATA.TOWNS_POLYM,massgis:GISDATA.NAVTEQRDS_ARC,massgis:GISDATA.NAVTEQRDS_ARC_INT";
-                m_styles = "Black_Lines,GISDATA.NAVTEQRDS_ARC::ForOrthos,GISDATA.NAVTEQRDS_ARC_INT::Default";
-                m_gcsType = "SRS";
-                m_gcs = "EPSG:26986";
-                m_format = "image/png";
-                //m_format = "image/jpeg";
-                m_transparent = "TRUE";
-
-                m_vendorSpecific = "SERVICE=WMS";
-
-                // WMS BBOX are in CRS units. i.e. cartesian.
-                m_corners[0].x = m_corners[2].x = 232325.38526025353; 
-                m_corners[1].x = m_corners[3].x = 238934.49648710093;  
-                m_corners[0].y = m_corners[1].y = 898705.3447384972; 
-                m_corners[2].y = m_corners[3].y = 903749.1401484597; 
-                m_corners[0].z = m_corners[1].z = m_corners[2].z = m_corners[3].z = 0;
-            #elif 1
-                //http://basemap.nationalmap.gov/arcgis/services/USGSImageryTopo/MapServer/WMSServer?request=GetCapabilities&service=WMS
-
-                Utf8String serverUrl = "http://basemap.nationalmap.gov/arcgis/services/USGSImageryTopo/MapServer/WmsServer";
-                Utf8String version = "1.1.1";
-                Utf8String layers = "0";
-                Utf8String styles = "";
-                Utf8String csType = "SRS";
-                Utf8String csLabel = "EPSG:4269";
-                Utf8String format = "image/png";
-                Utf8String transparent = "TRUE";
-           
-                DRange2d bbox;
-                bbox.low.x = -128.1;
-                bbox.low.y = 24.7;
-                bbox.high.x = -58.1;
-                bbox.high.y = 49.8;   
-            #elif 1
-                //http://ows.geobase.ca/wms/geobase_en?service=wms&request=getCapabilities
-                m_serverUrl = "http://ows.geobase.ca/wms/geobase_en";
-                m_version = "1.1.1";
-            #if 0 
-                m_layers = "imagery:landsat7,reference:roads,reference:hydro,reference:boundaries";
-                m_styles = ",,,";
-            #else
-                m_layers = "elevation:cded50k,reference:hydro,reference:roads,boundaries:geopolitical,reference:boundaries,nrwn:track,reference:placenames:capitals10m";
-                m_styles = ",,,,,,";
-            #endif    
-                m_gcsType = "SRS";
-                m_gcs = "EPSG:4269";
-                m_format = "image/png";
-                //m_format = "image/jpeg";
-                m_transparent = "TRUE";
-
-                m_vendorSpecific = "wms=WorldMap";
-
-    
-                //"[[-71.54944499999999,46.734076800000025],[-71.54944499999999,46.98193789999996],[-71.14270069999999,46.98193789999996],[-71.14270069999999,46.734076800000025]]"
-
-                // WMS BBOX are in CRS units. i.e. cartesian.
-                m_corners[0].x = m_corners[2].x = -78.18;
-                m_corners[1].x = m_corners[3].x = -69.48;  
-                m_corners[0].y = m_corners[1].y = 43.83; 
-                m_corners[2].y = m_corners[3].y = 49.45; 
-                m_corners[0].z = m_corners[1].z = m_corners[2].z = m_corners[3].z = 0;
-
-            //     m_corners[0].x = m_corners[2].x = -94.605;
-            //     m_corners[1].x = m_corners[3].x = -48.06;  
-            //     m_corners[0].y = m_corners[1].y = 41.68; 
-            //     m_corners[2].y = m_corners[3].y = 63.36; 
-            //     m_corners[0].z = m_corners[1].z = m_corners[2].z = m_corners[3].z = 0;
-
-                // Canada
-            //     m_corners[0].x = m_corners[2].x = -141.15; 
-            //     m_corners[1].x = m_corners[3].x = -48.06;  
-            //     m_corners[0].y = m_corners[1].y = 41.68; 
-            //     m_corners[2].y = m_corners[3].y = 85.05; 
-            //     m_corners[0].z = m_corners[1].z = m_corners[2].z = m_corners[3].z = 0;
-
-            #else
-                //http://www2.demis.nl/wms/wms.asp?wms=WorldMap&request=GetCapabilities&version=1.1.1
-                m_serverUrl = "http://www3.demis.nl/wms/wms.asp";
-                m_version = "1.1.1";
-                m_layers = "Topography,Rivers,Railroads,Roads,Borders,Cities";
-                m_styles = ",,,,,";
-                m_gcsType = "SRS";
-                m_gcs = "EPSG:4326";
-                m_format = "image/png";
-                //m_format = "image/jpeg";
-                m_transparent = "TRUE";
-
-                m_vendorSpecific = "wms=WorldMap";
-
-                // WMS BBOX are in CRS units. i.e. cartesian.
-                m_corners[0].x = m_corners[2].x = -106; 
-                m_corners[1].x = m_corners[3].x = -86;  
-                m_corners[0].y = m_corners[1].y = 40; 
-                m_corners[2].y = m_corners[3].y = 80; 
-                m_corners[0].z = m_corners[1].z = m_corners[2].z = m_corners[3].z = 0;
-            #endif
-
-                
-            // Keep the same cartesian to pixel ratio
-            double xLength = bbox.high.x - bbox.low.x;
-            double yLength = bbox.high.y - bbox.low.y;
-                        
-            uint32_t metaWidth = 2048*256;  // arbitrary size. 
-            uint32_t metaHeight = (uint32_t)((yLength/xLength) * metaWidth);
-                        
-            s_rasterLOD = RasterLOD::Create(*WmsSource::Create(serverUrl.c_str(), version.c_str(), layers.c_str(), styles.c_str(), csType.c_str(), csLabel.c_str(), format.c_str(), bbox, metaWidth, metaHeight), context.GetDgnDb());
-            }
-
-        RefCountedPtr<RasterProgressiveDisplay> display = RasterProgressiveDisplay::Create(*s_rasterLOD, context);
-        display->Draw(context);
-        }
-    }
-#endif

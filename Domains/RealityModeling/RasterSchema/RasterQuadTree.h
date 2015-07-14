@@ -30,22 +30,22 @@ public:
     //&&MM TODO status. The goal is to avoid requesting over and over when errors occurs.
     // Also when a request timeout we should somehow retry a number of time.
     // Maybe we need flags? or 2 status. 
-    enum class TileStatus
-        {
-        Unloaded,
-        Requested,
-        Loaded,
-        ConnectionError,
-        //Error,
-        //Expired,
-        OutOfDomain,    // reprojection error  
-        };
+//     enum class TileStatus
+//         {
+//         Unloaded,
+//         Requested,
+//         Loaded,
+//         ConnectionError,
+//         //Error,
+//         //Expired,
+//         OutOfDomain,    // reprojection error  
+//         };
 
     //! Create a root node(without a parent)
     static RasterTilePtr CreateRoot(RasterQuadTreeR tree);
 
     //! return NULL if not available.
-    DisplayTileP GetDisplayTileP(bool request);
+    DisplayTilePtr GetDisplayTileP(bool request);
 
     // Raster 4 corners(UOR) in this order:
     //  [0]  [1]
@@ -67,10 +67,12 @@ public:
     void QueryVisible(bvector<RasterTilePtr>& visibles, Dgn::ViewContextR context);
 
     //! Return true if the tiles pixels are loaded.
-    bool IsLoaded() const {return m_pDisplayTile.IsValid();}
+    bool IsLoaded() const;
 
 private:
     RasterTile(TileId const& id, RasterTileP parent, RasterQuadTreeR tree);
+
+    ~RasterTile();
 
     bool IsLeaf() const {return 0 == m_tileId.resolution;}
 
@@ -85,18 +87,10 @@ private:
 
     static ReprojectStatus ReprojectCorners(DPoint3dP outUors, DPoint3dCP srcCartesian, RasterQuadTreeR tree);
 
-    DisplayTilePtr m_pDisplayTile;      // Can be NULL, will be loaded when needed. 
-
     TileId m_tileId; 
     RasterQuadTreeR m_tree;          // Hold a ref only.
 
     DPoint3d m_corners[4];      // Corners in uor.
-
-    TileStatus m_status;
-
-    //&&MM add the concept of lastDrawTime and use that to cleanup old tiles. Make sure time query does not impact performance.
-    //it might be better to use the same time for the all tiles of a single draw operation. Set during QueryVisible?
-    // use time and proximity to the current visibles tile to select what needs to be clean.
 
     RasterTileP m_pParent;      // NULL for root node.
     RasterTilePtr m_pChilds[4];    

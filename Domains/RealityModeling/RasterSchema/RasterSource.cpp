@@ -178,14 +178,16 @@ Bitmap::Bitmap(uint32_t width, uint32_t height, PixelType pixelType, bool isTopD
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-DisplayTilePtr DisplayTile::Create(uint32_t width, uint32_t height, DisplayTile::PixelType pixelType, Byte const* pData, uint32_t pitch)
+DisplayTilePtr DisplayTile::Create(uint32_t width, uint32_t height, DisplayTile::PixelType pixelType, bool alphaBlend, Byte const* pData, size_t pitch)
     {
+    BeAssert(pitch < UINT32_MAX);
+
     DisplayTilePtr pTile = new DisplayTile();
 
     Point2d size = {width, height};
 
     pTile->m_haveTexture = true;
-    T_HOST.GetGraphicsAdmin()._DefineTile(pTile->GetTextureId(), NULL, size, true/*enableAlpha &&MM - add as parameter */, static_cast<uint32_t>(pixelType), pitch, pData);
+    T_HOST.GetGraphicsAdmin()._DefineTile(pTile->GetTextureId(), NULL, size, alphaBlend, static_cast<uint32_t>(pixelType), (uint32_t)pitch, pData);
     return pTile;
     }
 
