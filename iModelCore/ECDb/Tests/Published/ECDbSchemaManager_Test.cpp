@@ -2152,94 +2152,104 @@ TEST(ECDbSchemaManager, ECDbImportSchema_WSG2eBPluginSchemas_Succeeds)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST (ECDbSchemaManager, ImportSchemaWithSubclassesToBaseClassInExistingSchema)
     {
-    Utf8CP baseSchemaXmlTemplate =
-        "<ECSchema schemaName=\"BaseSchema\" nameSpacePrefix=\"b\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-        "  <ECSchemaReference name = \"ECDbMap\" version = \"01.00\" prefix = \"ecdbmap\" />"
-        "  <ECClass typeName=\"A\" >"
-        "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
-        "  </ECClass>"
-        "  <ECClass typeName=\"B\" >"
-        "    <ECProperty propertyName=\"Id\" typeName=\"long\" />"
-        "  </ECClass>"
-        "  <ECRelationshipClass typeName = \"Rel\" isDomainClass = \"True\" strength = \"holding\" strengthDirection = \"forward\">"
-        "      %s"
-        "    <Source cardinality = \"(0, 1)\" polymorphic = \"True\">"
-        "      <Class class = \"A\" />"
-        "    </Source>"
-        "    <Target cardinality = \"(0, N)\" polymorphic = \"True\">"
-        "      <Class class = \"B\" />"
-        "    </Target>"
-        "  </ECRelationshipClass>"
-        "</ECSchema>";
-
-    Utf8CP secondSchemaXml =
-        "<ECSchema schemaName=\"DomainSchema\" nameSpacePrefix=\"d\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-        "  <ECSchemaReference name = \"BaseSchema\" version = \"01.00\" prefix = \"b\" />"
-        "  <ECClass typeName=\"AA\" >"
-        "    <BaseClass>b:A</BaseClass>"
-        "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
-        "  </ECClass>"
-        "</ECSchema>";
-
-    auto importSchema = [] (Utf8StringR ecdbFilePath, Utf8CP baseSchema, Utf8CP secondSchema)
+    auto setup = [] (ECInstanceKey& activityKey, ECDbCR ecdb, bool clearCacheAfterFirstImport)
         {
-        ECDbTestProject testProject;
-        ECDbR ecdb = testProject.Create ("importschemawithsubclassestoexistingschema.ecdb");
-        ecdbFilePath = ecdb.GetDbFileName ();
-        auto schemaCache = ECDbTestUtility::ReadECSchemaFromString (baseSchema);
-        if (BSISUCCESS != ecdb. Schemas ().ImportECSchemas (*schemaCache))
-            return BSIERROR;
+        Utf8CP baseSchemaXml =
+            "<ECSchema schemaName='Planning' nameSpacePrefix='p' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+            "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+            "  <ECClass typeName='Activity'>"
+            "    <ECCustomAttributes>"
+            "        <ClassMap xmlns='ECDbMap.01.00'>"
+            "            <MapStrategy>"
+            "               <Strategy>SharedTable</Strategy>"
+            "               <IsPolymorphic>True</IsPolymorphic>"
+            "            </MapStrategy>"
+            "        </ClassMap>"
+            "    </ECCustomAttributes>"
+            "    <ECProperty propertyName='PlanId' typeName='long' />"
+            "    <ECProperty propertyName='OutlineIndex' typeName='int' />"
+            "  </ECClass>"
+            "</ECSchema>";
 
-        ecdb.SaveChanges ();
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        context->AddSchemaLocater(ecdb.GetSchemaLocater());
+        ECSchemaPtr schema = nullptr;
+        ASSERT_EQ (SchemaReadStatus::SCHEMA_READ_STATUS_Success, ECSchema::ReadFromXmlString(schema, baseSchemaXml, *context));
+        ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(context->GetCache()));
 
-        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext ();
+        if (clearCacheAfterFirstImport)
+            ecdb.ClearECDbCache();
+
+        Utf8CP secondSchemaXml =
+            "<ECSchema schemaName='Construction' nameSpacePrefix='c' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+            "  <ECSchemaReference name='Planning' version='01.00' prefix='p' />"
+            "  <ECClass typeName='Activity'>"
+            "    <BaseClass>p:Activity</BaseClass>"
+            "    <ECProperty propertyName='Name' typeName='string' />"
+            "  </ECClass>"
+            "</ECSchema>";
+
+        context = ECSchemaReadContext::CreateContext ();
         context->AddSchemaLocater (ecdb. GetSchemaLocater ());
-        ECDbTestUtility::ReadECSchemaFromString (context, secondSchema);
-        if (BSISUCCESS != ecdb. Schemas ().ImportECSchemas (context->GetCache ()))
-            return BSIERROR;
+        ASSERT_EQ(SchemaReadStatus::SCHEMA_READ_STATUS_Success, ECSchema::ReadFromXmlString(schema, secondSchemaXml, *context));
+        ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(context->GetCache()));
 
-        ecdb.SaveChanges ();
-        return BSISUCCESS;
+        ECInstanceKey newKey;
+        ECSqlStatement insStmt;
+        ASSERT_EQ(ECSqlStatus::Success, insStmt.Prepare(ecdb, "INSERT INTO c.Activity (PlanId, OutlineIndex, Name) VALUES (1,1,'ConstructionPlan')"));
+        ASSERT_EQ(ECSqlStepStatus::Done, insStmt.Step(newKey));
+
+        ECSqlStatement updStmt;
+        ASSERT_EQ(ECSqlStatus::Success, updStmt.Prepare(ecdb, "UPDATE p.Activity SET PlanId=2, OutlineIndex=2 WHERE ECInstanceId=?"));
+        updStmt.BindId(1, newKey.GetECInstanceId());
+        ASSERT_EQ(ECSqlStepStatus::Done, updStmt.Step());
+
+        activityKey = newKey;
         };
 
-    //Test 1: Base schema doesn't explicitly mention class ids for source constraint -> error
+        //Import two ECSchemas separately without clearing the cache before the second import
         {
-        Utf8String ecdbPath;
-        Utf8String baseSchemaXml;
-        baseSchemaXml.Sprintf (baseSchemaXmlTemplate, "");
-        ASSERT_EQ (BSISUCCESS, importSchema (ecdbPath, baseSchemaXml.c_str (), secondSchemaXml));
+        ECDbTestProject testProject;
+        ECDbR ecdb = testProject.Create("importschemawithsubclassestoexistingschema1.ecdb");
 
-        ECDb ecdb;
-        ASSERT_EQ (BE_SQLITE_OK, ecdb.OpenBeSQLiteDb (ecdbPath.c_str (), ECDb::OpenParams (Db::OpenMode::Readonly)));
+        ECInstanceKey activityKey;
+        setup(activityKey, ecdb, false);
+        ASSERT_TRUE(activityKey.IsValid());
 
         ECSqlStatement stmt;
-        ASSERT_EQ ((int) ECSqlStatus::InvalidECSql, (int) stmt.Prepare (ecdb, "SELECT SourceECClassId, TargetECClassId FROM b.Rel"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT PlanId, OutlineIndex FROM p.Activity WHERE ECInstanceId=?"));
+        stmt.BindId(1, activityKey.GetECInstanceId());
+        ASSERT_EQ(ECSqlStepStatus::HasRow, stmt.Step());
+
+        ASSERT_TRUE(!stmt.IsValueNull(0));
+        ASSERT_EQ(1ULL, stmt.GetValueInt64(0)) << "This should start to fail once ECDb is fixed to recompute the horizontal partitions after a second schema import";
+        ASSERT_TRUE(!stmt.IsValueNull(1));
+        ASSERT_EQ(1, stmt.GetValueInt(1)) << "This should start to fail once ECDb is fixed to recompute the horizontal partitions after a second schema import";
+
+        ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step());
         }
 
-    //Test 2: Base schema explicitly mentions class ids for source constraint -> correct
+        //Import two ECSchemas separately with clearing the cache before the second import
         {
-        Utf8String ecdbPath;
-        Utf8CP customAttributeXml =
-            "<ECCustomAttributes>"
-            "  <ForeignKeyRelationshipMap xmlns = \"ECDbMap.01.00\">"
-            "    <ForeignKeyColumn>SourceECInstanceId</ForeignKeyColumn>"
-            "    <ForeignKeyClassIdColumn>SourceECClassId</ForeignKeyClassIdColumn>"
-            "  </ForeignKeyRelationshipMap>"
-            "</ECCustomAttributes>";
+        ECDbTestProject testProject;
+        ECDbR ecdb = testProject.Create("importschemawithsubclassestoexistingschema2.ecdb");
 
-        Utf8String baseSchemaXml;
-        baseSchemaXml.Sprintf (baseSchemaXmlTemplate, customAttributeXml);
-        ASSERT_EQ (BSISUCCESS, importSchema (ecdbPath, baseSchemaXml.c_str (), secondSchemaXml));
-
-        ECDb ecdb;
-        ASSERT_EQ (BE_SQLITE_OK, ecdb.OpenBeSQLiteDb (ecdbPath.c_str (), ECDb::OpenParams (Db::OpenMode::Readonly)));
-
-        ASSERT_TRUE (ecdb.ColumnExists ("b_B", "SourceECClassId"));
+        ECInstanceKey activityKey;
+        setup(activityKey, ecdb, true);
+        ASSERT_TRUE(activityKey.IsValid());
 
         ECSqlStatement stmt;
-        ASSERT_EQ ((int) ECSqlStatus::Success, (int) stmt.Prepare (ecdb, "SELECT SourceECClassId, TargetECClassId FROM b.Rel"));
-        }
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT PlanId, OutlineIndex FROM p.Activity WHERE ECInstanceId=?"));
+        stmt.BindId(1, activityKey.GetECInstanceId());
+        ASSERT_EQ(ECSqlStepStatus::HasRow, stmt.Step());
 
+        ASSERT_TRUE(!stmt.IsValueNull(0));
+        ASSERT_EQ(2ULL, stmt.GetValueInt64(0));
+        ASSERT_TRUE(!stmt.IsValueNull(1));
+        ASSERT_EQ(2, stmt.GetValueInt(1));
+
+        ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step());
+        }
     }
 
 END_ECDBUNITTESTS_NAMESPACE

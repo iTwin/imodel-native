@@ -779,7 +779,7 @@ void ECDbMap::GetClassMapsFromRelationshipEnd (bset<IClassMap const*>& endClassM
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECDbMap::ClearCache ()
     {
-    BeMutexHolder aGurad (m_criticalSection);
+    BeMutexHolder lock (m_criticalSection);
     m_classMapDictionary.clear();
     m_clustersByTable.clear();
     GetSQLManagerR ().Reset ();
@@ -791,7 +791,7 @@ void ECDbMap::ClearCache ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult ECDbMap::Save()
     {
-    BeMutexHolder aGurad (m_criticalSection);
+    BeMutexHolder lock(m_criticalSection);
     StopWatch stopWatch("", true);
     int i = 0;
     std::set<ClassMap const*> doneList;

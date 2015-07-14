@@ -1571,9 +1571,10 @@ StorageDescription& StorageDescription::operator=(StorageDescription&& rhs)
     
 std::unique_ptr<StorageDescription> StorageDescription::Create (IClassMap const& classMap)
     {
-    auto storageDescription = std::unique_ptr<StorageDescription> (new StorageDescription (classMap.GetClass ().GetId ()));
+    const ECClassId classId = classMap.GetClass().GetId();
+    auto storageDescription = std::unique_ptr<StorageDescription>(new StorageDescription(classId));
     auto& lwmc = classMap.GetECDbMap ().GetLightWeightMapCache ();
-    for (auto& kp : lwmc.GetTablesMapToClass (classMap.GetClass ().GetId ()))
+    for (auto& kp : lwmc.GetTablesMapToClass(classId))
         {
         auto table = kp.first;
 
@@ -1581,7 +1582,7 @@ std::unique_ptr<StorageDescription> StorageDescription::Create (IClassMap const&
         if (deriveClassList.empty ())
             continue;
 
-        auto id = storageDescription->AddHorizontalPartition (*table, deriveClassList.front () == classMap.GetClass ().GetId ());
+        auto id = storageDescription->AddHorizontalPartition(*table, deriveClassList.front() == classId);
         auto hp = storageDescription->GetHorizontalPartitionP (id);
         for (auto ecClassId : deriveClassList)
             {
@@ -1593,6 +1594,7 @@ std::unique_ptr<StorageDescription> StorageDescription::Create (IClassMap const&
 
     return std::move (storageDescription);
     }
+
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    05 / 2015
 //------------------------------------------------------------------------------------------

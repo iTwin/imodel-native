@@ -752,7 +752,7 @@ DbResult ECDbSchemaReader::GetECClass(ECClassP& ecClass, ECClassId ecClassId) { 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECDbSchemaReader::ClearCache ()
     {
-    BeMutexHolder aGuard (m_criticalSection);
+    BeMutexHolder lock (m_criticalSection);
     for (DbECClassEntryMap::reference pair : m_ecClassKeyByECClassIdLookup)
         delete pair.second;
 
