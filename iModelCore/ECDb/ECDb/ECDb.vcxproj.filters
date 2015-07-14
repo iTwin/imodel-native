@@ -4,9 +4,6 @@
     <Filter Include="Mke">
       <UniqueIdentifier>{ba9bb0c5-62ba-40df-9f6e-3ffa3058f034}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Pch">
-      <UniqueIdentifier>{5e830855-8429-4b6c-af08-980a24bcc630}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ECSql">
       <UniqueIdentifier>{ca571631-8c21-4c73-949d-9878bf88d78e}</UniqueIdentifier>
     </Filter>
@@ -66,9 +63,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ECDbPch.h">
-      <Filter>Pch</Filter>
-    </ClInclude>
     <ClInclude Include="ECDbInternalTypes.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECDbTypes.h">
       <Filter>PublicApi</Filter>
@@ -426,6 +420,9 @@
     <ClInclude Include="ECDbMap.h">
       <Filter>ECDbMap\Map</Filter>
     </ClInclude>
+    <ClInclude Include="ECDbPch.h">
+      <Filter>Mke</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
@@ -463,9 +460,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ECDbPch.cpp">
-      <Filter>Pch</Filter>
-    </ClCompile>
     <ClCompile Include="BeRepositoryBasedIdSequence.cpp" />
     <ClCompile Include="ECSql\Parser\SqlBison.cpp">
       <Filter>ECSql\OSQLParser</Filter>
@@ -787,6 +781,9 @@
     </ClCompile>
     <ClCompile Include="ECDbMap.cpp">
       <Filter>ECDbMap\Map</Filter>
+    </ClCompile>
+    <ClCompile Include="ECDbPch.cpp">
+      <Filter>Mke</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
