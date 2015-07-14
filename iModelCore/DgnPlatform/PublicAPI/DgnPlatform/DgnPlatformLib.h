@@ -86,6 +86,37 @@ public:
 
     public:
 
+        //! Provides access to scripting services.
+        //! This is a complete implementation of the Admin needed to establish a scripting environment and to set up and use the DgnScriptContext.
+        //! You may subclass ScriptingAdmin if you want to add more thread-specific contexts to it.
+        struct ScriptingAdmin : IHostObject
+            {
+            BeJsEnvironmentP m_jsenv;
+            DgnScriptContextP m_dgnContext;
+
+            DEFINE_BENTLEY_NEW_DELETE_OPERATORS
+
+            DGNPLATFORM_EXPORT ScriptingAdmin();
+            DGNPLATFORM_EXPORT ~ScriptingAdmin();
+
+            //! Provide the JavaScript environment needed to evaluate JavaScript expressions on the host's thread. 
+            //! There can only be one BeJsEnvironment per thread ... and this is it!
+            //! All BeJsContexts that run on this thread must use this BeJsEnvironment.
+            DGNPLATFORM_EXPORT BeJsEnvironmentR GetBeJsEnvironment();
+
+            //! Provide the BeJsContext to use when executing JavaScript that needs to use the Dgn JavaScript object model. 
+            //! There can only be one DgnScriptContext per thread ... and this is it!
+            DGNPLATFORM_EXPORT DgnScriptContextR GetDgnScriptContext();
+
+            //! Obtain the text of the specified JavaScript program.
+            //! This base class implementation looks for the program by name in the specified DgnDb.
+            //! @param[out] jsProgramText   The content of the JavaScript program
+            //! @param[in] db               The current DgnDb file
+            //! @param[in] jsProgramName    Identifies the .JS program.
+            //! @return non-zero if the JS program is not available from the library.
+            DGNPLATFORM_EXPORT virtual DgnDbStatus _FetchJavaScript(Utf8StringR jsProgramText, DgnDbR db, Utf8CP jsProgramName);
+            };
+
         //! Provides Exception handling capabilities
         struct ExceptionHandler : IHostObject
             {
@@ -107,8 +138,6 @@ public:
 
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
-            virtual int _GetVersion() const {return 1;} // Do not override!
-
             //! Handle the specified exception
             virtual WasHandled _ProcessException(_EXCEPTION_POINTERS*) {return WasHandled::ContinueSearch;};
             virtual WasHandled _FilterException(_EXCEPTION_POINTERS*, bool onlyWantFloatingPoint) {return WasHandled::ContinueSearch;}
@@ -120,7 +149,6 @@ public:
             virtual uint32_t _EnterCoreCriticalSection(CharCP) {return 0;} // WIP_CHAR_OK - Just for diagnostic purposes
             virtual uint32_t _ReleaseCoreCriticalSection(CharCP) {return 0;} // WIP_CHAR_OK - Just for diagnostic purposes
             virtual void _RestoreCoreCriticalSection(CharCP, int) {} // WIP_CHAR_OK - Just for diagnostic purposes
-            virtual void _OnHostTermination(bool isProcessShutdown) {delete this;}
             virtual bool _ConIOEnabled() {return false;}
             virtual WString _ConIOGetLine(wchar_t const* prompt) {return L"";}
             };
@@ -132,7 +160,6 @@ public:
 
         protected:
             virtual ~IKnownLocationsAdmin() {}
-            virtual void _OnHostTermination(bool isProcessShutdown) override {delete this;}
             virtual BeFileNameCR _GetLocalTempDirectoryBaseName() = 0; //!< @see GetLocalTempDirectoryBaseName
             virtual BeFileNameCR _GetDgnPlatformAssetsDirectory() = 0; //!< @see GetDgnPlatformAssetsDirectory
 
@@ -144,8 +171,8 @@ public:
 
             //! Return a local directory that can be used to store temporary files. This directory can optionally be a subdirectory of #GetLocalTempDirectoryBaseName.
             //! @param[out] tempDir The name of temporary directory. This must be MAX_PATH chars in size.
-            //! @param[in]  subDirName Optional subdirectory relative to default temp directory. If non-NULL, this subdirectory will be created.
-            //! @return NULL if no temporary directory available.
+            //! @param[in]  subDirName Optional subdirectory relative to default temp directory. If non-nullptr, this subdirectory will be created.
+            //! @return nullptr if no temporary directory available.
             DGNPLATFORM_EXPORT BentleyStatus GetLocalTempDirectory(BeFileNameR tempDir, WCharCP subDirName);
 
             //! Return the directory containing the required DgnPlatform assets that must be deployed with any DgnPlatform-based app.
@@ -167,7 +194,6 @@ public:
         public:
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
-            virtual void _OnHostTermination(bool isProcessShutdown) override {delete this;}
             virtual bool _OnPromptReverseAll() {return true;}
             virtual void _RestartTool()  {}
             virtual void _OnNothingToUndo() {}
@@ -211,8 +237,6 @@ public:
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS;
             FontAdmin() : m_isInitialized(false), m_lastResortFontDb(nullptr), m_dbFonts(nullptr), m_triedToLoadFTLibrary(false), m_ftLibrary(nullptr) {}
             DGNPLATFORM_EXPORT virtual ~FontAdmin();
-            virtual int _GetVersion() const { return 1; } // Do not override!
-            virtual void _OnHostTermination(bool isProcessShutdown) override { delete this; }
 
             virtual DgnFontCR _GetLastResortTrueTypeFont() { return m_lastResortTTFont.IsValid() ? *m_lastResortTTFont : *(m_lastResortTTFont = _CreateLastResortFont(DgnFontType::TrueType)); }
             DgnFontCR GetLastResortTrueTypeFont() { return _GetLastResortTrueTypeFont(); }
@@ -245,10 +269,6 @@ public:
 
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
-            // Get the version of the LineStyleAdmin api. Do not override this method.
-            virtual int _GetVersion() const {return 1;}
-            virtual void _OnHostTermination(bool isProcessShutdown) override {delete this;}
-
             //! Allows the host to provide a semi-colon-delimited list of search patterns to search for RSC files (which can each have zero or more RSC line styles).
             //! The order of files in the list is important
             //! because line styles encountered in files earlier in the list hide line styles of the same name encountered in files later in the list.
@@ -278,9 +298,6 @@ public:
             {
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
-            virtual int _GetVersion() const {return 1;} // Do not override!
-            virtual void _OnHostTermination(bool isProcessShutdown) override {delete this;}
-
             //! Determine whether DgnPlatform should attempt to determine materials for geometry during display.
             virtual bool _WantDisplayMaterials() {return true;}
             //! Convert a stored material preview from a jpeg data block to an rgb image
@@ -295,9 +312,6 @@ public:
         struct RasterAttachmentAdmin : IHostObject
             {
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-
-            virtual int _GetVersion() const {return 1;} // Do not override!
-            virtual void _OnHostTermination(bool isProcessShutdown) override {delete this;}
 
             //Control if raster are displayed or not
             virtual bool _IsDisplayEnable() const {return true;}
@@ -331,46 +345,43 @@ public:
 
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
-            virtual int _GetVersion() const {return 1;} // Do not override!
-            virtual void _OnHostTermination(bool isProcessShutdown) override {delete this;}
-
             //! Get the density used for dynamic display.
             //! @return the dynamic density (a value between 0 and 1).
-            virtual float               _GetDisplayDynamicDensity() const {return 0.10f;}
+            virtual float _GetDisplayDynamicDensity() const {return 0.10f;}
 
             //! Get the density used for point cloud display.
             //! @return the global density (a value between 0 and 1).
-            virtual float               _GetDisplayGlobalDensity() const {return 1.0f;}
+            virtual float _GetDisplayGlobalDensity() const {return 1.0f;}
 
             //! Get the action to be taken with a point cloud exported to an i-model.
             //! @return the publishing action.
-            virtual PublishingAction    _GetPublishingAction() const {return Publish_KeepOriginal;}
+            virtual PublishingAction _GetPublishingAction() const {return Publish_KeepOriginal;}
 
             //! Get the maximum size of a point cloud to be embedded in an i-model.
             //! If the point cloud is bigger than this value (in Mb), it is reduced to this value. This value is used
             //! only when the publishing action is Publish_ReduceSize.
             //! @return the publishing size (in Mb).
-            virtual uint32_t            _GetPublishingEmbedSize() const {return 10;}
+            virtual uint32_t _GetPublishingEmbedSize() const {return 10;}
 
             //! Get the display type to use for point clouds
             //! @return the display query type.
-            virtual DisplayQueryType    _GetDisplayQueryType() const {return DisplayQueryType_Progressive;}
+            virtual DisplayQueryType _GetDisplayQueryType() const {return DisplayQueryType_Progressive;}
 
             //! Copy the spatial reference from a point cloud file to a point cloud element
             //! @param[in]      eRef         The point cloud element.
             virtual BentleyStatus _SyncSpatialReferenceFromFile(DgnElementP eRef) { return ERROR; }
 
             //! returns whether we should automatically synchronize the spatial reference from the POD file
-            virtual bool _GetAutomaticallySyncSpatialReferenceFromFile() const   { return false; }
+            virtual bool _GetAutomaticallySyncSpatialReferenceFromFile() const { return false; }
 
             //! returns whether we should automatically synchronize the spatial reference to the POD file
-            virtual bool _GetAutomaticallySyncSpatialReferenceToFile() const     { return false; }
+            virtual bool _GetAutomaticallySyncSpatialReferenceToFile() const { return false; }
 
             //! returns whether we should automatically synchronize the spatial reference from the POD file even if it is empty
-            virtual bool _GetSyncEmptySpatialReferenceFromFile() const           { return false; }
+            virtual bool _GetSyncEmptySpatialReferenceFromFile() const { return false; }
 
             //! returns whether we should automatically synchronize the spatial reference to the POD file even if it is empty
-            virtual bool _GetSyncEmptySpatialReferenceToFile() const             { return false; }
+            virtual bool _GetSyncEmptySpatialReferenceToFile() const { return false; }
             };
 
         //! Supply IRealityDatahandlers
@@ -380,33 +391,28 @@ public:
             RealityDataCachePtr m_cache;
 
         public:
-            virtual void _OnHostTermination(bool isProgramExit) {delete this;}
-
             DGNPLATFORM_EXPORT RealityDataCache& GetCache();
         };
 
         //! Supervise various graphics operations.
         struct GraphicsAdmin : IHostObject
-            {
+        {
             //! Display control for edges marked as invisible in Mesh Elements and
             //! for B-spline Curve/Surface control polygons ("splframe" global).
-            enum ControlPolyDisplay
-                {
-                CONTROLPOLY_DISPLAY_ByElement = 0, //! display according to element property.
-                CONTROLPOLY_DISPLAY_Always    = 1, //! display on for all elements
-                CONTROLPOLY_DISPLAY_Never     = 2, //! display off for all elements
-                };
+            enum class ControlPolyDisplay
+            {
+                ByElement = 0, //! display according to element property.
+                Always    = 1, //! display on for all elements
+                Never     = 2, //! display off for all elements
+            };
 
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
-            virtual int _GetVersion() const {return 1;} // Do not override!
-            virtual void _OnHostTermination(bool isProcessShutdown) override {delete this;}
-
             //! Return a pointer to a temporary QVCache used to create a temporary QVElem (short-lived).
-            virtual QvCache* _GetTempElementCache() {return NULL;}
+            virtual QvCache* _GetTempElementCache() {return nullptr;}
 
             //! Create and maintain a cache to hold cached representations of drawn geometry for persistent elements (QVElem).
-            virtual QvCache* _CreateQvCache() {return NULL;}
+            virtual QvCache* _CreateQvCache() {return nullptr;}
 
             //! Delete specified qvCache.
             virtual void _DeleteQvCache(QvCacheP qvCache) {}
@@ -418,11 +424,11 @@ public:
             virtual void _DeleteQvElem(QvElem*) {}
 
             //! Return whether a QVElem should be created, host must balance expense against memory use.
-            virtual bool _WantSaveQvElem(/*DrawExpenseEnum*/int expense) {return true;}
+            virtual bool _WantSaveQvElem(int expense) {return true;}
 
             //! Return cache to use for symbols (if host has chosen to have a symbol cache).
             //! @note Symbol cache will be required for an interactive host.
-            virtual QvCache* _GetSymbolCache() {return NULL;}
+            virtual QvCache* _GetSymbolCache() {return nullptr;}
 
             //! Remove all entries in the symbol cache (if host has chosen to have a symbol cache).
             virtual void _EmptySymbolCache() {}
@@ -431,7 +437,7 @@ public:
             virtual void _SaveQvElemForSymbol(IDisplaySymbol* symbol, QvElem* qvElem) {}
 
             //! Return cache entry for symbol (if host has chosen to have a symbol cache).
-            virtual QvElem* _LookupQvElemForSymbol(IDisplaySymbol* symbol) {return NULL;}
+            virtual QvElem* _LookupQvElemForSymbol(IDisplaySymbol* symbol) {return nullptr;}
 
             //! Delete a specific entry from the symbol cache.
             virtual void _DeleteSymbol(IDisplaySymbol* symbol) {}
@@ -452,13 +458,13 @@ public:
             virtual void _DrawTile(IViewDrawR, uintptr_t textureId, DPoint3d const* verts) {}
 
             //! Create a 3D multi-resolution image.
-            virtual QvMRImage* _CreateQvMRImage(DPoint3dCP fourCorners, Point2dCR imageSize, Point2dCR tileSize, bool enableAlpha, int format, int tileFlags, int numLayers) {return NULL;}
+            virtual QvMRImage* _CreateQvMRImage(DPoint3dCP fourCorners, Point2dCR imageSize, Point2dCR tileSize, bool enableAlpha, int format, int tileFlags, int numLayers) {return nullptr;}
 
             //! Delete specified qvMRImage.
             virtual void _DeleteQvMRImage(QvMRImage* qvMRI) {}
 
             //! Add an image tile to a qvMRImage.
-            virtual QvElem* _CreateQvTile(bool is3d, QvCacheP hCache, QvMRImage* mri, uintptr_t textureId, int layer, int row, int column, int numLines, int bytesPerLine, Point2dCR bufferSize, Byte const* pBuffer) {return NULL;}
+            virtual QvElem* _CreateQvTile(bool is3d, QvCacheP hCache, QvMRImage* mri, uintptr_t textureId, int layer, int row, int column, int numLines, int bytesPerLine, Point2dCR bufferSize, Byte const* pBuffer) {return nullptr;}
 
             //! Define a custom raster format(QV_*_FORMAT) for color index data. Return 0 if error.
             virtual int _DefineCIFormat(int dataType, int numColors, QvUInt32 const* pTBGRColors){return 0;}
@@ -467,10 +473,7 @@ public:
             virtual void _CallViewTransients(ViewContextR, bool isPreupdate) {}
 
             //! @return Value to use for display control setting of mesh edges marked as invisible and for bspline curve/surface control polygons.
-            virtual ControlPolyDisplay _GetControlPolyDisplay() {return CONTROLPOLY_DISPLAY_ByElement;}
-
-            //! @return The max number of components before a cell will be drawn "fast" when ViewFlags.fast_cell is enabled.
-            virtual uint32_t _GetFastCellThreshold() {return 1;}
+            virtual ControlPolyDisplay _GetControlPolyDisplay() {return ControlPolyDisplay::ByElement;}
 
             virtual bool _WantInvertBlackBackground() {return false;}
 
@@ -487,14 +490,14 @@ public:
             virtual BentleyStatus _SendMaterialToQV(MaterialCR material, ColorDef elementColor, DgnViewportP viewport) {return ERROR;}
 
             //! Supported color depths for this library's UI icons.
-            enum IconColorDepth
+            enum class IconColorDepth
                 {
-                ICON_COLOR_DEPTH_32,    //!< 32 BPP icons will be used (transparency)
-                ICON_COLOR_DEPTH_24     //!< 24 BPP icons will be used (no transparency)
+                Bpp32,    //!< 32 BPP icons will be used (transparency)
+                Bpp24     //!< 24 BPP icons will be used (no transparency)
                 };
 
             //! Gets the desired color depth of the UI icons that this library loads. At this time, 32 is preferred, but 24 can be used if required.
-            virtual IconColorDepth _GetIconColorDepth() {return ICON_COLOR_DEPTH_32;}
+            virtual IconColorDepth _GetIconColorDepth() {return IconColorDepth::Bpp32;}
 
             //! Get the longest amount of time allowed between clicks to be interpreted as a double click. Units are milliseconds.
             virtual uint32_t _GetDoubleClickTimeout() {return 500;} // default to 1/2 second
@@ -514,16 +517,13 @@ public:
             //! Can be used to improve display performance in applications that only work in shaded views (or those that will clear all QvElems before switching to wireframe)
             virtual bool _WantWireframeRuleDisplay() {return true;}
 
-            }; // GraphicsAdmin
+        }; // GraphicsAdmin
 
         //! Support for elements that store their data as Parasolid or Acis breps. Also required
         //! to output element graphics as solid kernel entities and facet sets.
         struct SolidsKernelAdmin : IHostObject
             {
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-
-            virtual int _GetVersion() const {return 1;} // Do not override!
-            virtual void _OnHostTermination(bool isProcessShutdown) override {delete this;}
 
             //! Report if Parasolids is loaded.
             virtual bool _IsParasolidLoaded() {return false;}
@@ -547,7 +547,7 @@ public:
             //! @return storage unit to solid kernel scale to be used when creating a new ISolidKernelEntity.
             //! @note: Current scale will support single solids up to 1km, should be more than adequate 
             //!        to handle any sensible scenario with a high degree of linear precision.
-            virtual double _GetSolidScale() const {return 1.0;}
+            virtual double _GetSolidScale() const {return DgnUnits::OneMeter();}
 
             //! Produce a facet topology table for the supplied ISolidKernelEntity.
             //! @param[out] out Facet topology information for solid kernel entity.
@@ -690,7 +690,7 @@ public:
             //! @param[in] curveToDgn Optional transform from curve to modelRef UOR coordinates.
             //! @param[in] idMap Optional map of edge tags to curve topology ids.
             //! @return SUCCESS if out holds a valid solid kernel entity.
-            virtual BentleyStatus _CreateBodyFromCurveVector(ISolidKernelEntityPtr& out, CurveVectorCR profile, TransformCP curveToDgn = NULL, struct EdgeToCurveIdMap* idMap = NULL) const {return ERROR;}
+            virtual BentleyStatus _CreateBodyFromCurveVector(ISolidKernelEntityPtr& out, CurveVectorCR profile, TransformCP curveToDgn = nullptr, struct EdgeToCurveIdMap* idMap = nullptr) const {return ERROR;}
 
             //! Create an ISolidKernelEntity from the supplied solid primitve data.
             //! @param[out] out Ref counted pointer to new solid kernel entity.
@@ -831,7 +831,7 @@ public:
             //! @param[in] in The solid kernel entity that sub-entity string originated from.
             //! @param[in] subEntityStr string returned by ISubEntity::ToString.
             //! @return A new ISubEntityPtr.
-            virtual ISubEntityPtr _CreateSubEntityPtr(ISolidKernelEntityCR in, WCharCP subEntityStr) const {return NULL;}
+            virtual ISubEntityPtr _CreateSubEntityPtr(ISolidKernelEntityCR in, WCharCP subEntityStr) const {return nullptr;}
 
             //! Test is the supplied ISolidKernelEntity is the parent of the supplied ISubEntity.
             //! @param[in] subEntity subEntity The solid kernel sub-entity to query.
@@ -840,10 +840,10 @@ public:
             virtual bool _IsParentEntity(ISubEntityCR subEntity, ISolidKernelEntityCR entity) const {return false;}
 
             //! Simple yes/no type queries on ISubEntity
-            enum SubEntityQuery
+            enum class SubEntityQuery
                 {
-                SubEntityQuery_IsPlanarFace = 1, //!< Check if face sub-entity has as planar surface.
-                SubEntityQuery_IsSmoothEdge = 2, //!< Check if edge sub-entity is smooth by comparing the face normals along the edge.
+                IsPlanarFace = 1, //!< Check if face sub-entity has as planar surface.
+                IsSmoothEdge = 2, //!< Check if edge sub-entity is smooth by comparing the face normals along the edge.
                 };
 
             //! Query the supplied ISubEntity for information
@@ -864,9 +864,6 @@ public:
         struct NotificationAdmin : IHostObject
             {
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-
-            virtual int _GetVersion() const {return 1;} // Do not override!
-            virtual void _OnHostTermination(bool isProcessShutdown) override {delete this;}
 
             //! Implement this method to display messages from NotificationManager::OutputMessage.
             virtual StatusInt _OutputMessage(NotifyMessageDetails const&) {return SUCCESS;}
@@ -889,13 +886,10 @@ public:
             {
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
-            virtual int _GetVersion() const {return 1;} // Do not override!
-            virtual void _OnHostTermination(bool isProcessShutdown) override {delete this;}
-
             //! Allows the host to provide a path to coordinate system definition files.
             virtual WString _GetDataDirectory() { return L""; }
 
-            virtual IGeoCoordinateServicesP _GetServices() const {return NULL;}
+            virtual IGeoCoordinateServicesP _GetServices() const {return nullptr;}
             };
 
         //! Formatter preferences for units, fields, etc
@@ -903,8 +897,6 @@ public:
             {
             DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 
-            virtual int     _GetVersion() const {return 1;}
-            virtual void    _OnHostTermination(bool isProcessShutdown) override {delete this;}
             //! If true, display coordinates in DGN format(eg. 1:0 1/4); if false, display DWG format(eg. 1'-0 1/4").
             virtual bool    _AllowDgnCoordinateReadout() const {return true;}
             };
@@ -926,15 +918,12 @@ public:
         GeoCoordinationAdmin*   m_geoCoordAdmin;
         TxnAdmin*               m_txnAdmin;
         IACSManagerP            m_acsManager;
-        //  LineStyleManagerP       m_lineStyleManager;
         FormatterAdmin*         m_formatterAdmin;
         RealityDataAdmin*       m_realityDataAdmin;
+        ScriptingAdmin*         m_scriptingAdmin;
         Utf8String              m_productName;
         T_RegisteredDomains     m_registeredDomains;
         
-        // Get the version of the DgnPlatform api. Do not override this method.
-        virtual int _GetVersion() const {return 1;}
-
     public:
         T_RegisteredDomains& RegisteredDomains() {return m_registeredDomains;}
         
@@ -980,6 +969,9 @@ public:
         //! Supply the RealityDataAdmin
         DGNPLATFORM_EXPORT virtual RealityDataAdmin& _SupplyRealityDataAdmin();
 
+        //! Supply the ScriptingAdmin
+        DGNPLATFORM_EXPORT virtual ScriptingAdmin& _SupplyScriptingAdmin();
+
         //! Supply the product name to be used to describe the host.
         virtual void _SupplyProductName(Utf8StringR) = 0;
 
@@ -987,23 +979,24 @@ public:
 
         Host()
             {
-            m_knownLocationsAdmin = 0;
-            m_exceptionHandler = 0;
-            m_progressMeter = 0;
-            m_fontAdmin = 0;
-            m_lineStyleAdmin = 0;
-            m_rasterAttachmentAdmin = 0;
-            m_pointCloudAdmin = 0;
-            m_notificationAdmin = 0;
-            m_graphicsAdmin = 0;
-            m_materialAdmin = 0;
-            m_solidsKernelAdmin = 0;
-            m_geoCoordAdmin = 0;
-            m_txnAdmin = 0;
-            m_acsManager = 0;
-            //  m_lineStyleManager = 0;
-            m_formatterAdmin = 0;
-            m_realityDataAdmin = 0;
+            m_knownLocationsAdmin = nullptr;
+            m_exceptionHandler = nullptr;
+            m_progressMeter = nullptr;
+            m_fontAdmin = nullptr;
+            m_lineStyleAdmin = nullptr;
+            m_rasterAttachmentAdmin = nullptr;
+            m_pointCloudAdmin = nullptr;
+            m_notificationAdmin = nullptr;
+            m_graphicsAdmin = nullptr;
+            m_materialAdmin = nullptr;
+            m_solidsKernelAdmin = nullptr;
+            m_geoCoordAdmin = nullptr;
+            m_txnAdmin = nullptr;
+            m_acsManager = nullptr;
+            //  m_lineStyleManager = nullptr;
+            m_formatterAdmin = nullptr;
+            m_realityDataAdmin = nullptr;
+            m_scriptingAdmin = nullptr;
             };
 
         virtual ~Host() {}
@@ -1026,6 +1019,7 @@ public:
         //  LineStyleManagerR       GetLineStyleManager()      {return *m_lineStyleManager;}
         FormatterAdmin&         GetFormatterAdmin()        {return *m_formatterAdmin;}
         RealityDataAdmin&       GetRealityDataAdmin()      {return *m_realityDataAdmin;}
+        ScriptingAdmin&         GetScriptingAdmin()        {return *m_scriptingAdmin;}
         Utf8CP                  GetProductName()           {return m_productName.c_str();}
 
         void ChangeNotificationAdmin(NotificationAdmin& newAdmin) {m_notificationAdmin = &newAdmin;}
@@ -1061,7 +1055,7 @@ public:
     DGNPLATFORM_EXPORT static void ForgetHost();
 
     //! Query if a Host is associated with the current thread
-    //! @return NULL if not Host is associated with the current thread. Otherwise, a pointer to the Host object.
+    //! @return nullptr if not Host is associated with the current thread. Otherwise, a pointer to the Host object.
     DGNPLATFORM_EXPORT static Host* QueryHost();
 
     //! Get the Host that associated with the current thread
@@ -1069,7 +1063,7 @@ public:
     DGNPLATFORM_EXPORT static Host& GetHost();
 
     //! Used by DgnDbFileIO to initialize logging for Graphite code.
-    //! @param configFileName Optional. The name of the logging configuration file to parse. Pass NULL for logging to the console with default severities.
+    //! @param configFileName Optional. The name of the logging configuration file to parse. Pass nullptr for logging to the console with default severities.
     //! If configFileName is specified, then the log4cxx provider will be used. Note that this provider comes from log4cxx.dll, and both the Graphite and Vancouver
     //! code will use the same log4cxx.dll. 
     DGNPLATFORM_EXPORT static void InitializeBentleyLogging(WCharCP configFileName);

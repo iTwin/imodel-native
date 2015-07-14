@@ -59,6 +59,8 @@ BENTLEY_NAMESPACE_TYPEDEFS (DataExternalizer)
 BENTLEY_NAMESPACE_TYPEDEFS (GPArray)
 BENTLEY_NAMESPACE_TYPEDEFS (GraphicsPointArray)
 BENTLEY_NAMESPACE_TYPEDEFS (IRefCounted)
+BENTLEY_NAMESPACE_TYPEDEFS (BeJsContext)
+BENTLEY_NAMESPACE_TYPEDEFS (BeJsEnvironment)
 
 DGNPLATFORM_TYPEDEFS (ColorDef)
 DGNPLATFORM_TYPEDEFS (BoundingBox2d)
@@ -129,6 +131,7 @@ DGNPLATFORM_TYPEDEFS (DgnGestureEvent)
 DGNPLATFORM_TYPEDEFS (DgnHost)
 DGNPLATFORM_TYPEDEFS (DgnMouseWheelEvent)
 DGNPLATFORM_TYPEDEFS (DgnProgressMeter)
+DGNPLATFORM_TYPEDEFS (DgnScriptContext)
 DGNPLATFORM_TYPEDEFS (DrawContext)
 DGNPLATFORM_TYPEDEFS (DrawingModel)
 DGNPLATFORM_TYPEDEFS (DropGeometry)
@@ -600,7 +603,7 @@ struct DgnDisplayCoreTypes
 enum class ConfigurationVariableLevel
 {
     Predefined    = -2,        //!< predefined by the host
-    SysEnv        = -1,        //!< defined in the Windows system environment variable table
+    SysEnv        = -1,        //!< defined in the system environment variable table
     System        = 0,         //!< system defined
     Appl          = 1,         //!< application defined
     Site          = 2,         //!< site defined
@@ -613,21 +616,13 @@ enum DgnPlatformConstants
 {
     MIN_LINECODE                    = 0,
     MAX_LINECODE                    = 7,
-    MINIMUM_WINDOW_DEPTH            = -32767,
-    MAXIMUM_WINDOW_DEPTH            = 32767,
 };
 
 //! @private
-enum DgnPlatformInvalidSymbology
-{
-    INVALID_STYLE = 0x7fffff00,
-};
+enum class DgnFontType { TrueType = 1, Rsc = 2, Shx = 3, };
 
 //! @private
-enum struct DgnFontType { TrueType = 1, Rsc = 2, Shx = 3, };
-
-//! @private
-enum struct DgnFontStyle { Regular, Bold, Italic, BoldItalic, };
+enum class DgnFontStyle { Regular, Bold, Italic, BoldItalic, };
 
 //! Enumeration of possible coordinate system types
 enum class DgnCoordSystem
@@ -703,22 +698,6 @@ enum class OutputMessageAlert
     None     = 0,
     Dialog   = 1,
     Balloon  = 2,
-};
-
-enum TransformOptionValues
-{
-    TRANSFORM_OPTIONS_ModelFromElmdscr          = (1 << 0),
-    TRANSFORM_OPTIONS_DimValueMatchSource       = (1 << 1),     // Turn off if dimension value should be scaled
-    TRANSFORM_OPTIONS_DimSizeMatchSource        = (1 << 2),     // Turn off if non-annotation dimension size should be scaled
-    TRANSFORM_OPTIONS_MlineScaleOffsets         = (1 << 3),
-    TRANSFORM_OPTIONS_MlineMirrorOffsets        = (1 << 4),
-    TRANSFORM_OPTIONS_DisableMirrorCharacters   = (1 << 5),
-    TRANSFORM_OPTIONS_AnnotationSizeMatchSource = (1 << 7),     // Turn off if annotations should be scaled
-    TRANSFORM_OPTIONS_RotateDimView             = (1 << 8),     // Turn on if dim view orientation should be changed (so that dim text orientation remains constant)
-    TRANSFORM_OPTIONS_ApplyAnnotationScale      = (1 << 9),     // Turn on if annotation scale (provided by caller) should be applied to annotations
-    TRANSFORM_OPTIONS_FromClone                 = (1 << 10),    // transforming for purposes of cloning between models.
-    TRANSFORM_OPTIONS_NoteScaleSize             = (1 << 11),    // Apply scale to note's sizes. Used as an override when TRANSFORM_OPTIONS_DimSizeMatchSource == True.
-    TRANSFORM_OPTIONS_DisableRotateCharacters   = (1 << 12)     // If a rotation is specified, only the text's origin will be transformed (i.e. the characters will retain their original visual orientation).
 };
 
 enum class GridOrientationType
@@ -800,8 +779,8 @@ enum class ClipVolumePass
 //  a platform where unsigned long is a 64-bit integer we had to change the OpenGL QV but did not
 //  want to change D3D QV. Code that uses QvUInt32 will compile correctly for either case.
 #if defined(BENTLEYCONFIG_GRAPHICS_OPENGLES) || defined(BENTLEYCONFIG_GRAPHICS_OPENGL)
-    typedef long QvInt32;
-    typedef unsigned long QvUInt32;
+    typedef int32_t QvInt32;
+    typedef uint32_t QvUInt32;
     typedef short QvInt16;
     typedef unsigned short QvUInt16;
 #else

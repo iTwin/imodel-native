@@ -12,7 +12,14 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDomains::RegisterDomain(DgnDomain& domain)
     {
-    T_HOST.RegisteredDomains().push_back(&domain);
+    auto& domains = T_HOST.RegisteredDomains();
+    for (DgnDomainCP it : domains)
+        {
+        if (it->m_domainName.EqualsI(domain.m_domainName))
+            return;
+        }
+
+    domains.push_back(&domain);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -22,7 +29,7 @@ DgnDomainCP DgnDomains::FindDomain(Utf8CP name) const
     {
     for (DgnDomainCP domain : m_domains)
         {
-        if (0 == BeStringUtilities::Stricmp(domain->GetDomainName(), name))
+        if (domain->m_domainName.EqualsI(name))
             return  domain;
         }
 
@@ -36,7 +43,7 @@ DgnDomain::Handler* DgnDomain::FindHandler(Utf8CP className) const
     {
     for (Handler* iter : m_handlers)
         {
-        if (iter->GetClassName() == className)
+        if (iter->GetClassName().Equals(className))
             return iter;
         }
 
@@ -96,7 +103,7 @@ void DgnDomains::LoadDomain(DgnDomainR domain)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDomains::SyncWithSchemas()
+void DgnDomains::SyncWithSchemas()
     {
     m_handlers.clear();
     m_domains.clear();
@@ -131,7 +138,7 @@ DbResult DgnDomains::SyncWithSchemas()
 
     // if we're opening a readonly database, we know we can't add any new dependencies on a registered but unknown domain. Stop now.
     if (m_dgndb.IsReadonly())
-        return BE_SQLITE_OK;
+        return;
 
     // any that are left are new and need to be added to the database
     for (auto iter : registeredDomains)
@@ -144,25 +151,22 @@ DbResult DgnDomains::SyncWithSchemas()
         UNUSED_VARIABLE(rc);
         LoadDomain(*iter.second);
         }
-
-    return BE_SQLITE_OK;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * Before you can register a Handler, all of its superclass Handlers must be registered.
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnDomain::VerifySuperclass(Handler& handler) 
+DgnDbStatus DgnDomain::VerifySuperclass(Handler& handler) 
     {
     Handler* superclass = handler.GetSuperClass();
     if (&DgnDomain::Handler::GetHandler() == superclass) // Handler is always "registered"
-        return SUCCESS;
+        return DgnDbStatus::Success;
 
     if (nullptr == superclass || (nullptr == superclass->GetDomain().FindHandler(superclass->m_ecClassName.c_str())))
         {
         BeAssert(false);
-        return ERROR;
+        return DgnDbStatus::MissingHandler;
         }
 
     return VerifySuperclass(*superclass);
@@ -171,10 +175,11 @@ BentleyStatus DgnDomain::VerifySuperclass(Handler& handler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnDomain::RegisterHandler(Handler& handler) 
+DgnDbStatus DgnDomain::RegisterHandler(Handler& handler) 
     {
-    if (SUCCESS != VerifySuperclass(handler))
-        return ERROR;
+    auto stat = VerifySuperclass(handler);
+    if (DgnDbStatus::Success != stat)
+        return stat;
 
     handler.SetDomain(*this); 
 
@@ -188,7 +193,7 @@ BentleyStatus DgnDomain::RegisterHandler(Handler& handler)
         }
 
     m_handlers.push_back(&handler);
-    return SUCCESS;
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -196,9 +201,7 @@ BentleyStatus DgnDomain::RegisterHandler(Handler& handler)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDomains::OnDbOpened()
     {
-    auto rc = SyncWithSchemas();
-    if (BE_SQLITE_OK != rc)
-        return rc;
+    SyncWithSchemas();
 
     for (DgnDomainCP domain : m_domains)
         domain->_OnDgnDbOpened(m_dgndb);
@@ -218,12 +221,12 @@ void DgnDomains::OnDbClose()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile) const
+DgnDbStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile) const
     {
     if (!schemaFile.DoesPathExist())
         {
         BeAssert(false);
-        return BentleyStatus::ERROR;
+        return DgnDbStatus::FileNotFound;
         }
 
     WString schemaBaseNameW;
@@ -233,7 +236,7 @@ BentleyStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile) const
     if (0 != BeStringUtilities::Strnicmp(schemaBaseName.c_str(), GetDomainName(), strlen(GetDomainName()))) // ECSchema base name and DgnDomain name must match
         {
         BeAssert(false);
-        return BentleyStatus::ERROR;
+        return DgnDbStatus::WrongDomain;
         }
 
     BeFileName schemaDir = schemaFile.GetDirectoryName();
@@ -245,16 +248,14 @@ BentleyStatus DgnDomain::ImportSchema(DgnDbR db, BeFileNameCR schemaFile) const
     ECSchemaPtr schemaPtr;
     SchemaReadStatus readSchemaStatus = ECSchema::ReadFromXmlFile(schemaPtr, schemaFile.GetName(), *contextPtr);
     if (SCHEMA_READ_STATUS_Success != readSchemaStatus)
-        return BentleyStatus::ERROR;
+        return DgnDbStatus::ReadError;
 
     if (BentleyStatus::SUCCESS != db.Schemas().ImportECSchemas(contextPtr->GetCache()))
-        return BentleyStatus::ERROR;
+        return DgnDbStatus::BadSchema;
 
-    if (BE_SQLITE_OK != db.Domains().SyncWithSchemas())
-        return BentleyStatus::ERROR;
-
+    db.Domains().SyncWithSchemas();
     _OnSchemaImported(db); // notify subclasses so domain objects (like categories) can be created
-    return BentleyStatus::SUCCESS;
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

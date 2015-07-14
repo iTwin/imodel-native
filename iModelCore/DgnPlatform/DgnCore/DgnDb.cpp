@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 
+#define WSTR(astr) WString(astr,BentleyCharEncoding::Utf8).c_str()
+
 static WCharCP s_dgndbExt   = L".dgndb";
 
 /*---------------------------------------------------------------------------------**//**
@@ -261,3 +263,131 @@ DgnAnnotationFrameStyles& DgnStyles::AnnotationFrameStyles() {if (NULL == m_anno
 DgnAnnotationLeaderStyles& DgnStyles::AnnotationLeaderStyles() {if (NULL == m_annotationLeaderStyles) m_annotationLeaderStyles = new DgnAnnotationLeaderStyles(m_dgndb); return *m_annotationLeaderStyles;}
 DgnTextAnnotationSeeds& DgnStyles::TextAnnotationSeeds() {if (NULL == m_textAnnotationSeeds) m_textAnnotationSeeds = new DgnTextAnnotationSeeds(m_dgndb); return *m_textAnnotationSeeds;}
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   BentleySystems
+//---------------------------------------------------------------------------------------
+BentleyStatus DgnJavaScriptLibrary::ToJsonFromEC(Json::Value& json, ECN::IECInstanceCR ec, Utf8CP prop)
+    {
+    ECN::ECValue v;
+    if (ec.GetValue(v, WSTR(prop)) != ECN::ECOBJECTS_STATUS_Success || v.IsNull() || !v.IsPrimitive())
+        return BSIERROR;
+
+    auto& jv = json[prop];
+
+    switch(v.GetPrimitiveType())
+        {
+        case ECN::PRIMITIVETYPE_Boolean:    jv = v.GetBoolean(); break;
+        case ECN::PRIMITIVETYPE_Double:     jv = v.GetDouble(); break;
+        case ECN::PRIMITIVETYPE_Integer:    jv = v.GetInteger(); break;
+        case ECN::PRIMITIVETYPE_Long:       jv = v.GetLong(); break;
+        case ECN::PRIMITIVETYPE_String:     jv = Utf8String(v.GetString()).c_str(); break;
+        
+        case ECN::PRIMITIVETYPE_Point2D:    JsonUtils::DPoint2dToJson(jv, v.GetPoint2D()); break;
+        case ECN::PRIMITIVETYPE_Point3D:    JsonUtils::DPoint3dToJson(jv, v.GetPoint3D()); break;
+
+        /* WIP_EGA 
+        case ECN::PRIMITIVETYPE_IGeometry:  jv = ...
+        case ECN::PRIMITIVETYPE_DateTime:   jv = v.GetDateTime(); break;
+        */
+
+        default:
+            return BSIERROR;
+        }
+    
+    return BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   BentleySystems
+//---------------------------------------------------------------------------------------
+BentleyStatus DgnJavaScriptLibrary::ToJsonFromEC(Json::Value& json, ECN::IECInstanceCR ec, Utf8StringCR props)
+    {
+    size_t offset = 0;
+    Utf8String parm;
+    while ((offset = props.GetNextToken (parm, ",", offset)) != Utf8String::npos)
+        {
+        parm.Trim();
+        if (ToJsonFromEC(json, ec, parm.c_str()) != BSISUCCESS)
+            return BSIERROR;
+        }
+    return BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   BentleySystems
+//---------------------------------------------------------------------------------------
+static DgnDbStatus registerJavaScript(DgnDbR db, Utf8CP tsProgramName, Utf8CP tsProgramText, bool updateExisting)
+    {
+    Statement stmt;
+    stmt.Prepare(db, SqlPrintfString(
+        "INSERT %s INTO be_Prop (Namespace,     Name, Id, SubId, TxnMode, StrData) " 
+                       "VALUES('dgn_JavaScript',?,    ?,  ?,      0,       ?)", updateExisting? "OR REPLACE": ""));
+    stmt.BindText(1, tsProgramName, Statement::MakeCopy::No);
+    stmt.BindInt(2, 0);
+    stmt.BindInt(3, 0);
+    stmt.BindText(4, tsProgramText, Statement::MakeCopy::No);
+    DbResult res = stmt.Step();
+    
+    NativeLogging::LoggingManager::GetLogger("DgnScriptContext")->infov ("Registering %s -> %d", tsProgramName, res);
+    
+    return (BE_SQLITE_DONE == res)? DgnDbStatus::Success: DgnDbStatus::SQLiteError;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   BentleySystems
+//---------------------------------------------------------------------------------------
+DgnDbStatus DgnJavaScriptLibrary::QueryJavaScript(Utf8StringR tsProgramText, Utf8CP tsProgramName)
+    {
+    Statement stmt;
+    stmt.Prepare(m_dgndb, "SELECT StrData FROM be_Prop WHERE (Namespace='dgn_JavaScript' AND Name=? AND Id=? AND SubId=?)");
+    stmt.BindText(1, tsProgramName, Statement::MakeCopy::No);
+    stmt.BindInt(2, 0);
+    stmt.BindInt(3, 0);
+    if (stmt.Step() != BE_SQLITE_ROW)
+        return DgnDbStatus::NotFound;
+    tsProgramText = stmt.GetValueText(0);
+    return DgnDbStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void DgnJavaScriptLibrary::ImportJavaScript(BeFileNameCR jsDir, bool updateExisting)
+    {
+    BeFileName jsFiles(jsDir);
+    jsFiles.AppendToPath(L"*.js");
+    BeFileListIterator iter(jsFiles.GetName(), false);
+    BeFileName acmeTs;
+    bool anyImported = true;
+    while (BSISUCCESS == iter.GetNextFileName(acmeTs))
+        {
+        Utf8String jsText;
+        if (DgnDbStatus::Success == ReadJavaScript(jsText, acmeTs))
+            {
+            Utf8String name (acmeTs.GetFileNameWithoutExtension());
+            if (DgnDbStatus::Success == registerJavaScript(m_dgndb, name.c_str(), jsText.c_str(), updateExisting))
+                anyImported = true;
+            }
+        }
+    if (anyImported)
+        m_dgndb.SaveSettings();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DgnDbStatus DgnJavaScriptLibrary::ReadJavaScript(Utf8StringR jsprog, BeFileNameCR jsFileName)
+    {
+    uint64_t fileSize;
+    if (jsFileName.GetFileSize(fileSize) != BeFileNameStatus::Success)
+        return DgnDbStatus::NotFound;
+
+    size_t bufSize = (size_t)fileSize;
+    jsprog.resize(bufSize+1);
+    FILE* fp = fopen(Utf8String(jsFileName).c_str(), "r");
+    size_t nread = fread(&jsprog[0], 1, bufSize, fp);
+    BeAssert(nread <= bufSize);
+    fclose(fp);
+    jsprog[nread] = 0;
+    return DgnDbStatus::Success;
+    }

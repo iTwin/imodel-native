@@ -151,7 +151,7 @@ __PUBLISH_INSERT_FILE__  QueryView_GetRTreeMatchSql.sampleCode
     //! @param[in]  viewport the viewport that will display the graphics
     //! @param[in]  params   options for computing the range.
     //! @return \a true if the returned \a range is complete. Otherwise the caller will compute the tightest fit for all loaded elements.
-    DGNPLATFORM_EXPORT virtual bool _OnComputeFitRange (DRange3dR range, DgnViewportR viewport, FitViewParamsR params) override;
+    DGNPLATFORM_EXPORT virtual FitComplete _ComputeFitRange (DRange3dR range, DgnViewportR viewport, FitViewParamsR params) override;
 
     //! Return a value in the range -100 (fewest) to 100 (most) to determine the maximum number of elements loaded by the query.
     //! 0 means the "default" number of elements.

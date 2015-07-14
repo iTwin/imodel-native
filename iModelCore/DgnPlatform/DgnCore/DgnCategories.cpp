@@ -91,6 +91,8 @@ DgnCategoryId DgnCategories::QueryCategoryId(Utf8CP code) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCategoryId DgnCategories::QueryCategoryId(DgnSubCategoryId subCategoryId) const
     {
+    BeSQLite::HighPriorityOperationBlock highPriorityOperationBlock; // See comments on HighPriorityOperationBlock
+
     CachedStatementPtr stmt;
     m_dgndb.GetCachedStatement (stmt, "SELECT CategoryId FROM " DGN_TABLE(DGN_CLASSNAME_SubCategory) " WHERE Id=?");
 

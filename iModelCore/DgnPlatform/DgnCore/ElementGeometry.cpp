@@ -2594,6 +2594,9 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
             default:
                 break;
             }
+
+        if (context.CheckStop())
+            break;
         }
 
     GeomStreamEntryIdHelper::SetActive(context, false);

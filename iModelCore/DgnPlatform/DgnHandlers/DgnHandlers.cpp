@@ -29,6 +29,7 @@ void DgnPlatformLib::Host::InitializeDgnHandlers()
     BeAssert (NULL == m_materialAdmin);         m_materialAdmin         = &_SupplyMaterialAdmin();
     BeAssert (NULL == m_solidsKernelAdmin);     m_solidsKernelAdmin     = &_SupplySolidsKernelAdmin();
     BeAssert (NULL == m_formatterAdmin);        m_formatterAdmin        = &_SupplyFormatterAdmin ();
+    BeAssert (NULL == m_scriptingAdmin);        m_scriptingAdmin        = &_SupplyScriptingAdmin ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -54,6 +55,7 @@ void DgnPlatformLib::Host::Terminate (bool onProgramExit)
     TERMINATE_HOST_OBJECT(m_solidsKernelAdmin, onProgramExit);
     TERMINATE_HOST_OBJECT(m_geoCoordAdmin, onProgramExit);
     TERMINATE_HOST_OBJECT(m_formatterAdmin, onProgramExit);
+    TERMINATE_HOST_OBJECT(m_scriptingAdmin, onProgramExit);
 
     // UnRegister Symbol Provider for ECExpressions
     IECSymbolProvider::UnRegisterExternalSymbolPublisher ();

@@ -225,7 +225,7 @@ public:
 //=======================================================================================
 struct DgnShxFont : DgnFont
 {
-    enum struct ShxType { Invalid, Unicode, Locale };
+    enum class ShxType { Invalid, Unicode, Locale };
 
     //=======================================================================================
     // @bsiclass                                                    Jeff.Marker     03/2015

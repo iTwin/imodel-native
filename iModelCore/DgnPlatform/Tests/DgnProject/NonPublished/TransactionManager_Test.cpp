@@ -310,8 +310,8 @@ void TransactionManagerTests::SetupProject(WCharCP projFile, WCharCP testFile, D
     BeFileName schemaFile(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
     schemaFile.AppendToPath(L"ECSchemas/" TMTEST_SCHEMA_NAMEW L".01.00.ecschema.xml");
 
-    BentleyStatus status = TransactionManagerTestDomain::GetDomain().ImportSchema(*m_db, schemaFile);
-    ASSERT_TRUE(BentleyStatus::SUCCESS == status);
+    auto status = TransactionManagerTestDomain::GetDomain().ImportSchema(*m_db, schemaFile);
+    ASSERT_TRUE(DgnDbStatus::Success == status);
 
     auto schema = m_db->Schemas().GetECSchema(TMTEST_SCHEMA_NAME, true);
     ASSERT_NE( nullptr , schema );
@@ -496,7 +496,7 @@ DgnDbStatus TestElement::_InsertInDb()
         insertStmt->BindId(1, GetElementId());
         insertStmt->BindText(2, m_testItemProperty.c_str(), IECSqlBinder::MakeCopy::No);
         if (ECSqlStepStatus::Done != insertStmt->Step())
-            return DgnDbStatus::ElementWriteError;
+            return DgnDbStatus::WriteError;
         }
 
     return DgnDbStatus::Success;
@@ -545,7 +545,7 @@ DgnDbStatus TestElement::_UpdateInDb()
         }
 
     if (ECSqlStepStatus::Done != rc)
-        status = DgnDbStatus::ElementWriteError;
+        status = DgnDbStatus::WriteError;
 
     return status;
     }

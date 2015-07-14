@@ -151,6 +151,18 @@
     <ClCompile Include="NonPublished\ElementProperties.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
+    <ClCompile Include="NonPublished\ElementGeomPart_Tests.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="NonPublished\ElementGeometryBuilder_Tests.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
+    <ClCompile Include="TestFixture\DgnDbTestFixtures.cpp">
+      <Filter>TestFixture</Filter>
+    </ClCompile>
+    <ClCompile Include="TestFixture\GeomHelper.cpp">
+      <Filter>TestFixture</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\DgnHandlersTests.h">
@@ -195,6 +207,12 @@
     <ClInclude Include="NonPublished\BentleyHeaders.h">
       <Filter>NonPublished</Filter>
     </ClInclude>
+    <ClInclude Include="TestFixture\DgnDbTestFixtures.h">
+      <Filter>TestFixture</Filter>
+    </ClInclude>
+    <ClInclude Include="TestFixture\GeomHelper.h">
+      <Filter>TestFixture</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Published">
@@ -211,6 +229,9 @@
     </Filter>
     <Filter Include="BackDoor">
       <UniqueIdentifier>{6b4d526c-e397-4259-b44c-c7a9c52ef46b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="TestFixture">
+      <UniqueIdentifier>{55391e99-d1d3-4232-9d33-a3815859d015}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

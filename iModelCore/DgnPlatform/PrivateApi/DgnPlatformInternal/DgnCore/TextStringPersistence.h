@@ -1,6 +1,9 @@
 /*--------------------------------------------------------------------------------------+
-|     $Source: PrivateApi/DgnPlatformInternal/DgnCore/TextStringPersistence.h $
+|
+|  $Source: PrivateApi/DgnPlatformInternal/DgnCore/TextStringPersistence.h $
+|
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
 +--------------------------------------------------------------------------------------*/
 /*__BENTLEY_INTERNAL_ONLY__*/
 #pragma once
@@ -21,7 +24,7 @@ struct TextStringPersistence : public NonCopyableClass
     //=======================================================================================
     // @bsiclass                                                    Jeff.Marker     06/2014
     //=======================================================================================
-    enum struct FlatBufEncodeOptions
+    enum class FlatBufEncodeOptions
     {
         IncludeGlyphLayoutData = 1 << 0,
         Default = 0

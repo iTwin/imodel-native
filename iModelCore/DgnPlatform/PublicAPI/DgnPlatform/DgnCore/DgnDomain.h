@@ -266,7 +266,7 @@ protected:
     bvector<Handler*> m_handlers;
     bvector<TableHandler*> m_tableHandlers;
     virtual ~DgnDomain() {}
-    BentleyStatus VerifySuperclass(Handler& handler);
+    DgnDbStatus VerifySuperclass(Handler& handler);
 
     BeSQLite::DbResult LoadHandlers(DgnDbR) const;
 
@@ -303,7 +303,7 @@ public:
     DGNPLATFORM_EXPORT Handler* FindHandler(Utf8CP className) const;
 
     //! Register a handler with this DgnDomain.
-    DGNPLATFORM_EXPORT BentleyStatus RegisterHandler(Handler& handler);
+    DGNPLATFORM_EXPORT DgnDbStatus RegisterHandler(Handler& handler);
 
     //! Register a table handler with this DgnDomain.
     void RegisterTableHandler(TableHandler& handler) {handler.SetDomain(*this); m_tableHandlers.push_back(&handler);}
@@ -311,7 +311,7 @@ public:
     //! Import an ECSchema for this DgnDomain.
     //! @param[in] db Import the domain schema into this DgnDb
     //! @param[in] schemaFileName The domain ECSchema file to import
-    DGNPLATFORM_EXPORT BentleyStatus ImportSchema(DgnDbR db, BeFileNameCR schemaFileName) const;
+    DGNPLATFORM_EXPORT DgnDbStatus ImportSchema(DgnDbR db, BeFileNameCR schemaFileName) const;
 };
 
 //=======================================================================================
@@ -341,7 +341,7 @@ private:
     ECN::ECClassCP FindBaseOfType(DgnClassId subClassId, DgnClassId baseClassId);
     BeSQLite::DbResult OnDbOpened();
     void OnDbClose();
-    BeSQLite::DbResult SyncWithSchemas();
+    void SyncWithSchemas();
 
     explicit DgnDomains(DgnDbR db) : DgnDbTable(db) {}
 

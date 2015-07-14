@@ -597,20 +597,17 @@ TEST_F(DgnProjectPackageTest, ExtractPackageUsingDefaults)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad Hassan                         07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ImportSchema (ECSchemaR ecSchema, DgnDbR project)
+BentleyStatus ImportSchema (ECSchemaR ecSchema, DgnDbR project)
     {
     ECSchemaCachePtr schemaList = ECSchemaCache::Create ();
     schemaList->AddSchema (ecSchema);
-    BentleyStatus importSchemaStatus = project.Schemas ().ImportECSchemas (*schemaList);
-    if (SUCCESS == importSchemaStatus)
-        return true;
-    return false;
+    return project.Schemas ().ImportECSchemas (*schemaList);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad Hassan                         07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (DgnProjectPackageTest, SeperateTableForRelationshipWithMapStrategyTableForThisClass)
+TEST_F (DgnProjectPackageTest, EnforceLinkTableFor11Relationship)
     {
     WCharCP testFileName = L"2dMetricGeneral.idgndb";
     BeFileName sourceFile = DgnDbTestDgnManager::GetSeedFilePath (testFileName);
@@ -642,8 +639,8 @@ TEST_F (DgnProjectPackageTest, SeperateTableForRelationshipWithMapStrategyTableF
     ECSchema::ReadFromXmlFile (schema, ecSchemaPath, *schemaContext);
     ASSERT_TRUE (schema.IsValid ());
 
-    ASSERT_EQ (true, ImportSchema (*schema, *dgnProj));
+    ASSERT_EQ (SUCCESS, ImportSchema (*schema, *dgnProj));
 
-    ASSERT_TRUE (dgnProj->TableExists ("aswe"));
-    ASSERT_TRUE (dgnProj->TableExists ("awhs"));
+    ASSERT_TRUE (dgnProj->TableExists ("sdde_ArchStoreyWithElements"));
+    ASSERT_TRUE (dgnProj->TableExists ("sdde_ArchWithHVACStorey"));
     }

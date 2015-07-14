@@ -461,22 +461,48 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
+                    <!-- Each ElementUniqueAspect subclass should have its own table -->
                     <Strategy>OwnTable</Strategy>
-                    <IsPolymorphic>True</IsPolymorphic>
+                    <!-- Each ElementUniqueAspect subclass should determine its own MapStrategy -->
+                    <IsPolymorphic>False</IsPolymorphic>
                 </MapStrategy>
-                <!-- The ECInstanceId for ElementItem is the same as the Id of the owning Element -->
+                <!-- The ECInstanceId for ElementUniqueAspect is the same as the Id of the owning Element -->
                 <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
             </ClassMap>
         </ECCustomAttributes>
     </ECClass>
 
-    <!-- Abstract -->
+    <ECClass typeName="ElementMultiAspect" isDomainClass="False" isStruct="False" isCustomAttributeClass="False">
+        <!-- An ElementMultiAspect is related to an Element with the following constraints: 1) there can be N instances of a given aspect class associated with a given element, and 2) the value of the ElementId foreign key column is the same ID as the element. -->
+        <BaseClass>ElementAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.01.00">
+                <MapStrategy>
+                    <!-- Each ElementMultiAspect subclass should have its own table -->
+                    <Strategy>OwnTable</Strategy>
+                    <!-- Each ElementMultiAspect subclass should determine its own MapStrategy -->
+                    <IsPolymorphic>False</IsPolymorphic>
+                </MapStrategy>
+                <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="ElementId" typeName="long">
+            <!-- Foreign key relationship to Element that owns the aspect -->
+            <ECCustomAttributes>
+                <PropertyMap xmlns="ECDbMap.01.00">
+                    <IsNullable>False</IsNullable>
+                </PropertyMap>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+
     <ECClass typeName="ElementItem" isDomainClass="False" isStruct="False" isCustomAttributeClass="False">
         <!-- The aspect that holds the intrinsic characteristics of the element (properties that are independent of the functional spec which is stored directly on the Element). ElementItem adds the additional constraint that an element can have only one item, regardless of the sub-class of the item. -->
         <BaseClass>ElementUniqueAspect</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <MapStrategy>
+                    <!-- All subclasses of ElementItem will share the same table -->
                     <Strategy>SharedTable</Strategy>
                     <Options>SharedColumnsForSubclasses</Options>
                     <IsPolymorphic>True</IsPolymorphic>
@@ -486,21 +512,24 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             </ClassMap>
         </ECCustomAttributes>
     </ECClass>
-
-    <ECClass typeName="ElementMultiAspect" isDomainClass="False" isStruct="False" isCustomAttributeClass="False">
-        <!-- An ElementMultiAspect is related to an Element. There can be multiple instances of a given multiaspect subclass associated with a given element, and there is no direct relationship between the aspect instance ID and the element ID. The aspect instance is related to the element by the ElementOwnsAspect relationship. -->
-        <BaseClass>ElementAspect</BaseClass>
+    <ECRelationshipClass typeName="ElementOwnsItem" isDomainClass="True" strength="embedding" strengthDirection="forward">
         <ECCustomAttributes>
-            <ClassMap xmlns="ECDbMap.01.00">
-                <MapStrategy>
-                    <Strategy>OwnTable</Strategy>
-                    <IsPolymorphic>True</IsPolymorphic>
-                </MapStrategy>
-                <!-- The ECInstanceId for ElementItem is the same as the Id of the owning Element -->
-                <ECInstanceIdColumn>ElementId</ECInstanceIdColumn>
-            </ClassMap>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <CreateConstraint>True</CreateConstraint>
+                <OnDeleteAction>Cascade</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
-    </ECClass>
+        <Source cardinality="(1,1)" polymorphic="True">
+            <Class class="Element" />
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="True">
+            <Class class="ElementItem">
+                <Key>
+                    <Property name="ECInstanceId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
 
     <ECClass typeName="ElementGeom" isDomainClass="True" >
         <!-- The aspect that holds the cached/resovled geometry for an Element -->
@@ -515,6 +544,24 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="Placement" typeName="binary"/>
         <ECProperty propertyName="Geom" typeName="binary"/>
     </ECClass>
+    <ECRelationshipClass typeName="ElementOwnsGeom" isDomainClass="True" strength="embedding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <CreateConstraint>True</CreateConstraint>
+                <OnDeleteAction>Cascade</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+        <Source cardinality="(1,1)" polymorphic="True">
+            <Class class="GeometricElement" />
+        </Source>
+        <Target cardinality="(0,1)" polymorphic="False">
+            <Class class="ElementGeom">
+                <Key>
+                    <Property name="ECInstanceId"/>
+                </Key>
+            </Class>
+        </Target>
+    </ECRelationshipClass>
 
     <ECRelationshipClass typeName="ElementGeomUsesParts" isDomainClass="True" strength="referencing" strengthDirection="forward">
         <!-- Used to indicate that an ElementGeom uses a GeomPart.  This is useful for "garbage collecting" or finding Elements that would be affected by a change to a GeomPart. -->
@@ -578,57 +625,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" />
     </ECClass>
 
-    <ECRelationshipClass typeName="ElementOwnsAspects" isDomainClass="True" strength="embedding" strengthDirection="forward">
-        <ECCustomAttributes>
-           <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
-                <SourceECInstanceIdColumn>ElementId</SourceECInstanceIdColumn>
-                <TargetECInstanceIdColumn>AspectId</TargetECInstanceIdColumn>
-                <TargetECClassIdColumn>AspectClassId</TargetECClassIdColumn>
-            </LinkTableRelationshipMap>
-        </ECCustomAttributes>
-        <Source cardinality="(1,1)" polymorphic="True">
-            <Class class="Element" />
-        </Source>
-        <Target cardinality="(0,N)" polymorphic="True">
-            <Class class="ElementAspect" />
-        </Target>
-    </ECRelationshipClass>
-
-    <ECRelationshipClass typeName="ElementOwnsGeom" isDomainClass="True" strength="embedding" strengthDirection="forward">
-        <ECCustomAttributes>
-           <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
-                <CreateConstraint>True</CreateConstraint>
-                <OnDeleteAction>Cascade</OnDeleteAction>
-            </ForeignKeyRelationshipMap>
-        </ECCustomAttributes>
-    
-        <BaseClass>ElementOwnsAspects</BaseClass>
-        <Source cardinality="(1,1)" polymorphic="True">
-            <Class class="GeometricElement" />
-        </Source>
-        <Target cardinality="(0,1)" polymorphic="False">
-            <Class class="ElementGeom">
-                <Key>
-                    <Property name="ECInstanceId"/>
-                </Key>
-            </Class>
-        </Target>
-    </ECRelationshipClass>
-
-    <ECRelationshipClass typeName="ElementOwnsItem" isDomainClass="True" strength="embedding" strengthDirection="forward">
-        <BaseClass>ElementOwnsAspects</BaseClass>
-        <Source cardinality="(1,1)" polymorphic="True">
-            <Class class="Element" />
-        </Source>
-        <Target cardinality="(0,1)" polymorphic="False">
-            <Class class="ElementItem">
-                <Key>
-                    <Property name="ECInstanceId"/>
-                </Key>
-            </Class>
-        </Target>
-    </ECRelationshipClass>
-
     <ECRelationshipClass typeName="ElementOwnsChildElements" isDomainClass="True" strength="embedding" strengthDirection="forward">
         <Source cardinality="(1,1)" roleLabel="is on 1 element" polymorphic="True">
             <Class class="Element" />
@@ -649,7 +645,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                 <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyRelationshipMap>
         </ECCustomAttributes>
-
         <Source cardinality="(1,1)" roleLabel="is on 1 model" polymorphic="False">
             <Class class="Model" />
         </Source>
@@ -744,7 +739,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
                 <TargetECInstanceIdColumn>StyleId</TargetECInstanceIdColumn>
             </LinkTableRelationshipMap>
         </ECCustomAttributes>
-    
         <Source cardinality="(0,N)" roleLabel="uses 0 to N styles" polymorphic="True">
             <Class class="Element" />
         </Source>

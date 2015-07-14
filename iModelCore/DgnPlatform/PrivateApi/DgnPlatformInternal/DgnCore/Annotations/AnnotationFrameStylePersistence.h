@@ -1,7 +1,10 @@
-//-------------------------------------------------------------------------------------- 
-//     $Source: PrivateApi/DgnPlatformInternal/DgnCore/Annotations/AnnotationFrameStylePersistence.h $
-//  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
-//-------------------------------------------------------------------------------------- 
+/*--------------------------------------------------------------------------------------+
+|
+|  $Source: PrivateApi/DgnPlatformInternal/DgnCore/Annotations/AnnotationFrameStylePersistence.h $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 /*__BENTLEY_INTERNAL_ONLY__*/
 #pragma once
 
@@ -21,7 +24,7 @@ struct AnnotationFrameStylePersistence : public NonCopyableClass
     //=======================================================================================
     // @bsiclass                                                    Jeff.Marker     06/2014
     //=======================================================================================
-    enum struct FlatBufEncodeOptions
+    enum class FlatBufEncodeOptions
     {
         ExcludeNonPropertyData = 1 << 0,
         Default = 0

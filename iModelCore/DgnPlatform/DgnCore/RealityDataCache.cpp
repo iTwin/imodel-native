@@ -158,7 +158,6 @@ struct WorkerQueueNotEmptyPredicate : IConditionVariablePredicate
     WorkerQueueNotEmptyPredicate(ThreadSafeQueue<RealityDataWorkPtr> const& queue) : m_queue(queue) {}
     virtual bool _TestCondition(BeConditionVariable& cv) override 
         {
-        BeMutexHolder lock(cv.GetMutex());
         return !m_queue.IsEmpty();
         }
     };
@@ -172,7 +171,6 @@ struct SelectDataWorkHasResultPredicate : IConditionVariablePredicate
     SelectDataWorkHasResultPredicate(bool const& hasResult) : m_hasResult(hasResult) {}
     virtual bool _TestCondition(BeConditionVariable& cv) override 
         {
-        BeMutexHolder lock(cv.GetMutex());
         return m_hasResult;
         }
     };
@@ -1399,7 +1397,6 @@ public:
     AllThreadsIdlePredicate(RealityDataThreadPool const& pool) : m_pool(pool) {}
     virtual bool _TestCondition(BeConditionVariable& cv) override 
         {
-        BeMutexHolder lock(m_pool.m_threadsCV.GetMutex());
         for (auto pair : m_pool.m_threads)
             {
             if (pair.second)

@@ -21,7 +21,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //! This enumerates all possible ways to apply an AnnotationLeaderStyle to an AnnotationLeader.
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
-enum struct SetAnnotationLeaderStyleOptions
+enum class SetAnnotationLeaderStyleOptions
 {
     PreserveOverrides = 1 << 0,
     
@@ -34,7 +34,7 @@ enum struct SetAnnotationLeaderStyleOptions
 // Members should match AnnotationLeader::SourceAttachmentType in Annotations.proto.
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
-enum struct AnnotationLeaderSourceAttachmentType
+enum class AnnotationLeaderSourceAttachmentType
 {
     Invalid = 0,
     Id = 1 //<! Uses the ID of an attachment point defined by the frame. To get attachment point IDs, see AnnotationFrameLayout.
@@ -45,7 +45,7 @@ enum struct AnnotationLeaderSourceAttachmentType
 // Members should match AnnotationLeader::TargetAttachmentType in Annotations.proto.
 // @bsiclass                                                    Jeff.Marker     06/2014
 //=======================================================================================
-enum struct AnnotationLeaderTargetAttachmentType
+enum class AnnotationLeaderTargetAttachmentType
 {
     Invalid = 0,
     PhysicalPoint = 1 //!< Uses a physical 3D point to connect to; no association is kept to what it is pointing at.

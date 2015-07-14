@@ -23,6 +23,7 @@
 #define DGN_CLASSNAME_DrawingModel          "DrawingModel"
 #define DGN_CLASSNAME_Element               "Element"
 #define DGN_CLASSNAME_ElementAspect         "ElementAspect"
+#define DGN_CLASSNAME_ElementMultiAspect    "ElementMultiAspect"
 #define DGN_CLASSNAME_ElementGeom           "ElementGeom"
 #define DGN_CLASSNAME_ElementGroup          "ElementGroup"
 #define DGN_CLASSNAME_ElementItem           "ElementItem"
@@ -58,7 +59,6 @@
 #define DGN_RELNAME_ElementHasLinks             "ElementHasLinks"
 #define DGN_RELNAME_ElementGeomUsesParts        "ElementGeomUsesParts"
 #define DGN_RELNAME_ElementGroupHasMembers      "ElementGroupHasMembers"
-#define DGN_RELNAME_ElementOwnsAspects          "ElementOwnsAspects"
 #define DGN_RELNAME_ElementOwnsItem             "ElementOwnsItem"
 #define DGN_RELNAME_ModelDrivesModel            "ModelDrivesModel"
 
@@ -974,7 +974,7 @@ public:
     //! Delete a DgnElement from this DgnDb by DgnElementId.
     //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.
     //! @note This method is merely a shortcut to #GetElement and then #Delete
-    DgnDbStatus Delete(DgnElementId id) {auto el=GetElement(id); return el.IsValid() ? Delete(*el) : DgnDbStatus::ElementNotFound;}
+    DgnDbStatus Delete(DgnElementId id) {auto el=GetElement(id); return el.IsValid() ? Delete(*el) : DgnDbStatus::NotFound;}
 
     //! Get the Heapzone for this DgnDb.
     HeapZone& GetHeapZone() {return m_heapZone;}
@@ -1325,6 +1325,48 @@ public:
 };
 
 //=======================================================================================
+//! @private
+//=======================================================================================
+struct DgnJavaScriptLibrary : DgnDbTable
+{
+public:
+    DgnJavaScriptLibrary(DgnDbR db) : DgnDbTable(db) { }
+    
+    //! Import all .js files in the specified directory. This function inserjs the contenjs of each .js file into the DgnDb, using the basename of the file as ijs key.
+    //! @param jsDir    The directory to scan for .js files
+    //! @param updateExisting If true, programs already registered are updated from soruce found in \a jsDir
+    //! @see QueryJavaScript
+    DGNPLATFORM_EXPORT void ImportJavaScript(BeFileNameCR jsDir, bool updateExisting);
+
+    //! Read the text of the specified .JS file 
+    //! @param jsProgramText[out]    The content of the JavaScript program
+    //! @param jsFileName[in]     The basename of the original .JS program that was imported by ImportJavaScript
+    //! @return non-zero error status if the file could not be found
+    DGNPLATFORM_EXPORT static DgnDbStatus ReadJavaScript(Utf8StringR jsProgramText, BeFileNameCR jsFileName);
+
+    //! Look up an imported JavaScript program by the specified name. 
+    //! @param jsProgramText[out]    The content of the JavaScript program
+    //! @param jsProgramName[in]     The basename of the original .JS program that was imported by ImportJavaScript
+    //! @return non-zero if the JavaScript program could not be registered in the DgnDb.
+    //! @see ImportJavaScript
+    DGNPLATFORM_EXPORT DgnDbStatus QueryJavaScript(Utf8StringR jsProgramText, Utf8CP jsProgramName);
+
+    //! Utility function to convert ECProperties to JSON properties
+    //! @param json     The JSON object to be populated
+    //! @param ec       an ECObject that contains values
+    //! @param props    comma-separated list of property names
+    //! @return non-zero if a property could not be converted.
+    DGNPLATFORM_EXPORT static BentleyStatus ToJsonFromEC(Json::Value& json, ECN::IECInstanceCR ec, Utf8StringCR props);
+
+    //! Utility function to convert ECProperties to JSON properties
+    //! @param json     The JSON object to be populated
+    //! @param ec       an ECObject that contains values
+    //! @param prop     the name of a property
+    //! @return non-zero if the property could not be converted.
+    DGNPLATFORM_EXPORT static BentleyStatus ToJsonFromEC(Json::Value& json, ECN::IECInstanceCR ec, Utf8CP prop);
+};
+
+//=======================================================================================
 //! @see DgnDb::Units
 // @bsiclass                                                    Keith.Bentley   09/13
 //=======================================================================================
@@ -1381,6 +1423,10 @@ public:
 
     //! Set the azimuth of the global coordinate system of this DgnDb.
     void SetAzimuth(double azimuth) {m_azimuth = azimuth;}
+
+    static double const OneMeter() {return 1.;}
+    static double const OneKilometer() {return 1000. * OneMeter();}
+    static double const OneMillimeter() {return OneMeter() / 1000.;}
 };
 
 //=======================================================================================
