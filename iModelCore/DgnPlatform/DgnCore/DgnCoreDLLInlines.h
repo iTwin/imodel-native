@@ -73,7 +73,6 @@ DG_INLINE int DgnViewport::GetViewNumber() const {return m_viewNumber;}
 DG_INLINE ViewFlagsCP DgnViewport::GetViewFlags() const {return &m_rootViewFlags;}
 DG_INLINE CameraInfo const& DgnViewport::GetCamera() const {return m_camera;}
 DG_INLINE void DgnViewport::SetMinimumLOD(double minLOD) {m_minLOD = minLOD;}
-DG_INLINE DPoint3dCP DgnViewport::GetScale() const {return &m_scale;}
 DG_INLINE RotMatrixCR DgnViewport::GetRotMatrix() const {return m_rotMatrix;}
 DG_INLINE DMap4dCP DgnViewport::GetWorldToViewMap() const {return &m_rootToView;}
 DG_INLINE DMap4dCP DgnViewport::GetWorldToNpcMap() const {return &m_rootToNpc;}
@@ -104,9 +103,6 @@ DG_INLINE ColorDef DgnViewport::GetHiliteColor() const {return _GetHiliteColor()
 DG_INLINE StatusInt DgnViewport::RefreshViewport(bool always, bool synchHealingFromBs, bool& stopFlag) {return _RefreshViewport(always, synchHealingFromBs, stopFlag);}
 DG_INLINE void DgnViewport::DrawStandardGrid(DPoint3dR origin, RotMatrixR rMatrix, Point2dCP fixedRepetitions) {_DrawStandardGrid(origin, rMatrix, fixedRepetitions);}
 
-DG_INLINE DPoint3d ViewController::GetOrigin() const {return _GetOrigin();}
-DG_INLINE DVec3d ViewController::GetDelta() const {return _GetDelta();}
-DG_INLINE RotMatrix ViewController::GetRotation() const {return _GetRotation();}
 DG_INLINE void ViewController::SetOrigin(DPoint3dCR val) {_SetOrigin(val);}
 DG_INLINE void ViewController::SetDelta(DVec3dCR val) {_SetDelta(val);}
 DG_INLINE void ViewController::SetBackgroundColor(ColorDef color) {m_backgroundColor = color; m_viewFlags.bgColor=1;}

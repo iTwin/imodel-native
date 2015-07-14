@@ -120,8 +120,6 @@ protected:
 
     //! Return the default maximum number of elements to load. This is then scaled by the value returned from _GetMaxElementFactor.
     virtual uint32_t _GetMaxElementsToLoad () {return 5000;}
-
-    DGNPLATFORM_EXPORT virtual void _RestoreFromSettings (JsonValueCR) override;
 #endif
 
 protected:

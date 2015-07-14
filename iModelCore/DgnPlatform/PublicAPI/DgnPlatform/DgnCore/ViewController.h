@@ -311,7 +311,7 @@ protected:
     virtual DgnDbR _GetDgnDb() const {return m_dgndb;}
 
     //! Get the union of the range (axis-aligned bounding box) of all physical elements in project
-    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _GetProjectExtents() const;
+    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _GetViewedExtents() const;
 
     DGNPLATFORM_EXPORT BeSQLite::DbResult QueryViewsPropertyAsJson(JsonValueR, DgnViews::DgnViewPropertySpecCR) const;
     DGNPLATFORM_EXPORT BentleyStatus CheckViewSubType() const;
@@ -369,7 +369,7 @@ public:
     DgnDbR GetDgnDb() const {return _GetDgnDb();}
 
     //! Get the union of the range (axis-aligned bounding box) of all physical elements in project
-    AxisAlignedBox3d GetProjectExtents() const {return _GetProjectExtents();}
+    AxisAlignedBox3d GetViewedExtents() const {return _GetViewedExtents();}
 
     //! Load the settings of this view from persistent settings in the database.
     DGNPLATFORM_EXPORT BeSQLite::DbResult Load();
@@ -446,13 +446,13 @@ public:
 
     //! Get the origin (lower, left, front) point of of the view in coordinates of the target
     //! model (physical coordinates for PhysicalViewController and drawing coordinates for DrawingViewController).
-    DGNPLATFORM_EXPORT DPoint3d GetOrigin() const;
+    DPoint3d GetOrigin() const {return _GetOrigin();}
 
     //! Get the size of the X and Y axes of this view. The axes are in world coordinates units, aligned with the view.
-    DGNPLATFORM_EXPORT DVec3d GetDelta() const;
+    DVec3d GetDelta() const {return _GetDelta();}
 
     //! Get the 3x3 orthonormal rotation matrix for this view.
-    DGNPLATFORM_EXPORT RotMatrix GetRotation() const;
+    RotMatrix GetRotation() const {return _GetRotation();}
 
     //! Change the origin (lower, left, front) point of this view.
     //! @param[in] viewOrg The new origin for this view.
@@ -1051,7 +1051,7 @@ private:
     virtual void _AdjustAspectRatio(double , bool expandView) override;
     virtual DPoint3d _GetTargetPoint() const override;
     virtual bool _Allow3dManipulations() const override;
-    virtual AxisAlignedBox3d _GetProjectExtents() const override;
+    virtual AxisAlignedBox3d _GetViewedExtents() const override;
     virtual IAuxCoordSysP _GetAuxCoordinateSystem() const override;
     virtual ColorDef _GetBackgroundColor() const override;
     virtual ClipVectorPtr _GetClipVector() const override;

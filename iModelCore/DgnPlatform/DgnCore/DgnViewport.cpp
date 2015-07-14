@@ -357,11 +357,11 @@ StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double* compressi
         zExtent.z = zDelta;
         viewRot.MultiplyTranspose(zExtent);                                            // rotate back to root coordinates.
 
-        origin.x = eyeToOrigin.x * backFraction;                                         // Calculate origin in eye coordinates.
+        origin.x = eyeToOrigin.x * backFraction;                                       // Calculate origin in eye coordinates.
         origin.y = eyeToOrigin.y * backFraction;
         origin.z = eyeToOrigin.z;
         viewRot.MultiplyTranspose(origin);                                             // Rotate back to root coordinates
-        origin.Add(camera->GetEyePoint());                                              // Add the eye point.
+        origin.Add(camera->GetEyePoint());                                             // Add the eye point.
         frustFraction = frontFraction / backFraction;
         }
     else
@@ -489,12 +489,44 @@ static void validateCamera(CameraViewControllerR controller)
     camera.SetFocusDistance(focusDistance);
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* ensure the focus plane lies between the front and back clipping planes
+* @bsimethod                                    Keith.Bentley                   07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnViewport::CenterFocusPlane()
+    {
+    if (!m_isCameraOn)
+        return;
+
+    DVec3d eyeOrg = DVec3d::FromStartEnd(m_viewOrg, m_camera.GetEyePoint());
+    m_rotMatrix.Multiply(eyeOrg);
+
+    double backDist = eyeOrg.z;
+    double frontDist = backDist - m_viewDelta.z;
+    double focusDist = m_camera.GetFocusDistance();
+    if (focusDist>frontDist && focusDist<backDist)
+        return;
+
+    // put it halfway between front and back planes
+    m_camera.SetFocusDistance((m_viewDelta.z / 2.0) + frontDist);
+
+    // moving the focus plane means we have to adjust the origin and delta too (they're on the focus plane, see diagram in ViewController.h)
+    double ratio = m_camera.GetFocusDistance() / focusDist;
+    m_viewDelta.x *= ratio;
+    m_viewDelta.y *= ratio;
+
+    DVec3d xVec, yVec, zVec;
+    m_rotMatrix.GetRows(xVec, yVec, zVec);
+    m_viewOrg.SumOf(m_camera.GetEyePoint(), zVec, -backDist, xVec, -0.5*m_viewDelta.x, yVec, -0.5*m_viewDelta.y); // this centers the camera too
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * set up this viewport from the given viewController
 * @bsimethod                                                    KeithBentley    04/02
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewportStatus DgnViewport::_SetupFromViewController()
-    {
+    {                                               
     ViewControllerP   viewController = m_viewController.get();
     if (nullptr == viewController)
         return ViewportStatus::InvalidViewport;
@@ -522,14 +554,14 @@ ViewportStatus DgnViewport::_SetupFromViewController()
             // we're in a "2d" view of a physical model. That means that we must have our oreintation with z out of the screen with z=0 at the center.
             AlignWithRootZ(); // make sure we're in a z Up view
 
-            DRange3d  range = m_viewController->GetProjectExtents();
-            if (range.IsEmpty())
+            DRange3d  extents = m_viewController->GetViewedExtents();
+            if (extents.IsEmpty())
                 {
-                range.low.z = -DgnUnits::OneMillimeter();
-                range.high.z = DgnUnits::OneMillimeter();
+                extents.low.z = -DgnUnits::OneMillimeter();
+                extents.high.z = DgnUnits::OneMillimeter();
                 }
 
-            double zMax = std::max(fabs(range.low.z), fabs(range.high.z));
+            double zMax = std::max(fabs(extents.low.z), fabs(extents.high.z));
             zMax = std::max(zMax, DgnUnits::OneMillimeter()); // make sure we have at least +-100. Data may be purely planar
             delta.z  = 2.0 * zMax;
             origin.z = -zMax;
@@ -555,12 +587,12 @@ ViewportStatus DgnViewport::_SetupFromViewController()
                 if (m_isCameraOn)
                     {
                     // don't let the front clip move past camera
-                    DPoint3d viewCameraPosition;
-                    viewCameraPosition.DifferenceOf(m_camera.GetEyePoint(), origin);
-                    m_rotMatrix.Multiply(viewCameraPosition);
+                    DVec3d cameraDir;
+                    cameraDir.DifferenceOf(m_camera.GetEyePoint(), origin);
+                    m_rotMatrix.Multiply(cameraDir);
 
-                    if (delta.z > viewCameraPosition.z - DgnUnits::OneMillimeter())
-                        delta.z = viewCameraPosition.z - DgnUnits::OneMillimeter();
+                    if (delta.z > cameraDir.z - DgnUnits::OneMillimeter())
+                        delta.z = cameraDir.z - DgnUnits::OneMillimeter();
                     }
                 }
             }
@@ -580,17 +612,7 @@ ViewportStatus DgnViewport::_SetupFromViewController()
     m_viewOrg   = origin;
     m_viewDelta = delta;
 
-    DPoint3d    llb, urf;
-    _GetViewCorners(llb, urf);
-
-    double zRangeView = fabs(urf.z - llb.z);
-
-    m_scale.x = (fabs(urf.x - llb.x) / delta.x);
-    m_scale.y = (fabs(urf.y - llb.y) / delta.y);
-    m_scale.z = zRangeView / delta.z;
-
-    m_viewDelta = delta;
-    m_viewOrg   = origin;
+    // CenterFocusPlane(); - seems to cause problems. Probably due to the fact that there are then two values for focusplane - one in the vp and one in the viewcontroller.
 
     if (SUCCESS != _ConnectToOutput())
         return ViewportStatus::InvalidViewport;
@@ -598,7 +620,7 @@ ViewportStatus DgnViewport::_SetupFromViewController()
     BeAssert(nullptr == m_output || !m_output->IsDrawActive());
 
     double compressionFraction;
-    if (SUCCESS != RootToNpcFromViewDef(m_rootToNpc, &compressionFraction, IsCameraOn() ? &m_camera : nullptr, origin, delta, m_rotMatrix))
+    if (SUCCESS != RootToNpcFromViewDef(m_rootToNpc, &compressionFraction, IsCameraOn() ? &m_camera : nullptr, m_viewOrg, m_viewDelta, m_rotMatrix))
         return  ViewportStatus::InvalidViewport;
 
     DPoint3d rootBox[NPC_CORNER_COUNT];
