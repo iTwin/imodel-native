@@ -288,6 +288,7 @@ private:
     enum class ClassKind
         {
         Regular,
+        Abstract,
         Struct,
         Relationship
         };
@@ -326,8 +327,6 @@ private:
 
     virtual bool _ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) override;
     virtual std::unique_ptr<ECSchemaValidationRule::Error> _GetError() const override;
-
-    bool ValidateClass(ECN::ECClassCR baseClass) const;
 
     static ClassKind DetermineClassKind(ECN::ECClassCR);
     

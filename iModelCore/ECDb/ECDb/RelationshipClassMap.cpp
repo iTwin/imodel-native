@@ -1144,7 +1144,7 @@ ECDbSqlIndex* RelationshipClassLinkTableMap::CreateIndex (RelationshipIndexSpec 
     index->SetIsUnique (isUniqueIndex);
 
     //cache the class id for this index so that the index can be made a partial index if more than one classes map to the table to be indexed
-    GetECDbMap().GetMapContext()->AddClassIdFilteredIndex(*index, GetClass().GetId());
+    GetECDbMap().GetSchemaImportContext()->AddClassIdFilteredIndex(*index, GetClass().GetId());
     return index;
     }
     

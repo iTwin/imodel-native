@@ -12,46 +12,6 @@
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-//static void GetBaseHierarchy (ECN::ECClassCR current, std::set<ECN::ECClassCP>& baseHierarchy)
-//    {
-//    for (auto baseClass : current.GetBaseClasses ())
-//        {
-//        if (baseClass == nullptr)
-//            continue;
-//
-//        if (baseHierarchy.find (baseClass) == baseHierarchy.end ())
-//            {
-//            baseHierarchy.insert (baseClass);
-//            if (!current.GetBaseClasses ().empty ())
-//                GetBaseHierarchy (*baseClass, baseHierarchy);
-//            }
-//        }
-//    }
-//
-//static std::unique_ptr<std::map<ECN::ECClassCP, IClassMap const*>> GetExclusivelyStoredClassMaps (ECN::ECClassCR current, ECDbMapCR map)
-//    {
-//    auto exclusivelyStoredClassMaps = std::unique_ptr<std::map<ECN::ECClassCP, IClassMap const*>> (new std::map<ECN::ECClassCP, IClassMap const*> ());
-//    std::set<ECClassCP> baseHierarchy;
-//    GetBaseHierarchy (current, baseHierarchy);
-//    if (baseHierarchy.empty ())
-//        return exclusivelyStoredClassMaps;
-//
-//    for (auto dependentClass : baseHierarchy)
-//        {
-//        if (map.IsExclusivelyStored (dependentClass->GetId ()))
-//            {
-//            auto classMap = map.GetClassMap (*dependentClass);
-//            if (classMap != nullptr)
-//                {
-//                BeAssert (classMap->GetMapStrategy ().IsMapped ());
-//                exclusivelyStoredClassMaps->insert (std::make_pair (&classMap->GetClass (), classMap));
-//                }
-//            }
-//        }
-//
-//    return exclusivelyStoredClassMaps;
-//    }
-
 //********************* ClassDbView ******************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    10/2013
@@ -755,8 +715,8 @@ void ClassMap::CreateIndices ()
         else
             {
             //cache the class id for this index so that the index can be made a partial index if more than one classes map to the table to be indexed
-            BeAssert(GetECDbMap().IsMapping());
-            GetECDbMap().GetMapContext()->AddClassIdFilteredIndex(*index, GetClass().GetId());
+            GetECDbMap().AssertIfIsNotImportingSchema();
+            GetECDbMap().GetSchemaImportContext()->AddClassIdFilteredIndex(*index, GetClass().GetId());
             }
         }
     }

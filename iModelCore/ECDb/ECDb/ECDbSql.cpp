@@ -1287,10 +1287,11 @@ BentleyStatus ECDbSqlIndex::PersistenceManager::Drop (ECDbR ecdb) const
 //---------------------------------------------------------------------------------------
 void ECDbSqlIndex::PersistenceManager::EvaluateClassIdWhereExp(ECDbR ecdb) const
     {
-    BeAssert(ecdb.GetECDbImplR().GetECDbMap().IsMapping());
-    ECDbMap::MapContext const* mapContext = ecdb.GetECDbImplR().GetECDbMap().GetMapContext();
+    SchemaImportContext const* schemaImportContext = ecdb.GetECDbImplR().GetECDbMap().GetSchemaImportContext();
+    BeAssert(schemaImportContext != nullptr);
+
     ECClassId classId;
-    if (!mapContext->TryGetClassIdToIndex(classId, m_index))
+    if (!schemaImportContext->TryGetClassIdToIndex(classId, m_index))
         return;
 
     ECDbSqlColumn const* classIdCol = nullptr;

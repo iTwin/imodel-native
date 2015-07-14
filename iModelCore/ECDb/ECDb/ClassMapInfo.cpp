@@ -94,8 +94,8 @@ MapStatus ClassMapInfo::_EvaluateMapStrategy()
         return MapStatus::Success;
         }
 
-    BeAssert(m_ecdbMap.GetMapContext() != nullptr);
-    UserECDbMapStrategy* userStrategy = m_ecdbMap.GetMapContext()->GetUserStrategyP(m_ecClass);
+    BeAssert(m_ecdbMap.GetSchemaImportContext() != nullptr);
+    UserECDbMapStrategy* userStrategy = m_ecdbMap.GetSchemaImportContext()->GetUserStrategyP(m_ecClass);
     if (userStrategy == nullptr)
         {
         BeAssert(false);
@@ -169,7 +169,7 @@ MapStatus ClassMapInfo::DoEvaluateMapStrategy(UserECDbMapStrategy& userStrategy)
         ECClassCR parentClass = parentClassMap->GetClass();
         BeAssert(GetECClass().GetIsStruct() == parentClass.GetIsStruct() && "This should have been caught by the schema validation already");
 
-        UserECDbMapStrategy const* parentUserStrategy = m_ecdbMap.GetMapContext()->GetUserStrategy(parentClass);
+        UserECDbMapStrategy const* parentUserStrategy = m_ecdbMap.GetSchemaImportContext()->GetUserStrategy(parentClass);
         if (parentUserStrategy == nullptr)
             {
             BeAssert(false);
@@ -280,7 +280,7 @@ BentleyStatus ClassMapInfo::InitializeFromClassMapCA()
     if (!ECDbMapCustomAttributeHelper::TryGetClassMap(customClassMap, m_ecClass))
         return SUCCESS;
 
-    UserECDbMapStrategy const* userStrategy = m_ecdbMap.GetMapContext()->GetUserStrategy(m_ecClass, &customClassMap);
+    UserECDbMapStrategy const* userStrategy = m_ecdbMap.GetSchemaImportContext()->GetUserStrategy(m_ecClass, &customClassMap);
     if (userStrategy == nullptr || !userStrategy->IsValid())
         return ERROR;
 

@@ -21,28 +21,6 @@ typedef bmap<ECN::ECClassId, ClassMapPtr> ClassMapDictionary;
 typedef bmap<ECDbSqlTable*, MappedTablePtr> ClustersByTable;
 
 public:
-    struct MapContext : NonCopyableClass
-        {
-    private:
-        mutable std::map<ECN::ECClassCP, std::unique_ptr<UserECDbMapStrategy>> m_userStrategyCache;
-        bmap<ECDbSqlIndex const*, ECN::ECClassId> m_classIdFilteredIndices;
-
-        UserECDbMapStrategy* GetUserStrategyP(ECN::ECClassCR, ECN::ECDbClassMap const*) const;
-
-    public:
-        MapContext() {}
-        ~MapContext() {}
-
-        //! Gets the user map strategy for the specified ECClass.
-        //! @return User map strategy. If the class doesn't have one a default strategy is returned. Only in 
-        //! case of error, nullptr is returned
-        UserECDbMapStrategy const* GetUserStrategy(ECN::ECClassCR, ECN::ECDbClassMap const* = nullptr) const;
-        UserECDbMapStrategy* GetUserStrategyP(ECN::ECClassCR) const;
-
-        void AddClassIdFilteredIndex(ECDbSqlIndex const&, ECN::ECClassId);
-        bool TryGetClassIdToIndex(ECN::ECClassId&, ECDbSqlIndex const&) const;
-        };
-
     struct LightWeightMapCache : NonCopyableClass
         {
         enum class RelationshipEnd
@@ -106,21 +84,18 @@ private:
     ClustersByTable             m_clustersByTable;
     mutable bvector<ECN::ECClassCP> m_classMapLoadTable;
     mutable int                 m_classMapLoadAccessCounter;
-    mutable std::unique_ptr<MapContext> m_mapContext;
-
+    SchemaImportContext*        m_schemaImportContext;
     bool                        TryGetClassMap (ClassMapPtr& classMap, ECN::ECClassCR ecClass, bool loadIfNotFound) const;
     ClassMapPtr                 DoGetClassMap (ECN::ECClassCR ecClass) const;
     ClassMapPtr                 LoadAddClassMap (ECN::ECClassCR ecClass);
-    MapStatus                   DoMapSchemas (SchemaImportContext const& schemaImportContext, bvector<ECN::ECSchemaCP>& mapSchemas, bool forceMapStrategyReevaluation);
-    MapStatus                   MapClass (SchemaImportContext const& schemaImportContext, ECN::ECClassCR ecClass, bool forceRevaluationOfMapStrategy);
+    MapStatus                   DoMapSchemas (bvector<ECN::ECSchemaCP>& mapSchemas, bool forceMapStrategyReevaluation);
+    MapStatus                   MapClass (ECN::ECClassCR ecClass, bool forceRevaluationOfMapStrategy);
     MapStatus                   AddClassMap (ClassMapPtr& classMap);
     void                        RemoveClassMap (IClassMap const& classMap);
     bool                        FinishTableDefinition () const;
     DbResult                    Save ();
     //! Create a table to persist ECInstances of the given ECClass in the Db
     BentleyStatus               CreateOrUpdateRequiredTables ();
-    void BeginMapping ();
-    void EndMapping ();
 
 public:                        
                                 explicit ECDbMap (ECDbR ecdb);
@@ -129,16 +104,16 @@ public:
     ECDbSQLManager const&        GetSQLManager () const { return m_ecdbSqlManager; }
     ECDbSQLManager&              GetSQLManagerR () { return m_ecdbSqlManager; }
 
-    bool IsMapping () const;
-    MapContext* GetMapContext() const;
-    bool AssertIfNotMapping () const;
-    bool AssertIfMapping () const;
+    bool IsImportingSchema () const;
+    SchemaImportContext* GetSchemaImportContext() const;
+    bool AssertIfIsNotImportingSchema() const;
+
     LightWeightMapCache const& GetLightWeightMapCache () const { return m_lightWeightMapCache; }
     LightWeightMapCache& GetLightWeightMapCacheR () { return m_lightWeightMapCache; }
     ECN::ECClassCR              GetClassForPrimitiveArrayPersistence (ECN::PrimitiveType primitiveType) const;
     bool                        ContainsMappingsForSchema (ECN::ECSchemaCR ecSchema);
     ECDbR                       GetECDbR () const { return m_ecdb; }
-    MapStatus                   MapSchemas (SchemaImportContext const& importSchemaContext, bvector<ECN::ECSchemaCP>& mapSchemas, bool forceMapStrategyReevaluation);
+    MapStatus                   MapSchemas (SchemaImportContext& importSchemaContext, bvector<ECN::ECSchemaCP>& mapSchemas, bool forceMapStrategyReevaluation);
 
     ClassMapPtr                 LoadClassMap (bmap<ECN::ECClassId, ECN::ECClassCP>& currentlyLoadingClasses, ECN::ECClassCR ecClass);
 

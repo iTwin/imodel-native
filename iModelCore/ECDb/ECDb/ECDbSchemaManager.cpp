@@ -103,7 +103,7 @@ IImportIssueListener const* userProvidedIssueListener
 
         //Checks whether the schema contains classes or properties whose names only differ by case. This is (still) allowed in ECObjects,
         //but not supported by ECDb. (for non-legacy schemas, a check failure means abortion)
-        auto& validationResult = context.GetSchemaValidationResultR (*schema);
+        ECSchemaValidationResult validationResult;
         bool isValid = ECSchemaValidator::ValidateSchema (validationResult, *schema, options.SupportLegacySchemas ());
         if (validationResult.HasErrors ())
             {

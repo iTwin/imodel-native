@@ -16,62 +16,35 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 * @bsimethod                                                    Casey.Mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECDbMap::ECDbMap (ECDbR ecdb) 
-: m_ecdb (ecdb), m_classMapLoadAccessCounter (0), m_ecdbSqlManager (ecdb), m_mapContext (nullptr), m_lightWeightMapCache (*this)
+: m_ecdb (ecdb), m_classMapLoadAccessCounter (0), m_ecdbSqlManager (ecdb), m_schemaImportContext (nullptr), m_lightWeightMapCache (*this)
     {}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   05/2015
 //---------------+---------------+---------------+---------------+---------------+--------
-ECDbMap::MapContext* ECDbMap::GetMapContext() const
+SchemaImportContext* ECDbMap::GetSchemaImportContext() const
     {
-    if (AssertIfNotMapping())
+    if (AssertIfIsNotImportingSchema())
         return nullptr;
     
-    return m_mapContext.get();
+    return m_schemaImportContext;
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      02/2015
 //---------------+---------------+---------------+---------------+---------------+--------
-void ECDbMap::BeginMapping ()
+bool ECDbMap::IsImportingSchema () const
     {
-    AssertIfMapping();
-    m_mapContext = std::unique_ptr<MapContext>(new MapContext());
+    return m_schemaImportContext != nullptr;
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      02/2015
 //---------------+---------------+---------------+---------------+---------------+--------
-void ECDbMap::EndMapping ()
+bool ECDbMap::AssertIfIsNotImportingSchema() const
     {
-    AssertIfNotMapping();
-    m_mapContext = nullptr;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      02/2015
-//---------------+---------------+---------------+---------------+---------------+--------
-bool ECDbMap::IsMapping () const
-    {
-    return m_mapContext != nullptr;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      02/2015
-//---------------+---------------+---------------+---------------+---------------+--------
-bool ECDbMap::AssertIfNotMapping () const
-    {
-    BeAssert(IsMapping() && "ECDb is in currently is not in mapping mode. Which was not expected");
-    return !IsMapping();
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan      02/2015
-//---------------+---------------+---------------+---------------+---------------+--------
-bool ECDbMap::AssertIfMapping () const
-    {
-    BeAssert (!IsMapping () && "ECDb is in currently in mapping mode. Which was not expected");
-    return IsMapping();
+    BeAssert(IsImportingSchema() && "ECDb is in currently in schema import mode. Which was not expected");
+    return !IsImportingSchema();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -126,16 +99,20 @@ ECN::ECClassCR ECDbMap::GetClassForPrimitiveArrayPersistence (PrimitiveType prim
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    04/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-MapStatus ECDbMap::MapSchemas (SchemaImportContext const& schemaImportContext, bvector<ECSchemaCP>& mapSchemas, bool forceMapStrategyReevaluation)
+MapStatus ECDbMap::MapSchemas (SchemaImportContext& schemaImportContext, bvector<ECSchemaCP>& mapSchemas, bool forceMapStrategyReevaluation)
     {
-    if (AssertIfMapping ())
+    if (m_schemaImportContext != nullptr)
+        {
+        BeAssert(false && "MapSchemas is expected to be called if no other schema import is running.");
         return MapStatus::Error;
+        }
 
-    BeginMapping ();
-    auto stat = DoMapSchemas (schemaImportContext, mapSchemas, forceMapStrategyReevaluation);
+    m_schemaImportContext = &schemaImportContext;
+
+    auto stat = DoMapSchemas (mapSchemas, forceMapStrategyReevaluation);
     if (stat != MapStatus::Success)
         {
-        EndMapping ();
+        m_schemaImportContext = nullptr;
         return stat;
         }
 
@@ -145,7 +122,7 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext const& schemaImportContext, b
             "Failed to import ECSchemas. Data tables could not be created or updated. Please see log for details.");
 
         ClearCache ();
-        EndMapping ();
+        m_schemaImportContext = nullptr;
         return MapStatus::Error;
         }
 
@@ -155,7 +132,7 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext const& schemaImportContext, b
         schemaImportContext.GetIssueListener ().Report (ECDbSchemaManager::IImportIssueListener::Severity::Error,
             "Failed to import ECSchemas. Mappings of ECSchema to tables could not be saved. Please see log for details.");
 
-        EndMapping ();
+        m_schemaImportContext = nullptr;
         return MapStatus::Error;
         }
     
@@ -163,11 +140,7 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext const& schemaImportContext, b
     for (auto& key : m_classMapDictionary)
         {
         if (!key.second->GetMapStrategy ().IsNotMapped ())
-            {
-
-
             classMaps.insert (key.second.get ());
-            }
         }
 
     SqlGenerator viewGen (*this);
@@ -175,10 +148,11 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext const& schemaImportContext, b
     if (viewGen.BuildViewInfrastructure (classMaps) != BentleyStatus::SUCCESS)
         {
         BeAssert ( false && "failed to create view infrastructure");
+        m_schemaImportContext = nullptr;
         return MapStatus::Error;
         }
 
-    EndMapping ();
+    m_schemaImportContext = nullptr;
     return MapStatus::Success;
     }
 
@@ -220,10 +194,10 @@ RelationshipClassMapCP ECDbMap::GetRelationshipClassMap (ECN::ECClassId ecRelati
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    affan.khan         09/2012
 //---------------------------------------------------------------------------------------
-MapStatus ECDbMap::DoMapSchemas (SchemaImportContext const& schemaImportContext, bvector<ECSchemaCP>& mapSchemas, bool forceMapStrategyReevaluation)
+MapStatus ECDbMap::DoMapSchemas (bvector<ECSchemaCP>& mapSchemas, bool forceMapStrategyReevaluation)
     {
     StopWatch timer (L"", true);
-    if (AssertIfNotMapping ())
+    if (AssertIfIsNotImportingSchema ())
         return MapStatus::Error;
 
     // Identify root classes/relationship-classes
@@ -262,7 +236,7 @@ MapStatus ECDbMap::DoMapSchemas (SchemaImportContext const& schemaImportContext,
     MapStatus status = MapStatus::Success;
     for (ECClassCP rootClass : rootClasses)
         {
-        status = MapClass (schemaImportContext, *rootClass, forceMapStrategyReevaluation);
+        status = MapClass (*rootClass, forceMapStrategyReevaluation);
         if (status == MapStatus::Error)
             return status;
         }
@@ -273,7 +247,7 @@ MapStatus ECDbMap::DoMapSchemas (SchemaImportContext const& schemaImportContext,
     BeAssert (status != MapStatus::BaseClassesNotMapped && "Expected to resolve all class maps by now.");
     for (ECRelationshipClassCP rootRelationshipClass : rootRelationships)
         {
-        status = MapClass (schemaImportContext, *rootRelationshipClass, forceMapStrategyReevaluation);
+        status = MapClass (*rootRelationshipClass, forceMapStrategyReevaluation);
         if (status == MapStatus::Error)
             return status;
         }
@@ -333,9 +307,9 @@ ClassMapPtr ECDbMap::LoadAddClassMap (ECClassCR ecClass)
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                   Ramanujam.Raman                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-MapStatus ECDbMap::MapClass (SchemaImportContext const& schemaImportContext, ECClassCR ecClass, bool forceRevaluationOfMapStrategy)
+MapStatus ECDbMap::MapClass (ECClassCR ecClass, bool forceRevaluationOfMapStrategy)
     {
-    if (AssertIfNotMapping ())
+    if (AssertIfIsNotImportingSchema ())
         return MapStatus::Error;
 
     if (!ecClass.HasId())
@@ -360,7 +334,7 @@ MapStatus ECDbMap::MapClass (SchemaImportContext const& schemaImportContext, ECC
     MapStatus status = classMap == nullptr ? MapStatus::Success : MapStatus::AlreadyMapped;
     if (status != MapStatus::AlreadyMapped)
         {
-        ClassMapPtr newClassMap = ClassMapFactory::Create (status, schemaImportContext, ecClass, *this);
+        ClassMapPtr newClassMap = ClassMapFactory::Create (status, *GetSchemaImportContext(), ecClass, *this);
 
         //error (and no reevaluation)
         if ((status == MapStatus::BaseClassesNotMapped || status == MapStatus::Error) && !revaluateMapStrategy)
@@ -380,7 +354,7 @@ MapStatus ECDbMap::MapClass (SchemaImportContext const& schemaImportContext, ECC
 
     for (ECClassP childClass : ecClass.GetDerivedClasses())
         {
-        status = MapClass (schemaImportContext, *childClass, forceRevaluationOfMapStrategy);
+        status = MapClass (*childClass, forceRevaluationOfMapStrategy);
         if (status == MapStatus::Error)
             return status;
         } 
@@ -507,7 +481,7 @@ ClassMapPtr ECDbMap::DoGetClassMap (ECClassCR ecClass) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECDbSqlTable* ECDbMap::FindOrCreateTable (Utf8CP tableName, bool isVirtual, Utf8CP primaryKeyColumnName, bool mapToSecondaryTable, bool mapToExistingTable) 
     {
-    if (AssertIfNotMapping ())
+    if (AssertIfIsNotImportingSchema ())
         return nullptr;
 
     BeMutexHolder lock (m_criticalSection);
@@ -651,7 +625,7 @@ WCharCP ECDbMap::GetPrimitiveTypeName (ECN::PrimitiveType primitiveType)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbMap::CreateOrUpdateRequiredTables ()
     {
-    if (AssertIfNotMapping ())
+    if (AssertIfIsNotImportingSchema())
         return ERROR;
 
     BeMutexHolder lock (m_criticalSection);
@@ -707,7 +681,7 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECDbMap::FinishTableDefinition () const
     {
-    if (AssertIfNotMapping ())
+    if (AssertIfIsNotImportingSchema ())
         return false;
 
     BeMutexHolder aGurad (m_criticalSection);
@@ -844,81 +818,7 @@ DbResult ECDbMap::Save()
     return BE_SQLITE_DONE;
     }
 
-//************************************************************************************
-// ECDbMap::MapContext
-//************************************************************************************
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle   07/2015
-//---------------------------------------------------------------------------------------
-UserECDbMapStrategy const* ECDbMap::MapContext::GetUserStrategy(ECClassCR ecclass, ECDbClassMap const* classMapCA) const
-    {
-    return GetUserStrategyP(ecclass, classMapCA);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle   07/2015
-//---------------------------------------------------------------------------------------
-UserECDbMapStrategy* ECDbMap::MapContext::GetUserStrategyP(ECClassCR ecclass) const
-    {
-    return GetUserStrategyP(ecclass, nullptr);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle   07/2015
-//---------------------------------------------------------------------------------------
-UserECDbMapStrategy* ECDbMap::MapContext::GetUserStrategyP(ECClassCR ecclass, ECDbClassMap const* classMapCA) const
-    {
-    auto it = m_userStrategyCache.find(&ecclass);
-    if (it != m_userStrategyCache.end())
-        return it->second.get();
-
-    bool hasClassMapCA = true;
-    ECDbClassMap classMap;
-    if (classMapCA == nullptr)
-        {
-        hasClassMapCA = ECDbMapCustomAttributeHelper::TryGetClassMap(classMap, ecclass);
-        classMapCA = &classMap;
-        }
-
-    std::unique_ptr<UserECDbMapStrategy> userStrategy = std::unique_ptr<UserECDbMapStrategy>(new UserECDbMapStrategy());
-
-    if (hasClassMapCA)
-        {
-        ECDbClassMap::MapStrategy strategy;
-        if (ECOBJECTS_STATUS_Success != classMapCA->TryGetMapStrategy(strategy))
-            return nullptr; // error
-
-        if (SUCCESS != UserECDbMapStrategy::TryParse(*userStrategy, strategy) || !userStrategy->IsValid())
-            return nullptr; // error
-        }
-
-    UserECDbMapStrategy* userStrategyP = userStrategy.get();
-    m_userStrategyCache[&ecclass] = std::move(userStrategy);
-    return userStrategyP;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle   05/2015
-//---------------------------------------------------------------------------------------
-void ECDbMap::MapContext::AddClassIdFilteredIndex(ECDbSqlIndex const& index, ECClassId classId)
-    {
-    BeAssert(m_classIdFilteredIndices.find(&index) == m_classIdFilteredIndices.end());
-    m_classIdFilteredIndices[&index] = classId;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle   05/2015
-//---------------------------------------------------------------------------------------
-bool ECDbMap::MapContext::TryGetClassIdToIndex (ECClassId& classId, ECDbSqlIndex const& index) const
-    {
-    auto it = m_classIdFilteredIndices.find(&index);
-    if (it == m_classIdFilteredIndices.end())
-        return false;
-
-    classId = it->second;
-    return true;
-    }
 
 //************************************************************************************
 // LightWeightMapCache
