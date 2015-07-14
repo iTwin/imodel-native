@@ -16,9 +16,6 @@
     <Filter Include="ECSql\Fields">
       <UniqueIdentifier>{69614862-1ddd-425c-b0c0-3313d50032aa}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Unused">
-      <UniqueIdentifier>{84d3b338-2510-42e9-8ce2-0ef0d5cc4be9}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ECDbSchemaManager">
       <UniqueIdentifier>{b512b729-dbde-4f4d-a0f4-00d306962fc8}</UniqueIdentifier>
     </Filter>
@@ -167,12 +164,6 @@
     <ClInclude Include="ECDbMap.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
-    <ClInclude Include="ECInstanceSerializer.h">
-      <Filter>Unused</Filter>
-    </ClInclude>
-    <ClInclude Include="MapGenerator.h">
-      <Filter>Unused</Filter>
-    </ClInclude>
     <ClInclude Include="ClassMap.h">
       <Filter>ECDbMap\Map</Filter>
     </ClInclude>
@@ -249,9 +240,6 @@
       <Filter>ECDbSchemaManager</Filter>
     </ClInclude>
     <ClInclude Include="ECDbSchemaWriter.h">
-      <Filter>ECDbSchemaManager</Filter>
-    </ClInclude>
-    <ClInclude Include="ECDbClassDependencyAnalyzer.h">
       <Filter>ECDbSchemaManager</Filter>
     </ClInclude>
     <ClInclude Include="ECSql\Parser\SqlBison.hpp">
@@ -435,7 +423,6 @@
     </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
-    <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
     <ClInclude Include="MapStrategy.h">
       <Filter>ECDbMap\Map</Filter>
     </ClInclude>
@@ -445,7 +432,6 @@
     </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h" />
-    <ClInclude Include="ECObjectsExtensions.h" />
     <ClInclude Include="BeRepositoryBasedIdSequence.h" />
   </ItemGroup>
   <ItemGroup>
@@ -487,7 +473,6 @@
     <ClCompile Include="ECDbPch.cpp">
       <Filter>Pch</Filter>
     </ClCompile>
-    <ClCompile Include="ECDbUseCases.cpp" />
     <ClCompile Include="BeRepositoryBasedIdSequence.cpp" />
     <ClCompile Include="ECSql\Parser\SqlBison.cpp">
       <Filter>ECSql\OSQLParser</Filter>
@@ -543,12 +528,6 @@
     </ClCompile>
     <ClCompile Include="ECDbSchemaManager.cpp">
       <Filter>ECDbSchemaManager</Filter>
-    </ClCompile>
-    <ClCompile Include="ECInstanceSerializer.cpp">
-      <Filter>Unused</Filter>
-    </ClCompile>
-    <ClCompile Include="MapGenerator.cpp">
-      <Filter>Unused</Filter>
     </ClCompile>
     <ClCompile Include="ClassMap.cpp">
       <Filter>ECDbMap\Map</Filter>
@@ -641,9 +620,6 @@
       <Filter>ECDbSchemaManager</Filter>
     </ClCompile>
     <ClCompile Include="ECDbSchemaWriter.cpp">
-      <Filter>ECDbSchemaManager</Filter>
-    </ClCompile>
-    <ClCompile Include="ECDbClassDependencyAnalyzer.cpp">
       <Filter>ECDbSchemaManager</Filter>
     </ClCompile>
     <ClCompile Include="docs\samplecode\ECDb.sample.cpp">
@@ -816,7 +792,6 @@
     <ClCompile Include="ECSql\SystemColumnPreparer.cpp">
       <Filter>ECSql\ECSqlPrepare</Filter>
     </ClCompile>
-    <ClCompile Include="ECObjectsExtensions.cpp" />
     <ClCompile Include="MapStrategy.cpp">
       <Filter>ECDbMap\Map</Filter>
     </ClCompile>
