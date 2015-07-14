@@ -674,6 +674,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
     //---------------------------------------------------------------------------------------
     BentleyStatus SqlGenerator::BuildView (NativeSqlBuilder& viewSql, IClassMap const& classMap)
         {
+       
         return BuildClassView (viewSql, static_cast<ClassMapCR>(classMap));
         }
 
@@ -708,6 +709,9 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
         NativeSqlBuilder::List ddls;
         for (auto classMap : classMaps)
             {        
+            if (classMap->GetMapStrategy ().GetStrategy () == ECDbMapStrategy::Strategy::ExistingTable)
+                continue;
+
             viewCreatetimer.Start ();
             if (CreateView (ddls, *classMap, true) != BentleyStatus::SUCCESS)
                 return BentleyStatus::ERROR;
