@@ -381,12 +381,6 @@ WmsSource::WmsSource(WmsMap const& mapInfo)
  :m_mapInfo(mapInfo),
   m_reverseAxis(false)
     {
-    //DPoint3d corners[4];
-   // corners[0].x = corners[2].x = m_mapInfo.m_boundingBox.low.x; 
-    //corners[1].x = corners[3].x = m_mapInfo.m_boundingBox.high.x;  
-    //corners[0].y = corners[1].y = m_mapInfo.m_boundingBox.high.y; 
-    //corners[2].y = corners[3].y = m_mapInfo.m_boundingBox.low.y; 
-    //corners[0].z = corners[1].z = corners[2].z = corners[3].z = 0;
     // for WMS we define a 256x256 multi-resolution image.
     bvector<Resolution> resolution;
     RasterSource::GenerateResolution(resolution, m_mapInfo.m_metaWidth, m_mapInfo.m_metaHeight, 256, 256);
@@ -407,10 +401,11 @@ WmsSource::WmsSource(WmsMap const& mapInfo)
                                                              0.0, 0.0, 1.0, 0.0,
                                                              0.0, 0.0, 0.0, 1.0);
 
-     DMatrix4d physicalToCartesian;
-     physicalToCartesian.InitProduct(mapTransfo, physicalToLowerLeft);
+    DMatrix4d physicalToCartesian;
+    physicalToCartesian.InitProduct(mapTransfo, physicalToLowerLeft);
 
     m_reverseAxis = EvaluateReverseAxis(m_mapInfo, pGcs.get());
+           
     Initialize(resolution, physicalToCartesian, pGcs.get());
     }
 
@@ -491,14 +486,10 @@ Utf8String WmsSource::BuildTileUrl(TileId const& tileId)
     DPoint3d tileCorners[4];
     ComputeTileCorners(tileCorners, tileId);
 
-    // tile corners are in this order, with a lower-left origin.
-    // [0] [1]
-    // [2] [3]
-    tileOrigin.latitude = tileCorners[0].y;
-    tileOrigin.longitude = tileCorners[0].x;
+    double minX = tileCorners[2].x;
     double minY = tileCorners[2].y;
-    tileCorner.latitude = tileCorners[3].y;
-    tileCorner.longitude = tileCorners[3].x;
+    double maxX = tileCorners[1].x;
+    double maxY = tileCorners[1].y;
 
     if(m_reverseAxis)
         {
