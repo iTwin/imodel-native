@@ -18,15 +18,6 @@ void ECDbSchemaReader::AddECSchemaToCache (ECSchemaCR schema)
     }
 
 /*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        10/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDbSchemaReader::CanAnalyze (ECClassId classId) const
-    {
-    BeMutexHolder aGuard (m_criticalSection);
-    return m_ecClassKeyByECClassIdLookup.find (classId) != m_ecClassKeyByECClassIdLookup.end();
-    }
-
-/*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECDbSchemaReader::AddECSchemaToCacheInternal (ECSchemaCR schema)
@@ -754,11 +745,7 @@ ECClassP ECDbSchemaReader::GetECClass (Utf8CP schemaNameOrPrefix, Utf8CP classNa
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ECDbSchemaReader::GetECClass(ECClassP& ecClass, ECClassId ecClassId)
-    {
-
-    return ReadECClass (ecClass, ecClassId);
-    }
+DbResult ECDbSchemaReader::GetECClass(ECClassP& ecClass, ECClassId ecClassId) { return ReadECClass (ecClass, ecClassId); }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
