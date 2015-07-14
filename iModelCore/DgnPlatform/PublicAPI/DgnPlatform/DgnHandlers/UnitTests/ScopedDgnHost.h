@@ -24,8 +24,15 @@ struct ScopedDgnHost
 {
     ScopedDgnHostImpl* m_pimpl;
 
+    struct FetchJavaScriptCallback
+        {
+        virtual Dgn::DgnDbStatus _FetchJavaScript(Utf8StringR jsProgramText, Dgn::DgnDbR db, Utf8CP jsProgrameName) = 0;
+        };
+
     DGNPLATFORM_EXPORT ScopedDgnHost();
     DGNPLATFORM_EXPORT ~ScopedDgnHost();
+
+    DGNPLATFORM_EXPORT void SetFetchJavaScriptCallback(FetchJavaScriptCallback* cb);
 };
 
 struct TestDataManager
