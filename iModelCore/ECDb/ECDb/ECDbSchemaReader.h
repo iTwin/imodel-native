@@ -7,14 +7,13 @@
 +-------------------------------------------------------------------------------------*/
 #pragma once
 #include "ECDbInternalTypes.h"
-#include "ECDbClassDependencyAnalyzer.h"
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ECDbSchemaReader: public RefCountedBase, public virtual ECDbClassDependencyAnalyzer::ICallback
+struct ECDbSchemaReader: public RefCountedBase
     {
 typedef bmap<ECClassId, DbECClassEntry*>  DbECClassEntryMap;
 typedef bmap<ECSchemaId, DbECSchemaEntry*> DbECSchemaMap;
@@ -60,11 +59,7 @@ public:
     static ECDbSchemaReaderPtr Create                                  (Db& db);
     // add a existing in memory schema into cache and build key maps for schema and classes.
     void                       AddECSchemaToCache                      (ECSchemaCR schema);
-    virtual bool               CanAnalyze                              (ECClassId classId)const  override;
 
-#if 0 //RemoveClass is not supported in EC
-    BeSQLite::DbResult         DeleteECClass                           (ECClassId ecClassId, bool deleteDerivedClasses /*only delete derive if its only inherited from specified class*/);
-#endif
     void                       ClearCache                              ();
     BeSQLite::DbResult         TransformAllCABlobsToECInstances        ();
                                ~ECDbSchemaReader                       ();
