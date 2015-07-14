@@ -350,6 +350,71 @@ namespace ptedit
 		__int64 _count[EDT_MAX_THREADS];
 	};
 
+	
+	/* ------------------------------------------------------------------------ */ 
+	/*  Count Points in Layer					                                */ 
+	/* ------------------------------------------------------------------------ */ 
+	struct CountPointsInLayerVisitor : public pcloud::Node::Visitor
+	{
+		CountPointsInLayerVisitor( ubyte layers ) 
+		{ 
+			_count[0] = _count[1] = _count[2] = _count[3] = 0; 
+			_layers = layers;
+		}
+
+		bool visitNode(const pcloud::Node *n)
+		{			
+			if (!(n->layers(0) & _layers)) return false;
+
+			if (!(n->layers(1) & _layers))
+			{
+				_count[0] += n->fullPointCount();	// changed from pointCount
+				return false;						// no need to continue, fullpointcount is recursive
+			}
+			else 
+			{
+				if (n->isLeaf())
+				{
+					pcloud::Voxel *v = const_cast<pcloud::Voxel*>(static_cast<const pcloud::Voxel*>(n));
+
+					if (v->channel( pcloud::PCloud_Filter ))
+					{
+						CountPointsInLayerVisitor cp(_layers); // need this to have a separate count to scale up
+
+						pcloud::Voxel::LocalSpaceTransform lst;
+						VoxFiltering::iteratePoints( v, cp, lst );
+						
+						// scale up
+						uint voxel_count = cp.totalCount();
+
+						if (v->numPointsEdited())
+							voxel_count *= (float)v->fullPointCount()/v->numPointsEdited();
+						
+						_count[0] += voxel_count;
+					}
+					else _count[0] += n->fullPointCount();	// should not happen, but hey
+				}
+				else  return true;
+			}
+			return true;
+		}
+		inline void point( const pt::vector3d &p, uint index, ubyte &f) { mt_point(0, p, index, f);}
+		inline void mt_point(int t, const pt::vector3d &p, uint index, ubyte &f) 
+		{ 
+			if (f & _layers) ++_count[t];
+		}
+
+		__int64 totalCount() const 
+		{ 
+			__int64 c=0;		
+			for (int i=0;i<EDT_MAX_THREADS;i++) c += _count[i];
+			return c;
+		}
+
+		__int64 _count[EDT_MAX_THREADS];
+		ubyte	_layers;
+	};
+
 	/* ------------------------------------------------------------------------ */ 
 	/*  Count Selected							                                */ 
 	/* ------------------------------------------------------------------------ */ 

@@ -226,6 +226,8 @@ PTDESELECTCLOUD ptDeselectCloud = 0;
 PTSELECTSCENE ptSelectScene = 0;
 PTDESELECTSCENE ptDeselectScene = 0;
 
+PTCOUNTAPPROXPOINTSINLAYER ptCountApproxPointsInLayer = 0;
+
 _PTCOUNTVISIBLEPOINTS _ptCountVisiblePoints = 0;
 
 PTHIDESELECTED		ptHideSelected = 0;
@@ -272,6 +274,7 @@ PTCREATEFRUSTUMPOINTSQUERY ptCreateFrustumPointsQuery = 0;
 PTCREATEKNNQUERY ptCreateKNNQuery = 0;
 
 PTSETQUERYSCOPE ptSetQueryScope = 0;
+PTSETQUERYLAYERMASK ptSetQueryLayerMask = 0;
 
 PTRESETQUERY ptResetQuery = 0;
 PTDELETEQUERY ptDeleteQuery = 0;
@@ -604,6 +607,7 @@ bool LoadPointoolsDLL(const TCHAR*filepath)
 		ptDeleteAllEdits = (PTDELETEALLEDITS) GetAPIFunc("ptDeleteAllEdits");
 		
 		_ptCountVisiblePoints = (_PTCOUNTVISIBLEPOINTS) GetAPIFunc("_ptCountVisiblePoints");
+		ptCountApproxPointsInLayer = (ptCountApproxPointsInLayer) GetAPIFunc("ptCountApproxPointsInLayer");
 
 		ptResetSceneEditing = (PTRESETSCENEEDITING) GetAPIFunc("ptResetSceneEditing");
 
@@ -660,6 +664,8 @@ bool LoadPointoolsDLL(const TCHAR*filepath)
 		ptDeleteQuery = (PTDELETEQUERY) GetAPIFunc("ptDeleteQuery");
 
 		ptSetQueryScope = (PTSETQUERYSCOPE) GetAPIFunc("ptSetQueryScope");
+		ptSetQueryLayerMask = (PTSETQUERYLAYERMASK) GetAPIFunc("ptSetQueryLayerMask");
+
 		ptSetQueryDensity = (PTSETQUERYDENSITY) GetAPIFunc("ptSetQueryDensity");
 		ptGetQueryPointsd = (PTGETQUERYPOINTSD) GetAPIFunc("ptGetQueryPointsd");
 		ptGetQueryPointsf = (PTGETQUERYPOINTSF) GetAPIFunc("ptGetQueryPointsf");

@@ -53,8 +53,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,0,0,216
- PRODUCTVERSION 2,0,0,216
+ FILEVERSION 2,0,0,217
+ PRODUCTVERSION 2,0,0,217
  FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -70,12 +70,12 @@ BEGIN
         BLOCK "080904b0"
         BEGIN
             VALUE "FileDescription", "Vortex Feature Extract"
-            VALUE "FileVersion", "2, 0, 0, 216"
+            VALUE "FileVersion", "2, 0, 0, 217"
             VALUE "InternalName", "Vortex Feature Extract"
             VALUE "LegalCopyright", "Copyright (c) 2013 Bentley Systems, Incorporated. All rights reserved."
             VALUE "OriginalFilename", "Vortex Feature Extract"
             VALUE "ProductName", "Vortex Feature Extract"
-            VALUE "ProductVersion", "2, 0, 0, 216"
+            VALUE "ProductVersion", "2, 0, 0, 217"
         END
     END
     BLOCK "VarFileInfo"

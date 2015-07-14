@@ -391,6 +391,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\src\ClippingTool.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\src\FileTool.cpp"
 					>
 				</File>
@@ -465,7 +469,23 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
+					Name="Debug|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCResourceCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCResourceCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
 					ExcludedFromBuild="true"
 					>
 					<Tool

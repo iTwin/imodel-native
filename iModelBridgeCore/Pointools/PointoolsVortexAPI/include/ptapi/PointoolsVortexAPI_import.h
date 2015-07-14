@@ -528,6 +528,8 @@ typedef PTbool (__stdcall *PTDOESLAYERHAVEPOINTS)( PTuint layer );
 typedef PTvoid (__stdcall *PTCLEARPOINTSFROMLAYER)( PTuint layer );
 typedef PTvoid (__stdcall *PTRESETLAYERS)( void );
 
+typedef PTuint64 (__stdcall *PTCOUNTAPPROXPOINTSINLAYER)( PTuint layer );
+
 typedef PTbool		(__stdcall *PTSETLAYERCOLOR)( PTuint layer, PTfloat *rgb, PTfloat blend );
 typedef PTfloat *	(__stdcall *PTGETLAYERCOLOR)( PTuint layer );
 typedef PTfloat		(__stdcall *PTGETLAYERCOLORBLEND)( PTuint layer );
@@ -551,6 +553,9 @@ typedef PThandle (__stdcall * PTCREATEFRUSTUMPOINTSQUERY)( void );
 typedef PThandle (__stdcall * PTCREATEKNNQUERY)(PTfloat *vertices, PTint numQueryVertices, PTint k, PTfloat queryLOD);
 typedef PTbool (__stdcall * PTRESETQUERY)( PThandle query );
 typedef PTres (__stdcall *PTSETQUERYRGBMODE)( PThandle query, PTenum mode );
+
+typedef PTres (__stdcall *PTSETQUERYLAYERMASK)( PThandle query, PTubyte layerMask );
+
 typedef PTbool (__stdcall *PTDELETEQUERY)( PThandle query );
 typedef PTres  (__stdcall *PTSETQUERYSCOPE)( PThandle query, PThandle sceneOrCloudHandle );
 
@@ -752,6 +757,7 @@ extern PTENDDRAWFRAMEMETRICS ptEndDrawFrameMetrics;
 extern PTSTARTDRAWFRAMEMETRICS ptStartDrawFrameMetrics;
 
 extern PTSETQUERYSCOPE ptSetQueryScope;
+extern PTSETQUERYLAYERMASK ptSetQueryLayerMask;
 
 extern PTRESETQUERY ptResetQuery;
 
@@ -965,6 +971,8 @@ extern PTRESETLAYERCOLORS ptResetLayerColors;
 
 extern PTCOPYSELTOCURRENTLAYER ptCopySelToCurrentLayer;
 extern PTMOVESELTOCURRENTLAYER ptMoveSelToCurrentLayer;
+
+extern PTCOUNTAPPROXPOINTSINLAYER;
 
 /* tuning */ 
 extern PTSETCACHESIZEMB ptSetCacheSizeMb;

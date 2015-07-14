@@ -395,7 +395,7 @@ bool Node::replace(Node *oldnode, Node* newnode)
 /*****************************************************************************/
 /**
 * @brief		recursively calc currently held point count beneath this node
-* @return uint
+* @return uint64
 */
 /*****************************************************************************/
 uint64 Node::calcLodPointCount()
@@ -410,6 +410,25 @@ uint64 Node::calcLodPointCount()
 		return _pointCount;
 	}
 	return lodPointCount();
+}
+/*****************************************************************************/
+/**
+* @brief		recursively calc full point count including OOC
+* @return uint64
+*/
+/*****************************************************************************/
+uint64 Node::fullPointCount() const
+{
+	uint64 point_count = 0;
+
+	if (!isLeaf())
+	{
+		
+		for (int i=0; i<8; i++)
+			if (_child[i]) 
+				point_count += _child[i]->fullPointCount();
+	}
+	return point_count;
 }
 /*****************************************************************************/
 /**

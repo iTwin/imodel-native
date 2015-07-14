@@ -445,6 +445,8 @@ PTvoid PTAPI ptClearPointsFromLayer( PTuint layer );
 PTvoid PTAPI ptSelectPointsInLayer( PTuint layer );
 PTvoid PTAPI ptDeselectPointsInLayer( PTuint layer );
 
+PTuint64 PTAPI ptCountApproxPointsInLayer( PTuint layer );
+
 PTbool   PTAPI ptSetLayerColor( PTuint layer, PTfloat *rgb3, PTfloat blend );
 PTfloat *PTAPI ptGetLayerColor( PTuint layer );
 PTfloat  PTAPI ptGetLayerColorBlend( PTuint layer );
@@ -510,6 +512,7 @@ PTbool PTAPI ptResetQuery( PThandle query );
 PTres PTAPI ptSetQueryRGBMode( PThandle query, PTenum mode );
 PTres PTAPI ptSetQueryDensity( PThandle query, PTenum densityType, PTfloat densityValue );
 PTres PTAPI ptSetQueryScope( PThandle query, PThandle sceneOrCloudHandle );
+PTres PTAPI ptSetQueryLayerMask( PThandle query, PTubyte layerMask );
 
 PTuint PTAPI ptGetQueryPointsd( PThandle query, PTuint bufferSize, PTdouble *geomBuffer, PTubyte *rgbBuffer, 
 							   PTshort *intensityBuffer, PTubyte *selectionBuffer, PTubyte *classificationBuffer );

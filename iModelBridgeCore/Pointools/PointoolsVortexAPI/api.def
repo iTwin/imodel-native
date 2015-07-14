@@ -234,7 +234,8 @@ EXPORTS
 	ptResetQuery
 	ptDeleteQuery
 	ptSetQueryScope
-
+	ptSetQueryLayerMask
+	
 	ptSetQueryRGBMode
 
 	ptSetQueryDensity
@@ -273,6 +274,7 @@ EXPORTS
 	ptGetEditWorkingMode
 
 	_ptCountVisiblePoints
+	ptCountApproxPointsInLayer
 
 	ptSetCacheSizeMb
 	ptGetCacheSizeMb

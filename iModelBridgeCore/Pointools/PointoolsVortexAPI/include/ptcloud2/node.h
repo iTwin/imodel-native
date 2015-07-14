@@ -223,6 +223,8 @@ public:
 
 	/*point count*/ 
 	uint64			calcLodPointCount();
+
+	virtual uint64	fullPointCount() const;
 	virtual uint64	lodPointCount() const	{ return _pointCount; }
 
 	/*trim tree to max points per leaf    */ 

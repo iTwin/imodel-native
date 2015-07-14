@@ -100,6 +100,7 @@ namespace querydetail
 			scope = 0;
 			pcloudOnly = 0;
 			sceneOnly = 0;
+			layerMask = 0;
 		}
 		//---------------------------------------------------------------------
 		virtual ~Query()
@@ -153,6 +154,11 @@ namespace querydetail
 				densityCoeff = 1.0f;
 			}
 		}
+		//
+		void setLayers( PTuint layer_mask )
+		{
+			layerMask = layer_mask;
+		}
 		//---------------------------------------------------------------------
 		PTenum			getDensityType() const		{ return density; }
 		float			getDensityCoeff() const		{ return densityCoeff; }
@@ -205,6 +211,7 @@ namespace querydetail
 		PTenum			rgbMode;		
 		__int64			pointCount;			// point count of points returned
 		PThandle		scope;				// point cloud or scene (pod) scope
+		uint			layerMask;
 
 		static pcloud::Voxel *	lastPartiallyIteratedVoxel;
 		static float			lastPartiallyIteratedVoxelUnloadLOD;
@@ -332,8 +339,8 @@ namespace querydetail
 		SelectPoints (	NodeCondition	*condition,
 						bool			select=true, // or deselect (false)
 						PTenum			queryDensity = PT_QUERY_DENSITY_FULL, 
-						float			denCoeff			= 1.0f, 
-						pt::BitVoxelGrid *grid				= 0)
+						float			denCoeff	 = 1.0f, 
+						pt::BitVoxelGrid *grid		 = 0)
 		{
 			counter = 0;
 			density = queryDensity;
@@ -518,7 +525,8 @@ namespace querydetail
 					const PThandle  *_pointChannelsReq	= 0, 
 					PTvoid			**_pointChannels	= 0,
 					pcloud::Voxel	*lastPartiallyIteratedVoxel = NULL,
-					float			 lastPartiallyIteratedVoxelUnloadLOD = 0
+					float			 lastPartiallyIteratedVoxelUnloadLOD = 0,
+					PTubyte			layer_mask			= 255
 					)
 			: C(condition)
 		{
@@ -545,7 +553,7 @@ namespace querydetail
 			ugrid = grid;
 			pointLimit = 0;
 			spatialGridFailure = false;
-
+			layerMask = layer_mask;
 			pntsFailed = 0;
 			pntsTotal = 0;	
 
@@ -598,14 +606,18 @@ namespace querydetail
 		//---------------------------------------------------------------------
 		bool visitNode(const pcloud::Node *n)
 		{
-			getNodeBounds(n, objCsBounds);
+			if (layerMask & (n->layers(0)|n->layers(1)) )
+			{
+				getNodeBounds(n, objCsBounds);
 
-			bool res = C->boundsCheck(objCsBounds) && C->nodeCheck(n);
+				bool res = C->boundsCheck(objCsBounds) && C->nodeCheck(n);
+ 
+				if (res && n->isLeaf())
+					return voxel(static_cast<Voxel*>(const_cast<pcloud::Node*>(n)));
 
-			if (res && n->isLeaf())
-				return voxel(static_cast<Voxel*>(const_cast<pcloud::Node*>(n)));
-
-			return res;
+				return res;
+			}
+			return false;
 		}
 		//---------------------------------------------------------------------
 		bool getNodeBounds(const pcloud::Node *n, pt::BoundingBoxD &bounds)
@@ -754,6 +766,9 @@ namespace querydetail
 				return false;
 
 			if(C->escapeWhole(vox))
+				return true;
+
+			if ( !((vox->layers(0)|vox->layers(1)) & layerMask))
 				return true;
 
 			setVoxel(vox);
@@ -1074,7 +1089,7 @@ namespace querydetail
 				amount = 1.0f;
 			}
 
-			vox->iterateTransformedPoints(*this, cs, true, amount);
+			vox->iterateTransformedPoints(*this, cs, layerMask, amount);
 
 			return amount;
 		}
@@ -1197,12 +1212,12 @@ namespace querydetail
 		{
 			if (rwPos.counter >= bufferSize) return false;
 
-			if (rwPos.counter < bufferSize &&
-				(filter == 255 || C->validPoint(pnt, f)) &&
-				rwPos.lastPoint >= rwPos.continuePnt)
+			if (rwPos.counter < bufferSize					&&
+				(filter == 255 || C->validPoint(pnt, f))	&&
+				rwPos.lastPoint >= rwPos.continuePnt )
 			{
 				bool b;
-
+				
 				if (density == PT_QUERY_DENSITY_SPATIAL && ugrid)
 				{
 					if (ugrid->get(pnt, b) && !b)
@@ -1385,6 +1400,8 @@ namespace querydetail
 		PTubyte				*fchannel;
 		PTubyte				*clschannel;
 		PTubyte				*filterBuffer;		// the layer channel		
+		
+		PTubyte				layerMask;
 
 		PTenum				rgbMode;
 		
@@ -1621,7 +1638,9 @@ namespace querydetail
 
 			ReadPoints<Condition, T>
 					reader( &C, buffersize, geomBuffer, rgbBuffer, inten, false, lastVoxel, lastPnt,
-					density, densityCoeff, ugrid, rgbMode,0,classification, 0, 0, 0, getLastPartiallyIteratedVoxel(), getLastPartiallyIteratedVoxelUnloadLOD());
+					density, densityCoeff, ugrid, rgbMode,0,classification, 0, 0, 0, 
+					getLastPartiallyIteratedVoxel(), getLastPartiallyIteratedVoxelUnloadLOD(),
+					layerMask );
 
 			reader.cs = cs;
 			reader.pcloudOnly = pcloudOnly;
@@ -1710,7 +1729,7 @@ namespace querydetail
 			
 			ReadPoints<Condition, float>
 					reader( &C, buffersize, geomBuffer, rgbBuffer, 0 /* intensity */, false, lastVoxel, lastPnt,
-					density, densityCoeff, ugrid, rgbMode,0, 0 /*classification*/ );
+					density, densityCoeff, ugrid, rgbMode,0, 0 /*classification*/, 0, 0, 0, 0, 0, layerMask );
 
 			reader.cs = cs;
 			reader.pcloudOnly = pcloudOnly;
@@ -1755,7 +1774,8 @@ namespace querydetail
 
 			ReadPoints<Condition, T>
 					reader( &C, buffersize, geomBuffer, rgbBuffer, inten, false, lastVoxel, lastPnt, density, densityCoeff, ugrid,
-					rgbMode, filter, cf, numPointChannels, pointChannelsReq, pointChannels, getLastPartiallyIteratedVoxel(), getLastPartiallyIteratedVoxelUnloadLOD());
+					rgbMode, filter, cf, numPointChannels, pointChannelsReq, pointChannels, 
+					getLastPartiallyIteratedVoxel(), getLastPartiallyIteratedVoxelUnloadLOD(), layerMask);
 
 			reader.pcloudOnly = pcloudOnly;
 			reader.sceneOnly = sceneOnly;
@@ -1766,7 +1786,7 @@ namespace querydetail
 			if (_writer) delete _writer;
 
 			ReadPoints<Condition, T> *writer = new ReadPoints<Condition, T>( &C, buffersize, geomBuffer, rgbBuffer, inten, true, lastVoxel, lastPnt,
-				density, densityCoeff, ugrid, rgbMode, filter, cf, numPointChannels, pointChannelsReq, pointChannels);
+				density, densityCoeff, ugrid, rgbMode, filter, cf, numPointChannels, pointChannelsReq, pointChannels, 0, 0, layerMask);
 
 			writer->pcloudOnly = pcloudOnly;
 			writer->sceneOnly = sceneOnly;
@@ -4388,14 +4408,16 @@ struct FrustumQuery : public Query
 		stats.m_bufferSize = buffersize;
 
 		ReadPoints<FrustumCondition, T> reader( &C, buffersize, geomBuffer, rgbBuffer, inten, false,
-			lastVoxel, lastPnt, density, densityCoeff, 0, rgbMode, filter, cf, numPointChannels, pointChannelsReq, pointChannels, getLastPartiallyIteratedVoxel(), getLastPartiallyIteratedVoxelUnloadLOD());
+			lastVoxel, lastPnt, density, densityCoeff, 0, rgbMode, filter, cf, numPointChannels, pointChannelsReq, pointChannels, 
+			getLastPartiallyIteratedVoxel(), getLastPartiallyIteratedVoxelUnloadLOD(), layerMask);
 
 		reader.cs = cs;
 
 		if (numPointChannels && pointChannels)
 		{
 			_writer = new ReadPoints<FrustumCondition, T>( &C, buffersize, geomBuffer, rgbBuffer, inten, true,
-			lastVoxel, lastPnt, density, densityCoeff, 0, rgbMode, filter, cf, numPointChannels, pointChannelsReq, pointChannels );
+			lastVoxel, lastPnt, density, densityCoeff, 0, rgbMode, filter, cf, numPointChannels, pointChannelsReq, pointChannels ,
+			0, 0, layerMask );
 		}
 		/* run query on voxel list */ 
 		for (int i=0; i<voxels.size(); i++)
@@ -4934,6 +4956,24 @@ PTres PTAPI ptSetQueryScope( PThandle query, PThandle cloudOrSceneHandle )
 	if (i != s_queries.end())
 	{
 		i->second->setScope( cloudOrSceneHandle );
+		return setLastErrorCode( PTV_SUCCESS );
+	}
+	else
+	{
+		return setLastErrorCode( PTV_INVALID_HANDLE );
+	}
+}
+//
+//
+//
+PTres PTAPI ptSetQueryLayerMask( PThandle query, PTubyte layerMask )
+{
+	using namespace querydetail;
+
+	QueryMap::iterator i = s_queries.find( query );
+	if (i != s_queries.end())
+	{
+		i->second->setLayers( layerMask );
 		return setLastErrorCode( PTV_SUCCESS );
 	}
 	else

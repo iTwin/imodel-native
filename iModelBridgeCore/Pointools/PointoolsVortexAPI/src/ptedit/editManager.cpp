@@ -885,6 +885,9 @@ void PointEditManager::regenOOCComplete( pcloud::Scene *scene )
 	// scope should not effect this, will be restored by PreserveState
 	g_state.scope = 0;
 
+	if (scene)
+		setEditingScope( scene->cloud(0)->guid(), true );
+
 	// flag nodes first - note this cannot be done any other way since node state will be changing
 	StoreNodeStateAndPrepForRefresh statev;
 	TraverseScene::withVisitor(&statev);
@@ -1057,7 +1060,7 @@ void PointEditManager::invertSelection()
 /*****************************************************************************/
 /**
 * @brief
-* @return int
+* @return __int64
 */
 /*****************************************************************************/
 __int64 PointEditManager::countVisiblePoints()
@@ -1069,7 +1072,24 @@ __int64 PointEditManager::countVisiblePoints()
 
 	return v.totalCount();
 }
+/*****************************************************************************/
+/**
+* @brief
+* @return __int64
+*/
+/*****************************************************************************/
+__int64 PointEditManager::countPointsInLayer( int layerIndex )
+{
+	PTTRACE_FUNC
 
+	if (layerIndex < 0) return 0;
+	ubyte layerMask = 1 << layerIndex;
+
+	CountPointsInLayerVisitor v(layerMask);
+	TraverseScene::withVisitor( &v, true );
+
+	return v.totalCount();
+}
 /*****************************************************************************/
 /**
 * @brief

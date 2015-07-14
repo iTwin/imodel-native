@@ -39,13 +39,13 @@ public:
 
 	static PointEditManager *instance();
 
-	void	regenEditQuick();
-	void	regenEditQuick_run();
-	void	regenEditComplete();
+	void	regenEditQuick( void );
+	void	regenEditQuick_run( void );
+	void	regenEditComplete( void );
 	void	regenOOCComplete( pcloud::Scene *scene=0 );	
 	void	regenEditUnprocessed();	// run a regen on any scenes that have not been procesed at all
 
-	void	clearEdit();
+	void	clearEdit( void );
 
 	void	setUnits( double unitsPerMetre );
 	double	getUnits() const;
@@ -54,10 +54,10 @@ public:
 	bool	lockLayer( int layer, bool lock );
 	bool	showLayer( int layer, bool show );
 	bool	setCurrentLayer( int layer, bool maskValue=false );
-	void	updateActiveLayers();
-	void	updateLayerVisibility();
+	void	updateActiveLayers( void );
+	void	updateLayerVisibility( void );
 
-	int		getCurrentLayer() const;
+	int		getCurrentLayer( void ) const;
 	bool	isLayerLocked( int layer ) const;
 	bool	isLayerVisible( int layer ) const;
 	bool	doesLayerHavePoints( int layer ) const;
@@ -78,10 +78,10 @@ public:
 	bool	getLayerBoundingBox( int layer, pt::BoundingBoxD &bb, bool fast_approx ) const;
 
 	//editing commands
-	void	paintSelSphere();
-	void	paintSelCube();
+	void	paintSelSphere( void );
+	void	paintSelCube( void );
 	void	paintRadius( double radius );
-	float	getPaintRadius();
+	float	getPaintRadius( void );
 	void	paintSelectAtPoint( const pt::vector3d &pnt, bool limit_range );
 
 	void	rectangleSelect( int l, int r, int b, int t );
@@ -93,34 +93,35 @@ public:
 	void	layersFromUserChannel( pointsengine::UserChannel* userChannel );
 
 	// query
-	__int64 countVisiblePoints();
+	__int64 countVisiblePoints( void );
+	__int64 countPointsInLayer( int layerIndex );
 
 	//editing operations
-	void	selectAll();
-	void	clearAll();
-	void	deselectAll();
-	void	resetSelection();
-	void	showAll();
-	void	invertSelection();
-	void	invertVisibility();
-	void	hideSelPoints();
-	void	isolateSelPoints();
+	void	selectAll( void );
+	void	clearAll( void );
+	void	deselectAll( void );
+	void	resetSelection( void );
+	void	showAll( void );
+	void	invertSelection( void );
+	void	invertVisibility( void );
+	void	hideSelPoints( void );
+	void	isolateSelPoints( void );
 
 	// editing mode
-	void			selectMode();
-	void			deselectMode();
-	void			unhideMode();
-	SelectionMode	editMode() const;
+	void			selectMode( void );
+	void			deselectMode( void );
+	void			unhideMode( void );
+	SelectionMode	editMode( void ) const;
 
 	void			workingMode( EditWorkingMode mode );
-	EditWorkingMode	workingMode() const;
+	EditWorkingMode	workingMode( void ) const;
 
 	//id representing current state - used to check external caching validity
-	int				stateId() const;
+	int				stateId( void ) const;
 
 	//options
 	void			setUseMultiThreading( bool use=true );
-	bool			getUseMultiThreading() const;
+	bool			getUseMultiThreading( void ) const;
 	
 	void			setViewParams( const pt::ViewParams &view );
 
@@ -128,14 +129,14 @@ public:
 	bool				storeEdit( const pt::String name );
 	bool				restoreEdit( const pt::String name );
 	void				removeEdit (const pt::String name );
-	void				removeAllEdits();
-	uint				numEdits() const;
+	void				removeAllEdits( void );
+	uint				numEdits( void ) const;
 	const pt::String	&editName( uint index );
-	OperationStack*		getCurrentEdit();
+	OperationStack*		getCurrentEdit( void );
 		
 	//scope
 	void setEditingScope( pcloud::PointCloudGUID guid, bool sceneScope, int sceneInstance=0 );
-	void	clearEditingScope();
+	void	clearEditingScope( void );
 
 	//persistence
 	pt::datatree::Branch *_getEditDatatree( int index );
