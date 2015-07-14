@@ -345,7 +345,7 @@ protected:
     virtual void _AdjustAspectRatio(double , bool expandView) override;
     virtual DPoint3d _GetTargetPoint() const override;
     virtual bool _Allow3dManipulations() const override;
-    virtual AxisAlignedBox3d _GetProjectExtents() const override;
+    virtual AxisAlignedBox3d _GetViewedExtents() const override;
     virtual IAuxCoordSysP _GetAuxCoordinateSystem() const override;
     virtual ColorDef _GetBackgroundColor() const override;
     virtual ClipVectorPtr _GetClipVector() const override {return NULL;}

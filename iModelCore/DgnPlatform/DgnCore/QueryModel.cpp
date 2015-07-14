@@ -16,9 +16,9 @@
 void QueryModel::ClearQueryResults()
     {
     delete m_currQueryResults;
-    m_currQueryResults = NULL;
+    m_currQueryResults = nullptr;
 
-    ClearRangeIndex();
+    EmptyModel();
     GetSelector().Reset();
     }
 
@@ -112,7 +112,7 @@ void QueryModel::Selector::RequestAbort(bool waitUntilFinished)
         {
         //  BeConditionVariable::Infinite should be fine but I feel safer with 1000/16 and there is not 
         //  much overhead to using it since the abort should nearly always finish before it expires.
-        WaitUntilFinished(NULL, 1, false);
+        WaitUntilFinished(nullptr, 1, false);
         }
     }
 
@@ -141,7 +141,7 @@ QueryModel::Selector::State QueryModel::Selector::WaitUntilFinished(ICheckStop* 
     stopQueryOnAbort = true;
     while (IsActive())
         {
-        if (NULL != checkStop && checkStop->_CheckStop())
+        if (nullptr != checkStop && checkStop->_CheckStop())
             {
             if (stopQueryOnAbort)
                 //  RequestAbort does not return until the abort has finished,
@@ -164,7 +164,7 @@ void QueryModel::Selector::Reset()
     {
     RequestAbort(true);
 
-    m_viewport = NULL;
+    m_viewport = nullptr;
     SetState(State::Inactive);
     }
 
@@ -193,8 +193,8 @@ void QueryModel::Selector::StartProcessing(DgnViewportCR viewport, QueryViewCont
     m_maxMemory = maxMemory;
     m_neverDraw = neverDraw;
 
-    m_clipVector = NULL;
-    if (NULL != cpsIn)
+    m_clipVector = nullptr;
+    if (nullptr != cpsIn)
         m_clipVector = cpsIn;
 
     m_secondaryHitLimit = secondaryHitLimit;
@@ -345,7 +345,7 @@ void QueryModel::Selector::qt_ProcessRequest()
     //  a range tree operation and is therefore exempt from checks for high priority required.
     RangeTreeOperationBlock rangeTreeOperationBlock(m_dgndb);
 
-    DgnDbRTree3dViewFilter filter(*m_viewport, this, m_dgndb, m_maxElements, m_minimumPixels, m_noQuery ? NULL : m_alwaysDraw, m_neverDraw);
+    DgnDbRTree3dViewFilter filter(*m_viewport, this, m_dgndb, m_maxElements, m_minimumPixels, m_noQuery ? nullptr : m_alwaysDraw, m_neverDraw);
     if (m_clipVector.IsValid())
         filter.SetClipVector(*m_clipVector);
 
@@ -513,7 +513,7 @@ QueryModel::Selector::Selector(QueryModel& model) : m_dgndb(model.GetDgnDb()), m
     m_dbStatus = BE_SQLITE_ERROR;
     m_results = 0;
     m_maxElements = 0;
-    m_controller = NULL;
+    m_controller = nullptr;
     m_secondaryVolume.Init();
     m_secondaryHitLimit = 0;
     m_inRangeSelectionStep = false;
