@@ -20,6 +20,7 @@ private:
             ImagePP::HFCPtr<ImagePP::HRFRasterFile>         m_HRFRasterFilePtr;
             ImagePP::HFCPtr<ImagePP::HRAStoredRaster>       m_storedRasterPtr;
             ImagePP::HFCPtr<ImagePP::HGF2DWorldCluster>     m_worldClusterPtr;
+            ImagePP::HFCPtr<ImagePP::HRFPageFile>           m_pageFilePtr;            // Sister file decorator.
 
                                                             RasterFile(Utf8StringCR resolvedName);
             int                                             ComputeBufferSize(size_t& bufferSize, const Point2d& imageSize, int imageFormat) const;

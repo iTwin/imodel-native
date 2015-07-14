@@ -16,6 +16,7 @@ RasterFile::RasterFile(Utf8StringCR resolvedName)
     {
     m_storedRasterPtr = nullptr;
     m_worldClusterPtr = nullptr;
+    m_pageFilePtr = nullptr;
 
     m_HRFRasterFilePtr = OpenRasterFile(resolvedName);
     }
@@ -249,25 +250,34 @@ DMatrix4d RasterFile::GetGeoTransform()
     HFCPtr<HRFRasterFile> pAdaptedRasterFile(new HRFRasterFileBlockAdapter(m_HRFRasterFilePtr, HRFBlockType::IMAGE, HRF_EQUAL_TO_RESOLUTION_WIDTH, HRF_EQUAL_TO_RESOLUTION_HEIGHT));
     HFCPtr<HGF2DCoordSys> pLogical = GetWorldClusterP()->GetCoordSysReference(pAdaptedRasterFile->GetWorldIdentificator());
 
-    // Create CS from pTransfoModel (transformation from pixels to the world of the raster) to logical
-    HFCPtr<HGF2DTransfoModel> pTransfoModel(GetPageDescriptor()->GetTransfoModel());
-    HFCPtr<HGF2DCoordSys> pLogicalToPhysRasterWorld(new HGF2DCoordSys(*pTransfoModel, pLogical));
+    if (GetPageDescriptor()->HasTransfoModel())
+        {
+        // Create CS from pTransfoModel (transformation from pixels to the world of the raster) to logical
+        HFCPtr<HGF2DTransfoModel> pTransfoModel(GetPageDescriptor()->GetTransfoModel());
+        HFCPtr<HGF2DCoordSys> pLogicalToPhysRasterWorld(new HGF2DCoordSys(*pTransfoModel, pLogical));
 
-    // Normalize to HGF2DWorld_HMRWORLD, which is the expected CS for QuadTree
-    HFCPtr<HGF2DCoordSys> pHmrWorld = GetWorldClusterP()->GetCoordSysReference(HGF2DWorld_HMRWORLD);
-    HFCPtr<HGF2DTransfoModel> pLogicalToHmrWorldTransfo(pLogical->GetTransfoModelTo(pHmrWorld));
-    HFCPtr<HGF2DCoordSys> pLogicalToHmrWorld(new HGF2DCoordSys(*pLogicalToHmrWorldTransfo, pLogical));
-    HFCPtr<HGF2DTransfoModel> pLogicalToCartesian(pLogicalToPhysRasterWorld->GetTransfoModelTo(pLogicalToHmrWorld));
+        // Normalize to HGF2DWorld_HMRWORLD, which is the expected CS for QuadTree
+        HFCPtr<HGF2DCoordSys> pHmrWorld = GetWorldClusterP()->GetCoordSysReference(HGF2DWorld_HMRWORLD);
+        HFCPtr<HGF2DTransfoModel> pLogicalToHmrWorldTransfo(pLogical->GetTransfoModelTo(pHmrWorld));
+        HFCPtr<HGF2DCoordSys> pLogicalToHmrWorld(new HGF2DCoordSys(*pLogicalToHmrWorldTransfo, pLogical));
+        HFCPtr<HGF2DTransfoModel> pLogicalToCartesian(pLogicalToPhysRasterWorld->GetTransfoModelTo(pLogicalToHmrWorld));
 
-    // Initialize geoTransform with the significant rows/columns of matrix.         
-    HFCMatrix<3, 3> matrix = pLogicalToCartesian->GetMatrix();
-    DMatrix4d geoTransform;
-    geoTransform.InitFromRowValues( matrix[0][0], matrix[0][1], 0.0, matrix[0][2],
-                                    matrix[1][0], matrix[1][1], 0.0, matrix[1][2],
-                                    0.0,          0.0,          1.0, 0.0,
-                                    matrix[2][0], matrix[2][1], 0.0, matrix[2][2]);
+        // Initialize geoTransform with the significant rows/columns of matrix.         
+        HFCMatrix<3, 3> matrix = pLogicalToCartesian->GetMatrix();
+        DMatrix4d geoTransform;
+        geoTransform.InitFromRowValues( matrix[0][0], matrix[0][1], 0.0, matrix[0][2],
+                                        matrix[1][0], matrix[1][1], 0.0, matrix[1][2],
+                                        0.0,          0.0,          1.0, 0.0,
+                                        matrix[2][0], matrix[2][1], 0.0, matrix[2][2]);
 
-    return geoTransform;
+        return geoTransform;
+        }
+    else
+        {
+        // Raster has no transfo model. Simply use the transformation to lower left corner.
+        DMatrix4d physicalToLowerLeft = GetPhysicalToLowerLeft();
+        return physicalToLowerLeft;
+        }
     }
 
 //----------------------------------------------------------------------------------------
@@ -346,10 +356,15 @@ HFCPtr<HRFRasterFile> RasterFile::OpenRasterFile(Utf8StringCR resolvedName)
         if (rasterFile == 0)
             return rasterFile;
 
-        // Check if we have an internet imaging file
-        // DISABLED: We do not support HRFInternetImagingFile
-        //         if (RasterFile->IsCompatibleWith(HRFInternetImagingFile::CLASS_ID))
-        //             ((HFCPtr<HRFInternetImagingFile>&)RasterFile)->DownloadAttributes();
+        // Take care of sister file. Until requirements prove that wrong, always use sister file for georeference.
+        bool useSisterFileOfGeoreferencedFile = true;
+        const HRFPageFileCreator (* pPageFileCreator)(HRFPageFileFactory::GetInstance()->FindCreatorFor(rasterFile, useSisterFileOfGeoreferencedFile));
+        if(pPageFileCreator != NULL)
+            {
+            m_pageFilePtr = pPageFileCreator->CreateFor(rasterFile);
+            m_pageFilePtr->SetDefaultRatioToMeter(1000);
+            rasterFile = new HRFRasterFilePageDecorator(rasterFile, m_pageFilePtr);
+            }
         }
     catch (HFCException&)
         {

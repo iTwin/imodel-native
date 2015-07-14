@@ -45,22 +45,11 @@ RasterFileSource::RasterFileSource(Utf8StringCR resolvedName)
     bvector<Resolution> resolution;
     RasterSource::GenerateResolution(resolution, sizePixels.x, sizePixels.y, m_tileSize.x, m_tileSize.y);
 
-    // If this raster has georeference, get the geographic transform.
+    // Get the raster transform.
+    DMatrix4d geoTransform;
+    geoTransform = m_rasterFilePtr->GetGeoTransform();
     GeoCoordinates::BaseGCSPtr baseGcsPtr = m_rasterFilePtr->GetBaseGcs();
-    if (baseGcsPtr != nullptr)
-        {
-        DMatrix4d geoTransform;
-        geoTransform.InitIdentity(); 
-        geoTransform = m_rasterFilePtr->GetGeoTransform();
-        Initialize(resolution, geoTransform, baseGcsPtr.get());
-        }
-    else
-        {
-        // Raster has no georeference. Simply use the transformation to lower left corner.
-        DMatrix4d physicalToLowerLeft = m_rasterFilePtr->GetPhysicalToLowerLeft();
-        Initialize(resolution, physicalToLowerLeft, baseGcsPtr.get());
-        }
-
+    Initialize(resolution, geoTransform, baseGcsPtr.get());
     }
 
 //----------------------------------------------------------------------------------------
