@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#ifndef BENTLEYCONFIG_OS_WINRT
+#ifndef BENTLEYCONFIG_NO_JAVASCRIPT
 #include <BeJavaScript/BeJavaScript.h>
 #endif
 #include <DgnPlatform/DgnCore/DgnScriptContext.h>
