@@ -134,7 +134,7 @@ Utf8String ClientInfo::GetFallbackLanguage () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ClientInfo::GetAcceptLanguage () const
     {
-    BeCriticalSectionHolder lock (m_headersCS);
+    BeMutexHolder lock (m_headersCS);
 
     if (m_languageTag.EqualsI (m_fallbackLanguageTag))
         {
