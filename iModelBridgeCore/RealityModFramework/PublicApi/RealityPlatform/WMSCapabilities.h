@@ -26,7 +26,7 @@ struct WMSCapabilities : RefCountedBase
         WMSPARSER_EXPORT static WMSCapabilitiesPtr CreateAndReadFromString(WMSParserStatus& status, Utf8CP source, WStringP errorMsg = NULL);
         
         //! Attempts to parse the XML document provided.
-        WMSPARSER_EXPORT static WMSCapabilitiesPtr CreateAndReadFromMemory(WMSParserStatus& status, void const* xmlBuffer, size_t xmlBufferSize, WStringP errorMsg = NULL);  //&&JFC avoid copy of xmlData
+        WMSPARSER_EXPORT static WMSCapabilitiesPtr CreateAndReadFromMemory(WMSParserStatus& status, void const* xmlBuffer, size_t xmlBufferSize, WStringP errorMsg = NULL);
         
         //! Attempts to open and parse the XML document at the given file path.
         WMSPARSER_EXPORT static WMSCapabilitiesPtr CreateAndReadFromFile(WMSParserStatus& status, WCharCP fileName, WStringP errorMsg = NULL);
@@ -401,7 +401,7 @@ struct WMSLayer : RefCountedBase
 
         // Attribute.
         bool const& IsQueryable() const { return m_queryable; }
-        void        SetQueryable(WStringR queryable) { m_queryable = (BeStringUtilities::Wtoi(queryable.c_str()) != 0); } //&&JFC Make a proper string to bool conversion.
+        void        SetQueryable(WStringR queryable) { m_queryable = (BeStringUtilities::Wtoi(queryable.c_str()) != 0); }
 
         bool const&  IsOpaque() const { return m_opaque; }
         void         SetOpaque(WStringR opaque) { m_opaque = (BeStringUtilities::Wtoi(opaque.c_str()) != 0); }

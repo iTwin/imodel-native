@@ -21,9 +21,6 @@ BEGIN_BENTLEY_REALITYPACKAGE_NAMESPACE
 struct RealityDataSerializer;
 
 //=======================================================================================
-//! The bounding polygon for the RealityDataPackage represents the region of interest selected
-//! by the user in the RealityModelingNavigator. This can be seen as the clipping shape for
-//! all the data that the package will contain.
 //! @bsiclass
 //=======================================================================================
 struct BoundingPolygon : public RefCountedBase
@@ -112,6 +109,8 @@ public:
     REALITYPACKAGE_EXPORT void SetCreationDate(DateTimeCR date);
 
     //! Package bounding polygon in latitude/longitude.
+    //! The bounding polygon for the RealityDataPackage represents the region of interest selected by the user in the RealityModelingNavigator. 
+    //! This can be seen as the clipping shape for all the data that the package will contain.
     REALITYPACKAGE_EXPORT BoundingPolygonCR GetBoundingPolygon() const;
     //! Package object will increment ref count of 'polygon'.
     REALITYPACKAGE_EXPORT void SetBoundingPolygon(BoundingPolygonR polygon);

@@ -322,7 +322,7 @@ TEST_F (PackageTestFixture, ReadVersion_1_0)
     ASSERT_STREQ(WIDEN(RPACKAGE_POLYGON), pPackage->GetBoundingPolygon().ToString().c_str());
 
     // Imagery
-    ASSERT_STREQ(WIDEN(RPACKAGE_JPEG), pPackage->GetImageryGroup()[0]->GetSource().GetUri().c_str());
+    ASSERT_STREQ(RPACKAGE_JPEG, pPackage->GetImageryGroup()[0]->GetSource().GetUri().c_str());
     ASSERT_STREQ(L"image/jpeg", pPackage->GetImageryGroup()[0]->GetSource().GetType().c_str());
     ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::LowerLeft].x, RPACKAGE_JPEG_LL_x, LATLONG_EPSILON);
     ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::LowerLeft].y, RPACKAGE_JPEG_LL_y, LATLONG_EPSILON);
@@ -332,27 +332,27 @@ TEST_F (PackageTestFixture, ReadVersion_1_0)
     ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::UpperLeft].y, RPACKAGE_JPEG_UL_y, LATLONG_EPSILON);
     ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::UpperRight].x, RPACKAGE_JPEG_UR_x, LATLONG_EPSILON);
     ASSERT_NEAR(pPackage->GetImageryGroup()[0]->GetCornersCP()[ImageryData::UpperRight].y, RPACKAGE_JPEG_UR_y, LATLONG_EPSILON);
-    ASSERT_STREQ(WIDEN(RPACKAGE_WMS_URI), pPackage->GetImageryGroup()[1]->GetSource().GetUri().c_str());
+    ASSERT_STREQ(RPACKAGE_WMS_URI, pPackage->GetImageryGroup()[1]->GetSource().GetUri().c_str());
     ASSERT_STREQ(L"wms", pPackage->GetImageryGroup()[1]->GetSource().GetType().c_str());
 
     // Model
-    ASSERT_STREQ(WIDEN(RPACKAGE_ROAD_URI), pPackage->GetModelGroup()[0]->GetSource().GetUri().c_str());
+    ASSERT_STREQ(RPACKAGE_ROAD_URI, pPackage->GetModelGroup()[0]->GetSource().GetUri().c_str());
     ASSERT_STREQ(L"shapefile", pPackage->GetModelGroup()[0]->GetSource().GetType().c_str());
 
     // Pinned
-    ASSERT_STREQ(WIDEN(RPACKAGE_HOUSE_URI), pPackage->GetPinnedGroup()[0]->GetSource().GetUri().c_str());
+    ASSERT_STREQ(RPACKAGE_HOUSE_URI, pPackage->GetPinnedGroup()[0]->GetSource().GetUri().c_str());
     ASSERT_STREQ(L"image/jpeg", pPackage->GetPinnedGroup()[0]->GetSource().GetType().c_str());
     ASSERT_NEAR(pPackage->GetPinnedGroup()[0]->GetLocation().x, RPACKAGE_HOUSE_LAT, LATLONG_EPSILON);
     ASSERT_NEAR(pPackage->GetPinnedGroup()[0]->GetLocation().y, RPACKAGE_HOUSE_LONG, LATLONG_EPSILON);
-    ASSERT_STREQ(WIDEN(RPACKAGE_TRAFFIC_URI), pPackage->GetPinnedGroup()[1]->GetSource().GetUri().c_str());
+    ASSERT_STREQ(RPACKAGE_TRAFFIC_URI, pPackage->GetPinnedGroup()[1]->GetSource().GetUri().c_str());
     ASSERT_STREQ(L"video/avi", pPackage->GetPinnedGroup()[1]->GetSource().GetType().c_str());
     ASSERT_NEAR(pPackage->GetPinnedGroup()[1]->GetLocation().x, RPACKAGE_TRAFFIC_LAT, LATLONG_EPSILON);
     ASSERT_NEAR(pPackage->GetPinnedGroup()[1]->GetLocation().y, RPACKAGE_TRAFFIC_LONG, LATLONG_EPSILON);
 
     // Terrain
-    ASSERT_STREQ(WIDEN(RPACKAGE_CANADA_POD_URI), pPackage->GetTerrainGroup()[0]->GetSource().GetUri().c_str());
+    ASSERT_STREQ(RPACKAGE_CANADA_POD_URI, pPackage->GetTerrainGroup()[0]->GetSource().GetUri().c_str());
     ASSERT_STREQ(L"pod", pPackage->GetTerrainGroup()[0]->GetSource().GetType().c_str());
-    ASSERT_STREQ(WIDEN(RPACKAGE_CANADA_DTM_URI), pPackage->GetTerrainGroup()[1]->GetSource().GetUri().c_str());
+    ASSERT_STREQ(RPACKAGE_CANADA_DTM_URI, pPackage->GetTerrainGroup()[1]->GetSource().GetUri().c_str());
     ASSERT_STREQ(L"dtm", pPackage->GetTerrainGroup()[1]->GetSource().GetType().c_str());
     }
 
@@ -384,28 +384,28 @@ TEST_F (PackageTestFixture, CreateAndRead)
     ASSERT_DOUBLE_EQ(polygon[3].y, pPackage->GetBoundingPolygon().GetPointCP()[3].y);
 
     // **** Data sources
-    RealityDataSourcePtr pJpegDataSource = RealityDataSource::Create(L"./imagery/map.jpeg", L"image/jpeg");
+    RealityDataSourcePtr pJpegDataSource = RealityDataSource::Create("./imagery/map.jpeg", L"image/jpeg");
     ASSERT_TRUE(pJpegDataSource.IsValid());
 
-    RealityDataSourcePtr pPodDataSource = RealityDataSource::Create(L"./terrain/canada.pod", L"pod");
+    RealityDataSourcePtr pPodDataSource = RealityDataSource::Create("./terrain/canada.pod", L"pod");
     ASSERT_TRUE(pPodDataSource.IsValid());
 
-    RealityDataSourcePtr pTifDataSource = RealityDataSource::Create(L"./terrain/canada.tif", L"image/tif");
+    RealityDataSourcePtr pTifDataSource = RealityDataSource::Create("./terrain/canada.tif", L"image/tif");
     ASSERT_TRUE(pTifDataSource.IsValid());
 
-    RealityDataSourcePtr pDtmDataSource = RealityDataSource::Create(L"./terrain/canada.dtm", L"dtm");
+    RealityDataSourcePtr pDtmDataSource = RealityDataSource::Create("./terrain/canada.dtm", L"dtm");
     ASSERT_TRUE(pDtmDataSource.IsValid());
 
-    RealityDataSourcePtr pShapeDataSource = RealityDataSource::Create(L"./model/roads.shp", L"shapefile");
+    RealityDataSourcePtr pShapeDataSource = RealityDataSource::Create("./model/roads.shp", L"shapefile");
     ASSERT_TRUE(pShapeDataSource.IsValid());
 
-    RealityDataSourcePtr pWmsDataDataSource = WmsDataSource::Create(L"http://sampleserver1.arcgisonline.com/ArcGIS/services/Specialty/ESRI_StatesCitiesRivers_USA/MapServer/WMSServer?service=WMS&request=GetCapabilities&version=1.3.0");
+    RealityDataSourcePtr pWmsDataDataSource = WmsDataSource::Create("http://sampleserver1.arcgisonline.com/ArcGIS/services/Specialty/ESRI_StatesCitiesRivers_USA/MapServer/WMSServer?service=WMS&request=GetCapabilities&version=1.3.0");
     ASSERT_TRUE(pWmsDataDataSource.IsValid());
 
-    RealityDataSourcePtr pAviDataDataSource = RealityDataSource::Create(L"./pinned/roadTraffic.avi", L"video/avi");
+    RealityDataSourcePtr pAviDataDataSource = RealityDataSource::Create("./pinned/roadTraffic.avi", L"video/avi");
     ASSERT_TRUE(pAviDataDataSource.IsValid());
 
-    RealityDataSourcePtr pMyHouseDataDataSource = RealityDataSource::Create(L"./pinned/myHouse.jpeg", L"image/jpeg");
+    RealityDataSourcePtr pMyHouseDataDataSource = RealityDataSource::Create("./pinned/myHouse.jpeg", L"image/jpeg");
     ASSERT_TRUE(pMyHouseDataDataSource.IsValid());
 
     // *** Reality entries
