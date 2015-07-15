@@ -22,31 +22,6 @@ SEVERITY sev
     return GetLogProvider().IsSeverityEnabled ( m_context, sev );
     }
 
-#if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
-/*---------------------------------------------------------------------------------**//**
-* The log4cxx-0.9.7 release doesn't output non-latin character sets properly. This
-* manifests itself as a "hang" in the log output. Therefore, we sanitize the output
-* and convert any non-latin characters to '?'.
-* @bsimethod                                                    MichaelMcCarty  12/2006
-
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool isNonLatinCharacter (wchar_t c)
-    {
-    return !iswascii(c);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* The log4cxx-0.9.7 release doesn't output non-latin character sets properly. This
-* manifests itself as a "hang" in the log output. Therefore, we sanitize the output
-* and convert any non-latin characters to '?'.
-* @bsimethod                                                    MichaelMcCarty  12/2006
-+---------------+---------------+---------------+---------------+---------------+------*/
-static wchar_t replaceNonLatinCharacters (wchar_t c)
-    {
-    return isNonLatinCharacter(c)? L'?': c;
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    TonyCleveland   06/04
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -61,24 +36,7 @@ WCharCP         msg
 
 #if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
 
-    size_t len = wcslen (msg);
-    if (len < g_maxMessageSize.Get() && std::find_if (msg,msg+len,isNonLatinCharacter) == msg+len)
-        {
-        GetLogProvider().LogMessage ( m_context, sev, msg );
-        }
-    else
-        {
-        size_t tempStrLen = std::min<size_t> (len, g_maxMessageSize.Get()-1);   // (does not include trailing \0)
-
-        ScopedArray<WChar> tempBuffer (tempStrLen+1);
-        WCharP tempStr = tempBuffer.GetData();
-        BeStringUtilities::Wcsncpy (tempStr, tempStrLen+1, msg, tempStrLen);
-        tempStr[tempStrLen] = L'\0';
-
-        std::transform (tempStr, tempStr+tempStrLen, tempStr, replaceNonLatinCharacters);
-
-        GetLogProvider().LogMessage ( m_context, sev, tempStr );
-        }
+    GetLogProvider().LogMessage ( m_context, sev, msg );
 
 #elif defined (__unix__)
 

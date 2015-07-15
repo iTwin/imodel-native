@@ -190,16 +190,16 @@ public:
     bool EqualsI (WCharCP other) const {return (0 == CompareToI(other));}
 
     //! Removes all whitespace from the left and right sides. Whitespace includes space, line feed, carriage return, and tab (e.g. iswspace).
-    BENTLEYDLL_EXPORT void Trim ();
+    BENTLEYDLL_EXPORT WStringR Trim ();
 
     //! Removes all instances of any of the given characters from the left and right sides.
-    BENTLEYDLL_EXPORT void Trim (WCharCP trimCharacters);
+    BENTLEYDLL_EXPORT WStringR Trim (WCharCP trimCharacters);
 
     //! Pads, if necessary, to the given totalSize by adding charToPadWith to the left side.
-    BENTLEYDLL_EXPORT void PadLeft (size_t totalSize, value_type charToPadWith);
+    BENTLEYDLL_EXPORT WStringR PadLeft (size_t totalSize, value_type charToPadWith);
 
     //! Pads, if necessary, to the given totalSize by adding charToPadWith to the right side.
-    BENTLEYDLL_EXPORT void PadRight (size_t totalSize, value_type charToPadWith);
+    BENTLEYDLL_EXPORT WStringR PadRight (size_t totalSize, value_type charToPadWith);
 
     //! Determines if this instance starts with the provided string.
     BENTLEYDLL_EXPORT bool StartsWith(WCharCP) const;
@@ -224,38 +224,48 @@ public:
 // __PUBLISH_SECTION_END__
     //! @remarks A WString can share the string buffer with another WString object. Do not try to modify its internal buffer without first triggering the copy-on-write mechanism to make sure that this object has its own copy.
 // __PUBLISH_SECTION_START__
-    void ToUpper () {std::transform (begin(), end(), begin(), ::towupper);}
+    WStringR ToUpper ()
+        {
+        std::transform (begin(), end(), begin(), ::towupper);
+        return *this;
+        }
 
     //! Converts this string, in-place, to all lower case.
 // __PUBLISH_SECTION_END__
     //! @remarks A WString can share the string buffer with another WString object. Do not try to modify its internal buffer without first triggering the copy-on-write mechanism to make sure that this object has its own copy.
 // __PUBLISH_SECTION_START__
-    void ToLower () {std::transform (begin(), end(), begin(), ::towlower);}
+    WStringR ToLower () 
+        {
+        std::transform (begin(), end(), begin(), ::towlower);
+        return *this;
+        }
 
     //! True if the provided string is NULL or contains no character data.
     static bool IsNullOrEmpty (WCharCP str) { return (NULL == str) || (0 == str[0]); }
 
     //! Put quotes around a string.
-    void AddQuotes ()
+    WStringR AddQuotes ()
         {
         insert (begin(), L'\"');
         insert (end(),   L'\"');
+        return *this;
         }
 
     //! Remove quotes from around a string.
-    void DropQuotes ()
+    WStringR DropQuotes ()
         {
         if (2 > length())
-            return;
+            return *this;
 
         iterator first = begin();
         iterator last  = end() - 1;
 
         if ('\"' != *first || '\"' != *last)
-            return;
+            return *this;
 
         erase (last);
         erase (first);
+        return *this;
         }
 
     //! Replace all instances of a sub string. Returns the number of replacements made.
@@ -360,11 +370,11 @@ struct Utf8String : public bastring
     //! Test for equality with another string, ignoring case. @return true if the strings are equal (ignoring case). @param other The other string.
     bool EqualsI (Utf8CP other) const {return (0 == CompareToI(other));}
     //! Removes all whitespace from the left and right sides. Whitespace includes space, line feed, carriage return, and tab (e.g. iswspace).
-    BENTLEYDLL_EXPORT void Trim ();
+    BENTLEYDLL_EXPORT Utf8StringR Trim ();
     //! Removes all whitespace from the end. Whitespace includes space, line feed, carriage return, and tab (e.g. iswspace).
-    BENTLEYDLL_EXPORT void TrimEnd();
+    BENTLEYDLL_EXPORT Utf8StringR TrimEnd ();
     //! Removes all instances of any of the given characters from the left and right sides.
-    BENTLEYDLL_EXPORT void Trim (Utf8CP trimCharacters);
+    BENTLEYDLL_EXPORT Utf8StringR Trim (Utf8CP trimCharacters);
 
     //! Test for whether this string contains another string. @param other The other string. @return true if this string contains the other string. 
     BENTLEYDLL_EXPORT bool Contains(Utf8StringCR other) const;
@@ -395,7 +405,7 @@ struct Utf8String : public bastring
 
     //! Converts this string, in-place, to all lower case.
     //! @remarks This function can be very slow if the string contains non-ascii characters.
-    void ToLower()
+    Utf8StringR ToLower ()
         {
         if (IsAscii())
             std::transform (begin(), end(), begin(), ToLowerChar);
@@ -406,11 +416,12 @@ struct Utf8String : public bastring
             clear ();
             BeStringUtilities::WCharToUtf8 (*this, wstr.c_str());
             }
+        return *this;
         }
     
     //! Converts this string, in-place, to all upper case.
     //! @remarks This function can be very slow if the string contains non-ascii characters.
-    BENTLEYDLL_EXPORT void ToUpper();
+    BENTLEYDLL_EXPORT Utf8StringR ToUpper ();
 
     //! Reads the next token delimited by any character in \a delims or \0.
     //! @param[out] next    set to next token, if found, or cleared if not
