@@ -76,7 +76,9 @@ TEST_F(ElementGeometryBuilderTests, CreateElement2d)
     double radius = 1.5;
     DgnConeDetail cylinderDetail(DPoint3d::From(0, 0, 0), DPoint3d::From(0, 0, dz), radius, radius, true);
     ISolidPrimitivePtr cylinder = ISolidPrimitive::CreateDgnCone(cylinderDetail);
+    BeTest::SetFailOnAssert(false);
     EXPECT_FALSE(builder->Append(*cylinder));
+    BeTest::SetFailOnAssert(true);
 
     EXPECT_EQ(SUCCESS, builder->SetGeomStreamAndPlacement(*geomElem));
     EXPECT_TRUE(m_db->Elements().Insert(*el).IsValid());
