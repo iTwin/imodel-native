@@ -470,7 +470,7 @@ public:
 
     //! Determine whether this DgnModel has any elements loaded. This will always be true if FillModel was never called,
     //! or after EmptyModel is called.
-    bool IsEmpty() const {return (begin() != end());}
+    bool IsEmpty() const {return (begin() == end());}
 
     typedef DgnElementMap::const_iterator const_iterator;
 

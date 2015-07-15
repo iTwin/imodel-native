@@ -428,14 +428,7 @@ bool computeRangePlanesFromCorners(ClipPlane rangePlanes[6], DPoint3d degenerate
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RangeClipPlanes::ClipRange
-(
-ElemRangeCalc*          rangeCalculator,
-ClipStackCP             clipStack,
-DPoint3d                corners[8],
-size_t                  clipIndex,
-bool                    fastClip
-) const
+bool RangeClipPlanes::ClipRange (ElemRangeCalc* rangeCalculator, ClipStackCP clipStack, DPoint3d corners[8], size_t clipIndex, bool fastClip) const
     {
     switch (m_planes.ClassifyPointContainment(corners, 8))
         {
@@ -767,7 +760,7 @@ void RangeOutput::_DrawTextString(TextStringCR text, double* zDepth)
     if (text.GetText().empty())
         return;
 
-    double      height      = text.GetStyle().GetHeight();
+    double      height = text.GetStyle().GetHeight();
     DPoint3d    pts[5];
 
     text.ComputeBoundingShape(pts, 0.0, (fabs(height) / 2.0));
@@ -950,16 +943,13 @@ bool _ScanRangeFromPolyhedron()
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt _VisitElement(GeometricElementCR element) override
     {
-    if (IsRangeContainedInCurrentRange(element.CalculateRange3d(), element.Is3d()))
+    DRange3d range = element.CalculateRange3d();
+    if (IsRangeContainedInCurrentRange(range, element.Is3d()))
         return SUCCESS;
 
     // NOTE: Can just draw bounding box instead of drawing element geometry...
-    DPoint3d  corners[8];
-    DRange3d  range = (element.Is3d() ? element.ToElement3d()->GetPlacement().GetElementBox() : ElementAlignedBox3d(element.ToElement2d()->GetPlacement().GetElementBox()));
-    Transform placementTrans = (element.Is3d() ? element.ToElement3d()->GetPlacement().GetTransform() : element.ToElement2d()->GetPlacement().GetTransform());
-
+    DPoint3d corners[8];
     range.Get8Corners(corners);
-    placementTrans.Multiply(corners, 8);
     GetIDrawGeom().DrawPointString3d(8, corners, nullptr);
 
     return SUCCESS;
@@ -1064,7 +1054,6 @@ void InitDepthFitContext()
     {
     InitFitContext();
 
-#if defined (NEEDS_WORK_UNITS)
     Frustum frustum = GetFrustum();
     int         nPlanes;
     ClipPlane   frustumPlanes[6];
@@ -1079,8 +1068,6 @@ void InitDepthFitContext()
         ClipPlaneSet planeSet(frustumPlanes, nPlanes);
         DirectPushTransClipOutput(*m_IDrawGeom, nullptr, &planeSet);
         }
-#endif
-
     }
 };
 
@@ -1109,10 +1096,14 @@ StatusInt DgnViewport::DetermineVisibleDepthNpc(double& lowNpc, double& highNpc,
 
     if (SUCCESS != context.GetElemRange()->GetRange(range))
         return ERROR;
-    
-    m_rotMatrix.MultiplyTranspose(&range.low, &range.low, 2);
-    WorldToNpc(&range.low, &range.low, 2);
 
+    DPoint3d corner[8];
+    range.Get8Corners(corner);
+    
+    m_rotMatrix.MultiplyTranspose(corner, corner, 8);
+    WorldToNpc(corner, corner, 8);
+
+    range.InitFrom(corner, 8);
     lowNpc = range.low.z;
     highNpc = range.high.z;
 
@@ -1122,7 +1113,7 @@ StatusInt DgnViewport::DetermineVisibleDepthNpc(double& lowNpc, double& highNpc,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       DgnViewport::ComputeVisibleDepthRange(double& minDepth, double& maxDepth, bool ignoreViewExtent)
+StatusInt DgnViewport::ComputeVisibleDepthRange(double& minDepth, double& maxDepth, bool ignoreViewExtent)
     {
     FitViewParams params;
     

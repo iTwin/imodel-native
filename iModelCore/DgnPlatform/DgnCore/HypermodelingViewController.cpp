@@ -495,9 +495,9 @@ DgnModelP HypermodelingViewController::_GetTargetModel() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-AxisAlignedBox3d HypermodelingViewController::_GetProjectExtents() const
+AxisAlignedBox3d HypermodelingViewController::_GetViewedExtents() const
     {
-    return m_currentViewController->GetProjectExtents(); // *** NEEDS WORK: I guess the drawing could stick out the sides. Also, should we returned clipped range?
+    return m_currentViewController->GetViewedExtents(); // *** NEEDS WORK: I guess the drawing could stick out the sides. Also, should we returned clipped range?
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -401,7 +401,7 @@ DbResult ViewController::SaveTo(Utf8CP newName, DgnViewId& newId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-AxisAlignedBox3d ViewController::_GetProjectExtents() const
+AxisAlignedBox3d ViewController::_GetViewedExtents() const
     {
     return m_dgndb.Units().GetProjectExtents();
     }
@@ -1364,7 +1364,7 @@ bool DrawingViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, 
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewportStatus CameraViewController::LookAt(DPoint3dCR eyePoint, DPoint3dCR targetPoint, DVec3dCR upVec,
-                                                  DVec2dCP extentsIn, double const* frontDistIn, double const* backDistIn)
+                                            DVec2dCP extentsIn, double const* frontDistIn, double const* backDistIn)
     {
     DVec3d yVec = upVec;
     if (yVec.Normalize() <= mgds_fc_epsilon) // up vector zero length?

@@ -412,7 +412,7 @@ void QueryViewController::QueryModelExtents(DRange3dR range, DgnViewportR vp)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewController::FitComplete QueryViewController::_ComputeFitRange(DRange3dR range, DgnViewportR vp, FitViewParamsR params) 
     {
-    range = GetProjectExtents();
+    range = GetViewedExtents();
 
     Transform  transform;
     transform.InitFrom((nullptr == params.m_rMatrix) ? vp.GetRotMatrix() : *params.m_rMatrix);
@@ -468,15 +468,6 @@ void QueryViewController::BindModelAndCategory(StatementR stmt) const
     stmt.BindVirtualSet(vSetIdx, *this);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Shaun.Sewall    03/2013
-//--------------+------------------------------------------------------------------------
-void QueryViewController::_RestoreFromSettings(JsonValueCR val) 
-    {
-    T_Super::_RestoreFromSettings(val);
-    m_queryModel.EmptyModel();
-    }
-
 //  #define DUMP_DYNAMIC_UPDATE_STATS 1
 
 //---------------------------------------------------------------------------------------
@@ -491,7 +482,8 @@ void QueryViewController::_DrawView(ViewContextR context)
     // use the in-memory range tree for picks (to limit to sub-range)
     if (DrawPurpose::Pick == context.GetDrawPurpose() )
         {
-        context.VisitDgnModel(&m_queryModel);
+        if (!m_queryModel.IsEmpty())    // if we have no elements, nothing to do.
+            context.VisitDgnModel(&m_queryModel);
 
         if (context.CheckStop())
             return;
