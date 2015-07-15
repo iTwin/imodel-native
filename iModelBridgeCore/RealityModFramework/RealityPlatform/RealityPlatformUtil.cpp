@@ -12,7 +12,7 @@
 #include "stdafx.h"
 #include "RealityPlatformUtil.h"
 
-USING_BENTLEY_NAMESPACE_REALITYPLATFORM
+USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jean-Francois.Cote              02/2015

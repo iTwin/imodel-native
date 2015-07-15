@@ -12,7 +12,7 @@
 #include <PointoolsVortexAPI_DLL/vortexLicense.c>
 #include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_import.cpp>
 
-USING_BENTLEY_NAMESPACE_REALITYPLATFORM
+USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eric.Paquet                     07/2012

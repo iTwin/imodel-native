@@ -20,8 +20,8 @@ using namespace System::Drawing;
 using namespace System::IO;
 using namespace std;
 
-USING_BENTLEY_NAMESPACE_REALITYPLATFORM
-USING_BENTLEY_NAMESPACE_WMSPARSER
+USING_NAMESPACE_BENTLEY_REALITYPLATFORM
+USING_NAMESPACE_BENTLEY_WMSPARSER
 
 //-----------------------------------------------------------------------------
 // This function print out the usage for the current program.

@@ -10,7 +10,7 @@
 #include <Bentley/BeTest.h>
 #include <RealityPackage/RealityDataPackage.h>
 
-USING_BENTLEY_NAMESPACE_REALITYPACKAGE
+USING_NAMESPACE_BENTLEY_REALITYPACKAGE
 
 #define _STRINGIFY(s) #s
 #define STRINGIFY(s) _STRINGIFY(s)

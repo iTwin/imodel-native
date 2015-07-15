@@ -9,7 +9,7 @@
 #include <Bentley/BeFileName.h>
 #include "RealitySerialization.h"
 
-USING_BENTLEY_NAMESPACE_REALITYPACKAGE
+USING_NAMESPACE_BENTLEY_REALITYPACKAGE
 
 #define XML_TOSTRING_OPTIONS ((BeXmlDom::ToStringOption)(BeXmlDom::TO_STRING_OPTION_Formatted | BeXmlDom::TO_STRING_OPTION_Indent))
 

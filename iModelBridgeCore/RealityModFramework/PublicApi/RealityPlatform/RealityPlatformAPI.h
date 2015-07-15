@@ -8,7 +8,10 @@
 #pragma once
 
 #include <Bentley/Bentley.h>
+#include <Bentley/bvector.h>
+#include <Bentley/WString.h>
 #include <Bentley/RefCounted.h>
+#include <Geom/GeomApi.h>
 
 #if defined (__REALITYPLATFORM_BUILD__)
 #   define REALITYDATAPLATFORM_EXPORT EXPORT_ATTRIBUTE
@@ -18,7 +21,7 @@
 
 #define BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE         BEGIN_BENTLEY_NAMESPACE namespace RealityPlatform {
 #define END_BENTLEY_REALITYPLATFORM_NAMESPACE           } END_BENTLEY_NAMESPACE
-#define USING_BENTLEY_NAMESPACE_REALITYPLATFORM         using namespace BentleyApi::RealityPlatform;
+#define USING_NAMESPACE_BENTLEY_REALITYPLATFORM         using namespace BentleyApi::RealityPlatform;
 
 
 #define REALITYPLATFORM_TYPEDEFS(_name_) \
@@ -42,5 +45,5 @@ REALITYPLATFORM_REF_COUNTED_PTR(WMSDataHandler)
 REALITYPLATFORM_TYPEDEFS(WmsSource)
 REALITYPLATFORM_REF_COUNTED_PTR(WmsSource)
 
-REALITYPLATFORM_TYPEDEFS(MapInfo)
-REALITYPLATFORM_REF_COUNTED_PTR(MapInfo)
+REALITYPLATFORM_TYPEDEFS(WmsMapInfo)
+REALITYPLATFORM_REF_COUNTED_PTR(WmsMapInfo)

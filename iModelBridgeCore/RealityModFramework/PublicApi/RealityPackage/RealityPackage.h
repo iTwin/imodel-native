@@ -20,7 +20,7 @@
 
 #define BEGIN_BENTLEY_REALITYPACKAGE_NAMESPACE              BEGIN_BENTLEY_NAMESPACE namespace RealityPackage {
 #define END_BENTLEY_REALITYPACKAGE_NAMESPACE                } END_BENTLEY_NAMESPACE
-#define USING_BENTLEY_NAMESPACE_REALITYPACKAGE              using namespace BentleyApi::RealityPackage;
+#define USING_NAMESPACE_BENTLEY_REALITYPACKAGE              using namespace BentleyApi::RealityPackage;
 
 
 #define REALITYPACKAGE_TYPEDEFS(_name_) \

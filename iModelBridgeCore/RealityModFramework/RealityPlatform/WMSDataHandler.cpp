@@ -17,7 +17,7 @@
 #define THUMBNAIL_WIDTH     "256"
 #define THUMBNAIL_HEIGHT    "256"
 
-USING_BENTLEY_NAMESPACE_REALITYPLATFORM
+USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote               5/2015

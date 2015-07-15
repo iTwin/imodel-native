@@ -25,13 +25,13 @@ struct RealityDataSource : public RefCountedBase
 public:
     friend struct RealityDataSourceSerializer; 
 
-    REALITYPACKAGE_EXPORT static RealityDataSourcePtr Create(WCharCP uri, WCharCP type);
+    REALITYPACKAGE_EXPORT static RealityDataSourcePtr Create(Utf8CP uri, WCharCP type);
 
     //! Get/Set the source uri. It could be a full URL or a path relative to the package file.
     //! ex: "http://www.Bentley.com/logo.jpg"
     //!     "./imagery/road.jpg"
-    REALITYPACKAGE_EXPORT WStringCR GetUri() const;
-    REALITYPACKAGE_EXPORT void SetUri(WCharCP uri);
+    REALITYPACKAGE_EXPORT Utf8StringCR GetUri() const;
+    REALITYPACKAGE_EXPORT void         SetUri(Utf8CP uri);
 
     //! Get/Set The source type.
     REALITYPACKAGE_EXPORT WStringCR GetType() const;
@@ -39,7 +39,7 @@ public:
    
 protected:
     RealityDataSource(){}
-    RealityDataSource(WCharCP uri, WCharCP type);
+    RealityDataSource(Utf8CP uri, WCharCP type);
     virtual ~RealityDataSource();
 
     // Must be re-implemented by each child class.  Used by serialization.
@@ -49,7 +49,7 @@ protected:
     virtual RealityPackageStatus _Write(BeXmlNodeR dataSourceNode) const;
 
 private:
-    WString m_uri;
+    Utf8String m_uri;
     WString m_type;     
 };
 
@@ -64,17 +64,17 @@ struct WmsDataSource : public RealityDataSource
 public:
     friend struct RealityDataSourceSerializer; 
 
-    REALITYPACKAGE_EXPORT static WmsDataSourcePtr Create(WCharCP uri);
+    REALITYPACKAGE_EXPORT static WmsDataSourcePtr Create(Utf8CP uri);
 
     //! Get/Set The source data.
     //! The string used here should represent a xml fragment containing all the nodes/infos required for WMS processing.
     //! You can take a look at PublicApi/RealityPlatform/WMSSource.h for more details on the structure of a MapInfo object.
-    REALITYPACKAGE_EXPORT WStringCR GetMapInfo() const;
-    REALITYPACKAGE_EXPORT void      SetMapInfo(WCharCP mapInfo);
+    REALITYPACKAGE_EXPORT Utf8StringCR  GetMapInfo() const;
+    REALITYPACKAGE_EXPORT void          SetMapInfo(Utf8CP mapInfo);
 
 protected:
     WmsDataSource(){}
-    WmsDataSource(WCharCP uri);
+    WmsDataSource(Utf8CP uri);
     virtual ~WmsDataSource();
 
     virtual RealityPackageStatus _Read(BeXmlNodeR dataSourceNode);
@@ -83,7 +83,7 @@ protected:
     virtual Utf8CP _GetElementName() const;
 
 private:
-    WString m_mapInfo;
+    Utf8String m_mapInfo;
 };
 
 END_BENTLEY_REALITYPACKAGE_NAMESPACE

@@ -9,7 +9,7 @@
 #include <Bentley/BeFileName.h>
 #include "RealitySerialization.h"
 
-USING_BENTLEY_NAMESPACE_REALITYPACKAGE
+USING_NAMESPACE_BENTLEY_REALITYPACKAGE
 
 //=======================================================================================
 //                              RealityDataSource
@@ -17,8 +17,8 @@ USING_BENTLEY_NAMESPACE_REALITYPACKAGE
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   
 //----------------------------------------------------------------------------------------
-WStringCR RealityDataSource::GetUri() const {return m_uri;} 
-void RealityDataSource::SetUri(WCharCP uri) {m_uri=uri;}
+Utf8StringCR RealityDataSource::GetUri() const { return m_uri; }
+void RealityDataSource::SetUri(Utf8CP uri) { m_uri = uri; }
 
 WStringCR RealityDataSource::GetType() const  {return m_type;} 
 void RealityDataSource::SetType(WCharCP type) {m_type=type;}
@@ -35,9 +35,9 @@ Utf8CP RealityDataSource::_GetElementName() const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-RealityDataSource::RealityDataSource(WCharCP uri, WCharCP type)
+RealityDataSource::RealityDataSource(Utf8CP uri, WCharCP type)
     {
-    BeAssert(!WString::IsNullOrEmpty(uri) && !WString::IsNullOrEmpty(type));
+    BeAssert(!Utf8String::IsNullOrEmpty(uri) && !WString::IsNullOrEmpty(type));
     m_uri = uri;
     m_type = type;
     }
@@ -50,9 +50,9 @@ RealityDataSource::~RealityDataSource(){}
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-RealityDataSourcePtr RealityDataSource::Create(WCharCP uri, WCharCP type)
+RealityDataSourcePtr RealityDataSource::Create(Utf8CP uri, WCharCP type)
     {
-    if(WString::IsNullOrEmpty(uri) || WString::IsNullOrEmpty(type))
+    if (Utf8String::IsNullOrEmpty(uri) || WString::IsNullOrEmpty(type))
         return NULL;
         
     return new RealityDataSource(uri, type);
@@ -78,7 +78,10 @@ RealityPackageStatus RealityDataSource::_Write(BeXmlNodeR dataSourceNode) const
     if(m_uri.empty() || m_type.empty())
         return RealityPackageStatus::MissingSourceAttribute;
         
-    dataSourceNode.AddAttributeStringValue(PACKAGE_SOURCE_ATTRIBUTE_Uri, m_uri.c_str());
+    WString temp;
+    BeStringUtilities::Utf8ToWChar(temp, m_uri.c_str());
+    dataSourceNode.AddAttributeStringValue(PACKAGE_SOURCE_ATTRIBUTE_Uri, temp.c_str());
+
     dataSourceNode.AddAttributeStringValue(PACKAGE_SOURCE_ATTRIBUTE_Type, m_type.c_str());
 
     return RealityPackageStatus::Success;
@@ -91,13 +94,13 @@ RealityPackageStatus RealityDataSource::_Write(BeXmlNodeR dataSourceNode) const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                  
 //----------------------------------------------------------------------------------------
-WStringCR WmsDataSource::GetMapInfo() const { return m_mapInfo; }
-void WmsDataSource::SetMapInfo(WCharCP mapInfo) { m_mapInfo = mapInfo; }
+Utf8StringCR WmsDataSource::GetMapInfo() const { return m_mapInfo; }
+void WmsDataSource::SetMapInfo(Utf8CP mapInfo) { m_mapInfo = mapInfo; }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-WmsDataSource::WmsDataSource(WCharCP uri)
+WmsDataSource::WmsDataSource(Utf8CP uri)
     :RealityDataSource(uri, WMS_SOURCE_TYPE)
     {
     }
@@ -115,9 +118,9 @@ Utf8CP WmsDataSource::_GetElementName() const {return PACKAGE_ELEMENT_WmsSource;
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-WmsDataSourcePtr WmsDataSource::Create(WCharCP uri)
+WmsDataSourcePtr WmsDataSource::Create(Utf8CP uri)
     {
-    if(WString::IsNullOrEmpty(uri))
+    if (Utf8String::IsNullOrEmpty(uri))
         return NULL;
         
     return new WmsDataSource(uri);
