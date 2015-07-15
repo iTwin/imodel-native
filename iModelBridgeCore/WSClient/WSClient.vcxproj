@@ -41,7 +41,7 @@
     <NMakeCleanCommandLine>bb -ax64 reb WebServicesClient-Library WebServicesClient-PublishedAPI -c</NMakeCleanCommandLine>
     <NMakeReBuildCommandLine>bb -ax64 -r WSClient -f WSClient -p WebServicesClient b</NMakeReBuildCommandLine>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-    <IncludePath>$(SrcRoot)WSClient\PublicAPI\;$(SrcRoot)WSClient\Client\;$(OutRoot)Winx64\BuildContexts\WSClient\PublicAPI\;$(OutRoot)Winx64\Product\MobileDgnSdk-Winx64\include\;$(IncludePath)</IncludePath>
+    <IncludePath>$(SrcRoot)WSClient\PublicAPI\;$(SrcRoot)WSClient\Client\;$(OutRoot)Winx64\build\WSClient\PublishedApi\;$(OutRoot)Winx64\BuildContexts\WSClient\PublicAPI\;$(OutRoot)Winx64\Product\MobileDgnSdk-Winx64\include\;$(IncludePath)</IncludePath>
     <OutDir>$(TEMP)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(TEMP)</IntDir>
   </PropertyGroup>
@@ -60,6 +60,7 @@
     <ClCompile Include="Client\ClientInfo.cpp" />
     <ClCompile Include="Client\ClientInternal.cpp" />
     <ClCompile Include="Configuration\BuddiClient.cpp" />
+    <ClCompile Include="Configuration\BuddiError.cpp" />
     <ClCompile Include="Connect\Authentication.cpp" />
     <ClCompile Include="Connect\AuthenticationData.cpp" />
     <ClCompile Include="Connect\Connect.cpp" />
@@ -96,6 +97,7 @@
   <ItemGroup>
     <ClInclude Include="Client\ClientConfiguration.h" />
     <ClInclude Include="Client\ClientConnection.h" />
+    <ClInclude Include="Configuration\BuddiError.xliff.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\ClientInfo.h" />
     <ClInclude Include="Client\ClientInternal.h" />
     <ClInclude Include="Connect\AuthenticationData.h" />
@@ -110,6 +112,7 @@
     <ClInclude Include="Client\WSError.xliff.h" />
     <ClInclude Include="Client\ChunkedUploadRequest.h" />
     <ClInclude Include="PublicAPI\WebServices\Configuration\BuddiClient.h" />
+    <ClInclude Include="PublicAPI\WebServices\Configuration\BuddiError.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\Authentication.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\Connect.h" />
     <ClInclude Include="PublicAPI\WebServices\Connect\ConnectAuthenticationHandler.h" />

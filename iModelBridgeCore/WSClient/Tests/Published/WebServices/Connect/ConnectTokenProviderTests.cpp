@@ -10,6 +10,7 @@
 #include <WebServices/Connect/Connect.h>
 #include <Bentley/Base64Utilities.h>
 #include "MockConnectAuthenticationPersistence.h"
+#include <WebServices/Configuration/UrlProvider.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 using namespace ::testing;
@@ -18,6 +19,8 @@ using namespace ::testing;
 void ConnectTokenProviderTests::SetUp ()
     {
     Connect::Initialize (StubClientInfo (), GetHandlerPtr ());
+    m_client = std::make_shared<StubBuddiClient>();
+    UrlProvider::Initialize(UrlProvider::Environment::Dev, &m_localState, m_client);
     }
 
 void ConnectTokenProviderTests::TearDown ()
@@ -65,7 +68,7 @@ TEST_F (ConnectTokenProviderTests, UpdateToken_CredentialsSet_CallsImsServerToRe
 
     GetHandler ().ForRequest (1, [&] (HttpRequestCR request)
         {
-        EXPECT_THAT (request.GetUrl ().c_str (), HasSubstr ("ims"));
+        EXPECT_STREQ("TestUrl", request.GetUrl().c_str());
         EXPECT_EQ ("Basic " + Base64Utilities::Encode ("TestUser:TestPass"), request.GetHeaders ().GetAuthorization ());
         return StubHttpResponse ();
         });

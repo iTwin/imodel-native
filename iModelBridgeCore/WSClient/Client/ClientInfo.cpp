@@ -132,6 +132,21 @@ Utf8String ClientInfo::GetFallbackLanguage () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ClientInfo::GetAcceptLanguage () const
+    {
+    BeCriticalSectionHolder lock (m_headersCS);
+
+    if (m_languageTag.EqualsI (m_fallbackLanguageTag))
+        {
+        return m_languageTag;
+        }
+
+    return m_languageTag + ", " + m_fallbackLanguageTag + ";q=0.6";
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ClientInfo::GetApplicationName () const
     {
     return m_applicationName;
@@ -170,6 +185,14 @@ Utf8String ClientInfo::GetSystemDescription () const
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    07/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ClientInfo::GetUserAgent () const
+    {
+    return Utf8PrintfString ("%s (%s)", GetProductToken ().c_str (), m_systemDescription.c_str ());
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ClientInfo::GetProductToken () const
@@ -183,7 +206,7 @@ Utf8String ClientInfo::GetProductToken () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void  ClientInfo::FillHttpRequestHeaders (HttpRequestHeaders& headers) const
+void ClientInfo::FillHttpRequestHeaders (HttpRequestHeaders& headers) const
     {
     BeMutexHolder lock (m_headersCS);
     if (nullptr == m_headers)
@@ -191,17 +214,10 @@ void  ClientInfo::FillHttpRequestHeaders (HttpRequestHeaders& headers) const
         m_headers = std::make_shared<HttpRequestHeaders> ();
 
         // Reporting application that connects
-        m_headers->SetUserAgent (Utf8PrintfString ("%s (%s)", GetProductToken ().c_str (), m_systemDescription.c_str ()));
+        m_headers->SetUserAgent (GetUserAgent ());
 
         // Request localized response
-        if (m_languageTag.EqualsI (m_fallbackLanguageTag))
-            {
-            m_headers->SetAcceptLanguage (m_languageTag);
-            }
-        else
-            {
-            m_headers->SetAcceptLanguage (m_languageTag + ", " + m_fallbackLanguageTag + ";q=0.6");
-            }
+        m_headers->SetAcceptLanguage (GetAcceptLanguage ());
 
         // WSG feature usage tracking
         m_headers->SetUuid (m_deviceId);

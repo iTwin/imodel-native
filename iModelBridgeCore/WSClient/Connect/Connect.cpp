@@ -1,10 +1,10 @@
 /*--------------------------------------------------------------------------------------+
- |
- |     $Source: Connect/Connect.cpp $
- |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
- |
- +--------------------------------------------------------------------------------------*/
+|
+|     $Source: Connect/Connect.cpp $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
 #include <WebServices/Connect/Connect.h>
 
@@ -20,26 +20,8 @@ static ClientInfoPtr s_clientInfo;
 static IHttpHandlerPtr s_customHttpHandler;
 static bool s_connectInitialized = false;
 
-static Utf8String s_wsgUrl;
-static Utf8String s_eulaUrl;
-static Utf8String s_stsUrl;
-
 /////////////////////////////////////////////////////////////
 // Authentication related stuff
-
-#define QA_URLS
-#ifdef QA_URLS
-#define LEARN_STS_AUTH_URI "https://ims-testing.bentley.com/rest/ActiveSTSService/json/IssueEx"
-// The below DEFAULT_WSG_URL might need to be localized, since both production and QA urls contain "-eus".
-//#define DEFAULT_WSG_URL "https://qa-connectgateway-eus.cloudapp.net"
-#define DEFAULT_WSG_URL "https://dev-wsg20-eus.cloudapp.net"
-#define DEFAULT_EULA_URL "https://dev-agreement-eus.cloudapp.net/rest"
-#else // QA_URLS
-#define LEARN_STS_AUTH_URI "https://ims.bentley.com/rest/ActiveSTSService/json/IssueEx"
-// The below DEFAULT_WSG_URL might need to be localized, since both production and QA urls contain "-eus".
-#define DEFAULT_WSG_URL "https://qa-connectgateway-eus.cloudapp.net"
-#define DEFAULT_EULA_URL "https://agreement-eus.cloudapp.net/rest"
-#endif // !QA_URLS
 
 #ifdef DEBUG
 #define CONNECT_TOKEN_LIFETIME 30
@@ -50,9 +32,9 @@ static Utf8String s_stsUrl;
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Travis.Cobbs    04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Connect::Initialize (ClientInfoPtr clientInfo, IHttpHandlerPtr customHttpHandler)
+void Connect::Initialize(ClientInfoPtr clientInfo, IHttpHandlerPtr customHttpHandler)
     {
-    BeAssert (nullptr != clientInfo);
+    BeAssert(nullptr != clientInfo);
 
     if (!s_connectInitialized)
         {
@@ -65,7 +47,7 @@ void Connect::Initialize (ClientInfoPtr clientInfo, IHttpHandlerPtr customHttpHa
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Travis.Cobbs    04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Connect::Uninintialize ()
+void Connect::Uninintialize()
     {
     s_clientInfo = nullptr;
     s_customHttpHandler = nullptr;
@@ -75,111 +57,69 @@ void Connect::Uninintialize ()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Travis.Cobbs    07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR Connect::GetWsgUrl ()
+Utf8String Connect::GetWsgUrl()
     {
-    if (s_wsgUrl.empty ())
-        {
-        s_wsgUrl = DEFAULT_WSG_URL;
-
-        if (UrlProvider::IsInitialized ())
-            {
-            s_wsgUrl = UrlProvider::GetConnectWsgUrl ();
-            }
-        }
-    return s_wsgUrl;
+    return UrlProvider::GetConnectWsgUrl();
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Travis.Cobbs    07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Connect::SetWsgUrl (Utf8StringCR url)
+Utf8String Connect::GetEulaUrl()
     {
-    s_wsgUrl = url;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Travis.Cobbs    07/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR Connect::GetEulaUrl ()
-    {
-    if (s_eulaUrl.empty ())
-        {
-        s_eulaUrl = DEFAULT_EULA_URL;
-
-        if (UrlProvider::IsInitialized ())
-            {
-            s_eulaUrl = UrlProvider::GetConnectEulaUrl ();
-            }
-        }
-    return s_eulaUrl;
+    return UrlProvider::GetConnectEulaUrl();
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Rolandas.Rimkus    04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR Connect::GetStsUrl ()
+Utf8String Connect::GetStsUrl()
     {
-    if (s_stsUrl.empty ())
-        {
-        s_stsUrl = LEARN_STS_AUTH_URI;
-        if (UrlProvider::IsInitialized ())
-            {
-            s_stsUrl = UrlProvider::GetConnectLearnStsAuthUri ();
-            }
-        }
-    return s_stsUrl;
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Travis.Cobbs    07/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Connect::SetEulaUrl (Utf8StringCR url)
-    {
-    s_eulaUrl = url;
+    return UrlProvider::GetConnectLearnStsAuthUri();
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt Connect::GetStsToken (CredentialsCR creds, SamlTokenR tokenOut, Utf8CP appliesToUrlString, Utf8CP stsUrl)
+StatusInt Connect::GetStsToken(CredentialsCR creds, SamlTokenR tokenOut, Utf8CP appliesToUrlString, Utf8CP stsUrl)
     {
     Json::Value issueExParams;
     issueExParams["ActAs"] = "";
 
-    Utf8PrintfString credsPair ("%s:%s", creds.GetUsername ().c_str (), creds.GetPassword ().c_str ());
-    Utf8PrintfString authorization ("Basic %s", Base64Utilities::Encode (credsPair).c_str ());
+    Utf8PrintfString credsPair("%s:%s", creds.GetUsername().c_str(), creds.GetPassword().c_str());
+    Utf8PrintfString authorization("Basic %s", Base64Utilities::Encode(credsPair).c_str());
 
-    return GetStsToken (authorization, issueExParams, tokenOut, appliesToUrlString, stsUrl);
+    return GetStsToken(authorization, issueExParams, tokenOut, appliesToUrlString, stsUrl);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt Connect::GetStsToken (SamlTokenCR parentToken, SamlTokenR tokenOut, Utf8CP appliesToUrlString, Utf8CP stsUrl)
+StatusInt Connect::GetStsToken(SamlTokenCR parentToken, SamlTokenR tokenOut, Utf8CP appliesToUrlString, Utf8CP stsUrl)
     {
     Json::Value issueExParams;
 
-    issueExParams["ActAs"] = parentToken.AsString ();
+    issueExParams["ActAs"] = parentToken.AsString();
     issueExParams["AppliesToBootstrapToken"] = appliesToUrlString;
 
     // Note: the X509 certificate extracted from the token below is already base64 encoded.
     Utf8String cert;
-    if (SUCCESS != parentToken.GetX509Certificate (cert))
+    if (SUCCESS != parentToken.GetX509Certificate(cert))
         {
         return BC_ERROR;
         }
 
-    Utf8PrintfString authorization ("X509 access_token=%s", cert.c_str ());
+    Utf8PrintfString authorization("X509 access_token=%s", cert.c_str());
 
-    return GetStsToken (authorization, issueExParams, tokenOut, appliesToUrlString, stsUrl);
+    return GetStsToken(authorization, issueExParams, tokenOut, appliesToUrlString, stsUrl);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Travis.Cobbs    07/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt Connect::GetStsToken (Utf8StringCR authorization, JsonValueCR issueExParams, SamlTokenR tokenOut, Utf8CP appliesToUrlString, Utf8CP stsUrl)
+StatusInt Connect::GetStsToken(Utf8StringCR authorization, JsonValueCR issueExParams, SamlTokenR tokenOut, Utf8CP appliesToUrlString, Utf8CP stsUrl)
     {
-    BeAssert (s_connectInitialized);
+    BeAssert(s_connectInitialized);
 
     Json::Value issueExParamsValue = issueExParams;
 
@@ -188,38 +128,38 @@ StatusInt Connect::GetStsToken (Utf8StringCR authorization, JsonValueCR issueExP
     issueExParamsValue["KeyType"] = "";
     issueExParamsValue["AppliesTo"] = appliesToUrlString;
     issueExParamsValue["Claims"] = "";
-    issueExParamsValue["Lifetime"] = Utf8PrintfString ("%d", CONNECT_TOKEN_LIFETIME);
+    issueExParamsValue["Lifetime"] = Utf8PrintfString("%d", CONNECT_TOKEN_LIFETIME);
     issueExParamsValue["OnBehalfOf"] = "";
     issueExParamsValue["Properties"] = "";
-    issueExParamsValue["DeviceId"] = s_clientInfo->GetDeviceId ();
-    issueExParamsValue["AppId"] = s_clientInfo->GetProductToken ();
+    issueExParamsValue["DeviceId"] = s_clientInfo->GetDeviceId();
+    issueExParamsValue["AppId"] = s_clientInfo->GetProductToken();
 
-    HttpClient client (s_clientInfo, s_customHttpHandler);
-    HttpRequest request = client.CreatePostRequest (stsUrl);
-    request.GetHeaders ().SetContentType ("application/json");
-    request.GetHeaders ().SetAuthorization (authorization);
+    HttpClient client(s_clientInfo, s_customHttpHandler);
+    HttpRequest request = client.CreatePostRequest(stsUrl);
+    request.GetHeaders().SetContentType("application/json");
+    request.GetHeaders().SetAuthorization(authorization);
 
-    HttpStringBodyPtr requestBody = HttpStringBody::Create (Json::FastWriter ().write (issueExParamsValue));
-    request.SetRequestBody (requestBody);
+    HttpStringBodyPtr requestBody = HttpStringBody::Create(Json::FastWriter().write(issueExParamsValue));
+    request.SetRequestBody(requestBody);
 
-    HttpResponse httpResponse = request.Perform ();
-    if (httpResponse.GetConnectionStatus () != ConnectionStatus::OK)
+    HttpResponse httpResponse = request.Perform();
+    if (httpResponse.GetConnectionStatus() != ConnectionStatus::OK)
         {
         return BC_ERROR;
         }
-    if (httpResponse.GetHttpStatus () == HttpStatus::Unauthorized)
+    if (httpResponse.GetHttpStatus() == HttpStatus::Unauthorized)
         {
         return BC_LOGIN_ERROR;
         }
-    Json::Value root = httpResponse.GetBody ().AsJson ();
-    if (root["RequestedSecurityToken"].empty ())
+    Json::Value root = httpResponse.GetBody().AsJson();
+    if (root["RequestedSecurityToken"].empty())
         {
-        BeAssert (false && "Bentley::MobileUtils::Connect::GetStsToken(): Token not found.");
+        BeAssert(false && "Bentley::MobileUtils::Connect::GetStsToken(): Token not found.");
         return BC_ERROR;
         }
 
-    tokenOut = SamlToken (Utf8String (root["RequestedSecurityToken"].asString ()));
-    if (!tokenOut.IsSupported ())
+    tokenOut = SamlToken(Utf8String(root["RequestedSecurityToken"].asString()));
+    if (!tokenOut.IsSupported())
         {
         return BC_ERROR;
         }
@@ -230,7 +170,7 @@ StatusInt Connect::GetStsToken (Utf8StringCR authorization, JsonValueCR issueExP
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Bentley Systems 04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt Connect::Login (CredentialsCR creds, SamlTokenR tokenOut, Utf8CP appliesToUrl /*= nullptr*/, Utf8CP stsUrl /*= nullptr*/)
+StatusInt Connect::Login(CredentialsCR creds, SamlTokenR tokenOut, Utf8CP appliesToUrl /*= nullptr*/, Utf8CP stsUrl /*= nullptr*/)
     {
     Utf8String appliesToUrlString;
     if (appliesToUrl != nullptr)
@@ -239,31 +179,32 @@ StatusInt Connect::Login (CredentialsCR creds, SamlTokenR tokenOut, Utf8CP appli
         }
     else
         {
-        appliesToUrlString = GetWsgUrl ();
+        appliesToUrlString = GetWsgUrl();
         }
-    if (stsUrl == nullptr)
-        {
-        stsUrl = LEARN_STS_AUTH_URI;
 
-        if (UrlProvider::IsInitialized ())
-            {
-            // like "https://ims-testing.bentley.com/rest/ActiveSTSService/json/IssueEx"
-            stsUrl = (UrlProvider::GetConnectLearnStsAuthUri ()).c_str ();
-            }
+    Utf8String stsUrlString;
+    if (stsUrl != nullptr)
+        {
+        stsUrlString = stsUrl;
         }
-    return GetStsToken (creds, tokenOut, appliesToUrlString.c_str (), stsUrl);
+    else
+        {
+        stsUrlString = UrlProvider::GetConnectLearnStsAuthUri().c_str();
+        }
+
+    return GetStsToken(creds, tokenOut, appliesToUrlString.c_str(), stsUrlString.c_str());
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Connect::IsImsLoginRedirect (HttpResponseCR response)
+bool Connect::IsImsLoginRedirect(HttpResponseCR response)
     {
-    if (HttpStatus::OK != response.GetHttpStatus ())
+    if (HttpStatus::OK != response.GetHttpStatus())
         {
         return false;
         }
-    if (Utf8String::npos == response.GetEffectiveUrl ().find ("/IMS/Account/Login?"))
+    if (Utf8String::npos == response.GetEffectiveUrl().find("/IMS/Account/Login?"))
         {
         return false;
         }
