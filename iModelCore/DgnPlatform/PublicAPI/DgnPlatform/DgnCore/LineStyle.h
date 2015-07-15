@@ -44,6 +44,7 @@ LINESTYLE_TYPEDEFS (LsLineCodeComponent)
 LINESTYLE_TYPEDEFS (LsOffsetComponent)
 LINESTYLE_TYPEDEFS (LsPointComponent)
 LINESTYLE_TYPEDEFS (LsPointSymbolComponent)
+LINESTYLE_TYPEDEFS (LsRasterImageComponent)
 LINESTYLE_TYPEDEFS (LsStroke)
 LINESTYLE_TYPEDEFS (LsStrokePatternComponent)
 LINESTYLE_TYPEDEFS (LsSymbolComponent)
@@ -71,6 +72,9 @@ typedef RefCountedPtr <LsInternalComponent> LsInternalComponentPtr;
 //! Smart pointer wrapper for LsCache
 typedef RefCountedPtr <LsCache> LsCachePtr;
 
+typedef RefCountedPtr <LsRasterImageComponent> LsRasterImageComponentPtr;
+
+
 //! Special style numbers that form a subset of values that may passed to LineStyleManager::GetNameFromNumber() or returned from LineStyleManager::GetNumberFromName()
 //! @ingroup LineStyleManagerModule
 enum LsKnownStyleNumber
@@ -92,6 +96,7 @@ enum class LsComponentType
     LineCode        = 3,
     LinePoint       = 4,
     Internal        = 6,
+    RasterImage     = 7,
 };
 
 #pragma pack(push)
@@ -164,6 +169,23 @@ struct          V10LinePoint : V10ComponentBase
     // Note: we used to use offsetof(V10LinePoint,m_symbol). It's not legal to use offsetof macro on a non-POD struct, however. 
     // The cast on nullptr accomplishes the same thing as offsetof. It is safe because we know that V10LinePoint uses standard layout.
     static uint32_t GetBufferSize(uint32_t numberSymbols) { return ((uint32_t)(intptr_t)&(((V10LinePoint*)nullptr)->m_symbol)) + sizeof (V10PointSymbolInfo) * numberSymbols; }
+};
+
+//=======================================================================================
+//! Describes the binary representation of LsRasterImageComponent component in a DgnDb
+// @bsiclass                                                    John.Gooding    07/2105
+//=======================================================================================
+struct V10RasterImage : V10ComponentBase
+{
+    uint32_t        m_flags;
+    Point2d         m_size;
+    double          m_trueWidth;
+    double          m_reserved2[4];
+    uint32_t        m_reserved1[4];
+
+    uint32_t        m_nImageBytes;
+    uint8_t         m_imageData[1];
+    static uint32_t GetBufferSize(uint32_t m_nImageBytes) { return ((uint32_t)(intptr_t)&(((V10RasterImage*)nullptr)->m_imageData)) + m_nImageBytes; }
 };
 
 //=======================================================================================
@@ -433,6 +455,8 @@ public:
     virtual StatusInt   _StrokeBSplineCurve     (ViewContextP context, LineStyleSymbP lsSymb, MSBsplineCurve const*, double const* tolerance) const override;
     virtual StatusInt   _DoStroke               (ViewContextP, DPoint3dCP, int, LineStyleSymbCP) const {return SUCCESS;}
     virtual void        _LoadFinished           () { m_isDirty = false; }
+    virtual BentleyStatus _GetRasterTexture (uint8_t const*& image, Point2dR imageSize, uint32_t& flags) const   { return BSIERROR; }
+    virtual BentleyStatus _GetRasterTextureWidth (double& width) const                                      { return BSIERROR; }
 
     //  Defer until update supported
     DGNPLATFORM_EXPORT void SetDescription (Utf8StringCR descr) { m_descr = descr; }
@@ -458,6 +482,52 @@ public:
     //! Retrieves the description of the component; this is the description that is stored with the definition.
     DGNPLATFORM_EXPORT Utf8String GetDescription () const;
     };
+
+//=======================================================================================
+// @bsiclass                                                      Ray.Bentley    02/2015
+//=======================================================================================
+struct           LsRasterImageComponent : LsComponent
+{
+
+    enum
+        {
+        FlagMask_AlphaChannel     = 0x0003,
+        FlagMask_AlphaOnly        = 0x0001 << 2,
+        FlagMask_AlphaInvert      = 0x0001 << 3,
+        FlagMask_TrueWidth        = 0x0001 << 4,
+        } FlagMask;
+
+                        static LsRasterImageComponent* LoadRasterImage  (LsComponentReader* reader);
+
+    DGNPLATFORM_EXPORT static LsRasterImageComponentPtr Create (BeFileNameCR fileName);
+                       static LsRasterImageComponentPtr Create (LsLocation const& location) { LsRasterImageComponentP retVal = new LsRasterImageComponent (&location); retVal->m_isDirty = true; return retVal; }
+
+
+    //  virtual StatusInt       _SaveToResourceFile () override;
+    virtual BentleyStatus   _GetRasterTexture (uint8_t const*& image, Point2dR imageSize, uint32_t& flags) const override;
+    virtual BentleyStatus   _GetRasterTextureWidth (double& width) const override;
+    virtual bool            _HasWidth () const override  { return 0 != (m_flags & FlagMask_TrueWidth); }
+    virtual double          _GetMaxWidth (DgnModelP modelRef) const override  { return _HasWidth() ? m_trueWidth : 0.0; }
+
+    uint32_t      GetWidth() const              { return m_size.x; }
+    uint32_t      GetHeight() const             { return m_size.y; }
+    uint8_t const* GetImage() const             { return &m_image.front(); }
+    size_t      GetImageBufferSize () const     { return 4 * m_size.x * m_size.y; }
+
+
+    //  DGNPLATFORM_EXPORT  static void SaveToResource (V10RasterImage* resource, uint32_t width, uint32_t height, uint32_t flags, double trueWidth, uint8_t const* imageData, size_t imageDataSize);
+
+private:
+    Point2d             m_size;
+    uint32_t            m_flags;
+    double              m_trueWidth;
+    bvector<uint8_t>       m_image;
+
+    LsRasterImageComponent   (LsLocationCP pLocation);
+    LsRasterImageComponent (V10RasterImage* rasterImageResource, LsLocationCP location);
+
+
+};  // LsRasterImageComponent
 
 //=======================================================================================
 //!  Represents a component that contains graphics.
@@ -1138,6 +1208,10 @@ private:
     int                 m_hardwareLineCode;
     bool                m_componentLoadPostProcessed;
 
+    // For raster styles...
+    mutable bool        m_rasterInitialized;
+    mutable uintptr_t   m_rasterTexture;
+
     void Init (CharCP nName, Json::Value& lsDefinition, DgnStyleId styleId);
     void SetHWStyle (LsComponentType componentType, LsComponentId componentID);
     int                 GetUnits                () const {return m_attributes & LSATTR_UNITMASK;}
@@ -1170,6 +1244,9 @@ public:
     void SetAttributes (uint32_t attr) {m_attributes = attr;}
     void SetStyleId (DgnStyleId number) { m_styleId = number; }
     DgnStyleId GetStyleId () { return m_styleId; }
+
+    // Raster Images...
+    uintptr_t                           GetRasterTexture (ViewContextR viewContext, LineStyleSymbR lineStyleSymb, double scale) const;
 
     //  There should no reason to provide set methods or to expose this outside of DgnPlatform.
     DGNPLATFORM_EXPORT double _GetMaxWidth () const;

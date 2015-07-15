@@ -143,6 +143,8 @@ $(coreObjs)LsPointComponent$(oext):    $(lineStyleDir)LsPointComponent.cpp $(LsL
 
 $(coreObjs)StrokePattern$(oext):   $(lineStyleDir)StrokePattern.cpp $(LsLocalDepends) ${MultiCompileDepends}
 
+$(coreObjs)RasterLineStyle$(oext):   $(lineStyleDir)RasterLineStyle.cpp $(LsLocalDepends) ${MultiCompileDepends}
+
 $(coreObjs)DgnScan$(oext):     $(DgnCoreDir)DgnScan.cpp $(DgnCoreAPISrc)ScanCriteria.h $(DgnFileIOPubH) $(HandlerDepends) ${MultiCompileDepends}
 
 $(coreObjs)DgnRangeTree$(oext): $(DgnCoreDir)DgnRangeTree.cpp $(DgnCoreAPISrc)DgnRangeTree.h ${MultiCompileDepends}

@@ -522,6 +522,24 @@ LsComponentReader*    reader
     return  comp;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    07/2015
+//---------------------------------------------------------------------------------------
+LsRasterImageComponent* LsRasterImageComponent::LoadRasterImage  (LsComponentReader* reader)
+    {
+    V10RasterImage*         rasterImageResource = (V10RasterImage*) reader->GetRsc();
+
+    if (4 * rasterImageResource->m_size.x * rasterImageResource->m_size.y != rasterImageResource->m_nImageBytes)
+        {
+        BeAssert (false);
+        return NULL;
+        }
+
+    LsRasterImageComponent* rasterImage = new LsRasterImageComponent (rasterImageResource, reader->GetSource());
+
+    return  rasterImage;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Chuck.Kirschman   08/08
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -812,6 +830,9 @@ static LsComponent*  loadComponent (LsComponentReader* reader)
         case LsComponentType::PointSymbol:
             return LsSymbolComponent::LoadPointSym (reader);
             break;
+
+        case LsComponentType::RasterImage:
+            return LsRasterImageComponent::LoadRasterImage (reader);
         }
 
     return  NULL;
