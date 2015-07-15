@@ -263,7 +263,7 @@ TEST_F (CategoryTests, UpdateCategory)
 
     //Updates category.
     DgnCategories::Category Updated_category (u_code, DgnCategories::Scope::Any, u_desc, u_label, DgnCategories::Rank::Application);
-    BeSQLite::DbResult update = m_db->Categories ().Update (Updated_category);
+    m_db->Categories ().Update (Updated_category);
     BeSQLite::DbResult insert1 = m_db->Categories ().Insert (Updated_category, appearence);
     EXPECT_EQ (BE_SQLITE_OK, insert1);
 
@@ -337,12 +337,12 @@ TEST_F (CategoryTests, InsertSubCategory)
 
     DgnCategories::SubCategory query_sub_bycode = m_db->Categories ().QuerySubCategoryByCode (id, sub_code);
     EXPECT_TRUE (query_sub_bycode.IsValid ());
-
-    Utf8CP illegal_char = m_db->Categories ().GetIllegalCharacters ();
+    
+    /*TODO: Unused local. Should it verified or not? Utf8CP illegal_char = */ m_db->Categories ().GetIllegalCharacters ();
     EXPECT_TRUE (m_db->Categories ().IsValidCode (sub_code) == true);
 
-    DgnSubCategoryId deafult_subId = m_db->Categories ().DefaultSubCategoryId (id);
-    EXPECT_EQ (2, deafult_subId.GetValue ());
+    DgnSubCategoryId default_subId = m_db->Categories ().DefaultSubCategoryId (id);
+    EXPECT_EQ (2, default_subId.GetValue ());
 
     //Inserts sub category 2
     Utf8CP sub2_code = "Test SubCategory 2";
@@ -501,7 +501,7 @@ TEST_F (CategoryTests, UpdateSubCategory)
 
     //Updates category.
     DgnCategories::SubCategory Updated_subcategory (id, (DgnSubCategoryId)sub, u_code, appearence, u_desc, u_label);
-    BeSQLite::DbResult update = m_db->Categories ().UpdateSubCategory (Updated_subcategory);
+    m_db->Categories ().UpdateSubCategory (Updated_subcategory);
     BeSQLite::DbResult insert_sub = m_db->Categories ().InsertSubCategory (Updated_subcategory);
     EXPECT_EQ (BE_SQLITE_OK, insert_sub);
 
