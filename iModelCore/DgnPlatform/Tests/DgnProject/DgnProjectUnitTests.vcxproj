@@ -53,6 +53,8 @@
     <ClCompile Include="Performance\PerformanceTestFixture.cpp" />
     <ClCompile Include="Performance\RelationshipPerformance_Test.cpp" />
     <ClCompile Include="Performance\TestSchemaHelper.cpp" />
+    <ClCompile Include="Published\AnnotationFrameStyle_Test.cpp" />
+    <ClCompile Include="Published\AnnotationLeaderStyle_Test.cpp" />
     <ClCompile Include="Published\AnnotationTextBlock_Test.cpp" />
     <ClCompile Include="Published\AnnotationTextStyle_Test.cpp" />
     <ClCompile Include="Published\BackwardsCompatibility_Tests.cpp" />
@@ -60,16 +62,14 @@
     <ClCompile Include="Published\DgnGraphics_Test.cpp" />
     <ClCompile Include="Published\DgnLink_Test.cpp" />
     <ClCompile Include="Published\DgnModel_Test.cpp" />
-    <ClCompile Include="Published\DgnResourceURI_Test.cpp" />
-    <ClCompile Include="Published\Font_Test.cpp" />
-    <ClCompile Include="Published\IEditInterface_Test.cpp" />
     <ClCompile Include="Published\ImageUtilities_Test.cpp" />
     <ClCompile Include="Published\MarkupProject_Test.cpp" />
     <ClCompile Include="Published\NamedVolume_Test.cpp" />
     <ClCompile Include="Published\NotificationManager_Test.cpp" />
     <ClCompile Include="Published\RealityDataCache_Test.cpp" />
     <ClCompile Include="Published\Tag_Test.cpp" />
-    <ClCompile Include="Published\TextAnnotation_Test.cpp" />
+    <ClCompile Include="Published\TextAnnotationElement_Test.cpp" />
+    <ClCompile Include="Published\TextString_Test.cpp" />
     <ClCompile Include="Published\UnitDefinition_Test.cpp" />
     <ClCompile Include="Published\UnitManager_Test.cpp" />
     <ClCompile Include="Published\valueformat_test.cpp" />

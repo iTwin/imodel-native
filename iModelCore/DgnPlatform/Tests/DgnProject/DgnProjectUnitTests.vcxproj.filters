@@ -1,12 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="Published\Font_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\IEditInterface_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Published\NotificationManager_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
@@ -88,9 +82,6 @@
     <ClCompile Include="Published\DgnGraphics_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\DgnResourceURI_Test.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ImageUtilities_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
@@ -120,9 +111,6 @@
     </ClCompile>
     <ClCompile Include="NonPublished\RefImportTest.cpp">
       <Filter>NonPublished</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\TextAnnotation_Test.cpp">
-      <Filter>Published</Filter>
     </ClCompile>
     <ClCompile Include="Published\DgnLink_Test.cpp">
       <Filter>Published</Filter>
@@ -162,6 +150,18 @@
     </ClCompile>
     <ClCompile Include="TestFixture\GeomHelper.cpp">
       <Filter>TestFixture</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\TextAnnotationElement_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\TextString_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\AnnotationLeaderStyle_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\AnnotationFrameStyle_Test.cpp">
+      <Filter>Published</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
