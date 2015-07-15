@@ -163,6 +163,9 @@
     <ClCompile Include="TestFixture\GeomHelper.cpp">
       <Filter>TestFixture</Filter>
     </ClCompile>
+    <ClCompile Include="NonPublished\Category_Test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\DgnHandlersTests.h">
