@@ -198,8 +198,7 @@ ECSqlStepTaskCreateStatus UpdateStructArrayStepTask::Create (unique_ptr<UpdateSt
 //---------------------------------------------------------------------------------------
 InsertStructArrayStepTask::InsertStructArrayStepTask (ECSqlStatusContext& statusContext, PropertyMapToTableCR property, IClassMap const& classMap)
 : ParametericStepTask (ExecutionCategory::ExecuteAfterParentStep, statusContext, property, classMap), m_insertStmt (new EmbeddedECSqlStatement ()), m_parameterValue (nullptr), m_propertyPathId (0)
-    {
-    }
+    {}
 
 
 //---------------------------------------------------------------------------------------
@@ -208,8 +207,8 @@ InsertStructArrayStepTask::InsertStructArrayStepTask (ECSqlStatusContext& status
 ECSqlStepStatus InsertStructArrayStepTask::_Execute (ECInstanceId const& instanceId)
     {
     ECSqlStepStatus stepStatus = ECSqlStepStatus::Error;
-    auto preparedStmt = m_insertStmt->GetPreparedStatementP <ECSqlInsertPreparedStatement > ();
-    auto structArrayParameterValue = GetParameter ();
+    ECSqlInsertPreparedStatement* preparedStmt = m_insertStmt->GetPreparedStatementP <ECSqlInsertPreparedStatement >();
+    ECSqlParameterValue* structArrayParameterValue = GetParameter ();
     if (structArrayParameterValue == nullptr)
         {
         BeAssert (false && "Struct array parameter value is nullptr.");
@@ -217,25 +216,19 @@ ECSqlStepStatus InsertStructArrayStepTask::_Execute (ECInstanceId const& instanc
         }
     
     if (structArrayParameterValue->IsNull ())
-        {
         return ECSqlStepStatus::Done;
-        }
     
-    auto structType = GetPropertyMapR ().GetProperty ().GetAsArrayProperty ()->GetStructElementType ();
-    auto const& ecdb = preparedStmt->GetECDb ();
-    auto structClassMap = ecdb.GetECDbImplR().GetECDbMap ().GetClassMap (*structType);
-    auto const& structMemberPropMaps = structClassMap->GetPropertyMaps ();
+    ECClassCP structType = GetPropertyMapR ().GetProperty ().GetAsArrayProperty ()->GetStructElementType ();
+    ECDb const& ecdb = preparedStmt->GetECDb ();
+    IClassMap const* structClassMap = ecdb.GetECDbImplR().GetECDbMap ().GetClassMap (*structType);
+    PropertyMapCollection const& structMemberPropMaps = structClassMap->GetPropertyMaps ();
     int nArrayElementIndex = 0;
    
-    for (auto arrayElement : structArrayParameterValue->GetArray ())
+    for (IECSqlValue const* arrayElement : structArrayParameterValue->GetArray ())
         {       
         ECInstanceId generatedECInstanceId;
-        auto dbStat = ecdb.GetECDbImplR().GetECInstanceIdSequence ().GetNextValue<ECInstanceId> (generatedECInstanceId);
-        if (dbStat != BE_SQLITE_OK)
-            {
-            //GetStatusContext ().SetStatus (&ecdb, dbStat, true, "InsertStructArrayStepTask::_Execute (ECSqlStepTaskArgs& args) failed: Could not generate an ParentECInstanceId.");
+        if (BE_SQLITE_OK != ecdb.GetECDbImplR().GetECInstanceIdSequence ().GetNextValue<ECInstanceId> (generatedECInstanceId))
             return ECSqlStepStatus::Error;
-            }
        
         m_insertStmt->Reset ();
         m_insertStmt->ClearBindings ();
@@ -244,10 +237,10 @@ ECSqlStepStatus InsertStructArrayStepTask::_Execute (ECInstanceId const& instanc
         m_insertStmt->GetBinder (PARAMETER_ECPROPERTYPATHID).BindInt64 (m_propertyPathId);
         m_insertStmt->GetBinder (PARAMETER_ECARRAYINDEX).BindInt64 (nArrayElementIndex++);   
        
-        auto structArrayElementValue = static_cast<StructECSqlParameterValue const*> (&arrayElement->GetStruct ());
+        StructECSqlParameterValue const* structArrayElementValue = static_cast<StructECSqlParameterValue const*> (&arrayElement->GetStruct());
 
         int parameterIndex = PARAMETER_STRUCTARRAY - 1;
-        for (auto& propertyMap : structMemberPropMaps)
+        for (PropertyMap const* propertyMap : structMemberPropMaps)
             {
             if (propertyMap->IsSystemPropertyMap () || propertyMap->IsUnmapped())
                 continue;
@@ -258,8 +251,8 @@ ECSqlStepStatus InsertStructArrayStepTask::_Execute (ECInstanceId const& instanc
             if (v.IsNull ())
                 continue;
 
-            auto value = static_cast<ECSqlParameterValue const*>(&v);
-            auto& binder = m_insertStmt->GetBinder (parameterIndex);
+            ECSqlParameterValue const* value = static_cast<ECSqlParameterValue const*>(&v);
+            IECSqlBinder& binder = m_insertStmt->GetBinder (parameterIndex);
             if (value->BindTo (binder) != ECSqlStatus::Success)
                 {
                 BeAssert (false && "Failed to bind struct array element");

@@ -23,29 +23,28 @@ private:
     explicit ECDbSchemaWriter(ECDbR ecdb) : m_ecdb(ecdb) {}
 
     bool EnsureNamespacePrefixIsUnique(ECSchemaCR);
-    BeSQLite::DbResult CreateECSchemaEntry(ECSchemaCR, ECSchemaId);
-    BeSQLite::DbResult CreateECClassEntry(ECClassCR, ECClassId);
-    BeSQLite::DbResult CreateBaseClassEntry(ECClassId ecClassId, ECClassCR baseClass, int index);
-    BeSQLite::DbResult CreateECPropertyEntry(ECPropertyCR ecProperty, ECPropertyId ecPropertyId, ECClassId ecClassId, int32_t index);
-    BeSQLite::DbResult CreateECRelationshipConstraintEntry(ECClassId relationshipClassId, ECN::ECRelationshipConstraintR relationshipConstraint, ECRelationshipEnd endpoint);
-    BeSQLite::DbResult CreateECRelationshipConstraintClassEntry(ECClassId relationshipClassId, ECClassId constraintClassId, ECRelationshipEnd endpoint);
-    BeSQLite::DbResult InsertCAEntry(IECInstanceP customAttribute, ECClassId ecClassId, ECContainerId containerId, ECContainerType containerType, ECContainerId overridenContainerId, int index);
-    BeSQLite::DbResult CreateECSchemaReferenceEntry(ECSchemaId ecSchemaId, ECSchemaId ecReferencedSchemaId);
+    BentleyStatus CreateECSchemaEntry(ECSchemaCR, ECSchemaId);
+    BentleyStatus CreateECClassEntry(ECClassCR, ECClassId);
+    BentleyStatus CreateBaseClassEntry(ECClassId ecClassId, ECClassCR baseClass, int index);
+    BentleyStatus CreateECPropertyEntry(ECPropertyCR ecProperty, ECPropertyId ecPropertyId, ECClassId ecClassId, int32_t index);
+    BentleyStatus CreateECRelationshipConstraintEntry(ECClassId relationshipClassId, ECN::ECRelationshipConstraintR relationshipConstraint, ECRelationshipEnd endpoint);
+    BentleyStatus CreateECRelationshipConstraintClassEntry(ECClassId relationshipClassId, ECClassId constraintClassId, ECRelationshipEnd endpoint);
+    BentleyStatus InsertCAEntry(IECInstanceP customAttribute, ECClassId ecClassId, ECContainerId containerId, ECContainerType containerType, ECContainerId overridenContainerId, int index);
+    BentleyStatus CreateECSchemaReferenceEntry(ECSchemaId ecSchemaId, ECSchemaId ecReferencedSchemaId);
 
-    BeSQLite::DbResult ImportCustomAttributes(IECCustomAttributeContainerCR sourceContainer, ECContainerId sourceContainerId, ECContainerType containerType, WCharCP onlyImportCAWithClassName = nullptr);
+    BentleyStatus ImportCustomAttributes(IECCustomAttributeContainerCR sourceContainer, ECContainerId sourceContainerId, ECContainerType containerType, WCharCP onlyImportCAWithClassName = nullptr);
 
-    BeSQLite::DbResult ImportECSchema(ECN::ECSchemaCR);
-    BeSQLite::DbResult ImportECClass(ECN::ECClassCR);
+    BentleyStatus ImportECClass(ECN::ECClassCR);
 
-    BeSQLite::DbResult ImportECProperty(ECN::ECPropertyCR, ECClassId ecClassId, int32_t index);
-    BeSQLite::DbResult ImportECRelationshipClass(ECN::ECRelationshipClassCP, ECClassId relationshipClassId);
-    BeSQLite::DbResult ImportECRelationshipConstraint(ECClassId relationshipClassId, ECN::ECRelationshipConstraintR, ECRelationshipEnd);
-    BeSQLite::DbResult ImportECCustomAttributeECClass(ECN::IECCustomAttributeContainerCR);
-    BeSQLite::DbResult EnsureECSchemaExists(ECClassCR);
+    BentleyStatus ImportECProperty(ECN::ECPropertyCR, ECClassId ecClassId, int32_t index);
+    BentleyStatus ImportECRelationshipClass(ECN::ECRelationshipClassCP, ECClassId relationshipClassId);
+    BentleyStatus ImportECRelationshipConstraint(ECClassId relationshipClassId, ECN::ECRelationshipConstraintR, ECRelationshipEnd);
+    BentleyStatus ImportECCustomAttributeECClass(ECN::IECCustomAttributeContainerCR);
+    BentleyStatus EnsureECSchemaExists(ECClassCR);
 
 
 public:
-    BeSQLite::DbResult Import(ECSchemaCR ecSchema);
+    BentleyStatus Import(ECSchemaCR ecSchema);
 
     static ECDbSchemaWriterPtr Create(ECDbR ecdb);
     };

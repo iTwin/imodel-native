@@ -93,7 +93,7 @@ private:
     MapStatus                   AddClassMap (ClassMapPtr& classMap);
     void                        RemoveClassMap (IClassMap const& classMap);
     bool                        FinishTableDefinition () const;
-    DbResult                    Save ();
+    BentleyStatus               Save();
     //! Create a table to persist ECInstances of the given ECClass in the Db
     BentleyStatus               CreateOrUpdateRequiredTables ();
 

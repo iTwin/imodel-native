@@ -126,7 +126,7 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext& schemaImportContext, bvector
         return MapStatus::Error;
         }
 
-    if (BE_SQLITE_DONE != Save ())
+    if (SUCCESS != Save ())
         {
         ClearCache ();
         schemaImportContext.GetIssueListener ().Report (ECDbSchemaManager::IImportIssueListener::Severity::Error,
@@ -792,7 +792,7 @@ void ECDbMap::ClearCache ()
 * Save map
 * @bsimethod                                 Affan Khan                          08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ECDbMap::Save()
+BentleyStatus ECDbMap::Save()
     {
     BeMutexHolder lock(m_criticalSection);
     StopWatch stopWatch(true);
@@ -805,11 +805,10 @@ DbResult ECDbMap::Save()
         if (classMap->IsDirty())
             {
             i++;
-            auto r = classMap->Save (doneList);
-            if (r != BentleyStatus::SUCCESS)
+            if (SUCCESS != classMap->Save (doneList))
                 {
                 LOG.errorv ("Failed to save ECDbMap for ECClass %s. db error: %s", Utf8String (ecClass.GetFullName ()).c_str (), GetECDbR ().GetLastError ());
-                return BE_SQLITE_ERROR;
+                return ERROR;
                 }
             }
         }
@@ -819,7 +818,7 @@ DbResult ECDbMap::Save()
     if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
         LOG.debugv ("Saving ECDbMap for %d ECClasses took %.4lf msecs.", i, stopWatch.GetElapsedSeconds () * 1000.0);
 
-    return BE_SQLITE_DONE;
+    return SUCCESS;
     }
 
 

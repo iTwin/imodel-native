@@ -1582,8 +1582,8 @@ BentleyStatus ViewGenerator::GetViewQueryForChild (NativeSqlBuilder& viewSql, EC
 
     std::vector<ECClassId> classesMappedToTable;
 
-    if (ECDbSchemaPersistence::GetClassesMappedToTable (classesMappedToTable, table, true, map.GetECDbR ()) != BE_SQLITE_DONE)
-        return BentleyStatus::ERROR;
+    if (ECDbSchemaPersistence::GetClassesMappedToTable (classesMappedToTable, table, true, map.GetECDbR ()) != SUCCESS)
+        return ERROR;
  
     bool oneToManyMapping = classesMappedToTable.size() > 1;
 
@@ -1922,8 +1922,8 @@ BentleyStatus ViewGenerator::CreateViewForRelationship (NativeSqlBuilder& viewSq
                      {
 
                      std::vector<ECClassId> classesMappedToTable;
-                     if (ECDbSchemaPersistence::GetClassesMappedToTable(classesMappedToTable, relationMap.GetTable(), false, map.GetECDbR()) != BE_SQLITE_DONE)
-                         return BentleyStatus::ERROR;
+                     if (ECDbSchemaPersistence::GetClassesMappedToTable(classesMappedToTable, relationMap.GetTable(), false, map.GetECDbR()) != SUCCESS)
+                         return ERROR;
 
                      if (classesMappedToTable.size() != 1)
                          {
@@ -1967,7 +1967,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationship (NativeSqlBuilder& viewSq
                 unionQuery.Append (" UNION ");
 
             status = CreateViewForRelationshipClassLinkTableMap (unionQuery, map, prepareContext, *ltm.front (), relationMap);
-            if (status != BentleyStatus::SUCCESS)
+            if (status != SUCCESS)
                 return status;
 
             auto column = table->GetFilteredColumnFirst (ECDbSystemColumnECClassId);
@@ -1975,8 +1975,8 @@ BentleyStatus ViewGenerator::CreateViewForRelationship (NativeSqlBuilder& viewSq
                 {
 
                 std::vector<ECClassId> classesMappedToTable;
-                if (ECDbSchemaPersistence::GetClassesMappedToTable (classesMappedToTable, *table, false, map.GetECDbR ()) != BE_SQLITE_DONE)
-                    return BentleyStatus::ERROR;
+                if (ECDbSchemaPersistence::GetClassesMappedToTable (classesMappedToTable, *table, false, map.GetECDbR ()) != SUCCESS)
+                    return ERROR;
 
                 if (classesMappedToTable.size () != ltm.size ())
                     {

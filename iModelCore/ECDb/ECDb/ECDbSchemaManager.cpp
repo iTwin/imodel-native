@@ -285,8 +285,7 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaManager::ImportECSchema (SchemaImportContext const& context, ECSchemaCR ecSchema, bool addToReaderCache) const
     {
-    auto stat = m_ecImporter->Import (ecSchema);
-    if (BE_SQLITE_OK != stat)
+    if (SUCCESS != m_ecImporter->Import (ecSchema))
         {
         context.GetIssueListener ().Report (IImportIssueListener::Severity::Error,
                                             "Failed to import ECSchema '%s'. Please see log for details.",
@@ -388,7 +387,7 @@ void ECDbSchemaManager::GetSupplementalSchemas (bvector<ECSchemaP>& supplemental
 ECSchemaCP ECDbSchemaManager::GetECSchema (Utf8CP schemaName, bool ensureAllClassesLoaded) const
     {
     ECSchemaP schema = nullptr;
-    if (m_ecReader->GetECSchema (schema, schemaName, ensureAllClassesLoaded) == BE_SQLITE_ROW)
+    if (m_ecReader->GetECSchema (schema, schemaName, ensureAllClassesLoaded) == SUCCESS)
         return schema;
     else
         return nullptr;
@@ -400,7 +399,7 @@ ECSchemaCP ECDbSchemaManager::GetECSchema (Utf8CP schemaName, bool ensureAllClas
 ECSchemaCP ECDbSchemaManager::GetECSchema (ECSchemaId schemaId, bool ensureAllClassesLoaded) const
     {
     ECSchemaP schema = nullptr;
-    if (m_ecReader->GetECSchema (schema, schemaId, ensureAllClassesLoaded) == BE_SQLITE_ROW)
+    if (m_ecReader->GetECSchema(schema, schemaId, ensureAllClassesLoaded) == SUCCESS)
         return schema;
     else
         return nullptr;
@@ -440,7 +439,7 @@ ECClassCP ECDbSchemaManager::GetECClass (Utf8CP schemaNameOrPrefix, Utf8CP class
         case ResolveSchema::BySchemaName:
             {
             ECClassP ecClass = nullptr;
-            if (m_ecReader->GetECClassBySchemaName (ecClass, schemaNameOrPrefix, className) == BE_SQLITE_ROW)
+            if (m_ecReader->GetECClassBySchemaName(ecClass, schemaNameOrPrefix, className) == SUCCESS)
                 return ecClass;
             else
                 return nullptr;
@@ -448,7 +447,7 @@ ECClassCP ECDbSchemaManager::GetECClass (Utf8CP schemaNameOrPrefix, Utf8CP class
         case ResolveSchema::BySchemaNamespacePrefix:
             {
             ECClassP ecClass = nullptr;
-            if (m_ecReader->GetECClassBySchemaNameSpacePrefix (ecClass, schemaNameOrPrefix, className) == BE_SQLITE_ROW)
+            if (m_ecReader->GetECClassBySchemaNameSpacePrefix(ecClass, schemaNameOrPrefix, className) == SUCCESS)
                 return ecClass;
             else
                 return nullptr;
@@ -478,7 +477,7 @@ ECDerivedClassesList const& ECDbSchemaManager::GetDerivedECClasses (ECClassCR ba
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaManager::GetECSchemaKeys (ECSchemaKeys& keys) const
     {
-    return (ECDbSchemaPersistence::GetECSchemaKeys(keys, m_ecdb) == BE_SQLITE_DONE) ? SUCCESS : ERROR;
+    return ECDbSchemaPersistence::GetECSchemaKeys(keys, m_ecdb);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -488,7 +487,7 @@ BentleyStatus ECDbSchemaManager::GetECClassKeys (ECClassKeys& keys, Utf8CP schem
     {
     PRECONDITION(schemaName != nullptr && "schemaName parameter cannot be null", ERROR);
     ECSchemaId schemaId = ECDbSchemaPersistence::GetECSchemaId (m_ecdb, schemaName);
-    return (ECDbSchemaPersistence::GetECClassKeys (keys, schemaId, m_ecdb) == BE_SQLITE_DONE) ? SUCCESS : ERROR;
+    return ECDbSchemaPersistence::GetECClassKeys(keys, schemaId, m_ecdb);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -594,7 +593,7 @@ ECSchemaPtr ECDbSchemaManager::_LocateSchema (SchemaKeyR key, SchemaMatchType ma
     {
     ECSchemaP schema = nullptr;
     Utf8String schemaName(key.m_schemaName);
-    if (m_ecReader->GetECSchema (schema, schemaName.c_str (), true) != BE_SQLITE_ROW)
+    if (m_ecReader->GetECSchema (schema, schemaName.c_str (), true) != SUCCESS)
         return nullptr;
 
     if (schema->GetSchemaKey ().Matches (key, matchType))
@@ -670,8 +669,7 @@ BentleyStatus ECDbSchemaManager::EnsureDerivedClassesExist(ECN::ECClassCR ecClas
         }
 
     ECDbSchemaPersistence::ECClassIdList derivedClassIds;
-    DbResult r = ECDbSchemaPersistence::GetDerivedECClasses(derivedClassIds, ecClassId, m_ecdb);
-    if (r != BE_SQLITE_DONE)
+    if (SUCCESS != ECDbSchemaPersistence::GetDerivedECClasses(derivedClassIds, ecClassId, m_ecdb))
         return ERROR;
 
     for (ECClassId derivedClassId : derivedClassIds)

@@ -430,17 +430,15 @@ MapStatus ClassMap::AddPropertyMaps (IClassMap const* parentClassMap, ECDbClassM
 
         if (loadInfo == nullptr)
             {
-            if (propMap->FindOrCreateColumnsInTable(*this, classMapInfo) == MapStatus::Success)
+            if (SUCCESS == propMap->FindOrCreateColumnsInTable(*this, classMapInfo))
                 GetPropertyMapsR ().AddPropertyMap (propMap);
             }
         else
             {
-            if (propMap->Load (*loadInfo) == BE_SQLITE_DONE)
+            if (propMap->Load (*loadInfo) == SUCCESS)
                 GetPropertyMapsR ().AddPropertyMap (propMap);
             else
-                {
                 LOG.error ("A new property has been added to class but there is no mapping information for it %s, %s");
-                }
             }
         }
 
@@ -846,16 +844,15 @@ BentleyStatus ClassMap::_Save (std::set<ClassMap const*>& savedGraph)
             if (baseProperties.find (propertyMap) != baseProperties.end())
                 continue;
 
-            auto r = propertyMap->Save (*mapInfo);
-            if (r != BE_SQLITE_DONE)
-                return BentleyStatus::ERROR;
+            if (SUCCESS != propertyMap->Save (*mapInfo))
+                return ERROR;
             }
 
         m_id = mapInfo->GetId ();
         }
 
         m_isDirty = false;
-        return BentleyStatus::SUCCESS;
+        return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
