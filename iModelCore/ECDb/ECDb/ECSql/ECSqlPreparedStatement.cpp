@@ -456,9 +456,7 @@ ECSqlStepStatus ECSqlUpdatePreparedStatement::Step ()
             return ECSqlStepStatus::Error;
 
         if (!IsNothingToUpdate())
-            {
             status = DoStep();
-            }
         }
 
     return status;

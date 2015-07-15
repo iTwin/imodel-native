@@ -304,12 +304,11 @@ BeSQLite::DbResult ECDbSchemaWriter::CreateECRelationshipConstraintClassEntry (E
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::DbResult ECDbSchemaWriter::Import (ECSchemaCR ecSchema)
     {
-    BeMutexHolder aGuard (m_mutex);
-    StopWatch timer ("", true);
+    BeMutexHolder lock (m_mutex);
     ECSchemaId ecSchemaId = ECDbSchemaPersistence::GetECSchemaId(m_ecdb, ecSchema);
     if (0 != ecSchemaId)
         {
-        LOG.warningv(L"Did not import ECSchema %ls (it already exists in the ECDb). We should have checked earlier, that it already exists", ecSchema.GetFullSchemaName().c_str());
+        BeAssert(false && "Did not import ECSchema (it already exists in the ECDb). We should have checked earlier, that it already exists");
         return BE_SQLITE_OK;
         }
 
@@ -322,8 +321,6 @@ BeSQLite::DbResult ECDbSchemaWriter::Import (ECSchemaCR ecSchema)
         return r;
         }
 
-    timer.Stop();
-    LOG.infov("Imported (in %.2f seconds) ECSchema %s into %s", timer.GetElapsedSeconds(), Utf8String (ecSchema.GetFullSchemaName().c_str()).c_str (), m_ecdb.GetDbFileName());
     return BE_SQLITE_OK;
     }
 

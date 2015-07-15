@@ -32,7 +32,6 @@ ECDbSchemaManager.ECDbImportSchema_WSG2eBPluginSchemas_Succeeds
 
 # Affan - ECSchemaUpgrade related test failing due to my change. The feature is not avaliable yet in new api.
 ECDbSchemas.UpdatingSchemaShouldNotDeleteExistingRelationshipsOrIndexes
-ECDbSchemaManager.ImportSchemaWithSubclassesToBaseClassInExistingSchema
 
 ECDbInstances.CreateRoot_ExistingRoot_ReturnsSameKey_ECDBTEST
 ECDbSchemaManager.UpdateExsitingSchemaDifferntCache

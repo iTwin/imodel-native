@@ -79,6 +79,8 @@ IImportIssueListener const* userProvidedIssueListener
         return ERROR;
         }
 
+    StopWatch timer(true);
+
     BeMutexHolder lock (m_criticalSection);
     bvector<ECSchemaP> schemas;
     cache.GetSchemas (schemas);
@@ -89,7 +91,7 @@ IImportIssueListener const* userProvidedIssueListener
             {
             if (id == 0 || id != schema->GetId())
                 {
-                LOG.errorv(L"ECSchema %s. is owned by some other ECDB file", schema->GetFullSchemaName().c_str());
+                LOG.errorv(L"ECSchema %ls is owned by some other ECDb file.", schema->GetFullSchemaName().c_str());
                 return ERROR;
                 }
             }
@@ -131,10 +133,8 @@ IImportIssueListener const* userProvidedIssueListener
             BuildDependencyOrderedSchemaList (schemasToImport, schema);
         }
     
-    if (AssertOnDuplicateCopyOfSchema(schemasToImport))
-        {
+    if (ContainsDuplicateSchemas(schemasToImport))
         return ERROR;
-        }
 
     bvector<ECDiffPtr> diffs; 
     auto stat = BatchImportOrUpdateECSchemas (context, diffs, schemasToImport, options, true);
@@ -151,23 +151,25 @@ IImportIssueListener const* userProvidedIssueListener
     if (mapStatus == MapStatus::Error)
         return ERROR;
     //Clear cache in case we have diffs
-    if (!diffs.empty ())
+    if (!diffs.empty())
         m_ecdb.ClearECDbCache();
 
+    timer.Stop();
+    LOG.infov("Imported ECSchemas in %.4f msecs.",  timer.GetElapsedSeconds() * 1000.0);
     return SUCCESS;
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                  Muhammad.Zaighum                      11/2014
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool ECDbSchemaManager::AssertOnDuplicateCopyOfSchema(const bvector<ECSchemaP>& schemas)
+bool ECDbSchemaManager::ContainsDuplicateSchemas(bvector<ECSchemaP> const& schemas)
     {
-    std::map<WString, ECSchemaP> myMap;
-    for (auto const schema : schemas)
+    bmap<WString, ECSchemaCP> myMap;
+    for (ECSchemaCP schema : schemas)
         {
         if (myMap[schema->GetFullSchemaName()] == schema)
             {
-            LOG.errorv(L"Found more then one in-memory copy of ECSchema %s. Use single ECSchemaReadContext to Read all Schemas.", schema->GetFullSchemaName().c_str());
+            LOG.errorv(L"Found more then one in-memory copy of ECSchema %ls. Use single ECSchemaReadContext to deserialize ECSchemas.", schema->GetFullSchemaName().c_str());
             return true;
             }
 
@@ -190,7 +192,6 @@ bool isSupplemental (ECSchemaCR schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportContext const& context, bvector<ECDiffPtr>&  diffs, bvector<ECSchemaP> const& schemas, ImportOptions const& options, bool addToReaderCache) const
     {
-    StopWatch timer (true);
     //1. Only import supplemental schema if doSupplement = True AND saveSupplementals = TRUE
     bvector<ECSchemaP> schemasToImport;
     for (auto primarySchema : schemas)
@@ -213,7 +214,7 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
                     if (status != SUPPLEMENTED_SCHEMA_STATUS_Success)
                         {
                         //TODO: print detail error in log. We cannot revert so we will import what we got
-                        LOG.warningv (L"Encountered error while supplementing %ls", primarySchema->GetFullSchemaName ().c_str ());
+                        LOG.warningv (L"Failed to supplement %ls.", primarySchema->GetFullSchemaName ().c_str ());
                         }
                     }
                 //All consolidated customattribute must be reference. But Supplemental Provenance in BSCA is not
@@ -275,8 +276,6 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
 
     if (!diffs.empty ())
         ClearCache ();
-    timer.Stop ();
-    LOG.infov ("ECSchema Batch Import took %.4f msecs.", timer.GetElapsedSeconds () * 1000.0);
 
     return SUCCESS;
     }
@@ -321,14 +320,10 @@ BentleyStatus ECDbSchemaManager::UpdateECSchema (SchemaImportContext const& cont
         existingSchema->GetVersionMinor () > ecSchema.GetVersionMinor ())
         {
         if (ecSchema.IsStandardSchema ())
-            {
             return BentleyStatus::SUCCESS; 
-            }
-        else
-            {
-            ReportUpdateError (context, ecSchema, *existingSchema, "Version mismatch: Major version must be equal, minor version must be greater or equal than version of existing schema.");
-            return ERROR;
-            }
+
+        ReportUpdateError (context, ecSchema, *existingSchema, "Version mismatch: Major version must be equal, minor version must be greater or equal than version of existing schema.");
+        return ERROR;
         }
 
     if (existingSchema->GetNamespacePrefix () != ecSchema.GetNamespacePrefix ())
@@ -354,16 +349,6 @@ BentleyStatus ECDbSchemaManager::UpdateECSchema (SchemaImportContext const& cont
     LOG.errorv("The ECSchema '%s' cannot be updated. Updating ECSchemas is not yet supported in this version of ECDb.",
                schemaName.c_str());
     return ERROR;
-    /* Until schema update is working again...
-    DbResult r = m_ecImporter->Update (*diff, *m_ecReader, m_map);
-    if (BE_SQLITE_OK != r)
-        {
-        ReportUpdateError (context, ecSchema, *existingSchema, "Please see log for details.");
-        return ERROR;
-        }
-
-    return SUCCESS;
-    */
     }
 
 /*---------------------------------------------------------------------------------------

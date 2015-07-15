@@ -196,9 +196,10 @@ RelationshipClassMapCP ECDbMap::GetRelationshipClassMap (ECN::ECClassId ecRelati
 //---------------------------------------------------------------------------------------
 MapStatus ECDbMap::DoMapSchemas (bvector<ECSchemaCP>& mapSchemas, bool forceMapStrategyReevaluation)
     {
-    StopWatch timer (L"", true);
     if (AssertIfIsNotImportingSchema ())
         return MapStatus::Error;
+
+    StopWatch timer(true);
 
     // Identify root classes/relationship-classes
     bvector<ECClassCP> rootClasses;
@@ -262,8 +263,9 @@ MapStatus ECDbMap::DoMapSchemas (bvector<ECSchemaCP>& mapSchemas, bool forceMapS
         return MapStatus::Error;
 
     timer.Stop ();
-    LOG.infov ("Mapped %d ECSchemas containing %d ECClasses and %d ECRelationshipClasses to db in %.4f seconds",
-        mapSchemas.size (), nClasses, nRelationshipClasses, timer.GetElapsedSeconds ());
+    if (LOG.isSeverityEnabled (NativeLogging::LOG_DEBUG))
+        LOG.debugv ("Mapped %d ECSchemas containing %d ECClasses and %d ECRelationshipClasses to the database in %.4f seconds",
+            mapSchemas.size (), nClasses, nRelationshipClasses, timer.GetElapsedSeconds ());
 
     return MapStatus::Success;
     }
@@ -630,7 +632,7 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables ()
 
     BeMutexHolder lock (m_criticalSection);
     m_ecdb.GetStatementCache ().Empty ();
-    StopWatch timer(L"", true);
+    StopWatch timer(true);
     
     int nCreated = 0;
     int nUpdated = 0;
@@ -671,7 +673,8 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables ()
         }
 
     timer.Stop();
-    LOG.infov("Created %d tables, Skipped %d and updated %d table/view(s) in %.4f seconds", nCreated, nSkipped, nUpdated, timer.GetElapsedSeconds());
+    if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
+        LOG.debugv("Created %d tables, skipped %d tables and updated %d table/view(s) in %.4f seconds", nCreated, nSkipped, nUpdated, timer.GetElapsedSeconds());
 
     return SUCCESS;
     }
@@ -792,7 +795,7 @@ void ECDbMap::ClearCache ()
 DbResult ECDbMap::Save()
     {
     BeMutexHolder lock(m_criticalSection);
-    StopWatch stopWatch("", true);
+    StopWatch stopWatch(true);
     int i = 0;
     std::set<ClassMap const*> doneList;
     for (auto it =  m_classMapDictionary.begin(); it != m_classMapDictionary.end(); it++)
@@ -813,7 +816,8 @@ DbResult ECDbMap::Save()
 
     stopWatch.Stop();
     GetSQLManagerR ().Save ();
-    LOG.infov (L"Saving EC to db mappings took %.4lf seconds to save %d classes", stopWatch.GetElapsedSeconds (), i);
+    if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
+        LOG.debugv ("Saving ECDbMap for %d ECClasses took %.4lf msecs.", i, stopWatch.GetElapsedSeconds () * 1000.0);
 
     return BE_SQLITE_DONE;
     }

@@ -2157,7 +2157,7 @@ TEST (ECDbSchemaManager, ImportSchemaWithSubclassesToBaseClassInExistingSchema)
         Utf8CP baseSchemaXml =
             "<ECSchema schemaName='Planning' nameSpacePrefix='p' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
             "  <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
-            "  <ECClass typeName='Activity'>"
+            "  <ECClass typeName='Element'>"
             "    <ECCustomAttributes>"
             "        <ClassMap xmlns='ECDbMap.01.00'>"
             "            <MapStrategy>"
@@ -2166,16 +2166,20 @@ TEST (ECDbSchemaManager, ImportSchemaWithSubclassesToBaseClassInExistingSchema)
             "            </MapStrategy>"
             "        </ClassMap>"
             "    </ECCustomAttributes>"
+            "    <ECProperty propertyName='Code' typeName='string' />"
+            "  </ECClass>"
+            "  <ECClass typeName='Activity'>"
+            "    <BaseClass>Element</BaseClass>"
             "    <ECProperty propertyName='PlanId' typeName='long' />"
             "    <ECProperty propertyName='OutlineIndex' typeName='int' />"
             "  </ECClass>"
             "</ECSchema>";
 
-        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-        context->AddSchemaLocater(ecdb.GetSchemaLocater());
-        ECSchemaPtr schema = nullptr;
-        ASSERT_EQ (SchemaReadStatus::SCHEMA_READ_STATUS_Success, ECSchema::ReadFromXmlString(schema, baseSchemaXml, *context));
-        ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(context->GetCache()));
+        ECSchemaReadContextPtr context1 = ECSchemaReadContext::CreateContext();
+        context1->AddSchemaLocater(ecdb.GetSchemaLocater());
+        ECSchemaPtr schema1 = nullptr;
+        ASSERT_EQ (SchemaReadStatus::SCHEMA_READ_STATUS_Success, ECSchema::ReadFromXmlString(schema1, baseSchemaXml, *context1));
+        ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(context1->GetCache()));
 
         if (clearCacheAfterFirstImport)
             ecdb.ClearECDbCache();
@@ -2189,18 +2193,19 @@ TEST (ECDbSchemaManager, ImportSchemaWithSubclassesToBaseClassInExistingSchema)
             "  </ECClass>"
             "</ECSchema>";
 
-        context = ECSchemaReadContext::CreateContext ();
-        context->AddSchemaLocater (ecdb. GetSchemaLocater ());
-        ASSERT_EQ(SchemaReadStatus::SCHEMA_READ_STATUS_Success, ECSchema::ReadFromXmlString(schema, secondSchemaXml, *context));
-        ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(context->GetCache()));
+        ECSchemaReadContextPtr context2 = ECSchemaReadContext::CreateContext();
+        context2->AddSchemaLocater(ecdb.GetSchemaLocater());
+        ECSchemaPtr schema2 = nullptr;
+        ASSERT_EQ(SchemaReadStatus::SCHEMA_READ_STATUS_Success, ECSchema::ReadFromXmlString(schema2, secondSchemaXml, *context2));
+        ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(context2->GetCache()));
 
         ECInstanceKey newKey;
         ECSqlStatement insStmt;
-        ASSERT_EQ(ECSqlStatus::Success, insStmt.Prepare(ecdb, "INSERT INTO c.Activity (PlanId, OutlineIndex, Name) VALUES (1,1,'ConstructionPlan')"));
+        ASSERT_EQ(ECSqlStatus::Success, insStmt.Prepare(ecdb, "INSERT INTO c.Activity (Code, Name) VALUES ('ConstructionActivity-1', 'Do something')"));
         ASSERT_EQ(ECSqlStepStatus::Done, insStmt.Step(newKey));
 
         ECSqlStatement updStmt;
-        ASSERT_EQ(ECSqlStatus::Success, updStmt.Prepare(ecdb, "UPDATE p.Activity SET PlanId=2, OutlineIndex=2 WHERE ECInstanceId=?"));
+        ASSERT_EQ(ECSqlStatus::Success, updStmt.Prepare(ecdb, "UPDATE p.Activity SET PlanId=100, OutlineIndex=100 WHERE ECInstanceId=?"));
         updStmt.BindId(1, newKey.GetECInstanceId());
         ASSERT_EQ(ECSqlStepStatus::Done, updStmt.Step());
 
@@ -2221,10 +2226,8 @@ TEST (ECDbSchemaManager, ImportSchemaWithSubclassesToBaseClassInExistingSchema)
         stmt.BindId(1, activityKey.GetECInstanceId());
         ASSERT_EQ(ECSqlStepStatus::HasRow, stmt.Step());
 
-        ASSERT_TRUE(!stmt.IsValueNull(0));
-        ASSERT_EQ(1ULL, stmt.GetValueInt64(0)) << "This should start to fail once ECDb is fixed to recompute the horizontal partitions after a second schema import";
-        ASSERT_TRUE(!stmt.IsValueNull(1));
-        ASSERT_EQ(1, stmt.GetValueInt(1)) << "This should start to fail once ECDb is fixed to recompute the horizontal partitions after a second schema import";
+        ASSERT_TRUE(stmt.IsValueNull(0)) << "This should start to fail once ECDb is fixed to recompute the horizontal partitions after a second schema import";
+        ASSERT_TRUE(stmt.IsValueNull(1)) << "This should start to fail once ECDb is fixed to recompute the horizontal partitions after a second schema import";
 
         ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step());
         }
@@ -2244,9 +2247,9 @@ TEST (ECDbSchemaManager, ImportSchemaWithSubclassesToBaseClassInExistingSchema)
         ASSERT_EQ(ECSqlStepStatus::HasRow, stmt.Step());
 
         ASSERT_TRUE(!stmt.IsValueNull(0));
-        ASSERT_EQ(2ULL, stmt.GetValueInt64(0));
+        ASSERT_EQ(100ULL, stmt.GetValueInt64(0));
         ASSERT_TRUE(!stmt.IsValueNull(1));
-        ASSERT_EQ(2, stmt.GetValueInt(1));
+        ASSERT_EQ(100, stmt.GetValueInt(1));
 
         ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step());
         }

@@ -238,7 +238,7 @@ private:
     //! The list excludes ECSchemas that have already been imported into the ECDb file
     void BuildDependencyOrderedSchemaList (bvector<ECN::ECSchemaP>& schemas, ECN::ECSchemaP schema) const;
     static void ReportUpdateError (SchemaImportContext const& context, ECN::ECSchemaCR newSchema, ECN::ECSchemaCR existingSchema, Utf8CP reason);
-    static bool AssertOnDuplicateCopyOfSchema(const bvector<ECN::ECSchemaP>& schema);
+    static bool ContainsDuplicateSchemas(bvector<ECN::ECSchemaP> const& schema);
     
     ECN::ECSchemaCP GetECSchema (ECN::ECSchemaId schemaId, bool ensureAllClassesLoaded) const;
     //! Ensure that all direct subclasses of @p ecClass are loaded. Subclasses of its subclasses are not loaded

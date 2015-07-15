@@ -199,7 +199,7 @@ SchemaKey ECDbProfileECSchemaUpgrader::s_ecdbfileinfoSchemaKey = SchemaKey (L"EC
 //static
 DbResult ECDbProfileECSchemaUpgrader::ImportProfileSchemas (ECDbR ecdb, bool updateSchema)
     {
-    StopWatch timer ("", true);
+    StopWatch timer (true);
     auto context = ECSchemaReadContext::CreateContext ();
     context->AddSchemaLocater (ecdb.GetSchemaLocater ());
 
@@ -229,7 +229,7 @@ DbResult ECDbProfileECSchemaUpgrader::ImportProfileSchemas (ECDbR ecdb, bool upd
 
     if (LOG.isSeverityEnabled (NativeLogging::LOG_DEBUG))
         {
-        LOG.debugv ("Imported / updated ECDb standard ECSchemas in ECDb '%s' in %.4f msecs.",
+        LOG.debugv ("Imported / updated ECDb system ECSchemas in ECDb '%s' in %.4f msecs.",
             ecdb.GetDbFileName (),
             timer.GetElapsedSeconds () * 1000.0);
         }
