@@ -499,7 +499,9 @@ TEST_F (DomainTests, MultipleSchemasImport)
     BeFileName Test_schemaFile(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
     Test_schemaFile.AppendToPath(L"ECSchemas/" TMTEST_SCHEMA_NAMEW1 L".01.00.ecschema.xml");
 
+    BeTest::SetFailOnAssert(false); // We expect an assertion failure in a developer build. Don't let it break the test.
     auto Status = Domain_DgnSchema::GetDomain().ImportSchema(*m_db, Test_schemaFile);
+    BeTest::SetFailOnAssert(true); // Restore normal assertion handling
     EXPECT_FALSE (DgnDbStatus::Success == Status);
 
     auto test_schema = m_db->Schemas().GetECSchema(TMTEST_SCHEMA_NAME1, true);

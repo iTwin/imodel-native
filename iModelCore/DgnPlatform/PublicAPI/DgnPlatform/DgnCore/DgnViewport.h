@@ -438,7 +438,6 @@ protected:
     DPoint3d        m_viewOrgUnexpanded;        // view origin (from ViewController, unexpanded for "no clip")
     DVec3d          m_viewDeltaUnexpanded;      // view delta (from ViewController, unexpanded for "no clip")
     RotMatrix       m_rotMatrix;                // rotation matrix (from ViewController)
-    DPoint3d        m_scale;
     CameraInfo      m_camera;
     ViewFlags       m_rootViewFlags;            // view flags for root model
     int             m_viewNumber;
@@ -451,7 +450,7 @@ protected:
     ViewControllerPtr m_viewController;
     bvector<IProgressiveDisplayPtr> m_progressiveDisplay;    // progressive display of a query view and reality data.
 
-    void AdjustOrgAndDelta(ViewControllerR);
+    void CenterFocusPlane();
     DGNPLATFORM_EXPORT void DestroyViewport();
 
     virtual void _AdjustZPlanesToModel(DPoint3dR origin, DVec3dR delta, ViewControllerCR) const = 0;
@@ -491,7 +490,7 @@ protected:
     DGNPLATFORM_EXPORT virtual ColorDef _GetWindowBgColor() const;
     virtual BentleyStatus _RefreshViewport(bool always, bool synchHealingFromBs, bool& stopFlag) = 0;
     virtual void _SetICachedDraw(ICachedDrawP cachedOutput) = 0;
-    virtual double _GetMinimumLOD () const {return m_minLOD;}
+    virtual double _GetMinimumLOD() const {return m_minLOD;}
 
 public:
     DGNPLATFORM_EXPORT DgnViewport();
@@ -501,9 +500,6 @@ public:
     void SetShadowDirtyRect(BSIRectCP rect);
     bool CheckNeedsRefresh() const {return m_needsRefresh;}
     bool ShadowCastingLightsExist() const;
-    double GetXScale() const {return m_scale.x;}
-    double GetYScale() const {return m_scale.y;}
-    double GetZScale() const {return m_scale.z;}
     ViewFlagsP GetViewFlagsP () {return &m_rootViewFlags;}
     bool GetGridRange(DRange3d* range);
     DGNPLATFORM_EXPORT double GetGridScaleFactor();
@@ -526,7 +522,7 @@ public:
     void SynchShadowList();
     void UpdateShadowList(DgnDrawMode, DrawPurpose);
     DGNPLATFORM_EXPORT double GetFocusPlaneNpc();
-    DGNPLATFORM_EXPORT static StatusInt RootToNpcFromViewDef(DMap4d&, double*, CameraInfo const*, DPoint3dCR, DPoint3dCR, RotMatrixCR, DgnModelP targetModel);
+    DGNPLATFORM_EXPORT static StatusInt RootToNpcFromViewDef(DMap4d&, double*, CameraInfo const*, DPoint3dCR, DPoint3dCR, RotMatrixCR);
     DGNPLATFORM_EXPORT static int32_t GetMaxDisplayPriority();
     DGNPLATFORM_EXPORT static int32_t GetDisplayPriorityFrontPlane();
     DGNPLATFORM_EXPORT static ViewportStatus ValidateWindowSize(DPoint3dR delta, bool displayMessage);
@@ -652,10 +648,6 @@ public:
     //! support perspective transformations. This method is provided for compatibility with previous API only.
     //! @see the Coordinate Coordinate Query and Conversion functions and #GetWorldToViewMap
     DGNPLATFORM_EXPORT RotMatrixCR GetRotMatrix() const;
-
-    //! Get the Scale Factors for X, Y, Z for this DgnViewport.
-    //! @see the Coordinate Coordinate Query and Conversion functions and #GetWorldToViewMap
-    DGNPLATFORM_EXPORT DPoint3dCP GetScale() const;
 
     //! Get the DgnViewport rectangle in DgnCoordSystem::View.
     DGNPLATFORM_EXPORT BSIRect GetViewRect() const;

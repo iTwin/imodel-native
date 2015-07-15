@@ -26,6 +26,7 @@
     <ClCompile Include="BackDoor\DgnElementHelpers.cpp" />
     <ClCompile Include="BackDoor\ElementCreateHelpers.cpp" />
     <ClCompile Include="NonPublished\BeTextFile_Test.cpp" />
+    <ClCompile Include="NonPublished\Category_Test.cpp" />
     <ClCompile Include="NonPublished\Compatibility_Test.cpp" />
     <ClCompile Include="NonPublished\CopyContext_Test.cpp" />
     <ClCompile Include="NonPublished\DgnColors_Test.cpp" />

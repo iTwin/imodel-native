@@ -163,6 +163,9 @@
     <ClCompile Include="Published\AnnotationFrameStyle_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
+    <ClCompile Include="NonPublished\Category_Test.cpp">
+      <Filter>NonPublished</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\DgnHandlersTests.h">

@@ -87,7 +87,7 @@ public:
     public:
 
         //! Provides access to scripting services.
-        //! This is a complete implementation of the Admin needed to establish a scripting environment and to set up and use the DgnScriptContexts.
+        //! This is a complete implementation of the Admin needed to establish a scripting environment and to set up and use the DgnScriptContext.
         //! You may subclass ScriptingAdmin if you want to add more thread-specific contexts to it.
         struct ScriptingAdmin : IHostObject
             {
@@ -107,6 +107,14 @@ public:
             //! Provide the BeJsContext to use when executing JavaScript that needs to use the Dgn JavaScript object model. 
             //! There can only be one DgnScriptContext per thread ... and this is it!
             DGNPLATFORM_EXPORT DgnScriptContextR GetDgnScriptContext();
+
+            //! Obtain the text of the specified JavaScript program.
+            //! This base class implementation looks for the program by name in the specified DgnDb.
+            //! @param[out] jsProgramText   The content of the JavaScript program
+            //! @param[in] db               The current DgnDb file
+            //! @param[in] jsProgramName    Identifies the .JS program.
+            //! @return non-zero if the JS program is not available from the library.
+            DGNPLATFORM_EXPORT virtual DgnDbStatus _FetchJavaScript(Utf8StringR jsProgramText, DgnDbR db, Utf8CP jsProgramName);
             };
 
         //! Provides Exception handling capabilities
@@ -539,7 +547,7 @@ public:
             //! @return storage unit to solid kernel scale to be used when creating a new ISolidKernelEntity.
             //! @note: Current scale will support single solids up to 1km, should be more than adequate 
             //!        to handle any sensible scenario with a high degree of linear precision.
-            virtual double _GetSolidScale() const {return 1.0;}
+            virtual double _GetSolidScale() const {return DgnUnits::OneMeter();}
 
             //! Produce a facet topology table for the supplied ISolidKernelEntity.
             //! @param[out] out Facet topology information for solid kernel entity.
