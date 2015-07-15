@@ -130,7 +130,7 @@
 
   <Part Name="PointoolsLibsIO_VS2012" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
     <SubPart PartName="PointoolsLibsCommon_VS2012" Repository="PointoolsLibs"/>
-    <SubPart PartName="XercesLib_VS2012" PartFile="xerces-c-3_1_2" Repository="libsrc-xerces-c-3.1.2" />	
+    <SubPart PartName="Xerces_3_1_2_XercesLib_VS2012" PartFile="xerces-c-3_1_2" Repository="Libsrc-xerces-c-3.1.2" />
     <SubPart PartName="GNOME_LIBXML2_2_9_1_VS2012" Repository="PointoolsLibs"/>
     <SubPart PartName="GNU_IConv_1_1_4_VS2012" Repository="PointoolsLibs"/>
     <SubPart PartName="Loki_VS2012" Repository="PointoolsLibs"/>
