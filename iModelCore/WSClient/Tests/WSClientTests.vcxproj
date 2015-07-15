@@ -25,6 +25,9 @@
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\MobileDgn\MobileDgnViewportHelpers.h" />
     <ClInclude Include="Published\WebServices\Client\ClientInfoTests.h" />
     <ClInclude Include="Published\WebServices\Configuration\BuddiClientTests.h" />
+    <ClInclude Include="Published\WebServices\Configuration\MockBuddiClient.h" />
+    <ClInclude Include="Published\WebServices\Configuration\StubBuddiClient.h" />
+    <ClInclude Include="Published\WebServices\Configuration\UrlProviderTests.h" />
     <ClInclude Include="Published\WebServices\Connect\ConnectAuthenticationHandlerTests.h" />
     <ClInclude Include="Published\WebServices\Connect\ConnectAuthenticationPersistenceTests.h" />
     <ClInclude Include="Published\WebServices\Connect\ConnectTests.h" />
@@ -123,6 +126,7 @@
     <ClCompile Include="Published\BackstageTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\ClientInfoTests.cpp" />
     <ClCompile Include="Published\WebServices\Configuration\BuddiClientTests.cpp" />
+    <ClCompile Include="Published\WebServices\Configuration\UrlProviderTests.cpp" />
     <ClCompile Include="Published\WebServices\Connect\ConnectAuthenticationHandlerTests.cpp" />
     <ClCompile Include="Published\WebServices\Connect\ConnectAuthenticationPersistenceTests.cpp" />
     <ClCompile Include="Published\WebServices\Connect\ConnectTests.cpp" />

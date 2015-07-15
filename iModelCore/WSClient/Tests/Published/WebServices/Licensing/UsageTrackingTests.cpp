@@ -10,12 +10,16 @@
 #include <WebServices/Licensing/MobileTracking.h>
 #include <Bentley/Base64Utilities.h>
 
+#include <WebServices/Configuration/UrlProvider.h>
+
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
 void UsageTrackingTests::SetUp ()
     {
     UsageTracking::Initialize (GetHandlerPtr ());
+    m_client = std::make_shared<StubBuddiClient>();
+    UrlProvider::Initialize(UrlProvider::Environment::Dev, &m_localState, m_client);
     }
 
 void UsageTrackingTests::TearDown ()

@@ -172,3 +172,36 @@ TEST_F (ClientInfoTests, GetFallbackLanguage_NotFallbackLanguage_ReturnsLanguage
     info.SetFallbackLanguage ("en-US");
     EXPECT_STREQ ("en-US", info.GetFallbackLanguage ().c_str ());
     }
+
+TEST_F (ClientInfoTests, GetAcceptLanguage_Default_ReturnsDefaultLanguage)
+    {
+    ClientInfo info ("Foo", BeVersion (1, 0, 0, 0), "Foo", "Foo", "Foo");
+
+    EXPECT_STREQ (ClientInfo::DefaultLanguage, info.GetAcceptLanguage ().c_str ());
+    }
+
+TEST_F (ClientInfoTests, GetAcceptLanguage_LanguageAndFallbackLanguageSet_ReturnsSetLanguagesWithPriority)
+    {
+    ClientInfo info ("Foo", BeVersion (1, 0, 0, 0), "Foo", "Foo", "Foo");
+
+    info.SetFallbackLanguage ("lt");
+    info.SetLanguage ("en-US");
+
+    EXPECT_STREQ ("en-US, lt;q=0.6", info.GetAcceptLanguage ().c_str ());
+    }
+
+TEST_F (ClientInfoTests, GetAcceptLanguage_SetLanguageIsNotDefaultLanguage_FallbackLanguageWithLowerPriority)
+    {
+    ClientInfo info ("Foo", BeVersion (1, 0, 0, 0), "Foo", "Foo", "Foo");
+
+    info.SetLanguage ("en-US");
+    EXPECT_STREQ ("en-US, en;q=0.6", info.GetAcceptLanguage ().c_str ());
+    }
+
+TEST_F (ClientInfoTests, GetAcceptLanguage_FallbackLanguageDifferentFromSetLanguage_FallbackLanguageWithLowerPriority)
+    {
+    ClientInfo info ("Foo", BeVersion (1, 0, 0, 0), "Foo", "Foo", "Foo");
+
+    info.SetFallbackLanguage ("lt");
+    EXPECT_STREQ ("en, lt;q=0.6", info.GetAcceptLanguage ().c_str ());
+    }

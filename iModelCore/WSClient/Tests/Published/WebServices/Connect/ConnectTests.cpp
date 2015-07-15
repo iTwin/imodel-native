@@ -8,6 +8,7 @@
 #include "ConnectTests.h"
 #include <WebServices/Connect/Connect.h>
 #include <Bentley/Base64Utilities.h>
+#include <WebServices/Configuration/UrlProvider.h>
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 using namespace ::testing;
@@ -15,6 +16,8 @@ using namespace ::testing;
 void ConnectTests::SetUp ()
     {
     Connect::Initialize (StubClientInfo (), GetHandlerPtr ());
+    m_client = std::make_shared<StubBuddiClient>();
+    UrlProvider::Initialize(UrlProvider::Environment::Dev, &m_localState, m_client);
     }
 
 void ConnectTests::TearDown ()
@@ -26,7 +29,7 @@ TEST_F (ConnectTests, Login_DefaultUrls_SendsRequestToRetrieveToken)
     {
     GetHandler ().ForFirstRequest ([&] (HttpRequestCR request)
         {
-        EXPECT_TRUE (NULL != strstr (request.GetUrl ().c_str (), "ims"));
+        EXPECT_STREQ ("TestUrl", request.GetUrl ().c_str ());
         EXPECT_EQ ("Basic " + Base64Utilities::Encode ("Foo:Boo"), request.GetHeaders ().GetAuthorization ());
         return StubHttpResponse ();
         });

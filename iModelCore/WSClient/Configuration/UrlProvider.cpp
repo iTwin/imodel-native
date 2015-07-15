@@ -1,17 +1,38 @@
 /*--------------------------------------------------------------------------------------+
- |
- |     $Source: Configuration/UrlProvider.cpp $
- |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
- |
- +--------------------------------------------------------------------------------------*/
+|
+|     $Source: Configuration/UrlProvider.cpp $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
 #include <WebServices/Configuration/UrlProvider.h>
 
+#define LOCAL_STATE_NAMESPACE "UrlCache"
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 static UrlProvider::Environment s_env;
+IBuddiClientPtr UrlProvider::s_buddi;
+ILocalState* UrlProvider::s_localState = nullptr;
+
 bool UrlProvider::s_isInitialized = false;
+
+//Check IDs in the buddi.bentley.com
+//Bentley Corporate Network – DEV
+//Bentley Corporate Network – QA
+//Leave 0 for Release - actually all release URLs without regions
+//                      have their own unique IDs, but zero suits
+//                      them all untill URL name is unique
+uint32_t UrlProvider::s_regionsId[3] = {103, 102, 0};
+
+const Utf8CP UrlProvider::s_urlNames[6] = {
+    "Mobile.PunchListWsg",
+    "Mobile.ConnectWsg",
+    "Mobile.ConnectEula",
+    "Mobile.ImsStsAuth",       //ConnectLearnStsAuth
+    "Mobile.UsageTracking",
+    "Mobile.Passport"
+    };
 
 const Utf8String UrlProvider::s_punchListWsgUrl[3] = {
     "https://dev-wsg20-eus.cloudapp.net",
@@ -59,8 +80,10 @@ const Utf8String UrlProvider::s_passportUrl[3] = {
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Brad.Hadden   11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UrlProvider::Initialize (Environment env)
+void UrlProvider::Initialize(Environment env, ILocalState* customLocalState, IBuddiClientPtr customBuddi)
     {
+    s_localState = customLocalState ? customLocalState : &MobileDgnCommon::LocalState();
+    s_buddi = customBuddi ? customBuddi : std::make_shared<BuddiClient>();
     s_env = env;
     s_isInitialized = true;
     }
@@ -68,61 +91,100 @@ void UrlProvider::Initialize (Environment env)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Brad.Hadden   11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool UrlProvider::IsInitialized ()
+Utf8String UrlProvider::GetPunchlistWsgUrl()
     {
-    return s_isInitialized;
+    return GetUrl("Mobile.PunchListWsg", s_punchListWsgUrl);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Brad.Hadden   11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR UrlProvider::GetPunchlistWsgUrl ()
+Utf8String UrlProvider::GetConnectWsgUrl()
     {
-    BeAssert (s_isInitialized && "UrlProvider not initialized");
-    return s_punchListWsgUrl[s_env];
+    return GetUrl("Mobile.ConnectWsg", s_connectWsgUrl);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Brad.Hadden   11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR UrlProvider::GetConnectWsgUrl ()
+Utf8String UrlProvider::GetConnectEulaUrl()
     {
-    BeAssert (s_isInitialized && "UrlProvider not initialized");
-    return s_connectWsgUrl[s_env];
+    return GetUrl("Mobile.ConnectEula", s_connectEulaUrl);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Brad.Hadden   11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR UrlProvider::GetConnectEulaUrl ()
+Utf8String UrlProvider::GetConnectLearnStsAuthUri()
     {
-    BeAssert (s_isInitialized && "UrlProvider not initialized");
-    return s_connectEulaUrl[s_env];
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Brad.Hadden   11/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR UrlProvider::GetConnectLearnStsAuthUri ()
-    {
-    BeAssert (s_isInitialized && "UrlProvider not initialized");
-    return s_connectLearnStsAuthUri[s_env];
+    return GetUrl("Mobile.ImsStsAuth", s_connectLearnStsAuthUri);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    George.Rodier   2/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR UrlProvider::GetUsageTrackingUrl ()
+Utf8String UrlProvider::GetUsageTrackingUrl()
     {
-    BeAssert (s_isInitialized && "UrlProvider not initialized");
-    return s_usageTrackingUrl[s_env];
+    return GetUrl("Mobile.UsageTracking", s_usageTrackingUrl);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    George.Rodier   2/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR UrlProvider::GetPassportUrl ()
+Utf8String UrlProvider::GetPassportUrl()
     {
-    BeAssert (s_isInitialized && "UrlProvider not initialized");
-    return s_passportUrl[s_env];
+    return GetUrl("Mobile.Passport", s_passportUrl);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                Julija.Semenenko   06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String UrlProvider::GetUrl(Utf8CP urlName, const Utf8String* defaultUrls)
+    {
+    if (!s_isInitialized)
+        {
+        BeAssert(false && "UrlProvider not initialized");
+        return "";
+        }
+
+    Json::Value jsonUrl = s_localState->GetValue(LOCAL_STATE_NAMESPACE, urlName);
+
+    Utf8String url = jsonUrl.asString();
+    if (!url.empty())
+        {
+        return url;
+        }
+
+    url = GetBuddiUrl(urlName);
+    if (!url.empty())
+        {
+        s_localState->SaveValue(LOCAL_STATE_NAMESPACE, urlName, url);
+        return url;
+        }
+
+    return defaultUrls[s_env];
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                Julija.Semenenko   06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String UrlProvider::GetBuddiUrl(Utf8StringCR urlName)
+    {
+    auto result = s_buddi->GetUrl(urlName, s_regionsId[s_env])->GetResult();
+    if (result.IsSuccess())
+        {
+        return result.GetValue();
+        }
+    return "";
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                Julija.Semenenko   06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void UrlProvider::CleanUpUrlCache()
+    {
+    for (int i = 0; i < sizeof(s_urlNames) / sizeof(Utf8CP); i++)
+        {
+        s_localState->SaveValue(LOCAL_STATE_NAMESPACE, s_urlNames[i], "");
+        }
     }
