@@ -386,8 +386,12 @@ void ECDbSchemaManager::GetSupplementalSchemas (bvector<ECSchemaP>& supplemental
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaCP ECDbSchemaManager::GetECSchema (Utf8CP schemaName, bool ensureAllClassesLoaded) const
     {
+    const ECSchemaId schemaId = ECDbSchemaPersistence::GetECSchemaId(GetECDb(), schemaName); //WIP_FNV: could be more efficient if it first looked through those already cached in memory...
+    if (0 == schemaId)
+        return nullptr;
+
     ECSchemaP schema = nullptr;
-    if (m_ecReader->GetECSchema (schema, schemaName, ensureAllClassesLoaded) == SUCCESS)
+    if (m_ecReader->GetECSchema(schema, schemaId, ensureAllClassesLoaded) == SUCCESS)
         return schema;
     else
         return nullptr;
@@ -591,9 +595,13 @@ void ECDbSchemaManager::BuildDependencyOrderedSchemaList (bvector<ECSchemaP>& sc
 //---------------------------------------------------------------------------------------
 ECSchemaPtr ECDbSchemaManager::_LocateSchema (SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext)
     {
-    ECSchemaP schema = nullptr;
     Utf8String schemaName(key.m_schemaName);
-    if (m_ecReader->GetECSchema (schema, schemaName.c_str (), true) != SUCCESS)
+    const ECSchemaId schemaId = ECDbSchemaPersistence::GetECSchemaId(GetECDb (), schemaName.c_str()); //WIP_FNV: could be more efficient if it first looked through those already cached in memory...
+    if (0 == schemaId)
+        return nullptr;
+
+    ECSchemaP schema = nullptr;
+    if (m_ecReader->GetECSchema(schema, schemaId, true) != SUCCESS)
         return nullptr;
 
     if (schema->GetSchemaKey ().Matches (key, matchType))
@@ -618,7 +626,7 @@ ECClassCP ECDbSchemaManager::_LocateClass (WCharCP schemaName, WCharCP className
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      05/2013
 //---------------------------------------------------------------------------------------
-ECClassId ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema (Db& db, ECClassCR ecClass)
+ECClassId ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema (ECDbCR db, ECClassCR ecClass)
     {
     Utf8String schemaName(ecClass.GetSchema().GetName().c_str());
     Utf8String className(ecClass.GetName().c_str());
@@ -631,7 +639,7 @@ ECClassId ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema (Db& db, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      05/2013
 //---------------------------------------------------------------------------------------
-ECPropertyId ECDbSchemaManager::GetPropertyIdForECPropertyFromDuplicateECSchema (Db& db, ECPropertyCR ecProperty)
+ECPropertyId ECDbSchemaManager::GetPropertyIdForECPropertyFromDuplicateECSchema(ECDbCR db, ECPropertyCR ecProperty)
     {
     Utf8String schemaName(ecProperty.GetClass().GetSchema().GetName().c_str());
     Utf8String className(ecProperty.GetClass().GetName().c_str());
@@ -645,10 +653,9 @@ ECPropertyId ECDbSchemaManager::GetPropertyIdForECPropertyFromDuplicateECSchema 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      05/2013
 //---------------------------------------------------------------------------------------
-ECSchemaId ECDbSchemaManager::GetSchemaIdForECSchemaFromDuplicateECSchema (Db& db, ECSchemaCR ecSchema)
+ECSchemaId ECDbSchemaManager::GetSchemaIdForECSchemaFromDuplicateECSchema(ECDbCR db, ECSchemaCR ecSchema)
     {
-
-    ECSchemaId ecSchemaId = ECDbSchemaPersistence::GetECSchemaId(db, ecSchema);
+    const ECSchemaId ecSchemaId = ECDbSchemaPersistence::GetECSchemaId(db, ecSchema);
     const_cast<ECSchemaR>(ecSchema).SetId(ecSchemaId);
     return ecSchemaId;
     }
@@ -660,13 +667,9 @@ BentleyStatus ECDbSchemaManager::EnsureDerivedClassesExist(ECN::ECClassCR ecClas
     {
     ECClassId ecClassId = -1LL;
     if (ecClass.HasId ())
-        {
         ecClassId = ecClass.GetId ();
-        }
     else
-        {
         ecClassId = GetClassIdForECClassFromDuplicateECSchema(m_ecdb, ecClass);
-        }
 
     ECDbSchemaPersistence::ECClassIdList derivedClassIds;
     if (SUCCESS != ECDbSchemaPersistence::GetDerivedECClasses(derivedClassIds, ecClassId, m_ecdb))

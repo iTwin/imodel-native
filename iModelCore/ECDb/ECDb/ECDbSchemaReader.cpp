@@ -20,7 +20,7 @@ ECDbSchemaReader::~ECDbSchemaReader()
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDbSchemaReaderPtr ECDbSchemaReader::Create(Db& db)
+ECDbSchemaReaderPtr ECDbSchemaReader::Create(ECDbCR db)
     {
     return new ECDbSchemaReader(db);
     }
@@ -215,19 +215,6 @@ BentleyStatus ECDbSchemaReader::GetECSchema(ECSchemaP& ecSchemaOut, ECSchemaId e
 
     ecSchemaOut = outECSchemaKey->m_resolvedECSchema.get();
     return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        06/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaReader::GetECSchema(ECSchemaP& ecSchema, Utf8CP schemaName, bool ensureAllClassesLoaded)
-    {
-    ecSchema = nullptr;
-    ECSchemaId schemaId = ECDbSchemaPersistence::GetECSchemaId(m_db, schemaName); //WIP_FNV: could be more efficient if it first looked through those already cached in memory...
-    if (0 == schemaId)
-        return SUCCESS;
-
-    return GetECSchema (ecSchema, schemaId, ensureAllClassesLoaded);
     }
 
 //---------------------------------------------------------------------------------------

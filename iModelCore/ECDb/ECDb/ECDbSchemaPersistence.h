@@ -321,64 +321,64 @@ struct ECDbSchemaPersistence
         typedef ECSchemaKeyList*          ECSchemaKeyListP;
 
         //Insert new item
-        static  BentleyStatus InsertECSchema(BeSQLite::Db&, DbECSchemaInfo const&);
-        static  BentleyStatus InsertECClass(BeSQLite::Db&, DbECClassInfo const&);
-        static  BentleyStatus InsertBaseClass(BeSQLite::Db&, DbBaseClassInfo const&);
-        static  BentleyStatus InsertECProperty(BeSQLite::Db&, DbECPropertyInfo const&);
-        static  BentleyStatus InsertECRelationshipConstraint(BeSQLite::Db&, DbECRelationshipConstraintInfo const&);
-        static  BentleyStatus InsertECRelationshipConstraintClass(BeSQLite::Db&, DbECRelationshipConstraintClassInfo const&);
-        static  BentleyStatus InsertECRelationshipConstraintClassKeyProperty(BeSQLite::Db&, DbECRelationshipConstraintClassKeyPropertyInfo const&);
-        static  BentleyStatus InsertCustomAttribute(BeSQLite::Db&, DbCustomAttributeInfo const&);
-        static  BentleyStatus InsertECSchemaReference(BeSQLite::Db&, DbECSchemaReferenceInfo const&);
+        static  BentleyStatus InsertECSchema(ECDbCR, DbECSchemaInfo const&);
+        static  BentleyStatus InsertECClass(ECDbCR, DbECClassInfo const&);
+        static  BentleyStatus InsertBaseClass(ECDbCR, DbBaseClassInfo const&);
+        static  BentleyStatus InsertECProperty(ECDbCR, DbECPropertyInfo const&);
+        static  BentleyStatus InsertECRelationshipConstraint(ECDbCR, DbECRelationshipConstraintInfo const&);
+        static  BentleyStatus InsertECRelationshipConstraintClass(ECDbCR, DbECRelationshipConstraintClassInfo const&);
+        static  BentleyStatus InsertECRelationshipConstraintClassKeyProperty(ECDbCR, DbECRelationshipConstraintClassKeyPropertyInfo const&);
+        static  BentleyStatus InsertCustomAttribute(ECDbCR, DbCustomAttributeInfo const&);
+        static  BentleyStatus InsertECSchemaReference(ECDbCR, DbECSchemaReferenceInfo const&);
 
         //Find ECSchemaInfo
-        static  BentleyStatus FindECSchema(BeSQLite::CachedStatementPtr&, BeSQLite::Db&, DbECSchemaInfo const&);
+        static  BentleyStatus FindECSchema(BeSQLite::CachedStatementPtr&, ECDbCR, DbECSchemaInfo const&);
         static  BeSQLite::DbResult Step(DbECSchemaInfo&, BeSQLite::Statement&);
         //Find ECClassInfo
-        static  BentleyStatus FindECClass(BeSQLite::CachedStatementPtr&, BeSQLite::Db&, DbECClassInfo const&);
+        static  BentleyStatus FindECClass(BeSQLite::CachedStatementPtr&, ECDbCR, DbECClassInfo const&);
         static  BeSQLite::DbResult Step(DbECClassInfo&, BeSQLite::Statement&);
         //Find BaseClass
-        static  BentleyStatus FindBaseClass(BeSQLite::CachedStatementPtr&, BeSQLite::Db&, DbBaseClassInfo const&);
+        static  BentleyStatus FindBaseClass(BeSQLite::CachedStatementPtr&, ECDbCR, DbBaseClassInfo const&);
         static  BeSQLite::DbResult Step(DbBaseClassInfo&, BeSQLite::Statement&);
         //Find ECPropertyInfo
-        static  BentleyStatus FindECProperty(BeSQLite::CachedStatementPtr&, BeSQLite::Db&, DbECPropertyInfo const&);
+        static  BentleyStatus FindECProperty(BeSQLite::CachedStatementPtr&, ECDbCR, DbECPropertyInfo const&);
         static  BeSQLite::DbResult Step(DbECPropertyInfo&, BeSQLite::Statement&);
         //Find ECRelationConstraintInfo 
-        static  BentleyStatus FindECRelationshipConstraint(BeSQLite::CachedStatementPtr&, BeSQLite::Db&, DbECRelationshipConstraintInfo const&);
+        static  BentleyStatus FindECRelationshipConstraint(BeSQLite::CachedStatementPtr&, ECDbCR, DbECRelationshipConstraintInfo const&);
         static  BeSQLite::DbResult Step(DbECRelationshipConstraintInfo&, BeSQLite::Statement&);
         //Find ECRelationConstraintInfo 
-        static  BentleyStatus FindECRelationshipConstraintClass(BeSQLite::CachedStatementPtr&, BeSQLite::Db&, DbECRelationshipConstraintClassInfo const&);
+        static  BentleyStatus FindECRelationshipConstraintClass(BeSQLite::CachedStatementPtr&, ECDbCR, DbECRelationshipConstraintClassInfo const&);
         static  BeSQLite::DbResult Step(DbECRelationshipConstraintClassInfo&, BeSQLite::Statement&);
         //Find CustomAttributeInfo
-        static  BentleyStatus FindCustomAttribute(BeSQLite::CachedStatementPtr&, BeSQLite::Db&, DbCustomAttributeInfo const&);
+        static  BentleyStatus FindCustomAttribute(BeSQLite::CachedStatementPtr&, ECDbCR, DbCustomAttributeInfo const&);
         static  BeSQLite::DbResult Step(DbCustomAttributeInfo&, BeSQLite::Statement&);
         //Find CustomAttributeInfo
-        static  BentleyStatus FindECSchemaReference(BeSQLite::CachedStatementPtr& stmt, BeSQLite::Db& db, DbECSchemaReferenceInfo const&);
+        static  BentleyStatus FindECSchemaReference(BeSQLite::CachedStatementPtr& stmt, ECDbCR, DbECSchemaReferenceInfo const&);
         static  BeSQLite::DbResult Step(DbECSchemaReferenceInfo&, BeSQLite::Statement& stmt);
 
         //Helper
-        static                bool ContainsECSchemaReference(BeSQLite::Db&, ECSchemaId ecPrimarySchemaId, ECSchemaId ecReferencedSchemaId);
-        static                bool ContainsECClass(BeSQLite::Db&, ECClassCR);
-        static                bool ContainsECSchemaWithId(BeSQLite::Db&, ECSchemaId);
-        static          ECSchemaId GetECSchemaId(BeSQLite::Db&, Utf8CP schemaName);
-        static          ECSchemaId GetECSchemaId(BeSQLite::Db&, ECSchemaCR);
-        static           ECClassId GetECClassIdBySchemaNameSpacePrefix(BeSQLite::Db&, Utf8CP schemaName, Utf8CP className);
-        static           ECClassId GetECClassIdBySchemaName(BeSQLite::Db&, Utf8CP schemaName, Utf8CP className);
-        static        ECPropertyId GetECPropertyId(BeSQLite::Db&, Utf8CP schemaName, Utf8CP className, Utf8CP propertyName);
+        static                bool ContainsECSchemaReference(ECDbCR, ECSchemaId ecPrimarySchemaId, ECSchemaId ecReferencedSchemaId);
+        static                bool ContainsECClass(ECDbCR, ECClassCR);
+        static                bool ContainsECSchemaWithId(ECDbCR, ECSchemaId);
+        static          ECSchemaId GetECSchemaId(ECDbCR, Utf8CP schemaName);
+        static          ECSchemaId GetECSchemaId(ECDbCR, ECSchemaCR);
+        static           ECClassId GetECClassIdBySchemaNameSpacePrefix(ECDbCR, Utf8CP schemaName, Utf8CP className);
+        static           ECClassId GetECClassIdBySchemaName(ECDbCR, Utf8CP schemaName, Utf8CP className);
+        static        ECPropertyId GetECPropertyId(ECDbCR, Utf8CP schemaName, Utf8CP className, Utf8CP propertyName);
 
-        static  BentleyStatus InitializeSystemTables(BeSQLite::Db&);
-        static                bool RequiredSystemTablesExist(BeSQLite::Db&);
-        static  BentleyStatus ResolveECClassId(DbECClassEntry& key, ECClassId ecClassId, BeSQLite::Db& db);
-        static  BentleyStatus GetDerivedECClasses(ECClassIdListR classIds, ECClassId baseClassId, BeSQLite::Db& db);
-        static  BentleyStatus GetBaseECClasses(ECClassIdListR baseClassIds, ECClassId ecClassId, BeSQLite::Db& db);
-        static  BentleyStatus ResolveECSchemaId(DbECSchemaEntry& key, ECSchemaId ecSchemaId, BeSQLite::Db& db);
+        static  BentleyStatus InitializeSystemTables(ECDbCR);
+        static                bool RequiredSystemTablesExist(ECDbCR);
+        static  BentleyStatus ResolveECClassId(DbECClassEntry& key, ECClassId ecClassId, ECDbCR);
+        static  BentleyStatus GetDerivedECClasses(ECClassIdListR classIds, ECClassId baseClassId, ECDbCR);
+        static  BentleyStatus GetBaseECClasses(ECClassIdListR baseClassIds, ECClassId ecClassId, ECDbCR);
+        static  BentleyStatus ResolveECSchemaId(DbECSchemaEntry& key, ECSchemaId ecSchemaId, ECDbCR);
 
-        static  BentleyStatus GetECSchemaKeys(ECSchemaKeys&, BeSQLite::Db&);
-        static  BentleyStatus GetECClassKeys(ECClassKeys&, ECSchemaId, BeSQLite::Db&);
-        static                bool IsECSchemaMapped(bool* schemaNotFound, ECN::ECSchemaCR, BeSQLite::Db&);
-        static  BentleyStatus GetClassesMappedToTable(std::vector<ECClassId>& classIds, ECDbSqlTable const& table, bool skipRelationships, BeSQLite::Db&);
-        static                bool IsCustomAttributeDefined(BeSQLite::Db&, ECClassId caClassId, ECContainerId caSourceContainerId, ECContainerType caContainerType);
-        static  ECDbPropertyPathId GetECPropertyPathId(ECPropertyId rootECPropertyId, Utf8CP accessString, BeSQLite::Db&);
+        static  BentleyStatus GetECSchemaKeys(ECSchemaKeys&, ECDbCR);
+        static  BentleyStatus GetECClassKeys(ECClassKeys&, ECSchemaId, ECDbCR);
+        static                bool IsECSchemaMapped(bool* schemaNotFound, ECN::ECSchemaCR, ECDbCR);
+        static  BentleyStatus GetClassesMappedToTable(std::vector<ECClassId>& classIds, ECDbSqlTable const& table, bool skipRelationships, ECDbCR);
+        static                bool IsCustomAttributeDefined(ECDbCR, ECClassId caClassId, ECContainerId caSourceContainerId, ECContainerType caContainerType);
+        static  ECDbPropertyPathId GetECPropertyPathId(ECPropertyId rootECPropertyId, Utf8CP accessString, ECDbCR);
     };
 
 

@@ -19,13 +19,13 @@ typedef bmap<ECClassId, DbECClassEntry*>  DbECClassEntryMap;
 typedef bmap<ECSchemaId, DbECSchemaEntry*> DbECSchemaMap;
 private:
     ECSchemaCache              m_cache;
-    Db&                        m_db;
+    ECDbCR                     m_db;
     DbECClassEntryMap          m_ecClassKeyByECClassIdLookup;
     DbECSchemaMap              m_ecSchemaByECSchemaIdLookup;
     bool                       m_loadOnlyPrimaryCustomAttributes;
     mutable BeMutex m_criticalSection;
 
-    explicit ECDbSchemaReader(Db& db) :m_db(db), m_loadOnlyPrimaryCustomAttributes(false) {}
+    explicit ECDbSchemaReader(ECDbCR db) :m_db(db), m_loadOnlyPrimaryCustomAttributes(false) {}
 
     BentleyStatus         LoadECSchemaClassesFromDb(DbECSchemaEntry* ecSchemaKey, std::set<DbECSchemaEntry*>& fullyLoadedSchemas);
     BentleyStatus         LoadECSchemaFromDb(ECSchemaPtr& ecSchemaOut, ECSchemaId ecSchemaId);
@@ -47,24 +47,25 @@ private:
     void                       AddECSchemaToCacheInternal              (ECSchemaCR schema);
 
 public:
+    ~ECDbSchemaReader();
+
     BentleyStatus         FindECSchemaIdInDb(ECSchemaId& ecSchemaId, Utf8CP schemaName) const;
-    BentleyStatus         GetECSchema(ECSchemaP& ecSchema, Utf8CP schemaName, bool loadClasses);
     BentleyStatus         GetECSchema(ECSchemaP& ecSchemaOut, ECSchemaId ecSchemaId, bool loadClasses);
-    ECClassP                   GetECClass                              (ECClassId ecClassId);
-    ECClassP                   GetECClass (Utf8CP schemaNameOrPrefix, Utf8CP className);
+    ECClassP              GetECClass (ECClassId ecClassId);
+    ECClassP              GetECClass (Utf8CP schemaNameOrPrefix, Utf8CP className);
 
     BentleyStatus         GetECClass(/*OUT*/ECClassP& ecClass, ECClassId ecClassId);
     BentleyStatus         GetECClassBySchemaName(/*OUT*/ ECClassP& ecClass, Utf8CP schemaName, Utf8CP className);
     BentleyStatus         GetECClassBySchemaNameSpacePrefix(/*OUT*/ ECClassP& ecClass, Utf8CP schemaName, Utf8CP className);
     BentleyStatus         GetECClass(/*OUT*/ ECClassP& ecClass, Utf8CP qualifiedName); //schema:classname
     // Get the names of the class for given schema from database
-    static ECDbSchemaReaderPtr Create                                  (Db& db);
     // add a existing in memory schema into cache and build key maps for schema and classes.
     void                       AddECSchemaToCache                      (ECSchemaCR schema);
 
     void                       ClearCache                              ();
     BentleyStatus              TransformAllCABlobsToECInstances        ();
-                               ~ECDbSchemaReader                       ();
+
+    static ECDbSchemaReaderPtr Create(ECDbCR);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

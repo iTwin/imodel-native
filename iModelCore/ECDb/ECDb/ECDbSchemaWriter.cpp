@@ -446,9 +446,12 @@ BentleyStatus ECDbSchemaWriter::ImportECClass(ECN::ECClassCR ecClass)
     if (ECDbSchemaPersistence::ContainsECClass(m_ecdb, ecClass))
         {
         if (!ecClass.HasId())
-            ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema (m_ecdb, ecClass); //Callers will assume it has a valid Id
+            {
+            BeAssert(false && "should never end up here, as a class existing in the db should always have an id");
+            ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema(m_ecdb, ecClass); //Callers will assume it has a valid Id
+            }
 
-        return ERROR;
+        return SUCCESS;
         }
 
     // GenerateId
@@ -479,7 +482,10 @@ BentleyStatus ECDbSchemaWriter::ImportECClass(ECN::ECClassCR ecClass)
     for (ECPropertyCP ecProperty: ecClass.GetProperties(false))
         {
         if (SUCCESS != ImportECProperty(*ecProperty, ecClassId, propertyIndex++))
+            {
+            LOG.errorv(L"Failed to import ECProperty '%ls' of ECClass '%ls'.", ecProperty->GetName().c_str(), ecClass.GetFullName());
             return ERROR;
+            }
         }
 
     ECN::ECRelationshipClassCP relationship = ecClass.GetRelationshipClassCP();
