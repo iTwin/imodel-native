@@ -121,7 +121,9 @@ TEST(DgnScriptContextTest, Test1)
         builder.SetGeomStreamAndPlacement(element); \
         return 0;\
     } \
+    function testEgaBadReturn(element, origin, angles, params) { return 'abc'; }\
     BentleyApi.Dgn.RegisterEGA('DgnScriptContextTest.TestEga', testEga); \
+    BentleyApi.Dgn.RegisterEGA('DgnScriptContextTest.TestEgaBadReturn', testEgaBadReturn); \
 })();\
 ";
 
@@ -151,4 +153,26 @@ TEST(DgnScriptContextTest, Test1)
         }
     timeIt.Stop();
     BeTest::Log("DgnScriptContextTest", BeTest::LogPriority::PRIORITY_ERROR, Utf8PrintfString("%d / %lf seconds = %lf/second\n", niters, timeIt.GetElapsedSeconds(), niters/timeIt.GetElapsedSeconds()));
+
+    // Check that attempting to call a non-registered function fails with a non-zero xstatus
+    if (true)
+        {
+        int sres = -1;
+        BeTest::SetFailOnAssert(false);
+        DgnDbStatus xstatus = context.ExecuteJavaScriptEga(sres, *el, "DgnScriptContextTest.TestEgaNotRegistered", org, angles, parms);
+        BeTest::SetFailOnAssert(true);
+        ASSERT_EQ( DgnDbStatus::NotEnabled , xstatus ) << "this function is not registered so the attempt should fail";
+        ASSERT_EQ( -1 , sres );
+        }
+
+    // Check that attempting to call a registered function that returns anything other than a integer fails with a non-zero xstatus
+    if (true)
+        {
+        int sres = -1;
+        BeTest::SetFailOnAssert(false);
+        DgnDbStatus xstatus = context.ExecuteJavaScriptEga(sres, *el, "DgnScriptContextTest.TestEgaBadReturn", org, angles, parms);
+        BeTest::SetFailOnAssert(true);
+        ASSERT_EQ( DgnDbStatus::NotEnabled , xstatus ) << "this function should not be callable so the attempt should fail";
+        ASSERT_EQ( -1 , sres );
+        }
     }
