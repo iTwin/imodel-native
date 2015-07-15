@@ -156,7 +156,7 @@ struct StringMethods
         return compare(evalResult, args, true);
         }
 
-    static ExpressionStatus convertCase(EvaluationResult& evalResult, EvaluationResultVector& args, void (WString::*transformFunc)())
+    static ExpressionStatus convertCase(EvaluationResult& evalResult, EvaluationResultVector& args, WStringR (WString::*transformFunc)())
         {
         WString str;
         if (ExtractArg(str, args, 0, true))
