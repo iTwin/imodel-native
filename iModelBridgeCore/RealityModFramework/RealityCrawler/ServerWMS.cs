@@ -77,7 +77,7 @@ namespace Bentley.RealityPlatform.RealityCrawler
                 }
             }
 
-        /// <summary>ok
+        /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="url">Server URL to get the capabilities</param>
@@ -279,8 +279,6 @@ namespace Bentley.RealityPlatform.RealityCrawler
                 {
                 Stopwatch timer = new Stopwatch ();
                 timer.Start ();
-                // Test MyG
-                //WebRequest request = WebRequest.Create (url.AbsoluteUri + "?SERVICE=WMS&REQUEST=GetCapabilities");
 
                 WebRequest request = WebRequest.Create (url.AbsoluteUri + "SERVICE=WMS&REQUEST=GetCapabilities");
                 // ToDo: Manage error here
@@ -291,9 +289,6 @@ namespace Bentley.RealityPlatform.RealityCrawler
 
                 //Get the Response Stream from the URL 
                 System.IO.Stream responseStream = response.GetResponseStream ();
-                //byte[] rawData = new byte[responseStream.Length];
-                //responseStream.Read (rawData, 0, (int)responseStream.Length);
-                //Console.WriteLine ("The XML: {0}", rawData);
 
                 m_capabilities = new WMSCapabilities (responseStream);
 
@@ -352,18 +347,12 @@ namespace Bentley.RealityPlatform.RealityCrawler
                             {                            
                             if ( ServerToUpdate.ServerExtendedProperties.GetCapabilitiesData.Equals (m_capabilities.XML) )
                                 {
-                                // Trick to speedup the database operations by stopping the Change detection.               
-                                //context.Configuration.AutoDetectChangesEnabled = false;
-
                                 ServerToUpdate.Online = true;
                                 ServerToUpdate.LastCheck = DateTime.UtcNow;
                                 ServerToUpdate.LastTimeOnline = DateTime.UtcNow;
                                 ServerToUpdate.Latency = Latency;
 
                                 context.SaveChanges ();
-
-                                // Setback the Change detection state.
-                                //context.Configuration.AutoDetectChangesEnabled = true;
                                 }
                             else
                                 {
@@ -434,8 +423,6 @@ namespace Bentley.RealityPlatform.RealityCrawler
                 }
             extendedProperties.SupportedFormats = extendedProperties.SupportedFormats.TrimEnd (',');
 
-            //m_capabilities.RootLayer == null ? 0 : m_capabilities.RootLayer.ChildLayers.Count + 1; // ToDo: Manage the child layer of the child layer to have a exact value.
-
             // Save all the layers in the databases.
             extendedProperties.LayerNumber = SaveLayers (context, m_capabilities.RootLayer, extendedProperties);
 
@@ -483,10 +470,6 @@ namespace Bentley.RealityPlatform.RealityCrawler
                         {
                         layerData.CoordinateSystems += cs + ",";
                         }
-                    //foreach ( KeyValuePair<String, WMSBoundingBox> BBox in Layer.BoundingBoxes )
-                    //    {
-                    //    layerData.CoordinateSystems += BBox.Key + ",";
-                    //    }
                     layerData.CoordinateSystems = layerData.CoordinateSystems.TrimEnd (',');
                     }
 
@@ -539,9 +522,6 @@ namespace Bentley.RealityPlatform.RealityCrawler
                         context.WMSServerExtendedPropertiesSet.Remove (ModifiedServer.ServerExtendedProperties);
                     }
                 context.ServerSet.RemoveRange (ModifyedServers);
-               
-                //context.WMSServerExtendedPropertiesSet.Remove (context.WMSServerExtendedPropertiesSet.First());
-                //context.ServerSet.Remove (context.ServerSet.First ());
                 context.SaveChanges ();
                 int ServerURLToUpdateOrderNo = 1; // Used only to display info to the user.
                 foreach ( KeyValuePair<int, string> kvp in ServerURLToUpdate )
@@ -550,7 +530,6 @@ namespace Bentley.RealityPlatform.RealityCrawler
                     System.Console.WriteLine ("Updating ({0}/{1}): {2}", ServerURLToUpdateOrderNo, ServerURLToUpdate.Count, kvp.Value);
                     ServerURLToUpdateOrderNo++;
                     // ToDo: Verify the way to update and test the server. Need to modify getCapability().
-                    //Uri url = new Uri (kvp.Value.Split ('?')[0]);
                     ServerWMS UpdatedWMSServer = new ServerWMS (kvp.Value);
                     UpdatedWMSServer.UpdateStatus (kvp.Key);
                     }

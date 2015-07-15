@@ -20,6 +20,10 @@
       </Bindings>
     </Part>
 
+    <!--<Part Name="RealityCrawler" BMakeFile="RealityCrawler\RealityCrawler.mke">
+        <SubPart PartName="RealityPlatform"/>
+    </Part>-->
+
     <Part Name="RealityDataHandlerTester" BentleyBuildMakeFile="RealityPlatform\Tests\RealityDataHandlerTester\RealityDataHandlerTester.mke" OnlyPlatforms="x86,x64">
         <SubPart PartName="RealityPlatform"/>
         <Bindings>
@@ -120,6 +124,7 @@
     <Product Name="RealityModFramework">
         <SubPart PartName="RealityFramework-Tested"/>
         <SubPart PartName="RealityDataHandlerTester"/>
+        <!--<SubPart PartName="RealityCrawler"/>-->
         <Directories DirectoryListName="RealityModFrameworkDirList" />
     </Product>
 

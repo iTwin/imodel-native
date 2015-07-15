@@ -1,0 +1,30 @@
+How to build the Reality Crawler
+
+1. Open "\RealityModFramework\RealityCrawler\RealityCrawler.csproj" project with Visual Studio 2013.
+2. Select the solution RealityCrawler in the Solution Explorer and save it under "\RealityModFramework\RealityCrawler" (File->Save RealityCrawler.sln).
+3. In the Solution Explorer Right click on the "References" and select "Manage NuGet Packages..."
+4. On the top of the NuGet Packages manager they is a yellow band offering you to restore the NuGet Packages from the online package sources, click the "Restore" button in that band and close the dialog.
+5. In the Solution Explorer open the RealityCrawlerDB.edmx file.
+6. Right click in the diagram and select "Generate Database from Model..."
+7. In the dialog click "< Previous" then click "New Connection...".
+8. Click on the button "Change..." next to the "Data source:" field.
+9. Select "Microsoft SQL Server" and click "OK".
+10. In the Server name field type "(localdb)\ProjectsV12" (assuming you use the local SQL server V12, if not type the correct name of your SQL server).
+11. In the "Connect to a database" section type "RealityCrawlerDB" in the "Select or enter a database name" field and then click "Ok".
+12. When prompted click "Yes" to create the database.
+13. Click "Next >" and then "Finish".
+14. A RealityCrawlerDB.edmx.sql script should open(if not select it in the Solution Explorer) Right click in it and select "Execute".
+15. In the dialog verify that the server name is ok and click "Connect".
+16. Be sure to be in "Release" mode and "Save All".
+17. Then "Buid Solution" and run the Reality Crawler to verify that everything is ok.
+18. Close the project.
+19. Edit the file "\RealityModFramework\RealityModFramework.PartFile.xml" and uncomment the two sections relative to the Reality Crawler:
+
+    <!--<Part Name="RealityCrawler" BMakeFile="RealityCrawler\RealityCrawler.mke">
+        <SubPart PartName="RealityPlatform"/>
+    </Part>-->
+	
+	and
+	
+	<!--<SubPart PartName="RealityCrawler"/>-->
+20. Build with bb b
