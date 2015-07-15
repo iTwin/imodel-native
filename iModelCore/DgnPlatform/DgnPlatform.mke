@@ -313,9 +313,9 @@ $(o)GeoCoordServices$(oext): $(DgnGeoCoordDir)GeoCoordServices.cpp $(DgnPlatform
 #   DgnScriptContext
 #----------------------------------------------------------------------
 
-%ifndef BENTLEYCONFIG_NO_JAVASCRIPT
-
 $(o)DgnScriptContext$(oext) : $(dgnScriptContextDir)DgnScriptContext.cpp $(DgnCoreAPISrc)DgnScriptContext.h ${MultiCompileDepends}
+
+%ifndef BENTLEYCONFIG_NO_JAVASCRIPT
 
 $(o)DgnScriptContextBootstrap$(oext) : $(dgnScriptContextGen)DgnScriptContextBootstrap.cpp ${MultiCompileDepends}
 

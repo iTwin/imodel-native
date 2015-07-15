@@ -19,7 +19,7 @@
 
 extern Utf8CP dgnJavaDgnScriptContextImpl_GetBootstrappingSource();
 
-#ifndef BENTLEYCONFIG_OS_WINRT
+#ifndef BENTLEYCONFIG_NO_JAVASCRIPT
 
 BEJAVASCRIPT_EMIT_CUSTOM_TYPESCRIPT_DECLARATION ("export declare class BeJsNativePointer {}")
 
