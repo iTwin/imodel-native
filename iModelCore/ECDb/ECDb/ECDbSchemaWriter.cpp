@@ -446,10 +446,7 @@ BentleyStatus ECDbSchemaWriter::ImportECClass(ECN::ECClassCR ecClass)
     if (ECDbSchemaPersistence::ContainsECClass(m_ecdb, ecClass))
         {
         if (!ecClass.HasId())
-            {
-            BeAssert(false && "should never end up here, as a class existing in the db should always have an id");
             ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema(m_ecdb, ecClass); //Callers will assume it has a valid Id
-            }
 
         return SUCCESS;
         }
