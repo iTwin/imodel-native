@@ -14,10 +14,10 @@
 
 #define TMTEST_SCHEMA_NAME                               "DgnPlatformTest"
 #define TMTEST_SCHEMA_NAMEW                             L"DgnPlatformTest"
-#define TMTEST_TEST_ELEMENT_CLASS_NAME                   "TestElement"
+#define TMTEST_TEST_ELEMENT_CLASS_NAME                   "TestPhysicalElement"
 #define TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME    "TestElementDrivesElement"
 #define TMTEST_TEST_ELEMENT_TestElementProperty          "TestElementProperty"
-#define TMTEST_TEST_ITEM_CLASS_NAME                       "TestItem"
+#define TMTEST_TEST_ITEM_CLASS_NAME                      "TestItem"
 #define TMTEST_TEST_ITEM_TestItemProperty                "TestItemProperty"
 
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -59,8 +59,7 @@ struct TestElementHandler;
 //=======================================================================================
 struct TestElement : Dgn::PhysicalElement
 {
-    DEFINE_T_SUPER(Dgn::PhysicalElement)
-
+    DGNELEMENT_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT_CLASS_NAME, Dgn::PhysicalElement)
     friend struct TestElementHandler;
 
 private:
@@ -104,9 +103,9 @@ typedef TestElement const& TestElementCR;
 //! A test ElementHandler
 // @bsiclass                                                     Sam.Wilson      01/15
 //=======================================================================================
-struct TestElementHandler : dgn_ElementHandler::Element
+struct TestElementHandler : dgn_ElementHandler::Physical
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS("TestElement", TestElement, TestElementHandler, dgn_ElementHandler::Element, )
+    ELEMENTHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT_CLASS_NAME, TestElement, TestElementHandler, dgn_ElementHandler::Physical, )
 };
 
 HANDLER_DEFINE_MEMBERS(TestElementHandler)

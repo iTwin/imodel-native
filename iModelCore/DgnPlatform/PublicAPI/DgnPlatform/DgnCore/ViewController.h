@@ -738,17 +738,17 @@ public:
     bool IsCameraOn() const {return m_isCameraOn;}
 
     //! Determine whether the camera is valid for this view
-    bool IsCameraValid() const {return GetCamera().IsValid();}
+    bool IsCameraValid() const {return m_camera.IsValid();}
 
     //! Turn the camera on or off for this view
     //! @param[in] val whether the camera is to be on or off
     void SetCameraOn(bool val) {m_isCameraOn = val;}
 
     //! Get a reference to the CameraInfo for this view.
-    CameraInfo& GetCameraR() {return m_camera;}
+    CameraInfo& GetControllerCameraR() {return m_camera;}
 
     //! Get a const reference to the CameraInfo for this view.
-    CameraInfo const& GetCamera() const {return m_camera;}
+    CameraInfo const& GetControllerCamera() const {return m_camera;}
 
     //! Position the camera for this view and point it at a new target point.
     //! @param[in] eyePoint The new location of the camera.
@@ -833,31 +833,31 @@ public:
     double GetFrontDistance() const {return GetBackDistance() - GetDelta().z;}
 
     //! Get the lens angle for this view.
-    double GetLensAngle() const {return GetCamera().GetLensAngle();}
+    double GetLensAngle() const {return m_camera.GetLensAngle();}
 
     //! Set the lens angle for this view.
     //! @param[in] angle The new lens angle in radians. Must be greater than 0 and less than pi.
     //! @note This does not change the view's current field-of-view. Instead, it changes the lens that will be used if the view
     //! is subsequently modified and the lens angle is used to position the eyepoint.
     //! @note To change the field-of-view (i.e. "zoom") of a view, pass a new viewDelta to #LookAt
-    void SetLensAngle(double angle) {GetCameraR().SetLensAngle(angle);}
+    void SetLensAngle(double angle) {m_camera.SetLensAngle(angle);}
 
     //! Get the distance from the eyePoint to the focus plane for this view.
-    double GetFocusDistance() const {return GetCamera().GetFocusDistance();}
+    double GetFocusDistance() const {return m_camera.GetFocusDistance();}
 
     //! Set the focus distance for this view.
     //! @note Changing the focus distance changes the plane on which the delta.x and delta.y values lie. So, changing focus distance
     //! without making corresponding changes to delta.x and delta.y essentially changes the lens angle, causing a "zoom" effect.
-    void SetFocusDistance(double dist) {GetCameraR().SetFocusDistance(dist);}
+    void SetFocusDistance(double dist) {m_camera.SetFocusDistance(dist);}
 
     //! Get the current location of the eyePoint for camera in this view.
-    DPoint3dCR GetEyePoint() const {return GetCamera().GetEyePoint();}
+    DPoint3dCR GetEyePoint() const {return m_camera.GetEyePoint();}
 
     //! Change the location of the eyePoint for the camera in this view.
     //! @param[in] pt The new eyepoint.
     //! @note This method is generally for internal use only. Moving the eyePoint arbitrarily can result in skewed or illegal perspectives.
     //! The most common method for user-level camera positioning is #LookAt.
-    void SetEyePoint(DPoint3dCR pt) {GetCameraR().SetEyePoint(pt);}
+    void SetEyePoint(DPoint3dCR pt) {m_camera.SetEyePoint(pt);}
 /** @} */
 
 /** @name ClipVector */
