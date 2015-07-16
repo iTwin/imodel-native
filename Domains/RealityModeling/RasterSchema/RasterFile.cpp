@@ -16,6 +16,7 @@ RasterFile::RasterFile(Utf8StringCR resolvedName)
     {
     m_storedRasterPtr = nullptr;
     m_worldClusterPtr = nullptr;
+    m_pageFilePtr = nullptr;
 
     m_HRFRasterFilePtr = OpenRasterFile(resolvedName);
     }
@@ -81,7 +82,7 @@ HRAStoredRaster* RasterFile::GetStoredRasterP()
 
     // load raster file in memory in a single chunk
     if (!HRFRasterFileBlockAdapter::CanAdapt(m_HRFRasterFilePtr, HRFBlockType::IMAGE, HRF_EQUAL_TO_RESOLUTION_WIDTH, HRF_EQUAL_TO_RESOLUTION_HEIGHT) &&
-        m_HRFRasterFilePtr->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetBlockType() != HRFBlockType::IMAGE) //Make sure we don't try to adapt something we don't have to adapt
+        GetPageDescriptor()->GetResolutionDescriptor(0)->GetBlockType() != HRFBlockType::IMAGE) //Make sure we don't try to adapt something we don't have to adapt
         return nullptr;
 
     HFCPtr<HRFRasterFile> pAdaptedRasterFile(new HRFRasterFileBlockAdapter(m_HRFRasterFilePtr, HRFBlockType::IMAGE, HRF_EQUAL_TO_RESOLUTION_WIDTH, HRF_EQUAL_TO_RESOLUTION_HEIGHT));
@@ -110,7 +111,7 @@ void RasterFile::GetSize(Point2d* sizeP) const
 //----------------------------------------------------------------------------------------
 uint32_t    RasterFile::GetWidth() const
     {
-    return (uint32_t)m_HRFRasterFilePtr->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetWidth();
+    return (uint32_t)GetPageDescriptor()->GetResolutionDescriptor(0)->GetWidth();
     }
 
 
@@ -119,68 +120,7 @@ uint32_t    RasterFile::GetWidth() const
 //----------------------------------------------------------------------------------------
 uint32_t    RasterFile::GetHeight() const
     {
-    return (uint32_t)m_HRFRasterFilePtr->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetHeight();
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                       Eric.Paquet     6/2015
-//----------------------------------------------------------------------------------------
-void RasterFile::GetCorners(DPoint3dP corners) 
-    {
-    uint32_t width = GetWidth();
-    uint32_t height = GetHeight();
-
-    // Get physical extent
-    DPoint3d physCorners[4];
-
-    physCorners[0].x = 0;
-    physCorners[0].y = 0;
-    physCorners[0].z = 0;
-    physCorners[1].x = width;
-    physCorners[1].y = 0;
-    physCorners[1].z = 0;
-    physCorners[2].x = 0;
-    physCorners[2].y = height;
-    physCorners[2].z = 0;
-    physCorners[3].x = width;
-    physCorners[3].y = height;
-    physCorners[3].z = 0;
-
-    // Give default values (z must be initialized, it is untouched by the transform)
-    for (int i = 0; i < 4; i++)
-        {
-        corners[i].x = physCorners[i].x;
-        corners[i].y = physCorners[i].y;
-        corners[i].z = physCorners[i].z;
-        }
-
-    HFCPtr<HGF2DTransfoModel> transfoModel = GetStoredRasterP()->GetTransfoModel();
-
-    for (int i = 0; i < 4; i++)
-        {
-        transfoModel->ConvertDirect(physCorners[i].x, physCorners[i].y, &corners[i].x, &corners[i].y);
-        }
-
-
-/* &&ep d
-    HGF2DExtent physicalExtent;
-    physicalExtent = HGF2DExtent(0, 0, GetWidth(), GetHeight(), GetStoredRasterP()->GetPhysicalCoordSys());
-    HVEShape Shape(physicalExtent);
-    
-    phys = GetPhysicalExtent
-    HVEShape shape(physicalExtent);
-
-    0 0 width height
-    getTransfoModel + apply on all corners
-
-    shape.ChangeCoordSys(GetStoredRasterP()->GetCoordSys())
-
-//    Shape.ChangeCoordSys(GetPhysicalCoordSys());
-
-//    DPoint3d c[4];
-
-*/
-
+    return (uint32_t)GetPageDescriptor()->GetResolutionDescriptor(0)->GetHeight();
     }
 
 //----------------------------------------------------------------------------------------
@@ -188,11 +128,7 @@ void RasterFile::GetCorners(DPoint3dP corners)
 //----------------------------------------------------------------------------------------
 GeoCoordinates::BaseGCSPtr RasterFile::GetBaseGcs() 
     {
-//&&ep_todo
-//    HFCPtr<HRFGeoTiffKeysUtility> pGeotiffKeys(NULL);
-
-    IRasterBaseGcsCP pSrcFileGeocoding = m_HRFRasterFilePtr->GetPageDescriptor(0)->GetGeocodingCP();
-//    virtual GeoCoordinates::BaseGCS* _GetBaseGCS() const=0;
+    IRasterBaseGcsCP pSrcFileGeocoding = GetPageDescriptor()->GetGeocodingCP();
 
     if (pSrcFileGeocoding == nullptr)
         return nullptr;
@@ -203,11 +139,6 @@ GeoCoordinates::BaseGCSPtr RasterFile::GetBaseGcs()
 
     GeoCoordinates::BaseGCSPtr pGcs = GeoCoordinates::BaseGCS::CreateGCS(*baseGcsP);
     return pGcs;
-/*
-    HFCPtr<HMDMetaDataContainer> pGeotiffKeys(NULL);
-
-    pGeotiffKeys = m_HRFRasterFilePtr->GetPageDescriptor(0)->GetMetaDataContainer(HMDMetaDataContainer::HMD_GEOCODING_INFO);
-*/
     }
 
 //----------------------------------------------------------------------------------------
@@ -218,13 +149,13 @@ DMatrix4d RasterFile::GetPhysicalToLowerLeft() const
     DMatrix4d physicalToLowerLeft;
     physicalToLowerLeft.InitIdentity();
 
-    uint32_t width = (uint32_t)m_HRFRasterFilePtr->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetWidth();
-    uint32_t height = (uint32_t)m_HRFRasterFilePtr->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetHeight();
+    uint32_t width = (uint32_t)GetPageDescriptor()->GetResolutionDescriptor(0)->GetWidth();
+    uint32_t height = (uint32_t)GetPageDescriptor()->GetResolutionDescriptor(0)->GetHeight();
 
-    if (m_HRFRasterFilePtr->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetScanlineOrientation().IsScanlineVertical())
+    if (GetPageDescriptor()->GetResolutionDescriptor(0)->GetScanlineOrientation().IsScanlineVertical())
          std::swap(width, height);
    
-    switch(m_HRFRasterFilePtr->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetScanlineOrientation().m_ScanlineOrientation)
+    switch(GetPageDescriptor()->GetResolutionDescriptor(0)->GetScanlineOrientation().m_ScanlineOrientation)
         {
         // SLO 0
         case HRFScanlineOrientation::UPPER_LEFT_VERTICAL:
@@ -313,11 +244,57 @@ DMatrix4d RasterFile::GetPhysicalToLowerLeft() const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     6/2015
 //----------------------------------------------------------------------------------------
+DMatrix4d RasterFile::GetGeoTransform()
+    {
+    // Retrieve the logical CS associated to the world of the raster
+    HFCPtr<HRFRasterFile> pAdaptedRasterFile(new HRFRasterFileBlockAdapter(m_HRFRasterFilePtr, HRFBlockType::IMAGE, HRF_EQUAL_TO_RESOLUTION_WIDTH, HRF_EQUAL_TO_RESOLUTION_HEIGHT));
+    HFCPtr<HGF2DCoordSys> pLogical = GetWorldClusterP()->GetCoordSysReference(pAdaptedRasterFile->GetWorldIdentificator());
+
+    if (GetPageDescriptor()->HasTransfoModel())
+        {
+        // Create CS from pTransfoModel (transformation from pixels to the world of the raster) to logical
+        HFCPtr<HGF2DTransfoModel> pTransfoModel(GetPageDescriptor()->GetTransfoModel());
+        HFCPtr<HGF2DCoordSys> pLogicalToPhysRasterWorld(new HGF2DCoordSys(*pTransfoModel, pLogical));
+
+        // Normalize to HGF2DWorld_HMRWORLD(lower left origin), which is the expected CS for QuadTree
+        HFCPtr<HGF2DCoordSys> pHmrWorld = GetWorldClusterP()->GetCoordSysReference(HGF2DWorld_HMRWORLD);
+        HFCPtr<HGF2DTransfoModel> pLogicalToHmrWorldTransfo(pLogical->GetTransfoModelTo(pHmrWorld));
+        HFCPtr<HGF2DCoordSys> pLogicalToHmrWorld(new HGF2DCoordSys(*pLogicalToHmrWorldTransfo, pLogical));
+        HFCPtr<HGF2DTransfoModel> pLogicalToCartesian(pLogicalToPhysRasterWorld->GetTransfoModelTo(pLogicalToHmrWorld));
+
+        // Initialize geoTransform with the significant rows/columns of matrix.         
+        HFCMatrix<3, 3> matrix = pLogicalToCartesian->GetMatrix();
+        DMatrix4d geoTransform;
+        geoTransform.InitFromRowValues( matrix[0][0], matrix[0][1], 0.0, matrix[0][2],
+                                        matrix[1][0], matrix[1][1], 0.0, matrix[1][2],
+                                        0.0,          0.0,          1.0, 0.0,
+                                        matrix[2][0], matrix[2][1], 0.0, matrix[2][2]);
+        return geoTransform;
+        }
+    else
+        {
+        // Raster has no transfo model. Simply use the transformation to lower left corner.
+        DMatrix4d physicalToLowerLeft = GetPhysicalToLowerLeft();
+        return physicalToLowerLeft;
+        }
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                       Eric.Paquet     6/2015
+//----------------------------------------------------------------------------------------
+HFCPtr<HRFPageDescriptor> RasterFile::GetPageDescriptor() const
+    {
+    // Always 0 for now
+    return m_HRFRasterFilePtr->GetPageDescriptor(0);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                       Eric.Paquet     6/2015
+//----------------------------------------------------------------------------------------
 HFCPtr<HGF2DCoordSys> RasterFile::GetPhysicalCoordSys() 
     {
     return GetStoredRasterP()->GetPhysicalCoordSys();
     }
-
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     6/2015
@@ -378,10 +355,15 @@ HFCPtr<HRFRasterFile> RasterFile::OpenRasterFile(Utf8StringCR resolvedName)
         if (rasterFile == 0)
             return rasterFile;
 
-        // Check if we have an internet imaging file
-        // DISABLED: We do not support HRFInternetImagingFile
-        //         if (RasterFile->IsCompatibleWith(HRFInternetImagingFile::CLASS_ID))
-        //             ((HFCPtr<HRFInternetImagingFile>&)RasterFile)->DownloadAttributes();
+        // Take care of sister file. Until requirements prove that wrong, always use sister file for georeference.
+        bool useSisterFileOfGeoreferencedFile = true;
+        const HRFPageFileCreator (* pPageFileCreator)(HRFPageFileFactory::GetInstance()->FindCreatorFor(rasterFile, useSisterFileOfGeoreferencedFile));
+        if(pPageFileCreator != NULL)
+            {
+            m_pageFilePtr = pPageFileCreator->CreateFor(rasterFile);
+            m_pageFilePtr->SetDefaultRatioToMeter(1000);
+            rasterFile = new HRFRasterFilePageDecorator(rasterFile, m_pageFilePtr);
+            }
         }
     catch (HFCException&)
         {

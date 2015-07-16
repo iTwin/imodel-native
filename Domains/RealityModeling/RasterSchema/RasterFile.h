@@ -17,27 +17,30 @@ BEGIN_BENTLEY_RASTERSCHEMA_NAMESPACE
 struct RasterFile : public RefCountedBase
 {
 private:
-            ImagePP::HFCPtr<ImagePP::HRFRasterFile>       m_HRFRasterFilePtr;
-            ImagePP::HFCPtr<ImagePP::HRAStoredRaster>     m_storedRasterPtr;
-            ImagePP::HFCPtr<ImagePP::HGF2DWorldCluster>   m_worldClusterPtr;
+            ImagePP::HFCPtr<ImagePP::HRFRasterFile>         m_HRFRasterFilePtr;
+            ImagePP::HFCPtr<ImagePP::HRAStoredRaster>       m_storedRasterPtr;
+            ImagePP::HFCPtr<ImagePP::HGF2DWorldCluster>     m_worldClusterPtr;
+            ImagePP::HFCPtr<ImagePP::HRFPageFile>           m_pageFilePtr;            // Sister file decorator.
 
-                                        RasterFile(Utf8StringCR resolvedName);
-            int                         ComputeBufferSize(size_t& bufferSize, const Point2d& imageSize, int imageFormat) const;
-            ImagePP::HGF2DWorldCluster*          GetWorldClusterP();
+                                                            RasterFile(Utf8StringCR resolvedName);
+            int                                             ComputeBufferSize(size_t& bufferSize, const Point2d& imageSize, int imageFormat) const;
+            ImagePP::HGF2DWorldCluster*                     GetWorldClusterP();
 
 public:
-    static  RasterFilePtr               Create(Utf8StringCR resolvedName);
-            ImagePP::HFCPtr<ImagePP::HRFRasterFile>       OpenRasterFile(Utf8StringCR resolvedName);
-            ImagePP::HRFRasterFile*              GetHRFRasterFileP() const;
-            uint32_t                    GetWidth() const;
-            uint32_t                    GetHeight() const;
-            void                        GetSize(Point2d* sizeP) const;
-            void                        GetBitmap(ImagePP::HFCPtr<ImagePP::HRABitmapBase> pBitmap);
-            ImagePP::HRAStoredRaster*            GetStoredRasterP();
-            ImagePP::HFCPtr<ImagePP::HGF2DCoordSys>       GetPhysicalCoordSys();
-            DMatrix4d                   GetPhysicalToLowerLeft() const;
-            void                        GetCorners(DPoint3dP corners);
-            GeoCoordinates::BaseGCSPtr  GetBaseGcs();
+    static  RasterFilePtr                                   Create(Utf8StringCR resolvedName);
+            ImagePP::HFCPtr<ImagePP::HRFRasterFile>         OpenRasterFile(Utf8StringCR resolvedName);
+            ImagePP::HRFRasterFile*                         GetHRFRasterFileP() const;
+            uint32_t                                        GetWidth() const;
+            uint32_t                                        GetHeight() const;
+            void                                            GetSize(Point2d* sizeP) const;
+            void                                            GetBitmap(ImagePP::HFCPtr<ImagePP::HRABitmapBase> pBitmap);
+            ImagePP::HRAStoredRaster*                       GetStoredRasterP();
+            ImagePP::HFCPtr<ImagePP::HGF2DCoordSys>         GetPhysicalCoordSys();
+            ImagePP::HFCPtr<ImagePP::HRFPageDescriptor>     GetPageDescriptor() const;
+
+            DMatrix4d                                       GetPhysicalToLowerLeft() const;
+            DMatrix4d                                       GetGeoTransform();
+            GeoCoordinates::BaseGCSPtr                      GetBaseGcs();
 };
 
 END_BENTLEY_RASTERSCHEMA_NAMESPACE
