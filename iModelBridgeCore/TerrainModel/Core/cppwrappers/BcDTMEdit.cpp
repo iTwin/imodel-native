@@ -2,14 +2,14 @@
 |
 |     $Source: src/unmanaged/DTM/civilDTMext/BcDTMEdit.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include "stdafx.h"
 //#define CHECKDTM
 #include "BcDTMEdit.h"
-
+#include <stack>
 using namespace std;
 
 int  bcdtmExtEdit_checkForLineOnHullLineDtmObject(BC_DTM_OBJ *dtmP,long P1,long P2,long *hullLineP)
