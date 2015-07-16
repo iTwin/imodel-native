@@ -523,6 +523,9 @@ protected:
     //! where "myAllocedSize" is the number of bytes allocated for this element, held through member variable pointers.
     virtual uint32_t _GetMemSize() const {return sizeof(*this);}
 
+    //! Virtual writeable deep copy method.
+    DGNPLATFORM_EXPORT DgnElementPtr virtual _Clone(DgnDbStatus* stat=nullptr, DgnElement::CreateParams* params=nullptr) const;
+
     //! Virtual assignment method. If your subclass has member variables, it @b must override this method and copy those values from @a source.
     //! @param[in] source The element from which to copy
     //! @note If you override this method, you @b must call T_Super::_CopyFrom, forwarding its status (that is, only return DgnDbStatus::Success if both your
@@ -611,6 +614,11 @@ public:
     //! Set this element's undisplayed flag
     void SetUndisplayedFlag(bool yesNo) {m_flags.m_undisplayed = yesNo;}
 
+    //! Create a writeable deep copy of a DgnElement for insert into the same or new model.
+    //! @param[out] stat Optional status to describe failures, a valid DgnElementPtr will only be returned if successful.
+    //! @param[in] params Optional CreateParams. Might specify a different destination model, etc.
+    DgnElementPtr Clone(DgnDbStatus* stat=nullptr, DgnElement::CreateParams* params=nullptr) const {return _Clone(stat, params);}
+
     //! Copy the content of another DgnElement into this DgnElement.
     //! @param[in] source The other element whose content is copied into this element.
     //! @note This method @b does @b not change the DgnClassId, DgnModel or DgnElementId of this DgnElement. If the type of @a source is different
@@ -677,10 +685,6 @@ public:
 
     //! Get the DgnElementId of this DgnElement
     DgnElementId GetElementId() const {return m_elementId;}
-
-    //! Invalidate the ElementId of this element.
-    //! This can be used to clear the ElementId of this element before inserting a copy of it (otherwise Insert on the copy will fail.)
-    void InvalidateElementId() {m_elementId = DgnElementId();}
 
     //! Get the DgnClassId of this DgnElement.
     DgnClassId GetElementClassId() const {return m_classId;}
