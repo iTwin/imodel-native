@@ -328,10 +328,10 @@ DgnDbR PhysicalRedlineViewController::_GetDgnDb() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-AxisAlignedBox3d PhysicalRedlineViewController::_GetProjectExtents() const
+AxisAlignedBox3d PhysicalRedlineViewController::_GetViewedExtents() const
     {
-    AxisAlignedBox3d subjectRange = m_subjectView.GetProjectExtents();
-    AxisAlignedBox3d rdlRange = T_Super::_GetProjectExtents();
+    AxisAlignedBox3d subjectRange = m_subjectView.GetViewedExtents();
+    AxisAlignedBox3d rdlRange = T_Super::_GetViewedExtents();
     AxisAlignedBox3d fullRange;
     fullRange.UnionOf(rdlRange, subjectRange);
     return fullRange;

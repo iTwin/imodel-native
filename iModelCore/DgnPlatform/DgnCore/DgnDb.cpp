@@ -316,7 +316,7 @@ BentleyStatus DgnJavaScriptLibrary::ToJsonFromEC(Json::Value& json, ECN::IECInst
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
-static BentleyStatus registerJavaScript(DgnDbR db, Utf8CP tsProgramName, Utf8CP tsProgramText, bool updateExisting)
+static DgnDbStatus registerJavaScript(DgnDbR db, Utf8CP tsProgramName, Utf8CP tsProgramText, bool updateExisting)
     {
     Statement stmt;
     stmt.Prepare(db, SqlPrintfString(
@@ -330,13 +330,13 @@ static BentleyStatus registerJavaScript(DgnDbR db, Utf8CP tsProgramName, Utf8CP 
     
     NativeLogging::LoggingManager::GetLogger("DgnScriptContext")->infov ("Registering %s -> %d", tsProgramName, res);
     
-    return (BE_SQLITE_DONE == res)? BSISUCCESS: BSIERROR;
+    return (BE_SQLITE_DONE == res)? DgnDbStatus::Success: DgnDbStatus::SQLiteError;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
-BentleyStatus DgnJavaScriptLibrary::QueryJavaScript(Utf8StringR tsProgramText, Utf8CP tsProgramName)
+DgnDbStatus DgnJavaScriptLibrary::QueryJavaScript(Utf8StringR tsProgramText, Utf8CP tsProgramName)
     {
     Statement stmt;
     stmt.Prepare(m_dgndb, "SELECT StrData FROM be_Prop WHERE (Namespace='dgn_JavaScript' AND Name=? AND Id=? AND SubId=?)");
@@ -344,9 +344,9 @@ BentleyStatus DgnJavaScriptLibrary::QueryJavaScript(Utf8StringR tsProgramText, U
     stmt.BindInt(2, 0);
     stmt.BindInt(3, 0);
     if (stmt.Step() != BE_SQLITE_ROW)
-        return BSIERROR;
+        return DgnDbStatus::NotFound;
     tsProgramText = stmt.GetValueText(0);
-    return BSISUCCESS;
+    return DgnDbStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -361,21 +361,33 @@ void DgnJavaScriptLibrary::ImportJavaScript(BeFileNameCR jsDir, bool updateExist
     bool anyImported = true;
     while (BSISUCCESS == iter.GetNextFileName(acmeTs))
         {
-        uint64_t fileSize;
-        if (acmeTs.GetFileSize(fileSize) == BeFileNameStatus::Success)
+        Utf8String jsText;
+        if (DgnDbStatus::Success == ReadJavaScript(jsText, acmeTs))
             {
-            size_t bufSize = (size_t)fileSize;
-            ScopedArray<char> buf (bufSize+1);
-            FILE* fp = fopen(Utf8String(acmeTs).c_str(), "r");
-            size_t nread = fread(buf.GetData(), 1, bufSize, fp);
-            BeAssert(nread <= bufSize);
-            fclose(fp);
-            buf.GetData()[nread] = 0;
             Utf8String name (acmeTs.GetFileNameWithoutExtension());
-            if (BSISUCCESS == registerJavaScript(m_dgndb, name.c_str(), buf.GetDataCP(), updateExisting))
+            if (DgnDbStatus::Success == registerJavaScript(m_dgndb, name.c_str(), jsText.c_str(), updateExisting))
                 anyImported = true;
             }
         }
     if (anyImported)
         m_dgndb.SaveSettings();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+DgnDbStatus DgnJavaScriptLibrary::ReadJavaScript(Utf8StringR jsprog, BeFileNameCR jsFileName)
+    {
+    uint64_t fileSize;
+    if (jsFileName.GetFileSize(fileSize) != BeFileNameStatus::Success)
+        return DgnDbStatus::NotFound;
+
+    size_t bufSize = (size_t)fileSize;
+    jsprog.resize(bufSize+1);
+    FILE* fp = fopen(Utf8String(jsFileName).c_str(), "r");
+    size_t nread = fread(&jsprog[0], 1, bufSize, fp);
+    BeAssert(nread <= bufSize);
+    fclose(fp);
+    jsprog[nread] = 0;
+    return DgnDbStatus::Success;
     }

@@ -62,7 +62,6 @@ public:
         void     SetValue (T const& v) {m_value = v;}
         };
 
-//__PUBLISH_SECTION_END__
 private:
     size_t GetKeyIndex (DgnHost::Key& key);
 
@@ -90,7 +89,6 @@ protected:
     VarEntry& GetVarEntry(Key& key);
     ObjEntry& GetObjEntry(Key& key);
 
-//__PUBLISH_SECTION_START__
 public:
     //! Get the value of a host-based variable identified by key.
     //! @param[in] key The key that identifies this variable. Keys must always be static variables, as their values are assigned when they are first used
