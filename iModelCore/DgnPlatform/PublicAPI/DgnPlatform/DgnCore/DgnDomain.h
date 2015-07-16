@@ -110,6 +110,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
     //! A DgnDomain::Handler must be registered with its DgnDomain via DgnDomain::RegisterHandler before any DgnDbs are created or opened.
     struct Handler : NonCopyableClass
         {
+        friend struct DgnDomains;
         //! A DgnDomain::Handler::Extension can be used to add additional interfaces to a Handler at runtime. If a Handler is
         //! extended, all of its registered subclasses inherit that extension too.
         //! To implement a DgnDomain::Handler::Extension, derive from that class and put the HANDLER_EXTENSION_DECLARE_MEMBERS macro in
@@ -212,6 +213,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
         virtual ~Handler(){}
         void SetSuperClass(Handler* super) {m_superClass = super;}
         void SetDomain(DgnDomain& domain) {m_domain = &domain;}
+        DGNPLATFORM_EXPORT virtual DgnDbStatus _VerifySchema(DgnDomains&);
 
     public:
         //! To enable version-checking for your handler, override this method to report the

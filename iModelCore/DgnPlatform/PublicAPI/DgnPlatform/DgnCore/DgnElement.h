@@ -21,7 +21,7 @@ BENTLEY_NAMESPACE_TYPEDEFS(HeapZone);
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-namespace dgn_ElementHandler {struct Element; struct Physical;};
+namespace dgn_ElementHandler {struct Element; struct Physical; struct Drawing; struct Group;};
 namespace dgn_TxnTable {struct Element; struct Model;};
 
 struct MultiAspectMux;
@@ -46,6 +46,12 @@ public:
 };
 
 typedef QvElemSet<QvKey32> T_QvElemSet;
+
+#define DGNELEMENT_DECLARE_MEMBERS(__ECClassName__,__superclass__) \
+    private: typedef __superclass__ T_Super;\
+    public: static Utf8CP MyECClassName() {return __ECClassName__;}\
+    protected: virtual Utf8CP _GetECClassName() const override {return MyECClassName();}\
+               virtual Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
 
 //=======================================================================================
 //! An instance of a DgnElement in memory. DgnElements are the building blocks for a DgnDb.
@@ -422,6 +428,8 @@ protected:
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
     friend struct MultiAspect;
+    virtual Utf8CP _GetECClassName() const {return MyECClassName();}
+    virtual Utf8CP _GetSuperECClassName() const {return nullptr;}
 
     void SetPersistent(bool val) const {m_flags.m_persistent = val;} //!< @private
 
@@ -570,6 +578,7 @@ protected:
     DGNPLATFORM_EXPORT void ClearAllAppData(); //!< @private
 
 public:
+    static Utf8CP MyECClassName() {return DGN_CLASSNAME_Element;}
     DGNPLATFORM_EXPORT void SetInSelectionSet(bool yesNo) const; //!< @private
 
     DGNPLATFORM_EXPORT void AddRef() const;  //!< @private
@@ -971,7 +980,8 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : DgnElement3d
 {
-    DEFINE_T_SUPER(DgnElement3d);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalElement, DgnElement3d) 
+
 protected:
     PhysicalElementCP _ToPhysicalElement() const override {return this;}
 
@@ -1033,7 +1043,8 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DrawingElement : DgnElement2d
 {
-    DEFINE_T_SUPER(DgnElement2d);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, DgnElement2d) 
+
 protected:
     DrawingElementCP _ToDrawingElement() const override {return this;}
 
@@ -1056,7 +1067,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ElementGroup : DgnElement
 {
-    DEFINE_T_SUPER(DgnElement);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_ElementGroup, DgnElement) 
 
 protected:
     ElementGroupCP _ToElementGroup() const override {return this;}

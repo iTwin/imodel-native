@@ -52,6 +52,7 @@ public:
 // @param[in] __exporter__ Macro name that exports this class in its implementing DLL (may be blank)
 #define ELEMENTHANDLER_DECLARE_MEMBERS(__ECClassName__,__classname__,__handlerclass__,__handlersuperclass__,__exporter__) \
         private: virtual Dgn::DgnElementP _CreateInstance(Dgn::DgnElement::CreateParams const& params) override {return new __classname__(__classname__::CreateParams(params));}\
+        virtual std::type_info const& _ElementType() const override {return typeid(__classname__);}\
         DOMAINHANDLER_DECLARE_MEMBERS(__ECClassName__,__handlerclass__,__handlersuperclass__,__exporter__) 
 
 //=======================================================================================
@@ -70,11 +71,14 @@ namespace dgn_ElementHandler
     struct EXPORT_VTABLE_ATTRIBUTE Element : DgnDomain::Handler
     {
         friend struct Dgn::DgnElement;
+        friend struct Dgn::DgnElements;
         DOMAINHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_Element, Element, DgnDomain::Handler, DGNPLATFORM_EXPORT)
 
     protected:
         virtual DgnElement* _CreateInstance(DgnElement::CreateParams const& params) {return new DgnElement(params);}
         virtual ElementHandlerP _ToElementHandler() {return this;}
+        virtual std::type_info const& _ElementType() const {return typeid(DgnElement);}
+        DGNPLATFORM_EXPORT virtual DgnDbStatus _VerifySchema(DgnDomains&) override;
 
     public:
         //! Create a new instance of a DgnElement from a CreateParams. 
@@ -102,26 +106,32 @@ namespace dgn_ElementHandler
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_ElementGroup, ElementGroup, Group, Element, DGNPLATFORM_EXPORT)
     };
-
 };
 
-
 //=======================================================================================
-//! An ElementAspectHandler creates instances of (a subclass of) DgnElement::Aspect.
-//! @see DgnElement
-//! @ingroup DgnElementGroup
+//! @namespace BentleyApi::Dgn::dgn_AspectHandler Aspect Handlers in the base "Dgn" domain. 
+//! @note Only handlers from the base "Dgn" domain belong in this namespace.
+// @bsiclass                                                    Keith.Bentley   06/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ElementAspectHandler : DgnDomain::Handler
+namespace dgn_AspectHandler
 {
-    friend struct DgnElement;
-    DOMAINHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_ElementAspect, ElementAspectHandler, DgnDomain::Handler, DGNPLATFORM_EXPORT)
+    //=======================================================================================
+    //! A dgn_AspectHandler::Aspect creates instances of (a subclass of) DgnElement::Aspect.
+    //! @see DgnElement
+    //! @ingroup DgnElementGroup
+    //=======================================================================================
+    struct EXPORT_VTABLE_ATTRIBUTE Aspect : DgnDomain::Handler
+    {
+        friend struct DgnElement;
+        DOMAINHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_ElementAspect, Aspect, DgnDomain::Handler, DGNPLATFORM_EXPORT)
 
-    //! The subclass must override this method in order to create an instance using its default constructor.
-    //! (The caller will populate and/or persist the returned instance by invoking virtual methods on it.)
-    virtual RefCountedPtr<DgnElement::Aspect> _CreateInstance() {return nullptr;}
+        //! The subclass must override this method in order to create an instance using its default constructor.
+        //! (The caller will populate and/or persist the returned instance by invoking virtual methods on it.)
+        virtual RefCountedPtr<DgnElement::Aspect> _CreateInstance() {return nullptr;}
 
-    //! Find the ElementHandler for a DgnClassId within a supplied DgnDb.
-    DGNPLATFORM_EXPORT static ElementAspectHandler* FindHandler(DgnDbR dgndb, DgnClassId classId);
+        //! Find the ElementHandler for a DgnClassId within a supplied DgnDb.
+        DGNPLATFORM_EXPORT static Aspect* FindHandler(DgnDbR dgndb, DgnClassId classId);
+    };
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
