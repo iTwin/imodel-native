@@ -1589,7 +1589,7 @@ int bcdtmExtEdit_getIslandFeaturesInternalToVoidDtmObject(BC_DTM_OBJ *dtmP,long 
              if( bcdtmList_getDtmFeatureTypeOccurrencesForPointDtmObject(dtmP,DTMFeatureType::Island,lp,&lineFeaturesP,&numLineFeatures) ) goto errexit ;
              for( featP = lineFeaturesP ; featP < lineFeaturesP + numLineFeatures ; ++featP )
                {
-                if( bcdtmExtEdit_storeDtmFeatureInDtmFeatureList(islandsPP,numIslandsP,&memIslands,memIslandsInc,featP->dtmFeature,DTMFeatureType::Island,dtmP->nullUserTag,dtmP->dtmFeatureIndex,dtmP->nullPnt,dtmP->nullPnt) ) goto errexit ;
+                if( bcdtmEdit_storeDtmFeatureInDtmFeatureList(islandsPP,numIslandsP,&memIslands,memIslandsInc,featP->dtmFeature,DTMFeatureType::Island,dtmP->nullUserTag,dtmP->dtmFeatureIndex,dtmP->nullPnt,dtmP->nullPnt) ) goto errexit ;
                }
             }
          }
@@ -1622,7 +1622,7 @@ int bcdtmExtEdit_getIslandFeaturesInternalToVoidDtmObject(BC_DTM_OBJ *dtmP,long 
              if( bcdtmList_getDtmFeatureTypeOccurrencesForPointDtmObject(dtmP,DTMFeatureType::Island,lp,&lineFeaturesP,&numLineFeatures) ) goto errexit ;
              for( featP = lineFeaturesP ; featP < lineFeaturesP + numLineFeatures ; ++featP )
                {
-                if( bcdtmExtEdit_storeDtmFeatureInDtmFeatureList(islandsPP,numIslandsP,&memIslands,memIslandsInc,featP->dtmFeature,DTMFeatureType::Island,dtmP->nullUserTag,dtmP->dtmFeatureIndex,dtmP->nullPnt,dtmP->nullPnt) ) goto errexit ;
+                if( bcdtmEdit_storeDtmFeatureInDtmFeatureList(islandsPP,numIslandsP,&memIslands,memIslandsInc,featP->dtmFeature,DTMFeatureType::Island,dtmP->nullUserTag,dtmP->dtmFeatureIndex,dtmP->nullPnt,dtmP->nullPnt) ) goto errexit ;
                }
             }
           if(( lp = bcdtmList_nextAntDtmObject(dtmP,pnt,lp)) < 0 ) goto errexit ;
@@ -1632,7 +1632,7 @@ int bcdtmExtEdit_getIslandFeaturesInternalToVoidDtmObject(BC_DTM_OBJ *dtmP,long 
           if( bcdtmList_getDtmFeatureTypeOccurrencesForLineDtmObject(dtmP,DTMFeatureType::Island,pnt,lp,&lineFeaturesP,&numLineFeatures)) goto errexit ;
           for( featP = lineFeaturesP ; featP < lineFeaturesP + numLineFeatures ; ++featP )
             {
-             if( bcdtmExtEdit_storeDtmFeatureInDtmFeatureList(islandsPP,numIslandsP,&memIslands,memIslandsInc,featP->dtmFeature,DTMFeatureType::Island,dtmP->nullUserTag,dtmP->dtmFeatureIndex,dtmP->nullPnt,dtmP->nullPnt) ) goto errexit ;
+             if( bcdtmEdit_storeDtmFeatureInDtmFeatureList(islandsPP,numIslandsP,&memIslands,memIslandsInc,featP->dtmFeature,DTMFeatureType::Island,dtmP->nullUserTag,dtmP->dtmFeatureIndex,dtmP->nullPnt,dtmP->nullPnt) ) goto errexit ;
             }
          }
       }
@@ -1655,7 +1655,7 @@ int bcdtmExtEdit_getIslandFeaturesInternalToVoidDtmObject(BC_DTM_OBJ *dtmP,long 
                 if( bcdtmList_getDtmFeatureTypeOccurrencesForPointDtmObject(dtmP,DTMFeatureType::Island,lp,&lineFeaturesP,&numLineFeatures) ) goto errexit ;
                 for( featP = lineFeaturesP ; featP < lineFeaturesP + numLineFeatures ; ++featP )
                   {
-                   if( bcdtmExtEdit_storeDtmFeatureInDtmFeatureList(islandsPP,numIslandsP,&memIslands,memIslandsInc,featP->dtmFeature,DTMFeatureType::Island,dtmP->nullUserTag,dtmP->dtmFeatureIndex,dtmP->nullPnt,dtmP->nullPnt) ) goto errexit ;
+                   if( bcdtmEdit_storeDtmFeatureInDtmFeatureList(islandsPP,numIslandsP,&memIslands,memIslandsInc,featP->dtmFeature,DTMFeatureType::Island,dtmP->nullUserTag,dtmP->dtmFeatureIndex,dtmP->nullPnt,dtmP->nullPnt) ) goto errexit ;
                   }
                }
             if(( lp = bcdtmList_nextClkDtmObject(dtmP,pnt,lp)) < 0 ) goto errexit ;
@@ -1665,7 +1665,7 @@ int bcdtmExtEdit_getIslandFeaturesInternalToVoidDtmObject(BC_DTM_OBJ *dtmP,long 
             if( bcdtmList_getDtmFeatureTypeOccurrencesForLineDtmObject(dtmP,DTMFeatureType::Island,lp,pnt,&lineFeaturesP,&numLineFeatures)) goto errexit ;
             for( featP = lineFeaturesP ; featP < lineFeaturesP + numLineFeatures ; ++featP )
               {
-               if( bcdtmExtEdit_storeDtmFeatureInDtmFeatureList(islandsPP,numIslandsP,&memIslands,memIslandsInc,featP->dtmFeature,DTMFeatureType::Island,dtmP->nullUserTag,dtmP->dtmFeatureIndex,dtmP->nullPnt,dtmP->nullPnt) ) goto errexit ;
+               if( bcdtmEdit_storeDtmFeatureInDtmFeatureList(islandsPP,numIslandsP,&memIslands,memIslandsInc,featP->dtmFeature,DTMFeatureType::Island,dtmP->nullUserTag,dtmP->dtmFeatureIndex,dtmP->nullPnt,dtmP->nullPnt) ) goto errexit ;
               }
            }
         }
@@ -1701,7 +1701,7 @@ int bcdtmExtEdit_getIslandFeaturesInternalToVoidDtmObject(BC_DTM_OBJ *dtmP,long 
    {
     islandFeature = (*islandsPP+ofs)->dtmFeature ;
     sPnt = ftableAddrP(dtmP,islandFeature)->dtmFeaturePts.firstPoint ;
-    if( bcdtmExtList_getPriorPointForDtmFeatureDtmObject(dtmP,islandFeature,sPnt,&ppnt)) goto errexit ;
+    if( bcdtmList_getPriorPointForDtmFeatureDtmObject(dtmP,islandFeature,sPnt,&ppnt)) goto errexit ;
     do
       {
        if( bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,islandFeature,sPnt,&npnt)) goto errexit ;
@@ -1711,7 +1711,7 @@ int bcdtmExtEdit_getIslandFeaturesInternalToVoidDtmObject(BC_DTM_OBJ *dtmP,long 
           if( bcdtmList_getDtmFeatureTypeOccurrencesForPointDtmObject(dtmP,DTMFeatureType::Island,pnt,&lineFeaturesP,&numLineFeatures)) goto errexit ;
           for( featP = lineFeaturesP ; featP < lineFeaturesP + numLineFeatures ; ++featP )
             {
-             if( bcdtmExtEdit_storeDtmFeatureInDtmFeatureList(islandsPP,numIslandsP,&memIslands,memIslandsInc,featP->dtmFeature,DTMFeatureType::Island,dtmP->nullUserTag,dtmP->dtmFeatureIndex,dtmP->nullPnt,dtmP->nullPnt) ) goto errexit ;
+             if( bcdtmEdit_storeDtmFeatureInDtmFeatureList(islandsPP,numIslandsP,&memIslands,memIslandsInc,featP->dtmFeature,DTMFeatureType::Island,dtmP->nullUserTag,dtmP->dtmFeatureIndex,dtmP->nullPnt,dtmP->nullPnt) ) goto errexit ;
             }
           if(( pnt = bcdtmList_nextClkDtmObject(dtmP,sPnt,pnt)) < 0 ) goto errexit ;
          }
@@ -1735,76 +1735,6 @@ int bcdtmExtEdit_getIslandFeaturesInternalToVoidDtmObject(BC_DTM_OBJ *dtmP,long 
 */
  errexit :
  if( ret == DTM_SUCCESS )ret = DTM_ERROR ;
- goto cleanup ;
-}
-/*-------------------------------------------------------------------+
-|                                                                    |
-|                                                                    |
-|                                                                    |
-+-------------------------------------------------------------------*/
-int bcdtmExtEdit_storeDtmFeatureInDtmFeatureList(DTM_TIN_POINT_FEATURES **dtmFeatureListPP,long *numFeatureListP,long *memFeatureListP,long memFeatureListInc,long dtmFeature,DTMFeatureType dtmFeatureType,DTMUserTag userTag,DTMFeatureId userFeatureId,long priorPoint,long nextPoint)
-/*
-** This Stores A Feature In A Dtm Feature List
-**
-** Rob Cormack - June 2003
-*/
-{
- int    ret=DTM_SUCCESS,dbg=0 ;
- long   storeFlag ;
- DTM_TIN_POINT_FEATURES *featP ;
-/*
-** Write Entry Message
-*/
- if( dbg ) bcdtmWrite_message(0,0,0,"Storing Feature In Dtm Feature List") ;
-/*
-** Scan Point Feature List For Already Included Feature
-*/
- storeFlag = 1 ;
- for( featP = *dtmFeatureListPP ; featP < *dtmFeatureListPP + *numFeatureListP && storeFlag ; ++featP )
-   {
-    if( featP->dtmFeature == dtmFeature ) storeFlag = 0 ;
-   }
-/*
-** Add Feature To Feature List
-*/
- if( storeFlag )
-   {
-/*
-** Allocate memory If Necessary
-*/
-    if( *numFeatureListP == *memFeatureListP )
-      {
-       *memFeatureListP = *memFeatureListP + memFeatureListInc ;
-       if( *dtmFeatureListPP == NULL ) *dtmFeatureListPP = ( DTM_TIN_POINT_FEATURES * ) malloc ( *memFeatureListP * sizeof(DTM_TIN_POINT_FEATURES)) ;
-       else                            *dtmFeatureListPP = ( DTM_TIN_POINT_FEATURES * ) realloc ( *dtmFeatureListPP , *memFeatureListP * sizeof(DTM_TIN_POINT_FEATURES)) ;
-       if( *dtmFeatureListPP == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit ; }
-      }
-/*
-**  Store Feature
-*/
-    (*dtmFeatureListPP + *numFeatureListP)->dtmFeature     =  dtmFeature ;
-    (*dtmFeatureListPP + *numFeatureListP)->dtmFeatureType =  (DTMFeatureType)dtmFeatureType ;
-    (*dtmFeatureListPP + *numFeatureListP)->userTag        =  userTag ;
-    (*dtmFeatureListPP + *numFeatureListP)->userFeatureId  =  userFeatureId ;
-    (*dtmFeatureListPP + *numFeatureListP)->nextPoint      =  nextPoint ;
-    (*dtmFeatureListPP + *numFeatureListP)->priorPoint     =  priorPoint ;
-    ++*numFeatureListP ;
-   }
-/*
-** Clean Up
-*/
- cleanup :
-/*
-** Job Completed
-*/
- if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Storing Feature In Dtm Feature List Completed") ;
- if( dbg && ret == DTM_ERROR   ) bcdtmWrite_message(0,0,0,"Storing Feature In Dtm Feature List Error") ;
- return(ret) ;
-/*
-** Error Exit
-*/
- errexit :
- ret = DTM_ERROR ;
  goto cleanup ;
 }
 /*-------------------------------------------------------------------+
@@ -2335,7 +2265,7 @@ int bcdtmExtEdit_insertVoidsAndIslandsIntoEditDtmObject
 **        Set Void Feature To DTMFeatureType::Polygon
 */
           spnt = ftableAddrP(dtmP,feature)->dtmFeaturePts.firstPoint ;
-          if( bcdtmExtList_getPriorPointForDtmFeatureDtmObject(dtmP,feature,spnt,&pp)) goto errexit ;
+          if( bcdtmList_getPriorPointForDtmFeatureDtmObject(dtmP,feature,spnt,&pp)) goto errexit ;
           do
             {
              if( bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,feature,spnt,&np)) goto errexit ;
@@ -2574,7 +2504,7 @@ int bcdtmExtEdit_removeInsertedVoidsOnTinHullDtmObject(BC_DTM_OBJ *dtmP,long num
                      {
                       if( ftableAddrP(dtmP,flistAddrP(dtmP,fPtr)->dtmFeature)->dtmFeatureType == DTMFeatureType::GroupSpots )
                         {
-                         if( bcdtmExtInsert_removePointFromDtmFeatureDtmObject(dtmP,fsp2,flistAddrP(dtmP,fPtr)->dtmFeature)) goto errexit ;
+                         if( bcdtmInsert_removePointFromDtmFeatureDtmObject(dtmP,fsp2,flistAddrP(dtmP,fPtr)->dtmFeature)) goto errexit ;
                          fPtr = nodeAddrP(dtmP,fsp2)->fPtr ;
                         }
                       else fPtr = flistAddrP(dtmP,fPtr)->nextPtr ;
@@ -4039,7 +3969,7 @@ int bcdtmExtEdit_deleteInternalVoidPointsAndLinesAndRetriangulateVoidDtmObject(B
       {
        if( dbg ) bcdtmWrite_message(0,0,0,"Inserting Lines Internal To Void Feature %6ld",dtmFeature) ;
        spnt = ftableAddrP(voidDtmP,dtmFeature)->dtmFeaturePts.firstPoint ;
-       if( bcdtmExtList_getPriorPointForDtmFeatureDtmObject(voidDtmP,dtmFeature,spnt,&ppnt)) goto errexit ;
+       if( bcdtmList_getPriorPointForDtmFeatureDtmObject(voidDtmP,dtmFeature,spnt,&ppnt)) goto errexit ;
        if( bcdtmList_getNextPointForDtmFeatureDtmObject(voidDtmP,dtmFeature,spnt,&npnt)) goto errexit ;
 /*
 **     Scan Feature Hull
@@ -4111,7 +4041,7 @@ int bcdtmExtEdit_deleteInternalVoidPointsAndLinesAndRetriangulateVoidDtmObject(B
       {
        if( dbg ) bcdtmWrite_message(0,0,0,"Inserting Lines External To Island Feature %6ld",dtmFeature) ;
        spnt = ftableAddrP(voidDtmP,dtmFeature)->dtmFeaturePts.firstPoint ;
-       if( bcdtmExtList_getPriorPointForDtmFeatureDtmObject(voidDtmP,dtmFeature,spnt,&ppnt)) goto errexit ;
+       if( bcdtmList_getPriorPointForDtmFeatureDtmObject(voidDtmP,dtmFeature,spnt,&ppnt)) goto errexit ;
        if( bcdtmList_getNextPointForDtmFeatureDtmObject(voidDtmP,dtmFeature,spnt,&npnt)) goto errexit ;
 /*
 **     Scan Feature Hull
@@ -5206,7 +5136,7 @@ int  bcdtmExtEdit_checkPointCanBeDeletedDtmObject(BC_DTM_OBJ *dtmP,long Point,lo
        else clc = flistAddrP(dtmP,clc)->nextPtr ;
       }
     if( VoidFeature == dtmP->nullPnt ) goto errexit ;
-    bcdtmExtList_getPriorPointForDtmFeatureDtmObject(dtmP,VoidFeature,Point,&pp) ;
+    bcdtmList_getPriorPointForDtmFeatureDtmObject(dtmP,VoidFeature,Point,&pp) ;
     bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,VoidFeature,Point,&np) ;
     if((lp = bcdtmList_nextClkDtmObject(dtmP,Point,np)) < 0 ) goto errexit ;
     while ( lp != pp )
@@ -5236,7 +5166,7 @@ int  bcdtmExtEdit_checkPointCanBeDeletedDtmObject(BC_DTM_OBJ *dtmP,long Point,lo
        else clc = flistAddrP(dtmP,clc)->nextPtr ;
       }
     if( IslandFeature == dtmP->nullPnt ) goto errexit ;
-    bcdtmExtList_getPriorPointForDtmFeatureDtmObject(dtmP,IslandFeature,Point,&pp) ;
+    bcdtmList_getPriorPointForDtmFeatureDtmObject(dtmP,IslandFeature,Point,&pp) ;
     bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,IslandFeature,Point,&np) ;
     if((lp = bcdtmList_nextAntDtmObject(dtmP,Point,np)) < 0 ) goto errexit ;
     *Flag = 5 ;
@@ -5447,7 +5377,7 @@ int bcdtmExtEdit_insertPointDtmObject
 /*
 ** Reset Hull Pointers
 */
-    bcdtmExtList_getPriorPointForDtmFeatureDtmObject(dtmP,dtmFeature,P1,&pp) ;
+    bcdtmList_getPriorPointForDtmFeatureDtmObject(dtmP,dtmFeature,P1,&pp) ;
     nodeAddrP(dtmP,P1)->hPtr = *newPntP ;
     if( P3 != dtmP->nullPnt )
       {
@@ -5561,7 +5491,7 @@ int bcdtmExtEdit_insertPointDtmObject
        if( P3 != dtmP->nullPnt )
          {
           if(ftableAddrP(dtmP,voidFeature)->dtmFeaturePts.firstPoint == P2 ) ftableAddrP(dtmP,voidFeature)->dtmFeaturePts.firstPoint = P1 ;
-          if( bcdtmExtInsert_removePointFromDtmFeatureDtmObject(dtmP,P2,voidFeature)) goto errexit ;
+          if( bcdtmInsert_removePointFromDtmFeatureDtmObject(dtmP,P2,voidFeature)) goto errexit ;
           if( bcdtmInsert_pointIntoDtmFeatureDtmObject(dtmP,voidFeature,P1,P3,*newPntP)) goto errexit ;
          }
        else  if( bcdtmInsert_pointIntoDtmFeatureDtmObject(dtmP,voidFeature,P1,P2,*newPntP)) goto errexit ;
@@ -5672,7 +5602,7 @@ int bcdtmExtEdit_insertPointDtmObject
        if( P3 != dtmP->nullPnt )
          {
           if(ftableAddrP(dtmP,dtmFeature)->dtmFeaturePts.firstPoint == P2 ) ftableAddrP(dtmP,dtmFeature)->dtmFeaturePts.firstPoint = P1 ;
-          if( bcdtmExtInsert_removePointFromDtmFeatureDtmObject(dtmP,P2,dtmFeature)) goto errexit ;
+          if( bcdtmInsert_removePointFromDtmFeatureDtmObject(dtmP,P2,dtmFeature)) goto errexit ;
           if( bcdtmInsert_pointIntoDtmFeatureDtmObject(dtmP,dtmFeature,P1,P3,*newPntP)) goto errexit ;
          }
        else  if( bcdtmInsert_pointIntoDtmFeatureDtmObject(dtmP,dtmFeature,P1,P2,*newPntP)) goto errexit ;
@@ -5819,7 +5749,7 @@ int bcdtmExtEdit_removePointDtmObject
 */
  if( Ptype == 5 )
    {
-    if( bcdtmExtInsert_removePointFromDtmFeatureDtmObject(dtmP,Point,Feature)) goto errexit ;
+    if( bcdtmInsert_removePointFromDtmFeatureDtmObject(dtmP,Point,Feature)) goto errexit ;
     if( P3 != dtmP->nullPnt ) if( bcdtmInsert_pointIntoDtmFeatureDtmObject(dtmP,Feature,P1,P3,P2)) goto errexit ;
    }
 /*
@@ -5827,13 +5757,13 @@ int bcdtmExtEdit_removePointDtmObject
 */
  if( Ptype == 7 )
    {
-    if( bcdtmExtInsert_removePointFromDtmFeatureDtmObject(dtmP,Point,Feature)) goto errexit ;
+    if( bcdtmInsert_removePointFromDtmFeatureDtmObject(dtmP,Point,Feature)) goto errexit ;
     if( P3 != dtmP->nullPnt ) if( bcdtmInsert_pointIntoDtmFeatureDtmObject(dtmP,Feature,P1,P3,P2)) goto errexit ;
    }
 
 //  Remove Point From All DTM Features
 
- if( bcdtmExtInsert_removePointFromAllDtmFeaturesDtmObject(dtmP,Point)) goto errexit ;
+ if( bcdtmInsert_removePointFromAllDtmFeaturesDtmObject(dtmP,Point)) goto errexit ;
 
 //  Delete Circular List For Point
 
@@ -6356,7 +6286,7 @@ int bcdtmExtEdit_getIslandFeaturesInternalToVoidDtmObjectDup(BC_DTM_OBJ *dtmP,lo
    {
     islandFeature = (*islands+ofs)->dtmFeature ;
     sPnt = ftableAddrP(dtmP,islandFeature)->dtmFeaturePts.firstPoint ;
-    if( bcdtmExtList_getPriorPointForDtmFeatureDtmObject(dtmP,islandFeature,sPnt,&ppnt)) goto errexit ;
+    if( bcdtmList_getPriorPointForDtmFeatureDtmObject(dtmP,islandFeature,sPnt,&ppnt)) goto errexit ;
     do
       {
        if( bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,islandFeature,sPnt,&npnt)) goto errexit ;
@@ -7223,7 +7153,7 @@ int bcdtmExtEdit_breakDtmFeatureAtPointDtmObject(BC_DTM_OBJ *dtmP,long dtmFeatur
 /*
 **        Get Prior And Next Points To Break Point
 */
-          if( bcdtmExtList_getPriorPointForDtmFeatureDtmObject(dtmP,dtmFeature,breakPoint,&pp)) goto errexit ;
+          if( bcdtmList_getPriorPointForDtmFeatureDtmObject(dtmP,dtmFeature,breakPoint,&pp)) goto errexit ;
           if( bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,dtmFeature,breakPoint,&np)) goto errexit ;
           if( dbg ) bcdtmWrite_message(0,0,0,"Prior Point = %6ld Next Point = %6ld",pp,np) ;
 /*
@@ -7401,7 +7331,7 @@ int bcdtmExtEdit_dataPointDtmObject
     switch( ftableAddrP(dtmP,*dtmFeatureP)->dtmFeatureType )
       {
        case  DTMFeatureType::Void :
-         bcdtmExtList_getPriorPointForDtmFeatureDtmObject(dtmP,*dtmFeatureP,p1,&p3) ;
+         bcdtmList_getPriorPointForDtmFeatureDtmObject(dtmP,*dtmFeatureP,p1,&p3) ;
          bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,*dtmFeatureP,p2,&p4) ;
          n3 = bcdtmMath_normalDistanceToCordLine(pointAddrP(dtmP,p3)->x,pointAddrP(dtmP,p3)->y,x,y,pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y) ;
          n4 = bcdtmMath_normalDistanceToCordLine(pointAddrP(dtmP,p4)->x,pointAddrP(dtmP,p4)->y,x,y,pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y) ;
@@ -7421,7 +7351,7 @@ int bcdtmExtEdit_dataPointDtmObject
        break ;
 
        case  DTMFeatureType::Island :
-         bcdtmExtList_getPriorPointForDtmFeatureDtmObject(dtmP,*dtmFeatureP,p1,&p3) ;
+         bcdtmList_getPriorPointForDtmFeatureDtmObject(dtmP,*dtmFeatureP,p1,&p3) ;
          bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,*dtmFeatureP,p2,&p4) ;
          n3 = bcdtmMath_normalDistanceToCordLine(pointAddrP(dtmP,p3)->x,pointAddrP(dtmP,p3)->y,x,y,pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y) ;
          n4 = bcdtmMath_normalDistanceToCordLine(pointAddrP(dtmP,p4)->x,pointAddrP(dtmP,p4)->y,x,y,pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y) ;
@@ -9041,7 +8971,7 @@ int bcdtmExtEdit_clearVoidBitOfInternalVoidPointsDtmObject(BC_DTM_OBJ *dtmP,long
 */
  process = nvp = 0 ;
  fpnt = sp = ftableAddrP(dtmP,voidFeature)->dtmFeaturePts.firstPoint ;
- bcdtmExtList_getPriorPointForDtmFeatureDtmObject(dtmP,voidFeature,sp,&pp) ;
+ bcdtmList_getPriorPointForDtmFeatureDtmObject(dtmP,voidFeature,sp,&pp) ;
  bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,voidFeature,sp,&np) ;
  do
    {
@@ -9069,7 +8999,7 @@ int bcdtmExtEdit_clearVoidBitOfInternalVoidPointsDtmObject(BC_DTM_OBJ *dtmP,long
    {
     islandFeature = *(islandsP+np) ;
     fpnt = sp = ftableAddrP(dtmP,islandFeature)->dtmFeaturePts.firstPoint ;  ;
-    if( bcdtmExtList_getPriorPointForDtmFeatureDtmObject(dtmP,islandFeature,sp,&pp)) goto errexit ;
+    if( bcdtmList_getPriorPointForDtmFeatureDtmObject(dtmP,islandFeature,sp,&pp)) goto errexit ;
     if( bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,islandFeature,sp,&np))  goto errexit ;
     do
       {
@@ -9138,7 +9068,7 @@ int bcdtmExtEdit_clearVoidBitOfInternalVoidPointsDtmObject(BC_DTM_OBJ *dtmP,long
    {
     islandFeature = *(islandsP+n) ;
     fpnt = sp = ftableAddrP(dtmP,islandFeature)->dtmFeaturePts.firstPoint ;
-    bcdtmExtList_getPriorPointForDtmFeatureDtmObject(dtmP,islandFeature,sp,&pp) ;
+    bcdtmList_getPriorPointForDtmFeatureDtmObject(dtmP,islandFeature,sp,&pp) ;
     bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,islandFeature,sp,&np) ;
     do
       {
@@ -10181,7 +10111,7 @@ int bcdtmExtEdit_getVoidFeaturesInternalToIslandDtmObject
              if( bcdtmList_getDtmFeatureTypeOccurrencesForPointDtmObject(dtmP,DTMFeatureType::Void,lp,&lineFeaturesP,&numLineFeatures) ) goto errexit ;
              for( featP = lineFeaturesP ; featP < lineFeaturesP + numLineFeatures ; ++featP )
                {
-                if( bcdtmExtEdit_storeDtmFeatureInDtmFeatureList(voidsPP,numVoidsP,&memVoids,memVoidsInc,featP->dtmFeature,DTMFeatureType::Void,dtmP->nullUserTag,dtmP->dtmFeatureIndex,dtmP->nullPnt,dtmP->nullPnt) ) goto errexit ;
+                if( bcdtmEdit_storeDtmFeatureInDtmFeatureList(voidsPP,numVoidsP,&memVoids,memVoidsInc,featP->dtmFeature,DTMFeatureType::Void,dtmP->nullUserTag,dtmP->dtmFeatureIndex,dtmP->nullPnt,dtmP->nullPnt) ) goto errexit ;
                }
             }
          }
@@ -10214,7 +10144,7 @@ int bcdtmExtEdit_getVoidFeaturesInternalToIslandDtmObject
              if( bcdtmList_getDtmFeatureTypeOccurrencesForPointDtmObject(dtmP,DTMFeatureType::Void,lp,&lineFeaturesP,&numLineFeatures) ) goto errexit ;
              for( featP = lineFeaturesP ; featP < lineFeaturesP + numLineFeatures ; ++featP )
                {
-                if( bcdtmExtEdit_storeDtmFeatureInDtmFeatureList(voidsPP,numVoidsP,&memVoids,memVoidsInc,featP->dtmFeature,DTMFeatureType::Void,dtmP->nullUserTag,dtmP->dtmFeatureIndex,dtmP->nullPnt,dtmP->nullPnt) ) goto errexit ;
+                if( bcdtmEdit_storeDtmFeatureInDtmFeatureList(voidsPP,numVoidsP,&memVoids,memVoidsInc,featP->dtmFeature,DTMFeatureType::Void,dtmP->nullUserTag,dtmP->dtmFeatureIndex,dtmP->nullPnt,dtmP->nullPnt) ) goto errexit ;
                }
             }
           if(( lp = bcdtmList_nextAntDtmObject(dtmP,pnt,lp)) < 0 ) goto errexit ;
@@ -10224,7 +10154,7 @@ int bcdtmExtEdit_getVoidFeaturesInternalToIslandDtmObject
           if( bcdtmList_getDtmFeatureTypeOccurrencesForLineDtmObject(dtmP,DTMFeatureType::Void,pnt,lp,&lineFeaturesP,&numLineFeatures)) goto errexit ;
           for( featP = lineFeaturesP ; featP < lineFeaturesP + numLineFeatures ; ++featP )
             {
-             if( bcdtmExtEdit_storeDtmFeatureInDtmFeatureList(voidsPP,numVoidsP,&memVoids,memVoidsInc,featP->dtmFeature,DTMFeatureType::Void,dtmP->nullUserTag,dtmP->dtmFeatureIndex,dtmP->nullPnt,dtmP->nullPnt) ) goto errexit ;
+             if( bcdtmEdit_storeDtmFeatureInDtmFeatureList(voidsPP,numVoidsP,&memVoids,memVoidsInc,featP->dtmFeature,DTMFeatureType::Void,dtmP->nullUserTag,dtmP->dtmFeatureIndex,dtmP->nullPnt,dtmP->nullPnt) ) goto errexit ;
             }
          }
       }
@@ -10247,7 +10177,7 @@ int bcdtmExtEdit_getVoidFeaturesInternalToIslandDtmObject
                 if( bcdtmList_getDtmFeatureTypeOccurrencesForPointDtmObject(dtmP,DTMFeatureType::Void,lp,&lineFeaturesP,&numLineFeatures) ) goto errexit ;
                 for( featP = lineFeaturesP ; featP < lineFeaturesP + numLineFeatures ; ++featP )
                   {
-                   if( bcdtmExtEdit_storeDtmFeatureInDtmFeatureList(voidsPP,numVoidsP,&memVoids,memVoidsInc,featP->dtmFeature,DTMFeatureType::Void,dtmP->nullUserTag,dtmP->dtmFeatureIndex,dtmP->nullPnt,dtmP->nullPnt) ) goto errexit ;
+                   if( bcdtmEdit_storeDtmFeatureInDtmFeatureList(voidsPP,numVoidsP,&memVoids,memVoidsInc,featP->dtmFeature,DTMFeatureType::Void,dtmP->nullUserTag,dtmP->dtmFeatureIndex,dtmP->nullPnt,dtmP->nullPnt) ) goto errexit ;
                   }
                }
             if(( lp = bcdtmList_nextClkDtmObject(dtmP,pnt,lp)) < 0 ) goto errexit ;
@@ -10257,7 +10187,7 @@ int bcdtmExtEdit_getVoidFeaturesInternalToIslandDtmObject
             if( bcdtmList_getDtmFeatureTypeOccurrencesForLineDtmObject(dtmP,DTMFeatureType::Void,lp,pnt,&lineFeaturesP,&numLineFeatures)) goto errexit ;
             for( featP = lineFeaturesP ; featP < lineFeaturesP + numLineFeatures ; ++featP )
               {
-               if( bcdtmExtEdit_storeDtmFeatureInDtmFeatureList(voidsPP,numVoidsP,&memVoids,memVoidsInc,featP->dtmFeature,DTMFeatureType::Void,dtmP->nullUserTag,dtmP->dtmFeatureIndex,dtmP->nullPnt,dtmP->nullPnt) ) goto errexit ;
+               if( bcdtmEdit_storeDtmFeatureInDtmFeatureList(voidsPP,numVoidsP,&memVoids,memVoidsInc,featP->dtmFeature,DTMFeatureType::Void,dtmP->nullUserTag,dtmP->dtmFeatureIndex,dtmP->nullPnt,dtmP->nullPnt) ) goto errexit ;
               }
            }
         }
@@ -10303,7 +10233,7 @@ int bcdtmExtEdit_getVoidFeaturesInternalToIslandDtmObject
           if( bcdtmList_getDtmFeatureTypeOccurrencesForPointDtmObject(dtmP,DTMFeatureType::Void,pnt,&lineFeaturesP,&numLineFeatures)) goto errexit ;
           for( featP = lineFeaturesP ; featP < lineFeaturesP + numLineFeatures ; ++featP )
             {
-             if( bcdtmExtEdit_storeDtmFeatureInDtmFeatureList(voidsPP,numVoidsP,&memVoids,memVoidsInc,featP->dtmFeature,DTMFeatureType::Void,dtmP->nullUserTag,dtmP->dtmFeatureIndex,dtmP->nullPnt,dtmP->nullPnt) ) goto errexit ;
+             if( bcdtmEdit_storeDtmFeatureInDtmFeatureList(voidsPP,numVoidsP,&memVoids,memVoidsInc,featP->dtmFeature,DTMFeatureType::Void,dtmP->nullUserTag,dtmP->dtmFeatureIndex,dtmP->nullPnt,dtmP->nullPnt) ) goto errexit ;
             }
           if(( pnt = bcdtmList_nextClkDtmObject(dtmP,sPnt,pnt)) < 0 ) goto errexit ;
          }
@@ -10665,7 +10595,7 @@ int bcdtmExtEdit_deletePolygonalFeatureDtmObject
 // Reset Void Bits
 
  if( dbg ) bcdtmWrite_message(0,0,0,"Resetting Void Bits") ;
- if( bcdtmExtMark_voidPointsDtmObject(dtmP)) goto errexit ;
+ if( bcdtmMark_voidPointsDtmObject(dtmP)) goto errexit ;
 
 // Clean Up
 
@@ -10720,7 +10650,7 @@ int bcdtmExtEdit_deleteNonePolygonalFeatureDtmObject
 // Copy Feature Points To A Point List
 
  if( bcdtmList_copyDtmFeatureToTptrListDtmObject(dtmP,dtmFeature,&firstPnt)) goto errexit ;
- if( bcdtmExtList_copyTptrListToPointListDtmObject(dtmP,firstPnt,&pntListP,&numPntList)) goto errexit ;
+ if( bcdtmList_copyTptrListToPointListDtmObject(dtmP,firstPnt,&pntListP,&numPntList)) goto errexit ;
  if( bcdtmList_nullTptrListDtmObject(dtmP,firstPnt)) goto errexit ;
 
 // Delete Feature
