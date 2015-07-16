@@ -153,7 +153,8 @@ virtual bool _OnKeyTransition (bool wentDown, int key, bool shiftIsDown, bool ct
 //! @return String to describe selected controls or an empty string for no description.
 virtual Utf8String _OnGetDescription () = 0;
 
-virtual ~IEditManipulator () {}
+//! @private
+virtual ~IEditManipulator() {}
 
 }; // IEditManipulator
 
@@ -167,8 +168,12 @@ struct IEditManipulatorExtension : DgnDomain::Handler::Extension
 {
 public:
 
+virtual IEditManipulatorPtr _GetIEditManipulator (GeometricElementCR elm) = 0;
 virtual IEditManipulatorPtr _GetIEditManipulator (HitDetailCR hit) = 0;
 HANDLER_EXTENSION_DECLARE_MEMBERS(IEditManipulatorExtension, DGNPLATFORM_EXPORT)
+
+//! @private
+virtual ~IEditManipulatorExtension() {}
 
 }; // IEditManipulatorExtension
 
