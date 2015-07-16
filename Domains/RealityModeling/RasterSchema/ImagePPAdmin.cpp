@@ -105,7 +105,6 @@ BentleyStatus MyImageppLibAdmin::_GetGDalDataPath(WStringR gdalDataPath) const
 BentleyStatus MyImageppLibAdmin::_GetECWDataPath(WStringR ecwDataPath) const
     {
     BeFileName path = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-    path.AppendToPath (L"ECWData");
 
     // Convert BeFileName to WString
     BeFileName::BuildName (ecwDataPath, path.GetDevice().c_str(), path.GetDirectoryWithoutDevice().c_str(), path.GetFileNameWithoutExtension().c_str(), path.GetExtension().c_str());
