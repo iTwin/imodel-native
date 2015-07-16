@@ -67,9 +67,16 @@
   </Part>
 
                                                                                                   <!-- This boost headers places includes in subfolder Boost_1_5_7 to avoid clashes with other versions -->
+  <Part Name="Boost_1_5_7_VS2012" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
+    <SubPart PartName="BoostHeaders_1_5_7_VS2012"/>    
+    <SubPart PartName="BoostStaticLibraries" PartFile="BoostLib_1_57" Repository="BoostLibs_1.57"/>
+  </Part>
+  
+<!--  
   <Part Name="Boost_1_5_7_VS2012" BMakeFile="PointoolsLibsCommon/Boost_1_5_7/Boost_1_5_7.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
     <SubPart PartName="BoostHeaders_1_5_7_VS2012"/>    
   </Part>
+-->  
 
   <Part Name="GL_VS2012" BMakeFile="PointoolsLibsCommon/GL/GL.mke" BMakeOptions="+dPOINTOOLS_BUILD_USING_VS2012=1">
   </Part>

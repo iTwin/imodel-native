@@ -25,15 +25,15 @@ VendorAPIDir = $(OutBuildContexts)PointoolsLibs/VendorAPI/Boost_1_5_7/boost
 #   @CreateSymLinks.py   -f"$(DeliveryDir)libboost_thread-vc110-mt-gd-1_57.lib"=${PointoolsLibs}\boost\1.57\vc110-x86\libboost_thread-vc110-mt-gd-1_57.lib"
 #   @CreateSymLinks.py   -f"$(DeliveryDir)libboost_system-vc110-mt-gd-1_57.lib"=${PointoolsLibs}\boost\1.57\vc110-x86\libboost_system-vc110-mt-gd-1_57.lib"
 always:
-    @CreateSymLinks.py   -f"$(DeliveryDir)libboost_thread-vc110-mt-1_57.lib"=${PointoolsLibs}\boost\1.57\vc110-x86\libboost_thread-vc110-mt-1_57.lib"
-    @CreateSymLinks.py   -f"$(DeliveryDir)libboost_system-vc110-mt-1_57.lib"=${PointoolsLibs}\boost\1.57\vc110-x86\libboost_system-vc110-mt-1_57.lib"
+    @CreateSymLinks.py   -f"$(DeliveryDir)libboost_thread-vc110-mt-s-1_57.lib"=${PointoolsLibs}\boost\1.57\vc110-x86\libboost_thread-vc110-mt-1_57.lib"
+    @CreateSymLinks.py   -f"$(DeliveryDir)libboost_system-vc110-mt-s-1_57.lib"=${PointoolsLibs}\boost\1.57\vc110-x86\libboost_system-vc110-mt-1_57.lib"
 %endif
 
 %if $(TARGET_PROCESSOR_ARCHITECTURE) == "x64"
 #   @CreateSymLinks.py   -f"$(DeliveryDir)libboost_thread-vc110-mt-gd-1_57.lib"=${PointoolsLibs}\boost\1.57\vc110-x86_64\libboost_thread-vc110-mt-gd-1_57.lib"
 #   @CreateSymLinks.py   -f"$(DeliveryDir)libboost_system-vc110-mt-gd-1_57.lib"=${PointoolsLibs}\boost\1.57\vc110-x86_64\libboost_system-vc110-mt-gd-1_57.lib"
 always:
-    @CreateSymLinks.py   -f"$(DeliveryDir)libboost_thread-vc110-mt-1_57.lib"=${PointoolsLibs}\boost\1.57\vc110-x86_64\libboost_thread-vc110-mt-1_57.lib"
-    @CreateSymLinks.py   -f"$(DeliveryDir)libboost_system-vc110-mt-1_57.lib"=${PointoolsLibs}\boost\1.57\vc110-x86_64\libboost_system-vc110-mt-1_57.lib"
+    @CreateSymLinks.py   -f"$(DeliveryDir)libboost_thread-vc110-mt-s-1_57.lib"=${PointoolsLibs}\boost\1.57\vc110-x86_64\libboost_thread-vc110-mt-s-1_57.lib"
+    @CreateSymLinks.py   -f"$(DeliveryDir)libboost_system-vc110-mt-s-1_57.lib"=${PointoolsLibs}\boost\1.57\vc110-x86_64\libboost_system-vc110-mt-s-1_57.lib"
 %endif
 
