@@ -303,7 +303,7 @@ extern "C" {
 */
 #define SQLITE_VERSION        "3.8.11"
 #define SQLITE_VERSION_NUMBER 3008011
-#define SQLITE_SOURCE_ID      "2015-07-02 18:47:12 85ca4409bdca7aee801e9fba1c49a87fabbf2064"
+#define SQLITE_SOURCE_ID      "2015-07-14 15:39:22 db4cbefb8674c6cfff27c1e918741de1885c845c"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
@@ -6481,6 +6481,9 @@ SQLITE_API int SQLITE_STDCALL sqlite3_mutex_notheld(sqlite3_mutex*);
 #define SQLITE_MUTEX_STATIC_APP1      8  /* For use by application */
 #define SQLITE_MUTEX_STATIC_APP2      9  /* For use by application */
 #define SQLITE_MUTEX_STATIC_APP3     10  /* For use by application */
+#define SQLITE_MUTEX_STATIC_VFS1     11  /* For use by built-in VFS */
+#define SQLITE_MUTEX_STATIC_VFS2     12  /* For use by extension VFS */
+#define SQLITE_MUTEX_STATIC_VFS3     13  /* For use by application VFS */
 
 /*
 ** CAPI3REF: Retrieve the mutex for a database connection
@@ -10268,6 +10271,16 @@ SQLITE_PRIVATE void sqlite3HashClear(Hash*);
 #if SQLITE_DEFAULT_WORKER_THREADS>SQLITE_MAX_WORKER_THREADS
 # undef SQLITE_MAX_WORKER_THREADS
 # define SQLITE_MAX_WORKER_THREADS SQLITE_DEFAULT_WORKER_THREADS
+#endif
+
+/*
+** The default initial allocation for the pagecache when using separate
+** pagecaches for each database connection.  A positive number is the
+** number of pages.  A negative number N translations means that a buffer
+** of -1024*N bytes is allocated and used for as many pages as it will hold.
+*/
+#ifndef SQLITE_DEFAULT_PCACHE_INITSZ
+# define SQLITE_DEFAULT_PCACHE_INITSZ 100
 #endif
 
 
@@ -15386,7 +15399,7 @@ SQLITE_PRIVATE SQLITE_WSD struct Sqlite3Config sqlite3Config = {
    0,                         /* nScratch */
    (void*)0,                  /* pPage */
    0,                         /* szPage */
-   0,                         /* nPage */
+   SQLITE_DEFAULT_PCACHE_INITSZ, /* nPage */
    0,                         /* mxParserStack */
    0,                         /* sharedCacheEnabled */
    SQLITE_SORTER_PMASZ,       /* szPma */
@@ -20818,7 +20831,7 @@ static int debugMutexEnd(void){ return SQLITE_OK; }
 ** that means that a mutex could not be allocated. 
 */
 static sqlite3_mutex *debugMutexAlloc(int id){
-  static sqlite3_debug_mutex aStatic[SQLITE_MUTEX_STATIC_APP3 - 1];
+  static sqlite3_debug_mutex aStatic[SQLITE_MUTEX_STATIC_VFS3 - 1];
   sqlite3_debug_mutex *pNew = 0;
   switch( id ){
     case SQLITE_MUTEX_FAST:
@@ -21033,6 +21046,9 @@ static int pthreadMutexEnd(void){ return SQLITE_OK; }
 ** <li>  SQLITE_MUTEX_STATIC_APP1
 ** <li>  SQLITE_MUTEX_STATIC_APP2
 ** <li>  SQLITE_MUTEX_STATIC_APP3
+** <li>  SQLITE_MUTEX_STATIC_VFS1
+** <li>  SQLITE_MUTEX_STATIC_VFS2
+** <li>  SQLITE_MUTEX_STATIC_VFS3
 ** </ul>
 **
 ** The first two constants cause sqlite3_mutex_alloc() to create
@@ -21061,6 +21077,9 @@ static int pthreadMutexEnd(void){ return SQLITE_OK; }
 */
 static sqlite3_mutex *pthreadMutexAlloc(int iType){
   static sqlite3_mutex staticMutexes[] = {
+    SQLITE3_MUTEX_INITIALIZER,
+    SQLITE3_MUTEX_INITIALIZER,
+    SQLITE3_MUTEX_INITIALIZER,
     SQLITE3_MUTEX_INITIALIZER,
     SQLITE3_MUTEX_INITIALIZER,
     SQLITE3_MUTEX_INITIALIZER,
@@ -21675,6 +21694,9 @@ static sqlite3_mutex winMutex_staticMutexes[] = {
   SQLITE3_MUTEX_INITIALIZER,
   SQLITE3_MUTEX_INITIALIZER,
   SQLITE3_MUTEX_INITIALIZER,
+  SQLITE3_MUTEX_INITIALIZER,
+  SQLITE3_MUTEX_INITIALIZER,
+  SQLITE3_MUTEX_INITIALIZER,
   SQLITE3_MUTEX_INITIALIZER
 };
 
@@ -21746,6 +21768,9 @@ static int winMutexEnd(void){
 ** <li>  SQLITE_MUTEX_STATIC_APP1
 ** <li>  SQLITE_MUTEX_STATIC_APP2
 ** <li>  SQLITE_MUTEX_STATIC_APP3
+** <li>  SQLITE_MUTEX_STATIC_VFS1
+** <li>  SQLITE_MUTEX_STATIC_VFS2
+** <li>  SQLITE_MUTEX_STATIC_VFS3
 ** </ul>
 **
 ** The first two constants cause sqlite3_mutex_alloc() to create
@@ -22157,10 +22182,9 @@ SQLITE_PRIVATE int sqlite3MallocInit(void){
     sqlite3GlobalConfig.nScratch = 0;
   }
   if( sqlite3GlobalConfig.pPage==0 || sqlite3GlobalConfig.szPage<512
-      || sqlite3GlobalConfig.nPage<1 ){
+      || sqlite3GlobalConfig.nPage<=0 ){
     sqlite3GlobalConfig.pPage = 0;
     sqlite3GlobalConfig.szPage = 0;
-    sqlite3GlobalConfig.nPage = 0;
   }
   rc = sqlite3GlobalConfig.m.xInit(sqlite3GlobalConfig.m.pAppData);
   if( rc!=SQLITE_OK ) memset(&mem0, 0, sizeof(mem0));
@@ -26296,7 +26320,7 @@ SQLITE_PRIVATE u32 sqlite3Get4byte(const u8 *p){
   u32 x;
   memcpy(&x,p,4);
   return x;
-#elif SQLITE_BYTEORDER==1234 && defined(__GNUC__)
+#elif SQLITE_BYTEORDER==1234 && defined(__GNUC__) && GCC_VERSION>=4003000
   u32 x;
   memcpy(&x,p,4);
   return __builtin_bswap32(x);
@@ -26312,7 +26336,7 @@ SQLITE_PRIVATE u32 sqlite3Get4byte(const u8 *p){
 SQLITE_PRIVATE void sqlite3Put4byte(unsigned char *p, u32 v){
 #if SQLITE_BYTEORDER==4321
   memcpy(p,&v,4);
-#elif SQLITE_BYTEORDER==1234 && defined(__GNUC__)
+#elif SQLITE_BYTEORDER==1234 && defined(__GNUC__) && GCC_VERSION>=4003000
   u32 x = __builtin_bswap32(v);
   memcpy(p,&x,4);
 #elif SQLITE_BYTEORDER==1234 && defined(_MSC_VER) && _MSC_VER>=1300

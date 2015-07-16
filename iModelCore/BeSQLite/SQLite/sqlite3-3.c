@@ -8955,10 +8955,11 @@ static int checkTreePage(
   u32 usableSize;          /* Usable size of the page */
   u32 contentOffset;       /* Offset to the start of the cell content area */
   u32 *heap = 0;           /* Min-heap used for checking cell coverage */
-  u32 x, prev = 0;
+  u32 x, prev = 0;         /* Next and previous entry on the min-heap */
   const char *saved_zPfx = pCheck->zPfx;
   int saved_v1 = pCheck->v1;
   int saved_v2 = pCheck->v2;
+  u8 savedIsInit;
 
   /* Check that the page exists
   */
@@ -8976,6 +8977,7 @@ static int checkTreePage(
 
   /* Clear MemPage.isInit to make sure the corruption detection code in
   ** btreeInitPage() is executed.  */
+  savedIsInit = pPage->isInit;
   pPage->isInit = 0;
   if( (rc = btreeInitPage(pPage))!=0 ){
     assert( rc==SQLITE_CORRUPT );  /* The only possible error from InitPage */
@@ -9018,7 +9020,6 @@ static int checkTreePage(
     ** as the other cell checks, so initialize the heap.  */
     heap = pCheck->heap;
     heap[0] = 0;
-    btreeHeapInsert(heap, contentOffset-1);
   }
 
   /* EVIDENCE-OF: R-02776-14802 The cell pointer array consists of K 2-byte
@@ -9099,7 +9100,6 @@ static int checkTreePage(
     if( !pPage->leaf ){
       heap = pCheck->heap;
       heap[0] = 0;
-      btreeHeapInsert(heap, contentOffset-1);
       for(i=nCell-1; i>=0; i--){
         u32 size;
         pc = get2byteAligned(&data[cellStart+i*2]);
@@ -9119,7 +9119,7 @@ static int checkTreePage(
       assert( (u32)i<=usableSize-4 );     /* Enforced by btreeInitPage() */
       size = get2byte(&data[i+2]);
       assert( (u32)(i+size)<=usableSize );  /* Enforced by btreeInitPage() */
-      btreeHeapInsert(heap, (i<<16)|(i+size-1));
+      btreeHeapInsert(heap, (((u32)i)<<16)|(i+size-1));
       /* EVIDENCE-OF: R-58208-19414 The first 2 bytes of a freeblock are a
       ** big-endian integer which is the offset in the b-tree page of the next
       ** freeblock in the chain, or zero if the freeblock is the last on the
@@ -9133,13 +9133,21 @@ static int checkTreePage(
     }
     /* Analyze the min-heap looking for overlap between cells and/or 
     ** freeblocks, and counting the number of untracked bytes in nFrag.
+    ** 
+    ** Each min-heap entry is of the form:    (start_address<<16)|end_address.
+    ** There is an implied first entry the covers the page header, the cell
+    ** pointer index, and the gap between the cell pointer index and the start
+    ** of cell content.  
+    **
+    ** The loop below pulls entries from the min-heap in order and compares
+    ** the start_address against the previous end_address.  If there is an
+    ** overlap, that means bytes are used multiple times.  If there is a gap,
+    ** that gap is added to the fragmentation count.
     */
     nFrag = 0;
-    assert( heap[0]>0 );
-    assert( (heap[1]>>16)==0 );
-    btreeHeapPull(heap,&prev);
+    prev = contentOffset - 1;   /* Implied first min-heap entry */
     while( btreeHeapPull(heap,&x) ){
-      if( (prev&0xffff)+1>(x>>16) ){
+      if( (prev&0xffff)>=(x>>16) ){
         checkAppendMsg(pCheck,
           "Multiple uses for byte %u of page %d", x>>16, iPage);
         break;
@@ -9162,6 +9170,7 @@ static int checkTreePage(
   }
 
 end_of_check:
+  if( !doCoverageCheck ) pPage->isInit = savedIsInit;
   releasePage(pPage);
   pCheck->zPfx = saved_zPfx;
   pCheck->v1 = saved_v1;
@@ -15429,6 +15438,7 @@ static int vdbeRecordCompareDebug(
   /*  mem1.u.i = 0;  // not needed, here to silence compiler warning */
   
   idx1 = getVarint32(aKey1, szHdr1);
+  if( szHdr1>98307 ) return SQLITE_CORRUPT;
   d1 = szHdr1;
   assert( pKeyInfo->nField+pKeyInfo->nXField>=pPKey2->nField || CORRUPT_DB );
   assert( pKeyInfo->aSortOrder!=0 );
@@ -16466,6 +16476,31 @@ static int vdbeSafetyNotNull(Vdbe *p){
   }
 }
 
+#ifndef SQLITE_OMIT_TRACE
+/*
+** Invoke the profile callback.  This routine is only called if we already
+** know that the profile callback is defined and needs to be invoked.
+*/
+static SQLITE_NOINLINE void invokeProfileCallback(sqlite3 *db, Vdbe *p){
+  sqlite3_int64 iNow;
+  assert( p->startTime>0 );
+  assert( db->xProfile!=0 );
+  assert( db->init.busy==0 );
+  assert( p->zSql!=0 );
+  sqlite3OsCurrentTimeInt64(db->pVfs, &iNow);
+  db->xProfile(db->pProfileArg, p->zSql, (iNow - p->startTime)*1000000);
+  p->startTime = 0;
+}
+/*
+** The checkProfileCallback(DB,P) macro checks to see if a profile callback
+** is needed, and it invokes the callback if it is needed.
+*/
+# define checkProfileCallback(DB,P) \
+   if( ((P)->startTime)>0 ){ invokeProfileCallback(DB,P); }
+#else
+# define checkProfileCallback(DB,P)  /*no-op*/
+#endif
+
 /*
 ** The following routine destroys a virtual machine that is created by
 ** the sqlite3_compile() routine. The integer returned is an SQLITE_
@@ -16486,6 +16521,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_finalize(sqlite3_stmt *pStmt){
     sqlite3 *db = v->db;
     if( vdbeSafety(v) ) return SQLITE_MISUSE_BKPT;
     sqlite3_mutex_enter(db->mutex);
+    checkProfileCallback(db, v);
     rc = sqlite3VdbeFinalize(v);
     rc = sqlite3ApiExit(db, rc);
     sqlite3LeaveMutexAndCloseZombie(db);
@@ -16507,12 +16543,14 @@ SQLITE_API int SQLITE_STDCALL sqlite3_reset(sqlite3_stmt *pStmt){
     rc = SQLITE_OK;
   }else{
     Vdbe *v = (Vdbe*)pStmt;
-    sqlite3_mutex_enter(v->db->mutex);
+    sqlite3 *db = v->db;
+    sqlite3_mutex_enter(db->mutex);
+    checkProfileCallback(db, v);
     rc = sqlite3VdbeReset(v);
     sqlite3VdbeRewind(v);
-    assert( (rc & (v->db->errMask))==rc );
-    rc = sqlite3ApiExit(v->db, rc);
-    sqlite3_mutex_leave(v->db->mutex);
+    assert( (rc & (db->errMask))==rc );
+    rc = sqlite3ApiExit(db, rc);
+    sqlite3_mutex_leave(db->mutex);
   }
   return rc;
 }
@@ -16863,6 +16901,7 @@ static int doWalCallbacks(sqlite3 *db){
   return rc;
 }
 
+
 /*
 ** Execute the statement pStmt, either until a row of data is ready, the
 ** statement is completely executed or an error occurs.
@@ -16931,8 +16970,10 @@ static int sqlite3Step(Vdbe *p){
     );
 
 #ifndef SQLITE_OMIT_TRACE
-    if( db->xProfile && !db->init.busy ){
+    if( db->xProfile && !db->init.busy && p->zSql ){
       sqlite3OsCurrentTimeInt64(db->pVfs, &p->startTime);
+    }else{
+      assert( p->startTime==0 );
     }
 #endif
 
@@ -16956,13 +16997,8 @@ static int sqlite3Step(Vdbe *p){
   }
 
 #ifndef SQLITE_OMIT_TRACE
-  /* Invoke the profile callback if there is one
-  */
-  if( rc!=SQLITE_ROW && db->xProfile && !db->init.busy && p->zSql ){
-    sqlite3_int64 iNow;
-    sqlite3OsCurrentTimeInt64(db->pVfs, &iNow);
-    db->xProfile(db->pProfileArg, p->zSql, (iNow - p->startTime)*1000000);
-  }
+  /* If the statement completed successfully, invoke the profile callback */
+  if( rc!=SQLITE_ROW ) checkProfileCallback(db, p);
 #endif
 
   if( rc==SQLITE_DONE ){
