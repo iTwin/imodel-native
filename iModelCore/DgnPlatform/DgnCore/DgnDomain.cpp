@@ -180,23 +180,36 @@ DgnDbStatus DgnDomain::VerifySuperclass(Handler& handler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnDomain::RegisterHandler(Handler& handler) 
+DgnDbStatus DgnDomain::RegisterHandler(Handler& handler, bool reregister) 
     {
     auto stat = VerifySuperclass(handler);
     if (DgnDbStatus::Success != stat)
         return stat;
 
-    handler.SetDomain(*this); 
-
-    // make sure we don't already have a handler for this classname
-    for (auto thisHandler=m_handlers.begin(); thisHandler!=m_handlers.end(); )
+    auto thisHandler=m_handlers.begin();
+    for (; thisHandler!=m_handlers.end(); ++thisHandler)
         {
         if ((*thisHandler)->GetClassName() == handler.GetClassName())
-            thisHandler = m_handlers.erase(thisHandler);
-        else
-            ++thisHandler;
+            break;
         }
 
+    if (reregister)
+        {
+        if (thisHandler==m_handlers.end()) // reregister only works if we DO already have this handler
+            {
+            BeAssert(false);
+            return DgnDbStatus::NotFound;
+            }
+
+        m_handlers.erase(thisHandler);
+        }
+    else if (thisHandler!=m_handlers.end()) // register only works if we DON'T already have this handler.
+        {
+        BeAssert(false);
+        return DgnDbStatus::AlreadyLoaded;
+        }
+
+    handler.SetDomain(*this); 
     m_handlers.push_back(&handler);
     return DgnDbStatus::Success;
     }
@@ -396,7 +409,15 @@ DgnDbStatus DgnDomain::Handler::_VerifySchema(DgnDomains& domains)
     ECN::ECClassCP myEcClass    = schemas.GetECClass(classId.GetValue());
     ECN::ECClassCP superEcClass = schemas.GetECClass(superClassId.GetValue());
 
-    BeAssert(myEcClass->Is(superEcClass));
+    if (!myEcClass->Is(superEcClass))
+        {
+        printf("ERROR: HANDLER hiearchy does not match ECSCHMA hiearchy:\n"
+               " Handler [%s] says it handles ECClass '%s', \n"
+               " but that class does not derive from its superclass handler's ECClass '%s'\n", 
+                typeid(*this).name(), GetClassName().c_str(), handlerSuperClass->GetClassName().c_str());
+
+        BeAssert(false);
+        }
 #endif
     
     return DgnDbStatus::Success;
@@ -525,7 +546,8 @@ DgnDbStatus dgn_ElementHandler::Element::_VerifySchema(DgnDomains& domains)
     if (0 != strcmp(thisEl->_GetECClassName(), GetClassName().c_str()))
         {
         printf("HANDLER SETUP ERROR: Handler [%s] says it handles ECClass '%s', \n"
-               "    but its DgnElement class [%s] says its ECClass is '%s'\n", 
+               "    but its DgnElement class [%s] says its ECClass is '%s'\n"
+               "    (make sure you have a DGNELEMENT_DECLARE_MEMBERS macro in your DgnElement class).\n",
                 typeid(*this).name(), GetClassName().c_str(), 
                 typeid(*thisEl).name(), thisEl->_GetECClassName());
 
