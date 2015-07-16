@@ -31,7 +31,26 @@ TEST_F(ElementGeometryBuilderTests, CreateElement3d)
 
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, m_defaultCategoryId, DPoint3d::From(0.0, 0.0, 0.0));
     CurveVectorPtr curveVector =  GeomHelper::computeShape();
-    builder->Append(*curveVector);
+    EXPECT_TRUE(builder->Append(*curveVector));
+
+    double dz = 3.0;
+    double radius = 1.5;
+    DgnConeDetail cylinderDetail(DPoint3d::From(0, 0, 0), DPoint3d::From(0, 0, dz), radius, radius, true);
+    ISolidPrimitivePtr cylinder = ISolidPrimitive::CreateDgnCone(cylinderDetail);
+    EXPECT_TRUE(builder->Append(*cylinder));
+
+    DEllipse3d ellipseData = DEllipse3d::From(1, 2, 3,
+        0, 0, 2,
+        0, 3, 0,
+        0.0, Angle::TwoPi());
+    ICurvePrimitivePtr ellipse = ICurvePrimitive::CreateArc(ellipseData);
+    EXPECT_TRUE(builder->Append(*ellipse));
+
+    ElemDisplayParams elemDisplayParams;
+    elemDisplayParams.SetCategoryId(m_defaultCategoryId);
+    elemDisplayParams.SetWeight(2);
+    EXPECT_TRUE( builder->Append(elemDisplayParams));
+
     EXPECT_EQ(SUCCESS, builder->SetGeomStreamAndPlacement(*geomElem));
     EXPECT_TRUE(m_db->Elements().Insert(*el).IsValid());
 }
@@ -50,7 +69,22 @@ TEST_F(ElementGeometryBuilderTests, CreateElement2d)
 
     ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*model, m_defaultCategoryId, DPoint2d::From(0.0, 0.0));
     TextString textStringElem;
-    builder->Append(textStringElem);
+    EXPECT_TRUE(builder->Append(textStringElem));
+
+    // 3d should not be appended
+    double dz = 3.0;
+    double radius = 1.5;
+    DgnConeDetail cylinderDetail(DPoint3d::From(0, 0, 0), DPoint3d::From(0, 0, dz), radius, radius, true);
+    ISolidPrimitivePtr cylinder = ISolidPrimitive::CreateDgnCone(cylinderDetail);
+    BeTest::SetFailOnAssert(false);
+    EXPECT_FALSE(builder->Append(*cylinder));
+    BeTest::SetFailOnAssert(true);
+
     EXPECT_EQ(SUCCESS, builder->SetGeomStreamAndPlacement(*geomElem));
     EXPECT_TRUE(m_db->Elements().Insert(*el).IsValid());
+
+    DgnElementPtr el2 = TestElement2d::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "Test2");
+    DgnElement2dP dgnElement2d= el2->ToElement2dP();
+    DPoint2d origin = DPoint2d::From(0.0, 0.0);
+    ElementGeometryBuilderPtr builder2 = ElementGeometryBuilder::Create(*dgnElement2d, origin);
 }
