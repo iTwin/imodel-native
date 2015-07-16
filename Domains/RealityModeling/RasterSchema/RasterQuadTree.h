@@ -52,7 +52,7 @@ public:
     //  [2]  [3]
     DPoint3dCR GetCorners() const; 
 
-    //! Draw this tile in the view. Tile might not be loaded. Return true if successful.
+    //! Draw this tile in the view. Tile might not be loaded, it will be loaded only if locally available. Return true if successful.
     bool Draw(Dgn::ViewContextR context);    
 
     TileId const& GetId() const {return m_tileId;}
