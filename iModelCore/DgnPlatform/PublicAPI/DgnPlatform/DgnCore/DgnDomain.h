@@ -62,6 +62,8 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+struct DgnDomains;
+
 /** @addtogroup DgnDomainGroup
 
 A "Domain" is a combination of an ECSchema, plus a set of C++ classes that implement its runtime behavior.
