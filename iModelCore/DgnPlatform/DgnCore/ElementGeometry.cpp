@@ -1187,14 +1187,14 @@ void ElementGeomIO::Writer::Append (ISolidKernelEntityCR entity, bool saveBRepOn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeomIO::Writer::Append (DgnSubCategoryId subCategory, TransformCR geomToWorld)
+void ElementGeomIO::Writer::Append (DgnSubCategoryId subCategory, TransformCR geomToElem)
     {
     DPoint3d            origin;
     RotMatrix           rMatrix;
     YawPitchRollAngles  angles;
 
-    geomToWorld.GetTranslation (origin);
-    geomToWorld.GetMatrix (rMatrix);
+    geomToElem.GetTranslation (origin);
+    geomToElem.GetMatrix (rMatrix);
 
     YawPitchRollAngles::TryFromRotMatrix (angles, rMatrix);
 
@@ -1542,7 +1542,7 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, ISolidKernelEntityPtr& e
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ElementGeomIO::Reader::Get (Operation const& egOp, DgnSubCategoryId& subCategory, TransformR geomToWorld) const
+bool ElementGeomIO::Reader::Get (Operation const& egOp, DgnSubCategoryId& subCategory, TransformR geomToElem) const
     {
     if (OpCode::BeginSubCategory != egOp.m_opCode)
         return false;
@@ -1554,7 +1554,7 @@ bool ElementGeomIO::Reader::Get (Operation const& egOp, DgnSubCategoryId& subCat
     DPoint3d            origin = *((DPoint3dCP) ppfb->origin());
     YawPitchRollAngles  angles = YawPitchRollAngles::FromDegrees (ppfb->yaw(), ppfb->pitch(), ppfb->roll());
 
-    geomToWorld = angles.ToTransform (origin);
+    geomToElem = angles.ToTransform (origin);
 
     return true;
     }
@@ -1942,28 +1942,28 @@ void ElementGeomIO::Collection::GetGeomPartIds (IdSet<DgnGeomPartId>& parts, Dgn
 +===============+===============+===============+===============+===============+======*/
 struct DrawState
 {
-Transform           m_geomToWorld;
+Transform           m_geomToElem;
 ViewContextR        m_context;
 ViewFlagsCR         m_flags;
 bool                m_symbologyInitialized;
 bool                m_symbologyChanged;
-bool                m_geomToWorldPushed;
+bool                m_geomToElemPushed;
 
-DrawState (ViewContextR context, ViewFlagsCR flags) : m_context(context), m_flags(flags) {m_symbologyInitialized = false; m_symbologyChanged = false; m_geomToWorldPushed = false;}
+DrawState (ViewContextR context, ViewFlagsCR flags) : m_context(context), m_flags(flags) {m_symbologyInitialized = false; m_symbologyChanged = false; m_geomToElemPushed = false;}
 ~DrawState() {End();}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Begin (DgnSubCategoryId subCategory, TransformCR geomToWorld)
+void Begin (DgnSubCategoryId subCategory, TransformCR geomToElem)
     {
     End(); // Pop state from a previous Begin (if any). Calls aren't required to be paired...
 
-    m_geomToWorld = geomToWorld;
+    m_geomToElem = geomToElem;
 
     // NEEDSWORK: Draw changes - Begin new QvElem...
-    if (m_geomToWorldPushed = !m_geomToWorld.IsIdentity())
-        m_context.PushTransform (m_geomToWorld);
+    if (m_geomToElemPushed = !m_geomToElem.IsIdentity())
+        m_context.PushTransform (m_geomToElem);
 
     SetElemDisplayParams (subCategory);
     }
@@ -1974,10 +1974,10 @@ void Begin (DgnSubCategoryId subCategory, TransformCR geomToWorld)
 void End()
     {
     // NEEDSWORK: Draw changes - Complete/Save/Draw QvElem pushing/popping partToWorld...
-    if (m_geomToWorldPushed)
+    if (m_geomToElemPushed)
         m_context.PopTransformClip();
 
-    m_geomToWorldPushed = false;
+    m_geomToElemPushed = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2216,15 +2216,15 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
             case ElementGeomIO::OpCode::BeginSubCategory:
                 {
                 DgnSubCategoryId subCategory;
-                Transform        geomToWorld;
+                Transform        geomToElem;
 
-                if (!reader.Get(egOp, subCategory, geomToWorld))
+                if (!reader.Get(egOp, subCategory, geomToElem))
                     {
                     state.End();
                     break;
                     }
 
-                state.Begin(subCategory, geomToWorld);
+                state.Begin(subCategory, geomToElem);
                 break;
                 }
 
@@ -2676,9 +2676,12 @@ void GeometricElement::_Draw (ViewContextR context) const
         viewFlags.InitDefaults();
 
     // NEEDSWORK: Want separate QvElems per-subCategory...
+    Transform      placementTrans = (Is3d() ? ToElement3d()->GetPlacement().GetTransform() : ToElement2d()->GetPlacement().GetTransform());
     DrawGeomStream stroker(*this, viewFlags);
 
+    context.PushTransform(placementTrans);
     context.DrawCached(stroker);
+    context.PopTransformClip();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2856,16 +2859,17 @@ void ElementGeometryCollection::Iterator::ToNext()
 
             case ElementGeomIO::OpCode::BeginSubCategory:
                 {
-                Transform        geomToWorld;
+                Transform        geomToElem;
                 DgnSubCategoryId subCategory;
 
-                if (!reader.Get(egOp, subCategory, geomToWorld))
+                if (!reader.Get(egOp, subCategory, geomToElem))
                     break;
 
-                if (nullptr != m_context->GetCurrLocalToWorldTransformCP())
+                if (m_geomToElemPushed)
                     m_context->PopTransformClip(); // Pop previous sub-category/transform...
 
-                m_context->PushTransform(geomToWorld);
+                m_context->PushTransform(geomToElem);
+                m_geomToElemPushed = true;
 
                 ElemDisplayParamsR  elParams = *m_context->GetCurrentDisplayParams();
                 DgnCategoryId       category = elParams.GetCategoryId();
@@ -3084,6 +3088,7 @@ ElementGeometryCollection::ElementGeometryCollection (GeometricElementCR element
     m_dataSize = element.GetGeomStream().GetSize();
     m_elemToWorld = (element.Is3d() ? element.ToElement3d()->GetPlacement().GetTransform() : element.ToElement2d()->GetPlacement().GetTransform());
     m_context = new ElementGeometryCollectionContext(element.GetDgnDb());
+    m_context->PushTransform(m_elemToWorld);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3257,33 +3262,25 @@ bool ElementGeometryBuilder::Append (DgnGeomPartId geomPartId, TransformCR geomT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ElementGeometryBuilder::OnNewGeom (DRange3dCR localRange, TransformCP geomToElement)
+void ElementGeometryBuilder::OnNewGeom (DRange3dCR localRange, TransformCP geomToElementIn)
     {
     if (m_isPartCreate)
         return; // Don't need placement or want ElemDisplayParams...
 
-    Transform elementToWorld;
-    
     if (m_is3d)
-        {
         m_placement3d.GetElementBoxR().Extend(localRange);
-        elementToWorld = m_placement3d.GetTransform();
-        }
     else
-        {
         m_placement2d.GetElementBoxR().Extend(DRange2d::From(DPoint2d::From(localRange.low), DPoint2d::From(localRange.high)));
-        elementToWorld = m_placement2d.GetTransform();
-        }
 
-    Transform geomToWorld = (nullptr == geomToElement ? elementToWorld : Transform::FromProduct(elementToWorld, *geomToElement));
+    Transform geomToElem = (nullptr != geomToElementIn ? *geomToElementIn : Transform::FromIdentity());
 
     // Establish "geometry group" boundaries at sub-category and transform changes (NEEDSWORK: Other incompatible changes...priority/class?)
-    if (!m_prevSubCategory.IsValid() || (m_prevSubCategory != m_elParams.GetSubCategoryId() || !m_prevGeomToWorld.IsEqual(geomToWorld)))
+    if (!m_prevSubCategory.IsValid() || (m_prevSubCategory != m_elParams.GetSubCategoryId() || !m_prevGeomToElem.IsEqual(geomToElem)))
         {
-        m_writer.Append(m_elParams.GetSubCategoryId(), geomToWorld);
+        m_writer.Append(m_elParams.GetSubCategoryId(), geomToElem);
 
         m_prevSubCategory = m_elParams.GetSubCategoryId();
-        m_prevGeomToWorld = geomToWorld;
+        m_prevGeomToElem = geomToElem;
         }
 
     if (m_appearanceChanged)
@@ -3713,6 +3710,23 @@ ElementGeometryBuilderPtr ElementGeometryBuilder::Create (DgnElement3dCR element
 ElementGeometryBuilderPtr ElementGeometryBuilder::Create (DgnElement2dCR element, DPoint2dCR origin, AngleInDegrees const& angle)
     {
     return ElementGeometryBuilder::Create(*element.GetModel(), element.GetCategoryId(), origin, angle);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementGeometryBuilderPtr ElementGeometryBuilder::Create (GeometricElementCR element)
+    {
+    if (element.Is3d())
+        {
+        Placement3d placement3d = element.ToElement3d()->GetPlacement();
+
+        return ElementGeometryBuilder::Create(*element.ToElement3d(), placement3d.GetOrigin(), placement3d.GetAngles()); 
+        }
+
+    Placement2d placement2d = element.ToElement2d()->GetPlacement();
+
+    return ElementGeometryBuilder::Create(*element.ToElement2d(), placement2d.GetOrigin(), placement2d.GetAngle()); 
     }
 
 /*---------------------------------------------------------------------------------**//**

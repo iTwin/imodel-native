@@ -29,8 +29,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 struct EXPORT_VTABLE_ATTRIBUTE PhysicalTextAnnotationElement : PhysicalElement
 {
 private:
-    DEFINE_T_SUPER(PhysicalElement);
-    friend struct PhysicalTextAnnotationElementHandler;
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalTextAnnotationElement, PhysicalElement) 
     
     TextAnnotationPtr m_annotation;
 
@@ -62,14 +61,14 @@ public:
 
 namespace dgn_ElementHandler
 {
-//=======================================================================================
-//! The ElementHandler for PhysicalTextAnnotationElement
-// @bsiclass                                                    Jeff.Marker     06/2015
-//=======================================================================================
-struct PhysicalText : Element
-{
-    ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalTextAnnotationElement, PhysicalTextAnnotationElement, PhysicalText, Element, DGNPLATFORM_EXPORT);
-};
+    //=======================================================================================
+    //! The ElementHandler for PhysicalTextAnnotationElement
+    // @bsiclass                                                    Jeff.Marker     06/2015
+    //=======================================================================================
+    struct PhysicalText : Physical
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalTextAnnotationElement, PhysicalTextAnnotationElement, PhysicalText, Physical, DGNPLATFORM_EXPORT);
+    };
 };
 
 //! @endGroup

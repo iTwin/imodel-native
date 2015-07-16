@@ -84,6 +84,7 @@ enum class DgnDbStatus : int
     WrongDomain,
     WrongDgnDb,
     WrongElement,
+    WrongHandler,
     WrongModel,
     };
 

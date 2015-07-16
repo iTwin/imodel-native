@@ -21,8 +21,8 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_DGNDB_UNIT_TESTS_NAMESPACE
 
 #define TMTEST_SCHEMA_NAME                               "DgnPlatformTest"
-#define TMTEST_SCHEMA_NAMEW                             L"DgnPlatformTest"
 #define TMTEST_TEST_ELEMENT_CLASS_NAME                   "TestElement"
+#define TMTEST_TEST_ELEMENT2d_CLASS_NAME                 "TestElement2d"
 #define TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME    "TestElementDrivesElement"
 #define TMTEST_TEST_ELEMENT_TestElementProperty          "TestElementProperty"
 #define TMTEST_TEST_ITEM_CLASS_NAME                      "TestItem"
@@ -52,7 +52,7 @@ typedef TestElement2d const& TestElement2dCR;
 //=======================================================================================
 struct TestElement : PhysicalElement
 {
-    DEFINE_T_SUPER(PhysicalElement)
+    DGNELEMENT_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT_CLASS_NAME, PhysicalElement) 
 
 protected:
     friend struct TestElementHandler;
@@ -77,7 +77,7 @@ public:
 //=======================================================================================
 struct TestElementHandler : dgn_ElementHandler::Element
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS("TestElement", TestElement, TestElementHandler, dgn_ElementHandler::Element, )
+    ELEMENTHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT_CLASS_NAME, TestElement, TestElementHandler, dgn_ElementHandler::Element, )
 };
 struct GTestElement2dHandler;
 
@@ -87,26 +87,23 @@ struct GTestElement2dHandler;
 //=======================================================================================
 struct TestElement2d : Dgn::DrawingElement
 {
-    DEFINE_T_SUPER(Dgn::DrawingElement)
+    DGNELEMENT_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT2d_CLASS_NAME, Dgn::DrawingElement) 
 
 private:
     friend struct GTestElement2dHandler;
 public:
     TestElement2d(CreateParams const& params) : T_Super(params) {}
     static TestElement2dPtr Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode);
-    static ECN::ECClassCP GetTestElementECClass(DgnDbR db) { return db.Schemas().GetECClass(TMTEST_SCHEMA_NAME, TMTEST_TEST_ELEMENT_CLASS_NAME); }
 };
-
 
 //=======================================================================================
 //! A test ElementHandler
 // @bsiclass                                                     Sam.Wilson      01/15
 //=======================================================================================
-struct TestElement2dHandler : dgn_ElementHandler::Element
+struct TestElement2dHandler : dgn_ElementHandler::Drawing
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS("TestElement", TestElement2d, TestElement2dHandler, dgn_ElementHandler::Element, )
+    ELEMENTHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT2d_CLASS_NAME, TestElement2d, TestElement2dHandler, dgn_ElementHandler::Drawing, )
 };
-
 
 //=======================================================================================
 //! Domain that knows DgnPlatformTest schema
