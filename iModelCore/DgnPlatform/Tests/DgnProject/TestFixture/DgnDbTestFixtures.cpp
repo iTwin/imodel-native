@@ -168,7 +168,7 @@ void DgnDbTestFixture::SetupProject(WCharCP baseProjFile, WCharCP testProjFile, 
     ASSERT_TRUE(result == BE_SQLITE_OK);
 
     BeFileName schemaFile(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
-    schemaFile.AppendToPath(L"ECSchemas/" TMTEST_SCHEMA_NAMEW L".01.00.ecschema.xml");
+    schemaFile.AppendToPath(WString("ECSchemas/" TMTEST_SCHEMA_NAME ".01.00.ecschema.xml", BentleyCharEncoding::Utf8).c_str());
 
     //BentleyStatus status = m_db->Domains().FindDomain("DgnPlatformTest")->ImportSchema(*m_db, schemaFile);
     auto status = DgnPlatformTestDomain::GetDomain().ImportSchema(*m_db, schemaFile);
@@ -206,15 +206,16 @@ bool DgnDbTestFixture::SelectElementItem(DgnElementId id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestElement2dPtr TestElement2d::Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode)
 {
-    TestElement2dPtr testElement = new TestElement2d(TestElement2d::CreateParams(db, mid, DgnClassId(GetTestElementECClass(db)->GetId()), categoryId, Placement2d(), nullptr, elementCode));
-
-    //  Add some hard-wired geometry
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*testElement);
-    EXPECT_TRUE(builder->Append(*GeomHelper::computeShape2d()));
-    if (SUCCESS != builder->SetGeomStreamAndPlacement(*testElement))
+    DgnElementPtr testElement = TestElement2dHandler::GetHandler().Create(TestElement2d::CreateParams(db, mid, db.Domains().GetClassId(TestElement2dHandler::GetHandler()), categoryId, Placement2d(), nullptr, elementCode));
+    if (!testElement.IsValid())
         return nullptr;
 
-    return testElement;
+    TestElement2d* geom = (TestElement2d*) testElement.get();
+
+    //  Add some hard-wired geometry
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*geom);
+    EXPECT_TRUE(builder->Append(*GeomHelper::computeShape2d()));
+    return (SUCCESS != builder->SetGeomStreamAndPlacement(*geom)) ? nullptr : geom;
 }
 
 /*---------------------------------------------------------------------------------**//**

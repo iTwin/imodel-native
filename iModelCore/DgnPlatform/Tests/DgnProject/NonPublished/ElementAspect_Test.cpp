@@ -97,9 +97,9 @@ typedef TestItem* TestItemP;
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      06/15
 //=======================================================================================
-struct TestItemHandler : Dgn::ElementAspectHandler
+struct TestItemHandler : Dgn::dgn_AspectHandler::Aspect
 {
-    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ITEM_CLASS_NAME, TestItemHandler, Dgn::ElementAspectHandler, )
+    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ITEM_CLASS_NAME, TestItemHandler, Dgn::dgn_AspectHandler::Aspect, )
     RefCountedPtr<DgnElement::Aspect> _CreateInstance() override {return new TestItem("");}
 };
 
@@ -142,9 +142,9 @@ typedef TestUniqueAspect* TestUniqueAspectP;
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      06/15
 //=======================================================================================
-struct TestUniqueAspectHandler : Dgn::ElementAspectHandler
+struct TestUniqueAspectHandler : Dgn::dgn_AspectHandler::Aspect
 {
-    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_UNIQUE_ASPECT_CLASS_NAME, TestUniqueAspectHandler, Dgn::ElementAspectHandler, )
+    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_UNIQUE_ASPECT_CLASS_NAME, TestUniqueAspectHandler, Dgn::dgn_AspectHandler::Aspect, )
     RefCountedPtr<DgnElement::Aspect> _CreateInstance() override {return new TestUniqueAspect("");}
 };
 
@@ -187,9 +187,9 @@ typedef TestMultiAspect* TestMultiAspectP;
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      06/15
 //=======================================================================================
-struct TestMultiAspectHandler : Dgn::ElementAspectHandler
+struct TestMultiAspectHandler : Dgn::dgn_AspectHandler::Aspect
 {
-    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_MULTI_ASPECT_CLASS_NAME, TestMultiAspectHandler, Dgn::ElementAspectHandler, )
+    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_MULTI_ASPECT_CLASS_NAME, TestMultiAspectHandler, Dgn::dgn_AspectHandler::Aspect, )
     RefCountedPtr<DgnElement::Aspect> _CreateInstance() override {return new TestMultiAspect("");}
 };
 
