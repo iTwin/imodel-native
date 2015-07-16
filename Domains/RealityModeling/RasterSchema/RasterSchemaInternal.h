@@ -44,6 +44,9 @@
 #include <Imagepp/all/h/HCDCodecIdentity.h>
 #include <Imagepp/all/h/HCDPacket.h>
 #include <Imagepp/all/h/HGF2DAffine.h>
+#include <Imagepp/all/h/HRFPageFile.h>
+#include <Imagepp/all/h/HRFPageFileFactory.h>
+#include <Imagepp/all/h/HRFRasterFilePageDecorator.h>
 
 #include <RasterSchema/RasterSchemaTypes.h>
 #include <RasterSchema/RasterSchemaCommon.h>
