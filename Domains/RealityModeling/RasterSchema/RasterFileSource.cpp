@@ -75,11 +75,13 @@ RasterFileSource::RasterFileSource(Utf8StringCR resolvedName)
 //----------------------------------------------------------------------------------------
 DisplayTilePtr RasterFileSource::_QueryTile(TileId const& id, bool request)
     {
+    //&&ep need to take the 'request' param into account... When we will have a copyfrom thread.
+
     if (m_rasterFilePtr == nullptr)
         // RasterFile could not be initialized
         return nullptr;
 
-    // Use integer type to avoid floating-points precision errors durint origin multiplication.
+    // Use integer type to avoid floating-points precision errors during origin multiplication.
     uint32_t scale = 1 << id.resolution;
     HGF2DStretch stretch(HGF2DDisplacement((id.x * m_tileSize.x) * scale, (id.y * m_tileSize.y) * scale), scale, scale);
 
