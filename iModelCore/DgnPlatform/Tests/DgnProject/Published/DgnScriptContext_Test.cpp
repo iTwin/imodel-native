@@ -5,6 +5,7 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#ifndef BENTLEYCONFIG_NO_JAVASCRIPT
 #include "DgnHandlersTests.h"
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnCore/DgnScriptContext.h>
@@ -176,3 +177,4 @@ TEST(DgnScriptContextTest, Test1)
         ASSERT_EQ( -1 , sres );
         }
     }
+#endif
