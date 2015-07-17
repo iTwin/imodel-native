@@ -15,7 +15,7 @@ USING_NAMESPACE_BENTLEY
 // @bsimethod                                    Krischan.Eberle                  02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-WString DateTime::Info::KindToString (DateTime::Kind kind)
+WString DateTime::Info::KindToStringW (DateTime::Kind kind)
     {
     switch (kind)
         {
@@ -30,12 +30,31 @@ WString DateTime::Info::KindToString (DateTime::Kind kind)
         return L"Unspecified";
         }
     }
+//-------------------------------------------------------------------------------------
+/// <author>Carole.MacDonald</author>                     <date>07/2015</date>
+//---------------+---------------+---------------+---------------+---------------+-----
+//static
+Utf8String DateTime::Info::KindToString(DateTime::Kind kind)
+    {
+    switch (kind)
+        {
+        case Kind::Local:
+            return "Local";
+
+        case Kind::Utc:
+            return "Utc";
+
+        default:
+        case Kind::Unspecified:
+            return "Unspecified";
+        }
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-WString DateTime::Info::ComponentToString (DateTime::Component component)
+WString DateTime::Info::ComponentToStringW (DateTime::Component component)
     {
     switch (component)
         {
@@ -45,6 +64,23 @@ WString DateTime::Info::ComponentToString (DateTime::Component component)
     default:
     case Component::DateAndTime:
         return L"DateTime";
+        }
+    }
+
+//-------------------------------------------------------------------------------------
+/// <author>Carole.MacDonald</author>                     <date>07/2015</date>
+//---------------+---------------+---------------+---------------+---------------+-----
+//static
+Utf8String DateTime::Info::ComponentToString(DateTime::Component component)
+    {
+    switch (component)
+        {
+        case Component::Date:
+            return "Date";
+
+        default:
+        case Component::DateAndTime:
+            return "DateTime";
         }
     }
 
