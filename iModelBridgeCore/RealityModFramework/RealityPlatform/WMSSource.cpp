@@ -9,74 +9,77 @@
 #include <RealityPlatform/WMSSource.h>
 #include <BeXml/BeXml.h>
 
-USING_BENTLEY_NAMESPACE_REALITYPLATFORM
+// Xml Fragment Tags
+#define WMSSOURCE_PREFIX                        "wms"
 
-//=======================================================================================
-//                                      WmsSource
-//=======================================================================================
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         		 6/2015
-//-------------------------------------------------------------------------------------
-//WmsSource::WmsSource()
-//    {
-//    m_mapRequestList.resize(0);
-//    }
+#define WMSSOURCE_ELEMENT_Root                  "WmsMapInfo"
+#define WMSSOURCE_ELEMENT_Url                   "Url"
+#define WMSSOURCE_ELEMENT_BoundingBox           "BoundingBox"
+#define WMSSOURCE_ELEMENT_MetaWidth             "MetaWidth"
+#define WMSSOURCE_ELEMENT_MetaHeight            "MetaHeight"
+#define WMSSOURCE_ELEMENT_Version               "Version"
+#define WMSSOURCE_ELEMENT_Layers                "Layers"
+#define WMSSOURCE_ELEMENT_Styles                "Styles"
+#define WMSSOURCE_ELEMENT_CoordinateSystem      "CoordinateSystem"
+#define WMSSOURCE_ELEMENT_Format                "Format"
+#define WMSSOURCE_ELEMENT_VendorSpecific        "VendorSpecific"
+#define WMSSOURCE_ELEMENT_Transparent           "Transparent"
 
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         		 6/2015
-//-------------------------------------------------------------------------------------
-//WmsSource::~WmsSource()
-//    {
-//    // Ptr release
-//    }
+#define WMSSOURCE_ATTRIBUTE_CoordSysType        "type"
 
+USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 //-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         		 6/2015
+// @bsimethod                                   Jean-Francois.Cote         		 5/2015
 //-------------------------------------------------------------------------------------
-WmsSourcePtr WmsSource::Create()
+WmsMapInfoPtr WmsMapInfo::Create(Utf8CP url, DRange2dCR bbox, Utf8CP version, Utf8CP layers, Utf8CP csType, Utf8CP csLabel)
     {
-    WmsSourcePtr sourcePtr = new WmsSource();
-    sourcePtr->AddRef();
-    return sourcePtr;
+    return new WmsMapInfo(url, bbox, version, layers, csType, csLabel);
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 6/2015
 //-------------------------------------------------------------------------------------
-StatusInt WmsSource::Add(MapInfoPtr mapRequest)
-    {
-    return SUCCESS;
-    }
+Utf8StringCR    WmsMapInfo::GetUrl() const { return m_url; }
+void            WmsMapInfo::SetUrl(Utf8CP url) { m_url = url; }
+
+DRange2dCR  WmsMapInfo::GetBBox() const { return m_boundingBox; }
+void        WmsMapInfo::SetBBox(DRange2dCP bbox) { m_boundingBox = *bbox; }
+
+uint32_t    WmsMapInfo::GetMetaWidth() const { return m_metaWidth; }
+void        WmsMapInfo::SetMetaWidth(uint32_t width) { m_metaWidth = width; }
+
+uint32_t    WmsMapInfo::GetMetaHeight() const { return m_metaHeight; }
+void        WmsMapInfo::SetMetaHeight(uint32_t height) { m_metaHeight = height; }
+
+Utf8StringCR    WmsMapInfo::GetVersion() const { return m_version; }
+void            WmsMapInfo::SetVersion(Utf8CP version) { m_version = version; }
+
+Utf8StringCR    WmsMapInfo::GetLayers() const { return m_layers; }
+void            WmsMapInfo::SetLayers(Utf8CP layers) { m_layers = layers; }
+
+Utf8StringCR    WmsMapInfo::GetStyles() const { return m_styles; }
+void            WmsMapInfo::SetStyles(Utf8CP styles) { m_styles = styles; }
+
+Utf8StringCR    WmsMapInfo::GetCoordSysType() const { return m_csType; }
+void            WmsMapInfo::SetCoordSysType(Utf8CP csType) { m_csType = csType; }
+
+Utf8StringCR    WmsMapInfo::GetCoordSysLabel() const { return m_csLabel; }
+void            WmsMapInfo::SetCoordSysLabel(Utf8CP csLabel) { m_csLabel = csLabel; }
+
+Utf8StringCR    WmsMapInfo::GetFormat() const { return m_format; }
+void            WmsMapInfo::SetFormat(Utf8CP format) { m_format = format; }
+
+Utf8StringCR    WmsMapInfo::GetVendorSpecific() const { return m_vendorSpecific; }
+void            WmsMapInfo::SetVendorSpecific(Utf8CP vendorSpecific) { m_vendorSpecific = vendorSpecific; }
+
+bool    WmsMapInfo::IsTransparent() const { return m_transparent; }
+void    WmsMapInfo::SetTransparency(bool isTransparent) { m_transparent = isTransparent; }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 6/2015
 //-------------------------------------------------------------------------------------
-StatusInt WmsSource::Add(WCharCP url, WCharCP version, WCharCP layer, WCharCP style, WCharCP crs, WCharCP format)
-    {
-    MapInfoPtr foundMapInfoPtr = FindMapInfo(url);
-    if (0 == foundMapInfoPtr.get())
-        {
-        // Create a new WMS map request.
-        MapInfoPtr mapInfoPtr = MapInfo::Create(url, version, layer, style, crs, format);
-        if (0 == mapInfoPtr.get())
-            return ERROR;
-
-        m_mapInfoList.push_back(mapInfoPtr);
-        }
-    else
-        {
-        // The request already exist, just append the new layer and style to the list.
-        foundMapInfoPtr->AddLayer(layer, style);
-        }
-
-    return SUCCESS;
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         		 6/2015
-//-------------------------------------------------------------------------------------
-WString WmsSource::ToXmlString()
+void WmsMapInfo::ToXml(Utf8StringR xmlFragment) const
     {
     // Create new dom.
     BeXmlDomPtr pXmlDom = BeXmlDom::CreateEmpty();
@@ -87,135 +90,176 @@ WString WmsSource::ToXmlString()
     // &&JFC WIP: Add namespace
     //pRootNode->SetNamespace(WMSSOURCE_PREFIX, NULL);
 
-    if (!m_mapInfoList.empty())
+    WString temp;
+
+    // [Required] Url  
+    BeStringUtilities::Utf8ToWChar(temp, m_url.c_str());
+    pRootNode->AddElementStringValue(WMSSOURCE_ELEMENT_Url, temp.c_str());
+
+    // [Required] Bounding Box
+    WString bboxCorners;
+    WChar buf[100];
+    BeStringUtilities::Snwprintf(buf, L"%f", m_boundingBox.low.x);
+    bboxCorners.append(buf);
+    bboxCorners.append(L",");
+    BeStringUtilities::Snwprintf(buf, L"%f", m_boundingBox.low.y);
+    bboxCorners.append(buf);
+    bboxCorners.append(L",");
+    BeStringUtilities::Snwprintf(buf, L"%f", m_boundingBox.high.x);
+    bboxCorners.append(buf);
+    bboxCorners.append(L",");
+    BeStringUtilities::Snwprintf(buf, L"%f", m_boundingBox.high.y);
+    bboxCorners.append(buf);    
+    pRootNode->AddElementStringValue(WMSSOURCE_ELEMENT_BoundingBox, bboxCorners.c_str());
+
+    // [Required] Meta Width
+    //pRootNode->AddElementUInt64Value(WMSSOURCE_ELEMENT_MetaWidth, m_metaWidth);
+
+    // [Required] Meta Height
+    //pRootNode->AddElementUInt64Value(WMSSOURCE_ELEMENT_MetaHeight, m_metaHeight);
+
+    // [Required] Version
+    BeStringUtilities::Utf8ToWChar(temp, m_version.c_str());
+    pRootNode->AddElementStringValue(WMSSOURCE_ELEMENT_Version, temp.c_str());
+
+    // [Required] Layers
+    BeStringUtilities::Utf8ToWChar(temp, m_layers.c_str());
+    pRootNode->AddElementStringValue(WMSSOURCE_ELEMENT_Layers, temp.c_str());
+
+    // [Required] Styles
+    BeStringUtilities::Utf8ToWChar(temp, m_styles.c_str());
+    pRootNode->AddElementStringValue(WMSSOURCE_ELEMENT_Styles, temp.c_str());
+
+    // [Required] Coordinate System
+    BeStringUtilities::Utf8ToWChar(temp, m_csLabel.c_str());
+    BeXmlNodeP coordSysNode = pRootNode->AddElementStringValue(WMSSOURCE_ELEMENT_CoordinateSystem, temp.c_str());
+    BeStringUtilities::Utf8ToWChar(temp, m_csType.c_str());
+    coordSysNode->AddAttributeStringValue(WMSSOURCE_ATTRIBUTE_CoordSysType, temp.c_str());
+
+    // [Required] Format
+    BeStringUtilities::Utf8ToWChar(temp, m_format.c_str());
+    pRootNode->AddElementStringValue(WMSSOURCE_ELEMENT_Format, temp.c_str());
+
+    // [Optional] Vendor Specific
+    if (!m_vendorSpecific.empty())
         {
-        for (bvector<MapInfoPtr>::iterator mapInfoIt = m_mapInfoList.begin(); mapInfoIt != m_mapInfoList.end(); ++mapInfoIt)
-            {
-            // Add MapRequest info
-            pRootNode->AddElementStringValue(WMSSOURCE_ELEMENT_Url, (*mapInfoIt)->GetUrl().c_str());
-            pRootNode->AddElementStringValue(WMSSOURCE_ELEMENT_Version, (*mapInfoIt)->GetVersion().c_str());
-            BeXmlNodeP coordSysNode = pRootNode->AddElementStringValue(WMSSOURCE_ELEMENT_CoordinateSystem, (*mapInfoIt)->GetCoordinateSystem().c_str());
-            coordSysNode->AddAttributeStringValue(WMSSOURCE_ATTRIBUTE_CoordSysType, (*mapInfoIt)->GetCoordSysType().c_str());
-            pRootNode->AddElementStringValue(WMSSOURCE_ELEMENT_Format, (*mapInfoIt)->GetFormat().c_str());
-
-            // Create layers string
-            WString layers;
-            bvector<WCharCP> layerList = (*mapInfoIt)->GetLayers();
-            for (size_t pos = 0; pos < layerList.size(); ++pos)
-                {
-                if (layers.empty())
-                    layers += layerList[pos];
-                else
-                    {
-                    layers += L",";
-                    layers += layerList[pos];
-                    }
-                }
-            pRootNode->AddElementStringValue(WMSSOURCE_ELEMENT_Layers, layers.c_str());
-
-            // Create styles string
-            WString styles;
-            bvector<WCharCP> styleList = (*mapInfoIt)->GetStyles();
-            for (size_t pos = 0; pos < styleList.size(); ++pos)
-                {
-                if (styles.empty())
-                    styles += styleList[pos];
-                else
-                    {
-                    styles += L",";
-                    styles += styleList[pos];
-                    }
-                }
-            pRootNode->AddElementStringValue(WMSSOURCE_ELEMENT_Styles, styles.c_str());
-            }
+        BeStringUtilities::Utf8ToWChar(temp, m_vendorSpecific.c_str());
+        pRootNode->AddElementStringValue(WMSSOURCE_ELEMENT_VendorSpecific, temp.c_str());
         }
 
-    WString xmlString = NULL;
-    pRootNode->GetXmlString(xmlString);
-    return xmlString;
+    // [Optional] Transparent
+    pRootNode->AddElementBooleanValue(WMSSOURCE_ELEMENT_Transparent, m_transparent);
+
+    // Convert to string.
+    pRootNode->GetXmlString(xmlFragment);
     }
 
 //-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         		 6/2015
+// @bsimethod                                   Jean-Francois.Cote         		 5/2015
 //-------------------------------------------------------------------------------------
-MapInfoPtr WmsSource::FindMapInfo(WCharCP url)
+void WmsMapInfo::FromXml(Utf8CP xmlFragment)
     {
-    if (!m_mapInfoList.empty())
+    if (NULL == xmlFragment)
+        return;
+
+    // Create XmlDom from XmlFragment
+    BeXmlStatus xmlStatus = BEXML_ReadError;
+    BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlFragment);
+    if (BEXML_Success != xmlStatus)
+        return;
+
+    BeXmlNodeP pMapInfoNode = pXmlDom->GetRootElement()->SelectSingleNode("MapInfo");
+    if (NULL == pMapInfoNode)
+        return;
+
+    BeXmlNodeP pChildNode = NULL;
+
+    // GetMap url
+    pChildNode = pMapInfoNode->SelectSingleNode(WMSSOURCE_ELEMENT_Url);
+    if (NULL != pChildNode)
+        pChildNode->GetContent(m_url);
+
+    // Map window
+    pChildNode = pMapInfoNode->SelectSingleNode(WMSSOURCE_ELEMENT_BoundingBox);
+    if (NULL != pChildNode)
         {
-        for (bvector<MapInfoPtr>::iterator mapInfoIt = m_mapInfoList.begin(); mapInfoIt != m_mapInfoList.end(); ++mapInfoIt)
-            {
-            if (0 == BeStringUtilities::Wcsicmp(url, (*mapInfoIt)->GetUrl().c_str()))
-                return (*mapInfoIt);
-            }
+        WString bboxCorners;
+        pChildNode->GetContent(bboxCorners);
+
+        bvector<WString> tokens;
+        BeStringUtilities::Split(bboxCorners.c_str(), L",", tokens);
+
+        BeAssert(4 == tokens.size());
+
+        m_boundingBox.InitFrom(BeStringUtilities::Wcstod(tokens[0].c_str(), NULL),
+                               BeStringUtilities::Wcstod(tokens[1].c_str(), NULL),
+                               BeStringUtilities::Wcstod(tokens[2].c_str(), NULL),
+                               BeStringUtilities::Wcstod(tokens[3].c_str(), NULL));
+        }
+        
+    pChildNode = pMapInfoNode->SelectSingleNode(WMSSOURCE_ELEMENT_MetaWidth);
+    if (NULL != pChildNode)
+        pChildNode->GetContentUInt32Value(m_metaWidth);
+
+    pChildNode = pMapInfoNode->SelectSingleNode(WMSSOURCE_ELEMENT_MetaHeight);
+    if (NULL != pChildNode)
+        pChildNode->GetContentUInt32Value(m_metaHeight);
+
+    // Mandatory GetMap parameters
+    pChildNode = pMapInfoNode->SelectSingleNode(WMSSOURCE_ELEMENT_Version);
+    if (NULL != pChildNode)
+        pChildNode->GetContent(m_version);
+
+    pChildNode = pMapInfoNode->SelectSingleNode(WMSSOURCE_ELEMENT_Layers);
+    if (NULL != pChildNode)
+        pChildNode->GetContent(m_layers);
+
+    pChildNode = pMapInfoNode->SelectSingleNode(WMSSOURCE_ELEMENT_Styles);
+    if (NULL != pChildNode)
+        pChildNode->GetContent(m_styles);
+
+    pChildNode = pMapInfoNode->SelectSingleNode(WMSSOURCE_ELEMENT_CoordinateSystem);
+    if (NULL != pChildNode)
+        {
+        pChildNode->GetContent(m_csLabel);
+        pChildNode->GetAttributeStringValue(m_csType, WMSSOURCE_ATTRIBUTE_CoordSysType);
         }
 
-    return 0;
-    }
+    pChildNode = pMapInfoNode->SelectSingleNode(WMSSOURCE_ELEMENT_Format);
+    if (NULL != pChildNode)
+        pChildNode->GetContent(m_format);
 
-//=======================================================================================
-//                                      MapInfo
-//=======================================================================================
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         		 6/2015
-//-------------------------------------------------------------------------------------
-WStringCR MapInfo::GetUrl() const { return m_url; }
-void MapInfo::SetUrl(WCharCP url) { m_url = url; }
+    // Optional GetMap parameters
+    pChildNode = pMapInfoNode->SelectSingleNode(WMSSOURCE_ELEMENT_VendorSpecific);
+    if (NULL != pChildNode)
+        pChildNode->GetContent(m_vendorSpecific);
 
-WStringCR MapInfo::GetVersion() const { return m_version; }
-void MapInfo::SetVersion(WCharCP version) { m_version = version; }
-
-bvector<WCharCP> MapInfo::GetLayers() const { return m_layers; }
-bvector<WCharCP> MapInfo::GetStyles() const { return m_styles; }
-
-WStringCR MapInfo::GetCoordinateSystem() const { return m_coordinateSystem; }
-void MapInfo::SetCoordinateSystem(WCharCP coordSys) { m_coordinateSystem = coordSys; }
-
-WStringCR MapInfo::GetFormat() const { return m_format; }
-void MapInfo::SetFormat(WCharCP format) { m_format = format; }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         		 6/2015
-//-------------------------------------------------------------------------------------
-WStringCR MapInfo::GetCoordSysType() const { return m_coordSysType; }
-void MapInfo::SetCoordSysType() 
-    { 
-    // Default.
-    m_coordSysType = L"CRS"; 
-
-    if (m_version != L"1.3.0")
-        m_coordSysType = L"SRS";
+    pChildNode = pMapInfoNode->SelectSingleNode(WMSSOURCE_ELEMENT_Transparent);
+    if (NULL != pChildNode)
+        pChildNode->GetContentBooleanValue(m_transparent);
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 5/2015
 //-------------------------------------------------------------------------------------
-MapInfoPtr MapInfo::Create(WCharCP url, WCharCP version, WCharCP layer, WCharCP style, WCharCP crs, WCharCP format)
+WmsMapInfo::WmsMapInfo(Utf8CP url, DRange2dCR bbox, Utf8CP version, Utf8CP layers, Utf8CP csType, Utf8CP csLabel)
+    : m_url(url), 
+      m_boundingBox(bbox), 
+      m_metaWidth(10),          // Default.
+      m_metaHeight(10),         // Default.
+      m_version(version), 
+      m_layers(layers), 
+      m_styles(""),             // Default.
+      m_csType(csType), 
+      m_csLabel(csLabel),
+      m_format("image/png"),    // The standards says that all servers should support png.
+      m_vendorSpecific(""),
+      m_transparent(true)       // Default.
     {
-    MapInfoPtr mapInfoPtr = new MapInfo(url, version, layer, style, crs, format);
-    mapInfoPtr->SetCoordSysType();
 
-    return mapInfoPtr;
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         		 6/2015
-//-------------------------------------------------------------------------------------
-void MapInfo::AddLayer(WCharCP layer, WCharCP style)
-    {
-    m_layers.push_back(layer);
-    m_styles.push_back(style);
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         		 5/2015
-//-------------------------------------------------------------------------------------
-MapInfo::MapInfo(WCharCP url, WCharCP version, WCharCP layer, WCharCP style, WCharCP coordSys, WCharCP format)
-    : m_url(url), m_version(version), m_coordinateSystem(coordSys), m_format(format)
-    {
-    AddLayer(layer, style);
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         		 5/2015
 //-------------------------------------------------------------------------------------
-MapInfo::~MapInfo() {}
+WmsMapInfo::~WmsMapInfo() {}

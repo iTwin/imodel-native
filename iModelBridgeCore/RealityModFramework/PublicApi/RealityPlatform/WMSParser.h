@@ -17,7 +17,7 @@
 
 #define BEGIN_BENTLEY_WMSPARSER_NAMESPACE         BEGIN_BENTLEY_NAMESPACE namespace WMSParser {
 #define END_BENTLEY_WMSPARSER_NAMESPACE           }}
-#define USING_BENTLEY_NAMESPACE_WMSPARSER         using namespace BentleyApi::WMSParser;
+#define USING_NAMESPACE_BENTLEY_WMSPARSER         using namespace BentleyApi::WMSParser;
 
 
 #define WMSPARSER_TYPEDEFS(_name_) \

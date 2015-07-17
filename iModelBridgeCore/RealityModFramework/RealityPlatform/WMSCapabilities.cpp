@@ -13,7 +13,7 @@
 #include <curl/curl.h>
 #endif
 
-USING_BENTLEY_NAMESPACE_WMSPARSER
+USING_NAMESPACE_BENTLEY_WMSPARSER
 
 Utf8CP WMSCapabilities::m_namespace = NULL;
 

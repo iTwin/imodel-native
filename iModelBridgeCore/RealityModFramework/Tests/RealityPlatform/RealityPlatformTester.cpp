@@ -10,7 +10,7 @@
 #include <Bentley/BeTest.h>
 #include <RealityPlatform/WMSCapabilities.h>
 
-USING_BENTLEY_NAMESPACE_WMSPARSER
+USING_NAMESPACE_BENTLEY_WMSPARSER
 
 #define _STRINGIFY(s) #s
 #define STRINGIFY(s) _STRINGIFY(s)

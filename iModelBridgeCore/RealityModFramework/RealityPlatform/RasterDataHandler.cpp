@@ -14,7 +14,7 @@
 #define THUMBNAIL_HEIGHT    256
 
 USING_NAMESPACE_IMAGEPP
-USING_BENTLEY_NAMESPACE_REALITYPLATFORM
+USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Marc.Bedard                     11/2014
