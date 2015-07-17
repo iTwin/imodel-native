@@ -566,6 +566,7 @@ public:
     //! @remarks This method is provided to produce the same hexadecimal formatting as Snwprintf(), but much more efficiently.
     //! @remarks Typical usage: FormatUInt64(dest, count, val, HexFormatOptions::None) to produce the minimal representation or FormatUInt64(dest, count, val, HexFormatOptions::LeadingZeros, n) to produce fixed width (e.g. n=8 or 16) with leading zeros.
     BENTLEYDLL_EXPORT static int FormatUInt64 (wchar_t *dest, size_t numCharsInBuffer, uint64_t val, HexFormatOptions opts, uint8_t width = 0, uint8_t precision = 1);
+    BENTLEYDLL_EXPORT static int FormatUInt64 (Utf8Char *dest, size_t numCharsInBuffer, uint64_t val, HexFormatOptions opts, uint8_t width = 0, uint8_t precision = 1);
 
     //! Do a lexicographic comparison of specified strings.  This is an alphabetical sort that also takes numbers into account,
     //!   such that "file9" will come before "file11" in the sort order (even though alphabetically 1 is before 9).  This method

@@ -2463,6 +2463,13 @@ BentleyStatus BeStringUtilities::Wmemcpy(wchar_t *dest, size_t numberOfElements,
 #endif
     }
 
+template <typename value_type> void MyStrCpy(value_type *pDest, size_t count, value_type* src){}
+template<> void MyStrCpy<char>(char *pDest, size_t count, char *src)
+    {    BeStringUtilities::Strncpy(pDest, count, src);    }
+
+template<> void MyStrCpy<wchar_t>(wchar_t* pDest, size_t count, wchar_t* src)
+    {    BeStringUtilities::Wcsncpy (pDest, count, src);    }
+
 /*---------------------------------------------------------------------------------**//**
 * Note: This method was motivated by a significant performance degradation in 
 * BeStringUtilities::Snwprintf(). DgnECManager::FormatInstanceId() and PersistentElementPath::
@@ -2482,12 +2489,12 @@ BentleyStatus BeStringUtilities::Wmemcpy(wchar_t *dest, size_t numberOfElements,
 * some combinations of options).
 * @bsimethod                                                    Paul.Connelly   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-int BeStringUtilities::FormatUInt64(wchar_t *dest, size_t numCharsInBuffer, uint64_t inputVal, HexFormatOptions opts, uint8_t minWidth, uint8_t minPrecisionIn)
+template <typename value_type> int _FormatUInt64(value_type *dest, size_t numCharsInBuffer, uint64_t inputVal, HexFormatOptions opts, uint8_t minWidth, uint8_t minPrecisionIn)
     {
     if (NULL == dest || 0 >= numCharsInBuffer)
         { BeAssert(false); return 0; }
     
-    static const wchar_t s_offsets[2][2] = { { '0', 'a'-0xA }, { '0', 'A'-0xA } };
+    static const value_type s_offsets[2][2] = { { '0', 'a'-0xA }, { '0', 'A'-0xA } };
     static const size_t bufSize = 0x12      // max minWidth (== max minPrecision + max prefix length)
                                 + 1;        // null terminator
 
@@ -2518,16 +2525,16 @@ int BeStringUtilities::FormatUInt64(wchar_t *dest, size_t numCharsInBuffer, uint
         }
 
     // 4. Produce hexits
-    wchar_t buf[bufSize];
-    wchar_t const* offsets = uppercase ? s_offsets[1] : s_offsets[0];
-    wchar_t* pStart = buf + bufSize - 1,
+    value_type buf[bufSize];
+    value_type const* offsets = uppercase ? s_offsets[1] : s_offsets[0];
+    value_type* pStart = buf + bufSize - 1,
            * pCur   = pStart;
 
     *pCur = '\0';
     uint64_t val = inputVal;
     while (val > 0)
         {
-        wchar_t i = (wchar_t)(val & 0xF);
+        value_type i = (value_type)(val & 0xF);
         i += offsets[(int)(i > 9)];
         *--pCur = i;
         val >>= 4;
@@ -2551,7 +2558,7 @@ int BeStringUtilities::FormatUInt64(wchar_t *dest, size_t numCharsInBuffer, uint
         *--pCur = '0';
         }
 
-    wchar_t * pDest = dest,
+    value_type * pDest = dest,
             * pEnd  = dest + numCharsInBuffer - 1;
 
     // 7. Right-justify in output buffer
@@ -2567,7 +2574,7 @@ int BeStringUtilities::FormatUInt64(wchar_t *dest, size_t numCharsInBuffer, uint
     // 8. Copy to output buffer
     size_t nCharsWritten = pDest - dest;
     size_t nCharsRemaining = numCharsInBuffer - nCharsWritten;
-    Wcsncpy(pDest, nCharsRemaining, pCur);
+    MyStrCpy(pDest, nCharsRemaining, pCur);
 
     // 9. Left-justify
     if (leftJustify && width < (size_t)minWidth)
@@ -2587,6 +2594,16 @@ int BeStringUtilities::FormatUInt64(wchar_t *dest, size_t numCharsInBuffer, uint
     dest[width] = '\0';
         
     return (int)width;
+    }
+
+int BeStringUtilities::FormatUInt64 (wchar_t *dest, size_t numCharsInBuffer, uint64_t inputVal, HexFormatOptions opts, uint8_t minWidth, uint8_t minPrecisionIn)
+    {
+    return _FormatUInt64(dest, numCharsInBuffer, inputVal, opts, minWidth, minPrecisionIn);
+    }
+
+int BeStringUtilities::FormatUInt64 (Utf8Char *dest, size_t numCharsInBuffer, uint64_t inputVal, HexFormatOptions opts, uint8_t minWidth, uint8_t minPrecisionIn)
+    {
+    return _FormatUInt64(dest, numCharsInBuffer, inputVal, opts, minWidth, minPrecisionIn);
     }
 
 /*---------------------------------------------------------------------------------**//**
