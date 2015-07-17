@@ -12,6 +12,7 @@ Copyright (c) 2015 Bentley Systems, Incorporated. All rights reserved.
 
 *******************************************************************************/
 #include "EditTool.h"
+#include "QueryBuffer.h"
 #include "../include/PointoolsVortexAPI_resultCodes.h"
 #include <math.h>
 
@@ -318,11 +319,6 @@ void EditTool::command( int cmdId )
 			viewRedraw();
 			break;
 
-		case CmdDeselLayer8			: 
-			ptDeselectPointsInLayer(7); 
-			viewRedraw();
-			break;
-			
 		case CmdLayerCol1:			
 			chooseColor(0);
 			viewRedraw();
@@ -1125,11 +1121,28 @@ void	EditTool::drawPostDisplay()
 void	EditTool::doesLayerHavePoints()
 //-----------------------------------------------------------------------------
 {
+	QueryBufferf qbuffer(500000);
+
+	PTdouble lower[3], upper[3];
+	ptGetLowerBound( lower );
+	ptGetUpperBound( upper );
+	
+	PThandle q = ptCreateBoundingBoxQuery( lower[0], lower[1], lower[2], upper[0], upper[1], upper[2]);
+
 	//simple test to list layers with poitns
 	for (int i=0; i<PT_EDIT_MAX_LAYERS; i++)
 	{
-		std::cout << "Layer " << i << ": "<< (ptDoesLayerHavePoints(i) ? "Y" : "-") << std::endl;
+		std::cout << "Layer " << i << ": "<< (ptDoesLayerHavePoints(i) ? "Y " : "- ");
+		ptResetQuery( q );
+		ptSetQueryLayerMask( q, 1<<i );
+		int exact =	qbuffer.countPointsInQuery( q );
+		int approx = ptCountApproxPointsInLayer( i );
+
+		std::cout << " Approx "<< approx << "pts, Exact " << exact << "pts" <<std::endl;
 	}	
+
+	ptDeleteQuery(q);
+
 }
 //-----------------------------------------------------------------------------
 void EditTool::buildUserInterface(GLUI_Node *parent)
@@ -1266,7 +1279,7 @@ void EditTool::buildUserInterface(GLUI_Node *parent)
 		btn = new GLUI_Button( selectCopy, "Move", CmdMovePoints, &Tool::dispatchCmd );
 		btn->set_back_col( &layerButtonCol );
 
-		btn = new GLUI_Button( selectCopy, "Occupancy", CmdCheckPointLayers, &Tool::dispatchCmd );
+		btn = new GLUI_Button( selectCopy, "Report", CmdCheckPointLayers, &Tool::dispatchCmd );
 		btn->set_back_col( &layerButtonCol );
 
 		/* Scope */ 

@@ -79,6 +79,7 @@ struct NullCondition
 	static bool validPoint		(const Node *N)					{return true;}
 
 	static bool validPoint		(const vector3d &pnt, ubyte &f)	{return true;}
+	static const char* name()  { return "NULL"; }
 };
 
 
@@ -100,7 +101,7 @@ namespace querydetail
 			scope = 0;
 			pcloudOnly = 0;
 			sceneOnly = 0;
-			layerMask = 0;
+			layerMask = 255;
 		}
 		//---------------------------------------------------------------------
 		virtual ~Query()
@@ -555,7 +556,8 @@ namespace querydetail
 			spatialGridFailure = false;
 			layerMask = layer_mask;
 			pntsFailed = 0;
-			pntsTotal = 0;	
+			pntsTotal = 0;
+			layerMask = layer_mask;
 
 			extern RenderContext	*g_currentRenderContext;
 
@@ -896,7 +898,7 @@ namespace querydetail
 															// If not all of the requested range of the voxel was iterated
 			if(rwPos.lastPoint < vox->getNumPointsAtLOD(amount))
 			{
-				assert(rwPos.counter == bufferSize);
+			//	assert(rwPos.counter == bufferSize);
 															// Remember that this voxel is not unloaded so it can be unloaded if query is reset or destroyed
 				rwPos.setLastPartiallyIteratedVoxel(vox);
 				rwPos.setLastPartiallyIteratedVoxelUnloadLOD(vox->getPreviousLOD());
@@ -3918,7 +3920,7 @@ PThandle PTAPI ptCreateAllPointsQuery()
 
 	try
 	{
-		querydetail::Query *q = new ConditionQuery<VisibleCondition>; ///!ToDo: Exception safety: avoid leaks [Trac #315]
+		querydetail::Query *q = new ConditionQuery<NullCondition>; ///!ToDo: Exception safety: avoid leaks [Trac #315]
 		q->setDensity( PT_QUERY_DENSITY_FULL, 1.0f );				//all points
 		s_queries.insert( QueryMap::value_type( h, q ));
 	}

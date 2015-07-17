@@ -972,7 +972,7 @@ extern PTRESETLAYERCOLORS ptResetLayerColors;
 extern PTCOPYSELTOCURRENTLAYER ptCopySelToCurrentLayer;
 extern PTMOVESELTOCURRENTLAYER ptMoveSelToCurrentLayer;
 
-extern PTCOUNTAPPROXPOINTSINLAYER;
+extern PTCOUNTAPPROXPOINTSINLAYER ptCountApproxPointsInLayer;
 
 /* tuning */ 
 extern PTSETCACHESIZEMB ptSetCacheSizeMb;

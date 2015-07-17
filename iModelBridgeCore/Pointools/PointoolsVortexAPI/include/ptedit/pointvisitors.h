@@ -364,7 +364,11 @@ namespace ptedit
 
 		bool visitNode(const pcloud::Node *n)
 		{			
-			if (!(n->layers(0) & _layers)) return false;
+			if ( ! 
+				((n->layers(0) | n->layers(1)) & _layers)) 
+			{
+				return false;
+			}
 
 			if (!(n->layers(1) & _layers))
 			{

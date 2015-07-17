@@ -52,6 +52,9 @@ public:
 	
 	int						numPntsInQueryIteration() const				{ return m_validPnts; }
 	bool					isBufferFull() const						{ return m_validPnts == m_size ? true : false; }
+
+	__int64					countPointsInQuery( PThandle query );	
+
 private:
 	bool					allocateChannelBuffer( PThandle channel, int channelIndex );
 

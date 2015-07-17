@@ -608,7 +608,7 @@ bool LoadPointoolsDLL(const TCHAR*filepath)
 		ptDeleteAllEdits = (PTDELETEALLEDITS) GetAPIFunc("ptDeleteAllEdits");
 		
 		_ptCountVisiblePoints = (_PTCOUNTVISIBLEPOINTS) GetAPIFunc("_ptCountVisiblePoints");
-		ptCountApproxPointsInLayer = (ptCountApproxPointsInLayer) GetAPIFunc("ptCountApproxPointsInLayer");
+		ptCountApproxPointsInLayer = (PTCOUNTAPPROXPOINTSINLAYER) GetAPIFunc("ptCountApproxPointsInLayer");
 
 		ptResetSceneEditing = (PTRESETSCENEEDITING) GetAPIFunc("ptResetSceneEditing");
 
