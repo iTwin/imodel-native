@@ -4324,6 +4324,7 @@ struct TMElementEdgeOptionTypeAdapter : IDgnECTypeAdapter
         {
         return false;
         }
+    virtual bool            _GetPlaceholderValue (ECN::ECValueR v, IDgnECTypeAdapterContextCR) const override { return false; }
     virtual bool            _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override
         {
         if (!v.IsNull ())
@@ -4355,6 +4356,7 @@ struct MrDTMViewFlagsTypeAdapter : IDgnECTypeAdapter
 
         virtual bool            _Validate (ECN::ECValueCR v, IDgnECTypeAdapterContextCR context) const override;
         virtual bool            _ConvertToString (WStringR valueAsString, ECN::ECValueCR v, IDgnECTypeAdapterContextCR context, ECN::IECInstanceCP formatter) const override;
+        virtual bool            _GetPlaceholderValue (ECN::ECValueR v, IDgnECTypeAdapterContextCR) const override { return false; }
         virtual bool            _ConvertFromString (ECN::ECValueR v, WCharCP stringValue, IDgnECTypeAdapterContextCR context) const override;
         virtual bool            _CanConvertFromString (IDgnECTypeAdapterContextCR) const override
             {
