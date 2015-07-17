@@ -6,6 +6,7 @@
 #
 #----------------------------------------------------------------------------------------
 
+
 %include $(SharedMki)DefinePublicApiIncludes.mki
 %include $(SharedMki)CommonCompileLinkPolicy.mki
 
@@ -22,7 +23,10 @@ RealityPackagePublicAPISrc = $(SrcRoot)RealityModFramework/PublicAPI/RealityPack
 #----------------------------------------------------------
 # outdirs
 #----------------------------------------------------------
+
 BuildContextPublicApiDir = $(BuildContext)PublicAPI/
+ContextDeliveryDir            = $(BuildContext)Delivery/
+ContextSubPartsAssembliesDir  = $(BuildContext)SubParts/Assemblies/
 
 %ifndef appName
     %error appName must defined

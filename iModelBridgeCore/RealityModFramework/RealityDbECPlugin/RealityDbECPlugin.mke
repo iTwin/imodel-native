@@ -1,0 +1,133 @@
+#--------------------------------------------------------------------------------------
+#      $Source: RealityDbECPlugin/RealityDbECPlugin.mke $
+#   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#--------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+# 
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+baseDir          = $(_MakeFilePath)
+appName = RealityDbECPlugin
+PolicyFile=$(_MakeFilePath)../mki/AssertRealityModFrameworkPolicy.mki
+%include  mdl.mki
+
+
+
+
+#----------------------------------------------------------------------
+#       Define outputs
+#----------------------------------------------------------------------
+o = $(BuildDir)Bentley.RealityDbECPlugin/
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+# 
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+always:
+    ~mkdir $(o)
+
+
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.EC.Presentation3.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.EC.Persistence3.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.ECObjects3.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.EC.PluginBuilder3.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.ECSystem3.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.Platform.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.General.1.0.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.EC.AbstractUI3.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.Exceptions.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.logging-2.0.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Newtonsoft.Json.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.ComponentModel.DataAnnotations.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.Core.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.IO.Compression.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.IO.Compression.FileSystem.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.Net.Http.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.Xml.Linq.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.Data.DataSetExtensions.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\Microsoft.CSharp.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.Data.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.Xml.dll
+%include csrefapnd.mki
+
+#-----------------------------------------------------------------------
+# Define default assembly meta-data attributes
+#-----------------------------------------------------------------------
+%include $(SharedMki)stdversion.mki
+ASSEMBLY_NAME = Bentley.RealityDbECPlugin
+
+ASSEMBLY_PRODUCT_NAME   = $(PRODUCT_NAME)
+ASSEMBLY_FILE_VERSION   = $(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V)
+ASSEMBLY_COMPANY_NAME   = $(companyName)
+ASSEMBLY_COPYRIGHT      = $(Bentley_Copyright)
+#  temporary fix for ecframework builds
+ASSEMBLY_NO_AUTHENTICODE_SIGN = 1
+%include $(SharedMki)VersionedPartSignatureDefaults.mki
+ASSEMBLY_KEYFILE        =% $(ASSEMBLY_KEYFILE_DEFAULT)
+ASSEMBLY_TESTKEYFILE       =% $(ASSEMBLY_TESTKEYFILE_DEFAULT)
+
+%ifndef ASSEMBLY_TITLE
+  ASSEMBLY_TITLE  =% $(programName)
+%endif
+
+#-----------------------------------------------------------------------
+#   Compile C# Modules
+#-----------------------------------------------------------------------
+
+ASSEMBLY_DLL = 1
+ASSEMBLY_MAKE_DOCS = 1
+ASSEMBLY_TITLE = Bentley RealityDbECPlugin
+ASSEMBLY_DESCRIPTION = Bentley RealityDbECPlugin
+ASSEMBLY_VERSION = 1.0.0.0
+ASSEMBLY_STRONGNAME = 1
+
+ASSEMBLY_SOURCE_LIST = \
+            $(baseDir)Source/Helpers/ECToSQLMap.cs \
+            $(baseDir)Source/Helpers/DBGeometryhelpers.cs \
+            $(baseDir)Source/Helpers/TableDescriptor.cs \
+            $(baseDir)Source/FileRetrievalControllers/PackageRetrievalController.cs \
+            $(baseDir)Source/FileRetrievalControllers/SQLThumbnailRetrievalController.cs \
+            $(baseDir)Source/FileRetrievalControllers/USGSThumbnailRetrievalController.cs \
+            $(baseDir)Source/QueryProviders/IECQueryProvider.cs \
+            $(baseDir)Source/QueryProviders/SqlQueryProvider.cs \
+            $(baseDir)Source/QueryProviders/UsgsAPIQueryProvider.cs \
+            $(baseDir)Source/SQLQueryBuilder/PagedSQLQueryBuilder.cs \
+            $(baseDir)Source/SQLQueryBuilder/SQLQueryBuilder.cs \
+            $(baseDir)Source/SQLQueryBuilder/StandardSQLQueryBuilder.cs \
+            $(baseDir)Source/IndexECPlugin.cs \
+            $(baseDir)Source/IndexFileRetrievalController.cs \
+            $(baseDir)Source/IndexNavigationModule.cs \
+            $(baseDir)Source/models.cs 
+
+#ASSEMBLY_RESX_FILE_TO_BUILD = $(baseDir)LocalizableStrings.resx
+#ASSEMBLY_RES_TO_ADD = LocalizableStrings
+#%include assemblyResxAppend.mki
+
+%include mkcsharp.mki
+
+#----------------------------------------------------------------------
+#   Expose our transkit to the delivery directory
+#----------------------------------------------------------------------
+#always:
+#    @SymLinkResxTranskitFiles.py $(baseDir)transkit.xml $(o)resx $(ContextDeliveryDir)Transkit\ECDbECPlugin
+

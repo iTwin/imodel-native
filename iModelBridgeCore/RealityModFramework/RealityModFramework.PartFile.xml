@@ -61,11 +61,24 @@
     </Part>
 
     <Part Name="RealityFramework-Tested">
+		<SubPart PartName="RealityDbECPlugin"/>
         <SubPart PartName="RealityPlatformUnitTests"/>
         <SubPart PartName="RealityPackageUnitTests"/>
         <SubPart PartName="BeGTestCommon"       PartFile="BeGTest"      Repository="BeGTest" />
     </Part>
+	
+	<Part Name="RealityDb" BentleyBuildMakeFile="RealityDb\RealityDb.mke">
+	</Part>
 
+	<Part Name="RealityDbECPlugin" BMakeFile="RealityDbECPlugin\RealityDbECPlugin.mke" OnlyPlatforms="x86,x64">
+		 <!-- <SubPart PartName="RealityDb"/> -->
+        <SubPart PartName="ECServices"          PartFile="ecf"            Repository="ecf" />
+        <SubPart PartName="JsonNet45"           PartFile="${SrcBsiCommon}CvsPartFiles\bin"    Repository="Bin-JsonNet" />
+        <Bindings>
+            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/Bentley.RealityDbECPlugin.dll</Assemblies>
+        </Bindings>
+
+	</Part>
   
     <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
     <!-- ////////////////////////////////// Products ///////////////////////////////////////// -->
@@ -119,7 +132,6 @@
 	
     <Product Name="RealityModFramework">
         <SubPart PartName="RealityFramework-Tested"/>
-        <SubPart PartName="RealityDataHandlerTester"/>
         <Directories DirectoryListName="RealityModFrameworkDirList" />
     </Product>
 

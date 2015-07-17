@@ -1,0 +1,157 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{7B23AEA6-9095-44D4-828E-3DA7BFEC58D1}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>IndexECPlugin</RootNamespace>
+    <AssemblyName>IndexECPlugin</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <SccProjectName>SAK</SccProjectName>
+    <SccLocalPath>SAK</SccLocalPath>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccProvider>SAK</SccProvider>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Bentley.EC.AbstractUI3, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>External\Assemblies\Bentley.EC.AbstractUI3.dll</HintPath>
+    </Reference>
+    <Reference Include="Bentley.EC.Persistence3, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>External\Assemblies\Bentley.EC.Persistence3.dll</HintPath>
+    </Reference>
+    <Reference Include="Bentley.EC.PluginBuilder3, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>External\Assemblies\Bentley.EC.PluginBuilder3.dll</HintPath>
+    </Reference>
+    <Reference Include="Bentley.EC.Presentation3, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>External\Assemblies\Bentley.EC.Presentation3.dll</HintPath>
+    </Reference>
+    <Reference Include="Bentley.ECObjects3, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>External\Assemblies\Bentley.ECObjects3.dll</HintPath>
+    </Reference>
+    <Reference Include="Bentley.ECSystem3, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>External\Assemblies\Bentley.ECSystem3.dll</HintPath>
+    </Reference>
+    <Reference Include="Bentley.Exceptions, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>External\Assemblies\Bentley.Exceptions.dll</HintPath>
+    </Reference>
+    <Reference Include="Bentley.General.1.0, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>External\Assemblies\Bentley.General.1.0.dll</HintPath>
+    </Reference>
+    <Reference Include="Bentley.logging-2.0, Version=2.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>External\Assemblies\Bentley.logging-2.0.dll</HintPath>
+    </Reference>
+    <Reference Include="Bentley.Platform, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4bf6c96a266e58d4, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>External\Assemblies\Bentley.Platform.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework">
+      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer">
+      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Source\FileRetrievalControllers\PackageRetrievalController.cs" />
+    <Compile Include="Source\FileRetrievalControllers\SQLThumbnailRetrievalController.cs" />
+    <Compile Include="Source\FileRetrievalControllers\USGSThumbnailRetrievalController.cs" />
+    <Compile Include="Source\Helpers\DBGeometryHelpers.cs" />
+    <Compile Include="Source\Helpers\ECToSQLMap.cs" />
+    <Compile Include="Source\QueryProviders\SqlQueryProvider.cs" />
+    <Compile Include="Source\Helpers\TableDescriptor.cs" />
+    <Compile Include="Source\IndexECPlugin.cs" />
+    <Compile Include="Source\IndexFileRetrievalController.cs" />
+    <Compile Include="Source\IndexNavigationModule.cs" />
+    <Compile Include="Source\models.cs" />
+    <Compile Include="Source\QueryProviders\IECQueryProvider.cs" />
+    <Compile Include="Source\SQLQueryBuilder\PagedSQLQueryBuilder.cs" />
+    <Compile Include="Source\SQLQueryBuilder\SQLQueryBuilder.cs" />
+    <Compile Include="Source\SQLQueryBuilder\StandardSQLQueryBuilder.cs" />
+    <Compile Include="Source\QueryProviders\UsgsAPIQueryProvider.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+    <None Include="External\location.config">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="External\Assemblies\Bentley.EC.AbstractUI3.dll" />
+    <Content Include="External\Assemblies\Bentley.EC.Persistence3.dll" />
+    <Content Include="External\Assemblies\Bentley.EC.PluginBuilder3.dll" />
+    <Content Include="External\Assemblies\Bentley.EC.Presentation3.dll" />
+    <Content Include="External\Assemblies\Bentley.ECObjects3.dll" />
+    <Content Include="External\Assemblies\Bentley.ECSystem3.dll" />
+    <Content Include="External\Assemblies\Bentley.Exceptions.dll" />
+    <Content Include="External\Assemblies\Bentley.General.1.0.dll" />
+    <Content Include="External\Assemblies\Bentley.GeometryNET.Common.dll" />
+    <Content Include="External\Assemblies\Bentley.GeometryNET.Structs.dll" />
+    <Content Include="External\Assemblies\Bentley.logging-2.0.dll" />
+    <Content Include="External\Assemblies\Bentley.Platform.dll" />
+    <Content Include="External\ECSchemaStubv3.xml">
+      <SubType>Designer</SubType>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BentleyWMSPackageNet\BentleyWMSPackageNet.vcxproj">
+      <Project>{9c073450-904c-4260-91d8-0b0c0158c865}</Project>
+      <Name>BentleyWMSPackageNet</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
