@@ -6,43 +6,43 @@
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 using namespace std;
 
-#define ID_ROOT L"ECSchemaDiff"
-#define ID_NAME L"Name"
-#define ID_DISPLAY_LABEL L"DisplayLabel"
-#define ID_DESCRIPTION L"Description"
-#define ID_VERSION_MAJOR L"VersionMajor"
-#define ID_VERSION_MINOR L"VersionMinor"
-#define ID_CLASSES L"Classes"
-#define ID_REFERENCES L"References"
-#define ID_IS_CUSTOMATTRIBUTE_CLASS L"IsCustomAttributeClass"
-#define ID_IS_STRUCT L"IsStruct"
-#define ID_IS_DOMAIN_CLASS L"IsDomainClass"
-#define ID_IS_RELATIONSHIP_CLASS L"IsRelationshipClass"
-#define ID_BASECLASSES L"BaseClasses"
-#define ID_PROPERTIES L"Properties"
-#define ID_IS_ARRAY L"IsArray"
-#define ID_TYPENAME L"TypeName"
-#define ID_ARRAYINFO L"ArrayInfo"
-#define ID_IS_READONLY L"IsReadOnly"
-#define ID_IS_PRIMITIVE L"IsPrimitive"
-#define ID_RELATIONSHIP_INFO L"RelationshipInfo"
-#define ID_IS_OVERRIDEN L"IsOverriden"
-#define ID_STRENGTH L"Strength"
-#define ID_STRENGTH_DIRECTION L"StrengthDirection"
-#define ID_SOURCE L"Source"
-#define ID_TARGET L"Target"
-#define ID_CARDINALITY L"Cardinality"
-#define ID_IS_POLYMORPHIC L"IsPolymorphic"
-#define ID_ROLE_LABEL L"RoleLabel"
-#define ID_STRENGTH_DIRECTION_BACKWARD L"Backward"
-#define ID_STRENGTH_DIRECTION_FORWARD L"Forward"
-#define ID_STRENGTH_TYPE_EMBEDDING L"Embedding"
-#define ID_STRENGTH_TYPE_HOLDING L"Holding"
-#define ID_STRENGTH_TYPE_REFERENCING L"Referencing"
-#define ID_MAXOCCURS L"MaxOccurs"
-#define ID_MINOCCURS L"MinOccurs"
-#define ID_CUSTOMATTRIBUTES L"CustomAttributes"
-#define ID_NAMESPACEPREFIX L"NamespacePrefix"
+#define ID_ROOT "ECSchemaDiff"
+#define ID_NAME "Name"
+#define ID_DISPLAY_LABEL "DisplayLabel"
+#define ID_DESCRIPTION "Description"
+#define ID_VERSION_MAJOR "VersionMajor"
+#define ID_VERSION_MINOR "VersionMinor"
+#define ID_CLASSES "Classes"
+#define ID_REFERENCES "References"
+#define ID_IS_CUSTOMATTRIBUTE_CLASS "IsCustomAttributeClass"
+#define ID_IS_STRUCT "IsStruct"
+#define ID_IS_DOMAIN_CLASS "IsDomainClass"
+#define ID_IS_RELATIONSHIP_CLASS "IsRelationshipClass"
+#define ID_BASECLASSES "BaseClasses"
+#define ID_PROPERTIES "Properties"
+#define ID_IS_ARRAY "IsArray"
+#define ID_TYPENAME "TypeName"
+#define ID_ARRAYINFO "ArrayInfo"
+#define ID_IS_READONLY "IsReadOnly"
+#define ID_IS_PRIMITIVE "IsPrimitive"
+#define ID_RELATIONSHIP_INFO "RelationshipInfo"
+#define ID_IS_OVERRIDEN "IsOverriden"
+#define ID_STRENGTH "Strength"
+#define ID_STRENGTH_DIRECTION "StrengthDirection"
+#define ID_SOURCE "Source"
+#define ID_TARGET "Target"
+#define ID_CARDINALITY "Cardinality"
+#define ID_IS_POLYMORPHIC "IsPolymorphic"
+#define ID_ROLE_LABEL "RoleLabel"
+#define ID_STRENGTH_DIRECTION_BACKWARD "Backward"
+#define ID_STRENGTH_DIRECTION_FORWARD "Forward"
+#define ID_STRENGTH_TYPE_EMBEDDING "Embedding"
+#define ID_STRENGTH_TYPE_HOLDING "Holding"
+#define ID_STRENGTH_TYPE_REFERENCING "Referencing"
+#define ID_MAXOCCURS "MaxOccurs"
+#define ID_MINOCCURS "MinOccurs"
+#define ID_CUSTOMATTRIBUTES "CustomAttributes"
+#define ID_NAMESPACEPREFIX "NamespacePrefix"
     
 
 /*---------------------------------------------------------------------------------**//**
@@ -98,7 +98,7 @@ DiffStatus ECDiff::GetStatus() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-DiffStatus ECDiff::WriteToString(WStringR out, int tabSize)
+DiffStatus ECDiff::WriteToString(Utf8StringR out, int tabSize)
     {
     BeAssert (GetStatus() == DIFFSTATUS_Success);
     if (GetStatus() == DIFFSTATUS_Success)
@@ -136,7 +136,7 @@ bool  ECDiff::IsEmpty()
     return true;
     }
 
-DiffStatus ECDiff::GetNodesState (bmap<WString, DiffNodeState>& nodes, WStringCR accessString, bool bAccumlativeState)
+DiffStatus ECDiff::GetNodesState (bmap<Utf8String, DiffNodeState>& nodes, Utf8StringCR accessString, bool bAccumlativeState)
     {
     return GetRoot()->GetNodeState (nodes, accessString, bAccumlativeState);
     }
@@ -151,7 +151,7 @@ ECDiffValue::ECDiffValue()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECDiffValue::SetValue (WCharCP v) 
+void ECDiffValue::SetValue (Utf8CP v) 
     {
     m_valueString.clear();
     if (v == NULL)
@@ -172,7 +172,7 @@ void ECDiffValue::SetValue (Byte const* v, size_t size)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECDiffValue::SetValue (WStringCR v) { m_valueString = v ; m_type = VALUETYPE_String; }
+void ECDiffValue::SetValue (Utf8StringCR v) { m_valueString = v ; m_type = VALUETYPE_String; }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -213,7 +213,7 @@ Byte const* ECDiffValue::GetBinary(size_t& size) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP ECDiffValue::GetValueWCharCP() const
+Utf8CP ECDiffValue::GetValueUtf8CP() const
     { 
     BeAssert(m_type == VALUETYPE_String); 
     return m_valueString.c_str();
@@ -294,23 +294,23 @@ bool ECDiffValue::IsEqual(ECDiffValue const& value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString ECDiffValue::ToString() const
+Utf8String ECDiffValue::ToString() const
     {
-    WString out;
+    Utf8String out;
     switch (m_type)
         {
         case VALUETYPE_Boolean:
-            out.Sprintf (L"%ls", m_valueBool?L"true" :L"false"); break;
+            out.Sprintf ("%s", m_valueBool?"true" :"false"); break;
         case VALUETYPE_Double:
-            out.Sprintf (L"%f", m_valueDouble); break;
+            out.Sprintf ("%f", m_valueDouble); break;
         case VALUETYPE_Int32:
-            out.Sprintf (L"%d", m_valueInt32); break;
+            out.Sprintf ("%d", m_valueInt32); break;
         case VALUETYPE_Int64:
-            out.Sprintf (L"%lld", m_valueInt64); break;
+            out.Sprintf ("%lld", m_valueInt64); break;
         case VALUETYPE_String:
-            out.Sprintf (L"\"%ls\"", m_valueString.c_str()); break;
+            out.Sprintf ("\"%s\"", m_valueString.c_str()); break;
         case VALUETYPE_Nil:
-            out = L"<nil>"; break;
+            out = "<nil>"; break;
         }
     return out;
     }
@@ -340,10 +340,10 @@ ECValue ECDiffValue::GetValueAsECValue() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECDiffNode::_Write (WStringR out, int indent, WStringCR tab) const
+void ECDiffNode::_Write (Utf8StringR out, int indent, Utf8StringCR tab) const
     {
-    WString prefix;
-    WString eol = L"\r\n";
+    Utf8String prefix;
+    Utf8String eol = "\r\n";
     int i = indent;
     while (i-- >= 1)
         prefix.append (tab);
@@ -351,41 +351,41 @@ void ECDiffNode::_Write (WStringR out, int indent, WStringCR tab) const
     //Left value is new
     if (!m_valueLeft.IsValueNill() && m_valueRight.IsValueNill())
         {
-        out.append (L"L");
+        out.append ("L");
         out.append (prefix);
         out.append (m_name);
-        out.append (L" : ");
+        out.append (" : ");
         out.append (m_valueLeft.ToString());
         out.append (eol);
         }
     //Right value is new
     else if (m_valueLeft.IsValueNill() && !m_valueRight.IsValueNill())
         {
-        out.append (L"R");
+        out.append ("R");
         out.append (prefix);
         out.append (m_name);
-        out.append (L" : ");
+        out.append (" : ");
         out.append (m_valueRight.ToString());
         out.append (eol);
         }
     //Conflict
     else if (!m_valueLeft.IsValueNill() && !m_valueRight.IsValueNill())
         {
-        out.append (L"!");
+        out.append ("!");
         out.append (prefix);
         out.append (m_name);
-        out.append (L" : ");
+        out.append (" : ");
         out.append (m_valueLeft.ToString());
-        out.append (L" <> ");
+        out.append (" <> ");
         out.append (m_valueRight.ToString());
         out.append (eol);
         }
     else // this is a object output its child nodes
         {
-        out.append (L" ");
+        out.append (" ");
         out.append (prefix);
         out.append (m_name);
-        out.append (L" : ");
+        out.append (" : ");
         out.append (eol);
         for (const_iterator itor = m_childNodeList.begin(); itor != m_childNodeList.end(); ++itor)
             {
@@ -399,7 +399,7 @@ void ECDiffNode::_Write (WStringR out, int indent, WStringCR tab) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDiffNodeP ECDiffNode::Find (WCharCP name)
+ECDiffNodeP ECDiffNode::Find (Utf8CP name)
     {
     ECDiffNodeMap::const_iterator itor = m_childNodeMap.find (name);
     if (itor != m_childNodeMap.end())
@@ -410,27 +410,27 @@ ECDiffNodeP ECDiffNode::Find (WCharCP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-DiffStatus ECDiffNode::GetNodeState (bmap<WString, DiffNodeState>& nodes, WStringCR accessString, bool bAccumlativeState)
+DiffStatus ECDiffNode::GetNodeState (bmap<Utf8String, DiffNodeState>& nodes, Utf8StringCR accessString, bool bAccumlativeState)
     {
     BeAssert(!accessString.empty());
-    bvector<WString> accessors;
-    WString delimiter = L".";
+    bvector<Utf8String> accessors;
+    Utf8String delimiter = ".";
 
-    WString::size_type j = 0;
-    WString::size_type i = accessString.find (delimiter, j);
+    Utf8String::size_type j = 0;
+    Utf8String::size_type i = accessString.find (delimiter, j);
  
     do 
         {
-        if (i == WString::npos)
+        if (i == Utf8String::npos)
             i = accessString.size();
 
-        WString accessor = accessString.substr (j, i - j);
+        Utf8String accessor = accessString.substr (j, i - j);
         if (accessor.empty())
             return DIFFSTATUS_InvalidAccessString;
 
-        if (!accessors.empty() && accessor == L"*")
+        if (!accessors.empty() && accessor == "*")
             {
-            WStringCR lastAccessor = accessors [accessor.size() - 1];
+            Utf8StringCR lastAccessor = accessors [accessor.size() - 1];
             if (lastAccessor != accessor)
                 accessors.push_back (accessor);
             }
@@ -444,8 +444,8 @@ DiffStatus ECDiffNode::GetNodeState (bmap<WString, DiffNodeState>& nodes, WStrin
     if (accessors.empty())
         return DIFFSTATUS_InvalidAccessString;
 
-    stack<WString> accessorStack;
-    for (bvector<WString>::const_reverse_iterator itor = accessors.rbegin() ; itor != accessors.rend() ; ++itor )
+    stack<Utf8String> accessorStack;
+    for (bvector<Utf8String>::const_reverse_iterator itor = accessors.rbegin() ; itor != accessors.rend() ; ++itor )
         accessorStack.push(*itor);
 
     _GetNodeState (nodes, accessorStack, bAccumlativeState);
@@ -463,14 +463,14 @@ DiffNodeState ConvertToDiffNodeState(DiffType type)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECDiffNode::_GetNodeState (bmap<WString, DiffNodeState>& nodes, stack<WString> accessors , bool bAccumlativeState)
+void ECDiffNode::_GetNodeState (bmap<Utf8String, DiffNodeState>& nodes, stack<Utf8String> accessors , bool bAccumlativeState)
     {
     if (accessors.empty())
         {
         BeAssert(false);
         return;
         }
-    bool wildCard = (accessors.top() == L"*");
+    bool wildCard = (accessors.top() == "*");
     if (wildCard && accessors.size() == 1)
         {
         nodes [GetAccessString()] = ConvertToDiffNodeState (ImplGetDiffType (bAccumlativeState));
@@ -495,7 +495,7 @@ void ECDiffNode::_GetNodeState (bmap<WString, DiffNodeState>& nodes, stack<WStri
         } 
     if (wildCard)
         {
-        accessors.push(L"*");
+        accessors.push("*");
         for (const_iterator itor = begin(); itor != end(); ++itor)
             (*itor)->_GetNodeState (nodes, accessors, bAccumlativeState);
         }
@@ -503,7 +503,7 @@ void ECDiffNode::_GetNodeState (bmap<WString, DiffNodeState>& nodes, stack<WStri
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDiffNode::ECDiffNode (WCharCP name, ECDiffNodeP parent, DiffNodeId id, int index) 
+ECDiffNode::ECDiffNode (Utf8CP name, ECDiffNodeP parent, DiffNodeId id, int index) 
     : m_parent(parent), m_id(id), m_index(index),m_cachedAccumlativeType(DIFFTYPE_Empty)
     {
     BeAssert(name != NULL);
@@ -512,11 +512,11 @@ ECDiffNode::ECDiffNode (WCharCP name, ECDiffNodeP parent, DiffNodeId id, int ind
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString ECDiffNode::GetAccessString() const
+Utf8String ECDiffNode::GetAccessString() const
     {
     if (GetParent() == NULL)
         return GetName();
-    return GetParent()->GetName() + L"." + GetName();
+    return GetParent()->GetName() + "." + GetName();
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
@@ -533,7 +533,7 @@ ECDiffValue& ECDiffNode::GetValue (ValueDirection direction) { return direction=
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDiffNode::SetValue (WCharCP left, WCharCP right)
+bool ECDiffNode::SetValue (Utf8CP left, Utf8CP right)
     {
     if ( left || right )
         {
@@ -581,7 +581,7 @@ ECDiffNodeCP ECDiffNode::GetParent() const { return m_parent ; }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDiffNodeP ECDiffNode::Add (WCharCP name, DiffNodeId type)
+ECDiffNodeP ECDiffNode::Add (Utf8CP name, DiffNodeId type)
     {
     if (name == NULL)
         name = IdToString (type);
@@ -602,7 +602,7 @@ ECDiffNodeP ECDiffNode::Add (WCharCP name, DiffNodeId type)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECDiffNodeP ECDiffNode::Add (DiffNodeId type)
     {
-    return Add ((WCharCP)NULL, type);
+    return Add ((Utf8CP)NULL, type);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -610,8 +610,8 @@ ECDiffNodeP ECDiffNode::Add (DiffNodeId type)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECDiffNodeP ECDiffNode::AddWithIndex (int index, DiffNodeId type)
     {
-    WString idx;
-    idx.Sprintf (L"%ls[%d]", m_name.c_str(), index);
+    Utf8String idx;
+    idx.Sprintf ("%s[%d]", m_name.c_str(), index);
     if (m_childNodeMap.find (idx.c_str()) != m_childNodeMap.end())
         {
         BeAssert(false && "ECDiffNode with same name already exist");
@@ -669,7 +669,7 @@ DiffType ECDiffNode::_GetDiffType (bool bRecursively)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      11/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECDiffNodeCP ECDiffNode::GetChildByAccessString(WCharCP accessString ) const
+IECDiffNodeCP ECDiffNode::GetChildByAccessString(Utf8CP accessString ) const
     {
     return const_cast<ECDiffNodeP>(this)->GetChild(accessString, false);
     }
@@ -677,10 +677,10 @@ IECDiffNodeCP ECDiffNode::GetChildByAccessString(WCharCP accessString ) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDiffNodeP ECDiffNode::GetChild (WStringCR accessString, bool bCreate)
+ECDiffNodeP ECDiffNode::GetChild (Utf8StringCR accessString, bool bCreate)
     {
-    WString cur, rest;
-    size_t n = accessString.find (L".");
+    Utf8String cur, rest;
+    size_t n = accessString.find (".");
     if (n == WString::npos)
         cur = accessString;
     else
@@ -742,14 +742,14 @@ void ECDiffNode::Remove (ECDiffNodeP n)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString ECDiffNode::ToString(int tabSize) const
+Utf8String ECDiffNode::ToString(int tabSize) const
     {
-    WString out;
-    WString tab;
+    Utf8String out;
+    Utf8String tab;
     BeAssert (tabSize > 0);
     if (tabSize <= 0 )
         tabSize = 1;
-    do tab.append (L" "); while (--tabSize > 0);
+    do tab.append (" "); while (--tabSize > 0);
     _Write (out, 0, tab);
     return out;
     }
@@ -768,7 +768,7 @@ bool ECDiffNode::IsEmpty()
     return size() == 0 && ImplGetValueLeft().IsValueNill() && ImplGetValueRight().IsValueNill();
     }
 
-WCharCP  ECDiffNode::IdToString (DiffNodeId id)
+Utf8CP  ECDiffNode::IdToString (DiffNodeId id)
     {
     switch (id)
     {
@@ -827,7 +827,7 @@ ECDiffNodeP ECSchemaDiffTool::Diff(ECSchemaCR left, ECSchemaCR right)
     {
     ECDiffNodeP diff = new ECDiffNode (ID_ROOT, NULL, DiffNodeId::Root);
 
-    if (left.GetName() != right.GetName())
+    if (!left.GetName().Equals(right.GetName()))
         diff->Add (DiffNodeId::Name)->SetValue (left.GetName().c_str(), right.GetName().c_str());
 
     if (left.GetVersionMajor() != right.GetVersionMajor())
@@ -836,18 +836,18 @@ ECDiffNodeP ECSchemaDiffTool::Diff(ECSchemaCR left, ECSchemaCR right)
     if (left.GetVersionMinor() != right.GetVersionMinor())
         diff->Add (DiffNodeId::VersionMinor)->SetValue (left.GetVersionMinor(), right.GetVersionMinor());
 
-    if (left.GetDisplayLabel() != right.GetDisplayLabel())
+    if (!left.GetDisplayLabel().Equals(right.GetDisplayLabel()))
         diff->Add (DiffNodeId::DisplayLabel)->SetValue (left.GetIsDisplayLabelDefined()? left.GetDisplayLabel().c_str() : NULL, right.GetIsDisplayLabelDefined()? right.GetDisplayLabel().c_str(): NULL);
 
-    if (left.GetDescription() != right.GetDescription())
+    if (!left.GetDescription().Equals(right.GetDescription()))
         diff->Add (DiffNodeId::Description)->SetValue (left.GetDescription().c_str(), right.GetDescription().c_str());
 
-    if (left.GetNamespacePrefix() != right.GetNamespacePrefix())
+    if (!left.GetNamespacePrefix().Equals(right.GetNamespacePrefix()))
         diff->Add (DiffNodeId::NamespacePrefix)->SetValue (left.GetNamespacePrefix().c_str(), right.GetNamespacePrefix().c_str());
 
     DiffReferences (*diff, left, right);
     DiffCustomAttributes (*diff, left, right);
-    set<WCharCP, DiffNameComparer> classes;
+    set<Utf8CP, DiffNameComparer> classes;
     ECClassContainerCR classesLeft = left.GetClasses();
     for (ECClassContainer::const_iterator itor = classesLeft.begin(); itor != classesLeft.end(); ++itor)
         if (classes.find ((*itor)->GetName().c_str()) == classes.end())
@@ -859,7 +859,7 @@ ECDiffNodeP ECSchemaDiffTool::Diff(ECSchemaCR left, ECSchemaCR right)
             classes.insert ((*itor)->GetName().c_str());
 
     ECDiffNodeP diffClasses = diff->Add (DiffNodeId::Classes);
-    for (std::set<WCharCP,  DiffNameComparer>::const_iterator itor = classes.begin(); itor != classes.end(); ++itor)
+    for (std::set<Utf8CP,  DiffNameComparer>::const_iterator itor = classes.begin(); itor != classes.end(); ++itor)
         DiffClass ((*itor), left, right, *diffClasses);
 
     if (diffClasses->IsEmpty())
@@ -875,8 +875,8 @@ ECDiffNodeP ECSchemaDiffTool::DiffReferences(ECDiffNodeR parentDiff, ECSchemaCR 
         ECSchemaReferenceListCR left = schemaLeft.GetReferencedSchemas();
         ECSchemaReferenceListCR right = schemaRight.GetReferencedSchemas();
    
-        set<WString> referenceSchemas;
-        WString namespacePrefix;
+        set<Utf8String> referenceSchemas;
+        Utf8String namespacePrefix;
         for (ECSchemaReferenceList::const_iterator itor = left.begin(); itor != left.end() ; ++itor)
             if (schemaLeft.ResolveNamespacePrefix (*itor->second, namespacePrefix) == ECOBJECTS_STATUS_Success)
                 if (referenceSchemas.find (namespacePrefix) == referenceSchemas.end())
@@ -890,7 +890,7 @@ ECDiffNodeP ECSchemaDiffTool::DiffReferences(ECDiffNodeR parentDiff, ECSchemaCR 
         if (referenceSchemas.empty())
             return NULL;
     ECDiffNodeP diff= parentDiff.Add (DiffNodeId::References);
-        for(set<WString>::const_iterator itor = referenceSchemas.begin(); itor != referenceSchemas.end(); ++itor)
+        for(set<Utf8String>::const_iterator itor = referenceSchemas.begin(); itor != referenceSchemas.end(); ++itor)
             {
             ECSchemaCP leftR =  schemaLeft.GetSchemaByNamespacePrefixP (*itor);
             ECSchemaCP rightR =  schemaRight.GetSchemaByNamespacePrefixP (*itor);
@@ -910,7 +910,7 @@ ECDiffNodeP ECSchemaDiffTool::DiffReferences(ECDiffNodeR parentDiff, ECSchemaCR 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDiffNodeP ECSchemaDiffTool::DiffClass (WCharCP className, ECSchemaCR schemaLeft, ECSchemaCR schemaRight, ECDiffNodeR parentDiff)
+ECDiffNodeP ECSchemaDiffTool::DiffClass (Utf8CP className, ECSchemaCR schemaLeft, ECSchemaCR schemaRight, ECDiffNodeR parentDiff)
     {
     ECClassCP left = schemaLeft.GetClassCP(className);
     ECClassCP right = schemaRight.GetClassCP(className);
@@ -948,7 +948,7 @@ ECDiffNodeP ECSchemaDiffTool::DiffClass (WCharCP className, ECSchemaCR schemaLef
     classes.push_back(right);
     DiffBaseClasses(*diff, classes);
 
-    std::set<WCharCP, DiffNameComparer> properties;
+    std::set<Utf8CP, DiffNameComparer> properties;
     ECPropertyIterableCR propertiesLeft = left->GetProperties(false);
     for (ECPropertyIterable::const_iterator itor = propertiesLeft.begin(); itor != propertiesLeft.end(); ++itor)
         if (properties.find ((*itor)->GetName().c_str()) == properties.end())
@@ -960,7 +960,7 @@ ECDiffNodeP ECSchemaDiffTool::DiffClass (WCharCP className, ECSchemaCR schemaLef
             properties.insert ((*itor)->GetName().c_str());
 
     ECDiffNodeP diffProperties = diff->Add (DiffNodeId::Properties);
-    for (std::set<WCharCP,  DiffNameComparer>::const_iterator itor = properties.begin(); itor != properties.end(); ++itor)
+    for (std::set<Utf8CP,  DiffNameComparer>::const_iterator itor = properties.begin(); itor != properties.end(); ++itor)
         DiffProperty ((*itor), *left, *right, *diffProperties);
     diff->RemoveIfEmpty (diffProperties);
 
@@ -974,7 +974,7 @@ ECDiffNodeP ECSchemaDiffTool::DiffBaseClasses (ECDiffNodeR parentDiff, AlignedCl
     {
     BeAssert (classes.size() == 2);
     AlignedClassMap baseClassMap;
-    bvector<WCharCP> baseClassOrderedList;
+    bvector<Utf8CP> baseClassOrderedList;
     for (int i = 0 ; i < (int)classes.size(); i++)
         {
         ECClassCP ecclass = classes[i];
@@ -997,7 +997,7 @@ ECDiffNodeP ECSchemaDiffTool::DiffBaseClasses (ECDiffNodeR parentDiff, AlignedCl
                 baseClasses.push_back (&baseClass);
             }
         }
-    for (bvector<WCharCP>::iterator itor = baseClassOrderedList.begin(); itor != baseClassOrderedList.end(); ++itor)
+    for (bvector<Utf8CP>::iterator itor = baseClassOrderedList.begin(); itor != baseClassOrderedList.end(); ++itor)
         if (baseClassMap[*itor].size() < classes.size())
             while (baseClassMap[*itor].size() < classes.size())
                 baseClassMap[*itor].push_back(NULL);
@@ -1007,7 +1007,7 @@ ECDiffNodeP ECSchemaDiffTool::DiffBaseClasses (ECDiffNodeR parentDiff, AlignedCl
 
     ECDiffNodeP baseClasses = parentDiff.Add (DiffNodeId::BaseClasses);
     int index = 0;
-    for (bvector<WCharCP>::iterator itor = baseClassOrderedList.begin(); itor != baseClassOrderedList.end(); ++itor, index++)
+    for (bvector<Utf8CP>::iterator itor = baseClassOrderedList.begin(); itor != baseClassOrderedList.end(); ++itor, index++)
         {
         ECClassCP left = baseClassMap[*itor][0];
         ECClassCP right = baseClassMap[*itor][1];
@@ -1016,7 +1016,7 @@ ECDiffNodeP ECSchemaDiffTool::DiffBaseClasses (ECDiffNodeR parentDiff, AlignedCl
         else if(!left && right)
             baseClasses->AddWithIndex (index, DiffNodeId::BaseClass)->ImplGetValueRight().SetValue(right->GetFullName());
         else
-            if (wcscmp (left->GetFullName(), right->GetFullName()) != 0)
+            if (strcmp (left->GetFullName(), right->GetFullName()) != 0)
                 baseClasses->AddWithIndex (index, DiffNodeId::BaseClass)->SetValue(left->GetFullName(), right->GetFullName());
         }
     return parentDiff.RemoveIfEmpty (baseClasses);
@@ -1024,7 +1024,7 @@ ECDiffNodeP ECSchemaDiffTool::DiffBaseClasses (ECDiffNodeR parentDiff, AlignedCl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDiffNodeP ECSchemaDiffTool::DiffProperty (WCharCP propertyName, ECClassCR classLeft, ECClassCR classRight, ECDiffNodeR parentDiff)
+ECDiffNodeP ECSchemaDiffTool::DiffProperty (Utf8CP propertyName, ECClassCR classLeft, ECClassCR classRight, ECDiffNodeR parentDiff)
     {
     ECPropertyCP left = classLeft.GetPropertyP (propertyName);
     ECPropertyCP right = classRight.GetPropertyP (propertyName);
@@ -1124,7 +1124,7 @@ ECDiffNodeP ECSchemaDiffTool::DiffRelationshipConstraintClasses (ECDiffNodeR par
     {
     BeAssert (constraints.size() == 2);
     AlignedClassMap constraintClassMap;
-    bvector<WCharCP> constraintClassOrderedList;
+    bvector<Utf8CP> constraintClassOrderedList;
     for (int i = 0 ; i < (int)constraints.size(); i++)
         {
         ECRelationshipConstraintCP ecRelationshipConstraint = constraints[i];
@@ -1146,7 +1146,7 @@ ECDiffNodeP ECSchemaDiffTool::DiffRelationshipConstraintClasses (ECDiffNodeR par
                 baseClasses.push_back (&baseClass);
             }
         }
-    for (bvector<WCharCP>::iterator itor = constraintClassOrderedList.begin(); itor != constraintClassOrderedList.end(); ++itor)
+    for (bvector<Utf8CP>::iterator itor = constraintClassOrderedList.begin(); itor != constraintClassOrderedList.end(); ++itor)
         if (constraintClassMap[*itor].size() < constraints.size())
             while (constraintClassMap[*itor].size() < constraints.size())
                 constraintClassMap[*itor].push_back(NULL);
@@ -1155,7 +1155,7 @@ ECDiffNodeP ECSchemaDiffTool::DiffRelationshipConstraintClasses (ECDiffNodeR par
 
     ECDiffNodeP constraintClasses = parentDiff.Add (DiffNodeId::Classes);
     int index =0;
-    for (bvector<WCharCP>::iterator itor = constraintClassOrderedList.begin(); itor != constraintClassOrderedList.end(); ++itor, index++)
+    for (bvector<Utf8CP>::iterator itor = constraintClassOrderedList.begin(); itor != constraintClassOrderedList.end(); ++itor, index++)
         {
         ECClassCP left = constraintClassMap[*itor][0];
         ECClassCP right = constraintClassMap[*itor][1];
@@ -1164,7 +1164,7 @@ ECDiffNodeP ECSchemaDiffTool::DiffRelationshipConstraintClasses (ECDiffNodeR par
         else if (!left && right)
             constraintClasses->AddWithIndex (index, DiffNodeId::ConstraintClass)->ImplGetValueRight().SetValue(right->GetFullName());
         else
-            if (wcscmp (left->GetFullName(), right->GetFullName()) != 0)
+            if (strcmp (left->GetFullName(), right->GetFullName()) != 0)
                 constraintClasses->AddWithIndex (index, DiffNodeId::ConstraintClass)->SetValue(left->GetFullName(), right->GetFullName());
         }
     return parentDiff.RemoveIfEmpty (constraintClasses);
@@ -1204,7 +1204,7 @@ ECDiffNodeP ECSchemaDiffTool::AppendRelationshipConstraint(ECDiffNodeR parent, E
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP ECSchemaDiffTool::ToString(ECRelatedInstanceDirection direction)
+Utf8CP ECSchemaDiffTool::ToString(ECRelatedInstanceDirection direction)
     {
     switch(direction)
         {
@@ -1218,7 +1218,7 @@ WCharCP ECSchemaDiffTool::ToString(ECRelatedInstanceDirection direction)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP ECSchemaDiffTool::ToString(StrengthType type)
+Utf8CP ECSchemaDiffTool::ToString(StrengthType type)
     {
     switch(type)
         {
@@ -1325,7 +1325,7 @@ ECDiffNodeP ECSchemaDiffTool::AppendArrayBounds (ECDiffNodeR parent , ECProperty
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchemaDiffTool::CollectInstanceValues (bmap<WString,ECValue>& valueMap, set<WString>& accessStrings, IECInstanceCR instance)
+void ECSchemaDiffTool::CollectInstanceValues (bmap<Utf8String,ECValue>& valueMap, set<Utf8String>& accessStrings, IECInstanceCR instance)
     {
     valueMap.clear();
     ECValuesCollectionPtr propertyValues = ECValuesCollection::Create (instance);
@@ -1336,12 +1336,12 @@ void ECSchemaDiffTool::CollectInstanceValues (bmap<WString,ECValue>& valueMap, s
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchemaDiffTool::CollectInstanceValues (bmap<WString,ECValue>& valueMap, set<WString>& accessStrings, ECValuesCollectionCR values)
+void ECSchemaDiffTool::CollectInstanceValues (bmap<Utf8String,ECValue>& valueMap, set<Utf8String>& accessStrings, ECValuesCollectionCR values)
     {
     for (ECValuesCollection::const_iterator itor = values.begin(); itor != values.end(); ++itor)
         {
         ECValueAccessorCR valueAccessor = (*itor).GetValueAccessor ();
-        WString accessString = valueAccessor.GetManagedAccessString();
+        Utf8String accessString = valueAccessor.GetManagedAccessString();
         if ((*itor).HasChildValues())
             CollectInstanceValues (valueMap, accessStrings, *(*itor).GetChildValues());
         else
@@ -1371,7 +1371,7 @@ ECDiffNodeP ECSchemaDiffTool::DiffCustomAttributes
     IECCustomAttributeContainerCR rightContainer
     )
     {
-    bmap<WCharCP, ECClassCP, DiffNameComparer> classes;
+    bmap<Utf8CP, ECClassCP, DiffNameComparer> classes;
     ECCustomAttributeInstanceIterable leftCustomAttributes =  leftContainer.GetPrimaryCustomAttributes(false);
     for (ECCustomAttributeInstanceIterable::const_iterator itor = leftCustomAttributes.begin(); itor != leftCustomAttributes.end(); ++itor)
         {
@@ -1390,7 +1390,7 @@ ECDiffNodeP ECSchemaDiffTool::DiffCustomAttributes
         return NULL;
 
     ECDiffNodeP diff = parentDiff.Add (DiffNodeId::CustomAttributes);
-    for (bmap<WCharCP, ECClassCP, DiffNameComparer>::iterator itor = classes.begin(); itor != classes.end(); ++itor)
+    for (bmap<Utf8CP, ECClassCP, DiffNameComparer>::iterator itor = classes.begin(); itor != classes.end(); ++itor)
         DiffInstance(*diff, *(itor->second), leftContainer, rightContainer);
 
     return parentDiff.RemoveIfEmpty (diff);
@@ -1415,19 +1415,19 @@ ECDiffNodeP ECSchemaDiffTool::DiffInstance
     if (!left && right)
         return AppendInstance (parentDiff, *right, ECDiffNode::DIRECTION_Right);
 
-    bmap<WString,ECValue> leftValues;
-    bmap<WString,ECValue> rightValues;
-    set<WString> accessStrings;
+    bmap<Utf8String,ECValue> leftValues;
+    bmap<Utf8String,ECValue> rightValues;
+    set<Utf8String> accessStrings;
     CollectInstanceValues (leftValues, accessStrings, *left);
     CollectInstanceValues (rightValues, accessStrings, *right);
 
     if (!accessStrings.empty())
         {
         ECDiffNodeP diff = parentDiff.Add (customAttributeClass.GetFullName(), DiffNodeId::CustomAttribute);
-        for (set<WString> ::const_iterator itor = accessStrings.begin(); itor != accessStrings.end(); ++itor)
+        for (set<Utf8String> ::const_iterator itor = accessStrings.begin(); itor != accessStrings.end(); ++itor)
             {
-            bmap<WString,ECValue>::const_iterator lItor = leftValues.find (*itor);
-            bmap<WString,ECValue>::const_iterator rItor = rightValues.find (*itor);
+            bmap<Utf8String,ECValue>::const_iterator lItor = leftValues.find (*itor);
+            bmap<Utf8String,ECValue>::const_iterator rItor = rightValues.find (*itor);
             if (lItor == leftValues.end() && rItor != rightValues.end())
                 SetECValue (*(diff->GetChild ((*itor), true)), rItor->second, ECDiffNode::DIRECTION_Right);
             else if (lItor != leftValues.end() && rItor == rightValues.end())
@@ -1485,7 +1485,7 @@ ECDiffNodeP ECSchemaDiffTool::AppendPropertyValues (ECDiffNodeR parentDiff, ECVa
     for (ECValuesCollection::const_iterator itor = values.begin(); itor != values.end(); ++itor)
         {
         ECValueAccessorCR valueAccessor = (*itor).GetValueAccessor ();
-        const WString propertyName = valueAccessor.GetPropertyName ();
+        const Utf8String propertyName = valueAccessor.GetPropertyName ();
         ECDiffNodeP diff = parentDiff.Add (propertyName.c_str(), DiffNodeId::Property);
         if ((*itor).HasChildValues())
             AppendPropertyValues (*diff, *(*itor).GetChildValues(), direction);
@@ -1537,19 +1537,19 @@ bool ECSchemaDiffTool::SetECValue (ECDiffNodeR n, ECValueCR v, ECDiffNode::Value
             n.GetValue (direction).SetValue (v.GetLong()); break;
         case PRIMITIVETYPE_Point2D:
             {              
-            n.Add (L"x", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint2D().x); 
-            n.Add (L"y", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint2D().y); 
+            n.Add ("x", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint2D().x); 
+            n.Add ("y", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint2D().y); 
             break;
             }
         case PRIMITIVETYPE_Point3D:
             {
-            n.Add (L"x", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint3D().x); 
-            n.Add (L"y", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint3D().y); 
-            n.Add (L"z", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint3D().z); 
+            n.Add ("x", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint3D().x); 
+            n.Add ("y", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint3D().y); 
+            n.Add ("z", DiffNodeId::None)->GetValue (direction).SetValue (v.GetPoint3D().z); 
             break;
             }
         case PRIMITIVETYPE_String:
-            n.GetValue (direction).SetValue (v.GetString()); break;
+            n.GetValue (direction).SetValue (v.GetUtf8CP()); break;
         }
     return true;
     }
@@ -1561,10 +1561,10 @@ bool ECSchemaDiffTool::SetECValue (ECDiffNodeR n, ECValueCR v, ECDiffNode::Value
 * @bsimethod                                                    Affan.Khan      10/2013
 static
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDiffValueHelper::TryParseClassKey(WStringR schemaName, WStringR className, WStringCR classKey)
+bool ECDiffValueHelper::TryParseClassKey(Utf8StringR schemaName, Utf8StringR className, Utf8StringCR classKey)
     {
-    auto indexOfDelimiter = classKey.find (L":");
-    if (indexOfDelimiter == WString::npos)
+    auto indexOfDelimiter = classKey.find (":");
+    if (indexOfDelimiter == Utf8String::npos)
         return false;
 
     schemaName = classKey.substr (0, indexOfDelimiter);
@@ -1578,27 +1578,27 @@ bool ECDiffValueHelper::TryParseClassKey(WStringR schemaName, WStringR className
 * @bsimethod                                                    Affan.Khan      10/2013
 static
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDiffValueHelper::TryParsePrimitiveType(ECN::PrimitiveType& primitiveType, WStringCR primtiveTypeValue)
+bool ECDiffValueHelper::TryParsePrimitiveType(ECN::PrimitiveType& primitiveType, Utf8StringCR primtiveTypeValue)
     {
-    if (primtiveTypeValue.CompareToI (L"String") == 0)
+    if (primtiveTypeValue.CompareToI ("String") == 0)
         primitiveType = PRIMITIVETYPE_String;
-    else if (primtiveTypeValue.CompareToI (L"Binary") == 0)
+    else if (primtiveTypeValue.CompareToI ("Binary") == 0)
         primitiveType = PRIMITIVETYPE_Binary;
-    else if (primtiveTypeValue.CompareToI (L"Boolean") == 0)
+    else if (primtiveTypeValue.CompareToI ("Boolean") == 0)
         primitiveType = PRIMITIVETYPE_Boolean;
-    else if (primtiveTypeValue.CompareToI (L"DateTime") == 0)
+    else if (primtiveTypeValue.CompareToI ("DateTime") == 0)
         primitiveType = PRIMITIVETYPE_DateTime;
-    else if (primtiveTypeValue.CompareToI (L"Double") == 0)
+    else if (primtiveTypeValue.CompareToI ("Double") == 0)
         primitiveType = PRIMITIVETYPE_Double;
-    else if (primtiveTypeValue.CompareToI (L"IGeometry") == 0)
+    else if (primtiveTypeValue.CompareToI ("IGeometry") == 0)
         primitiveType = PRIMITIVETYPE_IGeometry;
-    else if (primtiveTypeValue.CompareToI (L"Integer") == 0 || primtiveTypeValue.CompareToI (L"Int") == 0)
+    else if (primtiveTypeValue.CompareToI ("Integer") == 0 || primtiveTypeValue.CompareToI ("Int") == 0)
         primitiveType = PRIMITIVETYPE_Integer;
-    else if (primtiveTypeValue.CompareToI (L"Long") == 0)
+    else if (primtiveTypeValue.CompareToI ("Long") == 0)
         primitiveType = PRIMITIVETYPE_Long;
-    else if (primtiveTypeValue.CompareToI (L"Point2D") == 0)
+    else if (primtiveTypeValue.CompareToI ("Point2D") == 0)
         primitiveType = PRIMITIVETYPE_Point2D;
-    else if (primtiveTypeValue.CompareToI (L"Point3D") == 0)
+    else if (primtiveTypeValue.CompareToI ("Point3D") == 0)
         primitiveType = PRIMITIVETYPE_Point3D;
     else
         return false;
@@ -1609,7 +1609,7 @@ bool ECDiffValueHelper::TryParsePrimitiveType(ECN::PrimitiveType& primitiveType,
 * @bsimethod                                                    Affan.Khan      10/2013
 static
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDiffValueHelper::TryParseRelationshipStrengthType (ECN::StrengthType& strengthType, WStringCR strengthValue)
+bool ECDiffValueHelper::TryParseRelationshipStrengthType (ECN::StrengthType& strengthType, Utf8StringCR strengthValue)
     {
     if (strengthValue.CompareToI(ID_STRENGTH_TYPE_EMBEDDING) == 0)
         {
@@ -1634,7 +1634,7 @@ bool ECDiffValueHelper::TryParseRelationshipStrengthType (ECN::StrengthType& str
 * @bsimethod                                                    Affan.Khan      10/2013
 static
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDiffValueHelper::TryParseRelatedStrengthDirection (ECN::ECRelatedInstanceDirection& strengthDirection, WStringCR strengthDirectionValue)
+bool ECDiffValueHelper::TryParseRelatedStrengthDirection (ECN::ECRelatedInstanceDirection& strengthDirection, Utf8StringCR strengthDirectionValue)
     {
     if (strengthDirectionValue.CompareToI(ID_STRENGTH_DIRECTION_BACKWARD) == 0)
         {
@@ -1689,7 +1689,7 @@ void ECSchemaMergeTool::EnsureSchemaIsReferenced (ECSchemaCR reference)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECDiffValueP ECSchemaMergeTool::GetMergeValue (ECDiffNodeR n, WCharCP id)
+ECDiffValueP ECSchemaMergeTool::GetMergeValue (ECDiffNodeR n, Utf8CP id)
     {
     ECDiffNodeP v;
     if ((v = n.GetChild (id)) != NULL)
@@ -1719,7 +1719,7 @@ ECDiffValueP ECSchemaMergeTool::GetMergeValue (ECDiffNodeR v)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECDiffValueP ECSchemaMergeTool::GetMergeValue (ECDiffNodeR n, DiffNodeId id)
     {
-    WCharCP name = ECDiffNode::IdToString (id);
+    Utf8CP name = ECDiffNode::IdToString (id);
     BeAssert(name != NULL);
     return GetMergeValue (n, name);
     }
@@ -1752,7 +1752,7 @@ void ECSchemaMergeTool::ComputeMergeActions(ClassMergeInfoMap& actions, ECDiffNo
     ECClassContainerCR classList = schema.GetClasses();
     for(ECClassContainer::const_iterator itor =  classList.begin(); itor !=  classList.end(); ++itor)
         {
-        WStringCR className = (*itor)->GetName();
+        Utf8StringCR className = (*itor)->GetName();
         if (actions.find (className.c_str()) != actions.end())
             continue;
         if (diffClasses && ((diffClass = diffClasses->GetChild (className)) != NULL))
@@ -1770,7 +1770,7 @@ void ECSchemaMergeTool::ComputeMergeActions(PropertyMergeInfoMap& actions, ECDif
     ECPropertyIterable propertyList =ecClass.GetProperties(false);
     for(ECPropertyIterable::const_iterator itor =  propertyList.begin(); itor !=  propertyList.end(); ++itor)
         {
-        WStringCR propertyName = (*itor)->GetName();
+        Utf8StringCR propertyName = (*itor)->GetName();
         if (actions.find (propertyName.c_str()) != actions.end())
             continue;
         if (diffProperties && ((diffProperty = diffProperties->GetChild (propertyName)) != NULL))
@@ -1809,7 +1809,7 @@ MergeStatus ECSchemaMergeTool::MergeSchema (ECSchemaPtr& mergedSchema)
         BuildClassMap (GetRight());
         BuildClassMap (GetLeft());
         }
-    WString schemaName;
+    Utf8String schemaName;
     uint32_t versionMajor;
     uint32_t versionMinor;
 
@@ -1886,7 +1886,7 @@ MergeStatus ECSchemaMergeTool::MergeSchema (ECSchemaPtr& mergedSchema)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-MergeStatus ECSchemaMergeTool::ResolveClassFromMergeContext (ECClassCP& mergedClass, WCharCP className)
+MergeStatus ECSchemaMergeTool::ResolveClassFromMergeContext (ECClassCP& mergedClass, Utf8CP className)
     {
     ClassMergeInfoMap::iterator itor= m_classMergeTasks.find (className);
     if (itor  == m_classMergeTasks.end())
@@ -2144,7 +2144,7 @@ MergeStatus ECSchemaMergeTool::MergeRelationshipConstraint (ECDiffNodeR diff, EC
         if (defaultContraint)
             mergedConstraint.SetIsPolymorphic (defaultContraint->GetIsPolymorphic());
 
-    set<WString> constraintClasses;
+    set<Utf8String> constraintClasses;
     if (defaultContraint)
         for(const auto constraintClass: defaultContraint->GetConstraintClasses())
         constraintClasses.insert(constraintClass->GetClass().GetFullName());
@@ -2155,7 +2155,7 @@ MergeStatus ECSchemaMergeTool::MergeRelationshipConstraint (ECDiffNodeR diff, EC
             if ((v = GetMergeValue (**itor)) != NULL)
                 if (constraintClasses.find(v->GetValueString()) == constraintClasses.end())
                     constraintClasses.insert(v->GetValueString());
-    for (set<WString>::const_iterator itor = constraintClasses.begin(); itor != constraintClasses.end(); ++itor)
+    for (set<Utf8String>::const_iterator itor = constraintClasses.begin(); itor != constraintClasses.end(); ++itor)
         {
         ECClassCP resolvedConstraintClass = ResolveClass(*itor);
         if (resolvedConstraintClass == NULL)
@@ -2276,7 +2276,7 @@ MergeStatus ECSchemaMergeTool::MergeCustomAttributes (ECDiffNodeR diff, IECCusto
         return MERGESTATUS_Failed;
         }
     //We do not merge actual instance content rather  just select default one in case of conflict.
-    bmap<WString, IECInstancePtr> mergedListOfCustomAttributes;
+    bmap<Utf8String, IECInstancePtr> mergedListOfCustomAttributes;
     if (defaultConstainer)
         FOR_EACH (IECInstancePtr const& ca, defaultConstainer->GetPrimaryCustomAttributes(false))
         mergedListOfCustomAttributes [ca->GetClass().GetFullName()] = ca;
@@ -2286,9 +2286,9 @@ MergeStatus ECSchemaMergeTool::MergeCustomAttributes (ECDiffNodeR diff, IECCusto
         if (mergedListOfCustomAttributes.find(ca->GetClass().GetFullName()) == mergedListOfCustomAttributes.end())
             mergedListOfCustomAttributes [ca->GetClass().GetFullName()] = ca;
 
-    for (bmap<WString, IECInstancePtr>::iterator itor = mergedListOfCustomAttributes.begin(); itor != mergedListOfCustomAttributes.end(); ++itor)
+    for (bmap<Utf8String, IECInstancePtr>::iterator itor = mergedListOfCustomAttributes.begin(); itor != mergedListOfCustomAttributes.end(); ++itor)
         {
-        WStringCR className = itor->first;
+        Utf8StringCR className = itor->first;
         IECInstanceR customAttribute = *(itor->second);
 
         ECClassCP ecClass = ResolveClass (className);
@@ -2318,7 +2318,7 @@ MergeStatus ECSchemaMergeTool::MergeProperties(ECDiffNodeR diff, ECClassR merged
     ComputeMergeActions (propertyActionMap, &diff, *right);
     for (PropertyMergeInfoMap::const_iterator itor = propertyActionMap.begin(); itor != propertyActionMap.end(); ++itor )
         {
-        WCharCP propertyName = itor->first;
+        Utf8CP propertyName = itor->first;
         DiffType diffType= itor->second;
 
         if (diffType == DIFFTYPE_Left)
@@ -2358,7 +2358,7 @@ MergeStatus ECSchemaMergeTool::MergeProperty (ECDiffNodeP diff, ECClassR mergedC
     BeAssert (!diff->IsEmpty());
     ECDiffValueP v = NULL;
     MergeStatus status;
-    WStringCR propertyName = diff->GetName();
+    Utf8StringCR propertyName = diff->GetName();
     ECPropertyCP defaultProperty = defaultClass.GetPropertyP (propertyName, false);
     BeAssert (defaultProperty != NULL);
     if (defaultProperty == NULL)
@@ -2370,7 +2370,7 @@ MergeStatus ECSchemaMergeTool::MergeProperty (ECDiffNodeP diff, ECClassR mergedC
     bool isStruct = defaultProperty->GetIsStruct();
     if ((v = GetMergeValue (*diff, DiffNodeId::IsStruct)) != NULL)
         isStruct = v->GetValueBool();
-    WString typeName = defaultProperty->GetTypeName();
+    Utf8String typeName = defaultProperty->GetTypeName();
     if ((v = GetMergeValue (*diff, DiffNodeId::TypeName)) != NULL)
         typeName = v->GetValueString();
 
@@ -2388,7 +2388,7 @@ MergeStatus ECSchemaMergeTool::MergeProperty (ECDiffNodeP diff, ECClassR mergedC
     else if (isArray)
         {
         ArrayECPropertyP newProperty;
-        if (typeName.find (L":") == WString::npos)
+        if (typeName.find (":") == Utf8String::npos)
             {
             PrimitiveType primitiveType;
             if (!ECDiffValueHelper::TryParsePrimitiveType (primitiveType, typeName))
@@ -2556,8 +2556,8 @@ MergeStatus ECSchemaMergeTool::MergeBaseClasses (ECDiffNodeR diff,ECClassR merge
     ECDiffValueP v = NULL;
     MergeStatus status = MERGESTATUS_Success;
     //Determine the merge list of baseClasses.
-    bvector<WString> baseClassList; 
-    set<WString> baseClassMap;
+    bvector<Utf8String> baseClassList; 
+    set<Utf8String> baseClassMap;
     FOR_EACH (ECClassCP baseClass, defaultClass.GetBaseClasses())
         {
         baseClassList.push_back (baseClass->GetFullName());
@@ -2570,7 +2570,7 @@ MergeStatus ECSchemaMergeTool::MergeBaseClasses (ECDiffNodeR diff,ECClassR merge
                 baseClassList.push_back (v->GetValueString());
                 baseClassMap.insert (v->GetValueString());
                 }
-            for(bvector<WString>::const_iterator itor = baseClassList.begin(); itor != baseClassList.end(); ++itor)
+            for(bvector<Utf8String>::const_iterator itor = baseClassList.begin(); itor != baseClassList.end(); ++itor)
                 {
                 ECClassCP baseClass = ResolveClass (*itor);
                 if (baseClass == NULL)
@@ -2582,13 +2582,13 @@ MergeStatus ECSchemaMergeTool::MergeBaseClasses (ECDiffNodeR diff,ECClassR merge
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCP ECSchemaMergeTool::ResolveClass (WStringCR classFullName)
+ECClassCP ECSchemaMergeTool::ResolveClass (Utf8StringCR classFullName)
     {
     BeAssert (!classFullName.empty());
     //First priority is merged schema see if can find it there
-    WString::size_type n = classFullName.find (L":");
-    BeAssert (n != WString::npos);
-    WString className = classFullName.substr (n + 1);
+    Utf8String::size_type n = classFullName.find (":");
+    BeAssert (n != Utf8String::npos);
+    Utf8String className = classFullName.substr (n + 1);
     ECClassCP ecClass = GetMerged().GetClassCP (className.c_str());
     if (ecClass != NULL)
         return ecClass;
