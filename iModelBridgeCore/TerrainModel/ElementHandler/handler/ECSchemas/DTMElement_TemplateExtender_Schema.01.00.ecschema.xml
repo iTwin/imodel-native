@@ -1,0 +1,2799 @@
+<?xml version="1.0" encoding="us-ascii"?>
+<ECSchema schemaName="DTMElement_TemplateExtender_Schema" nameSpacePrefix="bcsct" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
+    <ECSchemaReference name="Bentley_Common_Classes" version="01.01" prefix="bcc" />
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.10" prefix="besc" />
+
+    <ECCustomAttributes>
+        <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.10">
+            <Hidden>True</Hidden>
+        </DisplayOptions>
+    </ECCustomAttributes>
+
+    <ECClass typeName="CriteriaStruct" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="Criteria" typeName="string" />
+    </ECClass>
+    <ECClass typeName="ContourMajor_Color_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECStructProperty propertyName="Value" typeName="bcc:DgnElementColor">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMElementColor</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+    </ECClass>
+    <ECClass typeName="ContourMajor_LineStyle_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="string">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMStyle</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="ContourMajor_LineWeight_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="int">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMWeight</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="ContourMajorDepression_Color_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECStructProperty propertyName="Value" typeName="bcc:DgnElementColor">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMElementColor</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+    </ECClass>
+    <ECClass typeName="ContourMajorDepression_LineStyle_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="string">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMStyle</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="ContourMajorDepression_LineWeight_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="int">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMWeight</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="ContourMajorDepression_Class" isStruct="True" isDomainClass="True">
+        <ECStructProperty propertyName="ContourMajorDepression_Color" typeName="ContourMajorDepression_Color_Class" displayLabel="Color">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>298000</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>Color_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="ContourMajorDepression_LineStyle" typeName="ContourMajorDepression_LineStyle_Class" displayLabel="LineStyle">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>297900</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>LineStyle_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="ContourMajorDepression_LineWeight" typeName="ContourMajorDepression_LineWeight_Class" displayLabel="Weight">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>297800</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>LineWeight_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+    </ECClass>
+    <ECClass typeName="ContourMajor_Class" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="ContourMajor_Display" typeName="boolean" displayLabel="Display">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.00">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299900</Priority>
+                </PropertyPriority>
+                <RequiresReload xmlns="EditorCustomAttributes.01.00" />
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ContourMajor_Level" typeName="string" displayLabel="Level">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>ElementParams_TMLevelStruct</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECStructProperty propertyName="ContourMajor_Color" typeName="ContourMajor_Color_Class" displayLabel="Color">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299700</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>Color_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="ContourMajor_LineStyle" typeName="ContourMajor_LineStyle_Class" displayLabel="LineStyle">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299600</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>LineStyle_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="ContourMajor_LineWeight" typeName="ContourMajor_LineWeight_Class" displayLabel="Weight">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299500</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>LineWeight_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECProperty propertyName="ContourMajor_Transparency" typeName="double" displayLabel="Transparency">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>Transparency_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ContourMajor_DisplayText" typeName="boolean" displayLabel="DisplayText">
+            <ECCustomAttributes>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>Yes</TrueString>
+                    <FalseString>No</FalseString>
+                </BooleanDisplay>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299200</Priority>
+                </PropertyPriority>
+                <RequiresReload xmlns="EditorCustomAttributes.01.00" />
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ContourMajor_TextLevel" typeName="string" displayLabel="Text Level">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>ElementParams_TMLevelStruct</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ContourMajor_TextStyles" typeName="string" displayLabel="TextStyle">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>ElementParams_TMTextStyleStruct</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ContourMajor_TextInterval" typeName="double" displayLabel="TextInterval">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>298300</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Standard>8</Standard>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECStructProperty propertyName="ContourMajorDepression" typeName="ContourMajorDepression_Class" displayLabel="Depression">
+            <ECCustomAttributes>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>1800</Priority>
+                </PropertyPriority>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+            </ECCustomAttributes>
+        </ECStructProperty>
+    </ECClass>
+    <ECClass typeName="ContourMinor_Color_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECStructProperty propertyName="Value" typeName="bcc:DgnElementColor">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMElementColor</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+    </ECClass>
+    <ECClass typeName="ContourMinor_LineStyle_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="string">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMStyle</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="ContourMinor_LineWeight_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="int">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMWeight</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="ContourMinorDepression_Color_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECStructProperty propertyName="Value" typeName="bcc:DgnElementColor">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMElementColor</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+    </ECClass>
+    <ECClass typeName="ContourMinorDepression_LineStyle_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="string">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMStyle</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="ContourMinorDepression_LineWeight_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="int">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMWeight</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="ContourMinorDepression_Class" isStruct="True" isDomainClass="True">
+        <ECStructProperty propertyName="ContourMinorDepression_Color" typeName="ContourMinorDepression_Color_Class" displayLabel="Color">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>298000</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>Color_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="ContourMinorDepression_LineStyle" typeName="ContourMinorDepression_LineStyle_Class" displayLabel="LineStyle">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>297900</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>LineStyle_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="ContourMinorDepression_LineWeight" typeName="ContourMinorDepression_LineWeight_Class" displayLabel="Weight">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>297800</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>LineWeight_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+    </ECClass>
+    <ECClass typeName="ContourMinor_Class" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="ContourMinor_Display" typeName="boolean" displayLabel="Display">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.00">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299900</Priority>
+                </PropertyPriority>
+                <RequiresReload xmlns="EditorCustomAttributes.01.00" />
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ContourMinor_Level" typeName="string" displayLabel="Level">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>ElementParams_TMLevelStruct</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECStructProperty propertyName="ContourMinor_Color" typeName="ContourMinor_Color_Class" displayLabel="Color">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299700</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>Color_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="ContourMinor_LineStyle" typeName="ContourMinor_LineStyle_Class" displayLabel="LineStyle">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299600</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>LineStyle_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="ContourMinor_LineWeight" typeName="ContourMinor_LineWeight_Class" displayLabel="Weight">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299500</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>LineWeight_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECProperty propertyName="ContourMinor_Transparency" typeName="double" displayLabel="Transparency">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>Transparency_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ContourMinor_DisplayText" typeName="boolean" displayLabel="DisplayText">
+            <ECCustomAttributes>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>Yes</TrueString>
+                    <FalseString>No</FalseString>
+                </BooleanDisplay>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299200</Priority>
+                </PropertyPriority>
+                <RequiresReload xmlns="EditorCustomAttributes.01.00" />
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ContourMinor_TextLevel" typeName="string" displayLabel="Text Level">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>ElementParams_TMLevelStruct</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ContourMinor_TextStyles" typeName="string" displayLabel="TextStyle">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>ElementParams_TMTextStyleStruct</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ContourMinor_TextInterval" typeName="double" displayLabel="TextInterval">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>298300</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Standard>8</Standard>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECStructProperty propertyName="ContourMinorDepression" typeName="ContourMinorDepression_Class" displayLabel="Depression">
+            <ECCustomAttributes>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>1800</Priority>
+                </PropertyPriority>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+            </ECCustomAttributes>
+        </ECStructProperty>
+    </ECClass>
+    <ECClass typeName="Contour_Class" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="Contour_MaxSlopeOption" typeName="int" displayLabel="MaxSlopeOption">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299900</Priority>
+                </PropertyPriority>
+                <StandardValues xmlns="EditorCustomAttributes.01.00">
+                    <ValueMap>
+                        <ValueMap>
+                            <Value>0</Value>
+                            <DisplayString>None</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>1</Value>
+                            <DisplayString>IgnoreMaxSlopes</DisplayString>
+                        </ValueMap>
+                    </ValueMap>
+                </StandardValues>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Contour_MaxSlopeValue" typeName="double" displayLabel="MaxSlopeValue">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299800</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Contour_ContourLabelPrecision" typeName="int" displayLabel="ContourLabelPrecision">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299700</Priority>
+                </PropertyPriority>
+                <StandardValues xmlns="EditorCustomAttributes.01.00">
+                    <ValueMap>
+                        <ValueMap>
+                            <Value>0</Value>
+                            <DisplayString>0</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>1</Value>
+                            <DisplayString>1</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>2</Value>
+                            <DisplayString>2</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>3</Value>
+                            <DisplayString>3</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>4</Value>
+                            <DisplayString>4</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>5</Value>
+                            <DisplayString>5</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>6</Value>
+                            <DisplayString>6</DisplayString>
+                        </ValueMap>
+                    </ValueMap>
+                </StandardValues>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Contour_SplineSmoothingFactor" typeName="int" displayLabel="SmoothingFactor">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299600</Priority>
+                </PropertyPriority>
+                <StandardValues xmlns="EditorCustomAttributes.01.00">
+                    <ValueMap>
+                        <ValueMap>
+                            <Value>1</Value>
+                            <DisplayString>1</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>2</Value>
+                            <DisplayString>2</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>3</Value>
+                            <DisplayString>3</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>4</Value>
+                            <DisplayString>4</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>5</Value>
+                            <DisplayString>5</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>6</Value>
+                            <DisplayString>6</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>7</Value>
+                            <DisplayString>7</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>8</Value>
+                            <DisplayString>8</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>9</Value>
+                            <DisplayString>9</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>10</Value>
+                            <DisplayString>10</DisplayString>
+                        </ValueMap>
+                    </ValueMap>
+                </StandardValues>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Contour_SmoothingOptions" typeName="int" displayLabel="Smoothing">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299500</Priority>
+                </PropertyPriority>
+                <StandardValues xmlns="EditorCustomAttributes.01.00">
+                    <ValueMap>
+                        <ValueMap>
+                            <Value>0</Value>
+                            <DisplayString>None</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>2</Value>
+                            <DisplayString>Spline</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>3</Value>
+                            <DisplayString>SplineWithoutOverlapDetection</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>1</Value>
+                            <DisplayString>Vertex</DisplayString>
+                        </ValueMap>
+                    </ValueMap>
+                </StandardValues>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Contour_MajorInterval" typeName="double" displayLabel="MajorInterval">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299300</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Standard>8</Standard>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Contour_MinorInterval" typeName="double" displayLabel="MinorInterval">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299200</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Standard>8</Standard>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECStructProperty propertyName="ContourMajor" typeName="ContourMajor_Class" displayLabel="MajorContours">
+            <ECCustomAttributes>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>900</Priority>
+                </PropertyPriority>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="ContourMinor" typeName="ContourMinor_Class" displayLabel="MinorContours">
+            <ECCustomAttributes>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>1000</Priority>
+                </PropertyPriority>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+            </ECCustomAttributes>
+        </ECStructProperty>
+    </ECClass>
+    <ECClass typeName="Triangle_Color_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECStructProperty propertyName="Value" typeName="bcc:DgnElementColor">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMElementColor</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+    </ECClass>
+    <ECClass typeName="Triangle_LineStyle_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="string">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMStyle</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="Triangle_LineWeight_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="int">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMWeight</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="Triangle_Materials_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="string" />
+        <ECProperty propertyName="Type" typeName="string">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="Triangle_Class" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="Triangle_Level" typeName="string" displayLabel="Level">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>ElementParams_TMLevelStruct</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECStructProperty propertyName="Triangle_Color" typeName="Triangle_Color_Class" displayLabel="Color">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299700</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>Color_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="Triangle_LineStyle" typeName="Triangle_LineStyle_Class" displayLabel="LineStyle">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299600</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>LineStyle_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="Triangle_LineWeight" typeName="Triangle_LineWeight_Class" displayLabel="Weight">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299500</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>LineWeight_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECProperty propertyName="Triangle_Transparency" typeName="double" displayLabel="Transparency">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>Transparency_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Value" typeName="string" displayLabel="ThematicDisplayStyle">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>ElementParams_TMDisplayStyle</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECStructProperty propertyName="Triangle_Materials" typeName="Triangle_Materials_Class" displayLabel="Material">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299100</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>ElementParams_MaterialStruct</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+    </ECClass>
+    <ECClass typeName="TriangleVertice_Color_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECStructProperty propertyName="Value" typeName="bcc:DgnElementColor">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMElementColor</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+    </ECClass>
+    <ECClass typeName="TriangleVertice_LineStyle_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="string">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMStyle</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="TriangleVertice_LineWeight_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="int">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMWeight</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="TriangleVertice_PointCellName_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="string" />
+        <ECProperty propertyName="Type" typeName="int">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="TriangleVertice_Class" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="TriangleVertice_Level" typeName="string" displayLabel="Level">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>ElementParams_TMLevelStruct</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECStructProperty propertyName="TriangleVertice_Color" typeName="TriangleVertice_Color_Class" displayLabel="Color">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299700</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>Color_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="TriangleVertice_LineStyle" typeName="TriangleVertice_LineStyle_Class" displayLabel="LineStyle">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299600</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>LineStyle_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="TriangleVertice_LineWeight" typeName="TriangleVertice_LineWeight_Class" displayLabel="Weight">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299500</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>LineWeight_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECProperty propertyName="TriangleVertice_Transparency" typeName="double" displayLabel="Transparency">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>Transparency_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECStructProperty propertyName="TriangleVertice_PointCellName" typeName="TriangleVertice_PointCellName_Class" displayLabel="PointType">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299300</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>ElementParams_ActivePointStruct</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECProperty propertyName="TriangleVertice_CellSize" typeName="double" displayLabel="CellScale">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299200</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="TriangleVertice_DisplaySpotText" typeName="boolean" displayLabel="DisplayText">
+            <ECCustomAttributes>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299100</Priority>
+                </PropertyPriority>
+                <RequiresReload xmlns="EditorCustomAttributes.01.00" />
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="TriangleVertice_SpotTextStyles" typeName="string" displayLabel="TextStyle">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>ElementParams_TMTextStyleStruct</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="TriangleVertice_SpotTextPrefix" typeName="string" displayLabel="TextPrefix">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>298900</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="TriangleVertice_SpotTextSuffix" typeName="string" displayLabel="TextSuffix">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>298800</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="FlowArrows_Color_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECStructProperty propertyName="Value" typeName="bcc:DgnElementColor">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMElementColor</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+    </ECClass>
+    <ECClass typeName="FlowArrows_LineStyle_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="string">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMStyle</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="FlowArrows_LineWeight_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="int">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMWeight</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="FlowArrows_PointCellName_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="string" />
+        <ECProperty propertyName="Type" typeName="int">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="FlowArrows_Class" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="FlowArrows_Level" typeName="string" displayLabel="Level">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>ElementParams_TMLevelStruct</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECStructProperty propertyName="FlowArrows_Color" typeName="FlowArrows_Color_Class" displayLabel="Color">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299700</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>Color_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="FlowArrows_LineStyle" typeName="FlowArrows_LineStyle_Class" displayLabel="LineStyle">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299600</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>LineStyle_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="FlowArrows_LineWeight" typeName="FlowArrows_LineWeight_Class" displayLabel="Weight">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299500</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>LineWeight_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECProperty propertyName="FlowArrows_Transparency" typeName="double" displayLabel="Transparency">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>Transparency_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECStructProperty propertyName="FlowArrows_PointCellName" typeName="FlowArrows_PointCellName_Class" displayLabel="ArrowType">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299300</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>ElementParams_ActivePointStruct</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECProperty propertyName="FlowArrows_CellSize" typeName="double" displayLabel="CellScale">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299200</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="LowPoints_Color_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECStructProperty propertyName="Value" typeName="bcc:DgnElementColor">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMElementColor</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+    </ECClass>
+    <ECClass typeName="LowPoints_LineStyle_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="string">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMStyle</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="LowPoints_LineWeight_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="int">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMWeight</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="LowPoints_PointCellName_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="string" />
+        <ECProperty propertyName="Type" typeName="int">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="LowPoints_Class" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="LowPoints_Level" typeName="string" displayLabel="Level">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>ElementParams_TMLevelStruct</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECStructProperty propertyName="LowPoints_Color" typeName="LowPoints_Color_Class" displayLabel="Color">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299700</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>Color_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="LowPoints_LineStyle" typeName="LowPoints_LineStyle_Class" displayLabel="LineStyle">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299600</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>LineStyle_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="LowPoints_LineWeight" typeName="LowPoints_LineWeight_Class" displayLabel="Weight">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299500</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>LineWeight_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECProperty propertyName="LowPoints_Transparency" typeName="double" displayLabel="Transparency">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>Transparency_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECStructProperty propertyName="LowPoints_PointCellName" typeName="LowPoints_PointCellName_Class" displayLabel="PointType">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299300</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>ElementParams_ActivePointStruct</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECProperty propertyName="LowPoints_CellSize" typeName="double" displayLabel="CellScale">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299200</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="LowPoints_WantText" typeName="boolean" displayLabel="DisplayText">
+            <ECCustomAttributes>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299100</Priority>
+                </PropertyPriority>
+                <RequiresReload xmlns="EditorCustomAttributes.01.00" />
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="LowPoints_TextStyle" typeName="string" displayLabel="TextStyle">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>ElementParams_TMTextStyleStruct</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="LowPoints_PrefixText" typeName="string" displayLabel="TextPrefix">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>298900</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="LowPoints_SuffixText" typeName="string" displayLabel="TextSuffix">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>298800</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="LowPoints_MinimumDepth" typeName="double" displayLabel="MinimumDepth">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>298700</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Standard>8</Standard>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="HighPoints_Color_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECStructProperty propertyName="Value" typeName="bcc:DgnElementColor">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMElementColor</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+    </ECClass>
+    <ECClass typeName="HighPoints_LineStyle_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="string">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMStyle</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="HighPoints_LineWeight_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="int">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMWeight</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="HighPoints_PointCellName_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="string" />
+        <ECProperty propertyName="Type" typeName="int">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="HighPoints_Class" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="HighPoints_Level" typeName="string" displayLabel="Level">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>ElementParams_TMLevelStruct</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECStructProperty propertyName="HighPoints_Color" typeName="HighPoints_Color_Class" displayLabel="Color">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299700</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>Color_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="HighPoints_LineStyle" typeName="HighPoints_LineStyle_Class" displayLabel="LineStyle">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299600</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>LineStyle_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="HighPoints_LineWeight" typeName="HighPoints_LineWeight_Class" displayLabel="Weight">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299500</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>LineWeight_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECProperty propertyName="HighPoints_Transparency" typeName="double" displayLabel="Transparency">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>Transparency_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECStructProperty propertyName="HighPoints_PointCellName" typeName="HighPoints_PointCellName_Class" displayLabel="PointType">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299300</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>ElementParams_ActivePointStruct</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECProperty propertyName="HighPoints_CellSize" typeName="double" displayLabel="CellScale">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299200</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="HighPoints_WantText" typeName="boolean" displayLabel="DisplayText">
+            <ECCustomAttributes>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299100</Priority>
+                </PropertyPriority>
+                <RequiresReload xmlns="EditorCustomAttributes.01.00" />
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="HighPoints_TextStyle" typeName="string" displayLabel="TextStyle">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>ElementParams_TMTextStyleStruct</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="HighPoints_PrefixText" typeName="string" displayLabel="TextPrefix">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>298900</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="HighPoints_SuffixText" typeName="string" displayLabel="TextSuffix">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>298800</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="SourceBreakline_Color_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECStructProperty propertyName="Value" typeName="bcc:DgnElementColor">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMElementColor</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+    </ECClass>
+    <ECClass typeName="SourceBreakline_LineStyle_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="string">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMStyle</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="SourceBreakline_LineWeight_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="int">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMWeight</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="SourceBreakline_Class" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="SourceBreakline_Level" typeName="string" displayLabel="Level">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>ElementParams_TMLevelStruct</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECStructProperty propertyName="SourceBreakline_Color" typeName="SourceBreakline_Color_Class" displayLabel="Color">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_SourceSettings</Name>
+                    <DisplayLabel>SourceFeatureSettings</DisplayLabel>
+                    <Description>SourceFeatureSettings</Description>
+                    <Priority>299600</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299700</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>Color_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="SourceBreakline_LineStyle" typeName="SourceBreakline_LineStyle_Class" displayLabel="LineStyle">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_SourceSettings</Name>
+                    <DisplayLabel>SourceFeatureSettings</DisplayLabel>
+                    <Description>SourceFeatureSettings</Description>
+                    <Priority>299600</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299600</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>LineStyle_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="SourceBreakline_LineWeight" typeName="SourceBreakline_LineWeight_Class" displayLabel="Weight">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_SourceSettings</Name>
+                    <DisplayLabel>SourceFeatureSettings</DisplayLabel>
+                    <Description>SourceFeatureSettings</Description>
+                    <Priority>299600</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299500</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>LineWeight_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECProperty propertyName="SourceBreakline_Transparency" typeName="double" displayLabel="Transparency">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>Transparency_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="SourceBoundary_Color_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECStructProperty propertyName="Value" typeName="bcc:DgnElementColor">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMElementColor</Name>
+                </ExtendType>
+           </ECCustomAttributes>
+        </ECStructProperty>
+    </ECClass>
+    <ECClass typeName="SourceBoundary_LineStyle_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="string">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMStyle</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="SourceBoundary_LineWeight_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="int">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMWeight</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="SourceBoundary_Class" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="SourceBoundary_Level" typeName="string" displayLabel="Level">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>ElementParams_TMLevelStruct</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECStructProperty propertyName="SourceBoundary_Color" typeName="SourceBoundary_Color_Class" displayLabel="Color">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_SourceSettings</Name>
+                    <DisplayLabel>SourceFeatureSettings</DisplayLabel>
+                    <Description>SourceFeatureSettings</Description>
+                    <Priority>299600</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299700</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>Color_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="SourceBoundary_LineStyle" typeName="SourceBoundary_LineStyle_Class" displayLabel="LineStyle">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_SourceSettings</Name>
+                    <DisplayLabel>SourceFeatureSettings</DisplayLabel>
+                    <Description>SourceFeatureSettings</Description>
+                    <Priority>299600</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299600</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>LineStyle_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="SourceBoundary_LineWeight" typeName="SourceBoundary_LineWeight_Class" displayLabel="Weight">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_SourceSettings</Name>
+                    <DisplayLabel>SourceFeatureSettings</DisplayLabel>
+                    <Description>SourceFeatureSettings</Description>
+                    <Priority>299600</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299500</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>LineWeight_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECProperty propertyName="SourceBoundary_Transparency" typeName="double" displayLabel="Transparency">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>Transparency_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="SourceContour_Color_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECStructProperty propertyName="Value" typeName="bcc:DgnElementColor">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMElementColor</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+    </ECClass>
+    <ECClass typeName="SourceContour_LineStyle_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="string">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMStyle</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="SourceContour_LineWeight_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="int">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMWeight</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="SourceContour_Class" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="SourceContour_Level" typeName="string" displayLabel="Level">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>ElementParams_TMLevelStruct</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECStructProperty propertyName="SourceContour_Color" typeName="SourceContour_Color_Class" displayLabel="Color">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_SourceSettings</Name>
+                    <DisplayLabel>SourceFeatureSettings</DisplayLabel>
+                    <Description>SourceFeatureSettings</Description>
+                    <Priority>299600</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299700</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>Color_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="SourceContour_LineStyle" typeName="SourceContour_LineStyle_Class" displayLabel="LineStyle">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_SourceSettings</Name>
+                    <DisplayLabel>SourceFeatureSettings</DisplayLabel>
+                    <Description>SourceFeatureSettings</Description>
+                    <Priority>299600</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299600</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>LineStyle_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="SourceContour_LineWeight" typeName="SourceContour_LineWeight_Class" displayLabel="Weight">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_SourceSettings</Name>
+                    <DisplayLabel>SourceFeatureSettings</DisplayLabel>
+                    <Description>SourceFeatureSettings</Description>
+                    <Priority>299600</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299500</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>LineWeight_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECProperty propertyName="SourceContour_Transparency" typeName="double" displayLabel="Transparency">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>Transparency_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="SourceIsland_Color_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECStructProperty propertyName="Value" typeName="bcc:DgnElementColor">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMElementColor</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+    </ECClass>
+    <ECClass typeName="SourceIsland_LineStyle_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="string">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMStyle</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="SourceIsland_LineWeight_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="int">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMWeight</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="SourceIsland_Class" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="SourceIsland_Level" typeName="string" displayLabel="Level">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>ElementParams_TMLevelStruct</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECStructProperty propertyName="SourceIsland_Color" typeName="SourceIsland_Color_Class" displayLabel="Color">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_SourceSettings</Name>
+                    <DisplayLabel>SourceFeatureSettings</DisplayLabel>
+                    <Description>SourceFeatureSettings</Description>
+                    <Priority>299600</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299700</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>Color_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="SourceIsland_LineStyle" typeName="SourceIsland_LineStyle_Class" displayLabel="LineStyle">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_SourceSettings</Name>
+                    <DisplayLabel>SourceFeatureSettings</DisplayLabel>
+                    <Description>SourceFeatureSettings</Description>
+                    <Priority>299600</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299600</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>LineStyle_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="SourceIsland_LineWeight" typeName="SourceIsland_LineWeight_Class" displayLabel="Weight">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_SourceSettings</Name>
+                    <DisplayLabel>SourceFeatureSettings</DisplayLabel>
+                    <Description>SourceFeatureSettings</Description>
+                    <Priority>299600</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299500</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>LineWeight_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECProperty propertyName="SourceIsland_Transparency" typeName="double" displayLabel="Transparency">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>Transparency_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="SourceHole_Color_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECStructProperty propertyName="Value" typeName="bcc:DgnElementColor">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMElementColor</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+    </ECClass>
+    <ECClass typeName="SourceHole_LineStyle_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="string">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMStyle</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="SourceHole_LineWeight_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="int">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMWeight</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="SourceHole_Class" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="SourceHole_Level" typeName="string" displayLabel="Level">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>ElementParams_TMLevelStruct</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECStructProperty propertyName="SourceHole_Color" typeName="SourceHole_Color_Class" displayLabel="Color">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_SourceSettings</Name>
+                    <DisplayLabel>SourceFeatureSettings</DisplayLabel>
+                    <Description>SourceFeatureSettings</Description>
+                    <Priority>299600</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299700</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>Color_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="SourceHole_LineStyle" typeName="SourceHole_LineStyle_Class" displayLabel="LineStyle">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_SourceSettings</Name>
+                    <DisplayLabel>SourceFeatureSettings</DisplayLabel>
+                    <Description>SourceFeatureSettings</Description>
+                    <Priority>299600</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299600</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>LineStyle_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="SourceHole_LineWeight" typeName="SourceHole_LineWeight_Class" displayLabel="Weight">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_SourceSettings</Name>
+                    <DisplayLabel>SourceFeatureSettings</DisplayLabel>
+                    <Description>SourceFeatureSettings</Description>
+                    <Priority>299600</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299500</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>LineWeight_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECProperty propertyName="SourceHole_Transparency" typeName="double" displayLabel="Transparency">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>Transparency_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="SourceVoid_Color_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECStructProperty propertyName="Value" typeName="bcc:DgnElementColor">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMElementColor</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+    </ECClass>
+    <ECClass typeName="SourceVoid_LineStyle_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="string">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMStyle</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="SourceVoid_LineWeight_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="int">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMWeight</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="SourceVoid_Class" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="SourceVoid_Level" typeName="string" displayLabel="Level">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>ElementParams_TMLevelStruct</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECStructProperty propertyName="SourceVoid_Color" typeName="SourceVoid_Color_Class" displayLabel="Color">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_SourceSettings</Name>
+                    <DisplayLabel>SourceFeatureSettings</DisplayLabel>
+                    <Description>SourceFeatureSettings</Description>
+                    <Priority>299600</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299700</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>Color_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="SourceVoid_LineStyle" typeName="SourceVoid_LineStyle_Class" displayLabel="LineStyle">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_SourceSettings</Name>
+                    <DisplayLabel>SourceFeatureSettings</DisplayLabel>
+                    <Description>SourceFeatureSettings</Description>
+                    <Priority>299600</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299600</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>LineStyle_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="SourceVoid_LineWeight" typeName="SourceVoid_LineWeight_Class" displayLabel="Weight">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_SourceSettings</Name>
+                    <DisplayLabel>SourceFeatureSettings</DisplayLabel>
+                    <Description>SourceFeatureSettings</Description>
+                    <Priority>299600</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299500</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>LineWeight_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECProperty propertyName="SourceVoid_Transparency" typeName="double" displayLabel="Transparency">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>Transparency_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="SourceSpot_Color_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECStructProperty propertyName="Value" typeName="bcc:DgnElementColor">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMElementColor</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+    </ECClass>
+    <ECClass typeName="SourceSpot_LineStyle_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="string">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMStyle</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="SourceSpot_LineWeight_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="int">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMWeight</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="SourceSpot_SpotSymbol_Class" isStruct="True" isDomainClass="True">
+        <BaseClass>CriteriaStruct</BaseClass>
+        <ECProperty propertyName="Value" typeName="string" />
+        <ECProperty propertyName="Type" typeName="int">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="SourceSpot_Class" isStruct="True" isDomainClass="True">
+        <ECProperty propertyName="SourceSpot_Level" typeName="string" displayLabel="Level">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>ElementParams_TMLevelStruct</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECStructProperty propertyName="SourceSpot_Color" typeName="SourceSpot_Color_Class" displayLabel="Color">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_SourceSettings</Name>
+                    <DisplayLabel>SourceFeatureSettings</DisplayLabel>
+                    <Description>SourceFeatureSettings</Description>
+                    <Priority>299600</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299300</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>Color_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="SourceSpot_LineStyle" typeName="SourceSpot_LineStyle_Class" displayLabel="LineStyle">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_SourceSettings</Name>
+                    <DisplayLabel>SourceFeatureSettings</DisplayLabel>
+                    <Description>SourceFeatureSettings</Description>
+                    <Priority>299600</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299200</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>LineStyle_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="SourceSpot_LineWeight" typeName="SourceSpot_LineWeight_Class" displayLabel="Weight">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_SourceSettings</Name>
+                    <DisplayLabel>SourceFeatureSettings</DisplayLabel>
+                    <Description>SourceFeatureSettings</Description>
+                    <Priority>299600</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299100</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>LineWeight_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECProperty propertyName="SourceSpot_Transparency" typeName="double" displayLabel="Transparency">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>Transparency_ExtendedType</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECStructProperty propertyName="SourceSpot_SpotSymbol" typeName="SourceSpot_SpotSymbol_Class" displayLabel="PointType">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_SourceSettings</Name>
+                    <DisplayLabel>SourceFeatureSettings</DisplayLabel>
+                    <Description>SourceFeatureSettings</Description>
+                    <Priority>299600</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>298900</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>ElementParams_ActivePointStruct</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECProperty propertyName="SourceSpot_CellScale" typeName="double" displayLabel="CellScale">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_SourceSettings</Name>
+                    <DisplayLabel>SourceFeatureSettings</DisplayLabel>
+                    <Description>SourceFeatureSettings</Description>
+                    <Priority>299600</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>298800</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="SourceSpot_WantText" typeName="boolean" displayLabel="DisplayText">
+            <ECCustomAttributes>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_SourceSettings</Name>
+                    <DisplayLabel>SourceFeatureSettings</DisplayLabel>
+                    <Description>SourceFeatureSettings</Description>
+                    <Priority>299600</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>298700</Priority>
+                </PropertyPriority>
+                <RequiresReload xmlns="EditorCustomAttributes.01.00" />
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="SourceSpot_SpotTextStyle" typeName="string" displayLabel="TextStyle">
+            <ECCustomAttributes>
+                <RequiresRefresh xmlns="EditorCustomAttributes.01.00" />
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>ElementParams_TMTextStyleStruct</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="SourceSpot_SpotTextPrefix" typeName="string" displayLabel="TextPrefix">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_SourceSettings</Name>
+                    <DisplayLabel>SourceFeatureSettings</DisplayLabel>
+                    <Description>SourceFeatureSettings</Description>
+                    <Priority>299600</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>298500</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="SourceSpot_SpotTextSuffix" typeName="string" displayLabel="TextSuffix">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_SourceSettings</Name>
+                    <DisplayLabel>SourceFeatureSettings</DisplayLabel>
+                    <Description>SourceFeatureSettings</Description>
+                    <Priority>299600</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>298400</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="DTMElement_TemplateExtender_Class" isDomainClass="True">
+        <ECCustomAttributes>
+            <DontShowNullProperties xmlns="EditorCustomAttributes.01.00" />
+        </ECCustomAttributes>
+        <ECProperty propertyName="ContoursDisplayed" typeName="boolean" displayLabel="Contours">
+            <ECCustomAttributes>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_DisplayTerrainModelFeaturesSettings</Name>
+                    <DisplayLabel>CalculatedFeaturesDisplay</DisplayLabel>
+                    <Description>CalculatedFeaturesDisplay</Description>
+                    <Priority>299900</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299900</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="TrianglesDisplayed" typeName="boolean" displayLabel="Triangles">
+            <ECCustomAttributes>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_DisplayTerrainModelFeaturesSettings</Name>
+                    <DisplayLabel>CalculatedFeaturesDisplay</DisplayLabel>
+                    <Description>CalculatedFeaturesDisplay</Description>
+                    <Priority>299900</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299800</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="TriangleVerticeDisplayed" typeName="boolean" displayLabel="TriangleVertices">
+            <ECCustomAttributes>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_DisplayTerrainModelFeaturesSettings</Name>
+                    <DisplayLabel>CalculatedFeaturesDisplay</DisplayLabel>
+                    <Description>CalculatedFeaturesDisplay</Description>
+                    <Priority>299900</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299700</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="FlowArrowsDisplayed" typeName="boolean" displayLabel="FlowArrows">
+            <ECCustomAttributes>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_DisplayTerrainModelFeaturesSettings</Name>
+                    <DisplayLabel>CalculatedFeaturesDisplay</DisplayLabel>
+                    <Description>CalculatedFeaturesDisplay</Description>
+                    <Priority>299900</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299500</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="LowPointsDisplayed" typeName="boolean" displayLabel="LowPoints">
+            <ECCustomAttributes>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_DisplayTerrainModelFeaturesSettings</Name>
+                    <DisplayLabel>CalculatedFeaturesDisplay</DisplayLabel>
+                    <Description>CalculatedFeaturesDisplay</Description>
+                    <Priority>299900</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299400</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="HighPointsDisplayed" typeName="boolean" displayLabel="HighPoints">
+            <ECCustomAttributes>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_DisplayTerrainModelFeaturesSettings</Name>
+                    <DisplayLabel>CalculatedFeaturesDisplay</DisplayLabel>
+                    <Description>CalculatedFeaturesDisplay</Description>
+                    <Priority>299900</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299300</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECStructProperty propertyName="Contour" typeName="Contour_Class" displayLabel="Contours">
+            <ECCustomAttributes>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10000</Priority>
+                </PropertyPriority>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="Triangle" typeName="Triangle_Class" displayLabel="Triangles">
+            <ECCustomAttributes>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>9000</Priority>
+                </PropertyPriority>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="TriangleVertice" typeName="TriangleVertice_Class" displayLabel="TriangleVertices">
+            <ECCustomAttributes>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>8000</Priority>
+                </PropertyPriority>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="FlowArrows" typeName="FlowArrows_Class">
+            <ECCustomAttributes>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>7000</Priority>
+                </PropertyPriority>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="LowPoints" typeName="LowPoints_Class">
+            <ECCustomAttributes>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>6000</Priority>
+                </PropertyPriority>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="HighPoints" typeName="HighPoints_Class">
+            <ECCustomAttributes>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>5000</Priority>
+                </PropertyPriority>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_FeatureSettings</Name>
+                    <DisplayLabel>CalculatedFeatureSettings</DisplayLabel>
+                    <Description>CalculatedFeatureSettings</Description>
+                    <Priority>299800</Priority>
+                </Category>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECProperty propertyName="LinearFeatureBreaklineDisplayed" typeName="boolean" displayLabel="Breakline">
+            <ECCustomAttributes>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_DisplaySourceSettings</Name>
+                    <DisplayLabel>SourceFeaturesDisplay</DisplayLabel>
+                    <Description>SourceFeaturesDisplay</Description>
+                    <Priority>299700</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299900</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="LinearFeatureBoundaryDisplayed" typeName="boolean" displayLabel="Boundary">
+            <ECCustomAttributes>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_DisplaySourceSettings</Name>
+                    <DisplayLabel>SourceFeaturesDisplay</DisplayLabel>
+                    <Description>SourceFeaturesDisplay</Description>
+                    <Priority>299700</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299800</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="LinearFeatureContourDisplayed" typeName="boolean" displayLabel="ImportedContours">
+            <ECCustomAttributes>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_DisplaySourceSettings</Name>
+                    <DisplayLabel>SourceFeaturesDisplay</DisplayLabel>
+                    <Description>SourceFeaturesDisplay</Description>
+                    <Priority>299700</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299700</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="LinearFeatureIslandDisplayed" typeName="boolean" displayLabel="Island">
+            <ECCustomAttributes>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_DisplaySourceSettings</Name>
+                    <DisplayLabel>SourceFeaturesDisplay</DisplayLabel>
+                    <Description>SourceFeaturesDisplay</Description>
+                    <Priority>299700</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299600</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="LinearFeatureHoleDisplayed" typeName="boolean" displayLabel="Hole">
+            <ECCustomAttributes>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_DisplaySourceSettings</Name>
+                    <DisplayLabel>SourceFeaturesDisplay</DisplayLabel>
+                    <Description>SourceFeaturesDisplay</Description>
+                    <Priority>299700</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299500</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="LinearFeatureVoidDisplayed" typeName="boolean" displayLabel="Void">
+            <ECCustomAttributes>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_DisplaySourceSettings</Name>
+                    <DisplayLabel>SourceFeaturesDisplay</DisplayLabel>
+                    <Description>SourceFeaturesDisplay</Description>
+                    <Priority>299700</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299400</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="LinearFeatureSpotDisplayed" typeName="boolean" displayLabel="Spot">
+            <ECCustomAttributes>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_DisplaySourceSettings</Name>
+                    <DisplayLabel>SourceFeaturesDisplay</DisplayLabel>
+                    <Description>SourceFeaturesDisplay</Description>
+                    <Priority>299700</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>299300</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECStructProperty propertyName="SourceBreakline" typeName="SourceBreakline_Class" displayLabel="Breakline">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_SourceSettings</Name>
+                    <DisplayLabel>SourceFeatureSettings</DisplayLabel>
+                    <Description>SourceFeatureSettings</Description>
+                    <Priority>299600</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>1000</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="SourceBoundary" typeName="SourceBoundary_Class" displayLabel="Boundary">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_SourceSettings</Name>
+                    <DisplayLabel>SourceFeatureSettings</DisplayLabel>
+                    <Description>SourceFeatureSettings</Description>
+                    <Priority>299600</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>900</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="SourceContour" typeName="SourceContour_Class" displayLabel="ImportedContours">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_SourceSettings</Name>
+                    <DisplayLabel>SourceFeatureSettings</DisplayLabel>
+                    <Description>SourceFeatureSettings</Description>
+                    <Priority>299600</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>800</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="SourceIsland" typeName="SourceIsland_Class" displayLabel="Island">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_SourceSettings</Name>
+                    <DisplayLabel>SourceFeatureSettings</DisplayLabel>
+                    <Description>SourceFeatureSettings</Description>
+                    <Priority>299600</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>700</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="SourceHole" typeName="SourceHole_Class" displayLabel="Hole">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_SourceSettings</Name>
+                    <DisplayLabel>SourceFeatureSettings</DisplayLabel>
+                    <Description>SourceFeatureSettings</Description>
+                    <Priority>299600</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>600</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="SourceVoid" typeName="SourceVoid_Class" displayLabel="Void">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_SourceSettings</Name>
+                    <DisplayLabel>SourceFeatureSettings</DisplayLabel>
+                    <Description>SourceFeatureSettings</Description>
+                    <Priority>299600</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>500</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECStructProperty propertyName="SourceSpot" typeName="SourceSpot_Class" displayLabel="Spot">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DTMElementExtender_SourceSettings</Name>
+                    <DisplayLabel>SourceFeatureSettings</DisplayLabel>
+                    <Description>SourceFeatureSettings</Description>
+                    <Priority>299600</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>400</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECStructProperty>
+    </ECClass>
+</ECSchema>

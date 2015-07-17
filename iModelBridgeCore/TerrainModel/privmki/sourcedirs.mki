@@ -1,0 +1,39 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: privmki/sourcedirs.mki $
+#
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%if defined (__SourceDirs_MKI__)
+    %warn SourceDirs.mki is being included redundantly in $(_MakeFileSpec)
+    %return
+%endif
+__SourceDirs_MKI__=1
+
+
+#----------------------------------------------------------
+#   Top level directories
+#----------------------------------------------------------
+SrcTerrainModel               =       $(SrcRoot)TerrainModel/
+TerrainModelCoreDir           =       $(SrcTerrainModel)core/
+TerrainModelCoreNetDir        =       $(SrcTerrainModel)CoreNet/
+TerrainModelFormatsDir        =       $(SrcTerrainModel)formats/
+TerrainModelDrainageDir       =       $(SrcTerrainModel)drainage/
+TerrainModelSTMDir            =       $(SrcTerrainModel)stm/
+TerrainModelElementHandlerDir =       $(SrcTerrainModel)elementHandler/
+#PlatformToolsDir             =       $(SrcDgnPlatform)PlatformTools/
+#PrivateApiSrc                =       $(SrcDgnPlatform)PrivateApi/
+privmki                       =       $(SrcDgnPlatform)privmki/
+
+
+#------------------------------------------------------
+# Header file locations in source tree
+#------------------------------------------------------
+TerrainModelPublicAPISrc    =  $(SrcTerrainModel)PublicAPI/
+TerrainModelAPISrc          =  $(TerrainModelPublicAPISrc)TerrainModel/
+TerrainModelCoreAPISrc      =  $(TerrainModelCoreDir)PublicAPI/
+TerrainModelFormatsAPISrc   =  $(TerrainModelFormatsDir)PublicAPI/
+TerrainModelDrainageAPISrc   =  $(TerrainModelDrainageDir)PublicAPI/
+TerrainModelSTMAPISrc   =  $(TerrainModelSTMDir)PublicAPI/
+TerrainModelElementHandlerAPISrc   =  $(TerrainModelElementHandlerDir)PublicAPI/

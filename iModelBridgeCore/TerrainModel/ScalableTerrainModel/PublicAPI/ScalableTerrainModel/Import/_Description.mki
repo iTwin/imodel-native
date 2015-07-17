@@ -1,0 +1,161 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: ScalableTerrainModel/PublicAPI/ScalableTerrainModel/Import/_Description.mki $
+#
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+%if defined (__ImportPublicAPIDescriptionMki__)
+    %return
+%endif
+__ImportPublicAPIDescriptionMki__ = 1
+
+%include $(BuildContext)PublicAPI/Foundations/_Description.mki
+%include $(BuildContext)PublicAPI/Memory/_Description.mki
+%include $(BuildContext)PublicAPI/GeoCoords/_Description.mki
+
+# 1st level
+ImportPublicAPILocation = $(BuildContext)PublicAPI/Import/
+
+# 2th level
+ImportCommandPublicAPILocation = $(ImportPublicAPILocation)Command/
+ImportConfigPublicAPILocation = $(ImportPublicAPILocation)Config/
+ImportErrorPublicAPILocation = $(ImportPublicAPILocation)Error/
+ImportPluginPublicAPILocation = $(ImportPublicAPILocation)Plugin/
+
+# 3th level
+ImportConfigContentPublicAPILocation = $(ImportConfigPublicAPILocation)Content/
+
+
+#----------------------------------------------------------------------
+#   Non-recursive listing
+#----------------------------------------------------------------------
+ImportPublicAPIListing = \
+    $(ImportPublicAPILocation)Attachment.h \
+    $(ImportPublicAPILocation)ContentConfig.h \
+    $(ImportPublicAPILocation)ContentConfigVisitor.h \
+    $(ImportPublicAPILocation)ContentDescriptor.h \
+    $(ImportPublicAPILocation)ContentDescriptor.hpp \
+    $(ImportPublicAPILocation)CustomFilterFactory.h \
+    $(ImportPublicAPILocation)DataType.h \
+    $(ImportPublicAPILocation)DataTypeDescription.h \
+    $(ImportPublicAPILocation)DataTypeFamily.h \
+    $(ImportPublicAPILocation)Definitions.h \
+    $(ImportPublicAPILocation)Exceptions.h \
+    $(ImportPublicAPILocation)ExtractionConfig.h \
+    $(ImportPublicAPILocation)Filter.h \
+    $(ImportPublicAPILocation)FilterFactory.h \
+    $(ImportPublicAPILocation)FilteringConfig.h \
+    $(ImportPublicAPILocation)ImportConfig.h \
+    $(ImportPublicAPILocation)ImportConfigVisitor.h \
+    $(ImportPublicAPILocation)Importer.h \
+    $(ImportPublicAPILocation)ImportPolicy.h \
+    $(ImportPublicAPILocation)ImportSequence.h \
+    $(ImportPublicAPILocation)ImportSequenceVisitor.h \
+    $(ImportPublicAPILocation)Metadata.h \
+    $(ImportPublicAPILocation)Source.h \
+    $(ImportPublicAPILocation)SourceReference.h \
+    $(ImportPublicAPILocation)SourceReferenceVisitor.h \
+    $(ImportPublicAPILocation)Warnings.h
+
+
+ImportCommandPublicAPIListing = \
+    $(ImportCommandPublicAPILocation)All.h \
+    $(ImportCommandPublicAPILocation)Base.h \
+    $(ImportCommandPublicAPILocation)ImportAll.h \
+    $(ImportCommandPublicAPILocation)ImportAllToLayer.h \
+    $(ImportCommandPublicAPILocation)ImportAllToLayerType.h \
+    $(ImportCommandPublicAPILocation)ImportAllToType.h \
+    $(ImportCommandPublicAPILocation)ImportLayer.h \
+    $(ImportCommandPublicAPILocation)ImportLayerToLayer.h \
+    $(ImportCommandPublicAPILocation)ImportLayerToLayerType.h \
+    $(ImportCommandPublicAPILocation)ImportLayerToType.h \
+    $(ImportCommandPublicAPILocation)ImportLayerType.h \
+    $(ImportCommandPublicAPILocation)ImportLayerTypeToLayer.h \
+    $(ImportCommandPublicAPILocation)ImportLayerTypeToLayerType.h \
+    $(ImportCommandPublicAPILocation)ImportLayerTypeToType.h \
+    $(ImportCommandPublicAPILocation)ImportType.h \
+    $(ImportCommandPublicAPILocation)ImportTypeToLayer.h \
+    $(ImportCommandPublicAPILocation)ImportTypeToLayerType.h \
+    $(ImportCommandPublicAPILocation)ImportTypeToType.h
+
+
+
+ImportConfigPublicAPIListing = \
+    $(ImportConfigPublicAPILocation)All.h \
+    $(ImportConfigPublicAPILocation)Attachments.h \
+    $(ImportConfigPublicAPILocation)Base.h \
+    $(ImportConfigPublicAPILocation)DefaultSourceGCS.h \
+    $(ImportConfigPublicAPILocation)DefaultTargetGCS.h \
+    $(ImportConfigPublicAPILocation)DefaultTargetLayer.h \
+    $(ImportConfigPublicAPILocation)DefaultTargetType.h \
+    $(ImportConfigPublicAPILocation)Extraction.h \
+    $(ImportConfigPublicAPILocation)Filtering.h \
+    $(ImportConfigPublicAPILocation)SourceFilters.h \
+    $(ImportConfigPublicAPILocation)TargetFilters.h
+
+ImportConfigContentPublicAPIListing = \
+    $(ImportConfigContentPublicAPILocation)All.h \
+    $(ImportConfigContentPublicAPILocation)Base.h \
+    $(ImportConfigContentPublicAPILocation)GCS.h \
+    $(ImportConfigContentPublicAPILocation)Layer.h \
+    $(ImportConfigContentPublicAPILocation)Type.h
+
+ImportErrorPublicAPIListing = \
+    $(ImportErrorPublicAPILocation)Source.h 
+
+ImportPluginPublicAPIListing = \
+    $(ImportPluginPublicAPILocation)CustomFilterFactoryV0.h \
+    $(ImportPluginPublicAPILocation)DataTypeFamilyV0.h \
+    $(ImportPluginPublicAPILocation)DataTypeRegistry.h \
+    $(ImportPluginPublicAPILocation)DataTypeV0.h \
+    $(ImportPluginPublicAPILocation)ExtractorRegistry.h \
+    $(ImportPluginPublicAPILocation)FilterV0.h \
+    $(ImportPluginPublicAPILocation)InputExtractorV0.h \
+    $(ImportPluginPublicAPILocation)PacketBinderV0.h \
+    $(ImportPluginPublicAPILocation)RegistryTools.h \
+    $(ImportPluginPublicAPILocation)ReprojectionFilterRegistry.h \
+    $(ImportPluginPublicAPILocation)ReprojectionFilterV0.h \
+    $(ImportPluginPublicAPILocation)SourceReferenceV0.h \
+    $(ImportPluginPublicAPILocation)SourceRegistry.h \
+    $(ImportPluginPublicAPILocation)SourceV0.h \
+    $(ImportPluginPublicAPILocation)TypeConversionFilterRegistry.h \
+    $(ImportPluginPublicAPILocation)TypeConversionFilterV0.h
+
+    
+#----------------------------------------------------------------------
+#   Recursive listing
+#----------------------------------------------------------------------
+ImportPublicAPIRecursiveListing = \
+    $(ImportPublicAPIListing) \
+    $(ImportCommandPublicAPIListing) \
+    $(ImportConfigPublicAPIListing) \
+    $(ImportConfigContentPublicAPIListing) \
+    $(ImportErrorPublicAPIListing) \
+    $(ImportPluginPublicAPIListing)
+
+ImportCommandPublicAPIRecursiveListing = \
+    $(ImportCommandPublicAPIListing) 
+
+ImportConfigPublicAPIRecursiveListing = \
+    $(ImportConfigPublicAPIListing) \
+    $(ImportConfigContentPublicAPIListing)
+
+ImportConfigContentPublicAPIRecursiveListing = \
+    $(ImportConfigContentPublicAPIListing)
+
+ImportErrorPublicAPIRecursiveListing = \
+    $(ImportErrorPublicAPIListing)
+
+ImportPluginPublicAPIRecursiveListing = \
+    $(ImportPluginPublicAPIListing)
+
+#----------------------------------------------------------------------
+#   Full recursive listing with dependencies
+#----------------------------------------------------------------------
+ImportPublicAPIFullListing = \
+    $(ImportPublicAPIRecursiveListing) \
+    $(GeoCoordsPublicAPIRecursiveListing) \
+    $(MemoryPublicAPIRecursiveListing) \
+    $(FoundationsPublicAPIRecursiveListing)
+

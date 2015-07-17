@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\bsicommon\build\PartFile.xsd" >
+
+    <Part Name="ExternalDependencies">
+        <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley" />
+    </Part>
+
+    <Part Name="HeaderFiles" BMakeFile="TerrainModel.prewire.mke" >
+        <SubPart PartName="Base" PartFile="Bentley" Repository="Bentley" />
+        <SubPart PartName="HeaderFiles"  PartFile="geomlibs"                            Repository="GeomLibs" />
+        <Bindings>
+            <PublicAPI Domain="TerrainModel" />
+        </Bindings>
+    </Part>
+
+    <Part Name="Core" BMakeFile="core\core.mke">
+        <SubPart PartName="HeaderFiles"/>
+        <SubPart PartName="GeomDlls" PartFile="geomlibs" Repository="GeomLibs" />
+        <Bindings>
+            <Files ProductDirectoryName="TerrainModelNativeAssemblies">Delivery/$(shlibprefix)TerrainModelCore$(shlibext)</Files>
+            <Libs ProductDirectoryName="TerrainModelNativeCoreLibs" Required="false"> Delivery/$(libprefix)TerrainModelCore$(libext)</Libs>
+        </Bindings>
+    </Part>
+
+    <!--<Part Name="inroadstm" BMakeFile="formats\inroadstm\inroadstm.mke">
+        <SubPart PartName="GeomDlls" PartFile="geomlibs" Repository="GeomLibs" />
+        <Bindings>
+            <Files ProductDirectoryName="TerrainModelNativeAssemblies">Delivery/$(shlibprefix)inroadstm$(shlibext)</Files>
+            <Libs> Delivery/$(libprefix)inroadstm$(libext)</Libs>
+        </Bindings>
+    </Part>-->
+
+    <Part Name="Formats" BMakeFile="formats\formats.mke">
+        <!--<SubPart PartName="InRoadsTM" LibType="Static" />-->
+        <SubPart PartName="Core" />
+        <SubPart PartName="BeXmlDll"         PartFile="BeLibxml2"  Repository="libsrc-libxml2" />
+        <SubPart PartName="HeaderFiles"      PartFile="BeLibxml2"  Repository="libsrc-libxml2" />
+        <SubPart PartName="BeLibxml2Dll"     PartFile="BeLibxml2"  Repository="libsrc-libxml2" />
+        <SubPart PartName="GeoCoord"   PartFile="GeoCoord"   Repository="GeoCoord" />	
+        <SubPart PartName="IppUtlDll"  PartFile="ImagePP" Repository="ImagePP" />
+        <SubPart PartName="IppGraDll"  PartFile="ImagePP" Repository="ImagePP" />
+        <Bindings>
+            <Files ProductDirectoryName="TerrainModelNativeAssemblies" >Delivery\$(shlibprefix)TerrainModelFormats$(shlibext)</Files>
+            <Libs>Delivery\$(libprefix)TerrainModelFormats$(libext)</Libs>
+        </Bindings>
+    </Part>
+
+    <Part Name="STM" BMakeFile="stm\stm.mke">
+        <SubPart PartName="Core" />
+        <SubPart PartName="ImagePP" PartFile="ImagePP" Repository="ImagePP" />
+        <!-- Bindings>
+      <Assemblies ProductDirectoryName="TerrainModelNativeAssemblies">Delivery\$(shlibprefix)TerrainModelDrainage$(shlibext)</Assemblies>
+      <Libs>Delivery\$(libprefix)TerrainModelDrainage$(libext)</Libs>
+    </Bindings -->
+    </Part>
+
+    <!--Part Name="Drainage" BMakeFile="drainage\drainage.mke">
+        <SubPart PartName="Core" />
+        <Bindings>
+            <Files ProductDirectoryName="TerrainModelNativeAssemblies">Delivery\$(shlibprefix)TerrainModelDrainage$(shlibext)</Files>
+            <Libs>Delivery\$(libprefix)TerrainModelDrainage$(libext)</Libs>
+        </Bindings>
+    </Part-->
+
+    <Part Name="TerrainModelNET" BMakeFile="terrainModelNET\terrainModelNET.mke">
+        <SubPart PartName="Core"/>
+        <SubPart PartName="BentleyGeometryNetAssembly" PartFile="BentleyGeometryNet" Repository="BentleyGeometryNET"/>
+        <Bindings>
+            <Assemblies ProductDirectoryName="TerrainModelNetAssemblies">Delivery/Bentley.TerrainModelNET.dll</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="FormatsNET" BMakeFile="FormatsNET\FormatsNET.mke">
+        <SubPart PartName="Core"/>
+        <SubPart PartName="Formats"/>
+        <SubPart PartName="TerrainModelNET"/>
+        <SubPart PartName="GeoCoordManaged"              PartFile="GeoCoord"           Repository="GeoCoord" />
+        <SubPart PartName="BentleyGeometryNetAssembly" PartFile="BentleyGeometryNet" Repository="BentleyGeometryNET"/>
+        <Bindings>
+            <Assemblies ProductDirectoryName="TerrainModelNetAssemblies">Delivery/Bentley.TerrainModelNET.Formats.dll</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="ScalableTerrainModel" BMakeFile="ScalableTerrainModel\ScalableTerrainModel.mke">
+        <SubPart PartName="GeomDlls"        PartFile="geomlibs"                             Repository="GeomLibs"/>
+        <SubPart PartName="ImagePP"         PartFile="ImagePP"                              Repository="ImagePP" />
+        <SubPart PartName="Core"            PartFile="TerrainModel"                         Repository="TerrainModel"/>
+        <SubPart PartName="Formats"         PartFile="TerrainModel"                         Repository="TerrainModel"/>
+        <Bindings>
+            <Libs>delivery/$(shlibprefix)ScalableTerrainModel$(libext)</Libs>    
+            <Assemblies ProductDirectoryName="TerrainModelNativeAssemblies">delivery/$(shlibprefix)ScalableTerrainModel$(shlibext)</Assemblies> 
+            <PublicAPI Domain="ScalableTerrainModel" />
+        </Bindings>
+    </Part>
+
+    <Part Name="ConsoleApps" BMakeFile="consoleApps\consoleApps.mke" >
+        <SubPart PartName="Core" />
+        <SubPart PartName="Formats" />
+        <Bindings>
+            <Files ProductDirectoryName="TerrainModelNativeAssemblies">Delivery/bctin.exe</Files>
+            <Files ProductDirectoryName="TerrainModelNativeAssemblies">Delivery/bcload.exe</Files>
+            <Files ProductDirectoryName="TerrainModelNativeAssemblies">Delivery/bcclip.exe</Files>
+            <Files ProductDirectoryName="TerrainModelNativeAssemblies">Delivery/bcdrainage.exe</Files>
+            <Files ProductDirectoryName="TerrainModelNativeAssemblies">Delivery/bcVolume.exe</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="TestDependencies">
+        <SubPart PartName="nunit_2.5.10" PartFile="${SrcBsiCommon}CvsPartFiles\bsitools" Repository="bsitools-nunit_2.5.10" />
+        <SubPart PartName="HeaderFiles" />
+    </Part>
+
+    <Part Name="TerrainModelTestData"  BMakeFile="Tests\TerrainModelTests.prewire.mke" >
+        <RequiredRepository>TerrainModelTestData</RequiredRepository>
+        <RequiredRepository>TerrainModelLightTestData</RequiredRepository>
+        <Bindings>
+            <Directory ProductDirectoryName="TerrainModelTestData" SourceName="TestData" />
+        </Bindings>
+    </Part>
+
+    <Part Name="RunTerrainModelNetTests" BMakeFile="Tests\TerrainModelNetTests\RunTerrainModelTests.mke">
+
+    </Part>
+
+    <Part Name="RunTerrainModelTests" BMakeFile="Tests\TerrainModelTests\RunBentleyTest.mke">
+        <SubPart PartName="TerrainModelTestData" />
+        <SubPart PartName="Formats" />
+        <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest"/>
+        <SubPart PartName="google_gtest"        PartFile="gtest"            Repository="util-gtest" />
+        <SubPart PartName="google_gtest_lib"    PartFile="gtest"            Repository="util-gtest" />
+        <SubPart PartName="UnitTests_Published" PartFile="BentleyUnitTests" Repository="BentleyUnitTests"/>
+   </Part>
+
+    <Part Name="BuildTerrainModelNetTests" BMakeFile="Tests\TerrainModelNetTests\BuildTerrainModelTests.mke" >
+        <SubPart PartName="TerrainModelTestData" />
+        <SubPart PartName="TestDependencies"/>
+        <SubPart PartName="TerrainModelNET" />
+        <SubPart PartName="FormatsNET" />
+        <Bindings>
+            <Assemblies ProductDirectoryName="managedtests">
+                Delivery\Bentley.TerrainModelNET.Tests.dll
+            </Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="BuildTerrainModelTests" BMakeFile="Tests\TerrainModelTests\BuildTerrainModelTests.mke" >
+        <SubPart PartName="TerrainModelTestData" />
+        <SubPart PartName="TestDependencies"/>
+        <SubPart PartName="TerrainModelNET" />
+        <SubPart PartName="FormatsNET" />
+
+        <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest"/>
+        <SubPart PartName="google_gtest"        PartFile="gtest"            Repository="util-gtest" />
+        <SubPart PartName="google_gtest_lib"    PartFile="gtest"            Repository="util-gtest" />
+        <SubPart PartName="UnitTests_Published" PartFile="BentleyUnitTests" Repository="BentleyUnitTests"/>
+
+        <Bindings>
+            <Assemblies ProductDirectoryName="managedtests">
+                Delivery\TerrainModelTest_Published.dll
+            </Assemblies>
+        </Bindings>
+    </Part>
+
+    
+    <Part Name="TerrainModel"  PrgOutputDir="TerrainModel">
+        <SubPart PartName="Core" />
+        <SubPart PartName="TerrainModelNET" />
+        <SubPart PartName="Formats" />
+        <SubPart PartName="FormatsNET" />
+        <SubPart PartName="ScalableTerrainModel" />
+    </Part>
+
+    <Part Name="FullProduct"  PrgOutputDir="TerrainModel">
+        <SubPart PartName="TerrainModel" />
+        <SubPart PartName="ConsoleApps" />
+        <SubProduct ProductName="TerrainModelTest" />
+        <!--SubPart PartName="Core" LibType="Static"/>
+        <SubPart PartName="Formats" LibType="Static"/>
+        <SubPart PartName="ConsoleApps" LibType="Static" /-->
+
+    </Part>
+
+    <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+    <!-- Must have a product available to run the executable from. -->
+    <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
+
+    <ProductDirectoryList ListName="TerrainModelTest">
+        <ProductDirectory Name="Libs"                               Path="lib" Deliver="false" />
+        <ProductDirectory Name="PublicAPI"                          Deliver="false" />
+        <ProductDirectory Name="VendorAPI"                          Deliver="false" />
+        <ProductDirectory Name="BentleyNativeAssemblies"            Path="Tests"/>
+        <ProductDirectory Name="BentleyGeometryNetAssemblies"       Path="Tests"/>
+        <ProductDirectory Name="GeomNativeAssemblies"               Path="Tests"/>
+        <ProductDirectory Name="LoggingNativeAssemblies"            Path="Tests"/>
+        <ProductDirectory Name="PlatformTechAssemblies"             Path="Tests"/>
+        <ProductDirectory Name="LoggingManagedAssemblies"           Path="Tests"/>
+        <ProductDirectory Name="ImagePPAssemblies"                  Path="Tests"/>
+        <ProductDirectory Name="GeoCoordNativeAssemblies"           Path="Tests"/>
+        <ProductDirectory Name="GeoCoordManagedAssemblies"          Path="Tests"/>
+
+        <ProductDirectory Name="RmgrToolsNativeAssemblies"          Path="Tests"/>
+        <ProductDirectory Name="GeoCoordData"                       Path="Tests/GeoCoordData"/>
+
+
+        <ProductDirectory Name="TerrainModelNetAssemblies"          Path="Tests"/>
+        <ProductDirectory Name="TerrainModelNativeAssemblies"       Path="Tests"/>
+        <ProductDirectory Name="TerrainModelConsole"                Path="Tests"/>
+
+        <ProductDirectory Name="NUnit 2.5.10 binaries"               Path="" />
+        <ProductDirectory Name="NUnit 2.5.10 core references"        Path="Tests"/>
+        <ProductDirectory Name="managedtests"                        Path="Tests"/>
+        <ProductDirectory Name="TerrainModelTestData"                Path="Tests\Data"/>
+
+        <ProductDirectory Name="CSMapMergeModules"                Deliver="false"/>
+    
+        
+        <ProductDirectory Name="ECSchemas"  Deliver="false" />
+        <ProductDirectory Name="ECObjectsManagedAssemblies"  Deliver="false" />
+        
+        <ProductDirectory Name="AdobeResource"  Deliver="false" />
+        <ProductDirectory Name="AdobeAssemblies"  Deliver="false" />
+        <ProductDirectory Name="PdfLibinitNativeAssemblies"  Deliver="false" />
+
+        <ProductDirectory Name="PublicAPI"  LibType="static"  Deliver="false" />
+        <ProductDirectory Name="RmgrToolsNativeAssemblies"  LibType="static"  Deliver="false" />
+        <ProductDirectory Name="BentleyNativeAssemblies"  LibType="static"  Deliver="false" />
+        <ProductDirectory Name="VendorAPI"  LibType="static"  Deliver="false" />
+        <ProductDirectory Name="Libs"  LibType="static"  Deliver="false" />
+
+        
+        <ProductDirectory Name="TestBin"         Path="Tests"/>
+        <ProductDirectory Name="TestBin" LibType="static" Deliver="false" />
+
+    </ProductDirectoryList>
+
+    <Product Name="TerrainModelTest" >
+        <!--SubProduct ProductName="MicroStationProduct" PartFile="derivative\Mstn\Mstn" Repository="MstnPlatform" /-->
+        <SubPart PartName="ConsoleApps" />
+        <SubPart PartName="TerrainModelNET" />
+        <SubPart PartName="BuildTerrainModelTests" />
+        <SubPart PartName="BuildTerrainModelNETTests" />
+
+        <SubPart PartName="TestRunner"        PartFile="gtest"                      Repository="util-gtest"/>
+
+        <!-- SubPart PartName="ConsoleApps" LibType="Static" /-->
+        <Directories DirectoryListName="TerrainModelTest" />
+    </Product>
+
+</BuildContext>

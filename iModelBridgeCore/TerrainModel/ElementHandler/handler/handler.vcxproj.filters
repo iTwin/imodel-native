@@ -1,0 +1,229 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="DTMDisplayHandlers.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="DTMPropertyEnabler.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="DTMTextDrawer.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Stdafx.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="DTMDisplayUtils.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="DTMElementDisplayHandler.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="DTMDataRef.cpp">
+      <Filter>Source\DTMData</Filter>
+    </ClCompile>
+    <ClCompile Include="DTMElementHandlerManager.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\app\handlerApp.cpp">
+      <Filter>HandlerApp</Filter>
+    </ClCompile>
+    <ClCompile Include="DTMContourDisplayHandler.cpp">
+      <Filter>Source\SubDisplayHandlers</Filter>
+    </ClCompile>
+    <ClCompile Include="DTMFeaturesDisplayHandler.cpp">
+      <Filter>Source\SubDisplayHandlers</Filter>
+    </ClCompile>
+    <ClCompile Include="DTMFeatureSpotsDisplayHandler.cpp">
+      <Filter>Source\SubDisplayHandlers</Filter>
+    </ClCompile>
+    <ClCompile Include="DTMFlowArrowsDisplayHandler.cpp">
+      <Filter>Source\SubDisplayHandlers</Filter>
+    </ClCompile>
+    <ClCompile Include="DTMHighPointsDisplayHandler.cpp">
+      <Filter>Source\SubDisplayHandlers</Filter>
+    </ClCompile>
+    <ClCompile Include="DTMLowPointsDisplayHandler.cpp">
+      <Filter>Source\SubDisplayHandlers</Filter>
+    </ClCompile>
+    <ClCompile Include="DTMRasterDrapingDisplayHandler.cpp">
+      <Filter>Source\SubDisplayHandlers</Filter>
+    </ClCompile>
+    <ClCompile Include="DTMTriangleDisplayHandler.cpp">
+      <Filter>Source\SubDisplayHandlers</Filter>
+    </ClCompile>
+    <ClCompile Include="DTMSpotsDisplayHandler.cpp">
+      <Filter>Source\SubDisplayHandlers</Filter>
+    </ClCompile>
+    <ClCompile Include="DTMDataRefXAttribute.cpp">
+      <Filter>Source\DTMData</Filter>
+    </ClCompile>
+    <ClCompile Include="DTMElementSubDisplayHandler.cpp">
+      <Filter>Source\SubDisplayHandlers</Filter>
+    </ClCompile>
+    <ClCompile Include="DTMXAttributeHandler.cpp">
+      <Filter>Source\DTMData</Filter>
+    </ClCompile>
+    <ClCompile Include="DTMDataRefCachingManager.cpp">
+      <Filter>Source\DTMData</Filter>
+    </ClCompile>
+    <ClCompile Include="..\app\handlerAppManaged.cpp">
+      <Filter>HandlerApp</Filter>
+    </ClCompile>
+    <ClCompile Include="TMReferenceXAttributeHandler.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="DTMSymbologyOverrideManager.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="DTMExternalDataUndoRedo.cpp">
+      <Filter>STM</Filter>
+    </ClCompile>
+    <ClCompile Include="IMrDTMProgressiveDisplay.cpp">
+      <Filter>STM</Filter>
+    </ClCompile>
+    <ClCompile Include="MrDTMDataRef.cpp">
+      <Filter>STM</Filter>
+    </ClCompile>
+    <ClCompile Include="MrDTMXAttributeHandler.cpp">
+      <Filter>STM</Filter>
+    </ClCompile>
+    <ClCompile Include="STMDataRefCacheManager.cpp">
+      <Filter>STM</Filter>
+    </ClCompile>
+    <ClCompile Include="RasterTextureSourceManager.cpp">
+      <Filter>STM</Filter>
+    </ClCompile>
+    <ClCompile Include="RasterTextureSource.cpp">
+      <Filter>STM</Filter>
+    </ClCompile>
+    <ClCompile Include="MultiResolutionGridMaterialManager.cpp">
+      <Filter>STM</Filter>
+    </ClCompile>
+    <ClCompile Include="DTMPointDrawer.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="DTMDisplayHandlers.h">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="StdAfx.h">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="DTMDisplayUtils.h">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="DTMDrawingInfo.h">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="DTMPointDrawer.h">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="DTMPropertyEnabler.h">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="DTMTextDrawer.h">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="DTMUnitsConverter.h">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\app\handlerApp.h">
+      <Filter>HandlerApp\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="DTMDataRefXAttribute.h">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DTMDataRef.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DTMElementHandlerManager.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="DTMDataRefCachingManager.h">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="DTMXAttributeHandler.h">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\TMReferenceXAttributeHandler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\DTMSymbologyOverrideManager.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\TerrainModelElementHandler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\TMElementDisplayHandler.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\TMHandlersResource.r.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\TMHandlersResources.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="DTMExternalDataUndoRedo.h">
+      <Filter>STM</Filter>
+    </ClInclude>
+    <ClInclude Include="MrDTMDataRef.h">
+      <Filter>STM</Filter>
+    </ClInclude>
+    <ClInclude Include="MrDTMXAttributeHandler.h">
+      <Filter>STM</Filter>
+    </ClInclude>
+    <ClInclude Include="STMDataRefCacheManager.h">
+      <Filter>STM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\IMrDTMProgressiveDisplay.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\IMrDTMDataRef.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\IRasterTextureSourceManager.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\IRasterTextureSource.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\IMultiResolutionGridMaterialManager.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="handler.mke" />
+    <None Include="handler.mki" />
+    <None Include="..\app\app.mke">
+      <Filter>HandlerApp</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Includes">
+      <UniqueIdentifier>{cf49392a-2e14-4c54-af45-6ba727d8727c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source">
+      <UniqueIdentifier>{f7b523dc-bcc2-4d45-9e1b-ffc07c7eedeb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="HandlerApp">
+      <UniqueIdentifier>{ded1f059-cc15-4934-8d6a-a37d33152ffb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="HandlerApp\Headers">
+      <UniqueIdentifier>{c1eebeee-5e97-497d-a7df-b280fafd00ba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="PublicAPI">
+      <UniqueIdentifier>{0b1d8085-043d-4313-9a69-a90e916bb58c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\SubDisplayHandlers">
+      <UniqueIdentifier>{2f94a845-c095-4d69-9759-665f0066f468}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\DTMData">
+      <UniqueIdentifier>{52194595-1379-41f2-bb56-8837f467d0a6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="STM">
+      <UniqueIdentifier>{21afdcdf-e09a-410b-be2d-a1143dcebcdb}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

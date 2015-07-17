@@ -1,0 +1,201 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: ElementHandler/app/app.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+
+baseDir         = $(_MakeFilePath)
+PolicyFile      = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelElementPolicy.mki
+#SolutionPolicyMki=$(baseDir)TerrainModelElementHandlerApp.mki
+
+appendMacroSeparator=;
+PolicyPaths+$(BuildContext)SubParts/Assemblies/
+%undef appendMacroSeparator
+
+%include  mdl.mki
+
+## Could be in solution policy file..
+
+terrainModelHandlerAppObj = $(terrainModelBuildDir_)TerrainModelHandlerApp/
+
+OPTIMIZE_FOR_SPEED=1
+
+appName             = TerrainModelHandlerApp
+sAppName            = terrainmodelhandler
+
+MultiCompileIntermediatePdbFile=$(terrainModelHandlerAppObj)$(CCompPDBName).pdb
+IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
+
+#ProductIncludes + -I${publishInc}
+
+dirToSearch     = $(BuildContext)VendorAPI
+%include cincapnd.mki
+
+dirToSearch     = $(baseDir)
+%include cincapnd.mki
+
+dirToSearch     = $(TerrainModelElementHandlerDir)
+%include cincapnd.mki
+
+always:
+    ~mkdir $(terrainModelHandlerAppObj)
+
+dirToSearch     = $(terrainModelHandlerAppObj)
+%include cincapnd.mki
+
+## End of Solution Policy..
+
+o = $(terrainModelHandlerAppObj)
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    ~mkdir $(o)
+
+
+#----------------------------------------------------------------------
+#   The following defines the dependency list for the CODE portion
+#   of this application. Included are any CODE libraries or objects
+#   from any related applications. Typically these files are linked
+#   together into a file with a '.mp' extension. (Mdl Program module)
+#
+#   NOTE: ALL literal strings which would be contained in a .mc file
+#         should be placed in a messageList resource located in the
+#         directory pointed to by 'langSpec'. All strings should be
+#         loaded from a messageList resource at runtime.
+#----------------------------------------------------------------------
+depends = $(baseDir)handlerApp.h \
+          $(baseDir)handlerAppDefs.h
+
+#----------------------------------------------------------------------
+#   The following defines the dependency list for any NON-Translatable
+#   resources used by this application. Typically this includes any
+#   command table definitions or resource type definitions. This list
+#   would also contain the completed CODE portion of the application.
+#   Typically these files are lib'd together into a file with a '.mi'
+#   extension. (Mdl Intermediate application)
+#----------------------------------------------------------------------
+appRscs = \
+    $(o)handlerAppCmd.rsc
+
+#--------------------------------------------
+#       Create command table and header file
+#--------------------------------------------
+$(o)handlerAppCmd.rsc       : $(baseDir)handlerAppCmd.r
+
+#----------------------------------------------------------------------
+#       Compile language-independent resource modules
+#----------------------------------------------------------------------
+#$(o)handlerAppTyp.r         : $(baseDir)handlerAppTyp.mt \
+#                              $(baseDir)handlerAppDefs.h
+
+#$(o)handlerAppTyp.rsc       : $(o)handlerAppTyp.r
+
+#-----------------------------------------------------------------------
+#   Compile Managed C++ Modules
+#-----------------------------------------------------------------------
+%include compileForCLRStart.mki
+
+#always:
+#    ~task transform -i:Input="@(DependsOnCivilAssemblies->'-FU%(fullpath)', ' ')" \
+#                    -o:UsingDlls="Output"
+
+CCompOpts + -AI$(ContextSubPartsAssembliesDir)
+#CCompOpts + $(UsingDlls)
+
+$(o)handlerAppManaged$(oext)              : $(basedir)handlerAppManaged.cpp $(depends)
+
+%include compileForCLRStop.mki
+
+#----------------------------------------------------------------------
+#       The following section builds any necessary CODE modules for the
+#       application.
+#----------------------------------------------------------------------
+$(o)handlerApp$(oext)                   : $(baseDir)handlerApp.cpp             $(depends)
+
+
+appObjects = \
+    $(o)handlerApp$(oext) \
+    $(o)handlerAppManaged$(oext) \
+
+DLM_NAME                = $(appName)
+DLM_DEST                = $(o)
+DLM_OBJECT_DEST         = $(o)
+DLM_NAME                = TerrainModelHandlerApp
+ASSEMBLY_STRONGNAME     = 1
+DLM_OBJECT_FILES        = $(appObjects)
+DLM_EXPORT_DEST         = $(o)
+DLM_NOINITFUNC          = 1
+DLM_NOMSBUILTINS        = 1
+DLM_NO_DEF              = 1
+DLM_NO_DLS              = 1
+DLM_NOENTRY             = 1
+
+DLM_NO_DLS          = 1     #  Used DLLEXPORT in .c file instead of using a .dls
+DLM_NO_DEF          = 1
+DLM_NOENTRY         = 1
+DLM_DEST            = $(o)
+LINKER_LIBRARIES    = $(ContextSubpartsLibs)$(libprefix)TerrainModelElementHandler$(libext) \
+                      $(ContextSubpartsLibs)$(libprefix)mdlbltin$(libext) \
+                      $(ContextSubpartsLibs)$(libprefix)DgnView$(libext) \
+                      $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext) \
+                      $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext) \
+                      $(ContextSubpartsLibs)$(libprefix)RmgrTools$(libext) \
+                      $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext) \
+                      $(ContextSubpartsLibs)$(libprefix)Bentley.TerrainModelNET.Element$(libext)
+
+LINKER_LIBRARIES_DELAYLOADED = $(ContextSubpartsLibs)$(libprefix)TerrainModelCore$(libext)
+                      
+ASSEMBLY_NO_AUTHENTICODE_SIGN = 1
+%include $(SharedMki)VersionedPartSignatureDefaults.mki
+ASSEMBLY_KEYFILE        =% $(ASSEMBLY_KEYFILE_DEFAULT)
+ASSEMBLY_TESTKEYFILE       =% $(ASSEMBLY_TESTKEYFILE_DEFAULT)
+
+ASSEMBLY_NAME               = $(DLM_NAME)
+ASSEMBLY_STRONGNAME         = 1
+ASSEMBLY_TITLE              = $(DLM_NAME)
+ASSEMBLY_PRODUCT_NAME       = Bentley TerrainModel Core NET
+ASSEMBLY_DESCRIPTION        = Managed API for Bentley TerrainModel
+ASSEMBLY_VERSION            = 1.0.0.0
+ASSEMBLY_FILE_VERSION       = 1.0.0.0
+ASSEMBLY_COMPANY_NAME       = $(companyName)
+ASSEMBLY_COPYRIGHT          = $(Bentley_Copyright)
+
+ASSEMBLY_COMVISIBLE         = false
+ASSEMBLY_CLSCOMPLIANT       = true
+
+
+
+DLM_CONTEXT_LOCATION        = $(ContextDeliveryDir)/
+DLM_LIB_CONTEXT_LOCATION    = $(ContextDeliveryDir)/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+%include linkMixedAssembly.mki
+
+#----------------------------------------------------------------------
+# Link the MA
+#----------------------------------------------------------------------
+MA_NAME         = TerrainModelHandlerApp
+MA_DEST         = $(o)
+MA_RSC_FILES    = $(appRscs)
+MA_NO_VERSION   = 1
+RIGHTSCOMPLIANT = true
+
+MA_CONTEXT_LOCATION = $(ContextDeliveryDir)
+
+%include $(SharedMki)malink.mki
+
+#----------------------------------------------------------------------
+# Expose header files that are needed by our transkit
+#----------------------------------------------------------------------
+$(ContextDeliveryDir)TranskitInclude/TerrainModelAppHeaders/handlerAppDefs.h : $(_MakeFilePath)handlerAppDefs.h
+    $(LinkFirstDepToFirstTarget)
+
+MuiBaseName = TerrainModelHandlerApp.dll
+MuiTranskitDeliveryDir = $(ContextDeliveryDir)TransKit/TerrainModelApp/
+MuiAdditionalIncludes = $(o)
+
+%include $(SharedMki)CreateAndSymlinkMui.mki

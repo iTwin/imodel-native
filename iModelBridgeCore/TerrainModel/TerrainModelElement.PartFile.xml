@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\bsicommon\build\PartFile.xsd" >
+
+    <Part Name="ElementHandler" BMakeFile="elementhandler\handler\handler.mke">
+        <SubPart PartName="DgnPlatformDll" PartFile="DgnPlatform"     Repository="DgnPlatform" />
+        <SubPart PartName="DgnView"     PartFile="DgnDisplay"      Repository="DgnDisplay" />
+        <SubPart PartName="Core"        PartFile="TerrainModel" />
+        <SubPart PartName="DgnGeoCoord" PartFile="GeoCoord"        Repository="GeoCoord" />
+        <SubPart PartName="ScalableTerrainModel" PartFile="TerrainModel" />              
+        <!-- MST TBD - Temp -->
+        <SubPart PartName="RasterCore"           PartFile="DgnDisplay"           Repository="DgnDisplay"/>        
+        
+        <Bindings>
+            <Libs ProductDirectoryName="TerrainModelElementLibs" Required="false">Delivery/$(libprefix)TerrainModelElementHandler$(libext)</Libs>
+            <Files ProductDirectoryName="TerrainModelElementHandler">
+                Delivery/$(shlibprefix)TerrainModelElementHandler$(shlibext)
+                <TransKit SourceDirectory="Delivery\Transkit\ElementHandler"/>
+            </Files>
+            <Files ProductDirectoryName="ECSchemas" ProductSubDirectory="ECSchemas/Dgn">
+                ECSchemas/TerrainModel.01.00.ecschema.xml,ECSchemas/DTMElement_TemplateExtender_Schema.01.00.ecschema.xml
+                <TransKit SourceDirectory="Delivery\ECSchemas" />
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="ElementHandlerNET" BMakeFile="elementhandler\handlerNET\handlerNET.mke">
+        <SubPart PartName="ElementHandler"  />
+        <SubPart PartName="TerrainModel"         PartFile="TerrainModel" />
+        <SubPart PartName="Ustation" PartFile="PowerPlatform" Repository="MstnPlatform" />
+        <SubPart PartName="DgnPlatformNETAssembly"  PartFile="DgnPlatformNET" Repository="DgnPlatformNET" />
+
+        <Bindings>
+            <Assemblies ProductDirectoryName="TerrainModelElementHandler">Delivery/Bentley.TerrainModelNET.Element.dll</Assemblies>
+            <Libs>Delivery/$(libprefix)Bentley.TerrainModelNET.Element$(libext)</Libs>
+        </Bindings>
+    </Part>
+
+    <Part Name="ElementHandlerApp" BMakeFile="elementhandler\app\app.mke">
+        <SubPart PartName="ElementHandler" />
+        <SubPart PartName="ElementHandlerNET" />
+        <SubPart PartName="Ustation"            PartFile="PowerPlatform"     Repository="MstnPlatform" />
+        <SubPart PartName="DgnPlatformNETAssembly"  PartFile="DgnPlatformNET" Repository="DgnPlatformNET" />
+        <SubPart PartName="Bentley.MicroStation.General" PartFile="PowerPlatform" Repository="MstnPlatform"/>
+        <SubPart PartName="ClrApp-propertymanager" PartFile="PowerPlatform" Repository="MstnPlatform"/>
+        <SubPart PartName="MstnPart-TemplateUtils" PartFile="PowerPlatform" Repository="MstnPlatform"/>
+
+        <Bindings>
+            <Assemblies ProductDirectoryName="TerrainModelElementHandler">Delivery/TerrainModelHandlerApp.dll
+                <TransKit SourceDirectory="Delivery\Transkit\TerrainModelApp"/>
+            </Assemblies>
+            <Files ProductDirectoryName="TerrainModelElementHandler">
+                Delivery/TerrainModelHandlerApp.ma
+                <LoadConfig AppName="TerrainModelHandlerApp" ConfigVars="_USTN_FIRSTDGNFILE" />
+                <!--LoadConfig AppName="TerrainModelHandlerApp" ConfigVars="MS_HANDLER_LOAD,MS_XATTRIBUTE_HANDLER_LOAD" /-->
+            </Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="ElementTemplate" BMakeFile="elementhandler\ElementTemplate\ElementTemplate.mke">
+        <SubPart PartName="ClrApp-templates"  PartFile="PowerPlatform" Repository="MstnPlatform" />
+        <SubPart PartName="Bentley.MicroStation.General" PartFile="PowerPlatform" Repository="MstnPlatform"/>
+        <SubPart PartName="Bentley.MicroStation" PartFile="PowerPlatform"   Repository="MstnPlatform"/>
+        <SubPart PartName="MicroStationInterfaces" PartFile="PowerPlatform" Repository="MstnPlatform"/>
+        <SubPart PartName="Ustation"            PartFile="PowerPlatform"    Repository="MstnPlatform" />
+        <SubPart PartName="ElementHandlerApp" />
+        <SubPart PartName="ElementHandlerNET" />
+        <Bindings>
+            <Assemblies ProductDirectoryName="TerrainModelNetAssemblies">
+                Delivery/Bentley.TerrainModel.ElementTemplate.dll
+                <TransKit SourceDirectory="Delivery\TransKit\ElementTemplate" TkName="ElementTemplate"  />
+                <LoadConfig AppName="Bentley.TerrainModel.ElementTemplate" ConfigVars="MS_TEMPLATEEXTENDER_APPS" />
+            </Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="ElementHandlerCommands" BMakeFile="elementhandler\commands\commands.mke">
+        <SubPart PartName="ClrApp-templates"  PartFile="PowerPlatform" Repository="MstnPlatform" />
+        <SubPart PartName="Bentley.MicroStation.General" PartFile="PowerPlatform" Repository="MstnPlatform"/>
+        <SubPart PartName="Bentley.MicroStation" PartFile="PowerPlatform" Repository="MstnPlatform"/>
+        <SubPart PartName="MicroStationInterfaces" PartFile="PowerPlatform" Repository="MstnPlatform"/>
+        <SubPart PartName="Ustation"            PartFile="PowerPlatform"     Repository="MstnPlatform" />
+        <SubPart PartName="ElementHandlerApp" />
+        <SubPart PartName="ElementTemplate" />
+        <SubPart PartName="TerrainModel" PartFile="TerrainModel"/>
+        <SubPart PartName="FeatureAspectGenSrc" PartFile="PowerPlatform" Repository="MstnPlatform" />
+        <Bindings>
+            <Files ProductDirectoryName="TerrainModelElementHandler" FeatureAspect="PP_ID_FeatureAspects_TerrainModel">
+                Delivery/TerrainModelCommands.ma
+                <TransKit SourceDirectory="Delivery\TransKit\TerrainModelCommands" />
+                <LoadConfig AppName="TerrainModelCommands" ConfigVars="MS_CMDTABLE_LOAD,MS_XCOMMAND_APPS" />
+            </Files>
+            <Assemblies ProductDirectoryName="TerrainModelElementHandler" FeatureAspect="PP_ID_FeatureAspects_TerrainModel">
+                Delivery/TerrainModelCommands.dll
+                <TransKit SourceDirectory="Delivery\TransKit\TerrainModelCommands\Managed" />
+            </Assemblies>
+        </Bindings>
+    </Part>
+
+</BuildContext>

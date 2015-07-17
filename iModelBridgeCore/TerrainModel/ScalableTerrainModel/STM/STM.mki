@@ -1,0 +1,32 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: ScalableTerrainModel/STM/STM.mki $
+#
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+
+
+# DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
+# If we define appName and use it for DLM_NAME, MultiCppCompileRule.mki will use it for CCompPDBName, and linkLibrary.mki will use DLM_NAME for LIB_NAME.
+# PreCompiledHeader.mki uses CCompPDBName
+appName     = ScalableTerrainModel
+DLM_NAME    = $(appName)
+CCompPDBName = $(appName)
+
+#----------------------------------------------------------
+# Preprocessor definition.
+#----------------------------------------------------------
+nameToDefine = __BENTLEYSTM_BUILD__
+%include cdefapnd.mki
+
+nameToDefine = NO_IODEFS
+%include cdefapnd.mki
+
+#
+#  Defining NOMINMAX keeps windef.h from defining min/max macros. This is necessary to be able to use
+#  the std::min and std::max function templates. It might be nice to hoist this up to the power platform
+#  build policy level.
+#
+nameToDefine = NOMINMAX
+%include cdefapnd.mki

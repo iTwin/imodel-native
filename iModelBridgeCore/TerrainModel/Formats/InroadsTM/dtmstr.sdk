@@ -1,0 +1,74 @@
+/*----------------------------------------------------------------------------*/
+/* dtmstr.h                                        aec        10-Apr-1990     */
+/*----------------------------------------------------------------------------*/
+/* Structures to do things to and with dtm's.                                 */
+/*----------------------------------------------------------------------------*/
+
+#pragma once
+
+/*----------------------------------------------------------------------------*/
+/* Dependent include files.                                                   */
+/*----------------------------------------------------------------------------*/
+
+#include <aecuti.h>
+#include <txtsiz.h>
+#include <dtmcon.h>
+#include <dtmmac.h>
+
+/*----------------------------------------------------------------------------*/
+/* Data structures                                                            */
+/*----------------------------------------------------------------------------*/
+
+typedef struct CIVdtmprj               /* dtm project structure               */
+{
+   char opaqueStructure;
+} CIVdtmprj;
+
+
+typedef struct CIVdtmsrf               /* dtm surface structure               */
+{
+    char opaqueStructure;
+} CIVdtmsrf;
+
+
+typedef struct CIVdtmfil               /* dtm file structure                  */
+{
+    char opaqueStructure;
+} CIVdtmfil;
+
+
+typedef struct CIVdtmblk               /* dtm file block structure            */
+{
+    char opaqueStructure;
+} CIVdtmblk;
+
+
+typedef struct CIVdtmpnt               /* dtm point structure                 */
+{
+    char opaqueStructure;
+} CIVdtmpnt;
+
+
+typedef struct CIVdtmtin               /* dtm triangle structure              */
+{
+    char opaqueStructure;
+} CIVdtmtin;
+
+
+typedef struct CIVdtmpar               /* dtm parameters structure            */
+{
+    char opaqueStructure;
+} CIVdtmpar;
+
+
+typedef struct CIVdtmdis               /* dtm display structure               */
+{
+    char opaqueStructure;
+} CIVdtmdis;
+
+
+typedef struct CIVptrind               /* pointer / index structure           */
+{
+  char opaqueStructure;
+} CIVptrind;
+

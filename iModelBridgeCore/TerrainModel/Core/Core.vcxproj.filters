@@ -1,0 +1,407 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Headers">
+      <UniqueIdentifier>{18d4b828-ad07-44d8-85dc-d05e63356045}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source">
+      <UniqueIdentifier>{8ce81240-7629-4429-bd02-468df03e7b87}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\CPPWrappers">
+      <UniqueIdentifier>{05d708b5-e3eb-48a0-986d-822cd7a6caba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\2D">
+      <UniqueIdentifier>{0bc0d26b-4bba-4f6f-bf52-e6697c207731}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="PublicAPI">
+      <UniqueIdentifier>{6e8d54cd-3c32-49c6-a572-11371358020d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="PrivateAPI">
+      <UniqueIdentifier>{126e10ca-0705-4f00-956c-75b4c370a35c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="PrivateAPI\base">
+      <UniqueIdentifier>{5143e290-bcf9-4b4b-9381-1b878a40934c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Drainage">
+      <UniqueIdentifier>{eacf07f1-f82b-477d-aa1a-226b5d449d51}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Drainage\PublicAPI">
+      <UniqueIdentifier>{1e6d157b-5b75-4394-9975-55efeb96a606}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Drainage\PrivateAPI">
+      <UniqueIdentifier>{75aa016e-4893-467f-aa28-5a55e69d051e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="core.mke" />
+    <None Include="core.mki" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="2d\bcdtm3DModel.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmBtree.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmCheck.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmClean.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmcleanup.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmClip.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmClip1.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmConnect.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmData.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmDelta.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmDllMain.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmDrainage00.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmDrainage01.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmDrainage02.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmDrainage03.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmDrainage04.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmDrape.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmEdit.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmEditDraw.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmExport.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmFilter.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmFlags.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmFnd.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmGeopak.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmGeopakIO.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmGrade.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmInitialise.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmInsert.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmInterpolate.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmIo.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmJoin.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmLattice.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmLatticeVolume.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmList.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmLoadContours.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmLoadFeatures.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmLoadMesh.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmLoadRegions.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmLoadTriangles.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmLos.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmMark.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmMath.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmMem.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmMemory.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmMerge.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmMres.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmNgp.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmObj.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmPatch.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmPolyContour.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmPolygon.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmReport.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmSideSlope.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmSite.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmSlope.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmSort.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmStockPile.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmStream.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmString.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmTheme.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmTile.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmTin.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmTinVolume.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmTrg.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmUtility.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\dtmio.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="cppwrappers\bcDTMClass.cpp">
+      <Filter>Source\CPPWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="cppwrappers\bcDTMDrapedLineClass.cpp">
+      <Filter>Source\CPPWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="cppwrappers\bcDTMEdges.cpp">
+      <Filter>Source\CPPWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="cppwrappers\bcDTMFeatureClass.cpp">
+      <Filter>Source\CPPWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="cppwrappers\bcDTMFeatureEnumeratorClass.cpp">
+      <Filter>Source\CPPWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="cppwrappers\bcDTMFeatureMapClass.cpp">
+      <Filter>Source\CPPWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="cppwrappers\bcDTMInputClass.cpp">
+      <Filter>Source\CPPWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="cppwrappers\bcDTMMesh.cpp">
+      <Filter>Source\CPPWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="cppwrappers\DTM.cpp">
+      <Filter>Source\CPPWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Drainage\bcdtmDrainage.cpp">
+      <Filter>Source\Drainage</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Drainage\bcdtmDrainageCatchment.cpp">
+      <Filter>Source\Drainage</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Drainage\bcdtmDrainageFeatures.cpp">
+      <Filter>Source\Drainage</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Drainage\bcdtmDrainageList.cpp">
+      <Filter>Source\Drainage</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Drainage\bcdtmDrainagePond.cpp">
+      <Filter>Source\Drainage</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Drainage\bcdtmDrainageTables.cpp">
+      <Filter>Source\Drainage</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Drainage\bcdtmDrainageTrace.cpp">
+      <Filter>Source\Drainage</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Drainage\bcdtmDrainageUtility.cpp">
+      <Filter>Source\Drainage</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Drainage\drainage.cpp">
+      <Filter>Source\Drainage</Filter>
+    </ClCompile>
+    <ClCompile Include="2d\bcdtmLidarFilter.cpp">
+      <Filter>Source\2D</Filter>
+    </ClCompile>
+    <ClCompile Include="CPPWrappers\DTMIterators.cpp">
+      <Filter>Source\CPPWrappers</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="PrivateAPI\BcDTMWrapperClass.h">
+      <Filter>PrivateAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PrivateAPI\dtm2dfnsXM.h">
+      <Filter>PrivateAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PrivateAPI\dtmdefsXM.h">
+      <Filter>PrivateAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PrivateAPI\dtmvars.h">
+      <Filter>PrivateAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PrivateAPI\base\bcConversion.h">
+      <Filter>PrivateAPI\base</Filter>
+    </ClInclude>
+    <ClInclude Include="PrivateAPI\base\bcGmcNorm.h">
+      <Filter>PrivateAPI\base</Filter>
+    </ClInclude>
+    <ClInclude Include="PrivateAPI\base\bcMacros.h">
+      <Filter>PrivateAPI\base</Filter>
+    </ClInclude>
+    <ClInclude Include="PrivateAPI\base\bcMem.h">
+      <Filter>PrivateAPI\base</Filter>
+    </ClInclude>
+    <ClInclude Include="PrivateAPI\base\bcutil.h">
+      <Filter>PrivateAPI\base</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\bcDTM.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\bcDTMBaseDef.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\bcDTMClass.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\bcDTMElement.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\bcDTMStream.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\dtm2dfns.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\dtm2dfnsXM.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DTMDefs.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DTMEvars.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DTMFns.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DTMPtr.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\IDTM.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\PartitionArray.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicAPI\TerrainModel\TerrainModel.h" />
+    <ClInclude Include="PublicAPI\bcdtminlines.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="cppwrappers\bcDTMImpl.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\TMTransformHelper.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Drainage\bcdtmDrainage.h">
+      <Filter>Source\Drainage\PrivateAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Drainage\bcdtmDrainageCatchment.h">
+      <Filter>Source\Drainage\PrivateAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Drainage\bcdtmDrainageFeatures.h">
+      <Filter>Source\Drainage\PrivateAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Drainage\bcdtmDrainageList.h">
+      <Filter>Source\Drainage\PrivateAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Drainage\bcdtmDrainagePond.h">
+      <Filter>Source\Drainage\PrivateAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Drainage\bcdtmDrainageTables.h">
+      <Filter>Source\Drainage\PrivateAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Drainage\bcdtmDrainageTrace.h">
+      <Filter>Source\Drainage\PrivateAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Drainage\bcdtmDrainageUtility.h">
+      <Filter>Source\Drainage\PrivateAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Drainage\PublicAPI\drainage.h">
+      <Filter>Source\Drainage\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DTMIterators.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

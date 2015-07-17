@@ -1,0 +1,109 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Includes">
+      <UniqueIdentifier>{215ce148-ddac-4fa3-a4a5-05c9794a6c13}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source">
+      <UniqueIdentifier>{381d4875-2cb6-4838-83b3-fe783a1fa163}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{28d56bcd-00c1-4f38-96ca-73de74ef011c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Transkit">
+      <UniqueIdentifier>{ce869690-c885-46b5-8f3f-79ba896701dc}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Stdafx.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="DTMAddIn.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="DataGridViewElementTemplateCellEditingControl.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="LandXMLImportForm.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="AnnotateContours.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="AnnotateSpots.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="SelectDTMElem.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="mdlDialogHooks.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="StdAfx.h">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="DTMAddIn.h">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="commandsDefs.h">
+      <Filter>Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="DataGridViewElementTemplateCell.h">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="DataGridViewElementTemplateCellEditingControl.h">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="LandXMLImportForm.h">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="SelectDTMElemTool.h">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="Bentley.DTM.Commands.h">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="dtmcommdefs.h">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="dtmcommandstool.h">
+      <Filter>Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="transkit\commandsTxt.h">
+      <Filter>Transkit</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="commands.mke" />
+    <None Include="commandsCmd.r">
+      <Filter>Resources</Filter>
+    </None>
+    <None Include="commandsTyp.mt">
+      <Filter>Resources</Filter>
+    </None>
+    <None Include="transkit\commandsPal.r">
+      <Filter>Transkit</Filter>
+    </None>
+    <None Include="transkit\commandsMsg.r">
+      <Filter>Transkit</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="LandXMLImportForm.resx">
+      <Filter>Resources</Filter>
+    </EmbeddedResource>
+    <EmbeddedResource Include="LocalizableStrings.resx">
+      <Filter>Resources</Filter>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="transkit\transkit.xml">
+      <Filter>Transkit</Filter>
+    </Xml>
+  </ItemGroup>
+</Project>

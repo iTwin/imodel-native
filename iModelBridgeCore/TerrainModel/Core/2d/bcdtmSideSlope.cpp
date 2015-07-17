@@ -1,25 +1,26 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: src/unmanaged/DTM/civilDTMext/bcdtmExtSideSlope.cpp $
+|     $Source: Core/2d/bcdtmSideSlope.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-/*
-** Module bcdtmSideSlope.c - Side Slope Functions For Partitioned DTM
-*/
-#include "stdafx.h"
-
-static DTMFeatureId nullFeatureId = DTM_NULL_FEATURE_ID;
+#include "bcDTMBaseDef.h"
+#include "dtmevars.h"
+#include "bcdtminlines.h"
+#include "bcdtmSideSlope.h"
 static long processingLimits=0 ;
 static BC_DTM_OBJ *benchTinP=NULL ;
 
+BENTLEYDTM_Public int bcdtmInsert_removeDtmFeatureFromDtmObject2 (BC_DTM_OBJ *dtmP, long dtmFeature, bool clearup = false);
+
+
 /*-------------------------------------------------------------------+
 |                                                                    |
-|  bcdtmExtSideSlope_createSideSlopesForSideSlopeTableDtmObject      |
+|  bcdtmSideSlope_createSideSlopesForSideSlopeTableDtmObject      |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_createSideSlopesForSideSlopeTableDtmObject
+int bcdtmSideSlope_createSideSlopesForSideSlopeTableDtmObject
 (
  DTM_SIDE_SLOPE_TABLE **SideSlopeTable,  /* ==> Table Containing The Parameters For Determing The Side Slopes */
  long *SideSlopeTableSize,               /* ==> Size Of Or Number Of Entries In The Side Slope Table  */
@@ -55,7 +56,8 @@ int bcdtmExtSideSlope_createSideSlopesForSideSlopeTableDtmObject
  long    start ;
  static long numSideSlopes=0,numSideSlopeElements=0 ;
  DTM_TIN_POINT   *pointP ;
-// FILE *xyzFP=NULL ;
+ DTMFeatureId nullFeatureId = DTM_NULL_FEATURE_ID;
+ // FILE *xyzFP=NULL ;
 /*
 ** Set Static Debug Contol For Catching A Particular Side Slope OccurrenceIn A Sequence
 */
@@ -121,7 +123,7 @@ int bcdtmExtSideSlope_createSideSlopesForSideSlopeTableDtmObject
  if( dbg == 1 )
    {
     if( bcdtmObject_createDtmObject(&tempObjP)) goto errexit ;
-    if( bcdtmExtSideSlope_copySideSlopeElementPointsToPointArray(*SideSlopeTable,*SideSlopeTableSize,&elemPtsP,&numElemPts)) goto errexit ;
+    if( bcdtmSideSlope_copySideSlopeElementPointsToPointArray(*SideSlopeTable,*SideSlopeTableSize,&elemPtsP,&numElemPts)) goto errexit ;
 
 //xyzFP = bcdtmFile_open("alignment.xyz",L"wb") ;
 //fwrite(elemPtsP,sizeof(DPoint3d),numElemPts,xyzFP) ;
@@ -177,7 +179,7 @@ int bcdtmExtSideSlope_createSideSlopesForSideSlopeTableDtmObject
 ** Pull Element Points Onto Tin ** Fudge Fix For MS Conversion Of Coordinates From V7 To V8
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Pulling Side Slope Element Points Onto Tin") ;
- if( bcdtmExtSideSlope_pullSideSlopePointsOntoTin(*SideSlopeTable,*SideSlopeTableSize)) goto errexit ;
+ if( bcdtmSideSlope_pullSideSlopePointsOntoTin(*SideSlopeTable,*SideSlopeTableSize)) goto errexit ;
 /*
 ** Test For Closed Side Slope Element
 */
@@ -201,17 +203,17 @@ int bcdtmExtSideSlope_createSideSlopesForSideSlopeTableDtmObject
 **  Validate The Side Slope Element
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Validating Side Slope Element") ;
- if( bcdtmExtSideSlope_validateSideSlopeElement(*SideSlopeTable,SideSlopeTableSize,Pptol))  goto errexit ;
+ if( bcdtmSideSlope_validateSideSlopeElement(*SideSlopeTable,SideSlopeTableSize,Pptol))  goto errexit ;
 /*
 **  Set Force Slope For Element Points Not On Tin
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Setting Force Slope For Element Points Not On Tin") ;
- if( bcdtmExtSideSlope_setForceSlopeForVerticesNotOnTin(*SideSlopeTable,*SideSlopeTableSize,SideSlopeDirection,closedElement)) goto errexit ;
+ if( bcdtmSideSlope_setForceSlopeForVerticesNotOnTin(*SideSlopeTable,*SideSlopeTableSize,SideSlopeDirection,closedElement)) goto errexit ;
 /*
 **  Set Force Slope For Element Segments Not On Tin
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Setting Force Slope For Element Segments Not On Tin") ;
- if( bcdtmExtSideSlope_setForceSlopeForSegmentsNotOnTin(*SideSlopeTable,*SideSlopeTableSize)) goto errexit ;
+ if( bcdtmSideSlope_setForceSlopeForSegmentsNotOnTin(*SideSlopeTable,*SideSlopeTableSize)) goto errexit ;
 /*
 ** If Element Open And Parallel Points Present, Extend Ends Of Parallel points
 */
@@ -230,7 +232,7 @@ int bcdtmExtSideSlope_createSideSlopesForSideSlopeTableDtmObject
 ** Insert Elevation Transitions Points Into Side Slope Table
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Inserting Elevation Transition Points Into SideSlopeTable") ;
- if( bcdtmExtSideSlope_insertVerticesAtElevationTransitions(SideSlopeTable,SideSlopeTableSize)) goto errexit ;
+ if( bcdtmSideSlope_insertVerticesAtElevationTransitions(SideSlopeTable,SideSlopeTableSize)) goto errexit ;
  if( dbg == 2 )
    {
     bcdtmWrite_message(0,0,0,"Number Of Side Slope Element Radials = %6ld",*SideSlopeTableSize) ;
@@ -243,7 +245,7 @@ int bcdtmExtSideSlope_createSideSlopesForSideSlopeTableDtmObject
 ** Mark Radials Intactive That Cannot Satisfy A Forced Slope To A Delta Elevation
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Marking Radials Intactive That Cannot Satisfy A Forced Slope To A Delta Elevation") ;
- if( bcdtmExtSideSlope_markInactiveDeltaVerticalRadials(*SideSlopeTable,*SideSlopeTableSize)) goto errexit ;
+ if( bcdtmSideSlope_markInactiveDeltaVerticalRadials(*SideSlopeTable,*SideSlopeTableSize)) goto errexit ;
  if( dbg == 2 )
    {
     bcdtmWrite_message(0,0,0,"Number Of Side Slope Element Radials = %6ld",*SideSlopeTableSize) ;
@@ -256,7 +258,7 @@ int bcdtmExtSideSlope_createSideSlopesForSideSlopeTableDtmObject
 ** Insert Cut/Fill Transitions Points Into Side Slope Table
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Inserting Cut/Fill Transition Points Into SideSlopeTable") ;
- if( bcdtmExtSideSlope_insertVerticesAtCutFillTransitions(SideSlopeTable,SideSlopeTableSize,Pptol)) goto errexit ;
+ if( bcdtmSideSlope_insertVerticesAtCutFillTransitions(SideSlopeTable,SideSlopeTableSize,Pptol)) goto errexit ;
  if( dbg == 2 )
    {
     bcdtmWrite_message(0,0,0,"Number Of Side Slope Element Radials = %6ld",*SideSlopeTableSize) ;
@@ -269,7 +271,7 @@ int bcdtmExtSideSlope_createSideSlopesForSideSlopeTableDtmObject
 ** Insert Transition Points For Slope To Object Into Side Slope Table
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Inserting Transition Points For Slope To Object") ;
- if( bcdtmExtSideSlope_insertTransitionVerticesForSlopeToObject(SideSlopeTable,SideSlopeTableSize,Pptol)) goto errexit ;
+ if( bcdtmSideSlope_insertTransitionVerticesForSlopeToObject(SideSlopeTable,SideSlopeTableSize,Pptol)) goto errexit ;
  if( dbg == 2 )
    {
     bcdtmWrite_message(0,0,0,"Number Of Side Slope Element Radials = %6ld",*SideSlopeTableSize) ;
@@ -282,7 +284,7 @@ int bcdtmExtSideSlope_createSideSlopesForSideSlopeTableDtmObject
 ** Create Side Slopes For Active Radials
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Creating Side Slopes For Active Radials") ;
- if( bcdtmExtSideSlope_createSideSlopesForActiveRadials(*SideSlopeTable,*SideSlopeTableSize,SideSlopeDirection,SlopeTable,SlopeTableSize,CornerOption,StrokeCorners,CornerStrokeTolerance,Pptol,ParallelEdgePts,NumParallelEdgePts,UserRadialTag,UserElementTag,DataObjects,NumberOfDataObjects)) goto errexit ;
+ if( bcdtmSideSlope_createSideSlopesForActiveRadials(*SideSlopeTable,*SideSlopeTableSize,SideSlopeDirection,SlopeTable,SlopeTableSize,CornerOption,StrokeCorners,CornerStrokeTolerance,Pptol,ParallelEdgePts,NumParallelEdgePts,UserRadialTag,UserElementTag,DataObjects,NumberOfDataObjects)) goto errexit ;
 /*
 ** Round Side Slope Elevation Values
 */
@@ -388,7 +390,7 @@ int bcdtmExtSideSlope_createSideSlopesForSideSlopeTableDtmObject
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_copySideSlopeElementPointsToPointArray
+int bcdtmSideSlope_copySideSlopeElementPointsToPointArray
 (
  DTM_SIDE_SLOPE_TABLE *sideSlopeTableP,
  long                 sideSlopeTableSize,
@@ -454,7 +456,7 @@ int bcdtmExtSideSlope_copySideSlopeElementPointsToPointArray
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_pullSideSlopePointsOntoTin(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize)
+int bcdtmSideSlope_pullSideSlopePointsOntoTin(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize)
 /*
 ** This Function Pulls A Side Slope Point Onto The Cut/Fill Or Slope To Tin
 ** If The Distance Of The Side Slope Point From A Tin Point
@@ -543,10 +545,10 @@ int bcdtmExtSideSlope_pullSideSlopePointsOntoTin(DTM_SIDE_SLOPE_TABLE *SideSlope
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|  bcdtmExtSideSlope_validateSideSlopeElement()                           |
+|  bcdtmSideSlope_validateSideSlopeElement()                           |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_validateSideSlopeElement(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long *SideSlopeTableSize,double Pptol)
+int bcdtmSideSlope_validateSideSlopeElement(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long *SideSlopeTableSize,double Pptol)
 /*
 ** This Function Validates a Side Slope Element
 */
@@ -572,12 +574,12 @@ int bcdtmExtSideSlope_validateSideSlopeElement(DTM_SIDE_SLOPE_TABLE *SideSlopeTa
 ** Eliminate Duplicate Points
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Eliminating Duplicate Side Slope Element Points") ;
- bcdtmExtSideSlope_deleteDuplicateSideSlopeElementPoints(SideSlopeTable,SideSlopeTableSize,Pptol) ;
+ bcdtmSideSlope_deleteDuplicateSideSlopeElementPoints(SideSlopeTable,SideSlopeTableSize,Pptol) ;
 /*
 ** Check For Knots
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Checking For Knots In Side Slope Element") ;
- bcdtmExtSideSlope_checkForKnotsInSideSlopeElement(SideSlopeTable,*SideSlopeTableSize,&KnotDetected ) ;
+ bcdtmSideSlope_checkForKnotsInSideSlopeElement(SideSlopeTable,*SideSlopeTableSize,&KnotDetected ) ;
  if( KnotDetected )
    {
     bcdtmWrite_message(1,0,0,"Knots Detected In Side Slope Element") ;
@@ -592,14 +594,14 @@ int bcdtmExtSideSlope_validateSideSlopeElement(DTM_SIDE_SLOPE_TABLE *SideSlopeTa
 ** Get SideSlopeTable Direction
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Checking SideSlopeTable Direction") ;
-    bcdtmExtSideSlope_getSideSlopeElementDirection(SideSlopeTable,*SideSlopeTableSize,&Direction,&Area) ;
+    bcdtmSideSlope_getSideSlopeElementDirection(SideSlopeTable,*SideSlopeTableSize,&Direction,&Area) ;
 /*
 ** Reverse Direction Of SideSlopeTable If Clockwise
 */
     if( Direction == DTMDirection::Clockwise )
       {
        if( dbg ) bcdtmWrite_message(0,0,0,"Setting Element Direction Anti Clockwise") ;
-       bcdtmExtSideSlope_reverseSideSlopeTableDirection(SideSlopeTable,*SideSlopeTableSize) ;
+       bcdtmSideSlope_reverseSideSlopeTableDirection(SideSlopeTable,*SideSlopeTableSize) ;
       }
    }
 /*
@@ -621,7 +623,7 @@ int bcdtmExtSideSlope_validateSideSlopeElement(DTM_SIDE_SLOPE_TABLE *SideSlopeTa
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_deleteDuplicateSideSlopeElementPoints(DTM_SIDE_SLOPE_TABLE *Points,long *numPts,double Pptol)
+int bcdtmSideSlope_deleteDuplicateSideSlopeElementPoints(DTM_SIDE_SLOPE_TABLE *Points,long *numPts,double Pptol)
 {
  double dx,dy ;
  DTM_SIDE_SLOPE_TABLE  *p3d1,*p3d2   ;
@@ -650,10 +652,10 @@ int bcdtmExtSideSlope_deleteDuplicateSideSlopeElementPoints(DTM_SIDE_SLOPE_TABLE
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|  bcdtmExtSideSlope_checkForKnotsInSideSlopeElement                      |
+|  bcdtmSideSlope_checkForKnotsInSideSlopeElement                      |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_checkForKnotsInSideSlopeElement(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize,long *KnotFlag )
+int bcdtmSideSlope_checkForKnotsInSideSlopeElement(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize,long *KnotFlag )
 /*
 ** This Function Checks For Knots In The Pad Element Table
 */
@@ -714,7 +716,7 @@ int bcdtmExtSideSlope_checkForKnotsInSideSlopeElement(DTM_SIDE_SLOPE_TABLE *Side
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_getSideSlopeElementDirection(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize,DTMDirection *Direction,double *Area)
+int bcdtmSideSlope_getSideSlopeElementDirection(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize,DTMDirection *Direction,double *Area)
 /*
 **  This Function Determines The Direction Of A SideSlopeTable
 */
@@ -749,7 +751,7 @@ int bcdtmExtSideSlope_getSideSlopeElementDirection(DTM_SIDE_SLOPE_TABLE *SideSlo
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_reverseSideSlopeTableDirection(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize)
+int bcdtmSideSlope_reverseSideSlopeTableDirection(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize)
 /*
 **  This Function Reverses The Direction Of a SideSlopeTable
 */
@@ -778,7 +780,7 @@ int bcdtmExtSideSlope_reverseSideSlopeTableDirection(DTM_SIDE_SLOPE_TABLE *SideS
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_setForceSlopeForVerticesNotOnTin(DTM_SIDE_SLOPE_TABLE *sideSlopeTableP,long sideSlopeTableSize,long sideSlopeDirection,long closeFlag)
+int bcdtmSideSlope_setForceSlopeForVerticesNotOnTin(DTM_SIDE_SLOPE_TABLE *sideSlopeTableP,long sideSlopeTableSize,long sideSlopeDirection,long closeFlag)
 /*
 ** This Function Checks If The Side Slope Vertices Are On The Tin
 ** The Force Slope And Force Slope Option Is Set For Any Vertice Not
@@ -966,7 +968,7 @@ int bcdtmExtSideSlope_setForceSlopeForVerticesNotOnTin(DTM_SIDE_SLOPE_TABLE *sid
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_setForceSlopeForSegmentsNotOnTin(DTM_SIDE_SLOPE_TABLE *sideSlopeTableP,long sideSlopeTableSize)
+int bcdtmSideSlope_setForceSlopeForSegmentsNotOnTin(DTM_SIDE_SLOPE_TABLE *sideSlopeTableP,long sideSlopeTableSize)
 /*
 ** This Function Checks If The Side Slope Segments Are On The Tin
 ** The Force Slope And Force Slope Option Is Set For Segment Vertices
@@ -1055,10 +1057,10 @@ int bcdtmExtSideSlope_setForceSlopeForSegmentsNotOnTin(DTM_SIDE_SLOPE_TABLE *sid
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|  bcdtmExtSideSlope_insertVerticesAtElevationTransitions                 |
+|  bcdtmSideSlope_insertVerticesAtElevationTransitions                 |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_insertVerticesAtElevationTransitions(DTM_SIDE_SLOPE_TABLE **SideSlopeTable,long *SideSlopeTableSize)
+int bcdtmSideSlope_insertVerticesAtElevationTransitions(DTM_SIDE_SLOPE_TABLE **SideSlopeTable,long *SideSlopeTableSize)
 /*
 ** This Function Inserts Points Into The Side Slope Table At Elevation Transitions
 **
@@ -1206,10 +1208,10 @@ int bcdtmExtSideSlope_insertVerticesAtElevationTransitions(DTM_SIDE_SLOPE_TABLE 
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|  bcdtmExtSideSlope_markInactiveDeltaVerticalRadials                     |
+|  bcdtmSideSlope_markInactiveDeltaVerticalRadials                     |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_markInactiveDeltaVerticalRadials(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize)
+int bcdtmSideSlope_markInactiveDeltaVerticalRadials(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize)
 /*
 ** Mark Radials Inactive That Satisfy A Forced Slope To A Delta Elevation
 */
@@ -1241,10 +1243,10 @@ int bcdtmExtSideSlope_markInactiveDeltaVerticalRadials(DTM_SIDE_SLOPE_TABLE *Sid
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|  bcdtmExtSideSlope_insertVerticesAtCutFillTransitions                   |
+|  bcdtmSideSlope_insertVerticesAtCutFillTransitions                   |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_insertVerticesAtCutFillTransitions(DTM_SIDE_SLOPE_TABLE **SideSlopeTable,long *SideSlopeTableSize,double Pptol)
+int bcdtmSideSlope_insertVerticesAtCutFillTransitions(DTM_SIDE_SLOPE_TABLE **SideSlopeTable,long *SideSlopeTableSize,double Pptol)
 /*
 ** This Function Inserts Vertices At Cut/Fill Transitions For The Cut/Fill Tin
 */
@@ -1526,10 +1528,10 @@ int bcdtmExtSideSlope_insertVerticesAtCutFillTransitions(DTM_SIDE_SLOPE_TABLE **
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|    bcdtmExtSideSlope_insertTransitionVerticesForSlopeToObject           |
+|    bcdtmSideSlope_insertTransitionVerticesForSlopeToObject           |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_insertTransitionVerticesForSlopeToObject(DTM_SIDE_SLOPE_TABLE **SideSlopeTable,long *SideSlopeTableSize,double Pptol)
+int bcdtmSideSlope_insertTransitionVerticesForSlopeToObject(DTM_SIDE_SLOPE_TABLE **SideSlopeTable,long *SideSlopeTableSize,double Pptol)
 /*
 ** This Function Inserts Vertices At Cut/Fill Transitions For The Slope To Tin
 */
@@ -1780,10 +1782,10 @@ int bcdtmExtSideSlope_insertTransitionVerticesForSlopeToObject(DTM_SIDE_SLOPE_TA
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|  bcdtmExtSideSlope_createSideSlopesForActiveRadials                   |
+|  bcdtmSideSlope_createSideSlopesForActiveRadials                   |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_createSideSlopesForActiveRadials(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize,long SideSlopeDirection,DTM_SLOPE_TABLE *SlopeTable,long SlopeTableSize,long CornerOption,long StrokeCorners,double CornerStrokeTolerance,double Pptol,DPoint3d *ParallelEdgePts,long NumParallelEdgePts,DTMUserTag UserRadialTag,DTMUserTag UserElementTag,BC_DTM_OBJ* **DataObjects,long *NumberOfDataObjects)
+int bcdtmSideSlope_createSideSlopesForActiveRadials(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize,long SideSlopeDirection,DTM_SLOPE_TABLE *SlopeTable,long SlopeTableSize,long CornerOption,long StrokeCorners,double CornerStrokeTolerance,double Pptol,DPoint3d *ParallelEdgePts,long NumParallelEdgePts,DTMUserTag UserRadialTag,DTMUserTag UserElementTag,BC_DTM_OBJ* **DataObjects,long *NumberOfDataObjects)
 /*
 **
 ** This Function Calculates Sides Slopes For Active Side Slope Table Radials
@@ -1823,7 +1825,7 @@ int bcdtmExtSideSlope_createSideSlopesForActiveRadials(DTM_SIDE_SLOPE_TABLE *Sid
 /*
 ** If Closure Reorder Side Slope Table So First Radial Is Active
 */
- if( CloseFlag ) if( bcdtmExtSideSlope_reorderSideSlopeTable(SideSlopeTable,SideSlopeTableSize)) goto errexit ;
+ if( CloseFlag ) if( bcdtmSideSlope_reorderSideSlopeTable(SideSlopeTable,SideSlopeTableSize)) goto errexit ;
  if( dbg == 2 )
    {
     bcdtmWrite_message(0,0,0,"Number Of Side Slope Element Radials = %6ld",SideSlopeTableSize) ;
@@ -1918,8 +1920,8 @@ int bcdtmExtSideSlope_createSideSlopesForActiveRadials(DTM_SIDE_SLOPE_TABLE *Sid
 **     Create Side Slopes
 */
        if( dbg ) bcdtmWrite_message(0,0,0,"Creating Side Slopes") ;
-       if( SideSlopeDirection == 1 || SideSlopeDirection == 3 ) if( bcdtmExtSideSlope_createSideSlopes(&RightSideSlopeTable,&RightSideSlopeTableSize,1,SlopeTable,SlopeTableSize,CornerOption,StrokeCorners,CornerStrokeTolerance,Pptol) ) goto errexit ;
-       if( SideSlopeDirection == 2 || SideSlopeDirection == 3 ) if( bcdtmExtSideSlope_createSideSlopes(&LeftSideSlopeTable,&LeftSideSlopeTableSize,2,SlopeTable,SlopeTableSize,CornerOption,StrokeCorners,CornerStrokeTolerance,Pptol) ) goto errexit ;
+       if( SideSlopeDirection == 1 || SideSlopeDirection == 3 ) if( bcdtmSideSlope_createSideSlopes(&RightSideSlopeTable,&RightSideSlopeTableSize,1,SlopeTable,SlopeTableSize,CornerOption,StrokeCorners,CornerStrokeTolerance,Pptol) ) goto errexit ;
+       if( SideSlopeDirection == 2 || SideSlopeDirection == 3 ) if( bcdtmSideSlope_createSideSlopes(&LeftSideSlopeTable,&LeftSideSlopeTableSize,2,SlopeTable,SlopeTableSize,CornerOption,StrokeCorners,CornerStrokeTolerance,Pptol) ) goto errexit ;
 
 /*
 **     Create Data Object For Side Slopes
@@ -1931,7 +1933,7 @@ int bcdtmExtSideSlope_createSideSlopesForActiveRadials(DTM_SIDE_SLOPE_TABLE *Sid
 **     Resolve Overlapping Radials
 */
        if( dbg ) bcdtmWrite_message(0,0,0,"Resolving Overlapping Radials") ;
-       if( bcdtmExtSideSlope_resolveOverlappingSideSlopeRadials(RightSideSlopeTable,RightSideSlopeTableSize,LeftSideSlopeTable,LeftSideSlopeTableSize,ParallelEdgePts,NumParallelEdgePts,SideSlopeDirection,CornerStrokeTolerance,Pptol*2.0,UserRadialTag,UserElementTag,Pptol,Pptol,SideSlopes)) goto errexit ;
+       if( bcdtmSideSlope_resolveOverlappingSideSlopeRadials(RightSideSlopeTable,RightSideSlopeTableSize,LeftSideSlopeTable,LeftSideSlopeTableSize,ParallelEdgePts,NumParallelEdgePts,SideSlopeDirection,CornerStrokeTolerance,Pptol*2.0,UserRadialTag,UserElementTag,Pptol,Pptol,SideSlopes)) goto errexit ;
 /*
 **     Free Memory For Side Slope Tables
 */
@@ -1953,7 +1955,7 @@ int bcdtmExtSideSlope_createSideSlopesForActiveRadials(DTM_SIDE_SLOPE_TABLE *Sid
        if( BenchFlag )
          {
           if( dbg ) bcdtmWrite_message(0,0,0,"Extracting Benches") ;
-          if( bcdtmExtSideSlope_extractBenchesFromSlopeToesAndStoreInSeparateDataObjects(BenchTin,SideSlopes,&BenchObjects,&NumberOfBenchObjects)) goto errexit  ;
+          if( bcdtmSideSlope_extractBenchesFromSlopeToesAndStoreInSeparateDataObjects(BenchTin,SideSlopes,&BenchObjects,&NumberOfBenchObjects)) goto errexit  ;
           bcdtmObject_destroyDtmObject(&SideSlopes) ;
           SideSlopes = NULL ;
          }
@@ -2044,10 +2046,10 @@ int bcdtmExtSideSlope_createSideSlopesForActiveRadials(DTM_SIDE_SLOPE_TABLE *Sid
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|  bcdtmExtSideSlope_reorderSideSlopeTable                                |
+|  bcdtmSideSlope_reorderSideSlopeTable                                |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_reorderSideSlopeTable(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize)
+int bcdtmSideSlope_reorderSideSlopeTable(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize)
 /*
 ** This Function Reorders A Closed Side Slope Table So That
 ** The First Radial Is  An Active Radial
@@ -2134,10 +2136,10 @@ int bcdtmExtSideSlope_reorderSideSlopeTable(DTM_SIDE_SLOPE_TABLE *SideSlopeTable
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|  bcdtmExtSideSlope_createSideSlopes                                   |
+|  bcdtmSideSlope_createSideSlopes                                   |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_createSideSlopes(DTM_SIDE_SLOPE_TABLE **SideSlopeTable,long *SideSlopeTableSize,long SideSlopeDirection,DTM_SLOPE_TABLE *SlopeTable,long SlopeTableSize,long CornerOption,long StrokeCorners,double CornerStrokeTolerance,double Pptol)
+int bcdtmSideSlope_createSideSlopes(DTM_SIDE_SLOPE_TABLE **SideSlopeTable,long *SideSlopeTableSize,long SideSlopeDirection,DTM_SLOPE_TABLE *SlopeTable,long SlopeTableSize,long CornerOption,long StrokeCorners,double CornerStrokeTolerance,double Pptol)
 /*
 **
 ** This Function Calculates Sides Slopes
@@ -2179,13 +2181,13 @@ int bcdtmExtSideSlope_createSideSlopes(DTM_SIDE_SLOPE_TABLE **SideSlopeTable,lon
 //       bcdtmWrite_message(0,0,0,"Radial[%6ld] O = %2ld toElev = %10.4lf",(long)(radial-*SideSlopeTable),radial->sideSlopeOption,radial->toElev) ;
        bcdtmWrite_message(0,0,0,"Radial[%6ld] O = %2ld toDist = %10.4lf slope = %10.4lf ** %10.4lf %10.4lf %10.4lf ",(long)(radial-*SideSlopeTable),radial->sideSlopeOption,radial->toHorizOffset,radial->radialSlope,radial->radialStartPoint.x,radial->radialStartPoint.y,radial->radialStartPoint.z) ;
       }
-    bcdtmExtSideSlope_writeElementToBinaryDTMFile(*SideSlopeTable,*SideSlopeTableSize,L"SideSlopeElement.dat") ;
+    bcdtmSideSlope_writeElementToBinaryDTMFile(*SideSlopeTable,*SideSlopeTableSize,L"SideSlopeElement.dat") ;
    }
 /*
 ** Assign Radial Types
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Assigning Radial Types") ;
- if( bcdtmExtSideSlope_assignRadialTypesToSideSlopeTablePoints(*SideSlopeTable,*SideSlopeTableSize,SideSlopeDirection) ) goto errexit ;
+ if( bcdtmSideSlope_assignRadialTypesToSideSlopeTablePoints(*SideSlopeTable,*SideSlopeTableSize,SideSlopeDirection) ) goto errexit ;
  if( dbg == 2 )
    {
     bcdtmWrite_message(0,0,0,"Number Of Side Slope Element Radials = %6ld",*SideSlopeTableSize) ;
@@ -2198,7 +2200,7 @@ int bcdtmExtSideSlope_createSideSlopes(DTM_SIDE_SLOPE_TABLE **SideSlopeTable,lon
 ** Insert Normal Radials At Convex Corners
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Inserting Normal Radials At Convex Corners") ;
- if( bcdtmExtSideSlope_insertNormalRadialsAtConvexCorners(SideSlopeTable,SideSlopeTableSize) ) goto errexit ;
+ if( bcdtmSideSlope_insertNormalRadialsAtConvexCorners(SideSlopeTable,SideSlopeTableSize) ) goto errexit ;
  if( dbg == 2 )
    {
     bcdtmWrite_message(0,0,0,"Number Of Side Slope Element Radials = %6ld",*SideSlopeTableSize) ;
@@ -2211,7 +2213,7 @@ int bcdtmExtSideSlope_createSideSlopes(DTM_SIDE_SLOPE_TABLE **SideSlopeTable,lon
 ** Insert Normal Radials At Concave Corners
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Inserting Normal Radials At Concave Corners") ;
-// if( bcdtmExtSideSlope_insertNormalRadialsAtConcaveCorners(SideSlopeTable,SideSlopeTableSize,Pptol) ) goto errexit ;
+// if( bcdtmSideSlope_insertNormalRadialsAtConcaveCorners(SideSlopeTable,SideSlopeTableSize,Pptol) ) goto errexit ;
  if( dbg == 2 )
    {
     bcdtmWrite_message(0,0,0,"Number Of Side Slope Element Radials = %6ld",*SideSlopeTableSize) ;
@@ -2224,7 +2226,7 @@ int bcdtmExtSideSlope_createSideSlopes(DTM_SIDE_SLOPE_TABLE **SideSlopeTable,lon
 ** Assign Slopes And Angles To Radials
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Assigning Slopes And Angles To Radials") ;
- if( bcdtmExtSideSlope_assignSlopesAndAnglesToRadials(*SideSlopeTable,*SideSlopeTableSize,SideSlopeDirection,SlopeTable,SlopeTableSize) ) goto errexit ;
+ if( bcdtmSideSlope_assignSlopesAndAnglesToRadials(*SideSlopeTable,*SideSlopeTableSize,SideSlopeDirection,SlopeTable,SlopeTableSize) ) goto errexit ;
  if( dbg == 1 )
    {
     bcdtmWrite_message(0,0,0,"Number Of Side Slope Element Radials = %6ld",*SideSlopeTableSize) ;
@@ -2238,7 +2240,7 @@ int bcdtmExtSideSlope_createSideSlopes(DTM_SIDE_SLOPE_TABLE **SideSlopeTable,lon
        radial->radialEndPoint.y = radial->radialStartPoint.y + 25.0 * sin(radial->radialAngle) ;
        radial->radialEndPoint.z = radial->radialStartPoint.z + 25.0 * radial->radialSlope ;
       }
-    bcdtmExtSideSlope_writeRadialsToBinaryDTMFile(*SideSlopeTable,*SideSlopeTableSize,1,L"Angles&Slopes.dat") ;
+    bcdtmSideSlope_writeRadialsToBinaryDTMFile(*SideSlopeTable,*SideSlopeTableSize,1,L"Angles&Slopes.dat") ;
    }
 /*
  ** Check For Zero Slope To An Elevation Or Delta Elevation
@@ -2279,7 +2281,7 @@ int bcdtmExtSideSlope_createSideSlopes(DTM_SIDE_SLOPE_TABLE **SideSlopeTable,lon
 ** Adjust Slopes And Angles Of Radials For Calculation Method
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Adjusting Slopes And Angles For Calculation Method") ;
- if( bcdtmExtSideSlope_adjustSlopesAndAnglesForCalculationMethod(*SideSlopeTable,*SideSlopeTableSize,SideSlopeDirection,CornerOption) ) goto errexit ;
+ if( bcdtmSideSlope_adjustSlopesAndAnglesForCalculationMethod(*SideSlopeTable,*SideSlopeTableSize,SideSlopeDirection,CornerOption) ) goto errexit ;
  if( dbg == 1 )
    {
     bcdtmWrite_message(0,0,0,"Number Of Side Slope Element Radials = %6ld",*SideSlopeTableSize) ;
@@ -2293,22 +2295,22 @@ int bcdtmExtSideSlope_createSideSlopes(DTM_SIDE_SLOPE_TABLE **SideSlopeTable,lon
        radial->radialEndPoint.y = radial->radialStartPoint.y + 25.0 * sin(radial->radialAngle) ;
        radial->radialEndPoint.z = radial->radialStartPoint.z + 25.0 * radial->radialSlope ;
       }
-    bcdtmExtSideSlope_writeRadialsToBinaryDTMFile(*SideSlopeTable,*SideSlopeTableSize,1,L"AdjustedAngles&Slopes.dat") ;
+    bcdtmSideSlope_writeRadialsToBinaryDTMFile(*SideSlopeTable,*SideSlopeTableSize,1,L"AdjustedAngles&Slopes.dat") ;
    }
 /*
 ** Extend Horizontal Limits For Corner Radials
 */
 /*
 ** Commented Out 18/10/2004 Rob Cormack. Extension Amount Now Determined In
-** Function "bcdtmExtSideSlope_getReflexRadialAngleAndSlopeForLimit"
+** Function "bcdtmSideSlope_getReflexRadialAngleAndSlopeForLimit"
 */
 // if( dbg ) bcdtmWrite_message(0,0,0,"Extending Horizontal Limits For Corner Radials") ;
-// if( bcdtmExtSideSlope_extendHorizontalLimitForCornerRadials(*SideSlopeTable,*SideSlopeTableSize,SideSlopeDirection)) goto errexit ;
+// if( bcdtmSideSlope_extendHorizontalLimitForCornerRadials(*SideSlopeTable,*SideSlopeTableSize,SideSlopeDirection)) goto errexit ;
 /*
 ** Project Radials To Limit Or Intersect Tin Surface
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Projecting Radials To Limit And/Or Intersecting Tin Surface") ;
- if( bcdtmExtSideSlope_intersectRadialsWithSurface(*SideSlopeTable,*SideSlopeTableSize,1) ) goto errexit ;
+ if( bcdtmSideSlope_intersectRadialsWithSurface(*SideSlopeTable,*SideSlopeTableSize,1) ) goto errexit ;
  if( dbg == 1 )
    {
     bcdtmWrite_message(0,0,0,"Number Of Side Slope Element Radials = %6ld",*SideSlopeTableSize) ;
@@ -2317,7 +2319,7 @@ int bcdtmExtSideSlope_createSideSlopes(DTM_SIDE_SLOPE_TABLE **SideSlopeTable,lon
        bcdtmWrite_message(0,0,0,"Radial[%6ld] ** Start %10.4lf %10.4lf %10.4lf End  %10.4lf %10.4lf %10.4lf",(long)(radial-*SideSlopeTable),radial->radialStartPoint.x,radial->radialStartPoint.y,radial->radialStartPoint.z,radial->radialEndPoint.x,radial->radialEndPoint.y,radial->radialEndPoint.z) ;
  //      if( bcdtmMath_distance(radial->radialStartPoint.x,radial->radialStartPoint.y,radial->radialEndPoint.x,radial->radialEndPoint.y )> 50.0 ) goto errexit ;
       }
-    bcdtmExtSideSlope_writeRadialsToBinaryDTMFile(*SideSlopeTable,*SideSlopeTableSize,1,L"ProjectedRadials.dat") ;
+    bcdtmSideSlope_writeRadialsToBinaryDTMFile(*SideSlopeTable,*SideSlopeTableSize,1,L"ProjectedRadials.dat") ;
    }
 /*
 ** Stoke Convex Corners
@@ -2325,7 +2327,7 @@ int bcdtmExtSideSlope_createSideSlopes(DTM_SIDE_SLOPE_TABLE **SideSlopeTable,lon
  if( StrokeCorners )
    {
     if( dbg ) bcdtmWrite_message(0,0,0,"Stroking Convex Corners") ;
-    if( bcdtmExtSideSlope_strokeConvexCorners(SideSlopeTable,SideSlopeTableSize,SideSlopeDirection,CornerOption,CornerStrokeTolerance) ) goto errexit ;
+    if( bcdtmSideSlope_strokeConvexCorners(SideSlopeTable,SideSlopeTableSize,SideSlopeDirection,CornerOption,CornerStrokeTolerance) ) goto errexit ;
     if( dbg == 2 )
       {
        bcdtmWrite_message(0,0,0,"Number Of Side Slope Element Radials = %6ld",*SideSlopeTableSize) ;
@@ -2338,7 +2340,7 @@ int bcdtmExtSideSlope_createSideSlopes(DTM_SIDE_SLOPE_TABLE **SideSlopeTable,lon
 ** Project Stroked Corner Radials To Limit Or Intersect Tin Surface
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Projecting Stroked Corner Radials To Limit And/Or Intersecting Tin Surface") ;
-    if( bcdtmExtSideSlope_intersectRadialsWithSurface(*SideSlopeTable,*SideSlopeTableSize,2) ) goto errexit ;
+    if( bcdtmSideSlope_intersectRadialsWithSurface(*SideSlopeTable,*SideSlopeTableSize,2) ) goto errexit ;
     if( dbg == 2 )
       {
        bcdtmWrite_message(0,0,0,"Number Of Side Slope Element Radials = %6ld",*SideSlopeTableSize) ;
@@ -2346,7 +2348,7 @@ int bcdtmExtSideSlope_createSideSlopes(DTM_SIDE_SLOPE_TABLE **SideSlopeTable,lon
          {
           bcdtmWrite_message(0,0,0,"Radial[%6ld] ** Start %10.4lf %10.4lf %10.4lf End  %10.4lf %10.4lf %10.4lf",(long)(radial-*SideSlopeTable),radial->radialStartPoint.x,radial->radialStartPoint.y,radial->radialStartPoint.z,radial->radialEndPoint.x,radial->radialEndPoint.y,radial->radialEndPoint.z) ;
          }
-       bcdtmExtSideSlope_writeRadialsToBinaryDTMFile(*SideSlopeTable,*SideSlopeTableSize,1,L"StrokedCornerRadials.dat") ;
+       bcdtmSideSlope_writeRadialsToBinaryDTMFile(*SideSlopeTable,*SideSlopeTableSize,1,L"StrokedCornerRadials.dat") ;
       }
    }
 /*
@@ -2371,7 +2373,7 @@ int bcdtmExtSideSlope_createSideSlopes(DTM_SIDE_SLOPE_TABLE **SideSlopeTable,lon
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_assignRadialTypesToSideSlopeTablePoints(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize,long SideSlopeDirection)
+int bcdtmSideSlope_assignRadialTypesToSideSlopeTablePoints(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize,long SideSlopeDirection)
 /*
 ** This Function Assigns Radial Types To The Side Slope Table Points
 **
@@ -2509,7 +2511,7 @@ int bcdtmExtSideSlope_assignRadialTypesToSideSlopeTablePoints(DTM_SIDE_SLOPE_TAB
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_insertNormalRadialsAtConvexCorners(DTM_SIDE_SLOPE_TABLE **SideSlopeTable,long *SideSlopeTableSize)
+int bcdtmSideSlope_insertNormalRadialsAtConvexCorners(DTM_SIDE_SLOPE_TABLE **SideSlopeTable,long *SideSlopeTableSize)
 /*
 ** This Function Inserts Normal Radials At Convex Corner Points
 */
@@ -2598,7 +2600,7 @@ int bcdtmExtSideSlope_insertNormalRadialsAtConvexCorners(DTM_SIDE_SLOPE_TABLE **
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_insertNormalRadialsAtConcaveCorners(DTM_SIDE_SLOPE_TABLE **sideSlopeTablePP,long *sideSlopeTableSizeP,double p2pTol)
+int bcdtmSideSlope_insertNormalRadialsAtConcaveCorners(DTM_SIDE_SLOPE_TABLE **sideSlopeTablePP,long *sideSlopeTableSizeP,double p2pTol)
 /*
 ** This Function Inserts Normal Radials At Concave Corner Points
 */
@@ -2733,7 +2735,7 @@ int bcdtmExtSideSlope_insertNormalRadialsAtConcaveCorners(DTM_SIDE_SLOPE_TABLE *
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_assignSlopesAndAnglesToRadials(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize,long SideSlopeDirection,DTM_SLOPE_TABLE *SlopeTable,long SlopeTableSize)
+int bcdtmSideSlope_assignSlopesAndAnglesToRadials(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize,long SideSlopeDirection,DTM_SLOPE_TABLE *SlopeTable,long SlopeTableSize)
 /*
 ** This Function Assigns Radial Types To The Side Slope Table Points
 */
@@ -2977,7 +2979,7 @@ bcdtmWrite_message(0,0,0,"radialSlope = %10.4lf radial->forcedSlope = %10.4lf",r
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_adjustSlopesAndAnglesForCalculationMethod(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize,long SideSlopeDirection,long CornerOption)
+int bcdtmSideSlope_adjustSlopesAndAnglesForCalculationMethod(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize,long SideSlopeDirection,long CornerOption)
 /*
 ** This Function Assigns Radial Types To The Side Slope Table Points
 */
@@ -3025,7 +3027,7 @@ int bcdtmExtSideSlope_adjustSlopesAndAnglesForCalculationMethod(DTM_SIDE_SLOPE_T
          {
           if( dbg ) bcdtmWrite_message(0,0,0,"Adjusting Corner Radial[%6ld] T = %2ld Slope = %10.4lf Angle = %8.4lf Degs %11.8lf Rads ** %10.4lf %10.4lf %10.4lf",(long)(radial-SideSlopeTable),radial->radialType,radial->radialSlope,radial->radialAngle*360.0/DTM_2PYE,radial->radialAngle,radial->radialStartPoint.x,radial->radialStartPoint.y,radial->radialStartPoint.z) ;
           saveSlope = radial->radialSlope ;
-          if( bcdtmExtSideSlope_calculateAngleAndSlopeForCornerRadial(SideSlopeTable,SideSlopeTableSize,radial,SideSlopeDirection,&Solution)) goto errexit ;
+          if( bcdtmSideSlope_calculateAngleAndSlopeForCornerRadial(SideSlopeTable,SideSlopeTableSize,radial,SideSlopeDirection,&Solution)) goto errexit ;
           if( CornerOption == 1 && radial->radialType == 3  ) radial->radialSlope = saveSlope ;
  //         if( CornerOption == 1 && radial->radialType == 3  ) radial->radialSlope = (radial->radialSlope + saveSlope)/2.0 ;
           radial->radialSolution = Solution ;
@@ -3048,7 +3050,7 @@ int bcdtmExtSideSlope_adjustSlopesAndAnglesForCalculationMethod(DTM_SIDE_SLOPE_T
     else if ( radial->radialType == 1 )
       {
        if( dbg ) bcdtmWrite_message(0,0,0,"Radial[%6ld] T = %2ld ** %12.4lf %12.4lf %10.4lf ** Angle = %12.10lf Slope = %10.8lf",(long)(radial-SideSlopeTable),radial->radialType,radial->radialStartPoint.x,radial->radialStartPoint.y,radial->radialStartPoint.z,radial->radialAngle,radial->radialSlope) ;
-       if( bcdtmExtSideSlope_getReflexRadialAngleAndSlopeForLimit(SideSlopeTable,SideSlopeTableSize,radial,SideSlopeDirection,slopesP,&angle,&slope,&horRatio)) goto errexit ;
+       if( bcdtmSideSlope_getReflexRadialAngleAndSlopeForLimit(SideSlopeTable,SideSlopeTableSize,radial,SideSlopeDirection,slopesP,&angle,&slope,&horRatio)) goto errexit ;
        if( dbg ) bcdtmWrite_message(0,0,0,"============== Adjusted Angle = %12.10lf Adjusted Slope = %10.8lf Extension Ratio = %8.4lf",angle,slope,horRatio) ;
        radial->radialAngle = angle ;
        if     ( radial->radialSlope > 0.0 && slope > 0.0 ) radial->radialSlope = slope ;
@@ -3064,7 +3066,7 @@ int bcdtmExtSideSlope_adjustSlopesAndAnglesForCalculationMethod(DTM_SIDE_SLOPE_T
     if( ! radial->isRadialDir && radial->radialOption == 2  &&  radial->radialType == 2 )
       {
        if( dbg ) bcdtmWrite_message(0,0,0,"Adjusting Edge Radial[%6ld] T = %2ld Slope = %10.4lf Angle = %8.4lf Degs %11.8lf Rads ** %10.4lf %10.4lf %10.4lf",(long)(radial-SideSlopeTable),radial->radialType,radial->radialSlope,radial->radialAngle*360.0/DTM_2PYE,radial->radialAngle,radial->radialStartPoint.x,radial->radialStartPoint.y,radial->radialStartPoint.z) ;
-       if( bcdtmExtSideSlope_calculateAngleAndSlopeForEdgeRadial(SideSlopeTable,SideSlopeTableSize,radial,SideSlopeDirection,&Solution)) goto errexit ;
+       if( bcdtmSideSlope_calculateAngleAndSlopeForEdgeRadial(SideSlopeTable,SideSlopeTableSize,radial,SideSlopeDirection,&Solution)) goto errexit ;
        radial->radialSolution = Solution ;
        if( dbg ) bcdtmWrite_message(0,0,0,"Adjusted  Edge Radial[%6ld] T = %2ld Solution = %1ld Slope = %10.4lf Angle = %8.4lf Degs %11.8lf Rads ** %10.4lf %10.4lf %10.4lf",(long)(radial-SideSlopeTable),radial->radialType,radial->radialSolution,radial->radialSlope,radial->radialAngle*360.0/DTM_2PYE,radial->radialAngle,radial->radialStartPoint.x,radial->radialStartPoint.y,radial->radialStartPoint.z) ;
       }
@@ -3092,7 +3094,7 @@ int bcdtmExtSideSlope_adjustSlopesAndAnglesForCalculationMethod(DTM_SIDE_SLOPE_T
 |                                                                       |
 |                                                                       |
 +----------------------------------------------------------------------*/
-int bcdtmExtSideSlope_getReflexRadialAngleAndSlopeForLimit(DTM_SIDE_SLOPE_TABLE *sideSlopeTableP,long sideSlopeTableSize,DTM_SIDE_SLOPE_TABLE *radialP,long sideSlopeDirection,double *radialSlopesP,double *angleP,double *slopeP,double *horRatioP)
+int bcdtmSideSlope_getReflexRadialAngleAndSlopeForLimit(DTM_SIDE_SLOPE_TABLE *sideSlopeTableP,long sideSlopeTableSize,DTM_SIDE_SLOPE_TABLE *radialP,long sideSlopeDirection,double *radialSlopesP,double *angleP,double *slopeP,double *horRatioP)
 {
  int    ret=DTM_SUCCESS,sd1,sd2,dbg=0 ;
  double x=0.0,y=0.0,pz,nz,px1,py1,pz1,px2,py2,pz2,nx1,ny1,nz1,nx2,ny2,nz2;
@@ -3261,7 +3263,7 @@ int bcdtmExtSideSlope_getReflexRadialAngleAndSlopeForLimit(DTM_SIDE_SLOPE_TABLE 
 |                                                                       |
 |                                                                       |
 +----------------------------------------------------------------------*/
-int bcdtmExtSideSlope_calculateAngleAndSlopeForCornerRadial(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize,DTM_SIDE_SLOPE_TABLE *Radial,long SideSlopeDirection,long *PlaneSolution)
+int bcdtmSideSlope_calculateAngleAndSlopeForCornerRadial(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize,DTM_SIDE_SLOPE_TABLE *Radial,long SideSlopeDirection,long *PlaneSolution)
 /*
 **
 ** This Is The Controlling Routine For Calculating
@@ -3299,7 +3301,7 @@ int bcdtmExtSideSlope_calculateAngleAndSlopeForCornerRadial(DTM_SIDE_SLOPE_TABLE
 /*
 ** Calculate Planar Angles And Slope For Side Slope Element
 */
- if( bcdtmExtSideSlope_calculatePlanarAngleAndSlopeForCornerRadial(SideSlopeTable,SideSlopeDirection,priorRadial,Radial,nextRadial,&Angle,&Slope ) ) goto errexit ;
+ if( bcdtmSideSlope_calculatePlanarAngleAndSlopeForCornerRadial(SideSlopeTable,SideSlopeDirection,priorRadial,Radial,nextRadial,&Angle,&Slope ) ) goto errexit ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Planar Solution ** Angle = %10.8lf Slope = %10.4lf",Angle,Slope) ;
 /*
 ** Calculate Planar Angles And Slope For A Level Side Slope Element
@@ -3307,7 +3309,7 @@ int bcdtmExtSideSlope_calculateAngleAndSlopeForCornerRadial(DTM_SIDE_SLOPE_TABLE
  spz =  priorRadial->radialStartPoint.z ;
  snz =  nextRadial->radialStartPoint.z ;
  priorRadial->radialStartPoint.z = nextRadial->radialStartPoint.z = Radial->radialStartPoint.z ;
- if( bcdtmExtSideSlope_calculatePlanarAngleAndSlopeForCornerRadial(SideSlopeTable,SideSlopeDirection,priorRadial,Radial,nextRadial,&levelAngle,&levelSlope ) ) goto errexit ;
+ if( bcdtmSideSlope_calculatePlanarAngleAndSlopeForCornerRadial(SideSlopeTable,SideSlopeDirection,priorRadial,Radial,nextRadial,&levelAngle,&levelSlope ) ) goto errexit ;
  priorRadial->radialStartPoint.z = spz ;
  nextRadial->radialStartPoint.z  = snz ;
 /*
@@ -3315,7 +3317,7 @@ int bcdtmExtSideSlope_calculateAngleAndSlopeForCornerRadial(DTM_SIDE_SLOPE_TABLE
 */
  Solution = 1 ;
  if( ( Radial->radialSlope > 0.0 && Slope < 0.0 ) || ( Radial->radialSlope < 0.0 && Slope > 0.0 ) ) Solution = 0 ;
- else  bcdtmExtSideSlope_checkForSolution(SideSlopeDirection,Radial->radialType,Angle,priorAngle,nextAngle,&Solution) ;
+ else  bcdtmSideSlope_checkForSolution(SideSlopeDirection,Radial->radialType,Angle,priorAngle,nextAngle,&Solution) ;
  if( dbg &&   Solution ) bcdtmWrite_message(0,0,0,"Planar Solution Found") ;
  if( dbg && ! Solution ) bcdtmWrite_message(0,0,0,"No Planar Solution Found") ;
 /*
@@ -3359,10 +3361,10 @@ int bcdtmExtSideSlope_calculateAngleAndSlopeForCornerRadial(DTM_SIDE_SLOPE_TABLE
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|   bcdtmExtSideSlope_calculatePlanarAngleAndSlopeForCornerRadial         |
+|   bcdtmSideSlope_calculatePlanarAngleAndSlopeForCornerRadial         |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_calculatePlanarAngleAndSlopeForCornerRadial(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeDirection,DTM_SIDE_SLOPE_TABLE *PriorRadial,DTM_SIDE_SLOPE_TABLE *Radial,DTM_SIDE_SLOPE_TABLE *NextRadial,double *Angle,double *Slope )
+int bcdtmSideSlope_calculatePlanarAngleAndSlopeForCornerRadial(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeDirection,DTM_SIDE_SLOPE_TABLE *PriorRadial,DTM_SIDE_SLOPE_TABLE *Radial,DTM_SIDE_SLOPE_TABLE *NextRadial,double *Angle,double *Slope )
 /*
 ** This Function Calculates The Planar Angles And Slopes For A Corner Radial
 ** By Determing The Line Of Intersection Between The Prior And Next Planes At
@@ -3442,7 +3444,7 @@ int bcdtmExtSideSlope_calculatePlanarAngleAndSlopeForCornerRadial(DTM_SIDE_SLOPE
 /*
 **  Calcualte Intersection Angle Of Prior And Next Planes
 */
- else  bcdtmExtSideSlope_calculateXYAngleBetweenPlanes(&IntAngle,A0,B0,C0,A1,B1,C1) ;
+ else  bcdtmSideSlope_calculateXYAngleBetweenPlanes(&IntAngle,A0,B0,C0,A1,B1,C1) ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Angle Between Planes = %12.8lf",IntAngle) ;
 /*
 ** Normalise Intersection Angle ( Ensure It Is On Correct Side Of Side Slope Element )
@@ -3495,10 +3497,10 @@ int bcdtmExtSideSlope_calculatePlanarAngleAndSlopeForCornerRadial(DTM_SIDE_SLOPE
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|  bcdtmExtSideSlope_calculateXYAngleBetweenPlanes                        |
+|  bcdtmSideSlope_calculateXYAngleBetweenPlanes                        |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_calculateXYAngleBetweenPlanes(double *Angle,double A0,double B0,double C0,double A1,double B1,double C1)
+int bcdtmSideSlope_calculateXYAngleBetweenPlanes(double *Angle,double A0,double B0,double C0,double A1,double B1,double C1)
 /*
 ** This Function Calculates The Angle Between Two Planes
 */
@@ -3523,10 +3525,10 @@ int bcdtmExtSideSlope_calculateXYAngleBetweenPlanes(double *Angle,double A0,doub
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|  bcdtmExtSideSlope_checkForLeftSolution                                 |
+|  bcdtmSideSlope_checkForLeftSolution                                 |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_checkForSolution(long SideSlopeDirection,long RadialType,double Angle,double PriorAngle,double NextAngle,long *SolutionFound)
+int bcdtmSideSlope_checkForSolution(long SideSlopeDirection,long RadialType,double Angle,double PriorAngle,double NextAngle,long *SolutionFound)
 /*
 ** This Function Checks If The Solution Is Between The Two Normals At The Corner Point
 */
@@ -3620,10 +3622,10 @@ int bcdtmExtSideSlope_checkForSolution(long SideSlopeDirection,long RadialType,d
 }
 /*----------------------------------------------------------------------+
 |                                                                       |
-|  bcdtmExtSideSlope_calculateAngleAndSlopeForEdgeRadial                     |
+|  bcdtmSideSlope_calculateAngleAndSlopeForEdgeRadial                     |
 |                                                                       |
 +----------------------------------------------------------------------*/
-int bcdtmExtSideSlope_calculateAngleAndSlopeForEdgeRadial(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize,DTM_SIDE_SLOPE_TABLE *Radial,long SideSlopeDirection,long *PlaneSolution)
+int bcdtmSideSlope_calculateAngleAndSlopeForEdgeRadial(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize,DTM_SIDE_SLOPE_TABLE *Radial,long SideSlopeDirection,long *PlaneSolution)
 /*
 **
 ** This Is The Controlling Routine For Calculating
@@ -3693,7 +3695,7 @@ int bcdtmExtSideSlope_calculateAngleAndSlopeForEdgeRadial(DTM_SIDE_SLOPE_TABLE *
 */
  else
    {
-    if( bcdtmExtSideSlope_calculatePlanarAngleAndSlopeForEdgeRadial(SideSlopeTable,SideSlopeDirection,priorRadial,Radial,nextRadial,&Solution,&Angle,&Slope ) ) goto errexit ;
+    if( bcdtmSideSlope_calculatePlanarAngleAndSlopeForEdgeRadial(SideSlopeTable,SideSlopeDirection,priorRadial,Radial,nextRadial,&Solution,&Angle,&Slope ) ) goto errexit ;
     if( dbg ) bcdtmWrite_message(0,0,0,"Planar Solution ** Angle = %10.8lf Slope = %10.4lf",Angle,Slope) ;
 /*
 ** Check For Solution
@@ -3745,10 +3747,10 @@ int bcdtmExtSideSlope_calculateAngleAndSlopeForEdgeRadial(DTM_SIDE_SLOPE_TABLE *
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|   bcdtmExtSideSlope_calculatePlanarAngleAndSlopeForEdgeRadial           |
+|   bcdtmSideSlope_calculatePlanarAngleAndSlopeForEdgeRadial           |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_calculatePlanarAngleAndSlopeForEdgeRadial(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeDirection,DTM_SIDE_SLOPE_TABLE *PriorRadial,DTM_SIDE_SLOPE_TABLE *Radial,DTM_SIDE_SLOPE_TABLE *NextRadial,long *PlaneSolution,double *Angle,double *Slope )
+int bcdtmSideSlope_calculatePlanarAngleAndSlopeForEdgeRadial(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeDirection,DTM_SIDE_SLOPE_TABLE *PriorRadial,DTM_SIDE_SLOPE_TABLE *Radial,DTM_SIDE_SLOPE_TABLE *NextRadial,long *PlaneSolution,double *Angle,double *Slope )
 /*
 ** This Function Calculates The Planar Angles And Slopes For A Corner Radial
 ** By Determing The Line Of Intersection Between The Prior And Next Planes At
@@ -3784,8 +3786,8 @@ int bcdtmExtSideSlope_calculatePlanarAngleAndSlopeForEdgeRadial(DTM_SIDE_SLOPE_T
 **  Calculate Plane Coefficients
 */
  priorSolution = nextSolution = 0 ;
- if( PriorRadial != NULL ) if( bcdtmExtSideSlope_calculatePlaneCoefficientsForEdgeRadial(PriorRadial,Radial,SideSlopeDirection,&priorSolution,&A0,&B0,&C0,&D0)) goto errexit ;
- if( NextRadial  != NULL ) if( bcdtmExtSideSlope_calculatePlaneCoefficientsForEdgeRadial(Radial,NextRadial ,SideSlopeDirection,&nextSolution, &A1,&B1,&C1,&D1)) goto errexit ;
+ if( PriorRadial != NULL ) if( bcdtmSideSlope_calculatePlaneCoefficientsForEdgeRadial(PriorRadial,Radial,SideSlopeDirection,&priorSolution,&A0,&B0,&C0,&D0)) goto errexit ;
+ if( NextRadial  != NULL ) if( bcdtmSideSlope_calculatePlaneCoefficientsForEdgeRadial(Radial,NextRadial ,SideSlopeDirection,&nextSolution, &A1,&B1,&C1,&D1)) goto errexit ;
 /*
 ** Check For A Solution
 */
@@ -3841,10 +3843,10 @@ int bcdtmExtSideSlope_calculatePlanarAngleAndSlopeForEdgeRadial(DTM_SIDE_SLOPE_T
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|  bcdtmExtSideSlope_calculatePlaneCoefficientsForEdgeRadials             |
+|  bcdtmSideSlope_calculatePlaneCoefficientsForEdgeRadials             |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_calculatePlaneCoefficientsForEdgeRadial(DTM_SIDE_SLOPE_TABLE *Radial1,DTM_SIDE_SLOPE_TABLE *Radial2,long SideSlopeDirection,long *PlaneSolution,double *A,double *B,double *C,double *D)
+int bcdtmSideSlope_calculatePlaneCoefficientsForEdgeRadial(DTM_SIDE_SLOPE_TABLE *Radial1,DTM_SIDE_SLOPE_TABLE *Radial2,long SideSlopeDirection,long *PlaneSolution,double *A,double *B,double *C,double *D)
 {
  long   dbg=0 ;
  double x,y,z,dx,dy,dz,dd,d1,angle,slope,alpha,pslope,sloperatio ;
@@ -3948,7 +3950,7 @@ int bcdtmExtSideSlope_calculatePlaneCoefficientsForEdgeRadial(DTM_SIDE_SLOPE_TAB
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_extendHorizontalLimitForCornerRadials(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize,long SideSlopeDirection)
+int bcdtmSideSlope_extendHorizontalLimitForCornerRadials(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize,long SideSlopeDirection)
 {
  int      dbg=0 ;
  double   ang,angp,angn,angb ;
@@ -4038,7 +4040,7 @@ int bcdtmExtSideSlope_extendHorizontalLimitForCornerRadials(DTM_SIDE_SLOPE_TABLE
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_intersectRadialsWithSurface(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize,long Status )
+int bcdtmSideSlope_intersectRadialsWithSurface(DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize,long Status )
 /*
 ** This Function Calculates The Radial Intersections With The Tin Surface
 ** Only Radials That Match The Status Are Intersected
@@ -4071,7 +4073,7 @@ int bcdtmExtSideSlope_intersectRadialsWithSurface(DTM_SIDE_SLOPE_TABLE *SideSlop
 */
        if( radial->isForceSlope && ( radial->sideSlopeOption == 1 || ( radial->sideSlopeOption >= 5 && radial->sideSlopeOption <=7 ))  )
          {
-          if( bcdtmExtSideSlope_projectVectorStartToHullDtmObject((BC_DTM_OBJ *)radial->slopeToTin,sX,sY,sZ,radial->radialAngle,radial->radialSlope,&hX,&hY,&hZ) ) goto errexit ;
+          if( bcdtmSideSlope_projectVectorStartToHullDtmObject((BC_DTM_OBJ *)radial->slopeToTin,sX,sY,sZ,radial->radialAngle,radial->radialSlope,&hX,&hY,&hZ) ) goto errexit ;
           sX = hX ;
           sY = hY ;
           sZ = hZ ;
@@ -4079,7 +4081,7 @@ int bcdtmExtSideSlope_intersectRadialsWithSurface(DTM_SIDE_SLOPE_TABLE *SideSlop
 /*
 ** Intersect Tin Surface
 */
-       if( bcdtmExtSideSlope_intersectSurfaceDtmObject((BC_DTM_OBJ *)radial->slopeToTin,sX,sY,sZ,radial->radialAngle,radial->radialSlope,radial->sideSlopeOption,endValue,&radial->radialEndPoint.x,&radial->radialEndPoint.y,&radial->radialEndPoint.z,&StartFlag,&EndFlag)) goto errexit ;
+       if( bcdtmSideSlope_intersectSurfaceDtmObject((BC_DTM_OBJ *)radial->slopeToTin,sX,sY,sZ,radial->radialAngle,radial->radialSlope,radial->sideSlopeOption,endValue,&radial->radialEndPoint.x,&radial->radialEndPoint.y,&radial->radialEndPoint.z,&StartFlag,&EndFlag)) goto errexit ;
 /*
 ** Drape Radial End Point On slopeTo Tin For slopeTo Options With Limits
 */
@@ -4113,7 +4115,7 @@ int bcdtmExtSideSlope_intersectRadialsWithSurface(DTM_SIDE_SLOPE_TABLE *SideSlop
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_projectVectorStartToHullDtmObject(BC_DTM_OBJ *tinP,double Sx,double Sy,double Sz,double xyAngle,double slope,double *Hx, double *Hy,double *Hz)
+int bcdtmSideSlope_projectVectorStartToHullDtmObject(BC_DTM_OBJ *tinP,double Sx,double Sy,double Sz,double xyAngle,double slope,double *Hx, double *Hy,double *Hz)
 {
 /*
 ** This Function Extends The Vector Start Point To The Tin Hull
@@ -4235,7 +4237,7 @@ int bcdtmExtSideSlope_projectVectorStartToHullDtmObject(BC_DTM_OBJ *tinP,double 
 // SS3 branche only.
 // Need to make bcdtmDrape_findClosestHullLineDtmObject public
 //
-int bcdtmExtSideSlope_findClosestHullLineDtmObject(BC_DTM_OBJ *dtmP,double x,double y,long *pnt1P,long *pnt2P)
+int bcdtmSideSlope_findClosestHullLineDtmObject(BC_DTM_OBJ *dtmP,double x,double y,long *pnt1P,long *pnt2P)
 /*
 ** This Routine Find the Closeset Hull Line to x,y
 */
@@ -4300,7 +4302,7 @@ int bcdtmExtSideSlope_findClosestHullLineDtmObject(BC_DTM_OBJ *dtmP,double x,dou
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_intersectSurfaceDtmObject(BC_DTM_OBJ *Tin,double Sx,double Sy,double Sz,double Angle,double Slope,long SideSlopeFlag,double EndValue,double *Lx, double *Ly,double *Lz,long *StartFlag,long *EndFlag)
+int bcdtmSideSlope_intersectSurfaceDtmObject(BC_DTM_OBJ *Tin,double Sx,double Sy,double Sz,double Angle,double Slope,long SideSlopeFlag,double EndValue,double *Lx, double *Ly,double *Lz,long *StartFlag,long *EndFlag)
 /*
 ** This Function Intersects a 3D Vector With A Tin Surface
 **
@@ -4419,7 +4421,7 @@ int bcdtmExtSideSlope_intersectSurfaceDtmObject(BC_DTM_OBJ *Tin,double Sx,double
         return(0);
         }
 
-     bcdtmExtSideSlope_findClosestHullLineDtmObject(Tin, Sx, Sy, &P1, &P2) ;
+     bcdtmSideSlope_findClosestHullLineDtmObject(Tin, Sx, Sy, &P1, &P2) ;
      if( P1 != Tin->nullPnt && P2 != Tin->nullPnt )
         {
         DTM_TIN_POINT *pnt1P = pointAddrP (Tin, P1);
@@ -4474,7 +4476,7 @@ int bcdtmExtSideSlope_intersectSurfaceDtmObject(BC_DTM_OBJ *Tin,double Sx,double
  Ex = Ex ; Ey = Ey ; Ez = Ez  ;
  while ( process )
    {
-    if( bcdtmExtSideSlope_getNextInterceptDtmObject(Tin,px,py,&Ptype,Ex,Ey,&P1,&P2,&P3,&nx,&ny,&nzt)) return(1) ;
+    if( bcdtmSideSlope_getNextInterceptDtmObject(Tin,px,py,&Ptype,Ex,Ey,&P1,&P2,&P3,&nx,&ny,&nzt)) return(1) ;
     if( Ptype > 3 ) process = 0 ;
     else
       {
@@ -4596,7 +4598,7 @@ int bcdtmExtSideSlope_intersectSurfaceDtmObject(BC_DTM_OBJ *Tin,double Sx,double
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_getNextInterceptDtmObject(BC_DTM_OBJ *Tin,double Px,double Py,long *Ptype,double Ex,double Ey,long *P1,long *P2,long *P3,double *Nx,double *Ny, double *Nz )
+int bcdtmSideSlope_getNextInterceptDtmObject(BC_DTM_OBJ *Tin,double Px,double Py,long *Ptype,double Ex,double Ey,long *P1,long *P2,long *P3,double *Nx,double *Ny, double *Nz )
 /*
 ** This Function Gets The Next Triangle Intercept with Line PxPy  ExEy
 */
@@ -4773,7 +4775,7 @@ int bcdtmExtSideSlope_getNextInterceptDtmObject(BC_DTM_OBJ *Tin,double Px,double
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_strokeConvexCorners(DTM_SIDE_SLOPE_TABLE **SideSlopeTable,long *SideSlopeTableSize,long SideSlopeDirection,long CornerOption,double CornerStrokeTolerance)
+int bcdtmSideSlope_strokeConvexCorners(DTM_SIDE_SLOPE_TABLE **SideSlopeTable,long *SideSlopeTableSize,long SideSlopeDirection,long CornerOption,double CornerStrokeTolerance)
 /*
 ** This Function Strokes Convex Corners
 */
@@ -5051,7 +5053,7 @@ int bcdtmExtSideSlope_strokeConvexCorners(DTM_SIDE_SLOPE_TABLE **SideSlopeTable,
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_writeRadialsToBinaryDTMFile
+int bcdtmSideSlope_writeRadialsToBinaryDTMFile
 (
  DTM_SIDE_SLOPE_TABLE *sideSlopeTableP,
  long                 sideSlopeTableSize,
@@ -5067,6 +5069,7 @@ int bcdtmExtSideSlope_writeRadialsToBinaryDTMFile
  DPoint3d  radialPts[2],*elemPtsP=NULL ;
  DTM_SIDE_SLOPE_TABLE  *radialP ;
  BC_DTM_OBJ *dataP=NULL ;
+ DTMFeatureId nullFeatureId = DTM_NULL_FEATURE_ID;
 /*
 ** Create Data Object
 */
@@ -5089,7 +5092,7 @@ int bcdtmExtSideSlope_writeRadialsToBinaryDTMFile
 */
  if( writeSideSlopeElement )
    {
-    if( bcdtmExtSideSlope_copySideSlopeElementPointsToPointArray(sideSlopeTableP,sideSlopeTableSize,&elemPtsP,&numElemPts)) goto errexit ;
+    if( bcdtmSideSlope_copySideSlopeElementPointsToPointArray(sideSlopeTableP,sideSlopeTableSize,&elemPtsP,&numElemPts)) goto errexit ;
     if( bcdtmObject_storeDtmFeatureInDtmObject(dataP,DTMFeatureType::Breakline,dataP->nullUserTag,1,&dataP->nullFeatureId,elemPtsP,numElemPts)) goto errexit ;
    }
 /*
@@ -5118,7 +5121,7 @@ int bcdtmExtSideSlope_writeRadialsToBinaryDTMFile
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_writeElementToBinaryDTMFile
+int bcdtmSideSlope_writeElementToBinaryDTMFile
 (
  DTM_SIDE_SLOPE_TABLE *sideSlopeTableP,
  long                 sideSlopeTableSize,
@@ -5132,14 +5135,15 @@ int bcdtmExtSideSlope_writeElementToBinaryDTMFile
  long numElemPts=0 ;
  DPoint3d  *elemPtsP=NULL ;
  BC_DTM_OBJ *dataP=NULL ;
-/*
+ DTMFeatureId nullFeatureId = DTM_NULL_FEATURE_ID;
+ /*
 ** Create DTM Object
 */
  if( bcdtmObject_createDtmObject(&dataP)) goto errexit ;
 /*
 ** Store Element In DTM Object
 */
- if( bcdtmExtSideSlope_copySideSlopeElementPointsToPointArray(sideSlopeTableP,sideSlopeTableSize,&elemPtsP,&numElemPts)) goto errexit ;
+ if( bcdtmSideSlope_copySideSlopeElementPointsToPointArray(sideSlopeTableP,sideSlopeTableSize,&elemPtsP,&numElemPts)) goto errexit ;
  if( bcdtmObject_storeDtmFeatureInDtmObject(dataP,DTMFeatureType::Breakline,dataP->nullUserTag,1,&dataP->nullFeatureId,elemPtsP,numElemPts)) goto errexit ;
 /*
 ** Write DTM Object To File
@@ -5164,10 +5168,10 @@ int bcdtmExtSideSlope_writeElementToBinaryDTMFile
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|  bcdtmExtSideSlope_resolveOverlappingSideSlopeRadials                 |
+|  bcdtmSideSlope_resolveOverlappingSideSlopeRadials                 |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_resolveOverlappingSideSlopeRadials(DTM_SIDE_SLOPE_TABLE *RightSideSlopeTable,long RightSideSlopeTableSize,DTM_SIDE_SLOPE_TABLE *LeftSideSlopeTable,long LeftSideSlopeTableSize,DPoint3d *ParallelEdgePts,long NumParallelEdgePts,long SideDirection,double CornerTolerance,double RadialExtension,DTMUserTag RadialTag,DTMUserTag ElementTag,double Pptol,double Pltol,BC_DTM_OBJ *SideSlopes)
+int bcdtmSideSlope_resolveOverlappingSideSlopeRadials(DTM_SIDE_SLOPE_TABLE *RightSideSlopeTable,long RightSideSlopeTableSize,DTM_SIDE_SLOPE_TABLE *LeftSideSlopeTable,long LeftSideSlopeTableSize,DPoint3d *ParallelEdgePts,long NumParallelEdgePts,long SideDirection,double CornerTolerance,double RadialExtension,DTMUserTag RadialTag,DTMUserTag ElementTag,double Pptol,double Pltol,BC_DTM_OBJ *SideSlopes)
 /*
 ** This Is The Controlling Function For Resolving OverLapping Side Slope Radials
 ** This Function Has been Completely Rewritten From the older Resolve Side Slope Function
@@ -5222,8 +5226,8 @@ int bcdtmExtSideSlope_resolveOverlappingSideSlopeRadials(DTM_SIDE_SLOPE_TABLE *R
 */
  if( dbg == 1 )
    {
-    if( SideDirection == 1 || SideDirection == 3) bcdtmExtSideSlope_writeRadialsToBinaryDTMFile(RightSideSlopeTable,RightSideSlopeTableSize,0,L"RightSideSlopeRadials.dat") ;
-    if( SideDirection == 2 || SideDirection == 3) bcdtmExtSideSlope_writeRadialsToBinaryDTMFile(LeftSideSlopeTable,LeftSideSlopeTableSize,0,L"LeftSideSlopeRadials.dat") ;
+    if( SideDirection == 1 || SideDirection == 3) bcdtmSideSlope_writeRadialsToBinaryDTMFile(RightSideSlopeTable,RightSideSlopeTableSize,0,L"RightSideSlopeRadials.dat") ;
+    if( SideDirection == 2 || SideDirection == 3) bcdtmSideSlope_writeRadialsToBinaryDTMFile(LeftSideSlopeTable,LeftSideSlopeTableSize,0,L"LeftSideSlopeRadials.dat") ;
    }
 /*
 ** Determine Side Slope Element Type, 1 For Open Element 2 For Closed Element
@@ -5249,14 +5253,14 @@ int bcdtmExtSideSlope_resolveOverlappingSideSlopeRadials(DTM_SIDE_SLOPE_TABLE *R
 ** Extend Radials At Transistion Points If Necessary
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Extending Radials At Transistion Points") ;
-    bcdtmExtSideSlope_extendRadialsAtTransistionPoints(sideSlopeElementType,RightSideSlopeTable,RightSideSlopeTableSize,RadialExtension) ;
+    bcdtmSideSlope_extendRadialsAtTransistionPoints(sideSlopeElementType,RightSideSlopeTable,RightSideSlopeTableSize,RadialExtension) ;
 /*
 **  Create Right Radial Table
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Creating Right Radial Overlap Table") ;
-    if( bcdtmExtSideSlope_createRadialOverlapTable(sideSlopeElementType,RightSideSlopeTable,RightSideSlopeTableSize,&RghtRadials,&NumRghtRadials)) goto errexit ;
-    if( dbg ) bcdtmExtSideSlope_writeOverlapRadialTableToBinaryDTMFile(RghtRadials,NumRghtRadials,L"RightResolveRadials00.dat") ;
-    if( dbg == 2 ) bcdtmExtSideSlope_writeOverlapRadialTableToDTMLogFile(RghtRadials,NumRghtRadials,"Right After Creation Of Overlap Table") ;
+    if( bcdtmSideSlope_createRadialOverlapTable(sideSlopeElementType,RightSideSlopeTable,RightSideSlopeTableSize,&RghtRadials,&NumRghtRadials)) goto errexit ;
+    if( dbg ) bcdtmSideSlope_writeOverlapRadialTableToBinaryDTMFile(RghtRadials,NumRghtRadials,L"RightResolveRadials00.dat") ;
+    if( dbg == 2 ) bcdtmSideSlope_writeOverlapRadialTableToDTMLogFile(RghtRadials,NumRghtRadials,"Right After Creation Of Overlap Table") ;
 /*
 ** Truncate Radials At Parallel Boundary Edge
 */
@@ -5264,19 +5268,19 @@ int bcdtmExtSideSlope_resolveOverlappingSideSlopeRadials(DTM_SIDE_SLOPE_TABLE *R
       {
        if( dbg ) bcdtmWrite_message(0,0,0,"Truncating Right Radials At Parallel Boundary Edge") ;
        if( dbg ) start = bcdtmClock() ;
-       if( bcdtmExtSideSlope_truncateSideSlopeRadialsAtParallelBoundaryEdge(ParallelEdgePts,NumParallelEdgePts,RghtRadials,&NumRghtRadials) )
+       if( bcdtmSideSlope_truncateSideSlopeRadialsAtParallelBoundaryEdge(ParallelEdgePts,NumParallelEdgePts,RghtRadials,&NumRghtRadials) )
        if( dbg ) finish = bcdtmClock() ;
        if( dbg ) bcdtmWrite_message(0,0,0,"Time To Truncate Right Radials At Parallel Boundary Edge = %7.3lf seconds",bcdtmClock_elapsedTime(finish,start)) ;
-       if( dbg ) bcdtmExtSideSlope_writeOverlapRadialTableToBinaryDTMFile(RghtRadials,NumRghtRadials,L"RightResolveRadials01.dat") ;
-       if( dbg == 2 ) bcdtmExtSideSlope_writeOverlapRadialTableToDTMLogFile(RghtRadials,NumRghtRadials,"Right After Truncation At Parrallel Edge") ;
+       if( dbg ) bcdtmSideSlope_writeOverlapRadialTableToBinaryDTMFile(RghtRadials,NumRghtRadials,L"RightResolveRadials01.dat") ;
+       if( dbg == 2 ) bcdtmSideSlope_writeOverlapRadialTableToDTMLogFile(RghtRadials,NumRghtRadials,"Right After Truncation At Parrallel Edge") ;
       }
 /*
 ** Truncate Radials At Pad Edges
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Truncating Right Radials At Pad Edge") ;
-    if( bcdtmExtSideSlope_truncateSideSlopeRadialsAtPadEdge(RghtRadials,NumRghtRadials,sideSlopeElementType)) goto errexit ;
-    if( dbg ) bcdtmExtSideSlope_writeOverlapRadialTableToBinaryDTMFile(RghtRadials,NumRghtRadials,L"RightResolveRadials02.dat") ;
-    if( dbg == 2 ) bcdtmExtSideSlope_writeOverlapRadialTableToDTMLogFile(RghtRadials,NumRghtRadials,"Right After Truncation At Pad Edge") ;
+    if( bcdtmSideSlope_truncateSideSlopeRadialsAtPadEdge(RghtRadials,NumRghtRadials,sideSlopeElementType)) goto errexit ;
+    if( dbg ) bcdtmSideSlope_writeOverlapRadialTableToBinaryDTMFile(RghtRadials,NumRghtRadials,L"RightResolveRadials02.dat") ;
+    if( dbg == 2 ) bcdtmSideSlope_writeOverlapRadialTableToDTMLogFile(RghtRadials,NumRghtRadials,"Right After Truncation At Pad Edge") ;
 
 /*
 **
@@ -5284,16 +5288,16 @@ int bcdtmExtSideSlope_resolveOverlappingSideSlopeRadials(DTM_SIDE_SLOPE_TABLE *R
 ** RobC - Added Following Function 15/11/2007 To Counter Densification Of Verices While Benching
 **
 */
-   if( bcdtmExtSideSlope_removeAdjacentRadialsToConvexRadials(sideSlopeElementType,RghtRadials,&NumRghtRadials,tolerance,&numRemoved)) goto errexit ;
-   if( dbg ) bcdtmExtSideSlope_writeOverlapRadialTableToBinaryDTMFile(RghtRadials,NumRghtRadials,L"RightResolveRadials03.dat") ;
+   if( bcdtmSideSlope_removeAdjacentRadialsToConvexRadials(sideSlopeElementType,RghtRadials,&NumRghtRadials,tolerance,&numRemoved)) goto errexit ;
+   if( dbg ) bcdtmSideSlope_writeOverlapRadialTableToBinaryDTMFile(RghtRadials,NumRghtRadials,L"RightResolveRadials03.dat") ;
 /*
 ** Remove Adjacent Convex Corner Radials That Are Within Grainular Tolerance
 **
 **  Commented Out Rob Cormack 30/10/2007
     if( dbg ) bcdtmWrite_message(0,0,0,"Removing Adjacent Convex Corner Radials") ;
-    if( bcdtmExtSideSlope_removeAdjacentSideSlopeRadialsWithinTolerance(RghtRadials,&NumRghtRadials,CornerTolerance)) goto errexit ;
-    if( dbg ) bcdtmExtSideSlope_writeOverlapRadialTableToBinaryDTMFile(RghtRadials,NumRghtRadials,"RightResolveRadials03.dat") ;
-    if( dbg == 2 ) bcdtmExtSideSlope_writeOverlapRadialTableToDTMLogFile(RghtRadials,NumRghtRadials,"Right After Removal Of Adjacent Convex Corner Radials") ;
+    if( bcdtmSideSlope_removeAdjacentSideSlopeRadialsWithinTolerance(RghtRadials,&NumRghtRadials,CornerTolerance)) goto errexit ;
+    if( dbg ) bcdtmSideSlope_writeOverlapRadialTableToBinaryDTMFile(RghtRadials,NumRghtRadials,"RightResolveRadials03.dat") ;
+    if( dbg == 2 ) bcdtmSideSlope_writeOverlapRadialTableToDTMLogFile(RghtRadials,NumRghtRadials,"Right After Removal Of Adjacent Convex Corner Radials") ;
 */
 /*
 ** Truncate Element Radials With End Radials
@@ -5301,68 +5305,68 @@ int bcdtmExtSideSlope_resolveOverlappingSideSlopeRadials(DTM_SIDE_SLOPE_TABLE *R
     if( sideSlopeElementType == 1 )
       {
        if( dbg ) bcdtmWrite_message(0,0,0,"Truncating Left Radials By Element End Radials") ;
-       if( bcdtmExtSideSlope_truncateElementRadialsWithElementEndRadials(1,RghtRadials,NumRghtRadials) ) goto errexit ;
-       if( dbg ) bcdtmExtSideSlope_writeOverlapRadialTableToBinaryDTMFile(RghtRadials,NumRghtRadials,L"RightResolveRadials04.dat") ;
-       if( dbg == 2 ) bcdtmExtSideSlope_writeOverlapRadialTableToDTMLogFile(RghtRadials,NumRghtRadials,"Right After Truncation At Pad Edge") ;
+       if( bcdtmSideSlope_truncateElementRadialsWithElementEndRadials(1,RghtRadials,NumRghtRadials) ) goto errexit ;
+       if( dbg ) bcdtmSideSlope_writeOverlapRadialTableToBinaryDTMFile(RghtRadials,NumRghtRadials,L"RightResolveRadials04.dat") ;
+       if( dbg == 2 ) bcdtmSideSlope_writeOverlapRadialTableToDTMLogFile(RghtRadials,NumRghtRadials,"Right After Truncation At Pad Edge") ;
       }
 /*
 ** Intersect  Radials
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Intersecting Radials") ;
     if( dbg ) start = bcdtmClock() ;
-    if( bcdtmExtSideSlope_intersectSideSlopeRadials(RghtRadials,NumRghtRadials,sideSlopeElementType,&RadialIntersectFlag) ) goto errexit ;
+    if( bcdtmSideSlope_intersectSideSlopeRadials(RghtRadials,NumRghtRadials,sideSlopeElementType,&RadialIntersectFlag) ) goto errexit ;
     if( dbg ) finish = bcdtmClock() ;
     if( dbg ) bcdtmWrite_message(0,0,0,"Time To Intersect Radials = %7.3lf seconds",bcdtmClock_elapsedTime(finish,start)) ;
-    if( dbg ) bcdtmExtSideSlope_writeOverlapRadialTableToBinaryDTMFile(RghtRadials,NumRghtRadials,L"RightResolveRadials05.dat") ;
-    if( dbg == 2 ) bcdtmExtSideSlope_writeOverlapRadialTableToDTMLogFile(RghtRadials,NumRghtRadials,"Right After Radial Intersection") ;
+    if( dbg ) bcdtmSideSlope_writeOverlapRadialTableToBinaryDTMFile(RghtRadials,NumRghtRadials,L"RightResolveRadials05.dat") ;
+    if( dbg == 2 ) bcdtmSideSlope_writeOverlapRadialTableToDTMLogFile(RghtRadials,NumRghtRadials,"Right After Radial Intersection") ;
 /*
 **  Truncate Intersected Radials
 */
     if( RadialIntersectFlag )
       {
        if( dbg ) bcdtmWrite_message(0,0,0,"Truncating Intersected Radials") ;
-       if( bcdtmExtSideSlope_truncateIntersectedSideSlopeRadials(1,RghtRadials,NumRghtRadials)) goto errexit ;
-       if( dbg ) bcdtmExtSideSlope_writeOverlapRadialTableToBinaryDTMFile(RghtRadials,NumRghtRadials,L"RightResolveRadials06.dat") ;
-       if( dbg == 2 ) bcdtmExtSideSlope_writeOverlapRadialTableToDTMLogFile(RghtRadials,NumRghtRadials,"Right After Radial Truncation") ;
+       if( bcdtmSideSlope_truncateIntersectedSideSlopeRadials(1,RghtRadials,NumRghtRadials)) goto errexit ;
+       if( dbg ) bcdtmSideSlope_writeOverlapRadialTableToBinaryDTMFile(RghtRadials,NumRghtRadials,L"RightResolveRadials06.dat") ;
+       if( dbg == 2 ) bcdtmSideSlope_writeOverlapRadialTableToDTMLogFile(RghtRadials,NumRghtRadials,"Right After Radial Truncation") ;
       }
 /*
 ** Intersect Radials With Base Lines
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Intersecting Radials With Base Lines") ;
     if( dbg ) start = bcdtmClock() ;
-    if( bcdtmExtSideSlope_intersectSideSlopeRadialsWithBaseLines(1,RghtRadials,NumRghtRadials)) goto errexit ;
-    if( bcdtmExtSideSlope_intersectSideSlopeRadialsWithBaseLines(1,RghtRadials,NumRghtRadials)) goto errexit ;
+    if( bcdtmSideSlope_intersectSideSlopeRadialsWithBaseLines(1,RghtRadials,NumRghtRadials)) goto errexit ;
+    if( bcdtmSideSlope_intersectSideSlopeRadialsWithBaseLines(1,RghtRadials,NumRghtRadials)) goto errexit ;
     if( dbg ) finish = bcdtmClock() ;
     if( dbg ) bcdtmWrite_message(0,0,0,"Time To Intersect Radials With Base Lines = %7.3lf seconds",bcdtmClock_elapsedTime(finish,start)) ;
-    if( dbg ) bcdtmExtSideSlope_writeOverlapRadialTableToBinaryDTMFile(RghtRadials,NumRghtRadials,L"RightResolveRadials07.dat") ;
-    if( dbg == 2 ) bcdtmExtSideSlope_writeOverlapRadialTableToDTMLogFile(RghtRadials,NumRghtRadials,"Right After Base Lines") ;
+    if( dbg ) bcdtmSideSlope_writeOverlapRadialTableToBinaryDTMFile(RghtRadials,NumRghtRadials,L"RightResolveRadials07.dat") ;
+    if( dbg == 2 ) bcdtmSideSlope_writeOverlapRadialTableToDTMLogFile(RghtRadials,NumRghtRadials,"Right After Base Lines") ;
 /*
 **  Set Elevations Of Intersected Radials
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Setting Elevations Of Intersected Radials") ;
-    bcdtmExtSideSlope_setElevationOfIntersectedSideSlopeRadials(RghtRadials,NumRghtRadials) ;
-    if( dbg ) bcdtmExtSideSlope_writeOverlapRadialTableToBinaryDTMFile(RghtRadials,NumRghtRadials,L"RightResolveRadials08.dat") ;
-    if( dbg == 2 ) bcdtmExtSideSlope_writeOverlapRadialTableToDTMLogFile(RghtRadials,NumRghtRadials,"Right After Set Elevations") ;
+    bcdtmSideSlope_setElevationOfIntersectedSideSlopeRadials(RghtRadials,NumRghtRadials) ;
+    if( dbg ) bcdtmSideSlope_writeOverlapRadialTableToBinaryDTMFile(RghtRadials,NumRghtRadials,L"RightResolveRadials08.dat") ;
+    if( dbg == 2 ) bcdtmSideSlope_writeOverlapRadialTableToDTMLogFile(RghtRadials,NumRghtRadials,"Right After Set Elevations") ;
 /*
 **  Mark Truncated Radials
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Marking Truncated Radials") ;
-    if( bcdtmExtSideSlope_markTruncatedRadials(RghtRadials,NumRghtRadials)) goto errexit ;
+    if( bcdtmSideSlope_markTruncatedRadials(RghtRadials,NumRghtRadials)) goto errexit ;
 /*
 **  Truncate Non Truncated Radials The Intersect Truncated Slope Toes
 **  RobC Following Code added 9/11/2007
 */
-    if( bcdtmExtSideSlope_truncateRadialsInsideTruncatedSlopeToe(RghtRadials,NumRghtRadials,sideSlopeElementType)) goto errexit ;
+    if( bcdtmSideSlope_truncateRadialsInsideTruncatedSlopeToe(RghtRadials,NumRghtRadials,sideSlopeElementType)) goto errexit ;
 /*
 **  Terminate Radials With Toe Points Inside Slope Toes
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Terminating Radials With Toe Points Inside Slope Toes") ;
-    if( processingLimits ) if( bcdtmExtSideSlope_truncateRadialsWithToePointsInsideSlopeToe(RghtRadials,NumRghtRadials,1)) goto errexit ;
-    if( dbg ) bcdtmExtSideSlope_writeOverlapRadialTableToBinaryDTMFile(RghtRadials,NumRghtRadials,L"RightResolveRadials09.dat") ;
+    if( processingLimits ) if( bcdtmSideSlope_truncateRadialsWithToePointsInsideSlopeToe(RghtRadials,NumRghtRadials,1)) goto errexit ;
+    if( dbg ) bcdtmSideSlope_writeOverlapRadialTableToBinaryDTMFile(RghtRadials,NumRghtRadials,L"RightResolveRadials09.dat") ;
 /*
 **  Truncate Truncating Radials
 */
-    if( bcdtmExtSideSlope_truncateTruncatingRadials(RghtRadials,NumRghtRadials)) goto errexit ;
+    if( bcdtmSideSlope_truncateTruncatingRadials(RghtRadials,NumRghtRadials)) goto errexit ;
    }
 /*
 ** Resolve Left Radials
@@ -5373,14 +5377,14 @@ int bcdtmExtSideSlope_resolveOverlappingSideSlopeRadials(DTM_SIDE_SLOPE_TABLE *R
 ** Extend Radials At Transistion Points If Necessary
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Extending Radials At Transistion Points") ;
-    bcdtmExtSideSlope_extendRadialsAtTransistionPoints(sideSlopeElementType,LeftSideSlopeTable,LeftSideSlopeTableSize,RadialExtension) ;
+    bcdtmSideSlope_extendRadialsAtTransistionPoints(sideSlopeElementType,LeftSideSlopeTable,LeftSideSlopeTableSize,RadialExtension) ;
 /*
 **  Create Left Radial Table
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Creating Left Radial Overlap Table") ;
-    if( bcdtmExtSideSlope_createRadialOverlapTable(sideSlopeElementType,LeftSideSlopeTable,LeftSideSlopeTableSize,&LeftRadials,&NumLeftRadials)) goto errexit ;
-    if( dbg ) bcdtmExtSideSlope_writeOverlapRadialTableToBinaryDTMFile(LeftRadials,NumLeftRadials,L"LeftResolveRadials00.dat") ;
-    if( dbg == 2 ) bcdtmExtSideSlope_writeOverlapRadialTableToDTMLogFile(LeftRadials,NumLeftRadials,"Left After Creation Of Overlap Table") ;
+    if( bcdtmSideSlope_createRadialOverlapTable(sideSlopeElementType,LeftSideSlopeTable,LeftSideSlopeTableSize,&LeftRadials,&NumLeftRadials)) goto errexit ;
+    if( dbg ) bcdtmSideSlope_writeOverlapRadialTableToBinaryDTMFile(LeftRadials,NumLeftRadials,L"LeftResolveRadials00.dat") ;
+    if( dbg == 2 ) bcdtmSideSlope_writeOverlapRadialTableToDTMLogFile(LeftRadials,NumLeftRadials,"Left After Creation Of Overlap Table") ;
 /*
 ** Truncate Radials At Parallel Boundary Edge
 */
@@ -5388,39 +5392,39 @@ int bcdtmExtSideSlope_resolveOverlappingSideSlopeRadials(DTM_SIDE_SLOPE_TABLE *R
       {
        if( dbg ) bcdtmWrite_message(0,0,0,"Truncating Left Radials At Parallel Boundary Edge") ;
        if( dbg ) start = bcdtmClock() ;
-       if( bcdtmExtSideSlope_truncateSideSlopeRadialsAtParallelBoundaryEdge(ParallelEdgePts,NumParallelEdgePts,LeftRadials,&NumLeftRadials) )
+       if( bcdtmSideSlope_truncateSideSlopeRadialsAtParallelBoundaryEdge(ParallelEdgePts,NumParallelEdgePts,LeftRadials,&NumLeftRadials) )
        if( dbg ) finish = bcdtmClock() ;
        if( dbg ) bcdtmWrite_message(0,0,0,"Time To Truncate Left Radials At Parallel Boundary Edge = %7.3lf seconds",bcdtmClock_elapsedTime(finish,start)) ;
-       if( dbg ) bcdtmExtSideSlope_writeOverlapRadialTableToBinaryDTMFile(LeftRadials,NumLeftRadials,L"LeftResolveRadials01.dat") ;
-       if( dbg == 2 ) bcdtmExtSideSlope_writeOverlapRadialTableToDTMLogFile(LeftRadials,NumLeftRadials,"Left After Truncation At Parrallel Edge") ;
+       if( dbg ) bcdtmSideSlope_writeOverlapRadialTableToBinaryDTMFile(LeftRadials,NumLeftRadials,L"LeftResolveRadials01.dat") ;
+       if( dbg == 2 ) bcdtmSideSlope_writeOverlapRadialTableToDTMLogFile(LeftRadials,NumLeftRadials,"Left After Truncation At Parrallel Edge") ;
       }
 /*
 ** Truncate Radials At Pad Edges
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Truncating Left Radials At Pad Edge") ;
     if( dbg ) start = bcdtmClock() ;
-    if( bcdtmExtSideSlope_truncateSideSlopeRadialsAtPadEdge(LeftRadials,NumLeftRadials,sideSlopeElementType)) goto errexit ;
+    if( bcdtmSideSlope_truncateSideSlopeRadialsAtPadEdge(LeftRadials,NumLeftRadials,sideSlopeElementType)) goto errexit ;
     if( dbg ) finish = bcdtmClock() ;
     if( dbg ) bcdtmWrite_message(0,0,0,"Time To Truncate Left Radials At Pad Edges = %7.3lf seconds",bcdtmClock_elapsedTime(finish,start)) ;
-    if( dbg ) bcdtmExtSideSlope_writeOverlapRadialTableToBinaryDTMFile(LeftRadials,NumLeftRadials,L"LeftResolveRadials02.dat") ;
-    if( dbg == 2 ) bcdtmExtSideSlope_writeOverlapRadialTableToDTMLogFile(LeftRadials,NumLeftRadials,"Left After Truncation At Pad Edge") ;
+    if( dbg ) bcdtmSideSlope_writeOverlapRadialTableToBinaryDTMFile(LeftRadials,NumLeftRadials,L"LeftResolveRadials02.dat") ;
+    if( dbg == 2 ) bcdtmSideSlope_writeOverlapRadialTableToDTMLogFile(LeftRadials,NumLeftRadials,"Left After Truncation At Pad Edge") ;
 /*
 **
 ** Remove Adjacent Convex Corner Radials That Are Within Grainular Tolerance
 ** RobC - Added Following Function 15/11/2007 To Counter Densification Of Verices While Benching
 **
 */
-   if( bcdtmExtSideSlope_removeAdjacentRadialsToConvexRadials(sideSlopeElementType,LeftRadials,&NumLeftRadials,tolerance,&numRemoved)) goto errexit ;
-   if( dbg ) bcdtmExtSideSlope_writeOverlapRadialTableToBinaryDTMFile(LeftRadials,NumLeftRadials,L"LeftResolveRadials03.dat") ;
+   if( bcdtmSideSlope_removeAdjacentRadialsToConvexRadials(sideSlopeElementType,LeftRadials,&NumLeftRadials,tolerance,&numRemoved)) goto errexit ;
+   if( dbg ) bcdtmSideSlope_writeOverlapRadialTableToBinaryDTMFile(LeftRadials,NumLeftRadials,L"LeftResolveRadials03.dat") ;
 /*
 ** Remove Adjacent Convex Corner Radials That Are Within Grainular Tolerance
 */
 /*
 ** Commented Out Rob 30/10/2007
     if( dbg ) bcdtmWrite_message(0,0,0,"Removing Adjacent Convex Corner Left Radials") ;
-    if( bcdtmExtSideSlope_removeAdjacentSideSlopeRadialsWithinTolerance(LeftRadials,&NumLeftRadials,CornerTolerance)) goto errexit ;
-    if( dbg ) bcdtmExtSideSlope_writeOverlapRadialTableToBinaryDTMFile(LeftRadials,NumLeftRadials,"LeftResolveRadials03.dat") ;
-    if( dbg == 2 ) bcdtmExtSideSlope_writeOverlapRadialTableToDTMLogFile(LeftRadials,NumLeftRadials,"Right After Removal Of Adjacent Convex Corner Radials") ;
+    if( bcdtmSideSlope_removeAdjacentSideSlopeRadialsWithinTolerance(LeftRadials,&NumLeftRadials,CornerTolerance)) goto errexit ;
+    if( dbg ) bcdtmSideSlope_writeOverlapRadialTableToBinaryDTMFile(LeftRadials,NumLeftRadials,"LeftResolveRadials03.dat") ;
+    if( dbg == 2 ) bcdtmSideSlope_writeOverlapRadialTableToDTMLogFile(LeftRadials,NumLeftRadials,"Right After Removal Of Adjacent Convex Corner Radials") ;
 */
 
 /*
@@ -5429,79 +5433,79 @@ int bcdtmExtSideSlope_resolveOverlappingSideSlopeRadials(DTM_SIDE_SLOPE_TABLE *R
     if( sideSlopeElementType == 1 )
       {
        if( dbg ) bcdtmWrite_message(0,0,0,"Truncating Left Radials By Element End Radials") ;
-       if( bcdtmExtSideSlope_truncateElementRadialsWithElementEndRadials(2,LeftRadials,NumLeftRadials) ) goto errexit ;
-       if( dbg ) bcdtmExtSideSlope_writeOverlapRadialTableToBinaryDTMFile(LeftRadials,NumLeftRadials,L"LeftResolveRadials04.dat") ;
-       if( dbg == 2 ) bcdtmExtSideSlope_writeOverlapRadialTableToDTMLogFile(LeftRadials,NumLeftRadials,"Left After Truncation With Edge Radials") ;
+       if( bcdtmSideSlope_truncateElementRadialsWithElementEndRadials(2,LeftRadials,NumLeftRadials) ) goto errexit ;
+       if( dbg ) bcdtmSideSlope_writeOverlapRadialTableToBinaryDTMFile(LeftRadials,NumLeftRadials,L"LeftResolveRadials04.dat") ;
+       if( dbg == 2 ) bcdtmSideSlope_writeOverlapRadialTableToDTMLogFile(LeftRadials,NumLeftRadials,"Left After Truncation With Edge Radials") ;
       }
 /*
 ** Intersect  Radials
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Intersecting Radials") ;
     if( dbg ) start = bcdtmClock() ;
-    if( bcdtmExtSideSlope_intersectSideSlopeRadials(LeftRadials,NumLeftRadials,sideSlopeElementType,&RadialIntersectFlag) ) goto errexit ;
+    if( bcdtmSideSlope_intersectSideSlopeRadials(LeftRadials,NumLeftRadials,sideSlopeElementType,&RadialIntersectFlag) ) goto errexit ;
     if( dbg ) finish = bcdtmClock() ;
     if( dbg ) bcdtmWrite_message(0,0,0,"Time To Intersect Radials = %7.3lf seconds",bcdtmClock_elapsedTime(finish,start)) ;
-    if( dbg ) bcdtmExtSideSlope_writeOverlapRadialTableToBinaryDTMFile(LeftRadials,NumLeftRadials,L"LeftResolveRadials05.dat") ;
-    if( dbg == 2 ) bcdtmExtSideSlope_writeOverlapRadialTableToDTMLogFile(LeftRadials,NumLeftRadials,"Left After Radial Intersection") ;
+    if( dbg ) bcdtmSideSlope_writeOverlapRadialTableToBinaryDTMFile(LeftRadials,NumLeftRadials,L"LeftResolveRadials05.dat") ;
+    if( dbg == 2 ) bcdtmSideSlope_writeOverlapRadialTableToDTMLogFile(LeftRadials,NumLeftRadials,"Left After Radial Intersection") ;
 /*
 **  Truncate Intersected Radials
 */
     if( RadialIntersectFlag )
       {
        if( dbg ) bcdtmWrite_message(0,0,0,"Truncating Intersected Radials") ;
-       if( bcdtmExtSideSlope_truncateIntersectedSideSlopeRadials(2,LeftRadials,NumLeftRadials)) goto errexit ;
-       if( dbg ) bcdtmExtSideSlope_writeOverlapRadialTableToBinaryDTMFile(LeftRadials,NumLeftRadials,L"LeftResolveRadials06.dat") ;
-       if( dbg == 2 ) bcdtmExtSideSlope_writeOverlapRadialTableToDTMLogFile(LeftRadials,NumLeftRadials,"Left After Radial Truncation") ;
+       if( bcdtmSideSlope_truncateIntersectedSideSlopeRadials(2,LeftRadials,NumLeftRadials)) goto errexit ;
+       if( dbg ) bcdtmSideSlope_writeOverlapRadialTableToBinaryDTMFile(LeftRadials,NumLeftRadials,L"LeftResolveRadials06.dat") ;
+       if( dbg == 2 ) bcdtmSideSlope_writeOverlapRadialTableToDTMLogFile(LeftRadials,NumLeftRadials,"Left After Radial Truncation") ;
       }
 /*
 ** Intersect Radials With Base Lines
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Intersecting Radials With Base Lines") ;
     start = bcdtmClock() ;
-    if( bcdtmExtSideSlope_intersectSideSlopeRadialsWithBaseLines(sideSlopeElementType,LeftRadials,NumLeftRadials)) goto errexit ;
-    if( bcdtmExtSideSlope_intersectSideSlopeRadialsWithBaseLines(sideSlopeElementType,LeftRadials,NumLeftRadials)) goto errexit ;
+    if( bcdtmSideSlope_intersectSideSlopeRadialsWithBaseLines(sideSlopeElementType,LeftRadials,NumLeftRadials)) goto errexit ;
+    if( bcdtmSideSlope_intersectSideSlopeRadialsWithBaseLines(sideSlopeElementType,LeftRadials,NumLeftRadials)) goto errexit ;
     if( dbg ) finish = bcdtmClock() ;
     if( dbg ) bcdtmWrite_message(0,0,0,"Time To Intersect Radials With Base Lines = %7.3lf seconds",bcdtmClock_elapsedTime(finish,start)) ;
-    if( dbg ) bcdtmExtSideSlope_writeOverlapRadialTableToBinaryDTMFile(LeftRadials,NumLeftRadials,L"LeftResolveRadials07.dat") ;
-    if( dbg == 2 ) bcdtmExtSideSlope_writeOverlapRadialTableToDTMLogFile(LeftRadials,NumLeftRadials,"Left After Base Lines") ;
+    if( dbg ) bcdtmSideSlope_writeOverlapRadialTableToBinaryDTMFile(LeftRadials,NumLeftRadials,L"LeftResolveRadials07.dat") ;
+    if( dbg == 2 ) bcdtmSideSlope_writeOverlapRadialTableToDTMLogFile(LeftRadials,NumLeftRadials,"Left After Base Lines") ;
 /*
 **  Set Elevations Of Intersected Radials
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Setting Elevations Of Intersected Radials") ;
-    bcdtmExtSideSlope_setElevationOfIntersectedSideSlopeRadials(LeftRadials,NumLeftRadials) ;
-    if( dbg ) bcdtmExtSideSlope_writeOverlapRadialTableToBinaryDTMFile(LeftRadials,NumLeftRadials,L"LeftResolveRadials08.dat") ;
-    if( dbg == 2 ) bcdtmExtSideSlope_writeOverlapRadialTableToDTMLogFile(LeftRadials,NumLeftRadials,"Left After Setting Elevations") ;
+    bcdtmSideSlope_setElevationOfIntersectedSideSlopeRadials(LeftRadials,NumLeftRadials) ;
+    if( dbg ) bcdtmSideSlope_writeOverlapRadialTableToBinaryDTMFile(LeftRadials,NumLeftRadials,L"LeftResolveRadials08.dat") ;
+    if( dbg == 2 ) bcdtmSideSlope_writeOverlapRadialTableToDTMLogFile(LeftRadials,NumLeftRadials,"Left After Setting Elevations") ;
 /*
 **  Mark Truncated Radials
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Marking Truncated Radials") ;
-    if( bcdtmExtSideSlope_markTruncatedRadials(LeftRadials,NumLeftRadials)) goto errexit ;
+    if( bcdtmSideSlope_markTruncatedRadials(LeftRadials,NumLeftRadials)) goto errexit ;
 /*
 **  Truncate Non Truncated Radials The Intersect Truncated Slope Toes
 **  Robc - Following Code Added 9/11/2007
 */
-    if( bcdtmExtSideSlope_truncateRadialsInsideTruncatedSlopeToe(LeftRadials,NumLeftRadials,sideSlopeElementType)) goto errexit ;
+    if( bcdtmSideSlope_truncateRadialsInsideTruncatedSlopeToe(LeftRadials,NumLeftRadials,sideSlopeElementType)) goto errexit ;
 /*
 **  Terminate Radials With Toe Points Inside Slope Toes
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Terminating Radials With Toe Points Inside Slope Toes") ;
-    if( processingLimits ) if( bcdtmExtSideSlope_truncateRadialsWithToePointsInsideSlopeToe(LeftRadials,NumLeftRadials,2)) goto errexit ;
-    if( dbg == 2 ) bcdtmExtSideSlope_writeOverlapRadialTableToBinaryDTMFile(LeftRadials,NumLeftRadials,L"LeftResolveRadials09.dat") ;
+    if( processingLimits ) if( bcdtmSideSlope_truncateRadialsWithToePointsInsideSlopeToe(LeftRadials,NumLeftRadials,2)) goto errexit ;
+    if( dbg == 2 ) bcdtmSideSlope_writeOverlapRadialTableToBinaryDTMFile(LeftRadials,NumLeftRadials,L"LeftResolveRadials09.dat") ;
 /*
 **  Truncate Truncating Radials
 */
-    if( bcdtmExtSideSlope_truncateTruncatingRadials(LeftRadials,NumLeftRadials)) goto errexit ;
+    if( bcdtmSideSlope_truncateTruncatingRadials(LeftRadials,NumLeftRadials)) goto errexit ;
    }
 /*
 ** Remove Type2 Radials Coincident With Type1
 */
-// if( RghtRadials != NULL ) bcdtmExtSideSlope_removeType2RadialsCoincicidentWithType1(&RghtRadials,&NumRghtRadials) ;
-// if( LeftRadials != NULL ) bcdtmExtSideSlope_removeType2RadialsCoincicidentWithType1(&LeftRadials,&NumLeftRadials) ;
+// if( RghtRadials != NULL ) bcdtmSideSlope_removeType2RadialsCoincicidentWithType1(&RghtRadials,&NumRghtRadials) ;
+// if( LeftRadials != NULL ) bcdtmSideSlope_removeType2RadialsCoincicidentWithType1(&LeftRadials,&NumLeftRadials) ;
 /*
 ** Write Side Slope Radials To Data Object
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Writing Side Slope Radials To Data Object") ;
- if( bcdtmExtSideSlope_writeSideSlopeRadialsToDataObject(sideSlopeElementType,SideDirection,RghtRadials,NumRghtRadials,LeftRadials,NumLeftRadials,RadialTag,ElementTag,SideSlopes)) goto errexit ;
+ if( bcdtmSideSlope_writeSideSlopeRadialsToDataObject(sideSlopeElementType,SideDirection,RghtRadials,NumRghtRadials,LeftRadials,NumLeftRadials,RadialTag,ElementTag,SideSlopes)) goto errexit ;
 /*
 ** Write Boundary Polygon And Slope Toes Data Object
 **
@@ -5511,8 +5515,8 @@ int bcdtmExtSideSlope_resolveOverlappingSideSlopeRadials(DTM_SIDE_SLOPE_TABLE *R
    {
     if( dbg ) bcdtmWrite_message(0,0,0,"Writing Boundary Polygon To Data Object") ;
     if( dbg ) start = bcdtmClock() ;
-    if( sideSlopeElementType == 1 ) { if( bcdtmExtSideSlope_writeOpenSideSlopeElementBoundaryPolygonToDataObject(RghtRadials,NumRghtRadials,LeftRadials,NumLeftRadials,SideDirection,SideSlopes,Pptol,Pltol)) goto errexit ; }
-    if( sideSlopeElementType == 2 ) { if( bcdtmExtSideSlope_writeClosedSideSlopeElementBoundaryPolygonToDataObject(RghtRadials,NumRghtRadials,LeftRadials,NumLeftRadials,SideDirection,SideSlopes,Pptol,Pltol)) goto errexit ; }
+    if( sideSlopeElementType == 1 ) { if( bcdtmSideSlope_writeOpenSideSlopeElementBoundaryPolygonToDataObject(RghtRadials,NumRghtRadials,LeftRadials,NumLeftRadials,SideDirection,SideSlopes,Pptol,Pltol)) goto errexit ; }
+    if( sideSlopeElementType == 2 ) { if( bcdtmSideSlope_writeClosedSideSlopeElementBoundaryPolygonToDataObject(RghtRadials,NumRghtRadials,LeftRadials,NumLeftRadials,SideDirection,SideSlopes,Pptol,Pltol)) goto errexit ; }
     if( dbg ) finish = bcdtmClock() ;
     if( dbg ) bcdtmWrite_message(0,0,0,"Time To Determine Boundary Polygon = %7.3lf seconds",bcdtmClock_elapsedTime(finish,start) ) ;
 /*
@@ -5522,7 +5526,7 @@ int bcdtmExtSideSlope_resolveOverlappingSideSlopeRadials(DTM_SIDE_SLOPE_TABLE *R
       {
        if( dbg ) bcdtmWrite_message(0,0,0,"Writing Left Holes To Data Object") ;
        if( dbg ) start = bcdtmClock() ;
-       if( bcdtmExtSideSlope_writePadSideSlopeHolesToDataObject(LeftRadials,NumLeftRadials,SideSlopes,Pptol,Pltol)) goto errexit ;
+       if( bcdtmSideSlope_writePadSideSlopeHolesToDataObject(LeftRadials,NumLeftRadials,SideSlopes,Pptol,Pltol)) goto errexit ;
        if( dbg ) finish = bcdtmClock() ;
        if( dbg ) bcdtmWrite_message(0,0,0,"Time To Determine Left Holes = %7.3lf seconds",bcdtmClock_elapsedTime(finish,start)) ;
       }
@@ -5537,13 +5541,13 @@ int bcdtmExtSideSlope_resolveOverlappingSideSlopeRadials(DTM_SIDE_SLOPE_TABLE *R
     if( dbg ) bcdtmWrite_message(0,0,0,"Writing Boundary Polygon To Data Object") ;
     if( sideSlopeElementType == 1 )
         {
-        if( bcdtmExtSideSlope_getBoundaryPolygonAndSlopeToesForOpenSideSlopeElementDataObject
+        if( bcdtmSideSlope_getBoundaryPolygonAndSlopeToesForOpenSideSlopeElementDataObject
             (SideSlopes,sideSlopeElementType,SideDirection,RightSideSlopeTable, RghtRadials, NumRghtRadials, LeftSideSlopeTable, LeftRadials,NumLeftRadials))
             goto errexit ;
         }
     if( sideSlopeElementType == 2 )
         {
-        if( bcdtmExtSideSlope_getBoundaryPolygonAndSlopeToesForClosedSideSlopeElementDataObject(SideSlopes,sideSlopeElementType,SideDirection, RightSideSlopeTable, RghtRadials, NumRghtRadials, LeftSideSlopeTable, LeftRadials,NumLeftRadials))
+        if( bcdtmSideSlope_getBoundaryPolygonAndSlopeToesForClosedSideSlopeElementDataObject(SideSlopes,sideSlopeElementType,SideDirection, RightSideSlopeTable, RghtRadials, NumRghtRadials, LeftSideSlopeTable, LeftRadials,NumLeftRadials))
             goto errexit ;
         }
    }
@@ -5581,7 +5585,7 @@ int bcdtmExtSideSlope_resolveOverlappingSideSlopeRadials(DTM_SIDE_SLOPE_TABLE *R
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_removeType2RadialsCoincicidentWithType1
+int bcdtmSideSlope_removeType2RadialsCoincicidentWithType1
 (
  DTM_OVERLAP_RADIAL_TABLE **sideSlopeRadialsPP,    /* ==> Pointer To Side Slope Radials            */
  long                     *numSideSlopeRadialsP    /* ==> Number Of Side Slope Radials             */
@@ -5659,10 +5663,10 @@ int bcdtmExtSideSlope_removeType2RadialsCoincicidentWithType1
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|  bcdtmExtSideSlope_extendRadialsAtTransitionPoints                    |
+|  bcdtmSideSlope_extendRadialsAtTransitionPoints                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_extendRadialsAtTransistionPoints(long SideSlopeElementType,DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize,double RadialExtension)
+int bcdtmSideSlope_extendRadialsAtTransistionPoints(long SideSlopeElementType,DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize,double RadialExtension)
 /*
 ** This Function Creates The Overlap Table
 */
@@ -5698,10 +5702,10 @@ int bcdtmExtSideSlope_extendRadialsAtTransistionPoints(long SideSlopeElementType
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|  bcdtmExtSideSlope_createRadialOverlapTable                             |
+|  bcdtmSideSlope_createRadialOverlapTable                             |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_createRadialOverlapTable(long sideSlopeElementType,DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize,DTM_OVERLAP_RADIAL_TABLE **Radials,long *NumRadials)
+int bcdtmSideSlope_createRadialOverlapTable(long sideSlopeElementType,DTM_SIDE_SLOPE_TABLE *SideSlopeTable,long SideSlopeTableSize,DTM_OVERLAP_RADIAL_TABLE **Radials,long *NumRadials)
 /*
 ** This Function Creates The Overlap Table
 */
@@ -5773,7 +5777,7 @@ int bcdtmExtSideSlope_createRadialOverlapTable(long sideSlopeElementType,DTM_SID
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_removeAdjacentRadialsToConvexRadials(long sideSlopeElementType,DTM_OVERLAP_RADIAL_TABLE *radialsP,long *numRadialsP,double tolerance,long *numRemovedP)
+int bcdtmSideSlope_removeAdjacentRadialsToConvexRadials(long sideSlopeElementType,DTM_OVERLAP_RADIAL_TABLE *radialsP,long *numRadialsP,double tolerance,long *numRemovedP)
 /*
 ** This Function Removes Adjacent Radials At Convex Corners On The Side Slope Element
 */
@@ -5866,10 +5870,10 @@ int bcdtmExtSideSlope_removeAdjacentRadialsToConvexRadials(long sideSlopeElement
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|  bcdtmExtSideSlope_removeAdjacentSideSlopeRadialsWithinTolerance      |
+|  bcdtmSideSlope_removeAdjacentSideSlopeRadialsWithinTolerance      |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_removeAdjacentSideSlopeRadialsWithinTolerance(DTM_OVERLAP_RADIAL_TABLE *Radials,long *NumRadials,double Tolerance)
+int bcdtmSideSlope_removeAdjacentSideSlopeRadialsWithinTolerance(DTM_OVERLAP_RADIAL_TABLE *Radials,long *NumRadials,double Tolerance)
 /*
 ** This Function Removes Adjacent Radials At Convex Corners On The Side Slope Element
 */
@@ -6065,7 +6069,7 @@ int bcdtmExtSideSlope_removeAdjacentSideSlopeRadialsWithinTolerance(DTM_OVERLAP_
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_writeOverlapRadialTableToBinaryDTMFile
+int bcdtmSideSlope_writeOverlapRadialTableToBinaryDTMFile
 (
  DTM_OVERLAP_RADIAL_TABLE *ovlTablePtsP,
  long                     ovlTableSize,
@@ -6118,10 +6122,10 @@ int bcdtmExtSideSlope_writeOverlapRadialTableToBinaryDTMFile
 }
 /*----------------------------------------------------------------------+
 |                                                                       |
-| bcdtmExtSideSlope_writeOverlapRadialTableToDTMLogFile                      |
+| bcdtmSideSlope_writeOverlapRadialTableToDTMLogFile                      |
 |                                                                       |
 +----------------------------------------------------------------------*/
-int bcdtmExtSideSlope_writeOverlapRadialTableToDTMLogFile(DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts,char *Message)
+int bcdtmSideSlope_writeOverlapRadialTableToDTMLogFile(DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts,char *Message)
 /*
 ** This Function Write The Overlap Radial Table To The DTM Log File
 */
@@ -6140,10 +6144,10 @@ int bcdtmExtSideSlope_writeOverlapRadialTableToDTMLogFile(DTM_OVERLAP_RADIAL_TAB
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|  bcdtmExtSideSlope_truncateSideSlopeRadialsAtParallelBoundaryEdge       |
+|  bcdtmSideSlope_truncateSideSlopeRadialsAtParallelBoundaryEdge       |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_truncateSideSlopeRadialsAtParallelBoundaryEdge(DPoint3d *PadPts,long NumPadPts,DTM_OVERLAP_RADIAL_TABLE *OvlPts,long *NumOvlPts)
+int bcdtmSideSlope_truncateSideSlopeRadialsAtParallelBoundaryEdge(DPoint3d *PadPts,long NumPadPts,DTM_OVERLAP_RADIAL_TABLE *OvlPts,long *NumOvlPts)
 /*
 **
 ** This Function Truncates The Radials At User Provided Boundary Edge
@@ -6178,7 +6182,7 @@ int bcdtmExtSideSlope_truncateSideSlopeRadialsAtParallelBoundaryEdge(DPoint3d *P
 ** Build Radial Parallel Edge Intersection Table
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Building Radial Edge Intersection Table") ;
- if( bcdtmExtSideSlope_buildRadialParallelEdgeIntersectionTable(OvlPts,*NumOvlPts,PadPts,NumPadPts,&IntTable,&IntTableNe) )  goto errexit ;
+ if( bcdtmSideSlope_buildRadialParallelEdgeIntersectionTable(OvlPts,*NumOvlPts,PadPts,NumPadPts,&IntTable,&IntTableNe) )  goto errexit ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Number Radial Parallel Edge Intersection Table Entries = %4ld",IntTableNe) ;
 /*
 ** Write Intersection Table
@@ -6198,7 +6202,7 @@ int bcdtmExtSideSlope_truncateSideSlopeRadialsAtParallelBoundaryEdge(DPoint3d *P
  if( IntPtsMinc < 1000 ) IntPtsMinc = 1000 ;
  IntPtsNe = IntPtsMe = 0 ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Scanning For Intersections") ;
- if( bcdtmExtSideSlope_scanForRadialParallelEdgeIntersections(IntTable,IntTableNe,&IntPts,&IntPtsNe,&IntPtsMe,IntPtsMinc) ) goto errexit ;
+ if( bcdtmSideSlope_scanForRadialParallelEdgeIntersections(IntTable,IntTableNe,&IntPts,&IntPtsNe,&IntPtsMe,IntPtsMinc) ) goto errexit ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Intersections = %4ld",IntPtsNe) ;
 /*
 ** Truncate Radials
@@ -6300,10 +6304,10 @@ int bcdtmExtSideSlope_truncateSideSlopeRadialsAtParallelBoundaryEdge(DPoint3d *P
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|    bcdtmExtSideSlope_buildRadialParallelEdgeIntersectionTable                 |
+|    bcdtmSideSlope_buildRadialParallelEdgeIntersectionTable                 |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_buildRadialParallelEdgeIntersectionTable(DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts,DPoint3d *ParallelPts,long NumParallelPts,DTM_STR_INT_TAB **IntTable,long *IntTableNe)
+int bcdtmSideSlope_buildRadialParallelEdgeIntersectionTable(DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts,DPoint3d *ParallelPts,long NumParallelPts,DTM_STR_INT_TAB **IntTable,long *IntTableNe)
 {
  int    ret=0 ;
  long   dbg=0,IntTableMe,IntTableMinc  ;
@@ -6429,7 +6433,7 @@ int bcdtmExtSideSlope_buildRadialParallelEdgeIntersectionTable(DTM_OVERLAP_RADIA
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_scanForRadialParallelEdgeIntersections(DTM_STR_INT_TAB *IntTable,long IntTableNe,DTM_STR_INT_PTS **IntPts,long *IntPtsNe,long *IntPtsMe,long IntPtsMinc)
+int bcdtmSideSlope_scanForRadialParallelEdgeIntersections(DTM_STR_INT_TAB *IntTable,long IntTableNe,DTM_STR_INT_PTS **IntPts,long *IntPtsNe,long *IntPtsMe,long IntPtsMinc)
 /*
 ** This Function Scans for Radial Parallel Edge Intersections
 */
@@ -6444,7 +6448,7 @@ int bcdtmExtSideSlope_scanForRadialParallelEdgeIntersections(DTM_STR_INT_TAB *In
    {
     if( bcdtmClean_deleteActiveStringLines(ActIntTable,&ActIntTableNe,pint)) goto errexit ;
     if( bcdtmClean_addActiveStringLine(&ActIntTable,&ActIntTableNe,&ActIntTableMe,pint))  goto errexit ;
-    if( bcdtmExtSideSlope_determineRadialParallelEdgeIntersections(ActIntTable,ActIntTableNe,IntPts,IntPtsNe,IntPtsMe,IntPtsMinc)) goto errexit ;
+    if( bcdtmSideSlope_determineRadialParallelEdgeIntersections(ActIntTable,ActIntTableNe,IntPts,IntPtsNe,IntPtsMe,IntPtsMinc)) goto errexit ;
    }
 /*
 ** Clean Up
@@ -6467,7 +6471,7 @@ int bcdtmExtSideSlope_scanForRadialParallelEdgeIntersections(DTM_STR_INT_TAB *In
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_determineRadialParallelEdgeIntersections(DTM_STR_INT_TAB *ActIntTable,long ActIntTableNe,DTM_STR_INT_PTS **IntPts,long *IntPtsNe,long *IntPtsMe,long IntPtsMinc )
+int bcdtmSideSlope_determineRadialParallelEdgeIntersections(DTM_STR_INT_TAB *ActIntTable,long ActIntTableNe,DTM_STR_INT_PTS **IntPts,long *IntPtsNe,long *IntPtsMe,long IntPtsMinc )
 /*
 ** Determine Line Intersections
 */
@@ -6545,10 +6549,10 @@ int bcdtmExtSideSlope_determineRadialParallelEdgeIntersections(DTM_STR_INT_TAB *
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|  bcdtmExtSideSlope_truncateRadialsAtPadEdge                                   |
+|  bcdtmSideSlope_truncateRadialsAtPadEdge                                   |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_truncateSideSlopeRadialsAtPadEdge(DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts,long sideSlopeElementType)
+int bcdtmSideSlope_truncateSideSlopeRadialsAtPadEdge(DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts,long sideSlopeElementType)
 /*
 ** This Function Truncates The Radials At The Pad Edge
 */
@@ -6574,7 +6578,7 @@ int bcdtmExtSideSlope_truncateSideSlopeRadialsAtPadEdge(DTM_OVERLAP_RADIAL_TABLE
 ** Build Pad Line Intersection Table
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Building Radial Edge Intersection Table") ;
- if( bcdtmExtSideSlope_buildRadialEdgeIntersectionTable(OvlPts,NumOvlPts,sideSlopeElementType,&IntTable,&IntTableNe) )  goto errexit ;
+ if( bcdtmSideSlope_buildRadialEdgeIntersectionTable(OvlPts,NumOvlPts,sideSlopeElementType,&IntTable,&IntTableNe) )  goto errexit ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Number Radial Edge Intersection Table Entries = %4ld",IntTableNe) ;
 /*
 ** Write Intersection Table
@@ -6594,7 +6598,7 @@ int bcdtmExtSideSlope_truncateSideSlopeRadialsAtPadEdge(DTM_OVERLAP_RADIAL_TABLE
  if( IntPtsMinc < 1000 ) IntPtsMinc = 1000 ;
  IntPtsNe = IntPtsMe = 0 ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Scanning For Intersections") ;
- if( bcdtmExtSideSlope_scanForRadialEdgeIntersections(IntTable,IntTableNe,&IntPts,&IntPtsNe,&IntPtsMe,IntPtsMinc) ) goto errexit ;
+ if( bcdtmSideSlope_scanForRadialEdgeIntersections(IntTable,IntTableNe,&IntPts,&IntPtsNe,&IntPtsMe,IntPtsMinc) ) goto errexit ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Intersections = %4ld",IntPtsNe) ;
 /*
 ** Sort Intersection Points
@@ -6675,10 +6679,10 @@ int bcdtmExtSideSlope_truncateSideSlopeRadialsAtPadEdge(DTM_OVERLAP_RADIAL_TABLE
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|    bcdtmExtSideSlope_buildRadialEdgeIntersectionTable                   |
+|    bcdtmSideSlope_buildRadialEdgeIntersectionTable                   |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_buildRadialEdgeIntersectionTable(DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts,long sideSlopeElementType,DTM_STR_INT_TAB **IntTable,long *IntTableNe)
+int bcdtmSideSlope_buildRadialEdgeIntersectionTable(DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts,long sideSlopeElementType,DTM_STR_INT_TAB **IntTable,long *IntTableNe)
 {
  int    ret=0 ;
  long   dbg=0,IntTableMe,IntTableMinc,sideSlopeType  ;
@@ -6813,7 +6817,7 @@ int bcdtmExtSideSlope_buildRadialEdgeIntersectionTable(DTM_OVERLAP_RADIAL_TABLE 
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_scanForRadialEdgeIntersections(DTM_STR_INT_TAB *IntTable,long IntTableNe,DTM_STR_INT_PTS **IntPts,long *IntPtsNe,long *IntPtsMe,long IntPtsMinc)
+int bcdtmSideSlope_scanForRadialEdgeIntersections(DTM_STR_INT_TAB *IntTable,long IntTableNe,DTM_STR_INT_PTS **IntPts,long *IntPtsNe,long *IntPtsMe,long IntPtsMinc)
 /*
 ** This Function Scans for Radial Base Line Intersections
 */
@@ -6828,7 +6832,7 @@ int bcdtmExtSideSlope_scanForRadialEdgeIntersections(DTM_STR_INT_TAB *IntTable,l
    {
     if( bcdtmClean_deleteActiveStringLines(ActIntTable,&ActIntTableNe,pint)) goto errexit ;
     if( bcdtmClean_addActiveStringLine(&ActIntTable,&ActIntTableNe,&ActIntTableMe,pint))  goto errexit ;
-    if( bcdtmExtSideSlope_determineRadialEdgeIntersections(ActIntTable,ActIntTableNe,IntPts,IntPtsNe,IntPtsMe,IntPtsMinc)) goto errexit ;
+    if( bcdtmSideSlope_determineRadialEdgeIntersections(ActIntTable,ActIntTableNe,IntPts,IntPtsNe,IntPtsMe,IntPtsMinc)) goto errexit ;
    }
 /*
 ** Clean Up
@@ -6851,7 +6855,7 @@ int bcdtmExtSideSlope_scanForRadialEdgeIntersections(DTM_STR_INT_TAB *IntTable,l
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_determineRadialEdgeIntersections(DTM_STR_INT_TAB *ActIntTable,long ActIntTableNe,DTM_STR_INT_PTS **IntPts,long *IntPtsNe,long *IntPtsMe,long IntPtsMinc )
+int bcdtmSideSlope_determineRadialEdgeIntersections(DTM_STR_INT_TAB *ActIntTable,long ActIntTableNe,DTM_STR_INT_PTS **IntPts,long *IntPtsNe,long *IntPtsMe,long IntPtsMinc )
 /*
 ** Determine Line Intersections
 */
@@ -6948,10 +6952,10 @@ int bcdtmExtSideSlope_determineRadialEdgeIntersections(DTM_STR_INT_TAB *ActIntTa
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|  bcdtmExtSideSlope_truncateElementRadialsWithElementEndRadials                |
+|  bcdtmSideSlope_truncateElementRadialsWithElementEndRadials                |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_truncateElementRadialsWithElementEndRadials(long SideDirection,DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts)
+int bcdtmSideSlope_truncateElementRadialsWithElementEndRadials(long SideDirection,DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts)
 /*
 ** This Function Truncates The Radials With The Element End Radials
 */
@@ -7023,10 +7027,10 @@ int bcdtmExtSideSlope_truncateElementRadialsWithElementEndRadials(long SideDirec
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|  bcdtmExtSideSlope_intersectRadials                                     |
+|  bcdtmSideSlope_intersectRadials                                     |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_intersectSideSlopeRadials(DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts,long sideSlopeElementType,long *RadialIntersectFlag)
+int bcdtmSideSlope_intersectSideSlopeRadials(DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts,long sideSlopeElementType,long *RadialIntersectFlag)
 /*
 ** This Function Intersects Radials
 */
@@ -7056,7 +7060,7 @@ int bcdtmExtSideSlope_intersectSideSlopeRadials(DTM_OVERLAP_RADIAL_TABLE *OvlPts
 ** Create And Build Radial Intersection Table
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Building Radial Intersection Table") ;
- if( bcdtmExtSideSlope_buildRadialIntersectionTable(OvlPts,NumOvlPts,&IntTable,&IntTableNe)) goto errexit ;
+ if( bcdtmSideSlope_buildRadialIntersectionTable(OvlPts,NumOvlPts,&IntTable,&IntTableNe)) goto errexit ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Radial Intersection Table Entries = %6ld",IntTableNe) ;
 /*
 ** Write Intersection Table
@@ -7076,7 +7080,7 @@ int bcdtmExtSideSlope_intersectSideSlopeRadials(DTM_OVERLAP_RADIAL_TABLE *OvlPts
  if( IntPtsMinc < 10000 ) IntPtsMinc = 10000 ;
  IntPtsNe = IntPtsMe = 0 ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Scanning For Radial Intersections") ;
- if( bcdtmExtSideSlope_scanForRadialIntersections(IntTable,IntTableNe,&IntPts,&IntPtsNe,&IntPtsMe,IntPtsMinc) ) goto errexit ;
+ if( bcdtmSideSlope_scanForRadialIntersections(IntTable,IntTableNe,&IntPts,&IntPtsNe,&IntPtsMe,IntPtsMinc) ) goto errexit ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Radial Intersections = %4ld",IntPtsNe) ;
 /*
 ** Process Intersection Points
@@ -7088,7 +7092,7 @@ int bcdtmExtSideSlope_intersectSideSlopeRadials(DTM_OVERLAP_RADIAL_TABLE *OvlPts
 ** Sort Intersection Points
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Sorting Intersection Table") ;
-    qsort(IntPts,IntPtsNe,sizeof(DTM_STR_INT_PTS),( int (__cdecl *)(const void *,const void *))bcdtmExtSideSlope_radialRadialIntersectionPointsCompareFunction) ;
+    qsort(IntPts,IntPtsNe,sizeof(DTM_STR_INT_PTS),( int (__cdecl *)(const void *,const void *))bcdtmSideSlope_radialRadialIntersectionPointsCompareFunction) ;
     if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Intersections = %6ld",IntPtsNe) ;
 /*
 ** Write Intersection Points
@@ -7105,7 +7109,7 @@ int bcdtmExtSideSlope_intersectSideSlopeRadials(DTM_OVERLAP_RADIAL_TABLE *OvlPts
 ** Truncate Radials Using Intersection Points
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Truncating Radials Using Intersection Table") ;
-    if( bcdtmExtSideSlope_truncateRadialsUsingIntersectionPoints(sideSlopeElementType,OvlPts,NumOvlPts,IntPts,IntPtsNe) ) goto errexit ;
+    if( bcdtmSideSlope_truncateRadialsUsingIntersectionPoints(sideSlopeElementType,OvlPts,NumOvlPts,IntPts,IntPtsNe) ) goto errexit ;
     if( dbg ) bcdtmWrite_message(0,0,0,"Truncating Radials Using Truncation Table Completed") ;
    }
 /*
@@ -7143,7 +7147,7 @@ int bcdtmExtSideSlope_intersectSideSlopeRadials(DTM_OVERLAP_RADIAL_TABLE *OvlPts
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_radialRadialIntersectionPointsCompareFunction(const DTM_STR_INT_PTS *Tp1,const DTM_STR_INT_PTS  *Tp2)
+int bcdtmSideSlope_radialRadialIntersectionPointsCompareFunction(const DTM_STR_INT_PTS *Tp1,const DTM_STR_INT_PTS  *Tp2)
 /*
 ** Compare Function For Qsort Of Radial Intersection Points
 */
@@ -7159,7 +7163,7 @@ int bcdtmExtSideSlope_radialRadialIntersectionPointsCompareFunction(const DTM_ST
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_buildRadialIntersectionTable(DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts,DTM_STR_INT_TAB **IntTable,long *IntTableNe)
+int bcdtmSideSlope_buildRadialIntersectionTable(DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts,DTM_STR_INT_TAB **IntTable,long *IntTableNe)
 {
  int    ret=0 ;
  long   dbg=0,IntTableMe,IntTableMinc  ;
@@ -7253,7 +7257,7 @@ int bcdtmExtSideSlope_buildRadialIntersectionTable(DTM_OVERLAP_RADIAL_TABLE *Ovl
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_scanForRadialIntersections(DTM_STR_INT_TAB *IntTable,long IntTableNe,DTM_STR_INT_PTS **IntPts,long *IntPtsNe,long *IntPtsMe,long IntPtsMinc)
+int bcdtmSideSlope_scanForRadialIntersections(DTM_STR_INT_TAB *IntTable,long IntTableNe,DTM_STR_INT_PTS **IntPts,long *IntPtsNe,long *IntPtsMe,long IntPtsMinc)
 /*
 ** This Function Scans for Radial Intersections
 */
@@ -7268,7 +7272,7 @@ int bcdtmExtSideSlope_scanForRadialIntersections(DTM_STR_INT_TAB *IntTable,long 
    {
     if( bcdtmClean_deleteActiveStringLines(ActIntTable,&ActIntTableNe,pint)) goto errexit ;
     if( bcdtmClean_addActiveStringLine(&ActIntTable,&ActIntTableNe,&ActIntTableMe,pint))  goto errexit ;
-    if( bcdtmExtSideSlope_determineRadialIntersections(ActIntTable,ActIntTableNe,IntPts,IntPtsNe,IntPtsMe,IntPtsMinc)) goto errexit ;
+    if( bcdtmSideSlope_determineRadialIntersections(ActIntTable,ActIntTableNe,IntPts,IntPtsNe,IntPtsMe,IntPtsMinc)) goto errexit ;
    }
 /*
 ** Clean Up
@@ -7291,7 +7295,7 @@ int bcdtmExtSideSlope_scanForRadialIntersections(DTM_STR_INT_TAB *IntTable,long 
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_determineRadialIntersections(DTM_STR_INT_TAB *ActIntTable,long ActIntTableNe,DTM_STR_INT_PTS **IntPts,long *IntPtsNe,long *IntPtsMe,long IntPtsMinc )
+int bcdtmSideSlope_determineRadialIntersections(DTM_STR_INT_TAB *ActIntTable,long ActIntTableNe,DTM_STR_INT_PTS **IntPts,long *IntPtsNe,long *IntPtsMe,long IntPtsMinc )
 /*
 ** Determine Line Intersections
 */
@@ -7396,10 +7400,10 @@ int bcdtmExtSideSlope_determineRadialIntersections(DTM_STR_INT_TAB *ActIntTable,
 
 /*-------------------------------------------------------------------+
 |                                                                    |
-|  bcdtmExtSideSlope_truncateRadialsUsingIntersectionPoints               |
+|  bcdtmSideSlope_truncateRadialsUsingIntersectionPoints               |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_truncateRadialsUsingIntersectionPoints(long sideSlopeElementType,DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts,DTM_STR_INT_PTS *IntPts,long NumIntPts)
+int bcdtmSideSlope_truncateRadialsUsingIntersectionPoints(long sideSlopeElementType,DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts,DTM_STR_INT_PTS *IntPts,long NumIntPts)
 {
  int     ret=0 ;
  long    dbg=0,process,loop,NumIntersections,Offset,TruncatedRadial ;
@@ -7512,7 +7516,7 @@ int bcdtmExtSideSlope_truncateRadialsUsingIntersectionPoints(long sideSlopeEleme
           Radial2Ofs = *(RadIndex+Radial2) ;
           Radial1End = (long)(pinp-IntPts) ;
           Radial2End = *(IntIndex+Radial1End) ;
-          Radial2Truncated = bcdtmExtSideSlope_checkForPriorTruncationOfTruncatingRadial(OvlPts,IntPts,Radial2Ofs,Radial2End) ;
+          Radial2Truncated = bcdtmSideSlope_checkForPriorTruncationOfTruncatingRadial(OvlPts,IntPts,Radial2Ofs,Radial2End) ;
 /*
 ** If Either Radial Not Previously Truncated Test For Possible Truncation
 */
@@ -7605,7 +7609,7 @@ int bcdtmExtSideSlope_truncateRadialsUsingIntersectionPoints(long sideSlopeEleme
                 if( dbg ) bcdtmWrite_message(0,0,0,"Truncating Radial One") ;
                 ovl1->TruncatingRadial = (long)(ovl2-OvlPts) ;
                 Offset = (long)(pinp-IntPts) ;
-                if( bcdtmExtSideSlope_removeActiveIntersectionPointsForRadialFromOffset(Radial1,IntPts,NumIntPts,Offset,IntIndex) ) goto errexit ;
+                if( bcdtmSideSlope_removeActiveIntersectionPointsForRadialFromOffset(Radial1,IntPts,NumIntPts,Offset,IntIndex) ) goto errexit ;
                }
 /*
 ** Reset Intersection Table For Truncation Of Radial 2
@@ -7615,7 +7619,7 @@ int bcdtmExtSideSlope_truncateRadialsUsingIntersectionPoints(long sideSlopeEleme
                 if( dbg )  bcdtmWrite_message(0,0,0,"Truncating Radial Two") ;
                 ovl2->TruncatingRadial = (long)(ovl1-OvlPts) ;
                 Offset = *(IntIndex+(long)(pinp-IntPts)) ;
-                if( bcdtmExtSideSlope_removeActiveIntersectionPointsForRadialFromOffset(Radial2,IntPts,NumIntPts,Offset,IntIndex) ) goto errexit ;
+                if( bcdtmSideSlope_removeActiveIntersectionPointsForRadialFromOffset(Radial2,IntPts,NumIntPts,Offset,IntIndex) ) goto errexit ;
                }
 /*
 ** Write Truncated Radials
@@ -7656,10 +7660,10 @@ int bcdtmExtSideSlope_truncateRadialsUsingIntersectionPoints(long sideSlopeEleme
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|  bcdtmExtSideSlope_checkForPriorTruncationOfTruncatingRadial            |
+|  bcdtmSideSlope_checkForPriorTruncationOfTruncatingRadial            |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_checkForPriorTruncationOfTruncatingRadial(DTM_OVERLAP_RADIAL_TABLE *OvlPts,DTM_STR_INT_PTS *RadIntPts,long RadStartOfs,long RadEndOfs)
+int bcdtmSideSlope_checkForPriorTruncationOfTruncatingRadial(DTM_OVERLAP_RADIAL_TABLE *OvlPts,DTM_STR_INT_PTS *RadIntPts,long RadStartOfs,long RadEndOfs)
 /*
 ** This Function Checks For A Possible Prior Truncation Of The Truncating Radial
 */
@@ -7736,10 +7740,10 @@ int bcdtmExtSideSlope_checkForPriorTruncationOfTruncatingRadial(DTM_OVERLAP_RADI
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|  bcdtmExtSideSlope_removeActiveIntersectionPointsForRadial                    |
+|  bcdtmSideSlope_removeActiveIntersectionPointsForRadial                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_removeActiveIntersectionPointsForRadialFromOffset(long Radial,DTM_STR_INT_PTS *IntPts,long NumIntPts,long Offset,long *IntIndex)
+int bcdtmSideSlope_removeActiveIntersectionPointsForRadialFromOffset(long Radial,DTM_STR_INT_PTS *IntPts,long NumIntPts,long Offset,long *IntIndex)
 {
  long dbg=0 ;
  DTM_STR_INT_PTS *pinp1,*pinp2 ;
@@ -7782,10 +7786,10 @@ int bcdtmExtSideSlope_removeActiveIntersectionPointsForRadialFromOffset(long Rad
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|  bcdtmExtSideSlope_truncateIntersectedSideSlopeRadials                  |
+|  bcdtmSideSlope_truncateIntersectedSideSlopeRadials                  |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_truncateIntersectedSideSlopeRadials(long Direction,DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts)
+int bcdtmSideSlope_truncateIntersectedSideSlopeRadials(long Direction,DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts)
 /*
 ** This Function Truncates Intersected Radials
 ** Direction = 1  Right
@@ -7851,8 +7855,8 @@ int bcdtmExtSideSlope_truncateIntersectedSideSlopeRadials(long Direction,DTM_OVE
              if( dbg ) bcdtmWrite_message(0,0,0,"Ovl1 Radial[%6ld] ** %12.6lf %12.6lf %10.4lf ** %12.6lf %12.6lf %10.4lf",(long)(ovl1-OvlPts),ovl1->Px,ovl1->Py,ovl1->Pz,ovl1->Nx,ovl1->Ny,ovl1->Nz) ;
              if( dbg ) bcdtmWrite_message(0,0,0,"Ovl2 Radial[%6ld] ** %12.6lf %12.6lf %10.4lf ** %12.6lf %12.6lf %10.4lf",(long)(ovl2-OvlPts),ovl2->Px,ovl2->Py,ovl2->Pz,ovl2->Nx,ovl2->Ny,ovl2->Nz) ;
              if( dbg ) bcdtmWrite_message(0,0,0,"Ovl3 Radial[%6ld] ** %12.6lf %12.6lf %10.4lf ** %12.6lf %12.6lf %10.4lf",(long)(ovl3-OvlPts),ovl3->Px,ovl3->Py,ovl3->Pz,ovl3->Nx,ovl3->Ny,ovl3->Nz) ;
-             if( dz1 < 0.0 && dz2 < 0.0 ) bcdtmExtSideSlope_truncateSideSlopeRadial(OvlPts,ovl1,ovl2,ovl3,3) ;
-             if( dz1 > 0.0 && dz2 > 0.0 ) bcdtmExtSideSlope_truncateSideSlopeRadial(OvlPts,ovl1,ovl2,ovl3,3) ;
+             if( dz1 < 0.0 && dz2 < 0.0 ) bcdtmSideSlope_truncateSideSlopeRadial(OvlPts,ovl1,ovl2,ovl3,3) ;
+             if( dz1 > 0.0 && dz2 > 0.0 ) bcdtmSideSlope_truncateSideSlopeRadial(OvlPts,ovl1,ovl2,ovl3,3) ;
              ovl1->TruncatingRadial = DTM_NULL_PNT ;
              if( dbg ) bcdtmWrite_message(0,0,0,"Ovl1 Radial[%6ld] ** %12.6lf %12.6lf %10.4lf ** %12.6lf %12.6lf %10.4lf",(long)(ovl1-OvlPts),ovl1->Px,ovl1->Py,ovl1->Pz,ovl1->Nx,ovl1->Ny,ovl1->Nz) ;
             }
@@ -7905,7 +7909,7 @@ int bcdtmExtSideSlope_truncateIntersectedSideSlopeRadials(long Direction,DTM_OVE
                 if( dbg ) bcdtmWrite_message(0,0,0,"Ovl3 Radial[%6ld] ** %12.6lf %12.6lf %10.4lf ** %12.6lf %12.6lf %10.4lf",(long)(ovl3-OvlPts),ovl3->Px,ovl3->Py,ovl3->Pz,ovl3->Nx,ovl3->Ny,ovl3->Nz) ;
                 if( ( dz1 < 0.0 && dz2 < 0.0 ) || ( dz1 > 0.0 && dz2 > 0.0 ) )
                   {
-                   bcdtmExtSideSlope_truncateSideSlopeRadial(OvlPts,ovl1,ovl2,ovl3,4) ;
+                   bcdtmSideSlope_truncateSideSlopeRadial(OvlPts,ovl1,ovl2,ovl3,4) ;
                    ovl1->TruncatingRadial = DTM_NULL_PNT ;
                    if( dbg ) bcdtmWrite_message(0,0,0,"Ovl1 Radial[%6ld] ** %12.6lf %12.6lf %10.4lf ** %12.6lf %12.6lf %10.4lf",(long)(ovl1-OvlPts),ovl1->Px,ovl1->Py,ovl1->Pz,ovl1->Nx,ovl1->Ny,ovl1->Nz) ;
                    process = 1 ;
@@ -7922,10 +7926,10 @@ int bcdtmExtSideSlope_truncateIntersectedSideSlopeRadials(long Direction,DTM_OVE
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|  bcdtmExtSideSlope_truncateSideSlopeRadial                              |
+|  bcdtmSideSlope_truncateSideSlopeRadial                              |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_truncateSideSlopeRadial(DTM_OVERLAP_RADIAL_TABLE *OvlPts,DTM_OVERLAP_RADIAL_TABLE *Ovl1,DTM_OVERLAP_RADIAL_TABLE *Ovl2,DTM_OVERLAP_RADIAL_TABLE *Ovl3,long Flag)
+int bcdtmSideSlope_truncateSideSlopeRadial(DTM_OVERLAP_RADIAL_TABLE *OvlPts,DTM_OVERLAP_RADIAL_TABLE *Ovl1,DTM_OVERLAP_RADIAL_TABLE *Ovl2,DTM_OVERLAP_RADIAL_TABLE *Ovl3,long Flag)
 /*
 ** This Function Truncates Intersected Side Slope Radials
 */
@@ -8147,10 +8151,10 @@ int bcdtmExtSideSlope_truncateSideSlopeRadial(DTM_OVERLAP_RADIAL_TABLE *OvlPts,D
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|  bcdtmExtSideSlope_intersectSideSlopeRadialsWithBaseLines               |
+|  bcdtmSideSlope_intersectSideSlopeRadialsWithBaseLines               |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_intersectSideSlopeRadialsWithBaseLines(long sideSlopeElementType,DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts)
+int bcdtmSideSlope_intersectSideSlopeRadialsWithBaseLines(long sideSlopeElementType,DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts)
 /*
 ** This Function Detects Intersections Of Radials With Base Lines
 */
@@ -8201,7 +8205,7 @@ int bcdtmExtSideSlope_intersectSideSlopeRadialsWithBaseLines(long sideSlopeEleme
 ** Build Radial Base Line Intersection Tables
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Building Radial Base Line Intersection Table") ;
- if( bcdtmExtSideSlope_buildRadialBaseLineIntersectionTable(sideSlopeElementType,OvlPts,NumOvlPts,&IntTable,&IntTableNe) )  goto errexit ;
+ if( bcdtmSideSlope_buildRadialBaseLineIntersectionTable(sideSlopeElementType,OvlPts,NumOvlPts,&IntTable,&IntTableNe) )  goto errexit ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Radial Base Line Intersection Entries = %6ld",IntTableNe ) ;
 /*
 ** Write Base Lines To Data File For Checking Purposes
@@ -8248,7 +8252,7 @@ int bcdtmExtSideSlope_intersectSideSlopeRadialsWithBaseLines(long sideSlopeEleme
 */
  IntPtsNe = 0 ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Scanning For Intersections") ;
- if( bcdtmExtSideSlope_scanForRadialBaseLineIntersections(IntTable,IntTableNe,&IntPts,&IntPtsNe,&IntPtsMe,IntPtsMinc) ) goto errexit ;
+ if( bcdtmSideSlope_scanForRadialBaseLineIntersections(IntTable,IntTableNe,&IntPts,&IntPtsNe,&IntPtsMe,IntPtsMinc) ) goto errexit ;
  if( dbg == 1 )
    {
     bcdtmWrite_message(0,0,0,"Number Of Intersections = %6ld",IntPtsNe) ;
@@ -8294,8 +8298,8 @@ int bcdtmExtSideSlope_intersectSideSlopeRadialsWithBaseLines(long sideSlopeEleme
        Ny = ovl->Ny ;
        Nz = ovl->Nz ;
        if( dbg )  bcdtmWrite_message(0,0,0,"Before Truncating Radial[%4ld] T = %2ld [P] %10.4lf %10.4lf %10.4lf [G] %10.4lf %10.4lf %10.4lf [N] %10.4lf %10.4lf %10.4lf",(long)(ovl-OvlPts),ovl->Type,ovl->Px,ovl->Py,ovl->Pz,ovl->Gx,ovl->Gy,ovl->Gz,ovl->Nx,ovl->Ny,ovl->Nz) ;
-//       bcdtmExtSideSlope_truncateSideSlopeRadial(OvlPts,ovl,base1,base2,3) ;
-       if( pinp->Distance > 0.001 ) bcdtmExtSideSlope_truncateSideSlopeRadial(OvlPts,ovl,base1,base2,5) ;
+//       bcdtmSideSlope_truncateSideSlopeRadial(OvlPts,ovl,base1,base2,3) ;
+       if( pinp->Distance > 0.001 ) bcdtmSideSlope_truncateSideSlopeRadial(OvlPts,ovl,base1,base2,5) ;
        if( Nx != ovl->Nx || Ny != ovl->Ny ) ovl->TruncatingRadial = DTM_NULL_PNT ;
        pinp->x = ovl->Nx ;
        pinp->y = ovl->Ny ;
@@ -8327,7 +8331,7 @@ int bcdtmExtSideSlope_intersectSideSlopeRadialsWithBaseLines(long sideSlopeEleme
 ** Build Radial Base Line Intersection Tables
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Building Radial Base Line Intersection Table") ;
-    if( bcdtmExtSideSlope_buildRadialBaseLineIntersectionTable(sideSlopeElementType,OvlPts,NumOvlPts,&IntTable,&IntTableNe) )  goto errexit ;
+    if( bcdtmSideSlope_buildRadialBaseLineIntersectionTable(sideSlopeElementType,OvlPts,NumOvlPts,&IntTable,&IntTableNe) )  goto errexit ;
     if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Radial Base Line Intersection Entries = %6ld",IntTableNe ) ;
 /*
 **  Sort Intersection Table
@@ -8340,7 +8344,7 @@ int bcdtmExtSideSlope_intersectSideSlopeRadialsWithBaseLines(long sideSlopeEleme
     if( dbg ) bcdtmWrite_message(0,0,0,"Scanning For Intersections") ;
     IntPtsMinc = IntPtsNe ;
     IntPtsNe = 0 ;
-    if( bcdtmExtSideSlope_scanForRadialBaseLineIntersections(IntTable,IntTableNe,&IntPts,&IntPtsNe,&IntPtsMe,IntPtsMinc) ) goto errexit ;
+    if( bcdtmSideSlope_scanForRadialBaseLineIntersections(IntTable,IntTableNe,&IntPts,&IntPtsNe,&IntPtsMe,IntPtsMinc) ) goto errexit ;
     if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Intersections = %6ld",IntPtsNe) ;
 /*
 ** Set For Rescan
@@ -8374,10 +8378,10 @@ endloop :
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|    bcdtmExtSideSlope_buildRadialBaseLineIntersectionTable               |
+|    bcdtmSideSlope_buildRadialBaseLineIntersectionTable               |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_buildRadialBaseLineIntersectionTable(long SideSlopeElementType,DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts,DTM_STR_INT_TAB **IntTable,long *IntTableNe)
+int bcdtmSideSlope_buildRadialBaseLineIntersectionTable(long SideSlopeElementType,DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts,DTM_STR_INT_TAB **IntTable,long *IntTableNe)
 {
  int    ret=0 ;
  long   dbg=0,ofs,IntTableMe,IntTableMinc  ;
@@ -8409,7 +8413,7 @@ int bcdtmExtSideSlope_buildRadialBaseLineIntersectionTable(long SideSlopeElement
     if( ovl2 != ovl1 )
       {
        if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Storing Radial = %6ld",(long)(ovl1-OvlPts)) ;
-       if( bcdtmExtSideSlope_storeRadialBaseLineInRadialBaseLineIntersectionTable(ofs,ofs,2,1,ovl1->Px,ovl1->Py,ovl1->Pz,ovl1->Nx,ovl1->Ny,ovl1->Nz,IntTable,IntTableNe,&IntTableMe,IntTableMinc) ) goto errexit ;
+       if( bcdtmSideSlope_storeRadialBaseLineInRadialBaseLineIntersectionTable(ofs,ofs,2,1,ovl1->Px,ovl1->Py,ovl1->Pz,ovl1->Nx,ovl1->Ny,ovl1->Nz,IntTable,IntTableNe,&IntTableMe,IntTableMinc) ) goto errexit ;
       }
    }
 /*
@@ -8445,7 +8449,7 @@ int bcdtmExtSideSlope_buildRadialBaseLineIntersectionTable(long SideSlopeElement
        if( bovl1 == ovl1 && bovl2 == ovl2 )
          {
           if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Storing Base Line ** Radial1 = %6ld Radial2 = %6ld",(long)(bovl1-OvlPts),(long)(bovl2-OvlPts)) ;
-          if( bcdtmExtSideSlope_storeRadialBaseLineInRadialBaseLineIntersectionTable((long)(bovl1-OvlPts),(long)(bovl2-OvlPts),1,1,bovl1->Nx,bovl1->Ny,bovl1->Nz,bovl2->Nx,bovl2->Ny,bovl2->Nz,IntTable,IntTableNe,&IntTableMe,IntTableMinc ) ) goto errexit ;
+          if( bcdtmSideSlope_storeRadialBaseLineInRadialBaseLineIntersectionTable((long)(bovl1-OvlPts),(long)(bovl2-OvlPts),1,1,bovl1->Nx,bovl1->Ny,bovl1->Nz,bovl2->Nx,bovl2->Ny,bovl2->Nz,IntTable,IntTableNe,&IntTableMe,IntTableMinc ) ) goto errexit ;
          }
       }
    }
@@ -8486,7 +8490,7 @@ int bcdtmExtSideSlope_buildRadialBaseLineIntersectionTable(long SideSlopeElement
           if( trovl2 == NULL || ( trovl2 != NULL && trovl2->Type != 1 ) )
             {
              if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Storing Base Line Radial1 = %6ld Radial2 = %6ld",(long)(ovl1-OvlPts),(long)(ovl2-OvlPts)) ;
-             if( bcdtmExtSideSlope_storeRadialBaseLineInRadialBaseLineIntersectionTable((long)(ovl1-OvlPts),(long)(ovl2-OvlPts),1,1,ovl1->Nx,ovl1->Ny,ovl1->Nz,ovl2->Nx,ovl2->Ny,ovl2->Nz,IntTable,IntTableNe,&IntTableMe,IntTableMinc ) ) goto errexit ;
+             if( bcdtmSideSlope_storeRadialBaseLineInRadialBaseLineIntersectionTable((long)(ovl1-OvlPts),(long)(ovl2-OvlPts),1,1,ovl1->Nx,ovl1->Ny,ovl1->Nz,ovl2->Nx,ovl2->Ny,ovl2->Nz,IntTable,IntTableNe,&IntTableMe,IntTableMinc ) ) goto errexit ;
             }
          }
       }
@@ -8534,10 +8538,10 @@ int bcdtmExtSideSlope_buildRadialBaseLineIntersectionTable(long SideSlopeElement
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|    bcdtmExtSideSlope_storeRadialBaseLineInRadialBaseLineIntersectionTable                |
+|    bcdtmSideSlope_storeRadialBaseLineInRadialBaseLineIntersectionTable                |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_storeRadialBaseLineInRadialBaseLineIntersectionTable(long Ofs1,long Ofs2,long Type,long Direction,double X1,double Y1,double Z1,double X2,double Y2,double Z2, DTM_STR_INT_TAB **IntTable,long *IntTableNe,long *IntTableMe,long IntTableMinc )
+int bcdtmSideSlope_storeRadialBaseLineInRadialBaseLineIntersectionTable(long Ofs1,long Ofs2,long Type,long Direction,double X1,double Y1,double Z1,double X2,double Y2,double Z2, DTM_STR_INT_TAB **IntTable,long *IntTableNe,long *IntTableMe,long IntTableMinc )
 {
  int dbg=0 ;
 /*
@@ -8580,7 +8584,7 @@ int bcdtmExtSideSlope_storeRadialBaseLineInRadialBaseLineIntersectionTable(long 
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_scanForRadialBaseLineIntersections(DTM_STR_INT_TAB *IntTable,long IntTableNe,DTM_STR_INT_PTS **IntPts,long *IntPtsNe,long *IntPtsMe,long IntPtsMinc)
+int bcdtmSideSlope_scanForRadialBaseLineIntersections(DTM_STR_INT_TAB *IntTable,long IntTableNe,DTM_STR_INT_PTS **IntPts,long *IntPtsNe,long *IntPtsMe,long IntPtsMinc)
 /*
 ** This Function Scans for Radial Base Line Intersections
 */
@@ -8595,7 +8599,7 @@ int bcdtmExtSideSlope_scanForRadialBaseLineIntersections(DTM_STR_INT_TAB *IntTab
    {
     if( bcdtmClean_deleteActiveStringLines(ActIntTable,&ActIntTableNe,pint)) goto errexit ;
     if( bcdtmClean_addActiveStringLine(&ActIntTable,&ActIntTableNe,&ActIntTableMe,pint))  goto errexit ;
-    if( bcdtmExtSideSlope_determineActiveRadialBaseLineIntersections(ActIntTable,ActIntTableNe,IntPts,IntPtsNe,IntPtsMe,IntPtsMinc)) goto errexit ;
+    if( bcdtmSideSlope_determineActiveRadialBaseLineIntersections(ActIntTable,ActIntTableNe,IntPts,IntPtsNe,IntPtsMe,IntPtsMinc)) goto errexit ;
    }
 /*
 ** Clean Up
@@ -8618,7 +8622,7 @@ int bcdtmExtSideSlope_scanForRadialBaseLineIntersections(DTM_STR_INT_TAB *IntTab
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_determineActiveRadialBaseLineIntersections(DTM_STR_INT_TAB *ActIntTable,long ActIntTableNe,DTM_STR_INT_PTS **IntPts,long *IntPtsNe,long *IntPtsMe,long IntPtsMinc )
+int bcdtmSideSlope_determineActiveRadialBaseLineIntersections(DTM_STR_INT_TAB *ActIntTable,long ActIntTableNe,DTM_STR_INT_PTS **IntPts,long *IntPtsNe,long *IntPtsMe,long IntPtsMinc )
 /*
 ** Determine Line Intersections
 */
@@ -8704,10 +8708,10 @@ int bcdtmExtSideSlope_determineActiveRadialBaseLineIntersections(DTM_STR_INT_TAB
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|   bcdtmExtSideSlope_setElevationOfIntersectedSideSlopeRadials           |
+|   bcdtmSideSlope_setElevationOfIntersectedSideSlopeRadials           |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_setElevationOfIntersectedSideSlopeRadials(DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts)
+int bcdtmSideSlope_setElevationOfIntersectedSideSlopeRadials(DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts)
 /*
 ** This Function Sets The Elevation Of Intersected Radials To That Of The Intersecting Radial
 */
@@ -8745,7 +8749,7 @@ int bcdtmExtSideSlope_setElevationOfIntersectedSideSlopeRadials(DTM_OVERLAP_RADI
     if( ovl1->TruncatingRadial != DTM_NULL_PNT )
       {
            ovl2 = OvlPts + ovl1->TruncatingRadial ;
-           bcdtmExtSideSlope_setIntersectedSideSlopeRadialElevation(OvlPts,ovl1,ovl2) ;
+           bcdtmSideSlope_setIntersectedSideSlopeRadialElevation(OvlPts,ovl1,ovl2) ;
       }
    }
 /*
@@ -8771,10 +8775,10 @@ int bcdtmExtSideSlope_setElevationOfIntersectedSideSlopeRadials(DTM_OVERLAP_RADI
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|   bcdtmExtSideSlope_setIntersectedSideSlopeRadialElevation              |
+|   bcdtmSideSlope_setIntersectedSideSlopeRadialElevation              |
 |                                                                    |
 +-------------------------------------------------------------------*/
-void bcdtmExtSideSlope_setIntersectedSideSlopeRadialElevation(DTM_OVERLAP_RADIAL_TABLE *Ovl,DTM_OVERLAP_RADIAL_TABLE *Ovl1,DTM_OVERLAP_RADIAL_TABLE *Ovl2)
+void bcdtmSideSlope_setIntersectedSideSlopeRadialElevation(DTM_OVERLAP_RADIAL_TABLE *Ovl,DTM_OVERLAP_RADIAL_TABLE *Ovl1,DTM_OVERLAP_RADIAL_TABLE *Ovl2)
 {
  int    dbg=0 ;
  double d1,d2  ;
@@ -8790,7 +8794,7 @@ void bcdtmExtSideSlope_setIntersectedSideSlopeRadialElevation(DTM_OVERLAP_RADIAL
    {
     Ovl3 = Ovl + Ovl2->TruncatingRadial ;
     Ovl2->TruncatingRadial = - (Ovl2->TruncatingRadial+1) ;
-    if( Ovl3 != Ovl1 ) bcdtmExtSideSlope_setIntersectedSideSlopeRadialElevation(Ovl,Ovl2,Ovl3) ;
+    if( Ovl3 != Ovl1 ) bcdtmSideSlope_setIntersectedSideSlopeRadialElevation(Ovl,Ovl2,Ovl3) ;
    }
 /*
 **  Set Intersected Elevation For Ovl1
@@ -8812,10 +8816,10 @@ void bcdtmExtSideSlope_setIntersectedSideSlopeRadialElevation(DTM_OVERLAP_RADIAL
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|  bcdtmExtSideSlope_writeSideSlopeRadialsToDataObject                    |
+|  bcdtmSideSlope_writeSideSlopeRadialsToDataObject                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_writeSideSlopeRadialsToDataObject(long SideSlopeElementType,long SideDirection,DTM_OVERLAP_RADIAL_TABLE *RghtRadials,long NumRghtRadials,DTM_OVERLAP_RADIAL_TABLE *LeftRadials,long NumLeftRadials,DTMUserTag UserRadialTag,DTMUserTag UserElementTag,BC_DTM_OBJ *SideSlopes)
+int bcdtmSideSlope_writeSideSlopeRadialsToDataObject(long SideSlopeElementType,long SideDirection,DTM_OVERLAP_RADIAL_TABLE *RghtRadials,long NumRghtRadials,DTM_OVERLAP_RADIAL_TABLE *LeftRadials,long NumLeftRadials,DTMUserTag UserRadialTag,DTMUserTag UserElementTag,BC_DTM_OBJ *SideSlopes)
 /*
 ** This Function Writes The Side Slopes To The Data Object
 */
@@ -8911,7 +8915,7 @@ int bcdtmExtSideSlope_writeSideSlopeRadialsToDataObject(long SideSlopeElementTyp
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_writeOpenSideSlopeElementBoundaryPolygonToDataObject
+int bcdtmSideSlope_writeOpenSideSlopeElementBoundaryPolygonToDataObject
 (
  DTM_OVERLAP_RADIAL_TABLE *RghtRadials,
  long NumRghtRadials,
@@ -8938,8 +8942,8 @@ int bcdtmExtSideSlope_writeOpenSideSlopeElementBoundaryPolygonToDataObject
 /*
 ** Write Out Radials For Debugging Purposes
 */
- if( dbg ) { if( SideDirection == 1 || SideDirection == 3 ) bcdtmExtSideSlope_writeOverlapRadialTableToBinaryDTMFile(RghtRadials,NumRghtRadials,L"openElmRadialsRight.dat") ; }
- if( dbg ) { if( SideDirection == 2 || SideDirection == 3 ) bcdtmExtSideSlope_writeOverlapRadialTableToBinaryDTMFile(LeftRadials,NumLeftRadials,L"openElmRadialsleft.dat") ; }
+ if( dbg ) { if( SideDirection == 1 || SideDirection == 3 ) bcdtmSideSlope_writeOverlapRadialTableToBinaryDTMFile(RghtRadials,NumRghtRadials,L"openElmRadialsRight.dat") ; }
+ if( dbg ) { if( SideDirection == 2 || SideDirection == 3 ) bcdtmSideSlope_writeOverlapRadialTableToBinaryDTMFile(LeftRadials,NumLeftRadials,L"openElmRadialsleft.dat") ; }
 /*
 ** Check For Right Truncated Radials
 */
@@ -8989,8 +8993,8 @@ int bcdtmExtSideSlope_writeOpenSideSlopeElementBoundaryPolygonToDataObject
     else
       {
        if( dbg ) bcdtmWrite_message(0,0,0,"Writing Truncated Right Slope Toes") ;
-       if( ! processingLimits ) { if( bcdtmExtSideSlope_writeSlopeToesToDataObject(1,Data,RghtRadials,NumRghtRadials)) goto errexit ; }
-       else                     { if( bcdtmExtSideSlope_writeLimitSlopeToesToDataObject(1,Data,RghtRadials,NumRghtRadials)) goto errexit ; }
+       if( ! processingLimits ) { if( bcdtmSideSlope_writeSlopeToesToDataObject(1,Data,RghtRadials,NumRghtRadials)) goto errexit ; }
+       else                     { if( bcdtmSideSlope_writeLimitSlopeToesToDataObject(1,Data,RghtRadials,NumRghtRadials)) goto errexit ; }
       }
     if( bcdtmObject_cloneDtmObject(Data,&openRightP)) goto errexit ;
     if( dbg ) bcdtmWrite_geopakDatFileFromDtmObject(Data,L"openElmRightSlopeToes.dat") ;
@@ -9001,7 +9005,7 @@ int bcdtmExtSideSlope_writeOpenSideSlopeElementBoundaryPolygonToDataObject
  if( SideDirection == 2 || SideDirection == 3 )
    {
     if( dbg ) bcdtmWrite_message(0,0,0,"Writing Left Slope Toes") ;
-    bcdtmExtSideSlope_reverseOrderOfSideSlopeRadials(LeftRadials,NumLeftRadials) ;
+    bcdtmSideSlope_reverseOrderOfSideSlopeRadials(LeftRadials,NumLeftRadials) ;
     if( ! LeftTruncatedRadials )
       {
        for( ovl = LeftRadials ; ovl < LeftRadials + NumLeftRadials - 1 ; ++ovl )
@@ -9018,8 +9022,8 @@ int bcdtmExtSideSlope_writeOpenSideSlopeElementBoundaryPolygonToDataObject
       }
     else
       {
-       if( ! processingLimits ) { if( bcdtmExtSideSlope_writeSlopeToesToDataObject(1,Data,LeftRadials,NumLeftRadials)) goto errexit ; }
-       else                     { if( bcdtmExtSideSlope_writeLimitSlopeToesToDataObject(1,Data,LeftRadials,NumLeftRadials)) goto errexit ; }
+       if( ! processingLimits ) { if( bcdtmSideSlope_writeSlopeToesToDataObject(1,Data,LeftRadials,NumLeftRadials)) goto errexit ; }
+       else                     { if( bcdtmSideSlope_writeLimitSlopeToesToDataObject(1,Data,LeftRadials,NumLeftRadials)) goto errexit ; }
       }
     if( bcdtmObject_cloneDtmObject(Data,&openLeftP)) goto errexit ;
     if( dbg ) bcdtmWrite_geopakDatFileFromDtmObject(Data,L"openElmLeftSlopeToes.dat") ;
@@ -9266,8 +9270,8 @@ int bcdtmExtSideSlope_writeOpenSideSlopeElementBoundaryPolygonToDataObject
 **  Look For And Write Holes In Boundary Polygon To Data Object
 */
  if(dbg) bcdtmWrite_message(0,0,0,"Looking For Holes In Boundary Polygon") ;
- if( ! processingLimits ) { if( bcdtmExtSideSlope_writeInternalPadHolesToDataObject(Data,SideSlopes,1)) goto errexit ; }
- else                     { if( bcdtmExtSideSlope_writeLimitInternalPadHolesToDataObject(Data,SideSlopes,1)) goto errexit ; }
+ if( ! processingLimits ) { if( bcdtmSideSlope_writeInternalPadHolesToDataObject(Data,SideSlopes,1)) goto errexit ; }
+ else                     { if( bcdtmSideSlope_writeLimitInternalPadHolesToDataObject(Data,SideSlopes,1)) goto errexit ; }
  if(dbg) bcdtmWrite_message(0,0,0,"Looking For Holes In Boundary Polygon Completed") ;
 /*
 ** Clean Up
@@ -9293,10 +9297,10 @@ int bcdtmExtSideSlope_writeOpenSideSlopeElementBoundaryPolygonToDataObject
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|  bcdtmExtSideSlope_reverseOderOfSideSlopeRadials                              |
+|  bcdtmSideSlope_reverseOderOfSideSlopeRadials                              |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_reverseOrderOfSideSlopeRadials(DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts)
+int bcdtmSideSlope_reverseOrderOfSideSlopeRadials(DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts)
 /*
 ** This Function Reverses The Order Of The Radials
 */
@@ -9329,7 +9333,7 @@ int bcdtmExtSideSlope_reverseOrderOfSideSlopeRadials(DTM_OVERLAP_RADIAL_TABLE *O
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_removeExternalLoopsFromBoundaryDtmObject( BC_DTM_OBJ *tinP )
+int bcdtmSideSlope_removeExternalLoopsFromBoundaryDtmObject( BC_DTM_OBJ *tinP )
 {
  int ret=DTM_SUCCESS,dbg=0 ;
  long hullPnt,clPtr,priorPnt,nextPnt,startPnt,breakPnt,savPnt ;
@@ -9345,7 +9349,7 @@ int bcdtmExtSideSlope_removeExternalLoopsFromBoundaryDtmObject( BC_DTM_OBJ *tinP
 /*
 ** Remove Dangling Breaks
 */
- if( bcdtmExtSideSlope_removeDanglingBreaksDtmObject(tinP)) goto errexit ;
+ if( bcdtmSideSlope_removeDanglingBreaksDtmObject(tinP)) goto errexit ;
 /*
 ** Scan Tin Hull And Until A Hull Point Is Found That Is Part Of More Than Two Break Lines
 */
@@ -9527,7 +9531,7 @@ int bcdtmExtSideSlope_removeExternalLoopsFromBoundaryDtmObject( BC_DTM_OBJ *tinP
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_writeClosedSideSlopeElementBoundaryPolygonToDataObject
+int bcdtmSideSlope_writeClosedSideSlopeElementBoundaryPolygonToDataObject
 (
  DTM_OVERLAP_RADIAL_TABLE *rightRadialsP,
  long                     numRightRadials,
@@ -9655,8 +9659,8 @@ int bcdtmExtSideSlope_writeClosedSideSlopeElementBoundaryPolygonToDataObject
 **  Write Slope Toe Data To Data Object
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Writing Pad Slope Toes To Data Object") ;
- if( ! processingLimits ) { if( bcdtmExtSideSlope_writeSlopeToesToDataObject(2,dtmP,rightRadialsP,numRightRadials) ) goto errexit ; }
- else                     { if( bcdtmExtSideSlope_writeLimitSlopeToesToDataObject(2,dtmP,rightRadialsP,numRightRadials) ) goto errexit ; }
+ if( ! processingLimits ) { if( bcdtmSideSlope_writeSlopeToesToDataObject(2,dtmP,rightRadialsP,numRightRadials) ) goto errexit ; }
+ else                     { if( bcdtmSideSlope_writeLimitSlopeToesToDataObject(2,dtmP,rightRadialsP,numRightRadials) ) goto errexit ; }
  if( dbg ) bcdtmWrite_toFileDtmObject(dtmP,L"exttslopetoes.dat") ;
 /*
 ** Triangulate Data Object
@@ -9670,7 +9674,7 @@ int bcdtmExtSideSlope_writeClosedSideSlopeElementBoundaryPolygonToDataObject
 ** Check For Broken Side Slopes
 ** Following Code Added 14/Mar/2005 RobC - To Fix Breaks In Slope Toes
 */
- if( bcdtmExtSideSlope_detectAndFixBreaksInSlopeToes(dtmP) ) goto errexit ;
+ if( bcdtmSideSlope_detectAndFixBreaksInSlopeToes(dtmP) ) goto errexit ;
  if( dbg ) bcdtmWrite_toFileDtmObject(dtmP,L"fixedexttslopetoes.tin") ;
 /*
 ** Remove None Feature Hull Lines
@@ -9682,8 +9686,8 @@ int bcdtmExtSideSlope_writeClosedSideSlopeElementBoundaryPolygonToDataObject
 ** Remove External Loops From Boundary Tin
 */
  if(dbg) bcdtmWrite_message(0,0,0,"Removing External Loops From Boundary Tin") ;
-// if( bcdtmExtSideSlope_removeExternalLoopsFromBoundaryDtmObject(dtmP,)) goto errexit ;
-// bcdtmExtSideSlope_removeExternalLoopsFromBoundaryDtmObject(dtmP,) ;
+// if( bcdtmSideSlope_removeExternalLoopsFromBoundaryDtmObject(dtmP,)) goto errexit ;
+// bcdtmSideSlope_removeExternalLoopsFromBoundaryDtmObject(dtmP,) ;
 /*
 ** Store Tin Hull As Boundary Polygon In Side Slopes Object
 */
@@ -9701,8 +9705,8 @@ int bcdtmExtSideSlope_writeClosedSideSlopeElementBoundaryPolygonToDataObject
 **  Look For And Write Holes In Boundary Polygon To Side Slopes Object
 */
  if(dbg) bcdtmWrite_message(0,0,0,"Looking For Holes In Boundary Polygon") ;
- if( ! processingLimits ) { if( bcdtmExtSideSlope_writeInternalPadHolesToDataObject(dtmP,sideSlopesP,1)) goto errexit ; }
- else                     { if( bcdtmExtSideSlope_writeLimitInternalPadHolesToDataObject(dtmP,sideSlopesP,1)) goto errexit ; }
+ if( ! processingLimits ) { if( bcdtmSideSlope_writeInternalPadHolesToDataObject(dtmP,sideSlopesP,1)) goto errexit ; }
+ else                     { if( bcdtmSideSlope_writeLimitInternalPadHolesToDataObject(dtmP,sideSlopesP,1)) goto errexit ; }
 /*
 ** Clean Up
 */
@@ -9730,7 +9734,7 @@ int bcdtmExtSideSlope_writeClosedSideSlopeElementBoundaryPolygonToDataObject
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_detectAndFixBreaksInSlopeToes(BC_DTM_OBJ *tinP)
+int bcdtmSideSlope_detectAndFixBreaksInSlopeToes(BC_DTM_OBJ *tinP)
 /*
 ** This Function Detects And Fixes Breaks In The Slope Toes
 ** This Is Not A Generic Function
@@ -9919,7 +9923,7 @@ int bcdtmExtSideSlope_detectAndFixBreaksInSlopeToes(BC_DTM_OBJ *tinP)
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_writeSlopeToesToDataObject(long sideSlopeElementType,BC_DTM_OBJ *Data,DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts)
+int bcdtmSideSlope_writeSlopeToesToDataObject(long sideSlopeElementType,BC_DTM_OBJ *Data,DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts)
 /*
 ** This Function Writes The Radial Slope Toes To A Data Object
 */
@@ -9949,7 +9953,7 @@ int bcdtmExtSideSlope_writeSlopeToesToDataObject(long sideSlopeElementType,BC_DT
 ** Create And Build Slope Toe Intersection Table
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Building Slope Toe Intersection Table") ;
- if( bcdtmExtSideSlope_buildSlopeToeIntersectionTable(OvlPts,NumOvlPts,&IntTable,&IntTableNe)) goto errexit ;
+ if( bcdtmSideSlope_buildSlopeToeIntersectionTable(OvlPts,NumOvlPts,&IntTable,&IntTableNe)) goto errexit ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Slope Toe Intersection Table Entries = %6ld",IntTableNe) ;
 /*
 ** Write Intersection Table
@@ -9969,7 +9973,7 @@ int bcdtmExtSideSlope_writeSlopeToesToDataObject(long sideSlopeElementType,BC_DT
  if( IntPtsMinc < 1000 ) IntPtsMinc = 1000 ;
  IntPtsNe = IntPtsMe = 0 ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Scanning For Slope Toe Intersections") ;
- if( bcdtmExtSideSlope_scanForSlopeToeIntersections(IntTable,IntTableNe,&IntPts,&IntPtsNe,&IntPtsMe,IntPtsMinc) ) goto errexit ;
+ if( bcdtmSideSlope_scanForSlopeToeIntersections(IntTable,IntTableNe,&IntPts,&IntPtsNe,&IntPtsMe,IntPtsMinc) ) goto errexit ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Slope Toe Intersections = %4ld",IntPtsNe) ;
  if( IntPtsNe > 0 )
    {
@@ -9977,7 +9981,7 @@ int bcdtmExtSideSlope_writeSlopeToesToDataObject(long sideSlopeElementType,BC_DT
 ** Sort Intersection Points
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Sorting Intersection Table") ;
-    qsort(IntPts,IntPtsNe,sizeof(DTM_STR_INT_PTS),( int (__cdecl *)(const void *,const void *))bcdtmExtSideSlope_radialRadialIntersectionPointsCompareFunction) ;
+    qsort(IntPts,IntPtsNe,sizeof(DTM_STR_INT_PTS),( int (__cdecl *)(const void *,const void *))bcdtmSideSlope_radialRadialIntersectionPointsCompareFunction) ;
 /*
 ** Write Intersection Points
 */
@@ -10021,7 +10025,7 @@ int bcdtmExtSideSlope_writeSlopeToesToDataObject(long sideSlopeElementType,BC_DT
 ** Build Radial Pad Edge Intersection Table For Scanning Against Edges
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Building Radial Pad Edge Intersection Table") ;
- if( bcdtmExtSideSlope_buildRadialEdgeIntersectionTable(OvlPts,NumOvlPts,1,&IntTable,&IntTableNe) ) goto errexit ;
+ if( bcdtmSideSlope_buildRadialEdgeIntersectionTable(OvlPts,NumOvlPts,1,&IntTable,&IntTableNe) ) goto errexit ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Radial Pad Edge Intersection Table Entries = %6ld",IntTableNe) ;
 /*
 ** Store Slope Toes In Data Object
@@ -10065,7 +10069,7 @@ int bcdtmExtSideSlope_writeSlopeToesToDataObject(long sideSlopeElementType,BC_DT
             }
           else
                     {
-             bcdtmExtSideSlope_findFirstPriorNonTruncatedPadToePoint(sideSlopeElementType,OvlPts,NumOvlPts,IntTable,IntTableNe,ovl,&Ovl) ;
+             bcdtmSideSlope_findFirstPriorNonTruncatedPadToePoint(sideSlopeElementType,OvlPts,NumOvlPts,IntTable,IntTableNe,ovl,&Ovl) ;
                          if( Ovl != NULL )
                            {
                             ToeFound = 1 ;
@@ -10142,7 +10146,7 @@ int bcdtmExtSideSlope_writeSlopeToesToDataObject(long sideSlopeElementType,BC_DT
             }
           else
                     {
-             bcdtmExtSideSlope_findFirstNextNonTruncatedPadToePoint(sideSlopeElementType,OvlPts,NumOvlPts,IntTable,IntTableNe,ovl,&Ovl) ;
+             bcdtmSideSlope_findFirstNextNonTruncatedPadToePoint(sideSlopeElementType,OvlPts,NumOvlPts,IntTable,IntTableNe,ovl,&Ovl) ;
                          if( Ovl != NULL )
                            {
                             ToeFound = 1 ;
@@ -10216,7 +10220,7 @@ int bcdtmExtSideSlope_writeSlopeToesToDataObject(long sideSlopeElementType,BC_DT
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_buildSlopeToeIntersectionTable(DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts,DTM_STR_INT_TAB **IntTable,long *IntTableNe)
+int bcdtmSideSlope_buildSlopeToeIntersectionTable(DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts,DTM_STR_INT_TAB **IntTable,long *IntTableNe)
 {
  int    ret=0,dbg=0 ;
  long   type1,type2,IntTableMe,IntTableMinc  ;
@@ -10344,7 +10348,7 @@ int bcdtmExtSideSlope_buildSlopeToeIntersectionTable(DTM_OVERLAP_RADIAL_TABLE *O
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_scanForSlopeToeIntersections(DTM_STR_INT_TAB *IntTable,long IntTableNe,DTM_STR_INT_PTS **IntPts,long *IntPtsNe,long *IntPtsMe,long IntPtsMinc)
+int bcdtmSideSlope_scanForSlopeToeIntersections(DTM_STR_INT_TAB *IntTable,long IntTableNe,DTM_STR_INT_PTS **IntPts,long *IntPtsNe,long *IntPtsMe,long IntPtsMinc)
 /*
 ** This Function Scans for SlopeToe Intersections
 */
@@ -10359,7 +10363,7 @@ int bcdtmExtSideSlope_scanForSlopeToeIntersections(DTM_STR_INT_TAB *IntTable,lon
    {
     if( bcdtmClean_deleteActiveStringLines(ActIntTable,&ActIntTableNe,pint)) goto errexit ;
     if( bcdtmClean_addActiveStringLine(&ActIntTable,&ActIntTableNe,&ActIntTableMe,pint))  goto errexit ;
-    if( bcdtmExtSideSlope_determineSlopeToeIntersections(ActIntTable,ActIntTableNe,IntPts,IntPtsNe,IntPtsMe,IntPtsMinc)) goto errexit ;
+    if( bcdtmSideSlope_determineSlopeToeIntersections(ActIntTable,ActIntTableNe,IntPts,IntPtsNe,IntPtsMe,IntPtsMinc)) goto errexit ;
    }
 /*
 ** Clean Up
@@ -10382,7 +10386,7 @@ int bcdtmExtSideSlope_scanForSlopeToeIntersections(DTM_STR_INT_TAB *IntTable,lon
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_determineSlopeToeIntersections(DTM_STR_INT_TAB *ActIntTable,long ActIntTableNe,DTM_STR_INT_PTS **IntPts,long *IntPtsNe,long *IntPtsMe,long IntPtsMinc )
+int bcdtmSideSlope_determineSlopeToeIntersections(DTM_STR_INT_TAB *ActIntTable,long ActIntTableNe,DTM_STR_INT_PTS **IntPts,long *IntPtsNe,long *IntPtsMe,long IntPtsMinc )
 /*
 ** Determine Line Intersections
 */
@@ -10482,10 +10486,10 @@ int bcdtmExtSideSlope_determineSlopeToeIntersections(DTM_STR_INT_TAB *ActIntTabl
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|     bcdtmExtSideSlope_findFirstPrioNonTruncatedPadToePoint                    |
+|     bcdtmSideSlope_findFirstPrioNonTruncatedPadToePoint                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_findFirstPriorNonTruncatedPadToePoint(long sideSlopeElementType,DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts,DTM_STR_INT_TAB *IntTable,long IntTableNe,DTM_OVERLAP_RADIAL_TABLE *Ovl,DTM_OVERLAP_RADIAL_TABLE **Ovp )
+int bcdtmSideSlope_findFirstPriorNonTruncatedPadToePoint(long sideSlopeElementType,DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts,DTM_STR_INT_TAB *IntTable,long IntTableNe,DTM_OVERLAP_RADIAL_TABLE *Ovl,DTM_OVERLAP_RADIAL_TABLE **Ovp )
 {
  long   dbg=0,IntFlag,NumTested  ;
  DTM_OVERLAP_RADIAL_TABLE *ovp ;
@@ -10520,7 +10524,7 @@ int bcdtmExtSideSlope_findFirstPriorNonTruncatedPadToePoint(long sideSlopeElemen
 /*
 ** Test If Line Connecting Ovl And Ovp Toe Points Is Intersected By A Radial Or Pad Edge
 */
-          bcdtmExtSideSlope_checkForInterectionOfSlopeToeWithRadialOrPadEdge(OvlPts,ovp,Ovl,IntTable,IntTableNe,&IntFlag) ;
+          bcdtmSideSlope_checkForInterectionOfSlopeToeWithRadialOrPadEdge(OvlPts,ovp,Ovl,IntTable,IntTableNe,&IntFlag) ;
          }
       }
    } while ( IntFlag && ovp != Ovl && ovp != NULL ) ;
@@ -10536,10 +10540,10 @@ int bcdtmExtSideSlope_findFirstPriorNonTruncatedPadToePoint(long sideSlopeElemen
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|     bcdtmExtSideSlope_findFirstNextNonTruncatedPadToePoint                    |
+|     bcdtmSideSlope_findFirstNextNonTruncatedPadToePoint                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_findFirstNextNonTruncatedPadToePoint(long sideSlopeElementType,DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts,DTM_STR_INT_TAB *IntTable,long IntTableNe,DTM_OVERLAP_RADIAL_TABLE *Ovl,DTM_OVERLAP_RADIAL_TABLE **Ovn )
+int bcdtmSideSlope_findFirstNextNonTruncatedPadToePoint(long sideSlopeElementType,DTM_OVERLAP_RADIAL_TABLE *OvlPts,long NumOvlPts,DTM_STR_INT_TAB *IntTable,long IntTableNe,DTM_OVERLAP_RADIAL_TABLE *Ovl,DTM_OVERLAP_RADIAL_TABLE **Ovn )
 {
  long   dbg=0,IntFlag,NumTested  ;
  DTM_OVERLAP_RADIAL_TABLE *ovn ;
@@ -10574,7 +10578,7 @@ int bcdtmExtSideSlope_findFirstNextNonTruncatedPadToePoint(long sideSlopeElement
 /*
 ** Test If Line Connecting Ovl And Ovp Toe Points Is Intersected By A Radial Or Pad Edge
 */
-          bcdtmExtSideSlope_checkForInterectionOfSlopeToeWithRadialOrPadEdge(OvlPts,Ovl,ovn,IntTable,IntTableNe,&IntFlag) ;
+          bcdtmSideSlope_checkForInterectionOfSlopeToeWithRadialOrPadEdge(OvlPts,Ovl,ovn,IntTable,IntTableNe,&IntFlag) ;
          }
       }
    } while ( IntFlag && ovn != Ovl && ovn != NULL ) ;
@@ -10593,7 +10597,7 @@ int bcdtmExtSideSlope_findFirstNextNonTruncatedPadToePoint(long sideSlopeElement
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_checkForInterectionOfSlopeToeWithRadialOrPadEdge(DTM_OVERLAP_RADIAL_TABLE *OvlPts,DTM_OVERLAP_RADIAL_TABLE *Ovl1,DTM_OVERLAP_RADIAL_TABLE *Ovl2,DTM_STR_INT_TAB *IntTable,long IntTableNe,long *IntFlag)
+int bcdtmSideSlope_checkForInterectionOfSlopeToeWithRadialOrPadEdge(DTM_OVERLAP_RADIAL_TABLE *OvlPts,DTM_OVERLAP_RADIAL_TABLE *Ovl1,DTM_OVERLAP_RADIAL_TABLE *Ovl2,DTM_STR_INT_TAB *IntTable,long IntTableNe,long *IntFlag)
 {
  long   dbg=0,ofs1,ofs2 ;
  double Sx,Sy,Ex,Ey ;
@@ -10661,7 +10665,7 @@ int bcdtmExtSideSlope_checkForInterectionOfSlopeToeWithRadialOrPadEdge(DTM_OVERL
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_writePadSideSlopeHolesToDataObject
+int bcdtmSideSlope_writePadSideSlopeHolesToDataObject
 (
  DTM_OVERLAP_RADIAL_TABLE *leftRadialsP,
  long                     numLeftRadials,
@@ -10764,9 +10768,9 @@ int bcdtmExtSideSlope_writePadSideSlopeHolesToDataObject
 **  Write Slope Toe Data To Data Object
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Writing Slope Toes To Data Object") ;
-// if( ! processingLimits ) { if( bcdtmExtSideSlope_writeSlopeToesToDataObject(2,dtmP,leftRadialsP,numLeftRadials) ) goto errexit ; }
- if( ! processingLimits ) { if( bcdtmExtSideSlope_writeLimitSlopeToesToDataObject(2,dtmP,leftRadialsP,numLeftRadials) ) goto errexit ; }
- else                     { if( bcdtmExtSideSlope_writeLimitSlopeToesToDataObject(2,dtmP,leftRadialsP,numLeftRadials) ) goto errexit ; }
+// if( ! processingLimits ) { if( bcdtmSideSlope_writeSlopeToesToDataObject(2,dtmP,leftRadialsP,numLeftRadials) ) goto errexit ; }
+ if( ! processingLimits ) { if( bcdtmSideSlope_writeLimitSlopeToesToDataObject(2,dtmP,leftRadialsP,numLeftRadials) ) goto errexit ; }
+ else                     { if( bcdtmSideSlope_writeLimitSlopeToesToDataObject(2,dtmP,leftRadialsP,numLeftRadials) ) goto errexit ; }
  if( dbg ) bcdtmWrite_toFileDtmObject(dtmP,L"leftSlopeToes.dat") ;
 /*
 ** Write Side Slope Element To Data Object
@@ -10810,8 +10814,8 @@ int bcdtmExtSideSlope_writePadSideSlopeHolesToDataObject
 **  Look For And Write Internal Holes To Data Object
 */
  if(dbg) bcdtmWrite_message(0,0,0,"Extracting Internal Holes ** Processing Limits = %2ld",processingLimits) ;
- if( ! processingLimits ) { if( bcdtmExtSideSlope_writeInternalPadHolesToDataObject(dtmP,sideSlopesP,2)) goto errexit ; }
- else                     { if( bcdtmExtSideSlope_writeLimitInternalPadHolesToDataObject(dtmP,sideSlopesP,2)) goto errexit ; }
+ if( ! processingLimits ) { if( bcdtmSideSlope_writeInternalPadHolesToDataObject(dtmP,sideSlopesP,2)) goto errexit ; }
+ else                     { if( bcdtmSideSlope_writeLimitInternalPadHolesToDataObject(dtmP,sideSlopesP,2)) goto errexit ; }
  if(dbg) bcdtmWrite_message(0,0,0,"Extracting Internal Holes Completed") ;
 /*
 ** Delete DTm Object
@@ -10839,7 +10843,7 @@ int bcdtmExtSideSlope_writePadSideSlopeHolesToDataObject
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_writeInternalPadHolesToDataObject(BC_DTM_OBJ *Tin,BC_DTM_OBJ *Data,long HoleDirection)
+int bcdtmSideSlope_writeInternalPadHolesToDataObject(BC_DTM_OBJ *Tin,BC_DTM_OBJ *Data,long HoleDirection)
 {
  int    ret=0,dbg=0 ;
  long   sp,np,lp,clc,spnt,lpnt,node,nfeat=0,numPolyPts;
@@ -10873,7 +10877,7 @@ int bcdtmExtSideSlope_writeInternalPadHolesToDataObject(BC_DTM_OBJ *Tin,BC_DTM_O
 ** Remove Dangling Break Lines
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Removing Dangles") ;
- if( bcdtmExtSideSlope_removeDanglingBreaksDtmObject(Tin)) goto errexit ;
+ if( bcdtmSideSlope_removeDanglingBreaksDtmObject(Tin)) goto errexit ;
  if( dbg ) bcdtmWrite_toFileDtmObject(Tin,L"afterDanglesRemoved.tin") ;
 /*
 ** Write Information On Number Of Features At Internal TIN Point ** Developement Only
@@ -10887,7 +10891,7 @@ int bcdtmExtSideSlope_writeInternalPadHolesToDataObject(BC_DTM_OBJ *Tin,BC_DTM_O
        if( ! pd->PRGN && pd->hPtr == Tin->nullPnt )
          {
           spnt = sp  ;
-          if( bcdtmExtSideSlope_countNumberOfDtmFeaturesAtPointDtmObject(Tin,spnt,&nfeat)) goto errexit ;
+          if( bcdtmSideSlope_countNumberOfDtmFeaturesAtPointDtmObject(Tin,spnt,&nfeat)) goto errexit ;
           bcdtmWrite_message(0,0,0,"nfeat = %6ld spnt = %6ld ** %10.4lf %10.4lf %10.4lf",nfeat,spnt,pointAddrP(Tin,spnt)->x,pointAddrP(Tin,spnt)->y,pointAddrP(Tin,spnt)->z) ;
          }
       }
@@ -11069,7 +11073,7 @@ int bcdtmExtSideSlope_writeInternalPadHolesToDataObject(BC_DTM_OBJ *Tin,BC_DTM_O
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_countNumberOfDtmFeaturesAtPointDtmObject(BC_DTM_OBJ *Tin,long P,long *Count)
+int bcdtmSideSlope_countNumberOfDtmFeaturesAtPointDtmObject(BC_DTM_OBJ *Tin,long P,long *Count)
 /*
 ** This Function Counts The Number Of DTM Features At Point P
 */
@@ -11106,7 +11110,7 @@ int bcdtmExtSideSlope_countNumberOfDtmFeaturesAtPointDtmObject(BC_DTM_OBJ *Tin,l
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_removeDanglingBreaksDtmObject(BC_DTM_OBJ *Tin)
+int bcdtmSideSlope_removeDanglingBreaksDtmObject(BC_DTM_OBJ *Tin)
 /*
 **
 ** This Function Removes Internal Dangling Break Lines
@@ -11143,7 +11147,7 @@ int bcdtmExtSideSlope_removeDanglingBreaksDtmObject(BC_DTM_OBJ *Tin)
          {
           ++NumberOfDangles ;
           if( dbg ) bcdtmWrite_message(0,0,0,"Removing Dangling Break At Point %6ld ** %10.4lf %10.4lf %10.4lf",p,pointAddrP(Tin,p)->x,pointAddrP(Tin,p)->y,pointAddrP(Tin,p)->z) ;
-          if( bcdtmExtSideSlope_removeBreakLineSegmentAtTinPointDtmObject(Tin,p)) goto errexit ;
+          if( bcdtmSideSlope_removeBreakLineSegmentAtTinPointDtmObject(Tin,p)) goto errexit ;
          }
       }
    }
@@ -11166,7 +11170,7 @@ int bcdtmExtSideSlope_removeDanglingBreaksDtmObject(BC_DTM_OBJ *Tin)
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_countNumberOfDtmFeatureTypeForTinPointDtmObject(BC_DTM_OBJ *Tin,long TinPoint,DTMFeatureType DtmFeatureType,long *NumberOfFeatures)
+int bcdtmSideSlope_countNumberOfDtmFeatureTypeForTinPointDtmObject(BC_DTM_OBJ *Tin,long TinPoint,DTMFeatureType DtmFeatureType,long *NumberOfFeatures)
 /*
 ** This Function Counts The Number Of The DTM Features Types For A Tin Point
 ** This is a special adoption of the bcdtmList_countNumberOfDtmFeatureTypeForTinPointDtmObject function
@@ -11236,10 +11240,10 @@ int bcdtmExtSideSlope_countNumberOfDtmFeatureTypeForTinPointDtmObject(BC_DTM_OBJ
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|  bcdtmExtSideSlope_removeBreakLineSegmentAtTinPointDtmObject()          |
+|  bcdtmSideSlope_removeBreakLineSegmentAtTinPointDtmObject()          |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_removeBreakLineSegmentAtTinPointDtmObject(BC_DTM_OBJ *Tin,long P)
+int bcdtmSideSlope_removeBreakLineSegmentAtTinPointDtmObject(BC_DTM_OBJ *Tin,long P)
 /*
 ** This Function Removes The Break Line Segment At Tin Point P
 ** Assumes P Is On Only One Break line
@@ -11288,7 +11292,7 @@ int bcdtmExtSideSlope_removeBreakLineSegmentAtTinPointDtmObject(BC_DTM_OBJ *Tin,
 /*
 ** If Number Of Points Is Equal To Two Delete Feature From TIN
 */
- if      ( NumberOfPoints == 2 ) { if( bcdtmExtInsert_removeDtmFeatureFromDtmObject(Tin,Feature)) goto errexit ; }
+ if      ( NumberOfPoints == 2 ) { if( bcdtmInsert_removeDtmFeatureFromDtmObject2(Tin,Feature, false)) goto errexit ; }
  else if ( NumberOfPoints >  2 ) { if( bcdtmInsert_removePointFromDtmFeatureDtmObject(Tin,P,Feature)) goto errexit ; }
 /*
 ** Job Completed
@@ -11302,10 +11306,10 @@ int bcdtmExtSideSlope_removeBreakLineSegmentAtTinPointDtmObject(BC_DTM_OBJ *Tin,
 }
 /*---------------------------------------------------------------------------------+
 |                                                                                  |
-|   bcdtmExtSideSlope_extractextractBenchesFromSlopeToesAndStoreInSeparateDataObjects   |
+|   bcdtmSideSlope_extractextractBenchesFromSlopeToesAndStoreInSeparateDataObjects   |
 |                                                                                  |
 +---------------------------------------------------------------------------------*/
-int bcdtmExtSideSlope_extractBenchesFromSlopeToesAndStoreInSeparateDataObjects(BC_DTM_OBJ *Tin,BC_DTM_OBJ *SideSlopes,BC_DTM_OBJ* **DataObjects,long *NumberOfDataObjects)
+int bcdtmSideSlope_extractBenchesFromSlopeToesAndStoreInSeparateDataObjects(BC_DTM_OBJ *Tin,BC_DTM_OBJ *SideSlopes,BC_DTM_OBJ* **DataObjects,long *NumberOfDataObjects)
 /*
 ** This Function Extracts The Benches From The Slope Toes And Stores Them In Separate Data Objects
 **
@@ -11660,7 +11664,7 @@ int bcdtmExtSideSlope_extractBenchesFromSlopeToesAndStoreInSeparateDataObjects(B
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_markTruncatedRadials(DTM_OVERLAP_RADIAL_TABLE *radialTableP,long radialTableSize)
+int bcdtmSideSlope_markTruncatedRadials(DTM_OVERLAP_RADIAL_TABLE *radialTableP,long radialTableSize)
 /*
 ** This Function Marks Truncated Radials
 */
@@ -11706,7 +11710,7 @@ int bcdtmExtSideSlope_markTruncatedRadials(DTM_OVERLAP_RADIAL_TABLE *radialTable
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_truncateRadialsWithToePointsInsideSlopeToe(DTM_OVERLAP_RADIAL_TABLE *ovlPtsP,long numOvlPts,long direction)
+int bcdtmSideSlope_truncateRadialsWithToePointsInsideSlopeToe(DTM_OVERLAP_RADIAL_TABLE *ovlPtsP,long numOvlPts,long direction)
 /*
 ** This Function Truncates Radials With Toe Points Inside Truncated Slope Toes
 */
@@ -11910,7 +11914,7 @@ int bcdtmExtSideSlope_truncateRadialsWithToePointsInsideSlopeToe(DTM_OVERLAP_RAD
 * @version
 * @see None
 *===============================================================================*/
-int bcdtmExtSideSlope_copyParallel3D
+int bcdtmSideSlope_copyParallel3D
 (
  DPoint3d    *pointsP,             /* => Array  Of DPoint3d Points           */
  long   numPoints,            /* => Number Of DPoint3d Points           */
@@ -11960,18 +11964,18 @@ int bcdtmExtSideSlope_copyParallel3D
 ** Normalise Line String Points
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Normalising") ;
- if( offset != 0.0 ) if( bcdtmExtSideSlope_normalisePointArray(pointsP,numPoints) ) goto errexit ;
+ if( offset != 0.0 ) if( bcdtmSideSlope_normalisePointArray(pointsP,numPoints) ) goto errexit ;
 /*
 ** Remove Duplicate Points From Line String
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Removing Duplicates") ;
- if( bcdtmExtSideSlope_removeDuplicatesPointArray(pointsP,&numPoints,0.0)) goto errexit ;
+ if( bcdtmSideSlope_removeDuplicatesPointArray(pointsP,&numPoints,0.0)) goto errexit ;
  if( numPoints < 2   )   goto errexit ;
 /*
 ** Check For Knots In String
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Checking For Knots") ;
- if( bcdtmExtSideSlope_detectKnotsPointArray(pointsP,numPoints,&knotPtsP,&numKnotPts)) goto errexit ;
+ if( bcdtmSideSlope_detectKnotsPointArray(pointsP,numPoints,&knotPtsP,&numKnotPts)) goto errexit ;
  if( numKnotPts > 0 ) goto errexit ;
 /*
 ** Write Points
@@ -11987,7 +11991,7 @@ int bcdtmExtSideSlope_copyParallel3D
 /*
 ** Offset Points Parallel
 */
- if( bcdtmExtSideSlope_offsetCopyPointArray3D(pointsP,numPoints,offset,slope,copyMode,cornerStrokeTolerance,parallelPtsPP,numParallelPtsP) == DTM_ERROR ) goto errexit ;
+ if( bcdtmSideSlope_offsetCopyPointArray3D(pointsP,numPoints,offset,slope,copyMode,cornerStrokeTolerance,parallelPtsPP,numParallelPtsP) == DTM_ERROR ) goto errexit ;
 /*
 ** Write Parallel Points
 */
@@ -12002,15 +12006,15 @@ int bcdtmExtSideSlope_copyParallel3D
 /*
 ** Remove Knots From Parallel Points
 */
- if( bcdtmExtSideSlope_removeKnots(parallelPtsPP,numParallelPtsP,&knotPtsP,&numKnotPts)) goto errexit ;
+ if( bcdtmSideSlope_removeKnots(parallelPtsPP,numParallelPtsP,&knotPtsP,&numKnotPts)) goto errexit ;
 /*
 ** Normalise Parallel Points
 */
- if( bcdtmExtSideSlope_normalisePointArray(*parallelPtsPP,*numParallelPtsP) ) goto errexit ;
+ if( bcdtmSideSlope_normalisePointArray(*parallelPtsPP,*numParallelPtsP) ) goto errexit ;
 /*
 ** Remove Duplicate Parallel Points
 */
- if( bcdtmExtSideSlope_removeDuplicatesPointArray(*parallelPtsPP,numParallelPtsP,0.0)) goto errexit ;
+ if( bcdtmSideSlope_removeDuplicatesPointArray(*parallelPtsPP,numParallelPtsP,0.0)) goto errexit ;
 /*
 ** Write Parallel Points
 */
@@ -12065,7 +12069,7 @@ int bcdtmExtSideSlope_copyParallel3D
 * @version
 * @see None
 *===============================================================================*/
-int bcdtmExtSideSlope_removeDuplicatesPointArray
+int bcdtmSideSlope_removeDuplicatesPointArray
 (
  DPoint3d      *lineString,
  long          *sizeLineString,
@@ -12129,7 +12133,7 @@ int bcdtmExtSideSlope_removeDuplicatesPointArray
 * @doc  Generic Line String Knot Detection Function
 * @notes  This function detects knots in a line string
 * @notes  After the first line string segment consecutive Duplicate Line String Points Will Be reported As a knot.
-* @notes  Consecutive Duplicate Line String Points can be prior removed with function bcdtmExtSideSlope_removeDuplicatePoints
+* @notes  Consecutive Duplicate Line String Points can be prior removed with function bcdtmSideSlope_removeDuplicatePoints
 * @notes  The number of knots reported will be twice the actual number.
 * @notes  The same knot will be reported for each line string segment
 * @author Rob Cormack 26 February 2003 rob@geopak.com
@@ -12141,7 +12145,7 @@ int bcdtmExtSideSlope_removeDuplicatesPointArray
 * @version
 * @see None
 *===============================================================================*/
-int bcdtmExtSideSlope_detectKnotsPointArray
+int bcdtmSideSlope_detectKnotsPointArray
 (
  DPoint3d                   *lineString,
  long                  sizeLineString,
@@ -12168,13 +12172,13 @@ int bcdtmExtSideSlope_detectKnotsPointArray
  knotString.stringPts = lineString ;
  knotString.numStringPts = sizeLineString ;
  pknotString = &knotString ;
- if( bcdtmExtSideSlope_detectStringIntersections(&pknotString,1,knotPoints,numKnotPoints)) goto errexit ;
+ if( bcdtmSideSlope_detectStringIntersections(&pknotString,1,knotPoints,numKnotPoints)) goto errexit ;
 /*
 ** Sort Knots On String Segment Number
 */
  if( *numKnotPoints > 0 )
    {
-    qsort(*knotPoints,*numKnotPoints,sizeof(DTM_STR_INT_PTS),( int (__cdecl *)(const void *,const void *))bcdtmExtSideSlope_intersectionPointsCompareFunction) ;
+    qsort(*knotPoints,*numKnotPoints,sizeof(DTM_STR_INT_PTS),( int (__cdecl *)(const void *,const void *))bcdtmSideSlope_intersectionPointsCompareFunction) ;
    }
 /*
 **  Clean Up
@@ -12198,7 +12202,7 @@ int bcdtmExtSideSlope_detectKnotsPointArray
 * @doc  Generic Line String Knot Detection Function
 * @notes  This function detects and Inserts knots in a line string
 * @notes  After the first line string segment consecutive Duplicate Line String Points Will Be reported As a knot.
-* @notes  Consecutive Duplicate Line String Points can be prior removed with function bcdtmExtSideSlope_removeDuplicatePoints
+* @notes  Consecutive Duplicate Line String Points can be prior removed with function bcdtmSideSlope_removeDuplicatePoints
 * @notes  The number of knots reported will be twice the actual number.
 * @notes  The same knot will be reported for each line string segment
 * @author Rob Cormack 26 February 2003 rob@geopak.com
@@ -12210,7 +12214,7 @@ int bcdtmExtSideSlope_detectKnotsPointArray
 * @version
 * @see None
 *===============================================================================*/
-int bcdtmExtSideSlope_insertKnots
+int bcdtmSideSlope_insertKnots
 (
  DPoint3d                 *lineString,
  long                sizeLineString,
@@ -12237,17 +12241,17 @@ int bcdtmExtSideSlope_insertKnots
  knotString.stringPts = lineString ;
  knotString.numStringPts = sizeLineString ;
  pknotString = &knotString ;
- if( bcdtmExtSideSlope_detectStringIntersections(&pknotString,1,knotPoints,numKnotPoints)) goto errexit ;
+ if( bcdtmSideSlope_detectStringIntersections(&pknotString,1,knotPoints,numKnotPoints)) goto errexit ;
 /*
 ** Sort Knots On String Segment Number
 */
  if( *numKnotPoints > 0 )
    {
-    qsort(*knotPoints,*numKnotPoints,sizeof(DTM_STR_INT_PTS),( int (__cdecl *)(const void *,const void *))bcdtmExtSideSlope_intersectionPointsCompareFunction) ;
+    qsort(*knotPoints,*numKnotPoints,sizeof(DTM_STR_INT_PTS),( int (__cdecl *)(const void *,const void *))bcdtmSideSlope_intersectionPointsCompareFunction) ;
 /*
 ** Insert Knot Points Into Line String
 */
-   if( bcdtmExtSideSlope_insertIntersectionPointsIntoLineStrings(&pknotString,*knotPoints,*numKnotPoints) ) goto errexit ;
+   if( bcdtmSideSlope_insertIntersectionPointsIntoLineStrings(&pknotString,*knotPoints,*numKnotPoints) ) goto errexit ;
   }
 /*
 **  Clean Up
@@ -12285,7 +12289,7 @@ int bcdtmExtSideSlope_insertKnots
 * @version
 * @see None
 *===============================================================================*/
-int bcdtmExtSideSlope_removeKnots
+int bcdtmSideSlope_removeKnots
 (
  DPoint3d                 **linePtsPP,
  long                *numLinePtsP,
@@ -12320,7 +12324,7 @@ int bcdtmExtSideSlope_removeKnots
 /*
 ** Remove Duplicate Points
 */
- if( bcdtmExtSideSlope_removeDuplicatesPointArray(*linePtsPP,numLinePtsP,0.0)) goto errexit ;
+ if( bcdtmSideSlope_removeDuplicatesPointArray(*linePtsPP,numLinePtsP,0.0)) goto errexit ;
  if( dbg ) bcdtmWrite_message(0,0,0,"*numLinePtsP = %8ld",*numLinePtsP) ;
  if( *numLinePtsP <= 2 ) goto cleanup ;
 /*
@@ -12330,7 +12334,7 @@ int bcdtmExtSideSlope_removeKnots
  knotString.numStringPts = *numLinePtsP ;
  knotStringP = &knotString ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Checking Line String For Knots") ;
- if( bcdtmExtSideSlope_detectStringIntersections(&knotStringP,1,knotPtsPP,numKnotPtsP)) goto errexit ;
+ if( bcdtmSideSlope_detectStringIntersections(&knotStringP,1,knotPtsPP,numKnotPtsP)) goto errexit ;
  if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Number Of Knots Detected = %6ld",*numKnotPtsP) ;
@@ -12354,7 +12358,7 @@ int bcdtmExtSideSlope_removeKnots
 /*
 ** Sort Knots On String Segment Number
 */
-    qsort(*knotPtsPP,*numKnotPtsP,sizeof(DTM_STR_INT_PTS),( int (__cdecl *)(const void *,const void *))bcdtmExtSideSlope_intersectionPointsCompareFunction) ;
+    qsort(*knotPtsPP,*numKnotPtsP,sizeof(DTM_STR_INT_PTS),( int (__cdecl *)(const void *,const void *))bcdtmSideSlope_intersectionPointsCompareFunction) ;
 /*
 ** Write Out Sorted Knots
 */
@@ -12370,7 +12374,7 @@ int bcdtmExtSideSlope_removeKnots
 ** Insert Knot Points Into Line String
 */
    if( dbg ) bcdtmWrite_message(0,0,0,"Inserting Knots Into Line String") ;
-   if( bcdtmExtSideSlope_insertIntersectionPointsIntoLineStrings(&knotStringP,*knotPtsPP,*numKnotPtsP) ) goto errexit ;
+   if( bcdtmSideSlope_insertIntersectionPointsIntoLineStrings(&knotStringP,*knotPtsPP,*numKnotPtsP) ) goto errexit ;
    if( dbg )
      {
       bcdtmWrite_message(0,0,0,"Number Of Line String Points After Knot Insertion = %6ld",knotString.numStringPts) ;
@@ -12385,7 +12389,7 @@ int bcdtmExtSideSlope_removeKnots
    *linePtsPP = knotString.stringPts ;
    *numLinePtsP = knotString.numStringPts ;
    if( dbg ) bcdtmWrite_message(0,0,0,"Removing Knots From Line String") ;
-   if( bcdtmExtSideSlope_remove3DKnotsFromLineString(linePtsPP,numLinePtsP,*knotPtsPP,*numKnotPtsP) ) goto errexit ;
+   if( bcdtmSideSlope_remove3DKnotsFromLineString(linePtsPP,numLinePtsP,*knotPtsPP,*numKnotPtsP) ) goto errexit ;
   }
 /*
 **  Clean Up
@@ -12419,7 +12423,7 @@ int bcdtmExtSideSlope_removeKnots
 * @version
 * @see None
 *===============================================================================*/
-int bcdtmExtSideSlope_detectStringIntersections
+int bcdtmSideSlope_detectStringIntersections
 (
  DTM_P3D_LINE_STRING* *lineStrings,
  long                 numLineStrings,
@@ -12443,12 +12447,12 @@ int bcdtmExtSideSlope_detectStringIntersections
 ** Build Line String Table
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Building Line String Intersection Table") ;
- if( bcdtmExtSideSlope_buildD3dLineStringIntersectionTable(lineStrings,numLineStrings,&intTable,&intTableSize) ) goto errexit ;
+ if( bcdtmSideSlope_buildD3dLineStringIntersectionTable(lineStrings,numLineStrings,&intTable,&intTableSize) ) goto errexit ;
 /*
 ** Scan For Line String Intersections
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Scanning For Line String Intersections") ;
- if( bcdtmExtSideSlope_scanForStringLineIntersections(intTable,intTableSize,intPoints,numIntPoints,&memIntPoints,memIntPointsInc)) goto errexit ;
+ if( bcdtmSideSlope_scanForStringLineIntersections(intTable,intTableSize,intPoints,numIntPoints,&memIntPoints,memIntPointsInc)) goto errexit ;
 /*
 ** Reallocate Memory For Intersections Points
 */
@@ -12460,7 +12464,7 @@ int bcdtmExtSideSlope_detectStringIntersections
  if( *numIntPoints > 0 )
    {
     if( dbg ) bcdtmWrite_message(0,0,0,"Sorting Intersection Points") ;
-    qsort(*intPoints,*numIntPoints,sizeof(DTM_STR_INT_PTS),( int (__cdecl *)(const void *,const void *))bcdtmExtSideSlope_intersectionPointsCompareFunction) ;
+    qsort(*intPoints,*numIntPoints,sizeof(DTM_STR_INT_PTS),( int (__cdecl *)(const void *,const void *))bcdtmSideSlope_intersectionPointsCompareFunction) ;
    }
 /*
 **  Clean Up
@@ -12496,7 +12500,7 @@ int bcdtmExtSideSlope_detectStringIntersections
 * @version
 * @see None
 *===============================================================================*/
-int bcdtmExtSideSlope_insertStringIntersections
+int bcdtmSideSlope_insertStringIntersections
 (
  DTM_P3D_LINE_STRING*        *lineStrings,
  long                     numLineStrings,
@@ -12519,11 +12523,11 @@ int bcdtmExtSideSlope_insertStringIntersections
 /*
 ** Build Line String Table
 */
- if( bcdtmExtSideSlope_buildD3dLineStringIntersectionTable(lineStrings,numLineStrings,&intTable,&intTableSize) ) goto errexit ;
+ if( bcdtmSideSlope_buildD3dLineStringIntersectionTable(lineStrings,numLineStrings,&intTable,&intTableSize) ) goto errexit ;
 /*
 ** Scan For Line String Intersections
 */
- if( bcdtmExtSideSlope_scanForStringLineIntersections(intTable,intTableSize,intPoints,numIntPoints,&memIntPoints,memIntPointsInc)) goto errexit ;
+ if( bcdtmSideSlope_scanForStringLineIntersections(intTable,intTableSize,intPoints,numIntPoints,&memIntPoints,memIntPointsInc)) goto errexit ;
 /*
 ** Reallocate Memory For Intersections Points
 */
@@ -12536,11 +12540,11 @@ int bcdtmExtSideSlope_insertStringIntersections
 /*
 ** Sort Intersection Points On String Number
 */
-    qsort(*intPoints,*numIntPoints,sizeof(DTM_STR_INT_PTS),( int (__cdecl *)(const void *,const void *))bcdtmExtSideSlope_intersectionPointsCompareFunction) ;
+    qsort(*intPoints,*numIntPoints,sizeof(DTM_STR_INT_PTS),( int (__cdecl *)(const void *,const void *))bcdtmSideSlope_intersectionPointsCompareFunction) ;
 /*
 ** Insert Intersertion Points Into Line Strings
 */
-   if( bcdtmExtSideSlope_insertIntersectionPointsIntoLineStrings(lineStrings,*intPoints,*numIntPoints) ) goto errexit ;
+   if( bcdtmSideSlope_insertIntersectionPointsIntoLineStrings(lineStrings,*intPoints,*numIntPoints) ) goto errexit ;
    }
 /*
 **  Clean Up
@@ -12562,10 +12566,10 @@ int bcdtmExtSideSlope_insertStringIntersections
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
-|    bcdtmExtSideSlope_buildD3dLineStringIntersectionTable                |
+|    bcdtmSideSlope_buildD3dLineStringIntersectionTable                |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int  bcdtmExtSideSlope_buildD3dLineStringIntersectionTable(DTM_P3D_LINE_STRING* *lineStrings,long numLineStrings,DTM_STR_INT_TAB **intTable,long *intTableSize)
+int  bcdtmSideSlope_buildD3dLineStringIntersectionTable(DTM_P3D_LINE_STRING* *lineStrings,long numLineStrings,DTM_STR_INT_TAB **intTable,long *intTableSize)
 {
  int    ret=DTM_SUCCESS,dbg=0 ;
  long   numString,numStringPts,intTableMe,intTableMinc,CloseFlag  ;
@@ -12664,7 +12668,7 @@ int  bcdtmExtSideSlope_buildD3dLineStringIntersectionTable(DTM_P3D_LINE_STRING* 
 ** Sort Intersection Table
 */
  if( dbg )bcdtmWrite_message(0,0,0,"Qsorting Line Coordinates") ;
- qsort(*intTable,*intTableSize,sizeof(DTM_STR_INT_TAB),( int (__cdecl *)(const void *,const void *))bcdtmExtSideSlope_intersectionTableCompareFunction) ;
+ qsort(*intTable,*intTableSize,sizeof(DTM_STR_INT_TAB),( int (__cdecl *)(const void *,const void *))bcdtmSideSlope_intersectionTableCompareFunction) ;
 /*
 ** Clean Up
 */
@@ -12687,7 +12691,7 @@ int  bcdtmExtSideSlope_buildD3dLineStringIntersectionTable(DTM_P3D_LINE_STRING* 
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_intersectionTableCompareFunction(const DTM_STR_INT_TAB *Tp1,const DTM_STR_INT_TAB *Tp2)
+int bcdtmSideSlope_intersectionTableCompareFunction(const DTM_STR_INT_TAB *Tp1,const DTM_STR_INT_TAB *Tp2)
 /*
 ** Compare Function For Qsort Of String Line Intersection Table Entries
 */
@@ -12703,7 +12707,7 @@ int bcdtmExtSideSlope_intersectionTableCompareFunction(const DTM_STR_INT_TAB *Tp
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_scanForStringLineIntersections(DTM_STR_INT_TAB *IntTable,long IntTableNe,DTM_STR_INT_PTS **IntPts,long *IntPtsNe,long *IntPtsMe,long IntPtsMinc)
+int bcdtmSideSlope_scanForStringLineIntersections(DTM_STR_INT_TAB *IntTable,long IntTableNe,DTM_STR_INT_PTS **IntPts,long *IntPtsNe,long *IntPtsMe,long IntPtsMinc)
 /*
 ** This Function Scans for Radial Base Line Intersections
 */
@@ -12720,9 +12724,9 @@ int bcdtmExtSideSlope_scanForStringLineIntersections(DTM_STR_INT_TAB *IntTable,l
 */
  for( pint = IntTable ; pint < IntTable + IntTableNe  ; ++pint)
    {
-    if( bcdtmExtSideSlope_deleteActiveStringLines(ActIntTable,&ActIntTableNe,pint)) goto errexit ;
-    if( bcdtmExtSideSlope_addActiveStringLine(&ActIntTable,&ActIntTableNe,&ActIntTableMe,pint))  goto errexit ;
-    if( bcdtmExtSideSlope_determineActiveStringLineIntersections(ActIntTable,ActIntTableNe,IntPts,IntPtsNe,IntPtsMe,IntPtsMinc)) goto errexit ;
+    if( bcdtmSideSlope_deleteActiveStringLines(ActIntTable,&ActIntTableNe,pint)) goto errexit ;
+    if( bcdtmSideSlope_addActiveStringLine(&ActIntTable,&ActIntTableNe,&ActIntTableMe,pint))  goto errexit ;
+    if( bcdtmSideSlope_determineActiveStringLineIntersections(ActIntTable,ActIntTableNe,IntPts,IntPtsNe,IntPtsMe,IntPtsMinc)) goto errexit ;
    }
 /*
 ** Clean Up
@@ -12747,7 +12751,7 @@ int bcdtmExtSideSlope_scanForStringLineIntersections(DTM_STR_INT_TAB *IntTable,l
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_deleteActiveStringLines(DTM_STR_INT_TAB *ActIntTable,long *ActIntTableNe,DTM_STR_INT_TAB *Pint)
+int bcdtmSideSlope_deleteActiveStringLines(DTM_STR_INT_TAB *ActIntTable,long *ActIntTableNe,DTM_STR_INT_TAB *Pint)
 /*
 ** This Functions Deletes Entries From The Active Line Intersection List
 */
@@ -12790,7 +12794,7 @@ int bcdtmExtSideSlope_deleteActiveStringLines(DTM_STR_INT_TAB *ActIntTable,long 
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_addActiveStringLine(DTM_STR_INT_TAB **ActIntTable,long *ActIntTableNe,long *ActIntTableMe,DTM_STR_INT_TAB *Pint)
+int bcdtmSideSlope_addActiveStringLine(DTM_STR_INT_TAB **ActIntTable,long *ActIntTableNe,long *ActIntTableMe,DTM_STR_INT_TAB *Pint)
 /*
 ** This Functions Adds An Entry To The Active Line List
 */
@@ -12821,7 +12825,7 @@ int bcdtmExtSideSlope_addActiveStringLine(DTM_STR_INT_TAB **ActIntTable,long *Ac
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_determineActiveStringLineIntersections(DTM_STR_INT_TAB *ActIntTable,long ActIntTableNe,DTM_STR_INT_PTS **IntPts,long *IntPtsNe,long *IntPtsMe,long IntPtsMinc )
+int bcdtmSideSlope_determineActiveStringLineIntersections(DTM_STR_INT_TAB *ActIntTable,long ActIntTableNe,DTM_STR_INT_PTS **IntPts,long *IntPtsNe,long *IntPtsMe,long IntPtsMinc )
 /*
 ** Determine Line Intersections
 */
@@ -12850,12 +12854,12 @@ int bcdtmExtSideSlope_determineActiveStringLineIntersections(DTM_STR_INT_TAB *Ac
 /*
 ** Check Lines Intersect
 */
-          if( bcdtmExtSideSlope_checkIfLinesIntersect(slp->X1,slp->Y1,slp->X2,slp->Y2,alp->X1,alp->Y1,alp->X2,alp->Y2))
+          if( bcdtmSideSlope_checkIfLinesIntersect(slp->X1,slp->Y1,slp->X2,slp->Y2,alp->X1,alp->Y1,alp->X2,alp->Y2))
             {
 /*
 ** Intersect Lines
 */
-             bcdtmExtSideSlope_normalIntersectLines(slp->X1,slp->Y1,slp->X2,slp->Y2,alp->X1,alp->Y1,alp->X2,alp->Y2,&x,&y) ;
+             bcdtmSideSlope_normalIntersectLines(slp->X1,slp->Y1,slp->X2,slp->Y2,alp->X1,alp->Y1,alp->X2,alp->Y2,&x,&y) ;
 /*
 ** Check Memory
 */
@@ -12930,7 +12934,7 @@ int bcdtmExtSideSlope_determineActiveStringLineIntersections(DTM_STR_INT_TAB *Ac
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_checkIfLinesIntersect(double x1,double y1,double x2,double y2,double x3,double y3,double x4,double y4)
+int bcdtmSideSlope_checkIfLinesIntersect(double x1,double y1,double x2,double y2,double x3,double y3,double x4,double y4)
 /*
 ** This Function Checks If Two Lines Intersect
 ** Return Values  ==  0  No Intersection
@@ -12951,11 +12955,11 @@ int bcdtmExtSideSlope_checkIfLinesIntersect(double x1,double y1,double x2,double
 /*
 ** Calculate SideOf Values
 */
- sd1 = bcdtmExtSideSlope_sideOf(x3,y3,x4,y4,x1,y1) ;
- sd2 = bcdtmExtSideSlope_sideOf(x3,y3,x4,y4,x2,y2) ;
+ sd1 = bcdtmSideSlope_sideOf(x3,y3,x4,y4,x1,y1) ;
+ sd2 = bcdtmSideSlope_sideOf(x3,y3,x4,y4,x2,y2) ;
  if( sd1 == sd2 && sd1 != 0 ) return(0) ;
- sd1 = bcdtmExtSideSlope_sideOf(x1,y1,x2,y2,x3,y3) ;
- sd2 = bcdtmExtSideSlope_sideOf(x1,y1,x2,y2,x4,y4) ;
+ sd1 = bcdtmSideSlope_sideOf(x1,y1,x2,y2,x3,y3) ;
+ sd2 = bcdtmSideSlope_sideOf(x1,y1,x2,y2,x4,y4) ;
  if( sd1 == sd2 && sd1 != 0 ) return(0) ;
 /*
 ** Lines Intersect
@@ -12967,7 +12971,7 @@ int bcdtmExtSideSlope_checkIfLinesIntersect(double x1,double y1,double x2,double
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_sideOf(double x1,double y1,double x2,double y2,double x3,double y3)
+int bcdtmSideSlope_sideOf(double x1,double y1,double x2,double y2,double x3,double y3)
 {
  int ret=DTM_SUCCESS ;
  double sdof ;
@@ -12982,7 +12986,7 @@ int bcdtmExtSideSlope_sideOf(double x1,double y1,double x2,double y2,double x3,d
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_normalIntersectLines(double X1,double Y1,double X2,double Y2,double X3,double Y3,double X4,double Y4,double *Xi,double *Yi)
+int bcdtmSideSlope_normalIntersectLines(double X1,double Y1,double X2,double Y2,double X3,double Y3,double X4,double Y4,double *Xi,double *Yi)
 /*
 ** This Function Calculates The Intersect Point Of Two Lines
 */
@@ -12998,8 +13002,8 @@ int bcdtmExtSideSlope_normalIntersectLines(double X1,double Y1,double X2,double 
 /*
 ** Calculate Variables
 */
- n1  = fabs(bcdtmExtSideSlope_normalDistanceToLine(X1,Y1,X2,Y2,X3,Y3)) ;
- n2  = fabs(bcdtmExtSideSlope_normalDistanceToLine(X1,Y1,X2,Y2,X4,Y4)) ;
+ n1  = fabs(bcdtmSideSlope_normalDistanceToLine(X1,Y1,X2,Y2,X3,Y3)) ;
+ n2  = fabs(bcdtmSideSlope_normalDistanceToLine(X1,Y1,X2,Y2,X4,Y4)) ;
  if( (n1+n2) != 0.0 )
    {
     *Xi = X3 + (X4-X3) * (n1/(n1+n2)) ;
@@ -13022,7 +13026,7 @@ int bcdtmExtSideSlope_normalIntersectLines(double X1,double Y1,double X2,double 
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-double bcdtmExtSideSlope_normalDistanceToLine(double X1,double Y1,double X2,double Y2, double x, double y )
+double bcdtmSideSlope_normalDistanceToLine(double X1,double Y1,double X2,double Y2, double x, double y )
 /*
 ** This Function Return the Normal Distance Of a Point From A Line
 */
@@ -13053,7 +13057,7 @@ double bcdtmExtSideSlope_normalDistanceToLine(double X1,double Y1,double X2,doub
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_intersectionPointsCompareFunction(const DTM_STR_INT_PTS *Tp1,const DTM_STR_INT_PTS  *Tp2)
+int bcdtmSideSlope_intersectionPointsCompareFunction(const DTM_STR_INT_PTS *Tp1,const DTM_STR_INT_PTS  *Tp2)
 /*
 ** Compare Function For Qsort Of String Line Intersection Table Entries
 */
@@ -13071,7 +13075,7 @@ int bcdtmExtSideSlope_intersectionPointsCompareFunction(const DTM_STR_INT_PTS *T
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int  bcdtmExtSideSlope_insertIntersectionPointsIntoLineStrings(DTM_P3D_LINE_STRING* *lineStrings,DTM_STR_INT_PTS *intPoints,long numIntPoints)
+int  bcdtmSideSlope_insertIntersectionPointsIntoLineStrings(DTM_P3D_LINE_STRING* *lineStrings,DTM_STR_INT_PTS *intPoints,long numIntPoints)
 {
  int    ret=DTM_SUCCESS ;
  long   numInts,numStringPts,strSegNo ;
@@ -13141,7 +13145,7 @@ int  bcdtmExtSideSlope_insertIntersectionPointsIntoLineStrings(DTM_P3D_LINE_STRI
 /*
 ** Remove Duplicate Intersection Points From String
 */
-   bcdtmExtSideSlope_removeDuplicatesPointArray(string,&numStringPts,0.0) ;
+   bcdtmSideSlope_removeDuplicatesPointArray(string,&numStringPts,0.0) ;
 /*
 ** Replace Existing Line String with Line String With Inserted Intersection Points
 */
@@ -13176,7 +13180,7 @@ int  bcdtmExtSideSlope_insertIntersectionPointsIntoLineStrings(DTM_P3D_LINE_STRI
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int  bcdtmExtSideSlope_remove3DKnotsFromLineString(DPoint3d **linePtsPP,long *numLinePtsP,DTM_STR_INT_PTS *intPtsP,long numIntPts)
+int  bcdtmSideSlope_remove3DKnotsFromLineString(DPoint3d **linePtsPP,long *numLinePtsP,DTM_STR_INT_PTS *intPtsP,long numIntPts)
 {
  int                ret=DTM_SUCCESS,dbg=0 ;
  long               *lP,*l1P,*l2P,*l3P,*l4P,loop,process,*knotFlagP=NULL,numKnotPts,numKnots,closeFlag ;
@@ -13306,9 +13310,9 @@ int  bcdtmExtSideSlope_remove3DKnotsFromLineString(DPoint3d **linePtsPP,long *nu
 */
                    else
                      {
-                      knotLength  = bcdtmExtSideSlope_lengthOfNonKnotSection(*linePtsPP,knotFlagP,l1P,l2P) ;
-                      startLength = bcdtmExtSideSlope_lengthOfNonKnotSection(*linePtsPP,knotFlagP,knotFlagP,l1P) ;
-                      endLength   = bcdtmExtSideSlope_lengthOfNonKnotSection(*linePtsPP,knotFlagP,l2P,knotFlagP+*numLinePtsP-1) ;
+                      knotLength  = bcdtmSideSlope_lengthOfNonKnotSection(*linePtsPP,knotFlagP,l1P,l2P) ;
+                      startLength = bcdtmSideSlope_lengthOfNonKnotSection(*linePtsPP,knotFlagP,knotFlagP,l1P) ;
+                      endLength   = bcdtmSideSlope_lengthOfNonKnotSection(*linePtsPP,knotFlagP,l2P,knotFlagP+*numLinePtsP-1) ;
                       if( dbg ) bcdtmWrite_message(0,0,0,"Knot Length = %10.4lf Start length = %10.4lf End Length = %10.4lf",knotLength,startLength,endLength) ;
 /*
 **                    If Knot Length Shorter Than The Sum Of Start And Ending Length Eliminate Knot
@@ -13419,9 +13423,9 @@ int  bcdtmExtSideSlope_remove3DKnotsFromLineString(DPoint3d **linePtsPP,long *nu
 */
                    else
                      {
-                      knotLength  = bcdtmExtSideSlope_lengthOfNonKnotSection(*linePtsPP,knotFlagP,l1P,l2P) ;
-                      startLength = bcdtmExtSideSlope_lengthOfNonKnotSection(*linePtsPP,knotFlagP,knotFlagP,l1P) ;
-                      endLength   = bcdtmExtSideSlope_lengthOfNonKnotSection(*linePtsPP,knotFlagP,l2P,knotFlagP+*numLinePtsP-1) ;
+                      knotLength  = bcdtmSideSlope_lengthOfNonKnotSection(*linePtsPP,knotFlagP,l1P,l2P) ;
+                      startLength = bcdtmSideSlope_lengthOfNonKnotSection(*linePtsPP,knotFlagP,knotFlagP,l1P) ;
+                      endLength   = bcdtmSideSlope_lengthOfNonKnotSection(*linePtsPP,knotFlagP,l2P,knotFlagP+*numLinePtsP-1) ;
                       if( dbg ) bcdtmWrite_message(0,0,0,"Knot Length = %10.4lf Start length = %10.4lf End Length = %10.4lf",knotLength,startLength,endLength) ;
 /*
 **                    If Knot Length Shorter Than The Sum Of Start And Ending Length Eliminate Knot
@@ -13498,7 +13502,7 @@ int  bcdtmExtSideSlope_remove3DKnotsFromLineString(DPoint3d **linePtsPP,long *nu
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-double  bcdtmExtSideSlope_lengthOfNonKnotSection(DPoint3d *linePtsP,long *knotFlagP,long *l1P,long *l2P)
+double  bcdtmSideSlope_lengthOfNonKnotSection(DPoint3d *linePtsP,long *knotFlagP,long *l1P,long *l2P)
 {
  long     *lP ;
  double   length=0.0 ;
@@ -13532,7 +13536,7 @@ double  bcdtmExtSideSlope_lengthOfNonKnotSection(DPoint3d *linePtsP,long *knotFl
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_storePoint(double x,double y,double z,DPoint3d **pointsPP,long *numPtsP,long *memPtsP,long memPtsInc)
+int bcdtmSideSlope_storePoint(double x,double y,double z,DPoint3d **pointsPP,long *numPtsP,long *memPtsP,long memPtsInc)
 {
  int  dbg=0 ;
 /*
@@ -13571,7 +13575,7 @@ int bcdtmExtSideSlope_storePoint(double x,double y,double z,DPoint3d **pointsPP,
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_normalisePointArray(DPoint3d *pointsP,long numPts)
+int bcdtmSideSlope_normalisePointArray(DPoint3d *pointsP,long numPts)
 {
  double   large ;
  DPoint3d *p3dP ;
@@ -13613,7 +13617,7 @@ int bcdtmExtSideSlope_normalisePointArray(DPoint3d *pointsP,long numPts)
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-double bcdtmExtSideSlope_getAngle(double x1,double y1,double x2,double y2)
+double bcdtmSideSlope_getAngle(double x1,double y1,double x2,double y2)
 {
  double ang ;
  static double pye2=0.0 ;
@@ -13627,7 +13631,7 @@ double bcdtmExtSideSlope_getAngle(double x1,double y1,double x2,double y2)
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_getPolygonDirection(DPoint3d *polyPtsP,long numPolyPts,long *directionP,double *areaP)
+int bcdtmSideSlope_getPolygonDirection(DPoint3d *polyPtsP,long numPolyPts,long *directionP,double *areaP)
 /*
 **  This Function Determines The Direction And Area Of A Polygon
 */
@@ -13663,7 +13667,7 @@ int bcdtmExtSideSlope_getPolygonDirection(DPoint3d *polyPtsP,long numPolyPts,lon
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_reversePolygonDirection(DPoint3d *polyPtsP,long numPolyPts)
+int bcdtmSideSlope_reversePolygonDirection(DPoint3d *polyPtsP,long numPolyPts)
 /*
 **  This Function Reverses The Direction Of A Polygon
 */
@@ -13692,7 +13696,7 @@ int bcdtmExtSideSlope_reversePolygonDirection(DPoint3d *polyPtsP,long numPolyPts
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_breakPointArrayAtKnots(DPoint3d *pointsP,long numPoints,DTM_STR_INT_PTS *knotPtsP,long numKnotPts,DTM_P3D_LINE_STRING **stringsPP,long *numStringsP)
+int bcdtmSideSlope_breakPointArrayAtKnots(DPoint3d *pointsP,long numPoints,DTM_STR_INT_PTS *knotPtsP,long numKnotPts,DTM_P3D_LINE_STRING **stringsPP,long *numStringsP)
 /*
 ** This Function Breaks A Point Array Into Two Or More Point Arrays At Knot Points
 */
@@ -13751,12 +13755,12 @@ int bcdtmExtSideSlope_breakPointArrayAtKnots(DPoint3d *pointsP,long numPoints,DT
 ** Sort Knots On String Segment Number
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Sorting Knots") ;
-    qsort(knotPtsP,numKnotPts,sizeof(DTM_STR_INT_PTS),( int (__cdecl *)(const void *,const void *))bcdtmExtSideSlope_intersectionPointsCompareFunction) ;
+    qsort(knotPtsP,numKnotPts,sizeof(DTM_STR_INT_PTS),( int (__cdecl *)(const void *,const void *))bcdtmSideSlope_intersectionPointsCompareFunction) ;
 /*
 ** Insert Knot Points Into Temp String
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Inserting Knots") ;
-    if( bcdtmExtSideSlope_insertIntersectionPointsIntoLineStrings(&tempStringsP,knotPtsP,numKnotPts) ) goto errexit ;
+    if( bcdtmSideSlope_insertIntersectionPointsIntoLineStrings(&tempStringsP,knotPtsP,numKnotPts) ) goto errexit ;
     if( dbg )
       {
        bcdtmWrite_message(0,0,0,"Number Of Point Array Pts = %6ld",tempStringsP->numStringPts) ;
@@ -13885,7 +13889,7 @@ int bcdtmExtSideSlope_breakPointArrayAtKnots(DPoint3d *pointsP,long numPoints,DT
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_offsetCopyPointArray3D(DPoint3d *pointsP,long numPoints,double offset,double slope,long copyMode,double cornerStrokeTolerance,DPoint3d **parallelPtsPP,long *numParallelPtsP)
+int bcdtmSideSlope_offsetCopyPointArray3D(DPoint3d *pointsP,long numPoints,double offset,double slope,long copyMode,double cornerStrokeTolerance,DPoint3d **parallelPtsPP,long *numParallelPtsP)
 {
  int      i,ret=DTM_SUCCESS,dbg=0,sideOf=0 ;
  long     closeFlag,direction=0,numAngleIncs,memPts=0,memPtsInc=100 ;
@@ -13933,9 +13937,9 @@ int bcdtmExtSideSlope_offsetCopyPointArray3D(DPoint3d *pointsP,long numPoints,do
  if( closeFlag )
    {
     if( dbg ) bcdtmWrite_message(0,0,0,"Checking Direction") ;
-    bcdtmExtSideSlope_getPolygonDirection(pointsP,numPoints,&direction,&area) ;
+    bcdtmSideSlope_getPolygonDirection(pointsP,numPoints,&direction,&area) ;
     if( dbg && direction == 1 ) bcdtmWrite_message(0,0,0,"Reversing Direction") ;
-    if( direction == 1 ) bcdtmExtSideSlope_reversePolygonDirection(pointsP,numPoints) ;
+    if( direction == 1 ) bcdtmSideSlope_reversePolygonDirection(pointsP,numPoints) ;
    }
 /*
 ** Scan Points And Copy Parallel
@@ -13954,9 +13958,9 @@ int bcdtmExtSideSlope_offsetCopyPointArray3D(DPoint3d *pointsP,long numPoints,do
        else            npP = NULL ;
       }
     priorAngle = nextAngle = 0.0 ;
-    if( ppP != NULL ) priorAngle = bcdtmExtSideSlope_getAngle(cpP->x,cpP->y,ppP->x,ppP->y) ;
-    if( npP != NULL ) nextAngle  = bcdtmExtSideSlope_getAngle(cpP->x,cpP->y,npP->x,npP->y) ;
-    if( ppP != NULL && npP != NULL ) sideOf = bcdtmExtSideSlope_sideOf(ppP->x,ppP->y,npP->x,npP->y,cpP->x,cpP->y) ;
+    if( ppP != NULL ) priorAngle = bcdtmSideSlope_getAngle(cpP->x,cpP->y,ppP->x,ppP->y) ;
+    if( npP != NULL ) nextAngle  = bcdtmSideSlope_getAngle(cpP->x,cpP->y,npP->x,npP->y) ;
+    if( ppP != NULL && npP != NULL ) sideOf = bcdtmSideSlope_sideOf(ppP->x,ppP->y,npP->x,npP->y,cpP->x,cpP->y) ;
 /*
 ** zero offset
 */
@@ -13965,7 +13969,7 @@ int bcdtmExtSideSlope_offsetCopyPointArray3D(DPoint3d *pointsP,long numPoints,do
        x = cpP->x;
        y = cpP->y;
        z = z = cpP->z + slope * offset ;
-       if( bcdtmExtSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
+       if( bcdtmSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
       }
 /*
 ** offset To Right Or External
@@ -13980,7 +13984,7 @@ int bcdtmExtSideSlope_offsetCopyPointArray3D(DPoint3d *pointsP,long numPoints,do
           x = cpP->x + offset * cos(deltaAngle) ;
           y = cpP->y + offset * sin(deltaAngle) ;
           z = z = cpP->z + slope * offset ;
-          if( bcdtmExtSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
+          if( bcdtmSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
          }
        else
          {
@@ -13999,7 +14003,7 @@ int bcdtmExtSideSlope_offsetCopyPointArray3D(DPoint3d *pointsP,long numPoints,do
                 x = cpP->x + offset/cos(deltaAngle) * cos(bisectorAngle) ;
                 y = cpP->y + offset/cos(deltaAngle) * sin(bisectorAngle) ;
                 z = z = cpP->z + slope * offset ;
-                if( bcdtmExtSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
+                if( bcdtmSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
                }
              if( copyMode == DTM_ROUND_CORNER )
                {
@@ -14014,7 +14018,7 @@ int bcdtmExtSideSlope_offsetCopyPointArray3D(DPoint3d *pointsP,long numPoints,do
                 x = cpP->x + offset * cos(priorAngle) ;
                 y = cpP->y + offset * sin(priorAngle) ;
                 z = z = cpP->z + slope * offset ;
-                if( bcdtmExtSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
+                if( bcdtmSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
                 if( angleInc > 0.0 )
                   {
                    if( bisectorAngle >= priorAngle ) numAngleIncs = (long)(( bisectorAngle-priorAngle) / angleInc )  ;
@@ -14026,13 +14030,13 @@ int bcdtmExtSideSlope_offsetCopyPointArray3D(DPoint3d *pointsP,long numPoints,do
                       x = cpP->x + offset * cos(priorAngle+i*adjAngleInc) ;
                       y = cpP->y + offset * sin(priorAngle+i*adjAngleInc) ;
                       z = z = cpP->z + slope * offset ;
-                      if( bcdtmExtSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
+                      if( bcdtmSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
                      }
                   }
                 x = cpP->x + offset * cos(bisectorAngle) ;
                 y = cpP->y + offset * sin(bisectorAngle) ;
                 z = z = cpP->z + slope * offset ;
-                if( bcdtmExtSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
+                if( bcdtmSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
                 if( angleInc > 0.0 )
                   {
                    if( nextAngle >= bisectorAngle ) numAngleIncs = (long) (( nextAngle-bisectorAngle) / angleInc ) ;
@@ -14044,13 +14048,13 @@ int bcdtmExtSideSlope_offsetCopyPointArray3D(DPoint3d *pointsP,long numPoints,do
                       x = cpP->x + offset * cos(bisectorAngle+i*adjAngleInc) ;
                       y = cpP->y + offset * sin(bisectorAngle+i*adjAngleInc) ;
                       z = z = cpP->z + slope * offset ;
-                      if( bcdtmExtSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
+                      if( bcdtmSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
                      }
                   }
                 x = cpP->x + offset * cos(nextAngle) ;
                 y = cpP->y + offset * sin(nextAngle) ;
                 z = z = cpP->z + slope * offset ;
-                if( bcdtmExtSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
+                if( bcdtmSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
                }
             }
           else if( sideOf == 0 )      /* Colinear Lines */
@@ -14058,7 +14062,7 @@ int bcdtmExtSideSlope_offsetCopyPointArray3D(DPoint3d *pointsP,long numPoints,do
              x = cpP->x + offset * cos(bisectorAngle) ;
              y = cpP->y + offset * sin(bisectorAngle) ;
              z = z = cpP->z + slope * offset ;
-             if( bcdtmExtSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
+             if( bcdtmSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
             }
           else  if( sideOf > 0 )       /* Concave Corner To Right */
             {
@@ -14066,12 +14070,12 @@ int bcdtmExtSideSlope_offsetCopyPointArray3D(DPoint3d *pointsP,long numPoints,do
              x = cpP->x + offset * cos(priorAngle) ;
              y = cpP->y + offset * sin(priorAngle) ;
              z = z = cpP->z + slope * offset ;
-             if( bcdtmExtSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
+             if( bcdtmSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
              nextAngle  = nextAngle - gpkPye/2.0 ;
              x = cpP->x + offset * cos(nextAngle) ;
              y = cpP->y + offset * sin(nextAngle) ;
              z = z = cpP->z + slope * offset ;
-             if( bcdtmExtSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
+             if( bcdtmSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
 /*
 **  The following code Places A Single Copy Parallel Point At The Bisector
 **  Angle Of The Concave Angle. The above code places two points orthongal
@@ -14087,7 +14091,7 @@ int bcdtmExtSideSlope_offsetCopyPointArray3D(DPoint3d *pointsP,long numPoints,do
              x = cpP->x + offset/sin(deltaAngle) * cos(bisectorAngle) ;
              y = cpP->y + offset/sin(deltaAngle) * sin(bisectorAngle) ;
              z = z = cpP->z + slope * offset ;
-             if( bcdtmExtSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
+             if( bcdtmSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
 */
             }
          }
@@ -14108,7 +14112,7 @@ int bcdtmExtSideSlope_offsetCopyPointArray3D(DPoint3d *pointsP,long numPoints,do
           x = cpP->x - offset * cos(deltaAngle) ;
           y = cpP->y - offset * sin(deltaAngle) ;
           z = z = cpP->z + slope * offset ;
-          if( bcdtmExtSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
+          if( bcdtmSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
          }
        else
          {
@@ -14118,7 +14122,7 @@ int bcdtmExtSideSlope_offsetCopyPointArray3D(DPoint3d *pointsP,long numPoints,do
              x = cpP->x - offset * cos(priorAngle) ;
              y = cpP->y - offset * sin(priorAngle) ;
              z = z = cpP->z + slope * offset ;
-             if( bcdtmExtSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
+             if( bcdtmSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
              if( cpP != pointsP + numPoints - 1 )
                {
 
@@ -14126,7 +14130,7 @@ int bcdtmExtSideSlope_offsetCopyPointArray3D(DPoint3d *pointsP,long numPoints,do
                 x = cpP->x - offset * cos(nextAngle) ;
                 y = cpP->y - offset * sin(nextAngle) ;
                 z = z = cpP->z + slope * offset ;
-                if( bcdtmExtSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
+                if( bcdtmSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
                }
 /*
 **  The following code Places A Single Copy Parallel Point At The Bisector
@@ -14143,7 +14147,7 @@ int bcdtmExtSideSlope_offsetCopyPointArray3D(DPoint3d *pointsP,long numPoints,do
              x = cpP->x - offset/sin(deltaAngle) * cos(bisectorAngle) ;
              y = cpP->y - offset/sin(deltaAngle) * sin(bisectorAngle) ;
              z = z = cpP->z + slope * offset ;
-             if( bcdtmExtSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
+             if( bcdtmSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
 */
             }
           else if( sideOf == 0 )        /* Colinear Lines */
@@ -14151,7 +14155,7 @@ int bcdtmExtSideSlope_offsetCopyPointArray3D(DPoint3d *pointsP,long numPoints,do
              x = cpP->x - offset * cos(bisectorAngle) ;
              y = cpP->y - offset * sin(bisectorAngle) ;
              z = z = cpP->z + slope * offset ;
-             if( bcdtmExtSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
+             if( bcdtmSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
             }
           else  if( sideOf > 0 )          /* Convex Corner To Left */
             {
@@ -14165,7 +14169,7 @@ int bcdtmExtSideSlope_offsetCopyPointArray3D(DPoint3d *pointsP,long numPoints,do
                 x = cpP->x - offset/cos(deltaAngle) * cos(bisectorAngle) ;
                 y = cpP->y - offset/cos(deltaAngle) * sin(bisectorAngle) ;
                 z = z = cpP->z + slope * offset ;
-                if( bcdtmExtSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
+                if( bcdtmSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
                }
              if( copyMode == DTM_ROUND_CORNER )
                {
@@ -14180,7 +14184,7 @@ int bcdtmExtSideSlope_offsetCopyPointArray3D(DPoint3d *pointsP,long numPoints,do
                 x = cpP->x - offset * cos(priorAngle) ;
                 y = cpP->y - offset * sin(priorAngle) ;
                 z = z = cpP->z + slope * offset ;
-                if( bcdtmExtSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
+                if( bcdtmSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
                 if( angleInc > 0.0 )
                   {
                    if( priorAngle >= bisectorAngle ) numAngleIncs = (long)(( priorAngle - bisectorAngle) / angleInc )  ;
@@ -14192,13 +14196,13 @@ int bcdtmExtSideSlope_offsetCopyPointArray3D(DPoint3d *pointsP,long numPoints,do
                       x = cpP->x - offset * cos(priorAngle-i*adjAngleInc) ;
                       y = cpP->y - offset * sin(priorAngle-i*adjAngleInc) ;
                       z = z = cpP->z + slope * offset ;
-                      if( bcdtmExtSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
+                      if( bcdtmSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
                      }
                   }
                 x = cpP->x - offset * cos(bisectorAngle) ;
                 y = cpP->y - offset * sin(bisectorAngle) ;
                 z = z = cpP->z + slope * offset ;
-                if( bcdtmExtSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
+                if( bcdtmSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
                 if( angleInc > 0.0 )
                   {
                    if( bisectorAngle >= nextAngle ) numAngleIncs = (long) (( bisectorAngle - nextAngle ) / angleInc ) ;
@@ -14210,13 +14214,13 @@ int bcdtmExtSideSlope_offsetCopyPointArray3D(DPoint3d *pointsP,long numPoints,do
                       x = cpP->x - offset * cos(bisectorAngle-i*adjAngleInc) ;
                       y = cpP->y - offset * sin(bisectorAngle-i*adjAngleInc) ;
                       z = z = cpP->z + slope * offset ;
-                      if( bcdtmExtSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
+                      if( bcdtmSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
                      }
                   }
                 x = cpP->x - offset * cos(nextAngle) ;
                 y = cpP->y - offset * sin(nextAngle) ;
                 z = z = cpP->z + slope * offset ;
-                if( bcdtmExtSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
+                if( bcdtmSideSlope_storePoint(x,y,z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
                }
             }
          }
@@ -14228,8 +14232,8 @@ int bcdtmExtSideSlope_offsetCopyPointArray3D(DPoint3d *pointsP,long numPoints,do
 */
  if( closeFlag )
    {
-    if( bcdtmExtSideSlope_storePoint((*parallelPtsPP)->x,(*parallelPtsPP)->y,(*parallelPtsPP)->z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
-    if( direction == 1 ) bcdtmExtSideSlope_reversePolygonDirection(*parallelPtsPP,*numParallelPtsP) ;
+    if( bcdtmSideSlope_storePoint((*parallelPtsPP)->x,(*parallelPtsPP)->y,(*parallelPtsPP)->z,parallelPtsPP,numParallelPtsP,&memPts,memPtsInc)) goto errexit ;
+    if( direction == 1 ) bcdtmSideSlope_reversePolygonDirection(*parallelPtsPP,*numParallelPtsP) ;
    }
 /*
 ** Write Parallel Points
@@ -14264,7 +14268,7 @@ int bcdtmExtSideSlope_offsetCopyPointArray3D(DPoint3d *pointsP,long numPoints,do
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_copyParallelSideSlopeElement
+int bcdtmSideSlope_copyParallelSideSlopeElement
 (
  DTM_SIDE_SLOPE_TABLE *sideSlopeTableP,  /* ==> Table Containing The Parameters For Determing The Side Slopes */
  long sideSlopeTableSize,                /* ==> Size Of Or Number Of Entries In The Side Slope Table  */
@@ -14281,7 +14285,8 @@ int bcdtmExtSideSlope_copyParallelSideSlopeElement
  DPoint3d  *p3dP,*elementPtsP=NULL,*parallelPtsP=NULL ;
  DTM_SIDE_SLOPE_TABLE *radialP ;
  BC_DTM_OBJ *dataP=NULL ;
-/*
+ DTMFeatureId nullFeatureId = DTM_NULL_FEATURE_ID;
+ /*
 ** Allocate Memory For Side Slope Element Points
 */
  numElementPts = sideSlopeTableSize ;
@@ -14309,7 +14314,7 @@ int bcdtmExtSideSlope_copyParallelSideSlopeElement
 */
  copyMode = DTM_MITRE_CORNER ;
  if( cornerOption == 1 ) copyMode = DTM_ROUND_CORNER ;
- if( bcdtmExtSideSlope_copyParallel3D(elementPtsP,numElementPts,horOffset,slope,copyMode,cornerStrokeTolerance,&parallelPtsP,&numParallelPts)) goto errexit ;
+ if( bcdtmSideSlope_copyParallel3D(elementPtsP,numElementPts,horOffset,slope,copyMode,cornerStrokeTolerance,&parallelPtsP,&numParallelPts)) goto errexit ;
 /*
 ** Create Data Object To Store The Parallel Points
 */
@@ -14353,7 +14358,7 @@ int bcdtmExtSideSlope_copyParallelSideSlopeElement
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_copyParallelSideSlopeElementToPointArray
+int bcdtmSideSlope_copyParallelSideSlopeElementToPointArray
 (
  DTM_SIDE_SLOPE_TABLE *sideSlopeTableP,  /* ==> Table Containing The Parameters For Determing The Side Slopes */
  long sideSlopeTableSize,                /* ==> Size Of Or Number Of Entries In The Side Slope Table  */
@@ -14399,7 +14404,7 @@ int bcdtmExtSideSlope_copyParallelSideSlopeElementToPointArray
 */
  copyMode = DTM_MITRE_CORNER ;
  if( cornerOption == 1 ) copyMode = DTM_ROUND_CORNER ;
- if( bcdtmExtSideSlope_copyParallel3D(elementPtsP,numElementPts,horOffset,slope,copyMode,cornerStrokeTolerance,&parallelPtsP,&numParallelPts)) goto errexit ;
+ if( bcdtmSideSlope_copyParallel3D(elementPtsP,numElementPts,horOffset,slope,copyMode,cornerStrokeTolerance,&parallelPtsP,&numParallelPts)) goto errexit ;
 /*
 ** Copy Parallel Pts To Parallel Element Points Array
 */
@@ -14430,7 +14435,7 @@ int bcdtmExtSideSlope_copyParallelSideSlopeElementToPointArray
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_writeLimitSlopeToesToDataObject(long sideSlopeType,BC_DTM_OBJ *dataP,DTM_OVERLAP_RADIAL_TABLE *ovlPtsP,long numOvlPts)
+int bcdtmSideSlope_writeLimitSlopeToesToDataObject(long sideSlopeType,BC_DTM_OBJ *dataP,DTM_OVERLAP_RADIAL_TABLE *ovlPtsP,long numOvlPts)
 /*
 ** This Function Writes The Slope Toes To A Data Object
 */
@@ -14443,6 +14448,8 @@ int bcdtmExtSideSlope_writeLimitSlopeToesToDataObject(long sideSlopeType,BC_DTM_
  DPoint3d             pnt,p3dPts[2],*p3dP,*p3dLastP,*slopeToePtsP=NULL ;
  long            numSlopeToePts,numKnotPts,direction ;
  DTM_STR_INT_PTS *knotPtsP=NULL ;
+ DTMFeatureId nullFeatureId = DTM_NULL_FEATURE_ID;
+
 /*
 ** Write Entry Message
 */
@@ -14536,7 +14543,7 @@ int bcdtmExtSideSlope_writeLimitSlopeToesToDataObject(long sideSlopeType,BC_DTM_
 **  Remove Knots
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Removing Knots ** slopeToePtsP = %p ** numSlopePtsP = %8ld",slopeToePtsP,numSlopeToePts) ;
-    if( bcdtmExtSideSlope_removeKnots(&slopeToePtsP,&numSlopeToePts,&knotPtsP,&numKnotPts)) goto errexit ;
+    if( bcdtmSideSlope_removeKnots(&slopeToePtsP,&numSlopeToePts,&knotPtsP,&numKnotPts)) goto errexit ;
     if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Slope Toe Points = %6ld",numSlopeToePts) ;
 /*
 **  Copy Slope Toe Points To
@@ -14601,7 +14608,7 @@ int bcdtmExtSideSlope_writeLimitSlopeToesToDataObject(long sideSlopeType,BC_DTM_
           if( bcdtmDrape_pointDtmObject(benchTinP,priorX,priorY,&intZ1,&drapeFlag)) goto errexit ;
           if( fabs(intZ1-priorZ) < 0.0001 ) priorOnSurface = 1 ;
          }
-       bcdtmExtSideSlope_findFirstIntersectionWithSideSlopeRadial(ovlPtsP,numOvlPts,1,ovlX,ovlY,ovlZ,priorX,priorY,priorZ,priorP,ovlP,&intersectionFound,&intX,&intY,&intZ) ;
+       bcdtmSideSlope_findFirstIntersectionWithSideSlopeRadial(ovlPtsP,numOvlPts,1,ovlX,ovlY,ovlZ,priorX,priorY,priorZ,priorP,ovlP,&intersectionFound,&intX,&intY,&intZ) ;
        if( intersectionFound )
          {
           priorX = intX ;
@@ -14661,7 +14668,7 @@ int bcdtmExtSideSlope_writeLimitSlopeToesToDataObject(long sideSlopeType,BC_DTM_
           else
             {
              if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Processing Truncated Slope Toe ** ovl = %6ld ovn = %6ld",(long)(ovlP-ovlPtsP),(long)(ovnP-ovlPtsP)) ;
-             if( bcdtmExtSideSlope_findFirstNonTruncatedRadial(ovlPtsP,numOvlPts,padType,ovlP,&ovnP)) goto errexit ;
+             if( bcdtmSideSlope_findFirstNonTruncatedRadial(ovlPtsP,numOvlPts,padType,ovlP,&ovnP)) goto errexit ;
              if( dbg ) bcdtmWrite_message(0,0,0,"** Processing Slope Toe %6ld ** %6ld",(long)(ovlP-ovlPtsP),(long)(ovnP-ovlPtsP)) ;
 
 /*
@@ -14700,7 +14707,7 @@ int bcdtmExtSideSlope_writeLimitSlopeToesToDataObject(long sideSlopeType,BC_DTM_
 **              Check For Intersection With Side Slope Radials
 */
                 if( dbg ) bcdtmWrite_message(0,0,0,"Finding Intersection With Side Slope Radial") ;
-                bcdtmExtSideSlope_findFirstIntersectionWithSideSlopeRadial(ovlPtsP,numOvlPts,0,ovlX,ovlY,ovlZ,nextX,nextY,nextZ,ovlP,ovnP,&intersectionFound,&intX,&intY,&intZ) ;
+                bcdtmSideSlope_findFirstIntersectionWithSideSlopeRadial(ovlPtsP,numOvlPts,0,ovlX,ovlY,ovlZ,nextX,nextY,nextZ,ovlP,ovnP,&intersectionFound,&intX,&intY,&intZ) ;
                 if( intersectionFound )
                   {
                    nextX = intX ;
@@ -14737,7 +14744,7 @@ int bcdtmExtSideSlope_writeLimitSlopeToesToDataObject(long sideSlopeType,BC_DTM_
 **              Check For Intersection With Side Slope Radials
 */
                 if( dbg ) bcdtmWrite_message(0,0,0,"Finding Intersection With Side Slope Radial") ;
-                bcdtmExtSideSlope_findFirstIntersectionWithSideSlopeRadial(ovlPtsP,numOvlPts,1,ovnX,ovnY,ovnZ,priorX,priorY,priorZ,ovnP,ovlP,&intersectionFound,&intX,&intY,&intZ) ;
+                bcdtmSideSlope_findFirstIntersectionWithSideSlopeRadial(ovlPtsP,numOvlPts,1,ovnX,ovnY,ovnZ,priorX,priorY,priorZ,ovnP,ovlP,&intersectionFound,&intX,&intY,&intZ) ;
                 if( intersectionFound )
                   {
                    priorX = intX ;
@@ -14855,7 +14862,7 @@ int bcdtmExtSideSlope_writeLimitSlopeToesToDataObject(long sideSlopeType,BC_DTM_
 **        Check For Intersection With Side Slope Radials
 */
           if( dbg ) bcdtmWrite_message(0,0,0,"Finding Intersection With Side Slope Radial") ;
-          bcdtmExtSideSlope_findFirstIntersectionWithSideSlopeRadial(ovlPtsP,numOvlPts,0,ovlX,ovlY,ovlZ,nextX,nextY,nextZ,ovlP,ovlP,&intersectionFound,&intX,&intY,&intZ) ;
+          bcdtmSideSlope_findFirstIntersectionWithSideSlopeRadial(ovlPtsP,numOvlPts,0,ovlX,ovlY,ovlZ,nextX,nextY,nextZ,ovlP,ovlP,&intersectionFound,&intX,&intY,&intZ) ;
           if( intersectionFound )
             {
              nextX = intX ;
@@ -14904,7 +14911,7 @@ int bcdtmExtSideSlope_writeLimitSlopeToesToDataObject(long sideSlopeType,BC_DTM_
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_findFirstNonTruncatedRadial
+int bcdtmSideSlope_findFirstNonTruncatedRadial
 (
  DTM_OVERLAP_RADIAL_TABLE *ovlPtsP,
  long numOvlPts,
@@ -14942,7 +14949,7 @@ while ( *ovnPP != NULL && (*ovnPP)->Status != 1 )
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_findFirstIntersectionWithSideSlopeRadial
+int bcdtmSideSlope_findFirstIntersectionWithSideSlopeRadial
 (
  DTM_OVERLAP_RADIAL_TABLE *ovlPtsP,
  long                     numOvlPts,
@@ -15007,7 +15014,7 @@ int bcdtmExtSideSlope_findFirstIntersectionWithSideSlopeRadial
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_writeLimitSlopeToesToDataObjectOld(long sideSlopeType,BC_DTM_OBJ *dataP,DTM_OVERLAP_RADIAL_TABLE *ovlPtsP,long numOvlPts)
+int bcdtmSideSlope_writeLimitSlopeToesToDataObjectOld(long sideSlopeType,BC_DTM_OBJ *dataP,DTM_OVERLAP_RADIAL_TABLE *ovlPtsP,long numOvlPts)
 /*
 ** This Function Writes The Slope Toes To A Data Object
 */
@@ -15193,7 +15200,7 @@ int bcdtmExtSideSlope_writeLimitSlopeToesToDataObjectOld(long sideSlopeType,BC_D
              if( intersectionFound == false )
                {
                 if( dbg ) bcdtmWrite_message(0,0,0,"Finding First None Trucated Slope Radial") ;
-                if(bcdtmExtSideSlope_limitFindFirstNonTruncatedSlopeToe(ovlPtsP,numOvlPts,padType,rad1P,ovlP,ovnP,&intersectionFound,&xInt,&yInt,&zInt)) goto errexit ;
+                if(bcdtmSideSlope_limitFindFirstNonTruncatedSlopeToe(ovlPtsP,numOvlPts,padType,rad1P,ovlP,ovnP,&intersectionFound,&xInt,&yInt,&zInt)) goto errexit ;
                }
 /*
 **           Check Intersection Found
@@ -15252,7 +15259,7 @@ int bcdtmExtSideSlope_writeLimitSlopeToesToDataObjectOld(long sideSlopeType,BC_D
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_limitFindFirstNonTruncatedSlopeToe
+int bcdtmSideSlope_limitFindFirstNonTruncatedSlopeToe
 (
  DTM_OVERLAP_RADIAL_TABLE *ovlPtsP,
  long numOvlPts,
@@ -15344,7 +15351,7 @@ int bcdtmExtSideSlope_limitFindFirstNonTruncatedSlopeToe
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_writeLimitInternalPadHolesToDataObject(BC_DTM_OBJ *Tin,BC_DTM_OBJ *Data,long HoleDirection)
+int bcdtmSideSlope_writeLimitInternalPadHolesToDataObject(BC_DTM_OBJ *Tin,BC_DTM_OBJ *Data,long HoleDirection)
 {
  int    ret=0,dbg=0 ;
  long   sp,np,lp,clc,spnt,lpnt,node,nfeat=0,dtmFeature,numPolyPts,numFeaturePts ;
@@ -15355,7 +15362,8 @@ int bcdtmExtSideSlope_writeLimitInternalPadHolesToDataObject(BC_DTM_OBJ *Tin,BC_
  DTM_TIN_NODE   *pd ;
  static long seqdbg=0 ;
  BC_DTM_FEATURE *dtmFeatureP ;
-/*
+ DTMFeatureId nullFeatureId = DTM_NULL_FEATURE_ID;
+ /*
 ** Write Status Message
 */
  ++seqdbg ;
@@ -15376,7 +15384,7 @@ int bcdtmExtSideSlope_writeLimitInternalPadHolesToDataObject(BC_DTM_OBJ *Tin,BC_
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Removing Dangles") ;
  if( dbg ) bcdtmWrite_toFileDtmObject(Tin,L"beforeDanglesRemoved.tin") ;
- if( bcdtmExtSideSlope_removeLimitDanglingBreaksDtmObject(Tin)) goto errexit ;
+ if( bcdtmSideSlope_removeLimitDanglingBreaksDtmObject(Tin)) goto errexit ;
  if( dbg ) bcdtmWrite_toFileDtmObject(Tin,L"afterDanglesRemoved.tin") ;
 /*
 ** Scan Tin For Hole Start Points
@@ -15554,7 +15562,7 @@ int bcdtmExtSideSlope_writeLimitInternalPadHolesToDataObject(BC_DTM_OBJ *Tin,BC_
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_removeLimitDanglingBreaksDtmObject(BC_DTM_OBJ *tinP)
+int bcdtmSideSlope_removeLimitDanglingBreaksDtmObject(BC_DTM_OBJ *tinP)
 /*
 **
 ** This Function Removes Internal Dangling Break Lines
@@ -15630,7 +15638,7 @@ int bcdtmExtSideSlope_removeLimitDanglingBreaksDtmObject(BC_DTM_OBJ *tinP)
                 ++numDangles ;
                 if( dbg ) bcdtmWrite_message(0,0,0,"Removing Dangling Break At Point %6ld ** %10.4lf %10.4lf %10.4lf",p1,pointAddrP(tinP,p1)->x,pointAddrP(tinP,p1)->y,pointAddrP(tinP,p1)->z) ;
                 if( dbg ) bcdtmWrite_message(0,0,0,"                                 %6ld ** %10.4lf %10.4lf %10.4lf",p2,pointAddrP(tinP,p2)->x,pointAddrP(tinP,p2)->y,pointAddrP(tinP,p2)->z) ;
-                if( bcdtmExtSideSlope_removeBreakLineSegmentDtmObject(tinP,p1,p2)) goto errexit ;
+                if( bcdtmSideSlope_removeBreakLineSegmentDtmObject(tinP,p1,p2)) goto errexit ;
                 --nodeAddrP(tinP,p1)->sPtr ;
                 --nodeAddrP(tinP,p2)->sPtr ;
                 listPtr = tinP->nullPtr  ;
@@ -15731,7 +15739,7 @@ int bcdtmExtSideSlope_removeLimitDanglingBreaksDtmObject(BC_DTM_OBJ *tinP)
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_removeBreakLineSegmentDtmObject(BC_DTM_OBJ *tinP,long pnt1,long pnt2)
+int bcdtmSideSlope_removeBreakLineSegmentDtmObject(BC_DTM_OBJ *tinP,long pnt1,long pnt2)
 /*
 ** This Function Removes The Last Break Line Segment pnt1-pnt2 or pnt2-pnt1
 ** This Is Not A Generic Function
@@ -15740,7 +15748,8 @@ int bcdtmExtSideSlope_removeBreakLineSegmentDtmObject(BC_DTM_OBJ *tinP,long pnt1
  int  ret=DTM_SUCCESS,dbg=0 ;
  long fPnt,nPnt,sPnt,listPtr,dtmFeature ;
  bool reverse;
-/*
+ DTMFeatureId nullFeatureId = DTM_NULL_FEATURE_ID;
+ /*
 ** Write Entry Message
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Removing Last Break Line Segment") ;
@@ -15805,7 +15814,7 @@ int bcdtmExtSideSlope_removeBreakLineSegmentDtmObject(BC_DTM_OBJ *tinP,long pnt1
 ** Remove Dtm Feature From Tin Object
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Removing Dtm Feature %6ld",dtmFeature) ;
- if( bcdtmExtInsert_removeDtmFeatureFromDtmObject(tinP,dtmFeature)) goto errexit ;
+ if( bcdtmInsert_removeDtmFeatureFromDtmObject2(tinP,dtmFeature, false)) goto errexit ;
 /*
 ** Scan To Pnt1 ;
 */
@@ -15855,7 +15864,7 @@ int bcdtmExtSideSlope_removeBreakLineSegmentDtmObject(BC_DTM_OBJ *tinP,long pnt1
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_truncateTruncatingRadials(DTM_OVERLAP_RADIAL_TABLE *radialsP,long numRadials)
+int bcdtmSideSlope_truncateTruncatingRadials(DTM_OVERLAP_RADIAL_TABLE *radialsP,long numRadials)
 {
  double nullValue=-999999999.0 ;
  DTM_OVERLAP_RADIAL_TABLE *rad1P,*rad2P ;
@@ -15907,7 +15916,7 @@ int bcdtmExtSideSlope_truncateTruncatingRadials(DTM_OVERLAP_RADIAL_TABLE *radial
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_getBoundaryPolygonAndSlopeToesForClosedSideSlopeElementDataObject
+int bcdtmSideSlope_getBoundaryPolygonAndSlopeToesForClosedSideSlopeElementDataObject
 (
  BC_DTM_OBJ              *sideSlopesP,          /* Data Object To Store Slope Toes                   */
  long                     sideSlopeElementType,  /* ==>  1 = Open ,  2 = Closed                       */
@@ -15931,13 +15940,13 @@ int bcdtmExtSideSlope_getBoundaryPolygonAndSlopeToesForClosedSideSlopeElementDat
  if( sideSlopeDirection == 2 || sideSlopeDirection == 3 )
    {
     if( dbg ) bcdtmWrite_message(0,0,0,"Getting Internal Slope Toes For Closed Side Slope Element") ;
-    if( bcdtmExtSideSlope_getInternalSlopeToesForClosedSideSlopeElementDataObject(sideSlopesP,sideSlopeElementType,sideSlopeDirection,leftRadialsP,numLeftRadials)) goto errexit ;
+    if( bcdtmSideSlope_getInternalSlopeToesForClosedSideSlopeElementDataObject(sideSlopesP,sideSlopeElementType,sideSlopeDirection,leftRadialsP,numLeftRadials)) goto errexit ;
    }
 /*
 ** Get External Boundary Polygon And Slope Toes
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Getting External Slope Toes For Closed Side Slope Element") ;
- if( bcdtmExtSideSlope_getExternalSlopeToesForClosedSideSlopeElementDataObject(sideSlopesP,sideSlopeElementType,sideSlopeDirection,rightRadialsP,numRightRadials,leftRadialsP,numLeftRadials)) goto errexit ;
+ if( bcdtmSideSlope_getExternalSlopeToesForClosedSideSlopeElementDataObject(sideSlopesP,sideSlopeElementType,sideSlopeDirection,rightRadialsP,numRightRadials,leftRadialsP,numLeftRadials)) goto errexit ;
 
 /*
 ** Clean Up
@@ -15961,7 +15970,7 @@ int bcdtmExtSideSlope_getBoundaryPolygonAndSlopeToesForClosedSideSlopeElementDat
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_getInternalSlopeToesForClosedSideSlopeElementDataObject
+int bcdtmSideSlope_getInternalSlopeToesForClosedSideSlopeElementDataObject
 (
  BC_DTM_OBJ              *sideSlopesP,          /* Data Object To Store Slope Toes                   */
  long                     sideSlopeElementType,  /* ==>  1 = Open ,  2 = Closed                       */
@@ -15980,6 +15989,8 @@ int bcdtmExtSideSlope_getInternalSlopeToesForClosedSideSlopeElementDataObject
   BC_DTM_OBJ *dtmP=NULL ;
   DTM_OVERLAP_RADIAL_TABLE *rad1P,*rad2P,*firstRadialP ;
   long loop=0 ;
+  DTMFeatureId nullFeatureId = DTM_NULL_FEATURE_ID;
+
 /*
 ** Write Entry Message
 */
@@ -16008,7 +16019,7 @@ int bcdtmExtSideSlope_getInternalSlopeToesForClosedSideSlopeElementDataObject
 */
     if( numTruncated == 0 )
       {
-       if( bcdtmExtSideSlope_copySideSlopeRadialToePointsToPointArray(sideSlopeElementType,1,leftRadialsP,numLeftRadials,&hullPtsP,&numHullPts)) goto errexit ;
+       if( bcdtmSideSlope_copySideSlopeRadialToePointsToPointArray(sideSlopeElementType,1,leftRadialsP,numLeftRadials,&hullPtsP,&numHullPts)) goto errexit ;
 /*
 **     Write Hole Polygon
 */
@@ -16034,7 +16045,7 @@ int bcdtmExtSideSlope_getInternalSlopeToesForClosedSideSlopeElementDataObject
 /*
 **       Reverse Order Of Left Radials
 */
-         bcdtmExtSideSlope_reverseOrderOfSideSlopeRadials(leftRadialsP,numLeftRadials) ;
+         bcdtmSideSlope_reverseOrderOfSideSlopeRadials(leftRadialsP,numLeftRadials) ;
 /*
 **       Process Until No Holes Found
 */
@@ -16061,11 +16072,11 @@ loop = 10 ;
 /*
 **             Reorder Radials So First Radial Is Non truncated
 */
-               if( bcdtmExtSideSlope_reorderSideSlopeRadials(leftRadialsP,numLeftRadials,firstRadialP)) goto errexit ;
+               if( bcdtmSideSlope_reorderSideSlopeRadials(leftRadialsP,numLeftRadials,firstRadialP)) goto errexit ;
 /*
 **             Get Hole Polygon Internal To Closed Side Slope Element
 */
-               if( bcdtmExtSideSlope_getPolygonFromClosedSideSlopeElementToes(1,&leftRadialsP,&numLeftRadials,&hullPtsP,&numHullPts)) goto errexit ;
+               if( bcdtmSideSlope_getPolygonFromClosedSideSlopeElementToes(1,&leftRadialsP,&numLeftRadials,&hullPtsP,&numHullPts)) goto errexit ;
                bcdtmMath_getPolygonDirectionP3D(hullPtsP,numHullPts,&polyDirection,&polyArea) ;
                if( dbg ) bcdtmWrite_message(0,0,0,"polyArea = %10.2lf polyDirection = %2ld",polyArea,polyDirection) ;
 
@@ -16252,7 +16263,7 @@ loop = 10 ;
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_reorderSideSlopeRadials( DTM_OVERLAP_RADIAL_TABLE *radialsP,long numRadials,DTM_OVERLAP_RADIAL_TABLE *firstRadialP )
+int bcdtmSideSlope_reorderSideSlopeRadials( DTM_OVERLAP_RADIAL_TABLE *radialsP,long numRadials,DTM_OVERLAP_RADIAL_TABLE *firstRadialP )
 {
 /*
 ** This Function Reorders The Side Slope Toe Radials
@@ -16310,7 +16321,7 @@ int bcdtmExtSideSlope_reorderSideSlopeRadials( DTM_OVERLAP_RADIAL_TABLE *radials
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_getExternalSlopeToesForClosedSideSlopeElementDataObject
+int bcdtmSideSlope_getExternalSlopeToesForClosedSideSlopeElementDataObject
 (
  BC_DTM_OBJ              *sideSlopesP,           /* Data Object To Store Slope Toes                   */
  long                     sideSlopeElementType,  /* ==>  1 = Open ,  2 = Closed                       */
@@ -16330,6 +16341,8 @@ int bcdtmExtSideSlope_getExternalSlopeToesForClosedSideSlopeElementDataObject
   DPoint3d     slopeToe[2],*hullPtsP=NULL ;
   BC_DTM_OBJ *dtmP=NULL ;
   DTM_OVERLAP_RADIAL_TABLE *rad1P,*rad2P;
+  DTMFeatureId nullFeatureId = DTM_NULL_FEATURE_ID;
+
 /*
 ** Write Entry Message
 */
@@ -16353,7 +16366,7 @@ int bcdtmExtSideSlope_getExternalSlopeToesForClosedSideSlopeElementDataObject
     if(  sideSlopeDirection == 2 )
       {
        if( dbg ) bcdtmWrite_message(0,0,0,"Copying Side Slope Radial Start Points To Point Array") ;
-       if( bcdtmExtSideSlope_copySideSlopeRadialStartPointsToPointArray(sideSlopeElementType,leftRadialsP,numLeftRadials,&hullPtsP,&numHullPts)) goto errexit ;
+       if( bcdtmSideSlope_copySideSlopeRadialStartPointsToPointArray(sideSlopeElementType,leftRadialsP,numLeftRadials,&hullPtsP,&numHullPts)) goto errexit ;
 /*
 **     Write Boundary Polygon To Side Slopes Data Object
 */
@@ -16378,7 +16391,7 @@ int bcdtmExtSideSlope_getExternalSlopeToesForClosedSideSlopeElementDataObject
        if( numTruncated == 0 )
          {
           if( dbg ) bcdtmWrite_message(0,0,0,"Copying Side Slope Slope Toes To Point Array") ;
-          if( bcdtmExtSideSlope_copySideSlopeRadialToePointsToPointArray(sideSlopeElementType,1,rightRadialsP,numRightRadials,&hullPtsP,&numHullPts)) goto errexit ;
+          if( bcdtmSideSlope_copySideSlopeRadialToePointsToPointArray(sideSlopeElementType,1,rightRadialsP,numRightRadials,&hullPtsP,&numHullPts)) goto errexit ;
 /*
 **        Write Boundary Polygon
 */
@@ -16404,7 +16417,7 @@ int bcdtmExtSideSlope_getExternalSlopeToesForClosedSideSlopeElementDataObject
 **           Get Boundary Polygon
 */
              if( dbg ) bcdtmWrite_message(0,0,0,"Getting Boundary Polygon From Closed Side Slope Element Slope Toes") ;
-             if( bcdtmExtSideSlope_getPolygonFromClosedSideSlopeElementToes(2,&rightRadialsP,&numRightRadials,&hullPtsP,&numHullPts)) goto errexit ;
+             if( bcdtmSideSlope_getPolygonFromClosedSideSlopeElementToes(2,&rightRadialsP,&numRightRadials,&hullPtsP,&numHullPts)) goto errexit ;
 /*
 **           Write Boundary Polygon To Side Slopes Data Object
 */
@@ -16573,7 +16586,7 @@ int bcdtmExtSideSlope_getExternalSlopeToesForClosedSideSlopeElementDataObject
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_copySideSlopeRadialStartPointsToPointArray
+int bcdtmSideSlope_copySideSlopeRadialStartPointsToPointArray
 (
  long                     sideSlopeElementType,  /* ==>  1 = Open ,  2 = Closed   */
  DTM_OVERLAP_RADIAL_TABLE *sideSlopeRadialsP,    /* ==> Pointer To Radials        */
@@ -16634,7 +16647,7 @@ int bcdtmExtSideSlope_copySideSlopeRadialStartPointsToPointArray
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_copySideSlopeRadialToePointsToPointArray
+int bcdtmSideSlope_copySideSlopeRadialToePointsToPointArray
 (
  long                     sideSlopeElementType,  /* ==>  1 = Open ,  2 = Closed              */
  long                     toePointOption,        /* Toe Point Option <1 Ground, 2 Truncated> */
@@ -16714,7 +16727,7 @@ int bcdtmExtSideSlope_copySideSlopeRadialToePointsToPointArray
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_getPolygonFromClosedSideSlopeElementToesOld
+int bcdtmSideSlope_getPolygonFromClosedSideSlopeElementToesOld
 (
  DTMDirection               direction,            /* ==> Polygon Direction  < 1 = CW , 2 = CCw >  */
  DTM_OVERLAP_RADIAL_TABLE *sideSlopeRadialsP,    /* ==> Pointer To Side Slope Radials            */
@@ -16752,7 +16765,7 @@ int bcdtmExtSideSlope_getPolygonFromClosedSideSlopeElementToesOld
 /*
 ** Copy Slope Toe Points To Point Array
 */
- if( bcdtmExtSideSlope_copySideSlopeRadialToePointsToPointArray(2,1,sideSlopeRadialsP,numSideSlopeRadials,&slopeToePtsP,&numSlopeToePts)) goto errexit ;
+ if( bcdtmSideSlope_copySideSlopeRadialToePointsToPointArray(2,1,sideSlopeRadialsP,numSideSlopeRadials,&slopeToePtsP,&numSlopeToePts)) goto errexit ;
  if( bcdtmMath_getPolygonDirectionP3D(slopeToePtsP,numSlopeToePts,&toeDirection,&toeArea)) goto errexit ;
  if ((direction == DTMDirection::Clockwise && toeDirection == DTMDirection::AntiClockwise) || (direction == DTMDirection::AntiClockwise && toeDirection == DTMDirection::Clockwise))
    {
@@ -16761,7 +16774,7 @@ int bcdtmExtSideSlope_getPolygonFromClosedSideSlopeElementToesOld
 /*
 ** Remove Knots From Slope Toe Polygon
 */
- if( bcdtmExtSideSlope_removeKnots(&slopeToePtsP,&numSlopeToePts,&knotPtsP,&numKnotPts)) goto errexit ;
+ if( bcdtmSideSlope_removeKnots(&slopeToePtsP,&numSlopeToePts,&knotPtsP,&numKnotPts)) goto errexit ;
  if( knotPtsP != NULL ) { free( knotPtsP) ; knotPtsP     = NULL ; }
 /*
 ** Remove Truncated Radials Whose Slope Toe Intersects Boundary Polygon
@@ -16822,7 +16835,7 @@ int bcdtmExtSideSlope_getPolygonFromClosedSideSlopeElementToesOld
           p3dP->y = radP->Gy ;
           p3dP->z = radP->Gz ;
          }
-       if( bcdtmExtSideSlope_removeKnots(&slopeToePtsP,&numSlopeToePts,&knotPtsP,&numKnotPts)) goto errexit ;
+       if( bcdtmSideSlope_removeKnots(&slopeToePtsP,&numSlopeToePts,&knotPtsP,&numKnotPts)) goto errexit ;
        if( knotPtsP     != NULL ) { free( knotPtsP)     ; knotPtsP     = NULL ; }
       }
    }
@@ -16889,7 +16902,7 @@ int bcdtmExtSideSlope_getPolygonFromClosedSideSlopeElementToesOld
           p3dP->y = radP->Gy ;
           p3dP->z = radP->Gz ;
          }
-       if( bcdtmExtSideSlope_removeKnots(&slopeToePtsP,&numSlopeToePts,&knotPtsP,&numKnotPts)) goto errexit ;
+       if( bcdtmSideSlope_removeKnots(&slopeToePtsP,&numSlopeToePts,&knotPtsP,&numKnotPts)) goto errexit ;
        if( knotPtsP     != NULL ) { free( knotPtsP)     ; knotPtsP     = NULL ; }
        process = false ;  // Only Do One Loop Robc 2/Nov/2007
       }
@@ -16920,7 +16933,7 @@ int bcdtmExtSideSlope_getPolygonFromClosedSideSlopeElementToesOld
  goto cleanup ;
 }
 
-int bcdtmExtSideSlope_writeOpenSideSlopeElementTruncatedSlopeToesToDataObject
+int bcdtmSideSlope_writeOpenSideSlopeElementTruncatedSlopeToesToDataObject
 (
  BC_DTM_OBJ              *sideSlopesP,           /* dataP Object To Store Slope Toes                  */
  long                     sideSlopeDirection,    /* ==>  1 = Right , 2 = Left , 3 = Right And Left    */
@@ -16940,8 +16953,10 @@ int bcdtmExtSideSlope_writeOpenSideSlopeElementTruncatedSlopeToesToDataObject
     DPoint3d          *hullPtsP=NULL;
     BC_DTM_OBJ   *dataP=NULL ;
     DTM_OVERLAP_RADIAL_TABLE *rad1P ;
+    DTMFeatureId nullFeatureId = DTM_NULL_FEATURE_ID;
 
-    if( bcdtmExtSideSlope_getPolygonFromOpenSideSlopeElementToes(sideSlopeDirection,rightRadialsP,numRightRadials,leftRadialsP,numLeftRadials,&hullPtsP,&numHullPts,&dataP)) goto errexit ;
+
+    if( bcdtmSideSlope_getPolygonFromOpenSideSlopeElementToes(sideSlopeDirection,rightRadialsP,numRightRadials,leftRadialsP,numLeftRadials,&hullPtsP,&numHullPts,&dataP)) goto errexit ;
     /*
     **  Store Tin Hull As Boundary Polygon In Side Slopes Object
     */
@@ -17173,7 +17188,7 @@ errexit :
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_getBoundaryPolygonAndSlopeToesForOpenSideSlopeElementDataObject
+int bcdtmSideSlope_getBoundaryPolygonAndSlopeToesForOpenSideSlopeElementDataObject
 (
  BC_DTM_OBJ              *sideSlopesP,           /* dataP Object To Store Slope Toes                  */
  long                     sideSlopeElementType,  /* ==>  1 = Open ,  2 = Closed                       */
@@ -17218,8 +17233,8 @@ int bcdtmExtSideSlope_getBoundaryPolygonAndSlopeToesForOpenSideSlopeElementDataO
 /*
 ** Write Out Radials For Debugging Purposes
 */
- if( dbg == 2 ) { if( sideSlopeDirection  == 1 || sideSlopeDirection  == 3 ) bcdtmExtSideSlope_writeOverlapRadialTableToBinaryDTMFile(rightRadialsP,numRightRadials,L"openElmRadialsRight.dat") ; }
- if( dbg == 2 ) { if( sideSlopeDirection  == 2 || sideSlopeDirection  == 3 ) bcdtmExtSideSlope_writeOverlapRadialTableToBinaryDTMFile(leftRadialsP,numLeftRadials,L"openElmRadialsleft.dat") ; }
+ if( dbg == 2 ) { if( sideSlopeDirection  == 1 || sideSlopeDirection  == 3 ) bcdtmSideSlope_writeOverlapRadialTableToBinaryDTMFile(rightRadialsP,numRightRadials,L"openElmRadialsRight.dat") ; }
+ if( dbg == 2 ) { if( sideSlopeDirection  == 2 || sideSlopeDirection  == 3 ) bcdtmSideSlope_writeOverlapRadialTableToBinaryDTMFile(leftRadialsP,numLeftRadials,L"openElmRadialsleft.dat") ; }
 /*
 ** Log Left Radials
 */
@@ -17260,14 +17275,14 @@ int bcdtmExtSideSlope_getBoundaryPolygonAndSlopeToesForOpenSideSlopeElementDataO
 */
  if( ! numRightTruncatedRadials && ! numLeftTruncatedRadials )
    {
-    if( bcdtmExtSideSlope_writeOpenSideSlopeElementNoneTruncatedSlopeToesToDataObject(sideSlopesP,sideSlopeDirection, RightSideSlopeTable, rightRadialsP,numRightRadials, LeftSideSlopeTable,leftRadialsP,numLeftRadials)) goto errexit ;
+    if( bcdtmSideSlope_writeOpenSideSlopeElementNoneTruncatedSlopeToesToDataObject(sideSlopesP,sideSlopeDirection, RightSideSlopeTable, rightRadialsP,numRightRadials, LeftSideSlopeTable,leftRadialsP,numLeftRadials)) goto errexit ;
    }
 /*
 ** Resolve Intersecting Slope Toes
 */
  else
    {
-   if (bcdtmExtSideSlope_writeOpenSideSlopeElementTruncatedSlopeToesToDataObject (sideSlopesP,
+   if (bcdtmSideSlope_writeOpenSideSlopeElementTruncatedSlopeToesToDataObject (sideSlopesP,
        sideSlopeDirection, RightSideSlopeTable, rightRadialsP,numRightRadials, LeftSideSlopeTable,leftRadialsP,numLeftRadials))
         goto errexit;
    }
@@ -17296,7 +17311,7 @@ int bcdtmExtSideSlope_getBoundaryPolygonAndSlopeToesForOpenSideSlopeElementDataO
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_writeOpenSideSlopeElementNoneTruncatedSlopeToesToDataObject
+int bcdtmSideSlope_writeOpenSideSlopeElementNoneTruncatedSlopeToesToDataObject
 (
  BC_DTM_OBJ               *sideSlopesP,          /* Pointer To Data Object To Store Slope Toes        */
  long                     sideSlopeDirection,    /* ==>  1 = Right , 2 = Left , 3 = Right And Left    */
@@ -17524,7 +17539,7 @@ int bcdtmExtSideSlope_writeOpenSideSlopeElementNoneTruncatedSlopeToesToDataObjec
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_getPolygonFromClosedSideSlopeElementToes
+int bcdtmSideSlope_getPolygonFromClosedSideSlopeElementToes
 (
  long                      direction,            /* ==> Polygon Direction  < 1 = CW , 2 = CCw >  */
  DTM_OVERLAP_RADIAL_TABLE **sideSlopeRadialsPP,  /* ==> Pointer To Side Slope Radials            */
@@ -17659,7 +17674,7 @@ int bcdtmExtSideSlope_getPolygonFromClosedSideSlopeElementToes
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_getPolygonFromOpenSideSlopeElementToes
+int bcdtmSideSlope_getPolygonFromOpenSideSlopeElementToes
 (
  long                     sideSlopeDirection,    /* ==> Side Slope Direction                     */
  DTM_OVERLAP_RADIAL_TABLE *rightRadialsP,        /* ==> Pointer To Side Slope Radials            */
@@ -17877,7 +17892,7 @@ int bcdtmExtSideSlope_getPolygonFromOpenSideSlopeElementToes
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtSideSlope_truncateRadialsInsideTruncatedSlopeToe
+int bcdtmSideSlope_truncateRadialsInsideTruncatedSlopeToe
 (
  DTM_OVERLAP_RADIAL_TABLE *radialsP,
  long numRadials,

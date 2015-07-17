@@ -1,0 +1,77 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: ScalableTerrainModel/mki/ScalableTerrainModelPolicy.mki $
+#
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%if defined (__ScalableTerrainModelPolicy_mki__)
+    %warn ScalableTerrainModelPolicy.mki is being included redundantly in $(_MakeFileSpec)
+    %if defined (DebugRedundantMkiIncludes)
+        %error DebugRedundantMkiIncludes is defined.
+    %endif  
+    %return
+%endif
+__ScalableTerrainModelPolicy_mki__=1
+
+OPTIMIZE_FOR_SPEED=1
+
+# ------------------------------------
+# Source directories
+# ------------------------------------
+SrcScalableTerrainModel = $(SrcRoot)TerrainModel/ScalableTerrainModel/
+STMPrivateAPISrc        = $(SrcScalableTerrainModel)PrivateAPI/
+STMPublicAPISrc         = $(SrcScalableTerrainModel)PublicAPI/
+
+foundationsDir          = $(SrcScalableTerrainModel)Foundations/
+memoryDir               = $(SrcScalableTerrainModel)Memory/
+geocoordsDir            = $(SrcScalableTerrainModel)GeoCoords/
+importDir               = $(SrcScalableTerrainModel)Import/
+stmDir                  = $(SrcScalableTerrainModel)STM/
+importerPluginsDir      = $(stmDir)ImportPlugins/
+pluginsDir              = $(stmDir)Plugins/
+
+# ------------------------------------
+# Output directories
+# ------------------------------------
+OutBuildSTM         = $(OutBuildDir)ScalableTerrainModel/
+
+#o = !Must be defined by individual mke files!
+o = $(OutBuildSTM)$(appName)/
+
+%if !defined (BuildContext)
+    BuildContext=$(OutBuildContexts)ScalableTerrainModel/
+%endif
+ContextSubpartsLibs = $(BuildContext)SubParts/Libs/
+
+#----------------------------------------------------------
+# Compile and link settings
+#----------------------------------------------------------
+%include $(SharedMki)CommonCompileLinkPolicy.mki
+
+PublicApiIncludes + -I$(STMPrivateApiSrc)
+
+# dlmlink.mki common options.
+DLM_DEST                    = $(o)
+DLM_SYMB_DEST               = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_OBJECT_DEST             = $(o)
+DLM_NO_INITIALIZE_FUNCTION  = 1
+DLM_NO_DEF                  = 1
+DLM_NOMSBUILTINS            = 1
+DLM_NO_DLS                  = 1
+DLM_NOENTRY                 = 1
+DLM_NO_IMPLIB               = 1
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+DLM_CONTEXT_LOCATION        = $(ContextDeliveryDir)/
+DLM_LIB_CONTEXT_LOCATION    = $(ContextDeliveryDir)/
+
+# Common library names for linking.  Originally macro-ized when they had numbers in the name of the LIB
+IppGraLibsLib           = $(libprefix)IppGraLibs$(libext)
+IppUtlLibsLib           = $(libprefix)IppUtlLibs$(libext)
+BaseGeocoordLib         = $(libprefix)basegeocoord$(libext)
+BentleyGeomLib          = $(libprefix)BentleyGeom$(libext)
+TerrainModelCoreLib     = $(libprefix)TerrainModelCore$(libext)
+TerrainModelFormatsLib  = $(libprefix)TerrainModelFormats$(libext)
+
+

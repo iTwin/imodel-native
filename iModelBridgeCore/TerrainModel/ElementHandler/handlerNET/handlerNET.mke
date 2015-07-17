@@ -1,0 +1,139 @@
+#--------------------------------------------------------------------------------------
+#      $Source: ElementHandler/handlerNET/handlerNET.mke $
+#   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#--------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+# 
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+baseDir          = $(_MakeFilePath)
+PolicyFile       = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelElementPolicy.mki
+SolutionPolicyMki=$(baseDir)handlerNET.mki
+
+%include  mdl.mki
+
+
+%ifdef CREATE_STATIC_LIBRARIES
+%error can't be build as a static library
+%endif
+
+#GeneratedCppDir         = $(baseDir)GeneratedCpp/
+#GeneratedApiDir         = $(baseDir)GeneratedApi/
+#ManagedCommonDir        = $(baseDir)Common/
+
+#----------------------------------------------------------------------
+#       Define outputs
+#----------------------------------------------------------------------
+o = $(BentleyTerrainModelNetObj)
+
+appName               = Bentley.TerrainModelNET.Element
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+# 
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+always:
+    ~mkdir $(o)
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+# 
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+%include compileForCLRStart.mki
+
+#....................................................................................................................................................
+CCompDebugOptions = $(CCompDebugOffSwitch)
+
+#$(o)FxCopSuppressions$(oext) : $(baseDir)FxCopSuppressions.cpp
+
+CCompDebugOptions =% $[CCompDebugDefault]
+
+CCompOpts + -AI$(ContextSubPartsAssembliesDir)
+
+#....................................................................................................................................................
+PchCompiland        = $(baseDir)StdAfx.cpp
+PchOutputDir        = $(o)
+PchExtraOptions    = -Zm150
+
+#PchArgumentsDepends     = $(MultiCompileDepends)
+
+PchCompileForClr        = 1
+PchExtraOptions         + -AI$(ContextSubPartsAssembliesDir)
+
+%include $(SharedMki)PreCompileHeader.mki
+
+CCPchOpts = $(UsePrecompiledHeaderOptions)
+CPchOpts  = $(UsePrecompiledHeaderOptions)
+PCHHeaderDependency     = $(o)$(PCHCompilandBaseName).pch
+PCHHeaderObject         = $(o)$(PCHCompilandBaseName)$(oext)
+
+MultiCompileDepends     = $(_MakeFileSpec)
+
+dirToSearch=$(baseDir)
+%include cincapnd.mki
+
+DependsOnHeaders = \
+$(DependsOnAssemblies) \
+$(basedir)Stdafx.h \
+$(basedir)DTMElement.h \
+$(PCHHeaderObject)
+
+#....................................................................................................................................................
+%include MultiCppCompileRule.mki
+
+$(o)DTMElement$(oext)		: $(basedir)DTMElement.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#....................................................................................................................................................
+# Auto-generated AssemblyInfo.cpp file (spawned by compileForCLRStop.mki) should not include the PCH header file.
+CCPchOpts =
+
+%include compileForCLRStop.mki
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+# 
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+DLM_NAME          = $(appName)
+DLM_DEST          = $(o)
+DLM_OBJECT_DEST   = $(o)
+DLM_OBJECT_FILES  = $(MultiCompileObjectList) $(PCHHeaderObject) 
+DLM_NOINITFUNC    = 1
+DLM_NOENTRY       = 1
+DLM_NOMSBUILTINS  = 1
+DLM_NO_DEF        = 1
+DLM_NO_DLS        = 1
+
+LINKER_LIBRARIES  = $(ContextSubpartsLibs)BentleyGeom.lib
+#LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)TerrainModelCore.lib
+#LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)TerrainModelFormats.lib
+LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)mdlbltin.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnPlatform.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)TerrainModelElementHandler.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)Bentley.DgnPlatformNET.lib
+
+%include $(SharedMki)stdversion.mki
+ASSEMBLY_NAME               = $(DLM_NAME)
+ASSEMBLY_STRONGNAME         = 1
+ASSEMBLY_TITLE              = $(DLM_NAME)
+ASSEMBLY_PRODUCT_NAME       = Bentley TerrainModel Core NET
+ASSEMBLY_DESCRIPTION        = Managed API for Bentley TerrainModel
+ASSEMBLY_VERSION            = 1.0.0.0
+ASSEMBLY_FILE_VERSION       = 1.0.0.0
+ASSEMBLY_COMPANY_NAME       = $(companyName)
+ASSEMBLY_COPYRIGHT          = $(Bentley_Copyright)
+
+ASSEMBLY_COMVISIBLE         = false
+ASSEMBLY_CLSCOMPLIANT       = true
+
+ASSEMBLY_NO_AUTHENTICODE_SIGN = 1
+%include $(SharedMki)VersionedPartSignatureDefaults.mki
+ASSEMBLY_KEYFILE        =% $(ASSEMBLY_KEYFILE_DEFAULT)
+ASSEMBLY_TESTKEYFILE       =% $(ASSEMBLY_TESTKEYFILE_DEFAULT)
+
+#FxCopCustomDictionaryFile=$(baseDir)fxcopDictionary.xml
+#SuppressCodeAnalysis=1
+
+DLM_CONTEXT_LOCATION        = $(ContextDeliveryDir)/
+DLM_LIB_CONTEXT_LOCATION    = $(ContextDeliveryDir)/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+%include linkMixedAssembly.mki
+

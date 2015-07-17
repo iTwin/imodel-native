@@ -1,0 +1,185 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: ElementHandler/handler/handler.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+
+baseDir         = $(_MakeFilePath)
+PolicyFile      = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelElementPolicy.mki
+SolutionPolicyMki=$(baseDir)handler.mki
+
+%include mdl.mki
+
+
+
+DLM_OBJECT_DEST       = $(terrainModelElementHandlerObj)
+DLM_NAME              = TerrainModelElementHandler
+ASSEMBLY_STRONGNAME   = 1
+
+DependsOnHeaders = \
+$(DependsOnAssemblies) \
+$(basedir)..\PublicAPI\TerrainModelElementHandler.h \
+$(basedir)..\PublicAPI\DTMDataRef.h \
+$(basedir)DTMDisplayHandlers.h \
+$(basedir)DTMDisplayUtils.h \
+$(basedir)DTMDataRefXAttribute.h \
+$(basedir)DTMDataRefCachingManager.h \
+$(basedir)DTMXAttributeHandler.h \
+$(basedir)DTMBinaryData.h \
+$(basedir)Stdafx.h
+
+o =% $(DLM_OBJECT_DEST)
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    ~mkdir $(o)
+
+#----------------------------------------------------------------------
+#   Make sure that pch is up-to-date.
+#----------------------------------------------------------------------
+PchCompiland        = $(baseDir)StdAfx.cpp
+PchOutputDir        = $(o)
+PchExtraOptions    = -Zm150
+%include $(SharedMki)PreCompileHeader.mki
+
+CCPchOpts = $(UsePrecompiledHeaderOptions)
+CPchOpts  = $(UsePrecompiledHeaderOptions)
+
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)DTMElementHandlerManager$(oext)       : $(baseDir)DTMElementHandlerManager.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)DTMDataRef$(oext)                     : $(baseDir)DTMDataRef.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)DTMElementDisplayHandler$(oext)       : $(baseDir)DTMElementDisplayHandler.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)DTMElementSubDisplayHandler$(oext)    : $(baseDir)DTMElementSubDisplayHandler.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)DTMXAttributeHandler$(oext)           : $(baseDir)DTMXAttributeHandler.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)DTMBinaryData$(oext)                  : $(baseDir)DTMBinaryData.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)DTMDataRefXAttribute$(oext)           : $(baseDir)DTMDataRefXAttribute.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)DTMDataRefCachingManager$(oext)       : $(baseDir)DTMDataRefCachingManager.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)DTMTriangleDisplayHandler$(oext)      : $(baseDir)DTMTriangleDisplayHandler.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)DTMContourDisplayHandler$(oext)       : $(baseDir)DTMContourDisplayHandler.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)DTMHighPointsDisplayHandler$(oext)    : $(baseDir)DTMHighPointsDisplayHandler.cpp  $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)DTMLowPointsDisplayHandler$(oext)     : $(baseDir)DTMLowPointsDisplayHandler.cpp  $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)DTMFeaturesDisplayHandler$(oext)      : $(baseDir)DTMFeaturesDisplayHandler.cpp  $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)DTMFeatureSpotsDisplayHandler$(oext)  : $(baseDir)DTMFeatureSpotsDisplayHandler.cpp  $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)DTMFlowArrowsDisplayHandler$(oext)    : $(baseDir)DTMFlowArrowsDisplayHandler.cpp  $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)DTMRasterDrapingDisplayHandler$(oext) : $(baseDir)DTMRasterDrapingDisplayHandler.cpp  $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)DTMSpotsDisplayHandler$(oext)         : $(baseDir)DTMSpotsDisplayHandler.cpp  $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)DTMDisplayUtils$(oext)                : $(baseDir)DTMDisplayUtils.cpp   $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)DTMTextDrawer$(oext)                  : $(baseDir)DTMTextDrawer.cpp   $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)DTMPointDrawer$(oext)                 : $(baseDir)DTMPointDrawer.cpp  $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)DTMPropertyEnabler$(oext)	  	      : $(basedir)DTMPropertyEnabler.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)DTMDisplayHandlers$(oext)		      : $(basedir)DTMDisplayHandlers.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)MrDTMDataRef$(oext)		        : $(basedir)MrDTMDataRef.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)IMrDTMProgressiveDisplay$(oext)	: $(basedir)IMrDTMProgressiveDisplay.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)MrDTMXAttributeHandler$(oext)	         : $(basedir)MrDTMXAttributeHandler.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)MrDTMDefaultElementHandler$(oext)            : $(basedir)MrDTMDefaultElementHandler.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)MultiResolutionGridMaterialManager$(oext)           : $(basedir)MultiResolutionGridMaterialManager.cpp \
+                                                          $(basedir)..\PublicAPI\IMultiResolutionGridMaterialManager.h \
+                                                          ${MultiCompileDepends}
+
+$(o)RasterTextureSource$(oext)           : $(basedir)RasterTextureSource.cpp \
+                                           $(basedir)..\PublicAPI\IRasterTextureSource.h \
+                                           ${MultiCompileDepends}
+
+$(o)RasterTextureSourceManager$(oext)           : $(basedir)RasterTextureSourceManager.cpp \
+                                                  $(basedir)..\PublicAPI\IRasterTextureSourceManager.h \
+                                                  ${MultiCompileDepends}
+
+
+%include MultiCppCompileGo.mki
+
+DLM_NAME                = $(appName)
+DLM_DEST                = $(o)
+DLM_OBJECT_FILES        = $(MultiCompileObjectList)
+DLM_OBJECT_PCH          = $(o)Stdafx$(oext)
+DLM_EXPORT_DEST         = $(o)
+DLM_NOINITFUNC          = 1
+DLM_NOMSBUILTINS        = 1
+DLM_NO_DEF              = 1
+DLM_NO_DLS              = 1
+DLM_NOENTRY             = 1
+
+LINKER_LIBRARIES_DELAYLOADED  = \
+                            $(ContextSubpartsLibs)$(libprefix)TerrainModelCore$(libext) \
+			    $(ContextSubpartsLibs)$(libprefix)ScalableTerrainModel$(libext) \
+                            $(ContextSubpartsLibs)$(libprefix)basegeocoord$(libext) \
+                            $(ContextSubpartsLibs)$(libprefix)dgngeocoord$(libext)
+
+LINKER_LIBRARIES             = 	$(ContextSubpartsLibs)$(libprefix)DgnView$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)RmgrTools$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)RasterCore$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)IppGraLibs$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)IppImaging$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)IppUtlLibs$(libext) \
+                                
+
+DLM_CONTEXT_LOCATION        = $(ContextDeliveryDir)/
+DLM_LIB_CONTEXT_LOCATION    = $(ContextDeliveryDir)/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+%include dlmlink.mki
+
+$(BuildContext)ECSchemas\TerrainModel.01.00.ecschema.xml : $(basedir)ECSchemas\TerrainModel.01.00.ecschema.xml
+  $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)ECSchemas\DTMElement_TemplateExtender_Schema.01.00.ecschema.xml : $(basedir)ECSchemas\DTMElement_TemplateExtender_Schema.01.00.ecschema.xml
+  $(LinkFirstDepToFirstTarget)
+
+
+  transkitToolsDir = $(OutputRootDir)Transkit/Tools/
+
+#----------------------------------------------------------------------
+# Create localizable resources
+#----------------------------------------------------------------------
+
+MuiBaseName = TerrainModelElementHandler.dll
+MuiTranskitDeliveryDir = $(ContextDeliveryDir)Transkit/ElementHandler/
+#MuiTranskitPrebuiltSubDir = DgnPlatform/DgnPlatform/DgnHandlers/
+
+%include $(SharedMki)CreateAndSymlinkMui.mki
+
+#----------------------------------------------------------------------
+# Create localizable ECSchemas
+#----------------------------------------------------------------------
+ECSchemaPath = $(baseDir)ECSchemas/
+ECSchemaResxBaseName = TerrainModel
+ECSchemasResxBuildDir = $(o)SchemaTranskit/
+ECSchemaTranskitDir = $(baseDir)ECSchemas/
+ECSchemasResxDeliveryDir = $(ContextDeliveryDir)ECSchemas/
+ECSchemaReferences = $(BuildContext)SubParts/Files/
+%include $(SharedMki)CreateAndLinkECSchemaResources.mki 
+

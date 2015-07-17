@@ -1,0 +1,532 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: ScalableTerrainModel/STM/MrDTM.mke $
+#    $RCSfile: MrDTM.mke,v $
+#   $Revision: 1.105 $
+#       $Date: 2013/03/28 15:11:29 $
+#     $Author: Andy.Farr $
+#
+#   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+appName = BCivilMrDTM
+#BUILD_USING_VS2005=1
+NO_LEAN_AND_MEAN=1
+
+%include    mdl.mki
+
+%if $(TARGET_PROCESSOR_ARCHITECTURE)=="x64"
+  %return
+%endif
+
+ProductIncludes + -I${publishInc} -I${bsiIncludes} -I${publishIncGeom} -I${genSrc}
+
+
+#MRDTM_USE_STATIC_IMAGEPP=1
+%ifdef MRDTM_USE_STATIC_IMAGEPP
+    USE_STATIC_IMAGEPP=1
+    %include    $(SrcCivilTools)build\CivilSharedMki\imagepp.mki
+    %undef USE_STATIC_IMAGEPP
+%else
+    %include    $(SrcCivilTools)build\CivilSharedMki\imagepp.mki
+%endif #MRDTM_USE_STATIC_IMAGEPP
+
+
+
+%include    importer.mki
+
+importerPluginsDir = $(basedir)ImportrPlugins/
+pluginsDir = $(basedir)Plugins/
+
+
+dirToSearch     = $(IPP_BASE_INC_DIR)
+%include cincapnd.mki
+
+dirToSearch     = $(IPP_ALL_INC_DIR)
+%include cincapnd.mki
+
+dirToSearch     = $(IPP_WIN_INC_DIR)
+%include cincapnd.mki
+
+dirToSearch     = $(basedir)
+%include cincapnd.mki
+
+dirToSearch     = $(basedir)\Include
+%include cincapnd.mki
+
+dirToSearch     = $(basedir)\PrivateAPI
+%include cincapnd.mki
+
+dirToSearch     = $(importerDir)
+%include cincapnd.mki
+
+dirToSearch     = $(pluginsDir)
+%include cincapnd.mki
+
+dirToSearch     = $(importerPluginsDir)
+%include cincapnd.mki
+
+dirToSearch     = $(SrcCivilPlatform)unmanaged\include
+%include cincapnd.mki
+
+dirToSearch     = $(SrcCivilPlatform)unmanaged\dll\base\include
+%include cincapnd.mki
+
+dirToSearch     = $(SrcCivilPlatform)unmanaged\dll\dtm\include
+%include cincapnd.mki
+
+dirToSearch     = $(SrcCivilPlatform)unmanaged\dll\dtm\2D
+%include cincapnd.mki
+
+dirToSearch     = $(SrcCivilPlatform)unmanaged\dll\DTMLandXML\include
+%include cincapnd.mki
+
+dirToSearch     = $(MS_EXTRAS)bsiinc
+%include cincapnd.mki
+
+dirToSearch     = $(MS_EXTRAS)bsiinc
+%include cincapnd.mki
+
+dirToSearch     = $(MS_EXTRAS)InternalImplementers/geocoord
+%include cincapnd.mki
+
+
+DependsOnPublicPluginsHeaders=\
+$(pluginsDir)MrDTMClipMaskFilterFactory.h
+
+DependsOnPluginsHeaders=\
+$(DependsOnPublicPluginsHeaders) \
+$(pluginsDir)MrDTMDimensionTypeConversionFilter.h
+
+
+DependsOnHeadersCPP =\
+$(baseDir)\MrDTM.h \
+$(baseDir)\MrDTMClipContainer.h \
+$(baseDir)\MrDTMCoreDefs.h \
+$(baseDir)\MrDTMCreator.h \
+$(baseDir)\MrDTMFeature.h \
+$(baseDir)\MrDTMFilteringOptions.h \
+$(baseDir)\MrDTMTilingOptions.h \
+$(baseDir)\MrDTMRelevanceDistribution.h \
+$(baseDir)\MrDTMUtilityFunctions.h \
+$(baseDir)\MrDTMTime.h \
+$(baseDir)\MrDTMSourcesPersistance.h \
+$(baseDir)\MrDTMSourcesImport.h \
+$(baseDir)\PrivateAPI\IMrDTMTime.h \
+$(baseDir)..\Include\bcDTM.fdf \
+$(baseDir)..\Include\bcDTM.h \
+$(baseDir)..\Include\bcDTMBaseDef.h \
+$(baseDir)..\Include\bcDTMClass.h \
+$(baseDir)..\Include\bcDTMDrapedLine.fdf \
+$(baseDir)..\Include\bcDTMFeature.fdf \
+$(baseDir)..\Include\bcDTMFeatureEnumerator.fdf \
+$(baseDir)..\Include\bcDTMGuid.fdf \
+$(baseDir)..\Include\bcDTMInput.fdf
+
+DependsOnHeaders = \
+$(baseDir)..\Include\dtmdefs.h \
+$(baseDir)..\Include\PartitionArray.h 
+
+o = $(BC_Assemblies)BuildTemp/$(appName)/
+
+#----------------------------------------------------------------------
+#   Defines section
+#----------------------------------------------------------------------
+nameToDefine = NO_IODEFS
+%include cdefapnd.mki
+
+%ifndef DEBUG
+    nameToDefine = NDEBUG
+    %include cdefapnd.mki
+%endif #!DEBUG
+
+nameToDefine = NOMINMAX
+%include cdefapnd.mki
+
+nameToDefine = BCBASE_EXPORTS
+%include cdefapnd.mki
+
+
+nameToDefine = BENTLEY_MRDTM_FOUNDATIONS_EXPORTS
+%include cdefapnd.mki
+
+nameToDefine = BENTLEY_MRDTM_MEMORY_EXPORTS
+%include cdefapnd.mki
+
+nameToDefine = BENTLEY_MRDTM_GEOCOODINATES_EXPORTS
+%include cdefapnd.mki
+
+nameToDefine = BENTLEY_MRDTM_IMPORT_EXPORTS
+%include cdefapnd.mki
+
+
+%ifndef MRDTM_USE_STATIC_IMAGEPP
+    nameToDefine = _HDLL_SUPPORT
+    %include cdefapnd.mki
+%endif #!MRDTM_USE_STATIC_IMAGEPP
+
+
+nameToDefine = IMPORTER_USE_BENTLEY_SHARED_PTR
+#nameToDefine = IMPORTER_USE_BOOST_SHARED_PTR
+#nameToDefine = IMPORTER_USE_IPP_SHARED_PTR
+%include cdefapnd.mki
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    ~mkdir $(o)
+
+#-----------------------------------------------------------------------
+#   Compile Managed C++ Modules
+#-----------------------------------------------------------------------
+%include dlmcomp.mki
+#_WINDOWS;_USRDLL;BCGEOM_EXPORTS;winNT;GR;NO_IODEFS;WIN32;NDEBUG;BC_NOMDLENV;
+#_USE_32BIT_TIME_T;WIN32;NDEBUG;_WINDOWS;_USRDLL;
+   
+CCompOpts + -D_SECURE_SCL=0 -D_HAS_ITERATOR_DEBUGGING=0 -D_CRT_SECURE_NO_DEPRECATE -DBC_NOMDLENV -DBCGEOM_EXPORTS -DUSINGMSGEOMLIB -D__HMR_WINDOWS 
+
+CCompOpts + $(IPP_COMPILER_SWITCHES)
+
+#----------------------------------------------------------------------
+# Compile Stdafx for precompiled headers
+#----------------------------------------------------------------------
+
+CCPchOpts = -Yc"StdCpp.h" -Fp$(o)stdafx.pch
+$(o)stdafx$(oext)		: $(basedir)stdafx.cpp $(DependsOnHeaders)
+
+#----------------------------------------------------------------------
+# Compile ForwardDeclarationProblem file
+#----------------------------------------------------------------------
+CCPchOpts = -Yu"StdCpp.h" -Fp$(o)stdafx.pch
+
+%include MultiCppCompileRule.mki
+
+$(o)MrDTMInitialization$(oext) : $(baseDir)MrDTMInitialization.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP)
+
+$(o)MrDTM$(oext) : $(baseDir)MrDTM.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP)
+
+$(o)MrDTMClipContainer$(oext) : $(baseDir)MrDTMClipContainer.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) $(DependsOnPublicImporterHeaders) $(DependsOnPublicPluginsHeaders)
+
+$(o)MrDTMQuery$(oext) : $(baseDir)MrDTMQuery.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP)
+
+$(o)MrDTMCreator$(oext) : $(baseDir)MrDTMCreator.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) $(DependsOnPublicImporterHeaders) $(DependsOnPublicPluginsHeaders)
+
+$(o)MrDTMFeature$(oext) : $(baseDir)MrDTMFeature.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) $(DependsOnPublicImporterHeaders) $(DependsOnPublicPluginsHeaders)
+
+$(o)MrDTMSources$(oext) : $(baseDir)MrDTMSources.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) $(DependsOnPublicImporterHeaders) $(DependsOnPublicPluginsHeaders)
+
+$(o)MrDTMSourceCollection$(oext) : $(baseDir)MrDTMSourceCollection.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP)
+
+$(o)MrDTMCoreFns$(oext) : $(baseDir)MrDTMCoreFns.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP)
+
+$(o)MrDTMFilteringOptions$(oext) : $(baseDir)MrDTMFilteringOptions.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP)
+
+$(o)MrDTMMoniker$(oext) : $(baseDir)MrDTMMoniker.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP)
+
+$(o)MrDTMTilingOptions$(oext) : $(baseDir)MrDTMTilingOptions.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP)
+
+$(o)MrDTMQuadTreeBCLIBFilters$(oext) : $(baseDir)MrDTMQuadTreeBCLIBFilters.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP)
+
+$(o)MrDTMRelevanceDistribution$(oext) : $(baseDir)MrDTMRelevanceDistribution.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP)
+
+$(o)MrDTMUtilityFunctions$(oext) : $(baseDir)MrDTMUtilityFunctions.cpp $(DependsOnImporterHeaders)
+
+$(o)InternalUtilityFunctions$(oext) : $(baseDir)InternalUtilityFunctions.cpp $(DependsOnImporterHeaders)
+
+$(o)MrDTMTime$(oext) : $(baseDir)MrDTMTime.cpp $(DependsOnHeadersCPP)
+
+$(o)MrDTMSourcesPersistance$(oext) : $(baseDir)MrDTMSourcesPersistance.cpp $(DependsOnHeadersCPP)
+
+$(o)MrDTMSourcePersistance$(oext) : $(baseDir)MrDTMSourcePersistance.cpp $(DependsOnHeadersCPP)
+
+$(o)MrDTMImportSequencePersistance$(oext) : $(baseDir)MrDTMImportSequencePersistance.cpp $(DependsOnHeadersCPP)
+
+$(o)MrDTMContentConfigPersistance$(oext) : $(baseDir)MrDTMContentConfigPersistance.cpp $(DependsOnHeadersCPP)
+
+$(o)MrDTMSourcesImport$(oext) : $(baseDir)MrDTMSourcesImport.cpp $(DependsOnHeadersCPP)
+
+$(o)MrDTMSourceDescription$(oext) : $(baseDir)MrDTMSourceDescription.cpp $(DependsOnHeadersCPP)
+
+$(o)MrDTMSourceImportConfig$(oext) : $(baseDir)MrDTMSourceImportConfig.cpp $(DependsOnHeadersCPP)
+
+$(o)MrDTMStream$(oext) : $(baseDir)MrDTMStream.cpp $(DependsOnHeadersCPP)
+
+$(o)MrDTMURL$(oext) : $(baseDir)MrDTMURL.cpp $(DependsOnHeadersCPP)
+
+$(o)MrDTMPolicy$(oext) : $(baseDir)MrDTMPolicy.cpp $(DependsOnHeadersCPP)
+
+#-----------------------------------------------------------------------
+#   Compile Importer common
+#-----------------------------------------------------------------------
+$(o)Errors$(oext) : $(importerDir)Errors.cpp $(DependsOnCommonHeaders)
+
+#-----------------------------------------------------------------------
+#   Compile Data description module
+#-----------------------------------------------------------------------
+$(o)DataType$(oext) : $(importerDir)DataType.cpp $(DependsOnDataDescriptionPluginsHeaders)
+
+$(o)DataTypeFamily$(oext) : $(importerDir)DataTypeFamily.cpp $(DependsOnDataDescriptionPluginsHeaders)
+
+$(o)Reprojection$(oext) : $(importerDir)Reprojection.cpp $(DependsOnDataDescriptionHeaders)
+
+$(o)GCS$(oext) : $(importerDir)GCS.cpp $(DependsOnDataDescriptionHeaders)
+
+$(o)WktUtils$(oext) : $(importerDir)WktUtils.cpp $(DependsOnDataDescriptionHeaders)
+
+$(o)GCSWktParsing$(oext) : $(importerDir)GCSWktParsing.cpp $(DependsOnDataDescriptionHeaders)
+
+$(o)LocalTransform$(oext) : $(importerDir)LocalTransform.cpp $(DependsOnDataDescriptionHeaders)
+
+$(o)Transformation$(oext) : $(importerDir)Transformation.cpp $(DependsOnDataDescriptionHeaders)
+
+$(o)ContentDescriptor$(oext) : $(importerDir)ContentDescriptor.cpp $(DependsOnDataDescriptionHeaders)
+
+$(o)Metadata$(oext) : $(importerDir)Metadata.cpp $(DependsOnDataDescriptionHeaders)
+
+$(o)Attachment$(oext) : $(importerDir)Attachment.cpp $(DependsOnDataDescriptionHeaders)
+
+#-----------------------------------------------------------------------
+#   Compile Memory representation module
+#-----------------------------------------------------------------------
+$(o)MemoryAllocation$(oext) : $(importerDir)MemoryAllocation.cpp $(DependsOnMemoryRepresentationHeaders)
+
+$(o)Packet$(oext) : $(importerDir)Packet.cpp $(DependsOnMemoryRepresentationHeaders)
+
+$(o)PacketAccess$(oext) : $(importerDir)PacketAccess.cpp $(DependsOnMemoryRepresentationHeaders)
+
+#-----------------------------------------------------------------------
+#   Compile Filtering module
+#-----------------------------------------------------------------------
+$(o)Filter$(oext) : $(importerDir)Filter.cpp $(DependsOnFilteringPluginsHeaders)
+
+$(o)TypeConversionFilterFactory$(oext) : $(importerDir)TypeConversionFilterFactory.cpp $(DependsOnFilteringPluginsHeaders)
+
+$(o)ReprojectionFilterFactory$(oext) : $(importerDir)ReprojectionFilterFactory.cpp $(DependsOnFilteringPluginsHeaders)
+
+$(o)CustomFilterFactory$(oext) : $(importerDir)CustomFilterFactory.cpp $(DependsOnFilteringPluginsHeaders)
+
+$(o)FilterFactory$(oext) : $(importerDir)FilterFactory.cpp $(DependsOnFilteringHeaders)
+
+$(o)DimensionDescription$(oext) : $(importerDir)DimensionDescription.cpp $(DependsOnFilteringHeaders)
+
+$(o)FilteringConfig$(oext) : $(importerDir)FilteringConfig.cpp $(DependsOnImporterHeaders)
+
+#-----------------------------------------------------------------------
+#   Compile Source module
+#-----------------------------------------------------------------------
+$(o)Source$(oext) : $(importerDir)Source.cpp $(DependsOnSourceHeaders)
+
+$(o)SourceReference$(oext) : $(importerDir)SourceReference.cpp $(DependsOnSourceHeaders)
+
+$(o)SourcePlugin$(oext) : $(importerDir)SourcePlugin.cpp $(DependsOnSourcePluginsHeaders)
+
+#-----------------------------------------------------------------------
+#   Compile Importer module
+#-----------------------------------------------------------------------
+$(o)Importer$(oext) : $(importerDir)Importer.cpp $(importerDir)ImporterImpl.h $(DependsOnImporterHeaders)
+
+$(o)ImportPolicy$(oext) : $(importerDir)ImportPolicy.cpp $(DependsOnImporterHeaders)
+
+$(o)ImporterCommandVisitor$(oext) : $(importerDir)ImporterCommandVisitor.cpp $(importerDir)ImporterImpl.h $(DependsOnImporterHeaders)
+
+$(o)InternalContentDescriptor$(oext) : $(importerDir)InternalContentDescriptor.cpp $(DependsOnImporterHeaders)
+
+$(o)InternalImporterConfig$(oext) : $(importerDir)InternalImporterConfig.cpp $(DependsOnImporterHeaders)
+
+$(o)InputExtractor$(oext) : $(importerDir)InputExtractor.cpp $(DependsOnImporterHeaders)
+
+$(o)Sink$(oext) : $(importerDir)Sink.cpp $(DependsOnImporterHeaders)
+
+$(o)ImportConfig$(oext) : $(importerDir)ImportConfig.cpp $(DependsOnImporterHeaders)
+
+$(o)ExtractionConfig$(oext) : $(importerDir)ExtractionConfig.cpp $(DependsOnImporterHeaders)
+
+$(o)ContentConfig$(oext) : $(importerDir)ContentConfig.cpp $(DependsOnImporterHeaders)
+
+$(o)ImportSequence$(oext) : $(importerDir)ImportSequence.cpp $(DependsOnImporterHeaders)
+
+$(o)PrivateStringTools$(oext) : $(importerDir)PrivateStringTools.cpp $(importerDir)PrivateStringTools.h
+
+$(o)ImportConfigs$(oext) : $(importerDir)ImportConfigs.cpp $(DependsOnImporterHeaders)
+
+$(o)ContentConfigs$(oext) : $(importerDir)ContentConfigs.cpp $(DependsOnImporterHeaders)
+
+$(o)ImportCommands$(oext) : $(importerDir)ImportCommands.cpp $(DependsOnImporterHeaders)
+
+
+#-----------------------------------------------------------------------
+#   Compile Importer plugins
+#-----------------------------------------------------------------------
+$(o)CivilDTMHelpers$(oext) : $(importerPluginsDir)CivilDTMHelpers.cpp $(DependsOnImporterPluginsHeaders)
+
+$(o)CivilDTMFileImporter$(oext) : $(importerPluginsDir)CivilDTMFileImporter.cpp $(DependsOnImporterPluginsHeaders)
+
+$(o)XYZFileImporter$(oext) : $(importerPluginsDir)XYZFileImporter.cpp $(DependsOnImporterPluginsHeaders)
+
+$(o)LandXMLFileImporter$(oext) : $(importerPluginsDir)LandXMLFileImporter.cpp $(DependsOnImporterHeaders)
+
+$(o)IDTMFileImporter$(oext) : $(importerPluginsDir)IDTMFileImporter.cpp $(DependsOnImporterPluginsHeaders)
+
+$(o)XYZAsciiFileImporter$(oext) : $(importerPluginsDir)XYZAsciiFileImporter.cpp $(DependsOnImporterPluginsHeaders)
+
+#-----------------------------------------------------------------------
+#   Compile Custom plugins
+#-----------------------------------------------------------------------
+$(o)MrDTMClipMaskFilterFactory$(oext) : $(pluginsDir)MrDTMClipMaskFilterFactory.cpp $(DependsOnPluginsHeaders) $(DependsOnFilteringPluginsHeaders)
+
+$(o)MrDTMTypeConversionFilterPlugins$(oext) : $(pluginsDir)MrDTMTypeConversionFilterPlugins.cpp $(DependsOnPluginsHeaders) $(DependsOnFilteringPluginsHeaders)
+
+$(o)MrDTMReprojectionFilterPlugins$(oext) : $(pluginsDir)MrDTMReprojectionFilterPlugins.cpp $(DependsOnPluginsHeaders) $(DependsOnFilteringPluginsHeaders)
+
+$(o)MrDTMPointTypes$(oext) : $(pluginsDir)MrDTMPointTypes.cpp $(DependsOnDataDescriptionPluginsHeaders)
+
+$(o)MrDTMLinearTypes$(oext) : $(pluginsDir)MrDTMLinearTypes.cpp $(DependsOnDataDescriptionPluginsHeaders)
+
+$(o)MrDTMTINTypes$(oext) : $(pluginsDir)MrDTMTINTypes.cpp $(DependsOnDataDescriptionPluginsHeaders)
+
+$(o)MrDTMMeshTypes$(oext) : $(pluginsDir)MrDTMMeshTypes.cpp $(DependsOnDataDescriptionPluginsHeaders)
+
+
+%include MultiCppCompileGo.mki
+
+CCPchOpts = 
+
+
+
+#------------------------------------------------------------------------
+#   Define objects files
+#------------------------------------------------------------------------
+nonUniformObjs = \
+$(o)stdafx$(oext)
+
+dlmObjs = \
+$(MultiCompileObjectList)
+
+#----------------------------------------------------------------------
+#   Link the mixed assembly
+#----------------------------------------------------------------------
+DLM_OBJECT_DEST             = $(o)
+DLM_NAME                    = $(appName).$(dtm_dlls_version)
+DLM_DEST                    = $(BC_DESKTOP)
+DLM_SYMB_DEST               = $(BC_Symbols)
+DLM_OBJECT_FILES            = $(nonUniformObjs) $(dlmObjs)
+DLM_NO_DELAYLOAD            = 1
+DLM_NO_DLS                  = 1
+DLM_NO_IMPLIB               = 0
+DLM_NO_DEF                  = 1
+DLM_NOENTRY                 = 1
+DLM_NOMSBUILTINS            = 1
+DLM_LIBRARY_FILES  = $(bcLibs)BCivilBase.lib \
+$(bcLibs)BCivilDTM.lib \
+$(IPP_LIB_FILES) \
+$(IPP_NT_LIB_FILES) \
+$(MS_MDL)library/basegeocoord.lib \
+$(MS_EXTRAS)bsilib/bsibasegeom.lib \
+$(bcLibs)BCivilDTMLandXml.lib
+
+DLM_EXPORT_NAME = $(bcLibs)\$(appName).lib
+
+# %error DLM_EXPORT_NAME $(DLM_EXPORT_NAME)
+
+%include dlmlink.mki
+
+%if !defined(PRG)
+ %iffile $(OutPowerPlatform)
+ always:
+   @bcopy -cru $(BC_DESKTOP)$(DLM_NAME).dll $(OutMstn)Bentley\Microstation\mdlsys\asneeded\$(DLM_NAME).dll
+   @bcopy -cru $(BC_DESKTOP)$(DLM_NAME).dll $(OutPowerPlatform)Bentley\PseudoStation\mdlsys\asneeded\$(DLM_NAME).dll       
+   @bcopy -cru $(DLM_EXPORT_NAME) $(OutPowerPlatform)extras\bsilib\$(appName).lib
+ %else
+  %iffile $(MS)
+  always:
+    -@cacls $(MS)mdlsys\asneeded\$(DLM_NAME).dll \/E \/G Everyone:F
+    -@cacls $(MS_EXTRAS)bsilib\$(appName).lib \/E \/G Everyone:F
+    @bcopy -cru $(BC_DESKTOP)$(DLM_NAME).dll $(MS)mdlsys\asneeded\$(DLM_NAME).dll 
+    @bcopy -cru $(DLM_EXPORT_NAME) $(MS_EXTRAS)bsilib\$(appName).lib
+   %endif
+ %endif
+%endif
+
+
+
+
+PublishedSrcDir = $(SrcCivilPlatform)unmanaged/dll/dtm/mrdtm/
+PublishedSrcFiles = \
+$(PublishedSrcDir)MrDTM.h \
+$(PublishedSrcDir)MrDTMClipContainer.h \
+$(PublishedSrcDir)MrDTMCoreDefs.h \
+$(PublishedSrcDir)MrDTMCoreFns.h \
+$(PublishedSrcDir)MrDTMFilteringOptions.h \
+$(PublishedSrcDir)MrDTMTilingOptions.h \
+$(PublishedSrcDir)MrDTMUtilityFunctions.h \
+
+PublishedDstDir = $(BC_Assemblies)include/MrDTM/
+PublishedApiId = MrDTM
+%include PublishFiles.mki
+
+PublishedSrcDir = $(mrdtmPubDir)
+PublishedDstDir = $(BC_Assemblies)include/MrDTM/
+PublishedApiId = IMrDTM
+%include PublishFiles.mki
+
+PublishedSrcDir = $(mrdtmPubDir)Type/
+PublishedDstDir = $(BC_Assemblies)include/MrDTM/Type/
+PublishedApiId = IMrDTMType
+%include PublishFiles.mki
+
+PublishedSrcDir = $(mrdtmPubDir)Plugin/
+PublishedDstDir = $(BC_Assemblies)include/MrDTM/Plugin/
+PublishedApiId = IMrDTMPlugin
+%include PublishFiles.mki
+
+
+PublishedSrcDir = $(mrdtmPubDir)Foundations/
+PublishedDstDir = $(BC_Assemblies)include/MrDTM/Foundations/
+PublishedApiId = Foundations
+%include PublishFiles.mki
+
+
+PublishedSrcDir = $(mrdtmPubDir)Memory/
+PublishedDstDir = $(BC_Assemblies)include/MrDTM/Memory/
+PublishedApiId = Memory
+%include PublishFiles.mki
+
+
+PublishedSrcDir = $(mrdtmPubDir)GeoCoords/
+PublishedDstDir = $(BC_Assemblies)include/MrDTM/GeoCoords/
+PublishedApiId = GeoCoords
+%include PublishFiles.mki
+
+
+PublishedSrcDir = $(mrdtmPubDir)Import/
+PublishedDstDir = $(BC_Assemblies)include/MrDTM/Import/
+PublishedApiId = Import
+%include PublishFiles.mki
+
+PublishedSrcDir = $(mrdtmPubDir)Import/Plugin/
+PublishedDstDir = $(BC_Assemblies)include/MrDTM/Import/Plugin/
+PublishedApiId = ImportPlugin
+%include PublishFiles.mki
+
+
+PublishedSrcDir = $(mrdtmPubDir)Import/Error/
+PublishedDstDir = $(BC_Assemblies)include/MrDTM/Import/Error/
+PublishedApiId = ImportError
+%include PublishFiles.mki
+
+
+CopiedSrcDir = $(mrdtmPubDir)Import/Config/
+CopiedDstDir = $(BC_Assemblies)include/MrDTM/Import/Config/
+%include CopyFiles.mki
+
+ 
+CopiedSrcDir = $(mrdtmPubDir)Import/Config/Content/
+CopiedDstDir = $(BC_Assemblies)include/MrDTM/Import/Config/Content/
+%include CopyFiles.mki
+ 
+CopiedSrcDir = $(mrdtmPubDir)Import/Command/
+CopiedDstDir = $(BC_Assemblies)include/MrDTM/Import/Command/
+%include CopyFiles.mki
+

@@ -1,0 +1,76 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: ScalableTerrainModel/PublicAPI/ScalableTerrainModel/_Description.mki $
+#
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+%if defined (__STMPublicAPIDescriptionMki__)
+    %return
+%endif
+__STMPublicAPIDescriptionMki__ = 1
+
+%include $(BuildContext)PublicAPI/Foundations/_Description.mki
+%include $(BuildContext)PublicAPI/Memory/_Description.mki
+%include $(BuildContext)PublicAPI/GeoCoords/_Description.mki
+%include $(BuildContext)PublicAPI/Import/_Description.mki
+
+STMPublicAPILocation = $(BuildContext)PublicAPI/STM/
+STMPluginPublicAPILocation = $(STMPublicAPILocation)Plugin/
+STMTypePublicAPILocation = $(STMPublicAPILocation)Type/
+
+#----------------------------------------------------------------------
+#   Non-recursive listing
+#----------------------------------------------------------------------
+STMPublicAPIListing = \
+    $(STMPublicAPILocation)IMrDTM.h \
+    $(STMPublicAPILocation)IMrDTMCreator.h \
+    $(STMPublicAPILocation)IMrDTMDocumentEnv.h \
+    $(STMPublicAPILocation)IMrDTMMoniker.h \
+    $(STMPublicAPILocation)IMrDTMPolicy.h \
+    $(STMPublicAPILocation)IMrDTMQuery.h \
+    $(STMPublicAPILocation)IMrDTMSourceCollection.h \
+    $(STMPublicAPILocation)IMrDTMSourceCollection.hpp \
+    $(STMPublicAPILocation)IMrDTMSourceDescription.h \
+    $(STMPublicAPILocation)IMrDTMSourceImportConfig.h \
+    $(STMPublicAPILocation)IMrDTMSources.h \
+    $(STMPublicAPILocation)IMrDTMSourceVisitor.h \
+    $(STMPublicAPILocation)IMrDTMStream.h \
+    $(STMPublicAPILocation)IMrDTMStream.hpp \
+    $(STMPublicAPILocation)IMrDTMTime.h \
+    $(STMPublicAPILocation)IMrDTMURL.h \
+    $(STMPublicAPILocation)MrDTMClipContainer.h \
+    $(STMPublicAPILocation)MrDTMDefs.h \
+    $(STMInternalIncludesLocation)MrDTMUtilityFunctions.h
+
+STMPluginPublicAPIListing = \
+    $(STMPluginPublicAPILocation)IMrDTMCivilDTMSource.h \
+    $(STMPluginPublicAPILocation)IMrDTMFileUtilities.h \
+    $(STMPluginPublicAPILocation)IMrDTMFileUtilities.hpp \
+    $(STMPluginPublicAPILocation)IMrDTMPolicy.h \
+    $(STMPluginPublicAPILocation)IMrDTMSTMSource.h
+
+STMTypePublicAPIListing = \
+    $(STMTypePublicAPILocation)IMrDTMLinear.h \
+    $(STMTypePublicAPILocation)IMrDTMMesh.h \
+    $(STMTypePublicAPILocation)IMrDTMPoint.h \
+    $(STMTypePublicAPILocation)IMrDTMTIN.h
+
+
+#----------------------------------------------------------------------
+#   Recursive listing
+#----------------------------------------------------------------------
+STMPublicAPIRecursiveListing = \
+    $(STMPublicAPIListing) \
+    $(STMPluginPublicAPIListing) \
+    $(STMTypePublicAPIListing)
+
+#----------------------------------------------------------------------
+#   Full recursive listing with dependencies
+#----------------------------------------------------------------------
+STMPublicAPIFullListing = \
+    $(STMPublicAPIRecursiveListing) \
+    $(ImportPublicAPIRecursiveListing) \
+    $(GeoCoordsPublicAPIRecursiveListing) \
+    $(MemoryPublicAPIRecursiveListing) \
+    $(FoundationsPublicAPIRecursiveListing)

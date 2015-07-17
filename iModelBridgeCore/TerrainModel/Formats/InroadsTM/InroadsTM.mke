@@ -1,0 +1,251 @@
+#------------------------------------------------------------------------------------
+#
+#     $Source: Formats/InroadsTM/InroadsTM.mke $
+#    $RCSfile: cppwrappers.mke,v $
+#   $Revision: 1.123.2.1 $
+#       $Date: 2012/11/15 20:19:18 $
+#     $Author: Daryl.Holmwood $
+#
+#   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+baseDir         = $(_MakeFilePath)
+PolicyFile      = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelPolicy.mki
+SolutionPolicyMki=$(baseDir)inroadsTM.mki
+
+%include  mdl.mki
+
+DLM_OBJECT_DEST       = $(terrainModelFormatsObj)
+DLM_NAME              = InroadsTM
+ASSEMBLY_STRONGNAME   = 1
+
+InroadsDTMSource = $(baseDir)
+
+DependsOnHeadersCPP = \
+
+DependsOnHeaders = \
+
+#---------------------------------------------------------
+#  Set up for signing
+#---------------------------------------------------------
+%ifdef todo_signing
+RIGHTSCOMPLIANT = true
+%include    $(SrcTerrainModel)privmki/TerrainModelSignatureDefaults.mki
+
+%if !defined (MSJ_SKIP_SIGNRSCS) && !defined (DLM_NO_SIGN)
+    %include signrightscompliantdefs.mki
+    %include signrscsdefs.mki
+%endif
+%endif
+#----------------------------------------------------------------------
+#       Location for objects
+#----------------------------------------------------------------------
+o =% $(DLM_OBJECT_DEST)
+
+always:
+    ~mkdir $(o)
+
+#----------------------------------------------------------------------
+#   Make sure that pch is up-to-date.
+#----------------------------------------------------------------------
+PchCompiland        = $(InroadsDTMSource)StdAfx.cpp
+PchOutputDir        = $(o)
+PchExtraOptions    = -Zm150
+%include $(SharedMki)PreCompileHeader.mki
+
+$(o)civguids$(oext) : $(InroadsDTMSource)civguids.cpp  ${MultiCompileDepends}
+
+CCPchOpts = $(UsePrecompiledHeaderOptions)
+CPchOpts  = $(UsePrecompiledHeaderOptions)
+
+MultiCompileDepends=$(_MakeFileSpec)
+
+#----------------------------------------------------------------------
+#       Inform user of compile options
+#----------------------------------------------------------------------
+always:
+        |  Compiler options: $(cDefs)$(cDefsPost) $(copt)
+        |  -------- --------
+
+%include MultiCppCompileRule.mki
+
+$(o)actprj$(oext) : $(InroadsDTMSource)actprj.cpp  ${MultiCompileDepends}
+
+$(o)addftr$(oext) : $(InroadsDTMSource)addftr.cpp  ${MultiCompileDepends}
+
+$(o)addpnt$(oext) : $(InroadsDTMSource)addpnt.cpp  ${MultiCompileDepends}
+
+$(o)addtin$(oext) : $(InroadsDTMSource)addtin.cpp  ${MultiCompileDepends}
+
+$(o)allftr$(oext) : $(InroadsDTMSource)allftr.cpp  ${MultiCompileDepends}
+
+$(o)allocs$(oext) : $(InroadsDTMSource)allocs.cpp  ${MultiCompileDepends}
+
+$(o)allpnt$(oext) : $(InroadsDTMSource)allpnt.cpp  ${MultiCompileDepends}
+
+$(o)alltin$(oext) : $(InroadsDTMSource)alltin.cpp  ${MultiCompileDepends}
+
+$(o)bondry$(oext) : $(InroadsDTMSource)bondry.cpp  ${MultiCompileDepends}
+
+$(o)civdtm$(oext) : $(InroadsDTMSource)civdtm.cpp  ${MultiCompileDepends}
+
+$(o)civuti$(oext) : $(InroadsDTMSource)civuti.cpp  ${MultiCompileDepends}
+
+$(o)clputi$(oext) : $(InroadsDTMSource)clputi.cpp  ${MultiCompileDepends}
+
+$(o)cmpmemuti$(oext) : $(InroadsDTMSource)cmpmemuti.cpp  ${MultiCompileDepends}
+
+$(o)cmputi$(oext) : $(InroadsDTMSource)cmputi.cpp  ${MultiCompileDepends}
+
+$(o)CommonDTM$(oext) : $(InroadsDTMSource)CommonDTM.cpp  ${MultiCompileDepends}
+
+$(o)coruti$(oext) : $(InroadsDTMSource)coruti.cpp  ${MultiCompileDepends}
+
+$(o)counts$(oext) : $(InroadsDTMSource)counts.cpp  ${MultiCompileDepends}
+
+$(o)crtsrf$(oext) : $(InroadsDTMSource)crtsrf.cpp  ${MultiCompileDepends}
+
+$(o)dalloc$(oext) : $(InroadsDTMSource)dalloc.cpp  ${MultiCompileDepends}
+
+$(o)delany$(oext) : $(InroadsDTMSource)delany.cpp  ${MultiCompileDepends}
+
+$(o)delftr$(oext) : $(InroadsDTMSource)delftr.cpp  ${MultiCompileDepends}
+
+$(o)delpnt$(oext) : $(InroadsDTMSource)delpnt.cpp  ${MultiCompileDepends}
+
+$(o)delsrf$(oext) : $(InroadsDTMSource)delsrf.cpp  ${MultiCompileDepends}
+
+$(o)deltin$(oext) : $(InroadsDTMSource)deltin.cpp  ${MultiCompileDepends}
+
+$(o)inroadstm$(oext) : $(InroadsDTMSource)inroadstm.cpp  ${MultiCompileDepends}
+
+$(o)FeatureClass$(oext) : $(InroadsDTMSource)FeatureClass.cpp  ${MultiCompileDepends}
+
+$(o)FeatureFunctions$(oext) : $(InroadsDTMSource)FeatureFunctions.cpp  ${MultiCompileDepends}
+
+$(o)filuti$(oext) : $(InroadsDTMSource)filuti.cpp  ${MultiCompileDepends}
+
+$(o)fixtol$(oext) : $(InroadsDTMSource)fixtol.cpp  ${MultiCompileDepends}
+
+$(o)fncpnt$(oext) : $(InroadsDTMSource)fncpnt.cpp  ${MultiCompileDepends}
+
+$(o)fndfil$(oext) : $(InroadsDTMSource)fndfil.cpp  ${MultiCompileDepends}
+
+$(o)fndftr$(oext) : $(InroadsDTMSource)fndftr.cpp  ${MultiCompileDepends}
+
+$(o)fndpnt$(oext) : $(InroadsDTMSource)fndpnt.cpp  ${MultiCompileDepends}
+
+$(o)fndsrf$(oext) : $(InroadsDTMSource)fndsrf.cpp  ${MultiCompileDepends}
+
+$(o)fndtin$(oext) : $(InroadsDTMSource)fndtin.cpp  ${MultiCompileDepends}
+
+$(o)ftruti$(oext) : $(InroadsDTMSource)ftruti.cpp  ${MultiCompileDepends}
+
+$(o)getact$(oext) : $(InroadsDTMSource)getact.cpp  ${MultiCompileDepends}
+
+$(o)getelv$(oext) : $(InroadsDTMSource)getelv.cpp  ${MultiCompileDepends}
+
+$(o)heapmanager$(oext) : $(InroadsDTMSource)heapmanager.cpp  ${MultiCompileDepends}
+
+$(o)hshftr$(oext) : $(InroadsDTMSource)hshftr.cpp  ${MultiCompileDepends}
+
+$(o)hshuti$(oext) : $(InroadsDTMSource)hshuti.cpp  ${MultiCompileDepends}
+
+$(o)insbnd$(oext) : $(InroadsDTMSource)insbnd.cpp  ${MultiCompileDepends}
+
+$(o)intsct$(oext) : $(InroadsDTMSource)intsct.cpp  ${MultiCompileDepends}
+
+$(o)intuti$(oext) : $(InroadsDTMSource)intuti.cpp  ${MultiCompileDepends}
+
+$(o)jonuti$(oext) : $(InroadsDTMSource)jonuti.cpp  ${MultiCompileDepends}
+
+$(o)lcluti$(oext) : $(InroadsDTMSource)lcluti.cpp  ${MultiCompileDepends}
+
+$(o)linlst$(oext) : $(InroadsDTMSource)linlst.cpp  ${MultiCompileDepends}
+
+$(o)load$(oext) : $(InroadsDTMSource)load.cpp  ${MultiCompileDepends}
+
+$(o)loddtm$(oext) : $(InroadsDTMSource)loddtm.cpp  ${MultiCompileDepends}
+
+$(o)mrkuti$(oext) : $(InroadsDTMSource)mrkuti.cpp  ${MultiCompileDepends}
+
+$(o)msguti$(oext) : $(InroadsDTMSource)msguti.cpp  ${MultiCompileDepends}
+
+$(o)paruti$(oext) : $(InroadsDTMSource)paruti.cpp  ${MultiCompileDepends}
+
+$(o)patch$(oext) : $(InroadsDTMSource)patch.cpp  ${MultiCompileDepends}
+
+$(o)plyuti$(oext) : $(InroadsDTMSource)plyuti.cpp  ${MultiCompileDepends}
+
+$(o)pntadd$(oext) : $(InroadsDTMSource)pntadd.cpp  ${MultiCompileDepends}
+
+$(o)pntdel$(oext) : $(InroadsDTMSource)pntdel.cpp  ${MultiCompileDepends}
+
+$(o)pntuti$(oext) : $(InroadsDTMSource)pntuti.cpp  ${MultiCompileDepends}
+
+$(o)points$(oext) : $(InroadsDTMSource)points.cpp  ${MultiCompileDepends}
+
+$(o)prcpnt$(oext) : $(InroadsDTMSource)prcpnt.cpp  ${MultiCompileDepends}
+
+$(o)prjuti$(oext) : $(InroadsDTMSource)prjuti.cpp  ${MultiCompileDepends}
+
+$(o)ptrind$(oext) : $(InroadsDTMSource)ptrind.cpp  ${MultiCompileDepends}
+
+$(o)rnguti$(oext) : $(InroadsDTMSource)rnguti.cpp  ${MultiCompileDepends}
+
+$(o)rotpnt$(oext) : $(InroadsDTMSource)rotpnt.cpp  ${MultiCompileDepends}
+
+$(o)savdtm$(oext) : $(InroadsDTMSource)savdtm.cpp  ${MultiCompileDepends}
+
+$(o)srfflg$(oext) : $(InroadsDTMSource)srfflg.cpp  ${MultiCompileDepends}
+
+$(o)srfuti$(oext) : $(InroadsDTMSource)srfuti.cpp  ${MultiCompileDepends}
+
+$(o)stsuti$(oext) : $(InroadsDTMSource)stsuti.cpp  ${MultiCompileDepends}
+
+$(o)tbluti$(oext) : $(InroadsDTMSource)tbluti.cpp  ${MultiCompileDepends}
+
+$(o)tckuti$(oext) : $(InroadsDTMSource)tckuti.cpp  ${MultiCompileDepends}
+
+$(o)TimeStampUtils$(oext) : $(InroadsDTMSource)TimeStampUtils.cpp ${MultiCompileDepends}
+
+$(o)tinstk$(oext) : $(InroadsDTMSource)tinstk.cpp  ${MultiCompileDepends}
+
+$(o)tinuti$(oext) : $(InroadsDTMSource)tinuti.cpp  ${MultiCompileDepends}
+
+$(o)trisrf$(oext) : $(InroadsDTMSource)trisrf.cpp  ${MultiCompileDepends}
+
+$(o)vecuti$(oext) : $(InroadsDTMSource)vecuti.cpp  ${MultiCompileDepends}
+
+$(o)xngchk$(oext) : $(InroadsDTMSource)xngchk.cpp  ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#   Link the mixed assembly
+#----------------------------------------------------------------------
+DLM_NAME                    = $(appName)
+DLM_DEST                    = $(o)
+DLM_OBJECT_PCH          = $(o)Stdafx$(oext) 
+DLM_OBJECT_FILES            = $(MultiCompileObjectList) $(o)civguids$(oext)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOINITFUNC          = 1
+DLM_NOMSBUILTINS        = 1
+DLM_NO_DEF              = 1
+DLM_NO_DLS              = 1
+DLM_NOENTRY             = 1
+
+LINKER_LIBRARIES  = \
+	$(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext) \
+	Rpcrt4.lib
+
+%ifdef CREATE_STATIC_LIBRARIES
+  LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeIconv$(libext)
+%endif
+
+DLM_CONTEXT_LOCATION        = $(ContextDeliveryDir)/
+DLM_LIB_CONTEXT_LOCATION    = $(ContextDeliveryDir)/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+%include $(sharedMki)LinkLibrary.mki

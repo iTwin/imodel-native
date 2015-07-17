@@ -1,0 +1,48 @@
+#--------------------------------------------------------------------------------------+
+#
+#     $Source: terrainModel.prewire.mke $
+#
+#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+
+PolicyFile = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelPolicy.mki
+
+%include mdl.mki
+
+always:
+    !~@mkdir $(buildPublicAPI)TerrainModel/
+
+#FilesToPublish= \
+#$(TerrainModelCoreDir)PublicAPI/TerrainModel.h
+ 
+
+# $(terrainmodelObj)PublicAPITerrainModel.stamp : $(FilesToPublish)
+#    "$(PythonPath)python" $(TerrainModelPublicAPISrc)MakePublicAPI.py \
+#                                --sourcedir=$(TerrainModelCoreDir)PublicAPI \
+#                                --outdir=$(buildPublicAPI)TerrainModel \
+#                                --template=$(TerrainModelPublicAPISrc)PublicAPI.tpl \
+#                                $?
+
+#                                 --privexports=d:\temp\PublicAPI_PrivateExports.txt
+
+
+always:
+  @CreateSymLinks.py "$(buildPublicAPI)TerrainModel/TerrainModel.h=$(TerrainModelAPISrc)TerrainModel.h"
+
+always:
+   @CreateSymLinks.py -d"$(BuildContext)PublicAPI/TerrainModel=$(buildPublicAPI)TerrainModel"
+
+## Move below into seperate prewires.
+
+always:
+   @CreateSymLinks.py -d"$(buildPublicAPI)TerrainModel/Core=$(TerrainModelCoreDir)PublicAPI"
+
+always:
+   @CreateSymLinks.py -d"$(buildPublicAPI)TerrainModel/Formats=$(TerrainModelFormatsDir)PublicAPI"
+
+always:
+   @CreateSymLinks.py -d"$(buildPublicAPI)TerrainModel/ElementHandler=$(TerrainModelElementHandlerDir)PublicAPI"
+
+always:
+   @CreateSymLinks.py -d"$(buildPublicAPI)TerrainModel/Drainage=$(TerrainModelDrainageDir)PublicAPI"

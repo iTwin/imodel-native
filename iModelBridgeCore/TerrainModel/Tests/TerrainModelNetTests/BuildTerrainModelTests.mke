@@ -1,0 +1,140 @@
+#--------------------------------------------------------------------------------------
+#      $Source: Tests/TerrainModelNetTests/BuildTerrainModelTests.mke $
+#   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#--------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+# to run test:
+#   bmake RunDgnECPersistenceTests.mke
+# or
+#   ..\product\federationplatformtests> nunit-console.exe Bentley.DgnECPersistenceTest.dll
+#   ..\product\federationplatformtests> nunit-gui.exe Bentley.DgnECPersistenceTest.dll
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+baseDir          = $(_MakeFilePath)
+#SolutionPolicyMki=$(SrcRoot)BentleyGeometryNet\src\Bentley.Geometry.Net\BentleyGeometryNet.mki
+
+# This format was used instead of $(BaseDir)AssertBentleyGeometryNetPolicy.mki
+# because PreCompileHeader.mki writes the PolicyFile name to the
+# generated MKI file using the syntax PolicyFile=$[PolicyFile]
+PolicyFile= $(SrcRoot)TerrainModel/privmki/AssertTerrainModelPolicy.mki
+
+nunitDir=$(BuildContext)SubParts/nunit_2.5.10/
+%include  mdl.mki
+#----------------------------------------------------------------------
+#       Define outputs
+#----------------------------------------------------------------------
+o = $(terrainModelBuildDir_)TerrainModelNETTests/
+
+ASSEMBLY_NAME               = Bentley.TerrainModelNet.Tests
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+# 
+#----------------------------------------------------------------------------------------------------------------------------------------------------
+always:
+    ~mkdir $(o)
+
+ASSEMBLY_REFERENCE = $(nunitDir)nunit.framework.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.GeometryNET.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.GeometryNET.Structs.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.GeometryNET.Common.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.Exceptions.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.TerrainModelNet.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.TerrainModelNet.Formats.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.GeoCoord2.dll
+%include csrefapnd.mki
+
+
+
+#-----------------------------------------------------------------------
+#   Compile C# Modules
+#-----------------------------------------------------------------------
+
+# Where are these got from
+%include $(SharedMki)stdversion.mki
+ASSEMBLY_PRODUCT_NAME   = $(PRODUCT_NAME)
+ASSEMBLY_FILE_VERSION   = $(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V)
+ASSEMBLY_COMPANY_NAME   = $(companyName)
+ASSEMBLY_COPYRIGHT      = $(Bentley_Copyright)
+#  temporary fix for ecframework builds
+ASSEMBLY_NO_AUTHENTICODE_SIGN = 1
+%include $(SharedMki)VersionedPartSignatureDefaults.mki
+ASSEMBLY_KEYFILE        =% $(ASSEMBLY_KEYFILE_DEFAULT)
+ASSEMBLY_TESTKEYFILE       =% $(ASSEMBLY_TESTKEYFILE_DEFAULT)
+
+%ifndef ASSEMBLY_TITLE
+  ASSEMBLY_TITLE  =% $(programName)
+%endif
+
+
+
+
+ASSEMBLY_DLL            = 1
+ASSEMBLY_STRONGNAME     = 1
+ASSEMBLY_TITLE          = BentleyTerrainModelNet Tests
+ASSEMBLY_DESCRIPTION    = BentleyTerrainModelNet Tests
+ASSEMBLY_VERSION        = 1.0.0.0
+#ASSEMBLY_MAKE_DOCS      = 1
+
+ASSEMBLY_SOURCE_LIST =  \
+  $(baseDir)BulkTestDTM.cs \
+  $(baseDir)CheckMergeNullHull.cs \
+  $(baseDir)ComplexDTMTests.cs \
+  $(baseDir)DatabaseAccess.cs \
+  $(baseDir)DTMAppend.cs \
+  $(baseDir)DTMBrowse.cs \
+  $(baseDir)DTMCrossingFeatures.cs \
+  $(baseDir)DTMDrainage.cs \
+  $(baseDir)DTMDrape.cs \
+  $(baseDir)DTMFeature.cs \
+  $(baseDir)DTMFilterSpots.cs \
+  $(baseDir)DTMImportExort.cs \
+  $(baseDir)DTMInterpolation.cs \
+  $(baseDir)DTMJoinFeaturesTest.cs \
+  $(baseDir)DTMLidar.cs \
+  $(baseDir)DTMMergeTests.cs \
+  $(baseDir)DTMSideSlopeTest.cs \
+  $(baseDir)DTMStockPileTests.cs \
+  $(baseDir)DTMTinEditor.cs \
+  $(baseDir)DTMImageDEMTest.cs \
+  $(baseDir)DTMTriangulationTests.cs \
+  $(baseDir)DTMUNitTest.cs \
+  $(baseDir)DTMVisibility.cs \
+  $(baseDir)Helper.cs \
+  $(baseDir)SimpleTestsDTM.cs \
+  $(baseDir)DTMStoreFeatures.cs \
+  $(baseDir)DTMVolumeTests.cs \
+
+l=  $(baseDir)DTMImageDEMTest.cs \
+  $(baseDir)DTMLandXMLTest.cs \
+
+
+
+SUPPRESSCODEANALYSIS=1
+%include mkcsharp.mki
+
+%if !defined (ATP_CONFIG_EXT)
+ATP_CONFIG_EXT = .dll.config
+%endif
+
+%if !defined (ATP_CONFIG_DEST_DIR)
+ATP_CONFIG_DEST_DIR = $(ContextDeliveryDir)
+%endif
+
+#-----------------------------------------------------------------------
+#   Merge the Assembly's Config File with the root config file
+#   the app.config file for the ecom atp
+#-----------------------------------------------------------------------
+#mergeSource = $(_MakeFilePath)app.config
+#mergeTo = $(o)$(ASSEMBLY_NAME)$(ATP_CONFIG_EXT)
+#mergeCrumb = $(o)$(ASSEMBLY_NAME)$(ATP_CONFIG_EXT).crumb
+#%include $(SharedMki)xmlmerge.mki
+
+#$(ATP_CONFIG_DEST_DIR)$(ASSEMBLY_NAME)$(ATP_CONFIG_EXT): $(o)$(ASSEMBLY_NAME)$(ATP_CONFIG_EXT)
+#    $(LinkFirstDepToFirstTarget)
+

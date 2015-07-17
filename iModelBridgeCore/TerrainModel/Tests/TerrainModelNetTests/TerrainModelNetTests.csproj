@@ -1,0 +1,138 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{3E557515-B271-4650-B80C-406A78C2F7CC}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Bentley.TerrainModelNet.Tests</RootNamespace>
+    <AssemblyName>Bentley.TerrainModelNet.Tests</AssemblyName>
+    <AssemblyVersionAttribute>1.0.0.0</AssemblyVersionAttribute>
+    <AssemblyDescriptionAttribute>TerrainModel ElementTemplate AddIn</AssemblyDescriptionAttribute>
+    <RIGHTSCOMPLIANT>true</RIGHTSCOMPLIANT>
+    <AssemblyProductAttribute>MicroStation</AssemblyProductAttribute>
+    <!--    <ASSEMBLY_KEYFILE_DEFAULT Condition="'$(ASSEMBLY_KEYFILE_DEFAULT)' == ''">$(SrcRoot)bsitools\anycpu\PublicPrgNonRightsCompliant.snk</ASSEMBLY_KEYFILE_DEFAULT> -->
+    <!--    <AssemblyOriginatorKeyFile>$(ASSEMBLY_KEYFILE_DEFAULT)</AssemblyOriginatorKeyFile> -->
+    <DEFAULT_TARGET_PROCESSOR_ARCHITECTURE Condition="'$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)' == ''">x64</DEFAULT_TARGET_PROCESSOR_ARCHITECTURE>
+    <OutputPath>$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\build\TerrainModel\Bentley.TerrainModelNet.Tests\</OutputPath>
+    <OutDir>$(outputpath)</OutDir>
+    <BaseIntermediateOutputPath>$(outputpath)</BaseIntermediateOutputPath>
+    <TargetFrameworkProfile />
+    <ValidateMicroStationAddIns>true</ValidateMicroStationAddIns>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <DefineConstants>TRACE;DEBUG;CSC_VERSION_4500</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PlatformTarget>$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <!-- These are for projects that are NOT using msbuild entirely, but still want to avoid setting ReferencePath explicitly in every project -->
+    <DEFAULT_TARGET_PROCESSOR_ARCHITECTURE Condition="'$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)' == ''">x64</DEFAULT_TARGET_PROCESSOR_ARCHITECTURE>
+    <ContextSubPartsAssembliesDir Condition="'$(ContextSubPartsAssembliesDir)'==''">$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\TerrainModel\SubParts\Assemblies\</ContextSubPartsAssembliesDir>
+    <nunitDir Condition="'$(nunitDir)'==''">$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\TerrainModel\SubParts\nunit_2.5.10\</nunitDir>
+    <ReferencePath>$(ContextSubPartsAssembliesDir);$(nunitDir)</ReferencePath>
+  </PropertyGroup>
+  <!--  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <DelaySign>true</DelaySign>
+  </PropertyGroup>
+  -->
+  <ItemGroup>
+    <Reference Include="Bentley.GeometryNET.dll">
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Bentley.GeometryNET.Structs.dll">
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Bentley.GeometryNET.Common.dll">
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Bentley.Exceptions.dll">
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Bentley.TerrainModelNet.dll">
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Bentley.TerrainModelNet.Formats.dll">
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Bentley.GeoCoord2.dll">
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="$(nunitDir)nunit.framework.dll">
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Accessibility" />
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="BulkTestDTM.cs" />
+    <Compile Include="CheckMergeNullHull.cs" />
+    <Compile Include="ComplexDTMTests.cs" />
+    <Compile Include="DatabaseAccess.cs" />
+    <Compile Include="DTMAppend.cs" />
+    <Compile Include="DTMBrowse.cs" />
+    <Compile Include="DTMCrossingFeatures.cs" />
+    <Compile Include="DTMDrainage.cs" />
+    <Compile Include="DTMDrape.cs" />
+    <Compile Include="DTMFeature.cs" />
+    <Compile Include="DTMFilterSpots.cs" />
+    <None Include="DTMImageDEMTest.cs" />
+    <Compile Include="DTMImportExort.cs" />
+    <Compile Include="DTMInterpolation.cs" />
+    <Compile Include="DTMJoinFeaturesTest.cs" />
+    <None Include="DTMLandXMLTest.cs" />
+    <Compile Include="DTMLidar.cs" />
+    <Compile Include="DTMMergeTests.cs" />
+    <Compile Include="DTMSideSlopeTest.cs" />
+    <Compile Include="DTMStockPileTests.cs" />
+    <Compile Include="DTMStoreFeatures.cs" />
+    <Compile Include="DTMTinEditor.cs" />
+    <Compile Include="DTMTriangulationTests.cs" />
+    <Compile Include="DTMUNitTest.cs" />
+    <Compile Include="DTMVisibility.cs" />
+    <Compile Include="DTMVolumeTests.cs" />
+    <Compile Include="Helper.cs" />
+    <Compile Include="SimpleTestsDTM.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="transkit\transkit.xml" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

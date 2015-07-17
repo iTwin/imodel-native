@@ -1,0 +1,260 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source">
+      <UniqueIdentifier>{d76fa131-b917-444e-a2fc-8873258ba6b0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="InroadsTM.mke" />
+    <None Include="InroadsTM.mki" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="actprj.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="addftr.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="addpnt.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="addtin.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="allftr.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="allocs.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="allpnt.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="alltin.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="bondry.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="civdtm.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="civguids.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="civuti.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="clputi.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="cmpmemuti.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="cmputi.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="CommonDTM.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="coruti.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="counts.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="crtsrf.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="dalloc.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="delany.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="delftr.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="delpnt.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="delsrf.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="deltin.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="DTMLinkDTM.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="DTMToGPKTin.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="FeatureClass.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="FeatureFunctions.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="filuti.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="fixtol.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="fncpnt.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="fndfil.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="fndftr.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="fndlin.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="fndpnt.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="fndsrf.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="fndtin.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="ftruti.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="getact.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="getelv.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="GPKTinToDTM.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="heapmanager.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="hshftr.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="hshuti.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="insbnd.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="intsct.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="intuti.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="jonuti.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="lcluti.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="linlst.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="load.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="loddtm.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="mrkuti.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="msguti.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="MXTinToDTM.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="paruti.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="patch.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="plyuti.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="pntadd.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="pntdel.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="pntuti.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="points.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="prcpnt.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="prjuti.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="ptrind.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="rnguti.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="rotpnt.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="savdtm.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="srfflg.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="srfuti.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="StdAfx.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="stsuti.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="tbluti.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="tckuti.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="TimeStampUtils.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="tinstk.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="TinToDTM.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="tinuti.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="trisrf.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="vecuti.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="xngchk.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

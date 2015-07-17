@@ -1,0 +1,85 @@
+#----------------------------------------------------------------------
+#
+#     $Source: Core/core.mki $
+#
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+#
+# This file is used as the SolutionPolicyMki for TerrainModelCore.dll only.
+#
+
+terrainModelCoreObj = $(terrainModelBuildDir_)TerrainModelCore/
+
+OPTIMIZE_FOR_SPEED=1
+
+MultiCompileIntermediatePdbFile=$(terrainModelCoreObj)$(CCompPDBName).pdb
+IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
+
+ProductIncludes + -I${publishInc}
+
+dirToSearch     = $(TerrainModelCoreDir)CPPWrappers
+%include cincapnd.mki
+
+dirToSearch     = $(TerrainModelCoreDir)PrivateAPI/
+%include cincapnd.mki
+
+dirToSearch     = $(TerrainModelCoreDir)PrivateAPI/base
+%include cincapnd.mki
+
+dirToSearch     = $(TerrainModelAPISrc)
+%include cincapnd.mki
+
+dirToSearch     = $(TerrainModelCoreAPISrc)
+%include cincapnd.mki
+
+%ifdef DTM_CORE_DEBUG
+
+nameToDefine=DTM_TRACE_DEBUG
+%include cdefapnd.mki
+
+nameToDefine=DTM_CHECK_DEBUG
+%include cdefapnd.mki
+
+nameToDefine=DTM_TIME_DEBUG
+%include cdefapnd.mki
+
+%endif 
+
+### CREATE_STATIC_LIBRARIES
+###USESTATICGEOMLIB=1
+
+%if defined(USESTATICGEOMLIB)
+
+nameToDefine=BENTLEYDLL_EXPORT=
+%include cdefapnd.mki
+
+nameToDefine = jmdlgeom_static
+%include cdefapnd.mki
+
+%endif
+
+nameToDefine = XM
+%include cdefapnd.mki
+
+nameToDefine = __BENTLEYDTM_BUILD__
+%include cdefapnd.mki
+
+nameToDefine=BENTLEY_PORTABLE_CODE
+%include cdefapnd.mki
+
+# DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
+# If we define appName and use it for DLM_NAME, MultiCppCompileRule.mki will use it for CCompPDBName, and linkLibrary.mki will use DLM_NAME for LIB_NAME.
+# PreCompiledHeader.mki uses CCompPDBName
+appName     = TerrainModelCore
+DLM_NAME    = $(appName)
+CCompPDBName = $(appName)
+
+#Disable unreachable code warning this is because of the dbg=DTM_TRACE_VALUE(0)
+cuser + -wd4505 -wd4702 -wd4805
+
+%warn Need to remove 4189 warning local variable is initialized but not referenced.
+cuser + -wd4189
+
+
+%warn Need to remove 4805 warning unsafe mix of bool and long

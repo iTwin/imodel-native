@@ -1,0 +1,1760 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="TerrainModel" displayLabel="Terrain Model" nameSpacePrefix="terrain" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
+    <ECSchemaReference name="Bentley_Common_Classes" version="01.01" prefix="bcc" />
+    <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
+    <ECSchemaReference name="BaseElementSchema"      version="01.00" prefix="baseElem" />
+    <ECSchemaReference name="DgnElementSchema"      version="01.00" prefix="dgnElem" />
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.07" prefix="besc" />
+    <ECSchemaReference name="Bentley_Standard_Classes" version="01.00" prefix="bsc" />
+    <ECSchemaReference name="DgnCustomAttributes" version="01.00" prefix="dgnca" />
+
+    <ECCustomAttributes>
+        <IsDgnPlatformDeliveredSchema xmlns="DgnCustomAttributes.01.00" />
+        <StoresUnitsAsUors xmlns="EditorCustomAttributes.01.05" />
+        <ItemsSchemaIdentifier xmlns="Bentley_Standard_CustomAttributes.01.07">
+          <IsItemsSchema>False</IsItemsSchema>
+        </ItemsSchemaIdentifier>
+    </ECCustomAttributes>
+
+    <ECClass typeName="DTMInformation" isDomainClass="True">
+        <ECCustomAttributes>
+            <DontShowNullProperties xmlns="EditorCustomAttributes.01.00" />
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Name" typeName="string" displayLabel="Name">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Standard>1</Standard>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>495000</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="NumTriangles" typeName="long" displayLabel="Number of Triangles" readOnly="True">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>Information</Name>
+                    <DisplayLabel>Information</DisplayLabel>
+                    <Priority>300007</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10000</Priority>
+                </PropertyPriority>
+                <Format xmlns="EditorCustomAttributes.01.00">
+                    <FormatString>{0:N0}</FormatString>
+                </Format>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="NumBreaklines" typeName="long" displayLabel="Number of Breaklines" readOnly="True">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>Information</Name>
+                    <DisplayLabel>Information</DisplayLabel>
+                    <Priority>300007</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10010</Priority>
+                </PropertyPriority>
+                <Format xmlns="EditorCustomAttributes.01.00">
+                    <FormatString>{0:N0}</FormatString>
+                </Format>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="NumContours" typeName="long" displayLabel="Number of Contours" readOnly="True">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>Information</Name>
+                    <DisplayLabel>Information</DisplayLabel>
+                    <Priority>300007</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10011</Priority>
+                </PropertyPriority>
+                <Format xmlns="EditorCustomAttributes.01.00">
+                    <FormatString>{0:N0}</FormatString>
+                </Format>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="NumFeatures" typeName="long" displayLabel="Number of Features" readOnly="True">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>Information</Name>
+                    <DisplayLabel>Information</DisplayLabel>
+                    <Priority>300007</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10012</Priority>
+                </PropertyPriority>
+                <Format xmlns="EditorCustomAttributes.01.00">
+                    <FormatString>{0:N0}</FormatString>
+                </Format>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="NumVoids" typeName="long" displayLabel="Number of Voids" readOnly="True">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>Information</Name>
+                    <DisplayLabel>Information</DisplayLabel>
+                    <Priority>300007</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10013</Priority>
+                </PropertyPriority>
+                <Format xmlns="EditorCustomAttributes.01.00">
+                    <FormatString>{0:N0}</FormatString>
+                </Format>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="NumHoles" typeName="long" displayLabel="Number of Holes" readOnly="True">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>Information</Name>
+                    <DisplayLabel>Information</DisplayLabel>
+                    <Priority>300007</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10014</Priority>
+                </PropertyPriority>
+                <Format xmlns="EditorCustomAttributes.01.00">
+                    <FormatString>{0:N0}</FormatString>
+                </Format>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="NumIslands" typeName="long" displayLabel="Number of Islands" readOnly="True">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>Information</Name>
+                    <DisplayLabel>Information</DisplayLabel>
+                    <Priority>300007</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10015</Priority>
+                </PropertyPriority>
+                <Format xmlns="EditorCustomAttributes.01.00">
+                    <FormatString>{0:N0}</FormatString>
+                </Format>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="NumPointFeatures" typeName="long" displayLabel="Number of Point Features" readOnly="True">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>Information</Name>
+                    <DisplayLabel>Information</DisplayLabel>
+                    <Priority>300007</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10016</Priority>
+                </PropertyPriority>
+                <Format xmlns="EditorCustomAttributes.01.00">
+                    <FormatString>{0:N0}</FormatString>
+                </Format>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="NumPoints" typeName="long" displayLabel="Number of Points" readOnly="True">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>Information</Name>
+                    <DisplayLabel>Information</DisplayLabel>
+                    <Priority>300007</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10020</Priority>
+                </PropertyPriority>
+                <Format xmlns="EditorCustomAttributes.01.00">
+                    <FormatString>{0:N0}</FormatString>
+                </Format>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="RangeLow" typeName="point3d" displayLabel="Range Low" readOnly="True">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Standard>7</Standard>
+                </ExtendType>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>Information</Name>
+                    <DisplayLabel>Information</DisplayLabel>
+                    <Priority>300007</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10030</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="RangeHigh" typeName="point3d" displayLabel="Range High" readOnly="True">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Standard>7</Standard>
+                </ExtendType>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>Information</Name>
+                    <DisplayLabel>Information</DisplayLabel>
+                    <Priority>300007</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10031</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="DTMEdgeMethod" isDomainClass="True">
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+            <DontShowNullProperties xmlns="EditorCustomAttributes.01.00" />
+        </ECCustomAttributes>
+        <ECProperty propertyName="EdgeMethod" typeName="int" displayLabel="Edge Method">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>EdgeMethod</Name>
+                    <DisplayLabel>Edge Method</DisplayLabel>
+                    <Priority>300005</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10120</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMEdgeOption</Name>
+                </ExtendType>
+                <RequiresReload xmlns="EditorCustomAttributes.01.00" />
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="LengthValue" typeName="double" displayLabel="Length">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Standard>8</Standard>
+                </ExtendType>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>EdgeMethod</Name>
+                    <DisplayLabel>Edge Method</DisplayLabel>
+                    <Priority>300005</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10110</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="DTMOverrideSymbology" isDomainClass="True">
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+            <DontShowNullProperties xmlns="EditorCustomAttributes.01.00" />
+        </ECCustomAttributes>
+        <ECProperty propertyName="OverrideSymbology" typeName="boolean" displayLabel="Override Symbology">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>Reference</Name>
+                    <DisplayLabel>Reference</DisplayLabel>
+                    <Priority>300002</Priority>
+                    <Expand>True</Expand>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10050</Priority>
+                </PropertyPriority>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>Yes</TrueString>
+                    <FalseString>No</FalseString>
+                </BooleanDisplay>
+                <RequiresReload xmlns="EditorCustomAttributes.01.00" />
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="DTMOSTemplate" isDomainClass="True">
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+            <DontShowNullProperties xmlns="EditorCustomAttributes.01.00" />
+        </ECCustomAttributes>
+        <ECProperty propertyName="OSTemplate" typeName="long" displayLabel="Override Template">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMElementTemplate</Name>
+                </ExtendType>
+                <!--Category xmlns="EditorCustomAttributes.01.00">
+                    <Standard>1</Standard>
+                </Category-->
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>Reference</Name>
+                    <DisplayLabel>Reference</DisplayLabel>
+                    <Priority>300002</Priority>
+                    <Expand>True</Expand>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10060</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+            <RequiresReload xmlns="EditorCustomAttributes.01.00" />
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="STM" isDomainClass="True">
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+            <DontShowNullProperties xmlns="EditorCustomAttributes.01.00" />
+        </ECCustomAttributes>
+        <ECProperty propertyName="Locate" typeName="boolean">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>STM</Name>
+                    <DisplayLabel>Scalable Terrain Model</DisplayLabel>
+                    <Priority>300006</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10008</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Clip" typeName="boolean">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>STM</Name>
+                    <DisplayLabel>Scalable Terrain Model</DisplayLabel>
+                    <Priority>300006</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10006</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="UnshadedViewPointDensity" typeName="double" displayLabel="Not Shaded View Density">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>STM</Name>
+                    <DisplayLabel>Scalable Terrain Model</DisplayLabel>
+                    <Priority>300006</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10011</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>MrDTMUnshadedViewPointDensity</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+
+        <ECProperty propertyName="ShadedViewPointDensity" typeName="double" displayLabel="Shaded View Density">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>STM</Name>
+                    <DisplayLabel>Scalable Terrain Model</DisplayLabel>
+                    <Priority>300006</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10012</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>MrDTMShadedViewPointDensity</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+
+        <ECArrayProperty propertyName="Views" typeName="boolean" displayLabel="Views" minOccurs="8" maxOccurs="8">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>STM</Name>
+                    <DisplayLabel>Scalable Terrain Model</DisplayLabel>
+                    <Priority>300006</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10010</Priority>
+                </PropertyPriority>
+
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>MrDTMViewsFlags</Name>
+                </ExtendType>
+
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+            </ECCustomAttributes>
+        </ECArrayProperty>
+
+
+    </ECClass>
+
+    <ECClass typeName="DTMContourProperties" isDomainClass="True">
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+            <DontShowNullProperties xmlns="EditorCustomAttributes.01.00" />
+        </ECCustomAttributes>
+        <ECProperty propertyName="WantMajorContours" typeName="boolean" displayLabel="Major Contours">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>CalculatedFeaturesDisplay</Name>
+                    <DisplayLabel>Calculated Features Display</DisplayLabel>
+                    <Priority>300004</Priority>
+                    <Expand>True</Expand>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10040</Priority>
+                </PropertyPriority>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+                <RequiresReload xmlns="EditorCustomAttributes.01.00" />
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="WantMinorContours" typeName="boolean" displayLabel="Minor Contours">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>CalculatedFeaturesDisplay</Name>
+                    <DisplayLabel>Calculated Features Display</DisplayLabel>
+                    <Priority>300004</Priority>
+                    <Expand>True</Expand>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10040</Priority>
+                </PropertyPriority>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+                <RequiresReload xmlns="EditorCustomAttributes.01.00" />
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECCustomAttributes>
+            <CustomImageSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Moniker_Default>ECLiteralImage://TMPropertiesContours</Moniker_Default>
+                <Moniker_Expanded>ECLiteralImage://TMPropertiesContours</Moniker_Expanded>
+                <Moniker_Collapsed>ECLiteralImage://TMPropertiesContours</Moniker_Collapsed>
+            </CustomImageSpecification>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DTMFeatureProperties" isDomainClass="True" displayLabel="Calculated Features">
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+            <DontShowNullProperties xmlns="EditorCustomAttributes.01.00" />
+        </ECCustomAttributes>
+        <ECProperty propertyName="WantTriangles" typeName="boolean" displayLabel="Triangles">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>CalculatedFeaturesDisplay</Name>
+                    <DisplayLabel>Calculated Features Display</DisplayLabel>
+                    <Priority>300004</Priority>
+                    <Expand>True</Expand>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10030</Priority>
+                </PropertyPriority>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="WantRasterDraping" typeName="boolean" displayLabel="Draped Rasters">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>CalculatedFeaturesDisplay</Name>
+                    <DisplayLabel>Calculated Features Display</DisplayLabel>
+                    <Priority>300004</Priority>
+                    <Expand>True</Expand>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>9850</Priority>
+                </PropertyPriority>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="WantSpots" typeName="boolean" displayLabel="Triangle Vertices">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>CalculatedFeaturesDisplay</Name>
+                    <DisplayLabel>Calculated Features Display</DisplayLabel>
+                    <Priority>300004</Priority>
+                    <Expand>True</Expand>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10010</Priority>
+                </PropertyPriority>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="WantRegions" typeName="boolean" displayLabel="Regions">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>CalculatedFeaturesDisplay</Name>
+                    <DisplayLabel>Calculated Features Display</DisplayLabel>
+                    <Priority>300004</Priority>
+                    <Expand>True</Expand>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10000</Priority>
+                </PropertyPriority>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="WantFlowArrows" typeName="boolean" displayLabel="Flow Arrows">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>CalculatedFeaturesDisplay</Name>
+                    <DisplayLabel>Calculated Features Display</DisplayLabel>
+                    <Priority>300004</Priority>
+                    <Expand>True</Expand>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>9980</Priority>
+                </PropertyPriority>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="WantLowPoints" typeName="boolean" displayLabel="Low Points">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>CalculatedFeaturesDisplay</Name>
+                    <DisplayLabel>Calculated Features Display</DisplayLabel>
+                    <Priority>300004</Priority>
+                    <Expand>True</Expand>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>9970</Priority>
+                </PropertyPriority>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="WantHighPoints" typeName="boolean" displayLabel="High Points">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>CalculatedFeaturesDisplay</Name>
+                    <DisplayLabel>Calculated Features Display</DisplayLabel>
+                    <Priority>300004</Priority>
+                    <Expand>True</Expand>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>9960</Priority>
+                </PropertyPriority>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="DTMSourceProperties" isDomainClass="True" displayLabel="Source Features">
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+            <DontShowNullProperties xmlns="EditorCustomAttributes.01.00" />
+        </ECCustomAttributes>
+        <ECProperty propertyName="WantBreaklineFeatures" typeName="boolean" displayLabel="Breaklines">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>SourceFeaturesDisplay</Name>
+                    <DisplayLabel>Source Features Display</DisplayLabel>
+                    <Priority>300003</Priority>
+                    <Expand>True</Expand>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>9920</Priority>
+                </PropertyPriority>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="WantBoundaryFeatures" typeName="boolean" displayLabel="Boundary">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>SourceFeaturesDisplay</Name>
+                    <DisplayLabel>Source Features Display</DisplayLabel>
+                    <Priority>300003</Priority>
+                    <Expand>True</Expand>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>9910</Priority>
+                </PropertyPriority>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="WantContourFeatures" typeName="boolean" displayLabel="Imported Contours">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>SourceFeaturesDisplay</Name>
+                    <DisplayLabel>Source Features Display</DisplayLabel>
+                    <Priority>300003</Priority>
+                    <Expand>True</Expand>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>9900</Priority>
+                </PropertyPriority>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="WantIslandFeatures" typeName="boolean" displayLabel="Islands">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>SourceFeaturesDisplay</Name>
+                    <DisplayLabel>Source Features Display</DisplayLabel>
+                    <Priority>300003</Priority>
+                    <Expand>True</Expand>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>9890</Priority>
+                </PropertyPriority>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="WantHoleFeatures" typeName="boolean" displayLabel="Holes">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>SourceFeaturesDisplay</Name>
+                    <DisplayLabel>Source Features Display</DisplayLabel>
+                    <Priority>300003</Priority>
+                    <Expand>True</Expand>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>9880</Priority>
+                </PropertyPriority>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="WantVoidFeatures" typeName="boolean" displayLabel="Voids">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>SourceFeaturesDisplay</Name>
+                    <DisplayLabel>Source Features Display</DisplayLabel>
+                    <Priority>300003</Priority>
+                    <Expand>True</Expand>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>9870</Priority>
+                </PropertyPriority>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="WantSpotFeatures" typeName="boolean" displayLabel="Spots">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>SourceFeaturesDisplay</Name>
+                    <DisplayLabel>Source Features Display</DisplayLabel>
+                    <Priority>300003</Priority>
+                    <Expand>True</Expand>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>9860</Priority>
+                </PropertyPriority>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECCustomAttributes>
+            <CustomImageSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Moniker_Default>ECLiteralImage://TMPropertiesTreeSourceFeat</Moniker_Default>
+                <Moniker_Expanded>ECLiteralImage://TMPropertiesTreeSourceFeat</Moniker_Expanded>
+                <Moniker_Collapsed>ECLiteralImage://TMPropertiesTreeSourceFeat</Moniker_Collapsed>
+            </CustomImageSpecification>
+        </ECCustomAttributes>
+    </ECClass>
+
+    <ECClass typeName="DTMCalculatedProperties" isDomainClass="True" displayLabel="Calculated Features">
+        <BaseClass>DTMFeatureProperties</BaseClass>
+        <BaseClass>DTMContourProperties</BaseClass>
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+            <CustomImageSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Moniker_Default>ECLiteralImage://TMPropertiesTreeCalcFeat</Moniker_Default>
+                <Moniker_Expanded>ECLiteralImage://TMPropertiesTreeCalcFeat</Moniker_Expanded>
+                <Moniker_Collapsed>ECLiteralImage://TMPropertiesTreeCalcFeat</Moniker_Collapsed>
+            </CustomImageSpecification>
+        </ECCustomAttributes>
+    </ECClass>
+
+    <ECClass typeName="DTMGraphHeader" isDomainClass="True">
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Level" typeName="int" displayLabel="Level">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Standard>2</Standard>
+                </ExtendType>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Standard>1</Standard>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>490000</Priority>
+                </PropertyPriority>
+                <DWGProperty xmlns="EditorCustomAttributes.01.00">
+                    <Name>Layer</Name>
+                </DWGProperty>
+                <DisplayRulesOptions xmlns="DgnCustomAttributes.01.00">
+                    <SuppressGenerateByRange>True</SuppressGenerateByRange>
+                </DisplayRulesOptions>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Color" typeName="int" displayLabel="Color">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Standard>62</Standard>
+                </ExtendType>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Standard>1</Standard>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>480000</Priority>
+                </PropertyPriority>
+                <DWGProperty xmlns="EditorCustomAttributes.01.00">
+                    <Name>TrueColor</Name>
+                </DWGProperty>
+                <DisplayRulesOptions xmlns="DgnCustomAttributes.01.00">
+                    <SuppressGenerateByRange>True</SuppressGenerateByRange>
+                </DisplayRulesOptions>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Weight" typeName="int" displayLabel="Weight">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Standard>96</Standard>
+                </ExtendType>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Standard>1</Standard>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>460000</Priority>
+                </PropertyPriority>
+                <DWGProperty xmlns="EditorCustomAttributes.01.00">
+                    <Name>Lineweight</Name>
+                </DWGProperty>
+                <DisplayRulesOptions xmlns="DgnCustomAttributes.01.00">
+                    <GenerateByRangeDefaultMin>0</GenerateByRangeDefaultMin>
+                    <GenerateByRangeDefaultMax>31</GenerateByRangeDefaultMax>
+                </DisplayRulesOptions>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Style" typeName="int" displayLabel="Line Style">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Standard>97</Standard>
+                </ExtendType>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Standard>1</Standard>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>470000</Priority>
+                </PropertyPriority>
+                <DWGProperty xmlns="EditorCustomAttributes.01.00">
+                    <Name>Linetype</Name>
+                </DWGProperty>
+                <RequiresReload xmlns="EditorCustomAttributes.01.00" />
+                <DisplayRulesOptions xmlns="DgnCustomAttributes.01.00">
+                    <SuppressGenerateByRange>True</SuppressGenerateByRange>
+                </DisplayRulesOptions>
+            </ECCustomAttributes>
+        </ECProperty>
+
+    </ECClass>
+    <ECClass typeName="DTMElement" isDomainClass="True" displayLabel="Terrain Model Element">
+        <BaseClass>baseElem:MstnGraphHeader</BaseClass>
+        <BaseClass>baseElem:NamedGroupInfo</BaseClass>
+        <BaseClass>baseElem:MstnLockedElement</BaseClass>
+        <BaseClass>DTMFeatureProperties</BaseClass>
+        <BaseClass>DTMContourProperties</BaseClass>
+        <BaseClass>DTMSourceProperties</BaseClass>
+        <BaseClass>DTMInformation</BaseClass>
+        <BaseClass>DTMEdgeMethod</BaseClass>
+        <BaseClass>DTMOverrideSymbology</BaseClass>
+        <BaseClass>DTMOSTemplate</BaseClass>
+        <BaseClass>STM</BaseClass>
+        <BaseClass>DTMGraphHeader</BaseClass>
+        <ECCustomAttributes>
+            <DontShowNullProperties xmlns="EditorCustomAttributes.01.00" />
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>False</Hidden>
+            </DisplayOptions>
+            <CustomImageSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Moniker_Default>ECLiteralImage://TM</Moniker_Default>
+                <Moniker_Expanded>ECLiteralImage://TM</Moniker_Expanded>
+                <Moniker_Collapsed>ECLiteralImage://TM</Moniker_Collapsed>
+            </CustomImageSpecification>
+        </ECCustomAttributes>
+        <!--We override this property that we could hide it in Properties-->
+        <ECProperty propertyName="DisplayStyle" typeName="int" displayLabel="Display Style">
+            <ECCustomAttributes>
+                <HideProperty xmlns="EditorCustomAttributes.01.00">
+                    <If2D>True</If2D>
+                    <If3D>True</If3D>
+                </HideProperty>
+                <ElementHeaderPropertyOverridable  xmlns="BaseElementSchema.01.00">
+                    <DisabledByDefault>False</DisabledByDefault>
+                </ElementHeaderPropertyOverridable>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Standard>2</Standard>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>339009</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Standard>68</Standard>
+                </ExtendType>
+                <DisplayRulesOptions xmlns="DgnCustomAttributes.01.00">
+                    <SuppressGenerateByRange>True</SuppressGenerateByRange>
+                </DisplayRulesOptions>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="PointCell" isStruct="True" isDomainClass="True">
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Type" typeName="int" displayLabel="Type">
+            <ECCustomAttributes>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10190</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Value" typeName="string" displayLabel="Value">
+            <ECCustomAttributes>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10180</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Criteria" typeName="string" displayLabel="Criteria">
+            <ECCustomAttributes>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10200</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="DTMSubElementDisplay" isDomainClass="True">
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+            <DontShowNullProperties xmlns="EditorCustomAttributes.01.00" />
+        </ECCustomAttributes>
+        <ECProperty propertyName="Level" typeName="int" displayLabel="Level">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Standard>2</Standard>
+                </ExtendType>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Standard>1</Standard>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>490000</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Color" typeName="int" displayLabel="Color">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Standard>1</Standard>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>480000</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMColor</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Weight" typeName="int" displayLabel="Weight">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Standard>1</Standard>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>460000</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMWeight</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="LineStyle" typeName="int" displayLabel="Line Style">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Standard>1</Standard>
+                </Category>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMStyle</Name>
+                </ExtendType>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>470000</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Transparency" typeName="double" displayLabel="Transparency">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Standard>22</Standard>
+                </ExtendType>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Standard>1</Standard>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>410000</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Display" typeName="boolean" displayLabel="Display">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Standard>1</Standard>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>500000</Priority>
+                </PropertyPriority>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+
+    <ECClass typeName="DTMTextStyle" isDomainClass="True">
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+        </ECCustomAttributes>
+        <ECProperty propertyName="TextStyle" typeName="int" displayLabel="Text Style">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Standard>67</Standard>
+                </ExtendType>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>153000</Priority>
+                </PropertyPriority>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>TextStyleCategory</Name>
+                    <DisplayLabel>TextStyle</DisplayLabel>
+                    <Priority>320000</Priority>
+                    <Expand>True</Expand>
+                </Category>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="DTMPointSymbology" isDomainClass="True">
+        <!--BaseClass>DTMTextStyle</BaseClass-->
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+            <DontShowNullProperties xmlns="EditorCustomAttributes.01.00" />
+        </ECCustomAttributes>
+        <ECProperty propertyName="WantText" typeName="boolean" displayLabel="Display Text">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DisplayDTMFeatureSpots</Name>
+                    <DisplayLabel>Point</DisplayLabel>
+                    <Priority>300003</Priority>
+                    <Expand>True</Expand>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>4030</Priority>
+                </PropertyPriority>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>On</TrueString>
+                    <FalseString>Off</FalseString>
+                </BooleanDisplay>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="PrefixText" typeName="string" displayLabel="Text Prefix">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DisplayDTMFeatureSpots</Name>
+                    <DisplayLabel>Point</DisplayLabel>
+                    <Priority>300003</Priority>
+                    <Expand>True</Expand>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>4010</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="SuffixText" typeName="string" displayLabel="Text Suffix">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DisplayDTMFeatureSpots</Name>
+                    <DisplayLabel>Point</DisplayLabel>
+                    <Priority>300003</Priority>
+                    <Expand>True</Expand>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>4000</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+
+        <ECStructProperty propertyName="Point" typeName="PointCell" displayLabel="Point Type">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DisplayDTMFeatureSpots</Name>
+                    <DisplayLabel>Point</DisplayLabel>
+                    <Priority>300003</Priority>
+                    <Expand>True</Expand>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10180</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>ElementParams_ActivePointStruct</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECStructProperty>
+        <ECProperty propertyName="Scale" typeName="double" displayLabel="Cell Scale">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DisplayDTMFeatureSpots</Name>
+                    <DisplayLabel>Point</DisplayLabel>
+                    <Priority>300003</Priority>
+                    <Expand>True</Expand>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>4040</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="DTMAttachedMaterial" isDomainClass="True">
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+        </ECCustomAttributes>
+        <ECProperty propertyName="AttachedMaterial" typeName="string" displayLabel="Attached Material">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Standard>16</Standard>
+                </ExtendType>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10000</Priority>
+                </PropertyPriority>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Standard>32</Standard>
+                </Category>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+
+    <ECClass typeName="DTMGeneralContours" isDomainClass="True" displayLabel="Contours">
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+        </ECCustomAttributes>
+        <BaseClass>DTMContourProperties</BaseClass>
+        <ECProperty propertyName="ContourSmoothingOptions" typeName="int" displayLabel="Smoothing">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DisplayDTMGeneralContours</Name>
+                    <DisplayLabel>Contours</DisplayLabel>
+                    <Priority>300001</Priority>
+                    <Expand>True</Expand>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10010</Priority>
+                </PropertyPriority>
+                <StandardValues xmlns="EditorCustomAttributes.01.00">
+                    <ValueMap>
+                        <ValueMap>
+                            <Value>0</Value>
+                            <DisplayString>None</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>2</Value>
+                            <DisplayString>Spline</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>3</Value>
+                            <DisplayString>Spline Without Overlap Detection</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>1</Value>
+                            <DisplayString>Vertex</DisplayString>
+                        </ValueMap>
+                    </ValueMap>
+                </StandardValues>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ContourSmoothingFactor" typeName="int" displayLabel="Smoothing factor">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DisplayDTMGeneralContours</Name>
+                    <DisplayLabel>Contours</DisplayLabel>
+                    <Priority>300001</Priority>
+                    <Expand>True</Expand>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10020</Priority>
+                </PropertyPriority>
+                <StandardValues xmlns="EditorCustomAttributes.01.00">
+                    <ValueMap>
+                        <ValueMap>
+                            <Value>1</Value>
+                            <DisplayString>1</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>2</Value>
+                            <DisplayString>2</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>3</Value>
+                            <DisplayString>3</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>4</Value>
+                            <DisplayString>4</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>5</Value>
+                            <DisplayString>5</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>6</Value>
+                            <DisplayString>6</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>7</Value>
+                            <DisplayString>7</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>8</Value>
+                            <DisplayString>8</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>9</Value>
+                            <DisplayString>9</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>10</Value>
+                            <DisplayString>10</DisplayString>
+                        </ValueMap>
+                    </ValueMap>
+                </StandardValues>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ContourMaxSlopeOptions" typeName="int" displayLabel="Max Slope Option">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DisplayDTMGeneralContours</Name>
+                    <DisplayLabel>Contours</DisplayLabel>
+                    <Priority>300001</Priority>
+                    <Expand>True</Expand>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10100</Priority>
+                </PropertyPriority>
+                <StandardValues xmlns="EditorCustomAttributes.01.00">
+                    <ValueMap>
+                        <ValueMap>
+                            <Value>0</Value>
+                            <DisplayString>None</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>1</Value>
+                            <DisplayString>Ignore Max Slopes</DisplayString>
+                        </ValueMap>
+                    </ValueMap>
+                </StandardValues>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ContourMaxSlopeValue" typeName="double" displayLabel="Max Slope Value">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DisplayDTMGeneralContours</Name>
+                    <DisplayLabel>Contours</DisplayLabel>
+                    <Priority>300001</Priority>
+                    <Expand>True</Expand>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10090</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ContourLabelPrecision" typeName="int" displayLabel="Contour Label Precision">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DisplayDTMGeneralContours</Name>
+                    <DisplayLabel>Contours</DisplayLabel>
+                    <Priority>300001</Priority>
+                    <Expand>True</Expand>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10030</Priority>
+                </PropertyPriority>
+                <StandardValues xmlns="EditorCustomAttributes.01.00">
+                    <ValueMap>
+                        <ValueMap>
+                            <Value>0</Value>
+                            <DisplayString>0</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>1</Value>
+                            <DisplayString>1</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>2</Value>
+                            <DisplayString>2</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>3</Value>
+                            <DisplayString>3</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>4</Value>
+                            <DisplayString>4</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>5</Value>
+                            <DisplayString>5</DisplayString>
+                        </ValueMap>
+                        <ValueMap>
+                            <Value>6</Value>
+                            <DisplayString>6</DisplayString>
+                        </ValueMap>
+                    </ValueMap>
+                </StandardValues>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="MajorContourInterval" typeName="double" displayLabel="Major Interval">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Standard>8</Standard>
+                </ExtendType>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DisplayDTMGeneralContours</Name>
+                    <DisplayLabel>Contours</DisplayLabel>
+                    <Priority>300001</Priority>
+                    <Expand>True</Expand>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10005</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="MinorContourInterval" typeName="double" displayLabel="Minor Interval">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Standard>8</Standard>
+                </ExtendType>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DisplayDTMGeneralContours</Name>
+                    <DisplayLabel>Contours</DisplayLabel>
+                    <Priority>300001</Priority>
+                    <Expand>True</Expand>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10000</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="DTMDepressionSymbology" isDomainClass="True">
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+        </ECCustomAttributes>
+        <ECProperty propertyName="DepressionColor" typeName="int" displayLabel="Depression Color">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DepressionContours</Name>
+                    <DisplayLabel>Depression</DisplayLabel>
+                    <Priority>300010</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>480000</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMColor</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="DepressionWeight" typeName="int" displayLabel="Depression Weight">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DepressionContours</Name>
+                    <DisplayLabel>Depression</DisplayLabel>
+                    <Priority>300010</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>460000</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMWeight</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="DepressionStyle" typeName="int" displayLabel="Depression Line Style">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DepressionContours</Name>
+                    <DisplayLabel>Depression</DisplayLabel>
+                    <Priority>300010</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>470000</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Name>TMStyle</Name>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+
+    <ECClass typeName="DTMContoursBase"  isDomainClass="True">
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+        </ECCustomAttributes>
+        <ECProperty propertyName="ContourDrawText" typeName="boolean" displayLabel="Display Text">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>ContourLabels</Name>
+                    <DisplayLabel>Contour Labels</DisplayLabel>
+                    <Priority>300011</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10080</Priority>
+                </PropertyPriority>
+                <BooleanDisplay xmlns="EditorCustomAttributes.01.00">
+                    <TrueString>Yes</TrueString>
+                    <FalseString>No</FalseString>
+                </BooleanDisplay>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ContourTextInterval" typeName="double" displayLabel="Text Interval">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Standard>8</Standard>
+                </ExtendType>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>ContourLabels</Name>
+                    <DisplayLabel>Contour Labels</DisplayLabel>
+                    <Priority>300011</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10040</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ContourTextLevel" typeName="int" displayLabel="Text Level">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Standard>2</Standard>
+                </ExtendType>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>ContourLabels</Name>
+                    <DisplayLabel>Contour Labels</DisplayLabel>
+                    <Priority>300011</Priority>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>490000</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        
+    </ECClass>
+    <ECClass typeName="DTMContours" isDomainClass="True">
+        <BaseClass>DTMSubElementDisplay</BaseClass>
+        <BaseClass>DTMDepressionSymbology</BaseClass>
+        <BaseClass>DTMContoursBase</BaseClass>
+        <BaseClass>DTMTextStyle</BaseClass>
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+            <CustomImageSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Moniker_Default>ECLiteralImage://TMPropertiesContours</Moniker_Default>
+                <Moniker_Expanded>ECLiteralImage://TMPropertiesContours</Moniker_Expanded>
+                <Moniker_Collapsed>ECLiteralImage://TMPropertiesContours</Moniker_Collapsed>
+            </CustomImageSpecification>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DTMFeature" isDomainClass="True">
+        <BaseClass>DTMSubElementDisplay</BaseClass>
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+            <CustomImageSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Moniker_Default>ECLiteralImage://TMPropertiesTreeSourceFeat</Moniker_Default>
+                <Moniker_Expanded>ECLiteralImage://TMPropertiesTreeSourceFeat</Moniker_Expanded>
+                <Moniker_Collapsed>ECLiteralImage://TMPropertiesTreeSourceFeat</Moniker_Collapsed>
+            </CustomImageSpecification>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DTMFeatureSpots" isDomainClass="True" displayLabel="Feature Spots">
+        <BaseClass>DTMSubElementDisplay</BaseClass>
+        <BaseClass>DTMPointSymbology</BaseClass>
+        <BaseClass>DTMTextStyle</BaseClass>
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+            <CustomImageSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Moniker_Default>ECLiteralImage://TMPropertiesSpots</Moniker_Default>
+                <Moniker_Expanded>ECLiteralImage://TMPropertiesSpots</Moniker_Expanded>
+                <Moniker_Collapsed>ECLiteralImage://TMPropertiesSpots</Moniker_Collapsed>
+            </CustomImageSpecification>"
+        </ECCustomAttributes>
+    </ECClass>
+
+    <ECClass typeName="DTMFlowArrows" isDomainClass="True" displayLabel="Flow Arrows">
+        <BaseClass>DTMSubElementDisplay</BaseClass>
+        <BaseClass>DTMPointSymbology</BaseClass>
+        <BaseClass>DTMTextStyle</BaseClass>
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+            <CustomImageSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Moniker_Default>ECLiteralImage://TMPropertiesFlowArrows</Moniker_Default>
+                <Moniker_Expanded>ECLiteralImage://TMPropertiesFlowArrows</Moniker_Expanded>
+                <Moniker_Collapsed>ECLiteralImage://TMPropertiesFlowArrows</Moniker_Collapsed>
+            </CustomImageSpecification>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DTMHighPoints" isDomainClass="True" displayLabel="High Points">
+        <BaseClass>DTMSubElementDisplay</BaseClass>
+        <BaseClass>DTMPointSymbology</BaseClass>
+        <BaseClass>DTMTextStyle</BaseClass>
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+            <CustomImageSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Moniker_Default>ECLiteralImage://TMPropertiesHighPoints</Moniker_Default>
+                <Moniker_Expanded>ECLiteralImage://TMPropertiesHighPoints</Moniker_Expanded>
+                <Moniker_Collapsed>ECLiteralImage://TMPropertiesHighPoints</Moniker_Collapsed>
+            </CustomImageSpecification>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DTMLowPointsBase" isDomainClass="True">
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+        </ECCustomAttributes>
+        <ECProperty propertyName="MinDepth" typeName="double" displayLabel="Minimum Depth">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Standard>8</Standard>
+                </ExtendType>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Name>DisplayDTMLowPoints</Name>
+                    <DisplayLabel>Low Points</DisplayLabel>
+                    <Priority>10</Priority>
+                    <Expand>True</Expand>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>7010</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="DTMLowPoints" isDomainClass="True" displayLabel="Low Points">
+        <BaseClass>DTMSubElementDisplay</BaseClass>
+        <BaseClass>DTMPointSymbology</BaseClass>
+        <BaseClass>DTMTextStyle</BaseClass>
+        <BaseClass>DTMLowPointsBase</BaseClass>
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+            <CustomImageSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Moniker_Default>ECLiteralImage://TMPropertiesLowPoints</Moniker_Default>
+                <Moniker_Expanded>ECLiteralImage://TMPropertiesLowPoints</Moniker_Expanded>
+                <Moniker_Collapsed>ECLiteralImage://TMPropertiesLowPoints</Moniker_Collapsed>
+            </CustomImageSpecification>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="DTMSpots" isDomainClass="True" displayLabel="Spots">
+        <BaseClass>DTMSubElementDisplay</BaseClass>
+        <BaseClass>DTMPointSymbology</BaseClass>
+        <BaseClass>DTMTextStyle</BaseClass>
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+            <CustomImageSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Moniker_Default>ECLiteralImage://TMPropertiesVertices</Moniker_Default>
+                <Moniker_Expanded>ECLiteralImage://TMPropertiesVertices</Moniker_Expanded>
+                <Moniker_Collapsed>ECLiteralImage://TMPropertiesVertices</Moniker_Collapsed>
+            </CustomImageSpecification>
+        </ECCustomAttributes>
+    </ECClass>
+
+    <ECClass typeName="DTMTrianglesBase" isDomainClass="True">
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+        </ECCustomAttributes>
+        <ECProperty propertyName="ThematicDisplayStyle" typeName="int" displayLabel="Display Style">
+            <ECCustomAttributes>
+                <Category xmlns="EditorCustomAttributes.01.00">
+                    <Standard>2</Standard>
+                </Category>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>339009</Priority>
+                </PropertyPriority>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Standard>68</Standard>
+                </ExtendType>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+    <ECClass typeName="DTMTriangles" isDomainClass="True" displayLabel="Triangles">
+        <BaseClass>DTMTrianglesBase</BaseClass>
+        <BaseClass>DTMSubElementDisplay</BaseClass>
+        <BaseClass>DTMAttachedMaterial</BaseClass>
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+            <CustomImageSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Moniker_Default>ECLiteralImage://TMPropertiesTriangles</Moniker_Default>
+                <Moniker_Expanded>ECLiteralImage://TMPropertiesTriangles</Moniker_Expanded>
+                <Moniker_Collapsed>ECLiteralImage://TMPropertiesTriangles</Moniker_Collapsed>
+            </CustomImageSpecification>
+        </ECCustomAttributes>
+    </ECClass>
+
+    <ECClass typeName="DTMRegionsBase" isDomainClass="True">
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Description" typeName="string" displayLabel="Description">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Standard>16</Standard>
+                </ExtendType>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10010</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="RegionTag" typeName="string" readOnly="True" displayLabel="Region Tag">
+            <ECCustomAttributes>
+                <ExtendType xmlns="EditorCustomAttributes.01.00">
+                    <Standard>16</Standard>
+                </ExtendType>
+                <PropertyPriority xmlns="EditorCustomAttributes.01.00">
+                    <Priority>10020</Priority>
+                </PropertyPriority>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECClass>
+
+    <ECClass typeName="DTMRegions" isDomainClass="True" displayLabel="Regions">
+        <BaseClass>DTMRegionsBase</BaseClass>
+        <BaseClass>DTMAttachedMaterial</BaseClass>
+        <BaseClass>DTMSubElementDisplay</BaseClass>
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+            <CustomImageSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Moniker_Default>ECLiteralImage://TMPropertiesRegions</Moniker_Default>
+                <Moniker_Expanded>ECLiteralImage://TMPropertiesRegions</Moniker_Expanded>
+                <Moniker_Collapsed>ECLiteralImage://TMPropertiesRegions</Moniker_Collapsed>
+            </CustomImageSpecification>
+        </ECCustomAttributes>
+    </ECClass>
+
+
+
+
+    <ECClass typeName="DTMFeatureImportedContours" isDomainClass="True" displayLabel="Imported Contours">
+        <BaseClass>DTMFeature</BaseClass>
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+            <CustomImageSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Moniker_Default>ECLiteralImage://TMPropertiesImportedContours</Moniker_Default>
+                <Moniker_Expanded>ECLiteralImage://TMPropertiesImportedContours</Moniker_Expanded>
+                <Moniker_Collapsed>ECLiteralImage://TMPropertiesImportedContours</Moniker_Collapsed>
+            </CustomImageSpecification>
+        </ECCustomAttributes>
+    </ECClass>
+
+    <ECClass typeName="DTMFeatureBoundary" isDomainClass="True" displayLabel="Boundary">
+        <BaseClass>DTMFeature</BaseClass>
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+            <CustomImageSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Moniker_Default>ECLiteralImage://TMPropertiesBoundary</Moniker_Default>
+                <Moniker_Expanded>ECLiteralImage://TMPropertiesBoundary</Moniker_Expanded>
+                <Moniker_Collapsed>ECLiteralImage://TMPropertiesBoundary</Moniker_Collapsed>
+            </CustomImageSpecification>
+        </ECCustomAttributes>
+    </ECClass>
+
+    <ECClass typeName="DTMFeatureBreaklines" isDomainClass="True" displayLabel="Breaklines">
+        <BaseClass>DTMFeature</BaseClass>
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+            <CustomImageSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Moniker_Default>ECLiteralImage://TMPropertiesBreaklines</Moniker_Default>
+                <Moniker_Expanded>ECLiteralImage://TMPropertiesBreaklines</Moniker_Expanded>
+                <Moniker_Collapsed>ECLiteralImage://TMPropertiesBreaklines</Moniker_Collapsed>
+            </CustomImageSpecification>
+        </ECCustomAttributes>
+    </ECClass>
+
+    <ECClass typeName="DTMFeatureHoles" isDomainClass="True" displayLabel="Holes">
+        <BaseClass>DTMFeature</BaseClass>
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+            <CustomImageSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Moniker_Default>ECLiteralImage://TMPropertiesHole</Moniker_Default>
+                <Moniker_Expanded>ECLiteralImage://TMPropertiesHole</Moniker_Expanded>
+                <Moniker_Collapsed>ECLiteralImage://TMPropertiesHole</Moniker_Collapsed>
+            </CustomImageSpecification>
+        </ECCustomAttributes>
+    </ECClass>
+
+    <ECClass typeName="DTMFeatureIslands" isDomainClass="True" displayLabel="Islands">
+        <BaseClass>DTMFeature</BaseClass>
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+            <CustomImageSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Moniker_Default>ECLiteralImage://TMPropertiesIsland</Moniker_Default>
+                <Moniker_Expanded>ECLiteralImage://TMPropertiesIsland</Moniker_Expanded>
+                <Moniker_Collapsed>ECLiteralImage://TMPropertiesIsland</Moniker_Collapsed>
+            </CustomImageSpecification>
+        </ECCustomAttributes>
+    </ECClass>
+
+    <ECClass typeName="DTMFeatureVoids" isDomainClass="True" displayLabel="Voids">
+        <BaseClass>DTMFeature</BaseClass>
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+            <CustomImageSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Moniker_Default>ECLiteralImage://TMPropertiesVoid</Moniker_Default>
+                <Moniker_Expanded>ECLiteralImage://TMPropertiesVoid</Moniker_Expanded>
+                <Moniker_Collapsed>ECLiteralImage://TMPropertiesVoid</Moniker_Collapsed>
+            </CustomImageSpecification>
+        </ECCustomAttributes>
+    </ECClass>
+
+
+    <ECClass typeName="DTMFeatureMinorContours" isDomainClass="True" displayLabel="Minor Contours">
+        <BaseClass>DTMContours</BaseClass>
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+            <CustomImageSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Moniker_Default>ECLiteralImage://TMPropertiesContoursMinor</Moniker_Default>
+                <Moniker_Expanded>ECLiteralImage://TMPropertiesContoursMinor</Moniker_Expanded>
+                <Moniker_Collapsed>ECLiteralImage://TMPropertiesContoursMinor</Moniker_Collapsed>
+            </CustomImageSpecification>
+        </ECCustomAttributes>
+    </ECClass>
+
+    <ECClass typeName="DTMFeatureMajorContours" isDomainClass="True" displayLabel="Major Contours">
+        <BaseClass>DTMContours</BaseClass>
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+            <CustomImageSpecification xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Moniker_Default>ECLiteralImage://TMPropertiesContoursMajor</Moniker_Default>
+                <Moniker_Expanded>ECLiteralImage://TMPropertiesContoursMajor</Moniker_Expanded>
+                <Moniker_Collapsed>ECLiteralImage://TMPropertiesContoursMajor</Moniker_Collapsed>
+            </CustomImageSpecification>
+        </ECCustomAttributes>
+    </ECClass>
+
+    <ECRelationshipClass typeName="TerrainModelChildrenRelationship" displayLabel="TerrainModel Children Relationship" isDomainClass="True" strength="embedding" strengthDirection="forward">
+        <ECCustomAttributes>
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.00">
+                <Hidden>True</Hidden>
+            </DisplayOptions>
+            <SearchOptions xmlns="Bentley_Standard_CustomAttributes.01.08">
+                <Hidden>True</Hidden>
+            </SearchOptions>
+            <RelationshipIsNotStored xmlns="DgnCustomAttributes.01.00" />
+            <DgnECRelationshipAttributes xmlns="DgnCustomAttributes.01.00" >
+                <SourceHostType>1</SourceHostType>
+                <TargetHostType>1</TargetHostType>
+            </DgnECRelationshipAttributes>
+            <SearchOptions xmlns="Bentley_Standard_CustomAttributes.01.08">
+                <Hidden>True</Hidden>
+            </SearchOptions>
+        </ECCustomAttributes>
+        <Source cardinality="(0,N)" polymorphic="True">
+            <Class class="bsc:AnyClass" />
+        </Source>
+        <Target cardinality="(0,N)" polymorphic="True">
+            <Class class="bsc:AnyClass" />
+        </Target>
+    </ECRelationshipClass>
+
+</ECSchema>

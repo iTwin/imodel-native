@@ -1,0 +1,289 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug Local LKG|Win32">
+      <Configuration>Debug Local LKG</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{BA0D7365-B586-4AF9-859E-E312FA7A9309}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Local LKG|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug Local LKG|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
+    <NMakePreprocessorDefinitions>__BENTLEYTMFORMATS_BUILD__;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p Formats -f TerrainModel -r TerrainModel re Formats -x64
+</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p Formats -f TerrainModel -r TerrainModel re Formats -x64  -d"BMAKE_OPT=$(BMAKE_OPT) -a"
+</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p Formats -f TerrainModel -r TerrainModel re Formats -x64 -c
+</NMakeCleanCommandLine>
+    <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
+    <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
+    <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)PrivateAPI;$(ProjectDir)PublicAPI;$(ProjectDir)cppwrappers;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(OutRoot)Winx64\BuildContexts\TerrainModel\VendorAPI</NMakeIncludeSearchPath>
+    <NMakeOutput>$(OutRoot)\Winx64\build\TerrainModel\ElementHandler\BentleyTerrainModelFormats.dll</NMakeOutput>
+    <SourcePath>$(SourcePath)</SourcePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Local LKG|Win32'">
+    <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
+    <NMakePreprocessorDefinitions>__BENTLEYTMFORMATS_BUILD__;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p Formats -f TerrainModel -r TerrainModel re Formats -x64
+xcopy /S /Y /r $(SrcRoot)TerrainModel\Formats\PublicAPI\*.*  $(Root)\out\LKG\Winx64\TerrainModel\PublicAPI\TerrainModel\Formats
+xcopy /Y /r $(OutRoot)Winx64\Build\TerrainModel\TerrainModelFormats\TerrainModelFormats.lib $(Root)\out\LKG\Winx64\TerrainModel\Delivery\
+xcopy /Y /r $(OutRoot)Winx64\Build\TerrainModel\TerrainModelFormats\TerrainModelFormats.dll $(Root)\out\LKG\Winx64\TerrainModel\Delivery\
+</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p Formats -f TerrainModel -r TerrainModel re Formats -x64  -d"BMAKE_OPT=$(BMAKE_OPT) -a"
+</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p Formats -f TerrainModel -r TerrainModel re Formats -x64 -c
+</NMakeCleanCommandLine>
+    <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
+    <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
+    <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)PrivateAPI;$(ProjectDir)PublicAPI;$(ProjectDir)cppwrappers;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(OutRoot)Winx64\BuildContexts\TerrainModel\VendorAPI</NMakeIncludeSearchPath>
+    <NMakeOutput>$(OutRoot)\Winx64\build\TerrainModel\ElementHandler\BentleyTerrainModelFormats.dll</NMakeOutput>
+    <SourcePath>$(SourcePath)</SourcePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
+    <NMakePreprocessorDefinitions>__BENTLEYTMFORMATS_BUILD__;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild -x64 TerrainModelFormats</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild -x64 TerrainModelFormats</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild -x64 -c TerrainModelFormats</NMakeCleanCommandLine>
+    <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
+    <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
+    <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)PrivateAPI;$(ProjectDir)PublicAPI;$(ProjectDir)cppwrappers;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(OutRoot)Winx64\BuildContexts\TerrainModel\VendorAPI</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="InroadsTM\aecuti.h" />
+    <ClInclude Include="InroadsTM\civdtm.h" />
+    <ClInclude Include="InroadsTM\civguids.h" />
+    <ClInclude Include="InroadsTM\clpfnc.h" />
+    <ClInclude Include="InroadsTM\cmpmemuti.h" />
+    <ClInclude Include="InroadsTM\cmputi.h" />
+    <ClInclude Include="InroadsTM\coruti.h" />
+    <ClInclude Include="InroadsTM\disfnc.h" />
+    <ClInclude Include="InroadsTM\dtm.h" />
+    <ClInclude Include="InroadsTM\dtmactfnc.h" />
+    <ClInclude Include="InroadsTM\dtmcnt.h" />
+    <ClInclude Include="InroadsTM\dtmcon.h" />
+    <ClInclude Include="InroadsTM\dtmdis.h" />
+    <ClInclude Include="InroadsTM\dtmedt.h" />
+    <ClInclude Include="InroadsTM\dtmedtfnc.h" />
+    <ClInclude Include="InroadsTM\dtmflg.h" />
+    <ClInclude Include="InroadsTM\dtmflgfnc.h" />
+    <ClInclude Include="InroadsTM\dtmfnc.h" />
+    <ClInclude Include="InroadsTM\dtmfnd.h" />
+    <ClInclude Include="InroadsTM\dtmfndfnc.h" />
+    <ClInclude Include="InroadsTM\dtmftr.h" />
+    <ClInclude Include="InroadsTM\dtmftrpt.h" />
+    <ClInclude Include="InroadsTM\dtmio.h" />
+    <ClInclude Include="InroadsTM\dtmiofnc.h" />
+    <ClInclude Include="InroadsTM\DTMLinkDTM.h" />
+    <ClInclude Include="InroadsTM\dtmmac.h" />
+    <ClInclude Include="InroadsTM\dtmmem.h" />
+    <ClInclude Include="InroadsTM\dtmmemfnc.h" />
+    <ClInclude Include="InroadsTM\dtmmsg.h" />
+    <ClInclude Include="InroadsTM\dtmpnt.h" />
+    <ClInclude Include="InroadsTM\DtmRsc.h" />
+    <ClInclude Include="InroadsTM\dtmsnd.h" />
+    <ClInclude Include="InroadsTM\dtmstr.h" />
+    <ClInclude Include="InroadsTM\dtmtin.h" />
+    <ClInclude Include="InroadsTM\DTMToGPKTin.h" />
+    <ClInclude Include="InroadsTM\dtmtri.h" />
+    <ClInclude Include="InroadsTM\dtmtrifnc.h" />
+    <ClInclude Include="InroadsTM\dtmttn.h" />
+    <ClInclude Include="InroadsTM\dtmuti.h" />
+    <ClInclude Include="InroadsTM\dtmutifnc.h" />
+    <ClInclude Include="InroadsTM\dtmvol.h" />
+    <ClInclude Include="InroadsTM\FeatureClass.h" />
+    <ClInclude Include="InroadsTM\FeatureDefs.h" />
+    <ClInclude Include="InroadsTM\FeatureFunctions.h" />
+    <ClInclude Include="InroadsTM\filfnc.h" />
+    <ClInclude Include="InroadsTM\GPKTinToDTM.h" />
+    <ClInclude Include="InroadsTM\heapmanager.h" />
+    <ClInclude Include="InroadsTM\hshfnc.h" />
+    <ClInclude Include="InroadsTM\hshftr.h" />
+    <ClInclude Include="InroadsTM\intfnc.h" />
+    <ClInclude Include="InroadsTM\intsct.h" />
+    <ClInclude Include="InroadsTM\jonfnc.h" />
+    <ClInclude Include="InroadsTM\lclfnc.h" />
+    <ClInclude Include="InroadsTM\msgfnc.h" />
+    <ClInclude Include="InroadsTM\MXTinToDTM.h" />
+    <ClInclude Include="InroadsTM\parfnc.h" />
+    <ClInclude Include="InroadsTM\plyfnc.h" />
+    <ClInclude Include="InroadsTM\portable.h" />
+    <ClInclude Include="InroadsTM\StdAfx.h" />
+    <ClInclude Include="InroadsTM\stsfnc.h" />
+    <ClInclude Include="InroadsTM\tblfnc.h" />
+    <ClInclude Include="InroadsTM\tckfnc.h" />
+    <ClInclude Include="InroadsTM\TimeStampUtils.h" />
+    <ClInclude Include="InroadsTM\TinToDTM.h" />
+    <ClInclude Include="InroadsTM\txtsiz.h" />
+    <ClInclude Include="InroadsTM\utiuirsc.h" />
+    <ClInclude Include="InroadsTM\vecfnc.h" />
+    <ClInclude Include="msl_array.h" />
+    <ClInclude Include="MXModelFile.h" />
+    <ClInclude Include="mxtriangle.h" />
+    <ClInclude Include="TriangulationPreserver.h" />
+    <ClInclude Include="PublicAPI\Esri.h" />
+    <ClInclude Include="PublicAPI\Formats.h" />
+    <ClInclude Include="PublicAPI\ImagePP.h" />
+    <ClInclude Include="PublicAPI\Inroads.h" />
+    <ClInclude Include="PublicAPI\InroadsImporter.h" />
+    <ClInclude Include="PublicAPI\LandXMLExporter.h" />
+    <ClInclude Include="PublicAPI\LandXMLImporter.h" />
+    <ClInclude Include="PublicAPI\Lidar.h" />
+    <ClInclude Include="PublicAPI\LidarImporter.h" />
+    <ClInclude Include="PublicAPI\mx.h" />
+    <ClInclude Include="PublicAPI\TerrainExporter.h" />
+    <ClInclude Include="PublicAPI\TerrainImporter.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="bcdtmEsri.cpp" />
+    <ClCompile Include="bcdtmInroads.cpp" />
+    <ClCompile Include="bcdtmLidar.cpp" />
+    <ClCompile Include="bcdtmMX.cpp" />
+    <ClCompile Include="ImagePP.cpp" />
+    <ClCompile Include="InroadsImporter.cpp" />
+    <ClCompile Include="InroadsTM\actprj.cpp" />
+    <ClCompile Include="InroadsTM\addftr.cpp" />
+    <ClCompile Include="InroadsTM\addpnt.cpp" />
+    <ClCompile Include="InroadsTM\addtin.cpp" />
+    <ClCompile Include="InroadsTM\allftr.cpp" />
+    <ClCompile Include="InroadsTM\allocs.cpp" />
+    <ClCompile Include="InroadsTM\allpnt.cpp" />
+    <ClCompile Include="InroadsTM\alltin.cpp" />
+    <ClCompile Include="InroadsTM\bondry.cpp" />
+    <ClCompile Include="InroadsTM\civdtm.cpp" />
+    <ClCompile Include="InroadsTM\civguids.cpp" />
+    <ClCompile Include="InroadsTM\civuti.cpp" />
+    <ClCompile Include="InroadsTM\clputi.cpp" />
+    <ClCompile Include="InroadsTM\cmpmemuti.cpp" />
+    <ClCompile Include="InroadsTM\cmputi.cpp" />
+    <ClCompile Include="InroadsTM\CommonDTM.cpp" />
+    <ClCompile Include="InroadsTM\coruti.cpp" />
+    <ClCompile Include="InroadsTM\counts.cpp" />
+    <ClCompile Include="InroadsTM\crtsrf.cpp" />
+    <ClCompile Include="InroadsTM\dalloc.cpp" />
+    <ClCompile Include="InroadsTM\delany.cpp" />
+    <ClCompile Include="InroadsTM\delftr.cpp" />
+    <ClCompile Include="InroadsTM\delpnt.cpp" />
+    <ClCompile Include="InroadsTM\delsrf.cpp" />
+    <ClCompile Include="InroadsTM\deltin.cpp" />
+    <ClCompile Include="InroadsTM\DTMLinkDTM.cpp" />
+    <ClCompile Include="InroadsTM\DTMToGPKTin.cpp" />
+    <ClCompile Include="InroadsTM\FeatureClass.cpp" />
+    <ClCompile Include="InroadsTM\FeatureFunctions.cpp" />
+    <ClCompile Include="InroadsTM\filuti.cpp" />
+    <ClCompile Include="InroadsTM\fixtol.cpp" />
+    <ClCompile Include="InroadsTM\fncpnt.cpp" />
+    <ClCompile Include="InroadsTM\fndfil.cpp" />
+    <ClCompile Include="InroadsTM\fndftr.cpp" />
+    <ClCompile Include="InroadsTM\fndlin.cpp" />
+    <ClCompile Include="InroadsTM\fndpnt.cpp" />
+    <ClCompile Include="InroadsTM\fndsrf.cpp" />
+    <ClCompile Include="InroadsTM\fndtin.cpp" />
+    <ClCompile Include="InroadsTM\ftruti.cpp" />
+    <ClCompile Include="InroadsTM\getact.cpp" />
+    <ClCompile Include="InroadsTM\getelv.cpp" />
+    <ClCompile Include="InroadsTM\GPKTinToDTM.cpp" />
+    <ClCompile Include="InroadsTM\heapmanager.cpp" />
+    <ClCompile Include="InroadsTM\hshftr.cpp" />
+    <ClCompile Include="InroadsTM\hshuti.cpp" />
+    <ClCompile Include="InroadsTM\insbnd.cpp" />
+    <ClCompile Include="InroadsTM\intsct.cpp" />
+    <ClCompile Include="InroadsTM\intuti.cpp" />
+    <ClCompile Include="InroadsTM\jonuti.cpp" />
+    <ClCompile Include="InroadsTM\lcluti.cpp" />
+    <ClCompile Include="InroadsTM\linlst.cpp" />
+    <ClCompile Include="InroadsTM\load.cpp" />
+    <ClCompile Include="InroadsTM\loddtm.cpp" />
+    <ClCompile Include="InroadsTM\mrkuti.cpp" />
+    <ClCompile Include="InroadsTM\msguti.cpp" />
+    <ClCompile Include="InroadsTM\MXTinToDTM.cpp" />
+    <ClCompile Include="InroadsTM\paruti.cpp" />
+    <ClCompile Include="InroadsTM\patch.cpp" />
+    <ClCompile Include="InroadsTM\plyuti.cpp" />
+    <ClCompile Include="InroadsTM\pntadd.cpp" />
+    <ClCompile Include="InroadsTM\pntdel.cpp" />
+    <ClCompile Include="InroadsTM\pntuti.cpp" />
+    <ClCompile Include="InroadsTM\points.cpp" />
+    <ClCompile Include="InroadsTM\prcpnt.cpp" />
+    <ClCompile Include="InroadsTM\prjuti.cpp" />
+    <ClCompile Include="InroadsTM\ptrind.cpp" />
+    <ClCompile Include="InroadsTM\rnguti.cpp" />
+    <ClCompile Include="InroadsTM\rotpnt.cpp" />
+    <ClCompile Include="InroadsTM\savdtm.cpp" />
+    <ClCompile Include="InroadsTM\srfflg.cpp" />
+    <ClCompile Include="InroadsTM\srfuti.cpp" />
+    <ClCompile Include="InroadsTM\StdAfx.cpp" />
+    <ClCompile Include="InroadsTM\stsuti.cpp" />
+    <ClCompile Include="InroadsTM\tbluti.cpp" />
+    <ClCompile Include="InroadsTM\tckuti.cpp" />
+    <ClCompile Include="InroadsTM\TimeStampUtils.cpp" />
+    <ClCompile Include="InroadsTM\tinstk.cpp" />
+    <ClCompile Include="InroadsTM\TinToDTM.cpp" />
+    <ClCompile Include="InroadsTM\tinuti.cpp" />
+    <ClCompile Include="InroadsTM\trisrf.cpp" />
+    <ClCompile Include="InroadsTM\vecuti.cpp" />
+    <ClCompile Include="InroadsTM\xngchk.cpp" />
+    <ClCompile Include="LandXMLExporter.cpp" />
+    <ClCompile Include="LandXMLImporter.cpp" />
+    <ClCompile Include="LidarImporter.cpp" />
+    <ClCompile Include="MX.cpp" />
+    <ClCompile Include="MXModelFile.cpp" />
+    <ClCompile Include="mxtriangle.cpp" />
+    <ClCompile Include="TriangulationPreserver.cpp" />
+    <ClCompile Include="TerrainExporter.cpp" />
+    <ClCompile Include="TerrainImporter.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="formats.mke" />
+    <None Include="Formats.mki" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

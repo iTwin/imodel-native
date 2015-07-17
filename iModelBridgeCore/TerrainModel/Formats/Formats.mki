@@ -1,0 +1,41 @@
+#----------------------------------------------------------------------
+#
+#     $Source: Formats/Formats.mki $
+#
+#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+#
+# This file is used as the SolutionPolicyMki for TerrainModelCore.dll only.
+#
+
+terrainModelFormatsObj = $(terrainModelBuildDir_)TerrainModelFormats/
+
+OPTIMIZE_FOR_SPEED=1
+
+MultiCompileIntermediatePdbFile=$(terrainModelFormatsObj)$(CCompPDBName).pdb
+IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
+
+ProductIncludes + -I${publishInc}
+
+dirToSearch     = $(baseDir)PublicAPI
+%include cincapnd.mki
+
+dirToSearch     = $(BuildContext)VendorAPI
+%include cincapnd.mki
+
+dirToSearch     = $(srcTerrainModel)Formats\inroadstm
+%include cincapnd.mki
+
+nameToDefine = __BENTLEYTMFORMATS_BUILD__
+%include cdefapnd.mki
+
+nameToDefine = UNICODE
+%include cdefapnd.mki
+
+# DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
+# If we define appName and use it for DLM_NAME, MultiCppCompileRule.mki will use it for CCompPDBName, and linkLibrary.mki will use DLM_NAME for LIB_NAME.
+# PreCompiledHeader.mki uses CCompPDBName
+appName     = TerrainModelFormats
+DLM_NAME    = $(appName)
+CCompPDBName = $(appName)

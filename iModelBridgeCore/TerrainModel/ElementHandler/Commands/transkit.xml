@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Transkit>
+    <SatelliteAssembly DeliverEnglish="False" DllName="TerrainModelCommands" RightsCompliant="False">
+        <ResxFile ResourceName="LocalizableStrings" FileName="LocalizableStrings.resx" />
+        <ResxFile ResourceName="Bentley.TerrainModel.Commands.LandXMLImportForm" FileName="LandXMLImportForm.resx" />
+    </SatelliteAssembly>
+</Transkit>

@@ -1,0 +1,75 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: consoleApps/buildConsoleApps.mki $
+#
+#   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+baseDir = $(_MakeFilePath)
+
+DLM_OBJECT_DEST       = $(terrainModelConsoleAppsObj)
+ASSEMBLY_STRONGNAME   = 1
+
+terrainModelConsoleAppsObj = $(terrainModelBuildDir_)ConsoleApps/
+
+OPTIMIZE_FOR_SPEED=1
+
+%ifdef DTM_CORE_DEBUG
+
+nameToDefine=DTM_TRACE_DEBUG
+%include cdefapnd.mki
+
+nameToDefine=DTM_CHECK_DEBUG
+%include cdefapnd.mki
+
+nameToDefine=DTM_TIME_DEBUG
+%include cdefapnd.mki
+
+%endif
+
+dirToSearch     = $(basedir)
+%include cincapnd.mki
+
+dirToSearch     = $(TerrainModelCoreAPISrc)
+%include cincapnd.mki
+
+DependsOnHeaders =  \
+
+o =% $(DLM_OBJECT_DEST)
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    ~mkdir $(o)
+
+#Disable unreachable code warning this is because of the dbg=0  and unused initialized variables
+CCCompOpts + -wd4505 -wd4702 -wd4189
+
+$(o)$(appName)$(oext) : $(basedir)$(appName).cpp $(DependsOnHeaders)
+
+#------------------------------------------------------------------------
+#   Link EXE
+#------------------------------------------------------------------------
+
+EXE_NAME                    = $(appName)
+EXE_DEST                    = $(o)
+LINKER_LIBRARIES =  \
+$(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
+$(ContextSubpartsLibs)$(libprefix)BentleyAllocator$(libext) \
+$(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext) \
+$(ContextSubpartsLibs)$(libprefix)TerrainModelCore$(libext) \
+$(ContextSubpartsLibs)$(libprefix)TerrainModelFormats$(libext) \
+$(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \
+$(ContextSubpartsLibs)$(libprefix)BeLibxml2$(libext) \
+$(ContextSubpartsLibs)$(libprefix)BentleyAllocator$(libext)
+
+LINKER_LIBRARIES  + advapi32.lib wininet.lib Shlwapi.lib
+EXE_OBJS                    = $(o)$(appName)$(oext)
+
+
+DLM_CONTEXT_LOCATION        = $(ContextDeliveryDir)/
+#DLM_LIB_CONTEXT_LOCATION    = $(ContextDeliveryDir)/
+#DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+%include $(SrcBsiCommon)sharedmki/linktool.mki

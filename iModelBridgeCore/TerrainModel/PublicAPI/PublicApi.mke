@@ -1,0 +1,162 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: PublicAPI/PublicApi.mke $
+#
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+PolicyFile      = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelPolicy.mki
+%include mdl.mki
+
+%if !defined (OutputApiDir)
+    %error You must define OutputApiDir to tell me where to put the published API files
+    %return
+%endif
+
+# Scope1 - optional. If defined, then MakePublicApi.py is called with --publicScope1. This causes the header files to include __PUBLISH_SCOPE_1_START__ sections
+
+%if defined (Scope1)
+    genDir       = $(terrainModelBuildDir_)PublishedAPI_Scope1
+    scope1Arg = --publishScope1
+%else
+    genDir       = $(terrainModel)PublishedAPI
+%endif
+
+stampFileName = $(genDir).stamp
+
+%if defined(BMAKE_DELETE_ALL_TARGETS)
+cleanopt = --clean
+%else
+cleanopt =
+%endif
+
+always:
+    PublishAPI.py -o$(genDir) -d$(BuildContext)PublicAPI -s$(stampFileName) $(scope1Arg) $(cleanopt) -x$(TARGET_PLATFORM)
+    @CreateSymLinks.py -d"$(BuildContext)$(OutputApiDir)=$(genDir)"
+
+#### Old
+
+%ifdef notdef
+buildIncludes = 
+BuildContextPublicAPI   = $(BuildContexts)PublicAPI/
+
+TerrainModelPublicAPI = $(BuildContextPublicAPI)
+
+always:
+    !~@mkdir $(TerrainModelPublicAPISrc)
+
+FilesToPublish= \
+$(TerrainModelPublicAPISrc)TerrainModel.h \
+
+$(terrainModelBuildDir_)TerrainModelPublicAPI.stamp : $(FilesToPublish)
+    "$(PythonPath)python" $(SrcTerrainModel)MakePublicAPI.py \
+                                --sourcedir=$(TerrainModelPublicAPISrc) \
+                                --outdir=$(TerrainModelPublicAPI) \
+                                --template=$(SrcTerrainModel)/PublicAPI.tpl \
+                                --privexports=$(terrainmodelObj)PublicAPI_PrivateExports.txt \
+                                $? 
+    > $(build)TerrainModelPublicAPI.stamp
+    built
+    <
+    ~time
+
+TerrainModelCorePublicAPI = $(TerrainModelPublicAPI)Core/
+always:
+    ~@task MakeDir -i:Directories=$(TerrainModelCorePublicAPI)
+
+FilesToPublish= \
+$(SrcTerrainModel)src/core/include/bcDTMClass.h \
+$(SrcTerrainModel)src/core/include/bcDTM.h \
+$(SrcTerrainModel)src/core/include/dtmdefs.h \
+$(SrcTerrainModel)src/core/include/bcDTMStream.h \
+$(SrcTerrainModel)src/core/include/dtmfns.h \
+$(SrcTerrainModel)src/core/include/dtmevars.h \
+$(SrcTerrainModel)src/core/include/bcDTMBaseDef.h \
+$(SrcTerrainModel)src/core/include/IDTM.h \
+$(SrcTerrainModel)src/core/include/DTMPtr.h \
+
+$(build)TerrainModelCorePublicAPI.stamp : $(FilesToPublish)
+    "$(PythonPath)python" $(SrcTerrainModel)/MakePublicAPI.py \
+                                --sourcedir=$(TerrainModelCoreDir)include \
+                                --outdir=$(TerrainModelCorePublicAPI) \
+                                --template=$(SrcTerrainModel)/PublicAPI.tpl \
+                                --privexports=$(terrainmodelObj)PublicAPI_PrivateExports.txt \
+                                $? 
+    > $(build)TerrainModelCorePublicAPI.stamp
+    built
+    <
+    ~time
+
+includeDest=$(terrainModel_includes)DTM/
+
+filesToCopy= \
+$(SrcTerrainModel)src/core/include/partitionarray.h
+
+always:
+    ~@task Microsoft.Build.Tasks.Copy -i:SourceFiles=@(filesToCopy)              -i:DestinationFolder=@(IncludeDest) -i:SkipUnchangedFiles=true
+
+includeDest=$(terrainModel_includes)InternalImplementers/DTM/
+
+filesToCopy= \
+$(SrcTerrainModel)src/core/include/idtm.h \
+
+always:
+    ~@task MakeDir -i:Directories=$(includeDest)
+    ~@task Microsoft.Build.Tasks.Copy -i:SourceFiles=@(filesToCopy)              -i:DestinationFolder=@(IncludeDest) -i:SkipUnchangedFiles=true
+
+includeDest=$(terrainModel_includes)InternalInclude/DTM/
+
+filesToCopy= \
+$(SrcTerrainModel)src/core/include/*.h
+
+#$(SrcTerrainModel)src/core/include/*.fdf
+
+always:
+    ~@task MakeDir -i:Directories=$(includeDest)
+    ~@task Microsoft.Build.Tasks.Copy -i:SourceFiles=@(filesToCopy)              -i:DestinationFolder=@(IncludeDest) -i:SkipUnchangedFiles=true
+
+includeDest=$(terrainModel_includes)InternalInclude/DTM/CPPWrappers
+
+filesToCopy= \
+$(SrcTerrainModel)src/core/CPPWrappers/*.h
+
+always:
+    ~@task MakeDir -i:Directories=$(includeDest)
+    ~@task Microsoft.Build.Tasks.Copy -i:SourceFiles=@(filesToCopy)              -i:DestinationFolder=@(IncludeDest) -i:SkipUnchangedFiles=true
+
+
+#// Format PublicAPI
+
+TerrainModelFormatsPublicAPI = $(TerrainModelPublicAPI)Formats/
+always:
+    ~@task MakeDir -i:Directories=$(TerrainModelFormatsPublicAPI)
+
+FilesToPublish= \
+$(TerrainModelFormatsAPISrc)landxmlreader.h
+
+$(build)TerrainModelFormatsPublicAPI.stamp : $(FilesToPublish)
+    "$(PythonPath)python" $(SrcTerrainModel)/MakePublicAPI.py \
+                                --sourcedir=$(TerrainModelFormatsAPISrc) \
+                                --outdir=$(TerrainModelFormatsPublicAPI) \
+                                --template=$(SrcTerrainModel)/PublicAPI.tpl \
+                                $? 
+    > $(build)TerrainModelFormatsPublicAPI.stamp
+    built
+    <
+    ~time
+
+#///////
+
+# Use Gema to 
+#GEMADIR=$(SrcTerrainModel)
+
+
+#$(terrainModel_includes)DTM/dtm2dfns.h: $(SrcTerrainModel)src\DTM\include/dtm2dfns.h
+#   $(gemaCmd) $< $@
+#    ~@putenv GEMADIR=$(GEMADIR)
+#    call $(GEMADIR)dtmfdf $< $@
+
+#always:
+#    @CreateSymLinks.py   -d"$(BuildContextPublicAPI)TerrainModel=$(terrainModel_includes)"
+
+%endif

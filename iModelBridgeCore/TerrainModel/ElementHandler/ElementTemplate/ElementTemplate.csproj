@@ -1,0 +1,164 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.50727</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{7B124972-C897-4B7C-979B-F2C7D0FB897B}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Bentley.TerrainModel.ElementTemplate</RootNamespace>
+    <AssemblyName>Bentley.TerrainModel.ElementTemplate</AssemblyName>
+    <AssemblyVersionAttribute>1.0.0.0</AssemblyVersionAttribute>
+    <AssemblyDescriptionAttribute>TerrainModel ElementTemplate AddIn</AssemblyDescriptionAttribute>
+    <RIGHTSCOMPLIANT>true</RIGHTSCOMPLIANT>
+    <AssemblyProductAttribute>MicroStation</AssemblyProductAttribute>
+    <!--    <ASSEMBLY_KEYFILE_DEFAULT Condition="'$(ASSEMBLY_KEYFILE_DEFAULT)' == ''">$(SrcRoot)bsitools\anycpu\PublicPrgNonRightsCompliant.snk</ASSEMBLY_KEYFILE_DEFAULT> -->
+    <!--    <AssemblyOriginatorKeyFile>$(ASSEMBLY_KEYFILE_DEFAULT)</AssemblyOriginatorKeyFile> -->
+    <DEFAULT_TARGET_PROCESSOR_ARCHITECTURE Condition="'$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)' == ''">x64</DEFAULT_TARGET_PROCESSOR_ARCHITECTURE>
+    <OutputPath>$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\build\TerrainModelElement\ElementTemplate\</OutputPath>
+    <OutDir>$(outputpath)</OutDir>
+    <BaseIntermediateOutputPath>$(outputpath)</BaseIntermediateOutputPath>
+    <TargetFrameworkProfile />
+    <ValidateMicroStationAddIns>true</ValidateMicroStationAddIns>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <DefineConstants>TRACE;DEBUG;CSC_VERSION_4500</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PlatformTarget>$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <!-- These are for projects that are NOT using msbuild entirely, but still want to avoid setting ReferencePath explicitly in every project -->
+    <DEFAULT_TARGET_PROCESSOR_ARCHITECTURE Condition="'$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)' == ''">x64</DEFAULT_TARGET_PROCESSOR_ARCHITECTURE>
+    <ContextSubPartsAssembliesDir Condition="'$(ContextSubPartsAssembliesDir)'==''">$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\TerrainModelElement\SubParts\Assemblies\</ContextSubPartsAssembliesDir>
+    <nunitDir Condition="'$(nunitDir)'==''">$(OutRoot)Win$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)\BuildContexts\TerrainModelElement\SubParts\nunit_2.5.10\</nunitDir>
+    <ReferencePath>$(ContextSubPartsAssembliesDir);$(nunitDir)</ReferencePath>
+  </PropertyGroup>
+  <!--  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <DelaySign>true</DelaySign>
+  </PropertyGroup>
+  -->
+  <ItemGroup>
+    <Reference Include="Bentley.UI.dll">
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Bentley.ECObjects3.dll">
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Bentley.ECSystem3.dll">
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="bentley.general.1.0.dll">
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Bentley.GeometryNET.structs.dll">
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Bentley.DGNPlatformNET.dll">
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Bentley.Platform.dll">
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Bentley.MicroStation.General.dll">
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="bentley.microstation.interfaces.1.0.dll">
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="bentley.microstation.dll">
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="ustation.dll">
+      <Private>false</Private>
+      <Aliases>ustation</Aliases>
+    </Reference>
+    <Reference Include="bentley.microstation.templates.support.dll">
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="bentley.microstation.winforms.ecpropertypane.dll">
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="bentley.microstation.winforms.controls.dll">
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Bentley.Exceptions.dll">
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="TerrainModelHandlerApp.dll">
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Bentley.TerrainModelNET.Element.dll">
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Accessibility" />
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AddIn.cs" />
+    <Compile Include="AssemblyAttributes.cs" />
+    <Compile Include="BoundaryProperties.cs" />
+    <Compile Include="CategoryContainer.cs" />
+    <Compile Include="Constants.cs" />
+    <Compile Include="ContourProperties.cs" />
+    <Compile Include="ContourTextStyleProperties.cs" />
+    <Compile Include="DisplayCalculatedProperties.cs" />
+    <Compile Include="DisplaySourceProperties.cs" />
+    <Compile Include="DTMElementTemplateExtender.cs" />
+    <Compile Include="ElementTemplateExtenderPropertyProvider.cs" />
+    <Compile Include="FlowArrowProperties.cs" />
+    <Compile Include="HighPointProperties.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SourceFeatureProperties.cs" />
+    <Compile Include="LowPointProperties.cs" />
+    <Compile Include="Schema.cs" />
+    <Compile Include="GeneralProperties.cs" />
+    <Compile Include="TriangleVerticeProperties.cs" />
+    <Compile Include="TriangleProperties.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="transkit\LocalizableStrings.resx">
+      <LogicalName>Bentley.TerrainModel.ElementTemplate.LocalizableStrings.resources</LogicalName>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="transkit\transkit.xml" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

@@ -1,0 +1,571 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source">
+      <UniqueIdentifier>{d76fa131-b917-444e-a2fc-8873258ba6b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headers">
+      <UniqueIdentifier>{729465b5-68a3-45fe-9c4c-41184ab6f8be}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="PublicAPI">
+      <UniqueIdentifier>{8be24b45-138d-4ab6-8aae-36b884e70f76}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\MX">
+      <UniqueIdentifier>{6cda9c3a-2c28-4989-aa56-fa3776679322}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\InroadsTM">
+      <UniqueIdentifier>{b7b88aa3-0725-42a5-bc06-334dc101c0b4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\InroadsTM\Includes">
+      <UniqueIdentifier>{501309ba-91a1-478a-9492-6f6277f7e04d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="msl_array.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="mxtriangle.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\Esri.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\Formats.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\Inroads.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\Lidar.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\mx.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\TerrainImporter.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\LandXMLExporter.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\LandXMLImporter.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\LidarImporter.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="MXModelFile.h">
+      <Filter>Source\MX</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\TerrainExporter.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ImagePP.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\InroadsImporter.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\aecuti.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\civdtm.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\civguids.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\clpfnc.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\cmpmemuti.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\cmputi.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\coruti.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\disfnc.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\dtm.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\dtmactfnc.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\dtmcnt.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\dtmcon.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\dtmdis.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\dtmedt.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\dtmedtfnc.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\dtmflg.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\dtmflgfnc.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\dtmfnc.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\dtmfnd.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\dtmfndfnc.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\dtmftr.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\dtmftrpt.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\dtmio.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\dtmiofnc.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\DTMLinkDTM.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\dtmmac.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\dtmmem.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\dtmmemfnc.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\dtmmsg.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\dtmpnt.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\DtmRsc.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\dtmsnd.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\dtmstr.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\dtmtin.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\DTMToGPKTin.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\dtmtri.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\dtmtrifnc.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\dtmttn.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\dtmuti.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\dtmutifnc.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\dtmvol.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\FeatureClass.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\FeatureDefs.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\FeatureFunctions.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\filfnc.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\GPKTinToDTM.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\heapmanager.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\hshfnc.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\hshftr.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\intfnc.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\intsct.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\jonfnc.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\lclfnc.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\msgfnc.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\MXTinToDTM.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\parfnc.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\plyfnc.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\portable.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\StdAfx.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\stsfnc.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\tblfnc.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\tckfnc.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\TimeStampUtils.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\TinToDTM.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\txtsiz.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\utiuirsc.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="InroadsTM\vecfnc.h">
+      <Filter>Source\InroadsTM\Includes</Filter>
+    </ClInclude>
+    <ClInclude Include="TriangulationPreserver.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="bcdtmEsri.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="bcdtmInroads.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="bcdtmLidar.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="bcdtmMX.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="MX.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="TerrainImporter.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="LandXMLExporter.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="LandXMLImporter.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="MXModelFile.cpp">
+      <Filter>Source\MX</Filter>
+    </ClCompile>
+    <ClCompile Include="mxtriangle.cpp">
+      <Filter>Source\MX</Filter>
+    </ClCompile>
+    <ClCompile Include="LidarImporter.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="TerrainExporter.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="ImagePP.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsImporter.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\actprj.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\addftr.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\addpnt.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\addtin.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\allftr.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\allocs.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\allpnt.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\alltin.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\bondry.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\civdtm.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\civguids.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\civuti.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\clputi.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\cmpmemuti.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\cmputi.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\CommonDTM.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\coruti.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\counts.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\crtsrf.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\dalloc.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\delany.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\delftr.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\delpnt.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\delsrf.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\deltin.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\DTMLinkDTM.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\DTMToGPKTin.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\FeatureClass.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\FeatureFunctions.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\filuti.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\fixtol.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\fncpnt.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\fndfil.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\fndftr.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\fndlin.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\fndpnt.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\fndsrf.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\fndtin.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\ftruti.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\getact.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\getelv.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\GPKTinToDTM.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\heapmanager.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\hshftr.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\hshuti.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\insbnd.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\intsct.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\intuti.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\jonuti.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\lcluti.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\linlst.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\load.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\loddtm.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\mrkuti.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\msguti.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\MXTinToDTM.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\paruti.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\patch.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\plyuti.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\pntadd.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\pntdel.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\pntuti.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\points.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\prcpnt.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\prjuti.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\ptrind.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\rnguti.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\rotpnt.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\savdtm.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\srfflg.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\srfuti.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\StdAfx.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\stsuti.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\tbluti.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\tckuti.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\TimeStampUtils.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\tinstk.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\TinToDTM.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\tinuti.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\trisrf.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\vecuti.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\xngchk.cpp">
+      <Filter>Source\InroadsTM</Filter>
+    </ClCompile>
+    <ClCompile Include="TriangulationPreserver.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="formats.mke" />
+    <None Include="Formats.mki" />
+  </ItemGroup>
+</Project>

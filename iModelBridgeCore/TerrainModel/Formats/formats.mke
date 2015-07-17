@@ -1,0 +1,137 @@
+#------------------------------------------------------------------------------------
+#
+#     $Source: Formats/formats.mke $
+#    $RCSfile: cppwrappers.mke,v $
+#   $Revision: 1.123.2.1 $
+#       $Date: 2012/11/15 20:19:18 $
+#     $Author: Daryl.Holmwood $
+#
+#   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+always:
+  bmake -dCreate_Static_Libraries=1 $(_MakeFilePath)inroadstm/inroadstm.mke 
+
+
+baseDir         = $(_MakeFilePath)
+PolicyFile      = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelPolicy.mki
+SolutionPolicyMki=$(baseDir)formats.mki
+
+%include  mdl.mki
+
+DLM_OBJECT_DEST       = $(terrainModelFormatsObj)
+DLM_NAME              = TerrainModelFormats
+ASSEMBLY_STRONGNAME   = 1
+
+DependsOnHeadersCPP = \
+$(basedir)PublicAPI\Formats.h \
+$(basedir)PublicAPI\Esri.h \
+$(basedir)PublicAPI\Inroads.h \
+$(basedir)PublicAPI\InroadsImporter.h \
+$(basedir)PublicAPI\LandXMLImporter.h \
+$(basedir)PublicAPI\LandXMLExporter.h \
+$(basedir)PublicAPI\Lidar.h \
+$(basedir)PublicAPI\LidarImporter.h \
+$(basedir)PublicAPI\MX.h \
+$(basedir)PublicAPI\TerrainImporter.h \
+$(basedir)PublicAPI\TerrainExporter.h \
+$(basedir)MXModelFile.h \
+$(basedir)TriangulationPreserver.h \
+
+DependsOnHeaders = \
+
+#---------------------------------------------------------
+#  Set up for signing
+#---------------------------------------------------------
+%ifdef todo_signing
+RIGHTSCOMPLIANT = true
+%include    $(SrcTerrainModel)privmki/TerrainModelSignatureDefaults.mki
+
+%if !defined (MSJ_SKIP_SIGNRSCS) && !defined (DLM_NO_SIGN)
+    %include signrightscompliantdefs.mki
+    %include signrscsdefs.mki
+%endif
+%endif
+#----------------------------------------------------------------------
+#       Location for objects
+#----------------------------------------------------------------------
+o =% $(DLM_OBJECT_DEST)
+
+always:
+    ~mkdir $(o)
+
+#----------------------------------------------------------------------
+#       Inform user of compile options
+#----------------------------------------------------------------------
+always:
+        |  Compiler options: $(cDefs)$(cDefsPost) $(copt)
+        |  -------- --------
+
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)LandXMLImporter$(oext) : $(baseDir)LandXMLImporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)LandXMLExporter$(oext) : $(baseDir)LandXMLExporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)bcdtmMX$(oext) : $(baseDir)bcdtmMX.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+#$(o)bcdtminroads$(oext) : $(baseDir)bcdtminroads.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)bcdtmEsri$(oext) : $(baseDir)bcdtmEsri.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)bcdtmLidar$(oext) : $(baseDir)bcdtmLidar.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)MXModelFile$(oext) : $(baseDir)MXModelFile.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)MX$(oext) : $(baseDir)MX.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)TerrainImporter$(oext) : $(baseDir)TerrainImporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)TerrainExporter$(oext) : $(baseDir)TerrainExporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)InroadsImporter$(oext) : $(baseDir)InroadsImporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)LidarImporter$(oext) : $(baseDir)LidarImporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)ImagePP$(oext) : $(baseDir)ImagePP.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)TriangulationPreserver$(oext) : $(baseDir)TriangulationPreserver.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#   Link the mixed assembly
+#----------------------------------------------------------------------
+DLM_NAME                    = $(appName)
+DLM_DEST                    = $(o)
+DLM_OBJECT_FILES            = $(MultiCompileObjectList)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOINITFUNC          = 1
+DLM_NOMSBUILTINS        = 1
+DLM_NO_DEF              = 1
+DLM_NO_DLS              = 1
+DLM_NOENTRY             = 1
+
+InroadsLib = $(o)/inroadstm/$(libprefix)inroadstm$(libext)
+#InroadsLib = $(BuildContext)SubParts/StaticLibs/$(libprefix)inroadstm$(libext)
+#InroadsLib = $(ContextSubpartsLibs)$(libprefix)InroadsTM$(libext)
+
+LINKER_LIBRARIES  = \
+    $(InroadsLib) \
+    $(ContextSubpartsLibs)$(libprefix)TerrainModelCore$(libext) \
+    $(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \
+    $(ContextSubpartsLibs)$(libprefix)BeLibxml2$(libext) \
+    $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext) \
+    $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext)
+
+LINKER_LIBRARIES_DELAYLOADED  = \
+                                $(ContextSubpartsLibs)$(libprefix)IppGraLibs$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)IppUtlLibs$(libext) \
+
+DLM_CONTEXT_LOCATION        = $(ContextDeliveryDir)/
+DLM_LIB_CONTEXT_LOCATION    = $(ContextDeliveryDir)/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+%include $(sharedMki)LinkLibrary.mki

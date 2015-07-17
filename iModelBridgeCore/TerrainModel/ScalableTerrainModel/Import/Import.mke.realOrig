@@ -1,0 +1,178 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: ScalableTerrainModel/Import/Import.mke.realOrig $
+#
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+
+baseDir                 = $(_MakeFilePath)
+PolicyFile              = $(SrcRoot)ScalableTerrainModel/privmki/AssertScalableTerrainModelPolicy.mki
+#SolutionPolicyMki      = $(baseDir)Core.mki
+
+%include mdl.mki
+
+DLM_NAME                = Import
+DLM_OBJECT_DEST         = $(OutScalableTerrainModelRoot)$(DLM_NAME)/
+ASSEMBLY_STRONGNAME     = 1
+
+APINamespace            = $(DLM_NAME)
+PublicAPISrc            = $(PublicAPIRoot)$(APINamespace)/
+PublicAPITarget         = $(BuildContext)PublicAPI/$(APINamespace)
+PrivateAPISrc           = $(PrivateAPIRoot)$(APINamespace)/
+PrivateAPITarget        = $(BuildContext)PrivateAPI/$(APINamespace)
+
+#----------------------------------------------------------------------
+#  Set up for signing
+#----------------------------------------------------------------------
+%warn TODO: Set up for signing
+
+#----------------------------------------------------------------------
+#   Location for objects
+#----------------------------------------------------------------------
+o =% $(DLM_OBJECT_DEST)
+
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#   Symlink APIs
+#----------------------------------------------------------------------
+always:
+   @CreateSymLinks.py -d"$(PublicAPITarget)=$(PublicAPISrc)"
+#   @CreateSymLinks.py -d"$(PrivateAPITarget)=$(PrivateAPISrc)"
+
+#----------------------------------------------------------------------
+#   Add to include paths
+#----------------------------------------------------------------------
+dirToSearch     = $(PrivateAPIRoot)
+%include cincapnd.mki
+
+#----------------------------------------------------------------------
+#   Define section
+#----------------------------------------------------------------------
+nameToDefine = BENTLEY_MRDTM_IMPORT_EXPORTS
+%include cdefapnd.mki
+
+nameToDefine = NO_IODEFS
+%include cdefapnd.mki
+
+%ifndef DEBUG
+    nameToDefine = NDEBUG
+    %include cdefapnd.mki
+%endif #!DEBUG
+
+nameToDefine = NOMINMAX
+%include cdefapnd.mki
+
+
+#----------------------------------------------------------------------
+#   Get includes file listings
+#----------------------------------------------------------------------
+%include $(baseDir)_IncludesDescription.mki
+
+#----------------------------------------------------------------------
+#   Inform user of compile options
+#----------------------------------------------------------------------
+always:
+        |  Compiler options: $(cDefs)$(cDefsPost) $(copt)
+        |  -------- --------
+
+#----------------------------------------------------------------------
+#   Compile to objects
+#----------------------------------------------------------------------
+MultiCompileDepends=$(_MakeFileSpec)
+
+%include MultiCppCompileRule.mki
+
+#-----------------------------------------------------------------------
+#   Compile Data description module
+#-----------------------------------------------------------------------
+$(o)DataType$(oext) : $(baseDir)DataType.cpp $(ImportIncludesFullListing)
+
+$(o)DataTypeFamily$(oext) : $(baseDir)DataTypeFamily.cpp $(ImportIncludesFullListing)
+
+$(o)ContentDescriptor$(oext) : $(baseDir)ContentDescriptor.cpp $(ImportIncludesFullListing)
+
+$(o)Metadata$(oext) : $(baseDir)Metadata.cpp $(ImportIncludesFullListing)
+
+$(o)Attachment$(oext) : $(baseDir)Attachment.cpp $(ImportIncludesFullListing)
+
+
+
+#-----------------------------------------------------------------------
+#   Compile Filtering module
+#-----------------------------------------------------------------------
+$(o)Filter$(oext) : $(baseDir)Filter.cpp $(ImportIncludesFullListing)
+
+$(o)TypeConversionFilterFactory$(oext) : $(baseDir)TypeConversionFilterFactory.cpp $(ImportIncludesFullListing)
+
+$(o)ReprojectionFilterFactory$(oext) : $(baseDir)ReprojectionFilterFactory.cpp $(ImportIncludesFullListing)
+
+$(o)CustomFilterFactory$(oext) : $(baseDir)CustomFilterFactory.cpp $(ImportIncludesFullListing)
+
+$(o)FilterFactory$(oext) : $(baseDir)FilterFactory.cpp $(ImportIncludesFullListing)
+
+$(o)DimensionDescription$(oext) : $(baseDir)DimensionDescription.cpp $(ImportIncludesFullListing)
+
+$(o)FilteringConfig$(oext) : $(baseDir)FilteringConfig.cpp $(ImportIncludesFullListing)
+
+#-----------------------------------------------------------------------
+#   Compile Source module
+#-----------------------------------------------------------------------
+$(o)Source$(oext) : $(baseDir)Source.cpp $(ImportIncludesFullListing)
+
+$(o)SourceReference$(oext) : $(baseDir)SourceReference.cpp $(ImportIncludesFullListing)
+
+$(o)SourcePlugin$(oext) : $(baseDir)SourcePlugin.cpp $(ImportIncludesFullListing)
+
+#-----------------------------------------------------------------------
+#   Compile Importer module
+#-----------------------------------------------------------------------
+$(o)Importer$(oext) : $(baseDir)Importer.cpp $(baseDir)ImporterImpl.h $(ImportIncludesFullListing)
+
+$(o)ImportPolicy$(oext) : $(baseDir)ImportPolicy.cpp $(ImportIncludesFullListing)
+
+$(o)ImporterCommandVisitor$(oext) : $(baseDir)ImporterCommandVisitor.cpp $(baseDir)ImporterImpl.h $(ImportIncludesFullListing)
+
+$(o)InternalContentDescriptor$(oext) : $(baseDir)InternalContentDescriptor.cpp $(ImportIncludesFullListing)
+
+$(o)InternalImporterConfig$(oext) : $(baseDir)InternalImporterConfig.cpp $(ImportIncludesFullListing)
+
+$(o)InputExtractor$(oext) : $(baseDir)InputExtractor.cpp $(ImportIncludesFullListing)
+
+$(o)Sink$(oext) : $(baseDir)Sink.cpp $(ImportIncludesFullListing)
+
+$(o)ImportConfig$(oext) : $(baseDir)ImportConfig.cpp $(ImportIncludesFullListing)
+
+$(o)ExtractionConfig$(oext) : $(baseDir)ExtractionConfig.cpp $(ImportIncludesFullListing)
+
+$(o)ContentConfig$(oext) : $(baseDir)ContentConfig.cpp $(ImportIncludesFullListing)
+
+$(o)ImportSequence$(oext) : $(baseDir)ImportSequence.cpp $(ImportIncludesFullListing)
+
+$(o)ImportConfigs$(oext) : $(baseDir)ImportConfigs.cpp $(ImportIncludesFullListing)
+
+$(o)ContentConfigs$(oext) : $(baseDir)ContentConfigs.cpp $(ImportIncludesFullListing)
+
+$(o)ImportCommands$(oext) : $(baseDir)ImportCommands.cpp $(ImportIncludesFullListing)
+
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#   dependencies of the subsystem.
+#----------------------------------------------------------------------
+DLM_DEST                    = $(o)
+DLM_OBJECT_FILES            = $(MultiCompileObjectList)
+DLM_EXPORT_DEST             = $(o)
+
+LINKER_LIBRARIES            =
+#    $(ContextDeliveryDir)$(DgnCoreLib) \
+#    $(ContextDeliveryDir)$(DgnHandlersLib) \
+#    $(ContextSubpartsLibs)$(rmgrsubsLib)
+
+DLM_CONTEXT_LOCATION        = $(ContextDeliveryDir)/
+DLM_LIB_CONTEXT_LOCATION    = $(ContextDeliveryDir)/
+
+%include $(sharedMki)LinkLibrary.mki

@@ -1,0 +1,41 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: consoleApps/consoleApps.mke $
+#    $RCSfile: consoleApps.mke,v $
+#   $Revision: 1.1.4.1 $
+#       $Date: 2012/11/29 20:02:46 $
+#     $Author: Daryl.Holmwood $
+#
+#   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+consoleAppUnicode=1
+#NDEBUG=1
+
+baseDir         = $(_MakeFilePath)
+PolicyFile      = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelPolicy.mki
+#SolutionPolicyMki=$(baseDir)TerrainModelCore.mki
+
+%include  mdl.mki
+
+appName     = bctin
+
+%include buildConsoleApps.mki
+
+appName     = bcclip
+
+%include buildConsoleApps.mki
+
+appName     = bcload
+
+%include buildConsoleApps.mki
+
+appName     = bcDrainage
+
+%include buildConsoleApps.mki
+
+appName     = bcVolume
+
+%include buildConsoleApps.mki
+

@@ -1,0 +1,236 @@
+#*--------------------------------------------------------------------------------------+
+#
+#     $Source: ElementHandler/Commands/commands.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------*/
+
+baseDir         = $(_MakeFilePath)
+PolicyFile      = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelElementPolicy.mki
+#SolutionPolicyMki=$(baseDir)TerrainModelElementHandlerApp.mki
+
+appendMacroSeparator=;
+PolicyPaths+$(BuildContext)SubParts/Assemblies/
+%undef appendMacroSeparator
+
+# This isn't great, but we're in a weird situation.  For some reason this is in a separate
+#  partfile, but needs to access PowerPlatform.FeatureAspects.h.  This file is linked into
+#  the PowerPlatform build context, but it's only in the gensrc.  So the smallest change
+#  I can make to get this building will be to just include it from the gensrc location.
+#  It might be better to call the PowerProductSDK-postwire part earlier?
+GensrcInclude = $(OutputRootDir)build/PowerPlatform/gensrc/
+
+%include  mdl.mki
+
+### To go into solution policy file
+
+BentleyTerrainModelcommandsObj       = $(terrainModelBuildDir_)Commands/
+
+always:
+    ~mkdir $(BentleyTerrainModelcommandsObj)
+
+OPTIMIZE_FOR_SPEED=1
+
+dirToSearch     = $(BuildContext)VendorAPI
+%include cincapnd.mki
+
+dirToSearch     = $(baseDir)
+%include cincapnd.mki
+
+dirToSearch     = $(TerrainModelElementHandlerDir)handler
+%include cincapnd.mki
+
+dirToSearch     = $(BentleyTerrainModelcommandsObj)
+%include cincapnd.mki
+
+dirToSearch     = $(GensrcInclude)
+%include    cincapnd.mki
+
+moreRscCompileOpts  + -i$(GensrcInclude)
+
+#MultiCompileIntermediatePdbFile=$(terrainModelHandlerAppObj)$(CCompPDBName).pdb
+#IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
+
+
+## End of Solution Policy..
+
+o = $(BentleyTerrainModelcommandsObj)
+gensrcTransKit = $(o)
+
+appName             = TerrainModelCommands
+sAppName            = TerrainModelCommands
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    ~mkdir $(o)
+
+#----------------------------------------------------------------------
+#   The following defines the dependency list for any NON-Translatable
+#   resources used by this application. Typically this includes any
+#   command table definitions or resource type definitions. This list
+#   would also contain the completed CODE portion of the application.
+#   Typically these files are lib'd together into a file with a '.mi'
+#   extension. (Mdl Intermediate application)
+#----------------------------------------------------------------------
+appRscs = \
+    $(o)commandsCmd.rsc \
+	$(o)commandsTyp.rsc
+
+#----------------------------------------------------------------------
+#       Create output directory
+#----------------------------------------------------------------------
+$(o)$(tstdir)           : $(o)$(tstdir)
+
+#--------------------------------------------
+#       Create command table and header file
+#--------------------------------------------
+$(gensrcTransKit)commandsCmd.h         : $(baseDir)commandsCmd.r
+
+$(o)commandsCmd.rsc       : $(baseDir)commandsCmd.r
+
+#----------------------------------------------------------------------
+#       Compile language-independent resource modules
+#----------------------------------------------------------------------
+$(o)commandsTyp.r         : $(baseDir)commandsTyp.mt \
+                              $(baseDir)commandsDefs.h
+
+$(o)commandsTyp.rsc       : $(o)commandsTyp.r
+
+
+%include compileForCLRStart.mki
+
+CCompOpts + -AI$(ContextSubPartsAssembliesDir)
+
+DependsOnHeaders = \
+$(DependsOnAssemblies) \
+$(basedir)DTMAddIn.h \
+$(basedir)LandXMLImportForm.h \
+$(basedir)DataGridViewElementTemplateCellEditingControl.h \
+$(basedir)DataGridViewElementTemplateCell.h
+
+
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)DTMAddIn$(oext)		: $(basedir)DTMAddIn.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)DataGridViewElementTemplateCellEditingControl$(oext)		: $(basedir)DataGridViewElementTemplateCellEditingControl.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)LandXMLImportForm$(oext)		: $(basedir)LandXMLImportForm.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)AnnotateContours$(oext)		: $(basedir)AnnotateContours.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)AnnotateSpots$(oext)		: $(basedir)AnnotateSpots.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)SelectDTMElem$(oext)		: $(basedir)SelectDTMElem.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)utils$(oext)		        : $(basedir)utils.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+$(o)mdlDialogHooks$(oext)		: $(basedir)mdlDialogHooks.cpp $(DependsOnHeaders) ${MultiCompileDepends}
+
+
+
+%include MultiCppCompileGo.mki
+#....................................................................................................................................................
+# Auto-generated AssemblyInfo.cpp file (spawned by compileForCLRStop.mki) should not include the PCH header file.
+CCPchOpts =
+
+%include compileForCLRStop.mki
+
+ASSEMBLY_RES_TO_ADD         = Bentley.TerrainModel.Commands.LandXMLImportForm
+ASSEMBLY_RESX_FILE_TO_BUILD = $(baseDir)LandXMLImportForm.resx
+%include assemblyResxAppend.mki
+
+ASSEMBLY_RES_TO_ADD         = LocalizableStrings
+ASSEMBLY_RESX_FILE_TO_BUILD = $(baseDir)LocalizableStrings.resx
+%include assemblyResxAppend.mki
+
+DLM_NAME          = $(appName)
+DLM_DEST          = $(o)
+DLM_OBJECT_DEST   = $(o)
+DLM_OBJECT_FILES  = $(MultiCompileObjectList) $(PCHHeaderObject) 
+DLM_NOINITFUNC    = 1
+DLM_NOENTRY       = 1
+DLM_NOMSBUILTINS  = 1
+DLM_NO_DEF        = 1
+DLM_NO_DLS        = 1
+
+LINKER_LIBRARIES    = $(ContextSubpartsLibs)$(libprefix)TerrainModelElementHandler$(libext) \
+                      $(ContextSubpartsLibs)$(libprefix)TerrainModelCore$(libext) \
+                      $(ContextSubpartsLibs)$(libprefix)mdlbltin$(libext) \
+                      $(ContextSubpartsLibs)$(libprefix)DgnView$(libext) \
+                      $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext) \
+                      $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext) \
+                      $(ContextSubpartsLibs)$(libprefix)RmgrTools$(libext) \
+                      $(ContextSubpartsLibs)$(libprefix)TerrainModelFormats$(libext) \
+                      $(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \
+                      $(ContextSubpartsLibs)$(libprefix)BeLibxml2$(libext) \
+
+
+DLM_CONTEXT_LOCATION        = $(ContextDeliveryDir)/
+DLM_LIB_CONTEXT_LOCATION    = $(ContextDeliveryDir)/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+ASSEMBLY_NO_AUTHENTICODE_SIGN = 1
+%include $(SharedMki)VersionedPartSignatureDefaults.mki
+ASSEMBLY_KEYFILE        =% $(ASSEMBLY_KEYFILE_DEFAULT)
+ASSEMBLY_TESTKEYFILE       =% $(ASSEMBLY_TESTKEYFILE_DEFAULT)
+
+ASSEMBLY_NAME               = $(DLM_NAME)
+ASSEMBLY_STRONGNAME         = 1
+ASSEMBLY_TITLE              = $(DLM_NAME)
+ASSEMBLY_PRODUCT_NAME       = Bentley TerrainModel Commands
+ASSEMBLY_DESCRIPTION        = Bentley TerrainModel Commands
+ASSEMBLY_VERSION            = 1.0.0.0
+ASSEMBLY_FILE_VERSION       = 1.0.0.0
+ASSEMBLY_COMPANY_NAME       = $(companyName)
+ASSEMBLY_COPYRIGHT          = $(Bentley_Copyright)
+
+ASSEMBLY_COMVISIBLE         = false
+ASSEMBLY_CLSCOMPLIANT       = true
+
+# ======================================================
+# undef DLM_CREATE_LIB_CONTEXT_LINK since there is no 
+# .lib file created that needs to be linked to the build 
+# context directory
+# ======================================================
+%undef DLM_CREATE_LIB_CONTEXT_LINK
+#FxCopCustomDictionaryFile=$(baseDir)fxcopDictionary.xml
+#SuppressCodeAnalysis=1
+%include linkMixedAssembly.mki
+
+
+#----------------------------------------------------------------------
+# Link the MA
+#----------------------------------------------------------------------
+MA_NAME         = $(sAppName)
+MA_DEST         = $(o)
+MA_RSC_FILES    = $(appRscs)
+MA_NO_VERSION   = 1
+RIGHTSCOMPLIANT = true
+
+MA_CONTEXT_LOCATION = $(ContextDeliveryDir)
+
+%include $(SharedMki)malink.mki
+
+#----------------------------------------------------------------------
+# Expose header files that are needed by our transkit
+#----------------------------------------------------------------------
+$(ContextDeliveryDir)TranskitInclude/TerrainModelAppHeaders/commandsDefs.h : $(_MakeFilePath)commandsDefs.h
+    $(LinkFirstDepToFirstTarget)
+
+MuiTranskitSourceDir = $(basedir)Transkit/
+MuiBaseName = $(sAppName).ma
+MuiTranskitDeliveryDir = $(ContextDeliveryDir)TransKit/TerrainModelCommands/
+MuiAdditionalIncludes = $(o) $(GensrcInclude)
+
+%include $(SharedMki)CreateAndSymlinkMui.mki
+
+#always:
+#   @SymLinkResxTranskitFiles.py $(baseDir)transkit.xml $(o) $(MuiTranskitDeliveryDir)
+
+always:
+   @SymLinkResxTranskitFiles.py $(basedir)Transkit.xml $(o)Managed\ $(MuiTranskitDeliveryDir)Managed\

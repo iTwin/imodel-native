@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<Transkit>
+    <SchemaResource Name="TerrainModel_Supplemental_Localization_$(culture).01.00.ecschema.xml">
+        <ResourceSource>*.resx</ResourceSource>
+    </SchemaResource>
+    <SchemaResource Name="DTMElement_TemplateExtender_Schema_Supplemental_Localization_$(culture).01.00.ecschema.xml">
+        <ResourceSource>*.resx</ResourceSource>
+    </SchemaResource>
+</Transkit>

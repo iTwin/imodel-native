@@ -1,0 +1,868 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Includes">
+      <UniqueIdentifier>{215ce148-ddac-4fa3-a4a5-05c9794a6c13}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source">
+      <UniqueIdentifier>{381d4875-2cb6-4838-83b3-fe783a1fa163}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{28d56bcd-00c1-4f38-96ca-73de74ef011c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Transkit">
+      <UniqueIdentifier>{ce869690-c885-46b5-8f3f-79ba896701dc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\Foundations">
+      <UniqueIdentifier>{c89a4281-261d-42b9-87cc-5ab3a8575a0c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\GeoCoords">
+      <UniqueIdentifier>{bc185098-fa4a-4642-8aee-7fae6fc23f3e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\Import">
+      <UniqueIdentifier>{48a7f415-ef12-4d5a-aab6-e3911afafb47}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\Memory">
+      <UniqueIdentifier>{fd72e706-9e89-4a6c-a603-29237a7cb79a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\PrivateAPI">
+      <UniqueIdentifier>{2d1a9120-ceee-4c48-aba1-c8e82807f2e9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\PublicAPI">
+      <UniqueIdentifier>{4245fa35-4e44-4b19-aeec-d0e9d0c602e7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\STM">
+      <UniqueIdentifier>{9b2a811a-b4ee-4901-b972-87ccbb2b5026}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\PublicAPI\Foundations">
+      <UniqueIdentifier>{fcddf41e-5e1b-4917-9587-d5c10f1cf856}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\PublicAPI\GeoCoords">
+      <UniqueIdentifier>{61b4a017-7326-4913-aca9-dbf12b6b8431}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\PublicAPI\Import">
+      <UniqueIdentifier>{cb5839fc-6872-4bda-aa08-20b9f04d40a5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\PublicAPI\Memory">
+      <UniqueIdentifier>{cede7a6c-d623-44bd-8c29-65800923e4f1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\PublicAPI\Plugin">
+      <UniqueIdentifier>{e2c6f2df-757e-48a2-beab-33e50cd354ce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\PublicAPI\Type">
+      <UniqueIdentifier>{fdea4969-6fb8-43a4-9b7c-b4149d210c75}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\PublicAPI\Import\Command">
+      <UniqueIdentifier>{0825ad60-6e6f-4ea0-9029-3dcff319faee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\PublicAPI\Import\Config">
+      <UniqueIdentifier>{f091bfc1-258b-478b-a258-51becb9dd846}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\PublicAPI\Import\Error">
+      <UniqueIdentifier>{1e7190a4-567d-4e0e-96fd-c834438454ad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\PublicAPI\Import\Plugin">
+      <UniqueIdentifier>{fba82328-c918-4e8d-b3c1-d1dabd9164e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\PublicAPI\Import\Config\Content">
+      <UniqueIdentifier>{4785ce83-4eda-4a3f-ac2c-66224b2a2833}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\STM\ImportPlugins">
+      <UniqueIdentifier>{68f55aa3-3048-4165-a42b-fe222faae387}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Includes\STM\Plugins">
+      <UniqueIdentifier>{09d926f4-32ce-4919-a3bf-f793781e41f5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Foundations">
+      <UniqueIdentifier>{26be359b-e587-4d34-9fcc-10bb8f64d315}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\GeoCoords">
+      <UniqueIdentifier>{6b648dab-770c-40b8-8dbe-3bda5033aaf4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Import">
+      <UniqueIdentifier>{d33f9b56-a2f3-4fb3-a5dd-024b6595070c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Memory">
+      <UniqueIdentifier>{d80ece41-d034-4c81-b49f-f64fcbf437f1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\STM">
+      <UniqueIdentifier>{0926c720-2be9-42e1-aca5-aae5790286c1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\STM\ImportPlugins">
+      <UniqueIdentifier>{1f0083ca-77f4-4ede-ad85-e956550f413a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\STM\Plugins">
+      <UniqueIdentifier>{e8f1cdbe-faec-4dd6-b072-dbab16c29a4a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="GeoCoords\GCSWktParsing.h">
+      <Filter>Includes\GeoCoords</Filter>
+    </ClInclude>
+    <ClInclude Include="GeoCoords\StdCpp.h">
+      <Filter>Includes\GeoCoords</Filter>
+    </ClInclude>
+    <ClInclude Include="GeoCoords\TransfoModelAffine.hpp">
+      <Filter>Includes\GeoCoords</Filter>
+    </ClInclude>
+    <ClInclude Include="GeoCoords\TransfoModelBase.h">
+      <Filter>Includes\GeoCoords</Filter>
+    </ClInclude>
+    <ClInclude Include="GeoCoords\TransfoModelCombined.hpp">
+      <Filter>Includes\GeoCoords</Filter>
+    </ClInclude>
+    <ClInclude Include="GeoCoords\TransfoModelIdentity.hpp">
+      <Filter>Includes\GeoCoords</Filter>
+    </ClInclude>
+    <ClInclude Include="GeoCoords\TransfoModelMixinBase.h">
+      <Filter>Includes\GeoCoords</Filter>
+    </ClInclude>
+    <ClInclude Include="GeoCoords\TransfoModelScaling.hpp">
+      <Filter>Includes\GeoCoords</Filter>
+    </ClInclude>
+    <ClInclude Include="GeoCoords\TransfoModelScalingTranslating.hpp">
+      <Filter>Includes\GeoCoords</Filter>
+    </ClInclude>
+    <ClInclude Include="GeoCoords\TransfoModelTranslating.hpp">
+      <Filter>Includes\GeoCoords</Filter>
+    </ClInclude>
+    <ClInclude Include="GeoCoords\TransfoModelUniformScaling.hpp">
+      <Filter>Includes\GeoCoords</Filter>
+    </ClInclude>
+    <ClInclude Include="GeoCoords\TransformationInternal.h">
+      <Filter>Includes\GeoCoords</Filter>
+    </ClInclude>
+    <ClInclude Include="GeoCoords\TransformationUtils.h">
+      <Filter>Includes\GeoCoords</Filter>
+    </ClInclude>
+    <ClInclude Include="GeoCoords\WKTUtils.h">
+      <Filter>Includes\GeoCoords</Filter>
+    </ClInclude>
+    <ClInclude Include="Import\ContentConfigComponentMixinBaseImpl.h">
+      <Filter>Includes\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="Import\DimensionIterator.h">
+      <Filter>Includes\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="Import\ImportCommandMixinBaseImpl.h">
+      <Filter>Includes\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="Import\ImportConfigComponentMixinBaseImpl.h">
+      <Filter>Includes\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="Import\ImporterCommandVisitor.h">
+      <Filter>Includes\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="Import\ImporterImpl.h">
+      <Filter>Includes\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="Import\InputExtractor.h">
+      <Filter>Includes\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="Import\InternalContentDescriptor.h">
+      <Filter>Includes\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="Import\InternalImporterConfig.h">
+      <Filter>Includes\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="Import\InternalSourceHandler.h">
+      <Filter>Includes\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="Import\PluginRegistryHelper.h">
+      <Filter>Includes\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="Import\PluginRegistryHelper.hpp">
+      <Filter>Includes\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="Import\ReprojectionFilterFactory.h">
+      <Filter>Includes\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="Import\Sink.h">
+      <Filter>Includes\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="Import\SourcePlugin.h">
+      <Filter>Includes\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="Import\StdCpp.h">
+      <Filter>Includes\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="Import\TypeConversionFilterFactory.h">
+      <Filter>Includes\Import</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\HGF3DFilterCoord.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\HGF3DFilterCoord.hpp">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\InternalUtilityFunctions.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\MrDTM.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\MrDTMContentConfigPersistance.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\MrDTMCoreDefs.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\MrDTMCoreFns.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\MrDTMCreator.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\MrDTMEditListener.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\MrDTMFilteringOptions.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\MrDTMImportSequencePersistance.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\MrDTMMoniker.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\MrDTMQuadTreeBCLIBFilters.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\MrDTMQuadTreeBCLIBFilters.hpp">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\MrDTMQuadTreeQueries.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\MrDTMQuadTreeQueries.hpp">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\MrDTMQuery.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\MrDTMQuery.hpp">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\MrDTMRasterDraping.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\MrDTMRelevanceDistribution.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\MrDTMSourcePersistance.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\MrDTMSources.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\MrDTMSourcesImport.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\MrDTMSourcesPersistance.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\MrDTMStorage.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\MrDTMTilingOptions.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\MrDTMTime.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ScalableTerrainModelPCH.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTM.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMCreator.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMDocumentEnv.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMMoniker.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMPolicy.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMQuery.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMSourceCollection.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMSourceCollection.hpp">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMSourceDescription.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMSourceImportConfig.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMSources.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMSourceVisitor.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMStream.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMStream.hpp">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMTime.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMURL.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\MrDTMDefs.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\MrDTMUtilityFunctions.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Foundations\Algorithm.h">
+      <Filter>Includes\PublicAPI\Foundations</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Foundations\Algorithm.hpp">
+      <Filter>Includes\PublicAPI\Foundations</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Foundations\Definitions.h">
+      <Filter>Includes\PublicAPI\Foundations</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Foundations\Error.h">
+      <Filter>Includes\PublicAPI\Foundations</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Foundations\Exception.h">
+      <Filter>Includes\PublicAPI\Foundations</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Foundations\Iterator.h">
+      <Filter>Includes\PublicAPI\Foundations</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Foundations\Log.h">
+      <Filter>Includes\PublicAPI\Foundations</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Foundations\Message.h">
+      <Filter>Includes\PublicAPI\Foundations</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Foundations\Traits.h">
+      <Filter>Includes\PublicAPI\Foundations</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Foundations\Warning.h">
+      <Filter>Includes\PublicAPI\Foundations</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\GeoCoords\Definitions.h">
+      <Filter>Includes\PublicAPI\GeoCoords</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\GeoCoords\GCS.h">
+      <Filter>Includes\PublicAPI\GeoCoords</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\GeoCoords\LocalTransform.h">
+      <Filter>Includes\PublicAPI\GeoCoords</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\GeoCoords\Reprojection.h">
+      <Filter>Includes\PublicAPI\GeoCoords</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\GeoCoords\Transformation.h">
+      <Filter>Includes\PublicAPI\GeoCoords</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\GeoCoords\Transformation.hpp">
+      <Filter>Includes\PublicAPI\GeoCoords</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\All.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\Base.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\ImportAll.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\ImportAllToLayer.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\ImportAllToLayerType.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\ImportAllToType.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\ImportLayer.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\ImportLayerToLayer.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\ImportLayerToLayerType.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\ImportLayerToType.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\ImportLayerType.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\ImportLayerTypeToLayer.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\ImportLayerTypeToLayerType.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\ImportLayerTypeToType.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\ImportType.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\ImportTypeToLayer.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\ImportTypeToLayerType.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Command\ImportTypeToType.h">
+      <Filter>Includes\PublicAPI\Import\Command</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Config\All.h">
+      <Filter>Includes\PublicAPI\Import\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Config\Attachments.h">
+      <Filter>Includes\PublicAPI\Import\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Config\Base.h">
+      <Filter>Includes\PublicAPI\Import\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Config\DefaultSourceGCS.h">
+      <Filter>Includes\PublicAPI\Import\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Config\DefaultTargetGCS.h">
+      <Filter>Includes\PublicAPI\Import\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Config\DefaultTargetLayer.h">
+      <Filter>Includes\PublicAPI\Import\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Config\DefaultTargetType.h">
+      <Filter>Includes\PublicAPI\Import\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Config\Extraction.h">
+      <Filter>Includes\PublicAPI\Import\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Config\Filtering.h">
+      <Filter>Includes\PublicAPI\Import\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Config\SourceFilters.h">
+      <Filter>Includes\PublicAPI\Import\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Config\TargetFilters.h">
+      <Filter>Includes\PublicAPI\Import\Config</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Config\Content\All.h">
+      <Filter>Includes\PublicAPI\Import\Config\Content</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Config\Content\Base.h">
+      <Filter>Includes\PublicAPI\Import\Config\Content</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Config\Content\GCS.h">
+      <Filter>Includes\PublicAPI\Import\Config\Content</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Config\Content\Layer.h">
+      <Filter>Includes\PublicAPI\Import\Config\Content</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Config\Content\Type.h">
+      <Filter>Includes\PublicAPI\Import\Config\Content</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Error\Source.h">
+      <Filter>Includes\PublicAPI\Import\Error</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Plugin\CustomFilterFactoryV0.h">
+      <Filter>Includes\PublicAPI\Import\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Plugin\DataTypeFamilyV0.h">
+      <Filter>Includes\PublicAPI\Import\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Plugin\DataTypeRegistry.h">
+      <Filter>Includes\PublicAPI\Import\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Plugin\DataTypeV0.h">
+      <Filter>Includes\PublicAPI\Import\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Plugin\ExtractorRegistry.h">
+      <Filter>Includes\PublicAPI\Import\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Plugin\FilterV0.h">
+      <Filter>Includes\PublicAPI\Import\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Plugin\InputExtractorV0.h">
+      <Filter>Includes\PublicAPI\Import\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Plugin\PacketBinderV0.h">
+      <Filter>Includes\PublicAPI\Import\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Plugin\RegistryTools.h">
+      <Filter>Includes\PublicAPI\Import\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Plugin\ReprojectionFilterRegistry.h">
+      <Filter>Includes\PublicAPI\Import\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Plugin\ReprojectionFilterV0.h">
+      <Filter>Includes\PublicAPI\Import\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Plugin\SourceReferenceV0.h">
+      <Filter>Includes\PublicAPI\Import\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Plugin\SourceRegistry.h">
+      <Filter>Includes\PublicAPI\Import\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Plugin\SourceV0.h">
+      <Filter>Includes\PublicAPI\Import\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Plugin\TypeConversionFilterRegistry.h">
+      <Filter>Includes\PublicAPI\Import\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Import\Plugin\TypeConversionFilterV0.h">
+      <Filter>Includes\PublicAPI\Import\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Memory\Allocation.h">
+      <Filter>Includes\PublicAPI\Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Memory\Definitions.h">
+      <Filter>Includes\PublicAPI\Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Memory\Exceptions.h">
+      <Filter>Includes\PublicAPI\Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Memory\Packet.h">
+      <Filter>Includes\PublicAPI\Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Memory\PacketAccess.h">
+      <Filter>Includes\PublicAPI\Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Memory\PacketAccess.hpp">
+      <Filter>Includes\PublicAPI\Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Type\IMrDTMLinear.h">
+      <Filter>Includes\PublicAPI\Type</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Type\IMrDTMMesh.h">
+      <Filter>Includes\PublicAPI\Type</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Type\IMrDTMPoint.h">
+      <Filter>Includes\PublicAPI\Type</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Type\IMrDTMTIN.h">
+      <Filter>Includes\PublicAPI\Type</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Plugin\IMrDTMCivilDTMSource.h">
+      <Filter>Includes\PublicAPI\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Plugin\IMrDTMFileUtilities.h">
+      <Filter>Includes\PublicAPI\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Plugin\IMrDTMFileUtilities.hpp">
+      <Filter>Includes\PublicAPI\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Plugin\IMrDTMPolicy.h">
+      <Filter>Includes\PublicAPI\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\Plugin\IMrDTMSTMSource.h">
+      <Filter>Includes\PublicAPI\Plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PrivateAPI\STMInternal\Foundations\FoundationsPrivateTools.h">
+      <Filter>Includes\PrivateAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="PrivateAPI\STMInternal\Foundations\PrivateStringTools.h">
+      <Filter>Includes\PrivateAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\ImportPlugins\CivilDTMHelpers.h">
+      <Filter>Includes\STM\ImportPlugins</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\Plugins\MrDTMClipMaskFilterFactory.h">
+      <Filter>Includes\STM\Plugins</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\Plugins\MrDTMDimensionTypeConversionFilter.h">
+      <Filter>Includes\STM\Plugins</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\Plugins\MrDTMIDTMFileTraits.h">
+      <Filter>Includes\STM\Plugins</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMFeature.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\MrDTMClipContainer.h">
+      <Filter>Includes\STM</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableTerrainModel\IMrDTMClipContainer.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Foundations\Errors.cpp">
+      <Filter>Source\Foundations</Filter>
+    </ClCompile>
+    <ClCompile Include="Foundations\PrivateStringTools.cpp">
+      <Filter>Source\Foundations</Filter>
+    </ClCompile>
+    <ClCompile Include="GeoCoords\GCS.cpp">
+      <Filter>Source\GeoCoords</Filter>
+    </ClCompile>
+    <ClCompile Include="GeoCoords\GCSWktParsing.cpp">
+      <Filter>Source\GeoCoords</Filter>
+    </ClCompile>
+    <ClCompile Include="GeoCoords\LocalTransform.cpp">
+      <Filter>Source\GeoCoords</Filter>
+    </ClCompile>
+    <ClCompile Include="GeoCoords\Reprojection.cpp">
+      <Filter>Source\GeoCoords</Filter>
+    </ClCompile>
+    <ClCompile Include="GeoCoords\StdCpp.cpp">
+      <Filter>Source\GeoCoords</Filter>
+    </ClCompile>
+    <ClCompile Include="GeoCoords\Transformation.cpp">
+      <Filter>Source\GeoCoords</Filter>
+    </ClCompile>
+    <ClCompile Include="GeoCoords\WKTUtils.cpp">
+      <Filter>Source\GeoCoords</Filter>
+    </ClCompile>
+    <ClCompile Include="Import\Attachment.cpp">
+      <Filter>Source\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="Import\ContentConfig.cpp">
+      <Filter>Source\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="Import\ContentConfigs.cpp">
+      <Filter>Source\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="Import\ContentDescriptor.cpp">
+      <Filter>Source\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="Import\CustomFilterFactory.cpp">
+      <Filter>Source\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="Import\DataType.cpp">
+      <Filter>Source\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="Import\DataTypeFamily.cpp">
+      <Filter>Source\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="Import\DimensionDescription.cpp">
+      <Filter>Source\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="Import\ExtractionConfig.cpp">
+      <Filter>Source\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="Import\Filter.cpp">
+      <Filter>Source\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="Import\FilterFactory.cpp">
+      <Filter>Source\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="Import\FilteringConfig.cpp">
+      <Filter>Source\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="Import\ImportCommands.cpp">
+      <Filter>Source\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="Import\ImportConfig.cpp">
+      <Filter>Source\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="Import\ImportConfigs.cpp">
+      <Filter>Source\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="Import\Importer.cpp">
+      <Filter>Source\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="Import\ImporterCommandVisitor.cpp">
+      <Filter>Source\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="Import\ImportPolicy.cpp">
+      <Filter>Source\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="Import\ImportSequence.cpp">
+      <Filter>Source\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="Import\InputExtractor.cpp">
+      <Filter>Source\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="Import\InternalContentDescriptor.cpp">
+      <Filter>Source\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="Import\InternalImporterConfig.cpp">
+      <Filter>Source\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="Import\Metadata.cpp">
+      <Filter>Source\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="Import\ReprojectionFilterFactory.cpp">
+      <Filter>Source\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="Import\Sink.cpp">
+      <Filter>Source\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="Import\Source.cpp">
+      <Filter>Source\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="Import\SourcePlugin.cpp">
+      <Filter>Source\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="Import\SourceReference.cpp">
+      <Filter>Source\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="Import\SourceTypeConfig.cpp">
+      <Filter>Source\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="Import\StdCpp.cpp">
+      <Filter>Source\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="Import\TypeConversionFilterFactory.cpp">
+      <Filter>Source\Import</Filter>
+    </ClCompile>
+    <ClCompile Include="Memory\MemoryAllocation.cpp">
+      <Filter>Source\Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="Memory\Packet.cpp">
+      <Filter>Source\Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="Memory\PacketAccess.cpp">
+      <Filter>Source\Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ImportPlugins\CivilDTMFileImporter.cpp">
+      <Filter>Source\STM\ImportPlugins</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ImportPlugins\CivilDTMHelpers.cpp">
+      <Filter>Source\STM\ImportPlugins</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ImportPlugins\IDTMFileImporter.cpp">
+      <Filter>Source\STM\ImportPlugins</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ImportPlugins\LandXMLFileImporter.cpp">
+      <Filter>Source\STM\ImportPlugins</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ImportPlugins\XYZAsciiFileImporter.cpp">
+      <Filter>Source\STM\ImportPlugins</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ImportPlugins\XYZFileImporter.cpp">
+      <Filter>Source\STM\ImportPlugins</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\Plugins\MrDTMClipMaskFilterFactory.cpp">
+      <Filter>Source\STM\Plugins</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\Plugins\MrDTMLinearTypes.cpp">
+      <Filter>Source\STM\Plugins</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\Plugins\MrDTMMeshTypes.cpp">
+      <Filter>Source\STM\Plugins</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\Plugins\MrDTMPointTypes.cpp">
+      <Filter>Source\STM\Plugins</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\Plugins\MrDTMReprojectionFilterPlugins.cpp">
+      <Filter>Source\STM\Plugins</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\Plugins\MrDTMTINTypes.cpp">
+      <Filter>Source\STM\Plugins</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\Plugins\MrDTMTypeConversionFilterPlugins.cpp">
+      <Filter>Source\STM\Plugins</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\InternalUtilityFunctions.cpp">
+      <Filter>Source\STM</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\MrDTM.cpp">
+      <Filter>Source\STM</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\MrDTMContentConfigPersistance.cpp">
+      <Filter>Source\STM</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\MrDTMCoreFns.cpp">
+      <Filter>Source\STM</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\MrDTMCreator.cpp">
+      <Filter>Source\STM</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\MrDTMFilteringOptions.cpp">
+      <Filter>Source\STM</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\MrDTMImportSequencePersistance.cpp">
+      <Filter>Source\STM</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\MrDTMInitialization.cpp">
+      <Filter>Source\STM</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\MrDTMMoniker.cpp">
+      <Filter>Source\STM</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\MrDTMPolicy.cpp">
+      <Filter>Source\STM</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\MrDTMQuadTreeBCLIBFilters.cpp">
+      <Filter>Source\STM</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\MrDTMQuery.cpp">
+      <Filter>Source\STM</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\MrDTMRasterDraping.cpp">
+      <Filter>Source\STM</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\MrDTMRelevanceDistribution.cpp">
+      <Filter>Source\STM</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\MrDTMSourceCollection.cpp">
+      <Filter>Source\STM</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\MrDTMSourceDescription.cpp">
+      <Filter>Source\STM</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\MrDTMSourceImportConfig.cpp">
+      <Filter>Source\STM</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\MrDTMSourcePersistance.cpp">
+      <Filter>Source\STM</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\MrDTMSources.cpp">
+      <Filter>Source\STM</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\MrDTMSourcesImport.cpp">
+      <Filter>Source\STM</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\MrDTMSourcesPersistance.cpp">
+      <Filter>Source\STM</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\MrDTMStream.cpp">
+      <Filter>Source\STM</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\MrDTMTilingOptions.cpp">
+      <Filter>Source\STM</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\MrDTMTime.cpp">
+      <Filter>Source\STM</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\MrDTMURL.cpp">
+      <Filter>Source\STM</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\MrDTMUtilityFunctions.cpp">
+      <Filter>Source\STM</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableTerrainModelPCH.cpp">
+      <Filter>Source\STM</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\MrDTMFeature.cpp">
+      <Filter>Source\STM</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\MrDTMClipContainer.cpp">
+      <Filter>Source\STM</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ScalableTerrainModel.mke" />
+    <None Include="ScalableTerrainModel.mki" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="transkit\transkit.xml" />
+  </ItemGroup>
+</Project>

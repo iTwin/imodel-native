@@ -1,0 +1,230 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug Local LKG|Win32">
+      <Configuration>Debug Local LKG</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="core.mke" />
+    <None Include="core.mki" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\Drainage\bcdtmDrainage.cpp" />
+    <ClCompile Include="..\Drainage\bcdtmDrainageCatchment.cpp" />
+    <ClCompile Include="..\Drainage\bcdtmDrainageFeatures.cpp" />
+    <ClCompile Include="..\Drainage\bcdtmDrainageList.cpp" />
+    <ClCompile Include="..\Drainage\bcdtmDrainagePond.cpp" />
+    <ClCompile Include="..\Drainage\bcdtmDrainageTables.cpp" />
+    <ClCompile Include="..\Drainage\bcdtmDrainageTrace.cpp" />
+    <ClCompile Include="..\Drainage\bcdtmDrainageUtility.cpp" />
+    <ClCompile Include="..\Drainage\drainage.cpp" />
+    <ClCompile Include="2d\bcdtm3DModel.cpp" />
+    <ClCompile Include="2d\bcdtmBtree.cpp" />
+    <ClCompile Include="2d\bcdtmCheck.cpp" />
+    <ClCompile Include="2d\bcdtmClean.cpp" />
+    <ClCompile Include="2d\bcdtmcleanup.cpp" />
+    <ClCompile Include="2d\bcdtmClip.cpp" />
+    <ClCompile Include="2d\bcdtmClip1.cpp" />
+    <ClCompile Include="2d\bcdtmConnect.cpp" />
+    <ClCompile Include="2d\bcdtmData.cpp" />
+    <ClCompile Include="2d\bcdtmDelta.cpp" />
+    <ClCompile Include="2d\bcdtmDllMain.cpp" />
+    <ClCompile Include="2d\bcdtmDrainage00.cpp" />
+    <ClCompile Include="2d\bcdtmDrainage01.cpp" />
+    <ClCompile Include="2d\bcdtmDrainage02.cpp" />
+    <ClCompile Include="2d\bcdtmDrainage03.cpp" />
+    <ClCompile Include="2d\bcdtmDrainage04.cpp" />
+    <ClCompile Include="2d\bcdtmDrape.cpp" />
+    <ClCompile Include="2d\bcdtmEdit.cpp" />
+    <ClCompile Include="2d\bcdtmEditDraw.cpp" />
+    <ClCompile Include="2d\bcdtmExport.cpp" />
+    <ClCompile Include="2d\bcdtmFilter.cpp" />
+    <ClCompile Include="2d\bcdtmFlags.cpp" />
+    <ClCompile Include="2d\bcdtmFnd.cpp" />
+    <ClCompile Include="2d\bcdtmGeopak.cpp" />
+    <ClCompile Include="2d\bcdtmGeopakIO.cpp" />
+    <ClCompile Include="2d\bcdtmGrade.cpp" />
+    <ClCompile Include="2d\bcdtmInitialise.cpp" />
+    <ClCompile Include="2d\bcdtmInsert.cpp" />
+    <ClCompile Include="2d\bcdtmInterpolate.cpp" />
+    <ClCompile Include="2d\bcdtmIo.cpp" />
+    <ClCompile Include="2d\bcdtmJoin.cpp" />
+    <ClCompile Include="2d\bcdtmLattice.cpp" />
+    <ClCompile Include="2d\bcdtmLatticeVolume.cpp" />
+    <ClCompile Include="2d\bcdtmLidarFilter.cpp" />
+    <ClCompile Include="2d\bcdtmList.cpp" />
+    <ClCompile Include="2d\bcdtmLoadContours.cpp" />
+    <ClCompile Include="2d\bcdtmLoadFeatures.cpp" />
+    <ClCompile Include="2d\bcdtmLoadMesh.cpp" />
+    <ClCompile Include="2d\bcdtmLoadRegions.cpp" />
+    <ClCompile Include="2d\bcdtmLoadTriangles.cpp" />
+    <ClCompile Include="2d\bcdtmLos.cpp" />
+    <ClCompile Include="2d\bcdtmMark.cpp" />
+    <ClCompile Include="2d\bcdtmMath.cpp" />
+    <ClCompile Include="2d\bcdtmMem.cpp" />
+    <ClCompile Include="2d\bcdtmMemory.cpp" />
+    <ClCompile Include="2d\bcdtmMerge.cpp" />
+    <ClCompile Include="2d\bcdtmMres.cpp" />
+    <ClCompile Include="2d\bcdtmNgp.cpp" />
+    <ClCompile Include="2d\bcdtmObj.cpp" />
+    <ClCompile Include="2d\bcdtmPatch.cpp" />
+    <ClCompile Include="2d\bcdtmPolyContour.cpp" />
+    <ClCompile Include="2d\bcdtmPolygon.cpp" />
+    <ClCompile Include="2d\bcdtmReport.cpp" />
+    <ClCompile Include="2d\bcdtmSideSlope.cpp" />
+    <ClCompile Include="2d\bcdtmSite.cpp" />
+    <ClCompile Include="2d\bcdtmSlope.cpp" />
+    <ClCompile Include="2d\bcdtmSort.cpp" />
+    <ClCompile Include="2d\bcdtmStockPile.cpp" />
+    <ClCompile Include="2d\bcdtmStream.cpp" />
+    <ClCompile Include="2d\bcdtmString.cpp" />
+    <ClCompile Include="2d\bcdtmTheme.cpp" />
+    <ClCompile Include="2d\bcdtmTile.cpp" />
+    <ClCompile Include="2d\bcdtmTin.cpp" />
+    <ClCompile Include="2d\bcdtmTinVolume.cpp" />
+    <ClCompile Include="2d\bcdtmTrg.cpp" />
+    <ClCompile Include="2d\bcdtmUtility.cpp" />
+    <ClCompile Include="2d\dtmio.cpp" />
+    <ClCompile Include="cppwrappers\bcDTMClass.cpp" />
+    <ClCompile Include="cppwrappers\bcDTMDrapedLineClass.cpp" />
+    <ClCompile Include="cppwrappers\bcDTMEdges.cpp" />
+    <ClCompile Include="cppwrappers\bcDTMFeatureClass.cpp" />
+    <ClCompile Include="cppwrappers\bcDTMFeatureEnumeratorClass.cpp" />
+    <ClCompile Include="cppwrappers\bcDTMFeatureMapClass.cpp" />
+    <ClCompile Include="cppwrappers\bcDTMInputClass.cpp" />
+    <ClCompile Include="cppwrappers\bcDTMMesh.cpp" />
+    <ClCompile Include="cppwrappers\DTM.cpp" />
+    <ClCompile Include="CPPWrappers\DTMIterators.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Drainage\bcdtmDrainage.h" />
+    <ClInclude Include="..\Drainage\bcdtmDrainageCatchment.h" />
+    <ClInclude Include="..\Drainage\bcdtmDrainageFeatures.h" />
+    <ClInclude Include="..\Drainage\bcdtmDrainageList.h" />
+    <ClInclude Include="..\Drainage\bcdtmDrainagePond.h" />
+    <ClInclude Include="..\Drainage\bcdtmDrainageTables.h" />
+    <ClInclude Include="..\Drainage\bcdtmDrainageTrace.h" />
+    <ClInclude Include="..\Drainage\bcdtmDrainageUtility.h" />
+    <ClInclude Include="..\Drainage\PublicAPI\drainage.h" />
+    <ClInclude Include="..\PublicAPI\TerrainModel\TerrainModel.h" />
+    <ClInclude Include="cppwrappers\bcDTMImpl.h" />
+    <ClInclude Include="PrivateAPI\base\bcConversion.h" />
+    <ClInclude Include="PrivateAPI\base\bcGmcNorm.h" />
+    <ClInclude Include="PrivateAPI\base\bcMacros.h" />
+    <ClInclude Include="PrivateAPI\base\bcMem.h" />
+    <ClInclude Include="PrivateAPI\base\bcutil.h" />
+    <ClInclude Include="PrivateAPI\BcDTMWrapperClass.h" />
+    <ClInclude Include="PrivateAPI\dtm2dfnsXM.h" />
+    <ClInclude Include="PrivateAPI\dtmdefsXM.h" />
+    <ClInclude Include="PrivateAPI\dtmvars.h" />
+    <ClInclude Include="PublicAPI\bcDTM.h" />
+    <ClInclude Include="PublicAPI\bcDTMBaseDef.h" />
+    <ClInclude Include="PublicAPI\bcDTMClass.h" />
+    <ClInclude Include="PublicAPI\bcDTMElement.h" />
+    <ClInclude Include="PublicAPI\bcdtminlines.h" />
+    <ClInclude Include="PublicAPI\bcDTMStream.h" />
+    <ClInclude Include="PublicAPI\dtm2dfns.h" />
+    <ClInclude Include="PublicAPI\dtm2dfnsXM.h" />
+    <ClInclude Include="PublicAPI\DTMDefs.h" />
+    <ClInclude Include="PublicAPI\DTMIterators.h" />
+    <ClInclude Include="PublicAPI\DTMEvars.h" />
+    <ClInclude Include="PublicAPI\DTMFns.h" />
+    <ClInclude Include="PublicAPI\DTMPtr.h" />
+    <ClInclude Include="PublicAPI\IDTM.h" />
+    <ClInclude Include="PublicAPI\PartitionArray.h" />
+    <ClInclude Include="PublicAPI\TMTransformHelper.h" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{1D2F2287-897A-4C09-AAF7-62984BEF33A6}</ProjectGuid>
+    <Keyword>MakeFileProj</Keyword>
+    <ProjectName>TerrainModelCore</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Local LKG|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug Local LKG|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p Core -f TerrainModel -r TerrainModel re HeaderFiles Core -x64
+</NMakeBuildCommandLine>
+    <NMakeOutput>$(OutRoot)Winx64\build\TerrainModel\Core\BentleyTerrainModel.dll</NMakeOutput>
+    <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
+    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p Core -f TerrainModel -r TerrainModel re HeaderFiles Core -x64 -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p Core -f TerrainModel -r TerrainModel re HeaderFiles Core -x64 -d"BMAKE_OPT=$(BMAKE_OPT) -a"</NMakeReBuildCommandLine>
+    <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)PrivateAPI;$(ProjectDir)PublicAPI;$(ProjectDir)cppwrappers;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(ProjectDir)PrivateAPI\base</NMakeIncludeSearchPath>
+    <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
+    <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
+    <NMakePreprocessorDefinitions>__BENTLEYDTM_BUILD__</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Local LKG|Win32'">
+    <NMakeBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p Core -f TerrainModel -r TerrainModel re HeaderFiles Core -x64
+xcopy /S /Y /r $(SrcRoot)TerrainModel\Core\PublicAPI\*.*  $(Root)\out\LKG\Winx64\TerrainModel\PublicAPI\TerrainModel\Core
+xcopy /Y /r $(OutRoot)Winx64\Build\TerrainModel\TerrainModelCore\TerrainModelCore.lib $(Root)\out\LKG\Winx64\TerrainModel\Delivery\
+xcopy /Y /r $(OutRoot)Winx64\Build\TerrainModel\TerrainModelCore\TerrainModelCore.dll $(Root)\out\LKG\Winx64\TerrainModel\Delivery\</NMakeBuildCommandLine>
+    <NMakeOutput>$(OutRoot)Winx64\build\TerrainModel\Core\BentleyTerrainModel.dll</NMakeOutput>
+    <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
+    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p Core -f TerrainModel -r TerrainModel re HeaderFiles Core -x64 -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p Core -f TerrainModel -r TerrainModel re HeaderFiles Core -x64 -d"BMAKE_OPT=$(BMAKE_OPT) -a"</NMakeReBuildCommandLine>
+    <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)PrivateAPI;$(ProjectDir)PublicAPI;$(ProjectDir)cppwrappers;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI;$(ProjectDir)PrivateAPI\base</NMakeIncludeSearchPath>
+    <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
+    <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
+    <NMakePreprocessorDefinitions>__BENTLEYDTM_BUILD__</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <NMakeBuildCommandLine>set DEBUG=
+set NDEBUG=1
+python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild -x64 Core
+</NMakeBuildCommandLine>
+    <NMakeOutput>
+    </NMakeOutput>
+    <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
+    <NMakeCleanCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild -x64 Core -c</NMakeCleanCommandLine>
+    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py rebuild -x64 CoreDll</NMakeReBuildCommandLine>
+    <NMakePreprocessorDefinitions>WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
+    <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
+    <NMakeIncludeSearchPath>$(ProjectDir);$(ProjectDir)PrivateAPI;$(ProjectDir)PublicAPI;$(ProjectDir)cppwrappers;$(OutRoot)Winx64\BuildContexts\TerrainModel\PublicAPI</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

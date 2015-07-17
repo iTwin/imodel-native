@@ -1,0 +1,254 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: ScalableTerrainModel/ScalableTerrainModel.mke $
+#
+#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+
+baseDir         = $(_MakeFilePath)
+PolicyFile      = $(SrcRoot)TerrainModel/ScalableTerrainModel/mki/AssertScalableTerrainModelPolicy.mki
+SolutionPolicyMki=$(baseDir)ScalableTerrainModel.mki
+
+%include  mdl.mki
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------------------
+#   Symlink APIs
+#----------------------------------------------------------------------
+always:
+   @CreateSymLinks.py -d"$(BuildContext)PublicAPI/ScalableTerrainModel=$(STMPublicAPISrc)/ScalableTerrainModel"
+
+
+#----------------------------------------------------------------------
+#       Inform user of compile options
+#----------------------------------------------------------------------
+always:
+        |  Compiler options: $(cDefs)$(cDefsPost) $(copt) $(cIncs) $(PublicApiIncludes) $(CCompOpts)
+        |  -------- --------
+
+#----------------------------------------------------------------------
+#   Build precompiled header
+#----------------------------------------------------------------------
+PchCompiland = $(stmDir)ScalableTerrainModelPCH.cpp
+PchOutputDir = $(o)
+PchExtraOptions    = -Zm180
+%include $(SharedMki)PreCompileHeader.mki
+
+# UsePrecompiledHeaderOptions is defined for us by PreCompileHeader.mki
+CCPchOpts = $(UsePrecompiledHeaderOptions) -DSCALABLE_TERRAIN_MODEL_PRIVATE_SECTION
+
+PCHHeaderDepends=$(o)ScalableTerrainModelPCH$(oext)
+MultiCompileDepends=$(_MakeFileSpec) 
+#DisableMultiCompile=1
+%include MultiCppCompileRule.mki
+
+#----------------------------------------------------------------------
+#   Build Fondations
+#----------------------------------------------------------------------
+$(o)Errors$(oext) : $(foundationsDir)Errors.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)PrivateStringTools$(oext) : $(foundationsDir)PrivateStringTools.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+#----------------------------------------------------------------------
+#   Build Memory
+#----------------------------------------------------------------------
+$(o)MemoryAllocation$(oext) : $(memoryDir)MemoryAllocation.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)Packet$(oext) : $(memoryDir)Packet.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)PacketAccess$(oext) : $(memoryDir)PacketAccess.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+#----------------------------------------------------------------------
+#   Build GeoCoords
+#----------------------------------------------------------------------
+$(o)Reprojection$(oext) : $(geocoordsDir)Reprojection.cpp $(STMPublicAPISrc)ScalableTerrainModel/GeoCoords/Definitions.h $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)GCS$(oext) : $(geocoordsDir)GCS.cpp $(STMPublicAPISrc)ScalableTerrainModel/GeoCoords/Definitions.h $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)WktUtils$(oext) : $(geocoordsDir)WktUtils.cpp $(STMPublicAPISrc)ScalableTerrainModel/GeoCoords/Definitions.h $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)GCSWktParsing$(oext) : $(geocoordsDir)GCSWktParsing.cpp $(STMPublicAPISrc)ScalableTerrainModel/GeoCoords/Definitions.h $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)LocalTransform$(oext) : $(geocoordsDir)LocalTransform.cpp $(STMPublicAPISrc)ScalableTerrainModel/GeoCoords/Definitions.h $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)Transformation$(oext) : $(geocoordsDir)Transformation.cpp $(STMPublicAPISrc)ScalableTerrainModel/GeoCoords/Definitions.h $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+
+#-----------------------------------------------------------------------
+#   Build Import
+#-----------------------------------------------------------------------
+$(o)DataType$(oext) : $(importDir)DataType.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)DataTypeFamily$(oext) : $(importDir)DataTypeFamily.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)ContentDescriptor$(oext) : $(importDir)ContentDescriptor.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)Metadata$(oext) : $(importDir)Metadata.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)Attachment$(oext) : $(importDir)Attachment.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)Filter$(oext) : $(importDir)Filter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)TypeConversionFilterFactory$(oext) : $(importDir)TypeConversionFilterFactory.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)ReprojectionFilterFactory$(oext) : $(importDir)ReprojectionFilterFactory.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)CustomFilterFactory$(oext) : $(importDir)CustomFilterFactory.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)FilterFactory$(oext) : $(importDir)FilterFactory.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)DimensionDescription$(oext) : $(importDir)DimensionDescription.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)FilteringConfig$(oext) : $(importDir)FilteringConfig.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)Source$(oext) : $(importDir)Source.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)SourceReference$(oext) : $(importDir)SourceReference.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)SourcePlugin$(oext) : $(importDir)SourcePlugin.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)Importer$(oext) : $(importDir)Importer.cpp $(importDir)ImporterImpl.h $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)ImportPolicy$(oext) : $(importDir)ImportPolicy.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)ImporterCommandVisitor$(oext) : $(importDir)ImporterCommandVisitor.cpp $(importDir)ImporterImpl.h $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)InternalContentDescriptor$(oext) : $(importDir)InternalContentDescriptor.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)InternalImporterConfig$(oext) : $(importDir)InternalImporterConfig.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)InputExtractor$(oext) : $(importDir)InputExtractor.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)Sink$(oext) : $(importDir)Sink.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)ImportConfig$(oext) : $(importDir)ImportConfig.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)ExtractionConfig$(oext) : $(importDir)ExtractionConfig.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)ContentConfig$(oext) : $(importDir)ContentConfig.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)ImportSequence$(oext) : $(importDir)ImportSequence.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)ImportConfigs$(oext) : $(importDir)ImportConfigs.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)ContentConfigs$(oext) : $(importDir)ContentConfigs.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)ImportCommands$(oext) : $(importDir)ImportCommands.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+
+#-----------------------------------------------------------------------
+#   Build STM
+#-----------------------------------------------------------------------
+$(o)MrDTMInitialization$(oext) : $(stmDir)MrDTMInitialization.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)MrDTM$(oext) : $(stmDir)MrDTM.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)MrDTMClipContainer$(oext) : $(stmDir)MrDTMClipContainer.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)MrDTMQuery$(oext) : $(stmDir)MrDTMQuery.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)MrDTMCreator$(oext) : $(stmDir)MrDTMCreator.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)MrDTMFeature$(oext) : $(stmDir)MrDTMFeature.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)MrDTMSources$(oext) : $(stmDir)MrDTMSources.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)MrDTMSourceCollection$(oext) : $(stmDir)MrDTMSourceCollection.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)MrDTMCoreFns$(oext) : $(stmDir)MrDTMCoreFns.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)MrDTMFilteringOptions$(oext) : $(stmDir)MrDTMFilteringOptions.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)MrDTMMoniker$(oext) : $(stmDir)MrDTMMoniker.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)MrDTMTilingOptions$(oext) : $(stmDir)MrDTMTilingOptions.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)MrDTMQuadTreeBCLIBFilters$(oext) : $(stmDir)MrDTMQuadTreeBCLIBFilters.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)MrDTMRelevanceDistribution$(oext) : $(stmDir)MrDTMRelevanceDistribution.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)MrDTMUtilityFunctions$(oext) : $(stmDir)MrDTMUtilityFunctions.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)InternalUtilityFunctions$(oext) : $(stmDir)InternalUtilityFunctions.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)MrDTMTime$(oext) : $(stmDir)MrDTMTime.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)MrDTMSourcesPersistance$(oext) : $(stmDir)MrDTMSourcesPersistance.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)MrDTMSourcePersistance$(oext) : $(stmDir)MrDTMSourcePersistance.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)MrDTMImportSequencePersistance$(oext) : $(stmDir)MrDTMImportSequencePersistance.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)MrDTMContentConfigPersistance$(oext) : $(stmDir)MrDTMContentConfigPersistance.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)MrDTMSourcesImport$(oext) : $(stmDir)MrDTMSourcesImport.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)MrDTMSourceDescription$(oext) : $(stmDir)MrDTMSourceDescription.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)MrDTMSourceImportConfig$(oext) : $(stmDir)MrDTMSourceImportConfig.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)MrDTMStream$(oext) : $(stmDir)MrDTMStream.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)MrDTMURL$(oext) : $(stmDir)MrDTMURL.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)MrDTMPolicy$(oext) : $(stmDir)MrDTMPolicy.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+
+#-----------------------------------------------------------------------
+#   Build Compile Importer plugins
+#-----------------------------------------------------------------------
+$(o)CivilDTMHelpers$(oext) : $(importerPluginsDir)CivilDTMHelpers.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)CivilDTMFileImporter$(oext) : $(importerPluginsDir)CivilDTMFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)XYZFileImporter$(oext) : $(importerPluginsDir)XYZFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)LandXMLFileImporter$(oext) : $(importerPluginsDir)LandXMLFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)IDTMFileImporter$(oext) : $(importerPluginsDir)IDTMFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)XYZAsciiFileImporter$(oext) : $(importerPluginsDir)XYZAsciiFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+#-----------------------------------------------------------------------
+#   Build Compile Custom plugins
+#-----------------------------------------------------------------------
+$(o)MrDTMClipMaskFilterFactory$(oext) : $(pluginsDir)MrDTMClipMaskFilterFactory.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)MrDTMTypeConversionFilterPlugins$(oext) : $(pluginsDir)MrDTMTypeConversionFilterPlugins.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)MrDTMReprojectionFilterPlugins$(oext) : $(pluginsDir)MrDTMReprojectionFilterPlugins.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)MrDTMPointTypes$(oext) : $(pluginsDir)MrDTMPointTypes.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)MrDTMLinearTypes$(oext) : $(pluginsDir)MrDTMLinearTypes.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)MrDTMTINTypes$(oext) : $(pluginsDir)MrDTMTINTypes.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+$(o)MrDTMMeshTypes$(oext) : $(pluginsDir)MrDTMMeshTypes.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#   dependencies of the subsystem.
+#----------------------------------------------------------------------
+DLM_OBJECT_PCH      = $(o)ScalableTerrainModelPCH$(oext)
+DLM_OBJECT_FILES    = $(MultiCompileObjectList)
+
+LINKER_LIBRARIES_DELAYLOADED  = \
+    $(ContextSubpartsLibs)$(BaseGeocoordLib)
+
+LINKER_LIBRARIES            = \
+    $(ContextSubpartsLibs)$(IppGraLibsLib) \
+    $(ContextSubpartsLibs)$(IppUtlLibsLib) \
+    $(ContextSubpartsLibs)$(BentleyGeomLib) \
+    $(ContextSubpartsLibs)$(TerrainModelCoreLib) \
+    $(ContextSubpartsLibs)$(TerrainModelFormatsLib)
+
+%include $(sharedMki)LinkLibrary.mki
+

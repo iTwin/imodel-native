@@ -1,0 +1,39 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: ScalableTerrainModel/PublicAPI/ScalableTerrainModel/GeoCoords/_Description.mki $
+#
+#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+%if defined (__GeoCoordsPublicAPIDescriptionMki__)
+    %return
+%endif
+__GeoCoordsPublicAPIDescriptionMki__ = 1
+
+%include $(BuildContext)PublicAPI/Foundations/_Description.mki
+
+GeoCoordsPublicAPILocation = $(BuildContext)PublicAPI/GeoCoords/
+
+#----------------------------------------------------------------------
+#   Non-recursive listing
+#----------------------------------------------------------------------
+GeoCoordsPublicAPIListing = \
+    $(GeoCoordsPublicAPILocation)Definitions.h \
+    $(GeoCoordsPublicAPILocation)GCS.h \
+    $(GeoCoordsPublicAPILocation)LocalTransform.h \
+    $(GeoCoordsPublicAPILocation)Reprojection.h \
+    $(GeoCoordsPublicAPILocation)Transformation.h \
+    $(GeoCoordsPublicAPILocation)Transformation.hpp
+
+#----------------------------------------------------------------------
+#   Recursive listing
+#----------------------------------------------------------------------
+GeoCoordsPublicAPIRecursiveListing = \
+    $(GeoCoordsPublicAPIListing)
+
+#----------------------------------------------------------------------
+#   Full recursive listing with dependencies
+#----------------------------------------------------------------------
+GeoCoordsPublicAPIFullListing = \
+    $(GeoCoordsPublicAPIRecursiveListing) \
+    $(FoundationsPublicAPIRecursiveListing)

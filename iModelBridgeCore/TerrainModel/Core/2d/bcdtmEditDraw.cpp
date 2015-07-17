@@ -1,23 +1,24 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: src/unmanaged/DTM/civilDTMext/bcdtmExtEditDraw.cpp $
+|     $Source: Core/2d/bcdtmEditDraw.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "stdafx.h"
-
+#include "bcDTMBaseDef.h"
+#include "dtmevars.h"
+#include "bcdtminlines.h" 
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtEdit_drawPointFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,long point,double contourInterval,void *userP )
+BENTLEYDTM_EXPORT int bcdtmEdit_drawPointFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,long point,double contourInterval,void *userP )
 /*
 ** This Function draws All The Lines Connected To A Point
 */
 {
- int    ret=DTM_SUCCESS,dbg=0 ;
+ int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long   p2,p3,clc,voidFlag ;
  double x,y,z,SlopeD,SlopeP,Aspect,Height ;
 /*
@@ -47,7 +48,7 @@ int bcdtmExtEdit_drawPointFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback 
                 if( dbg == 2 ) bcdtmWrite_message(0,0,0,"**** Drawing Triangle") ;
                 if( drawMode != 2 && drawMode != 3 )
                   {
-                   if( bcdtmExtEdit_drawTriangleDtmObject(dtmP,loadFunctionP,drawMode,point,p2,p3,userP ) ) goto errexit ;
+                   if( bcdtmEdit_drawTriangleDtmObject(dtmP,loadFunctionP,drawMode,point,p2,p3,userP ) ) goto errexit ;
                   }
                 else
                   {
@@ -59,7 +60,7 @@ int bcdtmExtEdit_drawPointFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback 
 **              Draw Contours
 */
                 if( dbg == 2 ) bcdtmWrite_message(0,0,0,"**** Drawing Contours") ;
-                if( bcdtmExtEdit_drawContoursForTriangleDtmObject(dtmP,loadFunctionP,drawMode,point,p2,p3,contourInterval,userP)) goto errexit ;
+                if( bcdtmEdit_drawContoursForTriangleDtmObject(dtmP,loadFunctionP,drawMode,point,p2,p3,contourInterval,userP)) goto errexit ;
 /*
 **              Draw Flow Arrow
 */
@@ -77,14 +78,14 @@ int bcdtmExtEdit_drawPointFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback 
 */
              if( dbg == 2 ) bcdtmWrite_message(0,0,0,"**** Drawing Triangle Base") ;
              if( bcdtmList_testForVoidLineDtmObject(dtmP,p2,p3,&voidFlag) ) goto errexit ;
-             if( ! voidFlag ) if( bcdtmExtEdit_drawDtmFeaturesForLineDtmObject(dtmP,loadFunctionP,drawMode,p2,p3,userP) ) goto errexit ;
+             if( ! voidFlag ) if( bcdtmEdit_drawDtmFeaturesForLineDtmObject(dtmP,loadFunctionP,drawMode,p2,p3,userP) ) goto errexit ;
             }
 /*
 **        Draw DTM Features For Line point-p2
 */
           if( dbg == 2 ) bcdtmWrite_message(0,0,0,"**** Drawing Triangle Edge") ;
           if( bcdtmList_testForVoidLineDtmObject(dtmP,point,p2,&voidFlag) ) goto errexit ;
-          if( ! voidFlag ) if( bcdtmExtEdit_drawDtmFeaturesForLineDtmObject(dtmP,loadFunctionP,drawMode,point,p2,userP) ) goto errexit ;
+          if( ! voidFlag ) if( bcdtmEdit_drawDtmFeaturesForLineDtmObject(dtmP,loadFunctionP,drawMode,point,p2,userP) ) goto errexit ;
 /*
 **        Reset For Next Triangle Point
 */
@@ -114,7 +115,7 @@ int bcdtmExtEdit_drawPointFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback 
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtEdit_drawTriangleDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,long P1,long P2,long P3,void *userP)
+BENTLEYDTM_EXPORT int bcdtmEdit_drawTriangleDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,long P1,long P2,long P3,void *userP)
 /*
 ** This Function Draws A Triangle
 */
@@ -134,7 +135,7 @@ int bcdtmExtEdit_drawTriangleDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadF
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtEdit_drawDtmFeaturesForLineDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,long P1,long P2,void *userP )
+BENTLEYDTM_Private int bcdtmEdit_drawDtmFeaturesForLineDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,long P1,long P2,void *userP )
 /*
 ** This Function Draws Dtm Features For A Line
 ** Rob Cormack  July 2003
@@ -205,9 +206,9 @@ int bcdtmExtEdit_drawDtmFeaturesForLineDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCall
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtEdit_drawTriangleFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,long P1,long P2,long P3,double contourInterval,void *userP )
+BENTLEYDTM_EXPORT int bcdtmEdit_drawTriangleFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,long P1,long P2,long P3,double contourInterval,void *userP )
 {
- int    ret=DTM_SUCCESS,dbg=0 ;
+ int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long   clc,VoidFlag ;
  double x,y,z,SlopeD,SlopeP,Aspect,Height ;
 /*
@@ -381,7 +382,7 @@ int bcdtmExtEdit_drawTriangleFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallba
 ** Draw Contours For Triangle
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Drawing Triangle Contours") ;
- if( bcdtmExtEdit_drawContoursForTriangleDtmObject(dtmP,loadFunctionP,drawMode,P1,P2,P3,contourInterval,userP)) goto errexit ;
+ if( bcdtmEdit_drawContoursForTriangleDtmObject(dtmP,loadFunctionP,drawMode,P1,P2,P3,contourInterval,userP)) goto errexit ;
 /*
 ** Draw Flow Arrows For Triangle
 */
@@ -415,7 +416,7 @@ int bcdtmExtEdit_drawTriangleFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallba
 |                                                            |
 |                                                            |
 +-----------------------------------------------------------*/
-int bcdtmExtEdit_drawContoursForTriangleDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,long P1,long P2,long P3,double contourInterval,void *userP)
+BENTLEYDTM_Public int bcdtmEdit_drawContoursForTriangleDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,long P1,long P2,long P3,double contourInterval,void *userP)
 /*
 ** This Function Updates the Contours For A Triangle
 **
@@ -602,7 +603,7 @@ int bcdtmExtEdit_drawContoursForTriangleDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCal
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtEdit_drawTriangleLinesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,long P1,long P2,long P3, void *userP)
+BENTLEYDTM_EXPORT int bcdtmEdit_drawTriangleLinesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,long P1,long P2,long P3, void *userP)
 {
  int ret=DTM_SUCCESS ;
 /*
@@ -637,12 +638,12 @@ int bcdtmExtEdit_drawTriangleLinesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback 
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtEdit_drawTriangleBaseLinesForPointDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,long P1, void *userP)
+BENTLEYDTM_EXPORT int bcdtmEdit_drawTriangleBaseLinesForPointDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,long P1, void *userP)
 /*
 ** This Function Draws The Base Lines Of Triangles With Vertev P1
 */
 {
- int  ret=DTM_SUCCESS,dbg=0 ;
+ int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long clc,clf,P2,P3,voidLine ;
 /*
 ** Write Entry Message
@@ -738,7 +739,7 @@ int bcdtmExtEdit_drawTriangleBaseLinesForPointDtmObject(BC_DTM_OBJ *dtmP,DTMFeat
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtEdit_drawLineFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,long P1,long P2,double contourInterval,void *userP)
+BENTLEYDTM_EXPORT int bcdtmEdit_drawLineFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,long P1,long P2,double contourInterval,void *userP)
 /*
 ** This Function draws All The Lines Connected To A Line
 */
@@ -774,8 +775,8 @@ int bcdtmExtEdit_drawLineFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback l
              if( bcdtmList_testForVoidTriangleDtmObject(dtmP,P1,ap,P2,&voidFeature)) goto errexit ;
              if( ! voidFeature )
                {
-                if( bcdtmExtEdit_drawTriangleDtmObject(dtmP,loadFunctionP,drawMode,P1,ap,P2,userP) ) goto errexit ;
-                if( bcdtmExtEdit_drawContoursForTriangleDtmObject(dtmP,loadFunctionP,drawMode,P1,ap,P2,contourInterval,userP)) goto errexit ;
+                if( bcdtmEdit_drawTriangleDtmObject(dtmP,loadFunctionP,drawMode,P1,ap,P2,userP) ) goto errexit ;
+                if( bcdtmEdit_drawContoursForTriangleDtmObject(dtmP,loadFunctionP,drawMode,P1,ap,P2,contourInterval,userP)) goto errexit ;
                }
             }
           if( cp != dtmP->nullPnt )
@@ -783,23 +784,23 @@ int bcdtmExtEdit_drawLineFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback l
              if( bcdtmList_testForVoidTriangleDtmObject(dtmP,P1,P2,cp,&voidFeature)) goto errexit ;
              if( ! voidFeature )
                {
-                if( bcdtmExtEdit_drawTriangleDtmObject(dtmP,loadFunctionP,drawMode,P1,P2,cp,userP) ) goto errexit ;
-                if( bcdtmExtEdit_drawContoursForTriangleDtmObject(dtmP,loadFunctionP,drawMode,P1,P2,cp,contourInterval,userP)) goto errexit ;
+                if( bcdtmEdit_drawTriangleDtmObject(dtmP,loadFunctionP,drawMode,P1,P2,cp,userP) ) goto errexit ;
+                if( bcdtmEdit_drawContoursForTriangleDtmObject(dtmP,loadFunctionP,drawMode,P1,P2,cp,contourInterval,userP)) goto errexit ;
                }
             }
 /*
 **        Draw Dtm Features For Line
 */
-          if( bcdtmExtEdit_drawDtmFeaturesForLineDtmObject(dtmP,loadFunctionP,drawMode,P1,P2,userP) ) goto errexit ;
+          if( bcdtmEdit_drawDtmFeaturesForLineDtmObject(dtmP,loadFunctionP,drawMode,P1,P2,userP) ) goto errexit ;
           if( ap != dtmP->nullPnt )
             {
-             if( bcdtmExtEdit_drawDtmFeaturesForLineDtmObject(dtmP,loadFunctionP,drawMode,P1,ap,userP) ) goto errexit ;
-             if( bcdtmExtEdit_drawDtmFeaturesForLineDtmObject(dtmP,loadFunctionP,drawMode,ap,P2,userP) ) goto errexit ;
+             if( bcdtmEdit_drawDtmFeaturesForLineDtmObject(dtmP,loadFunctionP,drawMode,P1,ap,userP) ) goto errexit ;
+             if( bcdtmEdit_drawDtmFeaturesForLineDtmObject(dtmP,loadFunctionP,drawMode,ap,P2,userP) ) goto errexit ;
             }
           if( cp != dtmP->nullPnt )
             {
-             if( bcdtmExtEdit_drawDtmFeaturesForLineDtmObject(dtmP,loadFunctionP,drawMode,P1,cp,userP) ) goto errexit ;
-             if( bcdtmExtEdit_drawDtmFeaturesForLineDtmObject(dtmP,loadFunctionP,drawMode,cp,P2,userP) ) goto errexit ;
+             if( bcdtmEdit_drawDtmFeaturesForLineDtmObject(dtmP,loadFunctionP,drawMode,P1,cp,userP) ) goto errexit ;
+             if( bcdtmEdit_drawDtmFeaturesForLineDtmObject(dtmP,loadFunctionP,drawMode,cp,P2,userP) ) goto errexit ;
             }
 /*
 **        Draw Flow Arrows For Line
@@ -855,12 +856,12 @@ int bcdtmExtEdit_drawLineFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback l
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtEdit_drawPolygonFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,DPoint3d *polyPtsP,long numPolyPts,double contourInterval,void *userP)
+BENTLEYDTM_EXPORT int bcdtmEdit_drawPolygonFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,DPoint3d *polyPtsP,long numPolyPts,double contourInterval,void *userP) 
 /*
 ** This Function Draws All The DTM Features Within A Polygon
 */
 {
- int    ret=DTM_SUCCESS,dbg=0 ;
+ int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long   point ;
  double Xmin,Ymin,Xmax,Ymax ;
  DPoint3d    *p3dP ;
@@ -893,7 +894,7 @@ int bcdtmExtEdit_drawPolygonFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallbac
          {
           if( bcdtmClip_pointInPointArrayPolygon(polyPtsP,numPolyPts,pointP->x,pointP->y))
             {
-             if( bcdtmExtEdit_drawPointFeaturesDtmObject(dtmP,loadFunctionP,drawMode,point,contourInterval,userP)) goto errexit ;
+             if( bcdtmEdit_drawPointFeaturesDtmObject(dtmP,loadFunctionP,drawMode,point,contourInterval,userP)) goto errexit ;
             }
          }
       }
@@ -920,13 +921,13 @@ int bcdtmExtEdit_drawPolygonFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallbac
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtEdit_drawTptrFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,long startPoint,long updateOption,double contourInterval,void *userP)
+BENTLEYDTM_EXPORT int bcdtmEdit_drawTptrFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,long startPoint,long updateOption,double contourInterval,void *userP)
 /*
 ** This Function draws All Features Internal To A Tptr Polygon
 ** The Tptr Polygon Must Be AntiClockwise
 */
 {
- int    ret=DTM_SUCCESS,dbg=0 ;
+ int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long   sp,p2,p3,np,clc,feat,voidResult ;
  DTMFeatureType type;
  double x,y,z,SlopeD,SlopeP,Aspect,Height ;
@@ -1088,7 +1089,7 @@ int bcdtmExtEdit_drawTptrFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback l
     do
       {
        if( bcdtmList_testForVoidTriangleDtmObject(dtmP,sp,p2,p3,&voidResult)) goto errexit ;
-       if( ! voidResult ) if( bcdtmExtEdit_drawContoursForTriangleDtmObject(dtmP,loadFunctionP,drawMode,sp,p2,p3,contourInterval,userP)) goto errexit ;
+       if( ! voidResult ) if( bcdtmEdit_drawContoursForTriangleDtmObject(dtmP,loadFunctionP,drawMode,sp,p2,p3,contourInterval,userP)) goto errexit ;
        p2 = p3 ;
        if( ( p3 = bcdtmList_nextClkDtmObject(dtmP,sp,p2)) < 0 ) goto errexit ;
       }  while ( p2 != nodeAddrP(dtmP,sp)->tPtr ) ;
@@ -1108,7 +1109,7 @@ int bcdtmExtEdit_drawTptrFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback l
        p3  = clistAddrP(dtmP,clc)->pntNum ;
        clc = clistAddrP(dtmP,clc)->nextPtr ;
        if( bcdtmList_testForVoidTriangleDtmObject(dtmP,sp,p2,p3,&voidResult)) goto errexit ;
-       if( ! voidResult ) if( bcdtmExtEdit_drawContoursForTriangleDtmObject(dtmP,loadFunctionP,drawMode,sp,p2,p3,contourInterval,userP)) goto errexit ;
+       if( ! voidResult ) if( bcdtmEdit_drawContoursForTriangleDtmObject(dtmP,loadFunctionP,drawMode,sp,p2,p3,contourInterval,userP)) goto errexit ;
        p2 = p3 ;
       }
    }
@@ -1199,7 +1200,7 @@ int bcdtmExtEdit_drawTptrFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback l
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtEdit_drawTptrLineFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,long startPoint,void *userP)
+BENTLEYDTM_Public int bcdtmEdit_drawTptrLineFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,long startPoint,void *userP)
 /*
 ** This Function draws All Features Internal To A Tptr Polygon
 ** Tptr Polygon Must Be AntiClockwise
@@ -1319,7 +1320,7 @@ int bcdtmExtEdit_drawTptrLineFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallba
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtEdit_drawInternalTptrFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,long startPoint,double contourInterval,void *userP)
+BENTLEYDTM_EXPORT int bcdtmEdit_drawInternalTptrFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,long startPoint,double contourInterval,void *userP)
 /*
 ** This Function Moves The z Values within A Tpyt Polygon
 */
@@ -1382,7 +1383,7 @@ int bcdtmExtEdit_drawInternalTptrFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCa
  sp = startPoint ;
  do
    {
-    if( bcdtmExtEdit_drawPointFeaturesDtmObject(dtmP,loadFunctionP,drawMode,sp,contourInterval,userP)) goto errexit ;
+    if( bcdtmEdit_drawPointFeaturesDtmObject(dtmP,loadFunctionP,drawMode,sp,contourInterval,userP)) goto errexit ;
     sp = nodeAddrP(dtmP,sp)->tPtr ;
    } while ( sp != startPoint ) ;
 /*
@@ -1393,7 +1394,7 @@ int bcdtmExtEdit_drawInternalTptrFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCa
     nodeP = nodeAddrP(dtmP,point) ;
     if( nodeP->cPtr != dtmP->nullPtr && nodeP->tPtr < 0  )
       {
-       if( bcdtmExtEdit_drawPointFeaturesDtmObject(dtmP,loadFunctionP,drawMode,point,contourInterval,userP)) goto errexit ;
+       if( bcdtmEdit_drawPointFeaturesDtmObject(dtmP,loadFunctionP,drawMode,point,contourInterval,userP)) goto errexit ;
        nodeP->tPtr = dtmP->nullPnt ;
       }
    }
@@ -1417,7 +1418,7 @@ int bcdtmExtEdit_drawInternalTptrFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCa
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtEdit_drawExternalTptrFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,long startPoint,long updateOption,double contourInterval,void *userP)
+BENTLEYDTM_EXPORT int bcdtmEdit_drawExternalTptrFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,long startPoint,long updateOption,double contourInterval,void *userP)
 /*
 ** This Function draws All Features Internal To A Tptr Polygon
 ** Tptr Polygon Must Be AntiClockwise
@@ -1538,7 +1539,7 @@ int bcdtmExtEdit_drawExternalTptrFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCa
     do
       {
        if( bcdtmList_testForVoidTriangleDtmObject(dtmP,sp,p2,p3,&voidResult)) goto errexit ;
-       if( ! voidResult ) if( bcdtmExtEdit_drawContoursForTriangleDtmObject(dtmP,loadFunctionP,drawMode,sp,p2,p3,contourInterval,userP)) goto errexit ;
+       if( ! voidResult ) if( bcdtmEdit_drawContoursForTriangleDtmObject(dtmP,loadFunctionP,drawMode,sp,p2,p3,contourInterval,userP)) goto errexit ;
        p2 = p3 ;
        if( ( p3 = bcdtmList_nextClkDtmObject(dtmP,sp,p2)) < 0 ) goto errexit ;
       }  while ( p2 != nodeAddrP(dtmP,sp)->tPtr ) ;
@@ -1557,7 +1558,7 @@ int bcdtmExtEdit_drawExternalTptrFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCa
        p3  = clistAddrP(dtmP,clc)->pntNum ;
        clc = clistAddrP(dtmP,clc)->nextPtr ;
        if( bcdtmList_testForVoidTriangleDtmObject(dtmP,sp,p2,p3,&voidResult)) goto errexit ;
-       if( ! voidResult ) if( bcdtmExtEdit_drawContoursForTriangleDtmObject(dtmP,loadFunctionP,drawMode,sp,p2,p3,contourInterval,userP)) goto errexit ;
+       if( ! voidResult ) if( bcdtmEdit_drawContoursForTriangleDtmObject(dtmP,loadFunctionP,drawMode,sp,p2,p3,contourInterval,userP)) goto errexit ;
        p2 = p3 ;
       }
    }
@@ -1633,7 +1634,7 @@ int bcdtmExtEdit_drawExternalTptrFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCa
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtEdit_drawDtmFeatureDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,long dtmFeature,void *userP)
+BENTLEYDTM_EXPORT int bcdtmEdit_drawDtmFeatureDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,long dtmFeature,void *userP) 
 /*
 ** This Function draws All dtmFeatures Internal To A Tptr Polygon
 ** Tptr Polygon Must Be AntiClockwise
@@ -1687,7 +1688,7 @@ int bcdtmExtEdit_drawDtmFeatureDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loa
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtEdit_drawPointPerimeterDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,long Point,void *userP )
+BENTLEYDTM_EXPORT int bcdtmEdit_drawPointPerimeterDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,long Point,void *userP )
 /*
 ** This Function Draws Arounnd Perimeter Of A Point
 */
@@ -1737,7 +1738,7 @@ int bcdtmExtEdit_drawPointPerimeterDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmExtEdit_drawDeletedFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,long *deletedFeaturesP,long numDeletedFeatures,double contourInterval,void *userP)
+BENTLEYDTM_EXPORT int bcdtmEdit_drawDeletedFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallback loadFunctionP,long drawMode,long *deletedFeaturesP,long numDeletedFeatures,double contourInterval,void *userP)
 /*
 ** Draw dtmFeatures For Deleted Void
 */
@@ -1756,7 +1757,7 @@ int bcdtmExtEdit_drawDeletedFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallbac
     mp = np ;
     while ( lp != pp )
       {
-       bcdtmExtEdit_drawTriangleFeaturesDtmObject(dtmP,loadFunctionP,drawMode,sp,lp,mp,contourInterval,userP) ;
+       bcdtmEdit_drawTriangleFeaturesDtmObject(dtmP,loadFunctionP,drawMode,sp,lp,mp,contourInterval,userP) ;
        mp = lp ;
        if((lp = bcdtmList_nextAntDtmObject(dtmP,sp,lp)) < 0 ) goto errexit ;
       }
@@ -1777,7 +1778,7 @@ int bcdtmExtEdit_drawDeletedFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallbac
        mp = np ;
        while( lp != pp )
          {
-          bcdtmExtEdit_drawTriangleFeaturesDtmObject(dtmP,loadFunctionP,drawMode,sp,mp,lp,contourInterval,userP) ;
+          bcdtmEdit_drawTriangleFeaturesDtmObject(dtmP,loadFunctionP,drawMode,sp,mp,lp,contourInterval,userP) ;
           mp = lp ;
           if((lp = bcdtmList_nextClkDtmObject(dtmP,sp,lp)) < 0 ) goto errexit ;
          }
@@ -1790,7 +1791,7 @@ int bcdtmExtEdit_drawDeletedFeaturesDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureCallbac
 */
  for( n = 0 ; n < numDeletedFeatures ; ++n )
    {
-    if( bcdtmExtInsert_removeDtmFeatureFromDtmObject(dtmP,*(deletedFeaturesP+n))) goto errexit ;
+    if( bcdtmInsert_removeDtmFeatureFromDtmObject(dtmP,*(deletedFeaturesP+n))) goto errexit ;
    }
 /*
 ** Clean Up
