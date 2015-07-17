@@ -89,6 +89,8 @@ The DgnDomain for the base "dgn" schema is is called DgnSchemaDomain. It is alwa
 
 */
 
+struct DgnDomains;
+
 //=======================================================================================
 //! A DgnDomain is a singleton C++ object that provides the runtime implementation for an ECSchema.
 //! A given DgnDomain supplies set of "Handlers," each of which are singleton C++ objects derived from DgnDomain::Handler,

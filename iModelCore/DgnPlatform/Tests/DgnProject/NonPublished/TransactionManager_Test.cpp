@@ -2029,13 +2029,11 @@ static void testModelUndoRedo(DgnDbR db)
     DgnElementCPtr el1 = templateEl->Insert();
     ASSERT_TRUE(el1->IsPersistent());
 
-    templateEl->InvalidateElementId();
-    templateEl->SetCode(nullptr);
+    templateEl = TestElement::Create(db, model->GetModelId(), category, "");
     DgnElementCPtr el2 = templateEl->Insert();
     ASSERT_TRUE(el2->IsPersistent());
 
-    templateEl->InvalidateElementId();
-    templateEl->SetCode(nullptr);
+    templateEl = TestElement::Create(db, model->GetModelId(), category, "");
     DgnElementCPtr el3 = templateEl->Insert();
     ASSERT_TRUE(el3->IsPersistent());
 
