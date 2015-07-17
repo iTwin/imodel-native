@@ -675,7 +675,7 @@ QvElem* GeometricElement::GetQvElem(uint32_t id) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementPtr DgnElement::_Clone(DgnDbStatus* stat, DgnElement::CreateParams* params) const
+DgnElementPtr DgnElement::_Clone(DgnDbStatus* stat, DgnElement::CreateParams const* params) const
     {
     // Perform input params validation. Code must be different and element id should be invalid...
     if (nullptr != params)
