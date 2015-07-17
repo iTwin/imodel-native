@@ -2,7 +2,7 @@
 |
 |     $Source: src/ecxml.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -13,11 +13,11 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECXml::ParseBooleanString (bool & booleanValue, WCharCP booleanString)
+ECObjectsStatus ECXml::ParseBooleanString (bool & booleanValue, Utf8CP booleanString)
     {
-    if (0 == BeStringUtilities::Wcsicmp (booleanString, ECXML_TRUE_W))
+    if (0 == BeStringUtilities::Stricmp(booleanString, ECXML_TRUE))
         booleanValue = true;
-    else if (0 == BeStringUtilities::Wcsicmp (booleanString, ECXML_FALSE_W))
+    else if (0 == BeStringUtilities::Stricmp (booleanString, ECXML_FALSE))
         booleanValue = false;
     else
         return ECOBJECTS_STATUS_ParseError;
@@ -28,7 +28,7 @@ ECObjectsStatus ECXml::ParseBooleanString (bool & booleanValue, WCharCP booleanS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP ECXml::GetPrimitiveTypeName (PrimitiveType primitiveType)
+Utf8CP ECXml::GetPrimitiveTypeName (PrimitiveType primitiveType)
     {
     switch (primitiveType)
         {
@@ -60,7 +60,7 @@ WCharCP ECXml::GetPrimitiveTypeName (PrimitiveType primitiveType)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECXml::ParsePrimitiveType (PrimitiveType& primitiveType, WStringCR typeName)
+ECObjectsStatus ECXml::ParsePrimitiveType (PrimitiveType& primitiveType, Utf8StringCR typeName)
     {
     if (0 == typeName.length())
         return ECOBJECTS_STATUS_ParseError;
@@ -85,9 +85,9 @@ ECObjectsStatus ECXml::ParsePrimitiveType (PrimitiveType& primitiveType, WString
         primitiveType = PRIMITIVETYPE_DateTime;
     else if (0 == typeName.compare (ECXML_TYPENAME_BINARY))
         primitiveType = PRIMITIVETYPE_Binary;
-    else if (0 == typeName.compare(0, wcslen(ECXML_TYPENAME_IGEOMETRY_GENERIC), ECXML_TYPENAME_IGEOMETRY_GENERIC))
+    else if (0 == typeName.compare(0, strlen(ECXML_TYPENAME_IGEOMETRY_GENERIC), ECXML_TYPENAME_IGEOMETRY_GENERIC))
         primitiveType = PRIMITIVETYPE_IGeometry; 
-    else if (0 == typeName.compare(0, wcslen(ECXML_TYPENAME_IGEOMETRY_LEGACY), ECXML_TYPENAME_IGEOMETRY_LEGACY))
+    else if (0 == typeName.compare(0, strlen(ECXML_TYPENAME_IGEOMETRY_LEGACY), ECXML_TYPENAME_IGEOMETRY_LEGACY))
         primitiveType = PRIMITIVETYPE_IGeometry; 
     else
         return ECOBJECTS_STATUS_ParseError;
@@ -98,7 +98,7 @@ ECObjectsStatus ECXml::ParsePrimitiveType (PrimitiveType& primitiveType, WString
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP ECXml::StrengthToString (StrengthType strength)
+Utf8CP ECXml::StrengthToString (StrengthType strength)
     {
     switch (strength)
         {
@@ -117,7 +117,7 @@ WCharCP ECXml::StrengthToString (StrengthType strength)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECXml::ParseStrengthType (StrengthType& strength, WStringCR strengthString)
+ECObjectsStatus ECXml::ParseStrengthType (StrengthType& strength, Utf8StringCR strengthString)
     {
     if (0 == strengthString.length())
         return ECOBJECTS_STATUS_ParseError;
@@ -136,7 +136,7 @@ ECObjectsStatus ECXml::ParseStrengthType (StrengthType& strength, WStringCR stre
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP ECXml::DirectionToString (ECRelatedInstanceDirection direction)
+Utf8CP ECXml::DirectionToString (ECRelatedInstanceDirection direction)
     {
     switch (direction)
         {
@@ -152,7 +152,7 @@ WCharCP ECXml::DirectionToString (ECRelatedInstanceDirection direction)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECXml::ParseDirectionString (ECRelatedInstanceDirection& direction, WStringCR directionString)
+ECObjectsStatus ECXml::ParseDirectionString (ECRelatedInstanceDirection& direction, Utf8StringCR directionString)
     {
     if (0 == directionString.length())
         return ECOBJECTS_STATUS_ParseError;
@@ -169,52 +169,52 @@ ECObjectsStatus ECXml::ParseDirectionString (ECRelatedInstanceDirection& directi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECXml::ParseCardinalityString (uint32_t &lowerLimit, uint32_t &upperLimit, const WString &cardinalityString)
+ECObjectsStatus ECXml::ParseCardinalityString (uint32_t &lowerLimit, uint32_t &upperLimit, const Utf8String &cardinalityString)
     {
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
-    if (0 == cardinalityString.compare(L"1"))
+    if (0 == cardinalityString.compare("1"))
         {
-        LOG.debugv(L"Legacy cardinality of '1' interpreted as '(1,1)'");
+        LOG.debugv("Legacy cardinality of '1' interpreted as '(1,1)'");
         lowerLimit = 1;
         upperLimit = 1;
         return status;
         }
         
-    if ((0 == cardinalityString.compare(L"UNBOUNDED")) || (0 == cardinalityString.compare(L"Unbounded")) ||
-             (0 == cardinalityString.compare(L"unbounded")) || (0 == cardinalityString.compare(L"n")) ||
-             (0 == cardinalityString.compare(L"N")))
+    if ((0 == cardinalityString.compare("UNBOUNDED")) || (0 == cardinalityString.compare("Unbounded")) ||
+             (0 == cardinalityString.compare("unbounded")) || (0 == cardinalityString.compare("n")) ||
+             (0 == cardinalityString.compare("N")))
         {
-        LOG.debugv(L"Legacy cardinality of '%ls' interpreted as '(0,n)'", cardinalityString.c_str());
+        LOG.debugv("Legacy cardinality of '%s' interpreted as '(0,n)'", cardinalityString.c_str());
         lowerLimit = 0;
         upperLimit = UINT_MAX;
         return status;
         }
     
-    WString cardinalityWithoutSpaces = cardinalityString;
+    Utf8String cardinalityWithoutSpaces = cardinalityString;
     cardinalityWithoutSpaces.erase(std::remove_if(cardinalityWithoutSpaces.begin(), cardinalityWithoutSpaces.end(), ::isspace), cardinalityWithoutSpaces.end()); 
     size_t openParenIndex = cardinalityWithoutSpaces.find('(');
     if (openParenIndex == std::string::npos)
         {
-        if (0 == BE_STRING_UTILITIES_SWSCANF(cardinalityWithoutSpaces.c_str(), L"%d", &upperLimit))
+        if (0 == BE_STRING_UTILITIES_UTF8_SSCANF(cardinalityWithoutSpaces.c_str(), "%d", &upperLimit))
             return ECOBJECTS_STATUS_ParseError;
-        LOG.debugv(L"Legacy cardinality of '%d' interpreted as '(0,%d)'", upperLimit, upperLimit);
+        LOG.debugv("Legacy cardinality of '%d' interpreted as '(0,%d)'", upperLimit, upperLimit);
         lowerLimit = 0;
         return status;
         }
         
     if (openParenIndex != 0 && cardinalityWithoutSpaces.find(')') != cardinalityWithoutSpaces.length() - 1)
         {
-        LOG.warningv(L"Cardinality string '%ls' is invalid.", cardinalityString.c_str());
+        LOG.warningv("Cardinality string '%s' is invalid.", cardinalityString.c_str());
         return ECOBJECTS_STATUS_ParseError;
         }
      
-    int scanned = BE_STRING_UTILITIES_SWSCANF(cardinalityWithoutSpaces.c_str(), L"(%d,%d)", &lowerLimit, &upperLimit);
+    int scanned = BE_STRING_UTILITIES_UTF8_SSCANF(cardinalityWithoutSpaces.c_str(), "(%d,%d)", &lowerLimit, &upperLimit);
     if (2 == scanned)
         return ECOBJECTS_STATUS_Success;
         
     if (0 == scanned)
         {
-        LOG.warningv(L"Cardinality string '%ls' is invalid.", cardinalityString.c_str());
+        LOG.warningv("Cardinality string '%s' is invalid.", cardinalityString.c_str());
         return ECOBJECTS_STATUS_ParseError;
         }
     

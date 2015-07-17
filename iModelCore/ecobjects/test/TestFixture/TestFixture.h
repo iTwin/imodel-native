@@ -21,7 +21,7 @@ public:
 
     static WString GetTestDataPath(WCharCP fileName);
     static WString GetTempDataPath(WCharCP fileName);
-    static WString GetDateTime();
+    static Utf8String GetDateTime();
     };
 
 END_BENTLEY_ECN_TEST_NAMESPACE

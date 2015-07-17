@@ -2,7 +2,7 @@
 |
 |     $Source: src/StandaloneECInstance.cpp $
 |
-|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -48,7 +48,7 @@ MemoryECInstanceBase::MemoryECInstanceBase (ClassLayoutCR classLayout, uint32_t 
     m_data = (Byte*)malloc (size);
     m_bytesAllocated = size;
 
-    InitializeMemory (classLayout, m_data, m_bytesAllocated, ecClass.IsDefined (L"PersistStringsAsUtf8"));
+    InitializeMemory (classLayout, m_data, m_bytesAllocated, ecClass.IsDefined ("PersistStringsAsUtf8"));
     
     InitializePerPropertyFlags (classLayout, DEFAULT_NUMBITSPERPROPERTY);
     }
@@ -1038,7 +1038,7 @@ ECEnablerCR         StandaloneECInstance::_GetEnabler() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-WString        StandaloneECInstance::_GetInstanceId() const
+Utf8String        StandaloneECInstance::_GetInstanceId() const
     {
     return m_instanceId;
     }
@@ -1046,7 +1046,7 @@ WString        StandaloneECInstance::_GetInstanceId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/11
 +---------------+---------------+---------------+---------------+---------------+------*/    
-ECObjectsStatus StandaloneECInstance::_SetInstanceId (WCharCP instanceId)
+ECObjectsStatus StandaloneECInstance::_SetInstanceId (Utf8CP instanceId)
     {
     m_instanceId = instanceId;
     return ECOBJECTS_STATUS_Success;
@@ -1178,7 +1178,7 @@ ECObjectsStatus           StandaloneECInstance::_ClearArray (uint32_t propIdx)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-WString        StandaloneECInstance::_ToString (WCharCP indent) const
+Utf8String        StandaloneECInstance::_ToString (Utf8CP indent) const
     {
     return InstanceDataToString (indent);
     }
@@ -1215,16 +1215,16 @@ StandaloneECEnablerPtr    StandaloneECEnabler::CreateEnabler (ECClassCR ecClass,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP           StandaloneECEnabler::_GetName() const
+Utf8CP           StandaloneECEnabler::_GetName() const
     {
-    return L"Bentley::ECN::StandaloneECEnabler";
+    return "Bentley::ECN::StandaloneECEnabler";
     }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus StandaloneECEnabler::_GetPropertyIndex(uint32_t& propertyIndex, WCharCP propertyAccessString) const { return GetClassLayout().GetPropertyIndex (propertyIndex, propertyAccessString); }
-ECObjectsStatus StandaloneECEnabler::_GetAccessString(WCharCP& accessString, uint32_t propertyIndex) const { return GetClassLayout().GetAccessStringByIndex (accessString, propertyIndex); }
+ECObjectsStatus StandaloneECEnabler::_GetPropertyIndex(uint32_t& propertyIndex, Utf8CP propertyAccessString) const { return GetClassLayout().GetPropertyIndex (propertyIndex, propertyAccessString); }
+ECObjectsStatus StandaloneECEnabler::_GetAccessString(Utf8CP& accessString, uint32_t propertyIndex) const { return GetClassLayout().GetAccessStringByIndex (accessString, propertyIndex); }
 uint32_t        StandaloneECEnabler::_GetFirstPropertyIndex (uint32_t parentIndex) const {  return GetClassLayout().GetFirstChildPropertyIndex (parentIndex); }
 uint32_t        StandaloneECEnabler::_GetNextPropertyIndex (uint32_t parentIndex, uint32_t inputIndex) const { return GetClassLayout().GetNextChildPropertyIndex (parentIndex, inputIndex);  }
 ECObjectsStatus StandaloneECEnabler::_GetPropertyIndices (bvector<uint32_t>& indices, uint32_t parentIndex) const { return GetClassLayout().GetPropertyIndices (indices, parentIndex);  }

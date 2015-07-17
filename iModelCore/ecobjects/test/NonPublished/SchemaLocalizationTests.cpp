@@ -15,19 +15,19 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct SchemaLocalizationTests : ECTestFixture {};
 
-static WCharCP const PK = L"~~";
-static WCharCP const GB = L"!!";
-static WCharCP const IT = L"**";
+static Utf8CP const PK = "~~";
+static Utf8CP const GB = "!!";
+static Utf8CP const IT = "**";
 
-WString PsudoLocalizeString (WCharCP prePostFix, WCharCP invariantString)
+Utf8String PseudoLocalizeString (Utf8CP prePostFix, Utf8CP invariantString)
     {
-    WString psudoLocString(prePostFix);
-    psudoLocString.append(invariantString);
-    psudoLocString.append(prePostFix);
-    return psudoLocString;
+    Utf8String pseudoLocString(prePostFix);
+    pseudoLocString.append(invariantString);
+    pseudoLocString.append(prePostFix);
+    return pseudoLocString;
     }
 
-void VerifyCaString (IECCustomAttributeContainerR caContainer, WCharCP containerId, WCharCP invariantString, WCharCP caClassName, WCharCP propertyAccessor, WCharCP prePostFix = L"")
+void VerifyCaString (IECCustomAttributeContainerR caContainer, Utf8CP containerId, Utf8CP invariantString, Utf8CP caClassName, Utf8CP propertyAccessor, Utf8CP prePostFix = "")
     {
     IECInstancePtr caInstance = caContainer.GetCustomAttribute(caClassName);
     EXPECT_TRUE(caInstance.IsValid());
@@ -37,104 +37,104 @@ void VerifyCaString (IECCustomAttributeContainerR caContainer, WCharCP container
     EXPECT_EQ(ECOBJECTS_STATUS_Success, ECValueAccessor::PopulateValueAccessor(accessor, *caInstance, propertyAccessor));
     EXPECT_EQ(ECOBJECTS_STATUS_Success, caInstance->GetValueUsingAccessor(stringValue, accessor));
     EXPECT_FALSE(stringValue.IsNull()) << "Failed to get a valid value for " 
-        << caClassName << "." << propertyAccessor << " on container: " << containerId << "\nInstance\n" << caInstance->ToString(L"  ").c_str();
+        << caClassName << "." << propertyAccessor << " on container: " << containerId << "\nInstance\n" << caInstance->ToString("  ").c_str();
 
-    if (!WString::IsNullOrEmpty(prePostFix))
-        EXPECT_STREQ(PsudoLocalizeString(prePostFix, invariantString).c_str(), stringValue.GetString())
+    if (!Utf8String::IsNullOrEmpty(prePostFix))
+        EXPECT_STREQ(PseudoLocalizeString(prePostFix, invariantString).c_str(), stringValue.GetUtf8CP())
         << "Failed to localize property " << caClassName << "." << propertyAccessor << " on container: " << containerId;// << "\nInstance\n" << caInstance->ToString(L"  ").c_str();
     else
-        EXPECT_STREQ(invariantString, stringValue.GetString())
+        EXPECT_STREQ(invariantString, stringValue.GetUtf8CP())
         << "Property unexpectedly localized " << caClassName << "." << propertyAccessor << " on container: " << containerId;// << "\nInstance\n" << caInstance->ToString(L"  ").c_str();
     }
 
-void VerifyLocalized(ECSchemaPtr testSchema, WCharCP prePostFix)
+void VerifyLocalized(ECSchemaPtr testSchema, Utf8CP prePostFix)
     {
     // Test Schema level
-    WCharCP houseLabel = L"House";
-    WCharCP houseDescription = L"A house schema";
+    Utf8CP houseLabel = "House";
+    Utf8CP houseDescription = "A house schema";
     EXPECT_STREQ(houseLabel, testSchema->GetInvariantDisplayLabel().c_str());
-    EXPECT_STREQ(PsudoLocalizeString(prePostFix, houseLabel).c_str(), testSchema->GetDisplayLabel().c_str());
+    EXPECT_STREQ(PseudoLocalizeString(prePostFix, houseLabel).c_str(), testSchema->GetDisplayLabel().c_str());
     EXPECT_STREQ(houseDescription, testSchema->GetInvariantDescription().c_str());
-    EXPECT_STREQ(PsudoLocalizeString(prePostFix, houseDescription).c_str(), testSchema->GetDescription().c_str());
+    EXPECT_STREQ(PseudoLocalizeString(prePostFix, houseDescription).c_str(), testSchema->GetDescription().c_str());
 
     // Test Class level
-    ECClassCP itemClass = testSchema->GetClassCP(L"Item");
-    WCharCP itemLabel = L"Item";
-    WCharCP itemDescription = L"An Item";
+    ECClassCP itemClass = testSchema->GetClassCP("Item");
+    Utf8CP itemLabel = "Item";
+    Utf8CP itemDescription = "An Item";
     EXPECT_STREQ(itemLabel, itemClass->GetInvariantDisplayLabel().c_str());
-    EXPECT_STREQ(PsudoLocalizeString(prePostFix, itemLabel).c_str(), itemClass->GetDisplayLabel().c_str());
+    EXPECT_STREQ(PseudoLocalizeString(prePostFix, itemLabel).c_str(), itemClass->GetDisplayLabel().c_str());
     EXPECT_STREQ(itemDescription, itemClass->GetInvariantDescription().c_str());
-    EXPECT_STREQ(PsudoLocalizeString(prePostFix, itemDescription).c_str(), itemClass->GetDescription().c_str());
+    EXPECT_STREQ(PseudoLocalizeString(prePostFix, itemDescription).c_str(), itemClass->GetDescription().c_str());
 
     // Test Rel Class Role Labels
-    WCharCP sourceRoleLabel = L"Door to room";
-    WCharCP targetRoleLabel = L"Door for room";
-    ECRelationshipClassCP relClass = testSchema->GetClassP(L"RoomHasDoor")->GetRelationshipClassCP();
+    Utf8CP sourceRoleLabel = "Door to room";
+    Utf8CP targetRoleLabel = "Door for room";
+    ECRelationshipClassCP relClass = testSchema->GetClassP("RoomHasDoor")->GetRelationshipClassCP();
     ECRelationshipConstraintR sourceConstraint = relClass->GetSource();
     ECRelationshipConstraintR targetConstraint = relClass->GetTarget();
     EXPECT_STREQ(sourceRoleLabel, sourceConstraint.GetInvariantRoleLabel().c_str());
-    EXPECT_STREQ(PsudoLocalizeString(prePostFix, sourceRoleLabel).c_str(), sourceConstraint.GetRoleLabel().c_str());
+    EXPECT_STREQ(PseudoLocalizeString(prePostFix, sourceRoleLabel).c_str(), sourceConstraint.GetRoleLabel().c_str());
     EXPECT_STREQ(targetRoleLabel, targetConstraint.GetInvariantRoleLabel().c_str());
-    EXPECT_STREQ(PsudoLocalizeString(prePostFix, targetRoleLabel).c_str(), targetConstraint.GetRoleLabel().c_str());
+    EXPECT_STREQ(PseudoLocalizeString(prePostFix, targetRoleLabel).c_str(), targetConstraint.GetRoleLabel().c_str());
 
     // Test Property level
-    ECPropertyP displayNameProp = itemClass->GetPropertyP(L"DisplayName", false);
-    WCharCP displayNameLabel = L"Display Name";
-    WCharCP displayNameDescription = L"Display label for an item";
+    ECPropertyP displayNameProp = itemClass->GetPropertyP("DisplayName", false);
+    Utf8CP displayNameLabel = "Display Name";
+    Utf8CP displayNameDescription = "Display label for an item";
     EXPECT_STREQ(displayNameLabel, displayNameProp->GetInvariantDisplayLabel().c_str());
-    EXPECT_STREQ(PsudoLocalizeString(prePostFix, displayNameLabel).c_str(), displayNameProp->GetDisplayLabel().c_str());
+    EXPECT_STREQ(PseudoLocalizeString(prePostFix, displayNameLabel).c_str(), displayNameProp->GetDisplayLabel().c_str());
     EXPECT_STREQ(displayNameDescription, displayNameProp->GetInvariantDescription().c_str());
-    EXPECT_STREQ(PsudoLocalizeString(prePostFix, displayNameDescription).c_str(), displayNameProp->GetDescription().c_str());
+    EXPECT_STREQ(PseudoLocalizeString(prePostFix, displayNameDescription).c_str(), displayNameProp->GetDescription().c_str());
 
     // Test duplicate strings are resolved
-    WCharCP lengthString = L"Length";
-    ECPropertyP roomLengthProp = testSchema->GetClassCP(L"Room")->GetPropertyP(lengthString, false);
-    ECPropertyP doorLengthProp = testSchema->GetClassCP(L"Door")->GetPropertyP(lengthString, false);
+    Utf8CP lengthString = "Length";
+    ECPropertyP roomLengthProp = testSchema->GetClassCP("Room")->GetPropertyP(lengthString, false);
+    ECPropertyP doorLengthProp = testSchema->GetClassCP("Door")->GetPropertyP(lengthString, false);
     EXPECT_STREQ(lengthString, roomLengthProp->GetInvariantDisplayLabel().c_str());
     EXPECT_STREQ(lengthString, doorLengthProp->GetInvariantDisplayLabel().c_str());
-    EXPECT_STREQ(PsudoLocalizeString(prePostFix, lengthString).c_str(), roomLengthProp->GetDisplayLabel().c_str());
-    EXPECT_STREQ(PsudoLocalizeString(prePostFix, lengthString).c_str(), doorLengthProp->GetDisplayLabel().c_str());
+    EXPECT_STREQ(PseudoLocalizeString(prePostFix, lengthString).c_str(), roomLengthProp->GetDisplayLabel().c_str());
+    EXPECT_STREQ(PseudoLocalizeString(prePostFix, lengthString).c_str(), doorLengthProp->GetDisplayLabel().c_str());
 
     // Test custom attribute strings
     // Schema
-    VerifyCaString(*testSchema, testSchema->GetFullSchemaName().c_str(), L"A whole House", L"ExtendedInfo", L"Purpose", prePostFix);
+    VerifyCaString(*testSchema, testSchema->GetFullSchemaName().c_str(), "A whole House", "ExtendedInfo", "Purpose", prePostFix);
     // Class
-    ECClassP doorClass = testSchema->GetClassP(L"Door");
-    VerifyCaString(*doorClass, doorClass->GetFullName(), L"squar", L"ExtendedInfo", L"ExtraInfo[1]", prePostFix);
-    VerifyCaString(*doorClass, doorClass->GetFullName(), L"wood", L"ExtendedInfo", L"ContentInfo[0].DisplayName", prePostFix);
+    ECClassP doorClass = testSchema->GetClassP("Door");
+    VerifyCaString(*doorClass, doorClass->GetFullName(), "squar", "ExtendedInfo", "ExtraInfo[1]", prePostFix);
+    VerifyCaString(*doorClass, doorClass->GetFullName(), "wood", "ExtendedInfo", "ContentInfo[0].DisplayName", prePostFix);
     // Relationship Constraints
-    ECRelationshipClassCP roomHasDoorRelClass = testSchema->GetClassCP(L"RoomHasDoor")->GetRelationshipClassCP();
-    VerifyCaString(roomHasDoorRelClass->GetSource(), roomHasDoorRelClass->GetFullName(), L"This is a room", L"ExtendedInfo", L"Purpose", prePostFix);
-    VerifyCaString(roomHasDoorRelClass->GetTarget(), roomHasDoorRelClass->GetFullName(), L"This is a door", L"ExtendedInfo", L"Purpose", prePostFix);
+    ECRelationshipClassCP roomHasDoorRelClass = testSchema->GetClassCP("RoomHasDoor")->GetRelationshipClassCP();
+    VerifyCaString(roomHasDoorRelClass->GetSource(), roomHasDoorRelClass->GetFullName(), "This is a room", "ExtendedInfo", "Purpose", prePostFix);
+    VerifyCaString(roomHasDoorRelClass->GetTarget(), roomHasDoorRelClass->GetFullName(), "This is a door", "ExtendedInfo", "Purpose", prePostFix);
     // Property
-    doorLengthProp = testSchema->GetClassCP(L"Door")->GetPropertyP(lengthString, false);
-    VerifyCaString(*doorLengthProp, doorLengthProp->GetName().c_str(), L"Length of door", L"ExtendedInfo", L"Purpose", prePostFix);
-    VerifyCaString(*doorLengthProp, doorLengthProp->GetName().c_str(), L"Constant", L"StandardValues", L"ValueMap[1].DisplayString", prePostFix);
+    doorLengthProp = testSchema->GetClassCP("Door")->GetPropertyP(lengthString, false);
+    VerifyCaString(*doorLengthProp, doorLengthProp->GetName().c_str(), "Length of door", "ExtendedInfo", "Purpose", prePostFix);
+    VerifyCaString(*doorLengthProp, doorLengthProp->GetName().c_str(), "Constant", "StandardValues", "ValueMap[1].DisplayString", prePostFix);
     }
 
 void VerifyNotLocalized(ECSchemaPtr testSchema)
     {
     // Test Schema level
-    WCharCP houseLabel = L"House";
-    WCharCP houseDescription = L"A house schema";
+    Utf8CP houseLabel = "House";
+    Utf8CP houseDescription = "A house schema";
     EXPECT_STREQ(houseLabel, testSchema->GetInvariantDisplayLabel().c_str());
     EXPECT_STREQ(houseLabel, testSchema->GetDisplayLabel().c_str());
     EXPECT_STREQ(houseDescription, testSchema->GetInvariantDescription().c_str());
     EXPECT_STREQ(houseDescription, testSchema->GetDescription().c_str());
 
     // Test Class level
-    ECClassCP itemClass = testSchema->GetClassCP(L"Item");
-    WCharCP itemLabel = L"Item";
-    WCharCP itemDescription = L"An Item";
+    ECClassCP itemClass = testSchema->GetClassCP("Item");
+    Utf8CP itemLabel = "Item";
+    Utf8CP itemDescription = "An Item";
     EXPECT_STREQ(itemLabel, itemClass->GetInvariantDisplayLabel().c_str());
     EXPECT_STREQ(itemLabel, itemClass->GetDisplayLabel().c_str());
     EXPECT_STREQ(itemDescription, itemClass->GetInvariantDescription().c_str());
     EXPECT_STREQ(itemDescription, itemClass->GetDescription().c_str());
 
     // Test Rel Class Role Labels
-    WCharCP sourceRoleLabel = L"Door to room";
-    WCharCP targetRoleLabel = L"Door for room";
-    ECRelationshipClassCP relClass = testSchema->GetClassP(L"RoomHasDoor")->GetRelationshipClassCP();
+    Utf8CP sourceRoleLabel = "Door to room";
+    Utf8CP targetRoleLabel = "Door for room";
+    ECRelationshipClassCP relClass = testSchema->GetClassP("RoomHasDoor")->GetRelationshipClassCP();
     ECRelationshipConstraintR sourceConstraint = relClass->GetSource();
     ECRelationshipConstraintR targetConstraint = relClass->GetTarget();
     EXPECT_STREQ(sourceRoleLabel, sourceConstraint.GetInvariantRoleLabel().c_str());
@@ -143,36 +143,36 @@ void VerifyNotLocalized(ECSchemaPtr testSchema)
     EXPECT_STREQ(targetRoleLabel, targetConstraint.GetRoleLabel().c_str());
 
     // Test Property level
-    ECPropertyP displayNameProp = itemClass->GetPropertyP(L"DisplayName", false);
-    WCharCP displayNameLabel = L"Display Name";
-    WCharCP displayNameDescription = L"Display label for an item";
+    ECPropertyP displayNameProp = itemClass->GetPropertyP("DisplayName", false);
+    Utf8CP displayNameLabel = "Display Name";
+    Utf8CP displayNameDescription = "Display label for an item";
     EXPECT_STREQ(displayNameLabel, displayNameProp->GetInvariantDisplayLabel().c_str());
     EXPECT_STREQ(displayNameLabel, displayNameProp->GetDisplayLabel().c_str());
     EXPECT_STREQ(displayNameDescription, displayNameProp->GetInvariantDescription().c_str());
     EXPECT_STREQ(displayNameDescription, displayNameProp->GetDescription().c_str());
 
     // Test duplicate strings are resolved
-    WCharCP lengthString = L"Length";
-    ECPropertyP roomLengthProp = testSchema->GetClassCP(L"Room")->GetPropertyP(lengthString, false);
-    ECPropertyP doorLengthProp = testSchema->GetClassCP(L"Door")->GetPropertyP(lengthString, false);
+    Utf8CP lengthString = "Length";
+    ECPropertyP roomLengthProp = testSchema->GetClassCP("Room")->GetPropertyP(lengthString, false);
+    ECPropertyP doorLengthProp = testSchema->GetClassCP("Door")->GetPropertyP(lengthString, false);
     EXPECT_STREQ(lengthString, roomLengthProp->GetInvariantDisplayLabel().c_str());
     EXPECT_STREQ(lengthString, doorLengthProp->GetInvariantDisplayLabel().c_str());
     EXPECT_STREQ(lengthString, roomLengthProp->GetDisplayLabel().c_str());
     EXPECT_STREQ(lengthString, doorLengthProp->GetDisplayLabel().c_str());
 
     // Test custom attribute strings
-    VerifyCaString(*testSchema, testSchema->GetFullSchemaName().c_str(), L"A whole House", L"ExtendedInfo", L"Purpose");
+    VerifyCaString(*testSchema, testSchema->GetFullSchemaName().c_str(), "A whole House", "ExtendedInfo", "Purpose");
     // Class
-    ECClassP doorClass = testSchema->GetClassP(L"Door");
-    VerifyCaString(*doorClass, doorClass->GetFullName(), L"squar", L"ExtendedInfo", L"ExtraInfo[1]");
-    VerifyCaString(*doorClass, doorClass->GetFullName(), L"wood", L"ExtendedInfo", L"ContentInfo[0].DisplayName");
+    ECClassP doorClass = testSchema->GetClassP("Door");
+    VerifyCaString(*doorClass, doorClass->GetFullName(), "squar", "ExtendedInfo", "ExtraInfo[1]");
+    VerifyCaString(*doorClass, doorClass->GetFullName(), "wood", "ExtendedInfo", "ContentInfo[0].DisplayName");
     // Relationship Constraints
-    ECRelationshipClassCP roomHasDoorRelClass = testSchema->GetClassCP(L"RoomHasDoor")->GetRelationshipClassCP();
-    VerifyCaString(roomHasDoorRelClass->GetSource(), roomHasDoorRelClass->GetFullName(), L"This is a room", L"ExtendedInfo", L"Purpose");
-    VerifyCaString(roomHasDoorRelClass->GetTarget(), roomHasDoorRelClass->GetFullName(), L"This is a door", L"ExtendedInfo", L"Purpose");
+    ECRelationshipClassCP roomHasDoorRelClass = testSchema->GetClassCP("RoomHasDoor")->GetRelationshipClassCP();
+    VerifyCaString(roomHasDoorRelClass->GetSource(), roomHasDoorRelClass->GetFullName(), "This is a room", "ExtendedInfo", "Purpose");
+    VerifyCaString(roomHasDoorRelClass->GetTarget(), roomHasDoorRelClass->GetFullName(), "This is a door", "ExtendedInfo", "Purpose");
     // Property
-    VerifyCaString(*doorLengthProp, doorLengthProp->GetName().c_str(), L"Length of door", L"ExtendedInfo", L"Purpose");
-    VerifyCaString(*doorLengthProp, doorLengthProp->GetName().c_str(), L"Constant", L"StandardValues", L"ValueMap[1].DisplayString");
+    VerifyCaString(*doorLengthProp, doorLengthProp->GetName().c_str(), "Length of door", "ExtendedInfo", "Purpose");
+    VerifyCaString(*doorLengthProp, doorLengthProp->GetName().c_str(), "Constant", "StandardValues", "ValueMap[1].DisplayString");
     }
 
 //---------------------------------------------------------------------------------------//
@@ -185,7 +185,7 @@ TEST_F(SchemaLocalizationTests, SupplementingLocalizationSupplemental)
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
     schemaContext->AddCulture(L"ur-PK");
     schemaContext->AddSchemaPath(ECTestFixture::GetTestDataPath(L"").c_str());
-    SchemaKey key(L"House", 01, 00);
+    SchemaKey key("House", 01, 00);
     testSchema = schemaContext->LocateSchema(key, SCHEMAMATCHTYPE_Latest);
     EXPECT_TRUE(testSchema->IsSupplemented());
     
@@ -203,7 +203,7 @@ TEST_F(SchemaLocalizationTests, CopyingALocalizedSchema)
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
     schemaContext->AddCulture(L"en-GB");
     schemaContext->AddSchemaPath(ECTestFixture::GetTestDataPath(L"").c_str());
-    SchemaKey key(L"House", 01, 00);
+    SchemaKey key("House", 01, 00);
     testSchema = schemaContext->LocateSchema(key, SCHEMAMATCHTYPE_Latest);
     EXPECT_TRUE(testSchema->IsSupplemented());
     VerifyLocalized(testSchema, GB);
@@ -225,13 +225,13 @@ TEST_F(SchemaLocalizationTests, XmlSerializeALocalizedSchema)
     schemaContext->AddCulture(L"it-IT");
     schemaContext->AddCulture(L"it");
     schemaContext->AddSchemaPath(ECTestFixture::GetTestDataPath(L"").c_str());
-    SchemaKey key(L"House", 01, 00);
+    SchemaKey key("House", 01, 00);
     testSchema = schemaContext->LocateSchema(key, SCHEMAMATCHTYPE_Latest);
     EXPECT_TRUE(testSchema->IsSupplemented());
     VerifyLocalized(testSchema, IT);
 
     ECSchemaPtr copyTestSchema;
-    WString     schemaXml;
+    Utf8String     schemaXml;
     EXPECT_EQ(ECObjectsStatus::ECOBJECTS_STATUS_Success, testSchema->WriteToXmlString(schemaXml));
     ECSchemaReadContextPtr deserializedSchemaContext = ECSchemaReadContext::CreateContext();
     EXPECT_EQ(SchemaReadStatus::SCHEMA_READ_STATUS_Success, ECSchema::ReadFromXmlString(copyTestSchema, schemaXml.c_str(), *deserializedSchemaContext));
@@ -250,7 +250,7 @@ TEST_F(SchemaLocalizationTests, CustomStringsNotOverridden)
     schemaContext->AddCulture(L"ur-PK");
     schemaContext->AddCulture(L"ur");
     schemaContext->AddSchemaPath(ECTestFixture::GetTestDataPath(L"").c_str());
-    SchemaKey key(L"House", 01, 00);
+    SchemaKey key("House", 01, 00);
     testSchema = schemaContext->LocateSchema(key, SCHEMAMATCHTYPE_Latest);
     EXPECT_TRUE(testSchema->IsSupplemented());
     VerifyLocalized(testSchema, PK);

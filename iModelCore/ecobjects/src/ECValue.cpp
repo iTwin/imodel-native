@@ -402,20 +402,20 @@ bool ECValue::DateTimeInfo::MetadataMatches (DateTimeInfoCR caDateTimeMetadata) 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle                   02/13
 //+---------------+---------------+---------------+---------------+---------------+-------
-WString ECValue::DateTimeInfo::MetadataToString () const
+Utf8String ECValue::DateTimeInfo::MetadataToString () const
     {
     DateTime::Info metadata;
     if (!TryGetMetadata (metadata))
         {
-        return L"";
+        return "";
         }
 
-    WString str;
+    Utf8String str;
     //reserve for the longest possible string 
     str.reserve (36);
-    str.append (L"Kind: ");
+    str.append ("Kind: ");
     str.append (DateTime::Info::KindToString (m_kind));
-    str.append (L" Component: ");
+    str.append (" Component: ");
     str.append (DateTime::Info::ComponentToString (m_component));
 
     return str;
@@ -697,7 +697,7 @@ void            ECValue::ShallowCopy (ECValueCR v)
                 SetString (v.m_stringInfo.m_wchar);
 #endif
             else
-                SetString (NULL);
+                SetWCharCP (NULL);
 
             break;
             }
@@ -906,7 +906,7 @@ ECValue::ECValue (DateTimeCR dateTime)
 ECValue::ECValue (WCharCP string, bool holdADuplicate) //needswork: add an overload that takes utf8
     {
     ConstructUninitialized();
-    SetString (string, holdADuplicate);
+    SetWCharCP (string, holdADuplicate);
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -1214,11 +1214,11 @@ bool ECValue::DateTimeInfoMatches (DateTimeInfoCR dateTimeInfo) const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 02/2013
 //+---------------+---------------+---------------+---------------+---------------+-----
-WString ECValue::DateTimeMetadataToString () const
+Utf8String ECValue::DateTimeMetadataToString () const
     {
     if (!IsDateTime () || IsNull ())
         {
-        return L"";
+        return "";
         }
 
     return m_dateTimeInfo.MetadataToString ();
@@ -1276,7 +1276,7 @@ BentleyStatus       ECValue::SetPoint3D (DPoint3dCR value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP ECValue::GetString() const
+WCharCP ECValue::GetWCharCP() const
     {
     PRECONDITION (IsString() && "Tried to get string value from an ECN::ECValue that is not a string.", L"<Programmer Error: Attempted to get string value from ECN::ECValue that is not a string.>");
     return IsNull() ? NULL : m_stringInfo.GetWChar (m_ownershipFlags);
@@ -1285,7 +1285,7 @@ WCharCP ECValue::GetString() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   09/14
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ECValue::OwnsString () const
+bool ECValue::OwnsWCharCP () const
     {
     if (!IsString ())
         {
@@ -1314,7 +1314,7 @@ Utf8CP  ECValue::GetUtf8CP() const
     {
     if (!IsString())
         {
-        BeAssert (false && L"<Programmer Error: Attempted to get string value from ECN::ECValue that is not a string.>");
+        BeAssert (false && "<Programmer Error: Attempted to get string value from ECN::ECValue that is not a string.>");
         return NULL;
         }
 
@@ -1328,7 +1328,7 @@ bool ECValue::OwnsUtf8CP () const
     {
     if (!IsString ())
         {
-        BeAssert (false && L"<Programmer Error: Attempted to call string related method from ECN::ECValue that is not a string.>");
+        BeAssert (false && "<Programmer Error: Attempted to call string related method from ECN::ECValue that is not a string.>");
         return false;
         }
 
@@ -1342,7 +1342,7 @@ Utf16CP ECValue::GetUtf16CP() const
     {
     if (!IsString())
         {
-        BeAssert (false && L"<Programmer Error: Attempted to get string value from ECN::ECValue that is not a string.>");
+        BeAssert (false && "<Programmer Error: Attempted to get string value from ECN::ECValue that is not a string.>");
         return NULL;
         }
 
@@ -1356,7 +1356,7 @@ bool ECValue::OwnsUtf16CP () const
     {
     if (!IsString ())
         {
-        BeAssert (false && L"<Programmer Error: Attempted to call string related method from ECN::ECValue that is not a string.>");
+        BeAssert (false && "<Programmer Error: Attempted to call string related method from ECN::ECValue that is not a string.>");
         return false;
         }
 
@@ -1377,7 +1377,7 @@ void ECValue::InitForString (void const * str)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECValue::SetString (WCharCP string, bool holdADuplicate)
+BentleyStatus ECValue::SetWCharCP (WCharCP string, bool holdADuplicate)
     {
     InitForString (string);
     m_stringInfo.SetWChar (string, m_ownershipFlags, holdADuplicate);
@@ -1529,13 +1529,13 @@ BentleyStatus       ECValue::SetStruct (IECInstanceP structInstance)
     return SUCCESS;
     }    
 
-extern void convertByteArrayToString (WStringR outString, const Byte *byteData, size_t numBytes);
-extern bool convertStringToByteArray (bvector<Byte>& byteData, WCharCP stringData);
+extern void convertByteArrayToString (Utf8StringR outString, const Byte *byteData, size_t numBytes);
+extern bool convertStringToByteArray (bvector<Byte>& byteData, Utf8CP stringData);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool    ECValue::ConvertPrimitiveToString (WStringR str) const
+bool    ECValue::ConvertPrimitiveToString (Utf8StringR str) const
     {
     PRECONDITION (IsPrimitive() && "ECValue::ConvertPrimitiveToString() requires a primitive value", false);    
     if (!IsPrimitive())
@@ -1557,34 +1557,34 @@ bool    ECValue::ConvertPrimitiveToString (WStringR str) const
         }
         break;
     case PRIMITIVETYPE_Boolean:
-        str = GetBoolean() ? L"True" : L"False";
+        str = GetBoolean() ? "True" : "False";
         break;
     case PRIMITIVETYPE_DateTime:
-        str.Sprintf (L"%lld", GetDateTimeTicks());
+        str.Sprintf ("%lld", GetDateTimeTicks());
         break;
     case PRIMITIVETYPE_Double:
-        str.Sprintf (L"%.17g", GetDouble());
+        str.Sprintf ("%.17g", GetDouble());
         break;
     case PRIMITIVETYPE_Integer:
-        str.Sprintf (L"%d", GetInteger());
+        str.Sprintf ("%d", GetInteger());
         break;
     case PRIMITIVETYPE_Long:
-        str.Sprintf (L"%lld", GetLong());
+        str.Sprintf ("%lld", GetLong());
         break;
     case PRIMITIVETYPE_Point2D:
         {
         DPoint2d pt = GetPoint2D();
-        str.Sprintf (L"%.17g,%.17g", pt.x, pt.y);
+        str.Sprintf ("%.17g,%.17g", pt.x, pt.y);
         }
         break;
     case PRIMITIVETYPE_Point3D:
         {
         DPoint3d pt = GetPoint3D();
-        str.Sprintf (L"%.17g,%.17g,%.17g", pt.x, pt.y, pt.z);
+        str.Sprintf ("%.17g,%.17g,%.17g", pt.x, pt.y, pt.z);
         }
         break;
     case PRIMITIVETYPE_String:
-        str = GetString();
+        str = GetUtf8CP();
         break;
     default:
         BeAssert (false);
@@ -1597,12 +1597,12 @@ bool    ECValue::ConvertPrimitiveToString (WStringR str) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-static WString formatDouble (double d)
+static Utf8String formatDouble (double d)
     {
-    WString str;
-    str.Sprintf (L"%.17f", d);
+    Utf8String str;
+    str.Sprintf ("%.17f", d);
     auto dotPos = str.find ('.');
-    if (WString::npos != dotPos)
+    if (Utf8String::npos != dotPos)
         {
         auto nonZeroPos = str.length() - 1;
         while (nonZeroPos > dotPos && str[nonZeroPos] == '0')
@@ -1611,9 +1611,9 @@ static WString formatDouble (double d)
         if (nonZeroPos == dotPos)
             //We need to keep ".0" at the end to make sure we keep information about the value type,
             //this will be needed during value parsing.
-            str.erase (dotPos + 2, WString::npos);
+            str.erase (dotPos + 2, Utf8String::npos);
         else if (nonZeroPos < str.length() - 1)
-            str.erase (nonZeroPos+1, WString::npos);
+            str.erase (nonZeroPos+1, Utf8String::npos);
         }
 
     return str;
@@ -1622,11 +1622,11 @@ static WString formatDouble (double d)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECValue::ConvertPrimitiveToECExpressionLiteral (WStringR expr) const
+bool ECValue::ConvertPrimitiveToECExpressionLiteral (Utf8StringR expr) const
     {
     if (IsNull())
         {
-        expr = L"Null";
+        expr = "Null";
         return true;
         }
 
@@ -1634,31 +1634,31 @@ bool ECValue::ConvertPrimitiveToECExpressionLiteral (WStringR expr) const
     
     switch (GetPrimitiveType())
         {
-    case PRIMITIVETYPE_Boolean:     expr = GetBoolean() ? L"True" : L"False"; return true;
-    case PRIMITIVETYPE_DateTime:    expr.Sprintf (L"@%lld", GetDateTimeTicks()); return true;
+    case PRIMITIVETYPE_Boolean:     expr = GetBoolean() ? "True" : "False"; return true;
+    case PRIMITIVETYPE_DateTime:    expr.Sprintf ("@%lld", GetDateTimeTicks()); return true;
     case PRIMITIVETYPE_Double:      expr = formatDouble (GetDouble()); return true;
-    case PRIMITIVETYPE_Integer:     expr.Sprintf (L"%d", GetInteger()); return true;
-    case PRIMITIVETYPE_Long:        expr.Sprintf (L"%lld", GetLong()); return true;
-    case PRIMITIVETYPE_Point2D:     expr.Sprintf (L"{%ls,%ls}", formatDouble (GetPoint2D().x).c_str(), formatDouble (GetPoint2D().y).c_str()); return true;
+    case PRIMITIVETYPE_Integer:     expr.Sprintf ("%d", GetInteger()); return true;
+    case PRIMITIVETYPE_Long:        expr.Sprintf ("%lld", GetLong()); return true;
+    case PRIMITIVETYPE_Point2D:     expr.Sprintf ("{%s,%s}", formatDouble (GetPoint2D().x).c_str(), formatDouble (GetPoint2D().y).c_str()); return true;
     case PRIMITIVETYPE_Point3D:
         {
         DPoint3d pt = GetPoint3D();
-        expr.Sprintf (L"{%ls,%ls,%ls}", formatDouble(pt.x).c_str(), formatDouble(pt.y).c_str(), formatDouble(pt.z).c_str());
+        expr.Sprintf ("{%s,%s,%s}", formatDouble(pt.x).c_str(), formatDouble(pt.y).c_str(), formatDouble(pt.z).c_str());
         }
         return true;
     case PRIMITIVETYPE_String:
         {
         // Must escape quotes...
-        WString s (GetString());
-        s.ReplaceAll(L"\"", L"\"\"");
-        expr.Sprintf (L"\"%ls\"", s.c_str());
+        Utf8String s (GetUtf8CP());
+        s.ReplaceAll("\"", "\"\"");
+        expr.Sprintf ("\"%s\"", s.c_str());
         }
         return true;
     case PRIMITIVETYPE_Binary:
     case PRIMITIVETYPE_IGeometry:
         return false;
     default:
-        BeAssert (false && L"Unsupported PrimitiveType");
+        BeAssert (false && "Unsupported PrimitiveType");
         return false;
         }
     }
@@ -1681,7 +1681,7 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
         return true;
         }
             
-    WCharCP str = GetString();
+    Utf8CP str = GetUtf8CP();
     switch (primitiveType)
         {
     case PRIMITIVETYPE_Binary:
@@ -1694,9 +1694,9 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
         }
         break;
     case PRIMITIVETYPE_Boolean:
-        if (0 == BeStringUtilities::Wcsicmp (L"true", str) || 0 == wcscmp (L"1", str))
+        if (0 == BeStringUtilities::Stricmp("true", str) || 0 == strcmp("1", str))
             SetBoolean (true);
-        else if (0 == BeStringUtilities::Wcsicmp (L"false", str) || 0 == wcscmp (L"0", str))
+        else if (0 == BeStringUtilities::Stricmp("false", str) || 0 == strcmp("0", str))
             SetBoolean (false);
         else
             return false;
@@ -1705,7 +1705,7 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
     case PRIMITIVETYPE_Long:
         {
         int64_t i;
-        if (1 != BE_STRING_UTILITIES_SWSCANF (str, L"%lld", &i))
+        if (1 != BE_STRING_UTILITIES_UTF8_SSCANF (str, "%lld", &i))
             return false;
         else if (PRIMITIVETYPE_Long == primitiveType)
             SetLong (i);
@@ -1716,7 +1716,7 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
     case PRIMITIVETYPE_Double:
         {
         double d;
-        if (1 == BE_STRING_UTILITIES_SWSCANF (str, L"%lg", &d))
+        if (1 == BE_STRING_UTILITIES_UTF8_SSCANF (str, "%lg", &d))
             SetDouble (d);
         else
             return false;
@@ -1725,7 +1725,7 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
     case PRIMITIVETYPE_Integer:
         {
         int64_t i;
-        if (1 == BE_STRING_UTILITIES_SWSCANF (str, L"%lld", &i))
+        if (1 == BE_STRING_UTILITIES_UTF8_SSCANF (str, "%lld", &i))
             {
             if (INT_MAX >= i && INT_MIN <= i)
                 SetInteger ((int32_t)i);
@@ -1739,7 +1739,7 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
     case PRIMITIVETYPE_Point2D:
         {
         DPoint2d pt;
-        if (2 == BE_STRING_UTILITIES_SWSCANF (str, L"%lg,%lg", &pt.x, &pt.y))
+        if (2 == BE_STRING_UTILITIES_UTF8_SSCANF (str, "%lg,%lg", &pt.x, &pt.y))
             SetPoint2D (pt);
         else
             return false;
@@ -1748,7 +1748,7 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
     case PRIMITIVETYPE_Point3D:
         {
         DPoint3d pt;
-        if (3 == BE_STRING_UTILITIES_SWSCANF (str, L"%lg,%lg,%lg", &pt.x, &pt.y, &pt.z))
+        if (3 == BE_STRING_UTILITIES_UTF8_SSCANF (str, "%lg,%lg,%lg", &pt.x, &pt.y, &pt.z))
             SetPoint3D (pt);
         else
             return false;
@@ -1765,26 +1765,26 @@ bool ECValue::ConvertToPrimitiveFromString (PrimitiveType primitiveType)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-WString    ECValue::ToString () const
+Utf8String    ECValue::ToString () const
     {
     if (IsNull())
-        return L"<null>";
+        return "<null>";
         
-    WString str;
+    Utf8String str;
     
     if (IsArray())
         {
         ArrayInfo arrayInfo = GetArrayInfo();
-        str.Sprintf (L"Count: %d IsFixedSize: %d", arrayInfo.GetCount(), arrayInfo.IsFixedCount());
+        str.Sprintf ("Count: %d IsFixedSize: %d", arrayInfo.GetCount(), arrayInfo.IsFixedCount());
         }
     else if (IsStruct())
         {
-        return L"IECInstance containing struct value";
+        return "IECInstance containing struct value";
         }
     else if (PRIMITIVETYPE_DateTime == m_primitiveType)
-        str = GetDateTime().ToString(); // want something more readable than the ticks
+        str = GetDateTime().ToUtf8String(); // want something more readable than the ticks
     else if (!ConvertPrimitiveToString (str))
-        str = L"<error>";
+        str = "<error>";
         
     return str;
     }
@@ -1814,8 +1814,8 @@ bool ECValue::ConvertToPrimitiveType (PrimitiveType newType)
         return true;
     else if (PRIMITIVETYPE_String == newType)
         {
-        WString strVal = ToString();
-        SetString (strVal.c_str());
+        Utf8String strVal = ToString();
+        SetUtf8CP (strVal.c_str());
         return true;
         }
     else if (IsString())
@@ -2203,7 +2203,7 @@ void                                            ECValueAccessor::PushLocation (I
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool                                            ECValueAccessor::PushLocation (ECEnablerCR newEnabler, WCharCP accessString, int newArrayIndex)
+bool                                            ECValueAccessor::PushLocation (ECEnablerCR newEnabler, Utf8CP accessString, int newArrayIndex)
     {
     uint32_t propertyIndex;
     ECObjectsStatus status = newEnabler.GetPropertyIndex(propertyIndex, accessString);
@@ -2219,7 +2219,7 @@ bool                                            ECValueAccessor::PushLocation (E
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool                                            ECValueAccessor::PushLocation (IECInstanceCR instance, WCharCP accessString, int newArrayIndex)
+bool                                            ECValueAccessor::PushLocation (IECInstanceCR instance, Utf8CP accessString, int newArrayIndex)
     {
     return PushLocation (instance.GetEnabler(), accessString, newArrayIndex);
     }
@@ -2268,7 +2268,7 @@ uint32_t                                        ECValueAccessor::GetDepth() cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP                                 ECValueAccessor::GetAccessString () const
+Utf8CP                                 ECValueAccessor::GetAccessString () const
     {
     uint32_t depth = GetDepth();
     if (0 == depth)
@@ -2280,11 +2280,11 @@ WCharCP                                 ECValueAccessor::GetAccessString () cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP                                 ECValueAccessor::GetAccessString (uint32_t depth) const
+Utf8CP                                 ECValueAccessor::GetAccessString (uint32_t depth) const
     {
     int propertyIndex         = m_locationVector[depth].GetPropertyIndex();
     ECEnablerCR enabler       = * m_locationVector[depth].GetEnabler();
-    WCharCP accessString;
+    Utf8CP accessString;
     if (ECOBJECTS_STATUS_Success == enabler.GetAccessString (accessString, propertyIndex))
         return accessString;
     return NULL;
@@ -2293,17 +2293,17 @@ WCharCP                                 ECValueAccessor::GetAccessString (uint32
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString                                        ECValueAccessor::GetPropertyName() const
+Utf8String                                        ECValueAccessor::GetPropertyName() const
     {
     uint32_t depth = GetDepth();
     if (0 == depth)
-        return WString();
+        return Utf8String();
 
-    WString name = GetAccessString (GetDepth()-1);
+    Utf8String name = GetAccessString (GetDepth()-1);
 
     // get the name after the last .
     size_t lastDotIndex = name.rfind ('.');
-    if (WString::npos != lastDotIndex)
+    if (Utf8String::npos != lastDotIndex)
         {
         lastDotIndex++;
         size_t len =  name.length()-lastDotIndex;
@@ -2335,17 +2335,17 @@ ECPropertyCP ECValueAccessor::GetECProperty() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString                                        ECValueAccessor::GetDebugAccessString() const
+Utf8String                                        ECValueAccessor::GetDebugAccessString() const
     {
-    WString temp;
+    Utf8String temp;
     for(uint32_t depth = 0; depth < GetDepth(); depth++)
         {
         if(depth > 0)
-            temp.append (L" -> ");
-        temp.append (WPrintfString(L"{%d", m_locationVector[depth].GetPropertyIndex()));
+            temp.append (" -> ");
+        temp.append (Utf8PrintfString("{%d", m_locationVector[depth].GetPropertyIndex()));
         if(m_locationVector[depth].GetArrayIndex() > -1)
-            temp.append (WPrintfString(L",%d", m_locationVector[depth].GetArrayIndex()));
-        temp.append (L"}");
+            temp.append (Utf8PrintfString(",%d", m_locationVector[depth].GetArrayIndex()));
+        temp.append ("}");
         temp.append (GetAccessString (depth));
         }
     return temp;
@@ -2354,16 +2354,16 @@ WString                                        ECValueAccessor::GetDebugAccessSt
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString                                        ECValueAccessor::GetManagedAccessString() const
+Utf8String                                        ECValueAccessor::GetManagedAccessString() const
     {
-    WString temp;
+    Utf8String temp;
     for(uint32_t depth = 0; depth < GetDepth(); depth++)
         {
         if(depth > 0)
-            temp.append (L".");
+            temp.append (".");
 
-        WCharCP str = GetAccessString (depth);
-        WCharCP lastDot = wcsrchr (str, L'.');
+        Utf8CP str = GetAccessString (depth);
+        Utf8CP lastDot = strrchr (str, '.');
 
         if (NULL != lastDot)
             str = lastDot+1;
@@ -2372,9 +2372,9 @@ WString                                        ECValueAccessor::GetManagedAccess
         //If the current index is an array element,
         if(m_locationVector[depth].GetArrayIndex() > -1)
             {
-            temp.append (L"[");
-            temp.append (WPrintfString(L"%d", m_locationVector[depth].GetArrayIndex()));
-            temp.append (L"]");
+            temp.append ("[");
+            temp.append (Utf8PrintfString("%d", m_locationVector[depth].GetArrayIndex()));
+            temp.append ("]");
             }
         }
     return temp;
@@ -2446,12 +2446,12 @@ static void tokenize(const WString& str, bvector<WString>& tokens, const WString
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECClassCP getStructArrayClass (ECClassCR enablerClass, WCharCP propertyName)
+static ECClassCP getStructArrayClass (ECClassCR enablerClass, Utf8CP propertyName)
     {
-    WCharCP dotPos = wcschr (propertyName, '.');
+    Utf8CP dotPos = strchr (propertyName, '.');
     if (NULL != dotPos)
         {
-        WString structName (propertyName, dotPos);
+        Utf8String structName (propertyName, dotPos);
         ECClassCP structClass = getStructArrayClass (enablerClass, structName.c_str());
         if (NULL == structClass)
             { BeAssert (false); return NULL; }
@@ -2474,13 +2474,13 @@ static ECClassCP getStructArrayClass (ECClassCR enablerClass, WCharCP propertyNa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECObjectsStatus getECValueAccessorUsingManagedAccessString (wchar_t* asBuffer, wchar_t* indexBuffer, ECValueAccessor& va, ECEnablerCR  enabler, WCharCP managedPropertyAccessor)
+static ECObjectsStatus getECValueAccessorUsingManagedAccessString (Utf8Char* asBuffer, Utf8Char* indexBuffer, ECValueAccessor& va, ECEnablerCR  enabler, Utf8CP managedPropertyAccessor)
     {
     ECObjectsStatus status;
     uint32_t        propertyIndex;
 
     // see if access string specifies an array
-    WCharCP pos1 = wcschr (managedPropertyAccessor, L'[');
+    Utf8CP pos1 = strchr (managedPropertyAccessor, '[');
 
     // if not an array then we have a primitive that we can access directly 
     if (NULL == pos1)
@@ -2503,19 +2503,19 @@ static ECObjectsStatus getECValueAccessorUsingManagedAccessString (wchar_t* asBu
 
     size_t numChars = 0;
     numChars = pos1 - managedPropertyAccessor;
-    wcsncpy(asBuffer, managedPropertyAccessor, numChars>NUM_ACCESSSTRING_BUFFER_CHARS?NUM_ACCESSSTRING_BUFFER_CHARS:numChars);
+    strncpy(asBuffer, managedPropertyAccessor, numChars>NUM_ACCESSSTRING_BUFFER_CHARS?NUM_ACCESSSTRING_BUFFER_CHARS:numChars);
     asBuffer[numChars]=0;
 
-    WCharCP pos2 = wcschr (pos1+1, L']');
+    Utf8CP pos2 = strchr (pos1+1, L']');
     if (!pos2)
         return ECOBJECTS_STATUS_Error;
 
     numChars = pos2 - pos1 - 1;
-    wcsncpy(indexBuffer, pos1+1, numChars>NUM_INDEX_BUFFER_CHARS?NUM_INDEX_BUFFER_CHARS:numChars);
+    strncpy(indexBuffer, pos1+1, numChars>NUM_INDEX_BUFFER_CHARS?NUM_INDEX_BUFFER_CHARS:numChars);
     indexBuffer[numChars]=0;
 
     uint32_t indexValue = -1;
-    BE_STRING_UTILITIES_SWSCANF (indexBuffer, L"%ud", &indexValue);
+    BE_STRING_UTILITIES_UTF8_SSCANF (indexBuffer, "%ud", &indexValue);
 
     ECValue  arrayVal;
 
@@ -2530,7 +2530,7 @@ static ECObjectsStatus getECValueAccessorUsingManagedAccessString (wchar_t* asBu
         return ECOBJECTS_STATUS_Success;
         }
 
-    WString str = asBuffer; 
+    Utf8String str = asBuffer; 
 
     ECClassCP structClass = getStructArrayClass (enabler.GetClass(), asBuffer);
     if (!structClass)
@@ -2549,7 +2549,7 @@ static ECObjectsStatus getECValueAccessorUsingManagedAccessString (wchar_t* asBu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECValueAccessor::PopulateValueAccessor (ECValueAccessor& va, IECInstanceCR instance, WCharCP managedPropertyAccessor)
+ECObjectsStatus ECValueAccessor::PopulateValueAccessor (ECValueAccessor& va, IECInstanceCR instance, Utf8CP managedPropertyAccessor)
     {
     return PopulateValueAccessor (va, instance.GetEnabler(), managedPropertyAccessor);
     }
@@ -2557,10 +2557,10 @@ ECObjectsStatus ECValueAccessor::PopulateValueAccessor (ECValueAccessor& va, IEC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECValueAccessor::PopulateValueAccessor (ECValueAccessor& va, ECEnablerCR enabler, WCharCP accessor)
+ECObjectsStatus ECValueAccessor::PopulateValueAccessor (ECValueAccessor& va, ECEnablerCR enabler, Utf8CP accessor)
     {
-    wchar_t         asBuffer[NUM_ACCESSSTRING_BUFFER_CHARS+1];
-    wchar_t         indexBuffer[NUM_INDEX_BUFFER_CHARS+1];
+    Utf8Char         asBuffer[NUM_ACCESSSTRING_BUFFER_CHARS+1];
+    Utf8Char         indexBuffer[NUM_INDEX_BUFFER_CHARS+1];
     va.Clear ();
     return getECValueAccessorUsingManagedAccessString (asBuffer, indexBuffer, va, enabler, accessor);
     }
@@ -2568,7 +2568,7 @@ ECObjectsStatus ECValueAccessor::PopulateValueAccessor (ECValueAccessor& va, ECE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECValueAccessor::PopulateValueAccessor (ECValueAccessor& va, IECInstanceCR instance, WCharCP accessor, bool includeAdhocs)
+ECObjectsStatus ECValueAccessor::PopulateValueAccessor (ECValueAccessor& va, IECInstanceCR instance, Utf8CP accessor, bool includeAdhocs)
     {
     auto status = PopulateValueAccessor (va, instance, accessor);
     if (ECOBJECTS_STATUS_PropertyNotFound == status && includeAdhocs)
@@ -2607,7 +2607,7 @@ ECValueAccessorR    ECPropertyValue::GetValueAccessorR ()            { return m_
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  12/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyValuePtr     ECPropertyValue::GetPropertyValue (IECInstanceCR instance, WCharCP propertyAccessor)
+ECPropertyValuePtr     ECPropertyValue::GetPropertyValue (IECInstanceCR instance, Utf8CP propertyAccessor)
     {
     ECValueAccessor va;
 
@@ -2678,7 +2678,7 @@ ECPropertyValue::ECPropertyValue (IECInstanceCR instance, ECValueAccessorCR acce
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECPropertyValue::Initialize (IECInstanceCR instance, WCharCP accessString, ECValueCR v)
+ECObjectsStatus ECPropertyValue::Initialize (IECInstanceCR instance, Utf8CP accessString, ECValueCR v)
     {
     ECObjectsStatus status = ECValueAccessor::PopulateValueAccessor (m_accessor, instance, accessString);
     if (ECOBJECTS_STATUS_Success == status)
@@ -3064,21 +3064,21 @@ private:
         return fmtr;
         }
 
-    static bool     ExtractStandardFormatPrecision (WCharCP fmt, uint32_t& precision);
-    static bool     ApplyStandardNumericFormat (WStringR formatted, WCharCP fmt, double d);
-    static void     ParseCustomFormatString(WStringR formatted, WCharCP fmt, NumericFormat& numFormat, bool ignoreExponent);
-    static bool     ApplyCustomNumericFormat(WStringR formatted, WCharCP fmt, double d, bool* onlyZeros);
-    static WCharCP  ParseNumberFormat (NumericFormat& numFormat, WCharCP start);
-    static WCharCP  SkipLiteralString (WCharCP start);
+    static bool     ExtractStandardFormatPrecision (Utf8CP fmt, uint32_t& precision);
+    static bool     ApplyStandardNumericFormat (Utf8StringR formatted, Utf8CP fmt, double d);
+    static void     ParseCustomFormatString(Utf8StringR formatted, Utf8CP fmt, NumericFormat& numFormat, bool ignoreExponent);
+    static bool     ApplyCustomNumericFormat(Utf8StringR formatted, Utf8CP fmt, double d, bool* onlyZeros);
+    static Utf8CP   ParseNumberFormat (NumericFormat& numFormat, Utf8CP start);
+    static Utf8CP   SkipLiteralString (Utf8CP start);
 public:
-    static bool                 FormatDouble (WStringR formatted, WCharCP formatString, double d);
-    static bool                 FormatInteger (WStringR formatted, WCharCP formatString, int64_t i);
+    static bool                 FormatDouble (Utf8StringR formatted, Utf8CP formatString, double d);
+    static bool                 FormatInteger (Utf8StringR formatted, Utf8CP formatString, int64_t i);
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool NumericFormat::ExtractStandardFormatPrecision (WCharCP fmt, uint32_t& precision)
+bool NumericFormat::ExtractStandardFormatPrecision (Utf8CP fmt, uint32_t& precision)
     {
     // Expect 0-2 digits specifying a precision or width from 0-99
     // Don't overwrite value of precision unless one is explicitly specified or cannot be extracted
@@ -3087,7 +3087,7 @@ bool NumericFormat::ExtractStandardFormatPrecision (WCharCP fmt, uint32_t& preci
     if (*fmt)
         {
         precision = 0;
-        if (iswdigit (*fmt))
+        if (isdigit (*fmt))
             {
             precision = (uint32_t)(*fmt - '0');
             if (*++fmt)
@@ -3116,19 +3116,19 @@ bool NumericFormat::ExtractStandardFormatPrecision (WCharCP fmt, uint32_t& preci
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool NumericFormat::FormatInteger (WStringR formatted, WCharCP fmt, int64_t i)
+bool NumericFormat::FormatInteger (Utf8StringR formatted, Utf8CP fmt, int64_t i)
     {
     // Check for a couple of standard formats specific to integers
     if (NULL != fmt)
         {
-        WChar spec = *fmt;
-        WChar lspec = towlower (spec);
+        Utf8Char spec = *fmt;
+        Utf8Char lspec = (Utf8Char) tolower (spec);
         if ('d' == lspec || 'x' == lspec)
             {
             uint32_t precision = 0;
             if (ExtractStandardFormatPrecision (fmt + 1, precision))
                 {
-                WChar buf[100]; // because max width is 99
+                Utf8Char buf[100]; // because max width is 99
                 switch (lspec)
                     {
                     case 'x':       // hexadecimal
@@ -3142,7 +3142,7 @@ bool NumericFormat::FormatInteger (WStringR formatted, WCharCP fmt, int64_t i)
                         break;
                     case 'd':       // decimal
                         {
-                        BeStringUtilities::Snwprintf (buf, _countof(buf), L"%0*lld", precision, i);
+                        BeStringUtilities::Snprintf (buf, "%0*lld", precision, i);
                         }
                         break;
                     }
@@ -3160,7 +3160,7 @@ bool NumericFormat::FormatInteger (WStringR formatted, WCharCP fmt, int64_t i)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool NumericFormat::ApplyStandardNumericFormat (WStringR formatted, WCharCP fmt, double d)
+bool NumericFormat::ApplyStandardNumericFormat (Utf8StringR formatted, Utf8CP fmt, double d)
     {
     // Limited support for following standard .NET specifiers. All can be upper- or lower-case, all take an optional width/precision from 0-99
     //  E: scientific notation. Default precision 6.
@@ -3173,8 +3173,8 @@ bool NumericFormat::ApplyStandardNumericFormat (WStringR formatted, WCharCP fmt,
 
     BeAssert (NULL != fmt && 0 != *fmt);
 
-    WChar spec = *fmt,
-          lspec = towlower (spec);
+    Utf8Char spec = *fmt,
+          lspec = (Utf8Char) tolower (spec);
 
     PrecisionType precisionType = PrecisionType::Decimal;
     bool groupSeparators = false,
@@ -3225,7 +3225,7 @@ bool NumericFormat::ApplyStandardNumericFormat (WStringR formatted, WCharCP fmt,
     formatted = fmtr->ToString (d);
 
     if (appendPercent)
-        formatted.append (1, L'%');
+        formatted.append (1, '%');
     else if (ignoreExtractedPrecision && formatted.length() > 1)
         {
         // DoubleFormatter is going to give us trailing zeros. Strip them off
@@ -3247,7 +3247,7 @@ bool NumericFormat::ApplyStandardNumericFormat (WStringR formatted, WCharCP fmt,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NumericFormat::ParseCustomFormatString(WStringR formatted, WCharCP fmt, NumericFormat& numFormat, bool ignoreExponent)
+void NumericFormat::ParseCustomFormatString(Utf8StringR formatted, Utf8CP fmt, NumericFormat& numFormat, bool ignoreExponent)
     {
     while (0 != *fmt)
         {
@@ -3256,7 +3256,7 @@ void NumericFormat::ParseCustomFormatString(WStringR formatted, WCharCP fmt, Num
             case '\'':
             case '"':       // literal string
                 {
-                WCharCP endQuote = SkipLiteralString(fmt);
+                Utf8CP endQuote = SkipLiteralString(fmt);
                 if (endQuote - fmt > 2)
                     formatted.append(fmt + 1, endQuote - fmt - 1);
 
@@ -3290,7 +3290,7 @@ void NumericFormat::ParseCustomFormatString(WStringR formatted, WCharCP fmt, Num
                     if ('+' == *fmt || '-' == *fmt)
                         formatted.append(1, *fmt++);
 
-                    while (L'0' == *fmt)
+                    while ('0' == *fmt)
                         formatted.append(1, *fmt++);
                     }
                 else
@@ -3331,9 +3331,9 @@ void NumericFormat::ParseCustomFormatString(WStringR formatted, WCharCP fmt, Num
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool NumericFormat::ApplyCustomNumericFormat(WStringR formatted, WCharCP fmt, double d, bool* onlyZeros)
+bool NumericFormat::ApplyCustomNumericFormat(Utf8StringR formatted, Utf8CP fmt, double d, bool* onlyZeros)
     {
-    WString originalFmt = fmt;
+    Utf8String originalFmt = fmt;
     formatted.clear();
     
     NumericFormat numFormat;
@@ -3343,7 +3343,7 @@ bool NumericFormat::ApplyCustomNumericFormat(WStringR formatted, WCharCP fmt, do
         *onlyZeros = false;
     
     // It's possible the format string did not actually contain any placeholders for the digits, in which case we have no formatting to do
-    if (WString::npos == numFormat.insertPos)
+    if (Utf8String::npos == numFormat.insertPos)
         {
         // Need to go back and put processed characters such as exponents back in.
         formatted.clear();
@@ -3353,18 +3353,18 @@ bool NumericFormat::ApplyCustomNumericFormat(WStringR formatted, WCharCP fmt, do
         }
 
     DoubleFormatterPtr fmtr = numFormat.ToFormatter();
-    WString formattedDouble = fmtr->ToString(d * numFormat.multiplier);
+    Utf8String formattedDouble = fmtr->ToString(d * numFormat.multiplier);
 
     // Caller needs to know if rounding or precision of the format caused this to be only 0's.
     // Formatter can also insert things such as +,-,.,e,E, etc., so I think the best check is for non-zero digits.
     if (NULL != onlyZeros)
-        *onlyZeros = !std::any_of(formattedDouble.begin(), formattedDouble.end(), [&](WChar const& c) { return c >= L'1' && c <= L'9'; });
+        *onlyZeros = !std::any_of(formattedDouble.begin(), formattedDouble.end(), [&](Utf8Char const& c) { return c >= '1' && c <= '9'; });
 
     // We have to pad width with leading zeros, DoubleFormatter doesn't support it.
     if (numFormat.widthBeforeDecimal > 0)
         {
         size_t endPos = formattedDouble.find('.');
-        if (WString::npos == endPos)
+        if (Utf8String::npos == endPos)
             endPos = formattedDouble.length();
 
         if ((uint32_t)endPos < numFormat.widthBeforeDecimal)
@@ -3380,7 +3380,7 @@ bool NumericFormat::ApplyCustomNumericFormat(WStringR formatted, WCharCP fmt, do
     if (numFormat.minDecimalPrecision < numFormat.maxDecimalPrecision)
         {
         size_t decimalPos = (uint32_t)formattedDouble.find('.');
-        if (WString::npos != decimalPos)
+        if (Utf8String::npos != decimalPos)
             {
             uint32_t minPos = (uint32_t)decimalPos + 1 + numFormat.minDecimalPrecision, // the minimum number of decimal digits to keep, regardless of whether or not they are zero
                 maxPos = (uint32_t)decimalPos + 1 + numFormat.maxDecimalPrecision;
@@ -3412,7 +3412,7 @@ bool NumericFormat::ApplyCustomNumericFormat(WStringR formatted, WCharCP fmt, do
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool NumericFormat::FormatDouble (WStringR formatted, WCharCP fmt, double d)
+bool NumericFormat::FormatDouble (Utf8StringR formatted, Utf8CP fmt, double d)
     {
     if (ApplyStandardNumericFormat (formatted, fmt, d))
         return true;
@@ -3429,12 +3429,12 @@ bool NumericFormat::FormatDouble (WStringR formatted, WCharCP fmt, double d)
     //  One section: The format string applies to all values.
     //  Two sections: The first section applies to positive values and zeros, and the second section applies to negative values. If the number to be formatted is negative, but becomes zero after rounding according to the format in the second section, the resulting zero is formatted according to the first section.
     //  Three sections: The first section applies to positive values, the second section applies to negative values, and the third section applies to zeros. The second section can be left empty(by having nothing between the semicolons), in which case the first section applies to all nonzero values. If the number to be formatted is nonzero, but becomes zero after rounding according to the format in the first or second section, the resulting zero is formatted according to the third section.
-    bvector<WString> sections;
-    BeStringUtilities::Split(fmt, L";", L"\\", sections);
+    bvector<Utf8String> sections;
+    BeStringUtilities::Split(fmt, ";", "\\", sections);
 
     // Do something arbitrary for bad data.
     if (UNEXPECTED_CONDITION(0 == sections.size()))
-        return ApplyStandardNumericFormat(formatted, L"g", d);
+        return ApplyStandardNumericFormat(formatted, "g", d);
     
     if (UNEXPECTED_CONDITION(sections.size() > 3))
         return ApplyCustomNumericFormat(formatted, fmt, d, NULL);
@@ -3476,10 +3476,10 @@ bool NumericFormat::FormatDouble (WStringR formatted, WCharCP fmt, double d)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP NumericFormat::SkipLiteralString (WCharCP start)
+Utf8CP NumericFormat::SkipLiteralString (Utf8CP start)
     {
-    WCharCP end = start + 1;
-    WChar quoteChar = *start;
+    Utf8CP end = start + 1;
+    Utf8Char quoteChar = *start;
 
     while (*end)
         {
@@ -3495,11 +3495,11 @@ WCharCP NumericFormat::SkipLiteralString (WCharCP start)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP NumericFormat::ParseNumberFormat (NumericFormat& numFormat, WCharCP start)
+Utf8CP NumericFormat::ParseNumberFormat (NumericFormat& numFormat, Utf8CP start)
     {
     bool foundZero = false;
     bool stopProcessing = false;
-    WCharCP cur = start;
+    Utf8CP cur = start;
     while (0 != *cur)
         {
         switch (*cur)
@@ -3578,7 +3578,7 @@ WCharCP NumericFormat::ParseNumberFormat (NumericFormat& numFormat, WCharCP star
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECValue::ApplyDotNetFormatting (WStringR out, WCharCP fmt) const
+bool ECValue::ApplyDotNetFormatting (Utf8StringR out, Utf8CP fmt) const
     {
     if (IsNull())
         return false;
@@ -3592,7 +3592,7 @@ bool ECValue::ApplyDotNetFormatting (WStringR out, WCharCP fmt) const
     case PRIMITIVETYPE_Double:
         return NumericFormat::FormatDouble (out, fmt, GetDouble());
     default:
-        BeAssert (false && L"Call ECValue::SupportsDotNetFormatting() to determine if this ECValue can be formatted");
+        BeAssert (false && "Call ECValue::SupportsDotNetFormatting() to determine if this ECValue can be formatted");
         return false;
         }
     }
@@ -3600,7 +3600,7 @@ bool ECValue::ApplyDotNetFormatting (WStringR out, WCharCP fmt) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-AdhocPropertyQuery::AdhocPropertyQuery (IECInstanceCR host, WCharCP accessString)
+AdhocPropertyQuery::AdhocPropertyQuery (IECInstanceCR host, Utf8CP accessString)
     : AdhocPropertyMetadata (host.GetEnabler(), accessString), m_host (host)
     {
     //
@@ -3618,7 +3618,7 @@ AdhocPropertyQuery::AdhocPropertyQuery (IECInstanceCR host, uint32_t propertyInd
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool AdhocPropertyMetadata::IsSupported (ECEnablerCR enabler, WCharCP accessString)
+bool AdhocPropertyMetadata::IsSupported (ECEnablerCR enabler, Utf8CP accessString)
     {
     AdhocPropertyMetadata meta (enabler, accessString, false);
     return meta.IsSupported();
@@ -3636,7 +3636,7 @@ bool AdhocPropertyMetadata::IsSupported (ECEnablerCR enabler, uint32_t propIdx)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-AdhocPropertyMetadata::AdhocPropertyMetadata (ECEnablerCR enabler, WCharCP containerAccessString, bool loadMetadata)
+AdhocPropertyMetadata::AdhocPropertyMetadata (ECEnablerCR enabler, Utf8CP containerAccessString, bool loadMetadata)
     : m_containerIndex (0)
     {
     uint32_t containerIndex = 0;
@@ -3656,7 +3656,7 @@ AdhocPropertyMetadata::AdhocPropertyMetadata (ECEnablerCR enabler, uint32_t prop
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-AdhocPropertyMetadata::AdhocPropertyMetadata (ECEnablerCR enabler, WCharCP containerAccessString)
+AdhocPropertyMetadata::AdhocPropertyMetadata (ECEnablerCR enabler, Utf8CP containerAccessString)
     : AdhocPropertyMetadata (enabler, containerAccessString, true)
     {
     //
@@ -3684,7 +3684,7 @@ bool AdhocPropertyMetadata::Init (ECEnablerCR enabler, uint32_t containerIndex, 
         return false;
 
     // find custom attribute on struct class
-    IECInstancePtr attr = structClass->GetCustomAttribute (L"AdhocPropertyContainerDefinition");
+    IECInstancePtr attr = structClass->GetCustomAttribute ("AdhocPropertyContainerDefinition");
     if (attr.IsNull())
         return false;
 
@@ -3692,20 +3692,20 @@ bool AdhocPropertyMetadata::Init (ECEnablerCR enabler, uint32_t containerIndex, 
     ECValue v;
     v.SetAllowsPointersIntoInstanceMemory (true);
 
-    static const WCharCP s_propertyNames[(size_t)Index::MAX] =
+    static const Utf8CP s_propertyNames[(size_t)Index::MAX] =
         {
-        L"NameProperty", L"DisplayLabelProperty", L"ValueProperty", L"TypeProperty", L"UnitProperty", L"ExtendTypeProperty", L"IsReadOnlyProperty", L"IsHiddenProperty"
+        "NameProperty", "DisplayLabelProperty", "ValueProperty", "TypeProperty", "UnitProperty", "ExtendTypeProperty", "IsReadOnlyProperty", "IsHiddenProperty"
         };
 
     for (size_t i = 0; i < _countof (s_propertyNames); i++)
         {
         if (ECOBJECTS_STATUS_Success == attr->GetValue (v, s_propertyNames[i]) && !v.IsNull() && v.IsString())
             {
-            prop = structClass->GetPropertyP (v.GetString());
+            prop = structClass->GetPropertyP (v.GetUtf8CP());
             if (nullptr != prop)
                 {
                 if (loadMetadata)
-                    m_metadataPropertyNames[i] = v.GetString(); 
+                    m_metadataPropertyNames[i] = v.GetUtf8CP(); 
                 }
             else
                 return false;
@@ -3793,7 +3793,7 @@ bool AdhocPropertyMetadata::IsSupported() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP AdhocPropertyMetadata::GetPropertyName (Index index) const
+Utf8CP AdhocPropertyMetadata::GetPropertyName (Index index) const
     {
     auto const& name = m_metadataPropertyNames[static_cast<size_t> (index)];
     return !name.empty() ? name.c_str() : nullptr;
@@ -3822,7 +3822,7 @@ IECInstancePtr AdhocPropertyQuery::GetEntry (uint32_t index) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus AdhocPropertyQuery::GetValue (ECValueR v, uint32_t index, WCharCP accessor) const
+ECObjectsStatus AdhocPropertyQuery::GetValue (ECValueR v, uint32_t index, Utf8CP accessor) const
     {
     auto entry = GetEntry (index);
     return entry.IsValid() ? entry->GetValue (v, accessor) : ECOBJECTS_STATUS_PropertyNotFound;
@@ -3831,7 +3831,7 @@ ECObjectsStatus AdhocPropertyQuery::GetValue (ECValueR v, uint32_t index, WCharC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool AdhocPropertyQuery::GetPropertyIndex (uint32_t& index, WCharCP accessString) const
+bool AdhocPropertyQuery::GetPropertyIndex (uint32_t& index, Utf8CP accessString) const
     {
     if (!IsSupported())
         return false;
@@ -3845,7 +3845,7 @@ bool AdhocPropertyQuery::GetPropertyIndex (uint32_t& index, WCharCP accessString
                 {
                 IECInstancePtr instance = v.GetStruct();
                 v.SetAllowsPointersIntoInstanceMemory (true);
-                if (ECOBJECTS_STATUS_Success == instance->GetValue (v, GetPropertyName (Index::Name)) && !v.IsNull() && v.IsString() && 0 == wcscmp (accessString, v.GetString()))
+                if (ECOBJECTS_STATUS_Success == instance->GetValue (v, GetPropertyName (Index::Name)) && !v.IsNull() && v.IsString() && 0 == strcmp (accessString, v.GetUtf8CP()))
                     {
                     index = i;
                     return true;
@@ -3871,19 +3871,19 @@ uint32_t AdhocPropertyQuery::GetCount() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus AdhocPropertyQuery::GetName (WStringR name, uint32_t index) const { return GetString (name, index, Index::Name); }
-ECObjectsStatus AdhocPropertyQuery::GetExtendedTypeName (WStringR name, uint32_t index) const { return GetString (name, index, Index::ExtendType); }
-ECObjectsStatus AdhocPropertyQuery::GetUnitName (WStringR name, uint32_t index) const { return GetString (name, index, Index::Unit); }
+ECObjectsStatus AdhocPropertyQuery::GetName (Utf8StringR name, uint32_t index) const { return GetString (name, index, Index::Name); }
+ECObjectsStatus AdhocPropertyQuery::GetExtendedTypeName (Utf8StringR name, uint32_t index) const { return GetString (name, index, Index::ExtendType); }
+ECObjectsStatus AdhocPropertyQuery::GetUnitName (Utf8StringR name, uint32_t index) const { return GetString (name, index, Index::Unit); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus AdhocPropertyQuery::GetDisplayLabel (WStringR label, uint32_t index) const
+ECObjectsStatus AdhocPropertyQuery::GetDisplayLabel (Utf8StringR label, uint32_t index) const
     {
     auto status = GetString (label, index, Index::DisplayLabel);
     if (ECOBJECTS_STATUS_Success != status)
         {
-        WString name;
+        Utf8String name;
         status = GetName (name, index);
         if (ECOBJECTS_STATUS_Success == status)
             ECNameValidation::DecodeFromValidName (label, name);
@@ -3901,7 +3901,7 @@ ECObjectsStatus AdhocPropertyQuery::GetPrimitiveType (PrimitiveType& type, uint3
     if (entry.IsNull())
         return ECOBJECTS_STATUS_PropertyNotFound;
 
-    WCharCP propName = GetPropertyName (Index::Type);
+    Utf8CP propName = GetPropertyName (Index::Type);
     if (nullptr == propName)
         {
         // defaults to string if no property to specify otherwise
@@ -3933,7 +3933,7 @@ ECObjectsStatus AdhocPropertyQuery::GetValue (ECValueR propertyValue, uint32_t i
 
     // get value type
     PrimitiveType type = PRIMITIVETYPE_String;
-    WCharCP propName = GetPropertyName (Index::Type);
+    Utf8CP propName = GetPropertyName (Index::Type);
     ECValue v;
     if (nullptr != propName)
         {
@@ -3994,7 +3994,7 @@ ECObjectsStatus AdhocPropertyQuery::IsHidden (bool& isHidden, uint32_t index) co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus AdhocPropertyQuery::GetString (WStringR str, uint32_t index, Index which) const
+ECObjectsStatus AdhocPropertyQuery::GetString (Utf8StringR str, uint32_t index, Index which) const
     {
     auto entry = GetEntry (index);
     return entry.IsValid() ? GetString (str, *entry, which) : ECOBJECTS_STATUS_PropertyNotFound;
@@ -4003,7 +4003,7 @@ ECObjectsStatus AdhocPropertyQuery::GetString (WStringR str, uint32_t index, Ind
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus AdhocPropertyQuery::GetString (WStringR str, IECInstanceCR instance, Index which) const
+ECObjectsStatus AdhocPropertyQuery::GetString (Utf8StringR str, IECInstanceCR instance, Index which) const
     {
     ECValue v;
     v.SetAllowsPointersIntoInstanceMemory (true);
@@ -4013,7 +4013,7 @@ ECObjectsStatus AdhocPropertyQuery::GetString (WStringR str, IECInstanceCR insta
     else if (!v.IsString() && !v.IsNull())
         return ECOBJECTS_STATUS_DataTypeMismatch;
 
-    str = v.GetString();
+    str = v.GetUtf8CP();
     return ECOBJECTS_STATUS_Success;
     }
 
@@ -4031,7 +4031,7 @@ ECObjectsStatus AdhocPropertyQuery::GetValue (ECValueR v, uint32_t index, Index 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus AdhocPropertyQuery::GetValue (ECValueR v, IECInstanceCR instance, Index which) const
     {
-    WCharCP propName = GetPropertyName (which);
+    Utf8CP propName = GetPropertyName (which);
     if (nullptr == propName)
         {
         if (IsRequiredMetadata (which))
@@ -4047,7 +4047,7 @@ ECObjectsStatus AdhocPropertyQuery::GetValue (ECValueR v, IECInstanceCR instance
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-AdhocPropertyEdit::AdhocPropertyEdit (IECInstanceR host, WCharCP accessString)
+AdhocPropertyEdit::AdhocPropertyEdit (IECInstanceR host, Utf8CP accessString)
     : AdhocPropertyQuery (host, accessString)
     {
     //
@@ -4065,7 +4065,7 @@ AdhocPropertyEdit::AdhocPropertyEdit (IECInstanceR host, uint32_t propIdx)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus AdhocPropertyEdit::SetValue (uint32_t index, WCharCP accessor, ECValueCR v)
+ECObjectsStatus AdhocPropertyEdit::SetValue (uint32_t index, Utf8CP accessor, ECValueCR v)
     {
     auto entry = GetEntry (index);
     return entry.IsValid() ? entry->SetValue (accessor, v) : ECOBJECTS_STATUS_PropertyNotFound;
@@ -4074,7 +4074,7 @@ ECObjectsStatus AdhocPropertyEdit::SetValue (uint32_t index, WCharCP accessor, E
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus AdhocPropertyEdit::SetName (uint32_t index, WCharCP name)
+ECObjectsStatus AdhocPropertyEdit::SetName (uint32_t index, Utf8CP name)
     {
     if (!ECNameValidation::IsValidName (name))
         return ECOBJECTS_STATUS_Error;
@@ -4089,7 +4089,7 @@ ECObjectsStatus AdhocPropertyEdit::SetName (uint32_t index, WCharCP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus AdhocPropertyEdit::SetDisplayLabel (uint32_t index, WCharCP label, bool andSetName)
+ECObjectsStatus AdhocPropertyEdit::SetDisplayLabel (uint32_t index, Utf8CP label, bool andSetName)
     {
     auto entry = GetEntry (index);
     if (entry.IsNull())
@@ -4110,7 +4110,7 @@ ECObjectsStatus AdhocPropertyEdit::SetDisplayLabel (uint32_t index, WCharCP labe
 
     if (andSetName)
         {
-        WString name;
+        Utf8String name;
         ECNameValidation::EncodeToValidName (name, label);
         return entry->SetValue (GetPropertyName (Index::Name), ECValue (name.c_str(), false));
         }
@@ -4129,7 +4129,7 @@ ECObjectsStatus AdhocPropertyEdit::SetValue (uint32_t index, ECValueCR inputV)
         return status;
 
     ECValue v (inputV);
-    WString strRep;
+    Utf8String strRep;
     if (!v.ConvertToPrimitiveType (type) || !v.ConvertPrimitiveToString (strRep))
         return ECOBJECTS_STATUS_DataTypeMismatch;
 
@@ -4244,7 +4244,7 @@ ECObjectsStatus AdhocPropertyEdit::Swap (uint32_t propIdxA, uint32_t propIdxB)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus AdhocPropertyEdit::Add (WCharCP name, ECValueCR v, WCharCP displayLabel, WCharCP unitName, WCharCP extendedTypeName, bool isReadOnly, bool hidden)
+ECObjectsStatus AdhocPropertyEdit::Add (Utf8CP name, ECValueCR v, Utf8CP displayLabel, Utf8CP unitName, Utf8CP extendedTypeName, bool isReadOnly, bool hidden)
     {
     if (!IsSupported())
         return ECOBJECTS_STATUS_OperationNotSupported;
@@ -4266,7 +4266,7 @@ ECObjectsStatus AdhocPropertyEdit::Add (WCharCP name, ECValueCR v, WCharCP displ
     if (PRIMITIVETYPE_String != type && nullptr == GetPropertyName (Index::Type))
         return ECOBJECTS_STATUS_DataTypeMismatch;   // need a property to hold the type if it's not string...
 
-    WString strRep;
+    Utf8String strRep;
     ECValue vAsStr (v);
     if (!vAsStr.ConvertPrimitiveToString (strRep))
         return ECOBJECTS_STATUS_DataTypeMismatch;
@@ -4378,14 +4378,14 @@ ECObjectsStatus AdhocPropertyEdit::CopyFrom (AdhocPropertyQueryCR query, bool pr
     if (enabler.IsNull())
         return ECOBJECTS_STATUS_Error;
 
-    bmap<WString, ECValue> preservedValues;
+    bmap<Utf8String, ECValue> preservedValues;
     if (preserveValues)
         {
         uint32_t count = GetCount();
         for (uint32_t i = 0; i < count; i++)
             {
             IECInstancePtr entry = GetEntry (i);
-            WString name;
+            Utf8String name;
             ECValue v;
             if (entry.IsValid() && ECOBJECTS_STATUS_Success == GetString (name, *entry, Index::Name) && ECOBJECTS_STATUS_Success == GetValue (v, *entry, Index::Value))
                 preservedValues[name] = v;
@@ -4407,8 +4407,8 @@ ECObjectsStatus AdhocPropertyEdit::CopyFrom (AdhocPropertyQueryCR query, bool pr
         return ECOBJECTS_STATUS_Error;
         }
 
-    WString name;
-    bmap<WString, ECValue>::const_iterator found;
+    Utf8String name;
+    bmap<Utf8String, ECValue>::const_iterator found;
     for (uint32_t i = 0; i < count; i++)
         {
         IECInstancePtr from = query.GetEntry (i);

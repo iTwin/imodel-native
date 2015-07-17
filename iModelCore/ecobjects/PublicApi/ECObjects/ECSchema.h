@@ -35,9 +35,9 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 +===============+===============+===============+===============+===============+======*/
 struct less_str
 {
-bool operator()(WCharCP s1, WCharCP s2) const
+bool operator()(Utf8CP s1, Utf8CP s2) const
     {
-    if (wcscmp(s1, s2) < 0)
+    if (strcmp(s1, s2) < 0)
         return true;
 
     return false;
@@ -45,8 +45,8 @@ bool operator()(WCharCP s1, WCharCP s2) const
 };
 
 typedef bvector<ECPropertyP> PropertyList;
-typedef bmap<WCharCP , ECPropertyP, less_str> PropertyMap;
-typedef bmap<WCharCP , ECClassP,    less_str> ClassMap;
+typedef bmap<Utf8CP , ECPropertyP, less_str> PropertyMap;
+typedef bmap<Utf8CP , ECClassP,    less_str> ClassMap;
 
 /*---------------------------------------------------------------------------------**//**
 * Used to hold property name and display label forECProperty, ECClass, and ECSchema.
@@ -59,17 +59,17 @@ typedef bmap<WCharCP , ECClassP,    less_str> ClassMap;
 struct ECValidatedName
     {
 private:
-    WString             m_name;
-    WString             m_displayLabel;
+    Utf8String          m_name;
+    Utf8String          m_displayLabel;
     bool                m_hasExplicitDisplayLabel;
 public:
     ECValidatedName() : m_hasExplicitDisplayLabel (false) { }
 
-    WStringCR           GetName() const                 { return m_name; }
+    Utf8StringCR        GetName() const                 { return m_name; }
     bool                IsDisplayLabelDefined() const   { return m_hasExplicitDisplayLabel; }
-    WStringCR           GetDisplayLabel() const;
-    void                SetName (WCharCP name);
-    void                SetDisplayLabel (WCharCP label);
+    Utf8StringCR        GetDisplayLabel() const;
+    void                SetName (Utf8CP name);
+    void                SetDisplayLabel (Utf8CP label);
     };
 
 /*__PUBLISH_SECTION_START__*/
@@ -89,7 +89,7 @@ struct ECNameValidation
     {
 private:
 /*__PUBLISH_SECTION_END__*/
-    static void AppendEncodedCharacter (WStringR encoded, WChar c);
+    static void AppendEncodedCharacter (Utf8StringR encoded, Utf8Char c);
 /*__PUBLISH_SECTION_START__*/
 public:
 
@@ -106,21 +106,21 @@ public:
     //! @param[out] encoded     Will hold the valid name
     //! @param[in]  name        The name to encode
     //! @returns true if any special characters were encoded, false if the name was already valid. In either case encoded will contain a valid name.
-    ECOBJECTS_EXPORT static bool                EncodeToValidName (WStringR encoded, WStringCR name);
+    ECOBJECTS_EXPORT static bool                EncodeToValidName (Utf8StringR encoded, Utf8StringCR name);
 
     //! Decodes special characters in a name encoded by EncodeToValidName() to produce a name suitable for display
     //! @param[out] decoded     Will hold the decoded name
     //! @param[in]  name        The name to decode
     //! @returns true if any special characters were decoded. Regardless of return value, decoded will contain a decoded name.
-    ECOBJECTS_EXPORT static bool                DecodeFromValidName (WStringR decoded, WStringCR name);
+    ECOBJECTS_EXPORT static bool                DecodeFromValidName (Utf8StringR decoded, Utf8StringCR name);
 
     //! Checks a name against the rules for valid names
     //! @param[in] name     The name to validate
     //! @returns RESULT_Valid if the name is valid, or a ValidationResult indicating why the name is invalid.
-    ECOBJECTS_EXPORT static ValidationResult    Validate (WCharCP name);
+    ECOBJECTS_EXPORT static ValidationResult    Validate (Utf8CP name);
 
     //! Returns true if the specified name is a valid EC name
-    ECOBJECTS_EXPORT static bool                IsValidName (WCharCP name);
+    ECOBJECTS_EXPORT static bool                IsValidName (Utf8CP name);
 
     //! Checks whether a character is valid for use in an ECName, e.g. alphanumeric, plus '_'
     ECOBJECTS_EXPORT static bool IsValidAlphaNumericCharacter (WChar c);
@@ -216,7 +216,7 @@ private:
     ECCustomAttributeCollection         m_consolidatedCustomAttributes;
     SchemaWriteStatus                   AddCustomAttributeProperties (BeXmlNodeR oldNode, BeXmlNodeR newNode) const;
 
-    IECInstancePtr                      GetCustomAttributeInternal(WStringCR className, bool includeBaseClasses, bool includeSupplementalAttributes) const;
+    IECInstancePtr                      GetCustomAttributeInternal(Utf8StringCR className, bool includeBaseClasses, bool includeSupplementalAttributes) const;
     IECInstancePtr                      GetCustomAttributeInternal(ECClassCR ecClass, bool includeBaseClasses, bool includeSupplementalAttributes) const;
 
     ECObjectsStatus                     SetCustomAttributeInternal(ECCustomAttributeCollection& customAttributeCollection, IECInstanceR customAttributeInstance, bool requireSchemaReference = false);
@@ -246,13 +246,13 @@ public:
     ECSchemaP                           GetContainerSchema();
     //! Retrieves the local custom attribute matching the class name.  If the attribute is not 
     //! a consolidated attribute it will be copied and added to the consolidated list before it is returned.
-    IECInstancePtr                      GetLocalAttributeAsConsolidated(WStringCR className);
+    IECInstancePtr                      GetLocalAttributeAsConsolidated(Utf8StringCR className);
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
     //! Returns true if the container has a custom attribute of a class of the specified name
-    ECOBJECTS_EXPORT bool               IsDefined (WStringCR className) const;
+    ECOBJECTS_EXPORT bool               IsDefined (Utf8StringCR className) const;
     //! Returns true if the container has a custom attribute of a class of the specified class definition
     ECOBJECTS_EXPORT bool               IsDefined (ECClassCR classDefinition) const;
 
@@ -261,7 +261,7 @@ public:
     //! @param[in]  className   The name of the CustomAttribute Class to look for an instance of
     //! @returns An IECInstancePtr.  If IsValid(), will be the matching custom attribute.  Otherwise, no instance of
     //! the custom attribute was found on the container.
-    ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttribute(WStringCR className) const;
+    ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttribute(Utf8StringCR className) const;
 
     //! Retrieves the custom attribute matching the class definition.  Includes supplemental custom attributes
     //! and custom attributes from the base containers
@@ -275,7 +275,7 @@ public:
     //! @param[in]  className   The name of the CustomAttribute Class to look for an instance of
     //! @returns An IECInstancePtr.  If IsValid(), will be the matching custom attribute.  Otherwise, no instance of
     //! the custom attribute was found on the container.
-    ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttributeLocal(WStringCR className) const;
+    ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttributeLocal(Utf8StringCR className) const;
 
     //! Retrieves the custom attribute matching the class definition.  Includes supplemental custom attributes
     //! but not base containers
@@ -289,7 +289,7 @@ public:
     //! @param[in]  className   The name of the CustomAttribute Class to look for an instance of
     //! @returns An IECInstancePtr.  If IsValid(), will be the matching custom attribute.  Otherwise, no instance of
     //! the custom attribute was found on the container.
-    ECOBJECTS_EXPORT IECInstancePtr     GetPrimaryCustomAttribute(WStringCR className) const;
+    ECOBJECTS_EXPORT IECInstancePtr     GetPrimaryCustomAttribute(Utf8StringCR className) const;
 
     //! Retrieves the custom attribute matching the class definition.  Includes custom attributes from base containers
     //! but not supplemental custom attributes
@@ -311,7 +311,7 @@ public:
 
     //! Removes a custom attribute from the container
     //! @param[in]  className   Name of the class of the custom attribute to remove
-    ECOBJECTS_EXPORT bool               RemoveCustomAttribute(WStringCR className);
+    ECOBJECTS_EXPORT bool               RemoveCustomAttribute(Utf8StringCR className);
 
     //! Removes a custom attribute from the container
     //! @param[in]  classDefinition ECClass of the custom attribute to remove
@@ -394,7 +394,7 @@ protected:
     virtual uint32_t                            _GetComponentIndex() const = 0;
     virtual bool                                _Is3d() const = 0;
     virtual IECInstanceCP                       _GetECInstance() const = 0;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus    _GetInstanceValue (ECValueR v, WCharCP accessString, uint32_t arrayIndex) const;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus    _GetInstanceValue (ECValueR v, Utf8CP accessString, uint32_t arrayIndex) const;
     ECOBJECTS_EXPORT virtual IECClassLocaterR   _GetUnitsECClassLocater() const = 0;
     ECOBJECTS_EXPORT virtual EvaluationOptions  _GetEvaluationOptions () const;
     ECOBJECTS_EXPORT virtual void               _SetEvaluationOptions (EvaluationOptions evalOptions);
@@ -403,7 +403,7 @@ public:
 
     ECOBJECTS_EXPORT  IECInstanceCP     GetECInstance() const;
     ECOBJECTS_EXPORT  ECPropertyCP      GetProperty() const;
-    ECOBJECTS_EXPORT  ECObjectsStatus   GetInstanceValue (ECValueR v, WCharCP accessString, uint32_t arrayIndex = -1) const;
+    ECOBJECTS_EXPORT  ECObjectsStatus   GetInstanceValue (ECValueR v, Utf8CP accessString, uint32_t arrayIndex = -1) const;
 
     ECOBJECTS_EXPORT EvaluationOptions          GetEvaluationOptions () const;
     ECOBJECTS_EXPORT void                       SetEvaluationOptions (EvaluationOptions evalOptions);
@@ -447,8 +447,8 @@ protected:
 
     virtual bool                _CanConvertToString (IECTypeAdapterContextCR context) const = 0;
     virtual bool                _CanConvertFromString (IECTypeAdapterContextCR context) const = 0;
-    virtual bool                _ConvertToString (WStringR str, ECValueCR v, IECTypeAdapterContextCR context, IECInstanceCP formatter) const = 0;
-    virtual bool                _ConvertFromString (ECValueR v, WCharCP str, IECTypeAdapterContextCR context) const = 0;
+    virtual bool                _ConvertToString (Utf8StringR str, ECValueCR v, IECTypeAdapterContextCR context, IECInstanceCP formatter) const = 0;
+    virtual bool                _ConvertFromString (ECValueR v, Utf8CP str, IECTypeAdapterContextCR context) const = 0;
 
     virtual bool                _RequiresExpressionTypeConversion (EvaluationOptions evalOptions) const = 0;
     virtual bool                _ConvertToExpressionType (ECValueR v, IECTypeAdapterContextCR context) const = 0;
@@ -497,7 +497,7 @@ public:
     ECOBJECTS_EXPORT bool       GetPropertyNotSetValue (ECValueR v) const;
 
     //! Should return true if adapter type is ordinal. This gives hints for the UI in order to decide which operators to show.
-    //! For example, for some numeric properties it doesn't make sence to show ordinal operators, because adapter gives a list
+    //! For example, for some numeric properties it doesn't make sense to show ordinal operators, because adapter gives a list
     //! of string rather than numbers.
     ECOBJECTS_EXPORT bool       IsOrdinalType () const;
 
@@ -516,14 +516,14 @@ public:
     //! @param[in] context  Context under which conversion is performed
     //! @param[in] formatter Optional formatting specification, for ECFields
     //! @return true if successfully converted to string
-    ECOBJECTS_EXPORT        bool ConvertToString (WStringR str, ECValueCR v, IECTypeAdapterContextCR context, IECInstanceCP formatter = NULL) const;
+    ECOBJECTS_EXPORT        bool ConvertToString (Utf8StringR str, ECValueCR v, IECTypeAdapterContextCR context, IECInstanceCP formatter = NULL) const;
 
     //! Converts from a string to the underlying ECValue type. Input string typically comes from user input
     //! @param[out] v       The converted value
     //! @param[in] str      The string to convert
     //! @param[in] context  Context under which conversion is performed
     //! @return true if conversion is successful
-    ECOBJECTS_EXPORT        bool ConvertFromString (ECValueR v, WCharCP str, IECTypeAdapterContextCR context) const;
+    ECOBJECTS_EXPORT        bool ConvertFromString (ECValueR v, Utf8CP str, IECTypeAdapterContextCR context) const;
 
     //! @return true if the value must be converted for use in ECExpressions.
     ECOBJECTS_EXPORT        bool RequiresExpressionTypeConversion (EvaluationOptions evalOptions = EVALOPT_Legacy) const;
@@ -594,7 +594,7 @@ struct ECProperty /*abstract*/ : public IECCustomAttributeContainer
 friend struct ECClass;
 
 private:
-    WString                 m_description;
+    Utf8String              m_description;
     ECValidatedName         m_validatedName;
     mutable ECPropertyId    m_ecPropertyId;
     bool                    m_readOnly;
@@ -604,12 +604,12 @@ private:
 
     static void     SetErrorHandling (bool doAssert);
 protected:
-    WString         m_originalTypeName; //Will be empty unless the typeName was unrecognized. Keep this so that we can re-write the ECSchema without changing the type to string
+    Utf8String              m_originalTypeName; //Will be empty unless the typeName was unrecognized. Keep this so that we can re-write the ECSchema without changing the type to string
     bool                    m_forSupplementation;   // If when supplementing the schema, a local property had to be created, then don't serialize this property
     ECProperty (ECClassCR ecClass);
     virtual ~ECProperty();
 
-    ECObjectsStatus                     SetName (WStringCR name);
+    ECObjectsStatus                     SetName (Utf8StringCR name);
 
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext);
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter);
@@ -620,8 +620,8 @@ protected:
     virtual bool                        _IsArray () const { return false; }
     // This method returns a wstring by value because it may be a computed string.  For instance struct properties may return a qualified typename with a namespace
     // prefix relative to the containing schema.
-    virtual WString                     _GetTypeName () const = 0;
-    virtual ECObjectsStatus             _SetTypeName (WStringCR typeName) = 0;
+    virtual Utf8String                  _GetTypeName () const = 0;
+    virtual ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) = 0;
 
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const = 0;
 
@@ -662,7 +662,7 @@ public:
     ECOBJECTS_EXPORT ECClassCR          GetClass() const;
     // ECClass implementation will index property by name so publicly name can not be reset
     //! Gets the name of the ECProperty
-    ECOBJECTS_EXPORT WStringCR          GetName() const;
+    ECOBJECTS_EXPORT Utf8StringCR       GetName() const;
     //! Returns whether the DisplayLabel is explicitly set
     ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
     //! Returns whether this property is a Struct property
@@ -673,26 +673,26 @@ public:
     ECOBJECTS_EXPORT bool               GetIsPrimitive() const;
 
     //! Sets the ECXML typename for the property.  @see GetTypeName()
-    ECOBJECTS_EXPORT ECObjectsStatus    SetTypeName(WString value);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetTypeName(Utf8String value);
     //! The ECXML typename for the property.
     //! The TypeName for struct properties will be the ECClass name of the struct.  It may be qualified with a namespacePrefix if
     //! the struct belongs to a schema that is referenced by the schema actually containing this property.
     //! The TypeName for array properties will be the type of the elements the array contains.
     //! This method returns a wstring by value because it may be a computed string.  For instance struct properties may return a qualified typename with a namespace
     //! prefix relative to the containing schema.
-    ECOBJECTS_EXPORT WString            GetTypeName() const;
+    ECOBJECTS_EXPORT Utf8String         GetTypeName() const;
     //! Sets the description for this ECProperty
-    ECOBJECTS_EXPORT ECObjectsStatus    SetDescription(WStringCR value);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetDescription(Utf8StringCR value);
     //! The Description of this ECProperty.  Returns the localized description if one exists.
-    ECOBJECTS_EXPORT WStringCR          GetDescription() const;
+    ECOBJECTS_EXPORT Utf8StringCR       GetDescription() const;
     //! Gets the invariant description for this ECProperty.
-    ECOBJECTS_EXPORT WStringCR          GetInvariantDescription() const;
+    ECOBJECTS_EXPORT Utf8StringCR       GetInvariantDescription() const;
     //! Sets the Display Label for this ECProperty
-    ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel(WStringCR value);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel(Utf8StringCR value);
     //! Gets the Display Label for this ECProperty.  If no label has been set explicitly, it will return the Name of the property
-    ECOBJECTS_EXPORT WStringCR          GetDisplayLabel() const;
+    ECOBJECTS_EXPORT Utf8StringCR       GetDisplayLabel() const;
     //! Gets the invariant display label for this ECSchema.
-    ECOBJECTS_EXPORT WStringCR          GetInvariantDisplayLabel() const;
+    ECOBJECTS_EXPORT Utf8StringCR       GetInvariantDisplayLabel() const;
     //! Sets whether this ECProperty's value is read only
     ECOBJECTS_EXPORT ECObjectsStatus    SetIsReadOnly(bool value);
     //! Gets whether this ECProperty's value is read only
@@ -716,7 +716,7 @@ public:
 
     //! Sets whether this ECProperty's value is read only
     //@param[in]    isReadOnly  Valid values are 'True' and 'False' (case insensitive)
-    ECOBJECTS_EXPORT ECObjectsStatus    SetIsReadOnly (WCharCP isReadOnly);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetIsReadOnly (Utf8CP isReadOnly);
 
     ECOBJECTS_EXPORT PrimitiveECPropertyCP  GetAsPrimitiveProperty () const; //!< Returns the property as a const PrimitiveECProperty*
     ECOBJECTS_EXPORT PrimitiveECPropertyP   GetAsPrimitivePropertyP (); //!< Returns the property as a PrimitiveECProperty*
@@ -746,8 +746,8 @@ protected:
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter) override;
     virtual bool                        _IsPrimitive () const override { return true;}
-    virtual WString                     _GetTypeName () const override;
-    virtual ECObjectsStatus             _SetTypeName (WStringCR typeName) override;
+    virtual Utf8String                  _GetTypeName () const override;
+    virtual ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
     virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const override;
     virtual bool                                _IsCalculated() const override;
@@ -780,8 +780,8 @@ protected:
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter) override;
     virtual bool                        _IsStruct () const override { return true;}
-    virtual WString                     _GetTypeName () const override;
-    virtual ECObjectsStatus             _SetTypeName (WStringCR typeName) override;
+    virtual Utf8String                  _GetTypeName () const override;
+    virtual ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
 
 //__PUBLISH_CLASS_VIRTUAL__
@@ -821,15 +821,15 @@ private:
     ArrayECProperty (ECClassCR ecClass)
         : ECProperty(ecClass), m_primitiveType(PRIMITIVETYPE_String), m_arrayKind (ARRAYKIND_Primitive),
           m_minOccurs (0), m_maxOccurs (UINT_MAX), m_cachedMemberTypeAdapter (NULL) {};
-    ECObjectsStatus                     SetMinOccurs (WStringCR minOccurs);
-    ECObjectsStatus                     SetMaxOccurs (WStringCR maxOccurs);
+    ECObjectsStatus                     SetMinOccurs (Utf8StringCR minOccurs);
+    ECObjectsStatus                     SetMaxOccurs (Utf8StringCR maxOccurs);
 
 protected:
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
     virtual SchemaWriteStatus           _WriteXml(BeXmlWriterR xmlWriter) override;
     virtual bool                        _IsArray () const override { return true;}
-    virtual WString                     _GetTypeName () const override;
-    virtual ECObjectsStatus             _SetTypeName (WStringCR typeName) override;
+    virtual Utf8String                  _GetTypeName () const override;
+    virtual ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
     virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const override;
     virtual bool                                _IsCalculated() const override;
@@ -929,7 +929,7 @@ public:
     //! Attempts to look up an ECProperty by its display label
     //! @param[in]      label The label of the ECProperty to find
     //! @return     The ECProperty with the specified label, or nullptr if no such ECProperty exists
-    ECOBJECTS_EXPORT ECPropertyCP   FindByDisplayLabel (WCharCP label) const;
+    ECOBJECTS_EXPORT ECPropertyCP   FindByDisplayLabel (Utf8CP label) const;
     };
 
 typedef bvector<ECClassP> ECBaseClassesList;
@@ -961,8 +961,8 @@ friend struct SupplementedSchemaBuilder;
 friend bool ECProperty::SetCalculatedPropertySpecification (IECInstanceP);
 
 private:
-    mutable WString                 m_fullName;
-    WString                         m_description;
+    mutable Utf8String              m_fullName;
+    Utf8String                      m_description;
     ECValidatedName                 m_validatedName;
     mutable ECClassId               m_ecClassId;
     bool                            m_isStruct;
@@ -977,7 +977,7 @@ private:
     mutable StandaloneECEnablerPtr  m_defaultStandaloneEnabler;
 
     ECObjectsStatus AddProperty (ECPropertyP& pProperty);
-    ECObjectsStatus AddProperty (ECPropertyP pProperty, WStringCR name);
+    ECObjectsStatus AddProperty (ECPropertyP pProperty, Utf8StringCR name);
     ECObjectsStatus RemoveProperty (ECPropertyR pProperty);
 
     static bool     SchemaAllowsOverridingArrays(ECSchemaCP schema);
@@ -1009,7 +1009,7 @@ protected:
     virtual ECSchemaCP                  _GetContainerSchema() const override;
 
     // schemas index class by name so publicly name can not be reset
-    ECObjectsStatus                     SetName (WStringCR name);
+    ECObjectsStatus                     SetName (Utf8StringCR name);
 
     virtual SchemaReadStatus            _ReadXmlAttributes (BeXmlNodeR classNode);
 
@@ -1024,7 +1024,7 @@ protected:
     SchemaReadStatus                    _ReadPropertyFromXmlAndAddToClass( ECPropertyP ecProperty, BeXmlNodeP& childNode, ECSchemaReadContextR context, Utf8CP childNodeName );
 
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter) const;
-    SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, bmap<Utf8CP, WCharCP>* additionalAttributes, bool doElementEnd) const;
+    SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, bmap<Utf8CP, Utf8CP>* additionalAttributes, bool doElementEnd) const;
 
     virtual ECRelationshipClassCP       _GetRelationshipClassCP () const { return NULL; }  // used to avoid dynamic_cast
     virtual ECRelationshipClassP        _GetRelationshipClassP ()        { return NULL; }  // used to avoid dynamic_cast
@@ -1032,7 +1032,7 @@ protected:
     void                                InvalidateDefaultStandaloneEnabler() const;
 public:
     ECOBJECTS_EXPORT ECPropertyP            GetPropertyByIndex (uint32_t index) const;
-    ECOBJECTS_EXPORT ECObjectsStatus        RenameProperty (ECPropertyR ecProperty, WCharCP newName);
+    ECOBJECTS_EXPORT ECObjectsStatus        RenameProperty (ECPropertyR ecProperty, Utf8CP newName);
     ECOBJECTS_EXPORT ECObjectsStatus        ReplaceProperty (ECPropertyP& newProperty, ValueKind valueKind, ECPropertyR propertyToRemove);
     ECOBJECTS_EXPORT ECObjectsStatus        DeleteProperty (ECPropertyR ecProperty);
     ECSchemaR                               GetSchemaR() { return const_cast<ECSchemaR>(m_schema); }
@@ -1056,9 +1056,9 @@ public:
     ECOBJECTS_EXPORT ECSchemaCR         GetSchema() const;
     // schemas index class by name so publicly name can not be reset
     //! The name of this ECClass
-    ECOBJECTS_EXPORT WStringCR          GetName() const;
+    ECOBJECTS_EXPORT Utf8StringCR       GetName() const;
     //! {SchemaName}:{ClassName} The pointer will remain valid as long as the ECClass exists.
-    ECOBJECTS_EXPORT WCharCP            GetFullName() const;
+    ECOBJECTS_EXPORT Utf8CP             GetFullName() const;
     //! Whether the display label is explicitly defined or not
     ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
     //! Returns an iterable of all the ECProperties defined on this class
@@ -1071,17 +1071,17 @@ public:
     ECOBJECTS_EXPORT const ECDerivedClassesList& GetDerivedClasses() const;
 
     //! Sets the description of this ECClass
-    ECOBJECTS_EXPORT ECObjectsStatus    SetDescription(WStringCR value);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetDescription(Utf8StringCR value);
     //! Gets the description of this ECClass.  Returns the localized description if one exists.
-    ECOBJECTS_EXPORT WStringCR          GetDescription() const;
+    ECOBJECTS_EXPORT Utf8StringCR       GetDescription() const;
     //! Gets the invariant description for this ECClass.
-    ECOBJECTS_EXPORT WStringCR          GetInvariantDescription() const;
+    ECOBJECTS_EXPORT Utf8StringCR       GetInvariantDescription() const;
     //! Sets the display label of this ECClass
-    ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel(WStringCR value);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel(Utf8StringCR value);
     //! Gets the display label of this ECClass.  If no display label has been set explicitly, it will return the name of the ECClass
-    ECOBJECTS_EXPORT WStringCR          GetDisplayLabel() const;
+    ECOBJECTS_EXPORT Utf8StringCR       GetDisplayLabel() const;
     //! Gets the invariant display label for this ECClass.
-    ECOBJECTS_EXPORT WStringCR          GetInvariantDisplayLabel() const;
+    ECOBJECTS_EXPORT Utf8StringCR       GetInvariantDisplayLabel() const;
 
     //! Returns a list of properties for this class.
     //! @param[in]  includeBaseProperties If true, then will return properties that are contained in this class's base class(es)
@@ -1091,7 +1091,7 @@ public:
     //! Sets the bool value of whether this class can be used as a struct
     //! @param[in] isStruct String representation of true/false
     //! @return    Success if the string is parsed into a bool
-    ECOBJECTS_EXPORT ECObjectsStatus    SetIsStruct (WCharCP isStruct);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetIsStruct (Utf8CP isStruct);
     //! Sets the bool value of whether this class can be used as a struct
     ECOBJECTS_EXPORT ECObjectsStatus    SetIsStruct(bool value);
     //! Returns whether this class can be used as a struct
@@ -1100,7 +1100,7 @@ public:
     //! Sets the bool value of whether this class can be used as a custom attribute
     //! @param[in] isCustomAttribute String representation of true/false
     //! @return    Success if the string is parsed into a bool
-    ECOBJECTS_EXPORT ECObjectsStatus    SetIsCustomAttributeClass (WCharCP isCustomAttribute);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetIsCustomAttributeClass (Utf8CP isCustomAttribute);
     //! Sets the bool value of whether this class can be used as a custom attribute
     ECOBJECTS_EXPORT ECObjectsStatus    SetIsCustomAttributeClass(bool value);
     //! Returns whether this class can be used as a custom attribute
@@ -1109,7 +1109,7 @@ public:
     //! Sets the bool value of whether this class can be used as a domain object
     //! @param[in] isDomainClass String representation of true/false
     //! @return    Success if the string is parsed into a bool
-    ECOBJECTS_EXPORT ECObjectsStatus    SetIsDomainClass (WCharCP isDomainClass);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetIsDomainClass (Utf8CP isDomainClass);
     //! Sets the bool value of whether this class can be used as a domain object
     ECOBJECTS_EXPORT ECObjectsStatus    SetIsDomainClass(bool value);
     //! Gets whether this class can be used as a domain object
@@ -1146,34 +1146,34 @@ public:
     ECOBJECTS_EXPORT bool            Is(ECClassCP targetClass) const;
 
     //! Returns true if the class name  is of the type specified or derived from it.
-    ECOBJECTS_EXPORT bool            Is(WCharCP name) const;
+    ECOBJECTS_EXPORT bool            Is(Utf8CP name) const;
     //! Returns true if this class matches the specified schema and class name, or is derived from a matching class
-    ECOBJECTS_EXPORT bool            Is (WCharCP schemaName, WCharCP className) const;
+    ECOBJECTS_EXPORT bool            Is (Utf8CP schemaName, Utf8CP className) const;
 
     //! If the given name is valid, creates a primitive property object with the default type of STRING
-    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, WStringCR name);
+    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, Utf8StringCR name);
 
     //! If the given name is valid, creates a primitive property object with the given primitive type
-    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, WStringCR name, PrimitiveType primitiveType);
+    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveProperty(PrimitiveECPropertyP& ecProperty, Utf8StringCR name, PrimitiveType primitiveType);
 
     //! If the given name is valid, creates a struct property object using the current class as the struct type
-    ECOBJECTS_EXPORT ECObjectsStatus CreateStructProperty(StructECPropertyP& ecProperty, WStringCR name);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateStructProperty(StructECPropertyP& ecProperty, Utf8StringCR name);
 
     //! If the given name is valid, creates a struct property object using the specified class as the struct type
-    ECOBJECTS_EXPORT ECObjectsStatus CreateStructProperty(StructECPropertyP& ecProperty, WStringCR name, ECClassCR structType);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateStructProperty(StructECPropertyP& ecProperty, Utf8StringCR name, ECClassCR structType);
 
     //! If the given name is valid, creates an array property object using the current class as the array type
-    ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, WStringCR name);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, Utf8StringCR name);
 
     //! If the given name is valid, creates an array property object using the specified primitive type as the array type
-    ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, WStringCR name, PrimitiveType primitiveType);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, Utf8StringCR name, PrimitiveType primitiveType);
 
     //! If the given name is valid, creates an array property object using the specified class as the array type
-    ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, WStringCR name, ECClassCP structType);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateArrayProperty(ArrayECPropertyP& ecProperty, Utf8StringCR name, ECClassCP structType);
 
     //! Remove the named property
     //! @param[in] name The name of the property to be removed
-    ECOBJECTS_EXPORT ECObjectsStatus RemoveProperty(WStringCR name);
+    ECOBJECTS_EXPORT ECObjectsStatus RemoveProperty(Utf8StringCR name);
 
     //! Get a property by name within the context of this class and its base classes.
     //! The pointer returned by this method is valid until the ECClass containing the property is destroyed or the property
@@ -1189,7 +1189,7 @@ public:
     //! @param[in]  name     The name of the property to lookup.
     //! @param[in]  includeBaseClasses  Whether to look on base classes of the current class for the named property
     //! @return   A pointer to an ECN::ECProperty if the named property exists within the current class; otherwise, NULL
-    ECOBJECTS_EXPORT ECPropertyP     GetPropertyP (WStringCR name, bool includeBaseClasses=true) const;
+    ECOBJECTS_EXPORT ECPropertyP     GetPropertyP (Utf8StringCR name, bool includeBaseClasses=true) const;
 
     //! Get a property by name within the context of this class and its base classes.
     //! The pointer returned by this method is valid until the ECClass containing the property is destroyed or the property
@@ -1216,14 +1216,14 @@ public:
     //! @param[out] className   The name of the class
     //! @param[in]  qualifiedClassName  The qualified name of the class, in the format of ns:className
     //! @return A status code indicating whether the qualified name was successfully parsed or not
-    ECOBJECTS_EXPORT static ECObjectsStatus ParseClassName (WStringR prefix, WStringR className, WStringCR qualifiedClassName);
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseClassName (Utf8StringR prefix, Utf8StringR className, Utf8StringCR qualifiedClassName);
 
     //! Given a schema and a class, will return the fully qualified class name.  If the class is part of the passed in schema, there
     //! is no namespace prefix.  Otherwise, the class's schema must be a referenced schema in the passed in schema
     //! @param[in]  primarySchema   The schema used to lookup the namespace prefix of the class's schema
     //! @param[in]  ecClass         The class whose schema should be searched for
     //! @return WString    The namespace prefix if the class's schema is not the primarySchema
-    ECOBJECTS_EXPORT static WString GetQualifiedClassName(ECSchemaCR primarySchema, ECClassCR ecClass);
+    ECOBJECTS_EXPORT static Utf8String GetQualifiedClassName(ECSchemaCR primarySchema, ECClassCR ecClass);
 
     //! Given two ECClass's, checks to see if they are equal by name
     //! @param[in]  currentBaseClass    The source class to check against
@@ -1266,7 +1266,7 @@ public:
     ECOBJECTS_EXPORT bool     IsUpperLimitUnbounded() const;
 
     //! Converts the cardinality to a string, for example "(0,n)", "(1,1)"
-    ECOBJECTS_EXPORT WString ToString() const;
+    ECOBJECTS_EXPORT Utf8String ToString() const;
 
     // ************************************************************************************************************************
     // ************************************  STATIC METHODS *******************************************************************
@@ -1298,7 +1298,7 @@ public:
 struct ECRelationshipConstraintClass : NonCopyableClass
     {
 private:
-    bvector<WString> m_keys;
+    bvector<Utf8String> m_keys;
     ECClassCP m_ecClass;
 
 public:
@@ -1312,10 +1312,10 @@ public:
     //! Gets the constraint's ECClass
     ECClassCR GetClass() const { return *m_ecClass; }
     //! Gets the constraint's key property names
-    bvector<WString> const& GetKeys() const { return m_keys; }
+    bvector<Utf8String> const& GetKeys() const { return m_keys; }
     //! Adds name of key property.
     //! @param[in] keyPropertyName Name of key property to add
-    ECOBJECTS_EXPORT void AddKey(WCharCP keyPropertyName);
+    ECOBJECTS_EXPORT void AddKey(Utf8CP keyPropertyName);
     };
 
 //=======================================================================================
@@ -1403,7 +1403,7 @@ private:
 
     ECRelationshipConstraintClassList    m_constraintClasses;
 
-    WString                     m_roleLabel;
+    Utf8String                  m_roleLabel;
     bool                        m_isPolymorphic;
     RelationshipCardinality*    m_cardinality;
     ECRelationshipClassP        m_relClass;
@@ -1430,13 +1430,13 @@ public:
     ECOBJECTS_EXPORT virtual ~ECRelationshipConstraint(); //!< Destructor
 
     //! Sets the label of the constraint role in the relationship.
-    ECOBJECTS_EXPORT ECObjectsStatus            SetRoleLabel (WStringCR value);
+    ECOBJECTS_EXPORT ECObjectsStatus            SetRoleLabel (Utf8StringCR value);
     //! Gets the label of the constraint role in the relationship.
     //! If the role label is not defined, the display label of the relationship class is returned
-    ECOBJECTS_EXPORT WString const              GetRoleLabel() const;
+    ECOBJECTS_EXPORT Utf8String const           GetRoleLabel() const;
     //! Gets the invariant label of the constraint role in the relationship.
     //! If the role label is not defined, the invariant display label of the relationship class is returned
-    ECOBJECTS_EXPORT WString const              GetInvariantRoleLabel() const;
+    ECOBJECTS_EXPORT Utf8String const           GetInvariantRoleLabel() const;
 
     //! Returns whether the RoleLabel has been set explicitly
     ECOBJECTS_EXPORT bool                       IsRoleLabelDefined() const;
@@ -1450,12 +1450,12 @@ public:
     //! Sets the bool value of whether this constraint can also relate to instances of subclasses of classes applied to the constraint.
     //! @param[in] isPolymorphic String representation of true/false
     //! @return    Success if the string is parsed into a bool
-    ECOBJECTS_EXPORT ECObjectsStatus            SetIsPolymorphic(WCharCP isPolymorphic);
+    ECOBJECTS_EXPORT ECObjectsStatus            SetIsPolymorphic(Utf8CP isPolymorphic);
 
     //! Sets the cardinality of the constraint in the relationship
     ECOBJECTS_EXPORT ECObjectsStatus            SetCardinality(RelationshipCardinalityCR value);
     //! Sets the cardinality of the constraint in the relationship
-    ECOBJECTS_EXPORT ECObjectsStatus            SetCardinality(WCharCP cardinality);
+    ECOBJECTS_EXPORT ECObjectsStatus            SetCardinality(Utf8CP cardinality);
 
     //! Gets the cardinality of the constraint in the relationship
     ECOBJECTS_EXPORT RelationshipCardinalityCR  GetCardinality() const;
@@ -1495,7 +1495,7 @@ public:
     ECOBJECTS_EXPORT OrderIdStorageMode         GetOrderIdStorageMode () const;
 
     //! Gets the name of the OrderId property for this constraint.
-    ECOBJECTS_EXPORT ECObjectsStatus            GetOrderedRelationshipPropertyName (WString& propertyName)  const;
+    ECOBJECTS_EXPORT ECObjectsStatus            GetOrderedRelationshipPropertyName (Utf8String& propertyName)  const;
 };
 
 //=======================================================================================
@@ -1521,8 +1521,8 @@ private:
     ECRelationshipClass (ECSchemaCR schema);
     virtual ~ECRelationshipClass ();
 
-    ECObjectsStatus                     SetStrength (WCharCP strength);
-    ECObjectsStatus                     SetStrengthDirection (WCharCP direction);
+    ECObjectsStatus                     SetStrength (Utf8CP strength);
+    ECObjectsStatus                     SetStrengthDirection (Utf8CP direction);
 
 protected:
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter) const override;
@@ -1537,7 +1537,7 @@ protected:
 public:
     //! Returns pointer to ECRelationshipClassP,  used to avoid dynamic_cast.
     //! @return     Returns NULL if not an ECRelationshipClass
-    ECOBJECTS_EXPORT ECObjectsStatus            GetOrderedRelationshipPropertyName (WString& propertyName, ECRelationshipEnd end)  const;
+    ECOBJECTS_EXPORT ECObjectsStatus            GetOrderedRelationshipPropertyName (Utf8String& propertyName, ECRelationshipEnd end)  const;
     //! Sets the StrengthType of this constraint.
     ECOBJECTS_EXPORT ECObjectsStatus            SetStrength(StrengthType value);
     //! Gets the StrengthType of this constraint
@@ -1581,7 +1581,7 @@ enum SchemaMatchType
 +===============+===============+===============+===============+===============+======*/
 struct SchemaKey
     {
-    WString       m_schemaName;
+    Utf8String    m_schemaName;
     uint32_t      m_versionMajor;
     uint32_t      m_versionMinor;
     uint32_t      m_checkSum;
@@ -1590,7 +1590,7 @@ struct SchemaKey
     //! @param[in]  name    The name of the ECSchema
     //! @param[in]  major   The major portion of the version
     //! @param[in]  minor   The minor portion of the version
-    SchemaKey (WCharCP name, uint32_t major, uint32_t minor) : m_schemaName(name), m_versionMajor(major), m_versionMinor(minor), m_checkSum(0){}
+    SchemaKey (Utf8CP name, uint32_t major, uint32_t minor) : m_schemaName(name), m_versionMajor(major), m_versionMinor(minor), m_checkSum(0){}
 
     //! Default constructor
     SchemaKey () : m_versionMajor(DEFAULT_VERSION_MAJOR), m_versionMinor(DEFAULT_VERSION_MINOR), m_checkSum(0) {}
@@ -1598,7 +1598,7 @@ struct SchemaKey
     //! Given a full schema name (which includes the version information), will return a SchemaKey with the schema name and version information set
     //! @param[out] key             A SchemaKey with the schema's name and version set
     //! @param[in]  schemaFullName  The full name of the schema.
-    ECOBJECTS_EXPORT static ECObjectsStatus ParseSchemaFullName (SchemaKey& key, WCharCP schemaFullName);
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseSchemaFullName (SchemaKey& key, Utf8CP schemaFullName);
 
     //! Compares two SchemaKeys and returns whether the target schema is less than this SchemaKey, where LessThan is dependent on the match type
     //! @param[in]  rhs         The SchemaKey to compare to
@@ -1622,7 +1622,7 @@ struct SchemaKey
 
     //! Compares two schema names and returns whether the target schema matches this m_schemaName. Comparison is case insensitive
     //! @param[in]  schemaName  The schema name to compare to
-    ECOBJECTS_EXPORT int  CompareByName (WString schemaName) const;
+    ECOBJECTS_EXPORT int  CompareByName (Utf8String schemaName) const;
 
     //! Returns whether this SchemaKey is Identical to the target SchemaKey
     bool operator == (SchemaKeyCR rhs) const
@@ -1642,8 +1642,8 @@ struct SchemaKey
         return LessThan (rhs, SCHEMAMATCHTYPE_Identical);
         }
 /*__PUBLISH_SECTION_END__*/
-    ECOBJECTS_EXPORT WStringCR GetName() const {return m_schemaName;}
-    ECOBJECTS_EXPORT WString GetFullSchemaName() const;
+    ECOBJECTS_EXPORT Utf8StringCR GetName() const {return m_schemaName;}
+    ECOBJECTS_EXPORT Utf8String GetFullSchemaName() const;
     ECOBJECTS_EXPORT uint32_t GetVersionMajor() const { return m_versionMajor; };
     ECOBJECTS_EXPORT uint32_t GetVersionMinor() const { return m_versionMinor; };
 
@@ -1711,29 +1711,29 @@ struct SchemaKeyMatchPredicate
 struct SchemaNameClassNamePair
     {
 public:
-    WString m_schemaName;
-    WString m_className;
+    Utf8String m_schemaName;
+    Utf8String m_className;
 
     //! Constructs a SchemaNameClassNamePair from the specified schema and class names
-    SchemaNameClassNamePair (WStringCR schemaName, WStringCR className) : m_schemaName (schemaName), m_className  (className) {}
+    SchemaNameClassNamePair (Utf8StringCR schemaName, Utf8StringCR className) : m_schemaName (schemaName), m_className  (className) {}
     //! Constructs a SchemaNameClassNamePair from the specified schema and class names
-    SchemaNameClassNamePair (WCharCP schemaName, WCharCP className) : m_schemaName (schemaName), m_className  (className) {}
+    SchemaNameClassNamePair (Utf8CP schemaName, Utf8CP className) : m_schemaName (schemaName), m_className  (className) {}
     //! Constructs an empty SchemaNameClassNamePair
     SchemaNameClassNamePair() { }
     //! Constructs a SchemaNameClassNamePair from a string of the format "SCHEMANAME:CLASSNAME"
-    SchemaNameClassNamePair (WStringCR schemaAndClassNameSeparatedByColon)
+    SchemaNameClassNamePair (Utf8StringCR schemaAndClassNameSeparatedByColon)
         {
-        BeAssert (WString::npos != schemaAndClassNameSeparatedByColon.find (':'));
+        BeAssert (Utf8String::npos != schemaAndClassNameSeparatedByColon.find (':'));
         Parse (schemaAndClassNameSeparatedByColon);
         }
 
     //! Attempts to populate this SchemaNameClassNamePair from a string of the format "SCHEMANAME:CLASSNAME"
     //! @param[in]      schemaAndClassNameSeparatedByColon a string of the format "SCHEMANAME:CLASSNAME"
     //! @return true if the string was successfully parsed, false otherwise. If it returns false, this SchemaNameClassNamePair will not be modified.
-    bool Parse (WStringCR schemaAndClassNameSeparatedByColon)
+    bool Parse (Utf8StringCR schemaAndClassNameSeparatedByColon)
         {
         size_t pos = schemaAndClassNameSeparatedByColon.find (':');
-        if (WString::npos != pos)
+        if (Utf8String::npos != pos)
             {
             m_schemaName = schemaAndClassNameSeparatedByColon.substr (0, pos);
             m_className = schemaAndClassNameSeparatedByColon.substr (pos+1);
@@ -1767,10 +1767,10 @@ public:
 
     //! Concatenates the schema and class names into a single colon-separated string of the format "SCHEMANAME:CLASSNAME"
     //! @return a string of the format "SCHEMANAME:CLASSNAME"
-    WString     ToColonSeparatedString() const
+    Utf8String     ToColonSeparatedString() const
         {
-        WString str;
-        str.Sprintf (L"%ls:%ls", m_schemaName.c_str(), m_className.c_str());
+        Utf8String str;
+        str.Sprintf ("%s:%s", m_schemaName.c_str(), m_className.c_str());
         return str;
         }
     };
@@ -1783,43 +1783,43 @@ public:
 struct QualifiedECAccessor
     {
 protected:
-    WString         m_schemaName;
-    WString         m_className;
-    WString         m_accessString;
+    Utf8String         m_schemaName;
+    Utf8String         m_className;
+    Utf8String         m_accessString;
 public:
     //! Constructs an empty QualifiedECAccessor
     QualifiedECAccessor() { }
     //! Constructs a QualifiedECAccessor referring to a property of an ECClass specified by access string
-    QualifiedECAccessor (WCharCP schemaName, WCharCP className, WCharCP accessString)
+    QualifiedECAccessor (Utf8CP schemaName, Utf8CP className, Utf8CP accessString)
         : m_schemaName(schemaName), m_className(className), m_accessString(accessString) { }
 
     //! Returns the name of the schema containing the ECClass
-    WCharCP     GetSchemaName() const           { return m_schemaName.c_str(); }
+    Utf8CP GetSchemaName() const           { return m_schemaName.c_str(); }
     //! Returns the name of the ECClass (or subclass thereof) containing the ECProperty
-    WCharCP     GetClassName() const            { return m_className.c_str(); }
+    Utf8CP     GetClassName() const            { return m_className.c_str(); }
     //! Returns the access string identifying the ECProperty within the ECClass
-    WCharCP     GetAccessString() const         { return m_accessString.c_str(); }
+    Utf8CP     GetAccessString() const         { return m_accessString.c_str(); }
 
     //! Sets the name of the schema containing the ECClass
-    void        SetSchemaName (WCharCP name)    { m_schemaName = name; }
+    void        SetSchemaName (Utf8CP name)    { m_schemaName = name; }
     //! Sets the name of the ECClass (or subclass thereof) containing the ECProperty
-    void        SetClassName (WCharCP name)     { m_className = name; }
+    void        SetClassName (Utf8CP name)     { m_className = name; }
     //! Sets the access string identifying the ECProperty within the ECClass
-    void        SetAccessString (WCharCP acStr) { m_accessString = acStr; }
+    void        SetAccessString (Utf8CP acStr) { m_accessString = acStr; }
 
     //! Returns a colon-separated string of the format "Schema:Class:AccessString"
-    ECOBJECTS_EXPORT WString    ToString() const;
+    ECOBJECTS_EXPORT Utf8String    ToString() const;
     //! Attempts to initialize this QualifiedECAccessor from a colon-separated string. If the string cannot be parsed, this QualifiedECAccessor will not be modified
     //! @param[in]      str A string of the format "Schema:Class:AccessString"
     //! @return true if the string was successfully parsed
-    ECOBJECTS_EXPORT bool       FromString (WCharCP str);
+    ECOBJECTS_EXPORT bool       FromString (Utf8CP str);
 
     //! Attempts to initialize this QualifiedECAccessor from an access string identifying a property of the specified ECEnabler.
     //! If the ECProperty cannot be found within the ECEnabler, this QualifiedECAccessor will not be modified
     //! @param[in]      rootEnabler  The ECEnabler containing the desired ECProperty
     //! @param[in]      accessString The access string identifying the ECProperty within the ECEnabler
     //! @return true if the access string identifies a valid ECProperty within the ECEnabler
-    ECOBJECTS_EXPORT bool       FromAccessString (ECN::ECEnablerCR rootEnabler, WCharCP accessString);
+    ECOBJECTS_EXPORT bool       FromAccessString (ECN::ECEnablerCR rootEnabler, Utf8CP accessString);
     };
 
 typedef bvector<QualifiedECAccessor> QualifiedECAccessorList;
@@ -1928,7 +1928,7 @@ private:
 
 /*__PUBLISH_SECTION_END__*/
 protected:
-    virtual    StandaloneECEnablerPtr  _LocateStandaloneEnabler (SchemaKeyCR schemaKey, WCharCP className) = 0;
+    virtual    StandaloneECEnablerPtr  _LocateStandaloneEnabler (SchemaKeyCR schemaKey, Utf8CP className) = 0;
 
 /*__PUBLISH_CLASS_VIRTUAL__*/
 /*__PUBLISH_SECTION_START__*/
@@ -1938,7 +1938,7 @@ public:
     //! @param[in] schemaKey    SchemaKey fully describing the schema that the class belongs to
     //! @param[in] className    The name of the class to find the enabler for
     //! @returns A valid StandaloneECEnabler, if one was located
-    ECOBJECTS_EXPORT StandaloneECEnablerPtr  LocateStandaloneEnabler (SchemaKeyCR schemaKey, WCharCP className);
+    ECOBJECTS_EXPORT StandaloneECEnablerPtr  LocateStandaloneEnabler (SchemaKeyCR schemaKey, Utf8CP className);
 };
 
 
@@ -2030,7 +2030,7 @@ private:
     bvector<WString> m_searchPaths;
     SearchPathSchemaFileLocater (bvector<WString> const& searchPaths);
     virtual ~SearchPathSchemaFileLocater();
-    static bool TryLoadingSupplementalSchemas(WStringCR schemaName, WStringCR schemaFilePath, ECSchemaReadContextR schemaContext, bvector<ECSchemaP>& supplementalSchemas);
+    static bool TryLoadingSupplementalSchemas(Utf8StringCR schemaName, WStringCR schemaFilePath, ECSchemaReadContextR schemaContext, bvector<ECSchemaP>& supplementalSchemas);
 
     static ECSchemaPtr                  LocateSchemaByPath (SchemaKeyR key, ECSchemaReadContextR context, SchemaMatchType matchType, bvector<WString>& searchPaths);
 
@@ -2072,10 +2072,10 @@ friend struct SupplementedSchemaBuilder;
 
 private:
     SchemaKey               m_key;
-    WString                 m_namespacePrefix;
-    WString                 m_displayLabel;
+    Utf8String              m_namespacePrefix;
+    Utf8String              m_displayLabel;
     mutable ECSchemaId      m_ecSchemaId;
-    WString                 m_description;
+    Utf8String              m_description;
     ECClassContainer        m_classContainer;
 
     // maps class name -> class pointer
@@ -2086,7 +2086,7 @@ private:
     SupplementalSchemaInfoPtr   m_supplementalSchemaInfo;
     bool                        m_immutable;
 
-    bmap<ECSchemaP, WString>    m_referencedSchemaNamespaceMap;
+    bmap<ECSchemaP, Utf8String> m_referencedSchemaNamespaceMap;
     SchemaLocalizedStrings      m_localizedStrings;
 
     ECSchema ();
@@ -2094,12 +2094,12 @@ private:
 
     bool                                AddingSchemaCausedCycles () const;
     void                                SetIsSupplemented(bool isSupplemented);
-    bool                                IsOpenPlantPidCircularReferenceSpecialCase(WString& referencedECSchemaName);
+    bool                                IsOpenPlantPidCircularReferenceSpecialCase(Utf8String& referencedECSchemaName);
     static SchemaReadStatus             ReadXml (ECSchemaPtr& schemaOut, BeXmlDomR xmlDom, uint32_t checkSum, ECSchemaReadContextR context);
     SchemaWriteStatus                   WriteXml (BeXmlWriterR xmlWriter) const;
 
     ECObjectsStatus                     AddClass (ECClassP& pClass, bool deleteClassIfDuplicate = true);
-    ECObjectsStatus                     SetVersionFromString (WCharCP versionString);
+    ECObjectsStatus                     SetVersionFromString (Utf8CP versionString);
     ECObjectsStatus                     CopyConstraints(ECRelationshipConstraintR toRelationshipConstraint, ECRelationshipConstraintR fromRelationshipConstraint);
 
     void SetSupplementalSchemaInfo(SupplementalSchemaInfo* info);
@@ -2108,11 +2108,11 @@ private:
     SchemaReadStatus                    ReadClassStubsFromXml (BeXmlNodeR schemaNode, ClassDeserializationVector& classes, ECSchemaReadContextR context);
     SchemaReadStatus                    ReadClassContentsFromXml (ClassDeserializationVector&  classes, ECSchemaReadContextR context);
     SchemaReadStatus                    ReadSchemaReferencesFromXml (BeXmlNodeR schemaNode, ECSchemaReadContextR context);
-    ECObjectsStatus                     AddReferencedSchema(ECSchemaR refSchema, WStringCR prefix, ECSchemaReadContextR readContext);
+    ECObjectsStatus                     AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR prefix, ECSchemaReadContextR readContext);
 
     struct  ECSchemaWriteContext
         {
-        bset<WCharCP> m_alreadyWrittenClasses;
+        bset<Utf8CP> m_alreadyWrittenClasses;
         };
 
     SchemaWriteStatus                   WriteSchemaReferences (BeXmlWriterR xmlWriter) const;
@@ -2133,7 +2133,7 @@ public:
     ECOBJECTS_EXPORT bool HasId() const { return m_ecSchemaId != 0; };
 
     ECOBJECTS_EXPORT ECObjectsStatus    DeleteClass (ECClassR ecClass);
-    ECOBJECTS_EXPORT ECObjectsStatus    RenameClass (ECClassR ecClass, WCharCP newName);
+    ECOBJECTS_EXPORT ECObjectsStatus    RenameClass (ECClassR ecClass, Utf8CP newName);
     SchemaLocalizedStringsCR            GetLocalizedStrings() const { return m_localizedStrings; }
 
 //__PUBLISH_CLASS_VIRTUAL__
@@ -2152,26 +2152,26 @@ public:
     //! Sets the name of this schema
     //! @param[in]  value   The name of the ECSchema
     //! @returns Success if the name passes validation and is set, ECOBJECTS_STATUS_InvalidName otherwise
-    ECOBJECTS_EXPORT ECObjectsStatus    SetName(WStringCR value);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetName(Utf8StringCR value);
     //! Returns the name of this ECSchema
-    ECOBJECTS_EXPORT WStringCR          GetName() const;
+    ECOBJECTS_EXPORT Utf8StringCR       GetName() const;
     //! Sets the namespace prefix for this ECSchema
-    ECOBJECTS_EXPORT ECObjectsStatus    SetNamespacePrefix(WStringCR value);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetNamespacePrefix(Utf8StringCR value);
     //! Gets the namespace prefix for this ECSchema
-    ECOBJECTS_EXPORT WStringCR          GetNamespacePrefix() const;
+    ECOBJECTS_EXPORT Utf8StringCR       GetNamespacePrefix() const;
     //! Sets the description for this ECSchema
-    ECOBJECTS_EXPORT ECObjectsStatus    SetDescription(WStringCR value);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetDescription(Utf8StringCR value);
     //! Gets the description for this ECSchema.  Returns the localized description if one exists.
-    ECOBJECTS_EXPORT WStringCR          GetDescription() const;
+    ECOBJECTS_EXPORT Utf8StringCR       GetDescription() const;
     //! Gets the invariant description for this ECSchema.
-    ECOBJECTS_EXPORT WStringCR          GetInvariantDescription() const;
+    ECOBJECTS_EXPORT Utf8StringCR       GetInvariantDescription() const;
     //! Sets the display label for this ECSchema
-    ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel(WStringCR value);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel(Utf8StringCR value);
     //! Gets the DisplayLabel for this ECSchema.  If no DisplayLabel has been set explicitly, returns the name of the schema
     //! Gets the DisplayLabel for this ECSchema.  If no DisplayLabel has been set explicitly, returns the name of the schema.
-    ECOBJECTS_EXPORT WStringCR          GetDisplayLabel() const;
+    ECOBJECTS_EXPORT Utf8StringCR       GetDisplayLabel() const;
     //! Gets the invariant display label for this ECSchema.
-    ECOBJECTS_EXPORT WStringCR          GetInvariantDisplayLabel() const;
+    ECOBJECTS_EXPORT Utf8StringCR       GetInvariantDisplayLabel() const;
     //! Sets the major version of this schema
     ECOBJECTS_EXPORT ECObjectsStatus    SetVersionMajor(uint32_t value);
     //! Gets the major version of this schema
@@ -2242,35 +2242,35 @@ public:
     //! @param[out] ecClass If successful, will contain a new ECClass object
     //! @param[in]  name    Name of the class to create
     //! @return A status code indicating whether or not the class was successfully created and added to the schema
-    ECOBJECTS_EXPORT ECObjectsStatus    CreateClass (ECClassP& ecClass, WStringCR name);
+    ECOBJECTS_EXPORT ECObjectsStatus    CreateClass (ECClassP& ecClass, Utf8StringCR name);
 
     //! If the class name is valid, will create an ECRelationshipClass object and add the new class to the schema
     //! @param[out] relationshipClass If successful, will contain a new ECRelationshipClass object
     //! @param[in]  name    Name of the class to create
     //! @return A status code indicating whether or not the class was successfully created and added to the schema
-    ECOBJECTS_EXPORT ECObjectsStatus    CreateRelationshipClass (ECRelationshipClassP& relationshipClass, WStringCR name);
+    ECOBJECTS_EXPORT ECObjectsStatus    CreateRelationshipClass (ECRelationshipClassP& relationshipClass, Utf8StringCR name);
 
     //! Get a schema by namespace prefix within the context of this schema and its referenced schemas.
     //! @param[in]  namespacePrefix     The prefix of the schema to lookup in the context of this schema and it's references.
     //!                                 Passing an empty namespacePrefix will return a pointer to the current schema.
     //! @return   A non-refcounted pointer to an ECN::ECSchema if it can be successfully resolved from the specified namespacePrefix; otherwise, NULL
-    ECOBJECTS_EXPORT ECSchemaCP         GetSchemaByNamespacePrefixP(WStringCR namespacePrefix) const;
+    ECOBJECTS_EXPORT ECSchemaCP         GetSchemaByNamespacePrefixP(Utf8StringCR namespacePrefix) const;
 
     //! Resolve a namespace prefix for the specified schema within the context of this schema and its references.
     //! @param[in]  schema     The schema to lookup a namespace prefix in the context of this schema and its references.
     //! @param[out] namespacePrefix The namespace prefix if schema is a referenced schema; empty string if the sechema is the current schema;
     //! @return   Success if the schema is either the current schema or a referenced schema;  ECOBJECTS_STATUS_SchemaNotFound if the schema is not found in the list of referenced schemas
-    ECOBJECTS_EXPORT ECObjectsStatus    ResolveNamespacePrefix (ECSchemaCR schema, WStringR namespacePrefix) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    ResolveNamespacePrefix (ECSchemaCR schema, Utf8StringR namespacePrefix) const;
 
     //! Get a class by name within the context of this schema.
     //! @param[in]  name     The name of the class to lookup.  This must be an unqualified (short) class name.
     //! @return   A const pointer to an ECN::ECClass if the named class exists in within the current schema; otherwise, NULL
-    ECOBJECTS_EXPORT ECClassCP          GetClassCP (WCharCP name) const;
+    ECOBJECTS_EXPORT ECClassCP          GetClassCP (Utf8CP name) const;
 
     //! Get a class by name within the context of this schema.
     //! @param[in]  name     The name of the class to lookup.  This must be an unqualified (short) class name.
     //! @return   A pointer to an ECN::ECClass if the named class exists in within the current schema; otherwise, NULL
-    ECOBJECTS_EXPORT ECClassP           GetClassP (WCharCP name);
+    ECOBJECTS_EXPORT ECClassP           GetClassP (Utf8CP name);
 
     //! Gets the other schemas that are used by classes within this schema.
     //! Referenced schemas are the schemas that contain definitions of base classes,
@@ -2288,7 +2288,7 @@ public:
     //! class from a different schema, or custom attributes from a different schema.
     //! @param[in]  refSchema   The schema to add as a referenced schema
     //! @param[in]  prefix      The prefix to use within the context of this schema for referencing the referenced schema
-    ECOBJECTS_EXPORT ECObjectsStatus            AddReferencedSchema(ECSchemaR refSchema, WStringCR prefix);
+    ECOBJECTS_EXPORT ECObjectsStatus            AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR prefix);
 
     //! Removes an ECSchema from the list of referenced schemas
     //! @param[in]  refSchema   The schema that should be removed from the list of referenced schemas
@@ -2323,7 +2323,7 @@ public:
 
 
     //! Return full schema name in format GetName().MM.mm where Name is the schema name, MM is major version and mm is minor version.
-    ECOBJECTS_EXPORT WString               GetFullSchemaName () const;
+    ECOBJECTS_EXPORT Utf8String             GetFullSchemaName () const;
 
     //! Given a source class, will copy that class into this schema if it does not already exist
     //! @param[out] targetClass If successful, will contain a new ECClass object that is a copy of the sourceClass
@@ -2341,7 +2341,7 @@ public:
     // ************************************  STATIC METHODS *******************************************************************
     // ************************************************************************************************************************
     //! Given a str containing SchemaXml, will compute the CheckSum
-    ECOBJECTS_EXPORT static uint32_t        ComputeSchemaXmlStringCheckSum(WCharCP str, size_t len);
+    ECOBJECTS_EXPORT static uint32_t        ComputeSchemaXmlStringCheckSum(Utf8CP str, size_t len);
 
     //! If the given schemaName is valid, this will create a new schema object
     //! @param[out] schemaOut   if successful, will contain a new schema object
@@ -2349,14 +2349,14 @@ public:
     //! @param[in]  versionMajor The major version number.
     //! @param[in]  versionMinor The minor version number.
     //! @return A status code indicating whether the call was succesfull or not
-    ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema (ECSchemaPtr& schemaOut, WStringCR schemaName,
+    ECOBJECTS_EXPORT static ECObjectsStatus CreateSchema (ECSchemaPtr& schemaOut, Utf8StringCR schemaName,
                                                           uint32_t versionMajor, uint32_t versionMinor);
 
     //! Generate a schema version string given the major and minor version values.
     //! @param[in]  versionMajor    The major version number
     //! @param[in] versionMinor    The minor version number
     //! @return The version string
-    ECOBJECTS_EXPORT static WString        FormatSchemaVersion (uint32_t& versionMajor, uint32_t& versionMinor);
+    ECOBJECTS_EXPORT static Utf8String      FormatSchemaVersion (uint32_t& versionMajor, uint32_t& versionMinor);
 
     //! Given a version string MM.NN, this will parse other major and minor versions
     //! @param[out] schemaName      The schema name without version number qualifiers
@@ -2364,7 +2364,7 @@ public:
     //! @param[out] versionMinor    The minor version number
     //! @param[in]  fullName        A string containing the schema name and major and minor versions (GetName().MM.NN)
     //! @return A status code indicating whether the string was successfully parsed
-    ECOBJECTS_EXPORT static ECObjectsStatus ParseSchemaFullName (WString& schemaName, uint32_t& versionMajor, uint32_t& versionMinor, WCharCP fullName);
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseSchemaFullName (Utf8String& schemaName, uint32_t& versionMajor, uint32_t& versionMinor, Utf8CP fullName);
 
     //! Given a version string MM.NN, this will parse other major and minor versions
     //! @param[out] schemaName      The schema name without version number qualifiers
@@ -2372,14 +2372,14 @@ public:
     //! @param[out] versionMinor    The minor version number
     //! @param[in]  fullName        A string containing the schema name and major and minor versions (GetName().MM.NN)
     //! @return A status code indicating whether the string was successfully parsed
-    ECOBJECTS_EXPORT static ECObjectsStatus ParseSchemaFullName (WString& schemaName, uint32_t& versionMajor, uint32_t& versionMinor, WStringCR fullName);
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseSchemaFullName (Utf8String& schemaName, uint32_t& versionMajor, uint32_t& versionMinor, Utf8StringCR fullName);
 
     //! Given a version string MM.NN, this will parse other major and minor versions
     //! @param[out] versionMajor    The major version number
     //! @param[out] versionMinor    The minor version number
     //! @param[in]  versionString   A string containing the major and minor versions (MM.NN)
     //! @return A status code indicating whether the string was successfully parsed
-    ECOBJECTS_EXPORT static ECObjectsStatus ParseVersionString (uint32_t& versionMajor, uint32_t& versionMinor, WCharCP versionString);
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseVersionString (uint32_t& versionMajor, uint32_t& versionMinor, Utf8CP versionString);
 
     //! Given two schemas, will check to see if the second schema is referenced by the first schema
     //! @param[in]    thisSchema            The base schema to check the references of
@@ -2411,7 +2411,7 @@ public:
     //!           contain the read schema.  Otherwise schemaOut will be unmodified.
     ECOBJECTS_EXPORT static SchemaReadStatus ReadFromXmlFile (ECSchemaPtr& schemaOut, WCharCP ecSchemaXmlFile, ECSchemaReadContextR schemaContext);
 
-    //! Locate a schema using the provided schema locators and paths. If not found in those by either of those parameters standard schema pathes
+    //! Locate a schema using the provided schema locators and paths. If not found in those by either of those parameters standard schema paths
     //! relative to the executing dll will be searched.
     //! @param[in]    schema              Key describing the schema to be located
     //! @param[in]    schemaContext       Required to create schemas
@@ -2468,7 +2468,7 @@ public:
     //! Returns true if the schema is an ECStandard schema
     //! @return True if a standard schema, false otherwise
     //! @param[in]  schemaName  Name of the schema to test.  This is just the schema name, no version info
-    ECOBJECTS_EXPORT static bool IsStandardSchema(WStringCR schemaName);
+    ECOBJECTS_EXPORT static bool IsStandardSchema(Utf8StringCR schemaName);
 
     //! Find all ECSchemas in the schema graph, avoiding duplicates and any cycles.
     //! @param[out]   allSchemas            Vector of schemas including rootSchema.
@@ -2497,9 +2497,9 @@ public:
 struct IECClassLocater /*: RefCountedBase*/
     {
     protected:
-        ECOBJECTS_EXPORT virtual ECClassCP _LocateClass (WCharCP schemaName, WCharCP className) = 0;
+        ECOBJECTS_EXPORT virtual ECClassCP _LocateClass (Utf8CP schemaName, Utf8CP className) = 0;
     public:
-        ECClassCP LocateClass (WCharCP schemaName, WCharCP className)
+        ECClassCP LocateClass (Utf8CP schemaName, Utf8CP className)
             {
             return _LocateClass (schemaName, className);
             }

@@ -34,7 +34,7 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyFromSupplementalSchemaWhere
     {
     Unit defaultUnit;
     EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_trainingWheelDiameterProp));
-    VerifyDefaultUnit (L"MILLIFOOT", defaultUnit);
+    VerifyDefaultUnit ("MILLIFOOT", defaultUnit);
     }
 
  /*====================================================================================**/
@@ -45,7 +45,7 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyFromSupplementalSchemaOverr
     {
     Unit defaultUnit;
     EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_wcWeightProp));
-    VerifyDefaultUnit (L"POUND", defaultUnit);
+    VerifyDefaultUnit ("POUND", defaultUnit);
     }
 
  /*====================================================================================**/
@@ -56,7 +56,7 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyDirectlyFromPropertyOverrid
     {
     Unit defaultUnit;
     EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_seatPostAngleProp));
-    VerifyDefaultUnit (L"ANGLE_SECOND", defaultUnit);
+    VerifyDefaultUnit ("ANGLE_SECOND", defaultUnit);
     }
 
  /*====================================================================================**/
@@ -67,7 +67,7 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyDirectlyFromProperty)
     {
     Unit defaultUnit;
     EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_AreaProp));
-    VerifyDefaultUnit (L"INCH_SQUARED", defaultUnit);
+    VerifyDefaultUnit ("INCH_SQUARED", defaultUnit);
     }
 
  /*====================================================================================**/
@@ -78,7 +78,7 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyFromClassUsingKOQFromProper
     {
     Unit defaultUnit;
     EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_spokeLengthProp));
-    VerifyDefaultUnit (L"CENTIMETRE", defaultUnit);
+    VerifyDefaultUnit ("CENTIMETRE", defaultUnit);
     }
 
  /*====================================================================================**/
@@ -89,7 +89,7 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyFromDomainSchemaUsingKOQFro
     {
     Unit defaultUnit;
     EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_wcDiameterProp));
-    VerifyDefaultUnit (L"CENTIMETRE", defaultUnit);
+    VerifyDefaultUnit ("CENTIMETRE", defaultUnit);
     }
 
  /*====================================================================================**/
@@ -100,7 +100,7 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyFromSupplementalSchemaUsing
     {
     Unit defaultUnit;
     EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_headSetAngleProp));
-    VerifyDefaultUnit (L"RADIAN", defaultUnit);
+    VerifyDefaultUnit ("RADIAN", defaultUnit);
     }
 
  /*====================================================================================**/
@@ -111,7 +111,7 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyFromSupplementalSchemaUsing
     {
     Unit defaultUnit;
     EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_rearWheelDiameterProp));
-    VerifyDefaultUnit (L"CENTIMETRE", defaultUnit);
+    VerifyDefaultUnit ("CENTIMETRE", defaultUnit);
     }
 
  /*====================================================================================**/
@@ -122,7 +122,7 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnitForPropertyFromSupplementalSchemaUsing
     {
     Unit defaultUnit;
     EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_trainingWheelDiameterProp));
-    VerifyDefaultUnit (L"MILLIFOOT", defaultUnit);
+    VerifyDefaultUnit ("MILLIFOOT", defaultUnit);
     }
 
  /*====================================================================================**/
@@ -133,7 +133,7 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnitFromExternalSchemaUsingKOQFromProperty
     {
     Unit defaultUnit;
     EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_frontWheelPressureProp));
-    VerifyDefaultUnit (L"ATMOSPHERE", defaultUnit);
+    VerifyDefaultUnit ("ATMOSPHERE", defaultUnit);
     }
 
  /*====================================================================================**/
@@ -144,7 +144,7 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnitFromDomainSchemaOverridingExternalSche
     {
     Unit defaultUnit;
     EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_rearWheelPressureProp));
-    VerifyDefaultUnit (L"FOOT_OF_H2O_CONVENTIONAL", defaultUnit);
+    VerifyDefaultUnit ("FOOT_OF_H2O_CONVENTIONAL", defaultUnit);
     }
 
  /*====================================================================================**/
@@ -155,7 +155,7 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnit_FromUnitSystemDefaults1)
     {
     Unit defaultUnit;
     EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_sucAreaProp));
-    VerifyDefaultUnit (L"FOOT_SQUARED", defaultUnit);
+    VerifyDefaultUnit ("FOOT_SQUARED", defaultUnit);
     }
 
  /*====================================================================================**/
@@ -166,7 +166,7 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnit_FromUnitSystemDefaults2)
     {
     Unit defaultUnit;
     EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_sucVolumeProp));
-    VerifyDefaultUnit (L"FOOT_CUBED", defaultUnit);
+    VerifyDefaultUnit ("FOOT_CUBED", defaultUnit);
     }
 
  /*====================================================================================**/
@@ -177,7 +177,7 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnit_FromUnitSystemDefaults3)
     {
     Unit defaultUnit;
     EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_sucTemperatureProp));
-    VerifyDefaultUnit (L"DEGREE_FAHRENHEIT", defaultUnit);
+    VerifyDefaultUnit ("DEGREE_FAHRENHEIT", defaultUnit);
     }
 
  /*====================================================================================**/
@@ -188,7 +188,7 @@ TEST_F (ECSchemaUnitsManagerTests, GetUnit_FromKOQ_OverriddingUnitSystemDefaults
     {
     Unit defaultUnit;
     EXPECT_TRUE (Unit::GetUnitForECProperty (defaultUnit, *m_sucWidthProp));
-    VerifyDefaultUnit (L"MILLIMETRE", defaultUnit);
+    VerifyDefaultUnit ("MILLIMETRE", defaultUnit);
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

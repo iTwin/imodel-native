@@ -51,7 +51,7 @@ WString ECTestFixture::GetTempDataPath(WCharCP dataFile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString  ECTestFixture::GetDateTime ()
+Utf8String  ECTestFixture::GetDateTime ()
     {
     struct tm timeinfo;
     BeTimeUtilities::ConvertUnixMillisToTm (timeinfo, BeTimeUtilities::GetCurrentTimeAsUnixMillis());   // GMT
@@ -62,7 +62,7 @@ WString  ECTestFixture::GetDateTime ()
     dateTime.append (" ");
     strftime(buff, sizeof(buff), "%H:%M:%S", &timeinfo);
     dateTime.append (buff);
-    return WString(dateTime.c_str(), true);
+    return dateTime.c_str();
     }
     
 END_BENTLEY_ECN_TEST_NAMESPACE

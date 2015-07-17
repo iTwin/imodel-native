@@ -104,7 +104,7 @@ public:
 
     //! Generates a text representation of this object.
     //! @return Text representation of this object
-    ECOBJECTS_EXPORT WString ToString () const;
+    ECOBJECTS_EXPORT Utf8String ToString () const;
     };
 
 //=======================================================================================    
@@ -115,8 +115,8 @@ public:
 struct StandardCustomAttributeHelper : NonCopyableClass
     {
 private:
-    static WCharCP const SYSTEMSCHEMA_CA_NAME;
-    static WCharCP const DYNAMICSCHEMA_CA_NAME;
+    static Utf8CP const SYSTEMSCHEMA_CA_NAME;
+    static Utf8CP const DYNAMICSCHEMA_CA_NAME;
 
     //static class
     StandardCustomAttributeHelper ();
@@ -162,12 +162,12 @@ public:
     //! Returns the specified CustomAttribute ECClass
     //! @param[in] attributeName The name of the CustomAttribute ECClass
     //! @return An ECClassCP, if the attribute is found.  NULL otherwise.
-    ECOBJECTS_EXPORT static ECClassCP GetCustomAttributeClass(WCharCP attributeName);
+    ECOBJECTS_EXPORT static ECClassCP GetCustomAttributeClass(Utf8CP attributeName);
 
     //! Creates a custom attribute instance for the given attribute
     //! @param[in] attributeName The name of the custom attribute to create
     //! @return An instance of the given custom attribute
-    ECOBJECTS_EXPORT static IECInstancePtr CreateCustomAttributeInstance(WCharCP attributeName);
+    ECOBJECTS_EXPORT static IECInstancePtr CreateCustomAttributeInstance(Utf8CP attributeName);
     };
 
 struct ECDbSchemaMap;

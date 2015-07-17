@@ -2,7 +2,7 @@
 |
 |     $Source: src/Units/ECUnitsClassLocater.cpp $
 |
-|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -11,8 +11,8 @@
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 ECUnitsClassLocaterPtr ECUnitsClassLocater::s_unitsECClassLocaterPtr;
-static WCharCP const  UNITS_SCHEMA                      = L"Units_Schema";
-static WCharCP const  KOQ_SCHEMA                        = L"KindOfQuantity_Schema";
+static Utf8CP const  UNITS_SCHEMA                      = "Units_Schema";
+static Utf8CP const  KOQ_SCHEMA                        = "KindOfQuantity_Schema";
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 12/2012
@@ -67,15 +67,15 @@ bool ECUnitsClassLocater::Initialize()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 12/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCP ECUnitsClassLocater::_LocateClass (WCharCP schemaName, WCharCP className)
+ECClassCP ECUnitsClassLocater::_LocateClass (Utf8CP schemaName, Utf8CP className)
     {
     if (!Initialize())
         return NULL;
 
-    if (0 == wcscmp(UNITS_SCHEMA, schemaName))
+    if (0 == strcmp(UNITS_SCHEMA, schemaName))
         return m_unitsSchema->GetClassCP(className);
     
-    if (0 == wcscmp(KOQ_SCHEMA, schemaName))
+    if (0 == strcmp(KOQ_SCHEMA, schemaName))
         return m_koqSchema->GetClassCP(className);
 
     return nullptr;
