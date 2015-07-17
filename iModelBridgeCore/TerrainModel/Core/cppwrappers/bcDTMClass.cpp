@@ -31,6 +31,7 @@
 #include "bcDTMImpl.h"
 #include "bcpoint.fdf"
 
+#include "bcdtmSideSlope.h"
 #include <TerrainModel\Core\TMTransformHelper.h>
 #include <TerrainModel\Drainage\drainage.h>
 
@@ -1900,14 +1901,14 @@ DTMStatusInt BcDTM::_ShotVector (double* endSlopeP, double* endAspectP, DPoint3d
         _dtmTransformHelper->convertPointToDTM (startPt);
         direction = _dtmTransformHelper->convertAspectToDTM (direction);
         slope = _dtmTransformHelper->convertSlopeToDTM (slope);
-        status = (DTMStatusInt)dtmSideSlope_intersectSurfaceDtmObject (_GetTinHandle (), startPt.x, startPt.y, startPt.z,
+        status = (DTMStatusInt)bcdtmSideSlope_intersectSurfaceDtmObject (_GetTinHandle (), startPt.x, startPt.y, startPt.z,
                                                          direction, slope, 1, dc_zero, &endPt.x, &endPt.y, &endPt.z, &startFlag, &endFlag);
         if (status == DTM_SUCCESS)
             _dtmTransformHelper->convertPointFromDTM (endPt);
         }
     else
         {
-        status = (DTMStatusInt)dtmSideSlope_intersectSurfaceDtmObject (_GetTinHandle (), startPtP->x, startPtP->y, startPtP->z,
+        status = (DTMStatusInt)bcdtmSideSlope_intersectSurfaceDtmObject (_GetTinHandle (), startPtP->x, startPtP->y, startPtP->z,
                                                          direction, slope, 1, dc_zero, &endPt.x, &endPt.y, &endPt.z, &startFlag, &endFlag);
         }
     if (status != DTM_SUCCESS) return DTM_ERROR;

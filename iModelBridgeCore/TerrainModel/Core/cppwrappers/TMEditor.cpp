@@ -1,18 +1,67 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: src/unmanaged/DTM/civilDTMext/BcDTMEdit.cpp $
+|     $Source: Core/cppwrappers/TMEditor.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "stdafx.h"
 //#define CHECKDTM
+#include "bcDTMBaseDef.h"
+#include "dtmevars.h"
+#include "bcdtminlines.h"
 #include "BcDTMEdit.h"
+#include "TerrainModel\Core\TMTransformHelper.h"
+#include "TerrainModel\Core\TMEditor.h"
 #include <stack>
 using namespace std;
 
-int  bcdtmExtEdit_checkForLineOnHullLineDtmObject(BC_DTM_OBJ *dtmP,long P1,long P2,long *hullLineP)
+
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+int bcdtmList_testForNonGroupSpotDtmFeatureLineDtmObject (BC_DTM_OBJ *dtmP, long P1, long P2)
+    {
+    /*
+    ** This Function Tests If Line P1-P2 Is A Dtm Feature Line
+    */
+    long clPtr;
+    /*
+    ** Scan P1 and See If it Connects To P2
+    */
+    clPtr = nodeAddrP (dtmP, P1)->fPtr;
+    while (clPtr != dtmP->nullPtr)
+        {
+        if (P2 == flistAddrP (dtmP, clPtr)->nextPnt)
+            {
+            if (ftableAddrP (dtmP, flistAddrP (dtmP, clPtr)->dtmFeature)->dtmFeatureType != DTMFeatureType::GroupSpots)
+                return(1);
+            }
+        clPtr = flistAddrP (dtmP, clPtr)->nextPtr;
+        }
+    /*
+    ** Scan P2 and See If it Connects To P1
+    */
+    clPtr = nodeAddrP (dtmP, P2)->fPtr;
+    while (clPtr != dtmP->nullPtr)
+        {
+        if (P1 == flistAddrP (dtmP, clPtr)->nextPnt)
+            {
+            if (ftableAddrP (dtmP, flistAddrP (dtmP, clPtr)->dtmFeature)->dtmFeatureType != DTMFeatureType::GroupSpots)
+                return(1);
+            }
+
+        clPtr = flistAddrP (dtmP, clPtr)->nextPtr;
+        }
+    /*
+    ** Job Completed
+    */
+    return(0);
+    }
+
+int  bcdtmEdit_checkForLineOnHullLineDtmObject(BC_DTM_OBJ *dtmP,long P1,long P2,long *hullLineP)
 /*
 ** This Function Tests If The Line P1P2 or P2P1 is On A dtmP,Void,Hole Or Island Hull
 */
@@ -66,7 +115,7 @@ int  bcdtmExtEdit_checkForLineOnHullLineDtmObject(BC_DTM_OBJ *dtmP,long P1,long 
  return(DTM_SUCCESS) ;
 }
 
-int  bcdtmExtEdit_checkForPointOnHullLineDtmObject(BC_DTM_OBJ *dtmP,long Point,long *HullLine)
+int  bcdtmEdit_checkForPointOnHullLineDtmObject(BC_DTM_OBJ *dtmP,long Point,long *HullLine)
 /*
 ** This Function Tests For A Point On A DTM Hull
 */
@@ -101,20 +150,20 @@ int  bcdtmExtEdit_checkForPointOnHullLineDtmObject(BC_DTM_OBJ *dtmP,long Point,l
  return(0) ;
 }
 
-BEGIN_BENTLEY_CIVIL_TERRAINMODEL_NAMESPACE
+BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 
-enum TMPointType : long
+enum class TMPointType : long
 {
-    TM_POINT_TYPE_ExternalToDtm = 0,            // **  == 0   Point External To Dtm
-    TM_POINT_TYPE_CoincidentWithPoint = 1,      // **  == 1   Point Coincident with Point pnt1P
-    TM_POINT_TYPE_OnLine = 2,                   // **  == 2   Point On Line pnt1-Ppnt2P
-    TM_POINT_TYPE_OnHull = 3,                   // **  == 3   Point On Hull Line pnt1P-pnt2P
-    TM_POINT_TYPE_InTriangle = 4,               // **  == 4   Point In Triangle pnt1P-pnt2P-pnt3P
-    TM_POINT_TYPE_PointInternalToVoidHull = 5,
-    TM_POINT_TYPE_PointExternalToTinHull = 6,
+    ExternalToDtm = 0,            // **  == 0   Point External To Dtm
+    CoincidentWithPoint = 1,      // **  == 1   Point Coincident with Point pnt1P
+    OnLine = 2,                   // **  == 2   Point On Line pnt1-Ppnt2P
+    OnHull = 3,                   // **  == 3   Point On Hull Line pnt1P-pnt2P
+    InTriangle = 4,               // **  == 4   Point In Triangle pnt1P-pnt2P-pnt3P
+    PointInternalToVoidHull = 5,
+    PointExternalToTinHull = 6,
 };
 
-struct BcDTMEdit : RefCounted <IBcDTMEdit>
+struct BcDTMEdit : RefCounted <ITMEditor>
 {
 private:
     RefCountedPtr<BcDTM> m_dtm;
@@ -132,13 +181,13 @@ private:
 
     // Added RobC - 04/04/2012
 
-    SelectedLinearFeatures m_selectedFeatures ;
+    SelectedLinearFeatures m_selectedFeatures;
     SelectedLinearFeatures::iterator m_selectedFeaturesIter;
 
     struct DrawUserP
         {
         TMTransformHelperP helper;
-        IBcDTMEditDrawer* drawer;
+        ITMEditorDrawer* drawer;
         };
 
     static int dtmLoad_bcToGeopakLoadFunction(DTMFeatureType dtmFeatureType,DTMUserTag userTag,DTMFeatureId featureId,DPoint3d* featurePtsP,size_t numFeaturePts,void *userP)
@@ -255,7 +304,7 @@ protected:
         return DTM_SUCCESS;
         }
 
-    virtual StatusInt _DrawDynamics (IBcDTMEditDrawer* drawer) override
+    virtual StatusInt _DrawDynamics (ITMEditorDrawer* drawer) override
         {
         DrawUserP drawInfo = {helper, drawer};
         stack<dynamicMod*> dynamic_changes = m_dynamic_changes;
@@ -269,7 +318,7 @@ protected:
         return DTM_SUCCESS;
         }
 
-    virtual StatusInt _DrawSelection (IBcDTMEditDrawer* drawer) override
+    virtual StatusInt _DrawSelection (ITMEditorDrawer* drawer) override
         {
         if (m_selectionState == None)
             return DTM_SUCCESS;
@@ -279,17 +328,17 @@ protected:
             for (size_t i = 0; i < m_selectedPoints.size (); i += 4)
                 {
                 if (helper)
-                    drawer->Draw (/*IBcDTMEditDrawer::SELECTION_PURPOSE, */DTMFeatureType::None, -1, helper->copyPointsFromDTM (&m_selectedPoints[i], 4), 4);
+                    drawer->Draw (/*ITMEditorDrawer::SELECTION_PURPOSE, */DTMFeatureType::None, -1, helper->copyPointsFromDTM (&m_selectedPoints[i], 4), 4);
                 else
-                    drawer->Draw (/*IBcDTMEditDrawer::SELECTION_PURPOSE, */DTMFeatureType::None, -1, &m_selectedPoints[i], 4);
+                    drawer->Draw (/*ITMEditorDrawer::SELECTION_PURPOSE, */DTMFeatureType::None, -1, &m_selectedPoints[i], 4);
                 }
             }
         else
             {
             if (helper)
-                drawer->Draw (/*IBcDTMEditDrawer::SELECTION_PURPOSE, */DTMFeatureType::None, -1, helper->copyPointsFromDTM (&m_selectedPoints[0], (int)m_selectedPoints.size ()), (int)m_selectedPoints.size ());
+                drawer->Draw (/*ITMEditorDrawer::SELECTION_PURPOSE, */DTMFeatureType::None, -1, helper->copyPointsFromDTM (&m_selectedPoints[0], (int)m_selectedPoints.size ()), (int)m_selectedPoints.size ());
             else
-                drawer->Draw (/*IBcDTMEditDrawer::SELECTION_PURPOSE, */DTMFeatureType::None, -1, &m_selectedPoints[0], (int)m_selectedPoints.size ());
+                drawer->Draw (/*ITMEditorDrawer::SELECTION_PURPOSE, */DTMFeatureType::None, -1, &m_selectedPoints[0], (int)m_selectedPoints.size ());
             }
 
         return DTM_SUCCESS;
@@ -323,7 +372,7 @@ protected:
 
     virtual StatusInt _InsertFeature ()
         {
-//        bcdtmExtEdit_insertDtmFeatureIntoDtmObject(dtmP,DTMFeatureType::Breakline,dtmP->nullUserTag,stringPtsP,numstringPtsP,startPntP);
+//        bcdtmEdit_insertDtmFeatureIntoDtmObject(dtmP,DTMFeatureType::Breakline,dtmP->nullUserTag,stringPtsP,numstringPtsP,startPntP);
         return DTM_ERROR;
         }
 
@@ -342,7 +391,7 @@ protected:
             long hullLine = 0;
 
             // Check that the edge is on the boundary and it isn't a break line.
-            if (bcdtmExtEdit_checkForLineOnHullLineDtmObject (m_dtm->GetTinHandle(), m_linePointNumber[0], m_linePointNumber[1], &hullLine) != DTM_SUCCESS)
+            if (bcdtmEdit_checkForLineOnHullLineDtmObject (m_dtm->GetTinHandle(), m_linePointNumber[0], m_linePointNumber[1], &hullLine) != DTM_SUCCESS)
                 return false;
 
             // We are deleting the triangle on the edge
@@ -403,7 +452,7 @@ protected:
             // See if all 3 points are on the boundary, if so this is either the last point or is invalid.
             for (int i = 0; i < 3; i++)
                 {
-                if (bcdtmExtEdit_checkForPointOnHullLineDtmObject(m_dtm->GetTinHandle(), m_trianglePointNumber[i], &hullLine) != DTM_SUCCESS)
+                if (bcdtmEdit_checkForPointOnHullLineDtmObject(m_dtm->GetTinHandle(), m_trianglePointNumber[i], &hullLine) != DTM_SUCCESS)
                     return false;
 
                 if (hullLine)
@@ -411,7 +460,7 @@ protected:
                 }
 
             // See if the triangle edge is on the boundary, and that it isn't a break line.
-            if (bcdtmExtEdit_checkForLineOnHullLineDtmObject (m_dtm->GetTinHandle(), m_trianglePointNumber[0], m_trianglePointNumber[1], &hullLine) != DTM_SUCCESS)
+            if (bcdtmEdit_checkForLineOnHullLineDtmObject (m_dtm->GetTinHandle(), m_trianglePointNumber[0], m_trianglePointNumber[1], &hullLine) != DTM_SUCCESS)
                 return false;
             if (hullLine)
                 {
@@ -421,7 +470,7 @@ protected:
                     hullLineCount++;
                 }
 
-            if (bcdtmExtEdit_checkForLineOnHullLineDtmObject (m_dtm->GetTinHandle(), m_trianglePointNumber[1], m_trianglePointNumber[2], &hullLine) != DTM_SUCCESS)
+            if (bcdtmEdit_checkForLineOnHullLineDtmObject (m_dtm->GetTinHandle(), m_trianglePointNumber[1], m_trianglePointNumber[2], &hullLine) != DTM_SUCCESS)
                 return false;
             if (hullLine)
                 {
@@ -431,7 +480,7 @@ protected:
                     hullLineCount++;
                 }
 
-            if (bcdtmExtEdit_checkForLineOnHullLineDtmObject (m_dtm->GetTinHandle(), m_trianglePointNumber[2], m_trianglePointNumber[0], &hullLine) != DTM_SUCCESS)
+            if (bcdtmEdit_checkForLineOnHullLineDtmObject (m_dtm->GetTinHandle(), m_trianglePointNumber[2], m_trianglePointNumber[0], &hullLine) != DTM_SUCCESS)
                 return false;
             if (hullLine)
                 {
@@ -480,11 +529,11 @@ StatusInt BcDTMEdit::_SelectVertex (const DPoint3d& pt)
     long found,numPoints,editPnt2,editPnt3 ;
     DPoint3d  *pointsP = NULL ;
 
-    if( !bcdtmExtEdit_selectDtmEditFeatureDtmObject( m_dtm->GetTinHandle(), DTMFeatureType::TinPoint, cPt.x, cPt.y, &found, (DPoint3d**)&pointsP, &numPoints))
+    if( !bcdtmEdit_selectDtmEditFeatureDtmObject( m_dtm->GetTinHandle(), DTMFeatureType::TinPoint, cPt.x, cPt.y, &found, (DPoint3d**)&pointsP, &numPoints))
         {
         numPoints = 1;
         SetSelectedPoints(pointsP, numPoints);
-        bcdtmExtEdit_getDtmEditFeaturePoints(&m_pointNumber,&editPnt2,&editPnt3) ;
+        bcdtmEdit_getDtmEditFeaturePoints(&m_pointNumber,&editPnt2,&editPnt3) ;
         m_selectionState = Point;
         }
     else
@@ -507,10 +556,10 @@ StatusInt BcDTMEdit::_SelectLine (const DPoint3d& pt)
 
         m_selectionState = None;
 
-        if (!bcdtmExtEdit_selectDtmEditFeatureDtmObject( m_dtm->GetTinHandle(), DTMFeatureType::TinLine, cPt.x, cPt.y, &found, (DPoint3d**)&pointsP, &numPoints))
+        if (!bcdtmEdit_selectDtmEditFeatureDtmObject( m_dtm->GetTinHandle(), DTMFeatureType::TinLine, cPt.x, cPt.y, &found, (DPoint3d**)&pointsP, &numPoints))
             {
             SetSelectedPoints(pointsP, numPoints);
-            bcdtmExtEdit_getDtmEditFeaturePoints(&m_linePointNumber[0], &m_linePointNumber[1], &P3) ;
+            bcdtmEdit_getDtmEditFeaturePoints(&m_linePointNumber[0], &m_linePointNumber[1], &P3) ;
             m_selectionState = Line;
             }
         else
@@ -533,7 +582,7 @@ StatusInt BcDTMEdit::_SelectTriangle (DPoint3dCR pt)
 
     m_selectionState = None;
 
-    if (bcdtmExtEdit_selectDtmEditFeatureDtmObject (m_dtm->GetTinHandle(),DTMFeatureType::Triangle, cPt.x, cPt.y, &found, (DPoint3d**)&pointsP, &numPoints))
+    if (bcdtmEdit_selectDtmEditFeatureDtmObject (m_dtm->GetTinHandle(),DTMFeatureType::Triangle, cPt.x, cPt.y, &found, (DPoint3d**)&pointsP, &numPoints))
         {
         if (pointsP != NULL)
             free (pointsP);
@@ -541,7 +590,7 @@ StatusInt BcDTMEdit::_SelectTriangle (DPoint3dCR pt)
         }
 
     SetSelectedPoints (pointsP, numPoints, numPoints == 3);
-    bcdtmExtEdit_getDtmEditFeaturePoints (&m_trianglePointNumber[0], &m_trianglePointNumber[1], &m_trianglePointNumber[2]);
+    bcdtmEdit_getDtmEditFeaturePoints (&m_trianglePointNumber[0], &m_trianglePointNumber[1], &m_trianglePointNumber[2]);
     m_selectionState = Triangle;
 
      if (pointsP != NULL)
@@ -565,7 +614,7 @@ StatusInt BcDTMEdit::_SelectFeature (const DPoint3d& pt, bool first)
         {
         m_selectedFeatures.clear();
         m_selectedFeaturesIter = m_selectedFeatures.begin();
-        ret = bcdtmExtEdit_selectDtmEditLinearFeatureDtmObject(m_dtm->GetTinHandle(),cPt.x,cPt.y,snapTolerance,m_selectedFeatures) ;
+        ret = bcdtmEdit_selectDtmEditLinearFeatureDtmObject(m_dtm->GetTinHandle(),cPt.x,cPt.y,snapTolerance,m_selectedFeatures) ;
         if( ret ) return(ret) ;
         m_selectedFeaturesIter = m_selectedFeatures.begin();
         }
@@ -671,14 +720,14 @@ long Np;
 
 virtual StatusInt Revert (RefCountedPtr<BcDTM> dtm) override
     {
-    bcdtmExtEdit_removePointDtmObject (dtm->GetTinHandle(), Np, m_pointType, m_feature, P1, P2, P3);
+    bcdtmEdit_removePointDtmObject (dtm->GetTinHandle(), Np, (long)m_pointType, m_feature, P1, P2, P3);
     bcdtmTin_compactPointAndNodeTablesDtmObject (dtm->GetTinHandle());
     bcdtmList_setConvexHullDtmObject(dtm->GetTinHandle());
     return DTM_SUCCESS;
     }
 virtual StatusInt DrawDynamics (BcDTMEdit* edit, RefCountedPtr<BcDTM> dtm, DrawUserP* drawInfo) override
     {
-    bcdtmExtEdit_drawPointFeaturesDtmObject(dtm->GetTinHandle(), dtmLoad_bcToGeopakLoadFunction, 3, Np, edit->GetContourInterval(), drawInfo);
+    bcdtmEdit_drawPointFeaturesDtmObject(dtm->GetTinHandle(), dtmLoad_bcToGeopakLoadFunction, 3, Np, edit->GetContourInterval(), drawInfo);
     return DTM_SUCCESS;
     }
 }; // End BcDTMEdit::dynamicMod::AddVertex struct
@@ -691,13 +740,13 @@ DPoint3d originalPoint;
 
 virtual StatusInt Revert (RefCountedPtr<BcDTM> dtm) override
     {
-        bcdtmExtEdit_tempMoveVertexXYZDtmObject (dtm->GetTinHandle(), pointNumber, originalPoint.x, originalPoint.y, originalPoint.z) ;
+        bcdtmEdit_tempMoveVertexXYZDtmObject (dtm->GetTinHandle(), pointNumber, originalPoint.x, originalPoint.y, originalPoint.z) ;
     return DTM_SUCCESS;
     }
 
 virtual StatusInt DrawDynamics (BcDTMEdit* edit, RefCountedPtr<BcDTM> dtm, DrawUserP* drawInfo) override
     {
-    bcdtmExtEdit_drawPointFeaturesDtmObject(dtm->GetTinHandle(), dtmLoad_bcToGeopakLoadFunction, 3, pointNumber, edit->GetContourInterval(), drawInfo);
+    bcdtmEdit_drawPointFeaturesDtmObject(dtm->GetTinHandle(), dtmLoad_bcToGeopakLoadFunction, 3, pointNumber, edit->GetContourInterval(), drawInfo);
     return DTM_SUCCESS;
     }
 };
@@ -728,15 +777,15 @@ StatusInt BcDTMEdit::_AddVertex (DPoint3dCR pt, bool useZ)
 
     BC_DTM_OBJ* dtmP = m_dtm->GetTinHandle();
 
-    if (bcdtmExtEdit_dataPointDtmObject(dtmP, cPt.x, cPt.y, &z, reinterpret_cast<long*>(&tmp.m_pointType), &tmp.m_feature, &tmp.P1, &tmp.P2, &tmp.P3))
+    if (bcdtmEdit_dataPointDtmObject(dtmP, cPt.x, cPt.y, &z, reinterpret_cast<long*>(&tmp.m_pointType), &tmp.m_feature, &tmp.P1, &tmp.P2, &tmp.P3))
         return DTM_ERROR;
 
     if (useZ)
         cPt.z = z;
 
-    // ToDo: tmp.m_pointType == TM_POINT_TYPE_OnLine => tmp.P3 == dtmP->nullPnt
-    // probably tmp.m_pointType == TM_POINT_TYPE_CoincidentWithPoint => tmp.P2 == dtmP->nullPnt
-    if (tmp.m_pointType == TM_POINT_TYPE_CoincidentWithPoint)
+    // ToDo: tmp.m_pointType == TMPointType::OnLine => tmp.P3 == dtmP->nullPnt
+    // probably tmp.m_pointType == TMPointType::CoincidentWithPoint => tmp.P2 == dtmP->nullPnt
+    if (tmp.m_pointType == TMPointType::CoincidentWithPoint)
         return DTM_ERROR;
     if (bcdtmMath_distance(cPt.x,cPt.y,pointAddrP(dtmP, tmp.P1)->x,pointAddrP(dtmP, tmp.P1)->y) < dtmP->ppTol)
         return DTM_ERROR;
@@ -744,7 +793,7 @@ StatusInt BcDTMEdit::_AddVertex (DPoint3dCR pt, bool useZ)
         return DTM_ERROR;
     if (tmp.P3 != dtmP->nullPnt && bcdtmMath_distance(cPt.x,cPt.y,pointAddrP(dtmP, tmp.P3)->x,pointAddrP(dtmP, tmp.P3)->y) < dtmP->ppTol)
         return DTM_ERROR;
-    if (bcdtmExtEdit_insertPointDtmObject (dtmP, tmp.m_pointType, tmp.m_feature, m_inDynamics ? 0 : 1, tmp.P1, tmp.P2, tmp.P3, cPt.x, cPt.y,  cPt.z, &tmp.Np))
+    if (bcdtmEdit_insertPointDtmObject (dtmP, (long)tmp.m_pointType, tmp.m_feature, m_inDynamics ? 0 : 1, tmp.P1, tmp.P2, tmp.P3, cPt.x, cPt.y,  cPt.z, &tmp.Np))
         return DTM_ERROR;
 
     if (m_inDynamics)
@@ -772,7 +821,7 @@ StatusInt BcDTMEdit::_MoveVertex (const DPoint3d& pt, bool updateZ)
     if (!updateZ)
         cPt.z = m_selectedPoints[0].z;
 
-    bcdtmExtEdit_checkPointXYCanBeMovedDtmObject (m_dtm->GetTinHandle(), m_pointNumber,cPt.x,cPt.y,moveFlag) ;
+    bcdtmEdit_checkPointXYCanBeMovedDtmObject (m_dtm->GetTinHandle(), m_pointNumber,cPt.x,cPt.y,moveFlag) ;
 
     if (!moveFlag)
         return DTM_ERROR;
@@ -782,9 +831,9 @@ StatusInt BcDTMEdit::_MoveVertex (const DPoint3d& pt, bool updateZ)
 
 //       Move The Vertex To A New Point
 
-         if (bcdtmExtEdit_moveVertexXYZDtmObject (m_dtm->GetTinHandle(),0,m_pointNumber,cPt.x,cPt.y,cPt.z))
+         if (bcdtmEdit_moveVertexXYZDtmObject (m_dtm->GetTinHandle(),0,m_pointNumber,cPt.x,cPt.y,cPt.z))
             {
-             bcdtmExtEdit_tempMoveVertexXYZDtmObject (m_dtm->GetTinHandle(), m_pointNumber, m_selectedPoints[0].x, m_selectedPoints[0].y, m_selectedPoints[0].z) ;
+             bcdtmEdit_tempMoveVertexXYZDtmObject (m_dtm->GetTinHandle(), m_pointNumber, m_selectedPoints[0].x, m_selectedPoints[0].y, m_selectedPoints[0].z) ;
              return DTM_ERROR;
             }
 
@@ -797,7 +846,7 @@ StatusInt BcDTMEdit::_MoveVertex (const DPoint3d& pt, bool updateZ)
 
         }
     else
-        bcdtmExtEdit_tempMoveVertexXYZDtmObject (m_dtm->GetTinHandle(), m_pointNumber, cPt.x, cPt.y, cPt.z) ;
+        bcdtmEdit_tempMoveVertexXYZDtmObject (m_dtm->GetTinHandle(), m_pointNumber, cPt.x, cPt.y, cPt.z) ;
 
 
 
@@ -832,7 +881,7 @@ StatusInt BcDTMEdit::_DeleteTriangle (void)
     else
         {
         m_selectionState = None;
-        if (bcdtmExtEdit_deleteTriangleDtmObject(m_dtm->GetTinHandle(), m_trianglePointNumber[0], m_trianglePointNumber[1], m_trianglePointNumber[2]))
+        if (bcdtmEdit_deleteTriangleDtmObject(m_dtm->GetTinHandle(), m_trianglePointNumber[0], m_trianglePointNumber[1], m_trianglePointNumber[2]))
             return DTM_ERROR;
         }
     return DTM_SUCCESS;
@@ -855,7 +904,7 @@ StatusInt BcDTMEdit::_DeleteVertex ()
 
     m_selectionState = None;
 
-    if( bcdtmExtEdit_deletePointDtmObject (m_dtm->GetTinHandle(), m_pointNumber, 1))
+    if( bcdtmEdit_deletePointDtmObject (m_dtm->GetTinHandle(), m_pointNumber, 1))
         return DTM_ERROR;
 
     return DTM_SUCCESS;
@@ -878,7 +927,7 @@ StatusInt BcDTMEdit::_SwapLine ()
 
     long nP1, nP2;
     m_selectionState = None;
-    if (bcdtmExtEdit_deleteLineDtmObject (m_dtm->GetTinHandle(), 2 /*SwapLine*/, m_linePointNumber[0], m_linePointNumber[1], &nP1, &nP2))
+    if (bcdtmEdit_deleteLineDtmObject (m_dtm->GetTinHandle(), 2 /*SwapLine*/, m_linePointNumber[0], m_linePointNumber[1], &nP1, &nP2))
         return DTM_ERROR;
     return DTM_SUCCESS;
     }
@@ -901,7 +950,7 @@ StatusInt BcDTMEdit::_DeleteLine ()
 
     long nP1, nP2;
     m_selectionState = None;
-    if (bcdtmExtEdit_deleteLineDtmObject (m_dtm->GetTinHandle(), 1 /*DeleteLine*/, m_linePointNumber[0], m_linePointNumber[1], &nP1, &nP2))
+    if (bcdtmEdit_deleteLineDtmObject (m_dtm->GetTinHandle(), 1 /*DeleteLine*/, m_linePointNumber[0], m_linePointNumber[1], &nP1, &nP2))
         return DTM_ERROR;
     return DTM_SUCCESS;
     }
@@ -925,7 +974,7 @@ StatusInt BcDTMEdit::_DeleteFeature ()
     m_selectionState = None;
     m_selectedFeatures.clear();
     m_selectedFeaturesIter = m_selectedFeatures.begin();
-    if (bcdtmExtEdit_deleteLinearFeatureDtmObject (m_dtm->GetTinHandle(),m_selectedFeaturesIter->featureNumber, m_selectedFeaturesIter->featureType))
+    if (bcdtmEdit_deleteLinearFeatureDtmObject (m_dtm->GetTinHandle(),m_selectedFeaturesIter->featureNumber, m_selectedFeaturesIter->featureType))
         return DTM_ERROR;
     return DTM_SUCCESS;
     }
@@ -942,7 +991,7 @@ StatusInt BcDTMEdit::_DeleteTrianglesByLine()
         }
 
     // This is the old method we is much quicker but doesn't work as well and we need to stop at features.
-    //if (bcdtmExtEdit_deleteTrianglesOnDeleteLineDtmObject (m_dtm->GetTinHandle(), (DPoint3d*)(DPoint3d*)helper->copyPointsToDTM (pts, numPts), numPts))
+    //if (bcdtmEdit_deleteTrianglesOnDeleteLineDtmObject (m_dtm->GetTinHandle(), (DPoint3d*)(DPoint3d*)helper->copyPointsToDTM (pts, numPts), numPts))
     //    return DTM_ERROR;
     //m_selectionState = None;
     //if (m_selectionState != TrianglesByLine)
@@ -985,146 +1034,146 @@ StatusInt BcDTMEdit::_DeleteTrianglesByLine()
     }
 
 
-BCDTMEXT_EXPORT BcDTMEditPtr IBcDTMEdit::Make (BcDTMP dtm)
+BENTLEYDTM_EXPORT TMEditorPtr ITMEditor::Make (BcDTMP dtm)
     {
     return BcDTMEdit::Create(dtm);
     }
 
-BCDTMEXT_EXPORT StatusInt IBcDTMEdit::StartDynamics()
+BENTLEYDTM_EXPORT StatusInt ITMEditor::StartDynamics()
     {
     return _StartDynamics();
     }
 
-BCDTMEXT_EXPORT StatusInt IBcDTMEdit::EndDynamics()
+BENTLEYDTM_EXPORT StatusInt ITMEditor::EndDynamics()
     {
     return _EndDynamics();
     }
 
-BCDTMEXT_EXPORT StatusInt IBcDTMEdit::DrawDynamics (IBcDTMEditDrawer* drawer)
+BENTLEYDTM_EXPORT StatusInt ITMEditor::DrawDynamics (ITMEditorDrawer* drawer)
     {
     return _DrawDynamics (drawer);
     }
 
-BCDTMEXT_EXPORT StatusInt IBcDTMEdit::DrawSelection (IBcDTMEditDrawer* drawer)
+BENTLEYDTM_EXPORT StatusInt ITMEditor::DrawSelection (ITMEditorDrawer* drawer)
     {
     return _DrawSelection (drawer);
     }
 
-BCDTMEXT_EXPORT void IBcDTMEdit::ClearSelection ()
+BENTLEYDTM_EXPORT void ITMEditor::ClearSelection ()
     {
     return _ClearSelection();
     }
 
-BCDTMEXT_EXPORT StatusInt IBcDTMEdit::SelectVertex (const DPoint3d& pt)
+BENTLEYDTM_EXPORT StatusInt ITMEditor::SelectVertex (const DPoint3d& pt)
     {
     return _SelectVertex (pt);
     }
 
-BCDTMEXT_EXPORT StatusInt IBcDTMEdit::SelectLine (const DPoint3d& pt)
+BENTLEYDTM_EXPORT StatusInt ITMEditor::SelectLine (const DPoint3d& pt)
     {
     return _SelectLine (pt);
     }
 
-BCDTMEXT_EXPORT StatusInt IBcDTMEdit::SelectFeature (const DPoint3d& pt,bool first)
+BENTLEYDTM_EXPORT StatusInt ITMEditor::SelectFeature (const DPoint3d& pt,bool first)
     {
     return _SelectFeature (pt,first);
     }
 
-BCDTMEXT_EXPORT DTMFeatureType IBcDTMEdit::GetSelectedFeatureType ()
+BENTLEYDTM_EXPORT DTMFeatureType ITMEditor::GetSelectedFeatureType ()
     {
     return _GetSelectedFeatureType ();
     }
 
-BCDTMEXT_EXPORT StatusInt IBcDTMEdit::SelectTriangle (DPoint3dCR pt)
+BENTLEYDTM_EXPORT StatusInt ITMEditor::SelectTriangle (DPoint3dCR pt)
     {
     return _SelectTriangle (pt);
     }
 
-BCDTMEXT_EXPORT StatusInt IBcDTMEdit::SelectTrianglesByLine (const DPoint3d pts[], int numPts, bool stopAtFeatures)
+BENTLEYDTM_EXPORT StatusInt ITMEditor::SelectTrianglesByLine (const DPoint3d pts[], int numPts, bool stopAtFeatures)
     {
     return _SelectTrianglesByLine (pts, numPts, stopAtFeatures);
     }
 
-BCDTMEXT_EXPORT IBcDTMEdit::SelectionState IBcDTMEdit::GetSelectionState()
+BENTLEYDTM_EXPORT ITMEditor::SelectionState ITMEditor::GetSelectionState()
     {
     return _GetSelectionState();
     }
 
-BCDTMEXT_EXPORT StatusInt IBcDTMEdit::AddVertex (const DPoint3d& pt, bool useZ)
+BENTLEYDTM_EXPORT StatusInt ITMEditor::AddVertex (const DPoint3d& pt, bool useZ)
     {
     return _AddVertex (pt, useZ);
     }
 
-BCDTMEXT_EXPORT StatusInt IBcDTMEdit::MoveVertex (const DPoint3d& pt, bool updateZ)
+BENTLEYDTM_EXPORT StatusInt ITMEditor::MoveVertex (const DPoint3d& pt, bool updateZ)
     {
     return _MoveVertex (pt, updateZ);
     }
 
-BCDTMEXT_EXPORT StatusInt IBcDTMEdit::DeleteVertex ()
+BENTLEYDTM_EXPORT StatusInt ITMEditor::DeleteVertex ()
     {
     return _DeleteVertex ();
     }
 
-BCDTMEXT_EXPORT StatusInt IBcDTMEdit::SwapLine ()
+BENTLEYDTM_EXPORT StatusInt ITMEditor::SwapLine ()
     {
     return _SwapLine ();
     }
 
-BCDTMEXT_EXPORT StatusInt IBcDTMEdit::DeleteLine ()
+BENTLEYDTM_EXPORT StatusInt ITMEditor::DeleteLine ()
     {
     return _DeleteLine ();
     }
 
-BCDTMEXT_EXPORT StatusInt IBcDTMEdit::DeleteFeature ()
+BENTLEYDTM_EXPORT StatusInt ITMEditor::DeleteFeature ()
     {
     return _DeleteFeature ();
     }
 
-BCDTMEXT_EXPORT StatusInt IBcDTMEdit::DeleteTriangle()
+BENTLEYDTM_EXPORT StatusInt ITMEditor::DeleteTriangle()
     {
     return _DeleteTriangle();
     }
 
-BCDTMEXT_EXPORT StatusInt IBcDTMEdit::DeleteTrianglesByLine ()
+BENTLEYDTM_EXPORT StatusInt ITMEditor::DeleteTrianglesByLine ()
     {
     return _DeleteTrianglesByLine ();
     }
 
-BCDTMEXT_EXPORT bool IBcDTMEdit::CanDeleteVertex ()
+BENTLEYDTM_EXPORT bool ITMEditor::CanDeleteVertex ()
     {
     return _CanDeleteVertex ();
     }
 
-BCDTMEXT_EXPORT bool IBcDTMEdit::CanDeleteLine ()
+BENTLEYDTM_EXPORT bool ITMEditor::CanDeleteLine ()
     {
     return _CanDeleteLine ();
     }
 
-BCDTMEXT_EXPORT bool IBcDTMEdit::CanDeleteTriangle ()
+BENTLEYDTM_EXPORT bool ITMEditor::CanDeleteTriangle ()
     {
     return _CanDeleteTriangle();
     }
 
-BCDTMEXT_EXPORT bool IBcDTMEdit::CanSwapLine ()
+BENTLEYDTM_EXPORT bool ITMEditor::CanSwapLine ()
     {
     return _CanSwapLine ();
     }
 
-BCDTMEXT_EXPORT bool IBcDTMEdit::CanDeleteTrianglesByLine ()
+BENTLEYDTM_EXPORT bool ITMEditor::CanDeleteTrianglesByLine ()
     {
     return _CanDeleteTrianglesByLine ();
     }
 
 
-BCDTMEXT_EXPORT bool IBcDTMEdit::CanDeleteInternalTriangles()
+BENTLEYDTM_EXPORT bool ITMEditor::CanDeleteInternalTriangles()
     {
     return _CanDeleteInternalTriangles ();
     }
 
-BCDTMEXT_EXPORT void IBcDTMEdit::SetCanDeleteInternalTriangles (bool value)
+BENTLEYDTM_EXPORT void ITMEditor::SetCanDeleteInternalTriangles (bool value)
     {
     _SetCanDeleteInternalTriangles (value);
     }
 
 
-END_BENTLEY_CIVIL_TERRAINMODEL_NAMESPACE
+END_BENTLEY_TERRAINMODEL_NAMESPACE

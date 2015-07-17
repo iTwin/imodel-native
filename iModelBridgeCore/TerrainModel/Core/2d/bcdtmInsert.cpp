@@ -1225,8 +1225,8 @@ BENTLEYDTM_Public int bcdtmInsert_findClosestLineInterceptWithHullDtmObject(BC_D
  do
    {
     p2 = nodeAddrP(dtmP,p1)->hPtr ;
-	if( p1 != firstPnt && p2 != firstPnt )
-	  {
+    if( p1 != firstPnt && p2 != firstPnt )
+      {
        if( pointAddrP(dtmP,p1)->x <= pointAddrP(dtmP,p2)->x ) { xmin = pointAddrP(dtmP,p1)->x ; xmax = pointAddrP(dtmP,p2)->x ; }
        else                                                   { xmin = pointAddrP(dtmP,p2)->x ; xmax = pointAddrP(dtmP,p1)->x ; }
        if( pointAddrP(dtmP,p1)->y <= pointAddrP(dtmP,p2)->y ) { ymin = pointAddrP(dtmP,p1)->y ; ymax = pointAddrP(dtmP,p2)->y ; }
@@ -1236,22 +1236,22 @@ BENTLEYDTM_Public int bcdtmInsert_findClosestLineInterceptWithHullDtmObject(BC_D
           sd1 = bcdtmMath_sideOf(Xs,Ys,Xe,Ye,pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y) ;
           sd2 = bcdtmMath_sideOf(Xs,Ys,Xe,Ye,pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y) ;
           if( sd1 != sd2 )
-		    {
+            {
              sd1 = bcdtmMath_sideOf(pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,Xs,Ys) ;
              sd2 = bcdtmMath_sideOf(pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,Xe,Ye) ;
              if( sd1 != sd2 )
                {
                 bcdtmMath_normalIntersectCordLines(Xs,Ys,Xe,Ye,pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,&xc,&yc) ;
                 dist = bcdtmMath_distance(Xs,Ys,xc,yc) ;
-			    if( isw || dist < mindist  )
-			      {
+                if( isw || dist < mindist  )
+                  {
                    isw = 0 ;
-	               mindist = dist ;
-	               *p1P = p1 ; *p2P = p2 ;
+                   mindist = dist ;
+                   *p1P = p1 ; *p2P = p2 ;
                   }
                }
             }
-	     }
+         }
       }
     p1 = p2 ;
    } while ( p1 != dtmP->hullPoint ) ;
@@ -1961,7 +1961,7 @@ BENTLEYDTM_Public int bcdtmInsert_checkPointXYCanBeMovedDtmObject(BC_DTM_OBJ *dt
     clPtr = clistAddrP(dtmP,clPtr)->nextPtr ;
     if( nodeAddrP(dtmP,Point)->hPtr != p2 )
       {
-	   if( bcdtmMath_allPointSideOfDtmObject(dtmP,Point,p2,p3) >= 0 ) *moveFlagP = 0 ;
+       if( bcdtmMath_allPointSideOfDtmObject(dtmP,Point,p2,p3) >= 0 ) *moveFlagP = 0 ;
       }
     p2 = p3 ;
    }
@@ -2883,7 +2883,7 @@ BENTLEYDTM_Public int bcdtmInsert_addToFeatureTableDtmObject
 **  Set Feature Pointer And Number
 */
     dtmFeatureP        = ftableAddrP(dtmP,dtmP->numFeatures) ;
-	*newDtmFeatureNumP = dtmP->numFeatures ;
+    *newDtmFeatureNumP = dtmP->numFeatures ;
     ++dtmP->numFeatures ;
    }
 
@@ -3001,9 +3001,9 @@ BENTLEYDTM_Private int bcdtmInsert_addToFeatureListDtmObject
          lastFlPtr = nodeFptr ;
          while ( lastFlPtr != dtmP->nullPtr )
            {
-		    nodeFptr = lastFlPtr ;
-		    lastFlPtr = flistAddrP(dtmP,nodeFptr)->nextPtr ;
-		   }
+            nodeFptr = lastFlPtr ;
+            lastFlPtr = flistAddrP(dtmP,nodeFptr)->nextPtr ;
+           }
          flistAddrP(dtmP,nodeFptr)->nextPtr = flPtr ;
         }
 /*
@@ -3363,14 +3363,14 @@ BENTLEYDTM_Public int bcdtmInsert_removeZeroSlopeTrianglesAlongTptrListDtmObject
                   {
                    if( ! bcdtmList_testForDtmFeatureLineDtmObject(dtmP,sp,rp) )
                      {
-	                  if( bcdtmMath_pointSideOfDtmObject(dtmP,rpn,cp,rp) < 0  &&
-	                      bcdtmMath_pointSideOfDtmObject(dtmP,rpn,cp,sp) > 0   )
-				        {
+                      if( bcdtmMath_pointSideOfDtmObject(dtmP,rpn,cp,rp) < 0  &&
+                          bcdtmMath_pointSideOfDtmObject(dtmP,rpn,cp,sp) > 0   )
+                        {
                          ++numRight ;
-				         processPoint = 1 ;
+                         processPoint = 1 ;
                          if( dbg ) bcdtmWrite_message(0,0,0,"Deleting %6ld %6ld ** Inserting %6ld %6ld",sp,rp,cp,rpn) ;
-				         if( bcdtmList_deleteLineDtmObject(dtmP,sp,rp)) goto errexit ;
-				         if( bcdtmList_insertLineAfterPointDtmObject(dtmP,cp,rpn,rp)) goto errexit ;
+                         if( bcdtmList_deleteLineDtmObject(dtmP,sp,rp)) goto errexit ;
+                         if( bcdtmList_insertLineAfterPointDtmObject(dtmP,cp,rpn,rp)) goto errexit ;
                          if( bcdtmList_insertLineAfterPointDtmObject(dtmP,rpn,cp,sp)) goto errexit ;
                         }
                      }
@@ -3407,14 +3407,14 @@ BENTLEYDTM_Public int bcdtmInsert_removeZeroSlopeTrianglesAlongTptrListDtmObject
                   {
                    if( ! bcdtmList_testForDtmFeatureLineDtmObject(dtmP,sp,rp) )
                      {
-	                  if( bcdtmMath_pointSideOfDtmObject(dtmP,rpn,cp,rp) > 0  &&
-	                      bcdtmMath_pointSideOfDtmObject(dtmP,rpn,cp,sp) < 0   )
-				        {
+                      if( bcdtmMath_pointSideOfDtmObject(dtmP,rpn,cp,rp) > 0  &&
+                          bcdtmMath_pointSideOfDtmObject(dtmP,rpn,cp,sp) < 0   )
+                        {
                          ++numLeft ;
-				         processPoint = 1 ;
+                         processPoint = 1 ;
                          if( dbg ) bcdtmWrite_message(0,0,0,"Deleting %6ld %6ld ** Inserting %6ld %6ld",sp,rp,cp,rpn) ;
-				         if( bcdtmList_deleteLineDtmObject(dtmP,sp,rp)) goto errexit ;
-				         if( bcdtmList_insertLineAfterPointDtmObject(dtmP,cp,rpn,sp)) goto errexit ;
+                         if( bcdtmList_deleteLineDtmObject(dtmP,sp,rp)) goto errexit ;
+                         if( bcdtmList_insertLineAfterPointDtmObject(dtmP,cp,rpn,sp)) goto errexit ;
                          if( bcdtmList_insertLineAfterPointDtmObject(dtmP,rpn,cp,rp)) goto errexit ;
                         }
                      }
@@ -3471,6 +3471,7 @@ BENTLEYDTM_Public int bcdtmInsert_removeZeroSlopeTrianglesAlongTptrListDtmObject
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
+
 BENTLEYDTM_Public int bcdtmInsert_removeDtmFeatureFromDtmObject(BC_DTM_OBJ *dtmP,long dtmFeature)
 /*
 ** This Function Removes A DTM Feature From A Dtm Object
@@ -3490,7 +3491,7 @@ BENTLEYDTM_Public int bcdtmInsert_removeDtmFeatureFromDtmObject(BC_DTM_OBJ *dtmP
  if( dtmFeature < 0 || dtmFeature >= dtmP->numFeatures )
    {
     bcdtmWrite_message(2,0,0,"Dtm Feature Range Error") ;
-	goto errexit ;
+    goto errexit ;
    }
 /*
 ** Remove Feature Depending On Its State
@@ -3499,19 +3500,19 @@ BENTLEYDTM_Public int bcdtmInsert_removeDtmFeatureFromDtmObject(BC_DTM_OBJ *dtmP
  switch ( dtmFeatureP->dtmFeatureState )
    {
     case DTMFeatureState::Unused         :
-	break ;
+    break ;
 
     case DTMFeatureState::Data    :
     if( bcdtmInsert_removeFirstPointDtmDataFeatureFromDtmObject(dtmP,dtmFeature)) goto errexit ;
-	break ;
+    break ;
 
     case DTMFeatureState::PointsArray   :
     if( bcdtmInsert_removePointsArrayDtmDataFeatureFromDtmObject(dtmP,dtmFeature)) goto errexit ;
-	break ;
+    break ;
 
     case DTMFeatureState::OffsetsArray  :
     if( bcdtmInsert_removeOffsetsArrayDtmDataFeatureFromDtmObject(dtmP,dtmFeature)) goto errexit ;
-	break ;
+    break ;
 
     case DTMFeatureState::Tin            :
     if( bcdtmList_copyDtmFeatureToSptrListDtmObject(dtmP,dtmFeature,&firstPoint)) goto errexit ;
@@ -3526,7 +3527,7 @@ BENTLEYDTM_Public int bcdtmInsert_removeDtmFeatureFromDtmObject(BC_DTM_OBJ *dtmP
     if( bcdtmList_nullSptrListDtmObject(dtmP,firstPoint)) goto errexit ;
 
 
-	break ;
+    break ;
 
     case DTMFeatureState::TinError    :
       if( bcdtmList_copyDtmFeaturePointsToPointArrayDtmObject(dtmP,dtmFeature,&featurePtsP,&numFeaturePts)) goto errexit ;
@@ -3560,10 +3561,10 @@ BENTLEYDTM_Public int bcdtmInsert_removeDtmFeatureFromDtmObject(BC_DTM_OBJ *dtmP
          dtmFeatureP->dtmFeaturePts.pointsPI = 0 ;
         }
       dtmFeatureP->dtmFeatureState = DTMFeatureState::Deleted ;
-	break ;
+    break ;
 
     case DTMFeatureState::Deleted        :
-	break ;
+    break ;
 
   } ;
 /*
@@ -3636,7 +3637,7 @@ BENTLEYDTM_Public int bcdtmInsert_removeFirstPointDtmDataFeatureFromDtmObject (B
     if( dbg ) bcdtmWrite_message(0,0,0,"Marking Dtm Feature As Deleted") ;
     dtmFeatureP->dtmFeaturePts.firstPoint = dtmP->nullPnt ;
     dtmFeatureP->numDtmFeaturePts = 0 ;
-	dtmFeatureP->dtmFeatureState = DTMFeatureState::Deleted ;
+    dtmFeatureP->dtmFeatureState = DTMFeatureState::Deleted ;
 /*
 **  Reset Lower Feature First Points
 */
@@ -3702,7 +3703,7 @@ BENTLEYDTM_Public int bcdtmInsert_removePointsArrayDtmDataFeatureFromDtmObject(B
        dtmFeatureP->dtmFeaturePts.pointsPI = 0;
       }
     dtmFeatureP->numDtmFeaturePts = 0 ;
-	dtmFeatureP->dtmFeatureState = DTMFeatureState::Deleted ;
+    dtmFeatureP->dtmFeatureState = DTMFeatureState::Deleted ;
    }
 /*
 ** Clean Up
@@ -3726,7 +3727,7 @@ BENTLEYDTM_Public int bcdtmInsert_removePointsArrayDtmDataFeatureFromDtmObject(B
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmInsert_removeOffsetsArrayDtmDataFeatureFromDtmObject(BC_DTM_OBJ *dtmP,long dtmFeature)
+BENTLEYDTM_Public int bcdtmInsert_removeOffsetsArrayDtmDataFeatureFromDtmObject(BC_DTM_OBJ *dtmP,long dtmFeature)
 /*
 ** This Function Removes A DTM Feature From A DTM Object
 */
@@ -3757,7 +3758,7 @@ BENTLEYDTM_Private int bcdtmInsert_removeOffsetsArrayDtmDataFeatureFromDtmObject
        dtmFeatureP->dtmFeaturePts.pointsPI = 0;
       }
     dtmFeatureP->numDtmFeaturePts = 0 ;
-	dtmFeatureP->dtmFeatureState = DTMFeatureState::Deleted ;
+    dtmFeatureP->dtmFeatureState = DTMFeatureState::Deleted ;
    }
 /*
 ** Clean Up
@@ -3921,8 +3922,8 @@ else if( dtmFeatureP->dtmFeatureState == DTMFeatureState::Tin && dtmFeatureP->dt
 */
     if( dbg ) bcdtmWrite_message(0,0,0,"Marking Dtm Feature As Deleted") ;
     dtmFeatureP->dtmFeaturePts.firstPoint = dtmP->nullPnt ;
-	dtmFeatureP->dtmFeatureState = DTMFeatureState::Deleted ;
-	if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Feature Points Marked For Delete = %8ld of %8ld",numPtsMarked,dtmP->numPoints) ;
+    dtmFeatureP->dtmFeatureState = DTMFeatureState::Deleted ;
+    if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Feature Points Marked For Delete = %8ld of %8ld",numPtsMarked,dtmP->numPoints) ;
    }
 /*
 ** Check Dtm Feature End Points To Ensure Modified List Structure Is Correct
@@ -4359,30 +4360,30 @@ BENTLEYDTM_Public int  bcdtmInsert_storePointInDtmObject
     case  0 :      /* Point External To Tin             */
       if( internalPoint)
         {
-	     bcdtmWrite_message(1,0,0,"Point %12.4lf %12.4lf %10.4lf External To Tin",x,y,z) ;
-	     goto errexit ;
+         bcdtmWrite_message(1,0,0,"Point %12.4lf %12.4lf %10.4lf External To Tin",x,y,z) ;
+         goto errexit ;
         }
     break   ;
 
     case  1 :      /* Coincident With Existing Point     */
       dtmPoint = pnt1 ;
-	  pointAddrP(dtmP,dtmPoint)->z = z ;
+      pointAddrP(dtmP,dtmPoint)->z = z ;
     break   ;
 
     case  2 :      /* Coincident With Internal Tin Line  */
 
       bcdtmList_testForVoidLineDtmObject(dtmP,pnt1,pnt2,&voidPoint) ;
-	  if( (antPnt = bcdtmList_nextAntDtmObject(dtmP,pnt1,pnt2)) < 0 ) goto errexit ;
-	  if( (clkPnt = bcdtmList_nextClkDtmObject(dtmP,pnt1,pnt2)) < 0 ) goto errexit ;
-	  if(bcdtmList_deleteLineDtmObject(dtmP,pnt1,pnt2)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,pnt1,dtmPoint,antPnt)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPoint,pnt1,dtmP->nullPnt)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,pnt2,dtmPoint,clkPnt)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPoint,pnt2,pnt1)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,antPnt,dtmPoint,pnt2)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPoint,antPnt,pnt1)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,clkPnt,dtmPoint,pnt1)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPoint,clkPnt,pnt2)) goto errexit ;
+      if( (antPnt = bcdtmList_nextAntDtmObject(dtmP,pnt1,pnt2)) < 0 ) goto errexit ;
+      if( (clkPnt = bcdtmList_nextClkDtmObject(dtmP,pnt1,pnt2)) < 0 ) goto errexit ;
+      if(bcdtmList_deleteLineDtmObject(dtmP,pnt1,pnt2)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,pnt1,dtmPoint,antPnt)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPoint,pnt1,dtmP->nullPnt)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,pnt2,dtmPoint,clkPnt)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPoint,pnt2,pnt1)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,antPnt,dtmPoint,pnt2)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPoint,antPnt,pnt1)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,clkPnt,dtmPoint,pnt1)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPoint,clkPnt,pnt2)) goto errexit ;
       if(bcdtmList_testForDtmFeatureLineDtmObject(dtmP,pnt1,pnt2) )
          {
           if( bcdtmInsert_pointIntoAllDtmFeaturesDtmObject(dtmP,pnt1,pnt2,dtmPoint)) goto errexit ;
@@ -4391,35 +4392,35 @@ BENTLEYDTM_Public int  bcdtmInsert_storePointInDtmObject
 
     case  3 :      /* Coincident With External Tin Line  */
       bcdtmList_testForVoidLineDtmObject(dtmP,pnt1,pnt2,&voidPoint) ;
-	  if( (antPnt = bcdtmList_nextAntDtmObject(dtmP,pnt1,pnt2))   < 0 ) goto errexit ;
-	  if(bcdtmList_deleteLineDtmObject(dtmP,pnt1,pnt2)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,pnt1,dtmPoint,antPnt)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPoint,pnt1,dtmP->nullPnt)) goto errexit ;
-	  if(bcdtmList_insertLineBeforePointDtmObject(dtmP,pnt2,dtmPoint,antPnt)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPoint,pnt2,pnt1)) goto errexit ;
+      if( (antPnt = bcdtmList_nextAntDtmObject(dtmP,pnt1,pnt2))   < 0 ) goto errexit ;
+      if(bcdtmList_deleteLineDtmObject(dtmP,pnt1,pnt2)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,pnt1,dtmPoint,antPnt)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPoint,pnt1,dtmP->nullPnt)) goto errexit ;
+      if(bcdtmList_insertLineBeforePointDtmObject(dtmP,pnt2,dtmPoint,antPnt)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPoint,pnt2,pnt1)) goto errexit ;
       if(bcdtmList_insertLineAfterPointDtmObject(dtmP,antPnt,dtmPoint,pnt2)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPoint,antPnt,pnt1)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPoint,antPnt,pnt1)) goto errexit ;
       if(bcdtmList_testForDtmFeatureLineDtmObject(dtmP,pnt1,pnt2) )
         {
          if( bcdtmInsert_pointIntoAllDtmFeaturesDtmObject(dtmP,pnt1,pnt2,dtmPoint)) goto errexit ;
         }
-	  nodeAddrP(dtmP,pnt1)->hPtr = dtmPoint ;
-	  nodeAddrP(dtmP,dtmPoint)->hPtr = pnt2 ;
+      nodeAddrP(dtmP,pnt1)->hPtr = dtmPoint ;
+      nodeAddrP(dtmP,dtmPoint)->hPtr = pnt2 ;
     break ;
 
     case  4 :   /* In Triangle                      */
       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,pnt1,pnt2,pnt3,&voidPoint)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,pnt1,dtmPoint,pnt2)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPoint,pnt1,dtmP->nullPnt)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,pnt2,dtmPoint,pnt3)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPoint,pnt2,pnt1)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,pnt3,dtmPoint,pnt1)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPoint,pnt3,pnt2)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,pnt1,dtmPoint,pnt2)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPoint,pnt1,dtmP->nullPnt)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,pnt2,dtmPoint,pnt3)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPoint,pnt2,pnt1)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,pnt3,dtmPoint,pnt1)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPoint,pnt3,pnt2)) goto errexit ;
     break ;
 
-	default :
-	  bcdtmWrite_message(2,0,0,"Illegal Point Find Code %6ld ",findType) ;
-	  goto errexit ;
+    default :
+      bcdtmWrite_message(2,0,0,"Illegal Point Find Code %6ld ",findType) ;
+      goto errexit ;
     break   ;
    } ;
 /*
@@ -4470,9 +4471,9 @@ BENTLEYDTM_Public int bcdtmInsert_checkPointCanBeMovedDtmObject(BC_DTM_OBJ *dtmP
       {
        if( bcdtmMath_sideOf(pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,x,y) >= 0 )
          {
-		  *moveFlagP = 0  ;
-		  return(DTM_SUCCESS) ;
-		 }
+          *moveFlagP = 0  ;
+          return(DTM_SUCCESS) ;
+         }
       }
     p1 = p2 ;
    }
@@ -4480,9 +4481,9 @@ BENTLEYDTM_Public int bcdtmInsert_checkPointCanBeMovedDtmObject(BC_DTM_OBJ *dtmP
    {
     if( bcdtmMath_sideOf(pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,pointAddrP(dtmP,sp)->x,pointAddrP(dtmP,sp)->y,x,y) >= 0 )
       {
-	   *moveFlagP = 0  ;
-	   return(DTM_SUCCESS) ;
-	  }
+       *moveFlagP = 0  ;
+       return(DTM_SUCCESS) ;
+      }
    }
 /*
 ** Job Completed
@@ -5040,7 +5041,7 @@ BENTLEYDTM_Private int  bcdtmInsert_rubberBandTinPointsOnToInsertStringLinesDtmO
           if( dbg ) bcdtmWrite_message(0,0,0,"**** bkp = %2d fndType = %2ld ** np1 = %9ld np2 = %9ld np3 = %9ld",bkp,fndType,np1,np2,np3) ;
           if( dbg ) bcdtmWrite_message(0,0,0,"**** xi  = %12.4lf yi = %12.4lf",xi,yi) ;
           if( bkp == 0 )
-	        {
+            {
              if( fndType == 2 )
                {
                 if( bcdtmMath_distance(xi,yi,pointAddrP(dtmP,np1)->x,pointAddrP(dtmP,np1)->y) <= dtmP->ppTol )
@@ -5069,11 +5070,11 @@ BENTLEYDTM_Private int  bcdtmInsert_rubberBandTinPointsOnToInsertStringLinesDtmO
                      }
                   }
                }
-	         p1 = np1 ;
+             p1 = np1 ;
              p2 = np2 ;
              p3 = np3 ;
             }
-	     }
+         }
       }
    }
 /*
@@ -5331,10 +5332,10 @@ BENTLEYDTM_Private int  bcdtmInsert_buildStringHullPointsIntersectionTableDtmObj
        if( *intTablePP == NULL ) *intTablePP = ( DTM_STR_INT_TAB * ) malloc ( memIntTable * sizeof(DTM_STR_INT_TAB)) ;
        else                      *intTablePP = ( DTM_STR_INT_TAB * ) realloc ( *intTablePP,memIntTable * sizeof(DTM_STR_INT_TAB)) ;
        if( *intTablePP == NULL )
-	     {
-		  bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ;
-		  goto errexit ;
-		 }
+         {
+          bcdtmWrite_message(0,0,0,"Memory Allocation Failure") ;
+          goto errexit ;
+         }
       }
 /*
 **  Get Angles
@@ -6149,7 +6150,7 @@ BENTLEYDTM_Public int bcdtmInsert_colinearStringDtmObject(BC_DTM_OBJ *dtmP,DPoin
       {
        case  0 :      /* Point External To Tin              */
          bcdtmWrite_message(1,0,0,"Point External To Tin") ;
-	     goto errexit ;
+         goto errexit ;
        break   ;
 
        case  1 :      /* Coincident With Existing Point     */
@@ -6157,17 +6158,17 @@ BENTLEYDTM_Public int bcdtmInsert_colinearStringDtmObject(BC_DTM_OBJ *dtmP,DPoin
        break   ;
 
        case  2 :      /* Coincident With Internal Tin Line  */
-	     if( (p1 = bcdtmList_nextAntDtmObject(dtmP,pnt1,pnt2))   < 0 ) goto errexit ;
-	     if( (p2 = bcdtmList_nextClkDtmObject(dtmP,pnt1,pnt2)) < 0 ) goto errexit ;
-	     if(bcdtmList_deleteLineDtmObject(dtmP,pnt1,pnt2)) goto errexit ;
-	     if(bcdtmList_insertLineAfterPointDtmObject(dtmP,pnt1,newPnt,p1)) goto errexit ;
-	     if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,pnt1,dtmP->nullPnt)) goto errexit ;
-	     if(bcdtmList_insertLineAfterPointDtmObject(dtmP,pnt2,newPnt,p2)) goto errexit ;
-	     if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,pnt2,pnt1)) goto errexit ;
-	     if(bcdtmList_insertLineAfterPointDtmObject(dtmP,p1,newPnt,pnt2)) goto errexit ;
-	     if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,p1,pnt1)) goto errexit ;
-	     if(bcdtmList_insertLineAfterPointDtmObject(dtmP,p2,newPnt,pnt1)) goto errexit ;
-	     if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,p2,pnt2)) goto errexit ;
+         if( (p1 = bcdtmList_nextAntDtmObject(dtmP,pnt1,pnt2))   < 0 ) goto errexit ;
+         if( (p2 = bcdtmList_nextClkDtmObject(dtmP,pnt1,pnt2)) < 0 ) goto errexit ;
+         if(bcdtmList_deleteLineDtmObject(dtmP,pnt1,pnt2)) goto errexit ;
+         if(bcdtmList_insertLineAfterPointDtmObject(dtmP,pnt1,newPnt,p1)) goto errexit ;
+         if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,pnt1,dtmP->nullPnt)) goto errexit ;
+         if(bcdtmList_insertLineAfterPointDtmObject(dtmP,pnt2,newPnt,p2)) goto errexit ;
+         if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,pnt2,pnt1)) goto errexit ;
+         if(bcdtmList_insertLineAfterPointDtmObject(dtmP,p1,newPnt,pnt2)) goto errexit ;
+         if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,p1,pnt1)) goto errexit ;
+         if(bcdtmList_insertLineAfterPointDtmObject(dtmP,p2,newPnt,pnt1)) goto errexit ;
+         if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,p2,pnt2)) goto errexit ;
          if(bcdtmList_testForDtmFeatureLineDtmObject(dtmP,pnt1,pnt2) )
            {
             if( bcdtmInsert_pointIntoAllDtmFeaturesDtmObject(dtmP,pnt1,pnt2,newPnt)) goto errexit ;
@@ -6175,20 +6176,20 @@ BENTLEYDTM_Public int bcdtmInsert_colinearStringDtmObject(BC_DTM_OBJ *dtmP,DPoin
        break ;
 
        case  3 :      /* Coincident With External Tin Line  */
-	     if( (p1 = bcdtmList_nextAntDtmObject(dtmP,pnt1,pnt2))   < 0 ) goto errexit ;
-	     if(bcdtmList_deleteLineDtmObject(dtmP,pnt1,pnt2)) goto errexit ;
-	     if(bcdtmList_insertLineAfterPointDtmObject(dtmP,pnt1,newPnt,p1)) goto errexit ;
-	     if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,pnt1,dtmP->nullPnt)) goto errexit ;
-	     if(bcdtmList_insertLineBeforePointDtmObject(dtmP,pnt2,newPnt,p1)) goto errexit ;
-	     if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,pnt2,pnt1)) goto errexit ;
+         if( (p1 = bcdtmList_nextAntDtmObject(dtmP,pnt1,pnt2))   < 0 ) goto errexit ;
+         if(bcdtmList_deleteLineDtmObject(dtmP,pnt1,pnt2)) goto errexit ;
+         if(bcdtmList_insertLineAfterPointDtmObject(dtmP,pnt1,newPnt,p1)) goto errexit ;
+         if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,pnt1,dtmP->nullPnt)) goto errexit ;
+         if(bcdtmList_insertLineBeforePointDtmObject(dtmP,pnt2,newPnt,p1)) goto errexit ;
+         if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,pnt2,pnt1)) goto errexit ;
          if(bcdtmList_insertLineAfterPointDtmObject(dtmP,p1,newPnt,pnt2)) goto errexit ;
-	     if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,p1,pnt1)) goto errexit ;
+         if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newPnt,p1,pnt1)) goto errexit ;
          if(bcdtmList_testForDtmFeatureLineDtmObject(dtmP,pnt1,pnt2) )
            {
             if( bcdtmInsert_pointIntoAllDtmFeaturesDtmObject(dtmP,pnt1,pnt2,newPnt)) goto errexit ;
            }
-	     nodeAddrP(dtmP,pnt1)->hPtr   = newPnt ;
-	     nodeAddrP(dtmP,newPnt)->hPtr = pnt2 ;
+         nodeAddrP(dtmP,pnt1)->hPtr   = newPnt ;
+         nodeAddrP(dtmP,newPnt)->hPtr = pnt2 ;
        break ;
       } ;
    }
@@ -6715,29 +6716,29 @@ bcdtmWrite_message(0,0,0,"Internal Point External To Tin") ;
  switch ( pntType )
    {
     case  0 :      /* Point External To Tin             */
-	  bcdtmWrite_message(1,0,0,"Point %12.4lf %12.4lf %10.4lf External To Tin",x,y,z) ;
-	  goto errexit ;
+      bcdtmWrite_message(1,0,0,"Point %12.4lf %12.4lf %10.4lf External To Tin",x,y,z) ;
+      goto errexit ;
     break   ;
 
     case  1 :      /* Coincident With Existing Point     */
       newTinPnt = dtmPnt1 ;
-	  pointAddrP(dtmP,newTinPnt)->z = z ;
+      pointAddrP(dtmP,newTinPnt)->z = z ;
     break   ;
 
     case  2 :      /* Coincident With Internal Tin Line  */
 
       bcdtmList_testForVoidLineDtmObject(dtmP,dtmPnt1,dtmPnt2,&voidFlag) ;
-	  if( (antPnt = bcdtmList_nextAntDtmObject(dtmP,dtmPnt1,dtmPnt2))   < 0 ) goto errexit ;
-	  if( (clkPnt = bcdtmList_nextClkDtmObject(dtmP,dtmPnt1,dtmPnt2)) < 0 ) goto errexit ;
-	  if(bcdtmList_deleteLineDtmObject(dtmP,dtmPnt1,dtmPnt2)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt1,newTinPnt,antPnt)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newTinPnt,dtmPnt1,dtmP->nullPnt)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt2,newTinPnt,clkPnt)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newTinPnt,dtmPnt2,dtmPnt1)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,antPnt,newTinPnt,dtmPnt2)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newTinPnt,antPnt,dtmPnt1)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,clkPnt,newTinPnt,dtmPnt1)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newTinPnt,clkPnt,dtmPnt2)) goto errexit ;
+      if( (antPnt = bcdtmList_nextAntDtmObject(dtmP,dtmPnt1,dtmPnt2))   < 0 ) goto errexit ;
+      if( (clkPnt = bcdtmList_nextClkDtmObject(dtmP,dtmPnt1,dtmPnt2)) < 0 ) goto errexit ;
+      if(bcdtmList_deleteLineDtmObject(dtmP,dtmPnt1,dtmPnt2)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt1,newTinPnt,antPnt)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newTinPnt,dtmPnt1,dtmP->nullPnt)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt2,newTinPnt,clkPnt)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newTinPnt,dtmPnt2,dtmPnt1)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,antPnt,newTinPnt,dtmPnt2)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newTinPnt,antPnt,dtmPnt1)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,clkPnt,newTinPnt,dtmPnt1)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newTinPnt,clkPnt,dtmPnt2)) goto errexit ;
       if(bcdtmList_testForDtmFeatureLineDtmObject(dtmP,dtmPnt1,dtmPnt2) )
          {
           if( bcdtmInsert_pointIntoAllDtmFeaturesDtmObject(dtmP,dtmPnt1,dtmPnt2,newTinPnt)) goto errexit ;
@@ -6746,35 +6747,35 @@ bcdtmWrite_message(0,0,0,"Internal Point External To Tin") ;
 
     case  3 :      /* Coincident With External Tin Line  */
       bcdtmList_testForVoidLineDtmObject(dtmP,dtmPnt1,dtmPnt2,&voidFlag) ;
-	  if( (antPnt = bcdtmList_nextAntDtmObject(dtmP,dtmPnt1,dtmPnt2))   < 0 ) goto errexit ;
-	  if(bcdtmList_deleteLineDtmObject(dtmP,dtmPnt1,dtmPnt2)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt1,newTinPnt,antPnt)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newTinPnt,dtmPnt1,dtmP->nullPnt)) goto errexit ;
-	  if(bcdtmList_insertLineBeforePointDtmObject(dtmP,dtmPnt2,newTinPnt,antPnt)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newTinPnt,dtmPnt2,dtmPnt1)) goto errexit ;
+      if( (antPnt = bcdtmList_nextAntDtmObject(dtmP,dtmPnt1,dtmPnt2))   < 0 ) goto errexit ;
+      if(bcdtmList_deleteLineDtmObject(dtmP,dtmPnt1,dtmPnt2)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt1,newTinPnt,antPnt)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newTinPnt,dtmPnt1,dtmP->nullPnt)) goto errexit ;
+      if(bcdtmList_insertLineBeforePointDtmObject(dtmP,dtmPnt2,newTinPnt,antPnt)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newTinPnt,dtmPnt2,dtmPnt1)) goto errexit ;
       if(bcdtmList_insertLineAfterPointDtmObject(dtmP,antPnt,newTinPnt,dtmPnt2)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newTinPnt,antPnt,dtmPnt1)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newTinPnt,antPnt,dtmPnt1)) goto errexit ;
       if(bcdtmList_testForDtmFeatureLineDtmObject(dtmP,dtmPnt1,dtmPnt2) )
         {
          if( bcdtmInsert_pointIntoAllDtmFeaturesDtmObject(dtmP,dtmPnt1,dtmPnt2,newTinPnt)) goto errexit ;
         }
-	  nodeAddrP(dtmP,dtmPnt1)->hPtr = newTinPnt ;
-	  nodeAddrP(dtmP,newTinPnt)->hPtr = dtmPnt2 ;
+      nodeAddrP(dtmP,dtmPnt1)->hPtr = newTinPnt ;
+      nodeAddrP(dtmP,newTinPnt)->hPtr = dtmPnt2 ;
     break ;
 
     case  4 :   /* In Triangle                      */
       bcdtmList_testForVoidTriangleDtmObject(dtmP,dtmPnt1,dtmPnt2,dtmPnt3,&voidFlag) ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt1,newTinPnt,dtmPnt2)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newTinPnt,dtmPnt1,dtmP->nullPnt)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt2,newTinPnt,dtmPnt3)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newTinPnt,dtmPnt2,dtmPnt1)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt3,newTinPnt,dtmPnt1)) goto errexit ;
-	  if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newTinPnt,dtmPnt3,dtmPnt2)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt1,newTinPnt,dtmPnt2)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newTinPnt,dtmPnt1,dtmP->nullPnt)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt2,newTinPnt,dtmPnt3)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newTinPnt,dtmPnt2,dtmPnt1)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,dtmPnt3,newTinPnt,dtmPnt1)) goto errexit ;
+      if(bcdtmList_insertLineAfterPointDtmObject(dtmP,newTinPnt,dtmPnt3,dtmPnt2)) goto errexit ;
     break ;
 
-	default :
-	  bcdtmWrite_message(2,0,0,"Illegal Point Find Code %6ld",pntType) ;
-	  goto errexit ;
+    default :
+      bcdtmWrite_message(2,0,0,"Illegal Point Find Code %6ld",pntType) ;
+      goto errexit ;
     break   ;
    } ;
 /*
@@ -8154,10 +8155,10 @@ BENTLEYDTM_Private int bcdtmInsert_buildStringHullIntersectionTableDtmObject(BC_
        if( *intTablePP == NULL ) *intTablePP = ( DTM_STR_INT_TAB * ) malloc ( memIntTable * sizeof(DTM_STR_INT_TAB)) ;
        else                      *intTablePP = ( DTM_STR_INT_TAB * ) realloc ( *intTablePP,memIntTable * sizeof(DTM_STR_INT_TAB)) ;
        if( *intTablePP == NULL )
-	     {
-		  bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
+         {
+          bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
           goto errexit ;
-	     }
+         }
       }
 /*
 **  Store Hull Line
@@ -8194,10 +8195,10 @@ BENTLEYDTM_Private int bcdtmInsert_buildStringHullIntersectionTableDtmObject(BC_
        if( *intTablePP == NULL ) *intTablePP = ( DTM_STR_INT_TAB * ) malloc ( memIntTable * sizeof(DTM_STR_INT_TAB)) ;
        else                      *intTablePP = ( DTM_STR_INT_TAB * ) realloc ( *intTablePP,memIntTable * sizeof(DTM_STR_INT_TAB)) ;
        if( *intTablePP == NULL )
-	     {
-		  bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-		  goto errexit ;
-		 }
+         {
+          bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
+          goto errexit ;
+         }
       }
 /*
 **  Store String Line
@@ -8456,34 +8457,34 @@ BENTLEYDTM_Private int bcdtmInsert_findClosestHullLineDtmObject(BC_DTM_OBJ *dtmP
  do
    {
     p2 = nodeAddrP(dtmP,p1)->hPtr ;
-	if( bcdtmMath_sideOf(pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,x,y) < 0 )
-	  {
-	   d1 = bcdtmMath_distance(pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,x,y) ;
-	   d2 = bcdtmMath_distance(pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,x,y) ;
-	   d3 = bcdtmMath_distance((pointAddrP(dtmP,p1)->x+pointAddrP(dtmP,p2)->x) / 2.0,(pointAddrP(dtmP,p1)->y+pointAddrP(dtmP,p2)->y)/2.0,x,y) ;
+    if( bcdtmMath_sideOf(pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,x,y) < 0 )
+      {
+       d1 = bcdtmMath_distance(pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,x,y) ;
+       d2 = bcdtmMath_distance(pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,x,y) ;
+       d3 = bcdtmMath_distance((pointAddrP(dtmP,p1)->x+pointAddrP(dtmP,p2)->x) / 2.0,(pointAddrP(dtmP,p1)->y+pointAddrP(dtmP,p2)->y)/2.0,x,y) ;
        d4 = bcdtmMath_distanceOfPointFromLine(&onLine,pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,x,y,&Xn,&Yn) ;
-	   if( isw )
-	     {
-		  *hullPnt1P = p1 ;
-		  *hullPnt2P = p2 ;
+       if( isw )
+         {
+          *hullPnt1P = p1 ;
+          *hullPnt2P = p2 ;
           dn = d1 ;
-		  if( d2 < dn ) dn = d2 ;
-		  if( d3 < dn ) dn = d3 ;
+          if( d2 < dn ) dn = d2 ;
+          if( d3 < dn ) dn = d3 ;
           if( onLine && d4 < dn ) dn = d4 ;
-		  isw = 0 ;
-	     }
+          isw = 0 ;
+         }
        else
-	     {
-		  if( d1 < dn || d2 < dn || d3 < dn || ( onLine && d4 < dn ) )
-		    {
-		     *hullPnt1P = p1 ;
-			 *hullPnt2P = p2 ;
-		     if( d1 < dn ) dn = d1 ;
-		     if( d2 < dn ) dn = d2 ;
-		     if( d3 < dn ) dn = d3 ;
+         {
+          if( d1 < dn || d2 < dn || d3 < dn || ( onLine && d4 < dn ) )
+            {
+             *hullPnt1P = p1 ;
+             *hullPnt2P = p2 ;
+             if( d1 < dn ) dn = d1 ;
+             if( d2 < dn ) dn = d2 ;
+             if( d3 < dn ) dn = d3 ;
              if( onLine && d4 < dn ) dn = d4 ;
-			}
-		 }
+            }
+         }
       }
     p1 = p2 ;
    } while ( p1 != dtmP->hullPoint ) ;

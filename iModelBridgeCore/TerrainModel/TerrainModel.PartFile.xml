@@ -128,7 +128,6 @@
         <SubPart PartName="Formats" />
         <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest"/>
         <SubPart PartName="google_gtest"        PartFile="gtest"            Repository="util-gtest" />
-        <SubPart PartName="google_gtest_lib"    PartFile="gtest"            Repository="util-gtest" />
         <SubPart PartName="UnitTests_Published" PartFile="BentleyUnitTests" Repository="BentleyUnitTests"/>
    </Part>
 
@@ -152,7 +151,6 @@
 
         <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest"/>
         <SubPart PartName="google_gtest"        PartFile="gtest"            Repository="util-gtest" />
-        <SubPart PartName="google_gtest_lib"    PartFile="gtest"            Repository="util-gtest" />
         <SubPart PartName="UnitTests_Published" PartFile="BentleyUnitTests" Repository="BentleyUnitTests"/>
 
         <Bindings>

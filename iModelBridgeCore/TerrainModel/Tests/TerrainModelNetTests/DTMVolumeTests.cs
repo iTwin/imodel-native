@@ -51,7 +51,7 @@ namespace Bentley.TerrainModelNET.NUnit
 
             if (calcType == 1 || calcType == 2)
             {
-                Console.WriteLine("cut  = {0} fill = {1} balance = {2} area = {3}", volumeResult.CutVolume, volumeResult.FillVolume, volumeResult.BalanceVolume, volumeResult.AreaVolume);
+                Console.WriteLine("cut  = {0} fill = {1} balance = {2} area = {3}", volumeResult.CutVolume, volumeResult.FillVolume, volumeResult.BalanceVolume, volumeResult.Area);
             }
             if (calcType == 3)
             {
@@ -59,7 +59,7 @@ namespace Bentley.TerrainModelNET.NUnit
             }
             if (calcType == 4 || calcType == 5)
             {
-                Console.WriteLine("cut  = {0} fill = {1} balance = {2} area = {3} numCellsUsed = {4} cellArea = {5}", volumeResult.CutVolume, volumeResult.FillVolume, volumeResult.BalanceVolume, volumeResult.AreaVolume, volumeResult.NumCellsUsed, volumeResult.CellArea);
+                Console.WriteLine("cut  = {0} fill = {1} balance = {2} area = {3} numCellsUsed = {4} cellArea = {5}", volumeResult.CutVolume, volumeResult.FillVolume, volumeResult.BalanceVolume, volumeResult.Area, volumeResult.NumCellsUsed, volumeResult.CellArea);
             }
 
             //  Output Volume Polygons - Intersection Of Volume Boundary Polygon And Tin Hull(s)

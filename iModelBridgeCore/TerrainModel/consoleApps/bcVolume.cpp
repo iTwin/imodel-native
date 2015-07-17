@@ -53,7 +53,7 @@ int wmain(int argc, wchar_t *argv[])
 //  Calculate Volumes
 
  bcdtmWrite_message(0,0,0,"Calculating Surface To Surface Volume") ;
- if( bcdtmTinVolume_surfaceToSurfaceDtmObjects(fromDtmP,toDtmP,rangeTableP,numRanges,polygonPtsP,numPolygonPts,(DTMFeatureCallback) bcdtmVolume_callBackFunction,userP,&cut,&fill,&balance,&area)) goto errexit ;
+ if( bcdtmTinVolume_surfaceToSurfaceDtmObjects(fromDtmP,toDtmP,rangeTableP,numRanges,polygonPtsP,numPolygonPts,(DTMFeatureCallback) bcdtmVolume_callBackFunction,userP,cut,fill,balance,area)) goto errexit ;
  bcdtmWrite_message(0,0,0,"cut = %15.3lf fill = %15.3lf balance = %15.3lf area = %15.3lf",cut,fill,balance,area) ;
 
 // Clean Up

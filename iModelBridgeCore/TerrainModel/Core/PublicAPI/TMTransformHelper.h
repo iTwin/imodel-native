@@ -2,12 +2,13 @@
 |
 |     $Source: Core/PublicAPI/TMTransformHelper.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 
+#include "bcDTMClass.h"
 #include "dtmevars.h"
 BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 

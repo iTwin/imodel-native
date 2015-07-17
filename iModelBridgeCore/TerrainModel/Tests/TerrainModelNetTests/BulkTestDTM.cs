@@ -317,7 +317,7 @@ namespace Bentley.TerrainModelNET.NUnit
                 Console.WriteLine("Calculating Prismoidal Surface Volumes");
                 VolumeResult volumeResult = dtm.CalculatePrismoidalVolumeToSurface(dtm1, new VolumeCriteria());
                 DateTime dt2 = DateTime.Now;
-                Console.WriteLine("cut Volume  = {0} fill Volume = {1} areaVolume = {2}", volumeResult.CutVolume, volumeResult.FillVolume, volumeResult.AreaVolume);
+                Console.WriteLine("cut Volume  = {0} fill Volume = {1} areaVolume = {2}", volumeResult.CutVolume, volumeResult.FillVolume, volumeResult.Area);
 
                 // 
 

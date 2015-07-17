@@ -126,7 +126,7 @@ namespace Bentley.TerrainModelNET.NUnit
                 validationResult.numFeatures = dtm.CalculateFeatureStatistics ().FeaturesCount;
                 VolumeCriteria volumeCriteria = new VolumeCriteria();
                 VolumeResult volumeResult = dtm.CalculatePrismoidalVolumeToElevation(0.0, volumeCriteria);
-                validationResult.area = volumeResult.AreaVolume;
+                validationResult.area = volumeResult.Area;
                 validationResult.volume = volumeResult.BalanceVolume;
             }
             return (validationResult);
@@ -149,7 +149,7 @@ namespace Bentley.TerrainModelNET.NUnit
                 validationResult.numFeatures = dtm.CalculateFeatureStatistics ().FeaturesCount;
                 VolumeCriteria volumeCriteria = new VolumeCriteria();
                 VolumeResult volumeResult = dtm.CalculatePrismoidalVolumeToElevation(0.0, volumeCriteria);
-                validationResult.area = volumeResult.AreaVolume;
+                validationResult.area = volumeResult.Area;
                 validationResult.volume = volumeResult.BalanceVolume;
             }
             dtm.Dispose();

@@ -75,7 +75,7 @@ namespace Bentley.TerrainModelNET.NUnit
                 startPoint.X = sideSlopeAlignment[n].X;
                 startPoint.Y = sideSlopeAlignment[n].Y;
                 startPoint.Z = sideSlopeAlignment[n].Z;
-                dtmSideSlopeInput.AddRadialToSurface(startPoint, groundDTM, cutSlope, fillSlope);
+                dtmSideSlopeInput.AddRadialToSurface (startPoint, DTMSideSlopeRadialOption.Radial, DTMSideSlopeCutFillOption.CutAndFill, groundDTM, cutSlope, fillSlope);
             }
 
             // Calculate Side Slope DTMs
@@ -186,7 +186,7 @@ namespace Bentley.TerrainModelNET.NUnit
                 startPoint.X = sideSlopeAlignment[n].X;
                 startPoint.Y = sideSlopeAlignment[n].Y;
                 startPoint.Z = sideSlopeAlignment[n].Z;
-                dtmSideSlopeInput.AddRadialToElevation(startPoint,DTMSideSlopeRadialOption.Radial,cutSlope,fillSlope,startPoint.Z + 1.0);
+                dtmSideSlopeInput.AddRadialToElevation(startPoint,DTMSideSlopeRadialOption.Radial, DTMSideSlopeCutFillOption.CutAndFill,groundDTM,cutSlope,fillSlope,startPoint.Z + 1.0);
             }
 
             // Calculate Side Slope DTMs
@@ -295,7 +295,7 @@ namespace Bentley.TerrainModelNET.NUnit
                 startPoint.X = sideSlopeAlignment[n].X;
                 startPoint.Y = sideSlopeAlignment[n].Y;
                 startPoint.Z = sideSlopeAlignment[n].Z;
-                dtmSideSlopeInput.AddRadialToDeltaElevation(startPoint,DTMSideSlopeRadialOption.Radial,groundDTM, cutSlope, fillSlope,1.0);
+                dtmSideSlopeInput.AddRadialToDeltaElevation(startPoint,DTMSideSlopeRadialOption.Radial, DTMSideSlopeCutFillOption.CutAndFill,groundDTM, cutSlope,fillSlope, 1.0);
             }
 
             // Calculate Side Slope DTMs
@@ -433,7 +433,7 @@ namespace Bentley.TerrainModelNET.NUnit
                 startPoint.X = sideSlopeAlignment[n].X;
                 startPoint.Y = sideSlopeAlignment[n].Y;
                 startPoint.Z = sideSlopeAlignment[n].Z;
-                dtmSideSlopeInput.AddRadialToCutFillSurface(startPoint, groundDTM, DTMSideSlopeCutFillOption.FillOnly, cutSlope, fillSlope);
+                dtmSideSlopeInput.AddRadialToSurface (startPoint, DTMSideSlopeRadialOption.Radial, DTMSideSlopeCutFillOption.FillOnly, groundDTM, cutSlope, fillSlope); // was AddRadialToCutFillSurface
             }
 
             // Calculate Side Slope DTMs

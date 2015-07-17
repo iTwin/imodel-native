@@ -2,12 +2,13 @@
 |
 |     $Source: Core/2d/bcdtmStockPile.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
 #include "dtmevars.h"
 #include "bcdtminlines.h" 
+#include "bcdtmSideSlope.h"
 
 /*-----------------------------------------------------------+
 |                                                            |
@@ -186,7 +187,7 @@ BENTLEYDTM_Private int bcdtmStockPile_createPointStockPileToGroundSurfaceDtmObje
      angle = 0.0 ;
      for( n = 0 ; n < 10 ; ++n )
        {
-        if( dtmSideSlope_intersectSurfaceDtmObject(dtmP,headCoordinates.x,headCoordinates.y,headCoordinates.z,angle,-stockPileSlope,1,0.0,&surfacePoint[n].x,&surfacePoint[n].y,&surfacePoint[n].z,&startFlag,&endFlag)) goto errexit ;
+        if( bcdtmSideSlope_intersectSurfaceDtmObject(dtmP,headCoordinates.x,headCoordinates.y,headCoordinates.z,angle,-stockPileSlope,1,0.0,&surfacePoint[n].x,&surfacePoint[n].y,&surfacePoint[n].z,&startFlag,&endFlag)) goto errexit ;
         angle = angle + angleInc ;
        }
      length = 0.0 ;
@@ -236,7 +237,7 @@ BENTLEYDTM_Private int bcdtmStockPile_createPointStockPileToGroundSurfaceDtmObje
  radial[0].z = headCoordinates.z ;
  while( angle <= DTM_2PYE )
    {
-    if( dtmSideSlope_intersectSurfaceDtmObject(dtmP,radial[0].x,radial[0].y,radial[0].z,angle,-stockPileSlope,1,0.0,&radial[1].x,&radial[1].y,&radial[1].z,&startFlag,&endFlag)) goto errexit ;
+    if( bcdtmSideSlope_intersectSurfaceDtmObject(dtmP,radial[0].x,radial[0].y,radial[0].z,angle,-stockPileSlope,1,0.0,&radial[1].x,&radial[1].y,&radial[1].z,&startFlag,&endFlag)) goto errexit ;
     if( dbg == 2 )
       {
        bcdtmWrite_message(0,0,0,"angle = %12.10lf ** Ground = %12.5lf %12.5lf %10.4lf ** endFlag = %2ld",angle,radial[1].x,radial[1].y,radial[1].z,endFlag) ;
@@ -560,7 +561,7 @@ BENTLEYDTM_Private int bcdtmStockPile_createStringStockPileToGroundSurfaceDtmObj
 //  Create Stock Pile Side Slopes
 
  if( dbg ) bcdtmWrite_message(0,0,0,"Creating Side Slopes For Stock Pile") ;
- if( dtmSideSlope_createSideSlopesForSideSlopeTableDtmObject(&sideSlopeTableP,&sideSlopeTableSize,3,NULL,0,1,1,cornerStrokeTolerance,0.00001,NULL,0,DTM_NULL_USER_TAG,-10000,&dataObjectsPP,&numDataObjects) ) goto errexit ;
+ if( bcdtmSideSlope_createSideSlopesForSideSlopeTableDtmObject(&sideSlopeTableP,&sideSlopeTableSize,3,NULL,0,1,1,cornerStrokeTolerance,0.00001,NULL,0,DTM_NULL_USER_TAG,-10000,&dataObjectsPP,&numDataObjects) ) goto errexit ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Creating Side Slopes For Stock Pile Completed ** numDataObjects = %4ld",numDataObjects) ;
  *stockPileDtmPP = *dataObjectsPP ;
 
@@ -589,7 +590,7 @@ BENTLEYDTM_Private int bcdtmStockPile_createStringStockPileToGroundSurfaceDtmObj
  radial[0].z = headCoordinatesP[0].z ;
  while( angle < startAngle + DTM_2PYE / 2.0 )
    {
-    if( dtmSideSlope_intersectSurfaceDtmObject(dtmP,radial[0].x,radial[0].y,radial[0].z,angle,-stockPileSlope,1,0.0,&radial[1].x,&radial[1].y,&radial[1].z,&startFlag,&endFlag)) goto errexit ;
+    if( bcdtmSideSlope_intersectSurfaceDtmObject(dtmP,radial[0].x,radial[0].y,radial[0].z,angle,-stockPileSlope,1,0.0,&radial[1].x,&radial[1].y,&radial[1].z,&startFlag,&endFlag)) goto errexit ;
     if( dbg == 2 )
       {
        bcdtmWrite_message(0,0,0,"angle = %12.10lf ** Ground = %12.5lf %12.5lf %10.4lf ** endFlag = %2ld",angle,radial[1].x,radial[1].y,radial[1].z,endFlag) ;
@@ -599,7 +600,7 @@ BENTLEYDTM_Private int bcdtmStockPile_createStringStockPileToGroundSurfaceDtmObj
     angle = angle + angleInc ;
    }
  angle = startAngle + DTM_2PYE / 2.0 ;
- if( dtmSideSlope_intersectSurfaceDtmObject(dtmP,radial[0].x,radial[0].y,radial[0].z,angle,-stockPileSlope,1,0.0,&radial[1].x,&radial[1].y,&radial[1].z,&startFlag,&endFlag)) goto errexit ;
+ if( bcdtmSideSlope_intersectSurfaceDtmObject(dtmP,radial[0].x,radial[0].y,radial[0].z,angle,-stockPileSlope,1,0.0,&radial[1].x,&radial[1].y,&radial[1].z,&startFlag,&endFlag)) goto errexit ;
  slopeToePoints.push_back(radial[1]) ;
 
 // Append Slope Toes To DTM
@@ -628,7 +629,7 @@ BENTLEYDTM_Private int bcdtmStockPile_createStringStockPileToGroundSurfaceDtmObj
  radial[0].z = headCoordinatesP[numHeadCoordinates-1].z ;
  while( angle < startAngle + DTM_2PYE / 2.0 )
    {
-    if( dtmSideSlope_intersectSurfaceDtmObject(dtmP,radial[0].x,radial[0].y,radial[0].z,angle,-stockPileSlope,1,0.0,&radial[1].x,&radial[1].y,&radial[1].z,&startFlag,&endFlag)) goto errexit ;
+    if( bcdtmSideSlope_intersectSurfaceDtmObject(dtmP,radial[0].x,radial[0].y,radial[0].z,angle,-stockPileSlope,1,0.0,&radial[1].x,&radial[1].y,&radial[1].z,&startFlag,&endFlag)) goto errexit ;
     if( dbg == 2 )
       {
        bcdtmWrite_message(0,0,0,"angle = %12.10lf ** Ground = %12.5lf %12.5lf %10.4lf ** endFlag = %2ld",angle,radial[1].x,radial[1].y,radial[1].z,endFlag) ;
@@ -638,7 +639,7 @@ BENTLEYDTM_Private int bcdtmStockPile_createStringStockPileToGroundSurfaceDtmObj
     angle = angle + angleInc ;
    }
  angle = startAngle + DTM_2PYE / 2.0 ;
- if( dtmSideSlope_intersectSurfaceDtmObject(dtmP,radial[0].x,radial[0].y,radial[0].z,angle,-stockPileSlope,1,0.0,&radial[1].x,&radial[1].y,&radial[1].z,&startFlag,&endFlag)) goto errexit ;
+ if( bcdtmSideSlope_intersectSurfaceDtmObject(dtmP,radial[0].x,radial[0].y,radial[0].z,angle,-stockPileSlope,1,0.0,&radial[1].x,&radial[1].y,&radial[1].z,&startFlag,&endFlag)) goto errexit ;
  slopeToePoints.push_back(radial[1]) ;
 
 // Append Slope Toes To DTM

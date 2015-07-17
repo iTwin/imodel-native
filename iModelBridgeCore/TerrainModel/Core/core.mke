@@ -2,7 +2,7 @@
 #
 #     $Source: Core/core.mke $
 #
-#   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -23,6 +23,7 @@ $(TerrainModelCoreAPISrc)bcDTMBaseDef.h \
 $(TerrainModelCoreAPISrc)bcDTMClass.h \
 $(TerrainModelCoreAPISrc)TMTransformHelper.h \
 $(TerrainModelCoreAPISrc)DTMIterators.h \
+$(TerrainModelCoreAPISrc)TMEditor.h \
 $(baseDir)CPPWrappers\bcDTMImpl.h
 
 DependsOnHeaders = \
@@ -62,6 +63,8 @@ MultiCompileDepends=$(_MakeFileSpec)
 $(o)dtmIterators$(oext) : $(baseDir)CPPWrappers\dtmIterators.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
 $(o)DTM$(oext) : $(baseDir)CPPWrappers\DTM.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)TMEditor$(oext) : $(baseDir)CPPWrappers\TMEditor.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
 $(o)bcDTMStream$(oext) : $(baseDir)2d\bcDTMStream.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
