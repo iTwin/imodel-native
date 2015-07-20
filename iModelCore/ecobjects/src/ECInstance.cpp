@@ -2158,11 +2158,11 @@ ECObjectsStatus                 IECInstance::_GetDisplayLabel (WString& displayL
         ECN::ECValue ecValue;
         if (ECOBJECTS_STATUS_Success == GetValue (ecValue, propertyName.c_str()) && !ecValue.IsNull())
             {
-            if (ecValue.ConvertToPrimitiveType (PRIMITIVETYPE_String) && !WString::IsNullOrEmpty (ecValue.GetString()))
-                {
-                displayLabel = ecValue.GetString();
+            auto prop = GetClass().GetPropertyP (propertyName.c_str());
+            auto adapter = nullptr != prop ? prop->GetTypeAdapter() : nullptr;
+            auto context = nullptr != adapter ? IECTypeAdapterContext::Create (*prop, *this, propertyName.c_str()) : nullptr;
+            if (context.IsValid() && adapter->ConvertToString (displayLabel, ecValue, *context))
                 return ECOBJECTS_STATUS_Success;
-                }
             }
         }
 
@@ -2189,12 +2189,13 @@ ECObjectsStatus                 IECInstance::_SetDisplayLabel (WCharCP displayLa
         return ECOBJECTS_STATUS_Error;
 
     ECN::ECValue ecValue;
-    ecValue.SetString (displayLabel, false);
+    auto prop = GetClass().GetPropertyP (propertyName.c_str());
+    auto adapter = nullptr != prop ? prop->GetTypeAdapter() : nullptr;
+    auto context = nullptr != adapter ? IECTypeAdapterContext::Create (*prop, *this, propertyName.c_str()) : nullptr;
+    if (context.IsNull() || !adapter->ConvertFromString (ecValue, displayLabel, *context))
+        return ECOBJECTS_STATUS_Error;
 
-    if (ECOBJECTS_STATUS_Success == SetValue (propertyName.c_str(), ecValue))
-        return ECOBJECTS_STATUS_Success;
-
-    return  ECOBJECTS_STATUS_Error;
+    return SetValue (propertyName.c_str(), ecValue);
     }
 
 /*---------------------------------------------------------------------------------**//**
