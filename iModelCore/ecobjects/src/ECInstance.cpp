@@ -2160,9 +2160,22 @@ ECObjectsStatus                 IECInstance::_GetDisplayLabel (WString& displayL
             {
             auto prop = GetClass().GetPropertyP (propertyName.c_str());
             auto adapter = nullptr != prop ? prop->GetTypeAdapter() : nullptr;
-            auto context = nullptr != adapter ? IECTypeAdapterContext::Create (*prop, *this, propertyName.c_str()) : nullptr;
-            if (context.IsValid() && adapter->ConvertToString (displayLabel, ecValue, *context))
-                return ECOBJECTS_STATUS_Success;
+            if (nullptr == adapter)
+                {
+                // Preserve old behavior of converting directly to string, because ECObjects.dll doesn't know how to use type adapters...
+                if (ecValue.ConvertToPrimitiveType (PRIMITIVETYPE_String) && !WString::IsNullOrEmpty (ecValue.GetString()))
+                    {
+                    displayLabel = ecValue.GetString();
+                    return ECOBJECTS_STATUS_Success;
+                    }
+                }
+            else
+                {
+                // TFS#244646: Use type adapters to do conversion
+                auto context = nullptr != adapter ? IECTypeAdapterContext::Create (*prop, *this, propertyName.c_str()) : nullptr;
+                if (context.IsValid() && adapter->ConvertToString (displayLabel, ecValue, *context))
+                    return ECOBJECTS_STATUS_Success;
+                }
             }
         }
 
@@ -2191,9 +2204,18 @@ ECObjectsStatus                 IECInstance::_SetDisplayLabel (WCharCP displayLa
     ECN::ECValue ecValue;
     auto prop = GetClass().GetPropertyP (propertyName.c_str());
     auto adapter = nullptr != prop ? prop->GetTypeAdapter() : nullptr;
-    auto context = nullptr != adapter ? IECTypeAdapterContext::Create (*prop, *this, propertyName.c_str()) : nullptr;
-    if (context.IsNull() || !adapter->ConvertFromString (ecValue, displayLabel, *context))
-        return ECOBJECTS_STATUS_Error;
+    if (nullptr == adapter)
+        {
+        // Preserve old behavior of converting directly to string, because ECObjects.dll doesn't know how to use type adapters...
+        ecValue.SetString (displayLabel, false);
+        }
+    else
+        {
+        // TFS#244646: Use type adapters to do conversion
+        auto context = nullptr != adapter ? IECTypeAdapterContext::Create (*prop, *this, propertyName.c_str()) : nullptr;
+        if (context.IsNull() || !adapter->ConvertFromString (ecValue, displayLabel, *context))
+            return ECOBJECTS_STATUS_Error;
+        }
 
     return SetValue (propertyName.c_str(), ecValue);
     }
