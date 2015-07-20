@@ -362,8 +362,7 @@ struct ECDbSchemaPersistence
         static                bool ContainsECSchemaWithId(ECDbCR, ECSchemaId);
         static          ECSchemaId GetECSchemaId(ECDbCR, Utf8CP schemaName);
         static          ECSchemaId GetECSchemaId(ECDbCR, ECSchemaCR);
-        static           ECClassId GetECClassIdBySchemaNameSpacePrefix(ECDbCR, Utf8CP schemaName, Utf8CP className);
-        static           ECClassId GetECClassIdBySchemaName(ECDbCR, Utf8CP schemaName, Utf8CP className);
+        static           ECClassId GetECClassId(ECDbCR, Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema);
         static        ECPropertyId GetECPropertyId(ECDbCR, Utf8CP schemaName, Utf8CP className, Utf8CP propertyName);
 
         static  BentleyStatus InitializeSystemTables(ECDbCR);

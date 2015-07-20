@@ -64,7 +64,7 @@ void ECSqlParseContext::PopFinalizeParseArg ()
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlStatus ECSqlParseContext::TryResolveClass (shared_ptr<ClassNameExp::Info>& classNameExpInfo, Utf8StringCR schemaNameOrPrefix, Utf8StringCR className) 
     {
-    ECClassCP resolvedClass = m_ecdb.Schemas ().GetECClass (schemaNameOrPrefix.c_str (), className.c_str (), ECDbSchemaManager::ResolveSchema::AutoDetect);
+    ECClassCP resolvedClass = m_ecdb.Schemas ().GetECClass (schemaNameOrPrefix.c_str (), className.c_str (), ResolveSchema::AutoDetect);
 
     if (resolvedClass == nullptr)
         {

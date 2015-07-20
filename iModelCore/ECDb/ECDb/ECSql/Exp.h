@@ -299,7 +299,7 @@ public:
         for(auto& propertyName : propertyNames)
             resolvedPropertyPath.Push(propertyName);
 
-        auto targetClass = ecdb.Schemas().GetECClass(schemaName.c_str (), className.c_str (), ECDbSchemaManager::ResolveSchema::AutoDetect);
+        auto targetClass = ecdb.Schemas().GetECClass(schemaName.c_str (), className.c_str (), ResolveSchema::AutoDetect);
         if (!targetClass)
             {
             BeAssert(false && "Failed to find ECClass");

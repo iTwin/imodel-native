@@ -777,9 +777,8 @@ bool ECDbSchemaPersistence::ContainsECClass(ECDbCR db, ECClassCR ecClass)
     if (ecClass.HasId()) //This is unsafe but since we donot delete ecclass any class that hasId does exist in db
         return true;
 
-    const ECClassId classId = GetECClassIdBySchemaName(db,
-                                            Utf8String(ecClass.GetSchema().GetName().c_str()).c_str(),
-                                            Utf8String(ecClass.GetName().c_str()).c_str());
+    const ECClassId classId = GetECClassId(db, Utf8String(ecClass.GetSchema().GetName().c_str()).c_str(),
+                                            Utf8String(ecClass.GetName().c_str()).c_str(), ResolveSchema::BySchemaName);
 
     return classId != 0ULL;
     }
@@ -1088,36 +1087,36 @@ bool ECDbSchemaPersistence::IsECSchemaMapped(bool* schemaNotFound, ECN::ECSchema
 // @bsimethod                                                    Casey.Mullen      01/2013
 //---------------------------------------------------------------------------------------
 //static
-ECClassId ECDbSchemaPersistence::GetECClassIdBySchemaName(ECDbCR db, Utf8CP schemaName, Utf8CP className)
+ECClassId ECDbSchemaPersistence::GetECClassId(ECDbCR db, Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema resolveSchema)
     {
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT c.Id FROM ec_Class c JOIN ec_Schema s WHERE c.SchemaId = s.Id AND s.Name = ? AND c.Name = ?"))
-        return 0LL;
+    Utf8CP sql = nullptr;
+    switch (resolveSchema)
+        {
+            case ResolveSchema::BySchemaName:
+                sql = "SELECT c.Id FROM ec_Class c JOIN ec_Schema s WHERE c.SchemaId = s.Id AND s.Name = ? AND c.Name = ?";
+                break;
 
-    stmt->BindText (1, schemaName, Statement::MakeCopy::No);
+            case ResolveSchema::BySchemaNamespacePrefix:
+                sql = "SELECT c.Id FROM ec_Class c JOIN ec_Schema s WHERE c.SchemaId = s.Id AND s.NamespacePrefix = ? AND c.Name = ?";
+                break;
+
+            default:
+                sql = "SELECT c.Id FROM ec_Class c JOIN ec_Schema s WHERE c.SchemaId = s.Id AND (s.Name = ?1 OR s.NamespacePrefix = ?1) AND c.Name = ?2";
+                break;
+        }
+
+    CachedStatementPtr stmt = nullptr;
+    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, sql))
+        return -1LL;
+
+    stmt->BindText(1, schemaNameOrPrefix, Statement::MakeCopy::No);
     stmt->BindText (2, className, Statement::MakeCopy::No);
     if (BE_SQLITE_ROW != stmt->Step())
-        return 0LL;
+        return -1LL;
 
     return stmt->GetValueInt64 (0);
     }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                          muhammad.zaighum          10/2014
-//---------------------------------------------------------------------------------------
-//static
-ECClassId ECDbSchemaPersistence::GetECClassIdBySchemaNameSpacePrefix(ECDbCR db, Utf8CP schemaName, Utf8CP className)
-    {
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT c.Id FROM ec_Class c JOIN ec_Schema s WHERE c.SchemaId = s.Id AND s.NamespacePrefix = ? AND c.Name = ?"))
-        return 0LL;
 
-    stmt->BindText(1, schemaName, Statement::MakeCopy::No);
-    stmt->BindText(2, className, Statement::MakeCopy::No);
-    if (BE_SQLITE_ROW != stmt->Step())
-        return 0LL;
-
-    return stmt->GetValueInt64(0);
-    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      05/2013
 //---------------------------------------------------------------------------------------

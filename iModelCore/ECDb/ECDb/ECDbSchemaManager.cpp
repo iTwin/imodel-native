@@ -426,7 +426,19 @@ bool ECDbSchemaManager::ContainsECSchema (Utf8CP schemaName)  const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCP ECDbSchemaManager::GetECClass (ECClassId ecClassId) const
+ECClassCP ECDbSchemaManager::GetECClass (Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema resolveSchema) const // WIP_FNV: probably stays the same... though I expected this to look in memory, first
+    {
+    ECClassId id = -1LL;
+    if (!TryGetECClassId(id, schemaNameOrPrefix, className, resolveSchema))
+        return nullptr;
+
+    return GetECClass(id);
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        06/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECClassCP ECDbSchemaManager::GetECClass(ECClassId ecClassId) const
     {
     return m_ecReader->GetECClass(ecClassId);
     }
@@ -434,34 +446,10 @@ ECClassCP ECDbSchemaManager::GetECClass (ECClassId ecClassId) const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCP ECDbSchemaManager::GetECClass (Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema resolveSchema) const // WIP_FNV: probably stays the same... though I expected this to look in memory, first
+bool ECDbSchemaManager::TryGetECClassId(ECClassId& id, Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema resolveSchema) const // WIP_FNV: probably stays the same... though I expected this to look in memory, first
     {
-    switch (resolveSchema)
-        {
-        case ResolveSchema::AutoDetect:
-            return m_ecReader->GetECClass (schemaNameOrPrefix, className);
-        case ResolveSchema::BySchemaName:
-            {
-            ECClassP ecClass = nullptr;
-            if (m_ecReader->GetECClassBySchemaName(ecClass, schemaNameOrPrefix, className) == SUCCESS)
-                return ecClass;
-            else
-                return nullptr;
-            }
-        case ResolveSchema::BySchemaNamespacePrefix:
-            {
-            ECClassP ecClass = nullptr;
-            if (m_ecReader->GetECClassBySchemaNameSpacePrefix(ecClass, schemaNameOrPrefix, className) == SUCCESS)
-                return ecClass;
-            else
-                return nullptr;
-            }
-        default:
-            return nullptr;
-        }
-
+    return m_ecReader->TryGetECClassId(id, schemaNameOrPrefix, className, resolveSchema);
     }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                       12/13
@@ -626,14 +614,16 @@ ECClassCP ECDbSchemaManager::_LocateClass (WCharCP schemaName, WCharCP className
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      05/2013
 //---------------------------------------------------------------------------------------
+//static
 ECClassId ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema (ECDbCR db, ECClassCR ecClass)
     {
     Utf8String schemaName(ecClass.GetSchema().GetName().c_str());
     Utf8String className(ecClass.GetName().c_str());
    
-    ECClassId ecClassId = ECDbSchemaPersistence::GetECClassIdBySchemaName(db, schemaName.c_str(), className.c_str());
-    const_cast<ECClassR>(ecClass).SetId(ecClassId);
-    return ecClassId;
+    ECClassId id = -1LL;
+    db.Schemas().TryGetECClassId(id, schemaName.c_str(), className.c_str(), ResolveSchema::BySchemaName);
+    const_cast<ECClassR>(ecClass).SetId(id);
+    return id;
     }
 
 //---------------------------------------------------------------------------------------

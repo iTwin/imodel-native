@@ -52,12 +52,11 @@ public:
     BentleyStatus         FindECSchemaIdInDb(ECSchemaId& ecSchemaId, Utf8CP schemaName) const;
     BentleyStatus         GetECSchema(ECSchemaP& ecSchemaOut, ECSchemaId ecSchemaId, bool loadClasses);
     ECClassP              GetECClass (ECClassId ecClassId);
-    ECClassP              GetECClass (Utf8CP schemaNameOrPrefix, Utf8CP className);
 
-    BentleyStatus         GetECClass(/*OUT*/ECClassP& ecClass, ECClassId ecClassId);
-    BentleyStatus         GetECClassBySchemaName(/*OUT*/ ECClassP& ecClass, Utf8CP schemaName, Utf8CP className);
-    BentleyStatus         GetECClassBySchemaNameSpacePrefix(/*OUT*/ ECClassP& ecClass, Utf8CP schemaName, Utf8CP className);
     BentleyStatus         GetECClass(/*OUT*/ ECClassP& ecClass, Utf8CP qualifiedName); //schema:classname
+
+    bool                  TryGetECClassId(ECN::ECClassId& id, Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema) const;
+
     // Get the names of the class for given schema from database
     // add a existing in memory schema into cache and build key maps for schema and classes.
     void                       AddECSchemaToCache                      (ECSchemaCR schema);

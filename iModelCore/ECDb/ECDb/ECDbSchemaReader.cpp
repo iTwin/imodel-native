@@ -57,9 +57,9 @@ void ECDbSchemaReader::AddECSchemaToCacheInternal (ECSchemaCR schema)
             DbECClassEntry* classKey    = new DbECClassEntry();
             if (!ecClass->HasId())
                 const_cast<ECClassP>(ecClass)->SetId (
-                    ECDbSchemaPersistence::GetECClassIdBySchemaName(m_db, 
+                    ECDbSchemaPersistence::GetECClassId(m_db, 
                         Utf8String(ecClass->GetSchema().GetName()).c_str(),
-                        Utf8String(ecClass->GetName()).c_str()));
+                        Utf8String(ecClass->GetName()).c_str(), ResolveSchema::BySchemaName));
             classKey->m_ecClassId       = ecClass->GetId();
             classKey->m_ecSchemaId      = ecSchemaId;
             classKey->m_className.Assign (ecClass->GetName().c_str());
@@ -77,6 +77,12 @@ void ECDbSchemaReader::AddECSchemaToCacheInternal (ECSchemaCR schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaReader::ReadECClass(ECClassP& ecClass, ECClassId ecClassId)
     {
+    if (ecClassId < 0ULL)
+        {
+        ecClass = nullptr;
+        return ERROR;
+        }
+
     BeMutexHolder lock (m_criticalSection);
 
     DbECClassEntry* key = nullptr;
@@ -683,22 +689,19 @@ ECClassP ECDbSchemaReader::GetECClass(ECClassId ecClassId)
 
     return nullptr;
     }
-ECClassP ECDbSchemaReader::GetECClass (Utf8CP schemaNameOrPrefix, Utf8CP className)
-    {
-    CachedStatementPtr stmt = nullptr;
-    m_db.GetCachedStatement(stmt, "SELECT c.Id FROM ec_Class c JOIN ec_Schema s WHERE c.SchemaId = s.Id AND (s.Name = ?1 OR s.NamespacePrefix = ?1) AND c.Name = ?2");
-    stmt->BindText (1, schemaNameOrPrefix, Statement::MakeCopy::No);
-    stmt->BindText (2, className, Statement::MakeCopy::No);
-    if (BE_SQLITE_ROW != stmt->Step())
-        return nullptr;
-
-    return GetECClass(stmt->GetValueInt64(0));
-    }
 
 /*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        05/2012
+* @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaReader::GetECClass(ECClassP& ecClass, ECClassId ecClassId) { return ReadECClass (ecClass, ecClassId); }
+bool ECDbSchemaReader::TryGetECClassId(ECClassId& id, Utf8CP schemaName, Utf8CP className, ResolveSchema resolveSchema) const
+    {
+    ECClassId ecClassId = ECDbSchemaPersistence::GetECClassId(m_db, schemaName, className, resolveSchema); // needswork: if this is a performance issue, try to look it up in-memory, first
+    if (ecClassId < 0ULL)
+        return false;
+
+    id = ecClassId;
+    return true;
+    }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
@@ -719,24 +722,6 @@ void ECDbSchemaReader::ClearCache ()
     m_cache.Clear ();
     }
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        06/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaReader::GetECClassBySchemaName(ECClassP& ecClass, Utf8CP schemaName, Utf8CP className)
-    {
-    ECClassId ecClassId = ECDbSchemaPersistence::GetECClassIdBySchemaName(m_db, schemaName, className); // needswork: if this is a performance issue, try to look it up in-memory, first
-    return GetECClass (ecClass, ecClassId);
-    }
-
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        06/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaReader::GetECClassBySchemaNameSpacePrefix(ECClassP& ecClass, Utf8CP schemaName, Utf8CP className)
-    {
-    ECClassId ecClassId = ECDbSchemaPersistence::GetECClassIdBySchemaNameSpacePrefix(m_db, schemaName, className); // needswork: if this is a performance issue, try to look it up in-memory, first
-    return GetECClass(ecClass, ecClassId);
-    }
 
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
