@@ -778,20 +778,23 @@ BentleyStatus       LsComponentReader::_LoadDefinition ()
     switch ((LsComponentType)m_componentType)
         {
         case LsComponentType::LineCode:
-            LsStrokePatternComponent::CreateRscFromDgnDb ((V10LineCode**)&m_rsc, m_dgndb, m_source->GetComponentId(), false);
+            LsStrokePatternComponent::CreateRscFromDgnDb ((V10LineCode**)&m_rsc, m_dgndb, m_source->GetComponentId());
             break;
 
         case LsComponentType::Compound:
-            LsCompoundComponent::CreateRscFromDgnDb ((V10Compound**)&m_rsc, m_dgndb, m_source->GetComponentId(), false);
+            LsCompoundComponent::CreateRscFromDgnDb ((V10Compound**)&m_rsc, m_dgndb, m_source->GetComponentId());
             break;
 
         case LsComponentType::LinePoint:
-            LsPointComponent::CreateRscFromDgnDb ((V10LinePoint**)&m_rsc, m_dgndb, m_source->GetComponentId(), false);
+            LsPointComponent::CreateRscFromDgnDb ((V10LinePoint**)&m_rsc, m_dgndb, m_source->GetComponentId());
             break;
 
         case LsComponentType::PointSymbol:
-        //  case LS_ELEMENT_POINTSYMBOLV7:
-            LsSymbolComponent::CreateRscFromDgnDb ((V10Symbol**)&m_rsc, m_dgndb, m_source->GetComponentId(), false);
+            LsSymbolComponent::CreateRscFromDgnDb ((V10Symbol**)&m_rsc, m_dgndb, m_source->GetComponentId());
+            break;
+
+        case LsComponentType::RasterImage:
+            LsRasterImageComponent::CreateRscFromDgnDb ((V10RasterImage**)&m_rsc, m_dgndb, m_source->GetComponentId());
             break;
 
         case LsComponentType::Internal:

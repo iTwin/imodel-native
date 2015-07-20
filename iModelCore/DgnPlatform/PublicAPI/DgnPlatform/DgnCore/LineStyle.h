@@ -487,45 +487,46 @@ public:
 // @bsiclass                                                      Ray.Bentley    02/2015
 //=======================================================================================
 struct           LsRasterImageComponent : LsComponent
-{
-
-    enum
+    {
+    enum FlagMask
         {
         FlagMask_AlphaChannel     = 0x0003,
         FlagMask_AlphaOnly        = 0x0001 << 2,
         FlagMask_AlphaInvert      = 0x0001 << 3,
         FlagMask_TrueWidth        = 0x0001 << 4,
-        } FlagMask;
+        };
 
-                        static LsRasterImageComponent* LoadRasterImage  (LsComponentReader* reader);
+//__PUBLISH_SECTION_END__
+private:
+    Point2d             m_size;
+    uint32_t            m_flags;
+    double              m_trueWidth;
+    bvector<uint8_t>    m_image;
+
+    LsRasterImageComponent   (LsLocationCP pLocation);
+    LsRasterImageComponent (V10RasterImage* rasterImageResource, LsLocationCP location);
 
     DGNPLATFORM_EXPORT static LsRasterImageComponentPtr Create (BeFileNameCR fileName);
                        static LsRasterImageComponentPtr Create (LsLocation const& location) { LsRasterImageComponentP retVal = new LsRasterImageComponent (&location); retVal->m_isDirty = true; return retVal; }
 
-
-    //  virtual StatusInt       _SaveToResourceFile () override;
+protected:
     virtual BentleyStatus   _GetRasterTexture (uint8_t const*& image, Point2dR imageSize, uint32_t& flags) const override;
     virtual BentleyStatus   _GetRasterTextureWidth (double& width) const override;
     virtual bool            _HasWidth () const override  { return 0 != (m_flags & FlagMask_TrueWidth); }
     virtual double          _GetMaxWidth (DgnModelP modelRef) const override  { return _HasWidth() ? m_trueWidth : 0.0; }
 
-    uint32_t      GetWidth() const              { return m_size.x; }
-    uint32_t      GetHeight() const             { return m_size.y; }
-    uint8_t const* GetImage() const             { return &m_image.front(); }
-    size_t      GetImageBufferSize () const     { return 4 * m_size.x * m_size.y; }
+public:
+    static LsRasterImageComponent* LoadRasterImage  (LsComponentReader* reader);
+    static BentleyStatus CreateRscFromDgnDb(V10RasterImage** rscOut, DgnDbR project, LsComponentId id);
 
+    uint32_t        GetFlags() const            { return m_flags; }
+    uint32_t        GetWidth() const            { return m_size.x; }
+    uint32_t        GetHeight() const           { return m_size.y; }
+    uint8_t const*  GetImage() const            { return &m_image.front(); }
+    size_t          GetImageBufferSize () const { return 4 * m_size.x * m_size.y; }
 
-    //  DGNPLATFORM_EXPORT  static void SaveToResource (V10RasterImage* resource, uint32_t width, uint32_t height, uint32_t flags, double trueWidth, uint8_t const* imageData, size_t imageDataSize);
-
-private:
-    Point2d             m_size;
-    uint32_t            m_flags;
-    double              m_trueWidth;
-    bvector<uint8_t>       m_image;
-
-    LsRasterImageComponent   (LsLocationCP pLocation);
-    LsRasterImageComponent (V10RasterImage* rasterImageResource, LsLocationCP location);
-
+//__PUBLISH_SECTION_START__
+public:
 
 };  // LsRasterImageComponent
 
@@ -583,7 +584,7 @@ public:
     StatusInt           _DoStroke           (ViewContextP, DPoint3dCP, int, LineStyleSymbCP) const override;
     BentleyStatus       CreateFromComponent (LsPointSymbolComponentCP lpsComp);
 
-    static BentleyStatus CreateRscFromDgnDb(V10Symbol** rscOut, DgnDbR project, LsComponentId id, bool useRscComponentTypes);
+    static BentleyStatus CreateRscFromDgnDb(V10Symbol** rscOut, DgnDbR project, LsComponentId id);
 
 //__PUBLISH_SECTION_START__
 public:
@@ -747,7 +748,7 @@ public:
     static LsCompoundComponentPtr Create (LsLocation& location) { LsCompoundComponentP retval = new LsCompoundComponent (&location); retval->m_isDirty = true; return retval; }
     void            CalculateSize                       (DgnModelP modelRef);
 
-    static BentleyStatus CreateRscFromDgnDb(V10Compound** rscOut, DgnDbR project, LsComponentId id, bool useRscComponentTypes);
+    static BentleyStatus CreateRscFromDgnDb(V10Compound** rscOut, DgnDbR project, LsComponentId id);
 
     virtual void    _PostProcessLoad            (DgnModelP modelRef) override;
     virtual void    _ClearPostProcess           () override;
@@ -976,7 +977,7 @@ public:
     static LsStrokePatternComponentP  LoadStrokePatternComponent    (LsComponentReader*reader);
     static LsStrokePatternComponentPtr Create                       (LsLocation& location) { LsStrokePatternComponentP retval = new LsStrokePatternComponent (&location); retval->m_isDirty = true; return retval; };
     BentleyStatus   CreateFromRsrc          (V10LineCode const* pRsc);
-    static BentleyStatus   CreateRscFromDgnDb      (V10LineCode** rsc, DgnDbR project, LsComponentId id, bool useRscComponentTypes);
+    static BentleyStatus   CreateRscFromDgnDb      (V10LineCode** rsc, DgnDbR project, LsComponentId id);
 
     BentleyStatus   PostCreate              ();
 
@@ -1100,7 +1101,7 @@ public:
     void                            Free                    (bool    sub);
     bool                            HasStrokeSymbol         () const;
 
-    static BentleyStatus   CreateRscFromDgnDb(V10LinePoint** rscOut, DgnDbR project, LsComponentId id, bool useRscComponentTypes);
+    static BentleyStatus   CreateRscFromDgnDb(V10LinePoint** rscOut, DgnDbR project, LsComponentId id);
 
 //__PUBLISH_SECTION_START__
 public:
