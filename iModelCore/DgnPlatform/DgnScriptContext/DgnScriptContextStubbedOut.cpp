@@ -50,3 +50,11 @@ DgnScriptContextR DgnPlatformLib::Host::ScriptingAdmin::GetDgnScriptContext()
     BeAssert(false);
     return *m_dgnContext;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   BentleySystems
+//---------------------------------------------------------------------------------------
+DgnDbStatus DgnPlatformLib::Host::ScriptingAdmin::_FetchJavaScript(Utf8StringR jsProgramText, DgnDbR db, Utf8CP jsProgramName)
+    {
+    return DgnDbStatus::NotEnabled;
+    }

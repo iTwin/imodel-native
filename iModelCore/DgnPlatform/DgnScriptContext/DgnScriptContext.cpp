@@ -6,9 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#ifndef BENTLEYCONFIG_OS_WINRT
 #include <BeJavaScript/BeJavaScript.h>
-#endif
 #include <DgnPlatform/DgnCore/DgnScriptContext.h>
 #include <Bentley/BeFileListIterator.h>
 #include <ECObjects/ECObjectsAPI.h>
@@ -18,8 +16,6 @@
 #define DEBUG_JS_GC
 
 extern Utf8CP dgnJavaDgnScriptContextImpl_GetBootstrappingSource();
-
-#ifndef BENTLEYCONFIG_OS_WINRT
 
 BEJAVASCRIPT_EMIT_CUSTOM_TYPESCRIPT_DECLARATION ("export declare class BeJsNativePointer {}")
 
@@ -616,58 +612,3 @@ DgnDbStatus DgnPlatformLib::Host::ScriptingAdmin::_FetchJavaScript(Utf8StringR j
     DgnJavaScriptLibrary jslib(db);
     return jslib.QueryJavaScript(jsProgramText, jsProgramName);
     }
-
-#else
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                      07/15
-//---------------------------------------------------------------------------------------
-DgnDbStatus DgnScriptContext::ExecuteJavaScriptEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms)
-    {
-    return DgnDbStatus::NotEnabled;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                      07/15
-//---------------------------------------------------------------------------------------
-DgnPlatformLib::Host::ScriptingAdmin::ScriptingAdmin()
-    {
-    m_jsenv = nullptr;
-    m_dgnContext = nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                      07/15
-//---------------------------------------------------------------------------------------
-DgnPlatformLib::Host::ScriptingAdmin::~ScriptingAdmin()
-    {
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                      07/15
-//---------------------------------------------------------------------------------------
-BeJsEnvironmentR DgnPlatformLib::Host::ScriptingAdmin::GetBeJsEnvironment()
-    {
-    BeAssert(false);
-    return *m_jsenv;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                      07/15
-//---------------------------------------------------------------------------------------
-DgnScriptContextR DgnPlatformLib::Host::ScriptingAdmin::GetDgnScriptContext()
-    {
-    BeAssert(false);
-    return *m_dgnContext;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   BentleySystems
-//---------------------------------------------------------------------------------------
-DgnDbStatus DgnPlatformLib::Host::ScriptingAdmin::_FetchJavaScript(Utf8StringR jsProgramText, DgnDbR db, Utf8CP jsProgramName)
-    {
-    return DgnDbStatus::NotEnabled;
-    }
-
-
-#endif
