@@ -62,6 +62,8 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+struct DgnDomains;
+
 /** @addtogroup DgnDomainGroup
 
 A "Domain" is a combination of an ECSchema, plus a set of C++ classes that implement its runtime behavior.
@@ -86,6 +88,8 @@ called DgnDomains, which is accessed through the method DgnDb::Domains().
 The DgnDomain for the base "dgn" schema is is called DgnSchemaDomain. It is always loaded and it registers all of its DgnDomain::Handlers.
 
 */
+
+struct DgnDomains;
 
 //=======================================================================================
 //! A DgnDomain is a singleton C++ object that provides the runtime implementation for an ECSchema.

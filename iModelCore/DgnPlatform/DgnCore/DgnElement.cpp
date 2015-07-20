@@ -673,6 +673,49 @@ QvElem* GeometricElement::GetQvElem(uint32_t id) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Brien.Bastings                  07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementPtr DgnElement::_Clone(DgnDbStatus* stat, DgnElement::CreateParams const* params) const
+    {
+    // Perform input params validation. Code must be different and element id should be invalid...
+    if (nullptr != params)
+        {
+        if (params->m_id.IsValid())
+            {
+            if (nullptr != stat)
+                *stat = DgnDbStatus::InvalidId;
+
+            return nullptr;
+            }
+            
+        if (nullptr != params->m_code && 0 == strcmp(params->m_code, GetCode()))
+            {
+            if (nullptr != stat)
+                *stat = DgnDbStatus::InvalidName;
+
+            return nullptr;
+            }
+        }
+
+    DgnElementPtr cloneElem = GetElementHandler().Create(nullptr != params ? *params : DgnElement::CreateParams(GetDgnDb(), GetModelId(), GetElementClassId(), GetCategoryId(), nullptr, nullptr, DgnElementId()));
+
+    if (!cloneElem.IsValid())
+        {
+        if (nullptr != stat)
+            *stat = DgnDbStatus::BadRequest;
+
+        return nullptr;
+        }
+
+    cloneElem->_CopyFrom(*this);
+
+    if (nullptr != stat)
+        *stat = DgnDbStatus::Success;
+
+    return cloneElem;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::_CopyFrom(DgnElementCR other)
