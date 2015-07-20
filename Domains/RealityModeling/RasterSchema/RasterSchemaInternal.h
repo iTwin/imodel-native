@@ -47,6 +47,10 @@
 #include <Imagepp/all/h/HRFPageFile.h>
 #include <Imagepp/all/h/HRFPageFileFactory.h>
 #include <Imagepp/all/h/HRFRasterFilePageDecorator.h>
+#include <Imagepp/all/h/HRFiTiffCacheFileCreator.h>
+#include <Imagepp/all/h/HRFRasterFileResBooster.h>
+#include <Imagepp/all/h/HRFRasterFileCache.h>
+#include <Imagepp/all/h/HRFUtility.h>
 
 #include <RasterSchema/RasterSchemaTypes.h>
 #include <RasterSchema/RasterSchemaCommon.h>

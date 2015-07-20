@@ -80,14 +80,8 @@ HRAStoredRaster* RasterFile::GetStoredRasterP()
     if(NULL != m_storedRasterPtr)
         return m_storedRasterPtr.GetPtr();
 
-    // load raster file in memory in a single chunk
-    if (!HRFRasterFileBlockAdapter::CanAdapt(m_HRFRasterFilePtr, HRFBlockType::IMAGE, HRF_EQUAL_TO_RESOLUTION_WIDTH, HRF_EQUAL_TO_RESOLUTION_HEIGHT) &&
-        GetPageDescriptor()->GetResolutionDescriptor(0)->GetBlockType() != HRFBlockType::IMAGE) //Make sure we don't try to adapt something we don't have to adapt
-        return nullptr;
-
-    HFCPtr<HRFRasterFile> pAdaptedRasterFile(new HRFRasterFileBlockAdapter(m_HRFRasterFilePtr, HRFBlockType::IMAGE, HRF_EQUAL_TO_RESOLUTION_WIDTH, HRF_EQUAL_TO_RESOLUTION_HEIGHT));
-    HFCPtr<HGF2DCoordSys> pLogical = GetWorldClusterP()->GetCoordSysReference(pAdaptedRasterFile->GetWorldIdentificator());
-    HFCPtr<HRSObjectStore> pStore = new HRSObjectStore (GetMemoryPool(), pAdaptedRasterFile, 0/*page*/, pLogical);
+    HFCPtr<HGF2DCoordSys> pLogical = GetWorldClusterP()->GetCoordSysReference(m_HRFRasterFilePtr->GetWorldIdentificator());
+    HFCPtr<HRSObjectStore> pStore = new HRSObjectStore (GetMemoryPool(), m_HRFRasterFilePtr, 0/*page*/, pLogical);
 
     // Specify we do not want to use the file's clip shapes if any. Maybe we'll need to support the native clips some day...
     pStore->SetUseClipShape(false);
@@ -247,8 +241,7 @@ DMatrix4d RasterFile::GetPhysicalToLowerLeft() const
 DMatrix4d RasterFile::GetGeoTransform()
     {
     // Retrieve the logical CS associated to the world of the raster
-    HFCPtr<HRFRasterFile> pAdaptedRasterFile(new HRFRasterFileBlockAdapter(m_HRFRasterFilePtr, HRFBlockType::IMAGE, HRF_EQUAL_TO_RESOLUTION_WIDTH, HRF_EQUAL_TO_RESOLUTION_HEIGHT));
-    HFCPtr<HGF2DCoordSys> pLogical = GetWorldClusterP()->GetCoordSysReference(pAdaptedRasterFile->GetWorldIdentificator());
+    HFCPtr<HGF2DCoordSys> pLogical = GetWorldClusterP()->GetCoordSysReference(m_HRFRasterFilePtr->GetWorldIdentificator());
 
     if (GetPageDescriptor()->HasTransfoModel())
         {
@@ -355,15 +348,7 @@ HFCPtr<HRFRasterFile> RasterFile::OpenRasterFile(Utf8StringCR resolvedName)
         if (rasterFile == 0)
             return rasterFile;
 
-        // Take care of sister file. Until requirements prove that wrong, always use sister file for georeference.
-        bool useSisterFileOfGeoreferencedFile = true;
-        const HRFPageFileCreator (* pPageFileCreator)(HRFPageFileFactory::GetInstance()->FindCreatorFor(rasterFile, useSisterFileOfGeoreferencedFile));
-        if(pPageFileCreator != NULL)
-            {
-            m_pageFilePtr = pPageFileCreator->CreateFor(rasterFile);
-            m_pageFilePtr->SetDefaultRatioToMeter(1000);
-            rasterFile = new HRFRasterFilePageDecorator(rasterFile, m_pageFilePtr);
-            }
+        rasterFile = GenericImprove(rasterFile, HRFiTiffCacheFileCreator::GetInstance());
         }
     catch (HFCException&)
         {
