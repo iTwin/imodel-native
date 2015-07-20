@@ -1921,13 +1921,13 @@ TEST(ECDbSchemaManager, TestGetClassResolver)
     ECDbR ecdbr = testProject.Create("ecschemamanagertest.ecdb", L"TestSchema.01.00.ecschema.xml", true);
     ECClassCP ecClass = ecdbr. Schemas ().GetECClass ("TestSchema", "DerivedTestClass");
     EXPECT_TRUE (ecClass != nullptr);
-    ecClass = ecdbr. Schemas ().GetECClass ("TS", "DerivedTestClass", ECDbSchemaManager::ResolveSchema::BySchemaNamespacePrefix);
+    ecClass = ecdbr. Schemas ().GetECClass ("TS", "DerivedTestClass", ResolveSchema::BySchemaNamespacePrefix);
     EXPECT_TRUE (ecClass != nullptr);
 
-    ecClass = ecdbr. Schemas ().GetECClass ("TestSchema", "DerivedTestClass", ECDbSchemaManager::ResolveSchema::AutoDetect);
+    ecClass = ecdbr. Schemas ().GetECClass ("TestSchema", "DerivedTestClass", ResolveSchema::AutoDetect);
     EXPECT_TRUE (ecClass != nullptr);
 
-    ecClass = ecdbr. Schemas ().GetECClass ("TS", "DerivedTestClass", ECDbSchemaManager::ResolveSchema::AutoDetect);
+    ecClass = ecdbr. Schemas ().GetECClass ("TS", "DerivedTestClass", ResolveSchema::AutoDetect);
     EXPECT_TRUE (ecClass != nullptr);
     }
 //---------------------------------------------------------------------------------------
