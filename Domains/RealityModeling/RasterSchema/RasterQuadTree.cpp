@@ -292,7 +292,7 @@ bool RasterTile::Draw(ViewContextR context)
             pt.z = extents.low.z - 1;
         }
 
-    DisplayTilePtr pDisplayTile = DisplayTileCache::Instance().GetItem((uintptr_t)this);
+    DisplayTilePtr pDisplayTile = GetDisplayTileP(false/*request*/);
 
 #ifndef NDEBUG  // debug build only.
     static bool s_DrawTileShape = false;
@@ -350,7 +350,8 @@ DisplayTilePtr RasterTile::GetDisplayTileP(bool request)
     DisplayTilePtr pDisplayTile = DisplayTileCache::Instance().GetItem((uintptr_t)this);
     if(!pDisplayTile.IsValid())
         {
-        // Load only if locally available. If not a request is made to the cache and NULL is returned.
+        // request=false : Load only if locally available. 
+        // If not and request is turned on a request is made to the cache and NULL is returned. We will need to check back at a later time.
         pDisplayTile = m_tree.GetSource().QueryTile(m_tileId, request);        
         if(pDisplayTile.IsValid())
             DisplayTileCache::Instance().AddItem((uintptr_t)this, pDisplayTile);
@@ -693,14 +694,13 @@ void RasterProgressiveDisplay::Draw (ViewContextR context)
 
     // Draw background tiles if any, that gives feedback when zooming in.
     // Background tiles need to be draw from coarser resolution to finer resolution to make sure coarser tiles are not hiding finer tiles.
-//&&MM not now. we have a Z fighting issue between coarser and real tiles. 
-//     SortedTiles backgroundTiles;
-//     FindBackgroudTiles(backgroundTiles, m_visiblesTiles, 4/*maxResDelta*/);
-//     for(RasterTilePtr& pTile : backgroundTiles)
-//         {
-//         BeAssert(pTile->IsLoaded());
-//         pTile->Draw(context);
-//         }
+    SortedTiles backgroundTiles;
+    FindBackgroudTiles(backgroundTiles, m_visiblesTiles, 4/*maxResDelta*/);
+    for(RasterTilePtr& pTile : backgroundTiles)
+        {
+        BeAssert(pTile->IsLoaded());
+        pTile->Draw(context);
+        }
 
     // Draw what we have.
     for(RasterTilePtr& pTile : m_visiblesTiles)
@@ -711,9 +711,8 @@ void RasterProgressiveDisplay::Draw (ViewContextR context)
             }
         else
             {
-//&&MM not now. we have a Z fighting issue between coarser and real tiles. 
             // Draw finer resolution.
-            //DrawLoadedChildren(*pTile, context, 2/*resolutionDelta*/);
+            DrawLoadedChildren(*pTile, context, 2/*resolutionDelta*/);
 
             m_missingTiles.push_back(pTile);
             }
@@ -743,16 +742,9 @@ IProgressiveDisplay::Completion RasterProgressiveDisplay::_Process(ViewContextR 
         auto pTile = m_missingTiles.back();
         m_missingTiles.pop_back();
 
-        DisplayTilePtr pDisplayTile = pTile->GetDisplayTileP(true);  // Read from cache or request it. Won't be requested twice by the reality data cache.
-        if(pDisplayTile.IsValid())
+        DisplayTilePtr pDisplayTile = pTile->GetDisplayTileP(true/*request*/);  // Read from cache or request it. Won't be requested twice by the reality data cache.
+        if(!pTile->Draw(context))
             {
-            pTile->Draw(context);
-            }
-        else
-            {
-#ifndef NDEBUG
-            pTile->Draw(context);   // debug purpose. it will draw the border if data is missing.
-#endif
             // Tile was not available and was requested. We'll check for it at a later time.
             m_pendingTiles.push_back(pTile);
             }
@@ -771,11 +763,9 @@ IProgressiveDisplay::Completion RasterProgressiveDisplay::_Process(ViewContextR 
             break;
             }
 
-        //&&MM that generates to many quety to the tile cache.
-        DisplayTilePtr pDisplayTile = (*pTile)->GetDisplayTileP(false);  // Read from cache. do not request again.
-        if(pDisplayTile.IsValid())
+        // Will read from cache. Will not request again.
+        if((*pTile)->Draw(context))
             {
-            (*pTile)->Draw(context);
             pTile = m_pendingTiles.erase(pTile);
             }
         else
