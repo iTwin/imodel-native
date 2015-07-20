@@ -58,6 +58,48 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
     friend struct QueryModel;
     friend struct dgn_TxnTable::Model;
 
+    struct CreateParams;
+
+    //========================================================================================
+    //! Specifies the solver to invoke when changes to a model or its contents are validated.
+    //=======================================================================================
+    struct Solver
+        {
+        friend struct DgnModel;
+        friend struct CreateParams;
+
+        //! Identifies the type of solver used by a model
+        enum class Type 
+            {
+            None=0,     //!< This model has no solver
+            Script,     //!< Execute a named JavaScript function
+            // *** TBD: Add built-in constraint solvers 
+            };
+
+      private:
+        Type        m_type;
+        Utf8String  m_name;
+        Json::Value m_parameters;
+
+      protected:
+        void FromJson(Utf8CP);
+        Utf8String ToJson() const;
+
+        void Solve(DgnModelR);
+
+      public:
+        //! @private
+        Solver() {m_type = Type::None;}
+
+        //! Construct a Solver specification, in preparation for creating a new DgnModel.
+        Solver(Type t, Utf8CP n, Json::Value const& p) : m_type(t), m_name(n), m_parameters(p) {;}
+
+        Type GetType() const {return m_type;}
+        Utf8StringCR GetName() const {return m_name;}
+        Json::Value const& GetParameters() const {return m_parameters;}
+        Json::Value& GetParametersR() {return m_parameters;}
+        };
+
     //========================================================================================
     //! Application data attached to a DgnModel. Create a subclass of this to store non-persistent information on a DgnModel and
     //! to react to significant events on a DgnModel.
@@ -207,14 +249,16 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         DgnClassId  m_classId;
         Utf8String  m_name;
         Properties  m_props;
+        Solver      m_solver;
         //! Parameters to create a new instance of a DgnModel.
         //! @param[in] dgndb The DgnDb for the new DgnModel
         //! @param[in] classId The DgnClassId for the new DgnModel.
         //! @param[in] name The name for the DgnModel
         //! @param[in] props The properties for the new DgnModel.
+        //! @param[in] solver The definition of the solver to be used by this model when validating changes to its content.
         //! @param[in] id Internal only, must be DgnModelId() to create a new DgnModel.
-        CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, Properties props=Properties(), DgnModelId id=DgnModelId()) :
-            m_dgndb(dgndb), m_id(id), m_classId(classId), m_name(name), m_props(props) {}
+        CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, Properties props=Properties(), Solver solver=Solver(), DgnModelId id=DgnModelId()) :
+            m_dgndb(dgndb), m_id(id), m_classId(classId), m_name(name), m_props(props), m_solver(solver) {}
     };
 
 private:
@@ -234,6 +278,7 @@ protected:
     DgnClassId      m_classId;
     Utf8String      m_name;
     Properties      m_properties;
+    Solver          m_solver;
     DgnElementMap   m_elements;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
     mutable DgnRangeTreeP m_rangeIndex;
@@ -460,6 +505,26 @@ public:
     DGNPLATFORM_EXPORT AppData* FindAppData(AppData::Key const& key) const;
     /** @} */
 
+    /** @name Solver The Model Solver */
+    /** @{ */
+    //! Get the solver that is used to validate this model.
+    Solver const& GetSolver() const {return m_solver;}
+
+    //! Get read-write access to the parameters that will be used by the solver to validate this model when the transaction is validated.
+    //! After modifying a parameter value, you must call #Update in order to save the change to the Db.
+    //! That will have the effect of scheduling the model for validation by TxnManager later on. The model's #_OnValidate method will be called at validation time.
+    Json::Value& GetSolverParametersR() {return m_solver.m_parameters;}
+
+    //! This method is called when it is time to validate changes that have been made to the model's content during the transaction.
+    //! This method is called by the transaction manager after all element-level changes have been validated and all root models have been solved.
+    //! This method is called only if elements in this model were added, deleted, or modified or if this model object itself was added or modified.
+    //! This method allows a subclass to apply validation logic that requires a view of the entire model and possibly of root models.
+    //! This method may add, delete, or modify elements in this model.
+    //! To indication a validation error, call TxnManager::ReportError. If the error is marked as fatal, then the transaction will be rolled back.
+    //! @note This method must make changes of any kind to any other model. Dependent models will be validated later.
+    DGNPLATFORM_EXPORT virtual void _OnValidate();
+    /** @} */
+
     //! Make a copy of this DgnModel with the same DgnClassId and Properties.
     //! @param[in] newName The name for the new DgnModel.
     //! @note This makes a new empty, non-persistent, DgnModel with the same properties as this Model, it does NOT clone the elements of this DgnModel.
@@ -557,9 +622,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ComponentModel : DgnModel3d
 protected:
     DgnModelType _GetModelType() const override {return DgnModelType::Component;}
     DPoint3d _GetGlobalOrigin() const override {return DPoint3d::FromZero();}
+    DgnModels::Model::CoordinateSpace _GetCoordinateSpace() const override {return DgnModels::Model::CoordinateSpace::Local;}
 
 public:
-    explicit ComponentModel(CreateParams const& params) : T_Super(params) {}
+    explicit ComponentModel(CreateParams const& params) : T_Super(params) {BeAssert(params.m_solver.GetType() != Solver::Type::None);}
 };
 
 //=======================================================================================
@@ -651,7 +717,7 @@ struct EXPORT_VTABLE_ATTRIBUTE SheetModel : GraphicsModel2d
         //! @param[in] props the Properties of the new SheetModel
         //! @param[in] id the DgnModelId of thew new SheetModel. This should be DgnModelId() when creating a new model.
         CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, DPoint2d size, Properties props=Properties(), DgnModelId id=DgnModelId()) :
-            T_Super(dgndb, classId, name, props, id), m_size(size) {}
+            T_Super(dgndb, classId, name, props, Solver(), id), m_size(size) {}
 
         explicit CreateParams(DgnModel::CreateParams const& params, DPoint2d size=DPoint2d::FromZero()) : T_Super(params), m_size(size) {}
     };
@@ -712,6 +778,12 @@ namespace dgn_ModelHandler
     struct EXPORT_VTABLE_ATTRIBUTE Physical : Model
     {
         MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_PhysicalModel, PhysicalModel, Physical, Model, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ModelHandler for ComponentModel
+    struct EXPORT_VTABLE_ATTRIBUTE Component : Model
+    {
+        MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_ComponentModel, ComponentModel, Component, Model, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for GraphicsModel2d

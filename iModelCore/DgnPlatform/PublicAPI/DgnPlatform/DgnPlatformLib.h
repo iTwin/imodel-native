@@ -99,22 +99,24 @@ public:
             DGNPLATFORM_EXPORT ScriptingAdmin();
             DGNPLATFORM_EXPORT ~ScriptingAdmin();
 
-            //! Provide the JavaScript environment needed to evaluate JavaScript expressions on the host's thread. 
+            //! Provide the script environment needed to evaluate script expressions on the host's thread. 
             //! There can only be one BeJsEnvironment per thread ... and this is it!
             //! All BeJsContexts that run on this thread must use this BeJsEnvironment.
             DGNPLATFORM_EXPORT BeJsEnvironmentR GetBeJsEnvironment();
 
-            //! Provide the BeJsContext to use when executing JavaScript that needs to use the Dgn JavaScript object model. 
+            //! Provide the BeJsContext to use when executing script that needs to use the Dgn script object model. 
             //! There can only be one DgnScriptContext per thread ... and this is it!
             DGNPLATFORM_EXPORT DgnScriptContextR GetDgnScriptContext();
 
-            //! Obtain the text of the specified JavaScript program.
+            //! Obtain the text of the specified script program.
             //! This base class implementation looks for the program by name in the specified DgnDb.
-            //! @param[out] jsProgramText   The content of the JavaScript program
+            //! @param[out] sText           The text of the script that was found in the library
+            //! @param[out] stypeFound      The type of script actually found in the library
             //! @param[in] db               The current DgnDb file
-            //! @param[in] jsProgramName    Identifies the .JS program.
+            //! @param[in] sName            Identifies the script in the library
+            //! @param[in] stypePreferred   The type of script that the caller prefers, if there are multiple kinds stored for the specified name.
             //! @return non-zero if the JS program is not available from the library.
-            DGNPLATFORM_EXPORT virtual DgnDbStatus _FetchJavaScript(Utf8StringR jsProgramText, DgnDbR db, Utf8CP jsProgramName);
+            DGNPLATFORM_EXPORT virtual DgnDbStatus _FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DgnDbR db, Utf8CP sName, DgnScriptType stypePreferred);
             };
 
         //! Provides Exception handling capabilities

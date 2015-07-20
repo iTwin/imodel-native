@@ -34,6 +34,8 @@ public:
     DGNPLATFORM_EXPORT DgnScriptContext(BeJsEnvironmentR);
     DGNPLATFORM_EXPORT ~DgnScriptContext();
    
+    DgnScriptContextImpl* GetImpl() {return m_pimpl;}
+
     /**
     Execute an Element Generation Algorithm (EGA) that is implemented in JavaScript. 
     An EGA is identified by a two-part name, of the form namespace.function. 
@@ -88,8 +90,17 @@ public:
     @param[in] parms        Any additional parameters to pass to the EGA function. 
     @return non-zero if the EGA is not in JavaScript, if the egaInstance properties are invalid, or if the JavaScript function could not be found or failed to execute.
     **/
-    DGNPLATFORM_EXPORT DgnDbStatus ExecuteJavaScriptEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms);
+    DGNPLATFORM_EXPORT DgnDbStatus ExecuteEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms);
 
+    /**
+    Call a DgnModel validation solver function that is implemented in JavaScript.
+    @param[out] functionReturnStatus    The function's integer return value. 0 means success.
+    @param[in] model           The model to validate
+    @param[in] jsFunctionName   Identifies the Script function to be executed. Must be of the form namespace.functionname
+    @param[in] parms        The parameters to pass to the solver. 
+    @return non-zero if the specified namespace is not found in the JavaScript library or if the specified function could not be found or failed to execute.
+    **/
+    DGNPLATFORM_EXPORT DgnDbStatus ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, Json::Value const& parms);
 }; 
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

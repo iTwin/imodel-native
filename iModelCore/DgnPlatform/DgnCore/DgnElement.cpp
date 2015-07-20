@@ -1625,12 +1625,12 @@ DgnDbStatus DgnElement::Item::ExecuteEGA(Dgn::DgnElementR el, DPoint3dCR origin,
     //  JavaScript EGA
     //  ----------------------------------------------------------------------------------
     Json::Value json(Json::objectValue);
-    if (BSISUCCESS != DgnJavaScriptLibrary::ToJsonFromEC(json, egaInstance, Utf8String(egaInputs.GetString())))
+    if (BSISUCCESS != DgnScriptLibrary::ToJsonFromEC(json, egaInstance, Utf8String(egaInputs.GetString())))
         return DgnDbStatus::BadArg;
 
     DgnScriptContextR som = T_HOST.GetScriptingAdmin().GetDgnScriptContext();
     int retval;
-    DgnDbStatus xstatus = som.ExecuteJavaScriptEga(retval, el, tsName.c_str(), origin, angles, json);
+    DgnDbStatus xstatus = som.ExecuteEga(retval, el, tsName.c_str(), origin, angles, json);
     if (xstatus != DgnDbStatus::Success)
         return xstatus;
 

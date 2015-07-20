@@ -78,15 +78,15 @@ struct TestingConfigurationAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
 //=======================================================================================
 struct TestingDgnScriptingAdmin : Dgn::DgnPlatformLib::Host::ScriptingAdmin
 {
-    ScopedDgnHost::FetchJavaScriptCallback* m_callback;
+    ScopedDgnHost::FetchScriptCallback* m_callback;
 
     TestingDgnScriptingAdmin() {m_callback=nullptr;}
 
-    DgnDbStatus _FetchJavaScript(Utf8StringR jsProgramText, Dgn::DgnDbR db, Utf8CP jsProgrameName) override
+    DgnDbStatus _FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DgnDbR db, Utf8CP sName, DgnScriptType stypePreferred) override
         {
         if (nullptr == m_callback)
             return DgnDbStatus::NotEnabled;
-        return m_callback->_FetchJavaScript(jsProgramText, db, jsProgrameName);
+        return m_callback->_FetchScript(sText, stypeFound, db, sName, stypePreferred);
         }
 };
 
@@ -110,7 +110,7 @@ struct ScopedDgnHostImpl : DgnPlatformLib::Host
     void _SupplyProductName(Utf8StringR s) override {s="BeTest";}
     L10N::SqlangFiles _SupplySqlangFiles() override {return L10N::SqlangFiles(BeFileName());} // users must have already initialized L10N to use ScopedDgnHost
 
-    void SetFetchJavaScriptCallback(ScopedDgnHost::FetchJavaScriptCallback* cb) {((TestingDgnScriptingAdmin*)m_scriptingAdmin)->m_callback = cb;}
+    void SetFetchScriptCallback(ScopedDgnHost::FetchScriptCallback* cb) {((TestingDgnScriptingAdmin*)m_scriptingAdmin)->m_callback = cb;}
     
 };
 END_BENTLEY_DGNPLATFORM_NAMESPACE
@@ -134,9 +134,9 @@ ScopedDgnHost::~ScopedDgnHost()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ScopedDgnHost::SetFetchJavaScriptCallback(FetchJavaScriptCallback* cb)
+void ScopedDgnHost::SetFetchScriptCallback(FetchScriptCallback* cb)
     {
-    m_pimpl->SetFetchJavaScriptCallback(cb);
+    m_pimpl->SetFetchScriptCallback(cb);
     }
 
 /*---------------------------------------------------------------------------------**//**

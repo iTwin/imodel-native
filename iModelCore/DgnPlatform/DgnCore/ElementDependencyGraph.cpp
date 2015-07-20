@@ -1021,7 +1021,8 @@ void DgnElementDependencyGraph::InvokeAffectedDependencyHandlers()
     // Step through the affected models in dependency order
     CachedStatementPtr modelsInOrder=m_txnMgr.GetTxnStatement("SELECT Id From " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE "
         "Id IN (SELECT ModelId FROM " TEMP_TABLE(TXN_TABLE_Elements) ") OR "
-        "Id IN (SELECT ModelId FROM " TEMP_TABLE(TXN_TABLE_Depend) ")" 
+        "Id IN (SELECT ModelId FROM " TEMP_TABLE(TXN_TABLE_Depend) ") OR " 
+        "Id IN (SELECT ModelId FROM " TEMP_TABLE(TXN_TABLE_Models) ") "
         " ORDER BY Type,DependencyIndex");
 
     while (modelsInOrder->Step() == BE_SQLITE_ROW)
@@ -1034,6 +1035,15 @@ void DgnElementDependencyGraph::InvokeAffectedDependencyHandlers()
 
         if (m_txnMgr.HasFatalErrors())
             break;
+
+        DgnModelPtr model = GetDgnDb().Models().GetModel(mid);
+        if (model.IsValid())
+            {
+            model->_OnValidate();
+
+            if (m_txnMgr.HasFatalErrors())
+                break;
+            }
         }
     }
 

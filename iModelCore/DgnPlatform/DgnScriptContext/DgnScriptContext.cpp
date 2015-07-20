@@ -15,7 +15,7 @@
 
 #define DEBUG_JS_GC
 
-extern Utf8CP dgnJavaDgnScriptContextImpl_GetBootstrappingSource();
+extern Utf8CP dgnScriptContext_GetBootstrappingSource();
 
 BEJAVASCRIPT_EMIT_CUSTOM_TYPESCRIPT_DECLARATION ("export declare class BeJsNativePointer {}")
 
@@ -31,6 +31,34 @@ static void deleteThis(void* b) {delete (BeJsNativePointer*)b;}
 // @bsimethod                                   Sam.Wilson                      06/15
 //---------------------------------------------------------------------------------------
 static Utf8CP getUtf8CP(Utf8StringCR s) {return s.c_str();}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static RefCountedCPtr<PhysicalElement> createPhysicalElement(DgnModelR model, Utf8CP ecSqlClassName, DgnCategoryId catid, Utf8CP code)//, RefCountedPtr<T> geom)
+    {
+    Utf8CP dot = strchr(ecSqlClassName, '.');
+    if (nullptr == dot)
+        return nullptr;
+    Utf8String ecschema(ecSqlClassName, dot);
+    Utf8String ecclass(dot+1);
+    DgnDbR db = model.GetDgnDb();
+    DgnClassId pclassId = DgnClassId(db.Schemas().GetECClassId(ecschema.c_str(), ecclass.c_str()));
+    PhysicalElementPtr el = PhysicalElement::Create(PhysicalElement::CreateParams(db, model.GetModelId(), pclassId, catid));
+
+    if (nullptr != code)
+        el->SetCode(code);
+
+//    DPoint3d start = DPoint3d::FromZero();
+//    YawPitchRollAngles angles;
+
+//    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*el, start, angles);
+
+//    builder->Append(*geom);
+
+//    builder->SetGeomStreamAndPlacement(*el);
+    return el;
+    }
 
 //=======================================================================================
 // The first argument to every prototype's Create methods be DgnScriptContextImpl::GetCallContext()
@@ -74,6 +102,8 @@ BEJAVASCRIPT_EXPORT_CLASS struct JsDgnElement : BeJsNativePointer
     // Every wrapper class will hold the native value
     DgnElementPtr m_el;
 
+    BeJsObjectR GetJsObject() {return *this;}
+
     //  Interface methods - These are specific to each kind of native type
 
     //! Get the element's DgnElementId
@@ -116,11 +146,107 @@ struct JsDgnElementPrototype
 };
 
 //=======================================================================================
+// A wrapper class wraps a JsObject around a native value.
+// Every wrapper class is-a BeJsNativePointer, and it holds the corresponding native value as its data.
+// The lifetime of a wrapper class instance is controlled by the lifetime of the JS object.
+// The JS object invokes the supplied BeJsNativePointer::DisposeCallback on the wrapper object when
+// the JS object is garbage-collected. Therefore, all wrapper instances must be created using new and must
+// not be deleted from the native side. Wrapper instances must not be allocated on the stack!
+// @bsiclass                                                    Sam.Wilson      06/15
+//=======================================================================================
+BEJAVASCRIPT_EXPORT_CLASS struct JsDgnModel : BeJsNativePointer
+{
+    // Every wrapper class will hold the native value
+    DgnModelPtr m_model;
+
+    BeJsObjectR GetJsObject() {return *this;}
+
+    //  Interface methods - These are specific to each kind of native type
+
+    //! Get the element's DgnModelId
+    Utf8String GetModelId();
+    BEJAVASCRIPT_DECLARE_INSTANCE_CALLBACK(JsDgnModel, GetModelId)
+
+    JsDgnElement* CreateElement(Utf8StringCR elType, Utf8StringCR categoryName);
+    BEJAVASCRIPT_DECLARE_INSTANCE_CALLBACK(JsDgnModel, CreateElement)
+
+    void InsertElement(JsDgnElementP element);
+    BEJAVASCRIPT_DECLARE_INSTANCE_CALLBACK(JsDgnModel, InsertElement)
+
+    void DeleteAllElements();
+    BEJAVASCRIPT_DECLARE_INSTANCE_CALLBACK(JsDgnModel, DeleteAllElements)
+
+    //  The constructor for every wrapper class will be the same
+    JsDgnModel(DgnModelR m, BeJsContext& jsctx, BeJsObject& jsprototype) : BeJsNativePointer(jsctx, this, deleteThis, &jsprototype), m_model(&m) {;}
+    };
+
+typedef JsDgnModel* JsDgnModelP;
+
+// Implement the instance functions and the corresponding callback marshalling functions
+Utf8String JsDgnModel::GetModelId() {return Utf8PrintfString("%lld", (long long)m_model->GetModelId().GetValueUnchecked());}
+BEJAVASCRIPT_DEFINE_INSTANCE_CALLBACK(JsDgnModel, GetModelId, 
+    String, getUtf8CP)
+
+BEJAVASCRIPT_DEFINE_INSTANCE_CALLBACK_NULLABLEOBJECT_2ARGS(JsDgnModel, CreateElement, 
+    JsDgnElementP, 
+    Utf8String, String, GetValue, 
+    Utf8String, String, GetValue)
+
+void JsDgnModel::InsertElement(JsDgnElementP element)
+    {
+    if (nullptr != element)
+        m_model->GetDgnDb().Elements().Insert(*element->m_el);
+    }
+BEJAVASCRIPT_DEFINE_INSTANCE_CALLBACK_VOID_1ARG(JsDgnModel, InsertElement, 
+    JsDgnElementP, NativePointer, GetValue)
+
+void JsDgnModel::DeleteAllElements() 
+    {
+    m_model->FillModel();
+    bvector<DgnElementCPtr> elementsInModel;
+    for (auto const& emapEntry : *m_model)
+        elementsInModel.push_back(emapEntry.second);
+    for (auto const& el : elementsInModel)
+        el->Delete();
+    }
+BEJAVASCRIPT_DEFINE_INSTANCE_CALLBACK_VOID(JsDgnModel, DeleteAllElements)
+
+//  Every wrapper class will have a Prototype class associated with it.
+//  The prototype is paired with a JS object that has properties that are the get/set and other instance functions.
+// The first argument to every prototype's Create methods be DgnScriptContextImpl::GetCallContext()
+struct JsDgnModelPrototype
+{
+    BeJsContext& m_ctx;
+    BeJsContext& GetJsContext() {return m_ctx;}
+
+    BEJAVASCRIPT_DECLARE_JS_CALLBACKS_HOLDER(JsDgnModel)  // this just declares a member variable of type JsObject
+    BeJsObject& GetJsObject() {return BEJAVASCRIPT_JS_CALLBACKS_HOLDER(JsDgnModel);}
+
+    JsDgnModelPrototype(BeJsContext& ctx) : m_ctx(ctx),
+        BEJAVASCRIPT_INSTANTIATE_JS_CALLBACKS_HOLDER(JsDgnModel)  // this constructs the JsObject
+        {
+        //  Set the function properties of the JS prototype object, one for each callback method
+        BEJAVASCRIPT_INSTANTIATE_INSTANCE_FUNCTION_CALLBACK(JsDgnModel, GetModelId);
+        BEJAVASCRIPT_INSTANTIATE_INSTANCE_FUNCTION_CALLBACK(JsDgnModel, CreateElement);
+        BEJAVASCRIPT_INSTANTIATE_INSTANCE_FUNCTION_CALLBACK(JsDgnModel, InsertElement);
+        BEJAVASCRIPT_INSTANTIATE_INSTANCE_FUNCTION_CALLBACK(JsDgnModel, DeleteAllElements);
+
+        //  Finish the initialization of the JS prototype object.
+        BEJAVASCRIPT_INITIALIZE_CLASS("BentleyApi.Dgn", JsDgnModel)
+        }
+
+    //  Make an instance
+    JsDgnModel* Create(DgnJsCallContext& cc, DgnModelR m) {return cc.ScheduleDelete(new JsDgnModel(m, m_ctx, GetJsObject()));}
+};
+
+//=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
 BEJAVASCRIPT_EXPORT_CLASS struct JsDPoint3d : BeJsNativePointer
 {
     DPoint3d m_pt;
+
+    BeJsObjectR GetJsObject() {return *this;}
 
     //! Get the X coordinate
     double GetX();
@@ -141,7 +267,12 @@ BEJAVASCRIPT_EXPORT_CLASS struct JsDPoint3d : BeJsNativePointer
     void SetZ(double meters);
     BEJAVASCRIPT_DECLARE_INSTANCE_CALLBACK(JsDPoint3d, SetZ)
 
+    //! Create a JsDPoint3d object (JavaScript callers use this)
+    static JsDPoint3d* Create(double x, double y, double z);
+    BEJAVASCRIPT_DECLARE_STATIC_CALLBACK(JsDPoint3d, Create)
+
     JsDPoint3d(DPoint3dCR pt, BeJsContext& jsctx, BeJsObject& jsprototype) : BeJsNativePointer(jsctx, this, deleteThis, &jsprototype), m_pt(pt) {;}
+    JsDPoint3d(double x, double y, double z);
 };
 
 typedef JsDPoint3d* JsDPoint3dP;
@@ -152,6 +283,11 @@ BEJAVASCRIPT_DEFINE_INSTANCE_CALLBACK(JsDPoint3d, GetZ, Number, )
 BEJAVASCRIPT_DEFINE_INSTANCE_CALLBACK_VOID_1ARG(JsDPoint3d, SetX, double, Number, GetValue)
 BEJAVASCRIPT_DEFINE_INSTANCE_CALLBACK_VOID_1ARG(JsDPoint3d, SetY, double, Number, GetValue)
 BEJAVASCRIPT_DEFINE_INSTANCE_CALLBACK_VOID_1ARG(JsDPoint3d, SetZ, double, Number, GetValue)
+BEJAVASCRIPT_DEFINE_STATIC_CALLBACK_NULLABLEOBJECT_3ARGS(JsDPoint3d, Create,
+    JsDPoint3dP,
+    double, Number, GetValue,
+    double, Number, GetValue,
+    double, Number, GetValue)
 
 double JsDPoint3d::GetX() {return m_pt.x;}
 double JsDPoint3d::GetY() {return m_pt.y;}
@@ -178,6 +314,7 @@ struct JsDPoint3dPrototype
         BEJAVASCRIPT_INSTANTIATE_INSTANCE_PROPERTY_CALLBACKS(JsDPoint3d, X);
         BEJAVASCRIPT_INSTANTIATE_INSTANCE_PROPERTY_CALLBACKS(JsDPoint3d, Y);
         BEJAVASCRIPT_INSTANTIATE_INSTANCE_PROPERTY_CALLBACKS(JsDPoint3d, Z);
+        BEJAVASCRIPT_INSTANTIATE_STATIC_FUNCTION_CALLBACK(JsDPoint3d, Create);
 
         //  Finish the initialization of the JS prototype object.
         BEJAVASCRIPT_INITIALIZE_CLASS("BentleyApi.Dgn", JsDPoint3d)
@@ -192,6 +329,8 @@ struct JsDPoint3dPrototype
 BEJAVASCRIPT_EXPORT_CLASS struct JsYawPitchRollAngles : BeJsNativePointer
 {
     YawPitchRollAngles m_angles;
+
+    BeJsObjectR GetJsObject() {return *this;}
 
     //! Get the Yaw angle
     double GetYaw();
@@ -212,6 +351,10 @@ BEJAVASCRIPT_EXPORT_CLASS struct JsYawPitchRollAngles : BeJsNativePointer
     void SetRoll(double degrees);
     BEJAVASCRIPT_DECLARE_INSTANCE_CALLBACK(JsYawPitchRollAngles, SetRoll)
 
+    //! Create a JsYawPitchRollAngles object (JavaScript callers use this)
+    static JsYawPitchRollAngles* Create(double yaw, double pitch, double roll);
+    BEJAVASCRIPT_DECLARE_STATIC_CALLBACK(JsYawPitchRollAngles, Create)
+
     JsYawPitchRollAngles(YawPitchRollAnglesCR angles, BeJsContext& jsctx, BeJsObject& jsprototype) : BeJsNativePointer(jsctx, this, deleteThis, &jsprototype), m_angles(angles) {;}
 };
 
@@ -223,6 +366,11 @@ BEJAVASCRIPT_DEFINE_INSTANCE_CALLBACK(JsYawPitchRollAngles, GetRoll , Number, )
 BEJAVASCRIPT_DEFINE_INSTANCE_CALLBACK_VOID_1ARG(JsYawPitchRollAngles, SetYaw  , double, Number, GetValue)
 BEJAVASCRIPT_DEFINE_INSTANCE_CALLBACK_VOID_1ARG(JsYawPitchRollAngles, SetPitch, double, Number, GetValue)
 BEJAVASCRIPT_DEFINE_INSTANCE_CALLBACK_VOID_1ARG(JsYawPitchRollAngles, SetRoll , double, Number, GetValue)
+BEJAVASCRIPT_DEFINE_STATIC_CALLBACK_NULLABLEOBJECT_3ARGS(JsYawPitchRollAngles, Create,
+    JsYawPitchRollAnglesP,
+    double, Number, GetValue,
+    double, Number, GetValue,
+    double, Number, GetValue)
 
 double JsYawPitchRollAngles::GetYaw  () {return m_angles.GetYaw().Degrees();}
 double JsYawPitchRollAngles::GetPitch() {return m_angles.GetPitch().Degrees();}
@@ -250,6 +398,7 @@ struct JsYawPitchRollAnglesPrototype
         BEJAVASCRIPT_INSTANTIATE_INSTANCE_PROPERTY_CALLBACKS(JsYawPitchRollAngles, Yaw);
         BEJAVASCRIPT_INSTANTIATE_INSTANCE_PROPERTY_CALLBACKS(JsYawPitchRollAngles, Pitch);
         BEJAVASCRIPT_INSTANTIATE_INSTANCE_PROPERTY_CALLBACKS(JsYawPitchRollAngles, Roll);
+        BEJAVASCRIPT_INSTANTIATE_STATIC_FUNCTION_CALLBACK(JsYawPitchRollAngles, Create);
 
         //  Finish the initialization of the JS prototype object.
         BEJAVASCRIPT_INITIALIZE_CLASS("BentleyApi.Dgn", JsYawPitchRollAngles)
@@ -382,7 +531,7 @@ struct JsElementGeometryBuilderPrototype
 
 //=======================================================================================
 // This class holds the one and only BeJsEnvironment and BeJsContext for the session.
-// It defines all of the DgnJavaScript Object Model proxies and registers them in JavaScript.
+// It defines all of the DgnScript Object Model proxies and registers them in Script.
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================
 struct DgnScriptContextImpl : BeJsContext
@@ -393,8 +542,9 @@ struct DgnScriptContextImpl : BeJsContext
         JsDPoint3dPrototype           m_dpoint3d;
         JsYawPitchRollAnglesPrototype m_angles;
         JsElementGeometryBuilderPrototype m_builder;
+        JsDgnModelPrototype           m_dgnModel;
 
-        Prototypes(BeJsContext& ctx) : m_dgnElement(ctx), m_dpoint3d(ctx), m_angles(ctx), m_builder(ctx)
+        Prototypes(BeJsContext& ctx) : m_dgnElement(ctx), m_dpoint3d(ctx), m_angles(ctx), m_builder(ctx), m_dgnModel(ctx)
             {;}
         };
 
@@ -402,6 +552,7 @@ struct DgnScriptContextImpl : BeJsContext
     // Member variables
     // -------------------------------
     BeJsObject m_egaRegistry;
+    BeJsObject m_modelSolverRegistry;
     bset<Utf8String> m_jsScriptsExecuted;
     Prototypes m_prototypes;
     DgnJsCallContext m_callcontext;
@@ -412,7 +563,8 @@ struct DgnScriptContextImpl : BeJsContext
     DgnScriptContextImpl(BeJsEnvironmentR);
     ~DgnScriptContextImpl();
     DgnDbStatus LoadProgram(Dgn::DgnDbR db, Utf8CP tsFunctionSpec);
-    DgnDbStatus ExecuteJavaScriptEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms);
+    DgnDbStatus ExecuteEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms);
+    DgnDbStatus ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, Json::Value const& parms);
 
     DgnJsCallContext& GetCallContext() {return m_callcontext;}
 };
@@ -442,13 +594,46 @@ JsElementGeometryBuilder* JsElementGeometryBuilder::Create(JsDgnElementP e, JsDP
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      06/15
 //---------------------------------------------------------------------------------------
+JsDPoint3d* JsDPoint3d::Create(double x, double y, double z)
+    {
+    DgnScriptContextImpl* holder = dynamic_cast<DgnScriptContext*>(&T_HOST.GetScriptingAdmin().GetDgnScriptContext())->GetImpl();
+    DPoint3d pt = DPoint3d::From(x, y, z);
+    return holder->m_prototypes.m_dpoint3d.Create(holder->GetCallContext(), pt);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      06/15
+//---------------------------------------------------------------------------------------
+JsYawPitchRollAngles* JsYawPitchRollAngles::Create(double yaw, double pitch, double roll)
+    {
+    DgnScriptContextImpl* holder = dynamic_cast<DgnScriptContext*>(&T_HOST.GetScriptingAdmin().GetDgnScriptContext())->GetImpl();
+    YawPitchRollAngles angles = YawPitchRollAngles::FromDegrees(yaw, pitch, roll);
+    return holder->m_prototypes.m_angles.Create(holder->GetCallContext(), angles);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      06/15
+//---------------------------------------------------------------------------------------
+JsDgnElement* JsDgnModel::CreateElement(Utf8StringCR ecSqlClassName, Utf8StringCR categoryName)
+    {
+    DgnScriptContextImpl* holder = dynamic_cast<DgnScriptContext*>(&T_HOST.GetScriptingAdmin().GetDgnScriptContext())->GetImpl();
+    DgnCategoryId catid = m_model->GetDgnDb().Categories().QueryCategoryId(categoryName.c_str());
+    RefCountedCPtr<PhysicalElement> el = createPhysicalElement(*m_model, ecSqlClassName.c_str(), catid, nullptr);
+    return holder->m_prototypes.m_dgnElement.Create(holder->GetCallContext(), *const_cast<PhysicalElementP>(el.get()));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      06/15
+//---------------------------------------------------------------------------------------
 DgnScriptContextImpl::DgnScriptContextImpl(BeJsEnvironmentR jsenv)
     : 
-    BeJsContext(jsenv, "DgnScriptContext", dgnJavaDgnScriptContextImpl_GetBootstrappingSource()),
+    BeJsContext(jsenv, "DgnScriptContext", dgnScriptContext_GetBootstrappingSource()),
     m_egaRegistry(EvaluateScript("BentleyApi.Dgn.GetEgaRegistry()")),
+    m_modelSolverRegistry(EvaluateScript("BentleyApi.Dgn.GetModelSolverRegistry()")),
     m_prototypes(*this)
     {
     BeAssert(!m_egaRegistry.IsUndefined() && m_egaRegistry.IsObject());
+    BeAssert(!m_modelSolverRegistry.IsUndefined() && m_modelSolverRegistry.IsObject());
     }
 
 //---------------------------------------------------------------------------------------
@@ -471,8 +656,8 @@ DgnDbStatus DgnScriptContextImpl::LoadProgram(Dgn::DgnDbR db, Utf8CP jsFunctionS
     Utf8CP dot = strrchr(jsFunctionSpec, '.');
     if (nullptr == dot)
         {
-        NativeLogging::LoggingManager::GetLogger("DgnScriptContext")->errorv ("[%s] is an illegal JavaScript function spec. Must be of the form program.function", jsFunctionSpec);
-        BeAssert(false && "illegal JavaScript function spec");
+        NativeLogging::LoggingManager::GetLogger("DgnScriptContext")->errorv ("[%s] is an illegal Script function spec. Must be of the form program.function", jsFunctionSpec);
+        BeAssert(false && "illegal Script function spec");
         return DgnDbStatus::BadArg;
         }
 
@@ -481,12 +666,29 @@ DgnDbStatus DgnScriptContextImpl::LoadProgram(Dgn::DgnDbR db, Utf8CP jsFunctionS
     if (m_jsScriptsExecuted.find(jsProgramName) != m_jsScriptsExecuted.end())
         return DgnDbStatus::Success;
 
+    DgnScriptType sTypePreferred = DgnScriptType::JavaScript;
+    DgnScriptType sTypeFound;
     Utf8String jsprog;
-    DgnDbStatus status = T_HOST.GetScriptingAdmin()._FetchJavaScript(jsprog, db, jsProgramName.c_str());
+    DgnDbStatus status = T_HOST.GetScriptingAdmin()._FetchScript(jsprog, sTypeFound, db, jsProgramName.c_str(), sTypePreferred);
     if (DgnDbStatus::Success != status)
         {
-        NativeLogging::LoggingManager::GetLogger("DgnScriptContext")->infov ("JavaScript program %s is not registered in the script library", jsProgramName.c_str());
+        NativeLogging::LoggingManager::GetLogger("DgnScriptContext")->infov ("Script program %s is not registered in the script library", jsProgramName.c_str());
         return status;
+        }
+
+    if (sTypeFound != DgnScriptType::JavaScript)
+        {
+        switch (sTypeFound)
+            {
+            case DgnScriptType::TypeScript:
+                BeAssert(false && "*** TBD: compile script type on the fly");
+                return DgnDbStatus::NotEnabled;
+                break;
+            default:
+                BeAssert(false && "Unsupported script type");
+                return DgnDbStatus::NotEnabled;
+                break;
+            }
         }
 
     m_jsScriptsExecuted.insert(jsProgramName);
@@ -504,7 +706,7 @@ DgnDbStatus DgnScriptContextImpl::LoadProgram(Dgn::DgnDbR db, Utf8CP jsFunctionS
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
-DgnDbStatus DgnScriptContextImpl::ExecuteJavaScriptEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms)
+DgnDbStatus DgnScriptContextImpl::ExecuteEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms)
     {
     functionReturnStatus = -1;
 
@@ -530,8 +732,45 @@ DgnDbStatus DgnScriptContextImpl::ExecuteJavaScriptEga(int& functionReturnStatus
 
     if (!retval.IsNumber())
         {
-        NativeLogging::LoggingManager::GetLogger("DgnScriptContext")->errorv ("[%s] does not have the correct signature - must return an int", jsEgaFunctionName);
+        NativeLogging::LoggingManager::GetLogger("DgnScriptContext")->errorv ("[%s] does not have the correct signature for an EGA - must return an int", jsEgaFunctionName);
         BeAssert(false && "EGA has incorrect return type");
+        return DgnDbStatus::NotEnabled;
+        }
+
+    BeJsNumber num(retval);
+    functionReturnStatus = num.GetIntegerValue();
+    return DgnDbStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   BentleySystems
+//---------------------------------------------------------------------------------------
+DgnDbStatus DgnScriptContextImpl::ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, Json::Value const& parms)
+    {
+    functionReturnStatus = -1;
+
+    DgnDbStatus status = LoadProgram(model.GetDgnDb(), jsFunctionName);
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    BeJsFunction jsfunc = m_modelSolverRegistry.GetFunctionProperty(jsFunctionName);
+    if (jsfunc.IsUndefined() || !jsfunc.IsFunction())
+        {
+        NativeLogging::LoggingManager::GetLogger("DgnScriptContext")->errorv ("[%s] is not registered as a model solver", jsFunctionName);
+        BeAssert(false && "model solver not registered");
+        return DgnDbStatus::NotEnabled;
+        }
+
+    BeJsObject parmsObj = EvaluateJson(parms);
+    GetCallContext().Enter();
+    JsDgnModel* jsModel = m_prototypes.m_dgnModel.Create(GetCallContext(), model);
+    BeJsValue retval = jsfunc(*jsModel, parmsObj);
+    GetCallContext().Leave();
+
+    if (!retval.IsNumber())
+        {
+        NativeLogging::LoggingManager::GetLogger("DgnScriptContext")->errorv ("[%s] does not have the correct signature for a model solver - must return an int", jsFunctionName);
+        BeAssert(false && "model solver has incorrect return type");
         return DgnDbStatus::NotEnabled;
         }
 
@@ -559,9 +798,17 @@ DgnScriptContext::~DgnScriptContext()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
-DgnDbStatus DgnScriptContext::ExecuteJavaScriptEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms)
+DgnDbStatus DgnScriptContext::ExecuteEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms)
     {
-    return m_pimpl->ExecuteJavaScriptEga(functionReturnStatus, el, jsEgaFunctionName, origin, angles, parms);
+    return m_pimpl->ExecuteEga(functionReturnStatus, el, jsEgaFunctionName, origin, angles, parms);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      07/15
+//---------------------------------------------------------------------------------------
+DgnDbStatus DgnScriptContext::ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, Json::Value const& parms)
+    {
+    return m_pimpl->ExecuteModelSolver(functionReturnStatus, model, jsFunctionName, parms);
     }
 
 //---------------------------------------------------------------------------------------
@@ -607,8 +854,8 @@ DgnScriptContextR DgnPlatformLib::Host::ScriptingAdmin::GetDgnScriptContext()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
-DgnDbStatus DgnPlatformLib::Host::ScriptingAdmin::_FetchJavaScript(Utf8StringR jsProgramText, DgnDbR db, Utf8CP jsProgramName)
+DgnDbStatus DgnPlatformLib::Host::ScriptingAdmin::_FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DgnDbR db, Utf8CP sName, DgnScriptType stypePreferred)
     {
-    DgnJavaScriptLibrary jslib(db);
-    return jslib.QueryJavaScript(jsProgramText, jsProgramName);
+    DgnScriptLibrary jslib(db);
+    return jslib.QueryScript(sText, stypeFound, sName, stypePreferred);
     }

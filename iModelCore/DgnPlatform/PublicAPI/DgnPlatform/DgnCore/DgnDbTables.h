@@ -1327,29 +1327,31 @@ public:
 //=======================================================================================
 //! @private
 //=======================================================================================
-struct DgnJavaScriptLibrary : DgnDbTable
+struct DgnScriptLibrary : DgnDbTable
 {
 public:
-    DgnJavaScriptLibrary(DgnDbR db) : DgnDbTable(db) { }
+    DgnScriptLibrary(DgnDbR db) : DgnDbTable(db) { }
     
-    //! Import all .js files in the specified directory. This function inserjs the contenjs of each .js file into the DgnDb, using the basename of the file as ijs key.
-    //! @param jsDir    The directory to scan for .js files
+    //! Register the specified script in the DgnDb's script library.
+    //! @param sName    The name to assign to the script in the library
+    //! @param sText    The content of the script program
     //! @param updateExisting If true, programs already registered are updated from soruce found in \a jsDir
-    //! @see QueryJavaScript
-    DGNPLATFORM_EXPORT void ImportJavaScript(BeFileNameCR jsDir, bool updateExisting);
+    //! @see QueryScript
+    DGNPLATFORM_EXPORT DgnDbStatus RegisterScript(Utf8CP sName, Utf8CP sText, DgnScriptType stype, bool updateExisting);
 
-    //! Read the text of the specified .JS file 
-    //! @param jsProgramText[out]    The content of the JavaScript program
-    //! @param jsFileName[in]     The basename of the original .JS program that was imported by ImportJavaScript
+    //! Look up an imported script program by the specified name. 
+    //! @param[out] sText           The text of the script that was found in the library
+    //! @param[out] stypeFound      The type of script actually found in the library
+    //! @param[in] sName            Identifies the script in the library
+    //! @param[in] stypePreferred   The type of script that the caller prefers, if there are multiple kinds stored for the specified name.
+    //! @see RegisterScript
+    DGNPLATFORM_EXPORT DgnDbStatus QueryScript(Utf8StringR sText, DgnScriptType& stypeFound, Utf8CP sName, DgnScriptType stypePreferred);
+
+    //! Utility function to read the text of the specified file 
+    //! @param contents[out]    The content of the file
+    //! @param fileName[in]     The name of the file to read
     //! @return non-zero error status if the file could not be found
-    DGNPLATFORM_EXPORT static DgnDbStatus ReadJavaScript(Utf8StringR jsProgramText, BeFileNameCR jsFileName);
-
-    //! Look up an imported JavaScript program by the specified name. 
-    //! @param jsProgramText[out]    The content of the JavaScript program
-    //! @param jsProgramName[in]     The basename of the original .JS program that was imported by ImportJavaScript
-    //! @return non-zero if the JavaScript program could not be registered in the DgnDb.
-    //! @see ImportJavaScript
-    DGNPLATFORM_EXPORT DgnDbStatus QueryJavaScript(Utf8StringR jsProgramText, Utf8CP jsProgramName);
+    DGNPLATFORM_EXPORT static DgnDbStatus ReadText(Utf8StringR contents, BeFileNameCR fileName);
 
     //! Utility function to convert ECProperties to JSON properties
     //! @param json     The JSON object to be populated
