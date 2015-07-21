@@ -5,16 +5,15 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <Bentley/Bentley.h>
-#include <ECObjects/ECObjectsAPI.h>
-#include <Bentley/BeTest.h>
+#include "ECObjectsTestPCH.h"
+#include "TestFixture.h"
 
-using namespace BentleyApi::ECN;
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                   Muhammad Hassan                     07/15
 //+---------------+---------------+---------------+---------------+---------------+------
-struct PropertyOverrideTests : Public::testing::Test
+struct PropertyOverrideTests : ECTestFixture
     {
     ECSchemaPtr RoundTripSchema(ECSchemaPtr testSchema);
     void VerifyPropertyInheritance(ECClassCP ab, ECClassCP cd, ECClassCP ef, ECClassCP gh, ECClassCP ij, ECClassCP kl, ECClassCP mn);
@@ -484,3 +483,5 @@ TEST_F(PropertyOverrideTests, VerifyTraversalOrderAfterSerializingDeserializingS
     ASSERT_NE(foo1->GetPropertyP("A"), root1->GetPropertyP("A")) << "Expected Foo and Root to return the Foo Property and Root property Respectively";
     ASSERT_EQ(foo1->GetPropertyP("A")->GetBaseProperty(), root1->GetPropertyP("A")) << "Expected Foo and Root both to return Root property even after adding property A to class B2";
     }
+
+END_BENTLEY_ECOBJECT_NAMESPACE
