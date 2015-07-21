@@ -159,6 +159,7 @@
 
         <ProductDirectory   Name="PublicAPI"                    LibType="Static"    Deliver="false"/>
         <ProductDirectory   Name="VendorAPI"                    LibType="Static"    Deliver="false" />
+        <ProductDirectory   Name="VendorNotices"                LibType="Static"    Deliver="false" />
         <ProductDirectory   Name="libs"                         LibType="Static"    Deliver="false"/>
         <ProductDirectory   Name="BentleyNativeAssemblies"      LibType="Static"    Deliver="false"/>
         <ProductDirectory   Name="GeomNativeAssemblies"         LibType="Static"    Deliver="false"/>
