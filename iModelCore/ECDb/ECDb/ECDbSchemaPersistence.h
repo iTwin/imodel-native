@@ -251,7 +251,7 @@ struct DbCustomAttributeInfo : DbInfoBase
             {
             m_containerId = 0LL;
             m_containerType = ECContainerType::Schema;
-            m_ecClassId = 0LL;
+            m_ecClassId = ECN::ECClass::UNSET_ECCLASSID;
             m_caInstanceXml.clear();
             }
     };

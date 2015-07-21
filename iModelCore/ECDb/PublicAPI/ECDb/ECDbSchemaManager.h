@@ -316,7 +316,7 @@ public:
     //! @param[in] className Name of the class to be retrieved
     //! @param[in] resolveSchema indicates whether @p schemaNameOrPrefix is a schema name or a schema prefix
     //! @return ECClassId of the requested ECClass. If the ECClass does not exist in the %ECDb file, an invalid class id is returned
-    ECN::ECClassId GetECClassId(Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema resolveSchema = ResolveSchema::BySchemaName) const { ECN::ECClassId id = -1LL; TryGetECClassId(id, schemaNameOrPrefix, className, resolveSchema); return id; }
+    ECN::ECClassId GetECClassId(Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema resolveSchema = ResolveSchema::BySchemaName) const { ECN::ECClassId id = ECN::ECClass::UNSET_ECCLASSID; TryGetECClassId(id, schemaNameOrPrefix, className, resolveSchema); return id; }
 
     //! Gets the derived classes of @p baseECClass. The derived classes are loaded, if they are not yet.
     //! Callers should use this method in favor of ECN::ECClass::GetDerivedECClasses to ensure

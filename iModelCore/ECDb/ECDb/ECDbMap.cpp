@@ -1076,13 +1076,11 @@ void ECDbMap::LightWeightMapCache::LoadDerivedClasses ()  const
 //--------------------------------------------------------------------------------------
 ECN::ECClassId ECDbMap::LightWeightMapCache::GetAnyClassId () const
     {
-    if (m_anyClass == 0LL)
+    if (m_anyClass == ECClass::UNSET_ECCLASSID)
         {
         auto stmt = m_map.GetECDbR ().GetCachedStatement ("SELECT ec_Class.Id FROM ec_Class INNER JOIN ec_Schema ON ec_Schema.Id = ec_Class.SchemaId WHERE ec_Class.Name = 'AnyClass' AND ec_Schema.Name = 'Bentley_Standard_Classes'");
         if (stmt->Step () == BE_SQLITE_ROW)
-            {
             m_anyClass = stmt->GetValueInt64 (0);
-            }
         }
 
     return m_anyClass;
@@ -1158,7 +1156,7 @@ void ECDbMap::LightWeightMapCache::Reset ()
         m_loadedFlags.m_anyClassReplacementsLoaded = 
         m_loadedFlags.m_tablesByClassIdIsLoaded = false;
 
-    m_anyClass = 0LL;
+    m_anyClass = ECClass::UNSET_ECCLASSID;
     m_relationshipEndsByClassId.clear ();
     m_tablesByClassId.clear ();
     m_classIdsByTable.clear ();

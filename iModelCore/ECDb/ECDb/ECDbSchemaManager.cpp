@@ -428,7 +428,7 @@ bool ECDbSchemaManager::ContainsECSchema (Utf8CP schemaName)  const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCP ECDbSchemaManager::GetECClass (Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema resolveSchema) const // WIP_FNV: probably stays the same... though I expected this to look in memory, first
     {
-    ECClassId id = -1LL;
+    ECClassId id = ECClass::UNSET_ECCLASSID;
     if (!TryGetECClassId(id, schemaNameOrPrefix, className, resolveSchema))
         return nullptr;
 
@@ -620,7 +620,7 @@ ECClassId ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema (ECDbCR d
     Utf8String schemaName(ecClass.GetSchema().GetName().c_str());
     Utf8String className(ecClass.GetName().c_str());
    
-    ECClassId id = -1LL;
+    ECClassId id = ECClass::UNSET_ECCLASSID;
     db.Schemas().TryGetECClassId(id, schemaName.c_str(), className.c_str(), ResolveSchema::BySchemaName);
     const_cast<ECClassR>(ecClass).SetId(id);
     return id;
@@ -655,7 +655,7 @@ ECSchemaId ECDbSchemaManager::GetSchemaIdForECSchemaFromDuplicateECSchema(ECDbCR
 //---------------------------------------------------------------------------------------
 BentleyStatus ECDbSchemaManager::EnsureDerivedClassesExist(ECN::ECClassCR ecClass) const
     {
-    ECClassId ecClassId = -1LL;
+    ECClassId ecClassId = ECClass::UNSET_ECCLASSID;
     if (ecClass.HasId ())
         ecClassId = ecClass.GetId ();
     else

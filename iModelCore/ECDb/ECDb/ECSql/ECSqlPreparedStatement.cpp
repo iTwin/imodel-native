@@ -428,7 +428,7 @@ ECSqlStatus ECSqlInsertPreparedStatement::GenerateECInstanceIdAndBindToInsertSta
 //---------------------------------------------------------------------------------------
 void ECSqlInsertPreparedStatement::SetECInstanceKeyInfo (ECInstanceKeyInfo const& ecInstanceKeyInfo)
     {
-    BeAssert (ecInstanceKeyInfo.GetECClassId () > 0LL);
+    BeAssert(ecInstanceKeyInfo.GetECClassId() > ECClass::UNSET_ECCLASSID);
     m_ecInstanceKeyInfo = ecInstanceKeyInfo;
     }
 

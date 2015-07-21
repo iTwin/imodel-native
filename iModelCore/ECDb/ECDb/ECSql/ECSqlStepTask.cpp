@@ -478,7 +478,7 @@ BentleyStatus DeleteRelatedInstancesECSqlStepTask::DeleteInstances (ECDbR ecdb, 
         return SUCCESS;
 
     std::vector<ECInstanceKey> keyList;
-    ECClassId previousClassId = -1LL;
+    ECClassId previousClassId = ECClass::UNSET_ECCLASSID;
     bool isFirstItem = true;
     for (auto const& kvPair : candidateKeyMap)
         {

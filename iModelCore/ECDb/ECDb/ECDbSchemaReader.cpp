@@ -77,7 +77,7 @@ void ECDbSchemaReader::AddECSchemaToCacheInternal (ECSchemaCR schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaReader::ReadECClass(ECClassP& ecClass, ECClassId ecClassId)
     {
-    if (ecClassId < 0ULL)
+    if (ecClassId == ECClass::UNSET_ECCLASSID)
         {
         ecClass = nullptr;
         return ERROR;
@@ -696,7 +696,7 @@ ECClassP ECDbSchemaReader::GetECClass(ECClassId ecClassId)
 bool ECDbSchemaReader::TryGetECClassId(ECClassId& id, Utf8CP schemaName, Utf8CP className, ResolveSchema resolveSchema) const
     {
     ECClassId ecClassId = ECDbSchemaPersistence::GetECClassId(m_db, schemaName, className, resolveSchema); // needswork: if this is a performance issue, try to look it up in-memory, first
-    if (ecClassId < 0ULL)
+    if (ecClassId == ECClass::UNSET_ECCLASSID)
         return false;
 
     id = ecClassId;

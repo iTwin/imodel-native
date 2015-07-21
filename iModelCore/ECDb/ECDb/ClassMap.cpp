@@ -278,7 +278,7 @@ Utf8String IClassMap::ToString () const
 //---------------------------------------------------------------------------------------
 ClassMap::ClassMap (ECClassCR ecClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty)
 : IClassMap (), m_ecDbMap (ecDbMap), m_table (nullptr), m_ecClass (ecClass), m_mapStrategy (mapStrategy),
-m_parentMapClassId (0LL), m_dbView (nullptr), m_isDirty (setIsDirty), m_columnFactory (*this), /*clang says not used - m_useSharedColumnStrategy (false),*/ m_id(0LL)
+m_parentMapClassId(ECClass::UNSET_ECCLASSID), m_dbView(nullptr), m_isDirty(setIsDirty), m_columnFactory(*this), /*clang says not used - m_useSharedColumnStrategy (false),*/ m_id(0ULL)
     {}
 
 //---------------------------------------------------------------------------------------
@@ -820,7 +820,7 @@ BentleyStatus ClassMap::_Save (std::set<ClassMap const*>& savedGraph)
     auto& mapStorage = const_cast<ECDbMapR>(m_ecDbMap).GetSQLManagerR ().GetMapStorageR ();
     std::set<PropertyMapCP> baseProperties;
 
-    if (GetId () == 0LL)
+    if (GetId() == 0ULL)
         {
         //auto baseClassMap = GetParentMapClassId () == 
         auto baseClass = GetECDbMap ().GetECDbR ().Schemas ().GetECClass (GetParentMapClassId ());
@@ -838,7 +838,7 @@ BentleyStatus ClassMap::_Save (std::set<ClassMap const*>& savedGraph)
             }
 
         
-        auto mapInfo = mapStorage.CreateClassMap (GetClass ().GetId (), m_mapStrategy, baseClassMap == nullptr ? 0LL : baseClassMap->GetId ());
+        auto mapInfo = mapStorage.CreateClassMap(GetClass().GetId(), m_mapStrategy, baseClassMap == nullptr ? ECClass::UNSET_ECCLASSID : baseClassMap->GetId());
         for (auto propertyMap : GetPropertyMaps ())
             {
             if (baseProperties.find (propertyMap) != baseProperties.end())
