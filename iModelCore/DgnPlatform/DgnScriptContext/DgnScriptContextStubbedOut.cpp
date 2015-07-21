@@ -62,7 +62,7 @@ DgnScriptContextR DgnPlatformLib::Host::ScriptingAdmin::GetDgnScriptContext()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
-DgnDbStatus DgnPlatformLib::Host::ScriptingAdmin::_FetchScript(Utf8StringR jsProgramText, DgnDbR db, Utf8CP jsProgramName)
+DgnDbStatus DgnPlatformLib::Host::ScriptingAdmin::_FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DgnDbR db, Utf8CP sName, DgnScriptType stypePreferred)
     {
     return DgnDbStatus::NotEnabled;
     }

@@ -19,6 +19,7 @@
 #define DGN_CLASSNAME_Category              "Category"
 #define DGN_CLASSNAME_Color                 "Color"
 #define DGN_CLASSNAME_ComponentModel        "ComponentModel"
+#define DGN_CLASSNAME_ComponentProxyModel   "ComponentProxyModel"
 #define DGN_CLASSNAME_DrawingElement        "DrawingElement"
 #define DGN_CLASSNAME_DrawingModel          "DrawingModel"
 #define DGN_CLASSNAME_Element               "Element"
