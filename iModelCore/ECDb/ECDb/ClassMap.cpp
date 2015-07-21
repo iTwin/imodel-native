@@ -437,8 +437,6 @@ MapStatus ClassMap::AddPropertyMaps (IClassMap const* parentClassMap, ECDbClassM
             {
             if (propMap->Load (*loadInfo) == SUCCESS)
                 GetPropertyMapsR ().AddPropertyMap (propMap);
-            else
-                LOG.error ("A new property has been added to class but there is no mapping information for it %s, %s");
             }
         }
 
@@ -546,9 +544,8 @@ void ClassMap::CreateIndices ()
         Utf8String whereExpression;
         bool error = false;
 
-        for (Utf8String classQualifiedPropertyName : indexInfo->GetProperties ())
+        for (Utf8StringCR classQualifiedPropertyName : indexInfo->GetProperties ())
             {
-
             WString resolvePropertyName;
             Utf8String resolveClassName, resolveSchemaName;
 
