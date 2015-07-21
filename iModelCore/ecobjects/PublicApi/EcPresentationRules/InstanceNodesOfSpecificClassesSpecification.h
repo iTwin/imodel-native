@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/InstanceNodesOfSpecificClassesSpecification.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -52,23 +52,40 @@ struct InstanceNodesOfSpecificClassesSpecification : public ChildNodeSpecificati
         //! Returns true if grouping by class should be applied.
         ECOBJECTS_EXPORT bool                         GetGroupByClass (void) const;
 
+        //! Set GroupByClass value. Can be boolean.
+        ECOBJECTS_EXPORT void                         SetGroupByClass (bool value);
+
         //! Returns true if grouping by label should be applied.
         ECOBJECTS_EXPORT bool                         GetGroupByLabel (void) const;
+
+        //! Set GroupByLabel value. Can be boolean.
+        ECOBJECTS_EXPORT void                         SetGroupByLabel (bool value);
 
         //! Returns true if class grouping nodes should be shown even if there are no 
         //! ECInstances of those classes. Grouping nodes will be generated for all listed classes.
         ECOBJECTS_EXPORT bool                         GetShowEmptyGroups (void) const;
 
+        //! Set ShowEmptyGroups value. Can be boolean.
+        ECOBJECTS_EXPORT void                         SetShowEmptyGroups (bool value);
+
         //! Class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
         ECOBJECTS_EXPORT WStringCR                    GetClassNames (void) const;
+
+        //! Set class names. Can be string.
+        ECOBJECTS_EXPORT void                         SetClassNames (WString value);
 
         //! This flag identifies whether ECClasses defined in this specification should be marked as polymorphic in the Query.
         ECOBJECTS_EXPORT bool                         GetArePolymorphic (void) const;
 
+        //! Set ArePolymorphic value. Can be boolean.
+        ECOBJECTS_EXPORT void                         SetArePolymorphic (bool value);
+
         //! InstanceFiler is spacially formated string that represents WhereCriteria in 
         //! ECQuery that is used to filter query results (ChildNodes).
         ECOBJECTS_EXPORT WStringCR                    GetInstanceFilter (void) const;
-
+        
+        //! Set instance filter. Can be string.
+        ECOBJECTS_EXPORT void                         SetInstanceFilter (WString value);
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

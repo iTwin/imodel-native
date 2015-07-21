@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/ContentInstancesOfSpecificClassesSpecification.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -48,12 +48,20 @@ struct ContentInstancesOfSpecificClassesSpecification : public ContentSpecificat
         //! Class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
         ECOBJECTS_EXPORT WStringCR                    GetClassNames (void) const;
 
+        //! Sets the ClassNames for the specification.
+        ECOBJECTS_EXPORT void                         SetClassNames (WStringCR value);
+
         //! This flag identifies whether ECClasses defined in this specification should be marked as polymorphic in the Query.
         ECOBJECTS_EXPORT bool                         GetArePolymorphic (void) const;
+
+        //! Sets the ArePolymorphic value for the specification.
+        ECOBJECTS_EXPORT void                         SetArePolymorphic (bool value);
 
         //! InstanceFiler is specially formated string that represents WhereCriteria in 
         //! ECQuery that is used to filter query results.
         ECOBJECTS_EXPORT WStringCR                    GetInstanceFilter (void) const;
+
+        ECOBJECTS_EXPORT void                         SetInstanceFilter (WStringCR value);
 
     };
 

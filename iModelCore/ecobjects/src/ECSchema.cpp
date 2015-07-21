@@ -2820,14 +2820,10 @@ void            ECSchema::SetImmutable()
 +---------------+---------------+---------------+---------------+---------------+------*/
 int             SchemaKey::CompareByName (WString schemaName) const
     {
-    int caseSensitive = wcscmp (m_schemaName.c_str(), schemaName.c_str());
-    if (0 != caseSensitive && 0 == BeStringUtilities::Wcsicmp (m_schemaName.c_str(), schemaName.c_str()))
-        {
-        LOG.warningv (L"Schema name %ls and schema name %ls are different in case only.", m_schemaName.c_str(), schemaName.c_str());
-        return 0;
-        }
-
-    return caseSensitive;
+    // TFS#223524: This was added to do case-insensitive comparison, but it is being used inappropriately.
+    // ECSchema names are case-sensitive. If there are particular contexts in which case should be disregarded,
+    // the code that handles those contexts should do so explicitly.
+    return wcscmp (m_schemaName.c_str(), schemaName.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

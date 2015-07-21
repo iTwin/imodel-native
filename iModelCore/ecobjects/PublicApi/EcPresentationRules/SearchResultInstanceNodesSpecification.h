@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/SearchResultInstanceNodesSpecification.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -48,9 +48,14 @@ struct SearchResultInstanceNodesSpecification : public ChildNodeSpecification
         //! Returns true if grouping by class should be applied.
         ECOBJECTS_EXPORT bool                         GetGroupByClass (void) const;
 
+        //! Sets the GroupByClass value. Can be boolean.
+        ECOBJECTS_EXPORT void                         SetGroupByClass (bool value);
+
         //! Returns true if grouping by label should be applied.
         ECOBJECTS_EXPORT bool                         GetGroupByLabel (void) const;
 
+        //! Sets the GroupByLabel value. Can be boolean.
+        ECOBJECTS_EXPORT void                         SetGroupByLabel (bool value);
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

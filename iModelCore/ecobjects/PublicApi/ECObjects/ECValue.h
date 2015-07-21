@@ -22,7 +22,8 @@ typedef RefCountedPtr<ECValuesCollection> ECValuesCollectionPtr;
 
 //=======================================================================================    
 //! Information about an array in an ECN::IECInstance. Does not contain the actual elements.
-//! @ingroup ECObjectsGroup
+//! @addtogroup ECObjectsGroup
+//! @beginGroup
 //! @see ECValue
 //=======================================================================================    
 struct ArrayInfo
@@ -67,7 +68,6 @@ public:
 //! @remarks It does not represent a "live" reference into the underlying ECN::IECInstance
 //! (or the object that the ECN::IECInstance represents). Changing the ECValue will not affect
 //! the IECInstance unless you subsequently call IECInstance::SetValue with it.
-//! @ingroup ECObjectsGroup
 //=======================================================================================
 struct ECValue
     {
@@ -806,7 +806,6 @@ public:
 //! an ECEnabler, property index, and array index.  In cases where the array index is not
 //! applicable (primitive members or the roots of arrays), the INDEX_ROOT constant
 //! is used.
-//! @ingroup ECObjectsGroup
 //! @see ECValue, ECEnabler, ECPropertyValue, ECValuesCollection
 //! @bsiclass
 //=======================================================================================
@@ -1024,7 +1023,6 @@ struct ECValuesCollectionIterator;
 /*__PUBLISH_SECTION_START__*/
 
 //=======================================================================================
-//! @ingroup ECObjectsGroup
 //! Relates an ECProperty with an ECValue. Used when iterating over the values of an ECInstance
 //! @bsiclass
 //=======================================================================================
@@ -1084,7 +1082,6 @@ public:
 //=======================================================================================
 //! An iterator over the ECPropertyValues contained in an ECValuesCollection
 //! @see ECValue, ECValueAccessor, ECValuesCollection
-//! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================
 struct ECValuesCollectionIterator : RefCountedBase, std::iterator<std::forward_iterator_tag, ECPropertyValue const>
@@ -1122,7 +1119,6 @@ public:
 
 //=======================================================================================
 //! A collection of all ECPropertyValues contained in an IECInstance or an ECPropertyValue.
-//! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================
 struct ECValuesCollection : RefCountedBase
@@ -1166,6 +1162,7 @@ public:
     ECOBJECTS_EXPORT ECPropertyValueCR  GetParentProperty () const;
     };
 
+/** @endGroup */
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 //#pragma make_public (ECN::ECValuesCollection)

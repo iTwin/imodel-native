@@ -1,8 +1,8 @@
-/*--------------------------------------------------------------------------------------+
+ /*--------------------------------------------------------------------------------------+
 |
 |     $Source: PublicApi/EcPresentationRules/AllRelatedInstanceNodesSpecification.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -53,17 +53,32 @@ struct AllRelatedInstanceNodesSpecification : public ChildNodeSpecification
         //! Returns true if grouping by class should be applied.
         ECOBJECTS_EXPORT bool                         GetGroupByClass (void) const;
 
+        //! Sets the GroupByClass value. Can be boolean.
+        ECOBJECTS_EXPORT void                         SetGroupByClass (bool value);
+
         //! Returns true if grouping by relationship should be applied.
         ECOBJECTS_EXPORT bool                         GetGroupByRelationship (void) const;
+
+        //! Sets the GroupByRelationship value. Can be boolean.
+        ECOBJECTS_EXPORT void                         SetGroupByRelationship (bool value);
 
         //! Returns true if grouping by label should be applied.
         ECOBJECTS_EXPORT bool                         GetGroupByLabel (void) const;
 
+        //! Sets the GroupByLabel value. Can be boolean.
+        ECOBJECTS_EXPORT void                         SetGroupByLabel (bool value);
+
         //! Returns level of related instances to skip.
         ECOBJECTS_EXPORT int                          GetSkipRelatedLevel (void) const;
+        
+        //! Sets the SkipRelatedLevel value. Can be int.
+        ECOBJECTS_EXPORT void                         SetSkipRelatedLevel (int value);
 
         //! Returns supported schemas that should be used by this specification.
         ECOBJECTS_EXPORT WStringCR                    GetSupportedSchemas (void) const;
+
+        //! Sets the SupportedSchemas value. Can be WString.
+        ECOBJECTS_EXPORT void                         SetSupportedSchemas (WString value);
 
         //! Returns direction of relationship that should be selected in the query.
         ECOBJECTS_EXPORT RequiredRelationDirection    GetRequiredRelationDirection (void) const;

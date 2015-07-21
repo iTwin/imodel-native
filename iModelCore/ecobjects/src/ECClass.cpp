@@ -1088,6 +1088,17 @@ ECPropertyIterable ECClass::GetProperties (bool includeBaseProperties) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool containsProperty (WCharCP name, PropertyList const& props)
+    {
+    return props.end() != std::find_if (props.begin(), props.end(), [&name](ECPropertyP const& prop)
+        {
+        return prop->GetName().Equals (name);
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::GetProperties (bool includeBaseProperties, PropertyList* propertyList) const
@@ -1095,13 +1106,23 @@ ECObjectsStatus ECClass::GetProperties (bool includeBaseProperties, PropertyList
     for (ECPropertyP prop: m_propertyList)
         propertyList->push_back(prop);
         
-    if (!includeBaseProperties)
+    if (!includeBaseProperties || m_baseClasses.empty())
         return ECOBJECTS_STATUS_Success;
         
-    if (m_baseClasses.size() == 0)
-        return ECOBJECTS_STATUS_Success;
-        
-    TraverseBaseClasses(&AddUniquePropertiesToList, true, propertyList);
+    // replicate managed code behavior - specific ordering expected. Probably slower, but at least correct.
+    PropertyList inheritedProperties;
+    for (auto const& baseClass : m_baseClasses)
+        {
+        for (ECPropertyP const& baseProp : baseClass->GetProperties (true))
+            {
+            if (!containsProperty (baseProp->GetName().c_str(), *propertyList) && !containsProperty (baseProp->GetName().c_str(), inheritedProperties))
+                inheritedProperties.push_back (baseProp);
+            }
+        }
+
+    // inherited properties come before this class's properties
+    propertyList->reserve (propertyList->size() + inheritedProperties.size());
+    propertyList->insert (propertyList->begin(), inheritedProperties.begin(), inheritedProperties.end());
 
     return ECOBJECTS_STATUS_Success;
     }

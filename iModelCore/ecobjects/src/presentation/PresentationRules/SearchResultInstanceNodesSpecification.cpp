@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/SearchResultInstanceNodesSpecification.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -74,6 +74,16 @@ void SearchResultInstanceNodesSpecification::_WriteXml (BeXmlNodeP xmlNode)
 bool SearchResultInstanceNodesSpecification::GetGroupByClass (void) const { return m_groupByClass; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void SearchResultInstanceNodesSpecification::SetGroupByClass (bool value) { m_groupByClass = value; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SearchResultInstanceNodesSpecification::GetGroupByLabel (void) const { return m_groupByLabel; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void SearchResultInstanceNodesSpecification::SetGroupByLabel (bool value) { m_groupByLabel = value; }

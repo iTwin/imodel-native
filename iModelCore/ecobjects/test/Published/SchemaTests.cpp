@@ -1889,21 +1889,12 @@ TEST_F(ClassTest, ExpectPropertiesFromBaseClass)
         testVector.push_back(prop);
         
     EXPECT_EQ(14, testVector.size());
-    EXPECT_EQ(0, testVector[0]->GetName().compare(L"i"));
-    EXPECT_EQ(0, testVector[1]->GetName().compare(L"j"));
-    EXPECT_EQ(0, testVector[2]->GetName().compare(L"g"));
-    EXPECT_EQ(0, testVector[3]->GetName().compare(L"h"));
-    EXPECT_EQ(0, testVector[4]->GetName().compare(L"k"));
-    EXPECT_EQ(0, testVector[5]->GetName().compare(L"l"));
-    EXPECT_EQ(0, testVector[6]->GetName().compare(L"c"));
-    EXPECT_EQ(0, testVector[7]->GetName().compare(L"d"));
-    EXPECT_EQ(0, testVector[8]->GetName().compare(L"a"));
-    EXPECT_EQ(0, testVector[9]->GetName().compare(L"b"));
-    EXPECT_EQ(0, testVector[10]->GetName().compare(L"e"));
-    EXPECT_EQ(0, testVector[11]->GetName().compare(L"f"));
-    EXPECT_EQ(0, testVector[12]->GetName().compare(L"m"));
-    EXPECT_EQ(0, testVector[13]->GetName().compare(L"n"));
-    
+    for (size_t i = 0; i < testVector.size(); i++)
+        {
+        WChar expectedName[] = { L'a' + static_cast<WChar> (i), 0 };
+        EXPECT_EQ (0, testVector[i]->GetName().compare (expectedName)) << "Expected: " << expectedName << " Actual: " << testVector[i]->GetName().c_str();
+        }
+
     // now we add some duplicate properties to mn which will "override" those from the base classes
     PrimitiveECPropertyP b2;
     PrimitiveECPropertyP d2;
@@ -1925,20 +1916,9 @@ TEST_F(ClassTest, ExpectPropertiesFromBaseClass)
         testVector.push_back(prop);
         
     EXPECT_EQ(14, testVector.size());
-    EXPECT_EQ(0, testVector[0]->GetName().compare(L"i"));
-    EXPECT_EQ(0, testVector[1]->GetName().compare(L"g"));
-    EXPECT_EQ(0, testVector[2]->GetName().compare(L"l"));
-    EXPECT_EQ(0, testVector[3]->GetName().compare(L"c"));
-    EXPECT_EQ(0, testVector[4]->GetName().compare(L"a"));
-    EXPECT_EQ(0, testVector[5]->GetName().compare(L"e"));
-    EXPECT_EQ(0, testVector[6]->GetName().compare(L"m"));
-    EXPECT_EQ(0, testVector[7]->GetName().compare(L"n"));
-    EXPECT_EQ(0, testVector[8]->GetName().compare(L"b"));
-    EXPECT_EQ(0, testVector[9]->GetName().compare(L"d"));
-    EXPECT_EQ(0, testVector[10]->GetName().compare(L"f"));
-    EXPECT_EQ(0, testVector[11]->GetName().compare(L"h"));
-    EXPECT_EQ(0, testVector[12]->GetName().compare(L"j"));
-    EXPECT_EQ(0, testVector[13]->GetName().compare(L"k"));
+    bvector<WCharCP> expectedVector { L"a", L"c", L"e", L"g", L"i", L"l", L"m", L"n", L"b", L"d", L"f", L"h", L"j", L"k" };
+    for (size_t i = 0; i < testVector.size(); i++)
+        EXPECT_EQ (0, testVector[i]->GetName().compare (expectedVector[i])) << "Expected: " << expectedVector[i] << " Actual: " << testVector[i]->GetName().c_str();
 
     PrimitiveECPropertyP e2;
     PrimitiveECPropertyP a2;
@@ -1974,20 +1954,9 @@ TEST_F(ClassTest, ExpectPropertiesFromBaseClass)
         testVector.push_back(prop);
         
     EXPECT_EQ(14, testVector.size());
-    EXPECT_EQ(0, testVector[0]->GetName().compare(L"i"));
-    EXPECT_EQ(0, testVector[1]->GetName().compare(L"c"));
-    EXPECT_EQ(0, testVector[2]->GetName().compare(L"a"));
-    EXPECT_EQ(0, testVector[3]->GetName().compare(L"g"));
-    EXPECT_EQ(0, testVector[4]->GetName().compare(L"e"));
-    EXPECT_EQ(0, testVector[5]->GetName().compare(L"l"));
-    EXPECT_EQ(0, testVector[6]->GetName().compare(L"m"));
-    EXPECT_EQ(0, testVector[7]->GetName().compare(L"n"));
-    EXPECT_EQ(0, testVector[8]->GetName().compare(L"b"));
-    EXPECT_EQ(0, testVector[9]->GetName().compare(L"d"));
-    EXPECT_EQ(0, testVector[10]->GetName().compare(L"f"));
-    EXPECT_EQ(0, testVector[11]->GetName().compare(L"h"));
-    EXPECT_EQ(0, testVector[12]->GetName().compare(L"j"));
-    EXPECT_EQ(0, testVector[13]->GetName().compare(L"k"));
+    expectedVector = { L"a", L"g", L"c", L"e", L"l", L"i", L"m", L"n", L"b", L"d", L"f", L"h", L"j", L"k" };
+    for (size_t i = 0; i < testVector.size(); i++)
+        EXPECT_EQ (0, testVector[i]->GetName().compare (expectedVector[i])) << "Expected: " << expectedVector[i] << " Actual: " << testVector[i]->GetName().c_str();
     }
 
 /*---------------------------------------------------------------------------------**//**

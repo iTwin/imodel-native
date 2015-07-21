@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECInstanceIterable.h $
 |
-|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,6 +12,8 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
+//@addtogroup ECObjectsGroup
+//@beginGroup
 /*---------------------------------------------------------------------------------**//**
 This is the iterator that is exposed using VirtualCollectionIterator. These virtual member
 functions delegate the iteration to the appropriate implementations of it based on the container
@@ -218,7 +220,6 @@ for (ECInstanceIterable::const_iterator iter = collection.begin(); iter != colle
     {
     IECInstanceP instance = *iter;
     }
-@ingroup ECObjectsGroup
 @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ECInstanceIterable
@@ -249,7 +250,6 @@ for (ECRelationshipIterable::const_iterator iter = collection.begin(); iter != c
     {
     IECRelationshipInstanceP instance = *iter;
     }
-@ingroup ECObjectsGroup
 @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ECRelationshipIterable
@@ -273,7 +273,7 @@ struct ECRelationshipIterable
         ECOBJECTS_EXPORT bool empty() const; //!< returns whether the collection is empty or not
         ECOBJECTS_EXPORT bool IsNull () const; //!< returns whether the collection is Null
     };
-
+/** @endGroup */
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 /** @endcond */

@@ -217,7 +217,8 @@ public:
 
 /*=================================================================================**//**
 * The context in which an expression is evaluated.
-* @ingroup ECObjectsGroup
+* @addtogroup ECObjectsGroup
+* @beginGroup
 +===============+===============+===============+===============+===============+======*/
 struct          ExpressionContext : RefCountedBase
 {
@@ -284,7 +285,6 @@ public:
 
 /*=================================================================================**//**
 * A context in which multiple IECInstances provide the context for expression evaluation
-* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 struct          InstanceListExpressionContext : ExpressionContext
     {
@@ -382,7 +382,6 @@ public:
 
 /*=================================================================================**//**
 * A context which provides a set of symbols for expression evaluation.
-* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 struct EXPORT_VTABLE_ATTRIBUTE SymbolExpressionContext : ExpressionContext
 {
@@ -424,7 +423,6 @@ public:
 *
 * Base class for all symbol types
 *
-* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 struct          Symbol : RefCountedBase
 {
@@ -457,7 +455,6 @@ public:
 
 /*=================================================================================**//**
 * Used to give a name to an instance.
-* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 struct          ContextSymbol : Symbol
 {
@@ -483,7 +480,7 @@ public:
 
 /*=================================================================================**//**
 * Used to introduce a named method into the context.
-* @ingroup ECObjectsGroup
+
 +===============+===============+===============+===============+===============+======*/
 struct          MethodSymbol : Symbol
 {
@@ -516,7 +513,6 @@ public:
 
 /*=================================================================================**//**
 * Used to introduce a named property into the context.
-* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 struct PropertySymbol : Symbol
 {
@@ -600,7 +596,6 @@ public:
     };
 
 
-//! @ingroup ECObjectsGroup
 enum            ExpressionToken
     {
     TOKEN_None                = 0,
@@ -789,7 +784,6 @@ public:
 /*=================================================================================**//**
 *
 * Used to introduce a named value into the context.
-* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 struct          ValueSymbol : Symbol
 {
@@ -849,7 +843,6 @@ struct          NodeVisitor
 /*=================================================================================**//**
 * Parses an EC expression string to produce an expression tree which can be used to
 * evaluate the expression.
-* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 struct          ECEvaluator
     {
@@ -898,7 +891,6 @@ public:
 
 /*=================================================================================**//**
 * Holds the result of evaluating an EC expression.
-* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 struct          ValueResult : RefCountedBase
 {
@@ -923,7 +915,6 @@ public:
 /*=================================================================================**//**
 * An object which can optimize an ECExpression tree by resolving constant sub-expressions
 * to literal values, or perform other optimizations.
-* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 struct          ExpressionResolver : RefCountedBase
 {
@@ -972,7 +963,6 @@ public:
 
 /*=================================================================================**//**
 * Defines an expression tree for a parsed EC expression.
-* @ingroup ECObjectsGroup
 +===============+===============+===============+===============+===============+======*/
 struct          Node : RefCountedBase
 {
@@ -1066,6 +1056,7 @@ public:
     ECOBJECTS_EXPORT WString  ToExpressionString() const;
 };  //  End of struct Node
 
+/** @endGroup */
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 /** @endcond */

@@ -2356,9 +2356,22 @@ ECN::PrimitiveType         ECDBuffer::GetStructArrayPrimitiveType () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECDBuffer::ClearValues()                                               { _ClearValues(); }
-ECObjectsStatus ECDBuffer::CopyFromBuffer (ECDBufferCR source)    { return _CopyFromBuffer (source); }
-ClassLayoutCR ECDBuffer::GetClassLayout() const                             { return _GetClassLayout(); }
+void ECDBuffer::ClearValues()                                   { _ClearValues(); }
+ClassLayoutCR ECDBuffer::GetClassLayout() const                 { return _GetClassLayout(); }
+bool ECDBuffer::IsPersistentlyReadOnly() const                  { return _IsPersistentlyReadOnly(); }
+ECObjectsStatus ECDBuffer::SetIsPersistentlyReadOnly (bool ro)  { return _SetIsPersistentlyReadOnly (ro); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECDBuffer::CopyFromBuffer (ECDBufferCR source)
+    {
+    auto status = _CopyFromBuffer (source);
+    if (ECOBJECTS_STATUS_Success == status && source.IsPersistentlyReadOnly())
+        SetIsPersistentlyReadOnly (true);
+
+    return status;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/15
@@ -2416,13 +2429,17 @@ ECObjectsStatus IECInstance::CopyValues(ECN::IECInstanceCR source)
 
     // If both are ECD-based, try copying the buffers first - it's cheaper.
     ECDBuffer* thisBuffer = this->GetECDBufferP();
-    ECDBuffer const* srcBuffer;
+    ECDBuffer const* srcBuffer = nullptr;
     if (NULL != thisBuffer && NULL != (srcBuffer = source.GetECDBuffer()) && ECOBJECTS_STATUS_Success == thisBuffer->CopyFromBuffer (*srcBuffer))
         return ECOBJECTS_STATUS_Success;
     
     // Not ECD-based, or incompatible layouts. Copy property-by-property
     ECValuesCollectionPtr srcValues = ECValuesCollection::Create (source);
-    return duplicateProperties (*this, *srcValues, false);
+    auto status = duplicateProperties (*this, *srcValues, false);
+    if (ECOBJECTS_STATUS_Success == status && nullptr != srcBuffer && nullptr != thisBuffer && srcBuffer->IsPersistentlyReadOnly())
+        thisBuffer->SetIsPersistentlyReadOnly (true);
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**

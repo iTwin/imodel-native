@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/AllInstanceNodesSpecification.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -79,11 +79,26 @@ void AllInstanceNodesSpecification::_WriteXml (BeXmlNodeP xmlNode)
 bool AllInstanceNodesSpecification::GetGroupByClass (void) const { return m_groupByClass; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void AllInstanceNodesSpecification::SetGroupByClass (bool value) { m_groupByClass = value; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool AllInstanceNodesSpecification::GetGroupByLabel (void) const { return m_groupByLabel; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void AllInstanceNodesSpecification::SetGroupByLabel (bool value) { m_groupByLabel = value; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 WStringCR AllInstanceNodesSpecification::GetSupportedSchemas (void) const { return m_supportedSchemas; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void AllInstanceNodesSpecification::SetSupportedSchemas (WString value) { m_supportedSchemas = value; }

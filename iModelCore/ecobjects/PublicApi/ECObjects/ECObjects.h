@@ -95,6 +95,9 @@ struct IStream;
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
+//! @addtogroup ECObjectsGroup
+//! @beginGroup
+
 typedef struct IStream* IStreamP;
 
 //! Error code categories
@@ -294,7 +297,6 @@ enum EvaluationOptions
 //=======================================================================================
 //! Represents the classification of the data type of an ECValue. The classification is not the data type itself, but a category of type
 //! such as struct, array or primitive.
-//! @ingroup ECObjectsGroup
 //=======================================================================================
 enum ValueKind ENUM_UNDERLYING_TYPE(unsigned short)
     {
@@ -315,7 +317,6 @@ enum ValueKind ENUM_UNDERLYING_TYPE(unsigned short)
 //=======================================================================================
 //! Represents the classification of the data type of an EC array element.  The classification is not the data type itself, but a category of type.
 //! Currently an ECArray can only contain primitive or struct data types.
-//! @ingroup ECObjectsGroup
 //=======================================================================================
 enum ArrayKind ENUM_UNDERLYING_TYPE(unsigned short)
     {
@@ -356,7 +357,6 @@ enum PrimitiveType ENUM_UNDERLYING_TYPE(unsigned short)
     PRIMITIVETYPE_IGeometry                 = 0xa01,
     };
 
-//! @ingroup ECObjectsGroup
 //! Enumerates the possible return values for evaluating an expression or its value
 enum ExpressionStatus
     {
@@ -387,7 +387,6 @@ enum ExpressionStatus
     };
 
 //! Used to define how the relationship OrderId is handled.
-//! @ingroup ECObjectsGroup
 enum OrderIdStorageMode : uint8_t
     {
     ORDERIDSTORAGEMODE_None = 0,
@@ -396,7 +395,6 @@ enum OrderIdStorageMode : uint8_t
     };
 
 //! Used to define which end of the relationship, source or target
-//! @ingroup ECObjectsGroup
 enum ECRelationshipEnd
     {
     ECRelationshipEnd_Source = 0, //!< End is the source
@@ -405,7 +403,6 @@ enum ECRelationshipEnd
 
 //! Used to describe the direction of a related instance within the context
 //! of an IECRelationshipInstance
-//! @ingroup ECObjectsGroup
 enum class ECRelatedInstanceDirection
     {
     //! Related instance is the target in the relationship instance
@@ -415,7 +412,6 @@ enum class ECRelatedInstanceDirection
     };
 
 //! The various strengths supported on a relationship class.
-//! @ingroup ECObjectsGroup
 enum StrengthType
     {
     //!  'Referencing' relationships imply no ownership and no cascading deletes when the
@@ -435,5 +431,7 @@ enum StrengthType
     //! This is like "Composition" in UML.
     STRENGTHTYPE_Embedding
     };
+
+/** @endGroup */
 
 END_BENTLEY_ECOBJECT_NAMESPACE
