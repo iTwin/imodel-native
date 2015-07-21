@@ -1184,14 +1184,11 @@ RefCountedPtr<ComponentProxyModel> ComponentProxyModel::Create(DgnDbR targetDb, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ComponentProxyModel::Query(RefCountedPtr<ComponentProxyModel>& existingModel, DgnDbR targetDb, ComponentModel const& componentModel)
+RefCountedPtr<ComponentProxyModel> ComponentProxyModel::Get(DgnDbR targetDb, ComponentModel const& componentModel)
     {
     Utf8String proxyName = ComputeName(componentModel);
     DgnModelId mid = targetDb.Models().QueryModelId(proxyName.c_str());
-    if (!mid.IsValid())
-        return DgnDbStatus::NotFound;
-    existingModel = targetDb.Models().Get<ComponentProxyModel>(mid);
-    return existingModel.IsValid()? DgnDbStatus::Success: DgnDbStatus::ReadError;
+    return targetDb.Models().Get<ComponentProxyModel>(mid);
     }
 
 /*---------------------------------------------------------------------------------**//**

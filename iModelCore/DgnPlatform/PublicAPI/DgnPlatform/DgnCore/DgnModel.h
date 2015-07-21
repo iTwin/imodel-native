@@ -634,8 +634,9 @@ public:
         //! @param[in] name The name for the DgnModel
         //! @param[in] props The properties for the new DgnModel.
         //! @param[in] solver The definition of the solver to be used by this model when validating changes to its content.
+        //! @param[in] elementCategory The name of the category that this component model should use
         //! @param[in] id Internal only, must be DgnModelId() to create a new DgnModel.
-        CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, Utf8String elementCategory, Solver const& solver, Properties props=Properties(), DgnModelId id=DgnModelId()) :
+        CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, Utf8StringCR elementCategory, Solver const& solver, Properties props=Properties(), DgnModelId id=DgnModelId()) :
             T_Super(dgndb, classId, name, props, solver, id), m_elementCategoryName(elementCategory) {}
 
         //! @private
@@ -720,17 +721,16 @@ public:
     //! @note The caller must call #Insert. 
     //! @param[in] targetDb     The DgnDb that is to hold the new ComponentProxyModel
     //! @param[in] componentModel The ComponentModel that is to be represented
-    //! @praam[in] componentSchema The ComponentModel's ECSchema, which should have already been imported into this DgnDb.
+    //! @param[in] componentSchema The ComponentModel's ECSchema, which should have been imported already into this DgnDb.
     //! @return The newly created ComponentProxyModel
     DGNPLATFORM_EXPORT static RefCountedPtr<ComponentProxyModel> Create(DgnDbR targetDb, ComponentModel const& componentModel, ECN::ECSchemaCR componentSchema);
 
     //! Look up an existing ComponentProxyModel in the target DgnDb that represents the specified ComponentModel (which might be in a different DgnDb)
     //! The caller does not specify the proxy's name, because a proxy's name is always computed from the name of the componentModel that it represents.
-    //! @param[out] existingModel The ComponentProxyModel in the target Db that represents the component model.
     //! @param[in] targetDb     The DgnDb that holds ComponentProxyModel
     //! @param[in] componentModel The ComponentModel that is to be represented
-    //! @return DgnDbStatus::NotFound if the proxy could not be found or another non-zero status if the model could not be loaded; Success otherwise.
-    DGNPLATFORM_EXPORT static DgnDbStatus Query(RefCountedPtr<ComponentProxyModel>& existingModel, DgnDbR targetDb, ComponentModel const& componentModel);
+    //! @return The ComponentProxyModel in the target Db that represents the component model, if it exists.
+    DGNPLATFORM_EXPORT static RefCountedPtr<ComponentProxyModel> Get(DgnDbR targetDb, ComponentModel const& componentModel);
 
     //! Import the specified ECSchema into the target DgnDb.
     //! This is a utility function that is used to prepare to work with a ComponentModel that generated the schema.

@@ -128,7 +128,7 @@ FakeScriptLibrary  m_scriptLibrary;
 bmap<DgnSubCategoryId, DgnSubCategoryId> m_subcatxlat;
 
 CMTestFixture();
-void AddToScriptLibrary(Utf8CP jns, Utf8CP jtext);
+void AddToFakeScriptLibrary(Utf8CP jns, Utf8CP jtext);
 DgnCategoryId CreateCategory(Utf8CP code, ColorDef const&);
 void CreateWidgetComponentModel();
 void OpenComponentDb(DgnDb::OpenMode mode) {openDb(m_componentDb, m_componentDbName, mode);}
@@ -156,7 +156,7 @@ CMTestFixture::CMTestFixture()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CMTestFixture::AddToScriptLibrary(Utf8CP jns, Utf8CP jtext)
+void CMTestFixture::AddToFakeScriptLibrary(Utf8CP jns, Utf8CP jtext)
     {
     // In this test, there is only one JS program in the fake library at a time.
     m_scriptLibrary.m_jsProgramName = jns;
@@ -185,7 +185,7 @@ void CMTestFixture::CreateWidgetComponentModel()
     ASSERT_TRUE(m_componentDb.IsValid());
 
     // Define the CM's Element Category (in the CM's DgnDb). Use the same name as the component model. 
-    ASSERT_TRUE( CreateCategory(TEST_COMPONENT_NAME, ColorDef(0xff,0x00,0x00)).IsValid() );
+    ASSERT_TRUE( CreateCategory("Widget", ColorDef(0xff,0x00,0x00)).IsValid() );
 
     // Define the Solver parameters for use by this model.
     Json::Value parameters(Json::objectValue);
@@ -197,14 +197,14 @@ void CMTestFixture::CreateWidgetComponentModel()
 
     // Create the model
     DgnClassId mclassId = DgnClassId(m_componentDb->Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ComponentModel));
-    RefCountedPtr<ComponentModel> cm = new ComponentModel(ComponentModel::CreateParams(*m_componentDb, mclassId, TEST_COMPONENT_NAME, TEST_COMPONENT_NAME, solver));
+    RefCountedPtr<ComponentModel> cm = new ComponentModel(ComponentModel::CreateParams(*m_componentDb, mclassId, TEST_COMPONENT_NAME, "Widget", solver));
     ASSERT_EQ( DgnDbStatus::Success , cm->Insert() );       /* Insert the new model into the DgnDb */
 
     // Here is the model solver that should be used. 
     // Note that we must put it into the Script library under the same name that was used in the model definition above.
     // It must also register itself as a model solver under the same name as was used in the model definition above
     // Note that a script will generally create elements from scratch. That's why it starts by deleting all elements in the model. They would have been the outputs of the last run.
-    AddToScriptLibrary(TEST_JS_NAMESPACE, 
+    AddToFakeScriptLibrary(TEST_JS_NAMESPACE, 
 "(function () { \
     function testSolver(model, params) { \
         model.DeleteAllElements();\
@@ -354,9 +354,8 @@ void CMTestFixture::PlaceInstanceOfWidgetComponent(double x, double y, double z,
     OpenClientDb(Db::OpenMode::ReadWrite);
 
     // The CM Solution Element is stored in the proxy model (which should have been created in the client DB and CM import time)
-    RefCountedPtr<ComponentProxyModel> proxy;
-    ASSERT_EQ( DgnDbStatus::Success , ComponentProxyModel::Query(proxy, *m_clientDb, *componentModel) ) << "We should have imported the CM and created a proxy in a prior step";
-    ASSERT_TRUE( proxy.IsValid() );
+    RefCountedPtr<ComponentProxyModel> proxy = ComponentProxyModel::Get(*m_clientDb, *componentModel);
+    ASSERT_TRUE( proxy.IsValid() ) << "We should have imported the CM and created a proxy in a prior step";
 
     PhysicalElementCPtr solutionEl;
 
