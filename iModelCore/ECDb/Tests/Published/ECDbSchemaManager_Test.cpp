@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
+#include "SchemaImportTestFixture.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -242,44 +243,12 @@ ECSchemaPtr CreateTestSchema ()
     return testSchema;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsiclass                                   Krischan.Eberle                  07/15
-//+---------------+---------------+---------------+---------------+---------------+------
-struct SchemaImportTestItem
-    {
-    Utf8String m_schemaXml;
-    bool m_expectedToSucceed;
-    Utf8String m_assertMessage;
 
-    SchemaImportTestItem(Utf8CP schemaXml, bool expectedToSucceeed, Utf8CP assertMessage) : m_schemaXml(schemaXml), m_expectedToSucceed(expectedToSucceeed), m_assertMessage(assertMessage) {}
-    };
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                  07/15
-//+---------------+---------------+---------------+---------------+---------------+------
-void AssertSchemaImport(SchemaImportTestItem const& testItem)
-    {
-    ECDb ecdb;
-    auto stat = ECDbTestUtility::CreateECDb(ecdb, nullptr, L"importinvalidecschema.ecdb");
-    ASSERT_TRUE(stat == BE_SQLITE_OK);
-
-    auto schemaCache = ECDbTestUtility::ReadECSchemaFromString(testItem.m_schemaXml.c_str());
-    ASSERT_TRUE(schemaCache != nullptr) << testItem.m_assertMessage.c_str();
-
-    if (!testItem.m_expectedToSucceed)
-        BeTest::SetFailOnAssert(false);
-
-    {
-    ASSERT_EQ(testItem.m_expectedToSucceed, SUCCESS == ecdb.Schemas().ImportECSchemas(*schemaCache)) << testItem.m_assertMessage.c_str();
-    }
-
-    BeTest::SetFailOnAssert(true);
-    };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  04/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST (ECDbSchemaManager, ImportSchemaWithSchemaValidationErrors)
+TEST_F (SchemaImportTestFixture, ImportSchemaWithSchemaValidationErrors)
     {
     ECDbTestProject::Initialize ();
 
@@ -534,7 +503,7 @@ TEST (ECDbSchemaManager, ImportSchemaWithSchemaValidationErrors)
 
         for (SchemaImportTestItem const& testItem : testItems)
             {
-            AssertSchemaImport(testItem);
+            AssertSchemaImport(nullptr, testItem, "schemavalidationerrors.ecdb");
             }
     }
 

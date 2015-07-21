@@ -75,6 +75,7 @@
     <ClCompile Include="Published\InstanceCRUDTests.cpp" />
     <ClCompile Include="Published\JsonLibrary_Test.cpp" />
     <ClCompile Include="Published\RandomECInstanceGenerator.cpp" />
+    <ClCompile Include="Published\SchemaImportTestFixture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\Backdoor.h" />
@@ -103,6 +104,7 @@
     <ClInclude Include="Published\ECSqlTestFixture.h" />
     <ClInclude Include="Published\ECSqlUpdateStatementCrudTestDataset.h" />
     <ClInclude Include="Published\RandomECInstanceGenerator.h" />
+    <ClInclude Include="Published\SchemaImportTestFixture.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{739F36F2-2002-4DD7-8C46-97AF109867D3}</ProjectGuid>

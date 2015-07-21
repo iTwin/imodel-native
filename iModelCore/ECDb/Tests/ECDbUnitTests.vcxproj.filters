@@ -193,6 +193,9 @@
     <ClCompile Include="NonPublished\ECDb\ECDbMapCA_Tests.cpp">
       <Filter>NonPublished\ECDb</Filter>
     </ClCompile>
+    <ClCompile Include="Published\SchemaImportTestFixture.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Performance\PerformanceTests.h">
@@ -269,6 +272,9 @@
     </ClInclude>
     <ClInclude Include="Performance\DbLogHelper.h">
       <Filter>Performance</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\SchemaImportTestFixture.h">
+      <Filter>Published</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
