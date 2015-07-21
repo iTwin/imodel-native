@@ -617,6 +617,9 @@ enum DgnPlatformConstants
     MAX_LINECODE                    = 7,
 };
 
+//! A kind of script
+enum class DgnScriptType{JavaScript=0, TypeScript=1};
+
 //! @private
 enum class DgnFontType { TrueType = 1, Rsc = 2, Shx = 3, };
 

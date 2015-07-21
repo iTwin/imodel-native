@@ -55,6 +55,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <ECProperty propertyName="Type" typeName="int" />
         <ECProperty propertyName="Space" typeName="int" />
         <ECProperty propertyName="Props" typeName="string" />
+        <ECProperty propertyName="Solver" typeName="string" />
         <ECProperty propertyName="Visibility" typeName="int" />
         <ECProperty propertyName="DependencyIndex" typeName="int" />
     </ECClass>

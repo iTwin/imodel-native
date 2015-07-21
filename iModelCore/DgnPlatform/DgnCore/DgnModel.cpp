@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
+#include <DgnPlatform/DgnCore/DgnScriptContext.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
@@ -170,7 +171,7 @@ void DgnModel::ReleaseAllElements()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    10/00
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_modelId(params.m_id), m_classId(params.m_classId), m_name(params.m_name), m_properties(params.m_props)
+DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_modelId(params.m_id), m_classId(params.m_classId), m_name(params.m_name), m_properties(params.m_props), m_solver(params.m_solver)
     {
     m_rangeIndex = nullptr;
     m_persistent = false;
@@ -251,6 +252,38 @@ DgnModel::~DgnModel()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel::Solver::Solve(DgnModelR model)
+    {
+    if (Type::Script == m_type)
+        {
+        DgnScriptContextR som = T_HOST.GetScriptingAdmin().GetDgnScriptContext();
+        int retval;
+        DgnDbStatus xstatus = som.ExecuteModelSolver(retval, model, m_name.c_str(), m_parameters);
+        if (xstatus != DgnDbStatus::Success || 0 != retval)
+            {
+            TxnManager::ValidationError err(TxnManager::ValidationError::Severity::Fatal, "Model solver failed");   // *** NEEDS WORK: Get failure description from ModelSolver
+            model.GetDgnDb().Txns().ReportError(err);
+            }
+        }
+    else
+        {
+        // *** TBD: Add support for built-in constraint solvers 
+
+        BeAssert((m_type == Solver::Type::None) && "Only Script model solvers supported");
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel::_OnValidate()
+    {
+    m_solver.Solve(*this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::_ToPropertiesJson(Json::Value& val) const {m_properties.ToJson(val);}
@@ -292,7 +325,7 @@ DgnDbStatus DgnModel2d::_OnInsertElement(DgnElementR element)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::ReadProperties()
     {
-    Statement stmt(m_dgndb, "SELECT Props FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
+    Statement stmt(m_dgndb, "SELECT Props,Solver FROM " DGN_TABLE(DGN_CLASSNAME_Model) " WHERE Id=?");
     stmt.BindId(1, m_modelId);
 
     DbResult  result = stmt.Step();
@@ -310,6 +343,8 @@ void DgnModel::ReadProperties()
         }
 
     _FromPropertiesJson(propsJson);
+
+    m_solver.FromJson(stmt.GetValueText(1));
     }
 
 struct UpdatedCaller {DgnModel::AppData::DropMe operator()(DgnModel::AppData& handler, DgnModelCR model) const {return handler._OnUpdated(model);}};
@@ -349,9 +384,10 @@ DgnDbStatus DgnModel::Update()
     _ToPropertiesJson(propJson);
     Utf8String val = Json::FastWriter::ToString(propJson);
 
-    Statement stmt(m_dgndb, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Model) " SET Props=? WHERE Id=?");
+    Statement stmt(m_dgndb, "UPDATE " DGN_TABLE(DGN_CLASSNAME_Model) " SET Props=?, Solver=? WHERE Id=?");
     stmt.BindText(1, val, Statement::MakeCopy::No);
-    stmt.BindId(2, m_modelId);
+    stmt.BindText(2, m_solver.ToJson(), Statement::MakeCopy::Yes);
+    stmt.BindId(3, m_modelId);
 
     auto rc=stmt.Step();
     if (rc!= BE_SQLITE_DONE)
@@ -683,6 +719,8 @@ void DgnModel::_InitFrom(DgnModelCR other)
     Json::Value props;
     other._ToPropertiesJson(props);
     _FromPropertiesJson(props);
+
+    m_solver = other.m_solver;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -717,7 +755,7 @@ DgnModelPtr DgnModels::LoadDgnModel(DgnModelId modelId)
     if (nullptr == handler)
         return nullptr;
 
-    DgnModel::CreateParams params(m_dgndb, model.GetClassId(), model.GetName().c_str(), DgnModel::Properties(), modelId);
+    DgnModel::CreateParams params(m_dgndb, model.GetClassId(), model.GetName().c_str(), DgnModel::Properties(), DgnModel::Solver(), modelId);
     DgnModelPtr dgnModel = handler->Create(params);
     if (!dgnModel.IsValid())
         return nullptr;
@@ -941,4 +979,65 @@ void SheetModel::_FromPropertiesJson(Json::Value const& val)
     {
     T_Super::_FromPropertiesJson(val);
     JsonUtils::DPoint2dFromJson(m_size, val["sheet_size"]);
+    }
+
+// *** Persistent values *** Do not change ***
+#define SOLVER_TYPE_NONE    0
+#define SOLVER_TYPE_SCRIPT  1
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String DgnModel::Solver::ToJson() const
+    {
+    int tval;
+    switch (m_type)
+        { 
+        case Type::None:   tval = SOLVER_TYPE_NONE;   break;
+        case Type::Script: tval = SOLVER_TYPE_SCRIPT; break;
+        default:
+            tval = 0;
+            BeAssert(false);
+        }
+
+    Json::Value json (Json::objectValue);
+    json["Type"] = tval;
+    json["Name"] = m_name.c_str();
+    json["Parameters"] = m_parameters;
+
+    return Json::FastWriter::ToString(json);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel::Solver::FromJson(Utf8CP str)
+    {
+    //  Parse
+    Json::Value json(Json::objectValue);
+    if (!Json::Reader::Parse(str, json))
+        {
+        BeAssert(false);
+        return;
+        }
+
+    //  Validate content
+    if (!json.isMember("Type") || !json.isMember("Name") || !json.isMember("Parameters"))
+        {
+        BeAssert(false);
+        return;
+        }
+
+    switch (json["Type"].asInt())
+        { 
+        case SOLVER_TYPE_NONE:   m_type = Type::None;   break;
+        case SOLVER_TYPE_SCRIPT: m_type = Type::Script; break;
+        default:
+            m_type = Type::None;
+            BeAssert(false);
+        }
+    
+    //  Extract simple properties
+    m_name = json["Name"].asCString();
+    m_parameters = json["Parameters"];
     }
