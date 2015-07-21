@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/ContentRelatedInstancesSpecification.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -91,9 +91,19 @@ void ContentRelatedInstancesSpecification::_WriteXml (BeXmlNodeP xmlNode)
 int ContentRelatedInstancesSpecification::GetSkipRelatedLevel (void) const { return m_skipRelatedLevel; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentRelatedInstancesSpecification::SetSkipRelatedLevel (int value) { m_skipRelatedLevel = value; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 WStringCR ContentRelatedInstancesSpecification::GetInstanceFilter (void) const { return m_instanceFilter; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentRelatedInstancesSpecification::SetInstanceFilter (WStringCR value) { m_instanceFilter = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -101,11 +111,26 @@ WStringCR ContentRelatedInstancesSpecification::GetInstanceFilter (void) const {
 RequiredRelationDirection ContentRelatedInstancesSpecification::GetRequiredRelationDirection (void) const { return m_requiredDirection; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentRelatedInstancesSpecification::SetRequiredRelationDirection (RequiredRelationDirection value) { m_requiredDirection = value; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 WStringCR ContentRelatedInstancesSpecification::GetRelationshipClassNames (void) const { return m_relationshipClassNames; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentRelatedInstancesSpecification::SetRelationshipClassNames (WStringCR value) { m_relationshipClassNames = value; } 
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 WStringCR ContentRelatedInstancesSpecification::GetRelatedClassNames (void) const { return m_relatedClassNames; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentRelatedInstancesSpecification::SetRelatedClassNames (WStringCR value) { m_relatedClassNames = value; }

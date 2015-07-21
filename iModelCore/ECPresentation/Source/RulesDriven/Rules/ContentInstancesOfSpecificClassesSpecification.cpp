@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/ContentInstancesOfSpecificClassesSpecification.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -74,11 +74,26 @@ void ContentInstancesOfSpecificClassesSpecification::_WriteXml (BeXmlNodeP xmlNo
 WStringCR ContentInstancesOfSpecificClassesSpecification::GetClassNames (void) const { return m_classNames; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentInstancesOfSpecificClassesSpecification::SetClassNames (WStringCR value) { m_classNames = value; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ContentInstancesOfSpecificClassesSpecification::GetArePolymorphic (void) const { return m_arePolymorphic; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentInstancesOfSpecificClassesSpecification::SetArePolymorphic (bool value) { m_arePolymorphic = value; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 WStringCR ContentInstancesOfSpecificClassesSpecification::GetInstanceFilter (void) const { return m_instanceFilter; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentInstancesOfSpecificClassesSpecification::SetInstanceFilter (WStringCR value) { m_instanceFilter = value; }

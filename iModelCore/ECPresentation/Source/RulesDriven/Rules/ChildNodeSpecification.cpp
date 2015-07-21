@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/ChildNodeSpecification.cpp $
 |
-|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -106,6 +106,11 @@ int ChildNodeSpecification::GetPriority (void) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ChildNodeSpecification::SetPriority (int value) { m_priority = value; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 int ChildNodeSpecification::GetId (void) const
@@ -122,6 +127,11 @@ bool ChildNodeSpecification::GetAlwaysReturnsChildren (void) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ChildNodeSpecification::SetAlwaysReturnsChildren (bool value) { m_alwaysReturnsChildren = value; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ChildNodeSpecification::GetHideNodesInHierarchy (void) const
@@ -130,12 +140,22 @@ bool ChildNodeSpecification::GetHideNodesInHierarchy (void) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ChildNodeSpecification::SetHideNodesInHierarchy (bool value) { m_hideNodesInHierarchy = value; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ChildNodeSpecification::GetHideIfNoChildren (void)
     {
     return m_hideIfNoChildren;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ChildNodeSpecification::SetHideIfNoChildren (bool value) { m_hideIfNoChildren = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012

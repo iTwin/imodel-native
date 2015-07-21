@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/ContentSpecification.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -71,6 +71,11 @@ void ContentSpecification::WriteXml (BeXmlNodeP parentXmlNode)
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 int ContentSpecification::GetPriority (void) const { return m_priority; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentSpecification::SetPriority (int value) { m_priority = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
