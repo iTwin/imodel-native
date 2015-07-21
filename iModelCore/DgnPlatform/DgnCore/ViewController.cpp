@@ -1850,7 +1850,16 @@ StatusInt ViewController::_VisitHit (HitDetailCR hit, ViewContextR context) cons
     GeometricElementCPtr element = hit.GetElement();
 
     if (!element.IsValid())
-        return ERROR;
+        {
+        IElemTopologyCP  elemTopo = hit.GetElemTopology();
+        IViewTransients* transient = (nullptr != elemTopo ? dynamic_cast<IViewTransients*>(elemTopo->_GetGeometryHandler()) : nullptr);
+
+        if (nullptr == transient)
+            return ERROR;
+
+        transient->_DrawHitTransients(context, hit);
+        return SUCCESS;
+        }
 
     ViewContext::ContextMark mark(&context);
 
