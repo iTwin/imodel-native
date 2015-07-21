@@ -1041,3 +1041,372 @@ void DgnModel::Solver::FromJson(Utf8CP str)
     m_name = json["Name"].asCString();
     m_parameters = json["Parameters"];
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ComponentProxyModel::_ToPropertiesJson(Json::Value& json) const
+    {
+    ECN::ECClassCP ecclass = GetDgnDb().Schemas().GetECClass(ECN::ECClassId(m_elementClassId.GetValue()));
+    json["ProxyElementSchema"] = Utf8String(ecclass->GetSchema().GetName()).c_str();
+    json["ProxyElementClass"] = Utf8String(ecclass->GetName()).c_str();
+    json["ProxyComponentName"] = m_componentName.c_str();
+
+    DgnCategories::Category cat = GetDgnDb().Categories().Query(m_categoryId);
+    json["ProxyCategory"] = cat.GetCode();
+    
+    Json::Value subcats(Json::objectValue);
+    for (auto const& mapping : m_subcatxlat)
+        {
+        DgnCategories::SubCategory subcat = GetDgnDb().Categories().QuerySubCategory(mapping.second);
+        subcats[subcat.GetCode()] = Utf8PrintfString("%lld", mapping.first.GetValue());
+        }
+
+    json["ProxySubCategoryMap"] = subcats;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ComponentProxyModel::_FromPropertiesJson(Json::Value const& json)
+    {
+    m_elementClassId = DgnClassId(GetDgnDb().Schemas().GetECClassId(json["ProxyElementSchema"].asCString(), json["ProxyElementClass"].asCString()));
+    m_componentName = json["ProxyComponentName"].asCString();
+
+    m_categoryId = GetDgnDb().Categories().QueryCategoryId(json["ProxyCategory"].asCString());
+
+    Json::Value const& subcats = json["ProxySubCategoryMap"];
+    for (auto const& subcatname : subcats.getMemberNames())
+        {
+        DgnSubCategoryId subcatid = GetDgnDb().Categories().QuerySubCategoryId(m_categoryId, subcatname.c_str());
+        int64_t compsubcatvalue;
+        sscanf(subcats[subcatname.c_str()].asCString(), "%lld", &compsubcatvalue);
+        DgnSubCategoryId compsubcat(compsubcatvalue);
+        m_subcatxlat[compsubcat] = subcatid;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ComponentProxyModel::ComputeName(ComponentModel const& componentModel)
+    {
+    return Utf8PrintfString("^%s", componentModel.GetModelName());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ComponentProxyModel::ComputeSolutionName(ComponentModel const& componentModel)
+    {
+    return BeStringUtilities::UriEncode(Json::FastWriter::ToString(componentModel.GetSolver().GetParameters()).c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static void importCategory(DgnCategoryId& targetcatid, DgnCategoryId& sourcecatid, DgnDbR targetDb, DgnDbR sourceDb, Utf8CP catname)
+    {
+    sourcecatid = sourceDb.Categories().QueryCategoryId(catname);
+    DgnCategories::Category sourcecat = sourceDb.Categories().Query(sourcecatid);
+    DgnCategories::SubCategory::Appearance sourceAppearance = sourceDb.Categories().QuerySubCategory(DgnCategories::DefaultSubCategoryId(sourcecatid)).GetAppearance();
+
+    // *** TBD: Translate style IDS in sourceAppearance
+
+    DgnCategories::Category clientcat(sourcecat.GetCode(), DgnCategories::Scope::Physical, sourcecat.GetDescription());
+    if (BE_SQLITE_OK != targetDb.Categories().Insert(clientcat, sourceAppearance))
+        return;
+    
+    targetcatid = targetDb.Categories().QueryCategoryId(catname);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static void importSubCategory(DgnSubCategoryId& targetsubcatid, DgnDbR targetDb, DgnCategoryId targetcatid, DgnDbR sourceDb, DgnCategories::SubCategoryIterator::Entry const& sourceSubCat)
+    {
+    DgnCategories::SubCategory::Appearance sourceAppearance = sourceSubCat.GetAppearance();
+
+    // *** TBD: Translate style IDS in sourceAppearance
+
+    DgnCategories::SubCategory targetsubcat(targetcatid, DgnSubCategoryId(), sourceSubCat.GetCode(), sourceAppearance, sourceSubCat.GetDescription(), sourceSubCat.GetLabel().c_str());
+    if (BE_SQLITE_OK != targetDb.Categories().InsertSubCategory(targetsubcat)) 
+        return;
+    
+    targetsubcatid = targetsubcat.GetSubCategoryId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ComponentProxyModel::ImportElementCategory(ComponentModel const& componentModel)
+    {
+    DgnCategoryId componentCatId;
+    importCategory(m_categoryId, componentCatId, GetDgnDb(), componentModel.GetDgnDb(), componentModel.GetElementCategoryName().c_str());
+
+    for (auto const& componentSubCat : componentModel.GetDgnDb().Categories().MakeSubCategoryIterator(componentCatId))
+        {
+        DgnSubCategoryId subcatid;
+        if (componentSubCat.GetSubCategoryId() == DgnCategories::DefaultSubCategoryId(componentCatId))
+            subcatid = DgnCategories::DefaultSubCategoryId(m_categoryId);
+        else
+            importSubCategory(subcatid, GetDgnDb(), m_categoryId, componentModel.GetDgnDb(), componentSubCat);
+        
+        m_subcatxlat[componentSubCat.GetSubCategoryId()] = subcatid;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+RefCountedPtr<ComponentProxyModel> ComponentProxyModel::Create(DgnDbR targetDb, ComponentModel const& componentModel, ECN::ECSchemaCR componentSchema)
+    {
+    DgnClassId clsid = DgnClassId(targetDb.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ComponentProxyModel));
+    Utf8String proxyName = ComputeName(componentModel);
+    
+    ComponentProxyModel* proxy = new ComponentProxyModel(CreateParams(targetDb, clsid, proxyName.c_str()));
+    
+    proxy->m_componentName = componentModel.GetModelName();
+    
+    proxy->ImportElementCategory(componentModel);
+
+    auto elClass = componentSchema.GetClassCP(WString(componentModel.ComputeElementECClassName().c_str(), BentleyCharEncoding::Utf8).c_str());
+    if (nullptr == elClass)
+        {
+        BeAssert(false && "Component's schema must be imported first");
+        return nullptr;
+        }
+    proxy->m_elementClassId = DgnClassId(elClass->GetId());
+
+    return proxy;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ComponentProxyModel::Query(RefCountedPtr<ComponentProxyModel>& existingModel, DgnDbR targetDb, ComponentModel const& componentModel)
+    {
+    Utf8String proxyName = ComputeName(componentModel);
+    DgnModelId mid = targetDb.Models().QueryModelId(proxyName.c_str());
+    if (!mid.IsValid())
+        return DgnDbStatus::NotFound;
+    existingModel = targetDb.Models().Get<ComponentProxyModel>(mid);
+    return existingModel.IsValid()? DgnDbStatus::Success: DgnDbStatus::ReadError;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalElementCPtr ComponentProxyModel::QuerySolution(Utf8StringCR solutionName)
+    {
+    DgnElementId eid = GetDgnDb().Elements().QueryElementIdByCode(solutionName.c_str());
+    return GetDgnDb().Elements().Get<PhysicalElement>(eid);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalElementCPtr ComponentProxyModel::QuerySolution(ComponentModel const& componentModel)
+    {
+    return QuerySolution(ComputeSolutionName(componentModel));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+PhysicalElementCPtr ComponentProxyModel::CaptureSolution(ComponentModel& componentModel)
+    {
+    if (!m_elementClassId.IsValid() || !m_categoryId.IsValid())
+        {
+        BeAssert(false);
+        return PhysicalElementCPtr();
+        }
+
+    Utf8String solutionCode = ComputeSolutionName(componentModel);
+
+    //  Accumulate geometry by SubCategory
+    bmap<DgnSubCategoryId, ElementGeometryBuilderPtr> builders;     // *** TBD: add another dimension: break out builders by same ElemDisplayParams
+    componentModel.FillModel();
+    for (auto const& mapEntry : componentModel)
+        {
+        GeometricElementCP gel = mapEntry.second->ToGeometricElement();
+        if (nullptr == gel)
+            continue;
+        DgnCategories::Category gcat = componentModel.GetDgnDb().Categories().Query(gel->GetCategoryId());
+        if (!componentModel.GetElementCategoryName().Equals(gcat.GetCode()))
+            continue;
+        // *** NEEDS WORK: Detect, schedule, and skip instances of other CM's
+        ElementGeometryCollection gcollection(*gel);
+        for (ElementGeometryPtr const& geom : gcollection)
+            {
+            //  Look up the subcategory ... IN THE CLIENT DB
+            ElemDisplayParamsCR dparams = gcollection.GetElemDisplayParams();
+            DgnSubCategoryId clientsubcatid = m_subcatxlat[dparams.GetSubCategoryId()];
+
+            ElementGeometryBuilderPtr& builder = builders[clientsubcatid];
+            if (!builder.IsValid())
+                builder = ElementGeometryBuilder::CreateGeomPart(GetDgnDb(), true);
+
+            // Since each little piece of geometry can have its own transform, we must
+            // build the transforms back into them in order to assemble them into a single geomstream.
+            // It's all relative to 0,0,0 in the component model, so it's fine to do this.
+            ElementGeometryPtr xgeom = geom->Clone();
+            Transform trans = gcollection.GetGeometryToWorld(); // A component model is in its own local coordinate system, so "World" just means relative to local 0,0,0
+            xgeom->TransformInPlace(trans);
+
+            // *** NEEDS WORK: ElemDisplayParams -- translate line style IDs
+
+            builder->Append(*xgeom);
+            }
+        }
+    
+    //  Create a GeomPart for each SubCategory
+    bvector<bpair<DgnSubCategoryId,DgnGeomPartId>> subcatAndGeoms;
+    for (auto const& entry : builders)
+        {
+        DgnSubCategoryId clientsubcatid = entry.first;
+        ElementGeometryBuilderPtr builder = entry.second;
+
+        Utf8String geomPartCode (solutionCode);
+        geomPartCode.append(Utf8PrintfString("_%lld", clientsubcatid.GetValue()));
+
+        DgnGeomPartPtr geomPart = DgnGeomPart::Create(geomPartCode.c_str());
+        builder->CreateGeomPart(GetDgnDb(), true);
+        builder->SetGeomStream(*geomPart);
+        if (BSISUCCESS != GetDgnDb().GeomParts().InsertGeomPart(*geomPart))
+            return PhysicalElementCPtr();
+
+        subcatAndGeoms.push_back(make_bpair(clientsubcatid, geomPart->GetId()));
+        }
+
+    //  Now generate the solution element based on the harvested geometry
+    RefCountedPtr<PhysicalElement> cmsolution = PhysicalElement::Create(PhysicalElement::CreateParams(GetDgnDb(), GetModelId(), m_elementClassId, m_categoryId));
+    cmsolution->SetCode(solutionCode.c_str());
+
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*cmsolution);
+    for (bpair<DgnSubCategoryId,DgnGeomPartId> const& subcatAndGeom : subcatAndGeoms)
+        {
+        Transform noTransform = Transform::FromIdentity();
+        builder->Append(subcatAndGeom.first);
+        builder->Append(subcatAndGeom.second, noTransform);
+        }
+
+    builder->SetGeomStreamAndPlacement(*cmsolution);
+
+    return cmsolution->Insert()->ToPhysicalElement();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ComponentProxyModel::ImportSchema(DgnDbR db, BeFileNameCR schemaFile)
+    {
+    ECSchemaReadContextPtr contextPtr = ECSchemaReadContext::CreateContext();
+    contextPtr->AddSchemaLocater(db.GetSchemaLocater());
+    contextPtr->AddSchemaPath(schemaFile.GetDirectoryName().GetName());
+
+    ECSchemaPtr schemaPtr;
+    SchemaReadStatus readSchemaStatus = ECSchema::ReadFromXmlFile(schemaPtr, schemaFile.GetName(), *contextPtr);
+    if (SCHEMA_READ_STATUS_Success != readSchemaStatus)
+        return DgnDbStatus::ReadError;
+
+    if (BentleyStatus::SUCCESS != db.Schemas().ImportECSchemas(contextPtr->GetCache()))
+        return DgnDbStatus::BadSchema;
+
+    db.Domains().SyncWithSchemas();
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ComponentModel::GenerateECClass(ECN::ECSchemaR schema)
+    {
+    ECN::ECClassP ecclass;
+    auto stat = schema.CreateClass(ecclass, WString(ComputeElementECClassName().c_str(), BentleyCharEncoding::Utf8));
+    if (ECN::ECOBJECTS_STATUS_Success != stat)
+        return DgnDbStatus::BadRequest;
+
+    Json::Value const& parms = m_solver.GetParameters();
+    for (Utf8String const& parmname : parms.getMemberNames())
+        {
+        ECN::PrimitiveECPropertyP ecprop;
+        stat = ecclass->CreatePrimitiveProperty(ecprop, WString(parmname.c_str(), BentleyCharEncoding::Utf8));
+        if (ECN::ECOBJECTS_STATUS_Success != stat)
+            return DgnDbStatus::BadRequest;
+        Json::Value const& parmvalue = parms[parmname.c_str()];
+        if (parmvalue.isBool())
+            ecprop->SetType(ECN::PRIMITIVETYPE_Boolean);
+        else if (parmvalue.isIntegral())
+            ecprop->SetType(ECN::PRIMITIVETYPE_Long);
+        else if (parmvalue.isDouble())
+            ecprop->SetType(ECN::PRIMITIVETYPE_Double);
+        else if (parmvalue.isString())
+            ecprop->SetType(ECN::PRIMITIVETYPE_String);
+        else
+            {
+            BeAssert(false);
+            return DgnDbStatus::BadSchema;
+            }
+        }
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ComponentModel::SetParametersFromEC(ECN::IECInstanceCR instance)
+    {
+    Json::Value& parms = m_solver.GetParametersR();
+
+    for (ECN::ECPropertyP const& ecprop : instance.GetClass().GetProperties())
+        {
+        Utf8String propName(ecprop->GetName());
+        if (!parms.isMember(propName.c_str()))
+            {
+            BeAssert(false);
+            return DgnDbStatus::BadSchema;
+            }
+
+        if (BSISUCCESS != DgnScriptLibrary::ToJsonFromEC(parms, instance, propName.c_str()))
+            {
+            BeAssert(false);
+            return DgnDbStatus::BadSchema;
+            }
+        }
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ComponentModel::GetElementCategoryName() const
+    {
+    return m_elementCategoryName;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ComponentModel::ComputeElementECClassName() const
+    {
+    return GetModelName();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ComponentModel::_ToPropertiesJson(Json::Value& json) const
+    {
+    json["ElementCategoryName"] = m_elementCategoryName.c_str();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ComponentModel::_FromPropertiesJson(Json::Value const& json)
+    {
+    m_elementCategoryName = json["ElementCategoryName"].asCString();
+    }
+

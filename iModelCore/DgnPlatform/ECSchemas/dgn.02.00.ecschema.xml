@@ -89,6 +89,9 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
     <ECClass typeName="ComponentModel" isDomainClass="True">
         <BaseClass>Model3d</BaseClass>
     </ECClass>
+    <ECClass typeName="ComponentProxyModel" isDomainClass="True">
+        <BaseClass>Model3d</BaseClass>
+    </ECClass>
 
     <ECClass typeName="WebMercatorModel" isDomainClass="True" >
         <BaseClass>PhysicalModel</BaseClass>

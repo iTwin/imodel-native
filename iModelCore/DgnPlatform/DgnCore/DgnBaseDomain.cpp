@@ -25,6 +25,7 @@ namespace dgn_ModelHandler
 HANDLER_DEFINE_MEMBERS(Model)
 HANDLER_DEFINE_MEMBERS(Physical)
 HANDLER_DEFINE_MEMBERS(Component)
+HANDLER_DEFINE_MEMBERS(ComponentProxy)
 HANDLER_DEFINE_MEMBERS(PhysicalRedline)
 HANDLER_DEFINE_MEMBERS(Sheet)
 HANDLER_DEFINE_MEMBERS(Redline)
@@ -74,6 +75,7 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     RegisterHandler(dgn_ModelHandler::Model::GetHandler());
     RegisterHandler(dgn_ModelHandler::Physical::GetHandler());
     RegisterHandler(dgn_ModelHandler::Component::GetHandler());
+    RegisterHandler(dgn_ModelHandler::ComponentProxy::GetHandler());
     RegisterHandler(dgn_ModelHandler::Sheet::GetHandler());
     RegisterHandler(dgn_ModelHandler::Graphics2d::GetHandler());
     RegisterHandler(dgn_ModelHandler::PlanarPhysical::GetHandler());
