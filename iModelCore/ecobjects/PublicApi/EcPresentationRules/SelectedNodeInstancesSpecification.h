@@ -49,24 +49,24 @@ struct SelectedNodeInstancesSpecification : public ContentSpecification
         ECOBJECTS_EXPORT bool                         GetOnlyIfNotHandled (void) const;
 
         //! Sets OnlyIfNotHandled value for the specification.
-        ECOBJECTS_EXPORT void                         SetOnlyIfNotHandled (bool value)             { m_onlyIfNotHandled = value; }
+        ECOBJECTS_EXPORT void                         SetOnlyIfNotHandled (bool value);
 
         //! Acceptable schema name of ECInstances that will be shown in the content.
         ECOBJECTS_EXPORT WStringCR                    GetAcceptableSchemaName (void) const;
 
         //! Sets the acceptable schema name of the specification.
-        ECOBJECTS_EXPORT void                         SetAcceptableSchemaName (WStringCR value)    { m_acceptableSchemaName = value; } 
+        ECOBJECTS_EXPORT void                         SetAcceptableSchemaName (WStringCR value);
 
         //! Acceptable class names of ECInstances that will be shown in the content.
         ECOBJECTS_EXPORT WStringCR                    GetAcceptableClassNames (void) const;
 
         //! Sets the acceptable class names of the specification.
-        ECOBJECTS_EXPORT void                         SetAcceptableClassNames (WStringCR value)    { m_acceptableClassNames = value; }
+        ECOBJECTS_EXPORT void                         SetAcceptableClassNames (WStringCR value);
 
         //! Identifies whether AcceptableClasses should be check polymorphically.
         ECOBJECTS_EXPORT bool                         GetAcceptablePolymorphically (void) const;
         //! Sets the AcceptablePolymorphically value for the specification.
-        ECOBJECTS_EXPORT void                         SetAcceptablePolymorphically (bool value)    { m_acceptablePolymorphically = value; }
+        ECOBJECTS_EXPORT void                         SetAcceptablePolymorphically (bool value);
 
     };
 
