@@ -632,8 +632,9 @@ public:
         //! @param[in] dgndb The DgnDb for the new DgnModel
         //! @param[in] classId The DgnClassId for the new DgnModel.
         //! @param[in] name The name for the DgnModel
-        //! @param[in] props The properties for the new DgnModel.
+        //! @param[in] elementCategory the element category
         //! @param[in] solver The definition of the solver to be used by this model when validating changes to its content.
+        //! @param[in] props The properties for the new DgnModel.
         //! @param[in] id Internal only, must be DgnModelId() to create a new DgnModel.
         CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, Utf8String elementCategory, Solver const& solver, Properties props=Properties(), DgnModelId id=DgnModelId()) :
             T_Super(dgndb, classId, name, props, solver, id), m_elementCategoryName(elementCategory) {}
@@ -720,7 +721,7 @@ public:
     //! @note The caller must call #Insert. 
     //! @param[in] targetDb     The DgnDb that is to hold the new ComponentProxyModel
     //! @param[in] componentModel The ComponentModel that is to be represented
-    //! @praam[in] componentSchema The ComponentModel's ECSchema, which should have already been imported into this DgnDb.
+    //! @param[in] componentSchema The ComponentModel's ECSchema, which should have already been imported into this DgnDb.
     //! @return The newly created ComponentProxyModel
     DGNPLATFORM_EXPORT static RefCountedPtr<ComponentProxyModel> Create(DgnDbR targetDb, ComponentModel const& componentModel, ECN::ECSchemaCR componentSchema);
 
