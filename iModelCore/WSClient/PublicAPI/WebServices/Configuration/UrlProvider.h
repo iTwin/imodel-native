@@ -17,6 +17,34 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
 /*--------------------------------------------------------------------------------------+
+* @bsiclass                                                 Julija.Semenenko    07/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+struct UrlData
+    {
+
+    private:
+        Utf8String m_defaultUrl;
+        //Check URL IDs in the buddi.bentley.com
+        //For all DEV URLs: Bentley Corporate Network – DEV (ID: 103)
+        //For all QA URLs: Bentley Corporate Network – QA (ID: 102)
+        //Release URLs without regions have their own unique IDs
+        uint32_t m_urlId;
+
+    public:
+        UrlData(Utf8String defaultUrl, uint32_t urlId) : m_defaultUrl(defaultUrl), m_urlId(urlId) {}
+
+        Utf8String GetDefaultUrl() const
+            {
+            return m_defaultUrl;
+            }
+
+        uint32_t GetId() const
+            {
+            return m_urlId;
+            }
+    };
+
+/*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Brad.Hadden    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct UrlProvider
@@ -36,20 +64,19 @@ struct UrlProvider
         static ILocalState* s_localState;
         static IBuddiClientPtr s_buddi;
 
-        static uint32_t s_regionsId[3];
         static const Utf8CP s_urlNames[6];
 
-        static const Utf8String s_punchListWsgUrl[3];
-        static const Utf8String s_connectWsgUrl[3];
-        static const Utf8String s_connectEulaUrl[3];
-        static const Utf8String s_connectLearnStsAuthUri[3];
-        static const Utf8String s_usageTrackingUrl[3];
-        static const Utf8String s_passportUrl[3];
+        static const UrlData s_punchListWsgUrl[3];
+        static const UrlData s_connectWsgUrl[3];
+        static const UrlData s_connectEulaUrl[3];
+        static const UrlData s_connectLearnStsAuthUri[3];
+        static const UrlData s_usageTrackingUrl[3];
+        static const UrlData s_passportUrl[3];
 
 
     private:
-        static Utf8String GetBuddiUrl(Utf8StringCR urlName);
-        static Utf8String GetUrl(Utf8CP urlName, const Utf8String* defaultUrls);
+        static Utf8String GetBuddiUrl(Utf8StringCR urlName, uint32_t urlId);
+        static Utf8String GetUrl(Utf8CP urlName, const UrlData* defaultUrls);
 
     public:
         WSCLIENT_EXPORT static void Initialize(Environment env,
