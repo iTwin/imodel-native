@@ -1059,7 +1059,7 @@ void ComponentProxyModel::_ToPropertiesJson(Json::Value& json) const
     for (auto const& mapping : m_subcatxlat)
         {
         DgnCategories::SubCategory subcat = GetDgnDb().Categories().QuerySubCategory(mapping.second);
-        subcats[subcat.GetCode()] = Utf8PrintfString("%lld", mapping.first);
+        subcats[subcat.GetCode()] = Utf8PrintfString("%lld", mapping.first.GetValue());
         }
 
     json["ProxySubCategoryMap"] = subcats;
