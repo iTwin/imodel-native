@@ -338,7 +338,6 @@ enum ArrayKind ENUM_UNDERLYING_TYPE(unsigned short)
 
 //=======================================================================================
 //! Enumeration of primitive data types for ECProperties
-//! @ingroup ECObjectsGroup
 //=======================================================================================
 enum PrimitiveType ENUM_UNDERLYING_TYPE(unsigned short)
     {
