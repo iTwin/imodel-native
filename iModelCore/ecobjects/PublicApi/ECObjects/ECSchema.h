@@ -960,9 +960,13 @@ friend struct ECPropertyIterable::IteratorState;
 friend struct SupplementedSchemaBuilder;
 friend bool ECProperty::SetCalculatedPropertySpecification (IECInstanceP);
 
+//__PUBLISH_SECTION_START__
+
 public:
     //! Value of unset ECClassId.
     static const ECClassId UNSET_ECCLASSID = 0ULL;
+
+//__PUBLISH_SECTION_END__
 
 private:
     mutable WString                 m_fullName;
