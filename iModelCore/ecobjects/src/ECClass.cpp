@@ -63,10 +63,8 @@ WStringCR ECClass::GetName () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassId ECClass::GetId () const
     {
-
-    BeAssert (0 != m_ecClassId);
+    BeAssert (HasId());
     return m_ecClassId;
-
     }
 
 /*---------------------------------------------------------------------------------**//**

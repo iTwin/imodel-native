@@ -960,6 +960,10 @@ friend struct ECPropertyIterable::IteratorState;
 friend struct SupplementedSchemaBuilder;
 friend bool ECProperty::SetCalculatedPropertySpecification (IECInstanceP);
 
+public:
+    //! Value of unset ECClassId.
+    static const ECClassId UNSET_ECCLASSID = 0ULL;
+
 private:
     mutable WString                 m_fullName;
     WString                         m_description;
@@ -1038,8 +1042,8 @@ public:
     ECSchemaR                               GetSchemaR() { return const_cast<ECSchemaR>(m_schema); }
 
     //! Intended to be called by ECDb or a similar system
-    ECOBJECTS_EXPORT void SetId(ECClassId id) { BeAssert (0 == m_ecClassId); m_ecClassId = id; };
-    ECOBJECTS_EXPORT bool HasId() const { return m_ecClassId != 0; };
+    ECOBJECTS_EXPORT void SetId(ECClassId id) { BeAssert(UNSET_ECCLASSID == m_ecClassId); m_ecClassId = id; };
+    ECOBJECTS_EXPORT bool HasId() const { return m_ecClassId != UNSET_ECCLASSID; };
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
