@@ -22,10 +22,12 @@ private:
     bvector<Byte>           m_tileBuffer;
     RasterFilePtr           m_rasterFilePtr;
     Point2d                 m_tileSize;
+    HFCPtr<HCDPacket>       m_packetPtr;
 
 private:
             RasterFileSource(Utf8StringCR resolvedName);
     virtual ~RasterFileSource(){};
+			Byte*			CreateWorkingBuffer(size_t& bufferSize, const HRPPixelType& pi_rPixelType, uint32_t pi_Width, uint32_t pi_Height) const;
 
 
 protected:

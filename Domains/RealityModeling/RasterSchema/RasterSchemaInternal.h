@@ -41,6 +41,8 @@
 #include <Imagepp/all/h/HGF2DIdentity.h>
 #include <Imagepp/all/h/HRPPixelTypeV24R8G8B8.h>
 #include <Imagepp/all/h/HRPPixelTypeV32R8G8B8A8.h>
+#include <Imagepp/all/h/HRPPixelTypeI1R8G8B8A8RLE.h>
+#include <Imagepp/all/h/HRPPixelTypeI1R8G8B8RLE.h>
 #include <Imagepp/all/h/HCDCodecIdentity.h>
 #include <Imagepp/all/h/HCDPacket.h>
 #include <Imagepp/all/h/HGF2DAffine.h>
