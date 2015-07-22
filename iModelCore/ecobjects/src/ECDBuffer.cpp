@@ -29,6 +29,8 @@ enum ECDHeaderOffsets
     };
 
 const uint32_t BITS_PER_NULLFLAGSBITMASK = (sizeof(NullflagsBitmask) * 8);
+#define PROPERTYLAYOUT_Source_ECPointer "Source ECPointer"
+#define PROPERTYLAYOUT_Target_ECPointer "Target ECPointer"
 
 /*---------------------------------------------------------------------------------**//**
 * used in compatible class layout map

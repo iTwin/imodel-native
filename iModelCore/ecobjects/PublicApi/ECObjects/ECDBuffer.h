@@ -13,8 +13,6 @@
 
 /*__PUBLISH_SECTION_END__*/
 #define N_FINAL_STRING_PROPS_IN_FAKE_CLASS 48
-#define PROPERTYLAYOUT_Source_ECPointer "Source ECPointer"
-#define PROPERTYLAYOUT_Target_ECPointer "Target ECPointer"
 /*__PUBLISH_SECTION_START__*/
 
 EC_TYPEDEFS(ECDBuffer);
