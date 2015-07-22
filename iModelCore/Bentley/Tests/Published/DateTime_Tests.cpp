@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/DateTime_Tests.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -313,10 +313,10 @@ TEST (DateTimeTests, DateTimeComparisonTests)
 //---------------------------------------------------------------------------------------
 TEST (DateTimeTests, DateTimeComponentToString)
     {
-    WString date = DateTime::Info::ComponentToString(DateTime::Component::Date);
-    EXPECT_EQ(0, date.CompareTo(L"Date"));
-    WString dateTime = DateTime::Info::ComponentToString(DateTime::Component::DateAndTime);
-    EXPECT_EQ(0, dateTime.CompareTo(L"DateTime"));
+    Utf8String date = DateTime::Info::ComponentToString(DateTime::Component::Date);
+    EXPECT_EQ(0, date.CompareTo("Date"));
+    Utf8String dateTime = DateTime::Info::ComponentToString(DateTime::Component::DateAndTime);
+    EXPECT_EQ(0, dateTime.CompareTo("DateTime"));
     }
 
 //---------------------------------------------------------------------------------------
