@@ -288,12 +288,24 @@ BentleyStatus ClassMapInfo::InitializeFromClassMapCA()
     if (ECOBJECTS_STATUS_Success != ecstat)
         return ERROR;
 
-    if (m_tableName.empty() && (userStrategy->GetStrategy() == UserECDbMapStrategy::Strategy::ExistingTable ||
+    if ((userStrategy->GetStrategy() == UserECDbMapStrategy::Strategy::ExistingTable ||
         (userStrategy->GetStrategy() == UserECDbMapStrategy::Strategy::SharedTable && !userStrategy->IsPolymorphic())))
         {
-        LOG.errorv(L"TableName must not be empty in ClassMap custom attribute on ECClass %ls if MapStrategy is 'SharedTable' and MapStrategy.IsPolymorphic is false or if MapStrategy is 'ExistingTable'.",
-                   m_ecClass.GetFullName());
-        return ERROR;
+        if (m_tableName.empty())
+            {
+            LOG.errorv(L"TableName must not be empty in ClassMap custom attribute on ECClass %ls if MapStrategy is 'SharedTable, polymorphic' or if MapStrategy is 'ExistingTable'.",
+                       m_ecClass.GetFullName());
+            return ERROR;
+            }
+        }
+    else
+        {
+        if (!m_tableName.empty())
+            {
+            LOG.errorv(L"TableName must only be set in ClassMap custom attribute on ECClass %ls if MapStrategy is 'SharedTable, polymorphic' or 'ExistingTable'.",
+                       m_ecClass.GetFullName());
+            return ERROR;
+            }
         }
 
     ecstat = customClassMap.TryGetECInstanceIdColumn(m_ecInstanceIdColumnName);

@@ -487,9 +487,9 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (Utf8CP tableName, bool isVirtual, Utf8
         return nullptr;
 
     BeMutexHolder lock (m_criticalSection);
-    auto table = GetSQLManagerR ().GetDbSchemaR ().FindTableP (tableName);
-    auto ownerType = mapToExistingTable == false ? OwnerType::ECDb : OwnerType::ExistingTable;
-    if (table)
+    ECDbSqlTable* table = GetSQLManagerR ().GetDbSchemaR ().FindTableP (tableName);
+    OwnerType ownerType = mapToExistingTable == false ? OwnerType::ECDb : OwnerType::ExistingTable;
+    if (table != nullptr)
         {
 
         //if virtuality and empty table handling mismatches, change the table to the stronger
@@ -543,7 +543,10 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (Utf8CP tableName, bool isVirtual, Utf8
         if (mapToSecondaryTable)
             return nullptr;
 
-        table = GetSQLManagerR ().GetDbSchemaR ().CreateTableUsingExistingTableDefinition (GetECDbR (), tableName);
+        table = GetSQLManagerR ().GetDbSchemaR ().CreateTableForExistingTableMapStrategy (GetECDbR (), tableName);
+        if (table == nullptr)
+            return nullptr;
+
         if (!Utf8String::IsNullOrEmpty (primaryKeyColumnName))
             {
             auto editMode = table->GetEditHandle ().CanEdit ();
@@ -553,7 +556,7 @@ ECDbSqlTable* ECDbMap::FindOrCreateTable (Utf8CP tableName, bool isVirtual, Utf8
             auto systemColumn = table->FindColumnP (primaryKeyColumnName);
             if (systemColumn == nullptr)
                 {
-                BeAssert (false && "Failed to find user provided primary key column");
+                LOG.errorv("Table '%s' specified in ClassMap custom attribute together with ExistingTable MapStrategy doesn't have a primary key.", tableName);
                 return nullptr;
                 }
 

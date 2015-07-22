@@ -252,8 +252,8 @@ TEST_F (SchemaImportTestFixture, ImportSchemaWithSchemaValidationErrors)
     {
     ECDbTestProject::Initialize ();
 
-    std::vector <SchemaImportTestItem> testItems {
-        SchemaImportTestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+    std::vector <TestItem> testItems {
+        TestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECClass typeName=\"TestClass\" >"
         "    <ECProperty propertyName=\"TestProperty\" typeName=\"string\" />"
         "  </ECClass>"
@@ -263,7 +263,7 @@ TEST_F (SchemaImportTestFixture, ImportSchemaWithSchemaValidationErrors)
         "</ECSchema>",
         false, "Classes with names differing only by case."),
 
-        SchemaImportTestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        TestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECClass typeName=\"TestClass\" >"
         "    <ECProperty propertyName=\"TestProperty\" typeName=\"string\" />"
         "    <ECProperty propertyName=\"TESTPROPERTY\" typeName=\"string\" />"
@@ -271,7 +271,7 @@ TEST_F (SchemaImportTestFixture, ImportSchemaWithSchemaValidationErrors)
         "</ECSchema>",
         false, "Properties only differing by case within a class."),
 
-        SchemaImportTestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        TestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECClass typeName=\"TestClass\" >"
         "    <ECProperty propertyName=\"TestProperty\" typeName=\"string\" />"
         "  </ECClass>"
@@ -282,7 +282,7 @@ TEST_F (SchemaImportTestFixture, ImportSchemaWithSchemaValidationErrors)
         "</ECSchema>",
         false, "Properties only differing by case in a sub and base class."),
 
-        SchemaImportTestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        TestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECClass typeName=\"TestClass\" >"
         "    <ECProperty propertyName=\"TestProperty\" typeName=\"string\" />"
         "  </ECClass>"
@@ -292,7 +292,7 @@ TEST_F (SchemaImportTestFixture, ImportSchemaWithSchemaValidationErrors)
         "</ECSchema>",
         true, "Properties differing only by case in two unrelated classes."),
 
-        SchemaImportTestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        TestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECClass typeName=\"TestClass\" >"
         "    <ECProperty propertyName=\"TestProperty\" typeName=\"string\" />"
         "  </ECClass>"
@@ -319,14 +319,14 @@ TEST_F (SchemaImportTestFixture, ImportSchemaWithSchemaValidationErrors)
         "</ECSchema>",
         false, "Class and properties only differing by case within a class."),
 
-        SchemaImportTestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        TestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECClass typeName=\"TestClass\" isStruct=\"true\" isDomainClass=\"true\">"
         "    <ECStructProperty propertyName=\"Prop1\" typeName=\"TestClass\" />"
         "  </ECClass>"
         "</ECSchema>",
         false, "Property is of same type as class."),
 
-        SchemaImportTestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        TestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECClass typeName=\"Base\" isStruct=\"true\" isDomainClass=\"true\" >"
         "    <ECStructProperty propertyName=\"Prop1\" typeName=\"Sub\" isStruct=\"true\" />"
         "  </ECClass>"
@@ -337,14 +337,14 @@ TEST_F (SchemaImportTestFixture, ImportSchemaWithSchemaValidationErrors)
         "</ECSchema>",
         false, "Property is of subtype of class."),
 
-        SchemaImportTestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        TestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECClass typeName=\"TestClass\" isStruct=\"true\" isDomainClass=\"true\">"
         "    <ECArrayProperty propertyName=\"Prop1\" typeName=\"TestClass\" minOccurs=\"0\" maxOccurs=\"unbounded\"/>"
         "  </ECClass>"
         "</ECSchema>",
         false, "Property is array of class."),
 
-        SchemaImportTestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        TestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECClass typeName=\"Base\" isStruct=\"true\" isDomainClass=\"true\">"
         "    <ECArrayProperty propertyName=\"Prop1\" typeName=\"Sub\" minOccurs=\"0\" maxOccurs=\"unbounded\"/>"
         "  </ECClass>"
@@ -355,7 +355,7 @@ TEST_F (SchemaImportTestFixture, ImportSchemaWithSchemaValidationErrors)
         "</ECSchema>",
         false, "Property is of array of subclass of class."),
 
-        SchemaImportTestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        TestItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECClass typeName=\"Base\" isStruct=\"true\" isDomainClass=\"true\">"
         "    <ECArrayProperty propertyName=\"Prop1\" typeName=\"Sub\" minOccurs=\"0\" maxOccurs=\"unbounded\"/>"
         "  </ECClass>"
@@ -370,7 +370,7 @@ TEST_F (SchemaImportTestFixture, ImportSchemaWithSchemaValidationErrors)
         false, "Case-sensitive class and prop names and property is of array of subclass of class."),
 
 
-        SchemaImportTestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        TestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECClass typeName=\"A\" >"
         "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
         "  </ECClass>"
@@ -392,7 +392,7 @@ TEST_F (SchemaImportTestFixture, ImportSchemaWithSchemaValidationErrors)
         "</ECSchema>",
         false, "RelationshipClass with non-relationship base class is not expected to be supported."),
 
-        SchemaImportTestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        TestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECClass typeName=\"A\" >"
         "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
         "  </ECClass>"
@@ -414,7 +414,7 @@ TEST_F (SchemaImportTestFixture, ImportSchemaWithSchemaValidationErrors)
         "</ECSchema>",
         false, "Non-relationship class with a relationship base class is not expected to be supported."),
 
-        SchemaImportTestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        TestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECClass typeName=\"A\" >"
         "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
         "  </ECClass>"
@@ -436,7 +436,7 @@ TEST_F (SchemaImportTestFixture, ImportSchemaWithSchemaValidationErrors)
         "</ECSchema>",
         false, "Non-relationship class with a relationship base class is not expected to be supported."),
 
-        SchemaImportTestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        TestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECClass typeName=\"A\" isDomainClass='True'>"
         "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
         "  </ECClass>"
@@ -447,7 +447,7 @@ TEST_F (SchemaImportTestFixture, ImportSchemaWithSchemaValidationErrors)
         "</ECSchema>",
         false, "A domain base class must not have struct subclasses."),
 
-        SchemaImportTestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        TestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECClass typeName=\"A\" isDomainClass='True'>"
         "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
         "  </ECClass>"
@@ -462,7 +462,7 @@ TEST_F (SchemaImportTestFixture, ImportSchemaWithSchemaValidationErrors)
         "</ECSchema>",
         false, "A domain base class must not have struct subclasses."),
 
-        SchemaImportTestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        TestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECClass typeName=\"A\" isDomainClass='True'>"
         "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
         "  </ECClass>"
@@ -473,7 +473,7 @@ TEST_F (SchemaImportTestFixture, ImportSchemaWithSchemaValidationErrors)
         "</ECSchema>",
         false, "A domain base class must not have struct subclasses, even if the subclass is a struct and a domain class at the same time."),
 
-        SchemaImportTestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        TestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECClass typeName=\"A\" isStruct='True' isDomainClass='False'>"
         "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
         "  </ECClass>"
@@ -484,7 +484,7 @@ TEST_F (SchemaImportTestFixture, ImportSchemaWithSchemaValidationErrors)
         "</ECSchema>",
         false, "A struct base class must have only struct subclasses."),
 
-        SchemaImportTestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        TestItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
         "  <ECClass typeName=\"A\" isStruct='True' isDomainClass='False'>"
         "    <ECProperty propertyName=\"Name\" typeName=\"string\" />"
         "  </ECClass>"
@@ -501,9 +501,9 @@ TEST_F (SchemaImportTestFixture, ImportSchemaWithSchemaValidationErrors)
         };
 
 
-        for (SchemaImportTestItem const& testItem : testItems)
+        for (TestItem const& testItem : testItems)
             {
-            AssertSchemaImport(nullptr, testItem, "schemavalidationerrors.ecdb");
+            AssertSchemaImport(testItem, "schemavalidationerrors.ecdb");
             }
     }
 

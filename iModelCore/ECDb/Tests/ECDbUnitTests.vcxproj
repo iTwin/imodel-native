@@ -17,7 +17,6 @@
     <ClCompile Include="BackDoor\Backdoor.cpp" />
     <ClCompile Include="BackDoor\ECDbTestLogger.cpp" />
     <ClCompile Include="NonPublished\ECDb\ECDbInstances_Test.cpp" />
-    <ClCompile Include="NonPublished\ECDb\ECDbMapCA_Tests.cpp" />
     <ClCompile Include="NonPublished\ECDb\ECDbProfile_Test.cpp" />
     <ClCompile Include="NonPublished\ECDb\ECDbSchemas_Test.cpp" />
     <ClCompile Include="NonPublished\ECDb\ECDbSql_Test.cpp" />
@@ -41,6 +40,7 @@
     <ClCompile Include="Performance\TestSchemaHelper.cpp" />
     <ClCompile Include="Published\ECDbBrownBag_Demo.cpp" />
     <ClCompile Include="Published\ECDbFileInfoTests.cpp" />
+    <ClCompile Include="Published\ECDbMapCA_Tests.cpp" />
     <ClCompile Include="Published\ECDbMapPersistence_Tests.cpp" />
     <ClCompile Include="Published\ECDbReadTests.cpp" />
     <ClCompile Include="Published\ECDbRelationshipStrength_Test.cpp" />

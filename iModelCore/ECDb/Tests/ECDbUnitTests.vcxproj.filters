@@ -190,10 +190,10 @@
     <ClCompile Include="Published\ECSqlRangeTree_Tests.cpp">
       <Filter>Published\ECSql</Filter>
     </ClCompile>
-    <ClCompile Include="NonPublished\ECDb\ECDbMapCA_Tests.cpp">
-      <Filter>NonPublished\ECDb</Filter>
-    </ClCompile>
     <ClCompile Include="Published\SchemaImportTestFixture.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECDbMapCA_Tests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
   </ItemGroup>

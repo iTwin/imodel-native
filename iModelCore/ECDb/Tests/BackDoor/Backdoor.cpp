@@ -35,6 +35,14 @@ void ECDbBackdoor::ECObjects::ECValue::SetAllowsPointersIntoInstanceMemory (ECN:
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  07/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+ECN::ECObjectsStatus ECDbBackdoor::ECObjects::ECSchemaReadContext::AddSchema(ECN::ECSchemaReadContext& context, ECN::ECSchemaR schema)
+    {
+    return context.AddSchema(schema);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  07/2014
 //+---------------+---------------+---------------+---------------+---------------+------
 bool ECDbBackdoor::ECObjects::ECValue::AllowsPointersIntoInstanceMemory (ECN::ECValueCR value)

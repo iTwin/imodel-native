@@ -12,13 +12,10 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  07/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void SchemaImportTestFixture::AssertSchemaImport(ECDb* ecdb, SchemaImportTestItem const& testItem, Utf8CP ecdbFileName) const
+void SchemaImportTestFixture::AssertSchemaImport(ECDbR ecdb, bool& asserted, TestItem const& testItem, Utf8CP ecdbFileName) const
     {
-    ECDb localECDb;
-
-    ECDb* ecdbP = ecdb != nullptr ? ecdb : &localECDb;
-
-    ASSERT_EQ (BE_SQLITE_OK, ECDbTestUtility::CreateECDb(*ecdbP, nullptr, WString(ecdbFileName, BentleyCharEncoding::Utf8).c_str()));
+    asserted = true;
+    ASSERT_EQ (BE_SQLITE_OK, ECDbTestUtility::CreateECDb(ecdb, nullptr, WString(ecdbFileName, BentleyCharEncoding::Utf8).c_str()));
 
     auto schemaCache = ECDbTestUtility::ReadECSchemaFromString(testItem.m_schemaXml.c_str());
     ASSERT_TRUE(schemaCache != nullptr) << testItem.m_assertMessage.c_str();
@@ -27,10 +24,21 @@ void SchemaImportTestFixture::AssertSchemaImport(ECDb* ecdb, SchemaImportTestIte
         BeTest::SetFailOnAssert(false);
 
         {
-        ASSERT_EQ(testItem.m_expectedToSucceed, SUCCESS == ecdbP->Schemas().ImportECSchemas(*schemaCache)) << testItem.m_assertMessage.c_str();
+        ASSERT_EQ(testItem.m_expectedToSucceed, SUCCESS == ecdb.Schemas().ImportECSchemas(*schemaCache)) << testItem.m_assertMessage.c_str();
+        asserted = false;
         }
 
     BeTest::SetFailOnAssert(true);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  07/15
+//+---------------+---------------+---------------+---------------+---------------+------
+void SchemaImportTestFixture::AssertSchemaImport(TestItem const& testItem, Utf8CP ecdbFileName) const
+    {
+    ECDb localECDb;
+    bool asserted = false;
+    AssertSchemaImport(localECDb, asserted, testItem, ecdbFileName);
     }
 
 END_ECDBUNITTESTS_NAMESPACE
