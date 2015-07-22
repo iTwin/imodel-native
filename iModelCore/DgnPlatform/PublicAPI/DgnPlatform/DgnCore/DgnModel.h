@@ -612,23 +612,21 @@ public:
 //=======================================================================================
 //! A DgnModel3d that captures the definition of a parametric component and its current solution.
 //! 
-//! A ComponentModel is a DgnModel that is also is a <em>mechanism for generating</em> the geometry and properties of a particular kind of "component", 
-//! using an algorithm of some kind, given a set of input parameters. The mechanism is encapsulated in the model's Solver.
+//! A ComponentModel \em generates the geometry and properties of a particular kind of "component" 
+//! using an algorithm of some kind, given a set of input parameters. The generation algorithm is encapsulated in the model's Solver.
 //! <p>The content of a ComponentModel may include instances of other ComponentModels.
 //! <p>A ComponentModel exists in its own independent coordinate space. The DgnElements in a ComponentModel are not in the persistent range tree.
 //! <p>Instances of a solution to a ComponentModel can be placed in the physical coordinate space of other DgnDbs.
 //! 
 //! <h2>Parameters</h2>
-//! The inputs to the Solver of a ComponentModel are called "parameters". Some parameters are shared by all instances of a given "type". 
-//! They are called "type parameters". Parameters may also be specific to individual instances. They are called "instance parameters". 
-//! A type specifies only type parameters. Instance parameters are specified when an instance is placed.
+//! The inputs to the Solver of a ComponentModel are called "parameters". See GetSolverParametersR.
 //!
 //! <h2>ECClass</h2>
 //! A ComponentModel is paired with an ECClass. This ECClass will be a subclass of dgn.PhysicalElement. Its ECProperties are the ComponentModel's parameters.
 //! <p>
 //! This ECClass is \em generated from information stored in the ComponentModel. See #GenerateECClass. This ECClass is not used by the ComponentModel. It is used by other DgnDbs that want to place 
-//! instances of solutions the ComponentModel. With placed instances defined by this ECClass, users and apps can browse and write queries against the name and properties 
-//! of the component definition. Note that this physical distinction between a ComponentModel and its ECClass means that a ComponentModel cannot contain an instance of 
+//! instances of solutions of the ComponentModel. With placed instances defined by this ECClass, users and apps can browse and write queries against the name and properties 
+//! of the component definition. Note that this physical distinction between a ComponentModel and its Element ECClass means that a ComponentModel cannot contain an instance of 
 //! its own Element ECClass. In practical terms, it also means that no other model in the DgnDb that contains this ComponentModel can contain instances of its Element ECClass either. 
 //! Therefore, components that depend on each other will have to be defined in separate DgnDbs, and one will have to be developed first, before the other can use it.
 //! <p>
