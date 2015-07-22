@@ -631,7 +631,7 @@ public:
 //! Therefore, components that depend on each other will have to be defined in separate DgnDbs, and one will have to be developed first, before the other can use it.
 //! <p>
 //! The caller is responsible for generating an ECSchema that includes the ComponentModel's ECClass. The caller must generate an ECSchema before client DgnDbs can place
-//! instances of solutions to the ComponentModel. 
+//! instances of solutions of the ComponentModel. 
 //!
 //! The ECSchema must not be changed once instances have been placed in client DgnDbs. That means that the caller must not try to change the names, types, or number of parameters.
 //! <p>
@@ -706,8 +706,26 @@ public:
     explicit ComponentModel(CreateParams const& params) : T_Super(params) {m_elementCategoryName = params.GetElementCategoryName();}
 
     //! Create an ECClass definition from this model's parameters.
-    //! @see ComputeElementECClassName
+    //! @see ComputeElementECClassName, AddAllToECSchema
     DGNPLATFORM_EXPORT DgnDbStatus GenerateECClass(ECN::ECSchemaR);
+
+    /**
+    * Utility function to generate ECClasses for all ComponentModels in \a db and add them to \a schema.
+    * Here is an example of generating an ECSchema for all of the components in a specified DgnDb:
+    * @verbatim
+    ECN::ECSchemaPtr schema;
+    if (ECN::ECOBJECTS_STATUS_Success != ECN::ECSchema::CreateSchema(schema, L"SomeSchema", 0, 0))
+        return ERROR;
+    if (DgnDbStatus::Success != ComponentModel::AddAllToECSchema(*schema, *m_componentDb))
+        return ERROR;
+    if (ECN::SCHEMA_WRITE_STATUS_Success !=  schema->WriteToXmlFile(schemaFileName))
+        return ERROR;
+    @endverbatim
+    * @param schema   The schema to populate
+    * @param db       The DgnDb that contains ComponentModels
+    * @return DgnDbStatus::Success if all ComponentModels in the file were successfully exported 
+    */
+    DGNPLATFORM_EXPORT static DgnDbStatus AddAllToECSchema(ECN::ECSchemaR schema, DgnDbR db);
 
     //! Get the name of the ECClass that the GenerateECClass method will create.
     //! @see GenerateECClass
@@ -729,7 +747,7 @@ public:
 };
 
 //=======================================================================================
-//! A DgnModel3d that stores a reference to a ComponentModel and captured solutions to that ComponentModel.
+//! A DgnModel3d that stores a reference to a ComponentModel and captured solutions of that ComponentModel.
 //!
 //! A ComponentProxyModel is a bridge between normal models that hold instances of components and the ComponentModel that defines the solutions.
 //! A ComponentProxyModel must be created once before instances can be placed. See #Create, #Get.
