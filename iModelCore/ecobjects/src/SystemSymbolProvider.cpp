@@ -186,7 +186,7 @@ struct StringMethods
         return compare(evalResult, args, true);
         }
 
-    static ExpressionStatus convertCase(EvaluationResult& evalResult, EvaluationResultVector& args, void (Utf8String::*transformFunc)())
+    static ExpressionStatus convertCase(EvaluationResult& evalResult, EvaluationResultVector& args, Utf8StringR (Utf8String::*transformFunc)())
         {
         Utf8String str;
         if (ExtractArg(str, args, 0, true))
