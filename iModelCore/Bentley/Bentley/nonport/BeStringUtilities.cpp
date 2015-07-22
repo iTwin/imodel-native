@@ -2067,6 +2067,25 @@ wchar_t* BeStringUtilities::Wcstok(wchar_t *wcsToken, const wchar_t *wcsDelimit,
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald               07/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+char* BeStringUtilities::Strrev(char *s) 
+    {
+#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
+    return _strrev(s); 
+#elif defined (__unix__)
+     for (size_t i=0, j=strlen(s)-1;  i < j; ++i, --j)
+        {
+        char temp = s[i];
+        s[i] = s[j];
+        s[j] = temp;  
+        }
+    return s;
+#else
+#error unknown runtime
+#endif
+    }
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 wchar_t* BeStringUtilities::Wcsrev(wchar_t *s) 
@@ -2189,6 +2208,11 @@ void BeStringUtilities::FormatUInt64(WCharP buf, uint64_t value)
     FormatUInt64(buf, value, 10ULL);
     }
 
+void BeStringUtilities::FormatUInt64(Utf8P buf, uint64_t value)
+    {
+    FormatUInt64(buf, value, 10ULL);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2233,6 +2257,41 @@ void BeStringUtilities::FormatUInt64(WCharP string, uint64_t number, uint64_t ba
 
     *bufpt = '\0';
     Wcsrev(string);
+    }
+
+void BeStringUtilities::FormatUInt64(Utf8P string, uint64_t number, uint64_t base)
+    {
+    Utf8CP digits = nullptr;
+    switch (base)
+        {
+        case 2ULL:
+            digits = "01";
+            break;
+
+        case 10ULL:
+            digits = "0123456789";
+            break;
+
+        case 16ULL:
+            digits = "0123456789abcdef";
+            break;
+        default:
+            BeAssert(false && "BeStringUtilities::FormatUInt64: Unsupported base");
+            return;
+        }
+
+    Utf8P bufpt = string;
+    // Convert to ascii 
+    do  
+        {     
+        *bufpt = digits[number%base];
+        bufpt++;
+        number /= base;
+        }
+        while (number > 0ULL);
+
+        *bufpt = '\0';
+        Strrev(string);
     }
 
 

@@ -80,6 +80,7 @@ private:
 
 //__PUBLISH_SECTION_END__
     static void FormatUInt64 (WCharP string, uint64_t number, uint64_t base);
+    static void FormatUInt64 (Utf8P string, uint64_t number, uint64_t base);
 
 #if defined (BENTLEY_WIN32)
 public:
@@ -415,6 +416,9 @@ public:
     //! This is the equivelent of wcstok_s in MSVC and wcstok in GCC.  
     BENTLEYDLL_EXPORT static wchar_t *Wcstok (wchar_t *wcsToken, const wchar_t *wcsDelimit, wchar_t **context);
 
+    //! reverse the letters in str
+    BENTLEYDLL_EXPORT static char *Strrev (char* wstr);
+
     //! reverse the letters in wstr
     BENTLEYDLL_EXPORT static wchar_t *Wcsrev (wchar_t *wstr);
 
@@ -450,6 +454,7 @@ public:
     //! @param[out] buf  The output buffer for the formatted string.
     //! @param[in] value the integer value to be formatted.
     BENTLEYDLL_EXPORT static void FormatUInt64 (WCharP buf, uint64_t value);
+    BENTLEYDLL_EXPORT static void FormatUInt64 (Utf8P buf, uint64_t value);
 
     //! Parses a hexadecimal number
     //! @param[out]     value   Assigned the parsed value
