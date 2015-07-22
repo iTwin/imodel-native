@@ -639,7 +639,7 @@ public:
 * Clients will create a ComponentProxyModel in order to create instances of solutions of a ComponentModel.
 *
 * Whether you use use a script to create elements or you create elements interactively, be sure to place the solution geom using the "Element Category", as explained below.
-*
+*cf
 * <h2>ECClass</h2>
 * A ComponentModel is paired with an ECClass. This ECClass will be a subclass of dgn.PhysicalElement. Its ECProperties are the ComponentModel's parameters.
 * <p>
@@ -720,9 +720,8 @@ private:
 public:
     /**
      *The constructor for ComponentModel.
-    * Here is an example of creating a new ComponentModel based on a ficticious script program.
     *@verbatim
-    // An example of creating a ComponentModel that generates "Widgets"
+    // An example of creating a ComponentModel that generates "Widgets". It uses a script-type solver (which is not shown).
     static BentleyStatus createWidgetComponentModel(DgnDbR componentDb)
         {
         // Define the Element Category (in the ComponentModel's DgnDb). The normal approach is to use the same name as the component model. 
