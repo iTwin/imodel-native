@@ -459,7 +459,7 @@ public:
     DgnModelId GetModelId() const {return m_modelId;}
 
     //! @name Dynamic casting to DgnModel subclasses
-    //! @{
+    //@{
     DgnModel2dCP ToDgnModel2d() const {return _ToDgnModel2d();} //!< more efficient substitute for dynamic_cast<DgnModel2dCP>(model)
     DgnModel3dCP ToDgnModel3d() const {return _ToDgnModel3d();} //!< more efficient substitute for dynamic_cast<DgnModel3dCP>(model)
     PhysicalModelCP ToPhysicalModel() const {return _ToPhysicalModel();} //!< more efficient substitute for dynamic_cast<PhysicalModelCP>(model)
@@ -470,7 +470,7 @@ public:
     PhysicalModelP ToPhysicalModelP() {return const_cast<PhysicalModelP>(_ToPhysicalModel());} //!< more efficient substitute for dynamic_cast<PhysicalModelP>(model)
     PlanarPhysicalModelP ToPlanarPhysicalModelP() {return const_cast<PlanarPhysicalModelP>(_ToPlanarPhysicalModel());} //!< more efficient substitute for dynamic_cast<PlanarPhysicalModelP>(model)
     SheetModelP ToSheetModelP() {return const_cast<SheetModelP>(_ToSheetModel());}//!< more efficient substitute for dynamic_cast<SheetModelP>(model)
-    //! @}
+    //@}
 
     //! Get the DgnDb of this DgnModel.
     DgnDbR GetDgnDb() const {return m_dgndb;}
@@ -767,7 +767,7 @@ public:
     explicit ComponentProxyModel(CreateParams const&);
 
     //! @name Creating a Proxy Model
-    //! @{
+    //@{
 
     //! Import the specified ECSchema into the target DgnDb.
     //! This must be done \em once before any ComponentProxyModels are created for ComponentModels that are defined in the schema.
@@ -793,10 +793,10 @@ public:
     //! @param[in] componentModel The ComponentModel that is to be represented
     //! @return The ComponentProxyModel in the target Db that represents the component model, if it exists.
     DGNPLATFORM_EXPORT static ComponentProxyModelPtr Get(DgnDbR targetDb, ComponentModelCR componentModel);
-    //! @}
+    //@}
 
     //! @name Capturing Solutions
-    //! @{
+    //@{
     //! Compute the code that would be used by a ComponentProxyModel to refer to a solution with the specified parameters.
     //! @param[in] parms    The solver parameters
     //! @return a generated name for the solution
@@ -814,10 +814,10 @@ public:
     //! @param[in] componentModel The ComponentModel that is to be harvested
     //! @return An element that captures the solution. Returns an invalid pointer if this proxy model is not for the specified componentModel.
     DGNPLATFORM_EXPORT PhysicalElementCPtr CaptureSolution(ComponentModelR componentModel);
-    //! @}
+    //@}
 
     //! @name Creating a Solution Instance
-    //! @{
+    //@{
     //! Create a new element that is an instance of a captured solution. The caller must insert the returned element into the Db.
     //! @param[in] destinationModel The model where the instance will be inserted by the caller
     //! @param[in] solutionElement The element that captures a solution to a ComponentModel. See CaptureSolution and QuerySolution
@@ -826,7 +826,7 @@ public:
     //! @return An new element that could be inserted as an instance of a captured solution
     //! @see CaptureSolution, QuerySolution
     DGNPLATFORM_EXPORT static PhysicalElementPtr CreateSolutionInstance(DgnModelR destinationModel, PhysicalElementCR solutionElement, DPoint3dCR origin, YawPitchRollAnglesCR angles);
-    //! @}
+    //@}
 
 };
 
