@@ -436,7 +436,7 @@ ElementGeometryPtr ElementGeometry::Clone () const
 
         case GeometryType::Polyface:
             {
-            PolyfaceHeaderPtr geom = BentleyApi::PolyfaceHeader::New();
+            PolyfaceHeaderPtr geom = PolyfaceHeader::New();
 
             geom->CopyFrom (*GetAsPolyfaceHeader());
 
@@ -445,7 +445,7 @@ ElementGeometryPtr ElementGeometry::Clone () const
 
         case GeometryType::BsplineSurface:
             {
-            MSBsplineSurfacePtr geom = BentleyApi::MSBsplineSurface::CreatePtr();
+            MSBsplineSurfacePtr geom = MSBsplineSurface::CreatePtr();
 
             geom->CopyFrom (*GetAsMSBsplineSurface());
 
@@ -2520,12 +2520,12 @@ void ElementGeomIO::Collection::Draw (ViewContextR context, DgnCategoryId catego
                         pointIndex.push_back(thisIndex < 0 ? thisIndex : -thisIndex);
                         }
 
-                    BentleyApi::PolyfaceQueryCarrier sourceData (meshData.GetNumPerFace(), meshData.GetTwoSided(), meshData.GetPointIndexCount(),
+                    PolyfaceQueryCarrier sourceData (meshData.GetNumPerFace(), meshData.GetTwoSided(), meshData.GetPointIndexCount(),
                                                                  meshData.GetPointCount(), meshData.GetPointCP(), &pointIndex.front(),
                                                                  meshData.GetNormalCount(), meshData.GetNormalCP(), meshData.GetNormalIndexCP(),
                                                                  meshData.GetParamCount(), meshData.GetParamCP(), meshData.GetParamIndexCP(),
                                                                  meshData.GetColorCount(), meshData.GetColorIndexCP(), 
-                                                                 (BentleyApi::FloatRgb const*) meshData.GetFloatColorCP(), (BentleyApi::RgbFactor const*) meshData.GetDoubleColorCP(), meshData.GetIntColorCP(), meshData.GetColorTableCP(),
+                                                                 (FloatRgb const*) meshData.GetFloatColorCP(), (RgbFactor const*) meshData.GetDoubleColorCP(), meshData.GetIntColorCP(), meshData.GetColorTableCP(),
                                                                  meshData.GetIlluminationNameCP(), meshData.GetMeshStyle(), meshData.GetNumPerRow());
 
                     context.GetIDrawGeom().DrawPolyface(sourceData);
@@ -2754,21 +2754,13 @@ bool GeometricElement::_DrawHit (HitDetailCR hit, ViewContextR context) const
                 }
             }
 
-        ElemDisplayParamsR elParams = *context.GetCurrentDisplayParams();
-        ElemMatSymbR elMatSymb = *context.GetElemMatSymb();
-
-        elParams = collection.GetElemDisplayParams();
-        context.CookDisplayParams(elParams, elMatSymb); // Don't activate elMatSymb...
-
-        // NOTE: We don't want to flash using a vector linestyle...but a glowly raster style might be interesting...
-        if (SubSelectionMode::Segment == hit.GetSubSelectionMode())
-            elMatSymb.SetWidth(elMatSymb.GetWidth()+2);
-
-        context.GetIDrawGeom().ActivateMatSymb(&elMatSymb);
-        context.ResetContextOverrides();
+        *context.GetCurrentDisplayParams() = collection.GetElemDisplayParams();
 
         if (SubSelectionMode::Segment != hit.GetSubSelectionMode())
             {
+            context.CookDisplayParams();
+            context.ResetContextOverrides();
+
             context.PushTransform(collection.GetGeometryToWorld());
             geom->Draw(context);
             context.PopTransformClip();
@@ -2776,35 +2768,7 @@ bool GeometricElement::_DrawHit (HitDetailCR hit, ViewContextR context) const
             continue; // Keep going, want to draw all matching geometry... 
             }
 
-        DSegment3d      segment;
-        CurveVectorPtr  curve;
-        bool            doSegmentFlash = (hit.GetHitType() < HitDetailType::Snap);
-
-        if (!doSegmentFlash)
-            {
-            switch (static_cast<SnapDetailCR>(hit).GetSnapMode())
-                {
-                case SnapMode::Center:
-                case SnapMode::Origin:
-                case SnapMode::Bisector:
-                    break; // Snap point for these is computed using entire linestring, not just the hit segment...
-
-                default:
-                    doSegmentFlash = true;
-                    break;
-                }
-            }
-
-        // Flash only the selected segment of linestrings/shapes based on snap mode...
-        if (doSegmentFlash && hit.GetGeomDetail().GetSegment(segment))
-            curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateLine(segment));
-        else
-            curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, hit.GetGeomDetail().GetCurvePrimitive()->Clone());
-
-        if (element->Is3d())
-            context.GetIDrawGeom().DrawCurveVector(*curve, false);
-        else
-            context.GetIDrawGeom().DrawCurveVector2d(*curve, false, context.GetCurrentDisplayParams()->GetNetDisplayPriority());
+        hit.FlashCurveHit(context);
         break;
         }
 
@@ -3320,7 +3284,7 @@ bool ElementGeometryBuilder::ConvertToLocal (ElementGeometryR geom)
             BeAssert(0 == BeNumerical::Compare(origin.z, 0.0));
             if (0.0 != angles.GetPitch().Degrees() || 0.0 != angles.GetRoll().Degrees())
                 {
-                BentleyApi::YawPitchRollAngles tmpAngles(BentleyApi::AngleInDegrees(), angles.GetPitch(), angles.GetRoll());
+                YawPitchRollAngles tmpAngles(AngleInDegrees(), angles.GetPitch(), angles.GetRoll());
                 localToWorld = Transform::FromProduct (localToWorld, tmpAngles.ToTransform(DPoint3d::FromZero()));
                 }
 

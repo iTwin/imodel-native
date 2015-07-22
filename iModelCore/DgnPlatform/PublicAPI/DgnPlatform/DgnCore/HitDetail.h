@@ -182,7 +182,7 @@ protected:
 
 public:
 #if !defined (DOCUMENTATION_GENERATOR)
-    DGNPLATFORM_EXPORT HitDetail (DgnViewportR, GeometricElementCR, DPoint3dCR testPoint, HitSource, ViewFlagsCR, GeomDetailCR);
+    DGNPLATFORM_EXPORT HitDetail (DgnViewportR, GeometricElementCP, DPoint3dCR testPoint, HitSource, ViewFlagsCR, GeomDetailCR);
     DGNPLATFORM_EXPORT explicit HitDetail (HitDetailCR from);
     DGNPLATFORM_EXPORT virtual ~HitDetail ();
 
@@ -193,6 +193,7 @@ public:
     void SetSubSelectionMode (SubSelectionMode mode) {_SetSubSelectionMode(mode);}
 
     DGNPLATFORM_EXPORT void DrawInVp (DgnViewportP, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const;
+    DGNPLATFORM_EXPORT void FlashCurveHit(ViewContextR) const; //! Setup context.GetCurrentDisplayParams() before calling!
     
     DGNVIEW_EXPORT void DrawInView (IndexedViewSetR, int viewNum, DgnDrawMode drawMode, DrawPurpose drawPurpose) const;
     DGNVIEW_EXPORT void DrawInViews (IndexedViewSetR, DgnDrawMode drawMode, DrawPurpose drawPurpose) const;

@@ -543,7 +543,7 @@ SnapStatus      SnapContext::DoDefaultDisplayableSnap ()
     SnapMode        snapMode = GetSnapMode();
     GeomDetailCR    detail = snap->GetGeomDetail();
 
-    // Don't require a gpa if hit geom is point or mode is nearest because current hit point is correct...
+    // Don't require a curve primitive if hit geom is point or mode is nearest because current hit point is correct...
     if (SnapMode::Nearest == snapMode || HitGeomType::Point == detail.GetGeomType())
         {
         DPoint3d    hitPoint = snap->GetHitPoint();

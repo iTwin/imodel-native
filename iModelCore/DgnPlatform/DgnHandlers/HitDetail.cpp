@@ -378,14 +378,14 @@ CurvePrimitiveIdCP GeomDetail::GetCurvePrimitiveId() const
 HitDetail::HitDetail
 (
 DgnViewportR        viewport,
-GeometricElementCR  element,
+GeometricElementCP  element,
 DPoint3dCR          testPoint,
 HitSource           source,
 ViewFlagsCR         viewFlags,
 GeomDetailCR        geomDetail
 ) : m_viewport(viewport)
     {
-    m_elementId         = element.GetElementId();
+    m_elementId         = (nullptr != element ? element->GetElementId() : DgnElementId());
     m_locateSource      = source;
     m_testPoint         = testPoint;
     m_viewFlags         = viewFlags;
@@ -411,6 +411,57 @@ HitDetail::HitDetail (HitDetail const& from) : m_viewport(from.m_viewport)
 * @bsimethod                                    Keith.Bentley                   10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
 HitDetail::~HitDetail () {}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void HitDetail::FlashCurveHit(ViewContextR context) const
+    {
+    if (nullptr == GetGeomDetail().GetCurvePrimitive())
+        return;
+
+    ElemDisplayParamsR elParams = *context.GetCurrentDisplayParams();
+    ElemMatSymbR elMatSymb = *context.GetElemMatSymb();
+
+    context.CookDisplayParams(elParams, elMatSymb); // Don't activate elMatSymb yet...
+
+    // NOTE: Would be nice if flashing made element "glow" for now just bump up weight...
+    elMatSymb.SetWidth(elMatSymb.GetWidth()+2);
+
+    context.GetIDrawGeom().ActivateMatSymb(&elMatSymb);
+    context.ResetContextOverrides();
+
+    bool doSegmentFlash = (GetHitType() < HitDetailType::Snap);
+
+    if (!doSegmentFlash)
+        {
+        switch (static_cast<SnapDetailCR>(*this).GetSnapMode())
+            {
+            case SnapMode::Center:
+            case SnapMode::Origin:
+            case SnapMode::Bisector:
+                break; // Snap point for these is computed using entire linestring, not just the hit segment...
+
+            default:
+                doSegmentFlash = true;
+                break;
+            }
+        }
+
+    DSegment3d      segment;
+    CurveVectorPtr  curve;
+
+    // Flash only the selected segment of linestrings/shapes based on snap mode...
+    if (doSegmentFlash && GetGeomDetail().GetSegment(segment))
+        curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateLine(segment));
+    else
+        curve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, GetGeomDetail().GetCurvePrimitive()->Clone());
+
+    if (GetViewport().Is3dView())
+        context.GetIDrawGeom().DrawCurveVector(*curve, false);
+    else
+        context.GetIDrawGeom().DrawCurveVector2d(*curve, false, elParams.GetNetDisplayPriority());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/09
@@ -452,6 +503,9 @@ DgnModelR HitDetail::GetDgnModel() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeometricElementCPtr HitDetail::GetElement() const
     {
+    if (!m_elementId.IsValid())
+        return nullptr;
+
     DgnElementCP element = GetDgnDb().Elements().FindElement(m_elementId);
 
     return (nullptr != element ? element->ToGeometricElement() : nullptr);
