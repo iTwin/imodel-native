@@ -4,51 +4,59 @@ import os.path
 import copy
 
 class Config:
-	configFile					= ""
-	rootPaths 					= []
-	outputMKE					= False
-	outputMultiCompileDepends	= False
-	outputMinimalDependencies	= False
-	outputPrecompiledHeaders	= False
-	outputDLMFormat				= False
-	defaultMKEPolicy			= ""
+	configFile							= ""
+	rootPaths 							= []
+	outputMKE							= False
+	outputMultiCompileDepends			= False
+	outputMinimalDependencies			= False
+	outputPrecompiledHeaders			= False
+	precompiledHeadersForcedInclude		= True
+	outputDLMFormat						= False
+	defaultMKEPolicy					= ""
 		
-	includePathsStd				= dict()
-	includePathsLocal			= dict()
-	includePaths				= dict()
-	logFilePath					= ""
-	logFile						= None
-	ignoreSourceFile			= []
-	ignoreDependencies			= dict()
-	sourceFileTypes				= dict()
-	projectSourceFile			= ""
+	includePathsStd						= dict()
+	includePathsLocal					= dict()
+	includePaths						= dict()
+	logFilePath							= ""
+	logFile								= None
+	ignoreSourceFile					= []
+	ignoreDependencies					= dict()
+	sourceFileTypes						= dict()
+	projectSourceFile					= ""
 	
-	additionalLibraryPaths		= dict()
-	additionalLibraries			= []
-	standardLibraries			= ["kernel32.lib", "user32.lib", "gdi32.lib", "winspool.lib", "comdlg32.lib", "advapi32.lib", "shell32.lib", "ole32.lib", "oleaut32.lib", "uuid.lib", "odbc32.lib", "odbccp32.lib", "opengl32.lib", "glu32.lib", "shlwapi.lib", "wsock32.lib", "Ws2_32.lib"]
-	ignoreLibraries				= []
-	libraries					= []
+	additionalLibraryPaths				= dict()
+	additionalLibraries					= []
+	standardLibraries					= ["kernel32.lib", "user32.lib", "gdi32.lib", "winspool.lib", "comdlg32.lib", "advapi32.lib", "shell32.lib", "ole32.lib", "oleaut32.lib", "uuid.lib", "odbc32.lib", "odbccp32.lib", "opengl32.lib", "glu32.lib", "shlwapi.lib", "wsock32.lib", "Ws2_32.lib"]
+	ignoreLibraries						= []
+	libraries							= []
 
-	createStaticLibraries		= False
-	platformSpecific			= True
+	createStaticLibraries				= False
+	platformSpecific					= True
 	
-	buildName					= "Debug"
-	buildPlatform				= "Win32"
+	buildName							= "Debug"
+	buildPlatform						= "Win32"
 	
-	vsConfigPrefix				= "VS_Config_"
+	target								= ""
 	
-	definitions					= []
+	vsConfigPrefix						= "VS_Config_"
+	
+	outputPrecompuledHeaderFile			= False
+	precompiledHeaderFile				= ""
+	excludeFromPrecompiledHeader 		= []
+	
+	
+	definitions							= []
 
-	createBuildContextLibraries	= False
+	createBuildContextLibraries			= False
 	
-	outputDefinitions			= True
-	outputIncludePaths			= True
-	outputTargets				= True
-	outputObjects				= True
-	outputLibraryPaths			= True
-	outputStandardLibraries		= True
-	outputAdditionalLibraries	= True
-	outputIgnoreLibraries		= True
+	outputDefinitions					= True
+	outputIncludePaths					= True
+	outputTargets						= True
+	outputObjects						= True
+	outputLibraryPaths					= True
+	outputStandardLibraries				= True
+	outputAdditionalLibraries			= True
+	outputIgnoreLibraries				= True
 
 
 	def getConfigString(self):

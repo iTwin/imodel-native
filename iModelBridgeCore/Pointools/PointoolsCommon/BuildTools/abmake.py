@@ -13,6 +13,7 @@ import sys
 import os
 import time
 import copy
+from sets import Set
 
 #makeFileVarSourceRoot	= "$(basedir)src"
 makeFileVarSourceRoot	= "$(basedir)"
@@ -160,7 +161,27 @@ class AMake:
 				else:
 					fullFilePath = os.path.normpath(os.path.join(os.path.split(vcprojFilePath)[0], sourceFile))
 					config.ignoreSourceFiles.append(fullFilePath.encode('ascii'))
+		
+		
+		propertyGroupList = vcProjXML.getElementsByTagName("PropertyGroup")
+		
+		for item in propertyGroupList:
+			
+			targetNameList = item.getElementsByTagName("TargetName")
+						
+			if targetNameList != None:
+			
+				for targetName in targetNameList:
+								
+					condition = targetName.getAttribute("Condition")
 					
+					if condition != None:										
+						configPlatform = condition.split('==')[1]
+						if(configPlatform != ""):
+							configPlatform = configPlatform.strip("'")
+							if configPlatform == configPlatformName:
+								config.target = targetName.firstChild.data
+							
 		self.initializeVisualStudioSourceFiles(config, vcprojFilePath, fileDictionary, sourceFileList)
 		
 
@@ -366,6 +387,7 @@ class AMake:
 					else:
 						self.outputWarning(config, "Ignored Source File : " + fullPath)
 					
+					
 	def getImmediateFileDependencies(self, config, filePath):
 
 		dependencyList = []
@@ -486,7 +508,7 @@ class AMake:
 
 
 	def resolveFullIncludePath(self, config, filePath, includePath):
-	
+		
 										# If filepath is full and file exists, use it
 		if os.path.isfile(includePath):
 			return includePath
@@ -500,13 +522,32 @@ class AMake:
 										# Try to resolve include using set of include paths.
 										# Find first include file
 		for path in config.includePaths:
-				
-			pathTest = os.path.normpath(os.path.join(path, includePath))
-
+										# If path is absolute, add it as prefix, if relative, create path relative to includer
+			if os.path.isabs(path) == True:
+				pathTest = os.path.normpath(os.path.join(path, includePath))
+			else:
+				absPath = os.path.join(os.path.join(fileDirPath, path))
+				pathTest = os.path.normpath(os.path.join(absPath, includePath))
+			
 			if os.path.isfile(pathTest):
 				return pathTest
-
+				
+										# Try to resolve include using set of include paths relative to original VS project file
+		if config.projectSourceFile == "":
+			return ""
+			
+		projectPath = os.path.dirname(config.projectSourceFile)
+		
+		for path in config.includePaths:
+										# If path is absolute, add it as prefix, if relative, create path relative to includer
+			if os.path.isabs(path) == False:
+				pathTest = os.path.normpath(os.path.join(os.path.normpath(os.path.join(projectPath, path)), includePath))
+							
+				if os.path.isfile(pathTest):
+					return pathTest
+				
 		self.outputWarning(config, "Include not resolved : " + filePath + " --> " + includePath)
+		
 		return ""
 
 
@@ -517,7 +558,7 @@ class AMake:
 		
 		commonPathStart = os.path.commonprefix([rootPath, filePath])
 		
-		print ">>>>> " + path + ", " + commonPathStart + ", " + rootPath + "\n"
+#		print ">>>>> " + path + ", " + commonPathStart + ", " + rootPath + "\n"
 		
 										# If root path is substring of given file path
 #		if commonPathStart == rootPath:
@@ -683,11 +724,11 @@ class AMake:
 
 		
 	def writeMakefile(self, config, rootPathDictionary):
-
+	
 		out = open(config.output, "w")
-		
-		print "Writing Makefile : " + config.output + "\n"
-		
+				
+		print self.getSectionString(config, "# Writing Makefile : " + config.output)
+
 		t = time.localtime(time.time())
 		timeStr = str(t.tm_mday) + "/" + str(t.tm_mon) + "/" + str(t.tm_year) + " " + str(t.tm_hour) + ":" + str(t.tm_min) + ":" + str(t.tm_sec)
 		
@@ -701,23 +742,21 @@ class AMake:
 						
 		self.writeSectionHeader(config, out, headerStr)
 
-		if config.outputMKE:
-			self.writeMacros(config, out)
-			
-			if config.outputPrecompiledHeaders == True:
-				self.writePrecompiledHeaders(config, out)
-				
+		if config.outputMKE == True:
+			self.writeMacros(config, out)				
 		
 		if config.outputDefinitions == True:
-			self.writeMakefileDefinitions(config, out)
-
-		print "*********************************************************\n"
-		print "Output Include Paths : " + str(config.outputIncludePaths) + "\n"
-		print "*********************************************************\n"
+			self.writeMakefileDefinitions(config, out)			
+			
+		print self.getSectionString(config, "# Output Include Paths : " + str(config.outputIncludePaths) + "\n")
 		
 		if config.outputIncludePaths == True:
 			self.writeMakefileIncludePaths(config, out)
-
+			
+		if config.outputMKE == True:
+			if config.outputPrecompiledHeaders == True:
+				self.writePrecompiledHeaders(config, out)
+			
 		if config.outputTargets == True:		
 			self.writeMakefileTargets(config, rootPathDictionary, out)
 		
@@ -733,7 +772,7 @@ class AMake:
 		if config.outputIgnoreLibraries == True:
 			self.writeMakefileIgnoreLibraries(config, out)
 			
-		if config.outputMKE == True:
+		if config.outputMKE == True:				
 			self.writeBuild(config, out)
 
 		out.close()
@@ -750,8 +789,6 @@ class AMake:
 		out.write("\n\n")
 		
 		out.write("VendorAPIDir    = $(BuildContext)VendorAPI/$(appName)/\n\n")
-
-		out.write("\n\n")
 			
 		if config.outputMultiCompileDepends:
 		
@@ -760,7 +797,7 @@ class AMake:
 			out.write("MultiCompileDepends = $(_MakeFileSpec)")
 
 			if config.outputPrecompiledHeaders == True:
-				out.write("$(appSrc)/Include/$(appName)Internal.h\n")
+				out.write(" $(appSrc)/Include/$(appName)_PCH.h\n")
 				
 			out.write("\n")
 			
@@ -772,27 +809,80 @@ class AMake:
 	
 		self.writeSectionHeader(config, out, "# Precompiled Headers")
 		
-		out.write("PchCompiland        = $(basedir)/src/$(appName)Internal.cpp\n")
-		out.write("PchOutputDir        = $(o)\n")
-		out.write("PchExtraOptions     = -Zm160\n")
-		out.write("PchExplicitDepends  = $(MultiCompileDepends)\n")
-		out.write("\n\n")
+		if config.precompiledHeadersForcedInclude == False:
+		
+			out.write("PchCompiland        = $(basedir)/src/$(appName)_PCH.cpp\n")
+			out.write("PchOutputDir        = $(o)\n")
+			out.write("PchExtraOptions     = -Zm160\n")
+			out.write("PchExplicitDepends  = $(MultiCompileDepends)\n")
+			out.write("\n\n")
 
-		out.write("%if defined (winNT) && $(BUILD_TOOLSET) == \"GCC\"\n")
-		out.write("\tGCC_NO_PRE_COMPILED_HEADER = 1\n")
-		out.write("%endif")
-		out.write("\n\n")
+			out.write("%if defined (winNT) && $(BUILD_TOOLSET) == \"GCC\"\n")
+			out.write("\tGCC_NO_PRE_COMPILED_HEADER = 1\n")
+			out.write("%endif")
+			out.write("\n\n")
 
-		out.write("%include $(SharedMki)PreCompileHeader.mki\n")
-		out.write("CCPchOpts = $(UsePrecompiledHeaderOptions)\n")
-		out.write("#CCPchOpts + -showIncludes\n")
-		out.write("CPchOpts  = $(UsePrecompiledHeaderOptions)\n")
+			out.write("%include $(SharedMki)PreCompileHeader.mki\n")
+			out.write("CCPchOpts = $(UsePrecompiledHeaderOptions)\n")
+			out.write("#CCPchOpts + -showIncludes\n")
+			out.write("CPchOpts  = $(UsePrecompiledHeaderOptions)\n")
+			
+			out.write("\n\n")
+			out.write("#DisableMultiCompile=1\n")
+			
+		else:
+
+			out.write("%ifdef MSVC_VERSION\n")
+			out.write("   CCPchOpts = -Yc\"$(appName)_PCH.h\" -Fp$(o)$(appName).pch\n")
+			out.write("   $(o)$(appName)_PCH$(oext) $(o)$(appName).pch : $(appSrc)$(appName)_PCH.cpp $(appSrc)$(appName)_PCH.h\n")
+			out.write("# Use PCH by forcing the pch header inclusion(-FI)\n")
+			out.write("   CCPchOpts = -Yu$(appSrc)$(appName)_PCH.h -Fp$(o)$(appName).pch -FI$(appSrc)$(appName)_PCH.h\n")
+			out.write("%endif\n")
 		
 		out.write("\n\n")
-		out.write("#DisableMultiCompile=1\n")
-		
-		out.write("\n\n")
 
+		
+	def writePrecompiledHeaderFile(self, config, rootPathDictionary):
+	
+		if config.precompiledHeaderFile == "":
+			print "Warning : precompiledHeaderFile not specified in Configuration.\n"
+			return
+	
+		out = open(config.precompiledHeaderFile, "w")
+	
+		print self.getSectionString(config, "# Writing Precompiled Header File : " + config.precompiledHeaderFile)
+
+		
+		dependencyList = []
+		dependencyListLowerCase = []
+		excludeFromPrecompiledHeaderLowerCase = [s.lower() for s in config.excludeFromPrecompiledHeader]
+			
+		for rootPath in rootPathDictionary:
+
+			fileDictionary = rootPathDictionary[rootPath]
+
+			for f in fileDictionary:
+			
+				if self.isSourceFile(config, f):
+		
+					print ">>>>>> File = " + f + "\n"
+			
+					immediateDependencyList = fileDictionary.get(f, None)
+					
+					for d in immediateDependencyList:
+						if (d.lower() in dependencyListLowerCase) == False and (os.path.basename(d).lower() in excludeFromPrecompiledHeaderLowerCase) == False:
+								dependencyList.append(d)
+								dependencyListLowerCase.append(d.lower())
+										
+		for d in dependencyList:
+			out.write("#include <" + d + ">\n")
+					
+		
+#			if immediateDependencyList != None:
+			
+		
+		out.close()
+		
 		
 	def writeBuild(self, config, out):
 	
@@ -800,12 +890,20 @@ class AMake:
 		
 		if config.createStaticLibraries == True:
 			out.write("CREATE_STATIC_LIBRARIES     = 1\n\n")
+
+		if config.target == "":
+			out.write("DLM_NAME                    = $(appName)\n")
+		else:
+			out.write("DLM_NAME                    = " + config.target + "\n")
+			
+		out.write("DLM_OBJECT_FILES            = $(MultiCompileObjectList)")
+		if config.outputMKE == True and config.precompiledHeadersForcedInclude == True:
+			out.write(" $(o)$(appName)_PCH$(oext)")
+		out.write("\n")
 		
-		out.write("DLM_NAME                    = $(appName)\n")
-		out.write("DLM_OBJECT_FILES            = $(MultiCompileObjectList)\n")
 		out.write("DLM_OBJECT_DEST             = $(o)\n")
 		
-		if config.outputPrecompiledHeaders == True:
+		if config.outputPrecompiledHeaders == True and config.precompiledHeadersForcedInclude == False:
 			out.write("DLM_OBJECT_PCH              = $(o)$(appName)Internal$(oext)\n")
 			
 		out.write("DLM_DEST                    = $(o)\n")
@@ -850,7 +948,7 @@ class AMake:
 		if config.outputMultiCompileDepends == True:
 			out.write("\n%include MultiCppCompileGo.mki\n\n")
 		
-		if config.outputPrecompiledHeaders == True:
+		if config.outputPrecompiledHeaders == True and config.precompiledHeadersForcedInclude == False:
 			out.write("%undef CCPchOpts\n")
 			out.write("%undef CPchOpts\n")
 			
@@ -863,15 +961,17 @@ class AMake:
 		return ""
 					
 	def writeMakefileIncludePaths(self, config, out):
-	
+		
 		self.writeSectionHeader(config, out, "# Include Paths : " + config.buildName + " " + self.getBuildPlatformOutput(config))
 		
 		for path in config.additionalIncludePaths:
 			out.write('cIncs +% -I"' + config.additionalIncludePaths[path] + '"\n')
+																		# Write out standard VendorAPI declaration
+		out.write('cIncs +% -I"' + "$(VendorAPIDir)" + '"\n')
 
-		out.write("\n\n\n")			
+		out.write("\n\n\n")
 
-			
+		
 	def writeMakefileLibraryPaths(self, config, out):
 	
 		self.writeSectionHeader(config, out, "# Library Paths : " + config.buildName + " " + self.getBuildPlatformOutput(config))
@@ -1080,6 +1180,7 @@ class AMake:
 		
 		self.writeMakefile(config, rootPathDictionary)
 					
+		self.writePrecompiledHeaderFile(config, rootPathDictionary)
 
 print "ABMake Start..."
 sys.stdout.flush()
