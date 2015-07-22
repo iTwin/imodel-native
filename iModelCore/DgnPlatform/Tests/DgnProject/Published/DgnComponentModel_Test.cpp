@@ -5,6 +5,7 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#ifndef BENTLEYCONFIG_NO_JAVASCRIPT
 #include "DgnHandlersTests.h"
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnCore/DgnScriptContext.h>
@@ -333,15 +334,7 @@ void ComponentModelTest::GenerateCMSchema()
     OpenComponentDb(Db::OpenMode::ReadWrite);
     ECN::ECSchemaPtr schema;
     ASSERT_EQ( ECN::ECOBJECTS_STATUS_Success , ECN::ECSchema::CreateSchema(schema, TEST_JS_NAMESPACE_W, 0, 0) );
-
-    for (auto const& cm : m_componentDb->Models().MakeIterator())
-        {
-        if (cm.GetModelType() != DgnModelType::Component)
-            continue;
-        ComponentModelPtr componentModel = m_componentDb->Models().Get<ComponentModel>(cm.GetModelId());
-        ASSERT_EQ( DgnDbStatus::Success , componentModel->GenerateECClass(*schema) );
-        }
-
+    ASSERT_EQ( DgnDbStatus::Success , ComponentModel::AddAllToECSchema(*schema, *m_componentDb) );
     ASSERT_EQ( ECN::SCHEMA_WRITE_STATUS_Success , schema->WriteToXmlFile(m_componentSchemaFileName) );
     CloseComponentDb();
     }
@@ -538,3 +531,4 @@ TEST_F(ComponentModelTest, SimulateDeveloperAndClient)
     SimulateDeveloper();
     SimulateClient();
     }
+#endif //ndef BENTLEYCONFIG_NO_JAVASCRIPT

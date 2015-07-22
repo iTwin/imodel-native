@@ -1410,6 +1410,22 @@ DgnDbStatus ComponentModel::GenerateECClass(ECN::ECSchemaR schema)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus ComponentModel::AddAllToECSchema(ECN::ECSchemaR schema, DgnDbR db)
+    {
+    for (auto const& cm : db.Models().MakeIterator())
+        {
+        if (cm.GetModelType() != DgnModelType::Component)
+            continue;
+        ComponentModelPtr componentModel = db.Models().Get<ComponentModel>(cm.GetModelId());
+        if (DgnDbStatus::Success != componentModel->GenerateECClass(schema))
+            return DgnDbStatus::WriteError;
+        }
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ComponentModel::GetElementCategoryName() const
