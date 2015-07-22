@@ -613,7 +613,7 @@ public:
 //! A DgnModel3d that captures the definition of a parametric component and its current solution.
 //! 
 //! A ComponentModel is a DgnModel that is also is a <em>mechanism for generating</em> the geometry and properties of a particular kind of "component", 
-//! using an algorithm of some kind, given a set of input parameters. The mechanism is encapsulated in the model's \ref Solver.
+//! using an algorithm of some kind, given a set of input parameters. The mechanism is encapsulated in the model's Solver.
 //! <p>The content of a ComponentModel may include instances of other ComponentModels.
 //! <p>A ComponentModel exists in its own independent coordinate space. The DgnElements in a ComponentModel are not in the persistent range tree.
 //! <p>Instances of a solution to a ComponentModel can be placed in the physical coordinate space of other DgnDbs.
@@ -651,7 +651,7 @@ public:
 //!
 //! <h2>Parameters and Solving</h2>
 //!
-//! The \ref Solver of a ComponentModel holds a set of parameters and their values that will be used as the inputs to the solver. See #GetSolver.
+//! The Solver of a ComponentModel holds a set of parameters and their values that will be used as the inputs to the solver. See #GetSolver.
 //! These parameters also tell you what the current solution was based on.
 //! 
 //! To apply the current parameters and invoke the solver, invoke the #Solve method. That will cause the elements in the ComponentModel to be updated.
