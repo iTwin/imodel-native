@@ -34,7 +34,7 @@ static void importDgnSchema(DgnDbR project, bool updateExisting)
     standardSchemaPath.AppendToPath(L"Standard");
     ecSchemaContext->AddSchemaPath(standardSchemaPath);
 
-    SchemaKey dgnschemaKey(L"dgn", 2, 0);
+    SchemaKey dgnschemaKey("dgn", 2, 0);
     ECSchemaPtr dgnschema = ECSchema::LocateSchema(dgnschemaKey, *ecSchemaContext);
     BeAssert(dgnschema != NULL);
 

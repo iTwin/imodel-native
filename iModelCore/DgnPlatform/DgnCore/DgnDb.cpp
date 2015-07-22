@@ -269,7 +269,7 @@ DgnTextAnnotationSeeds& DgnStyles::TextAnnotationSeeds() {if (NULL == m_textAnno
 BentleyStatus DgnJavaScriptLibrary::ToJsonFromEC(Json::Value& json, ECN::IECInstanceCR ec, Utf8CP prop)
     {
     ECN::ECValue v;
-    if (ec.GetValue(v, WSTR(prop)) != ECN::ECOBJECTS_STATUS_Success || v.IsNull() || !v.IsPrimitive())
+    if (ec.GetValue(v, prop) != ECN::ECOBJECTS_STATUS_Success || v.IsNull() || !v.IsPrimitive())
         return BSIERROR;
 
     auto& jv = json[prop];
@@ -280,7 +280,7 @@ BentleyStatus DgnJavaScriptLibrary::ToJsonFromEC(Json::Value& json, ECN::IECInst
         case ECN::PRIMITIVETYPE_Double:     jv = v.GetDouble(); break;
         case ECN::PRIMITIVETYPE_Integer:    jv = v.GetInteger(); break;
         case ECN::PRIMITIVETYPE_Long:       jv = v.GetLong(); break;
-        case ECN::PRIMITIVETYPE_String:     jv = Utf8String(v.GetString()).c_str(); break;
+        case ECN::PRIMITIVETYPE_String:     jv = v.GetUtf8CP(); break;
         
         case ECN::PRIMITIVETYPE_Point2D:    JsonUtils::DPoint2dToJson(jv, v.GetPoint2D()); break;
         case ECN::PRIMITIVETYPE_Point3D:    JsonUtils::DPoint3dToJson(jv, v.GetPoint3D()); break;

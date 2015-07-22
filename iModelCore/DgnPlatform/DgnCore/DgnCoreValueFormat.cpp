@@ -991,7 +991,7 @@ WString DistanceFormatter::ToString(double meters) const
                 }
 
             if (m_insertThousandsSeparator)
-                InsertThousandsSeparator(masterUnitString, m_thousandsSeparator);
+                InsertThousandsSeparator(masterUnitString, m_thousandsSeparatorW);
 
             double limit = pow(10.0, -m_precisionByte);
             if (m_suppressZeroSubUnits && limit > subUnits)
@@ -1002,7 +1002,7 @@ WString DistanceFormatter::ToString(double meters) const
             else
                 {
                 GetPrecisionString(subUnitString, subUnits, m_precisionType, m_precisionByte, m_leadingZero, m_trailingZeros);
-                ReplaceDecimalSeparator(subUnitString, m_decimalSeparator);
+                ReplaceDecimalSeparator(subUnitString, m_decimalSeparatorW);
                 }
 
             if (unitFlag || !m_isDgnCoordReadOutCapable)
@@ -1015,7 +1015,7 @@ WString DistanceFormatter::ToString(double meters) const
         case DgnUnitFormat::MU:            /* Master Unit */
             {
             // Can't call ToStringBasic because UorsToMasterSubPositional already added in minRes*ROUNDOFF
-            outString = T_Super::ToStringFromElevatedValue(masterUnits);
+            outString = T_Super::ToStringFromElevatedValueW(masterUnits);
             if (unitFlag)
                 outString.append(masterUnitsLabel);
 
@@ -1026,7 +1026,7 @@ WString DistanceFormatter::ToString(double meters) const
             double  totalSuUnits = subUnits + subPerMaster * iMasterUnits;
 
             // Can't call ToStringBasic because UorsToMasterSubPositional already added in minRes*ROUNDOFF
-            outString = T_Super::ToStringFromElevatedValue(totalSuUnits);
+            outString = T_Super::ToStringFromElevatedValueW(totalSuUnits);
             if (unitFlag)
                 outString.append(subUnitsLabel);
 
@@ -1384,7 +1384,7 @@ WString AreaFormatter::ToString(double meters) const
     double mastMeters = m_masterUnit.ToMeters();
     double area = meters / (mastMeters*mastMeters);
 
-    WString outString = T_Super::ToStringBasic(area);
+    WString outString = T_Super::ToStringBasicW(area);
 
     if (m_showUnitLabel)
         appendUnitLabel(outString, m_masterUnit.GetLabelCP(), m_labelDecoratorAsSuffix ? DgnCoreL10N::UNIT_LABEL_SUFFIX_Area() : DgnCoreL10N::UNIT_LABEL_PREFIX_Area(), m_labelDecoratorAsSuffix);
@@ -1446,7 +1446,7 @@ WString VolumeFormatter::ToString(double meters) const
     double mastMeters = m_masterUnit.ToMeters();
     double cube = meters / (mastMeters*mastMeters*mastMeters);
 
-    WString outString = T_Super::ToStringBasic(cube);
+    WString outString = T_Super::ToStringBasicW(cube);
 
     if (m_showUnitLabel)
         appendUnitLabel(outString, m_masterUnit.GetLabelCP(), m_labelDecoratorAsSuffix ? DgnCoreL10N::UNIT_LABEL_SUFFIX_Volume() : DgnCoreL10N::UNIT_LABEL_PREFIX_Volume(), m_labelDecoratorAsSuffix);

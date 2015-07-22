@@ -1568,18 +1568,18 @@ DgnDbStatus DgnElement::Item::GenerateElementGeometry(GeometricElementR el)
 DgnDbStatus DgnElement::Item::ExecuteEGA(Dgn::DgnElementR el, DPoint3dCR origin, YawPitchRollAnglesCR angles, ECN::IECInstanceCR egaInstance)
     {
     ECN::ECClassCR ecclass = egaInstance.GetClass();
-    ECN::IECInstancePtr ca = ecclass.GetCustomAttribute(L"EGASpecifier");
+    ECN::IECInstancePtr ca = ecclass.GetCustomAttribute("EGASpecifier");
     if (!ca.IsValid())
         return DgnDbStatus::NotEnabled;
 
     ECN::ECValue egaType, egaName, egaInputs;
-    ca->GetValue(egaType, L"Type");
-    ca->GetValue(egaName, L"Name");
-    ca->GetValue(egaInputs, L"Inputs");
+    ca->GetValue(egaType, "Type");
+    ca->GetValue(egaName, "Name");
+    ca->GetValue(egaInputs, "Inputs");
 
-    Utf8String tsName(egaName.GetString());
+    Utf8String tsName(egaName.GetUtf8CP());
 
-    if (0 != BeStringUtilities::Wcsicmp(L"JavaScript", egaType.GetString()))
+    if (0 != BeStringUtilities::Stricmp("JavaScript", egaType.GetUtf8CP()))
         {
         // *******************************************************************
         // *** TBD: Support for other kinds of EGAs (e.g., parametric models)
@@ -1592,7 +1592,7 @@ DgnDbStatus DgnElement::Item::ExecuteEGA(Dgn::DgnElementR el, DPoint3dCR origin,
     //  JavaScript EGA
     //  ----------------------------------------------------------------------------------
     Json::Value json(Json::objectValue);
-    if (BSISUCCESS != DgnJavaScriptLibrary::ToJsonFromEC(json, egaInstance, Utf8String(egaInputs.GetString())))
+    if (BSISUCCESS != DgnJavaScriptLibrary::ToJsonFromEC(json, egaInstance, Utf8String(egaInputs.GetUtf8CP())))
         return DgnDbStatus::BadArg;
 
     IDgnJavaScriptObjectModel* js = T_HOST.GetScriptingAdmin().GetIDgnJavaScriptObjectModel();
