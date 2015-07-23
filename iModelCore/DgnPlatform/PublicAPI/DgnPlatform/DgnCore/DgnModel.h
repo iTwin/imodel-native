@@ -644,7 +644,7 @@ public:
 * Clients will create a ComponentProxyModel in order to create instances of solutions of a ComponentModel.
 *
 * Whether you use use a script to create elements or you create elements interactively, be sure to assign the solution geometry to the "Element Category", as explained below.
-*cf
+*
 * <h2>ECClass</h2>
 * A ComponentModel is paired with an ECClass. This ECClass will be a subclass of dgn.PhysicalElement. Its ECProperties are the ComponentModel's parameters.
 * <p>
