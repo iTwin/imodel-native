@@ -221,7 +221,7 @@
         <Bindings>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="de" SubPartDirectory="l10n/de">Delivery/l10n/de/DgnCoreMessages_de.xliff</Files>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="de" SubPartDirectory="l10n/de">Delivery/l10n/de/DgnHandlersMessages_de.xliff</Files>
-            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="de" SubPartDirectory="l10n/cs">Delivery/l10n/de/ForeignFormat_de.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="de" SubPartDirectory="l10n/de">Delivery/l10n/de/ForeignFormat_de.xliff</Files>
         </Bindings>
     </Part>
 
@@ -251,7 +251,7 @@
         <Bindings>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="fr" SubPartDirectory="l10n/fr">Delivery/l10n/fr/DgnCoreMessages_fr.xliff</Files>
             <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="fr" SubPartDirectory="l10n/fr">Delivery/l10n/fr/DgnHandlersMessages_fr.xliff</Files>
-            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="fr" SubPartDirectory="l10n/cs">Delivery/l10n/fr/ForeignFormat_fr.xliff</Files>
+            <Files ProductDirectoryName="L10N-DgnPlatformXliffs" Required="false" ProductSubDirectory="fr" SubPartDirectory="l10n/fr">Delivery/l10n/fr/ForeignFormat_fr.xliff</Files>
         </Bindings>
     </Part>
 
@@ -375,7 +375,7 @@
         <SubPart PartName="BootStrapToolContext"/>
 <!--        <SubPart PartName="DgnPlatformLib" /> -->
         <!-- Build all platform unit tests -->
-	<SubPart PartName="PlatformUnitTests-No-View" PartFile="BeGTest" Repository="BeGTest"  />
+        <SubPart PartName="PlatformUnitTests-No-View" PartFile="BeGTest" Repository="BeGTest"  />
         <!-- Build the test runner and, if possible, run the tests -->
         <SubPart PartName="BeGTestCommon"       PartFile="BeGTest"  Repository="BeGTest" />
     </Part>
