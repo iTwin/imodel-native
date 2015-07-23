@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/AllRelatedInstanceNodesSpecification.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -35,7 +35,7 @@ bool      groupByClass,
 bool      groupByRelationship,
 bool      groupByLabel,
 int       skipRelatedLevel,
-WStringCR supportedSchemas
+Utf8StringCR supportedSchemas
 ) : ChildNodeSpecification (priority, alwaysReturnsChildren, hideNodesInHierarchy, hideIfNoChildren), 
     m_groupByClass (groupByClass), m_groupByRelationship (groupByRelationship), m_groupByLabel (groupByLabel),
     m_skipRelatedLevel (skipRelatedLevel), m_supportedSchemas (supportedSchemas), m_requiredDirection (RequiredRelationDirection_Both)
@@ -69,11 +69,11 @@ bool AllRelatedInstanceNodesSpecification::_ReadXml (BeXmlNodeP xmlNode)
         m_skipRelatedLevel = 0;
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_supportedSchemas, COMMON_XML_ATTRIBUTE_SUPPORTEDSCHEMAS))
-        m_supportedSchemas = L"";
+        m_supportedSchemas = "";
 
-    WString requiredDirectionString = L"";
+    Utf8String requiredDirectionString = "";
     if (BEXML_Success != xmlNode->GetAttributeStringValue (requiredDirectionString, COMMON_XML_ATTRIBUTE_REQUIREDDIRECTION))
-        requiredDirectionString = L"";
+        requiredDirectionString = "";
     else
         m_requiredDirection = CommonTools::ParseRequiredDirectionString (requiredDirectionString.c_str ());
 
@@ -116,7 +116,7 @@ int AllRelatedInstanceNodesSpecification::GetSkipRelatedLevel (void) const { ret
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR AllRelatedInstanceNodesSpecification::GetSupportedSchemas (void) const { return m_supportedSchemas; }
+Utf8StringCR AllRelatedInstanceNodesSpecification::GetSupportedSchemas (void) const { return m_supportedSchemas; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               09/2013

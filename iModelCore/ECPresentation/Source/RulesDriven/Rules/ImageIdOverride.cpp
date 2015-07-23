@@ -16,14 +16,14 @@ USING_NAMESPACE_EC
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 ImageIdOverride::ImageIdOverride ()
-    : PresentationRule (), m_imageIdExpression (L"")
+    : PresentationRule (), m_imageIdExpression ("")
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ImageIdOverride::ImageIdOverride (WStringCR condition, int priority, WStringCR imageIdExpression)
+ImageIdOverride::ImageIdOverride (Utf8StringCR condition, int priority, Utf8StringCR imageIdExpression)
     : PresentationRule (condition, priority, false), m_imageIdExpression (imageIdExpression)
     {
     }
@@ -42,7 +42,7 @@ CharCP ImageIdOverride::_GetXmlElementName ()
 bool ImageIdOverride::_ReadXml (BeXmlNodeP xmlNode)
     {
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_imageIdExpression, IMAGE_ID_OVERRIDE_XML_ATTRIBUTE_IMAGEID))
-        m_imageIdExpression = L"";
+        m_imageIdExpression = "";
 
     return PresentationRule::_ReadXml (xmlNode);
     }
@@ -60,9 +60,9 @@ void ImageIdOverride::_WriteXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR ImageIdOverride::GetImageId (void) const { return m_imageIdExpression; }
+Utf8StringCR ImageIdOverride::GetImageId (void) const { return m_imageIdExpression; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Tom.Amon                        03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ImageIdOverride::SetImageId (WString value) { m_imageIdExpression = value; }
+void ImageIdOverride::SetImageId (Utf8String value) { m_imageIdExpression = value; }

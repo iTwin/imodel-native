@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/SortingRule.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -16,14 +16,14 @@ USING_NAMESPACE_EC
 * @bsimethod                                    Eligijus.Mauragas               11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 SortingRule::SortingRule ()
-    : PresentationRule (), m_schemaName (L""), m_className (L""), m_propertyName (L""), m_sortAscending (true), m_doNotSort (false), m_isPolymorphic (false)
+    : PresentationRule (), m_schemaName (""), m_className (""), m_propertyName (""), m_sortAscending (true), m_doNotSort (false), m_isPolymorphic (false)
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-SortingRule::SortingRule (WStringCR condition, int priority, WStringCR schemaName, WStringCR className, WStringCR propertyName, bool sortAscending, bool doNotSort, bool isPolymorphic)
+SortingRule::SortingRule (Utf8StringCR condition, int priority, Utf8StringCR schemaName, Utf8StringCR className, Utf8StringCR propertyName, bool sortAscending, bool doNotSort, bool isPolymorphic)
     : PresentationRule (condition, priority, false), 
       m_schemaName (schemaName), m_className (className), m_propertyName (propertyName), m_sortAscending (sortAscending), m_doNotSort (doNotSort), m_isPolymorphic (isPolymorphic)
     {
@@ -43,13 +43,13 @@ CharCP SortingRule::_GetXmlElementName ()
 bool SortingRule::_ReadXml (BeXmlNodeP xmlNode)
     {
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_schemaName,      COMMON_XML_ATTRIBUTE_SCHEMANAME))
-        m_schemaName = L"";
+        m_schemaName = "";
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_className,       COMMON_XML_ATTRIBUTE_CLASSNAME))
-        m_className = L"";
+        m_className = "";
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_propertyName,    COMMON_XML_ATTRIBUTE_PROPERTYNAME))
-        m_propertyName = L"";
+        m_propertyName = "";
 
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_sortAscending,  SORTING_RULE_XML_ATTRIBUTE_SORTASCENDING))
         m_sortAscending = true;
@@ -81,17 +81,17 @@ void SortingRule::_WriteXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR SortingRule::GetSchemaName (void) const { return m_schemaName; }
+Utf8StringCR SortingRule::GetSchemaName (void) const { return m_schemaName; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR SortingRule::GetClassName (void) const { return m_className; }
+Utf8StringCR SortingRule::GetClassName (void) const { return m_className; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR SortingRule::GetPropertyName (void) const { return m_propertyName; }
+Utf8StringCR SortingRule::GetPropertyName (void) const { return m_propertyName; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               11/2012

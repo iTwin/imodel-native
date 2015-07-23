@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/ContentRelatedInstancesSpecification.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -17,8 +17,8 @@ USING_NAMESPACE_EC
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentRelatedInstancesSpecification::ContentRelatedInstancesSpecification () 
-    : ContentSpecification (), m_skipRelatedLevel (0), m_instanceFilter (L""), 
-    m_requiredDirection (RequiredRelationDirection_Both), m_relationshipClassNames (L""), m_relatedClassNames (L"")
+    : ContentSpecification (), m_skipRelatedLevel (0), m_instanceFilter (""), 
+    m_requiredDirection (RequiredRelationDirection_Both), m_relationshipClassNames (""), m_relatedClassNames ("")
     {
     }
 
@@ -29,10 +29,10 @@ ContentRelatedInstancesSpecification::ContentRelatedInstancesSpecification
 (
 int                        priority,
 int                        skipRelatedLevel,
-WString                    instanceFilter,
+Utf8String                 instanceFilter,
 RequiredRelationDirection  requiredDirection,
-WString                    relationshipClassNames,
-WString                    relatedClassNames
+Utf8String                 relationshipClassNames,
+Utf8String                 relatedClassNames
 ) : ContentSpecification (priority), m_skipRelatedLevel (skipRelatedLevel), 
     m_instanceFilter (instanceFilter), m_requiredDirection (requiredDirection),
     m_relationshipClassNames (relationshipClassNames), m_relatedClassNames (relatedClassNames)
@@ -56,17 +56,17 @@ bool ContentRelatedInstancesSpecification::_ReadXml (BeXmlNodeP xmlNode)
         m_skipRelatedLevel = 0;
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_instanceFilter, COMMON_XML_ATTRIBUTE_INSTANCEFILTER))
-        m_instanceFilter = L"";
+        m_instanceFilter = "";
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_relationshipClassNames, COMMON_XML_ATTRIBUTE_RELATIONSHIPCLASSNAMES))
-        m_relationshipClassNames = L"";
+        m_relationshipClassNames = "";
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_relatedClassNames, COMMON_XML_ATTRIBUTE_RELATEDCLASSNAMES))
-        m_relatedClassNames = L"";
+        m_relatedClassNames = "";
 
-    WString requiredDirectionString = L"";
+    Utf8String requiredDirectionString = "";
     if (BEXML_Success != xmlNode->GetAttributeStringValue (requiredDirectionString, COMMON_XML_ATTRIBUTE_REQUIREDDIRECTION))
-        requiredDirectionString = L"";
+        requiredDirectionString = "";
     else
         m_requiredDirection = CommonTools::ParseRequiredDirectionString (requiredDirectionString.c_str ());
 
@@ -93,7 +93,7 @@ int ContentRelatedInstancesSpecification::GetSkipRelatedLevel (void) const { ret
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR ContentRelatedInstancesSpecification::GetInstanceFilter (void) const { return m_instanceFilter; }
+Utf8StringCR ContentRelatedInstancesSpecification::GetInstanceFilter (void) const { return m_instanceFilter; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -103,9 +103,9 @@ RequiredRelationDirection ContentRelatedInstancesSpecification::GetRequiredRelat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR ContentRelatedInstancesSpecification::GetRelationshipClassNames (void) const { return m_relationshipClassNames; }
+Utf8StringCR ContentRelatedInstancesSpecification::GetRelationshipClassNames (void) const { return m_relationshipClassNames; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR ContentRelatedInstancesSpecification::GetRelatedClassNames (void) const { return m_relatedClassNames; }
+Utf8StringCR ContentRelatedInstancesSpecification::GetRelatedClassNames (void) const { return m_relatedClassNames; }
