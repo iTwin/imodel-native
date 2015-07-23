@@ -63,10 +63,8 @@ Utf8StringCR ECClass::GetName () const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassId ECClass::GetId () const
     {
-
-    BeAssert (0 != m_ecClassId);
+    BeAssert (HasId());
     return m_ecClassId;
-
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -497,7 +495,6 @@ ECPropertyCP sourceProperty,
 bool copyCustomAttributes
 )
     {
-    ECSchemaP schema = const_cast<ECSchemaP>(&m_schema);
     if (sourceProperty->GetIsPrimitive())
         {
         PrimitiveECPropertyP destPrimitive;
@@ -512,14 +509,9 @@ bool copyCustomAttributes
         ArrayECPropertyP destArray;
         ArrayECPropertyCP sourceArray = sourceProperty->GetAsArrayProperty();
         destArray = new ArrayECProperty (*this);
-        if (NULL != sourceArray->GetStructElementType())
-            {
-            ECClassCP sourceType = sourceArray->GetStructElementType();
-            ECClassP targetType = schema->GetClassP(sourceType->GetName().c_str());
-            if (NULL == targetType)
-                schema->CopyClass(targetType, *sourceType);
-            destArray->SetStructElementType(targetType);
-            }
+        ECClassCP structElementType = sourceArray->GetStructElementType();
+        if (structElementType != nullptr)
+            destArray->SetStructElementType(structElementType);
         else
             destArray->SetPrimitiveElementType(sourceArray->GetPrimitiveElementType());
 
@@ -534,12 +526,7 @@ bool copyCustomAttributes
         StructECPropertyCP sourceStruct = sourceProperty->GetAsStructProperty();
         destStruct = new StructECProperty (*this);
         ECClassCR sourceType = sourceStruct->GetType();
-        ECClassP targetType = schema->GetClassP(sourceType.GetName().c_str());
-        if (NULL == targetType)
-            schema->CopyClass(targetType, sourceType);
-
-        destStruct->SetType(*targetType);
-
+        destStruct->SetType(sourceType);
         destProperty = destStruct;
         }
 
