@@ -1506,7 +1506,7 @@ DgnDbStatus DgnElement::Item::LoadPropertiesIntoInstance(ECN::IECInstancePtr& in
     if (!instance.IsValid())
         return DgnDbStatus::ReadError;
     
-    WChar idStrBuffer[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
+    Utf8Char idStrBuffer[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
     ECInstanceIdHelper::ToString(idStrBuffer, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, el.GetElementId());
     instance->SetInstanceId(idStrBuffer);
 
@@ -1668,7 +1668,7 @@ DgnDbStatus DgnElement::Item::ExecuteEGA(Dgn::DgnElementR el, DPoint3dCR origin,
     //  JavaScript EGA
     //  ----------------------------------------------------------------------------------
     Json::Value json(Json::objectValue);
-    if (BSISUCCESS != DgnJavaScriptLibrary::ToJsonFromEC(json, egaInstance, Utf8String(egaInputs.GetUtf8CP())))
+    if (BSISUCCESS != DgnScriptLibrary::ToJsonFromEC(json, egaInstance, Utf8String(egaInputs.GetUtf8CP())))
         return DgnDbStatus::BadArg;
 
     DgnScriptContextR som = T_HOST.GetScriptingAdmin().GetDgnScriptContext();
