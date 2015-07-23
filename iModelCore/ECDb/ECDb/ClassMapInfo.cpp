@@ -147,7 +147,7 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
                 baseClasses.append(" ");
                 }
 
-            LOG.errorv("ECClass '%s' has two or more base ECClasses which use the MapStrategy 'SharedTable (polymorphic)'. We cannot determine which to honor. The base ECClasses are: %s",
+            LOG.errorv("ECClass '%s' has two or more base ECClasses which use the MapStrategy 'SharedTable (polymorphic)'. This is not supported. The base ECClasses are: %s",
                        Utf8String(m_ecClass.GetFullName()).c_str(), baseClasses.c_str());
             }
 
