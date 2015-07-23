@@ -73,7 +73,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         enum class Type 
             {
             None=0,     //!< This model has no solver
-            Script,     //!< Execute a named script function
+            Script,     //!< Execute a named script function. See DgnScriptContext::ExecuteModelSolver
             // *** TBD: Add built-in constraint solvers 
             };
 
