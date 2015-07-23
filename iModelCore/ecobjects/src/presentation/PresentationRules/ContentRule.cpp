@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/ContentRule.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -16,15 +16,15 @@ USING_NAMESPACE_EC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentRule::ContentRule () : PresentationRule (), m_customControl (L"")
+ContentRule::ContentRule () : PresentationRule (), m_customControl ("")
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentRule::ContentRule (WStringCR condition, int priority, bool onlyIfNotHandled)
-    : PresentationRule (condition, priority, onlyIfNotHandled), m_customControl (L"")
+ContentRule::ContentRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled)
+    : PresentationRule (condition, priority, onlyIfNotHandled), m_customControl ("")
     {
     }
 
@@ -50,7 +50,7 @@ CharCP ContentRule::_GetXmlElementName ()
 bool ContentRule::_ReadXml (BeXmlNodeP xmlNode)
     {
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_customControl, CONTENT_RULE_XML_ATTRIBUTE_CUSTOMCONTROL))
-        m_customControl = L"";
+        m_customControl = "";
 
     for (BeXmlNodeP child = xmlNode->GetFirstChild (BEXMLNODE_Element); NULL != child; child = child->GetNextSibling (BEXMLNODE_Element))
         {
@@ -85,9 +85,9 @@ ContentSpecificationList& ContentRule::GetSpecifications (void) { return m_speci
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR ContentRule::GetCustomControl (void)                  { return m_customControl;  }
+Utf8StringCR ContentRule::GetCustomControl (void)                  { return m_customControl;  }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentRule::SetCustomControl (WStringCR customControl)    { m_customControl = customControl; }
+void ContentRule::SetCustomControl (Utf8StringCR customControl)    { m_customControl = customControl; }

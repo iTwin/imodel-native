@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/LocalizationResourceKeyDefinition.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -21,9 +21,9 @@ struct LocalizationResourceKeyDefinition : public PresentationKey
     {
     /*__PUBLISH_SECTION_END__*/
     private:
-        WString m_id;
-        WString m_key;
-        WString m_defaultValue;
+        Utf8String m_id;
+        Utf8String m_key;
+        Utf8String m_defaultValue;
 
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
@@ -41,16 +41,16 @@ struct LocalizationResourceKeyDefinition : public PresentationKey
         ECOBJECTS_EXPORT LocalizationResourceKeyDefinition ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT LocalizationResourceKeyDefinition (int priority, WStringCR id, WStringCR key, WStringCR defaultValue);
+        ECOBJECTS_EXPORT LocalizationResourceKeyDefinition (int priority, Utf8StringCR id, Utf8StringCR key, Utf8StringCR defaultValue);
 
         //! Id of the resource to localize.
-        ECOBJECTS_EXPORT WStringCR       GetId (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR    GetId (void) const;
 
         //! New key of the resource.
-        ECOBJECTS_EXPORT WStringCR       GetKey (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR    GetKey (void) const;
 
         //! Default value which is used if the resource is not found.
-        ECOBJECTS_EXPORT WStringCR       GetDefaultValue (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR    GetDefaultValue (void) const;
 
     };
 

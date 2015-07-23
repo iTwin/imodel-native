@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/CheckBoxRule.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -22,7 +22,7 @@ struct CheckBoxRule : public PresentationRule
     {
     /*__PUBLISH_SECTION_END__*/
     private:
-        WString                 m_propertyName;
+        Utf8String              m_propertyName;
         bool                    m_useInversedPropertyValue;
         bool                    m_defaultValue;
 
@@ -42,10 +42,10 @@ struct CheckBoxRule : public PresentationRule
         ECOBJECTS_EXPORT CheckBoxRule ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT CheckBoxRule (WStringCR condition, int priority, bool onlyIfNotHandled, WStringCR propertyName, bool useInversedPropertyValue, bool defaultValue);
+        ECOBJECTS_EXPORT CheckBoxRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled, Utf8StringCR propertyName, bool useInversedPropertyValue, bool defaultValue);
 
         //! ECProperty name to bind check box state.
-        ECOBJECTS_EXPORT WStringCR           GetPropertyName (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR        GetPropertyName (void) const;
 
         //! Defines if inversed property value should be used for check box state.
         ECOBJECTS_EXPORT bool                GetUseInversedPropertyValue (void) const;

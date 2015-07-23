@@ -23,7 +23,7 @@ struct ImageIdOverride : public PresentationRule
     {
     /*__PUBLISH_SECTION_END__*/
     private:
-        WString m_imageIdExpression;
+        Utf8String m_imageIdExpression;
 
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
@@ -41,13 +41,13 @@ struct ImageIdOverride : public PresentationRule
         ECOBJECTS_EXPORT ImageIdOverride ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT ImageIdOverride (WStringCR condition, int priority, WStringCR imageIdExpression);
+        ECOBJECTS_EXPORT ImageIdOverride (Utf8StringCR condition, int priority, Utf8StringCR imageIdExpression);
 
         //! Returns ImageId override ECExpression string.
-        ECOBJECTS_EXPORT WStringCR        GetImageId (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR        GetImageId (void) const;
 
         //! Set imageId override ECExpression string.
-        ECOBJECTS_EXPORT void             SetImageId (WString value);
+        ECOBJECTS_EXPORT void             SetImageId (Utf8String value);
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
