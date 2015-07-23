@@ -27,6 +27,7 @@ public:
         Utf8String m_assertMessage;
 
         TestItem(Utf8CP schemaXml, bool expectedToSucceeed, Utf8CP assertMessage) : m_schemaXml(schemaXml), m_expectedToSucceed(expectedToSucceeed), m_assertMessage(assertMessage) {}
+        TestItem(Utf8CP schemaXml, bool expectedToSucceeed) : m_schemaXml(schemaXml), m_expectedToSucceed(expectedToSucceeed) {}
         };
 
 public:

@@ -63,6 +63,11 @@ public:
     Option GetOption() const { return m_option; }
     bool IsPolymorphic() const { return m_isPolymorphic; }
 
+    //! Indicates whether this strategy represents the 'unset' strategy
+    bool IsUnset() const { return m_strategy == Strategy::None && m_option == Option::None && !m_isPolymorphic; }
+
+    Utf8String ToString() const;
+
     static BentleyStatus TryParse(UserECDbMapStrategy&, ECN::ECDbClassMap::MapStrategy const& mapStrategyCustomAttribute);
     };
 
@@ -129,4 +134,4 @@ public:
     Utf8String ToString() const;
     };
 
-    END_BENTLEY_SQLITE_EC_NAMESPACE
+END_BENTLEY_SQLITE_EC_NAMESPACE
