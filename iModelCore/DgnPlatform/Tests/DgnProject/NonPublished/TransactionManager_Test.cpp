@@ -14,10 +14,10 @@
 
 #define TMTEST_SCHEMA_NAME                               "DgnPlatformTest"
 #define TMTEST_SCHEMA_NAMEW                             L"DgnPlatformTest"
-#define TMTEST_TEST_ELEMENT_CLASS_NAME                   "TestElement"
+#define TMTEST_TEST_ELEMENT_CLASS_NAME                   "TestPhysicalElement"
 #define TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME    "TestElementDrivesElement"
 #define TMTEST_TEST_ELEMENT_TestElementProperty          "TestElementProperty"
-#define TMTEST_TEST_ITEM_CLASS_NAME                       "TestItem"
+#define TMTEST_TEST_ITEM_CLASS_NAME                      "TestItem"
 #define TMTEST_TEST_ITEM_TestItemProperty                "TestItemProperty"
 
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -59,8 +59,7 @@ struct TestElementHandler;
 //=======================================================================================
 struct TestElement : Dgn::PhysicalElement
 {
-    DEFINE_T_SUPER(Dgn::PhysicalElement)
-
+    DGNELEMENT_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT_CLASS_NAME, Dgn::PhysicalElement)
     friend struct TestElementHandler;
 
 private:
@@ -104,9 +103,9 @@ typedef TestElement const& TestElementCR;
 //! A test ElementHandler
 // @bsiclass                                                     Sam.Wilson      01/15
 //=======================================================================================
-struct TestElementHandler : dgn_ElementHandler::Element
+struct TestElementHandler : dgn_ElementHandler::Physical
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS("TestElement", TestElement, TestElementHandler, dgn_ElementHandler::Element, )
+    ELEMENTHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT_CLASS_NAME, TestElement, TestElementHandler, dgn_ElementHandler::Physical, )
 };
 
 HANDLER_DEFINE_MEMBERS(TestElementHandler)
@@ -310,8 +309,8 @@ void TransactionManagerTests::SetupProject(WCharCP projFile, WCharCP testFile, D
     BeFileName schemaFile(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
     schemaFile.AppendToPath(L"ECSchemas/" TMTEST_SCHEMA_NAMEW L".01.00.ecschema.xml");
 
-    BentleyStatus status = TransactionManagerTestDomain::GetDomain().ImportSchema(*m_db, schemaFile);
-    ASSERT_TRUE(BentleyStatus::SUCCESS == status);
+    auto status = TransactionManagerTestDomain::GetDomain().ImportSchema(*m_db, schemaFile);
+    ASSERT_TRUE(DgnDbStatus::Success == status);
 
     auto schema = m_db->Schemas().GetECSchema(TMTEST_SCHEMA_NAME, true);
     ASSERT_NE( nullptr , schema );
@@ -496,7 +495,7 @@ DgnDbStatus TestElement::_InsertInDb()
         insertStmt->BindId(1, GetElementId());
         insertStmt->BindText(2, m_testItemProperty.c_str(), IECSqlBinder::MakeCopy::No);
         if (ECSqlStepStatus::Done != insertStmt->Step())
-            return DgnDbStatus::ElementWriteError;
+            return DgnDbStatus::WriteError;
         }
 
     return DgnDbStatus::Success;
@@ -545,7 +544,7 @@ DgnDbStatus TestElement::_UpdateInDb()
         }
 
     if (ECSqlStepStatus::Done != rc)
-        status = DgnDbStatus::ElementWriteError;
+        status = DgnDbStatus::WriteError;
 
     return status;
     }
@@ -2030,13 +2029,11 @@ static void testModelUndoRedo(DgnDbR db)
     DgnElementCPtr el1 = templateEl->Insert();
     ASSERT_TRUE(el1->IsPersistent());
 
-    templateEl->InvalidateElementId();
-    templateEl->SetCode(nullptr);
+    templateEl = TestElement::Create(db, model->GetModelId(), category, "");
     DgnElementCPtr el2 = templateEl->Insert();
     ASSERT_TRUE(el2->IsPersistent());
 
-    templateEl->InvalidateElementId();
-    templateEl->SetCode(nullptr);
+    templateEl = TestElement::Create(db, model->GetModelId(), category, "");
     DgnElementCPtr el3 = templateEl->Insert();
     ASSERT_TRUE(el3->IsPersistent());
 

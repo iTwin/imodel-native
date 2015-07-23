@@ -266,7 +266,7 @@ DgnTextAnnotationSeeds& DgnStyles::TextAnnotationSeeds() {if (NULL == m_textAnno
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
-BentleyStatus DgnJavaScriptLibrary::ToJsonFromEC(Json::Value& json, ECN::IECInstanceCR ec, Utf8CP prop)
+BentleyStatus DgnScriptLibrary::ToJsonFromEC(Json::Value& json, ECN::IECInstanceCR ec, Utf8CP prop)
     {
     ECN::ECValue v;
     if (ec.GetValue(v, prop) != ECN::ECOBJECTS_STATUS_Success || v.IsNull() || !v.IsPrimitive())
@@ -300,7 +300,7 @@ BentleyStatus DgnJavaScriptLibrary::ToJsonFromEC(Json::Value& json, ECN::IECInst
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
-BentleyStatus DgnJavaScriptLibrary::ToJsonFromEC(Json::Value& json, ECN::IECInstanceCR ec, Utf8StringCR props)
+BentleyStatus DgnScriptLibrary::ToJsonFromEC(Json::Value& json, ECN::IECInstanceCR ec, Utf8StringCR props)
     {
     size_t offset = 0;
     Utf8String parm;
@@ -316,62 +316,57 @@ BentleyStatus DgnJavaScriptLibrary::ToJsonFromEC(Json::Value& json, ECN::IECInst
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
-static BentleyStatus registerJavaScript(DgnDbR db, Utf8CP tsProgramName, Utf8CP tsProgramText, bool updateExisting)
+DgnDbStatus DgnScriptLibrary::RegisterScript(Utf8CP tsProgramName, Utf8CP tsProgramText, DgnScriptType stype, bool updateExisting)
     {
     Statement stmt;
-    stmt.Prepare(db, SqlPrintfString(
-        "INSERT %s INTO be_Prop (Namespace,     Name, Id, SubId, TxnMode, StrData) " 
-                       "VALUES('dgn_JavaScript',?,    ?,  ?,      0,       ?)", updateExisting? "OR REPLACE": ""));
+    stmt.Prepare(m_dgndb, SqlPrintfString(
+        "INSERT %s INTO be_Prop (Namespace,  Name, Id, SubId, TxnMode, StrData) " 
+                       "VALUES('dgn_Script', ?,    ?,  ?,      0,       ?)", updateExisting? "OR REPLACE": ""));
     stmt.BindText(1, tsProgramName, Statement::MakeCopy::No);
     stmt.BindInt(2, 0);
-    stmt.BindInt(3, 0);
+    stmt.BindInt(3, (int)stype);
     stmt.BindText(4, tsProgramText, Statement::MakeCopy::No);
-    return (BE_SQLITE_DONE == stmt.Step())? BSISUCCESS: BSIERROR;
+    DbResult res = stmt.Step();
+    
+    NativeLogging::LoggingManager::GetLogger("DgnScriptContext")->infov ("Registering %s -> %d", tsProgramName, res);
+    
+    return (BE_SQLITE_DONE == res)? DgnDbStatus::Success: DgnDbStatus::SQLiteError;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
-BentleyStatus DgnJavaScriptLibrary::QueryJavaScript(Utf8StringR tsProgramText, Utf8CP tsProgramName)
+DgnDbStatus DgnScriptLibrary::QueryScript(Utf8StringR sText, DgnScriptType& stypeFound, Utf8CP sName, DgnScriptType stypePreferred)
     {
     Statement stmt;
-    stmt.Prepare(m_dgndb, "SELECT StrData FROM be_Prop WHERE (Namespace='dgn_JavaScript' AND Name=? AND Id=? AND SubId=?)");
-    stmt.BindText(1, tsProgramName, Statement::MakeCopy::No);
+    stmt.Prepare(m_dgndb, "SELECT StrData,SubId FROM be_Prop WHERE (Namespace='dgn_Script' AND Name=? AND Id=?)");
+    stmt.BindText(1, sName, Statement::MakeCopy::No);
     stmt.BindInt(2, 0);
-    stmt.BindInt(3, 0);
     if (stmt.Step() != BE_SQLITE_ROW)
-        return BSIERROR;
-    tsProgramText = stmt.GetValueText(0);
-    return BSISUCCESS;
+        return DgnDbStatus::NotFound;
+    do  {
+        sText = stmt.GetValueText(0);
+        stypeFound = (DgnScriptType)stmt.GetValueInt(1);
+        }
+    while ((stypeFound != stypePreferred) && (stmt.Step() == BE_SQLITE_ROW));
+    return DgnDbStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void DgnJavaScriptLibrary::ImportJavaScript(BeFileNameCR jsDir, bool updateExisting)
+DgnDbStatus DgnScriptLibrary::ReadText(Utf8StringR jsprog, BeFileNameCR jsFileName)
     {
-    BeFileName jsFiles(jsDir);
-    jsFiles.AppendToPath(L"*.js");
-    BeFileListIterator iter(jsFiles.GetName(), false);
-    BeFileName acmeTs;
-    bool anyImported = true;
-    while (BSISUCCESS == iter.GetNextFileName(acmeTs))
-        {
-        uint64_t fileSize;
-        if (acmeTs.GetFileSize(fileSize) == BeFileNameStatus::Success)
-            {
-            size_t bufSize = (size_t)fileSize;
-            ScopedArray<char> buf (bufSize+1);
-            FILE* fp = fopen(Utf8String(acmeTs).c_str(), "r");
-            size_t nread = fread(buf.GetData(), 1, bufSize, fp);
-            BeAssert(nread <= bufSize);
-            fclose(fp);
-            buf.GetData()[nread] = 0;
-            Utf8String name (acmeTs.GetFileNameWithoutExtension());
-            if (BSISUCCESS == registerJavaScript(m_dgndb, name.c_str(), buf.GetDataCP(), updateExisting))
-                anyImported = true;
-            }
-        }
-    if (anyImported)
-        m_dgndb.SaveSettings();
+    uint64_t fileSize;
+    if (jsFileName.GetFileSize(fileSize) != BeFileNameStatus::Success)
+        return DgnDbStatus::NotFound;
+
+    size_t bufSize = (size_t)fileSize;
+    jsprog.resize(bufSize+1);
+    FILE* fp = fopen(Utf8String(jsFileName).c_str(), "r");
+    size_t nread = fread(&jsprog[0], 1, bufSize, fp);
+    BeAssert(nread <= bufSize);
+    fclose(fp);
+    jsprog[nread] = 0;
+    return DgnDbStatus::Success;
     }

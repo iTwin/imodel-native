@@ -23,7 +23,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 // Used in persistence; do not change values. If you add or remove values, also ensure you update the #define's in the implemetation file for queries.
 // @bsiclass
 //=======================================================================================
-enum struct DgnLinkType
+enum class DgnLinkType
 {
     Invalid = 0,
 

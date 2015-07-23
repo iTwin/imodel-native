@@ -33,9 +33,6 @@ private:
     virtual Utf8CP         _GetName() const override           { return "DgnECSymbolProvider"; }
     virtual void            _PublishSymbols (ECN::SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const override;
 
-    // IHostObject
-    virtual void            _OnHostTermination (bool) override;
-
     // ECInstance methods for use in ECExpressions
     static ECN::ExpressionStatus GetInstanceId (ECN::EvaluationResult& evalResult, ECN::ECInstanceListCR instanceData, ECN::EvaluationResultVector& args);
     static ECN::ExpressionStatus GetInstanceLabel (ECN::EvaluationResult& evalResult, ECN::ECInstanceListCR instanceData, ECN::EvaluationResultVector& args);

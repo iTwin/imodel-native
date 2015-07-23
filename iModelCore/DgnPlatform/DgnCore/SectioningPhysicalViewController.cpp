@@ -107,7 +107,7 @@ ClipVectorPtr SectioningViewController::GetClipVectorInternal(ClipVolumePass pas
     if (!m_clip.IsValid())
         return NULL;
 
-    DRange3d range(_GetProjectExtents());
+    DRange3d range(_GetViewedExtents());
 
     ClipVectorPtr insideForward;
     m_clip->GetClipBoundary(insideForward, range, pass, /*displayCutGeometry*/true);

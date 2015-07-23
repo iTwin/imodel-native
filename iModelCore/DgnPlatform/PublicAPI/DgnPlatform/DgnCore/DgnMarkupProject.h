@@ -345,7 +345,7 @@ protected:
     virtual void _AdjustAspectRatio(double , bool expandView) override;
     virtual DPoint3d _GetTargetPoint() const override;
     virtual bool _Allow3dManipulations() const override;
-    virtual AxisAlignedBox3d _GetProjectExtents() const override;
+    virtual AxisAlignedBox3d _GetViewedExtents() const override;
     virtual IAuxCoordSysP _GetAuxCoordinateSystem() const override;
     virtual ColorDef _GetBackgroundColor() const override;
     virtual ClipVectorPtr _GetClipVector() const override {return NULL;}
@@ -375,7 +375,6 @@ protected:
     virtual uint32_t _GetMaxElementsToLoad() override;
     virtual BeSQLite::DbResult _Load() override;
     virtual Utf8String _GetRTreeMatchSql(DgnViewportR viewport) override;
-    virtual bool _OnComputeFitRange(DRange3dR range, DgnViewportR viewport, FitViewParamsR params) override;
     virtual int32_t _GetMaxElementFactor() override;
     virtual double _GetMinimumSizePixels(DrawPurpose updateType) override;
     virtual uint64_t _GetMaxElementMemory() override;

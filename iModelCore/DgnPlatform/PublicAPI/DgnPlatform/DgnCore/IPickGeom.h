@@ -14,8 +14,8 @@
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 //=======================================================================================
-//! Interface for supplying additional topology information for an element being located.
-//! Can be stored with the hit detail and later used to interpet the hit information.
+//! Interface for supplying additional topology information for geometry being located.
+//! Can be stored with the hit detail and later used to interpret the hit information.
 //=======================================================================================
 struct IElemTopology : BentleyApi::IRefCounted
 {
@@ -24,7 +24,11 @@ virtual IElemTopologyP _Clone() const = 0;
 
 //! Compare objects and return true if they should be considered the same.
 virtual bool _IsEqual (IElemTopologyCR) const = 0;
-};
+
+//! Return an object for handling geometry requests for non-Geometric element hits.
+virtual IRefCountedP _GetGeometryHandler () const = 0;
+
+}; // IElemTopology
 
 typedef RefCountedPtr<IElemTopology> IElemTopologyPtr; //!< Reference counted type to manage the life-cycle of the IElemTopology.
 

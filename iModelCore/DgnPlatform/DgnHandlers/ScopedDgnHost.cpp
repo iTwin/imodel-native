@@ -73,6 +73,23 @@ struct TestingConfigurationAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
     virtual BeFileNameCR _GetDgnPlatformAssetsDirectory () override {return m_appDir;}
     };
 
+//=======================================================================================
+// @bsiclass                                                    Sam.Wilson      07/15
+//=======================================================================================
+struct TestingDgnScriptingAdmin : Dgn::DgnPlatformLib::Host::ScriptingAdmin
+{
+    ScopedDgnHost::FetchScriptCallback* m_callback;
+
+    TestingDgnScriptingAdmin() {m_callback=nullptr;}
+
+    DgnDbStatus _FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DgnDbR db, Utf8CP sName, DgnScriptType stypePreferred) override
+        {
+        if (nullptr == m_callback)
+            return DgnDbStatus::NotEnabled;
+        return m_callback->_FetchScript(sText, stypeFound, db, sName, stypePreferred);
+        }
+};
+
 /*---------------------------------------------------------------------------------**//**
 * Here is the real implementation of ScopeDgnHost. Registers itself as a DgnHost in its
 * constructor. Supplies key admins that direct DgnPlatform to the files in the 
@@ -86,11 +103,15 @@ struct ScopedDgnHostImpl : DgnPlatformLib::Host
 
     ScopedDgnHostImpl();
     ~ScopedDgnHostImpl();
-    virtual LineStyleAdmin& _SupplyLineStyleAdmin() override;
-    virtual NotificationAdmin& _SupplyNotificationAdmin () override;
-    virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override;
-    virtual void _SupplyProductName(Utf8StringR s) override {s="BeTest";}
-    virtual L10N::SqlangFiles _SupplySqlangFiles() override {return L10N::SqlangFiles(BeFileName());} // users must have already initialized L10N to use ScopedDgnHost
+    LineStyleAdmin& _SupplyLineStyleAdmin() override;
+    NotificationAdmin& _SupplyNotificationAdmin () override;
+    IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override;
+    ScriptingAdmin& _SupplyScriptingAdmin() override {return *new TestingDgnScriptingAdmin();}
+    void _SupplyProductName(Utf8StringR s) override {s="BeTest";}
+    L10N::SqlangFiles _SupplySqlangFiles() override {return L10N::SqlangFiles(BeFileName());} // users must have already initialized L10N to use ScopedDgnHost
+
+    void SetFetchScriptCallback(ScopedDgnHost::FetchScriptCallback* cb) {((TestingDgnScriptingAdmin*)m_scriptingAdmin)->m_callback = cb;}
+    
 };
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -108,6 +129,14 @@ ScopedDgnHost::ScopedDgnHost()
 ScopedDgnHost::~ScopedDgnHost() 
     {
     delete m_pimpl;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+void ScopedDgnHost::SetFetchScriptCallback(FetchScriptCallback* cb)
+    {
+    m_pimpl->SetFetchScriptCallback(cb);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -205,7 +234,6 @@ TestDataManager::TestDataManager (WCharCP fullFileName, Db::OpenMode dbOpenMode,
     for (auto const& entry : m_dgndb->Models().MakeIterator())
         {
         DgnModelPtr dgnModel = getAndFill(*m_dgndb, entry.GetModelId(), fill);
-        dgnModel->SetReadOnly (Db::OpenMode::Readonly == dbOpenMode);
         if (m_model == NULL)
             m_model = dgnModel.get();
         }

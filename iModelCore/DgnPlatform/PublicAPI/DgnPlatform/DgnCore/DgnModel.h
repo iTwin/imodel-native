@@ -58,6 +58,49 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
     friend struct QueryModel;
     friend struct dgn_TxnTable::Model;
 
+    struct CreateParams;
+
+    //========================================================================================
+    //! Specifies the solver to invoke when changes to a model or its contents are validated.
+    //=======================================================================================
+    struct Solver
+        {
+        friend struct DgnModel;
+        friend struct CreateParams;
+
+        //! Identifies the type of solver used by a model
+        enum class Type 
+            {
+            None=0,     //!< This model has no solver
+            Script,     //!< Execute a named JavaScript function
+            // *** TBD: Add built-in constraint solvers 
+            };
+
+      private:
+        Type        m_type;
+        Utf8String  m_name;
+        Json::Value m_parameters;
+
+      protected:
+        void FromJson(Utf8CP);
+        Utf8String ToJson() const;
+
+        void Solve(DgnModelR);
+
+      public:
+        //! @private
+        Solver() {m_type = Type::None;}
+
+        //! Construct a Solver specification, in preparation for creating a new DgnModel.
+        Solver(Type t, Utf8CP n, Json::Value const& p) : m_type(t), m_name(n), m_parameters(p) {;}
+
+        bool IsValid() const {return Type::None != GetType();}
+        Type GetType() const {return m_type;}
+        Utf8StringCR GetName() const {return m_name;}
+        Json::Value const& GetParameters() const {return m_parameters;}
+        Json::Value& GetParametersR() {return m_parameters;}
+        };
+
     //========================================================================================
     //! Application data attached to a DgnModel. Create a subclass of this to store non-persistent information on a DgnModel and
     //! to react to significant events on a DgnModel.
@@ -207,14 +250,16 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         DgnClassId  m_classId;
         Utf8String  m_name;
         Properties  m_props;
+        Solver      m_solver;
         //! Parameters to create a new instance of a DgnModel.
         //! @param[in] dgndb The DgnDb for the new DgnModel
         //! @param[in] classId The DgnClassId for the new DgnModel.
         //! @param[in] name The name for the DgnModel
         //! @param[in] props The properties for the new DgnModel.
+        //! @param[in] solver The definition of the solver to be used by this model when validating changes to its content.
         //! @param[in] id Internal only, must be DgnModelId() to create a new DgnModel.
-        CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, Properties props=Properties(), DgnModelId id=DgnModelId()) :
-            m_dgndb(dgndb), m_id(id), m_classId(classId), m_name(name), m_props(props) {}
+        CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, Properties props=Properties(), Solver solver=Solver(), DgnModelId id=DgnModelId()) :
+            m_dgndb(dgndb), m_id(id), m_classId(classId), m_name(name), m_props(props), m_solver(solver) {}
     };
 
 private:
@@ -234,12 +279,12 @@ protected:
     DgnClassId      m_classId;
     Utf8String      m_name;
     Properties      m_properties;
+    Solver          m_solver;
     DgnElementMap   m_elements;
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
     mutable DgnRangeTreeP m_rangeIndex;
     mutable bool    m_persistent;   // true if this DgnModel is in the DgnModels "loaded models" list.
     bool            m_filled;       // true if the FillModel was called on this DgnModel.
-    bool            m_readonly;     // true if this model is from a read-only DgnDb.
 
     explicit DGNPLATFORM_EXPORT DgnModel(CreateParams const&);
     DGNPLATFORM_EXPORT virtual ~DgnModel();
@@ -414,7 +459,7 @@ public:
     DgnModelId GetModelId() const {return m_modelId;}
 
     //! @name Dynamic casting to DgnModel subclasses
-    //! @{
+    //@{
     DgnModel2dCP ToDgnModel2d() const {return _ToDgnModel2d();} //!< more efficient substitute for dynamic_cast<DgnModel2dCP>(model)
     DgnModel3dCP ToDgnModel3d() const {return _ToDgnModel3d();} //!< more efficient substitute for dynamic_cast<DgnModel3dCP>(model)
     PhysicalModelCP ToPhysicalModel() const {return _ToPhysicalModel();} //!< more efficient substitute for dynamic_cast<PhysicalModelCP>(model)
@@ -425,11 +470,7 @@ public:
     PhysicalModelP ToPhysicalModelP() {return const_cast<PhysicalModelP>(_ToPhysicalModel());} //!< more efficient substitute for dynamic_cast<PhysicalModelP>(model)
     PlanarPhysicalModelP ToPlanarPhysicalModelP() {return const_cast<PlanarPhysicalModelP>(_ToPlanarPhysicalModel());} //!< more efficient substitute for dynamic_cast<PlanarPhysicalModelP>(model)
     SheetModelP ToSheetModelP() {return const_cast<SheetModelP>(_ToSheetModel());}//!< more efficient substitute for dynamic_cast<SheetModelP>(model)
-    //! @}
-
-    //! Determine whether this is a readonly DgnModel or not.
-    bool IsReadOnly() const {return m_readonly;}
-    void SetReadOnly(bool val) {m_readonly = val;} //!< @private
+    //@}
 
     //! Get the DgnDb of this DgnModel.
     DgnDbR GetDgnDb() const {return m_dgndb;}
@@ -465,6 +506,26 @@ public:
     DGNPLATFORM_EXPORT AppData* FindAppData(AppData::Key const& key) const;
     /** @} */
 
+    /** @name Solver The Model Solver */
+    /** @{ */
+    //! Get the solver that is used to validate this model.
+    Solver const& GetSolver() const {return m_solver;}
+
+    //! Get read-write access to the parameters that will be used by the solver to validate this model when the transaction is validated.
+    //! After modifying a parameter value, you must call #Update in order to save the change to the Db.
+    //! That will have the effect of scheduling the model for validation by TxnManager later on. The model's #_OnValidate method will be called at validation time.
+    Json::Value& GetSolverParametersR() {return m_solver.m_parameters;}
+
+    //! This method is called when it is time to validate changes that have been made to the model's content during the transaction.
+    //! This method is called by the transaction manager after all element-level changes have been validated and all root models have been solved.
+    //! This method is called only if elements in this model were added, deleted, or modified or if this model object itself was added or modified.
+    //! This method allows a subclass to apply validation logic that requires a view of the entire model and possibly of root models.
+    //! This method may add, delete, or modify elements in this model.
+    //! To indication a validation error, call TxnManager::ReportError. If the error is marked as fatal, then the transaction will be rolled back.
+    //! @note This method must make changes of any kind to any other model. Dependent models will be validated later.
+    DGNPLATFORM_EXPORT virtual void _OnValidate();
+    /** @} */
+
     //! Make a copy of this DgnModel with the same DgnClassId and Properties.
     //! @param[in] newName The name for the new DgnModel.
     //! @note This makes a new empty, non-persistent, DgnModel with the same properties as this Model, it does NOT clone the elements of this DgnModel.
@@ -475,7 +536,7 @@ public:
 
     //! Determine whether this DgnModel has any elements loaded. This will always be true if FillModel was never called,
     //! or after EmptyModel is called.
-    bool IsEmpty() const {return (begin() != end());}
+    bool IsEmpty() const {return (begin() == end());}
 
     typedef DgnElementMap::const_iterator const_iterator;
 
@@ -549,22 +610,240 @@ public:
 };
 
 //=======================================================================================
-//! A DgnModel3d that exists in its own independent coordinate space. This is used to store the definitions of components.
-//! DgnElements of a ComponentModel are not in the persistent range tree.
-//! @ingroup DgnModelGroup
-//! @private
+//! A DgnModel3d that captures the definition of a parametric component and its current solution.
+//! 
+//! A ComponentModel \em generates the geometry and properties of a particular kind of "component" 
+//! using an algorithm of some kind, given a set of input parameters. The generation algorithm is encapsulated in the model's Solver.
+//! <p>The content of a ComponentModel may include instances of other ComponentModels.
+//! <p>A ComponentModel exists in its own independent coordinate space. The DgnElements in a ComponentModel are not in the persistent range tree.
+//! <p>Instances of a solution to a ComponentModel can be placed in the physical coordinate space of other DgnDbs.
+//! 
+//! <h2>Parameters</h2>
+//! The inputs to the Solver of a ComponentModel are called "parameters". See GetSolverParametersR.
+//!
+//! <h2>ECClass</h2>
+//! A ComponentModel is paired with an ECClass. This ECClass will be a subclass of dgn.PhysicalElement. Its ECProperties are the ComponentModel's parameters.
+//! <p>
+//! This ECClass is \em generated from information stored in the ComponentModel. See #GenerateECClass. This ECClass is not used by the ComponentModel. It is used by other DgnDbs that want to place 
+//! instances of solutions of the ComponentModel. With placed instances defined by this ECClass, users and apps can browse and write queries against the name and properties 
+//! of the component definition. Note that this physical distinction between a ComponentModel and its Element ECClass means that a ComponentModel cannot contain an instance of 
+//! its own Element ECClass. In practical terms, it also means that no other model in the DgnDb that contains this ComponentModel can contain instances of its Element ECClass either. 
+//! Therefore, components that depend on each other will have to be defined in separate DgnDbs, and one will have to be developed first, before the other can use it.
+//! <p>
+//! The caller is responsible for generating an ECSchema that includes the ComponentModel's ECClass. The caller must generate an ECSchema before client DgnDbs can place
+//! instances of solutions of the ComponentModel. 
+//!
+//! The ECSchema must not be changed once instances have been placed in client DgnDbs. That means that the caller must not try to change the names, types, or number of parameters.
+//! <p>
+//! Note that a ComponentModel does not define a new domain. Its generated ECClass is a subclass of an existing ECClass, and it will be handled by the handler for
+//! the base class. 
+//! 
+//! <h2>2D and 3D Representations of Components</h2>
+//!
+//! A graphical component generally has separate and very different 2D and 3D representations. For example, a door looks like a slab in 3D, while it is represented by 
+//! a door swing symbol in 2D. In BIS, 2D and 3D representations are captured by different elements, which are related to each other. The 2D element is a subclass of 
+//! dgn.Element2d, and the 3D element is a subclass of dgn.Element3d. Therefore, we will need two ComponentModels to define both representations, one for the 3D and another for the 2D. 
+//! The two ComponentModels should be related to each other.
+//! In a similar vein, a view cannot display 2D and 3D models both at the same time. Therefore, the user who develops a "component" must work on the 2D and 3D ComponentModels separately. 
+//! It may also be required that changes to one will generate changes in the other. That is a standard case of drawing-generation.
+//!
+//! <h2>Parameters and Solving</h2>
+//!
+//! The Solver of a ComponentModel holds a set of parameters and their values that will be used as the inputs to the solver. See #GetSolver.
+//! These parameters also tell you what the current solution was based on.
+//! 
+//! To apply the current parameters and invoke the solver, invoke the #Solve method. That will cause the elements in the ComponentModel to be updated.
+//!
+//! <h2>The Element Category</h2>
+//! All instance geometry stored in a ComponentModel is created in one special Category that is called the "Element Category". See #GetElementCategoryName for the name of this category.
+//! This must be the name of a Category in the ComponentModel's own DgnDb. The caller is responsible for creating this Category.
+//!
+//! @see ComponentProxyModel
 // @bsiclass                                                    Keith.Bentley   10/11
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ComponentModel : DgnModel3d
 {
     DEFINE_T_SUPER(DgnModel3d)
 
+public:
+    //=======================================================================================
+    //! Parameters to create a new instances of a ComponentModel.
+    //! @ingroup DgnModelGroup
+    //=======================================================================================
+    struct CreateParams : DgnModel3d::CreateParams
+    {
+        DEFINE_T_SUPER(DgnModel3d::CreateParams)
+        Utf8String m_elementCategoryName;
+    public:
+        //! Parameters to create a new instance of a DgnModel.
+        //! @param[in] dgndb The DgnDb for the new DgnModel
+        //! @param[in] classId The DgnClassId for the new DgnModel.
+        //! @param[in] name The name for the DgnModel
+        //! @param[in] props The properties for the new DgnModel.
+        //! @param[in] solver The definition of the solver to be used by this model when validating changes to its content.
+        //! @param[in] elementCategory The name of the category that this component model should use for all instance geometry. This must be the name of a Category in the ComponentModel's own DgnDb. The caller is responsible for creating this Category.
+        //! @param[in] id Internal only, must be DgnModelId() to create a new DgnModel.
+        CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, Utf8StringCR elementCategory, Solver const& solver, Properties props=Properties(), DgnModelId id=DgnModelId()) :
+            T_Super(dgndb, classId, name, props, solver, id), m_elementCategoryName(elementCategory) {}
+
+        //! @private
+        //! This constructor is used only by the model handler to create a new instance, prior to calling ReadProperties on the model object
+        explicit CreateParams(DgnModel::CreateParams const& params) : T_Super(params) {}
+
+        Utf8StringCR GetElementCategoryName() const {return m_elementCategoryName;}
+    };
+
+protected:
+    Utf8String m_elementCategoryName;
+
+    DgnModelType _GetModelType() const override {return DgnModelType::Component;}
+    DPoint3d _GetGlobalOrigin() const override {return DPoint3d::FromZero();}
+    DgnModels::Model::CoordinateSpace _GetCoordinateSpace() const override {return DgnModels::Model::CoordinateSpace::Local;}
+    DGNPLATFORM_EXPORT void _ToPropertiesJson(Json::Value&) const override;//!< @private
+    DGNPLATFORM_EXPORT void _FromPropertiesJson(Json::Value const&) override;//!< @private
+
+public:
+    explicit ComponentModel(CreateParams const& params) : T_Super(params) {m_elementCategoryName = params.GetElementCategoryName();}
+
+    //! Create an ECClass definition from this model's parameters.
+    //! @see ComputeElementECClassName, AddAllToECSchema
+    DGNPLATFORM_EXPORT DgnDbStatus GenerateECClass(ECN::ECSchemaR);
+
+    /**
+    * Utility function to generate ECClasses for all ComponentModels in \a db and add them to \a schema.
+    * Here is an example of generating an ECSchema for all of the components in a specified DgnDb:
+    * @verbatim
+    ECN::ECSchemaPtr schema;
+    if (ECN::ECOBJECTS_STATUS_Success != ECN::ECSchema::CreateSchema(schema, L"SomeSchema", 0, 0))
+        return ERROR;
+    if (DgnDbStatus::Success != ComponentModel::AddAllToECSchema(*schema, *m_componentDb))
+        return ERROR;
+    if (ECN::SCHEMA_WRITE_STATUS_Success !=  schema->WriteToXmlFile(schemaFileName))
+        return ERROR;
+    @endverbatim
+    * @param schema   The schema to populate
+    * @param db       The DgnDb that contains ComponentModels
+    * @return DgnDbStatus::Success if all ComponentModels in the file were successfully exported 
+    */
+    DGNPLATFORM_EXPORT static DgnDbStatus AddAllToECSchema(ECN::ECSchemaR schema, DgnDbR db);
+
+    //! Get the name of the ECClass that the GenerateECClass method will create.
+    //! @see GenerateECClass
+    DGNPLATFORM_EXPORT Utf8String ComputeElementECClassName() const;
+
+    //! Get the name of the Category that this model will use for instance geometry. Elements in this model
+    //! that are on other categories should be treated as construction geometry.
+    //! @note This must be the name of a Category in the ComponentModel's own DgnDb. The caller is responsible for creating this Category.
+    DGNPLATFORM_EXPORT Utf8String GetElementCategoryName() const;
+
+    //! Solve the component model for the given set of parameters. This method is just a short cut for setting the component model solver's 
+    //! parameters and then invoking Update on the model and SaveChanges on the DgnDb. The result is to update the component model.
+    //! @param[in] parameters   The parameters to pass to the solver
+    //! @return DgnDbStatus::Success if the solution was created and written to the component model; DgnDbStatus::ValidationFailed if the solver failed; 
+    //! or DgnDbStatus::SQLiteError if some other error prevented the transaction from being saved to the DgnDb.
+    //! @see GetSolver, Solver::GetParameters
+    DGNPLATFORM_EXPORT DgnDbStatus Solve(Json::Value const& parameters);
+
+};
+
+//=======================================================================================
+//! A DgnModel3d that stores a reference to a ComponentModel and captured solutions of that ComponentModel.
+//!
+//! A ComponentProxyModel is a bridge between normal models that hold instances of components and the ComponentModel that defines the solutions.
+//! A ComponentProxyModel must be created once before instances can be placed. See #Create, #Get.
+//! In a similar vein, the solution to a ComponentModel must be "captured" before instances of it can be placed. See #CaptureSolution, #QuerySolution.
+//! Instances of a component are created using the #CreateSolutionInstance method. The caller will normally call ComponentModel::Solve first.
+//! 
+//! @see ComponentModel
+// @bsiclass                                                    Keith.Bentley   10/11
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE ComponentProxyModel : DgnModel3d
+{
+    DEFINE_T_SUPER(DgnModel3d)
+    
+    Utf8String m_componentName;
+    DgnCategoryId m_categoryId;
+    DgnClassId m_elementClassId;
+    bmap<DgnSubCategoryId, DgnSubCategoryId> m_subcatxlat;
+
 protected:
     DgnModelType _GetModelType() const override {return DgnModelType::Component;}
     DPoint3d _GetGlobalOrigin() const override {return DPoint3d::FromZero();}
+    DgnModels::Model::CoordinateSpace _GetCoordinateSpace() const override {return DgnModels::Model::CoordinateSpace::Local;}
+    DGNPLATFORM_EXPORT void _ToPropertiesJson(Json::Value&) const override;//!< @private
+    DGNPLATFORM_EXPORT void _FromPropertiesJson(Json::Value const&) override;//!< @private
+
+    bool IsForComponent(ComponentModelCR);
+    //! Compute the name of the proxy model that would represent \a componentModel. 
+    static Utf8String ComputeName(ComponentModelCR componentModel);
+    void ImportElementCategory(ComponentModelCR);
 
 public:
-    explicit ComponentModel(CreateParams const& params) : T_Super(params) {}
+    //! @private
+    explicit ComponentProxyModel(CreateParams const&);
+
+    //! @name Creating a Proxy Model
+    //@{
+
+    //! Import the specified ECSchema into the target DgnDb.
+    //! This must be done \em once before any ComponentProxyModels are created for ComponentModels that are defined in the schema.
+    //! @param[in] targetDb     The DgnDb that is to hold the new schema
+    //! @param[in] schemaFile   The full filename of the ECSchema.xml file to import
+    //! @return non-zero error status if the ECSchema could not be imported; DgnDbStatus::DuplicateName if an ECSchema by the same name already exists.
+    //! @see ComponentModel::GenerateECClass
+    DGNPLATFORM_EXPORT static DgnDbStatus ImportSchema(DgnDbR targetDb, BeFileNameCR schemaFile);
+    
+    //! Create a new ComponentProxyModel object to represent the specified ComponentModel (which might be in a different DgnDb).
+    //! The proxy's name will be computed from the name of \a componentModel.
+    //! @note The caller must already have imported the ComponentModel's ECSchema by calling #ImportSchema.
+    //! @note The caller must call #Insert. 
+    //! @param[in] targetDb     The DgnDb that is to hold the new ComponentProxyModel
+    //! @param[in] componentModel The ComponentModel that is to be represented
+    //! @param[in] componentSchemaName The name of the ECSchema that contains the component model's ECClass, which should have been imported already into this DgnDb.
+    //! @return The newly created ComponentProxyModel
+    DGNPLATFORM_EXPORT static ComponentProxyModelPtr Create(DgnDbR targetDb, ComponentModelCR componentModel, Utf8CP componentSchemaName);
+
+    //! Look up an existing ComponentProxyModel in the target DgnDb that represents the specified ComponentModel (which might be in a different DgnDb)
+    //! The caller does not specify the proxy's name, because a proxy's name is always computed from the name of the componentModel that it represents.
+    //! @param[in] targetDb     The DgnDb that holds ComponentProxyModel
+    //! @param[in] componentModel The ComponentModel that is to be represented
+    //! @return The ComponentProxyModel in the target Db that represents the component model, if it exists.
+    DGNPLATFORM_EXPORT static ComponentProxyModelPtr Get(DgnDbR targetDb, ComponentModelCR componentModel);
+    //@}
+
+    //! @name Capturing Solutions
+    //@{
+    //! Compute the code that would be used by a ComponentProxyModel to refer to a solution with the specified parameters.
+    //! @param[in] parms    The solver parameters
+    //! @return a generated name for the solution
+    DGNPLATFORM_EXPORT static Utf8String ComputeSolutionName(Json::Value const& parms);
+
+    //! Look up the element in the this proxy model that represents the specified solution
+    //! @param[in] solutionName     The solution name to look for
+    //! @return The element in this model that represents the specified solution, if it is stored. Returns an invalid pointer if 
+    //! no solution has been captured or if this proxy model is not for the specified componentModel.
+    //! @see ComputeSolutionName
+    DGNPLATFORM_EXPORT PhysicalElementCPtr QuerySolution(Utf8StringCR solutionName);
+
+    //! Harvest geometry from the component model and store in this proxy model in the form of an element. The code of the
+    //! returned element is based on the computed name of the solution.
+    //! @param[in] componentModel The ComponentModel that is to be harvested
+    //! @return An element that captures the solution. Returns an invalid pointer if this proxy model is not for the specified componentModel.
+    DGNPLATFORM_EXPORT PhysicalElementCPtr CaptureSolution(ComponentModelR componentModel);
+    //@}
+
+    //! @name Creating a Solution Instance
+    //@{
+    //! Create a new element that is an instance of a captured solution. The caller must insert the returned element into the Db.
+    //! @param[in] destinationModel The model where the instance will be inserted by the caller
+    //! @param[in] solutionElement The element that captures a solution to a ComponentModel. See CaptureSolution and QuerySolution
+    //! @param[in] origin The instance placement origin
+    //! @param[in] angles The instance placement angles
+    //! @return An new element that could be inserted as an instance of a captured solution
+    //! @see CaptureSolution, QuerySolution
+    DGNPLATFORM_EXPORT static PhysicalElementPtr CreateSolutionInstance(DgnModelR destinationModel, PhysicalElementCR solutionElement, DPoint3dCR origin, YawPitchRollAnglesCR angles);
+    //@}
+
 };
 
 //=======================================================================================
@@ -656,7 +935,7 @@ struct EXPORT_VTABLE_ATTRIBUTE SheetModel : GraphicsModel2d
         //! @param[in] props the Properties of the new SheetModel
         //! @param[in] id the DgnModelId of thew new SheetModel. This should be DgnModelId() when creating a new model.
         CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, DPoint2d size, Properties props=Properties(), DgnModelId id=DgnModelId()) :
-            T_Super(dgndb, classId, name, props, id), m_size(size) {}
+            T_Super(dgndb, classId, name, props, Solver(), id), m_size(size) {}
 
         explicit CreateParams(DgnModel::CreateParams const& params, DPoint2d size=DPoint2d::FromZero()) : T_Super(params), m_size(size) {}
     };
@@ -717,6 +996,18 @@ namespace dgn_ModelHandler
     struct EXPORT_VTABLE_ATTRIBUTE Physical : Model
     {
         MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_PhysicalModel, PhysicalModel, Physical, Model, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ModelHandler for ComponentModel
+    struct EXPORT_VTABLE_ATTRIBUTE Component : Model
+    {
+        MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_ComponentModel, ComponentModel, Component, Model, DGNPLATFORM_EXPORT)
+    };
+
+    //! The ModelHandler for ComponentProxyModel
+    struct EXPORT_VTABLE_ATTRIBUTE ComponentProxy : Model
+    {
+        MODELHANDLER_DECLARE_MEMBERS (DGN_CLASSNAME_ComponentProxyModel, ComponentProxyModel, ComponentProxy, Model, DGNPLATFORM_EXPORT)
     };
 
     //! The ModelHandler for GraphicsModel2d

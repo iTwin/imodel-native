@@ -1236,30 +1236,37 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnDbStatus* outS
     // don't allow elements that already have an id.
     if (element.m_elementId.IsValid()) 
         {
-        stat = DgnDbStatus::WrongElement;
+        stat = DgnDbStatus::WrongElement; // this element must already be persistent
         return nullptr;
         }
 
     if (&element.GetDgnDb() != &m_dgndb)
         {
-        stat = DgnDbStatus::WrongDgnDb;
+        stat = DgnDbStatus::WrongDgnDb; // attempting to add an element from a different DgnDb
         return nullptr;
         }
 
-    if (!element.GetModel().IsValid())
+    if (!element.GetModel().IsValid())      
         {
-        stat = DgnDbStatus::BadModel;
+        stat = DgnDbStatus::BadModel; // they gave us an element with an invalid ModelId
+        return nullptr;
+        }
+
+    if (typeid(element) != element.GetElementHandler()._ElementType())
+        {
+        stat = DgnDbStatus::WrongHandler; // they gave us an element with an invalid handler
         return nullptr;
         }
 
     DgnElementCPtr newEl = PerformInsert(element, stat);
     if (!newEl.IsValid())
-        element.m_elementId = DgnElementId(); // make sure they know the insert failed
+        element.m_elementId = DgnElementId(); // Insert failed, make sure to invalidate the DgnElementId so they don't accidentally use it
 
     return newEl;
     }
 
 /*---------------------------------------------------------------------------------**//**
+* this method is called both after we've directly updated an element, and after we've reversed an update to an element.
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElements::FinishUpdate(DgnElementCR replacement, DgnElementCR original)

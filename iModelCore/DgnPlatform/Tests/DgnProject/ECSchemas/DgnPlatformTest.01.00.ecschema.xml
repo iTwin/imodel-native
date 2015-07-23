@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ECSchema schemaName="DgnPlatformTest" nameSpacePrefix="dptest" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-    
+
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.10" prefix="bsca" />
     <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
     <ECSchemaReference name="ECDbMap" version="01.00" prefix="ecdbmap" />
@@ -11,18 +11,28 @@
         <ECProperty propertyName="TestElementProperty" typeName="string" />
     </ECClass>
 
+    <ECClass typeName="TestPhysicalElement" isDomainClass="True">
+        <BaseClass>dgn:PhysicalElement</BaseClass>
+        <ECProperty propertyName="TestElementProperty" typeName="string" />
+    </ECClass>
+
+    <ECClass typeName="TestElement2d" isDomainClass="True">
+        <BaseClass>dgn:DrawingElement</BaseClass>
+        <ECProperty propertyName="TestElementProperty" typeName="string" />
+    </ECClass>
+
     <ECClass typeName="TestItem" isDomainClass="True">
         <BaseClass>dgn:ElementItem</BaseClass>
         <ECProperty propertyName="TestItemProperty" typeName="string" />
     </ECClass>
 
     <ECClass typeName="TestUniqueAspect" isDomainClass="True">
-        <BaseClass>dgn:ElementAspect</BaseClass>
+        <BaseClass>dgn:ElementUniqueAspect</BaseClass>
         <ECProperty propertyName="TestUniqueAspectProperty" typeName="string" />
     </ECClass>
 
     <ECClass typeName="TestMultiAspect" isDomainClass="True">
-        <BaseClass>dgn:ElementAspect</BaseClass>
+        <BaseClass>dgn:ElementMultiAspect</BaseClass>
         <ECProperty propertyName="TestMultiAspectProperty" typeName="string" />
     </ECClass>
 

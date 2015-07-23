@@ -79,12 +79,12 @@ struct TextString : public RefCountedBase
     //=======================================================================================
     // @bsiclass                                                    Jeff.Marker     01/2015
     //=======================================================================================
-    enum struct HorizontalJustification { Left, Center, Right };
+    enum class HorizontalJustification { Left, Center, Right };
     
     //=======================================================================================
     // @bsiclass                                                    Jeff.Marker     01/2015
     //=======================================================================================
-    enum struct VerticalJustification { Top, Middle, Bottom };
+    enum class VerticalJustification { Top, Middle, Bottom };
 
 private:
     DEFINE_T_SUPER(RefCountedBase);

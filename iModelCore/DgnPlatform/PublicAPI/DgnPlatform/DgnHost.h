@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnHost.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -41,7 +41,7 @@ public:
         {
     protected:
         virtual ~IHostObject(){}
-        virtual void _OnHostTermination (bool isProgramExit) = 0;
+        virtual void _OnHostTermination (bool isProgramExit) {delete this;}
     public:
         void OnHostTermination (bool isProgramExit) {_OnHostTermination(isProgramExit);}
         };
@@ -49,7 +49,6 @@ public:
     struct HostObjectBase : IHostObject
         {
         DEFINE_BENTLEY_NEW_DELETE_OPERATORS
-        virtual void _OnHostTermination (bool) override {delete this;}
         };
 
     template<typename T>
@@ -63,7 +62,6 @@ public:
         void     SetValue (T const& v) {m_value = v;}
         };
 
-//__PUBLISH_SECTION_END__
 private:
     size_t GetKeyIndex (DgnHost::Key& key);
 
@@ -91,7 +89,6 @@ protected:
     VarEntry& GetVarEntry(Key& key);
     ObjEntry& GetObjEntry(Key& key);
 
-//__PUBLISH_SECTION_START__
 public:
     //! Get the value of a host-based variable identified by key.
     //! @param[in] key The key that identifies this variable. Keys must always be static variables, as their values are assigned when they are first used
@@ -158,7 +155,6 @@ struct          DgnHostWString : DgnHost::IHostObject
 
 private:
     WString m_string;
-    virtual void _OnHostTermination (bool isProgramExit) override {delete this;}
 
 public:
     DgnHostWString (wchar_t const* s) : m_string(s) {;}

@@ -8,6 +8,7 @@
 #pragma once
 
 #include "../NonPublished/DgnHandlersTests.h"
+#include "GeomHelper.h"
 #include <Bentley/BeTest.h>
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <ECDb/ECDbApi.h>
@@ -20,13 +21,30 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_DGNDB_UNIT_TESTS_NAMESPACE
 
 #define TMTEST_SCHEMA_NAME                               "DgnPlatformTest"
-#define TMTEST_SCHEMA_NAMEW                             L"DgnPlatformTest"
 #define TMTEST_TEST_ELEMENT_CLASS_NAME                   "TestElement"
+#define TMTEST_TEST_ELEMENT2d_CLASS_NAME                 "TestElement2d"
+#define TMTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME    "TestElementDrivesElement"
 #define TMTEST_TEST_ELEMENT_TestElementProperty          "TestElementProperty"
 #define TMTEST_TEST_ITEM_CLASS_NAME                      "TestItem"
 #define TMTEST_TEST_ITEM_TestItemProperty                "TestItemProperty"
 
 struct TestElementHandler;
+struct TestElement;
+struct TestElement2dHandler;
+struct TestElement2d;
+
+//These typedefs have to be defined
+typedef RefCountedPtr<TestElement> TestElementPtr;
+typedef RefCountedCPtr<TestElement> TestElementCPtr;
+typedef TestElement& TestElementR;
+typedef TestElement const& TestElementCR;
+
+//These typedefs have to be defined
+typedef RefCountedPtr<TestElement2d> TestElement2dPtr;
+typedef RefCountedCPtr<TestElement2d> TestElement2dCPtr;
+typedef TestElement2d& TestElement2dR;
+typedef TestElement2d const& TestElement2dCR;
+
 
 //=======================================================================================
 //! A test Element. Has methods to manipulate Item data.
@@ -34,7 +52,7 @@ struct TestElementHandler;
 //=======================================================================================
 struct TestElement : PhysicalElement
 {
-    DEFINE_T_SUPER(PhysicalElement)
+    DGNELEMENT_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT_CLASS_NAME, PhysicalElement) 
 
 protected:
     friend struct TestElementHandler;
@@ -47,17 +65,11 @@ protected:
 
 public:
     TestElement(CreateParams const& params) : T_Super(params) {}
-    static RefCountedPtr<TestElement> Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode);
-    static RefCountedPtr<TestElement> Create(DgnDbR db, ElemDisplayParamsCR ep, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode);
+    static TestElementPtr Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode);
+    static TestElementPtr Create(DgnDbR db, ElemDisplayParamsCR ep, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode);
     static ECN::ECClassCP GetTestElementECClass(DgnDbR db) { return db.Schemas().GetECClass(TMTEST_SCHEMA_NAME, TMTEST_TEST_ELEMENT_CLASS_NAME); }
     void SetTestItemProperty(Utf8CP value) { m_testItemProperty.AssignOrClear(value); }
 };
-
-//These typedefs have to be defined
-typedef RefCountedPtr<TestElement> TestElementPtr;
-typedef RefCountedCPtr<TestElement> TestElementCPtr;
-typedef TestElement& TestElementR;
-typedef TestElement const& TestElementCR;
 
 //=======================================================================================
 //! A test ElementHandler for a class in DgnPlatformTest schema
@@ -65,7 +77,32 @@ typedef TestElement const& TestElementCR;
 //=======================================================================================
 struct TestElementHandler : dgn_ElementHandler::Element
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS("TestElement", TestElement, TestElementHandler, dgn_ElementHandler::Element, )
+    ELEMENTHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT_CLASS_NAME, TestElement, TestElementHandler, dgn_ElementHandler::Element, )
+};
+struct GTestElement2dHandler;
+
+//=======================================================================================
+//! A test Element
+// @bsiclass                                                     Sam.Wilson      04/15
+//=======================================================================================
+struct TestElement2d : Dgn::DrawingElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT2d_CLASS_NAME, Dgn::DrawingElement) 
+
+private:
+    friend struct GTestElement2dHandler;
+public:
+    TestElement2d(CreateParams const& params) : T_Super(params) {}
+    static TestElement2dPtr Create(DgnDbR db, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode);
+};
+
+//=======================================================================================
+//! A test ElementHandler
+// @bsiclass                                                     Sam.Wilson      01/15
+//=======================================================================================
+struct TestElement2dHandler : dgn_ElementHandler::Drawing
+{
+    ELEMENTHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ELEMENT2d_CLASS_NAME, TestElement2d, TestElement2dHandler, dgn_ElementHandler::Drawing, )
 };
 
 //=======================================================================================
@@ -90,7 +127,7 @@ struct DgnDbTestFixture : ::testing::Test
     DgnModelId                  m_defaultModelId;
     DgnCategoryId               m_defaultCategoryId;
     DgnModelPtr                 m_defaultModelP;
-
+public:
     DgnDbTestFixture()
     {
         DgnDomains::RegisterDomain(DgnPlatformTestDomain::GetDomain());
@@ -104,6 +141,10 @@ struct DgnDbTestFixture : ::testing::Test
 
     DgnElementCPtr InsertElement(Utf8CP elementCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId());
     DgnElementCPtr InsertElement(Utf8CP elementCode, ElemDisplayParamsCR ep, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId());
+    DgnElementKey InsertElementUsingGeomPart(Utf8CP gpCode, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode);
+    DgnElementKey InsertElementUsingGeomPart(DgnGeomPartId gpId, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode);
+    DgnElementKey InsertElement2d(DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode);
+    DgnElementKey InsertElementUsingGeomPart2d( Utf8CP gpCode, DgnModelId mid, DgnCategoryId categoryId, Utf8CP elementCode);
     bool SelectElementItem(DgnElementId id);
 };
 

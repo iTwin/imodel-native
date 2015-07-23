@@ -176,7 +176,7 @@ struct Writer
     void Append(MSBsplineSurfaceCR);
     void Append(ISolidKernelEntityCR, bool saveBRepOnly = false); // Adds multiple op-codes for when PSolid is un-available unless saveBRepOnly is true...
     void Append(ElementGeometryCR);
-    void Append(DgnSubCategoryId, TransformCR geomToWorld);
+    void Append(DgnSubCategoryId, TransformCR geomToElem);
     void Append(DgnGeomPartId);
     void Append(ElemDisplayParamsCR); // Adds multiple op-codes...
     void Append(TextStringCR);
@@ -296,6 +296,7 @@ struct Iterator : std::iterator<std::forward_iterator_tag, uint8_t const*>
     size_t              m_dataOffset;
     size_t              m_totalDataSize;
     ViewContextP        m_context;
+    bool                m_geomToElemPushed;
     ElementGeometryPtr  m_elementGeometry;
     DgnGeomPartPtr      m_partGeometry;
     uint8_t const*      m_saveData;
@@ -305,7 +306,7 @@ struct Iterator : std::iterator<std::forward_iterator_tag, uint8_t const*>
 
     DGNPLATFORM_EXPORT void ToNext ();
 
-    Iterator (uint8_t const* data, size_t totalDataSize, ViewContextP context, BRepOutput bRep) : m_data(data), m_totalDataSize(totalDataSize), m_dataOffset(0), m_context(context), m_bRepOutput(bRep) {ToNext();}
+    Iterator (uint8_t const* data, size_t totalDataSize, ViewContextP context, BRepOutput bRep) : m_data(data), m_totalDataSize(totalDataSize), m_dataOffset(0), m_context(context), m_geomToElemPushed(false), m_bRepOutput(bRep) {ToNext();}
     Iterator () : m_data(nullptr), m_totalDataSize(0), m_dataOffset(0), m_context(nullptr), m_bRepOutput(BRepOutput::BRep) {}
 
     friend struct ElementGeometryCollection;
@@ -391,7 +392,7 @@ Placement3d             m_placement3d;
 Placement2d             m_placement2d;
 DgnDbR                  m_dgnDb;
 DgnSubCategoryId        m_prevSubCategory;
-Transform               m_prevGeomToWorld;
+Transform               m_prevGeomToElem;
 ElemDisplayParams       m_elParams;
 ElementGeomIO::Writer   m_writer;
 
@@ -429,6 +430,7 @@ DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr CreateWorld (DgnModelR model
 
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnElement3dCR, DPoint3dCR origin, YawPitchRollAngles const& angles = YawPitchRollAngles());
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (DgnElement2dCR, DPoint2dCR origin, AngleInDegrees const& angle = AngleInDegrees());
+DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr Create (GeometricElementCR); //! Create builder from element using current placement.
 DGNPLATFORM_EXPORT static ElementGeometryBuilderPtr CreateWorld (GeometricElementCR);
 
 }; // ElementGeometryBuilder

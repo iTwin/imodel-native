@@ -47,11 +47,16 @@
         <SubPart PartName="GeoCoord"            PartFile="GeoCoord"     Repository="geocoord"/>
         <SubPart PartName="PublicApi"           PartFile="csmap"        Repository="libsrc-csmap"/>
         <SubPart PartName="GeoCoordDataMinimal" PartFile="csmap"        Repository="libsrc-csmap"/>
+        <SubPart PartName="BeJavaScript"        PartFile="BePortableUi" Repository="BePortableUi"/>
+        <SubPart PartName="nodejs-Winx86"       PartFile="nodejs"       Repository="Thirdparty-nodejs" />
+        <SubPart PartName="nodejs-Macx64"       PartFile="nodejs"       Repository="Thirdparty-nodejs" />
+        <SubPart PartName="typescript"          PartFile="typescript"   Repository="Thirdparty-typescript" />
         <Bindings>
             <Libs>Delivery/$(libprefix)DgnPlatform$(libext)</Libs>
             <Assemblies ProductDirectoryName="DgnPlatformNativeAssemblies">Delivery/$(shlibprefix)DgnPlatform$(ApiNumber)$(shlibext)</Assemblies>
             <Files ProductDirectoryName="DgnPlatformXliffs" Required="false" SubPartDirectory="xliffs">Delivery/xliffs/DgnCoreMessages_en.xliff</Files>
             <Files Required="false" ProductDirectoryName="DgnPlatformLastResortFonts" SubPartDirectory="DgnPlatformLastResortFonts">Delivery/lastresortfonts</Files>
+            <Files Required="false" ProductDirectoryName="DgnObjectModelTs" SubPartDirectory="DgnObjectModelTs">Delivery/DgnObjectModel.d.ts</Files>
             <Directory SourceName="Delivery/icons" ProductDirectoryName="DgnCoreDecorators" SubPartDirectory="DgnPlatformIcons" Required="false" />
         </Bindings>
     </Part>

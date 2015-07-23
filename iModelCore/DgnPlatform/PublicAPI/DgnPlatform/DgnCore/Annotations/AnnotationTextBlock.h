@@ -40,7 +40,7 @@ typedef AnnotationRunCollection const& AnnotationRunCollectionCR;
 //! This enumerates all possible ways to apply an AnnotationTextStyle to an AnnotationTextBlock objects.
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
-enum struct SetAnnotationTextStyleOptions
+enum class SetAnnotationTextStyleOptions
 {
     PreserveOverrides = 1 << 0,
     DontPropogate = 1 << 1,
@@ -53,7 +53,7 @@ enum struct SetAnnotationTextStyleOptions
 //! This enumerates all possible annotation run types.
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
-enum struct AnnotationRunType
+enum class AnnotationRunType
 {
     Text = 1,
     Fraction = 2,
@@ -103,7 +103,7 @@ public:
 // The values of the members are expected to match the flatbuffers AnnotationTextRunSubSuperScript.
 // @bsiclass                                                    Jeff.Marker     01/2015
 //=======================================================================================
-enum struct AnnotationTextRunSubSuperScript
+enum class AnnotationTextRunSubSuperScript
     {
     Neither = 0,
     SubScript = 1,
@@ -252,7 +252,7 @@ struct AnnotationTextBlock : public RefCountedBase
     // INTERNAL WARNING: The integer values are used for persistence; do not change them.
     // @bsiclass                                                    Jeff.Marker     05/2014
     //=======================================================================================
-    enum struct HorizontalJustification
+    enum class HorizontalJustification
     {
         Left = 1,
         Center = 2,

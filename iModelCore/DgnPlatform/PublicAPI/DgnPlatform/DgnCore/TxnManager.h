@@ -16,6 +16,7 @@ DGNPLATFORM_TYPEDEFS(TxnMonitor)
 #define TXN_TABLE(name)  TXN_TABLE_PREFIX name
 #define TXN_TABLE_Elements TXN_TABLE("Elements")
 #define TXN_TABLE_Depend   TXN_TABLE("Depend")
+#define TXN_TABLE_Models   TXN_TABLE("Models")
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -108,7 +109,7 @@ namespace dgn_TxnTable {struct Element; struct ElementDep;}
 // @bsiclass                                                    Keith.Bentley   06/15
 //=======================================================================================
 struct TxnTable : RefCountedBase
-    {
+{
     enum class ChangeType : int {Insert, Update, Delete};
     TxnManager& m_txnMgr;
     TxnTable(TxnManager& mgr) : m_txnMgr(mgr) {}
@@ -164,7 +165,7 @@ struct TxnTable : RefCountedBase
     //! Columns that are unchanged are in neither values.
     virtual void _OnReversedUpdate(BeSQLite::Changes::Change const& change) {}
     //@}
-    };
+};
 typedef RefCountedPtr<TxnTable> TxnTablePtr;
 
 //=======================================================================================
@@ -227,15 +228,15 @@ struct TxnManager : BeSQLite::ChangeTracker
 private:
     struct ChangeEntry
     {
-        BeGuid          m_sessionId;
-        TxnId           m_txnId;
-        Utf8String      m_description;
-        Utf8String      m_mark;
+        BeGuid      m_sessionId;
+        TxnId       m_txnId;
+        Utf8String  m_description;
+        Utf8String  m_mark;
     };
 
     struct UndoChangeSet : BeSQLite::ChangeSet
     {
-        virtual ConflictResolution _OnConflict(ConflictCause cause, BeSQLite::Changes::Change iter) override;
+        ConflictResolution _OnConflict(ConflictCause cause, BeSQLite::Changes::Change iter) override;
     };
 
     struct CompareTableNames {bool operator()(Utf8CP a, Utf8CP b) const {return strcmp(a, b) < 0;}};
@@ -406,14 +407,14 @@ namespace dgn_TxnTable
 
         Element(TxnManager& mgr) : TxnTable(mgr) {}
 
-        virtual void _OnValidate() override;
-        virtual void _OnValidateAdd(BeSQLite::Changes::Change const& change) override    {AddChange(change, TxnTable::ChangeType::Insert);}
-        virtual void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Delete);}
-        virtual void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Update);}
-        virtual void _OnValidated() override;
-        virtual void _OnReversedDelete(BeSQLite::Changes::Change const&) override;
-        virtual void _OnReversedAdd(BeSQLite::Changes::Change const&) override;
-        virtual void _OnReversedUpdate(BeSQLite::Changes::Change const&) override;
+        void _OnValidate() override;
+        void _OnValidateAdd(BeSQLite::Changes::Change const& change) override    {AddChange(change, TxnTable::ChangeType::Insert);}
+        void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Delete);}
+        void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Update);}
+        void _OnValidated() override;
+        void _OnReversedDelete(BeSQLite::Changes::Change const&) override;
+        void _OnReversedAdd(BeSQLite::Changes::Change const&) override;
+        void _OnReversedUpdate(BeSQLite::Changes::Change const&) override;
 
         void AddChange(BeSQLite::Changes::Change const& change, ChangeType changeType);
         void AddElement(DgnElementId, DgnModelId, ChangeType changeType);
@@ -447,12 +448,22 @@ namespace dgn_TxnTable
 
     struct Model : TxnTable
     {
+        BeSQLite::Statement m_stmt;
+        bool m_changes;
+
         Model(TxnManager& mgr) : TxnTable(mgr) {}
         static Utf8CP MyTableName() {return DGN_TABLE(DGN_CLASSNAME_Model);}
         Utf8CP _GetTableName() const {return MyTableName();}
 
-        virtual void _OnReversedAdd(BeSQLite::Changes::Change const&) override;
-        virtual void _OnReversedUpdate(BeSQLite::Changes::Change const&) override;
+        void _OnValidate() override;
+        void _OnValidateAdd(BeSQLite::Changes::Change const& change) override    {AddChange(change, TxnTable::ChangeType::Insert);}
+        void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Delete);}
+        void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override {AddChange(change, TxnTable::ChangeType::Update);}
+        void _OnValidated() override;
+        void _OnReversedAdd(BeSQLite::Changes::Change const&) override;
+        void _OnReversedUpdate(BeSQLite::Changes::Change const&) override;
+    
+        void AddChange(BeSQLite::Changes::Change const& change, ChangeType changeType);
     };
 
     struct ElementDep : TxnTable
@@ -464,12 +475,12 @@ namespace dgn_TxnTable
         Utf8CP _GetTableName() const {return MyTableName();}
 
         ElementDep(TxnManager& mgr) : TxnTable(mgr), m_changes(false) {}
-        virtual void _OnValidate() override;
-        virtual void _OnValidateAdd(BeSQLite::Changes::Change const& change) override    {UpdateSummary(change, TxnTable::ChangeType::Insert);}
-        virtual void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {UpdateSummary(change, TxnTable::ChangeType::Update);}
-        virtual void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override {UpdateSummary(change, TxnTable::ChangeType::Delete);}
-        virtual void _PropagateChanges() override;
-        virtual void _OnValidated() override;
+        void _OnValidate() override;
+        void _OnValidateAdd(BeSQLite::Changes::Change const& change) override    {UpdateSummary(change, TxnTable::ChangeType::Insert);}
+        void _OnValidateDelete(BeSQLite::Changes::Change const& change) override {UpdateSummary(change, TxnTable::ChangeType::Update);}
+        void _OnValidateUpdate(BeSQLite::Changes::Change const& change) override {UpdateSummary(change, TxnTable::ChangeType::Delete);}
+        void _PropagateChanges() override;
+        void _OnValidated() override;
 
         void UpdateSummary(BeSQLite::Changes::Change change, ChangeType changeType);
         void AddDependency(BeSQLite::EC::ECInstanceId const&, ChangeType);
@@ -484,9 +495,9 @@ namespace dgn_TxnTable
         Utf8CP _GetTableName() const {return MyTableName();}
         ModelDep(TxnManager& mgr) : TxnTable(mgr), m_changes(false) {}
 
-        virtual void _OnValidateAdd(BeSQLite::Changes::Change const&) override;
-        virtual void _OnValidateUpdate(BeSQLite::Changes::Change const&) override;
-        virtual void _PropagateChanges() override;
+        void _OnValidateAdd(BeSQLite::Changes::Change const&) override;
+        void _OnValidateUpdate(BeSQLite::Changes::Change const&) override;
+        void _PropagateChanges() override;
         void CheckDirection(BeSQLite::EC::ECInstanceId);
         void SetChanges() {m_changes=true;}
         bool HasChanges() const {return m_changes;}
@@ -497,7 +508,7 @@ namespace dgn_TxnTable
         static Utf8CP MyTableName() {return BEDB_TABLE_Property;}
         Utf8CP _GetTableName() const {return MyTableName();}
         BeProperties(TxnManager& mgr) : TxnTable(mgr) {}
-        virtual void _OnReversedUpdate(BeSQLite::Changes::Change const&) override;
+        void _OnReversedUpdate(BeSQLite::Changes::Change const&) override;
     };
 };
 
@@ -513,35 +524,35 @@ namespace dgn_TableHandler
     struct Element : DgnDomain::TableHandler
     {
         TABLEHANDLER_DECLARE_MEMBERS(Element, DGNPLATFORM_EXPORT)
-        virtual TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::Element(mgr);}
+        TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::Element(mgr);}
     };
 
     //! TableHandler for DgnModel
     struct Model : DgnDomain::TableHandler
     {
         TABLEHANDLER_DECLARE_MEMBERS(Model, DGNPLATFORM_EXPORT)
-        virtual TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::Model(mgr);}
+        TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::Model(mgr);}
     };
 
     //! TableHandler for DgnElement dependencies
     struct ElementDep : DgnDomain::TableHandler
     {
         TABLEHANDLER_DECLARE_MEMBERS(ElementDep, DGNPLATFORM_EXPORT)
-        virtual TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::ElementDep(mgr);}
+        TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::ElementDep(mgr);}
     };
 
     //! TableHandler for DgnModel dependencies
     struct ModelDep : DgnDomain::TableHandler
     {
         TABLEHANDLER_DECLARE_MEMBERS(ModelDep, DGNPLATFORM_EXPORT)
-        virtual TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::ModelDep(mgr);}
+        TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::ModelDep(mgr);}
     };
 
     //! TableHandler for BeProperties
     struct BeProperties : DgnDomain::TableHandler
     {
         TABLEHANDLER_DECLARE_MEMBERS(BeProperties, DGNPLATFORM_EXPORT)
-        virtual TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::BeProperties(mgr);}
+        TxnTable* _Create(TxnManager& mgr) const override {return new dgn_TxnTable::BeProperties(mgr);}
     };
 };
 

@@ -109,8 +109,6 @@ DGNPLATFORM_TYPEDEFS (ViewController)
 DGNPLATFORM_TYPEDEFS (ViewFlags)
 DGNPLATFORM_TYPEDEFS (DgnDbExpressionContext);
 DGNPLATFORM_TYPEDEFS (DgnElementExpressionContext);
-DGNPLATFORM_TYPEDEFS (DgnJavaScriptObjectModel)
-DGNPLATFORM_TYPEDEFS (IDgnJavaScriptObjectModel)
 
 /** @cond BENTLEY_SDK_Internal */
 DGNPLATFORM_REF_COUNTED_PTR (TextString)
@@ -123,6 +121,8 @@ DGNPLATFORM_TYPEDEFS (ChangeAnnotationScale)
 DGNPLATFORM_TYPEDEFS (ClipPrimitive)
 DGNPLATFORM_TYPEDEFS (ClipVector)
 DGNPLATFORM_TYPEDEFS (ClipVolumeOverrides)
+DGNPLATFORM_TYPEDEFS (ComponentModel)
+DGNPLATFORM_TYPEDEFS (ComponentProxyModel)
 DGNPLATFORM_TYPEDEFS (CutGraphicsCachedKey)
 DGNPLATFORM_TYPEDEFS (Dgn3DInputEvent)
 DGNPLATFORM_TYPEDEFS (DgnButtonEvent)
@@ -133,6 +133,7 @@ DGNPLATFORM_TYPEDEFS (DgnGestureEvent)
 DGNPLATFORM_TYPEDEFS (DgnHost)
 DGNPLATFORM_TYPEDEFS (DgnMouseWheelEvent)
 DGNPLATFORM_TYPEDEFS (DgnProgressMeter)
+DGNPLATFORM_TYPEDEFS (DgnScriptContext)
 DGNPLATFORM_TYPEDEFS (DrawContext)
 DGNPLATFORM_TYPEDEFS (DrawingModel)
 DGNPLATFORM_TYPEDEFS (DropGeometry)
@@ -236,6 +237,8 @@ DGNPLATFORM_REF_COUNTED_PTR (ElementGroup)
 DGNPLATFORM_REF_COUNTED_PTR (GeometricElement)
 DGNPLATFORM_REF_COUNTED_PTR (PatternParams)
 DGNPLATFORM_REF_COUNTED_PTR (PhysicalElement)
+DGNPLATFORM_REF_COUNTED_PTR (ComponentModel)
+DGNPLATFORM_REF_COUNTED_PTR (ComponentProxyModel)
 DGNPLATFORM_REF_COUNTED_PTR (PhysicalModel)
 DGNPLATFORM_REF_COUNTED_PTR (PhysicalRedlineViewController)
 DGNPLATFORM_REF_COUNTED_PTR (QueryViewController)
@@ -262,12 +265,11 @@ BEGIN_BENTLEY_NAMESPACE
 enum
 {
     DGNPLATFORM_RESOURCE_MAXFILELENGTH                    = 256,
-    DGNPLATFORM_RESOURCE_MAXDIRLENGTH                     = 256,
     DGNPLATFORM_RESOURCE_MAXNAMELENGTH                    = 256,
     DGNPLATFORM_RESOURCE_MAXEXTENSIONLENGTH               = 256,
 
     MAXFILELENGTH         = DGNPLATFORM_RESOURCE_MAXFILELENGTH,
-    MAXDIRLENGTH          = DGNPLATFORM_RESOURCE_MAXDIRLENGTH,
+    MAXDIRLENGTH          = 256,
     MAXDEVICELENGTH       = 256,
     MAXNAMELENGTH         = DGNPLATFORM_RESOURCE_MAXNAMELENGTH,
     MAXEXTENSIONLENGTH    = DGNPLATFORM_RESOURCE_MAXEXTENSIONLENGTH,
@@ -604,7 +606,7 @@ struct DgnDisplayCoreTypes
 enum class ConfigurationVariableLevel
 {
     Predefined    = -2,        //!< predefined by the host
-    SysEnv        = -1,        //!< defined in the Windows system environment variable table
+    SysEnv        = -1,        //!< defined in the system environment variable table
     System        = 0,         //!< system defined
     Appl          = 1,         //!< application defined
     Site          = 2,         //!< site defined
@@ -617,21 +619,16 @@ enum DgnPlatformConstants
 {
     MIN_LINECODE                    = 0,
     MAX_LINECODE                    = 7,
-    MINIMUM_WINDOW_DEPTH            = -32767,
-    MAXIMUM_WINDOW_DEPTH            = 32767,
 };
 
-//! @private
-enum DgnPlatformInvalidSymbology
-{
-    INVALID_STYLE = 0x7fffff00,
-};
+//! A kind of script
+enum class DgnScriptType{JavaScript=0, TypeScript=1};
 
 //! @private
-enum struct DgnFontType { TrueType = 1, Rsc = 2, Shx = 3, };
+enum class DgnFontType { TrueType = 1, Rsc = 2, Shx = 3, };
 
 //! @private
-enum struct DgnFontStyle { Regular, Bold, Italic, BoldItalic, };
+enum class DgnFontStyle { Regular, Bold, Italic, BoldItalic, };
 
 //! Enumeration of possible coordinate system types
 enum class DgnCoordSystem
@@ -707,22 +704,6 @@ enum class OutputMessageAlert
     None     = 0,
     Dialog   = 1,
     Balloon  = 2,
-};
-
-enum TransformOptionValues
-{
-    TRANSFORM_OPTIONS_ModelFromElmdscr          = (1 << 0),
-    TRANSFORM_OPTIONS_DimValueMatchSource       = (1 << 1),     // Turn off if dimension value should be scaled
-    TRANSFORM_OPTIONS_DimSizeMatchSource        = (1 << 2),     // Turn off if non-annotation dimension size should be scaled
-    TRANSFORM_OPTIONS_MlineScaleOffsets         = (1 << 3),
-    TRANSFORM_OPTIONS_MlineMirrorOffsets        = (1 << 4),
-    TRANSFORM_OPTIONS_DisableMirrorCharacters   = (1 << 5),
-    TRANSFORM_OPTIONS_AnnotationSizeMatchSource = (1 << 7),     // Turn off if annotations should be scaled
-    TRANSFORM_OPTIONS_RotateDimView             = (1 << 8),     // Turn on if dim view orientation should be changed (so that dim text orientation remains constant)
-    TRANSFORM_OPTIONS_ApplyAnnotationScale      = (1 << 9),     // Turn on if annotation scale (provided by caller) should be applied to annotations
-    TRANSFORM_OPTIONS_FromClone                 = (1 << 10),    // transforming for purposes of cloning between models.
-    TRANSFORM_OPTIONS_NoteScaleSize             = (1 << 11),    // Apply scale to note's sizes. Used as an override when TRANSFORM_OPTIONS_DimSizeMatchSource == True.
-    TRANSFORM_OPTIONS_DisableRotateCharacters   = (1 << 12)     // If a rotation is specified, only the text's origin will be transformed (i.e. the characters will retain their original visual orientation).
 };
 
 enum class GridOrientationType

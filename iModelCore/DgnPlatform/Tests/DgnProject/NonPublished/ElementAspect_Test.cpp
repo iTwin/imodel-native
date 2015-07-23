@@ -97,9 +97,9 @@ typedef TestItem* TestItemP;
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      06/15
 //=======================================================================================
-struct TestItemHandler : Dgn::ElementAspectHandler
+struct TestItemHandler : Dgn::dgn_AspectHandler::Aspect
 {
-    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ITEM_CLASS_NAME, TestItemHandler, Dgn::ElementAspectHandler, )
+    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ITEM_CLASS_NAME, TestItemHandler, Dgn::dgn_AspectHandler::Aspect, )
     RefCountedPtr<DgnElement::Aspect> _CreateInstance() override {return new TestItem("");}
 };
 
@@ -142,9 +142,9 @@ typedef TestUniqueAspect* TestUniqueAspectP;
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      06/15
 //=======================================================================================
-struct TestUniqueAspectHandler : Dgn::ElementAspectHandler
+struct TestUniqueAspectHandler : Dgn::dgn_AspectHandler::Aspect
 {
-    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_UNIQUE_ASPECT_CLASS_NAME, TestUniqueAspectHandler, Dgn::ElementAspectHandler, )
+    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_UNIQUE_ASPECT_CLASS_NAME, TestUniqueAspectHandler, Dgn::dgn_AspectHandler::Aspect, )
     RefCountedPtr<DgnElement::Aspect> _CreateInstance() override {return new TestUniqueAspect("");}
 };
 
@@ -187,9 +187,9 @@ typedef TestMultiAspect* TestMultiAspectP;
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      06/15
 //=======================================================================================
-struct TestMultiAspectHandler : Dgn::ElementAspectHandler
+struct TestMultiAspectHandler : Dgn::dgn_AspectHandler::Aspect
 {
-    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_MULTI_ASPECT_CLASS_NAME, TestMultiAspectHandler, Dgn::ElementAspectHandler, )
+    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_MULTI_ASPECT_CLASS_NAME, TestMultiAspectHandler, Dgn::dgn_AspectHandler::Aspect, )
     RefCountedPtr<DgnElement::Aspect> _CreateInstance() override {return new TestMultiAspect("");}
 };
 
@@ -270,8 +270,8 @@ void ElementItemTests::SetupProject(WCharCP projFile, WCharCP testFile, Db::Open
     BeFileName schemaFile(T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
     schemaFile.AppendToPath(L"ECSchemas/" TMTEST_SCHEMA_NAMEW L".01.00.ecschema.xml");
 
-    BentleyStatus status = ElementItemTestDomain::GetDomain().ImportSchema(*m_db, schemaFile);
-    ASSERT_TRUE(BentleyStatus::SUCCESS == status);
+    auto status = ElementItemTestDomain::GetDomain().ImportSchema(*m_db, schemaFile);
+    ASSERT_TRUE(DgnDbStatus::Success == status);
 
     auto schema = m_db->Schemas().GetECSchema(TMTEST_SCHEMA_NAME, true);
     ASSERT_NE( nullptr , schema );
@@ -301,10 +301,10 @@ DgnDbStatus TestItem::_GenerateElementGeometry(GeometricElementR el)
     else if (m_testItemProperty.EqualsI("Circle"))
         builder->Append(*ICurvePrimitive::CreateArc(DEllipse3d::FromXYMajorMinor(0,0,0, 10,10, 0,0, Angle::PiOver2())));
     else
-        return DgnDbStatus::ElementWriteError;
+        return DgnDbStatus::WriteError;
     
     if (BSISUCCESS != builder->SetGeomStreamAndPlacement(el))
-        return DgnDbStatus::ElementWriteError;
+        return DgnDbStatus::WriteError;
 
     return DgnDbStatus::Success;
     }
@@ -326,7 +326,7 @@ DgnDbStatus TestItem::_LoadProperties(DgnElementCR el)
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT " TMTEST_TEST_ITEM_TestItemProperty " FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
     stmt->BindId(1, el.GetElementId());
     if (BeSQLite::EC::ECSqlStepStatus::HasRow != stmt->Step())
-        return DgnDbStatus::ElementReadError;
+        return DgnDbStatus::ReadError;
     m_testItemProperty = stmt->GetValueText(0);
     return DgnDbStatus::Success;
     }
@@ -339,7 +339,7 @@ DgnDbStatus TestItem::_UpdateProperties(DgnElementCR el)
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("UPDATE %s SET " TMTEST_TEST_ITEM_TestItemProperty "=? WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
     stmt->BindText(1, m_testItemProperty.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     stmt->BindId(2, el.GetElementId());
-    return (BeSQLite::EC::ECSqlStepStatus::Done != stmt->Step())? DgnDbStatus::ElementWriteError: DgnDbStatus::Success;
+    return (BeSQLite::EC::ECSqlStepStatus::Done != stmt->Step())? DgnDbStatus::WriteError: DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -350,7 +350,7 @@ DgnDbStatus TestUniqueAspect::_LoadProperties(DgnElementCR el)
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT " TMTEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty " FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
     stmt->BindId(1, GetAspectInstanceId(el));
     if (BeSQLite::EC::ECSqlStepStatus::HasRow != stmt->Step())
-        return DgnDbStatus::ElementReadError;
+        return DgnDbStatus::ReadError;
     m_testUniqueAspectProperty = stmt->GetValueText(0);
     return DgnDbStatus::Success;
     }
@@ -363,7 +363,7 @@ DgnDbStatus TestUniqueAspect::_UpdateProperties(DgnElementCR el)
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("UPDATE %s SET " TMTEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty "=? WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
     stmt->BindText(1, m_testUniqueAspectProperty.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     stmt->BindId(2, GetAspectInstanceId(el));
-    return (BeSQLite::EC::ECSqlStepStatus::Done != stmt->Step())? DgnDbStatus::ElementWriteError: DgnDbStatus::Success;
+    return (BeSQLite::EC::ECSqlStepStatus::Done != stmt->Step())? DgnDbStatus::WriteError: DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -374,7 +374,7 @@ DgnDbStatus TestMultiAspect::_LoadProperties(DgnElementCR el)
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT " TMTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty " FROM %s WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
     stmt->BindId(1, GetAspectInstanceId());
     if (BeSQLite::EC::ECSqlStepStatus::HasRow != stmt->Step())
-        return DgnDbStatus::ElementReadError;
+        return DgnDbStatus::ReadError;
     m_testMultiAspectProperty = stmt->GetValueText(0);
     return DgnDbStatus::Success;
     }
@@ -387,7 +387,36 @@ DgnDbStatus TestMultiAspect::_UpdateProperties(DgnElementCR el)
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("UPDATE %s SET " TMTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty "=? WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()));
     stmt->BindText(1, m_testMultiAspectProperty.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     stmt->BindId(2, GetAspectInstanceId());
-    return (BeSQLite::EC::ECSqlStepStatus::Done != stmt->Step())? DgnDbStatus::ElementWriteError: DgnDbStatus::Success;
+    return (BeSQLite::EC::ECSqlStepStatus::Done != stmt->Step())? DgnDbStatus::WriteError: DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementItemTests, ElementsOwnsItemTest)
+    {
+    SetupProject(L"3dMetricGeneral.idgndb", L"ElementsOwnsItemTest.idgndb", Db::OpenMode::ReadWrite);
+
+    // Define an element with an item
+    TestElementCPtr el;
+    if (true)
+        {
+        TestElementPtr tempEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement");
+        DgnElement::Item::SetItem(*tempEl, *TestItem::Create("Line"));
+        el = m_db->Elements().Insert(*tempEl);
+        m_db->SaveChanges();
+        }
+
+    //  Delete the element. 
+    DgnElementId eid = el->GetElementId();
+    m_db->Elements().Delete(*el);
+
+    // Item should have been deleted for me.
+    Statement findItem;
+    findItem.Prepare(*m_db, "SELECT ECClassId FROM " DGN_TABLE(DGN_CLASSNAME_ElementItem) " WHERE(ElementId=?)");
+    findItem.BindId(1, eid);
+    bool itemIsGone = (BE_SQLITE_ROW != findItem.Step());
+    ASSERT_TRUE(itemIsGone);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -600,19 +629,21 @@ TEST_F(ElementItemTests, MultiAspect_CRUD)
 
     if (true)
         {
-        // Verify that aspects were written to the Db and that the ElementOwnsAspects relationships were put into place
+        // Verify that aspects were written to the Db and that the foreign key relationships were put into place
         BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement(
-            "SELECT Aspect.ECInstanceId, Aspect.TestMultiAspectProperty FROM DgnPlatformTest.TestMultiAspect Aspect"
-            " JOIN " DGN_SCHEMA(DGN_RELNAME_ElementOwnsAspects) " ON SourceECInstanceId=? AND TargetECClassId=?");
+            "SELECT aspect.ECInstanceId,aspect.TestMultiAspectProperty FROM DgnPlatformTest.TestMultiAspect aspect WHERE aspect.ElementId=?");
         stmt->BindId(1, el->GetElementId());
-        stmt->BindInt64(2, aclass.GetId());
+
         bool has1=false;
         bool has2=false;
-        // Note: select will often return the same aspect multiple times. Write the loop so that we don't care about that.
-        while (stmt->Step() == BeSQLite::EC::ECSqlStepStatus::HasRow)
+        int count=0;
+
+        while (BeSQLite::EC::ECSqlStepStatus::HasRow == stmt->Step())
             {
+            ++count;
             EC::ECInstanceId aspectId = stmt->GetValueId<EC::ECInstanceId>(0);
             Utf8CP propVal = stmt->GetValueText(1);
+
             if (a1id == aspectId)
                 {
                 has1 = true;
@@ -628,7 +659,8 @@ TEST_F(ElementItemTests, MultiAspect_CRUD)
                 FAIL() << "Unknown aspect found";
                 }
             }
-        ASSERT_TRUE( has1 && has2 );
+
+        ASSERT_TRUE( has1 && has2 && (2 == count) );
         }
 
     if (true)

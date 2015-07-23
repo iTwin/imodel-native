@@ -22,6 +22,7 @@ enum class DgnModelType : uint16_t
     Drawing         = 3,   //!< a 2d drawing model.
     Component       = 4,   //!< a 3d component model.
     Query           = 5,   //!< a query model
+    NonGeometric    = 6,   //!< a model containing non-geometric elements
     Illegal         = 999, //!< @private
     };
 

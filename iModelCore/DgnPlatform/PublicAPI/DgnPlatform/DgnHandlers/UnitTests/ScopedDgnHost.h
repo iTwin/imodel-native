@@ -9,6 +9,7 @@
 
 // __BENTLEY_INTERNAL_ONLY__
 
+#include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/DgnCore/DgnDb.h>
 
 // A published unit test can include only published API header files ... with the exception of a few utilities like this.
@@ -24,8 +25,15 @@ struct ScopedDgnHost
 {
     ScopedDgnHostImpl* m_pimpl;
 
+    struct FetchScriptCallback
+        {
+        virtual DgnDbStatus _FetchScript(Utf8StringR, DgnScriptType&, DgnDbR, Utf8CP, DgnScriptType) = 0;
+        };
+
     DGNPLATFORM_EXPORT ScopedDgnHost();
     DGNPLATFORM_EXPORT ~ScopedDgnHost();
+
+    DGNPLATFORM_EXPORT void SetFetchScriptCallback(FetchScriptCallback* cb);
 };
 
 struct TestDataManager

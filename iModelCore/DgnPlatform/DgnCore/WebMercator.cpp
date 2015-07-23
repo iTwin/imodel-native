@@ -638,7 +638,7 @@ void WebMercatorTileDisplayHelper::DrawTile (ViewContextR context, WebMercatorTi
         }
     else
         {
-        auto extents = context.GetViewport()->GetViewController().GetProjectExtents();
+        auto extents = context.GetViewport()->GetViewController().GetViewedExtents();
         for (auto& pt : uvPts)
             pt.z = extents.low.z - 1;
         }
@@ -1394,10 +1394,17 @@ BentleyStatus dgn_ModelHandler::StreetMap::_CreateUrl (Utf8StringR url, ImageUti
         }
 
     if (props.m_mapService[0] == '0') // "(c) OpenStreetMap contributors"
-        url = CreateMapquestUrl (tileid, props);
+        {
+        #ifdef WIP_MAPQUEST_NO_LONGER_AVAILABLE
+            url = CreateMapquestUrl (tileid, props);
+        #else
+            #ifndef NDEBUG  // *** In a developer build, go ahead and use OSM
+                url = Utf8PrintfString ("http://tile.openstreetmap.org/%d/%d/%d.png", tileid.zoomLevel, tileid.column, tileid.row);
+            #endif
+        #endif
+        }
 #ifdef WIP_MAP_SERVICE
-    else
-    if (OpenStreetMaps)
+    else if (OpenStreetMaps)
         url = Utf8PrintfString ("http://tile.openstreetmap.org/%d/%d/%d.png", tileid.zoomLevel, tileid.column, tileid.row);
     else if (GoogleMaps)
         url = CreateGoogleMapsUrl (tileid);

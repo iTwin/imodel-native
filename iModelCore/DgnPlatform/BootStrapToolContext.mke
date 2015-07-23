@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
-#     $Source: $
-#  $Copyright: $
+#     $Source: BootStrapToolContext.mke $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #--------------------------------------------------------------------------------------
 
 # The first part ever built causes the tool context to be generated.
@@ -9,6 +9,6 @@
 
 PolicyFile = $(InternalSystemPolicy)
 
-%include $(SrcRoot)BentleyApi/PublicMki/BentleyApi.mki 
+%include $(SrcRoot)Bentley/PublicMki/BentleyApi.mki 
 
 %include mdl.mki

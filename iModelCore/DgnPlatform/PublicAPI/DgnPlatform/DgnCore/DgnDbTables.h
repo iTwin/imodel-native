@@ -19,10 +19,12 @@
 #define DGN_CLASSNAME_Category              "Category"
 #define DGN_CLASSNAME_Color                 "Color"
 #define DGN_CLASSNAME_ComponentModel        "ComponentModel"
+#define DGN_CLASSNAME_ComponentProxyModel   "ComponentProxyModel"
 #define DGN_CLASSNAME_DrawingElement        "DrawingElement"
 #define DGN_CLASSNAME_DrawingModel          "DrawingModel"
 #define DGN_CLASSNAME_Element               "Element"
 #define DGN_CLASSNAME_ElementAspect         "ElementAspect"
+#define DGN_CLASSNAME_ElementMultiAspect    "ElementMultiAspect"
 #define DGN_CLASSNAME_ElementGeom           "ElementGeom"
 #define DGN_CLASSNAME_ElementGroup          "ElementGroup"
 #define DGN_CLASSNAME_ElementItem           "ElementItem"
@@ -58,7 +60,6 @@
 #define DGN_RELNAME_ElementHasLinks             "ElementHasLinks"
 #define DGN_RELNAME_ElementGeomUsesParts        "ElementGeomUsesParts"
 #define DGN_RELNAME_ElementGroupHasMembers      "ElementGroupHasMembers"
-#define DGN_RELNAME_ElementOwnsAspects          "ElementOwnsAspects"
 #define DGN_RELNAME_ElementOwnsItem             "ElementOwnsItem"
 #define DGN_RELNAME_ModelDrivesModel            "ModelDrivesModel"
 
@@ -974,7 +975,7 @@ public:
     //! Delete a DgnElement from this DgnDb by DgnElementId.
     //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.
     //! @note This method is merely a shortcut to #GetElement and then #Delete
-    DgnDbStatus Delete(DgnElementId id) {auto el=GetElement(id); return el.IsValid() ? Delete(*el) : DgnDbStatus::ElementNotFound;}
+    DgnDbStatus Delete(DgnElementId id) {auto el=GetElement(id); return el.IsValid() ? Delete(*el) : DgnDbStatus::NotFound;}
 
     //! Get the Heapzone for this DgnDb.
     HeapZone& GetHeapZone() {return m_heapZone;}
@@ -1327,23 +1328,31 @@ public:
 //=======================================================================================
 //! @private
 //=======================================================================================
-struct DgnJavaScriptLibrary : DgnDbTable
+struct DgnScriptLibrary : DgnDbTable
 {
 public:
-    DgnJavaScriptLibrary(DgnDbR db) : DgnDbTable(db) { }
+    DgnScriptLibrary(DgnDbR db) : DgnDbTable(db) { }
     
-    //! Import all .js files in the specified directory. This function inserts the contents of each .js file into the DgnDb, using the basename of the file as its key.
-    //! @param jsDir    The directory to scan for .js files
+    //! Register the specified script in the DgnDb's script library.
+    //! @param sName    The name to assign to the script in the library
+    //! @param sText    The content of the script program
     //! @param updateExisting If true, programs already registered are updated from soruce found in \a jsDir
-    //! @see QueryJavaScript
-    DGNPLATFORM_EXPORT void ImportJavaScript(BeFileNameCR jsDir, bool updateExisting);
+    //! @see QueryScript
+    DGNPLATFORM_EXPORT DgnDbStatus RegisterScript(Utf8CP sName, Utf8CP sText, DgnScriptType stype, bool updateExisting);
 
-    //! Look up an imported JavaScript program by the specified name. 
-    //! @param tsProgramText[out]    The content of the JavaScript program
-    //! @param tsProgramName[in]     The basename of the original .JS program that was imported by ImportJavaScript
-    //! @return non-zero if the JavaScript program was not registered in the DgnDb.
-    //! @see ImportJavaScript
-    DGNPLATFORM_EXPORT BentleyStatus QueryJavaScript(Utf8StringR tsProgramText, Utf8CP tsProgramName);
+    //! Look up an imported script program by the specified name. 
+    //! @param[out] sText           The text of the script that was found in the library
+    //! @param[out] stypeFound      The type of script actually found in the library
+    //! @param[in] sName            Identifies the script in the library
+    //! @param[in] stypePreferred   The type of script that the caller prefers, if there are multiple kinds stored for the specified name.
+    //! @see RegisterScript
+    DGNPLATFORM_EXPORT DgnDbStatus QueryScript(Utf8StringR sText, DgnScriptType& stypeFound, Utf8CP sName, DgnScriptType stypePreferred);
+
+    //! Utility function to read the text of the specified file 
+    //! @param contents[out]    The content of the file
+    //! @param fileName[in]     The name of the file to read
+    //! @return non-zero error status if the file could not be found
+    DGNPLATFORM_EXPORT static DgnDbStatus ReadText(Utf8StringR contents, BeFileNameCR fileName);
 
     //! Utility function to convert ECProperties to JSON properties
     //! @param json     The JSON object to be populated
@@ -1417,6 +1426,10 @@ public:
 
     //! Set the azimuth of the global coordinate system of this DgnDb.
     void SetAzimuth(double azimuth) {m_azimuth = azimuth;}
+
+    static double const OneMeter() {return 1.;}
+    static double const OneKilometer() {return 1000. * OneMeter();}
+    static double const OneMillimeter() {return OneMeter() / 1000.;}
 };
 
 //=======================================================================================

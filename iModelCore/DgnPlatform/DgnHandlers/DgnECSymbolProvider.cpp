@@ -189,11 +189,6 @@ void DgnECSymbolProvider::ExternalSymbolPublisher (SymbolExpressionContextR cont
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnECSymbolProvider::_OnHostTermination (bool)         { delete this; }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/12
-+---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaR DgnECSymbolProvider::GetSchema()
     {
     if (m_schema.IsNull())

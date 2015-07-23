@@ -24,6 +24,8 @@ namespace dgn_ModelHandler
 {
 HANDLER_DEFINE_MEMBERS(Model)
 HANDLER_DEFINE_MEMBERS(Physical)
+HANDLER_DEFINE_MEMBERS(Component)
+HANDLER_DEFINE_MEMBERS(ComponentProxy)
 HANDLER_DEFINE_MEMBERS(PhysicalRedline)
 HANDLER_DEFINE_MEMBERS(Sheet)
 HANDLER_DEFINE_MEMBERS(Redline)
@@ -45,10 +47,15 @@ HANDLER_DEFINE_MEMBERS(Drawing)
 HANDLER_DEFINE_MEMBERS(PhysicalText)
 };
 
+namespace dgn_AspectHandler
+{
+HANDLER_DEFINE_MEMBERS(Aspect)
+};
+
+
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 
 HANDLER_DEFINE_MEMBERS(ViewHandler)
-HANDLER_DEFINE_MEMBERS(ElementAspectHandler)
 
 HANDLER_EXTENSION_DEFINE_MEMBERS(IEditManipulatorExtension)
 HANDLER_EXTENSION_DEFINE_MEMBERS(ViewHandlerOverride)
@@ -63,10 +70,12 @@ DgnBaseDomain::DgnBaseDomain() : DgnDomain(DGN_ECSCHEMA_NAME, "Base DgnDb Domain
     // Note: Handlers must be registered in class heiarchy order (base classes before subclasses)
     RegisterHandler(ViewHandler::GetHandler());
     RegisterHandler(DgnElementDependencyHandler::GetHandler());
-    RegisterHandler(ElementAspectHandler::GetHandler());
+    RegisterHandler(dgn_AspectHandler::Aspect::GetHandler());
 
     RegisterHandler(dgn_ModelHandler::Model::GetHandler());
     RegisterHandler(dgn_ModelHandler::Physical::GetHandler());
+    RegisterHandler(dgn_ModelHandler::Component::GetHandler());
+    RegisterHandler(dgn_ModelHandler::ComponentProxy::GetHandler());
     RegisterHandler(dgn_ModelHandler::Sheet::GetHandler());
     RegisterHandler(dgn_ModelHandler::Graphics2d::GetHandler());
     RegisterHandler(dgn_ModelHandler::PlanarPhysical::GetHandler());

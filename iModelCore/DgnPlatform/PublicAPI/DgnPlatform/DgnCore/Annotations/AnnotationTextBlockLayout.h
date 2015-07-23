@@ -37,7 +37,7 @@ struct AnnotationLayoutRun : public RefCountedBase
     //=======================================================================================
     // @bsiclass                                                    Jeff.Marker     05/2014
     //=======================================================================================
-    enum struct SubRange
+    enum class SubRange
     {
         FractionDenominator,
         FractionNumerator,
