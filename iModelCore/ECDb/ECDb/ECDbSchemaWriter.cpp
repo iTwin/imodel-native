@@ -20,21 +20,21 @@ bool ECDbSchemaWriter::EnsureNamespacePrefixIsUnique (ECSchemaCR ecSchema)
                  schema name to it.
 
     */
-    WString ns = ecSchema.GetNamespacePrefix();
+    Utf8String ns = ecSchema.GetNamespacePrefix();
     ns.Trim();
     if (ns.empty())
         {
-        LOG.warningv(L"Importing ECSchema '%ls' has no NamespacePrefix. Name of this ECSchema will be set as its NamespacePrefix", ecSchema.GetName().c_str());
+        LOG.warningv("Importing ECSchema '%s' has no NamespacePrefix. Name of this ECSchema will be set as its NamespacePrefix", ecSchema.GetName().c_str());
         ns = ecSchema.GetName();
         }
     //verify ns is unique
-    Utf8String currentNSPrefix = Utf8String(ns.c_str());
+    Utf8String currentNSPrefix = ns.c_str();
     Statement stmt;
     stmt.Prepare(m_ecdb,"SELECT Name FROM ec_Schema WHERE NamespacePrefix = ?");
     stmt.BindText(1, currentNSPrefix, Statement::MakeCopy::No);
     if (stmt.Step() == BE_SQLITE_ROW)
         {       
-        LOG.warningv (L"Importing ECSchema '%ls' has NamespacePrefix '%ls' which already exist in ECDb for ECSchema '%ls. System will now attempt to generate a unique prefix for importing ECSchema.", ecSchema.GetName().c_str(), ns.c_str(), WString (stmt.GetValueText(0), BentleyCharEncoding::Utf8).c_str ());
+        LOG.warningv ("Importing ECSchema '%s' has NamespacePrefix '%s' which already exist in ECDb for ECSchema '%s. System will now attempt to generate a unique prefix for importing ECSchema.", ecSchema.GetName().c_str(), ns.c_str(), stmt.GetValueText(0));
         Utf8String newPrefix;
         int prefixIndex = 1;
         do
@@ -47,11 +47,11 @@ bool ECDbSchemaWriter::EnsureNamespacePrefixIsUnique (ECSchemaCR ecSchema)
         if (currentNSPrefix.Equals(newPrefix))
             {
             BeAssert(false && "Failed to generate a unique schema prefix");
-            LOG.errorv (L"Failed to Generate Unique NamespacePrefix for ECSchema %ls", ecSchema.GetName().c_str());    
+            LOG.errorv ("Failed to Generate Unique NamespacePrefix for ECSchema %ls", ecSchema.GetName().c_str());    
             return false;
             }
-        ns.AssignUtf8(newPrefix.c_str());
-        LOG.warningv (L"Generated a new NamespacePrefix='%ls' for newly importing ECSchema '%ls'", ecSchema.GetName().c_str(), ns.c_str());
+        ns = newPrefix.c_str();
+        LOG.warningv ("Generated a new NamespacePrefix='%s' for newly importing ECSchema '%s'", ecSchema.GetName().c_str(), ns.c_str());
         }
     if (!ns.Equals(ecSchema.GetNamespacePrefix()))
         const_cast<ECSchemaR>(ecSchema).SetNamespacePrefix(ns);
@@ -80,13 +80,13 @@ BentleyStatus ECDbSchemaWriter::CreateECSchemaEntry(ECSchemaCR ecSchema, ECSchem
     info.m_versionMajor = ecSchema.GetVersionMajor();
     info.m_versionMinor = ecSchema.GetVersionMinor();
 
-    BeStringUtilities::WCharToUtf8 (info.m_namespacePrefix, ecSchema.GetNamespacePrefix().c_str());
-    BeStringUtilities::WCharToUtf8 (info.m_name, ecSchema.GetName().c_str());
-    BeStringUtilities::WCharToUtf8 (info.m_description, ecSchema.GetDescription().c_str());
+    info.m_namespacePrefix = ecSchema.GetNamespacePrefix().c_str();
+    info.m_name = ecSchema.GetName().c_str();
+    info.m_description = ecSchema.GetDescription().c_str();
 
     if (ecSchema.GetIsDisplayLabelDefined())
         {
-        BeStringUtilities::WCharToUtf8 (info.m_displayLabel, ecSchema.GetDisplayLabel().c_str());
+        info.m_displayLabel = ecSchema.GetDisplayLabel().c_str();
         info.ColsInsert |= DbECSchemaInfo::COL_DisplayLabel;
         }
 
@@ -117,12 +117,12 @@ BentleyStatus ECDbSchemaWriter::CreateECClassEntry(ECClassCR ecClass, ECClassId 
     info.m_isStruct          = ecClass.GetIsStruct();
     info.m_isDomainClass     = ecClass.GetIsDomainClass();
     info.m_isRelationship    = false;
-    BeStringUtilities::WCharToUtf8 (info.m_name, ecClass.GetName().c_str());
-    BeStringUtilities::WCharToUtf8 (info.m_description, ecClass.GetDescription().c_str());
+    info.m_name = ecClass.GetName().c_str();
+    info.m_description = ecClass.GetDescription().c_str();
 
     if (ecClass.GetIsDisplayLabelDefined())
         {
-        BeStringUtilities::WCharToUtf8 (info.m_displayLabel, ecClass.GetDisplayLabel().c_str());
+        info.m_displayLabel = ecClass.GetDisplayLabel().c_str();
         info.ColsInsert |= DbECClassInfo::COL_DisplayLabel;
         }
 
@@ -182,12 +182,12 @@ BentleyStatus ECDbSchemaWriter::CreateECPropertyEntry(ECPropertyCR ecProperty, E
     info.m_isArray      = ecProperty.GetIsArray();
     info.m_ordinal      = index;
     info.m_isReadOnly   = ecProperty.GetIsReadOnly();
-    BeStringUtilities::WCharToUtf8 (info.m_name, ecProperty.GetName().c_str());
-    BeStringUtilities::WCharToUtf8 (info.m_description, ecProperty.GetDescription().c_str());
+    info.m_name = ecProperty.GetName().c_str();
+    info.m_description = ecProperty.GetDescription().c_str();
     if (ecProperty.GetIsDisplayLabelDefined())
         {
         info.ColsInsert |= DbECPropertyInfo::COL_DisplayLabel;
-        BeStringUtilities::WCharToUtf8 (info.m_displayLabel, ecProperty.GetDisplayLabel().c_str());
+        info.m_displayLabel = ecProperty.GetDisplayLabel().c_str();
         }
     if (ecProperty.GetIsPrimitive())
         {
@@ -247,7 +247,7 @@ BentleyStatus ECDbSchemaWriter::CreateECRelationshipConstraintEntry(ECClassId re
 
     if (relationshipConstraint.IsRoleLabelDefined())
         {
-        BeStringUtilities::WCharToUtf8 (info.m_roleLabel, relationshipConstraint.GetRoleLabel().c_str());
+        info.m_roleLabel = relationshipConstraint.GetRoleLabel().c_str();
         info.ColsInsert |= DbECRelationshipConstraintInfo::COL_RoleLabel;
         }
     //save to db
@@ -358,7 +358,7 @@ BentleyStatus ECDbSchemaWriter::Import(ECN::ECSchemaCR ecSchema)
         {
         if (SUCCESS != ImportECClass(*ecClass))
             {
-            LOG.errorv(L"Failed to import ECClass '%ls'.", ecClass->GetFullName());
+            LOG.errorv("Failed to import ECClass '%s'.", ecClass->GetFullName());
             BeDataAssert(false);
             return ERROR;
             }
@@ -383,7 +383,7 @@ BentleyStatus ECDbSchemaWriter::CreateECSchemaReferenceEntry(ECSchemaId ecSchema
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbSchemaWriter::ImportCustomAttributes(IECCustomAttributeContainerCR sourceContainer, ECContainerId sourceContainerId, ECContainerType containerType, WCharCP onlyImportCAWithClassName)
+BentleyStatus ECDbSchemaWriter::ImportCustomAttributes(IECCustomAttributeContainerCR sourceContainer, ECContainerId sourceContainerId, ECContainerType containerType, Utf8CP onlyImportCAWithClassName)
     {
     if (SUCCESS != ImportECCustomAttributeECClass(sourceContainer))
         return ERROR;
@@ -524,12 +524,12 @@ BentleyStatus ECDbSchemaWriter::ImportECRelationshipConstraint(ECClassId relClas
         if (SUCCESS != CreateECRelationshipConstraintClassEntry(relClassId, constraintClassId, endpoint))
             return ERROR;
 
-        for (WStringCR key : constraintClassObj->GetKeys())
+        for (Utf8StringCR key : constraintClassObj->GetKeys())
             {
-            if (!key.EqualsI(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME_W) &&
+            if (!key.EqualsI(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME) &&
                 constraintClass.GetPropertyP(key.c_str()) == nullptr)
                 {
-                LOG.errorv(L"ECProperty '%ls' is an invalid key property as it does not exist in ECClass '%ls'.", key.c_str(), constraintClass.GetFullName());
+                LOG.errorv("ECProperty '%s' is an invalid key property as it does not exist in ECClass '%s'.", key.c_str(), constraintClass.GetFullName());
                 return ERROR;
                 }
 

@@ -138,7 +138,7 @@ IECSqlArrayBinder& StructToColumnsECSqlBinder::_BindArray (uint32_t initialCapac
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2014
 //---------------------------------------------------------------------------------------
-IECSqlBinder& StructToColumnsECSqlBinder::_GetMember (WCharCP structMemberPropertyName)
+IECSqlBinder& StructToColumnsECSqlBinder::_GetMember (Utf8CP structMemberPropertyName)
     {
     auto memberProp = GetTypeInfo ().GetStructType ().GetPropertyP (structMemberPropertyName, true);
     if (memberProp == nullptr)
@@ -159,7 +159,7 @@ IECSqlBinder& StructToColumnsECSqlBinder::_GetMember (ECN::ECPropertyId structMe
     auto it = m_memberBinders.find (structMemberPropertyId);
     if (it == m_memberBinders.end ())
         {
-        WCharCP structMemberPropertyName = nullptr;
+        Utf8CP structMemberPropertyName = nullptr;
         for (auto prop : GetTypeInfo ().GetStructType ().GetProperties (true))
             {
             if (prop->GetId () == structMemberPropertyId)

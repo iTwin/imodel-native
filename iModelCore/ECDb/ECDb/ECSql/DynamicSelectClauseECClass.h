@@ -20,8 +20,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct DynamicSelectClauseECClass
     {
 private:
-    static WCharCP const SCHEMANAME;
-    static WCharCP const CLASSNAME;
+    static Utf8CP const SCHEMANAME;
+    static Utf8CP const CLASSNAME;
 
     ECN::ECSchemaPtr m_schema;
     ECN::ECClassP m_class;

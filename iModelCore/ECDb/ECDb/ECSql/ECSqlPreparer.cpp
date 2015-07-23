@@ -1200,22 +1200,22 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp (ECSqlPrepareContext& c
         }
 
     PRECONDITION (fromIsSource != TriState::None, ECSqlStatus::ProgrammerError);
-    ////Determin the from/to related keys
-    WCharCP fromRelatedKey = nullptr;
-    WCharCP toRelatedKey = nullptr;
+    ////Determine the from/to related keys
+    Utf8CP fromRelatedKey = nullptr;
+    Utf8CP toRelatedKey = nullptr;
     if (fromIsSource == TriState::True)
         {
-        fromRelatedKey = ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME_W;
-        toRelatedKey = ECDbSystemSchemaHelper::TARGETECINSTANCEID_PROPNAME_W;
+        fromRelatedKey = ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME;
+        toRelatedKey = ECDbSystemSchemaHelper::TARGETECINSTANCEID_PROPNAME;
         }
     else
         {
-        fromRelatedKey = ECDbSystemSchemaHelper::TARGETECINSTANCEID_PROPNAME_W;
-        toRelatedKey = ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME_W;
+        fromRelatedKey = ECDbSystemSchemaHelper::TARGETECINSTANCEID_PROPNAME;
+        toRelatedKey = ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME;
         }
 
     auto relationshipClassNameExp = exp->GetRelationshipClass();
-    auto ecInstanceIdKey = ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME_W;
+    auto ecInstanceIdKey = ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME;
 
     //Render previous sql part as is
     r = PrepareClassRefExp (sql, ctx, exp->GetFromClassRef ());
@@ -1818,7 +1818,7 @@ ECSqlStatus ECSqlExpPreparer::ResolveChildStatementsBinding (ECSqlPrepareContext
             structRoot = &backReferencePath.GetClassMap()->GetClass();
             }
 
-        auto sourcePropertyPath = WString (arrayField->GetBinder().GetSourcePropertyPath().c_str(), true);
+        auto sourcePropertyPath = arrayField->GetBinder().GetSourcePropertyPath();
         int fieldIndex = -1;
         int requestedFieldIndex = -1;
         for (unique_ptr<ECSqlField> const& candidateField : topLevelFields)

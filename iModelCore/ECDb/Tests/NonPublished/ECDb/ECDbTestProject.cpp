@@ -291,13 +291,13 @@ BentleyStatus ECDbTestProject::ImportECSchema (WCharCP testSchemaXmlFileName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-ECObjectsStatus ECDbTestProject::CopyStruct(IECInstanceR source, ECValuesCollectionCR collection, WCharCP baseAccessPath)
+ECObjectsStatus ECDbTestProject::CopyStruct(IECInstanceR source, ECValuesCollectionCR collection, Utf8CP baseAccessPath)
     { 
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
     for(auto& propertyValue : collection)
         {
         auto pvAccessString = propertyValue.GetValueAccessor().GetPropertyName();
-        auto accessString =  baseAccessPath == nullptr ? pvAccessString : WString(baseAccessPath) + L"." + pvAccessString;
+        auto accessString =  baseAccessPath == nullptr ? pvAccessString : Utf8String(baseAccessPath) + "." + pvAccessString;
 
         if (propertyValue.HasChildValues())
             {
@@ -332,7 +332,7 @@ ECObjectsStatus ECDbTestProject::CopyStruct(IECInstanceR source, ECValuesCollect
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-ECObjectsStatus ECDbTestProject::CopyStruct(IECInstanceR target, IECInstanceCR structValue, WCharCP propertyName)
+ECObjectsStatus ECDbTestProject::CopyStruct(IECInstanceR target, IECInstanceCR structValue, Utf8CP propertyName)
     {
     return CopyStruct(target, *ECValuesCollection::Create(structValue), propertyName);
     }
@@ -509,7 +509,7 @@ void ECDbTestProject::AssignRandomValueToECInstance
 (
 ECValueP createdValue,
 IECInstancePtr instance, 
-WCharCP propertyName
+Utf8CP propertyName
 )
     {
     ECPropertyP ecProperty = instance->GetClass ().GetPropertyP (propertyName);

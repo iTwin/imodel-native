@@ -13,7 +13,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ColumnInfo ColumnInfo::Create(ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString)
+ColumnInfo ColumnInfo::Create(ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString)
     {
     ColumnInfo info;
     if (SUCCESS != info.Initialize(ecProperty, propertyAccessString))
@@ -33,7 +33,7 @@ m_collation (ECDbSqlColumn::Constraint::Collation::Default)
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ColumnInfo::Initialize(ECPropertyCR ecProperty, WCharCP propertyAccessString)
+BentleyStatus ColumnInfo::Initialize(ECPropertyCR ecProperty, Utf8CP propertyAccessString)
     {
     // Assumes that if it is mapped to a column and is not primitive, it is mapped as a blob. Needswork if we add a JSON mapping hint
     PrimitiveECPropertyCP primitiveProperty = ecProperty.GetAsPrimitiveProperty();

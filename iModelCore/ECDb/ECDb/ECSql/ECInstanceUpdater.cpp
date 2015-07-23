@@ -153,8 +153,8 @@ BentleyStatus ECInstanceUpdater::Impl::Update (IECInstanceCR instance) const
     {
     if (instance.GetClass () != GetECClass ())
         {
-        WString errorMessage;
-        errorMessage.Sprintf (L"Invalid ECInstance passed to ECInstanceUpdater. ECClass mismatch: Expected ECClass: '%ls'. ECInstance's ECClass: '%ls'.",
+        Utf8String errorMessage;
+        errorMessage.Sprintf ("Invalid ECInstance passed to ECInstanceUpdater. ECClass mismatch: Expected ECClass: '%s'. ECInstance's ECClass: '%s'.",
             m_ecClass.GetFullName (), instance.GetClass ().GetFullName ());
 
         LogFailure (instance, Utf8String (errorMessage).c_str ());
@@ -164,7 +164,7 @@ BentleyStatus ECInstanceUpdater::Impl::Update (IECInstanceCR instance) const
 
     if (!IsValid ())
         {
-        LOG.errorv (L"ECInstanceUpdater for ECClass '%ls' is invalid as the ECClass is not mapped or cannot be used for updating.", m_ecClass.GetFullName ());
+        LOG.errorv (L"ECInstanceUpdater for ECClass '%s' is invalid as the ECClass is not mapped or cannot be used for updating.", m_ecClass.GetFullName ());
         return ERROR;
         }
 
@@ -244,7 +244,7 @@ void ClassUpdaterImpl::Initialize(bvector<uint32_t>& propertiesToBind)
     {
     if (propertiesToBind.size() < 1)
         {
-        LOG.errorv(L"ECClass '%ls' doesn't have any properties. Instances of that class therefore cannot be updated.",
+        LOG.errorv("ECClass '%s' doesn't have any properties. Instances of that class therefore cannot be updated.",
                      GetECClass().GetFullName());
 
         m_isValid = false;
@@ -275,7 +275,7 @@ void ClassUpdaterImpl::Initialize(bvector<uint32_t>& propertiesToBind)
             m_needsCalculatedPropertyEvaluation = ECInstanceAdapterHelper::IsOrContainsCalculatedProperty (*ecProperty);
 
         Utf8String propNameSnippet ("[");
-        WCharCP accessString;
+        Utf8CP accessString;
         enabler->GetAccessString(accessString, propertyIndex);
         size_t offset = 0;
         Utf8String utfAccessString(accessString);

@@ -93,10 +93,10 @@ public:
     static ECN::IECInstancePtr  CreateArbitraryECInstance(ECN::ECClassCR ecClass, PopulatePrimitiveValueCallback callback = PopulatePrimitiveValue, bool skipStructs = false, bool skipArrays = false);
     static void                 PopulateECInstance(ECN::IECInstancePtr ecInstance, PopulatePrimitiveValueCallback callback = PopulatePrimitiveValue, bool skipStructs = false, bool skipArrays = false);
     static ECN::IECInstancePtr  CreateECInstance (ECN::ECClassCR ecClass);
-    static void            AssignRandomValueToECInstance (ECN::ECValueP createdValue, ECN::IECInstancePtr instance, WCharCP propertyName);
+    static void            AssignRandomValueToECInstance (ECN::ECValueP createdValue, ECN::IECInstancePtr instance, Utf8CP propertyName);
     BentleyStatus InsertECInstance (BeSQLite::EC::ECInstanceKey& ecInstanceKey, ECN::IECInstancePtr ecInstance);
-    static ECN::ECObjectsStatus CopyStruct (ECN::IECInstanceR source, ECN::ECValuesCollectionCR collection, WCharCP baseAccessPath);
-    static ECN::ECObjectsStatus CopyStruct (ECN::IECInstanceR target, ECN::IECInstanceCR structValue, WCharCP propertyName);
+    static ECN::ECObjectsStatus CopyStruct (ECN::IECInstanceR source, ECN::ECValuesCollectionCR collection, Utf8CP baseAccessPath);
+    static ECN::ECObjectsStatus CopyStruct (ECN::IECInstanceR target, ECN::IECInstanceCR structValue, Utf8CP propertyName);
 
     static void PopulatePrimitiveValueWithRandomValues (ECN::ECValueR ecValue, ECN::PrimitiveType primitiveType, ECN::ECPropertyCP ecProperty);
     };

@@ -191,7 +191,7 @@ bool ECDbProfileUpgrader::IsView (ECDbCR ecdb, Utf8CP tableOrViewName)
 
 //*************************************** ECDbProfileSchemaUpgrader *********************************
 //static
-SchemaKey ECDbProfileECSchemaUpgrader::s_ecdbfileinfoSchemaKey = SchemaKey (L"ECDb_FileInfo", 1, 0);
+SchemaKey ECDbProfileECSchemaUpgrader::s_ecdbfileinfoSchemaKey = SchemaKey ("ECDb_FileInfo", 1, 0);
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle        07/2012

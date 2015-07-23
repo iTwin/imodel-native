@@ -210,8 +210,8 @@ private:
     BentleyStatus SetPrimitiveValue(ECN::ECValueR value, ECN::PrimitiveType primitiveType, IPropertyValueGenerator* gen);
     BentleyStatus SetStructValue(ECN::IECInstanceR generatedECInstance, ECN::ECClassCR structType, ECN::ECPropertyCP ecProperty);
     BentleyStatus SetInstanceData(ECN::IECInstanceR generatedECInstance);
-    ECN::ECObjectsStatus CopyStruct(ECN::IECInstanceR target, ECN::IECInstanceCR structValue, WCharCP propertyName);
-    ECN::ECObjectsStatus CopyStruct(ECN::IECInstanceR source, ECN::ECValuesCollectionCR collection, WCharCP baseAccessPath);
+    ECN::ECObjectsStatus CopyStruct(ECN::IECInstanceR target, ECN::IECInstanceCR structValue, Utf8CP propertyName);
+    ECN::ECObjectsStatus CopyStruct(ECN::IECInstanceR source, ECN::ECValuesCollectionCR collection, Utf8CP baseAccessPath);
 
 public:
     explicit RandomECInstanceGenerator(std::vector<ECN::ECClassCP> const& classList)

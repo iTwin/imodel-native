@@ -51,7 +51,7 @@ public:
     protected:
         void SetProperty(ECPropertyCR property)  
             {
-            auto propertyName = WString(GetPropertyName().c_str(), true);
+            auto propertyName = GetPropertyName().c_str();
             PRECONDITION(propertyName == property.GetName(),);
             m_property = &property;
             }
@@ -115,7 +115,7 @@ private:
 
             if (property == nullptr && i == 0)
                 {
-                auto propertyMap = classMap.GetPropertyMap (WString(propertyName.c_str(), true).c_str());
+                auto propertyMap = classMap.GetPropertyMap (propertyName.c_str());
                 if (propertyMap)
                     property = &propertyMap->GetProperty();
                 }

@@ -2186,7 +2186,7 @@ void ViewGenerator::CreateSystemClassView (NativeSqlBuilder &viewSql, std::map<E
 
         bool includeEntireTable = tableToIncludeEntirly.find (tableP) != tableToIncludeEntirly.end ();
         IClassMap const* classMap = classMaps[0];
-        ECDbSqlColumn const* ecInstanceIdColumn = classMap->GetPropertyMap (L"ECInstanceId")->GetFirstColumn ();
+        ECDbSqlColumn const* ecInstanceIdColumn = classMap->GetPropertyMap ("ECInstanceId")->GetFirstColumn ();
         ECDbSqlColumn const* ecClassIdColumn = tableP->FindColumnCP ("ECClassId");
 
         if (tableP->GetPersistenceType() == PersistenceType::Virtual)

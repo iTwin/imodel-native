@@ -83,7 +83,7 @@ void ECSqlStepTask::Collection::ResetSelector ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-ECSqlStepTask const* ECSqlStepTask::Collection::Find (WCharCP name) const
+ECSqlStepTask const* ECSqlStepTask::Collection::Find (Utf8CP name) const
     {
     auto stepTask = m_stepTasks.find (name);
     if (stepTask != m_stepTasks.end ())
@@ -173,7 +173,7 @@ ECSqlStepStatus UpdateStructArrayStepTask::_Execute (ECInstanceId const& instanc
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-ECSqlStepTaskCreateStatus UpdateStructArrayStepTask::Create (unique_ptr<UpdateStructArrayStepTask>& updateStepTask, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, WCharCP property)
+ECSqlStepTaskCreateStatus UpdateStructArrayStepTask::Create (unique_ptr<UpdateStructArrayStepTask>& updateStepTask, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, Utf8CP property)
     {
     unique_ptr<InsertStructArrayStepTask> insertStepTask;
     unique_ptr<DeleteStructArrayStepTask> deleteStepTask;
@@ -276,7 +276,7 @@ ECSqlStepStatus InsertStructArrayStepTask::_Execute (ECInstanceId const& instanc
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-ECSqlStepTaskCreateStatus InsertStructArrayStepTask::Create (unique_ptr<InsertStructArrayStepTask>& insertStepTask, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, WCharCP property)
+ECSqlStepTaskCreateStatus InsertStructArrayStepTask::Create (unique_ptr<InsertStructArrayStepTask>& insertStepTask, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, Utf8CP property)
     {
     auto propertyMap = classMap.GetPropertyMap (property);
     if (propertyMap == nullptr)
@@ -365,7 +365,7 @@ ECSqlStepStatus DeleteStructArrayStepTask::_Execute (ECInstanceId const& instanc
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-ECSqlStepTaskCreateStatus DeleteStructArrayStepTask::Create (unique_ptr<DeleteStructArrayStepTask>& deleteStepTask, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, WCharCP property)
+ECSqlStepTaskCreateStatus DeleteStructArrayStepTask::Create (unique_ptr<DeleteStructArrayStepTask>& deleteStepTask, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, Utf8CP property)
     {
     auto propertyMap = classMap.GetPropertyMap (property);
     if (propertyMap == nullptr)
@@ -416,7 +416,7 @@ ECSqlStepTaskCreateStatus DeleteStructArrayStepTask::Create (unique_ptr<DeleteSt
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-DeleteRelatedInstancesECSqlStepTask::DeleteRelatedInstancesECSqlStepTask (ECDbR ecdb, ECSqlStatusContext& statusContext, WCharCP name, ECClassId classId)
+DeleteRelatedInstancesECSqlStepTask::DeleteRelatedInstancesECSqlStepTask (ECDbR ecdb, ECSqlStatusContext& statusContext, Utf8CP name, ECClassId classId)
     : ECSqlStepTask (ExecutionCategory::ExecuteBeforeParentStep, statusContext, name), m_ecdb (ecdb), m_orphanInstanceFinder (ecdb), m_ecClassId (classId)
     {}
 
@@ -438,7 +438,7 @@ ECSqlStepStatus DeleteRelatedInstancesECSqlStepTask::_Execute (ECInstanceId cons
 //---------------------------------------------------------------------------------------
 ECSqlStepTaskCreateStatus DeleteRelatedInstancesECSqlStepTask::Create (unique_ptr<DeleteRelatedInstancesECSqlStepTask>& deleteStepTask, ECDbR ecdb, ECSqlPrepareContext& preparedContext, IClassMap const& classMap)
     {
-    deleteStepTask = unique_ptr<DeleteRelatedInstancesECSqlStepTask> (new DeleteRelatedInstancesECSqlStepTask (ecdb, preparedContext.GetECSqlStatementR ().GetStatusContextR (), L"$DeleteRelatedStepTask", classMap.GetClass ().GetId ()));
+    deleteStepTask = unique_ptr<DeleteRelatedInstancesECSqlStepTask> (new DeleteRelatedInstancesECSqlStepTask (ecdb, preparedContext.GetECSqlStatementR ().GetStatusContextR (), "$DeleteRelatedStepTask", classMap.GetClass ().GetId ()));
     return ECSqlStepTaskCreateStatus::Success;
     }
     
@@ -693,7 +693,7 @@ ECSqlStatement* DeleteRelatedInstancesECSqlStepTask::GetDeleteStatement (ECN::EC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-ECSqlStepTaskCreateStatus ECSqlStepTaskFactory::CreatePropertyStepTask (std::unique_ptr<ECSqlStepTask>& stepTask, StepTaskType taskType, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, WCharCP property)
+ECSqlStepTaskCreateStatus ECSqlStepTaskFactory::CreatePropertyStepTask (std::unique_ptr<ECSqlStepTask>& stepTask, StepTaskType taskType, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, Utf8CP property)
     {
     switch (taskType)
         {
@@ -773,7 +773,7 @@ void ECSqlStepTaskFactory::GetConstraintClasses (ECSqlParseContext::ClassListByI
         *containAnyClass = false;
     for (auto ecClass : constraintEnd.GetClasses ())
         {
-        if (containAnyClass && !(*containAnyClass) && ecClass->GetName () == L"AnyClass" && ecClass->GetSchema ().GetName () == L"Bentley_Standard_Classes")
+        if (containAnyClass && !(*containAnyClass) && ecClass->GetName () == "AnyClass" && ecClass->GetSchema ().GetName () == "Bentley_Standard_Classes")
             *containAnyClass = true;
 
         if (classes.find (ecClass->GetId ()) == classes.end ())

@@ -164,7 +164,7 @@ IImportIssueListener const* userProvidedIssueListener
 //static
 bool ECDbSchemaManager::ContainsDuplicateSchemas(bvector<ECSchemaP> const& schemas)
     {
-    bmap<WString, ECSchemaCP> myMap;
+    bmap<Utf8String, ECSchemaCP> myMap;
     for (ECSchemaCP schema : schemas)
         {
         if (myMap[schema->GetFullSchemaName()] == schema)
@@ -221,7 +221,7 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
                 //This bug could also be fixed in SupplementSchema builder but its much safer to do it here for now.
                 if (primarySchema->GetSupplementalInfo ().IsValid ())
                     {
-                    auto provenance = primarySchema->GetCustomAttribute (L"SupplementalProvenance");
+                    auto provenance = primarySchema->GetCustomAttribute ("SupplementalProvenance");
                     if (provenance.IsValid ())
                         {
                         auto& bsca = provenance->GetClass ().GetSchema ();
@@ -357,7 +357,7 @@ void ECDbSchemaManager::GetSupplementalSchemas (bvector<ECSchemaP>& supplemental
     {
     supplementalSchemas.clear();
     SupplementalSchemaMetaDataPtr metaData;
-    std::map<WString, ECSchemaP> supplementalSchemaMap;
+    std::map<Utf8String, ECSchemaP> supplementalSchemaMap;
     for (ECSchemaPtr const& schema : schemas)
         {
         if (SupplementalSchemaMetaData::TryGetFromSchema(metaData, *schema) && metaData.IsValid())
@@ -604,11 +604,9 @@ ECSchemaPtr ECDbSchemaManager::_LocateSchema (SchemaKeyR key, SchemaMatchType ma
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCP ECDbSchemaManager::_LocateClass (WCharCP schemaName, WCharCP className)
+ECClassCP ECDbSchemaManager::_LocateClass (Utf8CP schemaName, Utf8CP className)
     {
-    Utf8String schemaUtf8 (schemaName);
-    Utf8String classUtf8 (className);
-    return GetECClass (schemaUtf8.c_str(), classUtf8.c_str());
+    return GetECClass (schemaName, className);
     }
 
 //---------------------------------------------------------------------------------------
@@ -617,11 +615,8 @@ ECClassCP ECDbSchemaManager::_LocateClass (WCharCP schemaName, WCharCP className
 //static
 ECClassId ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema (ECDbCR db, ECClassCR ecClass)
     {
-    Utf8String schemaName(ecClass.GetSchema().GetName().c_str());
-    Utf8String className(ecClass.GetName().c_str());
-   
     ECClassId id = ECClass::UNSET_ECCLASSID;
-    db.Schemas().TryGetECClassId(id, schemaName.c_str(), className.c_str(), ResolveSchema::BySchemaName);
+    db.Schemas().TryGetECClassId(id, ecClass.GetSchema().GetName().c_str(), ecClass.GetName().c_str(), ResolveSchema::BySchemaName);
     const_cast<ECClassR>(ecClass).SetId(id);
     return id;
     }
@@ -631,11 +626,7 @@ ECClassId ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema (ECDbCR d
 //---------------------------------------------------------------------------------------
 ECPropertyId ECDbSchemaManager::GetPropertyIdForECPropertyFromDuplicateECSchema(ECDbCR db, ECPropertyCR ecProperty)
     {
-    Utf8String schemaName(ecProperty.GetClass().GetSchema().GetName().c_str());
-    Utf8String className(ecProperty.GetClass().GetName().c_str());
-    Utf8String propertyName(ecProperty.GetName().c_str());
-
-    ECPropertyId ecPropertyId = ECDbSchemaPersistence::GetECPropertyId (db, schemaName.c_str(), className.c_str(), propertyName.c_str()); 
+    ECPropertyId ecPropertyId = ECDbSchemaPersistence::GetECPropertyId (db, ecProperty.GetClass().GetSchema().GetName().c_str(), ecProperty.GetClass().GetName().c_str(), ecProperty.GetName().c_str()); 
     const_cast<ECPropertyR>(ecProperty).SetId(ecPropertyId);
     return ecPropertyId;
     }

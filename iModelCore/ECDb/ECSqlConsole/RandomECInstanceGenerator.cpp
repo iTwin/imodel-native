@@ -86,10 +86,10 @@ BentleyStatus DefaultPropertyValueGenerator::_NextLong (ECValueR value)
 //---------------------------------------------------------------------------------------
 BentleyStatus DefaultPropertyValueGenerator::_NextString (ECValueR value)
     {
-    WString strValue;
+    Utf8String strValue;
     m_currentInt32 += m_incrementInt32;
-    strValue.Sprintf (L"%ls-%05d", m_stringPrefix.c_str (), m_currentInt32);
-    return value.SetString (strValue.c_str (), true);
+    strValue.Sprintf ("%s-%05d", m_stringPrefix.c_str (), m_currentInt32);
+    return value.SetUtf8CP (strValue.c_str ());
     }
 
 //---------------------------------------------------------------------------------------
@@ -177,7 +177,7 @@ void DefaultPropertyValueGenerator::Init ()
     SetSeedLong (10000, 1);
     SetSeedPoint2D (DPoint2d::From (1, 1), DPoint2d::From (0.2, 0.4));
     SetSeedPoint3D (DPoint3d::From (1, 1, 1), DPoint3d::From (0.2, 0.4, 0.8));
-    SetStringPrefix (L"StRiNg");
+    SetStringPrefix ("StRiNg");
     SetBinaryLength (18);
     }
 
@@ -247,7 +247,7 @@ void DefaultPropertyValueGenerator::SetBinaryLength (size_t length)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-void DefaultPropertyValueGenerator::SetStringPrefix (WStringCR prefix)
+void DefaultPropertyValueGenerator::SetStringPrefix (Utf8StringCR prefix)
     {
     m_stringPrefix = prefix;
     }
@@ -361,9 +361,9 @@ BentleyStatus RandomPropertyValueGenerator::_NextString (ECN::ECValueR value)
     {
     int randomNumber = rand () % 1001;
 
-    WString text;
-    text.Sprintf (L"Sample-%d", randomNumber);
-    return value.SetString (text.c_str (), true);
+    Utf8String text;
+    text.Sprintf ("Sample-%d", randomNumber);
+    return value.SetUtf8CP(text.c_str ());
     }
 
 void RandomPropertyValueGenerator::_Reset ()
@@ -489,7 +489,7 @@ void RandomECInstanceGenerator::GetConstraintClasses (std::set<ECClassCP>& const
         {
         if (constraintClasses.find (constraintClass) != constraintClasses.end ())
             continue;
-        if (constraintClass->GetName ().Equals (L"AnyClass"))
+        if (constraintClass->GetName ().Equals ("AnyClass"))
             {
             for (auto key : m_instances)
                 {
@@ -571,7 +571,7 @@ bool HasAnyClass (std::set<ECClassCP>& classes)
     {
     for (auto& ecclass : classes)
         {
-        if (ecclass->GetName () == L"AnyClass")
+        if (ecclass->GetName () == "AnyClass")
             return true;
         }
     return false;
@@ -750,7 +750,7 @@ BentleyStatus RandomECInstanceGenerator::SetPrimitiveValue (ECValueR value, Prim
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-ECObjectsStatus RandomECInstanceGenerator::CopyStruct (IECInstanceR target, IECInstanceCR structValue, WCharCP propertyName)
+ECObjectsStatus RandomECInstanceGenerator::CopyStruct (IECInstanceR target, IECInstanceCR structValue, Utf8CP propertyName)
     {
     return CopyStruct (target, *ECValuesCollection::Create (structValue), propertyName);
     }
@@ -758,17 +758,17 @@ ECObjectsStatus RandomECInstanceGenerator::CopyStruct (IECInstanceR target, IECI
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-ECObjectsStatus RandomECInstanceGenerator::CopyStruct (IECInstanceR source, ECValuesCollectionCR collection, WCharCP baseAccessPath)
+ECObjectsStatus RandomECInstanceGenerator::CopyStruct (IECInstanceR source, ECValuesCollectionCR collection, Utf8CP baseAccessPath)
     {
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
 
     for (auto& propertyValue : collection)
         {
-        WString targetVAS;
+        Utf8String targetVAS;
         if (baseAccessPath)
             {
             targetVAS.append (baseAccessPath);
-            targetVAS.append (L".");
+            targetVAS.append (".");
             }
 
         targetVAS.append (propertyValue.GetValueAccessor ().GetManagedAccessString ());

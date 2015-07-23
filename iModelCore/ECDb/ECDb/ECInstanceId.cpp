@@ -18,7 +18,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                Krischan.Eberle                02/2014
 //---------------+---------------+---------------+---------------+---------------+------
 //static
-bool ECInstanceIdHelper::ToString (WCharP stringBuffer, size_t stringBufferLength, ECInstanceId const& ecInstanceId)
+bool ECInstanceIdHelper::ToString (Utf8P stringBuffer, size_t stringBufferLength, ECInstanceId const& ecInstanceId)
     {
     if (!ecInstanceId.IsValid ())
         return false;
@@ -35,9 +35,9 @@ bool ECInstanceIdHelper::ToString (WCharP stringBuffer, size_t stringBufferLengt
 // @bsimethod                                Krischan.Eberle                02/2014
 //---------------+---------------+---------------+---------------+---------------+------
 //static
-bool ECInstanceIdHelper::FromString (ECInstanceId& ecInstanceId, WCharCP ecInstanceIdString)
+bool ECInstanceIdHelper::FromString (ECInstanceId& ecInstanceId, Utf8CP ecInstanceIdString)
     {
-    if (WString::IsNullOrEmpty (ecInstanceIdString))
+    if (Utf8String::IsNullOrEmpty (ecInstanceIdString))
         return false;
 
     uint64_t value;

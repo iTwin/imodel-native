@@ -684,7 +684,7 @@ IECSqlBinder& StructECSqlParameterValue::_GetMember (ECN::ECPropertyId structMem
     auto it = m_propertyValueMap.find (structMemberPropertyId);
     if (it == m_propertyValueMap.end ())
         {
-        WCharCP structMemberPropertyName = nullptr;
+        Utf8CP structMemberPropertyName = nullptr;
         for (auto prop : GetTypeInfo ().GetStructType ().GetProperties (true))
             {
             if (prop->GetId () == structMemberPropertyId)
@@ -707,7 +707,7 @@ IECSqlBinder& StructECSqlParameterValue::_GetMember (ECN::ECPropertyId structMem
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-IECSqlBinder& StructECSqlParameterValue::_GetMember (WCharCP structMemberPropertyName)
+IECSqlBinder& StructECSqlParameterValue::_GetMember (Utf8CP structMemberPropertyName)
     {
     auto structMemberProp = GetTypeInfo ().GetStructType ().GetPropertyP (structMemberPropertyName, true);
     if (structMemberProp == nullptr)
@@ -729,7 +729,7 @@ IECSqlValue const& StructECSqlParameterValue::GetValue (ECN::ECPropertyId struct
     auto it = m_propertyValueMap.find (structMemberPropertyId);
     if (it == m_propertyValueMap.end ())
         {
-        WCharCP structMemberPropertyName = nullptr;
+        Utf8CP structMemberPropertyName = nullptr;
         for (auto prop : GetTypeInfo ().GetStructType ().GetProperties (true))
             {
             if (prop->GetId () == structMemberPropertyId)
@@ -740,8 +740,8 @@ IECSqlValue const& StructECSqlParameterValue::GetValue (ECN::ECPropertyId struct
             }
 
         GetStatusContext ().SetError (ECSqlStatus::UserError, "Struct member '%s.%s' does not exist", 
-            Utf8String (GetTypeInfo ().GetStructType ().GetFullName ()).c_str (),
-            Utf8String (structMemberPropertyName).c_str ());
+            GetTypeInfo ().GetStructType ().GetFullName (),
+            structMemberPropertyName);
         return NoopECSqlValue::GetSingleton ();
         }
 

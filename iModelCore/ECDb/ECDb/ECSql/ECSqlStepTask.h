@@ -66,7 +66,7 @@ public:
         {
     private:
 ;
-        std::map<WCharCP, std::unique_ptr<ECSqlStepTask>, CompareWChar> m_stepTasks;
+        std::map<Utf8CP, std::unique_ptr<ECSqlStepTask>, CompareUtf8> m_stepTasks;
         std::unique_ptr<EmbeddedECSqlStatement> m_selector;
         ECSqlStepStatus Execute (ExecutionCategory category, ECInstanceId const& instanceId);
 
@@ -76,11 +76,11 @@ public:
         ECSqlStepStatus ExecuteBeforeStepTaskList ();
         ECSqlStepStatus ExecuteAfterStepTaskList (ECInstanceId const& instanceId);
 
-        ECSqlStepTask const* Find (WCharCP name) const;
+        ECSqlStepTask const* Find (Utf8CP name) const;
         bool HasSelector () const { return m_selector != nullptr;  }
         EmbeddedECSqlStatement* GetSelector (bool create = false);
         bool Add (std::unique_ptr<ECSqlStepTask> stepTask);
-        bool Delete (WCharCP name);
+        bool Delete (Utf8CP name);
         size_t Size () const;
         bool HasAnyTask () const { return !m_stepTasks.empty (); }
         void Clear ();
@@ -92,12 +92,12 @@ public:
 private:
     ExecutionCategory m_category;
     ECSqlStatusContext& m_statusContext;
-    WString m_name;
+    Utf8String m_name;
 
     virtual ECSqlStepStatus _Execute (ECInstanceId const& instanceId) = 0;
 
 protected:
-    ECSqlStepTask (ExecutionCategory category, ECSqlStatusContext& statusContext, WCharCP name)
+    ECSqlStepTask (ExecutionCategory category, ECSqlStatusContext& statusContext, Utf8CP name)
         : m_category(category), m_statusContext(statusContext), m_name(name)
         {}
 
@@ -106,7 +106,7 @@ protected:
 public:
     virtual ~ECSqlStepTask () {};
 
-    WStringCR GetName () const { return m_name; }
+    Utf8StringCR GetName () const { return m_name; }
     ExecutionCategory GetExecutionCategory () const { return m_category; }
 
     ECSqlStepStatus Execute (ECInstanceId const& instanceId)
@@ -134,7 +134,7 @@ private:
     static void GetConstraintClasses (ECSqlParseContext::ClassListById& classes, ECRelationshipConstraintCR constraintEnd, ECDbSchemaManagerCR schemaManager, bool* containAnyClass);
 
 public:
-    static ECSqlStepTaskCreateStatus CreatePropertyStepTask (std::unique_ptr<ECSqlStepTask>& stepTask, StepTaskType taskType, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, WCharCP property);
+    static ECSqlStepTaskCreateStatus CreatePropertyStepTask (std::unique_ptr<ECSqlStepTask>& stepTask, StepTaskType taskType, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, Utf8CP property);
     static ECSqlStepTaskCreateStatus CreateClassStepTask(ECSqlStepTask::Collection& taskList, StepTaskType taskType, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, bool isPolymorphicStatement);
     };
 
@@ -225,7 +225,7 @@ public:
     virtual ~InsertStructArrayStepTask (){}
 
     EmbeddedECSqlStatement& GetStatement () { return *m_insertStmt; }
-    static ECSqlStepTaskCreateStatus Create (std::unique_ptr<InsertStructArrayStepTask>& insertStepTask, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, WCharCP property);
+    static ECSqlStepTaskCreateStatus Create (std::unique_ptr<InsertStructArrayStepTask>& insertStepTask, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, Utf8CP property);
     };
 
 //=======================================================================================
@@ -246,7 +246,7 @@ private:
     ~DeleteStructArrayStepTask (){}
 
     EmbeddedECSqlStatement& GetStatement () { return *m_deleteStmt; }
-    static ECSqlStepTaskCreateStatus Create (std::unique_ptr<DeleteStructArrayStepTask>& deleteStepTask, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, WCharCP property);
+    static ECSqlStepTaskCreateStatus Create (std::unique_ptr<DeleteStructArrayStepTask>& deleteStepTask, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, Utf8CP property);
     };
 
 //=======================================================================================
@@ -269,7 +269,7 @@ private:
     mutable std::map<ECN::ECClassId, std::unique_ptr<ECSqlStatement>> m_statementCache;
 
 
-    DeleteRelatedInstancesECSqlStepTask (ECDbR ecdb, ECSqlStatusContext& statusContext, WCharCP name, ECClassId classId);
+    DeleteRelatedInstancesECSqlStepTask (ECDbR ecdb, ECSqlStatusContext& statusContext, Utf8CP name, ECClassId classId);
 
     BentleyStatus FindOrphanedInstances (ECInstanceKeyMultiMap& orphanedRelationshipInstances, ECInstanceKeyMultiMap& orphanedInstances,
                                          ECDbR ecdb, ECClassId seedClassId, ECInstanceId seedInstanceId) const;
@@ -314,7 +314,7 @@ private:
 public:
     ~UpdateStructArrayStepTask (){};
 
-    static ECSqlStepTaskCreateStatus Create (std::unique_ptr<UpdateStructArrayStepTask>& updateStepTask, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, WCharCP property);
+    static ECSqlStepTaskCreateStatus Create (std::unique_ptr<UpdateStructArrayStepTask>& updateStepTask, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, Utf8CP property);
     };
 
 

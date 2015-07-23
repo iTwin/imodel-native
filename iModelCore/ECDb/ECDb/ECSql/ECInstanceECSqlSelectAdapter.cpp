@@ -46,7 +46,7 @@ ECInstanceId& id
     for(int i=0; i < m_ecSqlStatement.GetColumnCount(); i++)
         {
         auto prop = m_ecSqlStatement.GetColumnInfo (i).GetProperty();
-        if (prop->GetName().Equals(L"ECInstanceId"))
+        if (prop->GetName().Equals("ECInstanceId"))
             {
             id = m_ecSqlStatement.GetValueId<ECInstanceId> (i);
             return true;
@@ -145,29 +145,29 @@ void ECInstanceECSqlSelectAdapter::CreateColumnHandlers()
         IECSqlValue const& value = m_ecSqlStatement.GetValue (i);
         auto const& columnInfo = value.GetColumnInfo ();
         auto prop = columnInfo.GetProperty ();
-        if (prop->GetName().Equals(L"ECInstanceId"))
+        if (prop->GetName().Equals("ECInstanceId"))
             {
             m_columnHandlers.push_back(&ECInstanceECSqlSelectAdapter::SetInstanceId);
             }
-        else if (prop->GetName().Equals(L"SourceECInstanceId"))
+        else if (prop->GetName().Equals("SourceECInstanceId"))
             {
             m_columnHandlers.push_back(&ECInstanceECSqlSelectAdapter::SetRelationshipSource);
             }
-        else if (prop->GetName().Equals(L"SourceECClassId"))
+        else if (prop->GetName().Equals("SourceECClassId"))
             {
             m_columnHandlers.push_back(nullptr);
             m_sourceECClassIdColumnIndex = i;
             }
-        else if (prop->GetName().Equals(L"TargetECInstanceId"))
+        else if (prop->GetName().Equals("TargetECInstanceId"))
             {
             m_columnHandlers.push_back(&ECInstanceECSqlSelectAdapter::SetRelationshipTarget);
             }
-        else if (prop->GetName().Equals(L"TargetECClassId"))
+        else if (prop->GetName().Equals("TargetECClassId"))
             {
             m_columnHandlers.push_back(nullptr);
             m_targetECClassIdColumnIndex = i;
             }
-        else if (prop->GetName().Equals(L"ECClassId"))
+        else if (prop->GetName().Equals("ECClassId"))
             {
             m_columnHandlers.push_back(nullptr);
             m_ecClassIdColumnIndex = i;
@@ -240,7 +240,7 @@ IECSqlValue const& value
 BentleyStatus ECInstanceECSqlSelectAdapter::SetPropertyData
 (
 IECInstanceR instance,
-WCharCP parentPropertyAccessString,
+Utf8CP parentPropertyAccessString,
 IECSqlValue const& value
 ) const
     {
@@ -251,11 +251,11 @@ IECSqlValue const& value
     if (columnInfo.IsGeneratedProperty () || prop->IsCalculated ()) // WIP_ECSQL: is this true? do we need to set for last calculated and other scenarios?
         return SUCCESS;
 
-    WString accessString;
-    if (!WString::IsNullOrEmpty (parentPropertyAccessString))
+    Utf8String accessString;
+    if (!Utf8String::IsNullOrEmpty (parentPropertyAccessString))
         {
-        accessString = WString (parentPropertyAccessString);
-        accessString.append (L".");
+        accessString = parentPropertyAccessString;
+        accessString.append (".");
         }
 
     accessString.append (prop->GetName ());

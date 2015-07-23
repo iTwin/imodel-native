@@ -330,8 +330,7 @@ PropertyMapCR PropertyNameExp::GetPropertyMap() const
     if (GetClassRefExp ()->GetType () == Exp::Type::ClassName)
         {
         auto classNameExp = static_cast<ClassNameExp const*>(GetClassRefExp ());
-        WString accessString (GetPropertyPath ().ToString (false).c_str (), true);
-        auto propertyMap = classNameExp->GetInfo ().GetMap ().GetPropertyMap (accessString.c_str ());
+        auto propertyMap = classNameExp->GetInfo ().GetMap ().GetPropertyMap (GetPropertyPath ().ToString (false).c_str ());
         BeAssert (propertyMap != nullptr && "PropertyNameExp's PropertyMap should never be nullptr.");
         return *propertyMap;
         }

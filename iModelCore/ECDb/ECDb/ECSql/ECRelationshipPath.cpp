@@ -636,14 +636,14 @@ BentleyStatus ECRelatedItemsDisplaySpecificationsCache::Initialize ()
             continue;
 
         ECValue specificationsValue;
-        if (ECOBJECTS_STATUS_Success != customAttribute->GetValue (specificationsValue, L"Specifications"))
+        if (ECOBJECTS_STATUS_Success != customAttribute->GetValue (specificationsValue, "Specifications"))
             continue;
 
         ArrayInfo arrayInfo = specificationsValue.GetArrayInfo ();
         for (int ii = 0; ii < (int) arrayInfo.GetCount (); ii++)
             {
             ECValue specificationValue;
-            customAttribute->GetValue (specificationValue, L"Specifications", ii);
+            customAttribute->GetValue (specificationValue, "Specifications", ii);
             IECInstancePtr specificationInstance = specificationValue.GetStruct ();
             if (specificationInstance.IsNull ())
                 continue;
@@ -674,7 +674,7 @@ ECSchemaCR customAttributeContainerSchema
 
     // Find parent or "root" class
     ECValue ecValueParentClass;
-    ECObjectsStatus ecStatus = customAttributeSpecification.GetValue (ecValueParentClass, L"ParentClass");
+    ECObjectsStatus ecStatus = customAttributeSpecification.GetValue (ecValueParentClass, "ParentClass");
     PRECONDITION (ECOBJECTS_STATUS_Success == ecStatus && !ecValueParentClass.IsNull (), ERROR);
 
     // Append parent or "root" class
@@ -682,7 +682,7 @@ ECSchemaCR customAttributeContainerSchema
 
     // Append relationship path string
     ECValue ecValueRelationshipPath;
-    ecStatus = customAttributeSpecification.GetValue (ecValueRelationshipPath, L"RelationshipPath");
+    ecStatus = customAttributeSpecification.GetValue (ecValueRelationshipPath, "RelationshipPath");
     PRECONDITION (ECOBJECTS_STATUS_Success == ecStatus && !ecValueRelationshipPath.IsNull (), ERROR);
     relationshipPathString.append (".");
     relationshipPathString.append (ecValueRelationshipPath.GetUtf8CP ());
@@ -697,7 +697,7 @@ ECSchemaCR customAttributeContainerSchema
 
     // Create a relationship path for every DerivedClass specified
     ECValue derivedClassesValue;
-    ecStatus = customAttributeSpecification.GetValue (derivedClassesValue, L"DerivedClasses");
+    ecStatus = customAttributeSpecification.GetValue (derivedClassesValue, "DerivedClasses");
     if (ecStatus != ECOBJECTS_STATUS_Success)
         return SUCCESS;
 
@@ -706,11 +706,11 @@ ECSchemaCR customAttributeContainerSchema
     for (int ii = 0; ii < (int) arrayInfo.GetCount (); ii++)
         {
         ECValue val;
-        customAttributeSpecification.GetValue (val, L"DerivedClasses", ii);
+        customAttributeSpecification.GetValue (val, "DerivedClasses", ii);
         if (val.IsNull ())
             continue;
 
-        Utf8String derivedClassName (val.GetString ());
+        Utf8String derivedClassName (val.GetUtf8CP ());
         ECClassCP derivedClass = ECClassHelper::ResolveClass (derivedClassName, m_ecDb, &customAttributeContainerSchema);
         if (!EXPECTED_CONDITION (derivedClass != nullptr))
             continue;

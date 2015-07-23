@@ -106,7 +106,7 @@ private:
     virtual bool _ContainProperty(Utf8StringCR propertyName) const override
         {
         PRECONDITION(m_info != nullptr, false);
-        auto propertyMap = m_info->GetMap().GetPropertyMap(WString(propertyName.c_str(), true).c_str());
+        auto propertyMap = m_info->GetMap().GetPropertyMap(propertyName.c_str());
         return propertyMap != nullptr;
         }
 

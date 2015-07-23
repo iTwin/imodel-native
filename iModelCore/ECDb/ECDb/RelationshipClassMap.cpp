@@ -661,7 +661,7 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd (bool isUniqueIndex
         name.append("Target_");
     if (isUniqueIndex)
         name.append ("Unique_");
-    name.append (Utf8String (m_ecClass.GetSchema().GetNamespacePrefix() + L"_" + m_ecClass.GetName()));
+    name.append (m_ecClass.GetSchema().GetNamespacePrefix() + "_" + m_ecClass.GetName());
     
     auto existingIndex = persistenceEndTable.GetDbDef ().FindIndex (name.c_str ());
     if (existingIndex)
@@ -796,12 +796,12 @@ RelationshipEndColumns const& RelationshipClassEndTableMap::GetEndColumnsMapping
 //---------------------------------------------------------------------------------------
 // @bsimethod                      Krischan.Eberle                          06/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-void LogKeyPropertyRetrievalError(WCharCP errorDetails, ECRelationshipClassCR relClass, ECRelationshipEnd constraintEnd)
+void LogKeyPropertyRetrievalError(Utf8CP errorDetails, ECRelationshipClassCR relClass, ECRelationshipEnd constraintEnd)
     {
     const NativeLogging::SEVERITY sev = NativeLogging::LOG_ERROR;
     if (LOG.isSeverityEnabled(sev))
-        LOG.messagev(sev, L"Invalid Key property on %ls constraint in ECRelationshipClass '%ls': %ls",
-               constraintEnd == ECRelationshipEnd_Source ? L"source" : L"target", relClass.GetFullName(), errorDetails);
+        LOG.messagev(sev, "Invalid Key property on %s constraint in ECRelationshipClass '%s': %s",
+               constraintEnd == ECRelationshipEnd_Source ? "source" : "target", relClass.GetFullName(), errorDetails);
     }
 
 //---------------------------------------------------------------------------------------
@@ -815,11 +815,11 @@ BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(ECDbSqlColum
     if (constraintClasses.size() == 0)
         return SUCCESS;
 
-    WStringCP foundPropName = nullptr;
+    Utf8StringCP foundPropName = nullptr;
     bool isMappable = constraintClasses.size() == 1;
     for (ECRelationshipConstraintClassCP constraintClass : constraintClasses)
         {
-        bvector<WString> const& keys = constraintClass->GetKeys();
+        bvector<Utf8String> const& keys = constraintClass->GetKeys();
         const size_t keyCount = keys.size();
         if (keyCount >= 1)
             {
@@ -837,7 +837,7 @@ BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(ECDbSqlColum
 
     if (!isMappable)
         {
-        LogKeyPropertyRetrievalError(L"ECDb only supports Key properties if the constraint consists of a single ECClass and only a single Key property is defined for that ECClass.",
+        LogKeyPropertyRetrievalError("ECDb only supports Key properties if the constraint consists of a single ECClass and only a single Key property is defined for that ECClass.",
                                      relClass, constraintEnd);
         return ERROR;
         }
@@ -852,8 +852,8 @@ BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(ECDbSqlColum
     PropertyMap const* keyPropertyMap = classMap->GetPropertyMap(foundPropName->c_str());
     if (keyPropertyMap == nullptr || keyPropertyMap->IsUnmapped() || keyPropertyMap->IsVirtual())
         {
-        WString error;
-        error.Sprintf(L"Key property '%ls' does not exist or is not mapped.", foundPropName->c_str());
+        Utf8String error;
+        error.Sprintf("Key property '%s' does not exist or is not mapped.", foundPropName->c_str());
         LogKeyPropertyRetrievalError(error.c_str(), relClass, constraintEnd);
         return ERROR;
         }
@@ -861,8 +861,8 @@ BentleyStatus RelationshipClassEndTableMap::TryGetKeyPropertyColumn(ECDbSqlColum
     ECSqlTypeInfo typeInfo(keyPropertyMap->GetProperty());
     if (!typeInfo.IsExactNumeric() && !typeInfo.IsString())
         {
-        WString error;
-        error.Sprintf(L"Unsupported data type of Key property '%ls'. ECDb only supports integral or string Key properties.", foundPropName->c_str());
+        Utf8String error;
+        error.Sprintf("Unsupported data type of Key property '%s'. ECDb only supports integral or string Key properties.", foundPropName->c_str());
         LogKeyPropertyRetrievalError(error.c_str(), relClass, constraintEnd);
         return ERROR;
         }
@@ -1110,8 +1110,8 @@ ECDbSqlIndex* RelationshipClassLinkTableMap::CreateIndex (RelationshipIndexSpec 
         name.append("unique_");
 
     //add class full name as subclasses of the relationship might require different indices
-    WStringCR nsPrefix = GetClass().GetSchema().GetNamespacePrefix();
-    name.append(!nsPrefix.empty() ? Utf8String(nsPrefix) : Utf8String(GetClass().GetSchema().GetName())).append("_").append(Utf8String(GetClass().GetName())).append("_");
+    Utf8StringCR nsPrefix = GetClass().GetSchema().GetNamespacePrefix();
+    name.append(!nsPrefix.empty() ? nsPrefix : GetClass().GetSchema().GetName()).append("_").append(GetClass().GetName()).append("_");
    
     switch(spec)
         {

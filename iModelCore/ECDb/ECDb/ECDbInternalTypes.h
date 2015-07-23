@@ -166,24 +166,6 @@ struct CompareIUtf8
         }
     };
 
-//=======================================================================================
-// For case-sensitive WChar string comparisons in STL collections.
-// @bsistruct
-//+===============+===============+===============+===============+===============+======
-struct CompareWChar
-    {
-    bool operator()(WCharCP s1, WCharCP s2) const { return (wcscmp(s1, s2) < 0);}
-    };
-
-//=======================================================================================
-// For case-insensitive WChar string comparisons in STL collections.
-// @bsistruct
-//+===============+===============+===============+===============+===============+======
-struct CompareIWChar
-    {
-    bool operator()(WCharCP s1, WCharCP s2) const { return (BeStringUtilities::Wcsicmp(s1, s2) < 0);}
-    };
-
 #define ECDbDataColumn  0x0U
 #define ECDbSystemColumnECInstanceId  0x1U
 #define ECDbSystemColumnECClassId  0x2U

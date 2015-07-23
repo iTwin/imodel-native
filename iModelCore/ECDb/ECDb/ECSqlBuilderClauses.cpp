@@ -167,10 +167,10 @@ Utf8String ClassClause::ToString (bool ignoreIsPolymorphic) const
 Utf8String ClassClause::ToString (ECN::ECClassCR ecClass)
     {
     //add fully qualified class name, i.e. <schema name>.<class name> 
-    WString fullClassName (L"[");
-    fullClassName.append (ecClass.GetSchema ().GetName ()).append (L"].[").append (ecClass.GetName ().c_str ()).append (L"]");
+    Utf8String fullClassName ("[");
+    fullClassName.append (ecClass.GetSchema ().GetName ()).append ("].[").append (ecClass.GetName ().c_str ()).append ("]");
 
-    return Utf8String (fullClassName);
+    return fullClassName;
     }
 
 //****************** SelectClause ****************************************************
