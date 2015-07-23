@@ -62,6 +62,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
 
     //========================================================================================
     //! Specifies the solver to invoke when changes to a model or its contents are validated.
+    //! @see DgnScriptContext::ExecuteModelSolver for information on script type model solvers.
     //=======================================================================================
     struct Solver
         {
@@ -90,8 +91,12 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         //! @private
         Solver() {m_type = Type::None;}
 
-        //! Construct a Solver specification, in preparation for creating a new DgnModel.
-        Solver(Type t, Utf8CP n, Json::Value const& p) : m_type(t), m_name(n), m_parameters(p) {;}
+        //! Construct a Solver specification, in preparation for creating a new DgnModel. 
+        //! @see DgnScriptLibrary
+        //! @param type         The solver type
+        //! @param identifier   Identifies the solver. The meaning of this identifier varies, depending on the type of the solver.
+        //! @param parameters   The parameters to be passed to the solver
+        Solver(Type type, Utf8CP identifier, Json::Value const& parameters) : m_type(type), m_name(identifier), m_parameters(parameters) {;}
 
         //! Test if this object specifies a solver
         bool IsValid() const {return Type::None != GetType();}

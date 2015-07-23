@@ -54,11 +54,11 @@ public:
     @endverbatim
 
     <h2>Registering a JavaScript EGA function.</h2>
-    The JavaScript \em program must register an EGA function in its start-up logic like this:
+    The JavaScript program must register an EGA function in its start-up logic like this:
     @verbatim
     BentleyApi.Dgn.RegisterEGA('myNamespace.myEgaPublicName', myEgaFunction);
     @endverbatim
-    The \a jsEgaFunctionName parameter must match the name used to register a JavaScript EGA.
+    The \a myEgaPublicName parameter must match the name used to register a JavaScript EGA.
 
     <h2>Specifying an EGA in an ECClass.</h2>
     An ECClass that is derived from dgn.ElementItem that wants to specify an EGA must identify the JavaScript function in a custom attribute, like this:
@@ -94,6 +94,38 @@ public:
 
     /**
     Call a DgnModel validation solver function that is implemented in JavaScript.
+
+    <h2>Signature of a JavaScript ModelSolver function.</h2>
+    A ModelSolver function written in TypeScript must have the following signature:
+    @verbatim
+    function myModelSolverFunction(model: BentleyApi.Dgn.JsDgnModel, params: any) : number
+    @endverbatim
+    Or, in JavaScript:
+    @verbatim
+    function myModelSolverFunction(model, params)
+    @endverbatim
+
+    <h2>Registering a JavaScript ModelSolver function.</h2>
+    The JavaScript program must register a ModelSolver function in its start-up logic like this:
+    @verbatim
+    BentleyApi.Dgn.RegisterModelSolver('myNamespace.myModelSolverPublicName', myModelSolverFunction);
+    @endverbatim
+    The \a myModelSolverPublicName parameter must match the name used to register a JavaScript ModelSolver.
+
+    <h2>Specifying a JavaScript ModelSolver in an DgnModel::Solver.</h2>
+    Every DgnModel can have a model solver. To specify a JavaScript model solver, an application must supply a Solver object in the model's CreateParams, and 
+    the Solver object must be set up as follows: type = DgnModel::Solver::Type::Script, identifer = full name of the script function in the script library.
+    For example,
+    @verbatim
+    Json::Value parameters(Json::objectValue);
+    ... define parameters, as expected by the solver function ...
+    DgnModel::Solver solver(DgnModel::Solver::Type::Script, myNamespace.myModelSolverPublicName", parameters);
+    @endverbatim
+
+    Note the use of the DgnModel::Solver::Type::Script type. 
+    Also note that the solver identifier "myNamespace.myModelSolverPublicName" must match the string passed to BentleyApi.Dgn.RegisterModelSolver.
+    And, the namespace part of the identifer "myNamespace" must match the identifier of a JavaScript program in the script library.
+
     @param[out] functionReturnStatus    The function's integer return value. 0 means success.
     @param[in] model           The model to validate
     @param[in] jsFunctionName   Identifies the Script function to be executed. Must be of the form namespace.functionname
