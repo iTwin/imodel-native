@@ -231,6 +231,38 @@ TEST_F(SchemaImportTestFixture, ECDbMapCATests)
         "    </ECClass>"
         "</ECSchema>", false, "MapStrategy SharedTable (polymorphic) on child class where base has SharedTable (polymorphic) is not supported."),
 
+        TestItem("<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "    <ECClass typeName='Base1' isDomainClass='True'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <IsPolymorphic>True</IsPolymorphic>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='P1' typeName='int' />"
+        "    </ECClass>"
+        "    <ECClass typeName='Base2' isDomainClass='True'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.01.00'>"
+        "                <MapStrategy>"
+        "                   <Strategy>SharedTable</Strategy>"
+        "                   <IsPolymorphic>True</IsPolymorphic>"
+        "                </MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='P2' typeName='int' />"
+        "    </ECClass>"
+        "    <ECClass typeName='Sub' isDomainClass='True'>"
+        "        <BaseClass>Base1</BaseClass>"
+        "        <BaseClass>Base2</BaseClass>"
+        "        <ECProperty propertyName='P3' typeName='int' />"
+        "    </ECClass>"
+        "</ECSchema>", false, "Child class has two base classes which both have MapStrategy SharedTable (polymorphic). This is not expected to be supported."),
+
         TestItem (
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
@@ -689,6 +721,56 @@ TEST_F(SchemaImportTestFixture, NotMappedWithinClassHierarchy)
         ASSERT_EQ(2, stmt.GetValueInt(1));
         ASSERT_EQ(3, stmt.GetValueInt(2));
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     07/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaImportTestFixture, EnforceLinkTableMapping)
+    {
+    TestItem testItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='01.00' prefix='ecdbmap' />"
+        "    <ECClass typeName='A' isDomainClass='True'>"
+        "        <ECProperty propertyName='P0' typeName='int' />"
+        "    </ECClass>"
+        "    <ECClass typeName='B' isDomainClass='True'>"
+        "        <ECProperty propertyName='P1' typeName='int' />"
+        "    </ECClass>"
+        "    <ECRelationshipClass typeName='AHasB' isDomainClass='True' strength='referencing'>"
+        "        <ECCustomAttributes>"
+        "            <LinkTableRelationshipMap xmlns='ECDbMap.01.00' />"
+        "        </ECCustomAttributes>"
+        "       <Source cardinality='(0, 1)' polymorphic='True'>"
+        "        <Class class = 'A' />"
+        "       </Source>"
+        "       <Target cardinality='(0, 1)' polymorphic='True'>"
+        "         <Class class='B' />"
+        "       </Target>"
+        "     </ECRelationshipClass>"
+        "</ECSchema>", true);
+
+    ECDb db;
+    bool asserted = false;
+    AssertSchemaImport(db, asserted, testItem, "enforcelinktablemapping.ecdb");
+    ASSERT_FALSE(asserted);
+
+    //verify tables
+    ASSERT_TRUE(db.TableExists("ts_AHasB"));
+    ASSERT_TRUE(db.ColumnExists("ts_AHasB", "SourceECInstanceId"));
+    ASSERT_TRUE(db.ColumnExists("ts_AHasB", "TargetECInstanceId"));
+    bvector<Utf8String> columns;
+    ASSERT_TRUE(db.GetColumns(columns, "ts_AHasB"));
+    ASSERT_EQ(3, columns.size());
+
+    columns.clear();
+    ASSERT_TRUE(db.GetColumns(columns, "ts_A"));
+    ASSERT_EQ(2, columns.size());
+
+    columns.clear();
+    ASSERT_TRUE(db.GetColumns(columns, "ts_B"));
+    ASSERT_EQ(2, columns.size());
     }
 
 //=======================================================================================    
