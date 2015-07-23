@@ -415,7 +415,17 @@ HitDetail::~HitDetail () {}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HitDetail::FlashCurveHit(ViewContextR context) const
+bool HitDetail::ShouldFlashCurveSegment(ViewContextR context) const
+    {
+    return (DrawPurpose::Flash == context.GetDrawPurpose() && 
+            SubSelectionMode::Segment == GetSubSelectionMode() && 
+            nullptr != GetGeomDetail().GetCurvePrimitive());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void HitDetail::FlashCurveSegment(ViewContextR context) const
     {
     if (nullptr == GetGeomDetail().GetCurvePrimitive())
         return;

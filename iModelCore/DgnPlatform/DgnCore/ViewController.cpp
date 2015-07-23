@@ -1851,13 +1851,13 @@ StatusInt ViewController::_VisitHit (HitDetailCR hit, ViewContextR context) cons
 
     if (!element.IsValid())
         {
-        IElemTopologyCP  elemTopo = hit.GetElemTopology();
-        IViewTransients* transient = (nullptr != elemTopo ? dynamic_cast<IViewTransients*>(elemTopo->_GetGeometryHandler()) : nullptr);
+        IElemTopologyCP elemTopo = hit.GetElemTopology();
+        ITransientGeometryHandlerP transientHandler = (nullptr != elemTopo ? elemTopo->_GetTransientGeometryHandler() : nullptr);
 
-        if (nullptr == transient)
+        if (nullptr == transientHandler)
             return ERROR;
 
-        transient->_DrawHitTransients(context, hit);
+        transientHandler->_DrawTransient(hit, context);
         return SUCCESS;
         }
 

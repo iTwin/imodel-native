@@ -2768,7 +2768,7 @@ bool GeometricElement::_DrawHit (HitDetailCR hit, ViewContextR context) const
             continue; // Keep going, want to draw all matching geometry... 
             }
 
-        hit.FlashCurveHit(context);
+        hit.FlashCurveSegment(context);
         break;
         }
 

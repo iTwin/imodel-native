@@ -20,7 +20,6 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 struct     IViewTransients
 {
 //__PUBLISH_SECTION_END__
-friend struct ViewController;
 friend struct ViewTransientCaller;
 friend struct RedrawElems;
 
@@ -33,13 +32,6 @@ protected:
 //! @note You must set the current symbology before drawing any geometry.
 //! @see ViewContext::GetIDrawGeom
 virtual void _DrawTransients (ViewContextR context, bool isPreUpdate) = 0;
-
-//! Override this method to draw the HitDetail resulting from a locate of the transient graphics.
-//! @param context The ViewContext in which to draw. 
-//! @param hit The transient graphics HitDetail.
-//! @note You must set the current symbology before drawing any geometry.
-//! @see ViewContext::GetIDrawGeom
-virtual void _DrawHitTransients (ViewContextR context, HitDetailCR hit) {_DrawTransients(context, false);}
 
 public:
 
