@@ -8,6 +8,7 @@
 #include <DgnPlatformInternal.h>
 #include <BeSQLite/L10N.h>
 #include <DgnPlatform/DgnHandlers/DgnECSymbolProvider.h>
+#include <DgnPlatform/DgnHandlers/Dimension.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
@@ -135,6 +136,20 @@ void DgnPlatformLib::Host::LoadResources()
 
 DgnPlatformLib::Host::RasterAttachmentAdmin& DgnPlatformLib::Host::_SupplyRasterAttachmentAdmin() {return *new RasterAttachmentAdmin();}
 DgnPlatformLib::Host::PointCloudAdmin&       DgnPlatformLib::Host::_SupplyPointCloudAdmin()       {return *new PointCloudAdmin();}
+
+BEGIN_BENTLEY_NAMESPACE
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    07/2015
+// We sometimes use memcpy to copy unaligned data to an aligned buffer so we can access the
+// data without an alignment exception.  When clang sees that both the source and destination
+// are doubles it assumes they are aligned doubles and generates an inlined-memcpy that requires alignment.
+// To work around this problem I've added this function in a source file that doesn't use it
+// so the optimizer cannot figure out the type of data being copied.
+//---------------------------------------------------------------------------------------
+void UnalignedMemcpy(void*dest, void const*source, size_t num) { memcpy(dest, source, num); }
+
+END_BENTLEY_NAMESPACE
 
 #if defined (__unix__) // WIP_NONPORT
 // ???
