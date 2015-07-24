@@ -88,10 +88,7 @@ bool IClassMap::ContainsPropertyMapToTable () const
 //------------------------------------------------------------------------------------------
 StorageDescription const& IClassMap::GetStorageDescription () const
     {
-    if (m_storageDescription == nullptr)
-        m_storageDescription = StorageDescription::Create(*this);
-
-    return *m_storageDescription;
+    return GetECDbMap ().GetLightWeightMapCache ().GetStorageDescription (GetClass ().GetId ());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1563,11 +1560,9 @@ StorageDescription& StorageDescription::operator=(StorageDescription&& rhs)
 //    return std::move(storageDescription);
 //    }
     
-std::unique_ptr<StorageDescription> StorageDescription::Create (IClassMap const& classMap)
+std::unique_ptr<StorageDescription> StorageDescription::Create (ECN::ECClassId classId, ECDbMap::LightWeightMapCache const& lwmc)
     {
-    const ECClassId classId = classMap.GetClass().GetId();
     auto storageDescription = std::unique_ptr<StorageDescription>(new StorageDescription(classId));
-    auto& lwmc = classMap.GetECDbMap ().GetLightWeightMapCache ();
     for (auto& kp : lwmc.GetTablesMapToClass(classId))
         {
         auto table = kp.first;

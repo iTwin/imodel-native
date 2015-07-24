@@ -22,7 +22,7 @@ ECDB_TYPEDEFS_PTR(RelationshipClassEndTableMap);
 ECDB_TYPEDEFS_PTR(RelationshipClassLinkTableMap);
 ECDB_TYPEDEFS_PTR(ClassIndexInfo);
 ECDB_TYPEDEFS_PTR(StandardKeySpecification);
-
+#define ENABLE_TRIGGER_DEBUGGING
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
