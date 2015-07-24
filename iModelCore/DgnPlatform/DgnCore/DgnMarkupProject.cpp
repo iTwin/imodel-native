@@ -1683,11 +1683,55 @@ DgnViewId DgnMarkupProject::CreateRedlineModelView(RedlineModelR model, DgnViewI
     deltaBR.y = ( imageViewRect.Bottom()  - projectViewRect.Bottom()) * toDistanceY;
 
     //  Now restate the adjustment in terms of changes to bottom left and size
-
-    DPoint2d deltaBL;   // vector from sheet origin to desired origin (bottom left)
-    deltaBL.Init(deltaUL.x, deltaBR.y);
+    //  Recall: BSIRect has origin at top left, corner at bottom right, and +y moves DOWN the view from top to bottom
+    //  So, an inset in BSIRect terms will have +ix,+iy for the origin and -ix,-iy for the corner.
+    //  In the diagram below, the O is the origin, and C is the corner. io is the inset origin, and ic is the inset corner.
+    //  Positive X goes across, and positive Y goes down.
+    //      +X
+    //     ---->
+    //    |  
+    // +Y |                 deltaUL.x (+)           
+    //    v                O--> .............
+    //       deltaUL.y (+) |                :  
+    //                     v   io           :
+    //                     :                :
+    //                     :                :
+    //                     :            ic  ^
+    //                     :                | deltaBR.y (-)
+    //                     :.............<--C
+    //                                   deltaBR.x (-)
+    //
+    //  In Cartesian coordinates the view origin is at bottom left, and +y moves UP the view. So, 
+    //  THE SIGN OF Y CHANGES, and the origin and corner move from ToptLeft (TL) and BottomRight (BR) to BottomLeft (BL) and TopRight (TR)
+    //
+    //     ^
+    //  +Y |
+    //     |    +X
+    //      ----->       
+    //                                   deltaTR.x (-) = deltaBR.x
+    //                     ..............<--TR
+    //                     :                |  deltaTR.y (-) = -deltaUL.y
+    //                     :           itr  v
+    //                     :                :
+    //                     :                :
+    //                     ^   ibl          :
+    //      deltaBL.y (+)  |                :
+    //    = -deltaBR.y     BL-->.............:
+    //                      deltaBL.x (+)
+    //                      = deltaUL.x      
+    DPoint2d deltaBL;
+    deltaBL.Init (deltaUL.x, -deltaBR.y);
+    DPoint2d deltaTR;
+    deltaTR.Init (deltaBR.x, -deltaUL.y);
+    //
+    //  Thus deltaBL.y comes out +
+    //       deltaTR.y comes out -
+    //
+    // Now a view is actually defined terms of origin and "delta", which is its size. So, if we want to adjust the BL rightward and upward and the TR leftward and downward, 
+    // we must REDUCE the delta.x coordinate by the sum of the rightward and leftward adjustments and its y coordinate by the sum of the downward and upward adjustments.
+     
     DVec2d deltaSize; 
-    deltaSize.Init(-deltaUL.x + deltaBR.x,  deltaUL.y + (-deltaBR.y));
+    deltaSize.Init (-(deltaBL.x + -deltaTR.x),  -(deltaBL.y + -deltaTR.y));
 
     //model.m_origin.Add (deltaBL);
     model.m_size.Add(deltaSize);
