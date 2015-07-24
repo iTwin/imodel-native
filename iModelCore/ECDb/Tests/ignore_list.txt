@@ -25,9 +25,6 @@ ECDbMapPersistenceTests.MappingStrategyTest
 #Have notified Krischan and Affan; ignoring so we can get PRG builds through.
 ECDbSchemas.DeigoRelationshipTest2
 ECDbSchemaManager.ECDbImportSchema_WSG2eBPluginSchemas_Succeeds
-
-#Krischan the issue that this test represent is fixed. It say it should fail if issue is fixed. Remove it if nessary.
-ECDbSchemaManager.ImportSchemaWithSubclassesToBaseClassInExistingSchema
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
 #----------------------------------------------------------------------------------------
