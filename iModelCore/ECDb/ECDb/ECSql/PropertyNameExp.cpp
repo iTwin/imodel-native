@@ -13,41 +13,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 using namespace std;
 
-bool PropertyNameExp::PropertyRef::Prepare (NativeSqlBuilder::List const& snippets)
-    {
-    m_nativeSqlSnippets.clear ();
-    m_isPrepared = false;
-    auto alias = m_linkedTo.GetColumnAlias ();
-    if (alias.empty ())
-        alias = m_linkedTo.GetNestedAlias ();
 
-    if (!alias.empty ())
-        {
-        m_nativeSqlSnippets = snippets;
-        if (m_nativeSqlSnippets.size () == 1LL)
-            {
-            m_nativeSqlSnippets.front ().Reset ();
-            m_nativeSqlSnippets.front ().AppendEscaped (alias.c_str ());
-            m_isPrepared = true;
-            }
-        else
-            {
-            int idx = 0;
-            Utf8String postfix;
-            for (auto& snippet : m_nativeSqlSnippets)
-                {
-                postfix.clear ();
-                postfix.Sprintf ("%s_%d", alias.c_str (), idx++);
-                snippet.Reset ();
-                snippet.AppendEscaped (postfix.c_str ());
-                }
-
-            m_isPrepared = true;
-            }     
-        }
-
-    return m_isPrepared;
-    }
 //****************************** PropertyNameExp *****************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
@@ -412,5 +378,44 @@ PropertyNameExp const* PropertyNameExp::PropertyRef::GetEndPointPropertyNameIfAn
         return static_cast<PropertyNameExp const*>(cur.GetExpression ());
 
     return nullptr;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+bool PropertyNameExp::PropertyRef::Prepare(NativeSqlBuilder::List const& snippets)
+    {
+    m_nativeSqlSnippets.clear();
+    m_isPrepared = false;
+    auto alias = m_linkedTo.GetColumnAlias();
+    if (alias.empty())
+        alias = m_linkedTo.GetNestedAlias();
+
+    if (!alias.empty())
+        {
+        m_nativeSqlSnippets = snippets;
+        if (m_nativeSqlSnippets.size() == 1LL)
+            {
+            m_nativeSqlSnippets.front().Reset();
+            m_nativeSqlSnippets.front().AppendEscaped(alias.c_str());
+            m_isPrepared = true;
+            }
+        else
+            {
+            int idx = 0;
+            Utf8String postfix;
+            for (auto& snippet : m_nativeSqlSnippets)
+                {
+                postfix.clear();
+                postfix.Sprintf("%s_%d", alias.c_str(), idx++);
+                snippet.Reset();
+                snippet.AppendEscaped(postfix.c_str());
+                }
+
+            m_isPrepared = true;
+            }
+        }
+
+    return m_isPrepared;
     }
 END_BENTLEY_SQLITE_EC_NAMESPACE
