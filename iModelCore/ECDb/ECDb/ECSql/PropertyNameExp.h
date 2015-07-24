@@ -21,24 +21,21 @@ struct PropertyNameExp : ValueExp
     {
     struct PropertyRef
         {
-        private:
-            DerivedPropertyExp const& m_linkedTo;
-            NativeSqlBuilder::List m_nativeSqlSnippets;
-            bool m_isPrepared;
-        public:
-            PropertyRef (DerivedPropertyExp const& endPoint)
-                :m_linkedTo (endPoint), m_isPrepared (false)
-                {}
+    private:
+        DerivedPropertyExp const& m_linkedTo;
+        NativeSqlBuilder::List m_nativeSqlSnippets;
+        bool m_isPrepared;
+    public:
+        explicit PropertyRef (DerivedPropertyExp const& endPoint):m_linkedTo (endPoint), m_isPrepared (false) {}
 
-            DerivedPropertyExp const& LinkedTo () const { return m_linkedTo; }
+        DerivedPropertyExp const& LinkedTo () const { return m_linkedTo; }
 
-            NativeSqlBuilder::List const& GetOutSnippets () const { return m_nativeSqlSnippets; }
+        NativeSqlBuilder::List const& GetOutSnippets () const { return m_nativeSqlSnippets; }
 
-            DerivedPropertyExp const& GetEndPointDerivedProperty () const;
-            PropertyNameExp const* GetEndPointPropertyNameIfAny () const;
-            bool IsPrepared () const { return m_isPrepared; }
-            bool Prepare (NativeSqlBuilder::List const& snippets);
-            
+        DerivedPropertyExp const& GetEndPointDerivedProperty () const;
+        PropertyNameExp const* GetEndPointPropertyNameIfAny () const;
+        bool IsPrepared () const { return m_isPrepared; }
+        bool Prepare (NativeSqlBuilder::List const& snippets);
         };
 public:
     DEFINE_EXPR_TYPE(PropertyName) 
@@ -54,10 +51,7 @@ private:
     ECSqlStatus ResolveColumnRef (ECSqlParseContext& ctx);
     virtual FinalizeParseStatus _FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode) override;
     void SetClassRefExp (RangeClassRefExp const& classRefExp);
-    void SetPropertyRef (DerivedPropertyExp const& derivedPropertyExpInSubqueryRefExp)
-        {
-        m_propertyRef = std::unique_ptr<PropertyRef> (new PropertyRef (derivedPropertyExpInSubqueryRefExp));
-        }
+    void SetPropertyRef (DerivedPropertyExp const& derivedPropertyExpInSubqueryRefExp);
     virtual void _DoToECSql(Utf8StringR ecsql) const override;
     virtual Utf8String _ToString() const override;
 

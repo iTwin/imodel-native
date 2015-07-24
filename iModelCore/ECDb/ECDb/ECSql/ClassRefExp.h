@@ -42,7 +42,7 @@ private:
     Utf8String m_alias;
     bool m_isPolymorphic;
     virtual Utf8StringCR _GetId() const = 0;
-    virtual bool _ContainProperty(Utf8StringCR propertyName) const = 0;
+    virtual bool _ContainProperty(Utf8CP propertyName) const = 0;
     virtual ECSqlStatus _CreatePropertyNameExpList (ECSqlParseContext& ctx, std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const = 0;
 
 protected:
@@ -58,7 +58,7 @@ public:
 
     ECSqlStatus CreatePropertyNameExpList (ECSqlParseContext& ctx, std::function<void (std::unique_ptr<PropertyNameExp>&)> addDelegate) const;
 
-    bool ContainProperty(Utf8StringCR propertyName) const;
+    bool ContainProperty(Utf8CP propertyName) const;
     
     void SetAlias (Utf8StringCR alias) { m_alias = alias;}
    };
@@ -103,10 +103,10 @@ private:
         return GetAlias();
         }
 
-    virtual bool _ContainProperty(Utf8StringCR propertyName) const override
+    virtual bool _ContainProperty(Utf8CP propertyName) const override
         {
         PRECONDITION(m_info != nullptr, false);
-        auto propertyMap = m_info->GetMap().GetPropertyMap(WString(propertyName.c_str(), true).c_str());
+        auto propertyMap = m_info->GetMap().GetPropertyMap(WString(propertyName, BentleyCharEncoding::Utf8).c_str());
         return propertyMap != nullptr;
         }
 

@@ -51,23 +51,16 @@ public:
     protected:
         void SetProperty(ECPropertyCR property)  
             {
-            auto propertyName = WString(GetPropertyName().c_str(), true);
-            PRECONDITION(propertyName == property.GetName(),);
+            WString propertyName (GetPropertyName().c_str(), BentleyCharEncoding::Utf8);
+            BeAssert(propertyName == property.GetName());
             m_property = &property;
             }
-        void ClearResolvedProperty()
-            {
-            m_property = nullptr;
-            }
+        void ClearResolvedProperty() { m_property = nullptr; }
 
     public: 
         const static int NOT_ARRAY =-1;
 
-        Location(Utf8StringCR name, int index)
-            : m_property(nullptr), m_index(index), m_propertyName(name)
-            {
-            PRECONDITION(!m_propertyName.empty(),);
-            }
+        Location(Utf8StringCR name, int index) : m_property(nullptr), m_index(index), m_propertyName(name) { BeAssert(m_propertyName.empty()); }
             
         bool HasArrayIndex() const { return GetArrayIndex() != NOT_ARRAY;}
         ECPropertyCP GetProperty() const { return m_property;}
@@ -86,55 +79,51 @@ private:
     PropertyPath (PropertyPath const& rhs);
     PropertyPath& operator= (PropertyPath const& rhs);
 
-    Status ResetResolutionInfo(Status status, bool dryRun)
+    Status ResetResolutionInfo(Status status)
         {
-        if (!dryRun)
-            {
-            m_classMap = nullptr;
-            for(auto& loc : m_path)
-                loc->ClearResolvedProperty();
-            }
+        m_classMap = nullptr;
+        for (auto& loc : m_path)
+            loc->ClearResolvedProperty();
+
         return status;
-           
         }
-    Status ResolvePath (IClassMap const& classMap, bool dryRun = false)
+
+    Status ResolvePath(IClassMap const& classMap)
         {
         if (Empty())
             return Status::PropertyPathIsEmpty;
- 
-        auto pathStr = ToString();
+
         auto cursorClass = &classMap.GetClass();
-        for (size_t i = 0 ; i < Size(); i++)
+        for (size_t i = 0; i < Size(); i++)
             {
-            auto& element       = At(i);
-            auto& propertyName  = element.GetPropertyName();
-            if (element.GetArrayIndex () >= 0)
-                return ResetResolutionInfo (Status::ArrayIndexNotSupported, dryRun);
+            auto& element = At(i);
+            auto& propertyName = element.GetPropertyName();
+            if (element.GetArrayIndex() >= 0)
+                return ResetResolutionInfo(Status::ArrayIndexNotSupported);
 
             ECPropertyCP property = cursorClass->GetPropertyP(propertyName.c_str(), true);
 
             if (property == nullptr && i == 0)
                 {
-                auto propertyMap = classMap.GetPropertyMap (WString(propertyName.c_str(), true).c_str());
+                auto propertyMap = classMap.GetPropertyMap(WString(propertyName.c_str(), true).c_str());
                 if (propertyMap)
                     property = &propertyMap->GetProperty();
                 }
 
             if (property == nullptr)
-                return ResetResolutionInfo(Status::FailedToResolvePropertyName, dryRun);
+                return ResetResolutionInfo(Status::FailedToResolvePropertyName);
 
-            if (!dryRun)
-                element.SetProperty(*property);
+            element.SetProperty(*property);
 
             if (property->GetIsPrimitive())
                 {
-                if ( &element !=  &Top() || element.HasArrayIndex())
-                    return ResetResolutionInfo(Status::InvalidPropertyPath, dryRun); 
+                if (&element != &Top() || element.HasArrayIndex())
+                    return ResetResolutionInfo(Status::InvalidPropertyPath);
                 }
             else if (property->GetIsStruct())
                 {
                 if (element.HasArrayIndex())
-                    return ResetResolutionInfo(Status::InvalidPropertyPath, dryRun); 
+                    return ResetResolutionInfo(Status::InvalidPropertyPath);
                 cursorClass = &property->GetAsStructProperty()->GetType();
                 }
             else if (property->GetIsArray())
@@ -142,8 +131,8 @@ private:
                 auto arrayProperty = property->GetAsArrayProperty();
                 if (arrayProperty->GetKind() == ARRAYKIND_Primitive)
                     {
-                    if (&element !=  &Top())
-                        return ResetResolutionInfo(Status::InvalidPropertyPath, dryRun); 
+                    if (&element != &Top())
+                        return ResetResolutionInfo(Status::InvalidPropertyPath);
                     }
                 if (arrayProperty->GetKind() == ARRAYKIND_Struct)
                     {
@@ -151,28 +140,19 @@ private:
                     }
                 }
             if (!element.IsResolved())
-                return ResetResolutionInfo(Status::FailedToResolvePropertyName, dryRun); 
+                return ResetResolutionInfo(Status::FailedToResolvePropertyName);
             }
-        if(!dryRun)
-            {
-            BeAssert(IsResolved() && "Must be resolved by now");
-            m_classMap = &classMap;
-            }
+        
+        BeAssert(IsResolved() && "Must be resolved by now");
+        m_classMap = &classMap;
         return Status::Success;
         }
 
 public:
-    PropertyPath ()
-        : m_classMap (nullptr)
-        {
-        }
-    
+    PropertyPath () : m_classMap (nullptr) {}
     ~PropertyPath () {}
 
-    PropertyPath (PropertyPath&& rhs)
-        : m_path (std::move (rhs.m_path)), m_classMap (std::move (rhs.m_classMap))
-        {
-        }
+    PropertyPath (PropertyPath&& rhs) : m_path (std::move (rhs.m_path)), m_classMap (std::move (rhs.m_classMap)) {}
 
     PropertyPath& operator= (PropertyPath&& rhs)
         {
@@ -185,45 +165,21 @@ public:
         return *this;
         }
 
-    IClassMap const* GetClassMap() const
-        {
-        return m_classMap;
-        }
+    IClassMap const* GetClassMap() const { return m_classMap; }
 
-    void Push(Utf8StringCR propertyName, int arrayIndex = Location::NOT_ARRAY)
-        {
-        m_path.push_back(std::unique_ptr<Location>(new Location(propertyName, arrayIndex)));
-        }
+    void Push(Utf8StringCR propertyName, int arrayIndex = Location::NOT_ARRAY) { m_path.push_back(std::unique_ptr<Location>(new Location(propertyName, arrayIndex))); }
     void Pop()
         {
         m_path.pop_back();
         if (Empty())
             Clear();
         }
-    void Remove(size_t index)
-        {
-        m_path.erase(m_path.begin() + index);
-        }
-    Location& Top() const
-        {
-        return *m_path.at(m_path.size() - 1);
-        }
-    Location& Bottom() const
-        {
-        return *m_path.at(0);
-        }
-    Location& At(size_t index) const
-        {
-        return *m_path[index];
-        }
-    size_t Size() const 
-        {
-        return m_path.size();
-        }
-    bool Empty() const 
-        {
-        return m_path.empty();
-        }
+    void Remove(size_t index) { m_path.erase(m_path.begin() + index); }
+    Location& Top() const { return *m_path.at(m_path.size() - 1); }
+    Location& Bottom() const { return *m_path.at(0); }
+    Location& At(size_t index) const { return *m_path[index]; }
+    size_t Size() const { return m_path.size(); }
+    bool Empty() const  { return m_path.empty(); }
     bool IsResolved() const
         {
         for(auto& entry : m_path)
@@ -231,22 +187,7 @@ public:
                 return false;
         return true;
         }
-    Status Resolve(IClassMap const& classMap)
-        {
-        return ResolvePath(classMap, false);
-        }
-
-    bool ExistsIn (IClassMap const& classMap, Status* status = nullptr)
-        {
-        //Do by value comparison (with operator from ECSchemaComparers.h). Don't do by reference comparison
-        if (m_classMap != nullptr && classMap.GetClass() == m_classMap->GetClass())
-            return true;
-
-        auto r = ResolvePath(classMap, true);
-        if (status)
-            *status = r;
-        return  r == Status::Success;
-        }
+    Status Resolve(IClassMap const& classMap) { return ResolvePath(classMap); }
 
     void Clear() 
         {

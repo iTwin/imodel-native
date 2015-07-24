@@ -26,7 +26,7 @@ SubqueryExp::SubqueryExp (std::unique_ptr<SelectStatementExp> selectExp)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-DerivedPropertyExp const* SubqueryExp::_FindProperty (Utf8StringCR propertyName) const 
+DerivedPropertyExp const* SubqueryExp::_FindProperty(Utf8CP propertyName) const
     {
     return GetQuery ()->FindProperty (propertyName);
     }
@@ -707,7 +707,7 @@ SingleSelectStatementExp::SingleSelectStatementExp (SqlSetQuantifier selectionTy
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       04/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-DerivedPropertyExp const* SingleSelectStatementExp::_FindProperty(Utf8StringCR propertyName) const
+DerivedPropertyExp const* SingleSelectStatementExp::_FindProperty(Utf8CP propertyName) const
     {
     for(auto selectClauseExp : GetSelection ()->GetChildren ())
         {

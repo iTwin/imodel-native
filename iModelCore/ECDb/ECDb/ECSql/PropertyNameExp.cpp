@@ -258,6 +258,14 @@ void PropertyNameExp::SetClassRefExp (RangeClassRefExp const& resolvedClassRef)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
+void PropertyNameExp::SetPropertyRef(DerivedPropertyExp const& derivedPropertyExpInSubqueryRefExp)
+    {
+    m_propertyRef = std::unique_ptr<PropertyRef>(new PropertyRef(derivedPropertyExpInSubqueryRefExp));
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2013
+//+---------------+---------------+---------------+---------------+---------------+------
 RangeClassRefExp const* PropertyNameExp::GetClassRefExp() const
     {
     return m_classRefExp;
