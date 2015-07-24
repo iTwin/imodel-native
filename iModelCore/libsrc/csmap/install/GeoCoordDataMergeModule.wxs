@@ -3,7 +3,7 @@
 |
 |     $Source: install/GeoCoordDataMergeModule.wxs $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-->
 
@@ -90,6 +90,7 @@
                     <File Id="_e0b3e8cf021541ecbc4c981837484c87" Name="GeodeticTransform.dty" Source="$(env.GeoCoordDataMinimal)GeodeticTransform.dty" />
                     <File Id="_A3DD672887354767933E47A0803AB320" Name="ellipsoid.dty"       Source="$(env.GeoCoordDataMinimal)ellipsoid.dty" />
                     <File Id="_F3C53C62FA9E4D059B64DFB7E7E54B4C" Name="GeoidHeight.gdc"     Source="$(env.GeoCoordData)GeoidHeight.gdc" />
+                    <File Id="_C7B0DA5213CA4F758BA4891327D7436D" Name="WW15MGH.GRD"         Source="$(env.GeoCoordData)WW15MGH.GRD" />
                     <File Id="_C9EFB08837AB4B5D8619FEEFBF44AF19" Name="Vertcon.gdc"         Source="$(env.GeoCoordData)Vertcon.gdc" />
                 </Component>
 

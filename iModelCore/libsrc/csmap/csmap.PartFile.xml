@@ -24,6 +24,7 @@
                 Delivery/GeoCoordData/coordsys.dty.xml
                 Delivery/GeoCoordData/NameMapper.csv
                 Delivery/GeoCoordData/GeoidHeight.gdc
+                Delivery/GeoCoordData/WW15MGH.GRD
                 Delivery/GeoCoordData/Vertcon.gdc
                 Delivery/GeoCoordData/UserOverrideGeodeticTransformSeed.asc
             </Files>
