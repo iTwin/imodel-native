@@ -329,6 +329,8 @@ struct PhysicalRedlineViewController : PhysicalViewController
 #if !defined (DOCUMENTATION_GENERATOR)
 protected:
     PhysicalViewController& m_subjectView;
+    bvector<PhysicalRedlineModelP> m_otherRdlsInView;
+
     bool                    m_targetModelIsInSubjectView;
 
     virtual void _SaveToSettings(JsonValueR) const override;
@@ -385,7 +387,12 @@ protected:
 #endif // DOCUMENTATION_GENERATOR
 
 public:
-    DGNPLATFORM_EXPORT PhysicalRedlineViewController(PhysicalRedlineModel& model, PhysicalViewController& subjectView, DgnViewId physicalRedlineViewId = DgnViewId());
+    //! Create a PhysicalRedlineViewController
+    //! @param model    The PhysicalRedlineModel to view
+    //! @param subjectView The view of the underlying physical coordinate space to overlay
+    //! @param physicalRedlineViewId The view id
+    //! @param otherRdlsToView Optional. Other PhysicalRedlineModels to show in the view.
+    DGNPLATFORM_EXPORT PhysicalRedlineViewController (PhysicalRedlineModel& model, PhysicalViewController& subjectView, DgnViewId physicalRedlineViewId, bvector<PhysicalRedlineModelP> const& otherRdlsToView);
 
     DGNPLATFORM_EXPORT ~PhysicalRedlineViewController();
 

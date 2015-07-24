@@ -102,19 +102,12 @@ DgnViewId PhysicalRedlineModel::GetFirstView()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalRedlineViewController::PhysicalRedlineViewController(PhysicalRedlineModel& rdlModel, PhysicalViewController& subjectView, DgnViewId physicalRedlineViewId) 
+PhysicalRedlineViewController::PhysicalRedlineViewController(PhysicalRedlineModel& rdlModel, PhysicalViewController& subjectView, DgnViewId physicalRedlineViewId, bvector<PhysicalRedlineModelP> const& otherRdlsToView) 
     : 
-    PhysicalViewController(*rdlModel.GetDgnMarkupProject(), physicalRedlineViewId.IsValid()? physicalRedlineViewId: rdlModel.GetFirstView()),
-    m_subjectView(subjectView)
+    PhysicalViewController (*rdlModel.GetDgnMarkupProject(), physicalRedlineViewId.IsValid()? physicalRedlineViewId: rdlModel.GetFirstView()),
+    m_subjectView(subjectView),
+    m_otherRdlsInView(otherRdlsToView)
     {
-#ifndef NDEBUG
-    if (physicalRedlineViewId.IsValid())
-        {
-        DgnViewId assocViewId = rdlModel.GetFirstView();
-        BeAssert(!assocViewId.IsValid() || assocViewId == physicalRedlineViewId);
-        }
-#endif
-
     // By default, users of this view controller should target the redline model and we should set up the viewport based on the redline model.
     m_targetModelIsInSubjectView = false;
 
@@ -414,6 +407,10 @@ void PhysicalRedlineViewController::_DrawView(ViewContextR context)
 
     //  Draw redline model
     T_Super::_DrawView(context);
+
+    //  Draw additional redline models
+    for (auto rdlModel : m_otherRdlsInView)
+        context.VisitDgnModel(rdlModel);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1010,8 +1007,11 @@ void DgnViewAssociationData::GetViewOrigin(DPoint3dR origin, DgnDbCR dgnProject)
 void DgnViewAssociationData::ToPropertiesJson(Json::Value& val) const
     {
     T_Super::ToPropertiesJson(val);
-    val["ViewId"] = m_viewId.GetValue();
-    val["ViewGeometry"] = m_viewGeometry;
+    if (m_viewId.IsValid())
+        {
+        val["ViewId"] = m_viewId.GetValue();
+        val["ViewGeometry"] = m_viewGeometry;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1020,8 +1020,11 @@ void DgnViewAssociationData::ToPropertiesJson(Json::Value& val) const
 BentleyStatus DgnViewAssociationData::FromPropertiesJson(Json::Value const& val)
     {
     T_Super::FromPropertiesJson(val);
-    m_viewId = DgnViewId(val["ViewId"].asInt64());
-    m_viewGeometry = val["ViewGeometry"];
+    if (val.isMember("ViewId"))
+        {
+        m_viewId = DgnViewId(val["ViewId"].asInt64());
+        m_viewGeometry = val["ViewGeometry"];
+        }
     return BSISUCCESS;
     }
 
