@@ -143,6 +143,71 @@ BentleyStatus UserECDbMapStrategy::TryParse(Option& mapStrategyOption, Utf8CP ma
     return SUCCESS;
     }
 
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle              06/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+Utf8String UserECDbMapStrategy::ToString() const
+    {
+    Utf8String str;
+    switch (m_strategy)
+        {
+            case Strategy::None:
+                str.append("None");
+                break;
+
+            case Strategy::NotMapped:
+                str.append("NotMapped");
+                break;
+
+            case Strategy::OwnTable:
+                str.append("OwnTable");
+                break;
+
+            case Strategy::SharedTable:
+                str.append("SharedTable");
+                break;
+
+            case Strategy::ExistingTable:
+                str.append("ExistingTable");
+                break;
+
+            default:
+                BeAssert(false);
+                break;
+        }
+
+    if (m_isPolymorphic)
+        str.append(" (polymorphic)");
+
+    switch (m_option)
+        {
+            case Option::None:
+                break;
+
+            case Option::Readonly:
+                str.append("Option: Readonly");
+                break;
+
+            case Option::SharedColumns:
+                str.append("Option: SharedColumns");
+                break;
+
+            case Option::SharedColumnsForSubclasses:
+                str.append("Option: SharedColumnsForSubclasses");
+                break;
+
+            case Option::DisableSharedColumns:
+                str.append("Option: DisableSharedColumns");
+                break;
+
+            default:
+                BeAssert(false);
+                break;
+        }
+
+    return std::move(str);
+    }
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                02/2015
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -244,6 +309,10 @@ Utf8String ECDbMapStrategy::ToString() const
     Utf8String str;
     switch (m_strategy)
         {
+            case Strategy::NotMapped:
+                str.append("NotMapped");
+                break;
+
             case Strategy::OwnTable:
                 str.append("OwnTable");
                 break;
@@ -254,6 +323,14 @@ Utf8String ECDbMapStrategy::ToString() const
 
             case Strategy::ExistingTable:
                 str.append("ExistingTable");
+                break;
+
+            case Strategy::ForeignKeyRelationshipInSourceTable:
+                str.append("ForeignKeyRelationshipInSourceTable");
+                break;
+
+            case Strategy::ForeignKeyRelationshipInTargetTable:
+                str.append("ForeignKeyRelationshipInTargetTable");
                 break;
 
             default:
