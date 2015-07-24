@@ -336,6 +336,9 @@
   <data name="FromDatum" xml:space="preserve">
     <value>Matches Datum</value>
   </data>
+  <data name="Geoid" xml:space="preserve">
+    <value>Geoid</value>
+  </data>
   <data name="Name" xml:space="preserve">
     <value>Name</value>
   </data>

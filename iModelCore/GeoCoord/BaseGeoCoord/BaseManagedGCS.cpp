@@ -1134,6 +1134,7 @@ enum class VerticalDatumCode
     vdcFromDatum   = 0,    // Vertical Datum implied by Datum
     vdcNGVD29      = 1,    // Vertical Datum of 1929
     vdcNAVD88      = 2,    // Vertical Datum of 1988.
+    vdcGeoid       = 3     // Other Geoid (indicates GeoidHeight.gdc catalog should be used)
     };
 property VerticalDatumCode VerticalDatum
     {
@@ -2884,6 +2885,7 @@ ECUI::ECEnumerablePropertyDescriptor^   propertyDescriptor
     else
         {
         memberArray->Add (gcnew ECUI::ECStandardValueMember (GeoCoordinateLocalization::GetLocalizedString ("FromDatum"), BGC::vdcFromDatum));
+        memberArray->Add (gcnew ECUI::ECStandardValueMember (GeoCoordinateLocalization::GetLocalizedString ("Geoid"), BGC::vdcGeoid));
         }
 
     return memberArray;
@@ -4770,13 +4772,7 @@ ECI::IECPropertyValue^  propVal
     if (nullptr == (coordSys = dynamic_cast<BaseGCS^>(instanceData)))
         return ECL::LWIsNullReturnValue::IsNullCantSet;
 
-    if (coordSys->IsNAD83)
-        return ECL::LWIsNullReturnValue::NotNull;
-
-    if (coordSys->IsNAD27)
-        return ECL::LWIsNullReturnValue::NotNull;
-
-    return  ECL::LWIsNullReturnValue::IsNullCantSet;
+    return ECL::LWIsNullReturnValue::NotNull;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -2,7 +2,7 @@
 |
 |     $Source: BaseGeoCoord/PublicAPI/BaseGeoDefs.r.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -295,6 +295,7 @@ enum    DgnGeoCoordStrings
     DGNGEOCOORD_Msg_CantConvertFromMilitaryGrid             = 43,
 
     DGNGEOCOORD_Msg_DatumConvertNotSetErrors                = 44,
+    DGNGEOCOORD_Msg_VerticalConvertErrors                   = 45,
 
     };
 

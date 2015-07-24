@@ -405,10 +405,25 @@ int                     epsgCode
 * Gets the Well Known Text string from a coordinate system definition.
 * @return   SUCCESS or a CS_MAP error code.
 * @param    wellKnownText   Out     The Well Known Text specifying the coordinate system.
-* @param    wktFlavor       IN      The WKT Flavor desired. If not known, use WKTAny
+* @param    wktFlavor       IN      The WKT Flavor desired. If not known, use wktFlavorUnknown
 * @bsimethod                                                    Barry.Bentley   10/06
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED StatusInt         GetWellKnownText
+(
+WStringR                wellKnownText,
+WktFlavor               wktFlavor
+) const;
+
+/*---------------------------------------------------------------------------------**//**
+* Gets the COMPD_CS Well Known Text string from a coordinate system definition.
+* This compound coordinate system is composed of a PROJCS or GEOCS section followed
+* by a VERT_CS section that contains the definition of the vertical datum used.
+* @return   SUCCESS or a CS_MAP error code.
+* @param    wellKnownText   Out     The Well Known Text specifying the coordinate system.
+* @param    wktFlavor       IN      The WKT Flavor desired. If not known, use wktFlavorUnknown
+* @bsimethod                                                    Barry.Bentley   10/06
++---------------+---------------+---------------+---------------+---------------+------*/
+BASEGEOCOORD_EXPORTED StatusInt         GetCompoundCSWellKnownText
 (
 WStringR                wellKnownText,
 WktFlavor               wktFlavor
@@ -1939,9 +1954,10 @@ double          inRadians
 /*__PUBLISH_SECTION_START__*/
 enum VertDatumCode
     {
-    vdcFromDatum   = 0,    // Vertical Datum implied by Datum
-    vdcNGVD29      = 1,    // Vertical Datum of 1929
-    vdcNAVD88      = 2,    // Vertical Datum of 1988.
+    vdcFromDatum    = 0,    // Vertical Datum implied by Datum
+    vdcNGVD29       = 1,    // Vertical Datum of 1929
+    vdcNAVD88       = 2,    // Vertical Datum of 1988.
+    vdcGeoid        = 3     // Other Geoid (indicates GeoidHeight.gdc catalog should be used)
     };
 
 enum LocalTransformType

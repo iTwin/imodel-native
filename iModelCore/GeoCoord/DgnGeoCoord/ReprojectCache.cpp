@@ -2,7 +2,7 @@
 |
 |   $Source: DgnGeoCoord/ReprojectCache.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #pragma  warning(disable:4189) // local variable is initialized but not referenced
@@ -72,6 +72,7 @@ private:
     int                 m_domainErrors;
     int                 m_usefulRangeErrors;
     int                 m_datumConvertNotSetErrors;
+    int                 m_verticalConvertErrors;
     int                 m_otherErrors;
 
 public:
@@ -94,6 +95,7 @@ CacheReproject (DgnModelRefP refModelRef, DgnGCSP refGCS, DgnModelRefP rootModel
     m_domainErrors              = 0;
     m_usefulRangeErrors         = 0;
     m_datumConvertNotSetErrors  = 0; 
+    m_verticalConvertErrors     = 0;
     m_otherErrors               = 0;
     m_progressMeter             = DgnPlatformLib::GetHost().GetProgressMeter();
 #if defined (BEIJING_DGNPLATFORM_WIP_GEOCOORD)
@@ -578,6 +580,8 @@ ReprojectStatus         TrackErrors (ReprojectStatus status)
         m_datumConvertNotSetErrors++; // The actual number of occurence could be irrelevant in this case 
                                       // but it may provide an indication if multiple reference files are attached with various
                                       // GCS set which of the reference GCS is offending.
+    else if (REPROJECT_CSMAPERR_VerticalDatumConversionError == status)
+        m_verticalConvertErrors++;
     else if (REPROJECT_Success != status)
         m_otherErrors++;
 
@@ -600,7 +604,7 @@ WStringR    detailMessage
     WString fileName  = m_refModelRef->GetDgnFileP()->GetFileName();
     double seconds = BeTimeUtilities::QuerySecondsCounter() - m_startTime;
 
-    *hasWarnings = (m_usefulRangeErrors > 0) || (m_otherErrors > 0) || (m_datumConvertNotSetErrors > 0);
+    *hasWarnings = (m_usefulRangeErrors > 0) || (m_otherErrors > 0) || (m_datumConvertNotSetErrors > 0) || (m_verticalConvertErrors > 0);
     *hasErrors   = (m_domainErrors > 0);
 
     WString format;
@@ -634,6 +638,13 @@ WStringR    detailMessage
         BaseGeoCoordResource::GetLocalizedString (format, DGNGEOCOORD_Msg_DatumConvertNotSetErrors);
         detailMessage.append (L"\n");
         tmp.Sprintf (format.c_str(), m_datumConvertNotSetErrors);
+        detailMessage.append (tmp);
+        }
+    if (m_verticalConvertErrors > 0)
+        {
+        BaseGeoCoordResource::GetLocalizedString (format, DGNGEOCOORD_Msg_VerticalConvertErrors);
+        detailMessage.append (L"\n");
+        tmp.Sprintf (format.c_str(), m_verticalConvertErrors);
         detailMessage.append (tmp);
         }
 

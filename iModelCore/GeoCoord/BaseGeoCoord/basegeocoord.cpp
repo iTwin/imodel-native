@@ -273,15 +273,11 @@ StatusInt Process (BaseGCSPtr baseGCS, WCharCP wktChar)
         status = GetGeographic (baseGCS, wkt);
     else if ((wkt.length() >= 8) && (wkt.substr (0, 8) == (L"LOCAL_CS")))
         status = GetLocal (baseGCS, wkt);
+    else if ((wkt.length() >= 8) && (wkt.substr (0, 8) == (L"COMPD_CS")))
+        status = GetCompound (baseGCS, wkt);
     else
         status = ERROR;
 
-    if (SUCCESS != status)
-        {
-        // Something went wrong ... we should clear the csmap parameter struture we allocated above
-        // since strangely enough some clients still attempts to use invalid coordinate systems
-        // but we cannot do it here ... caller must!
-        }
     return status;
     }
 
@@ -455,6 +451,312 @@ StatusInt GetProjected (BaseGCSPtr baseGCS, WStringR wkt) const
     baseGCS->SetSource(L"WKT");
 
     return baseGCS->DefinitionComplete();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+*   @description PRIVATE This private method extracts a projection coordinate reference
+*   system from provided WKT stream.
+*
+*   @param baseGCS OUT The BaseGCS to fill definition of
+*
+*   @param wkt IN The WKT stream to obtain projected CRS from.
+*
+*   @return SUCCESS or error value
+*
+*   @bsimethod                                                  Alain Robert 2015/07
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt GetCompound (BaseGCSPtr baseGCS, WStringR wkt) const
+    {
+    StatusInt status = SUCCESS;
+
+    wkt.Trim();
+
+    // Validate that this is the proper section (must start with PROJCS)
+    if ((wkt.length() < 8) || (!(wkt.substr (0, 8) == L"COMPD_CS")))
+        {
+        return ERROR;
+        }
+
+    // Remove keyword
+    wkt = wkt.substr (8);
+
+    // Trim again
+    wkt.Trim();
+
+    // Make sure that remainder starts with [
+    if ((wkt.length() < 1) || (!(wkt.substr (0, 1) == L"[")))
+        {
+        return ERROR;
+        }
+
+    wkt = wkt.substr (1);
+
+    wkt.Trim();
+    WString name = GetName (wkt);
+
+    // Trim of whites
+    wkt.Trim();
+
+    // Trim commas
+    if ((wkt.length() >= 1) && (wkt.substr(0, 1) ==(L",")))
+         {
+         wkt = wkt.substr(1);
+         }
+
+    // The first member must be either a PROJCS or a GEOGCS
+    wkt.Trim();
+    if ((wkt.length() >= 6) && (wkt.substr (0, 6) == (L"PROJCS")))
+        status = GetProjected (baseGCS, wkt);
+    else if ((wkt.length() >= 6) && (wkt.substr (0, 6) == (L"GEOGCS")))
+        status = GetGeographic (baseGCS, wkt);
+    else
+        status = ERROR;
+
+    if (ERROR != status)
+        {
+        // Now we should have a valid BaseGCS properly filled with the projected or geographic
+        // coordinate system. Since we are dealing with a compound CS there is a second section
+        // We only support the VERT_CS as second coordinate system.
+        wkt.Trim();
+
+        // Trim commas
+        if ((wkt.length() >= 1) && (wkt.substr(0, 1) ==(L",")))
+            wkt = wkt.substr(1);
+        wkt.Trim();
+
+        if ((wkt.length() >= 7) && (wkt.substr (0, 7) == (L"VERT_CS")))
+            status = SetVerticalCS (baseGCS, wkt);
+        else
+            status = ERROR;
+        }
+    
+    // Complete BaseGCS
+    if (ERROR != status)
+        {
+        status =  baseGCS->DefinitionComplete();
+        }
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+*   @description PRIVATE This private method extracts a vertical datum
+*   from provided WKT stream.
+*
+*   @param wkt IN The WKT stream to obtain vertical datum from. The WKT should start with the
+*                 VERT_DATUM clause and contain the whole definition. Additional characters
+*                 after the end of the clause are ignored and returned in the wkt
+*                 stripped out of the whole VERT_DATUM clause.
+*
+*   @return the VertDatumCode or vdcDatumNone if datum could not be determined.
+*
+*   @bsimethod                                                  Alain Robert 2015/07
++---------------+---------------+---------------+---------------+---------------+------*/
+VertDatumCode GetVerticalDatum (WStringR wkt) const
+    {
+    if ((wkt.length() < 10) || (!(wkt.substr (0, 10) == L"VERT_DATUM")))
+        return vdcFromDatum;
+
+    // Remove keyword
+    wkt = wkt.substr (10);
+
+    // Trim again
+    wkt.Trim();
+
+    // Make sure that remainder starts with [
+    if ((wkt.length() < 1) || (!(wkt.substr (0, 1) == L"[")))
+        {
+        return vdcFromDatum;
+        }
+
+    wkt = wkt.substr (1);
+
+    WString name = GetName (wkt);
+    WString authorityID;
+    
+    // The name should be immediately followed by a number indicating the vertical datum type.
+
+    // Trim whites and comma
+    wkt.Trim();
+    if ((wkt.length() >= 1) && (wkt.substr(0, 1) ==(L",")))
+        wkt = wkt.substr(1);
+    wkt.Trim();
+
+    int WKTDatumCode = GetInteger(wkt);
+
+    bool sectionCompleted = false;
+    size_t previousLength;
+    while (wkt.length() > 0 && !sectionCompleted)
+        {
+        previousLength = wkt.length();
+
+        // Trim of whites
+        wkt.Trim();
+
+        // Trim commas
+        if ((wkt.length() >= 1) && (wkt.substr(0, 1) ==(L",")))
+            {
+            wkt = wkt.substr(1);
+            }
+
+        if ((wkt.length() >= 9) && (wkt.substr (0, 9) == (L"AUTHORITY")))
+            authorityID = GetAuthority (wkt);
+
+        if ((wkt.length() >= 9) && (wkt.substr (0, 9) == (L"EXTENSION"))) // PROJ4 addition
+            {
+            WString     extensionName;
+            WString     extensionText;
+
+        // We do not check for an error ... the EXTENSION clause is ill-formed then
+            // likely the vertical datum will be invalid
+            GetExtension (wkt, extensionName, extensionText);
+            }
+
+        if ((wkt.length() >= 1) && (wkt.substr (0, 1) == (L"]")))
+            {
+            wkt = wkt.substr (1);
+            sectionCompleted = true;
+            }
+
+        if (wkt.length() == previousLength)
+            {
+            return vdcFromDatum;
+            }
+        }
+
+    
+    // We map the WKT datum code to the GeoCoord datum code ... this process is still incomplete as
+    // we support little vertical datums
+    VertDatumCode vertDatum = vdcFromDatum;
+
+    // We do not support 2003 (Barometric altitude, and 2006 (Depth) but we set vertical datum to ellipsoidal height
+    // We consider 2002 (ellipsoidal), 2004 (Normal) and 2000 (Other) as ellipsoidal height which is the default. 
+    if (2005 == WKTDatumCode || 2001 == WKTDatumCode)
+        {
+        // This is a geoid based datum (we consider orthometric datum (2001) the same as Geoid)
+        // Technically there are various geoid datums but with csmap we are stuck with the 
+        // fact. We first rely on the authority code
+        vertDatum = vdcGeoid; 
+
+        if (authorityID.length() != 0)
+            {
+            if (authorityID == L"EPSG:5102")
+                vertDatum = vdcNGVD29;
+            else if (authorityID == L"EPSG:5103")
+                vertDatum = vdcNAVD88;
+            }
+            
+        }
+
+    return vertDatum;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+*   @description PRIVATE This private method extracts a vertical coordinate reference
+*   system from provided WKT stream.
+*
+*   @param baseGCS IN/OUT The BaseGCS to fill definition of vertical CS. The remainder
+*                         of the BaseGCS is left untouched and should already contain
+*                         the non-vertical portion of the GCS since some vertical
+*                         coordinate systems have limitations related to the nature of the
+*                         datum used by the GCS.
+*
+*   @param wkt IN The WKT stream to obtain vertical cs from. The WKT should start with the
+*                 VERT_CS clause and contain the whole definition. Additional characters
+*                 after the end of the clause are ignored and returned in the wkt
+*                 stripped out of the whole VERT_CS clause.
+*
+*   @return SUCCESS or error value
+*
+*   @bsimethod                                                  Alain Robert 2015/07
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt SetVerticalCS (BaseGCSPtr baseGCS, WStringR wkt) const
+    {
+    if ((wkt.length() < 7) || (!(wkt.substr (0, 7) == L"VERT_CS")))
+        return ERROR;
+
+    // Remove keyword
+    wkt = wkt.substr (7);
+
+    // Trim again
+    wkt.Trim();
+
+    // Make sure that remainder starts with [
+    if ((wkt.length() < 1) || (!(wkt.substr (0, 1) == L"[")))
+        {
+        return ERROR;
+        }
+
+    wkt = wkt.substr (1);
+
+    WString name = GetName (wkt);
+
+    VertDatumCode vertDatum = vdcFromDatum;
+    WString authorityID;
+
+    bool sectionCompleted = false;
+    size_t previousLength;
+    while (wkt.length() > 0 && !sectionCompleted)
+        {
+        previousLength = wkt.length();
+
+        // Trim whites and comma
+        wkt.Trim();
+        if ((wkt.length() >= 1) && (wkt.substr(0, 1) ==(L",")))
+            wkt = wkt.substr(1);
+
+        if ((wkt.length() >= 9) && (wkt.substr (0, 9) == (L"AUTHORITY")))
+            authorityID = GetAuthority (wkt);
+
+        if ((wkt.length() >= 10) && (wkt.substr (0, 10) == (L"VERT_DATUM")))
+            vertDatum = GetVerticalDatum (wkt);
+
+        //We only make sure the AXIS clause contains UP (We do not support anything else)
+        if ((wkt.length() >= 4) && (wkt.substr (0, 4) == (L"AXIS")))
+            if (GetAxis(wkt) != AxisDirection::UP)
+                return ERROR;
+
+        // We do not care about the content of the UNIT clause
+        if ((wkt.length() >= 4) && (wkt.substr (0, 4) == (L"UNIT")))
+            {
+            double      unitFactor;
+            WString     unitName;
+            StatusInt   status;
+            if (SUCCESS != (status = GetUnit (wkt, unitName, &unitFactor)))
+                return status;
+            }
+
+        if ((wkt.length() >= 1) && (wkt.substr (0, 1) == (L"]")))
+            {
+            wkt = wkt.substr (1);
+            sectionCompleted = true;
+            }
+
+        if (wkt.length() == previousLength)
+            {
+            return ERROR;
+            }
+        }
+
+    // If the datum has not been resolved ... we try to do it. This should not happen normally
+    // but we make sure in case the VERT_DATUM clause was badly formed or the vertical datum
+    // was geoid based but had not authority ID
+    if (vdcFromDatum == vertDatum || vdcGeoid == vertDatum)
+        {
+        if (authorityID == L"EPSG:5702")
+            vertDatum = vdcNGVD29;
+        else if (authorityID == L"EPSG:5703")
+            vertDatum = vdcNAVD88;
+        else if (authorityID == L"EPSG:5773")
+            vertDatum = vdcGeoid;
+        }
+
+    // NOTE: We only rely on the authority ID because the name is unthrustworty but if some
+    // standard emerges we will be happy to check the vertical cs names to resolve.
+
+    baseGCS->SetVerticalDatumCode (vertDatum);
+
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1926,6 +2228,50 @@ double GetDouble (WStringR wkt) const
         index = wkt.length();
 
     double value = BeStringUtilities::Wtof (wkt.substr(0, index).c_str());
+
+    wkt = wkt.substr (index);
+
+    return value;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+*   @description PRIVATE This private method extracts from the provided stream the integer
+*   The first non white character must be the number to extract.
+*
+*   @param wkt IN The WKT portion that contains the number to extract.
+*
+*   @return The number
+*
+*   @bsimethod                                                  Alain Robert 2015/07
++---------------+---------------+---------------+---------------+---------------+------*/
+long GetInteger (WStringR wkt) const
+    {
+    wkt.Trim();
+
+    // Obtain the next double quote location
+    size_t index1 = wkt.find_first_of (L",");
+    size_t index2 = wkt.find_first_of (L"]");
+
+    size_t index = 0;
+    if (index1 != WString::npos && index2 != WString::npos)
+        index = (index1 < index2 ? index1 : index2);
+    else
+        {
+        if (index1 != WString::npos)
+            index = index1;
+        else
+            index = index2;
+        }
+
+    if (0 == index)
+        {
+        return 0; // Return default value and let parser fail elsewhere in case of structural problem
+        }
+
+    if (index == WString::npos)
+        index = wkt.length();
+
+    long value = BeStringUtilities::Wtoi (wkt.substr(0, index).c_str());
 
     wkt = wkt.substr (index);
 
@@ -4640,14 +4986,14 @@ static AString s_errorLogFileName;
 // Dummy function required for error management of GX compilation during initialization.
 int GeodeticCompilationErrorLog (char *mesg) 
     {
-	// Create/Recreate file the first time.
+    // Create/Recreate file the first time.
     if (NULL == s_errorLogFile)
-	{
-		s_errorLogFile = fopen(s_errorLogFileName.c_str(), "w");
-	}
+        {
+        s_errorLogFile = fopen(s_errorLogFileName.c_str(), "w");
+        }
         
-	if (s_errorLogFile != NULL)
-		fprintf(s_errorLogFile, "%hs\n", mesg);
+    if (s_errorLogFile != NULL)
+        fprintf(s_errorLogFile, "%hs\n", mesg);
 
     return SUCCESS;
     }
@@ -4655,9 +5001,9 @@ int GeodeticCompilationErrorLog (char *mesg)
 // Dummy function required for error management of GX compilation during initialization.
 int GeodeticCompilationErrorOpen (AString *errorLogFileName) 
     {
-	s_errorLogFileName = *errorLogFileName;
+    s_errorLogFileName = *errorLogFileName;
 
-	return 0;
+    return 0;
     }
 
 // Dummy function required for error management of GX compilation during initialization.
@@ -4713,18 +5059,18 @@ void BaseGCS::Initialize (WCharCP dataDirectory)
             // Times are different ... we need to recompile the geodetic transformation user overrides.
             
             // We sure the directory exists
-			if (CS_fileModTime (userDir.c_str()) == 0)
-				{
-				_mkdir(userDir.c_str());
-				}
+            if (CS_fileModTime (userDir.c_str()) == 0)
+                {
+                _mkdir(userDir.c_str());
+                }
 
             // Initialise the error log
             AString errorLogFileName = userDir + "\\GeodeticTransformErrors.txt";
             GeodeticCompilationErrorOpen (&errorLogFileName);
         
-        	int err_cnt;
-        	err_cnt = CSgxcomp (userOverrideGxFileAscii.c_str(), geodeticTransformOverrrides.c_str(), cs_CMPLR_CRYPT | cs_CMPLR_EXTENTS, datumFile.c_str(), GeodeticCompilationErrorLog);
-        	if (err_cnt != 0)
+            int err_cnt;
+            err_cnt = CSgxcomp (userOverrideGxFileAscii.c_str(), geodeticTransformOverrrides.c_str(), cs_CMPLR_CRYPT | cs_CMPLR_EXTENTS, datumFile.c_str(), GeodeticCompilationErrorLog);
+            if (err_cnt != 0)
                 {
                 // What do we do then? Not much that can be done ... The user should look at the error log file
                 }
@@ -4808,7 +5154,7 @@ void            BaseGCS::Init ()
     m_csParameters                  = NULL;
     m_csError                       = 0;
     m_datumConverter                = NULL;
-	m_destinationGCS                = NULL;
+    m_destinationGCS                = NULL;
     m_coordSysId                    = 0;
     m_canEdit                       = false;
     m_reprojectElevation            = false;
@@ -5077,6 +5423,8 @@ WCharCP                 wellKnownText       // The Well Known Text specifying th
                 {
                 // Clear error in case it occured during previous CScsloc2
                 m_csError = 0;
+                if (warningOrErrorMsg)
+                    warningOrErrorMsg->clear();
                 status = SUCCESS;
                 }
             else
@@ -5173,6 +5521,120 @@ WktFlavor           wktFlavor           // The WKT Flavor.
     return SUCCESS;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Alain.Robert   07/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt       BaseGCS::GetCompoundCSWellKnownText
+(
+WStringR            wellKnownText,      // The WKT.
+WktFlavor           wktFlavor           // The WKT Flavor.
+) const
+    {
+    // Obtain the GCS well known text
+    WString temp;
+    StatusInt status;
+
+    if (SUCCESS == (status = GetWellKnownText(temp, wktFlavor)))
+        {
+        wellKnownText = L"COMPD_CS[\"" + WString(GetName()) + L"\",";
+        wellKnownText += temp;            // Add plain WKT PROJCS or GEOCS section
+
+       // We complete with Vertical Datum section
+        // First determine the texts to be added for various items.
+        // WKT texts are not usually meant to be translatable so we use English names when applicable
+        VertDatumCode verticalCode = GetVerticalDatumCode();
+        WString verticalCSName;
+        WString verticalDatumWKTCode;
+        WString verticalCSAuthorityName = L"EPSG"; // We only support EPSG authority name at the moment
+        WString verticalCSAuthorityCode;
+        WString verticalDatumName;
+        WString verticalDatumAuthorityName = L"EPSG"; // We only support EPSG authority name at the moment
+        WString verticalDatumAuthorityCode;
+        
+        if (vdcFromDatum == verticalCode)
+            {
+            verticalCSName = L"Ellipsoid Height";
+            verticalDatumWKTCode = L"2002";
+            verticalDatumName = L"Ellipsoid";
+            // EPSG database defines no code for ellipsoidal height since it is not really a vertical datum
+            }
+        else if (vdcNGVD29 == verticalCode)
+            {
+            verticalCSName = L"NGVD29";
+            verticalDatumWKTCode = L"2005";  // Although we use it differently NGVD29 is a geoid vertical CS
+            verticalDatumName = L"NGVD29";
+            verticalCSAuthorityCode = L"5702";
+            verticalDatumAuthorityCode = L"5102";
+            }
+        else if (vdcNAVD88 == verticalCode)
+            {
+            verticalCSName = L"NAVD88";
+            verticalDatumWKTCode = L"2005";  // Although we use it differently NAVD88 is a geoid vertical CS
+            verticalDatumName = L"NAVD88";
+            verticalCSAuthorityCode = L"5703";
+            verticalDatumAuthorityCode = L"5103";
+            }
+        else if (vdcGeoid == verticalCode)
+            {
+            verticalCSName = L"Generic Geoid";
+            verticalDatumWKTCode = L"2005";
+            verticalDatumName = L"Generic Vertical Datum";
+            // Since we are dealing with a generic Geoid there is no authority code defined
+            }
+        else
+            {
+            // This section is only useful in case future version data that uses new datum code unknown to present
+            // still results in a valid compound WKT though vertical cs identifiers can then only be guesses.
+            verticalCSName = L"Unknown Vertical CS";
+            verticalDatumName = L"Unknown Vertical Datum";
+            verticalDatumWKTCode = L"2000";  // We use the code for 'other' vertical cs
+            }
+        
+        wellKnownText += L",VERT_CS[\"" + verticalCSName + L"\",VERT_DATUM[\"" + verticalDatumName + L"\"," + verticalDatumWKTCode;
+
+        // We only add authority names and code for the OGC flavor
+        if ((wktFlavorOGC == wktFlavor) && (verticalDatumAuthorityCode != L""))
+            {
+            wellKnownText += L",AUTHORITY[\"" + verticalDatumAuthorityName + L"\",\"" + verticalDatumAuthorityCode + L"\"]";
+            }
+
+        // Close VERT_DATUM section
+        wellKnownText += L"]";
+
+        // UNIT Section
+        wellKnownText += L",UNIT[\"";
+        wchar_t conversionFactor[20];
+        swprintf(conversionFactor, 20, L"%lf", UnitsFromMeters());
+        WString unitName;
+        GetUnits(unitName);
+        wellKnownText +=  unitName + L"\"," + conversionFactor;
+
+        // We only add authority names and code for the OGC flavor
+        if ((wktFlavorOGC == wktFlavor) && GetEPSGUnitCode() != 0)
+            {
+            wchar_t unitCode[10];
+            BeStringUtilities::Itow(unitCode, GetEPSGUnitCode(), 10, 10);
+            wellKnownText += L",AUTHORITY[\"EPSG\",\"" + WString(unitCode) + L"\"]";
+            }
+
+        wellKnownText += L"]";
+
+        // We only add AXIS section for the OGC flavor
+        if (wktFlavorOGC == wktFlavor)
+            wellKnownText += L",AXIS[\"Up\", UP]"; // We only support the UP axis direction
+        
+        // We only add authority names and code for the OGC flavor
+        if ((wktFlavorOGC == wktFlavor) && (verticalCSAuthorityCode != L""))
+            {
+            wellKnownText += L",AUTHORITY[\"" + verticalCSAuthorityName + L"\",\"" + verticalCSAuthorityCode + L"\"]";
+            }
+
+        // Close both VERT_CS section and COMPD_CS section     
+        wellKnownText += L"]]";
+        }
+    
+    return status;
+    }
 /*---------------------------------------------------------------------------------**//**
 *   @bsimethod                                                    Barry.Bentley   06/07
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -5291,17 +5753,17 @@ BaseGCS::~BaseGCS
 
 
     if (m_destinationGCS != NULL)
-	{
+        {
         m_destinationGCS->UnRegisterIsADestinationOf(*this);
-		m_destinationGCS = NULL;
-	}
+        m_destinationGCS = NULL;
+        }
 
 
     if (NULL != m_datumConverter)
-	{
+        {
         m_datumConverter->Destroy();
-		m_datumConverter = NULL;
-	}
+        m_datumConverter = NULL;
+        }
 
     // Clear the link between other BaseGCS to this one used as a cached destination
     for (size_t i = 0 ; i < m_listOfPointingGCS.size() ; i++)
@@ -7400,20 +7862,20 @@ StatusInt BaseGCS::DefinitionComplete ()
     delete m_csParameters;
     m_csParameters = newParams;
 
-	// Clear cached destination GCS and datum converter if any
+    // Clear cached destination GCS and datum converter if any
     if (m_destinationGCS != NULL)
-	{
+        {
         m_destinationGCS->UnRegisterIsADestinationOf(*this);
-		m_destinationGCS = NULL;
-	}
+        m_destinationGCS = NULL;
+        }
 
 
     if (NULL != m_datumConverter)
-	{
+        {
         m_datumConverter->Destroy();
-		m_datumConverter = NULL;
-	}
-	
+        m_datumConverter = NULL;
+        }
+    
     return SUCCESS;
     }
 
@@ -7747,9 +8209,11 @@ VertDatumCode   verticalDatumCode
     if (NULL == m_csParameters)
         return GEOCOORDERR_InvalidCoordSys;
 
-    if (!this->IsNAD27() && !this->IsNAD83())
+    // There are limitations to using NGVD29 and NAVD88 (Others are worldwide)
+    if ((vdcNGVD29 == verticalDatumCode && !this->IsNAD27()) ||
+        (vdcNAVD88 == verticalDatumCode && !this->IsNAD83()))
         {
-        verticalDatumCode = vdcFromDatum;
+        m_verticalDatum = vdcFromDatum;
         return GEOCOORDERR_CantSetVerticalDatum;
         }
 
@@ -10164,7 +10628,7 @@ GeoPointCR      inLatLong           // => latitude longitude
     status = (ReprojectStatus) CSMap::CS_ll3cs (m_csParameters, &internalCartesian, &inLatLong);
 
     // In case a hard error occured ... we zero out all values
-    if ((REPROJECT_Success != status) && (REPROJECT_CSMAPERR_OutOfUsefulRange != status))
+    if ((REPROJECT_Success != status) && (REPROJECT_CSMAPERR_OutOfUsefulRange != status) && (REPROJECT_CSMAPERR_VerticalDatumConversionError != status) )
         outCartesian.x = outCartesian.y = outCartesian.z = 0.0;
     else
         CartesianFromInternalCartesian (outCartesian, internalCartesian);
@@ -10343,18 +10807,18 @@ BaseGCSCR        destGCS         // => destination coordinate system
 * @bsimethod                                    Alain.Robert                  05/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BaseGCS::ClearCache() const
-	{
-	// Clean up cache data so we release our hold upon other BaseGCS
+    {
+    // Clean up cache data so we release our hold upon other BaseGCS
     if (NULL != m_datumConverter)
         {
         m_datumConverter->Destroy();
         m_datumConverter = NULL;
         }
 
-	// Normally the caller is the pointed GCS of which the address is m_destinationGCS
-	// We do not need to unregister the present GCS from the list of pointed GCS of the caller.
-	m_destinationGCS = NULL;
-	}
+    // Normally the caller is the pointed GCS of which the address is m_destinationGCS
+    // We do not need to unregister the present GCS from the list of pointed GCS of the caller.
+    m_destinationGCS = NULL;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Alain.Robert                  05/2013
@@ -10372,10 +10836,10 @@ void BaseGCS::UnRegisterIsADestinationOf(BaseGCSCR baseGCSThatUsesCurrentAsADest
     for (bvector<BaseGCSCP>::iterator itr = m_listOfPointingGCS.begin() ; itr != m_listOfPointingGCS.end() ; itr++)
         {
         if ((*itr) == &baseGCSThatUsesCurrentAsADestination)
-			{
+            {
             m_listOfPointingGCS.erase(itr);
-			break;
-			}
+            break;
+            }
         }
     }
     
@@ -10420,10 +10884,10 @@ BaseGCSCR       destinationGCS      // => destination coordinate system
     if (NULL != m_datumConverter)
         status = m_datumConverter->ConvertLatLong3D (outLatLong, inLatLong);
     else
-		{
+        {
         outLatLong = inLatLong;
-	    status = REPROJECT_CSMAPERR_DatumConverterNotSet; // May be interpreted as a warning.
-		}
+        status = REPROJECT_CSMAPERR_DatumConverterNotSet; // May be interpreted as a warning.
+        }
 
     return status;
     }
@@ -10441,17 +10905,17 @@ BaseGCSCR       destinationGCS      // => destination coordinate system
 
 
     // make sure datum converter is set up for the destination.
-	if (&destinationGCS != m_destinationGCS)
-		SetupDatumConverterFor (destinationGCS);
+    if (&destinationGCS != m_destinationGCS)
+        SetupDatumConverterFor (destinationGCS);
 
     ReprojectStatus status = REPROJECT_Success;
     if (NULL != m_datumConverter)
         status = m_datumConverter->ConvertLatLong2D (outLatLong, inLatLong);
     else
-		{
+        {
         outLatLong = inLatLong;
-		status = REPROJECT_CSMAPERR_DatumConverterNotSet; // May be interpreted as a warning.
-		}
+        status = REPROJECT_CSMAPERR_DatumConverterNotSet; // May be interpreted as a warning.
+        }
 
     return status;
     }
@@ -10618,7 +11082,8 @@ struct VerticalDatumConverter
 private:
     bool            m_inputLatLongInNAD27;      // which latLongs are considered to be in NAD27.
     bool            m_fromNGVD29toNAVD88;       // direction
-
+    VertDatumCode   m_fromVDC;
+    VertDatumCode   m_toVDC;
 
 public:
 /*---------------------------------------------------------------------------------**//**
@@ -10628,6 +11093,10 @@ VerticalDatumConverter (bool inputIsInNAD27, VertDatumCode inputVdc, VertDatumCo
     {
     assert (inputVdc != outputVdc);
 
+    m_fromVDC = inputVdc;
+    m_toVDC = outputVdc;
+
+    // These two parameters are only used if NAVD88 to/from NGVD29 is to be performed.
     m_inputLatLongInNAD27 = inputIsInNAD27;
     m_fromNGVD29toNAVD88  = (vdcNGVD29 == inputVdc);
     }
@@ -10638,7 +11107,9 @@ VerticalDatumConverter (bool inputIsInNAD27, VertDatumCode inputVdc, VertDatumCo
 ~VerticalDatumConverter ()
     {
     CSvrtconCls();
+    CS_geoidCls();
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   09/09
@@ -10649,17 +11120,71 @@ GeoPointR   outLatLong,
 GeoPointCR  inLatLong
 )
     {
-    // The CSvrtcon29To88 function takes as input the Lat/Long in NAD27.
-    double  elevationDelta;
-    if (0 == CSvrtcon29To88 (&elevationDelta, (m_inputLatLongInNAD27 ? (const double *) &inLatLong : (const double *) &outLatLong)))
+    // The process of datum conversion can be complex here depending on the set of in/out
+    // vertical datums. Note that the vdcFromDatum value indicates that the ellipsoidal height is
+    // used. This height is related to the horizontal datum and conversion may be necessary
+    // using CSMAP prior to application of the vertical datum.
+    // All other vertical datums supported are Geoid based (orthometric)
+    // Here is a map of sequence to be applied
+    //      VERT1             VERT2
+    //   vdcFromDatum    vdcFromDatum      - CSMAP should take care of vertical elevation changes. The vertical datum should not exist
+    //   vdcFromDatum    vdcNAVD88         - Should not happen. Application of NAVD88 implies that source is NGVD29 
+    //   vdcFromDatum    vdcNGVD29         - Should not happen. Application of NGVD29 implies that source is NAVD88 
+    //   vdcFromDatum    vdcGeoid          - First ellipsoidal height change must be applied then Geoid value at location added to result.
+    //   vdcNAVD88       vdcNGVD29         - Normal VERTCON application.
+    //   vdcNAVD88       vdcGeoid          - We do nothing. We consider NAVD88 to be coincident to Geoid
+    //   vdcNGVD29       vdcGeoid          - We do nothing. We consider NGVD29 to be coincident to Geoid
+    
+    // vdcGeoid    vdcGeoid - In this specific case we remove Geoid elev, apply ellipsoidal height diff then apply Geoid at new location.
+    //                        although this case would give approximatively the same result the slight
+    //                        lat/long value may introduce a very small change in elevation.
+
+    // If we have NGVD29 to NAVD88 conversion
+    if ((m_fromVDC == vdcNGVD29 || m_fromVDC == vdcNAVD88) && (m_toVDC == vdcNGVD29 || m_toVDC == vdcNAVD88) && (m_toVDC != m_fromVDC))
         {
-        if (m_fromNGVD29toNAVD88)
-            outLatLong.elevation = inLatLong.elevation + elevationDelta;
-        else
-            outLatLong.elevation = inLatLong.elevation - elevationDelta;
-        return SUCCESS;
+        // The CSvrtcon29To88 function takes as input the Lat/Long in NAD27.
+        double  elevationDelta;
+        if (0 == CSvrtcon29To88 (&elevationDelta, (m_inputLatLongInNAD27 ? (const double *) &inLatLong : (const double *) &outLatLong)))
+            {
+            // Notice that ellipsoidal elevation changes are discarded in this case since the datum pair fully specifies the
+            // elevation delta to be applied.
+            if (m_fromNGVD29toNAVD88)
+                outLatLong.elevation = inLatLong.elevation + elevationDelta;
+            else
+                outLatLong.elevation = inLatLong.elevation - elevationDelta;
+            return SUCCESS;
+            }
+
+        // Something went wrong in VERTCON application
+        return GEOCOORDERR_VerticalDatumConversion;
+
         }
-    return GEOCOORDERR_VerticalDatumConversion;
+    // Otherwise if either vertical datum is NAVD88 or NGVD29  but the other is not then we do nothing
+    else if (m_fromVDC != vdcNGVD29 && m_fromVDC != vdcNAVD88 && m_toVDC != vdcNGVD29 && m_toVDC != vdcNAVD88)
+        {
+        // The ellipsoidal height diff is already applied but additions and substraction are commutative so we do not care
+        // about the order of application given we use the proper lat/long combination.
+        // In every case the output point should already have a meaningful elevation to correct.
+        double  elevationDelta;
+        if (m_fromVDC == vdcGeoid)
+            {
+            if (0 == CS_geoidHgt((const double *) &inLatLong, &elevationDelta))
+                outLatLong.elevation += elevationDelta;
+            else
+                return GEOCOORDERR_VerticalDatumConversion;
+            }
+
+        if (m_toVDC == vdcGeoid)
+            {
+            if (0 == CS_geoidHgt((double *) &outLatLong, &elevationDelta))
+                outLatLong.elevation -= elevationDelta;
+            else
+                return GEOCOORDERR_VerticalDatumConversion;
+            }
+        }
+        
+        
+    return SUCCESS;
     }
 
 };
@@ -10693,19 +11218,14 @@ static VertDatumCode   NetVerticalDatum (BaseGCSCR gcs)
     {
     VertDatumCode vdc = gcs.GetVerticalDatumCode();
 
-    if (vdcFromDatum == (vdc = gcs.GetVerticalDatumCode()))
+    if (vdcFromDatum == vdc)
         {
         if (gcs.IsNAD27())
             return vdcNGVD29;
         else if (gcs.IsNAD83())
             return vdcNAVD88;
         }
-    else if (!gcs.IsNAD27() && !gcs.IsNAD83())
-        {
-        // if it's notNAD27 or NAD83, return only vdcFromDatum.
-        // (This test shouldn't be necessary, given that SetVerticalDatumCode doesn't allow it either).
-        return vdcFromDatum;
-        }
+
 
     return vdc;
     }
@@ -10719,15 +11239,20 @@ BaseGCSCR       from,
 BaseGCSCR       to
 )
     {
-    // Handled by CS-Map?
+    // Handled by CS-Map? CS-Map will handle ellipsoidal height (vdcFromDatum) conversion given 3D transformations
+    // are requested. 
     if ( (vdcFromDatum == from.GetVerticalDatumCode()) && (vdcFromDatum == to.GetVerticalDatumCode()) )
         return NULL;
 
+    // Given at least one GCS uses a non-ellipsoidal height then some vertical datum must be provided.
+
     // The case that is not handled directly by CS_Map is when we have a vertical datum that does
-    //  not match the Horizontal Datum. This is a capability we added for 08.11.07 for the Caltrans
-    //  benchmark. As of 08.11.07, only NAD27 and NAD83 datums are handled, and in those cases,
-    //  the vertical datum can be set to either NGVD29 or NAVD88.
+    // not match the Horizontal Datum. This is a capability we added for 08.11.07 for the Caltrans
+    // benchmark. As of 08.11.07, only NAD27 and NAD83 datums were handled, and in those cases,
+    // the vertical datum can be set to either NGVD29 or NAVD88.
     // Both from and to have to be NAD27 or NAD83 for us to take action.
+    // Starting with CONNECT edition we support the generic Geoid datum 
+    // This will use the data specified in the GeoidHeight.gdc catalog
 
     // are they the same?
     VertDatumCode   fromVDC = NetVerticalDatum (from);
@@ -10735,9 +11260,13 @@ BaseGCSCR       to
     if (fromVDC == toVDC)
         return NULL;
 
-    if (0 != CSvrtconInit())
-        return NULL;
+    // If either vertical datum codes are NGVD29 or NAVD88 then we init
+    // the VERTCON american vertical datum system
+    if (fromVDC == vdcNGVD29 || fromVDC == vdcNAVD88 || toVDC == vdcNGVD29 || toVDC == vdcNAVD88)
+        if (0 != CSvrtconInit())
+            return NULL;
 
+    // This value is irrelevant when we are not performing NGVD29/NAVD88 vertical datum shift.
     bool fromIsNAD27 = from.IsNAD27();
     return new VerticalDatumConverter (fromIsNAD27, fromVDC, toVDC);
     }
@@ -10823,7 +11352,14 @@ GeoPointCR  inLatLong
         outLatLong = inLatLong;
 
     if (m_reprojectElevation && (NULL != m_verticalDatumConverter))
-        m_verticalDatumConverter->ConvertElevation (outLatLong, inLatLong);
+        {
+        StatusInt verticalStatus; 
+        verticalStatus = m_verticalDatumConverter->ConvertElevation (outLatLong, inLatLong);
+        
+        // horizontal status has precedence
+        if ((REPROJECT_Success == status) && (SUCCESS != verticalStatus))
+            status = REPROJECT_CSMAPERR_VerticalDatumConversionError;
+        }
 
     return status;
     }
