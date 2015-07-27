@@ -164,15 +164,13 @@ ECSqlStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
             return ctx.SetError(ECSqlStatus::InvalidECSql, "Duplicate ECProperty '%s' in ECClass with alias '%s'.", secondPropPathEntry, firstPropPathEntry);
         }
 
-    if (propNameClassRefExpMatches.size() > 1)
-        return ctx.SetError(ECSqlStatus::InvalidECSql, "ECProperty expression '%s' in ECSQL statement is ambiguous. Class alias might be missing.", m_propertyPath.ToString().c_str());
-
-    BeAssert(propNameClassRefExpMatches.size() <= 1 && aliasClassRefExpMatches.size() <= 1);
+    BeAssert(aliasClassRefExpMatches.size() <= 1);
 
     RangeClassRefExp const* classRefExp = nullptr;
     Utf8CP classAlias = nullptr;
     Utf8String error;
-    bool verifyPropNameClassRefs = propNameClassRefExpMatches.size() == 1;
+    bool verifyPropNameClassRefs = !propNameClassRefExpMatches.empty();
+
     if (aliasClassRefExpMatches.size() == 1)
         {
         classRefExp = aliasClassRefExpMatches[0];
@@ -190,9 +188,13 @@ ECSqlStatus PropertyNameExp::ResolveColumnRef(ECSqlParseContext& ctx)
             }
         }
 
+
     //Alias has priority over prop name. So only very prop name if class alias failed or no class alias matches exist
     if (verifyPropNameClassRefs)
         {
+        if (propNameClassRefExpMatches.size() > 1)
+            return ctx.SetError(ECSqlStatus::InvalidECSql, "ECProperty expression '%s' in ECSQL statement is ambiguous. Class alias might be missing.", m_propertyPath.ToString().c_str());
+
         classRefExp = propNameClassRefExpMatches[0];
         error.clear();
         ResolveColumnRef(error, *classRefExp, m_propertyPath);
