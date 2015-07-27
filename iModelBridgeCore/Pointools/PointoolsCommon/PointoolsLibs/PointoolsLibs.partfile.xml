@@ -101,7 +101,7 @@
     <SubPart PartName="PointoolsLibsCommon_VS2012" Repository="PointoolsLibs"/>
     <SubPart PartName="GLUI_VS2012" Repository="PointoolsLibs"/>
     <SubPart PartName="FastDelegate" PartFile="FastDelegate" Repository="libsrc-FastDelegate"/>
-    <SubPart PartName="Loki_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="Loki" PartFile="Loki" Repository="libsrc-loki"/>
     <SubPart PartName="SCZ_Compress_VS2012" PartFile="scz_compress" Repository="libsrc-scz_compress"/>
   </Part>
 
@@ -139,7 +139,7 @@
     <SubPart PartName="PointoolsLibsCommon_VS2012" Repository="PointoolsLibs"/>
     <SubPart PartName="BeLibxml2_VS2012" PartFile="BeLibxml2" Repository="libsrc-libxml2" LibType="static"/>
     <SubPart PartName="PublicAPI" PartFile="BeIconv" Repository="Libsrc-Iconv"/>
-    <SubPart PartName="Loki_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="Loki" PartFile="Loki" Repository="libsrc-loki"/>
     <SubPart PartName="Format_Leica_PTZ_6_0_0_VS2012" Repository="PointoolsLibs"/>
     <SubPart PartName="libLAS_VS2012" PartFile="liblas" Repository="libsrc-libLAS" />
     <SubPart PartName="Format_TopconCodec_VS2012" Repository="PointoolsLibs"/>
