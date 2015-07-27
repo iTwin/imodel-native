@@ -140,8 +140,9 @@ void Developer_TestWidgetSolver();
 void Developer_TestGadgetSolver();
 void Client_CreateTargetModel(Utf8CP targetModelName);
 void Client_SolveAndCapture(PhysicalElementCPtr& solutionEl, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists);
-void Client_PlaceInstanceOfSolution(Utf8CP targetModelName, PhysicalElementCR);
-void Client_SolveAndPlaceInstance(Utf8CP targetModelName, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists);
+void Client_PlaceInstanceOfSolution(DgnElementId&, Utf8CP targetModelName, PhysicalElementCR);
+void Client_SolveAndPlaceInstance(DgnElementId&, Utf8CP targetModelName, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists);
+void Client_CheckComponentInstance(DgnElementId, size_t expectedCount, double x, double y, double z);
 void GenerateCMSchema();
 void Client_CreateProxyCM(Utf8CP componentName);
 
@@ -382,6 +383,16 @@ void ComponentModelTest::Client_CreateTargetModel(Utf8CP targetModelName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
+void ComponentModelTest::Client_CheckComponentInstance(DgnElementId eid, size_t expectedCount, double x, double y, double z)
+    {
+    GeometricElementCPtr el = m_clientDb->Elements().Get<GeometricElement>(eid);
+    checkGeomStream(*el, ElementGeometry::GeometryType::SolidPrimitive, expectedCount);
+    checkSlabDimensions(*el, x, y, z);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/2013
++---------------+---------------+---------------+---------------+---------------+------*/
 void ComponentModelTest::Client_SolveAndCapture(PhysicalElementCPtr& solutionEl, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists)
     {
     //  -------------------------------------------------------
@@ -424,7 +435,7 @@ void ComponentModelTest::Client_SolveAndCapture(PhysicalElementCPtr& solutionEl,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Client_PlaceInstanceOfSolution(Utf8CP targetModelName, PhysicalElementCR solutionEl)
+void ComponentModelTest::Client_PlaceInstanceOfSolution(DgnElementId& ieid, Utf8CP targetModelName, PhysicalElementCR solutionEl)
     {
     BeAssert(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
 
@@ -435,13 +446,15 @@ void ComponentModelTest::Client_PlaceInstanceOfSolution(Utf8CP targetModelName, 
     ASSERT_TRUE( instance.IsValid() );
     ASSERT_TRUE( instance->Insert().IsValid() );
 
+    ieid = instance->GetElementId();
+
     ASSERT_EQ( BE_SQLITE_OK , m_clientDb->SaveChanges() );
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Client_SolveAndPlaceInstance(Utf8CP targetModelName, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists)
+void ComponentModelTest::Client_SolveAndPlaceInstance(DgnElementId& ieid, Utf8CP targetModelName, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists)
     {
     BeAssert(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
 
@@ -449,7 +462,7 @@ void ComponentModelTest::Client_SolveAndPlaceInstance(Utf8CP targetModelName, Ut
     Client_SolveAndCapture(solutionEl, componentName, parms, solutionAlreadyExists);
     
     if (solutionEl.IsValid())
-        Client_PlaceInstanceOfSolution(targetModelName, *solutionEl);
+        Client_PlaceInstanceOfSolution(ieid, targetModelName, *solutionEl);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -479,40 +492,64 @@ void ComponentModelTest::SimulateClient()
     Client_CreateTargetModel("Instances");
 
     // Now start placing instances of Widgets
-    Json::Value wparms(Json::objectValue);
-    wparms["X"] = 10;
-    wparms["Y"] = 11;
-    wparms["Z"] = 12;
-    Client_SolveAndPlaceInstance("Instances", TEST_WIDGET_COMPONENT_NAME, wparms, false);
+    Json::Value wsln1(Json::objectValue);
+    wsln1["X"] = 10;
+    wsln1["Y"] = 11;
+    wsln1["Z"] = 12;
+    DgnElementId w1, w2;
+    Client_SolveAndPlaceInstance(w1, "Instances", TEST_WIDGET_COMPONENT_NAME, wsln1, false);
     BeTest::SetFailOnAssert(false);
-    Client_SolveAndPlaceInstance("Instances", TEST_WIDGET_COMPONENT_NAME, wparms, true);
+    Client_SolveAndPlaceInstance(w2, "Instances", TEST_WIDGET_COMPONENT_NAME, wsln1, true);
     BeTest::SetFailOnAssert(true);
+
+    Client_CheckComponentInstance(w1, 2, wsln1["X"].asDouble(), wsln1["Y"].asDouble(), wsln1["Z"].asDouble());
+    Client_CheckComponentInstance(w2, 2, wsln1["X"].asDouble(), wsln1["Y"].asDouble(), wsln1["Z"].asDouble()); // 2nd instance of same solution should have the same instance geometry
     
-    wparms["X"] = 100;
-    Client_SolveAndPlaceInstance("Instances", TEST_WIDGET_COMPONENT_NAME, wparms, false);
+    Json::Value wsln3 = wsln1;
+    wsln3["X"] = 100;
+    DgnElementId w3;
+    Client_SolveAndPlaceInstance(w3, "Instances", TEST_WIDGET_COMPONENT_NAME, wsln3, false);
     
+    Client_CheckComponentInstance(w3, 2, wsln3["X"].asDouble(), wsln3["Y"].asDouble(), wsln3["Z"].asDouble());
+    Client_CheckComponentInstance(w1, 2, wsln1["X"].asDouble(), wsln1["Y"].asDouble(), wsln1["Z"].asDouble());  // new instance of new solution should not affect existing instances of other solutions
+
     // Just for a little variety, close the client Db and re-open it
     CloseClientDb();
 
     OpenClientDb(Db::OpenMode::ReadWrite);
-    wparms["X"] = 2;
-    Client_SolveAndPlaceInstance("Instances", TEST_WIDGET_COMPONENT_NAME, wparms, false);
+    Json::Value wsln4 = wsln3;
+    wsln4["X"] = 2;
+    DgnElementId w4;
+    Client_SolveAndPlaceInstance(w4, "Instances", TEST_WIDGET_COMPONENT_NAME, wsln4, false);
+
+    Client_CheckComponentInstance(w4, 2, wsln4["X"].asDouble(), wsln4["Y"].asDouble(), wsln4["Z"].asDouble());
+    Client_CheckComponentInstance(w1, 2, wsln1["X"].asDouble(), wsln1["Y"].asDouble(), wsln1["Z"].asDouble());  // new instance of new solution should not affect existing instances of other solutions
 
     // Now start placing instances of Gadgets
     Client_CreateProxyCM(TEST_GADGET_COMPONENT_NAME);
-    Json::Value gparms(Json::objectValue);
-    gparms["Q"] = 3;
-    gparms["W"] = 2;
-    gparms["R"] = 1;
-    gparms["T"] = "text";
-    Client_SolveAndPlaceInstance("Instances", TEST_GADGET_COMPONENT_NAME, gparms, false);
+    Json::Value gsln1(Json::objectValue);
+    gsln1["Q"] = 3;
+    gsln1["W"] = 2;
+    gsln1["R"] = 1;
+    gsln1["T"] = "text";
+    DgnElementId g1, g2;
+    Client_SolveAndPlaceInstance(g1, "Instances", TEST_GADGET_COMPONENT_NAME, gsln1, false);
     BeTest::SetFailOnAssert(false);
-    Client_SolveAndPlaceInstance("Instances", TEST_GADGET_COMPONENT_NAME, gparms, true);
+    Client_SolveAndPlaceInstance(g2, "Instances", TEST_GADGET_COMPONENT_NAME, gsln1, true);
     BeTest::SetFailOnAssert(true);
 
+    Client_CheckComponentInstance(g1, 1, gsln1["Q"].asDouble(), gsln1["W"].asDouble(), gsln1["R"].asDouble());
+    Client_CheckComponentInstance(g2, 1, gsln1["Q"].asDouble(), gsln1["W"].asDouble(), gsln1["R"].asDouble());
+
     //  And place another Widget
-    wparms["X"] = 44;
-    Client_SolveAndPlaceInstance("Instances", TEST_WIDGET_COMPONENT_NAME, wparms, false);
+    Json::Value wsln44 = wsln4;
+    wsln44["X"] = 44;
+    DgnElementId w44;
+    Client_SolveAndPlaceInstance(w44, "Instances", TEST_WIDGET_COMPONENT_NAME, wsln44, false);
+
+    Client_CheckComponentInstance(w3, 2, wsln3["X"].asDouble(), wsln3["Y"].asDouble(), wsln3["Z"].asDouble());
+    Client_CheckComponentInstance(w1, 2, wsln1["X"].asDouble(), wsln1["Y"].asDouble(), wsln1["Z"].asDouble());
+    Client_CheckComponentInstance(g1, 1, gsln1["Q"].asDouble(), gsln1["W"].asDouble(), gsln1["R"].asDouble());
 
     CloseClientDb();
     }
