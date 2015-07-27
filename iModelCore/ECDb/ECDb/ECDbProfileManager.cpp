@@ -389,6 +389,23 @@ Db& db
     if (stat != BE_SQLITE_OK)
         return stat;
 
+#ifdef ENABLE_TRIGGER_DEBUGGING
+    stat = db.ExecuteSql (
+        "CREATE TABLE ec_TriggerLog "
+        "("
+        "EventId INTEGER PRIMARY KEY AUTOINCREMENT , "
+        "EventTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP ,"
+        "TriggerId TEXT, "
+        "AffectedECInstanceId INTEGER, "
+        "AffectedECClassId INTEGER, "
+        "Scope TEXT,"
+        "Comment TEXT"
+        ");");
+
+    if (stat != BE_SQLITE_OK)
+        return stat;
+#endif
+
     timer.Stop();
     LOG.debugv("Created ECDb profile tables in ECDb file in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);
     return BE_SQLITE_OK;

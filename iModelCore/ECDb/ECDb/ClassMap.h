@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 
 struct NativeSqlBuilder;
-
+struct StorageDescription;
 //=======================================================================================
 //! Represents the SQLite view to which an ECClass is mapped by a ClassMap
 //! ECDb does not create a persistent database view, but just generates SQLite SELECT
@@ -35,67 +35,6 @@ public:
     virtual ~ClassDbView () {}
 
     BentleyStatus Generate (NativeSqlBuilder& viewSql, bool isPolymorphic, ECSqlPrepareContext const& preparedContext) const;
-    };
-
-//=======================================================================================
-//! Hold detail about how table partition is described for this class
-// @bsiclass                                               Affan.Khan           05/2015
-//+===============+===============+===============+===============+===============+======
-struct HorizontalPartition : NonCopyableClass
-    {
-private:
-    ECDbSqlTable const* m_table;
-    std::vector<ECN::ECClassId> m_partitionClassIds;
-    std::vector<ECN::ECClassId> m_inversedPartitionClassIds;
-    bool m_hasInversedPartitionClassIds;
-
-public:
-    explicit HorizontalPartition(ECDbSqlTable const& table) : m_table(&table), m_hasInversedPartitionClassIds (false) {}
-    ~HorizontalPartition () {}
-    HorizontalPartition(HorizontalPartition&& rhs);
-    HorizontalPartition& operator=(HorizontalPartition&& rhs);
-
-    ECDbSqlTable const& GetTable () const { return *m_table; }
-    std::vector<ECN::ECClassId> const& GetClassIds() const { return m_partitionClassIds; }
-
-    void AddClassId(ECN::ECClassId classId) { m_partitionClassIds.push_back(classId); }
-    void GenerateClassIdFilter(std::vector<ECN::ECClassId> const& tableClassIds);
-
-    bool NeedsClassIdFilter() const;
-    void AppendECClassIdFilterSql (NativeSqlBuilder&) const;
-    };
-
-struct IClassMap;
-
-//=======================================================================================
-//! Represents storage description for a given class map and its derived classes for polymorphic queries
-// @bsiclass                                               Affan.Khan           05/2015
-//+===============+===============+===============+===============+===============+======
-struct StorageDescription : NonCopyableClass
-    {
-private:      
-    ECN::ECClassId m_classId;
-    std::vector<HorizontalPartition> m_horizontalPartitions;
-    std::vector<size_t> m_nonVirtualHorizontalPartitionIndices;
-    size_t m_rootHorizontalPartitionIndex;
-
-    explicit StorageDescription(ECN::ECClassId classId) : m_classId(classId), m_rootHorizontalPartitionIndex(0) {}
-
-    size_t AddHorizontalPartition(ECDbSqlTable const& table, bool isRootPartition);
-public:
-    ~StorageDescription (){}
-    StorageDescription(StorageDescription&&);
-    StorageDescription& operator=(StorageDescription&&);
-
-    HorizontalPartition const* GetHorizontalPartition(size_t index) const;
-    HorizontalPartition* GetHorizontalPartitionP(size_t index);
-    std::vector<HorizontalPartition> const& GetHorizontalPartitions() const { return m_horizontalPartitions; }
-    HorizontalPartition const& GetRootHorizontalPartition() const { return *GetHorizontalPartition(m_rootHorizontalPartitionIndex); }
-    std::vector<size_t> const& GetNonVirtualHorizontalPartitionIndices() const { return m_nonVirtualHorizontalPartitionIndices; }
-    ECN::ECClassId GetClassId () const { return m_classId; }
-
-    static std::unique_ptr<StorageDescription> Create (IClassMap const& classMap);
-
     };
 
 //=======================================================================================
@@ -131,7 +70,6 @@ public:
     
 
 private:
-    mutable std::unique_ptr<StorageDescription> m_storageDescription;
 
     virtual IClassMap const& _GetView (View classView) const = 0;
     virtual Type _GetClassMapType () const = 0;
@@ -198,6 +136,7 @@ public:
 
         return secondaryTables;
         }
+
     static bool IsMapToSecondaryTableStrategy (ECN::ECClassCR ecClass);
     static bool IsAbstractECClass (ECN::ECClassCR ecClass);
     static bool IsAnyClass (ECN::ECClassCR ecClass);

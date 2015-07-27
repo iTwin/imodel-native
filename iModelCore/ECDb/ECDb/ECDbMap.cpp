@@ -144,7 +144,6 @@ MapStatus ECDbMap::MapSchemas (SchemaImportContext& schemaImportContext, bvector
         }
 
     SqlGenerator viewGen (*this);
-    GetLightWeightMapCacheR ().Load (true);
     if (viewGen.BuildViewInfrastructure (classMaps) != BentleyStatus::SUCCESS)
         {
         BeAssert ( false && "failed to create view infrastructure");
@@ -201,6 +200,7 @@ MapStatus ECDbMap::DoMapSchemas (bvector<ECSchemaCP>& mapSchemas, bool forceMapS
 
     StopWatch timer(true);
 
+    m_lightWeightMapCache.Reset ();
     // Identify root classes/relationship-classes
     bvector<ECClassCP> rootClasses;
     bvector<ECRelationshipClassCP> rootRelationships;
@@ -789,6 +789,7 @@ void ECDbMap::ClearCache ()
     m_classMapDictionary.clear();
     m_clustersByTable.clear();
     GetSQLManagerR ().Reset ();
+    m_lightWeightMapCache.Reset ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1165,6 +1166,7 @@ void ECDbMap::LightWeightMapCache::Reset ()
     m_classIdsByTable.clear ();
     m_anyClassRelationships.clear ();
     m_anyClassReplacements.clear ();
+    m_storageDescriptions.clear ();
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
@@ -1173,6 +1175,23 @@ ECDbMap::LightWeightMapCache::LightWeightMapCache (ECDbMapCR map)
 : m_map (map)
     {
     Reset ();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      07/2015
+//---------------------------------------------------------------------------------------
+StorageDescription const& ECDbMap::LightWeightMapCache::GetStorageDescription (ECN::ECClassId id)  const
+    {
+    auto itor = m_storageDescriptions.find (id);
+    if (itor == m_storageDescriptions.end ())
+        {
+        auto des = StorageDescription::Create (id, *this);
+        auto desP = des.get ();
+        m_storageDescriptions[id] = std::move (des);
+        return *desP;
+        }
+
+    return *(itor->second.get ());
     }
 END_BENTLEY_SQLITE_EC_NAMESPACE
 
