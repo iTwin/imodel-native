@@ -11,7 +11,7 @@
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      7/15
 //---------------------------------------------------------------------------------------
-Utf8CP dgnJavaDgnScriptContextImpl_GetBootstrappingSource()
+Utf8CP dgnScriptContext_GetBootstrappingSource()
     {
     static Utf8CP source = __OBJECTMODELJSSOURCE__;
     return source;

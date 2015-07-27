@@ -40,7 +40,7 @@ DGNPLATFORM_TYPEDEFS(DimArcInfo)
 DGNPLATFORM_TYPEDEFS(DimDerivedData)
 DGNPLATFORM_TYPEDEFS(DimOptionBlockHeader)
 
-#define DIM_BLOCK_ALIGNED(typeName,pointerName) typeName localVar; if (NULL != pointerName) {memcpy (&localVar, pointerName, sizeof(typeName)); pointerName = &localVar; }
+#define DIM_BLOCK_ALIGNED(typeName,pointerName) typeName localVar; if (NULL != pointerName) {BentleyApi::UnalignedMemcpy (&localVar, pointerName, sizeof(typeName)); pointerName = &localVar; }
 
 /*======================================================================+
 |                                                                       |
@@ -48,6 +48,8 @@ DGNPLATFORM_TYPEDEFS(DimOptionBlockHeader)
 |                                                                       |
 +======================================================================*/
 BEGIN_BENTLEY_NAMESPACE
+
+DGNPLATFORM_EXPORT void UnalignedMemcpy(void*dest, void const*source, size_t num);
 
 DGNPLATFORM_EXPORT int mdlDim_extractStringsWide
 (

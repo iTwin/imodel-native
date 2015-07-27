@@ -34,6 +34,8 @@ public:
     DGNPLATFORM_EXPORT DgnScriptContext(BeJsEnvironmentR);
     DGNPLATFORM_EXPORT ~DgnScriptContext();
    
+    DgnScriptContextImpl* GetImpl() {return m_pimpl;}
+
     /**
     Execute an Element Generation Algorithm (EGA) that is implemented in JavaScript. 
     An EGA is identified by a two-part name, of the form namespace.function. 
@@ -52,11 +54,11 @@ public:
     @endverbatim
 
     <h2>Registering a JavaScript EGA function.</h2>
-    The JavaScript \em program must register an EGA function in its start-up logic like this:
+    The JavaScript program must register an EGA function in its start-up logic like this:
     @verbatim
     BentleyApi.Dgn.RegisterEGA('myNamespace.myEgaPublicName', myEgaFunction);
     @endverbatim
-    The \a jsEgaFunctionName parameter must match the name used to register a JavaScript EGA.
+    The \a myEgaPublicName parameter must match the name used to register a JavaScript EGA.
 
     <h2>Specifying an EGA in an ECClass.</h2>
     An ECClass that is derived from dgn.ElementItem that wants to specify an EGA must identify the JavaScript function in a custom attribute, like this:
@@ -88,8 +90,49 @@ public:
     @param[in] parms        Any additional parameters to pass to the EGA function. 
     @return non-zero if the EGA is not in JavaScript, if the egaInstance properties are invalid, or if the JavaScript function could not be found or failed to execute.
     **/
-    DGNPLATFORM_EXPORT DgnDbStatus ExecuteJavaScriptEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms);
+    DGNPLATFORM_EXPORT DgnDbStatus ExecuteEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms);
 
+    /**
+    Call a DgnModel validation solver function that is implemented in JavaScript.
+
+    <h2>Signature of a JavaScript ModelSolver function.</h2>
+    A ModelSolver function written in TypeScript must have the following signature:
+    @verbatim
+    function myModelSolverFunction(model: BentleyApi.Dgn.JsDgnModel, params: any) : number
+    @endverbatim
+    Or, in JavaScript:
+    @verbatim
+    function myModelSolverFunction(model, params)
+    @endverbatim
+
+    <h2>Registering a JavaScript ModelSolver function.</h2>
+    The JavaScript program must register a ModelSolver function in its start-up logic like this:
+    @verbatim
+    BentleyApi.Dgn.RegisterModelSolver('myNamespace.myModelSolverPublicName', myModelSolverFunction);
+    @endverbatim
+    The \a myModelSolverPublicName parameter must match the name used to register a JavaScript ModelSolver.
+
+    <h2>Specifying a JavaScript ModelSolver in an DgnModel::Solver.</h2>
+    Every DgnModel can have a model solver. To specify a JavaScript model solver, an application must supply a Solver object in the model's CreateParams, and 
+    the Solver object must be set up as follows: type = DgnModel::Solver::Type::Script, identifer = full name of the script function in the script library.
+    For example,
+    @verbatim
+    Json::Value parameters(Json::objectValue);
+    ... define parameters, as expected by the solver function ...
+    DgnModel::Solver solver(DgnModel::Solver::Type::Script, myNamespace.myModelSolverPublicName", parameters);
+    @endverbatim
+
+    Note the use of the DgnModel::Solver::Type::Script type. 
+    Also note that the solver identifier "myNamespace.myModelSolverPublicName" must match the string passed to BentleyApi.Dgn.RegisterModelSolver.
+    And, the namespace part of the identifer "myNamespace" must match the identifier of a JavaScript program in the script library.
+
+    @param[out] functionReturnStatus    The function's integer return value. 0 means success.
+    @param[in] model           The model to validate
+    @param[in] jsFunctionName   Identifies the Script function to be executed. Must be of the form namespace.functionname
+    @param[in] parms        The parameters to pass to the solver. 
+    @return non-zero if the specified namespace is not found in the JavaScript library or if the specified function could not be found or failed to execute.
+    **/
+    DGNPLATFORM_EXPORT DgnDbStatus ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, Json::Value const& parms);
 }; 
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

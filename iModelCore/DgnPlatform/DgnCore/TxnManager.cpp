@@ -856,6 +856,67 @@ void dgn_TxnTable::Element::_OnValidated()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::Model::_OnValidate()
+    {
+    m_changes = false;
+    if (m_stmt.IsPrepared())
+        return;
+
+    m_txnMgr.GetDgnDb().CreateTable(TEMP_TABLE(TXN_TABLE_Models), "ModelId INTEGER NOT NULL PRIMARY KEY,ChangeType INT");
+    m_stmt.Prepare(m_txnMgr.GetDgnDb(), "INSERT INTO " TEMP_TABLE(TXN_TABLE_Models) "(ModelId,ChangeType) VALUES(?,?)");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void dgn_TxnTable::Model::_OnValidated()
+    {
+    // for cancel, the temp table is automatically rolled back, so we don't (can't actually, because there's no Txn active) need to empty it.
+    if (m_changes)
+        m_txnMgr.GetDgnDb().ExecuteSql("DELETE FROM " TEMP_TABLE(TXN_TABLE_Models));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    02/2015
+//---------------------------------------------------------------------------------------
+void dgn_TxnTable::Model::AddChange(Changes::Change const& change, ChangeType changeType)
+    {
+    Changes::Change::Stage stage;
+    switch (changeType)
+        {
+        case ChangeType::Insert:
+            stage = Changes::Change::Stage::New;
+            break;
+
+        case ChangeType::Update:
+        case ChangeType::Delete:
+            stage = Changes::Change::Stage::Old;
+            break;
+        default:
+            BeAssert(false);
+            return;
+        }
+
+    DgnModelId modelId = DgnModelId(change.GetValue(0, stage).GetValueInt64());
+    BeAssert(modelId.IsValid());
+    
+    enum Column : int {ModelId=1,ChangeType=2};
+
+    m_changes = true;
+    m_stmt.BindId(Column::ModelId, modelId);
+    m_stmt.BindInt(Column::ChangeType, (int) changeType);
+
+    auto rc = m_stmt.Step();
+    BeAssert(rc==BE_SQLITE_DONE);
+    UNUSED_VARIABLE(rc);
+
+    m_stmt.Reset();
+    m_stmt.ClearBindings();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_TxnTable::Model::_OnReversedAdd(BeSQLite::Changes::Change const& change)

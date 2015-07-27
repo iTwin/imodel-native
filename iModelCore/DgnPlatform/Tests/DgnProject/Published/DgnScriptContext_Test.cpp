@@ -42,16 +42,17 @@ static RefCountedCPtr<GeometricElement> insertElement(DgnModelR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct JsProg : ScopedDgnHost::FetchJavaScriptCallback
+struct JsProg : ScopedDgnHost::FetchScriptCallback
     {
     Utf8String m_jsProgramName;
     Utf8String m_jsProgramText;
 
-    Dgn::DgnDbStatus _FetchJavaScript(Utf8StringR jsProgramText, Dgn::DgnDbR db, Utf8CP jsProgrameName) override
+    Dgn::DgnDbStatus _FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DgnDbR, Utf8CP sName, DgnScriptType stypePreferred) override
         {
-        if (!m_jsProgramName.EqualsI(jsProgrameName))
+        if (!m_jsProgramName.EqualsI(sName))
             return DgnDbStatus::NotFound;
-        jsProgramText = m_jsProgramText;
+        stypeFound = DgnScriptType::JavaScript;
+        sText = m_jsProgramText;
         return DgnDbStatus::Success;
         }
     };
@@ -107,7 +108,7 @@ TEST(DgnScriptContextTest, Test1)
     for (int i=0; i<2; ++i)
         {
         int sres = -1;
-        DgnDbStatus xstatus = context.ExecuteJavaScriptEga(sres, *el, "DgnScriptContextTest.TestEga", org, angles, parms);
+        DgnDbStatus xstatus = context.ExecuteEga(sres, *el, "DgnScriptContextTest.TestEga", org, angles, parms);
         ASSERT_NE( DgnDbStatus::Success , xstatus ) << "Haven't registered the EGA yet";
         ASSERT_NE( 0 , sres );
         }
@@ -128,7 +129,7 @@ TEST(DgnScriptContextTest, Test1)
 })();\
 ";
 
-    autoDgnHost.SetFetchJavaScriptCallback(&jsProg);
+    autoDgnHost.SetFetchScriptCallback(&jsProg);
 
     parms["X"] = 1.0;
     parms["Y"] = 2.0;
@@ -139,7 +140,7 @@ TEST(DgnScriptContextTest, Test1)
     for (int i=0; i<niters; ++i)
         {
         int sres;
-        DgnDbStatus xstatus = context.ExecuteJavaScriptEga(sres, *el, "DgnScriptContextTest.TestEga", org, angles, parms);
+        DgnDbStatus xstatus = context.ExecuteEga(sres, *el, "DgnScriptContextTest.TestEga", org, angles, parms);
         ASSERT_EQ( DgnDbStatus::Success , xstatus ) << "Haven't registered the EGA yet";
         ASSERT_EQ( 0 , sres );
 
@@ -160,7 +161,7 @@ TEST(DgnScriptContextTest, Test1)
         {
         int sres = -1;
         BeTest::SetFailOnAssert(false);
-        DgnDbStatus xstatus = context.ExecuteJavaScriptEga(sres, *el, "DgnScriptContextTest.TestEgaNotRegistered", org, angles, parms);
+        DgnDbStatus xstatus = context.ExecuteEga(sres, *el, "DgnScriptContextTest.TestEgaNotRegistered", org, angles, parms);
         BeTest::SetFailOnAssert(true);
         ASSERT_EQ( DgnDbStatus::NotEnabled , xstatus ) << "this function is not registered so the attempt should fail";
         ASSERT_EQ( -1 , sres );
@@ -171,7 +172,7 @@ TEST(DgnScriptContextTest, Test1)
         {
         int sres = -1;
         BeTest::SetFailOnAssert(false);
-        DgnDbStatus xstatus = context.ExecuteJavaScriptEga(sres, *el, "DgnScriptContextTest.TestEgaBadReturn", org, angles, parms);
+        DgnDbStatus xstatus = context.ExecuteEga(sres, *el, "DgnScriptContextTest.TestEgaBadReturn", org, angles, parms);
         BeTest::SetFailOnAssert(true);
         ASSERT_EQ( DgnDbStatus::NotEnabled , xstatus ) << "this function should not be callable so the attempt should fail";
         ASSERT_EQ( -1 , sres );

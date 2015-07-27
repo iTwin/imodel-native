@@ -155,6 +155,7 @@ DgnCategories::Category DgnCategories::Query(DgnCategoryId id) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCategories::Iterator::const_iterator DgnCategories::Iterator::begin() const
     {
+    BeSQLite::HighPriorityOperationBlock highPriorityOperationBlock;
     if (!m_stmt.IsValid())
         {
         Utf8String sqlString = MakeSqlString("SELECT Id,Code,Label,Descr,Rank,Scope FROM " DGN_TABLE(DGN_CLASSNAME_Category));

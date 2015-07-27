@@ -27,8 +27,9 @@ friend struct RedrawElems;
 protected:
 
 //! Override this method to draw the transient graphics.
-//! @param context      The viewcontext in which to draw. 
-//! @param isPreUpdate  WIP_DOC
+//! @param context The ViewContext in which to draw. 
+//! @param isPreUpdate true when called before drawing elements (underlay).
+//! @note You must set the current symbology before drawing any geometry.
 //! @see ViewContext::GetIDrawGeom
 virtual void _DrawTransients (ViewContextR context, bool isPreUpdate) = 0;
 
@@ -36,8 +37,8 @@ public:
 
 //! Computes the range of the transients by drawing them. A viewport must be supplied,
 //! in order to specify the rotation and what transients are displayed and/or visible.
-//! @param[out]         range       The computed range.
-//! @param[in]          vp          The view in which transients are displayed.
+//! @param[out] range The computed range.
+//! @param[in] vp The view in which transients are displayed.
 DGNPLATFORM_EXPORT StatusInt ComputeRange (DRange3d& range, DgnViewportP vp);
 };
 
