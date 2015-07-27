@@ -917,19 +917,23 @@ public:
     explicit ColorDef (uint32_t intval) {*AsUInt32()=intval;}
     ColorDef (Byte red, Byte green, Byte blue, Byte alpha=0) {SetColors (red,green,blue,alpha);}
 
-    static ColorDef White()      {return ColorDef(255,255,255);}
-    static ColorDef Black()      {return ColorDef(0,0,0);}
-    static ColorDef Magenta()    {return ColorDef(255,0,255);}
-    static ColorDef Blue()       {return ColorDef(0,0,255);}
-    static ColorDef Red()        {return ColorDef(255,0,0);}
-    static ColorDef Green()      {return ColorDef(0,255,0);}
-    static ColorDef LightGrey()  {return ColorDef(0xbb,0xbb,0xbb);}
-    static ColorDef DarkGrey()   {return ColorDef(0x55,0x55,0x55);}
-    static ColorDef MediumGrey() {return ColorDef(0x88,0x88,0x88);}
-    static ColorDef Yellow()     {return ColorDef(0xff,0xff,0);}
-    static ColorDef DarkYellow() {return ColorDef(0x80,0x80,0);}
-    static ColorDef Violet()     {return ColorDef(0x80,0,0x80);}
-    static ColorDef Maroon()     {return ColorDef(0x80,0,0);}
+    static ColorDef Black()       {return ColorDef(0,0,0);}
+    static ColorDef White()       {return ColorDef(0xff,0xff,0xff);}
+    static ColorDef Red()         {return ColorDef(0xff,0,0);}
+    static ColorDef Green()       {return ColorDef(0,0xff,0);}       //! Lime
+    static ColorDef Blue()        {return ColorDef(0,0,0xff);}
+    static ColorDef Yellow()      {return ColorDef(0xff,0xff,0);}
+    static ColorDef Cyan()        {return ColorDef(0,0xff,0xff);}
+    static ColorDef Magenta()     {return ColorDef(0xff,0,0xff);}
+    static ColorDef LightGrey()   {return ColorDef(0xbb,0xbb,0xbb);}
+    static ColorDef MediumGrey()  {return ColorDef(0x88,0x88,0x88);}
+    static ColorDef DarkGrey()    {return ColorDef(0x55,0x55,0x55);}
+    static ColorDef DarkRed()     {return ColorDef(0x80,0,0);}       //! Maroon
+    static ColorDef DarkGreen()   {return ColorDef(0,0x80,0);}       //! Green
+    static ColorDef DarkBlue()    {return ColorDef(0,0,0x80);}       //! Navy
+    static ColorDef DarkYellow()  {return ColorDef(0x80,0x80,0);}    //! Olive
+    static ColorDef DarkCyan()    {return ColorDef(0,0x80,0x80);}    //! Teal
+    static ColorDef DarkMagenta() {return ColorDef(0x80,0,0x80);}    //! Purple
 };
 
 //=======================================================================================
