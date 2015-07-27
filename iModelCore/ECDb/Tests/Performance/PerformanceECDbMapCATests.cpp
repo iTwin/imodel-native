@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/Performance/ECDbMapCAPerformanceTests.cpp $
+|  $Source: Tests/Performance/PerformanceECDbMapCATests.cpp $
 |
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -14,7 +14,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsiClass                                       Muhammad Hassan                  07/15
 //+---------------+---------------+---------------+---------------+---------------+------
-struct ECDbMapCAPerformanceTests : public PerformanceTestFixture
+struct PerformanceECDbMapCATestFixture : public PerformanceTestFixture
     {
     public:
         size_t m_classNamePostFix = 1;
@@ -44,7 +44,7 @@ struct ECDbMapCAPerformanceTests : public PerformanceTestFixture
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  07/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECDbMapCAPerformanceTests::ReadInstances (ECDbR ecdb)
+void PerformanceECDbMapCATestFixture::ReadInstances(ECDbR ecdb)
     {
     int instanceId = 1;
     StopWatch timer (true);
@@ -74,7 +74,7 @@ void ECDbMapCAPerformanceTests::ReadInstances (ECDbR ecdb)
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  07/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECDbMapCAPerformanceTests::DeleteInstances (ECDbR ecdb)
+void PerformanceECDbMapCATestFixture::DeleteInstances(ECDbR ecdb)
     {
     int instanceId = 1;
     StopWatch timer (true);
@@ -104,7 +104,7 @@ void ECDbMapCAPerformanceTests::DeleteInstances (ECDbR ecdb)
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  07/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECDbMapCAPerformanceTests::UpdateInstances (ECDbR ecdb)
+void PerformanceECDbMapCATestFixture::UpdateInstances(ECDbR ecdb)
     {
     int instanceId = 1;
     StopWatch timer (true);
@@ -141,7 +141,7 @@ void ECDbMapCAPerformanceTests::UpdateInstances (ECDbR ecdb)
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  07/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECDbMapCAPerformanceTests::InsertInstances (ECDbR ecdb)
+void PerformanceECDbMapCATestFixture::InsertInstances(ECDbR ecdb)
     {
     StopWatch timer (true);
     for (auto const& kvPair : m_sqlTestItems)
@@ -181,7 +181,7 @@ void ECDbMapCAPerformanceTests::InsertInstances (ECDbR ecdb)
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  07/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECDbMapCAPerformanceTests::GenerateCRUDTestStatements (ECSchemaR ecSchema)
+void PerformanceECDbMapCATestFixture::GenerateCRUDTestStatements(ECSchemaR ecSchema)
     {
     for (ECClassCP testClass : ecSchema.GetClasses ())
         {
@@ -234,7 +234,7 @@ void ECDbMapCAPerformanceTests::GenerateCRUDTestStatements (ECSchemaR ecSchema)
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  07/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECDbMapCAPerformanceTests::CreatePrimitiveProperties (ECClassR ecClass, size_t noOfProperties)
+void PerformanceECDbMapCATestFixture::CreatePrimitiveProperties(ECClassR ecClass, size_t noOfProperties)
     {
     PrimitiveECPropertyP primitiveP;
     for (size_t i = 0; i < 4; i++)
@@ -250,7 +250,7 @@ void ECDbMapCAPerformanceTests::CreatePrimitiveProperties (ECClassR ecClass, siz
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  07/15
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECDbMapCAPerformanceTests::CreateClassHierarchy (ECSchemaR testSchema, size_t LevelCount, ECClassR baseClass)
+void PerformanceECDbMapCATestFixture::CreateClassHierarchy(ECSchemaR testSchema, size_t LevelCount, ECClassR baseClass)
     {
     if (LevelCount == 0)
         return;
@@ -277,7 +277,7 @@ void ECDbMapCAPerformanceTests::CreateClassHierarchy (ECSchemaR testSchema, size
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  07/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECDbMapCAPerformanceTests, InstanceInsertionWithSharedColumnsForSubclasses)
+TEST_F(PerformanceECDbMapCATestFixture, InstanceInsertionWithSharedColumnsForSubclasses)
     {
     m_instancesPerClass = 100;
     ECDbTestProject test;
@@ -324,7 +324,7 @@ TEST_F (ECDbMapCAPerformanceTests, InstanceInsertionWithSharedColumnsForSubclass
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  07/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F (ECDbMapCAPerformanceTests, InstanceInsertionWithDisableSharedColumns)
+TEST_F(PerformanceECDbMapCATestFixture, InstanceInsertionWithDisableSharedColumns)
     {
     m_instancesPerClass = 100;
     ECDbTestProject test;
