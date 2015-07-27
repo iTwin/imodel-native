@@ -106,6 +106,7 @@ struct LocateOptions
 private:
 
 bool                m_disableDgnDbFilter;
+bool                m_allowTransients;
 uint32_t            m_maxHits;
 HitSource           m_hitSource;
 LocateSurfacesPref  m_locateSurface;
@@ -115,6 +116,7 @@ public:
 LocateOptions ()
     {
     m_disableDgnDbFilter    = false;
+    m_allowTransients       = false;
     m_maxHits               = 20;
     m_hitSource             = HitSource::DataPoint;
     m_locateSurface         = LocateSurfacesPref::ByView;
@@ -123,17 +125,20 @@ LocateOptions ()
 LocateOptions (HitSource hitSource, uint32_t maxHits)
     {
     m_disableDgnDbFilter    = false;
+    m_allowTransients       = false;
     m_maxHits               = maxHits;
     m_hitSource             = hitSource;
     m_locateSurface         = LocateSurfacesPref::ByView;
     }
 
 void SetDisableDgnDbFilter (bool disableDgnDbFilter) {m_disableDgnDbFilter = disableDgnDbFilter;}
+void SetAllowTransients (bool allowTransients) {m_allowTransients = allowTransients;}
 void SetMaxHits (uint32_t maxHits) {m_maxHits = maxHits;}
 void SetHitSource (HitSource hitSource) {m_hitSource = hitSource;}
 void SetLocateSurfaces (LocateSurfacesPref locateSurface) {m_locateSurface = locateSurface;}
 
-bool GetDisableDgnDbFilter () const {return m_disableDgnDbFilter;}
+bool GetDisableDgnDbFilter() const {return m_disableDgnDbFilter;}
+bool GetAllowTransients() const {return m_allowTransients;}
 uint32_t GetMaxHits() const {return m_maxHits;}
 HitSource GetHitSource() const {return m_hitSource;}
 LocateSurfacesPref GetLocateSurfaces() const {return m_locateSurface;}
@@ -192,7 +197,7 @@ protected:
 
     DGNVIEW_EXPORT virtual void _Clear ();
     DGNVIEW_EXPORT virtual HitDetailCP _DoLocate (LocateFailureValue* reasonCode, Utf8StringP cantAcceptExplanation, bool newSearch, DPoint3dCR, DgnViewportP, SubSelectionMode mode, bool filterHits);
-    DGNVIEW_EXPORT virtual bool _FilterHit (HitDetailCP, LocateFailureValue*, Utf8StringP cantAcceptExplanation, SubSelectionMode mode, LocateAction);
+    DGNVIEW_EXPORT virtual bool _FilterHit (HitDetailCR, LocateFailureValue*, Utf8StringP cantAcceptExplanation, SubSelectionMode mode, LocateAction);
     DGNVIEW_EXPORT virtual void _InitToolLocate ();
     DGNVIEW_EXPORT virtual void _InitLocateOptions (); // Called from _InitToolLocate to establish defaults.
     DGNVIEW_EXPORT virtual double _GetAperture(); // in graphite, we need the help of the tool admin to set the aperture
@@ -230,7 +235,7 @@ public:
     DGNVIEW_EXPORT void HiliteAndSave (HitDetailCP, bool doHilite, bool checkHilited);
     DGNVIEW_EXPORT void ClearFrom (DgnModelP);
     DGNVIEW_EXPORT void DropFromHilited (DgnModelP modelRef);
-    DGNVIEW_EXPORT bool FilterHit (HitDetailCP, LocateFailureValue*, Utf8StringP cantAcceptExplanation, SubSelectionMode mode, LocateAction);
+    DGNVIEW_EXPORT bool FilterHit (HitDetailCR, LocateFailureValue*, Utf8StringP cantAcceptExplanation, SubSelectionMode mode, LocateAction);
     DGNVIEW_EXPORT double GetAperture();
     DGNVIEW_EXPORT void GetLocateError (Utf8StringR reasonString, int reason);
     DGNVIEW_EXPORT void InitToolLocate ();

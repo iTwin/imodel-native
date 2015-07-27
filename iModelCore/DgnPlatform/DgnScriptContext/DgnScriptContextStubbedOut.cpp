@@ -12,7 +12,15 @@
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
-DgnDbStatus DgnScriptContext::ExecuteJavaScriptEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms)
+DgnDbStatus DgnScriptContext::ExecuteEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms)
+    {
+    return DgnDbStatus::NotEnabled;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      07/15
+//---------------------------------------------------------------------------------------
+DgnDbStatus DgnScriptContext::ExecuteModelSolver(int& functionReturnStatus, Dgn::DgnModelR model, Utf8CP jsFunctionName, Json::Value const& parms)
     {
     return DgnDbStatus::NotEnabled;
     }
@@ -54,7 +62,7 @@ DgnScriptContextR DgnPlatformLib::Host::ScriptingAdmin::GetDgnScriptContext()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
-DgnDbStatus DgnPlatformLib::Host::ScriptingAdmin::_FetchJavaScript(Utf8StringR jsProgramText, DgnDbR db, Utf8CP jsProgramName)
+DgnDbStatus DgnPlatformLib::Host::ScriptingAdmin::_FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DgnDbR db, Utf8CP sName, DgnScriptType stypePreferred)
     {
     return DgnDbStatus::NotEnabled;
     }

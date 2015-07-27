@@ -460,7 +460,7 @@ void DgnViewport::_SetFrustumFromRootCorners(DPoint3dCP rootBox, double compress
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void validateCamera(CameraViewControllerR controller)
     {
-    CameraInfoR camera = controller.GetCameraR();
+    CameraInfoR camera = controller.GetControllerCameraR();
     camera.ValidateLens();
     if (camera.IsFocusValid())
          {
@@ -570,11 +570,11 @@ ViewportStatus DgnViewport::_SetupFromViewController()
             {
             m_is3dView = true;
             m_isCameraOn = (cameraView ? cameraView->IsCameraOn() : false);
+            m_camera = cameraView->GetControllerCamera();
 
             if (m_isCameraOn)
                 {
                 validateCamera(*cameraView);
-                m_camera = cameraView->GetCameraR();
                 }
 
             _AdjustZPlanesToModel(origin, delta, *viewController);
@@ -612,7 +612,8 @@ ViewportStatus DgnViewport::_SetupFromViewController()
     m_viewOrg   = origin;
     m_viewDelta = delta;
 
-    // CenterFocusPlane(); - seems to cause problems. Probably due to the fact that there are then two values for focusplane - one in the vp and one in the viewcontroller.
+    // make sure the focus plane is between front and back planes
+    CenterFocusPlane();
 
     if (SUCCESS != _ConnectToOutput())
         return ViewportStatus::InvalidViewport;

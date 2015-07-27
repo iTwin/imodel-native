@@ -847,7 +847,7 @@ void ViewController::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
     if (nullptr == cameraView)
         return;
 
-    cameraView->GetCameraR().ValidateLens();
+    cameraView->GetControllerCameraR().ValidateLens();
     // move the camera back so the entire x,y range is visible at front plane
     double frontDist = std::max(newDelta.x, newDelta.y) /(2.0*tan(cameraView->GetLensAngle()/2.0));
     double backDist = frontDist + newDelta.z;
@@ -1850,7 +1850,16 @@ StatusInt ViewController::_VisitHit (HitDetailCR hit, ViewContextR context) cons
     GeometricElementCPtr element = hit.GetElement();
 
     if (!element.IsValid())
-        return ERROR;
+        {
+        IElemTopologyCP elemTopo = hit.GetElemTopology();
+        ITransientGeometryHandlerP transientHandler = (nullptr != elemTopo ? elemTopo->_GetTransientGeometryHandler() : nullptr);
+
+        if (nullptr == transientHandler)
+            return ERROR;
+
+        transientHandler->_DrawTransient(hit, context);
+        return SUCCESS;
+        }
 
     ViewContext::ContextMark mark(&context);
 

@@ -673,6 +673,49 @@ QvElem* GeometricElement::GetQvElem(uint32_t id) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Brien.Bastings                  07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementPtr DgnElement::_Clone(DgnDbStatus* stat, DgnElement::CreateParams const* params) const
+    {
+    // Perform input params validation. Code must be different and element id should be invalid...
+    if (nullptr != params)
+        {
+        if (params->m_id.IsValid())
+            {
+            if (nullptr != stat)
+                *stat = DgnDbStatus::InvalidId;
+
+            return nullptr;
+            }
+            
+        if (nullptr != params->m_code && 0 == strcmp(params->m_code, GetCode()))
+            {
+            if (nullptr != stat)
+                *stat = DgnDbStatus::InvalidName;
+
+            return nullptr;
+            }
+        }
+
+    DgnElementPtr cloneElem = GetElementHandler().Create(nullptr != params ? *params : DgnElement::CreateParams(GetDgnDb(), GetModelId(), GetElementClassId(), GetCategoryId(), nullptr, nullptr, DgnElementId()));
+
+    if (!cloneElem.IsValid())
+        {
+        if (nullptr != stat)
+            *stat = DgnDbStatus::BadRequest;
+
+        return nullptr;
+        }
+
+    cloneElem->_CopyFrom(*this);
+
+    if (nullptr != stat)
+        *stat = DgnDbStatus::Success;
+
+    return cloneElem;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::_CopyFrom(DgnElementCR other)
@@ -743,6 +786,7 @@ ElementHandlerR DgnElement::GetElementHandler() const
 DgnElementPtr DgnElement::CopyForEdit() const
     {
     DgnElementPtr newEl = GetElementHandler()._CreateInstance(DgnElement::CreateParams(GetDgnDb(), m_modelId, m_classId, m_categoryId, GetLabel(), GetCode(), m_elementId, m_parentId));
+    BeAssert (typeid(*newEl) == typeid(*this)); // this means the ClassId of the element does not match the type of the element. Caller should find out why.
     newEl->_CopyFrom(*this);
     return newEl;
     }
@@ -997,25 +1041,19 @@ DgnClassId ElementGroup::QueryClassId(DgnDbR db)
     return DgnClassId(db.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ElementGroup));
     }
 
-//    _/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
-//   _/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
-//  _/  *** WIP_ITEM - maybe move the functions below into DgnElementAspect.cpp?  _/_/
-// _/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
-//_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementAspectHandler* ElementAspectHandler::FindHandler(DgnDbR db, DgnClassId handlerId) 
+dgn_AspectHandler::Aspect* dgn_AspectHandler::Aspect::FindHandler(DgnDbR db, DgnClassId handlerId) 
     {
     // quick check for a handler already known
     DgnDomain::Handler* handler = db.Domains().LookupHandler(handlerId);
     if (nullptr != handler)
-        return dynamic_cast<ElementAspectHandler*>(handler);
+        return dynamic_cast<dgn_AspectHandler::Aspect*>(handler);
 
     // not there, check via base classes
     handler = db.Domains().FindHandler(handlerId, db.Domains().GetClassId(GetHandler()));
-    return handler ? dynamic_cast<ElementAspectHandler*>(handler) : nullptr;
+    return handler ? dynamic_cast<dgn_AspectHandler::Aspect*>(handler) : nullptr;
     }
 
 
@@ -1212,7 +1250,7 @@ DgnElement::MultiAspect* DgnElement::MultiAspect::GetAspectP(DgnElementR el, ECN
         }
 
     //  First time we've been asked for this particular aspect. Cache it.
-    ElementAspectHandler* handler = ElementAspectHandler::FindHandler(el.GetDgnDb(), DgnClassId(cls.GetId()));
+    dgn_AspectHandler::Aspect* handler = dgn_AspectHandler::Aspect::FindHandler(el.GetDgnDb(), DgnClassId(cls.GetId()));
     if (nullptr == handler)
         return nullptr;
 
@@ -1333,7 +1371,7 @@ RefCountedPtr<DgnElement::UniqueAspect> DgnElement::UniqueAspect::Load0(DgnEleme
     if (!el.GetElementId().IsValid() || !classid.IsValid())
         return nullptr;
 
-    ElementAspectHandler* handler = ElementAspectHandler::FindHandler(el.GetDgnDb(), classid);
+    dgn_AspectHandler::Aspect* handler = dgn_AspectHandler::Aspect::FindHandler(el.GetDgnDb(), classid);
     if (nullptr == handler)
         return nullptr;
 
@@ -1443,18 +1481,6 @@ DgnClassId DgnElement::Item::QueryExistingItemClass(DgnElementCR el)
         return DgnClassId();
     return DgnClassId(getItemClass->GetValueId<DgnClassId>(0));
     }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 01/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-#ifdef NOT_USED
-static Utf8String getFullNameOfClass(ECN::ECClassCR ecClass)
-    {
-    WString fullClassName (L"[");
-    fullClassName.append (ecClass.GetSchema ().GetName ()).append (L"].[").append (ecClass.GetName ().c_str ()).append (L"]");
-    return Utf8String (fullClassName);
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
@@ -1642,12 +1668,12 @@ DgnDbStatus DgnElement::Item::ExecuteEGA(Dgn::DgnElementR el, DPoint3dCR origin,
     //  JavaScript EGA
     //  ----------------------------------------------------------------------------------
     Json::Value json(Json::objectValue);
-    if (BSISUCCESS != DgnJavaScriptLibrary::ToJsonFromEC(json, egaInstance, Utf8String(egaInputs.GetString())))
+    if (BSISUCCESS != DgnScriptLibrary::ToJsonFromEC(json, egaInstance, Utf8String(egaInputs.GetString())))
         return DgnDbStatus::BadArg;
 
     DgnScriptContextR som = T_HOST.GetScriptingAdmin().GetDgnScriptContext();
     int retval;
-    DgnDbStatus xstatus = som.ExecuteJavaScriptEga(retval, el, tsName.c_str(), origin, angles, json);
+    DgnDbStatus xstatus = som.ExecuteEga(retval, el, tsName.c_str(), origin, angles, json);
     if (xstatus != DgnDbStatus::Success)
         return xstatus;
 

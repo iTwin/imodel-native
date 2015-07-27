@@ -91,7 +91,7 @@ TEST_F (CategoryTests, InsertCategory)
 
     DgnCategories::SubCategory::Appearance appearence;
     appearence.SetInvisible (false);
-    appearence.SetColor (ColorDef::Maroon ());
+    appearence.SetColor (ColorDef::DarkRed ());
     appearence.SetWeight (weight);
     appearence.SetTransparency (trans);
     appearence.SetDisplayPriority (dp);
@@ -201,7 +201,7 @@ TEST_F (CategoryTests, DeleteCategory)
 
     DgnCategories::SubCategory::Appearance appearence;
     appearence.SetInvisible (false);
-    appearence.SetColor (ColorDef::Maroon ());
+    appearence.SetColor (ColorDef::DarkRed ());
     appearence.SetWeight (weight);
     appearence.SetTransparency (trans);
     appearence.SetDisplayPriority (dp);
@@ -246,7 +246,7 @@ TEST_F (CategoryTests, UpdateCategory)
 
     DgnCategories::SubCategory::Appearance appearence;
     appearence.SetInvisible (false);
-    appearence.SetColor (ColorDef::Maroon ());
+    appearence.SetColor (ColorDef::DarkRed ());
     appearence.SetWeight (weight);
     appearence.SetTransparency (trans);
     appearence.SetDisplayPriority (dp);
@@ -299,7 +299,7 @@ TEST_F (CategoryTests, InsertSubCategory)
 
     DgnCategories::SubCategory::Appearance appearence;
     appearence.SetInvisible (false);
-    appearence.SetColor (ColorDef::Maroon ());
+    appearence.SetColor (ColorDef::DarkRed ());
     appearence.SetWeight (weight);
     appearence.SetTransparency (trans);
     appearence.SetDisplayPriority (dp);
@@ -322,7 +322,7 @@ TEST_F (CategoryTests, InsertSubCategory)
 
     //Verifying appearence properties
     DgnCategories::SubCategory::Appearance app = subcategory.GetAppearance ();
-    EXPECT_EQ (ColorDef::Maroon (), app.GetColor ());
+    EXPECT_EQ (ColorDef::DarkRed (), app.GetColor ());
     EXPECT_EQ (dp, app.GetDisplayPriority ());
     EXPECT_EQ (trans, app.GetTransparency ());
     EXPECT_EQ (weight, app.GetWeight ());
@@ -425,7 +425,7 @@ TEST_F (CategoryTests, DeleteSubCategory)
 
     DgnCategories::SubCategory::Appearance appearence;
     appearence.SetInvisible (false);
-    appearence.SetColor (ColorDef::Maroon ());
+    appearence.SetColor (ColorDef::DarkRed ());
     appearence.SetWeight (weight);
     appearence.SetTransparency (trans);
     appearence.SetDisplayPriority (dp);
@@ -483,7 +483,7 @@ TEST_F (CategoryTests, UpdateSubCategory)
 
     DgnCategories::SubCategory::Appearance appearence;
     appearence.SetInvisible (false);
-    appearence.SetColor (ColorDef::Maroon ());
+    appearence.SetColor (ColorDef::DarkRed ());
     appearence.SetWeight (weight);
     appearence.SetTransparency (trans);
     appearence.SetDisplayPriority (dp);

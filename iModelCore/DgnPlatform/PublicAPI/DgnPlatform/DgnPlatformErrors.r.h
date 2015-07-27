@@ -76,6 +76,7 @@ enum class DgnDbStatus : int
     UnitsMissing,
     UnknownFormat,
     UpgradeFailed,
+    ValidationFailed,
     VersionTooNew,
     VersionTooOld,
     ViewNotFound,
@@ -84,6 +85,7 @@ enum class DgnDbStatus : int
     WrongDomain,
     WrongDgnDb,
     WrongElement,
+    WrongHandler,
     WrongModel,
     };
 
