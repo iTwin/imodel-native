@@ -620,8 +620,8 @@ public:
 struct          LsSymbolReference
     {
 //__PUBLISH_SECTION_END__
+    friend struct LsPointComponent;
 private:
-public:
     LsSymbolComponentPtr  m_symbol;
     LsPointComponentP   m_parent;
 
@@ -632,10 +632,7 @@ public:
 
     int                 m_strokeNo;
 
-#if defined(NOTNOW)
-    DgnElementPtrVec const* GetElements() const {return (NULL != m_symbol.get() ? &m_symbol->GetElements() : NULL);}
-#endif
-
+public:
     uint32_t            GetMod1             () const {return m_mod1;}
     double              _GetMaxWidth         (DgnModelP modelRef) const;
 
@@ -669,9 +666,9 @@ public:
     enum VertexMask
         {
         VERTEX_None         = 0x00,
-        VERTEX_LineOrigin   = 0x04,    // Symbol at origin of element
-        VERTEX_LineEnd      = 0x08,    // Symbol at end of element
-        VERTEX_Each         = 0x10,    // Symbol at each vertex
+        VERTEX_LineOrigin   = LCPOINT_LINEORG,    // Symbol at origin of element
+        VERTEX_LineEnd      = LCPOINT_LINEEND,    // Symbol at end of element
+        VERTEX_Each         = LCPOINT_LINEVERT,    // Symbol at each vertex
         VERTEX_Any          = (VERTEX_LineOrigin | VERTEX_LineEnd | VERTEX_Each)
         };
 
