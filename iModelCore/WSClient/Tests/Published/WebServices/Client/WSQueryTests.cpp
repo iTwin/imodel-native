@@ -37,7 +37,7 @@ TEST_F (WSQueryTests, Ctor_ECClassPassed_SetsSchemaAndClass)
             <ECClass typeName="TestClass" />
         </ECSchema>)xml");
 
-    WSQuery query (*schema->GetClassCP (L"TestClass"));
+    WSQuery query (*schema->GetClassCP ("TestClass"));
     EXPECT_STREQ (query.GetSchemaName ().c_str (), "TestSchema");
 #ifdef USE_GTEST
     EXPECT_THAT (query.GetClasses (), ContainerEq (set<Utf8String>{"TestClass"}));
@@ -51,7 +51,7 @@ TEST_F (WSQueryTests, Ctor_ECClassPassedWithPolymorphictrue_SetsSchemaAndPolymor
             <ECClass typeName="TestClass" />
         </ECSchema>)xml");
 
-    WSQuery query (*schema->GetClassCP (L"TestClass"), true);
+    WSQuery query (*schema->GetClassCP ("TestClass"), true);
     EXPECT_STREQ (query.GetSchemaName ().c_str (), "TestSchema");
 #ifdef USE_GTEST
     EXPECT_THAT (query.GetClasses (), ContainerEq (set<Utf8String>{"TestClass!poly"}));

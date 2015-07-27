@@ -60,7 +60,7 @@ TEST_F (ObjectIdTests, Ctor_ECClassPassedWithRemoteId_SchemaAndClassSet)
 
     BentleyApi::ECN::ECSchemaPtr schema;
     BentleyApi::ECN::ECSchema::ReadFromXmlString (schema, schemaXml.c_str (), *BentleyApi::ECN::ECSchemaReadContext::CreateContext ());
-    BentleyApi::ECN::ECClassCP ecClass = schema->GetClassCP (L"TestClass");
+    BentleyApi::ECN::ECClassCP ecClass = schema->GetClassCP ("TestClass");
 
     ObjectId objectId (*ecClass, "Id");
 
@@ -78,7 +78,7 @@ TEST_F (ObjectIdTests, Ctor_ECClassPassed_SchemaAndClassSetWithEmptyRemoteId)
 
     BentleyApi::ECN::ECSchemaPtr schema;
     BentleyApi::ECN::ECSchema::ReadFromXmlString (schema, schemaXml.c_str (), *BentleyApi::ECN::ECSchemaReadContext::CreateContext ());
-    BentleyApi::ECN::ECClassCP ecClass = schema->GetClassCP (L"TestClass");
+    BentleyApi::ECN::ECClassCP ecClass = schema->GetClassCP ("TestClass");
 
     ObjectId objectId (*ecClass);
 
