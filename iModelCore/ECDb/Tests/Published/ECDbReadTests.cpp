@@ -101,7 +101,7 @@ TEST(ECDbInstances, ReadPolymorphic)
      */
     ECSchemaPtr schema = saveTestProject.GetTestSchemaManager ().GetTestSchema ();
     size_t count;
-    ECClassP furniture = schema->GetClassP (L"Furniture");
+    ECClassP furniture = schema->GetClassP ("Furniture");
     ASSERT_TRUE (furniture != nullptr);
     count = CountInstancesOfClass (db, *furniture, false);
     ASSERT_EQ (3, count);
@@ -112,7 +112,7 @@ TEST(ECDbInstances, ReadPolymorphic)
      * Test retrieval when parent and childrenare all in different tables (TablePerClass)
      * Number of instances of Hardware and children = 9 (Hardware = 3, Computer = 3, Monitor = 3)
      */
-    ECClassP hardware = schema->GetClassP (L"Hardware");
+    ECClassP hardware = schema->GetClassP ("Hardware");
     ASSERT_TRUE (hardware != nullptr);
     count = CountInstancesOfClass (db, *hardware, false);
     ASSERT_EQ (3, count);
@@ -123,10 +123,10 @@ TEST(ECDbInstances, ReadPolymorphic)
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                   Ramanujam.Raman                  12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SetStringValue (IECInstanceR instance, WCharCP propertyAccessor, WCharCP stringValue)
+bool SetStringValue (IECInstanceR instance, Utf8CP propertyAccessor, Utf8CP stringValue)
     {
     ECValue ecValue;
-    if (SUCCESS != ecValue.SetString (stringValue, true))
+    if (SUCCESS != ecValue.SetUtf8CP (stringValue, true))
         return false;
     if (ECOBJECTS_STATUS_Success != instance.SetValue (propertyAccessor, ecValue))
         return false;
@@ -136,7 +136,7 @@ bool SetStringValue (IECInstanceR instance, WCharCP propertyAccessor, WCharCP st
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                   Ramanujam.Raman                  12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SetIntValue (IECInstanceR instance, WCharCP propertyAccessor, int intValue)
+bool SetIntValue (IECInstanceR instance, Utf8CP propertyAccessor, int intValue)
     {
     ECValue ecValue;
     if (SUCCESS != ecValue.SetInteger (intValue))
@@ -162,14 +162,14 @@ bool InsertInstance (ECDbR db, ECClassCR ecClass, IECInstanceR ecInstance)
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                   Ramanujam.Raman                  02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr CreatePerson (ECClassCR ecClass, WCharCP firstName, WCharCP lastName)
+IECInstancePtr CreatePerson (ECClassCR ecClass, Utf8CP firstName, Utf8CP lastName)
     {
     IECInstancePtr ecInstance = ecClass.GetDefaultStandaloneEnabler()->CreateInstance(0);
     if (ecInstance.IsNull())
         return nullptr;
-    if (!SetStringValue (*ecInstance, L"FirstName", firstName))
+    if (!SetStringValue (*ecInstance, "FirstName", firstName))
         return nullptr;
-    if (!SetStringValue (*ecInstance, L"LastName", lastName))
+    if (!SetStringValue (*ecInstance, "LastName", lastName))
         return nullptr;
     return ecInstance;
     }
@@ -184,21 +184,21 @@ TEST(ECDbInstances, OrderBy)
     ECDbR db = testProject.Create ("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", false);
 
     // Add some employees
-    ECClassCP employeeClass = testProject.GetTestSchemaManager().GetTestSchema()->GetClassP (L"Employee");
+    ECClassCP employeeClass = testProject.GetTestSchemaManager().GetTestSchema()->GetClassP ("Employee");
     IECInstancePtr employee;
-    employee = CreatePerson (*employeeClass, L"Leonardo", L"Da Vinci");
+    employee = CreatePerson (*employeeClass, "Leonardo", "Da Vinci");
     InsertInstance (db, *employeeClass, *employee);
-    employee = CreatePerson (*employeeClass, L"Galileo", L"Galilei");
+    employee = CreatePerson (*employeeClass, "Galileo", "Galilei");
     InsertInstance (db, *employeeClass, *employee);
-    employee = CreatePerson (*employeeClass, L"Nikola", L"Tesla");
+    employee = CreatePerson (*employeeClass, "Nikola", "Tesla");
     InsertInstance (db, *employeeClass, *employee);
-    employee = CreatePerson (*employeeClass, L"Niels", L"Bohr");
+    employee = CreatePerson (*employeeClass, "Niels", "Bohr");
     InsertInstance (db, *employeeClass, *employee);
-    employee = CreatePerson (*employeeClass, L"Albert", L"Einstein");
+    employee = CreatePerson (*employeeClass, "Albert", "Einstein");
     InsertInstance (db, *employeeClass, *employee);
-    employee = CreatePerson (*employeeClass, L"Albert", L"Einstein");
+    employee = CreatePerson (*employeeClass, "Albert", "Einstein");
     InsertInstance (db, *employeeClass, *employee);
-    employee = CreatePerson (*employeeClass, L"Srinivasa", L"Ramanujan");
+    employee = CreatePerson (*employeeClass, "Srinivasa", "Ramanujan");
     InsertInstance (db, *employeeClass, *employee);
     db.SaveChanges();
 
@@ -240,13 +240,13 @@ TEST(ECDbInstances, LimitOffset)
     ECDbR db = testProject.Create ("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", false);
 
     // Populate 100 instances
-    ECClassCP ecClass = testProject.GetTestSchemaManager().GetTestSchema()->GetClassP (L"ClassWithPrimitiveProperties");
+    ECClassCP ecClass = testProject.GetTestSchemaManager().GetTestSchema()->GetClassP ("ClassWithPrimitiveProperties");
     IECInstancePtr ecInstance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
     ECInstanceInserter inserter (db, *ecClass);
     ASSERT_TRUE (inserter.IsValid ());
     for (int ii = 0; ii < 100; ii++)
         {
-        bool instanceStatus = SetIntValue (*ecInstance, L"intProp", ii);
+        bool instanceStatus = SetIntValue (*ecInstance, "intProp", ii);
         ASSERT_TRUE (instanceStatus);
         ECInstanceKey instanceKey;
         auto insertStatus = inserter.Insert (instanceKey, *ecInstance);
@@ -323,10 +323,10 @@ TEST(ECDbInstances, WriteCalculatedECProperty)
     ECInstanceKey id;
     auto insertStatus = inserter.Insert(id, *(instance.get()));
     ASSERT_TRUE(insertStatus == BentleyStatus::SUCCESS);
-    instance->SetInstanceId(L"");
+    instance->SetInstanceId("");
     insertStatus = inserter.Insert(id, *(instance.get()));
     ASSERT_TRUE(insertStatus == BentleyStatus::SUCCESS);
-    instance->SetInstanceId(L"");
+    instance->SetInstanceId("");
     insertStatus = inserter.Insert(id, *(instance.get()));
     ASSERT_TRUE(insertStatus == BentleyStatus::SUCCESS);
     s.Commit();
@@ -355,7 +355,7 @@ TEST(ECDbTest, createECDbWithArbitraryNumberOfECInstances)
     ECDbR ecdbr = testproject.Create("ecdbWithArbitratyInstances.ecdb", L"SimpleCompany.01.00.ecschema.xml", 1);
     ECSchemaCP ecschemap = ecdbr. Schemas ().GetECSchema ("SimpleCompany", true);
     ASSERT_TRUE (ecschemap != nullptr);
-    ECClassCP employee = ecschemap->GetClassCP(L"Employee");
+    ECClassCP employee = ecschemap->GetClassCP("Employee");
     ASSERT_TRUE(employee != NULL);
     size_t count;
     count = CountInstancesOfClass(ecdbr, *employee, false);

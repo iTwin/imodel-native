@@ -47,22 +47,22 @@ static bool ColumnExist(DbR db, WCharCP table, WCharCP column)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WriteECSchemaDiffToLog (ECDiffR diff, NativeLogging::SEVERITY severity = NativeLogging::LOG_INFO)
     {
-    WString diffString;
+    Utf8String diffString;
     ASSERT_EQ (diff.WriteToString(diffString, 2), DIFFSTATUS_Success);
-    LOG.message (severity,  L"ECDiff: Legend [L] Added from left schema, [R] Added from right schema, [!] conflicting value");
-    LOG.message (severity, L"=====================================[ECDiff Start]=====================================");
+    LOG.message (severity,  "ECDiff: Legend [L] Added from left schema, [R] Added from right schema, [!] conflicting value");
+    LOG.message (severity, "=====================================[ECDiff Start]=====================================");
     //LOG doesnt allow single large string
-    WString eol = L"\r\n";
-    WString::size_type i = 0;
-    WString::size_type j = diffString.find (eol, i);
-    while ( j > i && j != WString::npos)
+    Utf8String eol = "\r\n";
+    Utf8String::size_type i = 0;
+    Utf8String::size_type j = diffString.find (eol, i);
+    while ( j > i && j != Utf8String::npos)
         {
-        WString line = diffString.substr (i, j - i);
-        LOG.messagev (severity, L"> %ls" , line.c_str()); //print out the difference
+        Utf8String line = diffString.substr (i, j - i);
+        LOG.messagev (severity, "> %s" , line.c_str()); //print out the difference
         i = j + eol.size();
         j = diffString.find (eol, i);
         }
-    LOG.message (severity, L"=====================================[ECDiff End]=====================================");
+    LOG.message (severity, "=====================================[ECDiff End]=====================================");
     }
 
 
@@ -74,7 +74,7 @@ void PopulatePrimitiveValueWithCustomDataSet2 (ECValueR value, PrimitiveType pri
     value.Clear();
     switch (primitiveType)
         {
-        case PRIMITIVETYPE_String  : value.SetString(L"Tim Cook"); break;
+        case PRIMITIVETYPE_String  : value.SetUtf8CP("Tim Cook"); break;
         case PRIMITIVETYPE_Integer : value.SetInteger(987); break;
         case PRIMITIVETYPE_Long    : value.SetLong(987654321); break;
         case PRIMITIVETYPE_Double  : value.SetDouble(PI*3);break;
@@ -135,9 +135,9 @@ ECSchemaReadContextPtr LocateECSchema (ECDbR ecDB, BeFileNameCR ecSchemaFile, EC
     size_t extPos = schemaFullName.length () - wcslen (ecSchemaExt);
     if (schemaFullName.substr (extPos).CompareToI (ecSchemaExt) == 0)
         {
-        WString schemaName;
+        Utf8String schemaName;
         uint32_t schemaMajor, schemaMinor;
-        if (ECSchema::ParseSchemaFullName (schemaName, schemaMajor, schemaMinor, schemaFullName.substr (0, extPos)) == ECOBJECTS_STATUS_Success)
+        if (ECSchema::ParseSchemaFullName (schemaName, schemaMajor, schemaMinor, Utf8String(schemaFullName.substr (0, extPos).c_str())) == ECOBJECTS_STATUS_Success)
             {
             ECSchemaReadContextPtr contextPtr = ECSchemaReadContext::CreateContext ();
             contextPtr->AddSchemaLocater (ecDB. GetSchemaLocater ());
@@ -303,8 +303,8 @@ TEST(ECDbSchemas, UpdatingExistingECSchema)
     ASSERT_EQ (diff->GetStatus() , DIFFSTATUS_Success);
     if (!diff->IsEmpty())
         {
-        bmap<WString, DiffNodeState> searchResults;
-        diff->GetNodesState(searchResults, L"*.ArrayInfo");
+        bmap<Utf8String, DiffNodeState> searchResults;
+        diff->GetNodesState(searchResults, "*.ArrayInfo");
         if (!searchResults.empty())
             LOG.error(L"*** Feature missing : Array type property Maxoccurs and Minoccurs are not stored currently by ECDbSchemaManager");
         WriteECSchemaDiffToLog(*diff, NativeLogging::LOG_ERROR);
@@ -341,15 +341,15 @@ TEST(ECDbSchemas, UpdateExistingECSchemaWithNewProperties)
     ECDbR db = testProject.Create("updateSchemaMinorVersion.ecdb");
 
     ECSchemaPtr schema12;
-    ECSchema::CreateSchema(schema12, L"TestSchema", 1, 2);
-    schema12->SetNamespacePrefix(L"ts");
-    schema12->SetDescription(L"Schema for testing upgrades");
-    schema12->SetDisplayLabel(L"Test Schema");
+    ECSchema::CreateSchema(schema12, "TestSchema", 1, 2);
+    schema12->SetNamespacePrefix("ts");
+    schema12->SetDescription("Schema for testing upgrades");
+    schema12->SetDisplayLabel("Test Schema");
 
     ECClassP widget12;
-    schema12->CreateClass(widget12, L"WIDGET");
+    schema12->CreateClass(widget12, "WIDGET");
     PrimitiveECPropertyP stringProp12;
-    widget12->CreatePrimitiveProperty(stringProp12, L"propA");
+    widget12->CreatePrimitiveProperty(stringProp12, "propA");
 
     auto schemaCache12 = ECSchemaCache::Create ();
     schemaCache12->AddSchema (*schema12);
@@ -362,15 +362,15 @@ TEST(ECDbSchemas, UpdateExistingECSchemaWithNewProperties)
     db.OpenBeSQLiteDb(ecdbFileName.c_str(), Db::OpenParams(Db::OpenMode::ReadWrite));
 
     ECSchemaPtr schema11;
-    ECSchema::CreateSchema(schema11, L"TestSchema", 1, 1);
-    schema11->SetNamespacePrefix(L"ts");
-    schema11->SetDescription(L"Schema for testing upgrades");
-    schema11->SetDisplayLabel(L"Test Schema");
+    ECSchema::CreateSchema(schema11, "TestSchema", 1, 1);
+    schema11->SetNamespacePrefix("ts");
+    schema11->SetDescription("Schema for testing upgrades");
+    schema11->SetDisplayLabel("Test Schema");
 
     ECClassP widget11;
-    schema11->CreateClass(widget11, L"WIDGET");
+    schema11->CreateClass(widget11, "WIDGET");
     PrimitiveECPropertyP stringProp11;
-    widget11->CreatePrimitiveProperty(stringProp11, L"propA");
+    widget11->CreatePrimitiveProperty(stringProp11, "propA");
 
     auto schemaCache11 = ECSchemaCache::Create ();
     schemaCache11->AddSchema (*schema11);
@@ -378,19 +378,19 @@ TEST(ECDbSchemas, UpdateExistingECSchemaWithNewProperties)
     ASSERT_EQ(ERROR, importSchemaStatus);
 
     ECSchemaPtr schema13;
-    ECSchema::CreateSchema(schema13, L"TestSchema", 1, 3);
-    schema13->SetNamespacePrefix(L"ts");
-    schema13->SetDescription(L"Schema for testing upgrades");
-    schema13->SetDisplayLabel(L"Test Schema");
+    ECSchema::CreateSchema(schema13, "TestSchema", 1, 3);
+    schema13->SetNamespacePrefix("ts");
+    schema13->SetDescription("Schema for testing upgrades");
+    schema13->SetDisplayLabel("Test Schema");
 
     ECClassP widget13;
     ECClassP gadget13;
-    schema13->CreateClass(widget13, L"WIDGET");
-    schema13->CreateClass(gadget13, L"GADGET");
+    schema13->CreateClass(widget13, "WIDGET");
+    schema13->CreateClass(gadget13, "GADGET");
     PrimitiveECPropertyP stringProp13;
     PrimitiveECPropertyP intProp13;
-    widget13->CreatePrimitiveProperty(stringProp13, L"propA");
-    widget13->CreatePrimitiveProperty(intProp13, L"propB");
+    widget13->CreatePrimitiveProperty(stringProp13, "propA");
+    widget13->CreatePrimitiveProperty(intProp13, "propB");
 
     auto schemaCache13 = ECSchemaCache::Create ();
     schemaCache13->AddSchema (*schema13);
@@ -402,9 +402,9 @@ TEST(ECDbSchemas, UpdateExistingECSchemaWithNewProperties)
     ECSchemaCP updatedECSchema = db. Schemas ().GetECSchema ("TestSchema");
     ASSERT_TRUE (updatedECSchema != nullptr);
 
-    ECClassCP updatedGadget = updatedECSchema->GetClassCP(L"GADGET");
+    ECClassCP updatedGadget = updatedECSchema->GetClassCP("GADGET");
     ASSERT_TRUE(nullptr != updatedGadget);
-    ECClassCP updatedWidget = updatedECSchema->GetClassCP(L"WIDGET");
+    ECClassCP updatedWidget = updatedECSchema->GetClassCP("WIDGET");
     ASSERT_TRUE(nullptr != updatedWidget);
     //ECPropertyP pProperty = updatedWidget->GetPropertyP(L"propB");
     //ASSERT_TRUE(nullptr != pProperty);
@@ -596,7 +596,7 @@ TEST(ECDbSchemas, VerifyEmptyECSchemaCanBeRead)
     DbResult stat = ecdb.CreateNewDb (nullptr);
     ASSERT_EQ (BE_SQLITE_OK, stat) << "Creation of test ECDb file failed.";
     ECSchemaPtr emptySchema;
-    ECSchema::CreateSchema(emptySchema,L"EmptyECSchema", 1, 0);
+    ECSchema::CreateSchema(emptySchema,"EmptyECSchema", 1, 0);
     auto cache = ECSchemaCache::Create();
     cache->AddSchema (*emptySchema);
     auto schemaStat = ecdb.Schemas().ImportECSchemas(*cache);
@@ -1274,20 +1274,20 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
 ECSchemaCachePtr CreateImportSchemaAgainstExistingTablesTestSchema ()
     {
     ECSchemaPtr testSchema = nullptr;
-    ECSchema::CreateSchema (testSchema, L"test", 1, 0);
-    testSchema->SetNamespacePrefix (L"t");
+    ECSchema::CreateSchema (testSchema, "test", 1, 0);
+    testSchema->SetNamespacePrefix ("t");
     ECClassP fooClass = nullptr;
-    testSchema->CreateClass (fooClass, L"Foo");
+    testSchema->CreateClass (fooClass, "Foo");
     PrimitiveECPropertyP prop = nullptr;
-    fooClass->CreatePrimitiveProperty (prop, L"Name", PRIMITIVETYPE_String);
+    fooClass->CreatePrimitiveProperty (prop, "Name", PRIMITIVETYPE_String);
 
     ECClassP gooClass = nullptr;
-    testSchema->CreateClass (gooClass, L"Goo");
+    testSchema->CreateClass (gooClass, "Goo");
     prop = nullptr;
-    gooClass->CreatePrimitiveProperty (prop, L"Price", PRIMITIVETYPE_Double);
+    gooClass->CreatePrimitiveProperty (prop, "Price", PRIMITIVETYPE_Double);
 
     ECRelationshipClassP oneToManyRelClass = nullptr;
-    testSchema->CreateRelationshipClass (oneToManyRelClass, L"FooHasGoo");
+    testSchema->CreateRelationshipClass (oneToManyRelClass, "FooHasGoo");
     oneToManyRelClass->SetStrength (STRENGTHTYPE_Holding);
     oneToManyRelClass->GetSource ().AddClass (*fooClass);
     oneToManyRelClass->GetSource ().SetCardinality (RelationshipCardinality::OneOne ());
@@ -1295,7 +1295,7 @@ ECSchemaCachePtr CreateImportSchemaAgainstExistingTablesTestSchema ()
     oneToManyRelClass->GetTarget ().SetCardinality (RelationshipCardinality::ZeroMany ());
 
     ECRelationshipClassP manyToManyRelClass = nullptr;
-    testSchema->CreateRelationshipClass (manyToManyRelClass, L"RelFooGoo");
+    testSchema->CreateRelationshipClass (manyToManyRelClass, "RelFooGoo");
     manyToManyRelClass->SetStrength (STRENGTHTYPE_Referencing);
     manyToManyRelClass->GetSource ().AddClass (*fooClass);
     manyToManyRelClass->GetSource ().SetCardinality (RelationshipCardinality::ZeroMany ());
@@ -1466,17 +1466,17 @@ TEST (ECDbSchemas, DeigoRelationshipTest2)
     ECDbTestProject test;
     auto& ecdb = test.Create ("importecschema.ecdb");
     const int nSchemas = 10;
-    WChar schemaNames[nSchemas][255] = {
-        L"Bentley_Civil_Objects.02.00",
-        L"HW_Bentley_Civil__Model_Geometry.03.00",
-        L"HW_Bentley_Civil__Model_Geometry_ContentManagement.03.00",
-        L"HW_Bentley_Civil__Model_Base.03.00",
-        L"HW_Bentley_Civil__Model_ContentManagement.03.00",
-        L"HW_Bentley_Civil__Model_DesignStandards.03.00",
-        L"HW_Bentley_Civil__Model_DTMFilterGroups.03.00",
-        L"HW_Bentley_Civil__Model_FilterGroups.03.00",
-        L"HW_Bentley_Civil__Model_MX.03.00",
-        L"HW_Bentley_Civil__Model_ProjectSettings.03.00"
+    Utf8Char schemaNames[nSchemas][255] = {
+        "Bentley_Civil_Objects.02.00",
+        "HW_Bentley_Civil__Model_Geometry.03.00",
+        "HW_Bentley_Civil__Model_Geometry_ContentManagement.03.00",
+        "HW_Bentley_Civil__Model_Base.03.00",
+        "HW_Bentley_Civil__Model_ContentManagement.03.00",
+        "HW_Bentley_Civil__Model_DesignStandards.03.00",
+        "HW_Bentley_Civil__Model_DTMFilterGroups.03.00",
+        "HW_Bentley_Civil__Model_FilterGroups.03.00",
+        "HW_Bentley_Civil__Model_MX.03.00",
+        "HW_Bentley_Civil__Model_ProjectSettings.03.00"
         };
     ECSchemaPtr loadedSchema;
     ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext ();
@@ -1488,9 +1488,9 @@ TEST (ECDbSchemas, DeigoRelationshipTest2)
         if (ctx->GetCache().GetSchema (schemaKey, SchemaMatchType::SCHEMAMATCHTYPE_Exact))
             continue;
 
-        WString schemaFile = schemaNames[i];
-        schemaFile.append(L".ecschema.xml");
-        ECDbTestUtility::ReadECSchemaFromDisk (loadedSchema, ctx, schemaFile.c_str(), nullptr);
+        Utf8String schemaFile = schemaNames[i];
+        schemaFile.append(".ecschema.xml");
+        ECDbTestUtility::ReadECSchemaFromDisk (loadedSchema, ctx, WString(schemaFile.c_str(), BentleyCharEncoding::Utf8).c_str(), nullptr);
         ASSERT_TRUE (loadedSchema.IsValid ());
         }
 
@@ -1597,41 +1597,41 @@ ECSchemaCachePtr& testSchemaCache
 )
     {
     ECSchemaPtr schema = nullptr;
-    ECObjectsStatus stat = ECSchema::CreateSchema (schema, L"foo", 1, 0);
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, stat) << L"Creating test schema failed";
+    ECObjectsStatus stat = ECSchema::CreateSchema (schema, "foo", 1, 0);
+    ASSERT_EQ (ECOBJECTS_STATUS_Success, stat) << "Creating test schema failed";
 
     ECClassP domainClass = nullptr;
-    stat = schema->CreateClass (domainClass, L"domain1");
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, stat) << L"Creating domain class 1 in schema failed";
+    stat = schema->CreateClass (domainClass, "domain1");
+    ASSERT_EQ (ECOBJECTS_STATUS_Success, stat) << "Creating domain class 1 in schema failed";
     domainClass->SetIsDomainClass (true);
     domainClass->SetIsCustomAttributeClass (false);
     domainClass->SetIsStruct (false);
 
     ECClassP domainClass2 = nullptr;
-    stat = schema->CreateClass (domainClass2, L"domain2");
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, stat) << L"Creating domain class 2 in schema failed";
+    stat = schema->CreateClass (domainClass2, "domain2");
+    ASSERT_EQ (ECOBJECTS_STATUS_Success, stat) << "Creating domain class 2 in schema failed";
     domainClass2->SetIsDomainClass (true);
     domainClass2->SetIsCustomAttributeClass (false);
     domainClass2->SetIsStruct (false);
 
     ECClassP caClass = nullptr;
-    stat = schema->CreateClass (caClass, L"MyCA");
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, stat) << L"Creating CA class in schema failed";
+    stat = schema->CreateClass (caClass, "MyCA");
+    ASSERT_EQ (ECOBJECTS_STATUS_Success, stat) << "Creating CA class in schema failed";
     caClass->SetIsDomainClass (false);
     caClass->SetIsCustomAttributeClass (true);
     caClass->SetIsStruct (false);
 
     PrimitiveECPropertyP dateProp = nullptr;
-    caClass->CreatePrimitiveProperty (dateProp, L"dateprop", PRIMITIVETYPE_DateTime);
+    caClass->CreatePrimitiveProperty (dateProp, "dateprop", PRIMITIVETYPE_DateTime);
 
     PrimitiveECPropertyP stringProp = nullptr;
-    caClass->CreatePrimitiveProperty (stringProp, L"stringprop", PRIMITIVETYPE_String);
+    caClass->CreatePrimitiveProperty (stringProp, "stringprop", PRIMITIVETYPE_String);
 
     PrimitiveECPropertyP doubleProp = nullptr;
-    caClass->CreatePrimitiveProperty (doubleProp, L"doubleprop", PRIMITIVETYPE_Double);
+    caClass->CreatePrimitiveProperty (doubleProp, "doubleprop", PRIMITIVETYPE_Double);
 
     PrimitiveECPropertyP pointProp = nullptr;
-    caClass->CreatePrimitiveProperty (pointProp, L"pointprop", PRIMITIVETYPE_Point3D);
+    caClass->CreatePrimitiveProperty (pointProp, "pointprop", PRIMITIVETYPE_Point3D);
 
     ECSchemaCachePtr cache = ECSchemaCache::Create ();
     cache->AddSchema (*schema);
@@ -1647,10 +1647,10 @@ void AssignCustomAttribute
 (
 IECInstancePtr& caInstance,
 ECSchemaPtr schema,
-WCharCP containerClassName,
-WCharCP caClassName,
-WCharCP instanceId,
-bmap<WString, ECValue> const& caPropValues
+Utf8CP containerClassName,
+Utf8CP caClassName,
+Utf8CP instanceId,
+bmap<Utf8String, ECValue> const& caPropValues
 )
     {
     ECClassP caClass = schema->GetClassP (caClassName);
@@ -1661,20 +1661,20 @@ bmap<WString, ECValue> const& caPropValues
     if (instanceId != nullptr)
         {
         stat = ca->SetInstanceId (instanceId);
-        ASSERT_EQ (ECOBJECTS_STATUS_Success, stat) << L"Setting instance id in CA instance failed";
+        ASSERT_EQ (ECOBJECTS_STATUS_Success, stat) << "Setting instance id in CA instance failed";
         }
 
-    typedef bpair<WString, ECValue> T_PropValuePair;
+    typedef bpair<Utf8String, ECValue> T_PropValuePair;
 
     for (T_PropValuePair const& pair : caPropValues)
         {
         stat = ca->SetValue (pair.first.c_str (), pair.second);
-        ASSERT_EQ (ECOBJECTS_STATUS_Success, stat) << L"Assigning property value to CA instance failed";
+        ASSERT_EQ (ECOBJECTS_STATUS_Success, stat) << "Assigning property value to CA instance failed";
         }
 
     ECClassP containerClass = schema->GetClassP (containerClassName);
     stat = containerClass->SetCustomAttribute (*ca);
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, stat) << L"Assigning CA instance to container class failed";
+    ASSERT_EQ (ECOBJECTS_STATUS_Success, stat) << "Assigning CA instance to container class failed";
 
     caInstance = ca;
     }
@@ -1688,18 +1688,18 @@ ECSchemaPtr testSchema
 )
     {
     //assign CA with instance id and all props populated
-    bmap<WString, ECValue> propValueMap;
-    propValueMap[WString (L"dateprop")] = ECValue (DateTime (DateTime::Kind::Unspecified, 1971, 4, 30, 21, 9, 0, 0));
-    propValueMap[WString (L"stringprop")] = ECValue ("hello world", true);
-    propValueMap[WString (L"doubleprop")] = ECValue (3.14);
+    bmap<Utf8String, ECValue> propValueMap;
+    propValueMap[Utf8String ("dateprop")] = ECValue (DateTime (DateTime::Kind::Unspecified, 1971, 4, 30, 21, 9, 0, 0));
+    propValueMap[Utf8String ("stringprop")] = ECValue ("hello world", true);
+    propValueMap[Utf8String ("doubleprop")] = ECValue (3.14);
     DPoint3d point;
     point.x = 1.0;
     point.y = -2.0;
     point.z = 3.0;
-    propValueMap[WString (L"pointprop")] = ECValue (point);
+    propValueMap[Utf8String("pointprop")] = ECValue (point);
 
     IECInstancePtr ca = nullptr;
-    AssignCustomAttribute (ca, testSchema, L"domain1", L"MyCA", L"bla bla", propValueMap);
+    AssignCustomAttribute (ca, testSchema, "domain1", "MyCA", "bla bla", propValueMap);
 
     return ca;
     }
@@ -1710,7 +1710,7 @@ ECSchemaPtr testSchema
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbSchemas, ReadCustomAttributesTest)
     {
-    WCharCP const CAClassName = L"MyCA";
+    Utf8CP const CAClassName = "MyCA";
 
     ECSchemaPtr testSchema = nullptr;
     ECSchemaCachePtr testSchemaCache = nullptr;
@@ -1720,10 +1720,10 @@ TEST(ECDbSchemas, ReadCustomAttributesTest)
     IECInstancePtr expectedCAInstanceWithInstanceId = CreateAndAssignRandomCAInstance (testSchema);
 
     //assign CA without instance id and only a few props populated
-    bmap<WString, ECValue> propValueMap;
-    propValueMap[WString (L"doubleprop")] = ECValue (3.14);
+    bmap<Utf8String, ECValue> propValueMap;
+    propValueMap[Utf8String ("doubleprop")] = ECValue (3.14);
     IECInstancePtr expectedCAInstanceWithoutInstanceId = nullptr;
-    AssignCustomAttribute (expectedCAInstanceWithoutInstanceId, testSchema, L"domain2", CAClassName, nullptr, propValueMap);
+    AssignCustomAttribute (expectedCAInstanceWithoutInstanceId, testSchema, "domain2", CAClassName, nullptr, propValueMap);
 
     //create test db and close it again
     Utf8String dbPath;
@@ -1741,13 +1741,13 @@ TEST(ECDbSchemas, ReadCustomAttributesTest)
     DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OpenMode::Readonly));
     ASSERT_EQ (BE_SQLITE_OK, stat) << L"Could not open test ECDb file";
 
-    ECSchemaCP readSchema = db. Schemas ().GetECSchema (Utf8String (testSchema->GetName().c_str ()).c_str ());
+    ECSchemaCP readSchema = db. Schemas ().GetECSchema (testSchema->GetName().c_str ());
     ASSERT_TRUE (readSchema != nullptr) << L"Could not read test schema from reopened ECDb file.";
     //*** assert custom attribute instance with instance id
-    ECClassCP domainClass1 = readSchema->GetClassCP (L"domain1");
-    ASSERT_TRUE (domainClass1 != nullptr) << L"Could not retrieve domain class 1 from re-read test schema.";
+    ECClassCP domainClass1 = readSchema->GetClassCP ("domain1");
+    ASSERT_TRUE (domainClass1 != nullptr) << "Could not retrieve domain class 1 from re-read test schema.";
     IECInstancePtr actualCAInstanceWithInstanceId = domainClass1->GetCustomAttribute (CAClassName);
-    ASSERT_TRUE (actualCAInstanceWithInstanceId.IsValid ()) << L"Test custom attribute instance not found on domain class 1.";
+    ASSERT_TRUE (actualCAInstanceWithInstanceId.IsValid ()) << "Test custom attribute instance not found on domain class 1.";
 
     //compare instance ids
     ASSERT_STREQ (expectedCAInstanceWithInstanceId->GetInstanceId ().c_str (), actualCAInstanceWithInstanceId->GetInstanceId ().c_str ()) << L"Instance Ids of retrieved custom attribute instance doesn't match.";
@@ -1757,18 +1757,18 @@ TEST(ECDbSchemas, ReadCustomAttributesTest)
     ASSERT_TRUE (equal) << L"Read custom attribute instance with instance id differs from expected.";
 
     //*** assert custom attribute instance without instance id
-    ECClassCP domainClass2 = readSchema->GetClassCP (L"domain2");
-    ASSERT_TRUE (domainClass2 != nullptr) << L"Could not retrieve domain class 2 from re-read test schema.";
+    ECClassCP domainClass2 = readSchema->GetClassCP ("domain2");
+    ASSERT_TRUE (domainClass2 != nullptr) << "Could not retrieve domain class 2 from re-read test schema.";
     IECInstancePtr actualCAInstanceWithoutInstanceId = domainClass2->GetCustomAttribute (CAClassName);
-    ASSERT_TRUE (actualCAInstanceWithoutInstanceId.IsValid ()) << L"Test custom attribute instance not found on domain class 2.";
+    ASSERT_TRUE (actualCAInstanceWithoutInstanceId.IsValid ()) << "Test custom attribute instance not found on domain class 2.";
 
     //compare instance ids
-    ASSERT_STREQ (expectedCAInstanceWithoutInstanceId->GetInstanceId ().c_str (), actualCAInstanceWithoutInstanceId->GetInstanceId ().c_str ()) << L"Instance Ids of retrieved custom attribute instance doesn't match.";
-    ASSERT_STREQ (L"", actualCAInstanceWithoutInstanceId->GetInstanceId ().c_str ()) << L"Instance Ids of retrieved custom attribute instance is expected to be empty";
+    ASSERT_STREQ (expectedCAInstanceWithoutInstanceId->GetInstanceId ().c_str (), actualCAInstanceWithoutInstanceId->GetInstanceId ().c_str ()) << "Instance Ids of retrieved custom attribute instance doesn't match.";
+    ASSERT_STREQ ("", actualCAInstanceWithoutInstanceId->GetInstanceId ().c_str ()) << "Instance Ids of retrieved custom attribute instance is expected to be empty";
     
     //compare rest of instance
     equal = ECDbTestUtility::CompareECInstances (*expectedCAInstanceWithoutInstanceId, *actualCAInstanceWithoutInstanceId);
-    ASSERT_TRUE (equal) << L"Read custom attribute instance without instance id differs from expected.";
+    ASSERT_TRUE (equal) << "Read custom attribute instance without instance id differs from expected.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -1819,8 +1819,8 @@ TEST(ECDbSchemas, CheckCustomAttributesXmlFormatTest)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbSchemas, HandlingMismatchesBetweenCAInstanceAndCAClassTest)
     {
-    WCharCP const CAClassName = L"MyCA";
-    WCharCP nameOfCAPropertyToRemove = L"dateprop";
+    Utf8CP const CAClassName = "MyCA";
+    Utf8CP nameOfCAPropertyToRemove = "dateprop";
 
     ECSchemaPtr testSchema = nullptr;
     ECSchemaCachePtr testSchemaCache = nullptr;
@@ -1835,7 +1835,7 @@ TEST(ECDbSchemas, HandlingMismatchesBetweenCAInstanceAndCAClassTest)
         ECDbTestProject testProject;
         ECDbR db = testProject.Create ("customattributestest.ecdb");
         auto importStat = db. Schemas ().ImportECSchemas (*testSchemaCache);
-        ASSERT_EQ (SUCCESS, importStat) << L"Could not import test schema into ECDb file";
+        ASSERT_EQ (SUCCESS, importStat) << "Could not import test schema into ECDb file";
 
         //now remove one of the CA properties only in the CA class definition again
         Statement stmt;
@@ -1851,36 +1851,36 @@ TEST(ECDbSchemas, HandlingMismatchesBetweenCAInstanceAndCAClassTest)
     //now reopen the out-synched ECDb file (to make sure that the schema stuff is read into memory from scratch
     ECDb db;
     DbResult stat = db.OpenBeSQLiteDb (dbPath.c_str (), Db::OpenParams(Db::OpenMode::Readonly));
-    ASSERT_EQ (BE_SQLITE_OK, stat) << L"Could not open test ECDb file";
+    ASSERT_EQ (BE_SQLITE_OK, stat) << "Could not open test ECDb file";
 
     ECSchemaCP readSchema = db. Schemas ().GetECSchema (Utf8String (testSchema->GetName ().c_str ()).c_str ());
-    ASSERT_TRUE (readSchema != nullptr) << L"Could not read test schema from reopened ECDb file.";
+    ASSERT_TRUE (readSchema != nullptr) << "Could not read test schema from reopened ECDb file.";
 
     //assert custom attribute instance with instance id
-    ECClassCP domainClass1 = readSchema->GetClassCP (L"domain1");
-    ASSERT_TRUE (domainClass1 != nullptr) << L"Could not retrieve domain class 1 from re-read test schema.";
+    ECClassCP domainClass1 = readSchema->GetClassCP ("domain1");
+    ASSERT_TRUE (domainClass1 != nullptr) << "Could not retrieve domain class 1 from re-read test schema.";
 
     IECInstancePtr actualCAInstance = domainClass1->GetCustomAttribute (CAClassName);
-    ASSERT_TRUE (actualCAInstance.IsValid ()) << L"Test custom attribute instance not found on domain class 1.";
+    ASSERT_TRUE (actualCAInstance.IsValid ()) << "Test custom attribute instance not found on domain class 1.";
 
     //removed property is expected to not be found anymore in the instance
     bool isNull = false;
     ECObjectsStatus ecStat = actualCAInstance->IsPropertyNull (isNull, nameOfCAPropertyToRemove);
-    EXPECT_EQ (ECOBJECTS_STATUS_PropertyNotFound, ecStat) << L"Calling IsPropertyNull on CA instance";
+    EXPECT_EQ (ECOBJECTS_STATUS_PropertyNotFound, ecStat) << "Calling IsPropertyNull on CA instance";
 
     //now check whether the rest of the instance is still the same
     ECValuesCollectionPtr expectedValueCollection = ECValuesCollection::Create (*expectedCAInstance);
     for (ECPropertyValueCR expectedPropertyValue : *expectedValueCollection)
         {
-        WCharCP expectedPropertyName = expectedPropertyValue.GetValueAccessor ().GetAccessString ();
-        if (BeStringUtilities::Wcsicmp (expectedPropertyName, nameOfCAPropertyToRemove) == 0)
+        Utf8CP expectedPropertyName = expectedPropertyValue.GetValueAccessor ().GetAccessString ();
+        if (BeStringUtilities::Stricmp (expectedPropertyName, nameOfCAPropertyToRemove) == 0)
             {
             continue;
             }
 
         ECValue actualValue;
         ecStat = actualCAInstance->GetValue (actualValue, expectedPropertyName);
-        EXPECT_EQ (ECOBJECTS_STATUS_Success, stat) << L"Property '" << expectedPropertyName << L"' not found in actual CA instance.";
+        EXPECT_EQ (ECOBJECTS_STATUS_Success, stat) << "Property '" << expectedPropertyName << "' not found in actual CA instance.";
         EXPECT_TRUE (expectedPropertyValue.GetValue ().Equals (actualValue)) << L"Property values for property '" << expectedPropertyName << L"' do not match";
         }
     }
@@ -1917,7 +1917,7 @@ TEST(ECDbSchemas, ImportSupplementalSchemas)
     ECSchemaPtr supple;
     ECDbTestUtility::ReadECSchemaFromDisk (startup, schemaContext, L"StartupCompany.02.00.ecschema.xml");
     ECDbTestUtility::ReadECSchemaFromDisk (supple, schemaContext, L"StartupCompany_Supplemental_ECDbTest.01.00.ecschema.xml");
-    SchemaKey key (L"StartupCompany", 2, 0);
+    SchemaKey key ("StartupCompany", 2, 0);
 
     bvector<ECSchemaP> supplementalSchemas;
     supplementalSchemas.push_back (supple.get ());
@@ -1943,7 +1943,7 @@ TEST(ECDbSchemas, ImportSupplementalSchemas)
     db.OpenBeSQLiteDb (projectFile.GetNameUtf8 ().c_str (), Db::OpenParams (Db::OpenMode::Readonly));
     ECSchemaCP startupCompanySchema = db. Schemas ().GetECSchema ("StartupCompany");
     ASSERT_TRUE (startupCompanySchema != nullptr);
-    ECClassCP aaa2 = startupCompanySchema->GetClassCP (L"AAA");
+    ECClassCP aaa2 = startupCompanySchema->GetClassCP ("AAA");
 
     ECCustomAttributeInstanceIterable allCustomAttributes2 = aaa2->GetCustomAttributes (false);
     uint32_t allCustomAttributesCount2 = 0;
@@ -1987,40 +1987,40 @@ TEST (ECDbSchemas, ArrayPropertyTest)
     ECSchemaCP startupCompanySchema = db. Schemas ().GetECSchema ("StartupCompany", true);
     ASSERT_TRUE (startupCompanySchema != nullptr);
 
-    auto arrayTestClass = startupCompanySchema->GetClassCP (L"ArrayTestclass");
+    auto arrayTestClass = startupCompanySchema->GetClassCP ("ArrayTestclass");
     ASSERT_TRUE (arrayTestClass != nullptr);
 
-    auto p0_unbounded = arrayTestClass->GetPropertyP (L"p0_unbounded")->GetAsArrayProperty ();
+    auto p0_unbounded = arrayTestClass->GetPropertyP ("p0_unbounded")->GetAsArrayProperty ();
     ASSERT_TRUE (p0_unbounded != nullptr);
     ASSERT_EQ (p0_unbounded->GetMinOccurs (), 0);
     ASSERT_EQ (p0_unbounded->GetMaxOccurs (), UINT32_MAX);
 
-    auto p1_unbounded = arrayTestClass->GetPropertyP (L"p1_unbounded")->GetAsArrayProperty ();
+    auto p1_unbounded = arrayTestClass->GetPropertyP ("p1_unbounded")->GetAsArrayProperty ();
     ASSERT_TRUE (p1_unbounded != nullptr);
     ASSERT_EQ (p1_unbounded->GetMinOccurs (), 1);
     ASSERT_EQ (p1_unbounded->GetMaxOccurs (), UINT32_MAX);
 
-    auto p0_1 = arrayTestClass->GetPropertyP (L"p0_1")->GetAsArrayProperty ();
+    auto p0_1 = arrayTestClass->GetPropertyP ("p0_1")->GetAsArrayProperty ();
     ASSERT_TRUE (p0_1 != nullptr);
     ASSERT_EQ (p0_1->GetMinOccurs (), 0);
     ASSERT_EQ (p0_1->GetMaxOccurs (), UINT32_MAX);
 
-    auto p1_1 = arrayTestClass->GetPropertyP (L"p1_1")->GetAsArrayProperty ();
+    auto p1_1 = arrayTestClass->GetPropertyP ("p1_1")->GetAsArrayProperty ();
     ASSERT_TRUE (p1_1 != nullptr);
     ASSERT_EQ (p1_1->GetMinOccurs (), 1);
     ASSERT_EQ (p1_1->GetMaxOccurs (), UINT32_MAX);
 
-    auto p1_10000 = arrayTestClass->GetPropertyP (L"p1_10000")->GetAsArrayProperty ();
+    auto p1_10000 = arrayTestClass->GetPropertyP ("p1_10000")->GetAsArrayProperty ();
     ASSERT_TRUE (p1_10000 != nullptr);
     ASSERT_EQ (p1_10000->GetMinOccurs (), 1);
     ASSERT_EQ (p1_10000->GetMaxOccurs (), UINT32_MAX);
 
-    auto p100_10000 = arrayTestClass->GetPropertyP (L"p100_10000")->GetAsArrayProperty ();
+    auto p100_10000 = arrayTestClass->GetPropertyP ("p100_10000")->GetAsArrayProperty ();
     ASSERT_TRUE (p100_10000 != nullptr);
     ASSERT_EQ (p100_10000->GetMinOccurs (), 100);
     ASSERT_EQ (p100_10000->GetMaxOccurs (), UINT32_MAX);
 
-    auto p123_12345 = arrayTestClass->GetPropertyP (L"p123_12345")->GetAsArrayProperty ();
+    auto p123_12345 = arrayTestClass->GetPropertyP ("p123_12345")->GetAsArrayProperty ();
     ASSERT_TRUE (p123_12345 != nullptr);
     ASSERT_EQ (p123_12345->GetMinOccurs (), 123);
     ASSERT_EQ (p123_12345->GetMaxOccurs (), UINT32_MAX);
@@ -2040,12 +2040,12 @@ TEST(ECDbSchemas, DynamicSchemaTest)
     ECDb::Initialize (temporaryDir, &assetsDir);
 
     ECSchemaPtr testSchema; 
-    ASSERT_EQ (ECSchema::CreateSchema(testSchema, L"TestSchema", 1, 1), ECOBJECTS_STATUS_Success);
+    ASSERT_EQ (ECSchema::CreateSchema(testSchema, "TestSchema", 1, 1), ECOBJECTS_STATUS_Success);
     ASSERT_EQ (testSchema->IsDynamicSchema(), false);
     ASSERT_EQ (testSchema->SetIsDynamicSchema(true), ECOBJECTS_STATUS_DynamicSchemaCustomAttributeWasNotFound);
     //reference BCSA, DynamicSchema CA introduce in 1.6
     ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
-    SchemaKey bscaKey (L"Bentley_Standard_CustomAttributes", 1, 6);
+    SchemaKey bscaKey ("Bentley_Standard_CustomAttributes", 1, 6);
     ECSchemaPtr bscaSchema =  ctx->LocateSchema (bscaKey, SCHEMAMATCHTYPE_Latest);
     ASSERT_TRUE (bscaSchema.IsValid());
     ASSERT_EQ (testSchema->AddReferencedSchema(*bscaSchema), ECOBJECTS_STATUS_Success);
@@ -2088,10 +2088,10 @@ TEST(ECDbSchemas, ECDbSchemaManagerAPITest)
     ASSERT_EQ (diff->GetStatus() , DIFFSTATUS_Success);
     if (!diff->IsEmpty())
         {
-        bmap<WString, DiffNodeState> searchResults;
-        diff->GetNodesState(searchResults, L"*.ArrayInfo");
+        bmap<Utf8String, DiffNodeState> searchResults;
+        diff->GetNodesState(searchResults, "*.ArrayInfo");
         if (!searchResults.empty())
-            LOG.error(L"*** Feature missing : Array type property MaxOccurs and MinOccurs are not stored currently by ECDbSchemaManager");
+            LOG.error("*** Feature missing : Array type property MaxOccurs and MinOccurs are not stored currently by ECDbSchemaManager");
         WriteECSchemaDiffToLog(*diff, NativeLogging::LOG_ERROR);
 
         }
@@ -2173,9 +2173,9 @@ TEST(ECDbSchemas, SchemaDiff)
     ECDiffPtr diff = ECDiff::Diff(*leftSchema, *rightSchema);
     ASSERT_TRUE ( diff.IsValid());
 
-    bmap<WString,DiffNodeState> unitStates;
-    diff->GetNodesState (unitStates, L"*.CustomAttributes.Unit_Attributes:UnitSpecification");
-    diff->GetNodesState (unitStates, L"*.CustomAttributes.Unit_Attributes:UnitSpecifications");
+    bmap<Utf8String,DiffNodeState> unitStates;
+    diff->GetNodesState (unitStates, "*.CustomAttributes.Unit_Attributes:UnitSpecification");
+    diff->GetNodesState (unitStates, "*.CustomAttributes.Unit_Attributes:UnitSpecifications");
     ASSERT_EQ(unitStates.size(), 2);
     WriteECSchemaDiffToLog (*diff);
     ECSchemaPtr mergedSchema;
@@ -2187,7 +2187,7 @@ TEST(ECDbSchemas, SchemaDiff)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                        06/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void VerifyRelationshipConstraint(ECN::ECSchemaCR schema, WCharCP relationName, WCharCP sourceClass, WCharCP targetClass)
+void VerifyRelationshipConstraint(ECN::ECSchemaCR schema, Utf8CP relationName, Utf8CP sourceClass, Utf8CP targetClass)
     {
     auto ecClass = schema.GetClassCP(relationName);
     ASSERT_TRUE(ecClass != nullptr);
@@ -2228,13 +2228,13 @@ TEST(ECDbSchemas, PFLModulePPCS_ECDiffTest)
     ASSERT_EQ(status , MERGESTATUS_Success);   
     ASSERT_TRUE(mergedSchema.IsValid());
     
-    VerifyRelationshipConstraint(*mergedSchema, L"STRUFRMW",   L"STRU", L"FRMW");
-    VerifyRelationshipConstraint(*mergedSchema, L"SUBELEVEL5", L"SUBE", L"LEVEL5");
-    VerifyRelationshipConstraint(*mergedSchema, L"ZONEEQUI",   L"ZONE", L"EQUI");
-    VerifyRelationshipConstraint(*mergedSchema, L"ZONESTRU",   L"ZONE", L"STRU");
-    VerifyRelationshipConstraint(*mergedSchema, L"EQUISUBE",   L"EQUI", L"SUBE");
-    VerifyRelationshipConstraint(*mergedSchema, L"FRMWLEVEL5", L"FRMW", L"LEVEL5");
-    VerifyRelationshipConstraint(*mergedSchema, L"FRMWSBFR",   L"FRMW", L"SBFR");
+    VerifyRelationshipConstraint(*mergedSchema, "STRUFRMW",   "STRU", "FRMW");
+    VerifyRelationshipConstraint(*mergedSchema, "SUBELEVEL5", "SUBE", "LEVEL5");
+    VerifyRelationshipConstraint(*mergedSchema, "ZONEEQUI",   "ZONE", "EQUI");
+    VerifyRelationshipConstraint(*mergedSchema, "ZONESTRU",   "ZONE", "STRU");
+    VerifyRelationshipConstraint(*mergedSchema, "EQUISUBE",   "EQUI", "SUBE");
+    VerifyRelationshipConstraint(*mergedSchema, "FRMWLEVEL5", "FRMW", "LEVEL5");
+    VerifyRelationshipConstraint(*mergedSchema, "FRMWSBFR",   "FRMW", "SBFR");
 
     }
 /*---------------------------------------------------------------------------------**//**
@@ -2256,51 +2256,51 @@ TEST(ECDbSchemas, ClassDiff)
     ECDbTestUtility::ReadECSchemaFromDisk (rightSchema, rightSchemaContext, L"RightSchema.01.00.ecschema.xml");
     ECDiffPtr diff = ECDiff::Diff(*leftSchema, *rightSchema);
     ASSERT_TRUE ( diff.IsValid());
-    bmap<WString,DiffNodeState> unitStates;
-    diff->GetNodesState (unitStates, L"*.CustomAttributes.Unit_Attributes:UnitSpecification");
-    diff->GetNodesState (unitStates, L"*.CustomAttributes.Unit_Attributes:UnitSpecifications");
+    bmap<Utf8String,DiffNodeState> unitStates;
+    diff->GetNodesState (unitStates, "*.CustomAttributes.Unit_Attributes:UnitSpecification");
+    diff->GetNodesState (unitStates, "*.CustomAttributes.Unit_Attributes:UnitSpecifications");
     ASSERT_EQ(unitStates.size(), 2);
     WriteECSchemaDiffToLog (*diff);
     ECSchemaPtr mergedSchema;
     MergeStatus status = diff->Merge (mergedSchema, CONFLICTRULE_TakeLeft);
     ASSERT_EQ(status , MERGESTATUS_Success);   
     ASSERT_TRUE(mergedSchema.IsValid());
-    ECClassP classPtr=mergedSchema->GetClassP(L"Employee");
+    ECClassP classPtr=mergedSchema->GetClassP("Employee");
     uint32_t classCount=mergedSchema->GetClassCount();
     EXPECT_EQ(classCount,8);
     bool bclassDisplayLabel=classPtr->GetIsDisplayLabelDefined();
-    WString className=classPtr->GetName();
-    EXPECT_STREQ(className.c_str(),L"Employee");
+    Utf8String className=classPtr->GetName();
+    EXPECT_STREQ(className.c_str(),"Employee");
     EXPECT_TRUE(bclassDisplayLabel);
-    classPtr=mergedSchema->GetClassP(L"RightFoo");
+    classPtr=mergedSchema->GetClassP("RightFoo");
     className=classPtr->GetName();
-    EXPECT_STREQ(className.c_str(),L"RightFoo");
-    classPtr=mergedSchema->GetClassP(L"StableClass");
+    EXPECT_STREQ(className.c_str(),"RightFoo");
+    classPtr=mergedSchema->GetClassP("StableClass");
     className=classPtr->GetName();
-    EXPECT_STREQ(className.c_str(),L"StableClass");
-    classPtr=mergedSchema->GetClassP(L"TestR");
+    EXPECT_STREQ(className.c_str(),"StableClass");
+    classPtr=mergedSchema->GetClassP("TestR");
     className=classPtr->GetName();
-    EXPECT_STREQ(className.c_str(),L"TestR");
-    classPtr=mergedSchema->GetClassP(L"UnitConflictClass");
+    EXPECT_STREQ(className.c_str(),"TestR");
+    classPtr=mergedSchema->GetClassP("UnitConflictClass");
     className=classPtr->GetName();
     ECSchemaCR SchemaToCheck=classPtr->GetSchema();
-    WString SchemaName=SchemaToCheck.GetFullSchemaName();
-    EXPECT_STREQ(SchemaName.c_str(),L"LeftSchema.01.00");
-    EXPECT_STREQ(className.c_str(),L"UnitConflictClass");
-    classPtr=mergedSchema->GetClassP(L"Employee");
+    Utf8String SchemaName=SchemaToCheck.GetFullSchemaName();
+    EXPECT_STREQ(SchemaName.c_str(),"LeftSchema.01.00");
+    EXPECT_STREQ(className.c_str(),"UnitConflictClass");
+    classPtr=mergedSchema->GetClassP("Employee");
     className=classPtr->GetName();
-    EXPECT_STREQ(className.c_str(),L"Employee");
-    WString classDisplayLabel =classPtr->GetDisplayLabel();
-    EXPECT_STREQ(classDisplayLabel.c_str(),L"Employee Left");
-    classPtr=mergedSchema->GetClassP(L"LeftFoo");
+    EXPECT_STREQ(className.c_str(),"Employee");
+    Utf8String classDisplayLabel =classPtr->GetDisplayLabel();
+    EXPECT_STREQ(classDisplayLabel.c_str(),"Employee Left");
+    classPtr=mergedSchema->GetClassP("LeftFoo");
     className=classPtr->GetName();
-    EXPECT_STREQ(className.c_str(),L"LeftFoo");
-    classPtr=mergedSchema->GetClassP(L"StableClass");
+    EXPECT_STREQ(className.c_str(),"LeftFoo");
+    classPtr=mergedSchema->GetClassP("StableClass");
     className=classPtr->GetName();
-    EXPECT_STREQ(className.c_str(),L"StableClass");
-    classPtr=mergedSchema->GetClassP(L"StableClass");
+    EXPECT_STREQ(className.c_str(),"StableClass");
+    classPtr=mergedSchema->GetClassP("StableClass");
     className=classPtr->GetName();
-    EXPECT_STREQ(className.c_str(),L"StableClass");
+    EXPECT_STREQ(className.c_str(),"StableClass");
     }
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                   Adeel.Shoukat                        05/3
@@ -2321,24 +2321,24 @@ TEST(ECDbSchemas, RelationshiClassDiff)
     ECDbTestUtility::ReadECSchemaFromDisk (rightSchema, rightSchemaContext, L"RightSchema.01.00.ecschema.xml");
     ECDiffPtr diff = ECDiff::Diff(*leftSchema, *rightSchema);
     ASSERT_TRUE ( diff.IsValid());
-    bmap<WString,DiffNodeState> unitStates;
-    diff->GetNodesState (unitStates, L"*.CustomAttributes.Unit_Attributes:UnitSpecification");
-    diff->GetNodesState (unitStates, L"*.CustomAttributes.Unit_Attributes:UnitSpecifications");
+    bmap<Utf8String,DiffNodeState> unitStates;
+    diff->GetNodesState (unitStates, "*.CustomAttributes.Unit_Attributes:UnitSpecification");
+    diff->GetNodesState (unitStates, "*.CustomAttributes.Unit_Attributes:UnitSpecifications");
     ASSERT_EQ(unitStates.size(), 2);
     WriteECSchemaDiffToLog (*diff);
     ECSchemaPtr mergedSchema;
     MergeStatus status = diff->Merge (mergedSchema, CONFLICTRULE_TakeLeft);
     ASSERT_EQ(status , MERGESTATUS_Success);   
     ASSERT_TRUE(mergedSchema.IsValid());
-    ECRelationshipClassCP relationshipClassPtr = mergedSchema->GetClassP(L"RightRelationshipClass")->GetRelationshipClassP();
-    WString relationshipClassName=relationshipClassPtr->GetName();
-    EXPECT_STREQ(relationshipClassName.c_str(),L"RightRelationshipClass");
-    relationshipClassPtr=mergedSchema->GetClassP(L"TestRelationshipClass")->GetRelationshipClassP();
+    ECRelationshipClassCP relationshipClassPtr = mergedSchema->GetClassP("RightRelationshipClass")->GetRelationshipClassP();
+    Utf8String relationshipClassName=relationshipClassPtr->GetName();
+    EXPECT_STREQ(relationshipClassName.c_str(), "RightRelationshipClass");
+    relationshipClassPtr=mergedSchema->GetClassP("TestRelationshipClass")->GetRelationshipClassP();
     relationshipClassName=relationshipClassPtr->GetName();
-    EXPECT_STREQ(relationshipClassName.c_str(),L"TestRelationshipClass");
-    relationshipClassPtr=mergedSchema->GetClassP(L"TestR")->GetRelationshipClassP();
+    EXPECT_STREQ(relationshipClassName.c_str(), "TestRelationshipClass");
+    relationshipClassPtr=mergedSchema->GetClassP("TestR")->GetRelationshipClassP();
     relationshipClassName=relationshipClassPtr->GetName();
-    EXPECT_STREQ(relationshipClassName.c_str(),L"TestR");
+    EXPECT_STREQ(relationshipClassName.c_str(), "TestR");
     }
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                   Adeel.Shoukat                        05/3
@@ -2359,70 +2359,70 @@ TEST(ECDbSchemas, PropertiesDiff)
     ECDbTestUtility::ReadECSchemaFromDisk (rightSchema, rightSchemaContext, L"RightSchema.01.00.ecschema.xml");
     ECDiffPtr diff = ECDiff::Diff(*leftSchema, *rightSchema);
     ASSERT_TRUE ( diff.IsValid());
-    bmap<WString,DiffNodeState> unitStates;
-    diff->GetNodesState (unitStates, L"*.CustomAttributes.Unit_Attributes:UnitSpecification");
-    diff->GetNodesState (unitStates, L"*.CustomAttributes.Unit_Attributes:UnitSpecifications");
+    bmap<Utf8String,DiffNodeState> unitStates;
+    diff->GetNodesState (unitStates, "*.CustomAttributes.Unit_Attributes:UnitSpecification");
+    diff->GetNodesState (unitStates, "*.CustomAttributes.Unit_Attributes:UnitSpecifications");
     ASSERT_EQ(unitStates.size(), 2);
     WriteECSchemaDiffToLog (*diff);
     ECSchemaPtr mergedSchema;
     MergeStatus status = diff->Merge (mergedSchema, CONFLICTRULE_TakeLeft);
     ASSERT_EQ(status , MERGESTATUS_Success);   
     ASSERT_TRUE(mergedSchema.IsValid());
-    ECClassP ecClassPtr = mergedSchema->GetClassP(L"Employee");
-    ECPropertyP  ecPropertyPtr=  ecClassPtr->GetPropertyP(L"Address");
+    ECClassP ecClassPtr = mergedSchema->GetClassP("Employee");
+    ECPropertyP  ecPropertyPtr=  ecClassPtr->GetPropertyP("Address");
     EXPECT_FALSE(ecPropertyPtr==nullptr);
-    WString ecPropertyName=ecPropertyPtr->GetName();
-    EXPECT_STREQ(ecPropertyName.c_str(),L"Address");
-    ecPropertyPtr=  ecClassPtr->GetPropertyP(L"Department");
-    EXPECT_FALSE(ecPropertyPtr==nullptr);
-    ecPropertyName=ecPropertyPtr->GetName();
-    EXPECT_STREQ(ecPropertyName.c_str(),L"Department");
-    ecPropertyPtr=  ecClassPtr->GetPropertyP(L"EmployeeId");
+    Utf8String ecPropertyName=ecPropertyPtr->GetName();
+    EXPECT_STREQ(ecPropertyName.c_str(), "Address");
+    ecPropertyPtr=  ecClassPtr->GetPropertyP("Department");
     EXPECT_FALSE(ecPropertyPtr==nullptr);
     ecPropertyName=ecPropertyPtr->GetName();
-    EXPECT_STREQ(ecPropertyName.c_str(),L"EmployeeId");
-    ecPropertyPtr=  ecClassPtr->GetPropertyP(L"LeftAddedThisProperty");
+    EXPECT_STREQ(ecPropertyName.c_str(), "Department");
+    ecPropertyPtr=  ecClassPtr->GetPropertyP("EmployeeId");
     EXPECT_FALSE(ecPropertyPtr==nullptr);
     ecPropertyName=ecPropertyPtr->GetName();
-    EXPECT_STREQ(ecPropertyName.c_str(),L"LeftAddedThisProperty");
-    ecPropertyPtr=  ecClassPtr->GetPropertyP(L"Name");
+    EXPECT_STREQ(ecPropertyName.c_str(), "EmployeeId");
+    ecPropertyPtr=  ecClassPtr->GetPropertyP("LeftAddedThisProperty");
     EXPECT_FALSE(ecPropertyPtr==nullptr);
     ecPropertyName=ecPropertyPtr->GetName();
-    EXPECT_STREQ(ecPropertyName.c_str(),L"Name");
-    ecPropertyPtr=  ecClassPtr->GetPropertyP(L"PhoneNumbers");
+    EXPECT_STREQ(ecPropertyName.c_str(), "LeftAddedThisProperty");
+    ecPropertyPtr=  ecClassPtr->GetPropertyP("Name");
     EXPECT_FALSE(ecPropertyPtr==nullptr);
     ecPropertyName=ecPropertyPtr->GetName();
-    EXPECT_STREQ(ecPropertyName.c_str(),L"PhoneNumbers");
-    ecClassPtr = mergedSchema->GetClassP(L"UnitConflictClass");
-    ecPropertyPtr=  ecClassPtr->GetPropertyP(L"UCCProp");
+    EXPECT_STREQ(ecPropertyName.c_str(), "Name");
+    ecPropertyPtr=  ecClassPtr->GetPropertyP("PhoneNumbers");
     EXPECT_FALSE(ecPropertyPtr==nullptr);
     ecPropertyName=ecPropertyPtr->GetName();
-    EXPECT_STREQ(ecPropertyName.c_str(),L"UCCProp");
-    ecClassPtr = mergedSchema->GetClassP(L"Employee");
-    ecPropertyPtr=  ecClassPtr->GetPropertyP(L"RightAddedThisProperty");
+    EXPECT_STREQ(ecPropertyName.c_str(), "PhoneNumbers");
+    ecClassPtr = mergedSchema->GetClassP("UnitConflictClass");
+    ecPropertyPtr=  ecClassPtr->GetPropertyP("UCCProp");
     EXPECT_FALSE(ecPropertyPtr==nullptr);
     ecPropertyName=ecPropertyPtr->GetName();
-    EXPECT_STREQ(ecPropertyName.c_str(),L"RightAddedThisProperty");
-    ecClassPtr = mergedSchema->GetClassP(L"StableClass");
-    ecPropertyPtr=  ecClassPtr->GetPropertyP(L"arrayProperty");
+    EXPECT_STREQ(ecPropertyName.c_str(),"UCCProp");
+    ecClassPtr = mergedSchema->GetClassP("Employee");
+    ecPropertyPtr=  ecClassPtr->GetPropertyP("RightAddedThisProperty");
     EXPECT_FALSE(ecPropertyPtr==nullptr);
     ecPropertyName=ecPropertyPtr->GetName();
-    EXPECT_STREQ(ecPropertyName.c_str(),L"arrayProperty");
-    ecClassPtr = mergedSchema->GetClassP(L"RightFoo");
-    ecPropertyPtr=  ecClassPtr->GetPropertyP(L"RightDoubleProperty");
+    EXPECT_STREQ(ecPropertyName.c_str(), "RightAddedThisProperty");
+    ecClassPtr = mergedSchema->GetClassP("StableClass");
+    ecPropertyPtr=  ecClassPtr->GetPropertyP("arrayProperty");
     EXPECT_FALSE(ecPropertyPtr==nullptr);
     ecPropertyName=ecPropertyPtr->GetName();
-    EXPECT_STREQ(ecPropertyName.c_str(),L"RightDoubleProperty");
-    ECRelationshipClassP  ecRelationshipClassPtr = mergedSchema->GetClassP(L"RightRelationshipClass")->GetRelationshipClassP();
-    ecPropertyPtr=  ecRelationshipClassPtr->GetPropertyP(L"Property");
+    EXPECT_STREQ(ecPropertyName.c_str(), "arrayProperty");
+    ecClassPtr = mergedSchema->GetClassP("RightFoo");
+    ecPropertyPtr=  ecClassPtr->GetPropertyP("RightDoubleProperty");
     EXPECT_FALSE(ecPropertyPtr==nullptr);
     ecPropertyName=ecPropertyPtr->GetName();
-    EXPECT_STREQ(ecPropertyName.c_str(),L"Property");
-    ecRelationshipClassPtr = mergedSchema->GetClassP(L"TestRelationshipClass")->GetRelationshipClassP();
-    ecPropertyPtr=  ecRelationshipClassPtr->GetPropertyP(L"PropertyB");
+    EXPECT_STREQ(ecPropertyName.c_str(), "RightDoubleProperty");
+    ECRelationshipClassP  ecRelationshipClassPtr = mergedSchema->GetClassP("RightRelationshipClass")->GetRelationshipClassP();
+    ecPropertyPtr=  ecRelationshipClassPtr->GetPropertyP("Property");
     EXPECT_FALSE(ecPropertyPtr==nullptr);
     ecPropertyName=ecPropertyPtr->GetName();
-    EXPECT_STREQ(ecPropertyName.c_str(),L"PropertyB");
+    EXPECT_STREQ(ecPropertyName.c_str(), "Property");
+    ecRelationshipClassPtr = mergedSchema->GetClassP("TestRelationshipClass")->GetRelationshipClassP();
+    ecPropertyPtr=  ecRelationshipClassPtr->GetPropertyP("PropertyB");
+    EXPECT_FALSE(ecPropertyPtr==nullptr);
+    ecPropertyName=ecPropertyPtr->GetName();
+    EXPECT_STREQ(ecPropertyName.c_str(), "PropertyB");
     }
 /*---------------------------------------------------------------------------------**//**
  * @bsiclass                                   Adeel.Shoukat                        04/13
@@ -2473,12 +2473,12 @@ void ECDbSchemaFixture::deleteExistingDgnb(WCharCP ECDbName)
 TEST_F(ECDbSchemaFixture,SchemaMapCustomAttributeTablePrefix)
     {
     ECDbTestUtility::ReadECSchemaFromDisk(MappingSchema,MappingSchemaContext,L"SchemaMapping.01.00.ecschema.xml");
-    SchemaKey schemaKey (L"ECDbMap", 1, 0);
+    SchemaKey schemaKey ("ECDbMap", 1, 0);
     ECSchemaPtr ecdbMapSchema = MappingSchemaContext->LocateSchema(schemaKey, SCHEMAMATCHTYPE_LatestCompatible);
     EXPECT_TRUE(ecdbMapSchema != nullptr) << "Schema '" << schemaKey.GetFullSchemaName().c_str() << "' not found.";
-    ECClassCP testClass = ecdbMapSchema->GetClassCP(L"SchemaMap");
+    ECClassCP testClass = ecdbMapSchema->GetClassCP("SchemaMap");
     IECInstancePtr ecInctance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    ecInctance->SetValue(L"TablePrefix",ECValue(L"Pre"));
+    ecInctance->SetValue("TablePrefix", ECValue("Pre"));
     MappingSchema->SetCustomAttribute(*ecInctance);
     WCharCP fileName=L"SchemaHintTablePrefix.ecdb";
     deleteExistingDgnb(fileName);
@@ -2498,13 +2498,13 @@ TEST_F(ECDbSchemaFixture,ClassMapCustomAttributeOwnTableNonPolymorphic)
     {
     ECSchemaReadContextPtr MappingSchemaContext=ECSchemaReadContext::CreateContext();
     ECDbTestUtility::ReadECSchemaFromDisk(MappingSchema,MappingSchemaContext,L"SchemaMapping.01.00.ecschema.xml");
-    SchemaKey schemaKey (L"ECDbMap", 1, 0);
+    SchemaKey schemaKey ("ECDbMap", 1, 0);
     ECSchemaPtr ecdbMapSchema = MappingSchemaContext->LocateSchema(schemaKey, SCHEMAMATCHTYPE_LatestCompatible);
     EXPECT_TRUE(ecdbMapSchema != nullptr) << "Schema '" << schemaKey.GetFullSchemaName().c_str() << "' not found.";
-    ECClassCP testClass = ecdbMapSchema->GetClassCP(L"ClassMap");
+    ECClassCP testClass = ecdbMapSchema->GetClassCP("ClassMap");
     IECInstancePtr ecInctance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    ecInctance->SetValue(L"MapStrategy.Strategy",ECValue(L"OwnTable"));
-    MappingSchema->GetClassP(L"B")->SetCustomAttribute(*ecInctance);
+    ecInctance->SetValue("MapStrategy.Strategy", ECValue("OwnTable"));
+    MappingSchema->GetClassP("B")->SetCustomAttribute(*ecInctance);
     WCharCP fileName=L"OwnTableNonPolymorphic.ecdb";
     deleteExistingDgnb(fileName);
     DbResult stat = db.CreateNewDb (projectFile.GetNameUtf8 ().c_str ());
@@ -2520,14 +2520,14 @@ TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeOwnTablePolymorphic)
     {
     ECSchemaReadContextPtr MappingSchemaContext=ECSchemaReadContext::CreateContext();
     ECDbTestUtility::ReadECSchemaFromDisk(MappingSchema,MappingSchemaContext,L"SchemaMapping.01.00.ecschema.xml");
-    SchemaKey schemaKey (L"ECDbMap", 1, 0);
+    SchemaKey schemaKey ("ECDbMap", 1, 0);
     ECSchemaPtr ecdbMapSchema = MappingSchemaContext->LocateSchema(schemaKey, SCHEMAMATCHTYPE_LatestCompatible);
     EXPECT_TRUE(ecdbMapSchema != nullptr) << "Schema '" << schemaKey.GetFullSchemaName().c_str() << "' not found.";
-    ECClassCP testClass = ecdbMapSchema->GetClassCP(L"ClassMap");
+    ECClassCP testClass = ecdbMapSchema->GetClassCP("ClassMap");
     IECInstancePtr ecInctance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    ecInctance->SetValue(L"MapStrategy.Strategy",ECValue(L"OwnTable"));
-    ecInctance->SetValue(L"MapStrategy.IsPolymorphic", ECValue(true));
-    MappingSchema->GetClassP(L"B")->SetCustomAttribute(*ecInctance);
+    ecInctance->SetValue("MapStrategy.Strategy", ECValue("OwnTable"));
+    ecInctance->SetValue("MapStrategy.IsPolymorphic", ECValue(true));
+    MappingSchema->GetClassP("B")->SetCustomAttribute(*ecInctance);
     WCharCP fileName=L"OwnTablePolymorphic.ecdb";
     deleteExistingDgnb(fileName);
     DbResult stat = db.CreateNewDb (projectFile.GetNameUtf8 ().c_str ());
@@ -2543,13 +2543,13 @@ TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeNotMapped)
     {
     ECSchemaReadContextPtr MappingSchemaContext=ECSchemaReadContext::CreateContext();
     ECDbTestUtility::ReadECSchemaFromDisk(MappingSchema,MappingSchemaContext,L"SchemaMapping.01.00.ecschema.xml");
-    SchemaKey schemaKey (L"ECDbMap", 1, 0);
+    SchemaKey schemaKey ("ECDbMap", 1, 0);
     ECSchemaPtr ecdbMapSchema = MappingSchemaContext->LocateSchema(schemaKey, SCHEMAMATCHTYPE_LatestCompatible);
     EXPECT_TRUE(ecdbMapSchema != nullptr) << "Schema '" << schemaKey.GetFullSchemaName().c_str() << "' not found.";
-    ECClassCP testClass = ecdbMapSchema->GetClassCP(L"ClassMap");
+    ECClassCP testClass = ecdbMapSchema->GetClassCP("ClassMap");
     IECInstancePtr ecInctance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    ecInctance->SetValue(L"MapStrategy.Strategy",ECValue(L"NotMapped"));
-    MappingSchema->GetClassP(L"B")->SetCustomAttribute(*ecInctance);
+    ecInctance->SetValue("MapStrategy.Strategy", ECValue("NotMapped"));
+    MappingSchema->GetClassP("B")->SetCustomAttribute(*ecInctance);
     WCharCP fileName=L"NotMappedClassMapping.ecdb";
     deleteExistingDgnb(fileName);
     DbResult stat = db.CreateNewDb (projectFile.GetNameUtf8 ().c_str ());
@@ -2564,14 +2564,14 @@ TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeNotMapped)
 TEST_F(ECDbSchemaFixture,ClassMapCustomAttributeSharedTablePolymorphic)
     {
     ECDbTestUtility::ReadECSchemaFromDisk(MappingSchema,MappingSchemaContext,L"SchemaMapping.01.00.ecschema.xml");
-    SchemaKey schemaKey(L"ECDbMap", 1, 0);
+    SchemaKey schemaKey("ECDbMap", 1, 0);
     ECSchemaPtr ecdbMapSchema = MappingSchemaContext->LocateSchema(schemaKey, SCHEMAMATCHTYPE_LatestCompatible);
     EXPECT_TRUE(ecdbMapSchema != nullptr) << "Schema '" << schemaKey.GetFullSchemaName().c_str() << "' not found.";
-    ECClassCP testClass = ecdbMapSchema->GetClassCP(L"ClassMap");
+    ECClassCP testClass = ecdbMapSchema->GetClassCP("ClassMap");
     IECInstancePtr ecInctance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    ecInctance->SetValue(L"MapStrategy.Strategy",ECValue(L"SharedTable"));
-    ecInctance->SetValue(L"MapStrategy.IsPolymorphic", ECValue(true));
-    MappingSchema->GetClassP(L"B")->SetCustomAttribute(*ecInctance);
+    ecInctance->SetValue("MapStrategy.Strategy", ECValue("SharedTable"));
+    ecInctance->SetValue("MapStrategy.IsPolymorphic", ECValue(true));
+    MappingSchema->GetClassP("B")->SetCustomAttribute(*ecInctance);
     WCharCP fileName=L"SharedTablePolymorphicClassMapping.ecdb";
     deleteExistingDgnb(fileName);
     DbResult stat = db.CreateNewDb (projectFile.GetNameUtf8 ().c_str ());
@@ -2593,14 +2593,14 @@ TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeNotMappedPolymorphic)
     {
     ECSchemaReadContextPtr MappingSchemaContext=ECSchemaReadContext::CreateContext();
     ECDbTestUtility::ReadECSchemaFromDisk(MappingSchema,MappingSchemaContext,L"SchemaMapping.01.00.ecschema.xml");
-    SchemaKey schemaKey (L"ECDbMap", 1, 0);
+    SchemaKey schemaKey ("ECDbMap", 1, 0);
     ECSchemaPtr ecdbMapSchema =  MappingSchemaContext->LocateSchema(schemaKey,SCHEMAMATCHTYPE_LatestCompatible);
     EXPECT_TRUE(ecdbMapSchema != nullptr) << "Schema '" << schemaKey.GetFullSchemaName().c_str() << "' not found.";
-    ECClassCP testClass = ecdbMapSchema->GetClassCP(L"ClassMap");
+    ECClassCP testClass = ecdbMapSchema->GetClassCP("ClassMap");
     IECInstancePtr ecInctance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    ecInctance->SetValue(L"MapStrategy.Strategy",ECValue(L"NotMapped"));
-    ecInctance->SetValue(L"MapStrategy.IsPolymorphic", ECValue(true));
-    MappingSchema->GetClassP(L"B")->SetCustomAttribute(*ecInctance);
+    ecInctance->SetValue("MapStrategy.Strategy", ECValue("NotMapped"));
+    ecInctance->SetValue("MapStrategy.IsPolymorphic", ECValue(true));
+    MappingSchema->GetClassP("B")->SetCustomAttribute(*ecInctance);
     WCharCP fileName=L"NotMappedPolymorphicClassMapping.ecdb";
     deleteExistingDgnb(fileName);
     DbResult stat = db.CreateNewDb (projectFile.GetNameUtf8 ().c_str ());
@@ -2616,20 +2616,20 @@ TEST_F(ECDbSchemaFixture, ClassMapCustomAttributeNotMappedPolymorphic)
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                   Affan.Khan                        06/13
  +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaPtr GenerateNewECSchema(WStringCR name, WStringCR prefix)
+ECSchemaPtr GenerateNewECSchema(Utf8StringCR name, Utf8StringCR prefix)
     {
     ECSchemaPtr newSchema;
     ECSchema::CreateSchema(newSchema, name, 1, 0);
     newSchema->SetNamespacePrefix(prefix);
     ECClassP equipment, pipe;
     PrimitiveECPropertyP primitveP;
-    newSchema->CreateClass(equipment, L"EQUIPMENT");
-    equipment->CreatePrimitiveProperty(primitveP,L"NAME",PrimitiveType::PRIMITIVETYPE_String);
-    equipment->CreatePrimitiveProperty(primitveP,L"EQID",PrimitiveType::PRIMITIVETYPE_Integer);
-    newSchema->CreateClass(pipe, L"PIPE");
+    newSchema->CreateClass(equipment, "EQUIPMENT");
+    equipment->CreatePrimitiveProperty(primitveP, "NAME", PrimitiveType::PRIMITIVETYPE_String);
+    equipment->CreatePrimitiveProperty(primitveP, "EQID", PrimitiveType::PRIMITIVETYPE_Integer);
+    newSchema->CreateClass(pipe, "PIPE");
     pipe->AddBaseClass(*equipment);
-    pipe->CreatePrimitiveProperty(primitveP,L"TYPE",PrimitiveType::PRIMITIVETYPE_String);
-    pipe->CreatePrimitiveProperty(primitveP,L"LENGTH",PrimitiveType::PRIMITIVETYPE_Integer);
+    pipe->CreatePrimitiveProperty(primitveP, "TYPE", PrimitiveType::PRIMITIVETYPE_String);
+    pipe->CreatePrimitiveProperty(primitveP, "LENGTH", PrimitiveType::PRIMITIVETYPE_Integer);
     return newSchema;
     }
 
@@ -2638,28 +2638,28 @@ ECSchemaPtr GenerateNewECSchema(WStringCR name, WStringCR prefix)
  +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbSchemaFixture,TestDuplicateNamespacePrefix)
     {
-    WString data[][3] = 
+    Utf8String data[][3] = 
         {
-            {L"APlant" , L"op"    , L"op"       },
-            {L"BPlant" , L"op"    , L"op1"      },
-            {L"CPlant" , L"op"    , L"op2"      },
-            {L"DPlant" , L"op"    , L"op3"      },
-            {L"EPlant" , L"op"    , L"op4"      },
-            {L"FPlant" , L"op"    , L"op5"      },
+            {"APlant" , "op"    , "op"       },
+            {"BPlant" , "op"    , "op1"      },
+            {"CPlant" , "op"    , "op2"      },
+            {"DPlant" , "op"    , "op3"      },
+            {"EPlant" , "op"    , "op4"      },
+            {"FPlant" , "op"    , "op5"      },
 
-            {L"GPlant" , L"op"    , L"op6"      },
-            {L"HPlant" , L"op1"   , L"op11"      },
-            {L"IPlant" , L"op2"   , L"op21"      },
-            {L"JPlant" , L"op3"   , L"op31"      },
-            {L"KPlant" , L"op4"   , L"op41"     },
-            {L"LPlant" , L"op5"   , L"op51"     },
+            {"GPlant" , "op"    , "op6"      },
+            {"HPlant" , "op1"   , "op11"      },
+            {"IPlant" , "op2"   , "op21"      },
+            {"JPlant" , "op3"   , "op31"      },
+            {"KPlant" , "op4"   , "op41"     },
+            {"LPlant" , "op5"   , "op51"     },
 
-            {L"MPlant" , L""      , L"MPlant"   },
-            {L"NPlant" , L""      , L"NPlant"   },
+            {"MPlant" , ""      , "MPlant"   },
+            {"NPlant" , ""      , "NPlant"   },
 
-            {L"OPlant" , L"PPlant", L"PPlant"   },
-            {L"PPlant" , L""      , L"PPlant1"  },
-            {L"PPlant1", L""      , L"PPlant11" }
+            {"OPlant" , "PPlant", "PPlant"   },
+            {"PPlant" , ""      , "PPlant1"  },
+            {"PPlant1", ""      , "PPlant11" }
         };
 
     Utf8String tables[] = 
@@ -2897,7 +2897,7 @@ TEST(ECDbSchemas, CheckClassHasCurrentTimeStamp)
     ASSERT_TRUE(simpleSchema != nullptr);
     auto importStatus = db.Schemas().ImportECSchemas(readContext->GetCache());
     ASSERT_TRUE(importStatus == BentleyStatus::SUCCESS);
-    auto ecClass = simpleSchema->GetClassP(L"SimpleClass");
+    auto ecClass = simpleSchema->GetClassP("SimpleClass");
 
     ECSqlStatement insertStatement;
     Utf8CP insertQuery = "INSERT INTO adhoc.SimpleClass(testprop) VALUES(12)";

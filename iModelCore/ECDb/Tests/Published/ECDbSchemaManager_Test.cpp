@@ -179,65 +179,65 @@ void SetupTestECDb (BeFileNameCR filePath)
 ECSchemaPtr CreateTestSchema ()
     {
     ECSchemaPtr testSchema = nullptr;
-    auto stat = ECSchema::CreateSchema (testSchema, WString (TEST_SCHEMA_NAME, BentleyCharEncoding::Utf8), 1, 0);
+    auto stat = ECSchema::CreateSchema (testSchema, TEST_SCHEMA_NAME, 1, 0);
     EXPECT_EQ (ECOBJECTS_STATUS_Success, stat);
-    testSchema->SetNamespacePrefix (L"test");
+    testSchema->SetNamespacePrefix ("test");
     if (testSchema == nullptr)
         return nullptr;
 
     ECClassP baseClass = nullptr;
-    stat = testSchema->CreateClass (baseClass, L"Base");
+    stat = testSchema->CreateClass (baseClass, "Base");
     EXPECT_EQ (ECOBJECTS_STATUS_Success, stat);
     if (baseClass == nullptr)
         return nullptr;
 
     PrimitiveECPropertyP prop = nullptr;
-    baseClass->CreatePrimitiveProperty (prop, L"bprop", PrimitiveType::PRIMITIVETYPE_Double);
+    baseClass->CreatePrimitiveProperty (prop, "bprop", PrimitiveType::PRIMITIVETYPE_Double);
 
 
     ECClassP sub1Class = nullptr;
-    stat = testSchema->CreateClass (sub1Class, L"Sub1");
+    stat = testSchema->CreateClass (sub1Class, "Sub1");
     EXPECT_EQ (ECOBJECTS_STATUS_Success, stat);
     if (sub1Class == nullptr)
         return nullptr;
 
-    sub1Class->CreatePrimitiveProperty (prop, L"s1prop", PrimitiveType::PRIMITIVETYPE_Long);
+    sub1Class->CreatePrimitiveProperty (prop, "s1prop", PrimitiveType::PRIMITIVETYPE_Long);
     sub1Class->AddBaseClass (*baseClass);
 
     ECClassP sub1Sub1Class = nullptr;
-    stat = testSchema->CreateClass (sub1Sub1Class, L"Sub1Sub1");
+    stat = testSchema->CreateClass (sub1Sub1Class, "Sub1Sub1");
     EXPECT_EQ (ECOBJECTS_STATUS_Success, stat);
     if (sub1Sub1Class == nullptr)
         return nullptr;
 
-    sub1Sub1Class->CreatePrimitiveProperty (prop, L"s1s1prop", PrimitiveType::PRIMITIVETYPE_Long);
+    sub1Sub1Class->CreatePrimitiveProperty (prop, "s1s1prop", PrimitiveType::PRIMITIVETYPE_Long);
     sub1Sub1Class->AddBaseClass (*sub1Class);
 
     ECClassP sub1Sub2Class = nullptr;
-    stat = testSchema->CreateClass (sub1Sub2Class, L"Sub1Sub2");
+    stat = testSchema->CreateClass (sub1Sub2Class, "Sub1Sub2");
     EXPECT_EQ (ECOBJECTS_STATUS_Success, stat);
     if (sub1Sub2Class == nullptr)
         return nullptr;
 
-    sub1Sub2Class->CreatePrimitiveProperty (prop, L"s1s2prop", PrimitiveType::PRIMITIVETYPE_Long);
+    sub1Sub2Class->CreatePrimitiveProperty (prop, "s1s2prop", PrimitiveType::PRIMITIVETYPE_Long);
     sub1Sub2Class->AddBaseClass (*sub1Class);
 
     ECClassP sub2Class = nullptr;
-    stat = testSchema->CreateClass (sub2Class, L"Sub2");
+    stat = testSchema->CreateClass (sub2Class, "Sub2");
     EXPECT_EQ (ECOBJECTS_STATUS_Success, stat);
     if (sub2Class == nullptr)
         return nullptr;
 
-    sub2Class->CreatePrimitiveProperty (prop, L"s2prop", PrimitiveType::PRIMITIVETYPE_Long);
+    sub2Class->CreatePrimitiveProperty (prop, "s2prop", PrimitiveType::PRIMITIVETYPE_Long);
     sub2Class->AddBaseClass (*baseClass);
 
     ECClassP sub2Sub1Class = nullptr;
-    stat = testSchema->CreateClass (sub2Sub1Class, L"Sub2Sub1");
+    stat = testSchema->CreateClass (sub2Sub1Class, "Sub2Sub1");
     EXPECT_EQ (ECOBJECTS_STATUS_Success, stat);
     if (sub2Sub1Class == nullptr)
         return nullptr;
 
-    sub2Sub1Class->CreatePrimitiveProperty (prop, L"s2s1prop", PrimitiveType::PRIMITIVETYPE_Long);
+    sub2Sub1Class->CreatePrimitiveProperty (prop, "s2s1prop", PrimitiveType::PRIMITIVETYPE_Long);
     sub2Sub1Class->AddBaseClass (*sub2Class);
 
     return testSchema;
@@ -1728,7 +1728,7 @@ TEST(ECDbSchemaManager, ImportSupplementedSchemaDoSupplementationFalse)
     ECSchemaCP SchoolSupplSchema = testecdb.Schemas().GetECSchema("SchoolSchema", true);
     ASSERT_TRUE (SchoolSupplSchema != nullptr);
 
-    ECClassCP ecclassCourseTitle = SchoolSupplSchema->GetClassCP(L"CourseTitle");
+    ECClassCP ecclassCourseTitle = SchoolSupplSchema->GetClassCP("CourseTitle");
     ASSERT_TRUE(ecclassCourseTitle != NULL);
     ECCustomAttributeInstanceIterable iterator1 = ecclassCourseTitle->GetCustomAttributes(true);
     uint32_t i = 0;
@@ -1770,9 +1770,9 @@ TEST(ECDbSchemaManager, ImportMultipalSupplementalSchemas)
     ECSchemaCP SchoolSupplSchema = testecdb.Schemas().GetECSchema("SchoolSchema", true);
     ASSERT_TRUE (SchoolSupplSchema != NULL);
 
-    ECClassCP ecclassCourse = SchoolSupplSchema->GetClassCP(L"Course");
+    ECClassCP ecclassCourse = SchoolSupplSchema->GetClassCP("Course");
     ASSERT_TRUE(ecclassCourse != NULL);
-    ECClassCP ecclassCourseTitle = SchoolSupplSchema->GetClassCP(L"CourseTitle");
+    ECClassCP ecclassCourseTitle = SchoolSupplSchema->GetClassCP("CourseTitle");
     ASSERT_TRUE(ecclassCourseTitle != NULL);
     //get custom attributes from base class (false)
     ECCustomAttributeInstanceIterable iterator2 = ecclassCourseTitle->GetCustomAttributes(false);
@@ -1791,7 +1791,7 @@ TEST(ECDbSchemaManager, ImportMultipalSupplementalSchemas)
     }
     EXPECT_EQ(4, i) << "the number of custom attributes on the Class CourseTitle do not match the original";
 
-    ECClassCP relationshipClass = SchoolSupplSchema->GetClassCP(L"SchoolDepartmentRelation");
+    ECClassCP relationshipClass = SchoolSupplSchema->GetClassCP("SchoolDepartmentRelation");
     ASSERT_TRUE(relationshipClass != NULL);
     ECCustomAttributeInstanceIterable iterator = relationshipClass->GetCustomAttributes(false);
     i = 0;
@@ -1801,10 +1801,10 @@ TEST(ECDbSchemaManager, ImportMultipalSupplementalSchemas)
     }
     EXPECT_EQ(5, i) << "the number of custom attributes on the Class relationshipClass do not match the original";
 
-    ECClassCP ecclasscp = SchoolSupplSchema->GetClassCP(L"Department");
+    ECClassCP ecclasscp = SchoolSupplSchema->GetClassCP("Department");
     ASSERT_TRUE(ecclasscp != NULL) << "couldn't read the class Department from schema";
-    IECInstancePtr iecinstancePtr = ecclasscp->GetCustomAttribute(L"ChangeManagement");
-    ASSERT_TRUE(iecinstancePtr.IsValid()) << "couldn't retreive the custom attribute from the class Department";
+    IECInstancePtr iecinstancePtr = ecclasscp->GetCustomAttribute("ChangeManagement");
+    ASSERT_TRUE(iecinstancePtr.IsValid()) << "couldn't retrieve the custom attribute from the class Department";
 }
 
 //---------------------------------------------------------------------------------------
@@ -1936,7 +1936,7 @@ TEST(ECDbSchemaManager, supplementSchemaWithLatestSupplementalSchema)
     ECSchemaCP basicSupplSchema = testecdb.Schemas().GetECSchema("BasicSchema", true);
     ASSERT_TRUE (basicSupplSchema != NULL);
 
-    ECClassCP ecclassBase = basicSupplSchema->GetClassCP(L"Base");
+    ECClassCP ecclassBase = basicSupplSchema->GetClassCP("Base");
     ASSERT_TRUE(ecclassBase != NULL);
     //get custom attributes from base class (false)
     ECCustomAttributeInstanceIterable iterator1 = ecclassBase->GetCustomAttributes(true);
@@ -1973,7 +1973,7 @@ TEST(ECDbSchemaManager, supplementSchemaWithGreaterMajorVersionPrimary)
     ECSchemaCP basicSupplSchema = testecdb.Schemas().GetECSchema("BasicSchema", true);
     ASSERT_TRUE (basicSupplSchema != NULL);
 
-    ECClassCP ecclassBase = basicSupplSchema->GetClassCP(L"Base");
+    ECClassCP ecclassBase = basicSupplSchema->GetClassCP("Base");
     ASSERT_TRUE(ecclassBase != NULL);
     //get custom attributes from base class (false)
     ECCustomAttributeInstanceIterable iterator1 = ecclassBase->GetCustomAttributes(true);
@@ -2010,7 +2010,7 @@ TEST(ECDbSchemaManager, supplementSchemaWithLessMinorVersionPrimarySchema)
     ECSchemaCP basicSupplSchema = testecdb.Schemas().GetECSchema("BasicSchema", true);
     ASSERT_TRUE (basicSupplSchema != NULL);
 
-    ECClassCP ecclassBase = basicSupplSchema->GetClassCP(L"Base");
+    ECClassCP ecclassBase = basicSupplSchema->GetClassCP("Base");
     ASSERT_TRUE(ecclassBase != NULL);
     //get custom attributes from base class (false)
     ECCustomAttributeInstanceIterable iterator1 = ecclassBase->GetCustomAttributes(true);
@@ -2051,7 +2051,7 @@ TEST(ECDbSchemaManager, supplementSchemaWithGreaterMinorVersionPrimarySchema)
     ECSchemaCP basicSupplSchema = testecdb. Schemas ().GetECSchema ("BasicSchema", true);
     ASSERT_TRUE (basicSupplSchema != NULL);
 
-    ECClassCP ecclassBase = basicSupplSchema->GetClassCP(L"Base");
+    ECClassCP ecclassBase = basicSupplSchema->GetClassCP("Base");
     ASSERT_TRUE(ecclassBase != NULL);
     //get custom attributes from base class (false)
     ECCustomAttributeInstanceIterable iterator1 = ecclassBase->GetCustomAttributes(true);

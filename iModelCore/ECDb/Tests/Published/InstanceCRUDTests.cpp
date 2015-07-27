@@ -25,11 +25,11 @@ struct InstanceCRUDTests : public ::testing::Test
     {
     ECDb                        m_db;
     ECSchemaPtr                 m_schema;
-    WString						m_classDbName;
+    WString                     m_classDbName;
     WString                     m_dbName;
     WString                     m_schemaFullPath;
     WString                     m_dirName;
-    WString                     m_className;
+    Utf8String                  m_className;
     bool                        m_insert = false;
     bool                        m_update = false;
     bool                        m_delete = false;
@@ -213,7 +213,7 @@ bool InstanceCRUDTests::addClass (ECClassCP ecClass)
         LOG1.info ("This is a CustomAttributeClass");
         return false;
         }
-    else if (ecClass->GetName () == L"AnyClass")
+    else if (ecClass->GetName () == "AnyClass")
         {
         return false;
         }
@@ -234,7 +234,7 @@ ECClassCP InstanceCRUDTests::addClassInPlaceOFAnyClass (ECSchemaPtr schemaPtr)
         {
         relClass = NULL;
         relClass = classInContainer->GetRelationshipClassCP ();
-        if (relClass == NULL && classInContainer->GetIsDomainClass () && !classInContainer->GetIsCustomAttributeClass () && classInContainer->GetName () != L"AnyClass")
+        if (relClass == NULL && classInContainer->GetIsDomainClass () && !classInContainer->GetIsCustomAttributeClass () && classInContainer->GetName () != "AnyClass")
             {
             list.push_back (classInContainer);
             }
@@ -275,7 +275,7 @@ void InstanceCRUDTests::setUpECDbForClass ()
     WString dbName3 (m_dirName);
     dbName3 = dbName3 + schemaName2;
     dbName3.AppendA (".");
-    dbName3 = dbName3 + m_className;
+    dbName3 = dbName3 + WString(m_className.c_str(), BentleyCharEncoding::Utf8).c_str();
 
     static const size_t JOURNAL_SUFFIX_LENGTH = 8;
     if (dbName3.size () + 6 + JOURNAL_SUFFIX_LENGTH > MAX_PATH)
@@ -307,7 +307,7 @@ bool InstanceCRUDTests::setUpECdbSingleClass ()
     WString dbName1 (m_dirName);
     dbName1 = dbName1 + schemaName1;
     dbName1.AppendA (".");
-    dbName1 = dbName1 + m_className;
+    dbName1 = dbName1 + WString(m_className.c_str(), BentleyCharEncoding::Utf8).c_str();
 
     static const size_t JOURNAL_SUFFIX_LENGTH = 8;
     if (dbName1.size () + 6 + JOURNAL_SUFFIX_LENGTH > MAX_PATH)
@@ -668,7 +668,7 @@ bool InstanceCRUDTests::deleteECInstances (bmap<ECN::ECClassCP, std::vector<ECN:
                 ECInstanceDeleter deleter (m_db, *ecClass);
                 if (!instance.IsValid ())
                     continue;
-                WString i = instance->GetInstanceId ();
+                Utf8String i = instance->GetInstanceId ();
                 auto deleteStatus = deleter.Delete (*instance.get ());
                 if (deleteStatus != SUCCESS)
                     {
@@ -827,7 +827,7 @@ void InstanceCRUDTests::checkECClassCRUDfeasibility (ECClassCP ecClass)
     m_insert = false;
     m_update = false;
     m_delete = false;
-    if (ecClass->GetIsDomainClass () && !ecClass->GetIsCustomAttributeClass () && ecClass->GetName () != L"AnyClass")
+    if (ecClass->GetIsDomainClass () && !ecClass->GetIsCustomAttributeClass () && ecClass->GetName () != "AnyClass")
         {
         ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP ();
         if (relClass == NULL)
@@ -837,7 +837,7 @@ void InstanceCRUDTests::checkECClassCRUDfeasibility (ECClassCP ecClass)
                 m_insert = true;
                 m_update = true;
                 m_delete = true;
-                LOG1.infov ("CRUD operations can be performed for class: %ls", ecClass->GetName ().c_str ());
+                LOG1.infov ("CRUD operations can be performed for class: %s", ecClass->GetName ().c_str ());
                 }
             else
                 {
@@ -873,7 +873,7 @@ void InstanceCRUDTests::checkECClassCRUDfeasibility (ECClassCP ecClass)
                             validSourceClasses = false;
                             }
                         }
-                    else if (!s_ecClass->GetIsDomainClass () && s_ecClass->GetName () != L"AnyClass")
+                    else if (!s_ecClass->GetIsDomainClass () && s_ecClass->GetName () != "AnyClass")
                         {
                         if (s_ecClass->GetDerivedClasses ().size () > 0)
                             continue;
@@ -882,7 +882,7 @@ void InstanceCRUDTests::checkECClassCRUDfeasibility (ECClassCP ecClass)
                         }
                     else
                         {
-                        if (s_ecClass->GetName () == L"AnyClass")
+                        if (s_ecClass->GetName () == "AnyClass")
                             notAnyClass = false;
                         else
                             {
@@ -903,7 +903,7 @@ void InstanceCRUDTests::checkECClassCRUDfeasibility (ECClassCP ecClass)
                             validSourceClasses = false;
                             }
                         }
-                    else if (!t_ecClass->GetIsDomainClass () && t_ecClass->GetName () != L"AnyClass")
+                    else if (!t_ecClass->GetIsDomainClass () && t_ecClass->GetName () != "AnyClass")
                         {
                         if (t_ecClass->GetDerivedClasses ().size () > 0)
                             continue;
@@ -912,7 +912,7 @@ void InstanceCRUDTests::checkECClassCRUDfeasibility (ECClassCP ecClass)
                         }
                     else
                         {
-                        if (t_ecClass->GetName () == L"AnyClass")
+                        if (t_ecClass->GetName () == "AnyClass")
                             notAnyClass = false;
                         else
                             {
@@ -946,15 +946,15 @@ void InstanceCRUDTests::checkECClassCRUDfeasibility (ECClassCP ecClass)
         {
         if (!ecClass->GetIsDomainClass ())
             {
-            LOG1.infov ("[NDC]Non-domain Class: CRUD opertions cann't be performed for class: %ls", ecClass->GetName ().c_str ());
+            LOG1.infov ("[NDC]Non-domain Class: CRUD operations can't be performed for class: %s", ecClass->GetName ().c_str ());
             }
         else if (ecClass->GetIsCustomAttributeClass ())
             {
-            LOG1.infov ("[CAC]Custom Attribute Class: CRUD operations cannot be performed for class: %ls", ecClass->GetName ().c_str ());
+            LOG1.infov ("[CAC]Custom Attribute Class: CRUD operations cannot be performed for class: %s", ecClass->GetName ().c_str ());
             }
-        else if (ecClass->GetName () == L"AnyClass")
+        else if (ecClass->GetName () == "AnyClass")
             {
-            LOG1.infov ("AnyClass: CRUD operations cannot be performed: %ls", ecClass->GetName ().c_str ());
+            LOG1.infov ("AnyClass: CRUD operations cannot be performed: %s", ecClass->GetName ().c_str ());
             }
         }
     }
@@ -1051,8 +1051,8 @@ TEST_F (InstanceCRUDTests, InsertUpdateDeleteTest)
     }
 TEST_F (InstanceCRUDTests, singleClassTest)
     {
-    WCharCP schma = L"SimpleCompany.01.00.ecschema.xml";//schema name
-    WCharCP classname = L"EducationStruct";//class name
+    WCharCP schema = L"SimpleCompany.01.00.ecschema.xml";//schema name
+    Utf8CP classname = "EducationStruct";//class name
     WCharCP folderName = L"StartupCompany";//folder name
     InstanceCRUDTests::initBeSQLiteLib ();
     BeFileName schemaPath;
@@ -1062,9 +1062,9 @@ TEST_F (InstanceCRUDTests, singleClassTest)
     schemaPath.AppendToPath (L"\\");
     ECSchemaReadContextPtr schemaReadContext = nullptr;
     ECSchemaPtr schemaPtr = nullptr;
-    ECDbTestUtility::ReadECSchemaFromDisk (schemaPtr, schemaReadContext, schma, schemaPath.c_str ());
+    ECDbTestUtility::ReadECSchemaFromDisk (schemaPtr, schemaReadContext, schema, schemaPath.c_str ());
     ASSERT_TRUE (schemaPtr != NULL);
-    m_schemaFullPath = schemaPath + schma;
+    m_schemaFullPath = schemaPath + schema;
     auto ecClass = schemaPtr->GetClassCP (classname);
     m_className = ecClass->GetName ();
     if (setUpECdbSingleClass ())

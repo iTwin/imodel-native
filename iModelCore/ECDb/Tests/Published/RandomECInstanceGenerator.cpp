@@ -86,10 +86,10 @@ BentleyStatus DefaultPropertyValueGenerator::_NextLong     (ECValueR value)
 //---------------------------------------------------------------------------------------
 BentleyStatus DefaultPropertyValueGenerator::_NextString   (ECValueR value)
     {
-    WString strValue;
+    Utf8String strValue;
     m_currentInt32 += m_incrementInt32;
-    strValue.Sprintf(L"%ls-%05d",m_stringPrefix.c_str(),m_currentInt32);
-    return value.SetString(strValue.c_str(), true);
+    strValue.Sprintf("%s-%05d",m_stringPrefix.c_str(),m_currentInt32);
+    return value.SetUtf8CP(strValue.c_str(), true);
     }
 
 //---------------------------------------------------------------------------------------
@@ -361,9 +361,9 @@ BentleyStatus RandomPropertyValueGenerator::_NextString(ECN::ECValueR value)
     {
     int randomNumber = rand () % 1001;
 
-    WString text;
-    text.Sprintf (L"Sample-%d", randomNumber);
-    return value.SetString(text.c_str (), true); 
+    Utf8String text;
+    text.Sprintf ("Sample-%d", randomNumber);
+    return value.SetUtf8CP(text.c_str (), true); 
     }
 
 void RandomPropertyValueGenerator::_Reset()
@@ -489,7 +489,7 @@ void RandomECInstanceGenerator::GetConstraintClasses(std::set<ECClassCP>& constr
         {
         if (constraintClasses.find(constraintClass) != constraintClasses.end())
             continue;
-        if (constraintClass->GetName().Equals(L"AnyClass"))
+        if (constraintClass->GetName().Equals("AnyClass"))
             {
             for(auto key : m_instances)
                 {
@@ -571,7 +571,7 @@ bool HasAnyClass(std::set<ECClassCP>& classes)
     {
     for (auto& ecclass : classes)
         {
-        if (ecclass->GetName() == L"AnyClass")
+        if (ecclass->GetName() == "AnyClass")
             return true;
         }
     return false;
@@ -683,10 +683,10 @@ BentleyStatus RandomECInstanceGenerator::GenerateRelationshipInstances(ECRelatio
             break;
         //Before we add this, we need to check that source and target are unique for the cardinality
         bool addInstance = true;
-        WString newSrcClassName = sourceInstance->GetClass().GetName();
-        WString newSrcId = sourceInstance->GetInstanceId();
-        WString newTarClassName = targetInstance->GetClass().GetName();
-        WString newTarId = targetInstance->GetInstanceId();
+        Utf8String newSrcClassName = sourceInstance->GetClass().GetName();
+        Utf8String newSrcId = sourceInstance->GetInstanceId();
+        Utf8String newTarClassName = targetInstance->GetClass().GetName();
+        Utf8String newTarId = targetInstance->GetInstanceId();
         for (auto& existingEntry : m_relationshipInstances)
         {
             //auto ecClass = existingEntry.first;
@@ -696,8 +696,8 @@ BentleyStatus RandomECInstanceGenerator::GenerateRelationshipInstances(ECRelatio
                 IECRelationshipInstancePtr relInstance = dynamic_cast<IECRelationshipInstance*>(existingInstance.get());
                 if (cardinality == Cardinality::S1_T1 || cardinality == Cardinality::S1_Tm) // target should be unique
                 {
-                    WString exstTarClassName = relInstance->GetTarget()->GetClass().GetName();
-                    WString existingTarInstId = relInstance->GetTarget()->GetInstanceId();
+                    Utf8String exstTarClassName = relInstance->GetTarget()->GetClass().GetName();
+                    Utf8String existingTarInstId = relInstance->GetTarget()->GetInstanceId();
                     if (exstTarClassName.Equals(newTarClassName) && existingTarInstId.Equals(newTarId))
                     {
                         addInstance = false;
@@ -706,8 +706,8 @@ BentleyStatus RandomECInstanceGenerator::GenerateRelationshipInstances(ECRelatio
                 }
                 if (cardinality == Cardinality::S1_T1 || cardinality == Cardinality::Sm_T1) // source should be unique
                 {
-                    WString exstSrcClassName = relInstance->GetSource()->GetClass().GetName();
-                    WString existingSrcInstId = relInstance->GetSource()->GetInstanceId();
+                    Utf8String exstSrcClassName = relInstance->GetSource()->GetClass().GetName();
+                    Utf8String existingSrcInstId = relInstance->GetSource()->GetInstanceId();
                     if (exstSrcClassName.Equals(newSrcClassName) && existingSrcInstId.Equals(newSrcId))
                     {
                         addInstance = false;
@@ -744,7 +744,7 @@ BentleyStatus RandomECInstanceGenerator::SetPrimitiveValue (ECValueR value, Prim
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-ECObjectsStatus RandomECInstanceGenerator::CopyStruct(IECInstanceR target, IECInstanceCR structValue, WCharCP propertyName)
+ECObjectsStatus RandomECInstanceGenerator::CopyStruct(IECInstanceR target, IECInstanceCR structValue, Utf8CP propertyName)
     {
     return CopyStruct(target, *ECValuesCollection::Create(structValue), propertyName);
     }
@@ -752,17 +752,17 @@ ECObjectsStatus RandomECInstanceGenerator::CopyStruct(IECInstanceR target, IECIn
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-ECObjectsStatus RandomECInstanceGenerator::CopyStruct(IECInstanceR source, ECValuesCollectionCR collection, WCharCP baseAccessPath)
+ECObjectsStatus RandomECInstanceGenerator::CopyStruct(IECInstanceR source, ECValuesCollectionCR collection, Utf8CP baseAccessPath)
     { 
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
 
     for(auto& propertyValue : collection)
         {
-        WString targetVAS;
+        Utf8String targetVAS;
         if (baseAccessPath)
             {
             targetVAS.append(baseAccessPath);
-            targetVAS.append(L".");
+            targetVAS.append(".");
             }
 
         targetVAS.append(propertyValue.GetValueAccessor().GetManagedAccessString());

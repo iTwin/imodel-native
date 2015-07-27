@@ -89,7 +89,7 @@ public:
     BeSQLite::EC::ECDbR    GetECDb ();
     BeSQLite::EC::ECDbCR   GetECDbCR () const;
     ECInstanceMapCR        GetImportedECInstances() const   {return m_ecInstances;}
-    BentleyStatus          GetInstances (bvector<ECN::IECInstancePtr>& instances, WCharCP className);
+    BentleyStatus          GetInstances (bvector<ECN::IECInstancePtr>& instances, Utf8CP className);
     static ECN::IECInstancePtr  CreateArbitraryECInstance(ECN::ECClassCR ecClass, PopulatePrimitiveValueCallback callback = PopulatePrimitiveValue, bool skipStructs = false, bool skipArrays = false);
     static void                 PopulateECInstance(ECN::IECInstancePtr ecInstance, PopulatePrimitiveValueCallback callback = PopulatePrimitiveValue, bool skipStructs = false, bool skipArrays = false);
     static ECN::IECInstancePtr  CreateECInstance (ECN::ECClassCR ecClass);
@@ -120,9 +120,9 @@ private:
         );
 
     static bool     IsECValueNullOrEmpty (ECN::ECValueCR value);
-    static bool     CompareJsonWithECValue (const Json::Value& jsonValue, ECN::ECValueCR referenceValue, ECN::IECInstanceCR referenceInstance, WCharCP referencePropertyAccessString);
+    static bool     CompareJsonWithECValue (const Json::Value& jsonValue, ECN::ECValueCR referenceValue, ECN::IECInstanceCR referenceInstance, Utf8CP referencePropertyAccessString);
     static bool     CompareJsonWithECPrimitiveValue (const Json::Value& jsonValue, ECN::ECValueCR referenceValue);
-    static bool     CompareJsonWithECArrayValue (const Json::Value& jsonValue, ECN::ECValueCR referenceValue, ECN::IECInstanceCR referenceInstance, WCharCP referencePropertyAccessString);
+    static bool     CompareJsonWithECArrayValue (const Json::Value& jsonValue, ECN::ECValueCR referenceValue, ECN::IECInstanceCR referenceInstance, Utf8CP referencePropertyAccessString);
     static bool     CompareJsonWithECStructValue (const Json::Value& jsonValue, ECN::ECValueCR referenceValue);
 
     static int64_t  JulianDayToCommonEraTicks (double jd);

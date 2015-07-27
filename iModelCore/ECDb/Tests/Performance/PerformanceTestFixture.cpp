@@ -181,9 +181,9 @@ ECPropertyCR ecProperty
         {
         case PRIMITIVETYPE_String: 
             {
-            WString text;
-            text.Sprintf (L"Sample text with random number: %d", randomNumber);
-            ecValue.SetString(text.c_str (), true); 
+            Utf8String text;
+            text.Sprintf ("Sample text with random number: %d", randomNumber);
+            ecValue.SetUtf8CP(text.c_str (), true); 
             }
             break;
 

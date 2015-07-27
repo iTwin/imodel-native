@@ -271,17 +271,17 @@ TEST (ECDbBrownBagDemo, PopulateSampleECDb)
 
 IECInstancePtr InsertCompany (ECDbR ecdb, ECSchemaCP schema, Utf8CP name, Utf8CP street, Utf8CP city, Utf8CP state, Utf8CP zip, Utf8CP country, int numberOfEmployees)
     {
-    ECClassCP ecClass = schema->GetClassCP (L"Company");
+    ECClassCP ecClass = schema->GetClassCP ("Company");
 
     auto companyInst = ecClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, companyInst->SetValue (L"Name", ECValue (name)));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, companyInst->SetValue (L"Headquarters.Street", ECValue (street)));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, companyInst->SetValue (L"Headquarters.City", ECValue (city)));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, companyInst->SetValue (L"Headquarters.State", ECValue (state)));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, companyInst->SetValue (L"Headquarters.Zip", ECValue (zip)));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, companyInst->SetValue (L"Headquarters.Country", ECValue (country)));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, companyInst->SetValue ("Name", ECValue (name)));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, companyInst->SetValue ("Headquarters.Street", ECValue (street)));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, companyInst->SetValue ("Headquarters.City", ECValue (city)));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, companyInst->SetValue ("Headquarters.State", ECValue (state)));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, companyInst->SetValue ("Headquarters.Zip", ECValue (zip)));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, companyInst->SetValue ("Headquarters.Country", ECValue (country)));
 
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, companyInst->SetValue (L"NumberOfEmployees", ECValue (numberOfEmployees)));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, companyInst->SetValue ("NumberOfEmployees", ECValue (numberOfEmployees)));
 
     ECInstanceInserter inserter (ecdb, *ecClass);
     ECInstanceKey instanceKey;
@@ -293,22 +293,22 @@ IECInstancePtr InsertCompany (ECDbR ecdb, ECSchemaCP schema, Utf8CP name, Utf8CP
 IECInstancePtr InsertEmployee (ECDbR ecdb, ECSchemaCP schema, int id, Utf8CP firstName, Utf8CP lastName, DateTimeCR birthday, Utf8CP street, Utf8CP city, Utf8CP state, Utf8CP zip, Utf8CP country,
                       IECInstanceR compInst)
     {
-    ECClassCP ecClass = schema->GetClassCP (L"Employee");
+    ECClassCP ecClass = schema->GetClassCP ("Employee");
 
     auto inst = ecClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue (L"EmployeeID", ECValue (id)));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue (L"FirstName", ECValue (firstName)));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue (L"LastName", ECValue (lastName)));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue (L"Birthday", ECValue (birthday)));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue (L"Address.Street", ECValue (street)));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue (L"Address.City", ECValue (city)));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue (L"Address.State", ECValue (state)));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue (L"Address.Zip", ECValue (zip)));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue (L"Address.Country", ECValue (country)));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue ("EmployeeID", ECValue (id)));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue ("FirstName", ECValue (firstName)));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue ("LastName", ECValue (lastName)));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue ("Birthday", ECValue (birthday)));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue ("Address.Street", ECValue (street)));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue ("Address.City", ECValue (city)));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue ("Address.State", ECValue (state)));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue ("Address.Zip", ECValue (zip)));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue ("Address.Country", ECValue (country)));
 
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->AddArrayElements (L"MobilePhones", 2));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue (L"MobilePhones", ECValue ("+1-610-766-1324"), 0));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue (L"MobilePhones", ECValue ("+1-610-766-6531"), 1));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->AddArrayElements ("MobilePhones", 2));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue ("MobilePhones", ECValue ("+1-610-766-1324"), 0));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue ("MobilePhones", ECValue ("+1-610-766-6531"), 1));
 
     ECInstanceInserter inserter (ecdb, *ecClass);
     ECInstanceKey instanceKey;
@@ -316,7 +316,7 @@ IECInstancePtr InsertEmployee (ECDbR ecdb, ECSchemaCP schema, int id, Utf8CP fir
     EXPECT_EQ (SUCCESS, stat) << "Inserting Employee";
 
     //now insert relationship to company
-    auto relClass = schema->GetClassCP (L"EmployeeCompany")->GetRelationshipClassCP ();
+    auto relClass = schema->GetClassCP ("EmployeeCompany")->GetRelationshipClassCP ();
     auto enabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*relClass);
     auto relInst = enabler->CreateRelationshipInstance ();
     relInst->SetSource (inst.get ());
@@ -334,15 +334,15 @@ IECInstancePtr InsertEmployee (ECDbR ecdb, ECSchemaCP schema, int id, Utf8CP fir
 //+---------------+---------------+---------------+---------------+---------------+------
 IECInstancePtr InsertDesk (ECDbR ecdb, ECSchemaCP schema, Utf8CP assetId, double cost, int material, double weight, double length, double breadth, IECInstanceR employeeInstance)
     {
-    ECClassCP ecClass = schema->GetClassCP (L"Desk");
+    ECClassCP ecClass = schema->GetClassCP ("Desk");
 
     auto inst = ecClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue (L"AssetID", ECValue (assetId)));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue (L"Cost", ECValue (cost)));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue (L"Material", ECValue (material)));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue (L"Weight", ECValue (weight)));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue (L"Length", ECValue (length)));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue (L"Breadth", ECValue (breadth)));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue ("AssetID", ECValue (assetId)));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue ("Cost", ECValue (cost)));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue ("Material", ECValue (material)));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue ("Weight", ECValue (weight)));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue ("Length", ECValue (length)));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue ("Breadth", ECValue (breadth)));
 
     ECInstanceInserter inserter (ecdb, *ecClass);
     ECInstanceKey instanceKey;
@@ -350,7 +350,7 @@ IECInstancePtr InsertDesk (ECDbR ecdb, ECSchemaCP schema, Utf8CP assetId, double
     EXPECT_EQ (SUCCESS, stat) << "Inserting Desk";
 
     //now insert relationship to employee
-    auto relClass = schema->GetClassCP (L"EmployeeFurniture")->GetRelationshipClassCP ();
+    auto relClass = schema->GetClassCP ("EmployeeFurniture")->GetRelationshipClassCP ();
     auto enabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*relClass);
     auto relInst = enabler->CreateRelationshipInstance ();
     relInst->SetSource (&employeeInstance);
@@ -370,19 +370,19 @@ IECInstancePtr InsertComputer (ECDbR ecdb, ECSchemaCP schema, Utf8CP assetId, do
     {
     ECClassCP ecClass = nullptr;
     if (isLaptop)
-        ecClass = schema->GetClassCP (L"Laptop");
+        ecClass = schema->GetClassCP ("Laptop");
     else
-        ecClass = schema->GetClassCP (L"Computer");
+        ecClass = schema->GetClassCP ("Computer");
 
     auto inst = ecClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue (L"AssetID", ECValue (assetId)));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue (L"Cost", ECValue (cost)));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue (L"Weight", ECValue (weight)));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue (L"Make", ECValue (make)));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue (L"IsCompanyProperty", ECValue (isCompanyProperty)));
-    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue (L"WarrantyExpiryDate", ECValue (warrantyExpiry)));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue ("AssetID", ECValue (assetId)));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue ("Cost", ECValue (cost)));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue ("Weight", ECValue (weight)));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue ("Make", ECValue (make)));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue ("IsCompanyProperty", ECValue (isCompanyProperty)));
+    EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue ("WarrantyExpiryDate", ECValue (warrantyExpiry)));
     if (isLaptop)
-        EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue (L"HasDockingStation", ECValue (hasDockingStation)));
+        EXPECT_EQ (ECOBJECTS_STATUS_Success, inst->SetValue ("HasDockingStation", ECValue (hasDockingStation)));
 
     ECInstanceInserter inserter (ecdb, *ecClass);
     ECInstanceKey instanceKey;
@@ -390,7 +390,7 @@ IECInstancePtr InsertComputer (ECDbR ecdb, ECSchemaCP schema, Utf8CP assetId, do
     EXPECT_EQ (SUCCESS, stat) << "Inserting Computer / Laptop";
 
     //now insert relationship to employee
-    auto relClass = schema->GetClassCP (L"HardwareUsedByEmployee")->GetRelationshipClassCP ();
+    auto relClass = schema->GetClassCP ("HardwareUsedByEmployee")->GetRelationshipClassCP ();
     auto enabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (*relClass);
     auto relInst = enabler->CreateRelationshipInstance ();
     relInst->SetSource (&employeeInstance);

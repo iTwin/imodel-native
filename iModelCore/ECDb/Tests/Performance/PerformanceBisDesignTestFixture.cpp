@@ -22,7 +22,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 // @bsimethod                                     Krischan.Eberle                  05/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //static 
-WCharCP const PerformanceBisDesignTestFixture::BASE_CLASS_NAME = L"Base";
+Utf8CP const PerformanceBisDesignTestFixture::BASE_CLASS_NAME = "Base";
 Utf8CP const PerformanceBisDesignTestFixture::ECINSTANCEID_COLUMN_NAME = "ecinstanceid";
 Utf8CP const PerformanceBisDesignTestFixture::CLASSID_COLUMN_NAME = "ecclassid";
 Utf8CP const PerformanceBisDesignTestFixture::PARENTECINSTANCEID_COLUMN_NAME = "parentecinstanceid";
@@ -277,9 +277,9 @@ void PerformanceBisDesignTestFixture::AppendPropDdlToSql (Utf8StringR sql, ECN::
         }
 
     auto const& propName = prop.GetName ();
-    if (propName.Equals (WString (ECINSTANCEID_COLUMN_NAME, BentleyCharEncoding::Utf8)))
+    if (propName.Equals (ECINSTANCEID_COLUMN_NAME))
         sql.append (" PRIMARY KEY");
-    else if (propName.Equals (WString (CLASSID_COLUMN_NAME, BentleyCharEncoding::Utf8)))
+    else if (propName.Equals (CLASSID_COLUMN_NAME))
         sql.append (" NOT NULL");
     }
 
@@ -326,7 +326,7 @@ Utf8String PerformanceBisDesignTestFixture::GetTableName (ECN::ECClassCR testCla
 ECSchemaPtr PerformanceBisDesignTestFixture::CreateTestSchema (int domainPropCount)
     {
     ECSchemaPtr schema = nullptr;
-    auto stat = ECSchema::CreateSchema (schema, L"BISDesignTest", 1, 0);
+    auto stat = ECSchema::CreateSchema (schema, "BISDesignTest", 1, 0);
     if (stat != ECObjectsStatus::ECOBJECTS_STATUS_Success)
         return nullptr;
 
@@ -336,7 +336,7 @@ ECSchemaPtr PerformanceBisDesignTestFixture::CreateTestSchema (int domainPropCou
         return nullptr;
 
     classId++;
-    ECClassP testClass = AddTestClassStub (*schema, *baseClass, L"ClassMixed", classId);
+    ECClassP testClass = AddTestClassStub (*schema, *baseClass, "ClassMixed", classId);
     for (int i = 0; i < domainPropCount; i++)
         {
         if (AddTestClassProperty (*testClass, i + 1, nullptr) != SUCCESS)
@@ -344,7 +344,7 @@ ECSchemaPtr PerformanceBisDesignTestFixture::CreateTestSchema (int domainPropCou
         }
 
     classId++;
-    testClass = AddTestClassStub (*schema, *baseClass, L"ClassInteger", classId);
+    testClass = AddTestClassStub (*schema, *baseClass, "ClassInteger", classId);
     PrimitiveType dataType = PRIMITIVETYPE_Integer;
     for (int i = 0; i < domainPropCount; i++)
         {
@@ -353,7 +353,7 @@ ECSchemaPtr PerformanceBisDesignTestFixture::CreateTestSchema (int domainPropCou
         }
 
     classId++;
-    testClass = AddTestClassStub (*schema, *baseClass, L"ClassDouble", classId);
+    testClass = AddTestClassStub (*schema, *baseClass, "ClassDouble", classId);
     dataType = PRIMITIVETYPE_Double;
     for (int i = 0; i < domainPropCount; i++)
         {
@@ -362,7 +362,7 @@ ECSchemaPtr PerformanceBisDesignTestFixture::CreateTestSchema (int domainPropCou
         }
 
     classId++;
-    testClass = AddTestClassStub (*schema, *baseClass, L"ClassString", classId);
+    testClass = AddTestClassStub (*schema, *baseClass, "ClassString", classId);
     dataType = PRIMITIVETYPE_String;
     for (int i = 0; i < domainPropCount; i++)
         {
@@ -371,7 +371,7 @@ ECSchemaPtr PerformanceBisDesignTestFixture::CreateTestSchema (int domainPropCou
         }
 
     classId++;
-    testClass = AddTestClassStub (*schema, *baseClass, L"ClassBlob", classId);
+    testClass = AddTestClassStub (*schema, *baseClass, "ClassBlob", classId);
     dataType = PRIMITIVETYPE_Binary;
     for (int i = 0; i < domainPropCount; i++)
         {
@@ -399,23 +399,23 @@ ECClassP PerformanceBisDesignTestFixture::AddTestBaseClass (ECSchemaR schema, EC
     baseClass->SetId (classId);
 
     PrimitiveECPropertyP prop = nullptr;
-    stat = baseClass->CreatePrimitiveProperty (prop, WString (ECINSTANCEID_COLUMN_NAME, BentleyCharEncoding::Utf8), PRIMITIVETYPE_Integer);
+    stat = baseClass->CreatePrimitiveProperty (prop, ECINSTANCEID_COLUMN_NAME, PRIMITIVETYPE_Integer);
     if (stat != ECObjectsStatus::ECOBJECTS_STATUS_Success)
         return nullptr;
 
-    stat = baseClass->CreatePrimitiveProperty (prop, WString (CLASSID_COLUMN_NAME, BentleyCharEncoding::Utf8), PRIMITIVETYPE_Integer);
+    stat = baseClass->CreatePrimitiveProperty (prop, CLASSID_COLUMN_NAME, PRIMITIVETYPE_Integer);
     if (stat != ECObjectsStatus::ECOBJECTS_STATUS_Success)
         return nullptr;
 
-    stat = baseClass->CreatePrimitiveProperty (prop, WString (PARENTECINSTANCEID_COLUMN_NAME, BentleyCharEncoding::Utf8), PRIMITIVETYPE_Integer);
+    stat = baseClass->CreatePrimitiveProperty (prop, PARENTECINSTANCEID_COLUMN_NAME, PRIMITIVETYPE_Integer);
     if (stat != ECObjectsStatus::ECOBJECTS_STATUS_Success)
         return nullptr;
 
-    stat = baseClass->CreatePrimitiveProperty (prop, WString (BUSINESSKEY_COLUMN_NAME, BentleyCharEncoding::Utf8), PRIMITIVETYPE_String);
+    stat = baseClass->CreatePrimitiveProperty (prop, BUSINESSKEY_COLUMN_NAME, PRIMITIVETYPE_String);
     if (stat != ECObjectsStatus::ECOBJECTS_STATUS_Success)
         return nullptr;
 
-    stat = baseClass->CreatePrimitiveProperty (prop, WString (GLOBALID_COLUMN_NAME, BentleyCharEncoding::Utf8), PRIMITIVETYPE_String);
+    stat = baseClass->CreatePrimitiveProperty (prop, GLOBALID_COLUMN_NAME, PRIMITIVETYPE_String);
     if (stat != ECObjectsStatus::ECOBJECTS_STATUS_Success)
         return nullptr;
 
@@ -426,7 +426,7 @@ ECClassP PerformanceBisDesignTestFixture::AddTestBaseClass (ECSchemaR schema, EC
 // @bsimethod                                     Krischan.Eberle                  05/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //static 
-ECClassP PerformanceBisDesignTestFixture::AddTestClassStub (ECSchemaR schema, ECClassCR baseClass, WCharCP name, ECClassId classId)
+ECClassP PerformanceBisDesignTestFixture::AddTestClassStub (ECSchemaR schema, ECClassCR baseClass, Utf8CP name, ECClassId classId)
     {
     ECClassP testClass = nullptr;
     auto stat = schema.CreateClass (testClass, name);
@@ -449,8 +449,8 @@ ECClassP PerformanceBisDesignTestFixture::AddTestClassStub (ECSchemaR schema, EC
 //static 
 BentleyStatus PerformanceBisDesignTestFixture::AddTestClassProperty (ECClassR testClass, int propertyNumber, ECN::PrimitiveType const* type)
     {
-    WString propName;
-    propName.Sprintf (L"prop%d", propertyNumber);
+    Utf8String propName;
+    propName.Sprintf ("prop%d", propertyNumber);
 
     PrimitiveType effectiveType;
     if (type != nullptr)
@@ -717,7 +717,7 @@ void Performance_BisDesign_TablePerClassScenario_TestFixture::_GenerateDdlSql (U
 //static
 bool Performance_BisDesign_TablePerClassScenario_TestFixture::IsClassIdProperty (ECN::ECPropertyCR prop)
     {
-    return prop.GetName ().Equals (WString (CLASSID_COLUMN_NAME, BentleyCharEncoding::Utf8));
+    return prop.GetName ().Equals (CLASSID_COLUMN_NAME);
     }
 
 

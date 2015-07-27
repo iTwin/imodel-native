@@ -413,7 +413,7 @@ void ECSqlSelectStatementCrudAsserter::AssertColumnInfo (ECSqlTestItem const& te
 
     if (columnInfo.IsGeneratedProperty ())
         {
-        EXPECT_STREQ (L"ECSqlSelectClause", rootClass.GetName ().c_str ()) << "IECSqlValue::GetColumnInfo().GetRootClass() is expected to return the anonymous class for generated properties.";
+        EXPECT_STREQ ("ECSqlSelectClause", rootClass.GetName ().c_str ()) << "IECSqlValue::GetColumnInfo().GetRootClass() is expected to return the anonymous class for generated properties.";
         EXPECT_TRUE (Utf8String::IsNullOrEmpty (columnInfo.GetRootClassAlias ())) << "IECSqlValue::GetColumnInfo ().GetRootClassAlias() is expected to return nullptr for generated properties.";
         }
 

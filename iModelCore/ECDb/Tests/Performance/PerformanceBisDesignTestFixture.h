@@ -43,7 +43,7 @@ protected:
         int GetInstancesPerClassCount () const { return m_instancesPerClassCount; }
         };
 
-    static WCharCP const BASE_CLASS_NAME;
+    static Utf8CP const BASE_CLASS_NAME;
     static Utf8CP const ECINSTANCEID_COLUMN_NAME;
     static Utf8CP const CLASSID_COLUMN_NAME;
     static Utf8CP const PARENTECINSTANCEID_COLUMN_NAME;
@@ -66,7 +66,7 @@ private:
 
     static ECN::ECSchemaPtr CreateTestSchema (int domainPropCount);
     static ECN::ECClassP AddTestBaseClass (ECN::ECSchemaR schema, ECN::ECClassId ecClassId);
-    static ECN::ECClassP AddTestClassStub (ECN::ECSchemaR schema, ECN::ECClassCR baseClass, WCharCP name, ECN::ECClassId ecClassId);
+    static ECN::ECClassP AddTestClassStub (ECN::ECSchemaR schema, ECN::ECClassCR baseClass, Utf8CP name, ECN::ECClassId ecClassId);
     static BentleyStatus AddTestClassProperty (ECN::ECClassR testClass, int propertyNumber, ECN::PrimitiveType const* type);
 
     static void CreateTestDb (BeSQLite::DbR db, Utf8CP fileName);

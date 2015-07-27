@@ -52,9 +52,9 @@ struct FSRTests : public ::testing::Test
         schemaDirectory.PopDir();
         schemaReadContext->AddSchemaPath(schemaDirectory);
         currentSchemaName.append(L".ecschema.xml");
-        WString schemaName;
+        Utf8String schemaName;
         uint32_t major, minor;
-        ECSchema::ParseSchemaFullName(schemaName, major, minor, currentSchemaName.GetFileNameWithoutExtension());
+        ECSchema::ParseSchemaFullName(schemaName, major, minor, Utf8String(currentSchemaName.GetFileNameWithoutExtension().c_str()));
         SchemaKey key = SchemaKey(schemaName.c_str(), major, minor);
         ecSchema = ECSchema::LocateSchema(key, *schemaReadContext);
         ASSERT_TRUE(ecSchema != NULL);

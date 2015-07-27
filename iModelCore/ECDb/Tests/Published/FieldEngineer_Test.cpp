@@ -45,19 +45,19 @@ int GetNextId()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr CreateSubContractor (ECClassCR subContractorClass, WCharCP firstName, WCharCP lastName)
+IECInstancePtr CreateSubContractor (ECClassCR subContractorClass, Utf8CP firstName, Utf8CP lastName)
     {
     IECInstancePtr subContractor = subContractorClass.GetDefaultStandaloneEnabler()->CreateInstance(0);
     
     ECValue ecValue;
-    ecValue.SetString (firstName, true);
-    subContractor->SetValue (L"FirstName", ecValue);
+    ecValue.SetUtf8CP (firstName, true);
+    subContractor->SetValue ("FirstName", ecValue);
 
-    ecValue.SetString (lastName, true);
-    subContractor->SetValue (L"LastName", ecValue);
+    ecValue.SetUtf8CP (lastName, true);
+    subContractor->SetValue ("LastName", ecValue);
 
     ecValue.SetInteger (GetNextId());
-    subContractor->SetValue (L"SubContractorId", ecValue);
+    subContractor->SetValue ("SubContractorId", ecValue);
 
     return subContractor;
     }
@@ -65,30 +65,30 @@ IECInstancePtr CreateSubContractor (ECClassCR subContractorClass, WCharCP firstN
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr CreateManager (ECClassCR managerClass, WCharCP firstName, WCharCP lastName)
+IECInstancePtr CreateManager (ECClassCR managerClass, Utf8CP firstName, Utf8CP lastName)
     {
     IECInstancePtr manager = managerClass.GetDefaultStandaloneEnabler()->CreateInstance(0);
     
     ECValue ecValue;
-    ecValue.SetString (firstName, true);
-    manager->SetValue (L"FirstName", ecValue);
+    ecValue.SetUtf8CP (firstName, true);
+    manager->SetValue ("FirstName", ecValue);
 
-    ecValue.SetString (lastName, true);
-    manager->SetValue (L"LastName", ecValue);
+    ecValue.SetUtf8CP (lastName, true);
+    manager->SetValue ("LastName", ecValue);
 
     ecValue.SetInteger (GetNextId());
-    manager->SetValue (L"EmployeeId", ecValue);
+    manager->SetValue ("EmployeeId", ecValue);
 
     DateTime dateJoined (1986, 1, 1);
     ecValue.SetDateTime (dateJoined);
-    manager->SetValue (L"DateJoined", ecValue);
+    manager->SetValue ("DateJoined", ecValue);
 
-    ecValue.SetString (L"PhD");
-    manager->SetValue (L"LatestEducation.Degree", ecValue);
+    ecValue.SetUtf8CP ("PhD");
+    manager->SetValue ("LatestEducation.Degree", ecValue);
     ecValue.SetInteger (1980);
-    manager->SetValue (L"LatestEducation.Year", ecValue);
+    manager->SetValue ("LatestEducation.Year", ecValue);
     ecValue.SetDouble (4.0);
-    manager->SetValue (L"LatestEducation.GPA", ecValue);
+    manager->SetValue ("LatestEducation.GPA", ecValue);
     
     return manager;
     }
@@ -96,67 +96,67 @@ IECInstancePtr CreateManager (ECClassCR managerClass, WCharCP firstName, WCharCP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   02/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr CreateEmployee (ECClassCR employeeClass, WCharCP firstName, WCharCP lastName)
+IECInstancePtr CreateEmployee (ECClassCR employeeClass, Utf8CP firstName, Utf8CP lastName)
     {
     IECInstancePtr employee = employeeClass.GetDefaultStandaloneEnabler()->CreateInstance(0);
     
     ECValue ecValue;
-    ecValue.SetString (firstName, true);
-    employee->SetValue (L"FirstName", ecValue);
+    ecValue.SetUtf8CP (firstName, true);
+    employee->SetValue ("FirstName", ecValue);
 
-    ecValue.SetString (lastName, true);
-    employee->SetValue (L"LastName", ecValue);
+    ecValue.SetUtf8CP (lastName, true);
+    employee->SetValue ("LastName", ecValue);
 
     ecValue.SetInteger (GetNextId());
-    employee->SetValue (L"EmployeeId", ecValue);
+    employee->SetValue ("EmployeeId", ecValue);
 
     DateTime dateJoined (1995, 1, 1);
     ecValue.SetDateTime (dateJoined);
-    employee->SetValue (L"DateJoined", ecValue);
+    employee->SetValue ("DateJoined", ecValue);
 
-    ecValue.SetString (L"MS");
-    employee->SetValue (L"LatestEducation.Degree", ecValue);
+    ecValue.SetUtf8CP ("MS");
+    employee->SetValue ("LatestEducation.Degree", ecValue);
     ecValue.SetInteger (1990);
-    employee->SetValue (L"LatestEducation.Year", ecValue);
+    employee->SetValue ("LatestEducation.Year", ecValue);
     ecValue.SetDouble (4.5);
-    employee->SetValue (L"LatestEducation.GPA", ecValue);
+    employee->SetValue ("LatestEducation.GPA", ecValue);
     
-    ECPropertyP ecProperty = employeeClass.GetPropertyP (L"EducationHistory");
+    ECPropertyP ecProperty = employeeClass.GetPropertyP ("EducationHistory");
     ArrayECPropertyCP arrayProperty = ecProperty->GetAsArrayProperty();
     ECClassCP educationHistoryClass = arrayProperty->GetStructElementType();
 
-    employee->AddArrayElements (L"EducationHistory", 3);
+    employee->AddArrayElements ("EducationHistory", 3);
 
     IECInstancePtr masters = educationHistoryClass->GetDefaultStandaloneEnabler()->CreateInstance (0);
-    ecValue.SetString (L"MS");
-    masters->SetValue (L"Degree", ecValue);
+    ecValue.SetUtf8CP ("MS");
+    masters->SetValue ("Degree", ecValue);
     ecValue.SetInteger (1990);
-    masters->SetValue (L"Year", ecValue);
+    masters->SetValue ("Year", ecValue);
     ecValue.SetDouble (4.5);
-    masters->SetValue (L"GPA", ecValue);
+    masters->SetValue ("GPA", ecValue);
     ECValue structValue;
     structValue.SetStruct (masters.get());
-    employee->SetValue (L"EducationHistory", structValue, 0);
+    employee->SetValue ("EducationHistory", structValue, 0);
 
     IECInstancePtr bachelors = educationHistoryClass->GetDefaultStandaloneEnabler()->CreateInstance (0);
-    ecValue.SetString (L"BS");
-    bachelors->SetValue (L"Degree", ecValue);
+    ecValue.SetUtf8CP ("BS");
+    bachelors->SetValue ("Degree", ecValue);
     ecValue.SetInteger (1986);
-    bachelors->SetValue (L"Year", ecValue);
+    bachelors->SetValue ("Year", ecValue);
     ecValue.SetDouble (5.0);
-    bachelors->SetValue (L"GPA", ecValue);
+    bachelors->SetValue ("GPA", ecValue);
     structValue.SetStruct (bachelors.get());
-    employee->SetValue (L"EducationHistory", structValue, 1);
+    employee->SetValue ("EducationHistory", structValue, 1);
 
     IECInstancePtr highSchool = educationHistoryClass->GetDefaultStandaloneEnabler()->CreateInstance (0);
-    ecValue.SetString (L"HighSchool");
-    highSchool->SetValue (L"Degree", ecValue);
+    ecValue.SetUtf8CP ("HighSchool");
+    highSchool->SetValue ("Degree", ecValue);
     ecValue.SetInteger (1982);
-    highSchool->SetValue (L"Year", ecValue);
+    highSchool->SetValue ("Year", ecValue);
     ecValue.SetDouble (3.5);
-    highSchool->SetValue (L"GPA", ecValue);
+    highSchool->SetValue ("GPA", ecValue);
     structValue.SetStruct (highSchool.get());
-    employee->SetValue (L"EducationHistory", structValue, 2);
+    employee->SetValue ("EducationHistory", structValue, 2);
 
     return employee;
     }
@@ -216,25 +216,25 @@ bool PopulateSimpleCompany (ECDbR ecDb)
         return false;
 
     /* Import sample instances into Db */
-    ECClassCP employeeClass = schema->GetClassCP (L"Employee");
-    ECClassCP managerClass = schema->GetClassCP (L"Manager");
-    ECClassCP subContractorClass = schema->GetClassCP (L"SubContractor");
-    ECRelationshipClassCP managerRelClass = schema->GetClassCP (L"ManagerRelationship")->GetRelationshipClassCP();
-    ECRelationshipClassCP subContractorRelClass = schema->GetClassCP (L"SubContractorRelationship")->GetRelationshipClassCP();
+    ECClassCP employeeClass = schema->GetClassCP ("Employee");
+    ECClassCP managerClass = schema->GetClassCP ("Manager");
+    ECClassCP subContractorClass = schema->GetClassCP ("SubContractor");
+    ECRelationshipClassCP managerRelClass = schema->GetClassCP ("ManagerRelationship")->GetRelationshipClassCP();
+    ECRelationshipClassCP subContractorRelClass = schema->GetClassCP ("SubContractorRelationship")->GetRelationshipClassCP();
 
-    IECInstancePtr goldFish = CreateEmployee (*employeeClass,  L"Gold",  L"Fish");
+    IECInstancePtr goldFish = CreateEmployee (*employeeClass,  "Gold",  "Fish");
     if (!InsertInstance (ecDb, *employeeClass, *goldFish))
         return false;
-    IECInstancePtr salmonFish = CreateEmployee (*employeeClass,  L"Salmon",  L"Fish");
+    IECInstancePtr salmonFish = CreateEmployee (*employeeClass,  "Salmon",  "Fish");
     if (!InsertInstance (ecDb, *employeeClass, *salmonFish))
         return false;
-    IECInstancePtr lionSeal = CreateManager (*managerClass, L"Lion",  L"Seal");
+    IECInstancePtr lionSeal = CreateManager (*managerClass, "Lion",  "Seal");
     if (!InsertInstance (ecDb, *managerClass, *lionSeal))
         return false;
-    IECInstancePtr subContractor = CreateSubContractor (*subContractorClass, L"Sub", L"Contractor");
+    IECInstancePtr subContractor = CreateSubContractor (*subContractorClass, "Sub", "Contractor");
     if (!InsertInstance (ecDb, *subContractorClass, *subContractor))
         return false;
-    IECInstancePtr whiteShark = CreateManager (*managerClass, L"White", L"Shark");
+    IECInstancePtr whiteShark = CreateManager (*managerClass, "White", "Shark");
     if (!InsertInstance (ecDb, *managerClass, *whiteShark))
         return false;
 
@@ -362,7 +362,7 @@ TEST (FieldEngineer, Workflow)
      
     ECSchemaCP simpleCompanySchema = ecDb.Schemas().GetECSchema ("SimpleCompany", true);
     ASSERT_TRUE (simpleCompanySchema != nullptr);
-    ECClassCP employeeClass = simpleCompanySchema->GetClassCP (L"Employee");
+    ECClassCP employeeClass = simpleCompanySchema->GetClassCP ("Employee");
     ASSERT_TRUE (employeeClass != nullptr);
 
     // Prepare statement
@@ -464,13 +464,13 @@ TEST (FieldEngineer, Workflow)
      * Retrieve specific relationship - Get the ManagerRelationship between "WhiteShark" and "LionSeal"
      * (Tests relationships stored in a link table)
      */
-    ECClassCP managerClass = simpleCompanySchema->GetClassCP (L"Manager");
+    ECClassCP managerClass = simpleCompanySchema->GetClassCP ("Manager");
     ASSERT_TRUE (managerClass != nullptr);
     ECInstanceId whiteSharkId = GetIdOfPerson (ecDb, *managerClass, "White", "Shark");
     ASSERT_TRUE (whiteSharkId.IsValid ());
     ECInstanceId lionSealId = GetIdOfPerson (ecDb, *managerClass, "Lion", "Seal");
     ASSERT_TRUE (lionSealId.IsValid ());
-    ECRelationshipClassCP managerRelClass = simpleCompanySchema->GetClassCP (L"ManagerRelationship")->GetRelationshipClassCP();
+    ECRelationshipClassCP managerRelClass = simpleCompanySchema->GetClassCP ("ManagerRelationship")->GetRelationshipClassCP();
     ASSERT_TRUE (managerRelClass != nullptr);
 
     ecSqlWithoutSelect = "FROM sico.ManagerRelationship WHERE SourceECInstanceId=? AND TargetECInstanceId=?";
@@ -502,13 +502,13 @@ TEST (FieldEngineer, Workflow)
     * Retrieve specific relationship - Get SubContractorRelationship between "SubContractor" and "SalmonFish"
     * (Tests relationships stored in one of the end tables)
     */
-     ECClassCP subContractorClass = simpleCompanySchema->GetClassCP (L"SubContractor");
+     ECClassCP subContractorClass = simpleCompanySchema->GetClassCP ("SubContractor");
      ASSERT_TRUE (subContractorClass != nullptr);
      ECInstanceId subContractorId = GetIdOfPerson (ecDb, *subContractorClass, "Sub", "Contractor");
      ASSERT_TRUE (subContractorId.IsValid ());
      ECInstanceId salmonFishId = GetIdOfPerson (ecDb, *employeeClass, "Salmon", "Fish");
      ASSERT_TRUE (salmonFishId.IsValid ());
-     ECRelationshipClassCP subContractorRelClass = simpleCompanySchema->GetClassCP (L"SubContractorRelationship")->GetRelationshipClassCP();
+     ECRelationshipClassCP subContractorRelClass = simpleCompanySchema->GetClassCP ("SubContractorRelationship")->GetRelationshipClassCP();
      ASSERT_TRUE (subContractorRelClass != nullptr);
 
      ecSqlWithoutSelect = "FROM sico.SubContractorRelationship WHERE SourceECInstanceId=? AND TargetECInstanceId=?";
@@ -638,14 +638,14 @@ TEST (FieldEngineer, CircularReferences)
     ECSchemaCP schema = ecDb.Schemas().GetECSchema ("SimpleCompany", true);
     ASSERT_TRUE (schema != nullptr);
 
-    ECClassCP managerClass = schema->GetClassCP (L"Manager");
-    ECRelationshipClassCP managerRelClass = schema->GetClassCP (L"ManagerRelationship")->GetRelationshipClassCP();
+    ECClassCP managerClass = schema->GetClassCP ("Manager");
+    ECRelationshipClassCP managerRelClass = schema->GetClassCP ("ManagerRelationship")->GetRelationshipClassCP();
 
-    IECInstancePtr manager1 = CreateManager (*managerClass, L"ImBig", L"Manager");
+    IECInstancePtr manager1 = CreateManager (*managerClass, "ImBig", "Manager");
     ASSERT_TRUE (InsertInstance (ecDb, *managerClass, *manager1));
-    IECInstancePtr manager2 = CreateManager (*managerClass, L"ImBigger", L"Manager");
+    IECInstancePtr manager2 = CreateManager (*managerClass, "ImBigger", "Manager");
     ASSERT_TRUE (InsertInstance (ecDb, *managerClass, *manager2));
-    IECInstancePtr manager3 = CreateManager (*managerClass, L"ImBiggest", L"Manager");
+    IECInstancePtr manager3 = CreateManager (*managerClass, "ImBiggest", "Manager");
     ASSERT_TRUE (InsertInstance (ecDb, *managerClass, *manager3));
 
     // Create all permutations of relationships
