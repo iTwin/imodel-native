@@ -112,7 +112,7 @@ void ECDbMapCAPerformanceTests::UpdateInstances (ECDbR ecdb)
         {
         auto testClass = kvPair.first;
         Utf8String updateSql = kvPair.second.m_updateECSql;
-        const size_t propertyCount = testClass->GetPropertyCount (true);
+        const int propertyCount = (int) testClass->GetPropertyCount (true);
 
         ECSqlStatement stmt;
         auto stat = stmt.Prepare (ecdb, updateSql.c_str ());
@@ -148,7 +148,7 @@ void ECDbMapCAPerformanceTests::InsertInstances (ECDbR ecdb)
         {
         auto testClass = kvPair.first;
         Utf8StringCR insertSql = kvPair.second.m_insertECSql;
-        const size_t propertyCount = testClass->GetPropertyCount(true);
+        const int propertyCount = (int) testClass->GetPropertyCount(true);
 
         ECSqlStatement stmt;
         auto stat = stmt.Prepare (ecdb, insertSql.c_str ());
