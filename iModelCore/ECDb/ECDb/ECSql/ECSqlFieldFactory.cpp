@@ -368,21 +368,21 @@ ECSqlColumnInfo ECSqlFieldFactory::CreateECSqlColumnInfoFromPropertyNameExp (ECS
 
     if (ctx.GetParentColumnInfo () != nullptr)
         {
-        auto const& parentPropPath = ctx.GetParentColumnInfo ()->GetPropertyPath ();
+        ECSqlPropertyPathCR parentPropPath = ctx.GetParentColumnInfo ()->GetPropertyPath ();
         ecsqlPropPath.InsertEntriesAtBeginning (parentPropPath);
         }
 
-    auto const& internalPropPath = propertyNameExp.GetPropertyPath ();
+    PropertyPath const& internalPropPath = propertyNameExp.GetPropertyPath ();
     size_t entryCount = internalPropPath.Size ();
     for (size_t i = 0; i < entryCount; i++)
         {
-        auto& internalEntry = internalPropPath.At (i);
+        PropertyPath::Location const& internalEntry = internalPropPath[i];
         ecsqlPropPath.AddEntry (*internalEntry.GetProperty ());
         }
 
     BeAssert (ecsqlPropPath.Size () > 0 && "Error in program logic. Property path must not be empty.");
 
-    auto const& rootClass = internalPropPath.GetClassMap ()->GetClass ();
+    ECClassCR& rootClass = internalPropPath.GetClassMap ()->GetClass ();
     return ECSqlColumnInfo::CreateTopLevel (false, move (ecsqlPropPath), rootClass, propertyNameExp.GetClassAlias ());
     }
 

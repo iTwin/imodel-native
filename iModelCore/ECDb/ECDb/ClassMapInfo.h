@@ -55,16 +55,14 @@ private:
     BentleyStatus InitializeFromClassMapCA ();
     BentleyStatus InitializeFromClassHasCurrentTimeStampProperty();
 
-    MapStatus DoEvaluateMapStrategy(UserECDbMapStrategy&);
+    BentleyStatus DoEvaluateMapStrategy(bool& baseClassesNotMappedYet, UserECDbMapStrategy&);
 
     bool GatherBaseClassMaps (bvector<IClassMap const*>& baseClassMaps, bvector<IClassMap const*>& tphMaps, bvector<IClassMap const*>& tpcMaps, bvector<IClassMap const*>& nmhMaps, ECN::ECClassCR ecClass) const;
 
-    static bool IsValidChildStrategy(ECDbMapStrategy const& parentResolvedStrategy, UserECDbMapStrategy const& childStrategy);
+    bool ValidateChildStrategy(UserECDbMapStrategy const& rootUserStrategy, UserECDbMapStrategy const& childStrategy) const;
 
     BentleyStatus ProcessStandardKeys(ECN::ECClassCR ecClass, Utf8CP customAttributeName);
     static Utf8String ResolveTablePrefix (ECN::ECClassCR ecClass);
-
-    MapStatus ReportError_OneClassMappedByTableInHierarchyFromTwoDifferentAncestors (ECN::ECClassCR ecClass, bvector<IClassMap const*> tphMaps) const;
 
 protected:
     virtual BentleyStatus _InitializeFromSchema();

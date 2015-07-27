@@ -1809,12 +1809,12 @@ ECSqlStatus ECSqlExpPreparer::ResolveChildStatementsBinding (ECSqlPrepareContext
             auto propertyCP = arrayField->GetColumnInfo ().GetProperty();
             BeAssert(propertyCP != nullptr);
             PropertyPath backReferencePath;
-            auto status = DynamicSelectClauseECClass::ParseBackReferenceToPropertyPath (backReferencePath, *propertyCP, preparedStatement->GetECDb ());
-            if (status != ECSqlStatus::Success)
+            if (SUCCESS != DynamicSelectClauseECClass::ParseBackReferenceToPropertyPath (backReferencePath, *propertyCP, preparedStatement->GetECDb ()))
                 {
                 BeAssert(false && "Failed to resolved back reference for a dynamic property");
-                ctx.SetError(status, "Failed to resolved back reference for a dynamic property");
+                ctx.SetError(ECSqlStatus::ProgrammerError, "Failed to resolved back reference for a dynamic property");
                 }
+
             structRoot = &backReferencePath.GetClassMap()->GetClass();
             }
 

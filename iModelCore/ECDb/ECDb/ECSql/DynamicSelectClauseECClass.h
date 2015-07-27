@@ -43,7 +43,7 @@ public:
 
     ECSqlStatus AddProperty (ECN::ECPropertyCP& generatedProperty, DerivedPropertyExp const& selectClauseItemExp, ECDbCR ecdb);
     bool IsGeneratedProperty (ECN::ECPropertyCR selectClauseProperty) const;
-    static ECSqlStatus ParseBackReferenceToPropertyPath(PropertyPath& propertyPath, ECPropertyCR generatedProperty, ECDbCR edb);
+    static BentleyStatus ParseBackReferenceToPropertyPath(PropertyPath& propertyPath, ECPropertyCR generatedProperty, ECDbCR edb);
 
     };
 

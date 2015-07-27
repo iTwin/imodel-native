@@ -11,6 +11,7 @@
 #include "SchemaImportContext.h"
 #include "ECDbSql.h"
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+struct StorageDescription;
 
 /*=================================================================================**//**
 * @bsiclass                                                     Casey.Mullen      11/2011
@@ -35,7 +36,7 @@ public:
         typedef  std::vector < ECN::ECClassId > ClassIds;
         typedef bmap<ECN::ECClassId, RelationshipEnd> ClassRelationshipEnds;
         typedef bmap <ECDbSqlTable const*, ClassIds> TableClasses;
-       
+
         private:
             mutable bmap<ECN::ECClassId, ClassRelationshipEnds> m_relationshipEndsByClassId;
             mutable bmap<ECN::ECClassId, TableClasses> m_tablesByClassId;
@@ -43,6 +44,7 @@ public:
             mutable TableClasses m_classIdsByTable;
             mutable ClassIds m_anyClassReplacements;
             mutable ECN::ECClassId m_anyClass;
+            mutable std::map<ECN::ECClassId, std::unique_ptr<StorageDescription>> m_storageDescriptions;
             mutable struct
                 {
                 bool m_relationshipEndsByClassIdIsLoaded : 1;
@@ -54,7 +56,7 @@ public:
 
             ECDbMapCR m_map;
         private:
-      
+
             void LoadDerivedClasses () const;
             void LoadClassTableClasses () const;
             void LoadAnyClassRelationships () const;
@@ -71,9 +73,13 @@ public:
             TableClasses const& GetTablesMapToClass (ECN::ECClassId classId) const;
             ECN::ECClassId GetAnyClassId () const;
             ClassIds const& GetAnyClassReplacements () const;
+            StorageDescription const& GetStorageDescription (ECN::ECClassId id)  const;
             void Load (bool forceReload);
             void Reset ();
         };
+
+
+
 private:
     mutable BeMutex m_criticalSection;
 
@@ -150,5 +156,63 @@ public:
     };
 
 
+    //=======================================================================================
+    //! Hold detail about how table partition is described for this class
+    // @bsiclass                                               Affan.Khan           05/2015
+    //+===============+===============+===============+===============+===============+======
+    struct HorizontalPartition : NonCopyableClass
+        {
+        private:
+            ECDbSqlTable const* m_table;
+            std::vector<ECN::ECClassId> m_partitionClassIds;
+            std::vector<ECN::ECClassId> m_inversedPartitionClassIds;
+            bool m_hasInversedPartitionClassIds;
 
+        public:
+            explicit HorizontalPartition (ECDbSqlTable const& table) : m_table (&table), m_hasInversedPartitionClassIds (false) {}
+            ~HorizontalPartition () {}
+            HorizontalPartition (HorizontalPartition&& rhs);
+            HorizontalPartition& operator=(HorizontalPartition&& rhs);
+
+            ECDbSqlTable const& GetTable () const { return *m_table; }
+            std::vector<ECN::ECClassId> const& GetClassIds () const { return m_partitionClassIds; }
+
+            void AddClassId (ECN::ECClassId classId) { m_partitionClassIds.push_back (classId); }
+            void GenerateClassIdFilter (std::vector<ECN::ECClassId> const& tableClassIds);
+
+            bool NeedsClassIdFilter () const;
+            void AppendECClassIdFilterSql (NativeSqlBuilder&) const;
+        };
+
+
+    //=======================================================================================
+    //! Represents storage description for a given class map and its derived classes for polymorphic queries
+    // @bsiclass                                               Affan.Khan           05/2015
+    //+===============+===============+===============+===============+===============+======
+    struct StorageDescription : NonCopyableClass
+        {
+        private:
+            ECN::ECClassId m_classId;
+            std::vector<HorizontalPartition> m_horizontalPartitions;
+            std::vector<size_t> m_nonVirtualHorizontalPartitionIndices;
+            size_t m_rootHorizontalPartitionIndex;
+
+            explicit StorageDescription (ECN::ECClassId classId) : m_classId (classId), m_rootHorizontalPartitionIndex (0) {}
+
+            size_t AddHorizontalPartition (ECDbSqlTable const& table, bool isRootPartition);
+        public:
+            ~StorageDescription (){}
+            StorageDescription (StorageDescription&&);
+            StorageDescription& operator=(StorageDescription&&);
+
+            HorizontalPartition const* GetHorizontalPartition (size_t index) const;
+            HorizontalPartition* GetHorizontalPartitionP (size_t index);
+            std::vector<HorizontalPartition> const& GetHorizontalPartitions () const { return m_horizontalPartitions; }
+            HorizontalPartition const& GetRootHorizontalPartition () const { return *GetHorizontalPartition (m_rootHorizontalPartitionIndex); }
+            std::vector<size_t> const& GetNonVirtualHorizontalPartitionIndices () const { return m_nonVirtualHorizontalPartitionIndices; }
+            ECN::ECClassId GetClassId () const { return m_classId; }
+
+            static std::unique_ptr<StorageDescription> Create (ECN::ECClassId classId, ECDbMap::LightWeightMapCache const& lwmc);
+
+        };
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -102,17 +102,15 @@ ECSqlStatus DynamicSelectClauseECClass::Initialize ()
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlStatus DynamicSelectClauseECClass::ParseBackReferenceToPropertyPath(PropertyPath& propertyPath, ECPropertyCR generatedProperty, ECDbCR ecdb)
+BentleyStatus DynamicSelectClauseECClass::ParseBackReferenceToPropertyPath(PropertyPath& propertyPath, ECPropertyCR generatedProperty, ECDbCR ecdb)
     {
     auto defMetaDataInst = generatedProperty.GetCustomAttribute ("DefinitionMetaData");
     if (defMetaDataInst == nullptr)
-        {
-        return ECSqlStatus::ProgrammerError;
-        }
+        return ERROR;
     
     ECValue v;
     if (defMetaDataInst->GetValue(v, "DefinitionBackReference") != ECOBJECTS_STATUS_Success)
-        return ECSqlStatus::ProgrammerError;
+        return ERROR;
 
     return PropertyPath::TryParseQualifiedPath(propertyPath, v.GetUtf8CP(), ecdb);
     }
@@ -159,15 +157,14 @@ ECSqlStatus DynamicSelectClauseECClass::SetBackReferenceToPropertyPath (ECProper
     BeAssert(defMetaDataInst != nullptr);
     
     Utf8String qualifiedPropertyPath;
-    auto status = propertyNameExp->GetPropertyPath().TryGetQualifiedPath(qualifiedPropertyPath);
-    if (status != ECSqlStatus::Success)
-        return status;
+    if (SUCCESS != propertyNameExp->GetPropertyPath().TryGetQualifiedPath(qualifiedPropertyPath))
+        return ECSqlStatus::ProgrammerError;
 
 
     if (defMetaDataInst->SetValue("DefinitionBackReference",  ECValue(qualifiedPropertyPath.c_str(), false)) != ECOBJECTS_STATUS_Success)
         return ECSqlStatus::ProgrammerError;
 
-    status = AddReferenceToStructSchema (*bsca);
+    ECSqlStatus status = AddReferenceToStructSchema (*bsca);
     if (status != ECSqlStatus::Success)
         return status;
 

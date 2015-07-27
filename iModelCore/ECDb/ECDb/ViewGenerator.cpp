@@ -414,7 +414,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
              auto classSqlName = BuildSchemaQualifiedClassName (classMap.GetClass ());
 
              auto const& targetTable = ecclassIdPropertyMap->GetFirstColumn ()->GetTable ();
-             sqlBuilder.Append (" INNER JOIN ");
+             sqlBuilder.Append (" LEFT JOIN ");
              sqlBuilder.AppendEscaped (targetTable.GetName ().c_str ());
              sqlBuilder.AppendSpace ();
              sqlBuilder.Append (GetECClassIdPrimaryTableAlias (endPoint));
@@ -617,7 +617,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
                     }
 
                 if (auto classIdcolumn = part.GetTable ().GetFilteredColumnFirst (ECDbSystemColumnECClassId))
-                    {;
+                    {
                     if (part.NeedsClassIdFilter ())
                         {
                         sqlBuilder.Append (" WHERE ");
@@ -627,6 +627,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
 
                         else
                             sqlBuilder.AppendEscaped (part.GetTable ().GetName ().c_str ()).AppendDot ();
+
                         sqlBuilder.AppendEscaped (classIdcolumn->GetName ().c_str ());
                         sqlBuilder.AppendSpace ();
                         part.AppendECClassIdFilterSql (sqlBuilder);
@@ -766,6 +767,12 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
         trigger.Append (BuildViewClassName (classMap.GetClass ()).c_str ()).AppendEOL ();
         trigger.Append ("FOR EACH ROW").AppendEOL ();
         trigger.Append ("BEGIN ").AppendEOL ();
+
+#ifdef ENABLE_TRIGGER_DEBUGGING
+        trigger.Append ("--#ifdef ENABLE_TRIGGER_DEBUGGING").AppendEOL();
+        trigger.Append (SqlPrintfString("\tINSERT INTO ec_TriggerLog (TriggerId, AffectedECInstanceId, AffectedECClassId, Scope) VALUES ('%s', OLD.ECInstanceId, OLD.ECClassId, 'BEGIN'); ", triggerName.c_str()).GetUtf8CP()).AppendEOL ();
+        trigger.Append ("--#endif").AppendEOL ();
+#endif
         std::map<IClassMap const*, std::vector<PropertyMapToTableCP>> structPropertyMaps;
         classMap.GetPropertyMaps ().Traverse ([&] (TraversalFeedback& feedback, PropertyMapCP propertyMap)
             {
@@ -797,7 +804,11 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
                 trigger.Append ("\tDELETE FROM ").AppendEscaped (BuildViewClassName (pair.first->GetClass ()).c_str ());
                 trigger.Append (" WHERE ParentECInstanceId = OLD.ECInstanceId;").AppendEOL ();
                 }
-
+#ifdef ENABLE_TRIGGER_DEBUGGING
+            trigger.Append ("--#ifdef ENABLE_TRIGGER_DEBUGGING").AppendEOL ();
+            trigger.Append (SqlPrintfString ("\tINSERT INTO ec_TriggerLog (TriggerId, AffectedECInstanceId, AffectedECClassId, Scope) VALUES ('%s', OLD.ECInstanceId, OLD.ECClassId, 'END'); ", triggerName.c_str ()).GetUtf8CP ()).AppendEOL ();
+            trigger.Append ("--#endif").AppendEOL ();
+#endif
             trigger.Append ("END ");
             triggers.push_back (std::move (trigger));
             }
@@ -887,9 +898,21 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
                 trigger.Append ("\tWHEN OLD.ECClassId ").Append (filterClause.c_str ()).AppendEOL ();
                 }
             trigger.Append ("BEGIN ").AppendEOL ();
+
+#ifdef ENABLE_TRIGGER_DEBUGGING
+            trigger.Append ("--#ifdef ENABLE_TRIGGER_DEBUGGING").AppendEOL ();
+            trigger.Append (SqlPrintfString ("\tINSERT INTO ec_TriggerLog (TriggerId, AffectedECInstanceId, AffectedECClassId, Scope) VALUES ('%s', OLD.ECInstanceId, OLD.ECClassId, 'BEGIN'); ", triggerName.c_str ()).GetUtf8CP ()).AppendEOL ();
+            trigger.Append ("--#endif").AppendEOL ();
+#endif
             trigger.Append ("\tDELETE FROM ");
             trigger.AppendEscaped (BuildViewClassName (derivedClassMap->GetClass ()).c_str ());
             trigger.Append (" WHERE ECInstanceId = OLD.ECInstanceId;").AppendEOL ();
+
+#ifdef ENABLE_TRIGGER_DEBUGGING
+            trigger.Append ("--#ifdef ENABLE_TRIGGER_DEBUGGING").AppendEOL ();
+            trigger.Append (SqlPrintfString ("\tINSERT INTO ec_TriggerLog (TriggerId, AffectedECInstanceId, AffectedECClassId, Scope) VALUES ('%s', OLD.ECInstanceId, OLD.ECClassId, 'END'); ", triggerName.c_str ()).GetUtf8CP ()).AppendEOL ();
+            trigger.Append ("--#endif").AppendEOL ();
+#endif
             trigger.Append ("END ");
             triggers.push_back (std::move (trigger));
             }
@@ -1047,6 +1070,11 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
         trigger.Append ("\tWHEN (OLD.ECClassId = ").Append (endTableMap.GetClass ().GetId ()).Append (")");
         trigger.AppendEOL ();
         trigger.Append ("BEGIN").AppendEOL ();
+#ifdef ENABLE_TRIGGER_DEBUGGING
+        trigger.Append ("--#ifdef ENABLE_TRIGGER_DEBUGGING").AppendEOL ();
+        trigger.Append (SqlPrintfString ("\tINSERT INTO ec_TriggerLog (TriggerId, AffectedECInstanceId, AffectedECClassId, Scope) VALUES ('%s', OLD.ECInstanceId, OLD.ECClassId, 'BEGIN'); ", triggerName.c_str ()).GetUtf8CP ()).AppendEOL ();
+        trigger.Append ("--#endif").AppendEOL ();
+#endif
         if (updateStatement.IsEmpty () && deleteTarget.IsEmpty ())
             trigger.Append ("SELECT 1;").AppendEOL ();
         else
@@ -1054,6 +1082,11 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
             trigger.Append (updateStatement);
             trigger.Append (deleteTarget);
             }
+#ifdef ENABLE_TRIGGER_DEBUGGING
+        trigger.Append ("--#ifdef ENABLE_TRIGGER_DEBUGGING").AppendEOL ();
+        trigger.Append (SqlPrintfString ("\tINSERT INTO ec_TriggerLog (TriggerId, AffectedECInstanceId, AffectedECClassId, Scope) VALUES ('%s', OLD.ECInstanceId, OLD.ECClassId, 'END'); ", triggerName.c_str ()).GetUtf8CP ()).AppendEOL ();
+        trigger.Append ("--#endif").AppendEOL ();
+#endif
         trigger.Append ("END ");
         triggers.push_back (std::move (trigger));
 
@@ -1179,6 +1212,11 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
 
                 trigger.AppendEOL ();
                 trigger.Append ("BEGIN ").AppendEOL ();
+#ifdef ENABLE_TRIGGER_DEBUGGING
+                trigger.Append ("--#ifdef ENABLE_TRIGGER_DEBUGGING").AppendEOL ();
+                trigger.Append (SqlPrintfString ("\tINSERT INTO ec_TriggerLog (TriggerId, AffectedECInstanceId, AffectedECClassId, Scope) VALUES ('%s', OLD.ECInstanceId, OLD.ECClassId, NULL); ", triggerName.c_str ()).GetUtf8CP ()).AppendEOL ();
+                trigger.Append ("--#endif").AppendEOL ();
+#endif
                 trigger.Append ("\tDELETE FROM ");
                 trigger.AppendEscaped (classMap.GetTable ().GetName ().c_str ());
                 trigger.Append (" WHERE ");
@@ -1251,6 +1289,11 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
         trigger.Append ("FOR EACH ROW").AppendEOL ();
         trigger.Append ("\tWHEN (OLD.ECClassId = ").Append (classMap.GetClass ().GetId ()).Append (")");
         trigger.Append ("BEGIN ").AppendEOL ();
+#ifdef ENABLE_TRIGGER_DEBUGGING
+        trigger.Append ("--#ifdef ENABLE_TRIGGER_DEBUGGING").AppendEOL ();
+        trigger.Append (SqlPrintfString ("\tINSERT INTO ec_TriggerLog (TriggerId, AffectedECInstanceId, AffectedECClassId, Scope) VALUES ('%s', OLD.ECInstanceId, OLD.ECClassId, 'BEGIN'); ", triggerName.c_str ()).GetUtf8CP ()).AppendEOL ();
+        trigger.Append ("--#endif").AppendEOL ();
+#endif
         for (auto& ref : relationshipRefs)
             {
             trigger.Append ("\tDELETE FROM ");
@@ -1262,7 +1305,11 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
             else
                 trigger.Append (" WHERE (SourceECInstanceId = OLD.ECInstanceId OR TargetECInstanceId = OLD.ECInstanceId) ;").AppendEOL ();
             }
-
+#ifdef ENABLE_TRIGGER_DEBUGGING
+        trigger.Append ("--#ifdef ENABLE_TRIGGER_DEBUGGING").AppendEOL ();
+        trigger.Append (SqlPrintfString ("\tINSERT INTO ec_TriggerLog (TriggerId, AffectedECInstanceId, AffectedECClassId, Scope) VALUES ('%s', OLD.ECInstanceId, OLD.ECClassId, 'END'); ", triggerName.c_str ()).GetUtf8CP ()).AppendEOL ();
+        trigger.Append ("--#endif").AppendEOL ();
+#endif
         trigger.Append ("END ");
         triggers.push_back (std::move (trigger));
         return BentleyStatus::SUCCESS;

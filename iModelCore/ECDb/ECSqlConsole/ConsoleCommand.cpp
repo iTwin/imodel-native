@@ -145,7 +145,7 @@ Utf8String HelpCommand::_GetUsage() const
 //---------------------------------------------------------------------------------------
 void HelpCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& args) const
     {
-    BeAssert(m_commandMap.size() == 23 && "Command was added or removed, please update the HelpCommand accordingly.");
+    BeAssert(m_commandMap.size() == 24 && "Command was added or removed, please update the HelpCommand accordingly.");
     Console::WriteLine(m_commandMap.at(".help")->GetUsage().c_str());
     Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".open")->GetUsage().c_str());
@@ -170,6 +170,8 @@ void HelpCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> const& a
     Console::WriteLine(m_commandMap.at(".parse")->GetUsage().c_str());
     Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".populate")->GetUsage().c_str());
+    Console::WriteLine();
+    Console::WriteLine(m_commandMap.at(".sqlite")->GetUsage().c_str());
     Console::WriteLine();
     Console::WriteLine(m_commandMap.at(".history")->GetUsage().c_str());
     Console::WriteLine();
@@ -1307,3 +1309,93 @@ void ECSchemaDiffCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> 
         }
     }
 
+//******************************* ECSchemaDiffCommand ******************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     07/2015
+//---------------------------------------------------------------------------------------
+Utf8String SqliteCommand::_GetName() const
+    {
+    return ".sqlite";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     10/2013
+//---------------------------------------------------------------------------------------
+Utf8String SqliteCommand::_GetUsage() const
+    {
+    return " .sqlite <SQLite SQL>        Executes a SQLite SQL statement";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     07/2015
+//---------------------------------------------------------------------------------------
+void SqliteCommand::_Run(ECSqlConsoleSession& session, std::vector<Utf8String> const& args) const
+    {
+    const size_t argSize = args.size();
+    if (argSize <= 1)
+        {
+        Console::WriteErrorLine("Usage: %s", GetUsage().c_str());
+        return;
+        }
+
+    if (!session.HasECDb(true))
+        return;
+
+    Utf8String sql = ConcatArgs(1, args);
+
+    Statement stmt;
+    DbResult status = stmt.Prepare(session.GetECDbR(), sql.c_str());
+    if (status != BE_SQLITE_OK)
+        {
+        Console::WriteErrorLine("Failed to prepare SQLite SQL statement %s: %s", sql.c_str(), session.GetECDb().GetLastError());
+        return;
+        }
+
+    if (strnicmp(sql.c_str(), "SELECT", 6) == 0)
+        ExecuteSelect(stmt);
+    else
+        ExecuteNonSelect(session, stmt);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     07/2015
+//---------------------------------------------------------------------------------------
+void SqliteCommand::ExecuteSelect(Statement& statement) const
+    {
+    const int columnCount = statement.GetColumnCount();
+    for (int i = 0; i < columnCount; i++)
+        {
+        Console::Write("%s\t", statement.GetColumnName(i));
+        }
+
+    Console::WriteLine();
+    Console::WriteLine("-------------------------------------------------------------");
+
+    while (statement.Step() == BE_SQLITE_ROW)
+        {
+        Utf8String out;
+        for (int i = 0; i < columnCount; i++)
+            {
+            if (statement.IsColumnNull(i))
+                out.append("NULL");
+            else
+                out.append(statement.GetValueText(i));
+
+            out.append("\t");
+            }
+
+        Console::WriteLine(out.c_str());
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     07/2015
+//---------------------------------------------------------------------------------------
+void SqliteCommand::ExecuteNonSelect(ECSqlConsoleSession& session, Statement& statement) const
+    {
+    if (statement.Step() != BE_SQLITE_DONE)
+        {
+        Console::WriteErrorLine("Failed to execute SQLite SQL statement %s: %s", statement.GetSql (), session.GetECDb ().GetLastError ());
+        return;
+        }
+    }

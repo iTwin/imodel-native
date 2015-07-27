@@ -102,15 +102,9 @@ MapStatus ClassMapInfo::_EvaluateMapStrategy()
         return MapStatus::Error;
         }
 
-    if (userStrategy->GetStrategy() == UserECDbMapStrategy::Strategy::NotMapped)
-        {
-        m_resolvedStrategy.Assign(*userStrategy);
-        return MapStatus::Success;
-        }
-
-    MapStatus stat = DoEvaluateMapStrategy(*userStrategy);
-    if (stat != MapStatus::Success)
-        return stat;
+    bool baseClassesNotMappedYet;
+    if (SUCCESS != DoEvaluateMapStrategy(baseClassesNotMappedYet, *userStrategy))
+        return baseClassesNotMappedYet ? MapStatus::BaseClassesNotMapped : MapStatus::Error;
 
     BeAssert(m_resolvedStrategy.IsResolved());
 
@@ -124,26 +118,41 @@ MapStatus ClassMapInfo::_EvaluateMapStrategy()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Ramanujam.Raman                07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-MapStatus ClassMapInfo::DoEvaluateMapStrategy(UserECDbMapStrategy& userStrategy)
+BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet, UserECDbMapStrategy& userStrategy)
     {
     bvector<IClassMap const*> baseClassMaps;
     bvector<IClassMap const*> polymorphicSharedTableClassMaps; // SharedTable-Polymorphic have the highest priority, but there can be only one
     bvector<IClassMap const*> polymorphicOwnTableClassMaps; // OwnTable-Polymorphic have second priority
     bvector<IClassMap const*> polymorphicNotMappedClassMaps; // NotMapped-Polymorphic has priority only over NoHint or NotMapped-NonPolymorphic
 
-    bool areBaseClassesMapped = GatherBaseClassMaps(baseClassMaps, polymorphicSharedTableClassMaps, polymorphicOwnTableClassMaps, polymorphicNotMappedClassMaps, m_ecClass);
-    if (!areBaseClassesMapped)
-        return MapStatus::BaseClassesNotMapped;
+    baseClassesNotMappedYet = !GatherBaseClassMaps(baseClassMaps, polymorphicSharedTableClassMaps, polymorphicOwnTableClassMaps, polymorphicNotMappedClassMaps, m_ecClass);
+    if (baseClassesNotMappedYet)
+        return ERROR;
 
     if (baseClassMaps.empty())
         {
         BeAssert(polymorphicSharedTableClassMaps.empty() && polymorphicOwnTableClassMaps.empty() && polymorphicNotMappedClassMaps.empty());
-        return SUCCESS == m_resolvedStrategy.Assign(userStrategy) ? MapStatus::Success : MapStatus::Error;
+        return m_resolvedStrategy.Assign(userStrategy);
         }
 
     // ClassMappingRule: No more than one ancestor of a class can use SharedTable-Polymorphic strategy. Mapping fails if this is violated
     if (polymorphicSharedTableClassMaps.size() > 1)
-        return ReportError_OneClassMappedByTableInHierarchyFromTwoDifferentAncestors(m_ecClass, polymorphicSharedTableClassMaps);
+        {
+        if (LOG.isSeverityEnabled(NativeLogging::LOG_ERROR))
+            {
+            Utf8String baseClasses;
+            for (IClassMap const* baseMap : polymorphicSharedTableClassMaps)
+                {
+                baseClasses.append(Utf8String(baseMap->GetClass().GetFullName()).c_str());
+                baseClasses.append(" ");
+                }
+
+            LOG.errorv("ECClass '%s' has two or more base ECClasses which use the MapStrategy 'SharedTable (polymorphic)'. This is not supported. The base ECClasses are: %s",
+                       Utf8String(m_ecClass.GetFullName()).c_str(), baseClasses.c_str());
+            }
+
+        return ERROR;
+        }
 
     IClassMap const* parentClassMap = nullptr;
     if (!polymorphicSharedTableClassMaps.empty())
@@ -155,29 +164,25 @@ MapStatus ClassMapInfo::DoEvaluateMapStrategy(UserECDbMapStrategy& userStrategy)
     else
         parentClassMap = baseClassMaps[0];
 
-    if (!IsValidChildStrategy(parentClassMap->GetMapStrategy (), userStrategy))
+    ECClassCR parentClass = parentClassMap->GetClass();
+
+    UserECDbMapStrategy const* parentUserStrategy = m_ecdbMap.GetSchemaImportContext()->GetUserStrategy(parentClass);
+    if (parentUserStrategy == nullptr)
         {
-        LOG.errorv("MapStrategies of base ECClass %ls and derived ECClass %ls mismatch.", parentClassMap->GetClass().GetFullName(),
-                   m_ecClass.GetFullName());
-        return MapStatus::Error;
+        BeAssert(false);
+        return ERROR;
         }
+
+    UserECDbMapStrategy const& rootUserStrategy = userStrategy.AssignRoot(*parentUserStrategy);
+
+    if (!ValidateChildStrategy(rootUserStrategy, userStrategy))
+        return ERROR;
 
     // ClassMappingRule: If exactly 1 ancestor ECClass is using SharedTable-Polymorphic, use this
     if (polymorphicSharedTableClassMaps.size() == 1)
         {
         m_parentClassMap = parentClassMap;
-        ECClassCR parentClass = parentClassMap->GetClass();
         BeAssert(GetECClass().GetIsStruct() == parentClass.GetIsStruct() && "This should have been caught by the schema validation already");
-
-        UserECDbMapStrategy const* parentUserStrategy = m_ecdbMap.GetSchemaImportContext()->GetUserStrategy(parentClass);
-        if (parentUserStrategy == nullptr)
-            {
-            BeAssert(false);
-            return MapStatus::Error;
-            }
-
-        UserECDbMapStrategy const& rootUserStrategy = userStrategy.AssignRoot(*parentUserStrategy);
-
         BeAssert(parentClassMap->GetMapStrategy().IsPolymorphicSharedTable());
 
         ECDbMapStrategy::Option option = ECDbMapStrategy::Option::None;
@@ -186,37 +191,73 @@ MapStatus ClassMapInfo::DoEvaluateMapStrategy(UserECDbMapStrategy& userStrategy)
                  rootUserStrategy.GetOption() == UserECDbMapStrategy::Option::SharedColumnsForSubclasses))
             option = ECDbMapStrategy::Option::SharedColumns;
 
-        return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::SharedTable, option, true) == SUCCESS ? MapStatus::Success : MapStatus::Error;
+        return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::SharedTable, option, true);
         }
 
     // ClassMappingRule: If one or more parent is using OwnClass-polymorphic, use OwnClass-polymorphic mapping
     if (polymorphicOwnTableClassMaps.size() > 0)
-        return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::OwnTable, true) == SUCCESS ? MapStatus::Success : MapStatus::Error;
+        return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::OwnTable, true);
 
     // ClassMappingRule: If one or more parent is using NotMapped-polymorphic, use NotMapped-polymorphic
     if (polymorphicNotMappedClassMaps.size() > 0)
-        return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, true) == SUCCESS ? MapStatus::Success : MapStatus::Error;
+        return m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, true);
 
-    if (SUCCESS != m_resolvedStrategy.Assign(userStrategy))
-        return MapStatus::Error;
-
-    return MapStatus::Success;
+    return m_resolvedStrategy.Assign(userStrategy);
     }
 
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                06/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-//static
-bool ClassMapInfo::IsValidChildStrategy(ECDbMapStrategy const& parentResolvedStrategy, UserECDbMapStrategy const& childStrategy)
+bool ClassMapInfo::ValidateChildStrategy(UserECDbMapStrategy const& rootStrategy, UserECDbMapStrategy const& childStrategy) const
     {
-    if (childStrategy.GetStrategy() == UserECDbMapStrategy::Strategy::None && childStrategy.GetOption() == UserECDbMapStrategy::Option::None &&
-        !childStrategy.IsPolymorphic())
+    //if root strategy doesn't have any CA, everything is valid on the child
+    if (rootStrategy.IsUnset())
         return true;
 
-    //if (parentResolvedStrategy.IsPolymorphic() && !childStrategy.IsPolymorphic())
-    //    return false;
+    if (!rootStrategy.IsPolymorphic())
+        {
+        BeAssert(rootStrategy.IsPolymorphic() && "In ClassMapInfo::ValidateChildStrategy rootStrategy should always be polymorphic");
+        return false;
+        }
 
-    return true;
+    bool isValid = true;
+    Utf8CP detailError = nullptr;
+    switch (rootStrategy.GetStrategy())
+        {
+            case UserECDbMapStrategy::Strategy::SharedTable:
+                {
+                isValid = childStrategy.GetStrategy() == UserECDbMapStrategy::Strategy::None &&
+                    !childStrategy.IsPolymorphic() &&
+                    (childStrategy.GetOption() == UserECDbMapStrategy::Option::None ||
+                    childStrategy.GetOption() == UserECDbMapStrategy::Option::DisableSharedColumns);
+
+                if (!isValid)
+                    detailError = "For subclasses of a class with MapStrategy SharedTable (polymorphic), Strategy must be unset and Option must either be unset or 'DisableSharedColumns'.";
+
+                break;
+                }
+
+            //in all other cases there must not be any MapStrategy defined in subclasses
+            default:
+                {
+                isValid = childStrategy.GetStrategy() == UserECDbMapStrategy::Strategy::None &&
+                    !childStrategy.IsPolymorphic() &&
+                    childStrategy.GetOption() == UserECDbMapStrategy::Option::None;
+
+                if (!isValid)
+                    detailError = "For subclasses of a class with a polymorphic SharedTable (polymorphic), no MapStrategy may be defined.";
+
+                break;
+                }
+        }
+
+    const NativeLogging::SEVERITY logSev = NativeLogging::LOG_ERROR;
+    if (!isValid && LOG.isSeverityEnabled(logSev))
+        LOG.messagev(logSev, "MapStrategy %s of ECClass '%s' does not match the MapStrategy %s on the root of the class hierarchy. %s",
+                    childStrategy.ToString().c_str(), Utf8String(m_ecClass.GetFullName()).c_str(), rootStrategy.ToString().c_str(),
+                    detailError);
+
+    return isValid;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -293,7 +334,7 @@ BentleyStatus ClassMapInfo::InitializeFromClassMapCA()
         {
         if (m_tableName.empty())
             {
-            LOG.errorv("TableName must not be empty in ClassMap custom attribute on ECClass %s if MapStrategy is 'SharedTable, polymorphic' or if MapStrategy is 'ExistingTable'.",
+            LOG.errorv("TableName must not be empty in ClassMap custom attribute on ECClass %s if MapStrategy is 'SharedTable (polymorphic)' or if MapStrategy is 'ExistingTable'.",
                        m_ecClass.GetFullName());
             return ERROR;
             }
@@ -302,7 +343,7 @@ BentleyStatus ClassMapInfo::InitializeFromClassMapCA()
         {
         if (!m_tableName.empty())
             {
-            LOG.errorv("TableName must only be set in ClassMap custom attribute on ECClass %s if MapStrategy is 'SharedTable, polymorphic' or 'ExistingTable'.",
+            LOG.errorv("TableName must only be set in ClassMap custom attribute on ECClass %s if MapStrategy is 'SharedTable (polymorphic)' or 'ExistingTable'.",
                        m_ecClass.GetFullName());
             return ERROR;
             }
@@ -489,24 +530,6 @@ void ClassMapInfo::LogClassNotMapped (NativeLogging::SEVERITY severity, ECClassC
     LOG.messagev (severity, "Did not map %s '%s': %s", classTypeStr, Utf8String (ecClass.GetFullName ()).c_str (), explanation);
     }
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    casey.mullen      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-MapStatus ClassMapInfo::ReportError_OneClassMappedByTableInHierarchyFromTwoDifferentAncestors (ECClassCR ecClass, bvector<IClassMap const*> tphMaps) const
-    {
-    Utf8String message;
-    message.Sprintf ("Two or more base ECClasses (or their base classes) of %s.%s are using the MapStrategy 'SharedTable (polymorphic)'. We cannot determine which to honor. The base ECClasses are: ",
-        ecClass.GetSchema ().GetName ().c_str (), ecClass.GetName ().c_str ());
-    for (auto tphMap : tphMaps)
-        {
-        message.append (tphMap->GetClass ().GetName ().c_str ());
-        message.append (" ");
-        }
-
-    LOG.error (message.c_str ());
-    return MapStatus::Error;
-    }
-
 //****************************************************************************************************
 //RelationshipClassMapInfo
 //****************************************************************************************************
@@ -668,7 +691,7 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
         {
         if (userStrategyIsForeignKeyMapping)
             {
-            LOG.errorv("The ECRelationshipClass '%s' implies a link table relationship with (MapStrategy: SharedTable, polymorphic), but it has a ForeignKeyRelationshipMap custom attribute.",
+            LOG.errorv("The ECRelationshipClass '%s' implies a link table relationship with (MapStrategy: SharedTable (polymorphic)), but it has a ForeignKeyRelationshipMap custom attribute.",
                        GetECClass().GetFullName());
             return MapStatus::Error;
             }

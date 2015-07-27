@@ -13,10 +13,36 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 
 struct ECSqlPrepareContext;
+//struct ViewBuilder;
+//struct ClassInfo
+//    {
+//    enum class TriggerPlacement
+//        {
+//        Table,
+//        View
+//        };
+//    private:
+//        ViewBuilder m_viewBuilder;
+//        NativeSqlBuilder m_tableName;
+//        std::vector<TriggerBuilder> m_triggerBuilderList;
+//        NativeSqlBuilder m_rowFilter;
+//        TriggerPlacement m_triggerTarget;
+//
+//        std::set<ClassInfo> m_modifies;
+//
+//    public:
+//        NativeSqlBuilder& GetTable () { return m_tableName; }
+//        ViewBuilder& GetViewBulder () { return m_viewBuilder; }
+//        NativeSqlBuilder& GetRowFilter () { return m_rowFilter; }
+//        std::vector<TriggerBuilder> const& GetTriggerBuilderList () { return m_triggerBuilderList; }
+//        TriggerPlacement GetTriggerPlacement () { return m_triggerTarget; }
+//
+//    };
 //struct ViewBuilder
 //{
+//private:
 //	Utf8String m_name;
-//    std::vector<NativeSqlBuilder> m_selectList;
+//    NativeSqlBuilder::List m_selectList;
 //public:
 //    ViewBuilder ()
 //        {
@@ -28,173 +54,167 @@ struct ECSqlPrepareContext;
 //        return m_selectList.back ();
 //        }
 //};
-
-struct DataSource
-    {
-    //Delete_AnyRelationship 
-    };
-struct ViewSource
-    {
-    };
-
-struct TriggerBuilder
-    {
-    public:
-        enum class Condition
-            {
-            After,
-            Before,
-            InsteadOf
-            };
-
-        enum class Type
-            {
-            Insert,
-            Update,
-            UpdateOf,
-            Delete
-            };
-
-        enum class SqlOption
-            {
-            Create,
-            CreateIfNotExist,
-            Drop,
-            DropIfExists
-            };
-
-    private:
-        NativeSqlBuilder m_name;
-        NativeSqlBuilder m_when;
-        NativeSqlBuilder m_body;
-        NativeSqlBuilder m_on;
-        bool m_temprory;
-        Type m_type;
-        Condition m_condition;
-        std::unique_ptr<std::vector<Utf8String>> m_ofColumns;
-
-    public:
-        TriggerBuilder (Type type, Condition condition, bool temprary)
-            :m_type (type), m_condition (condition), m_temprory (temprary)
-            {
-            if (m_type == Type::UpdateOf)
-                m_ofColumns = std::unique_ptr<std::vector<Utf8String>> (new std::vector<Utf8String> ());
-            }
-
-
-        NativeSqlBuilder& GetNameBuilder () { return m_name; }
-        NativeSqlBuilder& GetWhenBuilder () { return m_when; }
-        NativeSqlBuilder& GetBodyBuilder () { return m_body; }
-        NativeSqlBuilder& GetOnBuilder () { return m_on; }
-        Type GetType () const { return m_type; }
-        Condition GetCondition () const { return m_condition; }
-        std::vector<Utf8String> const* GetColumns () const
-            {
-            BeAssert (m_type == Type::UpdateOf);
-            return m_ofColumns.get ();
-            }
-        std::vector<Utf8String>* GetUpdateOfColumnsP ()
-            {
-            BeAssert (m_type == Type::UpdateOf);
-            return m_ofColumns.get ();
-            }
-        Utf8CP GetName () const { return m_name.ToString (); }
-        Utf8CP GetWhen () const { return m_when.ToString (); }
-        Utf8CP GetBody () const { return m_body.ToString (); }
-        Utf8CP GetOn () const { return m_on.ToString (); }
-        bool IsTemprory () const { return m_temprory; }
-        bool IsValid () const
-            {
-            if (m_name.IsEmpty ())
-                {
-                BeAssert (false && "Must specify a trigger name");
-                return false;
-                }
-
-            if (m_on.IsEmpty ())
-                {
-                BeAssert (false && "Must specify a trigger ON Table/View");
-                return false;
-                }
-
-            if (m_body.IsEmpty ())
-                {
-                BeAssert (false && "Must specify a trigger body");
-                return false;
-                }
-
-            if (m_type == Type::UpdateOf && m_ofColumns->empty ())
-                {
-                BeAssert (false && "For UPDATE OF trigger must specify atleast one column");
-                return false;
-                }
-
-            return true;
-            }
-
-        const Utf8String ToString (SqlOption option, bool escape) const
-            {
-            if (!IsValid ())
-                {
-                BeAssert (false && "Trigger specification is not valid");
-                }
-
-            NativeSqlBuilder sql;
-            if (option == SqlOption::Drop || option == SqlOption::DropIfExists)
-                {
-                sql.Append ("DROP TRIGGER ").AppendIf (option == SqlOption::DropIfExists, "IF EXISTS ").AppendEscapedIf (escape, GetName ()).Append (";");
-                }
-            else
-                {
-                sql.Append ("CREATE ").AppendIf (IsTemprory (), "TEMP ").AppendIf (option == SqlOption::CreateIfNotExist, "IF NOT EXISTS ").AppendEscapedIf (escape, GetName ()).AppendEOL ();
-                switch (m_condition)
-                    {
-                    case Condition::After:
-                        sql.Append ("AFTER "); break;
-                    case Condition::Before:
-                        sql.Append ("BEFORE "); break;
-                    case Condition::InsteadOf:
-                        sql.Append ("INSTEAD OF "); break;
-                    }
-
-                switch (m_type)
-                    {
-                    case Type::Delete:
-                        sql.Append ("DELETE "); break;
-                    case Type::Insert:
-                        sql.Append ("INSERT "); break;
-                    case Type::Update:
-                        sql.Append ("UPDATE "); break;
-                    case Type::UpdateOf:
-                        sql.Append ("UPDATE OF ");
-                        for (auto& column : *m_ofColumns)
-                            {
-                            if (&column != &m_ofColumns->front ())
-                                sql.Append (", ");
-
-                            sql.AppendEscapedIf (escape, column.c_str ());
-                            }
-                        break;
-                    }
-
-                sql.AppendEOL ();
-                sql.Append ("ON ").AppendEscapedIf (escape, GetOn ()).AppendEOL();
-                if (!m_when.IsEmpty ())
-                    {
-                    sql.Append ("\tWHEN ").Append (GetWhen ()).AppendEOL ();
-                    }
-
-                sql.Append ("BEGIN").AppendEOL();
-                sql.Append (GetBody ());
-                sql.Append ("END;");
-                }
-
-            return sql.ToString ();
-            }
-    };
+//
+//enum class SqlOption
+//    {
+//    Create,
+//    CreateIfNotExist,
+//    Drop,
+//    DropIfExists
+//    };
+//struct TriggerBuilder
+//    {
+//    public:
+//        enum class Condition
+//            {
+//            After,
+//            Before,
+//            InsteadOf
+//            };
+//
+//        enum class Type
+//            {
+//            Insert,
+//            Update,
+//            UpdateOf,
+//            Delete
+//            };
+//
+//
+//
+//    private:
+//        NativeSqlBuilder m_name;
+//        NativeSqlBuilder m_when;
+//        NativeSqlBuilder m_body;
+//        NativeSqlBuilder m_on;
+//        bool m_temprory;
+//        Type m_type;
+//        Condition m_condition;
+//        std::unique_ptr<std::vector<Utf8String>> m_ofColumns;
+//
+//    public:
+//        TriggerBuilder (Type type, Condition condition, bool temprary)
+//            :m_type (type), m_condition (condition), m_temprory (temprary)
+//            {
+//            if (m_type == Type::UpdateOf)
+//                m_ofColumns = std::unique_ptr<std::vector<Utf8String>> (new std::vector<Utf8String> ());
+//            }
+//
+//
+//        NativeSqlBuilder& GetNameBuilder () { return m_name; }
+//        NativeSqlBuilder& GetWhenBuilder () { return m_when; }
+//        NativeSqlBuilder& GetBodyBuilder () { return m_body; }
+//        NativeSqlBuilder& GetOnBuilder () { return m_on; }
+//        Type GetType () const { return m_type; }
+//        Condition GetCondition () const { return m_condition; }
+//        std::vector<Utf8String> const* GetColumns () const
+//            {
+//            BeAssert (m_type == Type::UpdateOf);
+//            return m_ofColumns.get ();
+//            }
+//        std::vector<Utf8String>* GetUpdateOfColumnsP ()
+//            {
+//            BeAssert (m_type == Type::UpdateOf);
+//            return m_ofColumns.get ();
+//            }
+//        Utf8CP GetName () const { return m_name.ToString (); }
+//        Utf8CP GetWhen () const { return m_when.ToString (); }
+//        Utf8CP GetBody () const { return m_body.ToString (); }
+//        Utf8CP GetOn () const { return m_on.ToString (); }
+//        bool IsTemprory () const { return m_temprory; }
+//        bool IsValid () const
+//            {
+//            if (m_name.IsEmpty ())
+//                {
+//                BeAssert (false && "Must specify a trigger name");
+//                return false;
+//                }
+//
+//            if (m_on.IsEmpty ())
+//                {
+//                BeAssert (false && "Must specify a trigger ON Table/View");
+//                return false;
+//                }
+//
+//            if (m_body.IsEmpty ())
+//                {
+//                BeAssert (false && "Must specify a trigger body");
+//                return false;
+//                }
+//
+//            if (m_type == Type::UpdateOf && m_ofColumns->empty ())
+//                {
+//                BeAssert (false && "For UPDATE OF trigger must specify atleast one column");
+//                return false;
+//                }
+//
+//            return true;
+//            }
+//
+//        const Utf8String ToString (SqlOption option, bool escape) const
+//            {
+//            if (!IsValid ())
+//                {
+//                BeAssert (false && "Trigger specification is not valid");
+//                }
+//
+//            NativeSqlBuilder sql;
+//            if (option == SqlOption::Drop || option == SqlOption::DropIfExists)
+//                {
+//                sql.Append ("DROP TRIGGER ").AppendIf (option == SqlOption::DropIfExists, "IF EXISTS ").AppendEscapedIf (escape, GetName ()).Append (";");
+//                }
+//            else
+//                {
+//                sql.Append ("CREATE ").AppendIf (IsTemprory (), "TEMP ").AppendIf (option == SqlOption::CreateIfNotExist, "IF NOT EXISTS ").AppendEscapedIf (escape, GetName ()).AppendEOL ();
+//                switch (m_condition)
+//                    {
+//                    case Condition::After:
+//                        sql.Append ("AFTER "); break;
+//                    case Condition::Before:
+//                        sql.Append ("BEFORE "); break;
+//                    case Condition::InsteadOf:
+//                        sql.Append ("INSTEAD OF "); break;
+//                    }
+//
+//                switch (m_type)
+//                    {
+//                    case Type::Delete:
+//                        sql.Append ("DELETE "); break;
+//                    case Type::Insert:
+//                        sql.Append ("INSERT "); break;
+//                    case Type::Update:
+//                        sql.Append ("UPDATE "); break;
+//                    case Type::UpdateOf:
+//                        sql.Append ("UPDATE OF ");
+//                        for (auto& column : *m_ofColumns)
+//                            {
+//                            if (&column != &m_ofColumns->front ())
+//                                sql.Append (", ");
+//
+//                            sql.AppendEscapedIf (escape, column.c_str ());
+//                            }
+//                        break;
+//                    }
+//
+//                sql.AppendEOL ();
+//                sql.Append ("ON ").AppendEscapedIf (escape, GetOn ()).AppendEOL();
+//                if (!m_when.IsEmpty ())
+//                    {
+//                    sql.Append ("\tWHEN ").Append (GetWhen ()).AppendEOL ();
+//                    }
+//
+//                sql.Append ("BEGIN").AppendEOL();
+//                sql.Append (GetBody ());
+//                sql.Append ("END;");
+//                }
+//
+//            return sql.ToString ();
+//            }
+//    };
+//
 
 
-
+        
 //=======================================================================================
 // @bsiclass                                               Affan.Khan           06/2015
 //+===============+===============+===============+===============+===============+======

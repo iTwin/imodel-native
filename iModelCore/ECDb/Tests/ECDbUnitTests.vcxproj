@@ -26,10 +26,11 @@
     <ClCompile Include="NonPublished\ECDb\FSRTests.cpp" />
     <ClCompile Include="Performance\DbLogHelper.cpp" />
     <ClCompile Include="Performance\DevSummitPerformanceTests.cpp" />
-    <ClCompile Include="Performance\ECSqlStatementPerformanceTests.cpp" />
+    <ClCompile Include="Performance\ECDbMapCAPerformanceTests.cpp" />
     <ClCompile Include="Performance\PerformanceAdapterTests.cpp" />
     <ClCompile Include="Performance\PerformanceBisDesignStudies_Test.cpp" />
     <ClCompile Include="Performance\PerformanceBisDesignTestFixture.cpp" />
+    <ClCompile Include="Performance\PerformanceECDbMapCATests.cpp" />
     <ClCompile Include="Performance\PerformanceECInstanceInserterTests.cpp" />
     <ClCompile Include="Performance\PerformanceECSqlStatementTestFixture.cpp" />
     <ClCompile Include="Performance\PerformanceJsonComparison.cpp" />

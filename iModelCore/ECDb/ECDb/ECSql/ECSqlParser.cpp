@@ -359,7 +359,7 @@ unique_ptr<PropertyNameExp> ECSqlParser::parse_column (ECSqlParseContext& ctx, O
         }
 
     PropertyPath propPath;
-    propPath.Push (parseNode->getTokenValue());
+    propPath.Push (parseNode->getTokenValue().c_str());
 
     return unique_ptr<PropertyNameExp> (new PropertyNameExp(move (propPath)));
     }
@@ -474,6 +474,7 @@ std::unique_ptr<PropertyNameExp> ECSqlParser::parse_property_path (ECSqlParseCon
         {
         auto property_path_entry = parseNode->getChild (i);
         auto first = property_path_entry->getFirst ();
+        Utf8StringCR tokenValue = first->getTokenValue();
         if (first->getNodeType () == SQL_NODE_NAME)
             {
             auto opt_column_array_idx = property_path_entry->getChild (1);
@@ -483,11 +484,15 @@ std::unique_ptr<PropertyNameExp> ECSqlParser::parse_property_path (ECSqlParseCon
                 arrayIndex = atoi (opt_column_array_idx->getFirst ()->getTokenValue ().c_str ());
                 }
 
-            propertyPath.Push (first->getTokenValue (), arrayIndex);            
+            if (arrayIndex < 0)
+                propertyPath.Push(tokenValue.c_str());
+            else
+                propertyPath.Push(tokenValue.c_str(), (size_t) arrayIndex);
+
             }
         else if (first->getNodeType () == SQL_NODE_PUNCTUATION)
             {
-            propertyPath.Push (first->getTokenValue ());
+            propertyPath.Push(tokenValue.c_str());
             }
         else
             {
@@ -778,7 +783,7 @@ unique_ptr<ECClassIdFunctionExp> ECSqlParser::parse_ecclassid_fct_spec (ECSqlPar
         auto prefixPath = parse_property_path (ctx, firstChildNode);
         if (prefixPath.get() != nullptr && prefixPath->GetPropertyPath ().Size () == 1)
             {
-            auto classAlias = prefixPath->GetPropertyPath ().At (0).GetPropertyName().c_str();
+            Utf8CP classAlias = prefixPath->GetPropertyPath ()[0].GetPropertyName();
             return std::unique_ptr<ECClassIdFunctionExp> (new ECClassIdFunctionExp (classAlias));
             }
         else

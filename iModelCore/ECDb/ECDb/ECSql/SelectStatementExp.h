@@ -249,13 +249,13 @@ DEFINE_EXPR_TYPE(Query)
 protected:
     QueryExp () : Exp () {}
 
-    virtual DerivedPropertyExp const* _FindProperty(Utf8StringCR propertyName) const=0;
+    virtual DerivedPropertyExp const* _FindProperty(Utf8CP propertyName) const = 0;
     virtual SelectClauseExp const* _GetSelection() const =0;
 
 public:
     virtual ~QueryExp() {}
 
-    DerivedPropertyExp const* FindProperty(Utf8StringCR propertyName) const { return _FindProperty (propertyName); }
+    DerivedPropertyExp const* FindProperty(Utf8CP propertyName) const { return _FindProperty(propertyName); }
     virtual SelectClauseExp const* GetSelection() const { return _GetSelection(); }
     };
 
@@ -283,7 +283,7 @@ private:
     virtual Utf8String _ToString() const override;
 
 protected:
-    virtual DerivedPropertyExp const* _FindProperty(Utf8StringCR propertyName) const override;
+    virtual DerivedPropertyExp const* _FindProperty(Utf8CP propertyName) const override;
     virtual SelectClauseExp const* _GetSelection() const override { return GetChild<SelectClauseExp> (m_selectClauseIndex); }
 
 public :
@@ -347,7 +347,7 @@ private:
     virtual Utf8String _ToString() const override { return "Subquery"; }
 
 protected:
-    virtual DerivedPropertyExp const* _FindProperty (Utf8StringCR propertyName) const override;
+    virtual DerivedPropertyExp const* _FindProperty(Utf8CP propertyName) const override;
     virtual SelectClauseExp const* _GetSelection () const override;
 public:
     explicit SubqueryExp (std::unique_ptr<SelectStatementExp> selectExp);
@@ -384,14 +384,13 @@ private:
         }
     virtual Utf8String _ToString () const override { return "SelectStatementExp"; }
 
-    virtual DerivedPropertyExp const* _FindProperty (Utf8StringCR propertyName) const override
+    virtual DerivedPropertyExp const* _FindProperty(Utf8CP propertyName) const override
         {
         return GetCurrent().FindProperty (propertyName);
         }
     virtual SelectClauseExp const* _GetSelection () const override { return  GetCurrent ().GetSelection (); }
 
 public:
-//SingleSelectStatementExp const& GetLhs
     SelectStatementExp (std::unique_ptr<SingleSelectStatementExp> lhs)
         :m_isAll (false), m_operator (Operator::None)
         {
@@ -463,7 +462,7 @@ struct SubqueryRefExp : RangeClassRefExp
     DEFINE_EXPR_TYPE(SubqueryRef) 
 private:
     virtual Utf8StringCR _GetId() const override { return GetAlias(); }
-    virtual bool _ContainProperty(Utf8StringCR propertyName) const override
+    virtual bool _ContainProperty(Utf8CP propertyName) const override
         {
         return GetSubquery ()->GetQuery()->FindProperty(propertyName) != nullptr;
         }

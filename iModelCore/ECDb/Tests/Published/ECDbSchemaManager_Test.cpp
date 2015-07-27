@@ -2195,8 +2195,8 @@ TEST (ECDbSchemaManager, ImportSchemaWithSubclassesToBaseClassInExistingSchema)
         stmt.BindId(1, activityKey.GetECInstanceId());
         ASSERT_EQ(ECSqlStepStatus::HasRow, stmt.Step());
 
-        ASSERT_TRUE(stmt.IsValueNull(0)) << "This should start to fail once ECDb is fixed to recompute the horizontal partitions after a second schema import";
-        ASSERT_TRUE(stmt.IsValueNull(1)) << "This should start to fail once ECDb is fixed to recompute the horizontal partitions after a second schema import";
+        ASSERT_FALSE(stmt.IsValueNull(0)) << "This should start to fail if ECDb still caching horizontal paratition even after import a second schema";
+        ASSERT_FALSE(stmt.IsValueNull(1)) << "This should start to fail if ECDb still caching horizontal paratition even after import a second schema";
 
         ASSERT_EQ(ECSqlStepStatus::Done, stmt.Step());
         }

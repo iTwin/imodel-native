@@ -113,7 +113,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareStepTask(ECSqlPrepareContext& ctx, Inser
         if (ecsqlParameterMap.TryGetBinder (binder, ecsqlParameterIndex) != ECSqlStatus::Success)
             {
             BeAssert (false && "Failed to find binder for given value expression");
-            return ctx.SetError (ECSqlStatus::ProgrammerError, "Failed to find binder for given value expression PROPERTY=%s BINDER_INDEX=%d", propNameExp->GetPropertyName().c_str(), ecsqlParameterIndex);
+            return ctx.SetError (ECSqlStatus::ProgrammerError, "Failed to find binder for given value expression PROPERTY=%s BINDER_INDEX=%d", propNameExp->GetPropertyName(), ecsqlParameterIndex);
             }
 
         if (typeInfo.GetKind () == ECSqlTypeInfo::Kind::Struct)

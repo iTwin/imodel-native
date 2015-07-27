@@ -29,295 +29,65 @@ typedef bvector<bpair<Utf8String, int>> PropertyNamePath;
 struct PropertyPath
     {
 public:
-    //=======================================================================================
-    //! @bsiclass                                             Krischan.Eberle      07/2013
-    //+===============+===============+===============+===============+===============+======
-    enum class Status
-        {
-        Success = SUCCESS,
-        PropertyPathIsEmpty,
-        InvalidPropertyPath,
-        FailedToResolvePropertyName,
-        ArrayIndexNotSupported
-        };
-
     struct Location
         {
     friend struct PropertyPath;
+
     private:
-        Utf8String      m_propertyName;
-        ECPropertyCP    m_property;
-        int             m_index;
-    protected:
-        void SetProperty(ECPropertyCR property)  
-            {
-            auto propertyName = GetPropertyName().c_str();
-            PRECONDITION(propertyName == property.GetName(),);
-            m_property = &property;
-            }
-        void ClearResolvedProperty()
-            {
-            m_property = nullptr;
-            }
+        static const int NOT_ARRAY = -1;
+
+        Utf8String m_propertyName;
+        ECPropertyCP m_property;
+        int m_arrayIndex;
+
+        void SetProperty(ECPropertyCR property);
+        void ClearResolvedProperty() { m_property = nullptr; }
 
     public: 
-        const static int NOT_ARRAY =-1;
-
-        Location(Utf8StringCR name, int index)
-            : m_property(nullptr), m_index(index), m_propertyName(name)
-            {
-            PRECONDITION(!m_propertyName.empty(),);
-            }
+        Location(Utf8CP name, int arrayIndex) : m_propertyName(name), m_property(nullptr), m_arrayIndex(arrayIndex) { BeAssert(!Utf8String::IsNullOrEmpty(name)); }
             
-        bool HasArrayIndex() const { return GetArrayIndex() != NOT_ARRAY;}
-        ECPropertyCP GetProperty() const { return m_property;}
-        Utf8StringCR GetPropertyName() const {return m_propertyName;}
+        Utf8CP GetPropertyName() const { return m_propertyName.c_str(); }
+        ECPropertyCP GetProperty() const { return m_property; }
+        bool HasArrayIndex() const { return GetArrayIndex() != NOT_ARRAY; }
+        int GetArrayIndex() const { return m_arrayIndex; }
 
         bool IsResolved() const { return m_property != nullptr;}
-        int GetArrayIndex() const { return m_index;} 
         Utf8String ToString(bool includeArrayIndexes) const;
         };
 
 private:
-    std::vector<std::unique_ptr<Location>> m_path;
+    std::vector<Location> m_path;
     IClassMap const* m_classMap;
 
-    //non-copyable
-    PropertyPath (PropertyPath const& rhs);
-    PropertyPath& operator= (PropertyPath const& rhs);
-
-    Status ResetResolutionInfo(Status status, bool dryRun)
-        {
-        if (!dryRun)
-            {
-            m_classMap = nullptr;
-            for(auto& loc : m_path)
-                loc->ClearResolvedProperty();
-            }
-        return status;
-           
-        }
-    Status ResolvePath (IClassMap const& classMap, bool dryRun = false)
-        {
-        if (Empty())
-            return Status::PropertyPathIsEmpty;
- 
-        auto pathStr = ToString();
-        auto cursorClass = &classMap.GetClass();
-        for (size_t i = 0 ; i < Size(); i++)
-            {
-            auto& element       = At(i);
-            auto& propertyName  = element.GetPropertyName();
-            if (element.GetArrayIndex () >= 0)
-                return ResetResolutionInfo (Status::ArrayIndexNotSupported, dryRun);
-
-            ECPropertyCP property = cursorClass->GetPropertyP(propertyName.c_str(), true);
-
-            if (property == nullptr && i == 0)
-                {
-                auto propertyMap = classMap.GetPropertyMap (propertyName.c_str());
-                if (propertyMap)
-                    property = &propertyMap->GetProperty();
-                }
-
-            if (property == nullptr)
-                return ResetResolutionInfo(Status::FailedToResolvePropertyName, dryRun);
-
-            if (!dryRun)
-                element.SetProperty(*property);
-
-            if (property->GetIsPrimitive())
-                {
-                if ( &element !=  &Top() || element.HasArrayIndex())
-                    return ResetResolutionInfo(Status::InvalidPropertyPath, dryRun); 
-                }
-            else if (property->GetIsStruct())
-                {
-                if (element.HasArrayIndex())
-                    return ResetResolutionInfo(Status::InvalidPropertyPath, dryRun); 
-                cursorClass = &property->GetAsStructProperty()->GetType();
-                }
-            else if (property->GetIsArray())
-                {
-                auto arrayProperty = property->GetAsArrayProperty();
-                if (arrayProperty->GetKind() == ARRAYKIND_Primitive)
-                    {
-                    if (&element !=  &Top())
-                        return ResetResolutionInfo(Status::InvalidPropertyPath, dryRun); 
-                    }
-                if (arrayProperty->GetKind() == ARRAYKIND_Struct)
-                    {
-                    cursorClass = arrayProperty->GetStructElementType();
-                    }
-                }
-            if (!element.IsResolved())
-                return ResetResolutionInfo(Status::FailedToResolvePropertyName, dryRun); 
-            }
-        if(!dryRun)
-            {
-            BeAssert(IsResolved() && "Must be resolved by now");
-            m_classMap = &classMap;
-            }
-        return Status::Success;
-        }
+    void Reset();
+    void Clear();
 
 public:
-    PropertyPath ()
-        : m_classMap (nullptr)
-        {
-        }
-    
+    PropertyPath () : m_classMap (nullptr) {}
     ~PropertyPath () {}
 
-    PropertyPath (PropertyPath&& rhs)
-        : m_path (std::move (rhs.m_path)), m_classMap (std::move (rhs.m_classMap))
-        {
-        }
+    PropertyPath(PropertyPath const& rhs) : m_path(rhs.m_path), m_classMap(rhs.m_classMap) {}
+    PropertyPath& operator=(PropertyPath const& rhs);
+    PropertyPath(PropertyPath&& rhs) : m_path(std::move(rhs.m_path)), m_classMap(std::move(rhs.m_classMap)) {}
+    PropertyPath& operator=(PropertyPath&& rhs);
 
-    PropertyPath& operator= (PropertyPath&& rhs)
-        {
-        if (this != &rhs)
-            {
-            m_path = std::move (rhs.m_path);
-            m_classMap = std::move (rhs.m_classMap);
-            }
+    Location const& operator[] (size_t index) const { return m_path[index]; }
+    size_t Size() const { return m_path.size(); }
+    bool IsEmpty() const { return m_path.empty(); }
+    IClassMap const* GetClassMap() const { return m_classMap; }
 
-        return *this;
-        }
+    void Push(Utf8CP propertyName);
+    void Push(Utf8CP propertyName, size_t arrayIndex);
+    void Pop();
+    void Remove(size_t index) { m_path.erase(m_path.begin() + index); }
 
-    IClassMap const* GetClassMap() const
-        {
-        return m_classMap;
-        }
+    BentleyStatus Resolve(IClassMap const& classMap, Utf8String* errorMessage = nullptr);
+    bool IsResolved() const;
 
-    void Push(Utf8StringCR propertyName, int arrayIndex = Location::NOT_ARRAY)
-        {
-        m_path.push_back(std::unique_ptr<Location>(new Location(propertyName, arrayIndex)));
-        }
-    void Pop()
-        {
-        m_path.pop_back();
-        if (Empty())
-            Clear();
-        }
-    void Remove(size_t index)
-        {
-        m_path.erase(m_path.begin() + index);
-        }
-    Location& Top() const
-        {
-        return *m_path.at(m_path.size() - 1);
-        }
-    Location& Bottom() const
-        {
-        return *m_path.at(0);
-        }
-    Location& At(size_t index) const
-        {
-        return *m_path[index];
-        }
-    size_t Size() const 
-        {
-        return m_path.size();
-        }
-    bool Empty() const 
-        {
-        return m_path.empty();
-        }
-    bool IsResolved() const
-        {
-        for(auto& entry : m_path)
-            if (!entry->IsResolved())
-                return false;
-        return true;
-        }
-    Status Resolve(IClassMap const& classMap)
-        {
-        return ResolvePath(classMap, false);
-        }
+    BentleyStatus TryGetQualifiedPath(Utf8StringR qualifiedPath) const;
+    static BentleyStatus TryParseQualifiedPath(PropertyPath& resolvedPropertyPath, Utf8StringCR qualifedPath, ECDbCR ecdb);
 
-    bool ExistsIn (IClassMap const& classMap, Status* status = nullptr)
-        {
-        //Do by value comparison (with operator from ECSchemaComparers.h). Don't do by reference comparison
-        if (m_classMap != nullptr && classMap.GetClass() == m_classMap->GetClass())
-            return true;
-
-        auto r = ResolvePath(classMap, true);
-        if (status)
-            *status = r;
-        return  r == Status::Success;
-        }
-
-    void Clear() 
-        {
-        m_path.clear();
-        m_classMap = nullptr;
-        }
-
-    Utf8String ToString(bool includeArrayIndexes = true) const
-        {
-        Utf8String tmp;
-        for(size_t i =0; i < Size(); i++)
-            {
-            tmp.append (At(i).ToString(includeArrayIndexes));
-            if (i != (Size() - 1))
-                tmp.append (".");            
-            }
-        return tmp;
-        }
-    
-    ECSqlStatus TryGetQualifiedPath(Utf8StringR qualifiedPath) const
-        {
-        if (m_classMap == nullptr)
-            {
-            BeAssert(false && "Invalid property path");
-            return ECSqlStatus::ProgrammerError;
-            }
-        qualifiedPath = Utf8String(GetClassMap()->GetClass().GetFullName());
-        qualifiedPath.append(":");
-        qualifiedPath.append(ToString(false));
-        return ECSqlStatus::Success;
-        }
-
-    static ECSqlStatus TryParseQualifiedPath(PropertyPath& resolvedPropertyPath, Utf8StringCR qualifedPath, ECDbCR ecdb)
-        {
-        resolvedPropertyPath.Clear();
-        bvector<Utf8String> subParts;
-        BeStringUtilities::Split(qualifedPath.c_str(), ":", NULL, subParts);
-        if (subParts.size() != 3)
-            {
-            BeAssert(false && "Invalid qualified path");
-            return ECSqlStatus::ProgrammerError;
-            }
-
-        auto& schemaName = subParts.at(0);
-        auto& className = subParts.at(1);
-        auto& propertyPath = subParts.at(2);
-        
-        bvector<Utf8String> propertyNames;
-        BeStringUtilities::Split(propertyPath.c_str(), ".", NULL, propertyNames);
-        for(auto& propertyName : propertyNames)
-            resolvedPropertyPath.Push(propertyName);
-
-        auto targetClass = ecdb.Schemas().GetECClass(schemaName.c_str (), className.c_str (), ResolveSchema::AutoDetect);
-        if (!targetClass)
-            {
-            BeAssert(false && "Failed to find ECClass");
-            return  ECSqlStatus::ProgrammerError;
-            }
-
-        auto targetClassMap = ecdb.GetECDbImplR().GetECDbMap().GetClassMap(*targetClass);
-        if (targetClassMap == nullptr)
-            {
-            BeAssert (false && "No class map found for class.");
-            return ECSqlStatus::ProgrammerError;
-            }
-
-        if (resolvedPropertyPath.Resolve(*targetClassMap) != Status::Success)
-            return ECSqlStatus::ProgrammerError;
-
-        return ECSqlStatus::Success;
-        }
+    Utf8String ToString(bool includeArrayIndexes = true) const;
     };
 
 
