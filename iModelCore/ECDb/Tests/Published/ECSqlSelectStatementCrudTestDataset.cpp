@@ -52,12 +52,12 @@ ECSqlTestDataset ECSqlSelectTestDataset::AliasTests (int rowCountPerClass)
     ecsql = "SELECT S.I FROM (SELECT S, I FROM ecsql.PSA) S";
     ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
-    ecsql = "SELECT S.S FROM ecsql.PSA, (SELECT I, S FROM ecsql.PSA) S WHERE PSA.ECInstanceId=S.ECInstanceId";
+/*    ecsql = "SELECT S.S FROM ecsql.PSA, (SELECT I, S FROM ecsql.PSA) S WHERE PSA.ECInstanceId=S.ECInstanceId";
     ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
 
     ecsql = "SELECT S.Bla FROM ecsql.PSA, (SELECT I, 3.14 AS Bla FROM ecsql.PSA) S WHERE PSA.ECInstanceId=S.ECInstanceId";
     ECSqlStatementCrudTestDatasetHelper::AddSelect(dataset, ecsql, 1, rowCountPerClass);
-
+    */
 
     //Class alias comes before property name, so PStructProp in select clause refers to class alias in case of ambiguity
     ecsql = "SELECT PStructProp FROM ecsql.PSA PStructProp";
