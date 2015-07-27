@@ -180,17 +180,22 @@ public:
     REALITYPACKAGE_EXPORT RealityDataSourceR GetSourceR();
     REALITYPACKAGE_EXPORT RealityDataSourceCR GetSource() const;
 
+    REALITYPACKAGE_EXPORT Utf8StringCR GetCopyright() const;
+    REALITYPACKAGE_EXPORT void SetCopyright(Utf8CP dataCopyright);
+    
 protected:
     explicit RealityData(){}; // for persistence.
     RealityData(RealityDataSourceR dataSource);
+    RealityData(RealityDataSourceR dataSource, Utf8CP dataCopyright);
     virtual ~RealityData();
 
     // read/write from a dataNode.
-    virtual RealityPackageStatus _Read(BeXmlNodeR dtaNode);
+    virtual RealityPackageStatus _Read(BeXmlNodeR dataNode);
     virtual RealityPackageStatus _Write(BeXmlNodeR dataNode) const;
       
 private:
     RealityDataSourcePtr m_pSource;
+    Utf8String m_copyright;
 };
 
 //=======================================================================================
