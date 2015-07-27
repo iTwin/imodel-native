@@ -13,9 +13,9 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 
 BEGIN_DGNDB_UNIT_TESTS_NAMESPACE
 //static member initialization
-WCharCP const PerformanceTestFixture::TEST_CLASS_NAME = L"PIPE_Extra";
-WCharCP const PerformanceTestFixture::TEST_SCHEMA_NAME = L"TestSchema";
-WCharCP const PerformanceTestFixture::TEST_COMPLEX_SCHEMA_NAME = L"ComplexTestSchema";
+Utf8CP const PerformanceTestFixture::TEST_CLASS_NAME = "PIPE_Extra";
+Utf8CP const PerformanceTestFixture::TEST_SCHEMA_NAME = "TestSchema";
+Utf8CP const PerformanceTestFixture::TEST_COMPLEX_SCHEMA_NAME = "ComplexTestSchema";
 const int PerformanceTestFixture::TESTCLASS_INSTANCE_COUNT = 20000;
 
 /*---------------------------------------------------------------------------------**//**
@@ -94,9 +94,9 @@ ECPropertyCR ecProperty
         {
         case PRIMITIVETYPE_String: 
             {
-            WString text;
-            text.Sprintf (L"Sample text with random number: %d", randomNumber);
-            ecValue.SetString(text.c_str (), true); 
+            Utf8String text;
+            text.Sprintf ("Sample text with random number: %d", randomNumber);
+            ecValue.SetUtf8CP(text.c_str (), true); 
             }
             break;
 
