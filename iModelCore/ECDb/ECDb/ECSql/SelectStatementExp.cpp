@@ -577,8 +577,8 @@ ECSqlStatus SelectClauseExp::ReplaceAsteriskExpressions (ECSqlParseContext& ctx,
 
     for(auto propertyNameExp : propertyNameExpList)
         {
-        auto innerExp = static_cast<PropertyNameExp const*>(propertyNameExp->GetExpression());
-        if (Exp::IsAsteriskToken (innerExp->GetPropertyName ().c_str ()))
+        PropertyNameExp const* innerExp = static_cast<PropertyNameExp const*>(propertyNameExp->GetExpression());
+        if (Exp::IsAsteriskToken (innerExp->GetPropertyName ()))
             {
             auto stat = ReplaceAsteriskExpression (ctx, *propertyNameExp, rangeClassRefs);
             if (stat != ECSqlStatus::Success)
@@ -591,9 +591,9 @@ ECSqlStatus SelectClauseExp::ReplaceAsteriskExpressions (ECSqlParseContext& ctx,
         //WIP_ECSQL: What about SELECT structProp.* from FOO?
         auto const& propertyPath = innerExp->GetPropertyPath ();
         //case: SELECT a.* from FOO a
-        if (propertyPath.Size() > 1 && Exp::IsAsteriskToken (propertyPath.At(1).GetPropertyName ().c_str ()))
+        if (propertyPath.Size() > 1 && Exp::IsAsteriskToken (propertyPath[1].GetPropertyName ()))
             {
-            auto alias = propertyPath.At(0).GetPropertyName();
+            Utf8CP alias = propertyPath[0].GetPropertyName();
             //Find class ref that matches the alias and replace the asterisk by just the props of that class ref
             for(auto classRef : rangeClassRefs)
                 {
@@ -722,8 +722,8 @@ DerivedPropertyExp const* SingleSelectStatementExp::_FindProperty(Utf8CP propert
             auto expr = derivedPropertyExp->GetExpression();
             if (expr->GetType() == Type::PropertyName)
                 {
-                auto property = static_cast<PropertyNameExp const*>(expr);
-                if (property->GetPropertyName().Equals(propertyName))
+                PropertyNameExp const* propertyNameExp = static_cast<PropertyNameExp const*>(expr);
+                if (strcmp(propertyNameExp->GetPropertyName(), propertyName) == 0)
                     return derivedPropertyExp;
                 }
             }
