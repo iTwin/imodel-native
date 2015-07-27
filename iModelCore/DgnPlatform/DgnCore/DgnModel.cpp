@@ -1316,7 +1316,7 @@ PhysicalElementCPtr ComponentProxyModel::CaptureSolution(ComponentModelR compone
     PhysicalElementPtr cmsolution = PhysicalElement::Create(PhysicalElement::CreateParams(GetDgnDb(), GetModelId(), m_elementClassId, m_categoryId));
     cmsolution->SetCode(solutionCode.c_str());
 
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::CreateWorld(*cmsolution);
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*cmsolution, DPoint3d::FromZero(), YawPitchRollAngles());
     for (bpair<DgnSubCategoryId,DgnGeomPartId> const& subcatAndGeom : subcatAndGeoms)
         {
         Transform noTransform = Transform::FromIdentity();
@@ -1324,7 +1324,11 @@ PhysicalElementCPtr ComponentProxyModel::CaptureSolution(ComponentModelR compone
         builder->Append(subcatAndGeom.second, noTransform);
         }
 
-    builder->SetGeomStreamAndPlacement(*cmsolution);
+    if (BSISUCCESS != builder->SetGeomStreamAndPlacement(*cmsolution))
+        {
+        BeAssert(false);
+        return nullptr;
+        }
 
     return cmsolution->Insert()->ToPhysicalElement();
     }

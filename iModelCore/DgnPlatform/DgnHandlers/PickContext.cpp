@@ -349,10 +349,16 @@ void PickOutput::AddSurfaceHit (DPoint3dCR hitPtLocal, DVec3dCR hitNormalLocal, 
         }
 
     DVec3d      saveNormal = m_currGeomDetail.GetSurfaceNormal ();
+    DVec3d      hitNormalWorld = hitNormalLocal;
     DPoint4d    viewPt;
-    
+    Transform   localToWorld;
+
+    m_context->GetCurrLocalToWorldTrans (localToWorld);
+    localToWorld.MultiplyMatrixOnly(hitNormalWorld);
+    hitNormalWorld.Normalize ();
+
     m_currGeomDetail.SetGeomType (HitGeomType::Surface);
-    m_currGeomDetail.SetSurfaceNormal (hitNormalLocal);
+    m_currGeomDetail.SetSurfaceNormal (hitNormalWorld);
 
     m_context->LocalToView (&viewPt, &hitPtLocal, 1);
     _AddHit (viewPt, &hitPtLocal, priority);

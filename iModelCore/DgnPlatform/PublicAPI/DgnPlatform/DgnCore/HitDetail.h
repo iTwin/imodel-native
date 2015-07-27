@@ -193,7 +193,8 @@ public:
     void SetSubSelectionMode (SubSelectionMode mode) {_SetSubSelectionMode(mode);}
 
     DGNPLATFORM_EXPORT void DrawInVp (DgnViewportP, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const;
-    DGNPLATFORM_EXPORT void FlashCurveHit(ViewContextR) const; //! Setup context.GetCurrentDisplayParams() before calling!
+    DGNPLATFORM_EXPORT bool ShouldFlashCurveSegment(ViewContextR) const; //! Check for segment flash mode before calling FlashCurveSegment.
+    DGNPLATFORM_EXPORT void FlashCurveSegment(ViewContextR) const; //! Setup context.GetCurrentDisplayParams() before calling!
     
     DGNVIEW_EXPORT void DrawInView (IndexedViewSetR, int viewNum, DgnDrawMode drawMode, DrawPurpose drawPurpose) const;
     DGNVIEW_EXPORT void DrawInViews (IndexedViewSetR, DgnDrawMode drawMode, DrawPurpose drawPurpose) const;

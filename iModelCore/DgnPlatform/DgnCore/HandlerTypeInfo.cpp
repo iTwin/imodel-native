@@ -137,7 +137,14 @@ void DgnPlatformLib::Host::GraphicsAdmin::_GetInfoString(HitDetailCP hit, Utf8St
     GeometricElementCPtr element = hit->GetElement();
 
     if (!element.IsValid())
+        {
+        IElemTopologyCP elemTopo = hit->GetElemTopology();
+        ITransientGeometryHandlerP transientHandler = (nullptr != elemTopo ? elemTopo->_GetTransientGeometryHandler() : nullptr);
+
+        if (nullptr != transientHandler)
+            transientHandler->_GetTransientInfoString(*hit, pathDescr, delimiter);
         return;
+        }
 
     pathDescr = element->GetCode();
 

@@ -175,8 +175,6 @@ struct UnitFlags
     uint32_t        reserved:26;
     };
 
-/** @cond BENTLEY_SDK_Internal */
-
 enum class SelectionMode
     {
     New         = 0,
@@ -193,8 +191,6 @@ enum class LocateSurfacesPref
     ByView          = 1, //!< Locate interiors according to view attributes for fill display and render mode. (Default)
     Always          = 2, //!< Locate interiors of regions, surfaces, and solids even in wireframe and even with fill display off.
     };
-
-/** @endcond */
 
 enum class UnitBase
     {
