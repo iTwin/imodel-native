@@ -26,7 +26,6 @@
     <ClCompile Include="BackDoor\DgnElementHelpers.cpp" />
     <ClCompile Include="BackDoor\ElementCreateHelpers.cpp" />
     <ClCompile Include="NonPublished\BeTextFile_Test.cpp" />
-    <ClCompile Include="NonPublished\Compatibility_Test.cpp" />
     <ClCompile Include="NonPublished\CopyContext_Test.cpp" />
     <ClCompile Include="NonPublished\DgnColors_Test.cpp" />
     <ClCompile Include="NonPublished\DgnLevelTable_Test.cpp" />
@@ -71,6 +70,7 @@
     <ClCompile Include="Published\RealityDataCache_Test.cpp" />
     <ClCompile Include="Published\Tag_Test.cpp" />
     <ClCompile Include="Published\TextAnnotationElement_Test.cpp" />
+    <ClCompile Include="Published\TextAnnotationSeed_Test.cpp" />
     <ClCompile Include="Published\TextString_Test.cpp" />
     <ClCompile Include="Published\UnitDefinition_Test.cpp" />
     <ClCompile Include="Published\UnitManager_Test.cpp" />
@@ -83,12 +83,9 @@
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\BackDoor.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\DgnElementHelpers.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\ElementCreateHelpers.h" />
-    <ClInclude Include="NonPublished\BentleyHeaders.h" />
-    <ClInclude Include="NonPublished\CompatibilityHeaders.h" />
     <ClInclude Include="NonPublished\DgnHandlersTests.h" />
     <ClInclude Include="NonPublished\DgnSqlTestDomain.h" />
     <ClInclude Include="NonPublished\GenericDgnModelTestFixture.h" />
-    <ClInclude Include="NonPublished\GeomHeaders.h" />
     <ClInclude Include="Performance\DgnECPerformanceTests.h" />
     <ClInclude Include="Performance\PerformanceTestFixture.h" />
     <ClInclude Include="Performance\TestSchemaHelper.h" />

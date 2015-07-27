@@ -65,3 +65,16 @@ AnnotationLeaderStylePtr AnnotationTestFixture::createAnnotationLeaderStyle(DgnD
         EXPECT_TRUE(style->GetId().IsValid());
         return style;
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Umar.Hayat     07/15
+//---------------------------------------------------------------------------------------
+AnnotationFrameStylePtr AnnotationTestFixture::createAnnotationFrameStyle(DgnDbR project, const char* styleName)
+    {
+        //.............................................................................................
+        AnnotationFrameStylePtr style = AnnotationFrameStyle::Create(project);
+        EXPECT_TRUE(style.IsValid());
+
+        EXPECT_TRUE(SUCCESS == project.Styles().AnnotationFrameStyles().Insert(*style));
+        EXPECT_TRUE(style->GetId().IsValid());
+        return style;
+    }

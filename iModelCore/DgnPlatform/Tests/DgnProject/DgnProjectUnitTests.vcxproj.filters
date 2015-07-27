@@ -124,9 +124,6 @@
     <ClCompile Include="NonPublished\EntityAndItem_Test.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
-    <ClCompile Include="NonPublished\Compatibility_Test.cpp">
-      <Filter>NonPublished</Filter>
-    </ClCompile>
     <ClCompile Include="NonPublished\DgnSqlTest.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
@@ -169,6 +166,9 @@
     <ClCompile Include="Published\AnnotationTestFixture.cpp">
       <Filter>Published</Filter>
     </ClCompile>
+    <ClCompile Include="Published\TextAnnotationSeed_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\DgnHandlersTests.h">
@@ -201,16 +201,7 @@
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\ElementCreateHelpers.h">
       <Filter>BackDoor</Filter>
     </ClInclude>
-    <ClInclude Include="NonPublished\CompatibilityHeaders.h">
-      <Filter>NonPublished</Filter>
-    </ClInclude>
     <ClInclude Include="NonPublished\DgnSqlTestDomain.h">
-      <Filter>NonPublished</Filter>
-    </ClInclude>
-    <ClInclude Include="NonPublished\GeomHeaders.h">
-      <Filter>NonPublished</Filter>
-    </ClInclude>
-    <ClInclude Include="NonPublished\BentleyHeaders.h">
       <Filter>NonPublished</Filter>
     </ClInclude>
     <ClInclude Include="TestFixture\DgnDbTestFixtures.h">
