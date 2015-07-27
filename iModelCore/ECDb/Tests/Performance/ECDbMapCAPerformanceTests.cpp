@@ -50,7 +50,6 @@ void ECDbMapCAPerformanceTests::ReadInstances (ECDbR ecdb)
     StopWatch timer (true);
     for (auto const& kvPair : m_sqlTestItems)
         {
-        auto testClass = kvPair.first;
         Utf8StringCR selectSql = kvPair.second.m_selectECSql;
 
         ECSqlStatement stmt;
@@ -81,7 +80,6 @@ void ECDbMapCAPerformanceTests::DeleteInstances (ECDbR ecdb)
     StopWatch timer (true);
     for (auto const& kvPair : m_sqlTestItems)
         {
-        auto testClass = kvPair.first;
         Utf8String deleteSql = kvPair.second.m_deleteECSql;
 
         ECSqlStatement stmt;
@@ -114,21 +112,20 @@ void ECDbMapCAPerformanceTests::UpdateInstances (ECDbR ecdb)
         {
         auto testClass = kvPair.first;
         Utf8String updateSql = kvPair.second.m_updateECSql;
-        auto propertyCollection = testClass->GetProperties (true);
+        const size_t propertyCount = testClass->GetPropertyCount (true);
 
         ECSqlStatement stmt;
         auto stat = stmt.Prepare (ecdb, updateSql.c_str ());
         EXPECT_EQ (ECSqlStatus::Success, stat) << "preparation failed for " << updateSql.c_str ();
         for (size_t i = 0; i < m_instancesPerClass; i++)
             {
-            int parameterIndex = 1;
-            for (auto prop : propertyCollection)
+            for (int parameterIndex = 1; parameterIndex <= propertyCount; parameterIndex++)
                 {
-                EXPECT_EQ (stmt.BindText (parameterIndex++, ("UpdatedValue"), IECSqlBinder::MakeCopy::No), ECSqlStatus::Success);
+                EXPECT_EQ(ECSqlStatus::Success, stmt.BindText(parameterIndex++, ("UpdatedValue"), IECSqlBinder::MakeCopy::No));
                 }
 
-            EXPECT_EQ (stmt.BindInt (parameterIndex, instanceId++), ECSqlStatus::Success);
-            EXPECT_EQ (stmt.Step (), ECSqlStepStatus::Done) << "step failed for " << updateSql.c_str ();
+            EXPECT_EQ(ECSqlStatus::Success, stmt.BindInt(propertyCount + 1, instanceId++));
+            EXPECT_EQ(ECSqlStepStatus::Done, stmt.Step()) << "step failed for " << updateSql.c_str();
             stmt.Reset ();
             stmt.ClearBindings ();
             }
@@ -151,17 +148,16 @@ void ECDbMapCAPerformanceTests::InsertInstances (ECDbR ecdb)
         {
         auto testClass = kvPair.first;
         Utf8StringCR insertSql = kvPair.second.m_insertECSql;
-        auto propertyCollection = testClass->GetProperties (true);
+        const size_t propertyCount = testClass->GetPropertyCount(true);
 
         ECSqlStatement stmt;
         auto stat = stmt.Prepare (ecdb, insertSql.c_str ());
         ASSERT_EQ (ECSqlStatus::Success, stat) << "Preparation failed for " << insertSql.c_str ();
         for (int i = 0; i < m_instancesPerClass; i++)
             {
-            int parameterIndex = 1;
-            for (auto prop : propertyCollection)
+            for (int parameterIndex = 1; parameterIndex <= propertyCount; parameterIndex++)
                 {
-                EXPECT_EQ (stmt.BindText (parameterIndex++, ("InitValue"), IECSqlBinder::MakeCopy::No), ECSqlStatus::Success);
+                EXPECT_EQ(ECSqlStatus::Success, stmt.BindText(parameterIndex++, ("InitValue"), IECSqlBinder::MakeCopy::No));
                 }
 
             EXPECT_EQ (stmt.Step (), ECSqlStepStatus::Done) << "Step failed for " << insertSql.c_str ();
