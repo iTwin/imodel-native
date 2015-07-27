@@ -100,7 +100,7 @@
   <Part Name="PointoolsLibsVortex_VS2012">
     <SubPart PartName="PointoolsLibsCommon_VS2012" Repository="PointoolsLibs"/>
     <SubPart PartName="GLUI_VS2012" Repository="PointoolsLibs"/>
-    <SubPart PartName="FastDelegate_VS2012" Repository="PointoolsLibs"/>
+    <SubPart PartName="FastDelegate" PartFile="FastDelegate" Repository="libsrc-FastDelegate"/>
     <SubPart PartName="Loki_VS2012" Repository="PointoolsLibs"/>
     <SubPart PartName="SCZ_Compress_VS2012" PartFile="scz_compress" Repository="libsrc-scz_compress"/>
   </Part>
