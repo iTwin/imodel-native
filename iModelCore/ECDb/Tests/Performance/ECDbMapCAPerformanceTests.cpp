@@ -50,7 +50,6 @@ void ECDbMapCAPerformanceTests::ReadInstances (ECDbR ecdb)
     StopWatch timer (true);
     for (auto const& kvPair : m_sqlTestItems)
         {
-        auto testClass = kvPair.first;
         Utf8StringCR selectSql = kvPair.second.m_selectECSql;
 
         ECSqlStatement stmt;
@@ -81,7 +80,6 @@ void ECDbMapCAPerformanceTests::DeleteInstances (ECDbR ecdb)
     StopWatch timer (true);
     for (auto const& kvPair : m_sqlTestItems)
         {
-        auto testClass = kvPair.first;
         Utf8String deleteSql = kvPair.second.m_deleteECSql;
 
         ECSqlStatement stmt;
@@ -124,7 +122,7 @@ void ECDbMapCAPerformanceTests::UpdateInstances (ECDbR ecdb)
             int parameterIndex = 1;
             for (auto prop : propertyCollection)
                 {
-                EXPECT_EQ (stmt.BindText (parameterIndex++, ("UpdatedValue"), IECSqlBinder::MakeCopy::No), ECSqlStatus::Success);
+                EXPECT_EQ (stmt.BindText (parameterIndex++, ((Utf8String)prop->GetName()).c_str(), IECSqlBinder::MakeCopy::No), ECSqlStatus::Success);
                 }
 
             EXPECT_EQ (stmt.BindInt (parameterIndex, instanceId++), ECSqlStatus::Success);
@@ -161,7 +159,7 @@ void ECDbMapCAPerformanceTests::InsertInstances (ECDbR ecdb)
             int parameterIndex = 1;
             for (auto prop : propertyCollection)
                 {
-                EXPECT_EQ (stmt.BindText (parameterIndex++, ("InitValue"), IECSqlBinder::MakeCopy::No), ECSqlStatus::Success);
+                EXPECT_EQ (stmt.BindText (parameterIndex++, ((Utf8String)prop->GetName ()).c_str (), IECSqlBinder::MakeCopy::No), ECSqlStatus::Success);
                 }
 
             EXPECT_EQ (stmt.Step (), ECSqlStepStatus::Done) << "Step failed for " << insertSql.c_str ();
