@@ -26,7 +26,6 @@
     <ClCompile Include="BackDoor\DgnElementHelpers.cpp" />
     <ClCompile Include="BackDoor\ElementCreateHelpers.cpp" />
     <ClCompile Include="NonPublished\BeTextFile_Test.cpp" />
-    <ClCompile Include="NonPublished\Category_Test.cpp" />
     <ClCompile Include="NonPublished\Compatibility_Test.cpp" />
     <ClCompile Include="NonPublished\CopyContext_Test.cpp" />
     <ClCompile Include="NonPublished\DgnColors_Test.cpp" />
@@ -56,6 +55,8 @@
     <ClCompile Include="Performance\TestSchemaHelper.cpp" />
     <ClCompile Include="Published\AnnotationFrameStyle_Test.cpp" />
     <ClCompile Include="Published\AnnotationLeaderStyle_Test.cpp" />
+    <ClCompile Include="Published\AnnotationLeader_Test.cpp" />
+    <ClCompile Include="Published\AnnotationTestFixture.cpp" />
     <ClCompile Include="Published\AnnotationTextBlock_Test.cpp" />
     <ClCompile Include="Published\AnnotationTextStyle_Test.cpp" />
     <ClCompile Include="Published\BackwardsCompatibility_Tests.cpp" />
@@ -91,6 +92,7 @@
     <ClInclude Include="Performance\DgnECPerformanceTests.h" />
     <ClInclude Include="Performance\PerformanceTestFixture.h" />
     <ClInclude Include="Performance\TestSchemaHelper.h" />
+    <ClInclude Include="Published\AnnotationTestFixture.h" />
     <ClInclude Include="Published\DgnHandlersTests.h" />
     <ClInclude Include="Published\GenericDgnModelTestFixture.h" />
     <ClInclude Include="TestFixture\DgnDbTestFixtures.h" />

@@ -163,8 +163,11 @@
     <ClCompile Include="Published\AnnotationFrameStyle_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="NonPublished\Category_Test.cpp">
-      <Filter>NonPublished</Filter>
+    <ClCompile Include="Published\AnnotationLeader_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\AnnotationTestFixture.cpp">
+      <Filter>Published</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -215,6 +218,9 @@
     </ClInclude>
     <ClInclude Include="TestFixture\GeomHelper.h">
       <Filter>TestFixture</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\AnnotationTestFixture.h">
+      <Filter>Published</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
