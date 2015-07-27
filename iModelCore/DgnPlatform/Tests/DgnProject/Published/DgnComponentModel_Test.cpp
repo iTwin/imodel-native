@@ -126,7 +126,6 @@ DgnDbPtr           m_componentDb;
 DgnDbPtr           m_clientDb;
 Dgn::ScopedDgnHost m_host;
 FakeScriptLibrary  m_scriptLibrary;
-bmap<DgnSubCategoryId, DgnSubCategoryId> m_subcatxlat;
 
 ComponentModelTest();
 void AddToFakeScriptLibrary(Utf8CP jns, Utf8CP jtext);
