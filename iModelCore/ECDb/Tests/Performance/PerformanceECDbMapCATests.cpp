@@ -112,20 +112,21 @@ void PerformanceECDbMapCATestFixture::UpdateInstances(ECDbR ecdb)
         {
         auto testClass = kvPair.first;
         Utf8String updateSql = kvPair.second.m_updateECSql;
-        const int propertyCount = (int) testClass->GetPropertyCount (true);
+        auto propertyCollection = testClass->GetProperties (true);
 
         ECSqlStatement stmt;
         auto stat = stmt.Prepare (ecdb, updateSql.c_str ());
         EXPECT_EQ (ECSqlStatus::Success, stat) << "preparation failed for " << updateSql.c_str ();
         for (size_t i = 0; i < m_instancesPerClass; i++)
             {
-            for (int parameterIndex = 1; parameterIndex <= propertyCount; parameterIndex++)
+            int parameterIndex = 1;
+            for (auto prop : propertyCollection)
                 {
-                EXPECT_EQ(ECSqlStatus::Success, stmt.BindText(parameterIndex++, ("UpdatedValue"), IECSqlBinder::MakeCopy::No));
+                EXPECT_EQ (stmt.BindText (parameterIndex++, ((Utf8String)prop->GetName()).c_str(), IECSqlBinder::MakeCopy::No), ECSqlStatus::Success);
                 }
 
-            EXPECT_EQ(ECSqlStatus::Success, stmt.BindInt(propertyCount + 1, instanceId++));
-            EXPECT_EQ(ECSqlStepStatus::Done, stmt.Step()) << "step failed for " << updateSql.c_str();
+            EXPECT_EQ (stmt.BindInt (parameterIndex, instanceId++), ECSqlStatus::Success);
+            EXPECT_EQ (stmt.Step (), ECSqlStepStatus::Done) << "step failed for " << updateSql.c_str ();
             stmt.Reset ();
             stmt.ClearBindings ();
             }
@@ -148,16 +149,17 @@ void PerformanceECDbMapCATestFixture::InsertInstances(ECDbR ecdb)
         {
         auto testClass = kvPair.first;
         Utf8StringCR insertSql = kvPair.second.m_insertECSql;
-        const int propertyCount = (int) testClass->GetPropertyCount(true);
+        auto propertyCollection = testClass->GetProperties (true);
 
         ECSqlStatement stmt;
         auto stat = stmt.Prepare (ecdb, insertSql.c_str ());
         ASSERT_EQ (ECSqlStatus::Success, stat) << "Preparation failed for " << insertSql.c_str ();
         for (int i = 0; i < m_instancesPerClass; i++)
             {
-            for (int parameterIndex = 1; parameterIndex <= propertyCount; parameterIndex++)
+            int parameterIndex = 1;
+            for (auto prop : propertyCollection)
                 {
-                EXPECT_EQ(ECSqlStatus::Success, stmt.BindText(parameterIndex++, ("InitValue"), IECSqlBinder::MakeCopy::No));
+                EXPECT_EQ (stmt.BindText (parameterIndex++, ((Utf8String)prop->GetName ()).c_str (), IECSqlBinder::MakeCopy::No), ECSqlStatus::Success);
                 }
 
             EXPECT_EQ (stmt.Step (), ECSqlStepStatus::Done) << "Step failed for " << insertSql.c_str ();
