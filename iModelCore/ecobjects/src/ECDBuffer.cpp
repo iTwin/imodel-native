@@ -2348,6 +2348,8 @@ void ECDBuffer::ClearValues()                                   { _ClearValues()
 ClassLayoutCR ECDBuffer::GetClassLayout() const                 { return _GetClassLayout(); }
 bool ECDBuffer::IsPersistentlyReadOnly() const                  { return _IsPersistentlyReadOnly(); }
 ECObjectsStatus ECDBuffer::SetIsPersistentlyReadOnly (bool ro)  { return _SetIsPersistentlyReadOnly (ro); }
+bool ECDBuffer::IsHidden() const                                { return _IsHidden(); }
+ECObjectsStatus ECDBuffer::SetIsHidden (bool hidden)            { return _SetIsHidden (hidden); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/15
@@ -2355,8 +2357,11 @@ ECObjectsStatus ECDBuffer::SetIsPersistentlyReadOnly (bool ro)  { return _SetIsP
 ECObjectsStatus ECDBuffer::CopyFromBuffer (ECDBufferCR source)
     {
     auto status = _CopyFromBuffer (source);
-    if (ECOBJECTS_STATUS_Success == status && source.IsPersistentlyReadOnly())
-        SetIsPersistentlyReadOnly (true);
+    if (ECOBJECTS_STATUS_Success == status)
+        {
+        SetIsPersistentlyReadOnly (source.IsPersistentlyReadOnly());
+        SetIsHidden (source.IsHidden());
+        }
 
     return status;
     }
@@ -2424,8 +2429,11 @@ ECObjectsStatus IECInstance::CopyValues(ECN::IECInstanceCR source)
     // Not ECD-based, or incompatible layouts. Copy property-by-property
     ECValuesCollectionPtr srcValues = ECValuesCollection::Create (source);
     auto status = duplicateProperties (*this, *srcValues, false);
-    if (ECOBJECTS_STATUS_Success == status && nullptr != srcBuffer && nullptr != thisBuffer && srcBuffer->IsPersistentlyReadOnly())
-        thisBuffer->SetIsPersistentlyReadOnly (true);
+    if (ECOBJECTS_STATUS_Success == status && nullptr != srcBuffer && nullptr != thisBuffer)
+        {
+        thisBuffer->SetIsPersistentlyReadOnly (srcBuffer->IsPersistentlyReadOnly());
+        thisBuffer->SetIsHidden (srcBuffer->IsHidden());
+        }
 
     return status;
     }

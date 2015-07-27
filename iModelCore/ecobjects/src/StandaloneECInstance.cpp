@@ -2,7 +2,7 @@ P*------------------------------------------------------------------------------
 |
 |     $Source: src/StandaloneECInstance.cpp $
 |
-|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -799,23 +799,21 @@ bool           MemoryECInstanceBase::IsPartiallyLoaded () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            MemoryECInstanceBase::SetHiddenInstance (bool set)
+ECObjectsStatus MemoryECInstanceBase::_SetIsHidden (bool set)
     {
-    bool returnVal = IsHiddenInstance();
-
     if (set)
         m_usageBitmask = m_usageBitmask | (uint16_t)MEMORYINSTANCEUSAGE_IsHidden;
     else 
         m_usageBitmask = m_usageBitmask & (~(uint16_t)MEMORYINSTANCEUSAGE_IsHidden);
 
-    return returnVal;
+    return ECOBJECTS_STATUS_Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * Currently only used by ECXA Instance serialization/deserialization
 * @bsimethod                                    Bill.Steinbock                  08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool           MemoryECInstanceBase::IsHiddenInstance () const
+bool           MemoryECInstanceBase::_IsHidden () const
     {
     return  0 != (m_usageBitmask & (uint16_t)MEMORYINSTANCEUSAGE_IsHidden); 
     }
