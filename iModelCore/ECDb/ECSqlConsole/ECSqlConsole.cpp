@@ -103,6 +103,8 @@ void ECSqlConsole::Setup ()
     AddCommand (make_shared<SetCommand> ());
     AddCommand (make_shared<PopulateCommand> ());
 
+    AddCommand(make_shared<SqliteCommand>());
+
     AddCommand (make_shared<HistoryCommand> ());
     auto exitCommand = make_shared<ExitCommand> ();
     AddCommand (exitCommand);
@@ -194,7 +196,6 @@ void ECSqlConsole::RunCommand (Utf8CP cmd)
     StopWatch executionTimer (true);
     command->Run (GetSession (), args);
     executionTimer.Stop ();
-    Console::WriteLine ("\r\n[Sqlite rows modified: %d]", GetSession().GetECDb().GetModifiedRowCount());
     Console::WriteLine ("[Execution Time: %.4f seconds]", executionTimer.GetElapsedSeconds ());
 
     //Add command to history (except history command itself)
