@@ -27,10 +27,10 @@ USING_NAMESPACE_WSCLIENT_UNIT_TESTS
 
 BEGIN_WSCLIENT_UNIT_TESTS_NAMESPACE
 
-std::shared_ptr<rapidjson::Document> ToRapidJson (Utf8StringCR jsonString);
-Json::Value ToJson (Utf8StringCR jsonString);
+std::shared_ptr<rapidjson::Document> ToRapidJson(Utf8StringCR jsonString);
+Json::Value ToJson(Utf8StringCR jsonString);
 
-ECN::ECSchemaPtr ParseSchema (Utf8StringCR schemaXml, ECN::ECSchemaReadContextPtr context = nullptr);
+ECN::ECSchemaPtr ParseSchema(Utf8StringCR schemaXml, ECN::ECSchemaReadContextPtr context = nullptr);
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    04/2014
@@ -44,44 +44,46 @@ struct TestAppPathProvider : MobileDgn::IApplicationPathsProvider
         BeFileName m_localStateDirectory;
 
     protected:
-        virtual BeFileNameCR _GetDocumentsDirectory () const  override
+        virtual BeFileNameCR _GetDocumentsDirectory() const  override
             {
             return m_documentsDirectory;
             }
-        virtual BeFileNameCR _GetTemporaryDirectory () const override
+        virtual BeFileNameCR _GetTemporaryDirectory() const override
             {
             return m_temporaryDirectory;
             }
-        virtual BeFileNameCR _GetCachesDirectory () const override
+        virtual BeFileNameCR _GetCachesDirectory() const override
             {
             return m_temporaryDirectory;
             }
-        virtual BeFileNameCR _GetLocalStateDirectory () const override
+        virtual BeFileNameCR _GetLocalStateDirectory() const override
             {
             return m_localStateDirectory;
             }
-        virtual BeFileNameCR _GetAssetsRootDirectory () const override
+        virtual BeFileNameCR _GetAssetsRootDirectory() const override
             {
             return m_platformAssetsDirectory;
             }
-        virtual BeFileNameCR _GetMarkupSeedFilePath () const override
+        virtual BeFileNameCR _GetMarkupSeedFilePath() const override
             {
             static BeFileName s_blank;
-            return s_blank; 
+            return s_blank;
             }
 
     public:
-        TestAppPathProvider ();
+        TestAppPathProvider();
     };
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    04/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct MobileUtilsTest : ::testing::Test
+struct WSClientBaseTest : ::testing::Test
     {
     TestAppPathProvider m_pathProvider;
-    virtual void SetUp () override;
-    virtual void TearDown () override;
+    virtual void SetUp() override;
+    virtual void TearDown() override;
+    static void SetUpTestCase();
+    static void TearDownTestCase();
     };
 
 /*--------------------------------------------------------------------------------------+
@@ -90,7 +92,7 @@ struct MobileUtilsTest : ::testing::Test
 struct MockHttpHandler : public IHttpHandler
     {
     public:
-        typedef std::function<HttpResponse (HttpRequestCR)> OnResponseCallback;
+        typedef std::function<HttpResponse(HttpRequestCR)> OnResponseCallback;
 
     private:
         int64_t m_expectedRequests;
@@ -101,39 +103,39 @@ struct MockHttpHandler : public IHttpHandler
         uint32_t m_perfomedRequests;
 
     public:
-        MockHttpHandler ();
-        virtual ~MockHttpHandler () override;
-        virtual AsyncTaskPtr<HttpResponse> PerformRequest (HttpRequestCR request) override;
+        MockHttpHandler();
+        virtual ~MockHttpHandler() override;
+        virtual AsyncTaskPtr<HttpResponse> PerformRequest(HttpRequestCR request) override;
 
-        uint32_t GetRequestsPerformed () const;
+        uint32_t GetRequestsPerformed() const;
 
-        MockHttpHandler& ExpectOneRequest ();
-        MockHttpHandler& ExpectRequests (uint32_t count);
+        MockHttpHandler& ExpectOneRequest();
+        MockHttpHandler& ExpectRequests(uint32_t count);
 
-        MockHttpHandler& ForRequest (uint32_t requestNumber, OnResponseCallback callback);
-        MockHttpHandler& ForRequest (uint32_t requestNumber, HttpResponseCR response);
+        MockHttpHandler& ForRequest(uint32_t requestNumber, OnResponseCallback callback);
+        MockHttpHandler& ForRequest(uint32_t requestNumber, HttpResponseCR response);
 
-        MockHttpHandler& ForFirstRequest (OnResponseCallback callback);
-        MockHttpHandler& ForFirstRequest (HttpResponseCR response);
+        MockHttpHandler& ForFirstRequest(OnResponseCallback callback);
+        MockHttpHandler& ForFirstRequest(HttpResponseCR response);
 
-        MockHttpHandler& ForAnyRequest (OnResponseCallback callback);
-        MockHttpHandler& ForAnyRequest (HttpResponseCR response);
+        MockHttpHandler& ForAnyRequest(OnResponseCallback callback);
+        MockHttpHandler& ForAnyRequest(HttpResponseCR response);
     };
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    04/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-class BaseMockHttpHandlerTest : public MobileUtilsTest
+class BaseMockHttpHandlerTest : public WSClientBaseTest
     {
     private:
         std::shared_ptr<MockHttpHandler>    m_handler;
         HttpClient                          m_client;
 
     public:
-        BaseMockHttpHandlerTest ();
-        HttpClientCR GetClient () const;
-        MockHttpHandler& GetHandler () const;
-        std::shared_ptr<MockHttpHandler> GetHandlerPtr () const;
+        BaseMockHttpHandlerTest();
+        HttpClientCR GetClient() const;
+        MockHttpHandler& GetHandler() const;
+        std::shared_ptr<MockHttpHandler> GetHandlerPtr() const;
     };
 
 //--------------------------------------------------------------------------------------+
@@ -143,12 +145,13 @@ class BaseMockHttpHandlerTest : public MobileUtilsTest
 class FSTest
     {
     public:
-        static BeFileName GetAssetsDir ();
-        static BeFileName GetTempDir ();
-        static BeFileName StubFilePath (Utf8StringCR customFileName = "");
-        static BeFileName StubFile (Utf8StringCR content = "TestContent", Utf8StringCR customFileName = "");
-        static Utf8String ReadFile (BeFileNameCR filePath);
-        static void WriteToFile (Utf8StringCR content, BeFileNameCR filePath);
+        static BeFileName GetAssetsDir();
+        static BeFileName GetTempDir();
+        static BeFileName StubFilePath(Utf8StringCR customFileName = "");
+        static BeFileName StubFile(Utf8StringCR content = "TestContent", Utf8StringCR customFileName = "");
+        static BeFileName StubFileWithSize(uint32_t bytesCount, Utf8StringCR customFileName = "");
+        static Utf8String ReadFile(BeFileNameCR filePath);
+        static void WriteToFile(Utf8StringCR content, BeFileNameCR filePath);
     };
 
 END_WSCLIENT_UNIT_TESTS_NAMESPACE

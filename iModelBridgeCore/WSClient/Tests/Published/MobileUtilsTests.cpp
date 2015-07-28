@@ -16,82 +16,90 @@ USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_MOBILEDGN
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
-std::shared_ptr<rapidjson::Document> Bentley::WSC::UnitTests::ToRapidJson (Utf8StringCR jsonString)
+std::shared_ptr<rapidjson::Document> Bentley::WSC::UnitTests::ToRapidJson(Utf8StringCR jsonString)
     {
     auto json = std::make_shared<rapidjson::Document>();
-    bool fail = json->Parse<rapidjson::kParseDefaultFlags> (jsonString.c_str()).HasParseError();
-    BeAssert (!fail && "Check json string");
+    bool fail = json->Parse<rapidjson::kParseDefaultFlags>(jsonString.c_str()).HasParseError();
+    BeAssert(!fail && "Check json string");
     return json;
     }
 
-Json::Value Bentley::WSC::UnitTests::ToJson (Utf8StringCR jsonString)
+Json::Value Bentley::WSC::UnitTests::ToJson(Utf8StringCR jsonString)
     {
     Json::Value json;
-    bool success = Json::Reader::Parse (jsonString, json);
-    BeAssert (success && "Check json string");
+    bool success = Json::Reader::Parse(jsonString, json);
+    BeAssert(success && "Check json string");
     return json;
     }
 
-ECSchemaPtr Bentley::WSC::UnitTests::ParseSchema (Utf8StringCR schemaXml, ECSchemaReadContextPtr context)
+ECSchemaPtr Bentley::WSC::UnitTests::ParseSchema(Utf8StringCR schemaXml, ECSchemaReadContextPtr context)
     {
-    if (context.IsNull ())
+    if (context.IsNull())
         {
-        context = ECSchemaReadContext::CreateContext ();
-        context->AddSchemaPath (FSTest::GetAssetsDir ().AppendToPath (L"/MobileUtilsAssets/ECSchemas/CacheSchemas/"));
+        context = ECSchemaReadContext::CreateContext();
+        context->AddSchemaPath(FSTest::GetAssetsDir().AppendToPath(L"/MobileUtilsAssets/ECSchemas/CacheSchemas/"));
         }
 
     ECSchemaPtr schema;
-    auto status = ECSchema::ReadFromXmlString (schema, schemaXml.c_str (), *context);
+    auto status = ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *context);
 
-    EXPECT_EQ (SchemaReadStatus::SCHEMA_READ_STATUS_Success, status);
-    EXPECT_TRUE (schema.IsValid ());
+    EXPECT_EQ(SchemaReadStatus::SCHEMA_READ_STATUS_Success, status);
+    EXPECT_TRUE(schema.IsValid());
 
     return schema;
     }
 
-TestAppPathProvider::TestAppPathProvider ()
+TestAppPathProvider::TestAppPathProvider()
     {
-    BeTest::GetHost ().GetDocumentsRoot (m_documentsDirectory);
-    BeTest::GetHost ().GetTempDir (m_temporaryDirectory);
-    BeTest::GetHost ().GetDgnPlatformAssetsDirectory (m_platformAssetsDirectory);
+    BeTest::GetHost().GetDocumentsRoot(m_documentsDirectory);
+    BeTest::GetHost().GetTempDir(m_temporaryDirectory);
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(m_platformAssetsDirectory);
 
     BeFileName outputRoot;
-    BeTest::GetHost ().GetOutputRoot (outputRoot);
+    BeTest::GetHost().GetOutputRoot(outputRoot);
     m_localStateDirectory = outputRoot;
     }
 
-void MobileUtilsTest::SetUp ()
+void WSClientBaseTest::SetUp()
     {
-    MobileDgnCommon::SetApplicationPathsProvider (&m_pathProvider);
+    // Init libs
+    MobileDgnCommon::SetApplicationPathsProvider(&m_pathProvider);
+    BeFileName::CreateNewDirectory(m_pathProvider.GetTemporaryDirectory());
 
-    BeSQLiteLib::Initialize (m_pathProvider.GetTemporaryDirectory ());
-    L10N::SqlangFiles sqlangFiles (BeFileName (m_pathProvider.GetAssetsRootDirectory ()).AppendToPath (L"sqlang\\BeGTest_en-US.sqlang.db3"));
-    MobileDgnL10N::ReInitialize (sqlangFiles, sqlangFiles);
+    BeSQLiteLib::Initialize(m_pathProvider.GetTemporaryDirectory());
+    BeSQLite::EC::ECDb::Initialize(m_pathProvider.GetTemporaryDirectory(), &m_pathProvider.GetAssetsRootDirectory());
+
+    L10N::SqlangFiles sqlangFiles(BeFileName(m_pathProvider.GetAssetsRootDirectory()).AppendToPath(L"sqlang\\BeGTest_en-US.sqlang.db3"));
+    MobileDgnL10N::ReInitialize(sqlangFiles, sqlangFiles);
     }
 
-void MobileUtilsTest::TearDown ()
+void WSClientBaseTest::TearDown()
     {
-    MobileDgnCommon::SetApplicationPathsProvider (NULL);
+    MobileDgnCommon::SetApplicationPathsProvider(nullptr);
     }
 
-BaseMockHttpHandlerTest::BaseMockHttpHandlerTest ()
-:
-m_handler (std::make_shared<MockHttpHandler> ()),
-m_client (nullptr, m_handler)
-    {
-    }
+void WSClientBaseTest::SetUpTestCase()
+    {}
 
-HttpClientCR BaseMockHttpHandlerTest::GetClient () const
+void WSClientBaseTest::TearDownTestCase()
+    {}
+
+BaseMockHttpHandlerTest::BaseMockHttpHandlerTest() :
+m_handler(std::make_shared<MockHttpHandler>()),
+m_client(nullptr, m_handler)
+    {}
+
+HttpClientCR BaseMockHttpHandlerTest::GetClient() const
     {
     return m_client;
     }
 
-MockHttpHandler& BaseMockHttpHandlerTest::GetHandler () const
+MockHttpHandler& BaseMockHttpHandlerTest::GetHandler() const
     {
     return *m_handler;
     }
 
-std::shared_ptr<MockHttpHandler> BaseMockHttpHandlerTest::GetHandlerPtr () const
+std::shared_ptr<MockHttpHandler> BaseMockHttpHandlerTest::GetHandlerPtr() const
     {
     return m_handler;
     }
@@ -101,7 +109,7 @@ std::shared_ptr<MockHttpHandler> BaseMockHttpHandlerTest::GetHandlerPtr () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-MockHttpHandler::MockHttpHandler ()
+MockHttpHandler::MockHttpHandler()
     {
     m_perfomedRequests = 0;
     m_expectedRequests = EXPECTED_COUNT_ANY;
@@ -112,30 +120,30 @@ MockHttpHandler::MockHttpHandler ()
             "\n"
             "Uninteresting HttpRequest was performed: %s \n"
             "Got %u requests.",
-            request.GetUrl ().c_str (),
+            request.GetUrl().c_str(),
             m_perfomedRequests
             );
-        BeDebugLog (message.c_str ());
+        BeDebugLog(message.c_str());
 
-        return HttpResponse (HttpResponseContent::Create (HttpStringBody::Create ()), "", ConnectionStatus::CouldNotConnect, HttpStatus::None);
+        return HttpResponse(HttpResponseContent::Create(HttpStringBody::Create()), "", ConnectionStatus::CouldNotConnect, HttpStatus::None);
         };
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-MockHttpHandler::~MockHttpHandler ()
+MockHttpHandler::~MockHttpHandler()
     {
     if (m_expectedRequests != EXPECTED_COUNT_ANY)
         {
-        EXPECT_EQ (m_expectedRequests, m_perfomedRequests);
+        EXPECT_EQ(m_expectedRequests, m_perfomedRequests);
         }
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-uint32_t MockHttpHandler::GetRequestsPerformed () const
+uint32_t MockHttpHandler::GetRequestsPerformed() const
     {
     return m_perfomedRequests;
     }
@@ -143,12 +151,12 @@ uint32_t MockHttpHandler::GetRequestsPerformed () const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<HttpResponse> MockHttpHandler::PerformRequest (HttpRequestCR request)
+AsyncTaskPtr<HttpResponse> MockHttpHandler::PerformRequest(HttpRequestCR request)
     {
-    auto task = std::make_shared<PackagedAsyncTask<HttpResponse>> ([&] ()
+    auto task = std::make_shared<PackagedAsyncTask<HttpResponse>>([&] ()
         {
-        EXPECT_LT (m_perfomedRequests, std::numeric_limits<uint32_t>::max ());
-        m_perfomedRequests ++;
+        EXPECT_LT(m_perfomedRequests, std::numeric_limits<uint32_t>::max());
+        m_perfomedRequests++;
 
         if (m_expectedRequests != EXPECTED_COUNT_ANY && m_expectedRequests < m_perfomedRequests)
             {
@@ -157,28 +165,28 @@ AsyncTaskPtr<HttpResponse> MockHttpHandler::PerformRequest (HttpRequestCR reques
                 "\n"
                 "Unexpected HttpRequest: %s \n"
                 "Expected %lld requests. Got %u requests.",
-                request.GetUrl ().c_str (),
+                request.GetUrl().c_str(),
                 m_expectedRequests,
                 m_perfomedRequests
                 );
-            BeDebugLog (message.c_str ());
+            BeDebugLog(message.c_str());
             }
 
-        if (m_onSpecificRequestMap.find (m_perfomedRequests) != m_onSpecificRequestMap.end ())
+        if (m_onSpecificRequestMap.find(m_perfomedRequests) != m_onSpecificRequestMap.end())
             {
-            return m_onSpecificRequestMap[m_perfomedRequests] (request);
+            return m_onSpecificRequestMap[m_perfomedRequests](request);
             }
 
-        return m_onAnyRequestCallback (request);
+        return m_onAnyRequestCallback(request);
         });
-    task->Execute ();
+    task->Execute();
     return task;
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-MockHttpHandler& MockHttpHandler::ExpectRequests (uint32_t count)
+MockHttpHandler& MockHttpHandler::ExpectRequests(uint32_t count)
     {
     m_expectedRequests = count;
     return *this;
@@ -187,7 +195,7 @@ MockHttpHandler& MockHttpHandler::ExpectRequests (uint32_t count)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-MockHttpHandler& MockHttpHandler::ExpectOneRequest ()
+MockHttpHandler& MockHttpHandler::ExpectOneRequest()
     {
     m_expectedRequests = 1;
     return *this;
@@ -196,9 +204,9 @@ MockHttpHandler& MockHttpHandler::ExpectOneRequest ()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-MockHttpHandler&  MockHttpHandler::ForRequest (uint32_t requestNumber, OnResponseCallback callback)
+MockHttpHandler&  MockHttpHandler::ForRequest(uint32_t requestNumber, OnResponseCallback callback)
     {
-    EXPECT_NE (0, requestNumber);
+    EXPECT_NE(0, requestNumber);
     m_onSpecificRequestMap[requestNumber] = callback;
     return *this;
     }
@@ -206,9 +214,9 @@ MockHttpHandler&  MockHttpHandler::ForRequest (uint32_t requestNumber, OnRespons
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-MockHttpHandler&  MockHttpHandler::ForRequest (uint32_t requestNumber, HttpResponseCR response)
+MockHttpHandler&  MockHttpHandler::ForRequest(uint32_t requestNumber, HttpResponseCR response)
     {
-    return ForRequest (requestNumber, [=] (HttpRequestCR)
+    return ForRequest(requestNumber, [=] (HttpRequestCR)
         {
         return response;
         });
@@ -217,118 +225,137 @@ MockHttpHandler&  MockHttpHandler::ForRequest (uint32_t requestNumber, HttpRespo
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-MockHttpHandler&  MockHttpHandler::ForFirstRequest (OnResponseCallback callback)
+MockHttpHandler&  MockHttpHandler::ForFirstRequest(OnResponseCallback callback)
     {
-    return ForRequest (1, callback);
+    return ForRequest(1, callback);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-MockHttpHandler&  MockHttpHandler::ForFirstRequest (HttpResponseCR response)
+MockHttpHandler&  MockHttpHandler::ForFirstRequest(HttpResponseCR response)
     {
-    return ForRequest (1, response);
+    return ForRequest(1, response);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-MockHttpHandler& MockHttpHandler::ForAnyRequest (OnResponseCallback callback)
+MockHttpHandler& MockHttpHandler::ForAnyRequest(OnResponseCallback callback)
     {
-    EXPECT_TRUE (nullptr != callback);
+    EXPECT_TRUE(nullptr != callback);
     m_onAnyRequestCallback = callback;
     return *this;
     }
-    
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-MockHttpHandler& MockHttpHandler::ForAnyRequest (HttpResponseCR response)
+MockHttpHandler& MockHttpHandler::ForAnyRequest(HttpResponseCR response)
     {
-    return ForAnyRequest ([=] (HttpRequestCR)
+    return ForAnyRequest([=] (HttpRequestCR)
         {
         return response;
         });
     }
 
-
-BeFileName FSTest::GetAssetsDir ()
+BeFileName FSTest::GetAssetsDir()
     {
     BeFileName path;
-    BeTest::GetHost ().GetDgnPlatformAssetsDirectory (path);
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(path);
     return path;
     }
 
-BeFileName FSTest::GetTempDir ()
+BeFileName FSTest::GetTempDir()
     {
     BeFileName path;
-    BeTest::GetHost ().GetTempDir (path);
+    BeTest::GetHost().GetTempDir(path);
     return path;
     }
 
-BeFileName FSTest::StubFilePath (Utf8StringCR customFileName)
+BeFileName FSTest::StubFilePath(Utf8StringCR customFileName)
     {
     BeFileName fileName;
-    if (customFileName.empty ())
+    if (customFileName.empty())
         {
-        BeSQLite::BeSQLiteLib::Initialize (GetTempDir ());
-        fileName = BeFileName (BeGuid ().ToString () + ".txt");
+        BeSQLite::BeSQLiteLib::Initialize(GetTempDir());
+        fileName = BeFileName(BeGuid().ToString() + ".txt");
         }
     else
         {
-        fileName = BeFileName (customFileName);
+        fileName = BeFileName(customFileName);
         }
 
-    BeFileName filePath = GetTempDir ().AppendToPath (fileName);
+    BeFileName filePath = GetTempDir().AppendToPath(fileName);
     return filePath;
     }
 
-BeFileName FSTest::StubFile (Utf8StringCR content, Utf8StringCR customFileName)
+BeFileName FSTest::StubFile(Utf8StringCR content, Utf8StringCR customFileName)
     {
-    BeFileName filePath = StubFilePath (customFileName);
+    BeFileName filePath = StubFilePath(customFileName);
 
     BeFile file;
-    file.Create (filePath);
-    file.Write (nullptr, content.c_str (), static_cast<uint32_t>(content.length ()));
-    file.Close ();
+    file.Create(filePath);
+    file.Write(nullptr, content.c_str(), static_cast<uint32_t>(content.length()));
+    file.Close();
 
     return filePath;
     }
 
-Utf8String FSTest::ReadFile (BeFileNameCR filePath)
+BeFileName FSTest::StubFileWithSize(uint32_t bytesCount, Utf8StringCR customFileName)
+    {
+    BeFileName filePath = StubFilePath();
+
+    BeFile file;
+    EXPECT_EQ(BeFileStatus::Success, file.Create(filePath));
+
+    uint32_t kbCount = bytesCount / 1024;
+    char kbBuffer[1024];
+    memset(kbBuffer, 'X', 1024);
+
+    while (kbCount--)
+        {
+        EXPECT_EQ(BeFileStatus::Success, file.Write(nullptr, kbBuffer, 1024));
+        }
+    EXPECT_EQ(BeFileStatus::Success, file.Write(nullptr, kbBuffer, bytesCount % 1024));
+    EXPECT_EQ(BeFileStatus::Success, file.Close());
+    return filePath;
+    }
+
+Utf8String FSTest::ReadFile(BeFileNameCR filePath)
     {
     bvector<Byte> fileContents;
 
     BeFile file;
     BeFileStatus status;
 
-    status = file.Open (filePath, BeFileAccess::Read);
-    BeAssert (status == BeFileStatus::Success);
+    status = file.Open(filePath, BeFileAccess::Read);
+    BeAssert(status == BeFileStatus::Success);
 
-    status = file.ReadEntireFile (fileContents);
-    BeAssert (status == BeFileStatus::Success);
+    status = file.ReadEntireFile(fileContents);
+    BeAssert(status == BeFileStatus::Success);
 
-    status = file.Close ();
-    BeAssert (status == BeFileStatus::Success);
+    status = file.Close();
+    BeAssert(status == BeFileStatus::Success);
 
     Utf8String stringContents;
-    stringContents.append (fileContents.begin (), fileContents.end ());
+    stringContents.append(fileContents.begin(), fileContents.end());
     return stringContents;
     }
 
-void FSTest::WriteToFile (Utf8StringCR content, BeFileNameCR filePath)
+void FSTest::WriteToFile(Utf8StringCR content, BeFileNameCR filePath)
     {
     uint32_t written = 0;
 
     BeFile file;
     BeFileStatus status;
 
-    status = file.Create (filePath, true);
-    BeAssert (status == BeFileStatus::Success);
+    status = file.Create(filePath, true);
+    BeAssert(status == BeFileStatus::Success);
 
-    status = file.Write (&written, content.c_str (), (uint32_t) content.size ());
-    BeAssert (status == BeFileStatus::Success);
+    status = file.Write(&written, content.c_str(), (uint32_t) content.size());
+    BeAssert(status == BeFileStatus::Success);
 
-    status = file.Close ();
-    BeAssert (status == BeFileStatus::Success);
+    status = file.Close();
+    BeAssert(status == BeFileStatus::Success);
     }

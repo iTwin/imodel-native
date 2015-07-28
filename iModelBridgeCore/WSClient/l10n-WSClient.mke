@@ -20,3 +20,9 @@ $(BuildContext)Delivery/l10n/$(L10N_LANGUAGE_TAG)/Connect_$(L10N_LANGUAGE_TAG).x
 
 $(BuildContext)Delivery/l10n/$(L10N_LANGUAGE_TAG)/WSError_$(L10N_LANGUAGE_TAG).xliff : $(xliffDir)WSError_$(L10N_LANGUAGE_TAG).xliff
     $(LinkFirstDepToFirstTarget)
+
+#$(BuildContext)Delivery/l10n/$(L10N_LANGUAGE_TAG)/ICachingDataSource_$(L10N_LANGUAGE_TAG).xliff : $(xliffDir)ICachingDataSource_$(L10N_LANGUAGE_TAG).xliff
+#    $(LinkFirstDepToFirstTarget)
+
+#$(BuildContext)Delivery/l10n/$(L10N_LANGUAGE_TAG)/BuddiError_$(L10N_LANGUAGE_TAG).xliff : $(xliffDir)BuddiError_$(L10N_LANGUAGE_TAG).xliff
+#    $(LinkFirstDepToFirstTarget)

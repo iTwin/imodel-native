@@ -1,0 +1,15 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: CachePrewire.mke $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+PolicyFile = $(InternalSystemPolicy)
+
+%include mdl.mki
+
+always:
+    !~@mkdir $(BuildContext)PublicAPI/WebServices
+    @CreateSymLinks.py "$(BuildContext)PublicAPI/WebServices/WebServices.h  =$(_MakeFilePath)/PublicAPI/WebServices/WebServices.h"
+    @CreateSymLinks.py "$(BuildContext)PublicAPI/WebServices/Cache         	=$(_MakeFilePath)/PublicAPI/WebServices/Cache"
