@@ -19,6 +19,7 @@ struct PerformanceECDbMapCATestFixture : public PerformanceTestFixture
     public:
         size_t m_classNamePostFix = 1;
         size_t m_instancesPerClass = 0;
+        double m_InsertTime, m_UpdateTime, m_SelectTime, m_DeleteTime;
         struct ECSqlTestItem
             {
             Utf8String m_insertECSql;
@@ -35,10 +36,7 @@ struct PerformanceECDbMapCATestFixture : public PerformanceTestFixture
         void ReadInstances (ECDbR ecdb);
         void UpdateInstances (ECDbR ecdb);
         void DeleteInstances (ECDbR ecdb);
-        void GenerateReadUpdateDeleteStatements (ECSchemaR ecSchema);/*
-        void CheckCRUDPerformanceOfBaseClass (ECDbR db, size_t noOfInstances);
-        void CheckCRUDPerformanceOf1stLevelDerivedClass (ECDbR db, size_t noOfInstances);
-        void CheckCRUDPerformanceOf2ndLevelDerivedClass (ECDbR db, size_t noOfInstances);*/
+        void GenerateReadUpdateDeleteStatements (ECSchemaR ecSchema);
     };
 
 //---------------------------------------------------------------------------------------
@@ -55,7 +53,7 @@ void PerformanceECDbMapCATestFixture::ReadInstances(ECDbR ecdb)
         ECSqlStatement stmt;
         auto stat = stmt.Prepare (ecdb, selectSql.c_str ());
         ASSERT_EQ (ECSqlStatus::Success, stat) << "preparation failed for " << selectSql.c_str ();
-        for (int i = 0; i < m_instancesPerClass; i++)
+        for (size_t i = 0; i < m_instancesPerClass; i++)
             {
             EXPECT_EQ (stmt.BindInt (1, instanceId++), ECSqlStatus::Success);
             EXPECT_EQ (stmt.Step (), ECSqlStepStatus::HasRow) << "step failed for " << selectSql.c_str ();
@@ -64,11 +62,10 @@ void PerformanceECDbMapCATestFixture::ReadInstances(ECDbR ecdb)
             }
         }
     timer.Stop ();
+    m_SelectTime = timer.GetElapsedSeconds ();
     auto const classCount = m_sqlTestItems.size ();
     auto totalInserts = m_instancesPerClass*classCount;
-    printf ("\n SELECT %d Instances took - %.4f s.", totalInserts, timer.GetElapsedSeconds ());
-    PerformanceTestingFrameWork performanceObjSchemaImport;
-    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (timer, "ECDbMapCAPerformanceTests", "SELECT time"));
+    LOG.infov ("\n SELECT %d Instances took - %.4f s.", totalInserts, timer.GetElapsedSeconds ());
     }
 
 //---------------------------------------------------------------------------------------
@@ -94,11 +91,10 @@ void PerformanceECDbMapCATestFixture::DeleteInstances(ECDbR ecdb)
             }
         }
     timer.Stop ();
+    m_DeleteTime = timer.GetElapsedSeconds ();
     auto const classCount = m_sqlTestItems.size ();
     auto totalInserts = m_instancesPerClass*classCount;
-    printf ("\n DELETE %d Instances took - %.4f s.\n", totalInserts, timer.GetElapsedSeconds ());
-    PerformanceTestingFrameWork performanceObjSchemaImport;
-    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (timer, "ECDbMapCAPerformanceTests", "DELETE time"));
+    LOG.infov ("\n DELETE %d Instances took - %.4f s.\n", totalInserts, timer.GetElapsedSeconds ());
     }
 
 //---------------------------------------------------------------------------------------
@@ -110,33 +106,31 @@ void PerformanceECDbMapCATestFixture::UpdateInstances(ECDbR ecdb)
     StopWatch timer (true);
     for (auto const& kvPair : m_sqlTestItems)
         {
-        auto testClass = kvPair.first;
+        ECClassCP testClass = kvPair.first;
         Utf8String updateSql = kvPair.second.m_updateECSql;
-        auto propertyCollection = testClass->GetProperties (true);
+        const int propertyCount = (int)testClass->GetPropertyCount (true);
 
         ECSqlStatement stmt;
         auto stat = stmt.Prepare (ecdb, updateSql.c_str ());
         EXPECT_EQ (ECSqlStatus::Success, stat) << "preparation failed for " << updateSql.c_str ();
         for (size_t i = 0; i < m_instancesPerClass; i++)
             {
-            int parameterIndex = 1;
-            for (auto prop : propertyCollection)
+            for (int parameterIndex = 1; parameterIndex <= propertyCount; parameterIndex++)
                 {
-                EXPECT_EQ (stmt.BindText (parameterIndex++, ((Utf8String)prop->GetName()).c_str(), IECSqlBinder::MakeCopy::No), ECSqlStatus::Success);
+                EXPECT_EQ (ECSqlStatus::Success, stmt.BindText (parameterIndex++, ("UpdatedValue"), IECSqlBinder::MakeCopy::No));
                 }
 
-            EXPECT_EQ (stmt.BindInt (parameterIndex, instanceId++), ECSqlStatus::Success);
-            EXPECT_EQ (stmt.Step (), ECSqlStepStatus::Done) << "step failed for " << updateSql.c_str ();
+            EXPECT_EQ (ECSqlStatus::Success, stmt.BindInt (propertyCount + 1, instanceId++));
+            EXPECT_EQ (ECSqlStepStatus::Done, stmt.Step ()) << "step failed for " << updateSql.c_str ();
             stmt.Reset ();
             stmt.ClearBindings ();
             }
         }
     timer.Stop ();
+    m_UpdateTime = timer.GetElapsedSeconds ();
     auto const classCount = m_sqlTestItems.size ();
     auto totalInserts = m_instancesPerClass*classCount;
-    printf ("\n UPDATE %d Instances took - %.4f s.", totalInserts, timer.GetElapsedSeconds ());
-    PerformanceTestingFrameWork performanceObjSchemaImport;
-    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (timer, "ECDbMapCAPerformanceTests", "UPDATE time"));
+    LOG.infov ("\n UPDATE %d Instances took - %.4f s.", totalInserts, timer.GetElapsedSeconds ());
     }
 
 //---------------------------------------------------------------------------------------
@@ -147,19 +141,19 @@ void PerformanceECDbMapCATestFixture::InsertInstances(ECDbR ecdb)
     StopWatch timer (true);
     for (auto const& kvPair : m_sqlTestItems)
         {
-        auto testClass = kvPair.first;
+        ECClassCP testClass = kvPair.first;
         Utf8StringCR insertSql = kvPair.second.m_insertECSql;
-        auto propertyCollection = testClass->GetProperties (true);
+        const int propertyCount = (int)testClass->GetPropertyCount (true);
 
         ECSqlStatement stmt;
         auto stat = stmt.Prepare (ecdb, insertSql.c_str ());
         ASSERT_EQ (ECSqlStatus::Success, stat) << "Preparation failed for " << insertSql.c_str ();
-        for (int i = 0; i < m_instancesPerClass; i++)
+        for (size_t i = 0; i < m_instancesPerClass; i++)
             {
             int parameterIndex = 1;
-            for (auto prop : propertyCollection)
+            for (int parameterIndex = 1; parameterIndex <= propertyCount; parameterIndex++)
                 {
-                EXPECT_EQ (stmt.BindText (parameterIndex++, ((Utf8String)prop->GetName ()).c_str (), IECSqlBinder::MakeCopy::No), ECSqlStatus::Success);
+                EXPECT_EQ (ECSqlStatus::Success, stmt.BindText (parameterIndex++, ("Init Value"), IECSqlBinder::MakeCopy::No));
                 }
 
             EXPECT_EQ (stmt.Step (), ECSqlStepStatus::Done) << "Step failed for " << insertSql.c_str ();
@@ -168,16 +162,15 @@ void PerformanceECDbMapCATestFixture::InsertInstances(ECDbR ecdb)
             }
         }
     timer.Stop ();
+    m_InsertTime = timer.GetElapsedSeconds ();
     auto const classCount = m_sqlTestItems.size ();
     auto totalInserts = m_instancesPerClass*classCount;
 
-    printf ("Scenario - INSERT - %d classes [4 properties each] , %d instances per class , %d total inserts took - %.4f s.",
+    LOG.infov ("Scenario - INSERT - %d classes [4 properties each] , %d instances per class , %d total inserts took - %.4f s.",
                classCount,
                m_instancesPerClass,
                totalInserts,
                timer.GetElapsedSeconds());
-    PerformanceTestingFrameWork performanceObjSchemaImport;
-    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (timer, "ECDbMapCAPerformanceTests", "INSERT time"));
     }
 
 //---------------------------------------------------------------------------------------
@@ -281,9 +274,10 @@ void PerformanceECDbMapCATestFixture::CreateClassHierarchy(ECSchemaR testSchema,
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceECDbMapCATestFixture, InstanceInsertionWithSharedColumnsForSubclasses)
     {
+    m_InsertTime = m_UpdateTime = m_SelectTime = m_DeleteTime = 0.0;
     m_instancesPerClass = 100;
     ECDbTestProject test;
-    ECDbR ecdb = test.Create ("InstanceInsertionWithSharedColumns.ecdb");
+    ECDbR ecdb = test.Create ("CRUDOperationWithSharedColumns.ecdb");
 
     ECSchemaPtr testSchema;
     ECSchema::CreateSchema (testSchema, L"testSchema", 1, 0);
@@ -321,16 +315,23 @@ TEST_F(PerformanceECDbMapCATestFixture, InstanceInsertionWithSharedColumnsForSub
     ReadInstances (ecdb);
     UpdateInstances (ecdb);
     DeleteInstances (ecdb);
+
+    PerformanceTestingFrameWork performanceObjSchemaImport;
+    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (m_InsertTime, "PerformanceECDbMapCATestFixture.InstanceInsertionWithSharedColumnsForSubclasses", "Insert time"));
+    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (m_SelectTime, "PerformanceECDbMapCATestFixture.InstanceInsertionWithSharedColumnsForSubclasses", "SELECT time"));
+    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (m_UpdateTime, "PerformanceECDbMapCATestFixture.InstanceInsertionWithSharedColumnsForSubclasses", "Update time"));
+    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (m_DeleteTime, "PerformanceECDbMapCATestFixture.InstanceInsertionWithSharedColumnsForSubclasses", "Delete time"));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Muhammad Hassan                  07/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceECDbMapCATestFixture, InstanceInsertionWithDisableSharedColumns)
+TEST_F(PerformanceECDbMapCATestFixture, InstanceInsertionWithOutSharedColumnsForSubClasses)
     {
+    m_InsertTime = m_UpdateTime = m_SelectTime = m_DeleteTime = 0.0;
     m_instancesPerClass = 100;
     ECDbTestProject test;
-    ECDbR ecdb = test.Create ("InstanceInsertionWithDisableSharedColumns.ecdb");
+    ECDbR ecdb = test.Create ("CRUDOperationWithOutSharedColumnsForSubClasses.ecdb");
 
     ECSchemaPtr testSchema;
     ECSchema::CreateSchema (testSchema, L"testSchema", 1, 0);
@@ -367,6 +368,12 @@ TEST_F(PerformanceECDbMapCATestFixture, InstanceInsertionWithDisableSharedColumn
     ReadInstances (ecdb);
     UpdateInstances (ecdb);
     DeleteInstances (ecdb);
+
+    PerformanceTestingFrameWork performanceObjSchemaImport;
+    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (m_InsertTime, "PerformanceECDbMapCATestFixture.InstanceInsertionWithOutSharedColumnsForSubClasses", "Insert time"));
+    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (m_SelectTime, "PerformanceECDbMapCATestFixture.InstanceInsertionWithOutSharedColumnsForSubClasses", "SELECT time"));
+    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (m_UpdateTime, "PerformanceECDbMapCATestFixture.InstanceInsertionWithOutSharedColumnsForSubClasses", "Update time"));
+    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (m_DeleteTime, "PerformanceECDbMapCATestFixture.InstanceInsertionWithOutSharedColumnsForSubClasses", "Delete time"));
     }
 
 
