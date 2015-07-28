@@ -248,5 +248,4 @@ public:
     BE_SQLITE_EXPORT static Utf8String InterpretConflictCause(ChangeSet::ConflictCause);
 };
 
-
 END_BENTLEY_SQLITE_NAMESPACE
