@@ -2,25 +2,29 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
 
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // WebServicesClient lib                                                  // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+
     <Part Name="WebServicesClient">
         <SubPart PartName="WebServicesClient-PublicAPI" />
-        <SubPart PartName="WebServicesClient-Xliffs" />
         <SubPart PartName="WebServicesClient-Library" />
         <SubPart PartName="WebServicesClient-Bindings" />
         <SubPart PartName="WebServicesClient-Bindings-Android" />
+        <SubPart PartName="WSClient-Xliffs" />
     </Part>
 
     <Part Name="WebServicesClient-PublicAPI" BentleyBuildMakeFile="ClientPrewire.mke">
         <Bindings>
-            <PublicAPI Domain="WebServices"/>
+            <PublicAPI Domain="WebServices" />
         </Bindings>
     </Part>
 
-    <Part Name="WebServicesClient-PublishedAPI" BentleyBuildMakeFile="${SrcBsiCommon}sharedmki/PublishApi.mke" 
+    <Part Name="WebServicesClient-PublishedAPI" BentleyBuildMakeFile="${SrcBsiCommon}sharedmki/PublishApi.mke"
      BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=libxml">
-        <SubPart PartName="WebServicesClient-PublicAPI"/>
+        <SubPart PartName="WebServicesClient-PublicAPI" />
         <Bindings>
-            <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/WSClient"/>
+            <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/WSClient" />
         </Bindings>
     </Part>
 
@@ -44,13 +48,61 @@
         </Bindings>
     </Part>
 
-    <Part Name="WebServicesClient-Xliffs" BentleyBuildMakeFile="xliffs.mke">
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+    <!-- // WebServicesCache lib                                                   // -->
+    <!-- //////////////////////////////////////////////////////////////////////////// -->
+
+    <Part Name="WebServicesCache">
+        <SubPart PartName="WebServicesCache-PublicAPI" />
+        <SubPart PartName="WebServicesCache-Library" />
+        <SubPart PartName="WebServicesCache-Bindings" />
+        <SubPart PartName="WebServicesCache-Bindings-Android" />
+        <SubPart PartName="WebServicesCache-Schemas" />
+        <SubPart PartName="WSClient-Xliffs" />
+    </Part>
+
+    <Part Name="WebServicesCache-PublicAPI" BentleyBuildMakeFile="CachePrewire.mke">
         <Bindings>
-            <Files ProductDirectoryName="WSClientXliffs" Required="false" SubPartDirectory="xliffs">
-                Delivery/xliffs/WSError_en.xliff
-                Delivery/xliffs/Connect_en.xliff
-                Delivery/xliffs/BuddiError_en.xliff
-            </Files>
+            <PublicAPI Domain="WebServices" />
+        </Bindings>
+    </Part>
+
+    <Part Name="WebServicesCache-PublishedAPI" BentleyBuildMakeFile="${SrcBsiCommon}sharedmki/PublishApi.mke"
+     BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=libxml">
+        <SubPart PartName="WebServicesCache-PublicAPI" />
+        <Bindings>
+            <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/WSClient" />
+        </Bindings>
+    </Part>
+
+    <Part Name="WebServicesCache-Library" BentleyBuildMakeFile="CacheLib.mke">
+        <SubPart PartName="WebServicesClient" />
+        <SubPart PartName="MobileDgnLibrary"            PartFile="MobileDgn" Repository="MobileDgn" />
+        <SubPart PartName="MobileDgnLibrary-Android"    PartFile="MobileDgn" Repository="MobileDgn" />
+        <SubPart PartName="MobileDgnLibrary-WinRT"      PartFile="MobileDgn" Repository="MobileDgn" />
+    </Part>
+
+    <Part Name="WebServicesCache-Bindings" ExcludePlatforms="Android*">
+        <Bindings>
+            <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)WebServicesCache$(libext)</Libs>
+            <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)WebServicesCache$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="WebServicesCache-Bindings-Android" OnlyPlatforms="Android*">
+        <Bindings>
+            <Libs ProductDirectoryName="WSClientLibs" Required="false">Delivery/$(libprefix)WebServicesCache.so</Libs>
+            <Assemblies ProductDirectoryName="WSClientAssemblies">Delivery/$(libprefix)WebServicesCache.so</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="WebServicesCache-Schemas" BentleyBuildMakeFile="CacheSchemasDelivery.mke">
+        <Bindings>
+            <Directory
+                SourceName="Delivery/ECSchemas/WSClient/Cache"
+                SubPartDirectory="ECSchemas/WSClient/Cache"
+                ProductDirectoryName="ECSchemas"
+                ProductSubDirectory="ECSchemas/WSClient/Cache" />
         </Bindings>
     </Part>
 
@@ -58,11 +110,22 @@
     <!-- // L10N                                                                   // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
+    <Part Name="WSClient-Xliffs" BentleyBuildMakeFile="xliffs.mke">
+        <Bindings>
+            <Files ProductDirectoryName="WSClientXliffs" Required="false" SubPartDirectory="xliffs">
+                Delivery/xliffs/BuddiError_en.xliff
+                Delivery/xliffs/Connect_en.xliff
+                Delivery/xliffs/ICachingDataSource_en.xliff
+                Delivery/xliffs/WSError_en.xliff
+            </Files>
+        </Bindings>
+    </Part>
+
     <!-- English Xliffs generated during the build are pushed (by PRG only) to Mercurial next to translations for L10N vendor convenience -->
     <Part Name="L10N-WSClientXliffs-en" OnlyPlatforms="x64"
         BentleyBuildMakeFile="${SrcBsiCommon}sqlang/mki/PushXliffsFromBuild.mke"
         BentleyBuildMakeOptions="-dBUILD_XLIFF_DIRECTORY=$(OutputRootDir)BuildContexts/WSClient/Delivery/xliffs/ -dL10N_XLIFF_DIRECTORY=$(SrcRoot)l10n/l10n-WSClient/en/">
-        <SubPart PartName="WebServicesClient-Xliffs" />
+        <SubPart PartName="WSClient-Xliffs" />
     </Part>
 
     <!-- Translated Xliffs are linked into the BuildContext here -->
@@ -212,14 +275,14 @@
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // Unit Tests                                                             // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
-    
-    <Part Name="WSClientUnitTests" ExcludePlatforms="Linux*" BentleyBuildMakeFile="../bsicommon/sharedmki/BuildPlatformUnitTests.mke" 
+
+    <Part Name="WSClientUnitTests" ExcludePlatforms="Linux*" BentleyBuildMakeFile="../bsicommon/sharedmki/BuildPlatformUnitTests.mke"
      BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)WSClient/Tests/ -dBEGTEST_NAME=WSClient -dBEGTEST_DEPENDENCIES=$(SrcRoot)WSClient/Tests/dependencies.mki">
         <!-- Get the tested API -->
         <SubPart PartName="WebServicesClient" />
+        <SubPart PartName="WebServicesCache" />
         <!-- Needed for published unit tests -->
         <SubPart PartName="WebServicesClient-PublishedAPI" />
+        <SubPart PartName="WebServicesCache-PublishedAPI" />
     </Part>
-
 </BuildContext>
-

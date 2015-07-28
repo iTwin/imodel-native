@@ -1,0 +1,243 @@
+#----------------------------------------------------------------------------------------
+#
+#     $Source: Cache/Cache.mki $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+
+CacheMkiPublicApiDir = $(CachePublicApiDirectory)Cache/
+CacheMkiSourceDir = $(CacheSourceDirectory)Cache/
+
+#----------------------------------------------------------------------------------------
+#   Set up build dependencies for precompiled header and Client.mki
+#----------------------------------------------------------------------------------------
+ClientMkiHeaders =                                                          \
+    $(CacheMkiPublicApiDir)CachingDataSource.h                              \
+    $(CacheMkiPublicApiDir)ICachingDataSource.h                             \
+    $(CacheMkiPublicApiDir)IQueryProvider.h                                 \
+    $(CacheMkiPublicApiDir)NavigationCachingOptions.h                       \
+    $(CacheMkiPublicApiDir)Persistence/CachedObjectInfo.h                   \
+    $(CacheMkiPublicApiDir)Persistence/CachedResponseKey.h                  \
+    $(CacheMkiPublicApiDir)Persistence/CacheEnvironment.h                   \
+    $(CacheMkiPublicApiDir)Persistence/CacheQueryHelper.h                   \
+    $(CacheMkiPublicApiDir)Persistence/ChangeManager.h                      \
+    $(CacheMkiPublicApiDir)Persistence/DataReadOptions.h                    \
+    $(CacheMkiPublicApiDir)Persistence/DataSourceCache.h                    \
+    $(CacheMkiPublicApiDir)Persistence/DataSourceCacheCommon.h              \
+    $(CacheMkiPublicApiDir)Persistence/IChangeManager.h                     \
+    $(CacheMkiPublicApiDir)Persistence/IDataSourceCache.h                   \
+    $(CacheMkiPublicApiDir)Persistence/IRepositoryInfoStore.h               \
+    $(CacheMkiPublicApiDir)ServerQueryHelper.h                              \
+    $(CacheMkiPublicApiDir)Transactions/BeSQLiteDbTransactionHandler.h      \
+    $(CacheMkiPublicApiDir)Transactions/CacheTransaction.h                  \
+    $(CacheMkiPublicApiDir)Transactions/CacheTransactionManager.h           \
+    $(CacheMkiPublicApiDir)Transactions/ICacheTransactionManager.h          \
+    $(CacheMkiPublicApiDir)Transactions/ITransactionHandler.h               \
+    $(CacheMkiPublicApiDir)Transactions/Transaction.h                       \
+    $(CacheMkiPublicApiDir)Util/ECCustomAttributeHelper.h                   \
+    $(CacheMkiPublicApiDir)Util/ECDbAdapter.h                               \
+    $(CacheMkiPublicApiDir)Util/ECDbDebugInfo.h                             \
+    $(CacheMkiPublicApiDir)Util/ECDbHelper.h                                \
+    $(CacheMkiPublicApiDir)Util/ECExpressionHelper.h                        \
+    $(CacheMkiPublicApiDir)Util/ECSqlAdapterCache.h                         \
+    $(CacheMkiPublicApiDir)Util/ECSqlStatementCache.h                       \
+    $(CacheMkiPublicApiDir)Util/ExtendedData.h                              \
+    $(CacheMkiPublicApiDir)Util/ExtendedDataAdapter.h                       \
+    $(CacheMkiPublicApiDir)Util/IECDbAdapter.h                              \
+    $(CacheMkiPublicApiDir)Util/IExtendedDataAdapter.h                      \
+    $(CacheMkiPublicApiDir)Util/ISelectProvider.h                           \
+    $(CacheMkiPublicApiDir)Util/ObservableECDb.h                            \
+    $(CacheMkiPublicApiDir)Util/TempFile.h                                  \
+    $(CacheMkiPublicApiDir)Util/ValueIncrementor.h                          \
+    $(CacheMkiSourceDir)CacheNavigationTask.h                               \
+    $(CacheMkiSourceDir)CachingTaskBase.h                                   \
+    $(CacheMkiSourceDir)ChangesGraph.h                                      \
+    $(CacheMkiSourceDir)DownloadFilesTask.h                                 \
+    $(CacheMkiSourceDir)Examples/CachingExample.h                           \
+    $(CacheMkiSourceDir)ICachingDataSource.xliff.h                          \
+    $(CacheMkiSourceDir)Logging.h                                           \
+    $(CacheMkiSourceDir)Network/ResponseGuard.h                             \
+    $(CacheMkiSourceDir)Persistence/Changes/ChangeInfo.h                    \
+    $(CacheMkiSourceDir)Persistence/Changes/ChangeInfoManager.h             \
+    $(CacheMkiSourceDir)Persistence/Core/CacheSchema.h                      \
+    $(CacheMkiSourceDir)Persistence/Core/CacheSettings.h                    \
+    $(CacheMkiSourceDir)Persistence/Core/DataSourceCacheOpenState.h         \
+    $(CacheMkiSourceDir)Persistence/Core/ECDbFileInfoSchema.h               \
+    $(CacheMkiSourceDir)Persistence/Core/SchemaContext.h                    \
+    $(CacheMkiSourceDir)Persistence/Core/SchemaManager.h                    \
+    $(CacheMkiSourceDir)Persistence/Files/FileCacheManager.h                \
+    $(CacheMkiSourceDir)Persistence/Files/FileInfo.h                        \
+    $(CacheMkiSourceDir)Persistence/Files/FileInfoManager.h                 \
+    $(CacheMkiSourceDir)Persistence/Hierarchy/HierarchyManager.h            \
+    $(CacheMkiSourceDir)Persistence/Hierarchy/IDeleteHandler.h              \
+    $(CacheMkiSourceDir)Persistence/Hierarchy/RootManager.h                 \
+    $(CacheMkiSourceDir)Persistence/Instances/InstanceCacheHelper.h         \
+    $(CacheMkiSourceDir)Persistence/Instances/NavigationBaseManager.h       \
+    $(CacheMkiSourceDir)Persistence/Instances/ObjectInfo.h                  \
+    $(CacheMkiSourceDir)Persistence/Instances/ObjectInfoManager.h           \
+    $(CacheMkiSourceDir)Persistence/Instances/RelationshipInfo.h            \
+    $(CacheMkiSourceDir)Persistence/Instances/RelationshipInfoManager.h     \
+    $(CacheMkiSourceDir)Persistence/RepositoryInfoStore.h                   \
+    $(CacheMkiSourceDir)Persistence/Responses/CachedResponseInfo.h          \
+    $(CacheMkiSourceDir)Persistence/Responses/CachedResponseManager.h       \
+    $(CacheMkiSourceDir)Persistence/Upgrade/RawWSObjectsReader.h            \
+    $(CacheMkiSourceDir)Persistence/Upgrade/Upgrader.h                      \
+    $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderBase.h                  \
+    $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV3ToV4.h            \
+    $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV4ToV5.h            \
+    $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV5ToCurrent.h       \
+    $(CacheMkiSourceDir)SyncCachedDataTask.h                                \
+    $(CacheMkiSourceDir)SyncCachedInstancesSeperatelyTask.h                 \
+    $(CacheMkiSourceDir)SyncCachedInstancesTask.h                           \
+    $(CacheMkiSourceDir)SyncLocalChangesTask.h
+    
+#----------------------------------------------------------------------------------------
+#   Compile
+#----------------------------------------------------------------------------------------
+$(o)CacheNavigationTask$(oext)                  : $(CacheMkiSourceDir)CacheNavigationTask.cpp $(ClientMkiHeaders) $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)CachingDataSource$(oext)                    : $(CacheMkiSourceDir)CachingDataSource.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)CachingTaskBase$(oext)                      : $(CacheMkiSourceDir)CachingTaskBase.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)ChangesGraph$(oext)                         : $(CacheMkiSourceDir)ChangesGraph.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)DownloadFilesTask$(oext)                    : $(CacheMkiSourceDir)DownloadFilesTask.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)ICachingDataSource$(oext)                   : $(CacheMkiSourceDir)ICachingDataSource.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)IQueryProvider$(oext)                       : $(CacheMkiSourceDir)IQueryProvider.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)NavigationCachingOptions$(oext)             : $(CacheMkiSourceDir)NavigationCachingOptions.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)ServerQueryHelper$(oext)                    : $(CacheMkiSourceDir)ServerQueryHelper.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)SyncCachedDataTask$(oext)                   : $(CacheMkiSourceDir)SyncCachedDataTask.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)SyncCachedInstancesSeperatelyTask$(oext)    : $(CacheMkiSourceDir)SyncCachedInstancesSeperatelyTask.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)SyncCachedInstancesTask$(oext)              : $(CacheMkiSourceDir)SyncCachedInstancesTask.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)SyncLocalChangesTask$(oext)                 : $(CacheMkiSourceDir)SyncLocalChangesTask.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+
+$(o)ResponseGuard$(oext)                        : $(CacheMkiSourceDir)Network/ResponseGuard.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+
+$(o)CacheEnvironment$(oext)                     : $(CacheMkiSourceDir)Persistence/CacheEnvironment.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)CacheQueryHelper$(oext)                     : $(CacheMkiSourceDir)Persistence/CacheQueryHelper.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)CachedObjectInfo$(oext)                     : $(CacheMkiSourceDir)Persistence/CachedObjectInfo.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)CachedResponseKey$(oext)                    : $(CacheMkiSourceDir)Persistence/CachedResponseKey.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)ChangeManager$(oext)                        : $(CacheMkiSourceDir)Persistence/ChangeManager.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)DataReadOptions$(oext)                      : $(CacheMkiSourceDir)Persistence/DataReadOptions.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)DataSourceCache$(oext)                      : $(CacheMkiSourceDir)Persistence/DataSourceCache.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)IChangeManager$(oext)                       : $(CacheMkiSourceDir)Persistence/IChangeManager.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)RepositoryInfoStore$(oext)                  : $(CacheMkiSourceDir)Persistence/RepositoryInfoStore.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+
+$(o)ChangeInfo$(oext)                           : $(CacheMkiSourceDir)Persistence/Changes/ChangeInfo.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)ChangeInfoManager$(oext)                    : $(CacheMkiSourceDir)Persistence/Changes/ChangeInfoManager.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+
+$(o)CacheSettings$(oext)                        : $(CacheMkiSourceDir)Persistence/Core/CacheSettings.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)DataSourceCacheOpenState$(oext)             : $(CacheMkiSourceDir)Persistence/Core/DataSourceCacheOpenState.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)SchemaContext$(oext)                        : $(CacheMkiSourceDir)Persistence/Core/SchemaContext.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)SchemaManager$(oext)                        : $(CacheMkiSourceDir)Persistence/Core/SchemaManager.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+
+$(o)FileCacheManager$(oext)                     : $(CacheMkiSourceDir)Persistence/Files/FileCacheManager.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)FileInfo$(oext)                             : $(CacheMkiSourceDir)Persistence/Files/FileInfo.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)FileInfoManager$(oext)                      : $(CacheMkiSourceDir)Persistence/Files/FileInfoManager.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+
+$(o)HierarchyManager$(oext)                     : $(CacheMkiSourceDir)Persistence/Hierarchy/HierarchyManager.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)RootManager$(oext)                          : $(CacheMkiSourceDir)Persistence/Hierarchy/RootManager.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+
+$(o)InstanceCacheHelper$(oext)                  : $(CacheMkiSourceDir)Persistence/Instances/InstanceCacheHelper.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)NavigationBaseManager$(oext)                : $(CacheMkiSourceDir)Persistence/Instances/NavigationBaseManager.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)ObjectInfo$(oext)                           : $(CacheMkiSourceDir)Persistence/Instances/ObjectInfo.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)ObjectInfoManager$(oext)                    : $(CacheMkiSourceDir)Persistence/Instances/ObjectInfoManager.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)RelationshipInfo$(oext)                     : $(CacheMkiSourceDir)Persistence/Instances/RelationshipInfo.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)RelationshipInfoManager$(oext)              : $(CacheMkiSourceDir)Persistence/Instances/RelationshipInfoManager.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+
+$(o)CachedResponseInfo$(oext)                   : $(CacheMkiSourceDir)Persistence/Responses/CachedResponseInfo.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)CachedResponseManager$(oext)                : $(CacheMkiSourceDir)Persistence/Responses/CachedResponseManager.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+
+$(o)RawWSObjectsReader$(oext)                   : $(CacheMkiSourceDir)Persistence/Upgrade/RawWSObjectsReader.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)Upgrader$(oext)                             : $(CacheMkiSourceDir)Persistence/Upgrade/Upgrader.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)UpgraderBase$(oext)                         : $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderBase.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)UpgraderFromV3ToV4$(oext)                   : $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV3ToV4.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)UpgraderFromV4ToV5$(oext)                   : $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV4ToV5.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)UpgraderFromV5ToCurrent$(oext)              : $(CacheMkiSourceDir)Persistence/Upgrade/UpgraderFromV5ToCurrent.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+
+$(o)BeSQLiteDbTransactionHandler$(oext)         : $(CacheMkiSourceDir)Transactions/BeSQLiteDbTransactionHandler.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)CacheTransaction$(oext)                     : $(CacheMkiSourceDir)Transactions/CacheTransaction.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)CacheTransactionManager$(oext)              : $(CacheMkiSourceDir)Transactions/CacheTransactionManager.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)Transaction$(oext)                          : $(CacheMkiSourceDir)Transactions/Transaction.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+
+$(o)ECCustomAttributeHelper$(oext)              : $(CacheMkiSourceDir)Util/ECCustomAttributeHelper.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)ECDbAdapter$(oext)                          : $(CacheMkiSourceDir)Util/ECDbAdapter.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)ECDbDebugInfo$(oext)                        : $(CacheMkiSourceDir)Util/ECDbDebugInfo.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)ECDbHelper$(oext)                           : $(CacheMkiSourceDir)Util/ECDbHelper.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)ECExpressionHelper$(oext)                   : $(CacheMkiSourceDir)Util/ECExpressionHelper.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)ECSqlStatementCache$(oext)                  : $(CacheMkiSourceDir)Util/ECSqlStatementCache.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)ExtendedData$(oext)                         : $(CacheMkiSourceDir)Util/ExtendedData.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)ExtendedDataAdapter$(oext)                  : $(CacheMkiSourceDir)Util/ExtendedDataAdapter.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)FileUtil$(oext)                             : $(CacheMkiSourceDir)Util/FileUtil.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)ISelectProvider$(oext)                      : $(CacheMkiSourceDir)Util/ISelectProvider.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)ObservableECDb$(oext)                       : $(CacheMkiSourceDir)Util/ObservableECDb.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)TempFile$(oext)                             : $(CacheMkiSourceDir)Util/TempFile.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)ValueIncrementor$(oext)                     : $(CacheMkiSourceDir)Util/ValueIncrementor.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+#----------------------------------------------------------------------------------------
+#   Link Examples
+#----------------------------------------------------------------------------------------
+$(BuildContext)Delivery/Examples/Caching : $(CacheMkiSourceDir)Examples
+    $(LinkFirstDepToFirstTargetAsDirectory)
