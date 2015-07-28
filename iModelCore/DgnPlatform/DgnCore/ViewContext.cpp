@@ -750,7 +750,7 @@ ILineStyleCP ViewContext::_GetCurrLineStyle(LineStyleSymbP* symb)
     if (symb)
         *symb = &tSymb;
 
-    return tSymb.GetILineStyle();
+    return 0 == tSymb.GetRasterTexture() ? tSymb.GetILineStyle() : NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
