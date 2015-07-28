@@ -946,7 +946,7 @@ TEST(ECDbInstances, FindECInstances)
         }
     }
 
-extern IECRelationshipInstancePtr CreateRelationship(ECDbTestProject& test, WCharCP sourceClassName, WCharCP targetClassName, WCharCP relationshipClassName);
+extern IECRelationshipInstancePtr CreateRelationship(ECDbTestProject& test, Utf8CP sourceClassName, Utf8CP targetClassName, Utf8CP relationshipClassName);
 extern void PersistRelationship (IECRelationshipInstanceR relInstance, ECDbR ecdb);
 
 /*---------------------------------------------------------------------------------**//**
@@ -958,7 +958,7 @@ TEST(ECDbInstances, FindECInstancesFromSelectWithMultipleClasses)
     ECDbTestProject testProject;
     auto& ecdb = testProject.Create ("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", true);
 
-    IECRelationshipInstancePtr relationship = CreateRelationship(testProject, L"Foo", L"Bar", L"Foo_has_Bars");
+    IECRelationshipInstancePtr relationship = CreateRelationship(testProject, "Foo", "Bar", "Foo_has_Bars");
     ASSERT_TRUE(relationship.IsValid());
     PersistRelationship(*relationship, ecdb);
 
