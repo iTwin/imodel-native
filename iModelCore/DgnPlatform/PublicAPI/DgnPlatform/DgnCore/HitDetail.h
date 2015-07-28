@@ -116,14 +116,14 @@ public:
     double                  GetScreenDist() const       {return m_viewDist;}
     double                  GetZValue() const           {return m_viewZ;}
 
-    void                    SetClosestPoint (DPoint3dCR pt)         {m_closePoint = pt;}
-    void                    SetSurfaceNormal (DVec3dCR value)       {m_normal = value;}
-    void                    SetGeomType (HitGeomType value)         {m_geomType = value; m_primitive = nullptr;} // NOTE: Use SetCurvePrimitive for HitGeomType::Segment/Arc/Curve.
-    void                    SetDetailSource (HitDetailSource value) {m_detailSource = value;}
-    void                    SetLocatePriority (HitPriority value)   {m_hitPriority = value;}
-    void                    SetNonSnappable (bool yesNo)            {m_nonSnappable = yesNo;}
-    void                    SetScreenDist (double value)            {m_viewDist = value;}
-    void                    SetZValue (double value)                {m_viewZ = value;}
+    void                    SetClosestPoint(DPoint3dCR pt)         {m_closePoint = pt;}
+    void                    SetSurfaceNormal(DVec3dCR value)       {m_normal = value;}
+    void                    SetGeomType(HitGeomType value)         {m_geomType = value; m_primitive = nullptr;} // NOTE: Use SetCurvePrimitive for HitGeomType::Segment/Arc/Curve.
+    void                    SetDetailSource(HitDetailSource value) {m_detailSource = value;}
+    void                    SetLocatePriority(HitPriority value)   {m_hitPriority = value;}
+    void                    SetNonSnappable(bool yesNo)            {m_nonSnappable = yesNo;}
+    void                    SetScreenDist(double value)            {m_viewDist = value;}
+    void                    SetZValue(double value)                {m_viewZ = value;}
 
     //! @private
     GeomStreamEntryId GetGeomStreamEntryId() const {return m_geomId;}
@@ -131,8 +131,8 @@ public:
     void SetGeomStreamEntryId(GeomStreamEntryId geomId) {m_geomId = geomId;}
 
     DGNPLATFORM_EXPORT bool     FillGPA (GPArrayR, bool singleSegment = true) const;
-    DGNPLATFORM_EXPORT bool     GetArc (DEllipse3dR) const;
-    DGNPLATFORM_EXPORT bool     GetSegment (DSegment3dR) const;
+    DGNPLATFORM_EXPORT bool     GetArc(DEllipse3dR) const;
+    DGNPLATFORM_EXPORT bool     GetSegment(DSegment3dR) const;
     DGNPLATFORM_EXPORT size_t   GetSegmentNumber() const;
     DGNPLATFORM_EXPORT double   GetSegmentParam() const;
     DGNPLATFORM_EXPORT double   GetCloseParam() const;
@@ -149,7 +149,7 @@ public:
     //! Sets ICurvePrimitive hit geometry and appropriate HitGeomType for the supplied primitive.
     //! @note Optional geomType can be explicity specified to override the default HitGeomType.
     //!       For example, an arc primitive with HitGeomType::Point denotes a hit on the arc center.
-    DGNPLATFORM_EXPORT void SetCurvePrimitive (ICurvePrimitiveCP curve, TransformCP localToWorld = nullptr, HitGeomType geomType = HitGeomType::None);
+    DGNPLATFORM_EXPORT void SetCurvePrimitive(ICurvePrimitiveCP curve, TransformCP localToWorld = nullptr, HitGeomType geomType = HitGeomType::None);
 };
 
 //=======================================================================================
@@ -169,39 +169,38 @@ protected:
     IElemTopologyPtr    m_elemTopo;             // details about the topology of the element.
     SubSelectionMode    m_subSelectionMode;     // segment hilite/flash mode.
 
-    virtual HitDetailType _GetHitType () const {return HitDetailType::Hit;}
-    virtual void _GetInfoString (Utf8StringR descr, Utf8CP delimiter) const;
-    virtual SubSelectionMode _GetSubSelectionMode () const {return m_subSelectionMode;}
-    virtual void _SetSubSelectionMode (SubSelectionMode mode) {m_subSelectionMode = mode;}
-    virtual DPoint3dCR _GetHitPoint () const {return m_geomDetail.GetClosestPoint();}
-    virtual void _SetHitPoint (DPoint3dCR pt) {m_geomDetail.SetClosestPoint (pt);}
-    virtual void _SetTestPoint (DPoint3dCR pt) {m_testPoint = pt;}
-    virtual bool _IsSameHit (HitDetailCP otherHit) const;
-    virtual void _DrawInVp (DgnViewportP, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const;
-    virtual void _SetHilited (DgnElement::Hilited) const;
+    virtual HitDetailType _GetHitType() const {return HitDetailType::Hit;}
+    virtual void _GetInfoString(Utf8StringR descr, Utf8CP delimiter) const;
+    virtual SubSelectionMode _GetSubSelectionMode() const {return m_subSelectionMode;}
+    virtual void _SetSubSelectionMode(SubSelectionMode mode) {m_subSelectionMode = mode;}
+    virtual DPoint3dCR _GetHitPoint() const {return m_geomDetail.GetClosestPoint();}
+    virtual void _SetHitPoint(DPoint3dCR pt) {m_geomDetail.SetClosestPoint(pt);}
+    virtual void _SetTestPoint(DPoint3dCR pt) {m_testPoint = pt;}
+    virtual bool _IsSameHit(HitDetailCP otherHit) const;
+    virtual void _DrawInVp(DgnViewportR, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const;
+    virtual void _SetHilited(DgnElement::Hilited) const;
 
 public:
 #if !defined (DOCUMENTATION_GENERATOR)
-    DGNPLATFORM_EXPORT HitDetail (DgnViewportR, GeometricElementCP, DPoint3dCR testPoint, HitSource, ViewFlagsCR, GeomDetailCR);
-    DGNPLATFORM_EXPORT explicit HitDetail (HitDetailCR from);
-    DGNPLATFORM_EXPORT virtual ~HitDetail ();
+    DGNPLATFORM_EXPORT HitDetail(DgnViewportR, GeometricElementCP, DPoint3dCR testPoint, HitSource, ViewFlagsCR, GeomDetailCR);
+    DGNPLATFORM_EXPORT explicit HitDetail(HitDetailCR from);
+    DGNPLATFORM_EXPORT virtual ~HitDetail();
 
-    void SetLocateSource (HitSource source) {m_locateSource = source;}
-    void SetHitPoint (DPoint3dCR pt) {_SetHitPoint(pt);}
-    void SetTestPoint (DPoint3dCR pt) {_SetTestPoint(pt);}
-    void SetHilited (DgnElement::Hilited state) const {_SetHilited(state);}
-    void SetSubSelectionMode (SubSelectionMode mode) {_SetSubSelectionMode(mode);}
+    void SetLocateSource(HitSource source) {m_locateSource = source;}
+    void SetHitPoint(DPoint3dCR pt) {_SetHitPoint(pt);}
+    void SetTestPoint(DPoint3dCR pt) {_SetTestPoint(pt);}
+    void SetHilited(DgnElement::Hilited state) const {_SetHilited(state);}
+    void SetSubSelectionMode(SubSelectionMode mode) {_SetSubSelectionMode(mode);}
 
-    DGNPLATFORM_EXPORT void DrawInVp (DgnViewportP, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const;
+    void DrawInVp(DgnViewportR vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const {_DrawInVp(vp, drawMode, drawPurpose, stopFlag);}
     DGNPLATFORM_EXPORT bool ShouldFlashCurveSegment(ViewContextR) const; //! Check for segment flash mode before calling FlashCurveSegment.
     DGNPLATFORM_EXPORT void FlashCurveSegment(ViewContextR) const; //! Setup context.GetCurrentDisplayParams() before calling!
     
-    DGNVIEW_EXPORT void DrawInView (IndexedViewSetR, int viewNum, DgnDrawMode drawMode, DrawPurpose drawPurpose) const;
-    DGNVIEW_EXPORT void DrawInViews (IndexedViewSetR, DgnDrawMode drawMode, DrawPurpose drawPurpose) const;
-    DGNVIEW_EXPORT void DrawInAllViews (IndexedViewSetR, DgnDrawMode drawMode, DrawPurpose drawPurpose) const;
-    DGNVIEW_EXPORT void Hilite (IndexedViewSetR, bool onOff) const;
+    DGNVIEW_EXPORT void DrawInView(IndexedViewportR, DgnDrawMode drawMode, DrawPurpose drawPurpose) const;
+    DGNVIEW_EXPORT void DrawInAllViews(IndexedViewSetR, DgnDrawMode drawMode, DrawPurpose drawPurpose) const;
+    DGNVIEW_EXPORT void Hilite(IndexedViewSetR, bool onOff) const;
 
-    DGNPLATFORM_EXPORT void GetInfoString (Utf8StringR descr, Utf8CP delimiter) const;
+    DGNPLATFORM_EXPORT void GetInfoString(Utf8StringR descr, Utf8CP delimiter) const;
     DGNPLATFORM_EXPORT DgnElement::Hilited IsHilited() const;
     DGNPLATFORM_EXPORT bool IsInSelectionSet() const;
 #endif
@@ -217,7 +216,7 @@ public:
     DPoint3dCR GetHitPoint() const {return _GetHitPoint();}
     HitDetailType GetHitType() const {return _GetHitType();}
     SubSelectionMode GetSubSelectionMode() const {return _GetSubSelectionMode(); }
-    bool IsSameHit (HitDetailCP otherHit) const {return _IsSameHit(otherHit);}
+    bool IsSameHit(HitDetailCP otherHit) const {return _IsSameHit(otherHit);}
 
     DGNPLATFORM_EXPORT GeomDetailCR    GetGeomDetail() const;
     DGNPLATFORM_EXPORT GeomDetailR     GetGeomDetailW();
@@ -245,27 +244,27 @@ public:
     DGNPLATFORM_EXPORT HitList();
     DGNPLATFORM_EXPORT virtual ~HitList();
 
-    DGNPLATFORM_EXPORT void RemoveHit (int hitNum);
-    DGNPLATFORM_EXPORT void RemoveCurrentHit ();
-    DGNPLATFORM_EXPORT HitDetailP GetHit (int hitNum) const;
-    DGNPLATFORM_EXPORT int Compare (HitDetailCP oHit1, HitDetailCP oHit2, bool comparePriority, bool compareZ) const;
-    DGNPLATFORM_EXPORT void SetCurrentHit (HitDetailCP);
-    DGNPLATFORM_EXPORT int AddHit (HitDetailP, bool allowDuplicates, bool comparePriority);
-    DGNPLATFORM_EXPORT void Empty ();
-    DGNPLATFORM_EXPORT void ResetCurrentHit () {m_currHit = -1;}
-    DGNPLATFORM_EXPORT HitDetailP GetCurrentHit () const;
-    DGNPLATFORM_EXPORT HitDetailP GetNextHit ();
-    DGNPLATFORM_EXPORT bool RemoveHitsFrom (HitDetailCR hit);
-    DGNPLATFORM_EXPORT bool RemoveHitsFrom (DgnElementCR element);
-    DGNPLATFORM_EXPORT bool RemoveHitsFrom (DgnModelR modelRef);
-    DGNPLATFORM_EXPORT virtual void Dump (WCharCP label) const;
+    DGNPLATFORM_EXPORT void RemoveHit(int hitNum);
+    DGNPLATFORM_EXPORT void RemoveCurrentHit();
+    DGNPLATFORM_EXPORT HitDetailP GetHit(int hitNum) const;
+    DGNPLATFORM_EXPORT int Compare(HitDetailCP oHit1, HitDetailCP oHit2, bool comparePriority, bool compareZ) const;
+    DGNPLATFORM_EXPORT void SetCurrentHit(HitDetailCP);
+    DGNPLATFORM_EXPORT int AddHit(HitDetailP, bool allowDuplicates, bool comparePriority);
+    DGNPLATFORM_EXPORT void Empty();
+    DGNPLATFORM_EXPORT void ResetCurrentHit() {m_currHit = -1;}
+    DGNPLATFORM_EXPORT HitDetailP GetCurrentHit() const;
+    DGNPLATFORM_EXPORT HitDetailP GetNextHit();
+    DGNPLATFORM_EXPORT bool RemoveHitsFrom(HitDetailCR hit);
+    DGNPLATFORM_EXPORT bool RemoveHitsFrom(DgnElementCR element);
+    DGNPLATFORM_EXPORT bool RemoveHitsFrom(DgnModelR modelRef);
+    DGNPLATFORM_EXPORT virtual void Dump(WCharCP label) const;
 
     // Because we use private inheritance, we must re-export every HitDetailArray method that we want to expose.
-    DGNPLATFORM_EXPORT int GetCount () const;
-    DGNPLATFORM_EXPORT HitDetailP Get (int i);
-    DGNPLATFORM_EXPORT void Set (int i, HitDetailP);
-    DGNPLATFORM_EXPORT void Insert (int i, HitDetailP);
-    DGNPLATFORM_EXPORT void DropNulls ();
+    DGNPLATFORM_EXPORT int GetCount() const;
+    DGNPLATFORM_EXPORT HitDetailP Get(int i);
+    DGNPLATFORM_EXPORT void Set(int i, HitDetailP);
+    DGNPLATFORM_EXPORT void Insert(int i, HitDetailP);
+    DGNPLATFORM_EXPORT void DropNulls();
 };
 
 //=======================================================================================
@@ -324,48 +323,48 @@ protected:
     Byte*               m_customKeypointData;
     bool                m_allowAssociations;
 
-    DGNPLATFORM_EXPORT virtual DPoint3dCR _GetHitPoint () const override;
-    DGNPLATFORM_EXPORT virtual void _SetHitPoint (DPoint3dCR snapPt) override;
-    virtual HitDetailType _GetHitType () const override {return HitDetailType::Snap;}
-    virtual SnapDetail* _Clone () const;
+    DGNPLATFORM_EXPORT virtual DPoint3dCR _GetHitPoint() const override;
+    DGNPLATFORM_EXPORT virtual void _SetHitPoint(DPoint3dCR snapPt) override;
+    virtual HitDetailType _GetHitType() const override {return HitDetailType::Snap;}
+    virtual SnapDetail* _Clone() const;
 
 public:
-    DGNPLATFORM_EXPORT explicit SnapDetail (HitDetailCP from);
-    DGNPLATFORM_EXPORT explicit SnapDetail (SnapDetail const&);
-    DGNPLATFORM_EXPORT ~SnapDetail ();
+    DGNPLATFORM_EXPORT explicit SnapDetail(HitDetailCP from);
+    DGNPLATFORM_EXPORT explicit SnapDetail(SnapDetail const&);
+    DGNPLATFORM_EXPORT ~SnapDetail();
 
-    void SetScreenPoint (Point2d const& pt) {m_screenPt = pt;} //!< Always set by DgnPlatform snap logic
+    void SetScreenPoint(Point2d const& pt) {m_screenPt = pt;} //!< Always set by DgnPlatform snap logic
     
-    bool GetAllowAssociations () const {return m_allowAssociations;}
-    void SetAllowAssociations (bool allowAssociations) {m_allowAssociations = allowAssociations;}
+    bool GetAllowAssociations() const {return m_allowAssociations;}
+    void SetAllowAssociations(bool allowAssociations) {m_allowAssociations = allowAssociations;}
 
-    ISpriteP GetSprite () const {return m_sprite;}
-    void SetSprite (ISpriteP sprite) {if (m_sprite) m_sprite->Release (); m_sprite = sprite; if (m_sprite) m_sprite->AddRef ();}
+    ISpriteP GetSprite() const {return m_sprite;}
+    void SetSprite(ISpriteP sprite) {if (m_sprite) m_sprite->Release(); m_sprite = sprite; if (m_sprite) m_sprite->AddRef();}
 
-    DGNPLATFORM_EXPORT bool GetCustomKeypoint (int* nBytesP, Byte** dataPP) const {if (nBytesP) *nBytesP = m_customKeypointSize; if (dataPP) *dataPP = m_customKeypointData; return (NULL != m_customKeypointData ? true : false);}
-    DGNPLATFORM_EXPORT void SetCustomKeypoint (int nBytes, Byte* dataP);
+    DGNPLATFORM_EXPORT bool GetCustomKeypoint(int* nBytesP, Byte** dataPP) const {if (nBytesP) *nBytesP = m_customKeypointSize; if (dataPP) *dataPP = m_customKeypointData; return (NULL != m_customKeypointData ? true : false);}
+    DGNPLATFORM_EXPORT void SetCustomKeypoint(int nBytes, Byte* dataP);
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
-    DGNPLATFORM_EXPORT bool IsHot () const;
-    DGNPLATFORM_EXPORT bool IsPointOnCurve () const;
-    DGNPLATFORM_EXPORT SnapHeat GetHeat () const;
-    DGNPLATFORM_EXPORT DPoint3dCR GetAdjustedPoint () const;
-    DGNPLATFORM_EXPORT DPoint3dCR GetSnapPoint () const;
-    DGNPLATFORM_EXPORT int GetSnapDivisor () const;
-    DGNPLATFORM_EXPORT double GetMinScreenDist () const;
-    DGNPLATFORM_EXPORT Point2d const& GetScreenPoint () const;
+    DGNPLATFORM_EXPORT bool IsHot() const;
+    DGNPLATFORM_EXPORT bool IsPointOnCurve() const;
+    DGNPLATFORM_EXPORT SnapHeat GetHeat() const;
+    DGNPLATFORM_EXPORT DPoint3dCR GetAdjustedPoint() const;
+    DGNPLATFORM_EXPORT DPoint3dCR GetSnapPoint() const;
+    DGNPLATFORM_EXPORT int GetSnapDivisor() const;
+    DGNPLATFORM_EXPORT double GetMinScreenDist() const;
+    DGNPLATFORM_EXPORT Point2d const& GetScreenPoint() const;
 
-    DGNPLATFORM_EXPORT SnapMode GetSnapMode () const;
-    DGNPLATFORM_EXPORT SnapMode GetOriginalSnapMode () const;
+    DGNPLATFORM_EXPORT SnapMode GetSnapMode() const;
+    DGNPLATFORM_EXPORT SnapMode GetOriginalSnapMode() const;
 
-    DGNPLATFORM_EXPORT bool PointWasAdjusted () const;
+    DGNPLATFORM_EXPORT bool PointWasAdjusted() const;
 
-    DGNPLATFORM_EXPORT void SetSnapMode (SnapMode s, bool isOriginal=true);
-    DGNPLATFORM_EXPORT void SetSnapDivisor (int divisor);
-    DGNPLATFORM_EXPORT void SetAdjustedPoint (DPoint3dCR adjustedPt);
-    DGNPLATFORM_EXPORT void SetHeat (SnapHeat isHot);
+    DGNPLATFORM_EXPORT void SetSnapMode(SnapMode s, bool isOriginal=true);
+    DGNPLATFORM_EXPORT void SetSnapDivisor(int divisor);
+    DGNPLATFORM_EXPORT void SetAdjustedPoint(DPoint3dCR adjustedPt);
+    DGNPLATFORM_EXPORT void SetHeat(SnapHeat isHot);
 }; // SnapDetail
 
 //=======================================================================================
@@ -378,16 +377,16 @@ struct IntersectDetail : SnapDetail
 private:
     HitDetail*    m_secondHit;
 
-    virtual void _DrawInVp (DgnViewportP, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const override;
-    virtual HitDetailType _GetHitType () const override{return HitDetailType::Intersection;}
-    DGNPLATFORM_EXPORT virtual void _SetHilited (DgnElement::Hilited) const override;
-    DGNPLATFORM_EXPORT virtual bool _IsSameHit (HitDetailCP otherHit) const override;
-    virtual SnapDetail* _Clone () const override;
+    virtual void _DrawInVp(DgnViewportR, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const override;
+    virtual HitDetailType _GetHitType() const override{return HitDetailType::Intersection;}
+    DGNPLATFORM_EXPORT virtual void _SetHilited(DgnElement::Hilited) const override;
+    DGNPLATFORM_EXPORT virtual bool _IsSameHit(HitDetailCP otherHit) const override;
+    virtual SnapDetail* _Clone() const override;
 
 public:
-    DGNPLATFORM_EXPORT IntersectDetail (HitDetailCP firstHit, HitDetailCP secondHit, DPoint3dCR intersctionPt);
-    DGNPLATFORM_EXPORT IntersectDetail (IntersectDetail const&);
-    DGNPLATFORM_EXPORT ~IntersectDetail ();
+    DGNPLATFORM_EXPORT IntersectDetail(HitDetailCP firstHit, HitDetailCP secondHit, DPoint3dCR intersctionPt);
+    DGNPLATFORM_EXPORT IntersectDetail(IntersectDetail const&);
+    DGNPLATFORM_EXPORT ~IntersectDetail();
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__

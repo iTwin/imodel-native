@@ -440,12 +440,12 @@ protected:
     RotMatrix       m_rotMatrix;                // rotation matrix (from ViewController)
     CameraInfo      m_camera;
     ViewFlags       m_rootViewFlags;            // view flags for root model
-    int             m_viewNumber;
     ColorDef        m_backgroundColor;
     IViewOutputP    m_output;
     DMap4d          m_rootToView;
     DMap4d          m_rootToNpc;
     double          m_minLOD;                   // default level of detail filter size
+    Utf8String      m_viewTitle;
     ToolGraphicsHandler* m_toolGraphicsHandler;
     ViewControllerPtr m_viewController;
     bvector<IProgressiveDisplayPtr> m_progressiveDisplay;    // progressive display of a query view and reality data.
@@ -475,7 +475,6 @@ protected:
     virtual Point2d _GetScreenOrigin() const  {Point2d pt={0,0}; return pt;}
     virtual DVec2d _GetDpiScale() const {return DVec2d::From(1,1);}
     virtual void _Destroy() {DestroyViewport();}
-    DGNPLATFORM_EXPORT virtual void _GetViewName(WStringR) const;
     DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(ViewControllerR, bool expandView);
     DGNPLATFORM_EXPORT virtual StatusInt _ConnectToOutput();
     DGNPLATFORM_EXPORT virtual int _GetIndexedLineWidth(int index) const;
@@ -650,7 +649,7 @@ public:
     DGNPLATFORM_EXPORT RotMatrixCR GetRotMatrix() const;
 
     //! Get the DgnViewport rectangle in DgnCoordSystem::View.
-    DGNPLATFORM_EXPORT BSIRect GetViewRect() const;
+    BSIRect GetViewRect() const {return _GetClientRect();}
 
     //! Get the DgnCoordSystem::View coordinates of lower-left-back and upper-right-front corners of a viewport.
     //! @param[out] low The lower left back corner of the view
@@ -833,19 +832,6 @@ public:
     SheetViewControllerP GetSheetViewControllerP() {return (SheetViewControllerP) GetSheetViewControllerCP();}
     //__PUBLISH_SECTION_START__
 
-    //! Get the name for this view.
-    //! @param[out] name A string to be filled with the current name of this view.
-    DGNPLATFORM_EXPORT void GetViewName(WStringR name) const;
-
-    //! Get the view number of this DgnViewport. If this DgnViewport is one of the 8 numbered views (i.e. "View 1" through
-    //! "View 8"), then return the index of view number (e.g. "View 1" is view index 0, "View 8" is view index 7). If the DgnViewport
-    //! is not one of the 8 numbered views, this method will return -1.
-    //! @return the view index of this DgnViewport, or -1 if it is not one of the numbered views.
-    DGNPLATFORM_EXPORT int GetViewNumber() const;
-
-    //! Get the screen number on which this DgnViewport resides.
-    DGNPLATFORM_EXPORT int GetScreenNumber() const;
-
     //! Get View Origin for this DgnViewport.
     //! @return the root coordinates of the lower left back corner of the DgnViewport.
     DGNPLATFORM_EXPORT DPoint3dCP GetViewOrigin() const;
@@ -898,6 +884,9 @@ public:
     //!       in the view undo buffer, see SynchWithViewController.
     DGNPLATFORM_EXPORT ViewportStatus SetupFromFrustum(Frustum const& frustPts);
 /** @} */
+
+    Utf8StringCR GetTitle() {return m_viewTitle;}
+    void SetTitle(Utf8CP title) {m_viewTitle = title;}
 
     //__PUBLISH_SECTION_END__
     DGNPLATFORM_EXPORT ColorDef GetSolidFillEdgeColor(ColorDef inColor);
