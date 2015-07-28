@@ -30,13 +30,10 @@ struct DTMTxnMonitor : RefCounted<IDTMTxnMonitor>, DgnFileAppData
         static RefCountedPtr<DTMTxnMonitor> s_instance;
         bvector<DTMXAttributeHandler*> m_openedDTMS;
         bvector<DTMXAttributeHandler*> m_modifiedDTMS;
-        ElementRefP m_TMPersitElement;
-        bool m_inTMPersit;
+        bvector<ElementRefP> m_tmPersistElements;
 
         DTMTxnMonitor()
             {
-            m_inTMPersit = false;
-            m_TMPersitElement = nullptr;
             ITxnManager::GetManager ().AddTxnMonitor (*this);
             }
 
@@ -57,34 +54,21 @@ struct DTMTxnMonitor : RefCounted<IDTMTxnMonitor>, DgnFileAppData
                 if ((*iter)->GetElemHandle ().GetElementRef () == elemRef)
                     (*iter)->UndoRedo ();
             }
-
         virtual void _OnXAttributeUndoRedo (XAttributeHandleCR xAttr,  ChangeTrackAction action, bool isUndo, ChangeTrackSource source, ChangeTrackInfo const* info) override
             {
             if (xAttr.GetHandlerId() == XAttributeHandlerId (TMElementMajorId, XATTRIBUTES_SUBID_DTM_HEADER))
                 {
-                BeAssert (m_TMPersitElement == nullptr);
-                m_TMPersitElement = xAttr.GetElementRef ();
+                ElementRefP elemRef = xAttr.GetElementRef ();
+                if (std::find (m_tmPersistElements.begin (), m_tmPersistElements.end (), elemRef) == m_tmPersistElements.end())
+                    m_tmPersistElements.push_back (elemRef);
                 }
             }
 
-        virtual void _OnReverse ()
+        virtual void _OnUndoRedoFinished (bool isUndo) override
             {
-            _OnReinstate ();
-            }
-
-        virtual void _OnReinstate ()
-            {
-            if (m_inTMPersit)
-                {
-                BeAssert (m_TMPersitElement);
-                ReloadData (m_TMPersitElement);
-                m_TMPersitElement = nullptr;
-                m_inTMPersit = false;
-                }
-            else
-                {
-                m_inTMPersit = true;
-                }
+            for (auto elmRef : m_tmPersistElements)
+                ReloadData (elmRef);
+            m_tmPersistElements.clear ();
             }
 
         virtual void _OnTxnValidate () override
