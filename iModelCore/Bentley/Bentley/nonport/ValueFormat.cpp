@@ -512,10 +512,31 @@ Utf8Char          DoubleFormatterBase::GetThousandsSeparator () const           
 WChar             DoubleFormatterBase::GetThousandsSeparatorW() const             { return m_thousandsSeparatorW; }
 bool              DoubleFormatterBase::GetLeadingZero () const                    { return m_leadingZero; }
 bool              DoubleFormatterBase::GetTrailingZeros () const                  { return m_trailingZeros; }
-void              DoubleFormatterBase::SetDecimalSeparator (Utf8Char newVal)      { m_decimalSeparator = newVal; }
-void              DoubleFormatterBase::SetDecimalSeparator (WChar newVal)         { m_decimalSeparatorW = newVal; }
-void              DoubleFormatterBase::SetThousandsSeparator (Utf8Char newVal)    { m_thousandsSeparator = newVal; }
-void              DoubleFormatterBase::SetThousandsSeparator (WChar newVal)       { m_thousandsSeparatorW = newVal; }
+void              DoubleFormatterBase::SetDecimalSeparator (Utf8Char newVal)      
+    { 
+    m_decimalSeparator = newVal; 
+    WString temp(&newVal, BentleyCharEncoding::Utf8);
+    m_decimalSeparatorW = temp[0];
+    }
+void              DoubleFormatterBase::SetDecimalSeparator (WChar newVal)         
+    { 
+    m_decimalSeparatorW = newVal;
+    Utf8String temp(&newVal);
+    m_decimalSeparator = temp[0];
+    }
+void              DoubleFormatterBase::SetThousandsSeparator (Utf8Char newVal)    
+    { 
+    m_thousandsSeparator = newVal; 
+    WString temp(&newVal, BentleyCharEncoding::Utf8);
+    m_thousandsSeparatorW = temp[0];
+    }
+void              DoubleFormatterBase::SetThousandsSeparator (WChar newVal)       
+    { 
+    m_thousandsSeparatorW = newVal; 
+    Utf8String temp(&newVal);
+    m_thousandsSeparator = temp[0];
+    }
+
 void              DoubleFormatterBase::SetInsertThousandsSeparator (bool newVal ) { m_insertThousandsSeparator = newVal; }
 void              DoubleFormatterBase::SetLeadingZero (bool newVal)               { m_leadingZero = newVal; }
 void              DoubleFormatterBase::SetTrailingZeros (bool newVal)             { m_trailingZeros = newVal; }
