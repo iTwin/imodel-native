@@ -124,9 +124,6 @@
     <ClCompile Include="NonPublished\EntityAndItem_Test.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
-    <ClCompile Include="NonPublished\Compatibility_Test.cpp">
-      <Filter>NonPublished</Filter>
-    </ClCompile>
     <ClCompile Include="NonPublished\DgnSqlTest.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
@@ -163,8 +160,17 @@
     <ClCompile Include="Published\AnnotationFrameStyle_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="NonPublished\Category_Test.cpp">
-      <Filter>NonPublished</Filter>
+    <ClCompile Include="Published\AnnotationLeader_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\AnnotationTestFixture.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\TextAnnotationSeed_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\ElementInsertPerformance.cpp">
+      <Filter>Performance</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -198,16 +204,7 @@
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\DgnProject\ElementCreateHelpers.h">
       <Filter>BackDoor</Filter>
     </ClInclude>
-    <ClInclude Include="NonPublished\CompatibilityHeaders.h">
-      <Filter>NonPublished</Filter>
-    </ClInclude>
     <ClInclude Include="NonPublished\DgnSqlTestDomain.h">
-      <Filter>NonPublished</Filter>
-    </ClInclude>
-    <ClInclude Include="NonPublished\GeomHeaders.h">
-      <Filter>NonPublished</Filter>
-    </ClInclude>
-    <ClInclude Include="NonPublished\BentleyHeaders.h">
       <Filter>NonPublished</Filter>
     </ClInclude>
     <ClInclude Include="TestFixture\DgnDbTestFixtures.h">
@@ -215,6 +212,9 @@
     </ClInclude>
     <ClInclude Include="TestFixture\GeomHelper.h">
       <Filter>TestFixture</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\AnnotationTestFixture.h">
+      <Filter>Published</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

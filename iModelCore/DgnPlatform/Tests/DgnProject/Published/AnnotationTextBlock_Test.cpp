@@ -1,21 +1,20 @@
-//-------------------------------------------------------------------------------------- 
+﻿//-------------------------------------------------------------------------------------- 
 //     $Source: Tests/DgnProject/Published/AnnotationTextBlock_Test.cpp $
 //  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
-#include "DgnHandlersTests.h"
-#include <DgnPlatform/DgnCore/Annotations/Annotations.h>
+#include "AnnotationTestFixture.h"
 
 //=======================================================================================
 // @bsiclass                                                    Jeff.Marker     05/2014
 //=======================================================================================
-class AnnotationTextBlockTest : public GenericDgnModelTestFixture
+class AnnotationTextBlockTest : public AnnotationTestFixture
 {
     //---------------------------------------------------------------------------------------
     // @bsimethod                                                   Jeff.Marker     05/2014
     //---------------------------------------------------------------------------------------
     public: AnnotationTextBlockTest () :
-        GenericDgnModelTestFixture (__FILE__, false /*2D*/)
+        AnnotationTestFixture(__FILE__, false /*2D*/)
         {
         }
 
@@ -260,3 +259,116 @@ TEST_F(AnnotationTextBlockTest, DeepCopy)
     AnnotationFractionRunCP clonedFracRun = (AnnotationFractionRunCP)clonedRun3.get();
     VERIFY_FRACRUN_DATA_1(clonedFracRun,fracRun);
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Umar.Hayat     07/2015
+//---------------------------------------------------------------------------------------
+TEST_F(AnnotationTextBlockTest, CreateAnnotationTextBlock)
+{
+    //.............................................................................................
+    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
+    DgnDbR project = *m_testDgnManager.GetDgnProjectP();
+
+    //.............................................................................................
+    AnnotationTextBlockPtr doc = AnnotationTextBlock::Create(project);
+    ASSERT_TRUE(doc.IsValid());
+
+    // Basics
+    EXPECT_TRUE(&project == &doc->GetDbR());
+    EXPECT_TRUE(0 == doc->GetParagraphs().size());
+
+    //.............................................................................................
+    // Text Style
+    AnnotationTextStylePtr testStyle = AnnotationTextStyle::Create(project);
+    ASSERT_TRUE(testStyle.IsValid());
+    
+    /*
+    //.............................................................................................
+    // Create with invalid style id
+    // Why does it create AnnotationTextBlock with invalid style id ?
+    AnnotationTextBlockPtr doc2 = AnnotationTextBlock::Create(project, testStyle->GetId());
+    ASSERT_FALSE(doc2.IsValid());*/
+
+    ASSERT_TRUE(SUCCESS == project.Styles().AnnotationTextStyles().Insert(*testStyle));
+    ASSERT_TRUE(testStyle->GetId().IsValid());
+
+    //.............................................................................................
+    // Create with Valid style id
+    AnnotationTextBlockPtr doc3 = AnnotationTextBlock::Create(project,testStyle->GetId());
+    ASSERT_TRUE(doc3.IsValid());
+
+    // Basic Check
+    EXPECT_TRUE(&project == &doc3->GetDbR());
+    EXPECT_TRUE(0 == doc3->GetParagraphs().size());
+    EXPECT_TRUE(testStyle->GetId() == doc3->GetStyleId());
+
+    //.............................................................................................
+    // Create Annotation Paragraph
+    AnnotationTextRunPtr run = createAnnotationTextRun(project, testStyle);
+    AnnotationParagraphPtr para = createAnnotationParagraph(project, testStyle, run);
+
+    //.............................................................................................
+    // Create with annotation paragraph
+    AnnotationTextBlockPtr doc5 = AnnotationTextBlock::Create(project,testStyle->GetId(),*para);
+    ASSERT_TRUE(doc5.IsValid());
+
+    // Basics Checks
+    EXPECT_TRUE(&project == &doc5->GetDbR());
+    EXPECT_TRUE(1 == doc5->GetParagraphs().size());
+    EXPECT_TRUE(testStyle->GetId() == doc5->GetStyleId());
+
+    //.............................................................................................
+    // Create with contents
+    const char * contents = "Contents";
+    AnnotationTextBlockPtr doc6 = AnnotationTextBlock::Create(project, testStyle->GetId(), contents);
+    ASSERT_TRUE(doc6.IsValid());
+
+    // Basics Checks
+    EXPECT_TRUE(&project == &doc6->GetDbR());
+    EXPECT_TRUE(1 == doc6->GetParagraphs().size());
+    EXPECT_TRUE(testStyle->GetId() == doc6->GetStyleId());
+    ASSERT_TRUE(1 == doc6->GetParagraphsR().at(0)->GetRunsR().size());
+    AnnotationTextRunP textRun = dynamic_cast<AnnotationTextRunP>(doc6->GetParagraphsR().at(0)->GetRunsR().at(0).get());
+    ASSERT_STREQ(contents, textRun->GetContent().c_str());
+
+    //.............................................................................................
+    // Create with Constructor
+    AnnotationTextBlock doc4(project);
+
+    // Basics Check
+    EXPECT_TRUE(&project == &doc4.GetDbR());
+    EXPECT_TRUE(0 == doc4.GetParagraphs().size());
+
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Umar.Hayat     07/2015
+//---------------------------------------------------------------------------------------
+TEST_F(AnnotationTextBlockTest, Unicode)
+{
+    //.............................................................................................
+    ASSERT_TRUE(NULL != m_testDgnManager.GetDgnProjectP());
+    DgnDbR project = *m_testDgnManager.GetDgnProjectP();
+
+
+    //.............................................................................................
+    // Text Style
+    AnnotationTextStylePtr testStyle = AnnotationTextStyle::Create(project);
+    ASSERT_TRUE(testStyle.IsValid());
+
+    AnnotationTextRunPtr run = createAnnotationTextRun(project, testStyle);
+    //AnnotationTextStylePtr testSytle = createAnnotationTextStyle(project, "");
+    AnnotationParagraphPtr para = createAnnotationParagraph(project, testStyle, run);
+    //.............................................................................................
+    // Create with contents
+
+    WString contentStr = L"عمر حیات";
+    char * contents = new char[contentStr.length() + 1];
+    contentStr.ConvertToLocaleChars(contents);
+    AnnotationTextBlockPtr doc6 = AnnotationTextBlock::Create(project, testStyle->GetId(), contents);
+    ASSERT_TRUE(doc6.IsValid());
+
+    EXPECT_TRUE(testStyle->GetId() == doc6->GetStyleId());
+    ASSERT_TRUE(1 == doc6->GetParagraphsR().at(0)->GetRunsR().size());
+    AnnotationTextRunP textRun = dynamic_cast<AnnotationTextRunP>(doc6->GetParagraphsR().at(0)->GetRunsR().at(0).get());
+    ASSERT_STREQ(contents, textRun->GetContent().c_str());
+}
+
