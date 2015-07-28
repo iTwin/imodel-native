@@ -371,7 +371,7 @@ void    LineStyleSymb::CheckContinuationData ()
         }
     }
 
-static bool s_allowLineStyles = true;  //  LINESTYLES_DISABLED
+static bool s_allowLineStyles = false;  //  LINESTYLES_DISABLED
 /*---------------------------------------------------------------------------------**//**
 * see whether this element should be drawn with a custom linestyle.
 * @return the hardware linestyle to be used.
