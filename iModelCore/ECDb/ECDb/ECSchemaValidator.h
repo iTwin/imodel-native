@@ -126,7 +126,7 @@ public:
     struct Error : ECSchemaValidationRule::Error
         {
     public:
-        typedef bmap<Utf8CP, bset<ECN::ECClassCP>, CompareUtf8> InvalidClasses;
+        typedef bmap<Utf8CP, bset<ECN::ECClassCP>, CompareIUtf8> InvalidClasses;
 
     private:
         InvalidClasses m_invalidClasses;
@@ -146,7 +146,7 @@ public:
 
 private:
     bool m_supportLegacySchemas;
-    bset<Utf8CP, CompareUtf8> m_classNameSet;
+    bset<Utf8CP, CompareIUtf8> m_classNameSet;
     mutable std::unique_ptr<Error> m_error;
 
     virtual bool _ValidateSchema (ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) override;
@@ -170,7 +170,7 @@ private:
     struct Error : ECSchemaValidationRule::Error
         {
     public:
-        typedef bmap<Utf8CP, bset<ECN::ECPropertyCP>, CompareUtf8> InvalidProperties;
+        typedef bmap<Utf8CP, bset<ECN::ECPropertyCP>, CompareIUtf8> InvalidProperties;
 
     private:
         ECN::ECClassCR m_ecClass;
@@ -191,7 +191,7 @@ private:
         };
 
     bool m_supportLegacySchemas;
-    bset<Utf8CP, CompareUtf8> m_propertyNameSet;
+    bset<Utf8CP, CompareIUtf8> m_propertyNameSet;
     mutable std::unique_ptr<Error> m_error;
 
     virtual bool _ValidateClass (ECN::ECClassCR ecClass, ECN::ECPropertyCR ecProperty) override;
