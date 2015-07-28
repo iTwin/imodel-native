@@ -51,6 +51,7 @@
     <ClCompile Include="NonPublished\TransactionManager_Test.cpp" />
     <ClCompile Include="NonPublished\ValidatePublishing_Test.cpp" />
     <ClCompile Include="Performance\DgnECPerformanceTests.cpp" />
+    <ClCompile Include="Performance\ElementInsertPerformance.cpp" />
     <ClCompile Include="Performance\PerformanceTestFixture.cpp" />
     <ClCompile Include="Performance\RelationshipPerformance_Test.cpp" />
     <ClCompile Include="Performance\TestSchemaHelper.cpp" />
