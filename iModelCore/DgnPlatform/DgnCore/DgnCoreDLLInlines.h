@@ -53,23 +53,9 @@ DG_INLINE size_t IViewClipObject::GetPrimaryCutPlaneCount() const {return _GetPr
 DG_INLINE StatusInt IViewClipObject::ApplyTransform(TransformCR t) {return _ApplyTransform(t);}
 DG_INLINE void IViewClipObject::Draw(ViewContextR c) {return _Draw(c);}
 
-DG_INLINE DgnViews& DgnDb::Views() const {return const_cast<DgnViews&>(m_views);}
-DG_INLINE DgnMaterials& DgnDb::Materials() const {return const_cast<DgnMaterials&>(m_materials);}
-DG_INLINE DgnModels& DgnDb::Models() const {return const_cast<DgnModels&>(m_models);}
-DG_INLINE DgnElements& DgnDb::Elements() const {return const_cast<DgnElements&>(m_elements);}
-DG_INLINE DgnGeomParts& DgnDb::GeomParts() const {return const_cast<DgnGeomParts&>(m_geomParts);}
-DG_INLINE DgnStyles& DgnDb::Styles() const {return const_cast<DgnStyles&>(m_styles);}
-DG_INLINE DgnColors& DgnDb::Colors() const {return const_cast<DgnColors&>(m_colors);}
-DG_INLINE DgnCategories& DgnDb::Categories() const {return const_cast<DgnCategories&>(m_categories);}
-DG_INLINE DgnFonts& DgnDb::Fonts() const { return const_cast<DgnFonts&>(m_fonts); }
-DG_INLINE DgnLinks& DgnDb::Links() const {return const_cast<DgnLinks&>(m_links);}
-DG_INLINE DgnUnits&   DgnDb::Units() const {return const_cast<DgnUnits&>(m_units);}
-DG_INLINE DgnDomains& DgnDb::Domains() const {return const_cast<DgnDomains&>(m_domains);}
-
 DG_INLINE bool DgnViewport::Is3dView() const {return m_is3dView;}
 DG_INLINE bool DgnViewport::IsActive() const {return NULL != m_output;}
 DG_INLINE bool DgnViewport::IsCameraOn() const {return m_isCameraOn;}
-DG_INLINE int DgnViewport::GetViewNumber() const {return m_viewNumber;}
 DG_INLINE ViewFlagsCP DgnViewport::GetViewFlags() const {return &m_rootViewFlags;}
 DG_INLINE CameraInfo const& DgnViewport::GetCamera() const {return m_camera;}
 DG_INLINE void DgnViewport::SetMinimumLOD(double minLOD) {m_minLOD = minLOD;}
@@ -80,7 +66,6 @@ DG_INLINE bool DgnViewport::IsGridOn() const {return _IsGridOn();}
 DG_INLINE bool DgnViewport::IsSheetView() const {return _IsSheetView();}
 DG_INLINE ViewControllerCR DgnViewport::GetViewController() const {return *m_viewController;}
 DG_INLINE ViewControllerR DgnViewport::GetViewControllerR() const {return *m_viewController;}
-DG_INLINE int DgnViewport::GetScreenNumber() const {return 0;}
 DG_INLINE DPoint3dCP DgnViewport::GetViewOrigin() const {return _GetViewOrigin();}
 DG_INLINE DPoint3dCP DgnViewport::GetViewDelta() const {return _GetViewDelta();}
 DG_INLINE void DgnViewport::Destroy() {_Destroy();}
@@ -93,7 +78,6 @@ DG_INLINE IViewOutputP DgnViewport::GetIViewOutput() {return _GetIViewOutput();}
 DG_INLINE ICachedDrawP DgnViewport::GetICachedDraw() {return _GetICachedDraw();}
 DG_INLINE void DgnViewport::SetNeedsRefresh() {_SetNeedsRefresh();}
 DG_INLINE void DgnViewport::SetNeedsHeal() {_SetNeedsHeal();}
-DG_INLINE void DgnViewport::GetViewName(WStringR name) const {_GetViewName(name);}
 DG_INLINE double DgnViewport::GetMinimumLOD() const {return _GetMinimumLOD();}
 DG_INLINE BSIRect DgnViewport::GetClientRect() const {return _GetClientRect();}
 DG_INLINE Point2d DgnViewport::GetScreenOrigin() const {return _GetScreenOrigin();}
@@ -120,7 +104,6 @@ DG_INLINE ClipVectorPtr CameraViewController::_GetClipVector() const {return m_c
 DG_INLINE IAuxCoordSysP PhysicalViewController::GetAuxCoordinateSystem() const {return _GetAuxCoordinateSystem();}
 
 DG_INLINE void            HitDetail::GetInfoString(Utf8StringR pathDescr, Utf8CP delimiter) const {_GetInfoString(pathDescr, delimiter);}
-DG_INLINE void            HitDetail::DrawInVp(DgnViewportP vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const {_DrawInVp(vp, drawMode, drawPurpose, stopFlag);}
 DG_INLINE HitSource       HitDetail::GetLocateSource() const {return m_locateSource;}
 DG_INLINE DPoint3dCR      HitDetail::GetTestPoint() const {return m_testPoint;}
 DG_INLINE GeomDetailCR    HitDetail::GetGeomDetail() const {return m_geomDetail;}

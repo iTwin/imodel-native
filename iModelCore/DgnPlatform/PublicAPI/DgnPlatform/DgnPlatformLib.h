@@ -508,7 +508,7 @@ public:
             //! for pre DX11 this was .0003 - For DX11 it is approximately 1.0E-6.
             virtual double _GetCameraFrustumNearScaleLimit() { return 1.0E-6; }
 
-            virtual void _DrawInVp (HitDetailCP, DgnViewportP vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const {}
+            virtual void _DrawInVp (HitDetailCP, DgnViewportR vp, DgnDrawMode drawMode, DrawPurpose drawPurpose, bool* stopFlag) const {}
 
             DGNPLATFORM_EXPORT virtual void _GetInfoString (HitDetailCP, Utf8StringR pathDescr, Utf8CP delimiter) const;
 

@@ -36,9 +36,7 @@ static DPoint3d const s_NpcCorners[NPC_CORNER_COUNT] =
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnViewport::DgnViewport()
     {
-    m_viewNumber        = -1;
     m_minLOD            = DEFAULT_MINUMUM_LOD;
-    m_viewNumber        = -1;
     m_isCameraOn        = false;
     m_needsRefresh      = false;
     m_zClipAdjusted     = false;
@@ -126,14 +124,6 @@ void DgnViewport::_GetViewCorners(DPoint3dR llb, DPoint3dR urf) const
         llb.y = viewRect.origin.y;
         urf.y = viewRect.corner.y;
         }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    11/02
-+---------------+---------------+---------------+---------------+---------------+------*/
-BSIRect DgnViewport::GetViewRect() const
-    {
-    return _GetClientRect();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -489,7 +479,6 @@ static void validateCamera(CameraViewControllerR controller)
     camera.SetFocusDistance(focusDistance);
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * ensure the focus plane lies between the front and back clipping planes
 * @bsimethod                                    Keith.Bentley                   07/15
@@ -733,10 +722,10 @@ ViewportStatus DgnViewport::ChangeArea(DPoint3dCP pts)
         }
     else
         {
-        /* get the view extents */
+        // get the view extents 
         delta.z = viewController->GetDelta().z;
 
-        /* make sure its not too big or too small */
+        // make sure its not too big or too small 
         auto stat = ValidateWindowSize(delta, true);
         if (stat != ViewportStatus::Success)
             return stat;
@@ -993,7 +982,6 @@ ViewportStatus DgnViewport::_Activate(QvPaintOptions const& opts)
 int DgnViewport::GetDefaultIndexedLineWidth(int index)
     {
     LIMIT_RANGE (0, 31, index);
-
     return index+1;
     }
 
@@ -1173,8 +1161,7 @@ ColorDef DgnViewport::MakeColorTransparency(ColorDef color, int transparency)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ColorDef DgnViewport::GetSolidFillEdgeColor(ColorDef inColor)
     {
-    // Logic derived from QVCamera::calcContrast...
-    ColorDef     backgroundColorDef, inColorDef, outColorDef;
+    ColorDef backgroundColorDef, inColorDef, outColorDef;
 
     backgroundColorDef = GetBackgroundColor();
     inColorDef = inColor;
@@ -1207,11 +1194,11 @@ ColorDef DgnViewport::GetSolidFillEdgeColor(ColorDef inColor)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   02/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-double DgnViewport::GetPixelSizeAtPoint(DPoint3dCP rootPtP, DgnCoordSystem coordSys) const // can be nullptr - if so, use center of view
+double DgnViewport::GetPixelSizeAtPoint(DPoint3dCP rootPtP, DgnCoordSystem coordSys) const 
     {
     DPoint3d    rootTestPt;
 
-    if (nullptr == rootPtP)
+    if (nullptr == rootPtP) // can be nullptr - if so, use center of view
         {
         DPoint3d    npcCenter;
 
@@ -1345,18 +1332,6 @@ ColorDef DgnViewport::GetContrastToBackgroundColor() const
     // should we use black or white
     bool    invert  = ((m_backgroundColor.GetRed() + m_backgroundColor.GetGreen() + m_backgroundColor.GetBlue()) > (255*3)/2);
     return  invert ? ColorDef::Black()  : ColorDef::White();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::_GetViewName(WStringR name) const
-    {
-    name = L"";
-    if (!Is3dView())
-        return;
-
-    ViewController::GetStandardViewName(name, ViewController::IsStandardViewRotation(m_rotMatrix, true));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1537,7 +1512,6 @@ ColorDef DgnViewport::_GetWindowBgColor() const
     return (m_viewController.IsValid()) ? m_viewController->ResolveBGColor() : ColorDef::Black();
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1554,6 +1528,5 @@ void DgnViewport::ScheduleProgressiveDisplay(IProgressiveDisplay& pd)
         {
         m_progressiveDisplay.push_back(pdptr);
         }
-
     // *** TBD: Sort in priority order
     }
