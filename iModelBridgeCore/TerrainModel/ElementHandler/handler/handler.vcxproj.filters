@@ -70,9 +70,6 @@
     <ClCompile Include="..\app\handlerAppManaged.cpp">
       <Filter>HandlerApp</Filter>
     </ClCompile>
-    <ClCompile Include="TMReferenceXAttributeHandler.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
     <ClCompile Include="DTMSymbologyOverrideManager.cpp">
       <Filter>Source</Filter>
     </ClCompile>
