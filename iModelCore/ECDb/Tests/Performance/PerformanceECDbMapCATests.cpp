@@ -150,7 +150,6 @@ void PerformanceECDbMapCATestFixture::InsertInstances(ECDbR ecdb)
         ASSERT_EQ (ECSqlStatus::Success, stat) << "Preparation failed for " << insertSql.c_str ();
         for (size_t i = 0; i < m_instancesPerClass; i++)
             {
-            int parameterIndex = 1;
             for (int parameterIndex = 1; parameterIndex <= propertyCount; parameterIndex++)
                 {
                 EXPECT_EQ (ECSqlStatus::Success, stmt.BindText (parameterIndex++, ("Init Value"), IECSqlBinder::MakeCopy::No));
