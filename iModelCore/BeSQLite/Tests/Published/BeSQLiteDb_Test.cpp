@@ -310,6 +310,69 @@ TEST_F(BeSQLiteDbTests, AttachDb)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Majd.Uddin                   07/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(BeSQLiteDbTests, RenameAndDropTable)
+{
+    SetupDb(L"RenameAndDropTable.db");
+
+    Utf8CP testTableName = "TestTable";
+    EXPECT_FALSE(m_db.TableExists(testTableName)) << "Table '" << testTableName << "' is expected to not exist.";
+    EXPECT_EQ(BE_SQLITE_OK, m_db.CreateTable(testTableName, "id NUMERIC, name TEXT")) << "Creating test table '" << testTableName << "' failed.";
+    EXPECT_TRUE(m_db.TableExists(testTableName)) << "Table '" << testTableName << "' is expected to exist as it was created right before this check.";
+
+    // Now rename the table
+    Utf8CP newTableName = "TestTable2";
+    EXPECT_TRUE(m_db.RenameTable(testTableName, newTableName));
+    EXPECT_FALSE(m_db.TableExists(testTableName)) << "Table '" << testTableName << "' is expected to not exist.";
+    EXPECT_TRUE(m_db.TableExists(newTableName)) << "Table '" << testTableName << "' is expected to exist as it was created right before this check.";
+
+    // Now let's drop it
+    EXPECT_EQ(BE_SQLITE_OK, m_db.DropTable(newTableName));
+    EXPECT_FALSE(m_db.TableExists(newTableName)) << "Table '" << testTableName << "' is expected to not exist.";
+
+    m_db.CloseDb();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Majd.Uddin                   07/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(BeSQLiteDbTests, GetLastRowId)
+{
+    SetupDb(L"explainQuery.db");
+
+    ASSERT_EQ(BE_SQLITE_OK, m_db.CreateTable("TestTable", "id NUMERIC, name TEXT")) << "Creating table failed.";
+
+    EXPECT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("INSERT INTO TestTable Values(1, 'test')"));
+    int64_t rowId = m_db.GetLastInsertRowId();
+    EXPECT_EQ(1, rowId);
+
+    EXPECT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("INSERT INTO TestTable Values(2, 'test2')"));
+    rowId = m_db.GetLastInsertRowId();
+    EXPECT_EQ(2, rowId);
+
+    ASSERT_EQ(BE_SQLITE_OK, m_db.CreateTable("TestTable2", "id NUMERIC, name TEXT")) << "Creating table failed.";
+    EXPECT_EQ(BE_SQLITE_OK, m_db.ExecuteSql("INSERT INTO TestTable2 Values(1, 'test')"));
+    rowId = m_db.GetLastInsertRowId();
+    EXPECT_EQ(1, rowId);
+    
+    m_db.CloseDb();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Majd.Uddin                   07/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(BeSQLiteDbTests, QueryCreationDate)
+{
+    SetupDb(L"CreationDate.db");
+    
+    DateTime creationDate;
+    //CreationDate is only inserted by Publishers/Convertors? And always return an error
+    EXPECT_EQ(BE_SQLITE_ERROR, m_db.QueryCreationDate(creationDate));
+
+    m_db.CloseDb();
+}
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   01/13
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(BeSQLiteDbTests, TableExists)
@@ -488,8 +551,9 @@ TEST_F(BeSQLiteDbTests, CachedProperties)
 TEST_F(BeSQLiteDbTests, RepositoryLocalValues)
     {
     SetupDb(L"local.db");
+    
+    //Working with RLVs through RLVCache
     int val = -1345;
-
     Utf8CP testPropValueName = "TestProp";
     size_t rlvIndex = 0;
     ASSERT_EQ (BE_SQLITE_OK, m_db.GetRLVCache().Register(rlvIndex, testPropValueName));
@@ -513,6 +577,16 @@ TEST_F(BeSQLiteDbTests, RepositoryLocalValues)
 
     ASSERT_EQ (BE_SQLITE_ERROR, m_db.GetRLVCache().Register(rlvIndex, testPropValueName));
 
+    //Work with RLVs directly
+    Utf8CP testProp2 = "TestProp2";
+    m_result = m_db.SaveRepositoryLocalValue(testProp2, "Test Value");
+    EXPECT_EQ(BE_SQLITE_DONE, m_result);
+
+    Utf8String val2 = "None";
+    m_result = m_db.QueryRepositoryLocalValue(testProp2, val2);
+    EXPECT_EQ(BE_SQLITE_ROW, m_result);
+    EXPECT_STREQ("Test Value", val2.c_str());
+    
     m_db.CloseDb ();
     }
 
