@@ -315,6 +315,22 @@ bool Utf8String::IsAscii ()
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
+bool Utf8String::EndsWith(Utf8StringCR ending) const
+    {
+    auto thisLength = length();
+    auto endingLength = ending.length ();
+
+    if (thisLength < endingLength)
+        {
+        return false;
+        }
+
+    return (0 == compare(thisLength - endingLength, endingLength, ending));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
 Utf8StringR Utf8String::Trim ()
     {
     if (empty ())

@@ -369,6 +369,8 @@ struct Utf8String : public bastring
     bool EqualsI (Utf8StringCR other) const {return (0 == CompareToI(other.c_str()));}
     //! Test for equality with another string, ignoring case. @return true if the strings are equal (ignoring case). @param other The other string.
     bool EqualsI (Utf8CP other) const {return (0 == CompareToI(other));}
+    //! Checks if string ends with other string (case sensitive)
+    BENTLEYDLL_EXPORT bool EndsWith (Utf8StringCR ending) const;
     //! Removes all whitespace from the left and right sides. Whitespace includes space, line feed, carriage return, and tab (e.g. iswspace).
     BENTLEYDLL_EXPORT Utf8StringR Trim ();
     //! Removes all whitespace from the end. Whitespace includes space, line feed, carriage return, and tab (e.g. iswspace).

@@ -496,6 +496,40 @@ TEST(Utf8String_Test, Utils)
     VERIFY (trimmed2.length() == 6);
     }
 
+TEST(Utf8String_Test, EndsWith_EmptyStrings_True)
+    {
+    EXPECT_TRUE(Utf8String("").EndsWith(""));
+    }
+
+TEST(Utf8String_Test, EndsWith_StringWithEmptyEnding_True)
+    {
+    EXPECT_TRUE(Utf8String("ABC").EndsWith(""));
+    }
+
+TEST(Utf8String_Test, EndsWith_StringWithEnding_True)
+    {
+    EXPECT_TRUE(Utf8String("ABC").EndsWith("C"));
+    }
+
+TEST(Utf8String_Test, EndsWith_StringWithBegining_False)
+    {
+    EXPECT_FALSE(Utf8String("ABC").EndsWith("A"));
+    }
+
+TEST(Utf8String_Test, EndsWith_EqualStrings_True)
+    {
+    EXPECT_TRUE(Utf8String("ABC").EndsWith("ABC"));
+    }
+
+TEST(Utf8String_Test, EndsWith_DifferentCaseStrings_False)
+    {
+    EXPECT_FALSE(Utf8String("ABC").EndsWith("abc"));
+    }
+
+TEST(Utf8String_Test, EndsWith_EndingLongerThanString_False)
+    {
+    EXPECT_FALSE(Utf8String("AAA").EndsWith("AAAA"));
+    }
 
 TEST(WString_test, Operators)
     {

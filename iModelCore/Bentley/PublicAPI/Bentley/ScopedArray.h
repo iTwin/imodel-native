@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/ScopedArray.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -16,6 +16,8 @@
 #endif
 
 BEGIN_BENTLEY_NAMESPACE
+
+BENTLEYDLL_EXPORT void UnalignedMemcpy(void*dest, void const*source, size_t num);
 
 /*=================================================================================**//**
 * Class to efficiently allocate a block of memory, freeing the memory when the function leaves the scope. ScopedArray provides a way to get the efficiency of stack allocation for the common case while preventing stack overflow in the unusual case.
@@ -131,9 +133,10 @@ public:
 //=======================================================================================
 //! AlignedArray ensures that a block of data is correctly aligned.
 //! If the CPU architecture does not require aligned data, then this class nevers makes a copy of the data.
+//! T is used to force AlignedArray to the proper alignment. It does not determine data size.  
 // @bsiclass                                                                    03/2010
 //=======================================================================================
-template <class T=uint8_t, size_t THRESHOLD = 512, int ALIGNMENT=0x3>
+template <class T, size_t THRESHOLD = 512, int ALIGNMENT=0x3>
 struct AlignedArray : NonCopyableClass
     {
 #if !defined (TARGET_PROCESSOR_ARCHITECTURE_MEMORY_ALIGNMENT_REQUIRED)
@@ -141,8 +144,8 @@ struct AlignedArray : NonCopyableClass
     //! This method just returns pData.
     //! @return pData
     //! @param pData the raw data array
-    //! @param numItems the number of T items in the pData array (not used)
-    T const* GetAlignedData (T const* pData, size_t numItems) {return pData;}
+    //! @param requiredSize size of the data block to be copied.
+    T const* GetAlignedData (T const* pData, size_t requiredSize) {return pData;}
     //! Discard the copy of the data allocated by any previous call to GetAlignedData.
     void Clear() {;}
 #else
@@ -169,7 +172,7 @@ struct AlignedArray : NonCopyableClass
     //! Discard the copy of the data allocated by any previous call to GetAlignedData.
     void Clear()
         {
-        if (m_data != m_mem)
+        if ((unsigned char*)m_data != m_mem)
             delete[] (Byte*) m_data;
         m_data = NULL;
         }
@@ -178,8 +181,8 @@ struct AlignedArray : NonCopyableClass
     //! The buffer is owned by this object and is discarded either by the Clear method or by the destructor.
     //! @return pData if it is aligned correctly or an aligned copy of its contents.
     //! @param pData the raw data array
-    //! @param numItems the number of T items in the pData array
-    T const* GetAlignedData (T const* pData, size_t numItems)
+    //! @param requiredSize size of the data block to be copied.
+    T const* GetAlignedData (T const* pData, size_t requiredSize)
         {
         // Raw data is correctly aligned?
         if (0 == ((size_t)(intptr_t)pData & ALIGNMENT))
@@ -191,14 +194,12 @@ struct AlignedArray : NonCopyableClass
             BeAssert (false && "Call Clear before calling GetAlignedData a second time");
             return NULL;
             }
-
-        size_t requiredSize = numItems * sizeof (T);
         if (requiredSize <= sizeof (m_mem))
             m_data = (T*) m_mem;
         else
             m_data = (T*) new Byte[requiredSize];
 
-        memcpy ((Byte*)m_data, pData, requiredSize);
+        Bentley::UnalignedMemcpy ((Byte*)m_data, pData, requiredSize);
 
         return m_data;
         }
