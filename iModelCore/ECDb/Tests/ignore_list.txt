@@ -42,3 +42,11 @@ ECSqlQueryAdapter.VerifyECSqlQueries
 #
 #for affan 6:35 PM 7/8/2015
 ECDbInstances.RelationshipStrengthBackwardHoldingForwardEmbedding
+
+#ECSqlStatementTests.ecdb needs to be updated with new ECDb_System schema (instead of ECDbSystem)
+ECSqlSelectTests.UnionTests
+ECSqlSelectTests.ExceptTests
+ECSqlSelectTests.IntersectTests
+ECSqlSelectTests.NestedSelectStatementsTests
+ECSqlSelectTests.TestPredicateFunctionsInNestedSelectStatement
+ECSqlSelectTests.GroupByClauseTests
