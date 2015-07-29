@@ -489,38 +489,6 @@ static void validateCamera(CameraViewControllerR controller)
     camera.SetFocusDistance(focusDistance);
     }
 
-
-/*---------------------------------------------------------------------------------**//**
-* ensure the focus plane lies between the front and back clipping planes
-* @bsimethod                                    Keith.Bentley                   07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::CenterFocusPlane()
-    {
-    if (!m_isCameraOn)
-        return;
-
-    DVec3d eyeOrg = DVec3d::FromStartEnd(m_viewOrg, m_camera.GetEyePoint());
-    m_rotMatrix.Multiply(eyeOrg);
-
-    double backDist = eyeOrg.z;
-    double frontDist = backDist - m_viewDelta.z;
-    double focusDist = m_camera.GetFocusDistance();
-    if (focusDist>frontDist && focusDist<backDist)
-        return;
-
-    // put it halfway between front and back planes
-    m_camera.SetFocusDistance((m_viewDelta.z / 2.0) + frontDist);
-
-    // moving the focus plane means we have to adjust the origin and delta too (they're on the focus plane, see diagram in ViewController.h)
-    double ratio = m_camera.GetFocusDistance() / focusDist;
-    m_viewDelta.x *= ratio;
-    m_viewDelta.y *= ratio;
-
-    DVec3d xVec, yVec, zVec;
-    m_rotMatrix.GetRows(xVec, yVec, zVec);
-    m_viewOrg.SumOf(m_camera.GetEyePoint(), zVec, -backDist, xVec, -0.5*m_viewDelta.x, yVec, -0.5*m_viewDelta.y); // this centers the camera too
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * set up this viewport from the given viewController
 * @bsimethod                                                    KeithBentley    04/02
@@ -611,9 +579,6 @@ ViewportStatus DgnViewport::_SetupFromViewController()
 
     m_viewOrg   = origin;
     m_viewDelta = delta;
-
-    // make sure the focus plane is between front and back planes
-    CenterFocusPlane();
 
     if (SUCCESS != _ConnectToOutput())
         return ViewportStatus::InvalidViewport;
@@ -813,14 +778,11 @@ Frustum DgnViewport::GetFrustum(DgnCoordSystem sys, bool expandedBox) const
 DPoint3d DgnViewport::DetermineDefaultRotatePoint()
     {
     double low, high;
-    if (SUCCESS != DetermineVisibleDepthNpc(low, high) && IsCameraOn())
-        {
-        // if there are no elements in the view and the camera is on, use the camera target point
-        return GetCameraTarget();
-        }
 
-    DPoint3d center = DPoint3d::From(.5, .5, (high + low) * .5);
-    return NpcToWorld(center);
+    if (SUCCESS != DetermineVisibleDepthNpc(low, high) && IsCameraOn())
+        return GetCameraTarget(); // if there are no elements in the view and the camera is on, use the camera target point
+
+    return DPoint3d::FromInterpolate(NpcToWorld(DPoint3d::From(0.5,0.5,low)), 0.5, NpcToWorld(DPoint3d::From(0.5,0.5,high)));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -889,7 +851,12 @@ DPoint3d DgnViewport::GetCameraTarget() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 double DgnViewport::GetFocusPlaneNpc()
     {
-    return WorldToNpc(GetCameraTarget()).z;
+    double npcZ = WorldToNpc(GetCameraTarget()).z;
+
+    if (npcZ < 0.0 || npcZ > 1.0)
+        npcZ = WorldToNpc(DPoint3d::FromInterpolate(NpcToWorld(DPoint3d::From(0.5,0.5,1.0)), 0.5, NpcToWorld(DPoint3d::From(0.5,0.5,0.0)))).z;
+
+    return npcZ;
     }
 
 /*---------------------------------------------------------------------------------**//**

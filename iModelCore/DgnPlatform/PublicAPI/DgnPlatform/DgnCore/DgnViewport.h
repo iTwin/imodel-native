@@ -52,22 +52,15 @@
 //=======================================================================================
 struct FitViewParams
 {
-    RotMatrixCP     m_rMatrix;
-    DgnModelP       m_modelIfNoViewport;
-    bool            m_fitRasterRefs;
-    bool            m_rasterElementsOnly;
-    bool            m_includeTransients;
-    bool            m_useScanRange;
-    bool            m_fitMinDepth;
-    bool            m_fitMaxDepth;
-    bool            m_return3dRangeIn2dViews;
+    RotMatrixCP m_rMatrix;
+    bool        m_useScanRange;
+    bool        m_fitMinDepth;
+    bool        m_fitMaxDepth;
 
     FitViewParams()
         {
-        m_rMatrix = NULL;
-        m_modelIfNoViewport = NULL;
-        m_fitRasterRefs = m_rasterElementsOnly = m_includeTransients = false;
-        m_useScanRange = m_fitMinDepth = m_fitMaxDepth = m_return3dRangeIn2dViews = false;
+        m_rMatrix = nullptr;
+        m_useScanRange = m_fitMinDepth = m_fitMaxDepth = false;
         }
 };
 
@@ -450,7 +443,6 @@ protected:
     ViewControllerPtr m_viewController;
     bvector<IProgressiveDisplayPtr> m_progressiveDisplay;    // progressive display of a query view and reality data.
 
-    void CenterFocusPlane();
     DGNPLATFORM_EXPORT void DestroyViewport();
 
     virtual void _AdjustZPlanesToModel(DPoint3dR origin, DVec3dR delta, ViewControllerCR) const = 0;
@@ -535,7 +527,6 @@ public:
     DGNPLATFORM_EXPORT void SetFrustumFromRootCorners(DPoint3dCP rootBox, double compressionFraction);
     DGNPLATFORM_EXPORT ViewportStatus ChangeArea(DPoint3dCP pts);
     DGNPLATFORM_EXPORT void Destroy();
-    DGNPLATFORM_EXPORT StatusInt ComputeTransientRange(DRange3dP range, RotMatrixP rMatrix, bool checkLevelClass) const;
     DGNPLATFORM_EXPORT StatusInt ComputeVisibleDepthRange (double& minDepth, double& maxDepth, bool ignoreViewExtent = false);
     DGNPLATFORM_EXPORT StatusInt ComputeViewRange(DRange3dR, FitViewParams& params) ;
     DGNPLATFORM_EXPORT void SetNeedsHeal();
