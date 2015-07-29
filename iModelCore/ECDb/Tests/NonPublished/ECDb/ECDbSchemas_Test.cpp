@@ -1965,7 +1965,7 @@ TEST(ECDbSchemas, SystemSchemaTest)
    ECDbR db = saveTestProject.Create ("StartupCompany.ecdb", L"StartupCompany.02.00.ecschema.xml", false);
    ECSchemaCP startupCompanySchema = db.Schemas().GetECSchema ("StartupCompany");
    ASSERT_TRUE (startupCompanySchema != nullptr);
-   ECSchemaCP ecdbSystemSchema = db.Schemas().GetECSchema ("ECDbSystem");
+   ECSchemaCP ecdbSystemSchema = db.Schemas().GetECSchema ("ECDb_System");
    ASSERT_TRUE (ecdbSystemSchema != nullptr);
 
    EXPECT_TRUE (ecdbSystemSchema->IsSystemSchema ());

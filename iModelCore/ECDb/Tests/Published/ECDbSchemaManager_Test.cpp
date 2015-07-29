@@ -63,7 +63,7 @@ TEST (ECDbSchemaManager, IncrementalLoading)
 
     auto const& schemaManager = ecdb. Schemas ();
 
-    ECClassCP ecClass = schemaManager.GetECClass ("ECDbSystem", "ArrayOfPrimitives");
+    ECClassCP ecClass = schemaManager.GetECClass ("ECDb_System", "ArrayOfPrimitives");
     ASSERT_TRUE (ecClass != nullptr) << "ECDbSchemaManager::GetECClass ('ECDbSystem', 'ArrayOfPrimitives') is expected to succeed as the class exists in the ecdb file.";
 
     ECSchemaCP schema = schemaManager.GetECSchema (TEST_SCHEMA_NAME, false);
