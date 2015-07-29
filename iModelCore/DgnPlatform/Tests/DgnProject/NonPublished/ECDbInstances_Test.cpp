@@ -727,7 +727,7 @@ TEST (ECDbInstances, FieldEngineerStructArray)
         ASSERT_EQ (0, compare) << "Json retrieved from db \n\t" << afterUpdateFile.GetName() << "\ndoes not match expected \n\t" << beforeUpdateFile.GetName();
     }
 
-/*
+#ifdef NOT_NOW
 struct DgnECInstanceTests : public testing::Test
     {
     private:
@@ -1179,6 +1179,4 @@ TEST_F(DgnECInstanceTests, InstancesAndRelationships)
 
     project.SaveChanges();
     }
-
-
-*/
+#endif
