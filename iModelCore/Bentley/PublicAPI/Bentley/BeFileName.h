@@ -182,7 +182,7 @@ public:
 
     //! Creates a shortened version of this path by removing leading path components until maxLength is reached. The resulting string is NOT a valid path, but is suitable for UI presentations. If the path is shortened, "..." will be prepended.
     //! @note Result is undefined when maxLength is less than or equal to 3.
-    BENTLEYDLL_EXPORT WString Abbreviate(size_t maxLength);
+    BENTLEYDLL_EXPORT WString Abbreviate(size_t maxLength) const;
 /** @} */
 
 /** @name Convert to/from other encodings */
