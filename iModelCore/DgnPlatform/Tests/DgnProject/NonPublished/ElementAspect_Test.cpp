@@ -97,9 +97,9 @@ typedef TestItem* TestItemP;
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      06/15
 //=======================================================================================
-struct TestItemHandler : Dgn::ElementAspectHandler
+struct TestItemHandler : Dgn::dgn_AspectHandler::Aspect
 {
-    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ITEM_CLASS_NAME, TestItemHandler, Dgn::ElementAspectHandler, )
+    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_ITEM_CLASS_NAME, TestItemHandler, Dgn::dgn_AspectHandler::Aspect, )
     RefCountedPtr<DgnElement::Aspect> _CreateInstance() override {return new TestItem("");}
 };
 
@@ -142,9 +142,9 @@ typedef TestUniqueAspect* TestUniqueAspectP;
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      06/15
 //=======================================================================================
-struct TestUniqueAspectHandler : Dgn::ElementAspectHandler
+struct TestUniqueAspectHandler : Dgn::dgn_AspectHandler::Aspect
 {
-    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_UNIQUE_ASPECT_CLASS_NAME, TestUniqueAspectHandler, Dgn::ElementAspectHandler, )
+    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_UNIQUE_ASPECT_CLASS_NAME, TestUniqueAspectHandler, Dgn::dgn_AspectHandler::Aspect, )
     RefCountedPtr<DgnElement::Aspect> _CreateInstance() override {return new TestUniqueAspect("");}
 };
 
@@ -187,9 +187,9 @@ typedef TestMultiAspect* TestMultiAspectP;
 //=======================================================================================
 // @bsiclass                                                     Sam.Wilson      06/15
 //=======================================================================================
-struct TestMultiAspectHandler : Dgn::ElementAspectHandler
+struct TestMultiAspectHandler : Dgn::dgn_AspectHandler::Aspect
 {
-    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_MULTI_ASPECT_CLASS_NAME, TestMultiAspectHandler, Dgn::ElementAspectHandler, )
+    DOMAINHANDLER_DECLARE_MEMBERS(TMTEST_TEST_MULTI_ASPECT_CLASS_NAME, TestMultiAspectHandler, Dgn::dgn_AspectHandler::Aspect, )
     RefCountedPtr<DgnElement::Aspect> _CreateInstance() override {return new TestMultiAspect("");}
 };
 
@@ -627,22 +627,23 @@ TEST_F(ElementItemTests, MultiAspect_CRUD)
 
     m_db->SaveChanges();
 
-#if 0 // WIP: trying to eliminate ElementOwnsAspects
     if (true)
         {
-        // Verify that aspects were written to the Db and that the ElementOwnsAspects relationships were put into place
+        // Verify that aspects were written to the Db and that the foreign key relationships were put into place
         BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement(
-            "SELECT Aspect.ECInstanceId, Aspect.TestMultiAspectProperty FROM DgnPlatformTest.TestMultiAspect Aspect"
-            " JOIN " DGN_SCHEMA(DGN_RELNAME_ElementOwnsAspects) " ON SourceECInstanceId=? AND TargetECClassId=?");
+            "SELECT aspect.ECInstanceId,aspect.TestMultiAspectProperty FROM DgnPlatformTest.TestMultiAspect aspect WHERE aspect.ElementId=?");
         stmt->BindId(1, el->GetElementId());
-        stmt->BindInt64(2, aclass.GetId());
+
         bool has1=false;
         bool has2=false;
-        // Note: select will often return the same aspect multiple times. Write the loop so that we don't care about that.
-        while (stmt->Step() == BeSQLite::EC::ECSqlStepStatus::HasRow)
+        int count=0;
+
+        while (BeSQLite::EC::ECSqlStepStatus::HasRow == stmt->Step())
             {
+            ++count;
             EC::ECInstanceId aspectId = stmt->GetValueId<EC::ECInstanceId>(0);
             Utf8CP propVal = stmt->GetValueText(1);
+
             if (a1id == aspectId)
                 {
                 has1 = true;
@@ -658,9 +659,9 @@ TEST_F(ElementItemTests, MultiAspect_CRUD)
                 FAIL() << "Unknown aspect found";
                 }
             }
-        ASSERT_TRUE( has1 && has2 );
+
+        ASSERT_TRUE( has1 && has2 && (2 == count) );
         }
-#endif
 
     if (true)
         {

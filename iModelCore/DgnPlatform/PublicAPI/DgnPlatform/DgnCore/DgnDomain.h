@@ -30,7 +30,7 @@
     public:    __exporter__ static __classname__& GetHandler() {return z_Get##__classname__##Instance();}\
                __exporter__ static __classname__& z_Get##__classname__##Instance();
 
-// This macro declares the required members for an DgnDomain::Handler. 
+// This macro declares the required members for an DgnDomain::Handler.
 #define DOMAINHANDLER_DECLARE_MEMBERS(__ECClassName__,__classname__,__superclass__,__exporter__) \
     private:   typedef __superclass__ T_Super; \
     protected: __classname__()  {m_ecClassName =  __ECClassName__ ;} \
@@ -42,7 +42,7 @@
     __classname__*& __classname__::z_PeekInstance() {static __classname__* s_instance = 0; return s_instance;}\
     __classname__&  __classname__::z_Get##__classname__##Instance(){__classname__*& instance=z_PeekInstance(); if (nullptr==instance) instance=z_CreateInstance(); return *instance;}
 
-// This macro declares the required members for an DgnDomain::Handler::Extension. 
+// This macro declares the required members for an DgnDomain::Handler::Extension.
 #define HANDLER_EXTENSION_DECLARE_MEMBERS(__classname__,__exporter__) \
     private: __exporter__ static Token& z_Get##__classname__##Token();\
     public: static BentleyStatus RegisterExtension(DgnDomain::Handler& handler, __classname__& obj) {return obj.RegisterExt(handler,z_Get##__classname__##Token());}\
@@ -62,30 +62,34 @@
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
+struct DgnDomains;
+
 /** @addtogroup DgnDomainGroup
 
 A "Domain" is a combination of an ECSchema, plus a set of C++ classes that implement its runtime behavior.
 
-To connect your Domain's ECSChema with your C++ classes, create a subclass of DgnDomain. A DgnDomain is a singleton - that is, 
-there is only one instance of a DgnDomain subclass that applies to all DgnDbs for a session. You tell the system 
-about your DgnDomain by calling the static method DgnDomains::RegisterDomain.  The constructor of DgnDomain takes the "domain name", 
+To connect your Domain's ECSChema with your C++ classes, create a subclass of DgnDomain. A DgnDomain is a singleton - that is,
+there is only one instance of a DgnDomain subclass that applies to all DgnDbs for a session. You tell the system
+about your DgnDomain by calling the static method DgnDomains::RegisterDomain.  The constructor of DgnDomain takes the "domain name",
 which must match the ECShema file name. That is how a DgnDomain is paired with its ECSchema.
 
-A DgnDomain holds an array of C++ singleton objects, each of which each derive from DgnDomain::Handler. A DgnDomain::Handler 
-holds the name of the ECClass it "handles". DgnDomain::Handlers are added to a DgnDomain by calling DgnDomain::RegisterHandler. 
-Note that DgnDomain::Handlers are singletons - they apply to all DgnDbs, and have no instance data. 
+A DgnDomain holds an array of C++ singleton objects, each of which each derive from DgnDomain::Handler. A DgnDomain::Handler
+holds the name of the ECClass it "handles". DgnDomain::Handlers are added to a DgnDomain by calling DgnDomain::RegisterHandler.
+Note that DgnDomain::Handlers are singletons - they apply to all DgnDbs, and have no instance data.
 
-You can create a DgnDomain::Handler for any ECClass, and the connection between them is via schema name/class name. 
+You can create a DgnDomain::Handler for any ECClass, and the connection between them is via schema name/class name.
 A DgnDomain::Handler handles an ECClass, *and all of its subclasses* unless they have their own DgnDomain::Handler
 
-Within a given DgnDb, instances of an ECClass are known by their local DgnClassId. The same ECClass may have two different 
-DgnClassIds in two different DgnDbs. Whenever a DgnDb is created or opened, the list of loaded DgnDomains is stored in a map of 
-local DgnClassId to DgnDomain::Handler (it will report an error if any expected ones are missing.) That map is stored in a class 
+Within a given DgnDb, instances of an ECClass are known by their local DgnClassId. The same ECClass may have two different
+DgnClassIds in two different DgnDbs. Whenever a DgnDb is created or opened, the list of loaded DgnDomains is stored in a map of
+local DgnClassId to DgnDomain::Handler (it will report an error if any expected ones are missing.) That map is stored in a class
 called DgnDomains, which is accessed through the method DgnDb::Domains().
 
-The DgnDomain for the base "dgn" schema is is called DgnSchemaDomain. It is always loaded and it registers all of its DgnDomain::Handlers. 
+The DgnDomain for the base "dgn" schema is is called DgnSchemaDomain. It is always loaded and it registers all of its DgnDomain::Handlers.
 
 */
+
+struct DgnDomains;
 
 //=======================================================================================
 //! A DgnDomain is a singleton C++ object that provides the runtime implementation for an ECSchema.
@@ -110,6 +114,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
     //! A DgnDomain::Handler must be registered with its DgnDomain via DgnDomain::RegisterHandler before any DgnDbs are created or opened.
     struct Handler : NonCopyableClass
         {
+        friend struct DgnDomains;
         //! A DgnDomain::Handler::Extension can be used to add additional interfaces to a Handler at runtime. If a Handler is
         //! extended, all of its registered subclasses inherit that extension too.
         //! To implement a DgnDomain::Handler::Extension, derive from that class and put the HANDLER_EXTENSION_DECLARE_MEMBERS macro in
@@ -212,6 +217,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
         virtual ~Handler(){}
         void SetSuperClass(Handler* super) {m_superClass = super;}
         void SetDomain(DgnDomain& domain) {m_domain = &domain;}
+        DGNPLATFORM_EXPORT virtual DgnDbStatus _VerifySchema(DgnDomains&);
 
     public:
         //! To enable version-checking for your handler, override this method to report the
@@ -302,8 +308,13 @@ public:
 
     DGNPLATFORM_EXPORT Handler* FindHandler(Utf8CP className) const;
 
-    //! Register a handler with this DgnDomain.
-    DGNPLATFORM_EXPORT DgnDbStatus RegisterHandler(Handler& handler);
+    //! Register a Handler for an ECClass within this DgnDomain.
+    //! @param[in] handler the Handler to register.
+    //! @param[in] replace if true, handler should replace the current handler and will fail if a handler for this class is NOT already registered.
+    //! If false, fails if a Handler for this class IS already registered.
+    //! @note Before a Handler is registered, all of its superclass Handlers must also be registered (that is, Handlers must be
+    //! registered in class hierarchy order.)
+    DGNPLATFORM_EXPORT DgnDbStatus RegisterHandler(Handler& handler, bool replace=false);
 
     //! Register a table handler with this DgnDomain.
     void RegisterTableHandler(TableHandler& handler) {handler.SetDomain(*this); m_tableHandlers.push_back(&handler);}
@@ -330,6 +341,7 @@ struct DgnDomains : DgnDbTable
 private:
     friend struct DgnDb;
     friend struct DgnDomain;
+    friend struct ComponentProxyModel;
 
     DomainList    m_domains;
     Handlers      m_handlers;

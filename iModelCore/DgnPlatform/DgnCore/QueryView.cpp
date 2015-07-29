@@ -223,7 +223,7 @@ void QueryViewController::StartSelectProcessing(DgnViewportR viewport, DrawPurpo
 
     size_t lastSize = 0;
     QueryModel::Results* results = m_queryModel.GetCurrentResults();
-    if (NULL != results)
+    if (nullptr != results)
         lastSize = results->m_elements.size();
 
     // When loading for view dynamics we don't want the overhead of loading too much. If the last update for view dynamics did not
@@ -237,8 +237,8 @@ void QueryViewController::StartSelectProcessing(DgnViewportR viewport, DrawPurpo
 
     QueryModel::Selector& selector = m_queryModel.GetSelector();
     selector.StartProcessing(viewport, *this, _GetRTreeMatchSql(viewport).c_str(), hitLimit, GetMaxElementMemory(), minimumPixels, 
-                                m_alwaysDrawn.empty() ? NULL : &m_alwaysDrawn, 
-                                m_neverDrawn.empty() ?  NULL : &m_neverDrawn, 
+                                m_alwaysDrawn.empty() ? nullptr : &m_alwaysDrawn, 
+                                m_neverDrawn.empty() ?  nullptr : &m_neverDrawn, 
                                 m_noQuery, GetClipVector().get(), m_secondaryHitLimit, m_secondaryVolume);
 
     m_startQueryFrustum = selector.GetFrustum();
@@ -410,22 +410,15 @@ void QueryViewController::QueryModelExtents(DRange3dR range, DgnViewportR vp)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool QueryViewController::_OnComputeFitRange(DRange3dR range, DgnViewportR vp, FitViewParamsR) 
+ViewController::FitComplete QueryViewController::_ComputeFitRange(DRange3dR range, DgnViewportR vp, FitViewParamsR params) 
     {
-    QueryModelExtents(range, vp);
-    if (range.IsNull())
-        return  false;
+    range = GetViewedExtents();
 
-    double aspect = vp.GetViewRect().Aspect();
-    LookAtVolume(range, &aspect);
-    vp.SetupFromViewController();
+    Transform  transform;
+    transform.InitFrom((nullptr == params.m_rMatrix) ? vp.GetRotMatrix() : *params.m_rMatrix);
+    transform.Multiply(range, range);
 
-    LoadElementsForUpdate(vp, DrawPurpose::FitView, NULL, true, true, false);
-
-    m_forceNewQuery = true;
-
-    // we've loaded a set of elements that will be at the extents. Let the normal fit logic do a tightest view fit
-    return  false;
+    return FitComplete::Yes;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -475,15 +468,6 @@ void QueryViewController::BindModelAndCategory(StatementR stmt) const
     stmt.BindVirtualSet(vSetIdx, *this);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Shaun.Sewall    03/2013
-//--------------+------------------------------------------------------------------------
-void QueryViewController::_RestoreFromSettings(JsonValueCR val) 
-    {
-    T_Super::_RestoreFromSettings(val);
-    m_queryModel.EmptyModel();
-    }
-
 //  #define DUMP_DYNAMIC_UPDATE_STATS 1
 
 //---------------------------------------------------------------------------------------
@@ -492,13 +476,17 @@ void QueryViewController::_RestoreFromSettings(JsonValueCR val)
 void QueryViewController::_DrawView(ViewContextR context) 
     {
     QueryModel::Results* results = m_queryModel.GetCurrentResults();
-    if (NULL == results)
+    if (nullptr == results)
         return;
 
     // use the in-memory range tree for picks (to limit to sub-range)
     if (DrawPurpose::Pick == context.GetDrawPurpose() )
         {
-        context.VisitDgnModel(&m_queryModel);
+        if (!m_queryModel.IsEmpty())    // if we have no elements, nothing to do.
+            context.VisitDgnModel(&m_queryModel);
+
+        if (context.CheckStop())
+            return;
 
         // Allow models to participate in picking
         for (DgnModelId modelId : GetViewedModels())
@@ -506,6 +494,9 @@ void QueryViewController::_DrawView(ViewContextR context)
             DgnModelPtr model = GetDgnDb().Models().GetModel(modelId);
             if (model.IsValid())
                 model->AddGraphicsToScene(context);
+
+            if (context.CheckStop())
+                break;
             }
 
         return;
@@ -617,7 +608,7 @@ void QueryViewController::_DrawView(ViewContextR context)
         BindModelAndCategory(*rangeStmt);
 
         ProgressiveViewFilter* pvFilter = new ProgressiveViewFilter(*vp, project, m_queryModel,
-                                                m_neverDrawn.empty() ? NULL : &m_neverDrawn, maxMem, rangeStmt.get());
+                                                m_neverDrawn.empty() ? nullptr : &m_neverDrawn, maxMem, rangeStmt.get());
         if (GetClipVector().IsValid())
             pvFilter->SetClipVector(*GetClipVector());
 
@@ -638,7 +629,7 @@ void QueryViewController::_VisitElements(ViewContextR context)
     CachedStatementPtr rangeStmt;
     project.GetCachedStatement(rangeStmt, _GetRTreeMatchSql(*context.GetViewport()).c_str());
     BindModelAndCategory(*rangeStmt);
-    ProgressiveViewFilter pvFilter (*context.GetViewport(), project, m_queryModel, m_neverDrawn.empty() ? NULL : &m_neverDrawn, GetMaxElementMemory(), rangeStmt.get());
+    ProgressiveViewFilter pvFilter (*context.GetViewport(), project, m_queryModel, m_neverDrawn.empty() ? nullptr : &m_neverDrawn, GetMaxElementMemory(), rangeStmt.get());
     while (pvFilter._Process(context) != IProgressiveDisplay::Completion::Finished)
         ;
     }

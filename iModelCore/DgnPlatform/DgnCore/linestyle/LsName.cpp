@@ -71,6 +71,9 @@ void LsDefinition::Init(Utf8CP name, Json::Value& lsDefinition, DgnStyleId style
 
     m_name = NULL;
     SetName (name);
+
+    m_rasterInitialized = false;
+    m_rasterTexture = 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -117,6 +120,52 @@ Utf8String         LsDefinition::GetStyleName () const
 
     Utf8String retval;
     return Utf8String(retval);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     02/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+uintptr_t     LsDefinition::GetRasterTexture (ViewContextR viewContext, LineStyleSymbR lineStyleSymb, double scale) const
+    {
+    if (!m_rasterInitialized)
+        {
+        m_rasterInitialized = true;
+
+        uint8_t const* image;
+        Point2d     imageSize;
+        uint32_t      flags = 0;
+
+        if (m_lsComp.IsValid() && 
+            SUCCESS == m_lsComp->_GetRasterTexture (image, imageSize, flags))
+            {
+            if (0 != (flags & LsRasterImageComponent::FlagMask_AlphaOnly))       // Alpha Only.
+                {
+                size_t          imageBytes = imageSize.x * imageSize.y, inIndex = (flags & LsRasterImageComponent::FlagMask_AlphaChannel);
+                bool            invert     = 0 != (flags & LsRasterImageComponent::FlagMask_AlphaInvert);
+
+                bvector<uint8_t>   alpha (imageBytes);
+
+                for (size_t outIndex=0; outIndex < imageBytes; inIndex +=4, outIndex++)
+                    alpha[outIndex] = invert ? (255 - image[inIndex]) : image[inIndex];
+
+                DgnPlatformLib::GetHost().GetGraphicsAdmin()._DefineTextureId (m_rasterTexture = reinterpret_cast <uintptr_t> (this), imageSize, true, 5, &alpha.front());
+                }
+            else
+                {
+                DgnPlatformLib::GetHost().GetGraphicsAdmin()._DefineTextureId (m_rasterTexture = reinterpret_cast <uintptr_t> (this), imageSize, true, 0, image);
+                }
+            }
+        }
+    
+
+    double          rasterWidth;
+
+    if (0 != m_rasterTexture &&
+        m_lsComp.IsValid() &&
+        SUCCESS == m_lsComp->_GetRasterTextureWidth (rasterWidth))
+        lineStyleSymb.SetWidth (rasterWidth * scale);
+    
+    return m_rasterTexture;
     }
 
 /*---------------------------------------------------------------------------------**//**

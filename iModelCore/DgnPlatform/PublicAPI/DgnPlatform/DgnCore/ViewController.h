@@ -187,7 +187,8 @@ protected:
     virtual void _SetOrigin(DPoint3dCR viewOrg) = 0;
     virtual void _SetDelta(DVec3dCR viewDelta) = 0;
     virtual void _SetRotation(RotMatrixCR viewRot) = 0;
-    virtual bool _OnComputeFitRange(DRange3dR range, DgnViewportR, FitViewParamsR) {return false;}
+    enum class FitComplete {No=0, Yes=1};
+    virtual FitComplete _ComputeFitRange(DRange3dR range, DgnViewportR, FitViewParamsR) {return FitComplete::No;}
     virtual void _OnViewOpened(DgnViewportR) {}
     virtual bool _Allow3dManipulations() const {return false;}
     virtual void _OnDynamicUpdateComplete(DgnViewportR vp, ViewContextR context, bool completedSuccessfully) {}
@@ -310,7 +311,7 @@ protected:
     virtual DgnDbR _GetDgnDb() const {return m_dgndb;}
 
     //! Get the union of the range (axis-aligned bounding box) of all physical elements in project
-    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _GetProjectExtents() const;
+    DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _GetViewedExtents() const;
 
     DGNPLATFORM_EXPORT BeSQLite::DbResult QueryViewsPropertyAsJson(JsonValueR, DgnViews::DgnViewPropertySpecCR) const;
     DGNPLATFORM_EXPORT BentleyStatus CheckViewSubType() const;
@@ -368,7 +369,7 @@ public:
     DgnDbR GetDgnDb() const {return _GetDgnDb();}
 
     //! Get the union of the range (axis-aligned bounding box) of all physical elements in project
-    AxisAlignedBox3d GetProjectExtents() const {return _GetProjectExtents();}
+    AxisAlignedBox3d GetViewedExtents() const {return _GetViewedExtents();}
 
     //! Load the settings of this view from persistent settings in the database.
     DGNPLATFORM_EXPORT BeSQLite::DbResult Load();
@@ -445,13 +446,13 @@ public:
 
     //! Get the origin (lower, left, front) point of of the view in coordinates of the target
     //! model (physical coordinates for PhysicalViewController and drawing coordinates for DrawingViewController).
-    DGNPLATFORM_EXPORT DPoint3d GetOrigin() const;
+    DPoint3d GetOrigin() const {return _GetOrigin();}
 
     //! Get the size of the X and Y axes of this view. The axes are in world coordinates units, aligned with the view.
-    DGNPLATFORM_EXPORT DVec3d GetDelta() const;
+    DVec3d GetDelta() const {return _GetDelta();}
 
     //! Get the 3x3 orthonormal rotation matrix for this view.
-    DGNPLATFORM_EXPORT RotMatrix GetRotation() const;
+    RotMatrix GetRotation() const {return _GetRotation();}
 
     //! Change the origin (lower, left, front) point of this view.
     //! @param[in] viewOrg The new origin for this view.
@@ -737,17 +738,17 @@ public:
     bool IsCameraOn() const {return m_isCameraOn;}
 
     //! Determine whether the camera is valid for this view
-    bool IsCameraValid() const {return GetCamera().IsValid();}
+    bool IsCameraValid() const {return m_camera.IsValid();}
 
     //! Turn the camera on or off for this view
     //! @param[in] val whether the camera is to be on or off
     void SetCameraOn(bool val) {m_isCameraOn = val;}
 
     //! Get a reference to the CameraInfo for this view.
-    CameraInfo& GetCameraR() {return m_camera;}
+    CameraInfo& GetControllerCameraR() {return m_camera;}
 
     //! Get a const reference to the CameraInfo for this view.
-    CameraInfo const& GetCamera() const {return m_camera;}
+    CameraInfo const& GetControllerCamera() const {return m_camera;}
 
     //! Position the camera for this view and point it at a new target point.
     //! @param[in] eyePoint The new location of the camera.
@@ -832,31 +833,31 @@ public:
     double GetFrontDistance() const {return GetBackDistance() - GetDelta().z;}
 
     //! Get the lens angle for this view.
-    double GetLensAngle() const {return GetCamera().GetLensAngle();}
+    double GetLensAngle() const {return m_camera.GetLensAngle();}
 
     //! Set the lens angle for this view.
     //! @param[in] angle The new lens angle in radians. Must be greater than 0 and less than pi.
     //! @note This does not change the view's current field-of-view. Instead, it changes the lens that will be used if the view
     //! is subsequently modified and the lens angle is used to position the eyepoint.
     //! @note To change the field-of-view (i.e. "zoom") of a view, pass a new viewDelta to #LookAt
-    void SetLensAngle(double angle) {GetCameraR().SetLensAngle(angle);}
+    void SetLensAngle(double angle) {m_camera.SetLensAngle(angle);}
 
     //! Get the distance from the eyePoint to the focus plane for this view.
-    double GetFocusDistance() const {return GetCamera().GetFocusDistance();}
+    double GetFocusDistance() const {return m_camera.GetFocusDistance();}
 
     //! Set the focus distance for this view.
     //! @note Changing the focus distance changes the plane on which the delta.x and delta.y values lie. So, changing focus distance
     //! without making corresponding changes to delta.x and delta.y essentially changes the lens angle, causing a "zoom" effect.
-    void SetFocusDistance(double dist) {GetCameraR().SetFocusDistance(dist);}
+    void SetFocusDistance(double dist) {m_camera.SetFocusDistance(dist);}
 
     //! Get the current location of the eyePoint for camera in this view.
-    DPoint3dCR GetEyePoint() const {return GetCamera().GetEyePoint();}
+    DPoint3dCR GetEyePoint() const {return m_camera.GetEyePoint();}
 
     //! Change the location of the eyePoint for the camera in this view.
     //! @param[in] pt The new eyepoint.
     //! @note This method is generally for internal use only. Moving the eyePoint arbitrarily can result in skewed or illegal perspectives.
     //! The most common method for user-level camera positioning is #LookAt.
-    void SetEyePoint(DPoint3dCR pt) {GetCameraR().SetEyePoint(pt);}
+    void SetEyePoint(DPoint3dCR pt) {m_camera.SetEyePoint(pt);}
 /** @} */
 
 /** @name ClipVector */
@@ -1050,7 +1051,7 @@ private:
     virtual void _AdjustAspectRatio(double , bool expandView) override;
     virtual DPoint3d _GetTargetPoint() const override;
     virtual bool _Allow3dManipulations() const override;
-    virtual AxisAlignedBox3d _GetProjectExtents() const override;
+    virtual AxisAlignedBox3d _GetViewedExtents() const override;
     virtual IAuxCoordSysP _GetAuxCoordinateSystem() const override;
     virtual ColorDef _GetBackgroundColor() const override;
     virtual ClipVectorPtr _GetClipVector() const override;

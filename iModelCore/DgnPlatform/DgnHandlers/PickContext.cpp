@@ -158,7 +158,8 @@ void PickOutput::_AddHit (DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPrio
     {
     GeometricElementCP element;
 
-    if (nullptr == (element = m_context->GetCurrentElement()))
+    // NOTE: Only reason to have ElemTopology for non-element hit is to allow locate/snap...
+    if (nullptr == (element = m_context->GetCurrentElement()) && nullptr == m_context->GetElemTopology())
         return;
 
     DPoint3d    localPt;
@@ -222,7 +223,7 @@ void PickOutput::_AddHit (DPoint4dCR hitPtScreen, DPoint3dCP hitPtLocal, HitPrio
     m_currGeomDetail.SetZValue (getAdjustedViewZ (*m_context, hitPtScreen) + m_context->GetCurrentDisplayParams()->GetNetDisplayPriority());
     m_currGeomDetail.SetGeomStreamEntryId (m_context->GetGeomStreamEntryId());
 
-    RefCountedPtr<HitDetail> thisHit = new HitDetail (*m_context->GetViewport(), *element, m_pickPointWorld, m_options.GetHitSource (), *m_context->GetViewFlags(), m_currGeomDetail);
+    RefCountedPtr<HitDetail> thisHit = new HitDetail (*m_context->GetViewport(), element, m_pickPointWorld, m_options.GetHitSource (), *m_context->GetViewFlags(), m_currGeomDetail);
 
     if (nullptr != m_context->GetElemTopology())
         thisHit->SetElemTopology(m_context->GetElemTopology()->_Clone());
@@ -348,10 +349,16 @@ void PickOutput::AddSurfaceHit (DPoint3dCR hitPtLocal, DVec3dCR hitNormalLocal, 
         }
 
     DVec3d      saveNormal = m_currGeomDetail.GetSurfaceNormal ();
+    DVec3d      hitNormalWorld = hitNormalLocal;
     DPoint4d    viewPt;
-    
+    Transform   localToWorld;
+
+    m_context->GetCurrLocalToWorldTrans (localToWorld);
+    localToWorld.MultiplyMatrixOnly(hitNormalWorld);
+    hitNormalWorld.Normalize ();
+
     m_currGeomDetail.SetGeomType (HitGeomType::Surface);
-    m_currGeomDetail.SetSurfaceNormal (hitNormalLocal);
+    m_currGeomDetail.SetSurfaceNormal (hitNormalWorld);
 
     m_context->LocalToView (&viewPt, &hitPtLocal, 1);
     _AddHit (viewPt, &hitPtLocal, priority);

@@ -91,6 +91,8 @@ DgnCategoryId DgnCategories::QueryCategoryId(Utf8CP code) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCategoryId DgnCategories::QueryCategoryId(DgnSubCategoryId subCategoryId) const
     {
+    BeSQLite::HighPriorityOperationBlock highPriorityOperationBlock; // See comments on HighPriorityOperationBlock
+
     CachedStatementPtr stmt;
     m_dgndb.GetCachedStatement (stmt, "SELECT CategoryId FROM " DGN_TABLE(DGN_CLASSNAME_SubCategory) " WHERE Id=?");
 
@@ -153,6 +155,7 @@ DgnCategories::Category DgnCategories::Query(DgnCategoryId id) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCategories::Iterator::const_iterator DgnCategories::Iterator::begin() const
     {
+    BeSQLite::HighPriorityOperationBlock highPriorityOperationBlock;
     if (!m_stmt.IsValid())
         {
         Utf8String sqlString = MakeSqlString("SELECT Id,Code,Label,Descr,Rank,Scope FROM " DGN_TABLE(DGN_CLASSNAME_Category));

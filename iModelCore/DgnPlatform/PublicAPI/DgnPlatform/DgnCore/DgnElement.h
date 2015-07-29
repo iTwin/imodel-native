@@ -21,7 +21,7 @@ BENTLEY_NAMESPACE_TYPEDEFS(HeapZone);
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-namespace dgn_ElementHandler {struct Element; struct Physical;};
+namespace dgn_ElementHandler {struct Element; struct Physical; struct Drawing; struct Group;};
 namespace dgn_TxnTable {struct Element; struct Model;};
 
 struct MultiAspectMux;
@@ -46,6 +46,12 @@ public:
 };
 
 typedef QvElemSet<QvKey32> T_QvElemSet;
+
+#define DGNELEMENT_DECLARE_MEMBERS(__ECClassName__,__superclass__) \
+    private: typedef __superclass__ T_Super;\
+    public: static Utf8CP MyECClassName() {return __ECClassName__;}\
+    protected: virtual Utf8CP _GetECClassName() const override {return MyECClassName();}\
+               virtual Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
 
 //=======================================================================================
 //! An instance of a DgnElement in memory. DgnElements are the building blocks for a DgnDb.
@@ -382,9 +388,10 @@ public:
         //! @param el   The element to be updated
         //! @param origin   The placement origin
         //! @param angles   The placement angles
-        //! @param egaInstance The ECInstance that specifies the EGA and supplies the required input parameters.
+        //! @param egaInstance The ECInstance that specifies the EGA and supplies any addition input parameters required by the implementation.
         //! @return DgnDbStatus::Success if the EGA was executed and the element's geometry was generated;
         //! DgnDbStatus::NotEnabled if the EGA is not available or cannot be executed; DgnDbStatus::BadArg if properties could not be marshalled from egaInstance; or DgnDbStatus::WriteError if the EGA executed but encountered an error.
+        //! @see BentleyApi::Dgn::DgnScriptContext for an explanation of script-based EGAs.
         DGNPLATFORM_EXPORT DgnDbStatus ExecuteEGA(Dgn::DgnElementR el, DPoint3dCR origin, YawPitchRollAnglesCR angles, ECN::IECInstanceCR egaInstance);
     
     };
@@ -421,6 +428,8 @@ protected:
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
     friend struct MultiAspect;
+    virtual Utf8CP _GetECClassName() const {return MyECClassName();}
+    virtual Utf8CP _GetSuperECClassName() const {return nullptr;}
 
     void SetPersistent(bool val) const {m_flags.m_persistent = val;} //!< @private
 
@@ -522,6 +531,9 @@ protected:
     //! where "myAllocedSize" is the number of bytes allocated for this element, held through member variable pointers.
     virtual uint32_t _GetMemSize() const {return sizeof(*this);}
 
+    //! Virtual writeable deep copy method.
+    DGNPLATFORM_EXPORT DgnElementPtr virtual _Clone(DgnDbStatus* stat=nullptr, DgnElement::CreateParams const* params=nullptr) const;
+
     //! Virtual assignment method. If your subclass has member variables, it @b must override this method and copy those values from @a source.
     //! @param[in] source The element from which to copy
     //! @note If you override this method, you @b must call T_Super::_CopyFrom, forwarding its status (that is, only return DgnDbStatus::Success if both your
@@ -569,6 +581,7 @@ protected:
     DGNPLATFORM_EXPORT void ClearAllAppData(); //!< @private
 
 public:
+    static Utf8CP MyECClassName() {return DGN_CLASSNAME_Element;}
     DGNPLATFORM_EXPORT void SetInSelectionSet(bool yesNo) const; //!< @private
 
     DGNPLATFORM_EXPORT void AddRef() const;  //!< @private
@@ -609,6 +622,11 @@ public:
 
     //! Set this element's undisplayed flag
     void SetUndisplayedFlag(bool yesNo) {m_flags.m_undisplayed = yesNo;}
+
+    //! Create a writeable deep copy of a DgnElement for insert into the same or new model.
+    //! @param[out] stat Optional status to describe failures, a valid DgnElementPtr will only be returned if successful.
+    //! @param[in] params Optional CreateParams. Might specify a different destination model, etc.
+    DgnElementPtr Clone(DgnDbStatus* stat=nullptr, DgnElement::CreateParams const* params=nullptr) const {return _Clone(stat, params);}
 
     //! Copy the content of another DgnElement into this DgnElement.
     //! @param[in] source The other element whose content is copied into this element.
@@ -676,10 +694,6 @@ public:
 
     //! Get the DgnElementId of this DgnElement
     DgnElementId GetElementId() const {return m_elementId;}
-
-    //! Invalidate the ElementId of this element.
-    //! This can be used to clear the ElementId of this element before inserting a copy of it (otherwise Insert on the copy will fail.)
-    void InvalidateElementId() {m_elementId = DgnElementId();}
 
     //! Get the DgnClassId of this DgnElement.
     DgnClassId GetElementClassId() const {return m_classId;}
@@ -970,7 +984,8 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE PhysicalElement : DgnElement3d
 {
-    DEFINE_T_SUPER(DgnElement3d);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_PhysicalElement, DgnElement3d) 
+
 protected:
     PhysicalElementCP _ToPhysicalElement() const override {return this;}
 
@@ -1032,7 +1047,8 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DrawingElement : DgnElement2d
 {
-    DEFINE_T_SUPER(DgnElement2d);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_DrawingElement, DgnElement2d) 
+
 protected:
     DrawingElementCP _ToDrawingElement() const override {return this;}
 
@@ -1055,7 +1071,7 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ElementGroup : DgnElement
 {
-    DEFINE_T_SUPER(DgnElement);
+    DGNELEMENT_DECLARE_MEMBERS(DGN_CLASSNAME_ElementGroup, DgnElement) 
 
 protected:
     ElementGroupCP _ToElementGroup() const override {return this;}
@@ -1115,26 +1131,6 @@ public:
     //! @return the DgnElementId of the ElementGroup.  Will be invalid if not found.
     //! @see QueryMembers
     DGNPLATFORM_EXPORT static DgnElementId QueryFromMember(DgnDbR db, DgnClassId groupClassId, DgnElementId memberElementId);
-};
-
-//=======================================================================================
-//! To be implemented by a class that enables JavaScript programs to access the DgnPlatform API.
-// @bsiclass                                                    Sam.Wilson      06/15
-//=======================================================================================
-struct IDgnJavaScriptObjectModel
-{
-    virtual ~IDgnJavaScriptObjectModel() {}
-
-    //! Execute an Element Generation Algorithm (EGA) that is implemented in JavaScript. The \a jsEgaFunctionName identifies the EGA function. The namespace portion of the name
-    //! must identify a JavaScript program that was previously registered in the DgnDb. See BentleyApi::DgnPlatform::DgnJavaScriptLibrary.
-    //! @param[out] functionReturnStatus    The function's integer return value. 0 means success.
-    //! @param[in] el           The element to update
-    //! @param[in] jsEgaFunctionName   Identifies the JavaScript function to be executed. Must be of the form namespace.functionname
-    //! @param[in] origin       The placement origin
-    //! @param[in] angles       The placement angles
-    //! @param[in] parms        The parameters to pass to the EGA function. The parameters are passed as a single JS object.
-    //! @return non-zero if the EGA is not in JavaScript, if the egaInstance properties are invalid, or if the JavaScript function could not be found or failed to execute.
-    virtual BentleyStatus _ExecuteJavaScriptEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms) = 0;
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

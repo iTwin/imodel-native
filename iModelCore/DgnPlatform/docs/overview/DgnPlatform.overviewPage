@@ -44,7 +44,7 @@ Domain examples include:
 @li Civil Conceptual Design
 @li Plant Operations
 @li Construction
-@li Planning
+@li @ref PlanningGroup
 
 Domains ship with the platform but are separate in a software architecture sense.  The goal of a domain is to capture the data model and file I/O services
 required for a specific discipline or lifecycle phase.  Domains are meant to be used across applications and to raise the level of information sharing.

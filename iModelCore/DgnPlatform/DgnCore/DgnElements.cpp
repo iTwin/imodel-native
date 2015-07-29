@@ -1252,6 +1252,12 @@ DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnDbStatus* outS
         return nullptr;
         }
 
+    if (typeid(element) != element.GetElementHandler()._ElementType())
+        {
+        stat = DgnDbStatus::WrongHandler; // they gave us an element with an invalid handler
+        return nullptr;
+        }
+
     DgnElementCPtr newEl = PerformInsert(element, stat);
     if (!newEl.IsValid())
         element.m_elementId = DgnElementId(); // Insert failed, make sure to invalidate the DgnElementId so they don't accidentally use it

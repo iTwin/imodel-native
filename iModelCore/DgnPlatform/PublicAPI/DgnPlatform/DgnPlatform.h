@@ -96,6 +96,7 @@ DGNPLATFORM_TYPEDEFS (IDrawGeom)
 DGNPLATFORM_TYPEDEFS (IElemTopology)
 DGNPLATFORM_TYPEDEFS (IRedrawOperation)
 DGNPLATFORM_TYPEDEFS (IRedrawAbort)
+DGNPLATFORM_TYPEDEFS (ITransientGeometryHandler)
 DGNPLATFORM_TYPEDEFS (IViewDraw)
 DGNPLATFORM_TYPEDEFS (IViewOutput)
 DGNPLATFORM_TYPEDEFS (LineStyleInfo)
@@ -109,8 +110,6 @@ DGNPLATFORM_TYPEDEFS (ViewController)
 DGNPLATFORM_TYPEDEFS (ViewFlags)
 DGNPLATFORM_TYPEDEFS (DgnDbExpressionContext);
 DGNPLATFORM_TYPEDEFS (DgnElementExpressionContext);
-DGNPLATFORM_TYPEDEFS (DgnJavaScriptObjectModel)
-DGNPLATFORM_TYPEDEFS (IDgnJavaScriptObjectModel)
 
 /** @cond BENTLEY_SDK_Internal */
 DGNPLATFORM_REF_COUNTED_PTR (TextString)
@@ -123,6 +122,8 @@ DGNPLATFORM_TYPEDEFS (ChangeAnnotationScale)
 DGNPLATFORM_TYPEDEFS (ClipPrimitive)
 DGNPLATFORM_TYPEDEFS (ClipVector)
 DGNPLATFORM_TYPEDEFS (ClipVolumeOverrides)
+DGNPLATFORM_TYPEDEFS (ComponentModel)
+DGNPLATFORM_TYPEDEFS (ComponentProxyModel)
 DGNPLATFORM_TYPEDEFS (CutGraphicsCachedKey)
 DGNPLATFORM_TYPEDEFS (Dgn3DInputEvent)
 DGNPLATFORM_TYPEDEFS (DgnButtonEvent)
@@ -133,6 +134,7 @@ DGNPLATFORM_TYPEDEFS (DgnGestureEvent)
 DGNPLATFORM_TYPEDEFS (DgnHost)
 DGNPLATFORM_TYPEDEFS (DgnMouseWheelEvent)
 DGNPLATFORM_TYPEDEFS (DgnProgressMeter)
+DGNPLATFORM_TYPEDEFS (DgnScriptContext)
 DGNPLATFORM_TYPEDEFS (DrawContext)
 DGNPLATFORM_TYPEDEFS (DrawingModel)
 DGNPLATFORM_TYPEDEFS (DropGeometry)
@@ -236,6 +238,8 @@ DGNPLATFORM_REF_COUNTED_PTR (ElementGroup)
 DGNPLATFORM_REF_COUNTED_PTR (GeometricElement)
 DGNPLATFORM_REF_COUNTED_PTR (PatternParams)
 DGNPLATFORM_REF_COUNTED_PTR (PhysicalElement)
+DGNPLATFORM_REF_COUNTED_PTR (ComponentModel)
+DGNPLATFORM_REF_COUNTED_PTR (ComponentProxyModel)
 DGNPLATFORM_REF_COUNTED_PTR (PhysicalModel)
 DGNPLATFORM_REF_COUNTED_PTR (PhysicalRedlineViewController)
 DGNPLATFORM_REF_COUNTED_PTR (QueryViewController)
@@ -262,12 +266,11 @@ BEGIN_BENTLEY_NAMESPACE
 enum
 {
     DGNPLATFORM_RESOURCE_MAXFILELENGTH                    = 256,
-    DGNPLATFORM_RESOURCE_MAXDIRLENGTH                     = 256,
     DGNPLATFORM_RESOURCE_MAXNAMELENGTH                    = 256,
     DGNPLATFORM_RESOURCE_MAXEXTENSIONLENGTH               = 256,
 
     MAXFILELENGTH         = DGNPLATFORM_RESOURCE_MAXFILELENGTH,
-    MAXDIRLENGTH          = DGNPLATFORM_RESOURCE_MAXDIRLENGTH,
+    MAXDIRLENGTH          = 256,
     MAXDEVICELENGTH       = 256,
     MAXNAMELENGTH         = DGNPLATFORM_RESOURCE_MAXNAMELENGTH,
     MAXEXTENSIONLENGTH    = DGNPLATFORM_RESOURCE_MAXEXTENSIONLENGTH,
@@ -619,6 +622,9 @@ enum DgnPlatformConstants
     MAX_LINECODE                    = 7,
 };
 
+//! A kind of script
+enum class DgnScriptType{JavaScript=0, TypeScript=1};
+
 //! @private
 enum class DgnFontType { TrueType = 1, Rsc = 2, Shx = 3, };
 
@@ -911,19 +917,23 @@ public:
     explicit ColorDef (uint32_t intval) {*AsUInt32()=intval;}
     ColorDef (Byte red, Byte green, Byte blue, Byte alpha=0) {SetColors (red,green,blue,alpha);}
 
-    static ColorDef White()      {return ColorDef(255,255,255);}
-    static ColorDef Black()      {return ColorDef(0,0,0);}
-    static ColorDef Magenta()    {return ColorDef(255,0,255);}
-    static ColorDef Blue()       {return ColorDef(0,0,255);}
-    static ColorDef Red()        {return ColorDef(255,0,0);}
-    static ColorDef Green()      {return ColorDef(0,255,0);}
-    static ColorDef LightGrey()  {return ColorDef(0xbb,0xbb,0xbb);}
-    static ColorDef DarkGrey()   {return ColorDef(0x55,0x55,0x55);}
-    static ColorDef MediumGrey() {return ColorDef(0x88,0x88,0x88);}
-    static ColorDef Yellow()     {return ColorDef(0xff,0xff,0);}
-    static ColorDef DarkYellow() {return ColorDef(0x80,0x80,0);}
-    static ColorDef Violet()     {return ColorDef(0x80,0,0x80);}
-    static ColorDef Maroon()     {return ColorDef(0x80,0,0);}
+    static ColorDef Black()       {return ColorDef(0,0,0);}
+    static ColorDef White()       {return ColorDef(0xff,0xff,0xff);}
+    static ColorDef Red()         {return ColorDef(0xff,0,0);}
+    static ColorDef Green()       {return ColorDef(0,0xff,0);}       //! Lime
+    static ColorDef Blue()        {return ColorDef(0,0,0xff);}
+    static ColorDef Yellow()      {return ColorDef(0xff,0xff,0);}
+    static ColorDef Cyan()        {return ColorDef(0,0xff,0xff);}
+    static ColorDef Magenta()     {return ColorDef(0xff,0,0xff);}
+    static ColorDef LightGrey()   {return ColorDef(0xbb,0xbb,0xbb);}
+    static ColorDef MediumGrey()  {return ColorDef(0x88,0x88,0x88);}
+    static ColorDef DarkGrey()    {return ColorDef(0x55,0x55,0x55);}
+    static ColorDef DarkRed()     {return ColorDef(0x80,0,0);}       //! Maroon
+    static ColorDef DarkGreen()   {return ColorDef(0,0x80,0);}       //! Green
+    static ColorDef DarkBlue()    {return ColorDef(0,0,0x80);}       //! Navy
+    static ColorDef DarkYellow()  {return ColorDef(0x80,0x80,0);}    //! Olive
+    static ColorDef DarkCyan()    {return ColorDef(0,0x80,0x80);}    //! Teal
+    static ColorDef DarkMagenta() {return ColorDef(0x80,0,0x80);}    //! Purple
 };
 
 //=======================================================================================
