@@ -68,7 +68,7 @@ WmsMap::WmsMap()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  6/2015
 //----------------------------------------------------------------------------------------
- WmsMap::WmsMap(Utf8CP url, DRange2dCR bbox, Utf8CP version, Utf8CP layers, Utf8CP csType, Utf8CP csLabel)
+WmsMap::WmsMap(Utf8CP url, DRange2dCR bbox, Utf8CP version, Utf8CP layers, Utf8CP csType, Utf8CP csLabel, Utf8CP vendorSpecific, bool isTransparent)
  :m_url(url),
   m_boundingBox(bbox),
   //m_metaWidth(),
@@ -79,8 +79,8 @@ WmsMap::WmsMap()
   m_csType(csType),
   m_csLabel(csLabel),
   m_format("image/png"),    // The standards says that all servers should support png.
-  m_vendorSpecific(""),
-  m_transparent(false),
+  m_vendorSpecific(vendorSpecific),
+  m_transparent(isTransparent),
   m_axisOrder(AxisOrder::Default)
     {
     SetMetaSizeByResolutionCount(10);

@@ -28,7 +28,7 @@ struct WmsMap
         };
 
     WmsMap();
-    RASTERSCHEMA_EXPORT WmsMap(Utf8CP url, DRange2dCR bbox, Utf8CP version, Utf8CP layers, Utf8CP csType, Utf8CP csLabel);
+    RASTERSCHEMA_EXPORT WmsMap(Utf8CP url, DRange2dCR bbox, Utf8CP version, Utf8CP layers, Utf8CP csType, Utf8CP csLabel, Utf8CP vendorSpecific, bool isTransparent);
 
     //! Return true if mandatory parameters are set. Does not validate with server.
     bool HasValidParameters() const;
