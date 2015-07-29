@@ -57,16 +57,16 @@ private:
 
 public:
     //! Gets the ECSqlSystemPropertiesClass ECClass.
-    //! @param[in] schemaManager SchemaManager used to retrieve the ECDbSystem ECSchema.
+    //! @param[in] schemaManager SchemaManager used to retrieve the ECDb_System ECSchema.
     //! @return ECSqlSystemPropertiesClass class or nullptr in case of errors
     static ECN::ECClassCP GetECSqlSystemPropertiesClass (ECDbSchemaManagerCR schemaManager);
 
-    //! Gets the ECDbSystem ECSchema.
-    //! @param[in] schemaManager SchemaManager used to retrieve the ECDbSystem ECSchema.
-    //! @return ECDbSystem ECSchema or nullptr in case of errors
+    //! Gets the ECDb_System ECSchema.
+    //! @param[in] schemaManager SchemaManager used to retrieve the ECDb_System ECSchema.
+    //! @return ECDb_System ECSchema or nullptr in case of errors
     static ECN::ECSchemaCP GetSchema (ECDbSchemaManagerCR schemaManager);
 
-    //! Gets the system property of the specified kind from the ECDbSystem ECSchema.
+    //! Gets the system property of the specified kind from the ECDb_System ECSchema.
     //! @param[in] schemaManager SchemaManager used to retrieve the respective system property
     //! @return System property or nullptr in case of errors
     static ECN::ECPropertyCP GetSystemProperty (ECDbSchemaManagerCR schemaManager, ECSqlSystemProperty kind);

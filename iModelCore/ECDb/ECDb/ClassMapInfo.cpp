@@ -182,7 +182,6 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
     if (polymorphicSharedTableClassMaps.size() == 1)
         {
         m_parentClassMap = parentClassMap;
-        BeAssert(GetECClass().GetIsStruct() == parentClass.GetIsStruct() && "This should have been caught by the schema validation already");
         BeAssert(parentClassMap->GetMapStrategy().IsPolymorphicSharedTable());
 
         ECDbMapStrategy::Option option = ECDbMapStrategy::Option::None;

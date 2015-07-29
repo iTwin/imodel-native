@@ -15,7 +15,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                 Krischan.Eberle                06/2013
 //+---------------+---------------+---------------+---------------+---------------+-
 //static member variable initialization
-Utf8CP const ECDbSystemSchemaHelper::ECDBSYSTEM_SCHEMANAME = "ECDbSystem";
+Utf8CP const ECDbSystemSchemaHelper::ECDBSYSTEM_SCHEMANAME = "ECDb_System";
 Utf8CP const ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME = "ECInstanceId";
 Utf8CP const ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME = "SourceECInstanceId";
 Utf8CP const ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME = "SourceECClassId";
@@ -42,7 +42,7 @@ ECClassCP ECDbSystemSchemaHelper::GetECSqlSystemPropertiesClass (ECDbSchemaManag
     //auto stat = schemaManager.GetECClass (systemPropsClass, ECDBSYSTEM_SCHEMANAME, ECSQLSYSTEMPROPERTIES_CLASSNAME);
     //if (stat != SUCCESS)
     //        {
-      //  BeAssert (false && "ECDbSystemSchemaHelper> Getting ECSqlSystemProperties class from ECDbSystem schema should never fail.");
+      //  BeAssert (false && "ECDbSystemSchemaHelper> Getting ECSqlSystemProperties class from ECDb_System schema should never fail.");
         //return nullptr;
         //}
     //return systemPropsClass;
@@ -69,7 +69,7 @@ ECSchemaCP ECDbSystemSchemaHelper::GetSchema (ECDbSchemaManagerCR schemaManager)
     if (schema == nullptr)
         {
         LOG.errorv ("Could not load system ECSchema '%s'. Make sure the standard ECSchemas are deployed in the expected location.", ECDBSYSTEM_SCHEMANAME);
-        BeAssert (false && "Could not load ECDbSystem ECSchema. Make sure the standard ECSchemas are deployed in the expected location.");
+        BeAssert (false && "Could not load system ECSchema. Make sure the standard ECSchemas are deployed in the expected location.");
         return nullptr;
         }
 
@@ -114,7 +114,7 @@ ECClassCP ECDbSystemSchemaHelper::GetECClass (ECSchemaCR ecdbSystemSchema, Utf8C
     if (ecClass == nullptr)
         {
         LOG.fatalv ("ECClass '%s' not found in system ECSchema '%s'.", className, ECDBSYSTEM_SCHEMANAME);
-        BeAssert (false && "Fatal error. ECClass not found in ECDbSystem ECSchema.");
+        BeAssert (false && "Fatal error. ECClass not found in system ECSchema.");
         }
 
     return ecClass;
@@ -131,7 +131,7 @@ ECPropertyCP ECDbSystemSchemaHelper::GetECProperty (ECClassCR ecClass, Utf8CP pr
     if (prop == nullptr)
         {
         LOG.fatalv ("ECProperty '%s' not found in ECClass '%s' from system ECSchema '%s'.", propertyName, Utf8String (ecClass.GetName ().c_str ()).c_str (), ECDBSYSTEM_SCHEMANAME);
-        BeAssert (false && "Fatal error. ECProperty not found in ECSqlSystemProperties ECClass from ECDbSystem ECSchema.");
+        BeAssert (false && "Fatal error. ECProperty not found in ECSqlSystemProperties ECClass from system ECSchema.");
         }
 
     return prop;

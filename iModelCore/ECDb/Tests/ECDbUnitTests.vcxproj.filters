@@ -193,9 +193,6 @@
     <ClCompile Include="Published\ECDbMapCA_Tests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Performance\ECDbMapCAPerformanceTests.cpp">
-      <Filter>Performance</Filter>
-    </ClCompile>
     <ClCompile Include="Performance\PerformanceECDbMapCATests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>

@@ -218,9 +218,6 @@ PropertyMapPtr PropertyMapSecondaryTableKey::Create (ECDbSchemaManagerCR schemaM
         return nullptr;
         }
 
-    //if (systemColumn->GetDependentPropertiesR ().Add (classMap.GetClass ().GetId (), property->GetName ().c_str ()) != BentleyStatus::SUCCESS)
-    //    return nullptr;
-
     return new PropertyMapSecondaryTableKey (*property, systemColumn, kind);
     }
 

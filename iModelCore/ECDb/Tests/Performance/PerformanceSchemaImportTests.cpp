@@ -144,11 +144,11 @@ ECSchemaPtr PerformanceTestsSchemaImport::CreateTestSchema (size_t noOfClasses, 
 
     if (customAttributeOnSchema)
         {
-        auto ca = bscaSchema->GetClassCP ("SchemaMap");
+        auto ca = bscaSchema->GetClassCP ("PrimarySchemaMetaData");
         EXPECT_TRUE (ca != nullptr);
         auto customAttribute = ca->GetDefaultStandaloneEnabler ()->CreateInstance ();
         EXPECT_TRUE (customAttribute != nullptr);
-        EXPECT_TRUE (customAttribute->SetValue ("TablePrefix", ECValue ("t")) == ECOBJECTS_STATUS_Success);
+        EXPECT_TRUE (customAttribute->SetValue ("ContainsUnits", ECValue (false)) == ECOBJECTS_STATUS_Success);
         EXPECT_TRUE (testSchema->SetCustomAttribute (*customAttribute) == ECOBJECTS_STATUS_Success);
         }
 
@@ -229,12 +229,13 @@ ECSchemaPtr PerformanceTestsSchemaImport::CreateTestSchema (size_t noOfClasses, 
                                 }
                             case 2:
                                 {
-                                auto ca = bscaSchema->GetClassCP ("PropertyMap");
+                                auto ca = bscaSchema->GetClassCP ("DisplayOptions");
                                 EXPECT_TRUE (ca != nullptr);
                                 auto customAttribute = ca->GetDefaultStandaloneEnabler ()->CreateInstance ();
-                                EXPECT_TRUE (customAttribute->SetValue ("IsNullable", ECValue (true)) == ECOBJECTS_STATUS_Success);
-                                EXPECT_TRUE (customAttribute->SetValue ("IsUnique", ECValue (false)) == ECOBJECTS_STATUS_Success);
-                                EXPECT_TRUE (primitiveProperty->SetCustomAttribute (*customAttribute) == ECOBJECTS_STATUS_Success);
+                                EXPECT_TRUE (customAttribute != nullptr);
+                                EXPECT_TRUE (customAttribute->SetValue ("Hidden", ECValue (true)) == ECOBJECTS_STATUS_Success);
+                                EXPECT_TRUE (customAttribute->SetValue ("HideRelated", ECValue (false)) == ECOBJECTS_STATUS_Success);
+                                EXPECT_TRUE (testClass->SetCustomAttribute (*customAttribute) == ECOBJECTS_STATUS_Success);
                                 break;
                                 }
                             case 3:
@@ -280,7 +281,7 @@ TEST_F (PerformanceTestsSchemaImport, SchemaWithCustomAttributeImportPerformance
     ASSERT_EQ (stat, BE_SQLITE_OK);
 
     ECSchemaPtr ecSchema;
-    ecSchema = PerformanceTestsSchemaImport::CreateTestSchema (10000, 100, false, false, false, 0);
+    ecSchema = PerformanceTestsSchemaImport::CreateTestSchema (5000, 100, true, true, true, 4);
     ASSERT_TRUE (ecSchema.IsValid ());
     ECSchemaCachePtr schemaCache = ECSchemaCache::Create ();
     ASSERT_EQ (SUCCESS, schemaCache->AddSchema (*ecSchema));
@@ -290,7 +291,7 @@ TEST_F (PerformanceTestsSchemaImport, SchemaWithCustomAttributeImportPerformance
     timer.Stop ();
     LOG.infov ("Schema Import took %.4f msecs.", timer.GetElapsedSeconds () * 1000.0);
     PerformanceTestingFrameWork performanceObjSchemaImport;
-    EXPECT_TRUE(performanceObjSchemaImport.writeTodb(timer, "PerformanceTestsSchemaImport,SchemaWithCustomAttributeImportPerformance_Import", "Import EC Schema with 10,000 Custom Attributes"));
+    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (timer, "PerformanceTestsSchemaImport,SchemaWithCustomAttributeImportPerformance_Import", "Import EC Schema with 10,000 Custom Attributes"));
 
     ecdb.SaveChanges ();
 
@@ -302,11 +303,10 @@ TEST_F (PerformanceTestsSchemaImport, SchemaWithCustomAttributeImportPerformance
     timer.Start ();
     ECSchemaCP ecschema = ecdb.Schemas ().GetECSchema ("TestSchema", true);
     timer.Stop ();
-    LOG.infov ("Schema Export took %.4f msecs.", timer.GetElapsedSeconds () * 1000.0);
-    EXPECT_TRUE(performanceObjSchemaImport.writeTodb(timer, "PerformanceTestsSchemaImport,SchemaWithCustomAttributeImportPerformance_GetSchema", "Gets the schema that has 10,000 Custom Attributes"));
-
     ASSERT_TRUE (ecschema != nullptr);
 
+    LOG.infov ("Schema Export took %.4f msecs.", timer.GetElapsedSeconds () * 1000.0);
+    EXPECT_TRUE (performanceObjSchemaImport.writeTodb (timer, "PerformanceTestsSchemaImport,SchemaWithCustomAttributeImportPerformance_GetSchema", "Gets the schema that has 10,000 Custom Attributes"));
     ecdb.CloseDb ();
     }
 
