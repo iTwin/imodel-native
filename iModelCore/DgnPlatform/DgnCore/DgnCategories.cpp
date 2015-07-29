@@ -466,3 +466,73 @@ void DgnCategories::SubCategory::Override::ApplyTo(Appearance& appear) const
     if (m_flags.m_transparency) appear.SetTransparency(m_value.GetTransparency());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnSubCategoryId importSubCategory(DgnDbR targetDb, DgnCategoryId targetcatid, DgnDbR sourceDb, DgnCategories::SubCategoryIterator::Entry const& sourceSubCat)
+    {
+    DgnCategories::SubCategory::Appearance sourceAppearance = sourceSubCat.GetAppearance();
+    // *** TBD: Translate style IDS in sourceAppearance
+
+    DgnCategories::SubCategory targetsubcat(targetcatid, DgnSubCategoryId(), sourceSubCat.GetCode(), sourceAppearance, sourceSubCat.GetDescription(), sourceSubCat.GetLabel().c_str());
+    targetDb.Categories().InsertSubCategory(targetsubcat);
+    return targetsubcat.GetSubCategoryId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnCategoryId importCategory(DgnDbR targetDb, DgnDbR sourceDb, DgnCategories::Category const& sourcecat)
+    {
+    DgnCategories::SubCategory::Appearance targetAppearance = sourceDb.Categories().QuerySubCategory(DgnCategories::DefaultSubCategoryId(sourcecat.GetCategoryId())).GetAppearance();
+    // *** TBD: Translate style IDS in targetAppearance
+
+    DgnCategories::Category targetcat(sourcecat.GetCode(), DgnCategories::Scope::Physical, sourcecat.GetDescription());
+    targetDb.Categories().Insert(targetcat, targetAppearance);
+    return targetcat.GetCategoryId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnCategories::Import(DgnRemapTables& remap, DgnDbR sourceDb, DgnCategoryId sourceCategoryId)
+    {
+    DgnCategoryId destCategoryId = remap.Find(sourceCategoryId);
+    if (!destCategoryId.IsValid())
+        {
+        DgnCategories::Category sourcecat = sourceDb.Categories().Query(sourceCategoryId);
+
+        destCategoryId = QueryCategoryId(sourcecat.GetCode());
+        if (!destCategoryId.IsValid())
+            {
+            destCategoryId = importCategory(GetDgnDb(), sourceDb, sourcecat);
+            if (!destCategoryId.IsValid())
+                return DgnDbStatus::DuplicateName;
+            }
+
+        remap.Add(sourceCategoryId, destCategoryId);
+        }
+
+    for (auto const& sourceSubCat : sourceDb.Categories().MakeSubCategoryIterator(sourceCategoryId))
+        {
+        DgnSubCategoryId destSubCategoryId = remap.Find(sourceSubCat.GetSubCategoryId());
+        if (destSubCategoryId.IsValid())
+            continue;
+
+        if (sourceSubCat.GetSubCategoryId() == DgnCategories::DefaultSubCategoryId(sourceCategoryId))
+            destSubCategoryId = DgnCategories::DefaultSubCategoryId(sourceCategoryId);
+        else
+            {
+            destSubCategoryId = QuerySubCategoryId(destCategoryId, sourceSubCat.GetCode());
+            if (!destCategoryId.IsValid())
+                destSubCategoryId = importSubCategory(GetDgnDb(), destCategoryId, sourceDb, sourceSubCat);
+            }
+
+        if (!destSubCategoryId.IsValid())
+            continue; // *** TBD: How to report error?
+
+        remap.Add(sourceSubCat.GetSubCategoryId(), destSubCategoryId);
+        }
+
+    return DgnDbStatus::Success;
+    }

@@ -407,6 +407,7 @@ void OnNewGeom (DRange3dCR localRange, TransformCP geomToElement);
 
 public:
 
+DGNPLATFORM_EXPORT BentleyStatus SetGeomStream (GeomStreamR);
 DGNPLATFORM_EXPORT BentleyStatus SetGeomStream (DgnGeomPartR);
 DGNPLATFORM_EXPORT BentleyStatus SetGeomStreamAndPlacement (GeometricElementR);
 

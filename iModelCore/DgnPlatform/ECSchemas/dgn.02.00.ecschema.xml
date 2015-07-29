@@ -14,7 +14,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
         <SystemSchema xmlns="Bentley_Standard_CustomAttributes.01.12"/>
     </ECCustomAttributes>
 
-    <ECClass typeName="ComponentSolution" isDomainClass="True" >
+    <ECClass typeName="ComponentModelSoulution" isDomainClass="True" >
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.01.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
@@ -36,7 +36,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd" >
             </LinkTableRelationshipMap>
         </ECCustomAttributes>
         <Source cardinality="(0,1)" polymorphic="True">
-            <Class class="ComponentSolution" />
+            <Class class="ComponentModelSoulution" />
         </Source>
         <Target cardinality="(0,N)" polymorphic="True">
             <Class class="Element" />

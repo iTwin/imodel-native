@@ -3084,6 +3084,19 @@ static bool is3dGeometryType (ElementGeometry::GeometryType geomType)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ElementGeometryBuilder::SetGeomStream (GeomStreamR geom)
+    {
+    if (0 == m_writer.m_buffer.size())
+        return ERROR;
+
+    geom.SaveData (&m_writer.m_buffer.front(), (uint32_t) m_writer.m_buffer.size());
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ElementGeometryBuilder::SetGeomStream (DgnGeomPartR part)
     {
     if (!m_isPartCreate)

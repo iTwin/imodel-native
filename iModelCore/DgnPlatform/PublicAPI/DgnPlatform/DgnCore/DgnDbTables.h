@@ -19,7 +19,7 @@
 #define DGN_CLASSNAME_Category              "Category"
 #define DGN_CLASSNAME_Color                 "Color"
 #define DGN_CLASSNAME_ComponentModel        "ComponentModel"
-#define DGN_CLASSNAME_ComponentProxyModel   "ComponentProxyModel"
+#define DGN_CLASSNAME_ComponentModelSolution "ComponentModelSolution"
 #define DGN_CLASSNAME_DrawingElement        "DrawingElement"
 #define DGN_CLASSNAME_DrawingModel          "DrawingModel"
 #define DGN_CLASSNAME_Element               "Element"
@@ -75,6 +75,31 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
 namespace dgn_ElementHandler {struct Physical;};
 namespace dgn_TxnTable {struct Element; struct Model;};
+
+//=======================================================================================
+//! Holds ID remapping tables
+//=======================================================================================
+struct DgnRemapTables : BeSQLite::DbAppData
+{
+protected:
+    bmap<DgnCategoryId, DgnCategoryId> m_categoryId;
+    bmap<DgnSubCategoryId, DgnSubCategoryId> m_subcategoryId;
+
+    virtual void _OnCleanup(BeSQLite::Db&) {delete this;}
+
+    template<typename T>
+    T Find(bmap<T,T> const& table, T sourceId) const {auto i = table.find(sourceId); return (i == table.end())? T(): i->second;}
+
+public:
+    DgnRemapTables& Get(DgnDbR);
+
+    DgnCategoryId Find(DgnCategoryId sourceId) const {return Find<DgnCategoryId>(m_categoryId, sourceId);}
+    void Add(DgnCategoryId sourceId, DgnCategoryId targetId) {m_categoryId[sourceId] = targetId;}
+
+    DgnSubCategoryId Find(DgnSubCategoryId sourceId) const {return Find<DgnSubCategoryId>(m_subcategoryId, sourceId);}
+    void Add(DgnSubCategoryId sourceId, DgnSubCategoryId targetId) {m_subcategoryId[sourceId] = targetId;}
+
+};
 
 //=======================================================================================
 //! A base class for api's that access a table in a DgnDb
@@ -483,6 +508,9 @@ public:
     //! @param[in] categoryId the category from which to get the default SubCategory.
     //! @return the Id of the SubCategory.
     static DgnSubCategoryId DefaultSubCategoryId(DgnCategoryId categoryId) {return DgnSubCategoryId(categoryId.GetValue());}
+
+    DgnDbStatus Import(DgnRemapTables& remap, DgnDbR sourceDb, DgnCategoryId sourceCategoryId);
+
 };
 
 //=======================================================================================
@@ -1604,5 +1632,72 @@ public:
     DGNPLATFORM_EXPORT BentleyStatus DeleteFromElement(DgnElementKey, DgnLinkId);
     DGNPLATFORM_EXPORT void PurgeUnused();
 };
+
+//=======================================================================================
+//! A helper class used to import a ComponentModel from one dgndb to another.
+//! The basic pattern for placing instances of component solutions is:
+//!     -# Make sure the component's schema has been generated. See ComponentModel::AddAllToECSchema.
+//!     -# Once per schema, import the component's schema into the target DgnDb. See #ImportSchema.
+//!     -# Once per component model, copy the model into the client's DgnDb. See #ImportModel.
+//!     -# Once per solution parameter set, solve and capture a solution. See ComponentSolution.
+//!     -# Create and place as many instances of a captured solution as you like. See ComponentSolution::CreateInstance.
+//! @see ComponentModel
+// @bsiclass                                                    Keith.Bentley   10/11
+//=======================================================================================
+struct DgnComponentSolutions : DgnDbTable
+{
+    DEFINE_T_SUPER(DgnDbTable)
+
+public:
+    struct Solution
+        {
+        BeSQLite::EC::ECInstanceId m_id;
+        DgnModelId  m_componentModelId;
+        Utf8String m_parameters;
+        DgnDbStatus QueryGeomStream(GeomStreamR, DgnDbR db) const;
+        };
+
+    DgnComponentSolutions(DgnDbR db) : T_Super(db) {;}
+
+    //! @name Capturing Solutions
+    //@{
+    //! Compute the code that would be used by row in ComponentModelSolutions to refer to a solution with the specified parameters.
+    //! @param[in] parms    The solver parameters
+    //! @return a generated name for the solution
+    DGNPLATFORM_EXPORT static Utf8String ComputeSolutionName(Json::Value const& parms);
+
+    //! Look up a captured solution from a solution name
+    //! @param[in] componentModelId Identifies the local copy of the ComponentModel
+    //! @param[in] solutionName     The solution name to look for
+    //! @return The ID of the captured solution or an invalid ID if no such solution has been captured.
+    //! @see ComputeSolutionName
+    DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceId QuerySolutionId(DgnModelId componentModelId, Utf8StringCR solutionName);
+
+    //! Look up a captured solution
+    //! @param[out] solution  The solution data
+    //! @param[in] sid     The solution id
+    //! @return non-zero if no such solution exists
+    //! @see CaptureSolution
+    DGNPLATFORM_EXPORT DgnDbStatus Query(Solution& solution, BeSQLite::EC::ECInstanceId sid);
+
+    //! Harvest geometry from the component model and store in the solutions table.
+    //! @param[in] componentModel The ComponentModel that is to be harvested
+    //! @return The ID of the captured solution 
+    //! @see ComponentModel::Solve
+    DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceId CaptureSolution(ComponentModelR componentModel);
+    //@}
+
+    //! @name Creating a Solution Instance
+    //@{
+    //! Create a new element that is an instance of a captured solution. The caller must insert the returned element into the Db.
+    //! @param[in] destinationModel The model where the instance will be inserted by the caller
+    //! @param[in] solutionElement The element that captures a solution to a ComponentModel. See CaptureSolution and QuerySolution
+    //! @param[in] origin The instance placement origin
+    //! @param[in] angles The instance placement angles
+    //! @return An new element that could be inserted as an instance of a captured solution
+    //! @see CaptureSolution, QuerySolution
+    DGNPLATFORM_EXPORT static PhysicalElementPtr CreateSolutionInstance(DgnModelR destinationModel, PhysicalElementCR solutionElement, DPoint3dCR origin, YawPitchRollAnglesCR angles);
+    //@}
+    };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

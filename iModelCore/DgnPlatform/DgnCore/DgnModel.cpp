@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnCore/DgnScriptContext.h>
+#include <DgnPlatform/DgnCore/DgnDbTables.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
@@ -1049,232 +1050,91 @@ void DgnModel::Solver::FromJson(Utf8CP str)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentProxyModel::_ToPropertiesJson(Json::Value& json) const
+EC::ECInstanceId DgnComponentSolutions::QuerySolutionId(DgnModelId cmid, Utf8StringCR solutionName)
     {
-    T_Super::_ToPropertiesJson(json);
+    CachedStatementPtr stmt = GetDgnDb().GetCachedStatement("SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_ComponentModelSolution) " WHERE(ComponentModelId=? AND Parameters=?)");
+    stmt->BindId(1, cmid);
+    stmt->BindText(2, solutionName, Statement::MakeCopy::No);
+    if (BE_SQLITE_ROW != stmt->Step())
+        return EC::ECInstanceId();
+    return stmt->GetValueId<EC::ECInstanceId>(0);
+    }
 
-    ECN::ECClassCP ecclass = GetDgnDb().Schemas().GetECClass(ECN::ECClassId(m_elementClassId.GetValue()));
-    json["ProxyElementSchema"] = Utf8String(ecclass->GetSchema().GetName()).c_str();
-    json["ProxyElementClass"] = Utf8String(ecclass->GetName()).c_str();
-    json["ProxyComponentName"] = m_componentName.c_str();
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnComponentSolutions::Query(Solution& sln, EC::ECInstanceId sid)
+    {
+    CachedStatementPtr stmt = GetDgnDb().GetCachedStatement("SELECT ComponentModelId,Parameters FROM " DGN_TABLE(DGN_CLASSNAME_ComponentModelSolution) " WHERE(Id=?)");
+    stmt->BindId(1, sid);
+    if (BE_SQLITE_ROW != stmt->Step())
+        return DgnDbStatus::NotFound;
+    sln.m_id = sid;
+    sln.m_componentModelId = stmt->GetValueId<DgnModelId>(0);
+    sln.m_parameters = stmt->GetValueText(1);
+    return DgnDbStatus::Success;
+    }
 
-    DgnCategories::Category cat = GetDgnDb().Categories().Query(m_categoryId);
-    json["ProxyCategory"] = cat.GetCode();
-    
-    Json::Value subcats(Json::objectValue);
-    for (auto const& mapping : m_subcatxlat)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnComponentSolutions::Solution::QueryGeomStream(GeomStreamR geom, DgnDbR db) const
+    {
+    return geom.ReadGeomStream(db, DGN_TABLE(DGN_CLASSNAME_ComponentModelSolution), "Geom", m_id.GetValue());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String DgnComponentSolutions::ComputeSolutionName(Json::Value const& parms)
+    {
+    return Json::FastWriter::ToString(parms).c_str();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+EC::ECInstanceId DgnComponentSolutions::CaptureSolution(ComponentModelR componentModel)
+    {
+    if (&componentModel.GetDgnDb() != &GetDgnDb())
         {
-        DgnCategories::SubCategory subcat = GetDgnDb().Categories().QuerySubCategory(mapping.second);
-        subcats[subcat.GetCode()] = Utf8PrintfString("%lld", mapping.first.GetValue());
-        }
-
-    json["ProxySubCategoryMap"] = subcats;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentProxyModel::_FromPropertiesJson(Json::Value const& json)
-    {
-    T_Super::_FromPropertiesJson(json);
-
-    m_elementClassId = DgnClassId(GetDgnDb().Schemas().GetECClassId(json["ProxyElementSchema"].asCString(), json["ProxyElementClass"].asCString()));
-    m_componentName = json["ProxyComponentName"].asCString();
-
-    m_categoryId = GetDgnDb().Categories().QueryCategoryId(json["ProxyCategory"].asCString());
-
-    Json::Value const& subcats = json["ProxySubCategoryMap"];
-    for (auto const& subcatname : subcats.getMemberNames())
-        {
-        DgnSubCategoryId subcatid;
-        if (subcatname.empty())
-            subcatid = DgnCategories::DefaultSubCategoryId(m_categoryId);
-        else
-            subcatid = GetDgnDb().Categories().QuerySubCategoryId(m_categoryId, subcatname.c_str());
-        if (!subcatid.IsValid())
-            {
-            BeDataAssert(false && "Subcategory was deleted after import??");
-            subcatid = DgnCategories::DefaultSubCategoryId(m_categoryId);
-            }
-        int64_t compsubcatvalue;
-        sscanf(subcats[subcatname.c_str()].asCString(), "%" PRId64 , &compsubcatvalue);
-        DgnSubCategoryId compsubcat(compsubcatvalue);
-        m_subcatxlat[compsubcat] = subcatid;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ComponentProxyModel::ComputeName(ComponentModelCR componentModel)
-    {
-    return Utf8PrintfString("^%s", componentModel.GetModelName());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ComponentProxyModel::ComputeSolutionName(Json::Value const& parms)
-    {
-    return BeStringUtilities::UriEncode(Json::FastWriter::ToString(parms).c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void importCategory(DgnCategoryId& targetcatid, DgnCategoryId& sourcecatid, DgnDbR targetDb, DgnDbR sourceDb, Utf8CP catname)
-    {
-    sourcecatid = sourceDb.Categories().QueryCategoryId(catname);
-    DgnCategories::Category sourcecat = sourceDb.Categories().Query(sourcecatid);
-    DgnCategories::SubCategory::Appearance sourceAppearance = sourceDb.Categories().QuerySubCategory(DgnCategories::DefaultSubCategoryId(sourcecatid)).GetAppearance();
-
-    // *** TBD: Translate style IDS in sourceAppearance
-
-    DgnCategories::Category clientcat(sourcecat.GetCode(), DgnCategories::Scope::Physical, sourcecat.GetDescription());
-    if (BE_SQLITE_OK != targetDb.Categories().Insert(clientcat, sourceAppearance))
-        return;
-    
-    targetcatid = targetDb.Categories().QueryCategoryId(catname);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void importSubCategory(DgnSubCategoryId& targetsubcatid, DgnDbR targetDb, DgnCategoryId targetcatid, DgnDbR sourceDb, DgnCategories::SubCategoryIterator::Entry const& sourceSubCat)
-    {
-    DgnCategories::SubCategory::Appearance sourceAppearance = sourceSubCat.GetAppearance();
-
-    // *** TBD: Translate style IDS in sourceAppearance
-
-    DgnCategories::SubCategory targetsubcat(targetcatid, DgnSubCategoryId(), sourceSubCat.GetCode(), sourceAppearance, sourceSubCat.GetDescription(), sourceSubCat.GetLabel().c_str());
-    if (BE_SQLITE_OK != targetDb.Categories().InsertSubCategory(targetsubcat)) 
-        return;
-    
-    targetsubcatid = targetsubcat.GetSubCategoryId();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentProxyModel::ImportElementCategory(ComponentModelCR componentModel)
-    {
-    BeAssert(IsForComponent(componentModel));
-
-    DgnCategoryId componentCatId;
-    importCategory(m_categoryId, componentCatId, GetDgnDb(), componentModel.GetDgnDb(), componentModel.GetElementCategoryName().c_str());
-
-    for (auto const& componentSubCat : componentModel.GetDgnDb().Categories().MakeSubCategoryIterator(componentCatId))
-        {
-        DgnSubCategoryId subcatid;
-        if (componentSubCat.GetSubCategoryId() == DgnCategories::DefaultSubCategoryId(componentCatId))
-            subcatid = DgnCategories::DefaultSubCategoryId(m_categoryId);
-        else
-            importSubCategory(subcatid, GetDgnDb(), m_categoryId, componentModel.GetDgnDb(), componentSubCat);
-        
-        m_subcatxlat[componentSubCat.GetSubCategoryId()] = subcatid;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-ComponentProxyModel::ComponentProxyModel(CreateParams const& params) : T_Super(params) {}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-ComponentProxyModelPtr ComponentProxyModel::Create(DgnDbR targetDb, ComponentModelCR componentModel, Utf8CP componentSchemaName)
-    {
-    DgnClassId clsid = DgnClassId(targetDb.Schemas().GetECClassId(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_ComponentProxyModel));
-    Utf8String proxyName = ComputeName(componentModel);
-
-    DgnClassId elClassId = DgnClassId(targetDb.Schemas().GetECClassId(componentSchemaName, componentModel.ComputeElementECClassName().c_str()));
-    if (!elClassId.IsValid())
-        {
-        BeAssert(false && "Component's schema must be imported first");
-        return nullptr;
-        }
-    if (!targetDb.Schemas().GetECClass(ECN::ECClassId(elClassId.GetValue()))->Is(targetDb.Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement)))
-        {
-        BeAssert(false && "Component's ECClass must derive from dgn.PhysicalElement");
-        return nullptr;
-        }
-    
-    ComponentProxyModel* proxy = new ComponentProxyModel(CreateParams(targetDb, clsid, proxyName.c_str()));
-    proxy->m_componentName = componentModel.GetModelName();
-    proxy->ImportElementCategory(componentModel);
-    proxy->m_elementClassId = elClassId;
-
-    return proxy;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-ComponentProxyModelPtr ComponentProxyModel::Get(DgnDbR targetDb, ComponentModelCR componentModel)
-    {
-    Utf8String proxyName = ComputeName(componentModel);
-    DgnModelId mid = targetDb.Models().QueryModelId(proxyName.c_str());
-    return targetDb.Models().Get<ComponentProxyModel>(mid);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalElementCPtr ComponentProxyModel::QuerySolution(Utf8StringCR solutionName)
-    {
-    DgnElementId eid = GetDgnDb().Elements().QueryElementIdByCode(solutionName.c_str());
-    return GetDgnDb().Elements().Get<PhysicalElement>(eid);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ComponentProxyModel::IsForComponent(ComponentModelCR cm)
-    {
-    return m_componentName == cm.GetModelName();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalElementCPtr ComponentProxyModel::CaptureSolution(ComponentModelR componentModel)
-    {
-    if (!IsForComponent(componentModel))
-        {
-        BeAssert(false && "wrong componentModel");
-        return nullptr;
-        }
-    if (!m_elementClassId.IsValid() || !m_categoryId.IsValid())
-        {
-        BeAssert(false);
-        return nullptr;
+        BeAssert(false && "you must import the component model before you can capture a solution");
+        return EC::ECInstanceId();
         }
 
     Utf8String solutionCode = ComputeSolutionName(componentModel.GetSolver().GetParameters());
 
-    PhysicalElementCPtr existingsolution = QuerySolution(solutionCode);
+    EC::ECInstanceId existingsolution = QuerySolutionId(componentModel.GetModelId(), solutionCode);
     if (existingsolution.IsValid())
         return existingsolution;
+
+    DgnCategoryId componentCategoryId = GetDgnDb().Categories().QueryCategoryId(componentModel.GetElementCategoryName().c_str());
+    if (!componentCategoryId.IsValid())
+        {
+        BeAssert(false && "component category not found -- you must import the component model before you can capture a solution");
+        return EC::ECInstanceId();
+        }
 
     //  Accumulate geometry by SubCategory
     bmap<DgnSubCategoryId, ElementGeometryBuilderPtr> builders;     // *** TBD: add another dimension: break out builders by same ElemDisplayParams
     componentModel.FillModel();
     for (auto const& mapEntry : componentModel)
         {
-        GeometricElementCP gel = mapEntry.second->ToGeometricElement();
-        if (nullptr == gel)
+        GeometricElementCP componentElement = mapEntry.second->ToGeometricElement();
+        if (nullptr == componentElement)
             continue;
-        DgnCategories::Category gcat = componentModel.GetDgnDb().Categories().Query(gel->GetCategoryId());
-        if (!componentModel.GetElementCategoryName().Equals(gcat.GetCode()))
+
+        //  Only solution elements in the component's Category are collected. The rest are construction/annotation geometry.
+        if (componentElement->GetCategoryId() != componentCategoryId)
             continue;
+
         // *** NEEDS WORK: Detect, schedule, and skip instances of other CM's
-        ElementGeometryCollection gcollection(*gel);
+        ElementGeometryCollection gcollection(*componentElement);
         for (ElementGeometryPtr const& geom : gcollection)
             {
             //  Look up the subcategory ... IN THE CLIENT DB
             ElemDisplayParamsCR dparams = gcollection.GetElemDisplayParams();
-            DgnSubCategoryId clientsubcatid = m_subcatxlat[dparams.GetSubCategoryId()];
+            DgnSubCategoryId clientsubcatid = dparams.GetSubCategoryId();
 
             ElementGeometryBuilderPtr& builder = builders[clientsubcatid];
             if (!builder.IsValid())
@@ -1286,8 +1146,6 @@ PhysicalElementCPtr ComponentProxyModel::CaptureSolution(ComponentModelR compone
             ElementGeometryPtr xgeom = geom->Clone();
             Transform trans = gcollection.GetGeometryToWorld(); // A component model is in its own local coordinate system, so "World" just means relative to local 0,0,0
             xgeom->TransformInPlace(trans);
-
-            // *** NEEDS WORK: ElemDisplayParams -- translate line style IDs
 
             builder->Append(*xgeom);
             }
@@ -1307,16 +1165,13 @@ PhysicalElementCPtr ComponentProxyModel::CaptureSolution(ComponentModelR compone
         builder->CreateGeomPart(GetDgnDb(), true);
         builder->SetGeomStream(*geomPart);
         if (BSISUCCESS != GetDgnDb().GeomParts().InsertGeomPart(*geomPart))
-            return PhysicalElementCPtr();
+            return EC::ECInstanceId();
 
         subcatAndGeoms.push_back(make_bpair(clientsubcatid, geomPart->GetId()));
         }
 
-    //  Now generate the solution element based on the harvested geometry
-    PhysicalElementPtr cmsolution = PhysicalElement::Create(PhysicalElement::CreateParams(GetDgnDb(), GetModelId(), m_elementClassId, m_categoryId));
-    cmsolution->SetCode(solutionCode.c_str());
-
-    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(*cmsolution, DPoint3d::FromZero(), YawPitchRollAngles());
+    //  The solution is a geomstream that refers to the geomparts
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(componentModel, componentCategoryId, DPoint3d::FromZero(), YawPitchRollAngles());
     for (bpair<DgnSubCategoryId,DgnGeomPartId> const& subcatAndGeom : subcatAndGeoms)
         {
         Transform noTransform = Transform::FromIdentity();
@@ -1324,26 +1179,30 @@ PhysicalElementCPtr ComponentProxyModel::CaptureSolution(ComponentModelR compone
         builder->Append(subcatAndGeom.second, noTransform);
         }
 
-    if (BSISUCCESS != builder->SetGeomStreamAndPlacement(*cmsolution))
-        {
-        BeAssert(false);
-        return nullptr;
-        }
 
-    return cmsolution->Insert()->ToPhysicalElement();
+    GeomStream  geom;
+    if (builder->SetGeomStream(geom) != BSISUCCESS)
+        return EC::ECInstanceId();
+        
+    CachedStatementPtr stmt = GetDgnDb().GetCachedStatement("INSERT INTO " DGN_TABLE(DGN_CLASSNAME_ComponentModelSolution) " (ComponentModelId,Parameters) VALUES(?,?)");
+    stmt->BindId(1, componentModel.GetModelId());
+    stmt->BindText(2, solutionCode, Statement::MakeCopy::No);
+    if (BE_SQLITE_ROW != stmt->Step())
+        return EC::ECInstanceId();
+
+    EC::ECInstanceId sid = EC::ECInstanceId(GetDgnDb().GetLastInsertRowId());
+
+    CachedStatementPtr gstmt = GetDgnDb().GetCachedStatement("UPDATE " DGN_TABLE(DGN_CLASSNAME_ComponentModelSolution) " SET Geom=? WHERE(Id=?)");
+    stmt->BindId(2, sid);
+    geom.WriteGeomStreamAndStep(GetDgnDb(), DGN_TABLE(DGN_CLASSNAME_ComponentModelSolution), "Geom", sid.GetValue(), *gstmt, 1);
+    return sid;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalElementPtr ComponentProxyModel::CreateSolutionInstance(DgnModelR destinationModel, PhysicalElementCR solutionElement, DPoint3dCR origin, YawPitchRollAnglesCR angles)
+PhysicalElementPtr DgnComponentSolutions::CreateSolutionInstance(DgnModelR destinationModel, PhysicalElementCR solutionElement, DPoint3dCR origin, YawPitchRollAnglesCR angles)
     {
-    ComponentProxyModelP proxy = dynamic_cast<ComponentProxyModelP>(solutionElement.GetModel().get());
-    if (nullptr == proxy)
-        {
-        BeAssert(false && "input element must be a solution to a component model");
-        return nullptr;
-        }
 
     DgnElement::CreateParams cparms(destinationModel.GetDgnDb(), destinationModel.GetModelId(), solutionElement.GetElementClassId(), solutionElement.GetCategoryId());
     PhysicalElementPtr instance = solutionElement.Clone(nullptr, &cparms)->ToPhysicalElementP();
@@ -1356,7 +1215,7 @@ PhysicalElementPtr ComponentProxyModel::CreateSolutionInstance(DgnModelR destina
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ComponentProxyModel::ImportSchema(DgnDbR db, BeFileNameCR schemaFile)
+DgnDbStatus ComponentModel::ImportSchema(DgnDbR db, BeFileNameCR schemaFile)
     {
     ECSchemaReadContextPtr contextPtr = ECSchemaReadContext::CreateContext();
     contextPtr->AddSchemaLocater(db.GetSchemaLocater());

@@ -10,19 +10,6 @@
 //=======================================================================================
 // @bsiclass                                                    Brien.Bastings  03/15
 //=======================================================================================
-struct GeomBlobHeader
-{
-enum {Signature = 0x0600,}; // DgnDb06
-
-uint32_t m_signature; // write this so we can detect errors on read
-uint32_t m_size;
-GeomBlobHeader(GeomStream const& geom) {m_signature = Signature; m_size=geom.GetSize();}
-GeomBlobHeader(BeSQLite::SnappyReader& in) {uint32_t actuallyRead; in._Read((Byte*) this, sizeof(*this), actuallyRead);}
-};
-
-//=======================================================================================
-// @bsiclass                                                    Brien.Bastings  03/15
-//=======================================================================================
 struct DbGeomPartsWriter
 {
 protected:
@@ -108,25 +95,7 @@ StatusInt DbGeomPartsWriter::SaveGeomPartToRow(GeomStreamCR geom, Utf8CP code, D
         return SUCCESS; // Is this an error?!?
         }
 
-    GeomBlobHeader  header(geom);
-
-    m_snappy.Init();
-    m_snappy.Write((ByteCP) &header, sizeof(header));
-    m_snappy.Write(geom.GetData(), geom.GetSize());
-
-    uint32_t zipSize = m_snappy.GetCompressedSize();
-
-    if (1 == m_snappy.GetCurrChunk())
-        {
-        m_stmt->BindBlob(GetColumnIndexForGeom(), m_snappy.GetChunkData(0), zipSize, Statement::MakeCopy::No);
-        ExecStatement();
-        return SUCCESS;
-        }
-
-    m_stmt->BindZeroBlob(GetColumnIndexForGeom(), zipSize); // more than one chunk in graphics stream
-    ExecStatement();
-
-    return m_snappy.SaveToRow(m_dgndb, DGN_TABLE(DGN_CLASSNAME_GeomPart), "Geom", geomPartId.GetValue());
+    return (DgnDbStatus::Success == geom.WriteGeomStreamAndStep(m_dgndb, DGN_TABLE(DGN_CLASSNAME_GeomPart), "Geom", geomPartId.GetValue(), *m_stmt, GetColumnIndexForGeom()))? BSISUCCESS: BSIERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -258,30 +227,13 @@ DgnGeomPartPtr DgnGeomParts::LoadGeomPart(DgnGeomPartId geomPartId)
     if (BE_SQLITE_ROW != result)
         return nullptr;
 
-    SnappyFromBlob& snappy = elements.GetSnappyFrom();
-    
-    if (ZIP_SUCCESS != snappy.Init(m_dgndb, DGN_TABLE(DGN_CLASSNAME_GeomPart), "Geom", geomPartId.GetValue()))
-        return nullptr;
-
-    GeomBlobHeader header(snappy);
-    if ((GeomBlobHeader::Signature != header.m_signature) || 0 == header.m_size)
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
     DgnGeomPartPtr geomPartPtr = new DgnGeomPart(stmt->GetValueText(0));
     GeomStreamR    geom = geomPartPtr->GetGeomStreamR();
 
-    geom.ReserveMemory(header.m_size);
-    uint32_t actuallyRead;
-    snappy.ReadAndFinish(geom.GetDataR(), geom.GetSize(), actuallyRead);
-
-    if (actuallyRead != geom.GetSize())
+    if (DgnDbStatus::Success != geom.ReadGeomStream(GetDgnDb(), DGN_TABLE(DGN_CLASSNAME_GeomPart), "Geom", geomPartId.GetValue()))
         return nullptr;
 
     geomPartPtr->SetId(geomPartId);
-
     return geomPartPtr;
     }
 
