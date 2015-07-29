@@ -2036,7 +2036,7 @@ void    BeFileName::RemoveQuotes ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     12/2013
 //---------------------------------------------------------------------------------------
-WString BeFileName::Abbreviate(size_t maxLength)
+WString BeFileName::Abbreviate(size_t maxLength) const
     {
     // Do we already fit?
     if (size() <= maxLength)
