@@ -135,10 +135,10 @@ WStringR WString::AssignUtf16 (Utf16CP in)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void WString::Trim ()
+WStringR WString::Trim ()
     {
     if (empty ())
-        return;
+        return *this;
 
     size_t firstNonSpaceIdx = 0;
     for (; (firstNonSpaceIdx < length ()) && iswspace (at (firstNonSpaceIdx)); ++firstNonSpaceIdx)
@@ -150,15 +150,16 @@ void WString::Trim ()
     
     erase ((begin () + lastNonSpaceIdx + 1), end ());
     erase (begin (), (begin () + firstNonSpaceIdx));
+    return *this;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void WString::Trim (WCharCP trimCharacters)
+WStringR WString::Trim (WCharCP trimCharacters)
     {
     if (empty ())
-        return;
+        return *this;
     
     size_t firstNonTrimIdx = 0;
     for (; (firstNonTrimIdx < length ()) && (NULL != wcschr (trimCharacters, at (firstNonTrimIdx))); ++firstNonTrimIdx)
@@ -170,28 +171,31 @@ void WString::Trim (WCharCP trimCharacters)
     
     erase ((begin() + lastNonTrimIdx + 1), end ());
     erase (begin(), (begin () + firstNonTrimIdx));
+    return *this;
     }
     
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void WString::PadLeft (size_t totalSize, value_type charToPadWith)
+WStringR WString::PadLeft (size_t totalSize, value_type charToPadWith)
     {
     if (length () >= totalSize)
-        return;
+        return *this;
 
     insert (begin (), (totalSize - length ()), charToPadWith);
+    return *this;
     }
     
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void WString::PadRight (size_t totalSize, value_type charToPadWith)
+WStringR WString::PadRight (size_t totalSize, value_type charToPadWith)
     {
     if (length () >= totalSize)
-        return;
+        return *this;
 
     insert (end (), (totalSize - length ()), charToPadWith);
+    return *this;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -300,7 +304,7 @@ bool WString::EndsWithI (WCharCP value) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Utf8String::IsAscii ()
     {
-    for (Utf8CP p = c_str(); 0 != *p; p++)
+    for (Utf8CP p = c_str(); 0 != *p; ++p)
         {
         if (0 != (*p & 0x80))
             return false;
@@ -311,10 +315,10 @@ bool Utf8String::IsAscii ()
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void Utf8String::Trim ()
+Utf8StringR Utf8String::Trim ()
     {
     if (empty ())
-        return;
+        return *this;
 
     size_t firstNonSpaceIdx = 0;
     for (; (firstNonSpaceIdx < length ()) && isspace (at (firstNonSpaceIdx)); ++firstNonSpaceIdx)
@@ -326,30 +330,32 @@ void Utf8String::Trim ()
     
     erase ((begin () + lastNonSpaceIdx + 1), end ());
     erase (begin (), (begin () + firstNonSpaceIdx));
+    return *this;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void Utf8String::TrimEnd()
+Utf8StringR Utf8String::TrimEnd()
     {
     if (empty())
-        return;
+        return *this;
 
     size_t lastNonSpaceIdx = length() - 1;
     for (; (lastNonSpaceIdx > 0) && isspace(at(lastNonSpaceIdx)); --lastNonSpaceIdx)
         ;
 
     erase((begin() + lastNonSpaceIdx + 1), end());
+    return *this;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void Utf8String::Trim (Utf8CP trimCharacters)
+Utf8StringR Utf8String::Trim (Utf8CP trimCharacters)
     {
     if (empty ())
-        return;
+        return *this;
     
     size_t firstNonTrimIdx = 0;
     for (; (firstNonTrimIdx < length ()) && (NULL != strchr (trimCharacters, at (firstNonTrimIdx))); ++firstNonTrimIdx)
@@ -361,6 +367,7 @@ void Utf8String::Trim (Utf8CP trimCharacters)
     
     erase ((begin () + lastNonTrimIdx + 1), end ());
     erase (begin (), (begin () + firstNonTrimIdx));
+    return *this;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -374,18 +381,19 @@ AString::AString (WCharCP source)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     12/2014
 //---------------------------------------------------------------------------------------
-void Utf8String::ToUpper()
+Utf8StringR Utf8String::ToUpper()
     {
     if (IsAscii())
         {
         std::transform(begin(), end(), begin(), [](char const& c){return toupper(c);});
-        return;
+        return *this;
         }
     
     WString wstr(c_str(), BentleyCharEncoding::Utf8);
     wstr.ToUpper();
     clear();
     BeStringUtilities::WCharToUtf8(*this, wstr.c_str());
+    return *this;
     }
 
 //---------------------------------------------------------------------------------------

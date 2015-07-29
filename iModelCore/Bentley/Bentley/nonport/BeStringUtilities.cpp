@@ -24,7 +24,7 @@
     #include <errno.h>
     #include <stdlib.h>
 
-    #if !defined(MAXHOSTNAMELEN)
+    #if !defined (MAXHOSTNAMELEN)
         #define MAXHOSTNAMELEN 256
     #endif
 
@@ -53,26 +53,32 @@
 #include <Bentley/BeAssert.h>
 #include "strfunc.h"
 
-#if defined (__APPLE__) || defined (ANDROID)
-    static char*    strlwr_ascii_only (char* s);
-    static wchar_t* wcslwr_portable (wchar_t* s);
-    static char*    strupr_ascii_only (char* s);
-    static wchar_t* wcsupr_portable (wchar_t* s);
-    static int      wcsicmp_portable (WCharCP lhs, WCharCP rhs, size_t n);
-    static wchar_t* wcsdup_portable (wchar_t const* s);
+#include "utf8.h"
 
-    static BentleyStatus unixUtf16ToWChar (WCharP wbuf, size_t wbufSizeInChars, Utf16CP inStr, size_t _count);
-    static BentleyStatus unixWCharToUtf16 (Utf16P ubuf, size_t ubufSizeInChars, WCharCP inStr, size_t count);
-    static wchar_t* unixWcsncpy (wchar_t *strDest, size_t destLen, const wchar_t *strSource, size_t count);
-    static char* unixStrncpy (char *strDest, size_t destLen, const char *strSource, size_t count);
+#ifndef CP_UTF8
+#define CP_UTF8 (uint32_t)LangCodePage::ISCII_UNICODE_UTF_8
+#endif
+
+#if defined (__APPLE__) || defined (ANDROID)
+    static char*    strlwr_ascii_only(char* s);
+    static wchar_t* wcslwr_portable(wchar_t* s);
+    static char*    strupr_ascii_only(char* s);
+    static wchar_t* wcsupr_portable(wchar_t* s);
+    static int      wcsicmp_portable(WCharCP lhs, WCharCP rhs, size_t n);
+    static wchar_t* wcsdup_portable(wchar_t const* s);
+
+    static BentleyStatus unixUtf16ToWChar(WCharP wbuf, size_t wbufSizeInChars, Utf16CP inStr, size_t _count);
+    static BentleyStatus unixWCharToUtf16(Utf16P ubuf, size_t ubufSizeInChars, WCharCP inStr, size_t count);
+    static wchar_t* unixWcsncpy(wchar_t *strDest, size_t destLen, const wchar_t *strSource, size_t count);
+    static char* unixStrncpy(char *strDest, size_t destLen, const char *strSource, size_t count);
 #endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Barry.Bentley                   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool isAscii (char const* p)
+static bool isAscii(char const* p)
     {
-    for ( ; 0 != *p; p++)
+    for ( ; 0 != *p; ++p)
         {
         if (0 != (*p & 0x80))
             return false;
@@ -83,7 +89,7 @@ static bool isAscii (char const* p)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t utf16len (Utf16CP utf16, size_t bufSizeIncludingTerminator=BeStringUtilities::NPOS)
+size_t utf16len(Utf16CP utf16, size_t bufSizeIncludingTerminator=BeStringUtilities::NPOS)
     {
     size_t count = 0;
     while (count < bufSizeIncludingTerminator && 0 != utf16[count])
@@ -91,11 +97,6 @@ size_t utf16len (Utf16CP utf16, size_t bufSizeIncludingTerminator=BeStringUtilit
     return count;
     }
 
-#include "utf8.h"
-
-#ifndef CP_UTF8
-#define CP_UTF8 (uint32_t)LangCodePage::ISCII_UNICODE_UTF_8
-#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2014
@@ -313,20 +314,20 @@ BentleyStatus BeStringUtilities::TranscodeStringDirect(bvector<Byte>& outStringB
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t BeStringUtilities::Utf16Len (Utf16CP str)
+size_t BeStringUtilities::Utf16Len(Utf16CP str)
     {
-    return utf16len (str);
+    return utf16len(str);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-WString::WString (Utf16CP in) : bwstring((wchar_t*)in) {}
+WString::WString(Utf16CP in) : bwstring((wchar_t*)in) {}
 #elif defined (__unix__)
-WString::WString (Utf16CP in) : bwstring()
+WString::WString(Utf16CP in) : bwstring()
     {
-    BeStringUtilities::Utf16ToWChar (*this, in);
+    BeStringUtilities::Utf16ToWChar(*this, in);
     }
 #else
 #error unknown runtime
@@ -335,36 +336,36 @@ WString::WString (Utf16CP in) : bwstring()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2011
 //---------------------------------------------------------------------------------------
-BentleyStatus BeStringUtilities::Utf16ToWChar (WStringR outStr, Utf16CP inStr, size_t _count)
+BentleyStatus BeStringUtilities::Utf16ToWChar(WStringR outStr, Utf16CP inStr, size_t _count)
     {
     if ((NULL == inStr) || (0 == _count) || (0 == inStr[0]))
         {
-        outStr.clear ();
+        outStr.clear();
         return SUCCESS;
         }
 
     // 'count' is NOT NULL-terminated
-    size_t inStrLen = utf16len (inStr, _count);
-    int inStrCount = (int)( (_count == NPOS)? inStrLen: std::min (_count, inStrLen) );
+    size_t inStrLen = utf16len(inStr, _count);
+    int inStrCount = (int)( (_count == NPOS)? inStrLen: std::min(_count, inStrLen) );
 
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
 
-    outStr.assign ((WCharCP)inStr, inStrCount);
+    outStr.assign((WCharCP)inStr, inStrCount);
 
 #elif defined (__unix__)
 
     // "LE" (little endian) is implied on all intended platforms, but being specific anyway.
 
     bvector<Byte> resultBytes;
-    if (SUCCESS != TranscodeStringDirect (resultBytes, "UTF-32LE", (Byte const*)inStr, (sizeof (uint16_t) * inStrCount), "UTF-16LE"))
+    if (SUCCESS != TranscodeStringDirect(resultBytes, "UTF-32LE", (Byte const*)inStr, (sizeof (uint16_t) * inStrCount), "UTF-16LE"))
         {
-        BeAssert (false && L"Unicode to Unicode should never fail.");
+        BeAssert(false && L"Unicode to Unicode should never fail.");
         return ERROR;
         }
     
     // basic_string objects maintain a NULL-terminated buffer internally; the value given to resize is the number of real characters.
-    outStr.resize (resultBytes.size () / sizeof (uint32_t));
-    memcpy ((CharP)outStr.data (), &resultBytes[0], resultBytes.size ());
+    outStr.resize(resultBytes.size() / sizeof (uint32_t));
+    memcpy((CharP)outStr.data(), &resultBytes[0], resultBytes.size());
 
 #else
 #error unknown runtime
@@ -377,7 +378,7 @@ BentleyStatus BeStringUtilities::Utf16ToWChar (WStringR outStr, Utf16CP inStr, s
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson 06/2011
 //---------------------------------------------------------------------------------------
-static BentleyStatus unixUtf16ToWChar (WCharP wbuf, size_t wbufSizeInChars, Utf16CP inStr, size_t _count)
+static BentleyStatus unixUtf16ToWChar(WCharP wbuf, size_t wbufSizeInChars, Utf16CP inStr, size_t _count)
     {
     // "LE" (little endian) is implied on all intended platforms, but being specific anyway.
 
@@ -385,18 +386,18 @@ static BentleyStatus unixUtf16ToWChar (WCharP wbuf, size_t wbufSizeInChars, Utf1
     if ((NULL != inStr) && (0 != _count))
         {
         // Note: 'inStrCount' does NOT include the NULL-terminator
-        size_t inStrLen = utf16len (inStr, _count);
-        int inStrCount = (int)( (_count == BeStringUtilities::NPOS)? inStrLen: std::min (_count, inStrLen) );
+        size_t inStrLen = utf16len(inStr, _count);
+        int inStrCount = (int)( (_count == BeStringUtilities::NPOS)? inStrLen: std::min(_count, inStrLen) );
 
-        if (SUCCESS != BeStringUtilities::TranscodeStringDirect (resultBytes, "UTF-32LE", (Byte const*)inStr, (sizeof (Utf16Char) * inStrCount), "UTF-16LE"))
+        if (SUCCESS != BeStringUtilities::TranscodeStringDirect(resultBytes, "UTF-32LE", (Byte const*)inStr, (sizeof (Utf16Char) * inStrCount), "UTF-16LE"))
             {
-            BeAssert (false && L"Unicode to Unicode should never fail.");
+            BeAssert(false && L"Unicode to Unicode should never fail.");
             return ERROR;
             }
         }
 
-    size_t nChars = std::min (wbufSizeInChars-1, resultBytes.size()/sizeof(WChar));
-    memcpy (wbuf, (WCharP)resultBytes.data(), nChars*sizeof(WChar));
+    size_t nChars = std::min(wbufSizeInChars-1, resultBytes.size()/sizeof(WChar));
+    memcpy(wbuf, (WCharP)resultBytes.data(), nChars*sizeof(WChar));
     wbuf[nChars] = 0;
 
     return SUCCESS;
@@ -405,7 +406,7 @@ static BentleyStatus unixUtf16ToWChar (WCharP wbuf, size_t wbufSizeInChars, Utf1
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson 06/2011
 //---------------------------------------------------------------------------------------
-static BentleyStatus unixWCharToUtf16 (Utf16P ubuf, size_t ubufSizeInChars, WCharCP inStr, size_t _count)
+static BentleyStatus unixWCharToUtf16(Utf16P ubuf, size_t ubufSizeInChars, WCharCP inStr, size_t _count)
     {
     // "LE" (little endian) is implied on all intended platforms, but being specific anyway.
 
@@ -413,18 +414,18 @@ static BentleyStatus unixWCharToUtf16 (Utf16P ubuf, size_t ubufSizeInChars, WCha
     if ((NULL != inStr) && (0 != _count))
         {
         // Note: 'inStrCount' does NOT include the NULL-terminator
-        size_t inStrLen = wcslen (inStr);
-        int inStrCount = (int)( (_count == BeStringUtilities::NPOS)? inStrLen: std::min (_count, inStrLen) );
+        size_t inStrLen = wcslen(inStr);
+        int inStrCount = (int)( (_count == BeStringUtilities::NPOS)? inStrLen: std::min(_count, inStrLen) );
 
-        if (SUCCESS != BeStringUtilities::TranscodeStringDirect (resultBytes, "UTF-16LE", (Byte const*)inStr, (sizeof (WChar) * inStrCount), "UTF-32LE"))
+        if (SUCCESS != BeStringUtilities::TranscodeStringDirect(resultBytes, "UTF-16LE", (Byte const*)inStr, (sizeof (WChar) * inStrCount), "UTF-32LE"))
             {
-            BeAssert (false && L"Unicode to Unicode should never fail.");
+            BeAssert(false && L"Unicode to Unicode should never fail.");
             return ERROR;
             }
         }
 
-    size_t nChars = std::min (ubufSizeInChars-1, resultBytes.size()/sizeof(Utf16Char));
-    memcpy (ubuf, (Utf16P)resultBytes.data(), nChars*sizeof(Utf16Char));
+    size_t nChars = std::min(ubufSizeInChars-1, resultBytes.size()/sizeof(Utf16Char));
+    memcpy(ubuf, (Utf16P)resultBytes.data(), nChars*sizeof(Utf16Char));
     ubuf[nChars] = 0;
 
     return SUCCESS;
@@ -435,43 +436,43 @@ static BentleyStatus unixWCharToUtf16 (Utf16P ubuf, size_t ubufSizeInChars, WCha
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2011
 //---------------------------------------------------------------------------------------
-BentleyStatus BeStringUtilities::WCharToUtf16 (Utf16BufferR outStr, WCharCP inStr, size_t _count)
+BentleyStatus BeStringUtilities::WCharToUtf16(Utf16BufferR outStr, WCharCP inStr, size_t _count)
     {
     if ((NULL == inStr) || (0 == _count) || (0 == inStr[0]))
         {
         // Ensure that outStr is NULL-terminated
-        outStr.resize (1);
+        outStr.resize(1);
         outStr[0] = 0;
         return SUCCESS;
         }
     
     // Note: 'inStrCount' does NOT include the NULL-terminator
-    size_t inStrLen = wcslen (inStr);
-    int inStrCount = (int)( (_count == NPOS)? inStrLen: std::min (_count, inStrLen) );
+    size_t inStrLen = wcslen(inStr);
+    int inStrCount = (int)( (_count == NPOS)? inStrLen: std::min(_count, inStrLen) );
     
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
 
-    outStr.resize (inStrCount+1);                                    // (allocates space for 1+inStrCount to leave room for the trailing \0)
-    outStr.assign ((uint16_t*)inStr, (uint16_t*)(inStr+inStrCount+1));   // copy all wchars and the trailing \0
+    outStr.resize(inStrCount+1);                                    // (allocates space for 1+inStrCount to leave room for the trailing \0)
+    outStr.assign((uint16_t*)inStr, (uint16_t*)(inStr+inStrCount+1));   // copy all wchars and the trailing \0
 
 #elif defined (__unix__)
 
     // "LE" (little endian) is implied on all intended platforms, but being specific anyway.
 
     bvector<Byte> resultBytes;
-    if (SUCCESS != TranscodeStringDirect (resultBytes, "UTF-16LE", (Byte const*)inStr, (sizeof (uint32_t) * inStrCount), "UTF-32LE"))
+    if (SUCCESS != TranscodeStringDirect(resultBytes, "UTF-16LE", (Byte const*)inStr, (sizeof (uint32_t) * inStrCount), "UTF-32LE"))
         {
-        BeAssert (false && L"Unicode to Unicode should never fail.");
+        BeAssert(false && L"Unicode to Unicode should never fail.");
 
         // Ensure that outStr is NULL-terminated
-        outStr.resize (1);
+        outStr.resize(1);
         outStr[0] = 0;
         return ERROR;
         }
     
-    outStr.resize ((resultBytes.size () / sizeof (uint16_t)) + 1);
-    memcpy ((CharP)outStr.data (), &resultBytes[0], resultBytes.size ());
-    outStr.back () = 0;
+    outStr.resize((resultBytes.size() / sizeof (uint16_t)) + 1);
+    memcpy((CharP)outStr.data(), &resultBytes[0], resultBytes.size());
+    outStr.back() = 0;
 
 #else
 #error unknown runtime
@@ -483,31 +484,31 @@ BentleyStatus BeStringUtilities::WCharToUtf16 (Utf16BufferR outStr, WCharCP inSt
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2011
 //---------------------------------------------------------------------------------------
-BentleyStatus BeStringUtilities::WCharToUtf8 (Utf8StringR outStr, WCharCP inStr, size_t _count)
+BentleyStatus BeStringUtilities::WCharToUtf8(Utf8StringR outStr, WCharCP inStr, size_t _count)
     {
-    return WCharToLocaleChar ((AStringR) outStr, LangCodePage::ISCII_UNICODE_UTF_8, inStr, _count);
+    return WCharToLocaleChar((AStringR) outStr, LangCodePage::ISCII_UNICODE_UTF_8, inStr, _count);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2011
 //---------------------------------------------------------------------------------------
-BentleyStatus BeStringUtilities::Utf8ToWChar (WStringR outStr, Utf8CP inStr, size_t _count)
+BentleyStatus BeStringUtilities::Utf8ToWChar(WStringR outStr, Utf8CP inStr, size_t _count)
     {
-    return LocaleCharToWChar (outStr, reinterpret_cast<CharCP>(inStr), LangCodePage::ISCII_UNICODE_UTF_8, _count); 
+    return LocaleCharToWChar(outStr, reinterpret_cast<CharCP>(inStr), LangCodePage::ISCII_UNICODE_UTF_8, _count); 
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2011
 //---------------------------------------------------------------------------------------
-WCharP        BeStringUtilities::Utf8ToWChar (WCharP outWChar, Utf8CP inStr, size_t outMaxChars)
+WCharP        BeStringUtilities::Utf8ToWChar(WCharP outWChar, Utf8CP inStr, size_t outMaxChars)
     {
-    return LocaleCharToWChar (outWChar, reinterpret_cast<CharCP>(inStr), LangCodePage::ISCII_UNICODE_UTF_8, outMaxChars); 
+    return LocaleCharToWChar(outWChar, reinterpret_cast<CharCP>(inStr), LangCodePage::ISCII_UNICODE_UTF_8, outMaxChars); 
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2011
 //---------------------------------------------------------------------------------------
-BentleyStatus BeStringUtilities::Utf8ToUtf16 (Utf16BufferR outStr, Utf8CP inStr, size_t _count)
+BentleyStatus BeStringUtilities::Utf8ToUtf16(Utf16BufferR outStr, Utf8CP inStr, size_t _count)
     {
     if ((NULL == inStr) || (0 == inStr[0]) || (0 == _count))
         {
@@ -515,15 +516,15 @@ BentleyStatus BeStringUtilities::Utf8ToUtf16 (Utf16BufferR outStr, Utf8CP inStr,
         return SUCCESS;
         }
 
-    size_t inStrLen = strlen (inStr);
-    int inStrCount = (int)( (_count == NPOS)? inStrLen: std::min (_count, inStrLen) );
+    size_t inStrLen = strlen(inStr);
+    int inStrCount = (int)( (_count == NPOS)? inStrLen: std::min(_count, inStrLen) );
 
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
 
-    int outStrCount = ::MultiByteToWideChar (CP_UTF8, 0, inStr, inStrCount, NULL, 0);
+    int outStrCount = ::MultiByteToWideChar(CP_UTF8, 0, inStr, inStrCount, NULL, 0);
 
-    outStr.resize (outStrCount + 1);
-    ::MultiByteToWideChar (CP_UTF8, 0, inStr, inStrCount, (LPWSTR)&outStr[0], outStrCount);
+    outStr.resize(outStrCount + 1);
+    ::MultiByteToWideChar(CP_UTF8, 0, inStr, inStrCount, (LPWSTR)&outStr[0], outStrCount);
     
     outStr[outStrCount] = '\0';
 
@@ -532,12 +533,12 @@ BentleyStatus BeStringUtilities::Utf8ToUtf16 (Utf16BufferR outStr, Utf8CP inStr,
     // "LE" (little endian) is implied on all intended platforms, but being specific anyway.
 
     bvector<Byte> resultBytes;
-    if (SUCCESS != TranscodeStringDirect (resultBytes, "UTF-16LE", (Byte const*)inStr, (sizeof (char) * inStrCount), "UTF-8"))
+    if (SUCCESS != TranscodeStringDirect(resultBytes, "UTF-16LE", (Byte const*)inStr, (sizeof (char) * inStrCount), "UTF-8"))
         return ERROR;
 
-    size_t outStrCount = (resultBytes.size () / sizeof (Utf16Char));
-    outStr.resize (outStrCount + 1);
-    memcpy (outStr.data (), &resultBytes[0], resultBytes.size ());
+    size_t outStrCount = (resultBytes.size() / sizeof (Utf16Char));
+    outStr.resize(outStrCount + 1);
+    memcpy(outStr.data(), &resultBytes[0], resultBytes.size());
     outStr[outStrCount] = '\0';
 
 #else
@@ -550,34 +551,34 @@ BentleyStatus BeStringUtilities::Utf8ToUtf16 (Utf16BufferR outStr, Utf8CP inStr,
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     05/2012
 //---------------------------------------------------------------------------------------
-BentleyStatus BeStringUtilities::Utf16ToUtf8 (Utf8StringR utf8Buffer, Utf16CP utf16Buffer, size_t count)
+BentleyStatus BeStringUtilities::Utf16ToUtf8(Utf8StringR utf8Buffer, Utf16CP utf16Buffer, size_t count)
     {
     if ((NULL == utf16Buffer) || (0 == utf16Buffer[0]) || (0 == count))
         {
-        utf8Buffer.clear ();
+        utf8Buffer.clear();
         return SUCCESS;
         }
 
-    size_t  inStrLen    = utf16len (utf16Buffer, count);
-    int     inStrCount  = (int)((NPOS == count) ? inStrLen : std::min (count, inStrLen));
+    size_t  inStrLen    = utf16len(utf16Buffer, count);
+    int     inStrCount  = (int)((NPOS == count) ? inStrLen : std::min(count, inStrLen));
 
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
 
-    int outStrCount = ::WideCharToMultiByte (CP_UTF8, 0, (LPWSTR)utf16Buffer, inStrCount, NULL, 0, NULL, NULL);
+    int outStrCount = ::WideCharToMultiByte(CP_UTF8, 0, (LPWSTR)utf16Buffer, inStrCount, NULL, 0, NULL, NULL);
 
-    utf8Buffer.resize (outStrCount);
-    ::WideCharToMultiByte (CP_UTF8, 0, (LPWSTR)utf16Buffer, inStrCount, const_cast<LPSTR>(utf8Buffer.data ()), outStrCount, NULL, NULL);
+    utf8Buffer.resize(outStrCount);
+    ::WideCharToMultiByte(CP_UTF8, 0, (LPWSTR)utf16Buffer, inStrCount, const_cast<LPSTR>(utf8Buffer.data()), outStrCount, NULL, NULL);
 
 #elif defined (__unix__)
 
     bvector<Byte> resultBytes;
-    if (SUCCESS != TranscodeStringDirect (resultBytes, "UTF-8", (Byte const*)utf16Buffer, (sizeof (*utf16Buffer) * inStrCount), "UTF-16LE"))
+    if (SUCCESS != TranscodeStringDirect(resultBytes, "UTF-8", (Byte const*)utf16Buffer, (sizeof (*utf16Buffer) * inStrCount), "UTF-16LE"))
         return ERROR;
 
-    size_t outStrCount = (resultBytes.size () / sizeof (Utf8Char));
+    size_t outStrCount = (resultBytes.size() / sizeof (Utf8Char));
     
-    utf8Buffer.resize (outStrCount);
-    memcpy (const_cast<CharP>(utf8Buffer.data ()), &resultBytes[0], resultBytes.size ());
+    utf8Buffer.resize(outStrCount);
+    memcpy(const_cast<CharP>(utf8Buffer.data()), &resultBytes[0], resultBytes.size());
     utf8Buffer[outStrCount] = 0;
 
 #else
@@ -592,7 +593,7 @@ BentleyStatus BeStringUtilities::Utf16ToUtf8 (Utf8StringR utf8Buffer, Utf16CP ut
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2011
 //---------------------------------------------------------------------------------------
-BentleyStatus BeStringUtilities::WCharToLocaleChar (AStringR outStr, LangCodePage codePageIn, WCharCP inStr, size_t _count)
+BentleyStatus BeStringUtilities::WCharToLocaleChar(AStringR outStr, LangCodePage codePageIn, WCharCP inStr, size_t _count)
     {
     if ((NULL == inStr) || (0 == inStr[0]) || (0 == _count))
         {
@@ -603,21 +604,21 @@ BentleyStatus BeStringUtilities::WCharToLocaleChar (AStringR outStr, LangCodePag
     uint32_t codePage = (uint32_t)codePageIn;
 
     // Note: 'inStrCount' does NOT include the NULL-terminator
-    size_t inStrLen = wcslen (inStr);
-    int inStrCount = (int)( (_count == NPOS)? inStrLen: std::min (_count, inStrLen) );
+    size_t inStrLen = wcslen(inStr);
+    int inStrCount = (int)( (_count == NPOS)? inStrLen: std::min(_count, inStrLen) );
 
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
 
-    int outStrCount = ::WideCharToMultiByte (codePage, 0, inStr, inStrCount, NULL, 0, NULL, NULL);
+    int outStrCount = ::WideCharToMultiByte(codePage, 0, inStr, inStrCount, NULL, 0, NULL, NULL);
     if (outStrCount <= 0)
         {
         outStr = "";
         return ERROR;
         }
 
-    outStr.resize ((size_t)outStrCount); // (allocates space for outStrCount + 1 chars)
+    outStr.resize((size_t)outStrCount); // (allocates space for outStrCount + 1 chars)
     
-    int conversionStatus = ::WideCharToMultiByte (codePage, 0, inStr, inStrCount, &outStr[0], outStrCount, NULL, NULL);
+    int conversionStatus = ::WideCharToMultiByte(codePage, 0, inStr, inStrCount, &outStr[0], outStrCount, NULL, NULL);
     if (0 == conversionStatus)
         {
         outStr = "";
@@ -625,7 +626,7 @@ BentleyStatus BeStringUtilities::WCharToLocaleChar (AStringR outStr, LangCodePag
         }
 
     #if !defined (PRG) && defined (DEBUG_UNICODE)
-        printf ("Warning: BeStringUtilities::WCharToLocaleChar: '%ls'\n", inStr);
+        printf("Warning: BeStringUtilities::WCharToLocaleChar: '%ls'\n", inStr);
     #endif    
 
 #elif defined (__unix__)
@@ -633,7 +634,7 @@ BentleyStatus BeStringUtilities::WCharToLocaleChar (AStringR outStr, LangCodePag
     if (CP_UTF8 == codePage || 0 == codePage)
         {
         // optimize for common case
-        outStr.resize (inStrCount);
+        outStr.resize(inStrCount);
         bool anyNotAscii = false;
         for (size_t i=0; i<inStrCount; ++i)
             {
@@ -653,19 +654,19 @@ BentleyStatus BeStringUtilities::WCharToLocaleChar (AStringR outStr, LangCodePag
         cpStr = "ASCII";
     else
         {
-        BeStringUtilities::Snprintf (cpStrBuf, _countof (cpStrBuf), "CP%u", codePage);
+        BeStringUtilities::Snprintf(cpStrBuf, _countof(cpStrBuf), "CP%u", codePage);
         cpStr = cpStrBuf;
         }
 
     // "LE" (little endian) is implied on all intended platforms, but being specific anyway.
 
     bvector<Byte> resultBytes;
-    if (SUCCESS != TranscodeStringDirect (resultBytes, cpStr, (Byte const*)inStr, (sizeof (WChar) * inStrCount), "UTF-32LE"))
+    if (SUCCESS != TranscodeStringDirect(resultBytes, cpStr, (Byte const*)inStr, (sizeof (WChar) * inStrCount), "UTF-32LE"))
         return ERROR;
 
     // basic_string objects maintain a NULL-terminated buffer internally; the value given to resize is the number of real characters.
-    outStr.resize (resultBytes.size () / sizeof (char));
-    memcpy ((CharP)outStr.data (), &resultBytes[0], resultBytes.size ());
+    outStr.resize(resultBytes.size() / sizeof (char));
+    memcpy((CharP)outStr.data(), &resultBytes[0], resultBytes.size());
     
 #else
 #error unknown runtime
@@ -678,26 +679,26 @@ BentleyStatus BeStringUtilities::WCharToLocaleChar (AStringR outStr, LangCodePag
 // This version of the function has the same signature as the old MSWCharToChar, which is very widely used.
 // @bsimethod                                                   Sam.Wilson  06/2011
 //---------------------------------------------------------------------------------------
-char* BeStringUtilities::WCharToCurrentLocaleChar (char* outChar, wchar_t const* inWChar, size_t outMaxBytes)
+char* BeStringUtilities::WCharToCurrentLocaleChar(char* outChar, wchar_t const* inWChar, size_t outMaxBytes)
     {
     if ((NULL == outChar) || (0 == outMaxBytes))
         {
-        BeDataAssert (false);
+        BeDataAssert(false);
         return outChar;
         }
 
     LangCodePage codePage;
-    BeStringUtilities::GetCurrentCodePage (codePage);
+    BeStringUtilities::GetCurrentCodePage(codePage);
 
     AString astr;
-    if (WCharToLocaleChar (astr, codePage, inWChar) != SUCCESS)
+    if (WCharToLocaleChar(astr, codePage, inWChar) != SUCCESS)
         {
         outChar[0] = 0;
         return outChar;
         }
 
-    size_t outCount = std::min (astr.length(), outMaxBytes-1);     // max chars to copy INCLUDING \0
-    strncpy (outChar, astr.c_str(), outCount);
+    size_t outCount = std::min(astr.length(), outMaxBytes-1);     // max chars to copy INCLUDING \0
+    strncpy(outChar, astr.c_str(), outCount);
     outChar[outCount] = 0;
 
     return outChar;
@@ -706,19 +707,19 @@ char* BeStringUtilities::WCharToCurrentLocaleChar (char* outChar, wchar_t const*
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     12/2011
 //---------------------------------------------------------------------------------------
-BentleyStatus BeStringUtilities::WCharToCurrentLocaleChar (AStringR localeStr, WCharCP inWChar)
+BentleyStatus BeStringUtilities::WCharToCurrentLocaleChar(AStringR localeStr, WCharCP inWChar)
     {
     LangCodePage codePage;
-    BeStringUtilities::GetCurrentCodePage (codePage);
+    BeStringUtilities::GetCurrentCodePage(codePage);
 
-    return BeStringUtilities::WCharToLocaleChar (localeStr, codePage, inWChar);
+    return BeStringUtilities::WCharToLocaleChar(localeStr, codePage, inWChar);
     }
 
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-void utf8ToWChar (wchar_t* outStr, size_t outStrCount, char const* inStr, size_t inStrCount)
+void utf8ToWChar(wchar_t* outStr, size_t outStrCount, char const* inStr, size_t inStrCount)
     {
-    BeAssert (outStrCount != 0);
-    int actualCount = ::MultiByteToWideChar (CP_UTF8, 0, inStr, (int)inStrCount, &outStr[0], (int)outStrCount);
+    BeAssert(outStrCount != 0);
+    int actualCount = ::MultiByteToWideChar(CP_UTF8, 0, inStr, (int)inStrCount, &outStr[0], (int)outStrCount);
     actualCount = std::min<int> (actualCount, (int)outStrCount-1);
     outStr[actualCount] = 0;
     }
@@ -727,7 +728,7 @@ void utf8ToWChar (wchar_t* outStr, size_t outStrCount, char const* inStr, size_t
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2011
 //---------------------------------------------------------------------------------------
-BentleyStatus BeStringUtilities::LocaleCharToWChar (WStringR outStr, CharCP inStr, LangCodePage codePageIn, size_t _count)
+BentleyStatus BeStringUtilities::LocaleCharToWChar(WStringR outStr, CharCP inStr, LangCodePage codePageIn, size_t _count)
     {
     if ((NULL == inStr) || (0 == inStr[0]) || (0 == _count))
         {
@@ -739,16 +740,16 @@ BentleyStatus BeStringUtilities::LocaleCharToWChar (WStringR outStr, CharCP inSt
 
     int inStrCount;
     if (_count == NPOS)
-        inStrCount = (int)strlen (inStr);               // strlen is necessary, because MultiByteToWideChar count or does not count the NULL 
+        inStrCount = (int)strlen(inStr);               // strlen is necessary, because MultiByteToWideChar count or does not count the NULL 
     else
-        inStrCount = (int)strnlen (inStr, _count);      // Need to stop at _count or less, if a NULL is not present
+        inStrCount = (int)strnlen(inStr, _count);      // Need to stop at _count or less, if a NULL is not present
 
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
 
-    int outStrCount = ::MultiByteToWideChar (codePage, 0, inStr, inStrCount, NULL, 0);
+    int outStrCount = ::MultiByteToWideChar(codePage, 0, inStr, inStrCount, NULL, 0);
 
-    outStr.resize (outStrCount); // (allocates space for outStrCount + 1 wchar_t's)
-    ::MultiByteToWideChar (codePage, 0, inStr, inStrCount, &outStr[0], outStrCount);
+    outStr.resize(outStrCount); // (allocates space for outStrCount + 1 wchar_t's)
+    ::MultiByteToWideChar(codePage, 0, inStr, inStrCount, &outStr[0], outStrCount);
     
     outStr[outStrCount] = '\0';
 
@@ -757,7 +758,7 @@ BentleyStatus BeStringUtilities::LocaleCharToWChar (WStringR outStr, CharCP inSt
     if (CP_UTF8 == codePage || 0 == codePage)
         {
         // optimize for common case
-        outStr.resize (inStrCount);
+        outStr.resize(inStrCount);
         bool anyNotAscii = false;
         for (size_t i=0; i<inStrCount; ++i)
             {
@@ -778,19 +779,19 @@ BentleyStatus BeStringUtilities::LocaleCharToWChar (WStringR outStr, CharCP inSt
         cpStr = "ASCII";
     else
         {
-        BeStringUtilities::Snprintf (cpStrBuf, _countof (cpStrBuf), "cp%u", codePage);
+        BeStringUtilities::Snprintf(cpStrBuf, _countof(cpStrBuf), "cp%u", codePage);
         cpStr = cpStrBuf;
         }    
 
     // "LE" (little endian) is implied on all intended platforms, but being specific anyway.
 
     bvector<Byte> resultBytes;
-    if (SUCCESS != TranscodeStringDirect (resultBytes, "UTF-32LE", (Byte const*)inStr, (sizeof (char) * inStrCount), cpStr))
+    if (SUCCESS != TranscodeStringDirect(resultBytes, "UTF-32LE", (Byte const*)inStr, (sizeof (char) * inStrCount), cpStr))
         return ERROR;
 
     // basic_string objects maintain a NULL-terminated buffer internally; the value given to resize is the number of real characters.
-    outStr.resize (resultBytes.size () / sizeof (WChar));
-    memcpy ((WCharP)outStr.data (), &resultBytes[0], resultBytes.size ());
+    outStr.resize(resultBytes.size() / sizeof (WChar));
+    memcpy((WCharP)outStr.data(), &resultBytes[0], resultBytes.size());
     
 #else
 #error unknown runtime
@@ -802,11 +803,11 @@ BentleyStatus BeStringUtilities::LocaleCharToWChar (WStringR outStr, CharCP inSt
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2011
 //---------------------------------------------------------------------------------------
-WCharP  BeStringUtilities::LocaleCharToWChar (WCharP outWChar, CharCP inChar, LangCodePage codePageIn, size_t outMaxChars)
+WCharP  BeStringUtilities::LocaleCharToWChar(WCharP outWChar, CharCP inChar, LangCodePage codePageIn, size_t outMaxChars)
     {
     if ((NULL == outWChar) || (0 == outMaxChars))
         {
-        BeDataAssert (false);
+        BeDataAssert(false);
         return outWChar;
         }
 
@@ -820,11 +821,11 @@ WCharP  BeStringUtilities::LocaleCharToWChar (WCharP outWChar, CharCP inChar, La
         }
 
     // get length of input string.
-    size_t inStrLen = strlen (inChar);
+    size_t inStrLen = strlen(inChar);
 
 #if defined (_WIN32)
 
-    size_t  outChars = ::MultiByteToWideChar (codePage, 0, inChar, (int)inStrLen, outWChar, (int)(outMaxChars-1)    );
+    size_t  outChars = ::MultiByteToWideChar(codePage, 0, inChar, (int)inStrLen, outWChar, (int)(outMaxChars-1)    );
     outWChar[outChars] = 0;
 
 #elif defined (__unix__)
@@ -832,7 +833,7 @@ WCharP  BeStringUtilities::LocaleCharToWChar (WCharP outWChar, CharCP inChar, La
     if (CP_UTF8 == codePage || 0 == codePage)
         {
         // optimize for common case
-        size_t outChars = std::min (inStrLen, outMaxChars-1);
+        size_t outChars = std::min(inStrLen, outMaxChars-1);
         bool anyNotAscii = false;
         for (size_t i=0; i<outChars; ++i)
             {
@@ -854,18 +855,18 @@ WCharP  BeStringUtilities::LocaleCharToWChar (WCharP outWChar, CharCP inChar, La
         cpStr = "ASCII";
     else
         {
-        BeStringUtilities::Snprintf (cpStrBuf, _countof (cpStrBuf), "CP%u", codePage);
+        BeStringUtilities::Snprintf(cpStrBuf, _countof(cpStrBuf), "CP%u", codePage);
         cpStr = cpStrBuf;
         }    
 
     // "LE" (little endian) is implied on all intended platforms, but being specific anyway.
     bvector<Byte> resultBytes;
-    if (SUCCESS != TranscodeStringDirect (resultBytes, "UTF-32LE", (Byte const*)inChar, (sizeof (char) * inStrLen), cpStr))
+    if (SUCCESS != TranscodeStringDirect(resultBytes, "UTF-32LE", (Byte const*)inChar, (sizeof (char) * inStrLen), cpStr))
         return outWChar;
 
     // basic_string objects maintain a NULL-terminated buffer internally; the value given to resize is the number of real characters.
-    size_t  copySize = std::min (resultBytes.size (), ((outMaxChars-1) * sizeof (WChar)));
-    memcpy (outWChar, &resultBytes[0], copySize);
+    size_t  copySize = std::min(resultBytes.size(), ((outMaxChars-1) * sizeof (WChar)));
+    memcpy(outWChar, &resultBytes[0], copySize);
     outWChar[copySize/sizeof(WChar)] = 0;
     
 #endif
@@ -877,61 +878,61 @@ WCharP  BeStringUtilities::LocaleCharToWChar (WCharP outWChar, CharCP inChar, La
 // This version of the function has the same signature as the old CharToMSWChar, which is very widely used.
 // @bsimethod                                                   Sam.Wilson  06/2011
 //---------------------------------------------------------------------------------------
-wchar_t* BeStringUtilities::CurrentLocaleCharToWChar (wchar_t* outWChar, char const* inStr, size_t outMaxChars)
+wchar_t* BeStringUtilities::CurrentLocaleCharToWChar(wchar_t* outWChar, char const* inStr, size_t outMaxChars)
     {
     LangCodePage codePage;
-    BeStringUtilities::GetCurrentCodePage (codePage);
+    BeStringUtilities::GetCurrentCodePage(codePage);
 
-    return LocaleCharToWChar (outWChar, inStr, codePage, outMaxChars);
+    return LocaleCharToWChar(outWChar, inStr, codePage, outMaxChars);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson  06/2011
 //---------------------------------------------------------------------------------------
-BentleyStatus BeStringUtilities::CurrentLocaleCharToWChar (WStringR outStr, char const* inStr)
+BentleyStatus BeStringUtilities::CurrentLocaleCharToWChar(WStringR outStr, char const* inStr)
     {
     LangCodePage codePage;
-    BeStringUtilities::GetCurrentCodePage (codePage);
+    BeStringUtilities::GetCurrentCodePage(codePage);
 
-    return LocaleCharToWChar (outStr, inStr, codePage);
+    return LocaleCharToWChar(outStr, inStr, codePage);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WString::VSprintf (WCharCP format, va_list argptr)
+BentleyStatus WString::VSprintf(WCharCP format, va_list argptr)
     {
-    auto result = BeWStringSprintf (*this, format, argptr);
+    auto result = BeWStringSprintf(*this, format, argptr);
     return (result < 0 || result > (int)size())? BSIERROR: BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Utf8String::VSprintf (Utf8CP format, va_list argptr)
+BentleyStatus Utf8String::VSprintf(Utf8CP format, va_list argptr)
     {
-    auto result = BeUtf8StringSprintf (*this, format, argptr);
+    auto result = BeUtf8StringSprintf(*this, format, argptr);
     return (result < 0 || result > (int)size())? BSIERROR: BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Utf8String::Sprintf (Utf8CP format, ...) 
+BentleyStatus Utf8String::Sprintf(Utf8CP format, ...) 
     {
     va_list args; 
-    va_start (args, format); 
-    auto result = BeUtf8StringSprintf (*this, format, args);
-    va_end (args);
+    va_start(args, format); 
+    auto result = BeUtf8StringSprintf(*this, format, args);
+    va_end(args);
 
     if (result < 0)
         return BSIERROR;
 
     if (result > (int)size()) // on *nix, the initial attempt may fail, because it can only guess at the length of the formatted string.
         {                // Note that we have to re-create 'args' in order make a second attempt.
-        va_start (args, format); 
-        result = BeUtf8StringSprintf (*this, format, args, result);
-        va_end (args);
+        va_start(args, format); 
+        result = BeUtf8StringSprintf(*this, format, args, result);
+        va_end(args);
 
         if (result < 0)
             return BSIERROR;
@@ -943,32 +944,32 @@ BentleyStatus Utf8String::Sprintf (Utf8CP format, ...)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8PrintfString::Utf8PrintfString (Utf8CP format, ...) : Utf8String()
+Utf8PrintfString::Utf8PrintfString(Utf8CP format, ...) : Utf8String()
     {
     va_list args; 
-    va_start (args, format); 
-    auto result = BeUtf8StringSprintf (*this, format, args);
-    va_end (args);
+    va_start(args, format); 
+    auto result = BeUtf8StringSprintf(*this, format, args);
+    va_end(args);
 
     if (result < 0)
         return;
 
     if (result > (int)size()) // on *nix, the initial attempt may fail, because it can only guess at the length of the formatted string.
-        BeUtf8StringSprintf (*this, format, args, result);
+        BeUtf8StringSprintf(*this, format, args, result);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8PrintfString::Utf8PrintfString (Utf8CP format, va_list args) : Utf8String()
+Utf8PrintfString::Utf8PrintfString(Utf8CP format, va_list args) : Utf8String()
     {
-    auto result = BeUtf8StringSprintf (*this, format, args);
+    auto result = BeUtf8StringSprintf(*this, format, args);
     if (result < 0)
         return;
 
     if (result > (int)size()) // on *nix, the initial attempt may fail, because it can only guess at the length of the formatted string.
         {                // Note that we have to re-create 'args' in order make a second attempt.
-        result = BeUtf8StringSprintf (*this, format, args, result);
+        result = BeUtf8StringSprintf(*this, format, args, result);
         if (result < 0)
             return;
         }
@@ -977,22 +978,22 @@ Utf8PrintfString::Utf8PrintfString (Utf8CP format, va_list args) : Utf8String()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WString::Sprintf (WCharCP format, ...) 
+BentleyStatus WString::Sprintf(WCharCP format, ...) 
     {
 #if defined (_WIN32)
     va_list args; 
-    va_start (args, format); 
-    auto result = BeWStringSprintf (*this, format, args);
-    va_end (args);
+    va_start(args, format); 
+    auto result = BeWStringSprintf(*this, format, args);
+    va_end(args);
 
     if (result < 0)
         return BSIERROR;
 
     if (result > (int)size()) // on *nix, the initial attempt may fail, because it can only guess at the length of the formatted string.
         {                // Note that we have to re-create 'args' in order make a second attempt.
-        va_start (args, format); 
-        result = BeWStringSprintf (*this, format, args, result);
-        va_end (args);
+        va_start(args, format); 
+        result = BeWStringSprintf(*this, format, args, result);
+        va_end(args);
 
         if (result < 0)
             return BSIERROR;
@@ -1055,7 +1056,7 @@ WPrintfString::WPrintfString(WCharCP format, va_list args) : WString()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     06/2011
 //---------------------------------------------------------------------------------------
-static int wcsicmp_portable (WCharCP lhs, WCharCP rhs, size_t n)
+static int wcsicmp_portable(WCharCP lhs, WCharCP rhs, size_t n)
     {
     // I have yet to find an equivalent. Some systems have wcscasecmp, but this is POSIX 2008, and not on Android, for example.
     
@@ -1066,10 +1067,10 @@ static int wcsicmp_portable (WCharCP lhs, WCharCP rhs, size_t n)
     WChar rhsChar;
     
     do  {
-        lhsChar = towlower (*lhs);
+        lhsChar = towlower(*lhs);
         ++lhs;
         
-        rhsChar = towlower (*rhs);
+        rhsChar = towlower(*rhs);
         ++rhs;
         }
     while ((0 != lhsChar) && (lhsChar == rhsChar) && (0 != --n));
@@ -1081,7 +1082,7 @@ static int wcsicmp_portable (WCharCP lhs, WCharCP rhs, size_t n)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BeStringUtilities::GetCurrentCodePage (LangCodePage& cp)
+BentleyStatus BeStringUtilities::GetCurrentCodePage(LangCodePage& cp)
     {
 #if defined (BENTLEY_WIN32)
     cp = static_cast<LangCodePage>(::GetACP());
@@ -1107,10 +1108,10 @@ BentleyStatus BeStringUtilities::GetCurrentCodePage (LangCodePage& cp)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool BeStringUtilities::IsValidCodePage (LangCodePage codePage)
+bool BeStringUtilities::IsValidCodePage(LangCodePage codePage)
     {
 #if defined (_WIN32)
-    return 0 != ::IsValidCodePage (static_cast<uint32_t>(codePage));
+    return 0 != ::IsValidCodePage(static_cast<uint32_t>(codePage));
 #elif defined (__unix__)
     // WIP_NONPORT
     return (uint32_t)-1 != static_cast<uint32_t>(codePage);
@@ -1122,12 +1123,12 @@ bool BeStringUtilities::IsValidCodePage (LangCodePage codePage)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BeStringUtilities::GetDecimalSeparator (WStringR sep)
+BentleyStatus BeStringUtilities::GetDecimalSeparator(WStringR sep)
     {
 #if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
 
     wchar_t decimalBuffer[4] = {0};
-    BentleyStatus status = 0 != GetLocaleInfoEx (LOCALE_NAME_USER_DEFAULT, LOCALE_SDECIMAL, decimalBuffer, 4) ? BSISUCCESS : BSIERROR;
+    BentleyStatus status = 0 != GetLocaleInfoEx(LOCALE_NAME_USER_DEFAULT, LOCALE_SDECIMAL, decimalBuffer, 4) ? BSISUCCESS : BSIERROR;
     if (status)
         decimalBuffer[0] = '.';
 
@@ -1137,7 +1138,7 @@ BentleyStatus BeStringUtilities::GetDecimalSeparator (WStringR sep)
 #elif defined (__unix__)
 
     // WIP_NONPORT
-    sep.assign (L".");
+    sep.assign(L".");
     return SUCCESS;
 
 #else
@@ -1173,14 +1174,14 @@ static const char s_safeForUri[256] =
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String BeStringUtilities::UriEncode (Utf8CP charsToEncode)
+Utf8String BeStringUtilities::UriEncode(Utf8CP charsToEncode)
     {
     if (NULL == charsToEncode)
-        return Utf8String ();
+        return Utf8String();
 
     const char DEC2HEX[16 + 1] = "0123456789ABCDEF";
 
-    const int      length = (const int) strlen (charsToEncode);
+    const int      length = (const int) strlen(charsToEncode);
     unsigned char* start  = new unsigned char[length * 3];
     unsigned char* end    = start;
     Utf8CP         srcEnd = charsToEncode + length;
@@ -1199,7 +1200,7 @@ Utf8String BeStringUtilities::UriEncode (Utf8CP charsToEncode)
             }
         }
  
-    Utf8String result ((Utf8CP) start, (Utf8CP) end);
+    Utf8String result((Utf8CP) start, (Utf8CP) end);
     delete [] start;
     return result;
     }
@@ -1214,7 +1215,7 @@ char from_hex(char ch) {
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      08/2013
 //---------------------------------------------------------------------------------------
-bool BeStringUtilities::IsUriEncoded (Utf8CP str) 
+bool BeStringUtilities::IsUriEncoded(Utf8CP str) 
     {
     while (*str)
         {
@@ -1228,10 +1229,10 @@ bool BeStringUtilities::IsUriEncoded (Utf8CP str)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      08/2013
 //---------------------------------------------------------------------------------------
-Utf8String BeStringUtilities::UriDecode (Utf8CP start, Utf8CP end) 
+Utf8String BeStringUtilities::UriDecode(Utf8CP start, Utf8CP end) 
     {
     Utf8String decoded;
-    decoded.reserve (end-start); // that will be at least long enough
+    decoded.reserve(end-start); // that will be at least long enough
 
     for (Utf8CP pstr = start; pstr < end; ++pstr)
         {
@@ -1239,17 +1240,17 @@ Utf8String BeStringUtilities::UriDecode (Utf8CP start, Utf8CP end)
             {
             if (pstr[1] && pstr[2]) 
                 {
-                decoded.append (1, static_cast <Utf8Char> ((from_hex(pstr[1]) << 4 | from_hex(pstr[2]))));
+                decoded.append(1, static_cast <Utf8Char> ((from_hex(pstr[1]) << 4 | from_hex(pstr[2]))));
                 pstr += 2;
                 }
             }
         else if (*pstr == '+') // Some encoders turn space into '+'
             { 
-            decoded.append (1, ' ');
+            decoded.append(1, ' ');
             } 
         else 
             {
-            decoded.append (1, *pstr);
+            decoded.append(1, *pstr);
             }
         }
     return decoded;
@@ -1258,9 +1259,9 @@ Utf8String BeStringUtilities::UriDecode (Utf8CP start, Utf8CP end)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      08/2013
 //---------------------------------------------------------------------------------------
-Utf8String BeStringUtilities::UriDecode (Utf8CP str) 
+Utf8String BeStringUtilities::UriDecode(Utf8CP str) 
     {
-    return UriDecode (str, str+strlen(str));
+    return UriDecode(str, str+strlen(str));
     }
 
 //---------------------------------------------------------------------------------------
@@ -1425,7 +1426,7 @@ WCharCP        auxDelimiters    // => other characters than can be used as separ
             if (0 == *p)
                 break;
 
-            if ((!inquote && (L' ' == *p || L'\t' == *p || ((NULL != auxDelimiters) && (NULL != wcschr (auxDelimiters, *p))))))
+            if ((!inquote && (L' ' == *p || L'\t' == *p || ((NULL != auxDelimiters) && (NULL != wcschr(auxDelimiters, *p))))))
                 {
                 ++p;
                 break;
@@ -1452,39 +1453,39 @@ WCharCP        auxDelimiters    // => other characters than can be used as separ
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            BeStringUtilities::ParseArguments (bvector<WString>& subStrings, WCharCP inString, WCharCP auxDelimiters)
+void            BeStringUtilities::ParseArguments(bvector<WString>& subStrings, WCharCP inString, WCharCP auxDelimiters)
     {
     uint32_t argc, numchars;
     WChar   **argv, *argStrings;
 
     // Determine the space needed for argc/argv
-    parseIntoArgcArgv (inString, NULL, NULL, &argc, &numchars, auxDelimiters);
-    argv       = (WChar**)_alloca ((argc+1) * sizeof(WChar *) );
-    argStrings = (WChar*)_alloca ((numchars+1) * sizeof(WChar) );
+    parseIntoArgcArgv(inString, NULL, NULL, &argc, &numchars, auxDelimiters);
+    argv       = (WChar**)_alloca((argc+1) * sizeof(WChar *) );
+    argStrings = (WChar*)_alloca((numchars+1) * sizeof(WChar) );
 
     // Actually split up the arguments
-    parseIntoArgcArgv (inString, argv, argStrings, &argc, &numchars, auxDelimiters);
+    parseIntoArgcArgv(inString, argv, argStrings, &argc, &numchars, auxDelimiters);
 
     for (uint32_t iArg = 0; iArg < argc; iArg++)
-        subStrings.push_back (argv[iArg]);
+        subStrings.push_back(argv[iArg]);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    06/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t        BeStringUtilities::ParseArguments (WCharCP inString, uint32_t numSubStrings, ...)
+uint32_t        BeStringUtilities::ParseArguments(WCharCP inString, uint32_t numSubStrings, ...)
     {
     uint32_t numParsed = 0;
     uint32_t argc, numchars;
     WChar  **argv, *argStrings;
 
     // Determine the space needed for argc/argv
-    parseIntoArgcArgv (inString, NULL, NULL, &argc, &numchars, NULL);
-    argv       = (WChar**)_alloca ((argc+1) * sizeof(WChar *) );
-    argStrings = (WChar*)_alloca ((numchars+1) * sizeof(WChar) );
+    parseIntoArgcArgv(inString, NULL, NULL, &argc, &numchars, NULL);
+    argv       = (WChar**)_alloca((argc+1) * sizeof(WChar *) );
+    argStrings = (WChar*)_alloca((numchars+1) * sizeof(WChar) );
 
     // Actually split up the arguments
-    parseIntoArgcArgv (inString, argv, argStrings, &argc, &numchars, NULL);
+    parseIntoArgcArgv(inString, argv, argStrings, &argc, &numchars, NULL);
 
     /* localization block for processing variable arguments */
         {
@@ -1492,19 +1493,19 @@ uint32_t        BeStringUtilities::ParseArguments (WCharCP inString, uint32_t nu
         uint32_t iArg;
 
         va_list args;
-        va_start (args, numSubStrings /*last fixed arg*/);
+        va_start(args, numSubStrings /*last fixed arg*/);
 
         for (iArg = 0; iArg < numSubStrings && iArg < argc; iArg++)
             {
-            outStr = va_arg (args, WStringP);
+            outStr = va_arg(args, WStringP);
 
             if (NULL != outStr)
-                outStr->assign (argv[iArg]);
+                outStr->assign(argv[iArg]);
             }
 
         numParsed = iArg;
 
-        va_end (args);
+        va_end(args);
         }
 
     return numParsed;
@@ -1515,22 +1516,22 @@ uint32_t        BeStringUtilities::ParseArguments (WCharCP inString, uint32_t nu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-static WCharP wcsdup_portable (wchar_t const* s)
+static WCharP wcsdup_portable(wchar_t const* s)
     {
-    size_t len = wcslen (s);
-    WCharP cc = (WCharP) malloc ((len+1)*sizeof(wchar_t));
-    wcscpy (cc, s);
+    size_t len = wcslen(s);
+    WCharP cc = (WCharP) malloc((len+1)*sizeof(wchar_t));
+    wcscpy(cc, s);
     return cc;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-static char* unixStrncpy (char *strDest, size_t destLen, const char *strSource, size_t count)
+static char* unixStrncpy(char *strDest, size_t destLen, const char *strSource, size_t count)
     {
     if (count >= destLen)
         count = destLen-1;
-    strncpy (strDest, strSource, count);
+    strncpy(strDest, strSource, count);
     strDest[count] = 0;
     return strDest;
     }
@@ -1538,11 +1539,11 @@ static char* unixStrncpy (char *strDest, size_t destLen, const char *strSource, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-static wchar_t* unixWcsncpy (wchar_t *strDest, size_t destLen, const wchar_t *strSource, size_t count)
+static wchar_t* unixWcsncpy(wchar_t *strDest, size_t destLen, const wchar_t *strSource, size_t count)
     {
     if (count >= destLen)
         count = destLen-1;
-    wcsncpy (strDest, strSource, count);
+    wcsncpy(strDest, strSource, count);
     strDest[count] = 0;
     return strDest;
     }
@@ -1550,7 +1551,7 @@ static wchar_t* unixWcsncpy (wchar_t *strDest, size_t destLen, const wchar_t *st
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-static char* strlwr_ascii_only (char* s)
+static char* strlwr_ascii_only(char* s)
     {
     for (char* p = s; *p; ++p)
         *p = (char)tolower(*p);
@@ -1560,7 +1561,7 @@ static char* strlwr_ascii_only (char* s)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-char* strupr_ascii_only (char* s)
+char* strupr_ascii_only(char* s)
     {
     for (char* p = s; *p; ++p)
         *p = (char)toupper(*p);
@@ -1570,7 +1571,7 @@ char* strupr_ascii_only (char* s)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-wchar_t* wcslwr_portable (wchar_t* s)
+wchar_t* wcslwr_portable(wchar_t* s)
     {
     for (wchar_t* p = s; *p; ++p)
         *p = (wchar_t)tolower(*p);
@@ -1580,7 +1581,7 @@ wchar_t* wcslwr_portable (wchar_t* s)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-wchar_t* wcsupr_portable (wchar_t* s)
+wchar_t* wcsupr_portable(wchar_t* s)
     {
     for (wchar_t* p = s; *p; ++p)
         *p = (wchar_t)toupper(*p);
@@ -1592,13 +1593,13 @@ wchar_t* wcsupr_portable (wchar_t* s)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BeStringUtilities::Utf16ToWChar (WCharP wbuf, size_t wbufSizeInChars, Utf16CP inStr, size_t count)
+BentleyStatus BeStringUtilities::Utf16ToWChar(WCharP wbuf, size_t wbufSizeInChars, Utf16CP inStr, size_t count)
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    Wcsncpy (wbuf, wbufSizeInChars, (WCharCP)inStr, count);
+    Wcsncpy(wbuf, wbufSizeInChars, (WCharCP)inStr, count);
     return SUCCESS;
 #elif defined (__unix__)
-    return unixUtf16ToWChar (wbuf, wbufSizeInChars, inStr, count);
+    return unixUtf16ToWChar(wbuf, wbufSizeInChars, inStr, count);
 #else
 #error unknown runtime
 #endif
@@ -1607,13 +1608,13 @@ BentleyStatus BeStringUtilities::Utf16ToWChar (WCharP wbuf, size_t wbufSizeInCha
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BeStringUtilities::WCharToUtf16 (Utf16P ubuf, size_t ubufSizeInChars, WCharCP inStr, size_t count)
+BentleyStatus BeStringUtilities::WCharToUtf16(Utf16P ubuf, size_t ubufSizeInChars, WCharCP inStr, size_t count)
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    Wcsncpy ((WCharP)ubuf, ubufSizeInChars, inStr, count);
+    Wcsncpy((WCharP)ubuf, ubufSizeInChars, inStr, count);
     return SUCCESS;
 #elif defined (__unix__)
-    return unixWCharToUtf16 (ubuf, ubufSizeInChars, inStr, count);
+    return unixWCharToUtf16(ubuf, ubufSizeInChars, inStr, count);
 #else
 #error unknown runtime
 #endif
@@ -1622,13 +1623,13 @@ BentleyStatus BeStringUtilities::WCharToUtf16 (Utf16P ubuf, size_t ubufSizeInCha
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-int BeStringUtilities::CompareUtf16 (Utf16CP s1, Utf16CP s2)
+int BeStringUtilities::CompareUtf16(Utf16CP s1, Utf16CP s2)
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    return wcscmp ((wchar_t*)s1, (wchar_t*)s2);
+    return wcscmp((wchar_t*)s1, (wchar_t*)s2);
 #elif defined (__unix__)
     // *** WIP_NONPORT
-    return WString(s1).CompareTo (WString(s2));
+    return WString(s1).CompareTo(WString(s2));
 #else
 #error unknown runtime
 #endif
@@ -1637,13 +1638,13 @@ int BeStringUtilities::CompareUtf16 (Utf16CP s1, Utf16CP s2)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-int BeStringUtilities::CompareUtf16WChar (Utf16CP s1, WCharCP s2)
+int BeStringUtilities::CompareUtf16WChar(Utf16CP s1, WCharCP s2)
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    return wcscmp ((wchar_t*)s1, s2);
+    return wcscmp((wchar_t*)s1, s2);
 #elif defined (__unix__)
     // *** WIP_NONPORT
-    return WString(s1).CompareTo (s2);
+    return WString(s1).CompareTo(s2);
 #else
 #error unknown runtime
 #endif
@@ -1652,10 +1653,10 @@ int BeStringUtilities::CompareUtf16WChar (Utf16CP s1, WCharCP s2)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeStringUtilities::CopyUtf16 (Utf16P outStr, size_t outStrCapacity, Utf16CP inStr)
+void BeStringUtilities::CopyUtf16(Utf16P outStr, size_t outStrCapacity, Utf16CP inStr)
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    Wcsncpy ((wchar_t*)outStr, outStrCapacity, (wchar_t*)inStr);
+    Wcsncpy((wchar_t*)outStr, outStrCapacity, (wchar_t*)inStr);
 #elif defined (__unix__)
     if (0 == outStrCapacity)
         return;
@@ -1671,46 +1672,46 @@ void BeStringUtilities::CopyUtf16 (Utf16P outStr, size_t outStrCapacity, Utf16CP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-int BeStringUtilities::Snprintf (CharP buffer, size_t numCharsInBuffer, CharCP format, ...)
+int BeStringUtilities::Snprintf(CharP buffer, size_t numCharsInBuffer, CharCP format, ...)
     {
     va_list args;
-    va_start (args, format);
-    return Bevsnprintf (buffer, numCharsInBuffer, format, args);
+    va_start(args, format);
+    return Bevsnprintf(buffer, numCharsInBuffer, format, args);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-int BeStringUtilities::Vsnprintf (CharP buffer, size_t numCharsInBuffer, CharCP format, va_list args)
+int BeStringUtilities::Vsnprintf(CharP buffer, size_t numCharsInBuffer, CharCP format, va_list args)
     {
-    return Bevsnprintf (buffer, numCharsInBuffer, format, args);
+    return Bevsnprintf(buffer, numCharsInBuffer, format, args);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-int BeStringUtilities::Snwprintf (WCharP buffer, size_t numCharsInBuffer, WCharCP format, ...)
+int BeStringUtilities::Snwprintf(WCharP buffer, size_t numCharsInBuffer, WCharCP format, ...)
     {
     va_list args;
-    va_start (args, format);
-    return Bevsnwprintf (buffer, numCharsInBuffer, format, args);
+    va_start(args, format);
+    return Bevsnwprintf(buffer, numCharsInBuffer, format, args);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-int BeStringUtilities::Vsnwprintf (WCharP buffer, size_t numCharsInBuffer, WCharCP format, va_list args)
+int BeStringUtilities::Vsnwprintf(WCharP buffer, size_t numCharsInBuffer, WCharCP format, va_list args)
     {
-    return Bevsnwprintf (buffer, numCharsInBuffer, format, args);
+    return Bevsnwprintf(buffer, numCharsInBuffer, format, args);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-int BentleyApi::BeUtf8StringGuessLength (CharCP fmt, va_list ap)
+int BentleyApi::BeUtf8StringGuessLength(CharCP fmt, va_list ap)
     {
 #ifdef _MSC_VER
-    return _vscprintf (fmt, ap);
+    return _vscprintf(fmt, ap);
 #else
     return FORMAT_RESULT_BUFFER_GUESS;
 #endif
@@ -1719,10 +1720,10 @@ int BentleyApi::BeUtf8StringGuessLength (CharCP fmt, va_list ap)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-int BentleyApi::BeWStringGuessLength (WCharCP fmt, va_list ap)
+int BentleyApi::BeWStringGuessLength(WCharCP fmt, va_list ap)
     {
 #ifdef _MSC_VER
-    return _vscwprintf (fmt, ap);
+    return _vscwprintf(fmt, ap);
 #else
     return FORMAT_RESULT_BUFFER_GUESS;
 #endif
@@ -1732,23 +1733,23 @@ int BentleyApi::BeWStringGuessLength (WCharCP fmt, va_list ap)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-int BentleyApi::BeUtf8StringSprintf (Utf8String& outStr, CharCP fmt, va_list ap, int initialLengthGuess)
+int BentleyApi::BeUtf8StringSprintf(Utf8String& outStr, CharCP fmt, va_list ap, int initialLengthGuess)
     {
     // See Notes in BeWStringSprintf
 
     if (initialLengthGuess == -1)
-        initialLengthGuess = BeUtf8StringGuessLength (fmt, ap);
+        initialLengthGuess = BeUtf8StringGuessLength(fmt, ap);
 
-    ScopedArray<Utf8Char> buffer (initialLengthGuess+1);
+    ScopedArray<Utf8Char> buffer(initialLengthGuess+1);
 
-    auto result = vsnprintf (buffer.GetData(), initialLengthGuess+1, fmt, ap);
+    auto result = vsnprintf(buffer.GetData(), initialLengthGuess+1, fmt, ap);
 
     if (result < 0)
         return result;
 
-    outStr.assign (buffer.GetData());
+    outStr.assign(buffer.GetData());
 
-    BeAssert (result >= (int)outStr.size());
+    BeAssert(result >= (int)outStr.size());
 
     return result;
     }
@@ -1756,7 +1757,7 @@ int BentleyApi::BeUtf8StringSprintf (Utf8String& outStr, CharCP fmt, va_list ap,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-int BentleyApi::BeWStringSprintf (WString& outStr, WCharCP fmt, va_list ap, int initialLengthGuess)
+int BentleyApi::BeWStringSprintf(WString& outStr, WCharCP fmt, va_list ap, int initialLengthGuess)
     {
     // *** NB: DO NOT MAKE TWO PASSES, calling vsnprintf once to get the length and again to do the formatting.
     // ***     vsnprintf modifies ap. The second time you call it, ap is garbage.
@@ -1766,18 +1767,18 @@ int BentleyApi::BeWStringSprintf (WString& outStr, WCharCP fmt, va_list ap, int 
     // and not all of it was written to the output buffer.
 
     if (initialLengthGuess == -1)
-        initialLengthGuess = BeWStringGuessLength (fmt, ap);
+        initialLengthGuess = BeWStringGuessLength(fmt, ap);
 
-    ScopedArray<wchar_t> buffer (initialLengthGuess+1);    // output buffer must have space for trailing \0
+    ScopedArray<wchar_t> buffer(initialLengthGuess+1);    // output buffer must have space for trailing \0
 
-    auto result = vswprintf (buffer.GetData(), initialLengthGuess+1, fmt, ap); // output buffer must have space for trailing \0
+    auto result = vswprintf(buffer.GetData(), initialLengthGuess+1, fmt, ap); // output buffer must have space for trailing \0
 
     if (result < 0)   // Note: on Windows (MSVC) result will never by < 0. That's because BeWStringGuessLength (which calls _vscwprintf) will always give an accurate size for buffer, and so the formatted string will always fit.
         return result;
 
-    outStr.assign (buffer.GetData());
+    outStr.assign(buffer.GetData());
 
-    BeAssert (result <= (int)outStr.size());
+    BeAssert(result <= (int)outStr.size());
 
     return result;
     }
@@ -1786,13 +1787,13 @@ int BentleyApi::BeWStringSprintf (WString& outStr, WCharCP fmt, va_list ap, int 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-int BentleyApi::Bevsnprintf (CharP buffer, size_t numCharsInBuffer, CharCP fmt, va_list ap)
+int BentleyApi::Bevsnprintf(CharP buffer, size_t numCharsInBuffer, CharCP fmt, va_list ap)
     {
     //                                         ^^^^^^^^^^^^^^^^ Note that numCharsInBuffer includes trailing \0
 
     //  Format the whole string, making it as long as necessary
     Utf8String s;
-    int res = BeUtf8StringSprintf (s, fmt, ap); // We must let the first guess call Be...GuessLength, which on Windows will be the correct length. That's how we avoid a return value of -1
+    int res = BeUtf8StringSprintf(s, fmt, ap); // We must let the first guess call Be...GuessLength, which on Windows will be the correct length. That's how we avoid a return value of -1
     if (EOF == res)
         {
         if (NULL != buffer && 0 != numCharsInBuffer)
@@ -1804,10 +1805,10 @@ int BentleyApi::Bevsnprintf (CharP buffer, size_t numCharsInBuffer, CharCP fmt, 
     if (NULL != buffer)
         {
         if (s.size() < numCharsInBuffer) // enough space for string AND trailing \0?
-            strcpy (buffer, s.c_str());
+            strcpy(buffer, s.c_str());
         else if (numCharsInBuffer > 0)
             {                       // truncate
-            strncpy (buffer, s.c_str(), numCharsInBuffer);
+            strncpy(buffer, s.c_str(), numCharsInBuffer);
             buffer[numCharsInBuffer-1] = 0;
             }
         }
@@ -1824,13 +1825,13 @@ int BentleyApi::Bevsnprintf (CharP buffer, size_t numCharsInBuffer, CharCP fmt, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-int BentleyApi::Bevsnwprintf (WCharP buffer, size_t numCharsInBuffer, WCharCP fmt, va_list ap)
+int BentleyApi::Bevsnwprintf(WCharP buffer, size_t numCharsInBuffer, WCharCP fmt, va_list ap)
     {
     //                                            ^^^^^^^^^^^^^^^^ Note that numCharsInBuffer includes trailing \0
 
     //  Format the whole string, making it as long as necessary
     WString s;
-    int res = BeWStringSprintf (s, fmt, ap); // We must let the first guess call Be...GuessLength, which on Windows will be the correct length. That's how we avoid a return value of -1
+    int res = BeWStringSprintf(s, fmt, ap); // We must let the first guess call Be...GuessLength, which on Windows will be the correct length. That's how we avoid a return value of -1
     if (res < 0)
         {
         if (NULL != buffer && 0 != numCharsInBuffer)
@@ -1842,10 +1843,10 @@ int BentleyApi::Bevsnwprintf (WCharP buffer, size_t numCharsInBuffer, WCharCP fm
     if (NULL != buffer)
         {
         if (s.size() < numCharsInBuffer) // enough space for string AND trailing \0?
-            wcscpy (buffer, s.c_str());
+            wcscpy(buffer, s.c_str());
         else if (numCharsInBuffer > 0)
             {                       // truncate
-            wcsncpy (buffer, s.c_str(), numCharsInBuffer);
+            wcsncpy(buffer, s.c_str(), numCharsInBuffer);
             buffer[numCharsInBuffer-1] = 0;
             }
         }
@@ -1862,25 +1863,25 @@ int BentleyApi::Bevsnwprintf (WCharP buffer, size_t numCharsInBuffer, WCharCP fm
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-char* BeStringUtilities::Strlwr (char* s)
+char* BeStringUtilities::Strlwr(char* s)
     {
     if (!isAscii(s))
         {
-        WString w (s, true);
+        WString w(s, true);
         w.ToLower();
-        Utf8String a (w);
+        Utf8String a(w);
         size_t alen = strlen(a.c_str()); // don't use a.size(). That's often larger than the actual length. The transcode logic resizes the buffer without being exact.
         if (alen > strlen(s))
             {
             BeAssert(false);
             return s;
             }
-        strcpy (s, a.c_str());
+        strcpy(s, a.c_str());
         return s;
         }
 
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    return _strlwr (s);
+    return _strlwr(s);
 #elif defined (__unix__)
     return strlwr_ascii_only(s);
         
@@ -1892,12 +1893,12 @@ char* BeStringUtilities::Strlwr (char* s)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-wchar_t* BeStringUtilities::Wcslwr (wchar_t* s)
+wchar_t* BeStringUtilities::Wcslwr(wchar_t* s)
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    return _wcslwr (s);
+    return _wcslwr(s);
 #elif defined (__unix__)
-    return wcslwr_portable (s);
+    return wcslwr_portable(s);
 #else
 #error unknown runtime
 #endif
@@ -1906,24 +1907,24 @@ wchar_t* BeStringUtilities::Wcslwr (wchar_t* s)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-char* BeStringUtilities::Strupr (char* s)
+char* BeStringUtilities::Strupr(char* s)
     {
     if (!isAscii(s))
         {
-        WString w (s, true);
+        WString w(s, true);
         w.ToUpper();
-        Utf8String a (w);
+        Utf8String a(w);
         if (a.size() > strlen(s))
             {
             BeAssert(false);
             return s;
             }
-        strcpy (s, a.c_str());
+        strcpy(s, a.c_str());
         return s;
         }
 
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    return _strupr (s);
+    return _strupr(s);
 #elif defined (__unix__)
     return strupr_ascii_only(s);
 #else
@@ -1934,12 +1935,12 @@ char* BeStringUtilities::Strupr (char* s)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-wchar_t* BeStringUtilities::Wcsupr (wchar_t* s)
+wchar_t* BeStringUtilities::Wcsupr(wchar_t* s)
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    return _wcsupr (s);
+    return _wcsupr(s);
 #elif defined (__unix__)
-    return wcsupr_portable (s);
+    return wcsupr_portable(s);
 #else
 #error unknown runtime
 #endif
@@ -1948,15 +1949,15 @@ wchar_t* BeStringUtilities::Wcsupr (wchar_t* s)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-int BeStringUtilities::Stricmp (const char* s1, const char* s2)
+int BeStringUtilities::Stricmp(const char* s1, const char* s2)
     {
     if (!isAscii(s1) || !isAscii(s2))
-        return WString(s1,BentleyCharEncoding::Utf8).CompareTo (WString(s2,BentleyCharEncoding::Utf8));
+        return WString(s1,BentleyCharEncoding::Utf8).CompareToI(WString(s2,BentleyCharEncoding::Utf8));
 
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    return _stricmp (s1, s2);
+    return _stricmp(s1, s2);
 #elif defined (__unix__)
-    return strcasecmp (s1, s2);
+    return strcasecmp(s1, s2);
 #else
 #error unknown runtime
 #endif
@@ -1965,12 +1966,12 @@ int BeStringUtilities::Stricmp (const char* s1, const char* s2)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-int BeStringUtilities::Wcsicmp (WCharCP lhs, WCharCP rhs)
+int BeStringUtilities::Wcsicmp(WCharCP lhs, WCharCP rhs)
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    return _wcsicmp (lhs, rhs);
+    return _wcsicmp(lhs, rhs);
 #elif defined (__unix__)
-    return wcsicmp_portable (lhs, rhs, AsManyAsPossible);
+    return wcsicmp_portable(lhs, rhs, AsManyAsPossible);
 #else
 #error unknown runtime
 #endif
@@ -1979,15 +1980,15 @@ int BeStringUtilities::Wcsicmp (WCharCP lhs, WCharCP rhs)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-int BeStringUtilities::Strnicmp (const char* s1, const char* s2, size_t n)
+int BeStringUtilities::Strnicmp(const char* s1, const char* s2, size_t n)
     {
     if (!isAscii(s1) || !isAscii(s2))
-        return Wcsnicmp (WString(s1,BentleyCharEncoding::Utf8).c_str(), WString(s2,BentleyCharEncoding::Utf8).c_str(), n);
+        return Wcsnicmp(WString(s1,BentleyCharEncoding::Utf8).c_str(), WString(s2,BentleyCharEncoding::Utf8).c_str(), n);
 
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    return _strnicmp (s1, s2, n);
+    return _strnicmp(s1, s2, n);
 #elif defined (__unix__)
-    return strncasecmp (s1, s2, n);
+    return strncasecmp(s1, s2, n);
 #else
 #error unknown runtime
 #endif
@@ -1996,12 +1997,12 @@ int BeStringUtilities::Strnicmp (const char* s1, const char* s2, size_t n)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-int BeStringUtilities::Wcsnicmp (const wchar_t* s1, const wchar_t* s2, size_t n)
+int BeStringUtilities::Wcsnicmp(const wchar_t* s1, const wchar_t* s2, size_t n)
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    return _wcsnicmp (s1, s2, n);
+    return _wcsnicmp(s1, s2, n);
 #elif defined (__unix__)
-    return wcsicmp_portable (s1, s2, n);
+    return wcsicmp_portable(s1, s2, n);
 #else
 #error unknown runtime
 #endif
@@ -2010,12 +2011,12 @@ int BeStringUtilities::Wcsnicmp (const wchar_t* s1, const wchar_t* s2, size_t n)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-char* BeStringUtilities::Strdup (char const* s)
+char* BeStringUtilities::Strdup(char const* s)
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    return _strdup (s);
+    return _strdup(s);
 #elif defined (__unix__)
-    return strdup (s);
+    return strdup(s);
 #else
 #error unknown runtime
 #endif
@@ -2024,12 +2025,12 @@ char* BeStringUtilities::Strdup (char const* s)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-wchar_t* BeStringUtilities::Wcsdup (wchar_t const* s)
+wchar_t* BeStringUtilities::Wcsdup(wchar_t const* s)
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    return _wcsdup (s);
+    return _wcsdup(s);
 #elif defined (__unix__)
-    return wcsdup_portable (s);
+    return wcsdup_portable(s);
 #else
 #error unknown runtime
 #endif
@@ -2038,14 +2039,14 @@ wchar_t* BeStringUtilities::Wcsdup (wchar_t const* s)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-char* BeStringUtilities::Strtok (char *strToken, const char *strDelimit, char **context)
+char* BeStringUtilities::Strtok(char *strToken, const char *strDelimit, char **context)
     {
-    BeAssert (isAscii (strDelimit));
+    BeAssert(isAscii(strDelimit));
 
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    return strtok_s (strToken, strDelimit, context);
+    return strtok_s(strToken, strDelimit, context);
 #elif defined (__unix__)
-    return strtok_r (strToken, strDelimit, context);
+    return strtok_r(strToken, strDelimit, context);
 #else
 #error unknown runtime
 #endif
@@ -2054,12 +2055,12 @@ char* BeStringUtilities::Strtok (char *strToken, const char *strDelimit, char **
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-wchar_t* BeStringUtilities::Wcstok (wchar_t *wcsToken, const wchar_t *wcsDelimit, wchar_t **context)
+wchar_t* BeStringUtilities::Wcstok(wchar_t *wcsToken, const wchar_t *wcsDelimit, wchar_t **context)
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    return wcstok_s (wcsToken, wcsDelimit, context);
+    return wcstok_s(wcsToken, wcsDelimit, context);
 #elif defined (__unix__)
-    return wcstok (wcsToken, wcsDelimit, context);
+    return wcstok(wcsToken, wcsDelimit, context);
 #else
 #error unknown runtime
 #endif
@@ -2068,10 +2069,10 @@ wchar_t* BeStringUtilities::Wcstok (wchar_t *wcsToken, const wchar_t *wcsDelimit
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-wchar_t* BeStringUtilities::Wcsrev (wchar_t *s) 
+wchar_t* BeStringUtilities::Wcsrev(wchar_t *s) 
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    return _wcsrev (s); 
+    return _wcsrev(s); 
 #elif defined (__unix__)
      for (size_t i=0, j=wcslen(s)-1;  i < j; ++i, --j)
         {
@@ -2088,12 +2089,12 @@ wchar_t* BeStringUtilities::Wcsrev (wchar_t *s)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-wchar_t* BeStringUtilities::Wcsncpy (wchar_t *strDest, size_t destLen, const wchar_t *strSource, size_t count) 
+wchar_t* BeStringUtilities::Wcsncpy(wchar_t *strDest, size_t destLen, const wchar_t *strSource, size_t count) 
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    wcsncpy_s (strDest, destLen, strSource, count); 
+    wcsncpy_s(strDest, destLen, strSource, count); 
 #elif defined (__unix__)
-    unixWcsncpy (strDest, destLen, strSource, count);
+    unixWcsncpy(strDest, destLen, strSource, count);
 #else
 #error unknown runtime
 #endif
@@ -2103,12 +2104,12 @@ wchar_t* BeStringUtilities::Wcsncpy (wchar_t *strDest, size_t destLen, const wch
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-char* BeStringUtilities::Strncpy (char *strDest, size_t destLen, const char *strSource, size_t count) 
+char* BeStringUtilities::Strncpy(char *strDest, size_t destLen, const char *strSource, size_t count) 
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    strncpy_s (strDest, destLen, strSource, count); 
+    strncpy_s(strDest, destLen, strSource, count); 
 #elif defined (__unix__)
-    unixStrncpy (strDest, destLen, strSource, count);
+    unixStrncpy(strDest, destLen, strSource, count);
 #else
 #error unknown runtime
 #endif
@@ -2142,7 +2143,7 @@ char* BeStringUtilities::Strncpy (char *strDest, size_t destLen, const char *str
         // Apply negative sign
         if (tmp_value < 0) *ptr++ = '-';
         *ptr-- = '\0';
-        while(ptr1 < ptr) {
+        while (ptr1 < ptr) {
             tmp_char = *ptr;
             *ptr--= *ptr1;
             *ptr1++ = tmp_char;
@@ -2155,22 +2156,22 @@ char* BeStringUtilities::Strncpy (char *strDest, size_t destLen, const char *str
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BeStringUtilities::Itow (wchar_t *buffer, int value, size_t sizeInCharacters, int radix)
+BentleyStatus BeStringUtilities::Itow(wchar_t *buffer, int value, size_t sizeInCharacters, int radix)
     {
 #if defined (_WIN32)
-    return _itow_s (value, buffer, sizeInCharacters, radix) == 0? SUCCESS: ERROR;
+    return _itow_s(value, buffer, sizeInCharacters, radix) == 0? SUCCESS: ERROR;
 #else
-    return bentleyItow (value, buffer, sizeInCharacters, radix) != NULL? SUCCESS: ERROR;
+    return bentleyItow(value, buffer, sizeInCharacters, radix) != NULL? SUCCESS: ERROR;
 #endif
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-int BeStringUtilities::Wtoi (wchar_t const* s)
+int BeStringUtilities::Wtoi(wchar_t const* s)
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    return _wtoi (s);
+    return _wtoi(s);
 #elif defined (__unix__)
     int i = 0;
     BE_STRING_UTILITIES_SWSCANF (s, L"%d", &i);
@@ -2183,23 +2184,23 @@ int BeStringUtilities::Wtoi (wchar_t const* s)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  09/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-void BeStringUtilities::FormatUInt64 (WCharP buf, uint64_t value)
+void BeStringUtilities::FormatUInt64(WCharP buf, uint64_t value)
     {
-    FormatUInt64 (buf, value, 10ULL);
+    FormatUInt64(buf, value, 10ULL);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeStringUtilities::FormatHexUInt64 (WCharP buf, uint64_t value)
+void BeStringUtilities::FormatHexUInt64(WCharP buf, uint64_t value)
     {
-    FormatUInt64 (buf, value, 16ULL);
+    FormatUInt64(buf, value, 16ULL);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  09/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-void BeStringUtilities::FormatUInt64 (WCharP string, uint64_t number, uint64_t base)
+void BeStringUtilities::FormatUInt64(WCharP string, uint64_t number, uint64_t base)
     {
     WCharCP digits = nullptr;
     switch (base)
@@ -2216,7 +2217,7 @@ void BeStringUtilities::FormatUInt64 (WCharP string, uint64_t number, uint64_t b
             digits = L"0123456789abcdef";
             break;
         default:
-            BeAssert (false && "BeStringUtilities::FormatUInt64: Unsupported base");
+            BeAssert(false && "BeStringUtilities::FormatUInt64: Unsupported base");
             return;
         }
 
@@ -2228,19 +2229,19 @@ void BeStringUtilities::FormatUInt64 (WCharP string, uint64_t number, uint64_t b
         bufpt++;
         number /= base;
         }
-    while(number > 0ULL);
+    while (number > 0ULL);
 
     *bufpt = '\0';
-    Wcsrev (string);
+    Wcsrev(string);
     }
 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  09/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus BeStringUtilities::ParseUInt64 (uint64_t& value, WCharCP string)
+BentleyStatus BeStringUtilities::ParseUInt64(uint64_t& value, WCharCP string)
     {
-    if (WString::IsNullOrEmpty (string))
+    if (WString::IsNullOrEmpty(string))
         return ERROR;
 
     value = 0;
@@ -2249,7 +2250,7 @@ BentleyStatus BeStringUtilities::ParseUInt64 (uint64_t& value, WCharCP string)
     while (string[i] != '\0')
         {
         WChar c = string[i];
-        if (!isdigit (c))
+        if (!isdigit(c))
             return ERROR;
 
         uint64_t digit = c - '0';
@@ -2264,9 +2265,9 @@ BentleyStatus BeStringUtilities::ParseUInt64 (uint64_t& value, WCharCP string)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  12/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus BeStringUtilities::ParseUInt64 (uint64_t& value, Utf8CP string)
+BentleyStatus BeStringUtilities::ParseUInt64(uint64_t& value, Utf8CP string)
     {
-    if (Utf8String::IsNullOrEmpty (string))
+    if (Utf8String::IsNullOrEmpty(string))
         return ERROR;
 
     value = 0;
@@ -2275,7 +2276,7 @@ BentleyStatus BeStringUtilities::ParseUInt64 (uint64_t& value, Utf8CP string)
     while (string[i] != '\0')
         {
         Utf8Char c = string[i];
-        if (!isdigit (c))
+        if (!isdigit(c))
             return ERROR;
 
         uint64_t digit = c - '0';
@@ -2290,7 +2291,7 @@ BentleyStatus BeStringUtilities::ParseUInt64 (uint64_t& value, Utf8CP string)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BeStringUtilities::ParseHexUInt64 (uint64_t& value, WCharCP hs)
+BentleyStatus BeStringUtilities::ParseHexUInt64(uint64_t& value, WCharCP hs)
     {
     if (hs[0] == '0' && tolower(hs[1]) == 'x')
         hs += 2;
@@ -2301,12 +2302,12 @@ BentleyStatus BeStringUtilities::ParseHexUInt64 (uint64_t& value, WCharCP hs)
         {
         uint64_t hexit;
         wchar_t c = *hs;
-        if (isdigit (c))
+        if (isdigit(c))
             hexit = c - '0';
         else
             {
-            if (isupper (c))
-                c = static_cast <wchar_t> (tolower (c));
+            if (isupper(c))
+                c = static_cast <wchar_t> (tolower(c));
             if (c >= 'a' && c <= 'f')
                 hexit = 10 + (c - 'a');
             else
@@ -2321,15 +2322,15 @@ BentleyStatus BeStringUtilities::ParseHexUInt64 (uint64_t& value, WCharCP hs)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-unsigned long  BeStringUtilities::Wcstoul (wchar_t const* s, wchar_t** end, int base)
+unsigned long  BeStringUtilities::Wcstoul(wchar_t const* s, wchar_t** end, int base)
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    return wcstoul (s, end, base);
+    return wcstoul(s, end, base);
 #elif defined (__unix__)
-    Utf8String a (s);
+    Utf8String a(s);
     char const* abegin = a.c_str();
     char* aend = NULL;
-    unsigned long value = strtoul (abegin, &aend, base);
+    unsigned long value = strtoul(abegin, &aend, base);
     if (end)
         *end = const_cast<wchar_t*>(s) + (aend - abegin);  // *** TRICKY: the # of utf-8 chars in a run of digits and a-z chars will be the same in all encodings
     return value;
@@ -2341,15 +2342,15 @@ unsigned long  BeStringUtilities::Wcstoul (wchar_t const* s, wchar_t** end, int 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-long  BeStringUtilities::Wcstol (wchar_t const* s, wchar_t** end, int base)
+long  BeStringUtilities::Wcstol(wchar_t const* s, wchar_t** end, int base)
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    return wcstol (s, end, base);
+    return wcstol(s, end, base);
 #elif defined (__unix__)
-    Utf8String a (s);
+    Utf8String a(s);
     char const* abegin = a.c_str();
     char* aend = NULL;
-    long value = strtol (abegin, &aend, base);
+    long value = strtol(abegin, &aend, base);
     if (end)
         *end = const_cast<wchar_t*>(s) + (aend - abegin);  // *** TRICKY: the # of utf-8 chars in a run of digits and a-z chars will be the same in all encodings
     return value;
@@ -2361,15 +2362,15 @@ long  BeStringUtilities::Wcstol (wchar_t const* s, wchar_t** end, int base)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-double BeStringUtilities::Wcstod (wchar_t const* s, wchar_t** end)
+double BeStringUtilities::Wcstod(wchar_t const* s, wchar_t** end)
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    return wcstod (s, end);
+    return wcstod(s, end);
 #elif defined (__unix__)
-    Utf8String a (s);
+    Utf8String a(s);
     char const* abegin = a.c_str();
     char* aend = NULL;
-    double value = strtod (abegin, &aend);
+    double value = strtod(abegin, &aend);
     if (end)
         *end = const_cast<wchar_t*>(s) + (aend - abegin);  // *** TRICKY: the # of utf-8 chars in a run of digits and a-z chars will be the same in all encodings
     return value;
@@ -2381,10 +2382,10 @@ double BeStringUtilities::Wcstod (wchar_t const* s, wchar_t** end)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-double BeStringUtilities::Wtof (wchar_t const* s)
+double BeStringUtilities::Wtof(wchar_t const* s)
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    return _wtof (s);
+    return _wtof(s);
 #elif defined (__unix__)
     double v = 0;
     BE_STRING_UTILITIES_SWSCANF (s, L"%lf", &v);
@@ -2397,14 +2398,14 @@ double BeStringUtilities::Wtof (wchar_t const* s)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BeStringUtilities::Memmove (void *dest, size_t numberOfElements, const void *src, size_t count)
+BentleyStatus BeStringUtilities::Memmove(void *dest, size_t numberOfElements, const void *src, size_t count)
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    return memmove_s (dest, numberOfElements, src, count) == 0? SUCCESS: ERROR;
+    return memmove_s(dest, numberOfElements, src, count) == 0? SUCCESS: ERROR;
 #elif defined (__unix__)
     if (NULL == dest || NULL == src || numberOfElements < count)
         return ERROR;
-    memmove (dest, src, count);
+    memmove(dest, src, count);
     return SUCCESS;
 #else
 #error unknown runtime
@@ -2414,14 +2415,14 @@ BentleyStatus BeStringUtilities::Memmove (void *dest, size_t numberOfElements, c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BeStringUtilities::Wmemmove (wchar_t *dest, size_t numberOfElements, const wchar_t *src, size_t count)
+BentleyStatus BeStringUtilities::Wmemmove(wchar_t *dest, size_t numberOfElements, const wchar_t *src, size_t count)
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    return wmemmove_s (dest, numberOfElements, src, count) == 0? SUCCESS: ERROR;
+    return wmemmove_s(dest, numberOfElements, src, count) == 0? SUCCESS: ERROR;
 #elif defined (__unix__)
     if (NULL == dest || NULL == src || numberOfElements < count)
         return ERROR;
-    wmemmove (dest, src, count);
+    wmemmove(dest, src, count);
     return SUCCESS;
 #else
 #error unknown runtime
@@ -2431,14 +2432,14 @@ BentleyStatus BeStringUtilities::Wmemmove (wchar_t *dest, size_t numberOfElement
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BeStringUtilities::Memcpy (void *dest, size_t numberOfElements, const void *src, size_t count)
+BentleyStatus BeStringUtilities::Memcpy(void *dest, size_t numberOfElements, const void *src, size_t count)
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    return memcpy_s (dest, numberOfElements, src, count) == 0? SUCCESS: ERROR;
+    return memcpy_s(dest, numberOfElements, src, count) == 0? SUCCESS: ERROR;
 #elif defined (__unix__)
     if (NULL == dest || NULL == src || numberOfElements < count)
         return ERROR;
-    memcpy (dest, src, count);
+    memcpy(dest, src, count);
     return SUCCESS;
 #else
 #error unknown runtime
@@ -2448,14 +2449,14 @@ BentleyStatus BeStringUtilities::Memcpy (void *dest, size_t numberOfElements, co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BeStringUtilities::Wmemcpy (wchar_t *dest, size_t numberOfElements, const wchar_t *src, size_t count)
+BentleyStatus BeStringUtilities::Wmemcpy(wchar_t *dest, size_t numberOfElements, const wchar_t *src, size_t count)
     {
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
-    return wmemcpy_s (dest, numberOfElements, src, count) == 0? SUCCESS: ERROR;
+    return wmemcpy_s(dest, numberOfElements, src, count) == 0? SUCCESS: ERROR;
 #elif defined (__unix__)
     if (NULL == dest || NULL == src || numberOfElements < count)
         return ERROR;
-    wmemcpy (dest, src, count);
+    wmemcpy(dest, src, count);
     return SUCCESS;
 #else
 #error unknown runtime
@@ -2481,10 +2482,10 @@ BentleyStatus BeStringUtilities::Wmemcpy (wchar_t *dest, size_t numberOfElements
 * some combinations of options).
 * @bsimethod                                                    Paul.Connelly   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-int BeStringUtilities::FormatUInt64 (wchar_t *dest, size_t numCharsInBuffer, uint64_t inputVal, HexFormatOptions opts, uint8_t minWidth, uint8_t minPrecisionIn)
+int BeStringUtilities::FormatUInt64(wchar_t *dest, size_t numCharsInBuffer, uint64_t inputVal, HexFormatOptions opts, uint8_t minWidth, uint8_t minPrecisionIn)
     {
     if (NULL == dest || 0 >= numCharsInBuffer)
-        { BeAssert (false); return 0; }
+        { BeAssert(false); return 0; }
     
     static const wchar_t s_offsets[2][2] = { { '0', 'a'-0xA }, { '0', 'A'-0xA } };
     static const size_t bufSize = 0x12      // max minWidth (== max minPrecision + max prefix length)
@@ -2566,7 +2567,7 @@ int BeStringUtilities::FormatUInt64 (wchar_t *dest, size_t numCharsInBuffer, uin
     // 8. Copy to output buffer
     size_t nCharsWritten = pDest - dest;
     size_t nCharsRemaining = numCharsInBuffer - nCharsWritten;
-    Wcsncpy (pDest, nCharsRemaining, pCur);
+    Wcsncpy(pDest, nCharsRemaining, pCur);
 
     // 9. Left-justify
     if (leftJustify && width < (size_t)minWidth)
@@ -2582,7 +2583,7 @@ int BeStringUtilities::FormatUInt64 (wchar_t *dest, size_t numCharsInBuffer, uin
         }
 
     // 10. Null-terminate
-    BeAssert (width < numCharsInBuffer);
+    BeAssert(width < numCharsInBuffer);
     dest[width] = '\0';
         
     return (int)width;
@@ -2591,14 +2592,14 @@ int BeStringUtilities::FormatUInt64 (wchar_t *dest, size_t numCharsInBuffer, uin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void countDigitChars (uint32_t& digitCount, uint32_t& leadingZeroCount, WCharCP inString)
+static void countDigitChars(uint32_t& digitCount, uint32_t& leadingZeroCount, WCharCP inString)
     {
     WCharCP     currChar = inString;
     bool        foundNonZeroDigit = false;
 
     digitCount  = leadingZeroCount = 0;
 
-    for (; iswdigit (*currChar); ++currChar)
+    for (; iswdigit(*currChar); ++currChar)
         {
         digitCount++;
 
@@ -2615,12 +2616,12 @@ static void countDigitChars (uint32_t& digitCount, uint32_t& leadingZeroCount, W
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-int BeStringUtilities::LexicographicCompare (WCharCP value0, WCharCP value1)
+int BeStringUtilities::LexicographicCompare(WCharCP value0, WCharCP value1)
     {
     int     zeroComparisonHint = 0;
     while (*value0 && *value1)
         {
-        if (iswdigit (*value0) && iswdigit (*value1))
+        if (iswdigit(*value0) && iswdigit(*value1))
             {
             // Previously, this used atoi to compare any digits found in two strings.  If either number was too large for atoi,
             // this would overflow and sort incorrectly/cause collisions.  The sort here now preserves the behavior of
@@ -2628,8 +2629,8 @@ int BeStringUtilities::LexicographicCompare (WCharCP value0, WCharCP value1)
             uint32_t    digitCount0, leadingZeroCount0;
             uint32_t    digitCount1, leadingZeroCount1;
 
-            countDigitChars (digitCount0, leadingZeroCount0, value0);
-            countDigitChars (digitCount1, leadingZeroCount1, value1);
+            countDigitChars(digitCount0, leadingZeroCount0, value0);
+            countDigitChars(digitCount1, leadingZeroCount1, value1);
 
             if (0 == zeroComparisonHint)
                 {
@@ -2654,16 +2655,16 @@ int BeStringUtilities::LexicographicCompare (WCharCP value0, WCharCP value1)
             value0 += leadingZeroCount0;
             value1 += leadingZeroCount1;
 
-            while (iswdigit (*value0) && iswdigit (*value1))
+            while (iswdigit(*value0) && iswdigit(*value1))
                 {
-                int compare = towlower (*value0++) - towlower (*value1++);
+                int compare = towlower(*value0++) - towlower(*value1++);
                 if (compare)
                     return compare;
                 }
             }
         else
             {
-            int compare = towlower (*value0++) - towlower (*value1++);
+            int compare = towlower(*value0++) - towlower(*value1++);
             if (compare)
                 return compare;
             }
@@ -2682,27 +2683,27 @@ int BeStringUtilities::LexicographicCompare (WCharCP value0, WCharCP value1)
 WString  BeStringUtilities::ParseFileURI (WCharCP uri, WCharCP basePath)
     {
     if (NULL == uri || L'\0' == *uri)
-        return WString ();
+        return WString();
 
-    int                 length       = static_cast<int>(wcslen (uri));
+    int                 length       = static_cast<int>(wcslen(uri));
     int                 maxLength    = length * 2;
-    WCharP              outComponent = static_cast<WCharP> (_alloca (maxLength * sizeof(WChar)));
+    WCharP              outComponent = static_cast<WCharP> (_alloca(maxLength * sizeof(WChar)));
     outComponent[0] = 0;
 
     URL_COMPONENTSW     components;
-    memset (&components, 0, sizeof(components));
+    memset(&components, 0, sizeof(components));
 
     components.dwStructSize     = sizeof(components);
     components.lpszUrlPath      = outComponent;
     components.dwUrlPathLength  = maxLength;
 
     if (TRUE != InternetCrackUrlW (uri, length, ICU_DECODE | ICU_ESCAPE, &components))
-        return WString ();
+        return WString();
 
     if (INTERNET_SCHEME_FILE != components.nScheme)
-        return WString ();
+        return WString();
 
-    return WString (outComponent);
+    return WString(outComponent);
     }
 
 #endif
