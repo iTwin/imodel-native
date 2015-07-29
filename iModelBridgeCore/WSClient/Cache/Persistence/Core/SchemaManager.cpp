@@ -35,9 +35,11 @@ BentleyStatus SchemaManager::ImportCacheSchemas()
 
     SchemaKey cacheSchemaKey = SchemaKey(WIDEN(SCHEMA_CacheSchema), 1, 5);
     ECSchemaPtr cacheSchema = schemaContext->LocateSchema(cacheSchemaKey, SchemaMatchType::SCHEMAMATCHTYPE_Exact);
+    BeAssert(cacheSchema.IsValid());
 
     SchemaKey supportSchemaKey = SchemaKey(WIDEN(SCHEMA_CacheLegacySupportSchema), 1, 0);
     ECSchemaPtr supportSchema = schemaContext->LocateSchema(supportSchemaKey, SchemaMatchType::SCHEMAMATCHTYPE_Exact);
+    BeAssert(supportSchema.IsValid());
 
     if (SUCCESS != ImportSchemas(std::vector<ECSchemaPtr> {cacheSchema, supportSchema}))
         {
@@ -89,7 +91,7 @@ BentleyStatus SchemaManager::ImportSchemas(const std::vector<ECSchemaPtr>& schem
         {
         if (schema.IsNull())
             {
-            BeAssert(false);
+            BeAssert(false && "Supplied schema is null");
             return ERROR;
             }
         schemaCache->AddSchema(*schema);
