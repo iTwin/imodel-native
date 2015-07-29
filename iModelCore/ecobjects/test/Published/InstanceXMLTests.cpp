@@ -244,7 +244,7 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-    /*
+#ifdef NOT_NOW
 TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingFaultyInstance)
     {
     //This test will verify that the xml deserializer will not fail on mismatched or malformed properties.
@@ -365,7 +365,7 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingFaultyInstance
 
     schemaOwner = NULL;
     };
-    */
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                10/2011
