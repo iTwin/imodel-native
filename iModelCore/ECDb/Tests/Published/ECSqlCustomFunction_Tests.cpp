@@ -399,7 +399,7 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_BlobSqlFunction)
      ASSERT_TRUE (stmt.Step() == ECSqlStepStatus::Error)<< "Step is expected to fail if function is called with NULL argument";
      }
 
-/*
+#ifdef NOT_NOW
 //---------------------------------------------------------------------------------------
 // Syntax: DATEFROMSTRING (Str) : DateTime
 // @bsiclass                                     Krischan.Eberle                 03/15
@@ -584,5 +584,5 @@ TEST_F(ECSqlTestFixture, ECSqlStatement_GeometryECSqlFunction)
         }
     }
 
-    */
+#endif
 END_ECDBUNITTESTS_NAMESPACE
