@@ -226,7 +226,7 @@ PropertyMapPtr PropertyMapSecondaryTableKey::Create (ECDbSchemaManagerCR schemaM
 //+---------------+---------------+---------------+---------------+---------------+-
 Utf8String PropertyMapSecondaryTableKey::_ToString () const
  {
- return Utf8PrintfString ("PropertyMapSecondaryTableKey: Column name=%s", GetColumn ().GetName ());
+ return Utf8PrintfString ("PropertyMapSecondaryTableKey: Column name=%s", GetColumn ().GetName ().c_str());
  }
 
 
