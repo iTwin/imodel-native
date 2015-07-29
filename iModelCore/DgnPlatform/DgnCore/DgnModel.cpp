@@ -1097,7 +1097,7 @@ void ComponentProxyModel::_FromPropertiesJson(Json::Value const& json)
             subcatid = DgnCategories::DefaultSubCategoryId(m_categoryId);
             }
         int64_t compsubcatvalue;
-        sscanf(subcats[subcatname.c_str()].asCString(), "%lld", &compsubcatvalue);
+        sscanf(subcats[subcatname.c_str()].asCString(), "%" PRId64 , &compsubcatvalue);
         DgnSubCategoryId compsubcat(compsubcatvalue);
         m_subcatxlat[compsubcat] = subcatid;
         }

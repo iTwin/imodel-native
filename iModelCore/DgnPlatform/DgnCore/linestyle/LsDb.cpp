@@ -41,7 +41,7 @@ void V10ComponentBase::SetDescription (Utf8CP source)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-BentleyStatus LsStrokePatternComponent::CreateRscFromDgnDb(V10LineCode** rscOut, DgnDbR project, LsComponentId componentId, bool useRscComponentTypes)
+BentleyStatus LsStrokePatternComponent::CreateRscFromDgnDb(V10LineCode** rscOut, DgnDbR project, LsComponentId componentId)
     {
     *rscOut = NULL;
     uint32_t propertySize;
@@ -61,7 +61,7 @@ BentleyStatus LsStrokePatternComponent::CreateRscFromDgnDb(V10LineCode** rscOut,
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-BentleyStatus LsPointComponent::CreateRscFromDgnDb(V10LinePoint** rscOut, DgnDbR project, LsComponentId componentId, bool useRscComponentTypes)
+BentleyStatus LsPointComponent::CreateRscFromDgnDb(V10LinePoint** rscOut, DgnDbR project, LsComponentId componentId)
     {
     *rscOut = NULL;
     uint32_t propertySize;
@@ -82,7 +82,7 @@ BentleyStatus LsPointComponent::CreateRscFromDgnDb(V10LinePoint** rscOut, DgnDbR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-BentleyStatus LsCompoundComponent::CreateRscFromDgnDb(V10Compound** rscOut, DgnDbR project, LsComponentId componentId, bool useRscComponentTypes)
+BentleyStatus LsCompoundComponent::CreateRscFromDgnDb(V10Compound** rscOut, DgnDbR project, LsComponentId componentId)
     {
     *rscOut = NULL;
     uint32_t propertySize;
@@ -102,7 +102,7 @@ BentleyStatus LsCompoundComponent::CreateRscFromDgnDb(V10Compound** rscOut, DgnD
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
-BentleyStatus LsSymbolComponent::CreateRscFromDgnDb(V10Symbol** rscOut, DgnDbR project, LsComponentId componentId, bool useRscComponentTypes)
+BentleyStatus LsSymbolComponent::CreateRscFromDgnDb(V10Symbol** rscOut, DgnDbR project, LsComponentId componentId)
     {
     *rscOut = NULL;
     uint32_t propertySize;
@@ -116,6 +116,26 @@ BentleyStatus LsSymbolComponent::CreateRscFromDgnDb(V10Symbol** rscOut, DgnDbR p
         return BSIERROR;
 
     *rscOut = symbolData;
+    return BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   John.Gooding    07/2015
+//---------------------------------------------------------------------------------------
+BentleyStatus LsRasterImageComponent::CreateRscFromDgnDb(V10RasterImage** rscOut, DgnDbR project, LsComponentId componentId)
+    {
+    *rscOut = NULL;
+    uint32_t propertySize;
+
+    if (BE_SQLITE_ROW != project.QueryPropertySize(propertySize, LineStyleProperty::RasterImage(), componentId.GetValue(), 0))
+        return BSIERROR;
+
+    V10RasterImage* rasterData = (V10RasterImage*)bentleyAllocator_malloc (propertySize);
+
+    if (BE_SQLITE_ROW != project.QueryProperty(rasterData, propertySize, LineStyleProperty::RasterImage(), componentId.GetValue(), 0))
+        return BSIERROR;
+
+    *rscOut = rasterData;
     return BSISUCCESS;
     }
 

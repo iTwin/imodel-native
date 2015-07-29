@@ -30,6 +30,7 @@ void            LineStyleSymb::Init (ILineStyleCP lStyle)
     m_orgWidth    = m_endWidth  = m_phaseShift  = m_autoPhase = 0.0;
     m_maxCompress = 0.3;
     m_planeByRows.InitIdentity ();
+    m_rasterTexture = 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -352,6 +353,7 @@ bool        cosmetic
 LineStyleSymb::LineStyleSymb ()
     {
     memset (&m_lStyle, 0, offsetof (LineStyleSymb, m_planeByRows) + sizeof (m_planeByRows) - offsetof (LineStyleSymb, m_lStyle));
+    m_rasterTexture = 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -509,6 +511,8 @@ DPoint3dCP          endTangent
 
     scale *= unitDef;
 
+    m_rasterTexture = nameRec->GetRasterTexture (context, *this, scale);
+
     double  startWidth = tmpLSParams.startWidth;
     double  endWidth   = tmpLSParams.endWidth;
 
@@ -634,6 +638,7 @@ bool                LineStyleSymb::HasIterationLimit()const {return m_options.it
 bool                LineStyleSymb::HasPlane()         const {return m_options.plane;}
 bool                LineStyleSymb::HasStartTangent()  const {return m_options.startTangentSet;}
 bool                LineStyleSymb::HasEndTangent()    const {return m_options.endTangentSet;}
+uintptr_t           LineStyleSymb::GetRasterTexture() const {return m_rasterTexture; }
 void                LineStyleSymb::SetTotalLength (double length) {m_totalLength = length;}
 void                LineStyleSymb::SetLineStyle (ILineStyleCP lstyle) {m_lStyle = lstyle;}
 
