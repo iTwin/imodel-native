@@ -585,6 +585,7 @@ private:
     DPoint3d        m_startTangent;
     DPoint3d        m_endTangent;
     RotMatrix       m_planeByRows;
+    uintptr_t       m_rasterTexture;
 
 public:
     DGNPLATFORM_EXPORT LineStyleSymb ();
@@ -593,7 +594,7 @@ public:
     DGNPLATFORM_EXPORT int FromNaturalElemDisplayParams (ElemDisplayParamsR, ViewContextR context, DPoint3dCP, DPoint3dCP);
     DGNPLATFORM_EXPORT int FromResolvedStyle (LineStyleInfoCP styleInfo, ViewContextR context, DPoint3dCP startTangent, DPoint3dCP endTangent);
 
-    void               Clear () {m_lStyle = NULL; m_options.orgWidth = m_options.endWidth = false;}
+    void               Clear () {m_lStyle = NULL; m_options.orgWidth = m_options.endWidth = false; m_rasterTexture = 0; }
     void               Init (ILineStyleCP);
 
 public:
@@ -612,6 +613,7 @@ DGNPLATFORM_EXPORT double        GetMaxWidth () const;
 DGNPLATFORM_EXPORT double        GetTotalLength () const;
 DGNPLATFORM_EXPORT DPoint3dCP    GetStartTangent () const;
 DGNPLATFORM_EXPORT DPoint3dCP    GetEndTangent () const;
+DGNPLATFORM_EXPORT uintptr_t     GetRasterTexture() const;
 DGNPLATFORM_EXPORT bool          IsScaled () const;
 DGNPLATFORM_EXPORT bool          IsAutoPhase () const;
 DGNPLATFORM_EXPORT bool          IsCenterPhase () const;
