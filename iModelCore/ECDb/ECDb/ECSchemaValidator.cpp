@@ -547,30 +547,20 @@ ConsistentClassHierarchyRule::ConsistentClassHierarchyRule()
 //---------------------------------------------------------------------------------------
 bool ConsistentClassHierarchyRule::_ValidateSchema(ECN::ECSchemaCR schema, ECN::ECClassCR baseClass)
     {
-    //only root classes need to be validated as validation is recursive
-    if (baseClass.HasBaseClasses())
-        return true;
-
-    return ValidateClass(baseClass);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    07/2015
-//---------------------------------------------------------------------------------------
-bool ConsistentClassHierarchyRule::ValidateClass(ECN::ECClassCR baseClass) const
-    {
     const ClassKind baseClassKind = DetermineClassKind(baseClass);
+
     bool valid = true;
     for (ECN::ECClassCP subclass : baseClass.GetDerivedClasses())
         {
         ClassKind subclassKind = DetermineClassKind(*subclass);
-        if (baseClassKind != subclassKind)
+        const bool baseIsRelationship = baseClassKind == ClassKind::Relationship;
+        const bool subIsRelationship = subclassKind == ClassKind::Relationship;
+        if (baseIsRelationship != subIsRelationship ||
+            (baseClassKind != ClassKind::Abstract && subclassKind != ClassKind::Abstract && baseClassKind != subclassKind))
             {
             m_error->AddInconsistency(baseClass, baseClassKind, *subclass, subclassKind);
             valid = false;
             }
-
-        valid = valid && ValidateClass(*subclass);
         }
 
     return valid;
@@ -595,11 +585,14 @@ std::unique_ptr<ECSchemaValidationRule::Error> ConsistentClassHierarchyRule::_Ge
 //static
 ConsistentClassHierarchyRule::ClassKind ConsistentClassHierarchyRule::DetermineClassKind(ECN::ECClassCR ecclass)
     {
+    if (ecclass.GetRelationshipClassCP() != nullptr)
+        return ClassKind::Relationship;
+
     if (ecclass.GetIsStruct())
         return ClassKind::Struct;
 
-    if (ecclass.GetRelationshipClassCP() != nullptr)
-        return ClassKind::Relationship;
+    if (!ecclass.GetIsDomainClass() && !ecclass.GetIsCustomAttributeClass())
+        return ClassKind::Abstract;
 
     return ClassKind::Regular;
     }
@@ -648,6 +641,10 @@ Utf8String ConsistentClassHierarchyRule::Error::InvalidClass::ToString() const
         {
             case ClassKind::Regular:
                 kindStr = "Domain class";
+                break;
+
+            case ClassKind::Abstract:
+                kindStr = "Abstract";
                 break;
 
             case ClassKind::Struct:

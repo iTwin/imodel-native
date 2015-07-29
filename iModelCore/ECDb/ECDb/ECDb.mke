@@ -61,7 +61,6 @@ ECDbAllHeaders = \
                 $(baseDir)SchemaImportContext.h \
                 $(baseDir)ClassMapInfo.h \
                 $(baseDir)ViewGenerator.h \
-                $(baseDir)ECDbClassDependencyAnalyzer.h \
                 $(baseDir)ECDbProfileManager.h \
                 $(baseDir)ECDbProfileUpgrader.h \
                 $(baseDir)ECDbSystemSchemaHelper.h \
@@ -195,8 +194,6 @@ $(o)ECDb$(oext):											$(baseDir)ECDb.cpp                          $(ECDbAll
 $(o)ECInstanceId$(oext):									$(baseDir)ECInstanceId.cpp                  $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDbSchemaPersistence$(oext):							$(baseDir)ECDbSchemaPersistence.cpp         $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)ECDbClassDependencyAnalyzer$(oext):						$(baseDir)ECDbClassDependencyAnalyzer.cpp   $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDbSchemaReader$(oext):								$(baseDir)ECDbSchemaReader.cpp              $(ECDbAllHeaders) ${MultiCompileDepends}
 

@@ -79,6 +79,8 @@ IImportIssueListener const* userProvidedIssueListener
         return ERROR;
         }
 
+    StopWatch timer(true);
+
     BeMutexHolder lock (m_criticalSection);
     bvector<ECSchemaP> schemas;
     cache.GetSchemas (schemas);
@@ -89,7 +91,7 @@ IImportIssueListener const* userProvidedIssueListener
             {
             if (id == 0 || id != schema->GetId())
                 {
-                LOG.errorv(L"ECSchema %s. is owned by some other ECDB file", schema->GetFullSchemaName().c_str());
+                LOG.errorv(L"ECSchema %ls is owned by some other ECDb file.", schema->GetFullSchemaName().c_str());
                 return ERROR;
                 }
             }
@@ -103,7 +105,7 @@ IImportIssueListener const* userProvidedIssueListener
 
         //Checks whether the schema contains classes or properties whose names only differ by case. This is (still) allowed in ECObjects,
         //but not supported by ECDb. (for non-legacy schemas, a check failure means abortion)
-        auto& validationResult = context.GetSchemaValidationResultR (*schema);
+        ECSchemaValidationResult validationResult;
         bool isValid = ECSchemaValidator::ValidateSchema (validationResult, *schema, options.SupportLegacySchemas ());
         if (validationResult.HasErrors ())
             {
@@ -131,10 +133,8 @@ IImportIssueListener const* userProvidedIssueListener
             BuildDependencyOrderedSchemaList (schemasToImport, schema);
         }
     
-    if (AssertOnDuplicateCopyOfSchema(schemasToImport))
-        {
+    if (ContainsDuplicateSchemas(schemasToImport))
         return ERROR;
-        }
 
     bvector<ECDiffPtr> diffs; 
     auto stat = BatchImportOrUpdateECSchemas (context, diffs, schemasToImport, options, true);
@@ -151,23 +151,25 @@ IImportIssueListener const* userProvidedIssueListener
     if (mapStatus == MapStatus::Error)
         return ERROR;
     //Clear cache in case we have diffs
-    if (!diffs.empty ())
+    if (!diffs.empty())
         m_ecdb.ClearECDbCache();
 
+    timer.Stop();
+    LOG.infov("Imported ECSchemas in %.4f msecs.",  timer.GetElapsedSeconds() * 1000.0);
     return SUCCESS;
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                  Muhammad.Zaighum                      11/2014
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool ECDbSchemaManager::AssertOnDuplicateCopyOfSchema(const bvector<ECSchemaP>& schemas)
+bool ECDbSchemaManager::ContainsDuplicateSchemas(bvector<ECSchemaP> const& schemas)
     {
-    std::map<WString, ECSchemaP> myMap;
-    for (auto const schema : schemas)
+    bmap<WString, ECSchemaCP> myMap;
+    for (ECSchemaCP schema : schemas)
         {
         if (myMap[schema->GetFullSchemaName()] == schema)
             {
-            LOG.errorv(L"Found more then one in-memory copy of ECSchema %s. Use single ECSchemaReadContext to Read all Schemas.", schema->GetFullSchemaName().c_str());
+            LOG.errorv(L"Found more then one in-memory copy of ECSchema %ls. Use single ECSchemaReadContext to deserialize ECSchemas.", schema->GetFullSchemaName().c_str());
             return true;
             }
 
@@ -190,7 +192,6 @@ bool isSupplemental (ECSchemaCR schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportContext const& context, bvector<ECDiffPtr>&  diffs, bvector<ECSchemaP> const& schemas, ImportOptions const& options, bool addToReaderCache) const
     {
-    StopWatch timer (true);
     //1. Only import supplemental schema if doSupplement = True AND saveSupplementals = TRUE
     bvector<ECSchemaP> schemasToImport;
     for (auto primarySchema : schemas)
@@ -213,7 +214,7 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
                     if (status != SUPPLEMENTED_SCHEMA_STATUS_Success)
                         {
                         //TODO: print detail error in log. We cannot revert so we will import what we got
-                        LOG.warningv (L"Encountered error while supplementing %ls", primarySchema->GetFullSchemaName ().c_str ());
+                        LOG.warningv (L"Failed to supplement %ls.", primarySchema->GetFullSchemaName ().c_str ());
                         }
                     }
                 //All consolidated customattribute must be reference. But Supplemental Provenance in BSCA is not
@@ -275,8 +276,6 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
 
     if (!diffs.empty ())
         ClearCache ();
-    timer.Stop ();
-    LOG.infov ("ECSchema Batch Import took %.4f msecs.", timer.GetElapsedSeconds () * 1000.0);
 
     return SUCCESS;
     }
@@ -286,8 +285,7 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaManager::ImportECSchema (SchemaImportContext const& context, ECSchemaCR ecSchema, bool addToReaderCache) const
     {
-    auto stat = m_ecImporter->Import (ecSchema);
-    if (BE_SQLITE_OK != stat)
+    if (SUCCESS != m_ecImporter->Import (ecSchema))
         {
         context.GetIssueListener ().Report (IImportIssueListener::Severity::Error,
                                             "Failed to import ECSchema '%s'. Please see log for details.",
@@ -321,14 +319,10 @@ BentleyStatus ECDbSchemaManager::UpdateECSchema (SchemaImportContext const& cont
         existingSchema->GetVersionMinor () > ecSchema.GetVersionMinor ())
         {
         if (ecSchema.IsStandardSchema ())
-            {
             return BentleyStatus::SUCCESS; 
-            }
-        else
-            {
-            ReportUpdateError (context, ecSchema, *existingSchema, "Version mismatch: Major version must be equal, minor version must be greater or equal than version of existing schema.");
-            return ERROR;
-            }
+
+        ReportUpdateError (context, ecSchema, *existingSchema, "Version mismatch: Major version must be equal, minor version must be greater or equal than version of existing schema.");
+        return ERROR;
         }
 
     if (existingSchema->GetNamespacePrefix () != ecSchema.GetNamespacePrefix ())
@@ -354,16 +348,6 @@ BentleyStatus ECDbSchemaManager::UpdateECSchema (SchemaImportContext const& cont
     LOG.errorv("The ECSchema '%s' cannot be updated. Updating ECSchemas is not yet supported in this version of ECDb.",
                schemaName.c_str());
     return ERROR;
-    /* Until schema update is working again...
-    DbResult r = m_ecImporter->Update (*diff, *m_ecReader, m_map);
-    if (BE_SQLITE_OK != r)
-        {
-        ReportUpdateError (context, ecSchema, *existingSchema, "Please see log for details.");
-        return ERROR;
-        }
-
-    return SUCCESS;
-    */
     }
 
 /*---------------------------------------------------------------------------------------
@@ -402,8 +386,12 @@ void ECDbSchemaManager::GetSupplementalSchemas (bvector<ECSchemaP>& supplemental
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSchemaCP ECDbSchemaManager::GetECSchema (Utf8CP schemaName, bool ensureAllClassesLoaded) const
     {
+    const ECSchemaId schemaId = ECDbSchemaPersistence::GetECSchemaId(GetECDb(), schemaName); //WIP_FNV: could be more efficient if it first looked through those already cached in memory...
+    if (0 == schemaId)
+        return nullptr;
+
     ECSchemaP schema = nullptr;
-    if (m_ecReader->GetECSchema (schema, schemaName, ensureAllClassesLoaded) == BE_SQLITE_ROW)
+    if (m_ecReader->GetECSchema(schema, schemaId, ensureAllClassesLoaded) == SUCCESS)
         return schema;
     else
         return nullptr;
@@ -415,7 +403,7 @@ ECSchemaCP ECDbSchemaManager::GetECSchema (Utf8CP schemaName, bool ensureAllClas
 ECSchemaCP ECDbSchemaManager::GetECSchema (ECSchemaId schemaId, bool ensureAllClassesLoaded) const
     {
     ECSchemaP schema = nullptr;
-    if (m_ecReader->GetECSchema (schema, schemaId, ensureAllClassesLoaded) == BE_SQLITE_ROW)
+    if (m_ecReader->GetECSchema(schema, schemaId, ensureAllClassesLoaded) == SUCCESS)
         return schema;
     else
         return nullptr;
@@ -438,7 +426,19 @@ bool ECDbSchemaManager::ContainsECSchema (Utf8CP schemaName)  const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCP ECDbSchemaManager::GetECClass (ECClassId ecClassId) const
+ECClassCP ECDbSchemaManager::GetECClass (Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema resolveSchema) const // WIP_FNV: probably stays the same... though I expected this to look in memory, first
+    {
+    ECClassId id = ECClass::UNSET_ECCLASSID;
+    if (!TryGetECClassId(id, schemaNameOrPrefix, className, resolveSchema))
+        return nullptr;
+
+    return GetECClass(id);
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        06/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ECClassCP ECDbSchemaManager::GetECClass(ECClassId ecClassId) const
     {
     return m_ecReader->GetECClass(ecClassId);
     }
@@ -446,34 +446,10 @@ ECClassCP ECDbSchemaManager::GetECClass (ECClassId ecClassId) const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCP ECDbSchemaManager::GetECClass (Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema resolveSchema) const // WIP_FNV: probably stays the same... though I expected this to look in memory, first
+bool ECDbSchemaManager::TryGetECClassId(ECClassId& id, Utf8CP schemaNameOrPrefix, Utf8CP className, ResolveSchema resolveSchema) const // WIP_FNV: probably stays the same... though I expected this to look in memory, first
     {
-    switch (resolveSchema)
-        {
-        case ResolveSchema::AutoDetect:
-            return m_ecReader->GetECClass (schemaNameOrPrefix, className);
-        case ResolveSchema::BySchemaName:
-            {
-            ECClassP ecClass = nullptr;
-            if (m_ecReader->GetECClassBySchemaName (ecClass, schemaNameOrPrefix, className) == BE_SQLITE_ROW)
-                return ecClass;
-            else
-                return nullptr;
-            }
-        case ResolveSchema::BySchemaNamespacePrefix:
-            {
-            ECClassP ecClass = nullptr;
-            if (m_ecReader->GetECClassBySchemaNameSpacePrefix (ecClass, schemaNameOrPrefix, className) == BE_SQLITE_ROW)
-                return ecClass;
-            else
-                return nullptr;
-            }
-        default:
-            return nullptr;
-        }
-
+    return m_ecReader->TryGetECClassId(id, schemaNameOrPrefix, className, resolveSchema);
     }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                       12/13
@@ -493,7 +469,7 @@ ECDerivedClassesList const& ECDbSchemaManager::GetDerivedECClasses (ECClassCR ba
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ECDbSchemaManager::GetECSchemaKeys (ECSchemaKeys& keys) const
     {
-    return (ECDbSchemaPersistence::GetECSchemaKeys(keys, m_ecdb) == BE_SQLITE_DONE) ? SUCCESS : ERROR;
+    return ECDbSchemaPersistence::GetECSchemaKeys(keys, m_ecdb);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -503,7 +479,7 @@ BentleyStatus ECDbSchemaManager::GetECClassKeys (ECClassKeys& keys, Utf8CP schem
     {
     PRECONDITION(schemaName != nullptr && "schemaName parameter cannot be null", ERROR);
     ECSchemaId schemaId = ECDbSchemaPersistence::GetECSchemaId (m_ecdb, schemaName);
-    return (ECDbSchemaPersistence::GetECClassKeys (keys, schemaId, m_ecdb) == BE_SQLITE_DONE) ? SUCCESS : ERROR;
+    return ECDbSchemaPersistence::GetECClassKeys(keys, schemaId, m_ecdb);
     }
 
 /*---------------------------------------------------------------------------------------
@@ -607,9 +583,13 @@ void ECDbSchemaManager::BuildDependencyOrderedSchemaList (bvector<ECSchemaP>& sc
 //---------------------------------------------------------------------------------------
 ECSchemaPtr ECDbSchemaManager::_LocateSchema (SchemaKeyR key, SchemaMatchType matchType, ECSchemaReadContextR schemaContext)
     {
-    ECSchemaP schema = nullptr;
     Utf8String schemaName(key.m_schemaName);
-    if (m_ecReader->GetECSchema (schema, schemaName.c_str (), true) != BE_SQLITE_ROW)
+    const ECSchemaId schemaId = ECDbSchemaPersistence::GetECSchemaId(GetECDb (), schemaName.c_str()); //WIP_FNV: could be more efficient if it first looked through those already cached in memory...
+    if (0 == schemaId)
+        return nullptr;
+
+    ECSchemaP schema = nullptr;
+    if (m_ecReader->GetECSchema(schema, schemaId, true) != SUCCESS)
         return nullptr;
 
     if (schema->GetSchemaKey ().Matches (key, matchType))
@@ -634,20 +614,22 @@ ECClassCP ECDbSchemaManager::_LocateClass (WCharCP schemaName, WCharCP className
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      05/2013
 //---------------------------------------------------------------------------------------
-ECClassId ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema (Db& db, ECClassCR ecClass)
+//static
+ECClassId ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema (ECDbCR db, ECClassCR ecClass)
     {
     Utf8String schemaName(ecClass.GetSchema().GetName().c_str());
     Utf8String className(ecClass.GetName().c_str());
    
-    ECClassId ecClassId = ECDbSchemaPersistence::GetECClassIdBySchemaName(db, schemaName.c_str(), className.c_str());
-    const_cast<ECClassR>(ecClass).SetId(ecClassId);
-    return ecClassId;
+    ECClassId id = ECClass::UNSET_ECCLASSID;
+    db.Schemas().TryGetECClassId(id, schemaName.c_str(), className.c_str(), ResolveSchema::BySchemaName);
+    const_cast<ECClassR>(ecClass).SetId(id);
+    return id;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      05/2013
 //---------------------------------------------------------------------------------------
-ECPropertyId ECDbSchemaManager::GetPropertyIdForECPropertyFromDuplicateECSchema (Db& db, ECPropertyCR ecProperty)
+ECPropertyId ECDbSchemaManager::GetPropertyIdForECPropertyFromDuplicateECSchema(ECDbCR db, ECPropertyCR ecProperty)
     {
     Utf8String schemaName(ecProperty.GetClass().GetSchema().GetName().c_str());
     Utf8String className(ecProperty.GetClass().GetName().c_str());
@@ -661,10 +643,9 @@ ECPropertyId ECDbSchemaManager::GetPropertyIdForECPropertyFromDuplicateECSchema 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      05/2013
 //---------------------------------------------------------------------------------------
-ECSchemaId ECDbSchemaManager::GetSchemaIdForECSchemaFromDuplicateECSchema (Db& db, ECSchemaCR ecSchema)
+ECSchemaId ECDbSchemaManager::GetSchemaIdForECSchemaFromDuplicateECSchema(ECDbCR db, ECSchemaCR ecSchema)
     {
-
-    ECSchemaId ecSchemaId = ECDbSchemaPersistence::GetECSchemaId(db, ecSchema);
+    const ECSchemaId ecSchemaId = ECDbSchemaPersistence::GetECSchemaId(db, ecSchema);
     const_cast<ECSchemaR>(ecSchema).SetId(ecSchemaId);
     return ecSchemaId;
     }
@@ -674,19 +655,14 @@ ECSchemaId ECDbSchemaManager::GetSchemaIdForECSchemaFromDuplicateECSchema (Db& d
 //---------------------------------------------------------------------------------------
 BentleyStatus ECDbSchemaManager::EnsureDerivedClassesExist(ECN::ECClassCR ecClass) const
     {
-    ECClassId ecClassId = -1LL;
+    ECClassId ecClassId = ECClass::UNSET_ECCLASSID;
     if (ecClass.HasId ())
-        {
         ecClassId = ecClass.GetId ();
-        }
     else
-        {
         ecClassId = GetClassIdForECClassFromDuplicateECSchema(m_ecdb, ecClass);
-        }
 
     ECDbSchemaPersistence::ECClassIdList derivedClassIds;
-    DbResult r = ECDbSchemaPersistence::GetDerivedECClasses(derivedClassIds, ecClassId, m_ecdb);
-    if (r != BE_SQLITE_DONE)
+    if (SUCCESS != ECDbSchemaPersistence::GetDerivedECClasses(derivedClassIds, ecClassId, m_ecdb))
         return ERROR;
 
     for (ECClassId derivedClassId : derivedClassIds)

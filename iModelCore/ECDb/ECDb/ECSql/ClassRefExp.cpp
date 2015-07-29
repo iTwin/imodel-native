@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ClassRefExp.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -54,7 +54,7 @@ ECSqlStatus RangeClassRefExp::CreatePropertyNameExpList (ECSqlParseContext& ctx,
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-bool RangeClassRefExp::ContainProperty( Utf8StringCR propertyName ) const
+bool RangeClassRefExp::ContainProperty(Utf8CP propertyName) const
     {
     return _ContainProperty(propertyName);
     }

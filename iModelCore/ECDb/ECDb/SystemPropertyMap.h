@@ -25,7 +25,6 @@ private:
     virtual bool _IsVirtual () const override;
     virtual bool _IsECInstanceIdPropertyMap () const override;
     virtual bool _IsSystemPropertyMap () const override;
-    virtual MapStatus _FindOrCreateColumnsInTable (ClassMap& classMap, ClassMapInfo const* classMapInfo) override;
     virtual void _GetColumns (std::vector<ECDbSqlColumn const*>& columns) const override;
     virtual Utf8CP _GetColumnBaseName () const override;
 

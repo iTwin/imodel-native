@@ -12,46 +12,6 @@
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-//static void GetBaseHierarchy (ECN::ECClassCR current, std::set<ECN::ECClassCP>& baseHierarchy)
-//    {
-//    for (auto baseClass : current.GetBaseClasses ())
-//        {
-//        if (baseClass == nullptr)
-//            continue;
-//
-//        if (baseHierarchy.find (baseClass) == baseHierarchy.end ())
-//            {
-//            baseHierarchy.insert (baseClass);
-//            if (!current.GetBaseClasses ().empty ())
-//                GetBaseHierarchy (*baseClass, baseHierarchy);
-//            }
-//        }
-//    }
-//
-//static std::unique_ptr<std::map<ECN::ECClassCP, IClassMap const*>> GetExclusivelyStoredClassMaps (ECN::ECClassCR current, ECDbMapCR map)
-//    {
-//    auto exclusivelyStoredClassMaps = std::unique_ptr<std::map<ECN::ECClassCP, IClassMap const*>> (new std::map<ECN::ECClassCP, IClassMap const*> ());
-//    std::set<ECClassCP> baseHierarchy;
-//    GetBaseHierarchy (current, baseHierarchy);
-//    if (baseHierarchy.empty ())
-//        return exclusivelyStoredClassMaps;
-//
-//    for (auto dependentClass : baseHierarchy)
-//        {
-//        if (map.IsExclusivelyStored (dependentClass->GetId ()))
-//            {
-//            auto classMap = map.GetClassMap (*dependentClass);
-//            if (classMap != nullptr)
-//                {
-//                BeAssert (classMap->GetMapStrategy ().IsMapped ());
-//                exclusivelyStoredClassMaps->insert (std::make_pair (&classMap->GetClass (), classMap));
-//                }
-//            }
-//        }
-//
-//    return exclusivelyStoredClassMaps;
-//    }
-
 //********************* ClassDbView ******************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    10/2013
@@ -128,10 +88,7 @@ bool IClassMap::ContainsPropertyMapToTable () const
 //------------------------------------------------------------------------------------------
 StorageDescription const& IClassMap::GetStorageDescription () const
     {
-    if (m_storageDescription == nullptr)
-        m_storageDescription = StorageDescription::Create(*this);
-
-    return *m_storageDescription;
+    return GetECDbMap ().GetLightWeightMapCache ().GetStorageDescription (GetClass ().GetId ());
     }
 
 //---------------------------------------------------------------------------------------
@@ -318,7 +275,7 @@ Utf8String IClassMap::ToString () const
 //---------------------------------------------------------------------------------------
 ClassMap::ClassMap (ECClassCR ecClass, ECDbMapCR ecDbMap, ECDbMapStrategy mapStrategy, bool setIsDirty)
 : IClassMap (), m_ecDbMap (ecDbMap), m_table (nullptr), m_ecClass (ecClass), m_mapStrategy (mapStrategy),
-m_parentMapClassId (0LL), m_dbView (nullptr), m_isDirty (setIsDirty), m_columnFactory (*this), /*clang says not used - m_useSharedColumnStrategy (false),*/ m_id(0LL)
+m_parentMapClassId(ECClass::UNSET_ECCLASSID), m_dbView(nullptr), m_isDirty(setIsDirty), m_columnFactory(*this), /*clang says not used - m_useSharedColumnStrategy (false),*/ m_id(0ULL)
     {}
 
 //---------------------------------------------------------------------------------------
@@ -470,17 +427,13 @@ MapStatus ClassMap::AddPropertyMaps (IClassMap const* parentClassMap, ECDbClassM
 
         if (loadInfo == nullptr)
             {
-            if (propMap->FindOrCreateColumnsInTable(*this, classMapInfo) == MapStatus::Success)
+            if (SUCCESS == propMap->FindOrCreateColumnsInTable(*this, classMapInfo))
                 GetPropertyMapsR ().AddPropertyMap (propMap);
             }
         else
             {
-            if (propMap->Load (*loadInfo) == BE_SQLITE_DONE)
+            if (propMap->Load (*loadInfo) == SUCCESS)
                 GetPropertyMapsR ().AddPropertyMap (propMap);
-            else
-                {
-                LOG.error ("A new property has been added to class but there is no mapping information for it %s, %s");
-                }
             }
         }
 
@@ -588,9 +541,8 @@ void ClassMap::CreateIndices ()
         Utf8String whereExpression;
         bool error = false;
 
-        for (Utf8String classQualifiedPropertyName : indexInfo->GetProperties ())
+        for (Utf8StringCR classQualifiedPropertyName : indexInfo->GetProperties ())
             {
-
             WString resolvePropertyName;
             Utf8String resolveClassName, resolveSchemaName;
 
@@ -755,8 +707,8 @@ void ClassMap::CreateIndices ()
         else
             {
             //cache the class id for this index so that the index can be made a partial index if more than one classes map to the table to be indexed
-            BeAssert(GetECDbMap().IsMapping());
-            GetECDbMap().GetMapContext()->AddClassIdFilteredIndex(*index, GetClass().GetId());
+            GetECDbMap().AssertIfIsNotImportingSchema();
+            GetECDbMap().GetSchemaImportContext()->AddClassIdFilteredIndex(*index, GetClass().GetId());
             }
         }
     }
@@ -862,7 +814,7 @@ BentleyStatus ClassMap::_Save (std::set<ClassMap const*>& savedGraph)
     auto& mapStorage = const_cast<ECDbMapR>(m_ecDbMap).GetSQLManagerR ().GetMapStorageR ();
     std::set<PropertyMapCP> baseProperties;
 
-    if (GetId () == 0LL)
+    if (GetId() == 0ULL)
         {
         //auto baseClassMap = GetParentMapClassId () == 
         auto baseClass = GetECDbMap ().GetECDbR ().Schemas ().GetECClass (GetParentMapClassId ());
@@ -880,22 +832,21 @@ BentleyStatus ClassMap::_Save (std::set<ClassMap const*>& savedGraph)
             }
 
         
-        auto mapInfo = mapStorage.CreateClassMap (GetClass ().GetId (), m_mapStrategy, baseClassMap == nullptr ? 0LL : baseClassMap->GetId ());
+        auto mapInfo = mapStorage.CreateClassMap(GetClass().GetId(), m_mapStrategy, baseClassMap == nullptr ? ECClass::UNSET_ECCLASSID : baseClassMap->GetId());
         for (auto propertyMap : GetPropertyMaps ())
             {
             if (baseProperties.find (propertyMap) != baseProperties.end())
                 continue;
 
-            auto r = propertyMap->Save (*mapInfo);
-            if (r != BE_SQLITE_DONE)
-                return BentleyStatus::ERROR;
+            if (SUCCESS != propertyMap->Save (*mapInfo))
+                return ERROR;
             }
 
         m_id = mapInfo->GetId ();
         }
 
         m_isDirty = false;
-        return BentleyStatus::SUCCESS;
+        return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1609,11 +1560,10 @@ StorageDescription& StorageDescription::operator=(StorageDescription&& rhs)
 //    return std::move(storageDescription);
 //    }
     
-std::unique_ptr<StorageDescription> StorageDescription::Create (IClassMap const& classMap)
+std::unique_ptr<StorageDescription> StorageDescription::Create (ECN::ECClassId classId, ECDbMap::LightWeightMapCache const& lwmc)
     {
-    auto storageDescription = std::unique_ptr<StorageDescription> (new StorageDescription (classMap.GetClass ().GetId ()));
-    auto& lwmc = classMap.GetECDbMap ().GetLightWeightMapCache ();
-    for (auto& kp : lwmc.GetTablesMapToClass (classMap.GetClass ().GetId ()))
+    auto storageDescription = std::unique_ptr<StorageDescription>(new StorageDescription(classId));
+    for (auto& kp : lwmc.GetTablesMapToClass(classId))
         {
         auto table = kp.first;
 
@@ -1621,7 +1571,7 @@ std::unique_ptr<StorageDescription> StorageDescription::Create (IClassMap const&
         if (deriveClassList.empty ())
             continue;
 
-        auto id = storageDescription->AddHorizontalPartition (*table, deriveClassList.front () == classMap.GetClass ().GetId ());
+        auto id = storageDescription->AddHorizontalPartition(*table, deriveClassList.front() == classId);
         auto hp = storageDescription->GetHorizontalPartitionP (id);
         for (auto ecClassId : deriveClassList)
             {
@@ -1633,6 +1583,7 @@ std::unique_ptr<StorageDescription> StorageDescription::Create (IClassMap const&
 
     return std::move (storageDescription);
     }
+
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Krischan.Eberle    05 / 2015
 //------------------------------------------------------------------------------------------

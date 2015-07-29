@@ -1172,7 +1172,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE (ColumnExist (db, tblAAFoo, L"binaryAFooChild"));
 
     //========================[sc_Bar]===========================================================
-    WCharCP tblBar = L"sc_Bar"; //this table has be renamed from tblBar=>FOO_FIGHTERS
+    WCharCP tblBar = L"sc_Bar";
     EXPECT_TRUE (TableExist  (db, tblBar));
     EXPECT_EQ   (4, GetColumnCount(db, tblBar));
     EXPECT_TRUE (ColumnExist (db, tblBar, L"ECInstanceId"));
@@ -1185,7 +1185,7 @@ TEST(ECDbSchemas, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE (ColumnExist (db, tblBar, L"ForeignECInstanceId_Foo_has_Bars_hint"));
     
     //========================[sc_Foo]===========================================================
-    WCharCP tblFoo = L"FOO_FIGHTERS"; //this table has be renamed from tblFoo=>FOO_FIGHTERS
+    WCharCP tblFoo = L"sc_Foo";
     EXPECT_TRUE (TableExist  (db, tblFoo));
     EXPECT_EQ   (19, GetColumnCount(db, tblFoo));
     

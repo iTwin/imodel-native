@@ -35,8 +35,8 @@ private:
             {
             bool operator() (DbFunctionKey const& lhs, DbFunctionKey const& rhs) const
                 {
-                return BeStringUtilities::Stricmp(lhs.m_functionName, rhs.m_functionName) < 0 || 
-                    lhs.m_argCount < rhs.m_argCount;
+                int nameCompareResult = BeStringUtilities::Stricmp(lhs.m_functionName, rhs.m_functionName);
+                return nameCompareResult < 0 || nameCompareResult == 0 && lhs.m_argCount < rhs.m_argCount;
                 }
             };
         };

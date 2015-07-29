@@ -20,7 +20,6 @@
     <ClCompile Include="docs\samplecode\ECDbCRUD.sample.cpp" />
     <ClCompile Include="docs\samplecode\ECDbCRUDAdapters.sample.cpp" />
     <ClCompile Include="ECDb.cpp" />
-    <ClCompile Include="ECDbClassDependencyAnalyzer.cpp" />
     <ClCompile Include="ECDbImpl.cpp" />
     <ClCompile Include="ECDbLogger.cpp" />
     <ClCompile Include="ECDbPolicyManager.cpp" />
@@ -30,14 +29,11 @@
     <ClCompile Include="ECDbMap.cpp" />
     <ClCompile Include="ECDbPch.cpp" />
     <ClCompile Include="ECDbSystemSchemaHelper.cpp" />
-    <ClCompile Include="ECDbUseCases.cpp" />
     <ClCompile Include="BeRepositoryBasedIdSequence.cpp" />
     <ClCompile Include="ECInstanceId.cpp" />
     <ClCompile Include="ECInstanceFinder.cpp" />
-    <ClCompile Include="ECInstanceSerializer.cpp" />
     <ClCompile Include="ECDbProfileManager.cpp" />
     <ClCompile Include="ECDbProfileUpgrader.cpp" />
-    <ClCompile Include="ECObjectsExtensions.cpp" />
     <ClCompile Include="ECSchemaComparers.cpp" />
     <ClCompile Include="ECDbSchemaWriter.cpp" />
     <ClCompile Include="ECDbSchemaReader.cpp" />
@@ -120,7 +116,6 @@
     <ClCompile Include="ECSql\UpdateStatementExp.cpp" />
     <ClCompile Include="ECSql\ValueExp.cpp" />
     <ClCompile Include="ECSql\WhereExp.cpp" />
-    <ClCompile Include="MapGenerator.cpp" />
     <ClCompile Include="MapStrategy.cpp" />
     <ClCompile Include="PropertyMap.cpp" />
     <ClCompile Include="RelationshipClassMap.cpp" />
@@ -149,7 +144,6 @@
     <ClInclude Include="ClassMapInfo.h" />
     <ClInclude Include="ClassMapSubclasses.h" />
     <ClInclude Include="ColumnInfo.h" />
-    <ClInclude Include="ECDbClassDependencyAnalyzer.h" />
     <ClInclude Include="ECDbImpl.h" />
     <ClInclude Include="ECDbInternalTypes.h" />
     <ClInclude Include="ECDbLogger.h" />
@@ -161,10 +155,8 @@
     <ClInclude Include="ECDbSchemaWriter.h" />
     <ClInclude Include="ECDbSql.h" />
     <ClInclude Include="ECDbSystemSchemaHelper.h" />
-    <ClInclude Include="ECInstanceSerializer.h" />
     <ClInclude Include="ECDbProfileManager.h" />
     <ClInclude Include="ECDbProfileUpgrader.h" />
-    <ClInclude Include="ECObjectsExtensions.h" />
     <ClInclude Include="ECSchemaComparers.h" />
     <ClInclude Include="ECSchemaValidator.h" />
     <ClInclude Include="ECSql\ClassRefExp.h" />
@@ -234,7 +226,6 @@
     <ClInclude Include="ECSql\UpdateStatementExp.h" />
     <ClInclude Include="ECSql\ValueExp.h" />
     <ClInclude Include="ECSql\WhereExp.h" />
-    <ClInclude Include="MapGenerator.h" />
     <ClInclude Include="MapStrategy.h" />
     <ClInclude Include="PropertyMap.h" />
     <ClInclude Include="RelationshipClassMap.h" />

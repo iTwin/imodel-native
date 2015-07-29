@@ -414,7 +414,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
              auto classSqlName = BuildSchemaQualifiedClassName (classMap.GetClass ());
 
              auto const& targetTable = ecclassIdPropertyMap->GetFirstColumn ()->GetTable ();
-             sqlBuilder.Append (" INNER JOIN ");
+             sqlBuilder.Append (" LEFT JOIN ");
              sqlBuilder.AppendEscaped (targetTable.GetName ().c_str ());
              sqlBuilder.AppendSpace ();
              sqlBuilder.Append (GetECClassIdPrimaryTableAlias (endPoint));
@@ -617,7 +617,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
                     }
 
                 if (auto classIdcolumn = part.GetTable ().GetFilteredColumnFirst (ECDbSystemColumnECClassId))
-                    {;
+                    {
                     if (part.NeedsClassIdFilter ())
                         {
                         sqlBuilder.Append (" WHERE ");
@@ -627,6 +627,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
 
                         else
                             sqlBuilder.AppendEscaped (part.GetTable ().GetName ().c_str ()).AppendDot ();
+
                         sqlBuilder.AppendEscaped (classIdcolumn->GetName ().c_str ());
                         sqlBuilder.AppendSpace ();
                         part.AppendECClassIdFilterSql (sqlBuilder);
@@ -674,6 +675,7 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
     //---------------------------------------------------------------------------------------
     BentleyStatus SqlGenerator::BuildView (NativeSqlBuilder& viewSql, IClassMap const& classMap)
         {
+       
         return BuildClassView (viewSql, static_cast<ClassMapCR>(classMap));
         }
 
@@ -708,6 +710,9 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
         NativeSqlBuilder::List ddls;
         for (auto classMap : classMaps)
             {        
+            //if (classMap->GetMapStrategy ().GetStrategy () == ECDbMapStrategy::Strategy::ExistingTable)
+            //    continue;
+
             viewCreatetimer.Start ();
             if (CreateView (ddls, *classMap, true) != BentleyStatus::SUCCESS)
                 return BentleyStatus::ERROR;
@@ -762,6 +767,12 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
         trigger.Append (BuildViewClassName (classMap.GetClass ()).c_str ()).AppendEOL ();
         trigger.Append ("FOR EACH ROW").AppendEOL ();
         trigger.Append ("BEGIN ").AppendEOL ();
+
+#ifdef ENABLE_TRIGGER_DEBUGGING
+        trigger.Append ("--#ifdef ENABLE_TRIGGER_DEBUGGING").AppendEOL();
+        trigger.Append (SqlPrintfString("\tINSERT INTO ec_TriggerLog (TriggerId, AffectedECInstanceId, AffectedECClassId, Scope) VALUES ('%s', OLD.ECInstanceId, OLD.ECClassId, 'BEGIN'); ", triggerName.c_str()).GetUtf8CP()).AppendEOL ();
+        trigger.Append ("--#endif").AppendEOL ();
+#endif
         std::map<IClassMap const*, std::vector<PropertyMapToTableCP>> structPropertyMaps;
         classMap.GetPropertyMaps ().Traverse ([&] (TraversalFeedback& feedback, PropertyMapCP propertyMap)
             {
@@ -793,7 +804,11 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
                 trigger.Append ("\tDELETE FROM ").AppendEscaped (BuildViewClassName (pair.first->GetClass ()).c_str ());
                 trigger.Append (" WHERE ParentECInstanceId = OLD.ECInstanceId;").AppendEOL ();
                 }
-
+#ifdef ENABLE_TRIGGER_DEBUGGING
+            trigger.Append ("--#ifdef ENABLE_TRIGGER_DEBUGGING").AppendEOL ();
+            trigger.Append (SqlPrintfString ("\tINSERT INTO ec_TriggerLog (TriggerId, AffectedECInstanceId, AffectedECClassId, Scope) VALUES ('%s', OLD.ECInstanceId, OLD.ECClassId, 'END'); ", triggerName.c_str ()).GetUtf8CP ()).AppendEOL ();
+            trigger.Append ("--#endif").AppendEOL ();
+#endif
             trigger.Append ("END ");
             triggers.push_back (std::move (trigger));
             }
@@ -883,9 +898,21 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
                 trigger.Append ("\tWHEN OLD.ECClassId ").Append (filterClause.c_str ()).AppendEOL ();
                 }
             trigger.Append ("BEGIN ").AppendEOL ();
+
+#ifdef ENABLE_TRIGGER_DEBUGGING
+            trigger.Append ("--#ifdef ENABLE_TRIGGER_DEBUGGING").AppendEOL ();
+            trigger.Append (SqlPrintfString ("\tINSERT INTO ec_TriggerLog (TriggerId, AffectedECInstanceId, AffectedECClassId, Scope) VALUES ('%s', OLD.ECInstanceId, OLD.ECClassId, 'BEGIN'); ", triggerName.c_str ()).GetUtf8CP ()).AppendEOL ();
+            trigger.Append ("--#endif").AppendEOL ();
+#endif
             trigger.Append ("\tDELETE FROM ");
             trigger.AppendEscaped (BuildViewClassName (derivedClassMap->GetClass ()).c_str ());
             trigger.Append (" WHERE ECInstanceId = OLD.ECInstanceId;").AppendEOL ();
+
+#ifdef ENABLE_TRIGGER_DEBUGGING
+            trigger.Append ("--#ifdef ENABLE_TRIGGER_DEBUGGING").AppendEOL ();
+            trigger.Append (SqlPrintfString ("\tINSERT INTO ec_TriggerLog (TriggerId, AffectedECInstanceId, AffectedECClassId, Scope) VALUES ('%s', OLD.ECInstanceId, OLD.ECClassId, 'END'); ", triggerName.c_str ()).GetUtf8CP ()).AppendEOL ();
+            trigger.Append ("--#endif").AppendEOL ();
+#endif
             trigger.Append ("END ");
             triggers.push_back (std::move (trigger));
             }
@@ -1043,6 +1070,11 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
         trigger.Append ("\tWHEN (OLD.ECClassId = ").Append (endTableMap.GetClass ().GetId ()).Append (")");
         trigger.AppendEOL ();
         trigger.Append ("BEGIN").AppendEOL ();
+#ifdef ENABLE_TRIGGER_DEBUGGING
+        trigger.Append ("--#ifdef ENABLE_TRIGGER_DEBUGGING").AppendEOL ();
+        trigger.Append (SqlPrintfString ("\tINSERT INTO ec_TriggerLog (TriggerId, AffectedECInstanceId, AffectedECClassId, Scope) VALUES ('%s', OLD.ECInstanceId, OLD.ECClassId, 'BEGIN'); ", triggerName.c_str ()).GetUtf8CP ()).AppendEOL ();
+        trigger.Append ("--#endif").AppendEOL ();
+#endif
         if (updateStatement.IsEmpty () && deleteTarget.IsEmpty ())
             trigger.Append ("SELECT 1;").AppendEOL ();
         else
@@ -1050,6 +1082,11 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
             trigger.Append (updateStatement);
             trigger.Append (deleteTarget);
             }
+#ifdef ENABLE_TRIGGER_DEBUGGING
+        trigger.Append ("--#ifdef ENABLE_TRIGGER_DEBUGGING").AppendEOL ();
+        trigger.Append (SqlPrintfString ("\tINSERT INTO ec_TriggerLog (TriggerId, AffectedECInstanceId, AffectedECClassId, Scope) VALUES ('%s', OLD.ECInstanceId, OLD.ECClassId, 'END'); ", triggerName.c_str ()).GetUtf8CP ()).AppendEOL ();
+        trigger.Append ("--#endif").AppendEOL ();
+#endif
         trigger.Append ("END ");
         triggers.push_back (std::move (trigger));
 
@@ -1175,6 +1212,11 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
 
                 trigger.AppendEOL ();
                 trigger.Append ("BEGIN ").AppendEOL ();
+#ifdef ENABLE_TRIGGER_DEBUGGING
+                trigger.Append ("--#ifdef ENABLE_TRIGGER_DEBUGGING").AppendEOL ();
+                trigger.Append (SqlPrintfString ("\tINSERT INTO ec_TriggerLog (TriggerId, AffectedECInstanceId, AffectedECClassId, Scope) VALUES ('%s', OLD.ECInstanceId, OLD.ECClassId, NULL); ", triggerName.c_str ()).GetUtf8CP ()).AppendEOL ();
+                trigger.Append ("--#endif").AppendEOL ();
+#endif
                 trigger.Append ("\tDELETE FROM ");
                 trigger.AppendEscaped (classMap.GetTable ().GetName ().c_str ());
                 trigger.Append (" WHERE ");
@@ -1247,6 +1289,11 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
         trigger.Append ("FOR EACH ROW").AppendEOL ();
         trigger.Append ("\tWHEN (OLD.ECClassId = ").Append (classMap.GetClass ().GetId ()).Append (")");
         trigger.Append ("BEGIN ").AppendEOL ();
+#ifdef ENABLE_TRIGGER_DEBUGGING
+        trigger.Append ("--#ifdef ENABLE_TRIGGER_DEBUGGING").AppendEOL ();
+        trigger.Append (SqlPrintfString ("\tINSERT INTO ec_TriggerLog (TriggerId, AffectedECInstanceId, AffectedECClassId, Scope) VALUES ('%s', OLD.ECInstanceId, OLD.ECClassId, 'BEGIN'); ", triggerName.c_str ()).GetUtf8CP ()).AppendEOL ();
+        trigger.Append ("--#endif").AppendEOL ();
+#endif
         for (auto& ref : relationshipRefs)
             {
             trigger.Append ("\tDELETE FROM ");
@@ -1258,7 +1305,11 @@ BentleyStatus SqlGenerator::BuildColumnExpression (NativeSqlBuilder::List& viewS
             else
                 trigger.Append (" WHERE (SourceECInstanceId = OLD.ECInstanceId OR TargetECInstanceId = OLD.ECInstanceId) ;").AppendEOL ();
             }
-
+#ifdef ENABLE_TRIGGER_DEBUGGING
+        trigger.Append ("--#ifdef ENABLE_TRIGGER_DEBUGGING").AppendEOL ();
+        trigger.Append (SqlPrintfString ("\tINSERT INTO ec_TriggerLog (TriggerId, AffectedECInstanceId, AffectedECClassId, Scope) VALUES ('%s', OLD.ECInstanceId, OLD.ECClassId, 'END'); ", triggerName.c_str ()).GetUtf8CP ()).AppendEOL ();
+        trigger.Append ("--#endif").AppendEOL ();
+#endif
         trigger.Append ("END ");
         triggers.push_back (std::move (trigger));
         return BentleyStatus::SUCCESS;
@@ -1578,8 +1629,8 @@ BentleyStatus ViewGenerator::GetViewQueryForChild (NativeSqlBuilder& viewSql, EC
 
     std::vector<ECClassId> classesMappedToTable;
 
-    if (ECDbSchemaPersistence::GetClassesMappedToTable (classesMappedToTable, table, true, map.GetECDbR ()) != BE_SQLITE_DONE)
-        return BentleyStatus::ERROR;
+    if (ECDbSchemaPersistence::GetClassesMappedToTable (classesMappedToTable, table, true, map.GetECDbR ()) != SUCCESS)
+        return ERROR;
  
     bool oneToManyMapping = classesMappedToTable.size() > 1;
 
@@ -1769,28 +1820,12 @@ BentleyStatus ViewGenerator::CreateViewForRelationshipClassLinkTableMap (NativeS
     auto primaryTable = &relationMap.GetTable ();
     auto primaryECInstanceIdColumn = primaryTable->GetFilteredColumnFirst (ECDbSystemColumnECInstanceId);
     BeAssert (primaryECInstanceIdColumn != nullptr);
-    if (!secondaryTables.empty ())
-        {
-        for (auto secondaryTable : secondaryTables)
-            {
-            auto secondaryECInstanceIdColumn = secondaryTable->GetFilteredColumnFirst (ECDbSystemColumnECInstanceId);
-            BeAssert (secondaryECInstanceIdColumn != nullptr);
-            viewSql.Append (" INNER JOIN ").AppendEscaped (secondaryTable->GetName ().c_str ()).Append (" ON ").AppendParenLeft ();
-            viewSql.AppendEscaped (secondaryTable->GetName ().c_str ()).AppendDot ().AppendEscaped (secondaryECInstanceIdColumn->GetName ().c_str ());
-            viewSql.Append (" = ");
-            if (!relationMap.GetSourceECClassIdPropMap ()->IsMappedToPrimaryTable ())
-                viewSql.AppendEscaped (primaryTable->GetName ().c_str ()).AppendDot ().AppendEscaped (relationMap.GetSourceECInstanceIdPropMap ()->GetFirstColumn ()->GetName ().c_str ());
-            else if (!relationMap.GetTargetECClassIdPropMap ()->IsMappedToPrimaryTable ())
-                viewSql.AppendEscaped (primaryTable->GetName ().c_str ()).AppendDot ().AppendEscaped (relationMap.GetTargetECInstanceIdPropMap ()->GetFirstColumn ()->GetName ().c_str ());
-            else
-                {
-                BeAssert (false && "Incorrect case");
-                return ERROR;
-                }
+    if (BuildRelationshipJoinIfAny (viewSql, relationMap, ECN::ECRelationshipEnd::ECRelationshipEnd_Source) != BentleyStatus::SUCCESS)
+        return BentleyStatus::ERROR;
 
-            viewSql.AppendParenRight ();
-            }
-        }
+    if (BuildRelationshipJoinIfAny (viewSql, relationMap, ECN::ECRelationshipEnd::ECRelationshipEnd_Target) != BentleyStatus::SUCCESS)
+        return BentleyStatus::ERROR;
+
     return BentleyStatus::SUCCESS;
     }
 
@@ -1802,14 +1837,6 @@ BentleyStatus ViewGenerator::CreateViewForRelationshipClassEndTableMap (NativeSq
     //ECInstanceId, ECClassId of the relationship instance
     viewSql.Append ("SELECT ");
     AppendSystemPropMaps (viewSql, ecdbMap, prepareContext,  relationMap);
-
-    //We need to figure out
-    //OtherEnd have ECClassId
-        //If yes then we need to JOIN otherwise we have a constant value
-
-    //FROM & WHERE
-    
-
     viewSql.Append (" FROM ").AppendEscaped (relationMap.GetTable ().GetName ().c_str ());
 
     //Append secondary table JOIN
@@ -1817,33 +1844,53 @@ BentleyStatus ViewGenerator::CreateViewForRelationshipClassEndTableMap (NativeSq
     auto primaryTable = &relationMap.GetTable ();
     auto primaryECInstanceIdColumn = primaryTable->GetFilteredColumnFirst (ECDbSystemColumnECInstanceId);
     BeAssert (primaryECInstanceIdColumn != nullptr);
-    if (!secondaryTables.empty ())
-        {
-        for (auto secondaryTable : secondaryTables)
-            {
-            auto secondaryECInstanceIdColumn = secondaryTable->GetFilteredColumnFirst (ECDbSystemColumnECInstanceId);
-            BeAssert (secondaryECInstanceIdColumn != nullptr);
-            viewSql.Append (" INNER JOIN ").AppendEscaped (secondaryTable->GetName ().c_str ()).Append (" ON ").AppendParenLeft();
-            viewSql.AppendEscaped (secondaryTable->GetName ().c_str ()).AppendDot ().AppendEscaped (secondaryECInstanceIdColumn->GetName ().c_str ());
-            viewSql.Append (" = ");
-            if (!relationMap.GetSourceECClassIdPropMap ()->IsMappedToPrimaryTable ())
-                viewSql.AppendEscaped (primaryTable->GetName ().c_str ()).AppendDot ().AppendEscaped (relationMap.GetSourceECInstanceIdPropMap ()->GetFirstColumn()->GetName ().c_str ());
-            else if (!relationMap.GetTargetECClassIdPropMap ()->IsMappedToPrimaryTable ())
-                viewSql.AppendEscaped (primaryTable->GetName ().c_str ()).AppendDot ().AppendEscaped (relationMap.GetTargetECInstanceIdPropMap ()->GetFirstColumn ()->GetName ().c_str ());
-            else
-                {
-                BeAssert (false && "Incorrect case");
-                return ERROR;
-                }
 
-            viewSql.AppendParenRight ();
-            }
-        }
+    if (BuildRelationshipJoinIfAny (viewSql, relationMap, ECN::ECRelationshipEnd::ECRelationshipEnd_Source) != BentleyStatus::SUCCESS)
+        return BentleyStatus::ERROR;
+
+    if (BuildRelationshipJoinIfAny (viewSql, relationMap, ECN::ECRelationshipEnd::ECRelationshipEnd_Target) != BentleyStatus::SUCCESS)
+    return BentleyStatus::ERROR;
+
 
     viewSql.Append (" WHERE ").Append (relationMap.GetOtherEndECInstanceIdPropMap ()->ToNativeSql (nullptr, ECSqlType::Select, false)).Append (" IS NOT NULL");
     return SUCCESS;
     }
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      07/2015
+//+---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus ViewGenerator::BuildRelationshipJoinIfAny (NativeSqlBuilder& sqlBuilder, RelationshipClassMapCR classMap, ECN::ECRelationshipEnd endPoint)
+    {
+    auto ecclassIdPropertyMap = static_cast<PropertyMapRelationshipConstraintClassId const*>(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECClassIdPropMap () : classMap.GetTargetECClassIdPropMap ());
+    if (!ecclassIdPropertyMap->IsMappedToPrimaryTable ())
+        {
+        auto ecInstanceIdPropertyMap = static_cast<PropertyMapRelationshipConstraintECInstanceId const*>(endPoint == ECRelationshipEnd::ECRelationshipEnd_Source ? classMap.GetSourceECInstanceIdPropMap () : classMap.GetTargetECInstanceIdPropMap ());
+        auto const& targetTable = ecclassIdPropertyMap->GetFirstColumn ()->GetTable ();
+
+        sqlBuilder.Append (" INNER JOIN ");
+        sqlBuilder.AppendEscaped (targetTable.GetName ().c_str ());
+        sqlBuilder.AppendSpace ();
+        sqlBuilder.Append (GetECClassIdPrimaryTableAlias (endPoint));
+        sqlBuilder.Append (" ON ");
+        sqlBuilder.Append (GetECClassIdPrimaryTableAlias (endPoint));
+        sqlBuilder.AppendDot ();
+        auto targetECInstanceIdColumn = targetTable.GetFilteredColumnFirst (ECDbSystemColumnECInstanceId);
+        if (targetECInstanceIdColumn == nullptr)
+            {
+            BeAssert (false && "Failed to find ECInstanceId column in target table");
+            return BentleyStatus::ERROR;
+            }
+        sqlBuilder.AppendEscaped (targetECInstanceIdColumn->GetName ().c_str ());
+        sqlBuilder.Append (" = ");
+        sqlBuilder.AppendEscaped (ecInstanceIdPropertyMap->GetFirstColumn ()->GetTable ().GetName ().c_str ());
+
+        sqlBuilder.AppendDot ();
+        sqlBuilder.Append (ecInstanceIdPropertyMap->GetFirstColumn ()->GetName ().c_str ());
+        sqlBuilder.AppendSpace ();
+        }
+
+    return BentleyStatus::SUCCESS;
+    }
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      09/2013
 //+---------------+---------------+---------------+---------------+---------------+-------
@@ -1922,8 +1969,8 @@ BentleyStatus ViewGenerator::CreateViewForRelationship (NativeSqlBuilder& viewSq
                      {
 
                      std::vector<ECClassId> classesMappedToTable;
-                     if (ECDbSchemaPersistence::GetClassesMappedToTable(classesMappedToTable, relationMap.GetTable(), false, map.GetECDbR()) != BE_SQLITE_DONE)
-                         return BentleyStatus::ERROR;
+                     if (ECDbSchemaPersistence::GetClassesMappedToTable(classesMappedToTable, relationMap.GetTable(), false, map.GetECDbR()) != SUCCESS)
+                         return ERROR;
 
                      if (classesMappedToTable.size() != 1)
                          {
@@ -1967,7 +2014,7 @@ BentleyStatus ViewGenerator::CreateViewForRelationship (NativeSqlBuilder& viewSq
                 unionQuery.Append (" UNION ");
 
             status = CreateViewForRelationshipClassLinkTableMap (unionQuery, map, prepareContext, *ltm.front (), relationMap);
-            if (status != BentleyStatus::SUCCESS)
+            if (status != SUCCESS)
                 return status;
 
             auto column = table->GetFilteredColumnFirst (ECDbSystemColumnECClassId);
@@ -1975,8 +2022,8 @@ BentleyStatus ViewGenerator::CreateViewForRelationship (NativeSqlBuilder& viewSq
                 {
 
                 std::vector<ECClassId> classesMappedToTable;
-                if (ECDbSchemaPersistence::GetClassesMappedToTable (classesMappedToTable, *table, false, map.GetECDbR ()) != BE_SQLITE_DONE)
-                    return BentleyStatus::ERROR;
+                if (ECDbSchemaPersistence::GetClassesMappedToTable (classesMappedToTable, *table, false, map.GetECDbR ()) != SUCCESS)
+                    return ERROR;
 
                 if (classesMappedToTable.size () != ltm.size ())
                     {
@@ -2041,7 +2088,10 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps (NativeSqlBuilder& viewSql, EC
     propMap = static_cast<PropertyMapRelationshipConstraint const*> (relationMap.GetSourceECClassIdPropMap ());
     if (!propMap->IsVirtual ())
         {
-        viewSql.AppendEscaped (propMap->GetFirstColumn ()->GetTable ().GetName ().c_str ()).AppendDot ();
+        if (!propMap->IsMappedToPrimaryTable ())
+            viewSql.AppendEscaped (GetECClassIdPrimaryTableAlias (ECRelationshipEnd::ECRelationshipEnd_Source)).AppendDot ();
+        else
+            viewSql.AppendEscaped (propMap->GetFirstColumn ()->GetTable ().GetName ().c_str ()).AppendDot ();
         }
 
     AppendConstraintClassIdPropMap (viewSql, prepareContext, *propMap, ecdbMap, relationMap, relationMap.GetRelationshipClass ().GetSource ());
@@ -2062,7 +2112,10 @@ BentleyStatus ViewGenerator::AppendSystemPropMaps (NativeSqlBuilder& viewSql, EC
     propMap = static_cast<PropertyMapRelationshipConstraint const*> (relationMap.GetTargetECClassIdPropMap ());
     if (!propMap->IsVirtual ())
         {
-        viewSql.AppendEscaped (propMap->GetFirstColumn ()->GetTable ().GetName ().c_str ()).AppendDot ();
+        if (!propMap->IsMappedToPrimaryTable ())
+            viewSql.AppendEscaped (GetECClassIdPrimaryTableAlias (ECRelationshipEnd::ECRelationshipEnd_Target)).AppendDot ();
+        else
+            viewSql.AppendEscaped (propMap->GetFirstColumn ()->GetTable ().GetName ().c_str ()).AppendDot ();
         }
 
     AppendConstraintClassIdPropMap (viewSql, prepareContext, *propMap, ecdbMap, relationMap, relationMap.GetRelationshipClass ().GetTarget ());

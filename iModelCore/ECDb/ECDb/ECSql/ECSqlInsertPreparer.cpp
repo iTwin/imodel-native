@@ -113,7 +113,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareStepTask(ECSqlPrepareContext& ctx, Inser
         if (ecsqlParameterMap.TryGetBinder (binder, ecsqlParameterIndex) != ECSqlStatus::Success)
             {
             BeAssert (false && "Failed to find binder for given value expression");
-            return ctx.SetError (ECSqlStatus::ProgrammerError, "Failed to find binder for given value expression PROPERTY=%s BINDER_INDEX=%d", propNameExp->GetPropertyName().c_str(), ecsqlParameterIndex);
+            return ctx.SetError (ECSqlStatus::ProgrammerError, "Failed to find binder for given value expression PROPERTY=%s BINDER_INDEX=%d", propNameExp->GetPropertyName(), ecsqlParameterIndex);
             }
 
         if (typeInfo.GetKind () == ECSqlTypeInfo::Kind::Struct)
@@ -244,12 +244,12 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoRelationship (ECSqlPrepareCont
         return ctx.SetError (ECSqlStatus::InvalidECSql, "In an ECSQL INSERT statement against an ECRelationship class SourceECInstanceId and TargetECInstanceId must always be specified.");
 
     //Validate and if need be determine SourceECClassId and TargetECClassId
-    ECClassId sourceECClassId = -1LL; //remains unset if is parametrized
+    ECClassId sourceECClassId = ECClass::UNSET_ECCLASSID; //remains unset if is parametrized
     auto stat = ValidateConstraintClassId (sourceECClassId, ctx, exp, relationshipClassMap, ECRelationshipEnd_Source);
     if (stat != ECSqlStatus::Success)
         return stat;
 
-    ECClassId targetECClassId = -1LL;  //remains unset if is parametrized
+    ECClassId targetECClassId = ECClass::UNSET_ECCLASSID;  //remains unset if is parametrized
     stat = ValidateConstraintClassId (targetECClassId, ctx, exp, relationshipClassMap, ECRelationshipEnd_Target);
     if (stat != ECSqlStatus::Success)
         return stat;
@@ -268,14 +268,14 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoLinkTableRelationship (ECSqlPr
     {
     PreparePrimaryKey (ctx, nativeSqlSnippets, relationshipClassMap);
 
-    if (sourceECClassId >= 0LL)
+    if (sourceECClassId >= ECClass::UNSET_ECCLASSID)
         {
         auto stat = PrepareConstraintClassId (nativeSqlSnippets, ctx, *relationshipClassMap.GetSourceECClassIdPropMap (), sourceECClassId);
         if (stat != ECSqlStatus::Success)
             return stat;
         }
 
-    if (targetECClassId >= 0LL)
+    if (targetECClassId >= ECClass::UNSET_ECCLASSID)
         {
         auto stat = PrepareConstraintClassId (nativeSqlSnippets, ctx, *relationshipClassMap.GetTargetECClassIdPropMap (), targetECClassId);
         if (stat != ECSqlStatus::Success)
@@ -379,7 +379,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
     std::sort(expIndexSkipList.begin(), expIndexSkipList.end());
 
     auto otherEndClassId = thisEnd == ECRelationshipEnd_Source ? targetECClassId : sourceECClassId;
-    if (otherEndClassId >= 0LL)
+    if (otherEndClassId >= ECClass::UNSET_ECCLASSID)
         {
         auto stat = PrepareConstraintClassId(nativeSqlSnippets, ctx, *relationshipEndTableMap.GetOtherEndECClassIdPropMap(), otherEndClassId);
         if (stat != ECSqlStatus::Success)
@@ -597,7 +597,7 @@ ECSqlStatus ECSqlInsertPreparer::GetConstraintClassIdExpValue(bool& isParameter,
         }
     else if (expType == Exp::Type::Parameter)
         {
-        constraintClassId = -1LL;
+        constraintClassId = ECClass::UNSET_ECCLASSID;
         isParameter = true;
         return ECSqlStatus::Success;
         }
@@ -612,7 +612,7 @@ ECSqlStatus ECSqlInsertPreparer::GetConstraintClassIdExpValue(bool& isParameter,
 //static
 ECSqlStatus ECSqlInsertPreparer::PrepareConstraintClassId (NativeSqlSnippets& insertNativeSqlSnippets, ECSqlPrepareContext& ctx, PropertyMapCR constraintClassIdPropMap, ECClassId constraintClassId)
     {
-    BeAssert (constraintClassId >= 0LL);
+    BeAssert(constraintClassId >= ECClass::UNSET_ECCLASSID);
     //if constraint class id maps to virtual column then ignore it as the column does not exist in the table.
     if (constraintClassIdPropMap.IsVirtual ())
         return ECSqlStatus::Success;

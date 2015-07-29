@@ -250,8 +250,7 @@ struct ECDbSqlDb : NonCopyableClass
     public:
         ECDbSqlDb (ECDbSQLManager& manager)
             : m_nameGenerator ("ECDbObj_%03d"), m_name ("ECDb"), m_version (ECDbVersion (1, 0)), /*clang says not used - m_enableIdGeneration (true),*/ m_sqlManager (manager)
-            {
-            }
+            {}
  
         ECDbSQLManager& GetManager () const { return m_sqlManager; }
         ECDbSQLManager & GetManagerR ()  { return m_sqlManager; }
@@ -259,8 +258,8 @@ struct ECDbSqlDb : NonCopyableClass
         Utf8StringCR GetName () const { return m_name; }
         //! Create a table with a given name or if name is null a name will be generated
         ECDbSqlTable* CreateTable (Utf8CP name, PersistenceType type = PersistenceType::Persisted);
-        ECDbSqlTable* CreateTableUsingExistingTableDefinition (ECDbCR ecdb, Utf8CP existingTableName);
-        ECDbSqlTable* CreateTableUsingExistingTableDefinition (Utf8CP existingTableName);
+        ECDbSqlTable* CreateTableForExistingTableMapStrategy (ECDbCR ecdb, Utf8CP existingTableName);
+        ECDbSqlTable* CreateTableForExistingTableMapStrategy (Utf8CP existingTableName);
         ECDbVersion const& GetVersion () const { return m_version; }
         //! Find a table with a given name
         ECDbSqlTable const* FindTable (Utf8CP name) const;
@@ -570,8 +569,8 @@ struct ECDbSqlTable : NonCopyableClass
         Deleted
         };
     friend ECDbSqlTable* ECDbSqlDb::CreateTable (Utf8CP name, PersistenceType type);
-    friend ECDbSqlTable* ECDbSqlDb::CreateTableUsingExistingTableDefinition (ECDbCR ecdb, Utf8CP existingTableName);
-    friend ECDbSqlTable* ECDbSqlDb::CreateTableUsingExistingTableDefinition (Utf8CP existingTableName);
+    friend ECDbSqlTable* ECDbSqlDb::CreateTableForExistingTableMapStrategy (ECDbCR ecdb, Utf8CP existingTableName);
+    friend ECDbSqlTable* ECDbSqlDb::CreateTableForExistingTableMapStrategy (Utf8CP existingTableName);
     friend std::weak_ptr<ECDbSqlColumn> ECDbSqlColumn::GetWeakPtr () const;
     struct PersistenceManager : NonCopyableClass
         {

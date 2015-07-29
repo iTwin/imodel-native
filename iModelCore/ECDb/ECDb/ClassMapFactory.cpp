@@ -98,7 +98,7 @@ ClassMapPtr ClassMapFactory::Load (MapStatus& mapStatus, ECClassCR ecClass, ECDb
 //static
 ClassMapPtr ClassMapFactory::Create (MapStatus& mapStatus, SchemaImportContext const& schemaImportContext, ECN::ECClassCR ecClass, ECDbMapCR ecdbMap)
     {
-    if (ecdbMap.AssertIfNotMapping())
+    if (ecdbMap.AssertIfIsNotImportingSchema())
         {
         mapStatus = MapStatus::Error;
         return nullptr;

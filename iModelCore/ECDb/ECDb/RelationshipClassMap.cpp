@@ -101,7 +101,7 @@ void RelationshipClassMap::DetermineConstraintClassIdColumnHandling (bool& addCo
         defaultConstraintClassId = constraintClass->GetId ();
         }
     else
-        defaultConstraintClassId = UNSET_ECCLASSID;
+        defaultConstraintClassId = ECClass::UNSET_ECCLASSID;
     }
 
 //---------------------------------------------------------------------------------------
@@ -421,13 +421,13 @@ BentleyStatus RelationshipClassEndTableMap::_Load (std::set<ClassMap const*>& lo
 
     if (thisEnd == ECRelationshipEnd_Source)
         {
-        defaultSourceECClassId = thisEndConstraint.GetClasses ().empty () ? 0LL : thisEndConstraint.GetClasses ().front ()->GetId ();
-        defaultTargetECClassId = otherEndConstraint.GetClasses ().empty () ? 0LL : otherEndConstraint.GetClasses ().front ()->GetId ();
+        defaultSourceECClassId = thisEndConstraint.GetClasses().empty() ? ECClass::UNSET_ECCLASSID : thisEndConstraint.GetClasses().front()->GetId();
+        defaultTargetECClassId = otherEndConstraint.GetClasses().empty() ? ECClass::UNSET_ECCLASSID : otherEndConstraint.GetClasses().front()->GetId();
         }
     else
         {
-        defaultTargetECClassId = thisEndConstraint.GetClasses ().empty () ? 0LL : thisEndConstraint.GetClasses ().front ()->GetId ();
-        defaultSourceECClassId = otherEndConstraint.GetClasses ().empty () ? 0LL : otherEndConstraint.GetClasses ().front ()->GetId ();
+        defaultTargetECClassId = thisEndConstraint.GetClasses().empty() ? ECClass::UNSET_ECCLASSID : thisEndConstraint.GetClasses().front()->GetId();
+        defaultSourceECClassId = otherEndConstraint.GetClasses().empty() ? ECClass::UNSET_ECCLASSID : otherEndConstraint.GetClasses().front()->GetId();
         }
 
     auto sourceECInstanceIdProperty = ECDbSystemSchemaHelper::GetSystemProperty (Schemas (), ECSqlSystemProperty::SourceECInstanceId);
@@ -543,12 +543,12 @@ ECClassId defaultOtherEndClassId
     Utf8CP sourceECInstanceIdViewColumnAlias = DEFAULT_SOURCEECINSTANCEID_COLUMNNAME;
     ECDbSqlColumn* sourceECClassIdColumn = nullptr;
     Utf8CP sourceECClassIdViewColumnAlias = DEFAULT_SOURCEECCLASSID_COLUMNNAME;
-    ECClassId defaultSourceECClassId = UNSET_ECCLASSID;
+    ECClassId defaultSourceECClassId = ECClass::UNSET_ECCLASSID;
     ECDbSqlColumn* targetECInstanceIdColumn = nullptr;
     Utf8CP targetECInstanceIdViewColumnAlias = DEFAULT_TARGETECINSTANCEID_COLUMNNAME;
     ECDbSqlColumn* targetECClassIdColumn = nullptr;
     Utf8CP targetECClassIdViewColumnAlias = DEFAULT_TARGETECCLASSID_COLUMNNAME;
-    ECClassId defaultTargetECClassId = UNSET_ECCLASSID;
+    ECClassId defaultTargetECClassId = ECClass::UNSET_ECCLASSID;
 
     //class id columns in end table are delay generated. Respective property map needs to know that so that
     //it can register for a hook that notifies the prop map when the class id column was generated.
@@ -911,11 +911,11 @@ MapStatus RelationshipClassLinkTableMap::_InitializePart1 (ClassMapInfo const& c
 
     //**** Constraint columns and prop maps
     bool addSourceECClassIdColumnToTable = false;
-    ECClassId defaultSourceECClassId = UNSET_ECCLASSID;
+    ECClassId defaultSourceECClassId = ECClass::UNSET_ECCLASSID;
     DetermineConstraintClassIdColumnHandling (addSourceECClassIdColumnToTable, defaultSourceECClassId, sourceConstraint);
 
     bool addTargetECClassIdColumnToTable = false;
-    ECClassId defaultTargetECClassId = UNSET_ECCLASSID;
+    ECClassId defaultTargetECClassId = ECClass::UNSET_ECCLASSID;
     DetermineConstraintClassIdColumnHandling (addTargetECClassIdColumnToTable, defaultTargetECClassId, targetConstraint);
     return CreateConstraintPropMaps (relationClassMapInfo, addSourceECClassIdColumnToTable, defaultSourceECClassId, addTargetECClassIdColumnToTable, defaultTargetECClassId);
     }
@@ -1144,7 +1144,7 @@ ECDbSqlIndex* RelationshipClassLinkTableMap::CreateIndex (RelationshipIndexSpec 
     index->SetIsUnique (isUniqueIndex);
 
     //cache the class id for this index so that the index can be made a partial index if more than one classes map to the table to be indexed
-    GetECDbMap().GetMapContext()->AddClassIdFilteredIndex(*index, GetClass().GetId());
+    GetECDbMap().GetSchemaImportContext()->AddClassIdFilteredIndex(*index, GetClass().GetId());
     return index;
     }
     
@@ -1254,8 +1254,8 @@ BentleyStatus RelationshipClassLinkTableMap::_Load (std::set<ClassMap const*>& l
     auto const& sourceConstraint = relationshipClass.GetSource ();
     auto const& targetConstraint = relationshipClass.GetTarget ();
 
-    ECClassId defaultSourceECClassId = sourceConstraint.GetClasses ().empty () ? 0LL : sourceConstraint.GetClasses ().front ()->GetId ();
-    ECClassId defaultTargetECClassId = targetConstraint.GetClasses ().empty () ? 0LL : targetConstraint.GetClasses ().front ()->GetId ();
+    ECClassId defaultSourceECClassId = sourceConstraint.GetClasses().empty() ? ECClass::UNSET_ECCLASSID : sourceConstraint.GetClasses().front()->GetId();
+    ECClassId defaultTargetECClassId = targetConstraint.GetClasses().empty() ? ECClass::UNSET_ECCLASSID : targetConstraint.GetClasses().front()->GetId();
 
     auto sourceECInstanceIdProperty = ECDbSystemSchemaHelper::GetSystemProperty (Schemas (), ECSqlSystemProperty::SourceECInstanceId);
     auto pm = mapInfo.FindPropertyMap (sourceECInstanceIdProperty->GetId (), ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME);

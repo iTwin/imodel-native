@@ -678,7 +678,7 @@ ECDbSqlTable* ECDbSqlDb::CreateTable (Utf8CP name, PersistenceType type)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-ECDbSqlTable* ECDbSqlDb::CreateTableUsingExistingTableDefinition (Utf8CP existingTableName)
+ECDbSqlTable* ECDbSqlDb::CreateTableForExistingTableMapStrategy (Utf8CP existingTableName)
     {
     if (Utf8String::IsNullOrEmpty (existingTableName))
         {
@@ -701,11 +701,17 @@ ECDbSqlTable* ECDbSqlDb::CreateTableUsingExistingTableDefinition (Utf8CP existin
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-ECDbSqlTable* ECDbSqlDb::CreateTableUsingExistingTableDefinition (ECDbCR ecdb, Utf8CP existingTableName)
+ECDbSqlTable* ECDbSqlDb::CreateTableForExistingTableMapStrategy (ECDbCR ecdb, Utf8CP existingTableName)
     {
     if (Utf8String::IsNullOrEmpty (existingTableName))
         {
         BeAssert (false && "Existing table name cannot be null or empty");
+        return nullptr;
+        }
+
+    if (!ecdb.TableExists(existingTableName))
+        {
+        LOG.errorv("Table '%s' specified in ClassMap custom attribute must exist if MapStrategy is ExistingTable.", existingTableName);
         return nullptr;
         }
 
@@ -715,11 +721,6 @@ ECDbSqlTable* ECDbSqlDb::CreateTableUsingExistingTableDefinition (ECDbCR ecdb, U
         return nullptr;
         }
 
-    if (!ecdb.TableExists (existingTableName))
-        {
-        BeAssert (false && "Table does not exist in db");
-        return nullptr;
-        }
 
     auto newTableDef = new ECDbSqlTable (existingTableName, *this, GetManagerR ().GetIdGenerator ().NextTableId (), PersistenceType::Persisted, OwnerType::ExistingTable);
     
@@ -1287,10 +1288,11 @@ BentleyStatus ECDbSqlIndex::PersistenceManager::Drop (ECDbR ecdb) const
 //---------------------------------------------------------------------------------------
 void ECDbSqlIndex::PersistenceManager::EvaluateClassIdWhereExp(ECDbR ecdb) const
     {
-    BeAssert(ecdb.GetECDbImplR().GetECDbMap().IsMapping());
-    ECDbMap::MapContext const* mapContext = ecdb.GetECDbImplR().GetECDbMap().GetMapContext();
+    SchemaImportContext const* schemaImportContext = ecdb.GetECDbImplR().GetECDbMap().GetSchemaImportContext();
+    BeAssert(schemaImportContext != nullptr);
+
     ECClassId classId;
-    if (!mapContext->TryGetClassIdToIndex(classId, m_index))
+    if (!schemaImportContext->TryGetClassIdToIndex(classId, m_index))
         return;
 
     ECDbSqlColumn const* classIdCol = nullptr;
@@ -2340,7 +2342,7 @@ DbResult ECDbSqlPersistence::ReadTable (Statement& stmt, ECDbSqlDb& o)
     if (ownerType == OwnerType::ECDb)
         n = o.CreateTable (name, persistenceType);
     else
-        n = o.CreateTableUsingExistingTableDefinition (name);
+        n = o.CreateTableForExistingTableMapStrategy (name);
 
     if (!n)
         {

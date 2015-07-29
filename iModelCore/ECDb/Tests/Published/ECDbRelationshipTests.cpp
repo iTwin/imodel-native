@@ -633,13 +633,13 @@ TEST(ECDbRelationships, ECRelationshipContraintKeyProperties)
     ASSERT_TRUE(ECSqlStepStatus::Done == statement.Step());
     statement.Finalize();
 
-    ECClassCP pClass = ecdb.Schemas().GetECClass("ecsqltestKeys", "P",ECDbSchemaManager::ResolveSchema::BySchemaNamespacePrefix);
+    ECClassCP pClass = ecdb.Schemas().GetECClass("ecsqltestKeys", "P",ResolveSchema::BySchemaNamespacePrefix);
     IECInstancePtr pInstance = pClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
     InsertInstance(ecdb, *pClass, *pInstance);
-    ECClassCP psaClass = ecdb.Schemas().GetECClass("ecsqltestKeys", "PSA", ECDbSchemaManager::ResolveSchema::BySchemaNamespacePrefix);
+    ECClassCP psaClass = ecdb.Schemas().GetECClass("ecsqltestKeys", "PSA", ResolveSchema::BySchemaNamespacePrefix);
     IECInstancePtr psaInstance = psaClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
     InsertInstance(ecdb, *psaClass, *psaInstance);
-    auto PSAHasPKey_N1Class = ecdb.Schemas().GetECClass("ecsqltestKeys", "PSAHasPKey_N1", ECDbSchemaManager::ResolveSchema::BySchemaNamespacePrefix)->GetRelationshipClassCP();
+    auto PSAHasPKey_N1Class = ecdb.Schemas().GetECClass("ecsqltestKeys", "PSAHasPKey_N1", ResolveSchema::BySchemaNamespacePrefix)->GetRelationshipClassCP();
     IECInstancePtr PSAHasPKey_N1Instance = PSAHasPKey_N1Class->GetRelationshipClassCP()->GetDefaultStandaloneEnabler()->CreateInstance(0);
     auto relationshipInstance = CreateRelationship(*PSAHasPKey_N1Class, *psaInstance.get(),*pInstance.get());
     ASSERT_TRUE(relationshipInstance.IsValid());

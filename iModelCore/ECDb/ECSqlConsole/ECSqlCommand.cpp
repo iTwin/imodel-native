@@ -123,7 +123,6 @@ void ECSqlCommand::ExecuteInsert (ECSqlStatement& statement) const
 //---------------------------------------------------------------------------------------
 void ECSqlCommand::ExecuteUpdateOrDelete (ECSqlStatement& statement) const
     {
-  
     ECSqlStepStatus stepStat = statement.Step ();
 
     if (stepStat != ECSqlStepStatus::Done)
@@ -131,8 +130,6 @@ void ECSqlCommand::ExecuteUpdateOrDelete (ECSqlStatement& statement) const
         Console::WriteErrorLine("Failed to execute ECSQL statement: %s", statement.GetLastStatusMessage ().c_str ());
         return;
         }
-
-    
     }
 
 //---------------------------------------------------------------------------------------

@@ -47,7 +47,7 @@ private:
 
 public:
     //! Construct an empty/invalid ECInstanceKey
-    ECInstanceKey() : m_ecClassId(-1LL) {}
+    ECInstanceKey() : m_ecClassId(ECN::ECClass::UNSET_ECCLASSID) {}
 
     //! Construct an ECInstanceKey
     ECInstanceKey(ECN::ECClassId ecClassId, ECInstanceId const& ecInstanceId) : m_ecClassId(ecClassId), m_ecInstanceId(ecInstanceId) {}
@@ -86,7 +86,7 @@ public:
     //! Test if this key is valid
     bool IsValid() const 
         { 
-        return (m_ecClassId > 0LL && m_ecInstanceId.IsValid()); 
+        return (m_ecClassId > ECN::ECClass::UNSET_ECCLASSID && m_ecInstanceId.IsValid());
         }
     };
 

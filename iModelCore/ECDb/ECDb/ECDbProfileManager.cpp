@@ -32,7 +32,7 @@ ECDbR ecdb
     {
     LOG.debugv("Creating %s profile in %s...", PROFILENAME, ecdb.GetDbFileName());
 
-    StopWatch timer("", true);
+    StopWatch timer(true);
     ecdb.SaveChanges();
     // Set up the id sequences as the upgrade steps might add entries to the ec tables and therefore
     // need the sequence.
@@ -64,7 +64,9 @@ ECDbR ecdb
 
     ecdb.SaveChanges();
     timer.Stop();
-    LOG.infov("Created %s profile (in %.4lf seconds) in '%s'.", PROFILENAME, timer.GetElapsedSeconds(), ecdb.GetDbFileName());
+    
+    if (LOG.isSeverityEnabled (NativeLogging::LOG_INFO))
+        LOG.infov("Created %s profile (in %.4lf msecs) in '%s'.", PROFILENAME, timer.GetElapsedSeconds() * 1000.0, ecdb.GetDbFileName());
 
     return BE_SQLITE_OK;
     }
@@ -104,7 +106,7 @@ public:
 //static
 DbResult ECDbProfileManager::UpgradeECProfile(ECDbR ecdb, Db::OpenParams const& openParams)
     {
-    StopWatch timer("", true);
+    StopWatch timer(true);
 
     SchemaVersion actualProfileVersion(0, 0, 0, 0);
     auto stat = ReadProfileVersion(actualProfileVersion, ecdb, *ecdb.GetDefaultTransaction());
@@ -314,7 +316,7 @@ DbResult ECDbProfileManager::ProfileCreator::CreateECProfileTables
 Db& db
 )
     {
-    StopWatch timer("", true);
+    StopWatch timer(true);
     auto stat = CreateTableECSchema(db);
     if (stat != BE_SQLITE_OK)
         return stat;
@@ -386,6 +388,23 @@ Db& db
     stat = CreateTableECPropertyMap(db);
     if (stat != BE_SQLITE_OK)
         return stat;
+
+#ifdef ENABLE_TRIGGER_DEBUGGING
+    stat = db.ExecuteSql (
+        "CREATE TABLE ec_TriggerLog "
+        "("
+        "EventId INTEGER PRIMARY KEY AUTOINCREMENT , "
+        "EventTime TIMESTAMP DEFAULT CURRENT_TIMESTAMP ,"
+        "TriggerId TEXT, "
+        "AffectedECInstanceId INTEGER, "
+        "AffectedECClassId INTEGER, "
+        "Scope TEXT,"
+        "Comment TEXT"
+        ");");
+
+    if (stat != BE_SQLITE_OK)
+        return stat;
+#endif
 
     timer.Stop();
     LOG.debugv("Created ECDb profile tables in ECDb file in %.4f msecs.", timer.GetElapsedSeconds() * 1000.0);

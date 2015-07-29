@@ -145,7 +145,7 @@ bool PropertyMap::_IsSystemPropertyMap () const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult PropertyMap::_Save (ECDbClassMapInfo & classMapInfo) const
+BentleyStatus PropertyMap::_Save(ECDbClassMapInfo & classMapInfo) const
     {
     auto& children = GetChildren ();
     if (children.IsEmpty ())
@@ -153,60 +153,57 @@ DbResult PropertyMap::_Save (ECDbClassMapInfo & classMapInfo) const
         std::vector<ECDbSqlColumn const*> columns;
         GetColumns (columns);
         if (columns.size () == 0)
-            return BE_SQLITE_DONE;
+            return SUCCESS;
 
         if (columns.size () > 1)
             {
             BeAssert (false && "Overide this funtion for multicolumn mapping");
-            return BE_SQLITE_ERROR;
+            return ERROR;
             }
 
         auto mapInfo = classMapInfo.CreatePropertyMap (GetRoot ().GetProperty ().GetId (), Utf8String (GetPropertyAccessString ()).c_str (), *columns.at (0));
         if (mapInfo != nullptr)
             m_propertyPathId = mapInfo->GetPropertyPath ().GetId ();
         else
-            return BE_SQLITE_ERROR;
+            return ERROR;
 
-        return BE_SQLITE_DONE;
+        return SUCCESS;
         }
 
     for (auto& child : children)
         {
-        auto r = child->Save (classMapInfo);
-        if (r != BE_SQLITE_DONE)
-            return r;
+        if (SUCCESS != child->Save (classMapInfo))
+            return ERROR;
         }
 
-    return BE_SQLITE_DONE;
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult PropertyMap::_Load (ECDbClassMapInfo const& classMapInfo)
+BentleyStatus PropertyMap::_Load(ECDbClassMapInfo const& classMapInfo)
     {
     auto& children = GetChildren ();
     if (children.IsEmpty ())
         {
         BeAssert (false && "This funtion must be overriden in derived class");
-        return BE_SQLITE_ERROR;
-        }
-   // classMapInfo.GetMapStorage ().FindPropertyPath ("")
-    for (auto child : children)
-        {
- 
-        auto r = const_cast<PropertyMap*>(child)->Load (classMapInfo);
-        if (r != BE_SQLITE_DONE)
-            return r;
+        return ERROR;
         }
 
-    return BE_SQLITE_DONE;
+    for (auto child : children)
+        {
+        if (SUCCESS != const_cast<PropertyMap*>(child)->Load (classMapInfo))
+            return ERROR;
+        }
+
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      08/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult PropertyMap::Save (ECDbClassMapInfo & classMapInfo) const
+BentleyStatus PropertyMap::Save(ECDbClassMapInfo & classMapInfo) const
     {
     return _Save (classMapInfo);
     }
@@ -291,7 +288,7 @@ NativeSqlBuilder::List PropertyMap::_ToNativeSql(Utf8CP classIdentifier, ECSqlTy
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-MapStatus PropertyMap::FindOrCreateColumnsInTable(ClassMap& classMap,ClassMapInfo const* classMapInfo)
+BentleyStatus PropertyMap::FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfo const* classMapInfo)
     {
     return _FindOrCreateColumnsInTable(classMap, classMapInfo);
     }
@@ -307,10 +304,10 @@ WString PropertyMap::ToString() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-MapStatus PropertyMap::_FindOrCreateColumnsInTable (ClassMap& classMap , ClassMapInfo const* classMapInfo)
+BentleyStatus PropertyMap::_FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfo const* classMapInfo)
     {
     // Base implementation does nothing, but is implemented so PropertyMap can serve as a placeholder
-    return MapStatus::Success;
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -656,16 +653,15 @@ BentleyStatus PropertyMapToInLineStruct::Initialize(ECDbMapCR map)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan     09/2013
 //---------------------------------------------------------------------------------------
-MapStatus PropertyMapToInLineStruct::_FindOrCreateColumnsInTable (ClassMap& classMap,ClassMapInfo const* classMapInfo)
+BentleyStatus PropertyMapToInLineStruct::_FindOrCreateColumnsInTable(ClassMap& classMap, ClassMapInfo const* classMapInfo)
     {
     for(auto childPropMap : m_children)
         {
-        auto status = const_cast<PropertyMapP> (childPropMap)->FindOrCreateColumnsInTable(classMap, classMapInfo);
-        if (status != MapStatus::Success)
-            return status;
+        if (SUCCESS != const_cast<PropertyMapP> (childPropMap)->FindOrCreateColumnsInTable(classMap, classMapInfo))
+            return ERROR;
         }
 
-    return MapStatus::Success;
+    return SUCCESS;
     }
 
 
@@ -710,7 +706,7 @@ PropertyMapToTable::PropertyMapToTable (ECPropertyCR ecProperty, ECClassCR struc
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult PropertyMapToTable::_Save (ECDbClassMapInfo & classMapInfo) const
+BentleyStatus PropertyMapToTable::_Save (ECDbClassMapInfo & classMapInfo) const
     {
     auto& manager = classMapInfo.GetMapStorageR ();
     auto propertyId = GetRoot ().GetProperty ().GetId ();
@@ -722,17 +718,17 @@ DbResult PropertyMapToTable::_Save (ECDbClassMapInfo & classMapInfo) const
     if (propertyPath == nullptr)
         {
         BeAssert (false && "Failed to create propertyPath");
-        return BE_SQLITE_ERROR;
+        return ERROR;
         }
 
     m_propertyPathId = propertyPath->GetId ();
-    return BE_SQLITE_DONE;
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult PropertyMapToTable::_Load (ECDbClassMapInfo const& classMapInfo) 
+BentleyStatus PropertyMapToTable::_Load(ECDbClassMapInfo const& classMapInfo)
     {
     auto& manager = classMapInfo.GetMapStorage ();
     auto propertyId = GetRoot ().GetProperty ().GetId ();
@@ -741,11 +737,11 @@ DbResult PropertyMapToTable::_Load (ECDbClassMapInfo const& classMapInfo)
     if (propertyPath == nullptr)
         {
         BeAssert (false && "Failed to find propertyPath");
-        return BE_SQLITE_ERROR;
+        return ERROR;
         }
 
     m_propertyPathId = propertyPath->GetId ();
-    return BE_SQLITE_DONE;
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------------
@@ -787,9 +783,9 @@ void PropertyMapToTable::_GetColumns(std::vector<ECDbSqlColumn const*>& columns)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-MapStatus PropertyMapToTable::_FindOrCreateColumnsInTable( ClassMap& classMap, ClassMapInfo const* classMapInfo)
+BentleyStatus PropertyMapToTable::_FindOrCreateColumnsInTable( ClassMap& classMap, ClassMapInfo const* classMapInfo)
     {
-    return MapStatus::Success; // PropertyMapToTable adds no columns in the main table. The other table has a FK that points to the main table
+    return SUCCESS; // PropertyMapToTable adds no columns in the main table. The other table has a FK that points to the main table
     }
         
 //---------------------------------------------------------------------------------------
@@ -824,7 +820,7 @@ bool PropertyMapToColumn::_IsVirtual () const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    casey.mullen      11/2012
 //---------------------------------------------------------------------------------------
-MapStatus PropertyMapToColumn::_FindOrCreateColumnsInTable (ClassMap& classMap , ClassMapInfo const* classMapInfor)
+BentleyStatus PropertyMapToColumn::_FindOrCreateColumnsInTable (ClassMap& classMap , ClassMapInfo const* classMapInfor)
     {
     Utf8CP        columnName = m_columnInfo.GetName ();
     PrimitiveType primitiveType = m_columnInfo.GetColumnType ();
@@ -833,7 +829,7 @@ MapStatus PropertyMapToColumn::_FindOrCreateColumnsInTable (ClassMap& classMap ,
     ECDbSqlColumn::Constraint::Collation collation = m_columnInfo.GetCollation ();
     m_column = classMap.FindOrCreateColumnForProperty(classMap, classMapInfor, *this, columnName, primitiveType, nullable, unique, collation, nullptr);
     BeAssert (m_column != nullptr && "This actually indicates a mapping error. The method PropertyMapToColumn::_FindOrCreateColumnsInTable should therefore be changed to return an error.");
-    return MapStatus::Success;
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -890,7 +886,7 @@ PropertyMapPoint::PropertyMapPoint (ECPropertyCR ecProperty, WCharCP propertyAcc
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult PropertyMapPoint::_Save (ECDbClassMapInfo & classMapInfo) const
+BentleyStatus PropertyMapPoint::_Save (ECDbClassMapInfo & classMapInfo) const
     {
     BeAssert (m_xColumn != nullptr);
     BeAssert (m_yColumn != nullptr);
@@ -901,14 +897,14 @@ DbResult PropertyMapPoint::_Save (ECDbClassMapInfo & classMapInfo) const
     if (pm == nullptr)
         {
         BeAssert (false && "Failed to create propertymap");
-        return BE_SQLITE_ERROR;
+        return ERROR;
         }
 
     classMapInfo.CreatePropertyMap (rootPropertyId, (accessString + ".Y").c_str (), *m_yColumn);
     if (pm == nullptr)
         {
         BeAssert (false && "Failed to create propertymap");
-        return BE_SQLITE_ERROR;
+        return ERROR;
         }
 
     if (m_is3d)
@@ -918,16 +914,16 @@ DbResult PropertyMapPoint::_Save (ECDbClassMapInfo & classMapInfo) const
         if (pm == nullptr)
             {
             BeAssert (false && "Failed to create propertymap");
-            return BE_SQLITE_ERROR;
+            return ERROR;
             }
         }
 
-    return BE_SQLITE_DONE;
+    return SUCCESS;
     }
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan      01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult PropertyMapPoint::_Load (ECDbClassMapInfo const& classMapInfo)
+BentleyStatus PropertyMapPoint::_Load(ECDbClassMapInfo const& classMapInfo)
     {
     BeAssert (m_xColumn == nullptr);
     BeAssert (m_yColumn == nullptr);
@@ -939,7 +935,7 @@ DbResult PropertyMapPoint::_Load (ECDbClassMapInfo const& classMapInfo)
     if (pm == nullptr)
         {
         BeAssert (false && "Failed to load propertymap");
-        return BE_SQLITE_ERROR;
+        return ERROR;
         }
 
     m_xColumn = const_cast<ECDbSqlColumn*>(&(pm->GetColumn ()));
@@ -947,7 +943,7 @@ DbResult PropertyMapPoint::_Load (ECDbClassMapInfo const& classMapInfo)
     if (pm == nullptr)
         {
         BeAssert (false && "Failed to load propertymap");
-        return BE_SQLITE_ERROR;
+        return ERROR;
         }
 
     m_yColumn = const_cast<ECDbSqlColumn*>(&(pm->GetColumn ()));
@@ -958,13 +954,13 @@ DbResult PropertyMapPoint::_Load (ECDbClassMapInfo const& classMapInfo)
         if (pm == nullptr)
             {
             BeAssert (false && "Failed to load propertymap");
-            return BE_SQLITE_ERROR;
+            return ERROR;
             }
 
         m_zColumn = const_cast<ECDbSqlColumn*>(&(pm->GetColumn ()));
         }
 
-    return BE_SQLITE_DONE;
+    return SUCCESS;
     }
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
@@ -982,7 +978,7 @@ WString PropertyMapPoint::_ToString() const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-MapStatus PropertyMapPoint::_FindOrCreateColumnsInTable(ClassMap& classMap,  ClassMapInfo const* classMapInfo)
+BentleyStatus PropertyMapPoint::_FindOrCreateColumnsInTable(ClassMap& classMap,  ClassMapInfo const* classMapInfo)
     {
     PrimitiveType primitiveType = PRIMITIVETYPE_Double;
 
@@ -999,12 +995,12 @@ MapStatus PropertyMapPoint::_FindOrCreateColumnsInTable(ClassMap& classMap,  Cla
     yColumnName.append("_Y");
     m_yColumn = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, yColumnName.c_str(), primitiveType, nullable, unique, collation, "Y");
     if (!m_is3d)
-        return MapStatus::Success;
+        return SUCCESS;
 
     Utf8String zColumnName(columnName);
     zColumnName.append("_Z");
     m_zColumn = classMap.FindOrCreateColumnForProperty(classMap, classMapInfo, *this, zColumnName.c_str(), primitiveType, nullable, unique, collation, "Z");
-    return MapStatus::Success;
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------------

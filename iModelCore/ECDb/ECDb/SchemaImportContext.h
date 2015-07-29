@@ -2,12 +2,12 @@
 |
 |     $Source: ECDb/SchemaImportContext.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include "ECDbInternalTypes.h"
-#include "ECSchemaValidator.h"
+#include <ECDb/ECDbSchemaManager.h>
+#include "ECDbSql.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
@@ -16,15 +16,24 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct SchemaImportContext
     {
 private:
-    std::map<ECN::ECSchemaCP, ECSchemaValidationResult> m_schemaValidationResultMap; //cannot use bmap as value type is not copyable
     ECDbSchemaManager::IImportIssueListener const& m_importIssueListener;
+
+    mutable std::map<ECN::ECClassCP, std::unique_ptr<UserECDbMapStrategy>> m_userStrategyCache;
+    bmap<ECDbSqlIndex const*, ECN::ECClassId> m_classIdFilteredIndices;
+
+    UserECDbMapStrategy* GetUserStrategyP(ECN::ECClassCR, ECN::ECDbClassMap const*) const;
 
 public:
     explicit SchemaImportContext (ECDbSchemaManager::IImportIssueListener const* importIssueListener);
 
-    ECSchemaValidationResult const* GetSchemaValidationResult (ECN::ECSchemaCR schema) const;
-    ECSchemaValidationResult& GetSchemaValidationResultR (ECN::ECSchemaCR schema);
-    std::map<ECN::ECSchemaCP, ECSchemaValidationResult> const& GetSchemaValidationResultMap () const { return m_schemaValidationResultMap; }
+    //! Gets the user map strategy for the specified ECClass.
+    //! @return User map strategy. If the class doesn't have one a default strategy is returned. Only in 
+    //! case of error, nullptr is returned
+    UserECDbMapStrategy const* GetUserStrategy(ECN::ECClassCR, ECN::ECDbClassMap const* = nullptr) const;
+    UserECDbMapStrategy* GetUserStrategyP(ECN::ECClassCR) const;
+
+    void AddClassIdFilteredIndex(ECDbSqlIndex const&, ECN::ECClassId);
+    bool TryGetClassIdToIndex(ECN::ECClassId&, ECDbSqlIndex const&) const;
 
     ECDbSchemaManager::IImportIssueListener const& GetIssueListener () const { return m_importIssueListener; }
     };

@@ -57,8 +57,6 @@ protected:
     static Utf8CP const DEFAULT_TARGETECINSTANCEID_COLUMNNAME;
     static Utf8CP const DEFAULT_TARGETECCLASSID_COLUMNNAME;
 
-    static const ECN::ECClassId UNSET_ECCLASSID = -1LL;
-
     ConstraintMap m_sourceConstraintMap;
     ConstraintMap m_targetConstraintMap;
 

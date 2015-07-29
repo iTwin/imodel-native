@@ -22,11 +22,11 @@ namespace Backdoor
     {
     namespace ECDb
         {
-        void* GetSqliteDb (BeSQLite::EC::ECDbCR ecdb);
+        void* GetSqliteDb (BeSQLite::EC::ECDbCR);
 
         namespace ECSqlStatement
             {
-            BeSQLite::EC::ECSqlStatus BindDateTime (BeSQLite::EC::ECSqlStatement& stmt, int parameterIndex, uint64_t julianDayTicksHns, DateTime::Info const* metadata);
+            BeSQLite::EC::ECSqlStatus BindDateTime (BeSQLite::EC::ECSqlStatement&, int parameterIndex, uint64_t julianDayTicksHns, DateTime::Info const* metadata);
             }
         }
 
@@ -34,8 +34,13 @@ namespace Backdoor
         {
         namespace ECValue
             {
-            void SetAllowsPointersIntoInstanceMemory (ECN::ECValueR value, bool allow);
-            bool AllowsPointersIntoInstanceMemory (ECN::ECValueCR value);
+            void SetAllowsPointersIntoInstanceMemory (ECN::ECValueR, bool allow);
+            bool AllowsPointersIntoInstanceMemory (ECN::ECValueCR);
+            }
+
+        namespace ECSchemaReadContext
+            {
+            ECN::ECObjectsStatus AddSchema(ECN::ECSchemaReadContext&, ECN::ECSchemaR);
             }
         }
 
