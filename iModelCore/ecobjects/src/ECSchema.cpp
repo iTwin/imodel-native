@@ -60,7 +60,7 @@ ECNameValidation::ValidationResult ECNameValidation::Validate (Utf8CP name)
 void ECNameValidation::AppendEncodedCharacter (Utf8StringR encoded, Utf8Char c)
     {
     Utf8Char buf[5];
-    sprintf(buf, "%04X", (uint64_t) c);
+    sprintf(buf, "%04X", c);
     encoded.append("__x");
     encoded.append(buf);
     encoded.append("__");
@@ -559,12 +559,12 @@ ECClassP ECSchema::GetClassP (Utf8CP name)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECSchema::DebugDump()const
     {
-    printf("ECSchema: this=0x%x  %s.%02d.%02d, nClasses=%d\n", (uintptr_t)this, m_key.m_schemaName.c_str(), m_key.m_versionMajor, m_key.m_versionMinor, m_classMap.size());
+    printf("ECSchema: this=0x%llx  %s.%02d.%02d, nClasses=%d\n", (uint64_t)this, m_key.m_schemaName.c_str(), m_key.m_versionMajor, m_key.m_versionMinor, (int) m_classMap.size());
     for (ClassMap::const_iterator it = m_classMap.begin(); it != m_classMap.end(); ++it)
         {
         bpair<Utf8CP, ECClassP>const& entry = *it;
         ECClassCP ecClass = entry.second;
-        printf("    ECClass: 0x%x, %ls\n", (uintptr_t)ecClass, ecClass->GetName().c_str());
+        printf("    ECClass: 0x%llx, %s\n", (uint64_t)ecClass, ecClass->GetName().c_str());
         }
     }
 

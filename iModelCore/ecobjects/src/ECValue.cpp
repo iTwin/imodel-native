@@ -694,7 +694,7 @@ void            ECValue::ShallowCopy (ECValueCR v)
                 SetUtf16CP (v.m_stringInfo.m_utf16);
 #if !defined (_WIN32)
             else if (NULL != v.m_stringInfo.m_wchar)
-                SetString (v.m_stringInfo.m_wchar);
+                SetWCharCP (v.m_stringInfo.m_wchar);
 #endif
             else
                 SetWCharCP (NULL);
