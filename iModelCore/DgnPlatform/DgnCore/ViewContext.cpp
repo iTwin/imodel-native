@@ -97,14 +97,6 @@ DgnModelP ViewContext::_GetViewTarget()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    05/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-int             ViewContext::_GetViewNumber() const
-    {
-    return NULL != m_viewport ? m_viewport->GetViewNumber() : -1;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    12/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewContext::ViewToNpc(DPoint3dP npcVec, DPoint3dCP screenVec, int nPts) const

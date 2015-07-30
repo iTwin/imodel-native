@@ -422,7 +422,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _InitScanCriteria();
     DGNPLATFORM_EXPORT virtual StatusInt _ScanDgnModel(DgnModelP model);
     DGNPLATFORM_EXPORT virtual bool _ScanRangeFromPolyhedron();
-    DGNPLATFORM_EXPORT virtual int _GetViewNumber() const;
     DGNPLATFORM_EXPORT virtual void _SetDgnDb(DgnDbR);
     DGNPLATFORM_EXPORT virtual void _SetCurrentElement(GeometricElementCP);
     DGNPLATFORM_EXPORT virtual void _ClearZ ();
@@ -445,7 +444,6 @@ public:
     void SetIViewDraw(IViewDrawR output) { m_IViewDraw = &output; m_IDrawGeom = &output;}
     void SetIDrawGeom(IDrawGeomR drawGeom) { m_IDrawGeom = &drawGeom; }
     bool IsAttached() {return m_isAttached;}
-    bool IsRealView() {return (-1 != _GetViewNumber());}
     void SetBlockAsynchs(bool blockAsyncs) {m_blockAsyncs = blockAsyncs;}
     bool WantAsynchs() {return !m_blockAsyncs;}
     void SetIntermediatePaintsBlocked(bool blockIntermediatePaints) {m_blockIntermediatePaints = blockIntermediatePaints;}
@@ -977,7 +975,6 @@ protected:
     DGNPLATFORM_EXPORT virtual void _SetupOutputs() override;
     DGNPLATFORM_EXPORT virtual void _Detach() override;
 
-    virtual int     _GetViewNumber() const override { return -1; }
     virtual void    _AllocateScanCriteria() override {}
 
 public:
