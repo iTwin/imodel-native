@@ -17,4 +17,5 @@ policyFile = $(_MakeFilePath)mki/AssertRealityModFrameworkPolicy.mki
 always:
    @CreateSymLinks.py -d"$(BuildContextPublicApiDir)RealityPlatform=$(RealityPlatformPublicAPISrc)"
    @CreateSymLinks.py -d"$(BuildContextPublicApiDir)RealityPackage=$(RealityPackagePublicAPISrc)"
+   @CreateSymLinks.py -d"$(BuildContextPublicApiDir)CrawlerLib=$(CrawlerLibPublicAPISrc)"
 

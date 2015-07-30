@@ -6,6 +6,7 @@
         <Bindings>
             <PublicAPI Domain="RealityPlatform" />
             <PublicAPI Domain="RealityPackage" />
+            <PublicAPI Domain="CrawlerLib" />
         </Bindings>
     </Part>
     
@@ -20,9 +21,9 @@
       </Bindings>
     </Part>
 
-    <!--<Part Name="RealityCrawler" BMakeFile="RealityCrawler\RealityCrawler.mke">
+    <Part Name="RealityCrawler" BMakeFile="RealityCrawler\RealityCrawler.mke">
         <SubPart PartName="RealityPlatform"/>
-    </Part>-->
+    </Part>
 
     <Part Name="RealityDataHandlerTester" BentleyBuildMakeFile="RealityPlatform\Tests\RealityDataHandlerTester\RealityDataHandlerTester.mke" OnlyPlatforms="x86,x64">
         <SubPart PartName="RealityPlatform"/>
@@ -42,6 +43,24 @@
         </Bindings>
     </Part>
 
+    <Part Name="CrawlerLib" BentleyBuildMakeFile="CrawlerLib\CrawlerLib.mke">
+        <SubPart PartName="PublicAPI" />
+        <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
+        <SubPart PartName="BeXmlDll"            PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
+        <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
+        <Bindings>
+            <Libs>Delivery/$(stlibprefix)CrawlerLib$(stlibext)</Libs>
+            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/$(shlibprefix)CrawlerLib$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="CrawlerLibClient" BMakeFile="CrawlerLibClient/CrawlerLibClient.mke">
+        <SubPart PartName="CrawlerLib" />
+        <Bindings>
+            <Files ProductDirectoryName="RealityAssemblies">Delivery/CrawlerLibClient.exe</Files>
+        </Bindings>
+    </Part>
+
     <Part Name="RealityPackageUnitTests" BentleyBuildMakeFile="${SrcBsiCommon}/sharedmki/BuildUnitTests.mke" 
           BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)RealityModFramework/Tests/RealityPackage/ -dBEGTEST_NAME=RealityPackage -dBEGTEST_DEPENDENCIES=$(SrcRoot)RealityModFramework/Tests/dependencies.mki">
         <SubPart PartName="google_gtest_lib"    PartFile="gtest"        Repository="util-gtest" />
@@ -54,20 +73,19 @@
         <SubPart PartName="RealityPlatform"/>
     </Part>
 
-    <Part Name="RealityPackage-Tested">
-        <SubPart PartName="RealityPackageUnitTests"/>
-        <SubPart PartName="BeGTestCommon"       PartFile="BeGTest"      Repository="BeGTest" />
-    </Part>
-
-    <Part Name="RealityPlatform-Tested">
-        <SubPart PartName="RealityPlatformUnitTests"/>
-        <SubPart PartName="BeGTestCommon"       PartFile="BeGTest"      Repository="BeGTest" />
+    <Part Name="CrawlerLibUnitTests" BentleyBuildMakeFile="${SrcBsiCommon}/sharedmki/BuildUnitTests.mke"
+          BMakeOptions="-dBEGTEST_INPUT=$(SrcRoot)RealityModFramework/Tests/CrawlerLib/ -dBEGTEST_NAME=CrawlerLib -dBEGTEST_DEPENDENCIES=$(SrcRoot)RealityModFramework/Tests/dependencies.mki">
+        <SubPart PartName="google_gtest_lib"    PartFile="gtest"        Repository="util-gtest" />
+        <SubPart PartName="CrawlerLib"/>
     </Part>
 
     <Part Name="RealityFramework-Tested">
-		<SubPart PartName="RealityDbECPlugin"/>
+        <SubPart PartName="RealityDbECPlugin"/>
         <SubPart PartName="RealityPlatformUnitTests"/>
         <SubPart PartName="RealityPackageUnitTests"/>
+        <!--<SubPart PartName="CrawlerLibUnitTests"/>-->
+        <!--<SubPart PartName="CrawlerLibClient"/>-->
+        <!--<SubPart PartName="RealityCrawler"/>-->
         <SubPart PartName="BeGTestCommon"       PartFile="BeGTest"      Repository="BeGTest" />
     </Part>
 	
@@ -136,7 +154,6 @@
 	
     <Product Name="RealityModFramework">
         <SubPart PartName="RealityFramework-Tested"/>
-        <!--<SubPart PartName="RealityCrawler"/>-->
         <Directories DirectoryListName="RealityModFrameworkDirList" />
     </Product>
 

@@ -1,0 +1,36 @@
+/*--------------------------------------------------------------------------------------+
+|
+|     $Source: PublicApi/CrawlerLib/CrawlerLib.h $
+|
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+#pragma once
+
+//__BENTLEY_INTERNAL_ONLY__
+
+#include <Bentley/Bentley.h>
+#include <Bentley/RefCounted.h>
+
+
+#if defined (__CRAWLERLIB_BUILD__)
+#   define CRAWLERLIB_EXPORT EXPORT_ATTRIBUTE
+#else
+#   define CRAWLERLIB_EXPORT IMPORT_ATTRIBUTE
+#endif
+
+#define BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE              BEGIN_BENTLEY_NAMESPACE namespace CrawlerLib {
+#define END_BENTLEY_CRAWLERLIB_NAMESPACE                } END_BENTLEY_NAMESPACE
+#define USING_NAMESPACE_BENTLEY_CRAWLERLIB              using namespace BentleyApi::CrawlerLib;
+
+
+#define CRAWLERLIB_TYPEDEFS(_name_) \
+    BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_CRAWLERLIB_NAMESPACE
+
+#define CRAWLERLIB_REF_COUNTED_PTR(_sname_) \
+    BEGIN_BENTLEY_CRAWLERLIB_NAMESPACE struct _sname_; DEFINE_REF_COUNTED_PTR(_sname_) END_BENTLEY_CRAWLERLIB_NAMESPACE
+
+CRAWLERLIB_TYPEDEFS(PageContent)
+CRAWLERLIB_REF_COUNTED_PTR(PageContent)
+CRAWLERLIB_TYPEDEFS(Url)
+CRAWLERLIB_REF_COUNTED_PTR(Url)

@@ -1,0 +1,64 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: CrawlerLib/CrawlerLib.mke $
+#       $Date: 7/22/2015 11:33:09$
+#     $Author: Alexandre.Gariepy $
+#
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+
+policyFile = $(_MakeFilePath)../mki/AssertRealityModFrameworkPolicy.mki
+
+appName = CrawlerLib
+baseDir	= $(_MakeFilePath)
+
+%include mdl.mki
+
+PublicApiDir    = $(OutBuildContexts)RealityModFramework/PublicAPI/CrawlerLib/
+
+#----------------------------------------------------------------------
+#       Create output directories
+#----------------------------------------------------------------------
+always:
+    !~@mkdir $(o)
+
+#----------------------------------------------------------
+# Preprocessor definition.
+#----------------------------------------------------------
+nameToDefine=__CRAWLERLIB_BUILD__
+%include cdefapnd.mki
+
+#----------------------------------------------------------------------
+#       Build source files
+#----------------------------------------------------------------------
+
+MultiCompileDepends=$(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)PageParser$(oext) : $(baseDir)PageParser.cpp $(PublicApiDir)PageParser.h ${MultiCompileDepends}
+
+$(o)Url$(oext) : $(baseDir)Url.cpp $(PublicApiDir)Url.h ${MultiCompileDepends}
+
+$(o)Downloader$(oext) : $(baseDir)Downloader.cpp $(PublicApiDir)Downloader.h ${MultiCompileDepends}
+
+$(o)UrlQueue$(oext) : $(baseDir)UrlQueue.cpp $(PublicApiDir)UrlQueue.h ${MultiCompileDepends}
+
+$(o)Crawler$(oext) : $(baseDir)Crawler.cpp $(PublicApiDir)Crawler.h ${MultiCompileDepends}
+
+$(o)CrawlerFactory$(oext) : $(baseDir)CrawlerFactory.cpp $(PublicApiDir)CrawlerFactory.h ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#       Lib creation
+#----------------------------------------------------------------------
+DLM_NAME            = $(appName)
+DLM_OBJECT_FILES    = $(MultiCompileObjectList)
+DLM_NO_SIGN	        = 1
+
+
+LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
+                       $(ContextSubpartsLibs)$(libprefix)BeCurl$(libext)
+
+%include dlmlink.mki
