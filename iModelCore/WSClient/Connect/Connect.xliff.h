@@ -20,10 +20,13 @@ MOBILEDGN_TRANSLATABLE_STRINGS_START (ConnectL10N, Connect)
     FIELDAPPS_SingleSignOn,                  // =="Single sign-on"==
     FIELDAPPS_DontHaveAnAccount,             // =="Don't have an account yet?"==
     FIELDAPPS_SignUp,                        // =="Sign up"==
+    FIELDAPPS_SignUpSuggestion,              // =="Don't have a profile?"==
+    FIELDAPPS_SignUpSuggestionLink,          // =="Register"==
     FIELDAPPS_Email,                         // =="Email"==
     FIELDAPPS_Password,                      // =="Password"==
     FIELDAPPS_ForgotPassword,                // =="Forgot Password?"==
     FIELDAPPS_SignIn,                        // =="Sign in"==
+    FIELDAPPS_SignInSubText,                 // =="Access your Bentley Services"==
     FIELDAPPS_ProductDemo,                   // =="Product Demo"==
     FIELDAPPS_EmailAndPasswordRequired,      // =="You must enter an email address and password."==
     FIELDAPPS_Error,                         // =="Error"==
