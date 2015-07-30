@@ -283,7 +283,7 @@ SchemaLocalizedStrings::SchemaLocalizedStrings(ECSchemaCP localizationSupplement
         if (!caClassName.Equals(lastCaClassName))
             {
             lastCaClassName = Utf8String(caClassName);
-            caInstance = caContainer->GetLocalAttributeAsConsolidated(caClassName);
+            caInstance = caContainer->GetLocalAttributeAsSupplemented(caClassName);
             if (!caInstance.IsValid())
                 {
                 LOG.errorv("Cannot apply the localized string '%s' because the custom attribute or container cannot be found given the key '%s'", it.second.second.c_str(), it.first.c_str());
