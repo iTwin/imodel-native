@@ -6,3 +6,4 @@
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
 *Create_PassedMandatoryValues_SetsValues* # TODO: enable when Device::GetDeviceId() is implemented for Windows
+BeSQLiteDbTransactionHandlerTests.StartTransaction_TwoConnections_SecondConnectionIsBlockedUntilFirstFinishesTransaction # Hangs regularly on firebug; have notified Vincas.
