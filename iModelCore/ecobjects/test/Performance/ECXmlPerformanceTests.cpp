@@ -22,7 +22,7 @@ ECSchemaReadContextPtr   schemaContext
 )
     {
     ECSchemaPtr schema;
-    StopWatch deserializationTimer(L"Deserialization", false);
+    StopWatch deserializationTimer("Deserialization", false);
     deserializationTimer.Start();
     //printf ("Attach to profiler for reading schema...\r\n"); getchar ();
     SchemaReadStatus status = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath(schemaName).c_str(), *schemaContext);
@@ -31,8 +31,8 @@ ECSchemaReadContextPtr   schemaContext
     deserializationTimer.Stop();
     EXPECT_EQ (SCHEMA_READ_STATUS_Success, status);  
 
-    StopWatch serializationTimer(L"Serialization", false);
-    WString ecSchemaXml;
+    StopWatch serializationTimer("Serialization", false);
+    Utf8String ecSchemaXml;
 
     serializationTimer.Start();
     //printf ("Attach to profiler for writing schema...\r\n"); getchar ();
@@ -43,20 +43,20 @@ ECSchemaReadContextPtr   schemaContext
 
     size_t stringLength = ecSchemaXml.length();
 
-    WString dateTime = ECTestFixture::GetDateTime ();
+    Utf8String dateTime = ECTestFixture::GetDateTime ();
     ECSchemaReferenceList references = schema->GetReferencedSchemas();
 
     bmap<Utf8String, double> results;
     Utf8String deserializingString;
-    deserializingString.Sprintf("De-serializing schema: %ls (%d references)", schema->GetFullSchemaName().c_str(), references.size());
+    deserializingString.Sprintf("De-serializing schema: %s (%d references)", schema->GetFullSchemaName().c_str(), references.size());
     results[deserializingString] = deserializationTimer.GetElapsedSeconds();
 
     Utf8String serializingString;
-    serializingString.Sprintf("Serializing schema: %ls (%d bytes)", schema->GetFullSchemaName().c_str(), stringLength);
+    serializingString.Sprintf("Serializing schema: %s (%d bytes)", schema->GetFullSchemaName().c_str(), stringLength);
     results[serializingString] = serializationTimer.GetElapsedSeconds();
 
-    PERFORMANCELOG.infov(L"%s, De-serializing schema: %ls (%d references), %.4f\n", dateTime.c_str(), schema->GetFullSchemaName().c_str(), references.size(), deserializationTimer.GetElapsedSeconds());
-    PERFORMANCELOG.infov(L"%s, Serializing schema: %ls (%d bytes), %.4f\n",dateTime.c_str(), schema->GetFullSchemaName().c_str(), stringLength, serializationTimer.GetElapsedSeconds());
+    PERFORMANCELOG.infov("%s, De-serializing schema: %s (%d references), %.4f\n", dateTime.c_str(), schema->GetFullSchemaName().c_str(), references.size(), deserializationTimer.GetElapsedSeconds());
+    PERFORMANCELOG.infov("%s, Serializing schema: %s (%d bytes), %.4f\n",dateTime.c_str(), schema->GetFullSchemaName().c_str(), stringLength, serializationTimer.GetElapsedSeconds());
 
     LogResultsToFile(results);
     }
@@ -80,7 +80,7 @@ ECSchemaReadContextPtr   schemaContext
     IECInstancePtr  testInstance;
     InstanceReadStatus instanceStatus;
 
-    StopWatch readingTimer(L"Reading", false);
+    StopWatch readingTimer("Reading", false);
     readingTimer.Start();
     instanceStatus = IECInstance::ReadFromXmlFile (testInstance, ECTestFixture::GetTestDataPath(instanceXmlFile).c_str(), *instanceContext);
     readingTimer.Stop();
@@ -93,15 +93,15 @@ ECSchemaReadContextPtr   schemaContext
     writingTimer.Stop();
     EXPECT_EQ (INSTANCE_WRITE_STATUS_Success, status2);  
 
-    WString dateTime = ECTestFixture::GetDateTime ();
+    Utf8String dateTime = ECTestFixture::GetDateTime ();
     size_t stringLength = ecInstanceXml.length();
 
-    PERFORMANCELOG.infov (L"%s, Reading instance from class: %ls:%ls, %.4f\n", dateTime.c_str(), schema->GetFullSchemaName().c_str(), testInstance->GetClass().GetName().c_str(), readingTimer.GetElapsedSeconds());
-    PERFORMANCELOG.infov(L"%s, Writing instance from class: %ls:%ls (%d bytes), %.4f\n",dateTime.c_str(), schema->GetFullSchemaName().c_str(), testInstance->GetClass().GetName().c_str(), stringLength, writingTimer.GetElapsedSeconds());
+    PERFORMANCELOG.infov ("%s, Reading instance from class: %s:%s, %.4f\n", dateTime.c_str(), schema->GetFullSchemaName().c_str(), testInstance->GetClass().GetName().c_str(), readingTimer.GetElapsedSeconds());
+    PERFORMANCELOG.infov("%s, Writing instance from class: %s:%s (%d bytes), %.4f\n",dateTime.c_str(), schema->GetFullSchemaName().c_str(), testInstance->GetClass().GetName().c_str(), stringLength, writingTimer.GetElapsedSeconds());
 
     bmap<Utf8String, double> results;
     Utf8String readingString;
-    readingString.Sprintf("Reading instance from class: %ls:%ls", schema->GetFullSchemaName().c_str(), testInstance->GetClass().GetName().c_str());
+    readingString.Sprintf("Reading instance from class: %s:%s", schema->GetFullSchemaName().c_str(), testInstance->GetClass().GetName().c_str());
     results[readingString] = readingTimer.GetElapsedSeconds();
 
     Utf8String writingString;

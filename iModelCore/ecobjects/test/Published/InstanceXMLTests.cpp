@@ -25,7 +25,7 @@ struct  Struct1
 struct  Struct2
     {
     bool            struct2StringMemberNull;
-    WCharCP  struct2StringMember;
+    Utf8CP          struct2StringMember;
     bool            struct2DoubleMemberNull;
     double          struct2DoubleMember;
     Struct1*        nestedArray;
@@ -46,101 +46,101 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
     {
     ECValue ecValue;
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"BaseClassMember"));
-    EXPECT_EQ (987, ecValue.GetInteger());
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "BaseClassMember"));
+    EXPECT_EQ (987, ecValue.GetInteger()) << "Expect 987 for integer value";
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"IntegerMember"));
-    EXPECT_EQ (12, ecValue.GetInteger());
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "IntegerMember"));
+    EXPECT_EQ (12, ecValue.GetInteger()) << "Expected 12 for integer value";
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"CustomFormatInt"));
-    EXPECT_EQ (13, ecValue.GetInteger());
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "CustomFormatInt"));
+    EXPECT_EQ (13, ecValue.GetInteger()) << "Expected 13 for integer value";
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"BooleanMember"));
-    EXPECT_FALSE (ecValue.GetBoolean());
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "BooleanMember"));
+    EXPECT_FALSE (ecValue.GetBoolean()) << "Expected false for booleanmember";
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"DoubleMember"));
-    EXPECT_EQ (456.789, ecValue.GetDouble());
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "DoubleMember"));
+    EXPECT_EQ (456.789, ecValue.GetDouble()) << "Expected 456.789 for double member";
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"StringMember"));
-    EXPECT_STREQ (ecValue.GetString(), L"Test string");
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "StringMember"));
+    EXPECT_STREQ (ecValue.GetUtf8CP(), "Test string") << "Expected 'test string'";
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FileNameMember"));
-    EXPECT_STREQ (ecValue.GetString(), L"c:\\usr\\barry\\test.txt");
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FileNameMember"));
+    EXPECT_STREQ (ecValue.GetUtf8CP(), "c:\\usr\\barry\\test.txt") << "Wrong value for FileNameMember";
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"NegativeMember"));
-    EXPECT_EQ (-42, ecValue.GetInteger());
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "NegativeMember"));
+    EXPECT_EQ (-42, ecValue.GetInteger()) << "Expected -42 for negativemember";
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"DateTimeMember"));
-    EXPECT_EQ (633374681466664305, ecValue.GetDateTimeTicks());
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "DateTimeMember"));
+    EXPECT_EQ (633374681466664305, ecValue.GetDateTimeTicks()) << "Wrong value for DateTimeMember";
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"StartPoint"));
-    EXPECT_EQ (1.1, ecValue.GetPoint3D().x);
-    EXPECT_EQ (2.2, ecValue.GetPoint3D().y);
-    EXPECT_EQ (3.3, ecValue.GetPoint3D().z);
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "StartPoint"));
+    EXPECT_EQ (1.1, ecValue.GetPoint3D().x) << "Incorrect x value for StartPoint";
+    EXPECT_EQ (2.2, ecValue.GetPoint3D().y) << "Incorrect y value for StartPoint";
+    EXPECT_EQ (3.3, ecValue.GetPoint3D().z) << "Incorrect z value for StartPoint";
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"EndPoint"));
-    EXPECT_EQ (4.4, ecValue.GetPoint3D().x);
-    EXPECT_EQ (7.7, ecValue.GetPoint3D().y);
-    EXPECT_EQ (6.6, ecValue.GetPoint3D().z);
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "EndPoint"));
+    EXPECT_EQ (4.4, ecValue.GetPoint3D().x) << "Incorrect x value for EndPoint";
+    EXPECT_EQ (7.7, ecValue.GetPoint3D().y) << "Incorrect y value for EndPoint";
+    EXPECT_EQ (6.6, ecValue.GetPoint3D().z) << "Incorrect z value for EndPoint";
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"SecondEmbeddedStruct.Struct1BoolMember"));
-    EXPECT_FALSE (ecValue.GetBoolean());
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "SecondEmbeddedStruct.Struct1BoolMember"));
+    EXPECT_FALSE (ecValue.GetBoolean()) << "Wrong value for Struct1BoolMember";
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"SecondEmbeddedStruct.Struct1IntMember"));
-    EXPECT_EQ (4, ecValue.GetInteger());
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "SecondEmbeddedStruct.Struct1IntMember"));
+    EXPECT_EQ (4, ecValue.GetInteger()) << "Wrong value for Struct1IntMember";
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStruct.Struct3DoubleMember"));
-    EXPECT_EQ (17.443, ecValue.GetDouble());
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStruct.Struct3DoubleMember"));
+    EXPECT_EQ (17.443, ecValue.GetDouble()) << "Wrong value for Struct3DoubleMember";
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStruct.Struct3IntMember"));
-    EXPECT_EQ (531992, ecValue.GetInteger());
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStruct.Struct3IntMember"));
+    EXPECT_EQ (531992, ecValue.GetInteger()) << "Wrong value for Struct3IntMember";
     
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStruct.Struct3BoolMember"));
-    EXPECT_TRUE (ecValue.GetBoolean());
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStruct.Struct3BoolMember"));
+    EXPECT_TRUE (ecValue.GetBoolean()) << "Wrong value for Struct3BoolMember";
 
     int         expectedInts[] = {0, 101, 202, 303, 404, 505, 606, 707, 808, 909};
     for (uint32_t index=0; index < _countof (expectedInts); index++)
         {
-        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedArray", index));
-        EXPECT_EQ (expectedInts[index], ecValue.GetInteger());
+        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedArray", index));
+        EXPECT_EQ (expectedInts[index], ecValue.GetInteger()) << "Wrong Value for FormattedArray";
         }
 
     int         moreInts[] = {41556, 32757, 56789, 32757, 21482 };
     for (uint32_t index=0; index < _countof (moreInts); index++)
         {
-        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"IntArray", index));
-        EXPECT_EQ (moreInts[index], ecValue.GetInteger());
+        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "IntArray", index));
+        EXPECT_EQ (moreInts[index], ecValue.GetInteger()) << "Wrong value for IntArray";
         }
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"OneMemberIntArray", 0));
-    EXPECT_EQ (3, ecValue.GetInteger());
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "OneMemberIntArray", 0));
+    EXPECT_EQ (3, ecValue.GetInteger()) << "Wrong value for OneMemberIntArray";
 
     DPoint3d    expectedPoints[] = { {4.0, 0.0, 0.0}, {1.0, 1.0, 1.0}, {2.0, 2.0, 2.0}, {3.0, 3.0, 3.0}, {4.0, 4.0, 4.0}, {5.0, 5.0, 5.0} };
     for (uint32_t index=0; index < _countof (expectedPoints); index++)
         {
-        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"PointArray", index));
-        EXPECT_EQ (expectedPoints[index].x, ecValue.GetPoint3D().x);
-        EXPECT_EQ (expectedPoints[index].y, ecValue.GetPoint3D().y);
-        EXPECT_EQ (expectedPoints[index].z, ecValue.GetPoint3D().z);
+        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "PointArray", index));
+        EXPECT_EQ (expectedPoints[index].x, ecValue.GetPoint3D().x) << "Wrong value for PointArray x";
+        EXPECT_EQ (expectedPoints[index].y, ecValue.GetPoint3D().y) << "Wrong value for PointArray y";
+        EXPECT_EQ (expectedPoints[index].z, ecValue.GetPoint3D().z) << "Wrong value for PointArray z";
         }
 
     for (uint32_t index=0; index < 300; index++)
         {
-        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"DateArray", index));
+        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "DateArray", index)) << "Wrong value for DateArray";
         }
 
     for (uint32_t index=0; index < 300; index++)
         {
-        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"StringArray", index));
-        WString expectedString;
-        expectedString.Sprintf (L"String %d", index%30);
-        EXPECT_STREQ (expectedString.c_str(), ecValue.GetString());
+        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "StringArray", index));
+        Utf8String expectedString;
+        expectedString.Sprintf ("String %d", index%30);
+        EXPECT_STREQ (expectedString.c_str(), ecValue.GetUtf8CP()) << "Wrong value for StringArray";
         }
 
     for (uint32_t index=0; index < 100; index++)
         {
-        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"SmallIntArray", index));
-        EXPECT_EQ (index, ecValue.GetInteger());
+        EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "SmallIntArray", index));
+        EXPECT_EQ (index, ecValue.GetInteger()) << "Wrong value for SmallIntArray";
         }
 
     // test the structArray of Struct2's that contains a nested array of Struct1's. Here's the data we expect:
@@ -154,7 +154,7 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
         {
             {
             false,
-            L"testInstance.StructArray[0].Struct2StringMember",
+            "testInstance.StructArray[0].Struct2StringMember",
             false,
             123456.789,
             firstArray,
@@ -162,7 +162,7 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
             },
             {
             false,
-            L"testInstance.StructArray[1].Struct2StringMember",
+            "testInstance.StructArray[1].Struct2StringMember",
             false,
             23456.789,
             secondArray,          
@@ -170,7 +170,7 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
             },
             {
             false,
-            L"Added.Struct2StringMember",
+            "Added.Struct2StringMember",
             true,
             0.0,
             NULL,
@@ -181,30 +181,30 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
     for (uint32_t index=0; index < _countof (struct2ExpectedValues); index++)
         {
         ECValue         structArrayMember;
-        EXPECT_EQ (SUCCESS, testInstance->GetValue (structArrayMember, L"StructArray", index));
+        EXPECT_EQ (SUCCESS, testInstance->GetValue (structArrayMember, "StructArray", index));
         IECInstancePtr  structArrayInstance = structArrayMember.GetStruct();
         EXPECT_TRUE (structArrayInstance.IsValid());
         
         if (struct2ExpectedValues[index].struct2StringMemberNull)
             {
             // This throws an assert rather than returning ERROR.
-            // EXPECT_EQ (ERROR, structArrayInstance->GetString (stringValue, L"Struct2StringMember"));
+            // EXPECT_EQ (ERROR, structArrayInstance->GetString (stringValue, "Struct2StringMember"));
             }
         else
             {
-            EXPECT_EQ (SUCCESS, structArrayInstance->GetValue (ecValue, L"Struct2StringMember"));
-            EXPECT_STREQ (struct2ExpectedValues[index].struct2StringMember, ecValue.GetString());
+            EXPECT_EQ (SUCCESS, structArrayInstance->GetValue (ecValue, "Struct2StringMember"));
+            EXPECT_STREQ (struct2ExpectedValues[index].struct2StringMember, ecValue.GetUtf8CP()) << "Wrong value for Struct2StringMember";
             }
 
         if (struct2ExpectedValues[index].struct2DoubleMemberNull)
             {
             // This throws an assert rather than returning ERROR.
-            // EXPECT_EQ (ERROR, structArrayInstance->GetDouble (doubleValue, L"Struct2DoubleMember"));
+            // EXPECT_EQ (ERROR, structArrayInstance->GetDouble (doubleValue, "Struct2DoubleMember"));
             }
         else
             {
-            EXPECT_EQ (SUCCESS, structArrayInstance->GetValue (ecValue, L"Struct2DoubleMember"));
-            EXPECT_EQ (struct2ExpectedValues[index].struct2DoubleMember, ecValue.GetDouble());
+            EXPECT_EQ (SUCCESS, structArrayInstance->GetValue (ecValue, "Struct2DoubleMember"));
+            EXPECT_EQ (struct2ExpectedValues[index].struct2DoubleMember, ecValue.GetDouble()) << "Wrong value for Struct2DoubleMember";
             }
 
         // now try to get the array of structs, if expected.
@@ -214,15 +214,15 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
         for (uint32_t nestedIndex=0; nestedIndex < struct2ExpectedValues[index].arraySize; nestedIndex++)
             {
             ECValue     nestedArrayMember;
-            EXPECT_EQ (SUCCESS, structArrayInstance->GetValue (nestedArrayMember, L"NestedArray", nestedIndex));
+            EXPECT_EQ (SUCCESS, structArrayInstance->GetValue (nestedArrayMember, "NestedArray", nestedIndex));
             IECInstancePtr  nestedInstance = nestedArrayMember.GetStruct();
             EXPECT_TRUE (nestedInstance.IsValid());
             
-            EXPECT_EQ (SUCCESS, nestedInstance->GetValue (ecValue, L"Struct1BoolMember"));
-            EXPECT_EQ (struct2ExpectedValues[index].nestedArray[nestedIndex].struct1BoolMember, ecValue.GetBoolean());
+            EXPECT_EQ (SUCCESS, nestedInstance->GetValue (ecValue, "Struct1BoolMember"));
+            EXPECT_EQ (struct2ExpectedValues[index].nestedArray[nestedIndex].struct1BoolMember, ecValue.GetBoolean()) << "Wrong value for Struct1BoolMember in NestedArray";
 
-            EXPECT_EQ (SUCCESS, nestedInstance->GetValue (ecValue, L"Struct1IntMember"));
-            EXPECT_EQ (struct2ExpectedValues[index].nestedArray[nestedIndex].struct1IntMember, ecValue.GetInteger());
+            EXPECT_EQ (SUCCESS, nestedInstance->GetValue (ecValue, "Struct1IntMember"));
+            EXPECT_EQ (struct2ExpectedValues[index].nestedArray[nestedIndex].struct1IntMember, ecValue.GetInteger()) << "Wrong value for Struct1IntMember in NestedArray";
             }
         }
 
@@ -230,7 +230,7 @@ void    VerifyTestInstance (IECInstanceCP testInstance, bool checkBinaryProperty
         return;
 
     ECValue         binaryMember;
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (binaryMember, L"TestBinary"));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (binaryMember, "TestBinary"));
 
     size_t      numBytes;
     const Byte* byteData; 
@@ -253,7 +253,7 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingFaultyInstance
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
 
     ECSchemaPtr schema;
-    SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath(L"MismatchedSchema.01.00.ecschema.xml").c_str(), *schemaContext);
+    SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath("MismatchedSchema.01.00.ecschema.xml").c_str(), *schemaContext);
 
     EXPECT_EQ (SCHEMA_READ_STATUS_Success, schemaStatus);
 
@@ -262,106 +262,106 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingFaultyInstance
     IECInstancePtr  testInstance;
     InstanceReadStatus instanceStatus;
 
-    instanceStatus = IECInstance::ReadFromXmlFile (testInstance, ECTestFixture::GetTestDataPath(L"MismatchedInstance.xml").c_str(), *instanceContext);
+    instanceStatus = IECInstance::ReadFromXmlFile (testInstance, ECTestFixture::GetTestDataPath("MismatchedInstance.xml").c_str(), *instanceContext);
 
     EXPECT_EQ (INSTANCE_READ_STATUS_Success, instanceStatus);
     //Testing a struct with type errors in its values
     ECValue ecValue;
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays0.BinaryArray",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays0.BinaryArray",0));
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays0.BooleanArray",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays0.BooleanArray",0));
     EXPECT_TRUE (ecValue.GetBoolean());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays0.DateTimeArray",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays0.DateTimeArray",0));
     EXPECT_EQ (633374681466664305, ecValue.GetDateTimeTicks());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays0.DoubleArray",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays0.DoubleArray",0));
     EXPECT_EQ (1.2, ecValue.GetDouble());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays0.IntArray",1));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays0.IntArray",1));
     EXPECT_EQ (7, ecValue.GetInteger());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays0.LongArray",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays0.LongArray",0));
     EXPECT_EQ (300, ecValue.GetLong());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays0.Point2DArray",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays0.Point2DArray",0));
     EXPECT_EQ (0, ecValue.GetPoint2D().x);
     EXPECT_EQ (1, ecValue.GetPoint2D().y);
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays0.Point3DArray",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays0.Point3DArray",0));
     EXPECT_EQ (0, ecValue.GetPoint3D().x);
     EXPECT_EQ (1, ecValue.GetPoint3D().y);
     EXPECT_EQ (0, ecValue.GetPoint3D().z);
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays0.StringArray",0));
-    EXPECT_STREQ (ecValue.GetString(), L"Test");
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays0.StringArray",0));
+    EXPECT_STREQ (ecValue.GetString(), "Test");
 
     // Testing a struct that misformatted values
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.BinaryArray",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.BinaryArray",0));
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.BooleanArray",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.BooleanArray",0));
     EXPECT_TRUE (ecValue.GetBoolean());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.DateTimeArray",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.DateTimeArray",0));
     EXPECT_EQ (633374681466664305, ecValue.GetDateTimeTicks());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.DoubleArray",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.DoubleArray",0));
     EXPECT_EQ (1.2, ecValue.GetDouble());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.IntArray",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.IntArray",0));
     EXPECT_EQ (7, ecValue.GetInteger());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.LongArray",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.LongArray",0));
     EXPECT_EQ (300, ecValue.GetLong());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.Point2DArray",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.Point2DArray",0));
     EXPECT_EQ (0, ecValue.GetPoint2D().x);
     EXPECT_EQ (1, ecValue.GetPoint2D().y);
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.Point3DArray",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.Point3DArray",0));
     EXPECT_EQ (0, ecValue.GetPoint3D().x);
     EXPECT_EQ (1, ecValue.GetPoint3D().y);
     EXPECT_EQ (0, ecValue.GetPoint3D().z);
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.StringArray",0));
-    EXPECT_STREQ (ecValue.GetString(), L"");
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.StringArray",6));
-    EXPECT_STREQ (ecValue.GetString(), L"Test");
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.StringArray",0));
+    EXPECT_STREQ (ecValue.GetString(), "");
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.StringArray",6));
+    EXPECT_STREQ (ecValue.GetString(), "Test");
 
     //Testing a struct with few errors among entirely bad structs in the same array
     ECValue badStructArrayMember;
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (badStructArrayMember, L"ArrayOfBadStructs",2));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (badStructArrayMember, "ArrayOfBadStructs",2));
     IECInstancePtr  structInstance = badStructArrayMember.GetStruct();
     EXPECT_TRUE (structInstance.IsValid());
 
-    EXPECT_EQ (SUCCESS, structInstance->GetValue (ecValue, L"BinaryMember"));
+    EXPECT_EQ (SUCCESS, structInstance->GetValue (ecValue, "BinaryMember"));
 
-    EXPECT_EQ (SUCCESS, structInstance->GetValue (ecValue, L"BooleanMember"));
+    EXPECT_EQ (SUCCESS, structInstance->GetValue (ecValue, "BooleanMember"));
     EXPECT_TRUE (ecValue.GetBoolean());
 
-    EXPECT_EQ (SUCCESS, structInstance->GetValue (ecValue, L"DateTimeMember"));
+    EXPECT_EQ (SUCCESS, structInstance->GetValue (ecValue, "DateTimeMember"));
     EXPECT_EQ (633374681466664305, ecValue.GetDateTimeTicks());
 
-    EXPECT_EQ (SUCCESS, structInstance->GetValue (ecValue, L"DoubleMember"));
+    EXPECT_EQ (SUCCESS, structInstance->GetValue (ecValue, "DoubleMember"));
     EXPECT_EQ (1.2, ecValue.GetDouble());
 
-    EXPECT_EQ (SUCCESS, structInstance->GetValue (ecValue, L"IntMember"));
+    EXPECT_EQ (SUCCESS, structInstance->GetValue (ecValue, "IntMember"));
     EXPECT_EQ (7, ecValue.GetInteger());
 
-    EXPECT_EQ (SUCCESS, structInstance->GetValue (ecValue, L"LongMember"));
+    EXPECT_EQ (SUCCESS, structInstance->GetValue (ecValue, "LongMember"));
     EXPECT_EQ (300, ecValue.GetLong());
 
-    EXPECT_EQ (SUCCESS, structInstance->GetValue (ecValue, L"Point2DMember"));
+    EXPECT_EQ (SUCCESS, structInstance->GetValue (ecValue, "Point2DMember"));
     EXPECT_EQ (0, ecValue.GetPoint2D().x);
     EXPECT_EQ (1, ecValue.GetPoint2D().y);
 
-    EXPECT_EQ (SUCCESS, structInstance->GetValue (ecValue, L"Point3DMember"));
+    EXPECT_EQ (SUCCESS, structInstance->GetValue (ecValue, "Point3DMember"));
     EXPECT_EQ (0, ecValue.GetPoint3D().x);
     EXPECT_EQ (1, ecValue.GetPoint3D().y);
     EXPECT_EQ (0, ecValue.GetPoint3D().z);
 
-    EXPECT_EQ (SUCCESS, structInstance->GetValue (ecValue, L"StringMember"));
-    EXPECT_STREQ (ecValue.GetString(), L"Test");
+    EXPECT_EQ (SUCCESS, structInstance->GetValue (ecValue, "StringMember"));
+    EXPECT_STREQ (ecValue.GetString(), "Test");
 
     schemaOwner = NULL;
     };
@@ -390,50 +390,50 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingInstanceWithEm
     EXPECT_EQ (INSTANCE_READ_STATUS_Success, instanceStatus);
     //Testing a struct with type errors in its values
     ECValue ecValue;
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.BinaryArray",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.BinaryArray",0));
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.BooleanArray",1));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.BooleanArray",1));
     EXPECT_TRUE (ecValue.IsNull());
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.BooleanArray",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.BooleanArray",0));
     EXPECT_TRUE (ecValue.GetBoolean());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.DateTimeArray",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.DateTimeArray",0));
     EXPECT_TRUE (ecValue.IsNull());
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.DateTimeArray",1));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.DateTimeArray",1));
     EXPECT_EQ (633374681466664305, ecValue.GetDateTimeTicks());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.DoubleArray",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.DoubleArray",0));
     EXPECT_TRUE (ecValue.IsNull());
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.DoubleArray",1));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.DoubleArray",1));
     EXPECT_EQ (1.2, ecValue.GetDouble());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.IntArray",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.IntArray",0));
     EXPECT_TRUE (ecValue.IsNull());
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.IntArray",1));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.IntArray",1));
     EXPECT_EQ (7, ecValue.GetInteger());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.LongArray",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.LongArray",0));
     EXPECT_TRUE (ecValue.IsNull());
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.LongArray",1));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.LongArray",1));
     EXPECT_EQ (300, ecValue.GetLong());
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.Point2DArray",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.Point2DArray",0));
     EXPECT_TRUE (ecValue.IsNull());
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.Point2DArray",1));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.Point2DArray",1));
     EXPECT_EQ (0, ecValue.GetPoint2D().x);
     EXPECT_EQ (1, ecValue.GetPoint2D().y);
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.Point3DArray",0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.Point3DArray",0));
     EXPECT_TRUE (ecValue.IsNull());
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.Point3DArray",1));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.Point3DArray",1));
     EXPECT_EQ (0, ecValue.GetPoint3D().x);
     EXPECT_EQ (1, ecValue.GetPoint3D().y);
     EXPECT_EQ (0, ecValue.GetPoint3D().z);
 
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.StringArray",0));
-    EXPECT_STREQ (ecValue.GetString(), L"");
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"FormattedStructWithArrays1.StringArray",6));
-    EXPECT_STREQ (ecValue.GetString(), L"Test");
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.StringArray",0));
+    EXPECT_STREQ (ecValue.GetUtf8CP(), "");
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "FormattedStructWithArrays1.StringArray",6));
+    EXPECT_STREQ (ecValue.GetUtf8CP(), "Test");
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -456,7 +456,7 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenDeserializingSimpleInstance
 
     EXPECT_EQ (INSTANCE_READ_STATUS_Success, instanceStatus);
 
-    WString str = testInstance->ToString(L"").c_str();
+    Utf8String str = testInstance->ToString("").c_str();
     VerifyTestInstance (testInstance.get(), false);
     };
 
@@ -503,7 +503,7 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     InstanceReadStatus instanceStatus = IECInstance::ReadFromXmlFile (testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_Instance.xml").c_str(), *instanceContext);
     EXPECT_EQ (INSTANCE_READ_STATUS_Success, instanceStatus);
     
-    testInstance->ToString(L"").c_str();
+    testInstance->ToString("").c_str();
     VerifyTestInstance (testInstance.get(), false);
 
     LPSTREAM stream = NULL;
@@ -520,7 +520,7 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     InstanceReadStatus status3 = IECInstance::ReadFromXmlStream(deserializedInstance, stream, *instanceContext);
     EXPECT_EQ (INSTANCE_READ_STATUS_Success, status3); 
 #ifdef DEBUG_PRINT
-    wprintf(L"Verifying schema deserialized from stream.\n");
+    printf("Verifying schema deserialized from stream.\n");
 #endif
     VerifyTestInstance (deserializedInstance.get(), false);
 
@@ -546,7 +546,7 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     InstanceReadStatus instanceStatus = IECInstance::ReadFromXmlFile (testInstance, ECTestFixture::GetTestDataPath(L"SimpleTest_Instance.xml").c_str(), *instanceContext);
     EXPECT_EQ (INSTANCE_READ_STATUS_Success, instanceStatus);
     
-    testInstance->ToString(L"").c_str();
+    testInstance->ToString("").c_str();
     VerifyTestInstance (testInstance.get(), false);
 
     WString ecInstanceXml;
@@ -558,7 +558,7 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
     InstanceReadStatus status3 = IECInstance::ReadFromXmlString(deserializedInstance, ecInstanceXml.c_str(), *instanceContext);
     EXPECT_EQ (INSTANCE_READ_STATUS_Success, status3); 
 #ifdef DEBUG_PRINT
-    wprintf(L"Verifying schema deserialized from string.\n");
+    printf("Verifying schema deserialized from string.\n");
 #endif
     VerifyTestInstance (deserializedInstance.get(), false);
     };
@@ -569,46 +569,46 @@ TEST_F(InstanceDeserializationTest, ExpectSuccessWhenRoundTrippingSimpleInstance
 void    VerifyPolymorphismInstance (IECInstanceCP testInstance)
     {
     ECValue     ecValue;
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"InRootClass"));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "InRootClass"));
     EXPECT_EQ (-1, ecValue.GetInteger());
 
     // get and check the first member.
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"PolymorphArray", 0));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "PolymorphArray", 0));
     IECInstancePtr  polymorphArrayInstance = ecValue.GetStruct();
     EXPECT_TRUE (polymorphArrayInstance.IsValid());
     ECClassCR       arrayMember0Class = polymorphArrayInstance->GetClass();
-    EXPECT_STREQ (L"BaseClass", arrayMember0Class.GetName().c_str());
+    EXPECT_STREQ ("BaseClass", arrayMember0Class.GetName().c_str());
 
-    EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetValue (ecValue, L"InBaseClass"));
+    EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetValue (ecValue, "InBaseClass"));
     EXPECT_EQ (0, ecValue.GetInteger());
 
     // get and check the second member.
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"PolymorphArray", 1));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "PolymorphArray", 1));
     polymorphArrayInstance = ecValue.GetStruct();
     EXPECT_TRUE (polymorphArrayInstance.IsValid());
     ECClassCR arrayMember1Class = polymorphArrayInstance->GetClass();
-    EXPECT_STREQ (L"SubClass1", arrayMember1Class.GetName().c_str());
+    EXPECT_STREQ ("SubClass1", arrayMember1Class.GetName().c_str());
 
-    EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetValue (ecValue, L"InBaseClass"));
+    EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetValue (ecValue, "InBaseClass"));
     EXPECT_EQ (1, ecValue.GetInteger());
 
-    EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetValue (ecValue, L"InSubClass1"));
+    EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetValue (ecValue, "InSubClass1"));
     EXPECT_EQ (2, ecValue.GetInteger());
 
     // get and check the third member.
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, L"PolymorphArray", 2));
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (ecValue, "PolymorphArray", 2));
     polymorphArrayInstance = ecValue.GetStruct();
     EXPECT_TRUE (polymorphArrayInstance.IsValid());
     ECClassCR arrayMember2Class = polymorphArrayInstance->GetClass();
-    EXPECT_STREQ (L"SubClass2", arrayMember2Class.GetName().c_str());
+    EXPECT_STREQ ("SubClass2", arrayMember2Class.GetName().c_str());
 
-    EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetValue (ecValue, L"InBaseClass"));
+    EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetValue (ecValue, "InBaseClass"));
     EXPECT_EQ (3, ecValue.GetInteger());
 
-    EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetValue (ecValue, L"InSubClass1"));
+    EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetValue (ecValue, "InSubClass1"));
     EXPECT_EQ (4, ecValue.GetInteger());
 
-    EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetValue (ecValue, L"InSubClass2"));
+    EXPECT_EQ (SUCCESS, polymorphArrayInstance->GetValue (ecValue, "InSubClass2"));
     EXPECT_EQ (5, ecValue.GetInteger());
     }
     
@@ -632,7 +632,7 @@ TEST_F(PolymorphismDeserializationTest, ExpectSuccessWhenDeserializingPolymorphi
 
     EXPECT_EQ (INSTANCE_READ_STATUS_Success, instanceStatus);
     
-    testInstance->ToString(L"").c_str();
+    testInstance->ToString("").c_str();
     VerifyPolymorphismInstance (testInstance.get());
     };
 
@@ -652,10 +652,10 @@ TEST_F(InstanceSerializationTest, ExpectSuccessWhenSerializingInstance)
 
     // add a binary property to the class we are deserializing.
     ECClassP    testClass;
-    if (NULL != (testClass = schema->GetClassP (L"TestClass")))
+    if (NULL != (testClass = schema->GetClassP ("TestClass")))
         {
         PrimitiveECPropertyP binaryProperty;
-        testClass->CreatePrimitiveProperty (binaryProperty, L"TestBinary", PRIMITIVETYPE_Binary);
+        testClass->CreatePrimitiveProperty (binaryProperty, "TestBinary", PRIMITIVETYPE_Binary);
         }
     
     ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext (*schema);
@@ -666,7 +666,7 @@ TEST_F(InstanceSerializationTest, ExpectSuccessWhenSerializingInstance)
 
     ECValue     binaryValue;
     binaryValue.SetBinary (testBinaryData, _countof (testBinaryData), true);
-    EXPECT_EQ (SUCCESS, testInstance->SetValue (L"TestBinary", binaryValue));
+    EXPECT_EQ (SUCCESS, testInstance->SetValue ("TestBinary", binaryValue));
     
     // verify that the instance is correct
     VerifyTestInstance (testInstance.get(), true);
@@ -696,8 +696,8 @@ TEST_F(InstanceSerializationTest, ExpectSuccessWhenRoundTrippingViaWCharXmlStrin
     SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
     EXPECT_EQ (SCHEMA_READ_STATUS_Success, schemaStatus);
     
-    ECClassCP testClass = schema->GetClassP (L"TestClass");
-    WCharCP propertyName = L"StringMember";
+    ECClassCP testClass = schema->GetClassP ("TestClass");
+    Utf8CP propertyName = "StringMember";
     ECInstanceReadContextPtr instanceReadContext = ECInstanceReadContext::CreateContext (*schema);    
         
     IECInstancePtr testInstance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
@@ -721,7 +721,7 @@ TEST_F(InstanceSerializationTest, ExpectSuccessWhenRoundTrippingViaWCharXmlStrin
     EXPECT_EQ (SUCCESS, testInstance->GetValue (actualValue, propertyName)) << L"Could not retrieve property value for property '" << propertyName << "'.";
     
     EXPECT_TRUE (expectedValue.Equals (actualValue)) << L"Roundtripped WChar ECValue does not match original ECValue.";
-    WCharCP actualString = actualValue.GetString ();
+    WCharCP actualString = actualValue.GetWCharCP();
     EXPECT_STREQ (expectedString.c_str (), actualString) << L"Roundtripped WChar string does not match original string.";    
 #endif
     };
@@ -739,8 +739,8 @@ TEST_F(InstanceSerializationTest, ExpectSuccessWhenRoundTrippingViaUtf8XmlString
     SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
     EXPECT_EQ (SCHEMA_READ_STATUS_Success, schemaStatus);
     
-    ECClassCP testClass = schema->GetClassP (L"TestClass");
-    WCharCP propertyName = L"StringMember";
+    ECClassCP testClass = schema->GetClassP ("TestClass");
+    Utf8CP propertyName = "StringMember";
     ECInstanceReadContextPtr instanceReadContext = ECInstanceReadContext::CreateContext (*schema);    
         
     IECInstancePtr testInstance = testClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
@@ -754,19 +754,19 @@ TEST_F(InstanceSerializationTest, ExpectSuccessWhenRoundTrippingViaUtf8XmlString
         
     Utf8String utf8Xml;
     InstanceWriteStatus serializeStat = testInstance->WriteToXmlString (utf8Xml, true, true);
-    EXPECT_EQ (INSTANCE_WRITE_STATUS_Success, serializeStat) << L"IECInstance::WriteToXmlString with Utf8String overload failed.";
+    EXPECT_EQ (INSTANCE_WRITE_STATUS_Success, serializeStat) << "IECInstance::WriteToXmlString with Utf8String overload failed.";
     
     // then read it back.
     IECInstancePtr readbackInstance = NULL;
     InstanceReadStatus deserializeStatus = IECInstance::ReadFromXmlString (readbackInstance, utf8Xml.c_str (), *instanceReadContext);
-    EXPECT_EQ (INSTANCE_READ_STATUS_Success, deserializeStatus) << L"IECInstance::ReadFromXmlString with Utf8Char overload failed";
+    EXPECT_EQ (INSTANCE_READ_STATUS_Success, deserializeStatus) << "IECInstance::ReadFromXmlString with Utf8Char overload failed";
     
     ECValue actualValue;
-    EXPECT_EQ (SUCCESS, testInstance->GetValue (actualValue, propertyName)) << L"Could not retrieve property value for property '" << propertyName << "'.";
+    EXPECT_EQ (SUCCESS, testInstance->GetValue (actualValue, propertyName)) << "Could not retrieve property value for property '" << propertyName << "'.";
     
-    EXPECT_TRUE (expectedValue.Equals (actualValue)) << L"Roundtripped WChar ECValue does not match original ECValue.";
+    EXPECT_TRUE (expectedValue.Equals (actualValue)) << "Roundtripped WChar ECValue does not match original ECValue.";
     Utf8CP actualString = actualValue.GetUtf8CP ();
-    EXPECT_STREQ (expectedString.c_str (), actualString) << L"Roundtripped WChar string does not match original string.";    
+    EXPECT_STREQ (expectedString.c_str (), actualString) << "Roundtripped WChar string does not match original string.";    
 #endif
     };
 
@@ -784,40 +784,40 @@ TEST_F (InstanceSerializationTest, EmptyPropertyTags)
     ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath (L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
 
     ECInstanceReadContextPtr instanceContext = ECInstanceReadContext::CreateContext (*schema);
-    WCharCP instanceXml =   L"<TestClass xmlns=\"SimpleTest_FirstSchema.01.00\">"
-                            L"  <StringMember />"
-                            L"  <DoubleMember />"
-                            L"  <LongMember />"
-                            L"</TestClass>";
+    Utf8CP instanceXml =   "<TestClass xmlns=\"SimpleTest_FirstSchema.01.00\">"
+                            "  <StringMember />"
+                            "  <DoubleMember />"
+                            "  <LongMember />"
+                            "</TestClass>";
 
     IECInstancePtr instance;
     IECInstance::ReadFromXmlString (instance, instanceXml, *instanceContext);
 
     ECValue v;
-    EXPECT_EQ (0, instance->GetValue (v, L"StringMember"));
+    EXPECT_EQ (0, instance->GetValue (v, "StringMember"));
     EXPECT_FALSE (v.IsNull());
-    EXPECT_EQ (L'\0', *v.GetString());
+    EXPECT_EQ (L'\0', *v.GetUtf8CP());
 
-    EXPECT_EQ (0, instance->GetValue (v, L"DoubleMember"));
+    EXPECT_EQ (0, instance->GetValue (v, "DoubleMember"));
     EXPECT_TRUE (v.IsNull());
 
-    EXPECT_EQ (0, instance->GetValue (v, L"LongMember"));
+    EXPECT_EQ (0, instance->GetValue (v, "LongMember"));
     EXPECT_TRUE (v.IsNull());
     }
 
 TEST_F(InstanceSerializationTest, ExpectSuccessWithIGeometryProperty)
     {
     ECSchemaPtr testSchema;
-    ECSchema::CreateSchema(testSchema, L"GeometrySchema", 1, 0);
+    ECSchema::CreateSchema(testSchema, "GeometrySchema", 1, 0);
     ECClassP geomClass;
-    testSchema->CreateClass(geomClass, L"GeometryStore");
+    testSchema->CreateClass(geomClass, "GeometryStore");
 
     PrimitiveECPropertyP stringProp;
-    geomClass->CreatePrimitiveProperty(stringProp, L"Name");
+    geomClass->CreatePrimitiveProperty(stringProp, "Name");
 
     PrimitiveECPropertyP geomProperty;
-    geomClass->CreatePrimitiveProperty(geomProperty, L"MyGeometry");
-    geomProperty->SetTypeName (L"Bentley.Geometry.Common.IGeometry");
+    geomClass->CreatePrimitiveProperty(geomProperty, "MyGeometry");
+    geomProperty->SetTypeName ("Bentley.Geometry.Common.IGeometry");
 
     IECInstancePtr instance = geomClass->GetDefaultStandaloneEnabler()->CreateInstance();
 
@@ -831,7 +831,7 @@ TEST_F(InstanceSerializationTest, ExpectSuccessWithIGeometryProperty)
 
     IGeometryPtr storedGeometryPtr1 = v.GetIGeometry ();
     ASSERT_TRUE(storedGeometryPtr1.IsValid());
-    ECObjectsStatus status = instance->SetValue (L"MyGeometry", v);
+    ECObjectsStatus status = instance->SetValue ("MyGeometry", v);
     ASSERT_EQ(ECOBJECTS_STATUS_Success,status);
 
     Utf8String ecInstanceXml;
@@ -845,7 +845,7 @@ TEST_F(InstanceSerializationTest, ExpectSuccessWithIGeometryProperty)
         EXPECT_TRUE(false);
 
     ECValue deserializedGeomProp;
-    ECObjectsStatus stat = newInstancePtr->GetValue (deserializedGeomProp, L"MyGeometry");
+    ECObjectsStatus stat = newInstancePtr->GetValue (deserializedGeomProp, "MyGeometry");
     ASSERT_EQ (ECOBJECTS_STATUS_Success, stat) << "IECInstance::GetValue";
 
     IGeometryPtr geomPtr = deserializedGeomProp.GetIGeometry();

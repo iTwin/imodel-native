@@ -25,13 +25,13 @@ TEST_F(NonPublishedSchemaTest, ShouldBeAbleToIterateOverECClassContainer)
     ECClassP foo;
     ECClassP bar;
     
-    ECSchema::CreateSchema(schema, L"TestSchema", 5, 5);
-    schema->CreateClass(foo, L"foo");
-    schema->CreateClass(bar, L"bar");
+    ECSchema::CreateSchema(schema, "TestSchema", 5, 5);
+    schema->CreateClass(foo, "foo");
+    schema->CreateClass(bar, "bar");
 
     ClassMap classMap;
-    classMap.insert (bpair<WCharCP, ECClassP> (foo->GetName().c_str(), foo));
-    classMap.insert (bpair<WCharCP, ECClassP> (bar->GetName().c_str(), bar));
+    classMap.insert (bpair<Utf8CP, ECClassP> (foo->GetName().c_str(), foo));
+    classMap.insert (bpair<Utf8CP, ECClassP> (bar->GetName().c_str(), bar));
     
     int count = 0;
     ECClassContainer container(classMap);
@@ -40,8 +40,8 @@ TEST_F(NonPublishedSchemaTest, ShouldBeAbleToIterateOverECClassContainer)
         ECClassCP ecClass = *cit;
         ASSERT_TRUE(ecClass != NULL);
 #if PRINT_DUMP
-        WString name = ecClass->GetName();
-        wprintf(L"ECClass=0x%x, name=%s\n", (uintptr_t)ecClass, name.c_str());
+        Utf8String name = ecClass->GetName();
+        printf("ECClass=0x%x, name=%s\n", (uintptr_t)ecClass, name.c_str());
 #endif
         count++;
         }
@@ -51,8 +51,8 @@ TEST_F(NonPublishedSchemaTest, ShouldBeAbleToIterateOverECClassContainer)
         {
         ASSERT_TRUE(ecClass != NULL);
 #if PRINT_DUMP
-        WString name = ecClass->GetName();
-        wprintf(L"ECClass=0x%x, name=%s\n", (uintptr_t)ecClass, name.c_str());
+        Utf8String name = ecClass->GetName();
+        printf("ECClass=0x%x, name=%s\n", (uintptr_t)ecClass, name.c_str());
 #endif
         count++;
         }
@@ -69,7 +69,7 @@ TEST_F (NonPublishedSchemaTest, TestCircularReferenceWithLocateSchema)
     schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths);
     schemaContext = ECSchemaReadContext::CreateContext();
     schemaContext->AddSchemaLocater (*schemaLocater);    
-    SchemaKey key(L"CircleSchema", 01, 00);
+    SchemaKey key("CircleSchema", 01, 00);
     DISABLE_ASSERTS
     testSchema = schemaContext->LocateSchema(key, SCHEMAMATCHTYPE_Latest);
     EXPECT_FALSE(testSchema.IsValid());
@@ -85,7 +85,7 @@ TEST_F (NonPublishedSchemaTest, FindLatestShouldFindSchemaWithLowerMinorVersion)
     schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths);
     schemaContext = ECSchemaReadContext::CreateContext();
     schemaContext->AddSchemaLocater (*schemaLocater);
-    SchemaKey key(L"Widgets", 9, 7);
+    SchemaKey key("Widgets", 9, 7);
     testSchema = schemaContext->LocateSchema(key, SCHEMAMATCHTYPE_Latest);
     EXPECT_TRUE(testSchema.IsValid());
     EXPECT_TRUE(testSchema->GetVersionMajor()==9);
@@ -102,7 +102,7 @@ TEST(SupplementalDeserializationTests, VerifyDeserializedSchemaIsSupplemented)
     schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths);
     schemaContext = ECSchemaReadContext::CreateContext();
     schemaContext->AddSchemaLocater (*schemaLocater);
-    SchemaKey key(L"MasterSchema", 1, 0);
+    SchemaKey key("MasterSchema", 1, 0);
     testSchema = schemaContext->LocateSchema(key, SCHEMAMATCHTYPE_Latest);
     EXPECT_TRUE(testSchema->IsSupplemented());
 

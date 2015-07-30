@@ -2,7 +2,7 @@
 |
 |     $Source: src/DateTimeInfoAccessor.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,9 +21,9 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 struct DateTimeInfoAccessor : NonCopyableClass
     {
 private:
-    static WCharCP const DATETIMEINFO_CLASSNAME;
-    static WCharCP const DATETIMEINFO_KIND_PROPERTYNAME;
-    static WCharCP const DATETIMEINFO_COMPONENT_PROPERTYNAME;
+    static Utf8CP const DATETIMEINFO_CLASSNAME;
+    static Utf8CP const DATETIMEINFO_KIND_PROPERTYNAME;
+    static Utf8CP const DATETIMEINFO_COMPONENT_PROPERTYNAME;
 
     static Utf8CP const DATETIMEKIND_UTC_STR;
     static WCharCP const DATETIMEKIND_UTC_WSTR;
@@ -47,7 +47,7 @@ private:
     static bool TryParseComponent (bool& isComponentNull, DateTime::Component& component, Utf8CP componentStr);
     static bool TryParseComponent (bool& isComponentNull, DateTime::Component& component, Utf16CP componentStr);
 
-    static void LogPropertyNotFoundError (WCharCP propertyName);
+    static void LogPropertyNotFoundError (Utf8CP propertyName);
 
 public:
     //! Retrieves the DateTimeInfo metadata from the specified date time ECProperty.

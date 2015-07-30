@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/AllRelatedInstanceNodesSpecification.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -28,7 +28,7 @@ struct AllRelatedInstanceNodesSpecification : public ChildNodeSpecification
         bool                       m_groupByRelationship;
         bool                       m_groupByLabel;
         int                        m_skipRelatedLevel;
-        WString                    m_supportedSchemas;
+        Utf8String                 m_supportedSchemas;
         RequiredRelationDirection  m_requiredDirection;
 
     protected:
@@ -48,7 +48,7 @@ struct AllRelatedInstanceNodesSpecification : public ChildNodeSpecification
 
         //! Constructor.
         ECOBJECTS_EXPORT AllRelatedInstanceNodesSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy, bool hideIfNoChildren,
-                                                               bool groupByClass, bool groupByRelationship, bool groupByLabel, int skipRelatedLevel, WStringCR supportedSchemas);
+                                                               bool groupByClass, bool groupByRelationship, bool groupByLabel, int skipRelatedLevel, Utf8StringCR supportedSchemas);
 
         //! Returns true if grouping by class should be applied.
         ECOBJECTS_EXPORT bool                         GetGroupByClass (void) const;
@@ -63,7 +63,7 @@ struct AllRelatedInstanceNodesSpecification : public ChildNodeSpecification
         ECOBJECTS_EXPORT int                          GetSkipRelatedLevel (void) const;
 
         //! Returns supported schemas that should be used by this specification.
-        ECOBJECTS_EXPORT WStringCR                    GetSupportedSchemas (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR                 GetSupportedSchemas (void) const;
 
         //! Returns direction of relationship that should be selected in the query.
         ECOBJECTS_EXPORT RequiredRelationDirection    GetRequiredRelationDirection (void) const;

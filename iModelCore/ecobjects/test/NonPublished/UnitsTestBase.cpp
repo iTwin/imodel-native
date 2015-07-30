@@ -20,7 +20,7 @@ void UnitsTestBase::SetUp()
     m_supplementedSchema = NULL;
 
     bvector<ECSchemaP> supplementalSchemas;
-    InitializeUnits (L"testschema",supplementalSchemas);
+    InitializeUnits ("testschema",supplementalSchemas);
 
     // Test that test schemas are not null
      ASSERT_TRUE(m_testSchema.IsValid())<<"Test setup failure: Domain Schema not loaded";
@@ -40,7 +40,7 @@ void UnitsTestBase::SetUp()
 /// <summary>Initializes the units framework for test.</summary>
 /// <author>Colin.Kerr</author>                            <date>3/2008</date>
 /*--------------+---------------+---------------+---------------+---------------+------*/
-void UnitsTestBase::InitializeUnits (WString testSchemaName, bvector< ECSchemaP > & testSupplementalSchemas)
+void UnitsTestBase::InitializeUnits (Utf8String testSchemaName, bvector< ECSchemaP > & testSupplementalSchemas)
     {
     if (0 == m_supplementalSchemas.size())
         {
@@ -55,7 +55,7 @@ void UnitsTestBase::InitializeUnits (WString testSchemaName, bvector< ECSchemaP 
 
         EXPECT_TRUE(m_testSchema.IsValid());
         EXPECT_FALSE(m_testSchema->ShouldNotBeStored());
-        ECClassP ecClass=m_testSchema->GetClassP(L"Bike");
+        ECClassP ecClass=m_testSchema->GetClassP("Bike");
         ASSERT_TRUE (NULL != ecClass);
 
 
@@ -66,9 +66,9 @@ void UnitsTestBase::InitializeUnits (WString testSchemaName, bvector< ECSchemaP 
         EXPECT_FALSE (m_supplementedSchema.get() == m_testSchema.get());
 
       //   Load Supplemental Schema
-        SchemaKey suppKey (L"TestSupplementalSchema", 1, 0),
-                  defKey  (L"TestUnitDefaults", 1, 0),
-                  widthKey (L"WidthDefaults", 1, 0);
+        SchemaKey suppKey ("TestSupplementalSchema", 1, 0),
+                  defKey  ("TestUnitDefaults", 1, 0),
+                  widthKey ("WidthDefaults", 1, 0);
 
         m_supplementalSchemas.push_back ((schemaContext->LocateSchema(suppKey, SCHEMAMATCHTYPE_Latest)).get());
         m_supplementalSchemas.push_back ((schemaContext->LocateSchema(defKey, SCHEMAMATCHTYPE_Latest)).get());
@@ -81,38 +81,38 @@ void UnitsTestBase::InitializeUnits (WString testSchemaName, bvector< ECSchemaP 
 
 void UnitsTestBase::InitClassAndPropertyVariables ()
     {
-    m_wheelClass                = m_supplementedSchema->GetClassP(L"Wheel");
-    m_spokeLengthProp           = m_wheelClass->GetPropertyP (L"SpokeLength");
-    m_AreaProp                  = m_wheelClass->GetPropertyP (L"Area");
-    m_hubStructProp             = m_wheelClass->GetPropertyP(L"WheelHub");
+    m_wheelClass                = m_supplementedSchema->GetClassP("Wheel");
+    m_spokeLengthProp           = m_wheelClass->GetPropertyP ("SpokeLength");
+    m_AreaProp                  = m_wheelClass->GetPropertyP ("Area");
+    m_hubStructProp             = m_wheelClass->GetPropertyP("WheelHub");
 
-    m_wheelsChildClass          = m_supplementedSchema->GetClassP(L"WheelsChild");
-    m_wcDiameterProp            = m_wheelsChildClass->GetPropertyP(L"Diameter");
-    m_wcWeightProp              = m_wheelsChildClass->GetPropertyP (L"Weight");
+    m_wheelsChildClass          = m_supplementedSchema->GetClassP("WheelsChild");
+    m_wcDiameterProp            = m_wheelsChildClass->GetPropertyP("Diameter");
+    m_wcWeightProp              = m_wheelsChildClass->GetPropertyP ("Weight");
 
-    m_BikeClass                 = m_supplementedSchema->GetClassP (L"Bike");
+    m_BikeClass                 = m_supplementedSchema->GetClassP ("Bike");
     
-    m_frontWheelDiameterProp    = m_BikeClass->GetPropertyP (L"FrontWheelDiameter");
-    m_frontWheelPressureProp    = m_BikeClass->GetPropertyP (L"FrontWheelPressure");
-    m_rearWheelDiameterProp     = m_BikeClass->GetPropertyP (L"RearWheelDiameter");
-    m_rearWheelPressureProp     = m_BikeClass->GetPropertyP (L"RearWheelPressure");
-    m_trainingWheelDiameterProp = m_BikeClass->GetPropertyP (L"TrainingWheelDiameter");
-    m_frameHeightProp           = m_BikeClass->GetPropertyP (L"FrameHeight");
-    m_headSetAngleProp          = m_BikeClass->GetPropertyP (L"HeadSetAngle");
-    m_seatPostAngleProp         = m_BikeClass->GetPropertyP (L"SeatPostAngle");
+    m_frontWheelDiameterProp    = m_BikeClass->GetPropertyP ("FrontWheelDiameter");
+    m_frontWheelPressureProp    = m_BikeClass->GetPropertyP ("FrontWheelPressure");
+    m_rearWheelDiameterProp     = m_BikeClass->GetPropertyP ("RearWheelDiameter");
+    m_rearWheelPressureProp     = m_BikeClass->GetPropertyP ("RearWheelPressure");
+    m_trainingWheelDiameterProp = m_BikeClass->GetPropertyP ("TrainingWheelDiameter");
+    m_frameHeightProp           = m_BikeClass->GetPropertyP ("FrameHeight");
+    m_headSetAngleProp          = m_BikeClass->GetPropertyP ("HeadSetAngle");
+    m_seatPostAngleProp         = m_BikeClass->GetPropertyP ("SeatPostAngle");
 
-    m_standardUnitsClass        = m_supplementedSchema->GetClassP(L"StandardUnitsClass");
-    m_sucAreaProp               = m_standardUnitsClass->GetPropertyP (L"Area");
-    m_sucVolumeProp             = m_standardUnitsClass->GetPropertyP (L"Volume");
-    m_sucTemperatureProp        = m_standardUnitsClass->GetPropertyP (L"Temperature");
-    m_sucWidthProp              = m_standardUnitsClass->GetPropertyP (L"Width");
+    m_standardUnitsClass        = m_supplementedSchema->GetClassP("StandardUnitsClass");
+    m_sucAreaProp               = m_standardUnitsClass->GetPropertyP ("Area");
+    m_sucVolumeProp             = m_standardUnitsClass->GetPropertyP ("Volume");
+    m_sucTemperatureProp        = m_standardUnitsClass->GetPropertyP ("Temperature");
+    m_sucWidthProp              = m_standardUnitsClass->GetPropertyP ("Width");
     }
 
 /*------------------------------------------------------------------------------------**/
 /// <summary>Test.</summary>
 /// <author>Colin.Kerr</author>                            <date>3/2008</date>
 /*--------------+---------------+---------------+---------------+---------------+------*/
-void UnitsTestBase::VerifyDefaultUnit (WString expectedUnitName, Unit defaultUnit)
+void UnitsTestBase::VerifyDefaultUnit (Utf8String expectedUnitName, Unit defaultUnit)
     {
     ASSERT_TRUE (expectedUnitName.Equals (defaultUnit.GetName())) << "Expected " << expectedUnitName.c_str() << " Actual " << defaultUnit.GetName();
     }

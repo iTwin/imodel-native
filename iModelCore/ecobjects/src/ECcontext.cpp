@@ -97,7 +97,7 @@ ECSchemaReadContext::ECSchemaReadContext(IStandaloneEnablerLocaterP enablerLocat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchemaReadContext::ResolveClassName (WStringR className, ECSchemaCR schema) const
+void ECSchemaReadContext::ResolveClassName (Utf8StringR className, ECSchemaCR schema) const
     {
     if (nullptr != m_remapper)
         m_remapper->ResolveClassName (className, schema);

@@ -23,8 +23,8 @@ struct LabelOverride : public PresentationRule
     {
     /*__PUBLISH_SECTION_END__*/
     private:
-        WString m_label;
-        WString m_description;
+        Utf8String m_label;
+        Utf8String m_description;
 
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
@@ -42,19 +42,19 @@ struct LabelOverride : public PresentationRule
         ECOBJECTS_EXPORT LabelOverride ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT LabelOverride (WStringCR condition, int priority, WStringCR label, WStringCR description);
+        ECOBJECTS_EXPORT LabelOverride (Utf8StringCR condition, int priority, Utf8StringCR label, Utf8StringCR description);
 
         //! Label override value. Can be ECExpression string. If value is not set it will not affect original value defined by schema.
-        ECOBJECTS_EXPORT WStringCR        GetLabel (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR        GetLabel (void) const;
 
         //! Set label override value. Can be ECExpression string. 
-        ECOBJECTS_EXPORT void             SetLabel (WString value);
+        ECOBJECTS_EXPORT void             SetLabel (Utf8String value);
 
         //! Description override value. Can be ECExpression string. If value is not set it will not affect original value defined by schema.
-        ECOBJECTS_EXPORT WStringCR        GetDescription (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR        GetDescription (void) const;
 
         //! Set description override value. Can be ECExpression string. 
-        ECOBJECTS_EXPORT void             SetDescription (WString value);
+        ECOBJECTS_EXPORT void             SetDescription (Utf8String value);
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/SchemaDiff.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -13,77 +13,59 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-//=======================================================================================
-// For case-insensitive WChar string comparisons in STL collections.
-// @bsistruct
-//+===============+===============+===============+===============+===============+======
-struct CompareIWChar
-    {
-    bool operator()(WCharCP s1, WCharCP s2) const { return (BeStringUtilities::Wcsicmp(s1, s2) < 0);}
-    };
-
-//=======================================================================================
-// For case-sensitive WChar string comparisons in STL collections.
-// @bsistruct
-//+===============+===============+===============+===============+===============+======
-struct CompareWChar
-    {
-    bool operator()(WCharCP s1, WCharCP s2) const { return (wcscmp(s1, s2) < 0);}
-    };
-
 // ###TODO? is it necessary to use strings for this?
 struct SchemaDiffType
     {
-    static const WCharCP	ECDIFF;
-    static const WCharCP	NAME;
-    static const WCharCP	DISPLAY_LABEL;
-    static const WCharCP	DESCRIPTION;
-    static const WCharCP	VERSION_MAJOR;
-    static const WCharCP	VERSION_MINOR;
-    static const WCharCP	CLASSES;
-    static const WCharCP	REFERENCES;
-    static const WCharCP	IS_CUSTOMATTRIBUTE_CLASS;
-    static const WCharCP	IS_STRUCT;
-    static const WCharCP	IS_DOMAIN_CLASS;
-    static const WCharCP	IS_RELATIONSHIP_CLASS;
-    static const WCharCP	BASECLASSES;
-    static const WCharCP	PROPERTIES;
-    static const WCharCP	IS_ARRAY;
-    static const WCharCP	TYPENAME;
-    static const WCharCP	ARRAYINFO;
-    static const WCharCP	IS_READONLY;
-    static const WCharCP	IS_PRIMITIVE;
-    static const WCharCP	RELATIONSHIP_INFO;
-    static const WCharCP	IS_OVERRIDEN;
-    static const WCharCP	STRENGTH;
-    static const WCharCP	STRENGTH_DIRECTION;
-    static const WCharCP	SOURCE;
-    static const WCharCP	TARGET;
-    static const WCharCP	CARDINALITY;
-    static const WCharCP	IS_POLYMORPHIC;
-    static const WCharCP	ROLE_LABEL;
-    static const WCharCP	STRENGTH_DIRECTION_BACKWARD;
-    static const WCharCP	STRENGTH_DIRECTION_FORWARD;
-    static const WCharCP	STRENGTH_TYPE_EMBEDDING;
-    static const WCharCP	STRENGTH_TYPE_HOLDING;
-    static const WCharCP	STRENGTH_TYPE_REFERENCING;
-    static const WCharCP	MAXOCCURS;
-    static const WCharCP	MINOCCURS;
-    static const WCharCP	CUSTOMATTRIBUTES;
+    static const Utf8CP ECDIFF;
+    static const Utf8CP NAME;
+    static const Utf8CP DISPLAY_LABEL;
+    static const Utf8CP DESCRIPTION;
+    static const Utf8CP VERSION_MAJOR;
+    static const Utf8CP VERSION_MINOR;
+    static const Utf8CP CLASSES;
+    static const Utf8CP REFERENCES;
+    static const Utf8CP IS_CUSTOMATTRIBUTE_CLASS;
+    static const Utf8CP IS_STRUCT;
+    static const Utf8CP IS_DOMAIN_CLASS;
+    static const Utf8CP IS_RELATIONSHIP_CLASS;
+    static const Utf8CP BASECLASSES;
+    static const Utf8CP PROPERTIES;
+    static const Utf8CP IS_ARRAY;
+    static const Utf8CP TYPENAME;
+    static const Utf8CP ARRAYINFO;
+    static const Utf8CP IS_READONLY;
+    static const Utf8CP IS_PRIMITIVE;
+    static const Utf8CP RELATIONSHIP_INFO;
+    static const Utf8CP IS_OVERRIDEN;
+    static const Utf8CP STRENGTH;
+    static const Utf8CP STRENGTH_DIRECTION;
+    static const Utf8CP SOURCE;
+    static const Utf8CP TARGET;
+    static const Utf8CP CARDINALITY;
+    static const Utf8CP IS_POLYMORPHIC;
+    static const Utf8CP ROLE_LABEL;
+    static const Utf8CP STRENGTH_DIRECTION_BACKWARD;
+    static const Utf8CP STRENGTH_DIRECTION_FORWARD;
+    static const Utf8CP STRENGTH_TYPE_EMBEDDING;
+    static const Utf8CP STRENGTH_TYPE_HOLDING;
+    static const Utf8CP STRENGTH_TYPE_REFERENCING;
+    static const Utf8CP MAXOCCURS;
+    static const Utf8CP MINOCCURS;
+    static const Utf8CP CUSTOMATTRIBUTES;
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 typedef bvector<ECSchemaCP> AlignedSchemas;
-typedef bmap<WCharCP,AlignedSchemas, CompareIWChar> AlignedSchemaMap;
+typedef bmap<Utf8CP,AlignedSchemas, CompareIWChar> AlignedSchemaMap;
 typedef bvector<ECClassCP> AlignedClasses;
-typedef bmap<WCharCP,AlignedClasses, CompareIWChar> AlignedClassMap;
+typedef bmap<Utf8CP,AlignedClasses, CompareIWChar> AlignedClassMap;
 typedef bvector<ECPropertyCP> AlignedProperties;
-typedef bmap<WCharCP,AlignedProperties, CompareIWChar> AlignedPropertyMap;
+typedef bmap<Utf8CP,AlignedProperties, CompareIWChar> AlignedPropertyMap;
 typedef bvector<IECCustomAttributeContainerCP> AlignedCustomAttributeContainers;
 typedef bvector<IECInstanceCP> AlignedCustomAttributes;
-typedef bmap<WCharCP,AlignedCustomAttributes, CompareIWChar> AlignedCustomAttributeMap;
+typedef bmap<Utf8CP,AlignedCustomAttributes, CompareIWChar> AlignedCustomAttributeMap;
 
 struct ECDiffNode;
 typedef ECDiffNode*       ECDiffNodeP;
@@ -108,7 +90,7 @@ struct ECDiffValue
         VALUETYPE_DateTimeTicks
         };
 private:
-    WString m_valueString;
+    Utf8String m_valueString;
     size_t m_binarySize;
     ValueType m_type;
     union 
@@ -122,9 +104,9 @@ private:
         };
 public:
     ECDiffValue();
-    void SetValue(WCharCP v) ;
+    void SetValue(Utf8CP v) ;
     void SetValue(Byte const* v, size_t size) ;
-    void SetValue(WStringCR v);
+    void SetValue(Utf8StringCR v);
     void SetValue(int32_t v);
     void SetValue(int64_t v);
     void SetValue(double v);
@@ -132,7 +114,7 @@ public:
     void SetDateTimeValue(int64_t v);
     void SetNil();
     Byte const* GetBinary(size_t& size) const;
-    WCharCP GetValueWCharCP() const;
+    Utf8CP GetValueUtf8CP() const;
     int32_t GetValueInt32() const;
     int64_t GetValueInt64() const;
     bool  GetValueBool() const;
@@ -140,7 +122,7 @@ public:
     bool IsValueNill() const;
     void Clear();
     bool IsEqual(ECDiffValue const& value);
-    WString ToString() const;
+    Utf8String ToString() const;
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -149,19 +131,19 @@ public:
 struct ECDiffNode 
     {
     typedef bvector<ECDiffNodeP> ECDiffNodeList;
-    typedef bmap<WCharCP, ECDiffNodeP, CompareWChar> ECDiffNodeMap;
+    typedef bmap<Utf8CP, ECDiffNodeP, CompareUtf8> ECDiffNodeMap;
     typedef ECDiffNodeList::const_iterator const_iterator;
     typedef ECDiffNodeList::iterator iterator;
     typedef ECDiffNodeList::size_type size_type;
 private:
     ECDiffNodeP m_parent;
-    WString m_name;
+    Utf8String m_name;
     ECDiffNodeList m_childNodeList;
     ECDiffNodeMap  m_childNodeMap;
     ECDiffValue m_valueLeft;
     ECDiffValue m_valueRight;
 private:
-    void Write (WStringR out, int indent) const;
+    void Write (Utf8StringR out, int indent) const;
 public:
     enum KindOf
         {
@@ -175,28 +157,28 @@ public:
         };
 public:
     ECDiffNode();
-    ECDiffNode (WCharCP name, ECDiffNodeP parent = NULL) ;
+    ECDiffNode (Utf8CP name, ECDiffNodeP parent = NULL) ;
 
-    ECDiffNodeP Find (WCharCP name);
-    WString GetAccessString() const;
+    ECDiffNodeP Find (Utf8CP name);
+    Utf8String GetAccessString() const;
     ECDiffValue& GetValueLeft();
     ECDiffValue& GetValueRight();
     ECDiffValue& GetValue (ValueDirection direction);
-    bool SetValue (WCharCP left, WCharCP right);
+    bool SetValue (Utf8CP left, Utf8CP right);
     bool SetValue (bool left, bool right);
     bool SetValue (uint32_t left, uint32_t right);
     const_iterator begin();
     const_iterator end();
     ECDiffNodeList::size_type size ();
     ECDiffNodeCP GetParent() const;
-    WStringCR GetName() const;
-    ECDiffNodeP Add (WCharCP name);
-    ECDiffNodeP GetChild (WStringCR accessString, bool bCreate);
+    Utf8StringCR GetName() const;
+    ECDiffNodeP Add (Utf8CP name);
+    ECDiffNodeP GetChild (Utf8StringCR accessString, bool bCreate);
     ECDiffNodeP Add (int index);
     void Clear();
     ECDiffNodeP RemoveIfEmpty(ECDiffNodeP n);
     void Remove (ECDiffNodeP n);
-    WString ToString() const;
+    Utf8String ToString() const;
     ~ECDiffNode();
     bool IsEmpty();
     };
@@ -208,9 +190,9 @@ struct ECSchemaDiff
     {
 private:
     static ECDiffNodeP DiffReferences(ECDiffNodeR parentDiff, ECSchemaCR schemaLeft, ECSchemaCR schemaRight);
-    static ECDiffNodeP DiffClass (WCharCP className, ECSchemaCR schemaLeft, ECSchemaCR schemaRight, ECDiffNodeR parentDiff);
+    static ECDiffNodeP DiffClass (Utf8CP className, ECSchemaCR schemaLeft, ECSchemaCR schemaRight, ECDiffNodeR parentDiff);
     static ECDiffNodeP DiffBaseClasses (ECDiffNodeR parentDiff, AlignedClasses const& classes);
-    static ECDiffNodeP DiffProperty (WCharCP propertyName, ECClassCR classLeft, ECClassCR classRight, ECDiffNodeR parentDiff);
+    static ECDiffNodeP DiffProperty (Utf8CP propertyName, ECClassCR classLeft, ECClassCR classRight, ECDiffNodeR parentDiff);
     static ECDiffNodeP DiffRelationship (ECClassCR classLeft, ECClassCR classRight, ECDiffNodeR parentDiff);
     static ECDiffNodeP DiffRelationshipConstraint(ECDiffNodeR parent, ECRelationshipConstraintCR  left, ECRelationshipConstraintCR  right, ECRelationshipEnd endPoint);
     static ECDiffNodeP DiffRelationshipConstraintClasses (ECDiffNodeR parentDiff, bvector<ECRelationshipConstraintCP> const& constraints, ECRelationshipEnd endPoint);
@@ -227,10 +209,10 @@ private:
     static ECDiffNodeP AppendInstance (ECDiffNodeR parentDiff, IECInstanceCR instance, ECDiffNode::ValueDirection direction);
     static ECDiffNodeP AppendPropertyValues (ECDiffNodeR parentDiff, ECValuesCollectionCR values, ECDiffNode::ValueDirection direction);
 
-    static WCharCP ToString(ECRelatedInstanceDirection direction);
-    static WCharCP ToString(StrengthType type);
-    static void CollectInstanceValues (bmap<WString,ECValue>& valueMap, bset<WString>& accessStrings, IECInstanceCR instance);
-    static void CollectInstanceValues (bmap<WString,ECValue>& valueMap, bset<WString>& accessStrings, ECValuesCollectionCR values);
+    static Utf8CP ToString(ECRelatedInstanceDirection direction);
+    static Utf8CP ToString(StrengthType type);
+    static void CollectInstanceValues (bmap<Utf8String,ECValue>& valueMap, bset<Utf8String>& accessStrings, IECInstanceCR instance);
+    static void CollectInstanceValues (bmap<Utf8String,ECValue>& valueMap, bset<Utf8String>& accessStrings, ECValuesCollectionCR values);
     static bool SetECValue (ECDiffNodeR n, ECValueCR v, ECDiffNode::ValueDirection direction);
 
 public:

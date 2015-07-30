@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/ContentInstancesOfSpecificClassesSpecification.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -23,8 +23,8 @@ struct ContentInstancesOfSpecificClassesSpecification : public ContentSpecificat
     {
     /*__PUBLISH_SECTION_END__*/
     private:
-        WString  m_instanceFilter;
-        WString  m_classNames;
+        Utf8String  m_instanceFilter;
+        Utf8String  m_classNames;
         bool     m_arePolymorphic;
 
     protected:
@@ -43,17 +43,17 @@ struct ContentInstancesOfSpecificClassesSpecification : public ContentSpecificat
         ECOBJECTS_EXPORT ContentInstancesOfSpecificClassesSpecification ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT ContentInstancesOfSpecificClassesSpecification (int priority, WStringCR instanceFilter, WStringCR classNames, bool arePolymorphic);
+        ECOBJECTS_EXPORT ContentInstancesOfSpecificClassesSpecification (int priority, Utf8StringCR instanceFilter, Utf8StringCR classNames, bool arePolymorphic);
 
         //! Class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
-        ECOBJECTS_EXPORT WStringCR                    GetClassNames (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR                 GetClassNames (void) const;
 
         //! This flag identifies whether ECClasses defined in this specification should be marked as polymorphic in the Query.
         ECOBJECTS_EXPORT bool                         GetArePolymorphic (void) const;
 
         //! InstanceFiler is specially formated string that represents WhereCriteria in 
         //! ECQuery that is used to filter query results.
-        ECOBJECTS_EXPORT WStringCR                    GetInstanceFilter (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR                 GetInstanceFilter (void) const;
 
     };
 

@@ -26,19 +26,19 @@ struct BasicTest : ECTestFixture {};
 +---------------+---------------+---------------+---------------+---------------+------*/
 static ECSchemaPtr       CreateTestSchema ()
     {
-    wchar_t schemaXML[] = L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                    L"<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-                    L"    <ECClass typeName=\"SampleDataClass\" isStruct=\"True\" isDomainClass=\"True\">"
-                    L"        <ECProperty propertyName=\"Name\"           typeName=\"string\" />"
-                    L"        <ECProperty propertyName=\"ID\"             typeName=\"int\" />"
-                    L"        <ECProperty propertyName=\"StartPoint\"     typeName=\"point3d\" />"
-                    L"        <ECProperty propertyName=\"EndPoint\"       typeName=\"point3d\" />"
-                    L"        <ECProperty propertyName=\"XYSize\"         typeName=\"point2d\" />"
-                    L"        <ECProperty propertyName=\"Length\"         typeName=\"double\"  />"
-                    L"        <ECArrayProperty propertyName=\"Readings\"  typeName=\"long\" />"
-                    L"        <ECProperty propertyName=\"Field_Tested\"   typeName=\"boolean\"  />"
-                    L"    </ECClass>"
-                    L"</ECSchema>";
+    Utf8Char schemaXML[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                    "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"01.00\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+                    "    <ECClass typeName=\"SampleDataClass\" isStruct=\"True\" isDomainClass=\"True\">"
+                    "        <ECProperty propertyName=\"Name\"           typeName=\"string\" />"
+                    "        <ECProperty propertyName=\"ID\"             typeName=\"int\" />"
+                    "        <ECProperty propertyName=\"StartPoint\"     typeName=\"point3d\" />"
+                    "        <ECProperty propertyName=\"EndPoint\"       typeName=\"point3d\" />"
+                    "        <ECProperty propertyName=\"XYSize\"         typeName=\"point2d\" />"
+                    "        <ECProperty propertyName=\"Length\"         typeName=\"double\"  />"
+                    "        <ECArrayProperty propertyName=\"Readings\"  typeName=\"long\" />"
+                    "        <ECProperty propertyName=\"Field_Tested\"   typeName=\"boolean\"  />"
+                    "    </ECClass>"
+                    "</ECSchema>";
 
     ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
 
@@ -55,7 +55,7 @@ static ECSchemaPtr       CreateTestSchema ()
 struct  SampleData
     {
     // struct data
-    WString                  m_name;
+    Utf8String                  m_name;
     int                      m_id;
     DPoint3d                 m_startPoint;
     DPoint3d                 m_endPoint;
@@ -67,7 +67,7 @@ struct  SampleData
 
     SampleData (int id, uint32_t numReadings)
         {
-        m_name.Sprintf (L"Sample_%d", id);
+        m_name.Sprintf ("Sample_%d", id);
         m_id = id;
         m_numReadings = numReadings;
 
@@ -121,7 +121,7 @@ struct  SampleDataInstanceManager
         m_schema = CreateTestSchema();
 
         // get the class that represents the native SampleData stuct and get the enabler that will be used to create instances
-        ECClassP ecClass = m_schema->GetClassP (L"SampleDataClass");
+        ECClassP ecClass = m_schema->GetClassP ("SampleDataClass");
         if (ecClass != NULL)
             m_enabler = ecClass->GetDefaultStandaloneEnabler();
         else
@@ -138,20 +138,20 @@ struct  SampleDataInstanceManager
         ECN::StandaloneECInstancePtr instance = m_enabler->CreateInstance();
 
         // populate the instance
-        instance->SetValue(L"Name",         ECValue (data.m_name.c_str()));
-        instance->SetValue(L"ID",           ECValue (data.m_id));
-        instance->SetValue(L"StartPoint",   ECValue (data.m_startPoint));
-        instance->SetValue(L"EndPoint",     ECValue (data.m_endPoint));
-        instance->SetValue(L"XYSize",       ECValue (data.m_xySize));
-        instance->SetValue(L"Length",       ECValue (data.m_length));
-        instance->SetValue(L"Field_Tested", ECValue (data.m_tested));
+        instance->SetValue("Name",         ECValue (data.m_name.c_str()));
+        instance->SetValue("ID",           ECValue (data.m_id));
+        instance->SetValue("StartPoint",   ECValue (data.m_startPoint));
+        instance->SetValue("EndPoint",     ECValue (data.m_endPoint));
+        instance->SetValue("XYSize",       ECValue (data.m_xySize));
+        instance->SetValue("Length",       ECValue (data.m_length));
+        instance->SetValue("Field_Tested", ECValue (data.m_tested));
 
         if (data.m_numReadings > 0)
             {
             // add room for the array members and then set the values for each
-            instance->AddArrayElements(L"Readings", data.m_numReadings);
+            instance->AddArrayElements("Readings", data.m_numReadings);
             for (uint32_t i=0; i<data.m_numReadings; i++)
-                instance->SetValue(L"Readings", ECValue (data.m_readings[i]), i);
+                instance->SetValue("Readings", ECValue (data.m_readings[i]), i);
             }
 
         return instance;
@@ -166,7 +166,7 @@ TEST_F(BasicTest, BuildInstanceAndSerializeToXML)
 //    EXPECT_EQ (S_OK, CoInitialize(NULL));  
 
     SampleDataInstanceManager instanceManager;
-    WString ecInstanceXml;
+    Utf8String ecInstanceXml;
 
     for (int i=0; i<5; i++)
         {

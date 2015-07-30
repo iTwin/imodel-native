@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/PresentationRuleSet.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -23,16 +23,16 @@ struct PresentationRuleSet : public RefCountedBase
     {
     /*__PUBLISH_SECTION_END__*/
     private:
-        WString                                m_ruleSetId;
-        WString                                m_supportedSchemas;
+        Utf8String                             m_ruleSetId;
+        Utf8String                             m_supportedSchemas;
         bool                                   m_isSupplemental;
-        WString                                m_supplementationPurpose;
+        Utf8String                             m_supplementationPurpose;
         int                                    m_versionMajor;
         int                                    m_versionMinor;
-        WString                                m_preferredImage;
+        Utf8String                             m_preferredImage;
         bool                                   m_isSearchEnabled;
-        WString                                m_extendedData;
-        WString                                m_searchClasses;
+        Utf8String                             m_extendedData;
+        Utf8String                             m_searchClasses;
 
         RootNodeRuleList                       m_rootNodesRules;
         ChildNodeRuleList                      m_childNodesRules;
@@ -54,14 +54,14 @@ struct PresentationRuleSet : public RefCountedBase
         //Private constructor. This class instance should be creates using static helper methods.
         PresentationRuleSet
             (
-            WStringCR ruleSetId,
-            int       versionMajor,
-            int       versionMinor,
-            bool      isSupplemental,
-            WStringCR supplementationPurpose,
-            WStringCR supportedSchemas,
-            WStringCR preferredImage,
-            bool      isSearchEnabled
+            Utf8StringCR ruleSetId,
+            int          versionMajor,
+            int          versionMinor,
+            bool         isSupplemental,
+            Utf8StringCR supplementationPurpose,
+            Utf8StringCR supportedSchemas,
+            Utf8StringCR preferredImage,
+            bool         isSearchEnabled
             );
 
         //Reads PresentationRuleSet from XML. Returns false if it is not able to load it.
@@ -78,33 +78,33 @@ struct PresentationRuleSet : public RefCountedBase
         //! Creates an instance of PresentationRuleSet.
         ECOBJECTS_EXPORT static PresentationRuleSetPtr  CreateInstance 
             (
-            WStringCR ruleSetId,
-            int       versionMajor,
-            int       versionMinor,
-            bool      isSupplemental,
-            WStringCR supplementationPurpose,
-            WStringCR supportedSchemas,
-            WStringCR preferredImage,
-            bool      isSearchEnabled
+            Utf8StringCR ruleSetId,
+            int          versionMajor,
+            int          versionMinor,
+            bool         isSupplemental,
+            Utf8StringCR supplementationPurpose,
+            Utf8StringCR supportedSchemas,
+            Utf8StringCR preferredImage,
+            bool         isSearchEnabled
             );
 
         //! Reads PresentationRuleSet from XmlString.
-        ECOBJECTS_EXPORT static PresentationRuleSetPtr  ReadFromXmlString (WCharCP xmlString);
+        ECOBJECTS_EXPORT static PresentationRuleSetPtr  ReadFromXmlString (Utf8CP xmlString);
 
         //! Reads PresentationRuleSet from XmlFile.
         ECOBJECTS_EXPORT static PresentationRuleSetPtr  ReadFromXmlFile (WCharCP xmlFilePath);
 
         //! Writes PresentationRuleSet to XmlString.
-        ECOBJECTS_EXPORT WString                        WriteToXmlString ();
+        ECOBJECTS_EXPORT Utf8String                     WriteToXmlString ();
 
         //! Writes PresentationRuleSet to XmlFile.
         ECOBJECTS_EXPORT bool                           WriteToXmlFile (WCharCP xmlFilePath);
 
         //! PresentationRuleSet identification.
-        ECOBJECTS_EXPORT WStringCR                      GetRuleSetId (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR                   GetRuleSetId (void) const;
 
         //! Full id of PresentationRuleSet that includes RuleSetId, Version, and IsSupplemental flag.
-        ECOBJECTS_EXPORT WString                        GetFullRuleSetId (void) const;
+        ECOBJECTS_EXPORT Utf8String                     GetFullRuleSetId (void) const;
 
         //! Major version of the PresentationRuleSet. This will be used in the future if we add some incompatible changes to the system.
         ECOBJECTS_EXPORT int                            GetVersionMajor (void) const;
@@ -116,28 +116,28 @@ struct PresentationRuleSet : public RefCountedBase
         ECOBJECTS_EXPORT bool                           GetIsSupplemental (void) const;
 
         //! Purpose of supplementation. There can be one RuleSet with the same version and same supplementation purpose.
-        ECOBJECTS_EXPORT WStringCR                      GetSupplementationPurpose (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR                   GetSupplementationPurpose (void) const;
 
         //! Schemas list for which rules should be applied
-        ECOBJECTS_EXPORT WStringCR                      GetSupportedSchemas (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR                   GetSupportedSchemas (void) const;
 
         //! Preferred ImageId for the tree that is configured using this presentation rule set.
-        ECOBJECTS_EXPORT WStringCR                      GetPreferredImage (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR                   GetPreferredImage (void) const;
 
         //! Returns true if search should be enabled for the tree that uses this presentation rule set.
         ECOBJECTS_EXPORT bool                           GetIsSearchEnabled (void) const;
 
         //! Allowed classes for the search.
-        ECOBJECTS_EXPORT WStringCR                      GetSearchClasses (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR                   GetSearchClasses (void) const;
 
         //! Set allowed classes for the search.
-        ECOBJECTS_EXPORT void                           SetSearchClasses (WStringCR searchClasses);
+        ECOBJECTS_EXPORT void                           SetSearchClasses (Utf8StringCR searchClasses);
 
         //! Extended data of a rule set.
-        ECOBJECTS_EXPORT WStringCR                      GetExtendedData (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR                   GetExtendedData (void) const;
 
         //! Set extended data of a rule set.
-        ECOBJECTS_EXPORT void                           SetExtendedData (WStringCR extendedData);
+        ECOBJECTS_EXPORT void                           SetExtendedData (Utf8StringCR extendedData);
 
         //! Collection of rules, which should be used when root nodes needs to be populated.
         ECOBJECTS_EXPORT RootNodeRuleList&              GetRootNodesRules (void);

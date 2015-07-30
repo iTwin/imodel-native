@@ -29,6 +29,8 @@ enum ECDHeaderOffsets
     };
 
 const uint32_t BITS_PER_NULLFLAGSBITMASK = (sizeof(NullflagsBitmask) * 8);
+#define PROPERTYLAYOUT_Source_ECPointer "Source ECPointer"
+#define PROPERTYLAYOUT_Target_ECPointer "Target ECPointer"
 
 /*---------------------------------------------------------------------------------**//**
 * used in compatible class layout map
@@ -56,9 +58,9 @@ static int      randomValue  ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    08/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            appendFormattedString (WString& outStream, WCharCP fmtStr, ...)
+void            appendFormattedString (Utf8String& outStream, Utf8CP fmtStr, ...)
     {
-    WString line;
+    Utf8String line;
     va_list argList;
     va_start(argList, fmtStr /* the last fixed argument */);
     line.VSprintf (fmtStr, argList);
@@ -148,7 +150,7 @@ static inline uint32_t  CalculateFixedArrayPropertySize (uint32_t fixedCount, Pr
 //                portable way of inlining.
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-WCharCP             PropertyLayout::GetAccessString() const     { return m_accessString.c_str(); }
+Utf8CP              PropertyLayout::GetAccessString() const     { return m_accessString.c_str(); }
 uint32_t            PropertyLayout::GetParentStructIndex() const{ return m_parentStructIndex; }
 uint32_t            PropertyLayout::GetOffset() const           { BeAssert ( ! m_typeDescriptor.IsStruct()); return m_offset; }
 uint32_t            PropertyLayout::GetNullflagsOffset() const  { BeAssert ( ! m_typeDescriptor.IsStruct()); return m_nullflagsOffset; }
@@ -176,16 +178,16 @@ bool    PropertyLayout::SetReadOnlyMask (bool readOnly)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString    PropertyLayout::ToString ()
+Utf8String    PropertyLayout::ToString ()
     {    
-    WString typeName;
+    Utf8String typeName;
     if ((m_typeDescriptor.IsPrimitive()) || (m_typeDescriptor.IsPrimitiveArray()))
         typeName = ECXml::GetPrimitiveTypeName (m_typeDescriptor.GetPrimitiveType());
     else
-        typeName = L"struct";
+        typeName = "struct";
 
-    wchar_t line[1024];
-    BeStringUtilities::Snwprintf (line, _countof(line), L"%-32s %-16s offset=%3i nullflagsOffset=%3i, nullflagsBitmask=0x%08.X", m_accessString.c_str(), typeName.c_str(), m_offset, m_nullflagsOffset, m_nullflagsBitmask);
+    Utf8Char line[1024];
+    BeStringUtilities::Snprintf(line, "%-32s %-16s offset=%3i nullflagsOffset=%3i, nullflagsBitmask=0x%08.X", m_accessString.c_str(), typeName.c_str(), m_offset, m_nullflagsOffset, m_nullflagsBitmask);
         
     return line;
     }
@@ -252,12 +254,12 @@ uint32_t        PropertyLayout::GetSizeInFixedSection () const
 *
 * @bsimethod                                    Bill.Steinbock                  12/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-static uint32_t ComputeFnvHashForString (WCharCP buf, uint32_t hashValue)
+static uint32_t ComputeFnvHashForString (Utf8CP buf, uint32_t hashValue)
     {
     if (NULL == buf || 0==*buf)
         return hashValue;
 
-    size_t len = wcslen(buf) * sizeof (WChar);
+    size_t len = strlen(buf) * sizeof (Utf8Char);
 
     unsigned char *bp = (unsigned char *)buf;	/* start of buffer */
     unsigned char *be = bp + len;		/* beyond end of buffer */
@@ -388,58 +390,57 @@ ClassLayout::~ClassLayout()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString        ClassLayout::GetShortDescription () const
+Utf8String        ClassLayout::GetShortDescription () const
     {
-    wchar_t line[1024];
-    BeStringUtilities::Snwprintf (line, _countof(line), L"ClassLayout for ECClass.GetName()=%ls", m_className.c_str());
-
+    Utf8Char line[1024];
+    BeStringUtilities::Snprintf (line, "ClassLayout for ECClass.GetName()=%s", m_className.c_str());
     return line;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString        ClassLayout::GetName () const
+Utf8String        ClassLayout::GetName () const
     {
     return GetShortDescription();
     }
 
-static WString  getIndentedFmt (int indentLevel)
+static Utf8String  getIndentedFmt (int indentLevel)
     {
-    return WPrintfString (L"%%-%dd", 12 - 3 * indentLevel);
+    return Utf8PrintfString ("%%-%dd", 12 - 3 * indentLevel);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString        ClassLayout::LogicalStructureToString (uint32_t parentStuctIndex, uint32_t indentLevel) const
+Utf8String        ClassLayout::LogicalStructureToString (uint32_t parentStuctIndex, uint32_t indentLevel) const
     {
     LogicalStructureMap::const_iterator it = m_logicalStructureMap.find(parentStuctIndex);
 
     if ( ! EXPECTED_CONDITION (it != m_logicalStructureMap.end()))
-        return L"";
+        return "";
 
-    WCharCP indentStr = L"|--";
-    WString oss;
+    Utf8CP indentStr = "|--";
+    Utf8String oss;
 
     for (uint32_t propIndex: it->second)
         {
         for (uint32_t i = 0; i < indentLevel; i++)
             oss += indentStr;
 
-        oss += WPrintfString(getIndentedFmt(indentLevel).c_str(), propIndex);
+        oss += Utf8PrintfString(getIndentedFmt(indentLevel).c_str(), propIndex);
 
         PropertyLayoutCP    propertyLayout = NULL;
         ECObjectsStatus     status = GetPropertyLayoutByIndex (propertyLayout, propIndex);
 
         if (ECOBJECTS_STATUS_Success != status || NULL == propertyLayout)
             {
-            oss += L"  *** ERROR finding PropertyLayout ***\n";
+            oss += "  *** ERROR finding PropertyLayout ***\n";
             continue;
             }
 
-        WCharCP  accessString = propertyLayout->GetAccessString();
-        oss += WPrintfString (L"%-40ls  Parent: %-10d\n", accessString, propertyLayout->GetParentStructIndex());
+        Utf8CP  accessString = propertyLayout->GetAccessString();
+        oss += Utf8PrintfString ("%-40s  Parent: %-10d\n", accessString, propertyLayout->GetParentStructIndex());
 
         if (propertyLayout->GetTypeDescriptor().IsStruct())
             oss += LogicalStructureToString (propIndex, indentLevel+1); 
@@ -451,24 +452,24 @@ WString        ClassLayout::LogicalStructureToString (uint32_t parentStuctIndex,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString        ClassLayout::ToString () const
+Utf8String        ClassLayout::ToString () const
     {
-    WString oss;
+    Utf8String oss;
 
-    oss += GetShortDescription() += L"\n";
+    oss += GetShortDescription() += "\n";
 
     uint32_t propIndex = 0;
 
     for (PropertyLayoutP layout: m_propertyLayouts)
         {
-        oss += WPrintfString(L"%-4d", propIndex);
+        oss += Utf8PrintfString("%-4d", propIndex);
         oss += layout->ToString();
-        oss += L"\n";
+        oss += "\n";
 
         propIndex++;
         }
 
-    oss += L"Logical Structure:\n";
+    oss += "Logical Structure:\n";
     oss += LogicalStructureToString ();
 
     return oss;
@@ -595,7 +596,7 @@ bool            ClassLayout::IsCompatible (ClassLayoutCR classLayout) const
     if (m_compatibleClassLayouts.end() != compatibeLayoutIter)
         return compatibeLayoutIter->second;
 
-    if (0 != BeStringUtilities::Wcsicmp (GetECClassName().c_str(), classLayout.GetECClassName().c_str()))
+    if (0 != BeStringUtilities::Stricmp (GetECClassName().c_str(), classLayout.GetECClassName().c_str()))
         return false;
 
     bool isCompatible = areLayoutsCompatible (*this, classLayout);
@@ -634,7 +635,7 @@ uint32_t        ClassLayout::CalculateBytesUsed(Byte const * propertyData) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     12/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-WString const &  ClassLayout::GetECClassName() const
+Utf8String const &  ClassLayout::GetECClassName() const
     {
     return m_className;
     }
@@ -653,15 +654,15 @@ int   ClassLayout::GetECPointerIndex (ECRelationshipEnd end) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/11
 +---------------+---------------+---------------+---------------+---------------+------*/    
-uint32_t        ClassLayout::Factory::GetParentStructIndex (WCharCP accessString) const
+uint32_t        ClassLayout::Factory::GetParentStructIndex (Utf8CP accessString) const
     {
     // The access string will contain a '.' only if the property is inside an embedded struct.
     uint32_t        parentStructIndex = 0;
-    WCharCP  pLastDot = ::wcsrchr (accessString, L'.');
+    Utf8CP  pLastDot = ::strrchr (accessString, L'.');
 
     if (NULL != pLastDot)
         {
-        WString         parentAccessString (accessString, pLastDot - accessString);
+        Utf8String         parentAccessString (accessString, pLastDot - accessString);
         ECObjectsStatus status = m_underConstruction->GetPropertyIndex (parentStructIndex, parentAccessString.c_str());
         if (ECOBJECTS_STATUS_Success != status)
             BeAssert (false);
@@ -673,7 +674,7 @@ uint32_t        ClassLayout::Factory::GetParentStructIndex (WCharCP accessString
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void            ClassLayout::Factory::AddStructProperty (WCharCP accessString, ECTypeDescriptor typeDescriptor)
+void            ClassLayout::Factory::AddStructProperty (Utf8CP accessString, ECTypeDescriptor typeDescriptor)
     {
     if (!EXPECTED_CONDITION (m_state == AcceptingFixedSizeProperties)) // ClassLayoutNotAcceptingFixedSizeProperties    
         return;
@@ -691,7 +692,7 @@ void            ClassLayout::Factory::AddStructProperty (WCharCP accessString, E
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void            ClassLayout::Factory::AddProperty (WCharCP accessString, ECTypeDescriptor typeDescriptor, uint32_t size, uint32_t modifierFlags, uint32_t modifierData)
+void            ClassLayout::Factory::AddProperty (Utf8CP accessString, ECTypeDescriptor typeDescriptor, uint32_t size, uint32_t modifierFlags, uint32_t modifierData)
     {
     uint32_t positionInCurrentNullFlags = m_nonStructPropertyCount % /*32*/ BITS_PER_NULLFLAGSBITMASK;
     NullflagsBitmask  nullflagsBitmask = 0x01 << positionInCurrentNullFlags;
@@ -719,7 +720,7 @@ void            ClassLayout::Factory::AddProperty (WCharCP accessString, ECTypeD
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void            ClassLayout::Factory::AddFixedSizeProperty (WCharCP accessString, ECTypeDescriptor typeDescriptor, bool isReadOnly, bool isCalculated)
+void            ClassLayout::Factory::AddFixedSizeProperty (Utf8CP accessString, ECTypeDescriptor typeDescriptor, bool isReadOnly, bool isCalculated)
     {
     if (!EXPECTED_CONDITION (m_state == AcceptingFixedSizeProperties)) // ClassLayoutNotAcceptingFixedSizeProperties    
         return;
@@ -745,7 +746,7 @@ void            ClassLayout::Factory::AddFixedSizeProperty (WCharCP accessString
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/ 
-void            ClassLayout::Factory::AddFixedSizeArrayProperty (WCharCP accessString, ECTypeDescriptor typeDescriptor, uint32_t arrayCount, bool isReadOnly, bool isCalculated)
+void            ClassLayout::Factory::AddFixedSizeArrayProperty (Utf8CP accessString, ECTypeDescriptor typeDescriptor, uint32_t arrayCount, bool isReadOnly, bool isCalculated)
     {
     if (!EXPECTED_CONDITION (m_state == AcceptingFixedSizeProperties)) // ClassLayoutNotAcceptingFixedSizeProperties    
         return;
@@ -765,7 +766,7 @@ void            ClassLayout::Factory::AddFixedSizeArrayProperty (WCharCP accessS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/ 
-void            ClassLayout::Factory::AddVariableSizeProperty (WCharCP accessString, ECTypeDescriptor typeDescriptor, bool isReadOnly, bool isCalculated)
+void            ClassLayout::Factory::AddVariableSizeProperty (Utf8CP accessString, ECTypeDescriptor typeDescriptor, bool isReadOnly, bool isCalculated)
     {
     if (m_state == AcceptingFixedSizeProperties)
         m_state = AcceptingVariableSizeProperties;
@@ -788,7 +789,7 @@ void            ClassLayout::Factory::AddVariableSizeProperty (WCharCP accessStr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Adam.Klatzkin                   01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/ 
-void            ClassLayout::Factory::AddVariableSizeArrayPropertyWithFixedCount (WCharCP accessString, ECTypeDescriptor typeDescriptor, uint32_t arrayCount, bool isReadOnly, bool isCalculated)
+void            ClassLayout::Factory::AddVariableSizeArrayPropertyWithFixedCount (Utf8CP accessString, ECTypeDescriptor typeDescriptor, uint32_t arrayCount, bool isReadOnly, bool isCalculated)
     {
     if (m_state == AcceptingFixedSizeProperties)
         m_state = AcceptingVariableSizeProperties;
@@ -810,17 +811,17 @@ void            ClassLayout::Factory::AddVariableSizeArrayPropertyWithFixedCount
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    12/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ClassLayout::Factory::AddProperties (ECClassCR ecClass, WCharCP nameRoot, bool addingFixedSizeProps)
+void            ClassLayout::Factory::AddProperties (ECClassCR ecClass, Utf8CP nameRoot, bool addingFixedSizeProps)
     {
     if (addingFixedSizeProps)
-        AddStructProperty (NULL == nameRoot ? L"" : nameRoot, ECTypeDescriptor::CreateStructTypeDescriptor());
+        AddStructProperty (NULL == nameRoot ? "" : nameRoot, ECTypeDescriptor::CreateStructTypeDescriptor());
 
     for (ECPropertyP property: ecClass.GetProperties())
         {
-        WString    propName = property->GetName();
+        Utf8String    propName = property->GetName();
         
         if (NULL != nameRoot)
-            propName = WString (nameRoot).append (L".") + propName;
+            propName = Utf8String (nameRoot).append (".") + propName;
 
         if (property->GetIsPrimitive())
             {
@@ -922,7 +923,7 @@ ClassLayoutPtr    ClassLayout::BuildFromClass (ECClassCR ecClass)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayoutPtr    ClassLayout::CreateEmpty (WCharCP className)
+ClassLayoutPtr    ClassLayout::CreateEmpty (Utf8CP className)
     {
     ClassLayoutP classLayout = new ClassLayout();
 
@@ -934,7 +935,7 @@ ClassLayoutPtr    ClassLayout::CreateEmpty (WCharCP className)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayoutPtr  ClassLayout::Clone (WCharCP className) const
+ClassLayoutPtr  ClassLayout::Clone (Utf8CP className) const
     {
     ClassLayoutPtr clone = CreateEmpty (nullptr != className ? className : GetECClassName().c_str());
     for (auto const& propLayout : m_propertyLayouts)
@@ -960,7 +961,7 @@ ClassLayoutPtr  ClassLayout::Clone (WCharCP className) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   ClassLayout::SetClass (WCharCP className)
+BentleyStatus   ClassLayout::SetClass (Utf8CP className)
     {
     m_className  = className;
     return SUCCESS;
@@ -1047,16 +1048,16 @@ ECObjectsStatus       ClassLayout::FinishLayout ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/     
-void            ClassLayout::CheckForECPointers (WCharCP accessString)
+void            ClassLayout::CheckForECPointers (Utf8CP accessString)
     {
     // Remember indices of source and target ECPointers for fast lookup
-    if (0 == wcscmp (PROPERTYLAYOUT_Source_ECPointer, accessString))
+    if (0 == strcmp (PROPERTYLAYOUT_Source_ECPointer, accessString))
         {
         m_isRelationshipClass = true;
         m_propertyIndexOfSourceECPointer = GetPropertyCount() - 1;
         }
         
-    if (0 == wcscmp (PROPERTYLAYOUT_Target_ECPointer, accessString))
+    if (0 == strcmp (PROPERTYLAYOUT_Target_ECPointer, accessString))
         {
         m_isRelationshipClass = true;
         m_propertyIndexOfTargetECPointer = GetPropertyCount() - 1;
@@ -1086,7 +1087,7 @@ void            ClassLayout::AddToLogicalStructureMap (PropertyLayoutR propertyL
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/12
 +---------------+---------------+---------------+---------------+---------------+------*/ 
-ClassLayout::IndicesByAccessString::const_iterator ClassLayout::GetPropertyIndexPosition (WCharCP accessString, bool forCreate) const
+ClassLayout::IndicesByAccessString::const_iterator ClassLayout::GetPropertyIndexPosition (Utf8CP accessString, bool forCreate) const
     {
     // this vector is always sorted, so we can do binary search
     // Explicitly implemented binary search (instead of using stl::lower_bound) in order to save one call to wcscmp in the case where we have
@@ -1100,7 +1101,7 @@ ClassLayout::IndicesByAccessString::const_iterator ClassLayout::GetPropertyIndex
         it = begin;
         step = count >> 1;
         it += step;
-        int cmp = wcscmp (it->first, accessString);
+        int cmp = strcmp (it->first, accessString);
         if (cmp == 0)           // easy out, avoiding redundant wcscmp() below
             {
             if (forCreate)
@@ -1121,25 +1122,25 @@ ClassLayout::IndicesByAccessString::const_iterator ClassLayout::GetPropertyIndex
     if (forCreate)
         {
         if (it != end)
-            DEBUG_EXPECT (0 != wcscmp (accessString, it->first) && "Cannot create a PropertyLayout with the same access string as an existing layout");
+            DEBUG_EXPECT (0 != strcmp (accessString, it->first) && "Cannot create a PropertyLayout with the same access string as an existing layout");
         return it;
         }
     else
-        return (it != end && 0 == wcscmp (accessString, it->first)) ? it : end;
+        return (it != end && 0 == strcmp (accessString, it->first)) ? it : end;
     }
 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-void            ClassLayout::AddPropertyLayout (WCharCP accessString, PropertyLayoutR propertyLayout)
+void            ClassLayout::AddPropertyLayout (Utf8CP accessString, PropertyLayoutR propertyLayout)
     {
     m_propertyLayouts.push_back(&propertyLayout);
 
     // if we knew no new PropertyLayouts could be added after construction, we could delay sorting the list until FinishLayout()
     // since AddPropertyLayout() is public we can't know that, so we need to insert in sorted order
     uint32_t index = (uint32_t)(m_propertyLayouts.size() - 1);
-    WCharCP plAccessString = propertyLayout.GetAccessString();
+    Utf8CP plAccessString = propertyLayout.GetAccessString();
     AccessStringIndexPair newPair (plAccessString, index);
     IndicesByAccessString::iterator begin = m_indicesByAccessString.begin();
     IndicesByAccessString::iterator insertPos = begin + (GetPropertyIndexPosition (plAccessString, true) - begin);    // because constness...
@@ -1155,7 +1156,7 @@ void            ClassLayout::AddPropertyLayout (WCharCP accessString, PropertyLa
 +---------------+---------------+---------------+---------------+---------------+------*/     
 void            ClassLayout::AddPropertyDirect
 (
-WCharCP  accessString,
+Utf8CP           accessString,
 uint32_t         parentStructIndex,
 ECTypeDescriptor typeDescriptor,
 uint32_t         offset,
@@ -1221,7 +1222,7 @@ bool            ClassLayout::SetPropertyReadOnly (uint32_t propertyIndex,  bool 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus       ClassLayout::GetPropertyLayout (PropertyLayoutCP & propertyLayout, WCharCP accessString) const
+ECObjectsStatus       ClassLayout::GetPropertyLayout (PropertyLayoutCP & propertyLayout, Utf8CP accessString) const
     {
     IndicesByAccessString::const_iterator pos = GetPropertyIndexPosition (accessString, false);
 
@@ -1237,7 +1238,7 @@ ECObjectsStatus       ClassLayout::GetPropertyLayout (PropertyLayoutCP & propert
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus     ClassLayout::GetPropertyIndex (uint32_t& propertyIndex, WCharCP accessString) const
+ECObjectsStatus     ClassLayout::GetPropertyIndex (uint32_t& propertyIndex, Utf8CP accessString) const
     {
     IndicesByAccessString::const_iterator pos = GetPropertyIndexPosition (accessString, false);
     if (pos == m_indicesByAccessString.end())
@@ -1278,7 +1279,7 @@ ECObjectsStatus ClassLayout::GetPropertyLayoutIndex (uint32_t& propertyIndex, Pr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan.Rush      12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus         ClassLayout::GetAccessStringByIndex(WCharCP& accessString, uint32_t propertyIndex) const
+ECObjectsStatus         ClassLayout::GetAccessStringByIndex(Utf8CP& accessString, uint32_t propertyIndex) const
     {
     PropertyLayoutCP    propertyLayout;
     ECObjectsStatus     status = GetPropertyLayoutByIndex (propertyLayout, propertyIndex);
@@ -1414,14 +1415,14 @@ ClassLayoutCP   SchemaLayout::GetClassLayout (ClassIndex classIndex) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayoutCP   SchemaLayout::FindClassLayout (WCharCP className) const
+ClassLayoutCP   SchemaLayout::FindClassLayout (Utf8CP className) const
     {
     for (ClassLayoutPtr const& classLayout: m_classLayouts)
         {
         if (classLayout.IsNull())
             continue;
 
-        if (0 == wcscmp (classLayout->GetECClassName().c_str(), className))
+        if (0 == strcmp (classLayout->GetECClassName().c_str(), className))
             return classLayout.get();
         }
 
@@ -1431,12 +1432,12 @@ ClassLayoutCP   SchemaLayout::FindClassLayout (WCharCP className) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassLayoutCP SchemaLayout::FindClassLayout (WCharCP className, ClassIndex* classIndex) const
+ClassLayoutCP SchemaLayout::FindClassLayout (Utf8CP className, ClassIndex* classIndex) const
     {
     for (size_t i = 0; i < m_classLayouts.size(); i++)
         {
         ClassLayoutCP layout = m_classLayouts[i].get();
-        if (NULL != layout && 0 == wcscmp (layout->GetECClassName().c_str(), className))
+        if (NULL != layout && 0 == strcmp (layout->GetECClassName().c_str(), className))
             {
             if (NULL != classIndex)
                 *classIndex = (ClassIndex)i;
@@ -1451,11 +1452,11 @@ ClassLayoutCP SchemaLayout::FindClassLayout (WCharCP className, ClassIndex* clas
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   SchemaLayout::FindClassIndex (ClassIndex& classIndex, WCharCP className) const
+BentleyStatus   SchemaLayout::FindClassIndex (ClassIndex& classIndex, Utf8CP className) const
     {
     for (size_t i = 0; i < m_classLayouts.size(); i++)
         {
-        if (NULL != m_classLayouts[i].get() && 0 == BeStringUtilities::Wcsicmp (m_classLayouts[i]->GetECClassName().c_str(), className))
+        if (NULL != m_classLayouts[i].get() && 0 == BeStringUtilities::Stricmp(m_classLayouts[i]->GetECClassName().c_str(), className))
             {
             classIndex = (ClassIndex)i;
             return SUCCESS;
@@ -2021,7 +2022,7 @@ ECObjectsStatus ECDBuffer::RemoveArrayElementsFromMemory (PropertyLayoutCR prope
         _HandleArrayResize (&propertyLayout, removeIndex, -1 * removeCount);
 
 #ifdef DEBUGGING_ARRAYENTRY_REMOVAL           
-    WString postDeleteLayout = InstanceDataToString (L"", classLayout);
+    WString postDeleteLayout = InstanceDataToString ("", classLayout);
     if (postDeleteLayout.empty())
         return status;
 #endif
@@ -2045,7 +2046,7 @@ ECObjectsStatus ECDBuffer::RemoveArrayElements (PropertyLayoutCR propertyLayout,
 
 #ifdef DEBUGGING_ARRAYENTRY_REMOVAL 
     ECObjectsStatus status = ECOBJECTS_STATUS_Error;
-    WString preDeleteLayout = InstanceDataToString (L"", GetClassLayout());
+    WString preDeleteLayout = InstanceDataToString ("", GetClassLayout());
     if (preDeleteLayout.empty())
         return status;
 #endif
@@ -2722,7 +2723,7 @@ ECObjectsStatus       ECDBuffer::GetValueFromMemory (ECValueR v, PropertyLayoutC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus       ECDBuffer::GetValueFromMemory (ECValueR v, WCharCP propertyAccessString, bool useIndex, uint32_t index) const
+ECObjectsStatus       ECDBuffer::GetValueFromMemory (ECValueR v, Utf8CP propertyAccessString, bool useIndex, uint32_t index) const
     {
     PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
                 
@@ -3095,7 +3096,7 @@ ECObjectsStatus ECDBuffer::SetInternalValueToMemory (PropertyLayoutCR propertyLa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus       ECDBuffer::SetValueToMemory (WCharCP propertyAccessString, ECValueCR v, bool useIndex, uint32_t index)
+ECObjectsStatus       ECDBuffer::SetValueToMemory (Utf8CP propertyAccessString, ECValueCR v, bool useIndex, uint32_t index)
     {
     PRECONDITION (NULL != propertyAccessString, ECOBJECTS_STATUS_PreconditionViolated);
                 
@@ -3243,22 +3244,22 @@ void ECDBuffer::SetDefaultStringEncoding (StringEncoding def)                   
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString        ECDBuffer::InstanceDataToString (WCharCP indent) const
+Utf8String        ECDBuffer::InstanceDataToString (Utf8CP indent) const
     {
     static const bool s_skipDump = false;
     static int s_dumpCount = 0;             // MT: For debugging purposes only...
     s_dumpCount++;
     
-    WString oss;
+    Utf8String oss;
 
-    appendFormattedString (oss, L"%ls================== ECInstance Dump #%d =============================\n", indent, s_dumpCount);
+    appendFormattedString (oss, "%s================== ECInstance Dump #%d =============================\n", indent, s_dumpCount);
     if (s_skipDump)
         return oss;
   
     Byte const * data = GetPropertyData();
 
     ClassLayoutCR classLayout = GetClassLayout();
-    appendFormattedString (oss, L"%lsECClass=%ls at address = 0x%0x\n", indent, classLayout.GetECClassName().c_str(), data);
+    appendFormattedString (oss, "%sECClass=%s at address = 0x%0x\n", indent, classLayout.GetECClassName().c_str(), data);
     uint32_t nProperties = classLayout.GetPropertyCount ();
     uint32_t nNullflagsBitmasks = CalculateNumberNullFlagsBitmasks (nProperties);
     
@@ -3266,7 +3267,7 @@ WString        ECDBuffer::InstanceDataToString (WCharCP indent) const
         {
         uint32_t offset = GetECDHeaderCP()->GetSize() + i * sizeof(NullflagsBitmask);
         Byte const * address = offset + data;
-        appendFormattedString (oss, L"%ls  [0x%x][%4.d] Nullflags[%d] = 0x%x\n", indent, address, offset, i, *(NullflagsBitmask*)(data + offset));
+        appendFormattedString (oss, "%s  [0x%x][%4.d] Nullflags[%d] = 0x%x\n", indent, address, offset, i, *(NullflagsBitmask*)(data + offset));
         }
     
     for (uint32_t i = 0; i < nProperties; i++)
@@ -3275,16 +3276,16 @@ WString        ECDBuffer::InstanceDataToString (WCharCP indent) const
         ECObjectsStatus status = classLayout.GetPropertyLayoutByIndex (propertyLayout, i);
         if (ECOBJECTS_STATUS_Success != status)
             {
-            appendFormattedString (oss, L"%lsError (%d) returned while getting PropertyLayout #%d", indent, status, i);
+            appendFormattedString (oss, "%sError (%d) returned while getting PropertyLayout #%d", indent, status, i);
             return oss;
             }
 
         if (propertyLayout->GetTypeDescriptor().IsStruct())
             {
-            WCharCP accessStringP = propertyLayout->GetAccessString();
+            Utf8CP accessStringP = propertyLayout->GetAccessString();
             // skip outputting "Struct" for struct that represents the root instance 
             if (NULL != accessStringP && 0 != *accessStringP)
-                appendFormattedString (oss, L"%ls  Struct %ls\n", indent, propertyLayout->GetAccessString());
+                appendFormattedString (oss, "%s  Struct %s\n", indent, propertyLayout->GetAccessString());
 
             continue;
             }
@@ -3294,23 +3295,23 @@ WString        ECDBuffer::InstanceDataToString (WCharCP indent) const
             
         ECValue v;
         GetValueFromMemory (v, *propertyLayout);
-        WString valueAsString = v.ToString();
+        Utf8String valueAsString = v.ToString();
            
         if (propertyLayout->IsFixedSized())            
-            appendFormattedString (oss, L"%ls  [0x%x][%4.d] %ls = %ls\n", indent, address, offset, propertyLayout->GetAccessString(), valueAsString.c_str());
+            appendFormattedString (oss, "%s  [0x%x][%4.d] %s = %s\n", indent, address, offset, propertyLayout->GetAccessString(), valueAsString.c_str());
         else
             {
             SecondaryOffset secondaryOffset = *(SecondaryOffset*)address;
             Byte const * realAddress = data + secondaryOffset;
             
-            appendFormattedString (oss, L"%ls  [0x%x][%4.d] -> [0x%x][%4.d] %ls = %ls\n", indent, address, offset, realAddress, secondaryOffset, propertyLayout->GetAccessString(), valueAsString.c_str());
+            appendFormattedString (oss, "%s  [0x%x][%4.d] -> [0x%x][%4.d] %s = %s\n", indent, address, offset, realAddress, secondaryOffset, propertyLayout->GetAccessString(), valueAsString.c_str());
             }
             
         if (propertyLayout->GetTypeDescriptor().IsArray())
             {
             uint32_t count = GetAllocatedArrayCount (*propertyLayout);
             if (count != GetReservedArrayCount (*propertyLayout))
-                appendFormattedString (oss, L"      array has not yet been initialized\n");
+                appendFormattedString (oss, "      array has not yet been initialized\n");
             else
                 {  
                 if (count > 0)
@@ -3327,7 +3328,7 @@ WString        ECDBuffer::InstanceDataToString (WCharCP indent) const
                         {
                         Byte const * bitAddress = nullflagsOffset + data;
 
-                        appendFormattedString (oss, L"%ls  [0x%x][%4.d] Nullflags[%d] = 0x%x\n", indent, bitAddress, nullflagsOffset, i, *(NullflagsBitmask*)(bitAddress));
+                        appendFormattedString (oss, "%s  [0x%x][%4.d] Nullflags[%d] = 0x%x\n", indent, bitAddress, nullflagsOffset, i, *(NullflagsBitmask*)(bitAddress));
                         nullflagsOffset += sizeof(NullflagsBitmask);
                         }
                     }
@@ -3341,29 +3342,29 @@ WString        ECDBuffer::InstanceDataToString (WCharCP indent) const
                         valueAsString = v.ToString();                
                     else
                         {
-                        wchar_t temp[1024];
-                        BeStringUtilities::Snwprintf(temp, 1024, L"Error (%d) returned while obtaining array index value", status, i);
-                        valueAsString = WString (temp);
+                        Utf8Char temp[1024];
+                        BeStringUtilities::Snprintf(temp, "Error (%d) returned while obtaining array index value", status, i);
+                        valueAsString = Utf8String (temp);
                         }
 
                     if (IsArrayOfFixedSizeElements (*propertyLayout))
-                        appendFormattedString (oss, L"%ls      [0x%x][%4.d] %d = %ls\n", indent, address, offset, i, valueAsString.c_str());
+                        appendFormattedString (oss, "%s      [0x%x][%4.d] %d = %s\n", indent, address, offset, i, valueAsString.c_str());
                     else
                         {
                         SecondaryOffset secondaryOffset = GetOffsetOfArrayIndexValue (GetOffsetOfPropertyValue (*propertyLayout), *propertyLayout, i);
                         Byte const * realAddress = data + secondaryOffset;
                         
-                        appendFormattedString (oss, L"%ls      [0x%x][%4.d] -> [0x%x][%4.d] %d = %ls\n", indent, address, offset, realAddress, secondaryOffset, i, valueAsString.c_str());                    
+                        appendFormattedString (oss, "%s      [0x%x][%4.d] -> [0x%x][%4.d] %d = %s\n", indent, address, offset, realAddress, secondaryOffset, i, valueAsString.c_str());                    
                         }     
                     if ((ECOBJECTS_STATUS_Success == status) && (!v.IsNull()) && (v.IsStruct()))
                         {
-                        WString structIndent(indent);
-                        structIndent.append (L"      ");
+                        Utf8String structIndent(indent);
+                        structIndent.append ("      ");
 
-                        WString structString = v.GetStruct()->ToString(structIndent.c_str());
+                        Utf8String structString = v.GetStruct()->ToString(structIndent.c_str());
                         oss += structString;
 
-                        appendFormattedString (oss, L"%ls=================== END Struct Instance ===========================\n", structIndent.c_str());
+                        appendFormattedString (oss, "%s=================== END Struct Instance ===========================\n", structIndent.c_str());
                         }         
                     }
                 }
@@ -3374,13 +3375,13 @@ WString        ECDBuffer::InstanceDataToString (WCharCP indent) const
         {
         // We have one PropertyLayout, which is an empty root struct, signifying an empty ECClass
         DEBUG_EXPECT (0 == classLayout.GetSizeOfFixedSection());
-        appendFormattedString (oss, L"Class has no properties\n");
+        appendFormattedString (oss, "Class has no properties\n");
         }
     else
         {
         uint32_t offsetOfLast = classLayout.GetSizeOfFixedSection() - sizeof(SecondaryOffset);
         SecondaryOffset * pLast = (SecondaryOffset*)(data + offsetOfLast);
-        appendFormattedString (oss, L"%ls  [0x%x][%4.d] Offset of TheEnd = %d\n", indent, pLast, offsetOfLast, *pLast);
+        appendFormattedString (oss, "%s  [0x%x][%4.d] Offset of TheEnd = %d\n", indent, pLast, offsetOfLast, *pLast);
         }
 
     return oss;

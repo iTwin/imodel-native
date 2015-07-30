@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/RelatedPropertiesSpecification.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -17,7 +17,7 @@ USING_NAMESPACE_EC
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 RelatedPropertiesSpecification::RelatedPropertiesSpecification ()
-    : m_requiredDirection (RequiredRelationDirection_Both), m_relationshipClassNames (L""), m_relatedClassNames (L""), m_propertyNames (L"")
+    : m_requiredDirection (RequiredRelationDirection_Both), m_relationshipClassNames (""), m_relatedClassNames (""), m_propertyNames ("")
     {
     }
 
@@ -27,9 +27,9 @@ RelatedPropertiesSpecification::RelatedPropertiesSpecification ()
 RelatedPropertiesSpecification::RelatedPropertiesSpecification 
 (
 RequiredRelationDirection  requiredDirection,
-WString                    relationshipClassNames,
-WString                    relatedClassNames,
-WString                    propertyNames
+Utf8String                 relationshipClassNames,
+Utf8String                 relatedClassNames,
+Utf8String                 propertyNames
 ) : m_requiredDirection (requiredDirection), 
     m_relationshipClassNames (relationshipClassNames),
     m_relatedClassNames (relatedClassNames),
@@ -51,17 +51,17 @@ RelatedPropertiesSpecification::~RelatedPropertiesSpecification ()
 bool RelatedPropertiesSpecification::ReadXml (BeXmlNodeP xmlNode)
     {
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_relationshipClassNames, COMMON_XML_ATTRIBUTE_RELATIONSHIPCLASSNAMES))
-        m_relationshipClassNames = L"";
+        m_relationshipClassNames = "";
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_relatedClassNames, COMMON_XML_ATTRIBUTE_RELATEDCLASSNAMES))
-        m_relatedClassNames = L"";
+        m_relatedClassNames = "";
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_propertyNames, COMMON_XML_ATTRIBUTE_PROPERTYNAMES))
-        m_propertyNames = L"";
+        m_propertyNames = "";
 
-    WString requiredDirectionString = L"";
+    Utf8String requiredDirectionString = "";
     if (BEXML_Success != xmlNode->GetAttributeStringValue (requiredDirectionString, COMMON_XML_ATTRIBUTE_REQUIREDDIRECTION))
-        requiredDirectionString = L"";
+        requiredDirectionString = "";
     else
         m_requiredDirection = CommonTools::ParseRequiredDirectionString (requiredDirectionString.c_str ());
 
@@ -93,17 +93,17 @@ RequiredRelationDirection RelatedPropertiesSpecification::GetRequiredRelationDir
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR RelatedPropertiesSpecification::GetRelationshipClassNames (void) const { return m_relationshipClassNames; }
+Utf8StringCR RelatedPropertiesSpecification::GetRelationshipClassNames (void) const { return m_relationshipClassNames; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR RelatedPropertiesSpecification::GetRelatedClassNames (void) const { return m_relatedClassNames; }
+Utf8StringCR RelatedPropertiesSpecification::GetRelatedClassNames (void) const { return m_relatedClassNames; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR RelatedPropertiesSpecification::GetPropertyNames (void) const { return m_propertyNames; }
+Utf8StringCR RelatedPropertiesSpecification::GetPropertyNames (void) const { return m_propertyNames; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012

@@ -22,7 +22,7 @@ struct ValueAccessorTests : ECTestFixture
     IECInstancePtr       m_instance;
     uint32_t             propIndex;
 
-    void CreateSchema(WString schemaName = L"TestSchema", WString className = L"TestClass")
+    void CreateSchema(Utf8String schemaName = "TestSchema", Utf8String className = "TestClass")
         {
         ECSchema::CreateSchema (m_schema, schemaName, 1, 0);
         m_schema->CreateClass (m_ecClass, className);
@@ -33,7 +33,7 @@ struct ValueAccessorTests : ECTestFixture
         m_instance = m_ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
         }
         
-    PrimitiveECPropertyP CreateProperty(WString name, PrimitiveType primitiveType)
+    PrimitiveECPropertyP CreateProperty(Utf8String name, PrimitiveType primitiveType)
         {
         PrimitiveECPropertyP prop;
         m_ecClass->CreatePrimitiveProperty (prop, name, primitiveType);
@@ -41,7 +41,7 @@ struct ValueAccessorTests : ECTestFixture
         return prop;
         }
         
-    PrimitiveECPropertyP CreateProperty(WString name)
+    PrimitiveECPropertyP CreateProperty(Utf8String name)
         {
         PrimitiveECPropertyP prop;
         m_ecClass->CreatePrimitiveProperty (prop, name);
@@ -49,7 +49,7 @@ struct ValueAccessorTests : ECTestFixture
         return prop;
         }
         
-    ArrayECPropertyP CreateArrayProperty(WCharCP name)
+    ArrayECPropertyP CreateArrayProperty(Utf8CP name)
         {
         ArrayECPropertyP prop;
         m_ecClass->CreateArrayProperty (prop, name);
@@ -64,10 +64,10 @@ struct ValueAccessorTests : ECTestFixture
 TEST_F (ValueAccessorTests, CreateFromIterator)
     {
     CreateSchema();
-    CreateProperty(L"Property_1");
+    CreateProperty("Property_1");
     CreateInstance();
     
-    EXPECT_EQ (m_instance->SetValue (L"Property_1", ECValue(L"Some value 1")), ECOBJECTS_STATUS_Success);    
+    EXPECT_EQ (m_instance->SetValue ("Property_1", ECValue("Some value 1")), ECOBJECTS_STATUS_Success);    
     ECValuesCollectionPtr m_collection = ECValuesCollection::Create (*m_instance);
     
     int count = 0;
@@ -78,7 +78,7 @@ TEST_F (ValueAccessorTests, CreateFromIterator)
         ECValueAccessorCR m_accessor = propertyValue.GetValueAccessor();
         m_instance->GetValueUsingAccessor (value1, m_accessor);
         
-        EXPECT_STREQ (value1.GetString(), L"Some value 1");
+        EXPECT_STREQ (value1.GetUtf8CP(), "Some value 1");
         count++;
         }
     EXPECT_EQ (count, 1);
@@ -90,16 +90,16 @@ TEST_F (ValueAccessorTests, CreateFromIterator)
 TEST_F (ValueAccessorTests, CreateFromInstance)
     {
     CreateSchema();
-    CreateProperty(L"Property_1");
+    CreateProperty("Property_1");
     CreateInstance();
     
     ECValueAccessor m_accessor;
-    EXPECT_EQ (ECValueAccessor::PopulateValueAccessor(m_accessor, *m_instance, L"Property_1"), ECOBJECTS_STATUS_Success);
-    EXPECT_EQ (m_instance->SetValueUsingAccessor (m_accessor, ECValue(L"Some value 1")), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (ECValueAccessor::PopulateValueAccessor(m_accessor, *m_instance, "Property_1"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_instance->SetValueUsingAccessor (m_accessor, ECValue("Some value 1")), ECOBJECTS_STATUS_Success);
     
     ECValue value1;
     m_instance->GetValueUsingAccessor (value1, m_accessor);
-    EXPECT_STREQ (value1.GetString(), L"Some value 1");
+    EXPECT_STREQ (value1.GetUtf8CP(), "Some value 1");
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -108,13 +108,13 @@ TEST_F (ValueAccessorTests, CreateFromInstance)
 TEST_F (ValueAccessorTests, GetAccessString)
     {
     CreateSchema();
-    CreateProperty(L"Property_1");
+    CreateProperty("Property_1");
     CreateInstance();
     
     ECValueAccessor m_accessor;
-    EXPECT_EQ (ECValueAccessor::PopulateValueAccessor(m_accessor, *m_instance, L"Property_1"), ECOBJECTS_STATUS_Success);
-    EXPECT_STREQ (m_accessor.GetAccessString(), L"Property_1");
-    EXPECT_STREQ (m_accessor.GetPropertyName().c_str(), L"Property_1");
+    EXPECT_EQ (ECValueAccessor::PopulateValueAccessor(m_accessor, *m_instance, "Property_1"), ECOBJECTS_STATUS_Success);
+    EXPECT_STREQ (m_accessor.GetAccessString(), "Property_1");
+    EXPECT_STREQ (m_accessor.GetPropertyName().c_str(), "Property_1");
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -131,17 +131,17 @@ TEST_F (ValueAccessorTests, DISABLED_GetDefaultStandaloneEnablerBug)
     CreateSchema();
     
     PrimitiveECPropertyP prop;
-    EXPECT_EQ (m_ecClass->CreatePrimitiveProperty (prop, L"Prop1"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_ecClass->CreatePrimitiveProperty (prop, "Prop1"), ECOBJECTS_STATUS_Success);
     EXPECT_EQ (m_ecClass->GetDefaultStandaloneEnabler()->GetClassLayout().GetPropertyCount(), 2);
              //ecClass->GetDefaultStandaloneEnabler() locks the item count and other properties
     
-    EXPECT_EQ (m_ecClass->CreatePrimitiveProperty (prop, L"Prop2"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_ecClass->CreatePrimitiveProperty (prop, "Prop2"), ECOBJECTS_STATUS_Success);
     EXPECT_EQ (m_ecClass->GetDefaultStandaloneEnabler()->GetClassLayout().GetPropertyCount(), 3);
     
-    EXPECT_EQ (m_ecClass->GetDefaultStandaloneEnabler()->GetPropertyIndex(propIndex, L"Prop2"), ECOBJECTS_STATUS_Success);
+    EXPECT_EQ (m_ecClass->GetDefaultStandaloneEnabler()->GetPropertyIndex(propIndex, "Prop2"), ECOBJECTS_STATUS_Success);
     WCharCP propertyName;
     EXPECT_EQ (m_ecClass->GetDefaultStandaloneEnabler()->GetAccessString  (propertyName,  propIndex), ECOBJECTS_STATUS_Success);
-    EXPECT_STREQ (propertyName, L"Prop2");
+    EXPECT_STREQ (propertyName, "Prop2");
 #endif
     }
     
@@ -151,7 +151,7 @@ TEST_F (ValueAccessorTests, DISABLED_GetDefaultStandaloneEnablerBug)
 TEST_F (ValueAccessorTests, PushPopLocation)
     {
     CreateSchema();
-    WCharP properties[4] = {L"Property_1", L"Property_2", L"Property_3", L"Property_4"};
+    Utf8Char* properties[4] = {"Property_1", "Property_2", "Property_3", "Property_4"};
     
     for (int i=0; i<4; i++)
         {
@@ -165,8 +165,8 @@ TEST_F (ValueAccessorTests, PushPopLocation)
         accessor.PushLocation(*m_instance, properties[i]);
     
     EXPECT_EQ (accessor.GetDepth(), 4);
-    EXPECT_STREQ (accessor.GetAccessString(), L"Property_4");
-    EXPECT_STREQ (accessor.GetPropertyName().c_str(), L"Property_4");
+    EXPECT_STREQ (accessor.GetAccessString(), "Property_4");
+    EXPECT_STREQ (accessor.GetPropertyName().c_str(), "Property_4");
     for (int i=0; i<4; i++)
         {
         EXPECT_STREQ (accessor.GetAccessString(i), properties[i]);
@@ -174,8 +174,8 @@ TEST_F (ValueAccessorTests, PushPopLocation)
         
     accessor.PopLocation();
     EXPECT_EQ (accessor.GetDepth(), 3);
-    EXPECT_STREQ (accessor.GetAccessString(), L"Property_3");
-    EXPECT_STREQ (accessor.GetPropertyName().c_str(), L"Property_3");
+    EXPECT_STREQ (accessor.GetAccessString(), "Property_3");
+    EXPECT_STREQ (accessor.GetPropertyName().c_str(), "Property_3");
     for (int i=0; i<3; i++)
         {
         EXPECT_STREQ (accessor.GetAccessString(i), properties[i]);
@@ -188,7 +188,7 @@ TEST_F (ValueAccessorTests, PushPopLocation)
 TEST_F (ValueAccessorTests, MatchAccessors)
     {
     CreateSchema();
-    WCharP properties[4] = {L"Property_1", L"Property_2", L"Property_3", L"Property_4"};
+    Utf8Char* properties[4] = {"Property_1", "Property_2", "Property_3", "Property_4"};
     IECInstancePtr instance_1;
     IECInstancePtr instance_2;
     

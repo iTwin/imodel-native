@@ -19,8 +19,8 @@ struct SystemSymbolProvider : ECN::IECSymbolProvider
 private:
     mutable ECN::SymbolPtr  m_systemNamespaceSymbol;
 
-    virtual WCharCP         _GetName() const override { return L"SystemSymbolProvider"; }
-    virtual void            _PublishSymbols (ECN::SymbolExpressionContextR context, bvector<WString> const& requestedSymbolSets) const override;
+    virtual Utf8CP          _GetName() const override { return "SystemSymbolProvider"; }
+    virtual void            _PublishSymbols (ECN::SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const override;
 public:
     SystemSymbolProvider();
 
@@ -29,6 +29,8 @@ public:
     // Extract a single argument
     ECOBJECTS_EXPORT static bool ExtractArg (WCharCP& str, ECN::EvaluationResultCR ev, bool allowNull = false);
     ECOBJECTS_EXPORT static bool ExtractArg (WStringR str, ECN::EvaluationResultCR ev, bool allowNull = false);
+    ECOBJECTS_EXPORT static bool ExtractArg (Utf8CP& str, ECN::EvaluationResultCR ev, bool allowNull = false);
+    ECOBJECTS_EXPORT static bool ExtractArg (Utf8StringR str, ECN::EvaluationResultCR ev, bool allowNull = false);
     ECOBJECTS_EXPORT static bool ExtractArg (double& d, ECN::EvaluationResultCR ev);
     ECOBJECTS_EXPORT static bool ExtractArg (int32_t& i, ECN::EvaluationResultCR ev);
     ECOBJECTS_EXPORT static bool ExtractArg (ECN::LambdaValueCP& lambda, ECN::EvaluationResultCR ev);

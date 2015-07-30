@@ -16,55 +16,55 @@ struct CompressInstanceTests : ECTestFixture {};
 
 namespace {
 
-static WString       GetKitchenSinkSchemaXml ()
+static Utf8String       GetKitchenSinkSchemaXml ()
     {
-    wchar_t* buff = L"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        L"<ECSchema schemaName=\"KitchenSink\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-        L"    <ECClass typeName=\"Manufacturer\" isStruct=\"True\" isDomainClass=\"True\">"
-        L"        <ECProperty propertyName=\"Name\" typeName=\"string\" />"
-        L"        <ECProperty propertyName=\"AccountNo\" typeName=\"int\" />"
-        L"    </ECClass>"
-        L"    <ECClass typeName=\"Complicated\" isStruct=\"True\" isDomainClass=\"True\">"
-        L"        <ECProperty propertyName=\"ExtName\" typeName=\"string\" />"
-        L"        <ECStructProperty propertyName=\"ExtStruct\" typeName=\"Manufacturer\" />"
-        L"        <ECArrayProperty propertyName=\"ExtStructs\" typeName=\"Manufacturer\" />"
-        L"    </ECClass>"
+    Utf8Char* buff = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<ECSchema schemaName=\"KitchenSink\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "    <ECClass typeName=\"Manufacturer\" isStruct=\"True\" isDomainClass=\"True\">"
+        "        <ECProperty propertyName=\"Name\" typeName=\"string\" />"
+        "        <ECProperty propertyName=\"AccountNo\" typeName=\"int\" />"
+        "    </ECClass>"
+        "    <ECClass typeName=\"Complicated\" isStruct=\"True\" isDomainClass=\"True\">"
+        "        <ECProperty propertyName=\"ExtName\" typeName=\"string\" />"
+        "        <ECStructProperty propertyName=\"ExtStruct\" typeName=\"Manufacturer\" />"
+        "        <ECArrayProperty propertyName=\"ExtStructs\" typeName=\"Manufacturer\" />"
+        "    </ECClass>"
 
-        L"    <ECClass typeName=\"FixedSizeArrayTester\" isStruct=\"True\" isDomainClass=\"True\">"
-        L"        <ECArrayProperty propertyName=\"FixedString5\"     typeName=\"string\"            minOccurs=\"5\"  maxOccurs=\"5\" />"
-        L"        <ECArrayProperty propertyName=\"FixedInt5\"        typeName=\"int\"               minOccurs=\"5\"  maxOccurs=\"5\" />"
-        L"        <ECArrayProperty propertyName=\"Manufacturer5\"    typeName=\"Manufacturer\"      minOccurs=\"5\"  maxOccurs=\"5\" />"
-        L"    </ECClass>"
+        "    <ECClass typeName=\"FixedSizeArrayTester\" isStruct=\"True\" isDomainClass=\"True\">"
+        "        <ECArrayProperty propertyName=\"FixedString5\"     typeName=\"string\"            minOccurs=\"5\"  maxOccurs=\"5\" />"
+        "        <ECArrayProperty propertyName=\"FixedInt5\"        typeName=\"int\"               minOccurs=\"5\"  maxOccurs=\"5\" />"
+        "        <ECArrayProperty propertyName=\"Manufacturer5\"    typeName=\"Manufacturer\"      minOccurs=\"5\"  maxOccurs=\"5\" />"
+        "    </ECClass>"
 
-        L"    <ECClass typeName=\"KitchenSink\" isDomainClass=\"True\">"
-        L"        <ECProperty propertyName=\"myString\" typeName=\"string\" />"
-        L"        <ECArrayProperty propertyName=\"myStringArray\" typeName=\"string\" />"
-        L"        <ECProperty propertyName=\"myInt\" typeName=\"int\" />"
-        L"        <ECArrayProperty propertyName=\"myIntArray\" typeName=\"int\" />"
-        L"        <ECProperty propertyName=\"my3dPoint\"     typeName=\"point3d\" />"
-        L"        <ECArrayProperty propertyName=\"my3dPointArray\" typeName=\"point3d\"/>"
-        L"        <ECProperty propertyName=\"myDate\" typeName=\"dateTime\"  />"
-        L"        <ECArrayProperty propertyName=\"myDateArray\" typeName=\"dateTime\" />"
-        L"        <ECProperty propertyName=\"myLong\" typeName=\"long\" />"
-        L"        <ECArrayProperty propertyName=\"myLongArray\" typeName=\"long\" />"
-        L"        <ECProperty propertyName=\"myDouble\" typeName=\"double\" />"
-        L"        <ECArrayProperty propertyName=\"myDoubleArray\" typeName=\"double\" />"
-        L"        <ECProperty propertyName=\"myBool\" typeName=\"boolean\"  />"
-        L"        <ECArrayProperty propertyName=\"myBoolArray\" typeName=\"boolean\" />"
-        L"        <ECProperty propertyName=\"my2dPoint\" typeName=\"point2d\" />"
-        L"        <ECArrayProperty propertyName=\"my2dPointArray\" typeName=\"point2d\" />"
-        L"        <ECStructProperty propertyName=\"myManufacturerStruct\" typeName=\"Manufacturer\" />"
-        L"        <ECArrayProperty propertyName=\"myManufacturerStructArray\" typeName=\"Manufacturer\"/>"
-        L"        <ECStructProperty propertyName=\"myComplicated\" typeName=\"Complicated\" />"
-        L"    </ECClass>"
-        L"    <ECClass typeName=\"PointArrayTest\" isStruct=\"True\" isDomainClass=\"True\">"
-        L"        <ECProperty propertyName=\"myString\" typeName=\"string\" />"
-        L"        <ECProperty propertyName=\"myInt\" typeName=\"int\" />"
-        L"        <ECArrayProperty propertyName=\"my3dPointArray\" typeName=\"point3d\"/>"
-        L"    </ECClass>"
-        L"</ECSchema>";
+        "    <ECClass typeName=\"KitchenSink\" isDomainClass=\"True\">"
+        "        <ECProperty propertyName=\"myString\" typeName=\"string\" />"
+        "        <ECArrayProperty propertyName=\"myStringArray\" typeName=\"string\" />"
+        "        <ECProperty propertyName=\"myInt\" typeName=\"int\" />"
+        "        <ECArrayProperty propertyName=\"myIntArray\" typeName=\"int\" />"
+        "        <ECProperty propertyName=\"my3dPoint\"     typeName=\"point3d\" />"
+        "        <ECArrayProperty propertyName=\"my3dPointArray\" typeName=\"point3d\"/>"
+        "        <ECProperty propertyName=\"myDate\" typeName=\"dateTime\"  />"
+        "        <ECArrayProperty propertyName=\"myDateArray\" typeName=\"dateTime\" />"
+        "        <ECProperty propertyName=\"myLong\" typeName=\"long\" />"
+        "        <ECArrayProperty propertyName=\"myLongArray\" typeName=\"long\" />"
+        "        <ECProperty propertyName=\"myDouble\" typeName=\"double\" />"
+        "        <ECArrayProperty propertyName=\"myDoubleArray\" typeName=\"double\" />"
+        "        <ECProperty propertyName=\"myBool\" typeName=\"boolean\"  />"
+        "        <ECArrayProperty propertyName=\"myBoolArray\" typeName=\"boolean\" />"
+        "        <ECProperty propertyName=\"my2dPoint\" typeName=\"point2d\" />"
+        "        <ECArrayProperty propertyName=\"my2dPointArray\" typeName=\"point2d\" />"
+        "        <ECStructProperty propertyName=\"myManufacturerStruct\" typeName=\"Manufacturer\" />"
+        "        <ECArrayProperty propertyName=\"myManufacturerStructArray\" typeName=\"Manufacturer\"/>"
+        "        <ECStructProperty propertyName=\"myComplicated\" typeName=\"Complicated\" />"
+        "    </ECClass>"
+        "    <ECClass typeName=\"PointArrayTest\" isStruct=\"True\" isDomainClass=\"True\">"
+        "        <ECProperty propertyName=\"myString\" typeName=\"string\" />"
+        "        <ECProperty propertyName=\"myInt\" typeName=\"int\" />"
+        "        <ECArrayProperty propertyName=\"my3dPointArray\" typeName=\"point3d\"/>"
+        "    </ECClass>"
+        "</ECSchema>";
 
-    return WString (buff);
+    return Utf8String (buff);
     }
     
 static ECSchemaPtr   CreateKitchenSinkSchema ()
@@ -76,7 +76,7 @@ static ECSchemaPtr   CreateKitchenSinkSchema ()
     return schema;
     }
 
-void VerifyArrayInfo (IECInstanceR instance, ECValueR v, WCharCP accessString, uint32_t count, bool isFixedCount)
+void VerifyArrayInfo (IECInstanceR instance, ECValueR v, Utf8CP accessString, uint32_t count, bool isFixedCount)
     {
     v.Clear();
     EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
@@ -84,7 +84,7 @@ void VerifyArrayInfo (IECInstanceR instance, ECValueR v, WCharCP accessString, u
     EXPECT_EQ (isFixedCount, v.GetArrayInfo().IsFixedCount());
     }
 
-void VerifyIsNullArrayElements (IECInstanceR instance, ECValueR v, WCharCP accessString, uint32_t start, uint32_t count
+void VerifyIsNullArrayElements (IECInstanceR instance, ECValueR v, Utf8CP accessString, uint32_t start, uint32_t count
 , bool isNull)
     {
     for (uint32_t i = start ; i < start + count ; i++)
@@ -94,27 +94,27 @@ void VerifyIsNullArrayElements (IECInstanceR instance, ECValueR v, WCharCP acces
         EXPECT_TRUE (isNull == v.IsNull());
         }
     }
-void VerifyString (IECInstanceR instance, ECValueR v, WCharCP accessString, bool useIndex, uint32_t index, WCharCP value)
+void VerifyString (IECInstanceR instance, ECValueR v, Utf8CP accessString, bool useIndex, uint32_t index, Utf8CP value)
     {
     v.Clear();
     if (useIndex)
         EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString, index));
     else
         EXPECT_TRUE (SUCCESS == instance.GetValue (v, accessString));
-    EXPECT_STREQ (value, v.GetString());
+    EXPECT_STREQ (value, v.GetUtf8CP());
     }
-void VerifyString (IECInstanceR instance, ECValueR v, WCharCP accessString, WCharCP value)
+void VerifyString (IECInstanceR instance, ECValueR v, Utf8CP accessString, Utf8CP value)
     {
     return VerifyString (instance, v, accessString, false, 0, value);
     }
-void SetAndVerifyString (IECInstanceR instance, ECValueR v, WCharCP accessString, WCharCP value)
+void SetAndVerifyString (IECInstanceR instance, ECValueR v, Utf8CP accessString, Utf8CP value)
     {
-    v.SetString(value);
+    v.SetUtf8CP(value);
     EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v));
     VerifyString (instance, v, accessString, value);
     }
 
-void VerifyInteger (IECInstanceR instance, ECValueR v, WCharCP accessString, bool useIndex, uint32_t index, uint32_t value)
+void VerifyInteger (IECInstanceR instance, ECValueR v, Utf8CP accessString, bool useIndex, uint32_t index, uint32_t value)
     {
     v.Clear();
     if (useIndex)
@@ -124,19 +124,19 @@ void VerifyInteger (IECInstanceR instance, ECValueR v, WCharCP accessString, boo
     EXPECT_EQ (value, v.GetInteger());
     }
 
-void VerifyInteger (IECInstanceR instance, ECValueR v, WCharCP accessString, uint32_t value)
+void VerifyInteger (IECInstanceR instance, ECValueR v, Utf8CP accessString, uint32_t value)
     {
     return VerifyInteger (instance, v, accessString, false, 0, value);
     }
 
 
-void SetAndVerifyInteger (IECInstanceR instance, ECValueR v, WCharCP accessString, uint32_t value)
+void SetAndVerifyInteger (IECInstanceR instance, ECValueR v, Utf8CP accessString, uint32_t value)
     {
     v.SetInteger(value);
     EXPECT_TRUE (SUCCESS == instance.SetValue (accessString, v));
     VerifyInteger (instance, v, accessString, value);
     }
-static void validateArrayCount  (ECN::StandaloneECInstanceCR instance, WCharCP propertyName, uint32_t expectedCount)
+static void validateArrayCount  (ECN::StandaloneECInstanceCR instance, Utf8CP propertyName, uint32_t expectedCount)
     {
     ECValue varray;
     EXPECT_TRUE (SUCCESS == instance.GetValue (varray, propertyName));
@@ -159,7 +159,7 @@ TEST_F(CompressInstanceTests, CheckVariableSizedPropertyAfterCallingCompress)
 
     ECSchemaPtr schema = CreateKitchenSinkSchema ();
     EXPECT_TRUE( schema.IsValid());
-	ECClassP ecClass = schema->GetClassP (L"KitchenSink");
+	ECClassP ecClass = schema->GetClassP ("KitchenSink");
     ASSERT_TRUE (NULL != ecClass);
 
     StandaloneECEnablerPtr enabler       = ecClass->GetDefaultStandaloneEnabler();
@@ -170,86 +170,86 @@ TEST_F(CompressInstanceTests, CheckVariableSizedPropertyAfterCallingCompress)
     bool       inTest = true;
 
 
-    ASSERT_EQ(ECOBJECTS_STATUS_Success,instance->SetValue (L"myInt",        ECValue (inCount)));
-    ASSERT_EQ(ECOBJECTS_STATUS_Success,instance->SetValue (L"myString",         ECValue (L"Test")));
-    ASSERT_EQ(ECOBJECTS_STATUS_Success,instance->SetValue (L"myDouble",       ECValue (inLength)));
-    ASSERT_EQ(ECOBJECTS_STATUS_Success,instance->SetValue (L"myBool", ECValue (inTest)));
+    ASSERT_EQ(ECOBJECTS_STATUS_Success,instance->SetValue ("myInt",        ECValue (inCount)));
+    ASSERT_EQ(ECOBJECTS_STATUS_Success,instance->SetValue ("myString",         ECValue ("Test")));
+    ASSERT_EQ(ECOBJECTS_STATUS_Success,instance->SetValue ("myDouble",       ECValue (inLength)));
+    ASSERT_EQ(ECOBJECTS_STATUS_Success,instance->SetValue ("myBool", ECValue (inTest)));
 
     ECValue ecValue;
 
-    EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"myInt"));
+    EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, "myInt"));
     EXPECT_TRUE (ecValue.GetInteger() == inCount);
 
-    EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"myString"));
-    EXPECT_STREQ (ecValue.GetString(), L"Test");
+    EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, "myString"));
+    EXPECT_STREQ (ecValue.GetUtf8CP(), "Test");
 
-    EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"myDouble"));
+    EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, "myDouble"));
     EXPECT_TRUE (ecValue.GetDouble() == inLength);
 
-    EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"myBool"));
+    EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, "myBool"));
     EXPECT_TRUE (ecValue.GetBoolean() == inTest);
 
 
         instance->Compress();
 
 
-        EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"myInt"));
+        EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, "myInt"));
     EXPECT_TRUE (ecValue.GetInteger() == inCount);
 
-    EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"myString"));
-    EXPECT_STREQ (ecValue.GetString(), L"Test");
+    EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, "myString"));
+    EXPECT_STREQ (ecValue.GetUtf8CP(), "Test");
 
-    EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"myDouble"));
+    EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, "myDouble"));
     EXPECT_TRUE (ecValue.GetDouble() == inLength);
 
-    EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, L"myBool"));
+    EXPECT_TRUE (SUCCESS == instance->GetValue (ecValue, "myBool"));
     EXPECT_TRUE (ecValue.GetBoolean() == inTest);
 
 
     // define struct array
-    StandaloneECEnablerPtr manufacturerEnabler = instance->GetEnablerR().GetEnablerForStructArrayMember (schema->GetSchemaKey(), L"Manufacturer");
+    StandaloneECEnablerPtr manufacturerEnabler = instance->GetEnablerR().GetEnablerForStructArrayMember (schema->GetSchemaKey(), "Manufacturer");
     EXPECT_TRUE (manufacturerEnabler.IsValid());
 
     ECValue v;
-    ASSERT_TRUE (ECOBJECTS_STATUS_Success == instance->AddArrayElements (L"myManufacturerStructArray", 4));
+    ASSERT_TRUE (ECOBJECTS_STATUS_Success == instance->AddArrayElements ("myManufacturerStructArray", 4));
         instance->Compress();
-    VerifyArrayInfo (*instance, v, L"myManufacturerStructArray", 4, false);
+    VerifyArrayInfo (*instance, v, "myManufacturerStructArray", 4, false);
         instance->Compress();
-    VerifyIsNullArrayElements (*instance, v, L"myManufacturerStructArray", 0, 4, true);
+    VerifyIsNullArrayElements (*instance, v, "myManufacturerStructArray", 0, 4, true);
 
     IECInstancePtr manufInst = manufacturerEnabler->CreateInstance().get();
 
-    SetAndVerifyString (*manufInst, v, L"Name", L"Nissan");
+    SetAndVerifyString (*manufInst, v, "Name", "Nissan");
         instance->Compress();
-    SetAndVerifyInteger (*manufInst, v, L"AccountNo", 3475);
+    SetAndVerifyInteger (*manufInst, v, "AccountNo", 3475);
         instance->Compress();
     v.SetStruct (manufInst.get());
-    ASSERT_TRUE (SUCCESS == instance->SetValue (L"myManufacturerStructArray", v, 0));
+    ASSERT_TRUE (SUCCESS == instance->SetValue ("myManufacturerStructArray", v, 0));
 
     manufInst = manufacturerEnabler->CreateInstance().get();
-    SetAndVerifyString (*manufInst, v, L"Name", L"Kia");
-    SetAndVerifyInteger (*manufInst, v, L"AccountNo", 1791);
+    SetAndVerifyString (*manufInst, v, "Name", "Kia");
+    SetAndVerifyInteger (*manufInst, v, "AccountNo", 1791);
     v.SetStruct (manufInst.get());
-    ASSERT_TRUE (SUCCESS == instance->SetValue (L"myManufacturerStructArray", v, 1));
+    ASSERT_TRUE (SUCCESS == instance->SetValue ("myManufacturerStructArray", v, 1));
 
     manufInst = manufacturerEnabler->CreateInstance().get();
-    SetAndVerifyString (*manufInst, v, L"Name", L"Honda");
-    SetAndVerifyInteger (*manufInst, v, L"AccountNo", 1592);
+    SetAndVerifyString (*manufInst, v, "Name", "Honda");
+    SetAndVerifyInteger (*manufInst, v, "AccountNo", 1592);
     v.SetStruct (manufInst.get());
-    ASSERT_TRUE (SUCCESS == instance->SetValue (L"myManufacturerStructArray", v, 2));
+    ASSERT_TRUE (SUCCESS == instance->SetValue ("myManufacturerStructArray", v, 2));
 
     manufInst = manufacturerEnabler->CreateInstance().get();
-    SetAndVerifyString (*manufInst, v, L"Name", L"Chevy");
-    SetAndVerifyInteger (*manufInst, v, L"AccountNo", 19341);
+    SetAndVerifyString (*manufInst, v, "Name", "Chevy");
+    SetAndVerifyInteger (*manufInst, v, "AccountNo", 19341);
     v.SetStruct (manufInst.get());
-    ASSERT_TRUE (SUCCESS == instance->SetValue (L"myManufacturerStructArray", v, 3));
+    ASSERT_TRUE (SUCCESS == instance->SetValue ("myManufacturerStructArray", v, 3));
         instance->Compress();
-    VerifyIsNullArrayElements (*instance, v, L"myManufacturerStructArray", 0, 4, false);
+    VerifyIsNullArrayElements (*instance, v, "myManufacturerStructArray", 0, 4, false);
 
     // remove struct array element
-    instance->RemoveArrayElement(L"myManufacturerStructArray", 2);
+    instance->RemoveArrayElement("myManufacturerStructArray", 2);
         instance->Compress();
-    validateArrayCount (*instance, L"myManufacturerStructArray", 3);
+    validateArrayCount (*instance, "myManufacturerStructArray", 3);
 
    }
 END_BENTLEY_ECN_TEST_NAMESPACE

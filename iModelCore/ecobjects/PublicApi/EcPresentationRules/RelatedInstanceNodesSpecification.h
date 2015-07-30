@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/RelatedInstanceNodesSpecification.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -42,11 +42,11 @@ struct RelatedInstanceNodesSpecification : public ChildNodeSpecification
         bool                       m_groupByLabel;
         bool                       m_showEmptyGroups;
         int                        m_skipRelatedLevel;
-        WString                    m_instanceFilter;
+        Utf8String                 m_instanceFilter;
         RequiredRelationDirection  m_requiredDirection;
-        WString                    m_supportedSchemas;
-        WString                    m_relationshipClassNames;
-        WString                    m_relatedClassNames;
+        Utf8String                 m_supportedSchemas;
+        Utf8String                 m_relationshipClassNames;
+        Utf8String                 m_relatedClassNames;
 
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
@@ -75,11 +75,11 @@ struct RelatedInstanceNodesSpecification : public ChildNodeSpecification
                                            bool                       groupByLabel,
                                            bool                       showEmptyGroups,
                                            int                        skipRelatedLevel,
-                                           WString                    instanceFilter,
+                                           Utf8String                 instanceFilter,
                                            RequiredRelationDirection  requiredDirection,
-                                           WString                    supportedSchemas,
-                                           WString                    relationshipClassNames,
-                                           WString                    relatedClassNames
+                                           Utf8String                 supportedSchemas,
+                                           Utf8String                 relationshipClassNames,
+                                           Utf8String                 relatedClassNames
                                           );
 
         //! Returns true if grouping by class should be applied.
@@ -100,19 +100,19 @@ struct RelatedInstanceNodesSpecification : public ChildNodeSpecification
 
         //! InstanceFiler is spacially formated string that represents WhereCriteria in 
         //! ECQuery that is used to filter query results (ChildNodes).
-        ECOBJECTS_EXPORT WStringCR                    GetInstanceFilter (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR                 GetInstanceFilter (void) const;
 
         //! Returns direction of relationship that should be selected in the query.
         ECOBJECTS_EXPORT RequiredRelationDirection    GetRequiredRelationDirection (void) const;
 
         //! Returns supported schemas that should be used by this specification.
-        ECOBJECTS_EXPORT WStringCR                    GetSupportedSchemas (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR                 GetSupportedSchemas (void) const;
 
         //! Relationship class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
-        ECOBJECTS_EXPORT WStringCR                    GetRelationshipClassNames (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR                 GetRelationshipClassNames (void) const;
 
         //! Related class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
-        ECOBJECTS_EXPORT WStringCR                    GetRelatedClassNames (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR                 GetRelatedClassNames (void) const;
 
     };
 

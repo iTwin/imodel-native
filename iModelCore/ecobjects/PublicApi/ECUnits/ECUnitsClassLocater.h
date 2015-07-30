@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECUnits/ECUnitsClassLocater.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -34,7 +34,7 @@ struct ECUnitsClassLocater : RefCounted<IECClassLocater>
 
         bool Initialize();
 
-        ECClassCP _LocateClass (WCharCP schemaName, WCharCP className);
+        ECClassCP _LocateClass (Utf8CP schemaName, Utf8CP className);
 
     protected:
         ECUnitsClassLocater () {}
