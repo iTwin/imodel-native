@@ -144,7 +144,6 @@ xcopy /Y /r $(OutRoot)Winx64\Build\TerrainModelElement\TerrainModelElementHandle
     <ClCompile Include="DTMLowPointsDisplayHandler.cpp" />
     <ClCompile Include="DTMPointDrawer.cpp" />
     <ClCompile Include="DTMRasterDrapingDisplayHandler.cpp" />
-    <ClCompile Include="TMReferenceXAttributeHandler.cpp" />
     <ClCompile Include="DTMSpotsDisplayHandler.cpp" />
     <ClCompile Include="DTMSymbologyOverrideManager.cpp" />
     <ClCompile Include="DTMTextDrawer.cpp" />
