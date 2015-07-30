@@ -213,7 +213,7 @@ private:
     friend struct SupplementedSchemaBuilder;
 
     ECCustomAttributeCollection         m_primaryCustomAttributes;
-    ECCustomAttributeCollection         m_consolidatedCustomAttributes;
+    ECCustomAttributeCollection         m_supplementedCustomAttributes;
     SchemaWriteStatus                   AddCustomAttributeProperties (BeXmlNodeR oldNode, BeXmlNodeR newNode) const;
 
     IECInstancePtr                      GetCustomAttributeInternal(Utf8StringCR className, bool includeBaseClasses, bool includeSupplementalAttributes) const;
@@ -225,10 +225,7 @@ private:
 
 protected:
     //! Does not check if the container's ECSchema references the requisite ECSchema(s). @see SupplementedSchemaBuilder::SetMergedCustomAttribute
-    ECObjectsStatus                     SetConsolidatedCustomAttribute(IECInstanceR customAttributeInstance);
-    //! Removes a consolidated custom attribute from the container
-    //! @param[in]  classDefinition ECClass of the custom attribute to remove
-    bool                                RemoveConsolidatedCustomAttribute(ECClassCR classDefinition);
+    ECObjectsStatus                     SetSupplementedCustomAttribute(IECInstanceR customAttributeInstance);
 
     InstanceReadStatus                  ReadCustomAttributes (BeXmlNodeR containerNode, ECSchemaReadContextR context, ECSchemaCR fallBackSchema);
     SchemaWriteStatus                   WriteCustomAttributes(BeXmlWriterR xmlWriter) const;
@@ -245,8 +242,8 @@ protected:
 public:
     ECSchemaP                           GetContainerSchema();
     //! Retrieves the local custom attribute matching the class name.  If the attribute is not 
-    //! a consolidated attribute it will be copied and added to the consolidated list before it is returned.
-    IECInstancePtr                      GetLocalAttributeAsConsolidated(Utf8StringCR className);
+    //! a supplemented attribute it will be copied and added to the supplemented list before it is returned.
+    IECInstancePtr                      GetLocalAttributeAsSupplemented(Utf8StringCR className);
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
@@ -316,6 +313,11 @@ public:
     //! Removes a custom attribute from the container
     //! @param[in]  classDefinition ECClass of the custom attribute to remove
     ECOBJECTS_EXPORT bool               RemoveCustomAttribute(ECClassCR classDefinition);
+
+    //! Removes a supplemented custom attribute from the container
+    //! @param[in]  classDefinition ECClass of the custom attribute to remove
+    ECOBJECTS_EXPORT bool               RemoveSupplementedCustomAttribute(ECClassCR classDefinition);
+
 };
 
 //=======================================================================================
