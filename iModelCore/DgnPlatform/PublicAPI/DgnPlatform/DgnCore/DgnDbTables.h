@@ -77,31 +77,6 @@ namespace dgn_ElementHandler {struct Physical;};
 namespace dgn_TxnTable {struct Element; struct Model;};
 
 //=======================================================================================
-//! Holds ID remapping tables
-//=======================================================================================
-struct DgnRemapTables : BeSQLite::DbAppData
-{
-protected:
-    bmap<DgnCategoryId, DgnCategoryId> m_categoryId;
-    bmap<DgnSubCategoryId, DgnSubCategoryId> m_subcategoryId;
-
-    virtual void _OnCleanup(BeSQLite::Db&) {delete this;}
-
-    template<typename T>
-    T Find(bmap<T,T> const& table, T sourceId) const {auto i = table.find(sourceId); return (i == table.end())? T(): i->second;}
-
-public:
-    DgnRemapTables& Get(DgnDbR);
-
-    DgnCategoryId Find(DgnCategoryId sourceId) const {return Find<DgnCategoryId>(m_categoryId, sourceId);}
-    void Add(DgnCategoryId sourceId, DgnCategoryId targetId) {m_categoryId[sourceId] = targetId;}
-
-    DgnSubCategoryId Find(DgnSubCategoryId sourceId) const {return Find<DgnSubCategoryId>(m_subcategoryId, sourceId);}
-    void Add(DgnSubCategoryId sourceId, DgnSubCategoryId targetId) {m_subcategoryId[sourceId] = targetId;}
-
-};
-
-//=======================================================================================
 //! A base class for api's that access a table in a DgnDb
 //=======================================================================================
 struct DgnDbTable : NonCopyableClass
@@ -1637,8 +1612,8 @@ public:
 //! A helper class used to import a ComponentModel from one dgndb to another.
 //! The basic pattern for placing instances of component solutions is:
 //!     -# Make sure the component's schema has been generated. See ComponentModel::AddAllToECSchema.
-//!     -# Once per schema, import the component's schema into the target DgnDb. See #ImportSchema.
-//!     -# Once per component model, copy the model into the client's DgnDb. See #ImportModel.
+//!     -# Once per schema, import the component's schema into the target DgnDb. See ComponentModel::ImportSchema.
+//!     -# Once per component model, copy the model into the client's DgnDb. See ComponentModel::ImportModel.
 //!     -# Once per solution parameter set, solve and capture a solution. See ComponentSolution.
 //!     -# Create and place as many instances of a captured solution as you like. See ComponentSolution::CreateInstance.
 //! @see ComponentModel
@@ -1691,12 +1666,13 @@ public:
     //@{
     //! Create a new element that is an instance of a captured solution. The caller must insert the returned element into the Db.
     //! @param[in] destinationModel The model where the instance will be inserted by the caller
-    //! @param[in] solutionElement The element that captures a solution to a ComponentModel. See CaptureSolution and QuerySolution
+    //! @param[in] componentSchemaName The 
+    //! @param[in] solutionId Identifies a captured solution. See CaptureSolution and QuerySolutionId
     //! @param[in] origin The instance placement origin
     //! @param[in] angles The instance placement angles
     //! @return An new element that could be inserted as an instance of a captured solution
     //! @see CaptureSolution, QuerySolution
-    DGNPLATFORM_EXPORT static PhysicalElementPtr CreateSolutionInstance(DgnModelR destinationModel, PhysicalElementCR solutionElement, DPoint3dCR origin, YawPitchRollAnglesCR angles);
+    DGNPLATFORM_EXPORT PhysicalElementPtr CreateSolutionInstance(DgnModelR destinationModel, Utf8CP componentSchemaName, BeSQLite::EC::ECInstanceId solutionId, DPoint3dCR origin, YawPitchRollAnglesCR angles);
     //@}
     };
 

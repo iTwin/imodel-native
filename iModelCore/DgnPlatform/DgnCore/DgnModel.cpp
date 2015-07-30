@@ -1201,15 +1201,92 @@ EC::ECInstanceId DgnComponentSolutions::CaptureSolution(ComponentModelR componen
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhysicalElementPtr DgnComponentSolutions::CreateSolutionInstance(DgnModelR destinationModel, PhysicalElementCR solutionElement, DPoint3dCR origin, YawPitchRollAnglesCR angles)
+PhysicalElementPtr DgnComponentSolutions::CreateSolutionInstance(DgnModelR destinationModel, Utf8CP componentSchemaName, BeSQLite::EC::ECInstanceId solutionId, DPoint3dCR origin, YawPitchRollAnglesCR angles)
     {
+    Solution sln;
+    if (DgnDbStatus::Success != Query(sln, solutionId))
+        return nullptr;
 
-    DgnElement::CreateParams cparms(destinationModel.GetDgnDb(), destinationModel.GetModelId(), solutionElement.GetElementClassId(), solutionElement.GetCategoryId());
-    PhysicalElementPtr instance = solutionElement.Clone(nullptr, &cparms)->ToPhysicalElementP();
-    AxisAlignedBox3d elementRange = solutionElement.CalculateRange3d(); // the solution element is at the origin and is un-rotated. So, it's range is an element-aligned box.
-    Placement3d placement(origin, angles, (ElementAlignedBox3dCR)elementRange);
-    instance->SetPlacement(placement);
+    RefCountedPtr<ComponentModel> cm = GetDgnDb().Models().Get<ComponentModel>(sln.m_componentModelId);
+    if (!cm.IsValid())
+        return nullptr;
+
+    DgnClassId cmClassId = DgnClassId(GetDgnDb().Schemas().GetECClassId(componentSchemaName, cm->ComputeElementECClassName().c_str()));
+    DgnCategoryId cmCategoryId = GetDgnDb().Categories().QueryCategoryId(cm->GetElementCategoryName().c_str());
+
+    GeomStream geom;
+    sln.QueryGeomStream(geom, GetDgnDb());
+
+    ElementGeometryBuilderPtr builder = ElementGeometryBuilder::Create(destinationModel, cmCategoryId, origin, angles);
+    builder->SetGeomStream(geom);
+
+    PhysicalElementPtr instance = PhysicalElement::Create(PhysicalElement::CreateParams(GetDgnDb(), destinationModel.GetModelId(), cmClassId, cmCategoryId));
+    builder->SetGeomStreamAndPlacement(*instance);
+
     return instance;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelPtr DgnModel::_Clone(DgnDbR targetDb) const
+    {
+    DgnModelId modelId = targetDb.Models().QueryModelId(GetModelName());
+    if (modelId.IsValid())
+        return nullptr;
+
+    return GetModelHandler().Create(CreateParams(targetDb, GetClassId(), GetModelName(), GetProperties(), GetSolver()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnModel::_CopyContentsFrom(DgnModelCR sourceModel)
+    {
+    DgnElements& elements = m_dgndb.Elements();
+    DgnElements& categories = m_dgndb.Categories();
+    DgnRemapTables remap;
+
+    Statement stmt(m_dgndb, "SELECT Id FROM " DGN_TABLE(DGN_CLASSNAME_Element) " WHERE ModelId=?");
+    stmt.BindId(1, m_modelId);
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        DgnElementCPtr el = elements.GetElement(stmt.GetValueId<DgnElementId>(0));
+        DgnCategoryId catid = categories.Import(remap, sourceModel.GetDgnDb(), el->GetCategoryId());
+        DgnElement::CreateParams ccparms(GetDgnDb(), GetModelId(), el->GetElementClassId(), catid);
+        DgnDbStatus status;
+        DgnElementPtr cc = el->Clone(&status, &ccparms);
+        if (!cc.IsValid() || (DgnDbStatus::Success != status))
+            {
+            // *** TBD: Record failure somehow
+            continue;
+            }
+        cc->Insert(&status);
+        if (DgnDbStatus::Success != status)
+            {
+            // *** TBD: Record failure somehow
+            continue;
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelPtr DgnModel::InsertCopyOfModel(DgnDbR destDb, DgnModelCR sourceModel)
+    {
+    DgnModelPtr newModel = sourceModel._Clone(destDb);
+    if (!newModel.IsValid())
+        return nullptr;
+    if (!newModel->GetModelId().IsValid())
+        {
+        if (newModel->Insert() != DgnDbStatus::Success)
+            return nullptr;
+        }
+    if (newModel->_CopyContentsFrom(sourceModel) != DgnDbStatus::Success)
+        return nullptr;
+
+    return newModel;
     }
 
 /*---------------------------------------------------------------------------------**//**

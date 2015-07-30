@@ -691,7 +691,7 @@ QvElem* GeometricElement::GetQvElem(uint32_t id) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Brien.Bastings                  07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementPtr DgnElement::_Clone(DgnDbStatus* stat, DgnElement::CreateParams const* params) const
+DgnElementPtr DgnElement::_Clone(DgnDbStatus* stat, DgnElement::CreateParams const* params, DgnElementImporter* importer) const
     {
     // Perform input params validation. Code must be different and element id should be invalid...
     if (nullptr != params)
@@ -713,7 +713,11 @@ DgnElementPtr DgnElement::_Clone(DgnDbStatus* stat, DgnElement::CreateParams con
             }
         }
 
-    DgnElementPtr cloneElem = GetElementHandler().Create(nullptr != params ? *params : DgnElement::CreateParams(GetDgnDb(), GetModelId(), GetElementClassId(), GetCategoryId(), nullptr, nullptr, DgnElementId()));
+    DgnCategoryId categoryId = GetCategoryId();
+    if (nullptr != importer)                                // Support for copying between DgnDbs
+        categoryId = importer->RemapCategory(categoryId);
+
+    DgnElementPtr cloneElem = GetElementHandler().Create(nullptr != params ? *params : DgnElement::CreateParams(GetDgnDb(), GetModelId(), GetElementClassId(), categoryId, nullptr, nullptr, DgnElementId()));
 
     if (!cloneElem.IsValid())
         {
@@ -727,6 +731,10 @@ DgnElementPtr DgnElement::_Clone(DgnDbStatus* stat, DgnElement::CreateParams con
 
     if (nullptr != stat)
         *stat = DgnDbStatus::Success;
+
+    // *** TBD: Copy my Aspects (other than ElementGeom -- GeometricElement subclass already does that!?!)
+
+    // *** TBD: Copy my Children?
 
     return cloneElem;
     }

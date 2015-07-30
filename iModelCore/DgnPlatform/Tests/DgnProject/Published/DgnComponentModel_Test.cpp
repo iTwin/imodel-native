@@ -138,12 +138,12 @@ void CloseClientDb() {m_clientDb->CloseDb(); m_clientDb=nullptr;}
 void Developer_TestWidgetSolver();
 void Developer_TestGadgetSolver();
 void Client_CreateTargetModel(Utf8CP targetModelName);
-void Client_SolveAndCapture(PhysicalElementCPtr& solutionEl, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists);
-void Client_PlaceInstanceOfSolution(DgnElementId&, Utf8CP targetModelName, PhysicalElementCR);
+void Client_SolveAndCapture(EC::ECInstanceId& solutionId, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists);
+void Client_PlaceInstanceOfSolution(DgnElementId&, Utf8CP targetModelName, EC::ECInstanceId);
 void Client_SolveAndPlaceInstance(DgnElementId&, Utf8CP targetModelName, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists);
 void Client_CheckComponentInstance(DgnElementId, size_t expectedCount, double x, double y, double z);
 void GenerateCMSchema();
-void Client_CreateProxyCM(Utf8CP componentName);
+void Client_ImportCM(Utf8CP componentName);
 
 void SimulateDeveloper();
 void SimulateClient();
@@ -342,28 +342,24 @@ void ComponentModelTest::GenerateCMSchema()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Client_CreateProxyCM(Utf8CP componentName)
+void ComponentModelTest::Client_ImportCM(Utf8CP componentName)
     {
     OpenComponentDb(Db::OpenMode::Readonly);
     
     ComponentModelPtr componentModel = getModelByName<ComponentModel>(*m_componentDb, componentName);
 
-    // Create the CMProxyModel -- ONLY DO THIS ONCE per CM. This might be done on demand, the first time that an instance of a particular CM is placed.
+    // ONLY DO THIS ONCE per CM. This might be done on demand, the first time that an instance of a particular CM is placed.
     ASSERT_TRUE( componentModel.IsValid() );
 
-    ComponentProxyModelPtr existingProxy = ComponentProxyModel::Get(*m_clientDb, *componentModel);
+    ComponentModelPtr cmCopy = ComponentModel::Copy(*m_clientDb, *componentModel);
     
-    ASSERT_FALSE( existingProxy.IsValid() ) << "We have not imported the CM yet, so no proxy for it should be found";
-    
-    ComponentProxyModelPtr proxy = ComponentProxyModel::Create(*m_clientDb, *componentModel, TEST_JS_NAMESPACE);
+    ASSERT_TRUE( cmCopy.IsValid() );
 
-    ASSERT_TRUE( proxy.IsValid() );
-    ASSERT_EQ( DgnDbStatus::Success , proxy->Insert() ) << "We have to be able to create a proxy with a prescribed name -- the name is how we look it up later";
+    m_clientDb->SaveChanges();
 
-    //  Verify that we can look up an existing proxy
-    existingProxy = ComponentProxyModel::Get(*m_clientDb, *componentModel);
-    ASSERT_TRUE( existingProxy.IsValid() );
-    ASSERT_EQ( proxy.get() , existingProxy.get() );
+    //  Verify that we can look up an existing cmCopy
+    DgnModelId ccId = m_clientDb->Models().QueryModelId(componentName);
+    ASSERT_EQ( ccId.GetValue(), cmCopy->GetModelId().GetValue() );
 
     CloseComponentDb();
     }
@@ -392,7 +388,7 @@ void ComponentModelTest::Client_CheckComponentInstance(DgnElementId eid, size_t 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Client_SolveAndCapture(PhysicalElementCPtr& solutionEl, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists)
+void ComponentModelTest::Client_SolveAndCapture(EC::ECInstanceId& solutionId, Utf8CP componentName, Json::Value const& parms, bool solutionAlreadyExists)
     {
     //  -------------------------------------------------------
     //  ComponentModel - Solve for the given parameter values
@@ -411,21 +407,22 @@ void ComponentModelTest::Client_SolveAndCapture(PhysicalElementCPtr& solutionEl,
         }
 
     //  -------------------------------------------------------
-    //  ComponentProxyModel - Capture (or look up) the solution geometry
+    //  ComponentModel - Capture (or look up) the solution geometry
     //  -------------------------------------------------------
     BeAssert(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
 
-    ComponentProxyModelPtr proxy = ComponentProxyModel::Get(*m_clientDb, *componentModel);
-    ASSERT_TRUE( proxy.IsValid() ) << "We should have imported the CM and created a proxy in a previous step";
+    DgnModelId ccId = m_clientDb->Models().QueryModelId(componentName);
+    RefCountedPtr<ComponentModel> cmCopy = m_clientDb->Models().Get<ComponentModel>(ccId);
+    ASSERT_TRUE( cmCopy.IsValid() ) << "We should have imported the CM and created a cmCopy in a previous step";
 
-    PhysicalElementCPtr existingSolution = proxy->QuerySolution(ComponentProxyModel::ComputeSolutionName(parms));
-    ASSERT_EQ( solutionAlreadyExists , existingSolution.IsValid() );
+    DgnComponentSolutions solutions(*m_clientDb);
+    EC::ECInstanceId existingSid = solutions.QuerySolutionId(ccId, DgnComponentSolutions::ComputeSolutionName(parms));
     
-    solutionEl = proxy->CaptureSolution(*componentModel);
-    ASSERT_TRUE( solutionEl.IsValid() );
+    solutionId = solutions.CaptureSolution(*componentModel);
+    ASSERT_TRUE( solutionId.IsValid() );
 
     if (solutionAlreadyExists)
-        ASSERT_EQ( existingSolution.get(), solutionEl.get() );
+        ASSERT_EQ( solutionId.GetValue(), existingSid.GetValue() );
 
     componentModel = nullptr;
     CloseComponentDb();
@@ -434,14 +431,15 @@ void ComponentModelTest::Client_SolveAndCapture(PhysicalElementCPtr& solutionEl,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ComponentModelTest::Client_PlaceInstanceOfSolution(DgnElementId& ieid, Utf8CP targetModelName, PhysicalElementCR solutionEl)
+void ComponentModelTest::Client_PlaceInstanceOfSolution(DgnElementId& ieid, Utf8CP targetModelName, EC::ECInstanceId solutionId)
     {
     BeAssert(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
 
     PhysicalModelPtr targetModel = getModelByName<PhysicalModel>(*m_clientDb, targetModelName);
     ASSERT_TRUE( targetModel.IsValid() );
     
-    PhysicalElementPtr instance = ComponentProxyModel::CreateSolutionInstance(*targetModel, solutionEl, DPoint3d::FromZero(), YawPitchRollAngles());
+    DgnComponentSolutions solutions(*m_clientDb);
+    PhysicalElementPtr instance = solutions.CreateSolutionInstance(*targetModel, TEST_JS_NAMESPACE, solutionId, DPoint3d::FromZero(), YawPitchRollAngles());
     ASSERT_TRUE( instance.IsValid() );
     ASSERT_TRUE( instance->Insert().IsValid() );
 
@@ -457,11 +455,11 @@ void ComponentModelTest::Client_SolveAndPlaceInstance(DgnElementId& ieid, Utf8CP
     {
     BeAssert(m_clientDb.IsValid() && "Caller must have already opened the Client DB");
 
-    PhysicalElementCPtr solutionEl;
-    Client_SolveAndCapture(solutionEl, componentName, parms, solutionAlreadyExists);
+    EC::ECInstanceId solutionId;
+    Client_SolveAndCapture(solutionId, componentName, parms, solutionAlreadyExists);
     
-    if (solutionEl.IsValid())
-        Client_PlaceInstanceOfSolution(ieid, targetModelName, *solutionEl);
+    if (solutionId.IsValid())
+        Client_PlaceInstanceOfSolution(ieid, targetModelName, solutionId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -485,12 +483,15 @@ void ComponentModelTest::SimulateClient()
 
     OpenClientDb(Db::OpenMode::ReadWrite);
 
-    ASSERT_EQ( DgnDbStatus::Success , ComponentProxyModel::ImportSchema(*m_clientDb, m_componentSchemaFileName) );
-    Client_CreateProxyCM(TEST_WIDGET_COMPONENT_NAME);
+    //  Once per schema, import the schema
+    ASSERT_EQ( DgnDbStatus::Success , ComponentModel::ImportSchema(*m_clientDb, m_componentSchemaFileName) );
 
-    Client_CreateTargetModel("Instances");
+    //  Once per component, import the component model
+    Client_ImportCM(TEST_WIDGET_COMPONENT_NAME);
 
     // Now start placing instances of Widgets
+    Client_CreateTargetModel("Instances");
+    
     Json::Value wsln1(Json::objectValue);
     wsln1["X"] = 10;
     wsln1["Y"] = 11;
@@ -525,7 +526,7 @@ void ComponentModelTest::SimulateClient()
     Client_CheckComponentInstance(w1, 2, wsln1["X"].asDouble(), wsln1["Y"].asDouble(), wsln1["Z"].asDouble());  // new instance of new solution should not affect existing instances of other solutions
 
     // Now start placing instances of Gadgets
-    Client_CreateProxyCM(TEST_GADGET_COMPONENT_NAME);
+    Client_ImportCM(TEST_GADGET_COMPONENT_NAME);
     Json::Value gsln1(Json::objectValue);
     gsln1["Q"] = 3;
     gsln1["W"] = 2;

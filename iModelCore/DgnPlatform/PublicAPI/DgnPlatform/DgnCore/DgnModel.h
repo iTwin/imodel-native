@@ -41,6 +41,49 @@ struct DgnElementMap : bmap<DgnElementId, DgnElementCPtr>
         }
     };
 
+//=======================================================================================
+//! Holds ID remapping tables
+//=======================================================================================
+struct DgnRemapTables
+{
+protected:
+    bmap<DgnCategoryId, DgnCategoryId> m_categoryId;
+    bmap<DgnSubCategoryId, DgnSubCategoryId> m_subcategoryId;
+
+    template<typename T>
+    T Find(bmap<T,T> const& table, T sourceId) const {auto i = table.find(sourceId); return (i == table.end())? T(): i->second;}
+
+public:
+    DgnRemapTables& Get(DgnDbR);
+
+    DgnCategoryId Find(DgnCategoryId sourceId) const {return Find<DgnCategoryId>(m_categoryId, sourceId);}
+    void Add(DgnCategoryId sourceId, DgnCategoryId targetId) {m_categoryId[sourceId] = targetId;}
+
+    DgnSubCategoryId Find(DgnSubCategoryId sourceId) const {return Find<DgnSubCategoryId>(m_subcategoryId, sourceId);}
+    void Add(DgnSubCategoryId sourceId, DgnSubCategoryId targetId) {m_subcategoryId[sourceId] = targetId;}
+
+};
+
+//=======================================================================================
+//! Helps models and elements copy themselves between DgnDbs
+//=======================================================================================
+struct DgnElementImporter
+{
+private:
+    DgnDbR          m_sourceDb;
+    DgnDbR          m_destDb;
+    DgnRemapTables  m_remap;
+
+public:
+    DgnElementImporter(DgnDbR source, DgnDbR dest) : m_sourceDb(source), m_destDb(dest) {;}
+
+    DgnDbR GetSourceDb() const {return m_sourceDb;}
+    DgnDbR GetDestinationDb() const {return m_destDb;}
+
+    DGNPLATFORM_EXPORT DgnCategoryId RemapCategory(DgnCategoryId sourceId);
+    DGNPLATFORM_EXPORT DgnSubCategoryId RemapSubCategory(DgnSubCategoryId sourceId);
+};
+
 /** @addtogroup DgnModelGroup DgnModels
 @ref PAGE_ModelOverview
 */
@@ -554,6 +597,37 @@ public:
 
     //! a const iterator to the end of the loaded elements for this DgnModel.
     const_iterator end() const {return m_elements.end();}
+
+    //! Copy the contents of \a sourceModel into this model. Note that this model might be in a different DgnDb.
+    //! @param sourceModel The model to copy
+    //! @return non-zero if the copy failed
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _CopyContentsFrom(DgnModelCR sourceModel);
+
+    //! Make a copy of this model -- but not its elements -- for use in the specified DgnDb.
+    //! The caller will follow up with a call to _CopyContentsFrom on the new model.
+    //! The returned model may or may not have been inserted. The caller must check.
+    //! The default implementation just gets this model's handler and asks it to create a new instance, based on the name and properties of this model.
+    //! @param targetDb   The destination Db
+    //! @return The copy 
+    DGNPLATFORM_EXPORT virtual DgnModelPtr _Clone(DgnDbR targetDb) const;
+
+    //! Copy \a sourceModel into \a destDb. 
+    //! The model itself is copied and inserted in the destination DgnDb.
+    //! All of the elements in the model and all of their aspects are copied and inserted.
+    //! All ECRelationships <em>between elements in the model</em> are copied and inserted. ECRelationships between elements in the model and elements outside the model are \em not copied.
+    //! Categories, SubCategories, styles, etc. used by elements in the model are copied if necessary.
+    //! @param destDb   The destination Db
+    //! @param sourceModel The model to copy
+    //! @return the copied model, already inserted into the destination Db.
+    DGNPLATFORM_EXPORT static DgnModelPtr InsertCopyOfModel(DgnDbR destDb, DgnModelCR sourceModel);
+
+    //! Copy \a sourceModel into \a destDb.
+    //! @param destDb   The destination Db
+    //! @param sourceModel The model to copy
+    //! @return the copied model
+    template<typename T>
+    static RefCountedPtr<T> Copy(DgnDbR destDb, T const& sourceModel) {return dynamic_cast<T*>(InsertCopyOfModel(destDb, sourceModel).get());}
+
 };
 
 //=======================================================================================
@@ -833,12 +907,15 @@ public:
     //! @see GenerateECClass
     DGNPLATFORM_EXPORT static DgnDbStatus ImportSchema(DgnDbR targetDb, BeFileNameCR schemaFile);
 
-    //! Import the this model into the target DgnDb.
-    //! This must be done \em once before any ComponentModelSolutions are created for ComponentModels that are defined in the schema.
-    //! @param[in] targetDb     The DgnDb that is to hold the new schema
-    //! @return non-zero error status if a like-named component model could not be imported; DgnDbStatus::DuplicateName if a model by the same name already exists.
-    //! @see GenerateECClass
-    DGNPLATFORM_EXPORT DgnDbStatus ImportInto(DgnDbR targetDb);
+    //! Copy the specified component model into \a destDb.
+    //! The model itself is copied and inserted in the destination DgnDb.
+    //! All of the elements in the model and all of their Aspects are copied and inserted.
+    //! All ECRelationships <em>between elements in the model</em> are copied and inserted. ECRelationships between elements in the model and elements outside the model are \em not copied.
+    //! Categories, SubCategories, styles, etc. used by elements in the model are copied if necessary.
+    //! @param destDb   The destination Db
+    //! @param sourceModel The model to copy
+    //! @return the copied model, already inserted into the destination Db.
+    DGNPLATFORM_EXPORT static ComponentModelPtr Copy(DgnDbR destDb, ComponentModel const& sourceModel) {return T_Super::Copy<ComponentModel>(destDb, sourceModel);}
 };
 
 //=======================================================================================
