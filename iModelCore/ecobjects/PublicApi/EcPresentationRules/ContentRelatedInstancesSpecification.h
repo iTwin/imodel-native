@@ -58,19 +58,33 @@ struct ContentRelatedInstancesSpecification : public ContentSpecification
         //! Returns level of related instances to skip.
         ECOBJECTS_EXPORT int                          GetSkipRelatedLevel (void) const;
 
+        //! Sets the SkipRelatedLevel of the specification.
+        ECOBJECTS_EXPORT void                         SetSkipRelatedLevel (int value);
+
         //! InstanceFiler is spacially formated string that represents WhereCriteria in 
         //! ECQuery that is used to filter query results.
         ECOBJECTS_EXPORT Utf8StringCR                 GetInstanceFilter (void) const;
 
+        //! Sets the instance filter of the specification.
+        ECOBJECTS_EXPORT void                         SetInstanceFilter (Utf8StringCR value); 
+
         //! Returns direction of relationship that should be selected in the query.
         ECOBJECTS_EXPORT RequiredRelationDirection    GetRequiredRelationDirection (void) const;
+
+        //! Sets the required direction of the specification.
+        ECOBJECTS_EXPORT void                         SetRequiredRelationDirection (RequiredRelationDirection value);
 
         //! Relationship class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
         ECOBJECTS_EXPORT Utf8StringCR                 GetRelationshipClassNames (void) const;
 
+        //! Sets the RelationshipClassNames of the specification.
+        ECOBJECTS_EXPORT void                         SetRelationshipClassNames (Utf8StringCR value);
+
         //! Related class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
         ECOBJECTS_EXPORT Utf8StringCR                 GetRelatedClassNames (void) const;
 
+        //! Sets the RelatedClassNames of the specification.
+        ECOBJECTS_EXPORT void                         SetRelatedClassNames (Utf8StringCR value);
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

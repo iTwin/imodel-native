@@ -100,9 +100,19 @@ void InstanceNodesOfSpecificClassesSpecification::_WriteXml (BeXmlNodeP xmlNode)
 bool InstanceNodesOfSpecificClassesSpecification::GetGroupByClass (void) const { return m_groupByClass; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void InstanceNodesOfSpecificClassesSpecification::SetGroupByClass (bool value) { m_groupByClass = value; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool InstanceNodesOfSpecificClassesSpecification::GetGroupByLabel (void) const { return m_groupByLabel; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void InstanceNodesOfSpecificClassesSpecification::SetGroupByLabel (bool value) { m_groupByLabel = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -110,14 +120,29 @@ bool InstanceNodesOfSpecificClassesSpecification::GetGroupByLabel (void) const {
 bool InstanceNodesOfSpecificClassesSpecification::GetShowEmptyGroups (void) const { return m_showEmptyGroups; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void InstanceNodesOfSpecificClassesSpecification::SetShowEmptyGroups (bool value) { m_showEmptyGroups; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR InstanceNodesOfSpecificClassesSpecification::GetClassNames (void) const { return m_classNames; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void InstanceNodesOfSpecificClassesSpecification::SetClassNames (Utf8String value) { m_classNames = value; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool InstanceNodesOfSpecificClassesSpecification::GetArePolymorphic (void) const { return m_arePolymorphic; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void InstanceNodesOfSpecificClassesSpecification::SetArePolymorphic (bool value) { m_arePolymorphic = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012

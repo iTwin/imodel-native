@@ -74,11 +74,26 @@ void ContentInstancesOfSpecificClassesSpecification::_WriteXml (BeXmlNodeP xmlNo
 Utf8StringCR ContentInstancesOfSpecificClassesSpecification::GetClassNames (void) const { return m_classNames; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentInstancesOfSpecificClassesSpecification::SetClassNames (Utf8StringCR value) { m_classNames = value; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ContentInstancesOfSpecificClassesSpecification::GetArePolymorphic (void) const { return m_arePolymorphic; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentInstancesOfSpecificClassesSpecification::SetArePolymorphic (bool value) { m_arePolymorphic = value; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR ContentInstancesOfSpecificClassesSpecification::GetInstanceFilter (void) const { return m_instanceFilter; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentInstancesOfSpecificClassesSpecification::SetInstanceFilter (Utf8StringCR value) { m_instanceFilter = value; }

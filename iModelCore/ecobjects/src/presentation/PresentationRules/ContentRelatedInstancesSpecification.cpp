@@ -91,9 +91,19 @@ void ContentRelatedInstancesSpecification::_WriteXml (BeXmlNodeP xmlNode)
 int ContentRelatedInstancesSpecification::GetSkipRelatedLevel (void) const { return m_skipRelatedLevel; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentRelatedInstancesSpecification::SetSkipRelatedLevel (int value) { m_skipRelatedLevel = value; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR ContentRelatedInstancesSpecification::GetInstanceFilter (void) const { return m_instanceFilter; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentRelatedInstancesSpecification::SetInstanceFilter (Utf8StringCR value) { m_instanceFilter = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -101,11 +111,26 @@ Utf8StringCR ContentRelatedInstancesSpecification::GetInstanceFilter (void) cons
 RequiredRelationDirection ContentRelatedInstancesSpecification::GetRequiredRelationDirection (void) const { return m_requiredDirection; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentRelatedInstancesSpecification::SetRequiredRelationDirection (RequiredRelationDirection value) { m_requiredDirection = value; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR ContentRelatedInstancesSpecification::GetRelationshipClassNames (void) const { return m_relationshipClassNames; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentRelatedInstancesSpecification::SetRelationshipClassNames (Utf8StringCR value) { m_relationshipClassNames = value; } 
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR ContentRelatedInstancesSpecification::GetRelatedClassNames (void) const { return m_relatedClassNames; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void ContentRelatedInstancesSpecification::SetRelatedClassNames (Utf8StringCR value) { m_relatedClassNames = value; }

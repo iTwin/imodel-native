@@ -182,7 +182,6 @@
         <ProductDirectory Name="PublishedApi_Doc"                   Path="Docs"/>
         <ProductDirectory Name="ecschemas"                          Path="Runtime"/>
         <ProductDirectory Name="VendorNotices"                      Path="Notices"/>
-        <ProductDirectory Name="VendorNotices"                      Path="Notices" LibType="Static"/>
     </ProductDirectoryList>
 
     <Product Name="ECObjects">

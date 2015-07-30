@@ -21,7 +21,8 @@ typedef RefCountedPtr<StandaloneECRelationshipEnabler>  StandaloneECRelationship
 typedef RefCountedPtr<StandaloneECRelationshipInstance> StandaloneECRelationshipInstancePtr;
 
 //=======================================================================================
-//! @ingroup ECObjectsGroup
+//! @addtogroup ECObjectsGroup
+//! @beginGroup
 //! StandaloneECRelationshipInstance is used to represent a relationship between
 //! two IECInstances
 //=======================================================================================
@@ -89,7 +90,6 @@ public:
     };
 
 //=======================================================================================
-//! @ingroup ECObjectsGroup
 //! ECEnabler for Standalone ECRelationshipInstances (IECInstances not tied to a specific persistent store)
 //=======================================================================================
 struct StandaloneECRelationshipEnabler : public IECRelationshipEnabler, public StandaloneECEnabler
@@ -126,7 +126,7 @@ public:
     //! Get the ClassLayout for this enabler
     ECOBJECTS_EXPORT ClassLayoutCR                              GetClassLayout() const;
     };
-
+/** @endGroup */
 //#pragma warning(default:4250)
 
 END_BENTLEY_ECOBJECT_NAMESPACE

@@ -122,9 +122,19 @@ void RelatedInstanceNodesSpecification::_WriteXml (BeXmlNodeP xmlNode)
 bool RelatedInstanceNodesSpecification::GetGroupByClass (void) const                { return m_groupByClass; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void RelatedInstanceNodesSpecification::SetGroupByClass (bool value)                { m_groupByClass = value; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool RelatedInstanceNodesSpecification::GetGroupByRelationship (void) const         { return m_groupByRelationship; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void RelatedInstanceNodesSpecification::SetGroupByRelationship (bool value)         { m_groupByRelationship = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -132,9 +142,19 @@ bool RelatedInstanceNodesSpecification::GetGroupByRelationship (void) const     
 bool RelatedInstanceNodesSpecification::GetGroupByLabel (void) const                { return m_groupByLabel; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void RelatedInstanceNodesSpecification::SetGroupByLabel (bool value)                { m_groupByLabel = value; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool RelatedInstanceNodesSpecification::GetShowEmptyGroups (void) const             { return m_showEmptyGroups; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void RelatedInstanceNodesSpecification::SetShowEmptyGroups (bool value)             { m_showEmptyGroups = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -142,9 +162,19 @@ bool RelatedInstanceNodesSpecification::GetShowEmptyGroups (void) const         
 int RelatedInstanceNodesSpecification::GetSkipRelatedLevel (void) const             { return m_skipRelatedLevel; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void RelatedInstanceNodesSpecification::SetSkipRelatedLevel (int value)             { m_skipRelatedLevel = value; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR RelatedInstanceNodesSpecification::GetInstanceFilter (void) const         { return m_instanceFilter; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void RelatedInstanceNodesSpecification::SetInstanceFilter (Utf8String value)           { m_instanceFilter = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -152,9 +182,19 @@ Utf8StringCR RelatedInstanceNodesSpecification::GetInstanceFilter (void) const  
 RequiredRelationDirection RelatedInstanceNodesSpecification::GetRequiredRelationDirection (void) const { return m_requiredDirection; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void RelatedInstanceNodesSpecification::SetRequiredRelationDirection (RequiredRelationDirection value) { m_requiredDirection = value; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR RelatedInstanceNodesSpecification::GetSupportedSchemas (void) const       { return m_supportedSchemas; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void RelatedInstanceNodesSpecification::SetSupportedSchemas (Utf8String value)         { m_supportedSchemas = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -162,6 +202,16 @@ Utf8StringCR RelatedInstanceNodesSpecification::GetSupportedSchemas (void) const
 Utf8StringCR RelatedInstanceNodesSpecification::GetRelationshipClassNames (void) const { return m_relationshipClassNames; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void RelatedInstanceNodesSpecification::SetRelationshipClassNames (Utf8String value)   { m_relationshipClassNames = value; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR RelatedInstanceNodesSpecification::GetRelatedClassNames (void) const      { return m_relatedClassNames; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void RelatedInstanceNodesSpecification::SetRelatedClassNames (Utf8String value) { m_relatedClassNames = value; }

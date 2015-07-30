@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/CustomNodeSpecification.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -48,14 +48,26 @@ struct CustomNodeSpecification : public ChildNodeSpecification
         //! Returns type of the custom node.
         ECOBJECTS_EXPORT WStringCR                    GetNodeType (void) const;
 
+        //! Sets the Node type. Can be string.
+        ECOBJECTS_EXPORT void                         SetNodeType (WString value);
+
         //! Returns label of the custom node.
         ECOBJECTS_EXPORT WStringCR                    GetLabel (void) const;
+
+        //! Sets the label. Can be string.
+        ECOBJECTS_EXPORT void                         SetLabel (WString value);
 
         //! Returns description of the custom node.
         ECOBJECTS_EXPORT WStringCR                    GetDescription (void) const;
 
+        //! Sets the description. Can be string.
+        ECOBJECTS_EXPORT void                         SetDescription (WString value);
+
         //! Returns ImageId of the custom node.
         ECOBJECTS_EXPORT WStringCR                    GetImageId (void) const;
+        //! Sets the ImageId. Can be string
+        ECOBJECTS_EXPORT void                         SetImageId (WString value);
+
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

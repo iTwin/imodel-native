@@ -48,12 +48,20 @@ struct ContentInstancesOfSpecificClassesSpecification : public ContentSpecificat
         //! Class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
         ECOBJECTS_EXPORT Utf8StringCR                 GetClassNames (void) const;
 
+        //! Sets the ClassNames for the specification.
+        ECOBJECTS_EXPORT void                         SetClassNames (Utf8StringCR value);
+
         //! This flag identifies whether ECClasses defined in this specification should be marked as polymorphic in the Query.
         ECOBJECTS_EXPORT bool                         GetArePolymorphic (void) const;
+
+        //! Sets the ArePolymorphic value for the specification.
+        ECOBJECTS_EXPORT void                         SetArePolymorphic (bool value);
 
         //! InstanceFiler is specially formated string that represents WhereCriteria in 
         //! ECQuery that is used to filter query results.
         ECOBJECTS_EXPORT Utf8StringCR                 GetInstanceFilter (void) const;
+
+        ECOBJECTS_EXPORT void                         SetInstanceFilter (Utf8StringCR value);
 
     };
 

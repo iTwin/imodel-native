@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/CustomNodeSpecification.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -75,9 +75,19 @@ void CustomNodeSpecification::_WriteXml (BeXmlNodeP xmlNode)
 WStringCR CustomNodeSpecification::GetNodeType (void) const { return m_type; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void CustomNodeSpecification::SetNodeType (WString value) { m_type = value; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 WStringCR CustomNodeSpecification::GetLabel (void) const { return m_label; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void CustomNodeSpecification::SetLabel (WString value) { m_label = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -85,6 +95,16 @@ WStringCR CustomNodeSpecification::GetLabel (void) const { return m_label; }
 WStringCR CustomNodeSpecification::GetDescription (void) const { return m_description; }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void CustomNodeSpecification::SetDescription (WString value) { m_description = value; }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 WStringCR CustomNodeSpecification::GetImageId (void) const { return m_imageId; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Kelly.Shiptoski                 05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void CustomNodeSpecification::SetImageId (WString value) { m_imageId = value; }

@@ -22,7 +22,8 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //! contain metadata about the actual date time value (see DateTime::Info). 
 //! In order to preserve the metadata when persisting a DateTime, clients can decorate the respective
 //! ECProperty with the \b %DateTimeInfo custom attribute from the standard ECSchema \b Bentley_Standard_CustomAttributes.
-//! @ingroup ECObjectsGroup
+//! @addtogroup ECObjectsGroup
+//! @beginGroup
 //! @bsiclass
 //=======================================================================================    
 struct DateTimeInfo
@@ -109,7 +110,6 @@ public:
 
 //=======================================================================================    
 //! StandardCustomAttributeHelper provides APIs to access items of the Bentley standard schemas
-//! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================    
 struct StandardCustomAttributeHelper : NonCopyableClass
@@ -179,7 +179,6 @@ struct ECDbForeignKeyRelationshipMap;
 //=======================================================================================    
 //! ECDbMapCustomAttributeHelper is a convenience API for the custom attributes defined
 //! in the ECDbMap standard ECSchema
-//! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================    
 struct ECDbMapCustomAttributeHelper
@@ -224,7 +223,6 @@ public:
 //=======================================================================================    
 //! ECDbSchemaMap is a convenience wrapper around the SchemaMap custom attribute that simplifies
 //! reading the values of that custom attribute
-//! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================    
 struct ECDbSchemaMap
@@ -249,7 +247,6 @@ public:
 //=======================================================================================    
 //! ECDbClassMap is a convenience wrapper around the ClassMap custom attribute that simplifies
 //! reading the values of that custom attribute
-//! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================    
 struct ECDbClassMap
@@ -260,7 +257,6 @@ public:
     //=======================================================================================    
     //! MapStrategy is a convenience wrapper around the MapStrategy struct in the ECDbMap ECSchema
     //! that simplifies reading the values of that struct
-    //! @ingroup ECObjectsGroup
     //! @bsiclass
     //=======================================================================================    
     struct MapStrategy
@@ -292,7 +288,6 @@ public:
     //=======================================================================================    
     //! DbIndex is a convenience wrapper around the DbIndex struct in the ECDbMap ECSchema
     //! that simplifies reading the values of that struct
-    //! @ingroup ECObjectsGroup
     //! @bsiclass
     //=======================================================================================    
     struct DbIndex
@@ -353,7 +348,6 @@ public:
 //=======================================================================================    
 //! ECDbPropertyMap is a convenience wrapper around the PropertyMap custom attribute that simplifies
 //! reading the values of that custom attribute
-//! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================    
 struct ECDbPropertyMap
@@ -391,7 +385,6 @@ public:
 //=======================================================================================    
 //! ECDbLinkTableRelationshipMap is a convenience wrapper around the LinkTableRelationshipMap 
 //! custom attribute that simplifies reading the values of that custom attribute
-//! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================    
 struct ECDbLinkTableRelationshipMap
@@ -440,7 +433,6 @@ public:
 //=======================================================================================    
 //! ECDbForeignKeyRelationshipMap is a convenience wrapper around the ForeignKeyRelationshipMap 
 //! custom attribute that simplifies reading the values of that custom attribute
-//! @ingroup ECObjectsGroup
 //! @bsiclass
 //=======================================================================================    
 struct ECDbForeignKeyRelationshipMap
@@ -495,5 +487,8 @@ public:
     //! @return ECOBJECTSTATUS_Success if OnUpdateAction was set or unset in the ForeignKeyRelationshipMap, Error codes otherwise
     ECOBJECTS_EXPORT ECObjectsStatus TryGetOnUpdateAction(Utf8StringR onUpdateAction) const;
     };
-
+	
+/** @endGroup */
 END_BENTLEY_ECOBJECT_NAMESPACE
+
+//__PUBLISH_SECTION_END__

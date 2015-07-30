@@ -18,6 +18,26 @@ BENTLEY_NAMESPACE_TYPEDEFS (BeXmlWriter)
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
+//! @addtogroup ECObjectsGroup
+//! ECObjects is a set of abstractions for working with engineering/business data and metadata. 
+//! "EC" stands for "Engineering Content".
+//! There are several implementations of the ECObjects abstractions:
+//! @li In XML (two formats ECSchemaXML and ECInstanceXML)
+//! @li This native C++ implementation
+//! @li In .NET (multiple implementations of IECInstance, IECClass, and related interfaces.
+//!
+//! You can think of an ECClass as being like a C++ or .NET class that only defines properties (ECClasses define no methods or behaviors.) In some ways, they are closer to .NET interfaces that hold only properties... or C++ pure virtual abstract base classes that only contain property getters and setters. They are also very analogous to a database table definition.
+//!
+//! ECClasses contain ECProperties. These are property *definitions*, not values.
+//!
+//! ECInstances represent instances of objects. Each "belongs" to an ECClass and holds ECPropertyValues. They are somewhat analogous to the rows of a database table.
+//!
+//! An ECSchema is just a collection of ECClasses.
+//!
+//! There are also ECRelationshipClasses that are ECClasses that also define "RelationshipConstraints" indicating what ECClasses they relate. ECRelationshipInstances represent the relationships between the ECinstances (defined/constrainted by their ECRelationshipClass) ECRelationships work more like database foreign key constraint that C++ pointers or .NET object references.
+//! @beginGroup
+//! @see Bentley::EC
+
 //////////////////////////////////////////////////////////////////////////////////
 //  The following definitions are used to allow a struct property to generate a
 //  custom XML representation of itself. This was required to support 8.11
@@ -25,7 +45,6 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //////////////////////////////////////////////////////////////////////////////////
 typedef bmap<Utf8String, ICustomECStructSerializerP> NameSerializerMap;
 
-//! @ingroup ECObjectsGroup
 //! Interface for a custom ECStruct Serializer.  Implement this class if you need to allow a struct property
 //! to generate a custom XML representation of itself.
 struct ICustomECStructSerializer
@@ -52,7 +71,6 @@ struct ICustomECStructSerializer
     virtual void            LoadStructureFromString (StructECPropertyP structProperty, IECInstanceR ecInstance, Utf8CP baseAccessString, Utf8CP valueString) = 0;
     };
 
-//! @ingroup ECObjectsGroup
 //! Used to manage multiple custom struct serializers
 struct CustomStructSerializerManager
 {
@@ -98,7 +116,6 @@ typedef RefCountedPtr<IECInstance> IECInstancePtr;
 //! or use the "Lightweight" system in Bentley.ECObjects.Lightweight.
 //! Native IECInstances could be called "enabled" as opposed to "lightweight".
 //! @endif
-//! @ingroup ECObjectsGroup
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE IECInstance : RefCountedBase
     {
@@ -596,7 +613,6 @@ public:
 //! ECN::IECRelationshipInstance is an instance of an ECRelationshipClass and represents
 //! the relationship between two \ref ECN::IECInstance "IECInstances"
 //! @see IECInstance, ECRelationshipClass
-//! @ingroup ECObjectsGroup
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE IECRelationshipInstance : virtual IECInstance
     {
@@ -779,6 +795,7 @@ typedef ECInstanceList                  *ECInstanceListP, &ECInstanceListR;
 typedef ECInstanceList const            *ECInstanceListCP;
 typedef ECInstanceList const            &ECInstanceListCR;
 
+/** @endGroup */
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 /*__PUBLISH_SECTION_END__*/

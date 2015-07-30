@@ -20,6 +20,9 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 typedef RefCountedPtr<IECWipRelationshipInstance> IECWipRelationshipInstancePtr;
 #define DEFAULT_NUMBITSPERPROPERTY  2
 
+// @addtogroup ECObjectsGroup
+// @beginGroup
+
 enum PropertyFlagIndex ENUM_UNDERLYING_TYPE(uint8_t)
     {
     PROPERTYFLAGINDEX_IsLoaded = 0,
@@ -63,7 +66,6 @@ struct PerPropertyFlagsHolder
 * The memory is laid out according to the ClassLayout. The ClassLayout must be provided by classes that
 * subclass this class.
 * @see IECInstance
-* @ingroup ECObjectsGroup
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct MemoryECInstanceBase : ECDBuffer
@@ -201,7 +203,6 @@ typedef RefCountedPtr<StandaloneECInstance>  StandaloneECInstancePtr;
 //! to a specified persistence store and which holds the values in memory that it allocates,
 //! laid out according to the ClassLayout.
 //! @see IECInstance
-//! @ingroup ECObjectsGroup
 //=======================================================================================
 struct StandaloneECInstance : IECInstance
 //__PUBLISH_SECTION_END__
@@ -267,7 +268,6 @@ public:
 //=======================================================================================
 //! IECWipRelationshipInstance is used to set the name and order properties for an
 //! ECRelationship.
-//! @ingroup ECObjectsGroup
 //=======================================================================================
 struct IECWipRelationshipInstance : StandaloneECInstance
     {
@@ -291,7 +291,6 @@ struct IECWipRelationshipInstance : StandaloneECInstance
 //=======================================================================================
 //! ECEnabler for standalone ECInstances (IECInstances not tied to a specific persistent store)
 //! @see StandaloneECInstance
-//! @ingroup ECObjectsGroup
 //=======================================================================================
 struct StandaloneECEnabler : public ECEnabler
    {
@@ -338,6 +337,8 @@ public:
     //! @return the ClassLayout associated with this enabler
     ECOBJECTS_EXPORT ClassLayoutR                   GetClassLayout();
     };
+
+/** @endGroup */
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 //#pragma make_public (ECN::StandaloneECEnabler)

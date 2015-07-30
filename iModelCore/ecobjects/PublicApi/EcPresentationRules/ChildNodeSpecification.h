@@ -66,19 +66,31 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeSpecification
         //! Priority of the specification, defines the order in which specifications are evaluated and executed.
         ECOBJECTS_EXPORT int                          GetPriority (void) const;
 
+        //! Sets the priority of the specification, can be an int.
+        ECOBJECTS_EXPORT void                         SetPriority (int value);
+
         //! ID of the specification.
         ECOBJECTS_EXPORT int                          GetId (void) const;
 
         //! Returns true if specification always returns nodes. This allows to optimize node expand performance.
         ECOBJECTS_EXPORT bool                         GetAlwaysReturnsChildren (void) const;
 
+        //! Sets the AlwaysReturnsChildren value. Can be boolean.
+        ECOBJECTS_EXPORT void                         SetAlwaysReturnsChildren (bool value);
+
         //! If this property is set it will not show nodes of this specification in the hierarchy, instead it will 
         //! use those nodes to get children that will be actually returned.
         ECOBJECTS_EXPORT bool                         GetHideNodesInHierarchy (void) const;
 
+        //! Sets the HideNodesInHierarchy value. Can be boolean.
+        ECOBJECTS_EXPORT void                         SetHideNodesInHierarchy (bool value);
+
         //! If this property is set, it will not show nodes in the hierarchy that doesn't contain children.
         //! Important: Setting this to true may affect tree performance.
         ECOBJECTS_EXPORT bool                         GetHideIfNoChildren (void);
+
+         //! Sets the HideIfNoChildren value. Can be boolean.
+        ECOBJECTS_EXPORT void                         SetHideIfNoChildren (bool value);
 
         //! Returns a string that represents extended data that will be passed to ECQuery for this particular specification.
         ECOBJECTS_EXPORT WStringCR                    GetExtendedData (void);

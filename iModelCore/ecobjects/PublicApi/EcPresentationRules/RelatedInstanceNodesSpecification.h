@@ -85,35 +85,64 @@ struct RelatedInstanceNodesSpecification : public ChildNodeSpecification
         //! Returns true if grouping by class should be applied.
         ECOBJECTS_EXPORT bool                         GetGroupByClass (void) const;
 
+        //! Sets GroupByClass value. Can be boolean.
+        ECOBJECTS_EXPORT void                         SetGroupByClass (bool value);
+
         //! Returns true if grouping by relationship should be applied.
         ECOBJECTS_EXPORT bool                         GetGroupByRelationship (void) const;
+
+        //! Sets GroupByRelationship value. Can be boolean.
+        ECOBJECTS_EXPORT void                         SetGroupByRelationship (bool value);
 
         //! Returns true if grouping by label should be applied.
         ECOBJECTS_EXPORT bool                         GetGroupByLabel (void) const;
 
+        //! Sets GroupByLabel value. Can be boolean.
+        ECOBJECTS_EXPORT void                         SetGroupByLabel (bool value);
+
         //! Returns true if class grouping nodes should be shown even if there are no 
         //! ECInstances of those classes. Grouping nodes will be generated for all listed classes.
         ECOBJECTS_EXPORT bool                         GetShowEmptyGroups (void) const;
+        
+        //! Sets ShowEmptyGroups value. Can be boolean.
+        ECOBJECTS_EXPORT void                         SetShowEmptyGroups (bool value);
 
         //! Returns level of related instances to skip.
         ECOBJECTS_EXPORT int                          GetSkipRelatedLevel (void) const;
+
+        //! Sets SkipRelatedLevel value. Can be int.
+        ECOBJECTS_EXPORT void                         SetSkipRelatedLevel (int value);
 
         //! InstanceFiler is spacially formated string that represents WhereCriteria in 
         //! ECQuery that is used to filter query results (ChildNodes).
         ECOBJECTS_EXPORT Utf8StringCR                 GetInstanceFilter (void) const;
 
+        //! Sets InstanceFilter value. Can be string.
+        ECOBJECTS_EXPORT void                         SetInstanceFilter (Utf8String value);
+
         //! Returns direction of relationship that should be selected in the query.
         ECOBJECTS_EXPORT RequiredRelationDirection    GetRequiredRelationDirection (void) const;
+
+        //! Sets RequiredRelationDirection value. Can be RequiredRelationDirection.
+        ECOBJECTS_EXPORT void                         SetRequiredRelationDirection (RequiredRelationDirection value);
 
         //! Returns supported schemas that should be used by this specification.
         ECOBJECTS_EXPORT Utf8StringCR                 GetSupportedSchemas (void) const;
 
+        //! Sets SupportedSchemas value. Can be string.
+        ECOBJECTS_EXPORT void                         SetSupportedSchemas (Utf8String value);
+
         //! Relationship class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
         ECOBJECTS_EXPORT Utf8StringCR                 GetRelationshipClassNames (void) const;
+
+        //! Sets RelationshipClassNames value. Can be string.
+        ECOBJECTS_EXPORT void                         SetRelationshipClassNames (Utf8String value);
 
         //! Related class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
         ECOBJECTS_EXPORT Utf8StringCR                 GetRelatedClassNames (void) const;
 
+        //! Sets RelatedClassNames value. Can be string.
+        ECOBJECTS_EXPORT void                         SetRelatedClassNames (Utf8String value);
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

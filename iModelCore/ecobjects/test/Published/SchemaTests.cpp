@@ -1890,21 +1890,12 @@ TEST_F(ClassTest, ExpectPropertiesFromBaseClass)
         testVector.push_back(prop);
         
     EXPECT_EQ(14, testVector.size());
-    EXPECT_EQ(0, testVector[0]->GetName().compare("i"));
-    EXPECT_EQ(0, testVector[1]->GetName().compare("j"));
-    EXPECT_EQ(0, testVector[2]->GetName().compare("g"));
-    EXPECT_EQ(0, testVector[3]->GetName().compare("h"));
-    EXPECT_EQ(0, testVector[4]->GetName().compare("k"));
-    EXPECT_EQ(0, testVector[5]->GetName().compare("l"));
-    EXPECT_EQ(0, testVector[6]->GetName().compare("c"));
-    EXPECT_EQ(0, testVector[7]->GetName().compare("d"));
-    EXPECT_EQ(0, testVector[8]->GetName().compare("a"));
-    EXPECT_EQ(0, testVector[9]->GetName().compare("b"));
-    EXPECT_EQ(0, testVector[10]->GetName().compare("e"));
-    EXPECT_EQ(0, testVector[11]->GetName().compare("f"));
-    EXPECT_EQ(0, testVector[12]->GetName().compare("m"));
-    EXPECT_EQ(0, testVector[13]->GetName().compare("n"));
-    
+    for (size_t i = 0; i < testVector.size(); i++)
+        {
+        Utf8Char expectedName[] = { 'a' + static_cast<Utf8Char> (i), 0 };
+        EXPECT_EQ (0, testVector[i]->GetName().compare (expectedName)) << "Expected: " << expectedName << " Actual: " << testVector[i]->GetName().c_str();
+        }
+
     // now we add some duplicate properties to mn which will "override" those from the base classes
     PrimitiveECPropertyP b2;
     PrimitiveECPropertyP d2;
@@ -1926,20 +1917,9 @@ TEST_F(ClassTest, ExpectPropertiesFromBaseClass)
         testVector.push_back(prop);
         
     EXPECT_EQ(14, testVector.size());
-    EXPECT_EQ(0, testVector[0]->GetName().compare("i"));
-    EXPECT_EQ(0, testVector[1]->GetName().compare("g"));
-    EXPECT_EQ(0, testVector[2]->GetName().compare("l"));
-    EXPECT_EQ(0, testVector[3]->GetName().compare("c"));
-    EXPECT_EQ(0, testVector[4]->GetName().compare("a"));
-    EXPECT_EQ(0, testVector[5]->GetName().compare("e"));
-    EXPECT_EQ(0, testVector[6]->GetName().compare("m"));
-    EXPECT_EQ(0, testVector[7]->GetName().compare("n"));
-    EXPECT_EQ(0, testVector[8]->GetName().compare("b"));
-    EXPECT_EQ(0, testVector[9]->GetName().compare("d"));
-    EXPECT_EQ(0, testVector[10]->GetName().compare("f"));
-    EXPECT_EQ(0, testVector[11]->GetName().compare("h"));
-    EXPECT_EQ(0, testVector[12]->GetName().compare("j"));
-    EXPECT_EQ(0, testVector[13]->GetName().compare("k"));
+    bvector<Utf8CP> expectedVector { "a", "c", "e", "g", "i", "l", "m", "n", "b", "d", "f", "h", "j", "k" };
+    for (size_t i = 0; i < testVector.size(); i++)
+        EXPECT_EQ (0, testVector[i]->GetName().compare (expectedVector[i])) << "Expected: " << expectedVector[i] << " Actual: " << testVector[i]->GetName().c_str();
 
     PrimitiveECPropertyP e2;
     PrimitiveECPropertyP a2;
@@ -1975,20 +1955,9 @@ TEST_F(ClassTest, ExpectPropertiesFromBaseClass)
         testVector.push_back(prop);
         
     EXPECT_EQ(14, testVector.size());
-    EXPECT_EQ(0, testVector[0]->GetName().compare("i"));
-    EXPECT_EQ(0, testVector[1]->GetName().compare("c"));
-    EXPECT_EQ(0, testVector[2]->GetName().compare("a"));
-    EXPECT_EQ(0, testVector[3]->GetName().compare("g"));
-    EXPECT_EQ(0, testVector[4]->GetName().compare("e"));
-    EXPECT_EQ(0, testVector[5]->GetName().compare("l"));
-    EXPECT_EQ(0, testVector[6]->GetName().compare("m"));
-    EXPECT_EQ(0, testVector[7]->GetName().compare("n"));
-    EXPECT_EQ(0, testVector[8]->GetName().compare("b"));
-    EXPECT_EQ(0, testVector[9]->GetName().compare("d"));
-    EXPECT_EQ(0, testVector[10]->GetName().compare("f"));
-    EXPECT_EQ(0, testVector[11]->GetName().compare("h"));
-    EXPECT_EQ(0, testVector[12]->GetName().compare("j"));
-    EXPECT_EQ(0, testVector[13]->GetName().compare("k"));
+    expectedVector = { "a", "g", "c", "e", "l", "i", "m", "n", "b", "d", "f", "h", "j", "k" };
+    for (size_t i = 0; i < testVector.size(); i++)
+        EXPECT_EQ (0, testVector[i]->GetName().compare (expectedVector[i])) << "Expected: " << expectedVector[i] << " Actual: " << testVector[i]->GetName().c_str();
     }
 
 /*---------------------------------------------------------------------------------**//**

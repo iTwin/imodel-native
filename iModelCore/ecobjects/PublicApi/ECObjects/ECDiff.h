@@ -35,7 +35,8 @@ typedef bvector<IECDiffNodeCP> DiffNodeList;
 
 //======================================================================================
 //! Status return by diff operations
-//! @ingroup ECObjectsGroup
+//! @addtogroup ECObjectsGroup
+//! @beginGroup
 //! @bsiclass                                                     Affan.Khan      02/2013
 //+===============+===============+===============+===============+===============+======
 enum DiffStatus
@@ -47,7 +48,6 @@ enum DiffStatus
 
 //======================================================================================
 //! Provide detail on a diff node in a ECDiff tree.
-//! @ingroup ECObjectsGroup
 //! @bsiclass                                                     Affan.Khan      02/2013
 //+===============+===============+===============+===============+===============+======
 enum DiffNodeState
@@ -61,7 +61,6 @@ enum DiffNodeState
 //! In case of conflict during merge where difference contain different values for same 
 //! schema facet. A simple rule is use to determine which input schema have higher priority
 //! then other and its value would be use for that facet in merged schema.
-//! @ingroup ECObjectsGroup
 //! @bsiclass                                                     Affan.Khan      02/2013
 //+===============+===============+===============+===============+===============+======
 enum ConflictRule
@@ -73,7 +72,6 @@ enum ConflictRule
 //======================================================================================
 //! DiffType represent if a node has Conflicting value or left schema have a value that right doesnt or vice versa
 //! Equal and Empty are special values and will not be returned currently.
-//! @ingroup ECObjectsGroup
 //! @bsiclass                                                     Affan.Khan      02/2013
 //+===============+===============+===============+===============+===============+=====
 enum DiffType
@@ -87,7 +85,6 @@ enum DiffType
 
 //======================================================================================
 //! DiffNodeId represent meta schema node id for diff nodes.
-//! @ingroup ECObjectsGroup
 //! @bsiclass                                                     Affan.Khan      02/2013
 //+===============+===============+===============+===============+===============+=====
 enum class DiffNodeId
@@ -137,7 +134,6 @@ enum class DiffNodeId
 
 //======================================================================================
 //! Represent a node in diff tree
-//! @ingroup ECObjectsGroup
 //! @bsiclass                                                     Affan.Khan      05/2013
 //+===============+===============+===============+===============+===============+======
 struct IECDiffNode 
@@ -182,7 +178,6 @@ public:
 
 //======================================================================================
 //! Provide status of merge operations
-//! @ingroup ECObjectsGroup
 //! @bsiclass                                                     Affan.Khan      02/2013
 //+===============+===============+===============+===============+===============+======
 enum MergeStatus
@@ -203,7 +198,6 @@ enum MergeStatus
 
 //======================================================================================
 //! ECDiff can be use to take a difference of two ECSchemas and if required merge them together.
-//! @ingroup ECObjectsGroup
 //! @bsiclass                                                     Affan.Khan      02/2013
 //+===============+===============+===============+===============+===============+======
 struct ECDiff : RefCountedBase
@@ -265,7 +259,6 @@ public:
 
 //======================================================================================
 //! ECDiffValueHelper can be use to convert string value to strong type values
-//! @ingroup ECObjectsGroup
 //! @bsiclass                                                     Affan.Khan      10/2013
 //+===============+===============+===============+===============+===============+======
 struct ECDiffValueHelper
@@ -593,6 +586,8 @@ public:
     };
 
 //__PUBLISH_SECTION_START__
-	
+
+/** @endGroup */
+
 END_BENTLEY_ECOBJECT_NAMESPACE
 

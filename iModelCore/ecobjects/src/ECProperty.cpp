@@ -988,6 +988,7 @@ bool IECTypeAdapter::GetPropertyNotSetValue (ECValueR v) const                  
 bool IECTypeAdapter::SupportsUnits() const                                                              { return _SupportsUnits(); }
 bool IECTypeAdapter::GetUnits (UnitSpecR unit, IECTypeAdapterContextCR context) const                   { return _GetUnits (unit, context); }
 bool IECTypeAdapter::IsOrdinalType () const                                                             { return _IsOrdinalType (); }
+bool IECTypeAdapter::GetPlaceholderValue (ECValueR v, IECTypeAdapterContextCR context) const            { return _GetPlaceholderValue (v, context); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/14
