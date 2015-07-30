@@ -22,7 +22,21 @@ SpriteLocation::SpriteLocation ()
 void    SpriteLocation::DecorateViewport (DgnViewportP viewport)
     {
     if (viewport == m_viewport)
+        {
+#define USE_WORLD_COORDSFOR_SPRITES 0
+#if USE_WORLD_COORDSFOR_SPRITES
+        //  On iOS this sometimes fails to draw.  Since sprites are always drawn in overlay
+        //  mode I switched to using view coords.
         viewport->GetIViewDraw()->DrawSprite (m_sprite, &m_location, NULL, m_transparency);
+#else
+        DPoint3d loc;
+        viewport->WorldToView (&loc, &m_location, 1);
+        loc.z = 0;
+        viewport->GetIViewDraw()->SetToViewCoords(true);
+        viewport->GetIViewDraw()->DrawSprite (m_sprite, &loc, NULL, m_transparency);
+        viewport->GetIViewDraw()->SetToViewCoords(false);
+#endif
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -199,7 +213,7 @@ void NamedSprite::LoadSprite()
 
     BeFileName pngPath;
 
-     if (T_HOST.GetGraphicsAdmin()._GetSpriteContainer(pngPath, m_namespace.c_str()) != BSISUCCESS)
+     if (T_HOST.GetGraphicsAdmin()._GetSpriteContainer(pngPath, m_namespace.c_str(), m_spriteName.c_str()) != BSISUCCESS)
         return;
 
     if (BeFileName::IsDirectory(pngPath.c_str()))

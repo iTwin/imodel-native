@@ -932,6 +932,9 @@ public:
     static ColorDef DarkYellow()  {return ColorDef(0x80,0x80,0);}    //! Olive
     static ColorDef DarkCyan()    {return ColorDef(0,0x80,0x80);}    //! Teal
     static ColorDef DarkMagenta() {return ColorDef(0x80,0,0x80);}    //! Purple
+
+    static ColorDef NotSelected() {return ColorDef(0x49,0x98,0xc8);} //! Bluish color used to denote unselected state
+    static ColorDef Selected()    {return ColorDef(0xf6,0xcc,0x7f);} //! Orangish color used to denote selected state
 };
 
 //=======================================================================================

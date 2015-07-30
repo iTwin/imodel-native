@@ -727,6 +727,8 @@ protected:
     DGNPLATFORM_EXPORT virtual void _RestoreFromSettings(JsonValueCR) override;
 
 public:
+    void VerifyFocusPlane();
+
     //! Construct a new CameraViewController
     //! @param[in] dgndb The DgnDb of this view
     //! @param[in] viewId the id of the view in the project.

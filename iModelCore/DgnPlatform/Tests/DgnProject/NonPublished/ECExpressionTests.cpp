@@ -34,21 +34,21 @@ struct DgpExpressionTests : public ::testing::Test
     {
     virtual void        PublishSymbols (SymbolExpressionContextR context) { }
 
-    ExpressionStatus    EvaluateExpression (EvaluationResult& result, WCharCP expr, IECInstanceR instance)
+    ExpressionStatus    EvaluateExpression (EvaluationResult& result, Utf8CP expr, IECInstanceR instance)
         {
         InstanceExpressionContextPtr context = InstanceExpressionContext::Create (NULL);
         context->SetInstance (instance);
         return EvaluateExpression (result, expr, *context);
         }
-    ExpressionStatus    EvaluateExpression (EvaluationResult& result, WCharCP expr, ECInstanceListCR instances)
+    ExpressionStatus    EvaluateExpression (EvaluationResult& result, Utf8CP expr, ECInstanceListCR instances)
         {
         InstanceListExpressionContextPtr context = InstanceListExpressionContext::Create (instances, NULL);
         return EvaluateExpression (result, expr, *context);
         }
-    ExpressionStatus    EvaluateExpression (EvaluationResult& result, WCharCP expr, InstanceListExpressionContextR context)
+    ExpressionStatus    EvaluateExpression (EvaluationResult& result, Utf8CP expr, InstanceListExpressionContextR context)
         {
         SymbolExpressionContextPtr symbolContext = SymbolExpressionContext::Create (NULL);
-        ContextSymbolPtr instanceSymbol = ContextSymbol::CreateContextSymbol (L"this", context);
+        ContextSymbolPtr instanceSymbol = ContextSymbol::CreateContextSymbol ("this", context);
         symbolContext->AddSymbol (*instanceSymbol);
 
         PublishSymbols (*symbolContext);
@@ -58,14 +58,14 @@ struct DgpExpressionTests : public ::testing::Test
 
         return tree->GetValue (result, *symbolContext);
         }
-    ExpressionStatus    EvaluateExpression (EvaluationResult& result, WCharCP expr, bvector<WString>& requiredSymbolSets, IECInstanceP instance)
+    ExpressionStatus    EvaluateExpression (EvaluationResult& result, Utf8CP expr, bvector<Utf8String>& requiredSymbolSets, IECInstanceP instance)
         {
         SymbolExpressionContextPtr contextWithThis = SymbolExpressionContext::CreateWithThis (requiredSymbolSets, instance);
 
         return  ECEvaluator::EvaluateExpression (result, expr, *contextWithThis);
         }
 
-        ExpressionStatus    EvaluateExpression (EvaluationResult& result, WCharCP expr)
+        ExpressionStatus    EvaluateExpression (EvaluationResult& result, Utf8CP expr)
         {
         // when a symbolset is passed in - published symbol providers will add their symbols to the context.
         SymbolExpressionContextPtr symbolContext = SymbolExpressionContext::Create (NULL);
@@ -79,7 +79,7 @@ struct DgpExpressionTests : public ::testing::Test
         }
 
 
-    void                TestExpressionEquals (IECInstanceR instance, WCharCP expr, ECValueCR expectVal)
+    void                TestExpressionEquals (IECInstanceR instance, Utf8CP expr, ECValueCR expectVal)
         {
         EvaluationResult result;
         ExpressionStatus status = EvaluateExpression (result, expr, instance);
@@ -90,14 +90,14 @@ struct DgpExpressionTests : public ::testing::Test
             if (result.IsECValue ())
                 {
                 if (expectVal.IsString())
-                    EXPECT_TRUE (expectVal.ToString().Equals (result.GetECValue()->ToString())) << L"Expected: " << expectVal.ToString().c_str() << L" Actual: " << result.GetECValue()->ToString().c_str() << " Expr: " << expr;
+                    EXPECT_TRUE (expectVal.ToString().Equals (result.GetECValue()->ToString())) << "Expected: " << expectVal.ToString().c_str() << " Actual: " << result.GetECValue()->ToString().c_str() << " Expr: " << expr;
                 else
-                    EXPECT_TRUE (expectVal.Equals (*result.GetECValue())) << L"Expected: " << expectVal.ToString().c_str() << L" Actual: " << result.GetECValue()->ToString().c_str() << " Expr: " << expr;
+                    EXPECT_TRUE (expectVal.Equals (*result.GetECValue())) << "Expected: " << expectVal.ToString().c_str() << " Actual: " << result.GetECValue()->ToString().c_str() << " Expr: " << expr;
                 }
             }
         }
 
-    void                TestExpressionEquals (bvector<WString>& requiredSymbolSets, WCharCP expr, ECValueCR expectVal, IECInstanceP instance=nullptr)
+    void                TestExpressionEquals (bvector<Utf8String>& requiredSymbolSets, Utf8CP expr, ECValueCR expectVal, IECInstanceP instance=nullptr)
         {
         EvaluationResult result;
         ExpressionStatus status = EvaluateExpression (result, expr, requiredSymbolSets, instance);
@@ -108,14 +108,14 @@ struct DgpExpressionTests : public ::testing::Test
             if (result.IsECValue())
                 {
                 if (expectVal.IsString())
-                    EXPECT_TRUE (expectVal.ToString().Equals (result.GetECValue()->ToString())) << L"Expected: " << expectVal.ToString().c_str() << L" Actual: " << result.GetECValue()->ToString().c_str() << " Expr: " << expr;
+                    EXPECT_TRUE (expectVal.ToString().Equals (result.GetECValue()->ToString())) << "Expected: " << expectVal.ToString().c_str() << " Actual: " << result.GetECValue()->ToString().c_str() << " Expr: " << expr;
                 else
-                    EXPECT_TRUE (expectVal.Equals (*result.GetECValue())) << L"Expected: " << expectVal.ToString().c_str() << L" Actual: " << result.GetECValue()->ToString().c_str() << " Expr: " << expr;
+                    EXPECT_TRUE (expectVal.Equals (*result.GetECValue())) << "Expected: " << expectVal.ToString().c_str() << " Actual: " << result.GetECValue()->ToString().c_str() << " Expr: " << expr;
                 }
             }
         }
 
-        void                TestExpressionEquals (WCharCP expr, ECValueCR expectVal)
+        void                TestExpressionEquals (Utf8CP expr, ECValueCR expectVal)
         {
         EvaluationResult result;
         ExpressionStatus status = EvaluateExpression (result, expr);
@@ -126,19 +126,19 @@ struct DgpExpressionTests : public ::testing::Test
             if (result.IsECValue())
                 {
                 if (expectVal.IsString())
-                    EXPECT_TRUE (expectVal.ToString().Equals (result.GetECValue()->ToString())) << L"Expected: " << expectVal.ToString().c_str() << L" Actual: " << result.GetECValue()->ToString().c_str() << " Expr: " << expr;
+                    EXPECT_TRUE (expectVal.ToString().Equals (result.GetECValue()->ToString())) << "Expected: " << expectVal.ToString().c_str() << " Actual: " << result.GetECValue()->ToString().c_str() << " Expr: " << expr;
                 else
-                    EXPECT_TRUE (expectVal.Equals (*result.GetECValue())) << L"Expected: " << expectVal.ToString().c_str() << L" Actual: " << result.GetECValue()->ToString().c_str() << " Expr: " << expr;
+                    EXPECT_TRUE (expectVal.Equals (*result.GetECValue())) << "Expected: " << expectVal.ToString().c_str() << " Actual: " << result.GetECValue()->ToString().c_str() << " Expr: " << expr;
                 }
             }
         }
 
-    template<typename T> void TestExpressionEquals (IECInstanceR instance, WCharCP expr, T const& v)
+    template<typename T> void TestExpressionEquals (IECInstanceR instance, Utf8CP expr, T const& v)
         {
         TestExpressionEquals (instance, expr, ECValue (v));
         }
 
-    void                TestExpressionNullity (IECInstanceR instance, WCharCP expr, bool expectNull)
+    void                TestExpressionNullity (IECInstanceR instance, Utf8CP expr, bool expectNull)
         {
         EvaluationResult result;
         ExpressionStatus status = EvaluateExpression (result, expr, instance);
@@ -151,8 +151,8 @@ struct DgpExpressionTests : public ::testing::Test
                 EXPECT_TRUE (!expectNull && result.IsInstanceList());
             }
         }
-    void                TestExpressionNull (IECInstanceR instance, WCharCP expr) { TestExpressionNullity (instance, expr, true); }
-    void                TestExpressionNotNull (IECInstanceR instance, WCharCP expr) { TestExpressionNullity (instance, expr, false); }
+    void                TestExpressionNull (IECInstanceR instance, Utf8CP expr) { TestExpressionNullity (instance, expr, true); }
+    void                TestExpressionNotNull (IECInstanceR instance, Utf8CP expr) { TestExpressionNullity (instance, expr, false); }
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -160,12 +160,12 @@ struct DgpExpressionTests : public ::testing::Test
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct DgpRoundtripExpressionTests : DgpExpressionTests
     {
-    void        Roundtrip (WCharCP inExpr, WCharCP expectedExpr)
+    void        Roundtrip (Utf8CP inExpr, Utf8CP expectedExpr)
         {
         NodePtr tree = ECEvaluator::ParseValueExpressionAndCreateTree (inExpr);
         EXPECT_TRUE (tree.IsValid());
 
-        WString roundtrippedExpr = tree->ToExpressionString();
+        Utf8String roundtrippedExpr = tree->ToExpressionString();
         EXPECT_TRUE (roundtrippedExpr.Equals (expectedExpr))
             << "Input:    " << inExpr << "\n"
             << "Expected: " << expectedExpr << "\n"
@@ -178,29 +178,29 @@ struct DgpRoundtripExpressionTests : DgpExpressionTests
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgpRoundtripExpressionTests, Roundtrip)
     {
-    Roundtrip (L"1 + 2 * 3 / 4 + 5 - 6 ^ 7 + -8 / -9 + +10", L"1+2*3/4+5-6^7+-8/-9++10");
-    Roundtrip (L"this.Property", L"this.Property");
-    Roundtrip (L"this.Property *  this[\"Property\"]", L"this.Property*this[\"Property\"]");
-    Roundtrip (L"Something.Method ( )", L"Something.Method()");
-    Roundtrip (L"Something.Method (0,1.5, 2.000,  \t\"string\", this.Property   )", L"Something.Method(0,1.5,2,\"string\",this.Property)");
-    Roundtrip (L"IIf (True,  Null, \t2 ^3  -3* 4)", L"IIf(True,Null,2^3-3*4)");
-    Roundtrip (L"X = \"Thing\" OrElse X = \"Stuff\"", L"X=\"Thing\"OrElse X=\"Stuff\"");
+    Roundtrip ("1 + 2 * 3 / 4 + 5 - 6 ^ 7 + -8 / -9 + +10", "1+2*3/4+5-6^7+-8/-9++10");
+    Roundtrip ("this.Property", "this.Property");
+    Roundtrip ("this.Property *  this[\"Property\"]", "this.Property*this[\"Property\"]");
+    Roundtrip ("Something.Method ( )", "Something.Method()");
+    Roundtrip ("Something.Method (0,1.5, 2.000,  \t\"string\", this.Property   )", "Something.Method(0,1.5,2,\"string\",this.Property)");
+    Roundtrip ("IIf (True,  Null, \t2 ^3  -3* 4)", "IIf(True,Null,2^3-3*4)");
+    Roundtrip ("X = \"Thing\" OrElse X = \"Stuff\"", "X=\"Thing\"OrElse X=\"Stuff\"");
 
     // Make sure we're capturing parens...
-    Roundtrip (L"(1 +2) * 3", L"(1+2)*3");
-    Roundtrip (L"(1 + (2 - 3)) * 4", L"(1+(2-3))*4");
-    Roundtrip (L"IIf (True, 1, (IIf (False, 0, -1)))", L"IIf(True,1,(IIf(False,0,-1)))");
+    Roundtrip ("(1 +2) * 3", "(1+2)*3");
+    Roundtrip ("(1 + (2 - 3)) * 4", "(1+(2-3))*4");
+    Roundtrip ("IIf (True, 1, (IIf (False, 0, -1)))", "IIf(True,1,(IIf(False,0,-1)))");
 
     // Should throw away redundant parens...but keep important ones...
-    Roundtrip (L"(1)", L"(1)");
-    Roundtrip (L"((1))", L"(1)");
-    Roundtrip (L"(((((1)))))", L"(1)");
-    Roundtrip (L"((1 + 2) * 3 / (4 + (5 - 6))) ^ (((7 + ((-8) -(((9)))) + +(10))))", L"((1+2)*3/(4+(5-6)))^(7+((-8)-(9))++(10))");
-    Roundtrip (L"0.00390625", L"0.00390625");
-    Roundtrip (L"method (method (True, method (method (1.5), False)))", L"method(method(True,method(method(1.5),False)))");
+    Roundtrip ("(1)", "(1)");
+    Roundtrip ("((1))", "(1)");
+    Roundtrip ("(((((1)))))", "(1)");
+    Roundtrip ("((1 + 2) * 3 / (4 + (5 - 6))) ^ (((7 + ((-8) -(((9)))) + +(10))))", "((1+2)*3/(4+(5-6)))^(7+((-8)-(9))++(10))");
+    Roundtrip ("0.00390625", "0.00390625");
+    Roundtrip ("method (method (True, method (method (1.5), False)))", "method(method(True,method(method(1.5),False)))");
 
-    Roundtrip (L"X => X < 5.0 AndAlso X > 1.5", L"X=>X<5 AndAlso X>1.5");
-    Roundtrip (L"this.Array.Any (X => X.Name = \"Chuck\" OrElse X.Name = \"Bob\")", L"this.Array.Any(X=>X.Name=\"Chuck\"OrElse X.Name=\"Bob\")");
+    Roundtrip ("X => X < 5.0 AndAlso X > 1.5", "X=>X<5 AndAlso X>1.5");
+    Roundtrip ("this.Array.Any (X => X.Name = \"Chuck\" OrElse X.Name = \"Bob\")", "this.Array.Any(X=>X.Name=\"Chuck\"OrElse X.Name=\"Bob\")");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -224,11 +224,11 @@ public:
 
         return *m_schema;
         }
-    IECInstancePtr      CreateInstance (WCharCP classname)
+    IECInstancePtr      CreateInstance (Utf8CP classname)
         {
         return CreateInstance (classname, GetSchema());
         }
-    static IECInstancePtr CreateInstance (WCharCP classname, ECSchemaCR schema)
+    static IECInstancePtr CreateInstance (Utf8CP classname, ECSchemaCR schema)
         {
         ECClassCP ecClass = schema.GetClassCP (classname);
         return NULL != ecClass ? ecClass->GetDefaultStandaloneEnabler()->CreateInstance() : NULL;
@@ -255,15 +255,15 @@ public:
 
     IECInstancePtr  CreateInstance (double d)
         {
-        auto instance = DgpInstanceExpressionTests::CreateInstance (L"ClassA");
-        instance->SetValue (L"d", ECValue (d));
+        auto instance = DgpInstanceExpressionTests::CreateInstance ("ClassA");
+        instance->SetValue ("d", ECValue (d));
         return instance;
         }
 
-    IECInstancePtr  CreateInstance (WString& s)
+    IECInstancePtr  CreateInstance (Utf8String& s)
         {
-        auto instance = DgpInstanceExpressionTests::CreateInstance (L"ClassA");
-        instance->SetValue (L"s", ECValue (s.c_str()));
+        auto instance = DgpInstanceExpressionTests::CreateInstance ("ClassA");
+        instance->SetValue ("s", ECValue (s.c_str()));
         return instance;
         }
 
@@ -276,20 +276,20 @@ public:
 TEST_F (DgpLiteralExpressionTests, DgnFloatComparisons)
     {
     auto instance = CreateInstance (12.000000000001);
-    TestExpressionEquals (*instance, L"this.d = 12", ECValue (true));
-    TestExpressionEquals (*instance, L"this.d >= 12", ECValue (true));
-    TestExpressionEquals (*instance, L"this.d <= 12", ECValue (true));
-    TestExpressionEquals (*instance, L"this.d <> 12", ECValue (false));
-    TestExpressionEquals (*instance, L"this.d > 12", ECValue (false));
-    TestExpressionEquals (*instance, L"this.d < 12", ECValue (false));
+    TestExpressionEquals (*instance, "this.d = 12", ECValue (true));
+    TestExpressionEquals (*instance, "this.d >= 12", ECValue (true));
+    TestExpressionEquals (*instance, "this.d <= 12", ECValue (true));
+    TestExpressionEquals (*instance, "this.d <> 12", ECValue (false));
+    TestExpressionEquals (*instance, "this.d > 12", ECValue (false));
+    TestExpressionEquals (*instance, "this.d < 12", ECValue (false));
 
     instance = CreateInstance (12.1);
-    TestExpressionEquals (*instance, L"this.d = 12", ECValue (false));
-    TestExpressionEquals (*instance, L"this.d >= 12", ECValue (true));
-    TestExpressionEquals (*instance, L"this.d <= 12", ECValue (false));
-    TestExpressionEquals (*instance, L"this.d <> 12", ECValue (true));
-    TestExpressionEquals (*instance, L"this.d > 12", ECValue (true));
-    TestExpressionEquals (*instance, L"this.d < 12", ECValue (false));
+    TestExpressionEquals (*instance, "this.d = 12", ECValue (false));
+    TestExpressionEquals (*instance, "this.d >= 12", ECValue (true));
+    TestExpressionEquals (*instance, "this.d <= 12", ECValue (false));
+    TestExpressionEquals (*instance, "this.d <> 12", ECValue (true));
+    TestExpressionEquals (*instance, "this.d > 12", ECValue (true));
+    TestExpressionEquals (*instance, "this.d < 12", ECValue (false));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -297,12 +297,12 @@ TEST_F (DgpLiteralExpressionTests, DgnFloatComparisons)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgpLiteralExpressionTests, DgnEmptySymbolSet)
     {
-    TestExpressionEquals (L"12.1 = 12", ECValue (false));
-    TestExpressionEquals (L"12.1 >= 12", ECValue (true));
-    TestExpressionEquals (L"12.1 <= 12", ECValue (false));
-    TestExpressionEquals (L"12.1 <> 12", ECValue (true));
-    TestExpressionEquals (L"12.1 > 12", ECValue (true));
-    TestExpressionEquals (L"12.1 < 12", ECValue (false));
+    TestExpressionEquals ("12.1 = 12", ECValue (false));
+    TestExpressionEquals ("12.1 >= 12", ECValue (true));
+    TestExpressionEquals ("12.1 <= 12", ECValue (false));
+    TestExpressionEquals ("12.1 <> 12", ECValue (true));
+    TestExpressionEquals ("12.1 > 12", ECValue (true));
+    TestExpressionEquals ("12.1 < 12", ECValue (false));
     }
 
  /*---------------------------------------------------------------------------------**//**
@@ -310,46 +310,46 @@ TEST_F (DgpLiteralExpressionTests, DgnEmptySymbolSet)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgpLiteralExpressionTests, DgnMathSymbols)
     {
-    bvector<WString> requiredSymbolSets;  
+    bvector<Utf8String> requiredSymbolSets;  
     
     // native ECExpression processing ignores the list of requiredSymbolSets and publishes all symbols from all symbol providers.
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.AlmostEqual(System.Math.E, 2.71828182846)", ECValue(true));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.Acos(0.5) * 180.0 / System.Math.PI", ECValue(60.0));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.Asin(0.5) * 180.0 / System.Math.PI", ECValue(30.0));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.Atan(1) * 180 / System.Math.PI", ECValue(45.0));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.Atan2(10, -10) * 180/System.Math.PI", ECValue(135.0));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.AlmostEqual(System.Math.BigMul(2000000000, 2000000000), 4000000000000000000)", ECValue(true));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.Cos(60.0*System.Math.PI/180)", ECValue(0.5));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.Cosh(System.Math.Log(2.0))", ECValue(1.25));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.AlmostEqual(System.Math.Exp(5.0), 148.4131591025766)", ECValue(true));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.Abs(-2.5)", ECValue(2.5));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.Floor(-3.1)", ECValue(-4.0));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.Ceiling(-3.1)", ECValue(-3.0));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.AlmostEqual(System.Math.Log(5.5), 1.7047480922384253)", ECValue(true));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.Log10(1000)", ECValue(3.0));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.Max (-5.5, 5.0)", ECValue(5.0));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.Min (-5, 5)", ECValue(-5.0));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.Round (1.4)", ECValue(1.0));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.Round (1.6)", ECValue(2.0));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.Round (1.5)", ECValue(2.0));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.Round (2.5)", ECValue(2.0));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.Round (-1.4)", ECValue(-1.0));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.Round (-1.6)", ECValue(-2.0));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.Round (-1.5)", ECValue(-2.0));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.Round (-2.5)", ECValue(-2.0));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.Pow(7,3)", ECValue(343.0));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.AlmostEqual(System.Math.Pow(32.01,1.54), 208.03669140538651)", ECValue(true));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.AlmostEqual(System.Math.Sin(30*System.Math.PI/180.0),0.50)", ECValue(true));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.Sinh(System.Math.Log(2.0))", ECValue(0.75));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.Sqrt (1024.0)", ECValue(32.0));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.Tan(45.0*System.Math.PI/180.0)", ECValue(1.0));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.Tanh(System.Math.Log(2.0))", ECValue(0.6));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.IEEERemainder(3,2)", ECValue(-1.0));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.IEEERemainder(10, 3)", ECValue(1.0));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.IEEERemainder(17.8,4)", ECValue(1.8));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.IEEERemainder(17.8,4.1)", ECValue(1.4));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.IEEERemainder(17.8,-4.1)", ECValue(1.4));
-    TestExpressionEquals (requiredSymbolSets, L"System.Math.IEEERemainder(-17.8,-4.1)", ECValue(-1.4));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.AlmostEqual(System.Math.E, 2.71828182846)", ECValue(true));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.Acos(0.5) * 180.0 / System.Math.PI", ECValue(60.0));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.Asin(0.5) * 180.0 / System.Math.PI", ECValue(30.0));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.Atan(1) * 180 / System.Math.PI", ECValue(45.0));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.Atan2(10, -10) * 180/System.Math.PI", ECValue(135.0));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.AlmostEqual(System.Math.BigMul(2000000000, 2000000000), 4000000000000000000)", ECValue(true));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.Cos(60.0*System.Math.PI/180)", ECValue(0.5));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.Cosh(System.Math.Log(2.0))", ECValue(1.25));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.AlmostEqual(System.Math.Exp(5.0), 148.4131591025766)", ECValue(true));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.Abs(-2.5)", ECValue(2.5));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.Floor(-3.1)", ECValue(-4.0));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.Ceiling(-3.1)", ECValue(-3.0));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.AlmostEqual(System.Math.Log(5.5), 1.7047480922384253)", ECValue(true));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.Log10(1000)", ECValue(3.0));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.Max (-5.5, 5.0)", ECValue(5.0));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.Min (-5, 5)", ECValue(-5.0));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.Round (1.4)", ECValue(1.0));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.Round (1.6)", ECValue(2.0));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.Round (1.5)", ECValue(2.0));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.Round (2.5)", ECValue(2.0));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.Round (-1.4)", ECValue(-1.0));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.Round (-1.6)", ECValue(-2.0));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.Round (-1.5)", ECValue(-2.0));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.Round (-2.5)", ECValue(-2.0));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.Pow(7,3)", ECValue(343.0));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.AlmostEqual(System.Math.Pow(32.01,1.54), 208.03669140538651)", ECValue(true));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.AlmostEqual(System.Math.Sin(30*System.Math.PI/180.0),0.50)", ECValue(true));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.Sinh(System.Math.Log(2.0))", ECValue(0.75));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.Sqrt (1024.0)", ECValue(32.0));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.Tan(45.0*System.Math.PI/180.0)", ECValue(1.0));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.Tanh(System.Math.Log(2.0))", ECValue(0.6));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.IEEERemainder(3,2)", ECValue(-1.0));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.IEEERemainder(10, 3)", ECValue(1.0));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.IEEERemainder(17.8,4)", ECValue(1.8));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.IEEERemainder(17.8,4.1)", ECValue(1.4));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.IEEERemainder(17.8,-4.1)", ECValue(1.4));
+    TestExpressionEquals (requiredSymbolSets, "System.Math.IEEERemainder(-17.8,-4.1)", ECValue(-1.4));
     }
  
  /*---------------------------------------------------------------------------------**//**
@@ -357,23 +357,23 @@ TEST_F (DgpLiteralExpressionTests, DgnMathSymbols)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgpLiteralExpressionTests, DgnStringSymbols)
     {
-    bvector<WString> requiredSymbolSets;  
+    bvector<Utf8String> requiredSymbolSets;  
     
     // native ECExpression processing ignores the list of requiredSymbolSets and publishes all symbols from all symbol providers.
-    TestExpressionEquals (requiredSymbolSets, L"System.String.ToUpper(\"loweR\")", ECValue(L"LOWER"));
-    TestExpressionEquals (requiredSymbolSets, L"System.String.ToLower(\"LOwEr\")", ECValue(L"lower"));
-    TestExpressionEquals (requiredSymbolSets, L"System.String.IndexOf(\"squid SQUID SQUID squid\", \"QUID\")", ECValue(7));
-    TestExpressionEquals (requiredSymbolSets, L"System.String.LastIndexOf(\"squid SQUID SQUID squid\", \"QUID\")", ECValue(13));
-    TestExpressionEquals (requiredSymbolSets, L"System.String.Length(\"12345678\")", ECValue(8));
-    TestExpressionEquals (requiredSymbolSets, L"System.String.SubString(\"dogCATdog\", 3, 3)", ECValue(L"CAT"));
-    TestExpressionEquals (requiredSymbolSets, L"System.String.Trim(\"  is \t trimmed\t\t\n\")", ECValue(L"is \t trimmed"));
-    TestExpressionEquals (requiredSymbolSets, L"IIf(System.String.Contains(\"thing\", \"in\"), \"true\", \"false\")", ECValue(L"true"));
-    TestExpressionEquals (requiredSymbolSets, L"IIf(System.String.Contains(\"thing\", \"In\"), \"true\", \"false\")", ECValue(L"false"));
+    TestExpressionEquals (requiredSymbolSets, "System.String.ToUpper(\"loweR\")", ECValue("LOWER"));
+    TestExpressionEquals (requiredSymbolSets, "System.String.ToLower(\"LOwEr\")", ECValue("lower"));
+    TestExpressionEquals (requiredSymbolSets, "System.String.IndexOf(\"squid SQUID SQUID squid\", \"QUID\")", ECValue(7));
+    TestExpressionEquals (requiredSymbolSets, "System.String.LastIndexOf(\"squid SQUID SQUID squid\", \"QUID\")", ECValue(13));
+    TestExpressionEquals (requiredSymbolSets, "System.String.Length(\"12345678\")", ECValue(8));
+    TestExpressionEquals (requiredSymbolSets, "System.String.SubString(\"dogCATdog\", 3, 3)", ECValue("CAT"));
+    TestExpressionEquals (requiredSymbolSets, "System.String.Trim(\"  is \t trimmed\t\t\n\")", ECValue("is \t trimmed"));
+    TestExpressionEquals (requiredSymbolSets, "IIf(System.String.Contains(\"thing\", \"in\"), \"true\", \"false\")", ECValue("true"));
+    TestExpressionEquals (requiredSymbolSets, "IIf(System.String.Contains(\"thing\", \"In\"), \"true\", \"false\")", ECValue("false"));
 
-    TestExpressionEquals (requiredSymbolSets, L"IIf(System.String.ContainsI(\"thing\",\"In\"),\"true\",\"false\")",   ECValue(L"true"));
-    TestExpressionEquals (requiredSymbolSets, L"IIf(System.String.Compare(\"thing\",\"thing\"),\"true\",\"false\")",  ECValue(L"true"));
-    TestExpressionEquals (requiredSymbolSets, L"IIf(System.String.Compare(\"thing\",\"THING\"),\"true\",\"false\")",  ECValue(L"false"));
-    TestExpressionEquals (requiredSymbolSets, L"IIf(System.String.CompareI(\"thing\",\"THING\"),\"true\",\"false\")", ECValue(L"true"));
+    TestExpressionEquals (requiredSymbolSets, "IIf(System.String.ContainsI(\"thing\",\"In\"),\"true\",\"false\")",   ECValue("true"));
+    TestExpressionEquals (requiredSymbolSets, "IIf(System.String.Compare(\"thing\",\"thing\"),\"true\",\"false\")",  ECValue("true"));
+    TestExpressionEquals (requiredSymbolSets, "IIf(System.String.Compare(\"thing\",\"THING\"),\"true\",\"false\")",  ECValue("false"));
+    TestExpressionEquals (requiredSymbolSets, "IIf(System.String.CompareI(\"thing\",\"THING\"),\"true\",\"false\")", ECValue("true"));
     }
 
  /*---------------------------------------------------------------------------------**//**
@@ -381,12 +381,12 @@ TEST_F (DgpLiteralExpressionTests, DgnStringSymbols)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgpLiteralExpressionTests, DgnMiscSymbols)
     {
-    bvector<WString> requiredSymbolSets;  // to have expression processing use published symbols requiredSymbolSets must be passed in, even if empty
+    bvector<Utf8String> requiredSymbolSets;  // to have expression processing use published symbols requiredSymbolSets must be passed in, even if empty
     
     // datetime
     EvaluationResult result;
 
-    ExpressionStatus status = EvaluateExpression (result, L"System.DateTime.Now()", requiredSymbolSets, nullptr);
+    ExpressionStatus status = EvaluateExpression (result, "System.DateTime.Now()", requiredSymbolSets, nullptr);
     EXPECT_SUCCESS (status);
     if (result.IsECValue ())
         {
@@ -395,28 +395,28 @@ TEST_F (DgpLiteralExpressionTests, DgnMiscSymbols)
         }
 
 #if defined (BENTLEYCONFIG_OS_WINDOWS) // Windows && WinRT
-    #define DIRSEP            L"\\"
+    #define DIRSEP            "\\"
 #elif defined (BENTLEYCONFIG_OS_UNIX)
-    #define DIRSEP            L"/"
+    #define DIRSEP            "/"
 #else
     #error unknown platform
 #endif
 
     // path
-    TestExpressionEquals (requiredSymbolSets, L"System.Path.GetDirectoryName(\"c:\\dir\\subdir\\filename.ext\")",             ECValue(L"c:" DIRSEP L"dir" DIRSEP L"subdir"));
-    TestExpressionEquals (requiredSymbolSets, L"System.Path.GetExtension(\"c:\\dir\\subdir\\filename.ext\")",                 ECValue(L".ext"));
-    TestExpressionEquals (requiredSymbolSets, L"System.Path.GetFileNameWithoutExtension(\"c:\\dir\\subdir\\filename.ext\")",  ECValue(L"filename"));
-    TestExpressionEquals (requiredSymbolSets, L"System.Path.GetFileName(\"c:\\dir\\subdir\\filename.ext\")",                  ECValue(L"filename.ext"));
-    TestExpressionEquals (requiredSymbolSets, L"System.Path.Combine (\"c:\\dir\")",                                           ECValue(L"c:" DIRSEP L"dir"));
-    TestExpressionEquals (requiredSymbolSets, L"System.Path.Combine (\"c:\\dir\", \"subdir\")",                               ECValue(L"c:" DIRSEP L"dir" DIRSEP L"subdir"));
-    TestExpressionEquals (requiredSymbolSets, L"System.Path.Combine (\"c:\\dir\", \"subdir\\\", \"filename.ext\")",           ECValue(L"c:" DIRSEP L"dir" DIRSEP L"subdir" DIRSEP L"filename.ext"));
+    TestExpressionEquals (requiredSymbolSets, "System.Path.GetDirectoryName(\"c:\\dir\\subdir\\filename.ext\")",             ECValue("c:" DIRSEP "dir" DIRSEP "subdir"));
+    TestExpressionEquals (requiredSymbolSets, "System.Path.GetExtension(\"c:\\dir\\subdir\\filename.ext\")",                 ECValue(".ext"));
+    TestExpressionEquals (requiredSymbolSets, "System.Path.GetFileNameWithoutExtension(\"c:\\dir\\subdir\\filename.ext\")",  ECValue("filename"));
+    TestExpressionEquals (requiredSymbolSets, "System.Path.GetFileName(\"c:\\dir\\subdir\\filename.ext\")",                  ECValue("filename.ext"));
+    TestExpressionEquals (requiredSymbolSets, "System.Path.Combine (\"c:\\dir\")",                                           ECValue("c:" DIRSEP "dir"));
+    TestExpressionEquals (requiredSymbolSets, "System.Path.Combine (\"c:\\dir\", \"subdir\")",                               ECValue("c:" DIRSEP "dir" DIRSEP "subdir"));
+    TestExpressionEquals (requiredSymbolSets, "System.Path.Combine (\"c:\\dir\", \"subdir\\\", \"filename.ext\")",           ECValue("c:" DIRSEP "dir" DIRSEP "subdir" DIRSEP "filename.ext"));
 
-    WString fileName (L"c:\\dir\\subdir\\filename.ext");
+    Utf8String fileName ("c:\\dir\\subdir\\filename.ext");
     auto instance = CreateInstance (fileName);       // set "s" property
-    TestExpressionEquals (requiredSymbolSets, L"System.Path.GetDirectoryName(this.s)",             ECValue(L"c:" DIRSEP L"dir" DIRSEP L"subdir"), instance.get());
-    TestExpressionEquals (requiredSymbolSets, L"System.Path.GetExtension(this.s)",                 ECValue(L".ext"),            instance.get());
-    TestExpressionEquals (requiredSymbolSets, L"System.Path.GetFileNameWithoutExtension(this.s)",  ECValue(L"filename"),        instance.get());
-    TestExpressionEquals (requiredSymbolSets, L"System.Path.GetFileName(this.s)",                  ECValue(L"filename.ext"),    instance.get());
+    TestExpressionEquals (requiredSymbolSets, "System.Path.GetDirectoryName(this.s)",             ECValue("c:" DIRSEP "dir" DIRSEP "subdir"), instance.get());
+    TestExpressionEquals (requiredSymbolSets, "System.Path.GetExtension(this.s)",                 ECValue(".ext"),            instance.get());
+    TestExpressionEquals (requiredSymbolSets, "System.Path.GetFileNameWithoutExtension(this.s)",  ECValue("filename"),        instance.get());
+    TestExpressionEquals (requiredSymbolSets, "System.Path.GetFileName(this.s)",                  ECValue("filename.ext"),    instance.get());
     }
 
 
@@ -455,23 +455,23 @@ struct DgpFullyQualifiedExpressionTests : DgpInstanceExpressionTests
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgpFullyQualifiedExpressionTests, DgnFullyQualifiedAccessors)
     {
-    IECInstancePtr A = CreateInstance (L"ClassA"),
-                   B = CreateInstance (L"ClassB"),
-                   ADerived = CreateInstance (L"DerivesFromA");
+    IECInstancePtr A = CreateInstance ("ClassA"),
+                   B = CreateInstance ("ClassB"),
+                   ADerived = CreateInstance ("DerivesFromA");
 
     EvaluationResult result;
 
     // ClassA contains 'p'
-    EXPECT_SUCCESS (EvaluateExpression (result, L"this.TestSchema::ClassA::p", *A));
+    EXPECT_SUCCESS (EvaluateExpression (result, "this.TestSchema::ClassA::p", *A));
     // ClassB contains 'p' but we have specified ClassA
-    EXPECT_ERROR (EvaluateExpression (result, L"this.TestSchema::ClassA::p", *B));
+    EXPECT_ERROR (EvaluateExpression (result, "this.TestSchema::ClassA::p", *B));
     // ClassB contains 'p' and we have specified ClassB
-    EXPECT_SUCCESS (EvaluateExpression (result, L"this.TestSchema::ClassB::p", *B));
+    EXPECT_SUCCESS (EvaluateExpression (result, "this.TestSchema::ClassB::p", *B));
     // ClassA contains 'p' and DerivesFromA is a subclass - we can find it whether we specify base or derived class
-    EXPECT_SUCCESS (EvaluateExpression (result, L"this.TestSchema::ClassA::p", *ADerived));
-    EXPECT_SUCCESS (EvaluateExpression (result, L"this.TestSchema::DerivesFromA::p", *ADerived));
+    EXPECT_SUCCESS (EvaluateExpression (result, "this.TestSchema::ClassA::p", *ADerived));
+    EXPECT_SUCCESS (EvaluateExpression (result, "this.TestSchema::DerivesFromA::p", *ADerived));
     // ClassA contains 'p' but we have specified a subclass - should not find it
-    EXPECT_ERROR (EvaluateExpression (result, L"this.TestSchema::DerivesFromA::p", *A));
+    EXPECT_ERROR (EvaluateExpression (result, "this.TestSchema::DerivesFromA::p", *A));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -505,7 +505,7 @@ struct DgpInstanceListExpressionTests : DgpInstanceExpressionTests
                     L"</ECSchema>";
         }
 
-    void    AddArrayElement (IECInstanceR instance, WCharCP accessString, ECValueCR entryVal)
+    void    AddArrayElement (IECInstanceR instance, Utf8CP accessString, ECValueCR entryVal)
         {
         ECValue arrayVal;
         EXPECT_SUCCESS (instance.GetValue (arrayVal, accessString));
@@ -522,52 +522,52 @@ struct DgpInstanceListExpressionTests : DgpInstanceExpressionTests
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgpInstanceListExpressionTests, DgnComplexExpressions)
     {
-    IECInstancePtr s1 = CreateInstance (L"Struct1");
-    AddArrayElement (*s1, L"Ints", ECValue (1));
-    s1->SetValue (L"Int", ECValue (2));
+    IECInstancePtr s1 = CreateInstance ("Struct1");
+    AddArrayElement (*s1, "Ints", ECValue (1));
+    s1->SetValue ("Int", ECValue (2));
 
     ECValue v;
-    IECInstancePtr s2 = CreateInstance (L"Struct2");
-    s2->SetValue (L"Struct.Int", ECValue (3));
-    AddArrayElement (*s2, L"Struct.Ints", ECValue (4));
+    IECInstancePtr s2 = CreateInstance ("Struct2");
+    s2->SetValue ("Struct.Int", ECValue (3));
+    AddArrayElement (*s2, "Struct.Ints", ECValue (4));
 
     v.SetStruct (s1.get());
-    AddArrayElement (*s2, L"Structs", v);
+    AddArrayElement (*s2, "Structs", v);
 
-    IECInstancePtr a = CreateInstance (L"ClassA");
-    a->SetValue (L"Int", ECValue (5));
-    AddArrayElement (*a, L"Ints", ECValue (6));
+    IECInstancePtr a = CreateInstance ("ClassA");
+    a->SetValue ("Int", ECValue (5));
+    AddArrayElement (*a, "Ints", ECValue (6));
     
     v.SetStruct (s2.get());
-    AddArrayElement (*a, L"Structs", v);
+    AddArrayElement (*a, "Structs", v);
 
-    s1 = CreateInstance (L"Struct1");
-    AddArrayElement (*s1, L"Ints", ECValue (7));
-    s1->SetValue (L"Int", ECValue (8));
+    s1 = CreateInstance ("Struct1");
+    AddArrayElement (*s1, "Ints", ECValue (7));
+    s1->SetValue ("Int", ECValue (8));
 
     v.SetStruct (s1.get());
-    AddArrayElement (*a, L"Struct.Structs", v);
+    AddArrayElement (*a, "Struct.Structs", v);
 
-    a->SetValue (L"Struct.Struct.Int", ECValue (9));
-    AddArrayElement (*a, L"Struct.Struct.Ints", ECValue (10));
+    a->SetValue ("Struct.Struct.Int", ECValue (9));
+    AddArrayElement (*a, "Struct.Struct.Ints", ECValue (10));
 
-    static WCharCP  s_expressions[10] =
+    static Utf8CP  s_expressions[10] =
         {
-        L"this.Structs[0].Structs[0].Ints[0]",
-        L"this.Structs[0].Structs[0].Int",
-        L"this.Structs[0].Struct.Int",
-        L"this.Structs[0].Struct.Ints[0]",
-        L"this.Int",
-        L"this.Ints[0]",
-        L"this.Struct.Structs[0].Ints[0]",
-        L"this.Struct.Structs[0].Int",
-        L"this.Struct.Struct.Int",
-        L"this.Struct.Struct.Ints[0]"
+        "this.Structs[0].Structs[0].Ints[0]",
+        "this.Structs[0].Structs[0].Int",
+        "this.Structs[0].Struct.Int",
+        "this.Structs[0].Struct.Ints[0]",
+        "this.Int",
+        "this.Ints[0]",
+        "this.Struct.Structs[0].Ints[0]",
+        "this.Struct.Structs[0].Int",
+        "this.Struct.Struct.Int",
+        "this.Struct.Struct.Ints[0]"
         };
 
     for (size_t i = 0; i < _countof(s_expressions); i++)
         {
-        WCharCP expr = s_expressions[i];
+        Utf8CP expr = s_expressions[i];
         EvaluationResult result;
         ExpressionStatus status = EvaluateExpression (result, expr, *a);
         EXPECT_SUCCESS (status);
@@ -580,23 +580,23 @@ TEST_F (DgpInstanceListExpressionTests, DgnComplexExpressions)
 
 #ifdef NEEDSWORK_COMPLEX_ACCESS_STRINGS
     // Doesn't work for expressions like 'this["Struct.Member"]'
-    static WCharCP s_bracketExpressions[10] =
+    static Utf8CP s_bracketExpressions[10] =
         {
-        L"this[\"Structs\"][0][\"Structs\"][0][\"Ints\"][0]",
-        L"this[\"Structs\"][0][\"Structs\"][0][\"Int\"]",
-        L"this[\"Structs\"][0][\"Struct.Int\"]",
-        L"this[\"Structs\"][0][\"Struct.Ints\"][0]",
-        L"this[\"Int\"]",
-        L"this[\"Ints\"][0]",
-        L"this[\"Struct.Structs\"][0][\"Ints\"][0]",
-        L"this[\"Struct.Structs\"][0][\"Int\"]",
-        L"this[\"Struct.Struct.Int\"]",
-        L"this[\"Struct.Struct.Ints\"][0]"
+        "this[\"Structs\"][0][\"Structs\"][0][\"Ints\"][0]",
+        "this[\"Structs\"][0][\"Structs\"][0][\"Int\"]",
+        "this[\"Structs\"][0][\"Struct.Int\"]",
+        "this[\"Structs\"][0][\"Struct.Ints\"][0]",
+        "this[\"Int\"]",
+        "this[\"Ints\"][0]",
+        "this[\"Struct.Structs\"][0][\"Ints\"][0]",
+        "this[\"Struct.Structs\"][0][\"Int\"]",
+        "this[\"Struct.Struct.Int\"]",
+        "this[\"Struct.Struct.Ints\"][0]"
         };
 
     for (size_t i = 0; i < _countof(s_bracketExpressions); i++)
         {
-        WCharCP expr = s_bracketExpressions[i];
+        Utf8CP expr = s_bracketExpressions[i];
         EvaluationResult result;
         ExpressionStatus status = EvaluateExpression (result, expr, *a);
         EXPECT_SUCCESS (status);

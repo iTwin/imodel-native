@@ -801,7 +801,6 @@ private:
     FitViewParams&      m_params;
 
 protected:
-    virtual DgnModelP _GetViewTarget() override {return nullptr == m_viewport ? m_params.m_modelIfNoViewport : m_viewport->GetViewController().GetTargetModel(); }
     virtual QvElem* _DrawCached(IStrokeForCache& stroker) override { stroker._StrokeForCache(*this); return nullptr;}
     virtual void _SetupOutputs() override {SetIViewDraw(m_output);}
 
@@ -817,9 +816,6 @@ public:
         }
 
     ElemRangeCalc* GetElemRange() { return m_output.GetElemRange(); }
-    void SetViewport(DgnViewportP viewport) { m_viewport = viewport; }
-    void SetDrawPurpose(DrawPurpose drawPurpose) { m_purpose = drawPurpose; } 
-    void SetIs3dView(bool is3dView) { m_is3dView = is3dView; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/08
@@ -853,27 +849,21 @@ void _DrawSymbol(IDisplaySymbol* symbol, TransformCP trans, ClipPlaneSetP clip, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-void InitFitContext()
+virtual StatusInt _InitContextForView() override
     {
-    InvalidateScanRange();
-
-    m_worldToNpc  = *m_viewport->GetWorldToNpcMap();
-    m_worldToView = *m_viewport->GetWorldToViewMap();
-    m_output.SetViewFlags(*m_viewport->GetViewFlags());
+    if (SUCCESS != T_Super::_InitContextForView())
+        return ERROR;
 
     if (m_params.m_rMatrix || m_viewport)
         {
-        Transform  transform;
+        Transform transform;
+
         transform.InitFrom((nullptr == m_params.m_rMatrix) ? m_viewport->GetRotMatrix() : *m_params.m_rMatrix);
         PushTransform(transform);
+        m_transformClipStack.Clear(); // It is important to clear after PushTransform (TFS# 16267)
         }
 
-    m_transformClipStack.Clear();      // It is important to clear after the _PushTransform above (TFS# 16267)
-
-    DgnModelP rootModel = _GetViewTarget();
-
-    SetDgnDb(rootModel->GetDgnDb());
-    m_is3dView = rootModel->Is3d();
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -971,20 +961,22 @@ StatusInt DgnViewport::ComputeViewRange(DRange3dR range, FitViewParams& params)
     // now do a normal query to find the elements that are within this range.
     // the purpose of this query is to make the returned range include only the elements that are
     // actually displayed in the view. That might be smaller than 'range'.
-    FitContext  context(params);
-    context.AllocateScanCriteria();
-
     if (ViewportStatus::Success != SetupFromViewController()) // can't proceed if viewport isn't valid (e.g. not active)
         return ERROR;
 
-    context.SetViewport(this); // Don't want to attach...but transients have view display mask!
-    context.InitFitContext();
-    context.VisitAllViewElements(params.m_includeTransients, nullptr);
+    FitContext  context(params);
 
+    if (SUCCESS != context.Attach (this, context.GetDrawPurpose()))
+        return ERROR;
+
+    context.VisitAllViewElements(true, nullptr);
+    context.Detach();
+    
     m_viewController->RestoreFromSettings(oldState);
     _SynchWithViewController(false);
 
     DRange3d fullRange;
+
     if (SUCCESS == context.GetElemRange()->GetRange(fullRange))
         range = fullRange;
 
@@ -997,12 +989,12 @@ StatusInt DgnViewport::ComputeViewRange(DRange3dR range, FitViewParams& params)
 StatusInt DgnViewport::ComputeFittedElementRange(DRange3dR rangeUnion, DgnElementIdSet const& elements, RotMatrixCP rMatrix)
     {
     FitViewParams params;
-    params.m_rMatrix = rMatrix;//Old function had this feature. So retaining it
+    params.m_rMatrix = rMatrix; // Old function had this feature. So retaining it
 
     FitContext context(params);
-    context.SetViewport(this);
-    context.AllocateScanCriteria();
-    context.InitFitContext();
+
+    if (SUCCESS != context.Attach (this, context.GetDrawPurpose()))
+        return ERROR;
 
     for (DgnElementId elemId : elements)
         {
@@ -1021,6 +1013,8 @@ StatusInt DgnViewport::ComputeFittedElementRange(DRange3dR rangeUnion, DgnElemen
         context.VisitElement(*geomElem);
         }
     
+    context.Detach();
+
     return context.GetElemRange()->GetRange(rangeUnion);
     }
 
@@ -1050,17 +1044,17 @@ virtual StatusInt _VisitElement(GeometricElementCR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void InitDepthFitContext()
+virtual StatusInt _InitContextForView() override
     {
-    InitFitContext();
+    if (SUCCESS != T_Super::_InitContextForView())
+        return ERROR;
 
-    Frustum frustum = GetFrustum();
+    Frustum     frustum = GetFrustum();
     int         nPlanes;
     ClipPlane   frustumPlanes[6];
     ViewFlagsCP viewFlags = GetViewFlags();
 
-    // DepthFitContext needs the frustum planes in RangeOutput also to properly
-    // clip elements that span outside the view.
+    // DepthFitContext needs the frustum planes in RangeOutput also to properly clip elements that span outside the view.
     if (0 != (nPlanes = ClipUtil::RangePlanesFromPolyhedra(frustumPlanes, frustum.GetPts(), nullptr != viewFlags && !viewFlags->noFrontClip, nullptr != viewFlags && !viewFlags->noBackClip, 1.0E-6)))
         {
         m_transformClipStack.PushClipPlanes(frustumPlanes, nPlanes);
@@ -1068,8 +1062,11 @@ void InitDepthFitContext()
         ClipPlaneSet planeSet(frustumPlanes, nPlanes);
         DirectPushTransClipOutput(*m_IDrawGeom, nullptr, &planeSet);
         }
+
+    return SUCCESS;
     }
-};
+
+}; // DepthFitContext
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/06
@@ -1077,18 +1074,20 @@ void InitDepthFitContext()
 StatusInt DgnViewport::DetermineVisibleDepthNpc(double& lowNpc, double& highNpc, DRange3dCP subRectNpc)
     {
     FitViewParams params;
+
     params.m_useScanRange = true;
     params.m_fitMinDepth = params.m_fitMaxDepth = true;
 
     DepthFitContext context(params);
 
-    context.SetViewport(this);
     if (subRectNpc)
         context.SetSubRectNpc(*subRectNpc);
 
-    context.AllocateScanCriteria();
-    context.InitDepthFitContext();
+    if (SUCCESS != context.Attach (this, context.GetDrawPurpose()))
+        return ERROR;
+
     context.VisitAllViewElements(true, nullptr);
+    context.Detach();
 
     lowNpc = 0.0;
     highNpc = 1.0;
@@ -1122,10 +1121,11 @@ StatusInt DgnViewport::ComputeVisibleDepthRange(double& minDepth, double& maxDep
 
     DepthFitContext context(params);
 
-    context.SetViewport(this);
-    context.AllocateScanCriteria();
-    context.InitDepthFitContext();
+    if (SUCCESS != context.Attach (this, context.GetDrawPurpose()))
+        return ERROR;
+
     context.VisitAllViewElements(true, nullptr);
+    context.Detach();
 
     DRange3d range;
 
@@ -1136,37 +1136,4 @@ StatusInt DgnViewport::ComputeVisibleDepthRange(double& minDepth, double& maxDep
     maxDepth = range.high.z;
 
     return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      06/2008
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       IViewTransients::ComputeRange(DRange3dR range, DgnViewportP vp)
-    {
-    // NEEDSWORK_WIP_RANGE - Do we need to keep this method if fit starts using project extents???
-    //                       Can maybe just have a virtual _GetRange method on IViewTransient and
-    //                       require implemention to keep "geometry" range if needed...
-    if (ViewportStatus::Success != vp->SetupFromViewController()) // can't proceed if viewport isn't valid (e.g. not active)
-        return  ERROR;
-
-    FitViewParams params;
-    params.m_fitRasterRefs = true;
-
-    FitContext  context(params);
-    context.SetViewport(vp); // Don't want to attach...but transients have view display mask!
-    context.AllocateScanCriteria();
-    context.InitFitContext();
-
-    _DrawTransients(context, false);
-
-    return context.GetElemRange()->GetRange(range);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   08/99
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnViewport::ComputeTransientRange(DRange3dP range, RotMatrixP rMatrix, bool checkLevelClass) const
-    {
-    // NEEDSWORK_WIP_RANGE - Called by QvViewport::_AdjustZPlanesToModel, goes aways when we have project "extents".
-    return ERROR;
     }

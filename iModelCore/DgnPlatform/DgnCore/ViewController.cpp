@@ -853,10 +853,8 @@ void ViewController::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
     double backDist = frontDist + newDelta.z;
 
     cameraView->SetFocusDistance(frontDist); // do this even if the camera isn't currently on.
-    cameraView->CenterEyePoint(&backDist);   // "
-
-    if (isCameraOn)
-        cameraView->CenterFocusDistance();   // changes delta/origin - only do it if the camera is on
+    cameraView->CenterEyePoint(&backDist); // do this even if the camera isn't currently on.
+    cameraView->VerifyFocusPlane(); // changes delta/origin 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1360,6 +1358,37 @@ bool DrawingViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, 
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Ensure the focus plane lies between the front and back planes. If not, center it.
+* @bsimethod                                    Keith.Bentley                   07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void CameraViewController::VerifyFocusPlane()
+    {
+    if (!m_isCameraOn)
+        return;
+
+    DVec3d eyeOrg = DVec3d::FromStartEnd(m_origin, m_camera.GetEyePoint());
+    m_rotation.Multiply(eyeOrg);
+
+    double backDist = eyeOrg.z;
+    double frontDist = backDist - m_delta.z;
+    double focusDist = m_camera.GetFocusDistance();
+    if (focusDist>frontDist && focusDist<backDist)
+        return;
+
+    // put it halfway between front and back planes
+    m_camera.SetFocusDistance((m_delta.z / 2.0) + frontDist);
+
+    // moving the focus plane means we have to adjust the origin and delta too (they're on the focus plane, see diagram in ViewController.h)
+    double ratio = m_camera.GetFocusDistance() / focusDist;
+    m_delta.x *= ratio;
+    m_delta.y *= ratio;
+
+    DVec3d xVec, yVec, zVec;
+    m_rotation.GetRows(xVec, yVec, zVec);
+    m_origin.SumOf(m_camera.GetEyePoint(), zVec, -backDist, xVec, -0.5*m_delta.x, yVec, -0.5*m_delta.y); // this centers the camera too
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * See diagram in viewController.h
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1393,6 +1422,9 @@ ViewportStatus CameraViewController::LookAt(DPoint3dCR eyePoint, DPoint3dCR targ
 
     frontDist = std::max(frontDist, DgnUnits::OneMillimeter());
     backDist  = std::max(backDist, focusDist+DgnUnits::OneMillimeter());
+
+    if (backDist < focusDist) // make sure focus distance is in front of back distance.
+        backDist = focusDist + DgnUnits::OneMillimeter();
 
     BeAssert(backDist > frontDist);
     delta.z =(backDist - frontDist);
@@ -1578,6 +1610,8 @@ void CameraViewController::_RestoreFromSettings(JsonValueCR jsonObj)
     if (m_delta.x <= DBL_EPSILON) m_delta.x = (m_delta.y + m_delta.z)/2;
     if (m_delta.y <= DBL_EPSILON) m_delta.y = (m_delta.x + m_delta.z)/2;
     if (m_delta.z <= DBL_EPSILON) m_delta.z = (m_delta.x + m_delta.y)/2;
+
+    VerifyFocusPlane();
     }
 
 //---------------------------------------------------------------------------------------
