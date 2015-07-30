@@ -114,7 +114,7 @@ public:
     //! 
     //! Typical example:
     //!
-    //!     WChar idStrBuffer[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
+    //!     Utf8Char idStrBuffer[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
     //!     bool success = ECInstanceIdHelper::ToString (idStrBuffer, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, ecInstanceId);
     //!
     //! @remarks The string representation can be used as an ECN::IECInstance's InstanceId

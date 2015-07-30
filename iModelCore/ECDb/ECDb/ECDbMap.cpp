@@ -294,7 +294,7 @@ ClassMapPtr ECDbMap::LoadAddClassMap (ECClassCR ecClass)
         {
         if (MapStatus::Error == AddClassMap (classMapPtr))
             {
-            LOG.errorv (L"Failed to add map for class %ls", ecClass.GetFullName ());
+            LOG.errorv ("Failed to add map for class %s", ecClass.GetFullName ());
             return nullptr;
             }
 
@@ -318,7 +318,7 @@ MapStatus ECDbMap::MapClass (ECClassCR ecClass, bool forceRevaluationOfMapStrate
         {
         if (0 == ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema(GetECDbR(), ecClass))
             {
-            LOG.errorv(L"ECClass %ls does not exist in ECDb. Import ECSchema containing the class first", ecClass.GetFullName());
+            LOG.errorv("ECClass %s does not exist in ECDb. Import ECSchema containing the class first", ecClass.GetFullName());
             BeAssert(false);
             return MapStatus::Error;
             }
@@ -373,7 +373,7 @@ MapStatus ECDbMap::AddClassMap (ClassMapPtr& classMap)
     ECClassCR ecClass = classMap->GetClass();
     if (m_classMapDictionary.end() != m_classMapDictionary.find(ecClass.GetId()))
         {
-        LOG.errorv (L"Attempted to add a second ClassMap for ECClass %ls", ecClass.GetFullName());
+        LOG.errorv ("Attempted to add a second ClassMap for ECClass %s", ecClass.GetFullName());
         BeAssert(false && "Attempted to add a second ClassMap for the same ECClass");
         return MapStatus::Error;
         }

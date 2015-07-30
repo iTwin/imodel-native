@@ -359,7 +359,6 @@ struct DependentPropertyCollection : NonCopyableClass
         ECDbSqlColumn& GetColumnR () { return m_column; }
         ECDbSqlColumn const& GetColumn () const { return m_column; }
         BentleyStatus Add (ECN::ECClassId ecClassId, Utf8CP accessString);
-        BentleyStatus Add (ECN::ECClassId ecClassId, WCharCP accessString);
         BentleyStatus Remove (ECN::ECClassId ecClassId);
         Utf8CP Find (ECN::ECClassId ecClassId) const;
         bool Contains (ECN::ECClassId ecClassId) const;

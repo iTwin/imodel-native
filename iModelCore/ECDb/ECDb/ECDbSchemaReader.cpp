@@ -559,13 +559,13 @@ BentleyStatus ECDbSchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContainerR  
             {
             if (SUCCESS != readerInfo.DeserializeCaInstance (inst, caClass->GetSchema ()))
                 {
-                LOG.errorv(L"Deserializing custom attribute instance from XML failed.");
+                LOG.error("Deserializing custom attribute instance from XML failed.");
                 return ERROR;
                 }
             }
         else
             {
-            LOG.errorv(L"Custom attribute defined but its content is missing. It doesn't have a ECInstanceId or corresponding xml.");
+            LOG.error("Custom attribute defined but its content is missing. It doesn't have a ECInstanceId or corresponding xml.");
             return ERROR;
             }
 
@@ -573,7 +573,7 @@ BentleyStatus ECDbSchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContainerR  
             caConstainer.SetCustomAttribute(*inst);
         else
             {
-            LOG.errorv(L"Error getting Custom attribute for a container");
+            LOG.error("Error getting Custom attribute for a container");
             return ERROR;
             }
         readerInfo.Clear();

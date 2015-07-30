@@ -62,7 +62,7 @@ BentleyStatus ColumnInfo::Initialize(ECPropertyCR ecProperty, Utf8CP propertyAcc
         if (!ECDbSqlColumn::Constraint::TryParseCollationString(m_collation, collationStr.c_str()))
             {
             LOG.errorv("Custom attribute PropertyMap on ECProperty %s:%s has an invalid value for the property 'Collation': %s",
-                       Utf8String(ecProperty.GetClass().GetFullName()).c_str(), Utf8String(ecProperty.GetName()).c_str(),
+                       ecProperty.GetClass().GetFullName(), ecProperty.GetName().c_str(),
                        collationStr.c_str());
             return ERROR;
             }
@@ -72,7 +72,7 @@ BentleyStatus ColumnInfo::Initialize(ECPropertyCR ecProperty, Utf8CP propertyAcc
     // we use the ECProperty's propertyAccessString (and replace . by _)
     if (Utf8String::IsNullOrEmpty(m_columnName.c_str()))
         {
-        m_columnName = Utf8String(propertyAccessString);
+        m_columnName.assign (propertyAccessString);
         m_columnName.ReplaceAll(".", "_");
         BeAssert(m_columnName.find(".") == Utf8String::npos);
         }

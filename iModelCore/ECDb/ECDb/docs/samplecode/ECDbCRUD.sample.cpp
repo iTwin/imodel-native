@@ -296,10 +296,10 @@ BentleyStatus ECDb_ECSqlStatementAndDateTime ()
 
         DateTime::Info const& birthdayInfo = birthday.GetInfo ();
         DateTime::Info const& lastModifiedInfo = lastModified.GetInfo ();
-        wprintf (L"Birthday: Kind %ls, Component %ls\n", 
+        printf ("Birthday: Kind %s, Component %s\n", 
         DateTime::Info::KindToString (birthdayInfo.GetKind ()).c_str (), 
         DateTime::Info::ComponentToString (birthdayInfo.GetComponent ()).c_str ());
-        wprintf (L"LastModified: Kind %ls, Component %ls\n", 
+        printf ("LastModified: Kind %s, Component %s\n", 
         DateTime::Info::KindToString (lastModifiedInfo.GetKind ()).c_str (), 
         DateTime::Info::ComponentToString (lastModifiedInfo.GetComponent ()).c_str ());
         }

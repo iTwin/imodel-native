@@ -523,7 +523,7 @@ Utf8String RelationshipConstraintIsNotARelationshipClassRule::Error::_ToString()
         if (!isFirstItem)
             str.append("; ");
 
-        str.append("(Relationship: ").append(Utf8String(inconsistency.first->GetFullName())).append(" , Constraint: ").append(Utf8String(inconsistency.second->GetFullName())).append(")");
+        str.append("(Relationship: ").append(Utf8String(inconsistency.first->GetFullName())).append(" , Constraint: ").append(inconsistency.second->GetFullName()).append(")");
         isFirstItem = false;
         }
 

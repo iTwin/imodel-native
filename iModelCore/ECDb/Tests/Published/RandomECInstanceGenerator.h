@@ -40,7 +40,7 @@ private:
     uint64_t    m_currentDateTimeJulian, m_incrementDateTimeJulian;
     DPoint2d    m_seedPoint2d, m_currentPoint2d, m_incrementPoint2d;
     DPoint3d    m_seedPoint3d, m_currentPoint3d, m_incrementPoint3d;
-    WString     m_stringPrefix;
+    Utf8String  m_stringPrefix;
     bool        m_seedBoolean, m_currentBoolean;
     size_t      m_binaryLength;
     ECN::ECPropertyCP m_property;
@@ -67,7 +67,7 @@ public:
     void SetSeedPoint2D(DPoint2dCR seed, DPoint2d increment);
     void SetSeedPoint3D(DPoint3dCR seed, DPoint3d increment);
     void SetBinaryLength(size_t length);
-    void SetStringPrefix(WStringCR prefix);
+    void SetStringPrefix(Utf8CP prefix);
     void SetSeedDateTime(DateTime seed, uint64_t julianHectoSecondsIncrement);
     void SetSeedBoolean(bool seed);
     ECN::ECPropertyCP GetProperty() const { return m_property; }

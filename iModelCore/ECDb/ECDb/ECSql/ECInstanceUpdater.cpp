@@ -164,7 +164,7 @@ BentleyStatus ECInstanceUpdater::Impl::Update (IECInstanceCR instance) const
 
     if (!IsValid ())
         {
-        LOG.errorv (L"ECInstanceUpdater for ECClass '%s' is invalid as the ECClass is not mapped or cannot be used for updating.", m_ecClass.GetFullName ());
+        LOG.errorv ("ECInstanceUpdater for ECClass '%s' is invalid as the ECClass is not mapped or cannot be used for updating.", m_ecClass.GetFullName ());
         return ERROR;
         }
 
@@ -315,7 +315,7 @@ void ClassUpdaterImpl::Initialize(bvector<ECPropertyCP>& propertiesToBind)
     {
     if (propertiesToBind.size() < 1)
         {
-        LOG.errorv(L"ECClass '%ls' doesn't have any properties. Instances of that class therefore cannot be updated.",
+        LOG.errorv("ECClass '%s' doesn't have any properties. Instances of that class therefore cannot be updated.",
                    GetECClass().GetFullName());
 
         m_isValid = false;

@@ -514,12 +514,12 @@ BentleyStatus DeleteRelatedInstancesECSqlStepTask::DeleteInstances (ECDbR ecdb, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                             Krischan.Eberle         01/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus DeleteRelatedInstancesECSqlStepTask::DeleteInstances (ECDbR ecDb, ECClassId classId, std::vector<ECInstanceKey> const& keyList) const
+BentleyStatus DeleteRelatedInstancesECSqlStepTask::DeleteInstances(ECDbR ecDb, ECClassId classId, std::vector<ECInstanceKey> const& keyList) const
     {
-    ECClassCP ecClass = ecDb.Schemas ().GetECClass (classId);
+    ECClassCP ecClass = ecDb.Schemas().GetECClass(classId);
     if (ecClass == nullptr)
         {
-        LOG.errorv ("ECSQL cascade delete of related instances with ECClassId %lld failed: Could not retrieve ECClass for the ECClassId.", classId);
+        LOG.errorv("ECSQL cascade delete of related instances with ECClassId %lld failed: Could not retrieve ECClass for the ECClassId.", classId);
         return ERROR;
         }
 
@@ -527,22 +527,22 @@ BentleyStatus DeleteRelatedInstancesECSqlStepTask::DeleteInstances (ECDbR ecDb, 
     //it as it gets implicitly deleted with the end instance.
     //This prevents us from running into null constraint violations if the foreign key column is not nullable
     //(See TFS#168619)
-    auto relationshipClass = ecClass->GetRelationshipClassCP ();
+    auto relationshipClass = ecClass->GetRelationshipClassCP();
     if (relationshipClass != nullptr)
         {
-        auto classMap = ecDb.GetECDbImplR().GetECDbMap ().GetClassMapCP (*relationshipClass);
+        auto classMap = ecDb.GetECDbImplR().GetECDbMap().GetClassMapCP(*relationshipClass);
         if (classMap == nullptr)
             {
-            LOG.errorv (L"ECSQL cascade delete of related %ls instances failed: Cound not retrieve class map.", relationshipClass->GetFullName ());
+            LOG.errorv("ECSQL cascade delete of related %s instances failed: Cound not retrieve class map.", relationshipClass->GetFullName());
             return ERROR;
             }
 
-        if (classMap->GetClassMapType () == IClassMap::Type::RelationshipEndTable)
+        if (classMap->GetClassMapType() == IClassMap::Type::RelationshipEndTable)
             {
-            BeAssert (dynamic_cast<RelationshipClassEndTableMapCP> (classMap) != nullptr);
+            BeAssert(dynamic_cast<RelationshipClassEndTableMapCP> (classMap) != nullptr);
             auto relClassMap = static_cast<RelationshipClassEndTableMapCP> (classMap);
-            auto const& otherEndConstraint = relClassMap->GetThisEnd () == ECRelationshipEnd_Source ? relationshipClass->GetTarget () : relationshipClass->GetSource ();
-            if (otherEndConstraint.GetCardinality ().GetLowerLimit () == 1)
+            auto const& otherEndConstraint = relClassMap->GetThisEnd() == ECRelationshipEnd_Source ? relationshipClass->GetTarget() : relationshipClass->GetSource();
+            if (otherEndConstraint.GetCardinality().GetLowerLimit() == 1)
                 {
 
                 return SUCCESS;
@@ -550,20 +550,20 @@ BentleyStatus DeleteRelatedInstancesECSqlStepTask::DeleteInstances (ECDbR ecDb, 
             }
         }
 
-    auto statement = GetDeleteStatement (*ecClass);
+    auto statement = GetDeleteStatement(*ecClass);
     if (statement == nullptr)
         return ERROR; //error logging already done in GetDeleteStatement
 
     //in order to reuse the prepared statement, the number of parameters in the ECSQL must be constant
     //We therefore split the delete in chunks of MAX_PARAMETER_COUNT instance ids
-    const int keyCount = (int) keyList.size ();
+    const int keyCount = (int) keyList.size();
     for (int i = 0; i < keyCount; i++)
         {
         const int parameterIndex = (i % MAX_PARAMETER_COUNT) + 1;
 
-        if (ECSqlStatus::Success != statement->BindId (parameterIndex, keyList[i].GetECInstanceId ()))
+        if (ECSqlStatus::Success != statement->BindId(parameterIndex, keyList[i].GetECInstanceId()))
             {
-            LOG.errorv (L"ECSQL cascade delete of related %ls instances failed: Binding to nested ECSQL DELETE failed.", ecClass->GetFullName ());
+            LOG.errorv("ECSQL cascade delete of related %s instances failed: Binding to nested ECSQL DELETE failed.", ecClass->GetFullName());
             return ERROR;
             }
 
@@ -572,17 +572,17 @@ BentleyStatus DeleteRelatedInstancesECSqlStepTask::DeleteInstances (ECDbR ecDb, 
         const bool isLastKey = (i + 1) == keyCount;
         if (parameterIndex == MAX_PARAMETER_COUNT || isLastKey)
             {
-            if (ECSqlStepStatus::Done != statement->Step ())
+            if (ECSqlStepStatus::Done != statement->Step())
                 {
-                LOG.errorv (L"ECSQL cascade delete of related %ls instances failed: Execution of nested ECSQL DELETE failed.", ecClass->GetFullName ());
+                LOG.errorv("ECSQL cascade delete of related %s instances failed: Execution of nested ECSQL DELETE failed.", ecClass->GetFullName());
                 return ERROR;
                 }
 
             //no need to reset the statement if this is the last execution
             if (!isLastKey)
                 {
-                statement->ClearBindings ();
-                statement->Reset ();
+                statement->ClearBindings();
+                statement->Reset();
                 }
             }
         }
@@ -669,7 +669,7 @@ ECSqlStatement* DeleteRelatedInstancesECSqlStepTask::GetDeleteStatement (ECN::EC
         auto statement = std::unique_ptr<ECSqlStatement> (new ECSqlStatement ());
         if (statement->Prepare (m_ecdb, ecsql.c_str ()) != ECSqlStatus::Success)
             {
-            LOG.errorv (L"ECSQL cascade delete of related %ls instances failed: Preparation of nested ECSQL DELETE failed.", ecClass.GetFullName ());
+            LOG.errorv ("ECSQL cascade delete of related %s instances failed: Preparation of nested ECSQL DELETE failed.", ecClass.GetFullName ());
             return nullptr;
             }
 

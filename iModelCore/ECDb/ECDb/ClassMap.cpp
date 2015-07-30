@@ -261,10 +261,8 @@ Utf8String IClassMap::ToString () const
             break;
         }
 
-    Utf8String strategyName = GetMapStrategy ().ToString ();
-
     Utf8String str;
-    str.Sprintf ("ClassMap '%s' - Type: %s - Map strategy: %ls", GetClass ().GetFullName (), typeStr, strategyName.c_str());
+    str.Sprintf("ClassMap '%s' - Type: %s - Map strategy: %s", GetClass().GetFullName(), typeStr, GetMapStrategy().ToString().c_str());
 
     return str;
     }
@@ -1083,9 +1081,9 @@ ColumnFactory::ColumnFactory (ClassMapCR classMap)
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-void ColumnFactory::RegisterColumnInUse (ECDbSqlColumn const& column)
+void ColumnFactory::RegisterColumnInUse(ECDbSqlColumn const& column)
     {
-    columnsInUseSet.insert (column.GetFullName ());
+    columnsInUseSet.insert(column.GetFullName());
     }
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015

@@ -819,7 +819,7 @@ bool JsonECSqlSelectAdapter::JsonFromPrimitive (JsonValueR jsonValue, IECSqlValu
             // TODO: Unhandled for now. Not asserting due to ATPs. 
             ECClassCR ecClass = ecProperty.GetClass();
             ECSchemaCR ecSchema = ecClass.GetSchema();
-            LOG.errorv (L"Cannot handle IGeometry primitive types. Property %ls:%ls:%ls", ecSchema.GetName().c_str(), ecClass.GetName().c_str(), ecProperty.GetName().c_str());
+            LOG.errorv ("Cannot handle IGeometry primitive types. Property %s:%s:%s", ecSchema.GetName().c_str(), ecClass.GetName().c_str(), ecProperty.GetName().c_str());
             status = true;
             break;
             }

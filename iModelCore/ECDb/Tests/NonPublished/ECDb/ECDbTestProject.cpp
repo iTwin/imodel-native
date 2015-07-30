@@ -54,12 +54,12 @@ BentleyStatus ECDbTestSchemaManager::ImportTestSchema (WCharCP testSchemaFileNam
     if (m_testSchema == nullptr)
         return ERROR;
 
-    LOG.infov (L"Loaded %ls from disk [%.4lf seconds]", m_testSchema->GetFullSchemaName ().c_str (), s.GetElapsedSeconds ());
+    LOG.infov ("Loaded %s from disk [%.4lf seconds]", m_testSchema->GetFullSchemaName ().c_str (), s.GetElapsedSeconds ());
 
     s.Start ();
     auto importSchemaStatus = Schemas ().ImportECSchemas (schemaReadContext->GetCache (), ECDbSchemaManager::ImportOptions (true, false));
     s.Stop();
-    LOG.infov (L"Imported %ls into DgnDb [%.4lf seconds]", m_testSchema->GetFullSchemaName ().c_str (), s.GetElapsedSeconds());
+    LOG.infov ("Imported %s into DgnDb [%.4lf seconds]", m_testSchema->GetFullSchemaName ().c_str (), s.GetElapsedSeconds());
     EXPECT_EQ (SUCCESS, importSchemaStatus);
     if (SUCCESS != importSchemaStatus)
         return ERROR;
@@ -1382,8 +1382,8 @@ double actualJd
     {
     const DateTime expectedDateTime = expectedECValue.GetDateTime ();
 
-    WString assertMessageHeader;
-    assertMessageHeader.Sprintf (L"EC date time assertion failed for '%ls': ", expectedDateTime.ToString ().c_str ());
+    Utf8String assertMessageHeader;
+    assertMessageHeader.Sprintf ("EC date time assertion failed for '%s': ", expectedDateTime.ToUtf8String().c_str ());
 
     const int64_t expectedCETicks = expectedECValue.GetDateTimeTicks ();
     double expectedJd;
@@ -1399,13 +1399,13 @@ double actualJd
     sql.Sprintf ("select julianday('%s');", expectedDateTime.ToUtf8String ().c_str ());
     Statement sqliteStatement;
     DbResult dbStat = sqliteStatement.Prepare (db, sql.c_str ());
-    EXPECT_EQ (BE_SQLITE_OK, dbStat) << assertMessageHeader.c_str () << L"SQL statement '" << sql.c_str () << L"' could not be prepared";
+    EXPECT_EQ (BE_SQLITE_OK, dbStat) << assertMessageHeader.c_str () << "SQL statement '" << sql.c_str () << "' could not be prepared";
     dbStat = sqliteStatement.Step ();
-    EXPECT_EQ (BE_SQLITE_ROW, dbStat) << assertMessageHeader.c_str () << L"SQL statement '" << sql.c_str () << L"' could not be executed";;
+    EXPECT_EQ (BE_SQLITE_ROW, dbStat) << assertMessageHeader.c_str () << "SQL statement '" << sql.c_str () << "' could not be executed";;
     const double sqliteJd = sqliteStatement.GetValueDouble (0);
     const int64_t sqliteCETicks = JulianDayToCommonEraTicks (sqliteJd);
-    LOG.infov (L"Expected JD: %lf - SQLite JD: %lf", expectedJd, sqliteJd);
-    assertMessageHeader.Sprintf (L"Comparison of Julian Days computed by Bentley::DateTime and SQLite date function failed for '%ls'. ", expectedDateTime.ToString ().c_str ());
+    LOG.infov ("Expected JD: %lf - SQLite JD: %lf", expectedJd, sqliteJd);
+    assertMessageHeader.Sprintf ("Comparison of Julian Days computed by Bentley::DateTime and SQLite date function failed for '%s'. ", expectedDateTime.ToUtf8String().c_str ());
     AssertECDateTime (expectedCETicks, sqliteCETicks, assertMessageHeader.c_str ());
     }
 
@@ -1417,12 +1417,12 @@ void ECDbTestUtility::AssertECDateTime
 (
 int64_t expectedCETicks,
 int64_t actualCETicks,
-WCharCP assertMessageHeader
+Utf8CP assertMessageHeader
 )
     {
     if (!CompareECDateTimes (expectedCETicks,actualCETicks))
         {
-        FAIL () << assertMessageHeader << L"Common Era ticks difference outside the tolerance. Expected ticks: " << expectedCETicks << L" Actual ticks: " << actualCETicks;
+        FAIL () << assertMessageHeader << "Common Era ticks difference outside the tolerance. Expected ticks: " << expectedCETicks << " Actual ticks: " << actualCETicks;
         }
     }
 
@@ -1528,7 +1528,7 @@ ECDbR ecdb
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECDbTestUtility::DumpECSchemaUsageStatistics (ECSchemaCR schema, ECDbR ecdb, bool dumpEmptyClasses)
     {
-    LOG.infov (L"ECSchema: %ls.%02d.%02d", schema.GetName().c_str(), schema.GetVersionMajor(), schema.GetVersionMinor());
+    LOG.infov ("ECSchema: %s.%02d.%02d", schema.GetName().c_str(), schema.GetVersionMajor(), schema.GetVersionMinor());
     size_t totalClassCount = 0;
     size_t totalUsedClassCount = 0;
     size_t totalCustomAttributeClassCount = 0;
@@ -1542,14 +1542,14 @@ void ECDbTestUtility::DumpECSchemaUsageStatistics (ECSchemaCR schema, ECDbR ecdb
         if (ecClass->GetIsCustomAttributeClass())
             {
             totalCustomAttributeClassCount++;
-            LOG.infov (L"    ECClass: %-40ls\t\t(Custom Attribute Class)", ecClass->GetName().c_str());
+            LOG.infov ("    ECClass: %-40s\t\t(Custom Attribute Class)", ecClass->GetName().c_str());
             continue;
             }
 
         ECInstanceInserter inserter (ecdb, *ecClass);
         if (!inserter.IsValid ())
             {
-            LOG.infov (L"    ECClass: %-40ls\t\t(Not mapped to any table)", ecClass->GetName().c_str());
+            LOG.infov ("    ECClass: %-40s\t\t(Not mapped to any table)", ecClass->GetName().c_str());
             continue;
             }
 
@@ -1558,7 +1558,7 @@ void ECDbTestUtility::DumpECSchemaUsageStatistics (ECSchemaCR schema, ECDbR ecdb
             *ecClass, ecdb);
         if (instanceCount > 0 && dumpEmptyClasses)
             {
-            LOG.infov (L"    ECClass: %-40ls: %5d instances, %5d properties, %5d null-properties, %5d cust-attr-instances", 
+            LOG.infov ("    ECClass: %-40s: %5d instances, %5d properties, %5d null-properties, %5d cust-attr-instances", 
                 ecClass->GetName().c_str(), instanceCount, propertyCount, nullPropertyCount, customAttributeInstanceCount);
             }
         if (instanceCount > 0) totalUsedClassCount++;
@@ -1567,14 +1567,14 @@ void ECDbTestUtility::DumpECSchemaUsageStatistics (ECSchemaCR schema, ECDbR ecdb
         totalNullPropertyCount += nullPropertyCount;
         }
 
-    LOG.infov (L"%-30ls = %5d", L"Total Classes", totalClassCount);
-    LOG.infov (L"%-30ls = %5d", L"Total CustAttr Classes", totalCustomAttributeClassCount);
-    LOG.infov (L"%-30ls = %5d", L"Total Used Classes", totalUsedClassCount);
-    LOG.infov (L"%-30ls = %5d", L"Total Unused Classes", totalClassCount - totalUsedClassCount - totalCustomAttributeClassCount);
-    LOG.infov (L"%-30ls = %5d", L"Total Custom Attr Instances", totalCustomAttributeInstanceCount);
-    LOG.infov (L"%-30ls = %5d", L"Total Property Count", totalPropertyCount);
-    LOG.infov (L"%-30ls = %5d", L"Total Null Property Count", totalNullPropertyCount);
-    LOG.infov (L"");
+    LOG.infov ("%-30s = %5d", "Total Classes", totalClassCount);
+    LOG.infov ("%-30s = %5d", "Total CustAttr Classes", totalCustomAttributeClassCount);
+    LOG.infov ("%-30s = %5d", "Total Used Classes", totalUsedClassCount);
+    LOG.infov ("%-30s = %5d", "Total Unused Classes", totalClassCount - totalUsedClassCount - totalCustomAttributeClassCount);
+    LOG.infov ("%-30s = %5d", "Total Custom Attr Instances", totalCustomAttributeInstanceCount);
+    LOG.infov ("%-30s = %5d", "Total Property Count", totalPropertyCount);
+    LOG.infov ("%-30s = %5d", "Total Null Property Count", totalNullPropertyCount);
+    LOG.infov ("");
     }
 
 /*---------------------------------------------------------------------------------**//**

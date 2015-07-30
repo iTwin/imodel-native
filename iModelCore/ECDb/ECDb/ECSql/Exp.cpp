@@ -490,7 +490,7 @@ BentleyStatus PropertyPath::TryGetQualifiedPath(Utf8StringR qualifiedPath) const
         return ERROR;
         }
 
-    qualifiedPath = Utf8String(GetClassMap()->GetClass().GetFullName());
+    qualifiedPath.assign(GetClassMap()->GetClass().GetFullName());
     qualifiedPath.append(":");
     qualifiedPath.append(ToString(false));
     return SUCCESS;

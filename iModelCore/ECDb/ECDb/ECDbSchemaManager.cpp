@@ -91,7 +91,7 @@ IImportIssueListener const* userProvidedIssueListener
             {
             if (id == 0 || id != schema->GetId())
                 {
-                LOG.errorv(L"ECSchema %ls is owned by some other ECDb file.", schema->GetFullSchemaName().c_str());
+                LOG.errorv("ECSchema %s is owned by some other ECDb file.", schema->GetFullSchemaName().c_str());
                 return ERROR;
                 }
             }
@@ -169,7 +169,7 @@ bool ECDbSchemaManager::ContainsDuplicateSchemas(bvector<ECSchemaP> const& schem
         {
         if (myMap[schema->GetFullSchemaName()] == schema)
             {
-            LOG.errorv(L"Found more then one in-memory copy of ECSchema %ls. Use single ECSchemaReadContext to deserialize ECSchemas.", schema->GetFullSchemaName().c_str());
+            LOG.errorv("Found more then one in-memory copy of ECSchema %s. Use single ECSchemaReadContext to deserialize ECSchemas.", schema->GetFullSchemaName().c_str());
             return true;
             }
 
@@ -202,7 +202,7 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
         if (options.DoSupplementation ())
             {
             if (primarySchema->IsSupplemented ())
-                LOG.warningv (L"Attempted to supplement ECSchema %ls that is already supplemented.", primarySchema->GetFullSchemaName ().c_str ());
+                LOG.warningv ("Attempted to supplement ECSchema %s that is already supplemented.", primarySchema->GetFullSchemaName ().c_str ());
             else
                 {
                 bvector<ECSchemaP> supplementalSchemas;
@@ -214,7 +214,7 @@ BentleyStatus ECDbSchemaManager::BatchImportOrUpdateECSchemas (SchemaImportConte
                     if (status != SUPPLEMENTED_SCHEMA_STATUS_Success)
                         {
                         //TODO: print detail error in log. We cannot revert so we will import what we got
-                        LOG.warningv (L"Failed to supplement %ls.", primarySchema->GetFullSchemaName ().c_str ());
+                        LOG.warningv ("Failed to supplement %s.", primarySchema->GetFullSchemaName ().c_str ());
                         }
                     }
                 //All consolidated customattribute must be reference. But Supplemental Provenance in BSCA is not

@@ -311,7 +311,7 @@ MapStatus RelationshipClassEndTableMap::_InitializePart1 (ClassMapInfo const& cl
 
     if (thisEndTableCount != 1)
         {
-        BeAssert(thisEndTableCount == 1 && "ForeignKey end of relationship %ls has more than one tables or has no table at all");
+        BeAssert(thisEndTableCount == 1 && "ForeignKey end of relationship has more than one tables or has no table at all");
         return MapStatus::Error;
         }
 
@@ -1204,20 +1204,20 @@ void RelationshipClassLinkTableMap::AddIndicesToRelationshipEnds (RelationshipIn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool RelationshipClassLinkTableMap::GetConstraintECInstanceIdColumnName (Utf8StringR columnName, ECRelationshipEnd relationshipEnd, ECDbSqlTable const& table) const
+bool RelationshipClassLinkTableMap::GetConstraintECInstanceIdColumnName(Utf8StringR columnName, ECRelationshipEnd relationshipEnd, ECDbSqlTable const& table) const
     {
-    if (columnName.empty ())
+    if (columnName.empty())
         columnName = (relationshipEnd == ECRelationshipEnd_Source) ? DEFAULT_SOURCEECINSTANCEID_COLUMNNAME : DEFAULT_TARGETECINSTANCEID_COLUMNNAME;
 
-    if (table.FindColumnCP (columnName.c_str()) == nullptr)
+    if (table.FindColumnCP(columnName.c_str()) == nullptr)
         return true;
 
     if (GetMapStrategy().GetStrategy() == ECDbMapStrategy::Strategy::SharedTable)
         return true;
-		
+
     //Following error occure in Upgrading ECSchema but is not fatal.
-    LOG.errorv ("Table %s already contains column named %s. ECRelationship %s has failed to map.", 
-        table.GetName().c_str(), columnName.c_str (), Utf8String (m_ecClass.GetFullName()).c_str ());
+    LOG.errorv("Table %s already contains column named %s. ECRelationship %s has failed to map.",
+               table.GetName().c_str(), columnName.c_str(), m_ecClass.GetFullName());
     return false;
     }
     
@@ -1236,8 +1236,8 @@ bool RelationshipClassLinkTableMap::GetConstraintECClassIdColumnName (Utf8String
         return true;
 
     //Following error occure in Upgrading ECSchema but is not fatal.
-    LOG.errorv (L"Table %s already contains column named %s. ECRelationship %s has failed to map.", 
-        table.GetName().c_str(), columnName.c_str (), Utf8String (m_ecClass.GetFullName()).c_str ());
+    LOG.errorv("Table %s already contains column named %s. ECRelationship %s has failed to map.",
+               table.GetName().c_str(), columnName.c_str(), m_ecClass.GetFullName());
     return false;
     }
 

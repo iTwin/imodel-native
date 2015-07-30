@@ -143,12 +143,12 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
             Utf8String baseClasses;
             for (IClassMap const* baseMap : polymorphicSharedTableClassMaps)
                 {
-                baseClasses.append(Utf8String(baseMap->GetClass().GetFullName()).c_str());
+                baseClasses.append(baseMap->GetClass().GetFullName());
                 baseClasses.append(" ");
                 }
 
             LOG.errorv("ECClass '%s' has two or more base ECClasses which use the MapStrategy 'SharedTable (polymorphic)'. This is not supported. The base ECClasses are: %s",
-                       Utf8String(m_ecClass.GetFullName()).c_str(), baseClasses.c_str());
+                       m_ecClass.GetFullName(), baseClasses.c_str());
             }
 
         return ERROR;
@@ -253,7 +253,7 @@ bool ClassMapInfo::ValidateChildStrategy(UserECDbMapStrategy const& rootStrategy
     const NativeLogging::SEVERITY logSev = NativeLogging::LOG_ERROR;
     if (!isValid && LOG.isSeverityEnabled(logSev))
         LOG.messagev(logSev, "MapStrategy %s of ECClass '%s' does not match the MapStrategy %s on the root of the class hierarchy. %s",
-                    childStrategy.ToString().c_str(), Utf8String(m_ecClass.GetFullName()).c_str(), rootStrategy.ToString().c_str(),
+                    childStrategy.ToString().c_str(), m_ecClass.GetFullName(), rootStrategy.ToString().c_str(),
                     detailError);
 
     return isValid;
@@ -526,7 +526,7 @@ Utf8String ClassMapInfo::ResolveTablePrefix (ECClassCR ecClass)
 void ClassMapInfo::LogClassNotMapped (NativeLogging::SEVERITY severity, ECClassCR ecClass, Utf8CP explanation)
     {
     Utf8CP classTypeStr = ecClass.GetRelationshipClassCP () != nullptr ? "ECRelationshipClass" : "ECClass";
-    LOG.messagev (severity, "Did not map %s '%s': %s", classTypeStr, Utf8String (ecClass.GetFullName ()).c_str (), explanation);
+    LOG.messagev (severity, "Did not map %s '%s': %s", classTypeStr, ecClass.GetFullName (), explanation);
     }
 
 //****************************************************************************************************

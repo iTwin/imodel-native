@@ -15,7 +15,7 @@ TEST_F(PerformanceECSqlStatementTestFixture, GetValueIntegerWithIsNull)
     {
     StopWatch timer("",false);
     Utf8String testDetails="PerformanceECSqlStatementTestFixture,GetValueIntegerWithIsNull";
-    PerformanceECSqlStatementTestFixture::GetIntegerValueAsserter asserter (1, L"IntegerMember");
+    PerformanceECSqlStatementTestFixture::GetIntegerValueAsserter asserter (1, "IntegerMember");
     PerformanceECSqlStatementTestFixture::RunGetValueWithIsNullTest (asserter,timer,testDetails);
     }
     
@@ -26,7 +26,7 @@ TEST_F(PerformanceECSqlStatementTestFixture, GetValueIntegerWithoutIsNull)
     {
     StopWatch timer("", false);
     Utf8String testDetails = "PerformanceECSqlStatementTestFixture,GetValueIntegerWithoutIsNull";
-    PerformanceECSqlStatementTestFixture::GetIntegerValueAsserter asserter (1, L"IntegerMember");
+    PerformanceECSqlStatementTestFixture::GetIntegerValueAsserter asserter (1, "IntegerMember");
     PerformanceECSqlStatementTestFixture::RunGetValueWithoutIsNullTest (asserter,timer,testDetails);
     }
 
@@ -37,7 +37,7 @@ TEST_F(PerformanceECSqlStatementTestFixture, GetValueStringWithIsNull)
     {
     StopWatch timer("", false);
     Utf8String testDetails = "PerformanceECSqlStatementTestFixture,GetValueStringWithIsNull";
-    PerformanceECSqlStatementTestFixture::GetStringValueAsserter asserter (2, L"StringMember");
+    PerformanceECSqlStatementTestFixture::GetStringValueAsserter asserter (2, "StringMember");
     PerformanceECSqlStatementTestFixture::RunGetValueWithIsNullTest (asserter,timer,testDetails);
     }
 
@@ -48,7 +48,7 @@ TEST_F(PerformanceECSqlStatementTestFixture, GetValueStringWithoutIsNull)
     {
     StopWatch timer("", false);
     Utf8String testDetails = "PerformanceECSqlStatementTestFixture,GetValueStringWithoutIsNull";
-    PerformanceECSqlStatementTestFixture::GetStringValueAsserter asserter (2, L"StringMember");
+    PerformanceECSqlStatementTestFixture::GetStringValueAsserter asserter (2, "StringMember");
     PerformanceECSqlStatementTestFixture::RunGetValueWithoutIsNullTest (asserter,timer,testDetails);
     }
 
@@ -59,7 +59,7 @@ TEST_F(PerformanceECSqlStatementTestFixture, GetValuePoint3DWithIsNull)
     {
     StopWatch timer("", false);
     Utf8String testDetails = "PerformanceECSqlStatementTestFixture,GetValuePoint3DWithIsNull";
-    PerformanceECSqlStatementTestFixture::GetPoint3DValueAsserter asserter (4, L"StartPoint");
+    PerformanceECSqlStatementTestFixture::GetPoint3DValueAsserter asserter (4, "StartPoint");
     PerformanceECSqlStatementTestFixture::RunGetValueWithIsNullTest (asserter,timer,testDetails);
     }
 
@@ -70,7 +70,7 @@ TEST_F(PerformanceECSqlStatementTestFixture, GetValuePoint3DWithoutIsNull)
     {
     StopWatch timer("", false);
     Utf8String testDetails = "PerformanceECSqlStatementTestFixture,GetValuePoint3DWithoutIsNull";
-    PerformanceECSqlStatementTestFixture::GetPoint3DValueAsserter asserter (4, L"StartPoint");
+    PerformanceECSqlStatementTestFixture::GetPoint3DValueAsserter asserter (4, "StartPoint");
     PerformanceECSqlStatementTestFixture::RunGetValueWithoutIsNullTest (asserter,timer,testDetails);
     }
 

@@ -96,7 +96,7 @@ typedef bvector<ECN::ECSchemaCP> ECSchemaList;
 //! 
 //!     ECN::ECSchemaReadContextPtr ecSchemaContext = ECN::ECSchemaReadContext::CreateContext ();
 //!     ecSchemaContext->AddSchemaLocater(ecdb.GetSchemaLocater());
-//!     ECN::SchemaKey schemaKey (L"foo", 1, 0);
+//!     ECN::SchemaKey schemaKey ("foo", 1, 0);
 //!     ECN::ECSchemaPtr fooSchema = ECN::ECSchema::LocateSchema (schemaKey, *ecSchemaContext);
 //!     schemaManager.ImportECSchemas(ecSchemaContext->GetCache());
 //!

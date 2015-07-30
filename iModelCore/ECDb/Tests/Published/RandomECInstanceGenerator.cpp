@@ -177,7 +177,7 @@ void DefaultPropertyValueGenerator::Init()
     SetSeedLong(10000,1);
     SetSeedPoint2D(DPoint2d::From(1,1),DPoint2d::From(0.2,0.4));
     SetSeedPoint3D(DPoint3d::From(1,1,1),DPoint3d::From(0.2, 0.4, 0.8));
-    SetStringPrefix(L"StRiNg");
+    SetStringPrefix("StRiNg");
     SetBinaryLength(18);              
     }
 
@@ -247,7 +247,7 @@ void DefaultPropertyValueGenerator::SetBinaryLength(size_t length)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-void DefaultPropertyValueGenerator::SetStringPrefix(WStringCR prefix)
+void DefaultPropertyValueGenerator::SetStringPrefix(Utf8CP prefix)
     {
     m_stringPrefix = prefix;
     }

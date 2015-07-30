@@ -79,10 +79,10 @@ TEST (ECDbBrownBagDemo, SchemaManager)
     ECDb ecdb;
     DbResult stat = ecdb.OpenBeSQLiteDb ("C:\\temp\\brownbag\\StartupCompany_empty.ecdb", ECDb::OpenParams (ECDb::OpenMode::Readonly));
     if (stat == BE_SQLITE_OK)
-        wprintf (L"ECDb file opened.");
+        printf ("ECDb file opened.");
     else
         {
-        wprintf (L"Opening ECDb failed.");
+        printf ("Opening ECDb failed.");
         return;
         }
 
@@ -92,14 +92,14 @@ TEST (ECDbBrownBagDemo, SchemaManager)
     ECSchemaCP schema = schemaManager.GetECSchema ("StartupCompany");
 
     schema->DebugDump ();
-    wprintf (L"\r\n");
+    printf ("\r\n");
 
     //** Get ECClass from ECDb file
     ECClassCP employeeClass = schemaManager.GetECClass ("StartupCompany", "Employee");
-    wprintf (L"ECClass Employee\r\n");
+    printf ("ECClass Employee\r\n");
     for (ECPropertyCP prop : employeeClass->GetProperties ())
         {
-        wprintf (L"\t%ls\r\n", prop->GetName ().c_str ());
+        printf ("\t%s\r\n", prop->GetName ().c_str ());
         }
 
     ecdb.CloseDb ();

@@ -47,7 +47,7 @@ bool ECDbSchemaWriter::EnsureNamespacePrefixIsUnique (ECSchemaCR ecSchema)
         if (currentNSPrefix.Equals(newPrefix))
             {
             BeAssert(false && "Failed to generate a unique schema prefix");
-            LOG.errorv ("Failed to Generate Unique NamespacePrefix for ECSchema %ls", ecSchema.GetName().c_str());    
+            LOG.errorv ("Failed to Generate Unique NamespacePrefix for ECSchema %s", ecSchema.GetName().c_str());    
             return false;
             }
         ns = newPrefix.c_str();
@@ -480,7 +480,7 @@ BentleyStatus ECDbSchemaWriter::ImportECClass(ECN::ECClassCR ecClass)
         {
         if (SUCCESS != ImportECProperty(*ecProperty, ecClassId, propertyIndex++))
             {
-            LOG.errorv(L"Failed to import ECProperty '%ls' of ECClass '%ls'.", ecProperty->GetName().c_str(), ecClass.GetFullName());
+            LOG.errorv("Failed to import ECProperty '%s' of ECClass '%s'.", ecProperty->GetName().c_str(), ecClass.GetFullName());
             return ERROR;
             }
         }

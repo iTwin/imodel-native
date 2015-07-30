@@ -686,42 +686,6 @@ BentleyStatus RandomECInstanceGenerator::GenerateRelationshipInstances (ECRelati
         if (!hasData)
             break;
         //Before we add this, we need to check that source and target are unique for the cardinality
-/*        bool addInstance = true;
-        WString newSrcClassName = sourceInstance->GetClass ().GetName ();
-        WString newSrcId = sourceInstance->GetInstanceId ();
-        WString newTarClassName = targetInstance->GetClass ().GetName ();
-        WString newTarId = targetInstance->GetInstanceId ()*/;
-        //for (auto& existingEntry : m_relationshipInstances)
-        //    {
-        //    //auto ecClass = existingEntry.first;
-        //    auto const& instanceList = existingEntry.second;
-        //    FOR_EACH (IECInstancePtr existingInstance, instanceList)
-        //        {
-        //        IECRelationshipInstancePtr relInstance = dynamic_cast<IECRelationshipInstance*>(existingInstance.get ());
-        //        if (cardinality == Cardinality::S1_T1 || cardinality == Cardinality::S1_Tm) // target should be unique
-        //            {
-        //            WString exstTarClassName = relInstance->GetTarget ()->GetClass ().GetName ();
-        //            WString existingTarInstId = relInstance->GetTarget ()->GetInstanceId ();
-        //            if (exstTarClassName.Equals (newTarClassName) && existingTarInstId.Equals (newTarId))
-        //                {
-        //                addInstance = false;
-        //                nPos--;
-        //                }
-        //            }
-        //        if (cardinality == Cardinality::S1_T1 || cardinality == Cardinality::Sm_T1) // source should be unique
-        //            {
-        //            WString exstSrcClassName = relInstance->GetSource ()->GetClass ().GetName ();
-        //            WString existingSrcInstId = relInstance->GetSource ()->GetInstanceId ();
-        //            if (exstSrcClassName.Equals (newSrcClassName) && existingSrcInstId.Equals (newSrcId))
-        //                {
-        //                addInstance = false;
-        //                nPos--;
-        //                }
-        //            }
-        //        }
-        //    }
-        //if (addInstance)
-        //    {
         if (sourceInstance && targetInstance)
             {            
             auto enabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler (ecRelationshipClass);
