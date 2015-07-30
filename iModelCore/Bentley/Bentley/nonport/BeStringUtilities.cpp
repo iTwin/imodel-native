@@ -2801,5 +2801,5 @@ size_t BeStringUtilities::ComputeByteOffsetOfLogicalChar(Utf8CP str, size_t numL
 // To work around this problem I've added this function in a source file that doesn't use it
 // so the optimizer cannot figure out the type of data being copied.
 //---------------------------------------------------------------------------------------
-void Bentley::UnalignedMemcpy(void*dest, void const*source, size_t num) { memcpy(dest, source, num); }
+void BentleyApi::UnalignedMemcpy(void*dest, void const*source, size_t num) { memcpy(dest, source, num); }
 

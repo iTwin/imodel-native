@@ -199,7 +199,7 @@ struct AlignedArray : NonCopyableClass
         else
             m_data = (T*) new Byte[requiredSize];
 
-        Bentley::UnalignedMemcpy ((Byte*)m_data, pData, requiredSize);
+        BentleyApi::UnalignedMemcpy ((Byte*)m_data, pData, requiredSize);
 
         return m_data;
         }
