@@ -698,7 +698,7 @@ Utf8StringCP consolidatedSchemaFullName
             }
         if (!found)
             {
-            consolidatedCustomAttributeContainer.SetConsolidatedCustomAttribute(*customAttribute);
+            consolidatedCustomAttributeContainer.SetSupplementedCustomAttribute(*customAttribute);
             }
         }
 
@@ -716,18 +716,18 @@ ECObjectsStatus SupplementedSchemaBuilder::SetMergedCustomAttribute(IECCustomAtt
     ECSchemaP containerSchema = container.GetContainerSchema();
     if (containerSchema != &(customAttributeSchema))
         {
-        if (!ECSchema::IsSchemaReferenced (*containerSchema, customAttributeSchema))
+        if (!ECSchema::IsSchemaReferenced(*containerSchema, customAttributeSchema))
             {
-            ECObjectsStatus status = containerSchema->AddReferencedSchema (customAttributeSchema);
+            ECObjectsStatus status = containerSchema->AddReferencedSchema(customAttributeSchema);
             if (status != ECOBJECTS_STATUS_Success)
                 return status;
             }
         }
 
     if (precedence == SCHEMA_PRECEDENCE_Equal)
-        return container.SetPrimaryCustomAttribute (customAttributeInstance);
+        return container.SetPrimaryCustomAttribute(customAttributeInstance);
     else
-        return container.SetConsolidatedCustomAttribute (customAttributeInstance);
+        return container.SetSupplementedCustomAttribute(customAttributeInstance);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -1262,7 +1262,7 @@ void ECSchema::SetSupplementalSchemaInfo(SupplementalSchemaInfo* info)
         IECInstancePtr attribute = info->CreateCustomAttribute();
         if (attribute.IsValid())
             {
-            this->SetConsolidatedCustomAttribute(*attribute);
+            this->SetSupplementedCustomAttribute(*attribute);
             auto& bsca = attribute->GetClass().GetSchema();
             if (!ECSchema::IsSchemaReferenced(*this, bsca ))
                 {
