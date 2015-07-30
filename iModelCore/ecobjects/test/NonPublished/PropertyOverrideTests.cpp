@@ -18,6 +18,15 @@ struct PropertyOverrideTests : ECTestFixture
     ECSchemaPtr RoundTripSchema(ECSchemaPtr testSchema);
     void VerifyPropertyInheritance(ECClassCP ab, ECClassCP cd, ECClassCP ef, ECClassCP gh, ECClassCP ij, ECClassCP kl, ECClassCP mn);
     ECSchemaPtr SetUpBaseSchema();
+
+    void ExpectBasePropertyFromClass (Utf8CP propName, ECClassCP derived, ECClassCP base)
+        {
+        auto baseProp = derived->GetPropertyP (propName)->GetBaseProperty();
+        EXPECT_TRUE (baseProp->GetClass().GetName().Equals (base->GetName()))
+            << "Base property " << propName
+            << " expected from class " << base->GetName().c_str()
+            << " actually from class " << baseProp->GetClass().GetName().c_str();
+        }
     };
 
 //---------------------------------------------------------------------------------------
@@ -42,30 +51,30 @@ void PropertyOverrideTests::VerifyPropertyInheritance(ECClassCP ab, ECClassCP cd
     EXPECT_TRUE((mn->GetPropertyP(propName)->GetClass()).GetName().Equals(ab->GetName()));
     propName = "b";
     EXPECT_TRUE((mn->GetPropertyP(propName)->GetClass()).GetName().Equals(mn->GetName()));
-    EXPECT_TRUE((mn->GetPropertyP(propName)->GetBaseProperty()->GetClass()).GetName().Equals(ab->GetName()));
+    ExpectBasePropertyFromClass (propName, mn, ab);
     propName = "c";
     EXPECT_TRUE((mn->GetPropertyP(propName)->GetClass()).GetName().Equals(cd->GetName()));
     propName = "d";
     EXPECT_TRUE((mn->GetPropertyP(propName)->GetClass()).GetName().Equals(mn->GetName()));
-    EXPECT_TRUE((mn->GetPropertyP(propName)->GetBaseProperty()->GetClass()).GetName().Equals(cd->GetName()));
+    ExpectBasePropertyFromClass (propName, mn, cd);
     propName = "e";
     EXPECT_TRUE((mn->GetPropertyP(propName)->GetClass()).GetName().Equals(ef->GetName()));
     propName = "f";
     EXPECT_TRUE((mn->GetPropertyP(propName)->GetClass()).GetName().Equals(mn->GetName()));
-    EXPECT_TRUE((mn->GetPropertyP(propName)->GetBaseProperty()->GetClass()).GetName().Equals(ef->GetName()));
+    ExpectBasePropertyFromClass (propName, mn, ef);
     propName = "g";
     EXPECT_TRUE((mn->GetPropertyP(propName)->GetClass()).GetName().Equals(ab->GetName()));
     propName = "h";
     EXPECT_TRUE((mn->GetPropertyP(propName)->GetClass()).GetName().Equals(mn->GetName()));
-    EXPECT_TRUE((mn->GetPropertyP(propName)->GetBaseProperty()->GetClass()).GetName().Equals(ab->GetName()));
+    ExpectBasePropertyFromClass (propName, mn, ab);
     propName = "i";
     EXPECT_TRUE((mn->GetPropertyP(propName)->GetClass()).GetName().Equals(gh->GetName()));
     propName = "j";
     EXPECT_TRUE((mn->GetPropertyP(propName)->GetClass()).GetName().Equals(mn->GetName()));
-    EXPECT_TRUE((mn->GetPropertyP(propName)->GetBaseProperty()->GetClass()).GetName().Equals(ij->GetName()));
+    ExpectBasePropertyFromClass (propName, mn, ij);
     propName = "k";
     EXPECT_TRUE((mn->GetPropertyP(propName)->GetClass()).GetName().Equals(mn->GetName()));
-    EXPECT_TRUE((mn->GetPropertyP(propName)->GetBaseProperty()->GetClass()).GetName().Equals(kl->GetName()));
+    ExpectBasePropertyFromClass (propName, mn, kl);
     propName = "l";
     EXPECT_TRUE((mn->GetPropertyP(propName)->GetClass()).GetName().Equals(ef->GetName()));
     propName = "m";

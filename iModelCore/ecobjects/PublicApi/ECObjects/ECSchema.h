@@ -1002,6 +1002,7 @@ protected:
     void                                InvalidateDefaultStandaloneEnabler() const;
 public:
     ECOBJECTS_EXPORT ECPropertyP            GetPropertyByIndex (uint32_t index);
+    ECOBJECTS_EXPORT ECPropertyP            GetBaseClassPropertyP (WCharCP name) const;
     ECOBJECTS_EXPORT ECObjectsStatus        RenameProperty (ECPropertyR ecProperty, WCharCP newName);
     ECOBJECTS_EXPORT ECObjectsStatus        ReplaceProperty (ECPropertyP& newProperty, ValueKind valueKind, ECPropertyR propertyToRemove);
     ECOBJECTS_EXPORT ECObjectsStatus        DeleteProperty (ECPropertyR ecProperty);

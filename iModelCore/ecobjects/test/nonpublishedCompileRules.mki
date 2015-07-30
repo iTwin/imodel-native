@@ -35,5 +35,5 @@ $(o)AdhocPropertyTests$(oext)       : $(baseDir)NonPublished/AdhocPropertyTests.
 
 $(o)SchemaLocalizationTests$(oext)   : $(baseDir)NonPublished/SchemaLocalizationTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
 
-# $(o)PropertyOverrideTests$(oext)   : $(baseDir)NonPublished/PropertyOverrideTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
+$(o)PropertyOverrideTests$(oext)   : $(baseDir)NonPublished/PropertyOverrideTests.cpp   $(PCHHeaderDependency) ${MultiCompileDepends}
 
