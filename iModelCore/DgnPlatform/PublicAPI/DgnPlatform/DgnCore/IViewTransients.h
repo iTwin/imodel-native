@@ -17,7 +17,7 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct     IViewTransients
+struct IViewTransients
 {
 //__PUBLISH_SECTION_END__
 friend struct ViewTransientCaller;
@@ -33,14 +33,7 @@ protected:
 //! @see ViewContext::GetIDrawGeom
 virtual void _DrawTransients (ViewContextR context, bool isPreUpdate) = 0;
 
-public:
-
-//! Computes the range of the transients by drawing them. A viewport must be supplied,
-//! in order to specify the rotation and what transients are displayed and/or visible.
-//! @param[out] range The computed range.
-//! @param[in] vp The view in which transients are displayed.
-DGNPLATFORM_EXPORT StatusInt ComputeRange (DRange3d& range, DgnViewportP vp);
-};
+}; // IViewTransients
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
 

@@ -1381,18 +1381,18 @@ DgnDbStatus ComponentProxyModel::ImportSchema(DgnDbR db, BeFileNameCR schemaFile
 DgnDbStatus ComponentModel::GenerateECClass(ECN::ECSchemaR schema)
     {
     ECN::ECClassP ecclass;
-    auto stat = schema.CreateClass(ecclass, WString(ComputeElementECClassName().c_str(), BentleyCharEncoding::Utf8));
+    auto stat = schema.CreateClass(ecclass, ComputeElementECClassName());
     if (ECN::ECOBJECTS_STATUS_Success != stat)
         return DgnDbStatus::BadRequest;
 
-    schema.AddReferencedSchema(*const_cast<ECN::ECSchemaP>(GetDgnDb().Schemas().GetECSchema(DGN_ECSCHEMA_NAME)), L"dgn");
+    schema.AddReferencedSchema(*const_cast<ECN::ECSchemaP>(GetDgnDb().Schemas().GetECSchema(DGN_ECSCHEMA_NAME)), "dgn");
     ecclass->AddBaseClass(*GetDgnDb().Schemas().GetECClass(DGN_ECSCHEMA_NAME, DGN_CLASSNAME_PhysicalElement));
 
     Json::Value const& parms = m_solver.GetParameters();
     for (Utf8String const& parmname : parms.getMemberNames())
         {
         ECN::PrimitiveECPropertyP ecprop;
-        stat = ecclass->CreatePrimitiveProperty(ecprop, WString(parmname.c_str(), BentleyCharEncoding::Utf8));
+        stat = ecclass->CreatePrimitiveProperty(ecprop, parmname.c_str());
         if (ECN::ECOBJECTS_STATUS_Success != stat)
             return DgnDbStatus::BadRequest;
         Json::Value const& parmvalue = parms[parmname.c_str()];

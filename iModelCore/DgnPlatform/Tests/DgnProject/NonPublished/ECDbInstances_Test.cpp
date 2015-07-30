@@ -450,10 +450,10 @@ bool ImportECSchema (ECSchemaR ecSchema, DgnDbR project)
 +---------------+---------------+---------------+---------------+---------------+------*/
 IECInstancePtr CreateStartupCompanyInstance (ECSchemaCR startupSchema)
     {
-    ECClassCP anglesStructClass = startupSchema.GetClassCP (L"AnglesStruct");
+    ECClassCP anglesStructClass = startupSchema.GetClassCP ("AnglesStruct");
     if (anglesStructClass == NULL)
         return NULL;
-    ECClassCP fooClass = startupSchema.GetClassCP (L"Foo");
+    ECClassCP fooClass = startupSchema.GetClassCP ("Foo");
     if (fooClass == NULL)
         return NULL;
 
@@ -463,22 +463,22 @@ IECInstancePtr CreateStartupCompanyInstance (ECSchemaCR startupSchema)
     intValue.SetInteger (67);
     ECValue anglesStructValue;
     IECInstancePtr anglesStruct = anglesStructClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
-    anglesStruct->SetValue (L"Alpha", doubleValue);
-    anglesStruct->SetValue (L"Beta", doubleValue);
+    anglesStruct->SetValue ("Alpha", doubleValue);
+    anglesStruct->SetValue ("Beta", doubleValue);
     anglesStructValue.SetStruct (anglesStruct.get());
 
     IECInstancePtr foo = fooClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
     ECObjectsStatus status;
-    status = foo->SetValue (L"intFoo", intValue);
-    status = foo->SetValue (L"doubleFoo", doubleValue);
-    status = foo->SetValue (L"anglesFoo.Alpha", doubleValue);
-    status = foo->SetValue (L"anglesFoo.Beta", doubleValue);
-    foo->AddArrayElements (L"arrayOfIntsFoo", 3);
-    foo->AddArrayElements (L"arrayOfAnglesStructsFoo", 3);
+    status = foo->SetValue ("intFoo", intValue);
+    status = foo->SetValue ("doubleFoo", doubleValue);
+    status = foo->SetValue ("anglesFoo.Alpha", doubleValue);
+    status = foo->SetValue ("anglesFoo.Beta", doubleValue);
+    foo->AddArrayElements ("arrayOfIntsFoo", 3);
+    foo->AddArrayElements ("arrayOfAnglesStructsFoo", 3);
     for (int ii = 0; ii < 3; ii++)
         {
-         status = foo->SetValue (L"arrayOfIntsFoo", intValue, ii);
-         status = foo->SetValue (L"arrayOfAnglesStructsFoo", anglesStructValue, ii);
+         status = foo->SetValue ("arrayOfIntsFoo", intValue, ii);
+         status = foo->SetValue ("arrayOfAnglesStructsFoo", anglesStructValue, ii);
         }
 
     return foo;

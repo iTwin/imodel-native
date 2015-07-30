@@ -44,9 +44,9 @@ void    doFormatDoubleTest (DoubleFormatTestData const& testData)
     formatter->SetThousandsSeparator  (testData.m_thousandsSeparator);
     formatter->SetDecimalSeparator  (testData.m_decimalSeparator);
 
-    WString outputStr = formatter->ToString (testData.m_inputValue);
+    Utf8String outputStr = formatter->ToString (testData.m_inputValue);
 
-    ASSERT_STREQ (testData.m_expectedString, outputStr.c_str());
+    ASSERT_STREQ (testData.m_expectedString, WString(outputStr.c_str(), BentleyCharEncoding::Utf8).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
