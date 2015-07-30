@@ -144,10 +144,10 @@ public:
     ECOBJECTS_EXPORT virtual DiffNodeId                  GetId() const = 0;
     //! Return access string for the current node. Access string is a meta schema path for current diff node.
     //! @return access string for current node
-    ECOBJECTS_EXPORT virtual WString                     GetAccessString() const =0;
+    ECOBJECTS_EXPORT virtual Utf8String                  GetAccessString() const =0;
     //! Return constant string representation of current diff node.
     //! @return name of current node.
-    ECOBJECTS_EXPORT virtual WStringCR                   GetName() const = 0;
+    ECOBJECTS_EXPORT virtual Utf8StringCR                GetName() const = 0;
     //! If current node is a array element e.g. BaseClasses it will also have a index
     //! @return index of current node if its array. Return -1 if if its not.
     ECOBJECTS_EXPORT virtual int                         GetIndex() const = 0;
@@ -161,7 +161,7 @@ public:
     //! Return child by accessString
     //! @param[in] accessString The accessString of child diff node.
     //! @return if successfully will return child node otherwise nullptr
-    ECOBJECTS_EXPORT virtual IECDiffNodeCP               GetChildByAccessString(WCharCP accessString) const = 0;
+    ECOBJECTS_EXPORT virtual IECDiffNodeCP               GetChildByAccessString(Utf8CP accessString) const = 0;
     //! Returns diff type for current diff node
     //! @param[in] bRecursively If true it will compute accumulative diff type of sub tree.
     //! @return DiffType for current node or accumulative one if bRecursively was true.
@@ -230,7 +230,7 @@ public:
     //! @param[out] outString WSTring object to which diff will be written.
     //! @param[in] tabSize optional parameter specifying size of the spaces to use for indenting each line in diff.
     //! @return if successfully it will return ::DIFFSTATUS_Success.
-    ECOBJECTS_EXPORT DiffStatus WriteToString(WStringR outString, int tabSize = ECDIFF_DEFAULT_TABSIZE);
+    ECOBJECTS_EXPORT DiffStatus WriteToString(Utf8StringR outString, int tabSize = ECDIFF_DEFAULT_TABSIZE);
     //! Return if diff is empty. If there is no difference between two schemas. This function will return true.
     //! @return true if its empty
     ECOBJECTS_EXPORT bool IsEmpty();
@@ -251,7 +251,7 @@ public:
     //!                          *.Classes.*.Prop1 It will return Prop1 from diff tree under Classes nodes.
     //! @param[in] bAccumlativeState Accumulative state mean if user need just the state of specific node or all its children.
     //! @return if successfully it will return ::DIFFSTATUS_Success.
-    ECOBJECTS_EXPORT DiffStatus GetNodesState (bmap<WString, DiffNodeState>& nodes, WStringCR accessString, bool bAccumlativeState = true);
+    ECOBJECTS_EXPORT DiffStatus GetNodesState (bmap<Utf8String, DiffNodeState>& nodes, Utf8StringCR accessString, bool bAccumlativeState = true);
     //! Return top level diff node
     //! @return IECDiffNode that represent a difference between two schemas. nullptr if difference was not found.
     ECOBJECTS_EXPORT IECDiffNodeCP GetRootNode () const;
@@ -267,26 +267,26 @@ struct ECDiffValueHelper
     //! @param[out] strengthType return ECN::StrengthType from string representation.
     //! @param[in] strengthTypeValue string representation of strength type value. 
     //! @return if successfully it will return true.
-    ECOBJECTS_EXPORT static bool TryParseRelationshipStrengthType (ECN::StrengthType& strengthType, WStringCR strengthTypeValue);
+    ECOBJECTS_EXPORT static bool TryParseRelationshipStrengthType (ECN::StrengthType& strengthType, Utf8StringCR strengthTypeValue);
 
     //! Attempt to parse a string into ECN::ECRelatedInstanceDirection
     //! @param[out] strengthDirection return ECN::ECRelatedInstanceDirection from string representation.
     //! @param[in] strengthDirectionValue string representation of strength type value. 
     //! @return if successfully it will return true.
-    ECOBJECTS_EXPORT static bool TryParseRelatedStrengthDirection (ECN::ECRelatedInstanceDirection& strengthDirection, WStringCR strengthDirectionValue);
+    ECOBJECTS_EXPORT static bool TryParseRelatedStrengthDirection (ECN::ECRelatedInstanceDirection& strengthDirection, Utf8StringCR strengthDirectionValue);
 
     //! Attempt to parse a string into ECN::PrimitiveType
     //! @param[out] primitiveType return ECN::PrimitiveType from string representation.
     //! @param[in] primtiveTypeValue string representation of strength type value. 
     //! @return if successfully it will return true.
-    ECOBJECTS_EXPORT static bool TryParsePrimitiveType(ECN::PrimitiveType& primitiveType, WStringCR primtiveTypeValue);
+    ECOBJECTS_EXPORT static bool TryParsePrimitiveType(ECN::PrimitiveType& primitiveType, Utf8StringCR primtiveTypeValue);
 
     //! Attempt to parse a classkey string into schemaName and className
     //! @param[out] schemaName the parsed schema name
     //! @param[out] className the parsed class name
     //! @param[in] classKey the input class key
     //! @return if successfully it will return true.
-    ECOBJECTS_EXPORT static bool TryParseClassKey(WStringR schemaName, WStringR className, WStringCR classKey);
+    ECOBJECTS_EXPORT static bool TryParseClassKey(Utf8StringR schemaName, Utf8StringR className, Utf8StringCR classKey);
 
     };
 
@@ -297,14 +297,14 @@ struct ECDiffValueHelper
 //+===============+===============+===============+===============+===============+======
 struct DiffNameComparer
     {
-    bool operator()(WCharCP s1, WCharCP s2) const { return (wcscmp(s1, s2) < 0);}
+    bool operator()(Utf8CP s1, Utf8CP s2) const { return (strcmp(s1, s2) < 0);}
     };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Affan.Khan      01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 typedef bvector<ECClassCP> AlignedClasses;
-typedef bmap<WCharCP,AlignedClasses, DiffNameComparer> AlignedClassMap;
+typedef bmap<Utf8CP,AlignedClasses, DiffNameComparer> AlignedClassMap;
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -324,7 +324,7 @@ struct ECDiffValue //Replace it with ECValue
         VALUETYPE_DateTimeTicks
         };
 private:
-    WString m_valueString;
+    Utf8String m_valueString;
     size_t m_binarySize;
     ValueType m_type;
     union 
@@ -338,9 +338,9 @@ private:
         };
 public:
     ECDiffValue();
-    void SetValue(WCharCP v) ;
+    void SetValue(Utf8CP v) ;
     void SetValue(Byte const* v, size_t size) ;
-    void SetValue(WStringCR v);
+    void SetValue(Utf8StringCR v);
     void SetValue(int32_t v);
     void SetValue(int64_t v);
     void SetValue(double v);
@@ -348,16 +348,16 @@ public:
     void SetDateTimeValue(int64_t v);
     void SetNil();
     Byte const* GetBinary(size_t& size) const;
-    WCharCP GetValueWCharCP() const;
+    Utf8CP GetValueUtf8CP() const;
     int32_t GetValueInt32() const;
     int64_t GetValueInt64() const;
     bool GetValueBool() const;
     double GetValueDouble() const;
-    WStringCR GetValueString() const {return m_valueString; }
+    Utf8StringCR GetValueString() const {return m_valueString; }
     bool IsValueNill() const;
     void Clear();
     bool IsEqual(ECDiffValue const& value);
-    WString ToString() const;
+    Utf8String ToString() const;
     ECValue GetValueAsECValue() const; 
     };
 
@@ -368,13 +368,13 @@ public:
 struct ECDiffNode : IECDiffNode
     {
     typedef bvector<ECDiffNodeP> ECDiffNodeList;
-    typedef bmap<WCharCP, ECDiffNodeP, DiffNameComparer> ECDiffNodeMap;
+    typedef bmap<Utf8CP, ECDiffNodeP, DiffNameComparer> ECDiffNodeMap;
     typedef ECDiffNodeList::const_iterator const_iterator;
     typedef ECDiffNodeList::iterator iterator;
     typedef ECDiffNodeList::size_type size_type;
 private:
     ECDiffNodeP m_parent;
-    WString m_name;
+    Utf8String m_name;
     ECDiffNodeList m_childNodeList;
     ECDiffNodeMap  m_childNodeMap;
     ECDiffValue m_valueLeft;
@@ -383,8 +383,8 @@ private:
     DiffType m_cachedAccumlativeType;
     int m_index;
 private:
-    void _Write (WStringR out, int indent, WStringCR tab) const;
-    void _GetNodeState (bmap<WString, DiffNodeState>& nodes, std::stack<WString> accessors, bool bAccumlativeState);
+    void _Write (Utf8StringR out, int indent, Utf8StringCR tab) const;
+    void _GetNodeState (bmap<Utf8String, DiffNodeState>& nodes, std::stack<Utf8String> accessors, bool bAccumlativeState);
     DiffType _GetDiffType (bool bRecursively);
 
 public:
@@ -394,15 +394,15 @@ public:
         DIRECTION_Left,
         DIRECTION_Right,
         };
-    static WCharCP IdToString (DiffNodeId id);
+    static Utf8CP IdToString (DiffNodeId id);
 public:
     DiffType GetDiffType (bool bRecursively) const override
         {
         return const_cast<ECDiffNode*>(this)->ImplGetDiffType(bRecursively);
         }
     DiffNodeId GetId() const override { return m_id;}
-    WString GetAccessString() const override;
-    WStringCR GetName() const override { return m_name;}
+    Utf8String GetAccessString() const override;
+    Utf8StringCR GetName() const override { return m_name;}
     int GetIndex() const override {return m_index;}
     DiffNodeList GetChildren() const override 
         {
@@ -411,7 +411,7 @@ public:
             list.push_back(n);
         return list;
         }
-    IECDiffNodeCP GetChildByAccessString(WCharCP name ) const override;
+    IECDiffNodeCP GetChildByAccessString(Utf8CP name ) const override;
     IECDiffNodeCP GetChildById (DiffNodeId id) const override
         {
         return const_cast<ECDiffNode*>(this)->ImplGetChildById (id);
@@ -425,12 +425,12 @@ public:
         return const_cast<ECDiffNode*>(this)->ImplGetValueLeft().GetValueAsECValue();
         }
     DiffType ImplGetDiffType (bool bRecursively =false);
-    ECDiffNodeP Find (WCharCP name);
-    ECDiffNode (WCharCP name, ECDiffNodeP parent = NULL, DiffNodeId id = DiffNodeId::None, int index = -1) ;
+    ECDiffNodeP Find (Utf8CP name);
+    ECDiffNode (Utf8CP name, ECDiffNodeP parent = NULL, DiffNodeId id = DiffNodeId::None, int index = -1) ;
     ECDiffValue& ImplGetValueLeft();
     ECDiffValue& ImplGetValueRight();
     ECDiffValue& GetValue (ValueDirection direction);
-    bool SetValue (WCharCP left, WCharCP right);
+    bool SetValue (Utf8CP left, Utf8CP right);
     bool SetValue (bool left, bool right);
     bool SetValue (uint32_t left, uint32_t right);
     const_iterator begin();
@@ -439,20 +439,20 @@ public:
     ECDiffNodeCP GetParent() const;
 
     ECDiffNodeP Add (DiffNodeId type);
-    ECDiffNodeP Add (WCharCP name, DiffNodeId type);
+    ECDiffNodeP Add (Utf8CP name, DiffNodeId type);
     ECDiffNodeP AddWithIndex (int index, DiffNodeId type);
-    ECDiffNodeP GetChild (WStringCR accessString, bool bCreate = false);
+    ECDiffNodeP GetChild (Utf8StringCR accessString, bool bCreate = false);
     ECDiffNodeP ImplGetChildById (DiffNodeId id)
         {
-        WCharCP c = IdToString(id);
+        Utf8CP c = IdToString(id);
         BeAssert (c != NULL);
         return GetChild (c);
         }
-    DiffStatus GetNodeState (bmap<WString, DiffNodeState>& nodes, WStringCR accessString, bool bAccumlativeState = true);
+    DiffStatus GetNodeState (bmap<Utf8String, DiffNodeState>& nodes, Utf8StringCR accessString, bool bAccumlativeState = true);
     void Clear();
     ECDiffNodeP RemoveIfEmpty(ECDiffNodeP n);
     void Remove (ECDiffNodeP n);
-    WString ToString(int tabSize = 2) const;
+    Utf8String ToString(int tabSize = 2) const;
     ~ECDiffNode();
     bool IsEmpty();
     };
@@ -492,16 +492,16 @@ private:
             DiffType  GetType() const { return m_diffType; }
             ECDiffNodeP GetNode ()  {return m_diff;}
         };
-    typedef bmap<WCharCP, ClassMergeInfo, DiffNameComparer> ClassMergeInfoMap;
-    typedef bmap<WCharCP, DiffType, DiffNameComparer> PropertyMergeInfoMap;
-    typedef bmap<WString, ECClassCP> ClassByNameMap;
+    typedef bmap<Utf8CP, ClassMergeInfo, DiffNameComparer> ClassMergeInfoMap;
+    typedef bmap<Utf8CP, DiffType, DiffNameComparer> PropertyMergeInfoMap;
+    typedef bmap<Utf8String, ECClassCP> ClassByNameMap;
 
     ECSchemaPtr m_mergeSchema;
     ECDiffR m_diff;
     ConflictRule m_defaultConflictRule;
     ClassMergeInfoMap m_classMergeTasks;
     ClassByNameMap m_classByNameMap;
-    bset<WString> m_doneList;
+    bset<Utf8String> m_doneList;
 
     ECSchemaCR GetLeft() const;
     ECSchemaCR GetRight() const;
@@ -517,7 +517,7 @@ private:
     void ComputeMergeActions(ClassMergeInfoMap& actions, ECDiffNodeP diffClasses, ECSchemaCR schema);
     void ComputeMergeActions(PropertyMergeInfoMap& actions, ECDiffNodeP diffProperties, ECClassCR ecClass);
     
-    ECDiffValueP GetMergeValue (ECDiffNodeR n, WCharCP id);
+    ECDiffValueP GetMergeValue (ECDiffNodeR n, Utf8CP id);
     ECDiffValueP GetMergeValue (ECDiffNodeR v);
     ECDiffValueP GetMergeValue (ECDiffNodeR n, DiffNodeId id);
 
@@ -539,8 +539,8 @@ private:
     MergeStatus AppendRelationshipContstraintToMerge(ECRelationshipConstraintR mergedRelationshipClassConstraint, ECRelationshipConstraintCR defaultRelationshipClassConstraint);
     MergeStatus AppendCustomAttributesToMerge (IECCustomAttributeContainerR mergeContainer, IECCustomAttributeContainerCR defaultContainer);
 
-    ECClassCP ResolveClass (WStringCR classFullName);
-    MergeStatus ResolveClassFromMergeContext (ECClassCP& mergedClass, WCharCP className);
+    ECClassCP ResolveClass (Utf8StringCR classFullName);
+    MergeStatus ResolveClassFromMergeContext (ECClassCP& mergedClass, Utf8CP className);
     bool TryGetECRelationshipConstraint (ECRelationshipConstraintCP & relationshipConstraint,  ECDiffNodeCR relationshipConstraintNode, ECSchemaCR schema);
     bool TryGetECProperty (ECPropertyCP& ecProperty,  ECDiffNodeCR propertyNode, ECSchemaCR schema, bool includeBaseClass);
     bool TryGetECClass (ECClassCP& ecclass,  ECDiffNodeCR classNode, ECSchemaCR schema);
@@ -556,9 +556,9 @@ struct ECSchemaDiffTool
     {
 private:
     static ECDiffNodeP DiffReferences(ECDiffNodeR parentDiff, ECSchemaCR schemaLeft, ECSchemaCR schemaRight);
-    static ECDiffNodeP DiffClass (WCharCP className, ECSchemaCR schemaLeft, ECSchemaCR schemaRight, ECDiffNodeR parentDiff);
+    static ECDiffNodeP DiffClass (Utf8CP className, ECSchemaCR schemaLeft, ECSchemaCR schemaRight, ECDiffNodeR parentDiff);
     static ECDiffNodeP DiffBaseClasses (ECDiffNodeR parentDiff, AlignedClasses const& classes);
-    static ECDiffNodeP DiffProperty (WCharCP propertyName, ECClassCR classLeft, ECClassCR classRight, ECDiffNodeR parentDiff);
+    static ECDiffNodeP DiffProperty (Utf8CP propertyName, ECClassCR classLeft, ECClassCR classRight, ECDiffNodeR parentDiff);
     static ECDiffNodeP DiffRelationship (ECClassCR classLeft, ECClassCR classRight, ECDiffNodeR parentDiff);
     static ECDiffNodeP DiffRelationshipConstraint(ECDiffNodeR parent, ECRelationshipConstraintCR  left, ECRelationshipConstraintCR  right, ECRelationshipEnd endPoint);
     static ECDiffNodeP DiffRelationshipConstraintClasses (ECDiffNodeR parentDiff, bvector<ECRelationshipConstraintCP> const& constraints, ECRelationshipEnd endPoint);
@@ -575,10 +575,10 @@ private:
     static ECDiffNodeP AppendInstance (ECDiffNodeR parentDiff, IECInstanceCR instance, ECDiffNode::ValueDirection direction);
     static ECDiffNodeP AppendPropertyValues (ECDiffNodeR parentDiff, ECValuesCollectionCR values, ECDiffNode::ValueDirection direction);
 
-    static WCharCP ToString(ECRelatedInstanceDirection direction);
-    static WCharCP ToString(StrengthType type);
-    static void CollectInstanceValues (bmap<WString,ECValue>& valueMap, std::set<WString>& accessStrings, IECInstanceCR instance);
-    static void CollectInstanceValues (bmap<WString,ECValue>& valueMap, std::set<WString>& accessStrings, ECValuesCollectionCR values);
+    static Utf8CP ToString(ECRelatedInstanceDirection direction);
+    static Utf8CP ToString(StrengthType type);
+    static void CollectInstanceValues (bmap<Utf8String,ECValue>& valueMap, std::set<Utf8String>& accessStrings, IECInstanceCR instance);
+    static void CollectInstanceValues (bmap<Utf8String,ECValue>& valueMap, std::set<Utf8String>& accessStrings, ECValuesCollectionCR values);
     static bool SetECValue (ECDiffNodeR n, ECValueCR v, ECDiffNode::ValueDirection direction);
     //Merge
 public:
