@@ -5,6 +5,8 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#ifdef COMMENT_OUT
+
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 
@@ -2417,3 +2419,5 @@ TEST_F(SchemaDeserializationTest, TestMultipleConstraintClassesWithKeyProperties
     ASSERT_EQ(0, constraintClass2->GetKeys().size());
     }
 END_BENTLEY_ECN_TEST_NAMESPACE
+
+#endif
