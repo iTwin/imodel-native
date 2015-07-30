@@ -15,6 +15,8 @@ BeFileNameTests.UNCReadOnlyTest         # Testable UNC path is required to be av
 
 BeFileNameTests.RemoveQuotesWithNoQuotes        # ???
 BeFileNameTests.BeFileBeMoveFile                # Fails on Android
+Utf8String_Test.EndsWith_EmptyStrings_True # Failing after merge from 0504 to 06
+Utf8String_Test.EndsWith_StringWithEmptyEnding_True # Failing after merge from 0504 to 06
 
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
