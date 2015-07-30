@@ -23,7 +23,7 @@ LabelOverride::LabelOverride ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-LabelOverride::LabelOverride (WStringCR condition, int priority, WStringCR label, WStringCR description)
+LabelOverride::LabelOverride (Utf8StringCR condition, int priority, Utf8StringCR label, Utf8StringCR description)
     : PresentationRule (condition, priority, false), m_label (label), m_description (description)
     {
     }
@@ -42,10 +42,10 @@ CharCP LabelOverride::_GetXmlElementName ()
 bool LabelOverride::_ReadXml (BeXmlNodeP xmlNode)
     {
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_label, LABEL_OVERRIDE_XML_ATTRIBUTE_LABEL))
-        m_label = L"";
+        m_label = "";
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_description, LABEL_OVERRIDE_XML_ATTRIBUTE_DESCRIPTION))
-        m_description = L"";
+        m_description = "";
 
     return PresentationRule::_ReadXml (xmlNode);
     }
@@ -64,19 +64,19 @@ void LabelOverride::_WriteXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR LabelOverride::GetLabel (void) const { return m_label; }
+Utf8StringCR LabelOverride::GetLabel (void) const { return m_label; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Tom.Amon                        03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LabelOverride::SetLabel (WString value) { m_label = value; }
+void LabelOverride::SetLabel (Utf8String value) { m_label = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR LabelOverride::GetDescription (void) const { return m_description; }
+Utf8StringCR LabelOverride::GetDescription (void) const { return m_description; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Tom.Amon                        03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LabelOverride::SetDescription (WString value) { m_description = value; }
+void LabelOverride::SetDescription (Utf8String value) { m_description = value; }

@@ -2,19 +2,19 @@
 |
 |     $Source: src/presentation/PresentationRules/PresentationRuleXmlConstants.h $
 |
-|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 /*__BENTLEY_INTERNAL_ONLY__*/
 
-#define COMMON_XML_ATTRIBUTE_VALUE_TARGET_TREE_MAINTREE                              L"MainTree"
-#define COMMON_XML_ATTRIBUTE_VALUE_TARGET_TREE_SELECTIONTREE                         L"SelectionTree"
-#define COMMON_XML_ATTRIBUTE_VALUE_TARGET_TREE_BOTH                                  L"Both"
+#define COMMON_XML_ATTRIBUTE_VALUE_TARGET_TREE_MAINTREE                              "MainTree"
+#define COMMON_XML_ATTRIBUTE_VALUE_TARGET_TREE_SELECTIONTREE                         "SelectionTree"
+#define COMMON_XML_ATTRIBUTE_VALUE_TARGET_TREE_BOTH                                  "Both"
 
-#define COMMON_XML_ATTRIBUTE_VALUE_REQUIRED_DIRECTION_BOTH                           L"Both"
-#define COMMON_XML_ATTRIBUTE_VALUE_REQUIRED_DIRECTION_FORWARD                        L"Forward"
-#define COMMON_XML_ATTRIBUTE_VALUE_REQUIRED_DIRECTION_BACKWARD                       L"Backward"
+#define COMMON_XML_ATTRIBUTE_VALUE_REQUIRED_DIRECTION_BOTH                           "Both"
+#define COMMON_XML_ATTRIBUTE_VALUE_REQUIRED_DIRECTION_FORWARD                        "Forward"
+#define COMMON_XML_ATTRIBUTE_VALUE_REQUIRED_DIRECTION_BACKWARD                       "Backward"
 
 #define COMMON_XML_ATTRIBUTE_PRIORITY                                                 "Priority"
 #define COMMON_XML_ATTRIBUTE_GROUPBYCLASS                                             "GroupByClass"

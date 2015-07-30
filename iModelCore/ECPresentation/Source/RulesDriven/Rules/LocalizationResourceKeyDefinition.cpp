@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/LocalizationResourceKeyDefinition.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -16,14 +16,14 @@ USING_NAMESPACE_EC
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 LocalizationResourceKeyDefinition::LocalizationResourceKeyDefinition ()
-    : PresentationKey (), m_id (L""), m_key (L""), m_defaultValue (L"")
+    : PresentationKey (), m_id (""), m_key (""), m_defaultValue ("")
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-LocalizationResourceKeyDefinition::LocalizationResourceKeyDefinition (int priority, WStringCR id, WStringCR key, WStringCR defaultValue)
+LocalizationResourceKeyDefinition::LocalizationResourceKeyDefinition (int priority, Utf8StringCR id, Utf8StringCR key, Utf8StringCR defaultValue)
     : PresentationKey (priority), m_id (id), m_key (key), m_defaultValue (defaultValue)
     {
     }
@@ -42,13 +42,13 @@ CharCP LocalizationResourceKeyDefinition::_GetXmlElementName ()
 bool LocalizationResourceKeyDefinition::_ReadXml (BeXmlNodeP xmlNode)
     {
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_id, LOCALIZATION_DEFINITION_XML_ATTRIBUTE_ID))
-        m_id = L"";
+        m_id = "";
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_key, LOCALIZATION_DEFINITION_XML_ATTRIBUTE_KEY))
-        m_key = L"";
+        m_key = "";
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_defaultValue, LOCALIZATION_DEFINITION_XML_ATTRIBUTE_DEFAULTVALUE))
-        m_defaultValue = L"";
+        m_defaultValue = "";
 
     return true;
     }
@@ -66,14 +66,14 @@ void LocalizationResourceKeyDefinition::_WriteXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR LocalizationResourceKeyDefinition::GetId (void) const             { return m_id; }
+Utf8StringCR LocalizationResourceKeyDefinition::GetId (void) const             { return m_id; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR LocalizationResourceKeyDefinition::GetKey (void) const            { return m_key; }
+Utf8StringCR LocalizationResourceKeyDefinition::GetKey (void) const            { return m_key; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR LocalizationResourceKeyDefinition::GetDefaultValue (void) const   { return m_defaultValue; }
+Utf8StringCR LocalizationResourceKeyDefinition::GetDefaultValue (void) const   { return m_defaultValue; }

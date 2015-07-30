@@ -17,8 +17,8 @@ USING_NAMESPACE_EC
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 PresentationRuleSet::PresentationRuleSet (void)
-    : m_ruleSetId (L""), m_supportedSchemas (L""), m_isSupplemental (false), m_supplementationPurpose (L""), m_versionMajor (1), m_versionMinor (0), m_isSearchEnabled (true),
-      m_extendedData (L""), m_searchClasses (L"")
+    : m_ruleSetId (""), m_supportedSchemas (""), m_isSupplemental (false), m_supplementationPurpose (""), m_versionMajor (1), m_versionMinor (0), m_isSearchEnabled (true),
+      m_extendedData (""), m_searchClasses ("")
     {
     }
 
@@ -27,14 +27,14 @@ PresentationRuleSet::PresentationRuleSet (void)
 +---------------+---------------+---------------+---------------+---------------+------*/
 PresentationRuleSet::PresentationRuleSet
 (
-WStringCR ruleSetId,
-int       versionMajor,
-int       versionMinor,
-bool      isSupplemental,
-WStringCR supplementationPurpose,
-WStringCR supportedSchemas,
-WStringCR preferredImage,
-bool      isSearchEnabled
+Utf8StringCR ruleSetId,
+int          versionMajor,
+int          versionMinor,
+bool         isSupplemental,
+Utf8StringCR supplementationPurpose,
+Utf8StringCR supportedSchemas,
+Utf8StringCR preferredImage,
+bool         isSearchEnabled
 ) : m_ruleSetId (ruleSetId), m_supportedSchemas (supportedSchemas), m_isSupplemental (isSupplemental), m_supplementationPurpose (supplementationPurpose),
     m_versionMajor (versionMajor), m_versionMinor (versionMinor), m_preferredImage (preferredImage), m_isSearchEnabled (isSearchEnabled)
     {
@@ -64,14 +64,14 @@ PresentationRuleSet::~PresentationRuleSet ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 PresentationRuleSetPtr PresentationRuleSet::CreateInstance
 (
-WStringCR ruleSetId,
-int       versionMajor,
-int       versionMinor,
-bool      isSupplemental,
-WStringCR supplementationPurpose,
-WStringCR supportedSchemas,
-WStringCR preferredImage,
-bool      isSearchEnabled
+Utf8StringCR ruleSetId,
+int          versionMajor,
+int          versionMinor,
+bool         isSupplemental,
+Utf8StringCR supplementationPurpose,
+Utf8StringCR supportedSchemas,
+Utf8StringCR preferredImage,
+bool         isSearchEnabled
 )
     {
     return new PresentationRuleSet (ruleSetId, versionMajor, versionMinor, isSupplemental, supplementationPurpose, supportedSchemas, preferredImage, isSearchEnabled);
@@ -80,14 +80,14 @@ bool      isSearchEnabled
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString PresentationRuleSet::GetFullRuleSetId (void) const
+Utf8String PresentationRuleSet::GetFullRuleSetId (void) const
     {
-    wchar_t fullId[255];
+    Utf8Char fullId[255];
 
     if (GetIsSupplemental ())
-        BeStringUtilities::Snwprintf (fullId, L"%ls_supplemental_%ls.%02d.%02d", GetRuleSetId ().c_str(), GetSupplementationPurpose ().c_str(), GetVersionMajor (), GetVersionMinor ());
+        BeStringUtilities::Snprintf (fullId, "%s_supplemental_%s.%02d.%02d", GetRuleSetId ().c_str(), GetSupplementationPurpose ().c_str(), GetVersionMajor (), GetVersionMinor ());
     else
-        BeStringUtilities::Snwprintf (fullId, L"%ls.%02d.%02d", GetRuleSetId ().c_str(), GetVersionMajor (), GetVersionMinor ());
+        BeStringUtilities::Snprintf (fullId, "%s.%02d.%02d", GetRuleSetId ().c_str(), GetVersionMajor (), GetVersionMinor ());
 
     return fullId;
     }
@@ -100,26 +100,26 @@ bool PresentationRuleSet::ReadXml (BeXmlDomR xmlDom)
     BeXmlNodeP ruleSetNode;
     if ( (BEXML_Success != xmlDom.SelectNode (ruleSetNode, "/" PRESENTATION_RULE_SET_XML_NODE_NAME, NULL, BeXmlDom::NODE_BIAS_First)) || (NULL == ruleSetNode) )
         {
-        LOG.errorv (L"Invalid PresentationRuleSetXML: Missing a top-level %hs node", PRESENTATION_RULE_SET_XML_NODE_NAME);
+        LOG.errorv ("Invalid PresentationRuleSetXML: Missing a top-level %s node", PRESENTATION_RULE_SET_XML_NODE_NAME);
         return false;
         }
     
     //Required:
     if (BEXML_Success != ruleSetNode->GetAttributeStringValue (m_ruleSetId, PRESENTATION_RULE_SET_XML_ATTRIBUTE_RULESETID))
         {
-        LOG.errorv (L"Invalid PresentationRuleSetXML: %hs element must contain a %hs attribute", PRESENTATION_RULE_SET_XML_NODE_NAME, PRESENTATION_RULE_SET_XML_ATTRIBUTE_RULESETID);
+        LOG.errorv ("Invalid PresentationRuleSetXML: %s element must contain a %s attribute", PRESENTATION_RULE_SET_XML_NODE_NAME, PRESENTATION_RULE_SET_XML_ATTRIBUTE_RULESETID);
         return false;
         }
 
     //Optional:
     if (BEXML_Success != ruleSetNode->GetAttributeStringValue (m_supportedSchemas, COMMON_XML_ATTRIBUTE_SUPPORTEDSCHEMAS))
-        m_supportedSchemas = L"";
+        m_supportedSchemas = "";
 
     if (BEXML_Success != ruleSetNode->GetAttributeBooleanValue (m_isSupplemental, PRESENTATION_RULE_SET_XML_ATTRIBUTE_ISSUPPLEMENTAL))
         m_isSupplemental = false;
 
     if (BEXML_Success != ruleSetNode->GetAttributeStringValue (m_supplementationPurpose, PRESENTATION_RULE_SET_XML_ATTRIBUTE_SUPPLEMENTATIONPURPOSE))
-        m_supplementationPurpose = L"";
+        m_supplementationPurpose = "";
 
     if (BEXML_Success != ruleSetNode->GetAttributeInt32Value (m_versionMajor, PRESENTATION_RULE_SET_XML_ATTRIBUTE_VERSIONMAJOR))
         m_versionMajor = 1;
@@ -128,16 +128,16 @@ bool PresentationRuleSet::ReadXml (BeXmlDomR xmlDom)
         m_versionMinor = 0;
 
     if (BEXML_Success != ruleSetNode->GetAttributeStringValue (m_preferredImage, PRESENTATION_RULE_SET_XML_ATTRIBUTE_PREFERREDIMAGE))
-        m_preferredImage = L"";
+        m_preferredImage = "";
 
     if (BEXML_Success != ruleSetNode->GetAttributeBooleanValue (m_isSearchEnabled, PRESENTATION_RULE_SET_XML_ATTRIBUTE_ISSEARCHENABLED))
         m_isSearchEnabled = true;
 
     if (BEXML_Success != ruleSetNode->GetAttributeStringValue (m_searchClasses, PRESENTATION_RULE_SET_XML_ATTRIBUTE_SEARCHCLASSES))
-        m_searchClasses = L"";
+        m_searchClasses = "";
 
     if (BEXML_Success != ruleSetNode->GetAttributeStringValue (m_extendedData, PRESENTATION_RULE_SET_XML_ATTRIBUTE_EXTENDEDDATA))
-        m_extendedData = L"";
+        m_extendedData = "";
 
     CommonTools::LoadRulesFromXmlNode <RootNodeRule,      RootNodeRuleList>      (ruleSetNode, m_rootNodesRules,   ROOT_NODE_RULE_XML_NODE_NAME);
     CommonTools::LoadRulesFromXmlNode <ChildNodeRule,     ChildNodeRuleList>     (ruleSetNode, m_childNodesRules,  CHILD_NODE_RULE_XML_NODE_NAME);
@@ -190,17 +190,17 @@ void PresentationRuleSet::WriteXml (BeXmlDomR xmlDom)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlString (WCharCP xmlString)
+PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlString (Utf8CP xmlString)
     {
-    LOG.debugv (L"About to read PrsentationRuleSet from string.");
+    LOG.debugv ("About to read PrsentationRuleSet from string.");
 
     BeXmlStatus xmlStatus;
-    size_t stringSize = wcslen (xmlString) * sizeof(WChar);
-    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString (xmlStatus, xmlString, stringSize / sizeof (WChar));
+    size_t stringSize = strlen (xmlString) * sizeof(Utf8Char);
+    BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromString (xmlStatus, xmlString, stringSize / sizeof (Utf8Char));
     
     if (BEXML_Success != xmlStatus)
         {
-        LOG.errorv (L"Failed to load PrsentationRuleSet from xml string.");
+        LOG.errorv ("Failed to load PresentationRuleSet from xml string.");
         return NULL;
         }
     
@@ -208,7 +208,7 @@ PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlString (WCharCP xmlString
     if (ruleSet->ReadXml (*xmlDom.get ()))
         return ruleSet;
 
-    LOG.errorv (L"Failed to load PrsentationRuleSet from xml string.");
+    LOG.errorv ("Failed to load PresentationRuleSet from xml string.");
     return NULL;
     }
 
@@ -238,12 +238,12 @@ PresentationRuleSetPtr PresentationRuleSet::ReadFromXmlFile (WCharCP xmlFilePath
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString PresentationRuleSet::WriteToXmlString ()
+Utf8String PresentationRuleSet::WriteToXmlString ()
     {
     BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty ();        
     WriteXml (*xmlDom.get());
 
-    WString presentationRuleSetXml = L"";
+    Utf8String presentationRuleSetXml = "";
     xmlDom->ToString (presentationRuleSetXml, BeXmlDom::TO_STRING_OPTION_Default);
 
     return presentationRuleSetXml;
@@ -257,13 +257,13 @@ bool PresentationRuleSet::WriteToXmlFile (WCharCP xmlFilePath)
     BeXmlDomPtr xmlDom = BeXmlDom::CreateEmpty();        
     WriteXml (*xmlDom.get());
 
-	return BEXML_Success == xmlDom->ToFile(xmlFilePath, (BeXmlDom::ToStringOption)(BeXmlDom::TO_STRING_OPTION_Indent | BeXmlDom::TO_STRING_OPTION_Formatted), BeXmlDom::FILE_ENCODING_Utf8);
+    return BEXML_Success == xmlDom->ToFile(xmlFilePath, (BeXmlDom::ToStringOption)(BeXmlDom::TO_STRING_OPTION_Indent | BeXmlDom::TO_STRING_OPTION_Formatted), BeXmlDom::FILE_ENCODING_Utf8);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR              PresentationRuleSet::GetRuleSetId (void) const         { return m_ruleSetId;        }
+Utf8StringCR           PresentationRuleSet::GetRuleSetId (void) const         { return m_ruleSetId;        }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -283,17 +283,17 @@ bool                   PresentationRuleSet::GetIsSupplemental (void) const    { 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR              PresentationRuleSet::GetSupplementationPurpose (void) const { return m_supplementationPurpose; }
+Utf8StringCR           PresentationRuleSet::GetSupplementationPurpose (void) const { return m_supplementationPurpose; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR              PresentationRuleSet::GetSupportedSchemas (void) const  { return m_supportedSchemas; }
+Utf8StringCR           PresentationRuleSet::GetSupportedSchemas (void) const  { return m_supportedSchemas; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR              PresentationRuleSet::GetPreferredImage (void) const    { return m_preferredImage;   }
+Utf8StringCR           PresentationRuleSet::GetPreferredImage (void) const    { return m_preferredImage;   }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -303,22 +303,22 @@ bool                   PresentationRuleSet::GetIsSearchEnabled (void) const   { 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   11/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR              PresentationRuleSet::GetSearchClasses (void) const     { return m_searchClasses;    }
+Utf8StringCR           PresentationRuleSet::GetSearchClasses (void) const     { return m_searchClasses;    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   11/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void                   PresentationRuleSet::SetSearchClasses (WStringCR searchClasses) { m_searchClasses = searchClasses; }
+void                   PresentationRuleSet::SetSearchClasses (Utf8StringCR searchClasses) { m_searchClasses = searchClasses; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   08/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR              PresentationRuleSet::GetExtendedData (void) const      { return m_extendedData;     }
+Utf8StringCR           PresentationRuleSet::GetExtendedData (void) const      { return m_extendedData;     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   08/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void                   PresentationRuleSet::SetExtendedData (WStringCR extendedData) { m_extendedData = extendedData; }
+void                   PresentationRuleSet::SetExtendedData (Utf8StringCR extendedData) { m_extendedData = extendedData; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
