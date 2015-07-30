@@ -456,11 +456,11 @@ public:
 
     //! Change the origin (lower, left, front) point of this view.
     //! @param[in] viewOrg The new origin for this view.
-    DGNPLATFORM_EXPORT void SetOrigin(DPoint3dCR viewOrg);
+    void SetOrigin(DPoint3dCR viewOrg) {_SetOrigin(viewOrg);}
 
     //! Change the size of this view. The axes are in world coordinates units, aligned with the view.
     //! @param[in] viewDelta the new size for the view.
-    DGNPLATFORM_EXPORT void SetDelta(DVec3dCR viewDelta);
+    void SetDelta(DVec3dCR viewDelta) {_SetDelta(viewDelta);}
 
     //! Change the rotation of the view.
     //! @note viewRot must be orthonormal. For 2d views, only the rotation angle about the z axis is used.
@@ -593,12 +593,12 @@ protected:
     virtual ClipVectorPtr _GetClipVector() const {return nullptr;}
 
     DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(double, bool expandView) override;
-    DGNPLATFORM_EXPORT virtual DPoint3d _GetOrigin() const override;
-    DGNPLATFORM_EXPORT virtual DVec3d _GetDelta() const override;
-    DGNPLATFORM_EXPORT virtual RotMatrix _GetRotation() const override;
-    DGNPLATFORM_EXPORT virtual void _SetOrigin(DPoint3dCR org) override;
-    DGNPLATFORM_EXPORT virtual void _SetDelta(DVec3dCR delta) override;
-    DGNPLATFORM_EXPORT virtual void _SetRotation(RotMatrixCR rot) override;
+    virtual DPoint3d _GetOrigin() const override {return m_origin;}
+    virtual DVec3d _GetDelta() const override {return m_delta;}
+    virtual RotMatrix _GetRotation() const override {return m_rotation;}
+    virtual void _SetOrigin(DPoint3dCR origin) override {m_origin = origin;}
+    virtual void _SetDelta(DVec3dCR delta) override {m_delta = delta;}
+    virtual void _SetRotation(RotMatrixCR rot) override {m_rotation = rot;}
     virtual bool _Allow3dManipulations() const override {return true;}
     DGNPLATFORM_EXPORT virtual IAuxCoordSysP _GetAuxCoordinateSystem() const;
     DGNPLATFORM_EXPORT virtual bool _OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point) override;
@@ -727,6 +727,8 @@ protected:
     DGNPLATFORM_EXPORT virtual void _RestoreFromSettings(JsonValueCR) override;
 
 public:
+    void VerifyFocusPlane();
+
     //! Construct a new CameraViewController
     //! @param[in] dgndb The DgnDb of this view
     //! @param[in] viewId the id of the view in the project.

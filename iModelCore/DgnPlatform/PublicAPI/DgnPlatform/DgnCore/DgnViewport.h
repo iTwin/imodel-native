@@ -450,7 +450,6 @@ protected:
     ViewControllerPtr m_viewController;
     bvector<IProgressiveDisplayPtr> m_progressiveDisplay;    // progressive display of a query view and reality data.
 
-    void CenterFocusPlane();
     DGNPLATFORM_EXPORT void DestroyViewport();
 
     virtual void _AdjustZPlanesToModel(DPoint3dR origin, DVec3dR delta, ViewControllerCR) const = 0;

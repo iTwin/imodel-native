@@ -87,8 +87,6 @@ DG_INLINE ColorDef DgnViewport::GetHiliteColor() const {return _GetHiliteColor()
 DG_INLINE StatusInt DgnViewport::RefreshViewport(bool always, bool synchHealingFromBs, bool& stopFlag) {return _RefreshViewport(always, synchHealingFromBs, stopFlag);}
 DG_INLINE void DgnViewport::DrawStandardGrid(DPoint3dR origin, RotMatrixR rMatrix, Point2dCP fixedRepetitions) {_DrawStandardGrid(origin, rMatrix, fixedRepetitions);}
 
-DG_INLINE void ViewController::SetOrigin(DPoint3dCR val) {_SetOrigin(val);}
-DG_INLINE void ViewController::SetDelta(DVec3dCR val) {_SetDelta(val);}
 DG_INLINE void ViewController::SetBackgroundColor(ColorDef color) {m_backgroundColor = color; m_viewFlags.bgColor=1;}
 DG_INLINE bool ViewController::IsLoaded() const { return m_baseModelId.IsValid();}
 DG_INLINE void ViewController::ChangeModelDisplay(DgnModelId modelId, bool onOff) {_ChangeModelDisplay(modelId, onOff);}

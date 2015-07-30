@@ -852,11 +852,9 @@ void ViewController::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
     double frontDist = std::max(newDelta.x, newDelta.y) /(2.0*tan(cameraView->GetLensAngle()/2.0));
     double backDist = frontDist + newDelta.z;
 
-    cameraView->SetFocusDistance(frontDist); // do this even if the camera isn't currently on.
-    cameraView->CenterEyePoint(&backDist);   // "
-
-    if (isCameraOn)
-        cameraView->CenterFocusDistance();   // changes delta/origin - only do it if the camera is on
+    cameraView->CenterEyePoint(&backDist); // do this even if the camera isn't currently on.
+    cameraView->SetFocusDistance(0.0);     // so VerifyFocusPlane will center it.
+    cameraView->VerifyFocusPlane();        // changes delta/origin 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -918,16 +916,6 @@ void PhysicalViewController::TransformBy(TransformCR trans)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PhysicalViewController::_SetDelta(DVec3dCR delta)     {m_delta = delta;}
-void PhysicalViewController::_SetOrigin(DPoint3dCR origin) {m_origin = origin;}
-void PhysicalViewController::_SetRotation(RotMatrixCR rot) {m_rotation = rot;}
-DPoint3d PhysicalViewController::_GetOrigin() const {return m_origin;}
-DVec3d PhysicalViewController::_GetDelta() const {return m_delta;}
-RotMatrix PhysicalViewController::_GetRotation() const {return m_rotation;}
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus PhysicalViewController::SetTargetModel(DgnModelP target)
@@ -969,43 +957,6 @@ ClipVectorPtr SectionDrawingViewController::GetProjectClipVector() const
         return ClipVector::Create();
     return sectionView->GetInsideForwardClipVector();
     }
-
-#if defined(NEEDS_WORK_ELEMENTS_API)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-Transform SectionDrawingViewController::GetFlatteningMatrix(double zdelta) const
-    {
-    auto drawing = GetSectionDrawing();
-    if (drawing == nullptr)
-        return Transform::FromIdentity();
-
-    return drawing->GetFlatteningMatrix(zdelta);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-Transform SectionDrawingViewController::GetFlatteningMatrixIf2D(ViewContextR context, double zdelta) const
-    {
-    if (!context.GetViewport() || context.GetViewport()->Is3dView())
-        return Transform::FromIdentity();
-
-    return GetFlatteningMatrix(zdelta);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-Transform SectionDrawingViewController::GetTransformToWorld() const
-    {
-    auto drawing = GetSectionDrawing();
-    if (drawing == nullptr)
-        return Transform::FromIdentity();
-
-    return drawing->GetTransformToWorld();
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/14
@@ -1360,6 +1311,37 @@ bool DrawingViewController::_OnGeoLocationEvent(GeoLocationEventStatus& status, 
     }
 
 /*---------------------------------------------------------------------------------**//**
+* Ensure the focus plane lies between the front and back planes. If not, center it.
+* @bsimethod                                    Keith.Bentley                   07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void CameraViewController::VerifyFocusPlane()
+    {
+    if (!m_isCameraOn)
+        return;
+
+    DVec3d eyeOrg = DVec3d::FromStartEnd(m_origin, m_camera.GetEyePoint());
+    m_rotation.Multiply(eyeOrg);
+
+    double backDist = eyeOrg.z;
+    double frontDist = backDist - m_delta.z;
+    double focusDist = m_camera.GetFocusDistance();
+    if (focusDist>frontDist && focusDist<backDist)
+        return;
+
+    // put it halfway between front and back planes
+    m_camera.SetFocusDistance((m_delta.z / 2.0) + frontDist);
+
+    // moving the focus plane means we have to adjust the origin and delta too (they're on the focus plane, see diagram in ViewController.h)
+    double ratio = m_camera.GetFocusDistance() / focusDist;
+    m_delta.x *= ratio;
+    m_delta.y *= ratio;
+
+    DVec3d xVec, yVec, zVec;
+    m_rotation.GetRows(xVec, yVec, zVec);
+    m_origin.SumOf(m_camera.GetEyePoint(), zVec, -backDist, xVec, -0.5*m_delta.x, yVec, -0.5*m_delta.y); // this centers the camera too
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * See diagram in viewController.h
 * @bsimethod                                    Keith.Bentley                   08/13
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1393,6 +1375,9 @@ ViewportStatus CameraViewController::LookAt(DPoint3dCR eyePoint, DPoint3dCR targ
 
     frontDist = std::max(frontDist, DgnUnits::OneMillimeter());
     backDist  = std::max(backDist, focusDist+DgnUnits::OneMillimeter());
+
+    if (backDist < focusDist) // make sure focus distance is in front of back distance.
+        backDist = focusDist + DgnUnits::OneMillimeter();
 
     BeAssert(backDist > frontDist);
     delta.z =(backDist - frontDist);
@@ -1547,6 +1532,7 @@ DPoint3d CameraViewController::_GetTargetPoint() const
     return  target;
     }
 
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      03/14
 //---------------------------------------------------------------------------------------
@@ -1578,6 +1564,8 @@ void CameraViewController::_RestoreFromSettings(JsonValueCR jsonObj)
     if (m_delta.x <= DBL_EPSILON) m_delta.x = (m_delta.y + m_delta.z)/2;
     if (m_delta.y <= DBL_EPSILON) m_delta.y = (m_delta.x + m_delta.z)/2;
     if (m_delta.z <= DBL_EPSILON) m_delta.z = (m_delta.x + m_delta.y)/2;
+
+    VerifyFocusPlane();
     }
 
 //---------------------------------------------------------------------------------------

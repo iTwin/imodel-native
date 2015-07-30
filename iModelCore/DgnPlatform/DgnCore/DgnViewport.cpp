@@ -131,10 +131,10 @@ void DgnViewport::_GetViewCorners(DPoint3dR llb, DPoint3dR urf) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::ViewToNpc(DPoint3dP npcVec, DPoint3dCP screenVec, int nPts) const
     {
-    DPoint3d        llb, urf;
+    DPoint3d llb, urf;
     _GetViewCorners(llb, urf);
 
-    Transform    scrToNpcTran;
+    Transform scrToNpcTran;
     bsiTransform_initFromRange(nullptr, &scrToNpcTran, &llb, &urf);
     scrToNpcTran.Multiply(npcVec, screenVec, nPts);
     }
@@ -144,7 +144,7 @@ void DgnViewport::ViewToNpc(DPoint3dP npcVec, DPoint3dCP screenVec, int nPts) co
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::NpcToView(DPoint3dP screenVec, DPoint3dCP npcVec, int nPts) const
     {
-    DPoint3d        llb, urf;
+    DPoint3d llb, urf;
     _GetViewCorners(llb, urf);
 
     Transform    npcToScrTran;
@@ -292,9 +292,9 @@ StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double* compressi
     DVec3d    xVector, yVector, zVector;
     viewRot.GetRows(xVector, yVector, zVector);
 
-    DPoint3d    xExtent, yExtent, zExtent;
-    DPoint3d    origin;
-    double      frustFraction;
+    DPoint3d xExtent, yExtent, zExtent;
+    DPoint3d origin;
+    double   frustFraction;
 
     // Compute root vectors along edges of view frustum.
     if (camera)
@@ -307,8 +307,7 @@ StatusInt DgnViewport::RootToNpcFromViewDef(DMap4dR rootToNpc, double* compressi
         viewRot.Multiply(eyeToOrigin);                                                   // Rotate to view coordinates.
 
         double focusDistance = camera->GetFocusDistance();
-        double zDeltaLimit = (-focusDistance / GetCameraPlaneRatio()) - eyeToOrigin.z;      // Limit front clip to be in front of camera plane.
-
+        double zDeltaLimit = (-focusDistance / GetCameraPlaneRatio()) - eyeToOrigin.z;   // Limit front clip to be in front of camera plane.
         double zDelta = (delta.z > zDeltaLimit) ? zDeltaLimit : delta.z;                 // Limited zDelta.
         double zBack  = eyeToOrigin.z;                                                   // Distance from eye to back clip plane.
         double zFront = zBack + zDelta;                                                  // Distance from eye to front clip plane.
@@ -453,15 +452,10 @@ static void validateCamera(CameraViewControllerR controller)
     CameraInfoR camera = controller.GetControllerCameraR();
     camera.ValidateLens();
     if (camera.IsFocusValid())
-         {
-         // we used to call controller.CenterEyePoint(nullptr) here, but that can cause existing MicroStation
-         // 1-point perspective views to jump, so i removed it. - KAB
          return;
-         }
 
     DPoint3dCR vDelta = controller.GetDelta();
     double maxDelta = vDelta.x > vDelta.y ? vDelta.x : vDelta.y;
-
     double focusDistance = maxDelta / (2.0 * tan(camera.GetLensAngle()/2.0));
 
     if (focusDistance < vDelta.z / 2.0)
@@ -480,37 +474,6 @@ static void validateCamera(CameraViewControllerR controller)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* ensure the focus plane lies between the front and back clipping planes
-* @bsimethod                                    Keith.Bentley                   07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::CenterFocusPlane()
-    {
-    if (!m_isCameraOn)
-        return;
-
-    DVec3d eyeOrg = DVec3d::FromStartEnd(m_viewOrg, m_camera.GetEyePoint());
-    m_rotMatrix.Multiply(eyeOrg);
-
-    double backDist = eyeOrg.z;
-    double frontDist = backDist - m_viewDelta.z;
-    double focusDist = m_camera.GetFocusDistance();
-    if (focusDist>frontDist && focusDist<backDist)
-        return;
-
-    // put it halfway between front and back planes
-    m_camera.SetFocusDistance((m_viewDelta.z / 2.0) + frontDist);
-
-    // moving the focus plane means we have to adjust the origin and delta too (they're on the focus plane, see diagram in ViewController.h)
-    double ratio = m_camera.GetFocusDistance() / focusDist;
-    m_viewDelta.x *= ratio;
-    m_viewDelta.y *= ratio;
-
-    DVec3d xVec, yVec, zVec;
-    m_rotMatrix.GetRows(xVec, yVec, zVec);
-    m_viewOrg.SumOf(m_camera.GetEyePoint(), zVec, -backDist, xVec, -0.5*m_viewDelta.x, yVec, -0.5*m_viewDelta.y); // this centers the camera too
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * set up this viewport from the given viewController
 * @bsimethod                                                    KeithBentley    04/02
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -524,12 +487,12 @@ ViewportStatus DgnViewport::_SetupFromViewController()
 
     DPoint3d origin = viewController->GetOrigin();
     DVec3d   delta  = viewController->GetDelta();
-    m_rotMatrix     = viewController->GetRotation();
 
+    m_rotMatrix     = viewController->GetRotation();
     m_rootViewFlags = viewController->GetViewFlags();
-    m_is3dView    = false;
-    m_isCameraOn  = false;
-    m_isSheetView = false;
+    m_is3dView      = false;
+    m_isCameraOn    = false;
+    m_isSheetView   = false;
     m_viewOrg       = m_viewOrgUnexpanded   = origin;
     m_viewDelta     = m_viewDeltaUnexpanded = delta;
     m_zClipAdjusted = false;
@@ -600,9 +563,6 @@ ViewportStatus DgnViewport::_SetupFromViewController()
 
     m_viewOrg   = origin;
     m_viewDelta = delta;
-
-    // make sure the focus plane is between front and back planes
-    CenterFocusPlane();
 
     if (SUCCESS != _ConnectToOutput())
         return ViewportStatus::InvalidViewport;
@@ -1020,9 +980,9 @@ void DgnViewport::SetSymbologyRgb(ColorDef lineColor, ColorDef fillColor, int li
     m_output->SetSymbology(lineColor, fillColor, lineWidth, _GetIndexedLinePattern(lineCodeIndex));
     }
 
-const double    VISIBILITY_GOAL           = 40.0;
-const int       HSV_SATURATION_WEIGHT     = 4;
-const int       HSV_VALUE_WEIGHT          = 2;
+const double VISIBILITY_GOAL       = 40.0;
+const int    HSV_SATURATION_WEIGHT = 4;
+const int    HSV_VALUE_WEIGHT      = 2;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   08/01
@@ -1030,9 +990,9 @@ const int       HSV_VALUE_WEIGHT          = 2;
 static double colorVisibilityCheck(ColorDef fg, ColorDef bg)
     {
     // Compute luminosity...
-    double      red   = abs(fg.GetRed()   - bg.GetRed());
-    double      green = abs(fg.GetGreen() - bg.GetGreen());
-    double      blue  = abs(fg.GetBlue()  - bg.GetBlue());
+    double red   = abs(fg.GetRed()   - bg.GetRed());
+    double green = abs(fg.GetGreen() - bg.GetGreen());
+    double blue  = abs(fg.GetBlue()  - bg.GetBlue());
 
     return (0.30 * red) + (0.59 * green) + (0.11 * blue);
     }
