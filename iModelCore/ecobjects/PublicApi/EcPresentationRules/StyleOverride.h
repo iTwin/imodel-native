@@ -20,9 +20,9 @@ struct StyleOverride : public PresentationRule
     {
     /*__PUBLISH_SECTION_END__*/
     private:
-        WString m_foreColor;
-        WString m_backColor;
-        WString m_fontStyle;
+        Utf8String m_foreColor;
+        Utf8String m_backColor;
+        Utf8String m_fontStyle;
 
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
@@ -40,19 +40,19 @@ struct StyleOverride : public PresentationRule
         ECOBJECTS_EXPORT StyleOverride ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT StyleOverride (WStringCR condition, int priority, WStringCR foreColor, WStringCR backColor, WStringCR fontStyle);
+        ECOBJECTS_EXPORT StyleOverride (Utf8StringCR condition, int priority, Utf8StringCR foreColor, Utf8StringCR backColor, Utf8StringCR fontStyle);
 
         //! Foreground color override value. Can be ECExpression string. If value is not set it will not affect original value.
-        ECOBJECTS_EXPORT WStringCR        GetForeColor (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR        GetForeColor (void) const;
 
         //! Set foreground color override value. Can be ECExpression string. If value is not set it will not affect original value.
-        ECOBJECTS_EXPORT void             SetForeColor (WString value);
+        ECOBJECTS_EXPORT void             SetForeColor (Utf8String value);
 
         //! Background color override value. Can be ECExpression string. If value is not set it will not affect original value.
-        ECOBJECTS_EXPORT WStringCR        GetBackColor (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR        GetBackColor (void) const;
 
         //! FontStyle override value. Can be ECExpression string. If value is not set it will not affect original value.
-        ECOBJECTS_EXPORT WStringCR        GetFontStyle (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR        GetFontStyle (void) const;
 
     };
 

@@ -87,6 +87,7 @@
     <ClCompile Include="StandaloneECRelationshipInstance.cpp" />
     <ClCompile Include="StandardCustomAttributeHelper.cpp" />
     <ClCompile Include="SupplementalSchema.cpp" />
+    <ClCompile Include="SystemSymbolProvider.cpp" />
     <ClCompile Include="Units\ECUnitsClassLocater.cpp" />
     <ClCompile Include="Units\Units.cpp" />
   </ItemGroup>

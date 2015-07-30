@@ -65,119 +65,119 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString         Lexer::GetString(ExpressionToken tokenName)
+Utf8String         Lexer::GetString(ExpressionToken tokenName)
     {
-    wchar_t const* retval = L"";
+    Utf8CP retval = "";
 
     switch(tokenName)
         {
         case TOKEN_True:
-            retval = L"True";
+            retval = "True";
             break;
         case TOKEN_False:
-            retval = L"False";
+            retval = "False";
             break;
         case TOKEN_Like:
-            retval = L"Like";
+            retval = "Like";
             break;
         case TOKEN_Is:
-            retval = L"Is";
+            retval = "Is";
             break;
         case TOKEN_Star:
-            retval = L"*";
+            retval = "*";
             break;
         case TOKEN_Plus:
-            retval = L"+";
+            retval = "+";
             break;
         case TOKEN_Minus:
-            retval = L"-";
+            retval = "-";
             break;
         case TOKEN_Slash:
-            retval = L"/";
+            retval = "/";
             break;
         case TOKEN_Comma:
-            retval = L",";
+            retval = ",";
             break;
         case TOKEN_IntegerDivide:
-            retval = L"\\";
+            retval = "\\";
             break;
         case TOKEN_LParen:
-            retval = L"(";
+            retval = "(";
             break;
         case TOKEN_Lambda:
-            retval = L"=>";
+            retval = "=>";
             break;
         case TOKEN_RParen:
-            retval = L")";
+            retval = ")";
             break;
         case TOKEN_Exponentiation:
-            retval = L"^";
+            retval = "^";
             break;
         case TOKEN_And:
-            retval = L"And";
+            retval = "And";
             break;
         case TOKEN_AndAlso:
-            retval = L"AndAlso";
+            retval = "AndAlso";
             break;
         case TOKEN_Or:
-            retval = L"Or";
+            retval = "Or";
             break;
         case TOKEN_OrElse:
-            retval = L"OrElse";
+            retval = "OrElse";
             break;
         case TOKEN_Concatenate:
-            retval = L"&";
+            retval = "&";
             break;
         case TOKEN_Mod:
-            retval = L"Mod";
+            retval = "Mod";
             break;
         case TOKEN_ShiftLeft:
-            retval = L"<<";
+            retval = "<<";
             break;
         case TOKEN_ShiftRight:
-            retval = L">>";
+            retval = ">>";
             break;
         case TOKEN_Colon:
-            retval = L":";
+            retval = ":";
             break;
         case TOKEN_LessEqual:
-            retval = L"<=";
+            retval = "<=";
             break;
         case TOKEN_GreaterEqual:
-            retval = L">=";
+            retval = ">=";
             break;
         case TOKEN_Less:
-            retval = L"<";
+            retval = "<";
             break;
         case TOKEN_Greater:
-            retval = L">";
+            retval = ">";
             break;
         case TOKEN_Equal:
-            retval = L"=";
+            retval = "=";
             break;
         case TOKEN_NotEqual:
-            retval = L"<>";
+            retval = "<>";
             break;
         case TOKEN_Not:
-            retval = L"Not";
+            retval = "Not";
             break;
         case TOKEN_Xor:
-            retval = L"Xor";
+            retval = "Xor";
             break;
         case TOKEN_UnsignedShiftRight:
-            retval = L">>>";
+            retval = ">>>";
             break;
         case TOKEN_LeftBracket:
-            retval = L"[";
+            retval = "[";
             break;
         case TOKEN_RightBracket:
-            retval = L"]";
+            retval = "]";
             break;
         case TOKEN_Dot:
-            retval = L".";
+            retval = ".";
             break;
         case TOKEN_IIf:
-            retval = L"IIf";
+            retval = "IIf";
             break;
         }
 
@@ -187,7 +187,7 @@ WString         Lexer::GetString(ExpressionToken tokenName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-wchar_t const*  Lexer::getTokenStringCP () 
+Utf8CP  Lexer::getTokenStringCP () 
     {
     m_tokenBuilder[m_outputIndex] = 0;
     return m_tokenBuilder;
@@ -196,7 +196,7 @@ wchar_t const*  Lexer::getTokenStringCP ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-wchar_t         Lexer::GetCurrentChar ()
+Utf8Char         Lexer::GetCurrentChar ()
     {
     return m_tokenBuilder [m_outputIndex - 1];
     }
@@ -204,9 +204,9 @@ wchar_t         Lexer::GetCurrentChar ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-wchar_t         Lexer::GetNextChar  ()
+Utf8Char         Lexer::GetNextChar  ()
     {
-    wchar_t         ch;
+    Utf8Char ch;
 
     if (m_inputIndex >= m_maxInputIndex || m_outputIndex >= m_maxOutputIndex)
         return '\0';
@@ -234,7 +234,7 @@ void            Lexer::PushBack ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-wchar_t         Lexer::PeekChar  ()
+Utf8Char Lexer::PeekChar  ()
     {
     if (m_inputIndex >= m_maxInputIndex)
         return '\0';
@@ -245,15 +245,15 @@ wchar_t         Lexer::PeekChar  ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-wchar_t         Lexer::GetDigits
+Utf8Char Lexer::GetDigits
 (
 ExpressionToken&  tokenType,
 bool            isOctal
 )
     {
-    wchar_t currentChar;
+    Utf8Char currentChar;
 
-    while  (0 != iswalnum (currentChar = GetNextChar() ) )
+    while  (0 != isalnum (currentChar = GetNextChar() ) )
         {
         if ((isOctal) && (currentChar > '7'))
             tokenType = TOKEN_BadOctalNumber;
@@ -265,7 +265,7 @@ bool            isOctal
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            Lexer::IsHexDigit (wchar_t ch)
+bool Lexer::IsHexDigit (Utf8Char ch)
     {
     return 0 != iswxdigit(ch);
     }
@@ -273,17 +273,17 @@ bool            Lexer::IsHexDigit (wchar_t ch)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-wchar_t         Lexer::GetHexConstant
+Utf8Char Lexer::GetHexConstant
 (
 ExpressionToken&  tokenType
 )
     {
-    wchar_t    current;
+    Utf8Char current;
 
     /*  Move the 'x' to token       */
     GetNextChar();
 
-    while  (0 != iswalnum (current = GetNextChar()))
+    while  (0 != isalnum (current = GetNextChar()))
         {
 #if defined (NOTNOW)
         //  Don't understand why this was here
@@ -323,8 +323,8 @@ ExpressionToken Lexer::GetNumericConstant ()
     bool            haveOctal = false;
     bool            haveFloat = false;
     //  bool    haveLong = false;
-    wchar_t         currentChar;
-    wchar_t         nextChar;
+    Utf8Char        currentChar;
+    Utf8Char        nextChar;
 
     currentChar = GetCurrentChar ();
 
@@ -409,7 +409,7 @@ ExpressionToken Lexer::GetNumericConstant ()
 ExpressionToken Lexer::GetString ()
     {
     bool            exitOnNext = false;
-    wchar_t         currentChar;
+    Utf8Char        currentChar;
 
     //  TODO -- error handling, incomplete string
     while (true)
@@ -449,7 +449,7 @@ ExpressionToken Lexer::GetString ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionToken Lexer::GetIdentifier ()
     {
-    wchar_t    current;
+    Utf8Char    current;
 
     //  Get the longest token.  The caller has already called recognized the
     //  first character of identifier.  Since this scans for the subsequent
@@ -457,33 +457,33 @@ ExpressionToken Lexer::GetIdentifier ()
     while (0 != iswalnum (current = PeekChar()) || current == '_')
         GetNextChar();
 
-    wchar_t const*  identifier = getTokenStringCP ();
+    Utf8CP identifier = getTokenStringCP ();
 
-    if (BeStringUtilities::Wcsicmp (L"True", identifier) == 0)
+    if (BeStringUtilities::Stricmp("True", identifier) == 0)
         return TOKEN_True;
-    else if (BeStringUtilities::Wcsicmp (L"False", identifier) == 0)
+    else if (BeStringUtilities::Stricmp ("False", identifier) == 0)
         return TOKEN_False;
-    else if (BeStringUtilities::Wcsicmp (L"And", identifier) == 0)
+    else if (BeStringUtilities::Stricmp ("And", identifier) == 0)
         return TOKEN_And;
-    else if (BeStringUtilities::Wcsicmp (L"AndAlso", identifier) == 0)
+    else if (BeStringUtilities::Stricmp ("AndAlso", identifier) == 0)
         return TOKEN_AndAlso;
-    else if (BeStringUtilities::Wcsicmp (L"Or", identifier) == 0)
+    else if (BeStringUtilities::Stricmp ("Or", identifier) == 0)
         return TOKEN_Or;
-    else if (BeStringUtilities::Wcsicmp (L"OrElse", identifier) == 0)
+    else if (BeStringUtilities::Stricmp ("OrElse", identifier) == 0)
         return TOKEN_OrElse;
-    else if (BeStringUtilities::Wcsicmp (L"Mod", identifier) == 0)
+    else if (BeStringUtilities::Stricmp ("Mod", identifier) == 0)
         return TOKEN_Mod;
-    else if (BeStringUtilities::Wcsicmp (L"Xor", identifier) == 0)
+    else if (BeStringUtilities::Stricmp ("Xor", identifier) == 0)
         return TOKEN_Xor;
-    else if (BeStringUtilities::Wcsicmp (L"Not", identifier) == 0)
+    else if (BeStringUtilities::Stricmp ("Not", identifier) == 0)
         return TOKEN_Not;
-    else if (BeStringUtilities::Wcsicmp (L"Like", identifier) == 0)
+    else if (BeStringUtilities::Stricmp ("Like", identifier) == 0)
         return TOKEN_Like;
-    else if (BeStringUtilities::Wcsicmp (L"Is", identifier) == 0)
+    else if (BeStringUtilities::Stricmp ("Is", identifier) == 0)
         return TOKEN_Is;
-    else if (BeStringUtilities::Wcsicmp (L"IIf", identifier) == 0)
+    else if (BeStringUtilities::Stricmp ("IIf", identifier) == 0)
         return TOKEN_IIf;
-    else if (BeStringUtilities::Wcsicmp (L"Null", identifier) == 0)
+    else if (BeStringUtilities::Stricmp ("Null", identifier) == 0)
         return TOKEN_Null;
 
     return TOKEN_Ident;
@@ -494,8 +494,8 @@ ExpressionToken Lexer::GetIdentifier ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionToken Lexer::ScanToken ()
     {
-    wchar_t         current;
-    ExpressionToken   t = TOKEN_None;
+    Utf8Char        current;
+    ExpressionToken t = TOKEN_None;
     m_outputIndex   = 0;
     m_tokenModifier = TOKEN_None;
 
@@ -507,7 +507,7 @@ ExpressionToken Lexer::ScanToken ()
             {
             MarkOffset();
             current = GetNextChar ();
-            if (0 == iswspace (current))
+            if (0 == isspace (current))
                 break;
 
             m_outputIndex   = 0;
@@ -650,14 +650,14 @@ ExpressionToken Lexer::ScanToken ()
                 return GetString ();
 
             default:
-                if (0 != iswalpha (current) || current == '_')
+                if (0 != isalpha (current) || current == '_')
                     {
                     if ((t = GetIdentifier()) != 0)
                         return t;
                     else
                         return TOKEN_Unrecognized;
                     }
-                else if (0 != iswdigit (current))
+                else if (0 != isdigit (current))
                     {
                     return GetNumericConstant();
                     }
@@ -670,21 +670,21 @@ ExpressionToken Lexer::ScanToken ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-                Lexer::Lexer (wchar_t const* inputString)
+                Lexer::Lexer (Utf8CP inputString)
     {
     m_outputIndex = m_inputIndex = 0;
 
-    m_inputString       = WString(inputString);
+    m_inputString       = Utf8String(inputString);
     m_inputCP           = m_inputString.c_str();
     m_maxOutputIndex    = _countof(m_tokenBuilder) - 1;
-    m_maxInputIndex     = wcslen(m_inputCP) + 1;   //  It includes the EOS
+    m_maxInputIndex     = strlen(m_inputCP) + 1;   //  It includes the EOS
     m_tokenModifier = m_currentToken = TOKEN_None;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-LexerPtr        Lexer::Create(wchar_t const* inputString)
+LexerPtr        Lexer::Create(Utf8CP inputString)
     {
     return new Lexer(inputString);
     }
@@ -716,7 +716,7 @@ ExpressionToken Lexer::GetTokenModifier ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-wchar_t const*  Lexer::GetTokenStringCP ()
+Utf8CP  Lexer::GetTokenStringCP ()
     {
     return getTokenStringCP ();
     }
@@ -724,7 +724,7 @@ wchar_t const*  Lexer::GetTokenStringCP ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    John.Gooding                    02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodePtr         ECEvaluator::GetErrorNode(wchar_t const*  errorMessage, wchar_t const* detail1, wchar_t const* detail2)
+NodePtr         ECEvaluator::GetErrorNode(Utf8CP errorMessage, Utf8CP detail1, Utf8CP detail2)
     {
     ErrorNodePtr    errorNode = ErrorNode::Create(errorMessage, detail1, detail2);
     return errorNode.get();
@@ -745,7 +745,7 @@ NodeR            inputNode
         return &inputNode;
         }
 
-    return GetErrorNode(L"Expected/Got Error");
+    return GetErrorNode("Expected/Got Error");
     }
 
     //  Already consumed (, consumes trailing )
@@ -789,8 +789,8 @@ if (m_lexer->GetTokenType() == TOKEN_Minus)     \
 else     \
     fac = 1.0;     \
  \
-if (1 != BE_STRING_UTILITIES_SWSCANF(m_lexer->GetTokenStringCP(), L"%lg", &COORD))     \
-    return GetErrorNode (L"PointLiteralExpected");     \
+if (1 != BE_STRING_UTILITIES_UTF8_SSCANF(m_lexer->GetTokenStringCP(), "%lg", &COORD))     \
+    return GetErrorNode ("PointLiteralExpected");     \
 else     \
     {   \
     m_lexer->Advance();     \
@@ -828,25 +828,25 @@ NodePtr         ECEvaluator::ParsePrimary
                 // Requires ( expression, expression, expression )
                 m_lexer->Advance ();
                 if (m_lexer->GetTokenType() != TOKEN_LParen)
-                    return GetErrorNode(L"IIfError");
+                    return GetErrorNode("IIfError");
 
                 m_lexer->Advance ();
 
                 NodePtr   conditional = ParseValueExpression ();
                 if (m_lexer->GetTokenType() != TOKEN_Comma)
-                    return GetErrorNode(L"IIfError");
+                    return GetErrorNode("IIfError");
 
                 m_lexer->Advance ();
                 NodePtr   trueClause = ParseValueExpression ();
 
                 if (m_lexer->GetTokenType() != TOKEN_Comma)
-                    return GetErrorNode(L"IIfError");
+                    return GetErrorNode("IIfError");
 
                 m_lexer->Advance ();
                 NodePtr falseClause = ParseValueExpression ();
 
                 if (m_lexer->GetTokenType() != TOKEN_RParen)
-                    return GetErrorNode(L"IIfError");
+                    return GetErrorNode("IIfError");
 
                 m_lexer->Advance ();
 
@@ -887,13 +887,13 @@ NodePtr         ECEvaluator::ParsePrimary
                                 break;  //  assume there has already been an error reported.
                                 }
 
-                            wchar_t const*   name;
+                            Utf8CP name;
                             if (identNode.IsValid())
                                 name = identNode->GetName();
                             else
                                 {
                                 //  TODO generate error
-                                name = L"";
+                                name = "";
                                 }
 
                             CallNodePtr callNode = CallNode::Create(*args, name, dotted);
@@ -954,7 +954,7 @@ NodePtr         ECEvaluator::ParsePrimary
                                 break;
                                 }
 
-                            WCharCP symbolName = identNode.IsValid() ? identNode->GetName() : L"";
+                            Utf8CP symbolName = identNode.IsValid() ? identNode->GetName() : "";
                             LambdaNodePtr lambdaNode = LambdaNode::Create (symbolName, *lambdaExpr);
                             result = lambdaNode;
                             identNode = NULL;
@@ -981,7 +981,7 @@ NodePtr         ECEvaluator::ParsePrimary
                 {
                 int64_t   value;
                 
-                BE_STRING_UTILITIES_SWSCANF(m_lexer->GetTokenStringCP (), L"%lld", &value);
+                BE_STRING_UTILITIES_UTF8_SSCANF(m_lexer->GetTokenStringCP (), "%lld", &value);
 
                 if (value >= INT_MIN && value <= INT_MAX)
                     {
@@ -998,7 +998,7 @@ NodePtr         ECEvaluator::ParsePrimary
             case TOKEN_FloatConst:
                 {
                 double d;
-                BE_STRING_UTILITIES_SWSCANF(m_lexer->GetTokenStringCP (), L"%lg", &d);
+                BE_STRING_UTILITIES_UTF8_SSCANF(m_lexer->GetTokenStringCP (), "%lg", &d);
                 result = Node::CreateFloatLiteral (d);
                 m_lexer->Advance ();
                 }
@@ -1018,7 +1018,7 @@ NodePtr         ECEvaluator::ParsePrimary
                 
                 EXTRACT_COORDINATE(x)
                 if (m_lexer->GetTokenType() != TOKEN_Comma)
-                    return GetErrorNode (L"PointLiteralExpected");
+                    return GetErrorNode ("PointLiteralExpected");
 
                 m_lexer->Advance();
 
@@ -1035,7 +1035,7 @@ NodePtr         ECEvaluator::ParsePrimary
                         result = Node::CreatePoint3DLiteral (DPoint3d::FromXYZ (x, y, z));
                         break;
                     default:
-                        return GetErrorNode (L"PointLiteralExpected");
+                        return GetErrorNode ("PointLiteralExpected");
                     }
 
                 result = Must (TOKEN_RCurly, *result);
@@ -1046,8 +1046,8 @@ NodePtr         ECEvaluator::ParsePrimary
                 {
                 m_lexer->Advance();
                 int64_t ticks;
-                if (1 != BE_STRING_UTILITIES_SWSCANF(m_lexer->GetTokenStringCP(), L"%lld", &ticks))
-                    return GetErrorNode (L"DateTimeLiteralExpected");
+                if (1 != BE_STRING_UTILITIES_UTF8_SSCANF(m_lexer->GetTokenStringCP(), "%lld", &ticks))
+                    return GetErrorNode ("DateTimeLiteralExpected");
 
                 result = Node::CreateDateTimeLiteral (ticks);
                 m_lexer->Advance();
@@ -1065,10 +1065,10 @@ NodePtr         ECEvaluator::ParsePrimary
                 //  This is the start of an object initializer
 
             case TOKEN_None:
-                return GetErrorNode(L"UnexpectedEOI");
+                return GetErrorNode("UnexpectedEOI");
 
             default:
-                return GetErrorNode(L"TokenUnexpected", m_lexer->GetTokenStringCP ());
+                return GetErrorNode("TokenUnexpected", m_lexer->GetTokenStringCP ());
             }
 
 
@@ -1144,7 +1144,7 @@ NodePtr         ECEvaluator::ParseUnitSpec()
             nQualifiers++;
             double qualifier;
             bool valid = false;
-            if (1 == swscanf(m_lexer->GetTokenStringCP (), L"%lg", &qualifier))
+            if (1 == sscanf(m_lexer->GetTokenStringCP (), "%lg", &qualifier))
                 {
                 switch (nQualifiers)
                     {
@@ -1166,7 +1166,7 @@ NodePtr         ECEvaluator::ParseUnitSpec()
             m_lexer->Advance();
             if (!valid)
                 {
-                result = GetErrorNode (L"Malformed unit specification", m_lexer->GetTokenStringCP());
+                result = GetErrorNode ("Malformed unit specification", m_lexer->GetTokenStringCP());
                 break;
                 }
             }
@@ -1423,8 +1423,8 @@ NodePtr         ECEvaluator::ParseAssignment
 +---------------+---------------+---------------+---------------+---------------+------*/
 NodePtr         ECEvaluator::ParseExpression
 (
-wchar_t const*  expression,
-bool            tryAssignment
+Utf8CP expression,
+bool tryAssignment
 )
     {
     m_lexer = Lexer::Create (expression);
@@ -1433,7 +1433,7 @@ bool            tryAssignment
     NodePtr theNode = tryAssignment ? ParseAssignment() : ParseValueExpression ();
 
     if (!CheckComplete ())
-        theNode = GetErrorNode(L"Unused input", m_lexer->GetTokenStringCP());
+        theNode = GetErrorNode("Unused input", m_lexer->GetTokenStringCP());
 
     return theNode;
     }
@@ -1451,7 +1451,7 @@ bool            ECEvaluator::CheckComplete ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 NodePtr         ECEvaluator::ParseValueExpressionAndCreateTree
 (
-wchar_t const* expression
+Utf8CP expression
 )
     {
     //  Probably should just make this reference counted
@@ -1467,7 +1467,7 @@ wchar_t const* expression
 +---------------+---------------+---------------+---------------+---------------+------*/
 NodePtr         ECEvaluator::ParseAssignmentExpressionAndCreateTree
 (
-wchar_t const* expression
+Utf8CP expression
 )
     {
     //  Probably should just make this reference counted
@@ -1483,11 +1483,11 @@ wchar_t const* expression
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus  ECEvaluator::EvaluateExpression (EvaluationResult& result, WCharCP expr, ExpressionContextR context)
     {
-    NodePtr tree = ECEvaluator::ParseValueExpressionAndCreateTree (expr);
-    if (tree.IsNull ())
-        return ExpressionStatus::ExprStatus_UnknownSymbol;
+    Utf8String utfExpression;
+    if (nullptr != expr)
+        utfExpression.Assign(expr);
 
-    return tree->GetValue (result, context);
+    return EvaluateExpression(result, utfExpression.c_str(), context);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1495,11 +1495,11 @@ ExpressionStatus  ECEvaluator::EvaluateExpression (EvaluationResult& result, WCh
 +---------------+---------------+---------------+---------------+---------------+------*/
 ExpressionStatus  ECEvaluator::EvaluateExpression(EvaluationResult& result, Utf8CP expr, ExpressionContextR context)
     {
-    WString wideExpression;
-    if (nullptr != expr)
-        wideExpression.AssignUtf8(expr);
+    NodePtr tree = ECEvaluator::ParseValueExpressionAndCreateTree (expr);
+    if (tree.IsNull ())
+        return ExpressionStatus::ExprStatus_UnknownSymbol;
 
-    return EvaluateExpression(result, wideExpression.c_str(), context);
+    return tree->GetValue (result, context);
     }
 
 /*---------------------------------------------------------------------------------**//**

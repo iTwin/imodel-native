@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/ChildNodeRule.cpp $
 |
-|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -104,7 +104,7 @@ ChildNodeRule::ChildNodeRule () : PresentationRule (), m_targetTree (TargetTree_
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ChildNodeRule::ChildNodeRule (WStringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree)
+ChildNodeRule::ChildNodeRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree)
     : PresentationRule (condition, priority, onlyIfNotHandled), m_targetTree (targetTree), m_stopFurtherProcessing (false)
     {
     }
@@ -132,7 +132,7 @@ CharCP ChildNodeRule::_GetXmlElementName ()
 bool ChildNodeRule::_ReadXml (BeXmlNodeP xmlNode)
     {
     m_targetTree = TargetTree_MainTree;
-    WString ruleTargetTreeString = L"";
+    Utf8String ruleTargetTreeString = "";
     if (BEXML_Success == xmlNode->GetAttributeStringValue (ruleTargetTreeString, CHILD_NODE_RULE_XML_ATTRIBUTE_TARGETTREE))
         m_targetTree = CommonTools::ParseTargetTreeString (ruleTargetTreeString.c_str ());
 
@@ -209,7 +209,7 @@ RootNodeRule::RootNodeRule () : ChildNodeRule ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-RootNodeRule::RootNodeRule (WStringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree, bool autoExpand)
+RootNodeRule::RootNodeRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree, bool autoExpand)
     : ChildNodeRule (condition, priority, onlyIfNotHandled, targetTree), m_autoExpand (autoExpand)
     {
     }

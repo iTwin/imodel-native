@@ -16,14 +16,14 @@ USING_NAMESPACE_EC
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 StyleOverride::StyleOverride ()
-    : PresentationRule (), m_foreColor (L""), m_backColor (L""), m_fontStyle (L"")
+    : PresentationRule (), m_foreColor (""), m_backColor (""), m_fontStyle ("")
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-StyleOverride::StyleOverride (WStringCR condition, int priority, WStringCR foreColor, WStringCR backColor, WStringCR fontStyle)
+StyleOverride::StyleOverride (Utf8StringCR condition, int priority, Utf8StringCR foreColor, Utf8StringCR backColor, Utf8StringCR fontStyle)
     : PresentationRule (condition, priority, false), 
         m_foreColor (foreColor), m_backColor (backColor), m_fontStyle (fontStyle)
     {
@@ -43,13 +43,13 @@ CharCP StyleOverride::_GetXmlElementName ()
 bool StyleOverride::_ReadXml (BeXmlNodeP xmlNode)
     {
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_foreColor, STYLE_OVERRIDE_XML_ATTRIBUTE_FORECOLOR))
-        m_foreColor = L"";
+        m_foreColor = "";
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_backColor, STYLE_OVERRIDE_XML_ATTRIBUTE_BACKCOLOR))
-        m_backColor = L"";
+        m_backColor = "";
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_fontStyle, STYLE_OVERRIDE_XML_ATTRIBUTE_FONTSTYLE))
-        m_fontStyle = L"";
+        m_fontStyle = "";
 
     return PresentationRule::_ReadXml (xmlNode);
     }
@@ -69,19 +69,19 @@ void StyleOverride::_WriteXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR StyleOverride::GetForeColor (void) const { return m_foreColor; }
+Utf8StringCR StyleOverride::GetForeColor (void) const { return m_foreColor; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Tom.Amon                        03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void StyleOverride::SetForeColor (WString value) { m_foreColor = value; }
+void StyleOverride::SetForeColor (Utf8String value) { m_foreColor = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR StyleOverride::GetBackColor (void) const { return m_backColor; }
+Utf8StringCR StyleOverride::GetBackColor (void) const { return m_backColor; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR StyleOverride::GetFontStyle (void) const { return m_fontStyle; }
+Utf8StringCR StyleOverride::GetFontStyle (void) const { return m_fontStyle; }

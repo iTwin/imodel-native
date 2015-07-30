@@ -26,8 +26,8 @@ struct InstanceNodesOfSpecificClassesSpecification : public ChildNodeSpecificati
         bool     m_groupByLabel;
         bool     m_showEmptyGroups;
         bool     m_arePolymorphic;
-        WString  m_instanceFilter;
-        WString  m_classNames;
+        Utf8String  m_instanceFilter;
+        Utf8String  m_classNames;
 
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
@@ -47,7 +47,7 @@ struct InstanceNodesOfSpecificClassesSpecification : public ChildNodeSpecificati
         //! Constructor.
         ECOBJECTS_EXPORT InstanceNodesOfSpecificClassesSpecification (int priority, bool alwaysReturnsChildren, bool hideNodesInHierarchy,
                                                                       bool hideIfNoChildren, bool groupByClass, bool groupByLabel, bool showEmptyGroups,
-                                                                      WStringCR instanceFilter, WStringCR classNames, bool arePolymorphic);
+                                                                      Utf8StringCR instanceFilter, Utf8StringCR classNames, bool arePolymorphic);
 
         //! Returns true if grouping by class should be applied.
         ECOBJECTS_EXPORT bool                         GetGroupByClass (void) const;
@@ -69,10 +69,10 @@ struct InstanceNodesOfSpecificClassesSpecification : public ChildNodeSpecificati
         ECOBJECTS_EXPORT void                         SetShowEmptyGroups (bool value);
 
         //! Class names. Format: "SchemaName1:ClassName11,ClassName12;SchemaName2:ClassName21,ClassName22"
-        ECOBJECTS_EXPORT WStringCR                    GetClassNames (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR                 GetClassNames (void) const;
 
         //! Set class names. Can be string.
-        ECOBJECTS_EXPORT void                         SetClassNames (WString value);
+        ECOBJECTS_EXPORT void                         SetClassNames (Utf8String value);
 
         //! This flag identifies whether ECClasses defined in this specification should be marked as polymorphic in the Query.
         ECOBJECTS_EXPORT bool                         GetArePolymorphic (void) const;
@@ -82,10 +82,10 @@ struct InstanceNodesOfSpecificClassesSpecification : public ChildNodeSpecificati
 
         //! InstanceFiler is spacially formated string that represents WhereCriteria in 
         //! ECQuery that is used to filter query results (ChildNodes).
-        ECOBJECTS_EXPORT WStringCR                    GetInstanceFilter (void) const;
+        ECOBJECTS_EXPORT Utf8StringCR                 GetInstanceFilter (void) const;
         
         //! Set instance filter. Can be string.
-        ECOBJECTS_EXPORT void                         SetInstanceFilter (WString value);
+        ECOBJECTS_EXPORT void                         SetInstanceFilter (Utf8String value);
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

@@ -16,14 +16,14 @@ USING_NAMESPACE_EC
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentInstancesOfSpecificClassesSpecification::ContentInstancesOfSpecificClassesSpecification () 
-    : ContentSpecification (), m_instanceFilter (L""), m_classNames (L""), m_arePolymorphic (false)
+    : ContentSpecification (), m_instanceFilter (""), m_classNames (""), m_arePolymorphic (false)
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentInstancesOfSpecificClassesSpecification::ContentInstancesOfSpecificClassesSpecification (int priority, WStringCR instanceFilter, WStringCR classNames, bool arePolymorphic) 
+ContentInstancesOfSpecificClassesSpecification::ContentInstancesOfSpecificClassesSpecification (int priority, Utf8StringCR instanceFilter, Utf8StringCR classNames, bool arePolymorphic) 
     : ContentSpecification (priority), m_instanceFilter (instanceFilter), m_classNames (classNames), m_arePolymorphic (arePolymorphic)
     {
     }
@@ -44,7 +44,7 @@ bool ContentInstancesOfSpecificClassesSpecification::_ReadXml (BeXmlNodeP xmlNod
     //Required:
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_classNames, COMMON_XML_ATTRIBUTE_CLASSNAMES))
         {
-        LOG.errorv (L"Invalid XML: %hs element must contain a %hs attribute", CONTENT_INSTANCES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME, COMMON_XML_ATTRIBUTE_CLASSNAMES);
+        LOG.errorv ("Invalid XML: %s element must contain a %s attribute", CONTENT_INSTANCES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME, COMMON_XML_ATTRIBUTE_CLASSNAMES);
         return false;
         }
 
@@ -53,7 +53,7 @@ bool ContentInstancesOfSpecificClassesSpecification::_ReadXml (BeXmlNodeP xmlNod
         m_arePolymorphic = false;
 
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_instanceFilter, COMMON_XML_ATTRIBUTE_INSTANCEFILTER))
-        m_instanceFilter = L"";
+        m_instanceFilter = "";
 
     return true;
     }
@@ -71,12 +71,12 @@ void ContentInstancesOfSpecificClassesSpecification::_WriteXml (BeXmlNodeP xmlNo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR ContentInstancesOfSpecificClassesSpecification::GetClassNames (void) const { return m_classNames; }
+Utf8StringCR ContentInstancesOfSpecificClassesSpecification::GetClassNames (void) const { return m_classNames; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Kelly.Shiptoski                 06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentInstancesOfSpecificClassesSpecification::SetClassNames (WStringCR value) { m_classNames = value; }
+void ContentInstancesOfSpecificClassesSpecification::SetClassNames (Utf8StringCR value) { m_classNames = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
@@ -91,9 +91,9 @@ void ContentInstancesOfSpecificClassesSpecification::SetArePolymorphic (bool val
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR ContentInstancesOfSpecificClassesSpecification::GetInstanceFilter (void) const { return m_instanceFilter; }
+Utf8StringCR ContentInstancesOfSpecificClassesSpecification::GetInstanceFilter (void) const { return m_instanceFilter; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Kelly.Shiptoski                 06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentInstancesOfSpecificClassesSpecification::SetInstanceFilter (WStringCR value) { m_instanceFilter = value; }
+void ContentInstancesOfSpecificClassesSpecification::SetInstanceFilter (Utf8StringCR value) { m_instanceFilter = value; }

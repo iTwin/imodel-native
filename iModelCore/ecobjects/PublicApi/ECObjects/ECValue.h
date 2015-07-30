@@ -188,7 +188,7 @@ private:
 
         bool MetadataMatches (DateTimeInfoCR dateTimeInfo) const;
 
-        WString MetadataToString () const;
+        Utf8String MetadataToString () const;
         };
 
     //! The union storing the actual data of this ECValue
@@ -406,17 +406,17 @@ public:
     // Attempts to convert a primitive ECValue to a string representation suitable for serialization.
     // Fails if this ECValue is not a primitive
     // Returns an empty string if this ECValue is null
-    ECOBJECTS_EXPORT bool           ConvertPrimitiveToString (WStringR str) const;
+    ECOBJECTS_EXPORT bool           ConvertPrimitiveToString (Utf8StringR str) const;
 
     // Attempts to convert this ECValue's primitive value to a literal ECExpression
     // Does not support binary or IGeometry
-    ECOBJECTS_EXPORT bool           ConvertPrimitiveToECExpressionLiteral (WStringR expression) const;
+    ECOBJECTS_EXPORT bool           ConvertPrimitiveToECExpressionLiteral (Utf8StringR expression) const;
 
     // Attempts to format the underlying value using the specified .NET-style format string.
     // Typically the format string originated from an ECCustomAttribute.
     // Currently only supports numeric types: double, int, and long
     // Use DgnPlatform::IECInteropStringFormatter() for more full-featured formatting.
-    ECOBJECTS_EXPORT bool           ApplyDotNetFormatting (WStringR formatted, WCharCP formatString) const;
+    ECOBJECTS_EXPORT bool           ApplyDotNetFormatting (Utf8StringR formatted, Utf8CP formatString) const;
     ECOBJECTS_EXPORT bool           SupportsDotNetFormatting() const;
 
     // Get/set a flag indicating whether to copy data from an ECDBuffer into this ECValue or to allow this ECValue to store direct pointers into the ECDBuffer's data.
@@ -475,7 +475,7 @@ public:
     //! @note If the encoding of the string in the ECValue differs from the encoding of what is to be returned, the string
     //!       is automatically converted. To avoid string conversions call ECValue::IsUtf8 first.
     //! @return string content
-    ECOBJECTS_EXPORT WCharCP        GetString () const;
+    ECOBJECTS_EXPORT WCharCP        GetWCharCP () const;
     //! Gets the string content of this ECValue in UTF-8 encoding.
     //! @note If the encoding of the string in the ECValue differs from the encoding of what is to be returned, the string
     //!       is automatically converted. To avoid string conversions call ECValue::IsUtf8 first.
@@ -487,11 +487,11 @@ public:
     //__PUBLISH_SECTION_END__
 
     //! Indicates whether the ECValue instance owns the memory of WCharCP returned by ECValue::GetString.
-    //! @remarks Can get return true, even if ECValue::SetString was called with holdADuplicate = false, as 
+    //! @remarks Can get return true, even if ECValue::SetWCharCP was called with holdADuplicate = false, as 
     //! ECValue does implicit encoding conversions when the requested encoding is different than the one used at set time.
     //! In those cases the ECValue always owns the converted string.
     //! @return bool if ECValue owns the WChar string value, false otherwise
-    ECOBJECTS_EXPORT bool           OwnsString () const;
+    ECOBJECTS_EXPORT bool           OwnsWCharCP () const;
 
     //! Indicates whether the ECValue instance owns the memory of Utf8CP returned by ECValue::GetUtf8CP.
     //! @remarks Can get return true, even if ECValue::SetUtf8CP was called with holdADuplicate = false, as 
@@ -513,7 +513,7 @@ public:
     //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to a string Primitive
     //! @param[in] string           The value to set
     //! @param[in] holdADuplicate   Flag specifying whether the ECValue should make its own copy of the string, or store the actual pointer passed in
-    ECOBJECTS_EXPORT BentleyStatus  SetString (WCharCP string, bool holdADuplicate = true);
+    ECOBJECTS_EXPORT BentleyStatus  SetWCharCP (WCharCP string, bool holdADuplicate = true);
     //! Sets the value of this ECValue to the given string
     //! @remarks This call will always succeed.  Previous data is cleared, and the type of the ECValue is set to a string Primitive
     //! @param[in] string           The value to set
@@ -609,7 +609,7 @@ public:
     BentleyStatus                   SetDateTimeMetadata (DateTimeInfoCR caDateTimeMetadata);
     bool                            IsDateTimeMetadataSet () const;
     bool                            DateTimeInfoMatches (DateTimeInfoCR caDateTimeMetadata) const;
-    WString                         DateTimeMetadataToString () const;
+    Utf8String                      DateTimeMetadataToString () const;
     ECOBJECTS_EXPORT BentleyStatus  SetLocalDateTimeFromUnixMillis (int64_t unixMillis);
 //__PUBLISH_SECTION_START__
 //
@@ -633,7 +633,7 @@ public:
     static ECOBJECTS_EXPORT uint32_t GetFixedPrimitiveValueSize (PrimitiveType primitiveType);
 
     //! This is intended for debugging purposes, not for presentation purposes.
-    ECOBJECTS_EXPORT WString       ToString () const;
+    ECOBJECTS_EXPORT Utf8String       ToString () const;
     
     //! Checks 2 ECValues for equality.
     ECOBJECTS_EXPORT bool           Equals (ECValueCR v) const;
@@ -663,27 +663,27 @@ private:
     friend struct AdhocPropertyQuery;
     friend struct AdhocPropertyEdit;
 
-    WString                 m_metadataPropertyNames[(size_t)Index::MAX];    // the property names within the struct class holding the ad-hoc values and metadata
+    Utf8String              m_metadataPropertyNames[(size_t)Index::MAX];    // the property names within the struct class holding the ad-hoc values and metadata
     uint32_t                m_containerIndex;                       // the property index of the struct array holding ad-hoc properties within the host's ECClass
 
-    AdhocPropertyMetadata (ECEnablerCR enabler, WCharCP containerAccessString, bool loadMetadata);
+    AdhocPropertyMetadata (ECEnablerCR enabler, Utf8CP containerAccessString, bool loadMetadata);
     AdhocPropertyMetadata (ECEnablerCR enabler, uint32_t containerPropertyIndex, bool loadMetadata);
 
     bool                    Init (ECEnablerCR enabler, uint32_t containerPropertyIndex, bool loadMetadata);
 protected:
-    WCharCP                 GetPropertyName (Index index) const;
+    Utf8CP                  GetPropertyName (Index index) const;
 
     static bool             IsRequiredMetadata (Index index);
     static bool             PrimitiveTypeForCode (PrimitiveType& primType, int32_t code);
     static bool             CodeForPrimitiveType (int32_t& code, PrimitiveType primType);
 public:
-    ECOBJECTS_EXPORT AdhocPropertyMetadata (ECEnablerCR enabler, WCharCP containerAccessString);
+    ECOBJECTS_EXPORT AdhocPropertyMetadata (ECEnablerCR enabler, Utf8CP containerAccessString);
     ECOBJECTS_EXPORT AdhocPropertyMetadata (ECEnablerCR enabler, uint32_t containerPropertyIndex);
 
     ECOBJECTS_EXPORT bool   IsSupported() const;
     uint32_t                GetContainerPropertyIndex() const { return m_containerIndex; }
 
-    ECOBJECTS_EXPORT static bool    IsSupported (ECEnablerCR enabler, WCharCP containerAccessString);
+    ECOBJECTS_EXPORT static bool    IsSupported (ECEnablerCR enabler, Utf8CP containerAccessString);
     ECOBJECTS_EXPORT static bool    IsSupported (ECEnablerCR enabler, uint32_t containerPropertyIndex);
     };
 
@@ -704,29 +704,29 @@ struct AdhocPropertyQuery : AdhocPropertyMetadata
 private:
     IECInstanceCR           m_host;
 public:
-    ECOBJECTS_EXPORT AdhocPropertyQuery (IECInstanceCR host, WCharCP containerAccessString);
+    ECOBJECTS_EXPORT AdhocPropertyQuery (IECInstanceCR host, Utf8CP containerAccessString);
     ECOBJECTS_EXPORT AdhocPropertyQuery (IECInstanceCR host, uint32_t containerPropertyIndex);
 
     IECInstanceCR                       GetHost() const { return m_host; }
 
-    ECOBJECTS_EXPORT bool               GetPropertyIndex (uint32_t& index, WCharCP accessString) const;
+    ECOBJECTS_EXPORT bool               GetPropertyIndex (uint32_t& index, Utf8CP accessString) const;
     ECOBJECTS_EXPORT uint32_t           GetCount() const;
 
-    ECOBJECTS_EXPORT ECObjectsStatus    GetName (WStringR name, uint32_t index) const;
-    ECOBJECTS_EXPORT ECObjectsStatus    GetDisplayLabel (WStringR label, uint32_t index) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    GetName (Utf8StringR name, uint32_t index) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    GetDisplayLabel (Utf8StringR label, uint32_t index) const;
     ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, uint32_t index) const;
     ECOBJECTS_EXPORT ECObjectsStatus    GetPrimitiveType (PrimitiveType& type, uint32_t index) const;
-    ECOBJECTS_EXPORT ECObjectsStatus    GetExtendedTypeName (WStringR typeName, uint32_t index) const;
-    ECOBJECTS_EXPORT ECObjectsStatus    GetUnitName (WStringR unitName, uint32_t index) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    GetExtendedTypeName (Utf8StringR typeName, uint32_t index) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    GetUnitName (Utf8StringR unitName, uint32_t index) const;
     ECOBJECTS_EXPORT ECObjectsStatus    IsReadOnly (bool& isReadOnly, uint32_t index) const;
     ECOBJECTS_EXPORT ECObjectsStatus    IsHidden (bool& isHidden, uint32_t index) const;
 
     // For getting additional ad-hoc metadata
-    ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, uint32_t index, WCharCP accessor) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    GetValue (ECValueR v, uint32_t index, Utf8CP accessor) const;
 
     IECInstancePtr          GetEntry (uint32_t index) const;
-    ECObjectsStatus         GetString (WStringR str, uint32_t index, Index which) const;
-    ECObjectsStatus         GetString (WStringR str, IECInstanceCR instance, Index which) const;
+    ECObjectsStatus         GetString (Utf8StringR str, uint32_t index, Index which) const;
+    ECObjectsStatus         GetString (Utf8StringR str, IECInstanceCR instance, Index which) const;
     ECObjectsStatus         GetValue (ECValueR v, uint32_t index, Index which) const;
     ECObjectsStatus         GetValue (ECValueR v, IECInstanceCR instance, Index which) const;
     ECClassCP               GetStructClass() const;
@@ -740,24 +740,24 @@ public:
 struct AdhocPropertyEdit : AdhocPropertyQuery
     {
 public:
-    ECOBJECTS_EXPORT AdhocPropertyEdit (IECInstanceR host, WCharCP containerAccessString);
+    ECOBJECTS_EXPORT AdhocPropertyEdit (IECInstanceR host, Utf8CP containerAccessString);
     ECOBJECTS_EXPORT AdhocPropertyEdit (IECInstanceR host, uint32_t containerPropertyIndex);
 
     IECInstanceR            GetHostR()  { return const_cast<IECInstanceR>(GetHost()); }
 
-    ECOBJECTS_EXPORT ECObjectsStatus    SetName (uint32_t index, WCharCP name);
-    ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel (uint32_t index, WCharCP displayLabel, bool andSetName = false);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetName (uint32_t index, Utf8CP name);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetDisplayLabel (uint32_t index, Utf8CP displayLabel, bool andSetName = false);
     ECOBJECTS_EXPORT ECObjectsStatus    SetValue (uint32_t index, ECValueCR v);
     ECOBJECTS_EXPORT ECObjectsStatus    SetIsReadOnly (uint32_t index, bool isReadOnly);
     ECOBJECTS_EXPORT ECObjectsStatus    SetIsHidden (uint32_t index, bool isHidden);
 
-    ECOBJECTS_EXPORT ECObjectsStatus    Add (WCharCP name, ECValueCR v, WCharCP displayLabel = nullptr, WCharCP unitName = nullptr, WCharCP extendedTypeName = nullptr, bool isReadOnly = false, bool hidden = false);
+    ECOBJECTS_EXPORT ECObjectsStatus    Add (Utf8CP name, ECValueCR v, Utf8CP displayLabel = nullptr, Utf8CP unitName = nullptr, Utf8CP extendedTypeName = nullptr, bool isReadOnly = false, bool hidden = false);
     ECOBJECTS_EXPORT ECObjectsStatus    Remove (uint32_t index);
     ECOBJECTS_EXPORT ECObjectsStatus    Clear();
     ECOBJECTS_EXPORT ECObjectsStatus    CopyFrom (AdhocPropertyQueryCR src, bool preserveValues);
 
     // For setting additional ad-hoc metadata
-    ECOBJECTS_EXPORT ECObjectsStatus    SetValue (uint32_t index, WCharCP accessor, ECValueCR v);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetValue (uint32_t index, Utf8CP accessor, ECValueCR v);
 
     ECOBJECTS_EXPORT ECObjectsStatus    Swap (uint32_t propIdxA, uint32_t propIdxB);
     };
@@ -908,7 +908,7 @@ public:
     //! Looks up and returns the ECProperty associated with this accessor
     ECOBJECTS_EXPORT ECN::ECPropertyCP      GetECProperty() const;
 
-    ECOBJECTS_EXPORT WString                GetDebugAccessString () const;
+    ECOBJECTS_EXPORT Utf8String             GetDebugAccessString () const;
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Gets the depth of this Location within the ECValueAccessor.
@@ -920,12 +920,12 @@ public:
     //! @param[in]      depth           The stack depth of the native access string.
     //! @return         The access string.
     //! @see            IECInstance
-    ECOBJECTS_EXPORT WCharCP                GetAccessString (uint32_t depth) const;
+    ECOBJECTS_EXPORT Utf8CP                 GetAccessString (uint32_t depth) const;
 
     //! Gets the native-style access string for the deepest Location in this ECValueAccessor. This access string does
     //! not contain an array index, and is compatible with the Get/Set methods in IECInstance.
     //! @return     The access string
-    ECOBJECTS_EXPORT WCharCP                GetAccessString () const;
+    ECOBJECTS_EXPORT Utf8CP                 GetAccessString () const;
 
     //! Appends a Location pointing to the specified property value
     //! @param[in]      enabler         The enabler containing the property
@@ -938,7 +938,7 @@ public:
     //! @param[in]      accessString    The access string of the property within its enabler
     //! @param[in]      arrayIndex      The array index of the property value, or INDEX_ROOT if no array index
     //! @return     true if the access string is valid for the enabler, otherwise false
-    ECOBJECTS_EXPORT bool  PushLocation (ECEnablerCR enabler, WCharCP accessString,   int arrayIndex=INDEX_ROOT);
+    ECOBJECTS_EXPORT bool  PushLocation (ECEnablerCR enabler, Utf8CP accessString,   int arrayIndex=INDEX_ROOT);
 
     //! Appends a Location pointing to the specified property value
     //! @param[in]      instance        The IECInstance containing the property value
@@ -951,7 +951,7 @@ public:
     //! @param[in]      accessString The access string identifying the property value within the IECInstance's ECEnabler
     //! @param[in]      arrayIndex   The array index of the property value, or INDEX_ROOT if no array index
     //! @return     true if the access string is valid for the IECInstance, otherwise false
-    ECOBJECTS_EXPORT bool  PushLocation (IECInstanceCR instance, WCharCP accessString,   int arrayIndex=INDEX_ROOT);
+    ECOBJECTS_EXPORT bool  PushLocation (IECInstanceCR instance, Utf8CP accessString,   int arrayIndex=INDEX_ROOT);
 
     //! Removes the deepest Location within this ECValueAccessor
     ECOBJECTS_EXPORT void       PopLocation ();
@@ -969,7 +969,7 @@ public:
 
     //! Gets the name of the ECProperty identified by this ECValueAccessor
     //! @return     the name of the ECProperty identified by this ECValueAccessor
-    ECOBJECTS_EXPORT WString               GetPropertyName () const;
+    ECOBJECTS_EXPORT Utf8String             GetPropertyName () const;
 
     //! Constructs an empty ECValueAccessor.
     ECOBJECTS_EXPORT ECValueAccessor () : m_isAdhoc (false) { }
@@ -984,7 +984,7 @@ public:
     //! managed code or the InteropHelper.
     //! @see            ECInstanceInteropHelper
     //! @private
-    ECOBJECTS_EXPORT WString               GetManagedAccessString () const;
+    ECOBJECTS_EXPORT Utf8String             GetManagedAccessString () const;
 
     //! Performs inequality comparison against the specified ECValueAccessor
     //! @param[in]      accessor The ECValueAccessor to compare against
@@ -1002,7 +1002,7 @@ public:
     //! @param[in]      managedPropertyAccessor The managed access string relative to the specified IECInstance
     //! @return     ECOBJECTS_STATUS_Success if the ECValueAccessor was successfully populated, otherwise an error status
     //! @private
-    ECOBJECTS_EXPORT static ECObjectsStatus PopulateValueAccessor (ECValueAccessor& va, IECInstanceCR instance, WCharCP managedPropertyAccessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus PopulateValueAccessor (ECValueAccessor& va, IECInstanceCR instance, Utf8CP managedPropertyAccessor);
 
     //! Populates an ECValueAccessor from an ECEnabler and a managed property access string.
     //! @param[in]      va                      The ECValueAccessor to populate
@@ -1010,9 +1010,9 @@ public:
     //! @param[in]      managedPropertyAccessor The managed access string relative to the specified ECEnabler
     //! @return     ECOBJECTS_STATUS_Success if the ECValueAccessor was successfully populated, otherwise an error status
     //! @private
-    ECOBJECTS_EXPORT static ECObjectsStatus PopulateValueAccessor (ECValueAccessor& va, ECEnablerCR enabler, WCharCP managedPropertyAccessor);
+    ECOBJECTS_EXPORT static ECObjectsStatus PopulateValueAccessor (ECValueAccessor& va, ECEnablerCR enabler, Utf8CP managedPropertyAccessor);
 //__PUBLISH_SECTION_END__
-    ECOBJECTS_EXPORT static ECObjectsStatus PopulateValueAccessor (ECValueAccessor& va, IECInstanceCR instance, WCharCP managedPropertyAccessor, bool includeAdhocs);
+    ECOBJECTS_EXPORT static ECObjectsStatus PopulateValueAccessor (ECValueAccessor& va, IECInstanceCR instance, Utf8CP managedPropertyAccessor, bool includeAdhocs);
 //__PUBLISH_SECTION_START__
     };
 
@@ -1047,7 +1047,7 @@ public:
     ECOBJECTS_EXPORT ECPropertyValue (IECInstanceCR, ECValueAccessorCR);
     ECOBJECTS_EXPORT ECPropertyValue (IECInstanceCR, ECValueAccessorCR, ECValueCR);
 
-    ECOBJECTS_EXPORT ECObjectsStatus    Initialize (IECInstanceCR, WCharCP accessString, ECValueCR);
+    ECOBJECTS_EXPORT ECObjectsStatus    Initialize (IECInstanceCR, Utf8CP accessString, ECValueCR);
 
     ECValueAccessorR    GetValueAccessorR ();
 
@@ -1076,7 +1076,7 @@ public:
     //! @param[in]      instance         The IECInstance containing the property value
     //! @param[in]      propertyAccessor The managed access string identifying the property value within the IECInstance
     //! @return     an ECPropertyValue pointing to the specified property value of the IECInstance, or nullptr if the property value could not be evaluated.
-    ECOBJECTS_EXPORT static ECPropertyValuePtr     GetPropertyValue (IECInstanceCR instance, WCharCP propertyAccessor);
+    ECOBJECTS_EXPORT static ECPropertyValuePtr     GetPropertyValue (IECInstanceCR instance, Utf8CP propertyAccessor);
     };
 
 //=======================================================================================

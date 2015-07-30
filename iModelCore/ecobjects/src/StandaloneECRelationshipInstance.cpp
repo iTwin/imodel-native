@@ -2,7 +2,7 @@
 |
 |     $Source: src/StandaloneECRelationshipInstance.cpp $
 |
-|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -87,7 +87,7 @@ ECEnablerCR         StandaloneECRelationshipInstance::_GetEnabler() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-WString        StandaloneECRelationshipInstance::_GetInstanceId() const
+Utf8String        StandaloneECRelationshipInstance::_GetInstanceId() const
     {
     return m_instanceId;
     }
@@ -95,7 +95,7 @@ WString        StandaloneECRelationshipInstance::_GetInstanceId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    05/11
 +---------------+---------------+---------------+---------------+---------------+------*/    
-ECObjectsStatus StandaloneECRelationshipInstance::_SetInstanceId (WCharCP instanceId)
+ECObjectsStatus StandaloneECRelationshipInstance::_SetInstanceId (Utf8CP instanceId)
     {
     m_instanceId = instanceId;
     return ECOBJECTS_STATUS_Success;
@@ -192,7 +192,7 @@ ECObjectsStatus           StandaloneECRelationshipInstance::_ClearArray (uint32_
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/    
-WString        StandaloneECRelationshipInstance::_ToString (WCharCP indent) const
+Utf8String        StandaloneECRelationshipInstance::_ToString (Utf8CP indent) const
     {
     return InstanceDataToString (indent);
     }
@@ -207,7 +207,7 @@ void            StandaloneECRelationshipInstance::_SetSource (IECInstanceP insta
 
     for (auto source : GetRelationshipClass().GetSource().GetConstraintClasses())
         {
-        if (source->GetClass().GetName().EqualsI (L"AnyClass") || instance->GetClass().Is(&source->GetClass()))
+        if (source->GetClass().GetName().EqualsI ("AnyClass") || instance->GetClass().Is(&source->GetClass()))
             {
             m_source = instance;
             return;
@@ -215,7 +215,7 @@ void            StandaloneECRelationshipInstance::_SetSource (IECInstanceP insta
         }
 
     BeAssert(false && "Invalid source instance");
-    LOG.warningv (L"Invalid source instance of class '%ls' for relationship class %ls", instance->GetClass().GetName().c_str(), GetRelationshipClass().GetName().c_str());
+    LOG.warningv ("Invalid source instance of class '%s' for relationship class %s", instance->GetClass().GetName().c_str(), GetRelationshipClass().GetName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -261,7 +261,7 @@ void            StandaloneECRelationshipInstance::_SetTarget (IECInstanceP insta
 
     for (auto target : this->GetRelationshipClass().GetTarget().GetConstraintClasses())
         {
-        if (target->GetClass().GetName().EqualsI (L"AnyClass") || instance->GetClass().Is(&target->GetClass()))
+        if (target->GetClass().GetName().EqualsI ("AnyClass") || instance->GetClass().Is(&target->GetClass()))
             {
             m_target = instance;
             return;
@@ -269,7 +269,7 @@ void            StandaloneECRelationshipInstance::_SetTarget (IECInstanceP insta
         }
 
     BeAssert(false && "Invalid target instance");
-    LOG.warningv (L"Invalid target instance of class '%ls' for relationship class %ls", instance->GetClass().GetName().c_str(), GetRelationshipClass().GetName().c_str());
+    LOG.warningv ("Invalid target instance of class '%s' for relationship class %s", instance->GetClass().GetName().c_str(), GetRelationshipClass().GetName().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -292,7 +292,7 @@ ECObjectsStatus StandaloneECRelationshipInstance::_GetTargetOrderId (int64_t& ta
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP     StandaloneECRelationshipInstance::GetName() 
+Utf8CP     StandaloneECRelationshipInstance::GetName() 
     {
     return m_name.c_str();
     }
@@ -300,7 +300,7 @@ WCharCP     StandaloneECRelationshipInstance::GetName()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void     StandaloneECRelationshipInstance::SetName (WCharCP name) 
+void     StandaloneECRelationshipInstance::SetName (Utf8CP name) 
     {
     if (name)
         m_name = name;

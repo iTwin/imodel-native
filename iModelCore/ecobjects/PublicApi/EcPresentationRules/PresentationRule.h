@@ -74,7 +74,7 @@ struct PresentationRule : public PresentationKey
     {
 //__PUBLISH_SECTION_END__
 private:
-    WString   m_condition;
+    Utf8String   m_condition;
     bool      m_onlyIfNotHandled;
 
 protected:
@@ -82,7 +82,7 @@ protected:
     ECOBJECTS_EXPORT PresentationRule ();
 
     //! Constructor.
-    ECOBJECTS_EXPORT PresentationRule (WStringCR condition, int priority, bool onlyIfNotHandled);
+    ECOBJECTS_EXPORT PresentationRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled);
 
     //! Reads rule information from XmlNode, returns true if it can read it successfully.
     ECOBJECTS_EXPORT virtual bool           _ReadXml (BeXmlNodeP xmlNode);
@@ -94,10 +94,10 @@ protected:
 //__PUBLISH_SECTION_START__
 public:
     //! Condition is an ECExpression string, which will be evaluated against the given context in order to decide whether to apply this rule or not.
-    ECOBJECTS_EXPORT WStringCR              GetCondition (void) const;
+    ECOBJECTS_EXPORT Utf8StringCR              GetCondition (void) const;
 
     //! Set condition ECExpression string, which will be evaluated against the given context in order to decide whether to apply this rule or not.
-    ECOBJECTS_EXPORT void                   SetCondition (WString value);
+    ECOBJECTS_EXPORT void                   SetCondition (Utf8String value);
 
     //! Returns true if this rule should be executed only in the case where there are no other higher priority rules for this particular cotext.
     ECOBJECTS_EXPORT bool                   GetOnlyIfNotHandled (void) const;

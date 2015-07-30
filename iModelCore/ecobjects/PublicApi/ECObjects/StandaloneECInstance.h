@@ -212,7 +212,7 @@ struct StandaloneECInstance : IECInstance
 //__PUBLISH_SECTION_END__
 friend struct StandaloneECEnabler;
 private:
-    WString                 m_instanceId;
+    Utf8String              m_instanceId;
     StandaloneECEnablerPtr  m_sharedWipEnabler;
     bool                    m_isSupportingInstance;
     ECSchemaPtr             m_boundSchema;
@@ -225,8 +225,8 @@ protected:
     ECOBJECTS_EXPORT ~StandaloneECInstance ();
 
     // IECInstance
-    ECOBJECTS_EXPORT virtual WString             _GetInstanceId() const override;
-    ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetInstanceId(WCharCP id) override;
+    ECOBJECTS_EXPORT virtual Utf8String          _GetInstanceId() const override;
+    ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetInstanceId(Utf8CP id) override;
     ECOBJECTS_EXPORT virtual bool                _IsReadOnly() const override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _GetValue (ECValueR v, uint32_t propertyIndex, bool useArrayIndex, uint32_t arrayIndex) const override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _SetValue (uint32_t propertyIndex, ECValueCR v, bool useArrayIndex, uint32_t arrayIndex) override;
@@ -235,7 +235,7 @@ protected:
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _AddArrayElements (uint32_t propIdx, uint32_t size) override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _RemoveArrayElement (uint32_t propIdx, uint32_t index) override;
     ECOBJECTS_EXPORT virtual ECObjectsStatus     _ClearArray (uint32_t propIdx) override;    
-    ECOBJECTS_EXPORT virtual WString             _ToString (WCharCP indent) const override;
+    ECOBJECTS_EXPORT virtual Utf8String          _ToString (Utf8CP indent) const override;
     ECOBJECTS_EXPORT virtual ClassLayoutCR       _GetClassLayout () const;
     ECOBJECTS_EXPORT virtual ECEnablerCR         _GetEnabler() const override;
     ECOBJECTS_EXPORT virtual MemoryECInstanceBase* _GetAsMemoryECInstance () const override;
@@ -275,14 +275,14 @@ struct IECWipRelationshipInstance : StandaloneECInstance
     protected:
         ECOBJECTS_EXPORT IECWipRelationshipInstance (StandaloneECEnablerR enabler) : StandaloneECInstance (enabler, 0){}
 
-        ECOBJECTS_EXPORT virtual BentleyStatus  _SetName (WCharCP name) = 0;
+        ECOBJECTS_EXPORT virtual BentleyStatus  _SetName (Utf8CP name) = 0;
         ECOBJECTS_EXPORT virtual BentleyStatus  _SetSourceOrderId (int64_t sourceOrderId) = 0;
         ECOBJECTS_EXPORT virtual BentleyStatus  _SetTargetOrderId (int64_t targetOrderId) = 0;
 
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
     public:
-        ECOBJECTS_EXPORT BentleyStatus  SetName (WCharCP name);
+        ECOBJECTS_EXPORT BentleyStatus  SetName (Utf8CP name);
         ECOBJECTS_EXPORT BentleyStatus  SetSourceOrderId (int64_t sourceOrderId);
         ECOBJECTS_EXPORT BentleyStatus  SetTargetOrderId (int64_t targetOrderId);
     };
@@ -302,9 +302,9 @@ protected:
     StandaloneECEnabler (ECClassCR ecClass, ClassLayoutR classLayout, IStandaloneEnablerLocaterP structStandaloneEnablerLocater);
     virtual ~StandaloneECEnabler();
 
-    virtual WCharCP                     _GetName() const override;
-    virtual ECObjectsStatus             _GetPropertyIndex (uint32_t& propertyIndex, WCharCP propertyAccessString) const override;
-    virtual ECObjectsStatus             _GetAccessString  (WCharCP& propertyAccessString, uint32_t propertyIndex) const override;
+    virtual Utf8CP                      _GetName() const override;
+    virtual ECObjectsStatus             _GetPropertyIndex (uint32_t& propertyIndex, Utf8CP propertyAccessString) const override;
+    virtual ECObjectsStatus             _GetAccessString  (Utf8CP& propertyAccessString, uint32_t propertyIndex) const override;
     virtual uint32_t                    _GetFirstPropertyIndex (uint32_t parentIndex) const override;
     virtual uint32_t                    _GetNextPropertyIndex  (uint32_t parentIndex, uint32_t inputIndex) const override;
     virtual bool                        _HasChildProperties (uint32_t parentIndex) const override;

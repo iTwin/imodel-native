@@ -62,14 +62,14 @@ int PresentationKey::GetPriority (void) const { return m_priority; }
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 PresentationRule::PresentationRule ()
-    : PresentationKey (), m_condition (L""), m_onlyIfNotHandled (false)
+    : PresentationKey (), m_condition (""), m_onlyIfNotHandled (false)
     {
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-PresentationRule::PresentationRule (WStringCR condition, int priority, bool onlyIfNotHandled)
+PresentationRule::PresentationRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled)
     : PresentationKey (priority), m_condition (condition), m_onlyIfNotHandled (onlyIfNotHandled)
     {
     }
@@ -81,7 +81,7 @@ bool PresentationRule::_ReadXml (BeXmlNodeP xmlNode)
     {
     //Optional:
     if (BEXML_Success != xmlNode->GetAttributeStringValue (m_condition, PRESENTATION_RULE_XML_ATTRIBUTE_CONDITION))
-        m_condition = L"";
+        m_condition = "";
 
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_onlyIfNotHandled, COMMON_XML_ATTRIBUTE_ONLYIFNOTHANDLED))
         m_onlyIfNotHandled = false;
@@ -101,12 +101,12 @@ void PresentationRule::_WriteXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR PresentationRule::GetCondition (void) const       { return m_condition; }
+Utf8StringCR PresentationRule::GetCondition (void) const       { return m_condition; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Tom.Amon                        03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PresentationRule::SetCondition (WString value)         { m_condition = value; }
+void PresentationRule::SetCondition (Utf8String value)         { m_condition = value; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012

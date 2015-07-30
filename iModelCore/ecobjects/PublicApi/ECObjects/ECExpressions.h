@@ -232,7 +232,7 @@ protected:
 
     virtual                     ~ExpressionContext () {}
                                 ExpressionContext(ExpressionContextP outer) : m_outer(outer), m_options (EVALOPT_Legacy) { }
-    virtual ExpressionStatus    _ResolveMethod(MethodReferencePtr& result, wchar_t const* ident, bool useOuterIfNecessary) { return ExprStatus_UnknownSymbol; }
+    virtual ExpressionStatus    _ResolveMethod(MethodReferencePtr& result, Utf8CP ident, bool useOuterIfNecessary) { return ExprStatus_UnknownSymbol; }
     virtual bool                _IsNamespace() const { return false; }
     //  If we provide this it must be implemented in every class that implements the _GetReference that uses more arguments.
     //  virtual ExpressionStatus    _GetReference(PrimaryListNodeR primaryList, bool useOuterIfNecessary) const { return ExprStatus_NotImpl; }
@@ -244,7 +244,7 @@ public:
 
     bool                        IsNamespace () const  { return _IsNamespace(); }
     ExpressionContextP          GetOuterP () const   { return m_outer.get(); }
-    ExpressionStatus            ResolveMethod(MethodReferencePtr& result, wchar_t const* ident, bool useOuterIfNecessary)
+    ExpressionStatus            ResolveMethod(MethodReferencePtr& result, Utf8CP ident, bool useOuterIfNecessary)
                                     { return _ResolveMethod(result, ident, useOuterIfNecessary); }
 
     ExpressionStatus            GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex = 0)
@@ -342,7 +342,7 @@ private:
 
 public:
     // This method is injected into ECObjects to provide symbols.
-    void PublishSymbols (SymbolExpressionContextR context, bvector<WString> const& requestedSymbolSets);
+    void PublishSymbols (SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets);
 
     // Register an IECSymbolProvider.
     void RegisterSymbolProvider (IECSymbolProviderCR provider);
@@ -391,7 +391,7 @@ private:
 
 protected:
 
-    ECOBJECTS_EXPORT virtual ExpressionStatus    _ResolveMethod(MethodReferencePtr& result, wchar_t const* ident, bool useOuterIfNecessary) override;
+    ECOBJECTS_EXPORT virtual ExpressionStatus    _ResolveMethod(MethodReferencePtr& result, Utf8CP ident, bool useOuterIfNecessary) override;
     ECOBJECTS_EXPORT virtual ExpressionStatus    _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
     ECOBJECTS_EXPORT virtual ExpressionStatus    _GetReference(EvaluationResultR evalResult, ReferenceResultR refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
 
@@ -400,12 +400,12 @@ protected:
 
 public:
 
-    ECOBJECTS_EXPORT SymbolCP       FindCP (wchar_t const* ident);
+    ECOBJECTS_EXPORT SymbolCP       FindCP (Utf8CP ident);
     ECOBJECTS_EXPORT BentleyStatus  RemoveSymbol (SymbolR symbol);
-    ECOBJECTS_EXPORT BentleyStatus  RemoveSymbol (wchar_t const* ident);
+    ECOBJECTS_EXPORT BentleyStatus  RemoveSymbol (Utf8CP ident);
 
     //! Creates a new SymbolExpressionContext using requested symbol sets and if an ECInstance is passed in it will publish it for "this" access
-    ECOBJECTS_EXPORT static SymbolExpressionContextPtr   CreateWithThis (bvector<WString> const& requestedSymbolSets, IECInstanceP instance = NULL);
+    ECOBJECTS_EXPORT static SymbolExpressionContextPtr   CreateWithThis (bvector<Utf8String> const& requestedSymbolSets, IECInstanceP instance = NULL);
 
 /*__PUBLISH_SECTION_START__*/
 public:
@@ -415,7 +415,7 @@ public:
     ECOBJECTS_EXPORT static SymbolExpressionContextPtr Create(ExpressionContextP outer);
     //! Creates a new SymbolExpressionContext from the given ExpressionContext and using sybmols from all the specified symbol sets. If the vector 
     //! is empty all available symbol are made available.
-    ECOBJECTS_EXPORT static SymbolExpressionContextPtr Create(bvector<WString> const& requestedSymbolSets, ExpressionContextP outer = NULL);
+    ECOBJECTS_EXPORT static SymbolExpressionContextPtr Create(bvector<Utf8String> const& requestedSymbolSets, ExpressionContextP outer = NULL);
 }; // End of class SymbolExpressionContext
 
 
@@ -428,17 +428,17 @@ struct          Symbol : RefCountedBase
 {
 /*__PUBLISH_SECTION_END__*/
 private:
-    WString     m_name;
+    Utf8String     m_name;
 
 protected:
-    Symbol (wchar_t const* name) : m_name (name) { }
+    Symbol (Utf8CP name) : m_name (name) { }
 
     virtual ExpressionStatus         _CreateMethodResult (MethodReferencePtr& result) const     { return ExprStatus_MethodRequired; };
     virtual ExpressionStatus         _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) = 0;
     virtual ExpressionStatus         _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) = 0;
 
 public:
-    wchar_t const*                       GetName() const { return m_name.c_str(); }
+    Utf8CP                          GetName() const { return m_name.c_str(); }
 
     ExpressionStatus                CreateMethodResult (MethodReferencePtr& result) const { return _CreateMethodResult (result); }
 
@@ -462,7 +462,7 @@ struct          ContextSymbol : Symbol
 protected:
     ExpressionContextPtr        m_context;
 
-                ContextSymbol (wchar_t const* name, ExpressionContextR context)
+                ContextSymbol (Utf8CP name, ExpressionContextR context)
                                     : Symbol(name), m_context(&context) {}
 
     virtual ExpressionStatus        _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
@@ -475,7 +475,7 @@ public:
     //! @param[in] name     The name to be used for this context symbol
     //! @param[in] context  The expression context to be used for this context
     //! @returns A new ContextSymbolPtr
-    ECOBJECTS_EXPORT static ContextSymbolPtr        CreateContextSymbol(wchar_t const* name, ExpressionContextR context);
+    ECOBJECTS_EXPORT static ContextSymbolPtr        CreateContextSymbol(Utf8CP name, ExpressionContextR context);
 };
 
 /*=================================================================================**//**
@@ -498,17 +498,17 @@ protected:
         return ExprStatus_Success;
         }
 
-    MethodSymbol(wchar_t const* name, MethodReferenceR methodReference);
-    MethodSymbol(wchar_t const* name, ExpressionValueListMethod_t valueListMethod);
+    MethodSymbol(Utf8CP name, MethodReferenceR methodReference);
+    MethodSymbol(Utf8CP name, ExpressionValueListMethod_t valueListMethod);
 
 public:
-    ECOBJECTS_EXPORT static MethodSymbolPtr     Create (WCharCP name, ExpressionValueListMethod_t valueListMethod);
+    ECOBJECTS_EXPORT static MethodSymbolPtr     Create (Utf8CP name, ExpressionValueListMethod_t valueListMethod);
 
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Creates a new method symbol context, using the supplied methods
-    ECOBJECTS_EXPORT static MethodSymbolPtr    Create(wchar_t const* name, ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod);
-    ECOBJECTS_EXPORT static MethodSymbolPtr    Create(wchar_t const* name, ExpressionStaticMethodWithContext_t staticMethod, void*context);
+    ECOBJECTS_EXPORT static MethodSymbolPtr    Create(Utf8CP name, ExpressionStaticMethod_t staticMethod, ExpressionInstanceMethod_t instanceMethod);
+    ECOBJECTS_EXPORT static MethodSymbolPtr    Create(Utf8CP name, ExpressionStaticMethodWithContext_t staticMethod, void*context);
 };
 
 /*=================================================================================**//**
@@ -543,14 +543,14 @@ private:
             static RefCountedPtr<PropertyEvaluator> Create (InstanceType const& instance, GetPropertyMethod method) { return new TemplatedPropertyEvaluator (instance, method); }
         };
 
-    ECOBJECTS_EXPORT static RefCountedPtr<PropertySymbol> Create (WCharCP name, RefCountedPtr<PropertyEvaluator> evaluator);
+    ECOBJECTS_EXPORT static RefCountedPtr<PropertySymbol> Create (Utf8CP name, RefCountedPtr<PropertyEvaluator> evaluator);
 
 /*__PUBLISH_SECTION_END__*/
 private:
     RefCountedPtr<PropertyEvaluator> m_evaluator;
 
 protected:
-    ECOBJECTS_EXPORT PropertySymbol (WCharCP name, RefCountedPtr<PropertyEvaluator> evaluator);
+    ECOBJECTS_EXPORT PropertySymbol (Utf8CP name, RefCountedPtr<PropertyEvaluator> evaluator);
     ECOBJECTS_EXPORT virtual ExpressionStatus _GetValue (EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
     virtual ExpressionStatus _GetReference (EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override 
         {
@@ -564,7 +564,7 @@ public:
     //! @param instance Instance of type InstanceType that will be used to invoke the provided method.
     //! @param method   The method that provides value for this property.
     template<class InstanceType, class ReturnValueType>
-    static RefCountedPtr<PropertySymbol> Create (WCharCP name, InstanceType const& instance, ReturnValueType (InstanceType::*method) () const) 
+    static RefCountedPtr<PropertySymbol> Create (Utf8CP name, InstanceType const& instance, ReturnValueType (InstanceType::*method) () const) 
         {
         return Create (name, TemplatedPropertyEvaluator<InstanceType, ReturnValueType>::Create (instance, method));
         }
@@ -577,16 +577,16 @@ public:
 struct      IECSymbolProvider
     {
 /*__PUBLISH_SECTION_END__*/
-    typedef void(*ExternalSymbolPublisher)(SymbolExpressionContextR, bvector<WString> const&);
+    typedef void(*ExternalSymbolPublisher)(SymbolExpressionContextR, bvector<Utf8String> const&);
 
 /*__PUBLISH_SECTION_START__*/
 protected:
-    virtual WCharCP                 _GetName() const = 0;
-    virtual void                    _PublishSymbols (SymbolExpressionContextR context, bvector<WString> const& requestedSymbolSets) const = 0;
+    virtual Utf8CP                  _GetName() const = 0;
+    virtual void                    _PublishSymbols (SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const = 0;
 public:
-    ECOBJECTS_EXPORT WCharCP        GetName() const
+    ECOBJECTS_EXPORT Utf8CP         GetName() const
                                         { return _GetName(); }
-    ECOBJECTS_EXPORT void           PublishSymbols (SymbolExpressionContextR context, bvector<WString> const& requestedSymbolSets) const
+    ECOBJECTS_EXPORT void           PublishSymbols (SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const
                                         { return _PublishSymbols (context, requestedSymbolSets); }
 /*__PUBLISH_SECTION_END__*/
     ECOBJECTS_EXPORT static void    RegisterExternalSymbolPublisher (ExternalSymbolPublisher externalPublisher);
@@ -697,8 +697,8 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct          ReferenceResult
 {
-    ECN::ECPropertyCP    m_property;
-    WString             m_accessString;
+    ECN::ECPropertyCP   m_property;
+    Utf8String          m_accessString;
     ::uint32_t          m_arrayIndex;
     int                 m_memberSelector;   // 1 for x, 2, for y, 3 for z
 };
@@ -792,14 +792,14 @@ private:
     EvaluationResult                m_expressionValue;
 
 protected:
-    ValueSymbol (wchar_t const* name, EvaluationResultCR exprValue);
+    ValueSymbol (Utf8CP name, EvaluationResultCR exprValue);
 
     virtual                         ~ValueSymbol();
     virtual ExpressionStatus        _GetValue(EvaluationResultR evalResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override;
     virtual ExpressionStatus        _GetReference(EvaluationResultR evalResult, ReferenceResult& refResult, PrimaryListNodeR primaryList, ExpressionContextR globalContext, ::uint32_t startIndex) override
                                                 { return ExprStatus_NeedsLValue; }
 public:
-    ECOBJECTS_EXPORT static ValueSymbolPtr  Create (wchar_t const* name, EvaluationResultCR value);
+    ECOBJECTS_EXPORT static ValueSymbolPtr  Create (Utf8CP name, EvaluationResultCR value);
 
     ECOBJECTS_EXPORT EvaluationResultCR     GetValue() const;
     ECOBJECTS_EXPORT void                   SetValue (EvaluationResultCR value);
@@ -807,7 +807,7 @@ public:
 
 /*__PUBLISH_SECTION_START__*/
     //! Creates a new ValueSymbol with the given name and given ECValue
-    ECOBJECTS_EXPORT static ValueSymbolPtr    Create(wchar_t const* name, ECN::ECValueCR exprValue);
+    ECOBJECTS_EXPORT static ValueSymbolPtr    Create(Utf8CP name, ECN::ECValueCR exprValue);
 
 };  //  End of ValueSymbol
 
@@ -851,7 +851,7 @@ private:
     LexerPtr            m_lexer;
     ExpressionContextPtr m_thisContext;
 
-    NodePtr         GetErrorNode(wchar_t const*  errorMessage, wchar_t const* detail1 = NULL, wchar_t const* detail2 = NULL);
+    NodePtr         GetErrorNode(Utf8CP errorMessage, Utf8CP detail1 = NULL, Utf8CP detail2 = NULL);
     NodePtr         Must (ExpressionToken s, NodeR inputNode);
     NodePtr         ParseArguments ();
 
@@ -869,7 +869,7 @@ private:
     NodePtr         ParseNot();
     NodePtr         ParseConjunction();
     NodePtr         ParseValueExpression();
-    NodePtr         ParseExpression(wchar_t const* expression, bool tryAssignment);
+    NodePtr         ParseExpression(Utf8CP expression, bool tryAssignment);
     NodePtr         ParseAssignment();
 
     bool            CheckComplete ();
@@ -878,9 +878,9 @@ private:
 /*__PUBLISH_SECTION_START__*/
 public:
     //! Parses a value expression and returns the root node of the expression tree.
-    ECOBJECTS_EXPORT static NodePtr  ParseValueExpressionAndCreateTree(wchar_t const* expression);
+    ECOBJECTS_EXPORT static NodePtr  ParseValueExpressionAndCreateTree(Utf8CP expression);
     //! Parses an assignment expression and returns the root node of the expression tree.
-    ECOBJECTS_EXPORT static NodePtr  ParseAssignmentExpressionAndCreateTree(wchar_t const* expression);
+    ECOBJECTS_EXPORT static NodePtr  ParseAssignmentExpressionAndCreateTree(Utf8CP expression);
 
     // Parses and evaluate a value expression and returns the result
     ECOBJECTS_EXPORT static ExpressionStatus  EvaluateExpression(EvaluationResult& result, WCharCP expr, ExpressionContextR context);
@@ -972,7 +972,7 @@ private:
 protected:
                         Node () { m_inParens = false; }
     virtual bool        _Traverse(NodeVisitorR visitor) const { return visitor.ProcessNode(*this); }
-    virtual WString     _ToString() const = 0;
+    virtual Utf8String  _ToString() const = 0;
 
     virtual ExpressionStatus _GetValue(EvaluationResult& evalResult, ExpressionContextR context)
         { return ExprStatus_NotImpl; }
@@ -1012,7 +1012,7 @@ public:
     bool                    SetRight (NodeR node) { return _SetRight (node); }
 
     ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateBooleanLiteral(bool literalValue);
-    ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateStringLiteral (wchar_t const* value, bool quoted);
+    ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateStringLiteral (Utf8CP value, bool quoted);
     ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateIntegerLiteral (int value);
     ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateInt64Literal(int64_t value);
     ECOBJECTS_EXPORT static ResolvedTypeNodePtr CreateFloatLiteral(double value);
@@ -1050,10 +1050,10 @@ public:
     ECOBJECTS_EXPORT bool  Traverse(NodeVisitorR visitor) const;
 
     //! Returns a string representation of the Node expression
-    ECOBJECTS_EXPORT WString  ToString() const;
+    ECOBJECTS_EXPORT Utf8String  ToString() const;
 
     //! Converts the Node expression into an expression string
-    ECOBJECTS_EXPORT WString  ToExpressionString() const;
+    ECOBJECTS_EXPORT Utf8String  ToExpressionString() const;
 };  //  End of struct Node
 
 /** @endGroup */

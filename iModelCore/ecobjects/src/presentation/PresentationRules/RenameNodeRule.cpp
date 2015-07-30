@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/RenameNodeRule.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -22,7 +22,7 @@ RenameNodeRule::RenameNodeRule () : PresentationRule ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                              dmitrijus.tiazlovas                   11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-RenameNodeRule::RenameNodeRule (WStringCR condition, int priority)
+RenameNodeRule::RenameNodeRule (Utf8StringCR condition, int priority)
     : PresentationRule (condition, priority, false)
     {
     }

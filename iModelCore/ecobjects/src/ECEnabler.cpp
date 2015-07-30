@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECEnabler.cpp $
 |
-|   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -27,7 +27,7 @@ ECEnabler::~ECEnabler()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandaloneECEnablerPtr          ECEnabler::_LocateStandaloneEnabler (SchemaKeyCR schemaKey, WCharCP className)  
+StandaloneECEnablerPtr          ECEnabler::_LocateStandaloneEnabler (SchemaKeyCR schemaKey, Utf8CP className)  
     {
     if (NULL != m_standaloneInstanceEnablerLocater)
         return m_standaloneInstanceEnablerLocater->LocateStandaloneEnabler (schemaKey, className);
@@ -46,7 +46,7 @@ StandaloneECEnablerPtr          ECEnabler::_LocateStandaloneEnabler (SchemaKeyCR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  01/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandaloneECEnablerPtr          ECEnabler::GetEnablerForStructArrayMember (SchemaKeyCR schemaName, WCharCP className)  
+StandaloneECEnablerPtr          ECEnabler::GetEnablerForStructArrayMember (SchemaKeyCR schemaName, Utf8CP className)  
     {
     return _LocateStandaloneEnabler (schemaName, className); 
     }
@@ -68,23 +68,23 @@ bool ECEnabler::_IsPropertyReadOnly (uint32_t propertyIndex) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECPropertyCP ECEnabler::_LookupECProperty (uint32_t propertyIndex) const
     {
-    WCharCP accessString;
+    Utf8CP accessString;
     return ECOBJECTS_STATUS_Success == GetAccessString (accessString, propertyIndex) ? _LookupECProperty (accessString) : NULL;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ECPropertyCP propertyFromAccessString (ECClassCR ecClass, WCharCP accessString)
+static ECPropertyCP propertyFromAccessString (ECClassCR ecClass, Utf8CP accessString)
     {
-    WCharCP dot = wcschr (accessString, '.');
+    Utf8CP dot = strchr (accessString, '.');
     if (NULL == dot)
         {
         return ecClass.GetPropertyP (accessString);
         }
     else
         {
-        WString structName (accessString, dot);
+        Utf8String structName (accessString, dot);
         ECPropertyCP prop = ecClass.GetPropertyP (structName.c_str());
         if (NULL == prop)
             { BeAssert (false); return NULL; }
@@ -99,7 +99,7 @@ static ECPropertyCP propertyFromAccessString (ECClassCR ecClass, WCharCP accessS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyCP ECEnabler::_LookupECProperty (WCharCP accessString) const
+ECPropertyCP ECEnabler::_LookupECProperty (Utf8CP accessString) const
     {
     return propertyFromAccessString (GetClass(), accessString);
     }
@@ -108,10 +108,10 @@ ECPropertyCP ECEnabler::_LookupECProperty (WCharCP accessString) const
 * @bsimethod                                                    CaseyMullen     10/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClassCR           ECEnabler::GetClass() const  { return m_ecClass; }
-WCharCP             ECEnabler::GetName() const { return _GetName(); }
-ECObjectsStatus     ECEnabler::GetPropertyIndex (uint32_t& propertyIndex, WCharCP accessString) const { return _GetPropertyIndex (propertyIndex, accessString); }
+Utf8CP              ECEnabler::GetName() const { return _GetName(); }
+ECObjectsStatus     ECEnabler::GetPropertyIndex (uint32_t& propertyIndex, Utf8CP accessString) const { return _GetPropertyIndex (propertyIndex, accessString); }
 
-ECObjectsStatus     ECEnabler::GetAccessString  (WCharCP& accessString, uint32_t propertyIndex) const { return _GetAccessString  (accessString, propertyIndex); }
+ECObjectsStatus     ECEnabler::GetAccessString  (Utf8CP& accessString, uint32_t propertyIndex) const { return _GetAccessString  (accessString, propertyIndex); }
 uint32_t            ECEnabler::GetFirstPropertyIndex (uint32_t parentIndex) const { return _GetFirstPropertyIndex (parentIndex); }
 uint32_t            ECEnabler::GetNextPropertyIndex  (uint32_t parentIndex, uint32_t inputIndex) const { return _GetNextPropertyIndex (parentIndex, inputIndex); }
 bool                ECEnabler::HasChildProperties (uint32_t parentIndex) const { return _HasChildProperties (parentIndex); }
@@ -119,7 +119,7 @@ uint32_t            ECEnabler::GetParentPropertyIndex (uint32_t childIndex) cons
 ECObjectsStatus     ECEnabler::GetPropertyIndices (bvector<uint32_t>& indices, uint32_t parentIndex) const{ return _GetPropertyIndices (indices, parentIndex); };
 IStandaloneEnablerLocaterR ECEnabler::GetStandaloneEnablerLocater() { return *this; }
 ECPropertyCP        ECEnabler::LookupECProperty (uint32_t propertyIndex) const { return _LookupECProperty (propertyIndex); }
-ECPropertyCP        ECEnabler::LookupECProperty (WCharCP accessString) const { return _LookupECProperty (accessString); }
+ECPropertyCP        ECEnabler::LookupECProperty (Utf8CP accessString) const { return _LookupECProperty (accessString); }
 bool                ECEnabler::IsPropertyReadOnly (uint32_t propertyIndex) const { return _IsPropertyReadOnly (propertyIndex); }
 
 #if defined (EXPERIMENTAL_TEXT_FILTER)

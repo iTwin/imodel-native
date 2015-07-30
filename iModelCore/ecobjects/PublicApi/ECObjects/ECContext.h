@@ -70,7 +70,7 @@ public:
 
     IECSchemaRemapperCP GetRemapper() const                         { return m_remapper; }
     void                SetRemapper (IECSchemaRemapperCP remapper)  { m_remapper = remapper; }
-    void                ResolveClassName (WStringR serializedClassName, ECSchemaCR schema) const;
+    void                ResolveClassName (Utf8StringR serializedClassName, ECSchemaCR schema) const;
 //__PUBLISH_CLASS_VIRTUAL__
 //__PUBLISH_SECTION_START__
 public:
@@ -171,8 +171,8 @@ public:
 
     void                    SetSchemaRemapper (IECSchemaRemapperCP remapper) { m_schemaRemapper = remapper; }
     void                    SetTypeResolver (IPrimitiveTypeResolver const* resolver) { m_typeResolver = resolver; }
-    void                    ResolveSerializedPropertyName (WStringR name, ECClassCR ecClass) const  { if (NULL != m_schemaRemapper) m_schemaRemapper->ResolvePropertyName (name, ecClass); }
-    void                    ResolveSerializedClassName (WStringR name, ECSchemaCR schema) const     { if (NULL != m_schemaRemapper) m_schemaRemapper->ResolveClassName (name, schema); }
+    void                    ResolveSerializedPropertyName (Utf8StringR name, ECClassCR ecClass) const  { if (NULL != m_schemaRemapper) m_schemaRemapper->ResolvePropertyName (name, ecClass); }
+    void                    ResolveSerializedClassName (Utf8StringR name, ECSchemaCR schema) const     { if (NULL != m_schemaRemapper) m_schemaRemapper->ResolveClassName (name, schema); }
 
     ECSchemaCP  FindSchemaCP(SchemaKeyCR key, SchemaMatchType matchType) const;
 

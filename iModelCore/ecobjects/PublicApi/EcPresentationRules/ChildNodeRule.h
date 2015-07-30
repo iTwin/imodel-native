@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/ChildNodeRule.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -88,7 +88,7 @@ struct ChildNodeRule : public PresentationRule
         ECOBJECTS_EXPORT ChildNodeRule ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT ChildNodeRule (WStringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree);
+        ECOBJECTS_EXPORT ChildNodeRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree);
 
         //! Destructor.
         ECOBJECTS_EXPORT                                ~ChildNodeRule (void);
@@ -139,7 +139,7 @@ struct RootNodeRule : public ChildNodeRule
         ECOBJECTS_EXPORT RootNodeRule ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT RootNodeRule (WStringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree, bool autoExpand);
+        ECOBJECTS_EXPORT RootNodeRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree, bool autoExpand);
 
         //! Returns flag which determines if nodes have to be automatically expanded.
         ECOBJECTS_EXPORT bool                           GetAutoExpand (void);

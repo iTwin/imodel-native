@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/RenameNodeRule.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -35,7 +35,7 @@ struct RenameNodeRule : public PresentationRule
         ECOBJECTS_EXPORT RenameNodeRule ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT RenameNodeRule (WStringCR condition, int priority);
+        ECOBJECTS_EXPORT RenameNodeRule (Utf8StringCR condition, int priority);
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

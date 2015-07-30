@@ -2,7 +2,7 @@
 |
 |     $Source: src/presentation/PresentationRules/CheckBoxRule.cpp $
 |
-|   $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -16,7 +16,7 @@ USING_NAMESPACE_EC
 * @bsimethod                                    Andrius.Zonys                   11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 CheckBoxRule::CheckBoxRule ()
-    : PresentationRule (), m_propertyName (L""), m_useInversedPropertyValue (false), m_defaultValue (false)
+    : PresentationRule (), m_propertyName (""), m_useInversedPropertyValue (false), m_defaultValue (false)
     {
     }
 
@@ -25,10 +25,10 @@ CheckBoxRule::CheckBoxRule ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 CheckBoxRule::CheckBoxRule
 (
-WStringCR condition,
+Utf8StringCR condition,
 int       priority,
 bool      onlyIfNotHandled,
-WStringCR propertyName,
+Utf8StringCR propertyName,
 bool      useInversedPropertyValue,
 bool      defaultValue
 ) : PresentationRule (condition, priority, onlyIfNotHandled), m_propertyName (propertyName), 
@@ -50,7 +50,7 @@ CharCP CheckBoxRule::_GetXmlElementName ()
 bool CheckBoxRule::_ReadXml (BeXmlNodeP xmlNode)
     {
     if (BEXML_Success != xmlNode->GetAttributeStringValue  (m_propertyName, COMMON_XML_ATTRIBUTE_PROPERTYNAME))
-        m_propertyName = L"";
+        m_propertyName = "";
 
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue (m_useInversedPropertyValue, CHECKBOX_RULE_XML_ATTRIBUTE_USEINVERSEDPROPERTYVALUE))
         m_useInversedPropertyValue = false;
@@ -76,7 +76,7 @@ void CheckBoxRule::_WriteXml (BeXmlNodeP xmlNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   11/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR CheckBoxRule::GetPropertyName (void) const { return m_propertyName; }
+Utf8StringCR CheckBoxRule::GetPropertyName (void) const { return m_propertyName; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Andrius.Zonys                   11/2012

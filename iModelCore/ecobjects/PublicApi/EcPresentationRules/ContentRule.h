@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/ContentRule.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -25,7 +25,7 @@ struct ContentRule : public PresentationRule
     /*__PUBLISH_SECTION_END__*/
     private:
         ContentSpecificationList  m_specifications;
-        WString                   m_customControl;
+        Utf8String                   m_customControl;
 
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
@@ -43,7 +43,7 @@ struct ContentRule : public PresentationRule
         ECOBJECTS_EXPORT ContentRule ();
 
         //! Constructor.
-        ECOBJECTS_EXPORT ContentRule (WStringCR condition, int priority, bool onlyIfNotHandled);
+        ECOBJECTS_EXPORT ContentRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled);
 
         //! Destructor.
         ECOBJECTS_EXPORT                                ~ContentRule (void);
@@ -52,10 +52,10 @@ struct ContentRule : public PresentationRule
         ECOBJECTS_EXPORT ContentSpecificationList&      GetSpecifications (void);
 
         //! Returns display type of custom control which should display content of this rule.
-        ECOBJECTS_EXPORT WStringCR                      GetCustomControl (void);
+        ECOBJECTS_EXPORT Utf8StringCR                      GetCustomControl (void);
 
         //! Sets display type of custom control which should display content of this rule.
-        ECOBJECTS_EXPORT void                           SetCustomControl (WStringCR customControl);
+        ECOBJECTS_EXPORT void                           SetCustomControl (Utf8StringCR customControl);
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

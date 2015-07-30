@@ -15,11 +15,11 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 SupplementalSchemaMetaData::SupplementalSchemaMetaData
 (
-WString primarySchemaName, 
+Utf8String primarySchemaName, 
 uint32_t primarySchemaMajorVersion, 
 uint32_t primarySchemaMinorVersion, 
 uint32_t supplementalSchemaPrecedence, 
-WString supplementalSchemaPurpose, 
+Utf8String supplementalSchemaPurpose, 
 bool isUserSpecific 
 )
     {
@@ -31,7 +31,7 @@ bool isUserSpecific
     m_isUserSpecific               = isUserSpecific;
     }
 
-WCharCP SupplementalSchemaMetaData::s_customAttributeAccessor = L"SupplementalSchemaMetaData";
+Utf8CP SupplementalSchemaMetaData::s_customAttributeAccessor = "SupplementalSchemaMetaData";
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2012
@@ -45,7 +45,7 @@ IECInstanceCR supplementalSchemaMetaDataCustomAttribute
 
     ECValue propertyValue;
     if (ECOBJECTS_STATUS_Success == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPrimarySchemaNamePropertyAccessor()) && !propertyValue.IsNull())
-        m_primarySchemaName = propertyValue.GetString();
+        m_primarySchemaName = propertyValue.GetUtf8CP();
 
     if (ECOBJECTS_STATUS_Success == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPrimarySchemaMajorVersionPropertyAccessor()) && !propertyValue.IsNull())
         m_primarySchemaMajorVersion = propertyValue.GetInteger();
@@ -57,7 +57,7 @@ IECInstanceCR supplementalSchemaMetaDataCustomAttribute
         m_supplementalSchemaPrecedence = propertyValue.GetInteger();
 
     if (ECOBJECTS_STATUS_Success == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetPurposePropertyAccessor()) && !propertyValue.IsNull())
-        m_supplementalSchemaPurpose = propertyValue.GetString();
+        m_supplementalSchemaPurpose = propertyValue.GetUtf8CP();
 
     if (ECOBJECTS_STATUS_Success == supplementalSchemaMetaDataCustomAttribute.GetValue(propertyValue, GetIsUserSpecificPropertyAccessor()) && !propertyValue.IsNull())
         m_isUserSpecific = propertyValue.GetBoolean();
@@ -68,11 +68,11 @@ IECInstanceCR supplementalSchemaMetaDataCustomAttribute
 +---------------+---------------+---------------+---------------+---------------+------*/
 SupplementalSchemaMetaDataPtr SupplementalSchemaMetaData::Create
 ( 
-WString primarySchemaName, 
+Utf8String primarySchemaName, 
 uint32_t primarySchemaMajorVersion, 
 uint32_t primarySchemaMinorVersion, 
 uint32_t supplementalSchemaPrecedence, 
-WString supplementalSchemaPurpose, 
+Utf8String supplementalSchemaPurpose, 
 bool isUserSpecific
 )
     {
@@ -90,61 +90,61 @@ SupplementalSchemaMetaDataPtr SupplementalSchemaMetaData::Create(IECInstanceCR s
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP SupplementalSchemaMetaData::GetCustomAttributeAccessor()
+Utf8CP SupplementalSchemaMetaData::GetCustomAttributeAccessor()
     {
     return s_customAttributeAccessor;
     }
 
-static WCharCP s_primarySchemaNameAccessor = L"PrimarySchemaName";
+static Utf8CP s_primarySchemaNameAccessor = "PrimarySchemaName";
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP SupplementalSchemaMetaData::GetPrimarySchemaNamePropertyAccessor()
+Utf8CP SupplementalSchemaMetaData::GetPrimarySchemaNamePropertyAccessor()
     {
     return s_primarySchemaNameAccessor;
     }
 
-static WCharCP s_primarySchemaVersionMajorAccessor = L"PrimarySchemaMajorVersion";
+static Utf8CP s_primarySchemaVersionMajorAccessor = "PrimarySchemaMajorVersion";
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP SupplementalSchemaMetaData::GetPrimarySchemaMajorVersionPropertyAccessor()
+Utf8CP SupplementalSchemaMetaData::GetPrimarySchemaMajorVersionPropertyAccessor()
     {
     return s_primarySchemaVersionMajorAccessor;
     }
 
-static WCharCP s_primarySchemaVersionMinorAccessor = L"PrimarySchemaMinorVersion";
+static Utf8CP s_primarySchemaVersionMinorAccessor = "PrimarySchemaMinorVersion";
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP SupplementalSchemaMetaData::GetPrimarySchemaMinorVersionPropertyAccessor()
+Utf8CP SupplementalSchemaMetaData::GetPrimarySchemaMinorVersionPropertyAccessor()
     {
     return s_primarySchemaVersionMinorAccessor;
     }
 
-static WCharCP s_precedenceAccessor = L"Precedence";
+static Utf8CP s_precedenceAccessor = "Precedence";
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP SupplementalSchemaMetaData::GetPrecedencePropertyAccessor()
+Utf8CP SupplementalSchemaMetaData::GetPrecedencePropertyAccessor()
     {
     return s_precedenceAccessor;
     }
 
-static WCharCP s_purposeAccessor = L"Purpose";
+static Utf8CP s_purposeAccessor = "Purpose";
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP SupplementalSchemaMetaData::GetPurposePropertyAccessor()
+Utf8CP SupplementalSchemaMetaData::GetPurposePropertyAccessor()
     {
     return s_purposeAccessor;
     }
 
-static WCharCP s_isUserSpecificAccessor = L"IsUserSpecific";
+static Utf8CP s_isUserSpecificAccessor = "IsUserSpecific";
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP SupplementalSchemaMetaData::GetIsUserSpecificPropertyAccessor()
+Utf8CP SupplementalSchemaMetaData::GetIsUserSpecificPropertyAccessor()
     {
     return s_isUserSpecificAccessor;
     }
@@ -212,7 +212,7 @@ IECInstancePtr SupplementalSchemaMetaData::CreateCustomAttribute()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR SupplementalSchemaMetaData::GetPrimarySchemaName() const
+Utf8StringCR SupplementalSchemaMetaData::GetPrimarySchemaName() const
     {
     return m_primarySchemaName;
     }
@@ -222,7 +222,7 @@ WStringCR SupplementalSchemaMetaData::GetPrimarySchemaName() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SupplementalSchemaMetaData::SetPrimarySchemaName
 (
-WStringCR name
+Utf8StringCR name
 )
     {
     m_primarySchemaName = name;
@@ -288,7 +288,7 @@ uint32_t precedence
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                04/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCR SupplementalSchemaMetaData::GetSupplementalSchemaPurpose() const
+Utf8StringCR SupplementalSchemaMetaData::GetSupplementalSchemaPurpose() const
     {
     return m_supplementalSchemaPurpose;
     }
@@ -298,7 +298,7 @@ WStringCR SupplementalSchemaMetaData::GetSupplementalSchemaPurpose() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SupplementalSchemaMetaData::SetSupplementalSchemaPurpose
 (
-WStringCR purpose
+Utf8StringCR purpose
 )
     {
     m_supplementalSchemaPurpose = purpose;
@@ -328,7 +328,7 @@ bool userSpecific
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SupplementalSchemaMetaData::IsForPrimarySchema
 (
-WStringCR querySchemaName, 
+Utf8StringCR querySchemaName, 
 uint32_t querySchemaMajorVersion, 
 uint32_t querySchemaMinorVersion, 
 SchemaMatchType matchType
@@ -349,7 +349,7 @@ bvector<ECSchemaP>& supplementalSchemaList,
 bool createCopyOfSupplementalCustomAttribute
 )
     {
-    return UpdateSchema(primarySchema, supplementalSchemaList, L"", createCopyOfSupplementalCustomAttribute);
+    return UpdateSchema(primarySchema, supplementalSchemaList, "", createCopyOfSupplementalCustomAttribute);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -359,7 +359,7 @@ SupplementedSchemaStatus SupplementedSchemaBuilder::UpdateSchema
 (
 ECSchemaR           primarySchema,
 bvector<ECSchemaP>& supplementalSchemaList,
-WCharCP             locale,
+Utf8CP locale,
 bool createCopyOfSupplementalCustomAttribute
 )
     {
@@ -391,8 +391,8 @@ bool createCopyOfSupplementalCustomAttribute
     ApplyLocalizationSupplementals(primarySchema, locale, localizationSchemas);
     
     timer.Stop();
-    WString primarySchemaName = primarySchema.GetFullSchemaName();
-    LOG.infov (L"Supplemented (in %.4f seconds) %ls with %d supplemental ECSchemas", timer.GetElapsedSeconds(), 
+    Utf8String primarySchemaName = primarySchema.GetFullSchemaName();
+    LOG.infov ("Supplemented (in %.4f seconds) %s with %d supplemental ECSchemas", timer.GetElapsedSeconds(), 
         primarySchemaName.c_str(), supplementalSchemaList.size());
 
     return status;
@@ -404,13 +404,13 @@ bool createCopyOfSupplementalCustomAttribute
 void SupplementedSchemaBuilder::ApplyLocalizationSupplementals
 (
 ECSchemaR primarySchema,
-WCharCP locale,
+Utf8CP locale,
 bvector<ECSchemaP>& localizationSchemas
 )
     {
     ECSchemaP locSchema = nullptr;
     // If not locale specified use the first localization supplemental found.
-    if (0 == wcscmp(L"", locale))
+    if (0 == strcmp("", locale))
         {
         if (localizationSchemas.begin() != localizationSchemas.end ())
             {
@@ -422,7 +422,7 @@ bvector<ECSchemaP>& localizationSchemas
         {
         for (ECSchemaP supplemental : localizationSchemas)
             {
-            if (0 == wcscmp(locale, SchemaLocalizedStrings::GetLocaleFromSupplementalSchema(supplemental).c_str()))
+            if (0 == strcmp(locale, SchemaLocalizedStrings::GetLocaleFromSupplementalSchema(supplemental).c_str()))
                 {
                 locSchema = supplemental;
                 }
@@ -431,7 +431,7 @@ bvector<ECSchemaP>& localizationSchemas
     if (nullptr == locSchema)
         return;
 
-    LOG.debugv("Applying localizations from %ls to %ls", locSchema->GetName().c_str(), primarySchema.GetName().c_str());
+    LOG.debugv("Applying localizations from %s to %s", locSchema->GetName().c_str(), primarySchema.GetName().c_str());
 
     primarySchema.m_localizedStrings = SchemaLocalizedStrings(locSchema, primarySchema);
     }
@@ -497,9 +497,9 @@ ECSchemaP schema2
     ECSchemaPtr mergedSchema;
     schema1->CopySchema(mergedSchema);  //Do we need to copy it?
 
-    WString supplementalSchemaFullName = schema2->GetFullSchemaName();
-    WString mergedSchemaFullName = schema1->GetFullSchemaName();
-    LOG.infov (L"Merging %ls into %ls", supplementalSchemaFullName.c_str(), mergedSchemaFullName.c_str());
+    Utf8String supplementalSchemaFullName = schema2->GetFullSchemaName();
+    Utf8String mergedSchemaFullName = schema1->GetFullSchemaName();
+    LOG.infov ("Merging %s into %s", supplementalSchemaFullName.c_str(), mergedSchemaFullName.c_str());
     MergeCustomAttributeClasses(*mergedSchema, schema2->GetPrimaryCustomAttributes(false), SCHEMA_PRECEDENCE_Equal, &supplementalSchemaFullName, &mergedSchemaFullName);
 
     SupplementedSchemaStatus status = SUPPLEMENTED_SCHEMA_STATUS_Success;
@@ -520,8 +520,8 @@ SupplementedSchemaStatus SupplementedSchemaBuilder::MergeClassesWithEqualPrecede
 (
 ECSchemaP mergedSchema, 
 ECClassP supplementalClass, 
-WStringCR supplementalSchemaFullName, 
-WStringCR mergedSchemaFullName
+Utf8StringCR supplementalSchemaFullName, 
+Utf8StringCR mergedSchemaFullName
 )
     {
     ECClassP mergedClass = mergedSchema->GetClassP(supplementalClass->GetName().c_str());
@@ -609,12 +609,12 @@ SchemaPrecedence precedence
 )
     {
     ECCustomAttributeInstanceIterable supplementalCustomAttributes = supplementalSchema->GetCustomAttributes(false);
-    WString supplementalSchemaFullName = supplementalSchema->GetFullSchemaName();
+    Utf8String supplementalSchemaFullName = supplementalSchema->GetFullSchemaName();
 
     SupplementedSchemaStatus status = MergeCustomAttributeClasses(primarySchema.GetCustomAttributeContainer(), supplementalCustomAttributes, precedence, &supplementalSchemaFullName, NULL);
     if (SUPPLEMENTED_SCHEMA_STATUS_Success != status)
         {
-        LOG.errorv (L"Failed to merge the custom attributes from the supplemental schema '%ls' into the supplemented schema '%ls'", supplementalSchemaFullName.c_str(), primarySchema.GetFullSchemaName().c_str());
+        LOG.errorv ("Failed to merge the custom attributes from the supplemental schema '%s' into the supplemented schema '%s'", supplementalSchemaFullName.c_str(), primarySchema.GetFullSchemaName().c_str());
         return status;
         }
 
@@ -623,7 +623,7 @@ SchemaPrecedence precedence
         status = SupplementClass(primarySchema, supplementalSchema, ecClass, precedence, &supplementalSchemaFullName);
         if (SUPPLEMENTED_SCHEMA_STATUS_Success != status)
             {
-            LOG.errorv(L"Failed to merge the custom attributes from the supplemental class '%ls' into the supplemented class '%ls:%ls'",
+            LOG.errorv("Failed to merge the custom attributes from the supplemental class '%s' into the supplemented class '%s:%s'",
                                            ecClass->GetFullName(),  primarySchema.GetFullSchemaName().c_str(), ecClass->GetName().c_str());
             return status;
             }
@@ -640,15 +640,15 @@ ECN::SupplementedSchemaStatus SupplementedSchemaBuilder::MergeCustomAttributeCla
 IECCustomAttributeContainerR consolidatedCustomAttributeContainer, 
 ECCustomAttributeInstanceIterable supplementalCustomAttributes, 
 SchemaPrecedence precedence, 
-WStringCP supplementalSchemaFullName, 
-WStringCP consolidatedSchemaFullName 
+Utf8StringCP supplementalSchemaFullName, 
+Utf8StringCP consolidatedSchemaFullName 
 )
     {
     SupplementedSchemaStatus status = SUPPLEMENTED_SCHEMA_STATUS_Success;
     for (IECInstancePtr const & customAttribute: supplementalCustomAttributes)
         {
-        WString className = customAttribute->GetClass().GetName();
-        if (0 == wcscmp(SupplementalSchemaMetaData::GetCustomAttributeAccessor(), className.c_str()))
+        Utf8String className = customAttribute->GetClass().GetName();
+        if (0 == strcmp(SupplementalSchemaMetaData::GetCustomAttributeAccessor(), className.c_str()))
             continue;
 
         IECInstancePtr supplementalCustomAttribute = m_createCopyOfSupplementalCustomAttribute ? customAttribute->CreateCopyThroughSerialization() : customAttribute;
@@ -669,11 +669,11 @@ WStringCP consolidatedSchemaFullName
             consolidatedCustomAttribute = localCustomAttribute;
 
         // We don't use merging delegates like in the managed world, but Units custom attributes still need to be treated specially
-        if (customAttribute->GetClass().GetSchema().GetName().EqualsI(L"Unit_Attributes"))  // changed from "Unit_Attributes.01.00" - ECSchema::GetName() does not include the version numbers...
+        if (customAttribute->GetClass().GetSchema().GetName().EqualsI("Unit_Attributes"))  // changed from "Unit_Attributes.01.00" - ECSchema::GetName() does not include the version numbers...
             {
-            if (customAttribute->GetClass().GetName().EqualsI(L"UnitSpecification"))
+            if (customAttribute->GetClass().GetName().EqualsI("UnitSpecification"))
                 status = MergeUnitSpecificationCustomAttribute(consolidatedCustomAttributeContainer, *supplementalCustomAttribute, consolidatedCustomAttribute.get(), precedence);
-            else if (customAttribute->GetClass().GetName().EqualsI(L"UnitSpecifications"))
+            else if (customAttribute->GetClass().GetName().EqualsI("UnitSpecifications"))
                 status = MergeUnitSpecificationsCustomAttribute(consolidatedCustomAttributeContainer, *supplementalCustomAttribute, consolidatedCustomAttribute.get(), precedence);
             else
                 status = MergeStandardCustomAttribute(consolidatedCustomAttributeContainer, *supplementalCustomAttribute, consolidatedCustomAttribute.get(), precedence);
@@ -739,7 +739,7 @@ ECSchemaR primarySchema,
 ECSchemaP supplementalSchema,
 ECClassP supplementalECClass,
 SchemaPrecedence precedence,
-WStringCP supplementalSchemaFullName
+Utf8StringCP supplementalSchemaFullName
 )
     {
     SupplementedSchemaStatus status = SUPPLEMENTED_SCHEMA_STATUS_Success;
@@ -749,7 +749,7 @@ WStringCP supplementalSchemaFullName
 
     if (supplementalECClass->HasBaseClasses())
         {
-        LOG.errorv(L"The class '%ls' from the Supplemental Schema '%ls' has one or more base classes.  This is not allowed.",
+        LOG.errorv("The class '%s' from the Supplemental Schema '%s' has one or more base classes.  This is not allowed.",
             supplementalECClass->GetName().c_str(), supplementalSchemaFullName->c_str());
         return SUPPLEMENTED_SCHEMA_STATUS_SupplementalClassHasBaseClass;
         }
@@ -785,17 +785,17 @@ ECRelationshipClassP supplementalECRelationshipClass,
 SchemaPrecedence precedence
 )
     {
-    WString supplementalSchemaFullName = supplementalECRelationshipClass->GetSchema().GetFullSchemaName();
+    Utf8String supplementalSchemaFullName = supplementalECRelationshipClass->GetSchema().GetFullSchemaName();
 
     ECRelationshipClassP consolidatedECRelationshipClass = consolidatedECClass ? consolidatedECClass->GetRelationshipClassP() : NULL;
     if (NULL == consolidatedECRelationshipClass)
         {
-        LOG.errorv(L"The supplemental class is an ECRelationshipClass but the primary class is not.  Class name: '%ls.%ls'",
+        LOG.errorv("The supplemental class is an ECRelationshipClass but the primary class is not.  Class name: '%s.%s'",
             supplementalSchemaFullName.c_str(), supplementalECRelationshipClass->GetName().c_str());
         return SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
         }
 
-    WString consolidatedSchemaFullName = consolidatedECRelationshipClass->GetSchema().GetFullSchemaName();
+    Utf8String consolidatedSchemaFullName = consolidatedECRelationshipClass->GetSchema().GetFullSchemaName();
 
     SupplementedSchemaStatus status;
     status = MergeCustomAttributeClasses(consolidatedECRelationshipClass->GetTarget(), supplementalECRelationshipClass->GetTarget().GetCustomAttributes(false),
@@ -832,7 +832,7 @@ SchemaPrecedence precedence
             ECPropertyP inheritedECProperty = consolidatedECClass->GetPropertyP(supplementalECProperty->GetName(), true);
             if (NULL == inheritedECProperty)
                 {
-                LOG.debugv(L"%ls supplements non-existent ECProperty %ls.%ls",
+                LOG.debugv("%s supplements non-existent ECProperty %s.%s",
                     supplementalECClass->GetFullName(), consolidatedECClass->GetFullName(), supplementalECProperty->GetName().c_str());
                 continue;
                 }
@@ -852,7 +852,7 @@ SchemaPrecedence precedence
                 }
             }
 
-        WString schemaName = supplementalECClass->GetSchema().GetFullSchemaName();
+        Utf8String schemaName = supplementalECClass->GetSchema().GetFullSchemaName();
         status = MergeCustomAttributeClasses(*consolidatedECProperty, supplementalCustomAttributes, precedence, &schemaName, NULL);
         if (SUPPLEMENTED_SCHEMA_STATUS_Success != status)
             return status;
@@ -885,7 +885,7 @@ SchemaPrecedence precedence
         IECInstancePtr primaryCustomAttribute = consolidatedCustomAttributeContainer.GetPrimaryCustomAttribute(customAttributeClass);
         if (primaryCustomAttribute.IsValid())
             {
-            LOG.errorv(L"The ECCustomAttribute: %ls:%ls exists in the same place in two ECSchemas that have the same precedence",
+            LOG.errorv("The ECCustomAttribute: %s:%s exists in the same place in two ECSchemas that have the same precedence",
                 customAttributeClass.GetSchema().GetFullSchemaName().c_str(), customAttributeClass.GetName().c_str());
             return SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
             }
@@ -903,7 +903,7 @@ SchemaPrecedence precedence
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static SupplementedSchemaStatus mergeAttributeProperty (IECInstanceR to, IECInstanceCR from, WCharCP accessor, bool checkForConflict)
+static SupplementedSchemaStatus mergeAttributeProperty (IECInstanceR to, IECInstanceCR from, Utf8CP accessor, bool checkForConflict)
     {
     ECValue vFrom;
     from.GetValue (vFrom, accessor);
@@ -928,12 +928,12 @@ static SupplementedSchemaStatus mergeAttributeProperty (IECInstanceR to, IECInst
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool allowableUnitsContains (WCharCP search, IECInstanceCR instance, uint32_t size)
+static bool allowableUnitsContains (Utf8CP search, IECInstanceCR instance, uint32_t size)
     {
     ECValue v;
     for (uint32_t i = 0; i < size; i++)
         {
-        if (ECOBJECTS_STATUS_Success == instance.GetValue (v, L"AllowableUnits", i) && !v.IsNull() && 0 == wcscmp (search, v.GetString()))
+        if (ECOBJECTS_STATUS_Success == instance.GetValue (v, "AllowableUnits", i) && !v.IsNull() && 0 == strcmp (search, v.GetUtf8CP()))
             return true;
         }
 
@@ -945,7 +945,7 @@ static bool allowableUnitsContains (WCharCP search, IECInstanceCR instance, uint
 +---------------+---------------+---------------+---------------+---------------+------*/
 static SupplementedSchemaStatus mergeUnitSpecification (IECInstanceR to, IECInstanceCR from, bool detectConflicts)
     {
-    WCharCP propertyNames[] = { L"DimensionName", L"KindOfQuantityName", L"UnitName" };
+    Utf8CP propertyNames[] = { "DimensionName", "KindOfQuantityName", "UnitName" };
     for (size_t i = 0; i < _countof(propertyNames); i++)
         {
         SupplementedSchemaStatus mergeStatus = mergeAttributeProperty (to, from, propertyNames[i], detectConflicts);
@@ -957,8 +957,8 @@ static SupplementedSchemaStatus mergeUnitSpecification (IECInstanceR to, IECInst
         {
         // Native code doesn't use AllowableUnits, but we have to compare them for managed (though managed doesn't really seem to use them either...)
         ECValue listTo, listFrom;
-        to.GetValue (listTo, L"AllowableUnits");
-        from.GetValue (listFrom, L"AllowableUnits");
+        to.GetValue (listTo, "AllowableUnits");
+        from.GetValue (listFrom, "AllowableUnits");
         if (listTo.IsNull() != listFrom.IsNull())
             return SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException; // they differ
         else if (!listTo.IsNull())  // both are non-null, compare them
@@ -973,7 +973,7 @@ static SupplementedSchemaStatus mergeUnitSpecification (IECInstanceR to, IECInst
             for (uint32_t i = 0; i < size; i++)
                 {
                 ECValue v;
-                if (ECOBJECTS_STATUS_Success == to.GetValue (v, L"AllowableUnits", i) && !v.IsNull() && !allowableUnitsContains (v.GetString(), from, size))
+                if (ECOBJECTS_STATUS_Success == to.GetValue (v, "AllowableUnits", i) && !v.IsNull() && !allowableUnitsContains (v.GetUtf8CP(), from, size))
                     return SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException; // unit in one list not found in another
                 }
             }
@@ -1015,15 +1015,15 @@ SchemaPrecedence precedence
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void buildUnitSpecificationKey (WStringR key, IECInstanceCR spec)
+static void buildUnitSpecificationKey (Utf8StringR key, IECInstanceCR spec)
     {
     ECValue v;
-    if (ECOBJECTS_STATUS_Success == spec.GetValue (v, L"KindOfQuantityName") && !v.IsNull())
-        key = v.GetString();
-    else if (ECOBJECTS_STATUS_Success == spec.GetValue (v, L"DimensionName") && !v.IsNull())
-        key = v.GetString();
+    if (ECOBJECTS_STATUS_Success == spec.GetValue (v, "KindOfQuantityName") && !v.IsNull())
+        key = v.GetUtf8CP();
+    else if (ECOBJECTS_STATUS_Success == spec.GetValue (v, "DimensionName") && !v.IsNull())
+        key = v.GetUtf8CP();
     else
-        key = L"@#$";   // a Dimension or KOQ name must be a valid ECClass name, so any invalid string suffices to represent "KindOfQuantity and Dimension not present"
+        key = "@#$";   // a Dimension or KOQ name must be a valid ECClass name, so any invalid string suffices to represent "KindOfQuantity and Dimension not present"
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1048,19 +1048,19 @@ SchemaPrecedence precedence
         bool detectConflicts = SCHEMA_PRECEDENCE_Equal == precedence;
 
         ECValue toList, fromList;
-        to->GetValue (toList, L"UnitSpecificationList");
-        from->GetValue (fromList, L"UnitSpecificationList");
+        to->GetValue (toList, "UnitSpecificationList");
+        from->GetValue (fromList, "UnitSpecificationList");
 
         ArrayInfo toInfo    = toList.GetArrayInfo();
         ArrayInfo fromInfo  = fromList.GetArrayInfo();
 
         // build the set UnitSpecification instances in destination list
-        bmap<WString, IECInstancePtr> toSpecs;
-        WString unitSpecKey;
+        bmap<Utf8String, IECInstancePtr> toSpecs;
+        Utf8String unitSpecKey;
         for (uint32_t i = 0; i < toInfo.GetCount(); i++)
             {
             ECValue spec;
-            if (ECOBJECTS_STATUS_Success == to->GetValue (spec, L"UnitSpecificationList", i) && !spec.IsNull())
+            if (ECOBJECTS_STATUS_Success == to->GetValue (spec, "UnitSpecificationList", i) && !spec.IsNull())
                 {
                 buildUnitSpecificationKey (unitSpecKey, *spec.GetStruct());
                 toSpecs[unitSpecKey] = spec.GetStruct();
@@ -1072,10 +1072,10 @@ SchemaPrecedence precedence
         for (uint32_t i = 0; i < fromInfo.GetCount(); i++)
             {
             ECValue spec;
-            if (ECOBJECTS_STATUS_Success == from->GetValue (spec, L"UnitSpecificationList", i) && !spec.IsNull())
+            if (ECOBJECTS_STATUS_Success == from->GetValue (spec, "UnitSpecificationList", i) && !spec.IsNull())
                 {
                 buildUnitSpecificationKey (unitSpecKey, *spec.GetStruct());
-                bmap<WString, IECInstancePtr>::const_iterator found = toSpecs.find (unitSpecKey);
+                bmap<Utf8String, IECInstancePtr>::const_iterator found = toSpecs.find (unitSpecKey);
                 if (toSpecs.end() != found)
                     {
                     SupplementedSchemaStatus mergeStatus = mergeUnitSpecification (*(found->second), *spec.GetStruct(), detectConflicts);
@@ -1085,11 +1085,11 @@ SchemaPrecedence precedence
                 else
                     {
                     // add the spec
-                    to->AddArrayElements (L"UnitSpecificationList", 1);
+                    to->AddArrayElements ("UnitSpecificationList", 1);
                     ++specCount;
                     ECValue newSpec;
                     newSpec.SetStruct (spec.GetStruct().get());
-                    to->SetValue (L"UnitSpecificationList", newSpec, specCount - 1);
+                    to->SetValue ("UnitSpecificationList", newSpec, specCount - 1);
                     }
                 }
             }
@@ -1100,22 +1100,22 @@ SchemaPrecedence precedence
     return ECOBJECTS_STATUS_Success == SetMergedCustomAttribute (consolidatedCustomAttributeContainer, *attributeToStore, precedence) ? SUPPLEMENTED_SCHEMA_STATUS_Success : SUPPLEMENTED_SCHEMA_STATUS_SchemaMergeException;
     }
 
-WCharCP SupplementalSchemaInfo::s_customAttributeAccessor = L"SupplementalProvenance";
+Utf8CP SupplementalSchemaInfo::s_customAttributeAccessor = "SupplementalProvenance";
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 SupplementalSchemaInfo::SupplementalSchemaInfo
 (
-WStringCR primarySchemaFullName, 
+Utf8StringCR primarySchemaFullName, 
 SchemaNamePurposeMap& schemaFullNameToPurposeMapping
 ) : m_primarySchemaFullName(primarySchemaFullName)
     {
     SchemaNamePurposeMap::const_iterator iter;
     for (iter = schemaFullNameToPurposeMapping.begin(); iter != schemaFullNameToPurposeMapping.end(); iter++)
         {
-        bpair<WString, WString>const& entry = *iter;
-        m_supplementalSchemaNamesAndPurpose[WString(entry.first)] = WString(entry.second);
+        bpair<Utf8String, Utf8String>const& entry = *iter;
+        m_supplementalSchemaNamesAndPurpose[Utf8String(entry.first)] = Utf8String(entry.second);
         }
     }
 
@@ -1124,7 +1124,7 @@ SchemaNamePurposeMap& schemaFullNameToPurposeMapping
 +---------------+---------------+---------------+---------------+---------------+------*/
 SupplementalSchemaInfoPtr SupplementalSchemaInfo::Create
 (
-WStringCR primarySchemaFullName, 
+Utf8StringCR primarySchemaFullName, 
 SchemaNamePurposeMap& schemaFullNameToPurposeMapping
 )
     {
@@ -1136,7 +1136,7 @@ SchemaNamePurposeMap& schemaFullNameToPurposeMapping
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus SupplementalSchemaInfo::GetSupplementalSchemaNames
 (
-bvector<WString>& supplementalSchemaNames
+bvector<Utf8String>& supplementalSchemaNames
 ) const
     {
     if (m_supplementalSchemaNamesAndPurpose.size() < 1)
@@ -1147,7 +1147,7 @@ bvector<WString>& supplementalSchemaNames
     SchemaNamePurposeMap::const_iterator iter;
     for (iter = m_supplementalSchemaNamesAndPurpose.begin(); iter != m_supplementalSchemaNamesAndPurpose.end(); iter++)
         {
-        bpair<WString, WString>const& entry = *iter;
+        bpair<Utf8String, Utf8String>const& entry = *iter;
         supplementalSchemaNames.push_back(entry.first);
         }
 
@@ -1157,9 +1157,9 @@ bvector<WString>& supplementalSchemaNames
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-WStringCP SupplementalSchemaInfo::GetPurposeOfSupplementalSchema
+Utf8StringCP SupplementalSchemaInfo::GetPurposeOfSupplementalSchema
 (
-WStringCR fullSchemaName
+Utf8StringCR fullSchemaName
 ) const
     {
     SchemaNamePurposeMap::const_iterator iter;
@@ -1174,8 +1174,8 @@ WStringCR fullSchemaName
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus SupplementalSchemaInfo::GetSupplementalSchemasWithPurpose
 (
-bvector<WString>& supplementalSchemaNames, 
-WStringCR purpose
+bvector<Utf8String>& supplementalSchemaNames, 
+Utf8StringCR purpose
 ) const
     {
     if (m_supplementalSchemaNamesAndPurpose.size() < 1)
@@ -1186,8 +1186,8 @@ WStringCR purpose
     SchemaNamePurposeMap::const_iterator iter;
     for (iter = m_supplementalSchemaNamesAndPurpose.begin(); iter != m_supplementalSchemaNamesAndPurpose.end(); iter++)
         {
-        bpair<WString, WString>const& entry = *iter;
-        WString storedPurpose = entry.second;
+        bpair<Utf8String, Utf8String>const& entry = *iter;
+        Utf8String storedPurpose = entry.second;
         if (0 == storedPurpose.CompareTo(purpose))
             supplementalSchemaNames.push_back(entry.first);
         }
@@ -1201,11 +1201,11 @@ WStringCR purpose
 bool SupplementalSchemaInfo::HasSameSupplementalSchemasForPurpose
 (
 ECSchemaCR secondSchema, 
-WStringCR purpose
+Utf8StringCR purpose
 ) const
     {
-    bvector<WString> supplementalSchemas;
-    bvector<WString> secondSupplementalSchemas;
+    bvector<Utf8String> supplementalSchemas;
+    bvector<Utf8String> secondSupplementalSchemas;
     GetSupplementalSchemasWithPurpose(supplementalSchemas, purpose);
     SupplementalSchemaInfoPtr schemaInfo = secondSchema.GetSupplementalInfo();
     if (!schemaInfo.IsValid())
@@ -1218,10 +1218,10 @@ WStringCR purpose
     if (supplementalSchemas.size() != secondSupplementalSchemas.size())
         return false;
 
-    bvector<WString>::const_iterator namesInSchema;
+    bvector<Utf8String>::const_iterator namesInSchema;
     for (namesInSchema = supplementalSchemas.begin(); namesInSchema != supplementalSchemas.end(); ++namesInSchema)
         {
-        WString name = *namesInSchema;
+        Utf8String name = *namesInSchema;
         bool foundIt = false;
         for (size_t i = 0; i < secondSupplementalSchemas.size(); i++)
             {
@@ -1240,7 +1240,7 @@ WStringCR purpose
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-WCharCP SupplementalSchemaInfo::GetCustomAttributeAccessor()
+Utf8CP SupplementalSchemaInfo::GetCustomAttributeAccessor()
     {
     return s_customAttributeAccessor;
     }
@@ -1254,7 +1254,7 @@ IECInstancePtr SupplementalSchemaInfo::CreateCustomAttribute()
     if (!instance.IsValid())
         return instance;
 
-    ECClassCP schemaNameAndPurpose = StandardCustomAttributeHelper::GetCustomAttributeClass(L"SchemaNameAndPurpose");
+    ECClassCP schemaNameAndPurpose = StandardCustomAttributeHelper::GetCustomAttributeClass("SchemaNameAndPurpose");
     if (NULL == schemaNameAndPurpose)
         return instance;
 
@@ -1265,18 +1265,18 @@ IECInstancePtr SupplementalSchemaInfo::CreateCustomAttribute()
     uint32_t arrayIndex = 0;
     for (iter = m_supplementalSchemaNamesAndPurpose.begin(); iter != m_supplementalSchemaNamesAndPurpose.end(); iter++)
         {
-        bpair<WString, WString>const& entry = *iter;
-        WString storedPurpose = entry.second;
+        bpair<Utf8String, Utf8String>const& entry = *iter;
+        Utf8String storedPurpose = entry.second;
         StandaloneECInstancePtr memberInst = memberEnabler->CreateInstance().get();
 
         ECValue v1(entry.first.c_str());
-        memberInst->SetValue(L"SchemaName", v1);
+        memberInst->SetValue("SchemaName", v1);
         ECValue v2(entry.second.c_str());
-        memberInst->SetValue(L"Purpose", v2);
+        memberInst->SetValue("Purpose", v2);
 
         ECValue v;
         v.SetStruct (memberInst.get());
-        instance->SetValue (L"SupplementalSchemaNamesAndPurposes", v, arrayIndex++);
+        instance->SetValue ("SupplementalSchemaNamesAndPurposes", v, arrayIndex++);
 
         }
 

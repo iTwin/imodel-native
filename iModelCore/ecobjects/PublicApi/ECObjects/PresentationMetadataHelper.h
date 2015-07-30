@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/PresentationMetadataHelper.h $
 |
-|   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -56,10 +56,10 @@ private:
 /*__PUBLISH_SECTION_END__*/
     struct CustomAttributeData;
 
-    IECInstancePtr          CreateInstance (WCharCP className) const;
+    IECInstancePtr          CreateInstance (Utf8CP className) const;
     ECObjectsStatus         EnsureSchemaReference (IECCustomAttributeContainerR container) const;
-    ECObjectsStatus         CreateCustomAttribute (IECCustomAttributeContainerR container, WCharCP className, CustomAttributeData const* data = NULL) const;
-    ECObjectsStatus         CreateCustomAttribute (IECCustomAttributeContainerR container, WCharCP className, CustomAttributeData const& data) const;
+    ECObjectsStatus         CreateCustomAttribute (IECCustomAttributeContainerR container, Utf8CP className, CustomAttributeData const* data = NULL) const;
+    ECObjectsStatus         CreateCustomAttribute (IECCustomAttributeContainerR container, Utf8CP className, CustomAttributeData const& data) const;
 
 public:
     ECOBJECTS_EXPORT PresentationMetadataHelper (ECSchemaR editorCustomAttributesSchema);
@@ -85,7 +85,7 @@ public:
     //! @param[in]      expand       
     //! @param[in]      description  
     //! @return ECOBJECTS_STATUS_Success if the custom attribute was applied
-    ECOBJECTS_EXPORT ECObjectsStatus    SetCustomCategory (ECPropertyR ecproperty, WCharCP uniqueName, WCharCP displayLabel, int32_t priority, bool expand = false, WCharCP description = NULL) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    SetCustomCategory (ECPropertyR ecproperty, Utf8CP uniqueName, Utf8CP displayLabel, int32_t priority, bool expand = false, Utf8CP description = NULL) const;
 
     // ###TODO: move standard types enum down from DgnPlatform?
     //! Sets the standard extended type for the property
@@ -98,7 +98,7 @@ public:
     //! @param ecproperty       The property to which to apply the custom attribute
     //! @param extendTypeName   The name of the extended type.
     //! @return ECOBJECTS_STATUS_Success if the custom attribute was applied
-    ECOBJECTS_EXPORT ECObjectsStatus    SetExtendedType (ECPropertyR ecproperty, WCharCP extendTypeName) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    SetExtendedType (ECPropertyR ecproperty, Utf8CP extendTypeName) const;
 
     // ###TODO: move standard types enum down from DgnPlatform?
     //! Sets the standard extended type for members of the array property
@@ -111,7 +111,7 @@ public:
     //! @param ecproperty       The property to which to apply the custom attribute
     //! @param extendTypeName   The name of the extended type.
     //! @return ECOBJECTS_STATUS_Success if the custom attribute was applied
-    ECOBJECTS_EXPORT ECObjectsStatus    SetMemberExtendedType (ArrayECPropertyR ecproperty, WCharCP extendTypeName) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    SetMemberExtendedType (ArrayECPropertyR ecproperty, Utf8CP extendTypeName) const;
 
     //! Sets the PropertyPriority for the property
     //! @param ecproperty   The property to which to apply the custom attribute

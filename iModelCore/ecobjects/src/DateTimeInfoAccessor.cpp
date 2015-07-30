@@ -2,7 +2,7 @@
 |
 |     $Source: src/DateTimeInfoAccessor.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -12,12 +12,12 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 // @bsimethod                                    Krischan.Eberle                 02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-WCharCP const DateTimeInfoAccessor::DATETIMEINFO_CLASSNAME = L"DateTimeInfo";
+Utf8CP const DateTimeInfoAccessor::DATETIMEINFO_CLASSNAME = "DateTimeInfo";
 
 //static
-WCharCP const DateTimeInfoAccessor::DATETIMEINFO_KIND_PROPERTYNAME = L"DateTimeKind";
+Utf8CP const DateTimeInfoAccessor::DATETIMEINFO_KIND_PROPERTYNAME = "DateTimeKind";
 //static
-WCharCP const DateTimeInfoAccessor::DATETIMEINFO_COMPONENT_PROPERTYNAME = L"DateTimeComponent";
+Utf8CP const DateTimeInfoAccessor::DATETIMEINFO_COMPONENT_PROPERTYNAME = "DateTimeComponent";
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 02/2013
@@ -115,7 +115,7 @@ bool DateTimeInfoAccessor::TryParseKind (bool& isKindNull, DateTime::Kind& kind,
 
     if (ecValue.IsUtf8 ())
         {
-        Utf8CP kindStr = ecValue.GetUtf8CP ();
+        Utf8CP kindStr = ecValue.GetUtf8CP();
         return TryParseKind (isKindNull, kind, kindStr);
         }
     else
@@ -211,7 +211,7 @@ bool DateTimeInfoAccessor::TryParseComponent (bool& isComponentNull, DateTime::C
 
     if (ecValue.IsUtf8 ())
         {
-        return TryParseComponent (isComponentNull, component, ecValue.GetUtf8CP ());
+        return TryParseComponent (isComponentNull, component, ecValue.GetUtf8CP());
         }
     else
         {
@@ -283,9 +283,9 @@ bool DateTimeInfoAccessor::TryParseComponent (bool& isComponentNull, DateTime::C
 // @bsimethod                                    Krischan.Eberle                 02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-void DateTimeInfoAccessor::LogPropertyNotFoundError (WCharCP propertyName)
+void DateTimeInfoAccessor::LogPropertyNotFoundError (Utf8CP propertyName)
     {
-    LOG.errorv (L"Property '%ls' not found in custom attribute class '%ls'.", propertyName, DATETIMEINFO_CLASSNAME);
+    LOG.errorv ("Property '%ls' not found in custom attribute class '%s'.", propertyName, DATETIMEINFO_CLASSNAME);
     BeAssert (false);
     }
 END_BENTLEY_ECOBJECT_NAMESPACE
