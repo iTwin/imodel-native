@@ -2131,8 +2131,6 @@ private:
     SchemaWriteStatus                   WritePropertyDependencies (BeXmlWriterR xmlWriter, ECClassCR ecClass, ECSchemaWriteContext&) const;
     void                                CollectAllSchemasInGraph (bvector<ECN::ECSchemaCP>& allSchemas,  bool includeRootSchema) const;
 
-    bool                                IsSupplementalSchema();
-
 protected:
     virtual ECSchemaCP                  _GetContainerSchema() const override;
 
@@ -2229,6 +2227,10 @@ public:
     //! @remarks FullName, NamespacePrefix, and ClassCount are checked
     //! @return True    if the schemas are the same
     ECOBJECTS_EXPORT bool               IsSamePrimarySchema(ECSchemaR primarySchema) const;
+
+    //! Indicates whether this schema is a supplemental schema or not.
+    //! @return True if this schema is a supplemental schema
+    ECOBJECTS_EXPORT bool               IsSupplementalSchema() const;
 
     //! Returns true if the schema is a supplemented schema
     //! @return True if the schema is a supplemented schema

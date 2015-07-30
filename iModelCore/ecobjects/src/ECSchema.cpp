@@ -457,6 +457,17 @@ ECSchemaR primarySchema
     return (GetClassCount() == primarySchema.GetClassCount());
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                07/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECSchema::IsSupplementalSchema
+(
+) const
+    {
+    SupplementalSchemaMetaDataPtr suppMetaData = nullptr;
+    return SupplementalSchemaMetaData::TryGetFromSchema(suppMetaData, *this);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
