@@ -26,8 +26,7 @@ MOBILEDGN_TRANSLATABLE_STRINGS_START (ConnectL10N, Connect)
     FIELDAPPS_Password,                      // =="Password"==
     FIELDAPPS_ForgotPassword,                // =="Forgot Password?"==
     FIELDAPPS_SignIn,                        // =="Sign in"==
-    FIELDAPPS_SignInSubText,                 // =="Access your Bentley Services"==
-    FIELDAPPS_ProductDemo,                   // =="Product Demo"==
+    FIELDAPPS_ProductDemo,                   // =="Demo"==
     FIELDAPPS_EmailAndPasswordRequired,      // =="You must enter an email address and password."==
     FIELDAPPS_Error,                         // =="Error"==
     FIELDAPPS_SignInFailed,                  // =="Sign In Failed"==
