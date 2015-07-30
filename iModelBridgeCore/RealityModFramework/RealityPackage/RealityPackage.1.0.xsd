@@ -76,11 +76,14 @@
     </xs:complexType>
     
     <!-- =========================================================== -->
-    <xs:complexType name="DataEntryType">
-        <xs:choice>
-            <xs:element name="Source" type="SourceType" maxOccurs="1"/>
-            <xs:element name="WmsSource" type="WmsSourceType" maxOccurs="1"/>            
-        </xs:choice>
+    <xs:complexType name="DataEntryType">  
+		<xs:sequence>	
+			<xs:element name="Copyright" type="xs:string" minOccurs="0" maxOccurs="1"/>
+			<xs:choice>
+				<xs:element name="Source" type="SourceType" maxOccurs="1"/>
+				<xs:element name="WmsSource" type="WmsSourceType" maxOccurs="1"/>            
+			</xs:choice>
+		</xs:sequence>
     </xs:complexType>
 
     <!-- =========================================================== -->

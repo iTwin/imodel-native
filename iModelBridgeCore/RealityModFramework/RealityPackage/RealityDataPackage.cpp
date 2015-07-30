@@ -455,7 +455,11 @@ WString RealityDataPackage::BuildCreationDateUTC()
 //=======================================================================================
 RealityDataSourceR RealityData::GetSourceR() {return *m_pSource;}
 RealityDataSourceCR RealityData::GetSource() const {return *m_pSource;}
+Utf8StringCR RealityData::GetCopyright() const { return m_copyright; }
+void RealityData::SetCopyright(Utf8CP dataCopyright) { m_copyright = dataCopyright; }
+
 RealityData::RealityData(RealityDataSourceR dataSource):m_pSource(&dataSource){}
+RealityData::RealityData(RealityDataSourceR dataSource, Utf8CP dataCopyright) : m_pSource(&dataSource), m_copyright(dataCopyright) {}
 RealityData::~RealityData(){}
 
 //----------------------------------------------------------------------------------------
@@ -465,9 +469,12 @@ RealityPackageStatus RealityData::_Read(BeXmlNodeR dataNode)
     {
     RealityPackageStatus status = RealityPackageStatus::MissingDataSource;
 
-    // Source should be the the first child element but we loop over all children to be more flexible.
+    // Copyright should be the first child element followed by a source node.
     for (BeXmlNodeP pChildElement = dataNode.GetFirstChild(); NULL != pChildElement; pChildElement = pChildElement->GetNextSibling())
         {
+        if (pChildElement->IsName("Copyright"))
+            pChildElement->GetContent(m_copyright);
+
         m_pSource = RealityDataSourceSerializer::Get().Load(status, *pChildElement);
         if(RealityPackageStatus::UnknownElementType != status)
             break;  // either we loaded the source or we had an error loading it.
@@ -485,6 +492,10 @@ RealityPackageStatus RealityData::_Write(BeXmlNodeR dataNode) const
     {
     if(!m_pSource.IsValid())
         return RealityPackageStatus::MissingDataSource;
+
+    BeXmlNodeP pCopyrightNode = dataNode.AddElementStringValue(PACKAGE_ELEMENT_Copyright, m_copyright.c_str());
+    if (NULL == pCopyrightNode)
+        return RealityPackageStatus::UnknownError;
 
     return RealityDataSourceSerializer::Get().Store(*m_pSource, dataNode);
     }
