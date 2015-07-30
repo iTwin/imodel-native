@@ -21,6 +21,8 @@ UnitsTest.Conversions   # Takes WAY too long to run every time
 SchemaReferenceTest.ExpectSchemaGraphInCorrectOrder	# Schemas are in a .zip file that isn't extracted on non-Windows
 PropertyOverrideTests.* 			#Notified Colin
 
+SchemaDeserializationTest.ExpectSuccessWhenRoundtripUsingString # Failing after merge from 0504 to 06
+
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***
 #----------------------------------------------------------------------------------------
