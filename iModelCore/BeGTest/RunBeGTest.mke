@@ -2,7 +2,7 @@
 #
 #     $Source: RunBeGTest.mke $
 #
-#  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -10,9 +10,9 @@ PolicyFile = ${SrcBsiCommon}/sharedmki/AssertCommonCompileLinkPolicy.mki
 %include mdl.mki
 
 BentleyTestDir=$(SrcRoot)util/gtest/BentleyTest/
-LogDir=$(OutputRootDir)Build/BeGTest/run/logs/
+LogDir=$(OutputRootDir)build/BeGTest/run/logs/
 LogFile=$(LogDir)BeGTeststdout.log
-OutputDir=$(OutputRootDir)Build/BeGTest/
+OutputDir=$(OutputRootDir)build/BeGTest/
 
 # NB: If you change the name of the output log file, you must also change it in RunBeGTest.logging.config.xml
 

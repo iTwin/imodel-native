@@ -2,14 +2,14 @@
 #
 #     $Source: DisplayIgnoreList.mke $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 PolicyFile = ${SrcBsiCommon}/sharedmki/AssertCommonCompileLinkPolicy.mki
 %include mdl.mki
 
 BentleyTestDir=$(SrcRoot)util/gtest/BentleyTest/
-LogDir=$(OutputRootDir)Build/BeGTest/run/logs/
+LogDir=$(OutputRootDir)build/BeGTest/run/logs/
 
 always:
     $(_MakeFilePath)DisplayIgnoreList.py "$(OutputRootDir)Product/BeGTest/bin/DgnPlatformAssetsDirectory/Ignore" > $(LogDir)ignored.txt
