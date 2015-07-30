@@ -80,6 +80,7 @@ private:
 
 //__PUBLISH_SECTION_END__
     static void FormatUInt64 (WCharP string, uint64_t number, uint64_t base);
+    static void FormatUInt64 (Utf8P string, uint64_t number, uint64_t base);
 
 #if defined (BENTLEY_WIN32)
 public:
@@ -415,6 +416,9 @@ public:
     //! This is the equivelent of wcstok_s in MSVC and wcstok in GCC.  
     BENTLEYDLL_EXPORT static wchar_t *Wcstok (wchar_t *wcsToken, const wchar_t *wcsDelimit, wchar_t **context);
 
+    //! reverse the letters in str
+    BENTLEYDLL_EXPORT static char *Strrev (char* wstr);
+
     //! reverse the letters in wstr
     BENTLEYDLL_EXPORT static wchar_t *Wcsrev (wchar_t *wstr);
 
@@ -450,6 +454,7 @@ public:
     //! @param[out] buf  The output buffer for the formatted string.
     //! @param[in] value the integer value to be formatted.
     BENTLEYDLL_EXPORT static void FormatUInt64 (WCharP buf, uint64_t value);
+    BENTLEYDLL_EXPORT static void FormatUInt64 (Utf8P buf, uint64_t value);
 
     //! Parses a hexadecimal number
     //! @param[out]     value   Assigned the parsed value
@@ -566,6 +571,7 @@ public:
     //! @remarks This method is provided to produce the same hexadecimal formatting as Snwprintf(), but much more efficiently.
     //! @remarks Typical usage: FormatUInt64(dest, count, val, HexFormatOptions::None) to produce the minimal representation or FormatUInt64(dest, count, val, HexFormatOptions::LeadingZeros, n) to produce fixed width (e.g. n=8 or 16) with leading zeros.
     BENTLEYDLL_EXPORT static int FormatUInt64 (wchar_t *dest, size_t numCharsInBuffer, uint64_t val, HexFormatOptions opts, uint8_t width = 0, uint8_t precision = 1);
+    BENTLEYDLL_EXPORT static int FormatUInt64 (Utf8Char *dest, size_t numCharsInBuffer, uint64_t val, HexFormatOptions opts, uint8_t width = 0, uint8_t precision = 1);
 
     //! Do a lexicographic comparison of specified strings.  This is an alphabetical sort that also takes numbers into account,
     //!   such that "file9" will come before "file11" in the sort order (even though alphabetically 1 is before 9).  This method

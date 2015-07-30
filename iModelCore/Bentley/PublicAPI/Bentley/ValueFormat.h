@@ -30,25 +30,33 @@ protected:
     bool                m_insertThousandsSeparator;
     PrecisionType       m_precisionType;
     Byte                m_precisionByte;
-    WChar               m_decimalSeparator;
-    WChar               m_thousandsSeparator;
+    Utf8Char            m_decimalSeparator;
+    WChar               m_decimalSeparatorW;
+    Utf8Char            m_thousandsSeparator;
+    WChar               m_thousandsSeparatorW;
 
     BENTLEYDLL_EXPORT void Init();
     BENTLEYDLL_EXPORT void InitFrom(DoubleFormatterBase const& other);
 
     //! Get the precision used by this formatter.
-    BENTLEYDLL_EXPORT WString ToStringFromElevatedValue (double inValue) const;
-    BENTLEYDLL_EXPORT WString ToStringBasic (double inValue) const;
+    BENTLEYDLL_EXPORT Utf8String ToStringFromElevatedValue (double inValue) const;
+    BENTLEYDLL_EXPORT Utf8String ToStringBasic (double inValue) const;
+    BENTLEYDLL_EXPORT WString ToStringFromElevatedValueW (double inValue) const;
+    BENTLEYDLL_EXPORT WString ToStringBasicW (double inValue) const;
 
     // Helper methods also used by other formatter types
     BENTLEYDLL_EXPORT static void InsertThousandsSeparator (WStringR numericString, WChar thousandsSeparator);
-    BENTLEYDLL_EXPORT static void GetScientificString (WStringR outString, double value, Byte precisionByte);
+    BENTLEYDLL_EXPORT static void InsertThousandsSeparator (Utf8StringR numericString, Utf8Char thousandsSeparator);
+    BENTLEYDLL_EXPORT static void GetScientificString (Utf8StringR outString, double value, Byte precisionByte);
     BENTLEYDLL_EXPORT static void GetPrecisionString (WStringR outString, double value, PrecisionType precisionType, Byte precisionByte, bool leaveLeadingZero, bool leaveTrailingZeros);
+    BENTLEYDLL_EXPORT static void GetPrecisionString (Utf8StringR outString, double value, PrecisionType precisionType, Byte precisionByte, bool leaveLeadingZero, bool leaveTrailingZeros);
 
 public:
     BENTLEYDLL_EXPORT static void ReplaceDecimalSeparator (WStringR numericString, WChar newDecimalSeparator);
+    BENTLEYDLL_EXPORT static void ReplaceDecimalSeparator (Utf8StringR numericString, Utf8Char newDecimalSeparator);
     BENTLEYDLL_EXPORT static double MinimumResolutionForType (Byte precisionByte, PrecisionType precisionType);
-    BENTLEYDLL_EXPORT static void StripTrailingZeros (WStringR string, wchar_t decimalChar = L'.');
+    BENTLEYDLL_EXPORT static void StripTrailingZeros (Utf8StringR string, Utf8Char decimalChar = '.');
+    BENTLEYDLL_EXPORT static void StripTrailingZeros (WStringR string, WChar decimalChar = L'.');
 
     BENTLEYDLL_EXPORT void SetPrecision (PrecisionType type, Byte precision);
 
@@ -60,13 +68,15 @@ public:
     BENTLEYDLL_EXPORT PrecisionFormat GetPrecision () const;
 
     //! Get the decimal separator used by this formatter.
-    BENTLEYDLL_EXPORT WChar GetDecimalSeparator () const;
+    BENTLEYDLL_EXPORT Utf8Char GetDecimalSeparator () const;
+    BENTLEYDLL_EXPORT WChar GetDecimalSeparatorW () const;
 
     //! Get the value indicating if the thousands separator is inserted by this formatter.
     BENTLEYDLL_EXPORT bool GetInsertThousandsSeparator () const;
 
     //! Get the thousands separator used by this formatter.
-    BENTLEYDLL_EXPORT WChar GetThousandsSeparator () const;
+    BENTLEYDLL_EXPORT Utf8Char GetThousandsSeparator () const;
+    BENTLEYDLL_EXPORT WChar GetThousandsSeparatorW () const;
 
     //! Test if this formatter will include a leading zero.  A leading zero is only
     //! included for values less than 1.0.  Ex. "0.5" vs. ".5"
@@ -80,9 +90,11 @@ public:
     BENTLEYDLL_EXPORT void SetPrecision (PrecisionFormat newVal);
 
     //! Set the formatter's decimal separator.
+    BENTLEYDLL_EXPORT void SetDecimalSeparator (Utf8Char newVal);
     BENTLEYDLL_EXPORT void SetDecimalSeparator (WChar newVal);
 
     //! Set the formatter's thousands separator.
+    BENTLEYDLL_EXPORT void SetThousandsSeparator (Utf8Char newVal);
     BENTLEYDLL_EXPORT void SetThousandsSeparator (WChar newVal);
 
     //! Specify if the thousands separator should be inserted or not.
@@ -138,7 +150,8 @@ public:
 
     //! Use the settings defined in this formatter to convert a double value to a string.
     //! @param[in] value value to format.
-    BENTLEYDLL_EXPORT WString ToString (double value) const;
+    BENTLEYDLL_EXPORT Utf8String ToString (double value) const;
+    BENTLEYDLL_EXPORT WString ToStringW (double value) const;
 };
 
 END_BENTLEY_NAMESPACE

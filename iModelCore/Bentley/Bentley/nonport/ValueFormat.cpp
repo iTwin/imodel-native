@@ -14,6 +14,7 @@ USING_NAMESPACE_BENTLEY
 
 #define  THOUSANDSSEPARATOR ','
 #define  DECIMALSEPARATOR   '.'
+#define  DECIMALSEPARATOR_W   L'.'
 #define  ROUNDOFF           (0.5 - std::numeric_limits<double>::epsilon())
 
 // From DgnPlatform.h...
@@ -25,11 +26,26 @@ USING_NAMESPACE_BENTLEY
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DoubleFormatterBase::ReplaceDecimalSeparator (WStringR numericString, WChar newDecimalSeparator)
     {
-    if (newDecimalSeparator == DECIMALSEPARATOR)
+    if (newDecimalSeparator == DECIMALSEPARATOR_W)
         return;
 
     WString::size_type offset;
-    if (WString::npos == (offset = numericString.find(DECIMALSEPARATOR)))
+    if (WString::npos == (offset = numericString.find(DECIMALSEPARATOR_W)))
+        return;
+
+    numericString[offset] = newDecimalSeparator;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    John.Gooding                    05/2005
++---------------+---------------+---------------+---------------+---------------+------*/
+void DoubleFormatterBase::ReplaceDecimalSeparator (Utf8StringR numericString, Utf8Char newDecimalSeparator)
+    {
+    if (newDecimalSeparator == DECIMALSEPARATOR)
+        return;
+
+    Utf8String::size_type offset;
+    if (Utf8String::npos == (offset = numericString.find(DECIMALSEPARATOR)))
         return;
 
     numericString[offset] = newDecimalSeparator;
@@ -45,6 +61,27 @@ void DoubleFormatterBase::InsertThousandsSeparator (WStringR numericString, WCha
     for ( ; currPos < numericString.size(); currPos++)
         {
         if ( ! iswdigit(numericString[currPos]))
+            break;
+        }
+
+    // Walk back to the beginning, doing an insert for every third character
+    while (3 < currPos)
+        {
+        numericString.insert (currPos - 3, &thousandsSeparator, 1);
+        currPos -= 3;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    03/12
++---------------+---------------+---------------+---------------+---------------+------*/
+void DoubleFormatterBase::InsertThousandsSeparator (Utf8StringR numericString, Utf8Char thousandsSeparator)
+    {
+    // Walk forward looking for the decimal point or the end, whichever comes first
+    size_t  currPos = 0;
+    for ( ; currPos < numericString.size(); currPos++)
+        {
+        if ( ! isdigit(numericString[currPos]))
             break;
         }
 
@@ -92,16 +129,16 @@ double DoubleFormatterBase::MinimumResolutionForType (Byte precisionByte, Precis
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          11/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DoubleFormatterBase::GetScientificString (WStringR outString, double value, Byte precisionByte)
+void DoubleFormatterBase::GetScientificString (Utf8StringR outString, double value, Byte precisionByte)
     {
-    WString     formatString;
+    Utf8String     formatString;
 
-    formatString.Sprintf (L"%%0.%dE", precisionByte);
+    formatString.Sprintf ("%%0.%dE", precisionByte);
     outString.Sprintf (formatString.c_str(), value);
 
     // Drop the most significant digit from the 3-digit exponent if its zero.
     size_t len = outString.size();
-    if (len > 2 && L'0' == outString[len-3])
+    if (len > 2 && '0' == outString[len-3])
         outString.erase (len-3, 1);
     }
 
@@ -124,6 +161,26 @@ static void GetFractionalStr (WStringR outString, int idenominator, double value
         }
 
     outString.Sprintf (L" %d/%d", inumerator, idenominator);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RBB             04/87
++---------------+---------------+---------------+---------------+---------------+------*/
+static void GetFractionalStr (Utf8StringR outString, int idenominator, double value)
+    {
+    outString.clear();
+
+    int     inumerator = (int) (value * (double) idenominator);
+
+    if (inumerator <= 0)
+        return;
+
+    while ((inumerator/2)*2 == inumerator && idenominator > 2)
+        {
+        inumerator      /= 2;
+        idenominator    /= 2;
+        }
+
+    outString.Sprintf (" %d/%d", inumerator, idenominator);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -168,14 +225,71 @@ void DoubleFormatterBase::GetPrecisionString (WStringR outString, double value, 
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    John.Gooding                    05/2005
++---------------+---------------+---------------+---------------+---------------+------*/
+void DoubleFormatterBase::GetPrecisionString (Utf8StringR outString, double value, PrecisionType precisionType, Byte precisionByte, bool leaveLeadingZero, bool leaveTrailingZeros)
+    {
+    if (precisionType == PrecisionType::Fractional)
+        {
+        int     iValue = (int) value;
+        Utf8String fractionString;
+
+        GetFractionalStr (fractionString, precisionByte + 1, value - iValue);
+        outString.Sprintf ("%d%s", iValue, fractionString.c_str());
+        }
+    else
+        {
+        int       i;
+        Utf8String   formatString;
+        double    truncateValue = ROUNDOFF;
+        double    factor = 1.0;
+
+        for (i=0; i<precisionByte; i++)
+            factor *= 10.0;
+
+        truncateValue = truncateValue / factor;
+
+        if (value > truncateValue)
+            value -= truncateValue;
+
+        formatString.Sprintf ("%%0.%dlf", precisionByte);
+        outString.Sprintf (formatString.c_str(), value);
+
+        if (!leaveTrailingZeros && precisionByte > 0)
+            StripTrailingZeros (outString);
+
+        if (!leaveLeadingZero)
+            {
+            if ('0' == outString[0] && 2 <= outString.size())
+                outString.erase (0, 1);
+            }
+        }
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   JoshSchifter    07/11
 //---------------------------------------------------------------------------------------
-void DoubleFormatterBase::StripTrailingZeros (WStringR string, wchar_t decimalChar)
+void DoubleFormatterBase::StripTrailingZeros (WStringR string, WChar decimalChar)
     {
     size_t newSize = string.length ();
     
     while ((0 < newSize) && (string[newSize - 1] == L'0'))
+        --newSize;
+
+    if ((0 < newSize) && (string[newSize - 1] == decimalChar))
+        --newSize;
+
+    string.resize (newSize);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   JoshSchifter    07/11
+//---------------------------------------------------------------------------------------
+void DoubleFormatterBase::StripTrailingZeros (Utf8StringR string, Utf8Char decimalChar)
+    {
+    size_t newSize = string.length ();
+
+    while ((0 < newSize) && (string[newSize - 1] == '0'))
         --newSize;
 
     if ((0 < newSize) && (string[newSize - 1] == decimalChar))
@@ -199,8 +313,8 @@ void DoubleFormatterBase::Init ()
     m_insertThousandsSeparator      = false;
     m_precisionType                 = PrecisionType::Decimal;
     m_precisionByte                 = 4;
-    m_decimalSeparator              = L'.';
-    m_thousandsSeparator            = L',';
+    m_decimalSeparator              = '.';
+    m_thousandsSeparator            = ',';
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -238,9 +352,9 @@ void DoubleFormatterBase::InitFrom(DoubleFormatterBase const& source)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString DoubleFormatterBase::ToStringFromElevatedValue (double inValue) const
+Utf8String DoubleFormatterBase::ToStringFromElevatedValue (double inValue) const
     {
-    WString     outString;
+    Utf8String     outString;
 
     if (PrecisionType::Scientific == m_precisionType || (inValue > RMAXUI4) || (inValue < RMINI4))
         {
@@ -265,9 +379,20 @@ WString DoubleFormatterBase::ToStringFromElevatedValue (double inValue) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaroleMacDonald 07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+WString DoubleFormatterBase::ToStringFromElevatedValueW (double inValue) const
+    {
+    Utf8String utf8str = ToStringFromElevatedValue(inValue);
+    WString outstring;
+    outstring.AssignUtf8(utf8str.c_str());
+    return outstring;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    JoshSchifter    03/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString DoubleFormatterBase::ToStringBasic (double inValue) const
+Utf8String DoubleFormatterBase::ToStringBasic (double inValue) const
     {
     bool        isNegative = inValue < 0;
 
@@ -277,12 +402,23 @@ WString DoubleFormatterBase::ToStringBasic (double inValue) const
     double  minimumResolution = MinimumResolutionForType (m_precisionByte, m_precisionType);
     inValue += minimumResolution * ROUNDOFF;
 
-    WString outString = ToStringFromElevatedValue (inValue);
+    Utf8String outString = ToStringFromElevatedValue (inValue);
 
     if (isNegative)
-        outString.insert (0, L"-");
+        outString.insert (0, "-");
 
     return outString;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    CaroleMacDonald 07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+WString DoubleFormatterBase::ToStringBasicW (double inValue) const
+    {
+    Utf8String utf8str = ToStringBasic(inValue);
+    WString outstring;
+    outstring.AssignUtf8(utf8str.c_str());
+    return outstring;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -369,16 +505,41 @@ void                    DoubleFormatter::Init ()              { T_Super::Init();
 /* ctor */              DoubleFormatter::DoubleFormatter(DoubleFormatterCR source)     { T_Super::InitFrom (source);  }
 
 PrecisionFormat   DoubleFormatterBase::GetPrecision () const                      { return DoubleFormatter::ToPrecisionEnum (m_precisionType, m_precisionByte); }
-WChar             DoubleFormatterBase::GetDecimalSeparator () const               { return m_decimalSeparator; }
+Utf8Char          DoubleFormatterBase::GetDecimalSeparator () const               { return m_decimalSeparator; }
+WChar             DoubleFormatterBase::GetDecimalSeparatorW() const               { return m_decimalSeparatorW; }
 bool              DoubleFormatterBase::GetInsertThousandsSeparator () const       { return m_insertThousandsSeparator; }
-WChar             DoubleFormatterBase::GetThousandsSeparator () const             { return m_thousandsSeparator; }
+Utf8Char          DoubleFormatterBase::GetThousandsSeparator () const             { return m_thousandsSeparator; }
+WChar             DoubleFormatterBase::GetThousandsSeparatorW() const             { return m_thousandsSeparatorW; }
 bool              DoubleFormatterBase::GetLeadingZero () const                    { return m_leadingZero; }
 bool              DoubleFormatterBase::GetTrailingZeros () const                  { return m_trailingZeros; }
-void              DoubleFormatterBase::SetDecimalSeparator (WChar newVal)         { m_decimalSeparator = newVal; }
-void              DoubleFormatterBase::SetThousandsSeparator (WChar newVal)       { m_thousandsSeparator = newVal; }
+void              DoubleFormatterBase::SetDecimalSeparator (Utf8Char newVal)      
+    { 
+    m_decimalSeparator = newVal; 
+    WString temp(&newVal, BentleyCharEncoding::Utf8);
+    m_decimalSeparatorW = temp[0];
+    }
+void              DoubleFormatterBase::SetDecimalSeparator (WChar newVal)         
+    { 
+    m_decimalSeparatorW = newVal;
+    Utf8String temp(&newVal);
+    m_decimalSeparator = temp[0];
+    }
+void              DoubleFormatterBase::SetThousandsSeparator (Utf8Char newVal)    
+    { 
+    m_thousandsSeparator = newVal; 
+    WString temp(&newVal, BentleyCharEncoding::Utf8);
+    m_thousandsSeparatorW = temp[0];
+    }
+void              DoubleFormatterBase::SetThousandsSeparator (WChar newVal)       
+    { 
+    m_thousandsSeparatorW = newVal; 
+    Utf8String temp(&newVal);
+    m_thousandsSeparator = temp[0];
+    }
+
 void              DoubleFormatterBase::SetInsertThousandsSeparator (bool newVal ) { m_insertThousandsSeparator = newVal; }
 void              DoubleFormatterBase::SetLeadingZero (bool newVal)               { m_leadingZero = newVal; }
 void              DoubleFormatterBase::SetTrailingZeros (bool newVal)             { m_trailingZeros = newVal; }
 
-WString           DoubleFormatter::ToString (double inVal) const                  { return T_Super::ToStringBasic (inVal); }
+Utf8String        DoubleFormatter::ToString (double inVal) const                  { return T_Super::ToStringBasic (inVal); }
 

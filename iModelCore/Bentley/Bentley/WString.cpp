@@ -450,3 +450,66 @@ bool Utf8String::ContainsI(Utf8CP other) const
     }
 
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Carole.MacDonald                07/2015
+//---------------------------------------------------------------------------------------
+bool Utf8String::StartsWith(Utf8CP value) const
+    {
+    if (Utf8String::IsNullOrEmpty(value))
+        return false;
+
+    size_t valueLen = strlen(value);
+    if (valueLen > size())
+        return false;
+    
+    return (0 == memcmp(c_str(), value, sizeof(Utf8CP) * valueLen));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Carole.MacDonald                07/2015
+//---------------------------------------------------------------------------------------
+bool Utf8String::StartsWithI (Utf8CP value) const
+    {
+    if (Utf8String::IsNullOrEmpty(value))
+        return false;
+
+    size_t valueLen = strlen(value);
+    if (valueLen > size())
+        return false;
+    
+    Utf8String temp = this->substr (0, valueLen);
+    return (0 == temp.CompareToI (value));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Carole.MacDonald                07/2015
+//---------------------------------------------------------------------------------------
+bool Utf8String::EndsWith (Utf8CP value) const
+    {
+    if (Utf8String::IsNullOrEmpty(value))
+        return false;
+
+    size_t valueLen = strlen(value);
+    if (valueLen > size())
+        return false;
+    
+    Utf8String temp = this->substr (size()-valueLen);
+    return (0 == temp.CompareTo (value));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Carole.MacDonald                07/2015
+//---------------------------------------------------------------------------------------
+bool Utf8String::EndsWithI (Utf8CP value) const
+    {
+    if (Utf8String::IsNullOrEmpty(value))
+        return false;
+
+    size_t valueLen = strlen(value);
+    if (valueLen > size())
+        return false;
+    
+    Utf8String temp = this->substr (size()-valueLen);
+    return (0 == temp.CompareToI (value));
+    }
+

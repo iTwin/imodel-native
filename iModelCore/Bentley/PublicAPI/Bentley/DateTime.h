@@ -119,12 +119,14 @@ public:
         //! Generates a text representation of the specified DateTime::Kind
         //! @param[in] kind DateTime::Kind to generate text representation for
         //! @return Text representation of a DateTime::Kind
-        BENTLEYDLL_EXPORT static WString KindToString(DateTime::Kind kind);
+        BENTLEYDLL_EXPORT static Utf8String KindToString(DateTime::Kind kind);
+        BENTLEYDLL_EXPORT static WString KindToStringW(DateTime::Kind kind);
 
         //! Generates a text representation of the specified DateTime::Kind
         //! @param[in] component DateTime::Component to generate text representation for
         //! @return Text representation of a DateTime::Kind
-        BENTLEYDLL_EXPORT static WString ComponentToString(DateTime::Component component);
+        BENTLEYDLL_EXPORT static Utf8String ComponentToString(DateTime::Component component);
+        BENTLEYDLL_EXPORT static WString ComponentToStringW(DateTime::Component component);
         };
 
 private:
