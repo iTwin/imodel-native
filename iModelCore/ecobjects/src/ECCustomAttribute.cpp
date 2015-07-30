@@ -496,6 +496,8 @@ bool IECCustomAttributeContainer::RemoveCustomAttribute
 ECClassCR classDefinition
 )
     {
+    RemoveConsolidatedCustomAttribute(classDefinition);
+
     ECCustomAttributeCollection::iterator iter;
     for (iter = m_primaryCustomAttributes.begin(); iter != m_primaryCustomAttributes.end(); iter++)
         {
