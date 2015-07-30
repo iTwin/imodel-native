@@ -5,6 +5,7 @@
 |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+//__BENTLEY_INTERNAL_ONLY__
 #pragma once
 
 //__BENTLEY_INTERNAL_ONLY__
