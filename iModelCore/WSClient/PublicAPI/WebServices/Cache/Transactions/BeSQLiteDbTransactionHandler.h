@@ -22,7 +22,7 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 * @bsiclass                                                     Vincas.Razma    12/2014
 * Class to use Transaction objects with BeSqliteDb with DefaultTx_No
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct BeSQLiteDbTransactionHandler : public ITransactionHandler
+struct EXPORT_VTABLE_ATTRIBUTE BeSQLiteDbTransactionHandler : public ITransactionHandler
     {
     private:
         BeSQLite::Db* m_db;
