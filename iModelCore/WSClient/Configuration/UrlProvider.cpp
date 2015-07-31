@@ -82,7 +82,8 @@ void UrlProvider::Initialize(Environment env, ILocalState* customLocalState, IBu
     s_env = env;
     s_isInitialized = true;
 
-    Json::Value jsonPreviousEnv = s_localState->GetValue(LOCAL_STATE_NAMESPACE, LOCAL_STATE_ENVIRONMENT);
+    //TODO: fix, app crashes on start
+    /*Json::Value jsonPreviousEnv = s_localState->GetValue(LOCAL_STATE_NAMESPACE, LOCAL_STATE_ENVIRONMENT);
     if (!jsonPreviousEnv.isNull() && env != jsonPreviousEnv.asUInt())
         {
         CleanUpUrlCache();
@@ -90,7 +91,7 @@ void UrlProvider::Initialize(Environment env, ILocalState* customLocalState, IBu
     if (jsonPreviousEnv.isNull() || env != jsonPreviousEnv.asUInt())
         {    
         s_localState->SaveValue(LOCAL_STATE_NAMESPACE, LOCAL_STATE_ENVIRONMENT, env);
-        }
+        }*/
     }
 
 /*--------------------------------------------------------------------------------------+
