@@ -28,10 +28,10 @@ struct UrlData
         //For all DEV URLs: Bentley Corporate Network – DEV (ID: 103)
         //For all QA URLs: Bentley Corporate Network – QA (ID: 102)
         //Release URLs without regions have their own unique IDs
-        uint32_t m_urlId;
+        uint32_t m_regionId;
 
     public:
-        UrlData(Utf8String defaultUrl, uint32_t urlId) : m_defaultUrl(defaultUrl), m_urlId(urlId) {}
+        UrlData(Utf8String defaultUrl, uint32_t regionId) : m_defaultUrl(defaultUrl), m_regionId(regionId) {}
 
         Utf8String GetDefaultUrl() const
             {
@@ -40,7 +40,7 @@ struct UrlData
 
         uint32_t GetId() const
             {
-            return m_urlId;
+            return m_regionId;
             }
     };
 
@@ -75,7 +75,7 @@ struct UrlProvider
 
 
     private:
-        static Utf8String GetBuddiUrl(Utf8StringCR urlName, uint32_t urlId);
+        static Utf8String GetBuddiUrl(Utf8StringCR urlName, uint32_t regionId);
         static Utf8String GetUrl(Utf8CP urlName, const UrlData* defaultUrls);
 
     public:
