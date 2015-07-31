@@ -852,9 +852,9 @@ void ViewController::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
     double frontDist = std::max(newDelta.x, newDelta.y) /(2.0*tan(cameraView->GetLensAngle()/2.0));
     double backDist = frontDist + newDelta.z;
 
+    cameraView->SetFocusDistance(frontDist); // do this even if the camera isn't currently on.
     cameraView->CenterEyePoint(&backDist); // do this even if the camera isn't currently on.
-    cameraView->SetFocusDistance(0.0);     // so VerifyFocusPlane will center it.
-    cameraView->VerifyFocusPlane();        // changes delta/origin 
+    cameraView->VerifyFocusPlane(); // changes delta/origin 
     }
 
 /*---------------------------------------------------------------------------------**//**

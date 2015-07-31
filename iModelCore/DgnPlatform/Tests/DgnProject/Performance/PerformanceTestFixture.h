@@ -32,9 +32,9 @@ private:
     static void ImportSchema(ECN::ECSchemaReadContextR schemaContext, ECN::ECSchemaR testSchema, DgnDbTestDgnManager tdm);
 
 protected:
-    static WCharCP const TEST_CLASS_NAME;
-    static WCharCP const TEST_SCHEMA_NAME;
-    static WCharCP const TEST_COMPLEX_SCHEMA_NAME;
+    static Utf8CP const TEST_CLASS_NAME;
+    static Utf8CP const TEST_SCHEMA_NAME;
+    static Utf8CP const TEST_COMPLEX_SCHEMA_NAME;
     static const int TESTCLASS_INSTANCE_COUNT;
 
     Dgn::ScopedDgnHost m_host;

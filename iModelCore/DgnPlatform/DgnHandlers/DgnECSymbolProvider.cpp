@@ -44,10 +44,10 @@ DgnDbExpressionContext::DgnDbExpressionContext(DgnDbR db) : m_db(db), SymbolExpr
     {
     SymbolExpressionContextPtr methodContext = SymbolExpressionContext::Create(NULL);
 
-    methodContext->AddSymbol(*PropertySymbol::Create<DgnDbExpressionContext, Utf8CP>(L"Path", *this, &DgnDbExpressionContext::GetPath));
-    methodContext->AddSymbol(*PropertySymbol::Create<DgnDbExpressionContext, ECValue>(L"Name", *this, &DgnDbExpressionContext::GetName));
+    methodContext->AddSymbol(*PropertySymbol::Create<DgnDbExpressionContext, Utf8CP>("Path", *this, &DgnDbExpressionContext::GetPath));
+    methodContext->AddSymbol(*PropertySymbol::Create<DgnDbExpressionContext, ECValue>("Name", *this, &DgnDbExpressionContext::GetName));
 
-    AddSymbol (*ContextSymbol::CreateContextSymbol(L"DgnDb", *methodContext));
+    AddSymbol (*ContextSymbol::CreateContextSymbol("DgnDb", *methodContext));
     }
 
 //---------------------------------------------------------------------------------------
@@ -100,10 +100,10 @@ DgnElementExpressionContext::DgnElementExpressionContext(DgnElementCR element) :
     {
     SymbolExpressionContextPtr methodContext = SymbolExpressionContext::Create(NULL);
 
-    methodContext->AddSymbol(*PropertySymbol::Create<DgnElementExpressionContext, ECValue>(L"ClassName", *this, &DgnElementExpressionContext::GetClassName));
-    methodContext->AddSymbol(*PropertySymbol::Create<DgnElementExpressionContext, ECValue>(L"FullClassName", *this, &DgnElementExpressionContext::GetFullClassName));
+    methodContext->AddSymbol(*PropertySymbol::Create<DgnElementExpressionContext, ECValue>("ClassName", *this, &DgnElementExpressionContext::GetClassName));
+    methodContext->AddSymbol(*PropertySymbol::Create<DgnElementExpressionContext, ECValue>("FullClassName", *this, &DgnElementExpressionContext::GetFullClassName));
 
-    AddSymbol(*ContextSymbol::CreateContextSymbol(L"element", *methodContext));
+    AddSymbol(*ContextSymbol::CreateContextSymbol("element", *methodContext));
     }
 
 //---------------------------------------------------------------------------------------
@@ -181,7 +181,7 @@ DgnECSymbolProvider& DgnECSymbolProvider::GetProvider()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnECSymbolProvider::ExternalSymbolPublisher (SymbolExpressionContextR context, bvector<WString> const& requestedSymbolSets)
+void DgnECSymbolProvider::ExternalSymbolPublisher (SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets)
     {
     return GetProvider().PublishSymbols (context, requestedSymbolSets);
     }
@@ -193,12 +193,12 @@ ECSchemaR DgnECSymbolProvider::GetSchema()
     {
     if (m_schema.IsNull())
         {
-        ECSchema::CreateSchema (m_schema, L"PseudoSchema", 1, 0);
+        ECSchema::CreateSchema (m_schema, "PseudoSchema", 1, 0);
         ECClassP ecClass;
-        m_schema->CreateClass (ecClass, L"ECClass");
+        m_schema->CreateClass (ecClass, "ECClass");
         PrimitiveECPropertyP ecProp;
-        ecClass->CreatePrimitiveProperty (ecProp, L"Name", PRIMITIVETYPE_String);
-        ecClass->CreatePrimitiveProperty (ecProp, L"DisplayLabel", PRIMITIVETYPE_String);
+        ecClass->CreatePrimitiveProperty (ecProp, "Name", PRIMITIVETYPE_String);
+        ecClass->CreatePrimitiveProperty (ecProp, "DisplayLabel", PRIMITIVETYPE_String);
         }
 
     BeAssert (m_schema.IsValid());
@@ -211,28 +211,28 @@ ECSchemaR DgnECSymbolProvider::GetSchema()
 void DgnECSymbolProvider::InitDefaultMethods()
     {
     m_defaultMethods.reserve (9);
-    m_defaultMethods.push_back (MethodSymbol::Create (L"GetInstanceId", NULL, &GetInstanceId));
-    m_defaultMethods.push_back (MethodSymbol::Create (L"GetInstanceLabel", NULL, &GetInstanceLabel));
-    m_defaultMethods.push_back (MethodSymbol::Create (L"GetClass", NULL, &GetClass));
+    m_defaultMethods.push_back (MethodSymbol::Create ("GetInstanceId", NULL, &GetInstanceId));
+    m_defaultMethods.push_back (MethodSymbol::Create ("GetInstanceLabel", NULL, &GetInstanceLabel));
+    m_defaultMethods.push_back (MethodSymbol::Create ("GetClass", NULL, &GetClass));
 #ifdef DETERMINE_NEED_TO_SUPPORT_IN_GRAPHITE
-    m_defaultMethods.push_back (MethodSymbol::Create (L"GetRelatedInstance", NULL, &GetRelatedInstance));
+    m_defaultMethods.push_back (MethodSymbol::Create ("GetRelatedInstance", NULL, &GetRelatedInstance));
 #endif
 
-    m_defaultMethods.push_back (MethodSymbol::Create (L"IsOfClass", NULL, &IsOfClass));
+    m_defaultMethods.push_back (MethodSymbol::Create ("IsOfClass", NULL, &IsOfClass));
 
 #ifdef DETERMINE_NEED_TO_SUPPORT_IN_GRAPHITE
-    m_defaultMethods.push_back (MethodSymbol::Create (L"IsPropertyValueSet", NULL, &IsPropertyValueSet));
-    m_defaultMethods.push_back (MethodSymbol::Create (L"ResolveSymbology", NULL, &ResolveSymbology));
+    m_defaultMethods.push_back (MethodSymbol::Create ("IsPropertyValueSet", NULL, &IsPropertyValueSet));
+    m_defaultMethods.push_back (MethodSymbol::Create ("ResolveSymbology", NULL, &ResolveSymbology));
 #endif
 
-    m_defaultMethods.push_back (MethodSymbol::Create (L"AnyMatches", &AnyMatches));
-    m_defaultMethods.push_back (MethodSymbol::Create (L"AllMatch", &AllMatch));
+    m_defaultMethods.push_back (MethodSymbol::Create ("AnyMatches", &AnyMatches));
+    m_defaultMethods.push_back (MethodSymbol::Create ("AllMatch", &AllMatch));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnECSymbolProvider::_PublishSymbols (SymbolExpressionContextR context, bvector<WString> const& requestedSymbolSets) const
+void DgnECSymbolProvider::_PublishSymbols (SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const
     {
     if (m_defaultMethods.empty())
         const_cast<DgnECSymbolProvider&>(*this).InitDefaultMethods();
@@ -335,10 +335,10 @@ ExpressionStatus DgnECSymbolProvider::GetInstanceId (EvaluationResult& evalResul
 
     for (IECInstancePtr const& instance: instanceData)
         {
-        WString instanceId = instance->GetInstanceId();
-        if (!WString::IsNullOrEmpty (instanceId.c_str()))
+        Utf8String instanceId = instance->GetInstanceId();
+        if (!Utf8String::IsNullOrEmpty (instanceId.c_str()))
             {
-            evalResult.InitECValue().SetString (instanceId.c_str());
+            evalResult.InitECValue().SetUtf8CP (instanceId.c_str());
             return ExprStatus_Success;
             }
         }
@@ -356,10 +356,10 @@ ExpressionStatus DgnECSymbolProvider::GetInstanceLabel (EvaluationResult& evalRe
 
     for (IECInstancePtr const& instance: instanceData)
         {
-        WString displayLabel;
+        Utf8String displayLabel;
         if (ECOBJECTS_STATUS_Success == instance->GetDisplayLabel (displayLabel))
             {
-            evalResult.InitECValue().SetString (displayLabel.c_str());
+            evalResult.InitECValue().SetUtf8CP (displayLabel.c_str());
             return ExprStatus_Success;
             }
         }
@@ -376,17 +376,17 @@ ExpressionStatus DgnECSymbolProvider::GetClass (EvaluationResult& evalResult, EC
         return ExprStatus_StructRequired;
 
     ECInstanceList classInstances;
-    StandaloneECEnablerR classEnabler = *GetProvider().GetSchema().GetClassCP (L"ECClass")->GetDefaultStandaloneEnabler();
+    StandaloneECEnablerR classEnabler = *GetProvider().GetSchema().GetClassCP ("ECClass")->GetDefaultStandaloneEnabler();
     for (IECInstancePtr const& instance: instanceData)
         {
         ECClassCR ecClass = instance->GetEnabler().GetClass();
         IECInstancePtr classInstance = classEnabler.CreateInstance();
 
         ECValue v;
-        v.SetString (ecClass.GetName().c_str());
-        classInstance->SetValue (L"Name", v);
-        v.SetString (ecClass.GetDisplayLabel().c_str());
-        classInstance->SetValue (L"DisplayLabel", v);
+        v.SetUtf8CP (ecClass.GetName().c_str());
+        classInstance->SetValue ("Name", v);
+        v.SetUtf8CP (ecClass.GetDisplayLabel().c_str());
+        classInstance->SetValue ("DisplayLabel", v);
 
         classInstances.push_back (classInstance);
         }
@@ -422,7 +422,7 @@ struct ClassVisitor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-ExpressionStatus extractPropertyAccessor (WCharCP& schemaName, WCharCP& className, WCharCP& accessString, EvaluationResultVector& args)
+ExpressionStatus extractPropertyAccessor (Utf8CP& schemaName, Utf8CP& className, Utf8CP& accessString, EvaluationResultVector& args)
     {
     if (!ExtractArg (schemaName, args, 0, false) || !ExtractArg (className, args, 1, false) || !ExtractArg (accessString, args, 2, false))
         return ExprStatus_UnknownError;
@@ -435,10 +435,10 @@ typedef bpair<IECInstanceCP, ECPropertyCP> InstancePropertyPair;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-InstancePropertyPair extractProperty (ExpressionStatus& status, ECInstanceListCR instanceData, EvaluationResultVector& args, WCharCP& accessString)
+InstancePropertyPair extractProperty (ExpressionStatus& status, ECInstanceListCR instanceData, EvaluationResultVector& args, Utf8CP& accessString)
     {
     InstancePropertyPair pair (nullptr, nullptr);
-    WCharCP schemaName, className;
+    Utf8CP schemaName, className;
     status = extractPropertyAccessor (schemaName, className, accessString, args);
     if (ExprStatus_Success == status)
         {
@@ -465,7 +465,7 @@ InstancePropertyPair extractProperty (ExpressionStatus& status, ECInstanceListCR
 ExpressionStatus DgnECSymbolProvider::IsOfClass (EvaluationResult& evalResult, ECInstanceListCR instanceData, EvaluationResultVector& args)
     {
     IECInstancePtr instance;
-    WCharCP schemaname, classname;
+    Utf8CP schemaname, classname;
     if (2 != args.size() || !SystemSymbolProvider::ExtractArg (classname, args[0]) || !SystemSymbolProvider::ExtractArg (schemaname, args[1]))
         return ExprStatus_UnknownError;
 
@@ -489,7 +489,7 @@ ExpressionStatus DgnECSymbolProvider::IsOfClass (EvaluationResult& evalResult, E
 ExpressionStatus DgnECSymbolProvider::IsPropertyValueSet (EvaluationResult& evalResult, ECInstanceListCR instanceData, EvaluationResultVector& args)
     {
     ExpressionStatus status;
-    WCharCP accessString;
+    Utf8CP accessString;
     InstancePropertyPair pair = extractProperty (status, instanceData, args, accessString);
     if (ExprStatus_Success == status)
         {
@@ -524,7 +524,7 @@ ExpressionStatus DgnECSymbolProvider::IsPropertyValueSet (EvaluationResult& eval
 ExpressionStatus DgnECSymbolProvider::ResolveSymbology (EvaluationResult& evalResult, ECInstanceListCR instanceData, EvaluationResultVector& args)
     {
     ExpressionStatus status;
-    WCharCP accessString;
+    Utf8CP accessString;
     InstancePropertyPair pair = extractProperty (status, instanceData, args, accessString);
     if (ExprStatus_Success != status)
         return status;
@@ -572,20 +572,20 @@ ExpressionStatus DgnECSymbolProvider::GetRelatedInstance (EvaluationResult& eval
     // If we fail to find any related instance, and PropertyName:FailureValue is specified, then we create a fake IECInstance
     // with a single property "PropertyName" with the value of FailureValue
 
-    WCharCP rawArg;
+    Utf8CP rawArg;
     if (1 != args.size() || 0 == instanceData.size() || !SystemSymbolProvider::ExtractArg (rawArg, args[0]))
         return ExprStatus_UnknownError;
 
-    bvector<WString> argTokens;
-    BeStringUtilities::Split(rawArg, L",", NULL, argTokens);
+    bvector<Utf8String> argTokens;
+    BeStringUtilities::Split(rawArg, ",", NULL, argTokens);
     if (1 > argTokens.size() || 2 < argTokens.size())
         return ExprStatus_UnknownError;
 
-    WString arg = argTokens[0];     // "relationship:dir:related"
-    WString failureSpec = (argTokens.size() > 1) ? argTokens[1] : L"";  // " PropertyName:FailureValue
+    Utf8String arg = argTokens[0];     // "relationship:dir:related"
+    Utf8String failureSpec = (argTokens.size() > 1) ? argTokens[1] : "";  // " PropertyName:FailureValue
     argTokens.clear();
 
-    BeStringUtilities::Split(arg.c_str(), L":", NULL, argTokens);
+    BeStringUtilities::Split(arg.c_str(), ":", NULL, argTokens);
     if (argTokens.size() < 3 || argTokens.size() > 4 || argTokens[1].length() != 1)
         return ExprStatus_UnknownError;
 
@@ -597,7 +597,7 @@ ExpressionStatus DgnECSymbolProvider::GetRelatedInstance (EvaluationResult& eval
     default:        return ExprStatus_UnknownError;
         }
 
-    WCharCP   relationshipName = argTokens[0].c_str(),
+    Utf8CP   relationshipName = argTokens[0].c_str(),
               relatedName      = argTokens[2].c_str();
 
     IECInstancePtr relatedInstance;
@@ -658,14 +658,14 @@ ExpressionStatus DgnECSymbolProvider::GetRelatedInstance (EvaluationResult& eval
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCP DgnECSymbolProvider::GetRelatedClassDefinition (ECN::IECRelationshipInstanceCR relationship, ECN::ECRelatedInstanceDirection dir, WCharCP relatedClassName)
+ECClassCP DgnECSymbolProvider::GetRelatedClassDefinition (ECN::IECRelationshipInstanceCR relationship, ECN::ECRelatedInstanceDirection dir, Utf8CP relatedClassName)
     {
     // This supports polymorphism
     ECClassCR actualRelatedClass = (STRENGTHDIRECTION_Forward == dir) ? relationship.GetTarget()->GetEnabler().GetClass() : relationship.GetSource()->GetEnabler().GetClass();
     struct Visitor : ClassVisitor
         {
-        WCharCP relatedClassName;
-        Visitor (WCharCP rcn) : relatedClassName(rcn) { }
+        Utf8CP relatedClassName;
+        Visitor (Utf8CP rcn) : relatedClassName(rcn) { }
         virtual bool Process (ECClassCR ecclass) override
             {
             return ecclass.GetName().Equals (relatedClassName);
@@ -678,17 +678,17 @@ ECClassCP DgnECSymbolProvider::GetRelatedClassDefinition (ECN::IECRelationshipIn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr DgnECSymbolProvider::CreatePseudoRelatedInstance (WCharCP spec)
+IECInstancePtr DgnECSymbolProvider::CreatePseudoRelatedInstance (Utf8CP spec)
     {
     // Extract the property name and failure value
     while (*spec && ' ' == *spec)
         ++spec;
 
-    bvector<WString> parts;
-    BeStringUtilities::Split(spec, L":", NULL, parts);
+    bvector<Utf8String> parts;
+    BeStringUtilities::Split(spec, ":", NULL, parts);
     if (2 == parts.size() && parts[0].length() > 0 && parts[1].length() > 0)
         {
-        WCharCP propName = parts[0].c_str(),
+        Utf8CP propName = parts[0].c_str(),
                 propVal  = parts[1].c_str();
 
         // We have to create a separate ECClass for each distinct property name used.
@@ -698,7 +698,7 @@ IECInstancePtr DgnECSymbolProvider::CreatePseudoRelatedInstance (WCharCP spec)
         for (ECClassContainer::const_iterator iter = schema.GetClasses().begin(), end = schema.GetClasses().end(); iter != end; ++iter)
             {
             ECClassP curClass = *iter;
-            if (0 == wcsncmp (curClass->GetName().c_str(), L"pseudo", _countof(L"pseudo") - 1))
+            if (0 == strncmp (curClass->GetName().c_str(), "pseudo", _countof("pseudo") - 1))
                 {
                 if (NULL != curClass->GetPropertyP (propName))
                     {
@@ -712,8 +712,8 @@ IECInstancePtr DgnECSymbolProvider::CreatePseudoRelatedInstance (WCharCP spec)
 
         if (NULL == pseudoClass)
             {
-            WChar pseudoClassName[0x20];
-            BeStringUtilities::Snwprintf (pseudoClassName, _countof(pseudoClassName), L"pseudo%d", classCount);
+            Utf8Char pseudoClassName[0x20];
+            BeStringUtilities::Snwprintf (pseudoClassName, _countof(pseudoClassName), "pseudo%d", classCount);
             schema.CreateClass (pseudoClass, pseudoClassName);
             PrimitiveECPropertyP ecprop;
             pseudoClass->CreatePrimitiveProperty (ecprop, propName, PRIMITIVETYPE_String);

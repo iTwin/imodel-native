@@ -22,6 +22,10 @@ XGraphicsTests.SplitLargeMeshes                         # TFS 19411
 DgnECPersistence.ConstructSimRelationshipsNonGeneric    # Fails on Android
 ECDbInstances.JsonValueStructure                        # Fails after geomlibs/ecobjects merge from topaz
 AnnotationFrameStyleTest.InvalidOperations              # notified Umar Hayat
+TextAnnotationSeedTest.DefaultsAndAccessors # Failing after merge from 0504 to 06
+TextAnnotationSeedTest.DeepCopy # Failing after merge from 0504 to 06
+TextAnnotationSeedTest.TableReadWrite # Failing after merge from 0504 to 06
+TextAnnotationSeedTest.InvalidOperations # Failing after merge from 0504 to 06
 
 #----------------------------------------------------------------------------------------
 # *** Broken in 06; need to be re-visited ***

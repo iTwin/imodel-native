@@ -762,14 +762,11 @@ Frustum DgnViewport::GetFrustum(DgnCoordSystem sys, bool expandedBox) const
 DPoint3d DgnViewport::DetermineDefaultRotatePoint()
     {
     double low, high;
-    if (SUCCESS != DetermineVisibleDepthNpc(low, high) && IsCameraOn())
-        {
-        // if there are no elements in the view and the camera is on, use the camera target point
-        return GetCameraTarget();
-        }
 
-    DPoint3d center = DPoint3d::From(.5, .5, (high + low) * .5);
-    return NpcToWorld(center);
+    if (SUCCESS != DetermineVisibleDepthNpc(low, high) && IsCameraOn())
+        return GetCameraTarget(); // if there are no elements in the view and the camera is on, use the camera target point
+
+    return DPoint3d::FromInterpolate(NpcToWorld(DPoint3d::From(0.5,0.5,low)), 0.5, NpcToWorld(DPoint3d::From(0.5,0.5,high)));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -838,7 +835,12 @@ DPoint3d DgnViewport::GetCameraTarget() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 double DgnViewport::GetFocusPlaneNpc()
     {
-    return WorldToNpc(GetCameraTarget()).z;
+    double npcZ = WorldToNpc(GetCameraTarget()).z;
+
+    if (npcZ < 0.0 || npcZ > 1.0)
+        npcZ = WorldToNpc(DPoint3d::FromInterpolate(NpcToWorld(DPoint3d::From(0.5,0.5,1.0)), 0.5, NpcToWorld(DPoint3d::From(0.5,0.5,0.0)))).z;
+
+    return npcZ;
     }
 
 /*---------------------------------------------------------------------------------**//**

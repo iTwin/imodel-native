@@ -513,7 +513,7 @@ public:
             DGNPLATFORM_EXPORT virtual void _GetInfoString(HitDetailCP, Utf8StringR pathDescr, Utf8CP delimiter) const;
 
             //! Gets the directory that holds the sprite definition files.
-            virtual StatusInt _GetSpriteContainer(BeFileNameR spritePath, Utf8CP spriteNamespace) { return BSIERROR; }
+            virtual StatusInt _GetSpriteContainer(BeFileNameR spritePath, Utf8CP spriteNamespace, Utf8CP spriteName) { return BSIERROR; }
 
             //! Return false to inhibit creating rule lines for surface/solid geometry for wireframe display.
             //! Can be used to improve display performance in applications that only work in shaded views (or those that will clear all QvElems before switching to wireframe)

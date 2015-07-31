@@ -30,8 +30,8 @@ private:
     void                    InitDefaultMethods();
 
     // IECSymbolProvider
-    virtual WCharCP         _GetName() const override           { return L"DgnECSymbolProvider"; }
-    virtual void            _PublishSymbols (ECN::SymbolExpressionContextR context, bvector<WString> const& requestedSymbolSets) const override;
+    virtual Utf8CP         _GetName() const override           { return "DgnECSymbolProvider"; }
+    virtual void            _PublishSymbols (ECN::SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets) const override;
 
     // ECInstance methods for use in ECExpressions
     static ECN::ExpressionStatus GetInstanceId (ECN::EvaluationResult& evalResult, ECN::ECInstanceListCR instanceData, ECN::EvaluationResultVector& args);
@@ -52,13 +52,13 @@ private:
     // Helpers for ECInstance methods
     ECN::ECSchemaR                   GetSchema();
 #ifdef DETERMINE_NEED_TO_SUPPORT_IN_GRAPHITE
-    static ECN::IECInstancePtr       CreatePseudoRelatedInstance (WCharCP);
-    static ECN::ECClassCP            GetRelatedClassDefinition (ECN::IECRelationshipInstanceCR relationship, ECN::ECRelatedInstanceDirection dir, WCharCP relatedClassName);
+    static ECN::IECInstancePtr       CreatePseudoRelatedInstance (Utf8CP);
+    static ECN::ECClassCP            GetRelatedClassDefinition (ECN::IECRelationshipInstanceCR relationship, ECN::ECRelatedInstanceDirection dir, Utf8CP relatedClassName);
 #endif
 
 public:
     // This method is injected into ECObjects to provide symbols.
-    static void             ExternalSymbolPublisher (ECN::SymbolExpressionContextR context, bvector<WString> const& requestedSymbolSets);
+    static void             ExternalSymbolPublisher (ECN::SymbolExpressionContextR context, bvector<Utf8String> const& requestedSymbolSets);
 
     DGNPLATFORM_EXPORT static DgnECSymbolProvider& GetProvider();
 
