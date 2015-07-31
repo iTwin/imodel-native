@@ -293,7 +293,6 @@ struct ECSqlSelectTests : public ::testing::Test
                 public:
                     PowSqlFunction() : ScalarFunction("POW", 2, DbValueType::FloatVal) {}
                 };
-
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -580,14 +579,14 @@ TEST_F (ECSqlSelectTests, GroupByClauseTests)
 bvector<IECInstancePtr> CreateECInstance_S4 (ECDbR ecdb, int n)
     {
     ECClassCP s4 = ecdb. Schemas ().GetECClass ("NestedStructArrayTest", "S4");
-    BeAssert (s4 != nullptr);
+    EXPECT_TRUE (s4 != nullptr);
 
     bvector<IECInstancePtr> vect;
-    for (auto j = 0; j < n; j++)
+    for (int j = 0; j < n; j++)
         {
-        auto inst = s4->GetDefaultStandaloneEnabler ()->CreateInstance ();
-        inst->SetValue ("I", ECValue (j));
-        inst->SetValue ("T", ECValue ("testData_S4"));
+        StandaloneECInstancePtr inst = s4->GetDefaultStandaloneEnabler ()->CreateInstance ();
+        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("I", ECValue (j))) << "Set Int Value failed for class s4";
+        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("T", ECValue ("testData_S4"))) << "Set String Value failed for class s4";
         vect.push_back (inst);
         }
 
@@ -601,21 +600,21 @@ bvector<IECInstancePtr> CreateECInstance_S3 (ECDbR ecdb, int n)
     {
     int m = n + 1;
     ECClassCP s3 = ecdb. Schemas ().GetECClass ("NestedStructArrayTest", "S3");
-    BeAssert (s3 != nullptr);
+    EXPECT_TRUE (s3 != nullptr);
 
     bvector<IECInstancePtr> vect;
-    for (auto j = 0; j < n; j++)
+    for (int j = 0; j < n; j++)
         {
-        auto inst = s3->GetDefaultStandaloneEnabler ()->CreateInstance ();
-        BeAssert (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("I", ECValue (j)));
-        BeAssert (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("T", ECValue ("testData_S3")));
-        BeAssert (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->AddArrayElements ("S4ARRAY", m));
+        StandaloneECInstancePtr inst = s3->GetDefaultStandaloneEnabler ()->CreateInstance ();
+        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("I", ECValue (j))) << "Set Int Value failed for class s3";
+        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("T", ECValue ("testData_S3"))) << "Set String Value failed for class s3";
+        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->AddArrayElements ("S4ARRAY", m));
         int v = 0;
         for (auto elm : CreateECInstance_S4 (ecdb, m))
             {
             ECValue elmV;
             elmV.SetStruct (elm.get ());
-            BeAssert (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("S4ARRAY", elmV, v++));
+            EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("S4ARRAY", elmV, v++)) << "Set Struct Value failed for class s3";
             }
 
         vect.push_back (inst);
@@ -631,21 +630,21 @@ bvector<IECInstancePtr> CreateECInstance_S2 (ECDbR ecdb, int n)
     {
     int m = n + 1;
     ECClassCP s2 = ecdb. Schemas ().GetECClass ("NestedStructArrayTest", "S2");
-    BeAssert (s2 != nullptr);
+    EXPECT_TRUE (s2 != nullptr);
 
     bvector<IECInstancePtr> vect;
-    for (auto j = 0; j < n; j++)
+    for (int j = 0; j < n; j++)
         {
-        auto inst = s2->GetDefaultStandaloneEnabler ()->CreateInstance ();
-        BeAssert (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("I", ECValue (j)));
-        BeAssert (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("T", ECValue ("testData_S2")));
-        BeAssert (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->AddArrayElements ("S3ARRAY", m));
+        StandaloneECInstancePtr inst = s2->GetDefaultStandaloneEnabler ()->CreateInstance ();
+        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("I", ECValue (j))) << "Set Int Value failed for class s2";
+        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("T", ECValue ("testData_S2"))) << "Set String Value failed for class s2";
+        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->AddArrayElements ("S3ARRAY", m));
         int v = 0;
         for (auto elm : CreateECInstance_S3 (ecdb, m))
             {
             ECValue elmV;
             elmV.SetStruct (elm.get ());
-            BeAssert (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("S3ARRAY", elmV, v++));
+            EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("S3ARRAY", elmV, v++)) << "Set Struct Value failed for class s2";
             }
 
         vect.push_back (inst);
@@ -661,21 +660,21 @@ bvector<IECInstancePtr> CreateECInstance_S1 (ECDbR ecdb, int n)
     {
     int m = n + 1;
     ECClassCP s1 = ecdb. Schemas ().GetECClass ("NestedStructArrayTest", "S1");
-    BeAssert (s1 != nullptr);
+    EXPECT_TRUE (s1 != nullptr);
 
     bvector<IECInstancePtr> vect;
-    for (auto j = 0; j < n; j++)
+    for (int j = 0; j < n; j++)
         {
-        auto inst = s1->GetDefaultStandaloneEnabler ()->CreateInstance ();
-        BeAssert (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("I", ECValue (j)));
-        BeAssert (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("T", ECValue ("testData_S1")));
-        BeAssert (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->AddArrayElements ("S2ARRAY", m));
+        StandaloneECInstancePtr inst = s1->GetDefaultStandaloneEnabler ()->CreateInstance ();
+        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("I", ECValue (j))) << "Set Int Value failed for class s1";
+        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("T", ECValue ("testData_S1"))) << "Set String Value failed for class s1";
+        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->AddArrayElements ("S2ARRAY", m));
         int v = 0;
         for (auto elm : CreateECInstance_S2 (ecdb, m))
             {
             ECValue elmV;
             elmV.SetStruct (elm.get ());
-            BeAssert (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("S2ARRAY", elmV, v++));
+            EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("S2ARRAY", elmV, v++)) << "Set Struct Value failed for class s1";
             }
 
         vect.push_back (inst);
@@ -691,21 +690,21 @@ bvector<IECInstancePtr> CreateECInstance_ClassP (ECDbR ecdb, int n)
     {
     int m = n + 1;
     ECClassCP classP = ecdb. Schemas ().GetECClass ("NestedStructArrayTest", "ClassP");
-    BeAssert (classP != nullptr);
+    EXPECT_TRUE (classP != nullptr);
 
     bvector<IECInstancePtr> vect;
-    for (auto j = 0; j < n; j++)
+    for (int j = 0; j < n; j++)
         {
-        auto inst = classP->GetDefaultStandaloneEnabler ()->CreateInstance ();
-        BeAssert (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("I", ECValue (j)));
-        BeAssert (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("T", ECValue ("testData_ClassP")));
-        BeAssert (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->AddArrayElements ("S1ARRAY", m));
+        StandaloneECInstancePtr inst = classP->GetDefaultStandaloneEnabler ()->CreateInstance ();
+        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("I", ECValue (j))) << "Set Int Value failed for class ClassP";
+        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("T", ECValue ("testData_ClassP"))) << "Set String Value failed for class ClassP";
+        EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->AddArrayElements ("S1ARRAY", m));
         int v = 0;
         for (auto elm : CreateECInstance_S1 (ecdb, m))
             {
             ECValue elmV; 
             elmV.SetStruct (elm.get ());
-            BeAssert (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("S1ARRAY", elmV, v++));
+            EXPECT_TRUE (ECObjectsStatus::ECOBJECTS_STATUS_Success == inst->SetValue ("S1ARRAY", elmV, v++)) << "Set Struct Value failed for class ClassP";
             }
 
         vect.push_back (inst);
@@ -719,9 +718,9 @@ bvector<IECInstancePtr> CreateECInstance_ClassP (ECDbR ecdb, int n)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F (ECSqlTestFixture, ECSqlStatement_InsertStructArray)
     {
-    const auto perClassRowCount = 0;
+    const int perClassRowCount = 0;
     // Create and populate a sample project
-    auto& ecdb = SetUp ("NestedStructArrayTest.ecdb", L"NestedStructArrayTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OpenMode::ReadWrite), perClassRowCount);
+    ECDbR ecdb = SetUp ("NestedStructArrayTest.ecdb", L"NestedStructArrayTest.01.00.ecschema.xml", ECDb::OpenParams (Db::OpenMode::ReadWrite), perClassRowCount);
     
     auto in = CreateECInstance_ClassP (ecdb, 1);
 
@@ -729,14 +728,13 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_InsertStructArray)
     for (auto inst : in)
         {
         ECInstanceInserter inserter (ecdb, inst->GetClass ());
-        auto st = inserter.Insert (*inst);
-        ASSERT_TRUE (st == BentleyStatus::SUCCESS);
+        ASSERT_TRUE (inserter.IsValid ());
+        ASSERT_EQ(BentleyStatus::SUCCESS, inserter.Insert (*inst, true));
         inst->WriteToXmlString (inXml, true, true);
         inXml += "\r\n";
         }
     
     bvector<IECInstancePtr> out;
-
     ECSqlStatement stmt;
     auto prepareStatus = stmt.Prepare (ecdb, "SELECT * FROM ONLY nsat.ClassP ORDER BY ECInstanceId");
     ASSERT_TRUE (prepareStatus == ECSqlStatus::Success);
@@ -748,6 +746,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_InsertStructArray)
         inst->WriteToXmlString (outXml, true, true);
         outXml += "\r\n";
         }
+
     ASSERT_EQ (in.size (), out.size ());
     ASSERT_TRUE (inXml == outXml);
     }
@@ -770,9 +769,8 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_DeleteStructArray)
         ASSERT_TRUE (st == BentleyStatus::SUCCESS);
         }
 
-
     ECClassCP classP = ecdb. Schemas ().GetECClass ("NestedStructArrayTest", "ClassP");
-    BeAssert (classP != nullptr);
+    ASSERT_TRUE (classP != nullptr);
 
     ECInstanceDeleter deleter(ecdb, *classP);
     for (auto& inst : in)
@@ -1164,7 +1162,6 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_BindPrimitiveArray)
             auto& elementBinder = arrayBinderS.AddArrayElement ();
             elementBinder.BindText (arrayElement.c_str (), IECSqlBinder::MakeCopy::No);
             }
-
 
         auto stepStat = statement.Step (ecInstanceKey);
         ASSERT_EQ ((int)ECSqlStepStatus::Done, (int)stepStat);
@@ -1560,7 +1557,6 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_UpdateWithStructBinding)
           "       }"
           "}");
 
-
     //**** Test 1 *****
     Utf8CP newStructValueJson = "{"
         " \"b\" : false,"
@@ -1749,8 +1745,7 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_GetParameterIndex)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  10/13
 //+---------------+---------------+---------------+---------------+---------------+------
-void AssertColumnInfo (Utf8CP expectedPropertyName, bool expectedIsGenerated, Utf8CP expectedPropPathStr, Utf8CP expectedRootClassName, Utf8CP expectedRootClassAlias,
-                       ECSqlColumnInfoCR actualColumnInfo)
+void AssertColumnInfo (Utf8CP expectedPropertyName, bool expectedIsGenerated, Utf8CP expectedPropPathStr, Utf8CP expectedRootClassName, Utf8CP expectedRootClassAlias, ECSqlColumnInfoCR actualColumnInfo)
     {
     auto actualProperty = actualColumnInfo.GetProperty ();
     if (expectedPropertyName == nullptr)
@@ -2484,7 +2479,6 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_Geometry)
         }
     ASSERT_EQ (2, rowCount);
     }
-
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  06/15
