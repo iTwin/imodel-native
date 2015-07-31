@@ -14,6 +14,8 @@
 #include    <DgnGeoCoord\DgnGeoCoordApi.h>
 #include    <DgnPlatform\IGeoCoordReproject.h>
 #include    <DgnPlatform\Undo.h>
+// needed for LoadLibraryW
+#include <windows.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
@@ -40,6 +42,10 @@ class       StandardReprojectionSettings : public IGeoCoordinateReprojectionSett
     virtual bool                    ReprojectElevation()                    { return false; }
     };
 
+// used for address to pass to BeGetModuleFileName.
+static void dummy() {;}
+
+typedef DgnPlatform::IGeoCoordinateReprojectionSettingsP  (*ReprojectRefSettingsFunc)(DgnModelRefP modelRef);
 
 /*=================================================================================**//**
 * This is the class that helps with the reprojection of a cache from reference GCS to master GCS.
@@ -75,6 +81,9 @@ private:
     int                 m_verticalConvertErrors;
     int                 m_otherErrors;
 
+    static bool                     s_lookedForRefReprojectionSettingsFunc;
+    static ReprojectRefSettingsFunc s_getRefReprojectionSettingsFunc;
+
 public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   10/06
@@ -98,11 +107,7 @@ CacheReproject (DgnModelRefP refModelRef, DgnGCSP refGCS, DgnModelRefP rootModel
     m_verticalConvertErrors     = 0;
     m_otherErrors               = 0;
     m_progressMeter             = DgnPlatformLib::GetHost().GetProgressMeter();
-#if defined (BEIJING_DGNPLATFORM_WIP_GEOCOORD)
-    m_reprojectionSettings      = dgnGeoCoord_getRefReprojectionSettings (refModelRef);
-#else
-    m_reprojectionSettings      = new StandardReprojectionSettings();
-#endif
+    m_reprojectionSettings      = GetRefReprojectionSettings (refModelRef);
 
     // calculate the stroke range. We use 1000 meters, and we need it in reference modelRef UORs
     double  refUorsPerMeter     = dgnModel_getUorPerMeter (refModelRef->GetDgnModelP());
@@ -143,6 +148,57 @@ virtual ~CacheReproject ()
         delete m_reprojectionSettings;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Barry.Bentley   07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnPlatform::IGeoCoordinateReprojectionSettingsP  GetRefReprojectionSettings (DgnModelRefP refModelRef)
+    {
+    FindRefReprojectionSettingsFunc();
+    if (nullptr == s_getRefReprojectionSettingsFunc)
+        return new StandardReprojectionSettings();
+
+    return s_getRefReprojectionSettingsFunc (refModelRef);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Barry.Bentley   07/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+static HMODULE FindManagedDll ()
+    {
+    BeFileName  dllFileName;
+    if (SUCCESS != Bentley::BeGetModuleFileName (dllFileName, (void*)&dummy))
+        return nullptr;
+
+    WString device;
+    WString dir;
+    dllFileName.ParseName (&device, &dir, NULL, NULL);
+
+    BeFileName  managedDllName;
+    managedDllName.BuildName (device.c_str(), dir.c_str(), L"Bentley.DgnGeoCoord2", L".dll");
+
+    // Try to load the library
+    return LoadLibraryW ( managedDllName);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Barry.Bentley   07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+static void FindRefReprojectionSettingsFunc()
+    {
+    // try once to find the dll and function that gets the Reprojection Settings for a given modelRef.
+    if (s_lookedForRefReprojectionSettingsFunc)
+        return;
+
+    s_lookedForRefReprojectionSettingsFunc = true;
+    s_getRefReprojectionSettingsFunc = nullptr;
+
+    HMODULE hLib;
+    if (nullptr == (hLib = FindManagedDll()))
+        return;
+
+    // Get the function pointers
+    s_getRefReprojectionSettingsFunc = (ReprojectRefSettingsFunc) GetProcAddress ( hLib, "dgnGeoCoord_getRefReprojectionSettings");
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   10/06
@@ -1021,3 +1077,6 @@ DGNGEOCOORD_EXPORTED StatusInt dgnGeoCoord_reprojectToGCS (DgnModelRefP modelRef
 
     return SUCCESS;
     }
+
+bool                        CacheReproject::s_lookedForRefReprojectionSettingsFunc;
+ReprojectRefSettingsFunc    CacheReproject::s_getRefReprojectionSettingsFunc;

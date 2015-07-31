@@ -19,6 +19,16 @@ assemDirToSearch    = $(BuildContextSubPartsAssemblies)
 %include cincapnd.mki
 
 #----------------------------------------------------------------------
+#
+#   Define __DGNEOCOORD_BUILD__ symbol, so that class declarations will
+#   know to specify dllexport, rather than dllimport (the default)
+#   !No other makefile should define this symbol!
+#
+#----------------------------------------------------------------------
+nameToDefine=__DGNGEOCOORDMANAGED_BUILD__
+%include cdefapnd.mki
+
+#----------------------------------------------------------------------
 #  Create output directories
 #----------------------------------------------------------------------
 o               = $(dgnGeoCoordObj)Managed/

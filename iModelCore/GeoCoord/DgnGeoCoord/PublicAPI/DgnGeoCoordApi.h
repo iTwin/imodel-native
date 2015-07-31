@@ -2,7 +2,7 @@
 |
 |     $Source: DgnGeoCoord/PublicAPI/DgnGeoCoordApi.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -17,12 +17,19 @@
 #   define DGNGEOCOORD_EXPORTED    __declspec(dllimport)
 #endif
 
+#if defined (__DGNGEOCOORDMANAGED_BUILD__)
+#   define DGNGEOCOORDMANAGED_EXPORTED    __declspec(dllexport)
+#else
+#   define DGNGEOCOORDMANAGED_EXPORTED    __declspec(dllimport)
+#endif
+
 BEGIN_EXTERN_C
 
+// these are exported from DgnGeoCoord2.dll (native dll).
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   10/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-DGNGEOCOORD_EXPORTED    DgnGCSP    dgnGeoCoord_readCoordinateSystem
+DGNGEOCOORD_EXPORTED    DgnGCSP     dgnGeoCoord_readCoordinateSystem
 (
 DgnModelRefP    modelRef,
 bool            primary
@@ -31,7 +38,7 @@ bool            primary
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   10/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-DGNGEOCOORD_EXPORTED    void    dgnGeoCoord_initialize
+DGNGEOCOORD_EXPORTED    void        dgnGeoCoord_initialize
 (
 const char*     dataDirectory
 );
@@ -46,11 +53,11 @@ DgnGCSP         newGCS,
 bool            reportProblems
 );
 
-// the functions below are not exported, called only within the DLL.
+// these are exported from Bentley.DgnGeoCoord2.dll (mixed dll).
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   05/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnPlatform::IGeoCoordinateReprojectionSettingsP  dgnGeoCoord_getRefReprojectionSettings
+DGNGEOCOORDMANAGED_EXPORTED DgnPlatform::IGeoCoordinateReprojectionSettingsP  dgnGeoCoord_getRefReprojectionSettings
 (
 DgnModelRefP modelRef
 );
@@ -58,7 +65,7 @@ DgnModelRefP modelRef
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   05/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       dgnGeoCoord_editRefReprojectionSettings
+DGNGEOCOORDMANAGED_EXPORTED StatusInt       dgnGeoCoord_editRefReprojectionSettings
 (
 DgnModelRefListP modelRefList
 );
@@ -66,7 +73,7 @@ DgnModelRefListP modelRefList
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   05/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       dgnGeoCoord_saveDefaultRefReprojectionSettings
+DGNGEOCOORDMANAGED_EXPORTED StatusInt       dgnGeoCoord_saveDefaultRefReprojectionSettings
 (
 DgnModelRefP    modelRef
 );
@@ -104,7 +111,6 @@ DgnGCSP         referenceGCS,
 DgnModelRefP    parentModelRef,
 DgnGCSP         parentGCS
 );
-
 
 END_EXTERN_C
 

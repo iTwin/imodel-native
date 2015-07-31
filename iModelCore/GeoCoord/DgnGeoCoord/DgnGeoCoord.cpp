@@ -2,7 +2,7 @@
 |
 |   $Source: DgnGeoCoord/DgnGeoCoord.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include    <DgnPlatform\DgnPlatformApi.h>
@@ -5907,11 +5907,6 @@ DgnGeoCoordinationAdmin::DgnGeoCoordinationAdmin (WCharCP dataDirectory, IACSMan
 
     // register the IACS stuff
     AddAuxCoordSystemProcessor (mgr);
-
-#if defined (BEIJING_DGNPLATFORM_WIP_GEOCOORD)
-    void dgnGeoCoord_initializeReprojectionSettings();
-    dgnGeoCoord_initializeReprojectionSettings();
-#endif
 
     Handler::RegisterSubTypeHandler (MICROSTATION_ELM, ELEMENTHANDLER_INSTANCE (GeoCoordType66Handler));
     }

@@ -2,7 +2,7 @@
 |
 |   $Source: DgnGeoCoord/ReprojectionSettings.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #pragma unmanaged
@@ -24,10 +24,7 @@
 #using      <Bentley.Platform.dll>
 #using      <Bentley.ECObjects.dll>
 #using      <Bentley.GeoCoord2.dll>
-
-#if defined (NEEDSWORK_DGNPLATFORM_ECXA)
 #using      <Bentley.ECXAttributes.dll>
-#endif
 
 namespace SIO   = System::IO;
 namespace SWF   = System::Windows::Forms;
@@ -40,10 +37,7 @@ namespace ECXML = Bentley::ECObjects::XML;
 namespace BGC   = Bentley::GeoCoordinates;
 namespace BGCN  = Bentley::GeoCoordinatesNET;
 namespace BUIA  = Bentley::UI::Attributes;
-
-#if defined (NEEDSWORK_DGNPLATFORM_ECXA)
 namespace ECXA  = Bentley::ECXAttributes;
-#endif
 
 // this makes it so we can use just String, rather than System::String all over the place.
 using   System::String;
@@ -330,7 +324,11 @@ static property ReprojectionSettingsECObjects^   Instance
     ReprojectionSettingsECObjects^ get()
         {
         if (nullptr == s_instance)
+            {
             s_instance = gcnew ReprojectionSettingsECObjects();
+            ECO::ECObjects::AddSchemaLocater (s_instance);
+            }
+
         return s_instance;
         }
     }
@@ -522,15 +520,11 @@ DgnModelRefP    modelRef
     if (NULL == (elemRef = cache->FindElementByID (refP->GetElementId())))
         return nullptr;
 
-#if defined (NEEDSWORK_DGNPLATFORM_ECXA)
     ElementHandle  elemHandle (elemRef, parentModelRef);
     ReprojectionSettingsECObjects::ECXATraverseArg^ arg = gcnew ReprojectionSettingsECObjects::ECXATraverseArg();
     ECXA::ECXAttributes::Traverse (gcnew ECXA::ECXAttributes::TraverseDelegate (this, &ReprojectionSettingsECObjects::FindECXAttribute),
                                     elemHandle, XAttributeHandle::INVALID_XATTR_ID, nullptr, arg);
     return arg->m_foundInstance;
-#endif
-
-    return nullptr;
     }
 
 
@@ -781,11 +775,7 @@ ECI::IECInstance^   instance
     if (NULL == (elemRef = cache->FindElementByID (refP->GetElementId())))
         return ERROR;
 
-#if defined (NEEDSWORK_DGNPLATFORM_ECXA)
-    //ElementHandle  elemHandle (elemRef, parentModelRef);
-    //BIME::Element^                      element = BIME::Element::ElementFactory (elemHandle, nullptr);
     ECXA::ECXAttributes::ReplaceInstance (elemRef, instance, true, false);
-#endif
 
     return SUCCESS;
     }
@@ -886,7 +876,7 @@ DgnModelRefP    modelRef
 
 };
 
-}   // End of GeoCoordinates Namespace
+}   // End of GeoCoordinatesNET Namespace
 
 
 
@@ -910,15 +900,6 @@ static ReprojectionSettingsManager* GetInstance ()
     if (NULL == s_instance)
         s_instance = new ReprojectionSettingsManager();
     return s_instance;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Barry.Bentley   05/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-void                                    Initialize ()
-    {
-    // add the ReprojectionSettingeECObjects schema locater.
-    ECO::ECObjects::AddSchemaLocater (BGCN::ReprojectionSettingsECObjects::Instance);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1025,20 +1006,13 @@ ReprojectionSettingsManager*    ReprojectionSettingsManager::s_instance;
 
 }   // End of GeoCoordinates Namespace
 
+END_BENTLEY_NAMESPACE
+
 #pragma unmanaged
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   05/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            dgnGeoCoord_initializeReprojectionSettings()
-    {
-    Bentley::GeoCoordinates::ReprojectionSettingsManager::GetInstance()->Initialize();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Barry.Bentley   05/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnPlatform::IGeoCoordinateReprojectionSettingsP dgnGeoCoord_getRefReprojectionSettings (DgnModelRefP modelRef)
+DGNGEOCOORDMANAGED_EXPORTED DgnPlatform::IGeoCoordinateReprojectionSettingsP dgnGeoCoord_getRefReprojectionSettings (DgnModelRefP modelRef)
     {
     return Bentley::GeoCoordinates::ReprojectionSettingsManager::GetInstance()->GetReprojectionSettings (modelRef);
     }
@@ -1046,7 +1020,7 @@ DgnPlatform::IGeoCoordinateReprojectionSettingsP dgnGeoCoord_getRefReprojectionS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   05/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       dgnGeoCoord_editRefReprojectionSettings
+DGNGEOCOORDMANAGED_EXPORTED StatusInt       dgnGeoCoord_editRefReprojectionSettings
 (
 DgnModelRefListP modelRefList
 )
@@ -1057,7 +1031,7 @@ DgnModelRefListP modelRefList
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   05/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt       dgnGeoCoord_saveDefaultRefReprojectionSettings
+DGNGEOCOORDMANAGED_EXPORTED StatusInt       dgnGeoCoord_saveDefaultRefReprojectionSettings
 (
 DgnModelRefP        modelRef
 )
@@ -1065,4 +1039,4 @@ DgnModelRefP        modelRef
     return Bentley::GeoCoordinates::ReprojectionSettingsManager::GetInstance()->SaveDefaultSettingsToReference (modelRef);
     }
 
-END_BENTLEY_NAMESPACE
+

@@ -2,7 +2,7 @@
 |
 |   $Source: DgnGeoCoord/GeoCoordServices.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +----------------------------------------------------------------------*/
 #include    <Geom\msgeomstructs.hpp>
@@ -10,6 +10,8 @@
 #include    <DgnGeoCoord\DgnGeoCoordApi.h>
 #include    <DgnPlatform\DgnCoreAPI.h>
 #include    <DgnPlatform\IGeoCoordServices.h>
+// needed for LoadLibraryW
+#include <windows.h>
 
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
@@ -588,7 +590,9 @@ bool RecoverReferenceScales (TransformCR  knownTransform, RotMatrixCR originalMa
 
 };
 
-
+typedef StatusInt       (*EditRefReprojectionSettingsFunc) (DgnModelRefListP modelRefList);
+typedef StatusInt       (*SaveDefaultRefReprojectionSettingsFunc)(DgnModelRefP modelRef);
+static void dummy() {;}
 
 /*=================================================================================**//**
 * This is the class that implements geocoordinate reference interface.
@@ -596,7 +600,22 @@ bool RecoverReferenceScales (TransformCR  knownTransform, RotMatrixCR originalMa
 +===============+===============+===============+===============+===============+======*/
 class   GeoCoordinateServices : public IGeoCoordinateServices
 {
+private:
+bool                                        m_lookedForSaveDefaultSettingsFunction;
+bool                                        m_lookedForEditReprojectionSettingsFunction;
+SaveDefaultRefReprojectionSettingsFunc      m_saveDefaultRefReprojectionSettingsFunc;
+EditRefReprojectionSettingsFunc             m_editRefReprojectionSettingsFunc;
+
 public:
+GeoCoordinateServices ()
+    {
+    // we look these functions up at runtime when needed.
+    m_lookedForSaveDefaultSettingsFunction      = false;
+    m_lookedForEditReprojectionSettingsFunction = false;
+    m_saveDefaultRefReprojectionSettingsFunc    = nullptr;
+    m_editRefReprojectionSettingsFunc           = nullptr;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Barry.Bentley   10/06
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -971,10 +990,50 @@ DgnModelRefListP    modelRefList
     if ((NULL == modelRefList) || (0 == modelRefList->size ()))
         return GEOREF_STATUS_BadArg;
 
-#if defined (BEIJING_MSTNPLATFORM_WIP_GEOCOORD)
-    return dgnGeoCoord_editRefReprojectionSettings (modelRefList);
-#endif
-    return  GEOREF_STATUS_BadArg;
+    FindEditReprojectionSettingsFunction();
+    if (nullptr == m_editRefReprojectionSettingsFunc)
+        return  GEOREF_STATUS_CantFindFunction;
+
+    return (GeoReferenceStatus)(*m_editRefReprojectionSettingsFunc) (modelRefList);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Barry.Bentley   07/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+HMODULE FindManagedDll ()
+    {
+    BeFileName  dllFileName;
+    if (SUCCESS != Bentley::BeGetModuleFileName (dllFileName, (void*)&dummy))
+        return nullptr;
+
+    WString device;
+    WString dir;
+    dllFileName.ParseName (&device, &dir, NULL, NULL);
+
+    BeFileName  managedDllName;
+    managedDllName.BuildName (device.c_str(), dir.c_str(), L"Bentley.DgnGeoCoord2", L".dll");
+
+    // try to load the library
+    return LoadLibraryW ( managedDllName);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Barry.Bentley   07/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void    FindEditReprojectionSettingsFunction ()
+    {
+    // try once to find the dll and function that edits the Reprojection Settings for a reference.
+    // The function is in the Bentley.DgnGeoCoord2 mixed DLL. Since that dll depends on this dll, we can't depend on it, so we have to look it up at runtime.
+    if (m_lookedForEditReprojectionSettingsFunction)
+        return;
+    m_lookedForEditReprojectionSettingsFunction  = true;
+
+    HMODULE hLib;
+    if (nullptr == (hLib = FindManagedDll()))
+        return;
+
+    // Get the function pointer
+    m_editRefReprojectionSettingsFunc = (EditRefReprojectionSettingsFunc) GetProcAddress ( hLib, "dgnGeoCoord_editRefReprojectionSettings");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -988,10 +1047,30 @@ DgnModelRefP        modelRef
     if (NULL == modelRef || ! modelRef->IsDgnAttachment())
         return  GEOREF_STATUS_BadArg;
 
-#if defined (BEIJING_MSTNPLATFORM_WIP_GEOCOORD)
-    return dgnGeoCoord_saveDefaultRefReprojectionSettings (modelRef);
-#endif
-    return  GEOREF_STATUS_BadArg;
+    FindSaveDefaultSettingsFunction();
+    if (nullptr == m_saveDefaultRefReprojectionSettingsFunc)
+        return  GEOREF_STATUS_CantFindFunction;
+
+    return (GeoReferenceStatus) (*m_saveDefaultRefReprojectionSettingsFunc) (modelRef);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Barry.Bentley   07/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void    FindSaveDefaultSettingsFunction ()
+    {
+    // try once to find the dll and function that saves default Reprojection Settings to a reference.
+    // The function is in the Bentley.DgnGeoCoord2 mixed DLL. Since that dll depends on this dll, we can't depend on it, so we have to look it up at runtime.
+    if (m_lookedForSaveDefaultSettingsFunction)
+        return;
+    m_lookedForSaveDefaultSettingsFunction = true;
+
+    HMODULE hLib;
+    if (nullptr == (hLib = FindManagedDll()))
+        return;
+
+    // Get the function pointer
+    m_saveDefaultRefReprojectionSettingsFunc = (SaveDefaultRefReprojectionSettingsFunc) GetProcAddress ( hLib, "dgnGeoCoord_saveDefaultRefReprojectionSettings");
     }
 
 private:

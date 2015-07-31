@@ -67,6 +67,7 @@
         <SubPart PartName="DgnGeoCoord" />
         <SubPart PartName="GeoCoordManaged" />
         <SubPart PartName="DgnPlatformNETAssembly" PartFile="DgnPlatformNET" Repository="DgnPlatformNET" />
+        <SubPart PartName="ECXAttributes" PartFile="DgnPlatformNET" Repository="DgnPlatformNET" />
         <Bindings>
             <Assemblies ProductDirectoryName="GeoCoordManagedAssemblies">Delivery\Bentley.DgnGeoCoord$(ApiNumber).dll
                 <TransKit SourceDirectory="Delivery\DgnGeoCoordManaged\transkit" />
