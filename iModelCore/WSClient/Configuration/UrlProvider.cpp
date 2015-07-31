@@ -8,7 +8,9 @@
 #include "ClientInternal.h"
 #include <WebServices/Configuration/UrlProvider.h>
 
-#define LOCAL_STATE_NAMESPACE "UrlCache"
+#define LOCAL_STATE_NAMESPACE   "UrlCache"
+#define LOCAL_STATE_ENVIRONMENT "Environment"
+
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 static UrlProvider::Environment s_env;
@@ -79,6 +81,16 @@ void UrlProvider::Initialize(Environment env, ILocalState* customLocalState, IBu
     s_buddi = customBuddi ? customBuddi : std::make_shared<BuddiClient>();
     s_env = env;
     s_isInitialized = true;
+
+    Json::Value jsonPreviousEnv = s_localState->GetValue(LOCAL_STATE_NAMESPACE, LOCAL_STATE_ENVIRONMENT);
+    if (!jsonPreviousEnv.isNull() && env != jsonPreviousEnv.asUInt())
+        {
+        CleanUpUrlCache();
+        }
+    if (jsonPreviousEnv.isNull() || env != jsonPreviousEnv.asUInt())
+        {    
+        s_localState->SaveValue(LOCAL_STATE_NAMESPACE, LOCAL_STATE_ENVIRONMENT, env);
+        }
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -178,6 +190,6 @@ void UrlProvider::CleanUpUrlCache()
     {
     for (int i = 0; i < sizeof(s_urlNames) / sizeof(Utf8CP); i++)
         {
-        s_localState->SaveValue(LOCAL_STATE_NAMESPACE, s_urlNames[i], "");
+        s_localState->SaveValue(LOCAL_STATE_NAMESPACE, s_urlNames[i], Json::Value::null);
         }
     }
