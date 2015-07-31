@@ -81,6 +81,21 @@ m_id (errorId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 WSError::WSError (HttpResponseCR httpResponse) : WSError ()
     {
+    if (ConnectionStatus::OK == httpResponse.GetConnectionStatus() &&
+        LOG.isSeverityEnabled(NativeLogging::SEVERITY::LOG_TRACE))
+        {
+        LOG.tracev
+            (
+            "WSError - received error:\n"
+            "From Url: %s\n"
+            "Http status: %d\n"
+            "Server response: %s\n",
+            httpResponse.GetEffectiveUrl().c_str(),
+            httpResponse.GetHttpStatus(),
+            httpResponse.GetBody().AsString().c_str()
+            );
+        }
+
     if (ConnectionStatus::Canceled == httpResponse.GetConnectionStatus ())
         {
         m_message.clear ();
@@ -112,21 +127,6 @@ WSError::WSError (HttpResponseCR httpResponse) : WSError ()
     if (SUCCESS != ParseBody (httpResponse))
         {
         SetStatusServerNotSupported ();
-        }
-
-    if (m_status != Status::ServerNotSupported &&
-        LOG.isSeverityEnabled (NativeLogging::SEVERITY::LOG_TRACE))
-        {
-        LOG.tracev
-            (
-            "WSError - received error:\n"
-            "From Url: %s\n"
-            "Http status: %d\n"
-            "Server response: %s\n",
-            httpResponse.GetEffectiveUrl ().c_str (),
-            httpResponse.GetHttpStatus (),
-            httpResponse.GetBody ().AsString ().c_str ()
-            );
         }
     }
 
