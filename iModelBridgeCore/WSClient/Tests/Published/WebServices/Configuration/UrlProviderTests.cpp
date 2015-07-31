@@ -25,9 +25,8 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_NoCachedURL_GetsURLFromBuddiWritesTo
     MockLocalState localState;
 
     EXPECT_CALL(localState, GetValue(_, _))
-        .WillOnce(Return(Json::Value::null))
-        .WillOnce(Return(""));
-    EXPECT_CALL(localState, SaveValue(_, _, _)).Times(2);
+        .WillOnce(Return(Json::Value::null));
+    EXPECT_CALL(localState, SaveValue(_, _, _)).Times(1);
     EXPECT_CALL(*client, GetUrl(_, _)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success(url))));
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, &localState, client);
@@ -56,9 +55,7 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_UrlIsCached_GetsURL)
     Utf8String url = "testUrl";
     MockLocalState localState;
 
-    EXPECT_CALL(localState, GetValue(_, _))
-        .WillOnce(Return(Json::Value::null))
-        .WillOnce(Return(url));
+    EXPECT_CALL(localState, GetValue(_, _)).WillOnce(Return(url));
     EXPECT_CALL(*client, GetUrl(_, _)).Times(0);
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, &localState, client);
@@ -142,42 +139,5 @@ TEST_F(UrlProviderTests, CleanUpCache_UrlsWereCached_RemovesUrlsFromLocalState)
     UrlProvider::GetConnectLearnStsAuthUri().c_str();
     UrlProvider::GetUsageTrackingUrl().c_str();
     UrlProvider::GetPassportUrl().c_str();
-    }
-
-TEST_F(UrlProviderTests, Initialize_CalledSecondTimeWithDifferentEnvironment_CleansUpCache)
-    {
-    auto client = std::make_shared<MockBuddiClient>();
-    Utf8String urlDev = "testUrl_Dev";
-    Utf8String urlQa = "testUrl_Qa";
-    StubLocalState localState;
-
-    EXPECT_CALL(*client, GetUrl(_, _))
-        .WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success(urlDev))))
-        .WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success(urlQa))))
-        .WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success(urlDev))));
-
-    UrlProvider::Initialize(UrlProvider::Environment::Dev, &localState, client);
-    EXPECT_STREQ(urlDev.c_str(), UrlProvider::GetPunchlistWsgUrl().c_str());
-
-    UrlProvider::Initialize(UrlProvider::Environment::Qa, &localState, client);
-    EXPECT_STREQ(urlQa.c_str(), UrlProvider::GetPunchlistWsgUrl().c_str());
-
-    UrlProvider::Initialize(UrlProvider::Environment::Dev, &localState, client);
-    EXPECT_STREQ(urlDev.c_str(), UrlProvider::GetPunchlistWsgUrl().c_str());
-    }
-
-TEST_F(UrlProviderTests, Initialize_CalledSecondTimeWithSameEnvironment_DoesNotCleanUpCache)
-    {
-    auto client = std::make_shared<MockBuddiClient>();
-    Utf8String url = "testUrl";
-    StubLocalState localState;
-
-    EXPECT_CALL(*client, GetUrl(_, _)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success(url))));
-
-    UrlProvider::Initialize(UrlProvider::Environment::Dev, &localState, client);
-    EXPECT_STREQ(url.c_str(), UrlProvider::GetPunchlistWsgUrl().c_str());
-
-    UrlProvider::Initialize(UrlProvider::Environment::Dev, &localState, client);
-    EXPECT_STREQ(url.c_str(), UrlProvider::GetPunchlistWsgUrl().c_str());
     }
 #endif
