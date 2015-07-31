@@ -867,9 +867,9 @@ ECObjectsStatus           IECInstance::SetInternalValueUsingAccessor (ECValueAcc
 
             //Get the array value to check its size. Expand array if necessary.
             if (compatible)
-                currentInstance->GetValue(arrayInfoPlaceholder, (uint32_t)propertyIndex);
+                status = currentInstance->GetValue(arrayInfoPlaceholder, (uint32_t)propertyIndex);
             else
-                currentInstance->GetValue(arrayInfoPlaceholder, accessor.GetAccessString (depth));
+                status = currentInstance->GetValue(arrayInfoPlaceholder, accessor.GetAccessString (depth));
 
             if (ECOBJECTS_STATUS_Success != status)
                 return status;
