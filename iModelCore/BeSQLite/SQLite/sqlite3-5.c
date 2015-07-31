@@ -18,6 +18,7 @@
 ** that actually generate the bulk of the WHERE loop code.  The original where.c
 ** file retains the code that does query planning and analysis.
 */
+/* #include "sqliteInt.h" */
 /************** Include whereInt.h in the middle of wherecode.c **************/
 /************** Begin file whereInt.h ****************************************/
 /*
@@ -1829,7 +1830,11 @@ SQLITE_PRIVATE Bitmask sqlite3WhereCodeOneLoopStart(
               r = sqlite3GetTempRange(pParse, nPk);
               for(iPk=0; iPk<nPk; iPk++){
                 int iCol = pPk->aiColumn[iPk];
-                sqlite3ExprCodeGetColumn(pParse, pTab, iCol, iCur, r+iPk, 0);
+                int rx;
+                rx = sqlite3ExprCodeGetColumn(pParse, pTab, iCol, iCur,r+iPk,0);
+                if( rx!=r+iPk ){
+                  sqlite3VdbeAddOp2(v, OP_SCopy, rx, r+iPk);
+                }
               }
 
               /* Check if the temp table already contains this key. If so,
@@ -2053,6 +2058,8 @@ SQLITE_PRIVATE Bitmask sqlite3WhereCodeOneLoopStart(
 ** readability and editabiliity.  This file contains utility routines for
 ** analyzing Expr objects in the WHERE clause.
 */
+/* #include "sqliteInt.h" */
+/* #include "whereInt.h" */
 
 /* Forward declarations */
 static void exprAnalyze(SrcList*, WhereClause*, int);
@@ -3303,6 +3310,8 @@ SQLITE_PRIVATE void sqlite3WhereExprAnalyze(
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 */
+/* #include "sqliteInt.h" */
+/* #include "whereInt.h" */
 
 /* Forward declaration of methods */
 static int whereLoopResize(sqlite3*, WhereLoop*, int);
@@ -7802,6 +7811,7 @@ SQLITE_PRIVATE void sqlite3WhereEnd(WhereInfo *pWInfo){
 ** in the input grammar file. */
 /* #include <stdio.h> */
 
+/* #include "sqliteInt.h" */
 
 /*
 ** Disable all error recovery processing in the parser push-down
@@ -11387,6 +11397,7 @@ SQLITE_PRIVATE void sqlite3Parser(
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 */
+/* #include "sqliteInt.h" */
 /* #include <stdlib.h> */
 
 /*
@@ -12196,6 +12207,7 @@ abort_parse:
 ** separating it out, the code will be automatically omitted from
 ** static links that do not use it.
 */
+/* #include "sqliteInt.h" */
 #ifndef SQLITE_OMIT_COMPLETE
 
 /*
@@ -12486,6 +12498,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_complete16(const void *zSql){
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 */
+/* #include "sqliteInt.h" */
 
 #ifdef SQLITE_ENABLE_FTS3
 /************** Include fts3.h in the middle of main.c ***********************/
@@ -12505,6 +12518,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_complete16(const void *zSql){
 ** This header file is used by programs that want to link against the
 ** FTS3 library.  All it does is declare the sqlite3Fts3Init() interface.
 */
+/* #include "sqlite3.h" */
 
 #if 0
 extern "C" {
@@ -12537,6 +12551,7 @@ SQLITE_PRIVATE int sqlite3Fts3Init(sqlite3 *db);
 ** This header file is used by programs that want to link against the
 ** RTREE library.  All it does is declare the sqlite3RtreeInit() interface.
 */
+/* #include "sqlite3.h" */
 
 #if 0
 extern "C" {
@@ -12569,6 +12584,7 @@ SQLITE_PRIVATE int sqlite3RtreeInit(sqlite3 *db);
 ** This header file is used by programs that want to link against the
 ** ICU extension.  All it does is declare the sqlite3IcuInit() interface.
 */
+/* #include "sqlite3.h" */
 
 #if 0
 extern "C" {
@@ -13201,6 +13217,7 @@ SQLITE_API int SQLITE_CDECL sqlite3_config(int op, ...){
 ** the lookaside memory.
 */
 static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
+#ifndef SQLITE_OMIT_LOOKASIDE
   void *pStart;
   if( db->lookaside.nOut ){
     return SQLITE_BUSY;
@@ -13251,6 +13268,7 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
     db->lookaside.bEnabled = 0;
     db->lookaside.bMalloced = 0;
   }
+#endif /* SQLITE_OMIT_LOOKASIDE */
   return SQLITE_OK;
 }
 
@@ -16382,6 +16400,8 @@ SQLITE_API int SQLITE_STDCALL sqlite3_db_readonly(sqlite3 *db, const char *zDbNa
 ** This file contains the implementation of the sqlite3_unlock_notify()
 ** API method and its associated functionality.
 */
+/* #include "sqliteInt.h" */
+/* #include "btreeInt.h" */
 
 /* Omit this entire file if SQLITE_ENABLE_UNLOCK_NOTIFY is not defined. */
 #ifdef SQLITE_ENABLE_UNLOCK_NOTIFY
@@ -17025,9 +17045,11 @@ SQLITE_PRIVATE void sqlite3ConnectionClosed(sqlite3 *db){
 
 /* If not building as part of the core, include sqlite3ext.h. */
 #ifndef SQLITE_CORE
+/* # include "sqlite3ext.h"  */
 SQLITE_EXTENSION_INIT3
 #endif
 
+/* #include "sqlite3.h" */
 /************** Include fts3_tokenizer.h in the middle of fts3Int.h **********/
 /************** Begin file fts3_tokenizer.h **********************************/
 /*
@@ -17056,6 +17078,7 @@ SQLITE_EXTENSION_INIT3
 ** If tokenizers are to be allowed to call sqlite3_*() functions, then
 ** we will need a way to register the API consistently.
 */
+/* #include "sqlite3.h" */
 
 /*
 ** Structures used by the tokenizer interface. When a new tokenizer
@@ -17896,7 +17919,9 @@ SQLITE_PRIVATE int sqlite3FtsUnicodeIsdiacritic(int);
 /* #include <string.h> */
 /* #include <stdarg.h> */
 
+/* #include "fts3.h" */
 #ifndef SQLITE_CORE 
+/* # include "sqlite3ext.h" */
   SQLITE_EXTENSION_INIT1
 #endif
 
@@ -23515,6 +23540,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_fts3_init(
 ******************************************************************************
 **
 */
+/* #include "fts3Int.h" */
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3)
 
 /* #include <string.h> */
@@ -24071,6 +24097,7 @@ SQLITE_PRIVATE int sqlite3Fts3InitAux(sqlite3 *db){
 ** syntax is relatively simple, the whole tokenizer/parser system is
 ** hand-coded. 
 */
+/* #include "fts3Int.h" */
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3)
 
 /*
@@ -25364,12 +25391,14 @@ SQLITE_PRIVATE int sqlite3Fts3ExprInitTestInterface(sqlite3* db){
 **     * The FTS3 module is being built into the core of
 **       SQLite (in which case SQLITE_ENABLE_FTS3 is defined).
 */
+/* #include "fts3Int.h" */
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3)
 
 /* #include <assert.h> */
 /* #include <stdlib.h> */
 /* #include <string.h> */
 
+/* #include "fts3_hash.h" */
 
 /*
 ** Malloc and Free functions
@@ -25747,6 +25776,7 @@ SQLITE_PRIVATE void *sqlite3Fts3HashInsert(
 **     * The FTS3 module is being built into the core of
 **       SQLite (in which case SQLITE_ENABLE_FTS3 is defined).
 */
+/* #include "fts3Int.h" */
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3)
 
 /* #include <assert.h> */
@@ -25754,6 +25784,7 @@ SQLITE_PRIVATE void *sqlite3Fts3HashInsert(
 /* #include <stdio.h> */
 /* #include <string.h> */
 
+/* #include "fts3_tokenizer.h" */
 
 /*
 ** Class derived from sqlite3_tokenizer
@@ -26411,6 +26442,7 @@ SQLITE_PRIVATE void sqlite3Fts3PorterTokenizerModule(
 **     * The FTS3 module is being built into the core of
 **       SQLite (in which case SQLITE_ENABLE_FTS3 is defined).
 */
+/* #include "fts3Int.h" */
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3)
 
 /* #include <assert.h> */
@@ -26906,6 +26938,7 @@ SQLITE_PRIVATE int sqlite3Fts3InitHashTable(
 **     * The FTS3 module is being built into the core of
 **       SQLite (in which case SQLITE_ENABLE_FTS3 is defined).
 */
+/* #include "fts3Int.h" */
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3)
 
 /* #include <assert.h> */
@@ -26913,6 +26946,7 @@ SQLITE_PRIVATE int sqlite3Fts3InitHashTable(
 /* #include <stdio.h> */
 /* #include <string.h> */
 
+/* #include "fts3_tokenizer.h" */
 
 typedef struct simple_tokenizer {
   sqlite3_tokenizer base;
@@ -27157,6 +27191,7 @@ SQLITE_PRIVATE void sqlite3Fts3SimpleTokenizerModule(
 **   pos:     Token offset of token within input.
 **
 */
+/* #include "fts3Int.h" */
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3)
 
 /* #include <string.h> */

@@ -13,6 +13,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 */
+/* #include "sqliteInt.h" */
 
 /*
 ** Return the 'affinity' of the expression pExpr if any.
@@ -4175,6 +4176,7 @@ SQLITE_PRIVATE void sqlite3ClearTempRegCache(Parse *pParse){
 ** This file contains C code routines that used to generate VDBE code
 ** that implements the ALTER TABLE command.
 */
+/* #include "sqliteInt.h" */
 
 /*
 ** The code in this file only exists if we are not omitting the
@@ -5137,6 +5139,7 @@ exit_begin_add_column:
 ** integer in the equivalent columns in sqlite_stat4.
 */
 #ifndef SQLITE_OMIT_ANALYZE
+/* #include "sqliteInt.h" */
 
 #if defined(SQLITE_ENABLE_STAT4)
 # define IsStat4     1
@@ -6902,6 +6905,7 @@ SQLITE_PRIVATE int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 */
+/* #include "sqliteInt.h" */
 
 #ifndef SQLITE_OMIT_ATTACH
 /*
@@ -7491,6 +7495,7 @@ SQLITE_PRIVATE int sqlite3FixTriggerStep(
 ** systems that do not need this facility may omit it by recompiling
 ** the library with -DSQLITE_OMIT_AUTHORIZATION=1
 */
+/* #include "sqliteInt.h" */
 
 /*
 ** All of the code in this file may be omitted by defining a single
@@ -7761,6 +7766,7 @@ SQLITE_PRIVATE void sqlite3AuthContextPop(AuthContext *pContext){
 **     COMMIT
 **     ROLLBACK
 */
+/* #include "sqliteInt.h" */
 
 /*
 ** This routine is called when a new SQL statement is beginning to
@@ -12081,6 +12087,7 @@ SQLITE_PRIVATE void sqlite3WithDelete(sqlite3 *db, With *pWith){
 ** of user defined functions and collation sequences.
 */
 
+/* #include "sqliteInt.h" */
 
 /*
 ** Invoke the 'collation needed' callback to request a collation sequence
@@ -12558,6 +12565,7 @@ SQLITE_PRIVATE Schema *sqlite3SchemaGet(sqlite3 *db, Btree *pBt){
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 */
+/* #include "sqliteInt.h" */
 
 /*
 ** While a SrcList can in general represent multiple tables and subqueries
@@ -13412,8 +13420,10 @@ SQLITE_PRIVATE void sqlite3ResolvePartIdxLabel(Parse *pParse, int iLabel){
 ** functions of SQLite.  (Some function, and in particular the date and
 ** time functions, are implemented separately.)
 */
+/* #include "sqliteInt.h" */
 /* #include <stdlib.h> */
 /* #include <assert.h> */
+/* #include "vdbeInt.h" */
 
 /*
 ** Return the collating function associated with a function.
@@ -14519,16 +14529,14 @@ static void zeroblobFunc(
   sqlite3_value **argv
 ){
   i64 n;
-  sqlite3 *db = sqlite3_context_db_handle(context);
+  int rc;
   assert( argc==1 );
   UNUSED_PARAMETER(argc);
   n = sqlite3_value_int64(argv[0]);
-  testcase( n==db->aLimit[SQLITE_LIMIT_LENGTH] );
-  testcase( n==db->aLimit[SQLITE_LIMIT_LENGTH]+1 );
-  if( n>db->aLimit[SQLITE_LIMIT_LENGTH] ){
-    sqlite3_result_error_toobig(context);
-  }else{
-    sqlite3_result_zeroblob(context, (int)n); /* IMP: R-00293-64994 */
+  if( n<0 ) n = 0;
+  rc = sqlite3_result_zeroblob64(context, n); /* IMP: R-00293-64994 */
+  if( rc ){
+    sqlite3_result_error_code(context, rc);
   }
 }
 
@@ -15209,6 +15217,7 @@ SQLITE_PRIVATE void sqlite3RegisterGlobalFunctions(void){
 ** This file contains code used by the compiler to add foreign key
 ** support to compiled SQL statements.
 */
+/* #include "sqliteInt.h" */
 
 #ifndef SQLITE_OMIT_FOREIGN_KEY
 #ifndef SQLITE_OMIT_TRIGGER
@@ -16613,6 +16622,7 @@ SQLITE_PRIVATE void sqlite3FkDelete(sqlite3 *db, Table *pTab){
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 */
+/* #include "sqliteInt.h" */
 
 /*
 ** Generate code that will 
@@ -18687,6 +18697,7 @@ static int xferOptimization(
 ** accessed by users of the library.
 */
 
+/* #include "sqliteInt.h" */
 
 /*
 ** Execute SQL code.  Return one of the SQLITE_ success/failure
@@ -18855,6 +18866,7 @@ exec_out:
 */
 #ifndef _SQLITE3EXT_H_
 #define _SQLITE3EXT_H_
+/* #include "sqlite3.h" */
 
 typedef struct sqlite3_api_routines sqlite3_api_routines;
 
@@ -19107,6 +19119,8 @@ struct sqlite3_api_routines {
   /* Version 3.8.11 and later */
   sqlite3_value *(*value_dup)(const sqlite3_value*);
   void (*value_free)(sqlite3_value*);
+  int (*result_zeroblob64)(sqlite3_context*,sqlite3_uint64);
+  int (*bind_zeroblob64)(sqlite3_stmt*, int, sqlite3_uint64);
 };
 
 /*
@@ -19340,6 +19354,8 @@ struct sqlite3_api_routines {
 /* Version 3.8.11 and later */
 #define sqlite3_value_dup              sqlite3_api->value_dup
 #define sqlite3_value_free             sqlite3_api->value_free
+#define sqlite3_result_zeroblob64      sqlite3_api->result_zeroblob64
+#define sqlite3_bind_zeroblob64        sqlite3_api->bind_zeroblob64
 #endif /* SQLITE_CORE */
 
 #ifndef SQLITE_CORE
@@ -19361,6 +19377,7 @@ struct sqlite3_api_routines {
 
 /************** End of sqlite3ext.h ******************************************/
 /************** Continuing where we left off in loadext.c ********************/
+/* #include "sqliteInt.h" */
 /* #include <string.h> */
 
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
@@ -19748,7 +19765,9 @@ static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_strglob,
   /* Version 3.8.11 and later */
   (sqlite3_value*(*)(const sqlite3_value*))sqlite3_value_dup,
-  sqlite3_value_free
+  sqlite3_value_free,
+  sqlite3_result_zeroblob64,
+  sqlite3_bind_zeroblob64
 };
 
 /*
@@ -20130,6 +20149,7 @@ SQLITE_PRIVATE void sqlite3AutoLoadExtensions(sqlite3 *db){
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 */
+/* #include "sqliteInt.h" */
 
 #if !defined(SQLITE_ENABLE_LOCKING_STYLE)
 #  if defined(__APPLE__)
@@ -20236,7 +20256,7 @@ static const struct sPragmaNames {
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
   { /* zName:     */ "cache_size",
     /* ePragTyp:  */ PragTyp_CACHE_SIZE,
-    /* ePragFlag: */ PragFlag_NeedSchema,
+    /* ePragFlag: */ 0,
     /* iArg:      */ 0 },
 #endif
 #if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
@@ -21306,6 +21326,7 @@ SQLITE_PRIVATE void sqlite3Pragma(
   case PragTyp_CACHE_SIZE: {
     assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
     if( !zRight ){
+      if( sqlite3ReadSchema(pParse) ) goto pragma_out;
       returnSingleInt(pParse, "cache_size", pDb->pSchema->cache_size);
     }else{
       int size = sqlite3Atoi(zRight);
@@ -22581,6 +22602,7 @@ pragma_out:
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 */
+/* #include "sqliteInt.h" */
 
 /*
 ** Fill the InitData structure with an error message that indicates
@@ -23475,6 +23497,7 @@ SQLITE_API int SQLITE_STDCALL sqlite3_prepare16_v2(
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 */
+/* #include "sqliteInt.h" */
 
 /*
 ** Trace output macros
@@ -24544,7 +24567,6 @@ static KeyInfo *keyInfoFromExprList(
   return pInfo;
 }
 
-#ifndef SQLITE_OMIT_COMPOUND_SELECT
 /*
 ** Name of the connection operator, used for error messages.
 */
@@ -24558,7 +24580,6 @@ static const char *selectOpName(int id){
   }
   return z;
 }
-#endif /* SQLITE_OMIT_COMPOUND_SELECT */
 
 #ifndef SQLITE_OMIT_EXPLAIN
 /*
@@ -25562,19 +25583,6 @@ static int multiSelectOrderBy(
 );
 
 /*
-** Error message for when two or more terms of a compound select have different
-** size result sets.
-*/
-SQLITE_PRIVATE void sqlite3SelectWrongNumTermsError(Parse *pParse, Select *p){
-  if( p->selFlags & SF_Values ){
-    sqlite3ErrorMsg(pParse, "all VALUES must have the same number of terms");
-  }else{
-    sqlite3ErrorMsg(pParse, "SELECTs to the left and right of %s"
-      " do not have the same number of result columns", selectOpName(p->op));
-  }
-}
-
-/*
 ** Handle the special case of a compound-select that originates from a
 ** VALUES clause.  By handling this as a special case, we avoid deep
 ** recursion, and thus do not need to enforce the SQLITE_LIMIT_COMPOUND_SELECT
@@ -25999,6 +26007,19 @@ multi_select_end:
   return rc;
 }
 #endif /* SQLITE_OMIT_COMPOUND_SELECT */
+
+/*
+** Error message for when two or more terms of a compound select have different
+** size result sets.
+*/
+SQLITE_PRIVATE void sqlite3SelectWrongNumTermsError(Parse *pParse, Select *p){
+  if( p->selFlags & SF_Values ){
+    sqlite3ErrorMsg(pParse, "all VALUES must have the same number of terms");
+  }else{
+    sqlite3ErrorMsg(pParse, "SELECTs to the left and right of %s"
+      " do not have the same number of result columns", selectOpName(p->op));
+  }
+}
 
 /*
 ** Code an output subroutine for a coroutine implementation of a
@@ -29093,6 +29114,7 @@ select_end:
 ** These routines are in a separate files so that they will not be linked
 ** if they are not used.
 */
+/* #include "sqliteInt.h" */
 /* #include <stdlib.h> */
 /* #include <string.h> */
 
@@ -29289,6 +29311,7 @@ SQLITE_API void SQLITE_STDCALL sqlite3_free_table(
 *************************************************************************
 ** This file contains the implementation for TRIGGERs
 */
+/* #include "sqliteInt.h" */
 
 #ifndef SQLITE_OMIT_TRIGGER
 /*
@@ -30412,6 +30435,7 @@ SQLITE_PRIVATE u32 sqlite3TriggerColmask(
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 */
+/* #include "sqliteInt.h" */
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /* Forward declaration */
@@ -31201,6 +31225,8 @@ static void updateVirtualTable(
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 */
+/* #include "sqliteInt.h" */
+/* #include "vdbeInt.h" */
 
 #if !defined(SQLITE_OMIT_VACUUM) && !defined(SQLITE_OMIT_ATTACH)
 /*
@@ -31573,6 +31599,7 @@ end_of_vacuum:
 ** This file contains code used to help implement virtual tables.
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
+/* #include "sqliteInt.h" */
 
 /*
 ** Before a virtual table xCreate() or xConnect() method is invoked, the
