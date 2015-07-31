@@ -96,7 +96,6 @@ enum UnoReference_SetThrow
 typedef  int sal_Int32;
 typedef  bool sal_Bool;
 typedef  Utf8Char sal_Char;
-typedef  WChar sal_Unicode;
 typedef  uint32_t sal_uInt32;
 
 typedef int16_t sal_Int16;
@@ -172,74 +171,7 @@ struct Utf8StringBuffer
             }
     };
 
-//struct WStringBuffer
-//{
-//private:
-//    WString m_buffer;
-//public:
-//    WStringBuffer(WStringCR str)
-//        : m_buffer(str)
-//        {
-//        }
-//    WStringBuffer(size_t reserve)
-//        {
-//        m_buffer.reserve(reserve);
-//        }
-//    WStringBuffer()
-//        {
-//        }
-//    WString makeStringAndClear()
-//        {
-//        WString tmp = m_buffer;
-//        m_buffer.clear();
-//        return tmp;
-//        }
-//    size_t size() const { return m_buffer.size();}
-//    void append(WChar c)
-//        {        
-//        m_buffer.append (&c, 1);
-//        }
-//    void append(WStringCR str)
-//        {
-//        m_buffer.append (str);
-//        }
-//    void appendAscii(Utf8CP c)
-//        {
-//        m_buffer.AppendUtf8(c);
-//        }
-//    void operator = (WStringCR str)
-//        {
-//        m_buffer = str;
-//        }
-//    void operator = (Utf8StringCR str)
-//        {
-//        m_buffer.AssignUtf8(str.c_str());
-//        }
-//    void appendAscii(Utf8CP str, sal_Int32 len)
-//        {
-//        BeAssert( strlen(str) != len);
-//        m_buffer.AppendUtf8(str);
-//        }
-//    sal_Unicode charAt(size_t index)
-//        {
-//        return m_buffer[index];
-//        }
-//    void setCharAt( size_t index, sal_Unicode c)
-//        {
-//        BeAssert (m_buffer.size() > index && index >=  0);
-//        m_buffer[index] = c;
-//        }
-//};
-//struct ECSqlStringHelper
-//    {
-//    public :
-//        static sal_Unicode toChar(WStringCR s)
-//            {
-//            if(s.empty())
-//                return 0;
-//            return s[0];
-//            }
-//    };
+
 struct Utf8StringHelper
     {
     static sal_Char toChar (Utf8StringCR s)
@@ -267,13 +199,7 @@ struct Utf8StringHelper
         BeAssert (strlen (str) != len);
         return Utf8String (str);
         }
-    //static Utf8String createString(const WString& str, size_t len, Int16 encoding)
-    //    {
-    //    BeAssert(encoding != RTL_TEXTENCODING_UTF8);
-    //    BeAssert(str.size() != len);
-    //    return Utf8String(str);
-    //    }
-    static Utf8String replace (Utf8StringCR str, sal_Char findChar, sal_Char replaceWith)
+     static Utf8String replace (Utf8StringCR str, sal_Char findChar, sal_Char replaceWith)
         {
         BeAssert (false && "Implement this");
         Utf8Char a[2] = {findChar, '\0'};
@@ -284,49 +210,7 @@ struct Utf8StringHelper
         }
 
     };
-//struct WStringHelper
-//    {
-//    public :
-//        static sal_Unicode toChar(WStringCR s)
-//            {
-//            if(s.empty())
-//                return 0;
-//            return s[0];
-//            }
-//        static WString createFromAscii(const char * ascii)
-//            {
-//            return WString(ascii, BentleyCharEncoding::Utf8);
-//            }
-//        static bool compareToAscii(WStringCR str, const char * ascii)
-//            {
-//            return str.Equals(createFromAscii(ascii));
-//            }
-//        static WString createString(const char* str, size_t len, Int16 encoding)
-//            {
-//            //if (encoding != RTL_TEXTENCODING_UTF8)
-//            //    {
-//            //    printf("");
-//            //    }
-//            //BeAssert(encoding != RTL_TEXTENCODING_UTF8);
-//
-//            return WString(str, BentleyCharEncoding::Utf8).substr(0, len);
-//            }
-//        static WString createString(const Utf8String& str, size_t len, Int16 encoding)
-//            {
-//            BeAssert(encoding != RTL_TEXTENCODING_UTF8);
-//            BeAssert(str.size() != len);
-//            return WString(str.c_str(), BentleyCharEncoding::Utf8);
-//            }
-//        static WString replace(WStringCR str, sal_Char findChar, sal_Char replaceWith)
-//            {
-//            BeAssert(false && "Implement this");
-//            Utf8Char a[2] ={findChar, '\0'};
-//            Utf8Char b[2] ={replaceWith, '\0'};
-//            Utf8String aResult (str);
-//            aResult.ReplaceAll(a, b);
-//            return WString(aResult.c_str(), BentleyCharEncoding::Utf8);
-//            }
-//    };
+
 namespace com
     {
     namespace sun

@@ -17,8 +17,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                                Krischan.Eberle 10/13
 //---------------------------------------------------------------------------------------
 //static
-WCharCP const DynamicSelectClauseECClass::SCHEMANAME = L"ECSqlStatement";
-WCharCP const DynamicSelectClauseECClass::CLASSNAME = L"ECSqlSelectClause";
+Utf8CP const DynamicSelectClauseECClass::SCHEMANAME = "ECSqlStatement";
+Utf8CP const DynamicSelectClauseECClass::CLASSNAME = "ECSqlSelectClause";
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    10/2013
@@ -104,15 +104,15 @@ ECSqlStatus DynamicSelectClauseECClass::Initialize ()
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DynamicSelectClauseECClass::ParseBackReferenceToPropertyPath(PropertyPath& propertyPath, ECPropertyCR generatedProperty, ECDbCR ecdb)
     {
-    auto defMetaDataInst = generatedProperty.GetCustomAttribute (L"DefinitionMetaData");
+    auto defMetaDataInst = generatedProperty.GetCustomAttribute ("DefinitionMetaData");
     if (defMetaDataInst == nullptr)
         return ERROR;
     
     ECValue v;
-    if (defMetaDataInst->GetValue(v, L"DefinitionBackReference") != ECOBJECTS_STATUS_Success)
+    if (defMetaDataInst->GetValue(v, "DefinitionBackReference") != ECOBJECTS_STATUS_Success)
         return ERROR;
 
-    return PropertyPath::TryParseQualifiedPath(propertyPath, Utf8String(v.GetString()), ecdb);
+    return PropertyPath::TryParseQualifiedPath(propertyPath, v.GetUtf8CP(), ecdb);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -138,7 +138,7 @@ ECSqlStatus DynamicSelectClauseECClass::SetBackReferenceToPropertyPath (ECProper
 
     auto ctx = ECSchemaReadContext::CreateContext();
     ctx->AddSchemaLocater(ecdb.GetSchemaLocater ());
-    auto bscaKey = SchemaKey(L"Bentley_Standard_CustomAttributes", 1, 0);
+    auto bscaKey = SchemaKey("Bentley_Standard_CustomAttributes", 1, 0);
     auto bsca = ctx->LocateSchema(bscaKey, SCHEMAMATCHTYPE_Latest);
     if (bsca.IsNull())
         {
@@ -146,7 +146,7 @@ ECSqlStatus DynamicSelectClauseECClass::SetBackReferenceToPropertyPath (ECProper
         return ECSqlStatus::ProgrammerError;
         }
 
-    auto defMetaData = bsca->GetClassCP(L"DefinitionMetaData");
+    auto defMetaData = bsca->GetClassCP("DefinitionMetaData");
     if(defMetaData == nullptr)
         {
         LOG.error("Failed to find class DefinitionMetaData in Bentley_Standard_CustomAttributes schema");
@@ -161,7 +161,7 @@ ECSqlStatus DynamicSelectClauseECClass::SetBackReferenceToPropertyPath (ECProper
         return ECSqlStatus::ProgrammerError;
 
 
-    if (defMetaDataInst->SetValue(L"DefinitionBackReference",  ECValue(qualifiedPropertyPath.c_str(), false)) != ECOBJECTS_STATUS_Success)
+    if (defMetaDataInst->SetValue("DefinitionBackReference",  ECValue(qualifiedPropertyPath.c_str(), false)) != ECOBJECTS_STATUS_Success)
         return ECSqlStatus::ProgrammerError;
 
     ECSqlStatus status = AddReferenceToStructSchema (*bsca);
@@ -184,7 +184,6 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty (ECN::ECPropertyCP& generate
         return stat;
 
     auto propName = selectClauseItemExp.GetName ();
-    WString propNameW (propName.c_str(), BentleyCharEncoding::Utf8);
 
     auto const& typeInfo = selectClauseItemExp.GetExpression ()->GetTypeInfo ();
     const auto typeKind = typeInfo.GetKind ();
@@ -195,7 +194,7 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty (ECN::ECPropertyCP& generate
         case ECSqlTypeInfo::Kind::Null:
             {
             PrimitiveECPropertyP primProp = nullptr;
-            auto ecstat = GetClassR ().CreatePrimitiveProperty (primProp, propNameW.c_str (), typeInfo.GetPrimitiveType ());
+            auto ecstat = GetClassR ().CreatePrimitiveProperty (primProp, propName.c_str (), typeInfo.GetPrimitiveType ());
             if (ecstat != ECOBJECTS_STATUS_Success)
                 return ECSqlStatus::ProgrammerError;
 
@@ -211,7 +210,7 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty (ECN::ECPropertyCP& generate
                 return stat;
 
             StructECPropertyP structProp = nullptr;
-            auto ecstat = GetClassR ().CreateStructProperty (structProp, propNameW.c_str (), structType);
+            auto ecstat = GetClassR ().CreateStructProperty (structProp, propName.c_str (), structType);
             if (ecstat != ECOBJECTS_STATUS_Success)
                 return ECSqlStatus::ProgrammerError;
 
@@ -222,7 +221,7 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty (ECN::ECPropertyCP& generate
         case ECSqlTypeInfo::Kind::PrimitiveArray:
             {
             ArrayECPropertyP arrayProp = nullptr;
-            auto ecstat = GetClassR ().CreateArrayProperty (arrayProp, propNameW.c_str (), typeInfo.GetPrimitiveType ());
+            auto ecstat = GetClassR ().CreateArrayProperty (arrayProp, propName.c_str (), typeInfo.GetPrimitiveType ());
             if (ecstat != ECOBJECTS_STATUS_Success)
                 return ECSqlStatus::ProgrammerError;
 
@@ -237,7 +236,7 @@ ECSqlStatus DynamicSelectClauseECClass::AddProperty (ECN::ECPropertyCP& generate
                 return stat;
 
             ArrayECPropertyP arrayProp = nullptr;
-            auto ecstat = GetClassR ().CreateArrayProperty (arrayProp, propNameW.c_str (), &structType);
+            auto ecstat = GetClassR ().CreateArrayProperty (arrayProp, propName.c_str (), &structType);
             if (ecstat != ECOBJECTS_STATUS_Success)
                 return ECSqlStatus::ProgrammerError;
 

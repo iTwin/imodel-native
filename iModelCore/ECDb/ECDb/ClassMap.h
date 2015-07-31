@@ -86,7 +86,7 @@ public:
 
     IClassMap const& GetView (View classView) const;
 
-    PropertyMapCP GetPropertyMap (WCharCP propertyName) const;
+    PropertyMapCP GetPropertyMap (Utf8CP propertyName) const;
 
     //! Returns a collection of this class map's property maps.
     //! @return Collection of property maps of this class map
@@ -268,7 +268,7 @@ struct ClassMap : public IClassMap, RefCountedBase
             }
         //! Used to find an ECProperty from a propertyAccessString
         //! @param propertyAccessString (as used here) does not support access "inside" arrays, e.g. you can access a struct member inside an array of structs
-        ECN::ECPropertyCP GetECProperty (ECN::ECClassCR ecClass, WCharCP propertyAccessString);
+        ECN::ECPropertyCP GetECProperty (ECN::ECClassCR ecClass, Utf8CP propertyAccessString);
 
         virtual MapStatus _OnInitialized ();
         virtual Type _GetClassMapType () const override;

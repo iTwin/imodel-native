@@ -158,7 +158,7 @@ public:
 struct IECSqlStructBinder : NonCopyableClass
     {
 private:
-    virtual IECSqlBinder& _GetMember (WCharCP structMemberPropertyName) = 0;
+    virtual IECSqlBinder& _GetMember (Utf8CP structMemberPropertyName) = 0;
     //__PUBLISH_SECTION_END__
     virtual IECSqlBinder& _GetMember (ECN::ECPropertyId structMemberPropertyId) = 0;
     //__PUBLISH_SECTION_START__
@@ -169,7 +169,7 @@ public:
     //! Binds a value to the specified struct member property
     //! @param[in] structMemberPropertyName Property name of the struct member to bind the value to
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT IECSqlBinder& GetMember (WCharCP structMemberPropertyName);
+    ECDB_EXPORT IECSqlBinder& GetMember (Utf8CP structMemberPropertyName);
 
     //__PUBLISH_SECTION_END__
     IECSqlBinder& GetMember (ECN::ECPropertyId structMemberPropertyId);

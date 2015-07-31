@@ -346,7 +346,7 @@ BentleyStatus PropertyPath::Resolve(IClassMap const& classMap, Utf8String* error
 
         if (property == nullptr && i == 0)
             {
-            PropertyMapCP propertyMap = classMap.GetPropertyMap(WString(propertyName, true).c_str());
+            PropertyMapCP propertyMap = classMap.GetPropertyMap(propertyName);
             if (propertyMap != nullptr)
                 property = &propertyMap->GetProperty();
             }
@@ -490,7 +490,7 @@ BentleyStatus PropertyPath::TryGetQualifiedPath(Utf8StringR qualifiedPath) const
         return ERROR;
         }
 
-    qualifiedPath = Utf8String(GetClassMap()->GetClass().GetFullName());
+    qualifiedPath.assign(GetClassMap()->GetClass().GetFullName());
     qualifiedPath.append(":");
     qualifiedPath.append(ToString(false));
     return SUCCESS;
@@ -513,7 +513,7 @@ void PropertyPath::Reset()
 //+---------------+---------------+---------------+---------------+---------------+------
 void PropertyPath::Location::SetProperty(ECPropertyCR property)
     {
-    BeAssert(property.GetName().Equals(WString(GetPropertyName(), BentleyCharEncoding::Utf8)));
+    BeAssert(property.GetName().Equals(GetPropertyName()));
     m_property = &property;
     }
 

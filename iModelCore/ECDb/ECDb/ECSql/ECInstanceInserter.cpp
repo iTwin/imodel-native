@@ -169,14 +169,14 @@ BentleyStatus ECInstanceInserter::Impl::Insert (ECInstanceKey& newInstanceKey, I
     {
     if (!IsValid ())
         {
-        LOG.errorv (L"ECInstanceInserter for ECClass '%ls' is invalid as the ECClass is not mapped or not instantiable.", m_ecClass.GetFullName ());
+        LOG.errorv ("ECInstanceInserter for ECClass '%s' is invalid as the ECClass is not mapped or not instantiable.", m_ecClass.GetFullName ());
         return ERROR;
         }
 
     if (instance.GetClass () != m_ecClass)
         {
-        WString errorMessage;
-        errorMessage.Sprintf (L"Invalid ECInstance passed to ECInstanceInserter. ECClass mismatch: Expected ECClass: '%ls'. ECInstance's ECClass: '%ls'.",
+        Utf8String errorMessage;
+        errorMessage.Sprintf ("Invalid ECInstance passed to ECInstanceInserter. ECClass mismatch: Expected ECClass: '%s'. ECInstance's ECClass: '%s'.",
             m_ecClass.GetFullName (), instance.GetClass ().GetFullName ());
 
         LogFailure (instance, Utf8String (errorMessage).c_str ());
@@ -197,11 +197,11 @@ BentleyStatus ECInstanceInserter::Impl::Insert (ECInstanceKey& newInstanceKey, I
             {
             if (!userProvidedECInstanceId->IsValid ())
                 {
-                WString errorMessage;
-                errorMessage.Sprintf (L"Invalid parameter for ECInstanceInserter::Insert. Parameter userprovidedECInstanceId is not a valid ECInstanceId.",
+                Utf8String errorMessage;
+                errorMessage.Sprintf ("Invalid parameter for ECInstanceInserter::Insert. Parameter userprovidedECInstanceId is not a valid ECInstanceId.",
                                       m_ecClass.GetFullName ());
 
-                LogFailure (instance, Utf8String (errorMessage).c_str ());
+                LogFailure (instance, errorMessage.c_str ());
                 return ERROR;
                 }
 
@@ -210,25 +210,25 @@ BentleyStatus ECInstanceInserter::Impl::Insert (ECInstanceKey& newInstanceKey, I
         else
             {
             //user provided ECInstanceId is null -> try to retrieve it from ECInstance
-            WString instanceIdStr = instance.GetInstanceId ();
+            Utf8String instanceIdStr = instance.GetInstanceId ();
             if (instanceIdStr.empty ())
                 {
-                WString errorMessage;
-                errorMessage.Sprintf (L"Invalid ECInstance passed to ECInstanceInserter. %ls ECInstance's instance id must be set when ECInstanceId auto-generation is disabled and no user provided ECInstanceId was given explicitly.",
+                Utf8String errorMessage;
+                errorMessage.Sprintf ("Invalid ECInstance passed to ECInstanceInserter. %s ECInstance's instance id must be set when ECInstanceId auto-generation is disabled and no user provided ECInstanceId was given explicitly.",
                                       m_ecClass.GetFullName ());
 
-                LogFailure (instance, Utf8String (errorMessage).c_str ());
+                LogFailure (instance, errorMessage.c_str ());
                 return ERROR;
 
                 }
 
             if (!ECInstanceIdHelper::FromString (actualUserProvidedInstanceId, instanceIdStr.c_str ()))
                 {
-                WString errorMessage;
-                errorMessage.Sprintf (L"Invalid ECInstance passed to ECInstanceInserter. %ls ECInstance's instance id '%ls' must be of type ECInstanceId when ECInstanceId auto-gneration is disabled and no user provided ECInstanceId was given explicitly.",
+                Utf8String errorMessage;
+                errorMessage.Sprintf ("Invalid ECInstance passed to ECInstanceInserter. %s ECInstance's instance id '%s' must be of type ECInstanceId when ECInstanceId auto-gneration is disabled and no user provided ECInstanceId was given explicitly.",
                                       m_ecClass.GetFullName (), instanceIdStr.c_str ());
 
-                LogFailure (instance, Utf8String (errorMessage).c_str ());
+                LogFailure (instance, errorMessage.c_str ());
                 return ERROR;
                 }
             }

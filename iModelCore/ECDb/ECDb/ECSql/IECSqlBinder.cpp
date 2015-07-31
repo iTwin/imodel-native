@@ -161,7 +161,7 @@ IECSqlArrayBinder& IECSqlBinder::BindArray (uint32_t initialCapacity)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2014
 //---------------------------------------------------------------------------------------
-IECSqlBinder& IECSqlStructBinder::GetMember (WCharCP structMemberPropertyName)
+IECSqlBinder& IECSqlStructBinder::GetMember (Utf8CP structMemberPropertyName)
     {
     return _GetMember (structMemberPropertyName);
     }

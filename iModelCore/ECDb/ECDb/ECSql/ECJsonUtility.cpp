@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECJsonUtility.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -90,7 +90,7 @@ StatusInt ECJsonCppUtility::ECPrimitiveValueFromJsonValue (ECValueR ecValue, con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 1/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ECJsonCppUtility::ECArrayValueFromJsonValue (IECInstanceR instance, const Json::Value& jsonValue, ArrayECPropertyCR arrayProperty, WStringCR accessString)
+StatusInt ECJsonCppUtility::ECArrayValueFromJsonValue (IECInstanceR instance, const Json::Value& jsonValue, ArrayECPropertyCR arrayProperty, Utf8StringCR accessString)
     {
     if (!EXPECTED_CONDITION (jsonValue.isArray()))
         return ERROR;
@@ -127,7 +127,7 @@ StatusInt ECJsonCppUtility::ECArrayValueFromJsonValue (IECInstanceR instance, co
         for (uint32_t ii=0; ii<length; ii++)
             {
             IECInstancePtr structInstance = structType->GetDefaultStandaloneEnabler()->CreateInstance (0);
-            ECInstanceFromJsonValue (*structInstance, jsonValue[ii], *structType, L"");
+            ECInstanceFromJsonValue (*structInstance, jsonValue[ii], *structType, "");
             ECValue ecStructValue;
             ecStructValue.SetStruct (structInstance.get());
             ECObjectsStatus ecStatus = instance.SetInternalValue (accessString.c_str(), ecStructValue, ii);
@@ -144,13 +144,13 @@ StatusInt ECJsonCppUtility::ECArrayValueFromJsonValue (IECInstanceR instance, co
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt ECJsonCppUtility::ECInstanceFromJsonValue (IECInstanceR instance, const Json::Value& jsonValue)
     {
-    return ECInstanceFromJsonValue (instance, jsonValue, instance.GetClass(), L"");
+    return ECInstanceFromJsonValue (instance, jsonValue, instance.GetClass(), "");
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 1/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ECJsonCppUtility::ECInstanceFromJsonValue (IECInstanceR instance, const Json::Value& jsonValue, ECClassCR currentClass, WStringCR currentAccessString)
+StatusInt ECJsonCppUtility::ECInstanceFromJsonValue (IECInstanceR instance, const Json::Value& jsonValue, ECClassCR currentClass, Utf8StringCR currentAccessString)
     {
     if (!jsonValue.isObject())
         return ERROR;
@@ -166,15 +166,14 @@ StatusInt ECJsonCppUtility::ECInstanceFromJsonValue (IECInstanceR instance, cons
         if (*memberName == '$')
             continue;
 
-        WString propertyName (memberName, BentleyCharEncoding::Utf8);
-        ECPropertyP ecProperty = currentClass.GetPropertyP (propertyName.c_str());
+        ECPropertyP ecProperty = currentClass.GetPropertyP (memberName);
         if (!EXPECTED_CONDITION (ecProperty != nullptr))
             {
             status = ERROR;
             continue;
             }
 
-        WString accessString = (currentAccessString[0] == 0) ? propertyName : currentAccessString + L"." + propertyName;
+        Utf8String accessString = (currentAccessString[0] == 0) ? memberName : currentAccessString + "." + memberName;
         if (ecProperty->GetIsPrimitive())
             {
             ECValue ecValue;
@@ -324,7 +323,7 @@ StatusInt ECRapidJsonUtility::ECPrimitiveValueFromJsonValue (ECValueR ecValue, R
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ECRapidJsonUtility::ECArrayValueFromJsonValue (IECInstanceR instance, RapidJsonValueCR jsonValue, ArrayECPropertyCR arrayProperty, WStringCR accessString)
+StatusInt ECRapidJsonUtility::ECArrayValueFromJsonValue (IECInstanceR instance, RapidJsonValueCR jsonValue, ArrayECPropertyCR arrayProperty, Utf8StringCR accessString)
     {
     if (!jsonValue.IsArray())
         return ERROR;
@@ -370,7 +369,7 @@ StatusInt ECRapidJsonUtility::ECArrayValueFromJsonValue (IECInstanceR instance, 
             for (rapidjson::SizeType i=0; i<size; i++)
                 {
                 IECInstancePtr structInstance = structType->GetDefaultStandaloneEnabler()->CreateInstance (0);
-                ECInstanceFromJsonValue (*structInstance, jsonValue[i], *structType, L"");
+                ECInstanceFromJsonValue (*structInstance, jsonValue[i], *structType, "");
 
                 ECValue structValue;
                 structValue.SetStruct (structInstance.get());
@@ -394,13 +393,13 @@ StatusInt ECRapidJsonUtility::ECArrayValueFromJsonValue (IECInstanceR instance, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt ECRapidJsonUtility::ECInstanceFromJsonValue (IECInstanceR instance, RapidJsonValueCR jsonValue)
     {
-    return ECInstanceFromJsonValue (instance, jsonValue, instance.GetClass(), L"");
+    return ECInstanceFromJsonValue (instance, jsonValue, instance.GetClass(), "");
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt ECRapidJsonUtility::ECInstanceFromJsonValue (ECN::IECInstanceR instance, RapidJsonValueCR jsonValue, ECClassCR currentClass, WStringCR currentAccessString)
+StatusInt ECRapidJsonUtility::ECInstanceFromJsonValue (ECN::IECInstanceR instance, RapidJsonValueCR jsonValue, ECClassCR currentClass, Utf8StringCR currentAccessString)
     {
     if (!jsonValue.IsObject())
         return ERROR;
@@ -414,7 +413,7 @@ StatusInt ECRapidJsonUtility::ECInstanceFromJsonValue (ECN::IECInstanceR instanc
         if ('$' == it->name.GetString()[0])
             continue;
 
-        WString propertyName (it->name.GetString(), BentleyCharEncoding::Utf8);
+        Utf8String propertyName (it->name.GetString());
         ECPropertyP propertyP = currentClass.GetPropertyP (propertyName.c_str());
         if (nullptr == propertyP)
             {
@@ -422,7 +421,7 @@ StatusInt ECRapidJsonUtility::ECInstanceFromJsonValue (ECN::IECInstanceR instanc
             continue;
             }
 
-        WString accessString = (0 == currentAccessString[0]) ? propertyName : currentAccessString + L"." + propertyName;
+        Utf8String accessString = (0 == currentAccessString[0]) ? propertyName : currentAccessString + "." + propertyName;
         if (propertyP->GetIsPrimitive())
             {
             ECValue ecValue;

@@ -106,7 +106,7 @@ private:
     virtual bool _ContainProperty(Utf8CP propertyName) const override
         {
         PRECONDITION(m_info != nullptr, false);
-        auto propertyMap = m_info->GetMap().GetPropertyMap(WString(propertyName, BentleyCharEncoding::Utf8).c_str());
+        auto propertyMap = m_info->GetMap().GetPropertyMap(propertyName);
         return propertyMap != nullptr;
         }
 

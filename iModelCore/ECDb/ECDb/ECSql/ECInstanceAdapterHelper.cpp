@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-std::unique_ptr<ECValueBindingInfo> ECValueBindingInfoFactory::CreateBindingInfo (ECN::ECEnablerCR enabler, ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString, int ecsqlParameterIndex)
+std::unique_ptr<ECValueBindingInfo> ECValueBindingInfoFactory::CreateBindingInfo (ECN::ECEnablerCR enabler, ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString, int ecsqlParameterIndex)
     {
     if (ecProperty.GetIsStruct ())
         {
@@ -145,7 +145,7 @@ uint32_t PrimitiveECValueBindingInfo::GetPropertyIndex () const
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-std::unique_ptr<StructECValueBindingInfo> StructECValueBindingInfo::Create (ECN::ECEnablerCR parentEnabler, ECN::ECClassCR structType, WCharCP parentPropertyAccessString, int ecsqlParameterIndex)
+std::unique_ptr<StructECValueBindingInfo> StructECValueBindingInfo::Create (ECN::ECEnablerCR parentEnabler, ECN::ECClassCR structType, Utf8CP parentPropertyAccessString, int ecsqlParameterIndex)
     {
     return std::unique_ptr<StructECValueBindingInfo> (new StructECValueBindingInfo (parentEnabler, structType, parentPropertyAccessString, ecsqlParameterIndex));
     }
@@ -162,16 +162,16 @@ std::unique_ptr<StructECValueBindingInfo> StructECValueBindingInfo::CreateForNes
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-StructECValueBindingInfo::StructECValueBindingInfo (ECN::ECEnablerCR parentEnabler, ECN::ECClassCR structType, WCharCP parentPropertyAccessString, int ecsqlParameterIndex)
+StructECValueBindingInfo::StructECValueBindingInfo (ECN::ECEnablerCR parentEnabler, ECN::ECClassCR structType, Utf8CP parentPropertyAccessString, int ecsqlParameterIndex)
 : ECValueBindingInfo (Type::Struct, ecsqlParameterIndex)
     {
     for (auto memberProp : structType.GetProperties (true))
         {
-        WString memberAccessString;
-        if (!WString::IsNullOrEmpty (parentPropertyAccessString))
+        Utf8String memberAccessString;
+        if (!Utf8String::IsNullOrEmpty (parentPropertyAccessString))
             {
-            memberAccessString = WString (parentPropertyAccessString);
-            memberAccessString.append (L".");
+            memberAccessString = parentPropertyAccessString;
+            memberAccessString.append (".");
             }
 
         memberAccessString.append (memberProp->GetName ());
@@ -262,7 +262,7 @@ BentleyStatus ECValueBindingInfoCollection::AddBindingInfo (ECN::ECClassCR ecCla
     return SUCCESS;
     }
 
-BentleyStatus ECValueBindingInfoCollection::AddBindingInfo (ECN::ECEnablerCR ecEnabler, ECN::ECPropertyCR ecProperty, WCharCP accessString, int ecsqlParameterIndex)
+BentleyStatus ECValueBindingInfoCollection::AddBindingInfo (ECN::ECEnablerCR ecEnabler, ECN::ECPropertyCR ecProperty, Utf8CP accessString, int ecsqlParameterIndex)
     {
     auto binding = ECValueBindingInfoFactory::CreateBindingInfo (ecEnabler, ecProperty, accessString, ecsqlParameterIndex);
     if (binding == nullptr)
@@ -629,12 +629,12 @@ bool ECInstanceAdapterHelper::IsOrContainsCalculatedProperty (ECN::ECPropertyCR 
 bool ECInstanceAdapterHelper::TryGetCurrentTimeStampProperty (ECN::ECPropertyCP& currentTimeStampProp, ECN::ECClassCR ecClass)
     {
     currentTimeStampProp = nullptr;
-    auto ca = ecClass.GetCustomAttribute (L"ClassHasCurrentTimeStampProperty");
+    auto ca = ecClass.GetCustomAttribute ("ClassHasCurrentTimeStampProperty");
     if (ca == nullptr)
         return false;
 
     ECValue v;
-    ca->GetValue (v, L"PropertyName");
+    ca->GetValue (v, "PropertyName");
 
     if (v.IsNull ())
         return false;
@@ -642,7 +642,7 @@ bool ECInstanceAdapterHelper::TryGetCurrentTimeStampProperty (ECN::ECPropertyCP&
     if (v.IsUtf8 ())
         currentTimeStampProp = ecClass.GetPropertyP (v.GetUtf8CP (), true);
     else
-        currentTimeStampProp = ecClass.GetPropertyP (v.GetString (), true);
+        currentTimeStampProp = ecClass.GetPropertyP (v.GetWCharCP(), true);
 
     return currentTimeStampProp != nullptr;
     }
@@ -656,7 +656,7 @@ BentleyStatus ECInstanceAdapterHelper::SetECInstanceId (ECN::IECInstanceR instan
     if (!ecInstanceId.IsValid ())
         return ERROR;
 
-    WChar instanceIdStr[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
+    Utf8Char instanceIdStr[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
     if (!ECInstanceIdHelper::ToString (instanceIdStr, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, ecInstanceId))
         {
         LOG.errorv ("Could not set ECInstanceId %lld on the ECInstanceId. Conversion to string failed.", ecInstanceId.GetValue ());
@@ -675,7 +675,7 @@ BentleyStatus ECInstanceAdapterHelper::SetECInstanceId (ECN::IECInstanceR instan
 //static
 void ECInstanceAdapterHelper::LogFailure (Utf8CP operationName, ECN::IECInstanceCR instance, Utf8CP errorMessage)
     {
-    WString displayLabel;
+    Utf8String displayLabel;
     instance.GetDisplayLabel (displayLabel);
     LOG.errorv ("Failed to %s ECInstance '%s'. %s", operationName,
         Utf8String (displayLabel).c_str (), errorMessage);

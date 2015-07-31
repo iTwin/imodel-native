@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/ECDB/Performance/TestSchemaHelper.h $
+|  $Source: Tests/Performance/TestSchemaHelper.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -23,7 +23,7 @@ private:
 
 public:
     static Utf8CP const TESTSCHEMA_NAME;
-    static WCharCP const TESTCLASS_NAME;
+    static Utf8CP const TESTCLASS_NAME;
 
 
     //!---------------------------------------------------------------------------------

@@ -28,10 +28,10 @@ private:
     ECDbSqlColumn::Constraint::Collation m_collation;
 
     ColumnInfo();
-    BentleyStatus Initialize(ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString);
+    BentleyStatus Initialize(ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString);
 
 public:
-    static ColumnInfo Create(ECN::ECPropertyCR ecProperty, WCharCP propertyAccessString);
+    static ColumnInfo Create(ECN::ECPropertyCR ecProperty, Utf8CP propertyAccessString);
     bool IsValid() const { return m_isValid; }
 
     void SetColumnType(ECN::PrimitiveType columnType) { BeAssert(IsValid()); m_columnType = columnType; }

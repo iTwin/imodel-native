@@ -52,9 +52,6 @@
     <ClCompile Include="Performance\PerformanceECSqlStatementTestFixture.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
-    <ClCompile Include="Performance\PerformanceAdapterTests.cpp">
-      <Filter>Performance</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ECSqlQueryAdapter_Tests.cpp">
       <Filter>Published\ECSql</Filter>
     </ClCompile>
@@ -194,6 +191,9 @@
       <Filter>Published</Filter>
     </ClCompile>
     <ClCompile Include="Performance\PerformanceECDbMapCATests.cpp">
+      <Filter>Performance</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\ECSqlStatementPerformanceTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
   </ItemGroup>

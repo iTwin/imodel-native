@@ -25,11 +25,11 @@ struct InstanceCRUDTests : public ::testing::Test
     {
     ECDb                        m_db;
     ECSchemaPtr                 m_schema;
-    WString						m_classDbName;
+    WString                     m_classDbName;
     WString                     m_dbName;
     WString                     m_schemaFullPath;
     WString                     m_dirName;
-    WString                     m_className;
+    Utf8String                  m_className;
     bool                        m_insert = false;
     bool                        m_update = false;
     bool                        m_delete = false;
@@ -213,7 +213,7 @@ bool InstanceCRUDTests::addClass (ECClassCP ecClass)
         LOG1.info ("This is a CustomAttributeClass");
         return false;
         }
-    else if (ecClass->GetName () == L"AnyClass")
+    else if (ecClass->GetName () == "AnyClass")
         {
         return false;
         }
@@ -234,7 +234,7 @@ ECClassCP InstanceCRUDTests::addClassInPlaceOFAnyClass (ECSchemaPtr schemaPtr)
         {
         relClass = NULL;
         relClass = classInContainer->GetRelationshipClassCP ();
-        if (relClass == NULL && classInContainer->GetIsDomainClass () && !classInContainer->GetIsCustomAttributeClass () && classInContainer->GetName () != L"AnyClass")
+        if (relClass == NULL && classInContainer->GetIsDomainClass () && !classInContainer->GetIsCustomAttributeClass () && classInContainer->GetName () != "AnyClass")
             {
             list.push_back (classInContainer);
             }
@@ -275,12 +275,12 @@ void InstanceCRUDTests::setUpECDbForClass ()
     WString dbName3 (m_dirName);
     dbName3 = dbName3 + schemaName2;
     dbName3.AppendA (".");
-    dbName3 = dbName3 + m_className;
+    dbName3 = dbName3 + WString(m_className.c_str(), BentleyCharEncoding::Utf8).c_str();
 
     static const size_t JOURNAL_SUFFIX_LENGTH = 8;
     if (dbName3.size () + 6 + JOURNAL_SUFFIX_LENGTH > MAX_PATH)
         {
-        LOG1.infov ("Db file path is exceeding the limit(260): %ls", dbName3.c_str ());
+        LOG1.infov ("Db file path is exceeding the limit(260): %s", Utf8String(dbName3).c_str ());
         size_t exceededSize = dbName3.size () + 6 + JOURNAL_SUFFIX_LENGTH - MAX_PATH;
         dbName3.resize (dbName3.size () - exceededSize);
         }
@@ -307,12 +307,12 @@ bool InstanceCRUDTests::setUpECdbSingleClass ()
     WString dbName1 (m_dirName);
     dbName1 = dbName1 + schemaName1;
     dbName1.AppendA (".");
-    dbName1 = dbName1 + m_className;
+    dbName1 = dbName1 + WString(m_className.c_str(), BentleyCharEncoding::Utf8).c_str();
 
     static const size_t JOURNAL_SUFFIX_LENGTH = 8;
     if (dbName1.size () + 6 + JOURNAL_SUFFIX_LENGTH > MAX_PATH)
         {
-        LOG1.infov ("Db file path is exceeding the limit(260): %ls", dbName1.c_str ());
+        LOG1.infov ("Db file path is exceeding the limit(260): %s", Utf8String(dbName1).c_str ());
         size_t exceededSize = dbName1.size () + 6 + JOURNAL_SUFFIX_LENGTH - MAX_PATH;
         dbName1.resize (dbName1.size () - exceededSize);
         }
@@ -339,14 +339,14 @@ void InstanceCRUDTests::createDb ()
         BeFileNameStatus fileDeleteStatus = BeFileName::BeDeleteFile (dbPath.GetName ());
         if (fileDeleteStatus != BeFileNameStatus::Success)
             {
-            LOG1.errorv ("Could not delete preexisting test ecdb file : %ls", m_dbName.c_str ());
+            LOG1.errorv("Could not delete preexisting test ecdb file : %s", Utf8String(m_dbName).c_str ());
             EXPECT_TRUE (false);
             }
         }
     auto stat = m_db.CreateNewDb (dbPath);
     if (stat != SUCCESS)
         {
-        LOG1.errorv ("Db could not be created for: %ls", m_dbName.c_str ());
+        LOG1.errorv("Db could not be created for: %s", Utf8String(m_dbName).c_str());
         EXPECT_TRUE (false);
         }
     else
@@ -381,18 +381,18 @@ bool InstanceCRUDTests::importSchema (WString schemaNameWithoutVerionAndExtensio
             if (result == SUCCESS)
                 cache->AddSchema (*schema1);
             else
-                LOG1.infov ("[SRF] Schema Read Failed :%ls \n", entry.GetName ());
+                LOG1.infov ("[SRF] Schema Read Failed :%s", entry.GetNameUtf8 ().c_str());
             }
         }
     auto importSchemaStatus = m_db.Schemas ().ImportECSchemas (*cache, ECDbSchemaManager::ImportOptions (true, true));
     if (importSchemaStatus == SUCCESS)
         {
-        LOG1.infov ("[SIS] Schema Import successful: %ls \n", m_schemaFullPath.c_str ());
+        LOG1.infov("[SIS] Schema Import successful: %s \n", Utf8String(m_schemaFullPath).c_str());
         importStatus = true;
         }
     else
         {
-        LOG1.errorv ("[SIF] Schema Import Failed: %ls \n", m_schemaFullPath.c_str ());
+        LOG1.errorv("[SIF] Schema Import Failed: %s \n", Utf8String(m_schemaFullPath).c_str());
         EXPECT_TRUE (false);
         }
     if (importStatus)
@@ -410,7 +410,7 @@ void InstanceCRUDTests::insertECClassInstances (ECClassCP ecClass)
     ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP ();
     if (relClass == NULL)
         {
-        LOG1.infov ("Starting Insert operation for class: %ls", m_className.c_str ());
+        LOG1.infov ("Starting Insert operation for class: %s", m_className.c_str ());
         m_classList.push_back (ecClass);
         int inserted = 0;
         int actualCount = 0;
@@ -419,7 +419,7 @@ void InstanceCRUDTests::insertECClassInstances (ECClassCP ecClass)
         auto status = insert.Generate (false);
         if (status != SUCCESS)
             {
-            LOG1.errorv ("Instance generation failed for: %ls", m_className.c_str ());
+            LOG1.errorv ("Instance generation failed for: %s", m_className.c_str ());
             EXPECT_TRUE (false);
             }
         else
@@ -429,28 +429,28 @@ void InstanceCRUDTests::insertECClassInstances (ECClassCP ecClass)
             actualCount = countECInstnacesAndCompare (m_generatedInstances);
             if (inserted <= 0)
                 {
-                LOG1.errorv ("No instances were inserted for the class: %ls", m_className.c_str ());
+                LOG1.errorv ("No instances were inserted for the class: %s", m_className.c_str ());
                 EXPECT_TRUE (false);
                 }
             else if (inserted != actualCount)
                 {
-                LOG1.errorv ("Insert count doesn't match for the class: %ls", m_className.c_str ());
+                LOG1.errorv ("Insert count doesn't match for the class: %s", m_className.c_str ());
                 EXPECT_TRUE (false);
                 }
             else
                 {
-                LOG1.infov ("Instance insertion successful for class: %ls", m_className.c_str ());
+                LOG1.infov ("Instance insertion successful for class: %s", m_className.c_str ());
                 instatus = true;
                 }
             }
         if (instatus)
-            LOG1.infov ("[IIS] Instance insertion successful for class: %ls \n", m_className.c_str ());
+            LOG1.infov ("[IIS] Instance insertion successful for class: %s \n", m_className.c_str ());
         else
-            LOG1.errorv ("[IIF] Insertion failed for class: %ls \n", m_className.c_str ());
+            LOG1.errorv ("[IIF] Insertion failed for class: %s \n", m_className.c_str ());
         }
     else // This is a Relationship class
         {
-        LOG1.infov ("Starting Insert operation for Relationship class: %ls", m_className.c_str ());
+        LOG1.infov ("Starting Insert operation for Relationship class: %s", m_className.c_str ());
         addClassesForRelationship (relClass);
         m_classList.push_back (relClass);
         insertECRelationshipClassInstances ();
@@ -468,9 +468,9 @@ void InstanceCRUDTests::insertECRelationshipClassInstances ()
     bool relstat = false;
     if (m_classList.size () == 1)
         {
-        LOG1.infov ("Source and Target constraints of this relationship class are AnyClass %ls", m_className.c_str ());
+        LOG1.infov ("Source and Target constraints of this relationship class are AnyClass %s", m_className.c_str ());
         ECClassCP temp = addClassInPlaceOFAnyClass (m_schema);
-        LOG1.infov ("Adding another Class: %ls", temp->GetName ().c_str ());
+        LOG1.infov ("Adding another Class: %s", temp->GetName ().c_str ());
         m_classList.push_back (temp);
         }
     RandomECInstanceGenerator insert (m_classList);
@@ -478,7 +478,7 @@ void InstanceCRUDTests::insertECRelationshipClassInstances ()
     auto status = insert.Generate (false);
     if (status != SUCCESS)
         {
-        LOG1.errorv ("no Instances were generated for constraint classes of: %ls", m_className.c_str ());
+        LOG1.errorv ("no Instances were generated for constraint classes of: %s", m_className.c_str ());
         EXPECT_TRUE (false);
         }
     else
@@ -488,17 +488,17 @@ void InstanceCRUDTests::insertECRelationshipClassInstances ()
         actualCount = countECInstnacesAndCompare (m_generatedInstances);
         if (inserted <= 0)
             {
-            LOG1.errorv ("No instances were inserted for: %ls", m_className.c_str ());
+            LOG1.errorv ("No instances were inserted for: %s", m_className.c_str ());
             EXPECT_TRUE (false);
             }
         else if (inserted != actualCount)
             {
-            LOG1.errorv ("Insert count doesn't match for: %ls", m_className.c_str ());
+            LOG1.errorv ("Insert count doesn't match for: %s", m_className.c_str ());
             EXPECT_TRUE (false);
             }
         else
             {
-            LOG1.infov ("Instance insertion successfull for Constraints of: %ls", m_className.c_str ());
+            LOG1.infov ("Instance insertion successfull for Constraints of: %s", m_className.c_str ());
             stat = true;
             }
         if (stat)
@@ -518,7 +518,7 @@ void InstanceCRUDTests::insertECRelationshipClassInstances ()
     status = insert.GenerateRelationships ();
     if (status != SUCCESS)
         {
-        LOG1.errorv ("Instance Generation failed for Relationship Class: %ls", m_className.c_str ());
+        LOG1.errorv ("Instance Generation failed for Relationship Class: %s", m_className.c_str ());
         EXPECT_TRUE (false);
         }
     else
@@ -528,17 +528,17 @@ void InstanceCRUDTests::insertECRelationshipClassInstances ()
         actualCount = countECInstnacesAndCompare (m_generatedRelationshipInstances);
         if (inserted <= 0)
             {
-            LOG1.errorv ("No instances were inserted for %ls", m_className.c_str ());
+            LOG1.errorv ("No instances were inserted for %s", m_className.c_str ());
             EXPECT_TRUE (false);
             }
         else if (inserted != actualCount)
             {
-            LOG1.errorv ("Insert count doesn't match for %ls", m_className.c_str ());
+            LOG1.errorv ("Insert count doesn't match for %s", m_className.c_str ());
             EXPECT_TRUE (false);
             }
         else
             {
-            LOG1.infov ("Instance insertion successfull for %ls", m_className.c_str ());
+            LOG1.infov ("Instance insertion successfull for %s", m_className.c_str ());
             relstat = true;
             }
         if (relstat)
@@ -554,9 +554,9 @@ void InstanceCRUDTests::insertECRelationshipClassInstances ()
             }
         }
     if (relstat && stat)
-        LOG1.infov ("[IIS] Instance insertion successful for relationship class: %ls \n", m_className.c_str ());
+        LOG1.infov ("[IIS] Instance insertion successful for relationship class: %s \n", m_className.c_str ());
     else
-        LOG1.errorv ("[IIF] Insertion failed for Relationship Class: %ls \n", m_className.c_str ());
+        LOG1.errorv ("[IIF] Insertion failed for Relationship Class: %s \n", m_className.c_str ());
     }
 
 void InstanceCRUDTests::addClassesForRelationship (ECRelationshipClassCP relClass)
@@ -621,18 +621,18 @@ void InstanceCRUDTests::deleteECClassInstances (ECClassCP ecClass)
     ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP ();
     if (relClass == NULL)
         {
-        LOG1.infov ("Starting delete operation for class: %ls", m_className.c_str ());
+        LOG1.infov ("Starting delete operation for class: %s", m_className.c_str ());
         if (deleteECInstances (m_generatedInstances))
-            LOG1.infov ("[IDS] Instances were deleted for class: %ls \n", m_className.c_str ());
+            LOG1.infov ("[IDS] Instances were deleted for class: %s \n", m_className.c_str ());
         else
             {
-            LOG1.errorv ("[IDF] Instance deletion Failed for class: %ls \n", m_className.c_str ());
+            LOG1.errorv ("[IDF] Instance deletion Failed for class: %s \n", m_className.c_str ());
             EXPECT_TRUE (false);
             }
         }
     else //This is relationshipClass
         {
-        LOG1.infov ("Starting delete operation for relationship class: %ls", m_className.c_str ());
+        LOG1.infov ("Starting delete operation for relationship class: %s", m_className.c_str ());
         deleteECRelationshipClassInstances ();
         }
     }
@@ -643,10 +643,10 @@ void InstanceCRUDTests::deleteECClassInstances (ECClassCP ecClass)
 void InstanceCRUDTests::deleteECRelationshipClassInstances ()
     {
     if (deleteECInstances (m_generatedRelationshipInstances))
-        LOG1.infov ("[IDS] Instances were deleted for Relationship Class: %ls \n", m_className.c_str ());
+        LOG1.infov ("[IDS] Instances were deleted for Relationship Class: %s \n", m_className.c_str ());
     else
         {
-        LOG1.errorv ("[IDF] Instance Deletion failed for Relationship Class: %ls \n", m_className.c_str ());
+        LOG1.errorv ("[IDF] Instance Deletion failed for Relationship Class: %s \n", m_className.c_str ());
         EXPECT_TRUE (false);
         }
     }
@@ -668,11 +668,11 @@ bool InstanceCRUDTests::deleteECInstances (bmap<ECN::ECClassCP, std::vector<ECN:
                 ECInstanceDeleter deleter (m_db, *ecClass);
                 if (!instance.IsValid ())
                     continue;
-                WString i = instance->GetInstanceId ();
+                Utf8String i = instance->GetInstanceId ();
                 auto deleteStatus = deleter.Delete (*instance.get ());
                 if (deleteStatus != SUCCESS)
                     {
-                    LOG1.errorv ("Could not delete ECInstance of ECClass %ls", m_className.c_str ());
+                    LOG1.errorv ("Could not delete ECInstance of ECClass %s", m_className.c_str ());
                     EXPECT_TRUE (false);
                     delstatus = false;
                     break;
@@ -694,7 +694,7 @@ void InstanceCRUDTests::updateECClassInstances (ECClassCP ecClass)
     ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP ();
     if (relClass == NULL)
         {
-        LOG1.infov ("Starting update operation for class: %ls", m_className.c_str ());
+        LOG1.infov ("Starting update operation for class: %s", m_className.c_str ());
         RandomECInstanceGenerator update (m_classList);
         auto status = update.Generate (false);
         if (status != SUCCESS)
@@ -707,23 +707,23 @@ void InstanceCRUDTests::updateECClassInstances (ECClassCP ecClass)
             auto updateInstances = update.GetGeneratedInstances ();
             if (updateECInstances (m_generatedInstances, updateInstances))
                 {
-                LOG1.infov ("Instances were updated for class: %ls", m_className.c_str ());
+                LOG1.infov ("Instances were updated for class: %s", m_className.c_str ());
                 upstatus = true;
                 }
             else
                 {
-                LOG1.errorv ("No instances were updated of ECClass %ls", m_className.c_str ());
+                LOG1.errorv ("No instances were updated of ECClass %s", m_className.c_str ());
                 EXPECT_TRUE (false);
                 }
             }
         if (upstatus)
-            LOG1.infov ("[IUS] Instances were updated for class: %ls \n", m_className.c_str ());
+            LOG1.infov ("[IUS] Instances were updated for class: %s \n", m_className.c_str ());
         else
-            LOG1.errorv ("[IUF] Instance update failed for class: %ls \n", m_className.c_str ());
+            LOG1.errorv ("[IUF] Instance update failed for class: %s \n", m_className.c_str ());
         }
     else //This is relationshipClass
         {
-        LOG1.infov ("Starting update operation for relationship class: %ls", m_className.c_str ());
+        LOG1.infov ("Starting update operation for relationship class: %s", m_className.c_str ());
         updateECRelationshipClassInstances ();
         }
     }
@@ -738,7 +738,7 @@ void InstanceCRUDTests::updateECRelationshipClassInstances ()
     auto status = update.Generate (false);
     if (status != SUCCESS)
         {
-        LOG1.errorv ("Instance Generation failed for Constrainst classes of: %ls", m_className.c_str ());
+        LOG1.errorv ("Instance Generation failed for Constrainst classes of: %s", m_className.c_str ());
         EXPECT_TRUE (false);
         }
     else
@@ -751,7 +751,7 @@ void InstanceCRUDTests::updateECRelationshipClassInstances ()
     status = update.GenerateRelationships ();
     if (status != SUCCESS)
         {
-        LOG1.errorv ("Instance Generation failed for relationship : %ls", m_className.c_str ());
+        LOG1.errorv ("Instance Generation failed for relationship : %s", m_className.c_str ());
         EXPECT_TRUE (false);
         }
     else
@@ -759,21 +759,21 @@ void InstanceCRUDTests::updateECRelationshipClassInstances ()
         auto updatedRelationInstances = update.GetGeneratedRelationshipInstances ();
         if (updateECInstances (m_generatedRelationshipInstances, updatedRelationInstances))
             {
-            LOG1.infov ("Instances were updated for Relationship: %ls", m_className.c_str ());
+            LOG1.infov ("Instances were updated for Relationship: %s", m_className.c_str ());
             relstatus = true;
             }
         else
             {
-            LOG1.errorv ("No instances were updated for: %ls", m_className.c_str ());
+            LOG1.errorv ("No instances were updated for: %s", m_className.c_str ());
             EXPECT_TRUE (false);
             }
         }
     if (relstatus)
         {
-        LOG1.infov ("[IUS] Instances update successfull for relationship Class: %ls \n", m_className.c_str ());
+        LOG1.infov ("[IUS] Instances update successfull for relationship Class: %s \n", m_className.c_str ());
         }
     else
-        LOG1.errorv ("[IUF] Instance update failed for Relationship Class: %ls \n", m_className.c_str ());
+        LOG1.errorv ("[IUF] Instance update failed for Relationship Class: %s \n", m_className.c_str ());
     }
 /*---------------------------------------------------------------------------------**//**
 * The method that does the update and returns update count
@@ -801,7 +801,7 @@ bool InstanceCRUDTests::updateECInstances (bmap<ECN::ECClassCP, std::vector<ECN:
                     auto updateStatus = updater.Update (*(updateinstance->get ()));
                     if (updateStatus != SUCCESS)
                         {
-                        LOG1.errorv ("Could not update ECInstance of ECClass %ls \n", m_className.c_str ());
+                        LOG1.errorv ("Could not update ECInstance of ECClass %s \n", m_className.c_str ());
                         EXPECT_TRUE (false);
                         upstat = false;
                         break;
@@ -809,7 +809,7 @@ bool InstanceCRUDTests::updateECInstances (bmap<ECN::ECClassCP, std::vector<ECN:
                     }
                 else
                     {
-                    LOG1.errorv ("Either inserted or updateinstance is invalid for class: %ls \n", m_className.c_str ());
+                    LOG1.errorv ("Either inserted or updateinstance is invalid for class: %s \n", m_className.c_str ());
                     EXPECT_TRUE (false);
                     }
                 }
@@ -827,7 +827,7 @@ void InstanceCRUDTests::checkECClassCRUDfeasibility (ECClassCP ecClass)
     m_insert = false;
     m_update = false;
     m_delete = false;
-    if (ecClass->GetIsDomainClass () && !ecClass->GetIsCustomAttributeClass () && ecClass->GetName () != L"AnyClass")
+    if (ecClass->GetIsDomainClass () && !ecClass->GetIsCustomAttributeClass () && ecClass->GetName () != "AnyClass")
         {
         ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP ();
         if (relClass == NULL)
@@ -837,14 +837,14 @@ void InstanceCRUDTests::checkECClassCRUDfeasibility (ECClassCP ecClass)
                 m_insert = true;
                 m_update = true;
                 m_delete = true;
-                LOG1.infov ("CRUD operations can be performed for class: %ls", ecClass->GetName ().c_str ());
+                LOG1.infov ("CRUD operations can be performed for class: %s", ecClass->GetName ().c_str ());
                 }
             else
                 {
                 m_insert = true;
                 m_update = false;
                 m_delete = true;
-                LOG1.infov ("Property Count Zero: update operation cannot be performed for this class %ls", ecClass->GetName ().c_str ());
+                LOG1.infov ("Property Count Zero: update operation cannot be performed for this class %s", ecClass->GetName ().c_str ());
                 }
             }
         else
@@ -853,7 +853,7 @@ void InstanceCRUDTests::checkECClassCRUDfeasibility (ECClassCP ecClass)
             const ECConstraintClassesList& targetClasses = relClass->GetTarget ().GetClasses ();
             if (sourceClasses.empty () || targetClasses.empty ())
                 {
-                LOG1.infov ("Empty Source or Target Constraints: This is not a valid Relationship Class", relClass->GetName ().c_str ());
+                LOG1.infov ("Empty Source or Target Constraints: This is not a valid Relationship Class %s", relClass->GetName ().c_str ());
                 }
             else
                 {
@@ -869,11 +869,11 @@ void InstanceCRUDTests::checkECClassCRUDfeasibility (ECClassCP ecClass)
                             continue;
                         else
                             {
-                            LOG1.infov ("Constraint Class %ls of relationship class %ls has zero property count", s_ecClass->GetName ().c_str (), ecClass->GetName ().c_str ());
+                            LOG1.infov ("Constraint Class %s of relationship class %s has zero property count", s_ecClass->GetName ().c_str (), ecClass->GetName ().c_str ());
                             validSourceClasses = false;
                             }
                         }
-                    else if (!s_ecClass->GetIsDomainClass () && s_ecClass->GetName () != L"AnyClass")
+                    else if (!s_ecClass->GetIsDomainClass () && s_ecClass->GetName () != "AnyClass")
                         {
                         if (s_ecClass->GetDerivedClasses ().size () > 0)
                             continue;
@@ -882,7 +882,7 @@ void InstanceCRUDTests::checkECClassCRUDfeasibility (ECClassCP ecClass)
                         }
                     else
                         {
-                        if (s_ecClass->GetName () == L"AnyClass")
+                        if (s_ecClass->GetName () == "AnyClass")
                             notAnyClass = false;
                         else
                             {
@@ -899,11 +899,11 @@ void InstanceCRUDTests::checkECClassCRUDfeasibility (ECClassCP ecClass)
                             continue;
                         else
                             {
-                            LOG1.infov ("Constraint Class %ls of relationship class %ls has zero property count", t_ecClass->GetName ().c_str (), ecClass->GetName ().c_str ());
+                            LOG1.infov ("Constraint Class %s of relationship class %s has zero property count", t_ecClass->GetName ().c_str (), ecClass->GetName ().c_str ());
                             validSourceClasses = false;
                             }
                         }
-                    else if (!t_ecClass->GetIsDomainClass () && t_ecClass->GetName () != L"AnyClass")
+                    else if (!t_ecClass->GetIsDomainClass () && t_ecClass->GetName () != "AnyClass")
                         {
                         if (t_ecClass->GetDerivedClasses ().size () > 0)
                             continue;
@@ -912,7 +912,7 @@ void InstanceCRUDTests::checkECClassCRUDfeasibility (ECClassCP ecClass)
                         }
                     else
                         {
-                        if (t_ecClass->GetName () == L"AnyClass")
+                        if (t_ecClass->GetName () == "AnyClass")
                             notAnyClass = false;
                         else
                             {
@@ -923,18 +923,18 @@ void InstanceCRUDTests::checkECClassCRUDfeasibility (ECClassCP ecClass)
                     }
                 if (validSourceClasses && validTargetClasses && isDomainOrNonCustom && notAnyClass)
                     {
-                    LOG1.infov ("CRUD Operations can be performed for this relationship Class: %ls", ecClass->GetName ().c_str ());
+                    LOG1.infov ("CRUD Operations can be performed for this relationship Class: %s", ecClass->GetName ().c_str ());
                     m_insert = true;
                     m_update = true;
                     m_delete = true;
                     }
                 else if (!isDomainOrNonCustom)
                     {
-                    LOG1.infov ("CRUD Operations cannot be performed for the relationship Class: %ls", ecClass->GetName ().c_str ());
+                    LOG1.infov ("CRUD Operations cannot be performed for the relationship Class: %s", ecClass->GetName ().c_str ());
                     }
                 else if (!validSourceClasses || !validTargetClasses || !notAnyClass)
                     {
-                    LOG1.infov ("Insert and Delete Operations can be performed but update cannot be performed for this relationship class %ls", ecClass->GetName ().c_str ());
+                    LOG1.infov ("Insert and Delete Operations can be performed but update cannot be performed for this relationship class %s", ecClass->GetName ().c_str ());
                     m_insert = true;
                     m_update = false;
                     m_delete = true;
@@ -946,15 +946,15 @@ void InstanceCRUDTests::checkECClassCRUDfeasibility (ECClassCP ecClass)
         {
         if (!ecClass->GetIsDomainClass ())
             {
-            LOG1.infov ("[NDC]Non-domain Class: CRUD opertions cann't be performed for class: %ls", ecClass->GetName ().c_str ());
+            LOG1.infov ("[NDC]Non-domain Class: CRUD operations can't be performed for class: %s", ecClass->GetName ().c_str ());
             }
         else if (ecClass->GetIsCustomAttributeClass ())
             {
-            LOG1.infov ("[CAC]Custom Attribute Class: CRUD operations cannot be performed for class: %ls", ecClass->GetName ().c_str ());
+            LOG1.infov ("[CAC]Custom Attribute Class: CRUD operations cannot be performed for class: %s", ecClass->GetName ().c_str ());
             }
-        else if (ecClass->GetName () == L"AnyClass")
+        else if (ecClass->GetName () == "AnyClass")
             {
-            LOG1.infov ("AnyClass: CRUD operations cannot be performed: %ls", ecClass->GetName ().c_str ());
+            LOG1.infov ("AnyClass: CRUD operations cannot be performed: %s", ecClass->GetName ().c_str ());
             }
         }
     }
@@ -1028,7 +1028,7 @@ TEST_F (InstanceCRUDTests, InsertUpdateDeleteTest)
                                             BeFileNameStatus fileDeleteStatus = BeFileName::BeDeleteFile (dbPath.GetName ());
                                             if (fileDeleteStatus != BeFileNameStatus::Success)
                                                 {
-                                                LOG1.errorv ("Could not delete preexisting test ecdb file : %ls", m_classDbName.c_str ());
+                                                LOG1.errorv ("Could not delete preexisting test ecdb file : %s", Utf8String(m_classDbName).c_str ());
                                                 EXPECT_TRUE (false);
                                                 }
                                             }
@@ -1040,7 +1040,7 @@ TEST_F (InstanceCRUDTests, InsertUpdateDeleteTest)
                             }
                         else
                             {
-                            LOG1.errorv ("[SRF] Schema Read Failed: %ls ", name.GetName ());
+                            LOG1.errorv ("[SRF] Schema Read Failed: %s ", name.GetNameUtf8 ().c_str());
                             }
                         }
                     }
@@ -1051,8 +1051,8 @@ TEST_F (InstanceCRUDTests, InsertUpdateDeleteTest)
     }
 TEST_F (InstanceCRUDTests, singleClassTest)
     {
-    WCharCP schma = L"SimpleCompany.01.00.ecschema.xml";//schema name
-    WCharCP classname = L"EducationStruct";//class name
+    WCharCP schema = L"SimpleCompany.01.00.ecschema.xml";//schema name
+    Utf8CP classname = "EducationStruct";//class name
     WCharCP folderName = L"StartupCompany";//folder name
     InstanceCRUDTests::initBeSQLiteLib ();
     BeFileName schemaPath;
@@ -1062,9 +1062,9 @@ TEST_F (InstanceCRUDTests, singleClassTest)
     schemaPath.AppendToPath (L"\\");
     ECSchemaReadContextPtr schemaReadContext = nullptr;
     ECSchemaPtr schemaPtr = nullptr;
-    ECDbTestUtility::ReadECSchemaFromDisk (schemaPtr, schemaReadContext, schma, schemaPath.c_str ());
+    ECDbTestUtility::ReadECSchemaFromDisk (schemaPtr, schemaReadContext, schema, schemaPath.c_str ());
     ASSERT_TRUE (schemaPtr != NULL);
-    m_schemaFullPath = schemaPath + schma;
+    m_schemaFullPath = schemaPath + schema;
     auto ecClass = schemaPtr->GetClassCP (classname);
     m_className = ecClass->GetName ();
     if (setUpECdbSingleClass ())

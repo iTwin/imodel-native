@@ -155,7 +155,7 @@ GetValueAsserter const& asserter
     totalStopWatch.Stop ();
     EXPECT_EQ (TESTCLASS_INSTANCE_COUNT, rowCount);
 
-    LOG.infov (L"Total Time: %.4lf ms for %d instances. Test Property: %ls::%ls.", 
+    LOG.infov ("Total Time: %.4lf ms for %d instances. Test Property: %s::%s.", 
             totalStopWatch.GetElapsedSeconds () * 1000, 
             TESTCLASS_INSTANCE_COUNT,
             TestSchemaHelper::TESTCLASS_NAME,
@@ -197,7 +197,7 @@ GetValueAsserter const& asserter
     totalStopWatch.Stop ();
     EXPECT_EQ (TESTCLASS_INSTANCE_COUNT, rowCount);
 
-    LOG.infov (L"Total Time: %.4lf ms for %d instances. Test Property: %ls::%ls.", 
+    LOG.infov ("Total Time: %.4lf ms for %d instances. Test Property: %s::%s.", 
             totalStopWatch.GetElapsedSeconds () * 1000, 
             TESTCLASS_INSTANCE_COUNT,
             TestSchemaHelper::TESTCLASS_NAME,

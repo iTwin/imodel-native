@@ -83,7 +83,7 @@ void ECSqlStepTask::Collection::ResetSelector ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-ECSqlStepTask const* ECSqlStepTask::Collection::Find (WCharCP name) const
+ECSqlStepTask const* ECSqlStepTask::Collection::Find (Utf8CP name) const
     {
     auto stepTask = m_stepTasks.find (name);
     if (stepTask != m_stepTasks.end ())
@@ -173,7 +173,7 @@ ECSqlStepStatus UpdateStructArrayStepTask::_Execute (ECInstanceId const& instanc
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-ECSqlStepTaskCreateStatus UpdateStructArrayStepTask::Create (unique_ptr<UpdateStructArrayStepTask>& updateStepTask, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, WCharCP property)
+ECSqlStepTaskCreateStatus UpdateStructArrayStepTask::Create (unique_ptr<UpdateStructArrayStepTask>& updateStepTask, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, Utf8CP property)
     {
     unique_ptr<InsertStructArrayStepTask> insertStepTask;
     unique_ptr<DeleteStructArrayStepTask> deleteStepTask;
@@ -276,7 +276,7 @@ ECSqlStepStatus InsertStructArrayStepTask::_Execute (ECInstanceId const& instanc
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-ECSqlStepTaskCreateStatus InsertStructArrayStepTask::Create (unique_ptr<InsertStructArrayStepTask>& insertStepTask, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, WCharCP property)
+ECSqlStepTaskCreateStatus InsertStructArrayStepTask::Create (unique_ptr<InsertStructArrayStepTask>& insertStepTask, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, Utf8CP property)
     {
     auto propertyMap = classMap.GetPropertyMap (property);
     if (propertyMap == nullptr)
@@ -365,7 +365,7 @@ ECSqlStepStatus DeleteStructArrayStepTask::_Execute (ECInstanceId const& instanc
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-ECSqlStepTaskCreateStatus DeleteStructArrayStepTask::Create (unique_ptr<DeleteStructArrayStepTask>& deleteStepTask, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, WCharCP property)
+ECSqlStepTaskCreateStatus DeleteStructArrayStepTask::Create (unique_ptr<DeleteStructArrayStepTask>& deleteStepTask, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, Utf8CP property)
     {
     auto propertyMap = classMap.GetPropertyMap (property);
     if (propertyMap == nullptr)
@@ -416,7 +416,7 @@ ECSqlStepTaskCreateStatus DeleteStructArrayStepTask::Create (unique_ptr<DeleteSt
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-DeleteRelatedInstancesECSqlStepTask::DeleteRelatedInstancesECSqlStepTask (ECDbR ecdb, ECSqlStatusContext& statusContext, WCharCP name, ECClassId classId)
+DeleteRelatedInstancesECSqlStepTask::DeleteRelatedInstancesECSqlStepTask (ECDbR ecdb, ECSqlStatusContext& statusContext, Utf8CP name, ECClassId classId)
     : ECSqlStepTask (ExecutionCategory::ExecuteBeforeParentStep, statusContext, name), m_ecdb (ecdb), m_orphanInstanceFinder (ecdb), m_ecClassId (classId)
     {}
 
@@ -438,7 +438,7 @@ ECSqlStepStatus DeleteRelatedInstancesECSqlStepTask::_Execute (ECInstanceId cons
 //---------------------------------------------------------------------------------------
 ECSqlStepTaskCreateStatus DeleteRelatedInstancesECSqlStepTask::Create (unique_ptr<DeleteRelatedInstancesECSqlStepTask>& deleteStepTask, ECDbR ecdb, ECSqlPrepareContext& preparedContext, IClassMap const& classMap)
     {
-    deleteStepTask = unique_ptr<DeleteRelatedInstancesECSqlStepTask> (new DeleteRelatedInstancesECSqlStepTask (ecdb, preparedContext.GetECSqlStatementR ().GetStatusContextR (), L"$DeleteRelatedStepTask", classMap.GetClass ().GetId ()));
+    deleteStepTask = unique_ptr<DeleteRelatedInstancesECSqlStepTask> (new DeleteRelatedInstancesECSqlStepTask (ecdb, preparedContext.GetECSqlStatementR ().GetStatusContextR (), "$DeleteRelatedStepTask", classMap.GetClass ().GetId ()));
     return ECSqlStepTaskCreateStatus::Success;
     }
     
@@ -514,12 +514,12 @@ BentleyStatus DeleteRelatedInstancesECSqlStepTask::DeleteInstances (ECDbR ecdb, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                             Krischan.Eberle         01/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus DeleteRelatedInstancesECSqlStepTask::DeleteInstances (ECDbR ecDb, ECClassId classId, std::vector<ECInstanceKey> const& keyList) const
+BentleyStatus DeleteRelatedInstancesECSqlStepTask::DeleteInstances(ECDbR ecDb, ECClassId classId, std::vector<ECInstanceKey> const& keyList) const
     {
-    ECClassCP ecClass = ecDb.Schemas ().GetECClass (classId);
+    ECClassCP ecClass = ecDb.Schemas().GetECClass(classId);
     if (ecClass == nullptr)
         {
-        LOG.errorv ("ECSQL cascade delete of related instances with ECClassId %lld failed: Could not retrieve ECClass for the ECClassId.", classId);
+        LOG.errorv("ECSQL cascade delete of related instances with ECClassId %lld failed: Could not retrieve ECClass for the ECClassId.", classId);
         return ERROR;
         }
 
@@ -527,22 +527,22 @@ BentleyStatus DeleteRelatedInstancesECSqlStepTask::DeleteInstances (ECDbR ecDb, 
     //it as it gets implicitly deleted with the end instance.
     //This prevents us from running into null constraint violations if the foreign key column is not nullable
     //(See TFS#168619)
-    auto relationshipClass = ecClass->GetRelationshipClassCP ();
+    auto relationshipClass = ecClass->GetRelationshipClassCP();
     if (relationshipClass != nullptr)
         {
-        auto classMap = ecDb.GetECDbImplR().GetECDbMap ().GetClassMapCP (*relationshipClass);
+        auto classMap = ecDb.GetECDbImplR().GetECDbMap().GetClassMapCP(*relationshipClass);
         if (classMap == nullptr)
             {
-            LOG.errorv (L"ECSQL cascade delete of related %ls instances failed: Cound not retrieve class map.", relationshipClass->GetFullName ());
+            LOG.errorv("ECSQL cascade delete of related %s instances failed: Cound not retrieve class map.", relationshipClass->GetFullName());
             return ERROR;
             }
 
-        if (classMap->GetClassMapType () == IClassMap::Type::RelationshipEndTable)
+        if (classMap->GetClassMapType() == IClassMap::Type::RelationshipEndTable)
             {
-            BeAssert (dynamic_cast<RelationshipClassEndTableMapCP> (classMap) != nullptr);
+            BeAssert(dynamic_cast<RelationshipClassEndTableMapCP> (classMap) != nullptr);
             auto relClassMap = static_cast<RelationshipClassEndTableMapCP> (classMap);
-            auto const& otherEndConstraint = relClassMap->GetThisEnd () == ECRelationshipEnd_Source ? relationshipClass->GetTarget () : relationshipClass->GetSource ();
-            if (otherEndConstraint.GetCardinality ().GetLowerLimit () == 1)
+            auto const& otherEndConstraint = relClassMap->GetThisEnd() == ECRelationshipEnd_Source ? relationshipClass->GetTarget() : relationshipClass->GetSource();
+            if (otherEndConstraint.GetCardinality().GetLowerLimit() == 1)
                 {
 
                 return SUCCESS;
@@ -550,20 +550,20 @@ BentleyStatus DeleteRelatedInstancesECSqlStepTask::DeleteInstances (ECDbR ecDb, 
             }
         }
 
-    auto statement = GetDeleteStatement (*ecClass);
+    auto statement = GetDeleteStatement(*ecClass);
     if (statement == nullptr)
         return ERROR; //error logging already done in GetDeleteStatement
 
     //in order to reuse the prepared statement, the number of parameters in the ECSQL must be constant
     //We therefore split the delete in chunks of MAX_PARAMETER_COUNT instance ids
-    const int keyCount = (int) keyList.size ();
+    const int keyCount = (int) keyList.size();
     for (int i = 0; i < keyCount; i++)
         {
         const int parameterIndex = (i % MAX_PARAMETER_COUNT) + 1;
 
-        if (ECSqlStatus::Success != statement->BindId (parameterIndex, keyList[i].GetECInstanceId ()))
+        if (ECSqlStatus::Success != statement->BindId(parameterIndex, keyList[i].GetECInstanceId()))
             {
-            LOG.errorv (L"ECSQL cascade delete of related %ls instances failed: Binding to nested ECSQL DELETE failed.", ecClass->GetFullName ());
+            LOG.errorv("ECSQL cascade delete of related %s instances failed: Binding to nested ECSQL DELETE failed.", ecClass->GetFullName());
             return ERROR;
             }
 
@@ -572,17 +572,17 @@ BentleyStatus DeleteRelatedInstancesECSqlStepTask::DeleteInstances (ECDbR ecDb, 
         const bool isLastKey = (i + 1) == keyCount;
         if (parameterIndex == MAX_PARAMETER_COUNT || isLastKey)
             {
-            if (ECSqlStepStatus::Done != statement->Step ())
+            if (ECSqlStepStatus::Done != statement->Step())
                 {
-                LOG.errorv (L"ECSQL cascade delete of related %ls instances failed: Execution of nested ECSQL DELETE failed.", ecClass->GetFullName ());
+                LOG.errorv("ECSQL cascade delete of related %s instances failed: Execution of nested ECSQL DELETE failed.", ecClass->GetFullName());
                 return ERROR;
                 }
 
             //no need to reset the statement if this is the last execution
             if (!isLastKey)
                 {
-                statement->ClearBindings ();
-                statement->Reset ();
+                statement->ClearBindings();
+                statement->Reset();
                 }
             }
         }
@@ -669,7 +669,7 @@ ECSqlStatement* DeleteRelatedInstancesECSqlStepTask::GetDeleteStatement (ECN::EC
         auto statement = std::unique_ptr<ECSqlStatement> (new ECSqlStatement ());
         if (statement->Prepare (m_ecdb, ecsql.c_str ()) != ECSqlStatus::Success)
             {
-            LOG.errorv (L"ECSQL cascade delete of related %ls instances failed: Preparation of nested ECSQL DELETE failed.", ecClass.GetFullName ());
+            LOG.errorv ("ECSQL cascade delete of related %s instances failed: Preparation of nested ECSQL DELETE failed.", ecClass.GetFullName ());
             return nullptr;
             }
 
@@ -693,7 +693,7 @@ ECSqlStatement* DeleteRelatedInstancesECSqlStepTask::GetDeleteStatement (ECN::EC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Affan.Khan         02/2014
 //---------------------------------------------------------------------------------------
-ECSqlStepTaskCreateStatus ECSqlStepTaskFactory::CreatePropertyStepTask (std::unique_ptr<ECSqlStepTask>& stepTask, StepTaskType taskType, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, WCharCP property)
+ECSqlStepTaskCreateStatus ECSqlStepTaskFactory::CreatePropertyStepTask (std::unique_ptr<ECSqlStepTask>& stepTask, StepTaskType taskType, ECSqlPrepareContext& preparedContext, ECDbR ecdb, IClassMap const& classMap, Utf8CP property)
     {
     switch (taskType)
         {
@@ -773,7 +773,7 @@ void ECSqlStepTaskFactory::GetConstraintClasses (ECSqlParseContext::ClassListByI
         *containAnyClass = false;
     for (auto ecClass : constraintEnd.GetClasses ())
         {
-        if (containAnyClass && !(*containAnyClass) && ecClass->GetName () == L"AnyClass" && ecClass->GetSchema ().GetName () == L"Bentley_Standard_Classes")
+        if (containAnyClass && !(*containAnyClass) && ecClass->GetName () == "AnyClass" && ecClass->GetSchema ().GetName () == "Bentley_Standard_Classes")
             *containAnyClass = true;
 
         if (classes.find (ecClass->GetId ()) == classes.end ())

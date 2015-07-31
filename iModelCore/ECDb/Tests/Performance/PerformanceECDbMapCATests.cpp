@@ -233,9 +233,9 @@ void PerformanceECDbMapCATestFixture::CreatePrimitiveProperties(ECClassR ecClass
     PrimitiveECPropertyP primitiveP;
     for (size_t i = 0; i < 4; i++)
         {
-        WString temp;
-        temp.Sprintf (L"_Property%d", i);
-        WString propName = ecClass.GetName ();
+        Utf8String temp;
+        temp.Sprintf ("_Property%d", i);
+        Utf8String propName = ecClass.GetName ();
         propName.append (temp);
         ecClass.CreatePrimitiveProperty (primitiveP, propName, PrimitiveType::PRIMITIVETYPE_String);
         }
@@ -251,14 +251,14 @@ void PerformanceECDbMapCATestFixture::CreateClassHierarchy(ECSchemaR testSchema,
     else
         {
         ECClassP tmpClass;
-        WString className;
-        className.Sprintf (L"P%d", m_classNamePostFix++);
+        Utf8String className;
+        className.Sprintf ("P%d", m_classNamePostFix++);
         EXPECT_EQ (testSchema.CreateClass (tmpClass, className), ECOBJECTS_STATUS_Success);
         EXPECT_EQ (tmpClass->AddBaseClass (baseClass), ECOBJECTS_STATUS_Success);
         CreatePrimitiveProperties (*tmpClass, 4);
 
         ECClassP tmpClass1;
-        className.Sprintf (L"P%d", m_classNamePostFix++);
+        className.Sprintf ("P%d", m_classNamePostFix++);
         EXPECT_EQ (testSchema.CreateClass (tmpClass1, className), ECOBJECTS_STATUS_Success);
         EXPECT_EQ (tmpClass1->AddBaseClass (baseClass), ECOBJECTS_STATUS_Success);
         CreatePrimitiveProperties (*tmpClass1, 4);
@@ -279,32 +279,32 @@ TEST_F(PerformanceECDbMapCATestFixture, InstanceInsertionWithSharedColumnsForSub
     ECDbR ecdb = test.Create ("CRUDOperationWithSharedColumns.ecdb");
 
     ECSchemaPtr testSchema;
-    ECSchema::CreateSchema (testSchema, L"testSchema", 1, 0);
+    ECSchema::CreateSchema (testSchema, "testSchema", 1, 0);
     ASSERT_TRUE (testSchema.IsValid ());
-    testSchema->SetNamespacePrefix (L"ts");
+    testSchema->SetNamespacePrefix ("ts");
 
     auto readContext = ECSchemaReadContext::CreateContext ();
     readContext->AddSchemaLocater (ecdb.GetSchemaLocater ());
-    auto ecdbmapKey = SchemaKey (L"ECDbMap", 1, 0);
+    auto ecdbmapKey = SchemaKey ("ECDbMap", 1, 0);
     auto ecdbmapSchema = readContext->LocateSchema (ecdbmapKey, SchemaMatchType::SCHEMAMATCHTYPE_LatestCompatible);
     ASSERT_TRUE (ecdbmapSchema.IsValid ());
     readContext->AddSchema (*testSchema);
     testSchema->AddReferencedSchema (*ecdbmapSchema);
 
     ECClassP baseClass;
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, testSchema->CreateClass (baseClass, L"BaseClass"));
+    ASSERT_EQ (ECOBJECTS_STATUS_Success, testSchema->CreateClass (baseClass, "BaseClass"));
     CreatePrimitiveProperties (*baseClass, 4);
 
     //Recursively Create Derived Classes of Provided Base Class (2 Derived Classes per Base Class)
     CreateClassHierarchy (*testSchema, 7, *baseClass);
 
-    auto ca = ecdbmapSchema->GetClassCP (L"ClassMap");
+    auto ca = ecdbmapSchema->GetClassCP ("ClassMap");
     EXPECT_TRUE (ca != nullptr);
     auto customAttribute = ca->GetDefaultStandaloneEnabler ()->CreateInstance ();
     EXPECT_TRUE (customAttribute != nullptr);
-    ASSERT_TRUE (customAttribute->SetValue (L"MapStrategy.Strategy", ECValue ("SharedTable")) == ECOBJECTS_STATUS_Success);
-    ASSERT_TRUE (customAttribute->SetValue (L"MapStrategy.Options", ECValue ("SharedColumnsForSubclasses")) == ECOBJECTS_STATUS_Success);
-    ASSERT_TRUE (customAttribute->SetValue (L"MapStrategy.IsPolymorphic", ECValue (true)) == ECOBJECTS_STATUS_Success);
+    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.Strategy", ECValue ("SharedTable")) == ECOBJECTS_STATUS_Success);
+    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.Options", ECValue ("SharedColumnsForSubclasses")) == ECOBJECTS_STATUS_Success);
+    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.IsPolymorphic", ECValue (true)) == ECOBJECTS_STATUS_Success);
     ASSERT_TRUE (baseClass->SetCustomAttribute (*customAttribute) == ECOBJECTS_STATUS_Success);
 
     ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (readContext->GetCache ()));
@@ -333,31 +333,31 @@ TEST_F(PerformanceECDbMapCATestFixture, InstanceInsertionWithOutSharedColumnsFor
     ECDbR ecdb = test.Create ("CRUDOperationWithOutSharedColumnsForSubClasses.ecdb");
 
     ECSchemaPtr testSchema;
-    ECSchema::CreateSchema (testSchema, L"testSchema", 1, 0);
+    ECSchema::CreateSchema (testSchema, "testSchema", 1, 0);
     ASSERT_TRUE (testSchema.IsValid ());
-    testSchema->SetNamespacePrefix (L"ts");
+    testSchema->SetNamespacePrefix ("ts");
 
     auto readContext = ECSchemaReadContext::CreateContext ();
     readContext->AddSchemaLocater (ecdb.GetSchemaLocater ());
-    auto ecdbmapKey = SchemaKey (L"ECDbMap", 1, 0);
+    auto ecdbmapKey = SchemaKey ("ECDbMap", 1, 0);
     auto ecdbmapSchema = readContext->LocateSchema (ecdbmapKey, SchemaMatchType::SCHEMAMATCHTYPE_LatestCompatible);
     ASSERT_TRUE (ecdbmapSchema.IsValid ());
     readContext->AddSchema (*testSchema);
     testSchema->AddReferencedSchema (*ecdbmapSchema);
 
     ECClassP baseClass;
-    ASSERT_EQ (ECOBJECTS_STATUS_Success, testSchema->CreateClass (baseClass, L"BaseClass"));
+    ASSERT_EQ (ECOBJECTS_STATUS_Success, testSchema->CreateClass (baseClass, "BaseClass"));
     CreatePrimitiveProperties (*baseClass, 4);
 
     //Recursively Create Derived Classes of Provided Base Class (2 Derived Classes per Base Class)
     CreateClassHierarchy (*testSchema, 7, *baseClass);
 
-    auto ca = ecdbmapSchema->GetClassCP (L"ClassMap");
+    auto ca = ecdbmapSchema->GetClassCP ("ClassMap");
     EXPECT_TRUE (ca != nullptr);
     auto customAttribute = ca->GetDefaultStandaloneEnabler ()->CreateInstance ();
     EXPECT_TRUE (customAttribute != nullptr);
-    ASSERT_TRUE (customAttribute->SetValue (L"MapStrategy.Strategy", ECValue ("SharedTable")) == ECOBJECTS_STATUS_Success);
-    ASSERT_TRUE (customAttribute->SetValue (L"MapStrategy.IsPolymorphic", ECValue (true)) == ECOBJECTS_STATUS_Success);
+    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.Strategy", ECValue ("SharedTable")) == ECOBJECTS_STATUS_Success);
+    ASSERT_TRUE (customAttribute->SetValue ("MapStrategy.IsPolymorphic", ECValue (true)) == ECOBJECTS_STATUS_Success);
     ASSERT_TRUE (baseClass->SetCustomAttribute (*customAttribute) == ECOBJECTS_STATUS_Success);
 
     ASSERT_EQ (SUCCESS, ecdb.Schemas ().ImportECSchemas (readContext->GetCache ()));

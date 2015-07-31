@@ -61,7 +61,7 @@ private:
 
     bool ValidateChildStrategy(UserECDbMapStrategy const& rootUserStrategy, UserECDbMapStrategy const& childStrategy) const;
 
-    BentleyStatus ProcessStandardKeys(ECN::ECClassCR ecClass, WCharCP customAttributeName);
+    BentleyStatus ProcessStandardKeys(ECN::ECClassCR ecClass, Utf8CP customAttributeName);
     static Utf8String ResolveTablePrefix (ECN::ECClassCR ecClass);
 
 protected:
@@ -240,28 +240,28 @@ struct StandardKeySpecification : RefCountedBase
             {
             return new StandardKeySpecification(type);
             }
-        static Type GetTypeFromString(WCharCP customAttributeName)
+        static Type GetTypeFromString(Utf8CP customAttributeName)
             {
             Type keyType = Type::None;
-            if (BeStringUtilities::Wcsicmp(customAttributeName, L"SyncIDSpecification") == 0)
+            if (BeStringUtilities::Stricmp(customAttributeName, "SyncIDSpecification") == 0)
                 keyType = Type::SyncIDSpecification;
-            else if (BeStringUtilities::Wcsicmp(customAttributeName, L"GlobalIdSpecification") == 0)
+            else if (BeStringUtilities::Stricmp(customAttributeName, "GlobalIdSpecification") == 0)
                 keyType = Type::GlobalIdSpecification;
-            else if (BeStringUtilities::Wcsicmp(customAttributeName, L"BusinessKeySpecification") == 0)
+            else if (BeStringUtilities::Stricmp(customAttributeName, "BusinessKeySpecification") == 0)
                 keyType = Type::BusinessKeySpecification;
 
             return keyType;
             }
-        static WString TypeToString(Type keyType)
+        static Utf8String TypeToString(Type keyType)
             {
             if (keyType == Type::SyncIDSpecification)
-                return L"SyncIDSpecification";
+                return "SyncIDSpecification";
             if (keyType == Type::GlobalIdSpecification)
-                return L"GlobalIdSpecification";
+                return "GlobalIdSpecification";
             if (keyType == Type::BusinessKeySpecification)
-                return L"BusinessKeySpecification";
+                return "BusinessKeySpecification";
 
-            return L"";
+            return "";
             }
     };
 

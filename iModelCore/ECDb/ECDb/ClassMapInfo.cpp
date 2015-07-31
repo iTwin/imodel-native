@@ -87,7 +87,7 @@ MapStatus ClassMapInfo::_EvaluateMapStrategy()
         return MapStatus::Success;
         }
 
-    if (IClassMap::IsAnyClass(m_ecClass) || (m_ecClass.GetSchema().IsStandardSchema() && m_ecClass.GetName().CompareTo(L"InstanceCount") == 0))
+    if (IClassMap::IsAnyClass(m_ecClass) || (m_ecClass.GetSchema().IsStandardSchema() && m_ecClass.GetName().CompareTo("InstanceCount") == 0))
         {
         LogClassNotMapped(NativeLogging::LOG_INFO, m_ecClass, "ECClass is a standard class not supported by ECDb.");
         m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, false);
@@ -143,12 +143,12 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
             Utf8String baseClasses;
             for (IClassMap const* baseMap : polymorphicSharedTableClassMaps)
                 {
-                baseClasses.append(Utf8String(baseMap->GetClass().GetFullName()).c_str());
+                baseClasses.append(baseMap->GetClass().GetFullName());
                 baseClasses.append(" ");
                 }
 
             LOG.errorv("ECClass '%s' has two or more base ECClasses which use the MapStrategy 'SharedTable (polymorphic)'. This is not supported. The base ECClasses are: %s",
-                       Utf8String(m_ecClass.GetFullName()).c_str(), baseClasses.c_str());
+                       m_ecClass.GetFullName(), baseClasses.c_str());
             }
 
         return ERROR;
@@ -182,7 +182,6 @@ BentleyStatus ClassMapInfo::DoEvaluateMapStrategy(bool& baseClassesNotMappedYet,
     if (polymorphicSharedTableClassMaps.size() == 1)
         {
         m_parentClassMap = parentClassMap;
-        BeAssert(GetECClass().GetIsStruct() == parentClass.GetIsStruct() && "This should have been caught by the schema validation already");
         BeAssert(parentClassMap->GetMapStrategy().IsPolymorphicSharedTable());
 
         ECDbMapStrategy::Option option = ECDbMapStrategy::Option::None;
@@ -254,7 +253,7 @@ bool ClassMapInfo::ValidateChildStrategy(UserECDbMapStrategy const& rootStrategy
     const NativeLogging::SEVERITY logSev = NativeLogging::LOG_ERROR;
     if (!isValid && LOG.isSeverityEnabled(logSev))
         LOG.messagev(logSev, "MapStrategy %s of ECClass '%s' does not match the MapStrategy %s on the root of the class hierarchy. %s",
-                    childStrategy.ToString().c_str(), Utf8String(m_ecClass.GetFullName()).c_str(), rootStrategy.ToString().c_str(),
+                    childStrategy.ToString().c_str(), m_ecClass.GetFullName(), rootStrategy.ToString().c_str(),
                     detailError);
 
     return isValid;
@@ -269,9 +268,9 @@ BentleyStatus ClassMapInfo::_InitializeFromSchema ()
         return ERROR;
 
     // Add indices for important identifiers
-    if (SUCCESS != ProcessStandardKeys(m_ecClass, L"BusinessKeySpecification") ||
-        SUCCESS != ProcessStandardKeys(m_ecClass, L"GlobalIdSpecification") ||
-        SUCCESS != ProcessStandardKeys(m_ecClass, L"SyncIDSpecification"))
+    if (SUCCESS != ProcessStandardKeys(m_ecClass, "BusinessKeySpecification") ||
+        SUCCESS != ProcessStandardKeys(m_ecClass, "GlobalIdSpecification") ||
+        SUCCESS != ProcessStandardKeys(m_ecClass, "SyncIDSpecification"))
         return ERROR;
     
     //TODO: VerifyThatTableNameIsNotReservedName, e.g. dgn element table, etc.
@@ -283,23 +282,23 @@ BentleyStatus ClassMapInfo::_InitializeFromSchema ()
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ClassMapInfo::InitializeFromClassHasCurrentTimeStampProperty()
     {
-    IECInstancePtr classHint = m_ecClass.GetCustomAttributeLocal(L"ClassHasCurrentTimeStampProperty");
+    IECInstancePtr classHint = m_ecClass.GetCustomAttributeLocal("ClassHasCurrentTimeStampProperty");
 
     if (classHint == nullptr)
         return SUCCESS;
    
-    WString propertyName;
+    Utf8String propertyName;
     ECValue v;
-    if (classHint->GetValue(v, L"PropertyName") == ECOBJECTS_STATUS_Success && !v.IsNull())
+    if (classHint->GetValue(v, "PropertyName") == ECOBJECTS_STATUS_Success && !v.IsNull())
         {
-        propertyName = v.GetString();
+        propertyName = v.GetUtf8CP();
         ECPropertyCP dateTimeProperty = m_ecClass.GetPropertyP(propertyName);
         if (nullptr == dateTimeProperty)
             {
             BeAssert(false && "ClassHasCurrentTimeStamp Property Not Found in ECClass");
             return ERROR;
             }
-        if (dateTimeProperty->GetTypeName().Equals(L"dateTime"))
+        if (dateTimeProperty->GetTypeName().Equals("dateTime"))
             {
             m_classHasCurrentTimeStampProperty = dateTimeProperty;
             }
@@ -334,7 +333,7 @@ BentleyStatus ClassMapInfo::InitializeFromClassMapCA()
         {
         if (m_tableName.empty())
             {
-            LOG.errorv(L"TableName must not be empty in ClassMap custom attribute on ECClass %ls if MapStrategy is 'SharedTable (polymorphic)' or if MapStrategy is 'ExistingTable'.",
+            LOG.errorv("TableName must not be empty in ClassMap custom attribute on ECClass %s if MapStrategy is 'SharedTable (polymorphic)' or if MapStrategy is 'ExistingTable'.",
                        m_ecClass.GetFullName());
             return ERROR;
             }
@@ -343,7 +342,7 @@ BentleyStatus ClassMapInfo::InitializeFromClassMapCA()
         {
         if (!m_tableName.empty())
             {
-            LOG.errorv(L"TableName must only be set in ClassMap custom attribute on ECClass %ls if MapStrategy is 'SharedTable (polymorphic)' or 'ExistingTable'.",
+            LOG.errorv("TableName must only be set in ClassMap custom attribute on ECClass %s if MapStrategy is 'SharedTable (polymorphic)' or 'ExistingTable'.",
                        m_ecClass.GetFullName());
             return ERROR;
             }
@@ -373,7 +372,7 @@ BentleyStatus ClassMapInfo::InitializeFromClassMapCA()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                 Affan.Khan                07/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ClassMapInfo::ProcessStandardKeys(ECClassCR ecClass, WCharCP customAttributeName)
+BentleyStatus ClassMapInfo::ProcessStandardKeys(ECClassCR ecClass, Utf8CP customAttributeName)
     {
     StandardKeySpecification::Type keyType = StandardKeySpecification::GetTypeFromString(customAttributeName);
     if (keyType == StandardKeySpecification::Type::None)
@@ -388,9 +387,9 @@ BentleyStatus ClassMapInfo::ProcessStandardKeys(ECClassCR ecClass, WCharCP custo
         {
             case StandardKeySpecification::Type::BusinessKeySpecification:
             case StandardKeySpecification::Type::GlobalIdSpecification:
-                ca->GetValue(v, L"PropertyName"); break;
+                ca->GetValue(v, "PropertyName"); break;
             case StandardKeySpecification::Type::SyncIDSpecification:
-                ca->GetValue(v, L"Property"); break;
+                ca->GetValue(v, "Property"); break;
 
             default:
                 BeAssert(false);
@@ -405,8 +404,8 @@ BentleyStatus ClassMapInfo::ProcessStandardKeys(ECClassCR ecClass, WCharCP custo
     ECPropertyP keyProp = ecClass.GetPropertyP(keyPropName);
     if (nullptr == keyProp)
         {
-        LOG.errorv(L"Invalid %ls on class '%ls'. The specified property '%ls' does not exist in the class.",
-                   customAttributeName, ecClass.GetFullName(), WString(keyPropName, BentleyCharEncoding::Utf8).c_str());
+        LOG.errorv("Invalid %s on class '%s'. The specified property '%s' does not exist in the class.",
+                   customAttributeName, ecClass.GetFullName(), keyPropName);
         return ERROR;
         }
 
@@ -428,8 +427,8 @@ BentleyStatus ClassMapInfo::ProcessStandardKeys(ECClassCR ecClass, WCharCP custo
             }
         }
 
-    LOG.errorv(L"Invalid %ls on class '%ls'. The data type of the specified property '%ls' is not supported. Supported types: Binary, Boolean, DateTime, Double, Integer, Long and String.",
-               customAttributeName, ecClass.GetFullName(), WString(keyPropName, BentleyCharEncoding::Utf8).c_str());
+    LOG.errorv("Invalid %s on class '%s'. The data type of the specified property '%s' is not supported. Supported types: Binary, Boolean, DateTime, Double, Integer, Long and String.",
+               customAttributeName, ecClass.GetFullName(), keyPropName);
     return ERROR;
     }
 
@@ -513,11 +512,11 @@ Utf8String ClassMapInfo::ResolveTablePrefix (ECClassCR ecClass)
             return tablePrefix;
         }
 
-    WStringCR namespacePrefix = schema.GetNamespacePrefix ();
+    Utf8StringCR namespacePrefix = schema.GetNamespacePrefix ();
     if (namespacePrefix.empty ())
-        return Utf8String (schema.GetName ());
+        return schema.GetName ();
     
-    return Utf8String (namespacePrefix);
+    return namespacePrefix;
     }
 
 //---------------------------------------------------------------------------------------
@@ -527,7 +526,7 @@ Utf8String ClassMapInfo::ResolveTablePrefix (ECClassCR ecClass)
 void ClassMapInfo::LogClassNotMapped (NativeLogging::SEVERITY severity, ECClassCR ecClass, Utf8CP explanation)
     {
     Utf8CP classTypeStr = ecClass.GetRelationshipClassCP () != nullptr ? "ECRelationshipClass" : "ECClass";
-    LOG.messagev (severity, "Did not map %s '%s': %s", classTypeStr, Utf8String (ecClass.GetFullName ()).c_str (), explanation);
+    LOG.messagev (severity, "Did not map %s '%s': %s", classTypeStr, ecClass.GetFullName (), explanation);
     }
 
 //****************************************************************************************************
@@ -552,7 +551,7 @@ BentleyStatus RelationshipMapInfo::_InitializeFromSchema()
 
     if (hasForeignKeyRelMap && hasLinkTableRelMap)
         {
-        LOG.errorv(L"ECRelationshipClass '%ls' can only have either the ForeignKeyRelationshipMap or the LinkTableRelationshipMap custom attribute but not both.",
+        LOG.errorv("ECRelationshipClass '%s' can only have either the ForeignKeyRelationshipMap or the LinkTableRelationshipMap custom attribute but not both.",
                    GetECClass().GetFullName());
         return ERROR;
         }
@@ -593,7 +592,7 @@ BentleyStatus RelationshipMapInfo::_InitializeFromSchema()
                 {
                 if (!constraintClass->GetKeys().empty())
                     {
-                    LOG.errorv(L"ForeignKeyRelationshipMap custom attribute on ECRelationshipClass '%ls' must not have a value for ForeignKeyProperty as there are Key properties defined in the ECRelationshipConstraint on the foreign key end.",
+                    LOG.errorv("ForeignKeyRelationshipMap custom attribute on ECRelationshipClass '%s' must not have a value for ForeignKeyProperty as there are Key properties defined in the ECRelationshipConstraint on the foreign key end.",
                                GetECClass().GetFullName());
                     return ERROR;
                     }
@@ -691,7 +690,7 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
         {
         if (userStrategyIsForeignKeyMapping)
             {
-            LOG.errorv(L"The ECRelationshipClass '%ls' implies a link table relationship with (MapStrategy: SharedTable (polymorphic)), but it has a ForeignKeyRelationshipMap custom attribute.",
+            LOG.errorv("The ECRelationshipClass '%s' implies a link table relationship with (MapStrategy: SharedTable (polymorphic)), but it has a ForeignKeyRelationshipMap custom attribute.",
                        GetECClass().GetFullName());
             return MapStatus::Error;
             }
@@ -705,7 +704,7 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
         {
         if (userStrategyIsForeignKeyMapping)
             {
-            LOG.errorv(L"The ECRelationshipClass '%ls' implies a link table relationship with because of its cardinality or because it has ECProperties. Therefore it must not have a ForeignKeyRelationshipMap custom attribute.",
+            LOG.errorv("The ECRelationshipClass '%s' implies a link table relationship with because of its cardinality or because it has ECProperties. Therefore it must not have a ForeignKeyRelationshipMap custom attribute.",
                        GetECClass().GetFullName());
             return MapStatus::Error;
             }
@@ -725,15 +724,15 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
                     {
                     if (userStrategyIsForeignKeyMapping)
                         {
-                        WCharCP constraintStr = nullptr;
+                        Utf8CP constraintStr = nullptr;
                         if (sourceTableCount > 1 && targetTableCount > 1)
-                            constraintStr = L"source and target constraints are";
+                            constraintStr = "source and target constraints are";
                         else if (sourceTableCount > 1)
-                            constraintStr = L"source constraint is";
+                            constraintStr = "source constraint is";
                         else
-                            constraintStr = L"target constraint is";
+                            constraintStr = "target constraint is";
 
-                        LOG.errorv(L"ECRelationshipClass %ls implies a link table relationship as the %ls mapped to more than one end table. Therefore it must not have a ForeignKeyRelationshipMap custom attribute.",
+                        LOG.errorv("ECRelationshipClass %s implies a link table relationship as the %s mapped to more than one end table. Therefore it must not have a ForeignKeyRelationshipMap custom attribute.",
                                    GetECClass().GetFullName(), constraintStr);
                         return MapStatus::Error;
                         }
@@ -752,7 +751,7 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
                 {
                 if (m_customMapType == CustomMapType::ForeignKeyOnSource)
                     {
-                    LOG.errorv(L"ECRelationshipClass %ls implies a foreign key relationship on the target's table. Therefore the 'End' property in the ForeignKeyRelationshipMap custom attribute must not be set to 'Source'.",
+                    LOG.errorv("ECRelationshipClass %s implies a foreign key relationship on the target's table. Therefore the 'End' property in the ForeignKeyRelationshipMap custom attribute must not be set to 'Source'.",
                                GetECClass().GetFullName());
                     return MapStatus::Error;
                     }
@@ -761,7 +760,7 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
                     {
                     if (userStrategyIsForeignKeyMapping)
                         {
-                        LOG.errorv(L"ECRelationshipClass %ls implies a link table relationship as the target constraint is mapped to more than one end table. Therefore it must not have a ForeignKeyRelationshipMap custom attribute.",
+                        LOG.errorv("ECRelationshipClass %s implies a link table relationship as the target constraint is mapped to more than one end table. Therefore it must not have a ForeignKeyRelationshipMap custom attribute.",
                                    GetECClass().GetFullName());
                         return MapStatus::Error;
                         }
@@ -778,7 +777,7 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
                 {
                 if (m_customMapType == CustomMapType::ForeignKeyOnTarget)
                     {
-                    LOG.errorv(L"ECRelationshipClass %ls implies a foreign key relationship on the source's table. Therefore the 'End' property in the ForeignKeyRelationshipMap custom attribute must not be set to 'Target'.",
+                    LOG.errorv("ECRelationshipClass %s implies a foreign key relationship on the source's table. Therefore the 'End' property in the ForeignKeyRelationshipMap custom attribute must not be set to 'Target'.",
                                GetECClass().GetFullName());
                     return MapStatus::Error;
                     }
@@ -787,7 +786,7 @@ MapStatus RelationshipMapInfo::_EvaluateMapStrategy()
                     {
                     if (userStrategyIsForeignKeyMapping)
                         {
-                        LOG.errorv(L"ECRelationshipClass %ls implies a link table relationship as the source constraint is mapped to more than one end table.. Therefore it must not have a ForeignKeyRelationshipMap custom attribute.",
+                        LOG.errorv("ECRelationshipClass %s implies a link table relationship as the source constraint is mapped to more than one end table.. Therefore it must not have a ForeignKeyRelationshipMap custom attribute.",
                                    GetECClass().GetFullName());
                         return MapStatus::Error;
                         }

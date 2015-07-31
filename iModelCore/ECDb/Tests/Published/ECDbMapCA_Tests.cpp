@@ -850,19 +850,19 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, InstanceInsertion)
     ECSchemaCP schema = ecdb.Schemas ().GetECSchema ("test", true);
     ASSERT_TRUE (schema != nullptr) << "Couldn't locate test schema";
 
-    ECClassCP baseClass = schema->GetClassCP (L"Base");
+    ECClassCP baseClass = schema->GetClassCP ("Base");
     ASSERT_TRUE(baseClass != nullptr) << "Couldn't locate class Base from schema";
-    ECClassCP classA = schema->GetClassCP (L"ClassA");
+    ECClassCP classA = schema->GetClassCP ("ClassA");
     ASSERT_TRUE (classA != nullptr) << "Couldn't locate classA from Schema";
-    ECClassCP classB = schema->GetClassCP (L"ClassB");
+    ECClassCP classB = schema->GetClassCP ("ClassB");
     ASSERT_TRUE (classB != nullptr) << "Couldn't locate classB from Schema";
 
     //Insert Instances for class Base
     ECN::StandaloneECInstancePtr baseInstance1 = baseClass->GetDefaultStandaloneEnabler()->CreateInstance();
     ECN::StandaloneECInstancePtr baseInstance2 = baseClass->GetDefaultStandaloneEnabler()->CreateInstance();
 
-    baseInstance1->SetValue(L"P0", ECValue("string1"));
-    baseInstance2->SetValue(L"P0", ECValue("string2"));
+    baseInstance1->SetValue("P0", ECValue("string1"));
+    baseInstance2->SetValue("P0", ECValue("string2"));
 
     ECInstanceInserter inserter(ecdb, *baseClass);
     ASSERT_TRUE (inserter.IsValid ());
@@ -876,8 +876,8 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, InstanceInsertion)
     ECN::StandaloneECInstancePtr classAInstance1 = classA->GetDefaultStandaloneEnabler ()->CreateInstance ();
     ECN::StandaloneECInstancePtr classAInstance2 = classA->GetDefaultStandaloneEnabler ()->CreateInstance ();
 
-    classAInstance1->SetValue (L"P1", ECValue ("string1"));
-    classAInstance2->SetValue (L"P1", ECValue ("string2"));
+    classAInstance1->SetValue ("P1", ECValue ("string1"));
+    classAInstance2->SetValue ("P1", ECValue ("string2"));
 
     ECInstanceInserter classAinserter (ecdb, *classA);
     ASSERT_TRUE (classAinserter.IsValid ());
@@ -891,8 +891,8 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, InstanceInsertion)
     ECN::StandaloneECInstancePtr classBInstance1 = classB->GetDefaultStandaloneEnabler ()->CreateInstance ();
     ECN::StandaloneECInstancePtr classBInstance2 = classB->GetDefaultStandaloneEnabler ()->CreateInstance ();
 
-    classBInstance1->SetValue (L"ClassB", ECValue ("string1"));
-    classBInstance2->SetValue (L"ClassB", ECValue ("string2"));
+    classBInstance1->SetValue ("ClassB", ECValue ("string1"));
+    classBInstance2->SetValue ("ClassB", ECValue ("string2"));
 
     ECInstanceInserter classBinserter (ecdb, *classB);
     ASSERT_TRUE (classBinserter.IsValid ());
@@ -903,11 +903,11 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, InstanceInsertion)
     ASSERT_TRUE (stat == SUCCESS);
 
     //Get Relationship Classes
-    ECRelationshipClassCP baseOwnsBaseClass = schema->GetClassCP (L"BaseOwnsBase")->GetRelationshipClassCP ();
+    ECRelationshipClassCP baseOwnsBaseClass = schema->GetClassCP ("BaseOwnsBase")->GetRelationshipClassCP ();
     ASSERT_TRUE(baseOwnsBaseClass != nullptr);
-    ECRelationshipClassCP baseHasClassAClass = schema->GetClassCP (L"BaseHasClassA")->GetRelationshipClassCP ();
+    ECRelationshipClassCP baseHasClassAClass = schema->GetClassCP ("BaseHasClassA")->GetRelationshipClassCP ();
     ASSERT_TRUE(baseHasClassAClass != nullptr);
-    ECRelationshipClassCP baseHasClassBClass = schema->GetClassCP (L"BaseHasClassB")->GetRelationshipClassCP ();
+    ECRelationshipClassCP baseHasClassBClass = schema->GetClassCP ("BaseHasClassB")->GetRelationshipClassCP ();
     ASSERT_TRUE(baseHasClassBClass != nullptr);
 
         {//Insert Instances for Relationship TPHOwnsTPH
@@ -918,13 +918,13 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, InstanceInsertion)
             {//Inserting 1st Instance
             relationshipInstance->SetSource (baseInstance1.get ());
             relationshipInstance->SetTarget (baseInstance2.get ());
-            relationshipInstance->SetInstanceId (L"source->target");
+            relationshipInstance->SetInstanceId ("source->target");
             ASSERT_EQ (SUCCESS, relationshipinserter.Insert (*relationshipInstance));
             }
                 {//Inserting 2nd Instance
                 relationshipInstance->SetSource (baseInstance2.get ());
                 relationshipInstance->SetTarget (baseInstance1.get ());
-                relationshipInstance->SetInstanceId (L"source->target");
+                relationshipInstance->SetInstanceId ("source->target");
                 ASSERT_EQ (SUCCESS, relationshipinserter.Insert (*relationshipInstance));
                     }
         }
@@ -937,13 +937,13 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, InstanceInsertion)
                 {//Inserting 1st Instance
                 relationshipInstance->SetSource (baseInstance1.get ());
                 relationshipInstance->SetTarget (classAInstance1.get ());
-                relationshipInstance->SetInstanceId (L"source->target");
+                relationshipInstance->SetInstanceId ("source->target");
                 ASSERT_EQ (SUCCESS, relationshipinserter.Insert (*relationshipInstance));
                 }
                     {//Inserting 2nd Instance
                     relationshipInstance->SetSource (baseInstance2.get ());
                     relationshipInstance->SetTarget (classAInstance2.get ());
-                    relationshipInstance->SetInstanceId (L"source->target");
+                    relationshipInstance->SetInstanceId ("source->target");
                     ASSERT_EQ (SUCCESS, relationshipinserter.Insert (*relationshipInstance));
                         }
                 }
@@ -956,13 +956,13 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, InstanceInsertion)
                     {//Inserting 1st Instance
                     relationshipInstance->SetSource(baseInstance1.get());
                     relationshipInstance->SetTarget (classBInstance1.get ());
-                    relationshipInstance->SetInstanceId (L"source->target");
+                    relationshipInstance->SetInstanceId ("source->target");
                     ASSERT_EQ (SUCCESS, relationshipinserter.Insert (*relationshipInstance));
                     }
                         {//Inserting 2nd Instance
                         relationshipInstance->SetSource(baseInstance2.get());
                         relationshipInstance->SetTarget (classBInstance2.get ());
-                        relationshipInstance->SetInstanceId (L"source->target");
+                        relationshipInstance->SetInstanceId ("source->target");
                         ASSERT_EQ (SUCCESS, relationshipinserter.Insert (*relationshipInstance));
                             }
             }
@@ -1333,22 +1333,22 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
     PrimitiveECPropertyP prim;
     auto readContext = ECSchemaReadContext::CreateContext();
     readContext->AddSchemaLocater(ecdb.GetSchemaLocater());
-    auto ecdbmapKey = SchemaKey(L"ECDbMap", 1, 0);
+    auto ecdbmapKey = SchemaKey("ECDbMap", 1, 0);
     auto ecdbmapSchema = readContext->LocateSchema(ecdbmapKey, SchemaMatchType::SCHEMAMATCHTYPE_LatestCompatible);
     ASSERT_TRUE(ecdbmapSchema.IsValid());
 
-    ECSchema::CreateSchema(testSchema, L"TestSchema", 1, 0);
+    ECSchema::CreateSchema(testSchema, "TestSchema", 1, 0);
     ASSERT_TRUE(testSchema.IsValid());
 
-    testSchema->SetNamespacePrefix(L"ts");
+    testSchema->SetNamespacePrefix("ts");
     testSchema->AddReferencedSchema(*ecdbmapSchema);
 
-    testSchema->CreateClass(foo, L"Foo");
-    testSchema->CreateClass(goo, L"Goo");
+    testSchema->CreateClass(foo, "Foo");
+    testSchema->CreateClass(goo, "Goo");
 
-    testSchema->CreateRelationshipClass(oneFooHasOneGoo, L"OneFooHasOneGoo");
-    testSchema->CreateRelationshipClass(oneFooHasManyGoo, L"OneFooHasManyGoo");
-    testSchema->CreateRelationshipClass(manyFooHasManyGoo, L"ManyFooHasManyGoo");
+    testSchema->CreateRelationshipClass(oneFooHasOneGoo, "OneFooHasOneGoo");
+    testSchema->CreateRelationshipClass(oneFooHasManyGoo, "OneFooHasManyGoo");
+    testSchema->CreateRelationshipClass(manyFooHasManyGoo, "ManyFooHasManyGoo");
 
     ASSERT_TRUE(foo != nullptr);
     ASSERT_TRUE(foo != nullptr);
@@ -1357,48 +1357,48 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
     ASSERT_TRUE(manyFooHasManyGoo != nullptr);
 
     prim = nullptr;
-    foo->CreatePrimitiveProperty(prim, L"fooProp");
+    foo->CreatePrimitiveProperty(prim, "fooProp");
     prim->SetType(PrimitiveType::PRIMITIVETYPE_String);
     ASSERT_TRUE(prim != nullptr);
 
     prim = nullptr;
-    goo->CreatePrimitiveProperty(prim, L"gooProp");
+    goo->CreatePrimitiveProperty(prim, "gooProp");
     prim->SetType(PrimitiveType::PRIMITIVETYPE_String);
     ASSERT_TRUE(prim != nullptr);
 
     oneFooHasOneGoo->GetSource().AddClass(*foo);
-    oneFooHasOneGoo->GetSource().SetCardinality(L"1");
+    oneFooHasOneGoo->GetSource().SetCardinality("1");
     oneFooHasOneGoo->GetTarget().AddClass(*goo);
-    oneFooHasOneGoo->GetTarget().SetCardinality(L"1");
+    oneFooHasOneGoo->GetTarget().SetCardinality("1");
 
     oneFooHasManyGoo->GetSource().AddClass(*foo);
-    oneFooHasManyGoo->GetSource().SetCardinality(L"1");
+    oneFooHasManyGoo->GetSource().SetCardinality("1");
     oneFooHasManyGoo->GetTarget().AddClass(*goo);
-    oneFooHasManyGoo->GetTarget().SetCardinality(L"N");
+    oneFooHasManyGoo->GetTarget().SetCardinality("N");
 
     manyFooHasManyGoo->GetSource().AddClass(*foo);
-    manyFooHasManyGoo->GetSource().SetCardinality(L"N");
+    manyFooHasManyGoo->GetSource().SetCardinality("N");
     manyFooHasManyGoo->GetTarget().AddClass(*goo);
-    manyFooHasManyGoo->GetTarget().SetCardinality(L"N");
+    manyFooHasManyGoo->GetTarget().SetCardinality("N");
     Backdoor::ECObjects::ECSchemaReadContext::AddSchema(*readContext, *testSchema);
 
     if (allowDuplicateRelationships)
         {
-        auto caInstClass = ecdbmapSchema->GetClassCP(L"LinkTableRelationshipMap");
+        auto caInstClass = ecdbmapSchema->GetClassCP("LinkTableRelationshipMap");
         ASSERT_TRUE(caInstClass != nullptr);
         auto caInst = caInstClass->GetDefaultStandaloneEnabler()->CreateInstance();
         ASSERT_TRUE(caInst != nullptr);
-        ASSERT_TRUE(caInst->SetValue(L"AllowDuplicateRelationships", ECValue(true)) == ECOBJECTS_STATUS_Success);
+        ASSERT_TRUE(caInst->SetValue("AllowDuplicateRelationships", ECValue(true)) == ECOBJECTS_STATUS_Success);
         ASSERT_TRUE(manyFooHasManyGoo->SetCustomAttribute(*caInst) == ECOBJECTS_STATUS_Success);
         }
 
     if (allowForeignKeyConstraint)
         {
-        auto fkMapClass = ecdbmapSchema->GetClassCP(L"ForeignKeyRelationshipMap");
+        auto fkMapClass = ecdbmapSchema->GetClassCP("ForeignKeyRelationshipMap");
         ASSERT_TRUE(fkMapClass != nullptr);
         auto caInst = fkMapClass->GetDefaultStandaloneEnabler()->CreateInstance();
         ASSERT_TRUE(caInst != nullptr);
-        const WCharCP enforceReferentialIntegrityProperty = L"CreateConstraint";
+        const Utf8CP enforceReferentialIntegrityProperty = "CreateConstraint";
         ASSERT_TRUE(caInst->SetValue(enforceReferentialIntegrityProperty, ECValue(true)) == ECOBJECTS_STATUS_Success);
         ASSERT_TRUE(oneFooHasOneGoo->SetCustomAttribute(*caInst) == ECOBJECTS_STATUS_Success);
         ASSERT_TRUE(oneFooHasManyGoo->SetCustomAttribute(*caInst) == ECOBJECTS_STATUS_Success);

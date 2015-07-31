@@ -84,8 +84,8 @@ public:
     typedef PropertyTreeNode& PropertyTreeNodeR;
     typedef const PropertyTreeNode& PropertyTreeNodeCR;
 
-    typedef bmap<WString, PropertyTreeNodeP > PropertyTreeNodeByName;
-    typedef bmap<WString, bvector<PropertyTreeNodeCP > > PropertyTreeNodesByCategory;
+    typedef bmap<Utf8String, PropertyTreeNodeP > PropertyTreeNodeByName;
+    typedef bmap<Utf8String, bvector<PropertyTreeNodeCP > > PropertyTreeNodesByCategory;
 
     struct PropertyTree;
     typedef const PropertyTree& PropertyTreeCR;
@@ -185,9 +185,9 @@ private:
     static Utf8String GetClassKey (ECN::ECClassCR ecClass);
     void JsonFromClass (JsonValueR jsonValue, ECN::ECClassCR ecClass) const;
 
-    static bool GetIntegerValue (int& value, ECN::IECInstanceCR instance, WCharCP propertyName);
-    static bool GetStringValue (WString& value, ECN::IECInstanceCR instance, WCharCP propertyName);
-    static bool GetBooleanValue (bool& value, ECN::IECInstanceCR instance, WCharCP propertyName);
+    static bool GetIntegerValue (int& value, ECN::IECInstanceCR instance, Utf8CP propertyName);
+    static bool GetStringValue (Utf8String& value, ECN::IECInstanceCR instance, Utf8CP propertyName);
+    static bool GetBooleanValue (bool& value, ECN::IECInstanceCR instance, Utf8CP propertyName);
     static bool GetPriorityFromCustomAttribute (int& priority, ECN::IECInstancePtr priorityCA);
     static ECN::ECClassCP GetClassFromStructOrStructArray (ECN::ECPropertyCR ecProperty);
     static bool GetPriorityFromProperty (int& priority, ECN::ECPropertyCR ecProperty);

@@ -89,14 +89,14 @@ public:
     BeSQLite::EC::ECDbR    GetECDb ();
     BeSQLite::EC::ECDbCR   GetECDbCR () const;
     ECInstanceMapCR        GetImportedECInstances() const   {return m_ecInstances;}
-    BentleyStatus          GetInstances (bvector<ECN::IECInstancePtr>& instances, WCharCP className);
+    BentleyStatus          GetInstances (bvector<ECN::IECInstancePtr>& instances, Utf8CP className);
     static ECN::IECInstancePtr  CreateArbitraryECInstance(ECN::ECClassCR ecClass, PopulatePrimitiveValueCallback callback = PopulatePrimitiveValue, bool skipStructs = false, bool skipArrays = false);
     static void                 PopulateECInstance(ECN::IECInstancePtr ecInstance, PopulatePrimitiveValueCallback callback = PopulatePrimitiveValue, bool skipStructs = false, bool skipArrays = false);
     static ECN::IECInstancePtr  CreateECInstance (ECN::ECClassCR ecClass);
-    static void            AssignRandomValueToECInstance (ECN::ECValueP createdValue, ECN::IECInstancePtr instance, WCharCP propertyName);
+    static void            AssignRandomValueToECInstance (ECN::ECValueP createdValue, ECN::IECInstancePtr instance, Utf8CP propertyName);
     BentleyStatus InsertECInstance (BeSQLite::EC::ECInstanceKey& ecInstanceKey, ECN::IECInstancePtr ecInstance);
-    static ECN::ECObjectsStatus CopyStruct (ECN::IECInstanceR source, ECN::ECValuesCollectionCR collection, WCharCP baseAccessPath);
-    static ECN::ECObjectsStatus CopyStruct (ECN::IECInstanceR target, ECN::IECInstanceCR structValue, WCharCP propertyName);
+    static ECN::ECObjectsStatus CopyStruct (ECN::IECInstanceR source, ECN::ECValuesCollectionCR collection, Utf8CP baseAccessPath);
+    static ECN::ECObjectsStatus CopyStruct (ECN::IECInstanceR target, ECN::IECInstanceCR structValue, Utf8CP propertyName);
 
     static void PopulatePrimitiveValueWithRandomValues (ECN::ECValueR ecValue, ECN::PrimitiveType primitiveType, ECN::ECPropertyCP ecProperty);
     };
@@ -120,9 +120,9 @@ private:
         );
 
     static bool     IsECValueNullOrEmpty (ECN::ECValueCR value);
-    static bool     CompareJsonWithECValue (const Json::Value& jsonValue, ECN::ECValueCR referenceValue, ECN::IECInstanceCR referenceInstance, WCharCP referencePropertyAccessString);
+    static bool     CompareJsonWithECValue (const Json::Value& jsonValue, ECN::ECValueCR referenceValue, ECN::IECInstanceCR referenceInstance, Utf8CP referencePropertyAccessString);
     static bool     CompareJsonWithECPrimitiveValue (const Json::Value& jsonValue, ECN::ECValueCR referenceValue);
-    static bool     CompareJsonWithECArrayValue (const Json::Value& jsonValue, ECN::ECValueCR referenceValue, ECN::IECInstanceCR referenceInstance, WCharCP referencePropertyAccessString);
+    static bool     CompareJsonWithECArrayValue (const Json::Value& jsonValue, ECN::ECValueCR referenceValue, ECN::IECInstanceCR referenceInstance, Utf8CP referencePropertyAccessString);
     static bool     CompareJsonWithECStructValue (const Json::Value& jsonValue, ECN::ECValueCR referenceValue);
 
     static int64_t  JulianDayToCommonEraTicks (double jd);
@@ -144,7 +144,7 @@ public:
     
     static bool     CompareECDateTimes (int64_t expectedECTicks, int64_t actualECTicks);
     static void     AssertECDateTime (ECN::ECValueCR expectedECValue, const Db& db, double actualJd);
-    static void     AssertECDateTime (int64_t expectedCETicks, int64_t actualCETicks, WCharCP assertMessageHeader);
+    static void     AssertECDateTime (int64_t expectedCETicks, int64_t actualCETicks, Utf8CP assertMessageHeader);
 
     static BentleyStatus SetECInstanceId (ECN::IECInstanceR instance, ECInstanceId const& instanceId);
 };

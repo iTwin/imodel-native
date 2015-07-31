@@ -10,7 +10,7 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
-bool SetStringValue(IECInstanceR instance, WCharCP propertyAccessor, WCharCP stringValue);
+bool SetStringValue(IECInstanceR instance, Utf8CP propertyAccessor, Utf8CP stringValue);
 bool InsertInstance(ECDbR db, ECClassCR ecClass, IECInstanceR ecInstance);
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   01/13
@@ -24,7 +24,7 @@ IECRelationshipInstancePtr CreateRelationship (ECN::ECRelationshipClassCR relati
 
     relationshipInstance->SetSource (&source);
     relationshipInstance->SetTarget (&target);
-    relationshipInstance->SetInstanceId (L"source->target");
+    relationshipInstance->SetInstanceId ("source->target");
     return relationshipInstance;
     }
 /*---------------------------------------------------------------------------------**//**
@@ -34,13 +34,13 @@ IECRelationshipInstancePtr CreateRelationshipWithProperty(ECN::ECRelationshipCla
 {
     StandaloneECRelationshipEnablerPtr relationshipEnabler = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(relationshipClass);
     StandaloneECRelationshipInstancePtr relationshipInstance = relationshipEnabler->CreateRelationshipInstance();
-    SetStringValue(*relationshipInstance, L"price", L"200");
+    SetStringValue(*relationshipInstance, "price", "200");
     if (relationshipInstance == nullptr)
         return nullptr;
 
     relationshipInstance->SetSource(&source);
     relationshipInstance->SetTarget(&target);
-    relationshipInstance->SetInstanceId(L"source->target");
+    relationshipInstance->SetInstanceId("source->target");
     return relationshipInstance;
 }
 /*---------------------------------------------------------------------------------**//**
@@ -49,9 +49,9 @@ IECRelationshipInstancePtr CreateRelationshipWithProperty(ECN::ECRelationshipCla
 IECRelationshipInstancePtr CreateRelationship 
 (
 ECDbTestProject& test, 
-WCharCP sourceClassName, 
-WCharCP targetClassName, 
-WCharCP relationshipClassName
+Utf8CP sourceClassName, 
+Utf8CP targetClassName, 
+Utf8CP relationshipClassName
 )
     {
     bvector<IECInstancePtr> instances;
@@ -75,7 +75,7 @@ WCharCP relationshipClassName
         return nullptr;
 
     ECRelationshipClassCP relClass = schema->GetClassP (relationshipClassName)->GetRelationshipClassCP();
-    EXPECT_TRUE (relClass != nullptr) << L"Could not find relationship class " << relationshipClassName << L" in test schema";
+    EXPECT_TRUE (relClass != nullptr) << "Could not find relationship class " << relationshipClassName << " in test schema";
     if (relClass == nullptr)
         return nullptr;
 
@@ -87,7 +87,7 @@ WCharCP relationshipClassName
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECInstanceId InstanceToId (IECInstanceCR ecInstance)
     {
-    WStringCR idString = ecInstance.GetInstanceId();
+    Utf8StringCR idString = ecInstance.GetInstanceId();
     ECInstanceId ecInstanceId;
     bool status = ECInstanceIdHelper::FromString (ecInstanceId, idString.c_str());
     BeAssert (status);
@@ -136,7 +136,7 @@ int64_t expectedId
 //+---------------+---------------+---------------+---------------+---------------+------
 bool GetECInstanceIdFromECInstance (ECInstanceId& ecInstanceId, IECInstanceCR instance)
     {
-    WString instanceId = instance.GetInstanceId ();
+    Utf8String instanceId = instance.GetInstanceId ();
     if (instanceId.empty ())
         return false;
 
@@ -146,7 +146,7 @@ bool GetECInstanceIdFromECInstance (ECInstanceId& ecInstanceId, IECInstanceCR in
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ValidateReadingRelationship (ECDbTestProject& testProject, WCharCP relationshipName, IECRelationshipInstanceCR importedRelInstance)
+void ValidateReadingRelationship (ECDbTestProject& testProject, Utf8CP relationshipName, IECRelationshipInstanceCR importedRelInstance)
     {
     // Get relationship class
     ECClassCP tmpClass = testProject.GetTestSchemaManager().GetTestSchema()->GetClassP (relationshipName);
@@ -179,7 +179,7 @@ void ValidateReadingRelationship (ECDbTestProject& testProject, WCharCP relation
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ValidateReadingRelated (ECDbTestProject& testProject, WCharCP relationshipName, IECInstancePtr relSourceInstance, IECInstancePtr relTargetInstance)
+void ValidateReadingRelated (ECDbTestProject& testProject, Utf8CP relationshipName, IECInstancePtr relSourceInstance, IECInstancePtr relTargetInstance)
     {
     // Get join end
     ECClassCR relSourceClass = relSourceInstance->GetClass();
@@ -232,7 +232,7 @@ TEST (ECDbRelationships, RelationshipECInstanceIdContract)
 
         {
         //Inserting relationship with non-link-table mapping
-        auto relationshipInstance = CreateRelationship (test, L"Employee", L"Chair", L"EmployeeFurniture");
+        auto relationshipInstance = CreateRelationship (test, "Employee", "Chair", "EmployeeFurniture");
         ASSERT_TRUE(relationshipInstance.IsValid());
         PersistRelationship (*relationshipInstance, ecdb);
 
@@ -251,7 +251,7 @@ TEST (ECDbRelationships, RelationshipECInstanceIdContract)
 
         {
         //Inserting relationship with link-table mapping
-        auto relationshipInstance = CreateRelationship (test, L"Employee", L"Hardware", L"EmployeeHardware");
+        auto relationshipInstance = CreateRelationship (test, "Employee", "Hardware", "EmployeeHardware");
         ASSERT_TRUE(relationshipInstance.IsValid());
         PersistRelationship (*relationshipInstance, ecdb);
 
@@ -285,11 +285,11 @@ TEST (ECDbRelationships, MappingRelationshipsWithAdditionalECProperties)
         {
         BeTest::SetFailOnAssert (false);
         //Inserting relationship with link-table mapping
-        auto relationshipInstance = CreateRelationship (test, L"Employee", L"Hardware", L"RelationWithLinkTableMapping");
+        auto relationshipInstance = CreateRelationship (test, "Employee", "Hardware", "RelationWithLinkTableMapping");
         ASSERT_TRUE (relationshipInstance != nullptr) << "Creating the relationship instance in memory is not expected to fail.";
-        ASSERT_EQ (ECOBJECTS_STATUS_Success, relationshipInstance->SetValue (L"Created", ECValue (created)));
+        ASSERT_EQ (ECOBJECTS_STATUS_Success, relationshipInstance->SetValue ("Created", ECValue (created)));
 
-        ECClassCP ecClass = test.GetTestSchemaManager ().GetTestSchema ()->GetClassP (L"RelationWithLinkTableMapping");
+        ECClassCP ecClass = test.GetTestSchemaManager ().GetTestSchema ()->GetClassP ("RelationWithLinkTableMapping");
         ASSERT_TRUE (ecClass != nullptr);
 
         ECInstanceInserter inserter (ecdb, *ecClass);
@@ -316,27 +316,27 @@ TEST (ECDbRelationships, ImportECRelationshipInstances)
     //   Inherits: AssetRelationshipsBase, EmployeeRelationshipsBase
     //   Relates:  Employee (1) -> Phone (1)
     //   Should write to sc_Phone table
-    relInstance = CreateRelationship (test, L"Employee", L"Phone", L"EmployeePhone");
+    relInstance = CreateRelationship (test, "Employee", "Phone", "EmployeePhone");
     ASSERT_TRUE (relInstance.IsValid());
     PersistRelationship (*relInstance, db);
     ValidatePersistingRelationship (db, "sc_Phone", InstanceToId (*relInstance->GetTarget()), 
         "Employee__src_01_id", InstanceToId (*relInstance->GetSource()).GetValue ());
-    ValidateReadingRelationship (test, L"EmployeePhone", *relInstance);
-    ValidateReadingRelated (test, L"EmployeePhone", relInstance->GetSource(), relInstance->GetTarget());
+    ValidateReadingRelationship (test, "EmployeePhone", *relInstance);
+    ValidateReadingRelated (test, "EmployeePhone", relInstance->GetSource(), relInstance->GetTarget());
 
     // Import another 1-to-1 relationships (with multiple classes on one end)
     // Foo_has_SomethingInOneOfManyTables
     //   Relates: Foo (1) -> Asset, Employee (1)
-    relInstance = CreateRelationship (test, L"Foo", L"Asset", L"Foo_has_SomethingInOneOfManyTables");
+    relInstance = CreateRelationship (test, "Foo", "Asset", "Foo_has_SomethingInOneOfManyTables");
     ASSERT_TRUE (relInstance.IsValid());
     PersistRelationship (*relInstance, db);
 
     db.SaveChanges ();
-    ValidateReadingRelationship (test, L"Foo_has_SomethingInOneOfManyTables", *relInstance);
-    ValidateReadingRelated (test, L"Foo_has_SomethingInOneOfManyTables", relInstance->GetSource(), relInstance->GetTarget());
+    ValidateReadingRelationship (test, "Foo_has_SomethingInOneOfManyTables", *relInstance);
+    ValidateReadingRelated (test, "Foo_has_SomethingInOneOfManyTables", relInstance->GetSource(), relInstance->GetTarget());
 
     //now attempt to insert a second relation to same Foo object which will violate cardinality
-    relInstance = CreateRelationship (test, L"Foo", L"Employee", L"Foo_has_SomethingInOneOfManyTables");
+    relInstance = CreateRelationship (test, "Foo", "Employee", "Foo_has_SomethingInOneOfManyTables");
     ASSERT_TRUE (relInstance.IsValid());
     ECInstanceInserter inserter (db, relInstance->GetClass ());
     ASSERT_TRUE (inserter.IsValid ());
@@ -347,40 +347,40 @@ TEST (ECDbRelationships, ImportECRelationshipInstances)
     // EmployeeFurniture
     //   Inherits: AssetRelationshipsBase, EmployeeRelationshipsBase
     //   Relates: Employee (1) -> Chair, Desk  (M)
-    relInstance = CreateRelationship (test, L"Employee", L"Chair", L"EmployeeFurniture");
+    relInstance = CreateRelationship (test, "Employee", "Chair", "EmployeeFurniture");
     ASSERT_TRUE (relInstance.IsValid());
     PersistRelationship (*relInstance, db);
     ValidatePersistingRelationship (db, "sc_Furniture", InstanceToId (*relInstance->GetTarget()), 
         "Employee__src_01_id", InstanceToId (*relInstance->GetSource()).GetValue ());
-    ValidateReadingRelationship (test, L"EmployeeFurniture", *relInstance);
-    ValidateReadingRelated (test, L"EmployeeFurniture", relInstance->GetSource(), relInstance->GetTarget());
+    ValidateReadingRelationship (test, "EmployeeFurniture", *relInstance);
+    ValidateReadingRelated (test, "EmployeeFurniture", relInstance->GetSource(), relInstance->GetTarget());
 
-    relInstance = CreateRelationship (test, L"Employee", L"Desk", L"EmployeeFurniture");
+    relInstance = CreateRelationship (test, "Employee", "Desk", "EmployeeFurniture");
     ASSERT_TRUE (relInstance.IsValid());
     PersistRelationship (*relInstance, db);
     ValidatePersistingRelationship (db, "sc_Furniture", InstanceToId (*relInstance->GetTarget()), 
         "Employee__src_01_id", InstanceToId (*relInstance->GetSource()).GetValue ());
-    ValidateReadingRelationship (test, L"EmployeeFurniture", *relInstance);
-    ValidateReadingRelated (test, L"EmployeeFurniture", relInstance->GetSource(), relInstance->GetTarget());
+    ValidateReadingRelationship (test, "EmployeeFurniture", *relInstance);
+    ValidateReadingRelated (test, "EmployeeFurniture", relInstance->GetSource(), relInstance->GetTarget());
 
     // Import a M-to-1 relationship
     // EmployeeCompany
     //   Inherits: EmployeeRelationshipsBase
     //   Relates: Employee (M) -> Company (1)
-    relInstance = CreateRelationship (test, L"Employee", L"Company", L"EmployeeCompany");
+    relInstance = CreateRelationship (test, "Employee", "Company", "EmployeeCompany");
     ASSERT_TRUE (relInstance.IsValid());
     PersistRelationship (*relInstance, db);
     ValidatePersistingRelationship (db, "sc_Employee", InstanceToId (*relInstance->GetSource()), 
         "Company__trg_11_id", InstanceToId (*relInstance->GetTarget()).GetValue ());
-    ValidateReadingRelationship (test, L"EmployeeCompany", *relInstance);
-    ValidateReadingRelated (test, L"EmployeeCompany", relInstance->GetSource(), relInstance->GetTarget());
+    ValidateReadingRelationship (test, "EmployeeCompany", *relInstance);
+    ValidateReadingRelated (test, "EmployeeCompany", relInstance->GetSource(), relInstance->GetTarget());
 
     // Import a M-to-M relationship
     // EmployeeHardware
     //   Inherits: AssetRelationshipsBase, EmployeeRelationshipsBase
     //   Relates: Employee (M) -> Hardware (M)
     db.SaveChanges();
-    relInstance = CreateRelationship (test, L"Employee", L"Hardware", L"EmployeeHardware");
+    relInstance = CreateRelationship (test, "Employee", "Hardware", "EmployeeHardware");
     ASSERT_TRUE (relInstance.IsValid());
     PersistRelationship (*relInstance, db);
     db.SaveChanges();
@@ -389,8 +389,8 @@ TEST (ECDbRelationships, ImportECRelationshipInstances)
     ValidatePersistingRelationship (db, "sc_EmployeeHardware", InstanceToId (*relInstance), 
         "Hardware__trg_0N_id", InstanceToId (*relInstance->GetTarget()).GetValue ());
 
-    ValidateReadingRelationship (test, L"EmployeeHardware", *relInstance);
-    ValidateReadingRelated (test, L"EmployeeHardware", relInstance->GetSource(), relInstance->GetTarget());
+    ValidateReadingRelationship (test, "EmployeeHardware", *relInstance);
+    ValidateReadingRelated (test, "EmployeeHardware", relInstance->GetSource(), relInstance->GetTarget());
 
     db.SaveChanges();
     }
@@ -405,22 +405,22 @@ TEST(ECDbRelationships, RelationshipProperties)
     auto& ecdb = testProj.Create("ecdbRelationshipProperties.ecdb", L"Computers.01.00.ecschema.xml", perClassRowCount);
     ECSqlStatement stmt;
 
-    ECClassCP laptopClass = testProj.GetTestSchemaManager().GetTestSchema()->GetClassP(L"Laptop");
+    ECClassCP laptopClass = testProj.GetTestSchemaManager().GetTestSchema()->GetClassP("Laptop");
     IECInstancePtr laptopInstance = laptopClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
-    SetStringValue(*laptopInstance, L"OS", L"Linux");
+    SetStringValue(*laptopInstance, "OS", "Linux");
     InsertInstance(ecdb, *laptopClass, *laptopInstance);
     IECInstancePtr laptopInstance2 = laptopClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
-    SetStringValue(*laptopInstance2, L"OS", L"Windows");
+    SetStringValue(*laptopInstance2, "OS", "Windows");
     InsertInstance(ecdb, *laptopClass, *laptopInstance2);
-    ECClassCP ramClass = testProj.GetTestSchemaManager().GetTestSchema()->GetClassP(L"RAM");
+    ECClassCP ramClass = testProj.GetTestSchemaManager().GetTestSchema()->GetClassP("RAM");
     IECInstancePtr ramInstance = ramClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
-    SetStringValue(*ramInstance, L"Size", L"4");
+    SetStringValue(*ramInstance, "Size", "4");
     InsertInstance(ecdb, *ramClass, *ramInstance);
     IECInstancePtr ramInstance2 = ramClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
-    SetStringValue(*ramInstance2, L"Size", L"2");
+    SetStringValue(*ramInstance2, "Size", "2");
     InsertInstance(ecdb, *ramClass, *ramInstance2);
 
-    ECRelationshipClassP laptopHasRam = testProj.GetTestSchemaManager().GetTestSchema()->GetClassP(L"LaptopHasRam")->GetRelationshipClassP();//1-1
+    ECRelationshipClassP laptopHasRam = testProj.GetTestSchemaManager().GetTestSchema()->GetClassP("LaptopHasRam")->GetRelationshipClassP();//1-1
     IECRelationshipInstancePtr rel1;
     rel1 = CreateRelationshipWithProperty(*laptopHasRam, *laptopInstance, *ramInstance);
     InsertInstance(ecdb, *laptopHasRam, *rel1);
@@ -428,7 +428,7 @@ TEST(ECDbRelationships, RelationshipProperties)
    auto statusOfInsert = ecdb.SaveChanges();
    EXPECT_EQ(statusOfInsert, DbResult::BE_SQLITE_OK);
 
-    ECRelationshipClassP laptopHaveRams = testProj.GetTestSchemaManager().GetTestSchema()->GetClassP(L"LaptopHaveManyRams")->GetRelationshipClassP();//1-many
+    ECRelationshipClassP laptopHaveRams = testProj.GetTestSchemaManager().GetTestSchema()->GetClassP("LaptopHaveManyRams")->GetRelationshipClassP();//1-many
 
     rel1 = CreateRelationship(*laptopHaveRams, *laptopInstance2, *ramInstance);
     InsertInstance(ecdb, *laptopHaveRams, *rel1);
@@ -436,7 +436,7 @@ TEST(ECDbRelationships, RelationshipProperties)
     rel2 = CreateRelationship(*laptopHaveRams, *laptopInstance2, *ramInstance2);
     InsertInstance(ecdb, *laptopHaveRams, *rel2);
 
-    ECRelationshipClassP manyLaptopHaveManyRam = testProj.GetTestSchemaManager().GetTestSchema()->GetClassP(L"ManyLaptopsHaveManyRams")->GetRelationshipClassP();//many-many
+    ECRelationshipClassP manyLaptopHaveManyRam = testProj.GetTestSchemaManager().GetTestSchema()->GetClassP("ManyLaptopsHaveManyRams")->GetRelationshipClassP();//many-many
     rel1 = CreateRelationship(*manyLaptopHaveManyRam, *laptopInstance2, *ramInstance);
     InsertInstance(ecdb, *manyLaptopHaveManyRam, *rel1);
     rel2 = CreateRelationship(*manyLaptopHaveManyRam, *laptopInstance, *ramInstance);
@@ -454,27 +454,27 @@ TEST(ECDbRelationships, RelationshipProperties)
     ASSERT_EQ(static_cast<int> (ECSqlStepStatus::HasRow), static_cast<int> (stepStat));
     int columncount = stmt.GetColumnCount();
     EXPECT_EQ(columncount, 5);
-    WStringCR prop = stmt.GetColumnInfo(4).GetProperty()->GetName();
-    WString a;
+    Utf8StringCR prop = stmt.GetColumnInfo(4).GetProperty()->GetName();
+    Utf8String a;
     a.assign(prop.begin(), prop.end());
-    EXPECT_STREQ(L"price", a.c_str());
+    EXPECT_STREQ("price", a.c_str());
     stmt.Finalize();
     stat = stmt.Prepare(ecdb, "SELECT * FROM TR.LaptopHaveManyRams");
     ASSERT_EQ(static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat));
     stepStat = stmt.Step();
     ASSERT_EQ(static_cast<int> (ECSqlStepStatus::HasRow), static_cast<int> (stepStat));
-    WStringCR prop2 = stmt.GetColumnInfo(5).GetProperty()->GetName();
-    WString b;
+    Utf8StringCR prop2 = stmt.GetColumnInfo(5).GetProperty()->GetName();
+    Utf8String b;
     b.assign(prop2.begin(), prop2.end());
-    EXPECT_STREQ(L"price", b.c_str());
+    EXPECT_STREQ("price", b.c_str());
     stmt.Finalize();
     stat = stmt.Prepare(ecdb, "SELECT * FROM TR.ManyLaptopsHaveManyRams");
     ASSERT_EQ(static_cast<int> (ECSqlStatus::Success), static_cast<int> (stat));
     stepStat = stmt.Step();
     ASSERT_EQ(static_cast<int> (ECSqlStepStatus::HasRow), static_cast<int> (stepStat));
-    WStringCR prop3 = stmt.GetColumnInfo(5).GetProperty()->GetName();
+    Utf8StringCR prop3 = stmt.GetColumnInfo(5).GetProperty()->GetName();
     a.assign(prop3.begin(), prop3.end());
-    EXPECT_STREQ(L"price", a.c_str());
+    EXPECT_STREQ("price", a.c_str());
     stmt.Finalize();
     ecdb.CloseDb();
 }
@@ -504,22 +504,22 @@ TEST(ECDbRelationships, JoinTests)
     auto& ecdb = testProj.Create("ecdbJoinTests.ecdb", L"Computers.01.00.ecschema.xml", perClassRowCount);
     ECSqlStatement stmt;
 
-    ECClassCP laptopClass = testProj.GetTestSchemaManager().GetTestSchema()->GetClassP(L"Laptop");
+    ECClassCP laptopClass = testProj.GetTestSchemaManager().GetTestSchema()->GetClassP("Laptop");
     IECInstancePtr laptopInstance = laptopClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
-    SetStringValue(*laptopInstance, L"OS", L"Linux");
+    SetStringValue(*laptopInstance, "OS", "Linux");
     InsertInstance(ecdb, *laptopClass, *laptopInstance);
     IECInstancePtr laptopInstance2 = laptopClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
-    SetStringValue(*laptopInstance2, L"OS", L"Windows");
+    SetStringValue(*laptopInstance2, "OS", "Windows");
     InsertInstance(ecdb, *laptopClass, *laptopInstance2);
-    ECClassCP ramClass = testProj.GetTestSchemaManager().GetTestSchema()->GetClassP(L"RAM");
+    ECClassCP ramClass = testProj.GetTestSchemaManager().GetTestSchema()->GetClassP("RAM");
     IECInstancePtr ramInstance = ramClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
-    SetStringValue(*ramInstance, L"Size", L"4");
+    SetStringValue(*ramInstance, "Size", "4");
     InsertInstance(ecdb, *ramClass, *ramInstance);
     IECInstancePtr ramInstance2 = ramClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
-    SetStringValue(*ramInstance2, L"Size", L"2");
+    SetStringValue(*ramInstance2, "Size", "2");
     InsertInstance(ecdb, *ramClass, *ramInstance2);
 
-    ECRelationshipClassP laptopHasRam = testProj.GetTestSchemaManager().GetTestSchema()->GetClassP(L"LaptopHasRam")->GetRelationshipClassP();//1-1
+    ECRelationshipClassP laptopHasRam = testProj.GetTestSchemaManager().GetTestSchema()->GetClassP("LaptopHasRam")->GetRelationshipClassP();//1-1
     IECRelationshipInstancePtr rel1;
     rel1 = CreateRelationship(*laptopHasRam, *laptopInstance, *ramInstance);
     InsertInstance(ecdb, *laptopHasRam, *rel1);
@@ -565,7 +565,7 @@ TEST(ECDbRelationships, TestRelationshipKeys)
     ECSchemaCP ecSchema = ecdbr.Schemas().GetECSchema("UserWorkBench", true);
     ASSERT_TRUE(ecSchema != NULL);
 
-    ECRelationshipClassCP areaTown = ecSchema->GetClassCP(L"area_town")->GetRelationshipClassCP();
+    ECRelationshipClassCP areaTown = ecSchema->GetClassCP("area_town")->GetRelationshipClassCP();
     for (auto constraintClass : areaTown->GetSource().GetConstraintClasses())
         {
         auto keys = constraintClass->GetKeys();
@@ -575,20 +575,20 @@ TEST(ECDbRelationships, TestRelationshipKeys)
         {
         auto keys = constraintClass->GetKeys();
         ASSERT_EQ(1, keys.size());
-        ASSERT_TRUE(std::find(keys.begin(), keys.end(), L"area_id") != keys.end());
+        ASSERT_TRUE(std::find(keys.begin(), keys.end(), "area_id") != keys.end());
         }
-    ECRelationshipClassCP countryContinent = ecSchema->GetClassCP(L"country_continent")->GetRelationshipClassCP();
+    ECRelationshipClassCP countryContinent = ecSchema->GetClassCP("country_continent")->GetRelationshipClassCP();
     for (auto constraintClass : countryContinent->GetSource().GetConstraintClasses())
         {
-        WString key = constraintClass->GetKeys().at(0);
-        ASSERT_TRUE(key.Equals(L"country_id"));
+        Utf8String key = constraintClass->GetKeys().at(0);
+        ASSERT_TRUE(key.Equals("country_id"));
         }
     for (auto constraintClass : countryContinent->GetTarget().GetConstraintClasses())
         {
-        WString key = constraintClass->GetKeys().at(0);
-        ASSERT_TRUE(key.Equals(L"continent_id"));
+        Utf8String key = constraintClass->GetKeys().at(0);
+        ASSERT_TRUE(key.Equals("continent_id"));
         }
-    ECRelationshipClassCP houseUser = ecSchema->GetClassCP(L"house_user")->GetRelationshipClassCP();
+    ECRelationshipClassCP houseUser = ecSchema->GetClassCP("house_user")->GetRelationshipClassCP();
     for (auto constraintClass : houseUser->GetSource().GetConstraintClasses())
         {
         auto keys = constraintClass->GetKeys();

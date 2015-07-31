@@ -39,6 +39,6 @@ ECDbSchemas.UpdatingExistingECSchema
 ECDbSchemas.Verify_TFS_14829_A
 ECSqlInsertTestFixture.RelationshipWithAdditionalPropsTests
 ECSqlQueryAdapter.VerifyECSqlQueries
-#
+
 #for affan 6:35 PM 7/8/2015
 ECDbInstances.RelationshipStrengthBackwardHoldingForwardEmbedding

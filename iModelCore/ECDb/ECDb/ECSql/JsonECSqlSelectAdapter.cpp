@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/JsonECSqlSelectAdapter.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -38,16 +38,15 @@ void JsonECSqlSelectAdapter::PropertyTree::AddInlinedStructNodes (PropertyTreeNo
         {
         ECPropertyCP ecProperty = propertyPath.At (ii).GetProperty();
         BeAssert (ecProperty != nullptr && "With the current ECSQL implementation, an in-lined struct member cannot have array entries (with NULL properties) in it's path!!!");
-        WStringCR wPropertyName = ecProperty->GetName();
         PropertyTreeNodeByName& childNodes = currentNode->m_childNodes;
-        PropertyTreeNodeByName::iterator it = childNodes.find (wPropertyName);
+        PropertyTreeNodeByName::iterator it = childNodes.find (ecProperty->GetName());
         if (it != childNodes.end())
             currentNode = it->second;
         else
             {
             ECClassCR ecClass = (ii == 0) ? rootClass : ecProperty->GetClass();
-            childNodes[wPropertyName] = new PropertyTreeNode (ecProperty, &ecClass, instanceIndex);
-            currentNode = childNodes[wPropertyName];
+            childNodes[ecProperty->GetName()] = new PropertyTreeNode (ecProperty, &ecClass, instanceIndex);
+            currentNode = childNodes[ecProperty->GetName()];
             }
         }
     }
@@ -84,10 +83,9 @@ void JsonECSqlSelectAdapter::PropertyTree::AddChildNodes (PropertyTreeNodeR pare
     ECSqlColumnInfoCR columnInfo = ecsqlValue.GetColumnInfo ();
     ECPropertyCP ecProperty = columnInfo.GetProperty ();
     BeAssert (ecProperty != nullptr && "This iteration cannot be on an array reader, and the column cannot represent an array value");
-    WStringCR wPropertyName = ecProperty->GetName ();
 
     // Skip instance id node
-    if (isRootReader && IsInstanceIdProperty (Utf8String (wPropertyName)))
+    if (isRootReader && IsInstanceIdProperty (ecProperty->GetName ()))
         return;
 
     // If reading the root (top level) columns, determine the index of the instance that the property belongs in
@@ -120,7 +118,7 @@ void JsonECSqlSelectAdapter::PropertyTree::AddChildNodes (PropertyTreeNodeR pare
 
     // Add node for the property
     PropertyTreeNodeByName& childNodes = parentNode.m_childNodes;
-    if (childNodes.find (wPropertyName) == childNodes.end ())
+    if (childNodes.find (ecProperty->GetName ()) == childNodes.end ())
         {
         ECPropertyCP ecProperty = columnInfo.GetProperty ();
         BeAssert (ecProperty != nullptr);
@@ -129,7 +127,7 @@ void JsonECSqlSelectAdapter::PropertyTree::AddChildNodes (PropertyTreeNodeR pare
             ecClass = &(columnInfo.GetRootClass ());
         else
             ecClass = GetClassFromStructOrStructArray (*(parentNode.m_property));
-        childNodes[wPropertyName] = new PropertyTreeNode (ecProperty, ecClass, instanceIndex);
+        childNodes[ecProperty->GetName()] = new PropertyTreeNode (ecProperty, ecClass, instanceIndex);
         }
 
     // Process nested children
@@ -162,7 +160,7 @@ void JsonECSqlSelectAdapter::PropertyTree::AddChildNodes (PropertyTreeNodeR pare
         bvector<ECClassCP> structRootClasses;
         int memberCount = structValue->GetMemberCount ();
         for (int i = 0; i < memberCount; i++)
-            AddChildNodes (*childNodes[wPropertyName], structRootClasses, structValue->GetValue (i));
+            AddChildNodes (*childNodes[ecProperty->GetName ()], structRootClasses, structValue->GetValue (i));
         }
     }
     
@@ -192,7 +190,7 @@ FormatOptions formatOptions /* = FormatOptions (ECValueFormat::FormattedStrings)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::GetIntegerValue (int& value, IECInstanceCR instance, WCharCP propertyName)
+bool JsonECSqlSelectAdapter::GetIntegerValue (int& value, IECInstanceCR instance, Utf8CP propertyName)
     {
     ECValue v;
     instance.GetValue(v, propertyName);
@@ -205,20 +203,20 @@ bool JsonECSqlSelectAdapter::GetIntegerValue (int& value, IECInstanceCR instance
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::GetStringValue (WString& value, IECInstanceCR instance, WCharCP propertyName)
+bool JsonECSqlSelectAdapter::GetStringValue (Utf8String& value, IECInstanceCR instance, Utf8CP propertyName)
     {
     ECValue v;
     instance.GetValue(v, propertyName);
     if (v.IsNull())
         return false;
-    value = v.GetString();
+    value = v.GetUtf8CP();
     return true;
     }
     
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool JsonECSqlSelectAdapter::GetBooleanValue (bool& value, IECInstanceCR instance, WCharCP propertyName)
+bool JsonECSqlSelectAdapter::GetBooleanValue (bool& value, IECInstanceCR instance, Utf8CP propertyName)
     {
     ECValue v;
     instance.GetValue(v, propertyName);
@@ -235,7 +233,7 @@ bool JsonECSqlSelectAdapter::GetPriorityFromCustomAttribute (int& priority, IECI
     {
     if (priorityCA.IsNull())
         return false;
-    return GetIntegerValue (priority, *priorityCA, L"Priority");
+    return GetIntegerValue (priority, *priorityCA, "Priority");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -243,7 +241,7 @@ bool JsonECSqlSelectAdapter::GetPriorityFromCustomAttribute (int& priority, IECI
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool JsonECSqlSelectAdapter::GetPriorityFromProperty (int& priority, ECPropertyCR ecProperty)
     {
-    IECInstancePtr priorityCA = ecProperty.GetCustomAttribute(L"PropertyPriority");
+    IECInstancePtr priorityCA = ecProperty.GetCustomAttribute("PropertyPriority");
     return GetPriorityFromCustomAttribute (priority, priorityCA);
     }
     
@@ -280,8 +278,8 @@ bool JsonECSqlSelectAdapter::PropertySortPredicate (PropertyTreeNodeCP propertyN
         return priority1 > priority2; // Return true if property1 has higher priority than priority2
 
     // Sort alphabetically by display label
-    WStringCR displayLabel1 = propertyNode1->m_property->GetDisplayLabel();
-    WStringCR displayLabel2 = propertyNode2->m_property->GetDisplayLabel();
+    Utf8StringCR displayLabel1 = propertyNode1->m_property->GetDisplayLabel();
+    Utf8StringCR displayLabel2 = propertyNode2->m_property->GetDisplayLabel();
     return displayLabel1.CompareTo (displayLabel2) < 0; // Return true if property1 is alphabetically before property2
     }
     
@@ -403,15 +401,15 @@ void JsonECSqlSelectAdapter::CategorizeProperties (bvector<IECInstancePtr>& cate
         ECPropertyCP ecProperty = node->m_property;
 
         // Skip property if hidden
-        IECInstancePtr hide = ecProperty->GetCustomAttribute (L"HideProperty");
+        IECInstancePtr hide = ecProperty->GetCustomAttribute ("HideProperty");
         if (hide.IsValid())
             continue;
             
         // Determine category
-        WString categoryName;
+        Utf8String categoryName;
         IECInstancePtr category = m_formatOptions.m_propertyFormatter->GetPropertyCategory (*ecProperty);
-        if (!category.IsValid () || !GetStringValue (categoryName, *category, L"Name"))
-            categoryName = L"Miscellaneous";
+        if (!category.IsValid () || !GetStringValue (categoryName, *category, "Name"))
+            categoryName = "Miscellaneous";
 
         // Organize by category
         bvector<PropertyTreeNodeCP>* categoryProperties = nullptr;
@@ -451,16 +449,14 @@ void JsonECSqlSelectAdapter::JsonFromProperty (JsonValueR propertyJson, ECProper
     {
     // PropertyJson = ObjectValue (SchemaName, ClassName, PropertyName, PropertyDisplayLabel, PropertyDescription, PropertyType, PropertyPriority)
     propertyJson = Json::Value (Json::objectValue);
-    propertyJson["Name"] = Utf8String (ecProperty.GetName());
+    propertyJson["Name"] = ecProperty.GetName();
 
-    WStringCR displayLabelWStr = ecProperty.GetDisplayLabel();
-    propertyJson["DisplayLabel"] = Utf8String (displayLabelWStr);
+    propertyJson["DisplayLabel"] = ecProperty.GetDisplayLabel();
 
-    Utf8String description = Utf8String (ecProperty.GetDescription());
-    if (!description.empty())
-        propertyJson["Description"] = description;
+    if (!Utf8String::IsNullOrEmpty(ecProperty.GetDescription().c_str()))
+        propertyJson["Description"] = ecProperty.GetDescription();
 
-    propertyJson["PrimitiveType"] = Utf8String (ecProperty.GetTypeName());
+    propertyJson["PrimitiveType"] = ecProperty.GetTypeName();
 
     int priority;
     if (GetPriorityFromProperty (priority, ecProperty))
@@ -486,40 +482,39 @@ void JsonECSqlSelectAdapter::JsonFromCategory (JsonValueR jsonValue, IECInstance
     // CategoryJson = ObjectValue (CategoryName, CategoryStandard, CategoryDisplayLabel, CategoryDescription, CategoryExpand, CategoryPriority, Properties)
     jsonValue = Json::Value (Json::objectValue);
 
-    WString categoryName;
+    Utf8String categoryName;
     if (categoryCustomAttribute.IsValid())
         {
-        bool status = GetStringValue (categoryName, *categoryCustomAttribute, L"Name");
+        bool status = GetStringValue (categoryName, *categoryCustomAttribute, "Name");
         if (!EXPECTED_CONDITION (status))
-            categoryName = L"Miscellaneous";
-        Utf8String categoryNameStr (categoryName);
-        jsonValue["CategoryName"] = categoryNameStr;
+            categoryName = "Miscellaneous";
+        jsonValue["CategoryName"] = categoryName;
         
         int standard;
-        if (GetIntegerValue (standard, *categoryCustomAttribute, L"Standard"))
+        if (GetIntegerValue (standard, *categoryCustomAttribute, "Standard"))
             jsonValue["Standard"] = standard;
 
-        WString displayLabel;
-        if (GetStringValue (displayLabel, *categoryCustomAttribute, L"DisplayLabel"))
-            jsonValue["DisplayLabel"] = Utf8String (displayLabel);
+        Utf8String displayLabel;
+        if (GetStringValue (displayLabel, *categoryCustomAttribute, "DisplayLabel"))
+            jsonValue["DisplayLabel"] = displayLabel;
         else
-            jsonValue["DisplayLabel"] = categoryNameStr;
+            jsonValue["DisplayLabel"] = categoryName;
 
-        WString description;
-        if (GetStringValue (description, *categoryCustomAttribute, L"Description"))
-            jsonValue["Description"] = Utf8String (description);
+        Utf8String description;
+        if (GetStringValue (description, *categoryCustomAttribute, "Description"))
+            jsonValue["Description"] = description;
 
         bool expand;
-        if (GetBooleanValue (expand, *categoryCustomAttribute, L"Expand"))
+        if (GetBooleanValue (expand, *categoryCustomAttribute, "Expand"))
             jsonValue["Expand"] = expand;
 
         int priority;
-        if (GetIntegerValue (priority, *categoryCustomAttribute, L"Priority"))
+        if (GetIntegerValue (priority, *categoryCustomAttribute, "Priority"))
             jsonValue["Priority"] = priority;
         }
     else
         {
-        categoryName = L"Miscellaneous";
+        categoryName = "Miscellaneous";
         jsonValue["CategoryName"] = "Miscellaneous";
         jsonValue["DisplayLabel"] = "Miscellaneous";
         jsonValue["Description"] = "Miscellaneous";
@@ -543,7 +538,7 @@ void JsonECSqlSelectAdapter::JsonFromCategory (JsonValueR jsonValue, IECInstance
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECN::IECInstancePtr ECPropertyFormatter::_GetPropertyCategory (ECN::ECPropertyCR ecProperty)
     {
-    return ecProperty.GetCustomAttribute(L"Category");
+    return ecProperty.GetCustomAttribute("Category");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -574,8 +569,7 @@ bool ECPropertyFormatter::_FormattedStringFromECValue
      * For an example of this use, see DgnECPropertyFormatter in DgnPlatform. 
      */
 
-    WString wstrVal = ecValue.ToString();
-    strVal = Utf8String (wstrVal.c_str()); 
+    strVal = ecValue.ToString(); 
     return true;
     }
 
@@ -756,8 +750,7 @@ bool JsonECSqlSelectAdapter::JsonFromString (JsonValueR jsonValue, IECSqlValue c
     else
         {
         ECValue ecValue;
-        WString wstrValue (strValue, true);
-        ecValue.SetString (wstrValue.c_str(), false);
+        ecValue.SetUtf8CP (strValue, false);
         return FormattedJsonFromECValue  (jsonValue, ecValue, ecProperty, isArrayMember);
         }
     }
@@ -826,7 +819,7 @@ bool JsonECSqlSelectAdapter::JsonFromPrimitive (JsonValueR jsonValue, IECSqlValu
             // TODO: Unhandled for now. Not asserting due to ATPs. 
             ECClassCR ecClass = ecProperty.GetClass();
             ECSchemaCR ecSchema = ecClass.GetSchema();
-            LOG.errorv (L"Cannot handle IGeometry primitive types. Property %ls:%ls:%ls", ecSchema.GetName().c_str(), ecClass.GetName().c_str(), ecProperty.GetName().c_str());
+            LOG.errorv ("Cannot handle IGeometry primitive types. Property %s:%s:%s", ecSchema.GetName().c_str(), ecClass.GetName().c_str(), ecProperty.GetName().c_str());
             status = true;
             break;
             }

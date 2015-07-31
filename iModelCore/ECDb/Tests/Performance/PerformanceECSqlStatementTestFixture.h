@@ -27,15 +27,15 @@ public:
         {
         private: 
             int m_propertyIndex;
-            WCharCP m_propertyName;
+            Utf8CP m_propertyName;
 
         protected:
-            GetValueAsserter (int propertyIndex, WCharCP propertyName) : m_propertyIndex (propertyIndex), m_propertyName (propertyName) {}
+            GetValueAsserter(int propertyIndex, Utf8CP propertyName) : m_propertyIndex(propertyIndex), m_propertyName(propertyName) {}
 
         public:
             virtual ~GetValueAsserter () {}
             int GetPropertyIndex () const { return m_propertyIndex; }
-            WCharCP GetPropertyName () const { return m_propertyName; }
+            Utf8CP GetPropertyName () const { return m_propertyName; }
             virtual void AssertGetValue (BeSQLite::EC::ECSqlStatement const& statement) const = 0;
         };
 
@@ -45,7 +45,7 @@ public:
     struct GetIntegerValueAsserter : public GetValueAsserter
         {
         public:
-            GetIntegerValueAsserter (int propertyIndex, WCharCP propertyName) : GetValueAsserter (propertyIndex, propertyName) {}
+            GetIntegerValueAsserter (int propertyIndex, Utf8CP propertyName) : GetValueAsserter (propertyIndex, propertyName) {}
             ~GetIntegerValueAsserter () {}
 
             virtual void AssertGetValue (BeSQLite::EC::ECSqlStatement const& statement) const override;
@@ -57,7 +57,7 @@ public:
     struct GetStringValueAsserter : public GetValueAsserter
         {
         public:
-            GetStringValueAsserter (int propertyIndex, WCharCP propertyName) : GetValueAsserter (propertyIndex, propertyName) {}
+            GetStringValueAsserter(int propertyIndex, Utf8CP propertyName) : GetValueAsserter(propertyIndex, propertyName) {}
             ~GetStringValueAsserter () {}
 
             virtual void AssertGetValue (BeSQLite::EC::ECSqlStatement const& statement) const override;
@@ -69,7 +69,7 @@ public:
     struct GetPoint3DValueAsserter : public GetValueAsserter
         {
         public:
-            GetPoint3DValueAsserter (int propertyIndex, WCharCP propertyName) : GetValueAsserter (propertyIndex, propertyName) {}
+            GetPoint3DValueAsserter(int propertyIndex, Utf8CP propertyName) : GetValueAsserter(propertyIndex, propertyName) {}
             ~GetPoint3DValueAsserter () {}
 
             virtual void AssertGetValue (BeSQLite::EC::ECSqlStatement const& statement) const override;
@@ -77,7 +77,7 @@ public:
 
 private:
     static WCharCP const TEST_DB_NAME;
-    static WCharCP const TEST_CLASS_NAME;
+    static Utf8CP const TEST_CLASS_NAME;
     static Utf8CP const s_selectClause;
     static const int TESTCLASS_INSTANCE_COUNT;
 

@@ -54,12 +54,12 @@ BentleyStatus ECDbTestSchemaManager::ImportTestSchema (WCharCP testSchemaFileNam
     if (m_testSchema == nullptr)
         return ERROR;
 
-    LOG.infov (L"Loaded %ls from disk [%.4lf seconds]", m_testSchema->GetFullSchemaName ().c_str (), s.GetElapsedSeconds ());
+    LOG.infov ("Loaded %s from disk [%.4lf seconds]", m_testSchema->GetFullSchemaName ().c_str (), s.GetElapsedSeconds ());
 
     s.Start ();
     auto importSchemaStatus = Schemas ().ImportECSchemas (schemaReadContext->GetCache (), ECDbSchemaManager::ImportOptions (true, false));
     s.Stop();
-    LOG.infov (L"Imported %ls into DgnDb [%.4lf seconds]", m_testSchema->GetFullSchemaName ().c_str (), s.GetElapsedSeconds());
+    LOG.infov ("Imported %s into DgnDb [%.4lf seconds]", m_testSchema->GetFullSchemaName ().c_str (), s.GetElapsedSeconds());
     EXPECT_EQ (SUCCESS, importSchemaStatus);
     if (SUCCESS != importSchemaStatus)
         return ERROR;
@@ -67,7 +67,7 @@ BentleyStatus ECDbTestSchemaManager::ImportTestSchema (WCharCP testSchemaFileNam
     GetECDb().SaveChanges();
 
     //cache test schema name in UTF-8
-    BeStringUtilities::WCharToUtf8 (m_testSchemaName, m_testSchema->GetName ().c_str ());
+    m_testSchemaName = m_testSchema->GetName ().c_str ();
 
     return SUCCESS;
     }
@@ -291,13 +291,13 @@ BentleyStatus ECDbTestProject::ImportECSchema (WCharCP testSchemaXmlFileName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-ECObjectsStatus ECDbTestProject::CopyStruct(IECInstanceR source, ECValuesCollectionCR collection, WCharCP baseAccessPath)
+ECObjectsStatus ECDbTestProject::CopyStruct(IECInstanceR source, ECValuesCollectionCR collection, Utf8CP baseAccessPath)
     { 
     ECObjectsStatus status = ECOBJECTS_STATUS_Success;
     for(auto& propertyValue : collection)
         {
         auto pvAccessString = propertyValue.GetValueAccessor().GetPropertyName();
-        auto accessString =  baseAccessPath == nullptr ? pvAccessString : WString(baseAccessPath) + L"." + pvAccessString;
+        auto accessString =  baseAccessPath == nullptr ? pvAccessString : Utf8String(baseAccessPath) + "." + pvAccessString;
 
         if (propertyValue.HasChildValues())
             {
@@ -332,7 +332,7 @@ ECObjectsStatus ECDbTestProject::CopyStruct(IECInstanceR source, ECValuesCollect
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan     9/2013
 //---------------------------------------------------------------------------------------
-ECObjectsStatus ECDbTestProject::CopyStruct(IECInstanceR target, IECInstanceCR structValue, WCharCP propertyName)
+ECObjectsStatus ECDbTestProject::CopyStruct(IECInstanceR target, IECInstanceCR structValue, Utf8CP propertyName)
     {
     return CopyStruct(target, *ECValuesCollection::Create(structValue), propertyName);
     }
@@ -509,7 +509,7 @@ void ECDbTestProject::AssignRandomValueToECInstance
 (
 ECValueP createdValue,
 IECInstancePtr instance, 
-WCharCP propertyName
+Utf8CP propertyName
 )
     {
     ECPropertyP ecProperty = instance->GetClass ().GetPropertyP (propertyName);
@@ -807,16 +807,16 @@ void ECDbTestProject::PopulatePrimitiveValueWithRandomValues (ECValueR ecValue, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ramanujam.Raman                   05/12
 ---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECDbTestProject::GetInstances (bvector<IECInstancePtr>& instances, WCharCP className)
+BentleyStatus ECDbTestProject::GetInstances (bvector<IECInstancePtr>& instances, Utf8CP className)
     {
     instances.clear();
 
     ECClassCP ecClass = GetTestSchemaManager ().GetTestSchema ()->GetClassP (className);
-    EXPECT_TRUE (ecClass != nullptr) << L"ECDbTestProject::GetInstances> ECClass '" << className << L"' not found.";
+    EXPECT_TRUE (ecClass != nullptr) << "ECDbTestProject::GetInstances> ECClass '" << className << "' not found.";
     if (ecClass == nullptr)
         return ERROR;
 
-    SqlPrintfString ecSql ("SELECT * FROM ONLY [%s].[%s]", Utf8String(ecClass->GetSchema().GetName()).c_str(), Utf8String(className).c_str());
+    SqlPrintfString ecSql ("SELECT * FROM ONLY [%s].[%s]", ecClass->GetSchema().GetName().c_str(), className);
     ECSqlStatement ecStatement;
     ECSqlStatus status = ecStatement.Prepare (GetECDb(), ecSql.GetUtf8CP());
     EXPECT_EQ ((int) ECSqlStatus::Success, (int) status) << "ECDbTestProject::GetInstances> Preparing ECSQL '" << ecSql.GetUtf8CP () << "' failed.";
@@ -965,7 +965,7 @@ ECN::ECSchemaCachePtr ECDbTestUtility::ReadECSchemaFromString (Utf8CP ecschemaXm
 void ECDbTestUtility::WriteECSchemaToDisk (ECSchemaCR ecSchema, WCharCP filenameNoVerExt)
     {
     // Construct the pathname to be written
-    WCharCP tmpFilename = (filenameNoVerExt != nullptr) ? filenameNoVerExt : ecSchema.GetName().c_str();
+    WCharCP tmpFilename = (filenameNoVerExt != nullptr) ? filenameNoVerExt : WString(ecSchema.GetName().c_str(), BentleyCharEncoding::Utf8).c_str();
     size_t size = wcslen(tmpFilename) + wcslen (L".VV.vv.ecschema.xml") + 1;
     WCharP schemaFilename = (wchar_t*) malloc(size * sizeof(wchar_t));
     BeStringUtilities::Snwprintf (schemaFilename, size, L"%ls.%02d.%02d.ecschema.xml", tmpFilename, ecSchema.GetVersionMajor(), ecSchema.GetVersionMinor());
@@ -1007,13 +1007,13 @@ bool CompareProperties (IECInstanceCR actual, ECValuesCollectionCR expected)
     for (ECPropertyValueCR expectedPropertyValue : expected)
         {
         ECValueAccessorCR valueAccessor = expectedPropertyValue.GetValueAccessor ();
-        const WString propertyName = valueAccessor.GetPropertyName ();
+        const Utf8String propertyName = valueAccessor.GetPropertyName ();
 
         if (expectedPropertyValue.HasChildValues())
             {
             if (!CompareProperties (actual, *expectedPropertyValue.GetChildValues()))
                 {
-                LOG.infov (L"CompareProperties - Failed for child of property %ls", propertyName.c_str());
+                LOG.infov ("CompareProperties - Failed for child of property %s", propertyName.c_str());
                 return false;
                 }
             continue;
@@ -1023,7 +1023,7 @@ bool CompareProperties (IECInstanceCR actual, ECValuesCollectionCR expected)
         ECObjectsStatus status = actual.GetValueUsingAccessor(actualValue, valueAccessor);
         if (status != ECOBJECTS_STATUS_Success)
             {
-            LOG.infov (L"CompareProperties - GetValue failed for %ls", propertyName.c_str());
+            LOG.infov ("CompareProperties - GetValue failed for %s", propertyName.c_str());
             return false;
             }
 
@@ -1035,11 +1035,11 @@ bool CompareProperties (IECInstanceCR actual, ECValuesCollectionCR expected)
             {
             if (expectedValueIsNull)
                 {
-                LOG.infov (L"CompareProperties - Expected NULL value for property '%ls' but the actual value was not NULL.", propertyName.c_str());
+                LOG.infov ("CompareProperties - Expected NULL value for property '%s' but the actual value was not NULL.", propertyName.c_str());
                 }
             else
                 {
-                LOG.infov (L"CompareProperties - Expected a non-NULL value for property '%ls' but the actual value was NULL.", propertyName.c_str());
+                LOG.infov ("CompareProperties - Expected a non-NULL value for property '%s' but the actual value was NULL.", propertyName.c_str());
                 }
             return false;
             }
@@ -1062,9 +1062,9 @@ bool CompareProperties (IECInstanceCR actual, ECValuesCollectionCR expected)
             }
 
             ValueKind actualKind = actualValue.GetKind();
-            WString expectedValueWStr = expectedValue.ToString();
-            WString actualValueWstr = actualValue.ToString();
-            LOG.infov (L"CompareProperties - Values not equal for property '%ls' (%d %d) - actual %ls expected %ls", propertyName.c_str(), actualKind, actualType, actualValueWstr.c_str(), expectedValueWStr.c_str());
+            Utf8String expectedValueWStr = expectedValue.ToString();
+            Utf8String actualValueWstr = actualValue.ToString();
+            LOG.infov ("CompareProperties - Values not equal for property '%s' (%d %d) - actual %s expected %s", propertyName.c_str(), actualKind, actualType, actualValueWstr.c_str(), expectedValueWStr.c_str());
             return false;
         }
 
@@ -1110,9 +1110,8 @@ bool ECDbTestUtility::CompareJsonWithECInstance (const Json::Value& json, IECIns
 
     for (ECPropertyValueCR propertyValue : *propertyValues)
         {
-        WString propertyNameWStr = propertyValue.GetValueAccessor().GetPropertyName();
-        WString propertyAccessStringWStr = propertyValue.GetValueAccessor().GetAccessString();
-        Utf8String propertyName (propertyNameWStr);
+        Utf8String propertyName = propertyValue.GetValueAccessor().GetPropertyName();
+        Utf8String propertyAccessString = propertyValue.GetValueAccessor().GetAccessString();
 
         ECValueCR referenceValue = propertyValue.GetValue();
         if (referenceValue.IsNull() && !json.isMember (propertyName))
@@ -1121,7 +1120,7 @@ bool ECDbTestUtility::CompareJsonWithECInstance (const Json::Value& json, IECIns
             return false;
 
         Json::Value jsonValue = json[propertyName];
-        if (!CompareJsonWithECValue (jsonValue, referenceValue, referenceInstance, propertyAccessStringWStr.c_str()))
+        if (!CompareJsonWithECValue (jsonValue, referenceValue, referenceInstance, propertyAccessString.c_str()))
             return false;
         }
     return true;
@@ -1130,7 +1129,7 @@ bool ECDbTestUtility::CompareJsonWithECInstance (const Json::Value& json, IECIns
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDbTestUtility::CompareJsonWithECValue (const Json::Value& jsonValue, ECValueCR referenceValue, IECInstanceCR referenceInstance, WCharCP referencePropertyAccessString)
+bool ECDbTestUtility::CompareJsonWithECValue (const Json::Value& jsonValue, ECValueCR referenceValue, IECInstanceCR referenceInstance, Utf8CP referencePropertyAccessString)
     {
     Json::ValueType jsonValueType = jsonValue.type();
 
@@ -1251,8 +1250,7 @@ bool ECDbTestUtility::CompareJsonWithECPrimitiveValue (const Json::Value& jsonVa
             {
             if (jsonValueType != Json::stringValue)
                 return false;
-            WCharCP referenceNativeValueWStr = referenceValue.GetString();
-            Utf8String referenceNativeValue (referenceNativeValueWStr);
+            Utf8String  referenceNativeValue(referenceValue.GetUtf8CP());
             Utf8String jsonNativeValue = jsonValue.asString();
             if (referenceNativeValue != jsonNativeValue)
                 return false;
@@ -1288,7 +1286,7 @@ bool ECDbTestUtility::CompareJsonWithECStructValue (const Json::Value& jsonValue
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDbTestUtility::CompareJsonWithECArrayValue (const Json::Value& jsonValue, ECValueCR referenceValue, IECInstanceCR referenceInstance, WCharCP referencePropertyAccessString)
+bool ECDbTestUtility::CompareJsonWithECArrayValue (const Json::Value& jsonValue, ECValueCR referenceValue, IECInstanceCR referenceInstance, Utf8CP referencePropertyAccessString)
     {
     if (referenceValue.IsNull())
         return false;
@@ -1362,7 +1360,7 @@ bool ECDbTestUtility::IsECValueNullOrEmpty (ECValueCR value)
         {
         if (value.IsString())
             {
-            WCharCP valueStr = value.GetString();
+            Utf8CP valueStr = value.GetUtf8CP();
             if(valueStr == nullptr || valueStr[0] == 0)
                 return true;
             }
@@ -1384,8 +1382,8 @@ double actualJd
     {
     const DateTime expectedDateTime = expectedECValue.GetDateTime ();
 
-    WString assertMessageHeader;
-    assertMessageHeader.Sprintf (L"EC date time assertion failed for '%ls': ", expectedDateTime.ToString ().c_str ());
+    Utf8String assertMessageHeader;
+    assertMessageHeader.Sprintf ("EC date time assertion failed for '%s': ", expectedDateTime.ToUtf8String().c_str ());
 
     const int64_t expectedCETicks = expectedECValue.GetDateTimeTicks ();
     double expectedJd;
@@ -1401,13 +1399,13 @@ double actualJd
     sql.Sprintf ("select julianday('%s');", expectedDateTime.ToUtf8String ().c_str ());
     Statement sqliteStatement;
     DbResult dbStat = sqliteStatement.Prepare (db, sql.c_str ());
-    EXPECT_EQ (BE_SQLITE_OK, dbStat) << assertMessageHeader.c_str () << L"SQL statement '" << sql.c_str () << L"' could not be prepared";
+    EXPECT_EQ (BE_SQLITE_OK, dbStat) << assertMessageHeader.c_str () << "SQL statement '" << sql.c_str () << "' could not be prepared";
     dbStat = sqliteStatement.Step ();
-    EXPECT_EQ (BE_SQLITE_ROW, dbStat) << assertMessageHeader.c_str () << L"SQL statement '" << sql.c_str () << L"' could not be executed";;
+    EXPECT_EQ (BE_SQLITE_ROW, dbStat) << assertMessageHeader.c_str () << "SQL statement '" << sql.c_str () << "' could not be executed";;
     const double sqliteJd = sqliteStatement.GetValueDouble (0);
     const int64_t sqliteCETicks = JulianDayToCommonEraTicks (sqliteJd);
-    LOG.infov (L"Expected JD: %lf - SQLite JD: %lf", expectedJd, sqliteJd);
-    assertMessageHeader.Sprintf (L"Comparison of Julian Days computed by Bentley::DateTime and SQLite date function failed for '%ls'. ", expectedDateTime.ToString ().c_str ());
+    LOG.infov ("Expected JD: %lf - SQLite JD: %lf", expectedJd, sqliteJd);
+    assertMessageHeader.Sprintf ("Comparison of Julian Days computed by Bentley::DateTime and SQLite date function failed for '%s'. ", expectedDateTime.ToUtf8String().c_str ());
     AssertECDateTime (expectedCETicks, sqliteCETicks, assertMessageHeader.c_str ());
     }
 
@@ -1419,12 +1417,12 @@ void ECDbTestUtility::AssertECDateTime
 (
 int64_t expectedCETicks,
 int64_t actualCETicks,
-WCharCP assertMessageHeader
+Utf8CP assertMessageHeader
 )
     {
     if (!CompareECDateTimes (expectedCETicks,actualCETicks))
         {
-        FAIL () << assertMessageHeader << L"Common Era ticks difference outside the tolerance. Expected ticks: " << expectedCETicks << L" Actual ticks: " << actualCETicks;
+        FAIL () << assertMessageHeader << "Common Era ticks difference outside the tolerance. Expected ticks: " << expectedCETicks << " Actual ticks: " << actualCETicks;
         }
     }
 
@@ -1530,7 +1528,7 @@ ECDbR ecdb
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ECDbTestUtility::DumpECSchemaUsageStatistics (ECSchemaCR schema, ECDbR ecdb, bool dumpEmptyClasses)
     {
-    LOG.infov (L"ECSchema: %ls.%02d.%02d", schema.GetName().c_str(), schema.GetVersionMajor(), schema.GetVersionMinor());
+    LOG.infov ("ECSchema: %s.%02d.%02d", schema.GetName().c_str(), schema.GetVersionMajor(), schema.GetVersionMinor());
     size_t totalClassCount = 0;
     size_t totalUsedClassCount = 0;
     size_t totalCustomAttributeClassCount = 0;
@@ -1544,14 +1542,14 @@ void ECDbTestUtility::DumpECSchemaUsageStatistics (ECSchemaCR schema, ECDbR ecdb
         if (ecClass->GetIsCustomAttributeClass())
             {
             totalCustomAttributeClassCount++;
-            LOG.infov (L"    ECClass: %-40ls\t\t(Custom Attribute Class)", ecClass->GetName().c_str());
+            LOG.infov ("    ECClass: %-40s\t\t(Custom Attribute Class)", ecClass->GetName().c_str());
             continue;
             }
 
         ECInstanceInserter inserter (ecdb, *ecClass);
         if (!inserter.IsValid ())
             {
-            LOG.infov (L"    ECClass: %-40ls\t\t(Not mapped to any table)", ecClass->GetName().c_str());
+            LOG.infov ("    ECClass: %-40s\t\t(Not mapped to any table)", ecClass->GetName().c_str());
             continue;
             }
 
@@ -1560,7 +1558,7 @@ void ECDbTestUtility::DumpECSchemaUsageStatistics (ECSchemaCR schema, ECDbR ecdb
             *ecClass, ecdb);
         if (instanceCount > 0 && dumpEmptyClasses)
             {
-            LOG.infov (L"    ECClass: %-40ls: %5d instances, %5d properties, %5d null-properties, %5d cust-attr-instances", 
+            LOG.infov ("    ECClass: %-40s: %5d instances, %5d properties, %5d null-properties, %5d cust-attr-instances", 
                 ecClass->GetName().c_str(), instanceCount, propertyCount, nullPropertyCount, customAttributeInstanceCount);
             }
         if (instanceCount > 0) totalUsedClassCount++;
@@ -1569,14 +1567,14 @@ void ECDbTestUtility::DumpECSchemaUsageStatistics (ECSchemaCR schema, ECDbR ecdb
         totalNullPropertyCount += nullPropertyCount;
         }
 
-    LOG.infov (L"%-30ls = %5d", L"Total Classes", totalClassCount);
-    LOG.infov (L"%-30ls = %5d", L"Total CustAttr Classes", totalCustomAttributeClassCount);
-    LOG.infov (L"%-30ls = %5d", L"Total Used Classes", totalUsedClassCount);
-    LOG.infov (L"%-30ls = %5d", L"Total Unused Classes", totalClassCount - totalUsedClassCount - totalCustomAttributeClassCount);
-    LOG.infov (L"%-30ls = %5d", L"Total Custom Attr Instances", totalCustomAttributeInstanceCount);
-    LOG.infov (L"%-30ls = %5d", L"Total Property Count", totalPropertyCount);
-    LOG.infov (L"%-30ls = %5d", L"Total Null Property Count", totalNullPropertyCount);
-    LOG.infov (L"");
+    LOG.infov ("%-30s = %5d", "Total Classes", totalClassCount);
+    LOG.infov ("%-30s = %5d", "Total CustAttr Classes", totalCustomAttributeClassCount);
+    LOG.infov ("%-30s = %5d", "Total Used Classes", totalUsedClassCount);
+    LOG.infov ("%-30s = %5d", "Total Unused Classes", totalClassCount - totalUsedClassCount - totalCustomAttributeClassCount);
+    LOG.infov ("%-30s = %5d", "Total Custom Attr Instances", totalCustomAttributeInstanceCount);
+    LOG.infov ("%-30s = %5d", "Total Property Count", totalPropertyCount);
+    LOG.infov ("%-30s = %5d", "Total Null Property Count", totalNullPropertyCount);
+    LOG.infov ("");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1626,7 +1624,7 @@ BentleyStatus ECDbTestUtility::SetECInstanceId (ECN::IECInstanceR instance, ECIn
     if (!instanceId.IsValid ())
         return ERROR;
 
-    WChar instanceIdStr[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
+    Utf8Char instanceIdStr[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH];
     if (!ECInstanceIdHelper::ToString (instanceIdStr, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, instanceId))
         {
         LOG.errorv ("Could not set ECInstanceId %lld on the ECInstanceId. Conversion to string failed.", instanceId.GetValue ());

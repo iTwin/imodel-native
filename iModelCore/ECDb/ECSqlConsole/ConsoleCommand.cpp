@@ -688,7 +688,8 @@ void ExportCommand::RunExportSchema(ECSqlConsoleSession& session, Utf8CP outFold
 
     for (auto schema : schemas)
         {
-        WString fileName = schema->GetFullSchemaName();
+        WString fileName;
+        fileName.AssignUtf8(schema->GetFullSchemaName().c_str());
         fileName.append(L".ecschema.xml");
 
         BeFileName outPath(outFolder);
@@ -863,7 +864,7 @@ void PopulateCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> cons
             Savepoint savepoint(ecdb, "Populate");
             ECInstanceKey instanceKey;
             auto insertStatus = inserter.Insert(instanceKey, *instance);
-            WChar id[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH] = L"";
+            Utf8Char id[ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH] = "";
             ECInstanceIdHelper::ToString (id, ECInstanceIdHelper::ECINSTANCEID_STRINGBUFFER_LENGTH, instanceKey.GetECInstanceId ());
             instance->SetInstanceId (id);
 
@@ -1284,14 +1285,14 @@ void ECSchemaDiffCommand::_Run(ECSqlConsoleSession& session, vector<Utf8String> 
         return;
         }
 
-    WString diffText;
+    Utf8String diffText;
     if (diff->WriteToString(diffText,2) != DiffStatus::DIFFSTATUS_Success)
         {
         Console::WriteErrorLine("Failed to convert diff into textual representation");
         return;
         }
     if (out.empty())
-        Console::WriteLine( Utf8String(diffText.c_str()).c_str());
+        Console::WriteLine( diffText.c_str());
     else
         {
         BeFile file;

@@ -82,7 +82,7 @@ void OutputNameValuePair (IECSqlValue const& value)
             {
                 case PRIMITIVETYPE_Integer:
                     auto intValue = value.GetInt ();
-                    wprintf (L"%ls: %d\t", propName, intValue);
+                    printf ("%s: %d\t", propName, intValue);
                     break;
             }
         }
@@ -207,7 +207,7 @@ void Scenario_GetMetadataForQueryWithNoResults (ECDbR ecdb)
     for (auto i = 0; i < columnCount; i++)
         {
         auto propName = statement.GetColumnInfo (i).GetProperty ()->GetName ().c_str ();
-        wprintf (L"%ls\t", propName);
+        printf ("%s\t", propName);
         }
         
     while (statement.Step () == ECSqlStepStatus::HasRow)
@@ -296,13 +296,13 @@ void Scenario_BindCertainPrimitiveAndStructsAndArrays (ECDbR ecdb)
 
     // *** Bind struct value ***
     IECSqlStructBinder& headquarterStructBinder = statement.BindStruct (2);
-    auto stat = headquarterStructBinder.GetMember (L"Town").BindText ("New York", IECSqlBinder::MakeCopy::Yes);
+    auto stat = headquarterStructBinder.GetMember ("Town").BindText ("New York", IECSqlBinder::MakeCopy::Yes);
     if (stat != ECSqlStatus::Success)
         {
         //do error handling
         return;
         }
-    stat = headquarterStructBinder.GetBinder (L"Zip").BindInt (97652);
+    stat = headquarterStructBinder.GetBinder ("Zip").BindInt (97652);
     if (stat != ECSqlStatus::Success)
         {
         //do error handling
@@ -310,15 +310,15 @@ void Scenario_BindCertainPrimitiveAndStructsAndArrays (ECDbR ecdb)
         }
 
     //Bind nested struct value (StreetName is a member of struct Location which is a struct again
-    IECSqlStructBinder& streetNameStructBinder = headquarterStructBinder.GetMember (L"StreetName").BindStruct ();
-    stat = streetNameStructBinder.GetMember (L"Name").BindText ("Main Street", IECSqlBinder::MakeCopy::Yes);
+    IECSqlStructBinder& streetNameStructBinder = headquarterStructBinder.GetMember ("StreetName").BindStruct ();
+    stat = streetNameStructBinder.GetMember ("Name").BindText ("Main Street", IECSqlBinder::MakeCopy::Yes);
     if (stat != ECSqlStatus::Success)
         {
         //do error handling
         return;
         }
 
-    stat = streetNameStructBinder.GetMember (L"HouseNumber").BindInt (2001);
+    stat = streetNameStructBinder.GetMember ("HouseNumber").BindInt (2001);
     if (stat != ECSqlStatus::Success)
         {
         //do error handling
@@ -330,27 +330,27 @@ void Scenario_BindCertainPrimitiveAndStructsAndArrays (ECDbR ecdb)
     //first array element
     IECSqlStructBinder& affiliateBinder = affiliateArrayBinder.AddArrayElement ().BindStruct ();
     
-    stat = affiliateBinder.GetMember (L"Town").BindText ("Philadelphia", IECSqlBinder::MakeCopy::Yes);
+    stat = affiliateBinder.GetMember ("Town").BindText ("Philadelphia", IECSqlBinder::MakeCopy::Yes);
     if (stat != ECSqlStatus::Success)
         {
         //do error handling
         return;
         }
     //skipping error handling from here for better readability of sample code
-    affiliateBinder.GetMember (L"Zip").BindInt (23451);
+    affiliateBinder.GetMember ("Zip").BindInt (23451);
     //Bind nested struct value (StreetName is a member of struct Location which is a struct again
-    streetNameStructBinder = affiliateBinder.GetMember (L"StreetName").BindStruct ();
-    streetNameStructBinder.GetMember (L"Name").BindText ("High Street", IECSqlBinder::MakeCopy::Yes);
-    streetNameStructBinder.GetMember (L"HouseNumber").BindInt (1100);
+    streetNameStructBinder = affiliateBinder.GetMember ("StreetName").BindStruct ();
+    streetNameStructBinder.GetMember ("Name").BindText ("High Street", IECSqlBinder::MakeCopy::Yes);
+    streetNameStructBinder.GetMember ("HouseNumber").BindInt (1100);
 
     //second array element
     affiliateBinder = affiliateArrayBinder.AddArrayElement ();
 
-    affiliateBinder.GetMember (L"Town").BindText ("Washington", IECSqlBinder::MakeCopy::Yes);
-    affiliateBinder.GetMember (L"Zip").BindInt (43219);
-    streetNameStructBinder = affiliateBinder.GetMember (L"StreetName").BindStruct ();
-    streetNameStructBinder.GetMember (L"Name").BindText ("Capitol Hill Rd", IECSqlBinder::MakeCopy::Yes);
-    streetNameStructBinder.GetMember (L"HouseNumber").BindInt (5000);
+    affiliateBinder.GetMember ("Town").BindText ("Washington", IECSqlBinder::MakeCopy::Yes);
+    affiliateBinder.GetMember ("Zip").BindInt (43219);
+    streetNameStructBinder = affiliateBinder.GetMember ("StreetName").BindStruct ();
+    streetNameStructBinder.GetMember ("Name").BindText ("Capitol Hill Rd", IECSqlBinder::MakeCopy::Yes);
+    streetNameStructBinder.GetMember ("HouseNumber").BindInt (5000);
 
     //*** Bind primitive array value ***
     IECSqlArrayBinder& acronymArrayBinder = statement.BindArray (4, 2);
@@ -391,8 +391,8 @@ void Scenario_AddFileAttributeOnFile_BindStruct (ECDbR ecdb)
 
     //Bind FileAttribute struct value
     IECSqlStructBinder& attributeBinder = statement.BindStruct (1);
-    attributeBinder.GetMember (L"Type").BindText ("readonly", IECSqlBinder::MakeCopy::Yes);
-    attributeBinder.GetMember(L"Value").BindBoolean (true);
+    attributeBinder.GetMember ("Type").BindText ("readonly", IECSqlBinder::MakeCopy::Yes);
+    attributeBinder.GetMember("Value").BindBoolean (true);
 
     //Bind ECInstanceId value
     statement.BindInt64 (2, 1324353);
@@ -428,13 +428,13 @@ void Scenario_SetFileAttributesOnFile_BindStructArray (ECDbR ecdb)
     IECSqlBinder& attributesBinder = statement.GetBinder (1, 2);
     //First element
     IECSqlBinder& attributeBinder = attributesBinder.AddArrayElement ();
-    attributeBinder.BindStruct ().GetMember (L"Type").BindText ("readonly", IECSqlBinder::MakeCopy::Yes);
-    attributeBinder.BindStruct ().GetMember (L"Value").BindBoolean (true);
+    attributeBinder.BindStruct ().GetMember ("Type").BindText ("readonly", IECSqlBinder::MakeCopy::Yes);
+    attributeBinder.BindStruct ().GetMember ("Value").BindBoolean (true);
 
     //Second element
     attributeBinder = attributesBinder.AddArrayElement ();
-    attributeBinder.BindStruct ().GetMember (L"Type").BindText ("compressed", IECSqlBinder::MakeCopy::Yes);
-    attributeBinder.BindStruct ().GetMember (L"Value").BindBoolean (true);
+    attributeBinder.BindStruct ().GetMember ("Type").BindText ("compressed", IECSqlBinder::MakeCopy::Yes);
+    attributeBinder.BindStruct ().GetMember ("Value").BindBoolean (true);
 
     //Bind ECInstanceId value
     statement.BindInt64 (2, 1324353);
@@ -509,7 +509,7 @@ void Scenario_BindWithOutOfBoundsIndex (ECDbR ecdb)
     
     //This is how the no-op binder behaves:
     //The BindXXX methods return an error indicating that the binder was obtained for an index out of bounds
-    ECSqlStatus stat = invalidBinder.BindInt64 (L"Id", 1000LL);
+    ECSqlStatus stat = invalidBinder.BindInt64 ("Id", 1000LL);
     if (stat == ECSqlStatus::IndexOutOfBounds)
         {
         //error

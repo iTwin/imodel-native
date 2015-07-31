@@ -60,34 +60,34 @@ ECN::ECClassCR ECDbMap::GetClassForPrimitiveArrayPersistence (PrimitiveType prim
     switch(primitiveType)
         {
         case PRIMITIVETYPE_Binary:
-            ecMapClass = ecdbSystemSchema->GetClassCP (L"ArrayOfBinary");
+            ecMapClass = ecdbSystemSchema->GetClassCP ("ArrayOfBinary");
             break;
         case PRIMITIVETYPE_Boolean:                
-            ecMapClass = ecdbSystemSchema->GetClassCP (L"ArrayOfBoolean");
+            ecMapClass = ecdbSystemSchema->GetClassCP ("ArrayOfBoolean");
             break;
         case PRIMITIVETYPE_DateTime:                  
-            ecMapClass = ecdbSystemSchema->GetClassCP (L"ArrayOfDateTime");
+            ecMapClass = ecdbSystemSchema->GetClassCP ("ArrayOfDateTime");
             break;
         case PRIMITIVETYPE_Double:                    
-            ecMapClass = ecdbSystemSchema->GetClassCP (L"ArrayOfDouble");
+            ecMapClass = ecdbSystemSchema->GetClassCP ("ArrayOfDouble");
             break;
         case PRIMITIVETYPE_Integer:                   
-            ecMapClass = ecdbSystemSchema->GetClassCP (L"ArrayOfInteger");
+            ecMapClass = ecdbSystemSchema->GetClassCP ("ArrayOfInteger");
             break;
         case PRIMITIVETYPE_Long:                      
-            ecMapClass = ecdbSystemSchema->GetClassCP (L"ArrayOfLong");
+            ecMapClass = ecdbSystemSchema->GetClassCP ("ArrayOfLong");
             break;
         case PRIMITIVETYPE_Point2D:                   
-            ecMapClass = ecdbSystemSchema->GetClassCP (L"ArrayOfPoint2d");
+            ecMapClass = ecdbSystemSchema->GetClassCP ("ArrayOfPoint2d");
             break;
         case PRIMITIVETYPE_Point3D:                   
-            ecMapClass = ecdbSystemSchema->GetClassCP (L"ArrayOfPoint3d");
+            ecMapClass = ecdbSystemSchema->GetClassCP ("ArrayOfPoint3d");
             break;
         case PRIMITIVETYPE_String:                    
-            ecMapClass = ecdbSystemSchema->GetClassCP (L"ArrayOfString");
+            ecMapClass = ecdbSystemSchema->GetClassCP ("ArrayOfString");
             break;
         case PRIMITIVETYPE_IGeometry:
-            ecMapClass = ecdbSystemSchema->GetClassCP(L"ArrayOfGeometry");
+            ecMapClass = ecdbSystemSchema->GetClassCP("ArrayOfGeometry");
             break;
         default:
             BeAssert(0 && "Cannot map primitive type");
@@ -294,7 +294,7 @@ ClassMapPtr ECDbMap::LoadAddClassMap (ECClassCR ecClass)
         {
         if (MapStatus::Error == AddClassMap (classMapPtr))
             {
-            LOG.errorv (L"Failed to add map for class %ls", ecClass.GetFullName ());
+            LOG.errorv ("Failed to add map for class %s", ecClass.GetFullName ());
             return nullptr;
             }
 
@@ -318,7 +318,7 @@ MapStatus ECDbMap::MapClass (ECClassCR ecClass, bool forceRevaluationOfMapStrate
         {
         if (0 == ECDbSchemaManager::GetClassIdForECClassFromDuplicateECSchema(GetECDbR(), ecClass))
             {
-            LOG.errorv(L"ECClass %ls does not exist in ECDb. Import ECSchema containing the class first", ecClass.GetFullName());
+            LOG.errorv("ECClass %s does not exist in ECDb. Import ECSchema containing the class first", ecClass.GetFullName());
             BeAssert(false);
             return MapStatus::Error;
             }
@@ -373,7 +373,7 @@ MapStatus ECDbMap::AddClassMap (ClassMapPtr& classMap)
     ECClassCR ecClass = classMap->GetClass();
     if (m_classMapDictionary.end() != m_classMapDictionary.find(ecClass.GetId()))
         {
-        LOG.errorv (L"Attempted to add a second ClassMap for ECClass %ls", ecClass.GetFullName());
+        LOG.errorv ("Attempted to add a second ClassMap for ECClass %s", ecClass.GetFullName());
         BeAssert(false && "Attempted to add a second ClassMap for the same ECClass");
         return MapStatus::Error;
         }
@@ -603,21 +603,21 @@ MappedTableP ECDbMap::GetMappedTable (ClassMapCR classMap, bool createMappedTabl
 * @bsimethod                                                    casey.mullen      11/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 //static
-WCharCP ECDbMap::GetPrimitiveTypeName (ECN::PrimitiveType primitiveType)
+Utf8CP ECDbMap::GetPrimitiveTypeName (ECN::PrimitiveType primitiveType)
     {
     switch (primitiveType)
         {
         // the values are intended only for logging and debugging purposes
-        case PRIMITIVETYPE_String  : return L"String";
-        case PRIMITIVETYPE_Integer : return L"Integer(32)";
-        case PRIMITIVETYPE_Long    : return L"Long(64)";
-        case PRIMITIVETYPE_Double  : return L"Double";
-        case PRIMITIVETYPE_DateTime: return L"DateTime";
-        case PRIMITIVETYPE_Binary  : return L"Binary";
-        case PRIMITIVETYPE_Boolean : return L"Boolean";
-        case PRIMITIVETYPE_Point2D : return L"Point2D";
-        case PRIMITIVETYPE_Point3D : return L"Point3D";
-        default:                     return L"<unknown>";
+        case PRIMITIVETYPE_String  : return "String";
+        case PRIMITIVETYPE_Integer : return "Integer(32)";
+        case PRIMITIVETYPE_Long    : return "Long(64)";
+        case PRIMITIVETYPE_Double  : return "Double";
+        case PRIMITIVETYPE_DateTime: return "DateTime";
+        case PRIMITIVETYPE_Binary  : return "Binary";
+        case PRIMITIVETYPE_Boolean : return "Boolean";
+        case PRIMITIVETYPE_Point2D : return "Point2D";
+        case PRIMITIVETYPE_Point3D : return "Point3D";
+        default:                     return "<unknown>";
         }
     }
 

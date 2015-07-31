@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSchemaComparers.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -19,7 +19,7 @@ bool operator== (ECClassCR lhs, ECClassCR rhs)
         return lhs.GetId () == rhs.GetId ();
         }
 
-    return wcscmp (lhs.GetFullName (), rhs.GetFullName ()) == 0;
+    return strcmp (lhs.GetFullName (), rhs.GetFullName ()) == 0;
     }
 
 
@@ -43,7 +43,7 @@ bool operator== (ECPropertyCR lhs, ECPropertyCR rhs)
         return lhs.GetId () == rhs.GetId ();
         }
 
-    return lhs.GetClass () == rhs.GetClass () && wcscmp (lhs.GetName ().c_str (), rhs.GetName ().c_str ()) == 0;
+    return lhs.GetClass () == rhs.GetClass () && strcmp (lhs.GetName ().c_str (), rhs.GetName ().c_str ()) == 0;
     }
 
 //--------------------------------------------------------------------------------------

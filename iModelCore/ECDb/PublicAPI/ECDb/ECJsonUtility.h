@@ -24,8 +24,8 @@ private:
     ~ECJsonCppUtility ();
 
 //__PUBLISH_SECTION_END__
-    static StatusInt ECInstanceFromJsonValue (ECN::IECInstanceR instance, const Json::Value& jsonValue, ECN::ECClassCR currentClass, WStringCR currentAccessString);
-    static StatusInt ECArrayValueFromJsonValue (ECN::IECInstanceR instance, const Json::Value& jsonValue, ECN::ArrayECPropertyCR arrayProperty, WStringCR currentAccessString);
+    static StatusInt ECInstanceFromJsonValue (ECN::IECInstanceR instance, const Json::Value& jsonValue, ECN::ECClassCR currentClass, Utf8StringCR currentAccessString);
+    static StatusInt ECArrayValueFromJsonValue (ECN::IECInstanceR instance, const Json::Value& jsonValue, ECN::ArrayECPropertyCR arrayProperty, Utf8StringCR currentAccessString);
     static StatusInt ECPrimitiveValueFromJsonValue (ECN::ECValueR ecValue, const Json::Value& jsonValue, ECN::PrimitiveType primitiveType);
 //__PUBLISH_SECTION_START__
 
@@ -43,8 +43,8 @@ private:
     ~ECRapidJsonUtility ();
 
 //__PUBLISH_SECTION_END__
-    static StatusInt ECInstanceFromJsonValue (ECN::IECInstanceR instance, RapidJsonValueCR jsonValue, ECN::ECClassCR currentClass, WStringCR currentAccessString);
-    static StatusInt ECArrayValueFromJsonValue (ECN::IECInstanceR instance, RapidJsonValueCR jsonValue, ECN::ArrayECPropertyCR arrayProperty, WStringCR currentAccessString);
+    static StatusInt ECInstanceFromJsonValue (ECN::IECInstanceR instance, RapidJsonValueCR jsonValue, ECN::ECClassCR currentClass, Utf8StringCR currentAccessString);
+    static StatusInt ECArrayValueFromJsonValue (ECN::IECInstanceR instance, RapidJsonValueCR jsonValue, ECN::ArrayECPropertyCR arrayProperty, Utf8StringCR currentAccessString);
     static StatusInt ECPrimitiveValueFromJsonValue (ECN::ECValueR ecValue, RapidJsonValueCR jsonValue, ECN::PrimitiveType primitiveType);
 //__PUBLISH_SECTION_START__
 

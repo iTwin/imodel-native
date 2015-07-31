@@ -46,7 +46,7 @@ private:
     virtual ECSqlStatus _OnBeforeStep () override;
 
     //these are needed by the actual binding API
-    virtual IECSqlBinder& _GetMember (WCharCP structMemberPropertyName) override;
+    virtual IECSqlBinder& _GetMember (Utf8CP structMemberPropertyName) override;
     virtual IECSqlBinder& _GetMember (ECN::ECPropertyId structMemberPropertyId) override;
     virtual ECSqlStatus _BindNull () override;
     virtual IECSqlPrimitiveBinder& _BindPrimitive () override;

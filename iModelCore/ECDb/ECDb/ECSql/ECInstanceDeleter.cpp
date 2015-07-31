@@ -60,7 +60,7 @@ ECInstanceId const& ecInstanceId
     {
     if (!IsValid ())
         {
-        LOG.errorv (L"ECInstanceDeleter for ECClass '%ls' is invalid as the ECClass is not mapped or cannot be used for deleting.", m_ecClass.GetFullName ());
+        LOG.errorv ("ECInstanceDeleter for ECClass '%s' is invalid as the ECClass is not mapped or cannot be used for deleting.", m_ecClass.GetFullName ());
         return ERROR;
         }
 
@@ -88,9 +88,9 @@ IECInstanceCR ecInstance
     {
     if (ecInstance.GetClass () != m_ecClass)
         {
-        WString displayLabel;
+        Utf8String displayLabel;
         ecInstance.GetDisplayLabel (displayLabel);
-        LOG.errorv (L"Failed to delete ECInstance '%ls'. Invalid ECInstance passed to ECInstanceDeleter. ECClass mismatch: Expected ECClass: '%ls'. ECInstance's ECClass: '%ls'.",
+        LOG.errorv ("Failed to delete ECInstance '%s'. Invalid ECInstance passed to ECInstanceDeleter. ECClass mismatch: Expected ECClass: '%s'. ECInstance's ECClass: '%s'.",
             displayLabel.c_str (), m_ecClass.GetFullName (), ecInstance.GetClass ().GetFullName ());
         return ERROR;
         }
