@@ -173,9 +173,9 @@ Utf8String UrlProvider::GetUrl(Utf8CP urlName, const UrlData* defaultUrls)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                Julija.Semenenko   06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String UrlProvider::GetBuddiUrl(Utf8StringCR urlName, uint32_t urlId)
+Utf8String UrlProvider::GetBuddiUrl(Utf8StringCR urlName, uint32_t regionId)
     {
-    auto result = s_buddi->GetUrl(urlName, urlId)->GetResult();
+    auto result = s_buddi->GetUrl(urlName, regionId)->GetResult();
     if (result.IsSuccess())
         {
         return result.GetValue();
