@@ -126,7 +126,6 @@ DG_INLINE DPoint3dCR      SnapDetail::GetSnapPoint() const {return m_snapPoint;}
 DG_INLINE int             SnapDetail::GetSnapDivisor() const {return m_divisor;}
 DG_INLINE double          SnapDetail::GetMinScreenDist() const {return m_minScreenDist;}
 DG_INLINE Point2d const&  SnapDetail::GetScreenPoint() const {return m_screenPt;}
-DG_INLINE HitDetail*        IntersectDetail::GetSecondHit() const {return m_secondHit;}
 
 DG_INLINE IACSManagerR IACSManager::GetManager() {return T_HOST.GetAcsManager();}
 

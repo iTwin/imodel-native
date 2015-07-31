@@ -203,7 +203,7 @@ struct RevTxn
 //!    - notifying TxnTables of changes
 //!    - change propagation.
 //!    - Reversing (undo) and Reinstating (redo) Txns
-//!    - combining multi-step Txns into a single reversible "operation"
+//!    - combining multi-step Txns into a single reversible "operation". See BeginMultiTxnOperation
 //!    - change merging
 // @bsiclass
 //=======================================================================================

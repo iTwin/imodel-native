@@ -1173,7 +1173,6 @@ public:
     //! @param[in]          zDepth      Priority value in 2d or NULL
     DGNPLATFORM_EXPORT void DrawTextString(TextStringCR text, double* zDepth = NULL);
 
-    //__PUBLISH_SECTION_END__
     //! Draw a filled triangle strip from 3D points.
     //! @param[in]          numPoints   Number of vertices in \c points array.
     //! @param[in]          points      Array of vertices.
@@ -1287,7 +1286,6 @@ public:
     //! Draw a QvElem
     DGNPLATFORM_EXPORT void DrawQvElem(QvElem* qvElem, int subElemIndex = 0);
 
-    //__PUBLISH_SECTION_END__
     //! Draw OLE object.
     DGNPLATFORM_EXPORT void DrawDgnOle(IDgnOleDraw*);
 

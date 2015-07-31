@@ -293,7 +293,7 @@ enum KeypointType
 //=======================================================================================
 // @bsiclass                                                      Keith.Bentley   10/04
 //=======================================================================================
-enum            SnapHeat
+enum SnapHeat
 {
     SNAP_HEAT_None       = 0,
     SNAP_HEAT_NotInRange = 1,   // "of interest", but out of range
@@ -306,8 +306,6 @@ enum            SnapHeat
 struct  SnapDetail : HitDetail
 {
     DEFINE_T_SUPER(HitDetail)
-
-//__PUBLISH_SECTION_END__
 
 protected:
     SnapHeat            m_heat;
@@ -344,8 +342,6 @@ public:
     DGNPLATFORM_EXPORT bool GetCustomKeypoint(int* nBytesP, Byte** dataPP) const {if (nBytesP) *nBytesP = m_customKeypointSize; if (dataPP) *dataPP = m_customKeypointData; return (NULL != m_customKeypointData ? true : false);}
     DGNPLATFORM_EXPORT void SetCustomKeypoint(int nBytes, Byte* dataP);
 
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
 public:
     DGNPLATFORM_EXPORT bool IsHot() const;
     DGNPLATFORM_EXPORT bool IsPointOnCurve() const;
@@ -365,7 +361,7 @@ public:
     DGNPLATFORM_EXPORT void SetSnapDivisor(int divisor);
     DGNPLATFORM_EXPORT void SetAdjustedPoint(DPoint3dCR adjustedPt);
     DGNPLATFORM_EXPORT void SetHeat(SnapHeat isHot);
-}; // SnapDetail
+};
 
 //=======================================================================================
 // @bsiclass                                                      KeithBentley    04/01
@@ -373,7 +369,6 @@ public:
 struct IntersectDetail : SnapDetail
 {
     DEFINE_T_SUPER(SnapDetail)
-//__PUBLISH_SECTION_END__
 private:
     HitDetail*    m_secondHit;
 
@@ -387,11 +382,7 @@ public:
     DGNPLATFORM_EXPORT IntersectDetail(HitDetailCP firstHit, HitDetailCP secondHit, DPoint3dCR intersctionPt);
     DGNPLATFORM_EXPORT IntersectDetail(IntersectDetail const&);
     DGNPLATFORM_EXPORT ~IntersectDetail();
-
-//__PUBLISH_CLASS_VIRTUAL__
-//__PUBLISH_SECTION_START__
-public:
-    DGNPLATFORM_EXPORT HitDetail* GetSecondHit() const;
-}; // IntersectDetail
+    HitDetail* GetSecondHit() const {return m_secondHit;}
+}; 
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

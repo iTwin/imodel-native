@@ -424,15 +424,15 @@ public:
     friend struct QvOutputMT;
 
 protected:
-    bool            m_needsRefresh:1;           // screen needs to be redrawn from backing store at next opportunity
-    bool            m_zClipAdjusted:1;          // were the view z clip planes adjusted due to front/back clipping off?
-    bool            m_is3dView:1;               // view is of a 3d model
-    bool            m_isSheetView:1;            // view is sheet
-    bool            m_isCameraOn:1;             // view is 3d and the camera is turned on.
-    bool            m_qvDCAssigned:1;           // whether the DC was assigned for QV
-    bool            m_qvParamsSet:1;            // whether view frustum and display mode have been set
-    bool            m_invertY:1;
-    bool            m_frustumValid:1;
+    bool            m_needsRefresh;           // screen needs to be redrawn from backing store at next opportunity
+    bool            m_zClipAdjusted;          // were the view z clip planes adjusted due to front/back clipping off?
+    bool            m_is3dView;               // view is of a 3d model
+    bool            m_isSheetView;            // view is sheet
+    bool            m_isCameraOn;             // view is 3d and the camera is turned on.
+    bool            m_qvDCAssigned;           // whether the DC was assigned for QV
+    bool            m_qvParamsSet;            // whether view frustum and display mode have been set
+    bool            m_invertY;
+    bool            m_frustumValid;
     DPoint3d        m_viewOrg;                  // view origin, potentially expanded if f/b clipping are off
     DVec3d          m_viewDelta;                // view delta, potentially expanded if f/b clipping are off
     DPoint3d        m_viewOrgUnexpanded;        // view origin (from ViewController, unexpanded for "no clip")

@@ -231,7 +231,7 @@ size_t GeomDetail::GetSegmentNumber() const
     if (!m_primitive.IsValid() || ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString != m_primitive->GetCurvePrimitiveType())
         return 0;
 
-    bvector<DPoint3d> const* points = m_primitive->GetLineStringCP ();
+    bvector<DPoint3d> const* points = m_primitive->GetLineStringCP();
 
     if (points->size() < 3)
         return 0;
@@ -375,15 +375,7 @@ CurvePrimitiveIdCP GeomDetail::GetCurvePrimitiveId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/015
 +---------------+---------------+---------------+---------------+---------------+------*/
-HitDetail::HitDetail
-(
-DgnViewportR        viewport,
-GeometricElementCP  element,
-DPoint3dCR          testPoint,
-HitSource           source,
-ViewFlagsCR         viewFlags,
-GeomDetailCR        geomDetail
-) : m_viewport(viewport)
+HitDetail::HitDetail(DgnViewportR viewport, GeometricElementCP element, DPoint3dCR testPoint, HitSource source, ViewFlagsCR viewFlags, GeomDetailCR geomDetail) : m_viewport(viewport)
     {
     m_elementId         = (nullptr != element ? element->GetElementId() : DgnElementId());
     m_locateSource      = source;

@@ -1210,13 +1210,13 @@ static void limitWindowSize(ViewportStatus& error, double& value, ViewportStatus
     {
     if (value < DgnViewport::GetMinViewDelta())
         {
-        value  = DgnViewport::GetMinViewDelta();
-        error  = lowErr;
+        value = DgnViewport::GetMinViewDelta();
+        error = lowErr;
         }
     else if (value > DgnViewport::GetMaxViewDelta())
         {
-        value  = DgnViewport::GetMaxViewDelta();
-        error  = highErr;
+        value = DgnViewport::GetMaxViewDelta();
+        error = highErr;
         }
     }
 
