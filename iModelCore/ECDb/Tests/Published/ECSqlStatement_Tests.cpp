@@ -749,6 +749,34 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_InsertStructArray)
 
     ASSERT_EQ (in.size (), out.size ());
     ASSERT_TRUE (inXml == outXml);
+
+    //Verify Values have also been Inserted for StructArray properties of the Class
+    bmap<Utf8String, int> selectStatements;
+    int i = 2;
+    int j = 1;
+    ECSchemaCP ecSchema = ecdb.Schemas ().GetECSchema ("NestedStructArrayTest", true);
+    for (ECClassCP testClass : ecSchema->GetClasses ())
+        {
+        if (testClass->GetName () != "ClassP")
+            {
+            Utf8String selectSql = "SELECT COUNT(*) FROM nsat_ArrayOf";
+            selectSql.append (testClass->GetName ());
+            selectStatements[selectSql] = i*j;
+            j = i*j;
+            i++;
+            }
+        }
+
+    BeSQLite::Statement readStmt;
+    for (auto kvPair : selectStatements)
+        {
+        Utf8String selectSql = kvPair.first;
+        int noOfRows = kvPair.second;
+        ASSERT_EQ (DbResult::BE_SQLITE_OK, readStmt.Prepare (ecdb, selectSql.c_str ())) << "Preparation failed for " << selectSql.c_str ();
+        ASSERT_EQ (readStmt.Step (), DbResult::BE_SQLITE_ROW) << "step failed for " << selectSql.c_str ();
+        ASSERT_EQ (readStmt.GetValueInt (0), noOfRows) << "No of Rows Mis-Match: Expected = " << readStmt.GetValueInt (0) << "Actual = " << noOfRows;
+        readStmt.Finalize ();
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -778,12 +806,34 @@ TEST_F (ECSqlTestFixture, ECSqlStatement_DeleteStructArray)
         ASSERT_TRUE (deleter.Delete (*inst) == BentleyStatus::SUCCESS);
         }
 
+    //Verify Inserted Instance have been deleted.
     bvector<IECInstancePtr> out;
     ECSqlStatement stmt;
     auto prepareStatus = stmt.Prepare (ecdb, "SELECT * FROM ONLY nsat.ClassP ORDER BY ECInstanceId");
     ASSERT_TRUE (prepareStatus == ECSqlStatus::Success);
     ECInstanceECSqlSelectAdapter classPReader (stmt);
-    ASSERT_TRUE (stmt.Step () != ECSqlStepStatus::HasRow);
+    ASSERT_FALSE (stmt.Step () == ECSqlStepStatus::HasRow);
+
+    //Verify Nested StructArray values have also been deleted.
+    bvector<Utf8String> selectStatements;
+    ECSchemaCP ecSchema = ecdb.Schemas ().GetECSchema ("NestedStructArrayTest", true);
+    for (ECClassCP testClass : ecSchema->GetClasses ())
+        {
+        if (testClass->GetName () != "ClassP")
+            {
+            Utf8String selectSql = "SELECT * FROM nsat_ArrayOf";
+            selectSql.append (testClass->GetName ());
+            selectStatements.push_back (selectSql);
+            }
+        }
+
+    BeSQLite::Statement readStmt;
+    for (auto selectSql : selectStatements)
+        {
+        ASSERT_EQ (DbResult::BE_SQLITE_OK, readStmt.Prepare (ecdb, selectSql.c_str ())) << "preparation failed for " << selectSql.c_str ();
+        ASSERT_EQ (readStmt.Step (), DbResult::BE_SQLITE_DONE) << "step failed for " << selectSql.c_str ();
+        readStmt.Finalize ();
+        }
     }
 
 //---------------------------------------------------------------------------------------
