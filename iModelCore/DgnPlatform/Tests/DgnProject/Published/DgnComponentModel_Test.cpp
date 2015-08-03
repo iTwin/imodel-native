@@ -230,6 +230,7 @@ void ComponentModelTest::Developer_CreateCMs()
         builder.AppendBox(params['X'], params['Y'], params['Z']); \
         builder.SetGeomStreamAndPlacement(element); \
         model.InsertElement(element); \
+        element.Dispose();\
         var element2 = model.CreateElement('dgn.PhysicalElement', 'Widget');\
         var origin2 = BentleyApi.Dgn.JsDPoint3d.Create(10,12,13);\
         var angles2 = BentleyApi.Dgn.JsYawPitchRollAngles.Create(0,0,0);\
@@ -237,6 +238,7 @@ void ComponentModelTest::Developer_CreateCMs()
         builder2.AppendBox(params['X'], params['Y'], params['Z']); \
         builder2.SetGeomStreamAndPlacement(element2); \
         model.InsertElement(element2); \
+        element2.Dispose();\
         return 0;\
     } \
     function gadgetSolver(model, params) { \
@@ -248,6 +250,7 @@ void ComponentModelTest::Developer_CreateCMs()
         builder.AppendBox(params['Q'], params['W'], params['R']); \
         builder.SetGeomStreamAndPlacement(element); \
         model.InsertElement(element); \
+        element.Dispose();\
         return 0;\
     } \
     BentleyApi.Dgn.RegisterModelSolver('" TEST_JS_NAMESPACE ".Widget" "', widgetSolver); \
