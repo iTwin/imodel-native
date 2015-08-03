@@ -72,6 +72,14 @@ UserECDbMapStrategy* SchemaImportContext::GetUserStrategyP(ECClassCR ecclass, EC
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle   08/2015
+//---------------------------------------------------------------------------------------
+void SchemaImportContext::CacheClassMapInfo(ClassMap const& classMap, std::unique_ptr<ClassMapInfo>& info) const
+    {
+    m_classMapInfoCache.push_back(std::make_pair(&classMap,std::move(info)));
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   05/2015
 //---------------------------------------------------------------------------------------
 void SchemaImportContext::AddClassIdFilteredIndex(ECDbSqlIndex const& index, ECClassId classId)

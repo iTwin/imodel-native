@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include "ECDbInternalTypes.h"
-#include "SchemaImportContext.h"
 #include "MapStrategy.h"
 #include "ECDbSql.h"
 
@@ -15,6 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct IClassMap;
 struct ClassMapInfo;
+struct SchemaImportContext;
 
 //======================================================================================
 // @bsiclass                                                 Krischan.Eberle  02/2014

@@ -254,9 +254,10 @@ MapStatus ECDbMap::DoMapSchemas (bvector<ECSchemaCP>& mapSchemas, bool forceMapS
         }
     
     BeAssert (status != MapStatus::BaseClassesNotMapped && "Expected to resolve all class maps by now.");
-    for (auto& key : m_classMapDictionary)
+    for (std::pair<ClassMap const*, std::unique_ptr<ClassMapInfo>> const& kvpair : GetSchemaImportContext()->GetClassMapInfoCache())
         {
-        key.second->CreateIndices ();
+        if (SUCCESS != kvpair.first->CreateUserProvidedIndices(*kvpair.second))
+            return MapStatus::Error;
         }
 
     if (!FinishTableDefinition ())
